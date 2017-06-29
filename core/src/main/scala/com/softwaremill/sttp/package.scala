@@ -5,6 +5,8 @@ import java.net.URI
 import java.nio.ByteBuffer
 import java.nio.file.Path
 
+import com.softwaremill.sttp.model._
+
 import scala.annotation.implicitNotFound
 import scala.language.higherKinds
 
@@ -57,39 +59,10 @@ package object sttp {
   type Id[X] = X
   type Empty[X] = None.type
 
-  case class Method(m: String) extends AnyVal
-  object Method {
-    val GET = Method("GET")
-    val HEAD = Method("HEAD")
-    val POST = Method("POST")
-    val PUT = Method("PUT")
-    val DELETE = Method("DELETE")
-    val OPTIONS = Method("OPTIONS")
-    val PATCH = Method("PATCH")
-  }
-
-  sealed trait ResponseAs[T]
-  object IgnoreResponse extends ResponseAs[Unit]
-  case class ResponseAsString(encoding: String) extends ResponseAs[String]
-  object ResponseAsByteArray extends ResponseAs[Array[Byte]]
-
-  case class ResponseAsStream[-S]()
-
   def ignoreResponse: ResponseAs[Unit] = IgnoreResponse
   def responseAsString(encoding: String): ResponseAs[String] = ResponseAsString(encoding)
   def responseAsByteArray: ResponseAs[Array[Byte]] = ResponseAsByteArray
   def responseAsStream[S]: ResponseAsStream[S] = ResponseAsStream[S]()
-
-  sealed trait RequestBody
-  sealed trait BasicRequestBody extends RequestBody
-  case object NoBody extends RequestBody
-  case class StringBody(s: String) extends BasicRequestBody
-  case class ByteArrayBody(b: Array[Byte]) extends BasicRequestBody
-  case class ByteBufferBody(b: ByteBuffer) extends BasicRequestBody
-  case class InputStreamBody(b: InputStream) extends BasicRequestBody
-  case class InputStreamSupplierBody(b: () => InputStream) extends BasicRequestBody
-  case class FileBody(f: File) extends BasicRequestBody
-  case class PathBody(f: Path) extends BasicRequestBody
 
   /**
     * Use the factory methods `multiPart` to conveniently create instances of this class. A part can be then
