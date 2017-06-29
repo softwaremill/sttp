@@ -1,14 +1,15 @@
 package com.softwaremill.sttp
 
-import java.io.{InputStream, OutputStream, OutputStreamWriter}
+import java.io.{ByteArrayOutputStream, InputStream, OutputStream, OutputStreamWriter}
 import java.net.HttpURLConnection
 import java.nio.channels.Channels
 import java.nio.file.Files
 
 import scala.annotation.tailrec
+import scala.io.Source
 
 class HttpConnectionSttpHandler extends SttpHandler[Id] {
-  override def send[T](r: Request, responseReader: ResponseBodyReader[T]): Response[T] = {
+  override def send[T](r: Request, responseAs: ResponseAs[T]): Response[T] = {
     val c = r.uri.toURL.openConnection().asInstanceOf[HttpURLConnection]
     c.setRequestMethod(r.method.m)
     r.headers.foreach { case (k, v) => c.setRequestProperty(k, v) }
@@ -16,7 +17,7 @@ class HttpConnectionSttpHandler extends SttpHandler[Id] {
     setBody(r, c)
 
     val status = c.getResponseCode
-    Response(status, responseReader.fromInputStream(c.getInputStream))
+    Response(status, readResponse(c.getInputStream, responseAs))
   }
 
   private def setBody(r: Request, c: HttpURLConnection): Unit = {
@@ -63,5 +64,32 @@ class HttpConnectionSttpHandler extends SttpHandler[Id] {
       case PathBody(b) =>
         Files.copy(b, c.getOutputStream)
     }
+  }
+
+  private def readResponse[T](is: InputStream, responseAs: ResponseAs[T]): T = responseAs match {
+    case IgnoreResponse =>
+      @tailrec def consume(): Unit = if (is.read() != -1) consume()
+      consume()
+
+    case ResponseAsString(enc) =>
+      Source.fromInputStream(is, enc).mkString
+
+    case ResponseAsByteArray =>
+      val os = new ByteArrayOutputStream
+      var read = 0
+      val buf = new Array[Byte](1024)
+
+      @tailrec
+      def transfer(): Unit = {
+        read = is.read(buf, 0, buf.length)
+        if (read != -1) {
+          os.write(buf, 0, read)
+          transfer()
+        }
+      }
+
+      transfer()
+
+      os.toByteArray
   }
 }

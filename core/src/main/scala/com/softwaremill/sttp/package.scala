@@ -1,13 +1,11 @@
 package com.softwaremill
 
-import java.io.File
-import java.io.InputStream
-import java.nio.file.Path
-import java.nio.ByteBuffer
+import java.io.{File, InputStream}
 import java.net.URI
+import java.nio.ByteBuffer
+import java.nio.file.Path
 
-import scala.annotation.{implicitNotFound, tailrec}
-import scala.io.Source
+import scala.annotation.implicitNotFound
 import scala.language.higherKinds
 
 package object sttp {
@@ -30,7 +28,7 @@ package object sttp {
   - stream responses (sendStreamAndReceive?) / strict responses
   - make sure response is consumed - only fire request when we know what to do with response?
 
-  - reuse connections / connectio pooling - in handler
+  - reuse connections / connection pooling - in handler
 
   - handler restriction? AnyHandler <: Handler Restriction
 
@@ -70,45 +68,34 @@ package object sttp {
     val PATCH = Method("PATCH")
   }
 
-  trait ResponseBodyReader[T] {
-    def fromInputStream(is: InputStream): T
-    def fromBytes(bytes: Array[Byte]): T
-  }
-  object IgnoreResponseBody extends ResponseBodyReader[Unit] {
-    override def fromInputStream(is: InputStream): Unit = {
-      @tailrec def consume(): Unit = if (is.read() != -1) consume()
-      consume()
-    }
-    override def fromBytes(bytes: Array[Byte]): Unit = {}
-  }
-  implicit object StringResponseBody extends ResponseBodyReader[String] {
-    override def fromInputStream(is: InputStream): String = {
-      Source.fromInputStream(is, "UTF-8").mkString
-    }
-    override def fromBytes(bytes: Array[Byte]): String = {
-      new String(bytes, "UTF-8")
-    }
-  }
+  sealed trait ResponseAs[T]
+  object IgnoreResponse extends ResponseAs[Unit]
+  case class ResponseAsString(encoding: String) extends ResponseAs[String]
+  object ResponseAsByteArray extends ResponseAs[Array[Byte]]
 
-  def responseAs[T](implicit r: ResponseBodyReader[T]): ResponseBodyReader[T] = r
-  def ignoreResponseBody: ResponseBodyReader[Unit] = IgnoreResponseBody
+  case class ResponseAsStream[-S]()
+
+  def ignoreResponse: ResponseAs[Unit] = IgnoreResponse
+  def responseAsString(encoding: String): ResponseAs[String] = ResponseAsString(encoding)
+  def responseAsByteArray: ResponseAs[Array[Byte]] = ResponseAsByteArray
+  def responseAsStream[S]: ResponseAsStream[S] = ResponseAsStream[S]()
 
   sealed trait RequestBody
-  sealed trait SimpleRequestBody
+  sealed trait BasicRequestBody extends RequestBody
   case object NoBody extends RequestBody
-  case class StringBody(s: String) extends RequestBody with SimpleRequestBody
-  case class ByteArrayBody(b: Array[Byte]) extends RequestBody with SimpleRequestBody
-  case class ByteBufferBody(b: ByteBuffer) extends RequestBody with SimpleRequestBody
-  case class InputStreamBody(b: InputStream) extends RequestBody with SimpleRequestBody
-  case class InputStreamSupplierBody(b: () => InputStream) extends RequestBody with SimpleRequestBody
-  case class FileBody(f: File) extends RequestBody with SimpleRequestBody
-  case class PathBody(f: Path) extends RequestBody with SimpleRequestBody
+  case class StringBody(s: String) extends BasicRequestBody
+  case class ByteArrayBody(b: Array[Byte]) extends BasicRequestBody
+  case class ByteBufferBody(b: ByteBuffer) extends BasicRequestBody
+  case class InputStreamBody(b: InputStream) extends BasicRequestBody
+  case class InputStreamSupplierBody(b: () => InputStream) extends BasicRequestBody
+  case class FileBody(f: File) extends BasicRequestBody
+  case class PathBody(f: Path) extends BasicRequestBody
 
   /**
     * Use the factory methods `multiPart` to conveniently create instances of this class. A part can be then
     * further customised using `fileName`, `contentType` and `header` methods.
     */
-  case class MultiPart(name: String, data: RequestBody with SimpleRequestBody, fileName: Option[String] = None,
+  case class MultiPart(name: String, data: BasicRequestBody, fileName: Option[String] = None,
     contentType: Option[String] = None, additionalHeaders: Map[String, String] = Map()) {
     def fileName(v: String): MultiPart = copy(fileName = Some(v))
     def contentType(v: String): MultiPart = copy(contentType = Some(v))
@@ -155,16 +142,22 @@ package object sttp {
 
     def multipartData(parts: MultiPart*): RequestTemplate[U] = ???
 
-    def send[R[_], T](responseReader: ResponseBodyReader[T])(
+    def send[R[_], T](responseAs: ResponseAs[T])(
       implicit handler: SttpHandler[R], isRequest: IsRequest[U]): R[Response[T]] = {
 
-      handler.send(this, responseReader)
+      handler.send(this, responseAs)
     }
 
-    def sendStream[R[_], S, T](contentType: String, stream: S, responseReader: ResponseBodyReader[T])(
+    def send[R[_], S](responseAs: ResponseAsStream[S])(
+      implicit handler: SttpStreamHandler[R, S], isRequest: IsRequest[U]): R[Response[S]] = {
+
+      handler.send(this, responseAs)
+    }
+
+    def sendStream[R[_], S, T](contentType: String, stream: S, responseAs: ResponseAs[T])(
       implicit handler: SttpStreamHandler[R, S], isRequest: IsRequest[U]): R[Response[T]] = {
 
-      handler.sendStream(this, contentType, stream, responseReader)
+      handler.sendStream(this, contentType, stream, responseAs)
     }
   }
 
