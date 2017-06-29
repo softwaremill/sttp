@@ -10,7 +10,7 @@ import com.softwaremill.sttp.model._
 import scala.annotation.tailrec
 import scala.io.Source
 
-class HttpConnectionSttpHandler extends SttpHandler[Id] {
+object HttpConnectionSttpHandler extends SttpHandler[Id] {
   override def send[T](r: Request, responseAs: ResponseAs[T]): Response[T] = {
     val c = r.uri.toURL.openConnection().asInstanceOf[HttpURLConnection]
     c.setRequestMethod(r.method.m)
