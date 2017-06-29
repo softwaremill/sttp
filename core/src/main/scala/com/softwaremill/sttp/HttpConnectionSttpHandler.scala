@@ -5,6 +5,8 @@ import java.net.HttpURLConnection
 import java.nio.channels.Channels
 import java.nio.file.Files
 
+import com.softwaremill.sttp.model._
+
 import scala.annotation.tailrec
 import scala.io.Source
 

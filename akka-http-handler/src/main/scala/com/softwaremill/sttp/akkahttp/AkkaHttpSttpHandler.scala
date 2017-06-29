@@ -8,6 +8,7 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.softwaremill.sttp._
+import com.softwaremill.sttp.model._
 
 import scala.concurrent.Future
 
@@ -25,7 +26,7 @@ class AkkaHttpSttpHandler(actorSystem: ActorSystem) extends SttpStreamHandler[Fu
     }
   }
 
-  override def send[T](r: Request, responseAsStream: ResponseAsStream[Source[ByteString, Any]]): Future[Response[Source[ByteString, Any]]] = {
+  override def send(r: Request, responseAsStream: ResponseAsStream[Source[ByteString, Any]]): Future[Response[Source[ByteString, Any]]] = {
     requestToAkka(r).flatMap(Http().singleRequest(_)).map { hr =>
       val code = hr.status.intValue()
       Response(code, hr.entity.dataBytes)
@@ -41,6 +42,16 @@ class AkkaHttpSttpHandler(actorSystem: ActorSystem) extends SttpStreamHandler[Fu
       hr <- Http().singleRequest(ar.withEntity(HttpEntity(ct, stream)))
       body <- bodyFromAkkaResponse(responseAs, hr)
     } yield Response(hr.status.intValue(), body)
+  }
+
+  override def sendStream(r: Request, contentType: String, stream: Source[ByteString, Any],
+    responseAsStream: ResponseAsStream[Source[ByteString, Any]]): Future[Response[Source[ByteString, Any]]] = {
+
+    for {
+      ar <- requestToAkka(r)
+      ct <- contentTypeToAkka(contentType)
+      hr <- Http().singleRequest(ar.withEntity(HttpEntity(ct, stream)))
+    } yield Response(hr.status.intValue(), hr.entity.dataBytes)
   }
 
   private def convertMethod(m: Method): HttpMethod = m match {

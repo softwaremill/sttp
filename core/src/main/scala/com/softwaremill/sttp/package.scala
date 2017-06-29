@@ -132,6 +132,12 @@ package object sttp {
 
       handler.sendStream(this, contentType, stream, responseAs)
     }
+
+    def sendStream[R[_], S](contentType: String, stream: S, responseAs: ResponseAsStream[S])(
+      implicit handler: SttpStreamHandler[R, S], isRequest: IsRequest[U]): R[Response[S]] = {
+
+      handler.sendStream(this, contentType, stream, responseAs)
+    }
   }
 
   object RequestTemplate {
