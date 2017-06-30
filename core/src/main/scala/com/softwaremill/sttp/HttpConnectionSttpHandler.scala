@@ -43,8 +43,8 @@ object HttpConnectionSttpHandler extends SttpHandler[Id] {
     body match {
       case NoBody => // skip
 
-      case StringBody(b) =>
-        val writer = new OutputStreamWriter(c.getOutputStream)
+      case StringBody(b, encoding) =>
+        val writer = new OutputStreamWriter(c.getOutputStream, encoding)
         try writer.write(b) finally writer.close()
 
       case ByteArrayBody(b) =>

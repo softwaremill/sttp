@@ -27,7 +27,7 @@ package object model {
   case class SerializableBody[T](f: BodySerializer[T], t: T) extends RequestBody
 
   sealed trait BasicRequestBody extends RequestBody
-  case class StringBody(s: String) extends BasicRequestBody
+  case class StringBody(s: String, encoding: String) extends BasicRequestBody
   case class ByteArrayBody(b: Array[Byte]) extends BasicRequestBody
   case class ByteBufferBody(b: ByteBuffer) extends BasicRequestBody
   case class InputStreamBody(b: InputStream) extends BasicRequestBody
@@ -38,6 +38,7 @@ package object model {
   object IgnoreResponse extends ResponseAs[Unit]
   case class ResponseAsString(encoding: String) extends ResponseAs[String]
   object ResponseAsByteArray extends ResponseAs[Array[Byte]]
+  // response as params
 
   case class ResponseAsStream[S]()
 }

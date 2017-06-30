@@ -78,7 +78,7 @@ class AkkaHttpSttpHandler(actorSystem: ActorSystem) extends SttpStreamHandler[Fu
 
   private def setBody(r: Request, body: RequestBody, ar: HttpRequest): Future[HttpRequest] = body match {
     case NoBody => Future.successful(ar)
-    case StringBody(b) => Future.successful(ar.withEntity(b))
+    case StringBody(b, encoding) => Future.successful(ar.withEntity(b)) // TODO
     case ByteArrayBody(b) => Future.successful(ar.withEntity(b))
     case ByteBufferBody(b) => Future.successful(ar.withEntity(ByteString(b)))
     case InputStreamBody(b) => Future.successful(ar) //TODO
