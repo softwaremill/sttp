@@ -2,7 +2,7 @@
 
 The HTTP client for Scala that you always wanted
  
-```
+```scala
 val state = "closed"
 val request = sttp.get(uri"https://api.github.com/repos/adamw/elasticmq/issues?state=$state")
   
@@ -31,7 +31,7 @@ which contain common cookies/headers/options, which can later be specialized usi
 
 First, make sure to import:
 
-```
+```scala
 import com.softwaremill.sttp._
 ```
 
@@ -39,7 +39,7 @@ To send requests, you will also need a backend. A default, synchronous backend b
 is provided out-of-the box. An implicit value needs to be in scope to invoke `send()` (however it's possible to 
 create requests without any implicit backend in scope): 
 
-```
+```scala
 implicit val handler = HttpConnectionSttpHandler
 ```
 
@@ -60,10 +60,10 @@ a method nor an URI. Both of these fields will be set to `None` (the `Option` su
 
 * the encoding for `String`s defaults to `utf-8`.
 * unless explicitly specified, the `Content-Type` defaults to:
-** `text/plain` for text
-** `application/x-www-form-urlencoded` for form data
-** `multipart/form-data` for multipart form data
-** `application/octet-stream` for everything else (binary)
+  * `text/plain` for text
+  * `application/x-www-form-urlencoded` for form data
+  * `multipart/form-data` for multipart form data
+  * `application/octet-stream` for everything else (binary)
 
 ## Other Scala HTTP clients
 
