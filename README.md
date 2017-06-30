@@ -10,6 +10,13 @@ The HTTP client for Scala that you always wanted
 * support both synchronous and asynchronous execution backends
 * provide support for backend-specific request/response streaming
 
+## How is sttp different from other libraries?
+
+* immutable request builder which doesn't require the URI to be specified upfront. Allows defining partial requests
+which contain common cookies/headers/options, which can later be specialized using a specific URI and HTTP method.
+* support for multiple backends, both synchronous and asynchronous, with backend-specific streaming support
+* TODO URI interpolator with optional parameters support
+
 ## Other Scala HTTP clients
 
 * [scalaj](https://github.com/scalaj/scalaj-http)
