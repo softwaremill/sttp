@@ -22,26 +22,33 @@ class AkkaHttpSttpHandler(actorSystem: ActorSystem) extends SttpStreamHandler[Fu
   import as.dispatcher
 
   override def send[T](r: Request, responseAs: ResponseAs[T]): Future[Response[T]] = {
-    requestToAkka(r).flatMap(setBody(r, r.body, _)).flatMap(Http().singleRequest(_)).flatMap { hr =>
+    requestToAkka(r).flatMap(setBodyOnAkka(r, r.body, _)).flatMap(Http().singleRequest(_)).flatMap { hr =>
       val code = hr.status.intValue()
-      bodyFromAkkaResponse(responseAs, hr).map(Response(code, _))
+      bodyFromAkka(responseAs, hr).map(Response(code, _))
     }
   }
 
   override def send(r: Request, responseAsStream: ResponseAsStream[Source[ByteString, Any]]): Future[Response[Source[ByteString, Any]]] = {
-    requestToAkka(r).flatMap(setBody(r, r.body, _)).flatMap(Http().singleRequest(_)).map { hr =>
+    requestToAkka(r).flatMap(setBodyOnAkka(r, r.body, _)).flatMap(Http().singleRequest(_)).map { hr =>
       val code = hr.status.intValue()
       Response(code, hr.entity.dataBytes)
     }
   }
 
-  private def convertMethod(m: Method): HttpMethod = m match {
+  private def methodToAkka(m: Method): HttpMethod = m match {
     case Method.GET => HttpMethods.GET
+    case Method.HEAD => HttpMethods.HEAD
     case Method.POST => HttpMethods.POST
+    case Method.PUT => HttpMethods.PUT
+    case Method.DELETE => HttpMethods.DELETE
+    case Method.OPTIONS => HttpMethods.OPTIONS
+    case Method.PATCH => HttpMethods.PATCH
+    case Method.CONNECT => HttpMethods.CONNECT
+    case Method.TRACE => HttpMethods.TRACE
     case _ => HttpMethod.custom(m.m)
   }
 
-  private def bodyFromAkkaResponse[T](rr: ResponseAs[T], hr: HttpResponse): Future[T] = {
+  private def bodyFromAkka[T](rr: ResponseAs[T], hr: HttpResponse): Future[T] = {
     def asByteArray = hr.entity.dataBytes
       .runFold(ByteString(""))(_ ++ _)
       .map(_.toArray[Byte])
@@ -60,7 +67,7 @@ class AkkaHttpSttpHandler(actorSystem: ActorSystem) extends SttpStreamHandler[Fu
   }
 
   private def requestToAkka(r: Request): Future[HttpRequest] = {
-    val ar = HttpRequest(uri = r.uri.toString, method = convertMethod(r.method))
+    val ar = HttpRequest(uri = r.uri.toString, method = methodToAkka(r.method))
     val parsed = r.headers.map(h => HttpHeader.parse(h._1, h._2))
     val errors = parsed.collect {
       case ParsingResult.Error(e) => e
@@ -76,7 +83,7 @@ class AkkaHttpSttpHandler(actorSystem: ActorSystem) extends SttpStreamHandler[Fu
     }
   }
 
-  private def setBody(r: Request, body: RequestBody, ar: HttpRequest): Future[HttpRequest] = body match {
+  private def setBodyOnAkka(r: Request, body: RequestBody, ar: HttpRequest): Future[HttpRequest] = body match {
     case NoBody => Future.successful(ar)
     case StringBody(b, encoding) => Future.successful(ar.withEntity(b)) // TODO
     case ByteArrayBody(b) => Future.successful(ar.withEntity(b))
@@ -84,14 +91,14 @@ class AkkaHttpSttpHandler(actorSystem: ActorSystem) extends SttpStreamHandler[Fu
     case InputStreamBody(b) => Future.successful(ar) //TODO
     case FileBody(b) =>  Future.successful(ar)//TODO
     case PathBody(b) => Future.successful(ar)       //TODO
-    case sb@SerializableBody(_, _) => setSerializableBody(r, sb, ar)
+    case sb@SerializableBody(_, _) => setSerializableBodyOnAkka(r, sb, ar)
   }
 
-  private def setSerializableBody[T](r: Request, body: SerializableBody[T], ar: HttpRequest): Future[HttpRequest] = body match {
+  private def setSerializableBodyOnAkka[T](r: Request, body: SerializableBody[T], ar: HttpRequest): Future[HttpRequest] = body match {
     case SerializableBody(SourceBodySerializer, t) =>
       getContentTypeOrOctetStream(r).map(ct => ar.withEntity(HttpEntity(ct, t)))
 
-    case SerializableBody(f, t) => setBody(r, f(t), ar)
+    case SerializableBody(f, t) => setBodyOnAkka(r, f(t), ar)
   }
 
   private def getContentTypeOrOctetStream(r: Request): Future[ContentType] = {

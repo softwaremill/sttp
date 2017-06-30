@@ -14,6 +14,8 @@ package object model {
     val DELETE = Method("DELETE")
     val OPTIONS = Method("OPTIONS")
     val PATCH = Method("PATCH")
+    val CONNECT = Method("CONNECT")
+    val TRACE = Method("TRACE")
   }
 
   /**
