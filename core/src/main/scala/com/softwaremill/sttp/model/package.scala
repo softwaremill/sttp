@@ -16,14 +16,21 @@ package object model {
     val PATCH = Method("PATCH")
   }
 
+  /**
+    * Provide an implicit value of this type to serialize arbitrary classes into a request body.
+    * Handlers might also provide special logic for serializer instances which they define (e.g. to handle streaming).
+    */
+  type BodySerializer[T] = T => BasicRequestBody
+
   sealed trait RequestBody
-  sealed trait BasicRequestBody extends RequestBody
   case object NoBody extends RequestBody
+  case class SerializableBody[T](f: BodySerializer[T], t: T) extends RequestBody
+
+  sealed trait BasicRequestBody extends RequestBody
   case class StringBody(s: String) extends BasicRequestBody
   case class ByteArrayBody(b: Array[Byte]) extends BasicRequestBody
   case class ByteBufferBody(b: ByteBuffer) extends BasicRequestBody
   case class InputStreamBody(b: InputStream) extends BasicRequestBody
-  case class InputStreamSupplierBody(b: () => InputStream) extends BasicRequestBody
   case class FileBody(f: File) extends BasicRequestBody
   case class PathBody(f: Path) extends BasicRequestBody
 
@@ -32,5 +39,5 @@ package object model {
   case class ResponseAsString(encoding: String) extends ResponseAs[String]
   object ResponseAsByteArray extends ResponseAs[Array[Byte]]
 
-  case class ResponseAsStream[-S]()
+  case class ResponseAsStream[S]()
 }

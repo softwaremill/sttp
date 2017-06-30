@@ -10,6 +10,4 @@ trait SttpHandler[R[_]] {
 
 trait SttpStreamHandler[R[_], S] extends SttpHandler[R] {
   def send(request: Request, responseAsStream: ResponseAsStream[S]): R[Response[S]]
-  def sendStream[T](request: Request, contentType: String, stream: S, responseAs: ResponseAs[T]): R[Response[T]]
-  def sendStream(request: Request, contentType: String, stream: S, responseAsStream: ResponseAsStream[S]): R[Response[S]]
 }

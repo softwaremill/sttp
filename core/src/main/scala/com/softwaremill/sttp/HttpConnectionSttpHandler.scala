@@ -16,14 +16,14 @@ object HttpConnectionSttpHandler extends SttpHandler[Id] {
     c.setRequestMethod(r.method.m)
     r.headers.foreach { case (k, v) => c.setRequestProperty(k, v) }
     c.setDoInput(true)
-    setBody(r, c)
+    setBody(r.body, c)
 
     val status = c.getResponseCode
     Response(status, readResponse(c.getInputStream, responseAs))
   }
 
-  private def setBody(r: Request, c: HttpURLConnection): Unit = {
-    if (r.body != NoBody) c.setDoOutput(true)
+  private def setBody(body: RequestBody, c: HttpURLConnection): Unit = {
+    if (body != NoBody) c.setDoOutput(true)
 
     def copyStream(in: InputStream, out: OutputStream): Unit = {
       val buf = new Array[Byte](1024)
@@ -40,7 +40,7 @@ object HttpConnectionSttpHandler extends SttpHandler[Id] {
       doCopy()
     }
 
-    r.body match {
+    body match {
       case NoBody => // skip
 
       case StringBody(b) =>
@@ -57,14 +57,14 @@ object HttpConnectionSttpHandler extends SttpHandler[Id] {
       case InputStreamBody(b) =>
         copyStream(b, c.getOutputStream)
 
-      case InputStreamSupplierBody(b) =>
-        copyStream(b(), c.getOutputStream)
-
       case FileBody(b) =>
         Files.copy(b.toPath, c.getOutputStream)
 
       case PathBody(b) =>
         Files.copy(b, c.getOutputStream)
+
+      case SerializableBody(f, t) =>
+        setBody(f(t), c)
     }
   }
 

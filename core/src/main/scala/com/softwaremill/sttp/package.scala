@@ -79,7 +79,6 @@ package object sttp {
   def multiPart(name: String, data: Array[Byte]): MultiPart = MultiPart(name, ByteArrayBody(data))
   def multiPart(name: String, data: ByteBuffer): MultiPart = MultiPart(name, ByteBufferBody(data))
   def multiPart(name: String, data: InputStream): MultiPart = MultiPart(name, InputStreamBody(data))
-  def multiPart(name: String, data: () => InputStream): MultiPart = MultiPart(name, InputStreamSupplierBody(data))
   // mandatory content type?
   def multiPart(name: String, data: File): MultiPart = MultiPart(name, FileBody(data), fileName = Some(data.getName))
   def multiPart(name: String, data: Path): MultiPart = MultiPart(name, PathBody(data), fileName = Some(data.getFileName.toString))
@@ -101,15 +100,18 @@ package object sttp {
 
     def header(k: String, v: String): RequestTemplate[U] = this.copy(headers = headers + (k -> v))
 
+    // automatically set the content type? - unless specified
     def data(b: String): RequestTemplate[U] = this.copy(body = StringBody(b))
     def data(b: Array[Byte]): RequestTemplate[U] = this.copy(body = ByteArrayBody(b))
     def data(b: ByteBuffer): RequestTemplate[U] = this.copy(body = ByteBufferBody(b))
     def data(b: InputStream): RequestTemplate[U] = this.copy(body = InputStreamBody(b))
-    def data(b: () => InputStream): RequestTemplate[U] = this.copy(body = InputStreamSupplierBody(b))
     // mandatory content type?
     def data(b: File): RequestTemplate[U] = this.copy(body = FileBody(b))
     def data(b: Path): RequestTemplate[U] = this.copy(body = PathBody(b))
+    def data[T: BodySerializer](b: T): RequestTemplate[U] = this.copy(body = SerializableBody(implicitly[BodySerializer[T]], b))
+    // add serializable / deserializable?
 
+    //def formData(fs: Map[String, Seq[String]]): RequestTemplate[U] = ???
     def formData(fs: Map[String, String]): RequestTemplate[U] = ???
     def formData(fs: (String, String)*): RequestTemplate[U] = ???
 
@@ -125,18 +127,6 @@ package object sttp {
       implicit handler: SttpStreamHandler[R, S], isRequest: IsRequest[U]): R[Response[S]] = {
 
       handler.send(this, responseAs)
-    }
-
-    def sendStream[R[_], S, T](contentType: String, stream: S, responseAs: ResponseAs[T])(
-      implicit handler: SttpStreamHandler[R, S], isRequest: IsRequest[U]): R[Response[T]] = {
-
-      handler.sendStream(this, contentType, stream, responseAs)
-    }
-
-    def sendStream[R[_], S](contentType: String, stream: S, responseAs: ResponseAsStream[S])(
-      implicit handler: SttpStreamHandler[R, S], isRequest: IsRequest[U]): R[Response[S]] = {
-
-      handler.sendStream(this, contentType, stream, responseAs)
     }
   }
 

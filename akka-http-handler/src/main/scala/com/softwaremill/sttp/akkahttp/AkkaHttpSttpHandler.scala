@@ -4,6 +4,8 @@ import akka.actor.{ActorSystem, Terminated}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.HttpHeader.ParsingResult
 import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.headers.`Content-Type`
+import akka.http.scaladsl.model.ContentTypes.`application/octet-stream`
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
@@ -20,38 +22,17 @@ class AkkaHttpSttpHandler(actorSystem: ActorSystem) extends SttpStreamHandler[Fu
   import as.dispatcher
 
   override def send[T](r: Request, responseAs: ResponseAs[T]): Future[Response[T]] = {
-    requestToAkka(r).flatMap(Http().singleRequest(_)).flatMap { hr =>
+    requestToAkka(r).flatMap(setBody(r, r.body, _)).flatMap(Http().singleRequest(_)).flatMap { hr =>
       val code = hr.status.intValue()
       bodyFromAkkaResponse(responseAs, hr).map(Response(code, _))
     }
   }
 
   override def send(r: Request, responseAsStream: ResponseAsStream[Source[ByteString, Any]]): Future[Response[Source[ByteString, Any]]] = {
-    requestToAkka(r).flatMap(Http().singleRequest(_)).map { hr =>
+    requestToAkka(r).flatMap(setBody(r, r.body, _)).flatMap(Http().singleRequest(_)).map { hr =>
       val code = hr.status.intValue()
       Response(code, hr.entity.dataBytes)
     }
-  }
-
-  override def sendStream[T](r: Request, contentType: String, stream: Source[ByteString, Any],
-    responseAs: ResponseAs[T]): Future[Response[T]] = {
-
-    for {
-      ar <- requestToAkka(r)
-      ct <- contentTypeToAkka(contentType)
-      hr <- Http().singleRequest(ar.withEntity(HttpEntity(ct, stream)))
-      body <- bodyFromAkkaResponse(responseAs, hr)
-    } yield Response(hr.status.intValue(), body)
-  }
-
-  override def sendStream(r: Request, contentType: String, stream: Source[ByteString, Any],
-    responseAsStream: ResponseAsStream[Source[ByteString, Any]]): Future[Response[Source[ByteString, Any]]] = {
-
-    for {
-      ar <- requestToAkka(r)
-      ct <- contentTypeToAkka(contentType)
-      hr <- Http().singleRequest(ar.withEntity(HttpEntity(ct, stream)))
-    } yield Response(hr.status.intValue(), hr.entity.dataBytes)
   }
 
   private def convertMethod(m: Method): HttpMethod = m match {
@@ -95,10 +76,34 @@ class AkkaHttpSttpHandler(actorSystem: ActorSystem) extends SttpStreamHandler[Fu
     }
   }
 
-  private def contentTypeToAkka(ct: String): Future[ContentType] = {
-    ContentType.parse(ct).fold(
-      errors => Future.failed(new RuntimeException(s"Cannot parse content type: $errors")),
-      Future.successful)
+  private def setBody(r: Request, body: RequestBody, ar: HttpRequest): Future[HttpRequest] = body match {
+    case NoBody => Future.successful(ar)
+    case StringBody(b) => Future.successful(ar.withEntity(b))
+    case ByteArrayBody(b) => Future.successful(ar.withEntity(b))
+    case ByteBufferBody(b) => Future.successful(ar.withEntity(ByteString(b)))
+    case InputStreamBody(b) => Future.successful(ar) //TODO
+    case FileBody(b) =>  Future.successful(ar)//TODO
+    case PathBody(b) => Future.successful(ar)       //TODO
+    case sb@SerializableBody(_, _) => setSerializableBody(r, sb, ar)
+  }
+
+  private def setSerializableBody[T](r: Request, body: SerializableBody[T], ar: HttpRequest): Future[HttpRequest] = body match {
+    case SerializableBody(SourceBodySerializer, t) =>
+      getContentTypeOrOctetStream(r).map(ct => ar.withEntity(HttpEntity(ct, t)))
+
+    case SerializableBody(f, t) => setBody(r, f(t), ar)
+  }
+
+  private def getContentTypeOrOctetStream(r: Request): Future[ContentType] = {
+    r.headers
+      .find(_._1.toLowerCase.contains(`Content-Type`.lowercaseName))
+      .map(_._2)
+      .map { ct =>
+        ContentType.parse(ct).fold(
+          errors => Future.failed(new RuntimeException(s"Cannot parse content type: $errors")),
+          Future.successful)
+      }
+      .getOrElse(Future.successful(`application/octet-stream`))
   }
 
   def close(): Future[Terminated] = {
