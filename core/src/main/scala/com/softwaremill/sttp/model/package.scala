@@ -38,6 +38,10 @@ package object model {
   case class FileBody(f: File) extends BasicRequestBody
   case class PathBody(f: Path) extends BasicRequestBody
 
+  /**
+    * @tparam T Target type as which the response will be read.
+    * @tparam S If `T` is a stream, the type of the stream. Otherwise, `Nothing`.
+    */
   sealed trait ResponseAs[T, +S]
 
   sealed trait ResponseAsBasic[T, +S] extends ResponseAs[T, S]
@@ -46,5 +50,5 @@ package object model {
   object ResponseAsByteArray extends ResponseAsBasic[Array[Byte], Nothing]
   // response as params
 
-  case class ResponseAsStream[T, S]()(implicit val x: S =:= T) extends ResponseAs[T, S]
+  case class ResponseAsStream[T, S]()(implicit val responseIsStream: S =:= T) extends ResponseAs[T, S]
 }

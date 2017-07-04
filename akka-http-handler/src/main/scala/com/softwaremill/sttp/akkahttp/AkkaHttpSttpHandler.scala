@@ -59,8 +59,8 @@ class AkkaHttpSttpHandler(actorSystem: ActorSystem)
       case ResponseAsByteArray =>
         asByteArray
 
-      case r @ ResponseAsStream() =>
-        Future.successful(r.x(hr.entity.dataBytes))
+      case r@ResponseAsStream() =>
+        Future.successful(r.responseIsStream(hr.entity.dataBytes))
     }
   }
 

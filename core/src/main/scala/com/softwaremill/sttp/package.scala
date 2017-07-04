@@ -150,8 +150,9 @@ package object sttp {
       *                   to consume it. An exception to this are streaming responses, which need to fully consumed
       *                   by the client if such a response type is requested.
       */
-    def send[R[_], S, T, ResponseAsType[x, s] <: ResponseAs[x, s]](responseAs: ResponseAsType[T, S])(
-      implicit handler: SttpHandler[R, S, ResponseAsType], isRequest: IsRequest[U]): R[Response[T]] = {
+    def send[R[_], S, T, TypeOfResponseAs[x, s] <: ResponseAs[x, s]](responseAs: TypeOfResponseAs[T, S])(
+      implicit handler: SttpHandler[R, S, TypeOfResponseAs], isRequest: IsRequest[U]): R[Response[T]] = {
+      
       handler.send(this, responseAs)
     }
   }
