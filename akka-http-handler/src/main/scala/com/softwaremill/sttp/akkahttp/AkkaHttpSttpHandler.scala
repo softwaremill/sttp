@@ -14,24 +14,19 @@ import com.softwaremill.sttp.model._
 
 import scala.concurrent.Future
 
-class AkkaHttpSttpHandler(actorSystem: ActorSystem) extends SttpStreamHandler[Future, Source[ByteString, Any]] {
+class AkkaHttpSttpHandler(actorSystem: ActorSystem)
+    extends SttpHandler[Future, Source[ByteString, Any], ResponseAs] {
+
   def this() = this(ActorSystem("sttp"))
 
   private implicit val as = actorSystem
   private implicit val materializer = ActorMaterializer()
   import as.dispatcher
 
-  override def send[T](r: Request, responseAs: ResponseAs[T]): Future[Response[T]] = {
+  override def send[T](r: Request, responseAs: ResponseAs[T, Source[ByteString, Any]]): Future[Response[T]] = {
     requestToAkka(r).flatMap(setBodyOnAkka(r, r.body, _)).flatMap(Http().singleRequest(_)).flatMap { hr =>
       val code = hr.status.intValue()
       bodyFromAkka(responseAs, hr).map(Response(code, _))
-    }
-  }
-
-  override def send(r: Request, responseAsStream: ResponseAsStream[Source[ByteString, Any]]): Future[Response[Source[ByteString, Any]]] = {
-    requestToAkka(r).flatMap(setBodyOnAkka(r, r.body, _)).flatMap(Http().singleRequest(_)).map { hr =>
-      val code = hr.status.intValue()
-      Response(code, hr.entity.dataBytes)
     }
   }
 
@@ -48,7 +43,7 @@ class AkkaHttpSttpHandler(actorSystem: ActorSystem) extends SttpStreamHandler[Fu
     case _ => HttpMethod.custom(m.m)
   }
 
-  private def bodyFromAkka[T](rr: ResponseAs[T], hr: HttpResponse): Future[T] = {
+  private def bodyFromAkka[T](rr: ResponseAs[T, Source[ByteString, Any]], hr: HttpResponse): Future[T] = {
     def asByteArray = hr.entity.dataBytes
       .runFold(ByteString(""))(_ ++ _)
       .map(_.toArray[Byte])
@@ -63,6 +58,9 @@ class AkkaHttpSttpHandler(actorSystem: ActorSystem) extends SttpStreamHandler[Fu
 
       case ResponseAsByteArray =>
         asByteArray
+
+      case r @ ResponseAsStream() =>
+        Future.successful(r.x(hr.entity.dataBytes))
     }
   }
 

@@ -4,6 +4,8 @@ import java.io.{File, InputStream}
 import java.nio.ByteBuffer
 import java.nio.file.Path
 
+import scala.language.higherKinds
+
 package object model {
   case class Method(m: String) extends AnyVal
   object Method {
@@ -36,11 +38,13 @@ package object model {
   case class FileBody(f: File) extends BasicRequestBody
   case class PathBody(f: Path) extends BasicRequestBody
 
-  sealed trait ResponseAs[T]
-  object IgnoreResponse extends ResponseAs[Unit]
-  case class ResponseAsString(encoding: String) extends ResponseAs[String]
-  object ResponseAsByteArray extends ResponseAs[Array[Byte]]
+  sealed trait ResponseAs[T, -S]
+
+  sealed trait ResponseAsBasic[T, -S <: Any] extends ResponseAs[T, S]
+  object IgnoreResponse extends ResponseAsBasic[Unit, Any]
+  case class ResponseAsString(encoding: String) extends ResponseAsBasic[String, Any]
+  object ResponseAsByteArray extends ResponseAsBasic[Array[Byte], Any]
   // response as params
 
-  case class ResponseAsStream[S]()
+  case class ResponseAsStream[T, S]()(implicit val x: S =:= T) extends ResponseAs[T, S]
 }

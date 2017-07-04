@@ -12,62 +12,17 @@ import scala.language.higherKinds
 import scala.collection.immutable.Seq
 
 package object sttp {
-  /*
-
-  - set headers
-  - set cookies (set from response)
-  - partial request (no uri + method) / full request
-  - start with an empty partial request
-  - multi-part uploads
-  - body: bytes, input stream (?), task/future, stream (fs2/akka), form data, file
-  - auth
-  - access uri/method/headers/cookies/body spec
-  - proxy
-  - user agent, buffer size
-  - charset
-  - zipped encodings
-  - SSL - mutual? (client side)
-
-  - stream responses (sendStreamAndReceive?) / strict responses
-  - make sure response is consumed - only fire request when we know what to do with response?
-
-  - reuse connections / connection pooling - in handler
-
-  - handler restriction? AnyHandler <: Handler Restriction
-
-  Options:
-  - timeouts (connection/read)
-  - follow redirect
-  - ignore SSL
-
-  //
-
-  We want to serialize to:
-  - string
-  - byte array
-  - input stream
-  - handler-specific stream of bytes/strings
-
-  post:
-  - data (bytes/is/string - but which encoding?)
-  - form data (kv pairs - application/x-www-form-urlencoded)
-  - multipart (files mixed with forms - multipart/form-data)
-
-   */
-
-  //
-
   type Id[X] = X
   type Empty[X] = None.type
 
-  def ignoreResponse: ResponseAs[Unit] = IgnoreResponse
+  def ignoreResponse: ResponseAsBasic[Unit, Any] = IgnoreResponse
   /**
     * Uses `utf-8` encoding.
     */
-  def responseAsString: ResponseAs[String] = responseAsString(Utf8)
-  def responseAsString(encoding: String): ResponseAs[String] = ResponseAsString(encoding)
-  def responseAsByteArray: ResponseAs[Array[Byte]] = ResponseAsByteArray
-  def responseAsStream[S]: ResponseAsStream[S] = ResponseAsStream[S]()
+  def responseAsString: ResponseAsBasic[String, Any] = responseAsString(Utf8)
+  def responseAsString(encoding: String): ResponseAsBasic[String, Any] = ResponseAsString(encoding)
+  def responseAsByteArray: ResponseAsBasic[Array[Byte], Any] = ResponseAsByteArray
+  def responseAsStream[S]: ResponseAs[S, S] = ResponseAsStream[S, S]()
 
   /**
     * Use the factory methods `multiPart` to conveniently create instances of this class. A part can be then
@@ -189,15 +144,14 @@ package object sttp {
 
     def multipartData(parts: MultiPart*): RequestTemplate[U] = ???
 
-    def send[R[_], T](responseAs: ResponseAs[T])(
-      implicit handler: SttpHandler[R], isRequest: IsRequest[U]): R[Response[T]] = {
-
-      handler.send(this, responseAs)
-    }
-
-    def send[R[_], S](responseAs: ResponseAsStream[S])(
-      implicit handler: SttpStreamHandler[R, S], isRequest: IsRequest[U]): R[Response[S]] = {
-
+    /**
+      * @param responseAs What's the target type to which the response should be read. Needs to be specified upfront
+      *                   so that the response is always consumed and hence there are no requirements on client code
+      *                   to consume it. An exception to this are streaming responses, which need to fully consumed
+      *                   by the client if such a response type is requested.
+      */
+    def send[R[_], S, T, ResponseAsType[x, -s] <: ResponseAs[x, s]](responseAs: ResponseAsType[T, S])(
+      implicit handler: SttpHandler[R, S, ResponseAsType], isRequest: IsRequest[U]): R[Response[T]] = {
       handler.send(this, responseAs)
     }
   }

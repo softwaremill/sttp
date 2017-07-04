@@ -10,8 +10,8 @@ import com.softwaremill.sttp.model._
 import scala.annotation.tailrec
 import scala.io.Source
 
-object HttpConnectionSttpHandler extends SttpHandler[Id] {
-  override def send[T](r: Request, responseAs: ResponseAs[T]): Response[T] = {
+object HttpConnectionSttpHandler extends SttpHandler[Id, Any, ResponseAsBasic] {
+  override def send[T](r: Request, responseAs: ResponseAsBasic[T, Any]): Response[T] = {
     val c = r.uri.toURL.openConnection().asInstanceOf[HttpURLConnection]
     c.setRequestMethod(r.method.m)
     r.headers.foreach { case (k, v) => c.setRequestProperty(k, v) }
@@ -68,7 +68,7 @@ object HttpConnectionSttpHandler extends SttpHandler[Id] {
     }
   }
 
-  private def readResponse[T](is: InputStream, responseAs: ResponseAs[T]): T = responseAs match {
+  private def readResponse[T](is: InputStream, responseAs: ResponseAsBasic[T, Any]): T = responseAs match {
     case IgnoreResponse =>
       @tailrec def consume(): Unit = if (is.read() != -1) consume()
       consume()
