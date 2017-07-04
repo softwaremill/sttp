@@ -38,12 +38,12 @@ package object model {
   case class FileBody(f: File) extends BasicRequestBody
   case class PathBody(f: Path) extends BasicRequestBody
 
-  sealed trait ResponseAs[T, -S]
+  sealed trait ResponseAs[T, +S]
 
-  sealed trait ResponseAsBasic[T, -S <: Any] extends ResponseAs[T, S]
-  object IgnoreResponse extends ResponseAsBasic[Unit, Any]
-  case class ResponseAsString(encoding: String) extends ResponseAsBasic[String, Any]
-  object ResponseAsByteArray extends ResponseAsBasic[Array[Byte], Any]
+  sealed trait ResponseAsBasic[T, +S] extends ResponseAs[T, S]
+  object IgnoreResponse extends ResponseAsBasic[Unit, Nothing]
+  case class ResponseAsString(encoding: String) extends ResponseAsBasic[String, Nothing]
+  object ResponseAsByteArray extends ResponseAsBasic[Array[Byte], Nothing]
   // response as params
 
   case class ResponseAsStream[T, S]()(implicit val x: S =:= T) extends ResponseAs[T, S]
