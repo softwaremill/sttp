@@ -7,7 +7,6 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Directives._
 import com.softwaremill.sttp.akkahttp.AkkaHttpSttpHandler
-import com.softwaremill.sttp.model.ResponseAsBasic
 import com.typesafe.scalalogging.StrictLogging
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
@@ -59,7 +58,7 @@ class BasicTests extends FlatSpec with Matchers with BeforeAndAfterAll with Scal
     override def force[T](wrapped: Future[T]): T = wrapped.futureValue
   })
 
-  def runTests[R[_]](name: String, handler: SttpHandler[R, Nothing, ResponseAsBasic], forceResponse: ForceWrappedValue[R]): Unit = {
+  def runTests[R[_]](name: String, handler: SttpHandler[R, Nothing], forceResponse: ForceWrappedValue[R]): Unit = {
     implicit val h = handler
 
     name should "make a get request with parameters" in {

@@ -14,8 +14,7 @@ import com.softwaremill.sttp.model._
 
 import scala.concurrent.Future
 
-class AkkaHttpSttpHandler(actorSystem: ActorSystem)
-    extends SttpHandler[Future, Source[ByteString, Any], ResponseAs] {
+class AkkaHttpSttpHandler(actorSystem: ActorSystem) extends SttpHandler[Future, Source[ByteString, Any]] {
 
   def this() = this(ActorSystem("sttp"))
 

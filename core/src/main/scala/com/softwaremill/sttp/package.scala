@@ -15,13 +15,13 @@ package object sttp {
   type Id[X] = X
   type Empty[X] = None.type
 
-  def ignoreResponse: ResponseAsBasic[Unit, Nothing] = IgnoreResponse
+  def ignoreResponse: ResponseAs[Unit, Nothing] = IgnoreResponse
   /**
     * Uses `utf-8` encoding.
     */
-  def responseAsString: ResponseAsBasic[String, Nothing] = responseAsString(Utf8)
-  def responseAsString(encoding: String): ResponseAsBasic[String, Nothing] = ResponseAsString(encoding)
-  def responseAsByteArray: ResponseAsBasic[Array[Byte], Nothing] = ResponseAsByteArray
+  def responseAsString: ResponseAs[String, Nothing] = responseAsString(Utf8)
+  def responseAsString(encoding: String): ResponseAs[String, Nothing] = ResponseAsString(encoding)
+  def responseAsByteArray: ResponseAs[Array[Byte], Nothing] = ResponseAsByteArray
   def responseAsStream[S]: ResponseAs[S, S] = ResponseAsStream[S, S]()
 
   /**
@@ -150,8 +150,8 @@ package object sttp {
       *                   to consume it. An exception to this are streaming responses, which need to fully consumed
       *                   by the client if such a response type is requested.
       */
-    def send[R[_], S, T, TypeOfResponseAs[x, +s] <: ResponseAs[x, s]](responseAs: TypeOfResponseAs[T, S])(
-      implicit handler: SttpHandler[R, S, TypeOfResponseAs], isRequest: IsRequest[U]): R[Response[T]] = {
+    def send[R[_], S, T](responseAs: ResponseAs[T, S])(
+      implicit handler: SttpHandler[R, S], isRequest: IsRequest[U]): R[Response[T]] = {
       
       handler.send(this, responseAs)
     }

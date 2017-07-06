@@ -10,8 +10,8 @@ import com.softwaremill.sttp.model._
 import scala.annotation.tailrec
 import scala.io.Source
 
-object HttpConnectionSttpHandler extends SttpHandler[Id, Nothing, ResponseAsBasic] {
-  override def send[T](r: Request, responseAs: ResponseAsBasic[T, Nothing]): Response[T] = {
+object HttpConnectionSttpHandler extends SttpHandler[Id, Nothing] {
+  override def send[T](r: Request, responseAs: ResponseAs[T, Nothing]): Response[T] = {
     val c = r.uri.toURL.openConnection().asInstanceOf[HttpURLConnection]
     c.setRequestMethod(r.method.m)
     r.headers.foreach { case (k, v) => c.setRequestProperty(k, v) }
@@ -68,7 +68,7 @@ object HttpConnectionSttpHandler extends SttpHandler[Id, Nothing, ResponseAsBasi
     }
   }
 
-  private def readResponse[T](is: InputStream, responseAs: ResponseAsBasic[T, Nothing]): T = responseAs match {
+  private def readResponse[T](is: InputStream, responseAs: ResponseAs[T, Nothing]): T = responseAs match {
     case IgnoreResponse =>
       @tailrec def consume(): Unit = if (is.read() != -1) consume()
       consume()
@@ -93,5 +93,9 @@ object HttpConnectionSttpHandler extends SttpHandler[Id, Nothing, ResponseAsBasi
       transfer()
 
       os.toByteArray
+
+    case ResponseAsStream() =>
+      // only possible when the user requests the response as a stream of Nothing. Oh well ...
+      throw new IllegalStateException()
   }
 }

@@ -44,11 +44,9 @@ package object model {
     */
   sealed trait ResponseAs[T, +S]
 
-  sealed trait ResponseAsBasic[T, +S] extends ResponseAs[T, S]
-  object IgnoreResponse extends ResponseAsBasic[Unit, Nothing]
-  case class ResponseAsString(encoding: String) extends ResponseAsBasic[String, Nothing]
-  object ResponseAsByteArray extends ResponseAsBasic[Array[Byte], Nothing]
+  object IgnoreResponse extends ResponseAs[Unit, Nothing]
+  case class ResponseAsString(encoding: String) extends ResponseAs[String, Nothing]
+  object ResponseAsByteArray extends ResponseAs[Array[Byte], Nothing]
   // response as params
-
   case class ResponseAsStream[T, S]()(implicit val responseIsStream: S =:= T) extends ResponseAs[T, S]
 }
