@@ -28,6 +28,7 @@ package object model {
 
   sealed trait RequestBody
   case object NoBody extends RequestBody
+  // TODO: extract StreamBody, with request parametrized to match the stream type?
   case class SerializableBody[T](f: BodySerializer[T], t: T) extends RequestBody
 
   sealed trait BasicRequestBody extends RequestBody
