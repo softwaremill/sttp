@@ -1,6 +1,8 @@
 package com.softwaremill.sttp
 
+import java.io.ByteArrayInputStream
 import java.net.URI
+import java.nio.ByteBuffer
 
 import akka.stream.ActorMaterializer
 import akka.actor.ActorSystem
@@ -10,6 +12,7 @@ import com.softwaremill.sttp.akkahttp.AkkaHttpSttpHandler
 import com.typesafe.scalalogging.StrictLogging
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
+import better.files._
 
 import scala.concurrent.Future
 import scala.language.higherKinds
@@ -21,13 +24,13 @@ class BasicTests extends FlatSpec with Matchers with BeforeAndAfterAll with Scal
     path("echo") {
       get {
         parameterMap { params =>
-          complete(s"GET /echo ${paramsToString(params)}")
+          complete(List("GET", "/echo", paramsToString(params)).filter(_.nonEmpty).mkString(" "))
         }
       } ~
       post {
         parameterMap { params =>
           entity(as[String]) { body: String =>
-            complete(s"POST /echo ${paramsToString(params)} $body")
+            complete(List("POST", "/echo", paramsToString(params), body).filter(_.nonEmpty).mkString(" "))
           }
         }
       }
@@ -68,6 +71,53 @@ class BasicTests extends FlatSpec with Matchers with BeforeAndAfterAll with Scal
 
       val fc = forceResponse.force(response).body
       fc should be ("GET /echo p1=v1 p2=v2")
+    }
+
+    val postEcho = sttp.post(new URI(endpoint + "/echo"))
+    val testBody = "this is the body"
+    val testBodyBytes = testBody.getBytes("UTF-8")
+    val expectedPostEchoResponse = "POST /echo this is the body"
+
+    name should "post a string" in {
+      val response = postEcho.data(testBody).send(responseAsString)
+      val fc = forceResponse.force(response).body
+      fc should be (expectedPostEchoResponse)
+    }
+
+    name should "post a byte array" in {
+      val response = postEcho.data(testBodyBytes).send(responseAsString)
+      val fc = forceResponse.force(response).body
+      fc should be (expectedPostEchoResponse)
+    }
+
+    name should "post an input stream" in {
+      val response = postEcho.data(new ByteArrayInputStream(testBodyBytes)).send(responseAsString)
+      val fc = forceResponse.force(response).body
+      fc should be (expectedPostEchoResponse)
+    }
+
+    name should "post a byte buffer" in {
+      val response = postEcho.data(ByteBuffer.wrap(testBodyBytes)).send(responseAsString)
+      val fc = forceResponse.force(response).body
+      fc should be (expectedPostEchoResponse)
+    }
+
+    name should "post a file" in {
+      val f = File.newTemporaryFile().write(testBody)
+      try {
+        val response = postEcho.data(f.toJava).send(responseAsString)
+        val fc = forceResponse.force(response).body
+        fc should be(expectedPostEchoResponse)
+      } finally f.delete()
+    }
+
+    name should "post a path" in {
+      val f = File.newTemporaryFile().write(testBody)
+      try {
+        val response = postEcho.data(f.toJava.toPath).send(responseAsString)
+        val fc = forceResponse.force(response).body
+        fc should be(expectedPostEchoResponse)
+      } finally f.delete()
     }
   }
 }

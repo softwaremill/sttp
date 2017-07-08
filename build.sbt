@@ -76,6 +76,7 @@ lazy val tests: Project = (project in file("tests"))
     libraryDependencies ++= Seq(
       akkaHttp,
       scalaTest,
-      "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0" % "test"
+      "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0" % "test",
+      "com.github.pathikrit" %% "better-files" % "3.0.0"
     )
   ) dependsOn(core, akkaHttpHandler)
