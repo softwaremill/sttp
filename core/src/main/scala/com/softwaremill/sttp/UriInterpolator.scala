@@ -1,6 +1,8 @@
 package com.softwaremill.sttp
 
-// from https://gist.github.com/teigen/5865923
+import java.net.URI
+
+// based on https://gist.github.com/teigen/5865923
 object UriInterpolator {
 
   private val unreserved = {
@@ -9,24 +11,22 @@ object UriInterpolator {
     alphanum ++ mark
   }
 
-  implicit class UriContext(val sc:StringContext) extends AnyVal {
-    def uri(args:String*) = {
-      val strings     = sc.parts.iterator
-      val expressions = args.iterator
-      val sb          = new StringBuffer(strings.next())
+  def interpolate(sc: StringContext, args: String*): URI = {
+    val strings     = sc.parts.iterator
+    val expressions = args.iterator
+    val sb          = new StringBuffer(strings.next())
 
-      while(strings.hasNext){
-        for(c <- expressions.next()){
-          if(unreserved(c))
-            sb.append(c)
-          else for(b <- c.toString.getBytes("UTF-8")){
-            sb.append("%")
-            sb.append("%02X".format(b))
-          }
+    while(strings.hasNext){
+      for(c <- expressions.next()){
+        if(unreserved(c))
+          sb.append(c)
+        else for(b <- c.toString.getBytes("UTF-8")){
+          sb.append("%")
+          sb.append("%02X".format(b))
         }
-        sb.append(strings.next())
       }
-      sb.toString
+      sb.append(strings.next())
     }
+    new URI(sb.toString)
   }
 }

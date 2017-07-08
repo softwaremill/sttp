@@ -3,13 +3,15 @@
 The HTTP client for Scala that you always wanted
  
 ```scala
+val user = "adamw"
 val state = "closed"
-val request = sttp.get(uri"https://api.github.com/repos/adamw/elasticmq/issues?state=$state")
+val sort: Option[String] = None
+val request = sttp.get(uri"https://api.github.com/repos/$user/elasticmq/issues?state=$state&sort=$sort")
   
 val response = request.send(responseAsString("utf-8"))
 
 println(response.header("Content-Length")) // has type Option[String]
-println(response.body)                     // has type String
+println(response.body)                     // has type String as specified when sending the request
 ```
  
 ## Goals of the project
@@ -37,7 +39,7 @@ import com.softwaremill.sttp._
 
 To send requests, you will also need a backend. A default, synchronous backend based on Java's `HttpURLConnection`
 is provided out-of-the box. An implicit value needs to be in scope to invoke `send()` (however it's possible to 
-create requests without any implicit backend in scope): 
+create request descriptions without any implicit backend in scope): 
 
 ```scala
 implicit val handler = HttpConnectionSttpHandler

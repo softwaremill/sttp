@@ -178,4 +178,8 @@ package object sttp {
   private val MultipartFormDataContentType = "multipart/form-data"
 
   private def contentTypeWithEncoding(ct: String, enc: String) = s"$ct; charset=$enc"
+
+  implicit class UriContext(val sc: StringContext) extends AnyVal {
+    def uri(args:String*): URI = UriInterpolator.interpolate(sc, args: _*)
+  }
 }
