@@ -98,41 +98,41 @@ package object sttp {
     /**
       * If content type is not yet specified, will be set to `text/plain` with `utf-8` encoding.
       */
-    def data(b: String): RequestTemplate[U] = data(b, Utf8)
+    def body(b: String): RequestTemplate[U] = body(b, Utf8)
     /**
       * If content type is not yet specified, will be set to `text/plain` with the given encoding.
       */
-    def data(b: String, encoding: String): RequestTemplate[U] =
+    def body(b: String, encoding: String): RequestTemplate[U] =
       setContentTypeIfMissing(contentTypeWithEncoding(TextPlainContentType, encoding)).copy(body = StringBody(b, encoding))
     /**
       * If content type is not yet specified, will be set to `application/octet-stream`.
       */
-    def data(b: Array[Byte]): RequestTemplate[U] =
+    def body(b: Array[Byte]): RequestTemplate[U] =
       setContentTypeIfMissing(ApplicationOctetStreamContentType).copy(body = ByteArrayBody(b))
     /**
       * If content type is not yet specified, will be set to `application/octet-stream`.
       */
-    def data(b: ByteBuffer): RequestTemplate[U] =
+    def body(b: ByteBuffer): RequestTemplate[U] =
       setContentTypeIfMissing(ApplicationOctetStreamContentType).copy(body = ByteBufferBody(b))
     /**
       * If content type is not yet specified, will be set to `application/octet-stream`.
       */
-    def data(b: InputStream): RequestTemplate[U] =
+    def body(b: InputStream): RequestTemplate[U] =
       setContentTypeIfMissing(ApplicationOctetStreamContentType).copy(body = InputStreamBody(b))
     /**
       * If content type is not yet specified, will be set to `application/octet-stream`.
       */
-    def data(b: File): RequestTemplate[U] =
+    def body(b: File): RequestTemplate[U] =
       setContentTypeIfMissing(ApplicationOctetStreamContentType).copy(body = FileBody(b))
     /**
       * If content type is not yet specified, will be set to `application/octet-stream`.
       */
-    def data(b: Path): RequestTemplate[U] =
+    def body(b: Path): RequestTemplate[U] =
       setContentTypeIfMissing(ApplicationOctetStreamContentType).copy(body = PathBody(b))
     /**
       * If content type is not yet specified, will be set to `application/octet-stream`.
       */
-    def data[T: BodySerializer](b: T): RequestTemplate[U] =
+    def body[T: BodySerializer](b: T): RequestTemplate[U] =
       setContentTypeIfMissing(ApplicationOctetStreamContentType).copy(body = SerializableBody(implicitly[BodySerializer[T]], b))
 
     private def hasContentType: Boolean = headers.exists(_._1.toLowerCase.contains(ContentTypeHeader))

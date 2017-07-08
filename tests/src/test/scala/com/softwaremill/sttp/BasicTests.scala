@@ -75,13 +75,13 @@ class BasicTests extends FlatSpec with Matchers with BeforeAndAfterAll with Scal
 
     def parseResponseTests(): Unit = {
       name should "parse response as string" in {
-        val response = postEcho.data(testBody).send(responseAsString)
+        val response = postEcho.body(testBody).send(responseAsString)
         val fc = forceResponse.force(response).body
         fc should be (expectedPostEchoResponse)
       }
 
       name should "parse response as a byte array" in {
-        val response = postEcho.data(testBody).send(responseAsByteArray)
+        val response = postEcho.body(testBody).send(responseAsByteArray)
         val fc = new String(forceResponse.force(response).body, "UTF-8")
         fc should be (expectedPostEchoResponse)
       }
@@ -100,25 +100,25 @@ class BasicTests extends FlatSpec with Matchers with BeforeAndAfterAll with Scal
 
     def bodyTests(): Unit = {
       name should "post a string" in {
-        val response = postEcho.data(testBody).send(responseAsString)
+        val response = postEcho.body(testBody).send(responseAsString)
         val fc = forceResponse.force(response).body
         fc should be (expectedPostEchoResponse)
       }
 
       name should "post a byte array" in {
-        val response = postEcho.data(testBodyBytes).send(responseAsString)
+        val response = postEcho.body(testBodyBytes).send(responseAsString)
         val fc = forceResponse.force(response).body
         fc should be (expectedPostEchoResponse)
       }
 
       name should "post an input stream" in {
-        val response = postEcho.data(new ByteArrayInputStream(testBodyBytes)).send(responseAsString)
+        val response = postEcho.body(new ByteArrayInputStream(testBodyBytes)).send(responseAsString)
         val fc = forceResponse.force(response).body
         fc should be (expectedPostEchoResponse)
       }
 
       name should "post a byte buffer" in {
-        val response = postEcho.data(ByteBuffer.wrap(testBodyBytes)).send(responseAsString)
+        val response = postEcho.body(ByteBuffer.wrap(testBodyBytes)).send(responseAsString)
         val fc = forceResponse.force(response).body
         fc should be (expectedPostEchoResponse)
       }
@@ -126,7 +126,7 @@ class BasicTests extends FlatSpec with Matchers with BeforeAndAfterAll with Scal
       name should "post a file" in {
         val f = File.newTemporaryFile().write(testBody)
         try {
-          val response = postEcho.data(f.toJava).send(responseAsString)
+          val response = postEcho.body(f.toJava).send(responseAsString)
           val fc = forceResponse.force(response).body
           fc should be(expectedPostEchoResponse)
         } finally f.delete()
@@ -135,7 +135,7 @@ class BasicTests extends FlatSpec with Matchers with BeforeAndAfterAll with Scal
       name should "post a path" in {
         val f = File.newTemporaryFile().write(testBody)
         try {
-          val response = postEcho.data(f.toJava.toPath).send(responseAsString)
+          val response = postEcho.body(f.toJava.toPath).send(responseAsString)
           val fc = forceResponse.force(response).body
           fc should be(expectedPostEchoResponse)
         } finally f.delete()
