@@ -20,7 +20,7 @@ class UriInterpolatorTests extends FlatSpec with Matchers {
 
   for (((interpolated, expected), i) <- testData.zipWithIndex) {
     it should s"interpolate to $expected ($i)" in {
-      interpolated should be (new URI(expected))
+      interpolated should be(new URI(expected))
     }
   }
 }

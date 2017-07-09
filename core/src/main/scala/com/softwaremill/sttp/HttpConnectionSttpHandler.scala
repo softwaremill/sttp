@@ -1,6 +1,11 @@
 package com.softwaremill.sttp
 
-import java.io.{ByteArrayOutputStream, InputStream, OutputStream, OutputStreamWriter}
+import java.io.{
+  ByteArrayOutputStream,
+  InputStream,
+  OutputStream,
+  OutputStreamWriter
+}
 import java.net.HttpURLConnection
 import java.nio.channels.Channels
 import java.nio.file.Files
@@ -11,7 +16,8 @@ import scala.annotation.tailrec
 import scala.io.Source
 
 object HttpConnectionSttpHandler extends SttpHandler[Id, Nothing] {
-  override def send[T](r: Request, responseAs: ResponseAs[T, Nothing]): Response[T] = {
+  override def send[T](r: Request,
+                       responseAs: ResponseAs[T, Nothing]): Response[T] = {
     val c = r.uri.toURL.openConnection().asInstanceOf[HttpURLConnection]
     c.setRequestMethod(r.method.m)
     r.headers.foreach { case (k, v) => c.setRequestProperty(k, v) }
@@ -45,14 +51,16 @@ object HttpConnectionSttpHandler extends SttpHandler[Id, Nothing] {
 
       case StringBody(b, encoding) =>
         val writer = new OutputStreamWriter(c.getOutputStream, encoding)
-        try writer.write(b) finally writer.close()
+        try writer.write(b)
+        finally writer.close()
 
       case ByteArrayBody(b) =>
         c.getOutputStream.write(b)
 
       case ByteBufferBody(b) =>
         val channel = Channels.newChannel(c.getOutputStream)
-        try channel.write(b) finally channel.close()
+        try channel.write(b)
+        finally channel.close()
 
       case InputStreamBody(b) =>
         copyStream(b, c.getOutputStream)
@@ -68,34 +76,36 @@ object HttpConnectionSttpHandler extends SttpHandler[Id, Nothing] {
     }
   }
 
-  private def readResponse[T](is: InputStream, responseAs: ResponseAs[T, Nothing]): T = responseAs match {
-    case IgnoreResponse =>
-      @tailrec def consume(): Unit = if (is.read() != -1) consume()
-      consume()
+  private def readResponse[T](is: InputStream,
+                              responseAs: ResponseAs[T, Nothing]): T =
+    responseAs match {
+      case IgnoreResponse =>
+        @tailrec def consume(): Unit = if (is.read() != -1) consume()
+        consume()
 
-    case ResponseAsString(enc) =>
-      Source.fromInputStream(is, enc).mkString
+      case ResponseAsString(enc) =>
+        Source.fromInputStream(is, enc).mkString
 
-    case ResponseAsByteArray =>
-      val os = new ByteArrayOutputStream
-      var read = 0
-      val buf = new Array[Byte](1024)
+      case ResponseAsByteArray =>
+        val os = new ByteArrayOutputStream
+        var read = 0
+        val buf = new Array[Byte](1024)
 
-      @tailrec
-      def transfer(): Unit = {
-        read = is.read(buf, 0, buf.length)
-        if (read != -1) {
-          os.write(buf, 0, read)
-          transfer()
+        @tailrec
+        def transfer(): Unit = {
+          read = is.read(buf, 0, buf.length)
+          if (read != -1) {
+            os.write(buf, 0, read)
+            transfer()
+          }
         }
-      }
 
-      transfer()
+        transfer()
 
-      os.toByteArray
+        os.toByteArray
 
-    case ResponseAsStream() =>
-      // only possible when the user requests the response as a stream of Nothing. Oh well ...
-      throw new IllegalStateException()
-  }
+      case ResponseAsStream() =>
+        // only possible when the user requests the response as a stream of Nothing. Oh well ...
+        throw new IllegalStateException()
+    }
 }

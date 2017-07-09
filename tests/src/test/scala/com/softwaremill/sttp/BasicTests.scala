@@ -17,20 +17,33 @@ import better.files._
 import scala.concurrent.Future
 import scala.language.higherKinds
 
-class BasicTests extends FlatSpec with Matchers with BeforeAndAfterAll with ScalaFutures with StrictLogging with IntegrationPatience {
-  private def paramsToString(m: Map[String, String]): String = m.toList.sortBy(_._1).map(p => s"${p._1}=${p._2}").mkString(" ")
+class BasicTests
+    extends FlatSpec
+    with Matchers
+    with BeforeAndAfterAll
+    with ScalaFutures
+    with StrictLogging
+    with IntegrationPatience {
+  private def paramsToString(m: Map[String, String]): String =
+    m.toList.sortBy(_._1).map(p => s"${p._1}=${p._2}").mkString(" ")
 
   private val serverRoutes =
     path("echo") {
       get {
         parameterMap { params =>
-          complete(List("GET", "/echo", paramsToString(params)).filter(_.nonEmpty).mkString(" "))
+          complete(
+            List("GET", "/echo", paramsToString(params))
+              .filter(_.nonEmpty)
+              .mkString(" "))
         }
       } ~
         post {
           parameterMap { params =>
             entity(as[String]) { body: String =>
-              complete(List("POST", "/echo", paramsToString(params), body).filter(_.nonEmpty).mkString(" "))
+              complete(
+                List("POST", "/echo", paramsToString(params), body)
+                  .filter(_.nonEmpty)
+                  .mkString(" "))
             }
           }
         }
@@ -54,14 +67,20 @@ class BasicTests extends FlatSpec with Matchers with BeforeAndAfterAll with Scal
     def force[T](wrapped: R[T]): T
   }
 
-  runTests("HttpURLConnection", HttpConnectionSttpHandler, new ForceWrappedValue[Id] {
-    override def force[T](wrapped: Id[T]): T = wrapped
-  })
-  runTests("Akka HTTP", new AkkaHttpSttpHandler(actorSystem), new ForceWrappedValue[Future] {
-    override def force[T](wrapped: Future[T]): T = wrapped.futureValue
-  })
+  runTests("HttpURLConnection",
+           HttpConnectionSttpHandler,
+           new ForceWrappedValue[Id] {
+             override def force[T](wrapped: Id[T]): T = wrapped
+           })
+  runTests("Akka HTTP",
+           new AkkaHttpSttpHandler(actorSystem),
+           new ForceWrappedValue[Future] {
+             override def force[T](wrapped: Future[T]): T = wrapped.futureValue
+           })
 
-  def runTests[R[_]](name: String, handler: SttpHandler[R, Nothing], forceResponse: ForceWrappedValue[R]): Unit = {
+  def runTests[R[_]](name: String,
+                     handler: SttpHandler[R, Nothing],
+                     forceResponse: ForceWrappedValue[R]): Unit = {
     implicit val h = handler
 
     val postEcho = sttp.post(new URI(endpoint + "/echo"))
@@ -77,13 +96,13 @@ class BasicTests extends FlatSpec with Matchers with BeforeAndAfterAll with Scal
       name should "parse response as string" in {
         val response = postEcho.body(testBody).send(responseAsString)
         val fc = forceResponse.force(response).body
-        fc should be (expectedPostEchoResponse)
+        fc should be(expectedPostEchoResponse)
       }
 
       name should "parse response as a byte array" in {
         val response = postEcho.body(testBody).send(responseAsByteArray)
         val fc = new String(forceResponse.force(response).body, "UTF-8")
-        fc should be (expectedPostEchoResponse)
+        fc should be(expectedPostEchoResponse)
       }
     }
 
@@ -94,7 +113,7 @@ class BasicTests extends FlatSpec with Matchers with BeforeAndAfterAll with Scal
           .send(responseAsString)
 
         val fc = forceResponse.force(response).body
-        fc should be ("GET /echo p1=v1 p2=v2")
+        fc should be("GET /echo p1=v1 p2=v2")
       }
     }
 
@@ -102,25 +121,28 @@ class BasicTests extends FlatSpec with Matchers with BeforeAndAfterAll with Scal
       name should "post a string" in {
         val response = postEcho.body(testBody).send(responseAsString)
         val fc = forceResponse.force(response).body
-        fc should be (expectedPostEchoResponse)
+        fc should be(expectedPostEchoResponse)
       }
 
       name should "post a byte array" in {
         val response = postEcho.body(testBodyBytes).send(responseAsString)
         val fc = forceResponse.force(response).body
-        fc should be (expectedPostEchoResponse)
+        fc should be(expectedPostEchoResponse)
       }
 
       name should "post an input stream" in {
-        val response = postEcho.body(new ByteArrayInputStream(testBodyBytes)).send(responseAsString)
+        val response = postEcho
+          .body(new ByteArrayInputStream(testBodyBytes))
+          .send(responseAsString)
         val fc = forceResponse.force(response).body
-        fc should be (expectedPostEchoResponse)
+        fc should be(expectedPostEchoResponse)
       }
 
       name should "post a byte buffer" in {
-        val response = postEcho.body(ByteBuffer.wrap(testBodyBytes)).send(responseAsString)
+        val response =
+          postEcho.body(ByteBuffer.wrap(testBodyBytes)).send(responseAsString)
         val fc = forceResponse.force(response).body
-        fc should be (expectedPostEchoResponse)
+        fc should be(expectedPostEchoResponse)
       }
 
       name should "post a file" in {

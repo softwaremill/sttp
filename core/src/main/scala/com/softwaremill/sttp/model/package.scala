@@ -29,7 +29,8 @@ package object model {
   sealed trait RequestBody
   case object NoBody extends RequestBody
   // TODO: extract StreamBody, with request parametrized to match the stream type?
-  case class SerializableBody[T](f: BodySerializer[T], t: T) extends RequestBody
+  case class SerializableBody[T](f: BodySerializer[T], t: T)
+      extends RequestBody
 
   sealed trait BasicRequestBody extends RequestBody
   case class StringBody(s: String, encoding: String) extends BasicRequestBody
@@ -46,8 +47,10 @@ package object model {
   sealed trait ResponseAs[T, +S]
 
   object IgnoreResponse extends ResponseAs[Unit, Nothing]
-  case class ResponseAsString(encoding: String) extends ResponseAs[String, Nothing]
+  case class ResponseAsString(encoding: String)
+      extends ResponseAs[String, Nothing]
   object ResponseAsByteArray extends ResponseAs[Array[Byte], Nothing]
   // response as params
-  case class ResponseAsStream[T, S]()(implicit val responseIsStream: S =:= T) extends ResponseAs[T, S]
+  case class ResponseAsStream[T, S]()(implicit val responseIsStream: S =:= T)
+      extends ResponseAs[T, S]
 }
