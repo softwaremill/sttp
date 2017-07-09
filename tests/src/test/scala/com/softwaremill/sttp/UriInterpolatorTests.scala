@@ -13,7 +13,9 @@ class UriInterpolatorTests extends FlatSpec with Matchers {
     (uri"http://example.com", "http://example.com"),
     (uri"http://example.com?x=y", "http://example.com?x=y"),
     (uri"http://example.com?x=$v1", s"http://example.com?x=$v1"),
-    (uri"http://example.com?x=$v2", s"http://example.com?x=$v2encoded")
+    (uri"http://example.com?x=$v2", s"http://example.com?x=$v2encoded"),
+    (uri"http://$v1.com", s"http://$v1.com"),
+    (uri"http://$v1.com?x=$v2", s"http://$v1.com?x=$v2encoded")
   )
 
   for (((interpolated, expected), i) <- testData.zipWithIndex) {
