@@ -63,7 +63,8 @@ object UriInterpolator {
   case class Authority(s: Scheme, v: String = "") extends UriBuilder {
 
     override def parseS(s: String, doEncode: (String) => String): UriBuilder = {
-      // authority is terminated by /, ?, # or end of string (there might be other /, ?, # later on e.g. in the query)
+      // authority is terminated by /, ?, # or end of string (there might be
+      // other /, ?, # later on e.g. in the query)
       // see https://tools.ietf.org/html/rfc3986#section-3.2
       s.split("[/\\?#]", 2) match {
         case Array(authorityFragment, rest) =>
@@ -90,11 +91,13 @@ object UriInterpolator {
     }
 
     override def build: String = {
-      // remove dangling "." which might occur due to optional authority fragments
-      val v2 = if (v.startsWith(".")) v.substring(1) else v
-      val v3 = if (v.endsWith(".")) v2.substring(0, v2.length - 1) else v2
+      var vv = v
+      // remove dangling "." which might occur due to optional authority
+      // fragments
+      while (vv.startsWith(".")) vv = vv.substring(1)
+      while (vv.endsWith(".")) vv = vv.substring(0, vv.length - 1)
 
-      s.build + v3
+      s.build + vv
     }
 
     private def append(x: String, doEncode: String => String): Authority =
@@ -105,7 +108,8 @@ object UriInterpolator {
       extends UriBuilder {
 
     override def parseS(s: String, doEncode: (String) => String): UriBuilder = {
-      // path is terminated by ?, # or end of string (there might be other ?, # later on e.g. in the query)
+      // path is terminated by ?, # or end of string (there might be other
+      // ?, # later on e.g. in the query)
       // see https://tools.ietf.org/html/rfc3986#section-3.3
       s.split("[\\?#]", 2) match {
         case Array(pathFragments, rest) =>

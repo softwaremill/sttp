@@ -29,7 +29,10 @@ class UriInterpolatorTests extends FunSuite with Matchers {
       (uri"http://$v1.com", s"http://$v1.com"),
       (uri"http://$v2.com", s"http://$v2hostEncoded.com"),
       (uri"http://$None.example.com", s"http://example.com"),
+      (uri"http://$None.$None.example.com", s"http://example.com"),
       (uri"http://${Some("sub")}.example.com", s"http://sub.example.com"),
+      (uri"http://${Some("sub1.sub2")}.example.com",
+       s"http://sub1.sub2.example.com"),
       (uri"http://${List("sub1", "sub2")}.example.com",
        s"http://sub1.sub2.example.com"),
       (uri"http://${List("sub", "example", "com")}", s"http://sub.example.com")
