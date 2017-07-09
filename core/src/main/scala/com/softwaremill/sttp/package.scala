@@ -244,6 +244,6 @@ package object sttp {
     s"$ct; charset=$enc"
 
   implicit class UriContext(val sc: StringContext) extends AnyVal {
-    def uri(args: String*): URI = UriInterpolator.interpolate(sc, args: _*)
+    def uri(args: Any*): URI = UriInterpolator.interpolate(sc, args: _*)
   }
 }
