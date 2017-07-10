@@ -25,7 +25,7 @@ println(response.body)                     // has type String as specified when 
 ## How is sttp different from other libraries?
 
 * immutable request builder which doesn't impose any order in which request parameters need to be specified. 
-One consequence of that approach is that the URI to be specified upfront. Allows defining partial requests
+One consequence of that approach is that the URI doesn't need to be specified upfront. Allows defining partial requests
 which contain common cookies/headers/options, which can later be specialized using a specific URI and HTTP method.
 * support for multiple backends, both synchronous and asynchronous, with backend-specific streaming support
 * URI interpolator with optional parameters support
