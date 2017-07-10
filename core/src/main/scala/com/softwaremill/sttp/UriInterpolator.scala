@@ -19,14 +19,16 @@ object UriInterpolator {
 
   sealed trait UriBuilder {
     def parseS(s: String): UriBuilder
-    def parseE(e: Any): UriBuilder = e match {
+    def parseE(e: Any): UriBuilder
+    def build: String
+
+    protected def parseE_asEncodedS_skipNone(e: Any): UriBuilder = e match {
       case s: String => parseS(encode(s))
       case None => this
       case null => this
       case Some(x) => parseE(x)
       case x => parseS(encode(x.toString))
     }
-    def build: String
   }
 
   val UriBuilderStart = Scheme("")
@@ -50,6 +52,8 @@ object UriInterpolator {
       }
     }
 
+    override def parseE(e: Any): UriBuilder = parseE_asEncodedS_skipNone(e)
+
     private def append(x: String): Scheme = Scheme(v + x)
 
     override def build: String = if (v.isEmpty) "" else v + "://"
@@ -71,7 +75,10 @@ object UriInterpolator {
 
     private def next(splitOn: Char, rest: String): UriBuilder =
       splitOn match {
-        case '/' => Path(this).parseS("/" + rest)
+        case '/' =>
+          // prepending the leading slash as we want it preserved in the
+          // output, if present
+          Path(this).parseS("/" + rest)
         case '?' => Query(Path(this)).parseS(rest)
         case '#' => Fragment(Query(Path(this))).parseS(rest)
       }
@@ -80,7 +87,7 @@ object UriInterpolator {
       case s: Seq[_] =>
         val newAuthority = s.map(_.toString).map(encode(_)).mkString(".")
         copy(v = v + newAuthority)
-      case x => super.parseE(x)
+      case x => parseE_asEncodedS_skipNone(x)
     }
 
     override def build: String = {
@@ -96,7 +103,7 @@ object UriInterpolator {
     private def append(x: String): Authority = copy(v = v + x)
   }
 
-  case class Path(a: Authority, vs: Vector[String] = Vector.empty)
+  case class Path(a: Authority, fs: Vector[String] = Vector.empty)
       extends UriBuilder {
 
     override def parseS(s: String): UriBuilder = {
@@ -129,21 +136,27 @@ object UriInterpolator {
     }
 
     override def build: String = {
-      val v = if (vs.isEmpty) "" else "/" + vs.mkString("/")
+      // if there is a trailing /, the last path fragment will be empty
+      val v = if (fs.isEmpty) "" else "/" + fs.mkString("/")
       a.build + v
     }
 
     private def appendS(fragments: String): Path = {
       if (fragments.isEmpty) this
       else if (fragments.startsWith("/"))
-        copy(vs = vs ++ fragments.substring(1).split("/", -1))
+        // avoiding an initial empty path fragment which would cause
+        // initial // the build output
+        copy(fs = fs ++ fragments.substring(1).split("/", -1))
       else
-        copy(vs = vs ++ fragments.split("/", -1))
+        copy(fs = fs ++ fragments.split("/", -1))
     }
 
-    private def appendE(fragment: Option[String]): Path = vs.lastOption match {
-      case Some("") => copy(vs = vs.init ++ fragment)
-      case _ => copy(vs = vs ++ fragment)
+    private def appendE(fragment: Option[String]): Path = fs.lastOption match {
+      case Some("") =>
+        // if the currently last path fragment is empty, replacing with the
+        // expression value: corresponds to an interpolation of [anything]/$v
+        copy(fs = fs.init ++ fragment)
+      case _ => copy(fs = fs ++ fragment)
     }
   }
 
@@ -170,7 +183,7 @@ object UriInterpolator {
         }
         val newFragments = flattenedM.map {
           case (k, v) =>
-            (Some(encode(k, query = true)), Some(encode(v, query = true)))
+            (Some(encodeQuery(k)), Some(encodeQuery(v)))
         }
         copy(fs = fs ++ newFragments)
 
@@ -184,16 +197,16 @@ object UriInterpolator {
         }
         val newFragments = flattenedS.map {
           case (k, v) =>
-            (Some(encode(k, query = true)), Some(encode(v, query = true)))
-          case x => (Some(encode(x, query = true)), None)
+            (Some(encodeQuery(k)), Some(encodeQuery(v)))
+          case x => (Some(encodeQuery(x)), None)
         }
         copy(fs = fs ++ newFragments)
 
-      case s: String => appendE(Some(encode(s, query = true)))
+      case s: String => appendE(Some(encodeQuery(s)))
       case None => appendE(None)
       case null => appendE(None)
       case Some(x) => parseE(x)
-      case x => appendE(Some(encode(x.toString, query = true)))
+      case x => appendE(Some(encodeQuery(x.toString)))
     }
 
     override def build: String = {
@@ -212,6 +225,7 @@ object UriInterpolator {
 
       val newVs = queryFragment.split("&").map { nv =>
         /*
+         Representation of key-value pairs:
          - empty -> (None, None)
          - k=v   -> (Some(k), Some(v))
          - k=    -> (Some(k), Some(""))
@@ -279,23 +293,23 @@ object UriInterpolator {
   case class Fragment(q: Query, v: String = "") extends UriBuilder {
     override def parseS(s: String): UriBuilder = copy(v = v + s)
 
+    override def parseE(e: Any): UriBuilder = parseE_asEncodedS_skipNone(e)
+
     override def build: String = q.build + (if (v.isEmpty) "" else s"#$v")
   }
 
-  private def encode(s: Any, query: Boolean = false): String = {
-    val encoded = URLEncoder.encode(String.valueOf(s), "UTF-8")
+  private def encode(s: Any): String = {
     // space is encoded as a +, which is only valid in the query;
     // in other contexts, it must be percent-encoded
     // see https://stackoverflow.com/questions/2678551/when-to-encode-space-to-plus-or-20
-    if (!query) encoded.replaceAll("\\+", "%20") else encoded
+    URLEncoder.encode(String.valueOf(s), "UTF-8").replaceAll("\\+", "%20")
   }
+
+  private def encodeQuery(s: Any): String =
+    URLEncoder.encode(String.valueOf(s), "UTF-8")
 
   private def charAfterPrefix(prefix: String, whole: String): Char = {
     val pl = prefix.length
     whole.substring(pl, pl + 1).charAt(0)
   }
-}
-
-object Test extends App {
-  println(uri"http://example.com/a/${List("a", "c")}/b")
 }
