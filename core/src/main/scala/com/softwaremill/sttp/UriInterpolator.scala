@@ -7,28 +7,24 @@ object UriInterpolator {
   def interpolate(sc: StringContext, args: Any*): URI = {
     val strings = sc.parts.iterator
     val expressions = args.iterator
-    var ub = UriBuilderStart.parseS(strings.next(), identity)
+    var ub = UriBuilderStart.parseS(strings.next())
 
     while (strings.hasNext) {
       ub = ub.parseE(expressions.next())
-      ub = ub.parseS(strings.next(), identity)
+      ub = ub.parseS(strings.next())
     }
 
     new URI(ub.build)
   }
 
   sealed trait UriBuilder {
-
-    /**
-      * @param doEncode Only values from expressions should be URI-encoded. Strings should be preserved as-is.
-      */
-    def parseS(s: String, doEncode: String => String): UriBuilder
+    def parseS(s: String): UriBuilder
     def parseE(e: Any): UriBuilder = e match {
-      case s: String => parseS(s, encode(_))
+      case s: String => parseS(encode(s))
       case None => this
       case null => this
       case Some(x) => parseE(x)
-      case x => parseS(x.toString, encode(_))
+      case x => parseS(encode(x.toString))
     }
     def build: String
   }
@@ -37,50 +33,47 @@ object UriInterpolator {
 
   case class Scheme(v: String) extends UriBuilder {
 
-    override def parseS(s: String, doEncode: String => String): UriBuilder = {
+    override def parseS(s: String): UriBuilder = {
       val splitAtSchemeEnd = s.split("://", 2)
       splitAtSchemeEnd match {
         case Array(schemeFragment, rest) =>
-          Authority(append(schemeFragment, doEncode))
-            .parseS(rest, doEncode)
+          Authority(append(schemeFragment))
+            .parseS(rest)
 
         case Array(x) =>
           if (!x.matches("[a-zA-Z0-9+\\.\\-]*")) {
             // anything else than the allowed characters in scheme suggest that there is no scheme
             // assuming whatever we parsed so far is part of authority, and parsing the rest
             // see https://stackoverflow.com/questions/3641722/valid-characters-for-uri-schemes
-            Authority(Scheme(""), v).parseS(x, doEncode)
-          } else append(x, doEncode)
+            Authority(Scheme(""), v).parseS(x)
+          } else append(x)
       }
     }
 
-    private def append(x: String, doEncode: String => String): Scheme =
-      Scheme(v + doEncode(x))
+    private def append(x: String): Scheme = Scheme(v + x)
 
     override def build: String = if (v.isEmpty) "" else v + "://"
   }
 
   case class Authority(s: Scheme, v: String = "") extends UriBuilder {
 
-    override def parseS(s: String, doEncode: (String) => String): UriBuilder = {
+    override def parseS(s: String): UriBuilder = {
       // authority is terminated by /, ?, # or end of string (there might be
       // other /, ?, # later on e.g. in the query)
       // see https://tools.ietf.org/html/rfc3986#section-3.2
       s.split("[/\\?#]", 2) match {
         case Array(authorityFragment, rest) =>
           val splitOn = charAfterPrefix(authorityFragment, s)
-          append(authorityFragment, doEncode).next(splitOn, rest, doEncode)
-        case Array(x) => append(x, doEncode)
+          append(authorityFragment).next(splitOn, rest)
+        case Array(x) => append(x)
       }
     }
 
-    private def next(splitOn: Char,
-                     rest: String,
-                     doEncode: (String) => String): UriBuilder =
+    private def next(splitOn: Char, rest: String): UriBuilder =
       splitOn match {
-        case '/' => Path(this).parseS(rest, doEncode)
-        case '?' => Query(Path(this)).parseS(rest, doEncode)
-        case '#' => Fragment(Query(Path(this))).parseS(rest, doEncode)
+        case '/' => Path(this).parseS("/" + rest)
+        case '?' => Query(Path(this)).parseS(rest)
+        case '#' => Fragment(Query(Path(this))).parseS(rest)
       }
 
     override def parseE(e: Any): UriBuilder = e match {
@@ -100,39 +93,39 @@ object UriInterpolator {
       s.build + vv
     }
 
-    private def append(x: String, doEncode: String => String): Authority =
-      copy(v = v + doEncode(x))
+    private def append(x: String): Authority = copy(v = v + x)
   }
 
   case class Path(a: Authority, vs: Vector[String] = Vector.empty)
       extends UriBuilder {
 
-    override def parseS(s: String, doEncode: (String) => String): UriBuilder = {
+    override def parseS(s: String): UriBuilder = {
       // path is terminated by ?, # or end of string (there might be other
       // ?, # later on e.g. in the query)
       // see https://tools.ietf.org/html/rfc3986#section-3.3
       s.split("[\\?#]", 2) match {
         case Array(pathFragments, rest) =>
           val splitOn = charAfterPrefix(pathFragments, s)
-          append(pathFragments, doEncode).next(splitOn, rest, doEncode)
-        case Array(x) => append(x, doEncode)
+          appendS(pathFragments).next(splitOn, rest)
+        case Array(x) => appendS(x)
       }
     }
 
-    private def next(splitOn: Char,
-                     rest: String,
-                     doEncode: (String) => String): UriBuilder =
+    private def next(splitOn: Char, rest: String): UriBuilder =
       splitOn match {
-        case '?' => Query(this).parseS(rest, doEncode)
-        case '#' => Fragment(Query(this)).parseS(rest, doEncode)
+        case '?' => Query(this).parseS(rest)
+        case '#' => Fragment(Query(this)).parseS(rest)
       }
 
     override def parseE(e: Any): UriBuilder = e match {
       case s: Seq[_] =>
-        val newFragments = s.map(_.toString).map(encode(_))
-        copy(vs = vs ++ newFragments)
-
-      case x => super.parseE(x)
+        val newFragments = s.map(_.toString).map(encode(_)).map(Some(_))
+        newFragments.foldLeft(this)(_.appendE(_))
+      case s: String => appendE(Some(encode(s)))
+      case None => appendE(None)
+      case null => appendE(None)
+      case Some(x) => parseE(x)
+      case x => appendE(Some(encode(x.toString)))
     }
 
     override def build: String = {
@@ -140,8 +133,17 @@ object UriInterpolator {
       a.build + v
     }
 
-    private def append(fragments: String, doEncode: String => String): Path = {
-      copy(vs = vs ++ fragments.split("/").map(doEncode))
+    private def appendS(fragments: String): Path = {
+      if (fragments.isEmpty) this
+      else if (fragments.startsWith("/"))
+        copy(vs = vs ++ fragments.substring(1).split("/", -1))
+      else
+        copy(vs = vs ++ fragments.split("/", -1))
+    }
+
+    private def appendE(fragment: Option[String]): Path = vs.lastOption match {
+      case Some("") => copy(vs = vs.init ++ fragment)
+      case _ => copy(vs = vs ++ fragment)
     }
   }
 
@@ -150,10 +152,10 @@ object UriInterpolator {
   case class Query(p: Path, fs: Vector[QueryFragment] = Vector.empty)
       extends UriBuilder {
 
-    override def parseS(s: String, doEncode: (String) => String): UriBuilder = {
+    override def parseS(s: String): UriBuilder = {
       s.split("#", 2) match {
         case Array(queryFragment, rest) =>
-          Fragment(appendS(queryFragment)).parseS(rest, doEncode)
+          Fragment(appendS(queryFragment)).parseS(rest)
 
         case Array(x) => appendS(x)
       }
@@ -161,7 +163,12 @@ object UriInterpolator {
 
     override def parseE(e: Any): UriBuilder = e match {
       case m: Map[_, _] =>
-        val newFragments = m.map {
+        val flattenedMap = m.flatMap {
+          case (_, None) => None
+          case (k, Some(v)) => Some((k, v))
+          case (k, v) => Some((k, v))
+        }
+        val newFragments = flattenedMap.map {
           case (k, v) =>
             (Some(encode(k, query = true)), Some(encode(v, query = true)))
         }
@@ -263,9 +270,7 @@ object UriInterpolator {
   }
 
   case class Fragment(q: Query, v: String = "") extends UriBuilder {
-    override def parseS(s: String, doEncode: (String) => String): UriBuilder = {
-      copy(v = v + doEncode(s))
-    }
+    override def parseS(s: String): UriBuilder = copy(v = v + s)
 
     override def build: String = q.build + (if (v.isEmpty) "" else s"#$v")
   }
@@ -282,4 +287,8 @@ object UriInterpolator {
     val pl = prefix.length
     whole.substring(pl, pl + 1).charAt(0)
   }
+}
+
+object Test extends App {
+  println(uri"http://example.com/a/${List("a", "c")}/b")
 }
