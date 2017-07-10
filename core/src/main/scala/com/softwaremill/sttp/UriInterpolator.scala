@@ -163,19 +163,26 @@ object UriInterpolator {
 
     override def parseE(e: Any): UriBuilder = e match {
       case m: Map[_, _] =>
-        val flattenedMap = m.flatMap {
+        val flattenedM = m.flatMap {
           case (_, None) => None
           case (k, Some(v)) => Some((k, v))
           case (k, v) => Some((k, v))
         }
-        val newFragments = flattenedMap.map {
+        val newFragments = flattenedM.map {
           case (k, v) =>
             (Some(encode(k, query = true)), Some(encode(v, query = true)))
         }
         copy(fs = fs ++ newFragments)
 
       case s: Seq[_] =>
-        val newFragments = s.map {
+        val flattenedS = s.flatMap {
+          case (_, None) => None
+          case (k, Some(v)) => Some((k, v))
+          case None => None
+          case Some(k) => Some(k)
+          case x => Some(x)
+        }
+        val newFragments = flattenedS.map {
           case (k, v) =>
             (Some(encode(k, query = true)), Some(encode(v, query = true)))
           case x => (Some(encode(x, query = true)), None)

@@ -88,7 +88,13 @@ class UriInterpolatorTests extends FunSuite with Matchers {
       (uri"http://example.com?x=y&${Map("a" -> None)}",
        s"http://example.com?x=y"),
       (uri"http://example.com?x=y&${Map("a" -> Some("b"))}",
-       s"http://example.com?x=y&a=b")
+       s"http://example.com?x=y&a=b"),
+      (uri"http://example.com?x=y&${Seq("a" -> None)}",
+       s"http://example.com?x=y")
+    ),
+    "fragments" -> List(
+      (uri"http://example.com#$v1", s"http://example.com#$v1"),
+      (uri"http://example.com#$None", s"http://example.com")
     ),
     "everything" -> List(
       (uri"${"http"}://$v1.$v2.com/$v1/$v2?$v1=$v2&$v3=$v4#$v1",
