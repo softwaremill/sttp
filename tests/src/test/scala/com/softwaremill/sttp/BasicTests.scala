@@ -92,7 +92,7 @@ class BasicTests
   private val endpoint = "http://localhost:51823"
 
   override protected def beforeAll(): Unit = {
-    Http().bindAndHandle(serverRoutes, "localhost", 51823)
+    Http().bindAndHandle(serverRoutes, "localhost", 51823).futureValue
   }
 
   override protected def afterAll(): Unit = {
