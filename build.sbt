@@ -70,6 +70,7 @@ lazy val akkaHttpHandler: Project = (project in file("akka-http-handler"))
 lazy val tests: Project = (project in file("tests"))
   .settings(commonSettings: _*)
   .settings(
+    publishArtifact := false,
     name := "tests",
     libraryDependencies ++= Seq(
       akkaHttp,
