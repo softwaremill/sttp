@@ -37,7 +37,6 @@ package object model {
   case class ByteArrayBody(b: Array[Byte]) extends BasicRequestBody
   case class ByteBufferBody(b: ByteBuffer) extends BasicRequestBody
   case class InputStreamBody(b: InputStream) extends BasicRequestBody
-  case class FileBody(f: File) extends BasicRequestBody
   case class PathBody(f: Path) extends BasicRequestBody
 
   /**

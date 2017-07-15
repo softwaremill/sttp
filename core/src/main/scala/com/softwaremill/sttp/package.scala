@@ -88,10 +88,7 @@ package object sttp {
     * Content type will be set to `application/octet-stream`, can be overridden later using the `contentType` method.
     */
   def multiPart(name: String, data: File): MultiPart =
-    MultiPart(name,
-              FileBody(data),
-              fileName = Some(data.getName),
-              contentType = Some(ApplicationOctetStreamContentType))
+    multiPart(name, data.toPath)
 
   /**
     * Content type will be set to `application/octet-stream`, can be overridden later using the `contentType` method.
@@ -174,9 +171,7 @@ package object sttp {
     /**
       * If content type is not yet specified, will be set to `application/octet-stream`.
       */
-    def body(b: File): RequestTemplate[U] =
-      setContentTypeIfMissing(ApplicationOctetStreamContentType).copy(
-        body = FileBody(b))
+    def body(b: File): RequestTemplate[U] = body(b.toPath)
 
     /**
       * If content type is not yet specified, will be set to `application/octet-stream`.

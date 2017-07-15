@@ -117,7 +117,6 @@ class AkkaHttpSttpHandler(actorSystem: ActorSystem)
         case InputStreamBody(b) =>
           ar.withEntity(
             HttpEntity(ct, StreamConverters.fromInputStream(() => b)))
-        case FileBody(b) => ar.withEntity(ct, b.toPath)
         case PathBody(b) => ar.withEntity(ct, b)
         case s @ SerializableBody(_, _) => doSetSerializable(s)
       }

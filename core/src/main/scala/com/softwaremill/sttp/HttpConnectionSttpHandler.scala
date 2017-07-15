@@ -66,9 +66,6 @@ object HttpConnectionSttpHandler extends SttpHandler[Id, Nothing] {
       case InputStreamBody(b) =>
         copyStream(b, c.getOutputStream)
 
-      case FileBody(b) =>
-        Files.copy(b.toPath, c.getOutputStream)
-
       case PathBody(b) =>
         Files.copy(b, c.getOutputStream)
 
