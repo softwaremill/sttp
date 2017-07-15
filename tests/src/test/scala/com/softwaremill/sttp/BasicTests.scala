@@ -117,22 +117,24 @@ class BasicTests
   trait ForceWrappedValue[R[_]] {
     def force[T](wrapped: R[T]): T
   }
+  implicit class ForceDecorator[R[_], T](wrapped: R[T]) {
+    def force()(implicit fwv: ForceWrappedValue[R]): T = fwv.force(wrapped)
+  }
 
-  runTests("HttpURLConnection",
-           HttpConnectionSttpHandler,
-           new ForceWrappedValue[Id] {
-             override def force[T](wrapped: Id[T]): T = wrapped
-           })
-  runTests("Akka HTTP",
-           new AkkaHttpSttpHandler(actorSystem),
-           new ForceWrappedValue[Future] {
-             override def force[T](wrapped: Future[T]): T = wrapped.futureValue
-           })
+  runTests("HttpURLConnection")(HttpConnectionSttpHandler,
+                                new ForceWrappedValue[Id] {
+                                  override def force[T](wrapped: Id[T]): T =
+                                    wrapped
+                                })
+  runTests("Akka HTTP")(new AkkaHttpSttpHandler(actorSystem),
+                        new ForceWrappedValue[Future] {
+                          override def force[T](wrapped: Future[T]): T =
+                            wrapped.futureValue
+                        })
 
-  def runTests[R[_]](name: String,
-                     handler: SttpHandler[R, Nothing],
-                     forceResponse: ForceWrappedValue[R]): Unit = {
-    implicit val h = handler
+  def runTests[R[_]](name: String)(
+      implicit handler: SttpHandler[R, Nothing],
+      forceResponse: ForceWrappedValue[R]): Unit = {
 
     val postEcho = sttp.post(uri"$endpoint/echo")
     val testBody = "this is the body"
@@ -149,14 +151,14 @@ class BasicTests
 
     def parseResponseTests(): Unit = {
       name should "parse response as string" in {
-        val response = postEcho.body(testBody).send(responseAsString)
-        val fc = forceResponse.force(response).body
-        fc should be(expectedPostEchoResponse)
+        val response = postEcho.body(testBody).send(responseAsString).force()
+        response.body should be(expectedPostEchoResponse)
       }
 
       name should "parse response as a byte array" in {
-        val response = postEcho.body(testBody).send(responseAsByteArray)
-        val fc = new String(forceResponse.force(response).body, "UTF-8")
+        val response =
+          postEcho.body(testBody).send(responseAsByteArray).force()
+        val fc = new String(response.body, "UTF-8")
         fc should be(expectedPostEchoResponse)
       }
     }
@@ -166,55 +168,54 @@ class BasicTests
         val response = sttp
           .get(uri"$endpoint/echo?p2=v2&p1=v1")
           .send(responseAsString)
+          .force()
 
-        val fc = forceResponse.force(response).body
-        fc should be("GET /echo p1=v1 p2=v2")
+        response.body should be("GET /echo p1=v1 p2=v2")
       }
     }
 
     def bodyTests(): Unit = {
       name should "post a string" in {
-        val response = postEcho.body(testBody).send(responseAsString)
-        val fc = forceResponse.force(response).body
-        fc should be(expectedPostEchoResponse)
+        val response = postEcho.body(testBody).send(responseAsString).force()
+        response.body should be(expectedPostEchoResponse)
       }
 
       name should "post a byte array" in {
-        val response = postEcho.body(testBodyBytes).send(responseAsString)
-        val fc = forceResponse.force(response).body
-        fc should be(expectedPostEchoResponse)
+        val response =
+          postEcho.body(testBodyBytes).send(responseAsString).force()
+        response.body should be(expectedPostEchoResponse)
       }
 
       name should "post an input stream" in {
         val response = postEcho
           .body(new ByteArrayInputStream(testBodyBytes))
           .send(responseAsString)
-        val fc = forceResponse.force(response).body
-        fc should be(expectedPostEchoResponse)
+          .force()
+        response.body should be(expectedPostEchoResponse)
       }
 
       name should "post a byte buffer" in {
-        val response =
-          postEcho.body(ByteBuffer.wrap(testBodyBytes)).send(responseAsString)
-        val fc = forceResponse.force(response).body
-        fc should be(expectedPostEchoResponse)
+        val response = postEcho
+          .body(ByteBuffer.wrap(testBodyBytes))
+          .send(responseAsString)
+          .force()
+        response.body should be(expectedPostEchoResponse)
       }
 
       name should "post a file" in {
         val f = File.newTemporaryFile().write(testBody)
         try {
-          val response = postEcho.body(f.toJava).send(responseAsString)
-          val fc = forceResponse.force(response).body
-          fc should be(expectedPostEchoResponse)
+          val response = postEcho.body(f.toJava).send(responseAsString).force()
+          response.body should be(expectedPostEchoResponse)
         } finally f.delete()
       }
 
       name should "post a path" in {
         val f = File.newTemporaryFile().write(testBody)
         try {
-          val response = postEcho.body(f.toJava.toPath).send(responseAsString)
-          val fc = forceResponse.force(response).body
-          fc should be(expectedPostEchoResponse)
+          val response =
+            postEcho.body(f.toJava.toPath).send(responseAsString).force()
+          response.body should be(expectedPostEchoResponse)
         } finally f.delete()
       }
 
@@ -223,8 +224,8 @@ class BasicTests
           .post(uri"$endpoint/echo/form_params")
           .body("a" -> "b", "c" -> "d")
           .send(responseAsString)
-        val fc = forceResponse.force(response).body
-        fc should be("a=b c=d")
+          .force()
+        response.body should be("a=b c=d")
       }
 
       name should "post form data with special characters" in {
@@ -232,8 +233,8 @@ class BasicTests
           .post(uri"$endpoint/echo/form_params")
           .body("a=" -> "/b", "c:" -> "/d")
           .send(responseAsString)
-        val fc = forceResponse.force(response).body
-        fc should be("a==/b c:=/d")
+          .force()
+        response.body should be("a==/b c:=/d")
       }
     }
 
@@ -241,8 +242,7 @@ class BasicTests
       val getHeaders = sttp.get(uri"$endpoint/set_headers")
 
       name should "read response headers" in {
-        val wrappedResponse = getHeaders.send(ignoreResponse)
-        val response = forceResponse.force(wrappedResponse)
+        val response = getHeaders.send(ignoreResponse).force()
         response.headers should have length (6)
         response.headers("Cache-Control").toSet should be(
           Set("no-cache", "max-age=1000"))
@@ -258,18 +258,16 @@ class BasicTests
       val getHeaders = sttp.post(uri"$endpoint/set_headers")
 
       name should "return 405 when method not allowed" in {
-        val response = getHeaders.send(ignoreResponse)
-        val resp = forceResponse.force(response)
-        resp.code should be(405)
-        resp.isClientError should be(true)
+        val response = getHeaders.send(ignoreResponse).force()
+        response.code should be(405)
+        response.isClientError should be(true)
       }
     }
 
     def cookiesTests(): Unit = {
       name should "read response cookies" in {
-        val wrappedResponse =
-          sttp.get(uri"$endpoint/set_cookies").send(ignoreResponse)
-        val response = forceResponse.force(wrappedResponse)
+        val response =
+          sttp.get(uri"$endpoint/set_cookies").send(ignoreResponse).force()
         response.cookies should have length (3)
         response.cookies.toSet should be(
           Set(
@@ -284,10 +282,10 @@ class BasicTests
       }
 
       name should "read response cookies with the expires attribute" in {
-        val wrappedResponse = sttp
+        val response = sttp
           .get(uri"$endpoint/set_cookies/with_expires")
           .send(ignoreResponse)
-        val response = forceResponse.force(wrappedResponse)
+          .force()
         response.cookies should have length (1)
         val c = response.cookies(0)
 
@@ -308,7 +306,7 @@ class BasicTests
 
       name should "return a 401 when authorization fails" in {
         val req = secureBasic
-        val resp = forceResponse.force(req.send(responseAsString))
+        val resp = req.send(responseAsString).force()
         resp.code should be(401)
         resp.header("WWW-Authenticate") should be(
           Some("""Basic realm="test realm",charset=UTF-8"""))
@@ -316,7 +314,7 @@ class BasicTests
 
       name should "perform basic authorization" in {
         val req = secureBasic.auth.basic("adam", "1234")
-        val resp = forceResponse.force(req.send(responseAsString))
+        val resp = req.send(responseAsString).force()
         resp.code should be(200)
         resp.body should be("Hello, adam!")
       }
