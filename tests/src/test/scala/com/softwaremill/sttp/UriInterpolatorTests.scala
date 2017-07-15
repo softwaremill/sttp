@@ -47,6 +47,11 @@ class UriInterpolatorTests extends FunSuite with Matchers {
     "authority with parameters" -> List(
       (uri"http://$v1.com?x=$v2", s"http://$v1.com?x=$v2queryEncoded")
     ),
+    "ports" -> List(
+      (uri"http://example.com:8080", s"http://example.com:8080"),
+      (uri"http://example.com:${8080}", s"http://example.com:8080"),
+      (uri"http://example.com:${8080}/x", s"http://example.com:8080/x")
+    ),
     "path" -> List(
       (uri"http://example.com/$v1", s"http://example.com/$v1"),
       (uri"http://example.com/$v1/", s"http://example.com/$v1/"),
@@ -99,6 +104,9 @@ class UriInterpolatorTests extends FunSuite with Matchers {
     "everything" -> List(
       (uri"${"http"}://$v1.$v2.com/$v1/$v2?$v1=$v2&$v3=$v4#$v1",
        s"http://$v1.$v2encoded.com/$v1/$v2encoded?$v1=$v2queryEncoded&$v3encoded=$v4encoded#$v1")
+    ),
+    "embed whole url" -> List(
+      (uri"${"http://example.com:123/a"}/b/c", "http://example.com:123/a/b/c")
     )
   )
 

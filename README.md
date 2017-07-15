@@ -75,6 +75,8 @@ query parameters. Maps and sequences of tuples can also contain optional values,
 if `None`.
 * optional values in the host part will be expanded to a subdomain if `Some`, removed if `None`
 * sequences in the host part will be expanded to a subdomain sequence
+* if a string contains the protocol is embedded *as the first element*, it will not be escaped, allowing to specialize
+entire addresses, e.g.: `uri"$endpoint/login"`, where `val endpoint = "http://example.com/api"`.
  
 A fully-featured example:
 

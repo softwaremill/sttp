@@ -1,7 +1,6 @@
 package com.softwaremill.sttp
 
 import java.io.ByteArrayInputStream
-import java.net.URI
 import java.time.{ZoneId, ZonedDateTime}
 
 import akka.stream.ActorMaterializer
@@ -120,7 +119,7 @@ class BasicTests
                      forceResponse: ForceWrappedValue[R]): Unit = {
     implicit val h = handler
 
-    val postEcho = sttp.post(new URI(endpoint + "/echo"))
+    val postEcho = sttp.post(uri"$endpoint/echo")
     val testBody = "this is the body"
     val testBodyBytes = testBody.getBytes("UTF-8")
     val expectedPostEchoResponse = "POST /echo this is the body"
@@ -149,7 +148,7 @@ class BasicTests
     def parameterTests(): Unit = {
       name should "make a get request with parameters" in {
         val response = sttp
-          .get(new URI(endpoint + "/echo?p2=v2&p1=v1"))
+          .get(uri"$endpoint/echo?p2=v2&p1=v1")
           .send(responseAsString)
 
         val fc = forceResponse.force(response).body
@@ -200,7 +199,7 @@ class BasicTests
     }
 
     def headerTests(): Unit = {
-      val getHeaders = sttp.get(new URI(endpoint + "/set_headers"))
+      val getHeaders = sttp.get(uri"$endpoint/set_headers")
 
       name should "read response headers" in {
         val wrappedResponse = getHeaders.send(ignoreResponse)
@@ -217,7 +216,7 @@ class BasicTests
     }
 
     def errorsTests(): Unit = {
-      val getHeaders = sttp.post(new URI(endpoint + "/set_headers"))
+      val getHeaders = sttp.post(uri"$endpoint/set_headers")
 
       name should "return 405 when method not allowed" in {
         val response = getHeaders.send(ignoreResponse)
@@ -230,7 +229,7 @@ class BasicTests
     def cookiesTests(): Unit = {
       name should "read response cookies" in {
         val wrappedResponse =
-          sttp.get(new URI(endpoint + "/set_cookies")).send(ignoreResponse)
+          sttp.get(uri"$endpoint/set_cookies").send(ignoreResponse)
         val response = forceResponse.force(wrappedResponse)
         response.cookies should have length (3)
         response.cookies.toSet should be(
@@ -247,7 +246,7 @@ class BasicTests
 
       name should "read response cookies with the expires attribute" in {
         val wrappedResponse = sttp
-          .get(new URI(endpoint + "/set_cookies/with_expires"))
+          .get(uri"$endpoint/set_cookies/with_expires")
           .send(ignoreResponse)
         val response = forceResponse.force(wrappedResponse)
         response.cookies should have length (1)

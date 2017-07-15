@@ -52,7 +52,21 @@ object UriInterpolator {
       }
     }
 
-    override def parseE(e: Any): UriBuilder = parseE_asEncodedS_skipNone(e)
+    override def parseE(e: Any): UriBuilder = {
+      def encodeIfNotInitialEndpoint(s: String) = {
+        // special case: when this is the first expression, contains a complete schema with :// and nothing is yet parsed
+        // not escaping the contents
+        if (v.isEmpty && s.contains("://")) s else encode(s)
+      }
+
+      e match {
+        case s: String => parseS(encodeIfNotInitialEndpoint(s))
+        case None => this
+        case null => this
+        case Some(x) => parseE(x)
+        case x => parseS(encodeIfNotInitialEndpoint(x.toString))
+      }
+    }
 
     private def append(x: String): Scheme = Scheme(v + x)
 
