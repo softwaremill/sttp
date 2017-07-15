@@ -141,6 +141,8 @@ package object sttp {
     def cookie(n: String, v: String): RequestTemplate[U] = cookies((n, v))
     def cookies(r: Response[_]): RequestTemplate[U] =
       cookies(r.cookies.map(c => (c.name, c.value)): _*)
+    def cookies(cs: Seq[Cookie]): RequestTemplate[U] =
+      cookies(cs.map(c => (c.name, c.value)): _*)
     def cookies(nvs: (String, String)*): RequestTemplate[U] =
       header(CookieHeader, nvs.map(p => p._1 + "=" + p._2).mkString("; "))
 
