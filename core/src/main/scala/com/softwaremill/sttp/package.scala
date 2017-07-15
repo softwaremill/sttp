@@ -133,6 +133,16 @@ package object sttp {
         else headers
       this.copy(headers = current :+ (k -> v))
     }
+    def headers(hs: Map[String, String]): RequestTemplate[U] =
+      this.copy(headers = headers ++ hs.toSeq)
+    def headers(hs: (String, String)*): RequestTemplate[U] =
+      this.copy(headers = headers ++ hs)
+    def cookie(nv: (String, String)): RequestTemplate[U] = cookies(nv)
+    def cookie(n: String, v: String): RequestTemplate[U] = cookies((n, v))
+    def cookies(r: Response[_]): RequestTemplate[U] =
+      cookies(r.cookies.map(c => (c.name, c.value)): _*)
+    def cookies(nvs: (String, String)*): RequestTemplate[U] =
+      header(CookieHeader, nvs.map(p => p._1 + "=" + p._2).mkString("; "))
 
     /**
       * If content type is not yet specified, will be set to `text/plain` with `utf-8` encoding.
@@ -226,9 +236,10 @@ package object sttp {
 
   val sttp: RequestTemplate[Empty] = RequestTemplate.empty
 
-  private[sttp] val ContentTypeHeader = "content-type"
-  private[sttp] val ContentLengthHeader = "content-length"
-  private[sttp] val SetCookieHeader = "set-cookie"
+  private[sttp] val ContentTypeHeader = "Content-Type"
+  private[sttp] val ContentLengthHeader = "Content-Length"
+  private[sttp] val SetCookieHeader = "Set-Cookie"
+  private[sttp] val CookieHeader = "Cookie"
   private val Utf8 = "utf-8"
 
   private val ApplicationOctetStreamContentType = "application/octet-stream"
