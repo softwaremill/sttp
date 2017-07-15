@@ -1,5 +1,3 @@
-import scalariform.formatter.preferences._
-
 lazy val commonSettings = Seq(
   organization := "com.softwaremill.sttp",
   version := "0.1",
