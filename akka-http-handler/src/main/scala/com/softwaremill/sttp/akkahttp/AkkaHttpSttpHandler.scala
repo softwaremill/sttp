@@ -58,16 +58,22 @@ class AkkaHttpSttpHandler(actorSystem: ActorSystem)
         .runFold(ByteString(""))(_ ++ _)
         .map(_.toArray[Byte])
 
+    def asString(enc: String) =
+      asByteArray.map(new String(_, enc))
+
     rr match {
       case IgnoreResponse =>
         hr.discardEntityBytes()
         Future.successful(())
 
       case ResponseAsString(enc) =>
-        asByteArray.map(new String(_, enc))
+        asString(enc)
 
       case ResponseAsByteArray =>
         asByteArray
+
+      case r @ ResponseAsParams(enc) =>
+        asString(enc).map(r.parse)
 
       case r @ ResponseAsStream() =>
         Future.successful(r.responseIsStream(hr.entity.dataBytes))

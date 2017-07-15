@@ -26,6 +26,12 @@ package object sttp {
     ResponseAsString(encoding)
   def responseAsByteArray: ResponseAs[Array[Byte], Nothing] =
     ResponseAsByteArray
+  def responseAsParams: ResponseAs[Seq[(String, String)], Nothing] =
+    responseAsParams(Utf8)
+  def responseAsParams(
+      encoding: String): ResponseAs[Seq[(String, String)], Nothing] =
+    ResponseAsParams(encoding)
+
   def responseAsStream[S]: ResponseAs[S, S] = ResponseAsStream[S, S]()
 
   /**

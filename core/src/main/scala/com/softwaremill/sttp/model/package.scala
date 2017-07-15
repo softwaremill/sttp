@@ -1,10 +1,12 @@
 package com.softwaremill.sttp
 
 import java.io.InputStream
+import java.net.URLDecoder
 import java.nio.ByteBuffer
 import java.nio.file.Path
 
 import scala.language.higherKinds
+import scala.collection.immutable.Seq
 
 package object model {
   case class Method(m: String) extends AnyVal
@@ -49,7 +51,22 @@ package object model {
   case class ResponseAsString(encoding: String)
       extends ResponseAs[String, Nothing]
   object ResponseAsByteArray extends ResponseAs[Array[Byte], Nothing]
-  // response as params
   case class ResponseAsStream[T, S]()(implicit val responseIsStream: S =:= T)
       extends ResponseAs[T, S]
+  case class ResponseAsParams(encoding: String)
+      extends ResponseAs[Seq[(String, String)], Nothing] {
+
+    def parse(s: String): Seq[(String, String)] = {
+      s.split("&")
+        .toList
+        .flatMap(kv =>
+          kv.split("=", 2) match {
+            case Array(k, v) =>
+              Some(
+                (URLDecoder.decode(k, encoding),
+                 URLDecoder.decode(v, encoding)))
+            case _ => None
+        })
+    }
+  }
 }

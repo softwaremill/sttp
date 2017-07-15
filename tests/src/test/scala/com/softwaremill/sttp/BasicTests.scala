@@ -7,7 +7,7 @@ import java.time.{ZoneId, ZonedDateTime}
 import akka.stream.ActorMaterializer
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.DateTime
+import akka.http.scaladsl.model.{DateTime, FormData}
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.model.headers.CacheDirectives._
 import akka.http.scaladsl.server.Directives._
@@ -33,9 +33,14 @@ class BasicTests
 
   private val serverRoutes =
     pathPrefix("echo") {
-      path("form_params") {
+      pathPrefix("form_params") {
         formFieldMap { params =>
-          complete(paramsToString(params))
+          path("as_string") {
+            complete(paramsToString(params))
+          } ~
+            path("as_params") {
+              complete(FormData(params))
+            }
         }
       } ~ get {
         parameterMap { params =>
@@ -161,6 +166,16 @@ class BasicTests
         val fc = new String(response.body, "UTF-8")
         fc should be(expectedPostEchoResponse)
       }
+
+      name should "parse response as parameters" in {
+        val params = List("a" -> "b", "c" -> "d", "e=" -> "&f")
+        val response = sttp
+          .post(uri"$endpoint/echo/form_params/as_params")
+          .body(params: _*)
+          .send(responseAsParams)
+          .force()
+        response.body.toList should be(params)
+      }
     }
 
     def parameterTests(): Unit = {
@@ -221,7 +236,7 @@ class BasicTests
 
       name should "post form data" in {
         val response = sttp
-          .post(uri"$endpoint/echo/form_params")
+          .post(uri"$endpoint/echo/form_params/as_string")
           .body("a" -> "b", "c" -> "d")
           .send(responseAsString)
           .force()
@@ -230,7 +245,7 @@ class BasicTests
 
       name should "post form data with special characters" in {
         val response = sttp
-          .post(uri"$endpoint/echo/form_params")
+          .post(uri"$endpoint/echo/form_params/as_string")
           .body("a=" -> "/b", "c:" -> "/d")
           .send(responseAsString)
           .force()
