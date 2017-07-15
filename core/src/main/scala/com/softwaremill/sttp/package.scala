@@ -233,6 +233,7 @@ package object sttp {
 
   private[sttp] val ContentTypeHeader = "content-type"
   private[sttp] val ContentLengthHeader = "content-length"
+  private[sttp] val SetCookieHeader = "set-cookie"
   private val Utf8 = "utf-8"
 
   private val ApplicationOctetStreamContentType = "application/octet-stream"
