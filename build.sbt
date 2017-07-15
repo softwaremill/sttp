@@ -78,6 +78,6 @@ lazy val tests: Project = (project in file("tests"))
       scalaTest,
       "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0",
       "com.github.pathikrit" %% "better-files" % "3.0.0",
-      "ch.qos.logback" % "logback-core" % "1.2.3"
+      "ch.qos.logback" % "logback-classic" % "1.2.3"
     ).map(_ % "test")
   ) dependsOn (core, akkaHttpHandler)

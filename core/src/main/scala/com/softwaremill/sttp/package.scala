@@ -4,6 +4,7 @@ import java.io.{File, InputStream}
 import java.net.URI
 import java.nio.ByteBuffer
 import java.nio.file.Path
+import java.util.Base64
 
 import com.softwaremill.sttp.model._
 
@@ -145,6 +146,10 @@ package object sttp {
       cookies(cs.map(c => (c.name, c.value)): _*)
     def cookies(nvs: (String, String)*): RequestTemplate[U] =
       header(CookieHeader, nvs.map(p => p._1 + "=" + p._2).mkString("; "))
+    def auth: SpecifyAuthScheme[U] =
+      new SpecifyAuthScheme[U](AuthorizationHeader, this)
+    def proxyAuth: SpecifyAuthScheme[U] =
+      new SpecifyAuthScheme[U](ProxyAuthorizationHeader, this)
 
     /**
       * If content type is not yet specified, will be set to `text/plain` with `utf-8` encoding.
@@ -224,6 +229,18 @@ package object sttp {
     }
   }
 
+  class SpecifyAuthScheme[U[_]](hn: String, rt: RequestTemplate[U]) {
+    def basic(user: String, password: String): RequestTemplate[U] = {
+      val c = new String(
+        Base64.getEncoder.encode(s"$user:$password".getBytes(Utf8)),
+        Utf8)
+      rt.header(hn, s"Basic $c")
+    }
+
+    def bearer(token: String): RequestTemplate[U] =
+      rt.header(hn, s"Bearer $token")
+  }
+
   object RequestTemplate {
     val empty: RequestTemplate[Empty] =
       RequestTemplate[Empty](None, None, NoBody, Vector())
@@ -242,6 +259,8 @@ package object sttp {
   private[sttp] val ContentLengthHeader = "Content-Length"
   private[sttp] val SetCookieHeader = "Set-Cookie"
   private[sttp] val CookieHeader = "Cookie"
+  private[sttp] val AuthorizationHeader = "Authorization"
+  private[sttp] val ProxyAuthorizationHeader = "Proxy-Authorization"
   private val Utf8 = "utf-8"
 
   private val ApplicationOctetStreamContentType = "application/octet-stream"

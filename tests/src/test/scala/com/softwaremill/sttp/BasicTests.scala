@@ -10,6 +10,7 @@ import akka.http.scaladsl.model.DateTime
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.model.headers.CacheDirectives._
 import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.directives.Credentials
 import com.softwaremill.sttp.akkahttp.AkkaHttpSttpHandler
 import com.typesafe.scalalogging.StrictLogging
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
@@ -83,6 +84,15 @@ class BasicTests
           }
         }
       }
+    } ~ path("secure_basic") {
+      authenticateBasic("test realm", {
+        case c @ Credentials.Provided(un)
+            if un == "adam" && c.verify("1234") =>
+          Some(un)
+        case _ => None
+      }) { userName =>
+        complete(s"Hello, $userName!")
+      }
     }
 
   private implicit val actorSystem: ActorSystem = ActorSystem("sttp-test")
@@ -130,6 +140,7 @@ class BasicTests
     headerTests()
     errorsTests()
     cookiesTests()
+    authTests()
 
     def parseResponseTests(): Unit = {
       name should "parse response as string" in {
@@ -261,6 +272,25 @@ class BasicTests
               .toInstant
               .toEpochMilli
           ))
+      }
+    }
+
+    def authTests(): Unit = {
+      val secureBasic = sttp.get(uri"$endpoint/secure_basic")
+
+      name should "return a 401 when authorization fails" in {
+        val req = secureBasic
+        val resp = forceResponse.force(req.send(responseAsString))
+        resp.code should be(401)
+        resp.header("WWW-Authenticate") should be(
+          Some("""Basic realm="test realm",charset=UTF-8"""))
+      }
+
+      name should "perform basic authorization" in {
+        val req = secureBasic.auth.basic("adam", "1234")
+        val resp = forceResponse.force(req.send(responseAsString))
+        resp.code should be(200)
+        resp.body should be("Hello, adam!")
       }
     }
   }

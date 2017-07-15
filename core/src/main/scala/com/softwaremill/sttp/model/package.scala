@@ -1,6 +1,6 @@
 package com.softwaremill.sttp
 
-import java.io.{File, InputStream}
+import java.io.InputStream
 import java.nio.ByteBuffer
 import java.nio.file.Path
 
