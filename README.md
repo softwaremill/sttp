@@ -1,5 +1,7 @@
 # sttp
 
+[![Build Status](https://travis-ci.org/softwaremill/sttp.svg?branch=master)](https://travis-ci.org/softwaremill/sttp)
+
 The HTTP client for Scala that you always wanted
  
 ```scala
