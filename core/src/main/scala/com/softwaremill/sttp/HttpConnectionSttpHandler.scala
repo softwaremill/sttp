@@ -1,11 +1,6 @@
 package com.softwaremill.sttp
 
-import java.io.{
-  ByteArrayOutputStream,
-  InputStream,
-  OutputStream,
-  OutputStreamWriter
-}
+import java.io._
 import java.net.HttpURLConnection
 import java.nio.channels.Channels
 import java.nio.file.Files
@@ -14,6 +9,7 @@ import com.softwaremill.sttp.model._
 
 import scala.annotation.tailrec
 import scala.io.Source
+import scala.collection.JavaConverters._
 
 object HttpConnectionSttpHandler extends SttpHandler[Id, Nothing] {
   override def send[T](r: Request,
@@ -24,8 +20,13 @@ object HttpConnectionSttpHandler extends SttpHandler[Id, Nothing] {
     c.setDoInput(true)
     setBody(r.body, c)
 
-    val status = c.getResponseCode
-    Response(status, readResponse(c.getInputStream, responseAs))
+    try {
+      val is = c.getInputStream
+      readResponse(c, is, responseAs)
+    } catch {
+      case _: IOException if c.getResponseCode != -1 =>
+        readResponse(c, c.getErrorStream, responseAs)
+    }
   }
 
   private def setBody(body: RequestBody, c: HttpURLConnection): Unit = {
@@ -76,8 +77,19 @@ object HttpConnectionSttpHandler extends SttpHandler[Id, Nothing] {
     }
   }
 
-  private def readResponse[T](is: InputStream,
-                              responseAs: ResponseAs[T, Nothing]): T =
+  private def readResponse[T](
+      c: HttpURLConnection,
+      is: InputStream,
+      responseAs: ResponseAs[T, Nothing]): Response[T] = {
+
+    val headers = c.getHeaderFields.asScala.toVector
+      .filter(_._1 != null)
+      .flatMap { case (k, vv) => vv.asScala.map((k, _)) }
+    Response(readResponseBody(is, responseAs), c.getResponseCode, headers)
+  }
+
+  private def readResponseBody[T](is: InputStream,
+                                  responseAs: ResponseAs[T, Nothing]): T =
     responseAs match {
       case IgnoreResponse =>
         @tailrec def consume(): Unit = if (is.read() != -1) consume()

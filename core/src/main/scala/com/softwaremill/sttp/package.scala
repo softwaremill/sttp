@@ -130,10 +130,9 @@ package object sttp {
     def header(k: String,
                v: String,
                replaceExisting: Boolean = false): RequestTemplate[U] = {
-      val kLower = k.toLowerCase
       val current =
         if (replaceExisting)
-          headers.filterNot(_._1.toLowerCase.contains(kLower))
+          headers.filterNot(_._1.equalsIgnoreCase(k))
         else headers
       this.copy(headers = current :+ (k -> v))
     }
@@ -232,7 +231,8 @@ package object sttp {
 
   val sttp: RequestTemplate[Empty] = RequestTemplate.empty
 
-  private val ContentTypeHeader = "content-type"
+  private[sttp] val ContentTypeHeader = "content-type"
+  private[sttp] val ContentLengthHeader = "content-length"
   private val Utf8 = "utf-8"
 
   private val ApplicationOctetStreamContentType = "application/octet-stream"

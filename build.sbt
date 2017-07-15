@@ -43,7 +43,7 @@ lazy val commonSettings = Seq(
 val akkaHttpVersion = "10.0.9"
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % akkaHttpVersion
 
-val scalaTest = "org.scalatest" %% "scalatest" % "3.0.3" % "test"
+val scalaTest = "org.scalatest" %% "scalatest" % "3.0.3"
 
 lazy val rootProject = (project in file("."))
   .settings(commonSettings: _*)
@@ -56,7 +56,7 @@ lazy val core: Project = (project in file("core"))
     name := "core",
     libraryDependencies ++= Seq(
       "org.scalacheck" %% "scalacheck" % "1.13.5" % "test",
-      scalaTest
+      scalaTest % "test"
     )
   )
 
@@ -76,7 +76,8 @@ lazy val tests: Project = (project in file("tests"))
     libraryDependencies ++= Seq(
       akkaHttp,
       scalaTest,
-      "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0" % "test",
-      "com.github.pathikrit" %% "better-files" % "3.0.0"
-    )
+      "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0",
+      "com.github.pathikrit" %% "better-files" % "3.0.0",
+      "ch.qos.logback" % "logback-core" % "1.2.3"
+    ).map(_ % "test")
   ) dependsOn (core, akkaHttpHandler)

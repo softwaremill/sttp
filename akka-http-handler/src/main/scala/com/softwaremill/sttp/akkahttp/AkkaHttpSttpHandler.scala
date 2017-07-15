@@ -14,6 +14,7 @@ import com.softwaremill.sttp.model._
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
+import scala.collection.immutable.Seq
 
 class AkkaHttpSttpHandler(actorSystem: ActorSystem)
     extends SttpHandler[Future, Source[ByteString, Any]] {
@@ -32,7 +33,8 @@ class AkkaHttpSttpHandler(actorSystem: ActorSystem)
       .flatMap(Http().singleRequest(_))
       .flatMap { hr =>
         val code = hr.status.intValue()
-        bodyFromAkka(responseAs, hr).map(Response(code, _))
+        bodyFromAkka(responseAs, hr).map(
+          Response(_, code, headersFromAkka(hr)))
       }
   }
 
@@ -70,6 +72,14 @@ class AkkaHttpSttpHandler(actorSystem: ActorSystem)
       case r @ ResponseAsStream() =>
         Future.successful(r.responseIsStream(hr.entity.dataBytes))
     }
+  }
+
+  private def headersFromAkka(hr: HttpResponse): Seq[(String, String)] = {
+    val ch = ContentTypeHeader -> hr.entity.contentType.toString()
+    val cl =
+      hr.entity.contentLengthOption.map(ContentLengthHeader -> _.toString)
+    val other = hr.headers.map(h => (h.name, h.value))
+    ch :: (cl.toList ++ other)
   }
 
   private def requestToAkka(r: Request): Future[HttpRequest] = {

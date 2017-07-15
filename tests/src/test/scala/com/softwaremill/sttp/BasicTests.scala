@@ -2,11 +2,12 @@ package com.softwaremill.sttp
 
 import java.io.ByteArrayInputStream
 import java.net.URI
-import java.nio.ByteBuffer
 
 import akka.stream.ActorMaterializer
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
+import akka.http.scaladsl.model.headers._
+import akka.http.scaladsl.model.headers.CacheDirectives._
 import akka.http.scaladsl.server.Directives._
 import com.softwaremill.sttp.akkahttp.AkkaHttpSttpHandler
 import com.typesafe.scalalogging.StrictLogging
@@ -47,6 +48,14 @@ class BasicTests
             }
           }
         }
+    } ~ path("set_headers") {
+      get {
+        respondWithHeader(`Cache-Control`(`max-age`(1000L))) {
+          respondWithHeader(`Cache-Control`(`no-cache`)) {
+            complete("ok")
+          }
+        }
+      }
     }
 
   private implicit val actorSystem: ActorSystem = ActorSystem("sttp-test")
@@ -91,6 +100,8 @@ class BasicTests
     parseResponseTests()
     parameterTests()
     bodyTests()
+    headerTests()
+    errorsTests()
 
     def parseResponseTests(): Unit = {
       name should "parse response as string" in {
@@ -138,12 +149,7 @@ class BasicTests
         fc should be(expectedPostEchoResponse)
       }
 
-      name should "post a byte buffer" in {
-        val response =
-          postEcho.body(ByteBuffer.wrap(testBodyBytes)).send(responseAsString)
-        val fc = forceResponse.force(response).body
-        fc should be(expectedPostEchoResponse)
-      }
+      name should "post a byte buffer" in {}
 
       name should "post a file" in {
         val f = File.newTemporaryFile().write(testBody)
@@ -161,6 +167,34 @@ class BasicTests
           val fc = forceResponse.force(response).body
           fc should be(expectedPostEchoResponse)
         } finally f.delete()
+      }
+    }
+
+    def headerTests(): Unit = {
+      val getHeaders = sttp.get(new URI(endpoint + "/set_headers"))
+
+      name should "read response headers" in {
+        val wrappedResponse = getHeaders.send(ignoreResponse)
+        val response = forceResponse.force(wrappedResponse)
+        response.headers should have length (6)
+        response.headers("Cache-Control").toSet should be(
+          Set("no-cache", "max-age=1000"))
+        response.header("Server") should be('defined)
+        response.header("server") should be('defined)
+        response.header("Server").get should startWith("akka-http")
+        response.contentType should be(Some("text/plain; charset=UTF-8"))
+        response.contentLength should be(Some(2L))
+      }
+    }
+
+    def errorsTests(): Unit = {
+      val getHeaders = sttp.post(new URI(endpoint + "/set_headers"))
+
+      name should "return 405 when method not allowed" in {
+        val response = getHeaders.send(ignoreResponse)
+        val resp = forceResponse.force(response)
+        resp.code should be(405)
+        resp.isClientError should be(true)
       }
     }
   }
