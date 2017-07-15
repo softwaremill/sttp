@@ -1,6 +1,7 @@
 package com.softwaremill.sttp
 
 import java.io.ByteArrayInputStream
+import java.nio.ByteBuffer
 import java.time.{ZoneId, ZonedDateTime}
 
 import akka.stream.ActorMaterializer
@@ -31,8 +32,12 @@ class BasicTests
     m.toList.sortBy(_._1).map(p => s"${p._1}=${p._2}").mkString(" ")
 
   private val serverRoutes =
-    path("echo") {
-      get {
+    pathPrefix("echo") {
+      path("form_params") {
+        formFieldMap { params =>
+          complete(paramsToString(params))
+        }
+      } ~ get {
         parameterMap { params =>
           complete(
             List("GET", "/echo", paramsToString(params))
@@ -188,7 +193,12 @@ class BasicTests
         fc should be(expectedPostEchoResponse)
       }
 
-      name should "post a byte buffer" in {}
+      name should "post a byte buffer" in {
+        val response =
+          postEcho.body(ByteBuffer.wrap(testBodyBytes)).send(responseAsString)
+        val fc = forceResponse.force(response).body
+        fc should be(expectedPostEchoResponse)
+      }
 
       name should "post a file" in {
         val f = File.newTemporaryFile().write(testBody)
@@ -206,6 +216,24 @@ class BasicTests
           val fc = forceResponse.force(response).body
           fc should be(expectedPostEchoResponse)
         } finally f.delete()
+      }
+
+      name should "post form data" in {
+        val response = sttp
+          .post(uri"$endpoint/echo/form_params")
+          .body("a" -> "b", "c" -> "d")
+          .send(responseAsString)
+        val fc = forceResponse.force(response).body
+        fc should be("a=b c=d")
+      }
+
+      name should "post form data with special characters" in {
+        val response = sttp
+          .post(uri"$endpoint/echo/form_params")
+          .body("a=" -> "/b", "c:" -> "/d")
+          .send(responseAsString)
+        val fc = forceResponse.force(response).body
+        fc should be("a==/b c:=/d")
       }
     }
 

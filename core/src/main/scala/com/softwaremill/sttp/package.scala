@@ -1,7 +1,7 @@
 package com.softwaremill
 
 import java.io.{File, InputStream}
-import java.net.URI
+import java.net.{URI, URLEncoder}
 import java.nio.ByteBuffer
 import java.nio.file.Path
 import java.util.Base64
@@ -152,6 +152,7 @@ package object sttp {
       new SpecifyAuthScheme[U](ProxyAuthorizationHeader, this)
 
     /**
+      * Uses the `utf-8` encoding.
       * If content type is not yet specified, will be set to `text/plain` with `utf-8` encoding.
       */
     def body(b: String): RequestTemplate[U] = body(b, Utf8)
@@ -198,22 +199,41 @@ package object sttp {
         body = PathBody(b))
 
     /**
+      * Encodes the given parameters as form data using `utf-8`.
+      * If content type is not yet specified, will be set to `application/x-www-form-urlencoded`.
+      */
+    def body(fs: Map[String, String]): RequestTemplate[U] =
+      formDataBody(fs.toList, Utf8)
+
+    /**
+      * Encodes the given parameters as form data.
+      * If content type is not yet specified, will be set to `application/x-www-form-urlencoded`.
+      */
+    def body(fs: Map[String, String], encoding: String): RequestTemplate[U] =
+      formDataBody(fs.toList, encoding)
+
+    /**
+      * Encodes the given parameters as form data using `utf-8`.
+      * If content type is not yet specified, will be set to `application/x-www-form-urlencoded`.
+      */
+    def body(fs: (String, String)*): RequestTemplate[U] =
+      formDataBody(fs.toList, Utf8)
+
+    /**
+      * Encodes the given parameters as form data.
+      * If content type is not yet specified, will be set to `application/x-www-form-urlencoded`.
+      */
+    def body(fs: Seq[(String, String)], encoding: String): RequestTemplate[U] =
+      formDataBody(fs, encoding)
+
+    /**
       * If content type is not yet specified, will be set to `application/octet-stream`.
       */
     def body[T: BodySerializer](b: T): RequestTemplate[U] =
       setContentTypeIfMissing(ApplicationOctetStreamContentType).copy(
         body = SerializableBody(implicitly[BodySerializer[T]], b))
 
-    private def hasContentType: Boolean =
-      headers.exists(_._1.toLowerCase.contains(ContentTypeHeader))
-    private def setContentTypeIfMissing(ct: String): RequestTemplate[U] =
-      if (hasContentType) this else contentType(ct)
-
-    //def formData(fs: Map[String, Seq[String]]): RequestTemplate[U] = ???
-    def formData(fs: Map[String, String]): RequestTemplate[U] = ???
-    def formData(fs: (String, String)*): RequestTemplate[U] = ???
-
-    def multipartData(parts: MultiPart*): RequestTemplate[U] = ???
+    //def multipartData(parts: MultiPart*): RequestTemplate[U] = ???
 
     /**
       * @param responseAs What's the target type to which the response should be read. Needs to be specified upfront
@@ -226,6 +246,23 @@ package object sttp {
         isRequest: IsRequest[U]): R[Response[T]] = {
 
       handler.send(this, responseAs)
+    }
+
+    private def hasContentType: Boolean =
+      headers.exists(_._1.toLowerCase.contains(ContentTypeHeader))
+    private def setContentTypeIfMissing(ct: String): RequestTemplate[U] =
+      if (hasContentType) this else contentType(ct)
+
+    private def formDataBody(fs: Seq[(String, String)],
+                             encoding: String): RequestTemplate[U] = {
+      val b = fs
+        .map(
+          p =>
+            URLEncoder.encode(p._1, encoding) + "=" + URLEncoder
+              .encode(p._2, encoding))
+        .mkString("&")
+      setContentTypeIfMissing(ApplicationFormContentType).copy(
+        body = StringBody(b, encoding))
     }
   }
 
