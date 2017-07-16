@@ -107,7 +107,7 @@ class BasicTests
 
   override def port = 51823
 
-  runTests("HttpURLConnection")(HttpConnectionSttpHandler,
+  runTests("HttpURLConnection")(HttpURLConnectionSttpHandler,
                                 ForceWrappedValue.id)
   runTests("Akka HTTP")(new AkkaHttpSttpHandler(actorSystem),
                         ForceWrappedValue.future)
