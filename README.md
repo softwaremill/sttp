@@ -1,8 +1,9 @@
 # sttp
 
+[![Join the chat at https://gitter.im/softwaremill/sttp](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/softwaremill/sttp?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Build Status](https://travis-ci.org/softwaremill/sttp.svg?branch=master)](https://travis-ci.org/softwaremill/sttp)
 
-The HTTP client for Scala that you always wanted
+The HTTP client for Scala that you always wanted!
  
 ```scala
 import com.softwaremill.sttp._
