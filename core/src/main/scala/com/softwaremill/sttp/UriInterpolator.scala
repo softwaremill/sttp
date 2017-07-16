@@ -44,9 +44,10 @@ object UriInterpolator {
 
         case Array(x) =>
           if (!x.matches("[a-zA-Z0-9+\\.\\-]*")) {
-            // anything else than the allowed characters in scheme suggest that there is no scheme
-            // assuming whatever we parsed so far is part of authority, and parsing the rest
-            // see https://stackoverflow.com/questions/3641722/valid-characters-for-uri-schemes
+            // anything else than the allowed characters in scheme suggest that
+            // there is no scheme assuming whatever we parsed so far is part of
+            // authority, and parsing the rest; see
+            // https://stackoverflow.com/questions/3641722/valid-characters-for-uri-schemes
             Authority(Scheme(""), v).parseS(x)
           } else append(x)
       }
@@ -54,8 +55,8 @@ object UriInterpolator {
 
     override def parseE(e: Any): UriBuilder = {
       def encodeIfNotInitialEndpoint(s: String) = {
-        // special case: when this is the first expression, contains a complete schema with :// and nothing is yet parsed
-        // not escaping the contents
+        // special case: when this is the first expression, contains a complete
+        // schema with :// and nothing is yet parsed not escaping the contents
         if (v.isEmpty && s.contains("://")) s else encode(s)
       }
 
@@ -314,8 +315,8 @@ object UriInterpolator {
 
   private def encode(s: Any): String = {
     // space is encoded as a +, which is only valid in the query;
-    // in other contexts, it must be percent-encoded
-    // see https://stackoverflow.com/questions/2678551/when-to-encode-space-to-plus-or-20
+    // in other contexts, it must be percent-encoded; see
+    // https://stackoverflow.com/questions/2678551/when-to-encode-space-to-plus-or-20
     URLEncoder.encode(String.valueOf(s), "UTF-8").replaceAll("\\+", "%20")
   }
 

@@ -4,13 +4,11 @@ import java.io.ByteArrayInputStream
 import java.nio.ByteBuffer
 import java.time.{ZoneId, ZonedDateTime}
 
-import akka.stream.ActorMaterializer
-import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{DateTime, FormData}
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.model.headers.CacheDirectives._
 import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.Credentials
 import com.softwaremill.sttp.akkahttp.AkkaHttpSttpHandler
 import com.typesafe.scalalogging.StrictLogging
@@ -18,7 +16,6 @@ import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import better.files._
 
-import scala.concurrent.Future
 import scala.language.higherKinds
 
 class BasicTests
@@ -27,11 +24,14 @@ class BasicTests
     with BeforeAndAfterAll
     with ScalaFutures
     with StrictLogging
-    with IntegrationPatience {
+    with IntegrationPatience
+    with TestHttpServer
+    with ForceWrapped {
+
   private def paramsToString(m: Map[String, String]): String =
     m.toList.sortBy(_._1).map(p => s"${p._1}=${p._2}").mkString(" ")
 
-  private val serverRoutes =
+  override val serverRoutes: Route =
     pathPrefix("echo") {
       pathPrefix("form_params") {
         formFieldMap { params =>
@@ -105,37 +105,12 @@ class BasicTests
       }
     }
 
-  private implicit val actorSystem: ActorSystem = ActorSystem("sttp-test")
-  import actorSystem.dispatcher
-
-  private implicit val materializer = ActorMaterializer()
-  private val endpoint = "http://localhost:51823"
-
-  override protected def beforeAll(): Unit = {
-    Http().bindAndHandle(serverRoutes, "localhost", 51823).futureValue
-  }
-
-  override protected def afterAll(): Unit = {
-    actorSystem.terminate().futureValue
-  }
-
-  trait ForceWrappedValue[R[_]] {
-    def force[T](wrapped: R[T]): T
-  }
-  implicit class ForceDecorator[R[_], T](wrapped: R[T]) {
-    def force()(implicit fwv: ForceWrappedValue[R]): T = fwv.force(wrapped)
-  }
+  override def port = 51823
 
   runTests("HttpURLConnection")(HttpConnectionSttpHandler,
-                                new ForceWrappedValue[Id] {
-                                  override def force[T](wrapped: Id[T]): T =
-                                    wrapped
-                                })
+                                ForceWrappedValue.id)
   runTests("Akka HTTP")(new AkkaHttpSttpHandler(actorSystem),
-                        new ForceWrappedValue[Future] {
-                          override def force[T](wrapped: Future[T]): T =
-                            wrapped.futureValue
-                        })
+                        ForceWrappedValue.future)
 
   def runTests[R[_]](name: String)(
       implicit handler: SttpHandler[R, Nothing],

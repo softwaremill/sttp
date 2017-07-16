@@ -47,9 +47,9 @@ case class Cookie(name: String,
 
 object Cookie {
   def apply(hc: HttpCookie, h: String): Cookie = {
-    // HttpCookie.parse has special handling for the expires attribute and turns it into max-age
-    // if the cookie contains an expires header; hand-parsing in such case to preserve the
-    // values from the cookie
+    // HttpCookie.parse has special handling for the expires attribute and
+    // turns it into max-age if the cookie contains an expires header;
+    // hand-parsing in such case to preserve the values from the cookie
     val lch = h.toLowerCase
     val (expires, maxAge) = if (lch.contains("expires=")) {
       val tokenizer = new StringTokenizer(h, ";")
@@ -85,7 +85,8 @@ object Cookie {
   }
 
   /**
-    * Modified version of `HttpCookie.expiryDate2DeltaSeconds` to return a `ZonedDateTime`, not a second-delta.
+    * Modified version of `HttpCookie.expiryDate2DeltaSeconds` to return a
+    * `ZonedDateTime`, not a second-delta.
     */
   private def expiryDate2ZonedDateTime(
       dateString: String): Option[ZonedDateTime] = {
@@ -98,7 +99,8 @@ object Cookie {
       df.set2DigitYearStart(cal.getTime)
       try {
         cal.setTime(df.parse(dateString))
-        if (!format.contains("yyyy")) { // 2-digit years following the standard set
+        if (!format.contains("yyyy")) {
+          // 2-digit years following the standard set
           // out it rfc 6265
           var year = cal.get(Calendar.YEAR)
           year %= 100

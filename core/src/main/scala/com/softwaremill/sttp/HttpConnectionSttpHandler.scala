@@ -120,7 +120,8 @@ object HttpConnectionSttpHandler extends SttpHandler[Id, Nothing] {
         r.parse(asString(enc))
 
       case ResponseAsStream() =>
-        // only possible when the user requests the response as a stream of Nothing. Oh well ...
+        // only possible when the user requests the response as a stream of
+        // Nothing. Oh well ...
         throw new IllegalStateException()
     }
   }
