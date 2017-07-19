@@ -1,10 +1,11 @@
 lazy val commonSettings = Seq(
   organization := "com.softwaremill.sttp",
-  version := "0.1",
+  version := "0.0.1",
   scalaVersion := "2.12.2",
   crossScalaVersions := Seq(scalaVersion.value, "2.11.8"),
   scalacOptions ++= Seq("-unchecked", "-deprecation"),
   scalafmtOnCompile := true,
+  scalafmtVersion := "1.0.0-RC2",
   // Sonatype OSS deployment
   publishTo := {
     val nexus = "https://oss.sonatype.org/"
@@ -32,7 +33,7 @@ lazy val commonSettings = Seq(
         </developer>
       </developers>
   ),
-  licenses := ("Apache2",
+  licenses := ("Apache-2.0",
                new java.net.URL(
                  "http://www.apache.org/licenses/LICENSE-2.0.txt")) :: Nil,
   homepage := Some(new java.net.URL("http://softwaremill.com/open-source"))

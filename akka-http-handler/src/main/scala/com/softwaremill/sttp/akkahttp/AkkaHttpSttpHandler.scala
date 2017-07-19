@@ -40,16 +40,16 @@ class AkkaHttpSttpHandler(actorSystem: ActorSystem)
   }
 
   private def methodToAkka(m: Method): HttpMethod = m match {
-    case Method.GET => HttpMethods.GET
-    case Method.HEAD => HttpMethods.HEAD
-    case Method.POST => HttpMethods.POST
-    case Method.PUT => HttpMethods.PUT
-    case Method.DELETE => HttpMethods.DELETE
+    case Method.GET     => HttpMethods.GET
+    case Method.HEAD    => HttpMethods.HEAD
+    case Method.POST    => HttpMethods.POST
+    case Method.PUT     => HttpMethods.PUT
+    case Method.DELETE  => HttpMethods.DELETE
     case Method.OPTIONS => HttpMethods.OPTIONS
-    case Method.PATCH => HttpMethods.PATCH
+    case Method.PATCH   => HttpMethods.PATCH
     case Method.CONNECT => HttpMethods.CONNECT
-    case Method.TRACE => HttpMethods.TRACE
-    case _ => HttpMethod.custom(m.m)
+    case Method.TRACE   => HttpMethods.TRACE
+    case _              => HttpMethod.custom(m.m)
   }
 
   private def bodyFromAkka[T](rr: ResponseAs[T, S],
@@ -119,13 +119,13 @@ class AkkaHttpSttpHandler(actorSystem: ActorSystem)
             .map(hc => ContentType.apply(ct.mediaType, () => hc))
             .getOrElse(ct)
           ar.withEntity(ctWithEncoding, b.getBytes(encoding))
-        case ByteArrayBody(b) => ar.withEntity(b)
+        case ByteArrayBody(b)  => ar.withEntity(b)
         case ByteBufferBody(b) => ar.withEntity(ByteString(b))
         case InputStreamBody(b) =>
           ar.withEntity(
             HttpEntity(ct, StreamConverters.fromInputStream(() => b)))
-        case PathBody(b) => ar.withEntity(ct, b)
-        case StreamBody(s) => ar.withEntity(HttpEntity(ct, s))
+        case PathBody(b)            => ar.withEntity(ct, b)
+        case StreamBody(s)          => ar.withEntity(HttpEntity(ct, s))
         case SerializableBody(f, t) => doSet(f(t))
       }
 

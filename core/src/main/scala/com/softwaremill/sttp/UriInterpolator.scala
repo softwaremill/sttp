@@ -24,10 +24,10 @@ object UriInterpolator {
 
     protected def parseE_asEncodedS_skipNone(e: Any): UriBuilder = e match {
       case s: String => parseS(encode(s))
-      case None => this
-      case null => this
-      case Some(x) => parseE(x)
-      case x => parseS(encode(x.toString))
+      case None      => this
+      case null      => this
+      case Some(x)   => parseE(x)
+      case x         => parseS(encode(x.toString))
     }
   }
 
@@ -62,10 +62,10 @@ object UriInterpolator {
 
       e match {
         case s: String => parseS(encodeIfNotInitialEndpoint(s))
-        case None => this
-        case null => this
-        case Some(x) => parseE(x)
-        case x => parseS(encodeIfNotInitialEndpoint(x.toString))
+        case None      => this
+        case null      => this
+        case Some(x)   => parseE(x)
+        case x         => parseS(encodeIfNotInitialEndpoint(x.toString))
       }
     }
 
@@ -144,10 +144,10 @@ object UriInterpolator {
         val newFragments = s.map(_.toString).map(encode(_)).map(Some(_))
         newFragments.foldLeft(this)(_.appendE(_))
       case s: String => appendE(Some(encode(s)))
-      case None => appendE(None)
-      case null => appendE(None)
-      case Some(x) => parseE(x)
-      case x => appendE(Some(encode(x.toString)))
+      case None      => appendE(None)
+      case null      => appendE(None)
+      case Some(x)   => parseE(x)
+      case x         => appendE(Some(encode(x.toString)))
     }
 
     override def build: String = {
@@ -201,40 +201,40 @@ object UriInterpolator {
 
     override def parseE(e: Any): UriBuilder = e match {
       case m: Map[_, _] => parseSeq(m.toSeq)
-      case s: Seq[_] => parseSeq(s)
-      case s: String => appendE(Some(encodeQuery(s)))
-      case None => appendE(None)
-      case null => appendE(None)
-      case Some(x) => parseE(x)
-      case x => appendE(Some(encodeQuery(x.toString)))
+      case s: Seq[_]    => parseSeq(s)
+      case s: String    => appendE(Some(encodeQuery(s)))
+      case None         => appendE(None)
+      case null         => appendE(None)
+      case Some(x)      => parseE(x)
+      case x            => appendE(Some(encodeQuery(x.toString)))
     }
 
     private def parseSeq(s: Seq[_]): UriBuilder = {
       val flattenedS = s.flatMap {
-        case (_, None) => None
+        case (_, None)    => None
         case (k, Some(v)) => Some((k, v))
-        case None => None
-        case Some(k) => Some(k)
-        case x => Some(x)
+        case None         => None
+        case Some(k)      => Some(k)
+        case x            => Some(x)
       }
       val newFragments = flattenedS.map {
         case ("", "") => Eq
-        case (k, "") => K_Eq(encodeQuery(k))
-        case ("", v) => Eq_V(encodeQuery(v))
-        case (k, v) => K_Eq_V(encodeQuery(k), encodeQuery(v))
-        case x => K(encodeQuery(x))
+        case (k, "")  => K_Eq(encodeQuery(k))
+        case ("", v)  => Eq_V(encodeQuery(v))
+        case (k, v)   => K_Eq_V(encodeQuery(k), encodeQuery(v))
+        case x        => K(encodeQuery(x))
       }
       copy(fs = fs ++ newFragments)
     }
 
     override def build: String = {
       val fragments = fs.flatMap {
-        case Empty => None
+        case Empty        => None
         case K_Eq_V(k, v) => Some(s"$k=$v")
-        case K_Eq(k) => Some(s"$k=")
-        case K(k) => Some(s"$k")
-        case Eq => Some("=")
-        case Eq_V(v) => Some(s"=$v")
+        case K_Eq(k)      => Some(s"$k=")
+        case K(k)         => Some(s"$k")
+        case Eq           => Some("=")
+        case Eq_V(v)      => Some(s"=$v")
       }
 
       val query = if (fragments.isEmpty) "" else "?" + fragments.mkString("&")
@@ -251,8 +251,8 @@ object UriInterpolator {
         else
           nv.split("=", 2) match {
             case Array(n, "") => K_Eq(n)
-            case Array(n, v) => K_Eq_V(n, v)
-            case Array(n) => K(n)
+            case Array(n, v)  => K_Eq_V(n, v)
+            case Array(n)     => K(n)
           }
       }
 
@@ -270,7 +270,7 @@ object UriInterpolator {
       }
 
       val combinedVs = mergedOpt match {
-        case None => fs ++ newVs // either current or new fragments are empty
+        case None         => fs ++ newVs // either current or new fragments are empty
         case Some(merged) => merged
       }
 
@@ -285,9 +285,9 @@ object UriInterpolator {
        the form k=$v). Here we have to handle: $k=$v and $k=v.
        */
       (last, first) match {
-        case (K(k), Eq) => Vector(K_Eq(k)) // k + =  => k=
+        case (K(k), Eq)      => Vector(K_Eq(k)) // k + =  => k=
         case (K(k), Eq_V(v)) => Vector(K_Eq_V(k, v)) // k + =v => k=v
-        case (x, y) => Vector(x, y)
+        case (x, y)          => Vector(x, y)
       }
     }
 
@@ -296,9 +296,9 @@ object UriInterpolator {
         case Some(K_Eq(k)) =>
           // k= + None -> remove parameter; k= + Some(v) -> k=v
           vo match {
-            case None => copy(fs = fs.init)
+            case None     => copy(fs = fs.init)
             case Some("") => this
-            case Some(v) => copy(fs = fs.init :+ K_Eq_V(k, v))
+            case Some(v)  => copy(fs = fs.init :+ K_Eq_V(k, v))
           }
         case _ => copy(fs = fs :+ vo.fold[QueryFragment](Empty)(K))
       }
