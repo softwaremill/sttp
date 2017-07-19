@@ -63,21 +63,21 @@ class AkkaHttpSttpHandler(actorSystem: ActorSystem)
       asByteArray.map(new String(_, enc))
 
     rr match {
-      case IgnoreResponse =>
+      case IgnoreResponse(g) =>
         hr.discardEntityBytes()
-        Future.successful(())
+        Future.successful(g(()))
 
-      case ResponseAsString(enc) =>
-        asString(enc)
+      case ResponseAsString(enc, g) =>
+        asString(enc).map(g)
 
-      case ResponseAsByteArray =>
-        asByteArray
+      case ResponseAsByteArray(g) =>
+        asByteArray.map(g)
 
-      case r @ ResponseAsParams(enc) =>
-        asString(enc).map(r.parse)
+      case r @ ResponseAsParams(enc, g) =>
+        asString(enc).map(r.parse).map(g)
 
-      case r @ ResponseAsStream() =>
-        Future.successful(r.responseIsStream(hr.entity.dataBytes))
+      case r @ ResponseAsStream(g) =>
+        Future.successful(r.responseIsStream(hr.entity.dataBytes)).map(g)
     }
   }
 

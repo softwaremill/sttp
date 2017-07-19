@@ -137,6 +137,24 @@ class BasicTests
         response.body should be(expectedPostEchoResponse)
       }
 
+      name should "parse response as string with mapping using map" in {
+        val response = postEcho
+          .body(testBody)
+          .response(asString.map(_.length))
+          .send()
+          .force()
+        response.body should be(expectedPostEchoResponse.length)
+      }
+
+      name should "parse response as string with mapping using mapResponse" in {
+        val response = postEcho
+          .body(testBody)
+          .mapResponse(_.length)
+          .send()
+          .force()
+        response.body should be(expectedPostEchoResponse.length)
+      }
+
       name should "parse response as a byte array" in {
         val response =
           postEcho.body(testBody).response(asByteArray).send().force()

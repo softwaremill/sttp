@@ -16,16 +16,16 @@ package object sttp {
   type Id[X] = X
   type Empty[X] = None.type
 
-  def ignore: ResponseAs[Unit, Nothing] = IgnoreResponse
+  def ignore: ResponseAs[Unit, Nothing] = IgnoreResponse(identity)
 
   /**
     * Uses `utf-8` encoding.
     */
   def asString: ResponseAs[String, Nothing] = asString(Utf8)
   def asString(encoding: String): ResponseAs[String, Nothing] =
-    ResponseAsString(encoding)
+    ResponseAsString(encoding, identity)
   def asByteArray: ResponseAs[Array[Byte], Nothing] =
-    ResponseAsByteArray
+    ResponseAsByteArray(identity)
 
   /**
     * Uses `utf-8` encoding.
@@ -33,9 +33,9 @@ package object sttp {
   def asParams: ResponseAs[Seq[(String, String)], Nothing] =
     asParams(Utf8)
   def asParams(encoding: String): ResponseAs[Seq[(String, String)], Nothing] =
-    ResponseAsParams(encoding)
+    ResponseAsParams(encoding, identity)
 
-  def asStream[S]: ResponseAs[S, S] = ResponseAsStream[S, S]()
+  def asStream[S]: ResponseAs[S, S] = ResponseAsStream[S, S, S](identity)
 
   /**
     * Use the factory methods `multiPart` to conveniently create instances of
@@ -282,16 +282,17 @@ package object sttp {
       this.copy[U, T, S2](body = StreamBody(b))
 
     /**
-      * What's the target type to which the response body
-      *                   should be read. Needs to be specified upfront
-      *                   so that the response is always consumed and hence
-      *                   there are no requirements on client code to consume
-      *                   it. An exception to this are streaming responses,
-      *                   which need to fully consumed by the client if such
-      *                   a response type is requested.
+      * What's the target type to which the response body should be read.
+      * Needs to be specified upfront so that the response is always consumed
+      * and hence there are no requirements on client code to consume it. An
+      * exception to this are streaming responses, which need to fully
+      * consumed by the client if such a response type is requested.
       */
     def response[T2, S2 >: S](ra: ResponseAs[T2, S2]): RequestT[U, T2, S2] =
       this.copy(responseAs = ra)
+
+    def mapResponse[T2](f: T => T2): RequestT[U, T2, S] =
+      this.copy(responseAs = responseAs.map(f))
 
     def send[R[_]]()(implicit handler: SttpHandler[R, S],
                      isIdInRequest: IsIdInRequest[U]): R[Response[T]] = {

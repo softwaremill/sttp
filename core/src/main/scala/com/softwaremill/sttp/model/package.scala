@@ -46,18 +46,32 @@ package object model {
     * @tparam T Target type as which the response will be read.
     * @tparam S If `T` is a stream, the type of the stream. Otherwise, `Nothing`.
     */
-  sealed trait ResponseAs[T, +S]
+  sealed trait ResponseAs[T, +S] {
+    def map[T2](f: T => T2): ResponseAs[T2, S]
+  }
 
-  object IgnoreResponse extends ResponseAs[Unit, Nothing]
-  case class ResponseAsString(encoding: String)
-      extends ResponseAs[String, Nothing]
-  object ResponseAsByteArray extends ResponseAs[Array[Byte], Nothing]
-  case class ResponseAsStream[T, S]()(implicit val responseIsStream: S =:= T)
-      extends ResponseAs[T, S]
-  case class ResponseAsParams(encoding: String)
-      extends ResponseAs[Seq[(String, String)], Nothing] {
+  case class IgnoreResponse[T](g: Unit => T) extends ResponseAs[T, Nothing] {
+    override def map[T2](f: T => T2): ResponseAs[T2, Nothing] =
+      IgnoreResponse(g andThen f)
+  }
+  case class ResponseAsString[T](encoding: String, g: String => T)
+      extends ResponseAs[T, Nothing] {
+    override def map[T2](f: T => T2): ResponseAs[T2, Nothing] =
+      ResponseAsString(encoding, g andThen f)
+  }
+  case class ResponseAsByteArray[T](g: Array[Byte] => T)
+      extends ResponseAs[T, Nothing] {
+    override def map[T2](f: T => T2): ResponseAs[T2, Nothing] =
+      ResponseAsByteArray(g andThen f)
+  }
+  case class ResponseAsParams[T](encoding: String,
+                                 g: Seq[(String, String)] => T)
+      extends ResponseAs[T, Nothing] {
 
-    def parse(s: String): Seq[(String, String)] = {
+    override def map[T2](f: T => T2): ResponseAs[T2, Nothing] =
+      ResponseAsParams(encoding, g andThen f)
+
+    private[sttp] def parse(s: String): Seq[(String, String)] = {
       s.split("&")
         .toList
         .flatMap(kv =>
@@ -69,5 +83,12 @@ package object model {
             case _ => None
         })
     }
+  }
+  case class ResponseAsStream[T, T2, S](g: T => T2)(
+      implicit val responseIsStream: S =:= T)
+      extends ResponseAs[T2, S] {
+
+    override def map[T3](f: T2 => T3): ResponseAs[T3, S] =
+      ResponseAsStream(g andThen f)
   }
 }

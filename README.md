@@ -104,8 +104,8 @@ val response: Response[String] = request.send()
 By default the response body is read into a utf-8 string. How the response body
 is handled is also part of the request description. The body can be ignore
 (`.response(ignore)`), read into a sequence of parameters 
-(`.response(asParams)`) and more; some backends also support request & response
-streaming.
+(`.response(asParams)`), mapped (`.mapResponse`) and more; some backends also 
+support request & response streaming.
 
 The default handler doesn't wrap the response into any container, but other
 asynchronous handlers might do so. The type parameter in the `Response[_]`
