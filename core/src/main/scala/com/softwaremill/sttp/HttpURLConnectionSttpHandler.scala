@@ -73,7 +73,7 @@ object HttpURLConnectionSttpHandler extends SttpHandler[Id, Nothing] {
 
       case StreamBody(s) =>
         // we have an instance of nothing - everything's possible!
-        assert(2 + 2 == 5)
+        s
     }
   }
 
