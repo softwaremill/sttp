@@ -11,16 +11,17 @@ import com.softwaremill.sttp._
 val sort: Option[String] = None
 val query = "http language:scala"
 
-// the `query` parameter is automatically url-encoded and `sort` removed
+// the `query` parameter is automatically url-encoded
+// `sort` is removed, as the value is not defined
 val request = sttp.get(uri"https://api.github.com/search/repositories?q=$query&sort=$sort")
   
-// response body is read into a string, no need to remember to consume it later 
-val response = request.send(responseAsString("utf-8"))
+implicit val handler = HttpURLConnectionSttpHandler
+val response = request.send()
 
 // response.header(...): Option[String]
 println(response.header("Content-Length")) 
 
-// response.body: String as specified when sending the request
+// response.body: by default read into a String 
 println(response.body)                     
 ```
  
@@ -97,14 +98,14 @@ request:
 ```scala
 implicit val handler = HttpConnectionSttpHandler
 
-val response: Response[String] = request.send(responseAsString)
+val response: Response[String] = request.send()
 ```
 
-Note that when sending the request, we have to specify how to read the response
-body. That way, you don't need to remember to consume it later, avoiding a 
-potential resource leak. Response bodies can be ignored (`ignoreResponseBody`),
-read into a parameter sequence (`responseAsParams`) and more; some backends
-also support request & response streaming.
+By default the response body is read into a utf-8 string. How the response body
+is handled is also part of the request description. The body can be ignore
+(`.response(ignore)`), read into a sequence of parameters 
+(`.response(asParams)`) and more; some backends also support request & response
+streaming.
 
 The default handler doesn't wrap the response into any container, but other
 asynchronous handlers might do so. The type parameter in the `Response[_]`
@@ -210,7 +211,7 @@ import akka.util.ByteString
 val source: Source[ByteString, Any] =   ...
 
 sttp
-  .body(source)
+  .streamBody(source)
   .post(uri"...")
 ```
 
@@ -218,6 +219,7 @@ To receive the response body as a stream:
 
 ```scala
 import com.softwaremill.sttp._
+import com.softwaremill.sttp.akkahttp._
 
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
@@ -227,21 +229,39 @@ implicit val sttpHandler = new AkkaHttpSttpHandler(actorSystem)
 val response: Future[Response[Source[ByteString, Any]]] = 
   sttp
     .post(uri"...")
-    .send(responseAsStream[Source[ByteString, Any]])
+    .response(asStream[Source[ByteString, Any]])
+    .send()
 ```
 
-## Request types
+## Request type
 
-All requests have type `RequestTemplate[U]`, where `U[_]` specifies if the 
-request method and URL are specified. There are two type aliases for the 
-request template that are used:
+All request descriptions have type `RequestT[U, T, S]` (T as in Template).
+If this looks a bit complex, don't worry, what the three type parameters stand
+for is the only thing you'll hopefully have to remember when using the API!
 
-* `type Request = RequestTemplate[Id]`, where `type Id[X] = X` is the identity,
-meaning that the request has both a method and an URI specified. Such a request
-can be sent.
-* `type PartialRequest = RequestTemplate[Empty]`, where `type Empty[X] = None`,
-meaning that the request has neither a method nor an URI. Both of these fields
-will be set to `None` (the `Option` subtype). Such a request cannot be sent.
+Going one-by-one:
+
+* `U[_]` specifies if the request method and URL are specified. Using the API,
+this can be either `type Empty[X] = None`, meaning that the request has neither
+a method nor an URI. Or, it can be `type Id[X] = X` (type-level identity),
+meaning that the request has both a method and an URI specified. Only requests
+with a specified URI & method can be sent.
+* `T` specifies the type to which the response will be read. By default, this
+is `String`. But it can also be e.g. `Array[Byte]` or `Unit`, if the response
+should be ignored. Response body handling can be changed by calling the 
+`.response` method. With backends which support streaming, this can also be
+a supported stream type.
+* `S` specifies the stream type that this request uses. Most of the time this
+will be `Nothing`, meaning that this request does not send a streaming body
+or receive a streaming response. So most of the times you can just ignore
+that parameter. But, if you are using a streaming backend and want to 
+send/receive a stream, the `.streamBody` or `response(asStream[S])` will change
+the type parameter. 
+
+There are two type aliases for the request template that are used:
+
+* `type Request[T, S] = RequestT[Id, T, S]`. A sendable request.
+* `type PartialRequest[T, S] = RequestT[Empty, T, S]`
 
 ## Notes
 
@@ -270,3 +290,8 @@ will be set to `None` (the `Option` subtype). Such a request cannot be sent.
 * [play ws](https://github.com/playframework/play-ws)
 * [fs2-http](https://github.com/Spinoco/fs2-http)
 * [http4s](http://http4s.org/v0.17/client/)
+
+## Credits
+
+* [Tomasz Szymański](https://github.com/szimano)
+* [Adam Warski](https://github.com/adamw)

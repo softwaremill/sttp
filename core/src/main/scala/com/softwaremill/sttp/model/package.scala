@@ -26,20 +26,21 @@ package object model {
     * Provide an implicit value of this type to serialize arbitrary classes into a request body.
     * Handlers might also provide special logic for serializer instances which they define (e.g. to handle streaming).
     */
-  type BodySerializer[T] = T => BasicRequestBody
+  type BodySerializer[B] = B => BasicRequestBody
 
-  sealed trait RequestBody
-  case object NoBody extends RequestBody
-  // TODO: extract StreamBody, with request parametrized to match the stream type?
+  sealed trait RequestBody[+S]
+  case object NoBody extends RequestBody[Nothing]
   case class SerializableBody[T](f: BodySerializer[T], t: T)
-      extends RequestBody
+      extends RequestBody[Nothing]
 
-  sealed trait BasicRequestBody extends RequestBody
+  sealed trait BasicRequestBody extends RequestBody[Nothing]
   case class StringBody(s: String, encoding: String) extends BasicRequestBody
   case class ByteArrayBody(b: Array[Byte]) extends BasicRequestBody
   case class ByteBufferBody(b: ByteBuffer) extends BasicRequestBody
   case class InputStreamBody(b: InputStream) extends BasicRequestBody
   case class PathBody(f: Path) extends BasicRequestBody
+
+  case class StreamBody[S](s: S) extends RequestBody[S]
 
   /**
     * @tparam T Target type as which the response will be read.

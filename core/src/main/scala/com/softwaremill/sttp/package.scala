@@ -16,27 +16,26 @@ package object sttp {
   type Id[X] = X
   type Empty[X] = None.type
 
-  def ignoreResponse: ResponseAs[Unit, Nothing] = IgnoreResponse
+  def ignore: ResponseAs[Unit, Nothing] = IgnoreResponse
 
   /**
     * Uses `utf-8` encoding.
     */
-  def responseAsString: ResponseAs[String, Nothing] = responseAsString(Utf8)
-  def responseAsString(encoding: String): ResponseAs[String, Nothing] =
+  def asString: ResponseAs[String, Nothing] = asString(Utf8)
+  def asString(encoding: String): ResponseAs[String, Nothing] =
     ResponseAsString(encoding)
-  def responseAsByteArray: ResponseAs[Array[Byte], Nothing] =
+  def asByteArray: ResponseAs[Array[Byte], Nothing] =
     ResponseAsByteArray
 
   /**
     * Uses `utf-8` encoding.
     */
-  def responseAsParams: ResponseAs[Seq[(String, String)], Nothing] =
-    responseAsParams(Utf8)
-  def responseAsParams(
-      encoding: String): ResponseAs[Seq[(String, String)], Nothing] =
+  def asParams: ResponseAs[Seq[(String, String)], Nothing] =
+    asParams(Utf8)
+  def asParams(encoding: String): ResponseAs[Seq[(String, String)], Nothing] =
     ResponseAsParams(encoding)
 
-  def responseAsStream[S]: ResponseAs[S, S] = ResponseAsStream[S, S]()
+  def asStream[S]: ResponseAs[S, S] = ResponseAsStream[S, S]()
 
   /**
     * Use the factory methods `multiPart` to conveniently create instances of
@@ -129,69 +128,72 @@ package object sttp {
     *           request is aliased to `Request`: the method and uri are
     *           specified, and the request can be sent.
     */
-  case class RequestTemplate[U[_]](
+  case class RequestT[U[_], T, +S](
       method: U[Method],
       uri: U[URI],
-      body: RequestBody,
-      headers: Seq[(String, String)]
+      body: RequestBody[S],
+      headers: Seq[(String, String)],
+      responseAs: ResponseAs[T, S]
   ) {
-    def get(uri: URI): Request = this.copy[Id](uri = uri, method = Method.GET)
-    def head(uri: URI): Request =
-      this.copy[Id](uri = uri, method = Method.HEAD)
-    def post(uri: URI): Request =
-      this.copy[Id](uri = uri, method = Method.POST)
-    def put(uri: URI): Request = this.copy[Id](uri = uri, method = Method.PUT)
-    def delete(uri: URI): Request =
-      this.copy[Id](uri = uri, method = Method.DELETE)
-    def options(uri: URI): Request =
-      this.copy[Id](uri = uri, method = Method.OPTIONS)
-    def patch(uri: URI): Request =
-      this.copy[Id](uri = uri, method = Method.PATCH)
+    def get(uri: URI): Request[T, S] =
+      this.copy[Id, T, S](uri = uri, method = Method.GET)
+    def head(uri: URI): Request[T, S] =
+      this.copy[Id, T, S](uri = uri, method = Method.HEAD)
+    def post(uri: URI): Request[T, S] =
+      this.copy[Id, T, S](uri = uri, method = Method.POST)
+    def put(uri: URI): Request[T, S] =
+      this.copy[Id, T, S](uri = uri, method = Method.PUT)
+    def delete(uri: URI): Request[T, S] =
+      this.copy[Id, T, S](uri = uri, method = Method.DELETE)
+    def options(uri: URI): Request[T, S] =
+      this.copy[Id, T, S](uri = uri, method = Method.OPTIONS)
+    def patch(uri: URI): Request[T, S] =
+      this.copy[Id, T, S](uri = uri, method = Method.PATCH)
 
-    def contentType(ct: String): RequestTemplate[U] =
+    def contentType(ct: String): RequestT[U, T, S] =
       header(ContentTypeHeader, ct, replaceExisting = true)
-    def contentType(ct: String, encoding: String): RequestTemplate[U] =
+    def contentType(ct: String, encoding: String): RequestT[U, T, S] =
       header(ContentTypeHeader,
              contentTypeWithEncoding(ct, encoding),
              replaceExisting = true)
     def header(k: String,
                v: String,
-               replaceExisting: Boolean = false): RequestTemplate[U] = {
+               replaceExisting: Boolean = false): RequestT[U, T, S] = {
       val current =
         if (replaceExisting)
           headers.filterNot(_._1.equalsIgnoreCase(k))
         else headers
       this.copy(headers = current :+ (k -> v))
     }
-    def headers(hs: Map[String, String]): RequestTemplate[U] =
+    def headers(hs: Map[String, String]): RequestT[U, T, S] =
       this.copy(headers = headers ++ hs.toSeq)
-    def headers(hs: (String, String)*): RequestTemplate[U] =
+    def headers(hs: (String, String)*): RequestT[U, T, S] =
       this.copy(headers = headers ++ hs)
-    def cookie(nv: (String, String)): RequestTemplate[U] = cookies(nv)
-    def cookie(n: String, v: String): RequestTemplate[U] = cookies((n, v))
-    def cookies(r: Response[_]): RequestTemplate[U] =
+    def cookie(nv: (String, String)): RequestT[U, T, S] = cookies(nv)
+    def cookie(n: String, v: String): RequestT[U, T, S] = cookies((n, v))
+    def cookies(r: Response[_]): RequestT[U, T, S] =
       cookies(r.cookies.map(c => (c.name, c.value)): _*)
-    def cookies(cs: Seq[Cookie]): RequestTemplate[U] =
+    def cookies(cs: Seq[Cookie]): RequestT[U, T, S] =
       cookies(cs.map(c => (c.name, c.value)): _*)
-    def cookies(nvs: (String, String)*): RequestTemplate[U] =
+    def cookies(nvs: (String, String)*): RequestT[U, T, S] =
       header(CookieHeader, nvs.map(p => p._1 + "=" + p._2).mkString("; "))
-    def auth: SpecifyAuthScheme[U] =
-      new SpecifyAuthScheme[U](AuthorizationHeader, this)
-    def proxyAuth: SpecifyAuthScheme[U] =
-      new SpecifyAuthScheme[U](ProxyAuthorizationHeader, this)
+    def auth: SpecifyAuthScheme[U, T, S] =
+      new SpecifyAuthScheme[U, T, S](AuthorizationHeader, this)
+    def proxyAuth: SpecifyAuthScheme[U, T, S] =
+      new SpecifyAuthScheme[U, T, S](ProxyAuthorizationHeader, this)
 
     /**
       * Uses the `utf-8` encoding.
       * If content type is not yet specified, will be set to `text/plain`
       * with `utf-8` encoding.
       */
-    def body(b: String): RequestTemplate[U] = body(b, Utf8)
+    def body(b: String): RequestT[U, T, S] = body(b, Utf8)
 
     /**
       * If content type is not yet specified, will be set to `text/plain`
       * with the given encoding.
       */
-    def body(b: String, encoding: String): RequestTemplate[U] =
+    def body(b: String, encoding: String): RequestT[U, T, S] =
       setContentTypeIfMissing(
         contentTypeWithEncoding(TextPlainContentType, encoding))
         .copy(body = StringBody(b, encoding))
@@ -200,7 +202,7 @@ package object sttp {
       * If content type is not yet specified, will be set to
       * `application/octet-stream`.
       */
-    def body(b: Array[Byte]): RequestTemplate[U] =
+    def body(b: Array[Byte]): RequestT[U, T, S] =
       setContentTypeIfMissing(ApplicationOctetStreamContentType).copy(
         body = ByteArrayBody(b))
 
@@ -208,7 +210,7 @@ package object sttp {
       * If content type is not yet specified, will be set to
       * `application/octet-stream`.
       */
-    def body(b: ByteBuffer): RequestTemplate[U] =
+    def body(b: ByteBuffer): RequestT[U, T, S] =
       setContentTypeIfMissing(ApplicationOctetStreamContentType).copy(
         body = ByteBufferBody(b))
 
@@ -216,7 +218,7 @@ package object sttp {
       * If content type is not yet specified, will be set to
       * `application/octet-stream`.
       */
-    def body(b: InputStream): RequestTemplate[U] =
+    def body(b: InputStream): RequestT[U, T, S] =
       setContentTypeIfMissing(ApplicationOctetStreamContentType).copy(
         body = InputStreamBody(b))
 
@@ -224,13 +226,13 @@ package object sttp {
       * If content type is not yet specified, will be set to
       * `application/octet-stream`.
       */
-    def body(b: File): RequestTemplate[U] = body(b.toPath)
+    def body(b: File): RequestT[U, T, S] = body(b.toPath)
 
     /**
       * If content type is not yet specified, will be set to
       * `application/octet-stream`.
       */
-    def body(b: Path): RequestTemplate[U] =
+    def body(b: Path): RequestT[U, T, S] =
       setContentTypeIfMissing(ApplicationOctetStreamContentType).copy(
         body = PathBody(b))
 
@@ -239,7 +241,7 @@ package object sttp {
       * If content type is not yet specified, will be set to
       * `application/x-www-form-urlencoded`.
       */
-    def body(fs: Map[String, String]): RequestTemplate[U] =
+    def body(fs: Map[String, String]): RequestT[U, T, S] =
       formDataBody(fs.toList, Utf8)
 
     /**
@@ -247,7 +249,7 @@ package object sttp {
       * If content type is not yet specified, will be set to
       * `application/x-www-form-urlencoded`.
       */
-    def body(fs: Map[String, String], encoding: String): RequestTemplate[U] =
+    def body(fs: Map[String, String], encoding: String): RequestT[U, T, S] =
       formDataBody(fs.toList, encoding)
 
     /**
@@ -255,7 +257,7 @@ package object sttp {
       * If content type is not yet specified, will be set to
       * `application/x-www-form-urlencoded`.
       */
-    def body(fs: (String, String)*): RequestTemplate[U] =
+    def body(fs: (String, String)*): RequestT[U, T, S] =
       formDataBody(fs.toList, Utf8)
 
     /**
@@ -263,21 +265,24 @@ package object sttp {
       * If content type is not yet specified, will be set to
       * `application/x-www-form-urlencoded`.
       */
-    def body(fs: Seq[(String, String)], encoding: String): RequestTemplate[U] =
+    def body(fs: Seq[(String, String)], encoding: String): RequestT[U, T, S] =
       formDataBody(fs, encoding)
 
     /**
       * If content type is not yet specified, will be set to
       * `application/octet-stream`.
       */
-    def body[T: BodySerializer](b: T): RequestTemplate[U] =
+    def body[B: BodySerializer](b: B): RequestT[U, T, S] =
       setContentTypeIfMissing(ApplicationOctetStreamContentType).copy(
-        body = SerializableBody(implicitly[BodySerializer[T]], b))
+        body = SerializableBody(implicitly[BodySerializer[B]], b))
 
     //def multipartData(parts: MultiPart*): RequestTemplate[U] = ???
 
+    def streamBody[S2 >: S](b: S2): RequestT[U, T, S2] =
+      this.copy[U, T, S2](body = StreamBody(b))
+
     /**
-      * @param responseAs What's the target type to which the response body
+      * What's the target type to which the response body
       *                   should be read. Needs to be specified upfront
       *                   so that the response is always consumed and hence
       *                   there are no requirements on client code to consume
@@ -285,20 +290,25 @@ package object sttp {
       *                   which need to fully consumed by the client if such
       *                   a response type is requested.
       */
-    def send[R[_], S, T](responseAs: ResponseAs[T, S])(
-        implicit handler: SttpHandler[R, S],
-        isRequest: IsRequest[U]): R[Response[T]] = {
+    def response[T2, S2 >: S](ra: ResponseAs[T2, S2]): RequestT[U, T2, S2] =
+      this.copy(responseAs = ra)
 
-      handler.send(this, responseAs)
+    def send[R[_]]()(implicit handler: SttpHandler[R, S],
+                     isIdInRequest: IsIdInRequest[U]): R[Response[T]] = {
+      // we could avoid the asInstanceOf by creating an artificial copy
+      // changing the method & url fields using `isIdInRequest`, but that
+      // would be only to satisfy the type checker, and a needless copy at
+      // runtime.
+      handler.send(this.asInstanceOf[RequestT[Id, T, S]])
     }
 
     private def hasContentType: Boolean =
       headers.exists(_._1.toLowerCase.contains(ContentTypeHeader))
-    private def setContentTypeIfMissing(ct: String): RequestTemplate[U] =
+    private def setContentTypeIfMissing(ct: String): RequestT[U, T, S] =
       if (hasContentType) this else contentType(ct)
 
     private def formDataBody(fs: Seq[(String, String)],
-                             encoding: String): RequestTemplate[U] = {
+                             encoding: String): RequestT[U, T, S] = {
       val b = fs
         .map(
           p =>
@@ -310,32 +320,30 @@ package object sttp {
     }
   }
 
-  class SpecifyAuthScheme[U[_]](hn: String, rt: RequestTemplate[U]) {
-    def basic(user: String, password: String): RequestTemplate[U] = {
+  class SpecifyAuthScheme[U[_], T, +S](hn: String, rt: RequestT[U, T, S]) {
+    def basic(user: String, password: String): RequestT[U, T, S] = {
       val c = new String(
         Base64.getEncoder.encode(s"$user:$password".getBytes(Utf8)),
         Utf8)
       rt.header(hn, s"Basic $c")
     }
 
-    def bearer(token: String): RequestTemplate[U] =
+    def bearer(token: String): RequestT[U, T, S] =
       rt.header(hn, s"Bearer $token")
   }
 
-  object RequestTemplate {
-    val empty: RequestTemplate[Empty] =
-      RequestTemplate[Empty](None, None, NoBody, Vector())
+  object RequestT {
+    val empty: RequestT[Empty, String, Nothing] =
+      RequestT[Empty, String, Nothing](None, None, NoBody, Vector(), asString)
   }
 
-  type PartialRequest = RequestTemplate[Empty]
-  type Request = RequestTemplate[Id]
+  type PartialRequest[T, +S] = RequestT[Empty, T, S]
+  type Request[T, +S] = RequestT[Id, T, S]
 
   @implicitNotFound(
     "This is a partial request, the method & url are not specified. Use " +
       ".get(...), .post(...) etc. to obtain a non-partial request.")
-  private type IsRequest[U[_]] = RequestTemplate[U] =:= Request
-
-  val sttp: RequestTemplate[Empty] = RequestTemplate.empty
+  private type IsIdInRequest[U[_]] = U[Unit] =:= Id[Unit]
 
   private[sttp] val ContentTypeHeader = "Content-Type"
   private[sttp] val ContentLengthHeader = "Content-Length"
@@ -349,6 +357,8 @@ package object sttp {
   private val ApplicationFormContentType = "application/x-www-form-urlencoded"
   private val TextPlainContentType = "text/plain"
   private val MultipartFormDataContentType = "multipart/form-data"
+
+  val sttp: RequestT[Empty, String, Nothing] = RequestT.empty
 
   private def contentTypeWithEncoding(ct: String, enc: String) =
     s"$ct; charset=$enc"

@@ -12,8 +12,7 @@ import scala.io.Source
 import scala.collection.JavaConverters._
 
 object HttpURLConnectionSttpHandler extends SttpHandler[Id, Nothing] {
-  override def send[T](r: Request,
-                       responseAs: ResponseAs[T, Nothing]): Response[T] = {
+  override def send[T](r: Request[T, Nothing]): Response[T] = {
     val c = r.uri.toURL.openConnection().asInstanceOf[HttpURLConnection]
     c.setRequestMethod(r.method.m)
     r.headers.foreach { case (k, v) => c.setRequestProperty(k, v) }
@@ -22,14 +21,14 @@ object HttpURLConnectionSttpHandler extends SttpHandler[Id, Nothing] {
 
     try {
       val is = c.getInputStream
-      readResponse(c, is, responseAs)
+      readResponse(c, is, r.responseAs)
     } catch {
       case _: IOException if c.getResponseCode != -1 =>
-        readResponse(c, c.getErrorStream, responseAs)
+        readResponse(c, c.getErrorStream, r.responseAs)
     }
   }
 
-  private def setBody(body: RequestBody, c: HttpURLConnection): Unit = {
+  private def setBody(body: RequestBody[Nothing], c: HttpURLConnection): Unit = {
     if (body != NoBody) c.setDoOutput(true)
 
     def copyStream(in: InputStream, out: OutputStream): Unit = {
@@ -71,6 +70,10 @@ object HttpURLConnectionSttpHandler extends SttpHandler[Id, Nothing] {
 
       case SerializableBody(f, t) =>
         setBody(f(t), c)
+
+      case StreamBody(s) =>
+        // we have an instance of nothing - everything's possible!
+        assert(2 + 2 == 5)
     }
   }
 

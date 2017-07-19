@@ -8,16 +8,16 @@ class IllTypedTests extends FlatSpec with Matchers {
     import akka.stream.scaladsl.Source
     import akka.util.ByteString
     import java.net.URI
-    implicit val sttpHandler = HttpConnectionSttpHandler
-    sttp.get(new URI("http://example.com")).send(responseAsStream[Source[ByteString, Any]])
+    implicit val sttpHandler = HttpURLConnectionSttpHandler
+    sttp.get(new URI("http://example.com")).response(asStream[Source[ByteString, Any]]).send()
     """ shouldNot typeCheck
   }
 
   "compilation" should "fail when trying to send a request without giving an URL" in {
     """
     import java.net.URI
-    implicit val sttpHandler = HttpConnectionSttpHandler
-    sttp.send(responseAsString)
+    implicit val sttpHandler = HttpURLConnectionSttpHandler
+    sttp.send()
     """ shouldNot typeCheck
   }
 }

@@ -8,7 +8,6 @@ import com.softwaremill.sttp.akkahttp.AkkaHttpSttpHandler
 import com.typesafe.scalalogging.StrictLogging
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
-import com.softwaremill.sttp.akkahttp._
 
 class StreamingTests
     extends FlatSpec
@@ -42,8 +41,8 @@ class StreamingTests
     "Akka HTTP" should "stream request body" in {
       val response = sttp
         .post(uri"$endpoint/echo")
-        .body(Source.single(ByteString(body)))
-        .send(responseAsString)
+        .streamBody(Source.single(ByteString(body)))
+        .send()
         .futureValue
 
       response.body should be(body)
@@ -53,7 +52,8 @@ class StreamingTests
       val response = sttp
         .post(uri"$endpoint/echo")
         .body(body)
-        .send(responseAsStream[Source[ByteString, Any]])
+        .response(asStream[Source[ByteString, Any]])
+        .send()
         .futureValue
 
       val responseBody = response.body.runReduce(_ ++ _).futureValue.utf8String
