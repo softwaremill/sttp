@@ -78,5 +78,6 @@ lazy val tests: Project = (project in file("tests"))
       "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0",
       "com.github.pathikrit" %% "better-files" % "2.17.1",
       "ch.qos.logback" % "logback-classic" % "1.2.3"
-    ).map(_ % "test")
+    ).map(_ % "test"),
+    libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test"
   ) dependsOn (core, akkaHttpHandler)
