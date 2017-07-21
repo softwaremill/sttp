@@ -17,6 +17,7 @@ import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import better.files._
 import com.softwaremill.sttp.asynchttpclient.future.FutureAsyncHttpClientHandler
+import com.softwaremill.sttp.asynchttpclient.monix.MonixAsyncHttpClientHandler
 import com.softwaremill.sttp.asynchttpclient.scalaz.ScalazAsyncHttpClientHandler
 
 import scala.language.higherKinds
@@ -122,6 +123,8 @@ class BasicTests
                                          ForceWrappedValue.future)
   runTests("Async Http Client - Scalaz")(new ScalazAsyncHttpClientHandler(),
                                          ForceWrappedValue.scalazTask)
+  runTests("Async Http Client - Monix")(new MonixAsyncHttpClientHandler(),
+                                        ForceWrappedValue.monixTask)
 
   def runTests[R[_]](name: String)(
       implicit handler: SttpHandler[R, Nothing],

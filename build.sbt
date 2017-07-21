@@ -47,7 +47,12 @@ val scalaTest = "org.scalatest" %% "scalatest" % "3.0.3"
 lazy val rootProject = (project in file("."))
   .settings(commonSettings: _*)
   .settings(publishArtifact := false, name := "sttp")
-  .aggregate(core, akkaHttpHandler, tests)
+  .aggregate(core,
+             akkaHttpHandler,
+             futureAsyncHttpClientHandler,
+             scalazAsyncHttpClientHandler,
+             monixAsyncHttpClientHandler,
+             tests)
 
 lazy val core: Project = (project in file("core"))
   .settings(commonSettings: _*)
@@ -95,6 +100,16 @@ lazy val scalazAsyncHttpClientHandler: Project = (project in file(
     )
   ) dependsOn asyncHttpClientHandler
 
+lazy val monixAsyncHttpClientHandler: Project = (project in file(
+  "async-http-client-handler/monix"))
+  .settings(commonSettings: _*)
+  .settings(
+    name := "async-http-client-handler-monix",
+    libraryDependencies ++= Seq(
+      "io.monix" %% "monix" % "2.3.0"
+    )
+  ) dependsOn asyncHttpClientHandler
+
 lazy val tests: Project = (project in file("tests"))
   .settings(commonSettings: _*)
   .settings(
@@ -108,4 +123,5 @@ lazy val tests: Project = (project in file("tests"))
       "ch.qos.logback" % "logback-classic" % "1.2.3"
     ).map(_ % "test"),
     libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test"
-  ) dependsOn (core, akkaHttpHandler, futureAsyncHttpClientHandler, scalazAsyncHttpClientHandler)
+  ) dependsOn (core, akkaHttpHandler, futureAsyncHttpClientHandler, scalazAsyncHttpClientHandler,
+monixAsyncHttpClientHandler)

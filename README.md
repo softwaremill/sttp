@@ -243,16 +243,21 @@ To use, add the following dependency to your project:
 "com.softwaremill.sttp" %% "async-http-client-handler-future" % version
 // or
 "com.softwaremill.sttp" %% "async-http-client-handler-scalaz" % version
+// or
+"com.softwaremill.sttp" %% "async-http-client-handler-monix" % version
 ```
 
 This handler depends on [async-http-handler](https://github.com/AsyncHttpClient/async-http-client).
 A fully **asynchronous** handler, which uses [Netty](http://netty.io) behind the
 scenes. 
 
-The responses are either wrapped in a `Future`, or a 
-[Scalaz](https://github.com/scalaz/scalaz) `Task`, depending on the
-dependency chosen. In the latter case, there's an additional transitive 
+The responses are wrapped depending on the dependency chosen in either a:
+
+* standard Scala `Future`
+* [Scalaz](https://github.com/scalaz/scalaz) `Task`. There's a transitive
 dependency on `scalaz-concurrent`.
+* [Monix](https://monix.io) `Task`. There's a transitive dependency on 
+`monix-eval`.
 
 Next you'll need to add an implicit value:
 
@@ -261,6 +266,9 @@ implicit val sttpHandler = new FutureAsyncHttpClientHandler()
 
 // or, if you're using the scalaz version:
 implicit val sttpHandler = new ScalazAsyncHttpClientHandler()
+
+// or, if you're using the monix version:
+implicit val sttpHandler = new MonixAsyncHttpClientHandler()
 
 // or, if you'd like to use custom configuration:
 implicit val sttpHandler = new FutureAsyncHttpClientHandler(asyncHttpClientConfig)

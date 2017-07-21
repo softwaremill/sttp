@@ -9,7 +9,6 @@ import org.scalatest.concurrent.ScalaFutures
 
 import scala.concurrent.Future
 import scala.language.higherKinds
-import scalaz.concurrent.Task
 
 trait TestHttpServer extends BeforeAndAfterAll with ScalaFutures {
   this: Suite =>
@@ -44,9 +43,15 @@ trait ForceWrapped extends ScalaFutures { this: Suite =>
       override def force[T](wrapped: Future[T]): T =
         wrapped.futureValue
     }
-    val scalazTask = new ForceWrappedValue[Task] {
-      override def force[T](wrapped: Task[T]): T =
+    val scalazTask = new ForceWrappedValue[scalaz.concurrent.Task] {
+      override def force[T](wrapped: scalaz.concurrent.Task[T]): T =
         wrapped.unsafePerformSync
+    }
+    val monixTask = new ForceWrappedValue[monix.eval.Task] {
+      import monix.execution.Scheduler.Implicits.global
+
+      override def force[T](wrapped: monix.eval.Task[T]): T =
+        wrapped.runAsync.futureValue
     }
   }
   implicit class ForceDecorator[R[_], T](wrapped: R[T]) {
