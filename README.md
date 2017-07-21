@@ -49,6 +49,18 @@ backend-specific streaming support
 * URI interpolator with context-aware escaping, optional parameters support
 and parameter collections
 
+## Quickstart with Ammonite
+
+If you are an [Ammonite](http://ammonite.io) user, you can quickly start 
+experimenting with sttp by copy-pasting the following:
+
+```scala
+import $ivy.`com.softwaremill.sttp::core:0.0.1`
+import com.softwaremill.sttp._
+implicit val handler = HttpURLConnectionSttpHandler
+sttp.get(uri"http://httpbin.org/ip").send()
+```
+
 ## Adding sttp to your project 
 
 SBT dependency:
