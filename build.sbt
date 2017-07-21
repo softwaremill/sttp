@@ -1,11 +1,11 @@
-lazy val commonSettings = Seq(
+val commonSettings = Seq(
   organization := "com.softwaremill.sttp",
   version := "0.0.1",
   scalaVersion := "2.12.2",
   crossScalaVersions := Seq(scalaVersion.value, "2.11.8"),
   scalacOptions ++= Seq("-unchecked", "-deprecation"),
   scalafmtOnCompile := true,
-  scalafmtVersion := "1.0.0-RC2",
+  scalafmtVersion := "1.0.0",
   // Sonatype OSS deployment
   publishTo := {
     val nexus = "https://oss.sonatype.org/"
