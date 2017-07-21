@@ -333,10 +333,8 @@ There are two type aliases for the request template that are used:
 ## TODO
 
 * multi-part uploads
-* netty-based backend
-* backends which wrap the responses in scalaz/monix/... `Task`
+* scalaz/monix/fs2 streaming
 * proxy support
-* compression support
 * connection options, SSL
 * *your API improvement idea here*
 
