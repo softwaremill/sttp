@@ -68,6 +68,16 @@ lazy val akkaHttpHandler: Project = (project in file("akka-http-handler"))
     )
   ) dependsOn (core)
 
+lazy val asyncHttpClientHandler: Project = (project in file(
+  "async-http-client-handler"))
+  .settings(commonSettings: _*)
+  .settings(
+    name := "async-http-client-handler",
+    libraryDependencies ++= Seq(
+      "org.asynchttpclient" % "async-http-client" % "2.0.33"
+    )
+  ) dependsOn (core)
+
 lazy val tests: Project = (project in file("tests"))
   .settings(commonSettings: _*)
   .settings(
@@ -81,4 +91,4 @@ lazy val tests: Project = (project in file("tests"))
       "ch.qos.logback" % "logback-classic" % "1.2.3"
     ).map(_ % "test"),
     libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test"
-  ) dependsOn (core, akkaHttpHandler)
+  ) dependsOn (core, akkaHttpHandler, asyncHttpClientHandler)

@@ -15,6 +15,7 @@ import com.typesafe.scalalogging.StrictLogging
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import better.files._
+import com.softwaremill.sttp.asynchttpclient.AsyncHttpClientHandler
 
 import scala.language.higherKinds
 
@@ -111,6 +112,8 @@ class BasicTests
                                 ForceWrappedValue.id)
   runTests("Akka HTTP")(new AkkaHttpSttpHandler(actorSystem),
                         ForceWrappedValue.future)
+  runTests("Async Http Client")(new AsyncHttpClientHandler(),
+                                ForceWrappedValue.future)
 
   def runTests[R[_]](name: String)(
       implicit handler: SttpHandler[R, Nothing],

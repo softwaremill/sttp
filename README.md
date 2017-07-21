@@ -188,7 +188,7 @@ This handler depends on [akka-http](http://doc.akka.io/docs/akka-http/current/sc
 A fully **asynchronous** handler. Sending a request returns a response wrapped
 in a `Future`.
 
-To use, add an implicit value:
+Next you'll need to add an implicit value:
 
 ```scala
 implicit val sttpHandler = new AkkaHttpSttpHandler()
@@ -234,6 +234,33 @@ val response: Future[Response[Source[ByteString, Any]]] =
     .response(asStream[Source[ByteString, Any]])
     .send()
 ```
+
+### `AsyncHttpClientHandler`
+
+To use, add the following dependency to your project:
+
+```scala
+"com.softwaremill.sttp" %% "async-http-client-handler" % version
+```
+
+This handler depends on [async-http-handler](https://github.com/AsyncHttpClient/async-http-client).
+A fully **asynchronous** handler, which uses [Netty](http://netty.io) behind the
+scenes. Sending a request returns a response wrapped in a `Future`. Different
+wrappers will be added in the future.
+
+Next you'll need to add an implicit value:
+
+```scala
+implicit val sttpHandler = new AsyncHttpClientHandler()
+
+// or, if you'd like to use custom configuration:
+implicit val sttpHandler = new AsyncHttpClientHandler(asyncHttpClientConfig)
+
+// or, if you'd like to instantiate the AsyncHttpClient yourself:
+implicit val sttpHandler = new AsyncHttpClientHandler(asyncHttpClient)
+```
+
+Streaming is not (yet) supported.
 
 ## Request type
 
