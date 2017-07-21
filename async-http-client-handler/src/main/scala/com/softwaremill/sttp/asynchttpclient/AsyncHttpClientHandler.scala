@@ -1,4 +1,4 @@
-package com.softwaremill.sttp.asynchttpclient.internal
+package com.softwaremill.sttp.asynchttpclient
 
 import java.nio.charset.Charset
 
@@ -15,9 +15,8 @@ import org.asynchttpclient.{
 import scala.collection.JavaConverters._
 import scala.language.higherKinds
 
-private[asynchttpclient] class AsyncHttpClientHandler[R[_]](
-    asyncHttpClient: AsyncHttpClient,
-    wrapper: WrapperFromAsync[R])
+class AsyncHttpClientHandler[R[_]](asyncHttpClient: AsyncHttpClient,
+                                   wrapper: WrapperFromAsync[R])
     extends SttpHandler[R, Nothing] {
 
   override def send[T](r: Request[T, Nothing]): R[Response[T]] = {
@@ -109,6 +108,6 @@ private[asynchttpclient] class AsyncHttpClientHandler[R[_]](
   }
 }
 
-private[asynchttpclient] trait WrapperFromAsync[R[_]] {
+trait WrapperFromAsync[R[_]] {
   def apply[T](register: (Either[Throwable, T] => Unit) => Unit): R[T]
 }

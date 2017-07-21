@@ -1,6 +1,6 @@
 package com.softwaremill.sttp.asynchttpclient.monix
 
-import com.softwaremill.sttp.asynchttpclient.internal.{
+import com.softwaremill.sttp.asynchttpclient.{
   AsyncHttpClientHandler,
   WrapperFromAsync
 }
