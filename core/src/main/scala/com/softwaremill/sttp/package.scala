@@ -181,6 +181,8 @@ package object sttp {
       new SpecifyAuthScheme[U, T, S](AuthorizationHeader, this)
     def proxyAuth: SpecifyAuthScheme[U, T, S] =
       new SpecifyAuthScheme[U, T, S](ProxyAuthorizationHeader, this)
+    def acceptEncoding(encoding: String): RequestT[U, T, S] =
+      header(AcceptEncodingHeader, encoding)
 
     /**
       * Uses the `utf-8` encoding.
@@ -333,11 +335,6 @@ package object sttp {
       rt.header(hn, s"Bearer $token")
   }
 
-  object RequestT {
-    val empty: RequestT[Empty, String, Nothing] =
-      RequestT[Empty, String, Nothing](None, None, NoBody, Vector(), asString)
-  }
-
   type PartialRequest[T, +S] = RequestT[Empty, T, S]
   type Request[T, +S] = RequestT[Id, T, S]
 
@@ -352,6 +349,8 @@ package object sttp {
   private[sttp] val CookieHeader = "Cookie"
   private[sttp] val AuthorizationHeader = "Authorization"
   private[sttp] val ProxyAuthorizationHeader = "Proxy-Authorization"
+  private[sttp] val AcceptEncodingHeader = "Accept-Encoding"
+  private[sttp] val ContentEncodingHeader = "Content-Encoding"
   private val Utf8 = "utf-8"
 
   private val ApplicationOctetStreamContentType = "application/octet-stream"
@@ -359,7 +358,21 @@ package object sttp {
   private val TextPlainContentType = "text/plain"
   private val MultipartFormDataContentType = "multipart/form-data"
 
-  val sttp: RequestT[Empty, String, Nothing] = RequestT.empty
+  /**
+    * An empty request with no headers.
+    */
+  val emptyRequest: RequestT[Empty, String, Nothing] =
+    RequestT[Empty, String, Nothing](None, None, NoBody, Vector(), asString)
+
+  /**
+    * A starting request, with the following modifications comparing to
+    * `emptyRequest`:
+    *
+    * - `Accept-Encoding` set to `gzip, deflate` (handled automatically by the
+    *   library)
+    */
+  val sttp: RequestT[Empty, String, Nothing] =
+    emptyRequest.acceptEncoding("gzip, deflate")
 
   private def contentTypeWithEncoding(ct: String, enc: String) =
     s"$ct; charset=$enc"

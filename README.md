@@ -72,10 +72,10 @@ First, import:
 import com.softwaremill.sttp._
 ```
 
-This brings into scope `sttp`, the empty request, from which all request
-definitions start. This empty request can be customised, each time yielding 
-a new, immutable request description (unless a mutable body is set on the 
-request, such as a byte array).
+This brings into scope `sttp`, the starting request (it's an empty request
+with the `Accept-Encoding: gzip, defalte` header added). This request can 
+be customised, each time yielding a new, immutable request description 
+(unless a mutable body is set on the request, such as a byte array).
 
 For example, we can set a cookie, string-body and specify that this should
 be a `POST` request to a given URI:

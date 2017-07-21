@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream
 import java.nio.ByteBuffer
 import java.time.{ZoneId, ZonedDateTime}
 
+import akka.http.scaladsl.coding.{Deflate, Gzip, NoCoding}
 import akka.http.scaladsl.model.{DateTime, FormData}
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.model.headers.CacheDirectives._
@@ -104,6 +105,10 @@ class BasicTests
       }) { userName =>
         complete(s"Hello, $userName!")
       }
+    } ~ path("compress") {
+      encodeResponseWith(Gzip, Deflate, NoCoding) {
+        complete("I'm compressed!")
+      }
     }
 
   override def port = 51823
@@ -133,6 +138,7 @@ class BasicTests
     errorsTests()
     cookiesTests()
     authTests()
+    compressionTests()
 
     def parseResponseTests(): Unit = {
       name should "parse response as string" in {
@@ -336,6 +342,38 @@ class BasicTests
         val resp = req.send().force()
         resp.code should be(200)
         resp.body should be("Hello, adam!")
+      }
+    }
+
+    def compressionTests(): Unit = {
+      val compress = sttp.get(uri"$endpoint/compress")
+      val decompressedBody = "I'm compressed!"
+
+      name should "decompress using the default accept encoding header" in {
+        val req = compress
+        val resp = req.send().force()
+        resp.body should be(decompressedBody)
+      }
+
+      name should "decompress using gzip" in {
+        val req =
+          compress.header("Accept-Encoding", "gzip", replaceExisting = true)
+        val resp = req.send().force()
+        resp.body should be(decompressedBody)
+      }
+
+      name should "decompress using deflate" in {
+        val req =
+          compress.header("Accept-Encoding", "deflate", replaceExisting = true)
+        val resp = req.send().force()
+        resp.body should be(decompressedBody)
+      }
+
+      name should "work despite providing an unsupported encoding" in {
+        val req =
+          compress.header("Accept-Encoding", "br", replaceExisting = true)
+        val resp = req.send().force()
+        resp.body should be(decompressedBody)
       }
     }
   }

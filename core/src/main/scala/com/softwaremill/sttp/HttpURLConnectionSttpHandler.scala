@@ -3,7 +3,9 @@ package com.softwaremill.sttp
 import java.io._
 import java.net.HttpURLConnection
 import java.nio.channels.Channels
+import java.nio.charset.CharacterCodingException
 import java.nio.file.Files
+import java.util.zip.{GZIPInputStream, InflaterInputStream}
 
 import com.softwaremill.sttp.model._
 
@@ -23,6 +25,8 @@ object HttpURLConnectionSttpHandler extends SttpHandler[Id, Nothing] {
       val is = c.getInputStream
       readResponse(c, is, r.responseAs)
     } catch {
+      case e: CharacterCodingException     => throw e
+      case e: UnsupportedEncodingException => throw e
       case _: IOException if c.getResponseCode != -1 =>
         readResponse(c, c.getErrorStream, r.responseAs)
     }
@@ -85,11 +89,15 @@ object HttpURLConnectionSttpHandler extends SttpHandler[Id, Nothing] {
     val headers = c.getHeaderFields.asScala.toVector
       .filter(_._1 != null)
       .flatMap { case (k, vv) => vv.asScala.map((k, _)) }
-    Response(readResponseBody(is, responseAs), c.getResponseCode, headers)
+    val contentEncoding = Option(c.getHeaderField(ContentEncodingHeader))
+    Response(readResponseBody(wrapInput(contentEncoding, is), responseAs),
+             c.getResponseCode,
+             headers)
   }
 
   private def readResponseBody[T](is: InputStream,
                                   responseAs: ResponseAs[T, Nothing]): T = {
+
     def asString(enc: String) = Source.fromInputStream(is, enc).mkString
 
     responseAs match {
@@ -128,4 +136,14 @@ object HttpURLConnectionSttpHandler extends SttpHandler[Id, Nothing] {
         throw new IllegalStateException()
     }
   }
+
+  private def wrapInput(contentEncoding: Option[String],
+                        is: InputStream): InputStream =
+    contentEncoding.map(_.toLowerCase) match {
+      case None            => is
+      case Some("gzip")    => new GZIPInputStream(is)
+      case Some("deflate") => new InflaterInputStream(is)
+      case Some(ce) =>
+        throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
+    }
 }

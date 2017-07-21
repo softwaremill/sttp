@@ -1,10 +1,13 @@
 package com.softwaremill.sttp.akkahttp
 
+import java.io.UnsupportedEncodingException
+
 import akka.actor.{ActorSystem, Terminated}
 import akka.http.scaladsl.Http
+import akka.http.scaladsl.coding.{Deflate, Gzip, NoCoding}
 import akka.http.scaladsl.model.HttpHeader.ParsingResult
 import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.headers.`Content-Type`
+import akka.http.scaladsl.model.headers.{HttpEncodings, `Content-Type`}
 import akka.http.scaladsl.model.ContentTypes.`application/octet-stream`
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Source, StreamConverters}
@@ -34,7 +37,7 @@ class AkkaHttpSttpHandler(actorSystem: ActorSystem)
       .flatMap(Http().singleRequest(_))
       .flatMap { hr =>
         val code = hr.status.intValue()
-        bodyFromAkka(r.responseAs, hr)
+        bodyFromAkka(r.responseAs, decodeAkkaResponse(hr))
           .map(Response(_, code, headersFromAkka(hr)))
       }
   }
@@ -151,6 +154,19 @@ class AkkaHttpSttpHandler(actorSystem: ActorSystem)
 
   private def isContentType(header: (String, String)) =
     header._1.toLowerCase.contains(`Content-Type`.lowercaseName)
+
+  // http://doc.akka.io/docs/akka-http/10.0.7/scala/http/common/de-coding.html
+  private def decodeAkkaResponse(response: HttpResponse): HttpResponse = {
+    val decoder = response.encoding match {
+      case HttpEncodings.gzip     => Gzip
+      case HttpEncodings.deflate  => Deflate
+      case HttpEncodings.identity => NoCoding
+      case ce =>
+        throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
+    }
+
+    decoder.decodeMessage(response)
+  }
 
   def close(): Future[Terminated] = {
     actorSystem.terminate()
