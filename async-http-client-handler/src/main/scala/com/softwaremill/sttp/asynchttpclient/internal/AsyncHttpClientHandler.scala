@@ -1,4 +1,4 @@
-package com.softwaremill.sttp.asynchttpclient
+package com.softwaremill.sttp.asynchttpclient.internal
 
 import java.nio.charset.Charset
 
@@ -7,34 +7,31 @@ import com.softwaremill.sttp.{Request, Response, SttpHandler}
 import org.asynchttpclient.{
   AsyncCompletionHandler,
   AsyncHttpClient,
-  AsyncHttpClientConfig,
-  DefaultAsyncHttpClient,
   RequestBuilder,
   Request => AsyncRequest,
   Response => AsyncResponse
 }
 
-import scala.concurrent.{Future, Promise}
 import scala.collection.JavaConverters._
+import scala.language.higherKinds
 
-class AsyncHttpClientHandler(asyncHttpClient: AsyncHttpClient)
-    extends SttpHandler[Future, Nothing] {
-  def this() = this(new DefaultAsyncHttpClient())
-  def this(cfg: AsyncHttpClientConfig) = this(new DefaultAsyncHttpClient(cfg))
+private[asynchttpclient] class AsyncHttpClientHandler[R[_]](
+    asyncHttpClient: AsyncHttpClient,
+    wrapper: WrapperFromAsync[R])
+    extends SttpHandler[R, Nothing] {
 
-  override def send[T](r: Request[T, Nothing]): Future[Response[T]] = {
-    val p = Promise[Response[T]]()
-    asyncHttpClient
-      .prepareRequest(requestToAsync(r))
-      .execute(new AsyncCompletionHandler[AsyncResponse] {
-        override def onCompleted(response: AsyncResponse): AsyncResponse = {
-          p.success(readResponse(response, r.responseAs))
-          response
-        }
-        override def onThrowable(t: Throwable): Unit = p.failure(t)
-      })
-
-    p.future
+  override def send[T](r: Request[T, Nothing]): R[Response[T]] = {
+    wrapper { cb =>
+      asyncHttpClient
+        .prepareRequest(requestToAsync(r))
+        .execute(new AsyncCompletionHandler[AsyncResponse] {
+          override def onCompleted(response: AsyncResponse): AsyncResponse = {
+            cb(Right(readResponse(response, r.responseAs)))
+            response
+          }
+          override def onThrowable(t: Throwable): Unit = cb(Left(t))
+        })
+    }
   }
 
   private def requestToAsync(r: Request[_, Nothing]): AsyncRequest = {
@@ -110,4 +107,8 @@ class AsyncHttpClientHandler(asyncHttpClient: AsyncHttpClient)
         throw new IllegalStateException()
     }
   }
+}
+
+private[asynchttpclient] trait WrapperFromAsync[R[_]] {
+  def apply[T](register: (Either[Throwable, T] => Unit) => Unit): R[T]
 }

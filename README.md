@@ -240,24 +240,33 @@ val response: Future[Response[Source[ByteString, Any]]] =
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp" %% "async-http-client-handler" % version
+"com.softwaremill.sttp" %% "async-http-client-handler-future" % version
+// or
+"com.softwaremill.sttp" %% "async-http-client-handler-scalaz" % version
 ```
 
 This handler depends on [async-http-handler](https://github.com/AsyncHttpClient/async-http-client).
 A fully **asynchronous** handler, which uses [Netty](http://netty.io) behind the
-scenes. Sending a request returns a response wrapped in a `Future`. Different
-wrappers will be added in the future.
+scenes. 
+
+The responses are either wrapped in a `Future`, or a 
+[Scalaz](https://github.com/scalaz/scalaz) `Task`, depending on the
+dependency chosen. In the latter case, there's an additional transitive 
+dependency on `scalaz-concurrent`.
 
 Next you'll need to add an implicit value:
 
 ```scala
-implicit val sttpHandler = new AsyncHttpClientHandler()
+implicit val sttpHandler = new FutureAsyncHttpClientHandler()
+
+// or, if you're using the scalaz version:
+implicit val sttpHandler = new ScalazAsyncHttpClientHandler()
 
 // or, if you'd like to use custom configuration:
-implicit val sttpHandler = new AsyncHttpClientHandler(asyncHttpClientConfig)
+implicit val sttpHandler = new FutureAsyncHttpClientHandler(asyncHttpClientConfig)
 
 // or, if you'd like to instantiate the AsyncHttpClient yourself:
-implicit val sttpHandler = new AsyncHttpClientHandler(asyncHttpClient)
+implicit val sttpHandler = new FutureAsyncHttpClientHandler(asyncHttpClient)
 ```
 
 Streaming is not (yet) supported.

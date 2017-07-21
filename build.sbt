@@ -66,7 +66,7 @@ lazy val akkaHttpHandler: Project = (project in file("akka-http-handler"))
     libraryDependencies ++= Seq(
       akkaHttp
     )
-  ) dependsOn (core)
+  ) dependsOn core
 
 lazy val asyncHttpClientHandler: Project = (project in file(
   "async-http-client-handler"))
@@ -76,7 +76,24 @@ lazy val asyncHttpClientHandler: Project = (project in file(
     libraryDependencies ++= Seq(
       "org.asynchttpclient" % "async-http-client" % "2.0.33"
     )
-  ) dependsOn (core)
+  ) dependsOn core
+
+lazy val futureAsyncHttpClientHandler: Project = (project in file(
+  "async-http-client-handler/future"))
+  .settings(commonSettings: _*)
+  .settings(
+    name := "async-http-client-handler-future"
+  ) dependsOn asyncHttpClientHandler
+
+lazy val scalazAsyncHttpClientHandler: Project = (project in file(
+  "async-http-client-handler/scalaz"))
+  .settings(commonSettings: _*)
+  .settings(
+    name := "async-http-client-handler-scalaz",
+    libraryDependencies ++= Seq(
+      "org.scalaz" %% "scalaz-concurrent" % "7.2.14"
+    )
+  ) dependsOn asyncHttpClientHandler
 
 lazy val tests: Project = (project in file("tests"))
   .settings(commonSettings: _*)
@@ -91,4 +108,4 @@ lazy val tests: Project = (project in file("tests"))
       "ch.qos.logback" % "logback-classic" % "1.2.3"
     ).map(_ % "test"),
     libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test"
-  ) dependsOn (core, akkaHttpHandler, asyncHttpClientHandler)
+  ) dependsOn (core, akkaHttpHandler, futureAsyncHttpClientHandler, scalazAsyncHttpClientHandler)
