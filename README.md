@@ -347,6 +347,11 @@ There are two type aliases for the request template that are used:
 * [fs2-http](https://github.com/Spinoco/fs2-http)
 * [http4s](http://http4s.org/v0.17/client/)
 
+## Contributing
+
+Take a look at our [project board](https://github.com/softwaremill/sttp/projects/1) 
+and pick a task you'd like to work on!
+
 ## Credits
 
 * [Tomasz Szymański](https://github.com/szimano)
