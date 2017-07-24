@@ -262,6 +262,11 @@ class BasicTests
           .force()
         response.body should be("a==/b c:=/d")
       }
+
+      name should "post without a body" in {
+        val response = postEcho.send().force()
+        response.body should be("POST /echo")
+      }
     }
 
     def headerTests(): Unit = {

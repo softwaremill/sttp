@@ -218,7 +218,7 @@ abstract class AsyncHttpClientHandler[R[_], S](
     }
   }
 
-  def close(): Unit = {
+  override def close(): Unit = {
     if (closeClient)
       asyncHttpClient.close()
   }

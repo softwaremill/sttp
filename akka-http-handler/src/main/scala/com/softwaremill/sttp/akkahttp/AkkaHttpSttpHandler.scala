@@ -173,10 +173,9 @@ class AkkaHttpSttpHandler private (actorSystem: ActorSystem,
     decoder.decodeMessage(response)
   }
 
-  def close(): Future[Unit] = {
+  override def close(): Unit = {
     implicit val ec = this.ec
-    if (terminateActorSystemOnClose) actorSystem.terminate().map(_ => ())
-    else Future.successful(())
+    if (terminateActorSystemOnClose) actorSystem.terminate()
   }
 
   private implicit class RichTry[T](t: Try[T]) {
