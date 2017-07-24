@@ -15,10 +15,12 @@ import org.reactivestreams.Publisher
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 
-class FutureAsyncHttpClientHandler private (asyncHttpClient: AsyncHttpClient)(
-    implicit ec: ExecutionContext)
+class FutureAsyncHttpClientHandler private (
+    asyncHttpClient: AsyncHttpClient,
+    closeClient: Boolean)(implicit ec: ExecutionContext)
     extends AsyncHttpClientHandler[Future, Nothing](asyncHttpClient,
-                                                    new FutureMonad()) {
+                                                    new FutureMonad(),
+                                                    closeClient) {
 
   override protected def streamBodyToPublisher(
       s: Nothing): Publisher[ByteBuffer] = s // nothing is everything
@@ -38,7 +40,8 @@ object FutureAsyncHttpClientHandler {
   def apply()(
       implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
     : FutureAsyncHttpClientHandler =
-    new FutureAsyncHttpClientHandler(new DefaultAsyncHttpClient())
+    new FutureAsyncHttpClientHandler(new DefaultAsyncHttpClient(),
+                                     closeClient = true)
 
   /**
     * @param ec The execution context for running non-network related operations,
@@ -48,7 +51,8 @@ object FutureAsyncHttpClientHandler {
   def usingConfig(cfg: AsyncHttpClientConfig)(
       implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
     : FutureAsyncHttpClientHandler =
-    new FutureAsyncHttpClientHandler(new DefaultAsyncHttpClient())
+    new FutureAsyncHttpClientHandler(new DefaultAsyncHttpClient(),
+                                     closeClient = true)
 
   /**
     * @param ec The execution context for running non-network related operations,
@@ -58,7 +62,7 @@ object FutureAsyncHttpClientHandler {
   def usingClient(client: AsyncHttpClient)(implicit ec: ExecutionContext =
                                              ExecutionContext.Implicits.global)
     : FutureAsyncHttpClientHandler =
-    new FutureAsyncHttpClientHandler(client)
+    new FutureAsyncHttpClientHandler(client, closeClient = false)
 }
 
 private[future] class FutureMonad(implicit ec: ExecutionContext)

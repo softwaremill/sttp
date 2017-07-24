@@ -30,7 +30,8 @@ import scala.language.higherKinds
 
 abstract class AsyncHttpClientHandler[R[_], S](
     asyncHttpClient: AsyncHttpClient,
-    rm: MonadAsyncError[R])
+    rm: MonadAsyncError[R],
+    closeClient: Boolean)
     extends SttpHandler[R, S] {
 
   override def send[T](r: Request[T, S]): R[Response[T]] = {
@@ -215,6 +216,11 @@ abstract class AsyncHttpClientHandler[R[_], S](
           new IllegalStateException(
             "Requested a streaming response, trying to read eagerly."))
     }
+  }
+
+  def close(): Unit = {
+    if (closeClient)
+      asyncHttpClient.close()
   }
 }
 

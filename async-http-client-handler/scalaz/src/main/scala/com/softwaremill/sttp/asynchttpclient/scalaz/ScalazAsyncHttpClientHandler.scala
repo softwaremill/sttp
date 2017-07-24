@@ -16,8 +16,11 @@ import org.reactivestreams.Publisher
 import scalaz.{-\/, \/-}
 import scalaz.concurrent.Task
 
-class ScalazAsyncHttpClientHandler private (asyncHttpClient: AsyncHttpClient)
-    extends AsyncHttpClientHandler[Task, Nothing](asyncHttpClient, TaskMonad) {
+class ScalazAsyncHttpClientHandler private (asyncHttpClient: AsyncHttpClient,
+                                            closeClient: Boolean)
+    extends AsyncHttpClientHandler[Task, Nothing](asyncHttpClient,
+                                                  TaskMonad,
+                                                  closeClient) {
 
   override protected def streamBodyToPublisher(
       s: Nothing): Publisher[ByteBuffer] = s // nothing is everything
@@ -29,11 +32,13 @@ class ScalazAsyncHttpClientHandler private (asyncHttpClient: AsyncHttpClient)
 
 object ScalazAsyncHttpClientHandler {
   def apply(): ScalazAsyncHttpClientHandler =
-    new ScalazAsyncHttpClientHandler(new DefaultAsyncHttpClient())
+    new ScalazAsyncHttpClientHandler(new DefaultAsyncHttpClient(),
+                                     closeClient = true)
   def usingConfig(cfg: AsyncHttpClientConfig): ScalazAsyncHttpClientHandler =
-    new ScalazAsyncHttpClientHandler(new DefaultAsyncHttpClient())
+    new ScalazAsyncHttpClientHandler(new DefaultAsyncHttpClient(),
+                                     closeClient = true)
   def usingClient(client: AsyncHttpClient): ScalazAsyncHttpClientHandler =
-    new ScalazAsyncHttpClientHandler(client)
+    new ScalazAsyncHttpClientHandler(client, closeClient = false)
 }
 
 private[scalaz] object TaskMonad extends MonadAsyncError[Task] {
