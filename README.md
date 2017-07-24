@@ -274,19 +274,19 @@ dependency on `scalaz-concurrent`.
 Next you'll need to add an implicit value:
 
 ```scala
-implicit val sttpHandler = new FutureAsyncHttpClientHandler()
+implicit val sttpHandler = FutureAsyncHttpClientHandler()
 
 // or, if you're using the scalaz version:
-implicit val sttpHandler = new ScalazAsyncHttpClientHandler()
+implicit val sttpHandler = ScalazAsyncHttpClientHandler()
 
 // or, if you're using the monix version:
-implicit val sttpHandler = new MonixAsyncHttpClientHandler()
+implicit val sttpHandler = MonixAsyncHttpClientHandler()
 
 // or, if you'd like to use custom configuration:
-implicit val sttpHandler = new FutureAsyncHttpClientHandler(asyncHttpClientConfig)
+implicit val sttpHandler = FutureAsyncHttpClientHandler.usingConfig(asyncHttpClientConfig)
 
 // or, if you'd like to instantiate the AsyncHttpClient yourself:
-implicit val sttpHandler = new FutureAsyncHttpClientHandler(asyncHttpClient)
+implicit val sttpHandler = FutureAsyncHttpClientHandler.usingClient(asyncHttpClient)
 ```
 
 Streaming is not (yet) supported.

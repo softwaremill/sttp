@@ -12,12 +12,23 @@ import org.asynchttpclient.{
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 
-class FutureAsyncHttpClientHandler(asyncHttpClient: AsyncHttpClient)(
-    implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
-    extends AsyncHttpClientHandler[Future](asyncHttpClient, new FutureMonad()) {
+class FutureAsyncHttpClientHandler private (asyncHttpClient: AsyncHttpClient)(
+    implicit ec: ExecutionContext)
+    extends AsyncHttpClientHandler[Future](asyncHttpClient, new FutureMonad())
 
-  def this() = this(new DefaultAsyncHttpClient())
-  def this(cfg: AsyncHttpClientConfig) = this(new DefaultAsyncHttpClient(cfg))
+object FutureAsyncHttpClientHandler {
+  def apply()(
+      implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
+    : FutureAsyncHttpClientHandler =
+    new FutureAsyncHttpClientHandler(new DefaultAsyncHttpClient())
+  def usingConfig(cfg: AsyncHttpClientConfig)(
+      implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
+    : FutureAsyncHttpClientHandler =
+    new FutureAsyncHttpClientHandler(new DefaultAsyncHttpClient())
+  def usingClient(client: AsyncHttpClient)(implicit ec: ExecutionContext =
+                                             ExecutionContext.Implicits.global)
+    : FutureAsyncHttpClientHandler =
+    new FutureAsyncHttpClientHandler(client)
 }
 
 private[future] class FutureMonad(implicit ec: ExecutionContext)

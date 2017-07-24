@@ -21,6 +21,15 @@ class MonixAsyncHttpClientHandler(asyncHttpClient: AsyncHttpClient)
   def this(cfg: AsyncHttpClientConfig) = this(new DefaultAsyncHttpClient(cfg))
 }
 
+object MonixAsyncHttpClientHandler {
+  def apply(): MonixAsyncHttpClientHandler =
+    new MonixAsyncHttpClientHandler(new DefaultAsyncHttpClient())
+  def usingConfig(cfg: AsyncHttpClientConfig): MonixAsyncHttpClientHandler =
+    new MonixAsyncHttpClientHandler(new DefaultAsyncHttpClient())
+  def usingClient(client: AsyncHttpClient): MonixAsyncHttpClientHandler =
+    new MonixAsyncHttpClientHandler(client)
+}
+
 private[monix] object TaskMonad extends MonadAsyncError[Task] {
   override def unit[T](t: T): Task[T] = Task.now(t)
 

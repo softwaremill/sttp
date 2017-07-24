@@ -119,11 +119,11 @@ class BasicTests
                                 ForceWrappedValue.id)
   runTests("Akka HTTP")(AkkaHttpSttpHandler.usingActorSystem(actorSystem),
                         ForceWrappedValue.future)
-  runTests("Async Http Client - Future")(new FutureAsyncHttpClientHandler(),
+  runTests("Async Http Client - Future")(FutureAsyncHttpClientHandler(),
                                          ForceWrappedValue.future)
-  runTests("Async Http Client - Scalaz")(new ScalazAsyncHttpClientHandler(),
+  runTests("Async Http Client - Scalaz")(ScalazAsyncHttpClientHandler(),
                                          ForceWrappedValue.scalazTask)
-  runTests("Async Http Client - Monix")(new MonixAsyncHttpClientHandler(),
+  runTests("Async Http Client - Monix")(MonixAsyncHttpClientHandler(),
                                         ForceWrappedValue.monixTask)
 
   def runTests[R[_]](name: String)(

@@ -13,11 +13,16 @@ import org.asynchttpclient.{
 import scalaz.{-\/, \/-}
 import scalaz.concurrent.Task
 
-class ScalazAsyncHttpClientHandler(asyncHttpClient: AsyncHttpClient)
-    extends AsyncHttpClientHandler[Task](asyncHttpClient, TaskMonad) {
+class ScalazAsyncHttpClientHandler private (asyncHttpClient: AsyncHttpClient)
+    extends AsyncHttpClientHandler[Task](asyncHttpClient, TaskMonad)
 
-  def this() = this(new DefaultAsyncHttpClient())
-  def this(cfg: AsyncHttpClientConfig) = this(new DefaultAsyncHttpClient(cfg))
+object ScalazAsyncHttpClientHandler {
+  def apply(): ScalazAsyncHttpClientHandler =
+    new ScalazAsyncHttpClientHandler(new DefaultAsyncHttpClient())
+  def usingConfig(cfg: AsyncHttpClientConfig): ScalazAsyncHttpClientHandler =
+    new ScalazAsyncHttpClientHandler(new DefaultAsyncHttpClient())
+  def usingClient(client: AsyncHttpClient): ScalazAsyncHttpClientHandler =
+    new ScalazAsyncHttpClientHandler(client)
 }
 
 private[scalaz] object TaskMonad extends MonadAsyncError[Task] {
