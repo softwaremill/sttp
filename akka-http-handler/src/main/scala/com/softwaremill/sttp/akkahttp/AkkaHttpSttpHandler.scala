@@ -2,7 +2,7 @@ package com.softwaremill.sttp.akkahttp
 
 import java.io.UnsupportedEncodingException
 
-import akka.actor.{ActorSystem, Terminated}
+import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.coding.{Deflate, Gzip, NoCoding}
 import akka.http.scaladsl.model.HttpHeader.ParsingResult
@@ -174,7 +174,6 @@ class AkkaHttpSttpHandler private (actorSystem: ActorSystem,
   }
 
   override def close(): Unit = {
-    implicit val ec = this.ec
     if (terminateActorSystemOnClose) actorSystem.terminate()
   }
 

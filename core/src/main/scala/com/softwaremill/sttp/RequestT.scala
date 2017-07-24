@@ -10,6 +10,8 @@ import com.softwaremill.sttp.model._
 
 import scala.collection.immutable.Seq
 
+import scala.language.higherKinds
+
 /**
   * @tparam U Specifies if the method & uri are specified. By default can be
   *           either:

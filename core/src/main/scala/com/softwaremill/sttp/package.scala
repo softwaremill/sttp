@@ -1,10 +1,9 @@
 package com.softwaremill
 
 import java.io.{File, InputStream}
-import java.net.{URI, URLEncoder}
+import java.net.URI
 import java.nio.ByteBuffer
 import java.nio.file.Path
-import java.util.Base64
 
 import com.softwaremill.sttp.model._
 
@@ -23,6 +22,12 @@ package object sttp {
     "This is a partial request, the method & url are not specified. Use " +
       ".get(...), .post(...) etc. to obtain a non-partial request.")
   private[sttp] type IsIdInRequest[U[_]] = U[Unit] =:= Id[Unit]
+
+  /**
+    * Provide an implicit value of this type to serialize arbitrary classes into a request body.
+    * Handlers might also provide special logic for serializer instances which they define (e.g. to handle streaming).
+    */
+  type BodySerializer[B] = B => BasicRequestBody
 
   // constants
 
