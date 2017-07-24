@@ -156,6 +156,8 @@ package object sttp {
       header(ContentTypeHeader,
              contentTypeWithEncoding(ct, encoding),
              replaceExisting = true)
+    def contentLength(l: Long): RequestT[U, T, S] =
+      header(ContentLengthHeader, l.toString, replaceExisting = true)
     def header(k: String,
                v: String,
                replaceExisting: Boolean = false): RequestT[U, T, S] = {
@@ -186,27 +188,39 @@ package object sttp {
 
     /**
       * Uses the `utf-8` encoding.
+      *
       * If content type is not yet specified, will be set to `text/plain`
       * with `utf-8` encoding.
+      *
+      * If content length is not yet specified, will be set to the number of
+      * bytes in the string using the `utf-8` encoding.
       */
     def body(b: String): RequestT[U, T, S] = body(b, Utf8)
 
     /**
       * If content type is not yet specified, will be set to `text/plain`
       * with the given encoding.
+      *
+      * If content length is not yet specified, will be set to the number of
+      * bytes in the string using the given encoding.
       */
     def body(b: String, encoding: String): RequestT[U, T, S] =
       setContentTypeIfMissing(
         contentTypeWithEncoding(TextPlainContentType, encoding))
+        .setContentLengthIfMissing(b.getBytes(encoding).length)
         .copy(body = StringBody(b, encoding))
 
     /**
       * If content type is not yet specified, will be set to
       * `application/octet-stream`.
+      *
+      * If content length is not yet specified, will be set to the length
+      * of the given array.
       */
     def body(b: Array[Byte]): RequestT[U, T, S] =
-      setContentTypeIfMissing(ApplicationOctetStreamContentType).copy(
-        body = ByteArrayBody(b))
+      setContentTypeIfMissing(ApplicationOctetStreamContentType)
+        .setContentLengthIfMissing(b.length)
+        .copy(body = ByteArrayBody(b))
 
     /**
       * If content type is not yet specified, will be set to
@@ -227,21 +241,32 @@ package object sttp {
     /**
       * If content type is not yet specified, will be set to
       * `application/octet-stream`.
+      *
+      * If content length is not yet specified, will be set to the length
+      * of the given file.
       */
-    def body(b: File): RequestT[U, T, S] = body(b.toPath)
+    def body(b: File): RequestT[U, T, S] =
+      body(b.toPath)
 
     /**
       * If content type is not yet specified, will be set to
       * `application/octet-stream`.
+      *
+      * If content length is not yet specified, will be set to the length
+      * of the given file.
       */
     def body(b: Path): RequestT[U, T, S] =
-      setContentTypeIfMissing(ApplicationOctetStreamContentType).copy(
-        body = PathBody(b))
+      setContentTypeIfMissing(ApplicationOctetStreamContentType)
+        .setContentLengthIfMissing(b.toFile.length())
+        .copy(body = PathBody(b))
 
     /**
       * Encodes the given parameters as form data using `utf-8`.
       * If content type is not yet specified, will be set to
       * `application/x-www-form-urlencoded`.
+      *
+      * If content length is not yet specified, will be set to the length
+      * of the number of bytes in the url-encoded parameter string.
       */
     def body(fs: Map[String, String]): RequestT[U, T, S] =
       formDataBody(fs.toList, Utf8)
@@ -250,6 +275,9 @@ package object sttp {
       * Encodes the given parameters as form data.
       * If content type is not yet specified, will be set to
       * `application/x-www-form-urlencoded`.
+      *
+      * If content length is not yet specified, will be set to the length
+      * of the number of bytes in the url-encoded parameter string.
       */
     def body(fs: Map[String, String], encoding: String): RequestT[U, T, S] =
       formDataBody(fs.toList, encoding)
@@ -258,6 +286,9 @@ package object sttp {
       * Encodes the given parameters as form data using `utf-8`.
       * If content type is not yet specified, will be set to
       * `application/x-www-form-urlencoded`.
+      *
+      * If content length is not yet specified, will be set to the length
+      * of the number of bytes in the url-encoded parameter string.
       */
     def body(fs: (String, String)*): RequestT[U, T, S] =
       formDataBody(fs.toList, Utf8)
@@ -266,6 +297,9 @@ package object sttp {
       * Encodes the given parameters as form data.
       * If content type is not yet specified, will be set to
       * `application/x-www-form-urlencoded`.
+      *
+      * If content length is not yet specified, will be set to the length
+      * of the number of bytes in the url-encoded parameter string.
       */
     def body(fs: Seq[(String, String)], encoding: String): RequestT[U, T, S] =
       formDataBody(fs, encoding)
@@ -306,9 +340,14 @@ package object sttp {
     }
 
     private def hasContentType: Boolean =
-      headers.exists(_._1.toLowerCase.contains(ContentTypeHeader))
+      headers.exists(_._1.equalsIgnoreCase(ContentTypeHeader))
     private def setContentTypeIfMissing(ct: String): RequestT[U, T, S] =
       if (hasContentType) this else contentType(ct)
+
+    private def hasContentLength: Boolean =
+      headers.exists(_._1.equalsIgnoreCase(ContentLengthHeader))
+    private def setContentLengthIfMissing(l: => Long): RequestT[U, T, S] =
+      if (hasContentLength) this else contentLength(l)
 
     private def formDataBody(fs: Seq[(String, String)],
                              encoding: String): RequestT[U, T, S] = {
@@ -318,8 +357,9 @@ package object sttp {
             URLEncoder.encode(p._1, encoding) + "=" + URLEncoder
               .encode(p._2, encoding))
         .mkString("&")
-      setContentTypeIfMissing(ApplicationFormContentType).copy(
-        body = StringBody(b, encoding))
+      setContentTypeIfMissing(ApplicationFormContentType)
+        .setContentLengthIfMissing(b.getBytes(encoding).length)
+        .copy(body = StringBody(b, encoding))
     }
   }
 
