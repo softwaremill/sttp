@@ -5,8 +5,8 @@ jdk:
 scala:
 - 2.12.2
 - 2.11.8
-deploy:
-- sbt ++$TRAVIS_SCALA_VERSION releaseEarly
+script:
+- sbt ++$TRAVIS_SCALA_VERSION test releaseEarly
 # Encrypted SONATYPE_USER, SONATYPE_PASSWORD, PGP_PASSWORD
 env:
   global:
