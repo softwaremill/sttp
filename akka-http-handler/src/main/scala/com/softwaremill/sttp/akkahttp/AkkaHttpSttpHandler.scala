@@ -195,7 +195,8 @@ object AkkaHttpSttpHandler {
     *           context.
     */
   def apply()(
-      implicit ec: ExecutionContext = ExecutionContext.Implicits.global) =
+      implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
+    : SttpHandler[Future, Source[ByteString, Any]] =
     new AkkaHttpSttpHandler(ActorSystem("sttp"), ec, true)
 
   /**
@@ -206,6 +207,7 @@ object AkkaHttpSttpHandler {
     *           context.
     */
   def usingActorSystem(actorSystem: ActorSystem)(
-      implicit ec: ExecutionContext = ExecutionContext.Implicits.global) =
+      implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
+    : SttpHandler[Future, Source[ByteString, Any]] =
     new AkkaHttpSttpHandler(actorSystem, ec, false)
 }

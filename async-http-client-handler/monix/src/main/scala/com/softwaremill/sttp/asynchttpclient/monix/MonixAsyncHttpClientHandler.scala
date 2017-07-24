@@ -2,6 +2,7 @@ package com.softwaremill.sttp.asynchttpclient.monix
 
 import java.nio.ByteBuffer
 
+import com.softwaremill.sttp.SttpHandler
 import com.softwaremill.sttp.asynchttpclient.{
   AsyncHttpClientHandler,
   MonadAsyncError
@@ -43,7 +44,7 @@ object MonixAsyncHttpClientHandler {
     *          global scheduler.
     */
   def apply()(implicit s: Scheduler = Scheduler.Implicits.global)
-    : MonixAsyncHttpClientHandler =
+    : SttpHandler[Task, Observable[ByteBuffer]] =
     new MonixAsyncHttpClientHandler(new DefaultAsyncHttpClient(),
                                     closeClient = true)
 
@@ -53,7 +54,7 @@ object MonixAsyncHttpClientHandler {
     */
   def usingConfig(cfg: AsyncHttpClientConfig)(implicit s: Scheduler =
                                                 Scheduler.Implicits.global)
-    : MonixAsyncHttpClientHandler =
+    : SttpHandler[Task, Observable[ByteBuffer]] =
     new MonixAsyncHttpClientHandler(new DefaultAsyncHttpClient(),
                                     closeClient = true)
 
@@ -63,7 +64,7 @@ object MonixAsyncHttpClientHandler {
     */
   def usingClient(client: AsyncHttpClient)(implicit s: Scheduler =
                                              Scheduler.Implicits.global)
-    : MonixAsyncHttpClientHandler =
+    : SttpHandler[Task, Observable[ByteBuffer]] =
     new MonixAsyncHttpClientHandler(client, closeClient = false)
 }
 

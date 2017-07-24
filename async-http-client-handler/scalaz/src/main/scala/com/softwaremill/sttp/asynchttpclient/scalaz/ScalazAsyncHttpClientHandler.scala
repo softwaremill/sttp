@@ -2,6 +2,7 @@ package com.softwaremill.sttp.asynchttpclient.scalaz
 
 import java.nio.ByteBuffer
 
+import com.softwaremill.sttp.SttpHandler
 import com.softwaremill.sttp.asynchttpclient.{
   AsyncHttpClientHandler,
   MonadAsyncError
@@ -31,13 +32,13 @@ class ScalazAsyncHttpClientHandler private (asyncHttpClient: AsyncHttpClient,
 }
 
 object ScalazAsyncHttpClientHandler {
-  def apply(): ScalazAsyncHttpClientHandler =
+  def apply(): SttpHandler[Task, Nothing] =
     new ScalazAsyncHttpClientHandler(new DefaultAsyncHttpClient(),
                                      closeClient = true)
-  def usingConfig(cfg: AsyncHttpClientConfig): ScalazAsyncHttpClientHandler =
+  def usingConfig(cfg: AsyncHttpClientConfig): SttpHandler[Task, Nothing] =
     new ScalazAsyncHttpClientHandler(new DefaultAsyncHttpClient(),
                                      closeClient = true)
-  def usingClient(client: AsyncHttpClient): ScalazAsyncHttpClientHandler =
+  def usingClient(client: AsyncHttpClient): SttpHandler[Task, Nothing] =
     new ScalazAsyncHttpClientHandler(client, closeClient = false)
 }
 

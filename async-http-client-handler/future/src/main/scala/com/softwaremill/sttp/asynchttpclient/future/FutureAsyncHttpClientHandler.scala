@@ -2,6 +2,7 @@ package com.softwaremill.sttp.asynchttpclient.future
 
 import java.nio.ByteBuffer
 
+import com.softwaremill.sttp.SttpHandler
 import com.softwaremill.sttp.asynchttpclient.{
   AsyncHttpClientHandler,
   MonadAsyncError
@@ -39,7 +40,7 @@ object FutureAsyncHttpClientHandler {
     */
   def apply()(
       implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
-    : FutureAsyncHttpClientHandler =
+    : SttpHandler[Future, Nothing] =
     new FutureAsyncHttpClientHandler(new DefaultAsyncHttpClient(),
                                      closeClient = true)
 
@@ -50,7 +51,7 @@ object FutureAsyncHttpClientHandler {
     */
   def usingConfig(cfg: AsyncHttpClientConfig)(
       implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
-    : FutureAsyncHttpClientHandler =
+    : SttpHandler[Future, Nothing] =
     new FutureAsyncHttpClientHandler(new DefaultAsyncHttpClient(),
                                      closeClient = true)
 
@@ -61,7 +62,7 @@ object FutureAsyncHttpClientHandler {
     */
   def usingClient(client: AsyncHttpClient)(implicit ec: ExecutionContext =
                                              ExecutionContext.Implicits.global)
-    : FutureAsyncHttpClientHandler =
+    : SttpHandler[Future, Nothing] =
     new FutureAsyncHttpClientHandler(client, closeClient = false)
 }
 
