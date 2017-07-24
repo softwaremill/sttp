@@ -289,7 +289,44 @@ implicit val sttpHandler = FutureAsyncHttpClientHandler.usingConfig(asyncHttpCli
 implicit val sttpHandler = FutureAsyncHttpClientHandler.usingClient(asyncHttpClient)
 ```
 
-Streaming is not (yet) supported.
+#### Streaming using Monix
+
+Currently, only the Monix handler supports streaming (as both Monix and Async 
+Http Client support reactive streams `Publisher`s out of the box). The type of 
+supported streams in this case is `Observable[ByteBuffer]`. That is, you can 
+set such an observable as a request body:
+
+```scala
+import com.softwaremill.sttp._
+
+import java.nio.ByteBuffer
+import monix.reactive.Observable
+
+val obs: Observable[ByteBuffer] =  ...
+
+sttp
+  .streamBody(obs)
+  .post(uri"...")
+```
+
+And receive responses as an observable stream:
+
+```scala
+import com.softwaremill.sttp._
+import com.softwaremill.sttp.asynchttpclient.monix._
+
+import java.nio.ByteBuffer
+import monix.eval.Task
+import monix.reactive.Observable
+
+implicit val sttpHandler = MonixAsyncHttpClientHandler()
+
+val response: Task[Response[Observable[ByteBuffer]]] = 
+  sttp
+    .post(uri"...")
+    .response(asStream[Observable[ByteBuffer]])
+    .send()
+```
 
 ## Request type
 

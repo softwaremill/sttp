@@ -1,5 +1,7 @@
 package com.softwaremill.sttp.asynchttpclient.scalaz
 
+import java.nio.ByteBuffer
+
 import com.softwaremill.sttp.asynchttpclient.{
   AsyncHttpClientHandler,
   MonadAsyncError
@@ -9,12 +11,21 @@ import org.asynchttpclient.{
   AsyncHttpClientConfig,
   DefaultAsyncHttpClient
 }
+import org.reactivestreams.Publisher
 
 import scalaz.{-\/, \/-}
 import scalaz.concurrent.Task
 
 class ScalazAsyncHttpClientHandler private (asyncHttpClient: AsyncHttpClient)
-    extends AsyncHttpClientHandler[Task](asyncHttpClient, TaskMonad)
+    extends AsyncHttpClientHandler[Task, Nothing](asyncHttpClient, TaskMonad) {
+
+  override protected def streamBodyToPublisher(
+      s: Nothing): Publisher[ByteBuffer] = s // nothing is everything
+
+  override protected def publisherToStreamBody(
+      p: Publisher[ByteBuffer]): Nothing =
+    throw new IllegalStateException("This handler does not support streaming")
+}
 
 object ScalazAsyncHttpClientHandler {
   def apply(): ScalazAsyncHttpClientHandler =
