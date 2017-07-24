@@ -16,16 +16,16 @@ package object sttp {
   type Id[X] = X
   type Empty[X] = None.type
 
-  def ignore: ResponseAs[Unit, Nothing] = IgnoreResponse(identity)
+  def ignore: ResponseAs[Unit, Nothing] = IgnoreResponse
 
   /**
     * Uses `utf-8` encoding.
     */
   def asString: ResponseAs[String, Nothing] = asString(Utf8)
   def asString(encoding: String): ResponseAs[String, Nothing] =
-    ResponseAsString(encoding, identity)
+    ResponseAsString(encoding)
   def asByteArray: ResponseAs[Array[Byte], Nothing] =
-    ResponseAsByteArray(identity)
+    ResponseAsByteArray
 
   /**
     * Uses `utf-8` encoding.
@@ -33,9 +33,9 @@ package object sttp {
   def asParams: ResponseAs[Seq[(String, String)], Nothing] =
     asParams(Utf8)
   def asParams(encoding: String): ResponseAs[Seq[(String, String)], Nothing] =
-    ResponseAsParams(encoding, identity)
+    ResponseAsParams(encoding)
 
-  def asStream[S]: ResponseAs[S, S] = ResponseAsStream[S, S, S](identity)
+  def asStream[S]: ResponseAs[S, S] = ResponseAsStream[S, S]()
 
   /**
     * Use the factory methods `multiPart` to conveniently create instances of

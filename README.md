@@ -203,10 +203,10 @@ in a `Future`.
 Next you'll need to add an implicit value:
 
 ```scala
-implicit val sttpHandler = new AkkaHttpSttpHandler()
+implicit val sttpHandler = AkkaHttpSttpHandler()
 
 // or, if you'd like to use an existing actor system:
-implicit val sttpHandler = new AkkaHttpSttpHandler(actorSystem)
+implicit val sttpHandler = AkkaHttpSttpHandler.usingActorSystem(actorSystem)
 ```
 
 This backend supports sending and receiving 
@@ -238,7 +238,7 @@ import com.softwaremill.sttp.akkahttp._
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 
-implicit val sttpHandler = new AkkaHttpSttpHandler(actorSystem)
+implicit val sttpHandler = AkkaHttpSttpHandler()
 
 val response: Future[Response[Source[ByteString, Any]]] = 
   sttp

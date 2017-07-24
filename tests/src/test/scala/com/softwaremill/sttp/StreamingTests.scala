@@ -34,7 +34,7 @@ class StreamingTests
   akkaStreamingTests()
 
   def akkaStreamingTests(): Unit = {
-    implicit val handler = new AkkaHttpSttpHandler(actorSystem)
+    implicit val handler = AkkaHttpSttpHandler.usingActorSystem(actorSystem)
 
     val body = "streaming test"
 

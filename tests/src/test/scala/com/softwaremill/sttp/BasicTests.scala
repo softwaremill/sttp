@@ -117,7 +117,7 @@ class BasicTests
 
   runTests("HttpURLConnection")(HttpURLConnectionSttpHandler,
                                 ForceWrappedValue.id)
-  runTests("Akka HTTP")(new AkkaHttpSttpHandler(actorSystem),
+  runTests("Akka HTTP")(AkkaHttpSttpHandler.usingActorSystem(actorSystem),
                         ForceWrappedValue.future)
   runTests("Async Http Client - Future")(new FutureAsyncHttpClientHandler(),
                                          ForceWrappedValue.future)

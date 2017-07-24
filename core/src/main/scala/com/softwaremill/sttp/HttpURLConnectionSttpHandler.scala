@@ -101,15 +101,16 @@ object HttpURLConnectionSttpHandler extends SttpHandler[Id, Nothing] {
     def asString(enc: String) = Source.fromInputStream(is, enc).mkString
 
     responseAs match {
-      case IgnoreResponse(g) =>
+      case MappedResponseAs(raw, g) => g(readResponseBody(is, raw))
+
+      case IgnoreResponse =>
         @tailrec def consume(): Unit = if (is.read() != -1) consume()
+        consume()
 
-        g(consume())
+      case ResponseAsString(enc) =>
+        asString(enc)
 
-      case ResponseAsString(enc, g) =>
-        g(asString(enc))
-
-      case ResponseAsByteArray(g) =>
+      case ResponseAsByteArray =>
         val os = new ByteArrayOutputStream
         var read = 0
         val buf = new Array[Byte](1024)
@@ -125,12 +126,12 @@ object HttpURLConnectionSttpHandler extends SttpHandler[Id, Nothing] {
 
         transfer()
 
-        g(os.toByteArray)
+        os.toByteArray
 
-      case r @ ResponseAsParams(enc, g) =>
-        g(r.parse(asString(enc)))
+      case r @ ResponseAsParams(enc) =>
+        r.parse(asString(enc))
 
-      case ResponseAsStream(_) =>
+      case ResponseAsStream() =>
         // only possible when the user requests the response as a stream of
         // Nothing. Oh well ...
         throw new IllegalStateException()
