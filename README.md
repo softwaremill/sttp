@@ -66,12 +66,11 @@ sttp.get(uri"http://httpbin.org/ip").send()
 SBT dependency:
 
 ```scala
-"com.softwaremill.sttp" %% "core" % version
+"com.softwaremill.sttp" %% "core" % "0.0.1"
 ```
 
-Check the maven badge above or git tags for the latest version. `sttp` is 
-available for Scala 2.11 and 2.12, and requires Java 8. The core module has
-no transitive dependencies.
+`sttp` is available for Scala 2.11 and 2.12, and requires Java 8. The core 
+module has no transitive dependencies.
 
 If you'd like to use an alternate backend, [see below](#supported-backends) 
 for additional instructions.
@@ -193,7 +192,7 @@ implicit val sttpHandler = HttpURLConnectionSttpHandler
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp" %% "akka-http-handler" % version
+"com.softwaremill.sttp" %% "akka-http-handler" % "0.0.1"
 ```
 
 This handler depends on [akka-http](http://doc.akka.io/docs/akka-http/current/scala/http/).
@@ -252,11 +251,11 @@ val response: Future[Response[Source[ByteString, Any]]] =
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp" %% "async-http-client-handler-future" % version
+"com.softwaremill.sttp" %% "async-http-client-handler-future" % "0.0.1"
 // or
-"com.softwaremill.sttp" %% "async-http-client-handler-scalaz" % version
+"com.softwaremill.sttp" %% "async-http-client-handler-scalaz" % "0.0.1"
 // or
-"com.softwaremill.sttp" %% "async-http-client-handler-monix" % version
+"com.softwaremill.sttp" %% "async-http-client-handler-monix" % "0.0.1"
 ```
 
 This handler depends on [async-http-handler](https://github.com/AsyncHttpClient/async-http-client).

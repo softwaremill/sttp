@@ -1,12 +1,19 @@
 val commonSettings = Seq(
   organization := "com.softwaremill.sttp",
-  version := "0.0.2",
   scalaVersion := "2.12.2",
   crossScalaVersions := Seq(scalaVersion.value, "2.11.8"),
   scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-Xlint"),
   scalafmtOnCompile := true,
   scalafmtVersion := "1.0.0",
-  releaseEarlyWith := SonatypePublisher,
+  // publishing
+  publishTo := {
+    val nexus = "https://oss.sonatype.org/"
+    val (name, url) =
+      if (isSnapshot.value)
+        ("snapshots", nexus + "content/repositories/snapshots")
+      else ("releases", nexus + "service/local/staging/deploy/maven2")
+    Some(name at url)
+  },
   publishArtifact in Test := false,
   publishMavenStyle := true,
   scmInfo := Some(
@@ -17,9 +24,10 @@ val commonSettings = Seq(
   licenses := ("Apache-2.0",
                url("http://www.apache.org/licenses/LICENSE-2.0.txt")) :: Nil,
   homepage := Some(url("http://softwaremill.com/open-source")),
-  pgpPassphrase := sys.env.get("PGP_PASSWORD").map(_.toArray),
-  pgpPublicRing := file(".keys_pub.asc"),
-  pgpSecretRing := file(".keys_priv.asc")
+  // sbt-release
+  releaseCrossBuild := true,
+  releasePublishArtifactsAction := PgpKeys.publishSigned.value,
+  releaseIgnoreUntrackedFiles := true
 )
 
 val akkaHttpVersion = "10.0.9"
