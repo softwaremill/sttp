@@ -6,14 +6,12 @@ val commonSettings = Seq(
   scalafmtOnCompile := true,
   scalafmtVersion := "1.0.0",
   // publishing
-  publishTo := {
-    val nexus = "https://oss.sonatype.org/"
-    val (name, url) =
-      if (isSnapshot.value)
-        ("snapshots", nexus + "content/repositories/snapshots")
-      else ("releases", nexus + "service/local/staging/deploy/maven2")
-    Some(name at url)
-  },
+  publishTo := Some(
+    if (isSnapshot.value)
+      Opts.resolver.sonatypeSnapshots
+    else
+      Opts.resolver.sonatypeStaging
+  ),
   publishArtifact in Test := false,
   publishMavenStyle := true,
   scmInfo := Some(
@@ -24,10 +22,12 @@ val commonSettings = Seq(
   licenses := ("Apache-2.0",
                url("http://www.apache.org/licenses/LICENSE-2.0.txt")) :: Nil,
   homepage := Some(url("http://softwaremill.com/open-source")),
+  sonatypeProfileName := "com.softwaremill",
   // sbt-release
   releaseCrossBuild := true,
   releasePublishArtifactsAction := PgpKeys.publishSigned.value,
-  releaseIgnoreUntrackedFiles := true
+  releaseIgnoreUntrackedFiles := true,
+  releaseProcess := SttpRelease.steps
 )
 
 val akkaHttpVersion = "10.0.9"
