@@ -258,7 +258,7 @@ To use, add the following dependency to your project:
 "com.softwaremill.sttp" %% "async-http-client-handler-monix" % "0.0.2"
 ```
 
-This handler depends on [async-http-handler](https://github.com/AsyncHttpClient/async-http-client).
+This handler depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client).
 A fully **asynchronous** handler, which uses [Netty](http://netty.io) behind the
 scenes. 
 
