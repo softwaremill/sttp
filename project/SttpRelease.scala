@@ -11,8 +11,8 @@ object SttpRelease {
   def steps: Seq[ReleaseStep] = Seq(
     checkSnapshotDependencies,
     inquireVersions,
-    runClean,
-    runTest,
+//    runClean,
+//    runTest,
     setReleaseVersion,
     updateVersionInReadme,
     commitReleaseVersion,
