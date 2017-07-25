@@ -1,6 +1,8 @@
 import java.util.regex.Pattern
 
+import sbt.Keys._
 import sbt._
+import sbtrelease.ReleasePlugin.autoImport._
 import sbtrelease.ReleasePlugin.autoImport.ReleaseKeys._
 import sbtrelease.ReleasePlugin.autoImport.ReleaseStep
 import sbtrelease.ReleaseStateTransformations._
@@ -36,6 +38,9 @@ object SttpRelease {
 
     val newReadme = readme.replaceAll(Pattern.quote(currentVersionInReadme), releaseVersion)
     IO.write(readmeFile, newReadme)
+
+    val settings = Project.extract(s)
+    settings.get(releaseVcs).get.add(readmeFile.getAbsolutePath) !! s.log
 
     s
   }
