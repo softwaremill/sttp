@@ -1,6 +1,5 @@
 import java.util.regex.Pattern
 
-import sbt.Keys._
 import sbt._
 import sbtrelease.ReleasePlugin.autoImport._
 import sbtrelease.ReleasePlugin.autoImport.ReleaseKeys._
@@ -11,8 +10,8 @@ object SttpRelease {
   def steps: Seq[ReleaseStep] = Seq(
     checkSnapshotDependencies,
     inquireVersions,
-//    runClean,
-//    runTest,
+    runClean,
+    runTest,
     setReleaseVersion,
     updateVersionInReadme,
     commitReleaseVersion,
