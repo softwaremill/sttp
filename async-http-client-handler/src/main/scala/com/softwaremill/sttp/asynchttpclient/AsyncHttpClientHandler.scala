@@ -80,6 +80,7 @@ abstract class AsyncHttpClientHandler[R[_], S](
     new StreamedAsyncHandler[Unit] {
       private val builder = new AsyncResponse.ResponseBuilder()
       private var publisher: Option[Publisher[ByteBuffer]] = None
+      private var completed = false
 
       override def onStream(
           p: Publisher[HttpResponseBodyPart]): AsyncHandler.State = {
@@ -95,6 +96,10 @@ abstract class AsyncHttpClientHandler[R[_], S](
                 s.onSubscribe(v)
             })
         })
+        // #2: sometimes onCompleted() isn't called, only onStream(); this
+        // seems to be true esp for https sites. For these cases, completing
+        // the request here.
+        doComplete()
         State.CONTINUE
       }
 
@@ -116,11 +121,20 @@ abstract class AsyncHttpClientHandler[R[_], S](
       }
 
       override def onCompleted(): Unit = {
-        val baseResponse = readResponseNoBody(builder.build())
-        val p = publisher.getOrElse(EmptyPublisher)
-        val s = publisherToStreamBody(p)
-        val t = responseAs.responseIsStream(s)
-        success(rm.unit(baseResponse.copy(body = t)))
+        // if the request had no body, onStream() will never be called
+        doComplete()
+      }
+
+      private def doComplete(): Unit = {
+        if (!completed) {
+          completed = true
+
+          val baseResponse = readResponseNoBody(builder.build())
+          val p = publisher.getOrElse(EmptyPublisher)
+          val s = publisherToStreamBody(p)
+          val t = responseAs.responseIsStream(s)
+          success(rm.unit(baseResponse.copy(body = t)))
+        }
       }
 
       override def onThrowable(t: Throwable): Unit = {

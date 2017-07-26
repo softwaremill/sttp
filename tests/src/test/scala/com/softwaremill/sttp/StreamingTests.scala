@@ -105,5 +105,26 @@ class StreamingTests
 
       new String(bytes, "utf-8") should be(body)
     }
+
+    it should "receive a stream from an https site" in {
+      val response = sttp
+      // of course, you should never rely on the internet being available
+      // in tests, but that's so much easier than setting up an https
+      // testing server
+        .get(uri"https://softwaremill.com")
+        .response(asStream[Observable[ByteBuffer]])
+        .send()
+        .runAsync
+        .futureValue
+
+      val bytes = response.body
+        .flatMap(bb => Observable.fromIterable(bb.array()))
+        .toListL
+        .runAsync
+        .futureValue
+        .toArray
+
+      new String(bytes, "utf-8") should include("</div>")
+    }
   }
 }
