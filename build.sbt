@@ -40,6 +40,7 @@ lazy val rootProject = (project in file("."))
   .settings(publishArtifact := false, name := "sttp")
   .aggregate(core,
              akkaHttpHandler,
+             asyncHttpClientHandler,
              futureAsyncHttpClientHandler,
              scalazAsyncHttpClientHandler,
              monixAsyncHttpClientHandler,
