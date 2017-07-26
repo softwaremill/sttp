@@ -10,6 +10,9 @@ object SttpRelease {
   def steps: Seq[ReleaseStep] = Seq(
     checkSnapshotDependencies,
     inquireVersions,
+    // publishing locally so that the pgp password prompt is displayed early
+    // in the process
+    ReleaseStep(action = Command.process("publishLocalSigned", _)),
     runClean,
     runTest,
     setReleaseVersion,
