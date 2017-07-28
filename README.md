@@ -175,6 +175,16 @@ uri"$scheme://$subdomains.example.com?x=$vx&$params#$jumpTo"
 
 ## Supported backends
 
+### Summary
+
+| Class (`com.softwaremill.sttp.`) | Result wrapper | Supported stream type |
+| --- | --- | --- |
+| `HttpURLConnectionSttpHandler` | None (`Id`) | - |
+| `akkahttp.AkkaHttpSttpHandler` | `scala.concurrent.Future` | `akka.stream.scaladsl.Source[ByteString, Any]` |
+| `asynchttpclient.future.FutureAsyncHttpClientHandler` | `scala.concurrent.Future` | - |
+| `asynchttpclient.scalaz..ScalazAsyncHttpClientHandler` | `scalaz.concurrent.Task` | - |
+| `asynchttpclient.monix.MonixAsyncHttpClientHandler` | `monix.eval.Task` | `monix.reactive.Observable[ByteBuffer]` | 
+
 ### `HttpURLConnectionSttpHandler`
 
 The default **synchronous** handler. Sending a request returns a response wrapped 
@@ -368,7 +378,7 @@ There are two type aliases for the request template that are used:
 ## TODO
 
 * multi-part uploads
-* scalaz/monix/fs2 streaming
+* scalaz/fs2 streaming
 * proxy support
 * connection options, SSL
 * *your API improvement idea here*
