@@ -1,6 +1,6 @@
 val commonSettings = Seq(
   organization := "com.softwaremill.sttp",
-  scalaVersion := "2.12.2",
+  scalaVersion := "2.12.3",
   crossScalaVersions := Seq(scalaVersion.value, "2.11.8"),
   scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-Xlint"),
   scalafmtOnCompile := true,
