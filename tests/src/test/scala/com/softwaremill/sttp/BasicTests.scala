@@ -114,6 +114,8 @@ class BasicTests
 
   override def port = 51823
 
+  var closeHandlers: List[() => Unit] = Nil
+
   runTests("HttpURLConnection")(HttpURLConnectionSttpHandler,
                                 ForceWrappedValue.id)
   runTests("Akka HTTP")(AkkaHttpSttpHandler.usingActorSystem(actorSystem),
@@ -128,6 +130,8 @@ class BasicTests
   def runTests[R[_]](name: String)(
       implicit handler: SttpHandler[R, Nothing],
       forceResponse: ForceWrappedValue[R]): Unit = {
+
+    closeHandlers = handler.close _ :: closeHandlers
 
     val postEcho = sttp.post(uri"$endpoint/echo")
     val testBody = "this is the body"
@@ -386,5 +390,10 @@ class BasicTests
         resp.body should be(decompressedBody)
       }
     }
+  }
+
+  override protected def afterAll(): Unit = {
+    closeHandlers.foreach(_())
+    super.afterAll()
   }
 }
