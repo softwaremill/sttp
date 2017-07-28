@@ -69,7 +69,7 @@ class UriTests extends FunSuite with Matchers {
     List(QF.KeyValue("k1", "v1"), QF.Plain("&abc&", relaxedEncoding = true)) -> "k1=v1&abc&",
     List(QF.KeyValue("k1?", "v1?", keyRelaxedEncoding = true)) -> "k1?=v1%3F",
     List(QF.KeyValue("k1?", "v1?", valueRelaxedEncoding = true)) -> "k1%3F=v1?",
-    List(QF.Plain("ą/ę&+;?", relaxedEncoding = true)) -> "%C4%85/%C4%99&+;?",
+    List(QF.Plain("ą/ę&+;?", relaxedEncoding = true)) -> "%C4%85/%C4%99&+;?"
   )
 
   for {
