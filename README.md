@@ -131,12 +131,11 @@ instances, which can then be used to specify request endpoints, for example:
 
 ```scala
 import com.softwaremill.sttp._
-import java.net.URI
 
 val user = "Mary Smith"
 val filter = "programming languages"
 
-val endpoint: URI = uri"http://example.com/$user/skills?filter=$filter"
+val endpoint: Uri = uri"http://example.com/$user/skills?filter=$filter"
 ```
 
 Any values embedded in the URI will be URL-encoded, taking into account the 
@@ -175,6 +174,16 @@ uri"$scheme://$subdomains.example.com?x=$vx&$params#$jumpTo"
 ```
 
 ## Supported backends
+
+### Summary
+
+| Class | Result wrapper | Supported stream type |
+| --- | --- | --- |
+| `HttpURLConnectionSttpHandler` | None (`Id`) | - |
+| `AkkaHttpSttpHandler` | `scala.concurrent.Future` | `akka.stream.scaladsl.Source[ByteString, Any]` |
+| `FutureAsyncHttpClientHandler` | `scala.concurrent.Future` | - |
+| `ScalazAsyncHttpClientHandler` | `scalaz.concurrent.Task` | - |
+| `MonixAsyncHttpClientHandler` | `monix.eval.Task` | `monix.reactive.Observable[ByteBuffer]` | 
 
 ### `HttpURLConnectionSttpHandler`
 
@@ -369,7 +378,7 @@ There are two type aliases for the request template that are used:
 ## TODO
 
 * multi-part uploads
-* scalaz/monix/fs2 streaming
+* scalaz/fs2 streaming
 * proxy support
 * connection options, SSL
 * *your API improvement idea here*
@@ -382,10 +391,12 @@ There are two type aliases for the request template that are used:
 * [play ws](https://github.com/playframework/play-ws)
 * [fs2-http](https://github.com/Spinoco/fs2-http)
 * [http4s](http://http4s.org/v0.17/client/)
+* [Gigahorse](http://eed3si9n.com/gigahorse/)
+* [RösHTTP](https://github.com/hmil/RosHTTP)
 
 ## Contributing
 
-Take a look at our [project board](https://github.com/softwaremill/sttp/projects/1) 
+Take a look at the [open issues](https://github.com/softwaremill/sttp/issues) 
 and pick a task you'd like to work on!
 
 ## Credits

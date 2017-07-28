@@ -28,10 +28,9 @@ import org.reactivestreams.{Publisher, Subscriber, Subscription}
 import scala.collection.JavaConverters._
 import scala.language.higherKinds
 
-abstract class AsyncHttpClientHandler[R[_], S](
-    asyncHttpClient: AsyncHttpClient,
-    rm: MonadAsyncError[R],
-    closeClient: Boolean)
+abstract class AsyncHttpClientHandler[R[_], S](asyncHttpClient: AsyncHttpClient,
+                                               rm: MonadAsyncError[R],
+                                               closeClient: Boolean)
     extends SttpHandler[R, S] {
 
   override def send[T](r: Request[T, S]): R[Response[T]] = {

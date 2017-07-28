@@ -35,13 +35,16 @@ class StreamingTests
 
   override def port = 51824
 
+  val akkaHandler = AkkaHttpSttpHandler.usingActorSystem(actorSystem)
+  val monixHandler = MonixAsyncHttpClientHandler()
+
   akkaStreamingTests()
   monixStreamingTests()
 
   val body = "streaming test"
 
   def akkaStreamingTests(): Unit = {
-    implicit val handler = AkkaHttpSttpHandler.usingActorSystem(actorSystem)
+    implicit val handler = akkaHandler
 
     "Akka HTTP" should "stream request body" in {
       val response = sttp
@@ -68,7 +71,7 @@ class StreamingTests
   }
 
   def monixStreamingTests(): Unit = {
-    implicit val handler = MonixAsyncHttpClientHandler()
+    implicit val handler = monixHandler
     import monix.execution.Scheduler.Implicits.global
 
     val body = "streaming test"
@@ -126,5 +129,11 @@ class StreamingTests
 
       new String(bytes, "utf-8") should include("</div>")
     }
+  }
+
+  override protected def afterAll(): Unit = {
+    akkaHandler.close()
+    monixHandler.close()
+    super.afterAll()
   }
 }

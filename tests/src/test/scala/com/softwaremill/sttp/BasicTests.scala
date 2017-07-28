@@ -104,8 +104,7 @@ class BasicTests
       }
     } ~ path("secure_basic") {
       authenticateBasic("test realm", {
-        case c @ Credentials.Provided(un)
-            if un == "adam" && c.verify("1234") =>
+        case c @ Credentials.Provided(un) if un == "adam" && c.verify("1234") =>
           Some(un)
         case _ => None
       }) { userName =>
@@ -118,6 +117,8 @@ class BasicTests
     }
 
   override def port = 51823
+
+  var closeHandlers: List[() => Unit] = Nil
 
   runTests("HttpURLConnection")(HttpURLConnectionSttpHandler,
                                 ForceWrappedValue.id)
@@ -137,6 +138,8 @@ class BasicTests
   def runTests[R[_]](name: String)(
       implicit handler: SttpHandler[R, Nothing],
       forceResponse: ForceWrappedValue[R]): Unit = {
+
+    closeHandlers = handler.close _ :: closeHandlers
 
     val postEcho = sttp.post(uri"$endpoint/echo")
     val testBody = "this is the body"
@@ -395,5 +398,10 @@ class BasicTests
         resp.body should be(decompressedBody)
       }
     }
+  }
+
+  override protected def afterAll(): Unit = {
+    closeHandlers.foreach(_())
+    super.afterAll()
   }
 }

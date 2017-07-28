@@ -38,8 +38,7 @@ object FutureAsyncHttpClientHandler {
     *           e.g. mapping responses. Defaults to the global execution
     *           context.
     */
-  def apply()(
-      implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
+  def apply()(implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
     : SttpHandler[Future, Nothing] =
     new FutureAsyncHttpClientHandler(new DefaultAsyncHttpClient(),
                                      closeClient = true)
@@ -72,8 +71,7 @@ private[future] class FutureMonad(implicit ec: ExecutionContext)
 
   override def map[T, T2](fa: Future[T], f: (T) => T2): Future[T2] = fa.map(f)
 
-  override def flatMap[T, T2](fa: Future[T],
-                              f: (T) => Future[T2]): Future[T2] =
+  override def flatMap[T, T2](fa: Future[T], f: (T) => Future[T2]): Future[T2] =
     fa.flatMap(f)
 
   override def async[T](

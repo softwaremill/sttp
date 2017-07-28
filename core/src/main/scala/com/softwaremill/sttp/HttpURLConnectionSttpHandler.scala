@@ -1,7 +1,7 @@
 package com.softwaremill.sttp
 
 import java.io._
-import java.net.HttpURLConnection
+import java.net.{HttpURLConnection, URL}
 import java.nio.channels.Channels
 import java.nio.charset.CharacterCodingException
 import java.nio.file.Files
@@ -15,7 +15,8 @@ import scala.collection.JavaConverters._
 
 object HttpURLConnectionSttpHandler extends SttpHandler[Id, Nothing] {
   override def send[T](r: Request[T, Nothing]): Response[T] = {
-    val c = r.uri.toURL.openConnection().asInstanceOf[HttpURLConnection]
+    val c =
+      new URL(r.uri.toString).openConnection().asInstanceOf[HttpURLConnection]
     c.setRequestMethod(r.method.m)
     r.headers.foreach { case (k, v) => c.setRequestProperty(k, v) }
     c.setDoInput(true)

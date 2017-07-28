@@ -192,8 +192,7 @@ object AkkaHttpSttpHandler {
     *           e.g. mapping responses. Defaults to the global execution
     *           context.
     */
-  def apply()(
-      implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
+  def apply()(implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
     : SttpHandler[Future, Source[ByteString, Any]] =
     new AkkaHttpSttpHandler(ActorSystem("sttp"), ec, true)
 
