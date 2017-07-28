@@ -177,13 +177,13 @@ uri"$scheme://$subdomains.example.com?x=$vx&$params#$jumpTo"
 
 ### Summary
 
-| Class (`com.softwaremill.sttp.`) | Result wrapper | Supported stream type |
+| Class | Result wrapper | Supported stream type |
 | --- | --- | --- |
 | `HttpURLConnectionSttpHandler` | None (`Id`) | - |
-| `akkahttp.AkkaHttpSttpHandler` | `scala.concurrent.Future` | `akka.stream.scaladsl.Source[ByteString, Any]` |
-| `asynchttpclient.future.FutureAsyncHttpClientHandler` | `scala.concurrent.Future` | - |
-| `asynchttpclient.scalaz..ScalazAsyncHttpClientHandler` | `scalaz.concurrent.Task` | - |
-| `asynchttpclient.monix.MonixAsyncHttpClientHandler` | `monix.eval.Task` | `monix.reactive.Observable[ByteBuffer]` | 
+| `AkkaHttpSttpHandler` | `scala.concurrent.Future` | `akka.stream.scaladsl.Source[ByteString, Any]` |
+| `FutureAsyncHttpClientHandler` | `scala.concurrent.Future` | - |
+| `ScalazAsyncHttpClientHandler` | `scalaz.concurrent.Task` | - |
+| `MonixAsyncHttpClientHandler` | `monix.eval.Task` | `monix.reactive.Observable[ByteBuffer]` | 
 
 ### `HttpURLConnectionSttpHandler`
 
