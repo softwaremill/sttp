@@ -4,7 +4,7 @@ val commonSettings = Seq(
   crossScalaVersions := Seq(scalaVersion.value, "2.11.8"),
   scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-Xlint"),
   scalafmtOnCompile := true,
-  scalafmtVersion := "1.0.0",
+  scalafmtVersion := "1.1.0",
   // publishing
   publishTo := Some(
     if (isSnapshot.value)
