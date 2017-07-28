@@ -129,4 +129,4 @@ lazy val tests: Project = (project in file("tests"))
     ).map(_ % "test"),
     libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test"
   ) dependsOn (core, akkaHttpHandler, futureAsyncHttpClientHandler, scalazAsyncHttpClientHandler,
-monixAsyncHttpClientHandler)
+monixAsyncHttpClientHandler, okhttpClientHandler)
