@@ -1,7 +1,5 @@
 package com.softwaremill.sttp
 
-import java.net.URI
-
 import org.scalatest.{FunSuite, Matchers}
 
 class UriInterpolatorTests extends FunSuite with Matchers {
@@ -15,7 +13,7 @@ class UriInterpolatorTests extends FunSuite with Matchers {
   val v4encoded = "f%2Fg"
   val secure = true
 
-  val testData: List[(String, List[(URI, String)])] = List(
+  val testData: List[(String, List[(Uri, String)])] = List(
     "basic" -> List(
       (uri"http://example.com", "http://example.com"),
       (uri"http://example.com/", "http://example.com/"),
@@ -30,7 +28,7 @@ class UriInterpolatorTests extends FunSuite with Matchers {
        s"https://example.com"),
       (uri"${if (secure) "https" else "http"}://example.com",
        s"https://example.com"),
-      (uri"example.com?a=$v2", s"example.com?a=$v2queryEncoded")
+      (uri"example.com?a=$v2", s"http://example.com?a=$v2queryEncoded")
     ),
     "authority" -> List(
       (uri"http://$v1.com", s"http://$v1.com"),
@@ -74,6 +72,11 @@ class UriInterpolatorTests extends FunSuite with Matchers {
       (uri"http://example.com?x=$v2", s"http://example.com?x=$v2queryEncoded"),
       (uri"http://example.com?x=$v3", s"http://example.com?x=$v3encoded")
     ),
+    "query parameter without value" -> List(
+      (uri"http://example.com?$v1", s"http://example.com?$v1"),
+      (uri"http://example.com?$v1&$v2",
+       s"http://example.com?$v1&$v2queryEncoded")
+    ),
     "optional query parameters" -> List(
       (uri"http://example.com?a=$None", s"http://example.com"),
       (uri"http://example.com?a=b&c=$None", s"http://example.com?a=b"),
@@ -115,7 +118,7 @@ class UriInterpolatorTests extends FunSuite with Matchers {
     ((interpolated, expected), i) <- testCases.zipWithIndex
   } {
     test(s"[$groupName] interpolate to $expected (${i + 1})") {
-      interpolated should be(new URI(expected))
+      interpolated.toString should be(expected)
     }
   }
 }

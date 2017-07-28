@@ -100,8 +100,7 @@ class BasicTests
       }
     } ~ path("secure_basic") {
       authenticateBasic("test realm", {
-        case c @ Credentials.Provided(un)
-            if un == "adam" && c.verify("1234") =>
+        case c @ Credentials.Provided(un) if un == "adam" && c.verify("1234") =>
           Some(un)
         case _ => None
       }) { userName =>

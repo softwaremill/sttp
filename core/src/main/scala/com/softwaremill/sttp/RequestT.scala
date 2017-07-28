@@ -1,7 +1,7 @@
 package com.softwaremill.sttp
 
 import java.io.{File, InputStream}
-import java.net.{URI, URLEncoder}
+import java.net.URLEncoder
 import java.nio.ByteBuffer
 import java.nio.file.Path
 import java.util.Base64
@@ -25,24 +25,24 @@ import scala.language.higherKinds
   */
 case class RequestT[U[_], T, +S](
     method: U[Method],
-    uri: U[URI],
+    uri: U[Uri],
     body: RequestBody[S],
     headers: Seq[(String, String)],
     responseAs: ResponseAs[T, S]
 ) {
-  def get(uri: URI): Request[T, S] =
+  def get(uri: Uri): Request[T, S] =
     this.copy[Id, T, S](uri = uri, method = Method.GET)
-  def head(uri: URI): Request[T, S] =
+  def head(uri: Uri): Request[T, S] =
     this.copy[Id, T, S](uri = uri, method = Method.HEAD)
-  def post(uri: URI): Request[T, S] =
+  def post(uri: Uri): Request[T, S] =
     this.copy[Id, T, S](uri = uri, method = Method.POST)
-  def put(uri: URI): Request[T, S] =
+  def put(uri: Uri): Request[T, S] =
     this.copy[Id, T, S](uri = uri, method = Method.PUT)
-  def delete(uri: URI): Request[T, S] =
+  def delete(uri: Uri): Request[T, S] =
     this.copy[Id, T, S](uri = uri, method = Method.DELETE)
-  def options(uri: URI): Request[T, S] =
+  def options(uri: Uri): Request[T, S] =
     this.copy[Id, T, S](uri = uri, method = Method.OPTIONS)
-  def patch(uri: URI): Request[T, S] =
+  def patch(uri: Uri): Request[T, S] =
     this.copy[Id, T, S](uri = uri, method = Method.PATCH)
 
   def contentType(ct: String): RequestT[U, T, S] =
@@ -63,7 +63,7 @@ case class RequestT[U[_], T, +S](
     this.copy(headers = current :+ (k -> v))
   }
   def headers(hs: Map[String, String]): RequestT[U, T, S] =
-    this.copy(headers = headers ++ hs.toSeq)
+    headers(hs.toSeq: _*)
   def headers(hs: (String, String)*): RequestT[U, T, S] =
     this.copy(headers = headers ++ hs)
   def cookie(nv: (String, String)): RequestT[U, T, S] = cookies(nv)

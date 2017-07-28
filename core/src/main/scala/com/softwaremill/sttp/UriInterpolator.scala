@@ -1,10 +1,10 @@
 package com.softwaremill.sttp
 
-import java.net.{URI, URLEncoder}
+import scala.annotation.tailrec
 
 object UriInterpolator {
 
-  def interpolate(sc: StringContext, args: Any*): URI = {
+  def interpolate(sc: StringContext, args: Any*): Uri = {
     val strings = sc.parts.iterator
     val expressions = args.iterator
     var ub = UriBuilderStart.parseS(strings.next())
@@ -14,20 +14,20 @@ object UriInterpolator {
       ub = ub.parseS(strings.next())
     }
 
-    new URI(ub.build)
+    ub.build
   }
 
   sealed trait UriBuilder {
     def parseS(s: String): UriBuilder
     def parseE(e: Any): UriBuilder
-    def build: String
+    def build: Uri
 
-    protected def parseE_asEncodedS_skipNone(e: Any): UriBuilder = e match {
-      case s: String => parseS(encode(s))
+    protected def parseE_skipNone(e: Any): UriBuilder = e match {
+      case s: String => parseS(s)
       case None      => this
       case null      => this
       case Some(x)   => parseE(x)
-      case x         => parseS(encode(x.toString))
+      case x         => parseS(x.toString)
     }
   }
 
@@ -48,30 +48,16 @@ object UriInterpolator {
             // there is no scheme assuming whatever we parsed so far is part of
             // authority, and parsing the rest; see
             // https://stackoverflow.com/questions/3641722/valid-characters-for-uri-schemes
-            Authority(Scheme(""), v).parseS(x)
+            Authority(Scheme("http"), v).parseS(x)
           } else append(x)
       }
     }
 
-    override def parseE(e: Any): UriBuilder = {
-      def encodeIfNotInitialEndpoint(s: String) = {
-        // special case: when this is the first expression, contains a complete
-        // schema with :// and nothing is yet parsed not escaping the contents
-        if (v.isEmpty && s.contains("://")) s else encode(s)
-      }
-
-      e match {
-        case s: String => parseS(encodeIfNotInitialEndpoint(s))
-        case None      => this
-        case null      => this
-        case Some(x)   => parseE(x)
-        case x         => parseS(encodeIfNotInitialEndpoint(x.toString))
-      }
-    }
+    override def parseE(e: Any): UriBuilder = parseE_skipNone(e)
 
     private def append(x: String): Scheme = Scheme(v + x)
 
-    override def build: String = if (v.isEmpty) "" else v + "://"
+    override def build: Uri = Uri(v, "", None, Nil, Nil, None)
   }
 
   case class Authority(s: Scheme, v: String = "") extends UriBuilder {
@@ -100,22 +86,27 @@ object UriInterpolator {
 
     override def parseE(e: Any): UriBuilder = e match {
       case s: Seq[_] =>
-        val newAuthority = s.map(_.toString).map(encode(_)).mkString(".")
+        val newAuthority = s.map(_.toString).mkString(".")
         copy(v = v + newAuthority)
-      case x => parseE_asEncodedS_skipNone(x)
+      case x => parseE_skipNone(x)
     }
 
-    override def build: String = {
+    override def build: Uri = {
       var vv = v
       // remove dangling "." which might occur due to optional authority
       // fragments
       while (vv.startsWith(".")) vv = vv.substring(1)
-      while (vv.endsWith(".")) vv = vv.substring(0, vv.length - 1)
 
-      s.build + vv
+      val builtS = s.build
+      vv.split(":", 2) match {
+        case Array(host, port) if port.matches("\\d+") =>
+          builtS.copy(host = host, port = Some(port.toInt))
+        case Array(x) => builtS.copy(host = x)
+      }
     }
 
-    private def append(x: String): Authority = copy(v = v + x)
+    private def append(x: String): Authority =
+      copy(v = v + x)
   }
 
   case class Path(a: Authority, fs: Vector[String] = Vector.empty)
@@ -141,20 +132,16 @@ object UriInterpolator {
 
     override def parseE(e: Any): UriBuilder = e match {
       case s: Seq[_] =>
-        val newFragments = s.map(_.toString).map(encode(_)).map(Some(_))
+        val newFragments = s.map(_.toString).map(Some(_))
         newFragments.foldLeft(this)(_.appendE(_))
-      case s: String => appendE(Some(encode(s)))
+      case s: String => appendE(Some(s))
       case None      => appendE(None)
       case null      => appendE(None)
       case Some(x)   => parseE(x)
-      case x         => appendE(Some(encode(x.toString)))
+      case x         => appendE(Some(x.toString))
     }
 
-    override def build: String = {
-      // if there is a trailing /, the last path fragment will be empty
-      val v = if (fs.isEmpty) "" else "/" + fs.mkString("/")
-      a.build + v
-    }
+    override def build: Uri = a.build.copy(path = fs)
 
     private def appendS(fragments: String): Path = {
       if (fragments.isEmpty) this
@@ -200,16 +187,16 @@ object UriInterpolator {
     }
 
     override def parseE(e: Any): UriBuilder = e match {
-      case m: Map[_, _] => parseSeq(m.toSeq)
-      case s: Seq[_]    => parseSeq(s)
-      case s: String    => appendE(Some(encodeQuery(s)))
+      case m: Map[_, _] => parseSeqE(m.toSeq)
+      case s: Seq[_]    => parseSeqE(s)
+      case s: String    => appendE(Some(s))
       case None         => appendE(None)
       case null         => appendE(None)
       case Some(x)      => parseE(x)
-      case x            => appendE(Some(encodeQuery(x.toString)))
+      case x            => appendE(Some(x.toString))
     }
 
-    private def parseSeq(s: Seq[_]): UriBuilder = {
+    private def parseSeqE(s: Seq[_]): UriBuilder = {
       val flattenedS = s.flatMap {
         case (_, None)    => None
         case (k, Some(v)) => Some((k, v))
@@ -219,32 +206,67 @@ object UriInterpolator {
       }
       val newFragments = flattenedS.map {
         case ("", "") => Eq
-        case (k, "")  => K_Eq(encodeQuery(k))
-        case ("", v)  => Eq_V(encodeQuery(v))
-        case (k, v)   => K_Eq_V(encodeQuery(k), encodeQuery(v))
-        case x        => K(encodeQuery(x))
+        case (k, "")  => K_Eq(k.toString)
+        case ("", v)  => Eq_V(v.toString)
+        case (k, v)   => K_Eq_V(k.toString, v.toString)
+        case x        => K(x.toString)
       }
       copy(fs = fs ++ newFragments)
     }
 
-    override def build: String = {
-      val fragments = fs.flatMap {
+    override def build: Uri = {
+      import com.softwaremill.sttp.{QueryFragment => QF}
+
+      val plainSeparator = QF.Plain("&", relaxedEncoding = true)
+      var fragments: Vector[QF] = fs.flatMap {
         case Empty        => None
-        case K_Eq_V(k, v) => Some(s"$k=$v")
-        case K_Eq(k)      => Some(s"$k=")
-        case K(k)         => Some(s"$k")
-        case Eq           => Some("=")
-        case Eq_V(v)      => Some(s"=$v")
+        case K_Eq_V(k, v) => Some(QF.KeyValue(k, v))
+        case K_Eq(k)      => Some(QF.KeyValue(k, ""))
+        case K(k)         =>
+          // if we have a key-only entry, we encode it as a plain query
+          // fragment
+          Some(QF.Plain(k))
+        case Eq      => Some(QF.KeyValue("", ""))
+        case Eq_V(v) => Some(QF.KeyValue("", v))
       }
 
-      val query = if (fragments.isEmpty) "" else "?" + fragments.mkString("&")
+      // when serialized, plain query fragments don't have & separators
+      // prepended/appended - hence, if we have parsed them here, they
+      // need to be added by hand. Adding an & separator between each pair
+      // of fragments where one of them is plain. For example:
+      // KV P P KV KV P KV
+      // becomes:
+      // KV S P S P S KV KV S P S KV
+      @tailrec
+      def addPlainSeparators(qfs: Vector[QF],
+                             previousWasPlain: Boolean,
+                             acc: Vector[QF],
+                             isFirst: Boolean = false): Vector[QF] = qfs match {
+        case Vector() => acc
+        case (p: QF.Plain) +: tail if !isFirst =>
+          addPlainSeparators(tail,
+                             previousWasPlain = true,
+                             acc :+ plainSeparator :+ p)
+        case (p: QF.Plain) +: tail =>
+          addPlainSeparators(tail, previousWasPlain = true, acc :+ p)
+        case (kv: QF.KeyValue) +: tail if previousWasPlain =>
+          addPlainSeparators(tail,
+                             previousWasPlain = false,
+                             acc :+ plainSeparator :+ kv)
+        case (kv: QF.KeyValue) +: tail =>
+          addPlainSeparators(tail, previousWasPlain = false, acc :+ kv)
+      }
 
-      p.build + query
+      fragments = addPlainSeparators(fragments,
+                                     previousWasPlain = false,
+                                     Vector(),
+                                     isFirst = true)
+
+      p.build.copy(queryFragments = fragments)
     }
 
     private def appendS(queryFragment: String): Query = {
-
-      val newVs = queryFragment.split("&").map { nv =>
+      val newVs = queryFragment.split("&", -1).map { nv =>
         if (nv.isEmpty) Empty
         else if (nv == "=") Eq
         else if (nv.startsWith("=")) Eq_V(nv.substring(1))
@@ -285,9 +307,10 @@ object UriInterpolator {
        the form k=$v). Here we have to handle: $k=$v and $k=v.
        */
       (last, first) match {
-        case (K(k), Eq)      => Vector(K_Eq(k)) // k + =  => k=
-        case (K(k), Eq_V(v)) => Vector(K_Eq_V(k, v)) // k + =v => k=v
-        case (x, y)          => Vector(x, y)
+        case (K(k), Eq) => Vector(K_Eq(k)) // k + = => k=
+        case (K(k), Eq_V(v)) =>
+          Vector(K_Eq_V(k, v)) // k + =v => k=v
+        case (x, y) => Vector(x, y)
       }
     }
 
@@ -300,28 +323,21 @@ object UriInterpolator {
             case Some("") => this
             case Some(v)  => copy(fs = fs.init :+ K_Eq_V(k, v))
           }
-        case _ => copy(fs = fs :+ vo.fold[QueryFragment](Empty)(K))
+        case _ =>
+          copy(fs = fs :+ vo.fold[QueryFragment](Empty)(K))
       }
     }
   }
 
   case class Fragment(q: Query, v: String = "") extends UriBuilder {
-    override def parseS(s: String): UriBuilder = copy(v = v + s)
+    override def parseS(s: String): UriBuilder =
+      copy(v = v + s)
 
-    override def parseE(e: Any): UriBuilder = parseE_asEncodedS_skipNone(e)
+    override def parseE(e: Any): UriBuilder = parseE_skipNone(e)
 
-    override def build: String = q.build + (if (v.isEmpty) "" else s"#$v")
+    override def build: Uri =
+      q.build.copy(fragment = if (v.isEmpty) None else Some(v))
   }
-
-  private def encode(s: Any): String = {
-    // space is encoded as a +, which is only valid in the query;
-    // in other contexts, it must be percent-encoded; see
-    // https://stackoverflow.com/questions/2678551/when-to-encode-space-to-plus-or-20
-    URLEncoder.encode(String.valueOf(s), "UTF-8").replaceAll("\\+", "%20")
-  }
-
-  private def encodeQuery(s: Any): String =
-    URLEncoder.encode(String.valueOf(s), "UTF-8")
 
   private def charAfterPrefix(prefix: String, whole: String): Char = {
     val pl = prefix.length
