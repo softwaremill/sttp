@@ -38,13 +38,16 @@ val scalaTest = "org.scalatest" %% "scalatest" % "3.0.3"
 lazy val rootProject = (project in file("."))
   .settings(commonSettings: _*)
   .settings(publishArtifact := false, name := "sttp")
-  .aggregate(core,
-             akkaHttpHandler,
-             asyncHttpClientHandler,
-             futureAsyncHttpClientHandler,
-             scalazAsyncHttpClientHandler,
-             monixAsyncHttpClientHandler,
-             tests)
+  .aggregate(
+    core,
+    akkaHttpHandler,
+    asyncHttpClientHandler,
+    futureAsyncHttpClientHandler,
+    scalazAsyncHttpClientHandler,
+    monixAsyncHttpClientHandler,
+    okhttpClientHandler,
+    tests
+  )
 
 lazy val core: Project = (project in file("core"))
   .settings(commonSettings: _*)
@@ -101,6 +104,16 @@ lazy val monixAsyncHttpClientHandler: Project = (project in file(
       "io.monix" %% "monix" % "2.3.0"
     )
   ) dependsOn asyncHttpClientHandler
+
+lazy val okhttpClientHandler: Project = (project in file(
+  "okhttp-client-handler"))
+  .settings(commonSettings: _*)
+  .settings(
+    name := "okhttp-client-handler",
+    libraryDependencies ++= Seq(
+      "com.squareup.okhttp3" % "okhttp" % "3.8.1"
+    )
+  ) dependsOn core
 
 lazy val tests: Project = (project in file("tests"))
   .settings(commonSettings: _*)
