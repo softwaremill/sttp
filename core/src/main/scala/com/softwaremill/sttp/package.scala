@@ -163,6 +163,6 @@ package object sttp {
   // uri interpolator
 
   implicit class UriContext(val sc: StringContext) extends AnyVal {
-    def uri(args: Any*): Uri = UriInterpolator.interpolate(sc, args: _*)
+    def uri(args: Any*): URI = UriInterpolator.interpolate(sc, args: _*)
   }
 }

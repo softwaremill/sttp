@@ -63,7 +63,7 @@ case class RequestT[U[_], T, +S](
     this.copy(headers = current :+ (k -> v))
   }
   def headers(hs: Map[String, String]): RequestT[U, T, S] =
-    headers(hs.toSeq: _*)
+    this.copy(headers = headers ++ hs.toSeq)
   def headers(hs: (String, String)*): RequestT[U, T, S] =
     this.copy(headers = headers ++ hs)
   def cookie(nv: (String, String)): RequestT[U, T, S] = cookies(nv)
