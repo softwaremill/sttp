@@ -396,7 +396,7 @@ There are two type aliases for the request template that are used:
 
 ## Contributing
 
-Take a look at our [project board](https://github.com/softwaremill/sttp/projects/1) 
+Take a look at the [open issues](https://github.com/softwaremill/sttp/issues) 
 and pick a task you'd like to work on!
 
 ## Credits
