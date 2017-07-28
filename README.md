@@ -382,6 +382,8 @@ There are two type aliases for the request template that are used:
 * [play ws](https://github.com/playframework/play-ws)
 * [fs2-http](https://github.com/Spinoco/fs2-http)
 * [http4s](http://http4s.org/v0.17/client/)
+* [Gigahorse](http://eed3si9n.com/gigahorse/)
+* [RösHTTP](https://github.com/hmil/RosHTTP)
 
 ## Contributing
 
