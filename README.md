@@ -131,12 +131,11 @@ instances, which can then be used to specify request endpoints, for example:
 
 ```scala
 import com.softwaremill.sttp._
-import java.net.URI
 
 val user = "Mary Smith"
 val filter = "programming languages"
 
-val endpoint: URI = uri"http://example.com/$user/skills?filter=$filter"
+val endpoint: Uri = uri"http://example.com/$user/skills?filter=$filter"
 ```
 
 Any values embedded in the URI will be URL-encoded, taking into account the 
