@@ -23,10 +23,9 @@ import scala.language.higherKinds
 
 abstract class OkHttpClientHandler[R[_], S](client: OkHttpClient)
     extends SttpHandler[R, S] {
-  private[okhttp] def convertRequest[T](
-      request: Request[T, S]): OkHttpRequest = {
+  private[okhttp] def convertRequest[T](request: Request[T, S]): OkHttpRequest = {
     val builder = new OkHttpRequest.Builder()
-      .url(request.uri.toURL)
+      .url(request.uri.toString)
 
     val body = setBody(request.body)
     builder.method(request.method.m, body.getOrElse {
