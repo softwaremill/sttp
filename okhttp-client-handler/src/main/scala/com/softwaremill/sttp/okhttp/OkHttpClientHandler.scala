@@ -89,6 +89,8 @@ abstract class OkHttpClientHandler[R[_], S](client: OkHttpClient)
           case ResponseAsByteArray => Try(res.body().bytes())
           case ResponseAsStream() =>
             Failure(new IllegalStateException("Streaming isn't supported"))
+          case ResponseAsFile(file, overwrite) =>
+            Try(ResponseAs.saveFile(file, res.body().byteStream(), overwrite))
         }
     }
 }
@@ -125,7 +127,8 @@ class OkHttpFutureClientHandler private (client: OkHttpClient)(
           promise.failure(e)
 
         override def onResponse(call: Call, response: OkHttpResponse): Unit =
-          promise.success(readResponse(response, r.responseAs))
+          try promise.success(readResponse(response, r.responseAs))
+          catch { case e: Exception => promise.failure(e) }
       })
 
     responseMonad.flatten(promise.future)

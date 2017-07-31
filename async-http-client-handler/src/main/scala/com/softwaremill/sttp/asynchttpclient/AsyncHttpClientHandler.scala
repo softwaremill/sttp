@@ -222,6 +222,11 @@ abstract class AsyncHttpClientHandler[R[_], S](asyncHttpClient: AsyncHttpClient,
             Failure(
               new IllegalStateException(
                 "Requested a streaming response, trying to read eagerly."))
+
+          case ResponseAsFile(file, overwrite) =>
+            Try(
+              ResponseAs
+                .saveFile(file, response.getResponseBodyAsStream, overwrite))
         }
     }
 

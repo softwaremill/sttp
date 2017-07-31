@@ -443,3 +443,4 @@ and pick a task you'd like to work on!
 * [Adam Warski](https://github.com/adamw)
 * [Omar Alejandro Mainegra Sarduy](https://github.com/omainegra)
 * [Bjørn Madsen](https://github.com/aeons)
+* [Piotr Buda](https://github.com/pbuda)
