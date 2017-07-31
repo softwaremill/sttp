@@ -15,6 +15,7 @@ import scala.collection.immutable.Seq
   * added manually as part of the plain query fragment.
   */
 case class Uri(scheme: String,
+               userInfo: Option[String],
                host: String,
                port: Option[Int],
                path: Seq[String],
@@ -22,19 +23,23 @@ case class Uri(scheme: String,
                fragment: Option[String]) {
 
   def this(host: String) =
-    this("http", host, None, Vector.empty, Vector.empty, None)
+    this("http", None, host, None, Vector.empty, Vector.empty, None)
   def this(host: String, port: Int) =
-    this("http", host, Some(port), Vector.empty, Vector.empty, None)
+    this("http", None, host, Some(port), Vector.empty, Vector.empty, None)
   def this(host: String, port: Int, path: Seq[String]) =
-    this("http", host, Some(port), path, Vector.empty, None)
+    this("http", None, host, Some(port), path, Vector.empty, None)
   def this(scheme: String, host: String) =
-    this(scheme, host, None, Vector.empty, Vector.empty, None)
+    this(scheme, None, host, None, Vector.empty, Vector.empty, None)
   def this(scheme: String, host: String, port: Int) =
-    this(scheme, host, Some(port), Vector.empty, Vector.empty, None)
+    this(scheme, None, host, Some(port), Vector.empty, Vector.empty, None)
   def this(scheme: String, host: String, port: Int, path: Seq[String]) =
-    this(scheme, host, Some(port), path, Vector.empty, None)
+    this(scheme, None, host, Some(port), path, Vector.empty, None)
 
   def scheme(s: String): Uri = this.copy(scheme = s)
+
+  def userInfo(ui: String): Uri = this.copy(userInfo = Some(ui))
+
+  def userInfo(ui: Option[String]): Uri = this.copy(userInfo = ui)
 
   def host(h: String): Uri = this.copy(host = h)
 
@@ -87,12 +92,10 @@ case class Uri(scheme: String,
   def fragment(f: Option[String]): Uri = this.copy(fragment = f)
 
   override def toString: String = {
-    val schemeS = encode(scheme)
-    val hostS = encode(host)
-    val portS = port.fold("")(":" + _)
-    val pathPrefixS = if (path.isEmpty) "" else "/"
-    val pathS = path.map(encode).mkString("/")
-    val queryPrefixS = if (queryFragments.isEmpty) "" else "?"
+    def encodeUserInfo(ui: String): String = ui.split(":", 2) match {
+      case Array(u)    => encode(u)
+      case Array(u, p) => encode(u) + ":" + encode(p)
+    }
 
     @tailrec
     def encodeQueryFragments(qfs: List[QueryFragment],
@@ -111,11 +114,19 @@ case class Uri(scheme: String,
         encodeQueryFragments(t, previousWasKV = true, sb)
     }
 
+    val schemeS = encode(scheme)
+    val userInfoS = userInfo.fold("")(encodeUserInfo(_) + "@")
+    val hostS = encode(host)
+    val portS = port.fold("")(":" + _)
+    val pathPrefixS = if (path.isEmpty) "" else "/"
+    val pathS = path.map(encode).mkString("/")
+    val queryPrefixS = if (queryFragments.isEmpty) "" else "?"
+
     val queryS = encodeQueryFragments(queryFragments.toList,
                                       previousWasKV = false,
                                       new StringBuilder())
     val fragS = fragment.fold("")("#" + _)
-    s"$schemeS://$hostS$portS$pathPrefixS$pathS$queryPrefixS$queryS$fragS"
+    s"$schemeS://$userInfoS$hostS$portS$pathPrefixS$pathS$queryPrefixS$queryS$fragS"
   }
 
   private def encode(s: Any): String = {

@@ -57,7 +57,7 @@ object UriInterpolator {
 
     private def append(x: String): Scheme = Scheme(v + x)
 
-    override def build: Uri = Uri(v, "", None, Nil, Nil, None)
+    override def build: Uri = Uri(v, None, "", None, Nil, Nil, None)
   }
 
   case class Authority(s: Scheme, v: String = "") extends UriBuilder {
