@@ -1,5 +1,6 @@
 package com.softwaremill.sttp
 
+import com.softwaremill.sttp.Uri.{QueryFragment, UserInfo}
 import org.scalatest.{FunSuite, Matchers}
 
 class UriTests extends FunSuite with Matchers {
@@ -31,7 +32,13 @@ class UriTests extends FunSuite with Matchers {
         List(QF.KeyValue("p:1", "v&v"), QF.KeyValue("p2", "v v")),
         None) ->
       "http://exa%20mple.com/a%20b/z/%C4%85%3A%C4%99?p%3A1=v%26v&p2=v+v",
-    Uri("http", Some("us&er:pa ss"), "example.com", None, Nil, Nil, None) ->
+    Uri("http",
+        Some(UserInfo("us&er", Some("pa ss"))),
+        "example.com",
+        None,
+        Nil,
+        Nil,
+        None) ->
       "http://us%26er:pa%20ss@example.com",
   )
 

@@ -215,7 +215,7 @@ object UriInterpolator {
     }
 
     override def build: Uri = {
-      import com.softwaremill.sttp.{QueryFragment => QF}
+      import com.softwaremill.sttp.Uri.{QueryFragment => QF}
 
       val plainSeparator = QF.Plain("&", relaxedEncoding = true)
       var fragments: Vector[QF] = fs.flatMap {
