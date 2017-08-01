@@ -2,39 +2,39 @@ package com.softwaremill.sttp
 
 import java.net.URLEncoder
 
-import com.softwaremill.sttp.QueryFragment.{KeyValue, Plain}
+import Uri.{QueryFragment, UserInfo}
+import Uri.QueryFragment.{KeyValue, Value, Plain}
 
 import scala.annotation.tailrec
 import scala.collection.immutable.Seq
 
 /**
-  * @param queryFragments Either key-value pairs, or plain query fragments.
-  * Key value pairs will be serialized as `k=v`, and blocks of key-value
-  * pairs will be combined using `&`. Note that no `&` or other separators
-  * are added around plain query fragments - if required, they need to be
-  * added manually as part of the plain query fragment.
+  * A [[https://en.wikipedia.org/wiki/Uniform_Resource_Identifier URI]].
+  * All components (scheme, host, query, ...) are stored unencoded, and
+  * become encoded upon serialization (using [[toString]]).
+  *
+  * @param queryFragments Either key-value pairs, single values, or plain
+  * query fragments. Key value pairs will be serialized as `k=v`, and blocks
+  * of key-value pairs/single values will be combined using `&`. Note that no
+  * `&` or other separators are added around plain query fragments - if
+  * required, they need to be added manually as part of the plain query
+  * fragment.
   */
 case class Uri(scheme: String,
+               userInfo: Option[UserInfo],
                host: String,
                port: Option[Int],
                path: Seq[String],
                queryFragments: Seq[QueryFragment],
                fragment: Option[String]) {
 
-  def this(host: String) =
-    this("http", host, None, Vector.empty, Vector.empty, None)
-  def this(host: String, port: Int) =
-    this("http", host, Some(port), Vector.empty, Vector.empty, None)
-  def this(host: String, port: Int, path: Seq[String]) =
-    this("http", host, Some(port), path, Vector.empty, None)
-  def this(scheme: String, host: String) =
-    this(scheme, host, None, Vector.empty, Vector.empty, None)
-  def this(scheme: String, host: String, port: Int) =
-    this(scheme, host, Some(port), Vector.empty, Vector.empty, None)
-  def this(scheme: String, host: String, port: Int, path: Seq[String]) =
-    this(scheme, host, Some(port), path, Vector.empty, None)
-
   def scheme(s: String): Uri = this.copy(scheme = s)
+
+  def userInfo(username: String): Uri =
+    this.copy(userInfo = Some(UserInfo(username, None)))
+
+  def userInfo(username: String, password: String): Uri =
+    this.copy(userInfo = Some(UserInfo(username, Some(password))))
 
   def host(h: String): Uri = this.copy(host = h)
 
@@ -87,35 +87,44 @@ case class Uri(scheme: String,
   def fragment(f: Option[String]): Uri = this.copy(fragment = f)
 
   override def toString: String = {
+    def encodeUserInfo(ui: UserInfo): String =
+      encode(ui.username) + ui.password.fold("")(":" + encode(_))
+
+    @tailrec
+    def encodeQueryFragments(qfs: List[QueryFragment],
+                             previousWasPlain: Boolean,
+                             sb: StringBuilder): String = qfs match {
+      case Nil => sb.toString()
+
+      case Plain(v, re) :: t =>
+        encodeQueryFragments(t,
+                             previousWasPlain = true,
+                             sb.append(encodeQuery(v, re)))
+
+      case Value(v, re) :: t =>
+        if (!previousWasPlain) sb.append("&")
+        sb.append(encodeQuery(v, re))
+        encodeQueryFragments(t, previousWasPlain = false, sb)
+
+      case KeyValue(k, v, reK, reV) :: t =>
+        if (!previousWasPlain) sb.append("&")
+        sb.append(encodeQuery(k, reK)).append("=").append(encodeQuery(v, reV))
+        encodeQueryFragments(t, previousWasPlain = false, sb)
+    }
+
     val schemeS = encode(scheme)
+    val userInfoS = userInfo.fold("")(encodeUserInfo(_) + "@")
     val hostS = encode(host)
     val portS = port.fold("")(":" + _)
     val pathPrefixS = if (path.isEmpty) "" else "/"
     val pathS = path.map(encode).mkString("/")
     val queryPrefixS = if (queryFragments.isEmpty) "" else "?"
 
-    @tailrec
-    def encodeQueryFragments(qfs: List[QueryFragment],
-                             previousWasKV: Boolean,
-                             sb: StringBuilder): String = qfs match {
-      case Nil => sb.toString()
-
-      case Plain(v, re) :: t =>
-        encodeQueryFragments(t,
-                             previousWasKV = false,
-                             sb.append(encodeQuery(v, re)))
-
-      case KeyValue(k, v, reK, reV) :: t =>
-        if (previousWasKV) sb.append("&")
-        sb.append(encodeQuery(k, reK)).append("=").append(encodeQuery(v, reV))
-        encodeQueryFragments(t, previousWasKV = true, sb)
-    }
-
     val queryS = encodeQueryFragments(queryFragments.toList,
-                                      previousWasKV = false,
+                                      previousWasPlain = true,
                                       new StringBuilder())
     val fragS = fragment.fold("")("#" + _)
-    s"$schemeS://$hostS$portS$pathPrefixS$pathS$queryPrefixS$queryS$fragS"
+    s"$schemeS://$userInfoS$hostS$portS$pathPrefixS$pathS$queryPrefixS$queryS$fragS"
   }
 
   private def encode(s: Any): String = {
@@ -154,31 +163,55 @@ case class Uri(scheme: String,
   }
 }
 
-sealed trait QueryFragment
-object QueryFragment {
+object Uri {
+  def apply(host: String): Uri =
+    Uri("http", None, host, None, Vector.empty, Vector.empty, None)
+  def apply(host: String, port: Int): Uri =
+    Uri("http", None, host, Some(port), Vector.empty, Vector.empty, None)
+  def apply(host: String, port: Int, path: Seq[String]): Uri =
+    Uri("http", None, host, Some(port), path, Vector.empty, None)
+  def apply(scheme: String, host: String): Uri =
+    Uri(scheme, None, host, None, Vector.empty, Vector.empty, None)
+  def apply(scheme: String, host: String, port: Int): Uri =
+    Uri(scheme, None, host, Some(port), Vector.empty, Vector.empty, None)
+  def apply(scheme: String, host: String, port: Int, path: Seq[String]): Uri =
+    Uri(scheme, None, host, Some(port), path, Vector.empty, None)
 
-  /**
-    * @param keyRelaxedEncoding See [[Plain.relaxedEncoding]]
-    * @param valueRelaxedEncoding See [[Plain.relaxedEncoding]]
-    */
-  case class KeyValue(k: String,
-                      v: String,
-                      keyRelaxedEncoding: Boolean = false,
-                      valueRelaxedEncoding: Boolean = false)
-      extends QueryFragment
+  sealed trait QueryFragment
+  object QueryFragment {
 
-  /**
-    * A query fragment which will be inserted into the query, without and
-    * preceding or following separators. Allows constructing query strings
-    * which are not (only) &-separated key-value pairs.
-    *
-    * @param relaxedEncoding Should characters, which are allowed in the query
-    * string, but normally escaped be left unchanged. These characters are:
-    * {{{
-    * /?:@-._~!$&()*+,;=
-    * }}}
-    * See: [[https://stackoverflow.com/questions/2322764/what-characters-must-be-escaped-in-an-http-query-string]]
-    */
-  case class Plain(v: String, relaxedEncoding: Boolean = false)
-      extends QueryFragment
+    /**
+      * @param keyRelaxedEncoding See [[Plain.relaxedEncoding]]
+      * @param valueRelaxedEncoding See [[Plain.relaxedEncoding]]
+      */
+    case class KeyValue(k: String,
+                        v: String,
+                        keyRelaxedEncoding: Boolean = false,
+                        valueRelaxedEncoding: Boolean = false)
+        extends QueryFragment
+
+    /**
+      * A query fragment which contains only the value, without a key.
+      */
+    case class Value(v: String, relaxedEncoding: Boolean = false)
+        extends QueryFragment
+
+    /**
+      * A query fragment which will be inserted into the query, without and
+      * preceding or following separators. Allows constructing query strings
+      * which are not (only) &-separated key-value pairs.
+      *
+      * @param relaxedEncoding Should characters, which are allowed in the
+      * query string, but normally escaped be left unchanged. These characters
+      * are:
+      * {{{
+      * /?:@-._~!$&()*+,;=
+      * }}}
+      * See: [[https://stackoverflow.com/questions/2322764/what-characters-must-be-escaped-in-an-http-query-string]]
+      */
+    case class Plain(v: String, relaxedEncoding: Boolean = false)
+        extends QueryFragment
+  }
+
+  case class UserInfo(username: String, password: Option[String])
 }

@@ -1,346 +1,494 @@
 package com.softwaremill.sttp
 
+import java.net.URLDecoder
+
 import scala.annotation.tailrec
 
 object UriInterpolator {
 
   def interpolate(sc: StringContext, args: Any*): Uri = {
-    val strings = sc.parts.iterator
-    val expressions = args.iterator
-    var ub = UriBuilderStart.parseS(strings.next())
+    val tokens = tokenize(sc, args: _*)
 
-    while (strings.hasNext) {
-      ub = ub.parseE(expressions.next())
-      ub = ub.parseS(strings.next())
+    val builders = List(
+      UriBuilder.Scheme,
+      UriBuilder.UserInfo,
+      UriBuilder.HostPort,
+      UriBuilder.Path,
+      UriBuilder.Query,
+      UriBuilder.Fragment
+    )
+
+    val startingUri = Uri("")
+
+    val (uri, leftTokens) =
+      builders.foldLeft((startingUri, tokens)) {
+        case ((u, t), builder) =>
+          builder.fromTokens(u, t)
+      }
+
+    if (leftTokens.nonEmpty) {
+      throw new IllegalStateException(
+        s"Tokens left after building the whole uri: $leftTokens, result so far: $uri")
     }
 
-    ub.build
+    uri
+  }
+
+  private def tokenize(sc: StringContext, args: Any*): Vector[Token] = {
+    val strings = sc.parts.iterator
+    val expressions = args.iterator
+
+    var (tokenizer, tokens) = Tokenizer.Scheme.tokenize(strings.next())
+
+    while (strings.hasNext) {
+      val nextExpression = expressions.next()
+
+      // special case: the interpolation starts with an expression, which
+      // contains a whole URI. In this case, parsing the expression as if
+      // its string value was embedded in the interpolated string. This
+      // way it's possible to extend existing URIs. Without special-casing
+      // the embedded URI would be escaped and become part of the host
+      // as a whole.
+      if (tokens == Vector(StringToken("")) && nextExpression.toString.contains("://")) {
+        def tokenizeExpressionAsString(): Unit = {
+          val (nextTokenizer, nextTokens) = tokenizer.tokenize(nextExpression.toString)
+          tokenizer = nextTokenizer
+          tokens = tokens ++ nextTokens
+        }
+
+        def tokenizeStringRemoveEmptyPrefix(): Unit = {
+          val (nextTokenizer, nextTokens) = tokenizer.tokenize(strings.next())
+          tokenizer = nextTokenizer
+
+          // we need to remove empty tokens around exp as well - however here
+          // by hand, as the expression token is unwrapped, so removeEmptyTokensAroundExp
+          // won't handle this.
+          val nextTokensWithoutEmptyPrefix = nextTokens match {
+            case StringToken("") +: tail => tail
+            case x                       => x
+          }
+
+          tokens = tokens ++ nextTokensWithoutEmptyPrefix
+        }
+
+        tokenizeExpressionAsString()
+        tokenizeStringRemoveEmptyPrefix()
+      } else {
+        tokens = tokens :+ ExpressionToken(nextExpression)
+
+        val (nextTokenizer, nextTokens) = tokenizer.tokenize(strings.next())
+        tokenizer = nextTokenizer
+        tokens = tokens ++ nextTokens
+      }
+
+    }
+
+    removeEmptyTokensAroundExp(tokens)
+  }
+
+  sealed trait Token
+  case class StringToken(s: String) extends Token
+  case class ExpressionToken(e: Any) extends Token
+  case object SchemeEnd extends Token
+  case object ColonInAuthority extends Token
+  case object AtInAuthority extends Token
+  case object DotInAuthority extends Token
+  case object PathStart extends Token
+  case object SlashInPath extends Token
+  case object QueryStart extends Token
+  case object AmpInQuery extends Token
+  case object EqInQuery extends Token
+  case object FragmentStart extends Token
+
+  trait Tokenizer {
+    def tokenize(s: String): (Tokenizer, Vector[Token])
+  }
+
+  object Tokenizer {
+    object Scheme extends Tokenizer {
+      override def tokenize(s: String): (Tokenizer, Vector[Token]) = {
+        s.split("://", 2) match {
+          case Array(scheme, rest) =>
+            val (next, authorityTokens) = Authority.tokenize(rest)
+            (next, Vector(StringToken(scheme), SchemeEnd) ++ authorityTokens)
+
+          case Array(x) =>
+            if (!x.matches("[a-zA-Z0-9+\\.\\-]*")) {
+              // anything else than the allowed characters in scheme suggest that
+              // there is no scheme; tokenizing using the next tokenizer in chain
+              // https://stackoverflow.com/questions/3641722/valid-characters-for-uri-schemes
+              Authority.tokenize(x)
+            } else {
+              (this, Vector(StringToken(x)))
+            }
+        }
+      }
+    }
+
+    object Authority extends Tokenizer {
+      override def tokenize(s: String): (Tokenizer, Vector[Token]) =
+        tokenizeTerminatedFragment(
+          s,
+          this,
+          Set('/', '?', '#'),
+          Map(':' -> ColonInAuthority,
+              '@' -> AtInAuthority,
+              '.' -> DotInAuthority)
+        )
+    }
+
+    object Path extends Tokenizer {
+      override def tokenize(s: String): (Tokenizer, Vector[Token]) =
+        tokenizeTerminatedFragment(
+          s,
+          this,
+          Set('?', '#'),
+          Map('/' -> SlashInPath)
+        )
+    }
+
+    object Query extends Tokenizer {
+      override def tokenize(s: String): (Tokenizer, Vector[Token]) =
+        tokenizeTerminatedFragment(
+          s,
+          this,
+          Set('#'),
+          Map('&' -> AmpInQuery, '=' -> EqInQuery)
+        )
+    }
+
+    object Fragment extends Tokenizer {
+      override def tokenize(s: String): (Tokenizer, Vector[Token]) =
+        (this, Vector(StringToken(s)))
+    }
+
+    /**
+      * Tokenize the given string up to any of the given terminator characters
+      * by splitting it using the given separators and translating each
+      * separator to a token.
+      *
+      * The rest of the string, after the terminators, is tokenized using
+      * a tokenizer determined by the type of the terminator.
+      */
+    private def tokenizeTerminatedFragment(
+        s: String,
+        current: Tokenizer,
+        terminators: Set[Char],
+        separatorsToTokens: Map[Char, Token]): (Tokenizer, Vector[Token]) = {
+
+      def tokenizeFragment(f: String): Vector[Token] = {
+        splitPreserveSeparators(f, separatorsToTokens.keySet).map { t =>
+          t.headOption.flatMap(separatorsToTokens.get) match {
+            case Some(token) => token
+            case None        => StringToken(t)
+          }
+        }
+      }
+
+      // first checking if the fragment doesn't end; e.g. the authority is
+      // terminated by /, ?, # or end of string (there might be other /, ?,
+      // # later on e.g. in the query).
+      // See: https://tools.ietf.org/html/rfc3986#section-3.2
+      split(s, terminators) match {
+        case Right((fragment, separator, rest)) =>
+          tokenizeAfterSeparator(tokenizeFragment(fragment), separator, rest)
+
+        case Left(fragment) =>
+          (current, tokenizeFragment(fragment))
+      }
+    }
+
+    private def tokenizeAfterSeparator(
+        beforeSeparatorTokens: Vector[Token],
+        separator: Char,
+        s: String): (Tokenizer, Vector[Token]) = {
+
+      val (next, separatorToken) = separatorTokenizerAndToken(separator)
+      val (nextNext, nextTokens) = next.tokenize(s)
+      (nextNext, beforeSeparatorTokens ++ Vector(separatorToken) ++ nextTokens)
+    }
+
+    private def separatorTokenizerAndToken(
+        separator: Char): (Tokenizer, Token) =
+      separator match {
+        case '/' => (Path, PathStart)
+        case '?' => (Query, QueryStart)
+        case '#' => (Fragment, FragmentStart)
+      }
+
+    private def splitPreserveSeparators(s: String,
+                                        sep: Set[Char]): Vector[String] = {
+      @tailrec
+      def doSplit(s: String, acc: Vector[String]): Vector[String] = {
+        split(s, sep) match {
+          case Left(x) => acc :+ x
+          case Right((before, separator, after)) =>
+            doSplit(after, acc ++ Vector(before, separator.toString))
+        }
+      }
+
+      doSplit(s, Vector.empty)
+    }
+
+    private def split(
+        s: String,
+        sep: Set[Char]): Either[String, (String, Char, String)] = {
+      val i = s.indexWhere(sep.contains)
+      if (i == -1) Left(s)
+      else Right((s.substring(0, i), s.charAt(i), s.substring(i + 1)))
+    }
   }
 
   sealed trait UriBuilder {
-    def parseS(s: String): UriBuilder
-    def parseE(e: Any): UriBuilder
-    def build: Uri
-
-    protected def parseE_skipNone(e: Any): UriBuilder = e match {
-      case s: String => parseS(s)
-      case None      => this
-      case null      => this
-      case Some(x)   => parseE(x)
-      case x         => parseS(x.toString)
-    }
+    def fromTokens(u: Uri, t: Vector[Token]): (Uri, Vector[Token])
   }
 
-  val UriBuilderStart = Scheme("")
+  object UriBuilder {
 
-  case class Scheme(v: String) extends UriBuilder {
-
-    override def parseS(s: String): UriBuilder = {
-      val splitAtSchemeEnd = s.split("://", 2)
-      splitAtSchemeEnd match {
-        case Array(schemeFragment, rest) =>
-          Authority(append(schemeFragment))
-            .parseS(rest)
-
-        case Array(x) =>
-          if (!x.matches("[a-zA-Z0-9+\\.\\-]*")) {
-            // anything else than the allowed characters in scheme suggest that
-            // there is no scheme assuming whatever we parsed so far is part of
-            // authority, and parsing the rest; see
-            // https://stackoverflow.com/questions/3641722/valid-characters-for-uri-schemes
-            Authority(Scheme("http"), v).parseS(x)
-          } else append(x)
+    case object Scheme extends UriBuilder {
+      override def fromTokens(u: Uri, t: Vector[Token]): (Uri, Vector[Token]) = {
+        split(t, Set[Token](SchemeEnd)) match {
+          case Left(tt) => (u.scheme("http"), tt)
+          case Right((schemeTokens, _, otherTokens)) =>
+            val scheme = tokensToString(schemeTokens)
+            (u.scheme(scheme), otherTokens)
+        }
       }
     }
 
-    override def parseE(e: Any): UriBuilder = parseE_skipNone(e)
+    case object UserInfo extends UriBuilder {
+      override def fromTokens(u: Uri, t: Vector[Token]): (Uri, Vector[Token]) = {
+        split(t, Set[Token](AtInAuthority)) match {
+          case Left(tt) => (u, tt)
+          case Right((uiTokens, _, otherTokens)) =>
+            (uiFromTokens(u, uiTokens), otherTokens)
+        }
+      }
 
-    private def append(x: String): Scheme = Scheme(v + x)
+      private def uiFromTokens(u: Uri, uiTokens: Vector[Token]): Uri = {
+        val uiTokensWithDots = uiTokens.map {
+          case DotInAuthority => StringToken(".")
+          case x              => x
+        }
+        split(uiTokensWithDots, Set[Token](ColonInAuthority)) match {
+          case Left(tt) => uiFromTokens(u, tt, Vector.empty)
+          case Right((usernameTokens, _, passwordTokens)) =>
+            uiFromTokens(u, usernameTokens, passwordTokens)
+        }
+      }
 
-    override def build: Uri = Uri(v, "", None, Nil, Nil, None)
-  }
+      private def uiFromTokens(u: Uri,
+                               usernameTokens: Vector[Token],
+                               passwordTokens: Vector[Token]): Uri = {
 
-  case class Authority(s: Scheme, v: String = "") extends UriBuilder {
-
-    override def parseS(s: String): UriBuilder = {
-      // authority is terminated by /, ?, # or end of string (there might be
-      // other /, ?, # later on e.g. in the query)
-      // see https://tools.ietf.org/html/rfc3986#section-3.2
-      s.split("[/\\?#]", 2) match {
-        case Array(authorityFragment, rest) =>
-          val splitOn = charAfterPrefix(authorityFragment, s)
-          append(authorityFragment).next(splitOn, rest)
-        case Array(x) => append(x)
+        (tokensToStringOpt(usernameTokens), tokensToStringOpt(passwordTokens)) match {
+          case (Some(un), Some(p)) => u.userInfo(un, p)
+          case (Some(un), None)    => u.userInfo(un)
+          case (None, Some(p))     => u.userInfo("", p)
+          case (None, None)        => u
+        }
       }
     }
 
-    private def next(splitOn: Char, rest: String): UriBuilder =
-      splitOn match {
-        case '/' =>
-          // prepending the leading slash as we want it preserved in the
-          // output, if present
-          Path(this).parseS("/" + rest)
-        case '?' => Query(Path(this)).parseS(rest)
-        case '#' => Fragment(Query(Path(this))).parseS(rest)
+    case object HostPort extends UriBuilder {
+      override def fromTokens(u: Uri, t: Vector[Token]): (Uri, Vector[Token]) = {
+        split(t, Set[Token](PathStart, QueryStart, FragmentStart)) match {
+          case Left(tt) =>
+            (hostPortFromTokens(u, tt), Vector.empty)
+          case Right((hpTokens, sep, otherTokens)) =>
+            (hostPortFromTokens(u, hpTokens), sep +: otherTokens)
+        }
       }
 
-    override def parseE(e: Any): UriBuilder = e match {
-      case s: Seq[_] =>
-        val newAuthority = s.map(_.toString).mkString(".")
-        copy(v = v + newAuthority)
-      case x => parseE_skipNone(x)
-    }
+      private def hostPortFromTokens(u: Uri, hpTokens: Vector[Token]): Uri = {
+        split(hpTokens, Set[Token](ColonInAuthority)) match {
+          case Left(tt) => hostFromTokens(u, tt)
+          case Right((hostTokens, _, portTokens)) =>
+            portFromTokens(hostFromTokens(u, hostTokens), portTokens)
+        }
+      }
 
-    override def build: Uri = {
-      var vv = v
-      // remove dangling "." which might occur due to optional authority
-      // fragments
-      while (vv.startsWith(".")) vv = vv.substring(1)
+      private def hostFromTokens(u: Uri, tokens: Vector[Token]): Uri = {
+        val hostFragments = tokensToStringSeq(tokens)
+        u.host(hostFragments.mkString("."))
+      }
 
-      val builtS = s.build
-      vv.split(":", 2) match {
-        case Array(host, port) if port.matches("\\d+") =>
-          builtS.copy(host = host, port = Some(port.toInt))
-        case Array(x) => builtS.copy(host = x)
+      private def portFromTokens(u: Uri, tokens: Vector[Token]): Uri = {
+        u.port(tokensToStringOpt(tokens).map(_.toInt))
       }
     }
 
-    private def append(x: String): Authority =
-      copy(v = v + x)
-  }
+    case object Path extends UriBuilder {
+      override def fromTokens(u: Uri, t: Vector[Token]): (Uri, Vector[Token]) =
+        fromStartingToken(u,
+                          t,
+                          PathStart,
+                          Set[Token](QueryStart, FragmentStart),
+                          pathFromTokens)
 
-  case class Path(a: Authority, fs: Vector[String] = Vector.empty)
-      extends UriBuilder {
-
-    override def parseS(s: String): UriBuilder = {
-      // path is terminated by ?, # or end of string (there might be other
-      // ?, # later on e.g. in the query)
-      // see https://tools.ietf.org/html/rfc3986#section-3.3
-      s.split("[\\?#]", 2) match {
-        case Array(pathFragments, rest) =>
-          val splitOn = charAfterPrefix(pathFragments, s)
-          appendS(pathFragments).next(splitOn, rest)
-        case Array(x) => appendS(x)
+      private def pathFromTokens(u: Uri, tokens: Vector[Token]): Uri = {
+        u.path(tokensToStringSeq(tokens))
       }
     }
 
-    private def next(splitOn: Char, rest: String): UriBuilder =
-      splitOn match {
-        case '?' => Query(this).parseS(rest)
-        case '#' => Fragment(Query(this)).parseS(rest)
+    case object Query extends UriBuilder {
+
+      import com.softwaremill.sttp.Uri.{QueryFragment => QF}
+
+      override def fromTokens(u: Uri, t: Vector[Token]): (Uri, Vector[Token]) =
+        fromStartingToken(u, t, QueryStart, Set[Token](FragmentStart), queryFromTokens)
+
+      private def queryFromTokens(u: Uri, tokens: Vector[Token]): Uri = {
+        val qfs =
+          splitToGroups(tokens, AmpInQuery)
+            .flatMap(queryMappingsFromTokens)
+
+        u.copy(queryFragments = qfs)
       }
 
-    override def parseE(e: Any): UriBuilder = e match {
-      case s: Seq[_] =>
-        val newFragments = s.map(_.toString).map(Some(_))
-        newFragments.foldLeft(this)(_.appendE(_))
-      case s: String => appendE(Some(s))
-      case None      => appendE(None)
-      case null      => appendE(None)
-      case Some(x)   => parseE(x)
-      case x         => appendE(Some(x.toString))
-    }
+      private def queryMappingsFromTokens(tokens: Vector[Token]): Vector[QF] = {
+        def expressionPairToQueryFragment(ke: Any,
+                                          ve: Any): Option[QF.KeyValue] =
+          for {
+            k <- anyToStringOpt(ke)
+            v <- anyToStringOpt(ve)
+          } yield QF.KeyValue(k, v)
 
-    override def build: Uri = a.build.copy(path = fs)
+        def seqToQueryFragments(s: Seq[_]): Vector[QF] = {
+          s.flatMap {
+            case (ke, ve) => expressionPairToQueryFragment(ke, ve)
+            case ve       => anyToStringOpt(ve).map(QF.Value(_))
+          }.toVector
+        }
 
-    private def appendS(fragments: String): Path = {
-      if (fragments.isEmpty) this
-      else if (fragments.startsWith("/"))
-        // avoiding an initial empty path fragment which would cause
-        // initial // the build output
-        copy(fs = fs ++ fragments.substring(1).split("/", -1))
-      else
-        copy(fs = fs ++ fragments.split("/", -1))
-    }
+        split(tokens, Set[Token](EqInQuery)) match {
+          case Left(Vector(ExpressionToken(e: Map[_, _]))) =>
+            seqToQueryFragments(e.toSeq)
+          case Left(Vector(ExpressionToken(e: Seq[_]))) =>
+            seqToQueryFragments(e)
+          case Left(t) => tokensToStringOpt(t).map(QF.Value(_)).toVector
+          case Right((leftEq, _, rightEq)) =>
+            tokensToStringOpt(leftEq) match {
+              case Some(k) =>
+                tokensToStringSeq(rightEq).map(QF.KeyValue(k, _)).toVector
 
-    private def appendE(fragment: Option[String]): Path = fs.lastOption match {
-      case Some("") =>
-        // if the currently last path fragment is empty, replacing with the
-        // expression value: corresponds to an interpolation of [anything]/$v
-        copy(fs = fs.init ++ fragment)
-      case _ => copy(fs = fs ++ fragment)
-    }
-  }
-
-  sealed trait QueryFragment
-  object QueryFragment {
-    case object Empty extends QueryFragment
-    case class K_Eq_V(k: String, v: String) extends QueryFragment
-    case class K_Eq(k: String) extends QueryFragment
-    case class K(k: String) extends QueryFragment
-    case object Eq extends QueryFragment
-    case class Eq_V(v: String) extends QueryFragment
-  }
-
-  case class Query(p: Path, fs: Vector[QueryFragment] = Vector.empty)
-      extends UriBuilder {
-
-    import QueryFragment._
-
-    override def parseS(s: String): UriBuilder = {
-      s.split("#", 2) match {
-        case Array(queryFragment, rest) =>
-          Fragment(appendS(queryFragment)).parseS(rest)
-
-        case Array(x) => appendS(x)
+              case None =>
+                Vector.empty
+            }
+        }
       }
     }
 
-    override def parseE(e: Any): UriBuilder = e match {
-      case m: Map[_, _] => parseSeqE(m.toSeq)
-      case s: Seq[_]    => parseSeqE(s)
-      case s: String    => appendE(Some(s))
-      case None         => appendE(None)
-      case null         => appendE(None)
-      case Some(x)      => parseE(x)
-      case x            => appendE(Some(x.toString))
+    case object Fragment extends UriBuilder {
+      override def fromTokens(u: Uri, t: Vector[Token]): (Uri, Vector[Token]) = {
+        t match {
+          case FragmentStart +: tt =>
+            (u.fragment(tokensToStringOpt(tt)), Vector.empty)
+
+          case _ => (u, t)
+        }
+      }
     }
 
-    private def parseSeqE(s: Seq[_]): UriBuilder = {
-      val flattenedS = s.flatMap {
-        case (_, None)    => None
-        case (k, Some(v)) => Some((k, v))
-        case None         => None
-        case Some(k)      => Some(k)
-        case x            => Some(x)
-      }
-      val newFragments = flattenedS.map {
-        case ("", "") => Eq
-        case (k, "")  => K_Eq(k.toString)
-        case ("", v)  => Eq_V(v.toString)
-        case (k, v)   => K_Eq_V(k.toString, v.toString)
-        case x        => K(x.toString)
-      }
-      copy(fs = fs ++ newFragments)
-    }
+    /**
+      * Parse a prefix of tokens `t` into a component of a URI. The component
+      * is only present in the tokens if there's a `startingToken`; otherwise
+      * the component is skipped.
+      *
+      * The component is terminated by any of `nextComponentTokens`.
+      */
+    private def fromStartingToken(
+      u: Uri,
+      t: Vector[Token],
+      startingToken: Token,
+      nextComponentTokens: Set[Token],
+      componentFromTokens: (Uri, Vector[Token]) => Uri)
+    : (Uri, Vector[Token]) = {
 
-    override def build: Uri = {
-      import com.softwaremill.sttp.{QueryFragment => QF}
-
-      val plainSeparator = QF.Plain("&", relaxedEncoding = true)
-      var fragments: Vector[QF] = fs.flatMap {
-        case Empty        => None
-        case K_Eq_V(k, v) => Some(QF.KeyValue(k, v))
-        case K_Eq(k)      => Some(QF.KeyValue(k, ""))
-        case K(k)         =>
-          // if we have a key-only entry, we encode it as a plain query
-          // fragment
-          Some(QF.Plain(k))
-        case Eq      => Some(QF.KeyValue("", ""))
-        case Eq_V(v) => Some(QF.KeyValue("", v))
-      }
-
-      // when serialized, plain query fragments don't have & separators
-      // prepended/appended - hence, if we have parsed them here, they
-      // need to be added by hand. Adding an & separator between each pair
-      // of fragments where one of them is plain. For example:
-      // KV P P KV KV P KV
-      // becomes:
-      // KV S P S P S KV KV S P S KV
-      @tailrec
-      def addPlainSeparators(qfs: Vector[QF],
-                             previousWasPlain: Boolean,
-                             acc: Vector[QF],
-                             isFirst: Boolean = false): Vector[QF] = qfs match {
-        case Vector() => acc
-        case (p: QF.Plain) +: tail if !isFirst =>
-          addPlainSeparators(tail,
-                             previousWasPlain = true,
-                             acc :+ plainSeparator :+ p)
-        case (p: QF.Plain) +: tail =>
-          addPlainSeparators(tail, previousWasPlain = true, acc :+ p)
-        case (kv: QF.KeyValue) +: tail if previousWasPlain =>
-          addPlainSeparators(tail,
-                             previousWasPlain = false,
-                             acc :+ plainSeparator :+ kv)
-        case (kv: QF.KeyValue) +: tail =>
-          addPlainSeparators(tail, previousWasPlain = false, acc :+ kv)
-      }
-
-      fragments = addPlainSeparators(fragments,
-                                     previousWasPlain = false,
-                                     Vector(),
-                                     isFirst = true)
-
-      p.build.copy(queryFragments = fragments)
-    }
-
-    private def appendS(queryFragment: String): Query = {
-      val newVs = queryFragment.split("&", -1).map { nv =>
-        if (nv.isEmpty) Empty
-        else if (nv == "=") Eq
-        else if (nv.startsWith("=")) Eq_V(nv.substring(1))
-        else
-          nv.split("=", 2) match {
-            case Array(n, "") => K_Eq(n)
-            case Array(n, v)  => K_Eq_V(n, v)
-            case Array(n)     => K(n)
+      t match {
+        case `startingToken` +: tt =>
+          split(tt, nextComponentTokens) match {
+            case Left(ttt) =>
+              (componentFromTokens(u, ttt), Vector.empty)
+            case Right((componentTokens, sep, otherTokens)) =>
+              (componentFromTokens(u, componentTokens), sep +: otherTokens)
           }
-      }
 
-      // it's possible that the current-last and new-first query fragments
-      // are indeed two parts of a single fragment. Attempting to merge,
-      // if possible
-      val (currentInit, currentLastV) = fs.splitAt(fs.length - 1)
-      val (newHeadV, newTail) = newVs.splitAt(1)
-
-      val mergedOpt = for {
-        currentLast <- currentLastV.headOption
-        newHead <- newHeadV.headOption
-      } yield {
-        currentInit ++ merge(currentLast, newHead) ++ newTail
-      }
-
-      val combinedVs = mergedOpt match {
-        case None         => fs ++ newVs // either current or new fragments are empty
-        case Some(merged) => merged
-      }
-
-      copy(fs = combinedVs)
-    }
-
-    private def merge(last: QueryFragment,
-                      first: QueryFragment): Vector[QueryFragment] = {
-      /*
-       Only some combinations of fragments are possible. Part of them are
-       already handled in `appendE` (specifically, any expressions of
-       the form k=$v). Here we have to handle: $k=$v and $k=v.
-       */
-      (last, first) match {
-        case (K(k), Eq) => Vector(K_Eq(k)) // k + = => k=
-        case (K(k), Eq_V(v)) =>
-          Vector(K_Eq_V(k, v)) // k + =v => k=v
-        case (x, y) => Vector(x, y)
+        case _ => (u, t)
       }
     }
 
-    private def appendE(vo: Option[String]): Query = {
-      fs.lastOption match {
-        case Some(K_Eq(k)) =>
-          // k= + None -> remove parameter; k= + Some(v) -> k=v
-          vo match {
-            case None     => copy(fs = fs.init)
-            case Some("") => this
-            case Some(v)  => copy(fs = fs.init :+ K_Eq_V(k, v))
-          }
-        case _ =>
-          copy(fs = fs :+ vo.fold[QueryFragment](Empty)(K))
-      }
+    private def anyToString(a: Any): String = anyToStringOpt(a).getOrElse("")
+
+    private def anyToStringOpt(a: Any): Option[String] = a match {
+      case None    => None
+      case null    => None
+      case Some(x) => Some(x.toString)
+      case x       => Some(x.toString)
     }
+
+    private def tokensToStringSeq(t: Vector[Token]): Seq[String] = t.flatMap {
+      case ExpressionToken(s: Seq[_]) => s.flatMap(anyToStringOpt).toVector
+      case ExpressionToken(e)         => anyToStringOpt(e).toVector
+      case StringToken(s)             => Vector(decode(s))
+      case _                          => Vector.empty
+    }
+
+    private def tokensToStringOpt(t: Vector[Token]): Option[String] = t match {
+      case Vector()                   => None
+      case Vector(ExpressionToken(e)) => anyToStringOpt(e)
+      case _                          => Some(tokensToString(t))
+    }
+
+    private def tokensToString(t: Vector[Token]): String =
+      t.collect {
+          case StringToken(s)     => decode(s)
+          case ExpressionToken(e) => anyToString(e)
+        }
+        .mkString("")
+
+    private def split[T](
+        v: Vector[T],
+        sep: Set[T]): Either[Vector[T], (Vector[T], T, Vector[T])] = {
+      val i = v.indexWhere(sep.contains)
+      if (i == -1) Left(v) else Right((v.take(i), v(i), v.drop(i + 1)))
+    }
+
+    private def splitToGroups[T](v: Vector[T], sep: T): Vector[Vector[T]] = {
+      def doSplit(vv: Vector[T], acc: Vector[Vector[T]]): Vector[Vector[T]] = {
+        vv.indexOf(sep) match {
+          case -1 => acc :+ vv
+          case i  => doSplit(vv.drop(i + 1), acc :+ vv.take(i))
+        }
+      }
+
+      doSplit(v, Vector.empty)
+    }
+
+    private def decode(s: String): String = URLDecoder.decode(s, Utf8)
   }
 
-  case class Fragment(q: Query, v: String = "") extends UriBuilder {
-    override def parseS(s: String): UriBuilder =
-      copy(v = v + s)
+  /**
+    * After tokenizing, there might be extra empty string tokens
+    * (`StringToken("")`) before and after expressions. For example,
+    * `key=$value` will tokenize to:
+    *
+    * `Vector(StringToken("key"), EqInQuery, StringToken(""), ExpressionToken(value))`
+    *
+    * These empty string tokens need to be removed so that e.g. extra key-value
+    * mappings are not generated.
+    */
+  private def removeEmptyTokensAroundExp(tokens: Vector[Token]): Vector[Token] = {
+    def doRemove(t: Vector[Token], acc: Vector[Token]): Vector[Token] =
+      t match {
+        case StringToken("") +: (e: ExpressionToken) +: tail =>
+          doRemove(e +: tail, acc)
+        case (e: ExpressionToken) +: StringToken("") +: tail =>
+          doRemove(tail, acc :+ e)
+        case v +: tail => doRemove(tail, acc :+ v)
+        case Vector()  => acc
+      }
 
-    override def parseE(e: Any): UriBuilder = parseE_skipNone(e)
-
-    override def build: Uri =
-      q.build.copy(fragment = if (v.isEmpty) None else Some(v))
-  }
-
-  private def charAfterPrefix(prefix: String, whole: String): Char = {
-    val pl = prefix.length
-    whole.substring(pl, pl + 1).charAt(0)
+    doRemove(tokens, Vector.empty)
   }
 }
