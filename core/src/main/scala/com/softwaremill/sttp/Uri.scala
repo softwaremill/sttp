@@ -3,17 +3,22 @@ package com.softwaremill.sttp
 import java.net.URLEncoder
 
 import Uri.{QueryFragment, UserInfo}
-import Uri.QueryFragment.{KeyValue, Plain}
+import Uri.QueryFragment.{KeyValue, Value, Plain}
 
 import scala.annotation.tailrec
 import scala.collection.immutable.Seq
 
 /**
-  * @param queryFragments Either key-value pairs, or plain query fragments.
-  * Key value pairs will be serialized as `k=v`, and blocks of key-value
-  * pairs will be combined using `&`. Note that no `&` or other separators
-  * are added around plain query fragments - if required, they need to be
-  * added manually as part of the plain query fragment.
+  * A [[https://en.wikipedia.org/wiki/Uniform_Resource_Identifier URI]].
+  * All components (scheme, host, query, ...) are stored unencoded, and
+  * become encoded upon serialization (using [[toString]]).
+  *
+  * @param queryFragments Either key-value pairs, single values, or plain
+  * query fragments. Key value pairs will be serialized as `k=v`, and blocks
+  * of key-value pairs/single values will be combined using `&`. Note that no
+  * `&` or other separators are added around plain query fragments - if
+  * required, they need to be added manually as part of the plain query
+  * fragment.
   */
 case class Uri(scheme: String,
                userInfo: Option[UserInfo],
@@ -22,19 +27,6 @@ case class Uri(scheme: String,
                path: Seq[String],
                queryFragments: Seq[QueryFragment],
                fragment: Option[String]) {
-
-  def this(host: String) =
-    this("http", None, host, None, Vector.empty, Vector.empty, None)
-  def this(host: String, port: Int) =
-    this("http", None, host, Some(port), Vector.empty, Vector.empty, None)
-  def this(host: String, port: Int, path: Seq[String]) =
-    this("http", None, host, Some(port), path, Vector.empty, None)
-  def this(scheme: String, host: String) =
-    this(scheme, None, host, None, Vector.empty, Vector.empty, None)
-  def this(scheme: String, host: String, port: Int) =
-    this(scheme, None, host, Some(port), Vector.empty, Vector.empty, None)
-  def this(scheme: String, host: String, port: Int, path: Seq[String]) =
-    this(scheme, None, host, Some(port), path, Vector.empty, None)
 
   def scheme(s: String): Uri = this.copy(scheme = s)
 
@@ -100,19 +92,24 @@ case class Uri(scheme: String,
 
     @tailrec
     def encodeQueryFragments(qfs: List[QueryFragment],
-                             previousWasKV: Boolean,
+                             previousWasPlain: Boolean,
                              sb: StringBuilder): String = qfs match {
       case Nil => sb.toString()
 
       case Plain(v, re) :: t =>
         encodeQueryFragments(t,
-                             previousWasKV = false,
+                             previousWasPlain = true,
                              sb.append(encodeQuery(v, re)))
 
+      case Value(v, re) :: t =>
+        if (!previousWasPlain) sb.append("&")
+        sb.append(encodeQuery(v, re))
+        encodeQueryFragments(t, previousWasPlain = false, sb)
+
       case KeyValue(k, v, reK, reV) :: t =>
-        if (previousWasKV) sb.append("&")
+        if (!previousWasPlain) sb.append("&")
         sb.append(encodeQuery(k, reK)).append("=").append(encodeQuery(v, reV))
-        encodeQueryFragments(t, previousWasKV = true, sb)
+        encodeQueryFragments(t, previousWasPlain = false, sb)
     }
 
     val schemeS = encode(scheme)
@@ -124,7 +121,7 @@ case class Uri(scheme: String,
     val queryPrefixS = if (queryFragments.isEmpty) "" else "?"
 
     val queryS = encodeQueryFragments(queryFragments.toList,
-                                      previousWasKV = false,
+                                      previousWasPlain = true,
                                       new StringBuilder())
     val fragS = fragment.fold("")("#" + _)
     s"$schemeS://$userInfoS$hostS$portS$pathPrefixS$pathS$queryPrefixS$queryS$fragS"
@@ -167,6 +164,19 @@ case class Uri(scheme: String,
 }
 
 object Uri {
+  def apply(host: String): Uri =
+    Uri("http", None, host, None, Vector.empty, Vector.empty, None)
+  def apply(host: String, port: Int): Uri =
+    Uri("http", None, host, Some(port), Vector.empty, Vector.empty, None)
+  def apply(host: String, port: Int, path: Seq[String]): Uri =
+    Uri("http", None, host, Some(port), path, Vector.empty, None)
+  def apply(scheme: String, host: String): Uri =
+    Uri(scheme, None, host, None, Vector.empty, Vector.empty, None)
+  def apply(scheme: String, host: String, port: Int): Uri =
+    Uri(scheme, None, host, Some(port), Vector.empty, Vector.empty, None)
+  def apply(scheme: String, host: String, port: Int, path: Seq[String]): Uri =
+    Uri(scheme, None, host, Some(port), path, Vector.empty, None)
+
   sealed trait QueryFragment
   object QueryFragment {
 
@@ -178,6 +188,12 @@ object Uri {
                         v: String,
                         keyRelaxedEncoding: Boolean = false,
                         valueRelaxedEncoding: Boolean = false)
+        extends QueryFragment
+
+    /**
+      * A query fragment which contains only the value, without a key.
+      */
+    case class Value(v: String, relaxedEncoding: Boolean = false)
         extends QueryFragment
 
     /**

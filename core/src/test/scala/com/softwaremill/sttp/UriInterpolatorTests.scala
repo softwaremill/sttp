@@ -11,6 +11,8 @@ class UriInterpolatorTests extends FunSuite with Matchers {
   val v3encoded = "a%3F%3D%26c"
   val v4 = "f/g"
   val v4encoded = "f%2Fg"
+  val v5 = "a:b"
+  val v5encoded = "a%3Ab"
   val secure = true
 
   val testData: List[(String, List[(Uri, String)])] = List(
@@ -29,6 +31,12 @@ class UriInterpolatorTests extends FunSuite with Matchers {
       (uri"${if (secure) "https" else "http"}://example.com",
        s"https://example.com"),
       (uri"example.com?a=$v2", s"http://example.com?a=$v2queryEncoded")
+    ),
+    "user info" -> List(
+      (uri"http://user:pass@example.com", s"http://user:pass@example.com"),
+      (uri"http://$v2@example.com", s"http://$v2encoded@example.com"),
+      (uri"http://$v5@example.com", s"http://$v5encoded@example.com"),
+      (uri"http://$v1:$v2@example.com", s"http://$v1:$v2encoded@example.com")
     ),
     "authority" -> List(
       (uri"http://$v1.com", s"http://$v1.com"),
