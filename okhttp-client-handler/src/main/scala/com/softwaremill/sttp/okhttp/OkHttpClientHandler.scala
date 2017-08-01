@@ -35,9 +35,11 @@ abstract class OkHttpClientHandler[R[_], S](client: OkHttpClient)
     })
 
     //OkHttp support automatic gzip compression
-    request.headers.filter(_._1 != "Accept-Encoding").foreach {
-      case (name, value) => builder.addHeader(name, value)
-    }
+    request.headers
+      .filter(_._1.equalsIgnoreCase(AcceptEncodingHeader) == false)
+      .foreach {
+        case (name, value) => builder.addHeader(name, value)
+      }
 
     builder.build()
   }
@@ -74,8 +76,8 @@ abstract class OkHttpClientHandler[R[_], S](client: OkHttpClient)
     Response(body, res.code(), headers.toList)
   }
 
-  private[okhttp] def readResponseBody[T](res: OkHttpResponse,
-                                          responseAs: ResponseAs[T, S]): T = {
+  private def readResponseBody[T](res: OkHttpResponse,
+                                  responseAs: ResponseAs[T, S]): T = {
     responseAs match {
       case IgnoreResponse => res.body().close()
       case ResponseAsString(encoding) =>

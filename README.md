@@ -403,3 +403,4 @@ and pick a task you'd like to work on!
 
 * [Tomasz Szymański](https://github.com/szimano)
 * [Adam Warski](https://github.com/adamw)
+* [Omar Alejandro Mainegra Sarduy](https://github.com/omainegra)
