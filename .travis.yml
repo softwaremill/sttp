@@ -4,7 +4,7 @@ jdk:
 - oraclejdk8
 scala:
 - 2.12.3
-- 2.11.8
+- 2.11.11
 script:
 - sbt ++$TRAVIS_SCALA_VERSION test
 - '[ "${TRAVIS_PULL_REQUEST}" = "false" ] && sbt updateImpactSubmit || true'
