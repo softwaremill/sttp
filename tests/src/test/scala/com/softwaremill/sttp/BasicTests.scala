@@ -19,6 +19,10 @@ import better.files._
 import com.softwaremill.sttp.asynchttpclient.future.FutureAsyncHttpClientHandler
 import com.softwaremill.sttp.asynchttpclient.monix.MonixAsyncHttpClientHandler
 import com.softwaremill.sttp.asynchttpclient.scalaz.ScalazAsyncHttpClientHandler
+import com.softwaremill.sttp.okhttp.{
+  OkHttpFutureClientHandler,
+  OkHttpSyncClientHandler
+}
 
 import scala.language.higherKinds
 
@@ -126,6 +130,10 @@ class BasicTests
                                          ForceWrappedValue.scalazTask)
   runTests("Async Http Client - Monix")(MonixAsyncHttpClientHandler(),
                                         ForceWrappedValue.monixTask)
+  runTests("OkHttpSyncClientHandler")(OkHttpSyncClientHandler(),
+                                      ForceWrappedValue.id)
+  runTests("OkHttpSyncClientHandler - Future")(OkHttpFutureClientHandler(),
+                                               ForceWrappedValue.future)
 
   def runTests[R[_]](name: String)(
       implicit handler: SttpHandler[R, Nothing],

@@ -39,7 +39,7 @@ class UriTests extends FunSuite with Matchers {
         Nil,
         Nil,
         None) ->
-      "http://us%26er:pa%20ss@example.com",
+      "http://us%26er:pa%20ss@example.com"
   )
 
   for {
