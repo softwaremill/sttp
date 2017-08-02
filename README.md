@@ -350,6 +350,8 @@ This handler depends on [OkHttp](http://square.github.io/okhttp/), and offers
 both a **synchronous** (`OkHttpSyncClientHandler`) and **asynchronous**
 (`OkHttpFutureClientHandler`), `Future`-based handlers.
 
+OkHttp fully supports HTTP/2.
+
 ## Request type
 
 All request descriptions have type `RequestT[U, T, S]` (T as in Template).
