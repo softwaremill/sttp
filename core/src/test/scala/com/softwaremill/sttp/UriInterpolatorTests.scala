@@ -117,7 +117,9 @@ class UriInterpolatorTests extends FunSuite with Matchers {
        s"http://$v1.$v2encoded.com/$v1/$v2encoded?$v1=$v2queryEncoded&$v3encoded=$v4encoded#$v1")
     ),
     "embed whole url" -> List(
-      (uri"${"http://example.com:123/a"}/b/c", "http://example.com:123/a/b/c")
+      (uri"${"http://example.com:123/a"}/b/c", "http://example.com:123/a/b/c"),
+      (uri"${uri"http://example.com/$v1?p=$v2"}",
+       s"http://example.com/$v1?p=$v2queryEncoded")
     )
   )
 
