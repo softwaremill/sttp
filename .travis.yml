@@ -19,6 +19,8 @@ install:
 
 script:
     - sbt ++$TRAVIS_SCALA_VERSION clean coverage test;
+    - sbt ++$TRAVIS_SCALA_VERSION coverageReport;
+    - sbt ++$TRAVIS_SCALA_VERSION coverageAggregate && codecov;
     - '[ "${TRAVIS_PULL_REQUEST}" = "false" ] && sbt updateImpactSubmit || true'
 
 before_cache:
