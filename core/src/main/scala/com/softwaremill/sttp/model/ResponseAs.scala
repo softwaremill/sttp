@@ -17,10 +17,17 @@ case object IgnoreResponse extends ResponseAs[Unit, Nothing]
 case class ResponseAsString(encoding: String)
     extends ResponseAs[String, Nothing]
 case object ResponseAsByteArray extends ResponseAs[Array[Byte], Nothing]
-case class ResponseAsParams(encoding: String)
-    extends ResponseAs[Seq[(String, String)], Nothing] {
+case class ResponseAsStream[T, S]()(implicit val responseIsStream: S =:= T)
+    extends ResponseAs[T, S]
+case class MappedResponseAs[T, T2, S](raw: ResponseAs[T, S], g: T => T2)
+    extends ResponseAs[T2, S] {
+  override def map[T3](f: T2 => T3): ResponseAs[T3, S] =
+    MappedResponseAs[T, T3, S](raw, g andThen f)
+}
 
-  private[sttp] def parse(s: String): Seq[(String, String)] = {
+object ResponseAs {
+  private[sttp] def parseParams(s: String,
+                                encoding: String): Seq[(String, String)] = {
     s.split("&")
       .toList
       .flatMap(kv =>
@@ -31,11 +38,4 @@ case class ResponseAsParams(encoding: String)
           case _ => None
       })
   }
-}
-case class ResponseAsStream[T, S]()(implicit val responseIsStream: S =:= T)
-    extends ResponseAs[T, S]
-case class MappedResponseAs[T, T2, S](raw: ResponseAs[T, S], g: T => T2)
-    extends ResponseAs[T2, S] {
-  override def map[T3](f: T2 => T3): ResponseAs[T3, S] =
-    MappedResponseAs[T, T3, S](raw, g andThen f)
 }

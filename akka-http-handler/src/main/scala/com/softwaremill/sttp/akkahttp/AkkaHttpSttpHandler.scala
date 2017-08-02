@@ -65,9 +65,6 @@ class AkkaHttpSttpHandler private (actorSystem: ActorSystem,
         .runFold(ByteString(""))(_ ++ _)
         .map(_.toArray[Byte])
 
-    def asString(enc: String) =
-      asByteArray.map(new String(_, enc))
-
     rr match {
       case MappedResponseAs(raw, g) => bodyFromAkka(raw, hr).map(g)
 
@@ -76,13 +73,10 @@ class AkkaHttpSttpHandler private (actorSystem: ActorSystem,
         Future.successful(())
 
       case ResponseAsString(enc) =>
-        asString(enc)
+        asByteArray.map(new String(_, enc))
 
       case ResponseAsByteArray =>
         asByteArray
-
-      case r @ ResponseAsParams(enc) =>
-        asString(enc).map(r.parse)
 
       case r @ ResponseAsStream() =>
         Future.successful(r.responseIsStream(hr.entity.dataBytes))

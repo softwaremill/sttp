@@ -84,7 +84,7 @@ package object sttp {
   def asParams: ResponseAs[Seq[(String, String)], Nothing] =
     asParams(Utf8)
   def asParams(encoding: String): ResponseAs[Seq[(String, String)], Nothing] =
-    ResponseAsParams(encoding)
+    asString(encoding).map(ResponseAs.parseParams(_, encoding))
 
   def asStream[S]: ResponseAs[S, S] = ResponseAsStream[S, S]()
 

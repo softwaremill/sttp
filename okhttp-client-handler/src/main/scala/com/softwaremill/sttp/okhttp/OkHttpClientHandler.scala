@@ -84,9 +84,7 @@ abstract class OkHttpClientHandler[R[_], S](client: OkHttpClient)
         res.body().source().readString(Charset.forName(encoding))
       case ResponseAsByteArray      => res.body().bytes()
       case MappedResponseAs(raw, g) => g(readResponseBody(res, raw))
-      case r @ ResponseAsParams(enc) =>
-        r.parse(res.body().source().readString(Charset.forName(enc)))
-      case ResponseAsStream() => throw new IllegalStateException()
+      case ResponseAsStream()       => throw new IllegalStateException()
     }
   }
 }

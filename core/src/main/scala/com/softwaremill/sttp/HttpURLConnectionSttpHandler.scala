@@ -129,9 +129,6 @@ object HttpURLConnectionSttpHandler extends SttpHandler[Id, Nothing] {
 
         os.toByteArray
 
-      case r @ ResponseAsParams(enc) =>
-        r.parse(asString(enc))
-
       case ResponseAsStream() =>
         // only possible when the user requests the response as a stream of
         // Nothing. Oh well ...

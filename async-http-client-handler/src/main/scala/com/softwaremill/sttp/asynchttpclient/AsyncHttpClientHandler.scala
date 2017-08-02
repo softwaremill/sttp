@@ -219,9 +219,6 @@ abstract class AsyncHttpClientHandler[R[_], S](asyncHttpClient: AsyncHttpClient,
       case ResponseAsByteArray =>
         rm.unit(response.getResponseBodyAsBytes)
 
-      case r @ ResponseAsParams(enc) =>
-        rm.unit(r.parse(asString(enc)))
-
       case ResponseAsStream() =>
         // only possible when the user requests the response as a stream of
         // Nothing. Oh well ...
