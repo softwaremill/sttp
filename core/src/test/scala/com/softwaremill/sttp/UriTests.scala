@@ -41,7 +41,7 @@ class UriTests extends FunSuite with Matchers {
         None) ->
       "http://us%26er:pa%20ss@example.com",
     Uri("http", None, "example.com", None, Nil, Nil, Some("f:g/h i")) ->
-      "http://example.com#f:g/h%20i",
+      "http://example.com#f:g/h%20i"
   )
 
   for {
