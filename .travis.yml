@@ -18,8 +18,7 @@ install:
   - pip install --user codecov
 
 script:
-    - sbt ++$TRAVIS_SCALA_VERSION clean coverage test;
-    - sbt ++$TRAVIS_SCALA_VERSION coverageReport;
+    - sbt ++$TRAVIS_SCALA_VERSION clean coverage test coverageReport;
     - sbt ++$TRAVIS_SCALA_VERSION coverageAggregate && codecov;
     - '[ "${TRAVIS_PULL_REQUEST}" = "false" ] && sbt updateImpactSubmit || true'
 
@@ -27,8 +26,3 @@ before_cache:
     # Cleanup the cached directories to avoid unnecessary cache updates
     - find $HOME/.ivy2/cache -name "ivydata-*.properties" -print -delete
     - find $HOME/.sbt        -name "*.lock"               -print -delete
-
-after_success:
-    - codecov
-
-# Dummy comment
