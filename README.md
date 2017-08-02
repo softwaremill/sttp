@@ -184,6 +184,8 @@ uri"$scheme://$subdomains.example.com?x=$vx&$params#$jumpTo"
 | `FutureAsyncHttpClientHandler` | `scala.concurrent.Future` | - |
 | `ScalazAsyncHttpClientHandler` | `scalaz.concurrent.Task` | - |
 | `MonixAsyncHttpClientHandler` | `monix.eval.Task` | `monix.reactive.Observable[ByteBuffer]` | 
+| `OkHttpSyncClientHandler` | None (`Id`) | - | 
+| `OkHttpFutureClientHandler` | `scala.concurrent.Future` | - | 
 
 ### `HttpURLConnectionSttpHandler`
 
@@ -335,6 +337,18 @@ val response: Task[Response[Observable[ByteBuffer]]] =
     .response(asStream[Observable[ByteBuffer]])
     .send()
 ```
+
+### `OkHttpClientHandler`
+
+To use, add the following dependency to your project:
+
+```scala
+"com.softwaremill.sttp" %% "okhttp-client-handler" % "0.0.3"
+```
+
+This handler depends on [OkHttp](http://square.github.io/okhttp/), and offers 
+both a **synchronous** (`OkHttpSyncClientHandler`) and **asynchronous**
+(`OkHttpFutureClientHandler`), `Future`-based handlers.
 
 ## Request type
 

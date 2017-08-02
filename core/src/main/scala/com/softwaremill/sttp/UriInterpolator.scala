@@ -49,9 +49,11 @@ object UriInterpolator {
       // way it's possible to extend existing URIs. Without special-casing
       // the embedded URI would be escaped and become part of the host
       // as a whole.
-      if (tokens == Vector(StringToken("")) && nextExpression.toString.contains("://")) {
+      if (tokens == Vector(StringToken("")) && nextExpression.toString.contains(
+            "://")) {
         def tokenizeExpressionAsString(): Unit = {
-          val (nextTokenizer, nextTokens) = tokenizer.tokenize(nextExpression.toString)
+          val (nextTokenizer, nextTokens) =
+            tokenizer.tokenize(nextExpression.toString)
           tokenizer = nextTokenizer
           tokens = tokens ++ nextTokens
         }
@@ -336,7 +338,11 @@ object UriInterpolator {
       import com.softwaremill.sttp.Uri.{QueryFragment => QF}
 
       override def fromTokens(u: Uri, t: Vector[Token]): (Uri, Vector[Token]) =
-        fromStartingToken(u, t, QueryStart, Set[Token](FragmentStart), queryFromTokens)
+        fromStartingToken(u,
+                          t,
+                          QueryStart,
+                          Set[Token](FragmentStart),
+                          queryFromTokens)
 
       private def queryFromTokens(u: Uri, tokens: Vector[Token]): Uri = {
         val qfs =
@@ -398,12 +404,12 @@ object UriInterpolator {
       * The component is terminated by any of `nextComponentTokens`.
       */
     private def fromStartingToken(
-      u: Uri,
-      t: Vector[Token],
-      startingToken: Token,
-      nextComponentTokens: Set[Token],
-      componentFromTokens: (Uri, Vector[Token]) => Uri)
-    : (Uri, Vector[Token]) = {
+        u: Uri,
+        t: Vector[Token],
+        startingToken: Token,
+        nextComponentTokens: Set[Token],
+        componentFromTokens: (Uri, Vector[Token]) => Uri)
+      : (Uri, Vector[Token]) = {
 
       t match {
         case `startingToken` +: tt =>
