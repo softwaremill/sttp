@@ -123,7 +123,7 @@ case class Uri(scheme: String,
     val queryS = encodeQueryFragments(queryFragments.toList,
                                       previousWasPlain = true,
                                       new StringBuilder())
-    val fragS = fragment.fold("")("#" + _)
+    val fragS = fragment.fold("")("#" + encodeFragment(_))
     s"$schemeS://$userInfoS$hostS$portS$pathPrefixS$pathS$queryPrefixS$queryS$fragS"
   }
 
@@ -139,19 +139,30 @@ case class Uri(scheme: String,
     else
       URLEncoder.encode(String.valueOf(s), "UTF-8")
 
-  private val relaxedQueryAllowedCharacters = {
-    // https://stackoverflow.com/questions/2322764/what-characters-must-be-escaped-in-an-http-query-string
-    val alphanum = (('a' to 'z') ++ ('A' to 'Z') ++ ('0' to '9')).toSet
-    val special = Set('/', '?', ':', '@', '-', '.', '_', '~', '!', '$', '&',
-      '\'', '(', ')', '*', '+', ',', ';', '=')
-    alphanum ++ special
+  private object Rfc3986 {
+    val AlphaNum: Set[Char] =
+      (('a' to 'z') ++ ('A' to 'Z') ++ ('0' to '9')).toSet
+    val Unreserved: Set[Char] = AlphaNum ++ Set('-', '.', '_', '~')
+    val SubDelims: Set[Char] =
+      Set('!', '$', '&', '\'', '(', ')', '*', '+', ',', ';', '=')
+    val PChar: Set[Char] = Unreserved ++ SubDelims ++ Set(':', '@')
+    val Query: Set[Char] = PChar ++ Set('/', '?')
+    val Fragment: Set[Char] = Query
   }
 
-  private def encodeQueryRelaxed(s: String): String = {
+  // https://stackoverflow.com/questions/2322764/what-characters-must-be-escaped-in-an-http-query-string
+  private def encodeQueryRelaxed(s: String): String =
+    encode(s, Rfc3986.Query)
+
+  // https://stackoverflow.com/questions/2053132/is-a-colon-safe-for-friendly-url-use/2053640#2053640
+  private def encodeFragment(s: String): String =
+    encode(s, Rfc3986.Fragment)
+
+  private def encode(s: String, allowedCharacters: Set[Char]): String = {
     val sb = new StringBuilder()
     // based on https://gist.github.com/teigen/5865923
     for (c <- s) {
-      if (relaxedQueryAllowedCharacters(c)) sb.append(c)
+      if (allowedCharacters(c)) sb.append(c)
       else {
         for (b <- c.toString.getBytes("UTF-8")) {
           sb.append("%")
