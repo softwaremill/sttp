@@ -55,7 +55,7 @@ If you are an [Ammonite](http://ammonite.io) user, you can quickly start
 experimenting with sttp by copy-pasting the following:
 
 ```scala
-import $ivy.`com.softwaremill.sttp::core:0.0.3`
+import $ivy.`com.softwaremill.sttp::core:0.0.4`
 import com.softwaremill.sttp._
 implicit val handler = HttpURLConnectionSttpHandler
 sttp.get(uri"http://httpbin.org/ip").send()
@@ -66,7 +66,7 @@ sttp.get(uri"http://httpbin.org/ip").send()
 SBT dependency:
 
 ```scala
-"com.softwaremill.sttp" %% "core" % "0.0.3"
+"com.softwaremill.sttp" %% "core" % "0.0.4"
 ```
 
 `sttp` is available for Scala 2.11 and 2.12, and requires Java 8. The core 
@@ -203,7 +203,7 @@ implicit val sttpHandler = HttpURLConnectionSttpHandler
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp" %% "akka-http-handler" % "0.0.3"
+"com.softwaremill.sttp" %% "akka-http-handler" % "0.0.4"
 ```
 
 This handler depends on [akka-http](http://doc.akka.io/docs/akka-http/current/scala/http/).
@@ -262,11 +262,11 @@ val response: Future[Response[Source[ByteString, Any]]] =
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp" %% "async-http-client-handler-future" % "0.0.3"
+"com.softwaremill.sttp" %% "async-http-client-handler-future" % "0.0.4"
 // or
-"com.softwaremill.sttp" %% "async-http-client-handler-scalaz" % "0.0.3"
+"com.softwaremill.sttp" %% "async-http-client-handler-scalaz" % "0.0.4"
 // or
-"com.softwaremill.sttp" %% "async-http-client-handler-monix" % "0.0.3"
+"com.softwaremill.sttp" %% "async-http-client-handler-monix" % "0.0.4"
 ```
 
 This handler depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client).
@@ -343,7 +343,7 @@ val response: Task[Response[Observable[ByteBuffer]]] =
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp" %% "okhttp-client-handler" % "0.0.3"
+"com.softwaremill.sttp" %% "okhttp-client-handler" % "0.0.4"
 ```
 
 This handler depends on [OkHttp](http://square.github.io/okhttp/), and offers 
