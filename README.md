@@ -38,6 +38,10 @@ responses
 * provide support for backend-specific request/response streaming
 * minimum dependencies
 
+See also the [introduction to sttp](https://softwaremill.com/introducing-sttp-the-scala-http-client)
+and [sttp streaming & URI interpolators](https://softwaremill.com/sttp-streaming-uri-interpolator) 
+blogs.
+
 ## How is sttp different from other libraries?
 
 * immutable request builder which doesn't impose any order in which request 
