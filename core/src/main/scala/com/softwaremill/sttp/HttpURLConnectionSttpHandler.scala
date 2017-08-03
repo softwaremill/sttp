@@ -33,6 +33,8 @@ object HttpURLConnectionSttpHandler extends SttpHandler[Id, Nothing] {
     }
   }
 
+  override def responseMonad: MonadError[Id] = IdMonad
+
   private def setBody(body: RequestBody[Nothing], c: HttpURLConnection): Unit = {
     if (body != NoBody) c.setDoOutput(true)
 

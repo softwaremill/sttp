@@ -5,10 +5,12 @@ import java.nio.charset.Charset
 
 import com.softwaremill.sttp.model._
 import com.softwaremill.sttp.{
+  ContentLengthHeader,
+  MonadAsyncError,
+  MonadError,
   Request,
   Response,
-  SttpHandler,
-  ContentLengthHeader
+  SttpHandler
 }
 import org.asynchttpclient.AsyncHandler.State
 import org.asynchttpclient.handler.StreamedAsyncHandler
@@ -50,10 +52,10 @@ abstract class AsyncHttpClientHandler[R[_], S](asyncHttpClient: AsyncHttpClient,
           preparedRequest
             .execute(eagerAsyncHandler(ra, success, error))
       }
-
     })
-
   }
+
+  override def responseMonad: MonadError[R] = rm
 
   protected def streamBodyToPublisher(s: S): Publisher[ByteBuffer]
 
@@ -232,16 +234,6 @@ abstract class AsyncHttpClientHandler[R[_], S](asyncHttpClient: AsyncHttpClient,
     if (closeClient)
       asyncHttpClient.close()
   }
-}
-
-trait MonadAsyncError[R[_]] {
-  def unit[T](t: T): R[T]
-  def map[T, T2](fa: R[T], f: T => T2): R[T2]
-  def flatMap[T, T2](fa: R[T], f: T => R[T2]): R[T2]
-  def async[T](register: (Either[Throwable, T] => Unit) => Unit): R[T]
-  def error[T](t: Throwable): R[T]
-
-  def flatten[T](ffa: R[R[T]]): R[T] = flatMap[R[T], T](ffa, identity)
 }
 
 object EmptyPublisher extends Publisher[ByteBuffer] {

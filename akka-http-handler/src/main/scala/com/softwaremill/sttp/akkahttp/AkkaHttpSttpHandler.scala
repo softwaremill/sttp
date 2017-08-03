@@ -43,6 +43,8 @@ class AkkaHttpSttpHandler private (actorSystem: ActorSystem,
       }
   }
 
+  override def responseMonad: MonadError[Future] = new FutureMonad()(ec)
+
   private def methodToAkka(m: Method): HttpMethod = m match {
     case Method.GET     => HttpMethods.GET
     case Method.HEAD    => HttpMethods.HEAD
