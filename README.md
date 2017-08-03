@@ -356,6 +356,16 @@ both a **synchronous** (`OkHttpSyncClientHandler`) and **asynchronous**
 
 OkHttp fully supports HTTP/2.
 
+### Custom backends, logging, metrics
+
+It is also entirely possible to write your own backend (if so, please consider
+contributing!) or wrapping an existing one. You can even write completely 
+generic wrappers for any delegate backend, as the each backend comes equipped
+with a monad for the response wrapper. 
+
+This brings the possibility to `map` and `flatMap` over responses. That way you
+could implement e.g. a logging or metric-capturing wrapper.
+
 ## Request type
 
 All request descriptions have type `RequestT[U, T, S]` (T as in Template).
