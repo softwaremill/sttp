@@ -2,11 +2,8 @@ package com.softwaremill.sttp.asynchttpclient.monix
 
 import java.nio.ByteBuffer
 
-import com.softwaremill.sttp.SttpHandler
-import com.softwaremill.sttp.asynchttpclient.{
-  AsyncHttpClientHandler,
-  MonadAsyncError
-}
+import com.softwaremill.sttp.{MonadAsyncError, SttpHandler}
+import com.softwaremill.sttp.asynchttpclient.AsyncHttpClientHandler
 import monix.eval.Task
 import monix.execution.{Cancelable, Scheduler}
 import monix.reactive.Observable

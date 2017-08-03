@@ -2,11 +2,8 @@ package com.softwaremill.sttp.asynchttpclient.scalaz
 
 import java.nio.ByteBuffer
 
-import com.softwaremill.sttp.SttpHandler
-import com.softwaremill.sttp.asynchttpclient.{
-  AsyncHttpClientHandler,
-  MonadAsyncError
-}
+import com.softwaremill.sttp.{MonadAsyncError, SttpHandler}
+import com.softwaremill.sttp.asynchttpclient.AsyncHttpClientHandler
 import org.asynchttpclient.{
   AsyncHttpClient,
   AsyncHttpClientConfig,

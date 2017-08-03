@@ -2,11 +2,8 @@ package com.softwaremill.sttp.asynchttpclient.future
 
 import java.nio.ByteBuffer
 
-import com.softwaremill.sttp.SttpHandler
-import com.softwaremill.sttp.asynchttpclient.{
-  AsyncHttpClientHandler,
-  MonadAsyncError
-}
+import com.softwaremill.sttp.asynchttpclient.AsyncHttpClientHandler
+import com.softwaremill.sttp.{FutureMonad, SttpHandler}
 import org.asynchttpclient.{
   AsyncHttpClient,
   AsyncHttpClientConfig,
@@ -14,13 +11,13 @@ import org.asynchttpclient.{
 }
 import org.reactivestreams.Publisher
 
-import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.concurrent.{ExecutionContext, Future}
 
 class FutureAsyncHttpClientHandler private (
     asyncHttpClient: AsyncHttpClient,
     closeClient: Boolean)(implicit ec: ExecutionContext)
     extends AsyncHttpClientHandler[Future, Nothing](asyncHttpClient,
-                                                    new FutureMonad(),
+                                                    new FutureMonad,
                                                     closeClient) {
 
   override protected def streamBodyToPublisher(
@@ -63,26 +60,4 @@ object FutureAsyncHttpClientHandler {
                                              ExecutionContext.Implicits.global)
     : SttpHandler[Future, Nothing] =
     new FutureAsyncHttpClientHandler(client, closeClient = false)
-}
-
-private[future] class FutureMonad(implicit ec: ExecutionContext)
-    extends MonadAsyncError[Future] {
-  override def unit[T](t: T): Future[T] = Future.successful(t)
-
-  override def map[T, T2](fa: Future[T], f: (T) => T2): Future[T2] = fa.map(f)
-
-  override def flatMap[T, T2](fa: Future[T], f: (T) => Future[T2]): Future[T2] =
-    fa.flatMap(f)
-
-  override def async[T](
-      register: ((Either[Throwable, T]) => Unit) => Unit): Future[T] = {
-    val p = Promise[T]()
-    register {
-      case Left(t)  => p.failure(t)
-      case Right(t) => p.success(t)
-    }
-    p.future
-  }
-
-  override def error[T](t: Throwable): Future[T] = Future.failed(t)
 }

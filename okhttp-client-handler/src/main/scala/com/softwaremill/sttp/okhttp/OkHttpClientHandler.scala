@@ -18,7 +18,7 @@ import okhttp3.{
 import okio.{BufferedSink, Okio}
 
 import scala.collection.JavaConverters._
-import scala.concurrent.{Future, Promise}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.language.higherKinds
 
 abstract class OkHttpClientHandler[R[_], S](client: OkHttpClient)
@@ -65,7 +65,7 @@ abstract class OkHttpClientHandler[R[_], S](client: OkHttpClient)
 
   private[okhttp] def readResponse[T](
       res: OkHttpResponse,
-      responseAs: ResponseAs[T, S]): Response[T] = {
+      responseAs: ResponseAs[T, S]): R[Response[T]] = {
     val body = readResponseBody(res, responseAs)
 
     val headers = res
@@ -73,43 +73,49 @@ abstract class OkHttpClientHandler[R[_], S](client: OkHttpClient)
       .names()
       .asScala
       .flatMap(name => res.headers().values(name).asScala.map((name, _)))
-    Response(body, res.code(), headers.toList)
+
+    responseMonad.map(body, Response(_: T, res.code(), headers.toList))
   }
 
   private def readResponseBody[T](res: OkHttpResponse,
-                                  responseAs: ResponseAs[T, S]): T = {
+                                  responseAs: ResponseAs[T, S]): R[T] = {
     responseAs match {
-      case IgnoreResponse => res.body().close()
+      case IgnoreResponse => responseMonad.unit(res.body().close())
       case ResponseAsString(encoding) =>
-        res.body().source().readString(Charset.forName(encoding))
-      case ResponseAsByteArray      => res.body().bytes()
-      case MappedResponseAs(raw, g) => g(readResponseBody(res, raw))
-      case ResponseAsStream()       => throw new IllegalStateException()
+        responseMonad.unit(
+          res.body().source().readString(Charset.forName(encoding)))
+      case ResponseAsByteArray => responseMonad.unit(res.body().bytes())
+      case MappedResponseAs(raw, g) =>
+        responseMonad.map(readResponseBody(res, raw), g)
+      case ResponseAsStream() => responseMonad.error(new IllegalStateException("Streaming isn't supported"))
     }
   }
 }
 
-class OkHttpSyncClientHandler(client: OkHttpClient)
+class OkHttpSyncClientHandler private (client: OkHttpClient)
     extends OkHttpClientHandler[Id, Nothing](client) {
   override def send[T](r: Request[T, Nothing]): Response[T] = {
     val request = convertRequest(r)
     val response = client.newCall(request).execute()
     readResponse(response, r.responseAs)
   }
+
+  override def responseMonad: MonadError[Id] = IdMonad
 }
 
 object OkHttpSyncClientHandler {
   def apply(okhttpClient: OkHttpClient = new OkHttpClient())
-    : OkHttpSyncClientHandler =
+    : SttpHandler[Id, Nothing] =
     new OkHttpSyncClientHandler(okhttpClient)
 }
 
-class OkHttpFutureClientHandler(client: OkHttpClient)
+class OkHttpFutureClientHandler private (client: OkHttpClient)(
+    implicit ec: ExecutionContext)
     extends OkHttpClientHandler[Future, Nothing](client) {
 
   override def send[T](r: Request[T, Nothing]): Future[Response[T]] = {
     val request = convertRequest(r)
-    val promise = Promise[Response[T]]()
+    val promise = Promise[Future[Response[T]]]()
 
     client
       .newCall(request)
@@ -121,12 +127,15 @@ class OkHttpFutureClientHandler(client: OkHttpClient)
           promise.success(readResponse(response, r.responseAs))
       })
 
-    promise.future
+    promise.future.flatten
   }
+
+  override def responseMonad: MonadError[Future] = new FutureMonad
 }
 
 object OkHttpFutureClientHandler {
-  def apply(okhttpClient: OkHttpClient = new OkHttpClient())
-    : OkHttpFutureClientHandler =
+  def apply(okhttpClient: OkHttpClient = new OkHttpClient())(
+      implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
+    : SttpHandler[Future, Nothing] =
     new OkHttpFutureClientHandler(okhttpClient)
 }
