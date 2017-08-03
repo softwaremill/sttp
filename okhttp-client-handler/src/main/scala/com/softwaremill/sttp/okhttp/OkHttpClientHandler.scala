@@ -87,7 +87,9 @@ abstract class OkHttpClientHandler[R[_], S](client: OkHttpClient)
       case ResponseAsByteArray => responseMonad.unit(res.body().bytes())
       case MappedResponseAs(raw, g) =>
         responseMonad.map(readResponseBody(res, raw), g)
-      case ResponseAsStream() => responseMonad.error(new IllegalStateException("Streaming isn't supported"))
+      case ResponseAsStream() =>
+        responseMonad.error(
+          new IllegalStateException("Streaming isn't supported"))
     }
   }
 }
@@ -127,7 +129,7 @@ class OkHttpFutureClientHandler private (client: OkHttpClient)(
           promise.success(readResponse(response, r.responseAs))
       })
 
-    promise.future.flatten
+    responseMonad.flatten(promise.future)
   }
 
   override def responseMonad: MonadError[Future] = new FutureMonad

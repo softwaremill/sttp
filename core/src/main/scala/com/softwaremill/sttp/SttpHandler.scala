@@ -11,6 +11,7 @@ import scala.language.higherKinds
 trait SttpHandler[R[_], -S] {
   def send[T](request: Request[T, S]): R[Response[T]]
   def close(): Unit = {}
+
   /**
     * The monad in which the responses are wrapped. Allows writing wrapper
     * handlers, which map/flatMap over the return value of [[send]].
