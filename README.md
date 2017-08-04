@@ -113,7 +113,7 @@ value of type `SttpHandler` needs to be in scope to invoke the `send()` on the
 request: 
 
 ```scala
-implicit val handler = HttpConnectionSttpHandler
+implicit val handler = HttpURLConnectionSttpHandler
 
 val response: Response[String] = request.send()
 ```
