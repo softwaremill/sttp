@@ -1,7 +1,8 @@
 package com.softwaremill.sttp
 
-import java.io.ByteArrayInputStream
+import java.io.{ByteArrayInputStream, IOException}
 import java.nio.ByteBuffer
+import java.nio.file.Paths
 import java.time.{ZoneId, ZonedDateTime}
 
 import akka.http.scaladsl.coding.{Deflate, Gzip, NoCoding}
@@ -14,7 +15,7 @@ import akka.http.scaladsl.server.directives.Credentials
 import com.softwaremill.sttp.akkahttp.AkkaHttpSttpHandler
 import com.typesafe.scalalogging.StrictLogging
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
-import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
+import org.scalatest.{path => _, _}
 import better.files._
 import com.softwaremill.sttp.asynchttpclient.cats.CatsAsyncHttpClientHandler
 import com.softwaremill.sttp.asynchttpclient.future.FutureAsyncHttpClientHandler
@@ -32,13 +33,26 @@ class BasicTests
     with Matchers
     with BeforeAndAfterAll
     with ScalaFutures
+    with OptionValues
     with StrictLogging
     with IntegrationPatience
     with TestHttpServer
-    with ForceWrapped {
+    with ForceWrapped
+    with BeforeAndAfterEach {
+
+  override def afterEach() {
+    val file = File(outPath)
+    if (file.exists) file.delete()
+  }
 
   private def paramsToString(m: Map[String, String]): String =
     m.toList.sortBy(_._1).map(p => s"${p._1}=${p._2}").mkString(" ")
+
+  private val textFile =
+    new java.io.File("tests/src/test/resources/textfile.txt")
+  private val binaryFile =
+    new java.io.File("tests/src/test/resources/binaryfile.jpg")
+  private val outPath = Paths.get("out")
 
   override val serverRoutes: Route =
     pathPrefix("echo") {
@@ -114,6 +128,12 @@ class BasicTests
     } ~ path("compress") {
       encodeResponseWith(Gzip, Deflate, NoCoding) {
         complete("I'm compressed!")
+      }
+    } ~ pathPrefix("download") {
+      path("binary") {
+        getFromFile(binaryFile)
+      } ~ path("text") {
+        getFromFile(textFile)
       }
     }
 
@@ -400,6 +420,95 @@ class BasicTests
           compress.header("Accept-Encoding", "br", replaceExisting = true)
         val resp = req.send().force()
         resp.body should be(decompressedBody)
+      }
+    }
+
+    def downloadFileTests(): Unit = {
+      import CustomMatchers._
+
+      name should "download a binary file using asFile" in {
+        val file = outPath.resolve("binaryfile.jpg").toFile
+        val req =
+          sttp.get(uri"$endpoint/download/binary").response(asFile(file))
+        val resp = req.send().force()
+
+        resp.body shouldBe file
+        file should exist
+        file should haveSameContentAs(binaryFile)
+      }
+
+      name should "download a text file using asFile" in {
+        val file = outPath.resolve("textfile.txt").toFile
+        val req =
+          sttp.get(uri"$endpoint/download/text").response(asFile(file))
+        val resp = req.send().force()
+
+        resp.body shouldBe file
+        file should exist
+        file should haveSameContentAs(textFile)
+      }
+
+      name should "download a binary file using asPath" in {
+        val path = outPath.resolve("binaryfile.jpg")
+        val req =
+          sttp.get(uri"$endpoint/download/binary").response(asPath(path))
+        val resp = req.send().force()
+
+        resp.body shouldBe path
+        path.toFile should exist
+        path.toFile should haveSameContentAs(binaryFile)
+      }
+
+      name should "download a text file using asPath" in {
+        val path = outPath.resolve("textfile.txt")
+        val req =
+          sttp.get(uri"$endpoint/download/text").response(asPath(path))
+        val resp = req.send().force()
+
+        resp.body shouldBe path
+        path.toFile should exist
+        path.toFile should haveSameContentAs(textFile)
+      }
+
+      name should "fail at trying to save file to a restricted location" in {
+        val path = Paths.get("/").resolve("textfile.txt")
+        val req =
+          sttp.get(uri"$endpoint/download/text").response(asPath(path))
+        val caught = intercept[IOException] {
+          req.send().force()
+        }
+
+        caught.getMessage shouldBe "Permission denied"
+      }
+
+      name should "fail when file exists and overwrite flag is false" in {
+        val path = outPath.resolve("textfile.txt")
+        path.toFile.getParentFile.mkdirs()
+        path.toFile.createNewFile()
+        val req =
+          sttp.get(uri"$endpoint/download/text").response(asPath(path))
+
+        val caught = intercept[IOException] {
+          req.send().force()
+        }
+
+        caught.getMessage shouldBe s"File ${path.toFile.getAbsolutePath} exists - overwriting prohibited"
+
+      }
+
+      name should "not fail when file exists and overwrite flag is true" in {
+        val path = outPath.resolve("textfile.txt")
+        path.toFile.getParentFile.mkdirs()
+        path.toFile.createNewFile()
+        val req =
+          sttp
+            .get(uri"$endpoint/download/text")
+            .response(asPath(path, overwrite = true))
+        val resp = req.send().force()
+
+        resp.body shouldBe path
+        path.toFile should exist
+        path.toFile should haveSameContentAs(textFile)
       }
     }
   }

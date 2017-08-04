@@ -1,6 +1,6 @@
 package com.softwaremill.sttp.akkahttp
 
-import java.io.UnsupportedEncodingException
+import java.io.{File, IOException, UnsupportedEncodingException}
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
@@ -10,7 +10,7 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.{HttpEncodings, `Content-Type`}
 import akka.http.scaladsl.model.ContentTypes.`application/octet-stream`
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.{Source, StreamConverters}
+import akka.stream.scaladsl.{FileIO, Source, StreamConverters}
 import akka.util.ByteString
 import com.softwaremill.sttp._
 import com.softwaremill.sttp.model._
@@ -67,6 +67,18 @@ class AkkaHttpSttpHandler private (actorSystem: ActorSystem,
         .runFold(ByteString(""))(_ ++ _)
         .map(_.toArray[Byte])
 
+    def saved(file: File, overwrite: Boolean) = {
+      if (!file.exists()) {
+        file.getParentFile.mkdirs()
+        file.createNewFile()
+      } else if (!overwrite) {
+        throw new IOException(
+          s"File ${file.getAbsolutePath} exists - overwriting prohibited")
+      }
+
+      hr.entity.dataBytes.runWith(FileIO.toPath(file.toPath))
+    }
+
     rr match {
       case MappedResponseAs(raw, g) => bodyFromAkka(raw, hr).map(g)
 
@@ -82,6 +94,9 @@ class AkkaHttpSttpHandler private (actorSystem: ActorSystem,
 
       case r @ ResponseAsStream() =>
         Future.successful(r.responseIsStream(hr.entity.dataBytes))
+
+      case ResponseAsFile(file, overwrite) =>
+        saved(file, overwrite).map(_ => file)
     }
   }
 
