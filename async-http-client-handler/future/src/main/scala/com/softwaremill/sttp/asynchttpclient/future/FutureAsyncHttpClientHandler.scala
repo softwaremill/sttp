@@ -48,7 +48,7 @@ object FutureAsyncHttpClientHandler {
   def usingConfig(cfg: AsyncHttpClientConfig)(
       implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
     : SttpHandler[Future, Nothing] =
-    new FutureAsyncHttpClientHandler(new DefaultAsyncHttpClient(),
+    new FutureAsyncHttpClientHandler(new DefaultAsyncHttpClient(cfg),
                                      closeClient = true)
 
   /**

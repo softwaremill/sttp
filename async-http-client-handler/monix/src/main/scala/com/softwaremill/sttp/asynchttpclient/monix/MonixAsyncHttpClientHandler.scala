@@ -52,7 +52,7 @@ object MonixAsyncHttpClientHandler {
   def usingConfig(cfg: AsyncHttpClientConfig)(implicit s: Scheduler =
                                                 Scheduler.Implicits.global)
     : SttpHandler[Task, Observable[ByteBuffer]] =
-    new MonixAsyncHttpClientHandler(new DefaultAsyncHttpClient(),
+    new MonixAsyncHttpClientHandler(new DefaultAsyncHttpClient(cfg),
                                     closeClient = true)
 
   /**

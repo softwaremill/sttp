@@ -33,7 +33,7 @@ object ScalazAsyncHttpClientHandler {
     new ScalazAsyncHttpClientHandler(new DefaultAsyncHttpClient(),
                                      closeClient = true)
   def usingConfig(cfg: AsyncHttpClientConfig): SttpHandler[Task, Nothing] =
-    new ScalazAsyncHttpClientHandler(new DefaultAsyncHttpClient(),
+    new ScalazAsyncHttpClientHandler(new DefaultAsyncHttpClient(cfg),
                                      closeClient = true)
   def usingClient(client: AsyncHttpClient): SttpHandler[Task, Nothing] =
     new ScalazAsyncHttpClientHandler(client, closeClient = false)
