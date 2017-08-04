@@ -45,6 +45,7 @@ lazy val rootProject = (project in file("."))
     futureAsyncHttpClientHandler,
     scalazAsyncHttpClientHandler,
     monixAsyncHttpClientHandler,
+    catsAsyncHttpClientHandler,
     okhttpClientHandler,
     tests
   )
@@ -105,6 +106,16 @@ lazy val monixAsyncHttpClientHandler: Project = (project in file(
     )
   ) dependsOn asyncHttpClientHandler
 
+lazy val catsAsyncHttpClientHandler: Project = (project in file(
+  "async-http-client-handler/cats"))
+  .settings(commonSettings: _*)
+  .settings(
+    name := "async-http-client-handler-cats",
+    libraryDependencies ++= Seq(
+      "org.typelevel" %% "cats-effect" % "0.4"
+    )
+  ) dependsOn asyncHttpClientHandler
+
 lazy val okhttpClientHandler: Project = (project in file(
   "okhttp-client-handler"))
   .settings(commonSettings: _*)
@@ -129,4 +140,4 @@ lazy val tests: Project = (project in file("tests"))
     ).map(_ % "test"),
     libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test"
   ) dependsOn (core, akkaHttpHandler, futureAsyncHttpClientHandler, scalazAsyncHttpClientHandler,
-monixAsyncHttpClientHandler, okhttpClientHandler)
+monixAsyncHttpClientHandler, catsAsyncHttpClientHandler, okhttpClientHandler)

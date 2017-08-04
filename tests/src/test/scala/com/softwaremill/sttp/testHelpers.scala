@@ -53,6 +53,10 @@ trait ForceWrapped extends ScalaFutures { this: Suite =>
       override def force[T](wrapped: monix.eval.Task[T]): T =
         wrapped.runAsync.futureValue
     }
+    val catsIo = new ForceWrappedValue[cats.effect.IO] {
+      override def force[T](wrapped: cats.effect.IO[T]): T =
+        wrapped.unsafeRunSync
+    }
   }
   implicit class ForceDecorator[R[_], T](wrapped: R[T]) {
     def force()(implicit fwv: ForceWrappedValue[R]): T = fwv.force(wrapped)

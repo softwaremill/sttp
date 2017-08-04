@@ -188,6 +188,7 @@ uri"$scheme://$subdomains.example.com?x=$vx&$params#$jumpTo"
 | `FutureAsyncHttpClientHandler` | `scala.concurrent.Future` | - |
 | `ScalazAsyncHttpClientHandler` | `scalaz.concurrent.Task` | - |
 | `MonixAsyncHttpClientHandler` | `monix.eval.Task` | `monix.reactive.Observable[ByteBuffer]` | 
+| `CatsAsyncHttpClientHandler` | `F[_]: cats.effect.Async` | - | 
 | `OkHttpSyncClientHandler` | None (`Id`) | - | 
 | `OkHttpFutureClientHandler` | `scala.concurrent.Future` | - | 
 
@@ -271,6 +272,8 @@ To use, add the following dependency to your project:
 "com.softwaremill.sttp" %% "async-http-client-handler-scalaz" % "0.0.4"
 // or
 "com.softwaremill.sttp" %% "async-http-client-handler-monix" % "0.0.4"
+// or
+"com.softwaremill.sttp" %% "async-http-client-handler-cats" % "0.0.4"
 ```
 
 This handler depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client).
@@ -284,6 +287,8 @@ The responses are wrapped depending on the dependency chosen in either a:
 dependency on `scalaz-concurrent`.
 * [Monix](https://monix.io) `Task`. There's a transitive dependency on 
 `monix-eval`.
+* Any type implementing the [Cats Effect](https://github.com/typelevel/cats-effect) `Async` 
+typeclass, such as `cats.effect.IO`. There's a transitive dependency on `cats-effect`.
 
 Next you'll need to add an implicit value:
 
@@ -295,6 +300,9 @@ implicit val sttpHandler = ScalazAsyncHttpClientHandler()
 
 // or, if you're using the monix version:
 implicit val sttpHandler = MonixAsyncHttpClientHandler()
+
+// or, if you're using the cats effect version:
+implicit val sttpHandler = CatsAsyncHttpClientHandler[cats.effect.IO]()
 
 // or, if you'd like to use custom configuration:
 implicit val sttpHandler = FutureAsyncHttpClientHandler.usingConfig(asyncHttpClientConfig)
@@ -434,3 +442,4 @@ and pick a task you'd like to work on!
 * [Tomasz Szymański](https://github.com/szimano)
 * [Adam Warski](https://github.com/adamw)
 * [Omar Alejandro Mainegra Sarduy](https://github.com/omainegra)
+* [Bjørn Madsen](https://github.com/aeons)
