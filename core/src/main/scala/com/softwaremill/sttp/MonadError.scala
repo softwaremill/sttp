@@ -2,7 +2,7 @@ package com.softwaremill.sttp
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.language.higherKinds
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 trait MonadError[R[_]] {
   def unit[T](t: T): R[T]
@@ -12,7 +12,10 @@ trait MonadError[R[_]] {
 
   def flatten[T](ffa: R[R[T]]): R[T] = flatMap[R[T], T](ffa, identity)
 
-  def fromTry[T](t: Try[T]): R[T] = t.fold(error, unit)
+  def fromTry[T](t: Try[T]): R[T] = t match {
+    case Success(v) => unit(v)
+    case Failure(e) => error(e)
+  }
 }
 
 trait MonadAsyncError[R[_]] extends MonadError[R] {
