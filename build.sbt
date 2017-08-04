@@ -45,6 +45,7 @@ lazy val rootProject = (project in file("."))
     futureAsyncHttpClientHandler,
     scalazAsyncHttpClientHandler,
     monixAsyncHttpClientHandler,
+    catsAsyncHttpClientHandler,
     okhttpClientHandler,
     tests
   )
