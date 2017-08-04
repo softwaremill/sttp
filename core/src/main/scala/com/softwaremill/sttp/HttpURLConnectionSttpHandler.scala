@@ -115,19 +115,8 @@ object HttpURLConnectionSttpHandler extends SttpHandler[Id, Nothing] {
 
       case ResponseAsByteArray =>
         val os = new ByteArrayOutputStream
-        var read = 0
-        val buf = new Array[Byte](1024)
 
-        @tailrec
-        def transfer(): Unit = {
-          read = is.read(buf, 0, buf.length)
-          if (read != -1) {
-            os.write(buf, 0, read)
-            transfer()
-          }
-        }
-
-        transfer()
+        transfer(is, os)
 
         os.toByteArray
 
@@ -135,6 +124,10 @@ object HttpURLConnectionSttpHandler extends SttpHandler[Id, Nothing] {
         // only possible when the user requests the response as a stream of
         // Nothing. Oh well ...
         throw new IllegalStateException()
+
+      case ResponseAsFile(input, overwrite) =>
+        ResponseAs.saveFile(input, is, overwrite)
+
     }
   }
 

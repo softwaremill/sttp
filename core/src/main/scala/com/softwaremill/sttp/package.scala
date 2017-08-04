@@ -1,12 +1,12 @@
 package com.softwaremill
 
-import java.io.{File, InputStream}
+import java.io._
 import java.nio.ByteBuffer
 import java.nio.file.Path
 
 import com.softwaremill.sttp.model._
 
-import scala.annotation.implicitNotFound
+import scala.annotation.{implicitNotFound, tailrec}
 import scala.language.higherKinds
 import scala.collection.immutable.Seq
 
@@ -88,6 +88,14 @@ package object sttp {
 
   def asStream[S]: ResponseAs[S, S] = ResponseAsStream[S, S]()
 
+  def asFile(file: File,
+             overwrite: Boolean = false): ResponseAs[File, Nothing] =
+    ResponseAsFile(file, overwrite)
+
+  def asPath(path: Path,
+             overwrite: Boolean = false): ResponseAs[Path, Nothing] =
+    ResponseAsFile(path.toFile, overwrite).map(_.toPath)
+
   // multi part factory methods
 
   /**
@@ -158,6 +166,22 @@ package object sttp {
 
   private[sttp] def contentTypeWithEncoding(ct: String, enc: String) =
     s"$ct; charset=$enc"
+
+  private[sttp] def transfer(is: InputStream, os: OutputStream) {
+    var read = 0
+    val buf = new Array[Byte](1024)
+
+    @tailrec
+    def transfer(): Unit = {
+      read = is.read(buf, 0, buf.length)
+      if (read != -1) {
+        os.write(buf, 0, read)
+        transfer()
+      }
+    }
+
+    transfer()
+  }
 
   // uri interpolator
 

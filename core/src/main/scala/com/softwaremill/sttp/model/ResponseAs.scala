@@ -1,8 +1,10 @@
 package com.softwaremill.sttp.model
 
+import java.io.{File, FileOutputStream, IOException, InputStream}
 import java.net.URLDecoder
+import java.nio.file.Path
 
-import com.softwaremill.sttp.MonadError
+import com.softwaremill.sttp.{MonadError, transfer}
 
 import scala.collection.immutable.Seq
 import scala.language.higherKinds
@@ -38,6 +40,9 @@ case class MappedResponseAs[T, T2, S](raw: BasicResponseAs[T, S], g: T => T2)
     MappedResponseAs[T, T3, S](raw, g andThen f)
 }
 
+case class ResponseAsFile(input: File, overwrite: Boolean)
+    extends BasicResponseAs[File, Nothing]
+
 object ResponseAs {
   private[sttp] def parseParams(s: String,
                                 encoding: String): Seq[(String, String)] = {
@@ -50,6 +55,23 @@ object ResponseAs {
               (URLDecoder.decode(k, encoding), URLDecoder.decode(v, encoding)))
           case _ => None
       })
+  }
+
+  private[sttp] def saveFile(file: File,
+                             is: InputStream,
+                             overwrite: Boolean): File = {
+    if (!file.exists()) {
+      file.getParentFile.mkdirs()
+      file.createNewFile()
+    } else if (!overwrite) {
+      throw new IOException(
+        s"File ${file.getAbsolutePath} exists - overwriting prohibited")
+    }
+
+    val os = new FileOutputStream(file)
+
+    transfer(is, os)
+    file
   }
 
   /**

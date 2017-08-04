@@ -90,6 +90,8 @@ abstract class OkHttpClientHandler[R[_], S](client: OkHttpClient)
           case ResponseAsByteArray => Try(res.body().bytes())
           case ras @ ResponseAsStream() =>
             responseBodyToStream(res).map(ras.responseIsStream)
+          case ResponseAsFile(file, overwrite) =>
+            Try(ResponseAs.saveFile(file, res.body().byteStream(), overwrite))
         }
     }
 
@@ -131,9 +133,10 @@ abstract class OkHttpAsyncClientHandler[R[_], S](client: OkHttpClient,
         .enqueue(new Callback {
           override def onFailure(call: Call, e: IOException): Unit =
             error(e)
-
+          
           override def onResponse(call: Call, response: OkHttpResponse): Unit =
-            success(readResponse(response, r.responseAs))
+            try success(readResponse(response, r.responseAs))
+            catch { case e: Exception => error(e) }
         })
     })
   }
