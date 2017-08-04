@@ -20,6 +20,7 @@ import com.softwaremill.sttp.asynchttpclient.cats.CatsAsyncHttpClientHandler
 import com.softwaremill.sttp.asynchttpclient.future.FutureAsyncHttpClientHandler
 import com.softwaremill.sttp.asynchttpclient.monix.MonixAsyncHttpClientHandler
 import com.softwaremill.sttp.asynchttpclient.scalaz.ScalazAsyncHttpClientHandler
+import com.softwaremill.sttp.okhttp.monix.OkHttpMonixClientHandler
 import com.softwaremill.sttp.okhttp.{
   OkHttpFutureClientHandler,
   OkHttpSyncClientHandler
@@ -136,8 +137,10 @@ class BasicTests
     ForceWrappedValue.catsIo)
   runTests("OkHttpSyncClientHandler")(OkHttpSyncClientHandler(),
                                       ForceWrappedValue.id)
-  runTests("OkHttpSyncClientHandler - Future")(OkHttpFutureClientHandler(),
-                                               ForceWrappedValue.future)
+  runTests("OkHttpAsyncClientHandler - Future")(OkHttpFutureClientHandler(),
+                                                ForceWrappedValue.future)
+  runTests("OkHttpAsyncClientHandler - Monix")(OkHttpMonixClientHandler(),
+                                               ForceWrappedValue.monixTask)
 
   def runTests[R[_]](name: String)(
       implicit handler: SttpHandler[R, Nothing],

@@ -4,13 +4,11 @@ import java.nio.ByteBuffer
 
 import com.softwaremill.sttp._
 import com.softwaremill.sttp.okhttp.OkHttpAsyncClientHandler
-import monix.eval.{Callback, Task}
-import monix.execution.cancelables.AssignableCancelable
+import monix.eval.Task
 import monix.execution.{Cancelable, Scheduler}
-import monix.reactive.observers.Subscriber
 import monix.reactive.{Consumer, Observable}
 import okhttp3.{MediaType, OkHttpClient, RequestBody => OkHttpRequestBody}
-import okio.{BufferedSink, Okio}
+import okio.BufferedSink
 
 import scala.language.higherKinds
 import scala.util.{Failure, Success, Try}
