@@ -130,7 +130,7 @@ type specifies the type of the body.
 
 ## URI interpolator
 
-Using the URI interpolator it's possible to conveniently create `java.net.URI` 
+Using the URI interpolator it's possible to conveniently create `Uri` 
 instances, which can then be used to specify request endpoints, for example:
 
 ```scala
@@ -157,7 +157,7 @@ if `None`.
 * optional values in the host part will be expanded to a subdomain if `Some`, 
 removed if `None`
 * sequences in the host part will be expanded to a subdomain sequence
-* if a string contains the protocol is embedded *as the first element*, it will 
+* if a string containing the protocol is embedded *as the very beginning*, it will 
 not be escaped, allowing to embed entire addresses as prefixes, e.g.: 
 `uri"$endpoint/login"`, where `val endpoint = "http://example.com/api"`.
  
