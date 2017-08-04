@@ -14,11 +14,14 @@ import org.reactivestreams.Publisher
 
 import scala.language.higherKinds
 
-class CatsAsyncHttpClientHandler[F[_]: Async](asyncHttpClient: AsyncHttpClient,
-                                              closeClient: Boolean)
-    extends AsyncHttpClientHandler[F, Nothing](asyncHttpClient,
-                                               new AsyncMonad,
-                                               closeClient) {
+class CatsAsyncHttpClientHandler[F[_]: Async] private (
+    asyncHttpClient: AsyncHttpClient,
+    closeClient: Boolean
+) extends AsyncHttpClientHandler[F, Nothing](
+      asyncHttpClient,
+      new AsyncMonad,
+      closeClient
+    ) {
   override protected def streamBodyToPublisher(
       s: Nothing): Publisher[ByteBuffer] = s // nothing is everything
 
