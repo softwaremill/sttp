@@ -4,6 +4,7 @@ import java.io.IOException
 import java.nio.charset.Charset
 
 import com.softwaremill.sttp._
+import com.softwaremill.sttp.model.ResponseAs.EagerResponseHandler
 import com.softwaremill.sttp.model._
 import okhttp3.internal.http.HttpMethod
 import okhttp3.{
@@ -20,6 +21,7 @@ import okio.{BufferedSink, Okio}
 import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.language.higherKinds
+import scala.util.{Failure, Try}
 
 abstract class OkHttpClientHandler[R[_], S](client: OkHttpClient)
     extends SttpHandler[R, S] {
@@ -66,7 +68,7 @@ abstract class OkHttpClientHandler[R[_], S](client: OkHttpClient)
   private[okhttp] def readResponse[T](
       res: OkHttpResponse,
       responseAs: ResponseAs[T, S]): R[Response[T]] = {
-    val body = readResponseBody(res, responseAs)
+    val body = responseHandler(res).handle(responseAs, responseMonad)
 
     val headers = res
       .headers()
@@ -77,21 +79,18 @@ abstract class OkHttpClientHandler[R[_], S](client: OkHttpClient)
     responseMonad.map(body, Response(_: T, res.code(), headers.toList))
   }
 
-  private def readResponseBody[T](res: OkHttpResponse,
-                                  responseAs: ResponseAs[T, S]): R[T] = {
-    responseAs match {
-      case IgnoreResponse => responseMonad.unit(res.body().close())
-      case ResponseAsString(encoding) =>
-        responseMonad.unit(
-          res.body().source().readString(Charset.forName(encoding)))
-      case ResponseAsByteArray => responseMonad.unit(res.body().bytes())
-      case MappedResponseAs(raw, g) =>
-        responseMonad.map(readResponseBody(res, raw), g)
-      case ResponseAsStream() =>
-        responseMonad.error(
-          new IllegalStateException("Streaming isn't supported"))
+  private def responseHandler(res: OkHttpResponse) =
+    new EagerResponseHandler[S] {
+      override def handleBasic[T](bra: BasicResponseAs[T, S]): Try[T] =
+        bra match {
+          case IgnoreResponse => Try(res.body().close())
+          case ResponseAsString(encoding) =>
+            Try(res.body().source().readString(Charset.forName(encoding)))
+          case ResponseAsByteArray => Try(res.body().bytes())
+          case ResponseAsStream() =>
+            Failure(new IllegalStateException("Streaming isn't supported"))
+        }
     }
-  }
 }
 
 class OkHttpSyncClientHandler private (client: OkHttpClient)

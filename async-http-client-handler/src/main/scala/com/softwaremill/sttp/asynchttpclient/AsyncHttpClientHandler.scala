@@ -3,6 +3,7 @@ package com.softwaremill.sttp.asynchttpclient
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
 
+import com.softwaremill.sttp.model.ResponseAs.EagerResponseHandler
 import com.softwaremill.sttp.model._
 import com.softwaremill.sttp.{
   ContentLengthHeader,
@@ -29,6 +30,7 @@ import org.reactivestreams.{Publisher, Subscriber, Subscription}
 
 import scala.collection.JavaConverters._
 import scala.language.higherKinds
+import scala.util.{Failure, Try}
 
 abstract class AsyncHttpClientHandler[R[_], S](asyncHttpClient: AsyncHttpClient,
                                                rm: MonadAsyncError[R],
@@ -187,7 +189,7 @@ abstract class AsyncHttpClientHandler[R[_], S](asyncHttpClient: AsyncHttpClient,
   private def readEagerResponse[T](
       response: AsyncResponse,
       responseAs: ResponseAs[T, S]): R[Response[T]] = {
-    val body = readEagerResponseBody(response, responseAs)
+    val body = eagerResponseHandler(response).handle(responseAs, rm)
     rm.map(body, (b: T) => readResponseNoBody(response).copy(body = b))
   }
 
@@ -201,34 +203,27 @@ abstract class AsyncHttpClientHandler[R[_], S](asyncHttpClient: AsyncHttpClient,
                .toList)
   }
 
-  private def readEagerResponseBody[T](response: AsyncResponse,
-                                       responseAs: ResponseAs[T, S]): R[T] = {
+  private def eagerResponseHandler(response: AsyncResponse) =
+    new EagerResponseHandler[S] {
+      override def handleBasic[T](bra: BasicResponseAs[T, S]): Try[T] =
+        bra match {
+          case IgnoreResponse =>
+            // getting the body and discarding it
+            response.getResponseBodyAsBytes
+            Try(())
 
-    def asString(enc: String) = response.getResponseBody(Charset.forName(enc))
+          case ResponseAsString(enc) =>
+            Try(response.getResponseBody(Charset.forName(enc)))
 
-    responseAs match {
-      case MappedResponseAs(raw, g) =>
-        rm.map(readEagerResponseBody(response, raw), g)
+          case ResponseAsByteArray =>
+            Try(response.getResponseBodyAsBytes)
 
-      case IgnoreResponse =>
-        // getting the body and discarding it
-        response.getResponseBodyAsBytes
-        rm.unit(())
-
-      case ResponseAsString(enc) =>
-        rm.unit(asString(enc))
-
-      case ResponseAsByteArray =>
-        rm.unit(response.getResponseBodyAsBytes)
-
-      case ResponseAsStream() =>
-        // only possible when the user requests the response as a stream of
-        // Nothing. Oh well ...
-        rm.error(
-          new IllegalStateException(
-            "Requested a streaming response, trying to read eagerly."))
+          case ResponseAsStream() =>
+            Failure(
+              new IllegalStateException(
+                "Requested a streaming response, trying to read eagerly."))
+        }
     }
-  }
 
   override def close(): Unit = {
     if (closeClient)
