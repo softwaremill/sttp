@@ -16,6 +16,7 @@ import com.typesafe.scalalogging.StrictLogging
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import better.files._
+import com.softwaremill.sttp.asynchttpclient.cats.CatsAsyncHttpClientHandler
 import com.softwaremill.sttp.asynchttpclient.future.FutureAsyncHttpClientHandler
 import com.softwaremill.sttp.asynchttpclient.monix.MonixAsyncHttpClientHandler
 import com.softwaremill.sttp.asynchttpclient.scalaz.ScalazAsyncHttpClientHandler
@@ -130,6 +131,9 @@ class BasicTests
                                          ForceWrappedValue.scalazTask)
   runTests("Async Http Client - Monix")(MonixAsyncHttpClientHandler(),
                                         ForceWrappedValue.monixTask)
+  runTests("Async Http Client - Cats Effect")(
+    CatsAsyncHttpClientHandler[cats.effect.IO](),
+    ForceWrappedValue.catsIo)
   runTests("OkHttpSyncClientHandler")(OkHttpSyncClientHandler(),
                                       ForceWrappedValue.id)
   runTests("OkHttpSyncClientHandler - Future")(OkHttpFutureClientHandler(),
