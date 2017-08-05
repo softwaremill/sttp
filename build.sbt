@@ -126,6 +126,17 @@ lazy val okhttpClientHandler: Project = (project in file(
     )
   ) dependsOn core
 
+lazy val circe: Project = (project in file("circe"))
+  .settings(commonSettings: _*)
+  .settings(
+    name := "circe",
+    libraryDependencies ++= Seq(
+      "io.circe" %% "circe-core" % "0.8.0",
+      "io.circe" %% "circe-parser" % "0.8.0",
+      scalaTest % "test"
+    )
+  ) dependsOn core
+
 lazy val tests: Project = (project in file("tests"))
   .settings(commonSettings: _*)
   .settings(

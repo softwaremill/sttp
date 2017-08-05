@@ -234,9 +234,9 @@ case class RequestT[U[_], T, +S](
     handler.send(this.asInstanceOf[RequestT[Id, T, S]])
   }
 
-  private def hasContentType: Boolean =
+  private[sttp] def hasContentType: Boolean =
     headers.exists(_._1.equalsIgnoreCase(ContentTypeHeader))
-  private def setContentTypeIfMissing(ct: String): RequestT[U, T, S] =
+  private[sttp] def setContentTypeIfMissing(ct: String): RequestT[U, T, S] =
     if (hasContentType) this else contentType(ct)
 
   private def hasContentLength: Boolean =
