@@ -21,15 +21,17 @@ class OkHttpMonixClientHandler private (client: OkHttpClient)(
     extends OkHttpAsyncClientHandler[Task, Observable[ByteBuffer]](client,
                                                                    TaskMonad) {
 
+  private lazy val io = Scheduler.io("sttp-monix-io")
+
   override def streamToRequestBody(
       stream: Observable[ByteBuffer]): Option[OkHttpRequestBody] =
     Some(new OkHttpRequestBody() {
       override def writeTo(sink: BufferedSink): Unit =
         stream
           .consumeWith(
-            Consumer.foreach(chunck => sink.write(chunck.array()))
+            Consumer.foreach(chunk => sink.write(chunk.array()))
           )
-          .runAsync
+          .runAsync(io)
 
       override def contentType(): MediaType = null
     })
