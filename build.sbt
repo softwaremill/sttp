@@ -32,7 +32,7 @@ val commonSettings = Seq(
 
 val akkaHttpVersion = "10.0.9"
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % akkaHttpVersion
-
+val circeVersion = "0.8.0"
 val scalaTest = "org.scalatest" %% "scalatest" % "3.0.3"
 
 lazy val rootProject = (project in file("."))
@@ -47,6 +47,7 @@ lazy val rootProject = (project in file("."))
     monixAsyncHttpClientHandler,
     catsAsyncHttpClientHandler,
     okhttpClientHandler,
+    circe,
     tests
   )
 
@@ -131,8 +132,8 @@ lazy val circe: Project = (project in file("circe"))
   .settings(
     name := "circe",
     libraryDependencies ++= Seq(
-      "io.circe" %% "circe-core" % "0.8.0",
-      "io.circe" %% "circe-parser" % "0.8.0",
+      "io.circe" %% "circe-core" % circeVersion,
+      "io.circe" %% "circe-parser" % circeVersion,
       scalaTest % "test"
     )
   ) dependsOn core
