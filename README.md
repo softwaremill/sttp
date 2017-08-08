@@ -400,7 +400,7 @@ val requestPayload: Payload = ???
 val response: Either[io.circe.Error, Response] = 
   sttp
     .post(uri"...")
-    .jsonBody(requestPayload)
+    .body(requestPayload)
     .response(asJson[Response])
     .send()
 ```

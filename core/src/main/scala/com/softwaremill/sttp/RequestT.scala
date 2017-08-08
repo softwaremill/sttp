@@ -203,9 +203,11 @@ case class RequestT[U[_], T, +S](
     * If content type is not yet specified, will be set to
     * `application/octet-stream`.
     */
-  def body[B: BodySerializer](b: B): RequestT[U, T, S] =
-    setContentTypeIfMissing(ApplicationOctetStreamContentType).copy(
-      body = SerializableBody(implicitly[BodySerializer[B]], b))
+  def body[B](b: B)(implicit serializer: BodySerializer[B]): RequestT[U, T, S] =
+    setContentTypeIfMissing(
+      serializer.defaultContentType.getOrElse(
+        ApplicationOctetStreamContentType))
+      .copy(body = SerializableBody(serializer, b))
 
   //def multipartData(parts: MultiPart*): RequestTemplate[U] = ???
 

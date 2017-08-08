@@ -13,7 +13,7 @@ class CirceTests extends FlatSpec with Matchers with EitherValues {
     val body = Outer(Inner(42, true, "horses"), "cats")
     val expected = """{"foo":{"a":42,"b":true,"c":"horses"},"bar":"cats"}"""
 
-    val req = sttp.jsonBody(body)
+    val req = sttp.body(body)
 
     extractBody(req) shouldBe expected
   }
@@ -38,7 +38,7 @@ class CirceTests extends FlatSpec with Matchers with EitherValues {
   it should "should encode and decode back to the same thing" in {
     val outer = Outer(Inner(42, true, "horses"), "cats")
 
-    val encoded = extractBody(sttp.jsonBody(outer))
+    val encoded = extractBody(sttp.body(outer))
     val decoded = runJsonResponseAs(asJson[Outer])(encoded)
 
     decoded.right.value shouldBe outer
@@ -46,7 +46,7 @@ class CirceTests extends FlatSpec with Matchers with EitherValues {
 
   it should "set the content type" in {
     val body = Outer(Inner(42, true, "horses"), "cats")
-    val req = sttp.jsonBody(body)
+    val req = sttp.body(body)
 
     val ct = req.headers.toMap.get("Content-Type")
 
@@ -55,7 +55,7 @@ class CirceTests extends FlatSpec with Matchers with EitherValues {
 
   it should "only set the content type if it was not set earlier" in {
     val body = Outer(Inner(42, true, "horses"), "cats")
-    val req = sttp.contentType("horses/cats").jsonBody(body)
+    val req = sttp.contentType("horses/cats").body(body)
 
     val ct = req.headers.toMap.get("Content-Type")
 

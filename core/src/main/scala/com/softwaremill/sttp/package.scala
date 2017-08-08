@@ -22,12 +22,6 @@ package object sttp {
       ".get(...), .post(...) etc. to obtain a non-partial request.")
   private[sttp] type IsIdInRequest[U[_]] = U[Unit] =:= Id[Unit]
 
-  /**
-    * Provide an implicit value of this type to serialize arbitrary classes into a request body.
-    * Handlers might also provide special logic for serializer instances which they define (e.g. to handle streaming).
-    */
-  type BodySerializer[B] = B => BasicRequestBody
-
   // constants
 
   private[sttp] val ContentTypeHeader = "Content-Type"
