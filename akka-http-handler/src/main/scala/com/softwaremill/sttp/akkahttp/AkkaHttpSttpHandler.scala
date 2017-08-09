@@ -132,20 +132,19 @@ class AkkaHttpSttpHandler private (actorSystem: ActorSystem,
     getContentTypeOrOctetStream(r).map { ct =>
       def doSet(body: RequestBody[S]): HttpRequest = body match {
         case NoBody => ar
-        case StringBody(b, encoding) =>
+        case StringBody(b, encoding, _) =>
           val ctWithEncoding = HttpCharsets
             .getForKey(encoding)
             .map(hc => ContentType.apply(ct.mediaType, () => hc))
             .getOrElse(ct)
           ar.withEntity(ctWithEncoding, b.getBytes(encoding))
-        case ByteArrayBody(b)  => ar.withEntity(b)
-        case ByteBufferBody(b) => ar.withEntity(ByteString(b))
-        case InputStreamBody(b) =>
+        case ByteArrayBody(b, _)  => ar.withEntity(b)
+        case ByteBufferBody(b, _) => ar.withEntity(ByteString(b))
+        case InputStreamBody(b, _) =>
           ar.withEntity(
             HttpEntity(ct, StreamConverters.fromInputStream(() => b)))
-        case PathBody(b)            => ar.withEntity(ct, b)
-        case StreamBody(s)          => ar.withEntity(HttpEntity(ct, s))
-        case SerializableBody(f, t) => doSet(f(t))
+        case PathBody(b, _) => ar.withEntity(ct, b)
+        case StreamBody(s)  => ar.withEntity(HttpEntity(ct, s))
       }
 
       doSet(body)

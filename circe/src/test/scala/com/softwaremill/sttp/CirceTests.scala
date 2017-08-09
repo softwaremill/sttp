@@ -35,7 +35,7 @@ class CirceTests extends FlatSpec with Matchers with EitherValues {
     runJsonResponseAs(responseAs)(body).left.value shouldBe an[io.circe.Error]
   }
 
-  it should "should encode and decode back to the same thing" in {
+  it should "encode and decode back to the same thing" in {
     val outer = Outer(Inner(42, true, "horses"), "cats")
 
     val encoded = extractBody(sttp.body(outer))
@@ -50,7 +50,7 @@ class CirceTests extends FlatSpec with Matchers with EitherValues {
 
     val ct = req.headers.toMap.get("Content-Type")
 
-    ct shouldBe Some("application/json")
+    ct shouldBe Some(contentTypeWithEncoding(ApplicationJsonContentType, Utf8))
   }
 
   it should "only set the content type if it was not set earlier" in {
@@ -82,18 +82,10 @@ class CirceTests extends FlatSpec with Matchers with EitherValues {
 
   def extractBody[A[_], B, C](request: RequestT[A, B, C]): String =
     request.body match {
-      case SerializableBody(serializer, body) =>
-        serializer(body) match {
-          case StringBody(body, "utf-8") =>
-            body
-          case StringBody(_, encoding) =>
-            fail(
-              s"Request body serializes to StringBody with wrong encoding: $encoding")
-          case _ =>
-            fail("Request body does not serialize to StringBody")
-        }
-      case _ =>
-        fail("Request body is not SerializableBody")
+      case StringBody(body, "utf-8", Some(ApplicationJsonContentType)) =>
+        body
+      case wrongBody =>
+        fail(s"Request body does not serialize to correct StringBody: $wrongBody")
     }
 
   def runJsonResponseAs[A](responseAs: ResponseAs[A, Nothing]): String => A =

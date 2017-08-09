@@ -56,27 +56,24 @@ object HttpURLConnectionSttpHandler extends SttpHandler[Id, Nothing] {
     body match {
       case NoBody => // skip
 
-      case StringBody(b, encoding) =>
+      case StringBody(b, encoding, _) =>
         val writer = new OutputStreamWriter(c.getOutputStream, encoding)
         try writer.write(b)
         finally writer.close()
 
-      case ByteArrayBody(b) =>
+      case ByteArrayBody(b, _) =>
         c.getOutputStream.write(b)
 
-      case ByteBufferBody(b) =>
+      case ByteBufferBody(b, _) =>
         val channel = Channels.newChannel(c.getOutputStream)
         try channel.write(b)
         finally channel.close()
 
-      case InputStreamBody(b) =>
+      case InputStreamBody(b, _) =>
         copyStream(b, c.getOutputStream)
 
-      case PathBody(b) =>
+      case PathBody(b, _) =>
         Files.copy(b, c.getOutputStream)
-
-      case SerializableBody(f, t) =>
-        setBody(f(t), c)
 
       case StreamBody(s) =>
         // we have an instance of nothing - everything's possible!

@@ -100,10 +100,8 @@ case class RequestT[U[_], T, +S](
     * bytes in the string using the given encoding.
     */
   def body(b: String, encoding: String): RequestT[U, T, S] =
-    setContentTypeIfMissing(
-      contentTypeWithEncoding(TextPlainContentType, encoding))
+    withBasicBody(StringBody(b, encoding))
       .setContentLengthIfMissing(b.getBytes(encoding).length)
-      .copy(body = StringBody(b, encoding))
 
   /**
     * If content type is not yet specified, will be set to
@@ -113,25 +111,22 @@ case class RequestT[U[_], T, +S](
     * of the given array.
     */
   def body(b: Array[Byte]): RequestT[U, T, S] =
-    setContentTypeIfMissing(ApplicationOctetStreamContentType)
+    withBasicBody(ByteArrayBody(b))
       .setContentLengthIfMissing(b.length)
-      .copy(body = ByteArrayBody(b))
 
   /**
     * If content type is not yet specified, will be set to
     * `application/octet-stream`.
     */
   def body(b: ByteBuffer): RequestT[U, T, S] =
-    setContentTypeIfMissing(ApplicationOctetStreamContentType).copy(
-      body = ByteBufferBody(b))
+    withBasicBody(ByteBufferBody(b))
 
   /**
     * If content type is not yet specified, will be set to
     * `application/octet-stream`.
     */
   def body(b: InputStream): RequestT[U, T, S] =
-    setContentTypeIfMissing(ApplicationOctetStreamContentType).copy(
-      body = InputStreamBody(b))
+    withBasicBody(InputStreamBody(b))
 
   /**
     * If content type is not yet specified, will be set to
@@ -151,9 +146,8 @@ case class RequestT[U[_], T, +S](
     * of the given file.
     */
   def body(b: Path): RequestT[U, T, S] =
-    setContentTypeIfMissing(ApplicationOctetStreamContentType)
+    withBasicBody(PathBody(b))
       .setContentLengthIfMissing(b.toFile.length())
-      .copy(body = PathBody(b))
 
   /**
     * Encodes the given parameters as form data using `utf-8`.
@@ -203,16 +197,11 @@ case class RequestT[U[_], T, +S](
     * If content type is not yet specified, will be set to
     * `application/octet-stream`.
     */
-  def body[B](b: B)(implicit serializer: BodySerializer[B]): RequestT[U, T, S] =
-    setContentTypeIfMissing(
-      serializer.defaultContentType.getOrElse(
-        ApplicationOctetStreamContentType))
-      .copy(body = SerializableBody(serializer, b))
-
-  //def multipartData(parts: MultiPart*): RequestTemplate[U] = ???
+  def body[B: BodySerializer](b: B): RequestT[U, T, S] =
+    withBasicBody(implicitly[BodySerializer[B]].apply(b))
 
   def streamBody[S2 >: S](b: S2): RequestT[U, T, S2] =
-    this.copy[U, T, S2](body = StreamBody(b))
+    copy[U, T, S2](body = StreamBody(b))
 
   /**
     * What's the target type to which the response body should be read.
@@ -236,10 +225,24 @@ case class RequestT[U[_], T, +S](
     handler.send(this.asInstanceOf[RequestT[Id, T, S]])
   }
 
-  private[sttp] def hasContentType: Boolean =
+  private def hasContentType: Boolean =
     headers.exists(_._1.equalsIgnoreCase(ContentTypeHeader))
-  private[sttp] def setContentTypeIfMissing(ct: String): RequestT[U, T, S] =
+  private def setContentTypeIfMissing(ct: String): RequestT[U, T, S] =
     if (hasContentType) this else contentType(ct)
+
+  private def withBasicBody(body: BasicRequestBody) = {
+    if (hasContentType) this
+    else
+      body match {
+        case StringBody(_, encoding, Some(ct)) =>
+          contentType(ct, encoding)
+        case body =>
+          body.defaultContentType match {
+            case Some(ct) => contentType(ct)
+            case None     => this
+          }
+      }
+  }.copy(body = body)
 
   private def hasContentLength: Boolean =
     headers.exists(_._1.equalsIgnoreCase(ContentLengthHeader))
@@ -249,10 +252,11 @@ case class RequestT[U[_], T, +S](
   private def formDataBody(fs: Seq[(String, String)],
                            encoding: String): RequestT[U, T, S] = {
     val b = fs
-      .map(
-        p =>
-          URLEncoder.encode(p._1, encoding) + "=" + URLEncoder
-            .encode(p._2, encoding))
+      .map {
+        case (key, value) =>
+          URLEncoder.encode(key, encoding) + "=" +
+            URLEncoder.encode(value, encoding)
+      }
       .mkString("&")
     setContentTypeIfMissing(ApplicationFormContentType)
       .setContentLengthIfMissing(b.getBytes(encoding).length)
