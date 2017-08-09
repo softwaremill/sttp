@@ -10,6 +10,8 @@ import monix.reactive.{Consumer, Observable}
 import okhttp3.{MediaType, OkHttpClient, RequestBody => OkHttpRequestBody}
 import okio.BufferedSink
 
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 import scala.language.higherKinds
 import scala.util.{Failure, Success, Try}
 
@@ -26,12 +28,17 @@ class OkHttpMonixClientHandler private (client: OkHttpClient)(
   override def streamToRequestBody(
       stream: Observable[ByteBuffer]): Option[OkHttpRequestBody] =
     Some(new OkHttpRequestBody() {
-      override def writeTo(sink: BufferedSink): Unit =
-        stream
+      override def writeTo(sink: BufferedSink): Unit = {
+        val f = stream
           .consumeWith(
             Consumer.foreach(chunk => sink.write(chunk.array()))
           )
           .runAsync(io)
+
+        // We could safely block until the observable is consumed because OkHttp execute
+        // this method asynchronous in another ThreadPool.
+        Await.ready(f, Duration.Inf)
+      }
 
       override def contentType(): MediaType = null
     })
