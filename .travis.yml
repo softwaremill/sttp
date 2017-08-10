@@ -1,10 +1,28 @@
 sudo: false
+
 language: scala
+
 jdk:
-- oraclejdk8
+    - oraclejdk8
+
 scala:
-- 2.12.3
-- 2.11.11
+    - 2.12.3
+    - 2.11.11
+
+cache:
+    directories:
+        - $HOME/.ivy2/cache
+        - $HOME/.sbt
+
+install:
+  - pip install --user codecov
+
 script:
-- sbt ++$TRAVIS_SCALA_VERSION test
-- '[ "${TRAVIS_PULL_REQUEST}" = "false" ] && sbt updateImpactSubmit || true'
+    - sbt ++$TRAVIS_SCALA_VERSION clean coverage test coverageReport;
+    - sbt ++$TRAVIS_SCALA_VERSION coverageAggregate && codecov;
+    - '[ "${TRAVIS_PULL_REQUEST}" = "false" ] && sbt updateImpactSubmit || true'
+
+before_cache:
+    # Cleanup the cached directories to avoid unnecessary cache updates
+    - find $HOME/.ivy2/cache -name "ivydata-*.properties" -print -delete
+    - find $HOME/.sbt        -name "*.lock"               -print -delete
