@@ -159,23 +159,20 @@ abstract class AsyncHttpClientHandler[R[_], S](asyncHttpClient: AsyncHttpClient,
     body match {
       case NoBody => // skip
 
-      case StringBody(b, encoding) =>
+      case StringBody(b, encoding, _) =>
         rb.setBody(b.getBytes(encoding))
 
-      case ByteArrayBody(b) =>
+      case ByteArrayBody(b, _) =>
         rb.setBody(b)
 
-      case ByteBufferBody(b) =>
+      case ByteBufferBody(b, _) =>
         rb.setBody(b)
 
-      case InputStreamBody(b) =>
+      case InputStreamBody(b, _) =>
         rb.setBody(b)
 
-      case PathBody(b) =>
+      case PathBody(b, _) =>
         rb.setBody(b.toFile)
-
-      case SerializableBody(f, t) =>
-        setBody(r, f(t), rb)
 
       case StreamBody(s) =>
         val cl = r.headers
