@@ -231,18 +231,15 @@ case class RequestT[U[_], T, +S](
     if (hasContentType) this else contentType(ct)
 
   private def withBasicBody(body: BasicRequestBody) = {
-    if (hasContentType) this
-    else
-      body match {
-        case StringBody(_, encoding, Some(ct)) =>
-          contentType(ct, encoding)
-        case body =>
-          body.defaultContentType match {
-            case Some(ct) => contentType(ct)
-            case None     => this
-          }
-      }
-  }.copy(body = body)
+    val defaultCt = body match {
+      case StringBody(_, encoding, Some(ct)) =>
+        Some(contentTypeWithEncoding(ct, encoding))
+      case _ =>
+        body.defaultContentType
+    }
+
+    defaultCt.fold(this)(setContentTypeIfMissing).copy(body = body)
+  }
 
   private def hasContentLength: Boolean =
     headers.exists(_._1.equalsIgnoreCase(ContentLengthHeader))
