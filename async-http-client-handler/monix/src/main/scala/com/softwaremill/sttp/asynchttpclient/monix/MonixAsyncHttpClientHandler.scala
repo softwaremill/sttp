@@ -25,9 +25,8 @@ class MonixAsyncHttpClientHandler private (
       closeClient) {
 
   override protected def streamBodyToPublisher(
-      s: Observable[ByteBuffer]): Publisher[ByteBuffer] = {
+      s: Observable[ByteBuffer]): Publisher[ByteBuffer] =
     s.toReactivePublisher
-  }
 
   override protected def publisherToStreamBody(
       p: Publisher[ByteBuffer]): Observable[ByteBuffer] =

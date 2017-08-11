@@ -36,6 +36,8 @@ val akkaHttp = "com.typesafe.akka" %% "akka-http" % akkaHttpVersion
 val monixVersion = "2.3.0"
 val monix = "io.monix" %% "monix" % monixVersion
 
+val circeVersion = "0.8.0"
+
 val scalaTest = "org.scalatest" %% "scalatest" % "3.0.3"
 
 lazy val rootProject = (project in file("."))
@@ -51,6 +53,7 @@ lazy val rootProject = (project in file("."))
     catsAsyncHttpClientHandler,
     okhttpClientHandler,
     okhttpMonixClientHandler,
+    circe,
     tests
   )
 
@@ -135,6 +138,17 @@ lazy val okhttpMonixClientHandler: Project = (project in file(
     name := "okhttp-client-handler-monix",
     libraryDependencies ++= Seq(monix)
   ) dependsOn okhttpClientHandler
+
+lazy val circe: Project = (project in file("circe"))
+  .settings(commonSettings: _*)
+  .settings(
+    name := "circe",
+    libraryDependencies ++= Seq(
+      "io.circe" %% "circe-core" % circeVersion,
+      "io.circe" %% "circe-parser" % circeVersion,
+      scalaTest % "test"
+    )
+  ) dependsOn core
 
 lazy val tests: Project = (project in file("tests"))
   .settings(commonSettings: _*)

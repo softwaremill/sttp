@@ -49,19 +49,19 @@ abstract class OkHttpClientHandler[R[_], S](client: OkHttpClient)
   private def setBody(requestBody: RequestBody[S]): Option[OkHttpRequestBody] = {
     requestBody match {
       case NoBody => None
-      case StringBody(b, encoding) =>
+      case StringBody(b, encoding, _) =>
         Some(OkHttpRequestBody.create(MediaType.parse(encoding), b))
-      case ByteArrayBody(b)  => Some(OkHttpRequestBody.create(null, b))
-      case ByteBufferBody(b) => Some(OkHttpRequestBody.create(null, b.array()))
-      case InputStreamBody(b) =>
+      case ByteArrayBody(b, _) => Some(OkHttpRequestBody.create(null, b))
+      case ByteBufferBody(b, _) =>
+        Some(OkHttpRequestBody.create(null, b.array()))
+      case InputStreamBody(b, _) =>
         Some(new OkHttpRequestBody() {
           override def writeTo(sink: BufferedSink): Unit =
             sink.writeAll(Okio.source(b))
           override def contentType(): MediaType = null
         })
-      case PathBody(b)            => Some(OkHttpRequestBody.create(null, b.toFile))
-      case SerializableBody(f, t) => setBody(f(t))
-      case StreamBody(s)          => streamToRequestBody(s)
+      case PathBody(b, _) => Some(OkHttpRequestBody.create(null, b.toFile))
+      case StreamBody(s)  => streamToRequestBody(s)
     }
   }
 

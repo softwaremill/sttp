@@ -2,7 +2,6 @@ package com.softwaremill.sttp.model
 
 import java.io.{File, FileOutputStream, IOException, InputStream}
 import java.net.URLDecoder
-import java.nio.file.Path
 
 import com.softwaremill.sttp.{MonadError, transfer}
 

@@ -183,6 +183,7 @@ class BasicTests
     cookiesTests()
     authTests()
     compressionTests()
+    downloadFileTests()
 
     def parseResponseTests(): Unit = {
       name should "parse response as string" in {

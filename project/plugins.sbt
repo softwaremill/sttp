@@ -1,4 +1,4 @@
-addSbtPlugin("com.lucidchart" % "sbt-scalafmt" % "1.9")
+addSbtPlugin("com.lucidchart" % "sbt-scalafmt" % "1.10")
 
 addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "1.1")
 
