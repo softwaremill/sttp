@@ -29,7 +29,7 @@ abstract class OkHttpClientHandler[R[_], S](client: OkHttpClient)
     val builder = new OkHttpRequest.Builder()
       .url(request.uri.toString)
 
-    val body = setBody(request.body)
+    val body = setBody(request)
     builder.method(request.method.m, body.getOrElse {
       if (HttpMethod.requiresRequestBody(request.method.m))
         OkHttpRequestBody.create(null, "")
@@ -46,12 +46,13 @@ abstract class OkHttpClientHandler[R[_], S](client: OkHttpClient)
     builder.build()
   }
 
-  private def setBody(requestBody: RequestBody[S]): Option[OkHttpRequestBody] = {
-    requestBody match {
+  private def setBody[T](request: Request[T, S]): Option[OkHttpRequestBody] = {
+    request.body match {
       case NoBody => None
-      case StringBody(b, encoding, _) =>
-        Some(OkHttpRequestBody.create(MediaType.parse(encoding), b))
-      case ByteArrayBody(b, _) => Some(OkHttpRequestBody.create(null, b))
+      case StringBody(b, _, _) =>
+        Some(OkHttpRequestBody.create(null, b))
+      case ByteArrayBody(b, _) =>
+        Some(OkHttpRequestBody.create(null, b))
       case ByteBufferBody(b, _) =>
         Some(OkHttpRequestBody.create(null, b.array()))
       case InputStreamBody(b, _) =>
@@ -60,8 +61,10 @@ abstract class OkHttpClientHandler[R[_], S](client: OkHttpClient)
             sink.writeAll(Okio.source(b))
           override def contentType(): MediaType = null
         })
-      case PathBody(b, _) => Some(OkHttpRequestBody.create(null, b.toFile))
-      case StreamBody(s)  => streamToRequestBody(s)
+      case PathBody(b, _) =>
+        Some(OkHttpRequestBody.create(null, b.toFile))
+      case StreamBody(s) =>
+        streamToRequestBody(s)
     }
   }
 
@@ -133,7 +136,7 @@ abstract class OkHttpAsyncClientHandler[R[_], S](client: OkHttpClient,
         .enqueue(new Callback {
           override def onFailure(call: Call, e: IOException): Unit =
             error(e)
-          
+
           override def onResponse(call: Call, response: OkHttpResponse): Unit =
             try success(readResponse(response, r.responseAs))
             catch { case e: Exception => error(e) }
@@ -151,6 +154,6 @@ class OkHttpFutureClientHandler private (client: OkHttpClient)(
 object OkHttpFutureClientHandler {
   def apply(okhttpClient: OkHttpClient = new OkHttpClient())(
       implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
-    : OkHttpFutureClientHandler =
+    : SttpHandler[Future, Nothing] =
     new OkHttpFutureClientHandler(okhttpClient)
 }
