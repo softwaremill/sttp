@@ -26,6 +26,8 @@ import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.{path => _, _}
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+import scala.concurrent.duration._
 import scala.language.higherKinds
 
 class BasicTests
@@ -163,13 +165,19 @@ class BasicTests
         path("loop") {
           redirect("/redirect/loop", StatusCodes.Found)
         }
+    } ~ pathPrefix("timeout") {
+      complete {
+        akka.pattern.after(1.second, using = actorSystem.scheduler)(
+          Future.successful("Done"))
+      }
     }
 
   override def port = 51823
 
   var closeHandlers: List[() => Unit] = Nil
 
-  runTests("HttpURLConnection")(HttpURLConnectionHandler, ForceWrappedValue.id)
+  runTests("HttpURLConnection")(HttpURLConnectionHandler(),
+                                ForceWrappedValue.id)
   runTests("Akka HTTP")(AkkaHttpHandler.usingActorSystem(actorSystem),
                         ForceWrappedValue.future)
   runTests("Async Http Client - Future")(AsyncHttpClientFutureHandler(),
@@ -211,6 +219,7 @@ class BasicTests
     downloadFileTests()
     multipartTests()
     redirectTests()
+    timeoutTests()
 
     def parseResponseTests(): Unit = {
       name should "parse response as string" in {
@@ -631,6 +640,28 @@ class BasicTests
         val resp = loop.send().force()
         resp.code should be(0)
         resp.history should have size (FollowRedirectsHandler.MaxRedirects)
+      }
+    }
+
+    def timeoutTests(): Unit = {
+      name should "fail if read timeout is not big enough" in {
+        val request = sttp
+          .get(uri"$endpoint/timeout")
+          .readTimeout(200.milliseconds)
+          .response(asString)
+
+        intercept[Throwable] {
+          request.send().force()
+        }
+      }
+
+      name should "not fail if read timeout is big enough" in {
+        val request = sttp
+          .get(uri"$endpoint/timeout")
+          .readTimeout(5.seconds)
+          .response(asString)
+
+        request.send().force().unsafeBody should be("Done")
       }
     }
   }

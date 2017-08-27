@@ -1,7 +1,7 @@
 package com.softwaremill.sttp.okhttp.monix
 
 import java.nio.ByteBuffer
-import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.{ArrayBlockingQueue, TimeUnit}
 
 import com.softwaremill.sttp.{SttpHandler, _}
 import com.softwaremill.sttp.okhttp.{OkHttpAsyncHandler, OkHttpHandler}
@@ -14,6 +14,7 @@ import okhttp3.{MediaType, OkHttpClient, RequestBody => OkHttpRequestBody}
 import okio.BufferedSink
 
 import scala.concurrent.Future
+import scala.concurrent.duration.FiniteDuration
 import scala.util.{Failure, Success, Try}
 
 class OkHttpMonixHandler private (client: OkHttpClient, closeClient: Boolean)(
@@ -84,10 +85,17 @@ object OkHttpMonixHandler {
       implicit s: Scheduler): SttpHandler[Task, Observable[ByteBuffer]] =
     new FollowRedirectsHandler(new OkHttpMonixHandler(client, closeClient)(s))
 
-  def apply()(implicit s: Scheduler = Scheduler.Implicits.global)
+  def apply(connectionTimeout: FiniteDuration = SttpHandler.DefaultConnectionTimeout)(
+      implicit s: Scheduler = Scheduler.Implicits.global)
     : SttpHandler[Task, Observable[ByteBuffer]] =
-    OkHttpMonixHandler(OkHttpHandler.buildClientNoRedirects(),
-                       closeClient = true)(s)
+    OkHttpMonixHandler(
+      OkHttpHandler
+        .defaultBuilder()
+        .connectTimeout(connectionTimeout.toMillis, TimeUnit.MILLISECONDS)
+        .readTimeout(SttpHandler.DefaultConnectionTimeout.toMillis, TimeUnit.MILLISECONDS)
+        .build(),
+      closeClient = true
+    )(s)
 
   def usingClient(client: OkHttpClient)(implicit s: Scheduler =
                                           Scheduler.Implicits.global)

@@ -16,6 +16,7 @@ import org.asynchttpclient.{
 }
 import org.reactivestreams.Publisher
 
+import scala.concurrent.duration.FiniteDuration
 import scala.language.higherKinds
 
 class AsyncHttpClientCatsHandler[F[_]: Async] private (
@@ -46,8 +47,12 @@ object AsyncHttpClientCatsHandler {
     new FollowRedirectsHandler[F, Nothing](
       new AsyncHttpClientCatsHandler(asyncHttpClient, closeClient))
 
-  def apply[F[_]: Async](): SttpHandler[F, Nothing] =
-    AsyncHttpClientCatsHandler(new DefaultAsyncHttpClient(), closeClient = true)
+  def apply[F[_]: Async](connectionTimeout: FiniteDuration = SttpHandler.DefaultConnectionTimeout)
+    : SttpHandler[F, Nothing] =
+    AsyncHttpClientCatsHandler(
+      new DefaultAsyncHttpClient(
+        AsyncHttpClientHandler.withConnectionTimeout(connectionTimeout)),
+      closeClient = true)
 
   def usingConfig[F[_]: Async](
       cfg: AsyncHttpClientConfig): SttpHandler[F, Nothing] =

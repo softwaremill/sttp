@@ -66,4 +66,8 @@ class RequestTests extends FlatSpec with Matchers {
       .find(_._1.equalsIgnoreCase(ContentLengthHeader))
       .map(_._2) should be(Some("10"))
   }
+
+  "request timeout" should "use default if not overridden" in {
+    sttp.readTimeout should be(DefaultReadTimeout)
+  }
 }

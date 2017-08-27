@@ -25,7 +25,7 @@ class IllTypedTests extends FlatSpec with Matchers {
     val thrown = intercept[ToolBoxError] {
       EvalScala("""
         import com.softwaremill.sttp._
-        implicit val sttpHandler = HttpURLConnectionHandler
+        implicit val sttpHandler = HttpURLConnectionHandler()
         sttp.send()
         """)
     }

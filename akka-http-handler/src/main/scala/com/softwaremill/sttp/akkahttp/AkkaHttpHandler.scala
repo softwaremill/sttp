@@ -13,18 +13,22 @@ import akka.http.scaladsl.model.headers.{
   `Content-Type`
 }
 import akka.http.scaladsl.model.{Multipart => AkkaMultipart, _}
+import akka.http.scaladsl.settings.ClientConnectionSettings
+import akka.http.scaladsl.settings.ConnectionPoolSettings
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{FileIO, Source, StreamConverters}
 import akka.util.ByteString
 import com.softwaremill.sttp._
 
 import scala.collection.immutable.Seq
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 class AkkaHttpHandler private (actorSystem: ActorSystem,
                                ec: ExecutionContext,
-                               terminateActorSystemOnClose: Boolean)
+                               terminateActorSystemOnClose: Boolean,
+                               connectionTimeout: FiniteDuration)
     extends SttpHandler[Future, Source[ByteString, Any]] {
 
   // the supported stream type
@@ -35,10 +39,19 @@ class AkkaHttpHandler private (actorSystem: ActorSystem,
 
   override def send[T](r: Request[T, S]): Future[Response[T]] = {
     implicit val ec: ExecutionContext = this.ec
+
+    val connectionSettings = ClientConnectionSettings(actorSystem)
+      .withIdleTimeout(r.readTimeout)
+      .withConnectingTimeout(connectionTimeout)
+
+    val connectionPoolSettings = ConnectionPoolSettings(actorSystem)
+      .withConnectionSettings(connectionSettings)
+
     requestToAkka(r)
       .flatMap(setBodyOnAkka(r, r.body, _))
       .toFuture
-      .flatMap(Http().singleRequest(_))
+      .flatMap(req =>
+        Http().singleRequest(req, settings = connectionPoolSettings))
       .flatMap { hr =>
         val code = hr.status.intValue()
 
@@ -271,19 +284,26 @@ object AkkaHttpHandler {
 
   private def apply(actorSystem: ActorSystem,
                     ec: ExecutionContext,
-                    terminateActorSystemOnClose: Boolean)
-    : SttpHandler[Future, Source[ByteString, Any]] =
+                    terminateActorSystemOnClose: Boolean,
+                    connectionTimeout: FiniteDuration): SttpHandler[Future, Source[ByteString, Any]] =
     new FollowRedirectsHandler(
-      new AkkaHttpHandler(actorSystem, ec, terminateActorSystemOnClose))
+      new AkkaHttpHandler(actorSystem,
+                          ec,
+                          terminateActorSystemOnClose,
+                          connectionTimeout))
 
   /**
     * @param ec The execution context for running non-network related operations,
     *           e.g. mapping responses. Defaults to the global execution
     *           context.
     */
-  def apply()(implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
+  def apply(connectionTimeout: FiniteDuration = SttpHandler.DefaultConnectionTimeout)(
+      implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
     : SttpHandler[Future, Source[ByteString, Any]] =
-    AkkaHttpHandler(ActorSystem("sttp"), ec, terminateActorSystemOnClose = true)
+    AkkaHttpHandler(ActorSystem("sttp"),
+                    ec,
+                    terminateActorSystemOnClose = true,
+                    connectionTimeout)
 
   /**
     * @param actorSystem The actor system which will be used for the http-client
@@ -292,8 +312,12 @@ object AkkaHttpHandler {
     *           e.g. mapping responses. Defaults to the global execution
     *           context.
     */
-  def usingActorSystem(actorSystem: ActorSystem)(
+  def usingActorSystem(actorSystem: ActorSystem,
+                       connectionTimeout: FiniteDuration = SttpHandler.DefaultConnectionTimeout)(
       implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
     : SttpHandler[Future, Source[ByteString, Any]] =
-    AkkaHttpHandler(actorSystem, ec, terminateActorSystemOnClose = false)
+    AkkaHttpHandler(actorSystem,
+                    ec,
+                    terminateActorSystemOnClose = false,
+                    connectionTimeout)
 }

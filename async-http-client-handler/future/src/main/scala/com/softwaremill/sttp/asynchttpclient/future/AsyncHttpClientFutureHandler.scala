@@ -11,6 +11,7 @@ import org.asynchttpclient.{
 }
 import org.reactivestreams.Publisher
 
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
 class AsyncHttpClientFutureHandler private (
@@ -44,10 +45,13 @@ object AsyncHttpClientFutureHandler {
     *           e.g. mapping responses. Defaults to the global execution
     *           context.
     */
-  def apply()(implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
+  def apply(connectionTimeout: FiniteDuration = SttpHandler.DefaultConnectionTimeout)(
+      implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
     : SttpHandler[Future, Nothing] =
-    AsyncHttpClientFutureHandler(new DefaultAsyncHttpClient(),
-                                 closeClient = true)
+    AsyncHttpClientFutureHandler(
+      new DefaultAsyncHttpClient(
+        AsyncHttpClientHandler.withConnectionTimeout(connectionTimeout)),
+      closeClient = true)
 
   /**
     * @param ec The execution context for running non-network related operations,
