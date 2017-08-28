@@ -190,7 +190,8 @@ uri"$scheme://$subdomains.example.com?x=$vx&$params#$jumpTo"
 | `MonixAsyncHttpClientHandler` | `monix.eval.Task` | `monix.reactive.Observable[ByteBuffer]` | 
 | `CatsAsyncHttpClientHandler` | `F[_]: cats.effect.Async` | - | 
 | `OkHttpSyncClientHandler` | None (`Id`) | - | 
-| `OkHttpFutureClientHandler` | `scala.concurrent.Future` | - | 
+| `OkHttpFutureClientHandler` | `scala.concurrent.Future` | - |
+| `OkHttpMonixClientHandler` | `monix.eval.Task` | `monix.reactive.Observable[ByteBuffer]` |
 
 ### `HttpURLConnectionSttpHandler`
 

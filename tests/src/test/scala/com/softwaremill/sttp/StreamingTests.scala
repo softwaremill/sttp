@@ -8,10 +8,14 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.softwaremill.sttp.akkahttp.AkkaHttpSttpHandler
 import com.softwaremill.sttp.asynchttpclient.monix.MonixAsyncHttpClientHandler
+import com.softwaremill.sttp.okhttp.monix.OkHttpMonixClientHandler
 import com.typesafe.scalalogging.StrictLogging
+import monix.execution.Scheduler.Implicits.global
 import monix.reactive.Observable
-import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
+import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
+
+import scala.language.higherKinds
 
 class StreamingTests
     extends FlatSpec
@@ -20,6 +24,7 @@ class StreamingTests
     with ScalaFutures
     with StrictLogging
     with IntegrationPatience
+    with ForceWrapped
     with TestHttpServer {
 
   override val serverRoutes: Route =
@@ -33,25 +38,56 @@ class StreamingTests
       }
     }
 
+  type BodyProducer[S] = String => S
+  type BodyConsumer[S] = S => String
+
   override def port = 51824
-
-  val akkaHandler = AkkaHttpSttpHandler.usingActorSystem(actorSystem)
-  val monixHandler = MonixAsyncHttpClientHandler()
-
-  akkaStreamingTests()
-  monixStreamingTests()
-
   val body = "streaming test"
 
-  def akkaStreamingTests(): Unit = {
-    implicit val handler = akkaHandler
+  val akkaHandler = AkkaHttpSttpHandler.usingActorSystem(actorSystem)
+  val monixAsyncHttpClient = MonixAsyncHttpClientHandler()
+  val monixOkHttpClient = OkHttpMonixClientHandler()
 
-    "Akka HTTP" should "stream request body" in {
+  val akkaHttpBodyProducer: BodyProducer[Source[ByteString, Any]] = s =>
+    Source.single(ByteString(s))
+  val akkaHttpBodyConsumer: BodyConsumer[Source[ByteString, Any]] =
+    _.runReduce(_ ++ _).futureValue.utf8String
+
+  val monixBodyProducer: BodyProducer[Observable[ByteBuffer]] =
+    s =>
+      Observable.fromIterable(
+        s.getBytes("utf-8").map(b => ByteBuffer.wrap(Array(b))))
+
+  val monixBodyConsumer: BodyConsumer[Observable[ByteBuffer]] = stream =>
+    new String(stream
+                 .flatMap(bb => Observable.fromIterable(bb.array()))
+                 .toListL
+                 .runAsync
+                 .futureValue
+                 .toArray,
+               "utf-8")
+
+  runTests("Akka HTTP", akkaHttpBodyProducer, akkaHttpBodyConsumer)(
+    akkaHandler,
+    ForceWrappedValue.future)
+  runTests("Monix Async Http Client", monixBodyProducer, monixBodyConsumer)(
+    monixAsyncHttpClient,
+    ForceWrappedValue.monixTask)
+  runTests("Monix OkHttp Client", monixBodyProducer, monixBodyConsumer)(
+    monixOkHttpClient,
+    ForceWrappedValue.monixTask)
+
+  def runTests[R[_], S](name: String,
+                        bodyProducer: BodyProducer[S],
+                        bodyConsumer: BodyConsumer[S])(
+      implicit handler: SttpHandler[R, S],
+      forceResponse: ForceWrappedValue[R]): Unit = {
+    name should "stream request body" in {
       val response = sttp
         .post(uri"$endpoint/echo")
-        .streamBody(Source.single(ByteString(body)))
+        .streamBody(bodyProducer(body))
         .send()
-        .futureValue
+        .force()
 
       response.body should be(body)
     }
@@ -60,53 +96,11 @@ class StreamingTests
       val response = sttp
         .post(uri"$endpoint/echo")
         .body(body)
-        .response(asStream[Source[ByteString, Any]])
+        .response(asStream[S])
         .send()
-        .futureValue
+        .force()
 
-      val responseBody = response.body.runReduce(_ ++ _).futureValue.utf8String
-
-      responseBody should be(body)
-    }
-  }
-
-  def monixStreamingTests(): Unit = {
-    implicit val handler = monixHandler
-    import monix.execution.Scheduler.Implicits.global
-
-    val body = "streaming test"
-
-    "Monix Async Http Client" should "stream request body" in {
-      val source = Observable.fromIterable(
-        body.getBytes("utf-8").map(b => ByteBuffer.wrap(Array(b))))
-
-      val response = sttp
-        .post(uri"$endpoint/echo")
-        .streamBody(source)
-        .send()
-        .runAsync
-        .futureValue
-
-      response.body should be(body)
-    }
-
-    it should "receive a stream" in {
-      val response = sttp
-        .post(uri"$endpoint/echo")
-        .body(body)
-        .response(asStream[Observable[ByteBuffer]])
-        .send()
-        .runAsync
-        .futureValue
-
-      val bytes = response.body
-        .flatMap(bb => Observable.fromIterable(bb.array()))
-        .toListL
-        .runAsync
-        .futureValue
-        .toArray
-
-      new String(bytes, "utf-8") should be(body)
+      bodyConsumer(response.body) should be(body)
     }
 
     it should "receive a stream from an https site" in {
@@ -115,25 +109,17 @@ class StreamingTests
       // in tests, but that's so much easier than setting up an https
       // testing server
         .get(uri"https://softwaremill.com")
-        .response(asStream[Observable[ByteBuffer]])
+        .response(asStream[S])
         .send()
-        .runAsync
-        .futureValue
+        .force()
 
-      val bytes = response.body
-        .flatMap(bb => Observable.fromIterable(bb.array()))
-        .toListL
-        .runAsync
-        .futureValue
-        .toArray
-
-      new String(bytes, "utf-8") should include("</div>")
+      bodyConsumer(response.body) should include("</div>")
     }
   }
 
   override protected def afterAll(): Unit = {
     akkaHandler.close()
-    monixHandler.close()
+    monixAsyncHttpClient.close()
     super.afterAll()
   }
 }

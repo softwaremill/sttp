@@ -32,7 +32,12 @@ val commonSettings = Seq(
 
 val akkaHttpVersion = "10.0.9"
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % akkaHttpVersion
+
+val monixVersion = "2.3.0"
+val monix = "io.monix" %% "monix" % monixVersion
+
 val circeVersion = "0.8.0"
+
 val scalaTest = "org.scalatest" %% "scalatest" % "3.0.3"
 
 lazy val rootProject = (project in file("."))
@@ -47,6 +52,7 @@ lazy val rootProject = (project in file("."))
     monixAsyncHttpClientHandler,
     catsAsyncHttpClientHandler,
     okhttpClientHandler,
+    okhttpMonixClientHandler,
     circe,
     tests
   )
@@ -102,9 +108,7 @@ lazy val monixAsyncHttpClientHandler: Project = (project in file(
   .settings(commonSettings: _*)
   .settings(
     name := "async-http-client-handler-monix",
-    libraryDependencies ++= Seq(
-      "io.monix" %% "monix" % "2.3.0"
-    )
+    libraryDependencies ++= Seq(monix)
   ) dependsOn asyncHttpClientHandler
 
 lazy val catsAsyncHttpClientHandler: Project = (project in file(
@@ -126,6 +130,14 @@ lazy val okhttpClientHandler: Project = (project in file(
       "com.squareup.okhttp3" % "okhttp" % "3.8.1"
     )
   ) dependsOn core
+
+lazy val okhttpMonixClientHandler: Project = (project in file(
+  "okhttp-client-handler/monix"))
+  .settings(commonSettings: _*)
+  .settings(
+    name := "okhttp-client-handler-monix",
+    libraryDependencies ++= Seq(monix)
+  ) dependsOn okhttpClientHandler
 
 lazy val circe: Project = (project in file("circe"))
   .settings(commonSettings: _*)
@@ -152,4 +164,4 @@ lazy val tests: Project = (project in file("tests"))
     ).map(_ % "test"),
     libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test"
   ) dependsOn (core, akkaHttpHandler, futureAsyncHttpClientHandler, scalazAsyncHttpClientHandler,
-monixAsyncHttpClientHandler, catsAsyncHttpClientHandler, okhttpClientHandler)
+monixAsyncHttpClientHandler, catsAsyncHttpClientHandler, okhttpClientHandler, okhttpMonixClientHandler)
