@@ -51,6 +51,7 @@ lazy val rootProject = (project in file("."))
     scalazAsyncHttpClientHandler,
     monixAsyncHttpClientHandler,
     catsAsyncHttpClientHandler,
+    fs2AsyncHttpClientHandler,
     okhttpClientHandler,
     okhttpMonixClientHandler,
     circe,
@@ -121,6 +122,16 @@ lazy val catsAsyncHttpClientHandler: Project = (project in file(
     )
   ) dependsOn asyncHttpClientHandler
 
+lazy val fs2AsyncHttpClientHandler: Project = (project in file(
+  "async-http-client-handler/fs2"))
+  .settings(commonSettings: _*)
+  .settings(
+    name := "async-http-client-handler-fs2",
+    libraryDependencies ++= Seq(
+      "com.github.zainab-ali" %% "fs2-reactive-streams" % "0.2.2"
+    )
+  ) dependsOn asyncHttpClientHandler
+
 lazy val okhttpClientHandler: Project = (project in file(
   "okhttp-client-handler"))
   .settings(commonSettings: _*)
@@ -163,5 +174,8 @@ lazy val tests: Project = (project in file("tests"))
       "ch.qos.logback" % "logback-classic" % "1.2.3"
     ).map(_ % "test"),
     libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test"
-  ) dependsOn (core, akkaHttpHandler, futureAsyncHttpClientHandler, scalazAsyncHttpClientHandler,
-monixAsyncHttpClientHandler, catsAsyncHttpClientHandler, okhttpClientHandler, okhttpMonixClientHandler)
+  ) dependsOn (
+  core, akkaHttpHandler, futureAsyncHttpClientHandler, scalazAsyncHttpClientHandler,
+  monixAsyncHttpClientHandler, catsAsyncHttpClientHandler, fs2AsyncHttpClientHandler,
+  okhttpClientHandler, okhttpMonixClientHandler
+)
