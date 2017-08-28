@@ -117,7 +117,7 @@ class OkHttpSyncClientHandler private (client: OkHttpClient)
 
 object OkHttpSyncClientHandler {
   def apply(okhttpClient: OkHttpClient = new OkHttpClient())
-    : OkHttpSyncClientHandler =
+    : SttpHandler[Id, Nothing] =
     new OkHttpSyncClientHandler(okhttpClient)
 }
 

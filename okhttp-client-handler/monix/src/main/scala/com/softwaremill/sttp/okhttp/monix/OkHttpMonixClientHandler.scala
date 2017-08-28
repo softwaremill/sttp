@@ -16,9 +16,6 @@ import okio.BufferedSink
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
-/**
-  * Created by omainegra on 8/4/17.
-  */
 class OkHttpMonixClientHandler private (client: OkHttpClient)(
     implicit s: Scheduler)
     extends OkHttpAsyncClientHandler[Task, Observable[ByteBuffer]](client,
