@@ -73,7 +73,7 @@ SBT dependency:
 "com.softwaremill.sttp" %% "core" % "0.0.7"
 ```
 
-`sttp` is available for Scala 2.11 and 2.12, and requires Java 8. The core 
+`sttp` is available for Scala 2.11 and 2.12, and requires Java 7 if using an `OkHttp` based backend, or Java 8 otherwise. The core
 module has no transitive dependencies.
 
 If you'd like to use an alternate backend, [see below](#supported-backends) 
