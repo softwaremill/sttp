@@ -12,7 +12,7 @@ object SttpRelease {
     inquireVersions,
     // publishing locally so that the pgp password prompt is displayed early
     // in the process
-    ReleaseStep(action = Command.process("publishLocalSigned", _)),
+    releaseStepCommand("publishLocalSigned"),
     runClean,
     runTest,
     setReleaseVersion,
@@ -22,7 +22,7 @@ object SttpRelease {
     publishArtifacts,
     setNextVersion,
     commitNextVersion,
-    ReleaseStep(action = Command.process("sonatypeReleaseAll", _)),
+    releaseStepCommand("sonatypeReleaseAll"),
     pushChanges
   )
 
