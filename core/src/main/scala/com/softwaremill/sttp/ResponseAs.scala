@@ -1,9 +1,7 @@
-package com.softwaremill.sttp.model
+package com.softwaremill.sttp
 
 import java.io.{File, FileOutputStream, IOException, InputStream}
 import java.net.URLDecoder
-
-import com.softwaremill.sttp.{MonadError, transfer}
 
 import scala.collection.immutable.Seq
 import scala.language.higherKinds

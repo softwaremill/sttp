@@ -7,8 +7,6 @@ import java.nio.charset.CharacterCodingException
 import java.nio.file.Files
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
 
-import com.softwaremill.sttp.model._
-
 import scala.annotation.tailrec
 import scala.io.Source
 import scala.collection.JavaConverters._

@@ -1,11 +1,9 @@
-package com.softwaremill.sttp.model
+package com.softwaremill.sttp
 
 import java.io.InputStream
 import java.net.URLEncoder
 import java.nio.ByteBuffer
 import java.nio.file.Path
-
-import com.softwaremill.sttp._
 
 import scala.collection.immutable.Seq
 

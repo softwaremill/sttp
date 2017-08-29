@@ -4,8 +4,6 @@ import java.io._
 import java.nio.ByteBuffer
 import java.nio.file.Path
 
-import com.softwaremill.sttp.model._
-
 import scala.annotation.{implicitNotFound, tailrec}
 import scala.language.higherKinds
 import scala.collection.immutable.Seq

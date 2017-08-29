@@ -4,8 +4,7 @@ import java.io.IOException
 import java.nio.charset.Charset
 
 import com.softwaremill.sttp._
-import com.softwaremill.sttp.model.ResponseAs.EagerResponseHandler
-import com.softwaremill.sttp.model._
+import ResponseAs.EagerResponseHandler
 import okhttp3.internal.http.HttpMethod
 import okhttp3.{
   Call,

@@ -5,8 +5,6 @@ import java.nio.ByteBuffer
 import java.nio.file.Path
 import java.util.Base64
 
-import com.softwaremill.sttp.model._
-
 import scala.collection.immutable.Seq
 
 import scala.language.higherKinds
