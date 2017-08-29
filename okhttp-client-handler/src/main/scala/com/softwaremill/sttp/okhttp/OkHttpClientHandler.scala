@@ -167,7 +167,7 @@ abstract class OkHttpAsyncClientHandler[R[_], S](client: OkHttpClient,
 
           override def onResponse(call: Call, response: OkHttpResponse): Unit =
             try success(readResponse(response, r.responseAs))
-            catch { case e: Exception => error(e) } finally response.close()
+            catch { case e: Exception => error(e) }
         })
     })
   }
