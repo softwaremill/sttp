@@ -1,7 +1,6 @@
 package com.softwaremill.sttp
 
 import java.io.{File, InputStream}
-import java.net.URLEncoder
 import java.nio.ByteBuffer
 import java.nio.file.Path
 import java.util.Base64
@@ -200,6 +199,12 @@ case class RequestT[U[_], T, +S](
   def body[B: BodySerializer](b: B): RequestT[U, T, S] =
     withBasicBody(implicitly[BodySerializer[B]].apply(b))
 
+  def multipartBody(ps: Seq[Multipart]): RequestT[U, T, S] =
+    this.copy(body = MultipartBody(ps))
+
+  def multipartBody(p1: Multipart, ps: Multipart*): RequestT[U, T, S] =
+    this.copy(body = MultipartBody(p1 :: ps.toList))
+
   def streamBody[S2 >: S](b: S2): RequestT[U, T, S2] =
     copy[U, T, S2](body = StreamBody(b))
 
@@ -248,16 +253,10 @@ case class RequestT[U[_], T, +S](
 
   private def formDataBody(fs: Seq[(String, String)],
                            encoding: String): RequestT[U, T, S] = {
-    val b = fs
-      .map {
-        case (key, value) =>
-          URLEncoder.encode(key, encoding) + "=" +
-            URLEncoder.encode(value, encoding)
-      }
-      .mkString("&")
+    val b = RequestBody.paramsToStringBody(fs, encoding)
     setContentTypeIfMissing(ApplicationFormContentType)
-      .setContentLengthIfMissing(b.getBytes(encoding).length)
-      .copy(body = StringBody(b, encoding))
+      .setContentLengthIfMissing(b.s.getBytes(encoding).length)
+      .copy(body = b)
   }
 }
 

@@ -12,6 +12,7 @@ import akka.http.scaladsl.model.headers.CacheDirectives._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.Credentials
+import akka.util.ByteString
 import com.softwaremill.sttp.akkahttp.AkkaHttpSttpHandler
 import com.typesafe.scalalogging.StrictLogging
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
@@ -26,6 +27,7 @@ import com.softwaremill.sttp.okhttp.{
   OkHttpFutureClientHandler,
   OkHttpSyncClientHandler
 }
+import scala.concurrent.ExecutionContext.Implicits.global
 
 import scala.language.higherKinds
 
@@ -136,6 +138,20 @@ class BasicTests
       } ~ path("text") {
         getFromFile(textFile)
       }
+    } ~ pathPrefix("multipart") {
+      entity(as[akka.http.scaladsl.model.Multipart.FormData]) { fd =>
+        complete {
+          fd.parts
+            .mapAsync(1) { p =>
+              val fv = p.entity.dataBytes.runFold(ByteString())(_ ++ _)
+              fv.map(_.utf8String)
+                .map(v =>
+                  p.name + "=" + v + p.filename.fold("")(fn => s" ($fn)"))
+            }
+            .runFold(Vector.empty[String])(_ :+ _)
+            .map(v => v.mkString(", "))
+        }
+      }
     }
 
   override def port = 51823
@@ -184,6 +200,7 @@ class BasicTests
     authTests()
     compressionTests()
     downloadFileTests()
+//    multipartTests()
 
     def parseResponseTests(): Unit = {
       name should "parse response as string" in {
@@ -513,6 +530,23 @@ class BasicTests
         resp.body shouldBe path
         path.toFile should exist
         path.toFile should haveSameContentAs(textFile)
+      }
+    }
+
+    def multipartTests(): Unit = {
+      val mp = sttp.post(uri"$endpoint/multipart")
+
+      name should "send a multipart message" in {
+        val req = mp.multipartBody(multipart("p1", "v1"), multipart("p2", "v2"))
+        val resp = req.send().force()
+        resp.body should be("p1=v1, p2=v2")
+      }
+
+      name should "send a multipart message with filenames" in {
+        val req = mp.multipartBody(multipart("p1", "v1").fileName("f1"),
+                                   multipart("p2", "v2").fileName("f2"))
+        val resp = req.send().force()
+        resp.body should be("p1=v1 (f1), p2=v2 (f2)")
       }
     }
   }

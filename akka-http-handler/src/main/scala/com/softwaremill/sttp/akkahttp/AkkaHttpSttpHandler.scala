@@ -6,7 +6,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.coding.{Deflate, Gzip, NoCoding}
 import akka.http.scaladsl.model.HttpHeader.ParsingResult
-import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.{Multipart => AkkaMultipart, _}
 import akka.http.scaladsl.model.headers.{HttpEncodings, `Content-Type`}
 import akka.http.scaladsl.model.ContentTypes.`application/octet-stream`
 import akka.stream.ActorMaterializer
@@ -110,8 +110,13 @@ class AkkaHttpSttpHandler private (actorSystem: ActorSystem,
 
   private def requestToAkka(r: Request[_, S]): Try[HttpRequest] = {
     val ar = HttpRequest(uri = r.uri.toString, method = methodToAkka(r.method))
+    headersToAkka(r.headers).map(ar.withHeaders)
+  }
+
+  private def headersToAkka(
+      headers: Seq[(String, String)]): Try[Seq[HttpHeader]] = {
     val parsed =
-      r.headers.filterNot(isContentType).map(h => HttpHeader.parse(h._1, h._2))
+      headers.filterNot(isContentType).map(h => HttpHeader.parse(h._1, h._2))
     val errors = parsed.collect {
       case ParsingResult.Error(e) => e
     }
@@ -120,41 +125,91 @@ class AkkaHttpSttpHandler private (actorSystem: ActorSystem,
         case ParsingResult.Ok(h, _) => h
       }
 
-      Success(ar.withHeaders(headers.toList))
+      Success(headers.toList)
     } else {
       Failure(new RuntimeException(s"Cannot parse headers: $errors"))
     }
   }
 
+  private def traverseTry[T](l: Seq[Try[T]]): Try[Seq[T]] = {
+    // https://stackoverflow.com/questions/15495678/flatten-scala-try
+    val (ss: Seq[Success[T]] @unchecked, fs: Seq[Failure[T]] @unchecked) =
+      l.partition(_.isSuccess)
+
+    if (fs.isEmpty) Success(ss.map(_.get))
+    else Failure[Seq[T]](fs.head.exception)
+  }
+
   private def setBodyOnAkka(r: Request[_, S],
                             body: RequestBody[S],
                             ar: HttpRequest): Try[HttpRequest] = {
-    getContentTypeOrOctetStream(r).map { ct =>
-      def doSet(body: RequestBody[S]): HttpRequest = body match {
-        case NoBody => ar
+    def ctWithEncoding(ct: ContentType, encoding: String) =
+      HttpCharsets
+        .getForKey(encoding)
+        .map(hc => ContentType.apply(ct.mediaType, () => hc))
+        .getOrElse(ct)
+
+    def toBodyPart(mp: Multipart): Try[AkkaMultipart.FormData.BodyPart] = {
+      def entity(ct: ContentType) = mp.body match {
         case StringBody(b, encoding, _) =>
-          val ctWithEncoding = HttpCharsets
-            .getForKey(encoding)
-            .map(hc => ContentType.apply(ct.mediaType, () => hc))
-            .getOrElse(ct)
-          ar.withEntity(ctWithEncoding, b.getBytes(encoding))
-        case ByteArrayBody(b, _)  => ar.withEntity(b)
-        case ByteBufferBody(b, _) => ar.withEntity(ByteString(b))
-        case InputStreamBody(b, _) =>
-          ar.withEntity(
-            HttpEntity(ct, StreamConverters.fromInputStream(() => b)))
-        case PathBody(b, _) => ar.withEntity(ct, b)
-        case StreamBody(s)  => ar.withEntity(HttpEntity(ct, s))
+          HttpEntity(ctWithEncoding(ct, encoding), b.getBytes(encoding))
+        case ByteArrayBody(b, _)  => HttpEntity(ct, b)
+        case ByteBufferBody(b, _) => HttpEntity(ct, ByteString(b))
+        case isb: InputStreamBody =>
+          HttpEntity
+            .IndefiniteLength(ct, StreamConverters.fromInputStream(() => isb.b))
+        case PathBody(b, _) => HttpEntity.fromPath(ct, b)
       }
 
-      doSet(body)
+      for {
+        ct <- parseContentTypeOrOctetStream(mp.contentType)
+        headers <- headersToAkka(mp.additionalHeaders.toList)
+      } yield {
+        val dispositionParams =
+          mp.fileName.fold(Map.empty[String, String])(fn =>
+            Map("filename" -> fn))
+
+        AkkaMultipart.FormData.BodyPart(mp.name,
+                                        entity(ct),
+                                        dispositionParams,
+                                        headers)
+      }
+    }
+
+    parseContentTypeOrOctetStream(r).flatMap { ct =>
+      body match {
+        case NoBody => Success(ar)
+        case StringBody(b, encoding, _) =>
+          Success(
+            ar.withEntity(ctWithEncoding(ct, encoding), b.getBytes(encoding)))
+        case ByteArrayBody(b, _) => Success(ar.withEntity(HttpEntity(ct, b)))
+        case ByteBufferBody(b, _) =>
+          Success(ar.withEntity(HttpEntity(ct, ByteString(b))))
+        case InputStreamBody(b, _) =>
+          Success(
+            ar.withEntity(
+              HttpEntity(ct, StreamConverters.fromInputStream(() => b))))
+        case PathBody(b, _) => Success(ar.withEntity(ct, b))
+        case StreamBody(s)  => Success(ar.withEntity(HttpEntity(ct, s)))
+        case MultipartBody(ps) =>
+          traverseTry(ps.map(toBodyPart))
+            .map(bodyParts =>
+              ar.withEntity(AkkaMultipart.FormData(bodyParts: _*).toEntity()))
+      }
     }
   }
 
-  private def getContentTypeOrOctetStream(r: Request[_, S]): Try[ContentType] = {
-    r.headers
-      .find(isContentType)
-      .map(_._2)
+  private def parseContentTypeOrOctetStream(
+      r: Request[_, S]): Try[ContentType] = {
+    parseContentTypeOrOctetStream(
+      r.headers
+        .find(isContentType)
+        .map(_._2))
+  }
+
+  private def parseContentTypeOrOctetStream(
+      ctHeader: Option[String]): Try[ContentType] = {
+    ctHeader
       .map { ct =>
         ContentType
           .parse(ct)

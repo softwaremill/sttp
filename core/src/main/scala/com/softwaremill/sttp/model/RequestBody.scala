@@ -1,10 +1,13 @@
 package com.softwaremill.sttp.model
 
 import java.io.InputStream
+import java.net.URLEncoder
 import java.nio.ByteBuffer
 import java.nio.file.Path
 
 import com.softwaremill.sttp._
+
+import scala.collection.immutable.Seq
 
 sealed trait RequestBody[+S]
 case object NoBody extends RequestBody[Nothing]
@@ -40,3 +43,21 @@ case class PathBody(
 ) extends BasicRequestBody
 
 case class StreamBody[S](s: S) extends RequestBody[S]
+
+case class MultipartBody(parts: Seq[Multipart]) extends RequestBody[Nothing]
+
+object RequestBody {
+  private[sttp] def paramsToStringBody(fs: Seq[(String, String)],
+                                       encoding: String): StringBody = {
+
+    val b = fs
+      .map {
+        case (key, value) =>
+          URLEncoder.encode(key, encoding) + "=" +
+            URLEncoder.encode(value, encoding)
+      }
+      .mkString("&")
+
+    StringBody(b, encoding)
+  }
+}
