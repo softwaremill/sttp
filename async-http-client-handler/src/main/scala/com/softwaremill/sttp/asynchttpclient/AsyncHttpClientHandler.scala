@@ -4,10 +4,20 @@ import java.nio.ByteBuffer
 import java.nio.charset.Charset
 
 import com.softwaremill.sttp.ResponseAs.EagerResponseHandler
-import com.softwaremill.sttp.{BasicResponseAs, ContentLengthHeader, IgnoreResponse, MonadAsyncError, MonadError, NoBody, Request, RequestBody, Response, ResponseAs, ResponseAsByteArray, ResponseAsStream, SttpHandler}
+import com.softwaremill.sttp._
 import org.asynchttpclient.AsyncHandler.State
 import org.asynchttpclient.handler.StreamedAsyncHandler
-import org.asynchttpclient.{AsyncCompletionHandler, AsyncHandler, AsyncHttpClient, HttpResponseBodyPart, HttpResponseHeaders, HttpResponseStatus, RequestBuilder, Request => AsyncRequest, Response => AsyncResponse}
+import org.asynchttpclient.{
+  AsyncCompletionHandler,
+  AsyncHandler,
+  AsyncHttpClient,
+  HttpResponseBodyPart,
+  HttpResponseHeaders,
+  HttpResponseStatus,
+  RequestBuilder,
+  Request => AsyncRequest,
+  Response => AsyncResponse
+}
 import org.reactivestreams.{Publisher, Subscriber, Subscription}
 
 import scala.collection.JavaConverters._
