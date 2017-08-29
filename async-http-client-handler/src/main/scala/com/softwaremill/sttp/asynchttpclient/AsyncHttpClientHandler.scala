@@ -1,5 +1,6 @@
 package com.softwaremill.sttp.asynchttpclient
 
+import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
 
@@ -7,6 +8,11 @@ import com.softwaremill.sttp.ResponseAs.EagerResponseHandler
 import com.softwaremill.sttp._
 import org.asynchttpclient.AsyncHandler.State
 import org.asynchttpclient.handler.StreamedAsyncHandler
+import org.asynchttpclient.request.body.multipart.{
+  ByteArrayPart,
+  FilePart,
+  StringPart
+}
 import org.asynchttpclient.{
   AsyncCompletionHandler,
   AsyncHandler,
@@ -14,6 +20,7 @@ import org.asynchttpclient.{
   HttpResponseBodyPart,
   HttpResponseHeaders,
   HttpResponseStatus,
+  Param,
   RequestBuilder,
   Request => AsyncRequest,
   Response => AsyncResponse
@@ -172,7 +179,45 @@ abstract class AsyncHttpClientHandler[R[_], S](asyncHttpClient: AsyncHttpClient,
           .map(_._2.toLong)
           .getOrElse(-1L)
         rb.setBody(streamBodyToPublisher(s), cl)
+
+      case MultipartBody(ps) =>
+        ps.foreach(addMultipartBody(rb, _))
     }
+  }
+
+  private def addMultipartBody(rb: RequestBuilder, mp: Multipart): Unit = {
+    // async http client only supports setting file names on file parts. To
+    // set a file name on an arbitrary part we have to use a small "work
+    // around", combining the file name with the name (surrounding quotes
+    // are added by ahc).
+    def nameWithFilename = mp.fileName.fold(mp.name) { fn =>
+      s"""${mp.name}"; filename="$fn"""
+    }
+
+    val bodyPart = mp.body match {
+      case StringBody(b, encoding, _) =>
+        new StringPart(nameWithFilename,
+                       b,
+                       mp.contentType.getOrElse(TextPlainContentType),
+                       Charset.forName(encoding))
+      case ByteArrayBody(b, _) =>
+        new ByteArrayPart(nameWithFilename, b)
+      case ByteBufferBody(b, _) =>
+        new ByteArrayPart(nameWithFilename, b.array())
+      case InputStreamBody(b, _) =>
+        // sadly async http client only supports parts that are strings,
+        // byte arrays or files
+        val baos = new ByteArrayOutputStream()
+        transfer(b, baos)
+        new ByteArrayPart(nameWithFilename, baos.toByteArray)
+      case PathBody(b, _) =>
+        new FilePart(mp.name, b.toFile, null, null, mp.fileName.orNull)
+    }
+
+    bodyPart.setCustomHeaders(
+      mp.additionalHeaders.map(h => new Param(h._1, h._2)).toList.asJava)
+
+    rb.addBodyPart(bodyPart)
   }
 
   private def readEagerResponse[T](

@@ -548,6 +548,16 @@ class BasicTests
         val resp = req.send().force()
         resp.body should be("p1=v1 (f1), p2=v2 (f2)")
       }
+
+      name should "send a multipart message with a file" in {
+        val f = File.newTemporaryFile().write(testBody)
+        try {
+          val req =
+            mp.multipartBody(multipart("p1", f.toJava), multipart("p2", "v2"))
+          val resp = req.send().force()
+          resp.body should be(s"p1=$testBody (${f.name}), p2=v2")
+        } finally f.delete()
+      }
     }
   }
 

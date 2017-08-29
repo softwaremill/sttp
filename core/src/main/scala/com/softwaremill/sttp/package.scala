@@ -146,6 +146,8 @@ package object sttp {
   /**
     * Content type will be set to `application/octet-stream`, can be overridden
     * later using the `contentType` method.
+    *
+    * File name will be set to the name of the file.
     */
   def multipart(name: String, data: File): Multipart =
     multipart(name, data.toPath)
@@ -153,6 +155,8 @@ package object sttp {
   /**
     * Content type will be set to `application/octet-stream`, can be overridden
     * later using the `contentType` method.
+    *
+    * File name will be set to the name of the file.
     */
   def multipart(name: String, data: Path): Multipart =
     Multipart(name,
