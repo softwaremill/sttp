@@ -1,6 +1,7 @@
 package com.softwaremill.sttp.okhttp
 
 import java.io.IOException
+import java.net.URLEncoder
 import java.nio.charset.Charset
 
 import com.softwaremill.sttp._
@@ -9,8 +10,10 @@ import okhttp3.internal.http.HttpMethod
 import okhttp3.{
   Call,
   Callback,
+  Headers,
   MediaType,
   OkHttpClient,
+  MultipartBody => OkHttpMultipartBody,
   Request => OkHttpRequest,
   RequestBody => OkHttpRequestBody,
   Response => OkHttpResponse
@@ -28,7 +31,7 @@ abstract class OkHttpClientHandler[R[_], S](client: OkHttpClient)
     val builder = new OkHttpRequest.Builder()
       .url(request.uri.toString)
 
-    val body = setBody(request)
+    val body = bodyToOkHttp(request.body)
     builder.method(request.method.m, body.getOrElse {
       if (HttpMethod.requiresRequestBody(request.method.m))
         OkHttpRequestBody.create(null, "")
@@ -45,8 +48,8 @@ abstract class OkHttpClientHandler[R[_], S](client: OkHttpClient)
     builder.build()
   }
 
-  private def setBody[T](request: Request[T, S]): Option[OkHttpRequestBody] = {
-    request.body match {
+  private def bodyToOkHttp[T](body: RequestBody[S]): Option[OkHttpRequestBody] = {
+    body match {
       case NoBody => None
       case StringBody(b, _, _) =>
         Some(OkHttpRequestBody.create(null, b))
@@ -64,7 +67,23 @@ abstract class OkHttpClientHandler[R[_], S](client: OkHttpClient)
         Some(OkHttpRequestBody.create(null, b.toFile))
       case StreamBody(s) =>
         streamToRequestBody(s)
+      case MultipartBody(ps) =>
+        val b = new OkHttpMultipartBody.Builder()
+          .setType(OkHttpMultipartBody.FORM)
+        ps.foreach(addMultipart(b, _))
+        Some(b.build())
     }
+  }
+
+  private def addMultipart(builder: OkHttpMultipartBody.Builder,
+                           mp: Multipart): Unit = {
+    val disposition = s"""form-data; name="${URLEncoder.encode(mp.name, Utf8)}"""" +
+      mp.fileName.fold("")(fn =>
+        s"""; filename="${URLEncoder.encode(fn, Utf8)}"""")
+    val allHeaders = mp.additionalHeaders + ("Content-Disposition" -> disposition)
+    val headers = Headers.of(allHeaders.asJava)
+
+    bodyToOkHttp(mp.body).foreach(builder.addPart(headers, _))
   }
 
   private[okhttp] def readResponse[T](
