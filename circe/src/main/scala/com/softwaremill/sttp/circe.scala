@@ -1,6 +1,5 @@
 package com.softwaremill.sttp
 
-import com.softwaremill.sttp.model._
 import io.circe.parser._
 import io.circe.{Decoder, Encoder}
 
