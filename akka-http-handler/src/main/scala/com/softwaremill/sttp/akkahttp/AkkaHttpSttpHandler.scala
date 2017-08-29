@@ -7,7 +7,11 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.coding.{Deflate, Gzip, NoCoding}
 import akka.http.scaladsl.model.HttpHeader.ParsingResult
 import akka.http.scaladsl.model.{Multipart => AkkaMultipart, _}
-import akka.http.scaladsl.model.headers.{HttpEncodings, `Content-Type`}
+import akka.http.scaladsl.model.headers.{
+  HttpEncodings,
+  `Content-Type`,
+  `Content-Length`
+}
 import akka.http.scaladsl.model.ContentTypes.`application/octet-stream`
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{FileIO, Source, StreamConverters}
@@ -115,8 +119,13 @@ class AkkaHttpSttpHandler private (actorSystem: ActorSystem,
 
   private def headersToAkka(
       headers: Seq[(String, String)]): Try[Seq[HttpHeader]] = {
+    // content-type and content-length headers have to be set via the body
+    // entity, not as headers
     val parsed =
-      headers.filterNot(isContentType).map(h => HttpHeader.parse(h._1, h._2))
+      headers
+        .filterNot(isContentType)
+        .filterNot(isContentLength)
+        .map(h => HttpHeader.parse(h._1, h._2))
     val errors = parsed.collect {
       case ParsingResult.Error(e) => e
     }
@@ -224,6 +233,9 @@ class AkkaHttpSttpHandler private (actorSystem: ActorSystem,
 
   private def isContentType(header: (String, String)) =
     header._1.toLowerCase.contains(`Content-Type`.lowercaseName)
+
+  private def isContentLength(header: (String, String)) =
+    header._1.toLowerCase.contains(`Content-Length`.lowercaseName)
 
   // http://doc.akka.io/docs/akka-http/10.0.7/scala/http/common/de-coding.html
   private def decodeAkkaResponse(response: HttpResponse): HttpResponse = {
