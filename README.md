@@ -448,7 +448,6 @@ There are two type aliases for the request template that are used:
 
 ## TODO
 
-* multi-part uploads
 * scalaz/fs2 streaming
 * proxy support
 * connection options, SSL

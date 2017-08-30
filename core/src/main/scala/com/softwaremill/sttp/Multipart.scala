@@ -14,4 +14,12 @@ case class Multipart(name: String,
   def contentType(v: String): Multipart = copy(contentType = Some(v))
   def header(k: String, v: String): Multipart =
     copy(additionalHeaders = additionalHeaders + (k -> v))
+
+  private[sttp] def contentDispositionHeaderValue: String = {
+    def encodeHeaderValue(s: String): String =
+      new String(s.getBytes(Utf8), Iso88591)
+
+    s"""form-data; name="${encodeHeaderValue(name)}"""" +
+      fileName.fold("")(fn => s"""; filename="${encodeHeaderValue(fn)}"""")
+  }
 }

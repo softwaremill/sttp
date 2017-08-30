@@ -1,7 +1,6 @@
 package com.softwaremill.sttp.okhttp
 
 import java.io.IOException
-import java.net.URLEncoder
 import java.nio.charset.Charset
 
 import com.softwaremill.sttp._
@@ -77,10 +76,7 @@ abstract class OkHttpClientHandler[R[_], S](client: OkHttpClient)
 
   private def addMultipart(builder: OkHttpMultipartBody.Builder,
                            mp: Multipart): Unit = {
-    val disposition = s"""form-data; name="${URLEncoder.encode(mp.name, Utf8)}"""" +
-      mp.fileName.fold("")(fn =>
-        s"""; filename="${URLEncoder.encode(fn, Utf8)}"""")
-    val allHeaders = mp.additionalHeaders + ("Content-Disposition" -> disposition)
+    val allHeaders = mp.additionalHeaders + (ContentDispositionHeader -> mp.contentDispositionHeaderValue)
     val headers = Headers.of(allHeaders.asJava)
 
     bodyToOkHttp(mp.body).foreach(builder.addPart(headers, _))

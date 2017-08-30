@@ -36,7 +36,10 @@ package object sttp {
   private[sttp] val ProxyAuthorizationHeader = "Proxy-Authorization"
   private[sttp] val AcceptEncodingHeader = "Accept-Encoding"
   private[sttp] val ContentEncodingHeader = "Content-Encoding"
+  private[sttp] val ContentDispositionHeader = "Content-Disposition"
   private[sttp] val Utf8 = "utf-8"
+  private[sttp] val Iso88591 = "iso-8859-1"
+  private[sttp] val CrLf = "\r\n"
 
   private[sttp] val ApplicationOctetStreamContentType =
     "application/octet-stream"
