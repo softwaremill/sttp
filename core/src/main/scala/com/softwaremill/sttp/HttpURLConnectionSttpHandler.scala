@@ -36,21 +36,6 @@ object HttpURLConnectionSttpHandler extends SttpHandler[Id, Nothing] {
   private def setBody(body: RequestBody[Nothing], c: HttpURLConnection): Unit = {
     if (body != NoBody) c.setDoOutput(true)
 
-    def copyStream(in: InputStream, out: OutputStream): Unit = {
-      val buf = new Array[Byte](1024)
-
-      @tailrec
-      def doCopy(): Unit = {
-        val read = in.read(buf)
-        if (read != -1) {
-          out.write(buf, 0, read)
-          doCopy()
-        }
-      }
-
-      doCopy()
-    }
-
     body match {
       case NoBody => // skip
 
@@ -68,7 +53,7 @@ object HttpURLConnectionSttpHandler extends SttpHandler[Id, Nothing] {
         finally channel.close()
 
       case InputStreamBody(b, _) =>
-        copyStream(b, c.getOutputStream)
+        transfer(b, c.getOutputStream)
 
       case PathBody(b, _) =>
         Files.copy(b, c.getOutputStream)
