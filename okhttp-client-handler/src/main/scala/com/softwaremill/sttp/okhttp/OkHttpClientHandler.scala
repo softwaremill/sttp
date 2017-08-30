@@ -101,14 +101,24 @@ abstract class OkHttpClientHandler[R[_], S](client: OkHttpClient)
     new EagerResponseHandler[S] {
       override def handleBasic[T](bra: BasicResponseAs[T, S]): Try[T] =
         bra match {
-          case IgnoreResponse => Try(res.body().close())
+          case IgnoreResponse =>
+            Try(res.close())
           case ResponseAsString(encoding) =>
-            Try(res.body().source().readString(Charset.forName(encoding)))
-          case ResponseAsByteArray => Try(res.body().bytes())
+            val body = Try(
+              res.body().source().readString(Charset.forName(encoding)))
+            res.close()
+            body
+          case ResponseAsByteArray =>
+            val body = Try(res.body().bytes())
+            res.close()
+            body
           case ras @ ResponseAsStream() =>
             responseBodyToStream(res).map(ras.responseIsStream)
           case ResponseAsFile(file, overwrite) =>
-            Try(ResponseAs.saveFile(file, res.body().byteStream(), overwrite))
+            val body = Try(
+              ResponseAs.saveFile(file, res.body().byteStream(), overwrite))
+            res.close()
+            body
         }
     }
 
