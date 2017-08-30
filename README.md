@@ -189,6 +189,7 @@ uri"$scheme://$subdomains.example.com?x=$vx&$params#$jumpTo"
 | `ScalazAsyncHttpClientHandler` | `scalaz.concurrent.Task` | - |
 | `MonixAsyncHttpClientHandler` | `monix.eval.Task` | `monix.reactive.Observable[ByteBuffer]` | 
 | `CatsAsyncHttpClientHandler` | `F[_]: cats.effect.Async` | - | 
+| `Fs2AsyncHttpClientHandler` | `F[_]: cats.effect.Async` | `fs2.Stream[F, ByteBuffer]` | 
 | `OkHttpSyncClientHandler` | None (`Id`) | - | 
 | `OkHttpFutureClientHandler` | `scala.concurrent.Future` | - |
 | `OkHttpMonixClientHandler` | `monix.eval.Task` | `monix.reactive.Observable[ByteBuffer]` |
@@ -445,13 +446,6 @@ There are two type aliases for the request template that are used:
   * `application/x-www-form-urlencoded` for form data
   * `multipart/form-data` for multipart form data
   * `application/octet-stream` for everything else (binary)
-
-## TODO
-
-* scalaz/fs2 streaming
-* proxy support
-* connection options, SSL
-* *your API improvement idea here*
 
 ## Other Scala HTTP clients
 
