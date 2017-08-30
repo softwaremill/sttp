@@ -10,6 +10,12 @@ import scala.collection.immutable.Seq
 import scala.language.higherKinds
 
 /**
+  * @param response What's the target type to which the response body should
+  *                 be read. Needs to be specified upfront so that the response
+  *                 is always consumed and hence there are no requirements on
+  *                 client code to consume it. An exception to this are
+  *                 streaming responses, which need to fully consumed by the
+  *                 client if such a response type is requested.
   * @tparam U Specifies if the method & uri are specified. By default can be
   *           either:
   *           * `Empty`, which is a type constructor which always resolves to
@@ -206,13 +212,6 @@ case class RequestT[U[_], T, +S](
   def streamBody[S2 >: S](b: S2): RequestT[U, T, S2] =
     copy[U, T, S2](body = StreamBody(b))
 
-  /**
-    * What's the target type to which the response body should be read.
-    * Needs to be specified upfront so that the response is always consumed
-    * and hence there are no requirements on client code to consume it. An
-    * exception to this are streaming responses, which need to fully
-    * consumed by the client if such a response type is requested.
-    */
   def response[T2, S2 >: S](ra: ResponseAs[T2, S2]): RequestT[U, T2, S2] =
     this.copy(response = ra)
 
