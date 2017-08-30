@@ -25,7 +25,7 @@ case class RequestT[U[_], T, +S](
     uri: U[Uri],
     body: RequestBody[S],
     headers: Seq[(String, String)],
-    responseAs: ResponseAs[T, S]
+    response: ResponseAs[T, S]
 ) {
   def get(uri: Uri): Request[T, S] =
     this.copy[Id, T, S](uri = uri, method = Method.GET)
@@ -214,10 +214,10 @@ case class RequestT[U[_], T, +S](
     * consumed by the client if such a response type is requested.
     */
   def response[T2, S2 >: S](ra: ResponseAs[T2, S2]): RequestT[U, T2, S2] =
-    this.copy(responseAs = ra)
+    this.copy(response = ra)
 
   def mapResponse[T2](f: T => T2): RequestT[U, T2, S] =
-    this.copy(responseAs = responseAs.map(f))
+    this.copy(response = response.map(f))
 
   def send[R[_]]()(implicit handler: SttpHandler[R, S],
                    isIdInRequest: IsIdInRequest[U]): R[Response[T]] = {

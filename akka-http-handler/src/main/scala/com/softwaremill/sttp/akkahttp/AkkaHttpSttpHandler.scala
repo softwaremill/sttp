@@ -41,7 +41,7 @@ class AkkaHttpSttpHandler private (actorSystem: ActorSystem,
       .flatMap(Http().singleRequest(_))
       .flatMap { hr =>
         val code = hr.status.intValue()
-        bodyFromAkka(r.responseAs, decodeAkkaResponse(hr))
+        bodyFromAkka(r.response, decodeAkkaResponse(hr))
           .map(Response(_, code, headersFromAkka(hr)))
       }
   }

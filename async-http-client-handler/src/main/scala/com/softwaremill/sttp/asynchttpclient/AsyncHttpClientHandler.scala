@@ -44,7 +44,7 @@ abstract class AsyncHttpClientHandler[R[_], S](asyncHttpClient: AsyncHttpClient,
       def success(r: R[Response[T]]) = cb(Right(r))
       def error(t: Throwable) = cb(Left(t))
 
-      r.responseAs match {
+      r.response match {
         case ras @ ResponseAsStream() =>
           preparedRequest
             .execute(streamingAsyncHandler(ras, success, error))

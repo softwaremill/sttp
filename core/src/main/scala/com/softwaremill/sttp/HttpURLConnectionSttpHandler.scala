@@ -33,12 +33,12 @@ object HttpURLConnectionSttpHandler extends SttpHandler[Id, Nothing] {
 
     try {
       val is = c.getInputStream
-      readResponse(c, is, r.responseAs)
+      readResponse(c, is, r.response)
     } catch {
       case e: CharacterCodingException     => throw e
       case e: UnsupportedEncodingException => throw e
       case _: IOException if c.getResponseCode != -1 =>
-        readResponse(c, c.getErrorStream, r.responseAs)
+        readResponse(c, c.getErrorStream, r.response)
     }
   }
 

@@ -123,7 +123,7 @@ class OkHttpSyncClientHandler private (client: OkHttpClient)
   override def send[T](r: Request[T, Nothing]): Response[T] = {
     val request = convertRequest(r)
     val response = client.newCall(request).execute()
-    readResponse(response, r.responseAs)
+    readResponse(response, r.response)
   }
 
   override def responseMonad: MonadError[Id] = IdMonad
@@ -152,7 +152,7 @@ abstract class OkHttpAsyncClientHandler[R[_], S](client: OkHttpClient,
             error(e)
 
           override def onResponse(call: Call, response: OkHttpResponse): Unit =
-            try success(readResponse(response, r.responseAs))
+            try success(readResponse(response, r.response))
             catch { case e: Exception => error(e) }
         })
     })
