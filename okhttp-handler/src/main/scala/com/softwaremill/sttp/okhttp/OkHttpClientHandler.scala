@@ -24,7 +24,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 import scala.util.{Failure, Try}
 
-abstract class OkHttpClientHandler[R[_], S](client: OkHttpClient)
+abstract class OkHttpHandler[R[_], S](client: OkHttpClient)
     extends SttpHandler[R, S] {
   private[okhttp] def convertRequest[T](request: Request[T, S]): OkHttpRequest = {
     val builder = new OkHttpRequest.Builder()
@@ -128,8 +128,8 @@ abstract class OkHttpClientHandler[R[_], S](client: OkHttpClient)
     Failure(new IllegalStateException("Streaming isn't supported"))
 }
 
-class OkHttpSyncClientHandler private (client: OkHttpClient)
-    extends OkHttpClientHandler[Id, Nothing](client) {
+class OkHttpSyncHandler private (client: OkHttpClient)
+    extends OkHttpHandler[Id, Nothing](client) {
   override def send[T](r: Request[T, Nothing]): Response[T] = {
     val request = convertRequest(r)
     val response = client.newCall(request).execute()
@@ -139,15 +139,15 @@ class OkHttpSyncClientHandler private (client: OkHttpClient)
   override def responseMonad: MonadError[Id] = IdMonad
 }
 
-object OkHttpSyncClientHandler {
+object OkHttpSyncHandler {
   def apply(okhttpClient: OkHttpClient = new OkHttpClient())
     : SttpHandler[Id, Nothing] =
-    new OkHttpSyncClientHandler(okhttpClient)
+    new OkHttpSyncHandler(okhttpClient)
 }
 
-abstract class OkHttpAsyncClientHandler[R[_], S](client: OkHttpClient,
-                                                 rm: MonadAsyncError[R])
-    extends OkHttpClientHandler[R, S](client) {
+abstract class OkHttpAsyncHandler[R[_], S](client: OkHttpClient,
+                                           rm: MonadAsyncError[R])
+    extends OkHttpHandler[R, S](client) {
   override def send[T](r: Request[T, S]): R[Response[T]] = {
     val request = convertRequest(r)
 
@@ -171,13 +171,13 @@ abstract class OkHttpAsyncClientHandler[R[_], S](client: OkHttpClient,
   override def responseMonad: MonadError[R] = rm
 }
 
-class OkHttpFutureClientHandler private (client: OkHttpClient)(
+class OkHttpFutureHandler private (client: OkHttpClient)(
     implicit ec: ExecutionContext)
-    extends OkHttpAsyncClientHandler[Future, Nothing](client, new FutureMonad) {}
+    extends OkHttpAsyncHandler[Future, Nothing](client, new FutureMonad) {}
 
-object OkHttpFutureClientHandler {
+object OkHttpFutureHandler {
   def apply(okhttpClient: OkHttpClient = new OkHttpClient())(
       implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
     : SttpHandler[Future, Nothing] =
-    new OkHttpFutureClientHandler(okhttpClient)
+    new OkHttpFutureHandler(okhttpClient)
 }

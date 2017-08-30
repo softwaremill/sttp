@@ -5,17 +5,17 @@ import akka.actor.ActorSystem
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
+import com.softwaremill.sttp.akkahttp.AkkaHttpHandler
 import com.softwaremill.sttp.{ForceWrappedValue, SttpHandler}
-import com.softwaremill.sttp.akkahttp.AkkaHttpSttpHandler
 
 import scala.concurrent.Future
 
-class AkkaStreamingTests(actorSystem: ActorSystem)(
+class AkkaHttpStreamingTests(actorSystem: ActorSystem)(
     implicit materializer: Materializer)
     extends TestStreamingHandler[Future, Source[ByteString, Any]] {
 
   override implicit val handler: SttpHandler[Future, Source[ByteString, Any]] =
-    AkkaHttpSttpHandler.usingActorSystem(actorSystem)
+    AkkaHttpHandler.usingActorSystem(actorSystem)
 
   override implicit val forceResponse: ForceWrappedValue[Future] =
     ForceWrappedValue.future

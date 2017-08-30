@@ -12,7 +12,7 @@ class IllTypedTests extends FlatSpec with Matchers {
         import com.softwaremill.sttp._
         import akka.stream.scaladsl.Source
         import akka.util.ByteString
-        implicit val sttpHandler = HttpURLConnectionSttpHandler
+        implicit val sttpHandler = HttpURLConnectionHandler
         sttp.get(uri"http://example.com").response(asStream[Source[ByteString, Any]]).send()
         """)
     }
@@ -25,7 +25,7 @@ class IllTypedTests extends FlatSpec with Matchers {
     val thrown = intercept[ToolBoxError] {
       EvalScala("""
         import com.softwaremill.sttp._
-        implicit val sttpHandler = HttpURLConnectionSttpHandler
+        implicit val sttpHandler = HttpURLConnectionHandler
         sttp.send()
         """)
     }

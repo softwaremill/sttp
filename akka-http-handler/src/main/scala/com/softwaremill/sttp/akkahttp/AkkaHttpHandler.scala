@@ -5,26 +5,26 @@ import java.io.{File, IOException, UnsupportedEncodingException}
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.coding.{Deflate, Gzip, NoCoding}
+import akka.http.scaladsl.model.ContentTypes.`application/octet-stream`
 import akka.http.scaladsl.model.HttpHeader.ParsingResult
-import akka.http.scaladsl.model.{Multipart => AkkaMultipart, _}
 import akka.http.scaladsl.model.headers.{
   HttpEncodings,
-  `Content-Type`,
-  `Content-Length`
+  `Content-Length`,
+  `Content-Type`
 }
-import akka.http.scaladsl.model.ContentTypes.`application/octet-stream`
+import akka.http.scaladsl.model.{Multipart => AkkaMultipart, _}
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{FileIO, Source, StreamConverters}
 import akka.util.ByteString
 import com.softwaremill.sttp._
 
+import scala.collection.immutable.Seq
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
-import scala.collection.immutable.Seq
 
-class AkkaHttpSttpHandler private (actorSystem: ActorSystem,
-                                   ec: ExecutionContext,
-                                   terminateActorSystemOnClose: Boolean)
+class AkkaHttpHandler private (actorSystem: ActorSystem,
+                               ec: ExecutionContext,
+                               terminateActorSystemOnClose: Boolean)
     extends SttpHandler[Future, Source[ByteString, Any]] {
 
   // the supported stream type
@@ -261,7 +261,7 @@ class AkkaHttpSttpHandler private (actorSystem: ActorSystem,
   }
 }
 
-object AkkaHttpSttpHandler {
+object AkkaHttpHandler {
 
   /**
     * @param ec The execution context for running non-network related operations,
@@ -270,7 +270,7 @@ object AkkaHttpSttpHandler {
     */
   def apply()(implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
     : SttpHandler[Future, Source[ByteString, Any]] =
-    new AkkaHttpSttpHandler(ActorSystem("sttp"), ec, true)
+    new AkkaHttpHandler(ActorSystem("sttp"), ec, true)
 
   /**
     * @param actorSystem The actor system which will be used for the http-client
@@ -282,5 +282,5 @@ object AkkaHttpSttpHandler {
   def usingActorSystem(actorSystem: ActorSystem)(
       implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
     : SttpHandler[Future, Source[ByteString, Any]] =
-    new AkkaHttpSttpHandler(actorSystem, ec, false)
+    new AkkaHttpHandler(actorSystem, ec, false)
 }

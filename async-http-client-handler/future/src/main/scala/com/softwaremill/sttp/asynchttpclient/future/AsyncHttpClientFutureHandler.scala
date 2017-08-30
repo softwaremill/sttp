@@ -13,7 +13,7 @@ import org.reactivestreams.Publisher
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class FutureAsyncHttpClientHandler private (
+class AsyncHttpClientFutureHandler private (
     asyncHttpClient: AsyncHttpClient,
     closeClient: Boolean)(implicit ec: ExecutionContext)
     extends AsyncHttpClientHandler[Future, Nothing](asyncHttpClient,
@@ -28,7 +28,7 @@ class FutureAsyncHttpClientHandler private (
     throw new IllegalStateException("This handler does not support streaming")
 }
 
-object FutureAsyncHttpClientHandler {
+object AsyncHttpClientFutureHandler {
 
   /**
     * @param ec The execution context for running non-network related operations,
@@ -37,7 +37,7 @@ object FutureAsyncHttpClientHandler {
     */
   def apply()(implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
     : SttpHandler[Future, Nothing] =
-    new FutureAsyncHttpClientHandler(new DefaultAsyncHttpClient(),
+    new AsyncHttpClientFutureHandler(new DefaultAsyncHttpClient(),
                                      closeClient = true)
 
   /**
@@ -48,7 +48,7 @@ object FutureAsyncHttpClientHandler {
   def usingConfig(cfg: AsyncHttpClientConfig)(
       implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
     : SttpHandler[Future, Nothing] =
-    new FutureAsyncHttpClientHandler(new DefaultAsyncHttpClient(cfg),
+    new AsyncHttpClientFutureHandler(new DefaultAsyncHttpClient(cfg),
                                      closeClient = true)
 
   /**
@@ -59,5 +59,5 @@ object FutureAsyncHttpClientHandler {
   def usingClient(client: AsyncHttpClient)(implicit ec: ExecutionContext =
                                              ExecutionContext.Implicits.global)
     : SttpHandler[Future, Nothing] =
-    new FutureAsyncHttpClientHandler(client, closeClient = false)
+    new AsyncHttpClientFutureHandler(client, closeClient = false)
 }

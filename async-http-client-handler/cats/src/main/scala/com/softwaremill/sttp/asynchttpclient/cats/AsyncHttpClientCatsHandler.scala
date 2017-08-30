@@ -14,7 +14,7 @@ import org.reactivestreams.Publisher
 
 import scala.language.higherKinds
 
-class CatsAsyncHttpClientHandler[F[_]: Async] private (
+class AsyncHttpClientCatsHandler[F[_]: Async] private (
     asyncHttpClient: AsyncHttpClient,
     closeClient: Boolean
 ) extends AsyncHttpClientHandler[F, Nothing](
@@ -30,20 +30,20 @@ class CatsAsyncHttpClientHandler[F[_]: Async] private (
     throw new IllegalStateException("This handler does not support streaming")
 }
 
-object CatsAsyncHttpClientHandler {
+object AsyncHttpClientCatsHandler {
 
   def apply[F[_]: Async](): SttpHandler[F, Nothing] =
-    new CatsAsyncHttpClientHandler(new DefaultAsyncHttpClient(),
+    new AsyncHttpClientCatsHandler(new DefaultAsyncHttpClient(),
                                    closeClient = true)
 
   def usingConfig[F[_]: Async](
       cfg: AsyncHttpClientConfig): SttpHandler[F, Nothing] =
-    new CatsAsyncHttpClientHandler(new DefaultAsyncHttpClient(cfg),
+    new AsyncHttpClientCatsHandler(new DefaultAsyncHttpClient(cfg),
                                    closeClient = true)
 
   def usingClient[F[_]: Async](
       client: AsyncHttpClient): SttpHandler[F, Nothing] =
-    new CatsAsyncHttpClientHandler(client, closeClient = false)
+    new AsyncHttpClientCatsHandler(client, closeClient = false)
 }
 
 private[cats] class AsyncMonad[F[_]](implicit F: Async[F])

@@ -14,16 +14,13 @@ import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.Credentials
 import akka.util.ByteString
 import better.files._
-import com.softwaremill.sttp.akkahttp.AkkaHttpSttpHandler
-import com.softwaremill.sttp.asynchttpclient.cats.CatsAsyncHttpClientHandler
-import com.softwaremill.sttp.asynchttpclient.future.FutureAsyncHttpClientHandler
-import com.softwaremill.sttp.asynchttpclient.monix.MonixAsyncHttpClientHandler
-import com.softwaremill.sttp.asynchttpclient.scalaz.ScalazAsyncHttpClientHandler
-import com.softwaremill.sttp.okhttp.monix.OkHttpMonixClientHandler
-import com.softwaremill.sttp.okhttp.{
-  OkHttpFutureClientHandler,
-  OkHttpSyncClientHandler
-}
+import com.softwaremill.sttp.akkahttp.AkkaHttpHandler
+import com.softwaremill.sttp.asynchttpclient.cats.AsyncHttpClientCatsHandler
+import com.softwaremill.sttp.asynchttpclient.future.AsyncHttpClientFutureHandler
+import com.softwaremill.sttp.asynchttpclient.monix.AsyncHttpClientMonixHandler
+import com.softwaremill.sttp.asynchttpclient.scalaz.AsyncHttpClientScalazHandler
+import com.softwaremill.sttp.okhttp.monix.OkHttpMonixHandler
+import com.softwaremill.sttp.okhttp.{OkHttpFutureHandler, OkHttpSyncHandler}
 import com.typesafe.scalalogging.StrictLogging
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.{path => _, _}
@@ -158,24 +155,22 @@ class BasicTests
 
   var closeHandlers: List[() => Unit] = Nil
 
-  runTests("HttpURLConnection")(HttpURLConnectionSttpHandler,
-                                ForceWrappedValue.id)
-  runTests("Akka HTTP")(AkkaHttpSttpHandler.usingActorSystem(actorSystem),
+  runTests("HttpURLConnection")(HttpURLConnectionHandler, ForceWrappedValue.id)
+  runTests("Akka HTTP")(AkkaHttpHandler.usingActorSystem(actorSystem),
                         ForceWrappedValue.future)
-  runTests("Async Http Client - Future")(FutureAsyncHttpClientHandler(),
+  runTests("Async Http Client - Future")(AsyncHttpClientFutureHandler(),
                                          ForceWrappedValue.future)
-  runTests("Async Http Client - Scalaz")(ScalazAsyncHttpClientHandler(),
+  runTests("Async Http Client - Scalaz")(AsyncHttpClientScalazHandler(),
                                          ForceWrappedValue.scalazTask)
-  runTests("Async Http Client - Monix")(MonixAsyncHttpClientHandler(),
+  runTests("Async Http Client - Monix")(AsyncHttpClientMonixHandler(),
                                         ForceWrappedValue.monixTask)
   runTests("Async Http Client - Cats Effect")(
-    CatsAsyncHttpClientHandler[cats.effect.IO](),
+    AsyncHttpClientCatsHandler[cats.effect.IO](),
     ForceWrappedValue.catsIo)
-  runTests("OkHttpSyncClientHandler")(OkHttpSyncClientHandler(),
-                                      ForceWrappedValue.id)
-  runTests("OkHttpAsyncClientHandler - Future")(OkHttpFutureClientHandler(),
+  runTests("OkHttpSyncClientHandler")(OkHttpSyncHandler(), ForceWrappedValue.id)
+  runTests("OkHttpAsyncClientHandler - Future")(OkHttpFutureHandler(),
                                                 ForceWrappedValue.future)
-  runTests("OkHttpAsyncClientHandler - Monix")(OkHttpMonixClientHandler(),
+  runTests("OkHttpAsyncClientHandler - Monix")(OkHttpMonixHandler(),
                                                ForceWrappedValue.monixTask)
 
   def runTests[R[_]](name: String)(

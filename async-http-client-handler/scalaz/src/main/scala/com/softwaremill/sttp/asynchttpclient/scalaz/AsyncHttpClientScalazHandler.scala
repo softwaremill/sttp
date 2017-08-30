@@ -14,7 +14,7 @@ import org.reactivestreams.Publisher
 import scalaz.{-\/, \/-}
 import scalaz.concurrent.Task
 
-class ScalazAsyncHttpClientHandler private (asyncHttpClient: AsyncHttpClient,
+class AsyncHttpClientScalazHandler private (asyncHttpClient: AsyncHttpClient,
                                             closeClient: Boolean)
     extends AsyncHttpClientHandler[Task, Nothing](asyncHttpClient,
                                                   TaskMonad,
@@ -28,15 +28,15 @@ class ScalazAsyncHttpClientHandler private (asyncHttpClient: AsyncHttpClient,
     throw new IllegalStateException("This handler does not support streaming")
 }
 
-object ScalazAsyncHttpClientHandler {
+object AsyncHttpClientScalazHandler {
   def apply(): SttpHandler[Task, Nothing] =
-    new ScalazAsyncHttpClientHandler(new DefaultAsyncHttpClient(),
+    new AsyncHttpClientScalazHandler(new DefaultAsyncHttpClient(),
                                      closeClient = true)
   def usingConfig(cfg: AsyncHttpClientConfig): SttpHandler[Task, Nothing] =
-    new ScalazAsyncHttpClientHandler(new DefaultAsyncHttpClient(cfg),
+    new AsyncHttpClientScalazHandler(new DefaultAsyncHttpClient(cfg),
                                      closeClient = true)
   def usingClient(client: AsyncHttpClient): SttpHandler[Task, Nothing] =
-    new ScalazAsyncHttpClientHandler(client, closeClient = false)
+    new AsyncHttpClientScalazHandler(client, closeClient = false)
 }
 
 private[scalaz] object TaskMonad extends MonadAsyncError[Task] {
