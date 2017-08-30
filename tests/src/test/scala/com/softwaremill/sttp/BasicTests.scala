@@ -6,18 +6,15 @@ import java.nio.file.Paths
 import java.time.{ZoneId, ZonedDateTime}
 
 import akka.http.scaladsl.coding.{Deflate, Gzip, NoCoding}
-import akka.http.scaladsl.model.{DateTime, FormData}
-import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.model.headers.CacheDirectives._
+import akka.http.scaladsl.model.headers._
+import akka.http.scaladsl.model.{DateTime, FormData}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.Credentials
 import akka.util.ByteString
-import com.softwaremill.sttp.akkahttp.AkkaHttpSttpHandler
-import com.typesafe.scalalogging.StrictLogging
-import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
-import org.scalatest.{path => _, _}
 import better.files._
+import com.softwaremill.sttp.akkahttp.AkkaHttpSttpHandler
 import com.softwaremill.sttp.asynchttpclient.cats.CatsAsyncHttpClientHandler
 import com.softwaremill.sttp.asynchttpclient.future.FutureAsyncHttpClientHandler
 import com.softwaremill.sttp.asynchttpclient.monix.MonixAsyncHttpClientHandler
@@ -27,8 +24,11 @@ import com.softwaremill.sttp.okhttp.{
   OkHttpFutureClientHandler,
   OkHttpSyncClientHandler
 }
-import scala.concurrent.ExecutionContext.Implicits.global
+import com.typesafe.scalalogging.StrictLogging
+import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
+import org.scalatest.{path => _, _}
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.higherKinds
 
 class BasicTests
