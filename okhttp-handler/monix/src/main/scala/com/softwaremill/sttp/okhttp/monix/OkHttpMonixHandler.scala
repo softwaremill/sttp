@@ -4,7 +4,7 @@ import java.nio.ByteBuffer
 import java.util.concurrent.ArrayBlockingQueue
 
 import com.softwaremill.sttp.{SttpHandler, _}
-import com.softwaremill.sttp.okhttp.OkHttpAsyncHandler
+import com.softwaremill.sttp.okhttp.{OkHttpAsyncHandler, OkHttpHandler}
 import monix.eval.Task
 import monix.execution.Ack.Continue
 import monix.execution.{Ack, Cancelable, Scheduler}
@@ -77,7 +77,8 @@ class OkHttpMonixHandler private (client: OkHttpClient)(implicit s: Scheduler)
 }
 
 object OkHttpMonixHandler {
-  def apply(okhttpClient: OkHttpClient = new OkHttpClient())(
+  def apply(
+      okhttpClient: OkHttpClient = OkHttpHandler.buildClientNoRedirects())(
       implicit s: Scheduler = Scheduler.Implicits.global)
     : SttpHandler[Task, Observable[ByteBuffer]] =
     new OkHttpMonixHandler(okhttpClient)(s)

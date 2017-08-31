@@ -136,6 +136,14 @@ abstract class OkHttpHandler[R[_], S](client: OkHttpClient)
     Failure(new IllegalStateException("Streaming isn't supported"))
 }
 
+object OkHttpHandler {
+  def buildClientNoRedirects(): OkHttpClient =
+    new OkHttpClient.Builder()
+      .followRedirects(false)
+      .followSslRedirects(false)
+      .build()
+}
+
 class OkHttpSyncHandler private (client: OkHttpClient)
     extends OkHttpHandler[Id, Nothing](client) {
   override protected def doSend[T](r: Request[T, Nothing]): Response[T] = {
@@ -148,7 +156,7 @@ class OkHttpSyncHandler private (client: OkHttpClient)
 }
 
 object OkHttpSyncHandler {
-  def apply(okhttpClient: OkHttpClient = new OkHttpClient())
+  def apply(okhttpClient: OkHttpClient = OkHttpHandler.buildClientNoRedirects())
     : SttpHandler[Id, Nothing] =
     new OkHttpSyncHandler(okhttpClient)
 }
@@ -184,7 +192,8 @@ class OkHttpFutureHandler private (client: OkHttpClient)(
     extends OkHttpAsyncHandler[Future, Nothing](client, new FutureMonad) {}
 
 object OkHttpFutureHandler {
-  def apply(okhttpClient: OkHttpClient = new OkHttpClient())(
+  def apply(
+      okhttpClient: OkHttpClient = OkHttpHandler.buildClientNoRedirects())(
       implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
     : SttpHandler[Future, Nothing] =
     new OkHttpFutureHandler(okhttpClient)
