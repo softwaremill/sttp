@@ -252,7 +252,8 @@ abstract class AsyncHttpClientHandler[R[_], S](asyncHttpClient: AsyncHttpClient,
                .iterator()
                .asScala
                .map(e => (e.getKey, e.getValue))
-               .toList)
+               .toList,
+             Nil)
   }
 
   private def eagerResponseHandler(response: AsyncResponse) =

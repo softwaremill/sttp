@@ -199,7 +199,7 @@ object HttpURLConnectionHandler extends SttpHandler[Id, Nothing] {
       Left(readResponseBody(wrappedIs, asString))
     }
 
-    Response(body, code, headers)
+    Response(body, code, headers, Nil)
   }
 
   private def readResponseBody[T](is: InputStream,

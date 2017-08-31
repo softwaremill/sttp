@@ -155,6 +155,9 @@ class BasicTests
           redirect("/redirect/r3", StatusCodes.PermanentRedirect)
         } ~
         path("r3") {
+          redirect("/redirect/r4", StatusCodes.Found)
+        } ~
+        path("r4") {
           complete("819")
         }
     }
@@ -568,7 +571,8 @@ class BasicTests
     def redirectTests(): Unit = {
       val r1 = sttp.post(uri"$endpoint/redirect/r1")
       val r2 = sttp.post(uri"$endpoint/redirect/r2")
-      val r3response = "819"
+      val r3 = sttp.post(uri"$endpoint/redirect/r3")
+      val r4response = "819"
 
       name should "not redirect when redirects shouldn't be followed (temporary)" in {
         val resp = r1.followRedirects(false).send().force()
@@ -585,19 +589,37 @@ class BasicTests
       name should "redirect when redirects should be followed" in {
         val resp = r2.send().force()
         resp.code should be(200)
-        resp.unsafeBody should be(r3response)
+        resp.unsafeBody should be(r4response)
       }
 
       name should "redirect twice when redirects should be followed" in {
         val resp = r1.send().force()
         resp.code should be(200)
-        resp.unsafeBody should be(r3response)
+        resp.unsafeBody should be(r4response)
       }
 
       name should "redirect when redirects should be followed, and the response is parsed" in {
         val resp = r2.response(asString.map(_.toInt)).send().force()
         resp.code should be(200)
-        resp.unsafeBody should be(r3response.toInt)
+        resp.unsafeBody should be(r4response.toInt)
+      }
+
+      name should "keep a single history entry of redirect responses" in {
+        val resp = r3.send().force()
+        resp.code should be(200)
+        resp.unsafeBody should be(r4response)
+        resp.history should have size (1)
+        resp.history(0).code should be(302)
+      }
+
+      name should "keep whole history of redirect responses" in {
+        val resp = r1.send().force()
+        resp.code should be(200)
+        resp.unsafeBody should be(r4response)
+        resp.history should have size (3)
+        resp.history(0).code should be(307)
+        resp.history(1).code should be(308)
+        resp.history(2).code should be(302)
       }
     }
   }

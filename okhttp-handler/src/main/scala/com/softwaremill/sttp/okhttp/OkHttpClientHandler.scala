@@ -102,7 +102,7 @@ abstract class OkHttpHandler[R[_], S](client: OkHttpClient)
       .asScala
       .flatMap(name => res.headers().values(name).asScala.map((name, _)))
 
-    responseMonad.map(body)(Response(_, res.code(), headers.toList))
+    responseMonad.map(body)(Response(_, res.code(), headers.toList, Nil))
   }
 
   private def responseHandler(res: OkHttpResponse) =

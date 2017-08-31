@@ -38,7 +38,13 @@ trait SttpHandler[R[_], -S] {
         uri"$loc"
       }
 
-      send(request.copy[Id, T, S](uri = uri))
+      val redirectResponse = send(request.copy[Id, T, S](uri = uri))
+
+      responseMonad.map(redirectResponse) { rr =>
+        val responseNoBody =
+          response.copy(body = response.body.right.map(_ => ()))
+        rr.copy(history = responseNoBody :: rr.history)
+      }
     }
   }
 

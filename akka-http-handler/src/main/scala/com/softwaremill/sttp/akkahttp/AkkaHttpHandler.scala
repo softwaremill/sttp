@@ -48,7 +48,7 @@ class AkkaHttpHandler private (actorSystem: ActorSystem,
           bodyFromAkka(asString, decodeAkkaResponse(hr)).map(Left(_))
         }
 
-        body.map(Response(_, code, headersFromAkka(hr)))
+        body.map(Response(_, code, headersFromAkka(hr), Nil))
       }
   }
 

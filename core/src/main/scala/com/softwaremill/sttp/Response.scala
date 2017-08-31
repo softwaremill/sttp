@@ -21,10 +21,14 @@ import scala.util.Try
   *            `Left(String)`, if the request wasn't successful (status code
   *            3xx, 4xx or 5xx). In this case, the response body is read into
   *            a `String`.
+  * @param history If redirects are followed, and there were redirects,
+  *                contains responses for the intermediate requests.
+  *                The first response (oldest) comes first.
   */
 case class Response[T](body: Either[String, T],
                        code: Int,
-                       headers: Seq[(String, String)]) {
+                       headers: Seq[(String, String)],
+                       history: List[Response[Unit]]) {
   def is200: Boolean = code == 200
   def isSuccess: Boolean = codeIsSuccess(code)
   def isRedirect: Boolean = code >= 300 && code < 400
