@@ -159,6 +159,9 @@ class BasicTests
         } ~
         path("r4") {
           complete("819")
+        } ~
+        path("loop") {
+          redirect("/redirect/loop", StatusCodes.Found)
         }
     }
 
@@ -573,11 +576,13 @@ class BasicTests
       val r2 = sttp.post(uri"$endpoint/redirect/r2")
       val r3 = sttp.post(uri"$endpoint/redirect/r3")
       val r4response = "819"
+      val loop = sttp.post(uri"$endpoint/redirect/loop")
 
       name should "not redirect when redirects shouldn't be followed (temporary)" in {
         val resp = r1.followRedirects(false).send().force()
         resp.code should be(307)
         resp.body should be('left)
+        resp.history should be('empty)
       }
 
       name should "not redirect when redirects shouldn't be followed (permanent)" in {
@@ -620,6 +625,12 @@ class BasicTests
         resp.history(0).code should be(307)
         resp.history(1).code should be(308)
         resp.history(2).code should be(302)
+      }
+
+      name should "break redirect loops" in {
+        val resp = loop.send().force()
+        resp.code should be(0)
+        resp.history should have size (SttpHandler.MaxRedirects)
       }
     }
   }

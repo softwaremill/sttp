@@ -12,11 +12,16 @@ import scala.language.higherKinds
   */
 trait SttpHandler[R[_], -S] {
   def send[T](request: Request[T, S]): R[Response[T]] = {
+    sendWithCounter(request, 0)
+  }
+
+  private def sendWithCounter[T](request: Request[T, S],
+                                 redirects: Int): R[Response[T]] = {
     val resp = doSend(request)
     if (request.options.followRedirects) {
       responseMonad.flatMap(resp) { response: Response[T] =>
         if (response.isRedirect) {
-          followRedirect(request, response)
+          followRedirect(request, response, redirects)
         } else {
           responseMonad.unit(response)
         }
@@ -27,24 +32,39 @@ trait SttpHandler[R[_], -S] {
   }
 
   private def followRedirect[T](request: Request[T, S],
-                                response: Response[T]): R[Response[T]] = {
-    def isRelative(uri: String) = !uri.contains("://")
+                                response: Response[T],
+                                redirects: Int): R[Response[T]] = {
 
     response.header(LocationHeader).fold(responseMonad.unit(response)) { loc =>
-      val uri = if (isRelative(loc)) {
-        // using java's URI to resolve a relative URI
-        uri"${new URI(request.uri.toString).resolve(loc).toString}"
+      if (redirects >= SttpHandler.MaxRedirects) {
+        responseMonad.unit(Response(Left("Too many redirects"), 0, Nil, Nil))
       } else {
-        uri"$loc"
+        followRedirect(request, response, redirects, loc)
       }
+    }
+  }
 
-      val redirectResponse = send(request.copy[Id, T, S](uri = uri))
+  private def followRedirect[T](request: Request[T, S],
+                                response: Response[T],
+                                redirects: Int,
+                                loc: String): R[Response[T]] = {
 
-      responseMonad.map(redirectResponse) { rr =>
-        val responseNoBody =
-          response.copy(body = response.body.right.map(_ => ()))
-        rr.copy(history = responseNoBody :: rr.history)
-      }
+    def isRelative(uri: String) = !uri.contains("://")
+
+    val uri = if (isRelative(loc)) {
+      // using java's URI to resolve a relative URI
+      uri"${new URI(request.uri.toString).resolve(loc).toString}"
+    } else {
+      uri"$loc"
+    }
+
+    val redirectResponse =
+      sendWithCounter(request.copy[Id, T, S](uri = uri), redirects + 1)
+
+    responseMonad.map(redirectResponse) { rr =>
+      val responseNoBody =
+        response.copy(body = response.body.right.map(_ => ()))
+      rr.copy(history = responseNoBody :: rr.history)
     }
   }
 
@@ -57,4 +77,8 @@ trait SttpHandler[R[_], -S] {
     * handlers, which map/flatMap over the return value of [[send]].
     */
   def responseMonad: MonadError[R]
+}
+
+object SttpHandler {
+  private[sttp] val MaxRedirects = 32
 }
