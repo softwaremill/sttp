@@ -135,7 +135,7 @@ lazy val asyncHttpClientFs2Handler: Project = (project in file(
 lazy val okhttpHandler: Project = (project in file("okhttp-handler"))
   .settings(commonSettings: _*)
   .settings(
-    name := "okhttp-client-handler",
+    name := "okhttp-handler",
     libraryDependencies ++= Seq(
       "com.squareup.okhttp3" % "okhttp" % "3.8.1"
     )
@@ -144,7 +144,7 @@ lazy val okhttpHandler: Project = (project in file("okhttp-handler"))
 lazy val okhttpMonixHandler: Project = (project in file("okhttp-handler/monix"))
   .settings(commonSettings: _*)
   .settings(
-    name := "okhttp-client-handler-monix",
+    name := "okhttp-handler-monix",
     libraryDependencies ++= Seq(monix)
   ) dependsOn okhttpHandler
 
