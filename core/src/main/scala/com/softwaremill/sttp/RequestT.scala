@@ -31,7 +31,8 @@ case class RequestT[U[_], T, +S](
     uri: U[Uri],
     body: RequestBody[S],
     headers: Seq[(String, String)],
-    response: ResponseAs[T, S]
+    response: ResponseAs[T, S],
+    options: RequestOptions
 ) {
   def get(uri: Uri): Request[T, S] =
     this.copy[Id, T, S](uri = uri, method = Method.GET)
@@ -218,6 +219,9 @@ case class RequestT[U[_], T, +S](
   def mapResponse[T2](f: T => T2): RequestT[U, T2, S] =
     this.copy(response = response.map(f))
 
+  def followRedirects(fr: Boolean): RequestT[U, T, S] =
+    this.copy(options = options.copy(followRedirects = fr))
+
   def send[R[_]]()(implicit handler: SttpHandler[R, S],
                    isIdInRequest: IsIdInRequest[U]): R[Response[T]] = {
     // we could avoid the asInstanceOf by creating an artificial copy
@@ -268,3 +272,5 @@ class SpecifyAuthScheme[U[_], T, +S](hn: String, rt: RequestT[U, T, S]) {
   def bearer(token: String): RequestT[U, T, S] =
     rt.header(hn, s"Bearer $token")
 }
+
+case class RequestOptions(followRedirects: Boolean)

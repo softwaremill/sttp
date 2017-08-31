@@ -130,7 +130,7 @@ abstract class OkHttpHandler[R[_], S](client: OkHttpClient)
 
 class OkHttpSyncHandler private (client: OkHttpClient)
     extends OkHttpHandler[Id, Nothing](client) {
-  override def send[T](r: Request[T, Nothing]): Response[T] = {
+  override protected def doSend[T](r: Request[T, Nothing]): Response[T] = {
     val request = convertRequest(r)
     val response = client.newCall(request).execute()
     readResponse(response, r.response)
@@ -148,7 +148,7 @@ object OkHttpSyncHandler {
 abstract class OkHttpAsyncHandler[R[_], S](client: OkHttpClient,
                                            rm: MonadAsyncError[R])
     extends OkHttpHandler[R, S](client) {
-  override def send[T](r: Request[T, S]): R[Response[T]] = {
+  override protected def doSend[T](r: Request[T, S]): R[Response[T]] = {
     val request = convertRequest(r)
 
     rm.flatten(rm.async[R[Response[T]]] { cb =>

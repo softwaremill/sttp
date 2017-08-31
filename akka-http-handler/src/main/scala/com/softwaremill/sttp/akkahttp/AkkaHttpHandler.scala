@@ -33,7 +33,7 @@ class AkkaHttpHandler private (actorSystem: ActorSystem,
   private implicit val as = actorSystem
   private implicit val materializer = ActorMaterializer()
 
-  override def send[T](r: Request[T, S]): Future[Response[T]] = {
+  override protected def doSend[T](r: Request[T, S]): Future[Response[T]] = {
     implicit val ec = this.ec
     requestToAkka(r)
       .flatMap(setBodyOnAkka(r, r.body, _))

@@ -8,7 +8,7 @@ import java.time.{ZoneId, ZonedDateTime}
 import akka.http.scaladsl.coding.{Deflate, Gzip, NoCoding}
 import akka.http.scaladsl.model.headers.CacheDirectives._
 import akka.http.scaladsl.model.headers._
-import akka.http.scaladsl.model.{DateTime, FormData}
+import akka.http.scaladsl.model.{DateTime, FormData, StatusCodes}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.Credentials
@@ -67,19 +67,17 @@ class BasicTests
         }
       } ~ get {
         parameterMap { params =>
-          complete(
-            List("GET", "/echo", paramsToString(params))
-              .filter(_.nonEmpty)
-              .mkString(" "))
+          complete(List("GET", "/echo", paramsToString(params))
+            .filter(_.nonEmpty)
+            .mkString(" "))
         }
       } ~
         post {
           parameterMap { params =>
             entity(as[String]) { body: String =>
-              complete(
-                List("POST", "/echo", paramsToString(params), body)
-                  .filter(_.nonEmpty)
-                  .mkString(" "))
+              complete(List("POST", "/echo", paramsToString(params), body)
+                .filter(_.nonEmpty)
+                .mkString(" "))
             }
           }
         }
@@ -149,6 +147,16 @@ class BasicTests
             .map(v => v.mkString(", "))
         }
       }
+    } ~ pathPrefix("redirect") {
+      path("r1") {
+        redirect("/redirect/r2", StatusCodes.TemporaryRedirect)
+      } ~
+        path("r2") {
+          redirect("/redirect/r3", StatusCodes.PermanentRedirect)
+        } ~
+        path("r3") {
+          complete("ok")
+        }
     }
 
   override def port = 51823
@@ -196,6 +204,7 @@ class BasicTests
     compressionTests()
     downloadFileTests()
     multipartTests()
+    redirectTests()
 
     def parseResponseTests(): Unit = {
       name should "parse response as string" in {
@@ -552,6 +561,35 @@ class BasicTests
           val resp = req.send().force()
           resp.body should be(s"p1=$testBody (${f.name}), p2=v2")
         } finally f.delete()
+      }
+    }
+
+    def redirectTests(): Unit = {
+      val r1 = sttp.post(uri"$endpoint/redirect/r1")
+      val r2 = sttp.post(uri"$endpoint/redirect/r2")
+
+      name should "not redirect when redirects shouldn't be followed (temporary)" in {
+        val resp = r1.followRedirects(false).send().force()
+        resp.code should be(307)
+        resp.body should not be ("ok")
+      }
+
+      name should "not redirect when redirects shouldn't be followed (permanent)" in {
+        val resp = r2.followRedirects(false).send().force()
+        resp.code should be(308)
+        resp.body should not be ("ok")
+      }
+
+      name should "redirect when redirects should be followed" in {
+        val resp = r2.send().force()
+        resp.code should be(200)
+        resp.body should be("ok")
+      }
+
+      name should "redirect twice when redirects should be followed" in {
+        val resp = r1.send().force()
+        resp.code should be(200)
+        resp.body should be("ok")
       }
     }
   }

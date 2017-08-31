@@ -13,12 +13,15 @@ import scala.io.Source
 import scala.collection.JavaConverters._
 
 object HttpURLConnectionHandler extends SttpHandler[Id, Nothing] {
-  override def send[T](r: Request[T, Nothing]): Response[T] = {
+  override protected def doSend[T](r: Request[T, Nothing]): Response[T] = {
     val c =
       new URL(r.uri.toString).openConnection().asInstanceOf[HttpURLConnection]
     c.setRequestMethod(r.method.m)
     r.headers.foreach { case (k, v) => c.setRequestProperty(k, v) }
     c.setDoInput(true)
+
+    // redirects are handled in SttpHandler
+    c.setInstanceFollowRedirects(false)
 
     if (r.body != NoBody) {
       c.setDoOutput(true)

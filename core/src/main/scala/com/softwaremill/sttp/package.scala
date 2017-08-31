@@ -37,6 +37,7 @@ package object sttp {
   private[sttp] val AcceptEncodingHeader = "Accept-Encoding"
   private[sttp] val ContentEncodingHeader = "Content-Encoding"
   private[sttp] val ContentDispositionHeader = "Content-Disposition"
+  private[sttp] val LocationHeader = "Location"
   private[sttp] val Utf8 = "utf-8"
   private[sttp] val Iso88591 = "iso-8859-1"
   private[sttp] val CrLf = "\r\n"
@@ -54,7 +55,12 @@ package object sttp {
     * An empty request with no headers.
     */
   val emptyRequest: RequestT[Empty, String, Nothing] =
-    RequestT[Empty, String, Nothing](None, None, NoBody, Vector(), asString)
+    RequestT[Empty, String, Nothing](None,
+                                     None,
+                                     NoBody,
+                                     Vector(),
+                                     asString,
+                                     RequestOptions(followRedirects = true))
 
   /**
     * A starting request, with the following modifications comparing to
