@@ -253,7 +253,8 @@ package object sttp {
 
   private[sttp] def codeIsSuccess(c: Int): Boolean = c >= 200 && c < 300
 
-  private[sttp] def concatByteBuffers(bb1: ByteBuffer, bb2: ByteBuffer): ByteBuffer =
+  private[sttp] def concatByteBuffers(bb1: ByteBuffer,
+                                      bb2: ByteBuffer): ByteBuffer =
     ByteBuffer
       .allocate(bb1.array().length + bb2.array().length)
       .put(bb1)

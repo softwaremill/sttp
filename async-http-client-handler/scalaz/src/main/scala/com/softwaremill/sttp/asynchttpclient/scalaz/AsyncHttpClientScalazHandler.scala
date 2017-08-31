@@ -46,9 +46,9 @@ object AsyncHttpClientScalazHandler {
 private[scalaz] object TaskMonad extends MonadAsyncError[Task] {
   override def unit[T](t: T): Task[T] = Task.point(t)
 
-  override def map[T, T2](fa: Task[T], f: (T) => T2): Task[T2] = fa.map(f)
+  override def map[T, T2](fa: Task[T])(f: (T) => T2): Task[T2] = fa.map(f)
 
-  override def flatMap[T, T2](fa: Task[T], f: (T) => Task[T2]): Task[T2] =
+  override def flatMap[T, T2](fa: Task[T])(f: (T) => Task[T2]): Task[T2] =
     fa.flatMap(f)
 
   override def async[T](

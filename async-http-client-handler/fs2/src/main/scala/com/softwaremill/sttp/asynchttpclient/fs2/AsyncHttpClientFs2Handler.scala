@@ -4,7 +4,12 @@ import java.nio.ByteBuffer
 
 import cats.effect._
 import com.softwaremill.sttp.asynchttpclient.AsyncHttpClientHandler
-import com.softwaremill.sttp.{MonadAsyncError, SttpHandler, Utf8, concatByteBuffers}
+import com.softwaremill.sttp.{
+  MonadAsyncError,
+  SttpHandler,
+  Utf8,
+  concatByteBuffers
+}
 import fs2._
 import fs2.interop.reactivestreams._
 import org.asynchttpclient.{
@@ -88,9 +93,9 @@ private[fs2] class EffectMonad[F[_]](implicit F: Effect[F])
 
   override def unit[T](t: T): F[T] = F.pure(t)
 
-  override def map[T, T2](fa: F[T], f: (T) => T2): F[T2] = F.map(fa)(f)
+  override def map[T, T2](fa: F[T])(f: (T) => T2): F[T2] = F.map(fa)(f)
 
-  override def flatMap[T, T2](fa: F[T], f: (T) => F[T2]): F[T2] =
+  override def flatMap[T, T2](fa: F[T])(f: (T) => F[T2]): F[T2] =
     F.flatMap(fa)(f)
 
   override def error[T](t: Throwable): F[T] = F.raiseError(t)

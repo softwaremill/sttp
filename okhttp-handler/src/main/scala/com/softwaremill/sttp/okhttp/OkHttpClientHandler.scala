@@ -89,11 +89,11 @@ abstract class OkHttpHandler[R[_], S](client: OkHttpClient)
     val code = res.code()
 
     val body = if (codeIsSuccess(code)) {
-      responseMonad.map(responseHandler(res).handle(responseAs, responseMonad),
-                        Right(_: T))
+      responseMonad.map(responseHandler(res).handle(responseAs, responseMonad))(
+        Right(_))
     } else {
-      responseMonad.map(responseHandler(res).handle(asString, responseMonad),
-                        Left(_: String))
+      responseMonad.map(responseHandler(res).handle(asString, responseMonad))(
+        Left(_))
     }
 
     val headers = res
@@ -102,9 +102,7 @@ abstract class OkHttpHandler[R[_], S](client: OkHttpClient)
       .asScala
       .flatMap(name => res.headers().values(name).asScala.map((name, _)))
 
-    responseMonad.map(
-      body,
-      Response(_: Either[String, T], res.code(), headers.toList))
+    responseMonad.map(body)(Response(_, res.code(), headers.toList))
   }
 
   private def responseHandler(res: OkHttpResponse) =

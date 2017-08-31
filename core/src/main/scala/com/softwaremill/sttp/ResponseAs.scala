@@ -85,7 +85,7 @@ object ResponseAs {
 
       responseAs match {
         case mra @ MappedResponseAs(raw, g) =>
-          responseMonad.map(responseMonad.fromTry(handleBasic(mra.raw)), mra.g)
+          responseMonad.map(responseMonad.fromTry(handleBasic(mra.raw)))(mra.g)
         case bra: BasicResponseAs[T, S] =>
           responseMonad.fromTry(handleBasic(bra))
       }

@@ -14,13 +14,13 @@ trait SttpHandler[R[_], -S] {
   def send[T](request: Request[T, S]): R[Response[T]] = {
     val resp = doSend(request)
     if (request.options.followRedirects) {
-      responseMonad.flatMap(resp, { response: Response[T] =>
+      responseMonad.flatMap(resp) { response: Response[T] =>
         if (response.isRedirect) {
           followRedirect(request, response)
         } else {
           responseMonad.unit(response)
         }
-      })
+      }
     } else {
       resp
     }

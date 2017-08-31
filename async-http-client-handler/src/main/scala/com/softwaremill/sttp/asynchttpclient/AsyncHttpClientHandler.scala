@@ -139,12 +139,12 @@ abstract class AsyncHttpClientHandler[R[_], S](asyncHttpClient: AsyncHttpClient,
           val b = if (codeIsSuccess(baseResponse.code)) {
             rm.unit(Right(responseAs.responseIsStream(s)))
           } else {
-            rm.map(publisherToString(p), Left(_: String))
+            rm.map(publisherToString(p))(Left(_))
           }
 
-          success(rm.map(b, { bb: Either[String, T] =>
+          success(rm.map(b) { bb: Either[String, T] =>
             baseResponse.copy(body = bb)
-          }))
+          })
         }
       }
 
@@ -235,13 +235,14 @@ abstract class AsyncHttpClientHandler[R[_], S](asyncHttpClient: AsyncHttpClient,
     val base = readResponseNoBody(response)
 
     val body = if (codeIsSuccess(base.code)) {
-      rm.map(eagerResponseHandler(response).handle(responseAs, rm), Right(_: T))
+      rm.map(eagerResponseHandler(response).handle(responseAs, rm))(Right(_))
     } else {
-      rm.map(eagerResponseHandler(response).handle(asString, rm),
-             Left(_: String))
+      rm.map(eagerResponseHandler(response).handle(asString, rm))(Left(_))
     }
 
-    rm.map(body, (b: Either[String, T]) => base.copy(body = b))
+    rm.map(body) { b: Either[String, T] =>
+      base.copy(body = b)
+    }
   }
 
   private def readResponseNoBody(response: AsyncResponse): Response[Unit] = {

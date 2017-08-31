@@ -59,9 +59,9 @@ private[cats] class AsyncMonad[F[_]](implicit F: Async[F])
 
   override def unit[T](t: T): F[T] = F.pure(t)
 
-  override def map[T, T2](fa: F[T], f: (T) => T2): F[T2] = F.map(fa)(f)
+  override def map[T, T2](fa: F[T])(f: (T) => T2): F[T2] = F.map(fa)(f)
 
-  override def flatMap[T, T2](fa: F[T], f: (T) => F[T2]): F[T2] =
+  override def flatMap[T, T2](fa: F[T])(f: (T) => F[T2]): F[T2] =
     F.flatMap(fa)(f)
 
   override def error[T](t: Throwable): F[T] = F.raiseError(t)
