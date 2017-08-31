@@ -4,7 +4,7 @@ import java.nio.ByteBuffer
 import java.util.concurrent.ArrayBlockingQueue
 
 import com.softwaremill.sttp.{SttpHandler, _}
-import com.softwaremill.sttp.okhttp.OkHttpAsyncClientHandler
+import com.softwaremill.sttp.okhttp.OkHttpAsyncHandler
 import monix.eval.Task
 import monix.execution.Ack.Continue
 import monix.execution.{Ack, Cancelable, Scheduler}
@@ -16,10 +16,8 @@ import okio.BufferedSink
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
-class OkHttpMonixClientHandler private (client: OkHttpClient)(
-    implicit s: Scheduler)
-    extends OkHttpAsyncClientHandler[Task, Observable[ByteBuffer]](client,
-                                                                   TaskMonad) {
+class OkHttpMonixHandler private (client: OkHttpClient)(implicit s: Scheduler)
+    extends OkHttpAsyncHandler[Task, Observable[ByteBuffer]](client, TaskMonad) {
 
   override def streamToRequestBody(
       stream: Observable[ByteBuffer]): Option[OkHttpRequestBody] =
@@ -78,11 +76,11 @@ class OkHttpMonixClientHandler private (client: OkHttpClient)(
     }
 }
 
-object OkHttpMonixClientHandler {
+object OkHttpMonixHandler {
   def apply(okhttpClient: OkHttpClient = new OkHttpClient())(
       implicit s: Scheduler = Scheduler.Implicits.global)
     : SttpHandler[Task, Observable[ByteBuffer]] =
-    new OkHttpMonixClientHandler(okhttpClient)(s)
+    new OkHttpMonixHandler(okhttpClient)(s)
 }
 
 private[monix] object TaskMonad extends MonadAsyncError[Task] {

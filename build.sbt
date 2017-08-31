@@ -47,13 +47,13 @@ lazy val rootProject = (project in file("."))
     core,
     akkaHttpHandler,
     asyncHttpClientHandler,
-    futureAsyncHttpClientHandler,
-    scalazAsyncHttpClientHandler,
-    monixAsyncHttpClientHandler,
-    catsAsyncHttpClientHandler,
-    fs2AsyncHttpClientHandler,
-    okhttpClientHandler,
-    okhttpMonixClientHandler,
+    asyncHttpClientFutureHandler,
+    asyncHttpClientScalazHandler,
+    asyncHttpClientMonixHandler,
+    asyncHttpClientCatsHandler,
+    asyncHttpClientFs2Handler,
+    okhttpHandler,
+    okhttpMonixHandler,
     circe,
     tests
   )
@@ -87,14 +87,14 @@ lazy val asyncHttpClientHandler: Project = (project in file(
     )
   ) dependsOn core
 
-lazy val futureAsyncHttpClientHandler: Project = (project in file(
+lazy val asyncHttpClientFutureHandler: Project = (project in file(
   "async-http-client-handler/future"))
   .settings(commonSettings: _*)
   .settings(
     name := "async-http-client-handler-future"
   ) dependsOn asyncHttpClientHandler
 
-lazy val scalazAsyncHttpClientHandler: Project = (project in file(
+lazy val asyncHttpClientScalazHandler: Project = (project in file(
   "async-http-client-handler/scalaz"))
   .settings(commonSettings: _*)
   .settings(
@@ -104,7 +104,7 @@ lazy val scalazAsyncHttpClientHandler: Project = (project in file(
     )
   ) dependsOn asyncHttpClientHandler
 
-lazy val monixAsyncHttpClientHandler: Project = (project in file(
+lazy val asyncHttpClientMonixHandler: Project = (project in file(
   "async-http-client-handler/monix"))
   .settings(commonSettings: _*)
   .settings(
@@ -112,7 +112,7 @@ lazy val monixAsyncHttpClientHandler: Project = (project in file(
     libraryDependencies ++= Seq(monix)
   ) dependsOn asyncHttpClientHandler
 
-lazy val catsAsyncHttpClientHandler: Project = (project in file(
+lazy val asyncHttpClientCatsHandler: Project = (project in file(
   "async-http-client-handler/cats"))
   .settings(commonSettings: _*)
   .settings(
@@ -122,7 +122,7 @@ lazy val catsAsyncHttpClientHandler: Project = (project in file(
     )
   ) dependsOn asyncHttpClientHandler
 
-lazy val fs2AsyncHttpClientHandler: Project = (project in file(
+lazy val asyncHttpClientFs2Handler: Project = (project in file(
   "async-http-client-handler/fs2"))
   .settings(commonSettings: _*)
   .settings(
@@ -132,8 +132,7 @@ lazy val fs2AsyncHttpClientHandler: Project = (project in file(
     )
   ) dependsOn asyncHttpClientHandler
 
-lazy val okhttpClientHandler: Project = (project in file(
-  "okhttp-client-handler"))
+lazy val okhttpHandler: Project = (project in file("okhttp-handler"))
   .settings(commonSettings: _*)
   .settings(
     name := "okhttp-client-handler",
@@ -142,13 +141,12 @@ lazy val okhttpClientHandler: Project = (project in file(
     )
   ) dependsOn core
 
-lazy val okhttpMonixClientHandler: Project = (project in file(
-  "okhttp-client-handler/monix"))
+lazy val okhttpMonixHandler: Project = (project in file("okhttp-handler/monix"))
   .settings(commonSettings: _*)
   .settings(
     name := "okhttp-client-handler-monix",
     libraryDependencies ++= Seq(monix)
-  ) dependsOn okhttpClientHandler
+  ) dependsOn okhttpHandler
 
 lazy val circe: Project = (project in file("circe"))
   .settings(commonSettings: _*)
@@ -174,8 +172,5 @@ lazy val tests: Project = (project in file("tests"))
       "ch.qos.logback" % "logback-classic" % "1.2.3"
     ).map(_ % "test"),
     libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test"
-  ) dependsOn (
-  core, akkaHttpHandler, futureAsyncHttpClientHandler, scalazAsyncHttpClientHandler,
-  monixAsyncHttpClientHandler, catsAsyncHttpClientHandler, fs2AsyncHttpClientHandler,
-  okhttpClientHandler, okhttpMonixClientHandler
-)
+  ) dependsOn (core, akkaHttpHandler, asyncHttpClientFutureHandler, asyncHttpClientScalazHandler,
+asyncHttpClientMonixHandler, asyncHttpClientCatsHandler, asyncHttpClientFs2Handler, okhttpMonixHandler)

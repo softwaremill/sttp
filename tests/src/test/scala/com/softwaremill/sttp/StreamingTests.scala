@@ -33,10 +33,10 @@ class StreamingTests
 
   var closeHandlers: List[() => Unit] = Nil
 
-  runTests("Akka Http", new AkkaStreamingTests(actorSystem))
-  runTests("Monix Async Http Client", new MonixAHCStreamingTests)
-  runTests("Monix OkHttp", new MonixOKHStreamingTests)
-  runTests("fs2 Async Http Client", new Fs2StreamingTests)
+  runTests("Akka Http", new AkkaHttpStreamingTests(actorSystem))
+  runTests("Monix Async Http Client", new AsyncHttpClientMonixStreamingTests)
+  runTests("Monix OkHttp", new OkHttpMonixStreamingTests)
+  runTests("fs2 Async Http Client", new AsyncHttpClientFs2StreamingTests)
 
   def runTests[R[_], S](
       name: String,

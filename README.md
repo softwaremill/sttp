@@ -17,7 +17,7 @@ val query = "http language:scala"
 // `sort` is removed, as the value is not defined
 val request = sttp.get(uri"https://api.github.com/search/repositories?q=$query&sort=$sort")
   
-implicit val handler = HttpURLConnectionSttpHandler
+implicit val handler = HttpURLConnectionHandler
 val response = request.send()
 
 // response.header(...): Option[String]
@@ -61,7 +61,7 @@ experimenting with sttp by copy-pasting the following:
 ```scala
 import $ivy.`com.softwaremill.sttp::core:0.0.8`
 import com.softwaremill.sttp._
-implicit val handler = HttpURLConnectionSttpHandler
+implicit val handler = HttpURLConnectionHandler
 sttp.get(uri"http://httpbin.org/ip").send()
 ```
 
@@ -113,7 +113,7 @@ value of type `SttpHandler` needs to be in scope to invoke the `send()` on the
 request: 
 
 ```scala
-implicit val handler = HttpURLConnectionSttpHandler
+implicit val handler = HttpURLConnectionHandler
 
 val response: Response[String] = request.send()
 ```
@@ -183,18 +183,18 @@ uri"$scheme://$subdomains.example.com?x=$vx&$params#$jumpTo"
 
 | Class | Result wrapper | Supported stream type |
 | --- | --- | --- |
-| `HttpURLConnectionSttpHandler` | None (`Id`) | - |
-| `AkkaHttpSttpHandler` | `scala.concurrent.Future` | `akka.stream.scaladsl.Source[ByteString, Any]` |
-| `FutureAsyncHttpClientHandler` | `scala.concurrent.Future` | - |
-| `ScalazAsyncHttpClientHandler` | `scalaz.concurrent.Task` | - |
-| `MonixAsyncHttpClientHandler` | `monix.eval.Task` | `monix.reactive.Observable[ByteBuffer]` | 
-| `CatsAsyncHttpClientHandler` | `F[_]: cats.effect.Async` | - | 
-| `Fs2AsyncHttpClientHandler` | `F[_]: cats.effect.Async` | `fs2.Stream[F, ByteBuffer]` | 
-| `OkHttpSyncClientHandler` | None (`Id`) | - | 
-| `OkHttpFutureClientHandler` | `scala.concurrent.Future` | - |
-| `OkHttpMonixClientHandler` | `monix.eval.Task` | `monix.reactive.Observable[ByteBuffer]` |
+| `HttpURLConnectionHandler` | None (`Id`) | - |
+| `AkkaHttpHandler` | `scala.concurrent.Future` | `akka.stream.scaladsl.Source[ByteString, Any]` |
+| `AsyncHttpClientFutureHandler` | `scala.concurrent.Future` | - |
+| `AsyncHttpClientScalazHandler` | `scalaz.concurrent.Task` | - |
+| `AsyncHttpClientMonixHandler` | `monix.eval.Task` | `monix.reactive.Observable[ByteBuffer]` | 
+| `AsyncHttpClientCatsHandler` | `F[_]: cats.effect.Async` | - | 
+| `AsyncHttpClientFs2Handler` | `F[_]: cats.effect.Async` | `fs2.Stream[F, ByteBuffer]` | 
+| `OkHttpSyncHandler` | None (`Id`) | - | 
+| `OkHttpFutureHandler` | `scala.concurrent.Future` | - |
+| `OkHttpMonixHandler` | `monix.eval.Task` | `monix.reactive.Observable[ByteBuffer]` |
 
-### `HttpURLConnectionSttpHandler`
+### `HttpURLConnectionHandler`
 
 The default **synchronous** handler. Sending a request returns a response wrapped 
 in the identity type constructor, which is equivalent to no wrapper at all.
@@ -202,10 +202,10 @@ in the identity type constructor, which is equivalent to no wrapper at all.
 To use, add an implicit value:
 
 ```scala
-implicit val sttpHandler = HttpURLConnectionSttpHandler
+implicit val sttpHandler = HttpURLConnectionHandler
 ```
 
-### `AkkaHttpSttpHandler`
+### `AkkaHttpHandler`
 
 To use, add the following dependency to your project:
 
@@ -220,10 +220,10 @@ in a `Future`.
 Next you'll need to add an implicit value:
 
 ```scala
-implicit val sttpHandler = AkkaHttpSttpHandler()
+implicit val sttpHandler = AkkaHttpHandler()
 
 // or, if you'd like to use an existing actor system:
-implicit val sttpHandler = AkkaHttpSttpHandler.usingActorSystem(actorSystem)
+implicit val sttpHandler = AkkaHttpHandler.usingActorSystem(actorSystem)
 ```
 
 This backend supports sending and receiving 
@@ -255,7 +255,7 @@ import com.softwaremill.sttp.akkahttp._
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 
-implicit val sttpHandler = AkkaHttpSttpHandler()
+implicit val sttpHandler = AkkaHttpHandler()
 
 val response: Future[Response[Source[ByteString, Any]]] = 
   sttp
@@ -295,22 +295,22 @@ typeclass, such as `cats.effect.IO`. There's a transitive dependency on `cats-ef
 Next you'll need to add an implicit value:
 
 ```scala
-implicit val sttpHandler = FutureAsyncHttpClientHandler()
+implicit val sttpHandler = AsyncHttpClientFutureHandler()
 
 // or, if you're using the scalaz version:
-implicit val sttpHandler = ScalazAsyncHttpClientHandler()
+implicit val sttpHandler = AsyncHttpClientScalazHandler()
 
 // or, if you're using the monix version:
-implicit val sttpHandler = MonixAsyncHttpClientHandler()
+implicit val sttpHandler = AsyncHttpClientMonixHandler()
 
 // or, if you're using the cats effect version:
-implicit val sttpHandler = CatsAsyncHttpClientHandler[cats.effect.IO]()
+implicit val sttpHandler = AsyncHttpClientCatsHandler[cats.effect.IO]()
 
 // or, if you'd like to use custom configuration:
-implicit val sttpHandler = FutureAsyncHttpClientHandler.usingConfig(asyncHttpClientConfig)
+implicit val sttpHandler = AsyncHttpClientFutureHandler.usingConfig(asyncHttpClientConfig)
 
 // or, if you'd like to instantiate the AsyncHttpClient yourself:
-implicit val sttpHandler = FutureAsyncHttpClientHandler.usingClient(asyncHttpClient)
+implicit val sttpHandler = AsyncHttpClientFutureHandler.usingClient(asyncHttpClient)
 ```
 
 #### Streaming using Monix
@@ -343,7 +343,7 @@ import java.nio.ByteBuffer
 import monix.eval.Task
 import monix.reactive.Observable
 
-implicit val sttpHandler = MonixAsyncHttpClientHandler()
+implicit val sttpHandler = AsyncHttpClientMonixHandler()
 
 val response: Task[Response[Observable[ByteBuffer]]] = 
   sttp
@@ -361,8 +361,8 @@ To use, add the following dependency to your project:
 ```
 
 This handler depends on [OkHttp](http://square.github.io/okhttp/), and offers 
-both a **synchronous** (`OkHttpSyncClientHandler`) and **asynchronous**
-(`OkHttpFutureClientHandler`), `Future`-based handlers.
+both a **synchronous** (`OkHttpSyncHandler`) and **asynchronous**
+(`OkHttpFutureHandler`), `Future`-based handlers.
 
 OkHttp fully supports HTTP/2.
 
@@ -393,7 +393,7 @@ a request to decode the response to a specific object.
 import com.softwaremill.sttp._
 import com.softwaremill.sttp.circe._
 
-implicit val handler = HttpURLConnectionSttpHandler
+implicit val handler = HttpURLConnectionHandler
 
 // Assume that there is an implicit circe encoder in scope
 // for the request Payload, and a decoder for the Response

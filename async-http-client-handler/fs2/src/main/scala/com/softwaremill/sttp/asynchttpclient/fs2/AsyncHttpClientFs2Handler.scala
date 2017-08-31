@@ -17,7 +17,7 @@ import org.reactivestreams.Publisher
 import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
 
-class Fs2AsyncHttpClientHandler[F[_]: Effect] private (
+class AsyncHttpClientFs2Handler[F[_]: Effect] private (
     asyncHttpClient: AsyncHttpClient,
     closeClient: Boolean)(implicit ec: ExecutionContext)
     extends AsyncHttpClientHandler[F, Stream[F, ByteBuffer]](
@@ -35,7 +35,7 @@ class Fs2AsyncHttpClientHandler[F[_]: Effect] private (
     p.toStream[F]
 }
 
-object Fs2AsyncHttpClientHandler {
+object AsyncHttpClientFs2Handler {
 
   /**
     * @param ec The execution context for running non-network related operations,
@@ -45,7 +45,7 @@ object Fs2AsyncHttpClientHandler {
   def apply[F[_]: Effect]()(
       implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
     : SttpHandler[F, Stream[F, ByteBuffer]] =
-    new Fs2AsyncHttpClientHandler[F](new DefaultAsyncHttpClient(),
+    new AsyncHttpClientFs2Handler[F](new DefaultAsyncHttpClient(),
                                      closeClient = true)
 
   /**
@@ -56,7 +56,7 @@ object Fs2AsyncHttpClientHandler {
   def usingConfig[F[_]: Effect](cfg: AsyncHttpClientConfig)(
       implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
     : SttpHandler[F, Stream[F, ByteBuffer]] =
-    new Fs2AsyncHttpClientHandler[F](new DefaultAsyncHttpClient(cfg),
+    new AsyncHttpClientFs2Handler[F](new DefaultAsyncHttpClient(cfg),
                                      closeClient = true)
 
   /**
@@ -67,7 +67,7 @@ object Fs2AsyncHttpClientHandler {
   def usingClient[F[_]: Effect](client: AsyncHttpClient)(
       implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
     : SttpHandler[F, Stream[F, ByteBuffer]] =
-    new Fs2AsyncHttpClientHandler[F](client, closeClient = false)
+    new AsyncHttpClientFs2Handler[F](client, closeClient = false)
 }
 
 private[fs2] class EffectMonad[F[_]](implicit F: Effect[F])

@@ -16,7 +16,7 @@ import org.reactivestreams.Publisher
 
 import scala.util.{Failure, Success}
 
-class MonixAsyncHttpClientHandler private (
+class AsyncHttpClientMonixHandler private (
     asyncHttpClient: AsyncHttpClient,
     closeClient: Boolean)(implicit scheduler: Scheduler)
     extends AsyncHttpClientHandler[Task, Observable[ByteBuffer]](
@@ -33,7 +33,7 @@ class MonixAsyncHttpClientHandler private (
     Observable.fromReactivePublisher(p)
 }
 
-object MonixAsyncHttpClientHandler {
+object AsyncHttpClientMonixHandler {
 
   /**
     * @param s The scheduler used for streaming request bodies. Defaults to the
@@ -41,7 +41,7 @@ object MonixAsyncHttpClientHandler {
     */
   def apply()(implicit s: Scheduler = Scheduler.Implicits.global)
     : SttpHandler[Task, Observable[ByteBuffer]] =
-    new MonixAsyncHttpClientHandler(new DefaultAsyncHttpClient(),
+    new AsyncHttpClientMonixHandler(new DefaultAsyncHttpClient(),
                                     closeClient = true)
 
   /**
@@ -51,7 +51,7 @@ object MonixAsyncHttpClientHandler {
   def usingConfig(cfg: AsyncHttpClientConfig)(implicit s: Scheduler =
                                                 Scheduler.Implicits.global)
     : SttpHandler[Task, Observable[ByteBuffer]] =
-    new MonixAsyncHttpClientHandler(new DefaultAsyncHttpClient(cfg),
+    new AsyncHttpClientMonixHandler(new DefaultAsyncHttpClient(cfg),
                                     closeClient = true)
 
   /**
@@ -61,7 +61,7 @@ object MonixAsyncHttpClientHandler {
   def usingClient(client: AsyncHttpClient)(implicit s: Scheduler =
                                              Scheduler.Implicits.global)
     : SttpHandler[Task, Observable[ByteBuffer]] =
-    new MonixAsyncHttpClientHandler(client, closeClient = false)
+    new AsyncHttpClientMonixHandler(client, closeClient = false)
 }
 
 private[monix] object TaskMonad extends MonadAsyncError[Task] {
