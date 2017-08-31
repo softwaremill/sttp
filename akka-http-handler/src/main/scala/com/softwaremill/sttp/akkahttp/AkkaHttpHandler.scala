@@ -41,8 +41,14 @@ class AkkaHttpHandler private (actorSystem: ActorSystem,
       .flatMap(Http().singleRequest(_))
       .flatMap { hr =>
         val code = hr.status.intValue()
-        bodyFromAkka(r.response, decodeAkkaResponse(hr))
-          .map(Response(_, code, headersFromAkka(hr)))
+
+        val body = if (codeIsSuccess(code)) {
+          bodyFromAkka(r.response, decodeAkkaResponse(hr)).map(Right(_))
+        } else {
+          bodyFromAkka(asString, decodeAkkaResponse(hr)).map(Left(_))
+        }
+
+        body.map(Response(_, code, headersFromAkka(hr)))
       }
   }
 

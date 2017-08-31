@@ -4,7 +4,7 @@ import java.nio.ByteBuffer
 
 import cats.effect._
 import com.softwaremill.sttp.asynchttpclient.AsyncHttpClientHandler
-import com.softwaremill.sttp.{MonadAsyncError, SttpHandler}
+import com.softwaremill.sttp.{MonadAsyncError, SttpHandler, Utf8, concatByteBuffers}
 import fs2._
 import fs2.interop.reactivestreams._
 import org.asynchttpclient.{
@@ -33,6 +33,15 @@ class AsyncHttpClientFs2Handler[F[_]: Effect] private (
   override protected def publisherToStreamBody(
       p: Publisher[ByteBuffer]): Stream[F, ByteBuffer] =
     p.toStream[F]
+
+  override protected def publisherToString(
+      p: Publisher[ByteBuffer]): F[String] = {
+    val bytes = p
+      .toStream[F]
+      .runFold(ByteBuffer.allocate(0))(concatByteBuffers)
+
+    implicitly[Effect[F]].map(bytes)(bb => new String(bb.array(), Utf8))
+  }
 }
 
 object AsyncHttpClientFs2Handler {

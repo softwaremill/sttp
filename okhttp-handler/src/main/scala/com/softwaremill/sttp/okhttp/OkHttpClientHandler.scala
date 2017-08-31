@@ -86,7 +86,15 @@ abstract class OkHttpHandler[R[_], S](client: OkHttpClient)
       res: OkHttpResponse,
       responseAs: ResponseAs[T, S]): R[Response[T]] = {
 
-    val body = responseHandler(res).handle(responseAs, responseMonad)
+    val code = res.code()
+
+    val body = if (codeIsSuccess(code)) {
+      responseMonad.map(responseHandler(res).handle(responseAs, responseMonad),
+                        Right(_: T))
+    } else {
+      responseMonad.map(responseHandler(res).handle(asString, responseMonad),
+                        Left(_: String))
+    }
 
     val headers = res
       .headers()
@@ -94,7 +102,9 @@ abstract class OkHttpHandler[R[_], S](client: OkHttpClient)
       .asScala
       .flatMap(name => res.headers().values(name).asScala.map((name, _)))
 
-    responseMonad.map(body, Response(_: T, res.code(), headers.toList))
+    responseMonad.map(
+      body,
+      Response(_: Either[String, T], res.code(), headers.toList))
   }
 
   private def responseHandler(res: OkHttpResponse) =

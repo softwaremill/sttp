@@ -155,7 +155,7 @@ class BasicTests
           redirect("/redirect/r3", StatusCodes.PermanentRedirect)
         } ~
         path("r3") {
-          complete("ok")
+          complete("819")
         }
     }
 
@@ -209,7 +209,7 @@ class BasicTests
     def parseResponseTests(): Unit = {
       name should "parse response as string" in {
         val response = postEcho.body(testBody).send().force()
-        response.body should be(expectedPostEchoResponse)
+        response.unsafeBody should be(expectedPostEchoResponse)
       }
 
       name should "parse response as string with mapping using map" in {
@@ -218,7 +218,7 @@ class BasicTests
           .response(asString.map(_.length))
           .send()
           .force()
-        response.body should be(expectedPostEchoResponse.length)
+        response.unsafeBody should be(expectedPostEchoResponse.length)
       }
 
       name should "parse response as string with mapping using mapResponse" in {
@@ -227,13 +227,13 @@ class BasicTests
           .mapResponse(_.length)
           .send()
           .force()
-        response.body should be(expectedPostEchoResponse.length)
+        response.unsafeBody should be(expectedPostEchoResponse.length)
       }
 
       name should "parse response as a byte array" in {
         val response =
           postEcho.body(testBody).response(asByteArray).send().force()
-        val fc = new String(response.body, "UTF-8")
+        val fc = new String(response.unsafeBody, "UTF-8")
         fc should be(expectedPostEchoResponse)
       }
 
@@ -245,7 +245,7 @@ class BasicTests
           .response(asParams)
           .send()
           .force()
-        response.body.toList should be(params)
+        response.unsafeBody.toList should be(params)
       }
     }
 
@@ -256,20 +256,20 @@ class BasicTests
           .send()
           .force()
 
-        response.body should be("GET /echo p1=v1 p2=v2")
+        response.unsafeBody should be("GET /echo p1=v1 p2=v2")
       }
     }
 
     def bodyTests(): Unit = {
       name should "post a string" in {
         val response = postEcho.body(testBody).send().force()
-        response.body should be(expectedPostEchoResponse)
+        response.unsafeBody should be(expectedPostEchoResponse)
       }
 
       name should "post a byte array" in {
         val response =
           postEcho.body(testBodyBytes).send().force()
-        response.body should be(expectedPostEchoResponse)
+        response.unsafeBody should be(expectedPostEchoResponse)
       }
 
       name should "post an input stream" in {
@@ -277,7 +277,7 @@ class BasicTests
           .body(new ByteArrayInputStream(testBodyBytes))
           .send()
           .force()
-        response.body should be(expectedPostEchoResponse)
+        response.unsafeBody should be(expectedPostEchoResponse)
       }
 
       name should "post a byte buffer" in {
@@ -285,14 +285,14 @@ class BasicTests
           .body(ByteBuffer.wrap(testBodyBytes))
           .send()
           .force()
-        response.body should be(expectedPostEchoResponse)
+        response.unsafeBody should be(expectedPostEchoResponse)
       }
 
       name should "post a file" in {
         val f = File.newTemporaryFile().write(testBody)
         try {
           val response = postEcho.body(f.toJava).send().force()
-          response.body should be(expectedPostEchoResponse)
+          response.unsafeBody should be(expectedPostEchoResponse)
         } finally f.delete()
       }
 
@@ -301,7 +301,7 @@ class BasicTests
         try {
           val response =
             postEcho.body(f.toJava.toPath).send().force()
-          response.body should be(expectedPostEchoResponse)
+          response.unsafeBody should be(expectedPostEchoResponse)
         } finally f.delete()
       }
 
@@ -311,7 +311,7 @@ class BasicTests
           .body("a" -> "b", "c" -> "d")
           .send()
           .force()
-        response.body should be("a=b c=d")
+        response.unsafeBody should be("a=b c=d")
       }
 
       name should "post form data with special characters" in {
@@ -320,12 +320,12 @@ class BasicTests
           .body("a=" -> "/b", "c:" -> "/d")
           .send()
           .force()
-        response.body should be("a==/b c:=/d")
+        response.unsafeBody should be("a==/b c:=/d")
       }
 
       name should "post without a body" in {
         val response = postEcho.send().force()
-        response.body should be("POST /echo")
+        response.unsafeBody should be("POST /echo")
       }
     }
 
@@ -352,6 +352,7 @@ class BasicTests
         val response = getHeaders.response(sttpIgnore).send().force()
         response.code should be(405)
         response.isClientError should be(true)
+        response.body should be('left)
       }
     }
 
@@ -412,7 +413,7 @@ class BasicTests
         val req = secureBasic.auth.basic("adam", "1234")
         val resp = req.send().force()
         resp.code should be(200)
-        resp.body should be("Hello, adam!")
+        resp.unsafeBody should be("Hello, adam!")
       }
     }
 
@@ -423,28 +424,28 @@ class BasicTests
       name should "decompress using the default accept encoding header" in {
         val req = compress
         val resp = req.send().force()
-        resp.body should be(decompressedBody)
+        resp.unsafeBody should be(decompressedBody)
       }
 
       name should "decompress using gzip" in {
         val req =
           compress.header("Accept-Encoding", "gzip", replaceExisting = true)
         val resp = req.send().force()
-        resp.body should be(decompressedBody)
+        resp.unsafeBody should be(decompressedBody)
       }
 
       name should "decompress using deflate" in {
         val req =
           compress.header("Accept-Encoding", "deflate", replaceExisting = true)
         val resp = req.send().force()
-        resp.body should be(decompressedBody)
+        resp.unsafeBody should be(decompressedBody)
       }
 
       name should "work despite providing an unsupported encoding" in {
         val req =
           compress.header("Accept-Encoding", "br", replaceExisting = true)
         val resp = req.send().force()
-        resp.body should be(decompressedBody)
+        resp.unsafeBody should be(decompressedBody)
       }
     }
 
@@ -457,7 +458,7 @@ class BasicTests
           sttp.get(uri"$endpoint/download/binary").response(asFile(file))
         val resp = req.send().force()
 
-        resp.body shouldBe file
+        resp.unsafeBody shouldBe file
         file should exist
         file should haveSameContentAs(binaryFile)
       }
@@ -468,7 +469,7 @@ class BasicTests
           sttp.get(uri"$endpoint/download/text").response(asFile(file))
         val resp = req.send().force()
 
-        resp.body shouldBe file
+        resp.unsafeBody shouldBe file
         file should exist
         file should haveSameContentAs(textFile)
       }
@@ -479,7 +480,7 @@ class BasicTests
           sttp.get(uri"$endpoint/download/binary").response(asPath(path))
         val resp = req.send().force()
 
-        resp.body shouldBe path
+        resp.unsafeBody shouldBe path
         path.toFile should exist
         path.toFile should haveSameContentAs(binaryFile)
       }
@@ -490,7 +491,7 @@ class BasicTests
           sttp.get(uri"$endpoint/download/text").response(asPath(path))
         val resp = req.send().force()
 
-        resp.body shouldBe path
+        resp.unsafeBody shouldBe path
         path.toFile should exist
         path.toFile should haveSameContentAs(textFile)
       }
@@ -531,7 +532,7 @@ class BasicTests
             .response(asPath(path, overwrite = true))
         val resp = req.send().force()
 
-        resp.body shouldBe path
+        resp.unsafeBody shouldBe path
         path.toFile should exist
         path.toFile should haveSameContentAs(textFile)
       }
@@ -543,14 +544,14 @@ class BasicTests
       name should "send a multipart message" in {
         val req = mp.multipartBody(multipart("p1", "v1"), multipart("p2", "v2"))
         val resp = req.send().force()
-        resp.body should be("p1=v1, p2=v2")
+        resp.unsafeBody should be("p1=v1, p2=v2")
       }
 
       name should "send a multipart message with filenames" in {
         val req = mp.multipartBody(multipart("p1", "v1").fileName("f1"),
                                    multipart("p2", "v2").fileName("f2"))
         val resp = req.send().force()
-        resp.body should be("p1=v1 (f1), p2=v2 (f2)")
+        resp.unsafeBody should be("p1=v1 (f1), p2=v2 (f2)")
       }
 
       name should "send a multipart message with a file" in {
@@ -559,7 +560,7 @@ class BasicTests
           val req =
             mp.multipartBody(multipart("p1", f.toJava), multipart("p2", "v2"))
           val resp = req.send().force()
-          resp.body should be(s"p1=$testBody (${f.name}), p2=v2")
+          resp.unsafeBody should be(s"p1=$testBody (${f.name}), p2=v2")
         } finally f.delete()
       }
     }
@@ -567,29 +568,36 @@ class BasicTests
     def redirectTests(): Unit = {
       val r1 = sttp.post(uri"$endpoint/redirect/r1")
       val r2 = sttp.post(uri"$endpoint/redirect/r2")
+      val r3response = "819"
 
       name should "not redirect when redirects shouldn't be followed (temporary)" in {
         val resp = r1.followRedirects(false).send().force()
         resp.code should be(307)
-        resp.body should not be ("ok")
+        resp.body should be('left)
       }
 
       name should "not redirect when redirects shouldn't be followed (permanent)" in {
         val resp = r2.followRedirects(false).send().force()
         resp.code should be(308)
-        resp.body should not be ("ok")
+        resp.body should be('left)
       }
 
       name should "redirect when redirects should be followed" in {
         val resp = r2.send().force()
         resp.code should be(200)
-        resp.body should be("ok")
+        resp.unsafeBody should be(r3response)
       }
 
       name should "redirect twice when redirects should be followed" in {
         val resp = r1.send().force()
         resp.code should be(200)
-        resp.body should be("ok")
+        resp.unsafeBody should be(r3response)
+      }
+
+      name should "redirect when redirects should be followed, and the response is parsed" in {
+        val resp = r2.response(asString.map(_.toInt)).send().force()
+        resp.code should be(200)
+        resp.unsafeBody should be(r3response.toInt)
       }
     }
   }

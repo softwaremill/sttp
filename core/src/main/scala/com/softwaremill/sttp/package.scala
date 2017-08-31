@@ -251,6 +251,14 @@ package object sttp {
     transfer()
   }
 
+  private[sttp] def codeIsSuccess(c: Int): Boolean = c >= 200 && c < 300
+
+  private[sttp] def concatByteBuffers(bb1: ByteBuffer, bb2: ByteBuffer): ByteBuffer =
+    ByteBuffer
+      .allocate(bb1.array().length + bb2.array().length)
+      .put(bb1)
+      .put(bb2)
+
   // uri interpolator
 
   implicit class UriContext(val sc: StringContext) extends AnyVal {

@@ -26,6 +26,10 @@ class AsyncHttpClientScalazHandler private (asyncHttpClient: AsyncHttpClient,
   override protected def publisherToStreamBody(
       p: Publisher[ByteBuffer]): Nothing =
     throw new IllegalStateException("This handler does not support streaming")
+
+  override protected def publisherToString(
+      p: Publisher[ByteBuffer]): Task[String] =
+    throw new IllegalStateException("This handler does not support streaming")
 }
 
 object AsyncHttpClientScalazHandler {

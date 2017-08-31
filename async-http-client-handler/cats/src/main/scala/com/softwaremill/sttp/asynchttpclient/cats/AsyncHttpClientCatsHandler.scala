@@ -28,6 +28,10 @@ class AsyncHttpClientCatsHandler[F[_]: Async] private (
   override protected def publisherToStreamBody(
       p: Publisher[ByteBuffer]): Nothing =
     throw new IllegalStateException("This handler does not support streaming")
+
+  override protected def publisherToString(
+      p: Publisher[ByteBuffer]): F[String] =
+    throw new IllegalStateException("This handler does not support streaming")
 }
 
 object AsyncHttpClientCatsHandler {

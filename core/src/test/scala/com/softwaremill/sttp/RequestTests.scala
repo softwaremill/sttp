@@ -31,7 +31,7 @@ class RequestTests extends FlatSpec with Matchers {
 
   it should "set cookies from a response" in {
     val response =
-      Response((),
+      Response(Right(()),
                0,
                List((SetCookieHeader, "k1=v1"), (SetCookieHeader, "k2=v2")))
     sttp

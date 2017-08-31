@@ -191,9 +191,15 @@ object HttpURLConnectionHandler extends SttpHandler[Id, Nothing] {
       .filter(_._1 != null)
       .flatMap { case (k, vv) => vv.asScala.map((k, _)) }
     val contentEncoding = Option(c.getHeaderField(ContentEncodingHeader))
-    Response(readResponseBody(wrapInput(contentEncoding, is), responseAs),
-             c.getResponseCode,
-             headers)
+    val code = c.getResponseCode
+    val wrappedIs = wrapInput(contentEncoding, is)
+    val body = if (codeIsSuccess(code)) {
+      Right(readResponseBody(wrappedIs, responseAs))
+    } else {
+      Left(readResponseBody(wrappedIs, asString))
+    }
+
+    Response(body, code, headers)
   }
 
   private def readResponseBody[T](is: InputStream,

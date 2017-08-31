@@ -23,8 +23,8 @@ val response = request.send()
 // response.header(...): Option[String]
 println(response.header("Content-Length")) 
 
-// response.body: by default read into a String 
-println(response.body)                     
+// response.unsafeBody: by default read into a String 
+println(response.unsafeBody)                     
 ```
  
 ## Goals of the project

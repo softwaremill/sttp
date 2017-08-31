@@ -15,9 +15,18 @@ import scala.collection.JavaConverters._
 import scala.collection.immutable.Seq
 import scala.util.Try
 
-case class Response[T](body: T, code: Int, headers: Seq[(String, String)]) {
+/**
+  * @param body `Right(T)`, if the request was successful (status code 2xx).
+  *            The body is then handled as specified in the request.
+  *            `Left(String)`, if the request wasn't successful (status code
+  *            3xx, 4xx or 5xx). In this case, the response body is read into
+  *            a `String`.
+  */
+case class Response[T](body: Either[String, T],
+                       code: Int,
+                       headers: Seq[(String, String)]) {
   def is200: Boolean = code == 200
-  def isSuccess: Boolean = code >= 200 && code < 300
+  def isSuccess: Boolean = codeIsSuccess(code)
   def isRedirect: Boolean = code >= 300 && code < 400
   def isClientError: Boolean = code >= 400 && code < 500
   def isServerError: Boolean = code >= 500 && code < 600
@@ -34,6 +43,16 @@ case class Response[T](body: T, code: Int, headers: Seq[(String, String)]) {
   def cookies: Seq[Cookie] =
     headers(SetCookieHeader)
       .flatMap(h => HttpCookie.parse(h).asScala.map(hc => Cookie.apply(hc, h)))
+
+  /**
+    * Get the body of the response. If the status code wasn't 2xx (and there's
+    * no body to return), an exception is thrown, containing the status code
+    * and the response from the server.
+    */
+  def unsafeBody: T = body match {
+    case Left(v)  => throw new NoSuchElementException(s"Status code $code: $v")
+    case Right(v) => v
+  }
 }
 
 case class Cookie(name: String,

@@ -52,7 +52,7 @@ class StreamingTests
         .send()
         .force()
 
-      response.body shouldBe body
+      response.unsafeBody shouldBe body
     }
 
     it should "receive a stream" in {
@@ -63,7 +63,7 @@ class StreamingTests
         .send()
         .force()
 
-      bodyConsumer(response.body).force() shouldBe body
+      bodyConsumer(response.unsafeBody).force() shouldBe body
     }
 
     it should "receive a stream from an https site" in {
@@ -76,7 +76,7 @@ class StreamingTests
         .send()
         .force()
 
-      bodyConsumer(response.body).force() should include("</div>")
+      bodyConsumer(response.unsafeBody).force() should include("</div>")
     }
   }
 

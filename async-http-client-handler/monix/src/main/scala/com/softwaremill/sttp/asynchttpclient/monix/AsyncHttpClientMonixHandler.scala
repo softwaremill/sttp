@@ -2,7 +2,7 @@ package com.softwaremill.sttp.asynchttpclient.monix
 
 import java.nio.ByteBuffer
 
-import com.softwaremill.sttp.{MonadAsyncError, SttpHandler}
+import com.softwaremill.sttp.{MonadAsyncError, SttpHandler, Utf8, concatByteBuffers}
 import com.softwaremill.sttp.asynchttpclient.AsyncHttpClientHandler
 import monix.eval.Task
 import monix.execution.{Cancelable, Scheduler}
@@ -31,6 +31,16 @@ class AsyncHttpClientMonixHandler private (
   override protected def publisherToStreamBody(
       p: Publisher[ByteBuffer]): Observable[ByteBuffer] =
     Observable.fromReactivePublisher(p)
+
+  override protected def publisherToString(
+      p: Publisher[ByteBuffer]): Task[String] = {
+
+    val bytes = Observable
+      .fromReactivePublisher(p)
+      .foldLeftL(ByteBuffer.allocate(0))(concatByteBuffers)
+
+    bytes.map(bb => new String(bb.array(), Utf8))
+  }
 }
 
 object AsyncHttpClientMonixHandler {
