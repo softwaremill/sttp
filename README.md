@@ -357,12 +357,16 @@ val response: Task[Response[Observable[ByteBuffer]]] =
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp" %% "okhttp-client-handler" % "0.0.9"
+"com.softwaremill.sttp" %% "okhttp-handler" % "0.0.9"
+// or, for the monix version:
+"com.softwaremill.sttp" %% "okhttp-handler-monix" % "0.0.9"
 ```
 
-This handler depends on [OkHttp](http://square.github.io/okhttp/), and offers 
-both a **synchronous** (`OkHttpSyncHandler`) and **asynchronous**
-(`OkHttpFutureHandler`), `Future`-based handlers.
+This handler depends on [OkHttp](http://square.github.io/okhttp/), and offers: 
+
+* a **synchronous** handler: `OkHttpSyncHandler`
+* an **asynchronous**, `Future`-based handler: `OkHttpFutureHandler`
+* an **asynchronous**, Monix-`Task`-based handler: `OkHttpMonixHandler`
 
 OkHttp fully supports HTTP/2.
 
