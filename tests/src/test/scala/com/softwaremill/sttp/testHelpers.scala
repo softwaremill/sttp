@@ -7,7 +7,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Route
 import akka.stream.ActorMaterializer
-import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.concurrent.{PatienceConfiguration, ScalaFutures}
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.matchers.{MatchResult, Matcher}
 import org.scalatest.{BeforeAndAfterAll, Suite}
@@ -17,7 +17,7 @@ import scala.concurrent.duration._
 import scala.language.higherKinds
 import scalaz._
 
-trait TestHttpServer extends BeforeAndAfterAll with ScalaFutures {
+trait TestHttpServer extends BeforeAndAfterAll with ScalaFutures with TestingPatience {
   this: Suite =>
   protected implicit val actorSystem: ActorSystem = ActorSystem("sttp-test")
   import actorSystem.dispatcher
@@ -41,9 +41,7 @@ trait ForceWrappedValue[R[_]] {
   def force[T](wrapped: R[T]): T
 }
 
-object ForceWrappedValue extends ScalaFutures {
-  override implicit val patienceConfig: PatienceConfig =
-    PatienceConfig(timeout = 5.seconds, interval = 150.milliseconds)
+object ForceWrappedValue extends ScalaFutures with TestingPatience {
 
   val id = new ForceWrappedValue[Id] {
     override def force[T](wrapped: Id[T]): T =
@@ -81,7 +79,7 @@ object ForceWrappedValue extends ScalaFutures {
   }
 }
 
-trait ForceWrapped extends ScalaFutures { this: Suite =>
+trait ForceWrapped extends ScalaFutures with TestingPatience { this: Suite =>
   type ForceWrappedValue[R[_]] = com.softwaremill.sttp.ForceWrappedValue[R]
   val ForceWrappedValue: com.softwaremill.sttp.ForceWrappedValue.type =
     com.softwaremill.sttp.ForceWrappedValue
@@ -115,4 +113,9 @@ object CustomMatchers {
   }
 
   def haveSameContentAs(file: io.File) = new FileContentsMatch(file)
+}
+
+trait TestingPatience extends PatienceConfiguration {
+  override implicit val patienceConfig: PatienceConfig =
+    PatienceConfig(timeout = 5.seconds, interval = 150.milliseconds)
 }
