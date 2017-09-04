@@ -1,6 +1,7 @@
 package com.softwaremill.sttp
 
 import java.net.URI
+import scala.language.higherKinds
 
 class FollowRedirectsHandler[R[_], S](delegate: SttpHandler[R, S])
     extends SttpHandler[R, S] {
