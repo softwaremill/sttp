@@ -181,7 +181,7 @@ uri"$scheme://$subdomains.example.com?x=$vx&$params#$jumpTo"
 
 When ending the application, make sure to call `handler.close()`, which will 
 free up resources used by the backend (if any). The close process might be 
-asynchronous, and can complete only after the `close()` method returns.
+asynchronous, that is it can complete after the `close()` method returns.
 
 Note that only resources allocated by the handlers are freed. For example,
 if you use the `AkkaHttpHandler()` the `close()` method will terminate the
