@@ -177,6 +177,18 @@ uri"$scheme://$subdomains.example.com?x=$vx&$params#$jumpTo"
 // https://sub1.sub2.example.com?x=y+z&a=1&b=2#section2
 ```
 
+## Cleaning up
+
+When ending the application, make sure to call `handler.close()`, which will 
+free up resources used by the backend (if any). The close process might be 
+asynchronous, and can complete only after the `close()` method returns.
+
+Note that only resources allocated by the handlers are freed. For example,
+if you use the `AkkaHttpHandler()` the `close()` method will terminate the
+underlying actor system. However, if you have provided an existing actor system
+upon handler creation (`AkkaHttpHandler.usingActorSystem`), the `close()` 
+method will be a no-op. 
+
 ## Supported backends
 
 ### Summary
