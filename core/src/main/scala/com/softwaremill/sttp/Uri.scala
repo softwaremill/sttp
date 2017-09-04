@@ -88,7 +88,8 @@ case class Uri(scheme: String,
 
   override def toString: String = {
     def encodeUserInfo(ui: UserInfo): String =
-      encode(ui.username) + ui.password.fold("")(":" + encode(_))
+      encode(Rfc3986.UserInfo)(ui.username) + ui.password.fold("")(
+        ":" + encode(Rfc3986.UserInfo)(_))
 
     @tailrec
     def encodeQueryFragments(qfs: List[QueryFragment],
@@ -112,12 +113,12 @@ case class Uri(scheme: String,
         encodeQueryFragments(t, previousWasPlain = false, sb)
     }
 
-    val schemeS = encode(scheme)
+    val schemeS = encode(Rfc3986.Scheme)(scheme)
     val userInfoS = userInfo.fold("")(encodeUserInfo(_) + "@")
-    val hostS = encode(host)
+    val hostS = encode(Rfc3986.Host)(host)
     val portS = port.fold("")(":" + _)
     val pathPrefixS = if (path.isEmpty) "" else "/"
-    val pathS = path.map(encode).mkString("/")
+    val pathS = path.map(encode(Rfc3986.PathSegment)).mkString("/")
     val queryPrefixS = if (queryFragments.isEmpty) "" else "?"
 
     val queryS = encodeQueryFragments(queryFragments.toList,
@@ -125,13 +126,6 @@ case class Uri(scheme: String,
                                       new StringBuilder())
     val fragS = fragment.fold("")("#" + encodeFragment(_))
     s"$schemeS://$userInfoS$hostS$portS$pathPrefixS$pathS$queryPrefixS$queryS$fragS"
-  }
-
-  private def encode(s: Any): String = {
-    // space is encoded as a +, which is only valid in the query;
-    // in other contexts, it must be percent-encoded; see
-    // https://stackoverflow.com/questions/2678551/when-to-encode-space-to-plus-or-20
-    URLEncoder.encode(String.valueOf(s), "UTF-8").replaceAll("\\+", "%20")
   }
 
   private def encodeQuery(s: String, relaxed: Boolean): String =
@@ -146,19 +140,24 @@ case class Uri(scheme: String,
     val SubDelims: Set[Char] =
       Set('!', '$', '&', '\'', '(', ')', '*', '+', ',', ';', '=')
     val PChar: Set[Char] = Unreserved ++ SubDelims ++ Set(':', '@')
+
+    val Scheme: Set[Char] = AlphaNum ++ Set('+', '-', '.')
+    val UserInfo: Set[Char] = Unreserved ++ SubDelims
+    val Host: Set[Char] = Unreserved ++ SubDelims
+    val PathSegment: Set[Char] = PChar
     val Query: Set[Char] = PChar ++ Set('/', '?')
     val Fragment: Set[Char] = Query
   }
 
   // https://stackoverflow.com/questions/2322764/what-characters-must-be-escaped-in-an-http-query-string
   private def encodeQueryRelaxed(s: String): String =
-    encode(s, Rfc3986.Query)
+    encode(Rfc3986.Query)(s)
 
   // https://stackoverflow.com/questions/2053132/is-a-colon-safe-for-friendly-url-use/2053640#2053640
   private def encodeFragment(s: String): String =
-    encode(s, Rfc3986.Fragment)
+    encode(Rfc3986.Fragment)(s)
 
-  private def encode(s: String, allowedCharacters: Set[Char]): String = {
+  private def encode(allowedCharacters: Set[Char])(s: String): String = {
     val sb = new StringBuilder()
     // based on https://gist.github.com/teigen/5865923
     for (c <- s) {
