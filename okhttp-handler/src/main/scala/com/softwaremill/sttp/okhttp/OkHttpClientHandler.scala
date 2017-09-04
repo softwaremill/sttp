@@ -135,7 +135,7 @@ abstract class OkHttpHandler[R[_], S](client: OkHttpClient)
   def responseBodyToStream(res: OkHttpResponse): Try[S] =
     Failure(new IllegalStateException("Streaming isn't supported"))
 
-  override def close(): Unit = {}
+  override def close(): Unit = client.dispatcher().executorService().shutdown()
 }
 
 object OkHttpHandler {
