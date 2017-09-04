@@ -60,7 +60,8 @@ package object sttp {
                                      NoBody,
                                      Vector(),
                                      asString,
-                                     RequestOptions(followRedirects = true))
+                                     RequestOptions(followRedirects = true),
+                                     Map())
 
   /**
     * A starting request, with the following modifications comparing to

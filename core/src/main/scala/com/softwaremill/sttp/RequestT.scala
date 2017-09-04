@@ -16,6 +16,8 @@ import scala.language.higherKinds
   *                 client code to consume it. An exception to this are
   *                 streaming responses, which need to fully consumed by the
   *                 client if such a response type is requested.
+  * @param tags Request-specific tags which can be used by handlers for
+  *             logging, metrics, etc. Not used by default.
   * @tparam U Specifies if the method & uri are specified. By default can be
   *           either:
   *           * `Empty`, which is a type constructor which always resolves to
@@ -32,7 +34,8 @@ case class RequestT[U[_], T, +S](
     body: RequestBody[S],
     headers: Seq[(String, String)],
     response: ResponseAs[T, S],
-    options: RequestOptions
+    options: RequestOptions,
+    tags: Map[String, Any]
 ) {
   def get(uri: Uri): Request[T, S] =
     this.copy[Id, T, S](uri = uri, method = Method.GET)
