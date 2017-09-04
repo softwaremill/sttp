@@ -16,8 +16,11 @@ import okio.BufferedSink
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
-class OkHttpMonixHandler private (client: OkHttpClient)(implicit s: Scheduler)
-    extends OkHttpAsyncHandler[Task, Observable[ByteBuffer]](client, TaskMonad) {
+class OkHttpMonixHandler private (client: OkHttpClient, closeClient: Boolean)(
+    implicit s: Scheduler)
+    extends OkHttpAsyncHandler[Task, Observable[ByteBuffer]](client,
+                                                             TaskMonad,
+                                                             closeClient) {
 
   override def streamToRequestBody(
       stream: Observable[ByteBuffer]): Option[OkHttpRequestBody] =
@@ -77,11 +80,19 @@ class OkHttpMonixHandler private (client: OkHttpClient)(implicit s: Scheduler)
 }
 
 object OkHttpMonixHandler {
-  def apply(
-      okhttpClient: OkHttpClient = OkHttpHandler.buildClientNoRedirects())(
-      implicit s: Scheduler = Scheduler.Implicits.global)
+  private def apply(client: OkHttpClient, closeClient: Boolean)(
+      implicit s: Scheduler): SttpHandler[Task, Observable[ByteBuffer]] =
+    new FollowRedirectsHandler(new OkHttpMonixHandler(client, closeClient)(s))
+
+  def apply()(implicit s: Scheduler = Scheduler.Implicits.global)
     : SttpHandler[Task, Observable[ByteBuffer]] =
-    new FollowRedirectsHandler(new OkHttpMonixHandler(okhttpClient)(s))
+    OkHttpMonixHandler(OkHttpHandler.buildClientNoRedirects(),
+                       closeClient = true)(s)
+
+  def usingClient(client: OkHttpClient)(implicit s: Scheduler =
+                                          Scheduler.Implicits.global)
+    : SttpHandler[Task, Observable[ByteBuffer]] =
+    OkHttpMonixHandler(client, closeClient = false)(s)
 }
 
 private[monix] object TaskMonad extends MonadAsyncError[Task] {

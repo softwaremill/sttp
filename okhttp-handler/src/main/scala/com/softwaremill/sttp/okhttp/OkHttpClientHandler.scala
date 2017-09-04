@@ -24,7 +24,8 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 import scala.util.{Failure, Try}
 
-abstract class OkHttpHandler[R[_], S](client: OkHttpClient)
+abstract class OkHttpHandler[R[_], S](client: OkHttpClient,
+                                      closeClient: Boolean)
     extends SttpHandler[R, S] {
   private[okhttp] def convertRequest[T](request: Request[T, S]): OkHttpRequest = {
     val builder = new OkHttpRequest.Builder()
@@ -135,7 +136,9 @@ abstract class OkHttpHandler[R[_], S](client: OkHttpClient)
   def responseBodyToStream(res: OkHttpResponse): Try[S] =
     Failure(new IllegalStateException("Streaming isn't supported"))
 
-  override def close(): Unit = client.dispatcher().executorService().shutdown()
+  override def close(): Unit = if (closeClient) {
+    client.dispatcher().executorService().shutdown()
+  }
 }
 
 object OkHttpHandler {
@@ -146,8 +149,8 @@ object OkHttpHandler {
       .build()
 }
 
-class OkHttpSyncHandler private (client: OkHttpClient)
-    extends OkHttpHandler[Id, Nothing](client) {
+class OkHttpSyncHandler private (client: OkHttpClient, closeClient: Boolean)
+    extends OkHttpHandler[Id, Nothing](client, closeClient) {
   override def send[T](r: Request[T, Nothing]): Response[T] = {
     val request = convertRequest(r)
     val response = client.newCall(request).execute()
@@ -158,14 +161,23 @@ class OkHttpSyncHandler private (client: OkHttpClient)
 }
 
 object OkHttpSyncHandler {
-  def apply(okhttpClient: OkHttpClient = OkHttpHandler.buildClientNoRedirects())
-    : SttpHandler[Id, Nothing] =
-    new FollowRedirectsHandler[Id, Nothing](new OkHttpSyncHandler(okhttpClient))
+  private def apply(client: OkHttpClient,
+                    closeClient: Boolean): SttpHandler[Id, Nothing] =
+    new FollowRedirectsHandler[Id, Nothing](
+      new OkHttpSyncHandler(client, closeClient))
+
+  def apply(): SttpHandler[Id, Nothing] =
+    OkHttpSyncHandler(OkHttpHandler.buildClientNoRedirects(),
+                      closeClient = true)
+
+  def usingClient(client: OkHttpClient): SttpHandler[Id, Nothing] =
+    OkHttpSyncHandler(client, closeClient = false)
 }
 
 abstract class OkHttpAsyncHandler[R[_], S](client: OkHttpClient,
-                                           rm: MonadAsyncError[R])
-    extends OkHttpHandler[R, S](client) {
+                                           rm: MonadAsyncError[R],
+                                           closeClient: Boolean)
+    extends OkHttpHandler[R, S](client, closeClient) {
   override def send[T](r: Request[T, S]): R[Response[T]] = {
     val request = convertRequest(r)
 
@@ -189,15 +201,25 @@ abstract class OkHttpAsyncHandler[R[_], S](client: OkHttpClient,
   override def responseMonad: MonadError[R] = rm
 }
 
-class OkHttpFutureHandler private (client: OkHttpClient)(
+class OkHttpFutureHandler private (client: OkHttpClient, closeClient: Boolean)(
     implicit ec: ExecutionContext)
-    extends OkHttpAsyncHandler[Future, Nothing](client, new FutureMonad) {}
+    extends OkHttpAsyncHandler[Future, Nothing](client,
+                                                new FutureMonad,
+                                                closeClient) {}
 
 object OkHttpFutureHandler {
-  def apply(
-      okhttpClient: OkHttpClient = OkHttpHandler.buildClientNoRedirects())(
-      implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
-    : SttpHandler[Future, Nothing] =
+  private def apply(client: OkHttpClient, closeClient: Boolean)(
+      implicit ec: ExecutionContext): SttpHandler[Future, Nothing] =
     new FollowRedirectsHandler[Future, Nothing](
-      new OkHttpFutureHandler(okhttpClient))
+      new OkHttpFutureHandler(client, closeClient))
+
+  def apply()(implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
+    : SttpHandler[Future, Nothing] =
+    OkHttpFutureHandler(OkHttpHandler.buildClientNoRedirects(),
+                        closeClient = true)
+
+  def usingClient(client: OkHttpClient)(implicit ec: ExecutionContext =
+                                          ExecutionContext.Implicits.global)
+    : SttpHandler[Future, Nothing] =
+    OkHttpFutureHandler(client, closeClient = false)
 }
