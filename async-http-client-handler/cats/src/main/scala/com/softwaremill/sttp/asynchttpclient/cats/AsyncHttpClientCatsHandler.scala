@@ -4,7 +4,11 @@ import java.nio.ByteBuffer
 
 import cats.effect._
 import com.softwaremill.sttp.asynchttpclient.AsyncHttpClientHandler
-import com.softwaremill.sttp.{MonadAsyncError, SttpHandler}
+import com.softwaremill.sttp.{
+  FollowRedirectsHandler,
+  MonadAsyncError,
+  SttpHandler
+}
 import org.asynchttpclient.{
   AsyncHttpClient,
   AsyncHttpClientConfig,
@@ -36,18 +40,23 @@ class AsyncHttpClientCatsHandler[F[_]: Async] private (
 
 object AsyncHttpClientCatsHandler {
 
+  private def apply[F[_]: Async](
+      asyncHttpClient: AsyncHttpClient,
+      closeClient: Boolean): SttpHandler[F, Nothing] =
+    new FollowRedirectsHandler[F, Nothing](
+      new AsyncHttpClientCatsHandler(asyncHttpClient, closeClient))
+
   def apply[F[_]: Async](): SttpHandler[F, Nothing] =
-    new AsyncHttpClientCatsHandler(new DefaultAsyncHttpClient(),
-                                   closeClient = true)
+    AsyncHttpClientCatsHandler(new DefaultAsyncHttpClient(), closeClient = true)
 
   def usingConfig[F[_]: Async](
       cfg: AsyncHttpClientConfig): SttpHandler[F, Nothing] =
-    new AsyncHttpClientCatsHandler(new DefaultAsyncHttpClient(cfg),
-                                   closeClient = true)
+    AsyncHttpClientCatsHandler(new DefaultAsyncHttpClient(cfg),
+                               closeClient = true)
 
   def usingClient[F[_]: Async](
       client: AsyncHttpClient): SttpHandler[F, Nothing] =
-    new AsyncHttpClientCatsHandler(client, closeClient = false)
+    AsyncHttpClientCatsHandler(client, closeClient = false)
 }
 
 private[cats] class AsyncMonad[F[_]](implicit F: Async[F])

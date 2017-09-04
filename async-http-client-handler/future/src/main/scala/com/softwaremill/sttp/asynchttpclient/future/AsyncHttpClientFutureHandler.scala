@@ -3,7 +3,7 @@ package com.softwaremill.sttp.asynchttpclient.future
 import java.nio.ByteBuffer
 
 import com.softwaremill.sttp.asynchttpclient.AsyncHttpClientHandler
-import com.softwaremill.sttp.{FutureMonad, SttpHandler}
+import com.softwaremill.sttp.{FollowRedirectsHandler, FutureMonad, SttpHandler}
 import org.asynchttpclient.{
   AsyncHttpClient,
   AsyncHttpClientConfig,
@@ -34,6 +34,11 @@ class AsyncHttpClientFutureHandler private (
 
 object AsyncHttpClientFutureHandler {
 
+  private def apply(asyncHttpClient: AsyncHttpClient, closeClient: Boolean)(
+      implicit ec: ExecutionContext): SttpHandler[Future, Nothing] =
+    new FollowRedirectsHandler[Future, Nothing](
+      new AsyncHttpClientFutureHandler(asyncHttpClient, closeClient))
+
   /**
     * @param ec The execution context for running non-network related operations,
     *           e.g. mapping responses. Defaults to the global execution
@@ -41,8 +46,8 @@ object AsyncHttpClientFutureHandler {
     */
   def apply()(implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
     : SttpHandler[Future, Nothing] =
-    new AsyncHttpClientFutureHandler(new DefaultAsyncHttpClient(),
-                                     closeClient = true)
+    AsyncHttpClientFutureHandler(new DefaultAsyncHttpClient(),
+                                 closeClient = true)
 
   /**
     * @param ec The execution context for running non-network related operations,
@@ -52,8 +57,8 @@ object AsyncHttpClientFutureHandler {
   def usingConfig(cfg: AsyncHttpClientConfig)(
       implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
     : SttpHandler[Future, Nothing] =
-    new AsyncHttpClientFutureHandler(new DefaultAsyncHttpClient(cfg),
-                                     closeClient = true)
+    AsyncHttpClientFutureHandler(new DefaultAsyncHttpClient(cfg),
+                                 closeClient = true)
 
   /**
     * @param ec The execution context for running non-network related operations,
@@ -63,5 +68,5 @@ object AsyncHttpClientFutureHandler {
   def usingClient(client: AsyncHttpClient)(implicit ec: ExecutionContext =
                                              ExecutionContext.Implicits.global)
     : SttpHandler[Future, Nothing] =
-    new AsyncHttpClientFutureHandler(client, closeClient = false)
+    AsyncHttpClientFutureHandler(client, closeClient = false)
 }

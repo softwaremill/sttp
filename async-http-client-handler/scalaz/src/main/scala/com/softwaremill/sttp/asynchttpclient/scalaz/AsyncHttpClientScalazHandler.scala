@@ -2,7 +2,11 @@ package com.softwaremill.sttp.asynchttpclient.scalaz
 
 import java.nio.ByteBuffer
 
-import com.softwaremill.sttp.{MonadAsyncError, SttpHandler}
+import com.softwaremill.sttp.{
+  FollowRedirectsHandler,
+  MonadAsyncError,
+  SttpHandler
+}
 import com.softwaremill.sttp.asynchttpclient.AsyncHttpClientHandler
 import org.asynchttpclient.{
   AsyncHttpClient,
@@ -33,14 +37,19 @@ class AsyncHttpClientScalazHandler private (asyncHttpClient: AsyncHttpClient,
 }
 
 object AsyncHttpClientScalazHandler {
+  private def apply(asyncHttpClient: AsyncHttpClient,
+                    closeClient: Boolean): SttpHandler[Task, Nothing] =
+    new FollowRedirectsHandler[Task, Nothing](
+      new AsyncHttpClientScalazHandler(asyncHttpClient, closeClient))
+
   def apply(): SttpHandler[Task, Nothing] =
-    new AsyncHttpClientScalazHandler(new DefaultAsyncHttpClient(),
-                                     closeClient = true)
+    AsyncHttpClientScalazHandler(new DefaultAsyncHttpClient(),
+                                 closeClient = true)
   def usingConfig(cfg: AsyncHttpClientConfig): SttpHandler[Task, Nothing] =
-    new AsyncHttpClientScalazHandler(new DefaultAsyncHttpClient(cfg),
-                                     closeClient = true)
+    AsyncHttpClientScalazHandler(new DefaultAsyncHttpClient(cfg),
+                                 closeClient = true)
   def usingClient(client: AsyncHttpClient): SttpHandler[Task, Nothing] =
-    new AsyncHttpClientScalazHandler(client, closeClient = false)
+    AsyncHttpClientScalazHandler(client, closeClient = false)
 }
 
 private[scalaz] object TaskMonad extends MonadAsyncError[Task] {

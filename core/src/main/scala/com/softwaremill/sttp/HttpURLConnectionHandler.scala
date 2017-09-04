@@ -12,8 +12,8 @@ import scala.annotation.tailrec
 import scala.io.Source
 import scala.collection.JavaConverters._
 
-object HttpURLConnectionHandler extends SttpHandler[Id, Nothing] {
-  override protected def doSend[T](r: Request[T, Nothing]): Response[T] = {
+class HttpURLConnectionHandler extends SttpHandler[Id, Nothing] {
+  override def send[T](r: Request[T, Nothing]): Response[T] = {
     val c =
       new URL(r.uri.toString).openConnection().asInstanceOf[HttpURLConnection]
     c.setRequestMethod(r.method.m)

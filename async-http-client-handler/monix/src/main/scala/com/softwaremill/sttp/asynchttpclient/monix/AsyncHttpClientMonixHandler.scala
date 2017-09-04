@@ -3,6 +3,7 @@ package com.softwaremill.sttp.asynchttpclient.monix
 import java.nio.ByteBuffer
 
 import com.softwaremill.sttp.{
+  FollowRedirectsHandler,
   MonadAsyncError,
   SttpHandler,
   Utf8,
@@ -50,14 +51,20 @@ class AsyncHttpClientMonixHandler private (
 
 object AsyncHttpClientMonixHandler {
 
+  private def apply(asyncHttpClient: AsyncHttpClient, closeClient: Boolean)(
+      implicit scheduler: Scheduler)
+    : SttpHandler[Task, Observable[ByteBuffer]] =
+    new FollowRedirectsHandler(
+      new AsyncHttpClientMonixHandler(asyncHttpClient, closeClient))
+
   /**
     * @param s The scheduler used for streaming request bodies. Defaults to the
     *          global scheduler.
     */
   def apply()(implicit s: Scheduler = Scheduler.Implicits.global)
     : SttpHandler[Task, Observable[ByteBuffer]] =
-    new AsyncHttpClientMonixHandler(new DefaultAsyncHttpClient(),
-                                    closeClient = true)
+    AsyncHttpClientMonixHandler(new DefaultAsyncHttpClient(),
+                                closeClient = true)
 
   /**
     * @param s The scheduler used for streaming request bodies. Defaults to the
@@ -66,8 +73,8 @@ object AsyncHttpClientMonixHandler {
   def usingConfig(cfg: AsyncHttpClientConfig)(implicit s: Scheduler =
                                                 Scheduler.Implicits.global)
     : SttpHandler[Task, Observable[ByteBuffer]] =
-    new AsyncHttpClientMonixHandler(new DefaultAsyncHttpClient(cfg),
-                                    closeClient = true)
+    AsyncHttpClientMonixHandler(new DefaultAsyncHttpClient(cfg),
+                                closeClient = true)
 
   /**
     * @param s The scheduler used for streaming request bodies. Defaults to the
@@ -76,7 +83,7 @@ object AsyncHttpClientMonixHandler {
   def usingClient(client: AsyncHttpClient)(implicit s: Scheduler =
                                              Scheduler.Implicits.global)
     : SttpHandler[Task, Observable[ByteBuffer]] =
-    new AsyncHttpClientMonixHandler(client, closeClient = false)
+    AsyncHttpClientMonixHandler(client, closeClient = false)
 }
 
 private[monix] object TaskMonad extends MonadAsyncError[Task] {

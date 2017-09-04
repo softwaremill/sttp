@@ -630,7 +630,7 @@ class BasicTests
       name should "break redirect loops" in {
         val resp = loop.send().force()
         resp.code should be(0)
-        resp.history should have size (SttpHandler.MaxRedirects)
+        resp.history should have size (FollowRedirectsHandler.MaxRedirects)
       }
     }
   }

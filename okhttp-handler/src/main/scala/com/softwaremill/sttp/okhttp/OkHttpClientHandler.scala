@@ -148,7 +148,7 @@ object OkHttpHandler {
 
 class OkHttpSyncHandler private (client: OkHttpClient)
     extends OkHttpHandler[Id, Nothing](client) {
-  override protected def doSend[T](r: Request[T, Nothing]): Response[T] = {
+  override def send[T](r: Request[T, Nothing]): Response[T] = {
     val request = convertRequest(r)
     val response = client.newCall(request).execute()
     readResponse(response, r.response)
@@ -160,13 +160,13 @@ class OkHttpSyncHandler private (client: OkHttpClient)
 object OkHttpSyncHandler {
   def apply(okhttpClient: OkHttpClient = OkHttpHandler.buildClientNoRedirects())
     : SttpHandler[Id, Nothing] =
-    new OkHttpSyncHandler(okhttpClient)
+    new FollowRedirectsHandler[Id, Nothing](new OkHttpSyncHandler(okhttpClient))
 }
 
 abstract class OkHttpAsyncHandler[R[_], S](client: OkHttpClient,
                                            rm: MonadAsyncError[R])
     extends OkHttpHandler[R, S](client) {
-  override protected def doSend[T](r: Request[T, S]): R[Response[T]] = {
+  override def send[T](r: Request[T, S]): R[Response[T]] = {
     val request = convertRequest(r)
 
     rm.flatten(rm.async[R[Response[T]]] { cb =>
@@ -198,5 +198,6 @@ object OkHttpFutureHandler {
       okhttpClient: OkHttpClient = OkHttpHandler.buildClientNoRedirects())(
       implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
     : SttpHandler[Future, Nothing] =
-    new OkHttpFutureHandler(okhttpClient)
+    new FollowRedirectsHandler[Future, Nothing](
+      new OkHttpFutureHandler(okhttpClient))
 }

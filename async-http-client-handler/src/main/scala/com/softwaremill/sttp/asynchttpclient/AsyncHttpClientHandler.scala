@@ -36,7 +36,7 @@ abstract class AsyncHttpClientHandler[R[_], S](asyncHttpClient: AsyncHttpClient,
                                                closeClient: Boolean)
     extends SttpHandler[R, S] {
 
-  override protected def doSend[T](r: Request[T, S]): R[Response[T]] = {
+  override def send[T](r: Request[T, S]): R[Response[T]] = {
     val preparedRequest = asyncHttpClient
       .prepareRequest(requestToAsync(r))
 

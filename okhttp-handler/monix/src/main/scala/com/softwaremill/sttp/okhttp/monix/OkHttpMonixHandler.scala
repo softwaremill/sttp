@@ -81,7 +81,7 @@ object OkHttpMonixHandler {
       okhttpClient: OkHttpClient = OkHttpHandler.buildClientNoRedirects())(
       implicit s: Scheduler = Scheduler.Implicits.global)
     : SttpHandler[Task, Observable[ByteBuffer]] =
-    new OkHttpMonixHandler(okhttpClient)(s)
+    new FollowRedirectsHandler(new OkHttpMonixHandler(okhttpClient)(s))
 }
 
 private[monix] object TaskMonad extends MonadAsyncError[Task] {

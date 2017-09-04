@@ -5,6 +5,7 @@ import java.nio.ByteBuffer
 import cats.effect._
 import com.softwaremill.sttp.asynchttpclient.AsyncHttpClientHandler
 import com.softwaremill.sttp.{
+  FollowRedirectsHandler,
   MonadAsyncError,
   SttpHandler,
   Utf8,
@@ -51,6 +52,12 @@ class AsyncHttpClientFs2Handler[F[_]: Effect] private (
 
 object AsyncHttpClientFs2Handler {
 
+  private def apply[F[_]: Effect](asyncHttpClient: AsyncHttpClient,
+                                  closeClient: Boolean)(
+      implicit ec: ExecutionContext): SttpHandler[F, Stream[F, ByteBuffer]] =
+    new FollowRedirectsHandler(
+      new AsyncHttpClientFs2Handler(asyncHttpClient, closeClient))
+
   /**
     * @param ec The execution context for running non-network related operations,
     *           e.g. mapping responses. Defaults to the global execution
@@ -59,8 +66,8 @@ object AsyncHttpClientFs2Handler {
   def apply[F[_]: Effect]()(
       implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
     : SttpHandler[F, Stream[F, ByteBuffer]] =
-    new AsyncHttpClientFs2Handler[F](new DefaultAsyncHttpClient(),
-                                     closeClient = true)
+    AsyncHttpClientFs2Handler[F](new DefaultAsyncHttpClient(),
+                                 closeClient = true)
 
   /**
     * @param ec The execution context for running non-network related operations,
@@ -70,8 +77,8 @@ object AsyncHttpClientFs2Handler {
   def usingConfig[F[_]: Effect](cfg: AsyncHttpClientConfig)(
       implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
     : SttpHandler[F, Stream[F, ByteBuffer]] =
-    new AsyncHttpClientFs2Handler[F](new DefaultAsyncHttpClient(cfg),
-                                     closeClient = true)
+    AsyncHttpClientFs2Handler[F](new DefaultAsyncHttpClient(cfg),
+                                 closeClient = true)
 
   /**
     * @param ec The execution context for running non-network related operations,
@@ -81,7 +88,7 @@ object AsyncHttpClientFs2Handler {
   def usingClient[F[_]: Effect](client: AsyncHttpClient)(
       implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
     : SttpHandler[F, Stream[F, ByteBuffer]] =
-    new AsyncHttpClientFs2Handler[F](client, closeClient = false)
+    AsyncHttpClientFs2Handler[F](client, closeClient = false)
 }
 
 private[fs2] class EffectMonad[F[_]](implicit F: Effect[F])

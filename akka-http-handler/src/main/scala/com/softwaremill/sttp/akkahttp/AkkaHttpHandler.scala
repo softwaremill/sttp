@@ -30,11 +30,11 @@ class AkkaHttpHandler private (actorSystem: ActorSystem,
   // the supported stream type
   private type S = Source[ByteString, Any]
 
-  private implicit val as = actorSystem
-  private implicit val materializer = ActorMaterializer()
+  private implicit val as: ActorSystem = actorSystem
+  private implicit val materializer: ActorMaterializer = ActorMaterializer()
 
-  override protected def doSend[T](r: Request[T, S]): Future[Response[T]] = {
-    implicit val ec = this.ec
+  override def send[T](r: Request[T, S]): Future[Response[T]] = {
+    implicit val ec: ExecutionContext = this.ec
     requestToAkka(r)
       .flatMap(setBodyOnAkka(r, r.body, _))
       .toFuture
@@ -269,6 +269,13 @@ class AkkaHttpHandler private (actorSystem: ActorSystem,
 
 object AkkaHttpHandler {
 
+  private def apply(actorSystem: ActorSystem,
+                    ec: ExecutionContext,
+                    terminateActorSystemOnClose: Boolean)
+    : SttpHandler[Future, Source[ByteString, Any]] =
+    new FollowRedirectsHandler(
+      new AkkaHttpHandler(actorSystem, ec, terminateActorSystemOnClose))
+
   /**
     * @param ec The execution context for running non-network related operations,
     *           e.g. mapping responses. Defaults to the global execution
@@ -276,7 +283,7 @@ object AkkaHttpHandler {
     */
   def apply()(implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
     : SttpHandler[Future, Source[ByteString, Any]] =
-    new AkkaHttpHandler(ActorSystem("sttp"), ec, true)
+    AkkaHttpHandler(ActorSystem("sttp"), ec, terminateActorSystemOnClose = true)
 
   /**
     * @param actorSystem The actor system which will be used for the http-client
@@ -288,5 +295,5 @@ object AkkaHttpHandler {
   def usingActorSystem(actorSystem: ActorSystem)(
       implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
     : SttpHandler[Future, Source[ByteString, Any]] =
-    new AkkaHttpHandler(actorSystem, ec, false)
+    AkkaHttpHandler(actorSystem, ec, terminateActorSystemOnClose = false)
 }

@@ -266,4 +266,9 @@ package object sttp {
   implicit class UriContext(val sc: StringContext) extends AnyVal {
     def uri(args: Any*): Uri = UriInterpolator.interpolate(sc, args: _*)
   }
+
+  // default handler
+
+  val HttpURLConnectionHandler: SttpHandler[Id, Nothing] =
+    new FollowRedirectsHandler[Id, Nothing](new HttpURLConnectionHandler())
 }
