@@ -68,7 +68,7 @@ trait SttpHandler[R[_], -S] {
     }
   }
 
-  def close(): Unit = {}
+  def close(): Unit
 
   protected def doSend[T](request: Request[T, S]): R[Response[T]]
 

@@ -244,4 +244,6 @@ object HttpURLConnectionHandler extends SttpHandler[Id, Nothing] {
       case Some(ce) =>
         throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
     }
+
+  override def close(): Unit = {}
 }
