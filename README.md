@@ -386,11 +386,19 @@ OkHttp fully supports HTTP/2.
 
 It is also entirely possible to write your own backend (if so, please consider
 contributing!) or wrapping an existing one. You can even write completely 
-generic wrappers for any delegate backend, as the each backend comes equipped
-with a monad for the response wrapper. 
+generic wrappers for any delegate backend, as each backend comes equipped
+with a monad for the response type. This brings the possibility to `map` and 
+`flatMap` over responses. 
 
-This brings the possibility to `map` and `flatMap` over responses. That way you
-could implement e.g. a logging or metric-capturing wrapper.
+Possible use-cases for wrapper-backend include:
+ 
+* logging
+* capturing metrics
+* request signing (transforming the request before sending it to the delegate)
+
+To pass some context to wrapper-backends, requests can be *tagged*. Each 
+`RequestT` instance contains a `tags: Map[String, Any]` field. This is unused
+by http, but can be used e.g. to pass a metric name or logging context.
 
 ## JSON
 
@@ -422,7 +430,6 @@ val response: Either[io.circe.Error, Response] =
     .response(asJson[Response])
     .send()
 ```
-
 
 ## Request type
 

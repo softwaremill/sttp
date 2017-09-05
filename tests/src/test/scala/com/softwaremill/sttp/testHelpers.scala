@@ -17,7 +17,10 @@ import scala.concurrent.duration._
 import scala.language.higherKinds
 import scalaz._
 
-trait TestHttpServer extends BeforeAndAfterAll with ScalaFutures with TestingPatience {
+trait TestHttpServer
+    extends BeforeAndAfterAll
+    with ScalaFutures
+    with TestingPatience {
   this: Suite =>
   protected implicit val actorSystem: ActorSystem = ActorSystem("sttp-test")
   import actorSystem.dispatcher

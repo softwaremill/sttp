@@ -225,6 +225,11 @@ case class RequestT[U[_], T, +S](
   def followRedirects(fr: Boolean): RequestT[U, T, S] =
     this.copy(options = options.copy(followRedirects = fr))
 
+  def tag(k: String, v: Any): RequestT[U, T, S] =
+    this.copy(tags = tags + (k -> v))
+
+  def tag(k: String): Option[Any] = tags.get(k)
+
   def send[R[_]]()(implicit handler: SttpHandler[R, S],
                    isIdInRequest: IsIdInRequest[U]): R[Response[T]] = {
     // we could avoid the asInstanceOf by creating an artificial copy
