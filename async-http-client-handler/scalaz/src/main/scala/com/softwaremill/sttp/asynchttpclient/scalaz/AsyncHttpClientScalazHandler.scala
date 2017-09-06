@@ -46,8 +46,7 @@ object AsyncHttpClientScalazHandler {
   def apply(connectionTimeout: FiniteDuration = SttpHandler.DefaultConnectionTimeout)
     : SttpHandler[Task, Nothing] =
     AsyncHttpClientScalazHandler(
-      new DefaultAsyncHttpClient(
-        AsyncHttpClientHandler.withConnectionTimeout(connectionTimeout)),
+      AsyncHttpClientHandler.defaultClient(connectionTimeout.toMillis.toInt),
       closeClient = true)
 
   def usingConfig(cfg: AsyncHttpClientConfig): SttpHandler[Task, Nothing] =

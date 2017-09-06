@@ -68,6 +68,6 @@ class RequestTests extends FlatSpec with Matchers {
   }
 
   "request timeout" should "use default if not overridden" in {
-    sttp.readTimeout should be(DefaultReadTimeout)
+    sttp.options.readTimeout should be(DefaultReadTimeout)
   }
 }

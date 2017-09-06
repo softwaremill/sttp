@@ -37,21 +37,22 @@ class AkkaHttpHandler private (actorSystem: ActorSystem,
   private implicit val as: ActorSystem = actorSystem
   private implicit val materializer: ActorMaterializer = ActorMaterializer()
 
+  private val connectionSettings = ClientConnectionSettings(actorSystem)
+    .withConnectingTimeout(connectionTimeout)
+
+  private val connectionPoolSettings = ConnectionPoolSettings(actorSystem)
+
   override def send[T](r: Request[T, S]): Future[Response[T]] = {
     implicit val ec: ExecutionContext = this.ec
 
-    val connectionSettings = ClientConnectionSettings(actorSystem)
-      .withIdleTimeout(r.readTimeout)
-      .withConnectingTimeout(connectionTimeout)
-
-    val connectionPoolSettings = ConnectionPoolSettings(actorSystem)
-      .withConnectionSettings(connectionSettings)
+    val settings = connectionPoolSettings
+      .withConnectionSettings(
+        connectionSettings.withIdleTimeout(r.options.readTimeout))
 
     requestToAkka(r)
       .flatMap(setBodyOnAkka(r, r.body, _))
       .toFuture
-      .flatMap(req =>
-        Http().singleRequest(req, settings = connectionPoolSettings))
+      .flatMap(req => Http().singleRequest(req, settings = settings))
       .flatMap { hr =>
         val code = hr.status.intValue()
 
@@ -285,7 +286,8 @@ object AkkaHttpHandler {
   private def apply(actorSystem: ActorSystem,
                     ec: ExecutionContext,
                     terminateActorSystemOnClose: Boolean,
-                    connectionTimeout: FiniteDuration): SttpHandler[Future, Source[ByteString, Any]] =
+                    connectionTimeout: FiniteDuration)
+    : SttpHandler[Future, Source[ByteString, Any]] =
     new FollowRedirectsHandler(
       new AkkaHttpHandler(actorSystem,
                           ec,
@@ -297,7 +299,8 @@ object AkkaHttpHandler {
     *           e.g. mapping responses. Defaults to the global execution
     *           context.
     */
-  def apply(connectionTimeout: FiniteDuration = SttpHandler.DefaultConnectionTimeout)(
+  def apply(connectionTimeout: FiniteDuration =
+              SttpHandler.DefaultConnectionTimeout)(
       implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
     : SttpHandler[Future, Source[ByteString, Any]] =
     AkkaHttpHandler(ActorSystem("sttp"),
@@ -313,7 +316,8 @@ object AkkaHttpHandler {
     *           context.
     */
   def usingActorSystem(actorSystem: ActorSystem,
-                       connectionTimeout: FiniteDuration = SttpHandler.DefaultConnectionTimeout)(
+                       connectionTimeout: FiniteDuration =
+                         SttpHandler.DefaultConnectionTimeout)(
       implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
     : SttpHandler[Future, Source[ByteString, Any]] =
     AkkaHttpHandler(actorSystem,

@@ -68,8 +68,7 @@ object AsyncHttpClientFs2Handler {
       implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
     : SttpHandler[F, Stream[F, ByteBuffer]] =
     AsyncHttpClientFs2Handler[F](
-      new DefaultAsyncHttpClient(
-        AsyncHttpClientHandler.withConnectionTimeout(connectionTimeout)),
+      AsyncHttpClientHandler.defaultClient(connectionTimeout.toMillis.toInt),
       closeClient = true)
 
   /**

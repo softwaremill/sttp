@@ -21,7 +21,7 @@ class HttpURLConnectionHandler private (connectionTimeout: FiniteDuration)
     c.setRequestMethod(r.method.m)
     r.headers.foreach { case (k, v) => c.setRequestProperty(k, v) }
     c.setDoInput(true)
-    c.setReadTimeout(timeout(r.readTimeout))
+    c.setReadTimeout(timeout(r.options.readTimeout))
     c.setConnectTimeout(timeout(connectionTimeout))
 
     // redirects are handled in SttpHandler

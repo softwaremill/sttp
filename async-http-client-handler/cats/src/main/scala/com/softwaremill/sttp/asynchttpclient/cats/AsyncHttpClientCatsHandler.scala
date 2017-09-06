@@ -50,8 +50,7 @@ object AsyncHttpClientCatsHandler {
   def apply[F[_]: Async](connectionTimeout: FiniteDuration = SttpHandler.DefaultConnectionTimeout)
     : SttpHandler[F, Nothing] =
     AsyncHttpClientCatsHandler(
-      new DefaultAsyncHttpClient(
-        AsyncHttpClientHandler.withConnectionTimeout(connectionTimeout)),
+      AsyncHttpClientHandler.defaultClient(connectionTimeout.toMillis.toInt),
       closeClient = true)
 
   def usingConfig[F[_]: Async](

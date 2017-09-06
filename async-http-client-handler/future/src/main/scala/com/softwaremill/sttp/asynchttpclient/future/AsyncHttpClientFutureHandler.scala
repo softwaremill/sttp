@@ -49,8 +49,7 @@ object AsyncHttpClientFutureHandler {
       implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
     : SttpHandler[Future, Nothing] =
     AsyncHttpClientFutureHandler(
-      new DefaultAsyncHttpClient(
-        AsyncHttpClientHandler.withConnectionTimeout(connectionTimeout)),
+      AsyncHttpClientHandler.defaultClient(connectionTimeout.toMillis.toInt),
       closeClient = true)
 
   /**

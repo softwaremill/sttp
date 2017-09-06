@@ -18,6 +18,7 @@ import org.asynchttpclient.{
   AsyncHandler,
   AsyncHttpClient,
   DefaultAsyncHttpClientConfig,
+  DefaultAsyncHttpClient,
   HttpResponseBodyPart,
   HttpResponseHeaders,
   HttpResponseStatus,
@@ -29,7 +30,6 @@ import org.asynchttpclient.{
 import org.reactivestreams.{Publisher, Subscriber, Subscription}
 
 import scala.collection.JavaConverters._
-import scala.concurrent.duration.FiniteDuration
 import scala.language.higherKinds
 import scala.util.{Failure, Try}
 
@@ -157,10 +157,11 @@ abstract class AsyncHttpClientHandler[R[_], S](asyncHttpClient: AsyncHttpClient,
   }
 
   private def requestToAsync(r: Request[_, S]): AsyncRequest = {
+    val readTimeout = r.options.readTimeout
     val rb = new RequestBuilder(r.method.m)
       .setUrl(r.uri.toString)
       .setRequestTimeout(
-        if (r.readTimeout.isFinite()) r.readTimeout.toMillis.toInt else -1)
+        if (readTimeout.isFinite()) readTimeout.toMillis.toInt else -1)
     r.headers.foreach { case (k, v) => rb.setHeader(k, v) }
     setBody(r, r.body, rb)
     rb.build()
@@ -296,11 +297,12 @@ abstract class AsyncHttpClientHandler[R[_], S](asyncHttpClient: AsyncHttpClient,
 
 object AsyncHttpClientHandler {
 
-  private[asynchttpclient] def withConnectionTimeout(t: FiniteDuration) = {
-    new DefaultAsyncHttpClientConfig.Builder()
-      .setConnectTimeout(t.toMillis.toInt)
-      .build()
-  }
+  private[asynchttpclient] def defaultClient(connectionTimeout: Int): AsyncHttpClient =
+    new DefaultAsyncHttpClient(
+      new DefaultAsyncHttpClientConfig.Builder()
+        .setConnectTimeout(connectionTimeout)
+        .build()
+    )
 }
 
 object EmptyPublisher extends Publisher[ByteBuffer] {

@@ -1,7 +1,7 @@
 package com.softwaremill.sttp.okhttp.monix
 
 import java.nio.ByteBuffer
-import java.util.concurrent.{ArrayBlockingQueue, TimeUnit}
+import java.util.concurrent.ArrayBlockingQueue
 
 import com.softwaremill.sttp.{SttpHandler, _}
 import com.softwaremill.sttp.okhttp.{OkHttpAsyncHandler, OkHttpHandler}
@@ -89,13 +89,8 @@ object OkHttpMonixHandler {
       implicit s: Scheduler = Scheduler.Implicits.global)
     : SttpHandler[Task, Observable[ByteBuffer]] =
     OkHttpMonixHandler(
-      OkHttpHandler
-        .defaultBuilder()
-        .connectTimeout(connectionTimeout.toMillis, TimeUnit.MILLISECONDS)
-        .readTimeout(SttpHandler.DefaultConnectionTimeout.toMillis, TimeUnit.MILLISECONDS)
-        .build(),
-      closeClient = true
-    )(s)
+      OkHttpHandler.defaultClient(DefaultReadTimeout.toMillis, connectionTimeout.toMillis),
+      closeClient = true)(s)
 
   def usingClient(client: OkHttpClient)(implicit s: Scheduler =
                                           Scheduler.Implicits.global)

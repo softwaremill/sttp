@@ -66,8 +66,7 @@ object AsyncHttpClientMonixHandler {
       implicit s: Scheduler = Scheduler.Implicits.global)
     : SttpHandler[Task, Observable[ByteBuffer]] =
     AsyncHttpClientMonixHandler(
-      new DefaultAsyncHttpClient(
-        AsyncHttpClientHandler.withConnectionTimeout(connectionTimeout)),
+      AsyncHttpClientHandler.defaultClient(connectionTimeout.toMillis.toInt),
       closeClient = true)
 
   /**

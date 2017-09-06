@@ -58,14 +58,14 @@ package object sttp {
     * An empty request with no headers.
     */
   val emptyRequest: RequestT[Empty, String, Nothing] =
-    RequestT[Empty, String, Nothing](None,
-                                     None,
-                                     NoBody,
-                                     Vector(),
-                                     asString,
-                                     DefaultReadTimeout,
-                                     RequestOptions(followRedirects = true),
-                                     Map())
+    RequestT[Empty, String, Nothing](
+      None,
+      None,
+      NoBody,
+      Vector(),
+      asString,
+      RequestOptions(followRedirects = true, readTimeout = DefaultReadTimeout),
+      Map())
 
   /**
     * A starting request, with the following modifications comparing to

@@ -34,7 +34,6 @@ case class RequestT[U[_], T, +S](
     body: RequestBody[S],
     headers: Seq[(String, String)],
     response: ResponseAs[T, S],
-    readTimeout: Duration,
     options: RequestOptions,
     tags: Map[String, Any]
 ) {
@@ -218,7 +217,7 @@ case class RequestT[U[_], T, +S](
     copy[U, T, S2](body = StreamBody(b))
 
   def readTimeout(t: Duration): RequestT[U, T, S] =
-    copy(readTimeout = t)
+    this.copy(options = options.copy(readTimeout = t))
 
   def response[T2, S2 >: S](ra: ResponseAs[T2, S2]): RequestT[U, T2, S2] =
     this.copy(response = ra)
@@ -280,4 +279,4 @@ class SpecifyAuthScheme[U[_], T, +S](hn: String, rt: RequestT[U, T, S]) {
     rt.header(hn, s"Bearer $token")
 }
 
-case class RequestOptions(followRedirects: Boolean)
+case class RequestOptions(followRedirects: Boolean, readTimeout: Duration)
