@@ -154,8 +154,9 @@ object OkHttpHandler {
       .readTimeout(readTimeout, TimeUnit.MILLISECONDS)
       .build()
 
-  private[okhttp] def updateClientIfCustomReadTimeout[T, S](r: Request[T, S],
-                                                            client: OkHttpClient): OkHttpClient = {
+  private[okhttp] def updateClientIfCustomReadTimeout[T, S](
+      r: Request[T, S],
+      client: OkHttpClient): OkHttpClient = {
     val readTimeout = r.options.readTimeout
     if (readTimeout == DefaultReadTimeout) client
     else
@@ -191,9 +192,9 @@ object OkHttpSyncHandler {
   def apply(
       connectionTimeout: FiniteDuration = SttpHandler.DefaultConnectionTimeout)
     : SttpHandler[Id, Nothing] =
-    OkHttpSyncHandler(
-      OkHttpHandler.defaultClient(DefaultReadTimeout.toMillis, connectionTimeout.toMillis),
-      closeClient = true)
+    OkHttpSyncHandler(OkHttpHandler.defaultClient(DefaultReadTimeout.toMillis,
+                                                  connectionTimeout.toMillis),
+                      closeClient = true)
 
   def usingClient(client: OkHttpClient): SttpHandler[Id, Nothing] =
     OkHttpSyncHandler(client, closeClient = false)
@@ -239,12 +240,13 @@ object OkHttpFutureHandler {
     new FollowRedirectsHandler[Future, Nothing](
       new OkHttpFutureHandler(client, closeClient))
 
-  def apply(connectionTimeout: FiniteDuration = SttpHandler.DefaultConnectionTimeout)(
+  def apply(connectionTimeout: FiniteDuration =
+              SttpHandler.DefaultConnectionTimeout)(
       implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
     : SttpHandler[Future, Nothing] =
-    OkHttpFutureHandler(
-      OkHttpHandler.defaultClient(DefaultReadTimeout.toMillis, connectionTimeout.toMillis),
-      closeClient = true)
+    OkHttpFutureHandler(OkHttpHandler.defaultClient(DefaultReadTimeout.toMillis,
+                                                    connectionTimeout.toMillis),
+                        closeClient = true)
 
   def usingClient(client: OkHttpClient)(implicit ec: ExecutionContext =
                                           ExecutionContext.Implicits.global)

@@ -43,7 +43,8 @@ object AsyncHttpClientScalazHandler {
     new FollowRedirectsHandler[Task, Nothing](
       new AsyncHttpClientScalazHandler(asyncHttpClient, closeClient))
 
-  def apply(connectionTimeout: FiniteDuration = SttpHandler.DefaultConnectionTimeout)
+  def apply(
+      connectionTimeout: FiniteDuration = SttpHandler.DefaultConnectionTimeout)
     : SttpHandler[Task, Nothing] =
     AsyncHttpClientScalazHandler(
       AsyncHttpClientHandler.defaultClient(connectionTimeout.toMillis.toInt),

@@ -297,7 +297,8 @@ abstract class AsyncHttpClientHandler[R[_], S](asyncHttpClient: AsyncHttpClient,
 
 object AsyncHttpClientHandler {
 
-  private[asynchttpclient] def defaultClient(connectionTimeout: Int): AsyncHttpClient =
+  private[asynchttpclient] def defaultClient(
+      connectionTimeout: Int): AsyncHttpClient =
     new DefaultAsyncHttpClient(
       new DefaultAsyncHttpClientConfig.Builder()
         .setConnectTimeout(connectionTimeout)

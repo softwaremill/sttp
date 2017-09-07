@@ -258,7 +258,8 @@ class HttpURLConnectionHandler private (connectionTimeout: FiniteDuration)
 
 object HttpURLConnectionHandler {
 
-  def apply(connectionTimeout: FiniteDuration = SttpHandler.DefaultConnectionTimeout)
+  def apply(
+      connectionTimeout: FiniteDuration = SttpHandler.DefaultConnectionTimeout)
     : SttpHandler[Id, Nothing] =
     new FollowRedirectsHandler[Id, Nothing](
       new HttpURLConnectionHandler(connectionTimeout))

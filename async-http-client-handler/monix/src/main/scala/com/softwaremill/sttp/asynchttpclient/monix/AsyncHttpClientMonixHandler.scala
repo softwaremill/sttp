@@ -62,7 +62,8 @@ object AsyncHttpClientMonixHandler {
     * @param s The scheduler used for streaming request bodies. Defaults to the
     *          global scheduler.
     */
-  def apply(connectionTimeout: FiniteDuration = SttpHandler.DefaultConnectionTimeout)(
+  def apply(connectionTimeout: FiniteDuration =
+              SttpHandler.DefaultConnectionTimeout)(
       implicit s: Scheduler = Scheduler.Implicits.global)
     : SttpHandler[Task, Observable[ByteBuffer]] =
     AsyncHttpClientMonixHandler(

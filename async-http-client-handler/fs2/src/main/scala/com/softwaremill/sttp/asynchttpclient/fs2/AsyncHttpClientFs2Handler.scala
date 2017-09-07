@@ -64,7 +64,8 @@ object AsyncHttpClientFs2Handler {
     *           e.g. mapping responses. Defaults to the global execution
     *           context.
     */
-  def apply[F[_]: Effect](connectionTimeout: FiniteDuration = SttpHandler.DefaultConnectionTimeout)(
+  def apply[F[_]: Effect](connectionTimeout: FiniteDuration =
+                            SttpHandler.DefaultConnectionTimeout)(
       implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
     : SttpHandler[F, Stream[F, ByteBuffer]] =
     AsyncHttpClientFs2Handler[F](

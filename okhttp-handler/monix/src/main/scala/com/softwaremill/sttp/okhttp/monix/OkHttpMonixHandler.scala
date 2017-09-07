@@ -85,12 +85,13 @@ object OkHttpMonixHandler {
       implicit s: Scheduler): SttpHandler[Task, Observable[ByteBuffer]] =
     new FollowRedirectsHandler(new OkHttpMonixHandler(client, closeClient)(s))
 
-  def apply(connectionTimeout: FiniteDuration = SttpHandler.DefaultConnectionTimeout)(
+  def apply(connectionTimeout: FiniteDuration =
+              SttpHandler.DefaultConnectionTimeout)(
       implicit s: Scheduler = Scheduler.Implicits.global)
     : SttpHandler[Task, Observable[ByteBuffer]] =
-    OkHttpMonixHandler(
-      OkHttpHandler.defaultClient(DefaultReadTimeout.toMillis, connectionTimeout.toMillis),
-      closeClient = true)(s)
+    OkHttpMonixHandler(OkHttpHandler.defaultClient(DefaultReadTimeout.toMillis,
+                                                   connectionTimeout.toMillis),
+                       closeClient = true)(s)
 
   def usingClient(client: OkHttpClient)(implicit s: Scheduler =
                                           Scheduler.Implicits.global)

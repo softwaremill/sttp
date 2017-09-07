@@ -45,7 +45,8 @@ object AsyncHttpClientFutureHandler {
     *           e.g. mapping responses. Defaults to the global execution
     *           context.
     */
-  def apply(connectionTimeout: FiniteDuration = SttpHandler.DefaultConnectionTimeout)(
+  def apply(connectionTimeout: FiniteDuration =
+              SttpHandler.DefaultConnectionTimeout)(
       implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
     : SttpHandler[Future, Nothing] =
     AsyncHttpClientFutureHandler(

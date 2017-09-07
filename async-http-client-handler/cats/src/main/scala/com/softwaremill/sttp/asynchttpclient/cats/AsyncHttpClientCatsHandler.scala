@@ -47,7 +47,8 @@ object AsyncHttpClientCatsHandler {
     new FollowRedirectsHandler[F, Nothing](
       new AsyncHttpClientCatsHandler(asyncHttpClient, closeClient))
 
-  def apply[F[_]: Async](connectionTimeout: FiniteDuration = SttpHandler.DefaultConnectionTimeout)
+  def apply[F[_]: Async](
+      connectionTimeout: FiniteDuration = SttpHandler.DefaultConnectionTimeout)
     : SttpHandler[F, Nothing] =
     AsyncHttpClientCatsHandler(
       AsyncHttpClientHandler.defaultClient(connectionTimeout.toMillis.toInt),
