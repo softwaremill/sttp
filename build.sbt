@@ -27,10 +27,13 @@ val commonSettings = Seq(
   releaseCrossBuild := true,
   releasePublishArtifactsAction := PgpKeys.publishSigned.value,
   releaseIgnoreUntrackedFiles := true,
-  releaseProcess := SttpRelease.steps
+  releaseProcess := SttpRelease.steps,
+  // silence transitivie eviction warnings
+  evictionWarningOptions in update := EvictionWarningOptions.default
+    .withWarnTransitiveEvictions(false)
 )
 
-val akkaHttpVersion = "10.0.9"
+val akkaHttpVersion = "10.0.10"
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % akkaHttpVersion
 
 val monixVersion = "2.3.0"
@@ -38,7 +41,7 @@ val monix = "io.monix" %% "monix" % monixVersion
 
 val circeVersion = "0.8.0"
 
-val scalaTest = "org.scalatest" %% "scalatest" % "3.0.3"
+val scalaTest = "org.scalatest" %% "scalatest" % "3.0.4"
 
 lazy val rootProject = (project in file("."))
   .settings(commonSettings: _*)
@@ -137,7 +140,7 @@ lazy val okhttpHandler: Project = (project in file("okhttp-handler"))
   .settings(
     name := "okhttp-handler",
     libraryDependencies ++= Seq(
-      "com.squareup.okhttp3" % "okhttp" % "3.8.1"
+      "com.squareup.okhttp3" % "okhttp" % "3.9.0"
     )
   ) dependsOn core
 
