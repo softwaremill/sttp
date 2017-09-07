@@ -17,7 +17,7 @@ val query = "http language:scala"
 // `sort` is removed, as the value is not defined
 val request = sttp.get(uri"https://api.github.com/search/repositories?q=$query&sort=$sort")
   
-implicit val handler = HttpURLConnectionHandler
+implicit val handler = HttpURLConnectionHandler()
 val response = request.send()
 
 // response.header(...): Option[String]
@@ -61,7 +61,7 @@ experimenting with sttp by copy-pasting the following:
 ```scala
 import $ivy.`com.softwaremill.sttp::core:0.0.11`
 import com.softwaremill.sttp._
-implicit val handler = HttpURLConnectionHandler
+implicit val handler = HttpURLConnectionHandler()
 sttp.get(uri"http://httpbin.org/ip").send()
 ```
 
@@ -113,7 +113,7 @@ value of type `SttpHandler` needs to be in scope to invoke the `send()` on the
 request: 
 
 ```scala
-implicit val handler = HttpURLConnectionHandler
+implicit val handler = HttpURLConnectionHandler()
 
 val response: Response[String] = request.send()
 ```
@@ -214,7 +214,7 @@ in the identity type constructor, which is equivalent to no wrapper at all.
 To use, add an implicit value:
 
 ```scala
-implicit val sttpHandler = HttpURLConnectionHandler
+implicit val sttpHandler = HttpURLConnectionHandler()
 ```
 
 ### `AkkaHttpHandler`
@@ -417,7 +417,7 @@ a request to decode the response to a specific object.
 import com.softwaremill.sttp._
 import com.softwaremill.sttp.circe._
 
-implicit val handler = HttpURLConnectionHandler
+implicit val handler = HttpURLConnectionHandler()
 
 // Assume that there is an implicit circe encoder in scope
 // for the request Payload, and a decoder for the Response
@@ -461,6 +461,26 @@ There are two type aliases for the request template that are used:
 * `type Request[T, S] = RequestT[Id, T, S]`. A sendable request.
 * `type PartialRequest[T, S] = RequestT[Empty, T, S]`
 
+## Timeouts
+
+Sttp supports read and connection timeouts: 
+ * Connection timeout - can be set globally (30 seconds by default)
+ * Read timeout - can be set per request (1 minute by default)
+
+How to use:
+```scala
+import com.softwaremill.sttp._
+import scala.concurrent.duration._
+
+// all backends provide a constructor that allows users to specify connection timeout
+implicit val handler = HttpURLConnectionHandler(connectionTimeout = 1.minute)
+
+sttp
+  .get(uri"...")
+  .readTimeout(5.minutes) // or Duration.Inf to turn read timeout off
+  .send()
+```
+
 ## Notes
 
 * the encoding for `String`s defaults to `utf-8`.
@@ -493,3 +513,4 @@ and pick a task you'd like to work on!
 * [Omar Alejandro Mainegra Sarduy](https://github.com/omainegra)
 * [Bjørn Madsen](https://github.com/aeons)
 * [Piotr Buda](https://github.com/pbuda)
+* [Piotr Gabara](https://github.com/bhop)

@@ -20,6 +20,7 @@ import org.asynchttpclient.{
 }
 import org.reactivestreams.Publisher
 
+import scala.concurrent.duration.FiniteDuration
 import scala.util.{Failure, Success}
 
 class AsyncHttpClientMonixHandler private (
@@ -61,10 +62,12 @@ object AsyncHttpClientMonixHandler {
     * @param s The scheduler used for streaming request bodies. Defaults to the
     *          global scheduler.
     */
-  def apply()(implicit s: Scheduler = Scheduler.Implicits.global)
+  def apply(connectionTimeout: FiniteDuration = SttpHandler.DefaultConnectionTimeout)(
+      implicit s: Scheduler = Scheduler.Implicits.global)
     : SttpHandler[Task, Observable[ByteBuffer]] =
-    AsyncHttpClientMonixHandler(new DefaultAsyncHttpClient(),
-                                closeClient = true)
+    AsyncHttpClientMonixHandler(
+      AsyncHttpClientHandler.defaultClient(connectionTimeout.toMillis.toInt),
+      closeClient = true)
 
   /**
     * @param s The scheduler used for streaming request bodies. Defaults to the

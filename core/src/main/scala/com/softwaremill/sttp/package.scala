@@ -7,6 +7,7 @@ import java.nio.file.Path
 import scala.annotation.{implicitNotFound, tailrec}
 import scala.language.higherKinds
 import scala.collection.immutable.Seq
+import scala.concurrent.duration._
 
 package object sttp {
   type Id[X] = X
@@ -25,6 +26,8 @@ package object sttp {
     * Handlers might also provide special logic for serializer instances which they define (e.g. to handle streaming).
     */
   type BodySerializer[B] = B => BasicRequestBody
+
+  val DefaultReadTimeout: Duration = 1.minute
 
   // constants
 
@@ -55,13 +58,14 @@ package object sttp {
     * An empty request with no headers.
     */
   val emptyRequest: RequestT[Empty, String, Nothing] =
-    RequestT[Empty, String, Nothing](None,
-                                     None,
-                                     NoBody,
-                                     Vector(),
-                                     asString,
-                                     RequestOptions(followRedirects = true),
-                                     Map())
+    RequestT[Empty, String, Nothing](
+      None,
+      None,
+      NoBody,
+      Vector(),
+      asString,
+      RequestOptions(followRedirects = true, readTimeout = DefaultReadTimeout),
+      Map())
 
   /**
     * A starting request, with the following modifications comparing to
@@ -266,9 +270,4 @@ package object sttp {
   implicit class UriContext(val sc: StringContext) extends AnyVal {
     def uri(args: Any*): Uri = UriInterpolator.interpolate(sc, args: _*)
   }
-
-  // default handler
-
-  val HttpURLConnectionHandler: SttpHandler[Id, Nothing] =
-    new FollowRedirectsHandler[Id, Nothing](new HttpURLConnectionHandler())
 }

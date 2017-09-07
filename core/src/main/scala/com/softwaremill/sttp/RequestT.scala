@@ -6,7 +6,7 @@ import java.nio.file.Path
 import java.util.Base64
 
 import scala.collection.immutable.Seq
-
+import scala.concurrent.duration.Duration
 import scala.language.higherKinds
 
 /**
@@ -216,6 +216,9 @@ case class RequestT[U[_], T, +S](
   def streamBody[S2 >: S](b: S2): RequestT[U, T, S2] =
     copy[U, T, S2](body = StreamBody(b))
 
+  def readTimeout(t: Duration): RequestT[U, T, S] =
+    this.copy(options = options.copy(readTimeout = t))
+
   def response[T2, S2 >: S](ra: ResponseAs[T2, S2]): RequestT[U, T2, S2] =
     this.copy(response = ra)
 
@@ -281,4 +284,4 @@ class SpecifyAuthScheme[U[_], T, +S](hn: String, rt: RequestT[U, T, S]) {
     rt.header(hn, s"Bearer $token")
 }
 
-case class RequestOptions(followRedirects: Boolean)
+case class RequestOptions(followRedirects: Boolean, readTimeout: Duration)

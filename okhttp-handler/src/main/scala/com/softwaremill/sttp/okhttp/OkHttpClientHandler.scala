@@ -2,6 +2,7 @@ package com.softwaremill.sttp.okhttp
 
 import java.io.IOException
 import java.nio.charset.Charset
+import java.util.concurrent.TimeUnit
 
 import com.softwaremill.sttp._
 import ResponseAs.EagerResponseHandler
@@ -20,6 +21,7 @@ import okhttp3.{
 import okio.{BufferedSink, Okio}
 
 import scala.collection.JavaConverters._
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 import scala.util.{Failure, Try}
@@ -142,18 +144,38 @@ abstract class OkHttpHandler[R[_], S](client: OkHttpClient,
 }
 
 object OkHttpHandler {
-  def buildClientNoRedirects(): OkHttpClient =
+
+  private[okhttp] def defaultClient(readTimeout: Long,
+                                    connectionTimeout: Long): OkHttpClient =
     new OkHttpClient.Builder()
       .followRedirects(false)
       .followSslRedirects(false)
+      .connectTimeout(connectionTimeout, TimeUnit.MILLISECONDS)
+      .readTimeout(readTimeout, TimeUnit.MILLISECONDS)
       .build()
+
+  private[okhttp] def updateClientIfCustomReadTimeout[T, S](r: Request[T, S],
+                                                            client: OkHttpClient): OkHttpClient = {
+    val readTimeout = r.options.readTimeout
+    if (readTimeout == DefaultReadTimeout) client
+    else
+      client
+        .newBuilder()
+        .readTimeout(if (readTimeout.isFinite()) readTimeout.toMillis else 0,
+                     TimeUnit.MILLISECONDS)
+        .build()
+
+  }
 }
 
 class OkHttpSyncHandler private (client: OkHttpClient, closeClient: Boolean)
     extends OkHttpHandler[Id, Nothing](client, closeClient) {
   override def send[T](r: Request[T, Nothing]): Response[T] = {
     val request = convertRequest(r)
-    val response = client.newCall(request).execute()
+    val response = OkHttpHandler
+      .updateClientIfCustomReadTimeout(r, client)
+      .newCall(request)
+      .execute()
     readResponse(response, r.response)
   }
 
@@ -166,9 +188,12 @@ object OkHttpSyncHandler {
     new FollowRedirectsHandler[Id, Nothing](
       new OkHttpSyncHandler(client, closeClient))
 
-  def apply(): SttpHandler[Id, Nothing] =
-    OkHttpSyncHandler(OkHttpHandler.buildClientNoRedirects(),
-                      closeClient = true)
+  def apply(
+      connectionTimeout: FiniteDuration = SttpHandler.DefaultConnectionTimeout)
+    : SttpHandler[Id, Nothing] =
+    OkHttpSyncHandler(
+      OkHttpHandler.defaultClient(DefaultReadTimeout.toMillis, connectionTimeout.toMillis),
+      closeClient = true)
 
   def usingClient(client: OkHttpClient): SttpHandler[Id, Nothing] =
     OkHttpSyncHandler(client, closeClient = false)
@@ -185,7 +210,8 @@ abstract class OkHttpAsyncHandler[R[_], S](client: OkHttpClient,
       def success(r: R[Response[T]]) = cb(Right(r))
       def error(t: Throwable) = cb(Left(t))
 
-      client
+      OkHttpHandler
+        .updateClientIfCustomReadTimeout(r, client)
         .newCall(request)
         .enqueue(new Callback {
           override def onFailure(call: Call, e: IOException): Unit =
@@ -213,10 +239,12 @@ object OkHttpFutureHandler {
     new FollowRedirectsHandler[Future, Nothing](
       new OkHttpFutureHandler(client, closeClient))
 
-  def apply()(implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
+  def apply(connectionTimeout: FiniteDuration = SttpHandler.DefaultConnectionTimeout)(
+      implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
     : SttpHandler[Future, Nothing] =
-    OkHttpFutureHandler(OkHttpHandler.buildClientNoRedirects(),
-                        closeClient = true)
+    OkHttpFutureHandler(
+      OkHttpHandler.defaultClient(DefaultReadTimeout.toMillis, connectionTimeout.toMillis),
+      closeClient = true)
 
   def usingClient(client: OkHttpClient)(implicit ec: ExecutionContext =
                                           ExecutionContext.Implicits.global)

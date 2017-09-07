@@ -17,6 +17,8 @@ import org.asynchttpclient.{
   AsyncCompletionHandler,
   AsyncHandler,
   AsyncHttpClient,
+  DefaultAsyncHttpClientConfig,
+  DefaultAsyncHttpClient,
   HttpResponseBodyPart,
   HttpResponseHeaders,
   HttpResponseStatus,
@@ -155,7 +157,11 @@ abstract class AsyncHttpClientHandler[R[_], S](asyncHttpClient: AsyncHttpClient,
   }
 
   private def requestToAsync(r: Request[_, S]): AsyncRequest = {
-    val rb = new RequestBuilder(r.method.m).setUrl(r.uri.toString)
+    val readTimeout = r.options.readTimeout
+    val rb = new RequestBuilder(r.method.m)
+      .setUrl(r.uri.toString)
+      .setRequestTimeout(
+        if (readTimeout.isFinite()) readTimeout.toMillis.toInt else -1)
     r.headers.foreach { case (k, v) => rb.setHeader(k, v) }
     setBody(r, r.body, rb)
     rb.build()
@@ -287,6 +293,16 @@ abstract class AsyncHttpClientHandler[R[_], S](asyncHttpClient: AsyncHttpClient,
     if (closeClient)
       asyncHttpClient.close()
   }
+}
+
+object AsyncHttpClientHandler {
+
+  private[asynchttpclient] def defaultClient(connectionTimeout: Int): AsyncHttpClient =
+    new DefaultAsyncHttpClient(
+      new DefaultAsyncHttpClientConfig.Builder()
+        .setConnectTimeout(connectionTimeout)
+        .build()
+    )
 }
 
 object EmptyPublisher extends Publisher[ByteBuffer] {

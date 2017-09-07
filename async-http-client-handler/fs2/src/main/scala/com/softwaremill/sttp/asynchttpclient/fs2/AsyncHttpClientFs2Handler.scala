@@ -21,6 +21,7 @@ import org.asynchttpclient.{
 import org.reactivestreams.Publisher
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.FiniteDuration
 import scala.language.higherKinds
 
 class AsyncHttpClientFs2Handler[F[_]: Effect] private (
@@ -63,11 +64,12 @@ object AsyncHttpClientFs2Handler {
     *           e.g. mapping responses. Defaults to the global execution
     *           context.
     */
-  def apply[F[_]: Effect]()(
+  def apply[F[_]: Effect](connectionTimeout: FiniteDuration = SttpHandler.DefaultConnectionTimeout)(
       implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
     : SttpHandler[F, Stream[F, ByteBuffer]] =
-    AsyncHttpClientFs2Handler[F](new DefaultAsyncHttpClient(),
-                                 closeClient = true)
+    AsyncHttpClientFs2Handler[F](
+      AsyncHttpClientHandler.defaultClient(connectionTimeout.toMillis.toInt),
+      closeClient = true)
 
   /**
     * @param ec The execution context for running non-network related operations,

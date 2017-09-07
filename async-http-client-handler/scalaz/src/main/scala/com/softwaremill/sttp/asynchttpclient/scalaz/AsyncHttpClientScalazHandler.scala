@@ -15,6 +15,7 @@ import org.asynchttpclient.{
 }
 import org.reactivestreams.Publisher
 
+import scala.concurrent.duration.FiniteDuration
 import scalaz.{-\/, \/-}
 import scalaz.concurrent.Task
 
@@ -42,12 +43,16 @@ object AsyncHttpClientScalazHandler {
     new FollowRedirectsHandler[Task, Nothing](
       new AsyncHttpClientScalazHandler(asyncHttpClient, closeClient))
 
-  def apply(): SttpHandler[Task, Nothing] =
-    AsyncHttpClientScalazHandler(new DefaultAsyncHttpClient(),
-                                 closeClient = true)
+  def apply(connectionTimeout: FiniteDuration = SttpHandler.DefaultConnectionTimeout)
+    : SttpHandler[Task, Nothing] =
+    AsyncHttpClientScalazHandler(
+      AsyncHttpClientHandler.defaultClient(connectionTimeout.toMillis.toInt),
+      closeClient = true)
+
   def usingConfig(cfg: AsyncHttpClientConfig): SttpHandler[Task, Nothing] =
     AsyncHttpClientScalazHandler(new DefaultAsyncHttpClient(cfg),
                                  closeClient = true)
+
   def usingClient(client: AsyncHttpClient): SttpHandler[Task, Nothing] =
     AsyncHttpClientScalazHandler(client, closeClient = false)
 }

@@ -1,6 +1,7 @@
 package com.softwaremill.sttp
 
 import scala.language.higherKinds
+import scala.concurrent.duration._
 
 /**
   * @tparam R The type constructor in which responses are wrapped. E.g. `Id`
@@ -18,4 +19,8 @@ trait SttpHandler[R[_], -S] {
     * handlers, which map/flatMap over the return value of [[send]].
     */
   def responseMonad: MonadError[R]
+}
+
+object SttpHandler {
+  private[sttp] val DefaultConnectionTimeout = 30.seconds
 }

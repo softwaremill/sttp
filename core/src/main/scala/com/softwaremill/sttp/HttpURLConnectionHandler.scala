@@ -11,14 +11,18 @@ import java.util.zip.{GZIPInputStream, InflaterInputStream}
 import scala.annotation.tailrec
 import scala.io.Source
 import scala.collection.JavaConverters._
+import scala.concurrent.duration.{Duration, FiniteDuration}
 
-class HttpURLConnectionHandler extends SttpHandler[Id, Nothing] {
+class HttpURLConnectionHandler private (connectionTimeout: FiniteDuration)
+    extends SttpHandler[Id, Nothing] {
   override def send[T](r: Request[T, Nothing]): Response[T] = {
     val c =
       new URL(r.uri.toString).openConnection().asInstanceOf[HttpURLConnection]
     c.setRequestMethod(r.method.m)
     r.headers.foreach { case (k, v) => c.setRequestProperty(k, v) }
     c.setDoInput(true)
+    c.setReadTimeout(timeout(r.options.readTimeout))
+    c.setConnectTimeout(timeout(connectionTimeout))
 
     // redirects are handled in SttpHandler
     c.setInstanceFollowRedirects(false)
@@ -67,6 +71,10 @@ class HttpURLConnectionHandler extends SttpHandler[Id, Nothing] {
         setMultipartBody(mp, c)
     }
   }
+
+  private def timeout(t: Duration): Int =
+    if (t.isFinite()) t.toMillis.toInt
+    else 0
 
   private def writeBasicBody(body: BasicRequestBody, os: OutputStream): Unit = {
     body match {
@@ -246,4 +254,12 @@ class HttpURLConnectionHandler extends SttpHandler[Id, Nothing] {
     }
 
   override def close(): Unit = {}
+}
+
+object HttpURLConnectionHandler {
+
+  def apply(connectionTimeout: FiniteDuration = SttpHandler.DefaultConnectionTimeout)
+    : SttpHandler[Id, Nothing] =
+    new FollowRedirectsHandler[Id, Nothing](
+      new HttpURLConnectionHandler(connectionTimeout))
 }
