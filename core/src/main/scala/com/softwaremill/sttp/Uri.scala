@@ -2,8 +2,8 @@ package com.softwaremill.sttp
 
 import java.net.URLEncoder
 
-import Uri.{QueryFragment, UserInfo}
-import Uri.QueryFragment.{KeyValue, Value, Plain}
+import Uri.{QueryFragment, QueryFragmentEncoding, UserInfo}
+import Uri.QueryFragment.{KeyValue, Plain, Value}
 
 import scala.annotation.tailrec
 import scala.collection.immutable.Seq
@@ -124,14 +124,21 @@ case class Uri(scheme: String,
     val queryS = encodeQueryFragments(queryFragments.toList,
                                       previousWasPlain = true,
                                       new StringBuilder())
-    val fragS = fragment.fold("")("#" + encodeFragment(_))
+
+    // https://stackoverflow.com/questions/2053132/is-a-colon-safe-for-friendly-url-use/2053640#2053640
+    val fragS = fragment.fold("")("#" + encode(Rfc3986.Fragment)(_))
+
     s"$schemeS://$userInfoS$hostS$portS$pathPrefixS$pathS$queryPrefixS$queryS$fragS"
   }
 
-  private def encodeQuery(s: String, relaxed: Boolean): String =
-    if (relaxed) encodeQueryRelaxed(s)
-    else
-      URLEncoder.encode(String.valueOf(s), "UTF-8")
+  private def encodeQuery(s: String, e: QueryFragmentEncoding): String =
+    e match {
+      case QueryFragmentEncoding.All => URLEncoder.encode(s, "UTF-8")
+      case QueryFragmentEncoding.Standard =>
+        encode(Rfc3986.QueryNoStandardDelims, spaceAsPlus = true)(s)
+      case QueryFragmentEncoding.Relaxed =>
+        encode(Rfc3986.Query, spaceAsPlus = true)(s)
+    }
 
   private object Rfc3986 {
     val AlphaNum: Set[Char] =
@@ -147,21 +154,21 @@ case class Uri(scheme: String,
     val PathSegment: Set[Char] = PChar
     val Query: Set[Char] = PChar ++ Set('/', '?')
     val Fragment: Set[Char] = Query
+
+    val QueryNoStandardDelims: Set[Char] = Query -- Set('&', '=')
   }
 
-  // https://stackoverflow.com/questions/2322764/what-characters-must-be-escaped-in-an-http-query-string
-  private def encodeQueryRelaxed(s: String): String =
-    encode(Rfc3986.Query)(s)
-
-  // https://stackoverflow.com/questions/2053132/is-a-colon-safe-for-friendly-url-use/2053640#2053640
-  private def encodeFragment(s: String): String =
-    encode(Rfc3986.Fragment)(s)
-
-  private def encode(allowedCharacters: Set[Char])(s: String): String = {
+  /**
+    * @param spaceAsPlus In the query, space is encoded as a `+`. In other
+    * contexts, it should be %-encoded as `%20`.
+    */
+  private def encode(allowedCharacters: Set[Char],
+                     spaceAsPlus: Boolean = false)(s: String): String = {
     val sb = new StringBuilder()
     // based on https://gist.github.com/teigen/5865923
     for (c <- s) {
       if (allowedCharacters(c)) sb.append(c)
+      else if (c == ' ' && spaceAsPlus) sb.append('+')
       else {
         for (b <- c.toString.getBytes("UTF-8")) {
           sb.append("%")
@@ -191,19 +198,22 @@ object Uri {
   object QueryFragment {
 
     /**
-      * @param keyRelaxedEncoding See [[Plain.relaxedEncoding]]
-      * @param valueRelaxedEncoding See [[Plain.relaxedEncoding]]
+      * @param keyEncoding See [[Plain.encoding]]
+      * @param valueEncoding See [[Plain.encoding]]
       */
-    case class KeyValue(k: String,
-                        v: String,
-                        keyRelaxedEncoding: Boolean = false,
-                        valueRelaxedEncoding: Boolean = false)
+    case class KeyValue(
+        k: String,
+        v: String,
+        keyEncoding: QueryFragmentEncoding = QueryFragmentEncoding.Standard,
+        valueEncoding: QueryFragmentEncoding = QueryFragmentEncoding.Standard)
         extends QueryFragment
 
     /**
       * A query fragment which contains only the value, without a key.
       */
-    case class Value(v: String, relaxedEncoding: Boolean = false)
+    case class Value(v: String,
+                     relaxedEncoding: QueryFragmentEncoding =
+                       QueryFragmentEncoding.Standard)
         extends QueryFragment
 
     /**
@@ -211,16 +221,41 @@ object Uri {
       * preceding or following separators. Allows constructing query strings
       * which are not (only) &-separated key-value pairs.
       *
-      * @param relaxedEncoding Should characters, which are allowed in the
-      * query string, but normally escaped be left unchanged. These characters
-      * are:
+      * @param encoding Should reserved characters (in the RFC3986 sense),
+      * which are allowed in the query string, but can be also escaped be
+      * left unchanged. These characters are:
       * {{{
       * /?:@-._~!$&()*+,;=
       * }}}
-      * See: [[https://stackoverflow.com/questions/2322764/what-characters-must-be-escaped-in-an-http-query-string]]
+      * See:
+      * [[https://stackoverflow.com/questions/2322764/what-characters-must-be-escaped-in-an-http-query-string]]
+      * [[https://stackoverflow.com/questions/2366260/whats-valid-and-whats-not-in-a-uri-query]]
       */
-    case class Plain(v: String, relaxedEncoding: Boolean = false)
+    case class Plain(v: String,
+                     encoding: QueryFragmentEncoding =
+                       QueryFragmentEncoding.Standard)
         extends QueryFragment
+  }
+
+  sealed trait QueryFragmentEncoding
+  object QueryFragmentEncoding {
+
+    /**
+      * Encodes all reserved characters using [[java.net.URLEncoder.encode()]].
+      */
+    case object All extends QueryFragmentEncoding
+
+    /**
+      * Encodes only the `&` and `=` reserved characters, which are usually
+      * used to separate query parameter names and values.
+      */
+    case object Standard extends QueryFragmentEncoding
+
+    /**
+      * Doesn't encode any of the reserved characters, leaving intact all
+      * characters allow in the query string as defined by RFC3986.
+      */
+    case object Relaxed extends QueryFragmentEncoding
   }
 
   case class UserInfo(username: String, password: Option[String])

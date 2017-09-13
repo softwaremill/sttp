@@ -1,6 +1,10 @@
 package com.softwaremill.sttp
 
-import com.softwaremill.sttp.Uri.{QueryFragment, UserInfo}
+import com.softwaremill.sttp.Uri.{
+  QueryFragment,
+  QueryFragmentEncoding,
+  UserInfo
+}
 import org.scalatest.{FunSuite, Matchers}
 
 class UriTests extends FunSuite with Matchers {
@@ -31,7 +35,7 @@ class UriTests extends FunSuite with Matchers {
         List("a b", "z", "ą:ę"),
         List(QF.KeyValue("p:1", "v&v"), QF.KeyValue("p2", "v v")),
         None) ->
-      "http://exa%20mple.com/a%20b/z/%C4%85:%C4%99?p%3A1=v%26v&p2=v+v",
+      "http://exa%20mple.com/a%20b/z/%C4%85:%C4%99?p:1=v%26v&p2=v+v",
     Uri("http",
         Some(UserInfo("us&e/r", Some("pa ss"))),
         "example.com",
@@ -82,10 +86,17 @@ class UriTests extends FunSuite with Matchers {
          QF.KeyValue("k3", "v3"),
          QF.KeyValue("k4", "v4")) -> "k1=v1&k2=v2-abc-k3=v3&k4=v4",
     List(QF.KeyValue("k1", "v1"), QF.Plain("&abc&"), QF.KeyValue("k2", "v2")) -> "k1=v1%26abc%26k2=v2",
-    List(QF.KeyValue("k1", "v1"), QF.Plain("&abc&", relaxedEncoding = true)) -> "k1=v1&abc&",
-    List(QF.KeyValue("k1?", "v1?", keyRelaxedEncoding = true)) -> "k1?=v1%3F",
-    List(QF.KeyValue("k1?", "v1?", valueRelaxedEncoding = true)) -> "k1%3F=v1?",
-    List(QF.Plain("ą/ę&+;?", relaxedEncoding = true)) -> "%C4%85/%C4%99&+;?"
+    List(
+      QF.KeyValue("k1", "v1"),
+      QF.Plain("&abc&", encoding = QueryFragmentEncoding.Relaxed)) -> "k1=v1&abc&",
+    List(QF.KeyValue("k1&", "v1&", keyEncoding = QueryFragmentEncoding.Relaxed)) -> "k1&=v1%26",
+    List(QF.KeyValue(
+      "k1&",
+      "v1&",
+      valueEncoding = QueryFragmentEncoding.Relaxed)) -> "k1%26=v1&",
+    List(QF.Plain("ą/ę&+;?", encoding = QueryFragmentEncoding.Relaxed)) -> "%C4%85/%C4%99&+;?",
+    List(QF.KeyValue("k", "v1,v2", valueEncoding = QueryFragmentEncoding.All)) -> "k=v1%2Cv2",
+    List(QF.KeyValue("k", "v1,v2")) -> "k=v1,v2"
   )
 
   for {

@@ -8,7 +8,7 @@ class UriInterpolatorTests extends FunSuite with Matchers {
   val v2queryEncoded = "a+c"
   val v2encoded = "a%20c"
   val v3 = "a?=&c"
-  val v3encoded = "a%3F%3D%26c"
+  val v3encoded = "a?%3D%26c"
   val v4 = "f/g"
   val v4encoded = "f%2Fg"
   val v5 = "a:b"
@@ -114,7 +114,7 @@ class UriInterpolatorTests extends FunSuite with Matchers {
     ),
     "everything" -> List(
       (uri"${"http"}://$v1.$v2.com/$v1/$v2?$v1=$v2&$v3=$v4#$v1",
-       s"http://$v1.$v2encoded.com/$v1/$v2encoded?$v1=$v2queryEncoded&$v3encoded=$v4encoded#$v1")
+       s"http://$v1.$v2encoded.com/$v1/$v2encoded?$v1=$v2queryEncoded&$v3encoded=$v4#$v1")
     ),
     "embed whole url" -> List(
       (uri"${"http://example.com:123/a"}/b/c", "http://example.com:123/a/b/c"),
