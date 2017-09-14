@@ -42,6 +42,16 @@ See also the [introduction to sttp](https://softwaremill.com/introducing-sttp-th
 and [sttp streaming & URI interpolators](https://softwaremill.com/sttp-streaming-uri-interpolator) 
 blogs.
 
+## Non-goals of the project
+
+* implement a full HTTP client. Instead, sttp wraps existing HTTP clients,
+providing a consistent, programmer-friendly API. All network-related concerns
+such as sending the requests, connection pooling, receiving responses are 
+delegated to the chosen backend
+* provide ultimate flexibility in defining the request. While it's possible
+to define *most* valid HTTP requests, e.g. some of the less common body 
+chunking approaches aren't available
+
 ## How is sttp different from other libraries?
 
 * immutable request builder which doesn't impose any order in which request 
@@ -177,7 +187,11 @@ uri"$scheme://$subdomains.example.com?x=$vx&$params#$jumpTo"
 // https://sub1.sub2.example.com?x=y+z&a=1&b=2#section2
 ```
 
-## Cleaning up
+## Starting & cleaning up
+
+In case of most handlers, you should only instantiate a handler once per 
+application, as a handler typically allocates resources such as thread or
+connection pools.
 
 When ending the application, make sure to call `handler.close()`, which will 
 free up resources used by the backend (if any). The close process might be 
