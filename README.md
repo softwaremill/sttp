@@ -17,7 +17,7 @@ val query = "http language:scala"
 // `sort` is removed, as the value is not defined
 val request = sttp.get(uri"https://api.github.com/search/repositories?q=$query&sort=$sort")
   
-implicit val handler = HttpURLConnectionHandler()
+implicit val backend = HttpURLConnectionBackend()
 val response = request.send()
 
 // response.header(...): Option[String]
@@ -71,7 +71,7 @@ experimenting with sttp by copy-pasting the following:
 ```scala
 import $ivy.`com.softwaremill.sttp::core:0.0.13`
 import com.softwaremill.sttp._
-implicit val handler = HttpURLConnectionHandler()
+implicit val backend = HttpURLConnectionBackend()
 sttp.get(uri"http://httpbin.org/ip").send()
 ```
 
@@ -119,11 +119,11 @@ explore the API. And [more will be added](#todo)!
 You can create a request description without knowing how it will be sent.
 But to send a request, you will need a backend. A default, synchronous backend
 based on Java's `HttpURLConnection` is provided out-of-the box. An implicit 
-value of type `SttpHandler` needs to be in scope to invoke the `send()` on the
+value of type `SttpBackend` needs to be in scope to invoke the `send()` on the
 request: 
 
 ```scala
-implicit val handler = HttpURLConnectionHandler()
+implicit val backend = HttpURLConnectionBackend()
 
 val response: Response[String] = request.send()
 ```
@@ -134,8 +134,8 @@ is handled is also part of the request description. The body can be ignore
 (`.response(asParams)`), mapped (`.mapResponse`) and more; some backends also 
 support request & response streaming.
 
-The default handler doesn't wrap the response into any container, but other
-asynchronous handlers might do so. The type parameter in the `Response[_]`
+The default backend doesn't wrap the response into any container, but other
+asynchronous backends might do so. The type parameter in the `Response[_]`
 type specifies the type of the body.
 
 ## URI interpolator
@@ -189,18 +189,18 @@ uri"$scheme://$subdomains.example.com?x=$vx&$params#$jumpTo"
 
 ## Starting & cleaning up
 
-In case of most handlers, you should only instantiate a handler once per 
-application, as a handler typically allocates resources such as thread or
+In case of most backends, you should only instantiate a backend once per 
+application, as a backend typically allocates resources such as thread or
 connection pools.
 
-When ending the application, make sure to call `handler.close()`, which will 
+When ending the application, make sure to call `backend.close()`, which will 
 free up resources used by the backend (if any). The close process might be 
 asynchronous, that is it can complete after the `close()` method returns.
 
-Note that only resources allocated by the handlers are freed. For example,
-if you use the `AkkaHttpHandler()` the `close()` method will terminate the
+Note that only resources allocated by the backends are freed. For example,
+if you use the `AkkaHttpBackend()` the `close()` method will terminate the
 underlying actor system. However, if you have provided an existing actor system
-upon handler creation (`AkkaHttpHandler.usingActorSystem`), the `close()` 
+upon backend creation (`AkkaHttpBackend.usingActorSystem`), the `close()` 
 method will be a no-op. 
 
 ## Supported backends
@@ -209,47 +209,47 @@ method will be a no-op.
 
 | Class | Result wrapper | Supported stream type |
 | --- | --- | --- |
-| `HttpURLConnectionHandler` | None (`Id`) | - |
-| `AkkaHttpHandler` | `scala.concurrent.Future` | `akka.stream.scaladsl.Source[ByteString, Any]` |
-| `AsyncHttpClientFutureHandler` | `scala.concurrent.Future` | - |
-| `AsyncHttpClientScalazHandler` | `scalaz.concurrent.Task` | - |
-| `AsyncHttpClientMonixHandler` | `monix.eval.Task` | `monix.reactive.Observable[ByteBuffer]` | 
-| `AsyncHttpClientCatsHandler` | `F[_]: cats.effect.Async` | - | 
-| `AsyncHttpClientFs2Handler` | `F[_]: cats.effect.Async` | `fs2.Stream[F, ByteBuffer]` | 
-| `OkHttpSyncHandler` | None (`Id`) | - | 
-| `OkHttpFutureHandler` | `scala.concurrent.Future` | - |
-| `OkHttpMonixHandler` | `monix.eval.Task` | `monix.reactive.Observable[ByteBuffer]` |
+| `HttpURLConnectionBackend` | None (`Id`) | - |
+| `AkkaHttpBackend` | `scala.concurrent.Future` | `akka.stream.scaladsl.Source[ByteString, Any]` |
+| `AsyncHttpClientFutureBackend` | `scala.concurrent.Future` | - |
+| `AsyncHttpClientScalazBackend` | `scalaz.concurrent.Task` | - |
+| `AsyncHttpClientMonixBackend` | `monix.eval.Task` | `monix.reactive.Observable[ByteBuffer]` | 
+| `AsyncHttpClientCatsBackend` | `F[_]: cats.effect.Async` | - | 
+| `AsyncHttpClientFs2Backend` | `F[_]: cats.effect.Async` | `fs2.Stream[F, ByteBuffer]` | 
+| `OkHttpSyncBackend` | None (`Id`) | - | 
+| `OkHttpFutureBackend` | `scala.concurrent.Future` | - |
+| `OkHttpMonixBackend` | `monix.eval.Task` | `monix.reactive.Observable[ByteBuffer]` |
 
-### `HttpURLConnectionHandler`
+### `HttpURLConnectionBackend`
 
-The default **synchronous** handler. Sending a request returns a response wrapped 
+The default **synchronous** backend. Sending a request returns a response wrapped 
 in the identity type constructor, which is equivalent to no wrapper at all.
  
 To use, add an implicit value:
 
 ```scala
-implicit val sttpHandler = HttpURLConnectionHandler()
+implicit val sttpBackend = HttpURLConnectionBackend()
 ```
 
-### `AkkaHttpHandler`
+### `AkkaHttpBackend`
 
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp" %% "akka-http-handler" % "0.0.13"
+"com.softwaremill.sttp" %% "akka-http-backend" % "0.0.13"
 ```
 
-This handler depends on [akka-http](http://doc.akka.io/docs/akka-http/current/scala/http/).
-A fully **asynchronous** handler. Sending a request returns a response wrapped
+This backend depends on [akka-http](http://doc.akka.io/docs/akka-http/current/scala/http/).
+A fully **asynchronous** backend. Sending a request returns a response wrapped
 in a `Future`.
 
 Next you'll need to add an implicit value:
 
 ```scala
-implicit val sttpHandler = AkkaHttpHandler()
+implicit val sttpBackend = AkkaHttpBackend()
 
 // or, if you'd like to use an existing actor system:
-implicit val sttpHandler = AkkaHttpHandler.usingActorSystem(actorSystem)
+implicit val sttpBackend = AkkaHttpBackend.usingActorSystem(actorSystem)
 ```
 
 This backend supports sending and receiving 
@@ -281,7 +281,7 @@ import com.softwaremill.sttp.akkahttp._
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 
-implicit val sttpHandler = AkkaHttpHandler()
+implicit val sttpBackend = AkkaHttpBackend()
 
 val response: Future[Response[Source[ByteString, Any]]] = 
   sttp
@@ -290,22 +290,22 @@ val response: Future[Response[Source[ByteString, Any]]] =
     .send()
 ```
 
-### `AsyncHttpClientHandler`
+### `AsyncHttpClientBackend`
 
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp" %% "async-http-client-handler-future" % "0.0.13"
+"com.softwaremill.sttp" %% "async-http-client-backend-future" % "0.0.13"
 // or
-"com.softwaremill.sttp" %% "async-http-client-handler-scalaz" % "0.0.13"
+"com.softwaremill.sttp" %% "async-http-client-backend-scalaz" % "0.0.13"
 // or
-"com.softwaremill.sttp" %% "async-http-client-handler-monix" % "0.0.13"
+"com.softwaremill.sttp" %% "async-http-client-backend-monix" % "0.0.13"
 // or
-"com.softwaremill.sttp" %% "async-http-client-handler-cats" % "0.0.13"
+"com.softwaremill.sttp" %% "async-http-client-backend-cats" % "0.0.13"
 ```
 
-This handler depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client).
-A fully **asynchronous** handler, which uses [Netty](http://netty.io) behind the
+This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client).
+A fully **asynchronous** backend, which uses [Netty](http://netty.io) behind the
 scenes. 
 
 The responses are wrapped depending on the dependency chosen in either a:
@@ -321,28 +321,28 @@ typeclass, such as `cats.effect.IO`. There's a transitive dependency on `cats-ef
 Next you'll need to add an implicit value:
 
 ```scala
-implicit val sttpHandler = AsyncHttpClientFutureHandler()
+implicit val sttpBackend = AsyncHttpClientFutureBackend()
 
 // or, if you're using the scalaz version:
-implicit val sttpHandler = AsyncHttpClientScalazHandler()
+implicit val sttpBackend = AsyncHttpClientScalazBackend()
 
 // or, if you're using the monix version:
-implicit val sttpHandler = AsyncHttpClientMonixHandler()
+implicit val sttpBackend = AsyncHttpClientMonixBackend()
 
 // or, if you're using the cats effect version:
-implicit val sttpHandler = AsyncHttpClientCatsHandler[cats.effect.IO]()
+implicit val sttpBackend = AsyncHttpClientCatsBackend[cats.effect.IO]()
 
 // or, if you'd like to use custom configuration:
-implicit val sttpHandler = AsyncHttpClientFutureHandler.usingConfig(asyncHttpClientConfig)
+implicit val sttpBackend = AsyncHttpClientFutureBackend.usingConfig(asyncHttpClientConfig)
 
 // or, if you'd like to instantiate the AsyncHttpClient yourself:
-implicit val sttpHandler = AsyncHttpClientFutureHandler.usingClient(asyncHttpClient)
+implicit val sttpBackend = AsyncHttpClientFutureBackend.usingClient(asyncHttpClient)
 ```
 
 #### Streaming using Monix
 
-Currently, only the Monix handler supports streaming (as both Monix and Async 
-Http Client support reactive streams `Publisher`s out of the box). The type of 
+The Monix backend supports streaming (as both Monix and Async Http Client 
+support reactive streams `Publisher`s out of the box). The type of 
 supported streams in this case is `Observable[ByteBuffer]`. That is, you can 
 set such an observable as a request body:
 
@@ -369,7 +369,7 @@ import java.nio.ByteBuffer
 import monix.eval.Task
 import monix.reactive.Observable
 
-implicit val sttpHandler = AsyncHttpClientMonixHandler()
+implicit val sttpBackend = AsyncHttpClientMonixBackend()
 
 val response: Task[Response[Observable[ByteBuffer]]] = 
   sttp
@@ -378,21 +378,24 @@ val response: Task[Response[Observable[ByteBuffer]]] =
     .send()
 ```
 
-### `OkHttpClientHandler`
+It's also possible to use [fs2](https://github.com/functional-streams-for-scala/fs2)s
+streams for sending request & receiving responses.
+
+### `OkHttpClientBackend`
 
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp" %% "okhttp-handler" % "0.0.13"
+"com.softwaremill.sttp" %% "okhttp-backend" % "0.0.13"
 // or, for the monix version:
-"com.softwaremill.sttp" %% "okhttp-handler-monix" % "0.0.13"
+"com.softwaremill.sttp" %% "okhttp-backend-monix" % "0.0.13"
 ```
 
-This handler depends on [OkHttp](http://square.github.io/okhttp/), and offers: 
+This backend depends on [OkHttp](http://square.github.io/okhttp/), and offers: 
 
-* a **synchronous** handler: `OkHttpSyncHandler`
-* an **asynchronous**, `Future`-based handler: `OkHttpFutureHandler`
-* an **asynchronous**, Monix-`Task`-based handler: `OkHttpMonixHandler`
+* a **synchronous** backend: `OkHttpSyncBackend`
+* an **asynchronous**, `Future`-based backend: `OkHttpFutureBackend`
+* an **asynchronous**, Monix-`Task`-based backend: `OkHttpMonixBackend`
 
 OkHttp fully supports HTTP/2.
 
@@ -431,7 +434,7 @@ a request to decode the response to a specific object.
 import com.softwaremill.sttp._
 import com.softwaremill.sttp.circe._
 
-implicit val handler = HttpURLConnectionHandler()
+implicit val backend = HttpURLConnectionBackend()
 
 // Assume that there is an implicit circe encoder in scope
 // for the request Payload, and a decoder for the Response
@@ -487,7 +490,7 @@ import com.softwaremill.sttp._
 import scala.concurrent.duration._
 
 // all backends provide a constructor that allows users to specify connection timeout
-implicit val handler = HttpURLConnectionHandler(connectionTimeout = 1.minute)
+implicit val backend = HttpURLConnectionBackend(connectionTimeout = 1.minute)
 
 sttp
   .get(uri"...")

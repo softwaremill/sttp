@@ -16,7 +16,7 @@ import scala.language.higherKinds
   *                 client code to consume it. An exception to this are
   *                 streaming responses, which need to fully consumed by the
   *                 client if such a response type is requested.
-  * @param tags Request-specific tags which can be used by handlers for
+  * @param tags Request-specific tags which can be used by backends for
   *             logging, metrics, etc. Not used by default.
   * @tparam U Specifies if the method & uri are specified. By default can be
   *           either:
@@ -233,13 +233,13 @@ case class RequestT[U[_], T, +S](
 
   def tag(k: String): Option[Any] = tags.get(k)
 
-  def send[R[_]]()(implicit handler: SttpHandler[R, S],
+  def send[R[_]]()(implicit backend: SttpBackend[R, S],
                    isIdInRequest: IsIdInRequest[U]): R[Response[T]] = {
     // we could avoid the asInstanceOf by creating an artificial copy
     // changing the method & url fields using `isIdInRequest`, but that
     // would be only to satisfy the type checker, and a needless copy at
     // runtime.
-    handler.send(this.asInstanceOf[RequestT[Id, T, S]])
+    backend.send(this.asInstanceOf[RequestT[Id, T, S]])
   }
 
   private def hasContentType: Boolean =

@@ -23,7 +23,7 @@ package object sttp {
 
   /**
     * Provide an implicit value of this type to serialize arbitrary classes into a request body.
-    * Handlers might also provide special logic for serializer instances which they define (e.g. to handle streaming).
+    * Backends might also provide special logic for serializer instances which they define (e.g. to handle streaming).
     */
   type BodySerializer[B] = B => BasicRequestBody
 

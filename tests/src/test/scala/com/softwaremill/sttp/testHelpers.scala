@@ -73,7 +73,7 @@ object ForceWrappedValue extends ScalaFutures with TestingPatience {
       try {
         wrapped.runAsync.futureValue
       } catch {
-        case e: TestFailedException => throw e.getCause
+        case e: TestFailedException if e.getCause != null => throw e.getCause
       }
   }
   val catsIo = new ForceWrappedValue[cats.effect.IO] {

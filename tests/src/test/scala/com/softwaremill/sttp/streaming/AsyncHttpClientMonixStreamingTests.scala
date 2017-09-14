@@ -2,16 +2,16 @@ package com.softwaremill.sttp.streaming
 
 import java.nio.ByteBuffer
 
-import com.softwaremill.sttp.SttpHandler
-import com.softwaremill.sttp.asynchttpclient.monix.AsyncHttpClientMonixHandler
+import com.softwaremill.sttp.SttpBackend
+import com.softwaremill.sttp.asynchttpclient.monix.AsyncHttpClientMonixBackend
 import monix.eval.Task
 import monix.reactive.Observable
 
-class AsyncHttpClientMonixStreamingTests extends MonixBaseHandler {
+class AsyncHttpClientMonixStreamingTests extends MonixBaseBackend {
 
   import monix.execution.Scheduler.Implicits.global
 
-  override implicit val handler: SttpHandler[Task, Observable[ByteBuffer]] =
-    AsyncHttpClientMonixHandler()
+  override implicit val backend: SttpBackend[Task, Observable[ByteBuffer]] =
+    AsyncHttpClientMonixBackend()
 
 }

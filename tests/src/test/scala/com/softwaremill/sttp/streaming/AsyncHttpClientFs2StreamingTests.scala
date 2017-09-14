@@ -4,15 +4,15 @@ import java.nio.ByteBuffer
 
 import cats.effect._
 import cats.implicits._
-import com.softwaremill.sttp.asynchttpclient.fs2.AsyncHttpClientFs2Handler
-import com.softwaremill.sttp.{ForceWrappedValue, SttpHandler}
+import com.softwaremill.sttp.asynchttpclient.fs2.AsyncHttpClientFs2Backend
+import com.softwaremill.sttp.{ForceWrappedValue, SttpBackend}
 import fs2._
 
 class AsyncHttpClientFs2StreamingTests
-    extends TestStreamingHandler[IO, Stream[IO, ByteBuffer]] {
+    extends TestStreamingBackend[IO, Stream[IO, ByteBuffer]] {
 
-  override implicit val handler: SttpHandler[IO, Stream[IO, ByteBuffer]] =
-    AsyncHttpClientFs2Handler[IO]()
+  override implicit val backend: SttpBackend[IO, Stream[IO, ByteBuffer]] =
+    AsyncHttpClientFs2Backend[IO]()
 
   override implicit val forceResponse: ForceWrappedValue[IO] =
     ForceWrappedValue.catsIo

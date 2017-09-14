@@ -31,7 +31,7 @@ class StreamingTests
 
   val body = "streaming test"
 
-  var closeHandlers: List[() => Unit] = Nil
+  var closeBackends: List[() => Unit] = Nil
 
   runTests("Akka Http", new AkkaHttpStreamingTests(actorSystem))
   runTests("Monix Async Http Client", new AsyncHttpClientMonixStreamingTests)
@@ -40,10 +40,10 @@ class StreamingTests
 
   def runTests[R[_], S](
       name: String,
-      testStreamingHandler: TestStreamingHandler[R, S]): Unit = {
-    import testStreamingHandler._
+      testStreamingBackend: TestStreamingBackend[R, S]): Unit = {
+    import testStreamingBackend._
 
-    closeHandlers = handler.close _ :: closeHandlers
+    closeBackends = backend.close _ :: closeBackends
 
     name should "stream request body" in {
       val response = sttp
@@ -81,7 +81,7 @@ class StreamingTests
   }
 
   override protected def afterAll(): Unit = {
-    closeHandlers.foreach(_())
+    closeBackends.foreach(_())
     super.afterAll()
   }
 

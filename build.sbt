@@ -48,15 +48,15 @@ lazy val rootProject = (project in file("."))
   .settings(publishArtifact := false, name := "sttp")
   .aggregate(
     core,
-    akkaHttpHandler,
-    asyncHttpClientHandler,
-    asyncHttpClientFutureHandler,
-    asyncHttpClientScalazHandler,
-    asyncHttpClientMonixHandler,
-    asyncHttpClientCatsHandler,
-    asyncHttpClientFs2Handler,
-    okhttpHandler,
-    okhttpMonixHandler,
+    akkaHttpBackend,
+    asyncHttpClientBackend,
+    asyncHttpClientFutureBackend,
+    asyncHttpClientScalazBackend,
+    asyncHttpClientMonixBackend,
+    asyncHttpClientCatsBackend,
+    asyncHttpClientFs2Backend,
+    okhttpBackend,
+    okhttpMonixBackend,
     circe,
     tests
   )
@@ -71,85 +71,85 @@ lazy val core: Project = (project in file("core"))
     )
   )
 
-lazy val akkaHttpHandler: Project = (project in file("akka-http-handler"))
+lazy val akkaHttpBackend: Project = (project in file("akka-http-backend"))
   .settings(commonSettings: _*)
   .settings(
-    name := "akka-http-handler",
+    name := "akka-http-backend",
     libraryDependencies ++= Seq(
       akkaHttp
     )
   ) dependsOn core
 
-lazy val asyncHttpClientHandler: Project = (project in file(
-  "async-http-client-handler"))
+lazy val asyncHttpClientBackend: Project = (project in file(
+  "async-http-client-backend"))
   .settings(commonSettings: _*)
   .settings(
-    name := "async-http-client-handler",
+    name := "async-http-client-backend",
     libraryDependencies ++= Seq(
       "org.asynchttpclient" % "async-http-client" % "2.0.35"
     )
   ) dependsOn core
 
-lazy val asyncHttpClientFutureHandler: Project = (project in file(
-  "async-http-client-handler/future"))
+lazy val asyncHttpClientFutureBackend: Project = (project in file(
+  "async-http-client-backend/future"))
   .settings(commonSettings: _*)
   .settings(
-    name := "async-http-client-handler-future"
-  ) dependsOn asyncHttpClientHandler
+    name := "async-http-client-backend-future"
+  ) dependsOn asyncHttpClientBackend
 
-lazy val asyncHttpClientScalazHandler: Project = (project in file(
-  "async-http-client-handler/scalaz"))
+lazy val asyncHttpClientScalazBackend: Project = (project in file(
+  "async-http-client-backend/scalaz"))
   .settings(commonSettings: _*)
   .settings(
-    name := "async-http-client-handler-scalaz",
+    name := "async-http-client-backend-scalaz",
     libraryDependencies ++= Seq(
       "org.scalaz" %% "scalaz-concurrent" % "7.2.14"
     )
-  ) dependsOn asyncHttpClientHandler
+  ) dependsOn asyncHttpClientBackend
 
-lazy val asyncHttpClientMonixHandler: Project = (project in file(
-  "async-http-client-handler/monix"))
+lazy val asyncHttpClientMonixBackend: Project = (project in file(
+  "async-http-client-backend/monix"))
   .settings(commonSettings: _*)
   .settings(
-    name := "async-http-client-handler-monix",
+    name := "async-http-client-backend-monix",
     libraryDependencies ++= Seq(monix)
-  ) dependsOn asyncHttpClientHandler
+  ) dependsOn asyncHttpClientBackend
 
-lazy val asyncHttpClientCatsHandler: Project = (project in file(
-  "async-http-client-handler/cats"))
+lazy val asyncHttpClientCatsBackend: Project = (project in file(
+  "async-http-client-backend/cats"))
   .settings(commonSettings: _*)
   .settings(
-    name := "async-http-client-handler-cats",
+    name := "async-http-client-backend-cats",
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats-effect" % "0.4"
     )
-  ) dependsOn asyncHttpClientHandler
+  ) dependsOn asyncHttpClientBackend
 
-lazy val asyncHttpClientFs2Handler: Project = (project in file(
-  "async-http-client-handler/fs2"))
+lazy val asyncHttpClientFs2Backend: Project = (project in file(
+  "async-http-client-backend/fs2"))
   .settings(commonSettings: _*)
   .settings(
-    name := "async-http-client-handler-fs2",
+    name := "async-http-client-backend-fs2",
     libraryDependencies ++= Seq(
       "com.github.zainab-ali" %% "fs2-reactive-streams" % "0.2.2"
     )
-  ) dependsOn asyncHttpClientHandler
+  ) dependsOn asyncHttpClientBackend
 
-lazy val okhttpHandler: Project = (project in file("okhttp-handler"))
+lazy val okhttpBackend: Project = (project in file("okhttp-backend"))
   .settings(commonSettings: _*)
   .settings(
-    name := "okhttp-handler",
+    name := "okhttp-backend",
     libraryDependencies ++= Seq(
       "com.squareup.okhttp3" % "okhttp" % "3.9.0"
     )
   ) dependsOn core
 
-lazy val okhttpMonixHandler: Project = (project in file("okhttp-handler/monix"))
+lazy val okhttpMonixBackend: Project = (project in file("okhttp-backend/monix"))
   .settings(commonSettings: _*)
   .settings(
-    name := "okhttp-handler-monix",
+    name := "okhttp-backend-monix",
     libraryDependencies ++= Seq(monix)
-  ) dependsOn okhttpHandler
+  ) dependsOn okhttpBackend
 
 lazy val circe: Project = (project in file("circe"))
   .settings(commonSettings: _*)
@@ -175,5 +175,5 @@ lazy val tests: Project = (project in file("tests"))
       "ch.qos.logback" % "logback-classic" % "1.2.3"
     ).map(_ % "test"),
     libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test"
-  ) dependsOn (core, akkaHttpHandler, asyncHttpClientFutureHandler, asyncHttpClientScalazHandler,
-asyncHttpClientMonixHandler, asyncHttpClientCatsHandler, asyncHttpClientFs2Handler, okhttpMonixHandler)
+  ) dependsOn (core, akkaHttpBackend, asyncHttpClientFutureBackend, asyncHttpClientScalazBackend,
+asyncHttpClientMonixBackend, asyncHttpClientCatsBackend, asyncHttpClientFs2Backend, okhttpMonixBackend)

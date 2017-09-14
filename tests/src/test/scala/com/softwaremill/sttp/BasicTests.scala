@@ -14,13 +14,13 @@ import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.Credentials
 import akka.util.ByteString
 import better.files._
-import com.softwaremill.sttp.akkahttp.AkkaHttpHandler
-import com.softwaremill.sttp.asynchttpclient.cats.AsyncHttpClientCatsHandler
-import com.softwaremill.sttp.asynchttpclient.future.AsyncHttpClientFutureHandler
-import com.softwaremill.sttp.asynchttpclient.monix.AsyncHttpClientMonixHandler
-import com.softwaremill.sttp.asynchttpclient.scalaz.AsyncHttpClientScalazHandler
-import com.softwaremill.sttp.okhttp.monix.OkHttpMonixHandler
-import com.softwaremill.sttp.okhttp.{OkHttpFutureHandler, OkHttpSyncHandler}
+import com.softwaremill.sttp.akkahttp.AkkaHttpBackend
+import com.softwaremill.sttp.asynchttpclient.cats.AsyncHttpClientCatsBackend
+import com.softwaremill.sttp.asynchttpclient.future.AsyncHttpClientFutureBackend
+import com.softwaremill.sttp.asynchttpclient.monix.AsyncHttpClientMonixBackend
+import com.softwaremill.sttp.asynchttpclient.scalaz.AsyncHttpClientScalazBackend
+import com.softwaremill.sttp.okhttp.monix.OkHttpMonixBackend
+import com.softwaremill.sttp.okhttp.{OkHttpFutureBackend, OkHttpSyncBackend}
 import com.typesafe.scalalogging.StrictLogging
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.{path => _, _}
@@ -174,32 +174,32 @@ class BasicTests
 
   override def port = 51823
 
-  var closeHandlers: List[() => Unit] = Nil
+  var closeBackends: List[() => Unit] = Nil
 
-  runTests("HttpURLConnection")(HttpURLConnectionHandler(),
+  runTests("HttpURLConnection")(HttpURLConnectionBackend(),
                                 ForceWrappedValue.id)
-  runTests("Akka HTTP")(AkkaHttpHandler.usingActorSystem(actorSystem),
+  runTests("Akka HTTP")(AkkaHttpBackend.usingActorSystem(actorSystem),
                         ForceWrappedValue.future)
-  runTests("Async Http Client - Future")(AsyncHttpClientFutureHandler(),
+  runTests("Async Http Client - Future")(AsyncHttpClientFutureBackend(),
                                          ForceWrappedValue.future)
-  runTests("Async Http Client - Scalaz")(AsyncHttpClientScalazHandler(),
+  runTests("Async Http Client - Scalaz")(AsyncHttpClientScalazBackend(),
                                          ForceWrappedValue.scalazTask)
-  runTests("Async Http Client - Monix")(AsyncHttpClientMonixHandler(),
+  runTests("Async Http Client - Monix")(AsyncHttpClientMonixBackend(),
                                         ForceWrappedValue.monixTask)
   runTests("Async Http Client - Cats Effect")(
-    AsyncHttpClientCatsHandler[cats.effect.IO](),
+    AsyncHttpClientCatsBackend[cats.effect.IO](),
     ForceWrappedValue.catsIo)
-  runTests("OkHttpSyncClientHandler")(OkHttpSyncHandler(), ForceWrappedValue.id)
-  runTests("OkHttpAsyncClientHandler - Future")(OkHttpFutureHandler(),
+  runTests("OkHttpSyncClientHandler")(OkHttpSyncBackend(), ForceWrappedValue.id)
+  runTests("OkHttpAsyncClientHandler - Future")(OkHttpFutureBackend(),
                                                 ForceWrappedValue.future)
-  runTests("OkHttpAsyncClientHandler - Monix")(OkHttpMonixHandler(),
+  runTests("OkHttpAsyncClientHandler - Monix")(OkHttpMonixBackend(),
                                                ForceWrappedValue.monixTask)
 
   def runTests[R[_]](name: String)(
-      implicit handler: SttpHandler[R, Nothing],
+      implicit backend: SttpBackend[R, Nothing],
       forceResponse: ForceWrappedValue[R]): Unit = {
 
-    closeHandlers = handler.close _ :: closeHandlers
+    closeBackends = backend.close _ :: closeBackends
 
     val postEcho = sttp.post(uri"$endpoint/echo")
     val testBody = "this is the body"
@@ -639,7 +639,7 @@ class BasicTests
       name should "break redirect loops" in {
         val resp = loop.send().force()
         resp.code should be(0)
-        resp.history should have size (FollowRedirectsHandler.MaxRedirects)
+        resp.history should have size (FollowRedirectsBackend.MaxRedirects)
       }
     }
 
@@ -667,7 +667,7 @@ class BasicTests
   }
 
   override protected def afterAll(): Unit = {
-    closeHandlers.foreach(_())
+    closeBackends.foreach(_())
     super.afterAll()
   }
 }
