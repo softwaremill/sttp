@@ -13,7 +13,9 @@ import scala.io.Source
 import scala.collection.JavaConverters._
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
-class HttpURLConnectionBackend private (connectionTimeout: FiniteDuration)
+class HttpURLConnectionBackend private (
+    connectionTimeout: FiniteDuration,
+    customizeConnection: HttpURLConnection => Unit)
     extends SttpBackend[Id, Nothing] {
   override def send[T](r: Request[T, Nothing]): Response[T] = {
     val c =
@@ -26,6 +28,8 @@ class HttpURLConnectionBackend private (connectionTimeout: FiniteDuration)
 
     // redirects are handled by FollowRedirectsBackend
     c.setInstanceFollowRedirects(false)
+
+    customizeConnection(c)
 
     if (r.body != NoBody) {
       c.setDoOutput(true)
@@ -258,9 +262,11 @@ class HttpURLConnectionBackend private (connectionTimeout: FiniteDuration)
 
 object HttpURLConnectionBackend {
 
-  def apply(
-      connectionTimeout: FiniteDuration = SttpBackend.DefaultConnectionTimeout)
-    : SttpBackend[Id, Nothing] =
+  def apply(connectionTimeout: FiniteDuration =
+              SttpBackend.DefaultConnectionTimeout,
+            customizeConnection: HttpURLConnection => Unit = { _ =>
+              ()
+            }): SttpBackend[Id, Nothing] =
     new FollowRedirectsBackend[Id, Nothing](
-      new HttpURLConnectionBackend(connectionTimeout))
+      new HttpURLConnectionBackend(connectionTimeout, customizeConnection))
 }
