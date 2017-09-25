@@ -204,7 +204,7 @@ class HttpURLConnectionBackend private (
       .flatMap { case (k, vv) => vv.asScala.map((k, _)) }
     val contentEncoding = Option(c.getHeaderField(ContentEncodingHeader))
     val code = c.getResponseCode
-    val wrappedIs = wrapInput(contentEncoding, is)
+    val wrappedIs = wrapInput(contentEncoding, handleNullInput(is))
     val body = if (codeIsSuccess(code)) {
       Right(readResponseBody(wrappedIs, responseAs))
     } else {
@@ -246,6 +246,12 @@ class HttpURLConnectionBackend private (
 
     }
   }
+
+  private def handleNullInput(is: InputStream): InputStream =
+    if (is == null)
+      new ByteArrayInputStream(Array.empty[Byte])
+    else
+      is
 
   private def wrapInput(contentEncoding: Option[String],
                         is: InputStream): InputStream =
