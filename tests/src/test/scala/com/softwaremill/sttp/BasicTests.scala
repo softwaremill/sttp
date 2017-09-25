@@ -170,6 +170,17 @@ class BasicTests
         akka.pattern.after(1.second, using = actorSystem.scheduler)(
           Future.successful("Done"))
       }
+    } ~ path("empty_unauthorized_response") {
+      post {
+        import akka.http.scaladsl.model._
+        complete(
+          HttpResponse(
+            status = StatusCodes.Unauthorized,
+            headers = Nil,
+            entity = HttpEntity.Empty,
+            protocol = HttpProtocols.`HTTP/1.1`
+          ))
+      }
     }
 
   override def port = 51823
@@ -220,6 +231,7 @@ class BasicTests
     multipartTests()
     redirectTests()
     timeoutTests()
+    emptyResponseTests()
 
     def parseResponseTests(): Unit = {
       name should "parse response as string" in {
@@ -662,6 +674,18 @@ class BasicTests
           .response(asString)
 
         request.send().force().unsafeBody should be("Done")
+      }
+    }
+
+    def emptyResponseTests(): Unit = {
+      val postEmptyResponse = sttp
+        .post(uri"$endpoint/empty_unauthorized_response")
+        .body("{}")
+        .contentType("application/json")
+
+      name should "parse an empty error response as empty string" in {
+        val response = postEmptyResponse.send().force()
+        response.body should be(Left(""))
       }
     }
   }
