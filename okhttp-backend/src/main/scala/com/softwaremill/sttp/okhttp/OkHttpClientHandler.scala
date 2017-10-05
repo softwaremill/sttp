@@ -29,7 +29,9 @@ import scala.util.{Failure, Try}
 abstract class OkHttpBackend[R[_], S](client: OkHttpClient,
                                       closeClient: Boolean)
     extends SttpBackend[R, S] {
-  private[okhttp] def convertRequest[T](request: Request[T, S]): OkHttpRequest = {
+
+  private[okhttp] def convertRequest[T](
+      request: Request[T, S]): OkHttpRequest = {
     val builder = new OkHttpRequest.Builder()
       .url(request.uri.toString)
 
@@ -50,7 +52,8 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient,
     builder.build()
   }
 
-  private def bodyToOkHttp[T](body: RequestBody[S]): Option[OkHttpRequestBody] = {
+  private def bodyToOkHttp[T](
+      body: RequestBody[S]): Option[OkHttpRequestBody] = {
     body match {
       case NoBody => None
       case StringBody(b, _, _) =>

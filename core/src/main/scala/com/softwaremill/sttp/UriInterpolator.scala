@@ -248,7 +248,8 @@ object UriInterpolator {
   object UriBuilder {
 
     case object Scheme extends UriBuilder {
-      override def fromTokens(u: Uri, t: Vector[Token]): (Uri, Vector[Token]) = {
+      override def fromTokens(u: Uri,
+                              t: Vector[Token]): (Uri, Vector[Token]) = {
         split(t, Set[Token](SchemeEnd)) match {
           case Left(tt) => (u.scheme("http"), tt)
           case Right((schemeTokens, _, otherTokens)) =>
@@ -259,7 +260,8 @@ object UriInterpolator {
     }
 
     case object UserInfo extends UriBuilder {
-      override def fromTokens(u: Uri, t: Vector[Token]): (Uri, Vector[Token]) = {
+      override def fromTokens(u: Uri,
+                              t: Vector[Token]): (Uri, Vector[Token]) = {
         split(t, Set[Token](AtInAuthority)) match {
           case Left(tt) => (u, tt)
           case Right((uiTokens, _, otherTokens)) =>
@@ -293,7 +295,8 @@ object UriInterpolator {
     }
 
     case object HostPort extends UriBuilder {
-      override def fromTokens(u: Uri, t: Vector[Token]): (Uri, Vector[Token]) = {
+      override def fromTokens(u: Uri,
+                              t: Vector[Token]): (Uri, Vector[Token]) = {
         split(t, Set[Token](PathStart, QueryStart, FragmentStart)) match {
           case Left(tt) =>
             (hostPortFromTokens(u, tt), Vector.empty)
@@ -386,7 +389,8 @@ object UriInterpolator {
     }
 
     case object Fragment extends UriBuilder {
-      override def fromTokens(u: Uri, t: Vector[Token]): (Uri, Vector[Token]) = {
+      override def fromTokens(u: Uri,
+                              t: Vector[Token]): (Uri, Vector[Token]) = {
         t match {
           case FragmentStart +: tt =>
             (u.fragment(tokensToStringOpt(tt)), Vector.empty)
@@ -484,7 +488,8 @@ object UriInterpolator {
     * These empty string tokens need to be removed so that e.g. extra key-value
     * mappings are not generated.
     */
-  private def removeEmptyTokensAroundExp(tokens: Vector[Token]): Vector[Token] = {
+  private def removeEmptyTokensAroundExp(
+      tokens: Vector[Token]): Vector[Token] = {
     def doRemove(t: Vector[Token], acc: Vector[Token]): Vector[Token] =
       t match {
         case StringToken("") +: (e: ExpressionToken) +: tail =>

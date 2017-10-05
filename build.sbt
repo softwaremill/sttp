@@ -4,7 +4,7 @@ val commonSettings = Seq(
   crossScalaVersions := Seq(scalaVersion.value, "2.11.11"),
   scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-Xlint"),
   scalafmtOnCompile := true,
-  scalafmtVersion := "1.1.0",
+  scalafmtVersion := "1.2.0",
   // publishing
   publishTo := Some(
     if (isSnapshot.value)
@@ -86,7 +86,7 @@ lazy val asyncHttpClientBackend: Project = (project in file(
   .settings(
     name := "async-http-client-backend",
     libraryDependencies ++= Seq(
-      "org.asynchttpclient" % "async-http-client" % "2.0.35"
+      "org.asynchttpclient" % "async-http-client" % "2.0.37"
     )
   ) dependsOn core
 
@@ -103,7 +103,7 @@ lazy val asyncHttpClientScalazBackend: Project = (project in file(
   .settings(
     name := "async-http-client-backend-scalaz",
     libraryDependencies ++= Seq(
-      "org.scalaz" %% "scalaz-concurrent" % "7.2.14"
+      "org.scalaz" %% "scalaz-concurrent" % "7.2.15"
     )
   ) dependsOn asyncHttpClientBackend
 
@@ -170,7 +170,7 @@ lazy val tests: Project = (project in file("tests"))
     libraryDependencies ++= Seq(
       akkaHttp,
       scalaTest,
-      "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0",
+      "com.typesafe.scala-logging" %% "scala-logging" % "3.7.2",
       "com.github.pathikrit" %% "better-files" % "2.17.1",
       "ch.qos.logback" % "logback-classic" % "1.2.3"
     ).map(_ % "test"),
