@@ -39,7 +39,10 @@ object SttpBackendOptions {
 
   val Default: SttpBackendOptions = SttpBackendOptions(30.seconds, None)
 
-  def connectionTimeout(ct: FiniteDuration): SttpBackendOptions = Default.connectionTimeout(ct)
-  def httpProxy(host: String, port: Int): SttpBackendOptions = Default.httpProxy(host, port)
-  def socksProxy(host: String, port: Int): SttpBackendOptions = Default.socksProxy(host, port)
+  def connectionTimeout(ct: FiniteDuration): SttpBackendOptions =
+    Default.connectionTimeout(ct)
+  def httpProxy(host: String, port: Int): SttpBackendOptions =
+    Default.httpProxy(host, port)
+  def socksProxy(host: String, port: Int): SttpBackendOptions =
+    Default.socksProxy(host, port)
 }
