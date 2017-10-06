@@ -148,14 +148,22 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient,
 
 object OkHttpBackend {
 
-  private[okhttp] def defaultClient(readTimeout: Long,
-                                    connectionTimeout: Long): OkHttpClient =
-    new OkHttpClient.Builder()
+  private[okhttp] def defaultClient(
+      readTimeout: Long,
+      options: SttpBackendOptions): OkHttpClient = {
+    var clientBuilder = new OkHttpClient.Builder()
       .followRedirects(false)
       .followSslRedirects(false)
-      .connectTimeout(connectionTimeout, TimeUnit.MILLISECONDS)
+      .connectTimeout(options.connectionTimeout.toMillis, TimeUnit.MILLISECONDS)
       .readTimeout(readTimeout, TimeUnit.MILLISECONDS)
-      .build()
+
+    clientBuilder = options.proxy match {
+      case None    => clientBuilder
+      case Some(p) => clientBuilder.proxy(p.asJava)
+    }
+
+    clientBuilder.build()
+  }
 
   private[okhttp] def updateClientIfCustomReadTimeout[T, S](
       r: Request[T, S],
@@ -192,12 +200,11 @@ object OkHttpSyncBackend {
     new FollowRedirectsBackend[Id, Nothing](
       new OkHttpSyncBackend(client, closeClient))
 
-  def apply(
-      connectionTimeout: FiniteDuration = SttpBackend.DefaultConnectionTimeout)
+  def apply(options: SttpBackendOptions = SttpBackendOptions.Default)
     : SttpBackend[Id, Nothing] =
-    OkHttpSyncBackend(OkHttpBackend.defaultClient(DefaultReadTimeout.toMillis,
-                                                  connectionTimeout.toMillis),
-                      closeClient = true)
+    OkHttpSyncBackend(
+      OkHttpBackend.defaultClient(DefaultReadTimeout.toMillis, options),
+      closeClient = true)
 
   def usingClient(client: OkHttpClient): SttpBackend[Id, Nothing] =
     OkHttpSyncBackend(client, closeClient = false)
@@ -243,13 +250,12 @@ object OkHttpFutureBackend {
     new FollowRedirectsBackend[Future, Nothing](
       new OkHttpFutureBackend(client, closeClient))
 
-  def apply(connectionTimeout: FiniteDuration =
-              SttpBackend.DefaultConnectionTimeout)(
+  def apply(options: SttpBackendOptions = SttpBackendOptions.Default)(
       implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
     : SttpBackend[Future, Nothing] =
-    OkHttpFutureBackend(OkHttpBackend.defaultClient(DefaultReadTimeout.toMillis,
-                                                    connectionTimeout.toMillis),
-                        closeClient = true)
+    OkHttpFutureBackend(
+      OkHttpBackend.defaultClient(DefaultReadTimeout.toMillis, options),
+      closeClient = true)
 
   def usingClient(client: OkHttpClient)(implicit ec: ExecutionContext =
                                           ExecutionContext.Implicits.global)

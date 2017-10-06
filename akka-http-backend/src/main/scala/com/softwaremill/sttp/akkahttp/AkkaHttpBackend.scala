@@ -1,10 +1,11 @@
 package com.softwaremill.sttp.akkahttp
 
 import java.io.{File, IOException, UnsupportedEncodingException}
+import java.net.InetSocketAddress
 
 import akka.actor.ActorSystem
 import akka.event.LoggingAdapter
-import akka.http.scaladsl.{Http, HttpsConnectionContext}
+import akka.http.scaladsl.{ClientTransport, Http, HttpsConnectionContext}
 import akka.http.scaladsl.coding.{Deflate, Gzip, NoCoding}
 import akka.http.scaladsl.model.ContentTypes.`application/octet-stream`
 import akka.http.scaladsl.model.HttpHeader.ParsingResult
@@ -30,7 +31,7 @@ class AkkaHttpBackend private (
     actorSystem: ActorSystem,
     ec: ExecutionContext,
     terminateActorSystemOnClose: Boolean,
-    connectionTimeout: FiniteDuration,
+    opts: SttpBackendOptions,
     customHttpsContext: Option[HttpsConnectionContext],
     customConnectionPoolSettings: Option[ConnectionPoolSettings],
     customLog: Option[LoggingAdapter])
@@ -45,10 +46,17 @@ class AkkaHttpBackend private (
   private val http = Http()
 
   private val connectionSettings = ClientConnectionSettings(actorSystem)
-    .withConnectingTimeout(connectionTimeout)
+    .withConnectingTimeout(opts.connectionTimeout)
 
-  private val connectionPoolSettings =
-    customConnectionPoolSettings.getOrElse(ConnectionPoolSettings(actorSystem))
+  private val connectionPoolSettings = {
+    val base = customConnectionPoolSettings.getOrElse(
+      ConnectionPoolSettings(actorSystem))
+    opts.proxy match {
+      case None => base
+      case Some(p) =>
+        base.withTransport(ClientTransport.httpsProxy(p.inetSocketAddress))
+    }
+  }
 
   override def send[T](r: Request[T, S]): Future[Response[T]] = {
     implicit val ec: ExecutionContext = this.ec
@@ -300,7 +308,7 @@ object AkkaHttpBackend {
       actorSystem: ActorSystem,
       ec: ExecutionContext,
       terminateActorSystemOnClose: Boolean,
-      connectionTimeout: FiniteDuration,
+      options: SttpBackendOptions,
       customHttpsContext: Option[HttpsConnectionContext],
       customConnectionPoolSettings: Option[ConnectionPoolSettings],
       customLog: Option[LoggingAdapter])
@@ -309,7 +317,7 @@ object AkkaHttpBackend {
       new AkkaHttpBackend(actorSystem,
                           ec,
                           terminateActorSystemOnClose,
-                          connectionTimeout,
+                          options,
                           customHttpsContext,
                           customConnectionPoolSettings,
                           customLog))
@@ -319,8 +327,7 @@ object AkkaHttpBackend {
     *           e.g. mapping responses. Defaults to the global execution
     *           context.
     */
-  def apply(connectionTimeout: FiniteDuration =
-              SttpBackend.DefaultConnectionTimeout,
+  def apply(options: SttpBackendOptions = SttpBackendOptions.Default,
             customHttpsContext: Option[HttpsConnectionContext] = None,
             customConnectionPoolSettings: Option[ConnectionPoolSettings] = None,
             customLog: Option[LoggingAdapter] = None)(
@@ -329,7 +336,7 @@ object AkkaHttpBackend {
     AkkaHttpBackend(ActorSystem("sttp"),
                     ec,
                     terminateActorSystemOnClose = true,
-                    connectionTimeout,
+                    options,
                     customHttpsContext,
                     customConnectionPoolSettings,
                     customLog)
@@ -343,7 +350,7 @@ object AkkaHttpBackend {
     */
   def usingActorSystem(
       actorSystem: ActorSystem,
-      connectionTimeout: FiniteDuration = SttpBackend.DefaultConnectionTimeout,
+      options: SttpBackendOptions = SttpBackendOptions.Default,
       customHttpsContext: Option[HttpsConnectionContext] = None,
       customConnectionPoolSettings: Option[ConnectionPoolSettings] = None,
       customLog: Option[LoggingAdapter] = None)(
@@ -352,7 +359,7 @@ object AkkaHttpBackend {
     AkkaHttpBackend(actorSystem,
                     ec,
                     terminateActorSystemOnClose = false,
-                    connectionTimeout,
+                    options,
                     customHttpsContext,
                     customConnectionPoolSettings,
                     customLog)

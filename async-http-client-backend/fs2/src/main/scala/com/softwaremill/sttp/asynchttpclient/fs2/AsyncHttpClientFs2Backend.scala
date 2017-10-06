@@ -8,6 +8,7 @@ import com.softwaremill.sttp.{
   FollowRedirectsBackend,
   MonadAsyncError,
   SttpBackend,
+  SttpBackendOptions,
   Utf8,
   concatByteBuffers
 }
@@ -21,7 +22,6 @@ import org.asynchttpclient.{
 import org.reactivestreams.Publisher
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.duration.FiniteDuration
 import scala.language.higherKinds
 
 class AsyncHttpClientFs2Backend[F[_]: Effect] private (
@@ -64,13 +64,12 @@ object AsyncHttpClientFs2Backend {
     *           e.g. mapping responses. Defaults to the global execution
     *           context.
     */
-  def apply[F[_]: Effect](connectionTimeout: FiniteDuration =
-                            SttpBackend.DefaultConnectionTimeout)(
+  def apply[F[_]: Effect](options: SttpBackendOptions =
+                            SttpBackendOptions.Default)(
       implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
     : SttpBackend[F, Stream[F, ByteBuffer]] =
-    AsyncHttpClientFs2Backend[F](
-      AsyncHttpClientBackend.defaultClient(connectionTimeout.toMillis.toInt),
-      closeClient = true)
+    AsyncHttpClientFs2Backend[F](AsyncHttpClientBackend.defaultClient(options),
+                                 closeClient = true)
 
   /**
     * @param ec The execution context for running non-network related operations,

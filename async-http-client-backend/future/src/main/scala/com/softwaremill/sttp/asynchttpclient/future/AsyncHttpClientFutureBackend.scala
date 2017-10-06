@@ -3,7 +3,12 @@ package com.softwaremill.sttp.asynchttpclient.future
 import java.nio.ByteBuffer
 
 import com.softwaremill.sttp.asynchttpclient.AsyncHttpClientBackend
-import com.softwaremill.sttp.{FollowRedirectsBackend, FutureMonad, SttpBackend}
+import com.softwaremill.sttp.{
+  FollowRedirectsBackend,
+  FutureMonad,
+  SttpBackend,
+  SttpBackendOptions
+}
 import org.asynchttpclient.{
   AsyncHttpClient,
   AsyncHttpClientConfig,
@@ -11,7 +16,6 @@ import org.asynchttpclient.{
 }
 import org.reactivestreams.Publisher
 
-import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
 class AsyncHttpClientFutureBackend private (
@@ -45,13 +49,11 @@ object AsyncHttpClientFutureBackend {
     *           e.g. mapping responses. Defaults to the global execution
     *           context.
     */
-  def apply(connectionTimeout: FiniteDuration =
-              SttpBackend.DefaultConnectionTimeout)(
+  def apply(options: SttpBackendOptions = SttpBackendOptions.Default)(
       implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
     : SttpBackend[Future, Nothing] =
-    AsyncHttpClientFutureBackend(
-      AsyncHttpClientBackend.defaultClient(connectionTimeout.toMillis.toInt),
-      closeClient = true)
+    AsyncHttpClientFutureBackend(AsyncHttpClientBackend.defaultClient(options),
+                                 closeClient = true)
 
   /**
     * @param ec The execution context for running non-network related operations,

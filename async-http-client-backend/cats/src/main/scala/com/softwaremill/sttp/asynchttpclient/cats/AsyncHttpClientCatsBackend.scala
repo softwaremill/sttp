@@ -7,7 +7,8 @@ import com.softwaremill.sttp.asynchttpclient.AsyncHttpClientBackend
 import com.softwaremill.sttp.{
   FollowRedirectsBackend,
   MonadAsyncError,
-  SttpBackend
+  SttpBackend,
+  SttpBackendOptions
 }
 import org.asynchttpclient.{
   AsyncHttpClient,
@@ -16,7 +17,6 @@ import org.asynchttpclient.{
 }
 import org.reactivestreams.Publisher
 
-import scala.concurrent.duration.FiniteDuration
 import scala.language.higherKinds
 
 class AsyncHttpClientCatsBackend[F[_]: Async] private (
@@ -48,11 +48,10 @@ object AsyncHttpClientCatsBackend {
       new AsyncHttpClientCatsBackend(asyncHttpClient, closeClient))
 
   def apply[F[_]: Async](
-      connectionTimeout: FiniteDuration = SttpBackend.DefaultConnectionTimeout)
+      options: SttpBackendOptions = SttpBackendOptions.Default)
     : SttpBackend[F, Nothing] =
-    AsyncHttpClientCatsBackend(
-      AsyncHttpClientBackend.defaultClient(connectionTimeout.toMillis.toInt),
-      closeClient = true)
+    AsyncHttpClientCatsBackend(AsyncHttpClientBackend.defaultClient(options),
+                               closeClient = true)
 
   def usingConfig[F[_]: Async](
       cfg: AsyncHttpClientConfig): SttpBackend[F, Nothing] =

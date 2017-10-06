@@ -6,6 +6,7 @@ import com.softwaremill.sttp.{
   FollowRedirectsBackend,
   MonadAsyncError,
   SttpBackend,
+  SttpBackendOptions,
   Utf8,
   concatByteBuffers
 }
@@ -20,7 +21,6 @@ import org.asynchttpclient.{
 }
 import org.reactivestreams.Publisher
 
-import scala.concurrent.duration.FiniteDuration
 import scala.util.{Failure, Success}
 
 class AsyncHttpClientMonixBackend private (
@@ -62,13 +62,11 @@ object AsyncHttpClientMonixBackend {
     * @param s The scheduler used for streaming request bodies. Defaults to the
     *          global scheduler.
     */
-  def apply(connectionTimeout: FiniteDuration =
-              SttpBackend.DefaultConnectionTimeout)(
+  def apply(options: SttpBackendOptions = SttpBackendOptions.Default)(
       implicit s: Scheduler = Scheduler.Implicits.global)
     : SttpBackend[Task, Observable[ByteBuffer]] =
-    AsyncHttpClientMonixBackend(
-      AsyncHttpClientBackend.defaultClient(connectionTimeout.toMillis.toInt),
-      closeClient = true)
+    AsyncHttpClientMonixBackend(AsyncHttpClientBackend.defaultClient(options),
+                                closeClient = true)
 
   /**
     * @param s The scheduler used for streaming request bodies. Defaults to the

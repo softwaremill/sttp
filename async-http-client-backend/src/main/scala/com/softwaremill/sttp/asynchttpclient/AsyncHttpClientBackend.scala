@@ -8,6 +8,7 @@ import com.softwaremill.sttp.ResponseAs.EagerResponseHandler
 import com.softwaremill.sttp._
 import org.asynchttpclient.AsyncHandler.State
 import org.asynchttpclient.handler.StreamedAsyncHandler
+import org.asynchttpclient.proxy.ProxyServer
 import org.asynchttpclient.request.body.multipart.{
   ByteArrayPart,
   FilePart,
@@ -17,8 +18,8 @@ import org.asynchttpclient.{
   AsyncCompletionHandler,
   AsyncHandler,
   AsyncHttpClient,
-  DefaultAsyncHttpClientConfig,
   DefaultAsyncHttpClient,
+  DefaultAsyncHttpClientConfig,
   HttpResponseBodyPart,
   HttpResponseHeaders,
   HttpResponseStatus,
@@ -298,12 +299,20 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
 object AsyncHttpClientBackend {
 
   private[asynchttpclient] def defaultClient(
-      connectionTimeout: Int): AsyncHttpClient =
-    new DefaultAsyncHttpClient(
-      new DefaultAsyncHttpClientConfig.Builder()
-        .setConnectTimeout(connectionTimeout)
-        .build()
-    )
+      options: SttpBackendOptions): AsyncHttpClient = {
+
+    var configBuilder = new DefaultAsyncHttpClientConfig.Builder()
+      .setConnectTimeout(options.connectionTimeout.toMillis.toInt)
+
+    configBuilder = options.proxy match {
+      case None => configBuilder
+      case Some(p) =>
+        configBuilder.setProxyServer(
+          new ProxyServer.Builder(p.host, p.port).build())
+    }
+
+    new DefaultAsyncHttpClient(configBuilder.build())
+  }
 }
 
 object EmptyPublisher extends Publisher[ByteBuffer] {

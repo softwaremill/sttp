@@ -5,7 +5,8 @@ import java.nio.ByteBuffer
 import com.softwaremill.sttp.{
   FollowRedirectsBackend,
   MonadAsyncError,
-  SttpBackend
+  SttpBackend,
+  SttpBackendOptions
 }
 import com.softwaremill.sttp.asynchttpclient.AsyncHttpClientBackend
 import org.asynchttpclient.{
@@ -15,7 +16,6 @@ import org.asynchttpclient.{
 }
 import org.reactivestreams.Publisher
 
-import scala.concurrent.duration.FiniteDuration
 import scalaz.{-\/, \/-}
 import scalaz.concurrent.Task
 
@@ -43,12 +43,10 @@ object AsyncHttpClientScalazBackend {
     new FollowRedirectsBackend[Task, Nothing](
       new AsyncHttpClientScalazBackend(asyncHttpClient, closeClient))
 
-  def apply(
-      connectionTimeout: FiniteDuration = SttpBackend.DefaultConnectionTimeout)
+  def apply(options: SttpBackendOptions = SttpBackendOptions.Default)
     : SttpBackend[Task, Nothing] =
-    AsyncHttpClientScalazBackend(
-      AsyncHttpClientBackend.defaultClient(connectionTimeout.toMillis.toInt),
-      closeClient = true)
+    AsyncHttpClientScalazBackend(AsyncHttpClientBackend.defaultClient(options),
+                                 closeClient = true)
 
   def usingConfig(cfg: AsyncHttpClientConfig): SttpBackend[Task, Nothing] =
     AsyncHttpClientScalazBackend(new DefaultAsyncHttpClient(cfg),

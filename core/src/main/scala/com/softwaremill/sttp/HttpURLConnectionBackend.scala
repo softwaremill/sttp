@@ -9,22 +9,21 @@ import java.util.concurrent.ThreadLocalRandom
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
 
 import scala.annotation.tailrec
-import scala.io.Source
 import scala.collection.JavaConverters._
-import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.concurrent.duration.Duration
+import scala.io.Source
 
 class HttpURLConnectionBackend private (
-    connectionTimeout: FiniteDuration,
+    opts: SttpBackendOptions,
     customizeConnection: HttpURLConnection => Unit)
     extends SttpBackend[Id, Nothing] {
   override def send[T](r: Request[T, Nothing]): Response[T] = {
-    val c =
-      new URL(r.uri.toString).openConnection().asInstanceOf[HttpURLConnection]
+    val c = openConnection(r.uri)
     c.setRequestMethod(r.method.m)
     r.headers.foreach { case (k, v) => c.setRequestProperty(k, v) }
     c.setDoInput(true)
     c.setReadTimeout(timeout(r.options.readTimeout))
-    c.setConnectTimeout(timeout(connectionTimeout))
+    c.setConnectTimeout(timeout(opts.connectionTimeout))
 
     // redirects are handled by FollowRedirectsBackend
     c.setInstanceFollowRedirects(false)
@@ -54,6 +53,17 @@ class HttpURLConnectionBackend private (
   }
 
   override def responseMonad: MonadError[Id] = IdMonad
+
+  private def openConnection(uri: Uri): HttpURLConnection = {
+    val url = new URL(uri.toString)
+    val conn = opts.proxy match {
+      case None => url.openConnection()
+      case Some(p) =>
+        url.openConnection(p.asJava)
+    }
+
+    conn.asInstanceOf[HttpURLConnection]
+  }
 
   private def writeBody(body: RequestBody[Nothing],
                         c: HttpURLConnection): Option[OutputStream] = {
@@ -268,11 +278,10 @@ class HttpURLConnectionBackend private (
 
 object HttpURLConnectionBackend {
 
-  def apply(connectionTimeout: FiniteDuration =
-              SttpBackend.DefaultConnectionTimeout,
+  def apply(options: SttpBackendOptions = SttpBackendOptions.Default,
             customizeConnection: HttpURLConnection => Unit = { _ =>
               ()
             }): SttpBackend[Id, Nothing] =
     new FollowRedirectsBackend[Id, Nothing](
-      new HttpURLConnectionBackend(connectionTimeout, customizeConnection))
+      new HttpURLConnectionBackend(options, customizeConnection))
 }

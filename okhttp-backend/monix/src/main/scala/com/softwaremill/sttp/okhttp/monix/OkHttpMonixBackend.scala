@@ -85,13 +85,12 @@ object OkHttpMonixBackend {
       implicit s: Scheduler): SttpBackend[Task, Observable[ByteBuffer]] =
     new FollowRedirectsBackend(new OkHttpMonixBackend(client, closeClient)(s))
 
-  def apply(connectionTimeout: FiniteDuration =
-              SttpBackend.DefaultConnectionTimeout)(
+  def apply(options: SttpBackendOptions = SttpBackendOptions.Default)(
       implicit s: Scheduler = Scheduler.Implicits.global)
     : SttpBackend[Task, Observable[ByteBuffer]] =
-    OkHttpMonixBackend(OkHttpBackend.defaultClient(DefaultReadTimeout.toMillis,
-                                                   connectionTimeout.toMillis),
-                       closeClient = true)(s)
+    OkHttpMonixBackend(
+      OkHttpBackend.defaultClient(DefaultReadTimeout.toMillis, options),
+      closeClient = true)(s)
 
   def usingClient(client: OkHttpClient)(implicit s: Scheduler =
                                           Scheduler.Implicits.global)
