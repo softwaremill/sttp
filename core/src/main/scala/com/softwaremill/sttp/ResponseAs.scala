@@ -37,7 +37,7 @@ case class MappedResponseAs[T, T2, S](raw: BasicResponseAs[T, S], g: T => T2)
     MappedResponseAs[T, T3, S](raw, g andThen f)
 }
 
-case class ResponseAsFile(input: File, overwrite: Boolean)
+case class ResponseAsFile(output: File, overwrite: Boolean)
     extends BasicResponseAs[File, Nothing]
 
 object ResponseAs {

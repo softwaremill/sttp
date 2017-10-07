@@ -251,8 +251,8 @@ class HttpURLConnectionBackend private (
         // Nothing. Oh well ...
         throw new IllegalStateException()
 
-      case ResponseAsFile(input, overwrite) =>
-        ResponseAs.saveFile(input, is, overwrite)
+      case ResponseAsFile(output, overwrite) =>
+        ResponseAs.saveFile(output, is, overwrite)
 
     }
   }
