@@ -1,7 +1,6 @@
 package com.softwaremill.sttp.akkahttp
 
 import java.io.{File, IOException, UnsupportedEncodingException}
-import java.net.InetSocketAddress
 
 import akka.actor.ActorSystem
 import akka.event.LoggingAdapter
@@ -23,7 +22,6 @@ import akka.util.ByteString
 import com.softwaremill.sttp._
 
 import scala.collection.immutable.Seq
-import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 

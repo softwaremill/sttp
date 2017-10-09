@@ -17,6 +17,7 @@ class HttpURLConnectionBackend private (
     opts: SttpBackendOptions,
     customizeConnection: HttpURLConnection => Unit)
     extends SttpBackend[Id, Nothing] {
+
   override def send[T](r: Request[T, Nothing]): Response[T] = {
     val c = openConnection(r.uri)
     c.setRequestMethod(r.method.m)
@@ -52,7 +53,7 @@ class HttpURLConnectionBackend private (
     }
   }
 
-  override def responseMonad: MonadError[Id] = IdMonad
+  override val responseMonad: MonadError[Id] = IdMonad
 
   private def openConnection(uri: Uri): HttpURLConnection = {
     val url = new URL(uri.toString)
