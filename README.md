@@ -530,6 +530,36 @@ parameter. See [akka-http docs](http://doc.akka.io/docs/akka-http/current/scala/
 * OkHttp: create a custom client modifying the SSL settings as described
 [on the wiki](https://github.com/square/okhttp/wiki/HTTPS)
 
+## Testing
+
+If you need a stub backend for use in tests instead of a "real" backend (you 
+probably don't want to make HTTP calls during unit tests), you can use the
+`SttpBackendStub` class. It allows specifying how the backend should respond
+to requests matching given predicates.
+
+A backend stub can be created using an instance of a "real" backend, or by
+explicitly giving the response wrapper monad and supported streams type.
+
+For example:
+
+```scala
+implicit val testingBackend = SttpBackendStub(HttpURLConnectionBackend())
+  .whenRequestMatches(_.uri.path.startsWith(List("a", "b")))
+  .thenRespond("Hello there!")
+  .whenRequestMatches(_.method == Method.POST)
+  .thenRespondServerError()
+    
+val response1 = sttp.get(uri"http://example.org/a/b/c").send()
+// response1.body will be Right("Hello there")
+
+val response2 = sttp.post(uri"http://example.org/d/e").send()
+// response2.code will be 500
+```           
+
+However, this approach has one caveat: the responses are not type-safe. That
+is, the backend cannot match on or verify that the type included in the 
+response matches the response type requested.
+
 ## Notes
 
 * the encoding for `String`s defaults to `utf-8`.
