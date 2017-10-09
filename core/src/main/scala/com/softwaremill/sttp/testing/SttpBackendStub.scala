@@ -19,7 +19,8 @@ import scala.language.higherKinds
   * a response is specified with the incorrect body type.
   */
 class SttpBackendStub[R[_], S] private (rm: MonadError[R],
-                                        matchers: Vector[Matcher[_]])
+                                        matchers: Vector[Matcher[_]],
+                                        fallback: Option[SttpBackend[R, S]])
     extends SttpBackend[R, S] {
 
   /**
@@ -31,14 +32,21 @@ class SttpBackendStub[R[_], S] private (rm: MonadError[R],
     new WhenRequest(p)
 
   override def send[T](request: Request[T, S]): R[Response[T]] = {
-    val response = matchers
+    matchers
       .collectFirst {
         case matcher if matcher(request) => matcher.response
-      }
-      .getOrElse(DefaultResponse)
-
-    rm.unit(response.asInstanceOf[Response[T]])
+      } match {
+      case Some(response) => wrapResponse(response)
+      case None =>
+        fallback match {
+          case None     => wrapResponse(DefaultResponse)
+          case Some(fb) => fb.send(request)
+        }
+    }
   }
+
+  private def wrapResponse[T](r: Response[_]): R[Response[T]] =
+    rm.unit(r.asInstanceOf[Response[T]])
 
   override def close(): Unit = {}
 
@@ -57,7 +65,7 @@ class SttpBackendStub[R[_], S] private (rm: MonadError[R],
     def thenRespond[T](body: T): SttpBackendStub[R, S] =
       thenRespond(Response[T](Right(body), 200, Nil, Nil))
     def thenRespond[T](resp: Response[T]): SttpBackendStub[R, S] =
-      new SttpBackendStub(rm, matchers :+ Matcher(p, resp))
+      new SttpBackendStub(rm, matchers :+ Matcher(p, resp), fallback)
   }
 }
 
@@ -71,16 +79,27 @@ object SttpBackendStub {
     *            [[https://stackoverflow.com/questions/46642623/cannot-infer-contravariant-nothing-type-parameter]].
     */
   def apply[R[_], S, S2 <: S](c: SttpBackend[R, S]): SttpBackendStub[R, S2] =
-    new SttpBackendStub[R, S2](c.responseMonad, Vector.empty)
+    new SttpBackendStub[R, S2](c.responseMonad, Vector.empty, None)
 
   /**
     * Create a stub backend using the given response monad (which determines
     * how requests are wrapped), and any stream type.
     */
   def apply[R[_], S](responseMonad: MonadError[R]): SttpBackendStub[R, S] =
-    new SttpBackendStub[R, S](responseMonad, Vector.empty)
+    new SttpBackendStub[R, S](responseMonad, Vector.empty, None)
 
-  private val DefaultResponse = Response[Nothing](Left(""), 404, Nil, Nil)
+  /**
+    * Create a stub backend which delegates send requests to the given fallback
+    * backend, if the request doesn't match any of the specified predicates.
+    */
+  def withFallback[R[_], S, S2 <: S](
+      fallback: SttpBackend[R, S]): SttpBackendStub[R, S2] =
+    new SttpBackendStub[R, S2](fallback.responseMonad,
+                               Vector.empty,
+                               Some(fallback))
+
+  private val DefaultResponse =
+    Response[Nothing](Left("Not Found"), 404, Nil, Nil)
 
   private case class Matcher[T](p: Request[T, _] => Boolean,
                                 response: Response[T]) {

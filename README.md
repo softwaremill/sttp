@@ -560,6 +560,23 @@ However, this approach has one caveat: the responses are not type-safe. That
 is, the backend cannot match on or verify that the type included in the 
 response matches the response type requested.
 
+It is also possible to create a stub backend which delegates calls to another
+(possibly "real") backend if none of the specified predicates match a request.
+This can be useful during development, to partially stub a yet incomplete
+API with which we integrate:
+
+```scala
+implicit val testingBackend = SttpBackendStub.withFallback(HttpURLConnectionBackend())
+  .whenRequestMatches(_.uri.path.startsWith(List("a")))
+  .thenRespond("I'm a STUB!")
+    
+val response1 = sttp.get(uri"http://api.internal/a").send()
+// response1.body will be Right("I'm a STUB")
+
+val response2 = sttp.post(uri"http://api.internal/b").send()
+// response2 will be whatever a "real" network call to api.internal/b returns 
+```
+
 ## Notes
 
 * the encoding for `String`s defaults to `utf-8`.
@@ -593,3 +610,4 @@ and pick a task you'd like to work on!
 * [Bjørn Madsen](https://github.com/aeons)
 * [Piotr Buda](https://github.com/pbuda)
 * [Piotr Gabara](https://github.com/bhop)
+* [Gabriele Petronella](https://github.com/gabro)

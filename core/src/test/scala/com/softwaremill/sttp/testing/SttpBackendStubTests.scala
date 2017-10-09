@@ -13,7 +13,7 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
     .whenRequestMatches(_.method == Method.GET)
     .thenRespondServerError()
 
-  it should "use the first rule if it matches" in {
+  "backend stub" should "use the first rule if it matches" in {
     implicit val b = testingStub
     val r = sttp.get(uri"http://example.org/a/b/c").send()
     r.is200 should be(true)
@@ -47,5 +47,24 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
     implicit val b = SttpBackendStub(new FutureMonad())
     val r = sttp.post(uri"http://example.org").send()
     r.futureValue.code should be(404)
+  }
+
+  val testingStubWithFallback = SttpBackendStub
+    .withFallback(testingStub)
+    .whenRequestMatches(_.uri.path.startsWith(List("c")))
+    .thenRespond("ok")
+
+  "backend stub with fallback" should "use the stub when response for a request is defined" in {
+    implicit val b = testingStubWithFallback
+
+    val r = sttp.post(uri"http://example.org/c").send()
+    r.body should be(Right("ok"))
+  }
+
+  it should "delegate to the fallback for unhandled requests" in {
+    implicit val b = testingStubWithFallback
+
+    val r = sttp.post(uri"http://example.org/a/b").send()
+    r.is200 should be(true)
   }
 }
