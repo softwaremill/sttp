@@ -55,8 +55,22 @@ If you'd like to use an alternate backend, [see below](#supported-backends) for 
    goals
    requests/basics
    requests/uri
+   requests/defaults           
+   requests/type
    backends/summary
    backends/start_stop
+   backends/httpurlconnection
+   backends/akkahttp
+   backends/asynchttpclient
+   backends/okhttp
+   backends/custom
+   conf/timeouts
+   conf/ssl
+   conf/proxy           
+   json           
+   testing
+   other           
+   credits           
              
 Indices and tables
 ==================
