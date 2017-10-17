@@ -1,0 +1,86 @@
+.. _responsebodyspec:
+
+Response body specification
+===========================
+
+By default, the received response body will be read as a ``String``, using the ``UTF-8`` encoding. This is of course configurable: response bodies can be ignored, deserialized into custom types, recevied as a stream or saved to a file.
+
+How the response body will be read is part of the request definition, as already when sending the request, the backend needs to know what to do with the response. The type to which the response body should be deserialized is the second type parameter of ``RequestT``, and stored in the request definition as ``request.response``, which has type ``ResponseAs[T, S]``.
+
+Basic response specifications
+-----------------------------
+
+To conveniently specify how to deserialize the response body, a number of ``as[Type]`` methods are available. They can be used to provide a value for the requet's ``response`` modifier::
+
+  sttp.response(asByteArray)
+
+When the above request is completed and sent, it will result in a ``Response[Array[Byte]]``. Other possible response specifications are::
+
+  def ignore: ResponseAs[Unit, Nothing]
+  def asString: ResponseAs[String, Nothing]
+  def asString(encoding: String): ResponseAs[String, Nothing]
+  def asByteArray: ResponseAs[Array[Byte], Nothing]
+  def asParams: ResponseAs[Seq[(String, String)], Nothing]
+  def asParams(encoding: String): ResponseAs[Seq[(String, String)], Nothing] =
+  def asFile(file: File, overwrite: Boolean = false): ResponseAs[File, Nothing]
+  def asPath(path: Path, overwrite: Boolean = false): ResponseAs[Path, Nothing]
+
+Hence, to discard the response body, simply specify::
+
+  sttp.response(ignore)
+
+And to save the response to a file::
+
+  sttp.respone(asFile(someFile))
+
+.. note::
+
+  As the handling of response is specified upfront, there's no need to "consume" the response body. It can be safely discarded if not needed.
+
+Custom body deserializers
+-------------------------
+
+It's possible to define custom body deserializers by taking any of the built-in response specifications and mapping over them. Each ``ResponseAs`` instance has a ``map`` method, which can be used to transform it to a specification for another type. Each such value is immutable and can be used multiple times.
+
+As an example, to read the response body as an int, the following response specification can be defined (warning: this ignores the possibility of exceptions!)::
+
+  val asInt: ResponseAs[Int, Nothing] = asString.map(_.toInt)
+  
+  sttp
+    .response(asInt)
+    ...
+
+To integrate with a third-party JSON library::
+
+  def parseJson(json: String): Either[JsonError, JsonAST] = ...
+  val asJson: ResponseAs[Either[JsonError, JsonAST], Nothing] = asString.map(parseJson)
+  
+For some mapped response specifications available out-of-the-box, see :ref:`json support <json>`.
+
+Streaming
+---------
+
+If the backend used supports streaming (see :ref:`backends summary <backends_summary>`), it's possible to receive responses as a stream. This can be specified using the following method::
+
+  def asStream[S]: ResponseAs[S, S] = ResponseAsStream[S, S]()
+
+For example, when using the :ref:`akka-http backend <akkahttp>`::
+
+  import com.softwaremill.sttp._
+  import com.softwaremill.sttp.akkahttp._
+  
+  import akka.stream.scaladsl.Source
+  import akka.util.ByteString
+  
+  implicit val sttpBackend = AkkaHttpBackend() 
+  
+  val response: Future[Response[Source[ByteString, Any]]] = 
+    sttp
+      .post(uri"...")
+      .response(asStream[Source[ByteString, Any]])
+      .send()
+
+.. note::    
+
+  Unlike with non-streaming response handlers, each streaming response should be entirely consumed by client code.
+

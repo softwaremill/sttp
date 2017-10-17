@@ -1,3 +1,5 @@
+.. _akkahttp:
+
 ``AkkaHttpBackend``
 ===================
 
@@ -5,9 +7,7 @@ To use, add the following dependency to your project::
 
   "com.softwaremill.sttp" %% "akka-http-backend" % "0.0.20"
 
-This backend depends on `akka-http <http://doc.akka.io/docs/akka-http/current/scala/http/>`_.
-A fully **asynchronous** backend. Sending a request returns a response wrapped
-in a ``Future``.
+This backend depends on `akka-http <http://doc.akka.io/docs/akka-http/current/scala/http/>`_. A fully **asynchronous** backend. Sending a request returns a response wrapped in a ``Future``.
 
 Next you'll need to add an implicit value::
 
@@ -16,9 +16,7 @@ Next you'll need to add an implicit value::
   // or, if you'd like to use an existing actor system:
   implicit val sttpBackend = AkkaHttpBackend.usingActorSystem(actorSystem)
 
-This backend supports sending and receiving 
-`akka-streams <http://doc.akka.io/docs/akka/current/scala/stream/index.html>`_
-streams of type ``akka.stream.scaladsl.Source[ByteString, Any]``.
+This backend supports sending and receiving `akka-streams <http://doc.akka.io/docs/akka/current/scala/stream/index.html>`_ streams of type ``akka.stream.scaladsl.Source[ByteString, Any]``.
 
 To set the request body as a stream::
 

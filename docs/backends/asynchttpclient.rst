@@ -19,7 +19,7 @@ The responses are wrapped depending on the dependency chosen in either a:
 
 * standard Scala ``Future``
 * `Scalaz <https://github.com/scalaz/scalaz>`_ ``Task``. There's a transitive dependency on ``scalaz-concurrent``.
-* `Monix <https://monix.io`_ ``Task``. There's a transitive dependency on ``monix-eval``.
+* `Monix <https://monix.io>`_ ``Task``. There's a transitive dependency on ``monix-eval``.
 * Any type implementing the `Cats Effect <https://github.com/typelevel/cats-effect>`_ ``Async`` typeclass, such as ``cats.effect.IO``. There's a transitive dependency on ``cats-effect``.
 
 Next you'll need to add an implicit value::

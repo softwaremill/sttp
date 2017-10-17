@@ -8,9 +8,7 @@ Goals of the project
 * provide support for backend-specific request/response streaming
 * minimum dependencies
 
-See also the `introduction to sttp <https://softwaremill.com/introducing-sttp-the-scala-http-client>`_
-and `sttp streaming & URI interpolators <https://softwaremill.com/sttp-streaming-uri-interpolator>`_
-blogs.
+See also the `introduction to sttp <https://softwaremill.com/introducing-sttp-the-scala-http-client>`_ and `sttp streaming & URI interpolators <https://softwaremill.com/sttp-streaming-uri-interpolator>`_ blogs.
 
 Non-goals of the project
 ------------------------
