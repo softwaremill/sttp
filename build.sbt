@@ -58,6 +58,7 @@ lazy val rootProject = (project in file("."))
     okhttpBackend,
     okhttpMonixBackend,
     circe,
+    json4s,
     tests
   )
 
@@ -151,13 +152,23 @@ lazy val okhttpMonixBackend: Project = (project in file("okhttp-backend/monix"))
     libraryDependencies ++= Seq(monix)
   ) dependsOn okhttpBackend
 
-lazy val circe: Project = (project in file("circe"))
+lazy val circe: Project = (project in file("json/circe"))
   .settings(commonSettings: _*)
   .settings(
     name := "circe",
     libraryDependencies ++= Seq(
       "io.circe" %% "circe-core" % circeVersion,
       "io.circe" %% "circe-parser" % circeVersion,
+      scalaTest % "test"
+    )
+  ) dependsOn core
+
+lazy val json4s: Project = (project in file("json/json4s"))
+  .settings(commonSettings: _*)
+  .settings(
+    name := "json4s",
+    libraryDependencies ++= Seq(
+      "org.json4s" %% "json4s-native" % "3.5.3",
       scalaTest % "test"
     )
   ) dependsOn core

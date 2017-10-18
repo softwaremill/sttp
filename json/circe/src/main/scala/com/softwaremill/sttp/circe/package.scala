@@ -4,7 +4,6 @@ import io.circe.parser._
 import io.circe.{Decoder, Encoder}
 
 package object circe {
-  private[sttp] val ApplicationJsonContentType = "application/json"
 
   implicit def circeBodySerializer[B](
       implicit encoder: Encoder[B]): BodySerializer[B] =

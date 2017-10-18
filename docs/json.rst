@@ -30,4 +30,29 @@ This module adds a method to the request and a function that can be given to a r
       .response(asJson[Response])
       .send()
 
-    
+Json4s
+------
+
+To encode and decode json using json4s-native, add the following dependency to your project::
+
+  "com.softwaremill.sttp" %% "json4s" % "0.0.20"
+
+Using this module it is possible to set request bodies and read response bodies as case classes, using the implicitly available ``org.json4s.Formats`` (which defaults to ``org.json4s.DefaultFormats``).
+
+Usage example::
+
+  import com.softwaremill.sttp._
+  import com.softwaremill.sttp.json4s._
+  
+  implicit val backend = HttpURLConnectionBackend()
+
+  case class Payload(...)
+  val requestPayload: Payload = Payload(...)
+  
+  val response: Response[Payload] = 
+    sttp
+      .post(uri"...")
+      .body(requestPayload)
+      .response(asJson[Response])
+      .send()
+ 
