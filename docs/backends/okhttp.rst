@@ -3,9 +3,9 @@ OkHttp backend
 
 To use, add the following dependency to your project::
 
-  "com.softwaremill.sttp" %% "okhttp-backend" % "0.0.20"
+  "com.softwaremill.sttp" %% "okhttp-backend" % "0.0.21"
   // or, for the monix version:
-  "com.softwaremill.sttp" %% "okhttp-backend-monix" % "0.0.20"
+  "com.softwaremill.sttp" %% "okhttp-backend-monix" % "0.0.21"
 
 This backend depends on `OkHttp <http://square.github.io/okhttp/>`_, and offers: 
 
