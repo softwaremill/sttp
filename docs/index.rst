@@ -68,7 +68,6 @@ For more details, explore the subjects below!
    backends/okhttp
    backends/custom
    backends/testing
-   backends/tagging          
              
 .. toctree::
    :maxdepth: 2

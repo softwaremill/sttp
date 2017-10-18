@@ -1,5 +1,7 @@
-Request bodies
-==============
+.. _requestbody:
+
+Setting the request body
+========================
 
 Text data
 ---------
@@ -7,8 +9,8 @@ Text data
 In its simplest form, the request's body can be set as a ``String``. By default, this method will:
 
 * use the UTF-8 encoding to convert the string to a byte array
-* if not specified, set ``Content-Type: text/plain``
-* if not specified, set ``Content-Length`` to the number of bytes in the array
+* if not specified before, set ``Content-Type: text/plain``
+* if not specified before, set ``Content-Length`` to the number of bytes in the array
 
 A ``String`` body can be set on a request as follows::
 
@@ -28,21 +30,21 @@ To set a binary-data body, the following methods are available::
   def body(b: ByteBuffer)
   def body(b: InputStream)
 
-If not specified, these methods will set the conten type to ``application/octet-stream``. When using a byte array, additionally the content length will be set to the length of the array (unless specified explicitly).
+If not specified before, these methods will set the content type to ``application/octet-stream``. When using a byte array, additionally the content length will be set to the length of the array (unless specified explicitly).
 
 .. note::
 
-  While the object defining a request is immutable, setting a mutable request body will make the whole request definition mutable as well. With ``InputStream``, the request can be sent only once, as input streams can be consumed once.
+  While the object defining a request is immutable, setting a mutable request body will make the whole request definition mutable as well. With ``InputStream``, the request can be moreover sent only once, as input streams can be consumed once.
 
 Uploading files
 ---------------
 
-To upload a file, simply set the request body as a ``File``, ``Path``::
+To upload a file, simply set the request body as a ``File`` or ``Path``::
 
   def body(b: File)
   def body(b: Path)
 
-As with binary body methods, the content type will default to ``application/octet-stream``, and the content length will be set to the lenght of the file (unless specified explicitly).
+As with binary body methods, the content type will default to ``application/octet-stream``, and the content length will be set to the length of the file (unless specified explicitly).
 
 See also :ref:`multi-part <multipart>` and :ref:`streaming <streaming>` support.
 
@@ -58,14 +60,18 @@ By default, the ``UTF-8`` encoding is used, but can be also specified explicitly
   def body(fs: (String, String)*)
   def body(fs: Seq[(String, String)], encoding: String)
 
+.. _requestbody_custom:
+
 Custom body serializers
 -----------------------
 
-It is also possible to set custom types as request bodies, as long as there's an implicit ``BodySerializer[B]`` value in scope, which is just an alias for a function::
+It is also possible to set custom types as request bodies, as long as there's an implicit ``BodySerializer[B]`` value in scope, which is simply an alias for a function::
 
   type BodySerializer[B] = B => BasicRequestBody
 
-A ``BasicRequestBody`` is a wrapper for a ``String``/byte array/input stream body. For example, here's how to write custom serializer for a case class, with serializer-specific default content type::
+A ``BasicRequestBody`` is a wrapper for one of the supported request body types: a ``String``/byte array or an input stream.
+
+For example, here's how to write a custom serializer for a case class, with serializer-specific default content type::
 
   case class Person(name: String, surname: String, age: Int)
 

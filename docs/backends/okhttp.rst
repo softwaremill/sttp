@@ -1,5 +1,5 @@
-``OkHttpClientBackend``
-=======================
+OkHttp backend
+==============
 
 To use, add the following dependency to your project::
 

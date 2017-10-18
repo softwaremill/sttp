@@ -3,7 +3,7 @@
 Quickstart
 ==========
 
-The main sttp API comes in a single jar without transitive dependencies. This also includes a default, synchronous backend, which is based on java's ``HttpURLConnection``. For production usages, you'll often want to use an alternate backend (but what's important, is that the API remains the same!). See the section on :ref:`backends <backends_summary>` for additional instructions.
+The main sttp API comes in a single jar without transitive dependencies. This also includes a default, synchronous backend, which is based on Java's ``HttpURLConnection``. For production usages, you'll often want to use an alternate backend (but what's important is that the API remains the same!). See the section on :ref:`backends <backends_summary>` for additional instructions.
 
 Using sbt
 ---------
@@ -27,11 +27,11 @@ If you are an `Ammonite <http://ammonite.io>`_ user, you can quickly start exper
 Imports
 -------
 
-Working with sttp is most convenient if you import the ``sttp`` package::
+Working with sttp is most convenient if you import the ``sttp`` package entirely::
 
   import com.softwaremill.sttp._
 
-This brings into scope the starting point for defining requests and some convenience helper methods. All examples in this guide assume, that this import is in place.
+This brings into scope the starting point for defining requests and some helper methods. All examples in this guide assume that this import is in place.
 
-And that's all you need to start using sttp! To start exploring, import the above, type ``sttp.`` and see where your IDE's auto-complete gets you! Or, read on about the :ref:`basics of defining requests <request_basics>`.
+And that's all you need to start using sttp! To create and send your first request, import the above, type ``sttp.`` and see where your IDE's auto-complete gets you! Or, read on about the :ref:`basics of defining requests <request_basics>`.
 

@@ -5,7 +5,7 @@ Supported backends
 
 sttp suports a number of synchornous and asynchronous backends. It's the backends that take care of managing connections, sending requests and receiving responses: sttp defines only the API to describe the requests to be send and handle the response data. It's the backends where all the heavy-lifting is done.
 
-Choosing the right backend depends on a number of factors: if you are using sttp to explore some data, or is it a production system; are you using a synchornous, blocking architecture or an asynchronous one; do you work mostly with Scala's ``Future``, or maybe you use some form of a ``Task`` abstraction; finally, if you want to stream requests/responses, or not.
+Choosing the right backend depends on a number of factors: if you are using sttp to explore some data, or is it a production system; are you using a synchronous, blocking architecture or an asynchronous one; do you work mostly with Scala's ``Future``, or maybe you use some form of a ``Task`` abstraction; finally, if you want to stream requests/responses, or not.
 
 Each backend has two type parameters:
 
@@ -15,7 +15,7 @@ Each backend has two type parameters:
 Below is a summary of all the backends. See the sections on individual backend implementations for more information.
 
 ================================ ============================ ================================================
-Class                            Result wrapper               Supported stream type
+Class                            Response wrapper             Supported stream type
 ================================ ============================ ================================================
 ``HttpURLConnectionBackend``     None (``Id``)                n/a 
 ``AkkaHttpBackend``              ``scala.concurrent.Future``  ``akka.stream.scaladsl.Source[ByteString, Any]``

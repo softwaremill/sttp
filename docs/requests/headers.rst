@@ -27,4 +27,4 @@ For some common headers, dedicated methods are provided::
   def contentLength(l: Long)
   def acceptEncoding(encoding: String)
 
-See also [cookies], [authentication].
+See also documentation on setting :ref:`cookies <cookies>` and :ref:`authentication <authentication>`.

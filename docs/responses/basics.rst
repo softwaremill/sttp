@@ -1,13 +1,13 @@
 Responses
 =========
 
-Responses are represented as instances of the case class ``Response[T]``, where ``T`` is the type of the response body. When sending a request, the response will be returned in a wrapper. For example, for asynchronous backends, we will get a ``Future[Response[T]]``, while for the default synchronous backend, the wrapper backend will be the no-op wrapper, ``Id``, which is the same as no wrapper at all.
+Responses are represented as instances of the case class ``Response[T]``, where ``T`` is the type of the response body. When sending a request, the response will be returned in a wrapper. For example, for asynchronous backends, we can get a ``Future[Response[T]]``, while for the default synchronous backend, the wrapper will be a no-op, ``Id``, which is the same as no wrapper at all.
 
 If sending the request fails, either due to client or connection errors, an exception will be thrown (synchronous backends), or an error will be represented in the wrapper (e.g. a failed future).
 
 .. note::
 
-  If the request completes, but results in a non-2xx return code, the request is still considered successful, that is, a ``Response[T]`` will be returned. See the next subsection for details regarding body handling.
+  If the request completes, but results in a non-2xx return code, the request is still considered successful, that is, a ``Response[T]`` will be returned. See :ref:`response body specifications <responsebodyspec>` for details on how such cases are handled.
 
 Response code
 -------------
@@ -40,11 +40,11 @@ Obtaining the response body
 
 The response body can be obtained through the ``.body`` property, which has type ``Either[String, T]``. ``T`` is the body deserialized as specified in the request - see the next section on :ref:`response body specifications <responsebodyspec>`.
 
-The response body is an either as the response body can only be deserialized if the server responded with code 200. Otherwise, the response body is most probably an error message.
+The response body is an either as the body can only be deserialized if the server responded with a success code (2xx). Otherwise, the response body is most probably an error message.
 
 Hence, the ``response.body`` will be a:
 
 * ``Left(errorMessage)`` if the request is successful, but response code is not 2xx.
 * ``Right(deserializedBody``) if the request is successful and the response code is 2xx.
 
-You can also forcibly get the deserialized body, risking an excepiton being thrown, using the ``response.unsafeBody`` method.
+You can also forcibly get the deserialized body, regardless of the response code and risking an excepiton being thrown, using the ``response.unsafeBody`` method.

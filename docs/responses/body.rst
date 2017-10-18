@@ -5,12 +5,12 @@ Response body specification
 
 By default, the received response body will be read as a ``String``, using the ``UTF-8`` encoding. This is of course configurable: response bodies can be ignored, deserialized into custom types, recevied as a stream or saved to a file.
 
-How the response body will be read is part of the request definition, as already when sending the request, the backend needs to know what to do with the response. The type to which the response body should be deserialized is the second type parameter of ``RequestT``, and stored in the request definition as ``request.response``, which has type ``ResponseAs[T, S]``.
+How the response body will be read is part of the request definition, as already when sending the request, the backend needs to know what to do with the response. The type to which the response body should be deserialized is the second type parameter of ``RequestT``, and stored in the request definition as the ``request.response: ResponseAs[T, S]`` property.
 
 Basic response specifications
 -----------------------------
 
-To conveniently specify how to deserialize the response body, a number of ``as[Type]`` methods are available. They can be used to provide a value for the requet's ``response`` modifier::
+To conveniently specify how to deserialize the response body, a number of ``asXxx`` methods are available. They can be used to provide a value for the request definition's ``response`` modifier::
 
   sttp.response(asByteArray)
 
@@ -31,11 +31,13 @@ Hence, to discard the response body, simply specify::
 
 And to save the response to a file::
 
-  sttp.respone(asFile(someFile))
+  sttp.response(asFile(someFile))
 
 .. note::
 
   As the handling of response is specified upfront, there's no need to "consume" the response body. It can be safely discarded if not needed.
+
+.. _responsebodyspec_custom:
 
 Custom body deserializers
 -------------------------
@@ -54,6 +56,10 @@ To integrate with a third-party JSON library::
 
   def parseJson(json: String): Either[JsonError, JsonAST] = ...
   val asJson: ResponseAs[Either[JsonError, JsonAST], Nothing] = asString.map(parseJson)
+  
+  sttp
+    .response(asJson)
+    ...
   
 For some mapped response specifications available out-of-the-box, see :ref:`json support <json>`.
 

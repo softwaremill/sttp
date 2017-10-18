@@ -3,9 +3,9 @@ URIs
 
 A request can only be sent if the request method & URI are defined. To represent URIs, sttp comes with a ``Uri`` case class, which captures all of the parts of an address.
 
-To specify the request method and URI, use one of the methods on the request description corresponding to the name of the method: ``.post``, ``.get``, ``.put`` etc. All of them accept a single parameter, the URI to which the request should be send, and yield a request description which, when sent, will use the given address (these methods only modify the request description; they don't send the requests).
+To specify the request method and URI, use one of the methods on the request definition corresponding to the name of the desired HTTP method: ``.post``, ``.get``, ``.put`` etc. All of them accept a single parameter, the URI to which the request should be sent (these methods only modify the request definition; they don't send the requests).
 
-The ``Uri`` class is immutable, and can be constructed by hand, but in many cases the URI interpolator will be useful.
+The ``Uri`` class is immutable, and can be constructed by hand, but in many cases the URI interpolator will be easier to use.
 
 URI interpolator
 ----------------
@@ -19,7 +19,8 @@ Using the URI interpolator it's possible to conveniently create ``Uri`` instance
   
   val endpoint: Uri = uri"http://example.com/$user/skills?filter=$filter"
 
-  assert(endpoint.toString == "http://example.com/Mary%20Smith/skills?filter=programming+languages")
+  assert(endpoint.toString ==
+    "http://example.com/Mary%20Smith/skills?filter=programming+languages")
 
 Note the ``uri`` prefix before the string and the standard Scala string-embedding syntax (``$user``, ``$filter``).
 
@@ -62,7 +63,7 @@ Special cases
 
 If a string containing the protocol is embedded *as the very beginning*, it will not be escaped, allowing to embed entire addresses as prefixes, e.g.: ``uri"$endpoint/login"``, where ``val endpoint = "http://example.com/api"``.
 
-This is useful when a base URI is stored in a value, and can then be used as a base for constructing URIs.
+This is useful when a base URI is stored in a value, and can then be used as a base for constructing more specific URIs.
 
 All features combined
 ---------------------

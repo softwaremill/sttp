@@ -1,5 +1,5 @@
-``AsyncHttpClientBackend``
-==========================
+async-http-client backend
+=========================
 
 To use, add the following dependency to your project::
 
@@ -44,10 +44,7 @@ Next you'll need to add an implicit value::
 Streaming using Monix
 ---------------------
 
-The Monix backend supports streaming (as both Monix and Async Http Client 
-support reactive streams ``Publisher``s out of the box). The type of 
-supported streams in this case is ``Observable[ByteBuffer]``. That is, you can 
-set such an observable as a request body::
+The Monix backend supports streaming (as both Monix and Async Http Client support reactive streams ``Publisher`` s out of the box). The type of supported streams in this case is ``Observable[ByteBuffer]``. That is, you can set such an observable as a request body::
 
   import com.softwaremill.sttp._
   
@@ -77,6 +74,5 @@ And receive responses as an observable stream::
       .response(asStream[Observable[ByteBuffer]])
       .send()
 
-It's also possible to use `fs2 <https://github.com/functional-streams-for-scala/fs2>`_
-streams for sending request & receiving responses.
+It's also possible to use `fs2 <https://github.com/functional-streams-for-scala/fs2>`_ streams for sending request & receiving responses.
 

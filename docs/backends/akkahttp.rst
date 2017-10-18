@@ -1,7 +1,7 @@
 .. _akkahttp:
 
-``AkkaHttpBackend``
-===================
+akka-http backend
+=================
 
 To use, add the following dependency to your project::
 
