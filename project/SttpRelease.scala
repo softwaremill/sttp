@@ -36,12 +36,17 @@ object SttpRelease {
 
     val releaseVersion = s.get(versions).get._1
 
+    val settings = Project.extract(s)
+    val vcs = settings.get(releaseVcs).get
+
     def replaceInFile(f: File): Unit = {
       s.log.info(s"Replacing $currentVersionInReadme with $releaseVersion in ${f.name}")
 
       val oldFile = IO.read(f)
       val newFile = oldFile.replaceAll(Pattern.quote(currentVersionInReadme), releaseVersion)
       IO.write(f, newFile)
+
+      vcs.add(f.getAbsolutePath) !! s.log
     }
 
     def replaceRstInDirectory(d: File) {
@@ -56,9 +61,6 @@ object SttpRelease {
 
     replaceInFile(readmeFile)
     replaceRstInDirectory(file("docs"))
-
-    val settings = Project.extract(s)
-    settings.get(releaseVcs).get.add(readmeFile.getAbsolutePath) !! s.log
 
     s
   }
