@@ -38,7 +38,7 @@ sttp documentation is available at [sttp.readthedocs.io](http://sttp.readthedocs
 If you are an [Ammonite](http://ammonite.io) user, you can quickly start experimenting with sttp by copy-pasting the following:
 
 ```scala
-import $ivy.`com.softwaremill.sttp::core:0.0.21`
+import $ivy.`com.softwaremill.sttp::core:1.0.0`
 import com.softwaremill.sttp._
 implicit val backend = HttpURLConnectionBackend()
 sttp.get(uri"http://httpbin.org/ip").send()
@@ -49,7 +49,7 @@ sttp.get(uri"http://httpbin.org/ip").send()
 Add the following dependency:
 
 ```scala
-"com.softwaremill.sttp" %% "core" % "0.0.21"
+"com.softwaremill.sttp" %% "core" % "1.0.0"
 ```
 
 Then, import:
