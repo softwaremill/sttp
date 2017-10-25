@@ -8,4 +8,4 @@ Credits
 * `Piotr Buda <https://github.com/pbuda>`_
 * `Piotr Gabara <https://github.com/bhop>`_
 * `Gabriele Petronella <https://github.com/gabro>`_
-
+* `Paweł Stawicki <https://github.com/amorfis>`_
