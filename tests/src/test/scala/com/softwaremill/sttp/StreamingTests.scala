@@ -43,7 +43,7 @@ class StreamingTests
       testStreamingBackend: TestStreamingBackend[R, S]): Unit = {
     import testStreamingBackend._
 
-    closeBackends = backend.close _ :: closeBackends
+    closeBackends = (() => backend.close()) :: closeBackends
 
     name should "stream request body" in {
       val response = sttp

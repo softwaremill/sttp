@@ -210,7 +210,7 @@ class BasicTests
       implicit backend: SttpBackend[R, Nothing],
       forceResponse: ForceWrappedValue[R]): Unit = {
 
-    closeBackends = backend.close _ :: closeBackends
+    closeBackends = (() => backend.close()) :: closeBackends
 
     val postEcho = sttp.post(uri"$endpoint/echo")
     val testBody = "this is the body"
