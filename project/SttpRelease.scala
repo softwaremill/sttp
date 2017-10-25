@@ -16,7 +16,7 @@ object SttpRelease {
     runClean,
     runTest,
     setReleaseVersion,
-    updateVersionInReadme,
+    updateVersionInDocs,
     commitReleaseVersion,
     tagRelease,
     publishArtifacts,
@@ -27,7 +27,7 @@ object SttpRelease {
   )
 
   // based on https://github.com/EECOLOR/sbt-release-custom-steps/blob/master/src/main/scala/org/qirx/sbtrelease/UpdateVersionInFiles.scala
-  private def updateVersionInReadme: ReleaseStep = { s: State =>
+  private def updateVersionInDocs: ReleaseStep = { s: State =>
     val readmeFile = file("README.md")
     val readme = IO.read(readmeFile)
 
@@ -36,13 +36,31 @@ object SttpRelease {
 
     val releaseVersion = s.get(versions).get._1
 
-    s.log.info(s"Replacing $currentVersionInReadme with $releaseVersion in ${readmeFile.name}")
-
-    val newReadme = readme.replaceAll(Pattern.quote(currentVersionInReadme), releaseVersion)
-    IO.write(readmeFile, newReadme)
-
     val settings = Project.extract(s)
-    settings.get(releaseVcs).get.add(readmeFile.getAbsolutePath) !! s.log
+    val vcs = settings.get(releaseVcs).get
+
+    def replaceInFile(f: File): Unit = {
+      s.log.info(s"Replacing $currentVersionInReadme with $releaseVersion in ${f.name}")
+
+      val oldFile = IO.read(f)
+      val newFile = oldFile.replaceAll(Pattern.quote(currentVersionInReadme), releaseVersion)
+      IO.write(f, newFile)
+
+      vcs.add(f.getAbsolutePath) !! s.log
+    }
+
+    def replaceRstInDirectory(d: File) {
+      Option(d.listFiles()).foreach(_.foreach { f =>
+        if (f.isDirectory) {
+          replaceRstInDirectory(f)
+        } else if (f.getName.endsWith(".rst")) {
+          replaceInFile(f)
+        }
+      })
+    }
+
+    replaceInFile(readmeFile)
+    replaceRstInDirectory(file("docs"))
 
     s
   }

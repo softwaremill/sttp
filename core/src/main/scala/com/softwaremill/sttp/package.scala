@@ -51,6 +51,7 @@ package object sttp {
     "application/x-www-form-urlencoded"
   private[sttp] val TextPlainContentType = "text/plain"
   private[sttp] val MultipartFormDataContentType = "multipart/form-data"
+  private[sttp] val ApplicationJsonContentType = "application/json"
 
   // entry points
 

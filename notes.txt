@@ -1,0 +1,52 @@
+DONE
+  - body: bytes, input stream (?), task/future, stream (fs2/akka), form data, file
+  - set headers
+  - access uri/method/headers/cookies/body spec
+  - partial request (no uri + method) / full request
+  - start with an empty partial request
+  - make sure response is consumed - only fire request when we know what to do with response?
+  - reuse connections / connection pooling - in handler
+  - set cookies (set from response)
+  - auth
+
+  We want to serialize to:
+  - string
+  - byte array
+  - input stream
+  - handler-specific stream of bytes/strings
+
+TODO
+  - add params: to query, modify URI?
+  - multi-part uploads
+  - proxy
+  - user agent, buffer size
+  - charset
+  - zipped encodings
+  - SSL - mutual? (client side)
+  - type-safe content/media type as in akk
+  - stream responses (sendStreamAndReceive?) / strict responses
+
+IDEAS
+  - handler restriction? AnyHandler <: Handler Restriction
+
+  Options:
+  - timeouts (connection/read)
+  - follow redirect
+  - ignore SSL
+
+  //
+
+  post:
+  - data (bytes/is/string - but which encoding?)
+  - form data (kv pairs - application/x-www-form-urlencoded)
+  - multipart (files mixed with forms - multipart/form-data)
+
+Quick start with Ammonite
+https://github.com/AsyncHttpClient/async-http-client backend
+
+https://stackoverflow.com/questions/8659808/how-does-http-file-upload-work
+https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type
+https://stackoverflow.com/questions/4007969/application-x-www-form-urlencoded-or-multipart-form-data/4073451#4073451
+
+
+http://www.skorks.com/2010/05/what-every-developer-should-know-about-urls/

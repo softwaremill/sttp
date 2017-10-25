@@ -1,15 +1,15 @@
-``AsyncHttpClientBackend``
-==========================
+async-http-client backend
+=========================
 
 To use, add the following dependency to your project::
 
-  "com.softwaremill.sttp" %% "async-http-client-backend-future" % "0.0.20"
+  "com.softwaremill.sttp" %% "async-http-client-backend-future" % "1.0.0"
   // or
-  "com.softwaremill.sttp" %% "async-http-client-backend-scalaz" % "0.0.20"
+  "com.softwaremill.sttp" %% "async-http-client-backend-scalaz" % "1.0.0"
   // or
-  "com.softwaremill.sttp" %% "async-http-client-backend-monix" % "0.0.20"
+  "com.softwaremill.sttp" %% "async-http-client-backend-monix" % "1.0.0"
   // or
-  "com.softwaremill.sttp" %% "async-http-client-backend-cats" % "0.0.20"
+  "com.softwaremill.sttp" %% "async-http-client-backend-cats" % "1.0.0"
 
 This backend depends on `async-http-client <https://github.com/AsyncHttpClient/async-http-client>`_.
 A fully **asynchronous** backend, which uses `Netty <http://netty.io>`_ behind the
@@ -19,7 +19,7 @@ The responses are wrapped depending on the dependency chosen in either a:
 
 * standard Scala ``Future``
 * `Scalaz <https://github.com/scalaz/scalaz>`_ ``Task``. There's a transitive dependency on ``scalaz-concurrent``.
-* `Monix <https://monix.io`_ ``Task``. There's a transitive dependency on ``monix-eval``.
+* `Monix <https://monix.io>`_ ``Task``. There's a transitive dependency on ``monix-eval``.
 * Any type implementing the `Cats Effect <https://github.com/typelevel/cats-effect>`_ ``Async`` typeclass, such as ``cats.effect.IO``. There's a transitive dependency on ``cats-effect``.
 
 Next you'll need to add an implicit value::
@@ -44,10 +44,7 @@ Next you'll need to add an implicit value::
 Streaming using Monix
 ---------------------
 
-The Monix backend supports streaming (as both Monix and Async Http Client 
-support reactive streams ``Publisher``s out of the box). The type of 
-supported streams in this case is ``Observable[ByteBuffer]``. That is, you can 
-set such an observable as a request body::
+The Monix backend supports streaming (as both Monix and Async Http Client support reactive streams ``Publisher`` s out of the box). The type of supported streams in this case is ``Observable[ByteBuffer]``. That is, you can set such an observable as a request body::
 
   import com.softwaremill.sttp._
   
@@ -77,6 +74,5 @@ And receive responses as an observable stream::
       .response(asStream[Observable[ByteBuffer]])
       .send()
 
-It's also possible to use `fs2 <https://github.com/functional-streams-for-scala/fs2>`_
-streams for sending request & receiving responses.
+It's also possible to use `fs2 <https://github.com/functional-streams-for-scala/fs2>`_ streams for sending request & receiving responses.
 
