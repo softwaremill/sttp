@@ -31,10 +31,17 @@ class SttpBackendStub[R[_], S] private (rm: MonadError[R],
   def whenRequestMatches(p: Request[_, _] => Boolean): WhenRequest =
     new WhenRequest(p)
 
+  def whenRequestMatchesPartial(
+      partial: PartialFunction[Request[_, _], Response[_]]) = {
+    val m = Matcher(partial)
+    val vector: Vector[Matcher[_]] = matchers :+ m
+    new SttpBackendStub(rm, vector, fallback)
+  }
+
   override def send[T](request: Request[T, S]): R[Response[T]] = {
     matchers
       .collectFirst {
-        case matcher if matcher(request) => matcher.response
+        case matcher: Matcher[T] if matcher(request) => matcher.response(request).get
       } match {
       case Some(response) => wrapResponse(response)
       case None =>
@@ -64,8 +71,11 @@ class SttpBackendStub[R[_], S] private (rm: MonadError[R],
       thenRespond(Response[Nothing](Left(msg), code, Nil, Nil))
     def thenRespond[T](body: T): SttpBackendStub[R, S] =
       thenRespond(Response[T](Right(body), 200, Nil, Nil))
-    def thenRespond[T](resp: Response[T]): SttpBackendStub[R, S] =
-      new SttpBackendStub(rm, matchers :+ Matcher(p, resp), fallback)
+    def thenRespond[T](resp: Response[T]): SttpBackendStub[R, S] = {
+      val m = Matcher[T](p, resp)
+      new SttpBackendStub(rm, matchers :+ m, fallback)
+
+    }
   }
 }
 
@@ -101,9 +111,22 @@ object SttpBackendStub {
   private val DefaultResponse =
     Response[Nothing](Left("Not Found"), 404, Nil, Nil)
 
-  private case class Matcher[T](p: Request[T, _] => Boolean,
-                                response: Response[T]) {
-    def apply(request: Request[_, _]): Boolean =
-      p(request.asInstanceOf[Request[T, _]])
+  private case class Matcher[T](p: PartialFunction[Request[T, _], Response[_]]) {
+
+    def apply(request: Request[T, _]): Boolean =
+      p.isDefinedAt(request)
+
+    def response[S](request: Request[T, S]): Option[Response[T]] = {
+      p.lift(request).asInstanceOf[Option[Response[T]]]
+    }
+  }
+
+  private object Matcher {
+
+    def apply[T](p: Request[T, _] => Boolean, response: Response[T]) = {
+      new Matcher[T]({
+        case r if p(r) => response
+      })
+    }
   }
 }

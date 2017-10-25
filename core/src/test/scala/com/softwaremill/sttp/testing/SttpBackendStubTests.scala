@@ -12,6 +12,10 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
     .thenRespond(10)
     .whenRequestMatches(_.method == Method.GET)
     .thenRespondServerError()
+    .whenRequestMatchesPartial({
+      case r if r.method == Method.POST && r.uri.path.endsWith(List("partial10")) => Response(Right(10), 200, Nil, Nil)
+      case r if r.method == Method.POST && r.uri.path.endsWith(List("partialAda")) => Response(Right("Ada"), 200, Nil, Nil)
+    })
 
   "backend stub" should "use the first rule if it matches" in {
     implicit val b = testingStub
@@ -38,7 +42,7 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
 
   it should "use the default response if no rule matches" in {
     implicit val b = testingStub
-    val r = sttp.post(uri"http://example.org/d").send()
+    val r = sttp.put(uri"http://example.org/d").send()
     r.code should be(404)
   }
 
@@ -47,6 +51,17 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
     implicit val b = SttpBackendStub(new FutureMonad())
     val r = sttp.post(uri"http://example.org").send()
     r.futureValue.code should be(404)
+  }
+
+  it should "use rules in partial function" in {
+    implicit val s = testingStub
+    val r = sttp.post(uri"http://example.org/partial10").send()
+    r.is200 should be(true)
+    r.body should be(Right(10))
+
+    val ada = sttp.post(uri"http://example.org/partialAda").send()
+    ada.is200 should be(true)
+    ada.body should be(Right("Ada"))
   }
 
   val testingStubWithFallback = SttpBackendStub
