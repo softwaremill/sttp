@@ -13,8 +13,14 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
     .whenRequestMatches(_.method == Method.GET)
     .thenRespondServerError()
     .whenRequestMatchesPartial({
-      case r if r.method == Method.POST && r.uri.path.endsWith(List("partial10")) => Response(Right(10), 200, Nil, Nil)
-      case r if r.method == Method.POST && r.uri.path.endsWith(List("partialAda")) => Response(Right("Ada"), 200, Nil, Nil)
+      case r
+          if r.method == Method.POST && r.uri.path.endsWith(
+            List("partial10")) =>
+        Response(Right(10), 200, Nil, Nil)
+      case r
+          if r.method == Method.POST && r.uri.path.endsWith(
+            List("partialAda")) =>
+        Response(Right("Ada"), 200, Nil, Nil)
     })
 
   "backend stub" should "use the first rule if it matches" in {

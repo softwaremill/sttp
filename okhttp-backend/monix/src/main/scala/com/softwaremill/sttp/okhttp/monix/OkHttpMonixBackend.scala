@@ -14,7 +14,6 @@ import okhttp3.{MediaType, OkHttpClient, RequestBody => OkHttpRequestBody}
 import okio.BufferedSink
 
 import scala.concurrent.Future
-import scala.concurrent.duration.FiniteDuration
 import scala.util.{Failure, Success, Try}
 
 class OkHttpMonixBackend private (client: OkHttpClient, closeClient: Boolean)(

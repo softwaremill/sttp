@@ -41,7 +41,8 @@ class SttpBackendStub[R[_], S] private (rm: MonadError[R],
   override def send[T](request: Request[T, S]): R[Response[T]] = {
     matchers
       .collectFirst {
-        case matcher: Matcher[T] if matcher(request) => matcher.response(request).get
+        case matcher: Matcher[T @unchecked] if matcher(request) =>
+          matcher.response(request).get
       } match {
       case Some(response) => wrapResponse(response)
       case None =>
@@ -111,7 +112,8 @@ object SttpBackendStub {
   private val DefaultResponse =
     Response[Nothing](Left("Not Found"), 404, Nil, Nil)
 
-  private case class Matcher[T](p: PartialFunction[Request[T, _], Response[_]]) {
+  private case class Matcher[T](
+      p: PartialFunction[Request[T, _], Response[_]]) {
 
     def apply(request: Request[T, _]): Boolean =
       p.isDefinedAt(request)
