@@ -19,7 +19,7 @@ For example::
   val response2 = sttp.post(uri"http://example.org/d/e").send()
   // response2.code will be 500
 
-It is also possible to match request by partial function, returning a response. E.g.:
+It is also possible to match request by partial function, returning a response. E.g.::
 
   implicit val testingBackend = SttpBackendStub(HttpURLConnectionBackend())
     .whenRequestMatchesPartial({
