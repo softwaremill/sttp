@@ -19,6 +19,20 @@ For example::
   val response2 = sttp.post(uri"http://example.org/d/e").send()
   // response2.code will be 500
 
+It is also possible to match request by partial function, returning a response. E.g.:
+
+  implicit val testingBackend = SttpBackendStub(HttpURLConnectionBackend())
+    .whenRequestMatchesPartial({
+      case r if r.uri.path.endsWith(List("partial10")) => Response(Right(10), 200, Nil, Nil)
+      case r if r.uri.path.endsWith(List("partialAda")) => Response(Right("Ada"), 200, Nil, Nil)
+    })
+
+  val response1 = sttp.get(uri"http://example.org/partial10").send()
+  // response1.body will be Right(10)
+
+  val response2 = sttp.post(uri"http://example.org/partialAda").send()
+  // response2.body will be Right("Ada")
+
 However, this approach has one caveat: the responses are not type-safe. That is, the backend cannot match on or verify that the type included in the response matches the response type requested.
 
 It is also possible to create a stub backend which delegates calls to another (possibly "real") backend if none of the specified predicates match a request. This can be useful during development, to partially stub a yet incomplete API with which we integrate::
