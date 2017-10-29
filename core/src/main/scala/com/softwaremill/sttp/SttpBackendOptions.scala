@@ -2,8 +2,10 @@ package com.softwaremill.sttp
 
 import java.net.InetSocketAddress
 
-import scala.concurrent.duration._
 import com.softwaremill.sttp.SttpBackendOptions._
+
+import scala.concurrent.duration._
+import scala.util.Try
 
 case class SttpBackendOptions(
     connectionTimeout: FiniteDuration,
@@ -28,6 +30,7 @@ object SttpBackendOptions {
   sealed trait ProxyType {
     def asJava: java.net.Proxy.Type
   }
+
   object ProxyType {
     case object Http extends ProxyType {
       override def asJava: java.net.Proxy.Type = java.net.Proxy.Type.HTTP
@@ -37,12 +40,38 @@ object SttpBackendOptions {
     }
   }
 
-  val Default: SttpBackendOptions = SttpBackendOptions(30.seconds, None)
+  private val Empty: SttpBackendOptions =
+    SttpBackendOptions(30.seconds, None)
+
+  val Default: SttpBackendOptions =
+    Empty.copy(proxy = loadSystemProxy)
 
   def connectionTimeout(ct: FiniteDuration): SttpBackendOptions =
-    Default.connectionTimeout(ct)
+    Empty.connectionTimeout(ct)
+
   def httpProxy(host: String, port: Int): SttpBackendOptions =
-    Default.httpProxy(host, port)
+    Empty.httpProxy(host, port)
+
   def socksProxy(host: String, port: Int): SttpBackendOptions =
-    Default.socksProxy(host, port)
+    Empty.socksProxy(host, port)
+
+  private def loadSystemProxy: Option[Proxy] = {
+    def system(hostProp: String,
+               portProp: String,
+               make: (String, Int) => Proxy,
+               defaultPort: Int) = {
+      val host = Option(System.getProperty(hostProp))
+      def port = Try(System.getProperty(portProp).toInt).getOrElse(defaultPort)
+      host.map(make(_, port))
+    }
+
+    def proxy(t: ProxyType)(host: String, port: Int) = Proxy(host, port, t)
+
+    import ProxyType._
+    val socks = system("socksProxyHost", "socksProxyPort", proxy(Socks), 1080)
+    val http = system("http.proxyHost", "http.proxyPort", proxy(Http), 80)
+
+    Seq(socks, http).find(_.isDefined).flatten
+  }
+
 }
