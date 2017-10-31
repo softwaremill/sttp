@@ -437,11 +437,46 @@ object UriInterpolator {
       case x       => Some(x.toString)
     }
 
-    private def tokensToStringSeq(t: Vector[Token]): Seq[String] = t.flatMap {
-      case ExpressionToken(s: Seq[_]) => s.flatMap(anyToStringOpt).toVector
-      case ExpressionToken(e)         => anyToStringOpt(e).toVector
-      case StringToken(s)             => Vector(decode(s))
-      case _                          => Vector.empty
+    private def tokensToStringSeq(tokens: Vector[Token]): Seq[String] = {
+      /*
+      #40: when converting tokens to a string sequence, we have to look at
+      groups of string/expression (value) tokens separated by others. If there
+      are multiple tokens in each such group, their string representations
+      should be concatenated (corresponds to e.g. $x$y). A single
+      collection-valued token should be expanded.
+       */
+
+      def isValueToken(t: Token) = t match {
+        case ExpressionToken(_) => true
+        case StringToken(_)     => true
+        case _                  => false
+      }
+
+      @tailrec
+      def doToSeq(ts: Vector[Token], acc: Vector[String]): Seq[String] = {
+        val tsWithValuesPrefix = ts.dropWhile(to => !isValueToken(to))
+        val (valueTs, tailTs) = tsWithValuesPrefix.span(isValueToken)
+
+        valueTs match {
+          case Vector() => acc // tailTs must be empty then as well
+          case Vector(ExpressionToken(s: Seq[_])) =>
+            doToSeq(tailTs, acc ++ s.flatMap(anyToStringOpt).toVector)
+          case _ =>
+            val values = valueTs
+              .flatMap {
+                case ExpressionToken(e) => anyToStringOpt(e)
+                case StringToken(s)     => Some(decode(s))
+                case _                  => None
+              }
+
+            val strToAdd =
+              if (values.isEmpty) None else Some(values.mkString(""))
+
+            doToSeq(tailTs, acc ++ strToAdd)
+        }
+      }
+
+      doToSeq(tokens, Vector.empty)
     }
 
     private def tokensToStringOpt(t: Vector[Token]): Option[String] = t match {

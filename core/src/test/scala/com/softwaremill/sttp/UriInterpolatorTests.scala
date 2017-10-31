@@ -41,6 +41,9 @@ class UriInterpolatorTests extends FunSuite with Matchers {
     "authority" -> List(
       (uri"http://$v1.com", s"http://$v1.com"),
       (uri"http://$v2.com", s"http://$v2encoded.com"),
+      (uri"http://$v1.$v2.com", s"http://$v1.$v2encoded.com"),
+      (uri"http://$v1$v2.com", s"http://$v1$v2encoded.com"),
+      (uri"http://z$v1.com", s"http://z$v1.com"),
       (uri"http://$None.example.com", s"http://example.com"),
       (uri"http://$None.$None.example.com", s"http://example.com"),
       (uri"http://${Some("sub")}.example.com", s"http://sub.example.com"),
@@ -78,7 +81,9 @@ class UriInterpolatorTests extends FunSuite with Matchers {
       (uri"http://example.com?x=$v1", s"http://example.com?x=$v1"),
       (uri"http://example.com/?x=$v1", s"http://example.com/?x=$v1"),
       (uri"http://example.com?x=$v2", s"http://example.com?x=$v2queryEncoded"),
-      (uri"http://example.com?x=$v3", s"http://example.com?x=$v3encoded")
+      (uri"http://example.com?x=$v3", s"http://example.com?x=$v3encoded"),
+      (uri"http://example.com?x=$v1$v1", s"http://example.com?x=$v1$v1"),
+      (uri"http://example.com?x=z$v1", s"http://example.com?x=z$v1")
     ),
     "query parameter without value" -> List(
       (uri"http://example.com?$v1", s"http://example.com?$v1"),
