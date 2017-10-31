@@ -1,7 +1,16 @@
 Proxy support
 =============
 
-A proxy can be specified when creating a backend::
+sttp library by default checks for your System proxy properties (`docs <https://docs.oracle.com/javase/8/docs/api/java/net/doc-files/net-properties.html>`_):
+
+Following settings are checked:
+
+1. ``socksProxyHost`` and ``socksProxyPort`` *(default: 1080)*
+2. ``http.proxyHost`` and ``http.proxyPort`` *(default: 80)*
+
+Settings are loaded **in given order** and the **first existing value** is being used.
+
+Otherwise, proxy values can be specified manually when creating a backend::
  
   import com.softwaremill.sttp._
   
