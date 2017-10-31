@@ -47,7 +47,7 @@ object SttpBackendOptions {
     Empty.copy(proxy = loadSystemProxy)
 
   def connectionTimeout(ct: FiniteDuration): SttpBackendOptions =
-    Empty.connectionTimeout(ct)
+    Default.connectionTimeout(ct)
 
   def httpProxy(host: String, port: Int): SttpBackendOptions =
     Empty.httpProxy(host, port)
