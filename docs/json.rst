@@ -10,7 +10,7 @@ Circe
 
 JSON encoding of bodies and decoding of responses can be handled using `Circe <https://circe.github.io/circe/>`_ by the ``circe`` module. To use add the following dependency to your project::
 
-  "com.softwaremill.sttp" %% "circe" % "1.0.1"
+  "com.softwaremill.sttp" %% "circe" % "1.0.2"
 
 This module adds a method to the request and a function that can be given to a request to decode the response to a specific object::
 
@@ -35,7 +35,7 @@ Json4s
 
 To encode and decode json using json4s-native, add the following dependency to your project::
 
-  "com.softwaremill.sttp" %% "json4s" % "1.0.1"
+  "com.softwaremill.sttp" %% "json4s" % "1.0.2"
 
 Using this module it is possible to set request bodies and read response bodies as case classes, using the implicitly available ``org.json4s.Formats`` (which defaults to ``org.json4s.DefaultFormats``).
 
