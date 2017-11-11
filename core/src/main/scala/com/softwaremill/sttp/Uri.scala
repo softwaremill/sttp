@@ -193,6 +193,8 @@ object Uri {
     Uri(scheme, None, host, Some(port), Vector.empty, Vector.empty, None)
   def apply(scheme: String, host: String, port: Int, path: Seq[String]): Uri =
     Uri(scheme, None, host, Some(port), path, Vector.empty, None)
+  def apply(scheme: String, host: String, path: Seq[String]): Uri =
+    Uri(scheme, None, host, None, path, Vector.empty, None)
 
   sealed trait QueryFragment
   object QueryFragment {
