@@ -35,6 +35,18 @@ It is also possible to match request by partial function, returning a response. 
 
 However, this approach has one caveat: the responses are not type-safe. That is, the backend cannot match on or verify that the type included in the response matches the response type requested.
 
+Simulating exceptions
+---------------------
+
+If you want to simulate an exception being thrown by a backend, e.g. a socket timeout exception, you can do so by throwing the appropriate exception instead of the response, e.g.::
+
+  implicit val testingBackend = SttpBackendStub(HttpURLConnectionBackend())
+    .whenRequestMatches(_ => true)
+    .thenRespond(throw new TimeoutException())
+
+Delegating to another backend
+-----------------------------
+
 It is also possible to create a stub backend which delegates calls to another (possibly "real") backend if none of the specified predicates match a request. This can be useful during development, to partially stub a yet incomplete API with which we integrate::
 
   implicit val testingBackend =

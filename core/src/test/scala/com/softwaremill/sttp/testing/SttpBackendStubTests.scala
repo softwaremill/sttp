@@ -1,5 +1,9 @@
 package com.softwaremill.sttp.testing
 
+import java.util.concurrent.TimeoutException
+
+import scala.concurrent.ExecutionContext.Implicits.global
+
 import com.softwaremill.sttp._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FlatSpec, Matchers}
@@ -68,6 +72,25 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
     val ada = sttp.post(uri"http://example.org/partialAda").send()
     ada.is200 should be(true)
     ada.body should be(Right("Ada"))
+  }
+
+  it should "handle exceptions thrown instead of a response (synchronous)" in {
+    implicit val s = SttpBackendStub(HttpURLConnectionBackend())
+      .whenRequestMatches(_ => true)
+      .thenRespond(throw new TimeoutException())
+
+    a[TimeoutException] should be thrownBy {
+      sttp.get(uri"http://example.org").send()
+    }
+  }
+
+  it should "handle exceptions thrown instead of a response (asynchronous)" in {
+    implicit val s = SttpBackendStub(new FutureMonad())
+      .whenRequestMatches(_ => true)
+      .thenRespond(throw new TimeoutException())
+
+    val result = sttp.get(uri"http://example.org").send()
+    result.failed.futureValue shouldBe a[TimeoutException]
   }
 
   val testingStubWithFallback = SttpBackendStub

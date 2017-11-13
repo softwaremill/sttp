@@ -4,6 +4,7 @@ import com.softwaremill.sttp.testing.SttpBackendStub._
 import com.softwaremill.sttp.{MonadError, Request, Response, SttpBackend}
 
 import scala.language.higherKinds
+import scala.util.{Failure, Success, Try}
 
 /**
   * A stub backend to use in tests.
@@ -42,9 +43,10 @@ class SttpBackendStub[R[_], S] private (rm: MonadError[R],
     matchers
       .collectFirst {
         case matcher: Matcher[T @unchecked] if matcher(request) =>
-          matcher.response(request).get
+          Try(matcher.response(request).get)
       } match {
-      case Some(response) => wrapResponse(response)
+      case Some(Success(response)) => wrapResponse(response)
+      case Some(Failure(e))        => rm.error(e)
       case None =>
         fallback match {
           case None     => wrapResponse(DefaultResponse)
@@ -72,10 +74,9 @@ class SttpBackendStub[R[_], S] private (rm: MonadError[R],
       thenRespond(Response[Nothing](Left(msg), code, Nil, Nil))
     def thenRespond[T](body: T): SttpBackendStub[R, S] =
       thenRespond(Response[T](Right(body), 200, Nil, Nil))
-    def thenRespond[T](resp: Response[T]): SttpBackendStub[R, S] = {
+    def thenRespond[T](resp: => Response[T]): SttpBackendStub[R, S] = {
       val m = Matcher[T](p, resp)
       new SttpBackendStub(rm, matchers :+ m, fallback)
-
     }
   }
 }
@@ -124,8 +125,7 @@ object SttpBackendStub {
   }
 
   private object Matcher {
-
-    def apply[T](p: Request[T, _] => Boolean, response: Response[T]) = {
+    def apply[T](p: Request[T, _] => Boolean, response: => Response[T]) = {
       new Matcher[T]({
         case r if p(r) => response
       })
