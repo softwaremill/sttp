@@ -67,8 +67,13 @@ For more details, explore the subjects below!
    backends/asynchttpclient
    backends/okhttp
    backends/custom
-   backends/testing
-             
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Testing
+
+   testing
+
 .. toctree::
    :maxdepth: 2
    :caption: Configuration

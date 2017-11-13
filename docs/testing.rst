@@ -19,7 +19,7 @@ For example::
   val response2 = sttp.post(uri"http://example.org/d/e").send()
   // response2.code will be 500
 
-It is also possible to match request by partial function, returning a response. E.g.::
+It is also possible to match requests by partial function, returning a response. E.g.::
 
   implicit val testingBackend = SttpBackendStub(HttpURLConnectionBackend())
     .whenRequestMatchesPartial({
@@ -33,7 +33,7 @@ It is also possible to match request by partial function, returning a response. 
   val response2 = sttp.post(uri"http://example.org/partialAda").send()
   // response2.body will be Right("Ada")
 
-However, this approach has one caveat: the responses are not type-safe. That is, the backend cannot match on or verify that the type included in the response matches the response type requested.
+This approach to testing has one caveat: the responses are not type-safe. That is, the backend cannot match on or verify that the type included in the response matches the response type requested.
 
 Simulating exceptions
 ---------------------
@@ -47,7 +47,7 @@ If you want to simulate an exception being thrown by a backend, e.g. a socket ti
 Adjusting the response body type
 --------------------------------
 
-If the type of the response body returned by the stub's rules (as specified using the ``.when...`` methods) doesn't match what was specified in the request, the stub will attempt to convert the body to the desired type. This might be useful when:
+If the type of the response body returned by the stub's rules (as specified using the ``.whenXxx`` methods) doesn't match what was specified in the request, the stub will attempt to convert the body to the desired type. This might be useful when:
 
 * testing code which maps a basic response body to a custom type, e.g. mapping a raw json string using a decoder to a domain type
 * reading a classpath resource (which results in an ``InputStream``) and requesting a response of e.g. type ``String``
