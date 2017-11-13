@@ -257,6 +257,12 @@ package object sttp {
     transfer()
   }
 
+  private[sttp] def toByteArray(is: InputStream): Array[Byte] = {
+    val os = new ByteArrayOutputStream
+    transfer(is, os)
+    os.toByteArray
+  }
+
   private[sttp] def codeIsSuccess(c: Int): Boolean = c >= 200 && c < 300
 
   private[sttp] def concatByteBuffers(bb1: ByteBuffer,

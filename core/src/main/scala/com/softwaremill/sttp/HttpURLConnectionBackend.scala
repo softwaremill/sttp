@@ -241,11 +241,7 @@ class HttpURLConnectionBackend private (
         asString(enc)
 
       case ResponseAsByteArray =>
-        val os = new ByteArrayOutputStream
-
-        transfer(is, os)
-
-        os.toByteArray
+        toByteArray(is)
 
       case ResponseAsStream() =>
         // only possible when the user requests the response as a stream of

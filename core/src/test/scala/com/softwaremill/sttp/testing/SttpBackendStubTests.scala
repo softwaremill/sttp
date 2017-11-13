@@ -1,15 +1,15 @@
 package com.softwaremill.sttp.testing
 
+import java.io.ByteArrayInputStream
 import java.util.concurrent.TimeoutException
 
 import scala.concurrent.ExecutionContext.Implicits.global
-
 import com.softwaremill.sttp._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FlatSpec, Matchers}
 
 class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
-  val testingStub = SttpBackendStub(HttpURLConnectionBackend())
+  private val testingStub = SttpBackendStub(HttpURLConnectionBackend())
     .whenRequestMatches(_.uri.path.startsWith(List("a", "b")))
     .thenRespondOk()
     .whenRequestMatches(_.uri.paramsMap.get("p").contains("v"))
@@ -93,7 +93,21 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
     result.failed.futureValue shouldBe a[TimeoutException]
   }
 
-  val testingStubWithFallback = SttpBackendStub
+  it should "try to convert a basic response to a mapped one" in {
+    implicit val s = SttpBackendStub(HttpURLConnectionBackend())
+      .whenRequestMatches(_ => true)
+      .thenRespond("10")
+
+    val result = sttp
+      .get(uri"http://example.org")
+      .mapResponse(_.toInt)
+      .mapResponse(_ * 2)
+      .send()
+
+    result.body should be(Right(20))
+  }
+
+  private val testingStubWithFallback = SttpBackendStub
     .withFallback(testingStub)
     .whenRequestMatches(_.uri.path.startsWith(List("c")))
     .thenRespond("ok")
@@ -110,5 +124,31 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
 
     val r = sttp.post(uri"http://example.org/a/b").send()
     r.is200 should be(true)
+  }
+
+  private val s = "Hello, world!"
+  private val adjustTestData = List[(Any, ResponseAs[_, _], Any)](
+    (s, IgnoreResponse, Some(())),
+    (s, ResponseAsString(Utf8), Some(s)),
+    (s.getBytes(Utf8), ResponseAsString(Utf8), Some(s)),
+    (new ByteArrayInputStream(s.getBytes(Utf8)),
+     ResponseAsString(Utf8),
+     Some(s)),
+    (10, ResponseAsString(Utf8), None),
+    ("10",
+     MappedResponseAs(ResponseAsString(Utf8), (_: String).toInt),
+     Some(10)),
+    (10, MappedResponseAs(ResponseAsString(Utf8), (_: String).toInt), None)
+  )
+
+  behavior of "tryAdjustResponseBody"
+
+  for {
+    (body, responseAs, expectedResult) <- adjustTestData
+  } {
+    it should s"adjust $body to $expectedResult when specified as $responseAs" in {
+      SttpBackendStub.tryAdjustResponseBody(responseAs, body) should be(
+        expectedResult)
+    }
   }
 }

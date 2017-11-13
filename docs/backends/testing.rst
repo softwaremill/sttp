@@ -44,6 +44,37 @@ If you want to simulate an exception being thrown by a backend, e.g. a socket ti
     .whenRequestMatches(_ => true)
     .thenRespond(throw new TimeoutException())
 
+Adjusting the response body type
+--------------------------------
+
+If the type of the response body returned by the stub's rules (as specified using the ``.when...`` methods) doesn't match what was specified in the request, the stub will attempt to convert the body to the desired type. This might be useful when:
+
+* testing code which maps a basic response body to a custom type, e.g. mapping a raw json string using a decoder to a domain type
+* reading a classpath resource (which results in an ``InputStream``) and requesting a response of e.g. type ``String``
+
+The following conversions are supported:
+
+* anything to ``()`` (unit), when the response is ignored
+* ``InputStream`` and ``Array[Byte]`` to ``String``
+* ``InputStream`` and ``String`` to ``Array[Byte]``
+* ``InputStream``, ``String`` and ``Array[Byte]`` to custom types through mapped response specifications
+
+For example::
+
+  implicit val testingBackend = SttpBackendStub(HttpURLConnectionBackend())
+    .whenRequestMatches(_ => true)
+    .thenRespond(""" {"username": "john", "age": 65 } """)
+
+  def parseUserJson(a: Array[Byte]): User = ...
+
+  val response = sttp.get(uri"http://example.com")
+    .response(asByteArray.map(parseUserJson))
+    .send()
+
+In the example above, the stub's rules specify that a response with a ``String``-body should be returned for any request; the request, on the other hand, specifies that responses should be parsed from a byte array to a custom ``User`` type. These type don't match, so the ``SttpBackendStub`` will in this case convert the body to the desired type.
+
+Note that no conversions will be attempted for streaming response bodies.
+
 Delegating to another backend
 -----------------------------
 

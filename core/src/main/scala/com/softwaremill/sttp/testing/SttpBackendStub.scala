@@ -1,7 +1,9 @@
 package com.softwaremill.sttp.testing
 
+import java.io.{File, InputStream}
+
 import com.softwaremill.sttp.testing.SttpBackendStub._
-import com.softwaremill.sttp.{MonadError, Request, Response, SttpBackend}
+import com.softwaremill.sttp._
 
 import scala.language.higherKinds
 import scala.util.{Failure, Success, Try}
@@ -46,8 +48,9 @@ class SttpBackendStub[R[_], S] private (rm: MonadError[R],
         case matcher: Matcher[T @unchecked] if matcher(request) =>
           Try(matcher.response(request).get)
       } match {
-      case Some(Success(response)) => wrapResponse(response)
-      case Some(Failure(e))        => rm.error(e)
+      case Some(Success(response)) =>
+        wrapResponse(tryAdjustResponseType(request.response, response))
+      case Some(Failure(e)) => rm.error(e)
       case None =>
         fallback match {
           case None     => wrapResponse(DefaultResponse)
@@ -131,6 +134,46 @@ object SttpBackendStub {
       new Matcher[T]({
         case r if p(r) => response
       })
+    }
+  }
+
+  private[sttp] def tryAdjustResponseType[T, U](ra: ResponseAs[T, _],
+                                                r: Response[U]): Response[_] = {
+    r.body match {
+      case Left(_) => r
+      case Right(body) =>
+        val newBody: Any = tryAdjustResponseBody(ra, body).getOrElse(body)
+        r.copy(body = Right(newBody))
+    }
+  }
+
+  private[sttp] def tryAdjustResponseBody[T, U](ra: ResponseAs[T, _],
+                                                b: U): Option[T] = {
+    ra match {
+      case IgnoreResponse => Some(())
+      case ResponseAsString(enc) =>
+        b match {
+          case s: String       => Some(s)
+          case a: Array[Byte]  => Some(new String(a, enc))
+          case is: InputStream => Some(new String(toByteArray(is), enc))
+          case _               => None
+        }
+      case ResponseAsByteArray =>
+        b match {
+          case s: String       => Some(s.getBytes(Utf8))
+          case a: Array[Byte]  => Some(a)
+          case is: InputStream => Some(toByteArray(is))
+          case _               => None
+        }
+      case ras @ ResponseAsStream() =>
+        None
+      case ResponseAsFile(file, overwrite) =>
+        b match {
+          case f: File => Some(f)
+          case _       => None
+        }
+      case MappedResponseAs(raw, g) =>
+        tryAdjustResponseBody(raw, b).map(g)
     }
   }
 }

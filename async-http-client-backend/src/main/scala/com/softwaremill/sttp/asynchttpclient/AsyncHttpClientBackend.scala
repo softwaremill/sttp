@@ -223,9 +223,7 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
       case InputStreamBody(b, _) =>
         // sadly async http client only supports parts that are strings,
         // byte arrays or files
-        val baos = new ByteArrayOutputStream()
-        transfer(b, baos)
-        new ByteArrayPart(nameWithFilename, baos.toByteArray)
+        new ByteArrayPart(nameWithFilename, toByteArray(b))
       case PathBody(b, _) =>
         new FilePart(mp.name, b.toFile, null, null, mp.fileName.orNull)
     }
