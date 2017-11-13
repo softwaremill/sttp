@@ -33,7 +33,8 @@ class SttpBackendStub[R[_], S] private (rm: MonadError[R],
     new WhenRequest(p)
 
   def whenRequestMatchesPartial(
-      partial: PartialFunction[Request[_, _], Response[_]]) = {
+      partial: PartialFunction[Request[_, _], Response[_]])
+    : SttpBackendStub[R, S] = {
     val m = Matcher(partial)
     val vector: Vector[Matcher[_]] = matchers :+ m
     new SttpBackendStub(rm, vector, fallback)
@@ -125,7 +126,8 @@ object SttpBackendStub {
   }
 
   private object Matcher {
-    def apply[T](p: Request[T, _] => Boolean, response: => Response[T]) = {
+    def apply[T](p: Request[T, _] => Boolean,
+                 response: => Response[T]): Matcher[T] = {
       new Matcher[T]({
         case r if p(r) => response
       })
