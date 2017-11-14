@@ -1,7 +1,7 @@
 package com.softwaremill.sttp
 
 import java.net.URLEncoder
-
+import java.net.URI
 import Uri.{QueryFragment, QueryFragmentEncoding, UserInfo}
 import Uri.QueryFragment.{KeyValue, Plain, Value}
 
@@ -27,6 +27,7 @@ case class Uri(scheme: String,
                path: Seq[String],
                queryFragments: Seq[QueryFragment],
                fragment: Option[String]) {
+
 
   def scheme(s: String): Uri = this.copy(scheme = s)
 
@@ -193,6 +194,16 @@ object Uri {
     Uri(scheme, None, host, Some(port), Vector.empty, Vector.empty, None)
   def apply(scheme: String, host: String, port: Int, path: Seq[String]): Uri =
     Uri(scheme, None, host, Some(port), path, Vector.empty, None)
+  def apply(scheme: String, host: String, path: Seq[String]): Uri =
+    Uri(scheme, None, host, None, path, Vector.empty, None)
+  def apply(javaUri: URI): Uri = {
+    val scheme: String = javaUri.getScheme
+    val host: String = javaUri.getHost
+    val port: Option[Int] = Option(javaUri.getPort)
+    val path: Seq[String] = javaUri.getPath.split("/").toList.tail
+    val fragment: Option[String] = Option(javaUri.getFragment)
+    Uri(scheme, None, host, port, path, Vector.empty, fragment)
+  }
 
   sealed trait QueryFragment
   object QueryFragment {
