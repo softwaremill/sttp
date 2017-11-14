@@ -4,7 +4,7 @@ val commonSettings = Seq(
   crossScalaVersions := Seq(scalaVersion.value, "2.11.11"),
   scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-Xlint"),
   scalafmtOnCompile := true,
-  scalafmtVersion := "1.2.0",
+  scalafmtVersion := "1.3.0",
   // publishing
   publishTo := Some(
     if (isSnapshot.value)
@@ -36,7 +36,7 @@ val commonSettings = Seq(
 val akkaHttpVersion = "10.0.10"
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % akkaHttpVersion
 
-val monixVersion = "2.3.0"
+val monixVersion = "2.3.2"
 val monix = "io.monix" %% "monix" % monixVersion
 
 val circeVersion = "0.8.0"
@@ -104,7 +104,7 @@ lazy val asyncHttpClientScalazBackend: Project = (project in file(
   .settings(
     name := "async-http-client-backend-scalaz",
     libraryDependencies ++= Seq(
-      "org.scalaz" %% "scalaz-concurrent" % "7.2.15"
+      "org.scalaz" %% "scalaz-concurrent" % "7.2.16"
     )
   ) dependsOn asyncHttpClientBackend
 
@@ -122,7 +122,7 @@ lazy val asyncHttpClientCatsBackend: Project = (project in file(
   .settings(
     name := "async-http-client-backend-cats",
     libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-effect" % "0.4"
+      "org.typelevel" %% "cats-effect" % "0.5"
     )
   ) dependsOn asyncHttpClientBackend
 
@@ -132,7 +132,7 @@ lazy val asyncHttpClientFs2Backend: Project = (project in file(
   .settings(
     name := "async-http-client-backend-fs2",
     libraryDependencies ++= Seq(
-      "com.github.zainab-ali" %% "fs2-reactive-streams" % "0.2.2"
+      "com.github.zainab-ali" %% "fs2-reactive-streams" % "0.2.5"
     )
   ) dependsOn asyncHttpClientBackend
 
