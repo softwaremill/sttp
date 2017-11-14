@@ -26,9 +26,10 @@ import scala.util.{Failure, Success, Try}
   * or headers. A [[ClassCastException]] might occur if for a given request,
   * a response is specified with the incorrect or inconvertible body type.
   */
-class SttpBackendStub[R[_], S] private (rm: MonadError[R],
-                                        matchers: Vector[Matcher[_]],
-                                        fallback: Option[SttpBackend[R, S]])
+class SttpBackendStub[R[_], S] private (
+    rm: MonadError[R],
+    matchers: PartialFunction[Request[_, _], Response[_]],
+    fallback: Option[SttpBackend[R, S]])
     extends SttpBackend[R, S] {
 
   /**
@@ -51,25 +52,19 @@ class SttpBackendStub[R[_], S] private (rm: MonadError[R],
   def whenRequestMatchesPartial(
       partial: PartialFunction[Request[_, _], Response[_]])
     : SttpBackendStub[R, S] = {
-    val m = Matcher(partial)
-    val vector: Vector[Matcher[_]] = matchers :+ m
-    new SttpBackendStub(rm, vector, fallback)
+    new SttpBackendStub(rm, matchers.orElse(partial), fallback)
   }
 
   override def send[T](request: Request[T, S]): R[Response[T]] = {
-    matchers
-      .collectFirst {
-        case matcher: Matcher[T @unchecked] if matcher(request) =>
-          Try(matcher.response(request).get)
-      } match {
-      case Some(Success(response)) =>
+    Try(matchers.lift(request)) match {
+      case Success(Some(response)) =>
         wrapResponse(tryAdjustResponseType(request.response, response))
-      case Some(Failure(e)) => rm.error(e)
-      case None =>
+      case Success(None) =>
         fallback match {
           case None     => wrapResponse(DefaultResponse)
           case Some(fb) => fb.send(request)
         }
+      case Failure(e) => rm.error(e)
     }
   }
 
@@ -93,8 +88,10 @@ class SttpBackendStub[R[_], S] private (rm: MonadError[R],
     def thenRespond[T](body: T): SttpBackendStub[R, S] =
       thenRespond(Response[T](Right(body), 200, Nil, Nil))
     def thenRespond[T](resp: => Response[T]): SttpBackendStub[R, S] = {
-      val m = Matcher[T](p, resp)
-      new SttpBackendStub(rm, matchers :+ m, fallback)
+      val m: PartialFunction[Request[_, _], Response[_]] = {
+        case r if p(r) => resp
+      }
+      new SttpBackendStub(rm, matchers.orElse(m), fallback)
     }
   }
 }
@@ -106,7 +103,7 @@ object SttpBackendStub {
     * container), without streaming support.
     */
   def synchronous: SttpBackendStub[Id, Nothing] =
-    new SttpBackendStub[Id, Nothing](IdMonad, Vector.empty, None)
+    new SttpBackendStub[Id, Nothing](IdMonad, PartialFunction.empty, None)
 
   /**
     * Create a stub asynchronous backend (which wraps results in Scala's
@@ -114,7 +111,9 @@ object SttpBackendStub {
     */
   def asynchronousFuture: SttpBackendStub[Future, Nothing] = {
     import scala.concurrent.ExecutionContext.Implicits.global
-    new SttpBackendStub[Future, Nothing](new FutureMonad(), Vector.empty, None)
+    new SttpBackendStub[Future, Nothing](new FutureMonad(),
+                                         PartialFunction.empty,
+                                         None)
   }
 
   /**
@@ -125,14 +124,14 @@ object SttpBackendStub {
     *            [[https://stackoverflow.com/questions/46642623/cannot-infer-contravariant-nothing-type-parameter]].
     */
   def apply[R[_], S, S2 <: S](c: SttpBackend[R, S]): SttpBackendStub[R, S2] =
-    new SttpBackendStub[R, S2](c.responseMonad, Vector.empty, None)
+    new SttpBackendStub[R, S2](c.responseMonad, PartialFunction.empty, None)
 
   /**
     * Create a stub backend using the given response monad (which determines
     * how requests are wrapped), and any stream type.
     */
   def apply[R[_], S](responseMonad: MonadError[R]): SttpBackendStub[R, S] =
-    new SttpBackendStub[R, S](responseMonad, Vector.empty, None)
+    new SttpBackendStub[R, S](responseMonad, PartialFunction.empty, None)
 
   /**
     * Create a stub backend which delegates send requests to the given fallback
@@ -141,31 +140,11 @@ object SttpBackendStub {
   def withFallback[R[_], S, S2 <: S](
       fallback: SttpBackend[R, S]): SttpBackendStub[R, S2] =
     new SttpBackendStub[R, S2](fallback.responseMonad,
-                               Vector.empty,
+                               PartialFunction.empty,
                                Some(fallback))
 
   private val DefaultResponse =
     Response[Nothing](Left("Not Found"), 404, Nil, Nil)
-
-  private case class Matcher[T](
-      p: PartialFunction[Request[T, _], Response[_]]) {
-
-    def apply(request: Request[T, _]): Boolean =
-      p.isDefinedAt(request)
-
-    def response[S](request: Request[T, S]): Option[Response[T]] = {
-      p.lift(request).asInstanceOf[Option[Response[T]]]
-    }
-  }
-
-  private object Matcher {
-    def apply[T](p: Request[T, _] => Boolean,
-                 response: => Response[T]): Matcher[T] = {
-      new Matcher[T]({
-        case r if p(r) => response
-      })
-    }
-  }
 
   private[sttp] def tryAdjustResponseType[T, U](ra: ResponseAs[T, _],
                                                 r: Response[U]): Response[_] = {
