@@ -43,6 +43,14 @@ class SttpBackendStub[R[_], S] private (
     new WhenRequest(p)
 
   /**
+    * Specify how the stub backend should respond to any request (catch-all).
+    *
+    * Note that the stubs are immutable, and each new
+    * specification that is added yields a new stub instance.
+    */
+  def whenAnyRequest: WhenRequest = whenRequestMatches(_ => true)
+
+  /**
     * Specify how the stub backend should respond to requests using the
     * given partial function.
     *
