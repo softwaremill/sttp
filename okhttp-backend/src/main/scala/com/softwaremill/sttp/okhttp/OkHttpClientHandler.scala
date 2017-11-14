@@ -21,7 +21,6 @@ import okhttp3.{
 import okio.{BufferedSink, Okio}
 
 import scala.collection.JavaConverters._
-import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 import scala.util.{Failure, Try}
