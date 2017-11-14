@@ -28,7 +28,6 @@ case class Uri(scheme: String,
                queryFragments: Seq[QueryFragment],
                fragment: Option[String]) {
 
-
   def scheme(s: String): Uri = this.copy(scheme = s)
 
   def userInfo(username: String): Uri =
@@ -196,14 +195,7 @@ object Uri {
     Uri(scheme, None, host, Some(port), path, Vector.empty, None)
   def apply(scheme: String, host: String, path: Seq[String]): Uri =
     Uri(scheme, None, host, None, path, Vector.empty, None)
-  def apply(javaUri: URI): Uri = {
-    val scheme: String = javaUri.getScheme
-    val host: String = javaUri.getHost
-    val port: Option[Int] = Option(javaUri.getPort)
-    val path: Seq[String] = javaUri.getPath.split("/").toList.tail
-    val fragment: Option[String] = Option(javaUri.getFragment)
-    Uri(scheme, None, host, port, path, Vector.empty, fragment)
-  }
+  def apply(javaUri: URI): Uri = uri"${javaUri.toString}"
 
   sealed trait QueryFragment
   object QueryFragment {

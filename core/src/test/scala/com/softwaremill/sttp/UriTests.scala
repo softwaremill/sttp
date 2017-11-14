@@ -1,5 +1,7 @@
 package com.softwaremill.sttp
 
+import java.net.URI
+
 import com.softwaremill.sttp.Uri.{
   QueryFragment,
   QueryFragmentEncoding,
@@ -105,5 +107,10 @@ class UriTests extends FunSuite with Matchers {
     test(s"$fragments should serialize to$expected") {
       testUri.copy(queryFragments = fragments).toString should endWith(expected)
     }
+  }
+
+  test("should convert from java URI") {
+    val uriAsString = "https://sub.example.com:8080/a/b/xyz?p1=v1&p2=v2#f"
+    Uri(URI.create(uriAsString)).toString should be(uriAsString)
   }
 }
