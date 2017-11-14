@@ -3,9 +3,20 @@ Testing
 
 If you need a stub backend for use in tests instead of a "real" backend (you probably don't want to make HTTP calls during unit tests), you can use the ``SttpBackendStub`` class. It allows specifying how the backend should respond to requests matching given predicates.
 
-A backend stub can be created using an instance of a "real" backend, or by explicitly giving the response wrapper monad and supported streams type.
+Creating a stub backend
+-----------------------
 
-For example::
+An empty backend stub can be created using the following ways:
+
+* given an instance of a "real" backend, e.g. ``SttpBackendStub(HttpURLConnectionBackend())`` or ``SttpBackendStub(AsyncHttpClientScalazBackend())``. The stub will then use the same response wrapper and support the same type of streams as the given "real" backend.
+* by explicitly giving the response wrapper monad and supported streams type, e.g. ``SttpBackendStub[Task, Observable[ByteBuffer]](TaskMonad)``
+* by using one of the factory methods ``SttpBackendStub.synchronous`` or ``SttpBackendStub.asynchronousFuture``, which return stubs which use the ``Id`` or standard Scala's ``Future`` response wrappers without streaming support
+* by specifying a fallback/delegate backend, see below
+
+Specifying behavior
+-------------------
+
+Behavior of the stub can be specified using a combination of the ``whenRequestMatches`` and ``thenResponse`` methods::
 
   implicit val testingBackend = SttpBackendStub(HttpURLConnectionBackend())
     .whenRequestMatches(_.uri.path.startsWith(List("a", "b")))
@@ -23,8 +34,11 @@ It is also possible to match requests by partial function, returning a response.
 
   implicit val testingBackend = SttpBackendStub(HttpURLConnectionBackend())
     .whenRequestMatchesPartial({
-      case r if r.uri.path.endsWith(List("partial10")) => Response(Right(10), 200, Nil, Nil)
-      case r if r.uri.path.endsWith(List("partialAda")) => Response(Right("Ada"), 200, Nil, Nil)
+      case r if r.uri.path.endsWith(List("partial10")) =>
+        Response(Right(10), 200, Nil, Nil)
+
+      case r if r.uri.path.endsWith(List("partialAda")) =>
+        Response(Right("Ada"), 200, Nil, Nil)
     })
 
   val response1 = sttp.get(uri"http://example.org/partial10").send()
@@ -33,7 +47,7 @@ It is also possible to match requests by partial function, returning a response.
   val response2 = sttp.post(uri"http://example.org/partialAda").send()
   // response2.body will be Right("Ada")
 
-This approach to testing has one caveat: the responses are not type-safe. That is, the backend cannot match on or verify that the type included in the response matches the response type requested.
+This approach to testing has one caveat: the responses are not type-safe. That is, the stub backend cannot match on or verify that the type of the response body matches the response body type requested.
 
 Simulating exceptions
 ---------------------
@@ -71,7 +85,7 @@ For example::
     .response(asByteArray.map(parseUserJson))
     .send()
 
-In the example above, the stub's rules specify that a response with a ``String``-body should be returned for any request; the request, on the other hand, specifies that responses should be parsed from a byte array to a custom ``User`` type. These type don't match, so the ``SttpBackendStub`` will in this case convert the body to the desired type.
+In the example above, the stub's rules specify that a response with a ``String``-body should be returned for any request; the request, on the other hand, specifies that response body should be parsed from a byte array to a custom ``User`` type. These type don't match, so the ``SttpBackendStub`` will in this case convert the body to the desired type.
 
 Note that no conversions will be attempted for streaming response bodies.
 

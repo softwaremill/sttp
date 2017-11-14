@@ -5,6 +5,7 @@ import java.io.{File, InputStream}
 import com.softwaremill.sttp.testing.SttpBackendStub._
 import com.softwaremill.sttp._
 
+import scala.concurrent.Future
 import scala.language.higherKinds
 import scala.util.{Failure, Success, Try}
 
@@ -17,9 +18,13 @@ import scala.util.{Failure, Success, Try}
   * Note however, that this is not type-safe with respect to the type of the
   * response body - the stub doesn't have a way to check if the type of the
   * body in the configured response is the same as the one specified by the
-  * request. Hence, the predicates can match requests basing on the URI
+  * request. Some conversions will be attempted (e.g. from a `String` to
+  * a custom mapped type, as specified in the request, see the documentation
+  * for more details).
+  *
+  * Hence, the predicates can match requests basing on the URI
   * or headers. A [[ClassCastException]] might occur if for a given request,
-  * a response is specified with the incorrect body type.
+  * a response is specified with the incorrect or inconvertible body type.
   */
 class SttpBackendStub[R[_], S] private (rm: MonadError[R],
                                         matchers: Vector[Matcher[_]],
@@ -28,12 +33,21 @@ class SttpBackendStub[R[_], S] private (rm: MonadError[R],
 
   /**
     * Specify how the stub backend should respond to requests matching the
-    * given predicate. Note that the stubs are immutable, and each new
+    * given predicate.
+    *
+    * Note that the stubs are immutable, and each new
     * specification that is added yields a new stub instance.
     */
   def whenRequestMatches(p: Request[_, _] => Boolean): WhenRequest =
     new WhenRequest(p)
 
+  /**
+    * Specify how the stub backend should respond to requests using the
+    * given partial function.
+    *
+    * Note that the stubs are immutable, and each new
+    * specification that is added yields a new stub instance.
+    */
   def whenRequestMatchesPartial(
       partial: PartialFunction[Request[_, _], Response[_]])
     : SttpBackendStub[R, S] = {
@@ -86,6 +100,22 @@ class SttpBackendStub[R[_], S] private (rm: MonadError[R],
 }
 
 object SttpBackendStub {
+
+  /**
+    * Create a stub synchronous backend (which doesn't wrap results in any
+    * container), without streaming support.
+    */
+  def synchronous: SttpBackendStub[Id, Nothing] =
+    new SttpBackendStub[Id, Nothing](IdMonad, Vector.empty, None)
+
+  /**
+    * Create a stub asynchronous backend (which wraps results in Scala's
+    * built-in `Future`), without streaming support.
+    */
+  def asynchronousFuture: SttpBackendStub[Future, Nothing] = {
+    import scala.concurrent.ExecutionContext.Implicits.global
+    new SttpBackendStub[Future, Nothing](new FutureMonad(), Vector.empty, None)
+  }
 
   /**
     * Create a stub backend for testing, which uses the same response wrappers
