@@ -20,8 +20,8 @@ Tags can be added to a request using the ``def tag(k: String, v: Any)`` method, 
 
 Backends, or backend wrappers can use tags e.g. for logging, passing a metric name, using different connection pools, or even different delegate backends.
 
-Example backend wrapper
------------------------
+Example metrics backend wrapper
+-------------------------------
 
 Below is an example on how to implement a backend wrapper, which sends metrics for completed requests and wraps any ``Future``-based backend::
 
@@ -71,4 +71,48 @@ Below is an example on how to implement a backend wrapper, which sends metrics f
     .tag("metric", "service1")
     .send()
 
-  
+Example retrying backend wrapper
+--------------------------------
+
+Handling retries is a complex problem when it comes to HTTP requests. When is a request retryable? There are a couple of things to take into account:
+
+* connection exceptions are generally good candidates for retries
+* only idempotent HTTP methods (such as ``GET``) could potentially be retried
+* some HTTP status codes might also be retryable (e.g. ``500 Internal Server Error`` or ``503 Service Unavailable``)
+
+In some cases it's possible to implement a generic retry mechanism; such a mechanism should take into account logging, metrics, limiting the number of retries and a backoff mechanism. These mechanisms could be quite simple, or involve e.g. retry budges (see `Finagle's <https://twitter.github.io/finagle/guide/Clients.html#retries>`_ documentation on retries). In sttp, it's possible to recover from errors using the ``responseMonad``. A starting point for a retrying backend could be::
+
+  import com.softwaremill.sttp.{MonadError, Request, Response, SttpBackend}
+
+  class RetryingBackend[R[_], S](
+      delegate: SttpBackend[R, S],
+      shouldRetry: (Request[_, _], Either[Throwable, Response[_]]) => Boolean,
+      maxRetries: Int)
+      extends SttpBackend[R, S] {
+
+    override def send[T](request: Request[T, S]): R[Response[T]] = {
+      sendWithRetryCounter(request, 0)
+    }
+
+    private def sendWithRetryCounter[T](request: Request[T, S],
+                                        retries: Int): R[Response[T]] = {
+      val r = responseMonad.handleError(delegate.send(request)) {
+        case t if shouldRetry(request, Left(t)) && retries < maxRetries =>
+          sendWithRetryCounter(request, retries + 1)
+      }
+
+      responseMonad.flatMap(r) { resp =>
+        if (shouldRetry(request, Right(resp)) && retries < maxRetries) {
+          sendWithRetryCounter(request, retries + 1)
+        } else {
+          responseMonad.unit(resp)
+        }
+      }
+    }
+
+    override def close(): Unit = delegate.close()
+
+    override def responseMonad: MonadError[R] = delegate.responseMonad
+  }
+
+Note that some backends also have built-in retry mechanisms, e.g. `akka-http <https://doc.akka.io/docs/akka-http/current/scala/http/client-side/host-level.html#retrying-a-request>`_ or `OkHttp <http://square.github.io/okhttp>`_ (see the builder's ``retryOnConnectionFailure`` method).
