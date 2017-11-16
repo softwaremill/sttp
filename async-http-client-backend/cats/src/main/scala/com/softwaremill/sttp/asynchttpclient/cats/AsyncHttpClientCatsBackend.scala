@@ -78,4 +78,8 @@ private[cats] class AsyncMonad[F[_]](implicit F: Async[F])
     F.flatMap(fa)(f)
 
   override def error[T](t: Throwable): F[T] = F.raiseError(t)
+
+  override protected def handleWrappedError[T](rt: F[T])(
+      h: PartialFunction[Throwable, F[T]]): F[T] =
+    F.recoverWith(rt)(h)
 }

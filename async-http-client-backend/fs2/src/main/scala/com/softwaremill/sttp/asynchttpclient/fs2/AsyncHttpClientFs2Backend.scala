@@ -108,4 +108,8 @@ private[fs2] class EffectMonad[F[_]](implicit F: Effect[F])
     F.flatMap(fa)(f)
 
   override def error[T](t: Throwable): F[T] = F.raiseError(t)
+
+  override protected def handleWrappedError[T](rt: F[T])(
+      h: PartialFunction[Throwable, F[T]]): F[T] =
+    F.recoverWith(rt)(h)
 }

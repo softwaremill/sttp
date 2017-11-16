@@ -108,4 +108,8 @@ private[monix] object TaskMonad extends MonadAsyncError[Task] {
     }
 
   override def error[T](t: Throwable): Task[T] = Task.raiseError(t)
+
+  override protected def handleWrappedError[T](rt: Task[T])(
+      h: PartialFunction[Throwable, Task[T]]): Task[T] =
+    rt.onErrorRecoverWith(h)
 }
