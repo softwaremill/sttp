@@ -135,7 +135,9 @@ case class Uri(scheme: String,
     e match {
       case QueryFragmentEncoding.All => URLEncoder.encode(s, "UTF-8")
       case QueryFragmentEncoding.Standard =>
-        encode(Rfc3986.QueryNoStandardDelims, spaceAsPlus = true)(s)
+        encode(Rfc3986.QueryNoStandardDelims,
+               spaceAsPlus = true,
+               encodePlus = true)(s)
       case QueryFragmentEncoding.Relaxed =>
         encode(Rfc3986.Query, spaceAsPlus = true)(s)
     }
@@ -161,13 +163,17 @@ case class Uri(scheme: String,
   /**
     * @param spaceAsPlus In the query, space is encoded as a `+`. In other
     * contexts, it should be %-encoded as `%20`.
+    * @param encodePlus Should `+` (which is the encoded form of space
+    * in the query) be %-encoded.
     */
   private def encode(allowedCharacters: Set[Char],
-                     spaceAsPlus: Boolean = false)(s: String): String = {
+                     spaceAsPlus: Boolean = false,
+                     encodePlus: Boolean = false)(s: String): String = {
     val sb = new StringBuilder()
     // based on https://gist.github.com/teigen/5865923
     for (c <- s) {
-      if (allowedCharacters(c)) sb.append(c)
+      if (c == '+' && encodePlus) sb.append("%2B") // #48
+      else if (allowedCharacters(c)) sb.append(c)
       else if (c == ' ' && spaceAsPlus) sb.append('+')
       else {
         for (b <- c.toString.getBytes("UTF-8")) {
