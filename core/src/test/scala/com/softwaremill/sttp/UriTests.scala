@@ -114,4 +114,9 @@ class UriTests extends FunSuite with Matchers {
     val uriAsString = "https://sub.example.com:8080/a/b/xyz?p1=v1&p2=v2#f"
     Uri(URI.create(uriAsString)).toString should be(uriAsString)
   }
+
+  test("should convert to java URI") {
+    val uriAsString = "https://sub.example.com:8080/a/b/xyz?p1=v1&p2=v2#f"
+    uri"$uriAsString".toJavaUri.toString should be(uriAsString)
+  }
 }

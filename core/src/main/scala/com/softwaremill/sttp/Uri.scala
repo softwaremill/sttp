@@ -86,6 +86,8 @@ case class Uri(scheme: String,
 
   def fragment(f: Option[String]): Uri = this.copy(fragment = f)
 
+  def toJavaUri: URI = new URI(toString())
+
   override def toString: String = {
     def encodeUserInfo(ui: UserInfo): String =
       encode(Rfc3986.UserInfo)(ui.username) + ui.password.fold("")(
