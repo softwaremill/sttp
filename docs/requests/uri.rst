@@ -24,9 +24,11 @@ Using the URI interpolator it's possible to conveniently create ``Uri`` instance
 
 Note the ``uri`` prefix before the string and the standard Scala string-embedding syntax (``$user``, ``$filter``).
 
-Any values embedded in the URI will be URL-encoded, taking into account the context (e.g., the whitespace in ``user`` will be %-encoded as ``%20D``, while the whitespace in ``filter`` will be query-encoded as ``+``). 
+Any values embedded in the URI will be URL-encoded, taking into account the context (e.g., the whitespace in ``user`` will be %-encoded as ``%20D``, while the whitespace in ``filter`` will be query-encoded as ``+``). On the other hand, parts of the URI given as literal strings (not embedded values), are assumed to be URL-encoded and thus will be decoded when creating a ``Uri`` instance.
 
 All components of the URI can be embedded from values: scheme, username/password, host, port, path, query and fragment.
+
+Both the ``Uri`` class and the interpolator can be used stand-alone, without using the rest of sttp. Conversions are available both from and to ``java.net.URI``; ``Uri.toString`` returns the URI as a ``String``.
 
 Optional values
 ---------------
