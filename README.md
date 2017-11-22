@@ -33,6 +33,9 @@ println(response.unsafeBody)
 
 sttp documentation is available at [sttp.readthedocs.io](http://sttp.readthedocs.io).
 
+You can also take a look at the [introductory blog](https://softwaremill.com/introducing-sttp-the-scala-http-client/)
+and its [follow-up](https://softwaremill.com/sttp-streaming-uri-interpolator/).
+
 ## Quickstart with Ammonite
 
 If you are an [Ammonite](http://ammonite.io) user, you can quickly start experimenting with sttp by copy-pasting the following:
