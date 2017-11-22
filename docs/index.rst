@@ -25,7 +25,7 @@ Here's a very quick example of sttp in action::
   // response.unsafeBody: by default read into a String 
   println(response.unsafeBody)                     
 
-For more details, explore the subjects below!
+For more examples, see the :ref:`usage examples <usage_examples>` section. Or explore the features in detail:
 
 .. toctree::
    :maxdepth: 2
@@ -34,6 +34,7 @@ For more details, explore the subjects below!
    quickstart
    goals
    community             
+   examples
 
 .. toctree::
    :maxdepth: 2

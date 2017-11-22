@@ -20,14 +20,14 @@ This module adds a method to the request and a function that can be given to a r
   implicit val backend = HttpURLConnectionBackend()
   
   // Assume that there is an implicit circe encoder in scope
-  // for the request Payload, and a decoder for the Response
+  // for the request Payload, and a decoder for the MyResponse
   val requestPayload: Payload = ???
   
-  val response: Either[io.circe.Error, Response] = 
+  val response: Either[io.circe.Error, MyResponse] =
     sttp
       .post(uri"...")
       .body(requestPayload)
-      .response(asJson[Response])
+      .response(asJson[MyResponse])
       .send()
 
 Json4s
@@ -47,12 +47,14 @@ Usage example::
   implicit val backend = HttpURLConnectionBackend()
 
   case class Payload(...)
+  case class MyResponse(...)
+
   val requestPayload: Payload = Payload(...)
   
-  val response: Response[Payload] = 
+  val response: Response[MyResponse] =
     sttp
       .post(uri"...")
       .body(requestPayload)
-      .response(asJson[Response])
+      .response(asJson[MyResponse])
       .send()
  
