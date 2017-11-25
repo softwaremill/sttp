@@ -56,6 +56,10 @@ class UriInterpolatorTests extends FunSuite with Matchers {
     "authority with parameters" -> List(
       (uri"http://$v1.com?x=$v2", s"http://$v1.com?x=$v2queryEncoded")
     ),
+    "ipv4" -> List(
+      (uri"http://192.168.1.2/x", s"http://192.168.1.2/x"),
+      (uri"http://${"192.168.1.2"}/x", s"http://192.168.1.2/x")
+    ),
     "ports" -> List(
       (uri"http://example.com:8080", s"http://example.com:8080"),
       (uri"http://example.com:${8080}", s"http://example.com:8080"),
