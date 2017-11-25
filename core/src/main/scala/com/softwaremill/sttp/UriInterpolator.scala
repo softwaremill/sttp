@@ -42,6 +42,7 @@ object UriInterpolator {
 
     while (strings.hasNext) {
       val nextExpression = expressions.next()
+      val nextExpressionStr = nextExpression.toString
 
       // special case: the interpolation starts with an expression, which
       // contains a whole URI. In this case, parsing the expression as if
@@ -49,7 +50,7 @@ object UriInterpolator {
       // way it's possible to extend existing URIs. Without special-casing
       // the embedded URI would be escaped and become part of the host
       // as a whole.
-      if (tokens == Vector(StringToken("")) && nextExpression.toString.contains(
+      if (tokens == Vector(StringToken("")) && nextExpressionStr.contains(
             "://")) {
         def tokenizeExpressionAsString(): Unit = {
           val (nextTokenizer, nextTokens) =
@@ -305,7 +306,23 @@ object UriInterpolator {
         }
       }
 
-      private def hostPortFromTokens(u: Uri, hpTokens: Vector[Token]): Uri = {
+      private def hostPortFromTokens(u: Uri,
+                                     rawHpTokens: Vector[Token]): Uri = {
+        // Special case: if the host/port part contains an expression token,
+        // which has a string representation which contains a colon (:), then
+        // we assume that the intention was to embed the port and host separately,
+        // not to escape the colon in the host name.
+        val hpTokens = rawHpTokens.flatMap {
+          case e: ExpressionToken =>
+            val es = tokensToString(Vector(e))
+            es.split(":", 2) match {
+              case Array(_) => Vector(e)
+              case Array(h, p) =>
+                Vector(StringToken(h), ColonInAuthority, StringToken(p))
+            }
+          case t => Vector(t)
+        }
+
         split(hpTokens, Set[Token](ColonInAuthority)) match {
           case Left(tt) => hostFromTokens(u, tt)
           case Right((hostTokens, _, portTokens)) =>

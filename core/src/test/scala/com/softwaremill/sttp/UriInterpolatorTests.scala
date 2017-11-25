@@ -61,7 +61,9 @@ class UriInterpolatorTests extends FunSuite with Matchers {
       (uri"http://example.com:${8080}", s"http://example.com:8080"),
       (uri"http://example.com:${8080}/x", s"http://example.com:8080/x"),
       (uri"http://example.com:${Some(8080)}/x", s"http://example.com:8080/x"),
-      (uri"http://example.com:$None/x", s"http://example.com/x")
+      (uri"http://example.com:$None/x", s"http://example.com/x"),
+      (uri"http://${"example.com:8080"}", s"http://example.com:8080"),
+      (uri"http://${"example.com:8080"}:$None", s"http://example.com:8080")
     ),
     "path" -> List(
       (uri"http://example.com/$v1", s"http://example.com/$v1"),
