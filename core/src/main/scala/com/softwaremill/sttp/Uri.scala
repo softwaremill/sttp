@@ -117,7 +117,7 @@ case class Uri(scheme: String,
 
     val schemeS = encode(Rfc3986.Scheme)(scheme)
     val userInfoS = userInfo.fold("")(encodeUserInfo(_) + "@")
-    val hostS = encode(Rfc3986.Host)(host)
+    val hostS = encode(Rfc3986.Host)(java.net.IDN.toASCII(host))
     val portS = port.fold("")(":" + _)
     val pathPrefixS = if (path.isEmpty) "" else "/"
     val pathS = path.map(encode(Rfc3986.PathSegment)).mkString("/")
