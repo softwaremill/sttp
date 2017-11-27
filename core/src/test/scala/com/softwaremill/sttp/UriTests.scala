@@ -50,8 +50,7 @@ class UriTests extends FunSuite with Matchers {
       "http://example.com#f:g/h%20i",
     Uri("http", None, "example.com", None, List("key=value"), Nil, None) ->
       "http://example.com/key=value",
-    Uri("http", "www.mikołak.net") ->
-      "http://www.xn--mikoak-6db.net"
+    Uri("2001:db8::ff00:42:8329", 8080) -> "http://[2001:db8::ff00:42:8329]:8080"
   )
 
   for {
@@ -109,6 +108,22 @@ class UriTests extends FunSuite with Matchers {
   } {
     test(s"$fragments should serialize to$expected") {
       testUri.copy(queryFragments = fragments).toString should endWith(expected)
+    }
+  }
+
+  val hostTestData = List(
+    "www.mikołak.net" -> "http://www.xn--mikoak-6db.net",
+    "192.168.1.0" -> "http://192.168.1.0",
+    "::1" -> "http://[::1]",
+    "2001:db8::ff00:42:8329" -> "http://[2001:db8::ff00:42:8329]",
+    "2001:0db8:0000:0000:0000:ff00:0042:8329" -> "http://[2001:0db8:0000:0000:0000:ff00:0042:8329]"
+  )
+
+  for {
+    (host, expected) <- hostTestData
+  } {
+    test(s"host $host should serialize to $expected") {
+      Uri(host).toString should be(s"$expected")
     }
   }
 

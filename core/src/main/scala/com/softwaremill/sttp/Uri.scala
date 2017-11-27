@@ -117,7 +117,7 @@ case class Uri(scheme: String,
 
     val schemeS = encode(Rfc3986.Scheme)(scheme)
     val userInfoS = userInfo.fold("")(encodeUserInfo(_) + "@")
-    val hostS = encode(Rfc3986.Host)(java.net.IDN.toASCII(host))
+    val hostS = encodeHost
     val portS = port.fold("")(":" + _)
     val pathPrefixS = if (path.isEmpty) "" else "/"
     val pathS = path.map(encode(Rfc3986.PathSegment)).mkString("/")
@@ -161,6 +161,14 @@ case class Uri(scheme: String,
 
     val QueryNoStandardDelims: Set[Char] = Query -- Set('&', '=')
   }
+
+  private val IpV6Pattern = "[0-9a-fA-F:]+".r
+
+  private def encodeHost: String =
+    host match {
+      case IpV6Pattern() => s"[$host]"
+      case _             => encode(Rfc3986.Host)(java.net.IDN.toASCII(host))
+    }
 
   /**
     * @param spaceAsPlus In the query, space is encoded as a `+`. In other
