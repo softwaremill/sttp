@@ -26,7 +26,16 @@ Note the ``uri`` prefix before the string and the standard Scala string-embeddin
 
 Any values embedded in the URI will be URL-encoded, taking into account the context (e.g., the whitespace in ``user`` will be %-encoded as ``%20D``, while the whitespace in ``filter`` will be query-encoded as ``+``). On the other hand, parts of the URI given as literal strings (not embedded values), are assumed to be URL-encoded and thus will be decoded when creating a ``Uri`` instance.
 
-All components of the URI can be embedded from values: scheme, username/password, host, port, path, query and fragment.
+All components of the URI can be embedded from values: scheme, username/password, host, port, path, query and fragment. The embedded values won't be further parsed, with the exception of the ``:`` in the host part, which is commonly used to pass in both the host and port::
+
+  println(uri"http://example.org/${"a/b"}")
+  // the embedded / is escaped: http://example.org/a%2Fb
+
+  println(uri"http://example.org/${"a"}/${"b"}")
+  // the embedded / is escaped: http://example.org/a/b
+
+  println(uri"http://${"example.org:8080"}")
+  // the embedded : is not escaped: http://example.org:8080
 
 Both the ``Uri`` class and the interpolator can be used stand-alone, without using the rest of sttp. Conversions are available both from and to ``java.net.URI``; ``Uri.toString`` returns the URI as a ``String``.
 
@@ -58,7 +67,11 @@ For example::
   val u4 = uri"http://example.com?$ps&p3=p4"
   assert(u4.toString == "http://example.com?p1=v1&p2=v2&p3=p4")
 
-Sequences in the host part will be expanded to a subdomain sequence.
+Sequences in the host part will be expanded to a subdomain sequence, and sequences in the path will be expanded to path components::
+
+  val ps = List("a", "b", "c")
+  val u5 = uri"http://example.com/$ps"
+  assert(u5.toString == "http://example.com/a/b/c")
 
 Special cases
 -------------
