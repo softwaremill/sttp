@@ -60,6 +60,11 @@ class UriInterpolatorTests extends FunSuite with Matchers {
       (uri"http://192.168.1.2/x", s"http://192.168.1.2/x"),
       (uri"http://${"192.168.1.2"}/x", s"http://192.168.1.2/x")
     ),
+    "ipv6" -> List(
+      (uri"http://[::1]/x", s"http://[::1]/x"),
+      (uri"http://${"::1"}/x", s"http://[::1]/x"),
+      (uri"http://${"::1"}:${8080}/x", s"http://[::1]:8080/x")
+    ),
     "ports" -> List(
       (uri"http://example.com:8080", s"http://example.com:8080"),
       (uri"http://example.com:${8080}", s"http://example.com:8080"),

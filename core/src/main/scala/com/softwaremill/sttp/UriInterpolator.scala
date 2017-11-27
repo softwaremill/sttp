@@ -129,6 +129,17 @@ object UriInterpolator {
     }
 
     object Authority extends Tokenizer {
+      private val IpV6InAuthorityPattern = "\\[[0-9a-fA-F:]+\\]".r
+
+      private def ipv6parser(a: String): Option[Vector[Token]] = {
+        a match {
+          case IpV6InAuthorityPattern() =>
+            // removing the [] which are used to surround ipv6 adresses in URLs
+            Some(Vector(StringToken(a.substring(1, a.length - 1))))
+          case _ => None
+        }
+      }
+
       override def tokenize(s: String): (Tokenizer, Vector[Token]) =
         tokenizeTerminatedFragment(
           s,
@@ -136,7 +147,8 @@ object UriInterpolator {
           Set('/', '?', '#'),
           Map(':' -> ColonInAuthority,
               '@' -> AtInAuthority,
-              '.' -> DotInAuthority)
+              '.' -> DotInAuthority),
+          ipv6parser
         )
     }
 
@@ -172,19 +184,28 @@ object UriInterpolator {
       *
       * The rest of the string, after the terminators, is tokenized using
       * a tokenizer determined by the type of the terminator.
+      *
+      * @param extraFragmentParser A context-specific parser which is given the
+      * option to tokenize a fragment (without terminators).
       */
     private def tokenizeTerminatedFragment(
         s: String,
         current: Tokenizer,
         terminators: Set[Char],
-        separatorsToTokens: Map[Char, Token]): (Tokenizer, Vector[Token]) = {
+        separatorsToTokens: Map[Char, Token],
+        extraFragmentParser: String => Option[Vector[Token]] = _ => None)
+      : (Tokenizer, Vector[Token]) = {
 
       def tokenizeFragment(f: String): Vector[Token] = {
-        splitPreserveSeparators(f, separatorsToTokens.keySet).map { t =>
-          t.headOption.flatMap(separatorsToTokens.get) match {
-            case Some(token) => token
-            case None        => StringToken(t)
-          }
+        extraFragmentParser(f) match {
+          case None =>
+            splitPreserveSeparators(f, separatorsToTokens.keySet).map { t =>
+              t.headOption.flatMap(separatorsToTokens.get) match {
+                case Some(token) => token
+                case None        => StringToken(t)
+              }
+            }
+          case Some(tt) => tt
         }
       }
 
@@ -316,9 +337,9 @@ object UriInterpolator {
           case e: ExpressionToken =>
             val es = tokensToString(Vector(e))
             es.split(":", 2) match {
-              case Array(_) => Vector(e)
-              case Array(h, p) =>
+              case Array(h, p) if p.matches("\\d+") =>
                 Vector(StringToken(h), ColonInAuthority, StringToken(p))
+              case _ => Vector(e)
             }
           case t => Vector(t)
         }
