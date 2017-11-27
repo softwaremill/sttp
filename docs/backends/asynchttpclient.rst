@@ -3,13 +3,13 @@ async-http-client backend
 
 To use, add the following dependency to your project::
 
-  "com.softwaremill.sttp" %% "async-http-client-backend-future" % "1.0.6"
+  "com.softwaremill.sttp" %% "async-http-client-backend-future" % "1.1.0"
   // or
-  "com.softwaremill.sttp" %% "async-http-client-backend-scalaz" % "1.0.6"
+  "com.softwaremill.sttp" %% "async-http-client-backend-scalaz" % "1.1.0"
   // or
-  "com.softwaremill.sttp" %% "async-http-client-backend-monix" % "1.0.6"
+  "com.softwaremill.sttp" %% "async-http-client-backend-monix" % "1.1.0"
   // or
-  "com.softwaremill.sttp" %% "async-http-client-backend-cats" % "1.0.6"
+  "com.softwaremill.sttp" %% "async-http-client-backend-cats" % "1.1.0"
 
 This backend depends on `async-http-client <https://github.com/AsyncHttpClient/async-http-client>`_.
 A fully **asynchronous** backend, which uses `Netty <http://netty.io>`_ behind the
