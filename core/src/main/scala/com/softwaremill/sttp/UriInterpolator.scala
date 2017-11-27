@@ -344,6 +344,10 @@ object UriInterpolator {
           case t => Vector(t)
         }
 
+        if (hpTokens.count(_ == ColonInAuthority) > 1) {
+          throw new IllegalArgumentException("port specified multiple times")
+        }
+
         split(hpTokens, Set[Token](ColonInAuthority)) match {
           case Left(tt) => hostFromTokens(u, tt)
           case Right((hostTokens, _, portTokens)) =>

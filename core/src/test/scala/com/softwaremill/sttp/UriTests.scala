@@ -145,7 +145,7 @@ class UriTests extends FunSuite with Matchers {
   for {
     (createUri, expectedException) <- validationTestData
   } {
-    test(s"""should validate URI and throw "$expectedException" if not valid""") {
+    test(s"""should validate and throw "$expectedException" if not valid""") {
       val caught = intercept[IllegalArgumentException] {
         createUri()
       }

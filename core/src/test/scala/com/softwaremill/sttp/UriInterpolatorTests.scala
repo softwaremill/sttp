@@ -71,8 +71,7 @@ class UriInterpolatorTests extends FunSuite with Matchers {
       (uri"http://example.com:${8080}/x", s"http://example.com:8080/x"),
       (uri"http://example.com:${Some(8080)}/x", s"http://example.com:8080/x"),
       (uri"http://example.com:$None/x", s"http://example.com/x"),
-      (uri"http://${"example.com:8080"}", s"http://example.com:8080"),
-      (uri"http://${"example.com:8080"}:$None", s"http://example.com:8080")
+      (uri"http://${"example.com:8080"}", s"http://example.com:8080")
     ),
     "path" -> List(
       (uri"http://example.com/$v1", s"http://example.com/$v1"),
@@ -145,8 +144,30 @@ class UriInterpolatorTests extends FunSuite with Matchers {
     (groupName, testCases) <- testData
     ((interpolated, expected), i) <- testCases.zipWithIndex
   } {
-    test(s"[$groupName] interpolate to $expected (${i + 1})") {
+    test(s"[$groupName] should interpolate to $expected (${i + 1})") {
       interpolated.toString should be(expected)
+    }
+  }
+
+  val validationTestData = List(
+    ("uri with two ports",
+     () => uri"http://example.com:80:80",
+     "port specified multiple times"),
+    ("uri with embedded host+port and port",
+     () => uri"http://${"example.com:80"}:80",
+     "port specified multiple times")
+  )
+
+  for {
+    (name, createUri, expectedException) <- validationTestData
+  } {
+    test(
+      s"""$name should validate and throw "$expectedException" if not valid""") {
+      val caught = intercept[IllegalArgumentException] {
+        createUri()
+      }
+
+      caught.getMessage.toLowerCase() should include(expectedException)
     }
   }
 }
