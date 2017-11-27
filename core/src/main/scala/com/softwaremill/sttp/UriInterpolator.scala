@@ -18,7 +18,7 @@ object UriInterpolator {
       UriBuilder.Fragment
     )
 
-    val startingUri = Uri("")
+    val startingUri = Uri("-")
 
     val (uri, leftTokens) =
       builders.foldLeft((startingUri, tokens)) {

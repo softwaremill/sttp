@@ -28,6 +28,12 @@ case class Uri(scheme: String,
                queryFragments: Seq[QueryFragment],
                fragment: Option[String]) {
 
+  private val AllowedSchemeCharacters = "[a-zA-Z][a-zA-Z0-9+-.]*".r
+
+  require(host.nonEmpty, "Host cannot be empty")
+  require(AllowedSchemeCharacters.unapplySeq(scheme).isDefined,
+          "Scheme can only contain alphanumeric characters, +, - and .")
+
   def scheme(s: String): Uri = this.copy(scheme = s)
 
   def userInfo(username: String): Uri =

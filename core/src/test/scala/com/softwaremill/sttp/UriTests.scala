@@ -136,4 +136,21 @@ class UriTests extends FunSuite with Matchers {
     val uriAsString = "https://sub.example.com:8080/a/b/xyz?p1=v1&p2=v2#f"
     uri"$uriAsString".toJavaUri.toString should be(uriAsString)
   }
+
+  val validationTestData = List(
+    (() => Uri("")) -> "host cannot be empty",
+    (() => Uri("h ttp", "example.org")) -> "scheme"
+  )
+
+  for {
+    (createUri, expectedException) <- validationTestData
+  } {
+    test(s"""should validate URI and throw "$expectedException" if not valid""") {
+      val caught = intercept[IllegalArgumentException] {
+        createUri()
+      }
+
+      caught.getMessage.toLowerCase() should include(expectedException)
+    }
+  }
 }
