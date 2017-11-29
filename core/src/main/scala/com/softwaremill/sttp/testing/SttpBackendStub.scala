@@ -91,8 +91,10 @@ class SttpBackendStub[R[_], S] private (
     def thenRespondServerError(): SttpBackendStub[R, S] =
       thenRespondWithCode(500, "Internal server error")
     def thenRespondWithCode(code: Int,
-                            msg: String = ""): SttpBackendStub[R, S] =
-      thenRespond(Response[Nothing](Left(msg), code, Nil, Nil))
+                            msg: String = ""): SttpBackendStub[R, S] = {
+      val body = if (code >= 200 && code < 300) Right(msg) else Left(msg)
+      thenRespond(Response(body, code, Nil, Nil))
+    }
     def thenRespond[T](body: T): SttpBackendStub[R, S] =
       thenRespond(Response[T](Right(body), 200, Nil, Nil))
     def thenRespond[T](resp: => Response[T]): SttpBackendStub[R, S] = {
