@@ -31,7 +31,7 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
     implicit val b = testingStub
     val r = sttp.get(uri"http://example.org/a/b/c").send()
     r.is200 should be(true)
-    r.body should be('left)
+    r.body should be('right)
   }
 
   it should "use subsequent rules if the first doesn't match" in {
@@ -47,7 +47,7 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
     implicit val b = testingStub
     val r = sttp.get(uri"http://example.org/a/b/c?p=v").send()
     r.is200 should be(true)
-    r.body should be('left)
+    r.body should be('right)
   }
 
   it should "use the default response if no rule matches" in {
@@ -105,6 +105,58 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
       .send()
 
     result.body should be(Right(20))
+  }
+
+  it should "handle a 201 as a success" in {
+    implicit val s = SttpBackendStub(HttpURLConnectionBackend())
+      .whenAnyRequest
+      .thenRespondWithCode(201)
+
+    val result = sttp
+      .get(uri"http://example.org")
+      .send()
+
+    result.body should be(Right(""))
+
+  }
+
+  it should "handle a 300 as a failure" in {
+    implicit val s = SttpBackendStub(HttpURLConnectionBackend())
+      .whenAnyRequest
+      .thenRespondWithCode(300)
+
+    val result = sttp
+      .get(uri"http://example.org")
+      .send()
+
+    result.body should be(Left(""))
+
+  }
+
+  it should "handle a 400 as a failure" in {
+    implicit val s = SttpBackendStub(HttpURLConnectionBackend())
+      .whenAnyRequest
+      .thenRespondWithCode(400)
+
+    val result = sttp
+      .get(uri"http://example.org")
+      .send()
+
+    result.body should be(Left(""))
+
+  }
+
+  it should "handle a 500 as a failure" in {
+    implicit val s = SttpBackendStub(HttpURLConnectionBackend())
+      .whenAnyRequest
+      .thenRespondWithCode(500)
+
+    val result = sttp
+      .get(uri"http://example.org")
+      .send()
+
+    result.body should be(Left(""))
+
   }
 
   private val testingStubWithFallback = SttpBackendStub
