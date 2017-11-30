@@ -108,8 +108,7 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
   }
 
   it should "handle a 201 as a success" in {
-    implicit val s = SttpBackendStub(HttpURLConnectionBackend())
-      .whenAnyRequest
+    implicit val s = SttpBackendStub(HttpURLConnectionBackend()).whenAnyRequest
       .thenRespondWithCode(201)
 
     val result = sttp
@@ -121,8 +120,7 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
   }
 
   it should "handle a 300 as a failure" in {
-    implicit val s = SttpBackendStub(HttpURLConnectionBackend())
-      .whenAnyRequest
+    implicit val s = SttpBackendStub(HttpURLConnectionBackend()).whenAnyRequest
       .thenRespondWithCode(300)
 
     val result = sttp
@@ -134,8 +132,7 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
   }
 
   it should "handle a 400 as a failure" in {
-    implicit val s = SttpBackendStub(HttpURLConnectionBackend())
-      .whenAnyRequest
+    implicit val s = SttpBackendStub(HttpURLConnectionBackend()).whenAnyRequest
       .thenRespondWithCode(400)
 
     val result = sttp
@@ -147,8 +144,7 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
   }
 
   it should "handle a 500 as a failure" in {
-    implicit val s = SttpBackendStub(HttpURLConnectionBackend())
-      .whenAnyRequest
+    implicit val s = SttpBackendStub(HttpURLConnectionBackend()).whenAnyRequest
       .thenRespondWithCode(500)
 
     val result = sttp
