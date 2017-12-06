@@ -76,13 +76,21 @@ class AkkaHttpBackend private (
       .flatMap { hr =>
         val code = hr.status.intValue()
 
+        val headers = headersFromAkka(hr)
+        val charsetFromHeaders = headers
+          .find(_._1 == ContentTypeHeader)
+          .map(_._2)
+          .flatMap(encodingFromContentType)
+
         val body = if (codeIsSuccess(code)) {
-          bodyFromAkka(r.response, decodeAkkaResponse(hr)).map(Right(_))
+          bodyFromAkka(r.response, decodeAkkaResponse(hr), charsetFromHeaders)
+            .map(Right(_))
         } else {
-          bodyFromAkka(asString, decodeAkkaResponse(hr)).map(Left(_))
+          bodyFromAkka(asString, decodeAkkaResponse(hr), charsetFromHeaders)
+            .map(Left(_))
         }
 
-        body.map(Response(_, code, headersFromAkka(hr), Nil))
+        body.map(Response(_, code, headers, Nil))
       }
   }
 
@@ -102,8 +110,10 @@ class AkkaHttpBackend private (
   }
 
   private def bodyFromAkka[T](rr: ResponseAs[T, S],
-                              hr: HttpResponse): Future[T] = {
-    implicit val ec = this.ec
+                              hr: HttpResponse,
+                              charsetFromHeaders: Option[String]): Future[T] = {
+
+    implicit val ec: ExecutionContext = this.ec
 
     def asByteArray =
       hr.entity.dataBytes
@@ -123,14 +133,15 @@ class AkkaHttpBackend private (
     }
 
     rr match {
-      case MappedResponseAs(raw, g) => bodyFromAkka(raw, hr).map(g)
+      case MappedResponseAs(raw, g) =>
+        bodyFromAkka(raw, hr, charsetFromHeaders).map(g)
 
       case IgnoreResponse =>
         hr.discardEntityBytes()
         Future.successful(())
 
       case ResponseAsString(enc) =>
-        asByteArray.map(new String(_, enc))
+        asByteArray.map(new String(_, charsetFromHeaders.getOrElse(enc)))
 
       case ResponseAsByteArray =>
         asByteArray

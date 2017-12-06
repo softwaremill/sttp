@@ -214,24 +214,30 @@ class HttpURLConnectionBackend private (
       .filter(_._1 != null)
       .flatMap { case (k, vv) => vv.asScala.map((k, _)) }
     val contentEncoding = Option(c.getHeaderField(ContentEncodingHeader))
+
+    val charsetFromHeaders = Option(c.getHeaderField(ContentTypeHeader))
+      .flatMap(encodingFromContentType)
+
     val code = c.getResponseCode
     val wrappedIs = wrapInput(contentEncoding, handleNullInput(is))
     val body = if (codeIsSuccess(code)) {
-      Right(readResponseBody(wrappedIs, responseAs))
+      Right(readResponseBody(wrappedIs, responseAs, charsetFromHeaders))
     } else {
-      Left(readResponseBody(wrappedIs, asString))
+      Left(readResponseBody(wrappedIs, asString, charsetFromHeaders))
     }
 
     Response(body, code, headers, Nil)
   }
 
   private def readResponseBody[T](is: InputStream,
-                                  responseAs: ResponseAs[T, Nothing]): T = {
+                                  responseAs: ResponseAs[T, Nothing],
+                                  charset: Option[String]): T = {
 
-    def asString(enc: String) = Source.fromInputStream(is, enc).mkString
+    def asString(enc: String) =
+      Source.fromInputStream(is, charset.getOrElse(enc)).mkString
 
     responseAs match {
-      case MappedResponseAs(raw, g) => g(readResponseBody(is, raw))
+      case MappedResponseAs(raw, g) => g(readResponseBody(is, raw, charset))
 
       case IgnoreResponse =>
         @tailrec def consume(): Unit = if (is.read() != -1) consume()

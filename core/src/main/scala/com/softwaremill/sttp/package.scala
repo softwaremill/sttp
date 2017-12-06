@@ -83,19 +83,27 @@ package object sttp {
   def ignore: ResponseAs[Unit, Nothing] = IgnoreResponse
 
   /**
-    * Uses `utf-8` encoding.
+    * Use the `utf-8` encoding by default, unless specified otherwise in the response headers.
     */
   def asString: ResponseAs[String, Nothing] = asString(Utf8)
+
+  /**
+    * Use the given encoding by default, unless specified otherwise in the response headers.
+    */
   def asString(encoding: String): ResponseAs[String, Nothing] =
     ResponseAsString(encoding)
   def asByteArray: ResponseAs[Array[Byte], Nothing] =
     ResponseAsByteArray
 
   /**
-    * Uses `utf-8` encoding.
+    * Use the `utf-8` encoding by default, unless specified otherwise in the response headers.
     */
   def asParams: ResponseAs[Seq[(String, String)], Nothing] =
     asParams(Utf8)
+
+  /**
+    * Use the given encoding by default, unless specified otherwise in the response headers.
+    */
   def asParams(encoding: String): ResponseAs[Seq[(String, String)], Nothing] =
     asString(encoding).map(ResponseAs.parseParams(_, encoding))
 
@@ -238,8 +246,13 @@ package object sttp {
 
   // util
 
-  private[sttp] def contentTypeWithEncoding(ct: String, enc: String) =
+  private[sttp] def contentTypeWithEncoding(ct: String, enc: String): String =
     s"$ct; charset=$enc"
+
+  private[sttp] def encodingFromContentType(ct: String): Option[String] =
+    ct.split(";").map(_.trim.toLowerCase).collectFirst {
+      case s if s.startsWith("charset=") => s.substring(8)
+    }
 
   private[sttp] def transfer(is: InputStream, os: OutputStream) {
     var read = 0

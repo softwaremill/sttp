@@ -3,7 +3,7 @@
 Response body specification
 ===========================
 
-By default, the received response body will be read as a ``String``, using the ``UTF-8`` encoding. This is of course configurable: response bodies can be ignored, deserialized into custom types, recevied as a stream or saved to a file.
+By default, the received response body will be read as a ``String``, using the encoding specified in the ``Content-Type`` response header (and if none is specified, using ``UTF-8``). This is of course configurable: response bodies can be ignored, deserialized into custom types, received as a stream or saved to a file.
 
 How the response body will be read is part of the request definition, as already when sending the request, the backend needs to know what to do with the response. The type to which the response body should be deserialized is the second type parameter of ``RequestT``, and stored in the request definition as the ``request.response: ResponseAs[T, S]`` property.
 

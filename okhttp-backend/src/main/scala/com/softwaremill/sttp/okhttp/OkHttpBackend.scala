@@ -117,8 +117,11 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient,
           case IgnoreResponse =>
             Try(res.close())
           case ResponseAsString(encoding) =>
+            val charset = Option(res.header(ContentTypeHeader))
+              .flatMap(encodingFromContentType)
+              .getOrElse(encoding)
             val body = Try(
-              res.body().source().readString(Charset.forName(encoding)))
+              res.body().source().readString(Charset.forName(charset)))
             res.close()
             body
           case ResponseAsByteArray =>

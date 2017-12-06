@@ -8,7 +8,7 @@ import java.time.{ZoneId, ZonedDateTime}
 import akka.http.scaladsl.coding.{Deflate, Gzip, NoCoding}
 import akka.http.scaladsl.model.headers.CacheDirectives._
 import akka.http.scaladsl.model.headers._
-import akka.http.scaladsl.model.{DateTime, FormData, StatusCodes}
+import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.Credentials
@@ -55,6 +55,7 @@ class BasicTests
   private val binaryFile =
     new java.io.File("tests/src/test/resources/binaryfile.jpg")
   private val outPath = Paths.get("out")
+  private val textWithSpecialCharacters = "Żółć!"
 
   override val serverRoutes: Route =
     pathPrefix("echo") {
@@ -181,6 +182,13 @@ class BasicTests
             protocol = HttpProtocols.`HTTP/1.1`
           ))
       }
+    } ~ path("respond_with_iso_8859_2") {
+      get { ctx =>
+        val entity = HttpEntity(
+          MediaTypes.`text/plain`.withCharset(HttpCharset.custom("ISO-8859-2")),
+          textWithSpecialCharacters)
+        ctx.complete(HttpResponse(200, entity = entity))
+      }
     }
 
   override def port = 51823
@@ -232,6 +240,7 @@ class BasicTests
     redirectTests()
     timeoutTests()
     emptyResponseTests()
+    encodingTests()
 
     def parseResponseTests(): Unit = {
       name should "parse response as string" in {
@@ -686,6 +695,14 @@ class BasicTests
       name should "parse an empty error response as empty string" in {
         val response = postEmptyResponse.send().force()
         response.body should be(Left(""))
+      }
+    }
+
+    def encodingTests(): Unit = {
+      name should "read response body encoded using ISO-8859-2, as specified in the header, overriding the default" in {
+        val request = sttp.get(uri"$endpoint/respond_with_iso_8859_2")
+
+        request.send().force().unsafeBody should be(textWithSpecialCharacters)
       }
     }
   }
