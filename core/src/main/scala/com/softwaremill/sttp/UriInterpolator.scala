@@ -501,7 +501,9 @@ object UriInterpolator {
 
         valueTs match {
           case Vector() => acc // tailTs must be empty then as well
-          case Vector(ExpressionToken(s: Seq[_])) =>
+          case Vector(ExpressionToken(s: Iterable[_])) =>
+            doToSeq(tailTs, acc ++ s.flatMap(anyToStringOpt).toVector)
+          case Vector(ExpressionToken(s: Array[_])) =>
             doToSeq(tailTs, acc ++ s.flatMap(anyToStringOpt).toVector)
           case _ =>
             val values = valueTs
