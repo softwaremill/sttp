@@ -2,8 +2,8 @@ package com.softwaremill.sttp.testing
 
 import java.io.{File, InputStream}
 
-import com.softwaremill.sttp.testing.SttpBackendStub._
 import com.softwaremill.sttp._
+import com.softwaremill.sttp.testing.SttpBackendStub._
 
 import scala.concurrent.Future
 import scala.language.higherKinds
@@ -69,7 +69,12 @@ class SttpBackendStub[R[_], S] private (
         wrapResponse(tryAdjustResponseType(request.response, response))
       case Success(None) =>
         fallback match {
-          case None     => wrapResponse(DefaultResponse)
+          case None =>
+            wrapResponse(
+              Response[Nothing](Left("Not Found: " + request.uri),
+                                404,
+                                Nil,
+                                Nil))
           case Some(fb) => fb.send(request)
         }
       case Failure(e) => rm.error(e)
@@ -152,9 +157,6 @@ object SttpBackendStub {
     new SttpBackendStub[R, S2](fallback.responseMonad,
                                PartialFunction.empty,
                                Some(fallback))
-
-  private val DefaultResponse =
-    Response[Nothing](Left("Not Found"), 404, Nil, Nil)
 
   private[sttp] def tryAdjustResponseType[T, U](ra: ResponseAs[T, _],
                                                 r: Response[U]): Response[_] = {
