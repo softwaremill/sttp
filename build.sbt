@@ -33,7 +33,7 @@ val commonSettings = Seq(
     .withWarnTransitiveEvictions(false)
 )
 
-val akkaHttpVersion = "10.0.10"
+val akkaHttpVersion = "10.0.11"
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % akkaHttpVersion
 
 val monixVersion = "2.3.2"
@@ -87,7 +87,7 @@ lazy val asyncHttpClientBackend: Project = (project in file(
   .settings(
     name := "async-http-client-backend",
     libraryDependencies ++= Seq(
-      "org.asynchttpclient" % "async-http-client" % "2.0.37"
+      "org.asynchttpclient" % "async-http-client" % "2.0.38"
     )
   ) dependsOn core
 
@@ -104,7 +104,7 @@ lazy val asyncHttpClientScalazBackend: Project = (project in file(
   .settings(
     name := "async-http-client-backend-scalaz",
     libraryDependencies ++= Seq(
-      "org.scalaz" %% "scalaz-concurrent" % "7.2.16"
+      "org.scalaz" %% "scalaz-concurrent" % "7.2.18"
     )
   ) dependsOn asyncHttpClientBackend
 
@@ -122,7 +122,7 @@ lazy val asyncHttpClientCatsBackend: Project = (project in file(
   .settings(
     name := "async-http-client-backend-cats",
     libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-effect" % "0.5"
+      "org.typelevel" %% "cats-effect" % "0.6"
     )
   ) dependsOn asyncHttpClientBackend
 
@@ -132,7 +132,7 @@ lazy val asyncHttpClientFs2Backend: Project = (project in file(
   .settings(
     name := "async-http-client-backend-fs2",
     libraryDependencies ++= Seq(
-      "com.github.zainab-ali" %% "fs2-reactive-streams" % "0.2.5"
+      "com.github.zainab-ali" %% "fs2-reactive-streams" % "0.2.7"
     )
   ) dependsOn asyncHttpClientBackend
 
@@ -141,7 +141,7 @@ lazy val okhttpBackend: Project = (project in file("okhttp-backend"))
   .settings(
     name := "okhttp-backend",
     libraryDependencies ++= Seq(
-      "com.squareup.okhttp3" % "okhttp" % "3.9.0"
+      "com.squareup.okhttp3" % "okhttp" % "3.9.1"
     )
   ) dependsOn core
 
@@ -182,7 +182,7 @@ lazy val tests: Project = (project in file("tests"))
       akkaHttp,
       scalaTest,
       "com.typesafe.scala-logging" %% "scala-logging" % "3.7.2",
-      "com.github.pathikrit" %% "better-files" % "2.17.1",
+      "com.github.pathikrit" %% "better-files" % "3.4.0",
       "ch.qos.logback" % "logback-classic" % "1.2.3"
     ).map(_ % "test"),
     libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test"
