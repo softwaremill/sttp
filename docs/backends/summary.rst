@@ -18,6 +18,7 @@ Below is a summary of all the backends. See the sections on individual backend i
 Class                            Response wrapper             Supported stream type
 ================================ ============================ ================================================
 ``HttpURLConnectionBackend``     None (``Id``)                n/a 
+``TryBackend``                   ``scala.util.Try``                      n/a
 ``AkkaHttpBackend``              ``scala.concurrent.Future``  ``akka.stream.scaladsl.Source[ByteString, Any]``
 ``AsyncHttpClientFutureBackend`` ``scala.concurrent.Future``  n/a
 ``AsyncHttpClientScalazBackend`` ``scalaz.concurrent.Task``   n/a
