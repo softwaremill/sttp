@@ -15,6 +15,7 @@ import org.scalatest.{BeforeAndAfterAll, Suite}
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.language.higherKinds
+import scala.util.Try
 import scalaz._
 
 trait TestHttpServer
@@ -50,6 +51,11 @@ object ForceWrappedValue extends ScalaFutures with TestingPatience {
     override def force[T](wrapped: Id[T]): T =
       wrapped
   }
+
+  val scalaTry = new ForceWrappedValue[Try] {
+    override def force[T](wrapped: Try[T]): T = wrapped.get
+  }
+
   val future = new ForceWrappedValue[Future] {
 
     override def force[T](wrapped: Future[T]): T =
