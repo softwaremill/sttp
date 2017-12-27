@@ -41,7 +41,16 @@ object IdMonad extends MonadError[Id] {
   override protected def handleWrappedError[T](rt: Id[T])(
       h: PartialFunction[Throwable, Id[T]]): Id[T] = rt
 }
+object TryMonad extends MonadError[Try] {
+  override def unit[T](t: T): Try[T] = Success(t)
+  override def map[T, T2](fa: Try[T])(f: (T) => T2): Try[T2] = fa.map(f)
+  override def flatMap[T, T2](fa: Try[T])(f: (T) => Try[T2]): Try[T2] =
+    fa.flatMap(f)
 
+  override def error[T](t: Throwable): Try[T] = Failure(t)
+  override protected def handleWrappedError[T](rt: Try[T])(
+      h: PartialFunction[Throwable, Try[T]]): Try[T] = rt.recoverWith(h)
+}
 class FutureMonad(implicit ec: ExecutionContext)
     extends MonadAsyncError[Future] {
 

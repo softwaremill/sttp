@@ -197,6 +197,10 @@ class BasicTests
 
   runTests("HttpURLConnection")(HttpURLConnectionBackend(),
                                 ForceWrappedValue.id)
+
+  runTests("TryHttpURLConnection")(TryHttpUrlConnectionBackend(),
+                                   ForceWrappedValue.scalaTry)
+
   runTests("Akka HTTP")(AkkaHttpBackend.usingActorSystem(actorSystem),
                         ForceWrappedValue.future)
   runTests("Async Http Client - Future")(AsyncHttpClientFutureBackend(),
