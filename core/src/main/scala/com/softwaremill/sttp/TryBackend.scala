@@ -19,7 +19,7 @@ class TryBackend[-S](delegate: SttpBackend[Id, S]) extends SttpBackend[Try, S] {
   override def responseMonad: MonadError[Try] = TryMonad
 }
 
-object TryHttpUrlConnectionBackend {
+object TryHttpURLConnectionBackend {
   def apply(options: SttpBackendOptions = SttpBackendOptions.Default,
             customizeConnection: HttpURLConnection => Unit = _ => ())
     : SttpBackend[Try, Nothing] =

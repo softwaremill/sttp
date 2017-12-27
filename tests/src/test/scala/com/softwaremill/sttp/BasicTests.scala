@@ -6,9 +6,9 @@ import java.nio.file.Paths
 import java.time.{ZoneId, ZonedDateTime}
 
 import akka.http.scaladsl.coding.{Deflate, Gzip, NoCoding}
+import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.CacheDirectives._
 import akka.http.scaladsl.model.headers._
-import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.Credentials
@@ -197,10 +197,8 @@ class BasicTests
 
   runTests("HttpURLConnection")(HttpURLConnectionBackend(),
                                 ForceWrappedValue.id)
-
-  runTests("TryHttpURLConnection")(TryHttpUrlConnectionBackend(),
+  runTests("TryHttpURLConnection")(TryHttpURLConnectionBackend(),
                                    ForceWrappedValue.scalaTry)
-
   runTests("Akka HTTP")(AkkaHttpBackend.usingActorSystem(actorSystem),
                         ForceWrappedValue.future)
   runTests("Async Http Client - Future")(AsyncHttpClientFutureBackend(),
