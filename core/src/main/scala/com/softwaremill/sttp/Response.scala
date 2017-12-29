@@ -3,13 +3,7 @@ package com.softwaremill.sttp
 import java.net.HttpCookie
 import java.text.SimpleDateFormat
 import java.time.ZonedDateTime
-import java.util.{
-  Calendar,
-  GregorianCalendar,
-  Locale,
-  StringTokenizer,
-  TimeZone
-}
+import java.util.{Calendar, GregorianCalendar, Locale, TimeZone}
 
 import scala.collection.JavaConverters._
 import scala.collection.immutable.Seq
@@ -75,12 +69,11 @@ object Cookie {
     // hand-parsing in such case to preserve the values from the cookie
     val lch = h.toLowerCase
     val (expires, maxAge) = if (lch.contains("expires=")) {
-      val tokenizer = new StringTokenizer(h, ";")
+      val tokens = h.split(";")
       var e: Option[ZonedDateTime] = None
       var ma: Option[Long] = None
 
-      while (tokenizer.hasMoreTokens) {
-        val t = tokenizer.nextToken()
+      for (t <- tokens) {
         val nv = t.split("=", 2)
         if (nv(0).toLowerCase.contains("expires") && nv.length > 1) {
           e = expiryDate2ZonedDateTime(nv(1).trim())
