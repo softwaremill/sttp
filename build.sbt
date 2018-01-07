@@ -28,7 +28,7 @@ val commonSettings = Seq(
   releasePublishArtifactsAction := PgpKeys.publishSigned.value,
   releaseIgnoreUntrackedFiles := true,
   releaseProcess := SttpRelease.steps,
-  // silence transitivie eviction warnings
+  // silence transitive eviction warnings
   evictionWarningOptions in update := EvictionWarningOptions.default
     .withWarnTransitiveEvictions(false)
 )
