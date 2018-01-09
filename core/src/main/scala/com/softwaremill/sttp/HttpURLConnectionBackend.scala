@@ -226,7 +226,7 @@ class HttpURLConnectionBackend private (
       Left(readResponseBody(wrappedIs, asString, charsetFromHeaders))
     }
 
-    Response(body, code, headers, Nil)
+    Response(body, code, c.getResponseMessage, headers, Nil)
   }
 
   private def readResponseBody[T](is: InputStream,

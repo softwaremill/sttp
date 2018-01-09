@@ -252,6 +252,7 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
   private def readResponseNoBody(response: AsyncResponse): Response[Unit] = {
     Response(Right(()),
              response.getStatusCode,
+             response.getStatusText,
              response.getHeaders
                .iterator()
                .asScala

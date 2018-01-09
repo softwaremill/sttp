@@ -32,7 +32,8 @@ class FollowRedirectsBackend[R[_], S](delegate: SttpBackend[R, S])
 
     response.header(LocationHeader).fold(responseMonad.unit(response)) { loc =>
       if (redirects >= FollowRedirectsBackend.MaxRedirects) {
-        responseMonad.unit(Response(Left("Too many redirects"), 0, Nil, Nil))
+        responseMonad.unit(
+          Response(Left("Too many redirects"), 0, "", Nil, Nil))
       } else {
         followRedirect(request, response, redirects, loc)
       }

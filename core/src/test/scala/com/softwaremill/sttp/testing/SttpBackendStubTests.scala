@@ -20,11 +20,11 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
       case r
           if r.method == Method.POST && r.uri.path.endsWith(
             List("partial10")) =>
-        Response(Right(10), 200, Nil, Nil)
+        Response(Right(10), 200, "OK", Nil, Nil)
       case r
           if r.method == Method.POST && r.uri.path.endsWith(
             List("partialAda")) =>
-        Response(Right("Ada"), 200, Nil, Nil)
+        Response(Right("Ada"), 200, "OK", Nil, Nil)
     })
 
   "backend stub" should "use the first rule if it matches" in {
