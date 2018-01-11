@@ -21,7 +21,7 @@ import scala.util.Try
   */
 case class Response[T](body: Either[String, T],
                        code: Int,
-                       message: String,
+                       statusText: String,
                        headers: Seq[(String, String)],
                        history: List[Response[Unit]]) {
   def is200: Boolean = code == 200

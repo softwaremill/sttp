@@ -75,7 +75,7 @@ class AkkaHttpBackend private (
                              log = customLog.getOrElse(actorSystem.log)))
       .flatMap { hr =>
         val code = hr.status.intValue()
-        val message = hr.status.reason()
+        val statusText = hr.status.reason()
 
         val headers = headersFromAkka(hr)
         val charsetFromHeaders = headers
@@ -91,7 +91,7 @@ class AkkaHttpBackend private (
             .map(Left(_))
         }
 
-        body.map(Response(_, code, message, headers, Nil))
+        body.map(Response(_, code, statusText, headers, Nil))
       }
   }
 
