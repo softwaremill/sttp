@@ -33,6 +33,7 @@ class RequestTests extends FlatSpec with Matchers {
     val response =
       Response(Right(()),
                0,
+               "",
                List((SetCookieHeader, "k1=v1"), (SetCookieHeader, "k2=v2")),
                Nil)
     sttp

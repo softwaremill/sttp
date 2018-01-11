@@ -73,6 +73,7 @@ class SttpBackendStub[R[_], S] private (
             wrapResponse(
               Response[Nothing](Left("Not Found: " + request.uri),
                                 404,
+                                "Not Found",
                                 Nil,
                                 Nil))
           case Some(fb) => fb.send(request)
@@ -98,10 +99,10 @@ class SttpBackendStub[R[_], S] private (
     def thenRespondWithCode(code: Int,
                             msg: String = ""): SttpBackendStub[R, S] = {
       val body = if (code >= 200 && code < 300) Right(msg) else Left(msg)
-      thenRespond(Response(body, code, Nil, Nil))
+      thenRespond(Response(body, code, msg, Nil, Nil))
     }
     def thenRespond[T](body: T): SttpBackendStub[R, S] =
-      thenRespond(Response[T](Right(body), 200, Nil, Nil))
+      thenRespond(Response[T](Right(body), 200, "OK", Nil, Nil))
     def thenRespond[T](resp: => Response[T]): SttpBackendStub[R, S] = {
       val m: PartialFunction[Request[_, _], Response[_]] = {
         case r if p(r) => resp
