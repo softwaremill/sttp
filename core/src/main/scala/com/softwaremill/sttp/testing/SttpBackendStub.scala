@@ -28,7 +28,7 @@ import scala.util.{Failure, Success, Try}
   */
 class SttpBackendStub[R[_], S] private (
     rm: MonadError[R],
-    matchers: PartialFunction[Request[_, _], Response[_]],
+    matchers: PartialFunction[Request[_, _], R[Response[_]]],
     fallback: Option[SttpBackend[R, S]])
     extends SttpBackend[R, S] {
 
@@ -60,13 +60,14 @@ class SttpBackendStub[R[_], S] private (
   def whenRequestMatchesPartial(
       partial: PartialFunction[Request[_, _], Response[_]])
     : SttpBackendStub[R, S] = {
-    new SttpBackendStub(rm, matchers.orElse(partial), fallback)
+    val wrappedPartial = partial.andThen(rm.unit)
+    new SttpBackendStub(rm, matchers.orElse(wrappedPartial), fallback)
   }
 
   override def send[T](request: Request[T, S]): R[Response[T]] = {
     Try(matchers.lift(request)) match {
-      case Success(Some(response)) =>
-        wrapResponse(tryAdjustResponseType(request.response, response))
+      case Success(Some(responseMonad)) =>
+        tryAdjustResponseType(rm, request.response, wrapResponse(responseMonad))
       case Success(None) =>
         fallback match {
           case None =>
@@ -85,6 +86,9 @@ class SttpBackendStub[R[_], S] private (
   private def wrapResponse[T](r: Response[_]): R[Response[T]] =
     rm.unit(r.asInstanceOf[Response[T]])
 
+  private def wrapResponse[T](r: R[Response[_]]): R[Response[T]] =
+    rm.map(r)(_.asInstanceOf[Response[T]])
+
   override def close(): Unit = {}
 
   override def responseMonad: MonadError[R] = rm
@@ -99,12 +103,13 @@ class SttpBackendStub[R[_], S] private (
     def thenRespondWithCode(code: Int,
                             msg: String = ""): SttpBackendStub[R, S] = {
       val body = if (code >= 200 && code < 300) Right(msg) else Left(msg)
-      thenRespond(Response(body, code, msg, Nil, Nil))
+      thenRespondWithMonad(rm.unit(Response(body, code, msg, Nil, Nil)))
     }
     def thenRespond[T](body: T): SttpBackendStub[R, S] =
-      thenRespond(Response[T](Right(body), 200, "OK", Nil, Nil))
-    def thenRespond[T](resp: => Response[T]): SttpBackendStub[R, S] = {
-      val m: PartialFunction[Request[_, _], Response[_]] = {
+      thenRespondWithMonad(
+        rm.unit(Response[T](Right(body), 200, "OK", Nil, Nil)))
+    def thenRespondWithMonad(resp: => R[Response[_]]): SttpBackendStub[R, S] = {
+      val m: PartialFunction[Request[_, _], R[Response[_]]] = {
         case r if p(r) => resp
       }
       new SttpBackendStub(rm, matchers.orElse(m), fallback)
@@ -159,13 +164,19 @@ object SttpBackendStub {
                                PartialFunction.empty,
                                Some(fallback))
 
-  private[sttp] def tryAdjustResponseType[T, U](ra: ResponseAs[T, _],
-                                                r: Response[U]): Response[_] = {
-    r.body match {
-      case Left(_) => r
-      case Right(body) =>
-        val newBody: Any = tryAdjustResponseBody(ra, body).getOrElse(body)
-        r.copy(body = Right(newBody))
+  private[sttp] def tryAdjustResponseType[DesiredRType, RType, M[_]](
+      rm: MonadError[M],
+      ra: ResponseAs[DesiredRType, _],
+      m: M[Response[RType]]): M[Response[DesiredRType]] = {
+    rm.map[Response[RType], Response[DesiredRType]](m) { r =>
+      r.body match {
+        case Left(_) => r.asInstanceOf[Response[DesiredRType]]
+        case Right(body) =>
+          val newBody: Any = tryAdjustResponseBody(ra, body).getOrElse(body)
+          r.copy(
+            body =
+              Right[String, DesiredRType](newBody.asInstanceOf[DesiredRType]))
+      }
     }
   }
 
