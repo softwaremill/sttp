@@ -159,18 +159,15 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
 
   it should "not hold the calling thread when passed a future monad" in {
     val LongTimeMillis = 10000L
-
-    val fm = new FutureMonad()
-    val f = Future {
-      Thread.sleep(LongTimeMillis)
-      Response(Right("OK"), 200, "", Nil, Nil)
-    }
-
     val before = System.currentTimeMillis()
-    implicit val s = SttpBackendStub(fm).whenAnyRequest
-      .thenRespondWithMonad(f)
 
-    val result = sttp
+    implicit val s = SttpBackendStub(new FutureMonad()).whenAnyRequest
+      .thenRespondWithMonad(Future {
+        Thread.sleep(LongTimeMillis)
+        Response(Right("OK"), 200, "", Nil, Nil)
+      })
+
+    sttp
       .get(uri"http://example.org")
       .send()
 
