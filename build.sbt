@@ -122,7 +122,7 @@ lazy val asyncHttpClientCatsBackend: Project = (project in file(
   .settings(
     name := "async-http-client-backend-cats",
     libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-effect" % "0.6"
+      "org.typelevel" %% "cats-effect" % "0.8"
     )
   ) dependsOn asyncHttpClientBackend
 
