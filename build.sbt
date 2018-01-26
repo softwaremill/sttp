@@ -39,7 +39,7 @@ val akkaHttp = "com.typesafe.akka" %% "akka-http" % akkaHttpVersion
 val monixVersion = "2.3.2"
 val monix = "io.monix" %% "monix" % monixVersion
 
-val circeVersion = "0.8.0"
+val circeVersion = "0.9.1"
 
 val scalaTest = "org.scalatest" %% "scalatest" % "3.0.4"
 
