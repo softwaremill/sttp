@@ -79,7 +79,7 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
   it should "handle exceptions thrown instead of a response (synchronous)" in {
     implicit val s = SttpBackendStub(HttpURLConnectionBackend())
       .whenRequestMatches(_ => true)
-      .thenRespondWithMonad(throw new TimeoutException())
+      .thenRespond(throw new TimeoutException())
 
     a[TimeoutException] should be thrownBy {
       sttp.get(uri"http://example.org").send()
@@ -89,7 +89,7 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
   it should "handle exceptions thrown instead of a response (asynchronous)" in {
     implicit val s = SttpBackendStub(new FutureMonad())
       .whenRequestMatches(_ => true)
-      .thenRespondWithMonad(throw new TimeoutException())
+      .thenRespond(throw new TimeoutException())
 
     val result = sttp.get(uri"http://example.org").send()
     result.failed.futureValue shouldBe a[TimeoutException]

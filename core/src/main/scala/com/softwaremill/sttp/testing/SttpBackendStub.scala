@@ -103,11 +103,16 @@ class SttpBackendStub[R[_], S] private (
     def thenRespondWithCode(code: Int,
                             msg: String = ""): SttpBackendStub[R, S] = {
       val body = if (code >= 200 && code < 300) Right(msg) else Left(msg)
-      thenRespondWithMonad(rm.unit(Response(body, code, msg, Nil, Nil)))
+      thenRespond(Response(body, code, msg, Nil, Nil))
     }
     def thenRespond[T](body: T): SttpBackendStub[R, S] =
-      thenRespondWithMonad(
-        rm.unit(Response[T](Right(body), 200, "OK", Nil, Nil)))
+      thenRespond(Response[T](Right(body), 200, "OK", Nil, Nil))
+    def thenRespond[T](resp: => Response[T]): SttpBackendStub[R, S] = {
+      val m: PartialFunction[Request[_, _], R[Response[_]]] = {
+        case r if p(r) => rm.unit(resp)
+      }
+      new SttpBackendStub(rm, matchers.orElse(m), fallback)
+    }
     def thenRespondWithMonad(resp: => R[Response[_]]): SttpBackendStub[R, S] = {
       val m: PartialFunction[Request[_, _], R[Response[_]]] = {
         case r if p(r) => resp
