@@ -49,17 +49,16 @@ It is also possible to match requests by partial function, returning a response.
 
 This approach to testing has one caveat: the responses are not type-safe. That is, the stub backend cannot match on or verify that the type of the response body matches the response body type requested.
 
-Another way to specify the behaviour is passing a response monad to Stub. It is useful if you need to test scenario with slow server, when response should be not returned immediately but after some time.
-Example with Futures: ::
+Another way to specify the behaviour is passing response wrapped in the result monad to the stub. It is useful if you need to test a scenario with a slow server, when the response should be not returned immediately, but after some time. Example with Futures: ::
 
-  implicit val testingBackend = SttpBackendStub(new FutureMonad()).whenAnyRequest
-    .thenRespondWithMonad(Future {
+  implicit val testingBackend = SttpBackendStub.asynchronousFuture.whenAnyRequest
+    .thenRespondWrapped(Future {
       Thread.sleep(5000)
       Response(Right("OK"), 200, "", Nil, Nil)
     })
 
-  val respFuture = sttp.get(uri"http://example.org").send()
-  // responseFuture will complete after 10 seconds with "OK" response
+  val responseFuture = sttp.get(uri"http://example.org").send()
+  // responseFuture will complete after 5 seconds with "OK" response
 
 Simulating exceptions
 ---------------------

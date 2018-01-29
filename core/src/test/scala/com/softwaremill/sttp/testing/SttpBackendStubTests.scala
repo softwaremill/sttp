@@ -3,11 +3,11 @@ package com.softwaremill.sttp.testing
 import java.io.ByteArrayInputStream
 import java.util.concurrent.TimeoutException
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import com.softwaremill.sttp._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FlatSpec, Matchers}
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
@@ -29,7 +29,7 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
         Response(Right("Ada"), 200, "OK", Nil, Nil)
     })
     .whenRequestMatches(_.uri.port.exists(_ == 8080))
-    .thenRespondWithMonad(Response(Right("OK from monad"), 200, "OK", Nil, Nil))
+    .thenRespondWrapped(Response(Right("OK from monad"), 200, "OK", Nil, Nil))
 
   "backend stub" should "use the first rule if it matches" in {
     implicit val b = testingStub
@@ -172,7 +172,7 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
     val before = System.currentTimeMillis()
 
     implicit val s = SttpBackendStub(new FutureMonad()).whenAnyRequest
-      .thenRespondWithMonad(Future {
+      .thenRespondWrapped(Future {
         Thread.sleep(LongTimeMillis)
         Response(Right("OK"), 200, "", Nil, Nil)
       })

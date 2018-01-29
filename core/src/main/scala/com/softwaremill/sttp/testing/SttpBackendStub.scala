@@ -66,8 +66,8 @@ class SttpBackendStub[R[_], S] private (
 
   override def send[T](request: Request[T, S]): R[Response[T]] = {
     Try(matchers.lift(request)) match {
-      case Success(Some(responseMonad)) =>
-        tryAdjustResponseType(rm, request.response, wrapResponse(responseMonad))
+      case Success(Some(response)) =>
+        tryAdjustResponseType(rm, request.response, response.asInstanceOf[R[Response[T]]])
       case Success(None) =>
         fallback match {
           case None =>
@@ -85,9 +85,6 @@ class SttpBackendStub[R[_], S] private (
 
   private def wrapResponse[T](r: Response[_]): R[Response[T]] =
     rm.unit(r.asInstanceOf[Response[T]])
-
-  private def wrapResponse[T](r: R[Response[_]]): R[Response[T]] =
-    rm.map(r)(_.asInstanceOf[Response[T]])
 
   override def close(): Unit = {}
 
@@ -113,7 +110,7 @@ class SttpBackendStub[R[_], S] private (
       }
       new SttpBackendStub(rm, matchers.orElse(m), fallback)
     }
-    def thenRespondWithMonad(resp: => R[Response[_]]): SttpBackendStub[R, S] = {
+    def thenRespondWrapped(resp: => R[Response[_]]): SttpBackendStub[R, S] = {
       val m: PartialFunction[Request[_, _], R[Response[_]]] = {
         case r if p(r) => resp
       }
