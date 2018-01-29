@@ -8,6 +8,8 @@ import com.softwaremill.sttp._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FlatSpec, Matchers}
 
+import scala.concurrent.Future
+
 class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
   private val testingStub = SttpBackendStub(HttpURLConnectionBackend())
     .whenRequestMatches(_.uri.path.startsWith(List("a", "b")))
@@ -26,6 +28,8 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
             List("partialAda")) =>
         Response(Right("Ada"), 200, "OK", Nil, Nil)
     })
+    .whenRequestMatches(_.uri.port.exists(_ == 8080))
+    .thenRespondWithMonad(Response(Right("OK from monad"), 200, "OK", Nil, Nil))
 
   "backend stub" should "use the first rule if it matches" in {
     implicit val b = testingStub
@@ -48,6 +52,14 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
     val r = sttp.get(uri"http://example.org/a/b/c?p=v").send()
     r.is200 should be(true)
     r.body should be('right)
+  }
+
+  it should "respond with monad with set response" in {
+    implicit val b = testingStub
+    val r = sttp.post(uri"http://example.org:8080").send()
+    r.is200 should be(true)
+    r.body should be('right)
+    r.body.right.get should be("OK from monad")
   }
 
   it should "use the default response if no rule matches" in {
@@ -153,6 +165,25 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
 
     result.body should be(Left(""))
 
+  }
+
+  it should "not hold the calling thread when passed a future monad" in {
+    val LongTimeMillis = 10000L
+    val before = System.currentTimeMillis()
+
+    implicit val s = SttpBackendStub(new FutureMonad()).whenAnyRequest
+      .thenRespondWithMonad(Future {
+        Thread.sleep(LongTimeMillis)
+        Response(Right("OK"), 200, "", Nil, Nil)
+      })
+
+    sttp
+      .get(uri"http://example.org")
+      .send()
+
+    val after = System.currentTimeMillis()
+
+    (after - before) should be < LongTimeMillis
   }
 
   private val testingStubWithFallback = SttpBackendStub
