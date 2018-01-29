@@ -28,6 +28,8 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
             List("partialAda")) =>
         Response(Right("Ada"), 200, "OK", Nil, Nil)
     })
+    .whenRequestMatches(_.uri.port.exists(_ == 8080))
+    .thenRespondWithMonad(Response(Right("OK from monad"), 200, "OK", Nil, Nil))
 
   "backend stub" should "use the first rule if it matches" in {
     implicit val b = testingStub
@@ -50,6 +52,14 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
     val r = sttp.get(uri"http://example.org/a/b/c?p=v").send()
     r.is200 should be(true)
     r.body should be('right)
+  }
+
+  it should "respond with monad with set response" in {
+    implicit val b = testingStub
+    val r = sttp.post(uri"http://example.org:8080").send()
+    r.is200 should be(true)
+    r.body should be('right)
+    r.body.right.get should be("OK from monad")
   }
 
   it should "use the default response if no rule matches" in {
