@@ -67,7 +67,9 @@ class SttpBackendStub[R[_], S] private (
   override def send[T](request: Request[T, S]): R[Response[T]] = {
     Try(matchers.lift(request)) match {
       case Success(Some(response)) =>
-        tryAdjustResponseType(rm, request.response, response.asInstanceOf[R[Response[T]]])
+        tryAdjustResponseType(rm,
+                              request.response,
+                              response.asInstanceOf[R[Response[T]]])
       case Success(None) =>
         fallback match {
           case None =>
