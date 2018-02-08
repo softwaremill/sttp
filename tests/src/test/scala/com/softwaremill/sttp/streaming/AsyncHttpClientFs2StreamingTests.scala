@@ -24,6 +24,7 @@ class AsyncHttpClientFs2StreamingTests
     stream
       .map(bb => Chunk.array(bb.array))
       .through(text.utf8DecodeC)
-      .runFoldMonoid
+      .compile
+      .foldMonoid
 
 }

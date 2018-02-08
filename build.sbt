@@ -36,12 +36,12 @@ val commonSettings = Seq(
 val akkaHttpVersion = "10.0.11"
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % akkaHttpVersion
 
-val monixVersion = "2.3.2"
+val monixVersion = "2.3.3"
 val monix = "io.monix" %% "monix" % monixVersion
 
 val circeVersion = "0.9.1"
 
-val scalaTest = "org.scalatest" %% "scalatest" % "3.0.4"
+val scalaTest = "org.scalatest" %% "scalatest" % "3.0.5"
 
 lazy val rootProject = (project in file("."))
   .settings(commonSettings: _*)
@@ -104,7 +104,7 @@ lazy val asyncHttpClientScalazBackend: Project = (project in file(
   .settings(
     name := "async-http-client-backend-scalaz",
     libraryDependencies ++= Seq(
-      "org.scalaz" %% "scalaz-concurrent" % "7.2.18"
+      "org.scalaz" %% "scalaz-concurrent" % "7.2.19"
     )
   ) dependsOn asyncHttpClientBackend
 
@@ -132,7 +132,7 @@ lazy val asyncHttpClientFs2Backend: Project = (project in file(
   .settings(
     name := "async-http-client-backend-fs2",
     libraryDependencies ++= Seq(
-      "com.github.zainab-ali" %% "fs2-reactive-streams" % "0.2.7"
+      "com.github.zainab-ali" %% "fs2-reactive-streams" % "0.5.0"
     )
   ) dependsOn asyncHttpClientBackend
 

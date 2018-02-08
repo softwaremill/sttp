@@ -4,21 +4,10 @@ import java.nio.ByteBuffer
 
 import cats.effect._
 import com.softwaremill.sttp.asynchttpclient.AsyncHttpClientBackend
-import com.softwaremill.sttp.{
-  FollowRedirectsBackend,
-  MonadAsyncError,
-  SttpBackend,
-  SttpBackendOptions,
-  Utf8,
-  concatByteBuffers
-}
+import com.softwaremill.sttp.{FollowRedirectsBackend, MonadAsyncError, SttpBackend, SttpBackendOptions, Utf8, concatByteBuffers}
 import fs2._
 import fs2.interop.reactivestreams._
-import org.asynchttpclient.{
-  AsyncHttpClient,
-  AsyncHttpClientConfig,
-  DefaultAsyncHttpClient
-}
+import org.asynchttpclient.{AsyncHttpClient, AsyncHttpClientConfig, DefaultAsyncHttpClient}
 import org.reactivestreams.Publisher
 
 import scala.concurrent.ExecutionContext
@@ -45,7 +34,8 @@ class AsyncHttpClientFs2Backend[F[_]: Effect] private (
       p: Publisher[ByteBuffer]): F[String] = {
     val bytes = p
       .toStream[F]
-      .runFold(ByteBuffer.allocate(0))(concatByteBuffers)
+      .compile
+      .fold(ByteBuffer.allocate(0))(concatByteBuffers)
 
     implicitly[Effect[F]].map(bytes)(bb => new String(bb.array(), Utf8))
   }
