@@ -20,6 +20,28 @@ Tags can be added to a request using the ``def tag(k: String, v: Any)`` method, 
 
 Backends, or backend wrappers can use tags e.g. for logging, passing a metric name, using different connection pools, or even different delegate backends.
 
+Backend wrappers and redirects
+------------------------------
+
+By default redirects are handled at a low level, using a wrapper around the main, concrete backend: each of the backend factory methods, e.g. ``HttpURLConnectionBackend()`` returns a backend wrapped in ``FollowRedirectsBackend``.
+
+This causes any further backend wrappers to handle a request which involves redirects as one whole, without the intermediate requests. However, wrappers which collects metrics, implements tracing or handles request retries might want to handle every request in the redirect chain. This can be achieved by layering another ``FollowRedirectsBackend`` on top of the wrapper. Only the top-level follow redirects backend will handle redirects, other follow redirect wrappers (at lower levels) will be disabled.
+
+For example::
+
+  class MyWrapper[R[_], S] private (delegate: SttpBackend[R, S])
+    extends SttpBackend[R, S] {
+
+    ...
+  }
+
+  object MyWrapper {
+    def apply[R[_], S](delegate: SttpBackend[R, S]): SttpBackend[R, S] = {
+      // disables any other FollowRedirectsBackend-s further down the delegate chain
+      new FollowRedirectsBackend(new MyWrapper(delegate))
+    }
+  }
+
 Example metrics backend wrapper
 -------------------------------
 
