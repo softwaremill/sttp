@@ -99,7 +99,8 @@ object BraveBackend {
   type AnyRequest = Request[_, _]
   type AnyResponse = Response[_]
 
-  def apply[R[_], S](delegate: SttpBackend[R, S], tracing: Tracing): SttpBackend[R, S] = {
+  def apply[R[_], S](delegate: SttpBackend[R, S],
+                     tracing: Tracing): SttpBackend[R, S] = {
     apply(delegate, HttpTracing.create(tracing))
   }
 

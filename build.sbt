@@ -57,7 +57,7 @@ lazy val rootProject = (project in file("."))
     okhttpMonixBackend,
     circe,
     json4s,
-    brave,
+    braveBackend,
     tests
   )
 
@@ -176,10 +176,10 @@ lazy val json4s: Project = (project in file("json/json4s"))
 
 lazy val braveVersion = "4.15.1"
 
-lazy val brave: Project = (project in file("metrics/brave"))
+lazy val braveBackend: Project = (project in file("metrics/brave-backend"))
   .settings(commonSettings: _*)
   .settings(
-    name := "brave",
+    name := "brave-backend",
     libraryDependencies ++= Seq(
       "io.zipkin.brave" % "brave" % braveVersion,
       "io.zipkin.brave" % "brave-instrumentation-http" % braveVersion,
