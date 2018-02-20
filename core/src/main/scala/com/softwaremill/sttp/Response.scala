@@ -105,8 +105,7 @@ object Cookie {
     * Modified version of `HttpCookie.expiryDate2DeltaSeconds` to return a
     * `ZonedDateTime`, not a second-delta.
     */
-  private def expiryDate2ZonedDateTime(
-      dateString: String): Option[ZonedDateTime] = {
+  private def expiryDate2ZonedDateTime(dateString: String): Option[ZonedDateTime] = {
     val cal = new GregorianCalendar(Gmt)
     CookieDateFormats.foreach { format =>
       val df = new SimpleDateFormat(format, Locale.US)

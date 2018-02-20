@@ -38,9 +38,7 @@ class StreamingTests
   runTests("Monix OkHttp", new OkHttpMonixStreamingTests)
   runTests("fs2 Async Http Client", new AsyncHttpClientFs2StreamingTests)
 
-  def runTests[R[_], S](
-      name: String,
-      testStreamingBackend: TestStreamingBackend[R, S]): Unit = {
+  def runTests[R[_], S](name: String, testStreamingBackend: TestStreamingBackend[R, S]): Unit = {
     import testStreamingBackend._
 
     closeBackends = (() => backend.close()) :: closeBackends

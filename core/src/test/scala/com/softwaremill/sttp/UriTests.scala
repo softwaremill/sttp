@@ -2,11 +2,7 @@ package com.softwaremill.sttp
 
 import java.net.URI
 
-import com.softwaremill.sttp.Uri.{
-  QueryFragment,
-  QueryFragmentEncoding,
-  UserInfo
-}
+import com.softwaremill.sttp.Uri.{QueryFragment, QueryFragmentEncoding, UserInfo}
 import org.scalatest.{FunSuite, Matchers}
 
 class UriTests extends FunSuite with Matchers {
@@ -23,13 +19,7 @@ class UriTests extends FunSuite with Matchers {
         List(QF.KeyValue("p1", "v1"), QF.KeyValue("p2", "v2")),
         Some("f")) ->
       "https://sub.example.com:8080/a/b/xyz?p1=v1&p2=v2#f",
-    Uri("http",
-        None,
-        "example.com",
-        None,
-        List(""),
-        List(QF.KeyValue("p", "v"), QF.KeyValue("p", "v")),
-        None) -> "http://example.com/?p=v&p=v",
+    Uri("http", None, "example.com", None, List(""), List(QF.KeyValue("p", "v"), QF.KeyValue("p", "v")), None) -> "http://example.com/?p=v&p=v",
     Uri("http",
         None,
         "exa mple.com",
@@ -38,13 +28,7 @@ class UriTests extends FunSuite with Matchers {
         List(QF.KeyValue("p:1", "v&v"), QF.KeyValue("p2", "v v")),
         None) ->
       "http://exa%20mple.com/a%20b/z/%C4%85:%C4%99?p:1=v%26v&p2=v+v",
-    Uri("http",
-        Some(UserInfo("us&e/r", Some("pa ss"))),
-        "example.com",
-        None,
-        Nil,
-        Nil,
-        None) ->
+    Uri("http", Some(UserInfo("us&e/r", Some("pa ss"))), "example.com", None, Nil, Nil, None) ->
       "http://us&e%2Fr:pa%20ss@example.com",
     Uri("http", None, "example.com", None, Nil, Nil, Some("f:g/h i")) ->
       "http://example.com#f:g/h%20i",
@@ -79,24 +63,16 @@ class UriTests extends FunSuite with Matchers {
   }
 
   val queryFragmentsTestData = List(
-    List(QF.KeyValue("k1", "v1"),
-         QF.KeyValue("k2", "v2"),
-         QF.KeyValue("k3", "v3"),
-         QF.KeyValue("k4", "v4")) -> "k1=v1&k2=v2&k3=v3&k4=v4",
+    List(QF.KeyValue("k1", "v1"), QF.KeyValue("k2", "v2"), QF.KeyValue("k3", "v3"), QF.KeyValue("k4", "v4")) -> "k1=v1&k2=v2&k3=v3&k4=v4",
     List(QF.KeyValue("k1", "v1"),
          QF.KeyValue("k2", "v2"),
          QF.Plain("-abc-"),
          QF.KeyValue("k3", "v3"),
          QF.KeyValue("k4", "v4")) -> "k1=v1&k2=v2-abc-k3=v3&k4=v4",
     List(QF.KeyValue("k1", "v1"), QF.Plain("&abc&"), QF.KeyValue("k2", "v2")) -> "k1=v1%26abc%26k2=v2",
-    List(
-      QF.KeyValue("k1", "v1"),
-      QF.Plain("&abc&", encoding = QueryFragmentEncoding.Relaxed)) -> "k1=v1&abc&",
+    List(QF.KeyValue("k1", "v1"), QF.Plain("&abc&", encoding = QueryFragmentEncoding.Relaxed)) -> "k1=v1&abc&",
     List(QF.KeyValue("k1&", "v1&", keyEncoding = QueryFragmentEncoding.Relaxed)) -> "k1&=v1%26",
-    List(QF.KeyValue(
-      "k1&",
-      "v1&",
-      valueEncoding = QueryFragmentEncoding.Relaxed)) -> "k1%26=v1&",
+    List(QF.KeyValue("k1&", "v1&", valueEncoding = QueryFragmentEncoding.Relaxed)) -> "k1%26=v1&",
     List(QF.Plain("ą/ę&+;?", encoding = QueryFragmentEncoding.Relaxed)) -> "%C4%85/%C4%99&+;?",
     List(QF.KeyValue("k", "v1,v2", valueEncoding = QueryFragmentEncoding.All)) -> "k=v1%2Cv2",
     List(QF.KeyValue("k", "v1,v2")) -> "k=v1,v2",

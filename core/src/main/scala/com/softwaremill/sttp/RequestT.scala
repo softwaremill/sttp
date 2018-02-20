@@ -55,14 +55,10 @@ case class RequestT[U[_], T, +S](
   def contentType(ct: String): RequestT[U, T, S] =
     header(ContentTypeHeader, ct, replaceExisting = true)
   def contentType(ct: String, encoding: String): RequestT[U, T, S] =
-    header(ContentTypeHeader,
-           contentTypeWithEncoding(ct, encoding),
-           replaceExisting = true)
+    header(ContentTypeHeader, contentTypeWithEncoding(ct, encoding), replaceExisting = true)
   def contentLength(l: Long): RequestT[U, T, S] =
     header(ContentLengthHeader, l.toString, replaceExisting = true)
-  def header(k: String,
-             v: String,
-             replaceExisting: Boolean = false): RequestT[U, T, S] = {
+  def header(k: String, v: String, replaceExisting: Boolean = false): RequestT[U, T, S] = {
     val current =
       if (replaceExisting)
         headers.filterNot(_._1.equalsIgnoreCase(k))
@@ -233,8 +229,7 @@ case class RequestT[U[_], T, +S](
 
   def tag(k: String): Option[Any] = tags.get(k)
 
-  def send[R[_]]()(implicit backend: SttpBackend[R, S],
-                   isIdInRequest: IsIdInRequest[U]): R[Response[T]] = {
+  def send[R[_]]()(implicit backend: SttpBackend[R, S], isIdInRequest: IsIdInRequest[U]): R[Response[T]] = {
     // we could avoid the asInstanceOf by creating an artificial copy
     // changing the method & url fields using `isIdInRequest`, but that
     // would be only to satisfy the type checker, and a needless copy at
@@ -263,8 +258,7 @@ case class RequestT[U[_], T, +S](
   private def setContentLengthIfMissing(l: => Long): RequestT[U, T, S] =
     if (hasContentLength) this else contentLength(l)
 
-  private def formDataBody(fs: Seq[(String, String)],
-                           encoding: String): RequestT[U, T, S] = {
+  private def formDataBody(fs: Seq[(String, String)], encoding: String): RequestT[U, T, S] = {
     val b = RequestBody.paramsToStringBody(fs, encoding)
     setContentTypeIfMissing(ApplicationFormContentType)
       .setContentLengthIfMissing(b.s.getBytes(encoding).length)
@@ -274,9 +268,7 @@ case class RequestT[U[_], T, +S](
 
 class SpecifyAuthScheme[U[_], T, +S](hn: String, rt: RequestT[U, T, S]) {
   def basic(user: String, password: String): RequestT[U, T, S] = {
-    val c = new String(
-      Base64.getEncoder.encode(s"$user:$password".getBytes(Utf8)),
-      Utf8)
+    val c = new String(Base64.getEncoder.encode(s"$user:$password".getBytes(Utf8)), Utf8)
     rt.header(hn, s"Basic $c")
   }
 

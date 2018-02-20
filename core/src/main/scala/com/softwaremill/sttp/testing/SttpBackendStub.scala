@@ -26,10 +26,9 @@ import scala.util.{Failure, Success, Try}
   * or headers. A [[ClassCastException]] might occur if for a given request,
   * a response is specified with the incorrect or inconvertible body type.
   */
-class SttpBackendStub[R[_], S] private (
-    rm: MonadError[R],
-    matchers: PartialFunction[Request[_, _], R[Response[_]]],
-    fallback: Option[SttpBackend[R, S]])
+class SttpBackendStub[R[_], S] private (rm: MonadError[R],
+                                        matchers: PartialFunction[Request[_, _], R[Response[_]]],
+                                        fallback: Option[SttpBackend[R, S]])
     extends SttpBackend[R, S] {
 
   /**
@@ -57,9 +56,7 @@ class SttpBackendStub[R[_], S] private (
     * Note that the stubs are immutable, and each new
     * specification that is added yields a new stub instance.
     */
-  def whenRequestMatchesPartial(
-      partial: PartialFunction[Request[_, _], Response[_]])
-    : SttpBackendStub[R, S] = {
+  def whenRequestMatchesPartial(partial: PartialFunction[Request[_, _], Response[_]]): SttpBackendStub[R, S] = {
     val wrappedPartial = partial.andThen(rm.unit)
     new SttpBackendStub(rm, matchers.orElse(wrappedPartial), fallback)
   }
@@ -67,18 +64,11 @@ class SttpBackendStub[R[_], S] private (
   override def send[T](request: Request[T, S]): R[Response[T]] = {
     Try(matchers.lift(request)) match {
       case Success(Some(response)) =>
-        tryAdjustResponseType(rm,
-                              request.response,
-                              response.asInstanceOf[R[Response[T]]])
+        tryAdjustResponseType(rm, request.response, response.asInstanceOf[R[Response[T]]])
       case Success(None) =>
         fallback match {
           case None =>
-            wrapResponse(
-              Response[Nothing](Left("Not Found: " + request.uri),
-                                404,
-                                "Not Found",
-                                Nil,
-                                Nil))
+            wrapResponse(Response[Nothing](Left("Not Found: " + request.uri), 404, "Not Found", Nil, Nil))
           case Some(fb) => fb.send(request)
         }
       case Failure(e) => rm.error(e)
@@ -99,8 +89,7 @@ class SttpBackendStub[R[_], S] private (
       thenRespondWithCode(404, "Not found")
     def thenRespondServerError(): SttpBackendStub[R, S] =
       thenRespondWithCode(500, "Internal server error")
-    def thenRespondWithCode(code: Int,
-                            msg: String = ""): SttpBackendStub[R, S] = {
+    def thenRespondWithCode(code: Int, msg: String = ""): SttpBackendStub[R, S] = {
       val body = if (code >= 200 && code < 300) Right(msg) else Left(msg)
       thenRespond(Response(body, code, msg, Nil, Nil))
     }
@@ -136,9 +125,7 @@ object SttpBackendStub {
     */
   def asynchronousFuture: SttpBackendStub[Future, Nothing] = {
     import scala.concurrent.ExecutionContext.Implicits.global
-    new SttpBackendStub[Future, Nothing](new FutureMonad(),
-                                         PartialFunction.empty,
-                                         None)
+    new SttpBackendStub[Future, Nothing](new FutureMonad(), PartialFunction.empty, None)
   }
 
   /**
@@ -162,11 +149,8 @@ object SttpBackendStub {
     * Create a stub backend which delegates send requests to the given fallback
     * backend, if the request doesn't match any of the specified predicates.
     */
-  def withFallback[R[_], S, S2 <: S](
-      fallback: SttpBackend[R, S]): SttpBackendStub[R, S2] =
-    new SttpBackendStub[R, S2](fallback.responseMonad,
-                               PartialFunction.empty,
-                               Some(fallback))
+  def withFallback[R[_], S, S2 <: S](fallback: SttpBackend[R, S]): SttpBackendStub[R, S2] =
+    new SttpBackendStub[R, S2](fallback.responseMonad, PartialFunction.empty, Some(fallback))
 
   private[sttp] def tryAdjustResponseType[DesiredRType, RType, M[_]](
       rm: MonadError[M],
@@ -177,15 +161,12 @@ object SttpBackendStub {
         case Left(_) => r.asInstanceOf[Response[DesiredRType]]
         case Right(body) =>
           val newBody: Any = tryAdjustResponseBody(ra, body).getOrElse(body)
-          r.copy(
-            body =
-              Right[String, DesiredRType](newBody.asInstanceOf[DesiredRType]))
+          r.copy(body = Right[String, DesiredRType](newBody.asInstanceOf[DesiredRType]))
       }
     }
   }
 
-  private[sttp] def tryAdjustResponseBody[T, U](ra: ResponseAs[T, _],
-                                                b: U): Option[T] = {
+  private[sttp] def tryAdjustResponseBody[T, U](ra: ResponseAs[T, _], b: U): Option[T] = {
     ra match {
       case IgnoreResponse => Some(())
       case ResponseAsString(enc) =>

@@ -19,14 +19,11 @@ class BraveBackendTest extends FlatSpec with Matchers with BeforeAndAfter {
 
   def newT(): Unit = {
     t = new ITHttpClient[SttpBackend[Id, Nothing]]() {
-      override def post(client: SttpBackend[Id, Nothing],
-                        pathIncludingQuery: String,
-                        body: String): Unit = {
+      override def post(client: SttpBackend[Id, Nothing], pathIncludingQuery: String, body: String): Unit = {
         client.send(sttp.post(uri"${url(pathIncludingQuery)}").body(body))
       }
 
-      override def get(client: SttpBackend[Id, Nothing],
-                       pathIncludingQuery: String): Unit = {
+      override def get(client: SttpBackend[Id, Nothing], pathIncludingQuery: String): Unit = {
         client.send(sttp.get(uri"${url(pathIncludingQuery)}"))
       }
 
@@ -34,8 +31,7 @@ class BraveBackendTest extends FlatSpec with Matchers with BeforeAndAfter {
         client.close()
 
       override def newClient(port: Int): SttpBackend[Id, Nothing] = {
-        _backend =
-          BraveBackend[Id, Nothing](HttpURLConnectionBackend(), httpTracing)
+        _backend = BraveBackend[Id, Nothing](HttpURLConnectionBackend(), httpTracing)
         _httpTracing = httpTracing
         _takeSpan = () => takeSpan()
 
@@ -135,10 +131,8 @@ class BraveBackendTest extends FlatSpec with Matchers with BeforeAndAfter {
 
     val request = t.server.takeRequest
     request.getHeader("x-b3-traceId") should be(parent.context.traceIdString)
-    request.getHeader("x-b3-parentspanid") should be(
-      HexCodec.toLowerHex(parent.context.spanId))
+    request.getHeader("x-b3-parentspanid") should be(HexCodec.toLowerHex(parent.context.spanId))
 
-    Set(_takeSpan(), _takeSpan()).map(_.kind) should be(
-      Set(null, Span.Kind.CLIENT))
+    Set(_takeSpan(), _takeSpan()).map(_.kind) should be(Set(null, Span.Kind.CLIENT))
   }
 }

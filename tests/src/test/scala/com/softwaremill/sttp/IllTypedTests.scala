@@ -7,8 +7,7 @@ import scala.tools.reflect.ToolBoxError
 class IllTypedTests extends FlatSpec with Matchers {
   "compilation" should "fail when trying to stream using the default backend" in {
     val thrown = intercept[ToolBoxError] {
-      EvalScala(
-        """
+      EvalScala("""
         import com.softwaremill.sttp._
         import akka.stream.scaladsl.Source
         import akka.util.ByteString
@@ -30,7 +29,6 @@ class IllTypedTests extends FlatSpec with Matchers {
         """)
     }
 
-    thrown.getMessage should include(
-      "This is a partial request, the method & url are not specified")
+    thrown.getMessage should include("This is a partial request, the method & url are not specified")
   }
 }

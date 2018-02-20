@@ -25,44 +25,35 @@ sealed trait BasicResponseAs[T, +S] extends ResponseAs[T, S] {
 }
 
 case object IgnoreResponse extends BasicResponseAs[Unit, Nothing]
-case class ResponseAsString(encoding: String)
-    extends BasicResponseAs[String, Nothing]
+case class ResponseAsString(encoding: String) extends BasicResponseAs[String, Nothing]
 case object ResponseAsByteArray extends BasicResponseAs[Array[Byte], Nothing]
-case class ResponseAsStream[T, S]()(implicit val responseIsStream: S =:= T)
-    extends BasicResponseAs[T, S]
+case class ResponseAsStream[T, S]()(implicit val responseIsStream: S =:= T) extends BasicResponseAs[T, S]
 
-case class MappedResponseAs[T, T2, S](raw: BasicResponseAs[T, S], g: T => T2)
-    extends ResponseAs[T2, S] {
+case class MappedResponseAs[T, T2, S](raw: BasicResponseAs[T, S], g: T => T2) extends ResponseAs[T2, S] {
   override def map[T3](f: T2 => T3): ResponseAs[T3, S] =
     MappedResponseAs[T, T3, S](raw, g andThen f)
 }
 
-case class ResponseAsFile(output: File, overwrite: Boolean)
-    extends BasicResponseAs[File, Nothing]
+case class ResponseAsFile(output: File, overwrite: Boolean) extends BasicResponseAs[File, Nothing]
 
 object ResponseAs {
-  private[sttp] def parseParams(s: String,
-                                encoding: String): Seq[(String, String)] = {
+  private[sttp] def parseParams(s: String, encoding: String): Seq[(String, String)] = {
     s.split("&")
       .toList
       .flatMap(kv =>
         kv.split("=", 2) match {
           case Array(k, v) =>
-            Some(
-              (URLDecoder.decode(k, encoding), URLDecoder.decode(v, encoding)))
+            Some((URLDecoder.decode(k, encoding), URLDecoder.decode(v, encoding)))
           case _ => None
       })
   }
 
-  private[sttp] def saveFile(file: File,
-                             is: InputStream,
-                             overwrite: Boolean): File = {
+  private[sttp] def saveFile(file: File, is: InputStream, overwrite: Boolean): File = {
     if (!file.exists()) {
       file.getParentFile.mkdirs()
       file.createNewFile()
     } else if (!overwrite) {
-      throw new IOException(
-        s"File ${file.getAbsolutePath} exists - overwriting prohibited")
+      throw new IOException(s"File ${file.getAbsolutePath} exists - overwriting prohibited")
     }
 
     val os = new FileOutputStream(file)
@@ -80,8 +71,7 @@ object ResponseAs {
   private[sttp] trait EagerResponseHandler[S] {
     def handleBasic[T](bra: BasicResponseAs[T, S]): Try[T]
 
-    def handle[T, R[_]](responseAs: ResponseAs[T, S],
-                        responseMonad: MonadError[R]): R[T] = {
+    def handle[T, R[_]](responseAs: ResponseAs[T, S], responseMonad: MonadError[R]): R[T] = {
 
       responseAs match {
         case mra @ MappedResponseAs(raw, g) =>

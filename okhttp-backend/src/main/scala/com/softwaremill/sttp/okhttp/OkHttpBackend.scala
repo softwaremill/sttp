@@ -25,12 +25,9 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 import scala.util.{Failure, Try}
 
-abstract class OkHttpBackend[R[_], S](client: OkHttpClient,
-                                      closeClient: Boolean)
-    extends SttpBackend[R, S] {
+abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean) extends SttpBackend[R, S] {
 
-  private[okhttp] def convertRequest[T](
-      request: Request[T, S]): OkHttpRequest = {
+  private[okhttp] def convertRequest[T](request: Request[T, S]): OkHttpRequest = {
     val builder = new OkHttpRequest.Builder()
       .url(request.uri.toString)
 
@@ -51,8 +48,7 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient,
     builder.build()
   }
 
-  private def bodyToOkHttp[T](
-      body: RequestBody[S]): Option[OkHttpRequestBody] = {
+  private def bodyToOkHttp[T](body: RequestBody[S]): Option[OkHttpRequestBody] = {
     body match {
       case NoBody => None
       case StringBody(b, _, _) =>
@@ -79,26 +75,21 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient,
     }
   }
 
-  private def addMultipart(builder: OkHttpMultipartBody.Builder,
-                           mp: Multipart): Unit = {
+  private def addMultipart(builder: OkHttpMultipartBody.Builder, mp: Multipart): Unit = {
     val allHeaders = mp.additionalHeaders + (ContentDispositionHeader -> mp.contentDispositionHeaderValue)
     val headers = Headers.of(allHeaders.asJava)
 
     bodyToOkHttp(mp.body).foreach(builder.addPart(headers, _))
   }
 
-  private[okhttp] def readResponse[T](
-      res: OkHttpResponse,
-      responseAs: ResponseAs[T, S]): R[Response[T]] = {
+  private[okhttp] def readResponse[T](res: OkHttpResponse, responseAs: ResponseAs[T, S]): R[Response[T]] = {
 
     val code = res.code()
 
     val body = if (codeIsSuccess(code)) {
-      responseMonad.map(responseHandler(res).handle(responseAs, responseMonad))(
-        Right(_))
+      responseMonad.map(responseHandler(res).handle(responseAs, responseMonad))(Right(_))
     } else {
-      responseMonad.map(responseHandler(res).handle(asString, responseMonad))(
-        Left(_))
+      responseMonad.map(responseHandler(res).handle(asString, responseMonad))(Left(_))
     }
 
     val headers = res
@@ -107,8 +98,7 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient,
       .asScala
       .flatMap(name => res.headers().values(name).asScala.map((name, _)))
 
-    responseMonad.map(body)(
-      Response(_, res.code(), res.message(), headers.toList, Nil))
+    responseMonad.map(body)(Response(_, res.code(), res.message(), headers.toList, Nil))
   }
 
   private def responseHandler(res: OkHttpResponse) =
@@ -121,8 +111,7 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient,
             val charset = Option(res.header(ContentTypeHeader))
               .flatMap(encodingFromContentType)
               .getOrElse(encoding)
-            val body = Try(
-              res.body().source().readString(Charset.forName(charset)))
+            val body = Try(res.body().source().readString(Charset.forName(charset)))
             res.close()
             body
           case ResponseAsByteArray =>
@@ -132,8 +121,7 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient,
           case ras @ ResponseAsStream() =>
             responseBodyToStream(res).map(ras.responseIsStream)
           case ResponseAsFile(file, overwrite) =>
-            val body = Try(
-              ResponseAs.saveFile(file, res.body().byteStream(), overwrite))
+            val body = Try(ResponseAs.saveFile(file, res.body().byteStream(), overwrite))
             res.close()
             body
         }
@@ -151,9 +139,7 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient,
 
 object OkHttpBackend {
 
-  private[okhttp] def defaultClient(
-      readTimeout: Long,
-      options: SttpBackendOptions): OkHttpClient = {
+  private[okhttp] def defaultClient(readTimeout: Long, options: SttpBackendOptions): OkHttpClient = {
     var clientBuilder = new OkHttpClient.Builder()
       .followRedirects(false)
       .followSslRedirects(false)
@@ -168,16 +154,13 @@ object OkHttpBackend {
     clientBuilder.build()
   }
 
-  private[okhttp] def updateClientIfCustomReadTimeout[T, S](
-      r: Request[T, S],
-      client: OkHttpClient): OkHttpClient = {
+  private[okhttp] def updateClientIfCustomReadTimeout[T, S](r: Request[T, S], client: OkHttpClient): OkHttpClient = {
     val readTimeout = r.options.readTimeout
     if (readTimeout == DefaultReadTimeout) client
     else
       client
         .newBuilder()
-        .readTimeout(if (readTimeout.isFinite()) readTimeout.toMillis else 0,
-                     TimeUnit.MILLISECONDS)
+        .readTimeout(if (readTimeout.isFinite()) readTimeout.toMillis else 0, TimeUnit.MILLISECONDS)
         .build()
 
   }
@@ -198,24 +181,17 @@ class OkHttpSyncBackend private (client: OkHttpClient, closeClient: Boolean)
 }
 
 object OkHttpSyncBackend {
-  private def apply(client: OkHttpClient,
-                    closeClient: Boolean): SttpBackend[Id, Nothing] =
-    new FollowRedirectsBackend[Id, Nothing](
-      new OkHttpSyncBackend(client, closeClient))
+  private def apply(client: OkHttpClient, closeClient: Boolean): SttpBackend[Id, Nothing] =
+    new FollowRedirectsBackend[Id, Nothing](new OkHttpSyncBackend(client, closeClient))
 
-  def apply(options: SttpBackendOptions = SttpBackendOptions.Default)
-    : SttpBackend[Id, Nothing] =
-    OkHttpSyncBackend(
-      OkHttpBackend.defaultClient(DefaultReadTimeout.toMillis, options),
-      closeClient = true)
+  def apply(options: SttpBackendOptions = SttpBackendOptions.Default): SttpBackend[Id, Nothing] =
+    OkHttpSyncBackend(OkHttpBackend.defaultClient(DefaultReadTimeout.toMillis, options), closeClient = true)
 
   def usingClient(client: OkHttpClient): SttpBackend[Id, Nothing] =
     OkHttpSyncBackend(client, closeClient = false)
 }
 
-abstract class OkHttpAsyncBackend[R[_], S](client: OkHttpClient,
-                                           rm: MonadAsyncError[R],
-                                           closeClient: Boolean)
+abstract class OkHttpAsyncBackend[R[_], S](client: OkHttpClient, rm: MonadAsyncError[R], closeClient: Boolean)
     extends OkHttpBackend[R, S](client, closeClient) {
   override def send[T](r: Request[T, S]): R[Response[T]] = {
     val request = convertRequest(r)
@@ -241,27 +217,19 @@ abstract class OkHttpAsyncBackend[R[_], S](client: OkHttpClient,
   override def responseMonad: MonadError[R] = rm
 }
 
-class OkHttpFutureBackend private (client: OkHttpClient, closeClient: Boolean)(
-    implicit ec: ExecutionContext)
-    extends OkHttpAsyncBackend[Future, Nothing](client,
-                                                new FutureMonad,
-                                                closeClient) {}
+class OkHttpFutureBackend private (client: OkHttpClient, closeClient: Boolean)(implicit ec: ExecutionContext)
+    extends OkHttpAsyncBackend[Future, Nothing](client, new FutureMonad, closeClient) {}
 
 object OkHttpFutureBackend {
   private def apply(client: OkHttpClient, closeClient: Boolean)(
       implicit ec: ExecutionContext): SttpBackend[Future, Nothing] =
-    new FollowRedirectsBackend[Future, Nothing](
-      new OkHttpFutureBackend(client, closeClient))
+    new FollowRedirectsBackend[Future, Nothing](new OkHttpFutureBackend(client, closeClient))
 
   def apply(options: SttpBackendOptions = SttpBackendOptions.Default)(
-      implicit ec: ExecutionContext = ExecutionContext.Implicits.global)
-    : SttpBackend[Future, Nothing] =
-    OkHttpFutureBackend(
-      OkHttpBackend.defaultClient(DefaultReadTimeout.toMillis, options),
-      closeClient = true)
+      implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Nothing] =
+    OkHttpFutureBackend(OkHttpBackend.defaultClient(DefaultReadTimeout.toMillis, options), closeClient = true)
 
-  def usingClient(client: OkHttpClient)(implicit ec: ExecutionContext =
-                                          ExecutionContext.Implicits.global)
-    : SttpBackend[Future, Nothing] =
+  def usingClient(client: OkHttpClient)(
+      implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Nothing] =
     OkHttpFutureBackend(client, closeClient = false)
 }

@@ -96,30 +96,26 @@ case class Uri(scheme: String,
 
   override def toString: String = {
     def encodeUserInfo(ui: UserInfo): String =
-      encode(Rfc3986.UserInfo)(ui.username) + ui.password.fold("")(
-        ":" + encode(Rfc3986.UserInfo)(_))
+      encode(Rfc3986.UserInfo)(ui.username) + ui.password.fold("")(":" + encode(Rfc3986.UserInfo)(_))
 
     @tailrec
-    def encodeQueryFragments(qfs: List[QueryFragment],
-                             previousWasPlain: Boolean,
-                             sb: StringBuilder): String = qfs match {
-      case Nil => sb.toString()
+    def encodeQueryFragments(qfs: List[QueryFragment], previousWasPlain: Boolean, sb: StringBuilder): String =
+      qfs match {
+        case Nil => sb.toString()
 
-      case Plain(v, re) :: t =>
-        encodeQueryFragments(t,
-                             previousWasPlain = true,
-                             sb.append(encodeQuery(v, re)))
+        case Plain(v, re) :: t =>
+          encodeQueryFragments(t, previousWasPlain = true, sb.append(encodeQuery(v, re)))
 
-      case Value(v, re) :: t =>
-        if (!previousWasPlain) sb.append("&")
-        sb.append(encodeQuery(v, re))
-        encodeQueryFragments(t, previousWasPlain = false, sb)
+        case Value(v, re) :: t =>
+          if (!previousWasPlain) sb.append("&")
+          sb.append(encodeQuery(v, re))
+          encodeQueryFragments(t, previousWasPlain = false, sb)
 
-      case KeyValue(k, v, reK, reV) :: t =>
-        if (!previousWasPlain) sb.append("&")
-        sb.append(encodeQuery(k, reK)).append("=").append(encodeQuery(v, reV))
-        encodeQueryFragments(t, previousWasPlain = false, sb)
-    }
+        case KeyValue(k, v, reK, reV) :: t =>
+          if (!previousWasPlain) sb.append("&")
+          sb.append(encodeQuery(k, reK)).append("=").append(encodeQuery(v, reV))
+          encodeQueryFragments(t, previousWasPlain = false, sb)
+      }
 
     val schemeS = encode(Rfc3986.Scheme)(scheme)
     val userInfoS = userInfo.fold("")(encodeUserInfo(_) + "@")
@@ -129,9 +125,7 @@ case class Uri(scheme: String,
     val pathS = path.map(encode(Rfc3986.PathSegment)).mkString("/")
     val queryPrefixS = if (queryFragments.isEmpty) "" else "?"
 
-    val queryS = encodeQueryFragments(queryFragments.toList,
-                                      previousWasPlain = true,
-                                      new StringBuilder())
+    val queryS = encodeQueryFragments(queryFragments.toList, previousWasPlain = true, new StringBuilder())
 
     // https://stackoverflow.com/questions/2053132/is-a-colon-safe-for-friendly-url-use/2053640#2053640
     val fragS = fragment.fold("")("#" + encode(Rfc3986.Fragment)(_))
@@ -143,9 +137,7 @@ case class Uri(scheme: String,
     e match {
       case QueryFragmentEncoding.All => URLEncoder.encode(s, "UTF-8")
       case QueryFragmentEncoding.Standard =>
-        encode(Rfc3986.QueryNoStandardDelims,
-               spaceAsPlus = true,
-               encodePlus = true)(s)
+        encode(Rfc3986.QueryNoStandardDelims, spaceAsPlus = true, encodePlus = true)(s)
       case QueryFragmentEncoding.Relaxed =>
         encode(Rfc3986.Query, spaceAsPlus = true)(s)
     }
@@ -182,9 +174,8 @@ case class Uri(scheme: String,
     * @param encodePlus Should `+` (which is the encoded form of space
     * in the query) be %-encoded.
     */
-  private def encode(allowedCharacters: Set[Char],
-                     spaceAsPlus: Boolean = false,
-                     encodePlus: Boolean = false)(s: String): String = {
+  private def encode(allowedCharacters: Set[Char], spaceAsPlus: Boolean = false, encodePlus: Boolean = false)(
+      s: String): String = {
     val sb = new StringBuilder()
     // based on https://gist.github.com/teigen/5865923
     for (c <- s) {
@@ -226,19 +217,16 @@ object Uri {
       * @param keyEncoding See [[Plain.encoding]]
       * @param valueEncoding See [[Plain.encoding]]
       */
-    case class KeyValue(
-        k: String,
-        v: String,
-        keyEncoding: QueryFragmentEncoding = QueryFragmentEncoding.Standard,
-        valueEncoding: QueryFragmentEncoding = QueryFragmentEncoding.Standard)
+    case class KeyValue(k: String,
+                        v: String,
+                        keyEncoding: QueryFragmentEncoding = QueryFragmentEncoding.Standard,
+                        valueEncoding: QueryFragmentEncoding = QueryFragmentEncoding.Standard)
         extends QueryFragment
 
     /**
       * A query fragment which contains only the value, without a key.
       */
-    case class Value(v: String,
-                     relaxedEncoding: QueryFragmentEncoding =
-                       QueryFragmentEncoding.Standard)
+    case class Value(v: String, relaxedEncoding: QueryFragmentEncoding = QueryFragmentEncoding.Standard)
         extends QueryFragment
 
     /**
@@ -256,10 +244,7 @@ object Uri {
       * [[https://stackoverflow.com/questions/2322764/what-characters-must-be-escaped-in-an-http-query-string]]
       * [[https://stackoverflow.com/questions/2366260/whats-valid-and-whats-not-in-a-uri-query]]
       */
-    case class Plain(v: String,
-                     encoding: QueryFragmentEncoding =
-                       QueryFragmentEncoding.Standard)
-        extends QueryFragment
+    case class Plain(v: String, encoding: QueryFragmentEncoding = QueryFragmentEncoding.Standard) extends QueryFragment
   }
 
   sealed trait QueryFragmentEncoding

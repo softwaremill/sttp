@@ -10,8 +10,7 @@ trait MonadError[R[_]] {
   def flatMap[T, T2](fa: R[T])(f: T => R[T2]): R[T2]
 
   def error[T](t: Throwable): R[T]
-  protected def handleWrappedError[T](rt: R[T])(
-      h: PartialFunction[Throwable, R[T]]): R[T]
+  protected def handleWrappedError[T](rt: R[T])(h: PartialFunction[Throwable, R[T]]): R[T]
   def handleError[T](rt: => R[T])(h: PartialFunction[Throwable, R[T]]): R[T] = {
     Try(rt) match {
       case Success(v)                     => handleWrappedError(v)(h)
@@ -38,8 +37,7 @@ object IdMonad extends MonadError[Id] {
   override def flatMap[T, T2](fa: Id[T])(f: (T) => Id[T2]): Id[T2] = f(fa)
 
   override def error[T](t: Throwable): Id[T] = throw t
-  override protected def handleWrappedError[T](rt: Id[T])(
-      h: PartialFunction[Throwable, Id[T]]): Id[T] = rt
+  override protected def handleWrappedError[T](rt: Id[T])(h: PartialFunction[Throwable, Id[T]]): Id[T] = rt
 }
 object TryMonad extends MonadError[Try] {
   override def unit[T](t: T): Try[T] = Success(t)
@@ -48,11 +46,10 @@ object TryMonad extends MonadError[Try] {
     fa.flatMap(f)
 
   override def error[T](t: Throwable): Try[T] = Failure(t)
-  override protected def handleWrappedError[T](rt: Try[T])(
-      h: PartialFunction[Throwable, Try[T]]): Try[T] = rt.recoverWith(h)
+  override protected def handleWrappedError[T](rt: Try[T])(h: PartialFunction[Throwable, Try[T]]): Try[T] =
+    rt.recoverWith(h)
 }
-class FutureMonad(implicit ec: ExecutionContext)
-    extends MonadAsyncError[Future] {
+class FutureMonad(implicit ec: ExecutionContext) extends MonadAsyncError[Future] {
 
   override def unit[T](t: T): Future[T] = Future.successful(t)
   override def map[T, T2](fa: Future[T])(f: (T) => T2): Future[T2] = fa.map(f)
@@ -60,11 +57,10 @@ class FutureMonad(implicit ec: ExecutionContext)
     fa.flatMap(f)
 
   override def error[T](t: Throwable): Future[T] = Future.failed(t)
-  override protected def handleWrappedError[T](rt: Future[T])(
-      h: PartialFunction[Throwable, Future[T]]): Future[T] = rt.recoverWith(h)
+  override protected def handleWrappedError[T](rt: Future[T])(h: PartialFunction[Throwable, Future[T]]): Future[T] =
+    rt.recoverWith(h)
 
-  override def async[T](
-      register: ((Either[Throwable, T]) => Unit) => Unit): Future[T] = {
+  override def async[T](register: ((Either[Throwable, T]) => Unit) => Unit): Future[T] = {
     val p = Promise[T]()
     register {
       case Left(t)  => p.failure(t)

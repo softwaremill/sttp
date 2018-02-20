@@ -8,8 +8,7 @@ import com.softwaremill.sttp.asynchttpclient.fs2.AsyncHttpClientFs2Backend
 import com.softwaremill.sttp.{ForceWrappedValue, SttpBackend}
 import fs2._
 
-class AsyncHttpClientFs2StreamingTests
-    extends TestStreamingBackend[IO, Stream[IO, ByteBuffer]] {
+class AsyncHttpClientFs2StreamingTests extends TestStreamingBackend[IO, Stream[IO, ByteBuffer]] {
 
   override implicit val backend: SttpBackend[IO, Stream[IO, ByteBuffer]] =
     AsyncHttpClientFs2Backend[IO]()

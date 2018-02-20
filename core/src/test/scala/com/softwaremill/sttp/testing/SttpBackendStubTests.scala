@@ -19,13 +19,9 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
     .whenRequestMatches(_.method == Method.GET)
     .thenRespondServerError()
     .whenRequestMatchesPartial({
-      case r
-          if r.method == Method.POST && r.uri.path.endsWith(
-            List("partial10")) =>
+      case r if r.method == Method.POST && r.uri.path.endsWith(List("partial10")) =>
         Response(Right(10), 200, "OK", Nil, Nil)
-      case r
-          if r.method == Method.POST && r.uri.path.endsWith(
-            List("partialAda")) =>
+      case r if r.method == Method.POST && r.uri.path.endsWith(List("partialAda")) =>
         Response(Right("Ada"), 200, "OK", Nil, Nil)
     })
     .whenRequestMatches(_.uri.port.exists(_ == 8080))
@@ -210,13 +206,9 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
     (s, IgnoreResponse, Some(())),
     (s, ResponseAsString(Utf8), Some(s)),
     (s.getBytes(Utf8), ResponseAsString(Utf8), Some(s)),
-    (new ByteArrayInputStream(s.getBytes(Utf8)),
-     ResponseAsString(Utf8),
-     Some(s)),
+    (new ByteArrayInputStream(s.getBytes(Utf8)), ResponseAsString(Utf8), Some(s)),
     (10, ResponseAsString(Utf8), None),
-    ("10",
-     MappedResponseAs(ResponseAsString(Utf8), (_: String).toInt),
-     Some(10)),
+    ("10", MappedResponseAs(ResponseAsString(Utf8), (_: String).toInt), Some(10)),
     (10, MappedResponseAs(ResponseAsString(Utf8), (_: String).toInt), None)
   )
 
@@ -226,8 +218,7 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
     (body, responseAs, expectedResult) <- adjustTestData
   } {
     it should s"adjust $body to $expectedResult when specified as $responseAs" in {
-      SttpBackendStub.tryAdjustResponseBody(responseAs, body) should be(
-        expectedResult)
+      SttpBackendStub.tryAdjustResponseBody(responseAs, body) should be(expectedResult)
     }
   }
 }

@@ -84,8 +84,7 @@ class CirceTests extends FlatSpec with Matchers with EitherValues {
       case StringBody(body, "utf-8", Some(ApplicationJsonContentType)) =>
         body
       case wrongBody =>
-        fail(
-          s"Request body does not serialize to correct StringBody: $wrongBody")
+        fail(s"Request body does not serialize to correct StringBody: $wrongBody")
     }
 
   def runJsonResponseAs[A](responseAs: ResponseAs[A, Nothing]): String => A =
@@ -95,8 +94,7 @@ class CirceTests extends FlatSpec with Matchers with EitherValues {
           case ResponseAsString("utf-8") =>
             responseAs.g
           case ResponseAsString(encoding) =>
-            fail(
-              s"MappedResponseAs wraps a ResponseAsString with wrong encoding: $encoding")
+            fail(s"MappedResponseAs wraps a ResponseAsString with wrong encoding: $encoding")
           case _ =>
             fail("MappedResponseAs does not wrap a ResponseAsString")
         }

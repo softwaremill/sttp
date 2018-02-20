@@ -56,10 +56,7 @@ object SttpBackendOptions {
     Empty.socksProxy(host, port)
 
   private def loadSystemProxy: Option[Proxy] = {
-    def system(hostProp: String,
-               portProp: String,
-               make: (String, Int) => Proxy,
-               defaultPort: Int) = {
+    def system(hostProp: String, portProp: String, make: (String, Int) => Proxy, defaultPort: Int) = {
       val host = Option(System.getProperty(hostProp))
       def port = Try(System.getProperty(portProp).toInt).getOrElse(defaultPort)
       host.map(make(_, port))

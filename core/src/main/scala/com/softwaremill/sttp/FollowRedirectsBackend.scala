@@ -4,15 +4,13 @@ import java.net.URI
 
 import scala.language.higherKinds
 
-class FollowRedirectsBackend[R[_], S](delegate: SttpBackend[R, S])
-    extends SttpBackend[R, S] {
+class FollowRedirectsBackend[R[_], S](delegate: SttpBackend[R, S]) extends SttpBackend[R, S] {
 
   def send[T](request: Request[T, S]): R[Response[T]] = {
     sendWithCounter(request, 0)
   }
 
-  private def sendWithCounter[T](request: Request[T, S],
-                                 redirects: Int): R[Response[T]] = {
+  private def sendWithCounter[T](request: Request[T, S], redirects: Int): R[Response[T]] = {
     // if there are nested follow redirect backends, disabling them and handling redirects here
     val resp = delegate.send(request.followRedirects(false))
     if (request.options.followRedirects) {
@@ -28,14 +26,11 @@ class FollowRedirectsBackend[R[_], S](delegate: SttpBackend[R, S])
     }
   }
 
-  private def followRedirect[T](request: Request[T, S],
-                                response: Response[T],
-                                redirects: Int): R[Response[T]] = {
+  private def followRedirect[T](request: Request[T, S], response: Response[T], redirects: Int): R[Response[T]] = {
 
     response.header(LocationHeader).fold(responseMonad.unit(response)) { loc =>
       if (redirects >= FollowRedirectsBackend.MaxRedirects) {
-        responseMonad.unit(
-          Response(Left("Too many redirects"), 0, "", Nil, Nil))
+        responseMonad.unit(Response(Left("Too many redirects"), 0, "", Nil, Nil))
       } else {
         followRedirect(request, response, redirects, loc)
       }

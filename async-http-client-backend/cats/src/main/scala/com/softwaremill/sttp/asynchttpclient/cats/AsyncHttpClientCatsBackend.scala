@@ -4,17 +4,8 @@ import java.nio.ByteBuffer
 
 import cats.effect._
 import com.softwaremill.sttp.asynchttpclient.AsyncHttpClientBackend
-import com.softwaremill.sttp.{
-  FollowRedirectsBackend,
-  MonadAsyncError,
-  SttpBackend,
-  SttpBackendOptions
-}
-import org.asynchttpclient.{
-  AsyncHttpClient,
-  AsyncHttpClientConfig,
-  DefaultAsyncHttpClient
-}
+import com.softwaremill.sttp.{FollowRedirectsBackend, MonadAsyncError, SttpBackend, SttpBackendOptions}
+import org.asynchttpclient.{AsyncHttpClient, AsyncHttpClientConfig, DefaultAsyncHttpClient}
 import org.reactivestreams.Publisher
 
 import scala.language.higherKinds
@@ -27,47 +18,33 @@ class AsyncHttpClientCatsBackend[F[_]: Async] private (
       new AsyncMonad,
       closeClient
     ) {
-  override protected def streamBodyToPublisher(
-      s: Nothing): Publisher[ByteBuffer] = s // nothing is everything
+  override protected def streamBodyToPublisher(s: Nothing): Publisher[ByteBuffer] = s // nothing is everything
 
-  override protected def publisherToStreamBody(
-      p: Publisher[ByteBuffer]): Nothing =
+  override protected def publisherToStreamBody(p: Publisher[ByteBuffer]): Nothing =
     throw new IllegalStateException("This backend does not support streaming")
 
-  override protected def publisherToString(
-      p: Publisher[ByteBuffer]): F[String] =
+  override protected def publisherToString(p: Publisher[ByteBuffer]): F[String] =
     throw new IllegalStateException("This backend does not support streaming")
 }
 
 object AsyncHttpClientCatsBackend {
 
-  private def apply[F[_]: Async](
-      asyncHttpClient: AsyncHttpClient,
-      closeClient: Boolean): SttpBackend[F, Nothing] =
-    new FollowRedirectsBackend[F, Nothing](
-      new AsyncHttpClientCatsBackend(asyncHttpClient, closeClient))
+  private def apply[F[_]: Async](asyncHttpClient: AsyncHttpClient, closeClient: Boolean): SttpBackend[F, Nothing] =
+    new FollowRedirectsBackend[F, Nothing](new AsyncHttpClientCatsBackend(asyncHttpClient, closeClient))
 
-  def apply[F[_]: Async](
-      options: SttpBackendOptions = SttpBackendOptions.Default)
-    : SttpBackend[F, Nothing] =
-    AsyncHttpClientCatsBackend(AsyncHttpClientBackend.defaultClient(options),
-                               closeClient = true)
+  def apply[F[_]: Async](options: SttpBackendOptions = SttpBackendOptions.Default): SttpBackend[F, Nothing] =
+    AsyncHttpClientCatsBackend(AsyncHttpClientBackend.defaultClient(options), closeClient = true)
 
-  def usingConfig[F[_]: Async](
-      cfg: AsyncHttpClientConfig): SttpBackend[F, Nothing] =
-    AsyncHttpClientCatsBackend(new DefaultAsyncHttpClient(cfg),
-                               closeClient = true)
+  def usingConfig[F[_]: Async](cfg: AsyncHttpClientConfig): SttpBackend[F, Nothing] =
+    AsyncHttpClientCatsBackend(new DefaultAsyncHttpClient(cfg), closeClient = true)
 
-  def usingClient[F[_]: Async](
-      client: AsyncHttpClient): SttpBackend[F, Nothing] =
+  def usingClient[F[_]: Async](client: AsyncHttpClient): SttpBackend[F, Nothing] =
     AsyncHttpClientCatsBackend(client, closeClient = false)
 }
 
-private[cats] class AsyncMonad[F[_]](implicit F: Async[F])
-    extends MonadAsyncError[F] {
+private[cats] class AsyncMonad[F[_]](implicit F: Async[F]) extends MonadAsyncError[F] {
 
-  override def async[T](
-      register: ((Either[Throwable, T]) => Unit) => Unit): F[T] =
+  override def async[T](register: ((Either[Throwable, T]) => Unit) => Unit): F[T] =
     F.async(register)
 
   override def unit[T](t: T): F[T] = F.pure(t)
@@ -79,7 +56,6 @@ private[cats] class AsyncMonad[F[_]](implicit F: Async[F])
 
   override def error[T](t: Throwable): F[T] = F.raiseError(t)
 
-  override protected def handleWrappedError[T](rt: F[T])(
-      h: PartialFunction[Throwable, F[T]]): F[T] =
+  override protected def handleWrappedError[T](rt: F[T])(h: PartialFunction[Throwable, F[T]]): F[T] =
     F.recoverWith(rt)(h)
 }

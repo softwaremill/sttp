@@ -59,14 +59,13 @@ package object sttp {
     * An empty request with no headers.
     */
   val emptyRequest: RequestT[Empty, String, Nothing] =
-    RequestT[Empty, String, Nothing](
-      None,
-      None,
-      NoBody,
-      Vector(),
-      asString,
-      RequestOptions(followRedirects = true, readTimeout = DefaultReadTimeout),
-      Map())
+    RequestT[Empty, String, Nothing](None,
+                                     None,
+                                     NoBody,
+                                     Vector(),
+                                     asString,
+                                     RequestOptions(followRedirects = true, readTimeout = DefaultReadTimeout),
+                                     Map())
 
   /**
     * A starting request, with the following modifications comparing to
@@ -109,12 +108,10 @@ package object sttp {
 
   def asStream[S]: ResponseAs[S, S] = ResponseAsStream[S, S]()
 
-  def asFile(file: File,
-             overwrite: Boolean = false): ResponseAs[File, Nothing] =
+  def asFile(file: File, overwrite: Boolean = false): ResponseAs[File, Nothing] =
     ResponseAsFile(file, overwrite)
 
-  def asPath(path: Path,
-             overwrite: Boolean = false): ResponseAs[Path, Nothing] =
+  def asPath(path: Path, overwrite: Boolean = false): ResponseAs[Path, Nothing] =
     ResponseAsFile(path.toFile, overwrite).map(_.toPath)
 
   // multipart factory methods
@@ -124,47 +121,35 @@ package object sttp {
     * overridden later using the `contentType` method.
     */
   def multipart(name: String, data: String): Multipart =
-    Multipart(name,
-              StringBody(data, Utf8),
-              contentType =
-                Some(contentTypeWithEncoding(TextPlainContentType, Utf8)))
+    Multipart(name, StringBody(data, Utf8), contentType = Some(contentTypeWithEncoding(TextPlainContentType, Utf8)))
 
   /**
     * Content type will be set to `text/plain` with `utf-8` encoding, can be
     * overridden later using the `contentType` method.
     */
   def multipart(name: String, data: String, encoding: String): Multipart =
-    Multipart(name,
-              StringBody(data, encoding),
-              contentType =
-                Some(contentTypeWithEncoding(TextPlainContentType, Utf8)))
+    Multipart(name, StringBody(data, encoding), contentType = Some(contentTypeWithEncoding(TextPlainContentType, Utf8)))
 
   /**
     * Content type will be set to `application/octet-stream`, can be overridden
     * later using the `contentType` method.
     */
   def multipart(name: String, data: Array[Byte]): Multipart =
-    Multipart(name,
-              ByteArrayBody(data),
-              contentType = Some(ApplicationOctetStreamContentType))
+    Multipart(name, ByteArrayBody(data), contentType = Some(ApplicationOctetStreamContentType))
 
   /**
     * Content type will be set to `application/octet-stream`, can be overridden
     * later using the `contentType` method.
     */
   def multipart(name: String, data: ByteBuffer): Multipart =
-    Multipart(name,
-              ByteBufferBody(data),
-              contentType = Some(ApplicationOctetStreamContentType))
+    Multipart(name, ByteBufferBody(data), contentType = Some(ApplicationOctetStreamContentType))
 
   /**
     * Content type will be set to `application/octet-stream`, can be overridden
     * later using the `contentType` method.
     */
   def multipart(name: String, data: InputStream): Multipart =
-    Multipart(name,
-              InputStreamBody(data),
-              contentType = Some(ApplicationOctetStreamContentType))
+    Multipart(name, InputStreamBody(data), contentType = Some(ApplicationOctetStreamContentType))
 
   /**
     * Content type will be set to `application/octet-stream`, can be overridden
@@ -194,9 +179,7 @@ package object sttp {
     * overridden later using the `contentType` method.
     */
   def multipart(name: String, fs: Map[String, String]): Multipart =
-    Multipart(name,
-              RequestBody.paramsToStringBody(fs.toList, Utf8),
-              contentType = Some(ApplicationFormContentType))
+    Multipart(name, RequestBody.paramsToStringBody(fs.toList, Utf8), contentType = Some(ApplicationFormContentType))
 
   /**
     * Encodes the given parameters as form data.
@@ -204,12 +187,8 @@ package object sttp {
     * Content type will be set to `application/x-www-form-urlencoded`, can be
     * overridden later using the `contentType` method.
     */
-  def multipart(name: String,
-                fs: Map[String, String],
-                encoding: String): Multipart =
-    Multipart(name,
-              RequestBody.paramsToStringBody(fs.toList, encoding),
-              contentType = Some(ApplicationFormContentType))
+  def multipart(name: String, fs: Map[String, String], encoding: String): Multipart =
+    Multipart(name, RequestBody.paramsToStringBody(fs.toList, encoding), contentType = Some(ApplicationFormContentType))
 
   /**
     * Encodes the given parameters as form data using `utf-8`.
@@ -218,9 +197,7 @@ package object sttp {
     * overridden later using the `contentType` method.
     */
   def multipart(name: String, fs: Seq[(String, String)]): Multipart =
-    Multipart(name,
-              RequestBody.paramsToStringBody(fs, Utf8),
-              contentType = Some(ApplicationFormContentType))
+    Multipart(name, RequestBody.paramsToStringBody(fs, Utf8), contentType = Some(ApplicationFormContentType))
 
   /**
     * Encodes the given parameters as form data.
@@ -228,21 +205,15 @@ package object sttp {
     * Content type will be set to `application/x-www-form-urlencoded`, can be
     * overridden later using the `contentType` method.
     */
-  def multipart(name: String,
-                fs: Seq[(String, String)],
-                encoding: String): Multipart =
-    Multipart(name,
-              RequestBody.paramsToStringBody(fs, encoding),
-              contentType = Some(ApplicationFormContentType))
+  def multipart(name: String, fs: Seq[(String, String)], encoding: String): Multipart =
+    Multipart(name, RequestBody.paramsToStringBody(fs, encoding), contentType = Some(ApplicationFormContentType))
 
   /**
     * Content type will be set to `application/octet-stream`, can be
     * overridden later using the `contentType` method.
     */
   def multipart[B: BodySerializer](name: String, b: B): Multipart =
-    Multipart(name,
-              implicitly[BodySerializer[B]].apply(b),
-              contentType = Some(ApplicationOctetStreamContentType))
+    Multipart(name, implicitly[BodySerializer[B]].apply(b), contentType = Some(ApplicationOctetStreamContentType))
 
   // util
 
@@ -278,8 +249,7 @@ package object sttp {
 
   private[sttp] def codeIsSuccess(c: Int): Boolean = c >= 200 && c < 300
 
-  private[sttp] def concatByteBuffers(bb1: ByteBuffer,
-                                      bb2: ByteBuffer): ByteBuffer =
+  private[sttp] def concatByteBuffers(bb1: ByteBuffer, bb2: ByteBuffer): ByteBuffer =
     ByteBuffer
       .allocate(bb1.array().length + bb2.array().length)
       .put(bb1)

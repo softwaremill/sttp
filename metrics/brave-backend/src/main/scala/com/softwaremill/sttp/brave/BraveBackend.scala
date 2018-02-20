@@ -9,9 +9,7 @@ import zipkin2.Endpoint
 
 import scala.language.higherKinds
 
-class BraveBackend[R[_], S] private (delegate: SttpBackend[R, S],
-                                     httpTracing: HttpTracing)
-    extends SttpBackend[R, S] {
+class BraveBackend[R[_], S] private (delegate: SttpBackend[R, S], httpTracing: HttpTracing) extends SttpBackend[R, S] {
 
   // .asInstanceOf as the create method lacks generics in its return type
   private val handler = HttpClientHandler
@@ -42,9 +40,7 @@ class BraveBackend[R[_], S] private (delegate: SttpBackend[R, S],
     }
   }
 
-  private def sendAndHandleReceive[T](
-      span: Span,
-      request: Request[T, S]): R[Response[T]] = {
+  private def sendAndHandleReceive[T](span: Span, request: Request[T, S]): R[Response[T]] = {
     val spanInScope = tracer.withSpanInScope(span)
 
     responseMonad.handleError(
@@ -61,8 +57,7 @@ class BraveBackend[R[_], S] private (delegate: SttpBackend[R, S],
     }
   }
 
-  private def injectTracing[T](span: Span,
-                               request: Request[T, S]): Request[T, S] = {
+  private def injectTracing[T](span: Span, request: Request[T, S]): Request[T, S] = {
     /*
     Sadly the Brave API supports only mutable request representations, hence we need to work our way around
     this and inject headers into the traced request with the help of a mutable variable. Later a no-op injector
@@ -85,8 +80,7 @@ class BraveBackend[R[_], S] private (delegate: SttpBackend[R, S],
 
 object BraveBackend {
   private val NoopInjector = new TraceContext.Injector[Request[_, _]] {
-    override def inject(traceContext: TraceContext,
-                        carrier: Request[_, _]): Unit = {}
+    override def inject(traceContext: TraceContext, carrier: Request[_, _]): Unit = {}
   }
 
   private val TraceContextRequestTag = classOf[TraceContext].getName
@@ -99,20 +93,17 @@ object BraveBackend {
   type AnyRequest = Request[_, _]
   type AnyResponse = Response[_]
 
-  def apply[R[_], S](delegate: SttpBackend[R, S],
-                     tracing: Tracing): SttpBackend[R, S] = {
+  def apply[R[_], S](delegate: SttpBackend[R, S], tracing: Tracing): SttpBackend[R, S] = {
     apply(delegate, HttpTracing.create(tracing))
   }
 
-  def apply[R[_], S](delegate: SttpBackend[R, S],
-                     httpTracing: HttpTracing): SttpBackend[R, S] = {
+  def apply[R[_], S](delegate: SttpBackend[R, S], httpTracing: HttpTracing): SttpBackend[R, S] = {
     // redirects should be handled before brave tracing, hence adding the follow-redirects backend on top
     new FollowRedirectsBackend(new BraveBackend(delegate, httpTracing))
   }
 }
 
-object SttpHttpClientAdapter
-    extends HttpClientAdapter[AnyRequest, AnyResponse] {
+object SttpHttpClientAdapter extends HttpClientAdapter[AnyRequest, AnyResponse] {
 
   override def method(request: AnyRequest): String = request.method.m
 
@@ -123,8 +114,7 @@ object SttpHttpClientAdapter
 
   override def statusCode(response: AnyResponse): Integer = response.code
 
-  override def parseServerAddress(req: AnyRequest,
-                                  builder: Endpoint.Builder): Boolean = {
+  override def parseServerAddress(req: AnyRequest, builder: Endpoint.Builder): Boolean = {
 
     if (builder.parseIp(req.uri.host)) {
       req.uri.port.foreach(builder.port(_))

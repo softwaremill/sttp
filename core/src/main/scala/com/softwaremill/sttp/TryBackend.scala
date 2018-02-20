@@ -21,8 +21,6 @@ class TryBackend[-S](delegate: SttpBackend[Id, S]) extends SttpBackend[Try, S] {
 
 object TryHttpURLConnectionBackend {
   def apply(options: SttpBackendOptions = SttpBackendOptions.Default,
-            customizeConnection: HttpURLConnection => Unit = _ => ())
-    : SttpBackend[Try, Nothing] =
-    new TryBackend[Nothing](
-      HttpURLConnectionBackend(options, customizeConnection))
+            customizeConnection: HttpURLConnection => Unit = _ => ()): SttpBackend[Try, Nothing] =
+    new TryBackend[Nothing](HttpURLConnectionBackend(options, customizeConnection))
 }

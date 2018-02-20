@@ -94,25 +94,13 @@ class BasicTests
       }
     } ~ pathPrefix("set_cookies") {
       path("with_expires") {
-        setCookie(
-          HttpCookie("c",
-                     "v",
-                     expires = Some(DateTime(1997, 12, 8, 12, 49, 12)))) {
+        setCookie(HttpCookie("c", "v", expires = Some(DateTime(1997, 12, 8, 12, 49, 12)))) {
           complete("ok")
         }
       } ~ get {
-        setCookie(
-          HttpCookie("cookie1",
-                     "value1",
-                     secure = true,
-                     httpOnly = true,
-                     maxAge = Some(123L))) {
+        setCookie(HttpCookie("cookie1", "value1", secure = true, httpOnly = true, maxAge = Some(123L))) {
           setCookie(HttpCookie("cookie2", "value2")) {
-            setCookie(
-              HttpCookie("cookie3",
-                         "",
-                         domain = Some("xyz"),
-                         path = Some("a/b/c"))) {
+            setCookie(HttpCookie("cookie3", "", domain = Some("xyz"), path = Some("a/b/c"))) {
               complete("ok")
             }
           }
@@ -143,8 +131,7 @@ class BasicTests
             .mapAsync(1) { p =>
               val fv = p.entity.dataBytes.runFold(ByteString())(_ ++ _)
               fv.map(_.utf8String)
-                .map(v =>
-                  p.name + "=" + v + p.filename.fold("")(fn => s" ($fn)"))
+                .map(v => p.name + "=" + v + p.filename.fold("")(fn => s" ($fn)"))
             }
             .runFold(Vector.empty[String])(_ :+ _)
             .map(v => v.mkString(", "))
@@ -168,8 +155,7 @@ class BasicTests
         }
     } ~ pathPrefix("timeout") {
       complete {
-        akka.pattern.after(1.second, using = actorSystem.scheduler)(
-          Future.successful("Done"))
+        akka.pattern.after(1.second, using = actorSystem.scheduler)(Future.successful("Done"))
       }
     } ~ path("empty_unauthorized_response") {
       post {
@@ -184,9 +170,8 @@ class BasicTests
       }
     } ~ path("respond_with_iso_8859_2") {
       get { ctx =>
-        val entity = HttpEntity(
-          MediaTypes.`text/plain`.withCharset(HttpCharset.custom("ISO-8859-2")),
-          textWithSpecialCharacters)
+        val entity =
+          HttpEntity(MediaTypes.`text/plain`.withCharset(HttpCharset.custom("ISO-8859-2")), textWithSpecialCharacters)
         ctx.complete(HttpResponse(200, entity = entity))
       }
     }
@@ -195,30 +180,19 @@ class BasicTests
 
   var closeBackends: List[() => Unit] = Nil
 
-  runTests("HttpURLConnection")(HttpURLConnectionBackend(),
-                                ForceWrappedValue.id)
-  runTests("TryHttpURLConnection")(TryHttpURLConnectionBackend(),
-                                   ForceWrappedValue.scalaTry)
-  runTests("Akka HTTP")(AkkaHttpBackend.usingActorSystem(actorSystem),
-                        ForceWrappedValue.future)
-  runTests("Async Http Client - Future")(AsyncHttpClientFutureBackend(),
-                                         ForceWrappedValue.future)
-  runTests("Async Http Client - Scalaz")(AsyncHttpClientScalazBackend(),
-                                         ForceWrappedValue.scalazTask)
-  runTests("Async Http Client - Monix")(AsyncHttpClientMonixBackend(),
-                                        ForceWrappedValue.monixTask)
-  runTests("Async Http Client - Cats Effect")(
-    AsyncHttpClientCatsBackend[cats.effect.IO](),
-    ForceWrappedValue.catsIo)
+  runTests("HttpURLConnection")(HttpURLConnectionBackend(), ForceWrappedValue.id)
+  runTests("TryHttpURLConnection")(TryHttpURLConnectionBackend(), ForceWrappedValue.scalaTry)
+  runTests("Akka HTTP")(AkkaHttpBackend.usingActorSystem(actorSystem), ForceWrappedValue.future)
+  runTests("Async Http Client - Future")(AsyncHttpClientFutureBackend(), ForceWrappedValue.future)
+  runTests("Async Http Client - Scalaz")(AsyncHttpClientScalazBackend(), ForceWrappedValue.scalazTask)
+  runTests("Async Http Client - Monix")(AsyncHttpClientMonixBackend(), ForceWrappedValue.monixTask)
+  runTests("Async Http Client - Cats Effect")(AsyncHttpClientCatsBackend[cats.effect.IO](), ForceWrappedValue.catsIo)
   runTests("OkHttpSyncClientHandler")(OkHttpSyncBackend(), ForceWrappedValue.id)
-  runTests("OkHttpAsyncClientHandler - Future")(OkHttpFutureBackend(),
-                                                ForceWrappedValue.future)
-  runTests("OkHttpAsyncClientHandler - Monix")(OkHttpMonixBackend(),
-                                               ForceWrappedValue.monixTask)
+  runTests("OkHttpAsyncClientHandler - Future")(OkHttpFutureBackend(), ForceWrappedValue.future)
+  runTests("OkHttpAsyncClientHandler - Monix")(OkHttpMonixBackend(), ForceWrappedValue.monixTask)
 
-  def runTests[R[_]](name: String)(
-      implicit backend: SttpBackend[R, Nothing],
-      forceResponse: ForceWrappedValue[R]): Unit = {
+  def runTests[R[_]](name: String)(implicit backend: SttpBackend[R, Nothing],
+                                   forceResponse: ForceWrappedValue[R]): Unit = {
 
     closeBackends = (() => backend.close()) :: closeBackends
 
@@ -373,8 +347,7 @@ class BasicTests
       name should "read response headers" in {
         val response = getHeaders.response(sttpIgnore).send().force()
         response.headers should have length (6)
-        response.headers("Cache-Control").toSet should be(
-          Set("no-cache", "max-age=1000"))
+        response.headers("Cache-Control").toSet should be(Set("no-cache", "max-age=1000"))
         response.header("Server") should be('defined)
         response.header("server") should be('defined)
         response.header("Server").get should startWith("akka-http")
@@ -405,11 +378,7 @@ class BasicTests
         response.cookies should have length (3)
         response.cookies.toSet should be(
           Set(
-            Cookie("cookie1",
-                   "value1",
-                   secure = true,
-                   httpOnly = true,
-                   maxAge = Some(123L)),
+            Cookie("cookie1", "value1", secure = true, httpOnly = true, maxAge = Some(123L)),
             Cookie("cookie2", "value2"),
             Cookie("cookie3", "", domain = Some("xyz"), path = Some("a/b/c"))
           ))
@@ -443,8 +412,7 @@ class BasicTests
         val req = secureBasic
         val resp = req.send().force()
         resp.code should be(401)
-        resp.header("WWW-Authenticate") should be(
-          Some("""Basic realm="test realm",charset=UTF-8"""))
+        resp.header("WWW-Authenticate") should be(Some("""Basic realm="test realm",charset=UTF-8"""))
       }
 
       name should "perform basic authorization" in {
@@ -586,8 +554,7 @@ class BasicTests
       }
 
       name should "send a multipart message with filenames" in {
-        val req = mp.multipartBody(multipart("p1", "v1").fileName("f1"),
-                                   multipart("p2", "v2").fileName("f2"))
+        val req = mp.multipartBody(multipart("p1", "v1").fileName("f1"), multipart("p2", "v2").fileName("f2"))
         val resp = req.send().force()
         resp.unsafeBody should be("p1=v1 (f1), p2=v2 (f2)")
       }

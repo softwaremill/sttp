@@ -13,9 +13,7 @@ import scala.collection.JavaConverters._
 import scala.concurrent.duration.Duration
 import scala.io.Source
 
-class HttpURLConnectionBackend private (
-    opts: SttpBackendOptions,
-    customizeConnection: HttpURLConnection => Unit)
+class HttpURLConnectionBackend private (opts: SttpBackendOptions, customizeConnection: HttpURLConnection => Unit)
     extends SttpBackend[Id, Nothing] {
 
   override def send[T](r: Request[T, Nothing]): Response[T] = {
@@ -66,8 +64,7 @@ class HttpURLConnectionBackend private (
     conn.asInstanceOf[HttpURLConnection]
   }
 
-  private def writeBody(body: RequestBody[Nothing],
-                        c: HttpURLConnection): Option[OutputStream] = {
+  private def writeBody(body: RequestBody[Nothing], c: HttpURLConnection): Option[OutputStream] = {
     body match {
       case NoBody =>
         // skip
@@ -118,8 +115,7 @@ class HttpURLConnectionBackend private (
   private val BoundaryChars =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".toCharArray
 
-  private def setMultipartBody(mp: MultipartBody,
-                               c: HttpURLConnection): Option[OutputStream] = {
+  private def setMultipartBody(mp: MultipartBody, c: HttpURLConnection): Option[OutputStream] = {
     val boundary = {
       val tlr = ThreadLocalRandom.current()
       List
@@ -160,16 +156,14 @@ class HttpURLConnectionBackend private (
 
           val headersLen = headers.getBytes(Iso88591).length
 
-          bodyLen.map(bl =>
-            dashesLen + boundaryLen + crLfLen + headersLen + crLfLen + crLfLen + bl + crLfLen)
+          bodyLen.map(bl => dashesLen + boundaryLen + crLfLen + headersLen + crLfLen + crLfLen + bl + crLfLen)
       }
       .foldLeft(Option(finalBoundaryLen)) {
         case (Some(acc), Some(l)) => Some(acc + l)
         case _                    => None
       }
 
-    c.setRequestProperty(ContentTypeHeader,
-                         "multipart/form-data; boundary=" + boundary)
+    c.setRequestProperty(ContentTypeHeader, "multipart/form-data; boundary=" + boundary)
 
     contentLength.foreach { cl =>
       c.setFixedLengthStreamingMode(cl)
@@ -205,10 +199,9 @@ class HttpURLConnectionBackend private (
     Some(os)
   }
 
-  private def readResponse[T](
-      c: HttpURLConnection,
-      is: InputStream,
-      responseAs: ResponseAs[T, Nothing]): Response[T] = {
+  private def readResponse[T](c: HttpURLConnection,
+                              is: InputStream,
+                              responseAs: ResponseAs[T, Nothing]): Response[T] = {
 
     val headers = c.getHeaderFields.asScala.toVector
       .filter(_._1 != null)
@@ -229,9 +222,7 @@ class HttpURLConnectionBackend private (
     Response(body, code, c.getResponseMessage, headers, Nil)
   }
 
-  private def readResponseBody[T](is: InputStream,
-                                  responseAs: ResponseAs[T, Nothing],
-                                  charset: Option[String]): T = {
+  private def readResponseBody[T](is: InputStream, responseAs: ResponseAs[T, Nothing], charset: Option[String]): T = {
 
     def asString(enc: String) =
       Source.fromInputStream(is, charset.getOrElse(enc)).mkString
@@ -266,8 +257,7 @@ class HttpURLConnectionBackend private (
     else
       is
 
-  private def wrapInput(contentEncoding: Option[String],
-                        is: InputStream): InputStream =
+  private def wrapInput(contentEncoding: Option[String], is: InputStream): InputStream =
     contentEncoding.map(_.toLowerCase) match {
       case None            => is
       case Some("gzip")    => new GZIPInputStream(is)
@@ -281,10 +271,9 @@ class HttpURLConnectionBackend private (
 
 object HttpURLConnectionBackend {
 
-  def apply(options: SttpBackendOptions = SttpBackendOptions.Default,
-            customizeConnection: HttpURLConnection => Unit = { _ =>
-              ()
-            }): SttpBackend[Id, Nothing] =
-    new FollowRedirectsBackend[Id, Nothing](
-      new HttpURLConnectionBackend(options, customizeConnection))
+  def apply(options: SttpBackendOptions = SttpBackendOptions.Default, customizeConnection: HttpURLConnection => Unit = {
+    _ =>
+      ()
+  }): SttpBackend[Id, Nothing] =
+    new FollowRedirectsBackend[Id, Nothing](new HttpURLConnectionBackend(options, customizeConnection))
 }

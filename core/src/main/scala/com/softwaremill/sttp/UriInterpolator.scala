@@ -27,8 +27,7 @@ object UriInterpolator {
       }
 
     if (leftTokens.nonEmpty) {
-      throw new IllegalStateException(
-        s"Tokens left after building the whole uri: $leftTokens, result so far: $uri")
+      throw new IllegalStateException(s"Tokens left after building the whole uri: $leftTokens, result so far: $uri")
     }
 
     uri
@@ -50,8 +49,7 @@ object UriInterpolator {
       // way it's possible to extend existing URIs. Without special-casing
       // the embedded URI would be escaped and become part of the host
       // as a whole.
-      if (tokens == Vector(StringToken("")) && nextExpressionStr.contains(
-            "://")) {
+      if (tokens == Vector(StringToken("")) && nextExpressionStr.contains("://")) {
         def tokenizeExpressionAsString(): Unit = {
           val (nextTokenizer, nextTokens) =
             tokenizer.tokenize(nextExpression.toString)
@@ -145,9 +143,7 @@ object UriInterpolator {
           s,
           this,
           Set('/', '?', '#'),
-          Map(':' -> ColonInAuthority,
-              '@' -> AtInAuthority,
-              '.' -> DotInAuthority),
+          Map(':' -> ColonInAuthority, '@' -> AtInAuthority, '.' -> DotInAuthority),
           ipv6parser
         )
     }
@@ -193,8 +189,7 @@ object UriInterpolator {
         current: Tokenizer,
         terminators: Set[Char],
         separatorsToTokens: Map[Char, Token],
-        extraFragmentParser: String => Option[Vector[Token]] = _ => None)
-      : (Tokenizer, Vector[Token]) = {
+        extraFragmentParser: String => Option[Vector[Token]] = _ => None): (Tokenizer, Vector[Token]) = {
 
       def tokenizeFragment(f: String): Vector[Token] = {
         extraFragmentParser(f) match {
@@ -222,26 +217,23 @@ object UriInterpolator {
       }
     }
 
-    private def tokenizeAfterSeparator(
-        beforeSeparatorTokens: Vector[Token],
-        separator: Char,
-        s: String): (Tokenizer, Vector[Token]) = {
+    private def tokenizeAfterSeparator(beforeSeparatorTokens: Vector[Token],
+                                       separator: Char,
+                                       s: String): (Tokenizer, Vector[Token]) = {
 
       val (next, separatorToken) = separatorTokenizerAndToken(separator)
       val (nextNext, nextTokens) = next.tokenize(s)
       (nextNext, beforeSeparatorTokens ++ Vector(separatorToken) ++ nextTokens)
     }
 
-    private def separatorTokenizerAndToken(
-        separator: Char): (Tokenizer, Token) =
+    private def separatorTokenizerAndToken(separator: Char): (Tokenizer, Token) =
       separator match {
         case '/' => (Path, PathStart)
         case '?' => (Query, QueryStart)
         case '#' => (Fragment, FragmentStart)
       }
 
-    private def splitPreserveSeparators(s: String,
-                                        sep: Set[Char]): Vector[String] = {
+    private def splitPreserveSeparators(s: String, sep: Set[Char]): Vector[String] = {
       @tailrec
       def doSplit(s: String, acc: Vector[String]): Vector[String] = {
         split(s, sep) match {
@@ -254,9 +246,7 @@ object UriInterpolator {
       doSplit(s, Vector.empty)
     }
 
-    private def split(
-        s: String,
-        sep: Set[Char]): Either[String, (String, Char, String)] = {
+    private def split(s: String, sep: Set[Char]): Either[String, (String, Char, String)] = {
       val i = s.indexWhere(sep.contains)
       if (i == -1) Left(s)
       else Right((s.substring(0, i), s.charAt(i), s.substring(i + 1)))
@@ -270,8 +260,7 @@ object UriInterpolator {
   object UriBuilder {
 
     case object Scheme extends UriBuilder {
-      override def fromTokens(u: Uri,
-                              t: Vector[Token]): (Uri, Vector[Token]) = {
+      override def fromTokens(u: Uri, t: Vector[Token]): (Uri, Vector[Token]) = {
         split(t, Set[Token](SchemeEnd)) match {
           case Left(tt) => (u.scheme("http"), tt)
           case Right((schemeTokens, _, otherTokens)) =>
@@ -282,8 +271,7 @@ object UriInterpolator {
     }
 
     case object UserInfo extends UriBuilder {
-      override def fromTokens(u: Uri,
-                              t: Vector[Token]): (Uri, Vector[Token]) = {
+      override def fromTokens(u: Uri, t: Vector[Token]): (Uri, Vector[Token]) = {
         split(t, Set[Token](AtInAuthority)) match {
           case Left(tt) => (u, tt)
           case Right((uiTokens, _, otherTokens)) =>
@@ -303,9 +291,7 @@ object UriInterpolator {
         }
       }
 
-      private def uiFromTokens(u: Uri,
-                               usernameTokens: Vector[Token],
-                               passwordTokens: Vector[Token]): Uri = {
+      private def uiFromTokens(u: Uri, usernameTokens: Vector[Token], passwordTokens: Vector[Token]): Uri = {
 
         (tokensToStringOpt(usernameTokens), tokensToStringOpt(passwordTokens)) match {
           case (Some(un), Some(p)) => u.userInfo(un, p)
@@ -317,8 +303,7 @@ object UriInterpolator {
     }
 
     case object HostPort extends UriBuilder {
-      override def fromTokens(u: Uri,
-                              t: Vector[Token]): (Uri, Vector[Token]) = {
+      override def fromTokens(u: Uri, t: Vector[Token]): (Uri, Vector[Token]) = {
         split(t, Set[Token](PathStart, QueryStart, FragmentStart)) match {
           case Left(tt) =>
             (hostPortFromTokens(u, tt), Vector.empty)
@@ -327,8 +312,7 @@ object UriInterpolator {
         }
       }
 
-      private def hostPortFromTokens(u: Uri,
-                                     rawHpTokens: Vector[Token]): Uri = {
+      private def hostPortFromTokens(u: Uri, rawHpTokens: Vector[Token]): Uri = {
         // Special case: if the host/port part contains an expression token,
         // which has a string representation which contains a colon (:), then
         // we assume that the intention was to embed the port and host separately,
@@ -367,11 +351,7 @@ object UriInterpolator {
 
     case object Path extends UriBuilder {
       override def fromTokens(u: Uri, t: Vector[Token]): (Uri, Vector[Token]) =
-        fromStartingToken(u,
-                          t,
-                          PathStart,
-                          Set[Token](QueryStart, FragmentStart),
-                          pathFromTokens)
+        fromStartingToken(u, t, PathStart, Set[Token](QueryStart, FragmentStart), pathFromTokens)
 
       private def pathFromTokens(u: Uri, tokens: Vector[Token]): Uri = {
         u.path(tokensToStringSeq(tokens))
@@ -383,11 +363,7 @@ object UriInterpolator {
       import com.softwaremill.sttp.Uri.{QueryFragment => QF}
 
       override def fromTokens(u: Uri, t: Vector[Token]): (Uri, Vector[Token]) =
-        fromStartingToken(u,
-                          t,
-                          QueryStart,
-                          Set[Token](FragmentStart),
-                          queryFromTokens)
+        fromStartingToken(u, t, QueryStart, Set[Token](FragmentStart), queryFromTokens)
 
       private def queryFromTokens(u: Uri, tokens: Vector[Token]): Uri = {
         val qfs =
@@ -398,8 +374,7 @@ object UriInterpolator {
       }
 
       private def queryMappingsFromTokens(tokens: Vector[Token]): Vector[QF] = {
-        def expressionPairToQueryFragment(ke: Any,
-                                          ve: Any): Option[QF.KeyValue] =
+        def expressionPairToQueryFragment(ke: Any, ve: Any): Option[QF.KeyValue] =
           for {
             k <- anyToStringOpt(ke)
             v <- anyToStringOpt(ve)
@@ -431,8 +406,7 @@ object UriInterpolator {
     }
 
     case object Fragment extends UriBuilder {
-      override def fromTokens(u: Uri,
-                              t: Vector[Token]): (Uri, Vector[Token]) = {
+      override def fromTokens(u: Uri, t: Vector[Token]): (Uri, Vector[Token]) = {
         t match {
           case FragmentStart +: tt =>
             (u.fragment(tokensToStringOpt(tt)), Vector.empty)
@@ -449,13 +423,11 @@ object UriInterpolator {
       *
       * The component is terminated by any of `nextComponentTokens`.
       */
-    private def fromStartingToken(
-        u: Uri,
-        t: Vector[Token],
-        startingToken: Token,
-        nextComponentTokens: Set[Token],
-        componentFromTokens: (Uri, Vector[Token]) => Uri)
-      : (Uri, Vector[Token]) = {
+    private def fromStartingToken(u: Uri,
+                                  t: Vector[Token],
+                                  startingToken: Token,
+                                  nextComponentTokens: Set[Token],
+                                  componentFromTokens: (Uri, Vector[Token]) => Uri): (Uri, Vector[Token]) = {
 
       t match {
         case `startingToken` +: tt =>
@@ -536,9 +508,7 @@ object UriInterpolator {
         }
         .mkString("")
 
-    private def split[T](
-        v: Vector[T],
-        sep: Set[T]): Either[Vector[T], (Vector[T], T, Vector[T])] = {
+    private def split[T](v: Vector[T], sep: Set[T]): Either[Vector[T], (Vector[T], T, Vector[T])] = {
       val i = v.indexWhere(sep.contains)
       if (i == -1) Left(v) else Right((v.take(i), v(i), v.drop(i + 1)))
     }
@@ -567,8 +537,7 @@ object UriInterpolator {
     * These empty string tokens need to be removed so that e.g. extra key-value
     * mappings are not generated.
     */
-  private def removeEmptyTokensAroundExp(
-      tokens: Vector[Token]): Vector[Token] = {
+  private def removeEmptyTokensAroundExp(tokens: Vector[Token]): Vector[Token] = {
     def doRemove(t: Vector[Token], acc: Vector[Token]): Vector[Token] =
       t match {
         case StringToken("") +: (e: ExpressionToken) +: tail =>

@@ -10,8 +10,7 @@ import com.softwaremill.sttp.{ForceWrappedValue, SttpBackend}
 
 import scala.concurrent.Future
 
-class AkkaHttpStreamingTests(actorSystem: ActorSystem)(
-    implicit materializer: Materializer)
+class AkkaHttpStreamingTests(actorSystem: ActorSystem)(implicit materializer: Materializer)
     extends TestStreamingBackend[Future, Source[ByteString, Any]] {
 
   override implicit val backend: SttpBackend[Future, Source[ByteString, Any]] =
