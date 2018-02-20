@@ -1,6 +1,7 @@
 package com.softwaremill.sttp
 
 import java.net.URI
+
 import scala.language.higherKinds
 
 class FollowRedirectsBackend[R[_], S](delegate: SttpBackend[R, S])
@@ -12,7 +13,8 @@ class FollowRedirectsBackend[R[_], S](delegate: SttpBackend[R, S])
 
   private def sendWithCounter[T](request: Request[T, S],
                                  redirects: Int): R[Response[T]] = {
-    val resp = delegate.send(request)
+    // if there are nested follow redirect backends, disabling them and handling redirects here
+    val resp = delegate.send(request.followRedirects(false))
     if (request.options.followRedirects) {
       responseMonad.flatMap(resp) { response: Response[T] =>
         if (response.isRedirect) {

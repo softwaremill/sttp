@@ -39,8 +39,6 @@ val akkaHttp = "com.typesafe.akka" %% "akka-http" % akkaHttpVersion
 val monixVersion = "2.3.3"
 val monix = "io.monix" %% "monix" % monixVersion
 
-val circeVersion = "0.9.1"
-
 val scalaTest = "org.scalatest" %% "scalatest" % "3.0.5"
 
 lazy val rootProject = (project in file("."))
@@ -59,6 +57,7 @@ lazy val rootProject = (project in file("."))
     okhttpMonixBackend,
     circe,
     json4s,
+    brave,
     tests
   )
 
@@ -152,6 +151,8 @@ lazy val okhttpMonixBackend: Project = (project in file("okhttp-backend/monix"))
     libraryDependencies ++= Seq(monix)
   ) dependsOn okhttpBackend
 
+lazy val circeVersion = "0.9.1"
+
 lazy val circe: Project = (project in file("json/circe"))
   .settings(commonSettings: _*)
   .settings(
@@ -172,6 +173,20 @@ lazy val json4s: Project = (project in file("json/json4s"))
       scalaTest % "test"
     )
   ) dependsOn core
+
+lazy val braveVersion = "4.15.1"
+
+lazy val brave: Project = (project in file("metrics/brave"))
+  .settings(commonSettings: _*)
+  .settings(
+    name := "brave",
+    libraryDependencies ++= Seq(
+      "io.zipkin.brave" % "brave" % braveVersion,
+      "io.zipkin.brave" % "brave-instrumentation-http" % braveVersion,
+      "io.zipkin.brave" % "brave-instrumentation-http-tests" % braveVersion % "test",
+      scalaTest % "test"
+    )
+  ).dependsOn(core)
 
 lazy val tests: Project = (project in file("tests"))
   .settings(commonSettings: _*)
