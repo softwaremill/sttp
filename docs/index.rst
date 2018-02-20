@@ -67,6 +67,7 @@ For more examples, see the :ref:`usage examples <usage_examples>` section. Or ex
    backends/akkahttp
    backends/asynchttpclient
    backends/okhttp
+   backends/brave
    backends/custom
 
 .. toctree::
