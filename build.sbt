@@ -131,7 +131,7 @@ lazy val asyncHttpClientFs2Backend: Project = (project in file(
   .settings(
     name := "async-http-client-backend-fs2",
     libraryDependencies ++= Seq(
-      "com.github.zainab-ali" %% "fs2-reactive-streams" % "0.5.0"
+      "com.github.zainab-ali" %% "fs2-reactive-streams" % "0.5.1"
     )
   ) dependsOn asyncHttpClientBackend
 
