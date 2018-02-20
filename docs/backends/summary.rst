@@ -33,4 +33,4 @@ Class                            Response wrapper             Supported stream t
 There are also backends which wrap other backends to provide additional functionality. These include:
 
 * ``TryBackend``, which safely wraps any exceptions thrwon by a synchronous backend in ``scala.util.Try``
-* ``BraveBackend``, for Zipkin-compatible distributed tracing. See the :ref:`dedicated section <brave>`.
+* ``BraveBackend``, for Zipkin-compatible distributed tracing. See the :ref:`dedicated section <brave_backend>`.

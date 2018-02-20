@@ -1,4 +1,4 @@
-.. _brave:
+.. _brave_backend:
 
 brave backend
 =============
