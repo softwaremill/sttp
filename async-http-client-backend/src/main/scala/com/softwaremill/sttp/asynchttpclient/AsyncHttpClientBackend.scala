@@ -9,7 +9,20 @@ import org.asynchttpclient.AsyncHandler.State
 import org.asynchttpclient.handler.StreamedAsyncHandler
 import org.asynchttpclient.proxy.ProxyServer
 import org.asynchttpclient.request.body.multipart.{ByteArrayPart, FilePart, StringPart}
-import org.asynchttpclient.{AsyncCompletionHandler, AsyncHandler, AsyncHttpClient, DefaultAsyncHttpClient, DefaultAsyncHttpClientConfig, HttpResponseBodyPart, HttpResponseHeaders, HttpResponseStatus, Param, RequestBuilder, Request => AsyncRequest, Response => AsyncResponse}
+import org.asynchttpclient.{
+  AsyncCompletionHandler,
+  AsyncHandler,
+  AsyncHttpClient,
+  DefaultAsyncHttpClient,
+  DefaultAsyncHttpClientConfig,
+  HttpResponseBodyPart,
+  HttpResponseHeaders,
+  HttpResponseStatus,
+  Param,
+  RequestBuilder,
+  Request => AsyncRequest,
+  Response => AsyncResponse
+}
 import org.reactivestreams.{Publisher, Subscriber, Subscription}
 
 import scala.collection.JavaConverters._

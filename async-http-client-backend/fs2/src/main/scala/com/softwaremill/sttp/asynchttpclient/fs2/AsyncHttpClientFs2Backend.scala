@@ -4,7 +4,14 @@ import java.nio.ByteBuffer
 
 import cats.effect._
 import com.softwaremill.sttp.asynchttpclient.AsyncHttpClientBackend
-import com.softwaremill.sttp.{FollowRedirectsBackend, MonadAsyncError, SttpBackend, SttpBackendOptions, Utf8, concatByteBuffers}
+import com.softwaremill.sttp.{
+  FollowRedirectsBackend,
+  MonadAsyncError,
+  SttpBackend,
+  SttpBackendOptions,
+  Utf8,
+  concatByteBuffers
+}
 import fs2._
 import fs2.interop.reactivestreams._
 import org.asynchttpclient.{AsyncHttpClient, AsyncHttpClientConfig, DefaultAsyncHttpClient}

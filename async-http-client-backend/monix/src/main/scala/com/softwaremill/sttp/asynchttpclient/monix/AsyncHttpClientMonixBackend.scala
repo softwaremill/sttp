@@ -3,7 +3,14 @@ package com.softwaremill.sttp.asynchttpclient.monix
 import java.nio.ByteBuffer
 
 import com.softwaremill.sttp.asynchttpclient.AsyncHttpClientBackend
-import com.softwaremill.sttp.{FollowRedirectsBackend, MonadAsyncError, SttpBackend, SttpBackendOptions, Utf8, concatByteBuffers}
+import com.softwaremill.sttp.{
+  FollowRedirectsBackend,
+  MonadAsyncError,
+  SttpBackend,
+  SttpBackendOptions,
+  Utf8,
+  concatByteBuffers
+}
 import monix.eval.Task
 import monix.execution.{Cancelable, Scheduler}
 import monix.reactive.Observable

@@ -1,7 +1,7 @@
 package com.softwaremill.sttp.brave
 
 import brave.http.{HttpClientAdapter, HttpClientHandler, HttpTracing}
-import brave.propagation.TraceContext
+import brave.propagation.{Propagation, TraceContext}
 import brave.{Span, Tracing}
 import com.softwaremill.sttp.brave.BraveBackend._
 import com.softwaremill.sttp.{FollowRedirectsBackend, MonadError, Request, Response, SttpBackend}
@@ -69,8 +69,10 @@ class BraveBackend[R[_], S] private (delegate: SttpBackend[R, S], httpTracing: H
     httpTracing
       .tracing()
       .propagation()
-      .injector((_: Request[_, _], key: String, value: String) => {
-        tracedRequest = tracedRequest.header(key, value)
+      .injector(new Propagation.Setter[AnyRequest, String] {
+        override def put(carrier: AnyRequest, key: String, value: String): Unit = {
+          tracedRequest = tracedRequest.header(key, value)
+        }
       })
       .inject(span.context(), request)
 
