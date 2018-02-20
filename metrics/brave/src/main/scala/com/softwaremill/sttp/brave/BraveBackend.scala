@@ -1,8 +1,8 @@
 package com.softwaremill.sttp.brave
 
-import brave.Span
 import brave.http.{HttpClientAdapter, HttpClientHandler, HttpTracing}
 import brave.propagation.TraceContext
+import brave.{Span, Tracing}
 import com.softwaremill.sttp.brave.BraveBackend._
 import com.softwaremill.sttp.{FollowRedirectsBackend, MonadError, Request, Response, SttpBackend}
 import zipkin2.Endpoint
@@ -98,6 +98,10 @@ object BraveBackend {
 
   type AnyRequest = Request[_, _]
   type AnyResponse = Response[_]
+
+  def apply[R[_], S](delegate: SttpBackend[R, S], tracing: Tracing): SttpBackend[R, S] = {
+    apply(delegate, HttpTracing.create(tracing))
+  }
 
   def apply[R[_], S](delegate: SttpBackend[R, S],
                      httpTracing: HttpTracing): SttpBackend[R, S] = {
