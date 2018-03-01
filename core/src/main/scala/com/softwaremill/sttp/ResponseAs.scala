@@ -50,7 +50,9 @@ object ResponseAs {
 
   private[sttp] def saveFile(file: File, is: InputStream, overwrite: Boolean): File = {
     if (!file.exists()) {
-      file.getParentFile.mkdirs()
+      if (file.getParentFile != null) {
+        file.getParentFile.mkdirs()
+      }
       file.createNewFile()
     } else if (!overwrite) {
       throw new IOException(s"File ${file.getAbsolutePath} exists - overwriting prohibited")

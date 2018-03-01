@@ -108,6 +108,9 @@ package object sttp {
 
   def asStream[S]: ResponseAs[S, S] = ResponseAsStream[S, S]()
 
+  def asFile(path: String, overwrite: Boolean = false): ResponseAs[File, Nothing] =
+    ResponseAsFile(new File(path), overwrite)
+
   def asFile(file: File, overwrite: Boolean = false): ResponseAs[File, Nothing] =
     ResponseAsFile(file, overwrite)
 
