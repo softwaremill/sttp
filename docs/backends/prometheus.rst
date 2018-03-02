@@ -23,7 +23,7 @@ You can disable request histograms by passing ``None`` returning function::
 
 This backend also offers ``Gauge`` with currently in-progress requests number. It uses by default ``sttp_requests_in_progress`` name, defined in ``PrometheusBackend.DefaultRequestsInProgressGaugeName``. It is possible to define custom gauge name by passing function mapping request to gauge name::
 
-   implicit val sttpBackend = PrometheusBackend(AkkaHttpBackend(), requestToHistogramNameMapper = request => Some(request.uri.host))
+   implicit val sttpBackend = PrometheusBackend(AkkaHttpBackend(), requestToInProgressGaugeNameMapper = request => Some(request.uri.host))
 
 You can disable request in-progress gauges by passing ``None`` returning function::
 
