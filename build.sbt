@@ -58,6 +58,7 @@ lazy val rootProject = (project in file("."))
     circe,
     json4s,
     braveBackend,
+    prometheusBackend,
     tests
   )
 
@@ -187,6 +188,17 @@ lazy val braveBackend: Project = (project in file("metrics/brave-backend"))
       scalaTest % "test"
     )
   ).dependsOn(core)
+
+lazy val prometheusBackend: Project = (project in file("metrics/prometheus-backend"))
+  .settings(commonSettings: _*)
+  .settings(
+    name := "prometheus-backend",
+    libraryDependencies ++= Seq(
+      "io.prometheus" % "simpleclient" % "0.3.0",
+      scalaTest % "test"
+    )
+  )
+  .dependsOn(core)
 
 lazy val tests: Project = (project in file("tests"))
   .settings(commonSettings: _*)

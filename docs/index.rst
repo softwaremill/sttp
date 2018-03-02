@@ -68,6 +68,7 @@ For more examples, see the :ref:`usage examples <usage_examples>` section. Or ex
    backends/asynchttpclient
    backends/okhttp
    backends/brave
+   backends/prometheus
    backends/custom
 
 .. toctree::

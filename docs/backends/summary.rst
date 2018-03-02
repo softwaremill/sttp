@@ -17,7 +17,7 @@ Below is a summary of all the backends. See the sections on individual backend i
 ================================ ============================ ================================================
 Class                            Response wrapper             Supported stream type
 ================================ ============================ ================================================
-``HttpURLConnectionBackend``     None (``Id``)                n/a 
+``HttpURLConnectionBackend``     None (``Id``)                n/a
 ``TryHttpURLConnectionBackend``  ``scala.util.Try``           n/a
 ``AkkaHttpBackend``              ``scala.concurrent.Future``  ``akka.stream.scaladsl.Source[ByteString, Any]``
 ``AsyncHttpClientFutureBackend`` ``scala.concurrent.Future``  n/a
@@ -34,3 +34,4 @@ There are also backends which wrap other backends to provide additional function
 
 * ``TryBackend``, which safely wraps any exceptions thrwon by a synchronous backend in ``scala.util.Try``
 * ``BraveBackend``, for Zipkin-compatible distributed tracing. See the :ref:`dedicated section <brave_backend>`.
+* ``PrometheusBackend``, for gathering Prometheus-format metrics. See the :ref:`dedicated section <prometheus_backend>`.
