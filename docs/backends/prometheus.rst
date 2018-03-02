@@ -13,6 +13,18 @@ The Prometheus backend wraps any other backend, for example::
 
   implicit val sttpBackend = PrometheusBackend(AkkaHttpBackend())
 
-It uses by default ``sttp_request_latency`` histogram name, defined in ``PrometheusBackend.DefaultHistogramName``. It is possible to define custom histograms name by passing function mapping request to histogram name::
+It gathers request execution times in ``Histogram``. It uses by default ``sttp_request_latency`` name, defined in ``PrometheusBackend.DefaultHistogramName``. It is possible to define custom histograms name by passing function mapping request to histogram name::
 
-  implicit val sttpBackend = PrometheusBackend(AkkaHttpBackend(), Some(request => request.uri.toString))
+  implicit val sttpBackend = PrometheusBackend(AkkaHttpBackend(), request => Some(request.uri.host))
+
+You can disable request histograms by passing ``None`` returning function::
+
+  implicit val sttpBackend = PrometheusBackend(AkkaHttpBackend(), _ => None)
+
+This backend also offers ``Gauge`` with currently in-progress requests number. It uses by default ``sttp_requests_in_progress`` name, defined in ``PrometheusBackend.DefaultRequestsInProgressGaugeName``. It is possible to define custom gauge name by passing function mapping request to gauge name::
+
+   implicit val sttpBackend = PrometheusBackend(AkkaHttpBackend(), requestToHistogramNameMapper = request => Some(request.uri.host))
+
+You can disable request in-progress gauges by passing ``None`` returning function::
+
+  implicit val sttpBackend = PrometheusBackend(AkkaHttpBackend(), requestToInProgressGaugeNameMapper = _ => None)
