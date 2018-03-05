@@ -215,6 +215,11 @@ case class RequestT[U[_], T, +S](
   def readTimeout(t: Duration): RequestT[U, T, S] =
     this.copy(options = options.copy(readTimeout = t))
 
+  /**
+    * Specifies the target type to which the response body should be read.
+    * Note that this replaces any previous specifications, which also includes
+    * any previous `mapResponse` invocations.
+    */
   def response[T2, S2 >: S](ra: ResponseAs[T2, S2]): RequestT[U, T2, S2] =
     this.copy(response = ra)
 
