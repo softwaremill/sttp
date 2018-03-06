@@ -140,6 +140,8 @@ case class Uri(scheme: String,
         encode(Rfc3986.QueryNoStandardDelims, spaceAsPlus = true, encodePlus = true)(s)
       case QueryFragmentEncoding.Relaxed =>
         encode(Rfc3986.Query, spaceAsPlus = true)(s)
+      case QueryFragmentEncoding.RelaxedWithBrackets =>
+        encode(Rfc3986.QueryWithBrackets, spaceAsPlus = true)(s)
     }
 
   private object Rfc3986 {
@@ -158,6 +160,7 @@ case class Uri(scheme: String,
     val Fragment: Set[Char] = Query
 
     val QueryNoStandardDelims: Set[Char] = Query -- Set('&', '=')
+    val QueryWithBrackets: Set[Char] = Query ++ Set('[', ']')
   }
 
   private val IpV6Pattern = "[0-9a-fA-F:]+".r
@@ -263,9 +266,19 @@ object Uri {
 
     /**
       * Doesn't encode any of the reserved characters, leaving intact all
-      * characters allow in the query string as defined by RFC3986.
+      * characters allowed in the query string as defined by RFC3986.
       */
     case object Relaxed extends QueryFragmentEncoding
+
+    /**
+      * Doesn't encode any of the reserved characters, leaving intact all
+      * characters allowed in the query string as defined by RFC3986 as well
+      * as the characters `[` and `]`. These brackets aren't legal in the
+      * query part of the URI, but some servers use them unencoded. See
+      * https://stackoverflow.com/questions/11490326/is-array-syntax-using-square-brackets-in-url-query-strings-valid
+      * for discussion.
+      */
+    case object RelaxedWithBrackets extends QueryFragmentEncoding
   }
 
   case class UserInfo(username: String, password: Option[String])

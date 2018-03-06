@@ -76,7 +76,9 @@ class UriTests extends FunSuite with Matchers {
     List(QF.Plain("ą/ę&+;?", encoding = QueryFragmentEncoding.Relaxed)) -> "%C4%85/%C4%99&+;?",
     List(QF.KeyValue("k", "v1,v2", valueEncoding = QueryFragmentEncoding.All)) -> "k=v1%2Cv2",
     List(QF.KeyValue("k", "v1,v2")) -> "k=v1,v2",
-    List(QF.KeyValue("k", "+1234")) -> "k=%2B1234"
+    List(QF.KeyValue("k", "+1234")) -> "k=%2B1234",
+    List(QF.KeyValue("k", "[]")) -> "k=%5B%5D",
+    List(QF.KeyValue("k", "[]", valueEncoding = QueryFragmentEncoding.RelaxedWithBrackets)) -> "k=[]"
   )
 
   for {
