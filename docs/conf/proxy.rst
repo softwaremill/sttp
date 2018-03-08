@@ -7,6 +7,7 @@ Following settings are checked:
 
 1. ``socksProxyHost`` and ``socksProxyPort`` *(default: 1080)*
 2. ``http.proxyHost`` and ``http.proxyPort`` *(default: 80)*
+2. ``https.proxyHost`` and ``https.proxyPort`` *(default: 443)*
 
 Settings are loaded **in given order** and the **first existing value** is being used.
 

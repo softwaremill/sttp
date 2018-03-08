@@ -67,8 +67,9 @@ object SttpBackendOptions {
     import ProxyType._
     val socks = system("socksProxyHost", "socksProxyPort", proxy(Socks), 1080)
     val http = system("http.proxyHost", "http.proxyPort", proxy(Http), 80)
+    val https = system("https.proxyHost", "https.proxyPort", proxy(Http), 443)
 
-    Seq(socks, http).find(_.isDefined).flatten
+    Seq(socks, http, https).find(_.isDefined).flatten
   }
 
 }
