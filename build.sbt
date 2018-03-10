@@ -33,8 +33,8 @@ val commonSettings = Seq(
     .withWarnTransitiveEvictions(false)
 )
 
-val akkaHttpVersion = "10.0.11"
-val akkaHttp = "com.typesafe.akka" %% "akka-http" % akkaHttpVersion
+val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.0"
+val akkaStreams = "com.typesafe.akka" %% "akka-stream" % "2.5.11"
 
 val monixVersion = "2.3.3"
 val monix = "io.monix" %% "monix" % monixVersion
@@ -77,7 +77,10 @@ lazy val akkaHttpBackend: Project = (project in file("akka-http-backend"))
   .settings(
     name := "akka-http-backend",
     libraryDependencies ++= Seq(
-      akkaHttp
+      akkaHttp,
+      // provided as we don't want to create a transitive dependency on a specific streams version,
+      // just as akka-http doesn't
+      akkaStreams % "provided"
     )
   ) dependsOn core
 
@@ -104,7 +107,7 @@ lazy val asyncHttpClientScalazBackend: Project = (project in file(
   .settings(
     name := "async-http-client-backend-scalaz",
     libraryDependencies ++= Seq(
-      "org.scalaz" %% "scalaz-concurrent" % "7.2.19"
+      "org.scalaz" %% "scalaz-concurrent" % "7.2.20"
     )
   ) dependsOn asyncHttpClientBackend
 
@@ -122,7 +125,7 @@ lazy val asyncHttpClientCatsBackend: Project = (project in file(
   .settings(
     name := "async-http-client-backend-cats",
     libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-effect" % "0.8"
+      "org.typelevel" %% "cats-effect" % "0.9"
     )
   ) dependsOn asyncHttpClientBackend
 
@@ -141,7 +144,7 @@ lazy val okhttpBackend: Project = (project in file("okhttp-backend"))
   .settings(
     name := "okhttp-backend",
     libraryDependencies ++= Seq(
-      "com.squareup.okhttp3" % "okhttp" % "3.9.1"
+      "com.squareup.okhttp3" % "okhttp" % "3.10.0"
     )
   ) dependsOn core
 
@@ -175,7 +178,7 @@ lazy val json4s: Project = (project in file("json/json4s"))
     )
   ) dependsOn core
 
-lazy val braveVersion = "4.15.1"
+lazy val braveVersion = "4.17.2"
 
 lazy val braveBackend: Project = (project in file("metrics/brave-backend"))
   .settings(commonSettings: _*)
@@ -208,10 +211,11 @@ lazy val tests: Project = (project in file("tests"))
     libraryDependencies ++= Seq(
       akkaHttp,
       scalaTest,
-      "com.typesafe.scala-logging" %% "scala-logging" % "3.7.2",
+      "com.typesafe.scala-logging" %% "scala-logging" % "3.8.0",
       "com.github.pathikrit" %% "better-files" % "3.4.0",
-      "ch.qos.logback" % "logback-classic" % "1.2.3"
+      "ch.qos.logback" % "logback-classic" % "1.2.3",
+      "org.scala-lang" % "scala-compiler" % scalaVersion.value
     ).map(_ % "test"),
-    libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test"
+    libraryDependencies += akkaStreams,
   ) dependsOn (core, akkaHttpBackend, asyncHttpClientFutureBackend, asyncHttpClientScalazBackend,
 asyncHttpClientMonixBackend, asyncHttpClientCatsBackend, asyncHttpClientFs2Backend, okhttpMonixBackend)

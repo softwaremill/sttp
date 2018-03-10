@@ -1,6 +1,7 @@
 package com.softwaremill.sttp.brave
 
-import brave.http.{HttpTracing, ITHttpClient}
+import brave.http.HttpTracing
+import brave.test.http.ITHttpClient
 import brave.internal.HexCodec
 import com.softwaremill.sttp._
 import okhttp3.mockwebserver.MockResponse
