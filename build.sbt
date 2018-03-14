@@ -155,7 +155,7 @@ lazy val okhttpMonixBackend: Project = (project in file("okhttp-backend/monix"))
     libraryDependencies ++= Seq(monix)
   ) dependsOn okhttpBackend
 
-lazy val circeVersion = "0.9.1"
+lazy val circeVersion = "0.9.2"
 
 lazy val circe: Project = (project in file("json/circe"))
   .settings(commonSettings: _*)
