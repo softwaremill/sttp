@@ -6,7 +6,7 @@ import java.util.concurrent.CountDownLatch
 import com.softwaremill.sttp.testing.SttpBackendStub
 import com.softwaremill.sttp.{HttpURLConnectionBackend, Id, sttp, _}
 import io.prometheus.client.CollectorRegistry
-import org.scalatest.concurrent.{Eventually, IntegrationPatience}
+import org.scalatest.concurrent.Eventually
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers, OptionValues}
 
 import scala.concurrent.ExecutionContext.Implicits.global
