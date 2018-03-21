@@ -1,6 +1,6 @@
 val commonSettings = Seq(
   organization := "com.softwaremill.sttp",
-  scalaVersion := "2.12.4",
+  scalaVersion := "2.12.5",
   crossScalaVersions := Seq(scalaVersion.value, "2.11.11"),
   scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-Xlint"),
   scalafmtOnCompile := true,
@@ -125,7 +125,7 @@ lazy val asyncHttpClientCatsBackend: Project = (project in file(
   .settings(
     name := "async-http-client-backend-cats",
     libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-effect" % "0.9"
+      "org.typelevel" %% "cats-effect" % "0.10"
     )
   ) dependsOn asyncHttpClientBackend
 
@@ -178,7 +178,7 @@ lazy val json4s: Project = (project in file("json/json4s"))
     )
   ) dependsOn core
 
-lazy val braveVersion = "4.17.2"
+lazy val braveVersion = "4.18.2"
 
 lazy val braveBackend: Project = (project in file("metrics/brave-backend"))
   .settings(commonSettings: _*)
