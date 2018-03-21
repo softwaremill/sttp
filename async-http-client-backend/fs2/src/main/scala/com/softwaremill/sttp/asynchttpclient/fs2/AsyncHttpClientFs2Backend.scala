@@ -14,6 +14,7 @@ import com.softwaremill.sttp.{
 }
 import fs2._
 import fs2.interop.reactivestreams._
+import io.netty.buffer.{ByteBuf, Unpooled}
 import org.asynchttpclient.{AsyncHttpClient, AsyncHttpClientConfig, DefaultAsyncHttpClient}
 import org.reactivestreams.Publisher
 
@@ -28,8 +29,8 @@ class AsyncHttpClientFs2Backend[F[_]: Effect] private (asyncHttpClient: AsyncHtt
       closeClient
     ) {
 
-  override protected def streamBodyToPublisher(s: Stream[F, ByteBuffer]): Publisher[ByteBuffer] =
-    s.toUnicastPublisher
+  override protected def streamBodyToPublisher(s: Stream[F, ByteBuffer]): Publisher[ByteBuf] =
+    s.map(Unpooled.wrappedBuffer).toUnicastPublisher
 
   override protected def publisherToStreamBody(p: Publisher[ByteBuffer]): Stream[F, ByteBuffer] =
     p.toStream[F]

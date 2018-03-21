@@ -90,7 +90,7 @@ lazy val asyncHttpClientBackend: Project = (project in file(
   .settings(
     name := "async-http-client-backend",
     libraryDependencies ++= Seq(
-      "org.asynchttpclient" % "async-http-client" % "2.0.38"
+      "org.asynchttpclient" % "async-http-client" % "2.4.4"
     )
   ) dependsOn core
 

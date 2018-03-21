@@ -4,6 +4,7 @@ import java.nio.ByteBuffer
 
 import com.softwaremill.sttp.asynchttpclient.AsyncHttpClientBackend
 import com.softwaremill.sttp.{FollowRedirectsBackend, MonadAsyncError, SttpBackend, SttpBackendOptions}
+import io.netty.buffer.ByteBuf
 import org.asynchttpclient.{AsyncHttpClient, AsyncHttpClientConfig, DefaultAsyncHttpClient}
 import org.reactivestreams.Publisher
 
@@ -13,7 +14,8 @@ import scalaz.{-\/, \/-}
 class AsyncHttpClientScalazBackend private (asyncHttpClient: AsyncHttpClient, closeClient: Boolean)
     extends AsyncHttpClientBackend[Task, Nothing](asyncHttpClient, TaskMonad, closeClient) {
 
-  override protected def streamBodyToPublisher(s: Nothing): Publisher[ByteBuffer] = s // nothing is everything
+  override protected def streamBodyToPublisher(s: Nothing): Publisher[ByteBuf] =
+    s // nothing is everything
 
   override protected def publisherToStreamBody(p: Publisher[ByteBuffer]): Nothing =
     throw new IllegalStateException("This backend does not support streaming")

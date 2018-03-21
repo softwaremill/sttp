@@ -5,6 +5,8 @@ import java.nio.charset.Charset
 
 import com.softwaremill.sttp.ResponseAs.EagerResponseHandler
 import com.softwaremill.sttp._
+import io.netty.buffer.ByteBuf
+import io.netty.handler.codec.http.HttpHeaders
 import org.asynchttpclient.AsyncHandler.State
 import org.asynchttpclient.handler.StreamedAsyncHandler
 import org.asynchttpclient.proxy.ProxyServer
@@ -16,7 +18,6 @@ import org.asynchttpclient.{
   DefaultAsyncHttpClient,
   DefaultAsyncHttpClientConfig,
   HttpResponseBodyPart,
-  HttpResponseHeaders,
   HttpResponseStatus,
   Param,
   RequestBuilder,
@@ -56,7 +57,7 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
 
   override def responseMonad: MonadError[R] = rm
 
-  protected def streamBodyToPublisher(s: S): Publisher[ByteBuffer]
+  protected def streamBodyToPublisher(s: S): Publisher[ByteBuf]
 
   protected def publisherToStreamBody(p: Publisher[ByteBuffer]): S
 
@@ -105,7 +106,7 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
       override def onBodyPartReceived(bodyPart: HttpResponseBodyPart): AsyncHandler.State =
         throw new IllegalStateException("Requested a streaming backend, unexpected eager body parts.")
 
-      override def onHeadersReceived(headers: HttpResponseHeaders): AsyncHandler.State = {
+      override def onHeadersReceived(headers: HttpHeaders): AsyncHandler.State = {
         builder.accumulate(headers)
         State.CONTINUE
       }
@@ -234,7 +235,7 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
              response.getStatusCode,
              response.getStatusText,
              response.getHeaders
-               .iterator()
+               .iteratorAsString()
                .asScala
                .map(e => (e.getKey, e.getValue))
                .toList,

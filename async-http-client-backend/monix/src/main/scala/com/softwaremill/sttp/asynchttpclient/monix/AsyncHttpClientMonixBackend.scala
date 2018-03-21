@@ -11,6 +11,7 @@ import com.softwaremill.sttp.{
   Utf8,
   concatByteBuffers
 }
+import io.netty.buffer.{ByteBuf, Unpooled}
 import monix.eval.Task
 import monix.execution.{Cancelable, Scheduler}
 import monix.reactive.Observable
@@ -23,8 +24,8 @@ class AsyncHttpClientMonixBackend private (asyncHttpClient: AsyncHttpClient, clo
     implicit scheduler: Scheduler)
     extends AsyncHttpClientBackend[Task, Observable[ByteBuffer]](asyncHttpClient, TaskMonad, closeClient) {
 
-  override protected def streamBodyToPublisher(s: Observable[ByteBuffer]): Publisher[ByteBuffer] =
-    s.toReactivePublisher
+  override protected def streamBodyToPublisher(s: Observable[ByteBuffer]): Publisher[ByteBuf] =
+    s.map(Unpooled.wrappedBuffer).toReactivePublisher
 
   override protected def publisherToStreamBody(p: Publisher[ByteBuffer]): Observable[ByteBuffer] =
     Observable.fromReactivePublisher(p)
