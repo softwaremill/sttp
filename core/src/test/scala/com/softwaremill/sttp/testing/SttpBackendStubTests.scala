@@ -26,6 +26,8 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
     })
     .whenRequestMatches(_.uri.port.exists(_ == 8080))
     .thenRespondWrapped(Response(Right("OK from monad"), 200, "OK", Nil, Nil))
+    .whenRequestMatches(_.uri.port.exists(_ == 8081))
+    .thenRespondWrapped(r => Response(Right(s"OK from request. Request was sent to host: ${r.uri.host}"), 200, "OK", Nil, Nil))
 
   "backend stub" should "use the first rule if it matches" in {
     implicit val b = testingStub
@@ -56,6 +58,14 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
     r.is200 should be(true)
     r.body should be('right)
     r.body.right.get should be("OK from monad")
+  }
+
+  it should "respond with monad with response created from request" in {
+    implicit val b = testingStub
+    val r = sttp.post(uri"http://example.org:8081").send()
+    r.is200 should be(true)
+    r.body should be('right)
+    r.body.right.get should be("OK from request. Request was sent to host: example.org")
   }
 
   it should "use the default response if no rule matches" in {

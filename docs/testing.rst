@@ -60,6 +60,16 @@ Another way to specify the behaviour is passing response wrapped in the result m
   val responseFuture = sttp.get(uri"http://example.org").send()
   // responseFuture will complete after 5 seconds with "OK" response
 
+The returned response may also depend on the request: ::
+
+  implicit val testingBackend = SttpBackendStub(HttpURLConnectionBackend()).whenAnyRequest
+    .thenRespondWrapped(req =>
+      Response(Right("OK, got request sent to ${req.uri.host}"), 200, "", Nil, Nil)
+    )
+
+  val response = sttp.get(uri"http://example.org").send()
+  // response.body will be Right("OK, got request sent to example.org")
+
 Simulating exceptions
 ---------------------
 
