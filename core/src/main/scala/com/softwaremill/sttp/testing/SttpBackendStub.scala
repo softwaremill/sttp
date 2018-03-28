@@ -107,6 +107,12 @@ class SttpBackendStub[R[_], S] private (rm: MonadError[R],
       }
       new SttpBackendStub(rm, matchers.orElse(m), fallback)
     }
+    def thenRespondWrapped(resp: Request[_, _] => R[Response[_]]): SttpBackendStub[R, S] = {
+      val m: PartialFunction[Request[_, _], R[Response[_]]] = {
+        case r if p(r) => resp(r)
+      }
+      new SttpBackendStub(rm, matchers.orElse(m), fallback)
+    }
   }
 }
 
