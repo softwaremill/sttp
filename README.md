@@ -41,7 +41,7 @@ and its [follow-up](https://softwaremill.com/sttp-streaming-uri-interpolator/).
 If you are an [Ammonite](http://ammonite.io) user, you can quickly start experimenting with sttp by copy-pasting the following:
 
 ```scala
-import $ivy.`com.softwaremill.sttp::core:1.1.11`
+import $ivy.`com.softwaremill.sttp::core:1.1.12`
 import com.softwaremill.sttp._
 implicit val backend = HttpURLConnectionBackend()
 sttp.get(uri"http://httpbin.org/ip").send()
@@ -52,7 +52,7 @@ sttp.get(uri"http://httpbin.org/ip").send()
 Add the following dependency:
 
 ```scala
-"com.softwaremill.sttp" %% "core" % "1.1.11"
+"com.softwaremill.sttp" %% "core" % "1.1.12"
 ```
 
 Then, import:
