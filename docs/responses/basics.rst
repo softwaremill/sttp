@@ -47,4 +47,4 @@ Hence, the ``response.body`` will be a:
 * ``Left(errorMessage)`` if the request is successful, but response code is not 2xx.
 * ``Right(deserializedBody``) if the request is successful and the response code is 2xx.
 
-You can also forcibly get the deserialized body, regardless of the response code and risking an excepiton being thrown, using the ``response.unsafeBody`` method.
+You can also forcibly get the deserialized body, regardless of the response code and risking an exception being thrown, using the ``response.unsafeBody`` method.
