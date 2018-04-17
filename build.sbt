@@ -1,5 +1,5 @@
 // shadow sbt-scalajs' crossProject and CrossType until Scala.js 1.0.0 is released
-import sbtcrossproject.{CrossType, crossProject}
+import sbtcrossproject.{CrossType, Platform, crossProject}
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on (used by JS tests)")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests (used by JS tests)")
@@ -27,6 +27,12 @@ val commonJSSettings = Seq(
       }
   }
 ) ++ browserTestSettings
+
+val commonNativeSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
+  scalaVersion := "2.11.12",
+  crossScalaVersions := Seq("2.11.12"),
+  nativeLinkStubs := true
+)
 
 // run JS tests inside Chrome, due to jsdom not supporting fetch
 lazy val browserTestSettings = Seq(
@@ -71,7 +77,7 @@ def testServerSettings(config: Configuration) = Seq(
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.1"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % "2.5.13"
 
-val scalaTestVersion = "3.0.5"
+val scalaTestVersion = "3.2.0-SNAP10"
 val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion
 
 lazy val rootProject = (project in file("."))
@@ -113,12 +119,32 @@ lazy val rootJS = project
   .settings(skip in publish := true, name := "sttpJS")
   .aggregate(coreJS, catsJS, monixJS, circeJS)
 
-lazy val core = crossProject(JSPlatform, JVMPlatform)
+lazy val rootNative = project
+  .in(file(".native"))
+  .settings(commonNativeSettings: _*)
+  .settings(skip in publish := true, name := "sttpNative")
+  .aggregate(coreNative)
+
+lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .withoutSuffixFor(JVMPlatform)
-  .crossType(CrossType.Full)
+  .crossType {
+    new CrossType {
+      def projectDir(crossBase: File, projectType: String): File = crossBase / projectType
+      def projectDir(crossBase: File, platform: Platform): File = crossBase / platform.identifier
+      def sharedSrcDir(projectBase: File, conf: String): Option[File] = {
+        val dirOpt = projectBase.getName match {
+          case "native" if conf == "test" => None
+          case _ if conf == "test"        => Some("sharedTestsJvmJs")
+          case _                          => Some("shared")
+        }
+        dirOpt.map(projectBase.getParentFile / _ / "src" / conf / "scala")
+      }
+    }
+  }
   .in(file("core"))
   .settings(commonSettings: _*)
   .jsSettings(commonJSSettings: _*)
+  .nativeSettings(commonNativeSettings: _*)
   .settings(
     name := "core",
     libraryDependencies ++= Seq(
@@ -151,8 +177,10 @@ lazy val core = crossProject(JSPlatform, JVMPlatform)
     testServerPort in Test := 51823,
     startTestServer in Test := reStart.toTask("").value
   )
+
 lazy val coreJS = core.js
 lazy val coreJVM = core.jvm
+lazy val coreNative = core.native
 
 //----- implementations
 lazy val cats = crossProject(JSPlatform, JVMPlatform)
