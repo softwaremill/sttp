@@ -229,6 +229,9 @@ case class RequestT[U[_], T, +S](
   def followRedirects(fr: Boolean): RequestT[U, T, S] =
     this.copy(options = options.copy(followRedirects = fr))
 
+  def maxRedirects(n: Int): RequestT[U, T, S] =
+    this.copy(options = options.copy(maxRedirects = n))
+
   def tag(k: String, v: Any): RequestT[U, T, S] =
     this.copy(tags = tags + (k -> v))
 
@@ -281,4 +284,8 @@ class SpecifyAuthScheme[U[_], T, +S](hn: String, rt: RequestT[U, T, S]) {
     rt.header(hn, s"Bearer $token")
 }
 
-case class RequestOptions(followRedirects: Boolean, readTimeout: Duration)
+case class RequestOptions(
+    followRedirects: Boolean,
+    readTimeout: Duration,
+    maxRedirects: Int = FollowRedirectsBackend.MaxRedirects
+)

@@ -631,6 +631,13 @@ class BasicTests
         resp.code should be(0)
         resp.history should have size (FollowRedirectsBackend.MaxRedirects)
       }
+
+      name should "break redirect loops after user-specified count" in {
+        val maxRedirects = 10
+        val resp = loop.maxRedirects(maxRedirects).send().force()
+        resp.code should be(0)
+        resp.history should have size (maxRedirects)
+      }
     }
 
     def timeoutTests(): Unit = {
