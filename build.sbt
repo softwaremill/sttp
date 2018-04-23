@@ -1,7 +1,7 @@
 val commonSettings = Seq(
   organization := "com.softwaremill.sttp",
   scalaVersion := "2.12.5",
-  crossScalaVersions := Seq(scalaVersion.value, "2.11.11"),
+  crossScalaVersions := Seq(scalaVersion.value, "2.11.12"),
   scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-Xlint"),
   scalafmtOnCompile := true,
   scalafmtVersion := "1.4.0",
@@ -33,10 +33,10 @@ val commonSettings = Seq(
     .withWarnTransitiveEvictions(false)
 )
 
-val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.0"
+val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.1"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % "2.5.11"
 
-val monixVersion = "2.3.3"
+val monixVersion = "3.0.0-RC1"
 val monix = "io.monix" %% "monix" % monixVersion
 
 val scalaTest = "org.scalatest" %% "scalatest" % "3.0.5"
@@ -107,7 +107,7 @@ lazy val asyncHttpClientScalazBackend: Project = (project in file(
   .settings(
     name := "async-http-client-backend-scalaz",
     libraryDependencies ++= Seq(
-      "org.scalaz" %% "scalaz-concurrent" % "7.2.20"
+      "org.scalaz" %% "scalaz-concurrent" % "7.2.21"
     )
   ) dependsOn asyncHttpClientBackend
 
@@ -125,7 +125,7 @@ lazy val asyncHttpClientCatsBackend: Project = (project in file(
   .settings(
     name := "async-http-client-backend-cats",
     libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-effect" % "0.10"
+      "org.typelevel" %% "cats-effect" % "1.0.0-RC"
     )
   ) dependsOn asyncHttpClientBackend
 
@@ -155,7 +155,7 @@ lazy val okhttpMonixBackend: Project = (project in file("okhttp-backend/monix"))
     libraryDependencies ++= Seq(monix)
   ) dependsOn okhttpBackend
 
-lazy val circeVersion = "0.9.2"
+lazy val circeVersion = "0.9.3"
 
 lazy val circe: Project = (project in file("json/circe"))
   .settings(commonSettings: _*)
