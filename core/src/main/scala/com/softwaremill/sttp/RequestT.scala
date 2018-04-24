@@ -230,7 +230,10 @@ case class RequestT[U[_], T, +S](
     this.copy(options = options.copy(followRedirects = fr))
 
   def maxRedirects(n: Int): RequestT[U, T, S] =
-    this.copy(options = options.copy(maxRedirects = n))
+    if (n <= 0)
+      this.copy(options = options.copy(followRedirects = false))
+    else
+      this.copy(options = options.copy(followRedirects = true, maxRedirects = n))
 
   def tag(k: String, v: Any): RequestT[U, T, S] =
     this.copy(tags = tags + (k -> v))

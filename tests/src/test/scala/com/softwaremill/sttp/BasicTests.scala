@@ -638,6 +638,13 @@ class BasicTests
         resp.code should be(0)
         resp.history should have size (maxRedirects)
       }
+
+      name should "not redirect when maxRedirects is less than or equal to 0" in {
+        val resp = loop.maxRedirects(-1).send().force()
+        resp.code should be(302)
+        resp.body should be('left)
+        resp.history should be('empty)
+      }
     }
 
     def timeoutTests(): Unit = {
