@@ -34,7 +34,7 @@ val commonSettings = Seq(
 )
 
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.1"
-val akkaStreams = "com.typesafe.akka" %% "akka-stream" % "2.5.11"
+val akkaStreams = "com.typesafe.akka" %% "akka-stream" % "2.5.12"
 
 val monixVersion = "3.0.0-RC1"
 val monix = "io.monix" %% "monix" % monixVersion
