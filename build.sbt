@@ -34,7 +34,7 @@ val commonSettings = Seq(
 )
 
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.1"
-val akkaStreams = "com.typesafe.akka" %% "akka-stream" % "2.5.11"
+val akkaStreams = "com.typesafe.akka" %% "akka-stream" % "2.5.12"
 
 val monixVersion = "3.0.0-RC1"
 val monix = "io.monix" %% "monix" % monixVersion
@@ -67,7 +67,7 @@ lazy val core: Project = (project in file("core"))
   .settings(
     name := "core",
     libraryDependencies ++= Seq(
-      "org.scalacheck" %% "scalacheck" % "1.13.5" % "test",
+      "org.scalacheck" %% "scalacheck" % "1.14.0" % "test",
       scalaTest % "test"
     )
   )
@@ -90,7 +90,7 @@ lazy val asyncHttpClientBackend: Project = (project in file(
   .settings(
     name := "async-http-client-backend",
     libraryDependencies ++= Seq(
-      "org.asynchttpclient" % "async-http-client" % "2.4.4"
+      "org.asynchttpclient" % "async-http-client" % "2.4.7"
     )
   ) dependsOn core
 
@@ -107,7 +107,7 @@ lazy val asyncHttpClientScalazBackend: Project = (project in file(
   .settings(
     name := "async-http-client-backend-scalaz",
     libraryDependencies ++= Seq(
-      "org.scalaz" %% "scalaz-concurrent" % "7.2.21"
+      "org.scalaz" %% "scalaz-concurrent" % "7.2.23"
     )
   ) dependsOn asyncHttpClientBackend
 
@@ -178,7 +178,7 @@ lazy val json4s: Project = (project in file("json/json4s"))
     )
   ) dependsOn core
 
-lazy val braveVersion = "4.18.2"
+lazy val braveVersion = "4.19.2"
 
 lazy val braveBackend: Project = (project in file("metrics/brave-backend"))
   .settings(commonSettings: _*)
@@ -197,7 +197,7 @@ lazy val prometheusBackend: Project = (project in file("metrics/prometheus-backe
   .settings(
     name := "prometheus-backend",
     libraryDependencies ++= Seq(
-      "io.prometheus" % "simpleclient" % "0.3.0",
+      "io.prometheus" % "simpleclient" % "0.4.0",
       scalaTest % "test"
     )
   )
@@ -211,7 +211,7 @@ lazy val tests: Project = (project in file("tests"))
     libraryDependencies ++= Seq(
       akkaHttp,
       scalaTest,
-      "com.typesafe.scala-logging" %% "scala-logging" % "3.8.0",
+      "com.typesafe.scala-logging" %% "scala-logging" % "3.9.0",
       "com.github.pathikrit" %% "better-files" % "3.4.0",
       "ch.qos.logback" % "logback-classic" % "1.2.3",
       "org.scala-lang" % "scala-compiler" % scalaVersion.value
