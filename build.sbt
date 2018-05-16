@@ -107,7 +107,7 @@ lazy val asyncHttpClientScalazBackend: Project = (project in file(
   .settings(
     name := "async-http-client-backend-scalaz",
     libraryDependencies ++= Seq(
-      "org.scalaz" %% "scalaz-concurrent" % "7.2.21"
+      "org.scalaz" %% "scalaz-concurrent" % "7.2.23"
     )
   ) dependsOn asyncHttpClientBackend
 
