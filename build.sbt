@@ -67,7 +67,7 @@ lazy val core: Project = (project in file("core"))
   .settings(
     name := "core",
     libraryDependencies ++= Seq(
-      "org.scalacheck" %% "scalacheck" % "1.13.5" % "test",
+      "org.scalacheck" %% "scalacheck" % "1.14.0" % "test",
       scalaTest % "test"
     )
   )
