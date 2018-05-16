@@ -211,7 +211,7 @@ lazy val tests: Project = (project in file("tests"))
     libraryDependencies ++= Seq(
       akkaHttp,
       scalaTest,
-      "com.typesafe.scala-logging" %% "scala-logging" % "3.8.0",
+      "com.typesafe.scala-logging" %% "scala-logging" % "3.9.0",
       "com.github.pathikrit" %% "better-files" % "3.4.0",
       "ch.qos.logback" % "logback-classic" % "1.2.3",
       "org.scala-lang" % "scala-compiler" % scalaVersion.value
