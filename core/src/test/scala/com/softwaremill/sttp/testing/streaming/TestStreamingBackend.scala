@@ -1,6 +1,7 @@
 package com.softwaremill.sttp.testing.streaming
 
 import com.softwaremill.sttp.SttpBackend
+import com.softwaremill.sttp.testing.ConvertToFuture
 
 import scala.language.higherKinds
 

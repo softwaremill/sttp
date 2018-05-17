@@ -1,21 +1,27 @@
 package com.softwaremill.sttp.impl.monix
 
-import java.nio.ByteBuffer
-
-import com.softwaremill.sttp.testing.streaming.{ConvertToFuture, TestStreamingBackend}
+import com.softwaremill.sttp.testing.ConvertToFuture
+import com.softwaremill.sttp.testing.streaming.TestStreamingBackend
 import monix.eval.Task
 import monix.reactive.Observable
 
-trait MonixTestStreamingBackend extends TestStreamingBackend[Task, Observable[ByteBuffer]] {
+trait MonixTestStreamingBackend[T] extends TestStreamingBackend[Task, Observable[T]] {
+
+  def toByteArray(v: T): Array[Byte]
+  def fromByteArray(v: Array[Byte]): T
 
   override implicit def convertToFuture: ConvertToFuture[Task] = convertMonixTaskToFuture
 
-  override def bodyProducer(body: String): Observable[ByteBuffer] =
-    Observable.fromIterable(body.getBytes("utf-8").map(b => ByteBuffer.wrap(Array(b))))
+  override def bodyProducer(body: String): Observable[T] =
+    Observable
+      .fromIterable(
+        body.getBytes("utf-8")
+      )
+      .map(v => fromByteArray(Array(v)))
 
-  override def bodyConsumer(stream: Observable[ByteBuffer]): Task[String] =
+  override def bodyConsumer(stream: Observable[T]): Task[String] =
     stream
-      .flatMap(bb => Observable.fromIterable(bb.array()))
+      .flatMap(v => Observable.fromIterable(toByteArray(v)))
       .toListL
       .map(bs => new String(bs.toArray, "utf8"))
 

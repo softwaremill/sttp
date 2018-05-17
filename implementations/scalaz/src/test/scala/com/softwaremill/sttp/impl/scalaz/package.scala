@@ -1,6 +1,6 @@
 package com.softwaremill.sttp.impl
 
-import com.softwaremill.sttp.testing.streaming.ConvertToFuture
+import com.softwaremill.sttp.testing.ConvertToFuture
 
 import _root_.scalaz.concurrent.Task
 import _root_.scalaz.{-\/, \/-}

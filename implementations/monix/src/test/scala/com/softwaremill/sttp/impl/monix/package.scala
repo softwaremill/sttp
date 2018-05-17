@@ -3,7 +3,7 @@ package com.softwaremill.sttp.impl
 import scala.concurrent.Future
 
 import _root_.monix.eval.Task
-import com.softwaremill.sttp.testing.streaming.ConvertToFuture
+import com.softwaremill.sttp.testing.ConvertToFuture
 
 package object monix {
 
