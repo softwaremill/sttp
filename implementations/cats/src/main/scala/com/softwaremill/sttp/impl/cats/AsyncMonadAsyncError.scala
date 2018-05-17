@@ -1,6 +1,6 @@
 package com.softwaremill.sttp.impl.cats
 
-import _root_.cats.effect.{Async, Effect}
+import cats.effect.{Async, Effect}
 import com.softwaremill.sttp.MonadAsyncError
 
 import scala.language.higherKinds

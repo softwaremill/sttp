@@ -9,7 +9,7 @@ import scala.util.{Failure, Success}
 
 package object scalaz {
 
-  val convertToFuture: ConvertToFuture[Task] = new ConvertToFuture[Task] {
+  val convertScalazTaskToFuture: ConvertToFuture[Task] = new ConvertToFuture[Task] {
     // from https://github.com/Verizon/delorean
     override def toFuture[T](value: Task[T]): Future[T] = {
       val p = Promise[T]()

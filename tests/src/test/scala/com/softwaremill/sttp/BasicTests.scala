@@ -19,6 +19,9 @@ import com.softwaremill.sttp.asynchttpclient.cats.AsyncHttpClientCatsBackend
 import com.softwaremill.sttp.asynchttpclient.future.AsyncHttpClientFutureBackend
 import com.softwaremill.sttp.asynchttpclient.monix.AsyncHttpClientMonixBackend
 import com.softwaremill.sttp.asynchttpclient.scalaz.AsyncHttpClientScalazBackend
+import com.softwaremill.sttp.impl.cats.convertCatsIOToFuture
+import com.softwaremill.sttp.impl.monix.convertMonixTaskToFuture
+import com.softwaremill.sttp.impl.scalaz.convertScalazTaskToFuture
 import com.softwaremill.sttp.okhttp.monix.OkHttpMonixBackend
 import com.softwaremill.sttp.okhttp.{OkHttpFutureBackend, OkHttpSyncBackend}
 import com.softwaremill.sttp.testing.streaming.ConvertToFuture
@@ -185,14 +188,12 @@ class BasicTests
   runTests("TryHttpURLConnection")(TryHttpURLConnectionBackend(), ConvertToFuture.scalaTry)
   runTests("Akka HTTP")(AkkaHttpBackend.usingActorSystem(actorSystem), ConvertToFuture.future)
   runTests("Async Http Client - Future")(AsyncHttpClientFutureBackend(), ConvertToFuture.future)
-  runTests("Async Http Client - Scalaz")(AsyncHttpClientScalazBackend(),
-                                         com.softwaremill.sttp.impl.scalaz.convertToFuture)
-  runTests("Async Http Client - Monix")(AsyncHttpClientMonixBackend(), com.softwaremill.sttp.impl.monix.convertToFuture)
-  runTests("Async Http Client - Cats Effect")(AsyncHttpClientCatsBackend[cats.effect.IO](),
-                                              com.softwaremill.sttp.impl.cats.convertToFuture)
+  runTests("Async Http Client - Scalaz")(AsyncHttpClientScalazBackend(), convertScalazTaskToFuture)
+  runTests("Async Http Client - Monix")(AsyncHttpClientMonixBackend(), convertMonixTaskToFuture)
+  runTests("Async Http Client - Cats IO")(AsyncHttpClientCatsBackend[cats.effect.IO](), convertCatsIOToFuture)
   runTests("OkHttpSyncClientHandler")(OkHttpSyncBackend(), ConvertToFuture.id)
   runTests("OkHttpAsyncClientHandler - Future")(OkHttpFutureBackend(), ConvertToFuture.future)
-  runTests("OkHttpAsyncClientHandler - Monix")(OkHttpMonixBackend(), com.softwaremill.sttp.impl.monix.convertToFuture)
+  runTests("OkHttpAsyncClientHandler - Monix")(OkHttpMonixBackend(), convertMonixTaskToFuture)
 
   def runTests[R[_]](name: String)(implicit
                                    backend: SttpBackend[R, Nothing],

@@ -7,7 +7,7 @@ import scala.concurrent.Future
 
 package object cats {
 
-  val convertToFuture: ConvertToFuture[IO] = new ConvertToFuture[IO] {
+  val convertCatsIOToFuture: ConvertToFuture[IO] = new ConvertToFuture[IO] {
     override def toFuture[T](value: IO[T]): Future[T] = value.unsafeToFuture()
   }
 }

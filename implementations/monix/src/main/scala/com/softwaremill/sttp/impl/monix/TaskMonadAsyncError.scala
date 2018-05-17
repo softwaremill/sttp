@@ -1,8 +1,8 @@
 package com.softwaremill.sttp.impl.monix
 
 import com.softwaremill.sttp.MonadAsyncError
-import _root_.monix.eval.Task
-import _root_.monix.execution.Cancelable
+import monix.eval.Task
+import monix.execution.Cancelable
 
 import scala.util.{Failure, Success}
 
