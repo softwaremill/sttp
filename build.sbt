@@ -34,6 +34,9 @@ val akkaStreams = "com.typesafe.akka" %% "akka-stream" % "2.5.12"
 
 val scalaTest = "org.scalatest" %% "scalatest" % "3.0.5"
 
+val testServerPort = settingKey[Int]("Port to run the http test server on")
+val startTestServer = taskKey[Unit]("Start a http server used by tests")
+
 lazy val rootProject = (project in file("."))
   .settings(commonSettings: _*)
   .settings(publishArtifact := false, name := "sttp")
@@ -63,9 +66,10 @@ lazy val core: Project = (project in file("core"))
   .settings(
     name := "core",
     libraryDependencies ++= Seq(
-      "org.scalacheck" %% "scalacheck" % "1.14.0" % "test",
+      "com.github.pathikrit" %% "better-files" % "3.4.0" % "test",
       scalaTest % "test"
-    )
+    ),
+    publishArtifact in Test := true
   )
 
 //----- implementations
@@ -97,6 +101,7 @@ lazy val scalaz: Project = (project in file("implementations/scalaz"))
 //-- akka
 lazy val akkaHttpBackend: Project = (project in file("akka-http-backend"))
   .settings(commonSettings: _*)
+  .settings(testServerSettings: _*)
   .settings(
     name := "akka-http-backend",
     libraryDependencies ++= Seq(
@@ -106,42 +111,45 @@ lazy val akkaHttpBackend: Project = (project in file("akka-http-backend"))
       akkaStreams % "provided"
     )
   )
-  .dependsOn(core)
+  .dependsOn(core % "compile->compile;test->test")
 
 //-- async http client
 lazy val asyncHttpClientBackend: Project = {
   (project in file("async-http-client-backend"))
     .settings(commonSettings: _*)
+    .settings(testServerSettings: _*)
     .settings(
       name := "async-http-client-backend",
       libraryDependencies ++= Seq(
         "org.asynchttpclient" % "async-http-client" % "2.4.7"
       )
     )
-    .dependsOn(core)
+    .dependsOn(core % "compile->compile;test->test")
 }
 
 def asyncHttpClientBackendProject(proj: String): Project = {
   Project(s"asyncHttpClientBackend${proj.capitalize}", file(s"async-http-client-backend/$proj"))
     .settings(commonSettings: _*)
+    .settings(testServerSettings: _*)
     .settings(name := s"async-http-client-backend-$proj")
     .dependsOn(asyncHttpClientBackend)
 }
 
 lazy val asyncHttpClientFutureBackend: Project =
   asyncHttpClientBackendProject("future")
+    .dependsOn(core % "compile->compile;test->test")
 
 lazy val asyncHttpClientScalazBackend: Project =
   asyncHttpClientBackendProject("scalaz")
-    .dependsOn(scalaz)
+    .dependsOn(scalaz % "compile->compile;test->test")
 
 lazy val asyncHttpClientMonixBackend: Project =
   asyncHttpClientBackendProject("monix")
-    .dependsOn(monix)
+    .dependsOn(monix % "compile->compile;test->test")
 
 lazy val asyncHttpClientCatsBackend: Project =
   asyncHttpClientBackendProject("cats")
-    .dependsOn(cats)
+    .dependsOn(cats % "compile->compile;test->test")
 
 lazy val asyncHttpClientFs2Backend: Project =
   asyncHttpClientBackendProject("fs2")
@@ -150,28 +158,31 @@ lazy val asyncHttpClientFs2Backend: Project =
         "com.github.zainab-ali" %% "fs2-reactive-streams" % "0.5.1"
       )
     )
+    .dependsOn(core % "compile->compile;test->test")
 
 //-- okhttp
 lazy val okhttpBackend: Project = (project in file("okhttp-backend"))
   .settings(commonSettings: _*)
+  .settings(testServerSettings: _*)
   .settings(
     name := "okhttp-backend",
     libraryDependencies ++= Seq(
       "com.squareup.okhttp3" % "okhttp" % "3.10.0"
     )
   )
-  .dependsOn(core)
+  .dependsOn(core % "compile->compile;test->test")
 
 def okhttpBackendProject(proj: String): Project = {
   Project(s"okhttpBackend${proj.capitalize}", file(s"okhttp-backend/$proj"))
     .settings(commonSettings: _*)
+    .settings(testServerSettings: _*)
     .settings(name := s"okhttp-backend-$proj")
     .dependsOn(okhttpBackend)
 }
 
 lazy val okhttpMonixBackend: Project =
   okhttpBackendProject("monix")
-    .dependsOn(monix)
+    .dependsOn(monix % "compile->compile;test->test")
 
 lazy val circeVersion = "0.9.3"
 
@@ -225,6 +236,7 @@ lazy val prometheusBackend: Project = (project in file("metrics/prometheus-backe
 
 lazy val tests: Project = (project in file("tests"))
   .settings(commonSettings: _*)
+  .settings(testServerSettings: _*)
   .settings(
     publishArtifact := false,
     name := "tests",
@@ -251,3 +263,27 @@ lazy val tests: Project = (project in file("tests"))
     asyncHttpClientFs2Backend,
     okhttpMonixBackend
   )
+
+// https://stackoverflow.com/questions/25766797/how-do-i-start-a-server-before-running-a-test-suite-in-sbt
+lazy val testServer: Project = project
+  .in(file("test-server"))
+  .settings(commonSettings: _*)
+  .settings(
+    publishArtifact := false,
+    name := "test-server",
+    libraryDependencies ++= Seq(akkaHttp, akkaStreams),
+    mainClass in reStart := Some("com.softwaremill.sttp.server.TestHttpServer"),
+    reStartArgs := Seq(s"${testServerPort.value}"),
+    testServerPort := 51823,
+    startTestServer := (reStart in Test).toTask("").value
+  )
+
+// should probably use IntegrationTest instead of Test
+lazy val testServerSettings = Seq(
+  test in Test := (test in Test).dependsOn(startTestServer in testServer).value,
+  testOnly in Test := (testOnly in Test).dependsOn(startTestServer in testServer).evaluated,
+  testOptions in Test += Tests.Setup(() => {
+    val port = (testServerPort in testServer).value
+    PollingUtils.waitUntilServerAvailable(new URL(s"http://localhost:$port"))
+  })
+)

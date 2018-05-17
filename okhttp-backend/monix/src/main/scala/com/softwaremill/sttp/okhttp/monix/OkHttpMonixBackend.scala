@@ -4,8 +4,8 @@ import java.nio.ByteBuffer
 import java.util.concurrent.ArrayBlockingQueue
 
 import com.softwaremill.sttp.impl.monix.TaskMonadAsyncError
-import com.softwaremill.sttp.{SttpBackend, _}
 import com.softwaremill.sttp.okhttp.{OkHttpAsyncBackend, OkHttpBackend}
+import com.softwaremill.sttp.{SttpBackend, _}
 import monix.eval.Task
 import monix.execution.Ack.Continue
 import monix.execution.{Ack, Scheduler}

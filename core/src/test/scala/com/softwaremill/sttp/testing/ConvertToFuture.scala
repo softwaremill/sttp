@@ -1,4 +1,4 @@
-package com.softwaremill.sttp.testing.streaming
+package com.softwaremill.sttp.testing
 
 import com.softwaremill.sttp.Id
 import scala.concurrent.Future
