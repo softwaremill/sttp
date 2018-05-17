@@ -79,6 +79,7 @@ object AsyncHttpClientFs2Backend {
     AsyncHttpClientFs2Backend[F](client, closeClient = false)
 }
 
+// TODO replace with EffectMonadAsyncError when cats-effect versions are bin compat
 private[fs2] class EffectMonad[F[_]](implicit F: Effect[F]) extends MonadAsyncError[F] {
 
   override def async[T](register: ((Either[Throwable, T]) => Unit) => Unit): F[T] =

@@ -3,6 +3,7 @@ package com.softwaremill.sttp
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import com.softwaremill.sttp.streaming._
+import com.softwaremill.sttp.testing.streaming.TestStreamingBackend
 import com.typesafe.scalalogging.StrictLogging
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 
