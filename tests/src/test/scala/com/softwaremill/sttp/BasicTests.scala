@@ -21,6 +21,7 @@ import com.softwaremill.sttp.asynchttpclient.monix.AsyncHttpClientMonixBackend
 import com.softwaremill.sttp.asynchttpclient.scalaz.AsyncHttpClientScalazBackend
 import com.softwaremill.sttp.okhttp.monix.OkHttpMonixBackend
 import com.softwaremill.sttp.okhttp.{OkHttpFutureBackend, OkHttpSyncBackend}
+import com.softwaremill.sttp.testing.streaming.ConvertToFuture
 import com.typesafe.scalalogging.StrictLogging
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.{path => _, _}
@@ -180,19 +181,22 @@ class BasicTests
 
   var closeBackends: List[() => Unit] = Nil
 
-  runTests("HttpURLConnection")(HttpURLConnectionBackend(), ForceWrappedValue.id)
-  runTests("TryHttpURLConnection")(TryHttpURLConnectionBackend(), ForceWrappedValue.scalaTry)
-  runTests("Akka HTTP")(AkkaHttpBackend.usingActorSystem(actorSystem), ForceWrappedValue.future)
-  runTests("Async Http Client - Future")(AsyncHttpClientFutureBackend(), ForceWrappedValue.future)
-  runTests("Async Http Client - Scalaz")(AsyncHttpClientScalazBackend(), ForceWrappedValue.scalazTask)
-  runTests("Async Http Client - Monix")(AsyncHttpClientMonixBackend(), ForceWrappedValue.monixTask)
-  runTests("Async Http Client - Cats Effect")(AsyncHttpClientCatsBackend[cats.effect.IO](), ForceWrappedValue.catsIo)
-  runTests("OkHttpSyncClientHandler")(OkHttpSyncBackend(), ForceWrappedValue.id)
-  runTests("OkHttpAsyncClientHandler - Future")(OkHttpFutureBackend(), ForceWrappedValue.future)
-  runTests("OkHttpAsyncClientHandler - Monix")(OkHttpMonixBackend(), ForceWrappedValue.monixTask)
+  runTests("HttpURLConnection")(HttpURLConnectionBackend(), ConvertToFuture.id)
+  runTests("TryHttpURLConnection")(TryHttpURLConnectionBackend(), ConvertToFuture.scalaTry)
+  runTests("Akka HTTP")(AkkaHttpBackend.usingActorSystem(actorSystem), ConvertToFuture.future)
+  runTests("Async Http Client - Future")(AsyncHttpClientFutureBackend(), ConvertToFuture.future)
+  runTests("Async Http Client - Scalaz")(AsyncHttpClientScalazBackend(),
+                                         com.softwaremill.sttp.impl.scalaz.convertToFuture)
+  runTests("Async Http Client - Monix")(AsyncHttpClientMonixBackend(), com.softwaremill.sttp.impl.monix.convertToFuture)
+  runTests("Async Http Client - Cats Effect")(AsyncHttpClientCatsBackend[cats.effect.IO](),
+                                              com.softwaremill.sttp.impl.cats.convertToFuture)
+  runTests("OkHttpSyncClientHandler")(OkHttpSyncBackend(), ConvertToFuture.id)
+  runTests("OkHttpAsyncClientHandler - Future")(OkHttpFutureBackend(), ConvertToFuture.future)
+  runTests("OkHttpAsyncClientHandler - Monix")(OkHttpMonixBackend(), com.softwaremill.sttp.impl.monix.convertToFuture)
 
-  def runTests[R[_]](name: String)(implicit backend: SttpBackend[R, Nothing],
-                                   forceResponse: ForceWrappedValue[R]): Unit = {
+  def runTests[R[_]](name: String)(implicit
+                                   backend: SttpBackend[R, Nothing],
+                                   convertToFuture: ConvertToFuture[R]): Unit = {
 
     closeBackends = (() => backend.close()) :: closeBackends
 
