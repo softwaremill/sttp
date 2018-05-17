@@ -1,17 +1,15 @@
 package com.softwaremill.sttp.testing.streaming
 
 import com.softwaremill.sttp._
-import com.softwaremill.sttp.testing.ForceWrapped
+import com.softwaremill.sttp.testing.{ConvertToFuture, TestHttpServer, ToFutureWrapper}
 import org.scalatest.{AsyncFreeSpec, BeforeAndAfterAll, Matchers}
-import scala.language.higherKinds
 
-import com.softwaremill.sttp.testing.ConvertToFuture
-import com.softwaremill.sttp.testing.TestHttpServer
+import scala.language.higherKinds
 
 trait StreamingTest[R[_], S]
     extends AsyncFreeSpec
     with Matchers
-    with ForceWrapped
+    with ToFutureWrapper
     with BeforeAndAfterAll
     with TestHttpServer {
 
