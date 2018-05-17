@@ -1,12 +1,11 @@
 package com.softwaremill.sttp.testing.streaming
 
 import com.softwaremill.sttp._
-import com.softwaremill.sttp.testing.ForceWrapped
+import com.softwaremill.sttp.testing.ToFutureWrapper
 import org.scalatest.{AsyncFreeSpec, BeforeAndAfterAll, Matchers}
-
 import scala.language.higherKinds
 
-trait StreamingTest[R[_], S] extends AsyncFreeSpec with Matchers with BeforeAndAfterAll with ForceWrapped {
+trait StreamingTest[R[_], S] extends AsyncFreeSpec with Matchers with BeforeAndAfterAll with ToFutureWrapper {
 
   private val endpoint = "localhost:51823"
   private val body = "streaming test"
