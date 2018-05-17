@@ -56,7 +56,13 @@ val startTestServer = taskKey[Unit]("Start a http server used by tests")
 lazy val rootProject = (project in file("."))
   .settings(commonSettings: _*)
   .settings(skip in publish := true, name := "sttp")
-  .aggregate(rootJVM, rootJS)
+  .aggregate(
+    rootJVM,
+    rootJS,
+    // leave akkaHttpBackend out of rootJVM due to
+    // https://github.com/akka/akka-http/issues/1930
+    akkaHttpBackend
+  )
 
 lazy val rootJVM = project
   .in(file(".jvm"))
@@ -67,7 +73,7 @@ lazy val rootJVM = project
     catsJVM,
     monixJVM,
     scalaz,
-    akkaHttpBackend,
+//    akkaHttpBackend,
     asyncHttpClientBackend,
     asyncHttpClientFutureBackend,
     asyncHttpClientScalazBackend,
@@ -105,6 +111,9 @@ lazy val core = crossProject(JSPlatform, JVMPlatform)
   .jsSettings(
     libraryDependencies ++= Seq(
       "org.scala-js" %%% "scalajs-dom" % "0.9.5"
+    ),
+    jsDependencies ++= Seq(
+      "org.webjars.npm" % "spark-md5" % "3.0.0" % "test" / "spark-md5.js" minified "spark-md5.min.js"
     )
   )
 lazy val coreJS = core.js
@@ -304,6 +313,22 @@ lazy val tests = crossProject(JSPlatform, JVMPlatform)
       "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test"
     )
   )
+  .jsSettings(
+    // jsdom does not support fetch
+    jsEnv in Test := new org.scalajs.jsenv.selenium.SeleniumJSEnv(
+      {
+        val options = new org.openqa.selenium.chrome.ChromeOptions()
+        options.addArguments(
+          "auto-open-devtools-for-tabs", // devtools needs to be open to capture network requests
+          "allow-file-access-from-files" // change the origin header from 'null' to 'file'
+        )
+        val capabilities = org.openqa.selenium.remote.DesiredCapabilities.chrome()
+        capabilities.setCapability(org.openqa.selenium.chrome.ChromeOptions.CAPABILITY, options)
+        capabilities
+      },
+      org.scalajs.jsenv.selenium.SeleniumJSEnv.Config().withKeepAlive(false) // set to true when debugging
+    )
+  )
 lazy val testsJS = tests.js.dependsOn(coreJS % "compile->compile;test->test")
 lazy val testsJVM = tests.jvm.dependsOn(coreJVM % "compile->compile;test->test")
 
@@ -316,6 +341,7 @@ lazy val testServer: Project = project
     name := "test-server",
     libraryDependencies ++= Seq(
       akkaHttp,
+      "ch.megard" %% "akka-http-cors" % "0.3.0",
       akkaStreams
     ),
     mainClass in reStart := Some("com.softwaremill.sttp.server.TestHttpServer"),
