@@ -39,10 +39,13 @@ If not specified before, these methods will set the content type to ``applicatio
 Uploading files
 ---------------
 
-To upload a file, simply set the request body as a ``File`` or ``Path``::
+To upload a file, simply set the request body as a ``File``::
 
-  def body(b: File)
-  def body(b: Path)
+  def body(f: File)
+
+File can be:
+  * either a ``java.io.File`` or ``java.nio.file.Path`` on the JVM
+  * a ``Web/API/File`` on JavaScript
 
 As with binary body methods, the content type will default to ``application/octet-stream``, and the content length will be set to the length of the file (unless specified explicitly).
 

@@ -3,7 +3,7 @@
 Supported backends
 ==================
 
-sttp suports a number of synchronous and asynchronous backends. It's the backends that take care of managing connections, sending requests and receiving responses: sttp defines only the API to describe the requests to be send and handle the response data. It's the backends where all the heavy-lifting is done.
+sttp supports a number of synchronous and asynchronous backends. It's the backends that take care of managing connections, sending requests and receiving responses: sttp defines only the API to describe the requests to be send and handle the response data. It's the backends where all the heavy-lifting is done.
 
 Choosing the right backend depends on a number of factors: if you are using sttp to explore some data, or is it a production system; are you using a synchronous, blocking architecture or an asynchronous one; do you work mostly with Scala's ``Future``, or maybe you use some form of a ``Task`` abstraction; finally, if you want to stream requests/responses, or not.
 
@@ -35,3 +35,11 @@ There are also backends which wrap other backends to provide additional function
 * ``TryBackend``, which safely wraps any exceptions thrown by a synchronous backend in ``scala.util.Try``
 * ``BraveBackend``, for Zipkin-compatible distributed tracing. See the :ref:`dedicated section <brave_backend>`.
 * ``PrometheusBackend``, for gathering Prometheus-format metrics. See the :ref:`dedicated section <prometheus_backend>`.
+
+In additional there are also backends for JavaScript:
+
+================================ ========================================== ================================================
+Class                            Response wrapper                           Supported stream type
+================================ ========================================== ================================================
+``FetchBackend``                 ``Promise`` / ``scala.concurrent.Future``  n/a
+================================ ========================================== ================================================

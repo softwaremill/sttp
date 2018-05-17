@@ -139,7 +139,7 @@ class AkkaHttpBackend private (actorSystem: ActorSystem,
         Future.successful(r.responseIsStream(hr.entity.dataBytes))
 
       case ResponseAsFile(file, overwrite) =>
-        saved(file, overwrite).map(_ => file)
+        saved(file.toFile, overwrite).map(_ => file)
     }
   }
 
@@ -203,7 +203,7 @@ class AkkaHttpBackend private (actorSystem: ActorSystem,
         case isb: InputStreamBody =>
           HttpEntity
             .IndefiniteLength(ct, StreamConverters.fromInputStream(() => isb.b))
-        case PathBody(b, _) => HttpEntity.fromPath(ct, b)
+        case FileBody(b, _) => HttpEntity.fromPath(ct, b.toPath)
       }
 
       for {
@@ -227,7 +227,7 @@ class AkkaHttpBackend private (actorSystem: ActorSystem,
           Success(ar.withEntity(HttpEntity(ct, ByteString(b))))
         case InputStreamBody(b, _) =>
           Success(ar.withEntity(HttpEntity(ct, StreamConverters.fromInputStream(() => b))))
-        case PathBody(b, _) => Success(ar.withEntity(ct, b))
+        case FileBody(b, _) => Success(ar.withEntity(ct, b.toPath))
         case StreamBody(s)  => Success(ar.withEntity(HttpEntity(ct, s)))
         case MultipartBody(ps) =>
           traverseTry(ps.map(toBodyPart))

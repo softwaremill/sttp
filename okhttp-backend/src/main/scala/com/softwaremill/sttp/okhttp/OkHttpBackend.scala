@@ -63,7 +63,7 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean
             sink.writeAll(Okio.source(b))
           override def contentType(): MediaType = null
         })
-      case PathBody(b, _) =>
+      case FileBody(b, _) =>
         Some(OkHttpRequestBody.create(null, b.toFile))
       case StreamBody(s) =>
         streamToRequestBody(s)
@@ -121,9 +121,9 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean
           case ras @ ResponseAsStream() =>
             responseBodyToStream(res).map(ras.responseIsStream)
           case ResponseAsFile(file, overwrite) =>
-            val body = Try(ResponseAs.saveFile(file, res.body().byteStream(), overwrite))
+            val body = Try(FileHelpers.saveFile(file.toFile, res.body().byteStream(), overwrite))
             res.close()
-            body
+            body.map(_ => file)
         }
     }
 
