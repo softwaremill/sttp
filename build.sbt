@@ -1,3 +1,6 @@
+// shadow sbt-scalajs' crossProject and CrossType until Scala.js 1.0.0 is released
+import sbtcrossproject.{crossProject, CrossType}
+
 val commonSettings = Seq(
   organization := "com.softwaremill.sttp",
   scalaVersion := "2.12.6",
@@ -29,21 +32,40 @@ val commonSettings = Seq(
     .withWarnTransitiveEvictions(false)
 )
 
+val commonJSSettings = Seq(
+  // https://github.com/scalaz/scalaz/pull/1734#issuecomment-385627061
+  scalaJSLinkerConfig ~= {
+    _.withBatchMode(System.getenv("CONTINUOUS_INTEGRATION") == "true")
+  },
+  scalacOptions in Compile += {
+    val dir = project.base.toURI.toString.replaceFirst("[^/]+/?$", "")
+    val url = "https://raw.githubusercontent.com/softwaremill/sttp"
+    s"-P:scalajs:mapSourceURI:$dir->$url/v${version.value}/"
+  }
+)
+
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.1"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % "2.5.12"
 
-val scalaTest = "org.scalatest" %% "scalatest" % "3.0.5"
+val scalaTestVersion = "3.0.5"
+val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion
 
 val testServerPort = settingKey[Int]("Port to run the http test server on")
 val startTestServer = taskKey[Unit]("Start a http server used by tests")
 
 lazy val rootProject = (project in file("."))
   .settings(commonSettings: _*)
-  .settings(publishArtifact := false, name := "sttp")
+  .settings(skip in publish := true, name := "sttp")
+  .aggregate(rootJVM, rootJS)
+
+lazy val rootJVM = project
+  .in(file(".jvm"))
+  .settings(commonSettings: _*)
+  .settings(skip in publish := true, name := "sttpJVM")
   .aggregate(
-    core,
-    cats,
-    monix,
+    coreJVM,
+    catsJVM,
+    monixJVM,
     scalaz,
     akkaHttpBackend,
     asyncHttpClientBackend,
@@ -54,40 +76,66 @@ lazy val rootProject = (project in file("."))
     asyncHttpClientFs2Backend,
     okhttpBackend,
     okhttpMonixBackend,
-    circe,
+    circeJVM,
     json4s,
     braveBackend,
     prometheusBackend,
-    tests
+    testsJVM
   )
 
-lazy val core: Project = (project in file("core"))
+lazy val rootJS = project
+  .in(file(".js"))
   .settings(commonSettings: _*)
+  .settings(skip in publish := true, name := "sttpJS")
+  .aggregate(coreJS, catsJS, monixJS, circeJS, testsJS)
+
+lazy val core = crossProject(JSPlatform, JVMPlatform)
+  .withoutSuffixFor(JVMPlatform)
+  .crossType(CrossType.Full)
+  .in(file("core"))
+  .settings(commonSettings: _*)
+  .jsSettings(commonJSSettings: _*)
   .settings(
     name := "core",
     libraryDependencies ++= Seq(
-      "com.github.pathikrit" %% "better-files" % "3.4.0" % "test",
-      scalaTest % "test"
+      "org.scalatest" %%% "scalatest" % scalaTestVersion % "test"
     ),
     publishArtifact in Test := true
   )
+  .jsSettings(
+    libraryDependencies ++= Seq(
+      "org.scala-js" %%% "scalajs-dom" % "0.9.5"
+    )
+  )
+lazy val coreJS = core.js
+lazy val coreJVM = core.jvm
 
 //----- implementations
-lazy val cats: Project = (project in file("implementations/cats"))
+lazy val cats = crossProject(JSPlatform, JVMPlatform)
+  .withoutSuffixFor(JVMPlatform)
+  .crossType(CrossType.Pure)
+  .in(file("implementations/cats"))
   .settings(commonSettings: _*)
+  .jsSettings(commonJSSettings: _*)
   .settings(
     name := "cats",
-    libraryDependencies ++= Seq("org.typelevel" %% "cats-effect" % "1.0.0-RC")
+    libraryDependencies ++= Seq("org.typelevel" %%% "cats-effect" % "1.0.0-RC")
   )
-  .dependsOn(core % "compile->compile;test->test")
+lazy val catsJS = cats.js.dependsOn(coreJS % "compile->compile;test->test")
+lazy val catsJVM = cats.jvm.dependsOn(coreJVM % "compile->compile;test->test")
 
-lazy val monix: Project = (project in file("implementations/monix"))
+lazy val monix = crossProject(JSPlatform, JVMPlatform)
+  .withoutSuffixFor(JVMPlatform)
+  .crossType(CrossType.Pure)
+  .in(file("implementations/monix"))
   .settings(commonSettings: _*)
+  .jsSettings(commonJSSettings: _*)
   .settings(
     name := "monix",
-    libraryDependencies ++= Seq("io.monix" %% "monix" % "3.0.0-RC1")
+    libraryDependencies ++= Seq("io.monix" %%% "monix" % "3.0.0-RC1")
   )
-  .dependsOn(core % "compile->compile;test->test")
+lazy val monixJS = monix.js.dependsOn(coreJS % "compile->compile;test->test")
+lazy val monixJVM = monix.jvm.dependsOn(coreJVM % "compile->compile;test->test")
 
 lazy val scalaz: Project = (project in file("implementations/scalaz"))
   .settings(commonSettings: _*)
@@ -95,7 +143,7 @@ lazy val scalaz: Project = (project in file("implementations/scalaz"))
     name := "scalaz",
     libraryDependencies ++= Seq("org.scalaz" %% "scalaz-concurrent" % "7.2.22")
   )
-  .dependsOn(core % "compile->compile;test->test")
+  .dependsOn(coreJVM % "compile->compile;test->test")
 
 //----- backends
 //-- akka
@@ -111,10 +159,10 @@ lazy val akkaHttpBackend: Project = (project in file("akka-http-backend"))
       akkaStreams % "provided"
     )
   )
-  .dependsOn(core % "compile->compile;test->test")
+  .dependsOn(coreJVM % "compile->compile;test->test")
 
 //-- async http client
-lazy val asyncHttpClientBackend: Project = {
+lazy val asyncHttpClientBackend: Project =
   (project in file("async-http-client-backend"))
     .settings(commonSettings: _*)
     .settings(testServerSettings: _*)
@@ -124,8 +172,7 @@ lazy val asyncHttpClientBackend: Project = {
         "org.asynchttpclient" % "async-http-client" % "2.4.7"
       )
     )
-    .dependsOn(core % "compile->compile;test->test")
-}
+    .dependsOn(coreJVM % "compile->compile;test->test")
 
 def asyncHttpClientBackendProject(proj: String): Project = {
   Project(s"asyncHttpClientBackend${proj.capitalize}", file(s"async-http-client-backend/$proj"))
@@ -137,7 +184,7 @@ def asyncHttpClientBackendProject(proj: String): Project = {
 
 lazy val asyncHttpClientFutureBackend: Project =
   asyncHttpClientBackendProject("future")
-    .dependsOn(core % "compile->compile;test->test")
+    .dependsOn(coreJVM % "compile->compile;test->test")
 
 lazy val asyncHttpClientScalazBackend: Project =
   asyncHttpClientBackendProject("scalaz")
@@ -145,11 +192,11 @@ lazy val asyncHttpClientScalazBackend: Project =
 
 lazy val asyncHttpClientMonixBackend: Project =
   asyncHttpClientBackendProject("monix")
-    .dependsOn(monix % "compile->compile;test->test")
+    .dependsOn(monixJVM % "compile->compile;test->test")
 
 lazy val asyncHttpClientCatsBackend: Project =
   asyncHttpClientBackendProject("cats")
-    .dependsOn(cats % "compile->compile;test->test")
+    .dependsOn(catsJVM % "compile->compile;test->test")
 
 lazy val asyncHttpClientFs2Backend: Project =
   asyncHttpClientBackendProject("fs2")
@@ -158,7 +205,7 @@ lazy val asyncHttpClientFs2Backend: Project =
         "com.github.zainab-ali" %% "fs2-reactive-streams" % "0.5.1"
       )
     )
-    .dependsOn(core % "compile->compile;test->test")
+    .dependsOn(coreJVM % "compile->compile;test->test")
 
 //-- okhttp
 lazy val okhttpBackend: Project = (project in file("okhttp-backend"))
@@ -170,7 +217,7 @@ lazy val okhttpBackend: Project = (project in file("okhttp-backend"))
       "com.squareup.okhttp3" % "okhttp" % "3.10.0"
     )
   )
-  .dependsOn(core % "compile->compile;test->test")
+  .dependsOn(coreJVM % "compile->compile;test->test")
 
 def okhttpBackendProject(proj: String): Project = {
   Project(s"okhttpBackend${proj.capitalize}", file(s"okhttp-backend/$proj"))
@@ -182,21 +229,27 @@ def okhttpBackendProject(proj: String): Project = {
 
 lazy val okhttpMonixBackend: Project =
   okhttpBackendProject("monix")
-    .dependsOn(monix % "compile->compile;test->test")
+    .dependsOn(monixJVM % "compile->compile;test->test")
 
 lazy val circeVersion = "0.9.3"
 
 //----- json
-lazy val circe: Project = (project in file("json/circe"))
+lazy val circe = crossProject(JSPlatform, JVMPlatform)
+  .withoutSuffixFor(JVMPlatform)
+  .crossType(CrossType.Pure)
+  .in(file("json/circe"))
   .settings(commonSettings: _*)
+  .jsSettings(commonJSSettings: _*)
   .settings(
     name := "circe",
     libraryDependencies ++= Seq(
-      "io.circe" %% "circe-core" % circeVersion,
-      "io.circe" %% "circe-parser" % circeVersion,
-      scalaTest % "test"
+      "io.circe" %%% "circe-core" % circeVersion,
+      "io.circe" %%% "circe-parser" % circeVersion,
+      "org.scalatest" %%% "scalatest" % scalaTestVersion % "test"
     )
-  ) dependsOn core
+  )
+lazy val circeJS = circe.js.dependsOn(coreJS)
+lazy val circeJVM = circe.jvm.dependsOn(coreJVM)
 
 lazy val json4s: Project = (project in file("json/json4s"))
   .settings(commonSettings: _*)
@@ -204,9 +257,10 @@ lazy val json4s: Project = (project in file("json/json4s"))
     name := "json4s",
     libraryDependencies ++= Seq(
       "org.json4s" %% "json4s-native" % "3.5.3",
-      scalaTest % "test"
+      "org.scalatest" %% "scalatest" % scalaTestVersion % "test"
     )
-  ) dependsOn core
+  )
+  .dependsOn(coreJVM)
 
 lazy val braveVersion = "4.19.2"
 
@@ -221,7 +275,7 @@ lazy val braveBackend: Project = (project in file("metrics/brave-backend"))
       scalaTest % "test"
     )
   )
-  .dependsOn(core)
+  .dependsOn(coreJVM)
 
 lazy val prometheusBackend: Project = (project in file("metrics/prometheus-backend"))
   .settings(commonSettings: _*)
@@ -232,46 +286,38 @@ lazy val prometheusBackend: Project = (project in file("metrics/prometheus-backe
       scalaTest % "test"
     )
   )
-  .dependsOn(core)
+  .dependsOn(coreJVM)
 
-lazy val tests: Project = (project in file("tests"))
+lazy val tests = crossProject(JSPlatform, JVMPlatform)
+  .withoutSuffixFor(JVMPlatform)
+  .crossType(CrossType.Full)
+  .in(file("tests"))
   .settings(commonSettings: _*)
+  .jsSettings(commonJSSettings: _*)
   .settings(testServerSettings: _*)
   .settings(
-    publishArtifact := false,
+    skip in publish := true,
     name := "tests",
     libraryDependencies ++= Seq(
-      akkaHttp,
-      akkaStreams,
-      scalaTest,
-      "com.typesafe.scala-logging" %% "scala-logging" % "3.9.0",
-      "com.github.pathikrit" %% "better-files" % "3.4.0",
-      "ch.qos.logback" % "logback-classic" % "1.2.3",
-      "org.scala-lang" % "scala-compiler" % scalaVersion.value
-    ).map(_ % "test")
+      akkaHttp % "test",
+      akkaStreams % "test",
+      "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test"
+    )
   )
-  .dependsOn(
-    core % "compile->compile;test->test",
-    cats % "compile->compile;test->test",
-    monix % "compile->compile;test->test",
-    scalaz % "compile->compile;test->test",
-    akkaHttpBackend,
-    asyncHttpClientFutureBackend,
-    asyncHttpClientScalazBackend,
-    asyncHttpClientMonixBackend,
-    asyncHttpClientCatsBackend,
-    asyncHttpClientFs2Backend,
-    okhttpMonixBackend
-  )
+lazy val testsJS = tests.js.dependsOn(coreJS % "compile->compile;test->test")
+lazy val testsJVM = tests.jvm.dependsOn(coreJVM % "compile->compile;test->test")
 
 // https://stackoverflow.com/questions/25766797/how-do-i-start-a-server-before-running-a-test-suite-in-sbt
 lazy val testServer: Project = project
   .in(file("test-server"))
   .settings(commonSettings: _*)
   .settings(
-    publishArtifact := false,
+    skip in publish := true,
     name := "test-server",
-    libraryDependencies ++= Seq(akkaHttp, akkaStreams),
+    libraryDependencies ++= Seq(
+      akkaHttp,
+      akkaStreams
+    ),
     mainClass in reStart := Some("com.softwaremill.sttp.server.TestHttpServer"),
     reStartArgs := Seq(s"${testServerPort.value}"),
     testServerPort := 51823,
