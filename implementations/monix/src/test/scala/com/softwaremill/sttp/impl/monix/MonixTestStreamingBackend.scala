@@ -1,15 +1,14 @@
-package com.softwaremill.sttp.streaming
+package com.softwaremill.sttp.impl.monix
 
 import java.nio.ByteBuffer
 
-import com.softwaremill.sttp.ForceWrappedValue
+import com.softwaremill.sttp.testing.streaming.{ConvertToFuture, TestStreamingBackend}
 import monix.eval.Task
 import monix.reactive.Observable
 
-trait MonixBaseBackend extends TestStreamingBackend[Task, Observable[ByteBuffer]] {
+trait MonixTestStreamingBackend extends TestStreamingBackend[Task, Observable[ByteBuffer]] {
 
-  override implicit def forceResponse: ForceWrappedValue[Task] =
-    ForceWrappedValue.monixTask
+  override implicit def convertToFuture: ConvertToFuture[Task] = convertMonixTaskToFuture
 
   override def bodyProducer(body: String): Observable[ByteBuffer] =
     Observable.fromIterable(body.getBytes("utf-8").map(b => ByteBuffer.wrap(Array(b))))

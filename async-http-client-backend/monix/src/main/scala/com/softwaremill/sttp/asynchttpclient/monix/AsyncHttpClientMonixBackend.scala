@@ -3,26 +3,18 @@ package com.softwaremill.sttp.asynchttpclient.monix
 import java.nio.ByteBuffer
 
 import com.softwaremill.sttp.asynchttpclient.AsyncHttpClientBackend
-import com.softwaremill.sttp.{
-  FollowRedirectsBackend,
-  MonadAsyncError,
-  SttpBackend,
-  SttpBackendOptions,
-  Utf8,
-  concatByteBuffers
-}
+import com.softwaremill.sttp.impl.monix.TaskMonadAsyncError
+import com.softwaremill.sttp.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions, Utf8, concatByteBuffers}
 import io.netty.buffer.{ByteBuf, Unpooled}
 import monix.eval.Task
-import monix.execution.{Cancelable, Scheduler}
+import monix.execution.Scheduler
 import monix.reactive.Observable
 import org.asynchttpclient.{AsyncHttpClient, AsyncHttpClientConfig, DefaultAsyncHttpClient}
 import org.reactivestreams.Publisher
 
-import scala.util.{Failure, Success}
-
 class AsyncHttpClientMonixBackend private (asyncHttpClient: AsyncHttpClient, closeClient: Boolean)(
     implicit scheduler: Scheduler)
-    extends AsyncHttpClientBackend[Task, Observable[ByteBuffer]](asyncHttpClient, TaskMonad, closeClient) {
+    extends AsyncHttpClientBackend[Task, Observable[ByteBuffer]](asyncHttpClient, TaskMonadAsyncError, closeClient) {
 
   override protected def streamBodyToPublisher(s: Observable[ByteBuffer]): Publisher[ByteBuf] =
     s.map(Unpooled.wrappedBuffer).toReactivePublisher
@@ -69,28 +61,4 @@ object AsyncHttpClientMonixBackend {
   def usingClient(client: AsyncHttpClient)(
       implicit s: Scheduler = Scheduler.Implicits.global): SttpBackend[Task, Observable[ByteBuffer]] =
     AsyncHttpClientMonixBackend(client, closeClient = false)
-}
-
-private[monix] object TaskMonad extends MonadAsyncError[Task] {
-  override def unit[T](t: T): Task[T] = Task.now(t)
-
-  override def map[T, T2](fa: Task[T])(f: (T) => T2): Task[T2] = fa.map(f)
-
-  override def flatMap[T, T2](fa: Task[T])(f: (T) => Task[T2]): Task[T2] =
-    fa.flatMap(f)
-
-  override def async[T](register: ((Either[Throwable, T]) => Unit) => Unit): Task[T] =
-    Task.async { (_, cb) =>
-      register {
-        case Left(t)  => cb(Failure(t))
-        case Right(t) => cb(Success(t))
-      }
-
-      Cancelable.empty
-    }
-
-  override def error[T](t: Throwable): Task[T] = Task.raiseError(t)
-
-  override protected def handleWrappedError[T](rt: Task[T])(h: PartialFunction[Throwable, Task[T]]): Task[T] =
-    rt.onErrorRecoverWith(h)
 }

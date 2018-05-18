@@ -12,11 +12,8 @@ import org.scalatest.exceptions.TestFailedException
 import org.scalatest.matchers.{MatchResult, Matcher}
 import org.scalatest.{BeforeAndAfterAll, Suite}
 
-import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.language.higherKinds
-import scala.util.Try
-import scalaz._
 
 trait TestHttpServer extends BeforeAndAfterAll with ScalaFutures with TestingPatience {
   this: Suite =>
@@ -38,60 +35,18 @@ trait TestHttpServer extends BeforeAndAfterAll with ScalaFutures with TestingPat
   def port: Int
 }
 
-trait ForceWrappedValue[R[_]] {
-  def force[T](wrapped: R[T]): T
-}
-
-object ForceWrappedValue extends ScalaFutures with TestingPatience {
-
-  val id = new ForceWrappedValue[Id] {
-    override def force[T](wrapped: Id[T]): T =
-      wrapped
-  }
-
-  val scalaTry = new ForceWrappedValue[Try] {
-    override def force[T](wrapped: Try[T]): T = wrapped.get
-  }
-
-  val future = new ForceWrappedValue[Future] {
-
-    override def force[T](wrapped: Future[T]): T =
-      try {
-        wrapped.futureValue
-      } catch {
-        case e: TestFailedException if e.getCause != null => throw e.getCause
-      }
-  }
-  val scalazTask = new ForceWrappedValue[scalaz.concurrent.Task] {
-    override def force[T](wrapped: scalaz.concurrent.Task[T]): T =
-      wrapped.unsafePerformSyncAttempt match {
-        case -\/(error) => throw error
-        case \/-(value) => value
-      }
-  }
-  val monixTask = new ForceWrappedValue[monix.eval.Task] {
-    import monix.execution.Scheduler.Implicits.global
-
-    override def force[T](wrapped: monix.eval.Task[T]): T =
-      try {
-        wrapped.runAsync.futureValue
-      } catch {
-        case e: TestFailedException if e.getCause != null => throw e.getCause
-      }
-  }
-  val catsIo = new ForceWrappedValue[cats.effect.IO] {
-    override def force[T](wrapped: cats.effect.IO[T]): T =
-      wrapped.unsafeRunSync
-  }
-}
-
 trait ForceWrapped extends ScalaFutures with TestingPatience { this: Suite =>
-  type ForceWrappedValue[R[_]] = com.softwaremill.sttp.ForceWrappedValue[R]
-  val ForceWrappedValue: com.softwaremill.sttp.ForceWrappedValue.type =
-    com.softwaremill.sttp.ForceWrappedValue
+  type ConvertToFuture[R[_]] =
+    com.softwaremill.sttp.testing.streaming.ConvertToFuture[R]
 
   implicit class ForceDecorator[R[_], T](wrapped: R[T]) {
-    def force()(implicit fwv: ForceWrappedValue[R]): T = fwv.force(wrapped)
+    def force()(implicit ctf: ConvertToFuture[R]): T = {
+      try {
+        ctf.toFuture(wrapped).futureValue
+      } catch {
+        case e: TestFailedException if e.getCause != null => throw e.getCause
+      }
+    }
   }
 }
 
