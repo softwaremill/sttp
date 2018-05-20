@@ -1,8 +1,9 @@
 package com.softwaremill.sttp
 
-import com.softwaremill.sttp.testing.{ConvertToFuture, HttpTest}
-
 import scala.util.Try
+
+import com.softwaremill.sttp.testing.ConvertToFuture
+import com.softwaremill.sttp.testing.HttpTest
 
 class TryHttpURLConnectionHttpTest extends HttpTest[Try] {
 

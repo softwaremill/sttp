@@ -1,4 +1,4 @@
-package com.softwaremill.sttp
+package com.softwaremill.sttp.testing
 
 object EvalScala {
   import scala.tools.reflect.ToolBox

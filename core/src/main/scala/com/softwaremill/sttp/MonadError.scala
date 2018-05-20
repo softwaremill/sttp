@@ -31,15 +31,6 @@ trait MonadAsyncError[R[_]] extends MonadError[R] {
   def async[T](register: (Either[Throwable, T] => Unit) => Unit): R[T]
 }
 
-object syntax {
-
-  implicit final class MonadErrorOps[R[_], A](val r: R[A]) extends AnyVal {
-    def map[B](f: A => B)(implicit ME: MonadError[R]): R[B] = ME.map(r)(f)
-    def flatMap[B](f: A => R[B])(implicit ME: MonadError[R]): R[B] =
-      ME.flatMap(r)(f)
-  }
-}
-
 object IdMonad extends MonadError[Id] {
   override def unit[T](t: T): Id[T] = t
   override def map[T, T2](fa: Id[T])(f: (T) => T2): Id[T2] = f(fa)

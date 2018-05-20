@@ -3,16 +3,22 @@ package com.softwaremill.sttp.testing.streaming
 import com.softwaremill.sttp._
 import com.softwaremill.sttp.testing.ForceWrapped
 import org.scalatest.{AsyncFreeSpec, BeforeAndAfterAll, Matchers}
-
 import scala.language.higherKinds
+
+import com.softwaremill.sttp.testing.ConvertToFuture
 
 trait StreamingTest[R[_], S] extends AsyncFreeSpec with Matchers with BeforeAndAfterAll with ForceWrapped {
 
   private val endpoint = "localhost:51823"
   private val body = "streaming test"
 
-  val testStreamingBackend: TestStreamingBackend[R, S]
-  import testStreamingBackend._
+  implicit def backend: SttpBackend[R, S]
+
+  implicit def convertToFuture: ConvertToFuture[R]
+
+  def bodyProducer(body: String): S
+
+  def bodyConsumer(stream: S): R[String]
 
   "stream request body" in {
     sttp
@@ -58,7 +64,7 @@ trait StreamingTest[R[_], S] extends AsyncFreeSpec with Matchers with BeforeAndA
   }
 
   override protected def afterAll(): Unit = {
-    testStreamingBackend.backend.close()
+    backend.close()
     super.afterAll()
   }
 

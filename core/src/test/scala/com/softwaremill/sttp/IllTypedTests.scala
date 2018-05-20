@@ -1,5 +1,6 @@
 package com.softwaremill.sttp
 
+import com.softwaremill.sttp.testing.EvalScala
 import org.scalatest.{FlatSpec, Matchers}
 
 import scala.tools.reflect.ToolBoxError
@@ -9,15 +10,17 @@ class IllTypedTests extends FlatSpec with Matchers {
     val thrown = intercept[ToolBoxError] {
       EvalScala("""
         import com.softwaremill.sttp._
-        import akka.stream.scaladsl.Source
-        import akka.util.ByteString
+
+        class MyStream[T]()
+
         implicit val sttpBackend = HttpURLConnectionBackend()
-        sttp.get(uri"http://example.com").response(asStream[Source[ByteString, Any]]).send()
+        sttp.get(uri"http://example.com").response(asStream[MyStream[Byte]]).send()
         """)
     }
 
     thrown.getMessage should include(
-      "could not find implicit value for parameter backend: com.softwaremill.sttp.SttpBackend[R,akka.stream.scaladsl.Source[akka.util.ByteString,Any]]")
+      "could not find implicit value for parameter backend: com.softwaremill.sttp.SttpBackend[R,MyStream[Byte]]"
+    )
   }
 
   "compilation" should "fail when trying to send a request without giving an URL" in {

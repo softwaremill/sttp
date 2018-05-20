@@ -1,6 +1,7 @@
 package com.softwaremill.sttp
 
-import com.softwaremill.sttp.testing.{ConvertToFuture, HttpTest}
+import com.softwaremill.sttp.testing.ConvertToFuture
+import com.softwaremill.sttp.testing.HttpTest
 
 class HttpURLConnectionHttpTest extends HttpTest[Id] {
 

@@ -58,16 +58,17 @@ lazy val rootProject = (project in file("."))
     json4s,
     braveBackend,
     prometheusBackend,
-    tests,
     testServer
   )
 
 lazy val core: Project = (project in file("core"))
   .settings(commonSettings: _*)
+  .settings(testServerSettings: _*)
   .settings(
     name := "core",
     libraryDependencies ++= Seq(
       "com.github.pathikrit" %% "better-files" % "3.4.0" % "test",
+      "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test",
       scalaTest % "test"
     ),
     publishArtifact in Test := true // allow implementations outside of this repo
@@ -78,6 +79,7 @@ lazy val cats: Project = (project in file("implementations/cats"))
   .settings(commonSettings: _*)
   .settings(
     name := "cats",
+    publishArtifact in Test := true,
     libraryDependencies ++= Seq("org.typelevel" %% "cats-effect" % "1.0.0-RC")
   )
   .dependsOn(core % "compile->compile;test->test")
@@ -86,6 +88,7 @@ lazy val monix: Project = (project in file("implementations/monix"))
   .settings(commonSettings: _*)
   .settings(
     name := "monix",
+    publishArtifact in Test := true,
     libraryDependencies ++= Seq("io.monix" %% "monix" % "3.0.0-RC1")
   )
   .dependsOn(core % "compile->compile;test->test")
@@ -94,6 +97,7 @@ lazy val scalaz: Project = (project in file("implementations/scalaz"))
   .settings(commonSettings: _*)
   .settings(
     name := "scalaz",
+    publishArtifact in Test := true,
     libraryDependencies ++= Seq("org.scalaz" %% "scalaz-concurrent" % "7.2.22")
   )
   .dependsOn(core % "compile->compile;test->test")
@@ -235,36 +239,6 @@ lazy val prometheusBackend: Project = (project in file("metrics/prometheus-backe
   )
   .dependsOn(core)
 
-lazy val tests: Project = (project in file("tests"))
-  .settings(commonSettings: _*)
-  .settings(testServerSettings: _*)
-  .settings(
-    skip in publish := true,
-    name := "tests",
-    libraryDependencies ++= Seq(
-      akkaHttp,
-      akkaStreams,
-      scalaTest,
-      "com.typesafe.scala-logging" %% "scala-logging" % "3.9.0",
-      "com.github.pathikrit" %% "better-files" % "3.4.0",
-      "ch.qos.logback" % "logback-classic" % "1.2.3",
-      "org.scala-lang" % "scala-compiler" % scalaVersion.value
-    ).map(_ % "test")
-  )
-  .dependsOn(
-    core % "compile->compile;test->test",
-    cats % "compile->compile;test->test",
-    monix % "compile->compile;test->test",
-    scalaz % "compile->compile;test->test",
-    akkaHttpBackend,
-    asyncHttpClientFutureBackend,
-    asyncHttpClientScalazBackend,
-    asyncHttpClientMonixBackend,
-    asyncHttpClientCatsBackend,
-    asyncHttpClientFs2Backend,
-    okhttpMonixBackend
-  )
-
 // https://stackoverflow.com/questions/25766797/how-do-i-start-a-server-before-running-a-test-suite-in-sbt
 lazy val testServer: Project = project
   .in(file("test-server"))
@@ -278,7 +252,6 @@ lazy val testServer: Project = project
     startTestServer := (reStart in Test).toTask("").value
   )
 
-// maybe use IntegrationTest instead of Test?
 lazy val testServerSettings = Seq(
   test in Test := (test in Test).dependsOn(startTestServer in testServer).value,
   testOnly in Test := (testOnly in Test).dependsOn(startTestServer in testServer).evaluated,
