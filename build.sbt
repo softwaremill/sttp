@@ -36,7 +36,7 @@ val scalaTest = "org.scalatest" %% "scalatest" % "3.0.5"
 
 lazy val rootProject = (project in file("."))
   .settings(commonSettings: _*)
-  .settings(publishArtifact := false, name := "sttp")
+  .settings(skip in publish := true, name := "sttp")
   .aggregate(
     core,
     cats,
@@ -54,8 +54,7 @@ lazy val rootProject = (project in file("."))
     circe,
     json4s,
     braveBackend,
-    prometheusBackend,
-    tests
+    prometheusBackend
   )
 
 lazy val core: Project = (project in file("core"))
@@ -63,9 +62,13 @@ lazy val core: Project = (project in file("core"))
   .settings(
     name := "core",
     libraryDependencies ++= Seq(
-      "org.scalacheck" %% "scalacheck" % "1.14.0" % "test",
+      "com.github.pathikrit" %% "better-files" % "3.4.0" % "test",
+      "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test",
+      akkaHttp % "test",
+      akkaStreams % "test",
       scalaTest % "test"
-    )
+    ),
+    publishArtifact in Test := true // allow implementations outside of this repo
   )
 
 //----- implementations
@@ -73,6 +76,7 @@ lazy val cats: Project = (project in file("implementations/cats"))
   .settings(commonSettings: _*)
   .settings(
     name := "cats",
+    publishArtifact in Test := true,
     libraryDependencies ++= Seq("org.typelevel" %% "cats-effect" % "1.0.0-RC")
   )
   .dependsOn(core % "compile->compile;test->test")
@@ -81,6 +85,7 @@ lazy val monix: Project = (project in file("implementations/monix"))
   .settings(commonSettings: _*)
   .settings(
     name := "monix",
+    publishArtifact in Test := true,
     libraryDependencies ++= Seq("io.monix" %% "monix" % "3.0.0-RC1")
   )
   .dependsOn(core % "compile->compile;test->test")
@@ -89,6 +94,7 @@ lazy val scalaz: Project = (project in file("implementations/scalaz"))
   .settings(commonSettings: _*)
   .settings(
     name := "scalaz",
+    publishArtifact in Test := true,
     libraryDependencies ++= Seq("org.scalaz" %% "scalaz-concurrent" % "7.2.22")
   )
   .dependsOn(core % "compile->compile;test->test")
@@ -106,7 +112,7 @@ lazy val akkaHttpBackend: Project = (project in file("akka-http-backend"))
       akkaStreams % "provided"
     )
   )
-  .dependsOn(core)
+  .dependsOn(core % "compile->compile;test->test")
 
 //-- async http client
 lazy val asyncHttpClientBackend: Project = {
@@ -118,7 +124,7 @@ lazy val asyncHttpClientBackend: Project = {
         "org.asynchttpclient" % "async-http-client" % "2.4.7"
       )
     )
-    .dependsOn(core)
+    .dependsOn(core % "compile->compile;test->test")
 }
 
 def asyncHttpClientBackendProject(proj: String): Project = {
@@ -130,18 +136,19 @@ def asyncHttpClientBackendProject(proj: String): Project = {
 
 lazy val asyncHttpClientFutureBackend: Project =
   asyncHttpClientBackendProject("future")
+    .dependsOn(core % "compile->compile;test->test")
 
 lazy val asyncHttpClientScalazBackend: Project =
   asyncHttpClientBackendProject("scalaz")
-    .dependsOn(scalaz)
+    .dependsOn(scalaz % "compile->compile;test->test")
 
 lazy val asyncHttpClientMonixBackend: Project =
   asyncHttpClientBackendProject("monix")
-    .dependsOn(monix)
+    .dependsOn(monix % "compile->compile;test->test")
 
 lazy val asyncHttpClientCatsBackend: Project =
   asyncHttpClientBackendProject("cats")
-    .dependsOn(cats)
+    .dependsOn(cats % "compile->compile;test->test")
 
 lazy val asyncHttpClientFs2Backend: Project =
   asyncHttpClientBackendProject("fs2")
@@ -150,6 +157,7 @@ lazy val asyncHttpClientFs2Backend: Project =
         "com.github.zainab-ali" %% "fs2-reactive-streams" % "0.5.1"
       )
     )
+    .dependsOn(core % "compile->compile;test->test")
 
 //-- okhttp
 lazy val okhttpBackend: Project = (project in file("okhttp-backend"))
@@ -160,7 +168,7 @@ lazy val okhttpBackend: Project = (project in file("okhttp-backend"))
       "com.squareup.okhttp3" % "okhttp" % "3.10.0"
     )
   )
-  .dependsOn(core)
+  .dependsOn(core % "compile->compile;test->test")
 
 def okhttpBackendProject(proj: String): Project = {
   Project(s"okhttpBackend${proj.capitalize}", file(s"okhttp-backend/$proj"))
@@ -171,7 +179,7 @@ def okhttpBackendProject(proj: String): Project = {
 
 lazy val okhttpMonixBackend: Project =
   okhttpBackendProject("monix")
-    .dependsOn(monix)
+    .dependsOn(monix % "compile->compile;test->test")
 
 lazy val circeVersion = "0.9.3"
 
@@ -222,32 +230,3 @@ lazy val prometheusBackend: Project = (project in file("metrics/prometheus-backe
     )
   )
   .dependsOn(core)
-
-lazy val tests: Project = (project in file("tests"))
-  .settings(commonSettings: _*)
-  .settings(
-    publishArtifact := false,
-    name := "tests",
-    libraryDependencies ++= Seq(
-      akkaHttp,
-      akkaStreams,
-      scalaTest,
-      "com.typesafe.scala-logging" %% "scala-logging" % "3.9.0",
-      "com.github.pathikrit" %% "better-files" % "3.4.0",
-      "ch.qos.logback" % "logback-classic" % "1.2.3",
-      "org.scala-lang" % "scala-compiler" % scalaVersion.value
-    ).map(_ % "test")
-  )
-  .dependsOn(
-    core % "compile->compile;test->test",
-    cats % "compile->compile;test->test",
-    monix % "compile->compile;test->test",
-    scalaz % "compile->compile;test->test",
-    akkaHttpBackend,
-    asyncHttpClientFutureBackend,
-    asyncHttpClientScalazBackend,
-    asyncHttpClientMonixBackend,
-    asyncHttpClientCatsBackend,
-    asyncHttpClientFs2Backend,
-    okhttpMonixBackend
-  )
