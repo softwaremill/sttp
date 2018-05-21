@@ -6,10 +6,15 @@ import org.scalatest.{AsyncFreeSpec, BeforeAndAfterAll, Matchers}
 import scala.language.higherKinds
 
 import com.softwaremill.sttp.testing.ConvertToFuture
+import com.softwaremill.sttp.testing.TestHttpServer
 
-trait StreamingTest[R[_], S] extends AsyncFreeSpec with Matchers with BeforeAndAfterAll with ForceWrapped {
+trait StreamingTest[R[_], S]
+    extends AsyncFreeSpec
+    with Matchers
+    with ForceWrapped
+    with BeforeAndAfterAll
+    with TestHttpServer {
 
-  private val endpoint = "localhost:51823"
   private val body = "streaming test"
 
   implicit def backend: SttpBackend[R, S]

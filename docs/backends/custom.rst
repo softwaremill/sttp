@@ -146,6 +146,8 @@ Implementing a new backend is made easy as the tests are published in the ``core
 
   "com.softwaremill.sttp" %% "core" % sttpVersion % "test" classifier "tests",
   "com.github.pathikrit" %% "better-files" % "3.4.0" % "test",
+  "com.typesafe.akka" %% "akka-http" % "10.1.1" % "test",
+  "com.typesafe.akka" %% "akka-stream" % "2.5.12" % "test",
   "org.scalatest" %% "scalatest" % "3.0.5" % "test"
 
 Implement your backend and extend the ``HttpTest`` class::

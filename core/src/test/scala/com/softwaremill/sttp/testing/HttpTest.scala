@@ -22,26 +22,23 @@ trait HttpTest[R[_]]
     with OptionValues
     with IntegrationPatience
     with BeforeAndAfterEach
-    with BeforeAndAfterAll {
-
-  private val endpoint = "localhost:51823"
+    with BeforeAndAfterAll
+    with TestHttpServer {
 
   override def afterEach() {
     val file = File(outPath)
     if (file.exists) file.delete()
   }
 
-  private val textFile =
-    new java.io.File("test-server/src/main/resources/textfile.txt")
-  private val binaryFile =
-    new java.io.File("test-server/src/main/resources/binaryfile.jpg")
+  private val textFile = new java.io.File(getClass.getResource("/textfile.txt").getFile)
+  private val binaryFile = new java.io.File(getClass.getResource("/binaryfile.jpg").getFile)
   private val outPath = File.newTemporaryDirectory().path
   private val textWithSpecialCharacters = "Żółć!"
 
   implicit val backend: SttpBackend[R, Nothing]
   implicit val convertToFuture: ConvertToFuture[R]
 
-  private val postEcho = sttp.post(uri"$endpoint/echo")
+  private def postEcho = sttp.post(uri"$endpoint/echo")
   private val testBody = "this is the body"
   private val testBodyBytes = testBody.getBytes("UTF-8")
   private val expectedPostEchoResponse = "POST /echo this is the body"
@@ -172,7 +169,7 @@ trait HttpTest[R[_]]
   }
 
   "headers" - {
-    val getHeaders = sttp.get(uri"$endpoint/set_headers")
+    def getHeaders = sttp.get(uri"$endpoint/set_headers")
 
     "read response headers" in {
       val response = getHeaders.response(sttpIgnore).send().force()
@@ -187,7 +184,7 @@ trait HttpTest[R[_]]
   }
 
   "errors" - {
-    val getHeaders = sttp.post(uri"$endpoint/set_headers")
+    def getHeaders = sttp.post(uri"$endpoint/set_headers")
 
     "return 405 when method not allowed" in {
       val response = getHeaders.response(sttpIgnore).send().force()
@@ -236,7 +233,7 @@ trait HttpTest[R[_]]
   }
 
   "auth" - {
-    val secureBasic = sttp.get(uri"$endpoint/secure_basic")
+    def secureBasic = sttp.get(uri"$endpoint/secure_basic")
 
     "return a 401 when authorization fails" in {
       val req = secureBasic
@@ -254,7 +251,7 @@ trait HttpTest[R[_]]
   }
 
   "compression" - {
-    val compress = sttp.get(uri"$endpoint/compress")
+    def compress = sttp.get(uri"$endpoint/compress")
     val decompressedBody = "I'm compressed!"
 
     "decompress using the default accept encoding header" in {
@@ -374,7 +371,7 @@ trait HttpTest[R[_]]
   }
 
   "multipart" - {
-    val mp = sttp.post(uri"$endpoint/multipart")
+    def mp = sttp.post(uri"$endpoint/multipart")
 
     "send a multipart message" in {
       val req = mp.multipartBody(multipart("p1", "v1"), multipart("p2", "v2"))
@@ -400,11 +397,11 @@ trait HttpTest[R[_]]
   }
 
   "redirect" - {
-    val r1 = sttp.post(uri"$endpoint/redirect/r1")
-    val r2 = sttp.post(uri"$endpoint/redirect/r2")
-    val r3 = sttp.post(uri"$endpoint/redirect/r3")
+    def r1 = sttp.post(uri"$endpoint/redirect/r1")
+    def r2 = sttp.post(uri"$endpoint/redirect/r2")
+    def r3 = sttp.post(uri"$endpoint/redirect/r3")
     val r4response = "819"
-    val loop = sttp.post(uri"$endpoint/redirect/loop")
+    def loop = sttp.post(uri"$endpoint/redirect/loop")
 
     "not redirect when redirects shouldn't be followed (temporary)" in {
       val resp = r1.followRedirects(false).send().force()
@@ -499,10 +496,11 @@ trait HttpTest[R[_]]
   }
 
   "empty response" - {
-    val postEmptyResponse = sttp
-      .post(uri"$endpoint/empty_unauthorized_response")
-      .body("{}")
-      .contentType("application/json")
+    def postEmptyResponse =
+      sttp
+        .post(uri"$endpoint/empty_unauthorized_response")
+        .body("{}")
+        .contentType("application/json")
 
     "parse an empty error response as empty string" in {
       val response = postEmptyResponse.send().force()

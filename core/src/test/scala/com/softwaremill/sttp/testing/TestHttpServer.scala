@@ -1,5 +1,6 @@
-package com.softwaremill.sttp.server
+package com.softwaremill.sttp.testing
 
+import akka.Done
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.coding.{Deflate, Gzip, NoCoding}
@@ -11,22 +12,50 @@ import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.Credentials
 import akka.stream.ActorMaterializer
 import akka.util.ByteString
-
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 
-object TestHttpServer {
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.Suite
+
+trait TestHttpServer extends BeforeAndAfterAll { this: Suite =>
+
+  private val server = new HttpServer(0)
+  protected var endpoint = "localhost:51823"
+
+  override protected def beforeAll(): Unit = {
+    import scala.concurrent.ExecutionContext.Implicits.global
+
+    super.beforeAll()
+    Await.result(
+      server.start().map { binding =>
+        endpoint = s"localhost:${binding.localAddress.getPort}"
+      },
+      10.seconds
+    )
+  }
+
+  override protected def afterAll(): Unit = {
+    server.close()
+    super.afterAll()
+  }
+
+}
+
+object HttpServer {
 
   def main(args: Array[String]): Unit = {
     val port = args.headOption.map(_.toInt).getOrElse(51823)
 
-    Await.result(new TestHttpServer(port).start(), 10.seconds)
+    Await.result(new HttpServer(port).start(), 10.seconds)
   }
 }
 
-class TestHttpServer(port: Int) extends AutoCloseable {
+private class HttpServer(port: Int) extends AutoCloseable {
 
   import scala.concurrent.ExecutionContext.Implicits.global
+
+  private var server: Option[Future[Http.ServerBinding]] = None
 
   private implicit val actorSystem: ActorSystem = ActorSystem("sttp-test-server")
   private implicit val materializer: ActorMaterializer = ActorMaterializer()
@@ -34,8 +63,8 @@ class TestHttpServer(port: Int) extends AutoCloseable {
   private def paramsToString(m: Map[String, String]): String =
     m.toList.sortBy(_._1).map(p => s"${p._1}=${p._2}").mkString(" ")
 
-  private val textFile = new java.io.File("src/main/resources/textfile.txt")
-  private val binaryFile = new java.io.File("src/main/resources/binaryfile.jpg")
+  private val textFile = new java.io.File(getClass.getResource("/textfile.txt").getFile)
+  private val binaryFile = new java.io.File(getClass.getResource("/binaryfile.jpg").getFile)
   private val textWithSpecialCharacters = "Żółć!"
 
   val serverRoutes: Route =
@@ -185,13 +214,23 @@ class TestHttpServer(port: Int) extends AutoCloseable {
     }
 
   def start(): Future[Http.ServerBinding] = {
-    Http().bindAndHandle(serverRoutes, "localhost", port)
+    unbindServer().flatMap { _ =>
+      val server = Http().bindAndHandle(serverRoutes, "localhost", port)
+      this.server = Some(server)
+      server
+    }
   }
 
   def close(): Unit = {
+    val unbind = unbindServer()
+    unbind.onComplete(_ => actorSystem.terminate())
     Await.result(
-      actorSystem.terminate(),
+      unbind,
       10.seconds
     )
+  }
+
+  private def unbindServer(): Future[Done] = {
+    server.map(_.flatMap(_.unbind())).getOrElse(Future.successful(Done))
   }
 }

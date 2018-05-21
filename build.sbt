@@ -34,9 +34,6 @@ val akkaStreams = "com.typesafe.akka" %% "akka-stream" % "2.5.12"
 
 val scalaTest = "org.scalatest" %% "scalatest" % "3.0.5"
 
-val testServerPort = settingKey[Int]("Port to run the http test server on")
-val startTestServer = taskKey[Unit]("Start a http server used by tests")
-
 lazy val rootProject = (project in file("."))
   .settings(commonSettings: _*)
   .settings(skip in publish := true, name := "sttp")
@@ -57,18 +54,18 @@ lazy val rootProject = (project in file("."))
     circe,
     json4s,
     braveBackend,
-    prometheusBackend,
-    testServer
+    prometheusBackend
   )
 
 lazy val core: Project = (project in file("core"))
   .settings(commonSettings: _*)
-  .settings(testServerSettings: _*)
   .settings(
     name := "core",
     libraryDependencies ++= Seq(
       "com.github.pathikrit" %% "better-files" % "3.4.0" % "test",
       "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test",
+      akkaHttp % "test",
+      akkaStreams % "test",
       scalaTest % "test"
     ),
     publishArtifact in Test := true // allow implementations outside of this repo
@@ -106,7 +103,6 @@ lazy val scalaz: Project = (project in file("implementations/scalaz"))
 //-- akka
 lazy val akkaHttpBackend: Project = (project in file("akka-http-backend"))
   .settings(commonSettings: _*)
-  .settings(testServerSettings: _*)
   .settings(
     name := "akka-http-backend",
     libraryDependencies ++= Seq(
@@ -122,7 +118,6 @@ lazy val akkaHttpBackend: Project = (project in file("akka-http-backend"))
 lazy val asyncHttpClientBackend: Project = {
   (project in file("async-http-client-backend"))
     .settings(commonSettings: _*)
-    .settings(testServerSettings: _*)
     .settings(
       name := "async-http-client-backend",
       libraryDependencies ++= Seq(
@@ -135,7 +130,6 @@ lazy val asyncHttpClientBackend: Project = {
 def asyncHttpClientBackendProject(proj: String): Project = {
   Project(s"asyncHttpClientBackend${proj.capitalize}", file(s"async-http-client-backend/$proj"))
     .settings(commonSettings: _*)
-    .settings(testServerSettings: _*)
     .settings(name := s"async-http-client-backend-$proj")
     .dependsOn(asyncHttpClientBackend)
 }
@@ -168,7 +162,6 @@ lazy val asyncHttpClientFs2Backend: Project =
 //-- okhttp
 lazy val okhttpBackend: Project = (project in file("okhttp-backend"))
   .settings(commonSettings: _*)
-  .settings(testServerSettings: _*)
   .settings(
     name := "okhttp-backend",
     libraryDependencies ++= Seq(
@@ -180,7 +173,6 @@ lazy val okhttpBackend: Project = (project in file("okhttp-backend"))
 def okhttpBackendProject(proj: String): Project = {
   Project(s"okhttpBackend${proj.capitalize}", file(s"okhttp-backend/$proj"))
     .settings(commonSettings: _*)
-    .settings(testServerSettings: _*)
     .settings(name := s"okhttp-backend-$proj")
     .dependsOn(okhttpBackend)
 }
@@ -238,25 +230,3 @@ lazy val prometheusBackend: Project = (project in file("metrics/prometheus-backe
     )
   )
   .dependsOn(core)
-
-// https://stackoverflow.com/questions/25766797/how-do-i-start-a-server-before-running-a-test-suite-in-sbt
-lazy val testServer: Project = project
-  .in(file("test-server"))
-  .settings(commonSettings: _*)
-  .settings(
-    name := "test-server",
-    libraryDependencies ++= Seq(akkaHttp, akkaStreams),
-    mainClass in reStart := Some("com.softwaremill.sttp.server.TestHttpServer"),
-    reStartArgs := Seq(s"${testServerPort.value}"),
-    testServerPort := 51823,
-    startTestServer := (reStart in Test).toTask("").value
-  )
-
-lazy val testServerSettings = Seq(
-  test in Test := (test in Test).dependsOn(startTestServer in testServer).value,
-  testOnly in Test := (testOnly in Test).dependsOn(startTestServer in testServer).evaluated,
-  testOptions in Test += Tests.Setup(() => {
-    val port = (testServerPort in testServer).value
-    PollingUtils.waitUntilServerAvailable(new URL(s"http://localhost:$port"))
-  })
-)
