@@ -172,7 +172,7 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
       case InputStreamBody(b, _) =>
         rb.setBody(b)
 
-      case PathBody(b, _) =>
+      case FileBody(b, _) =>
         rb.setBody(b.toFile)
 
       case StreamBody(s) =>
@@ -207,7 +207,7 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
         // sadly async http client only supports parts that are strings,
         // byte arrays or files
         new ByteArrayPart(nameWithFilename, toByteArray(b))
-      case PathBody(b, _) =>
+      case FileBody(b, _) =>
         new FilePart(mp.name, b.toFile, null, null, mp.fileName.orNull)
     }
 
@@ -265,8 +265,8 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
 
           case ResponseAsFile(file, overwrite) =>
             Try(
-              ResponseAs
-                .saveFile(file, response.getResponseBodyAsStream, overwrite))
+              FileHelpers
+                .saveFile(file.toFile, response.getResponseBodyAsStream, overwrite))
         }
     }
 
