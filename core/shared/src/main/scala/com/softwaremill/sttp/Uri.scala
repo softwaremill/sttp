@@ -26,6 +26,7 @@ case class Uri(scheme: String,
                path: Seq[String],
                queryFragments: Seq[QueryFragment],
                fragment: Option[String]) {
+  import Rfc3986.encode
 
   private val AllowedSchemeCharacters = "[a-zA-Z][a-zA-Z0-9+-.]*".r
 
@@ -143,56 +144,14 @@ case class Uri(scheme: String,
         encode(Rfc3986.QueryWithBrackets, spaceAsPlus = true)(s)
     }
 
-  private object Rfc3986 {
-    val AlphaNum: Set[Char] =
-      (('a' to 'z') ++ ('A' to 'Z') ++ ('0' to '9')).toSet
-    val Unreserved: Set[Char] = AlphaNum ++ Set('-', '.', '_', '~')
-    val SubDelims: Set[Char] =
-      Set('!', '$', '&', '\'', '(', ')', '*', '+', ',', ';', '=')
-    val PChar: Set[Char] = Unreserved ++ SubDelims ++ Set(':', '@')
-
-    val Scheme: Set[Char] = AlphaNum ++ Set('+', '-', '.')
-    val UserInfo: Set[Char] = Unreserved ++ SubDelims
-    val Host: Set[Char] = Unreserved ++ SubDelims
-    val PathSegment: Set[Char] = PChar
-    val Query: Set[Char] = PChar ++ Set('/', '?')
-    val Fragment: Set[Char] = Query
-
-    val QueryNoStandardDelims: Set[Char] = Query -- Set('&', '=')
-    val QueryWithBrackets: Set[Char] = Query ++ Set('[', ']')
-  }
-
   private val IpV6Pattern = "[0-9a-fA-F:]+".r
 
   private def encodeHost: String =
     host match {
       case IpV6Pattern() => s"[$host]"
-      case _             => encode(Rfc3986.Host)(UriCompatibility.toASCII(host))
+      case _             => UriCompatibility.encodeDNSHost(host)
     }
 
-  /**
-    * @param spaceAsPlus In the query, space is encoded as a `+`. In other
-    * contexts, it should be %-encoded as `%20`.
-    * @param encodePlus Should `+` (which is the encoded form of space
-    * in the query) be %-encoded.
-    */
-  private def encode(allowedCharacters: Set[Char], spaceAsPlus: Boolean = false, encodePlus: Boolean = false)(
-      s: String): String = {
-    val sb = new StringBuilder()
-    // based on https://gist.github.com/teigen/5865923
-    for (c <- s) {
-      if (c == '+' && encodePlus) sb.append("%2B") // #48
-      else if (allowedCharacters(c)) sb.append(c)
-      else if (c == ' ' && spaceAsPlus) sb.append('+')
-      else {
-        for (b <- c.toString.getBytes("UTF-8")) {
-          sb.append("%")
-          sb.append(UriCompatibility.formatByte(b))
-        }
-      }
-    }
-    sb.toString
-  }
 }
 
 object Uri {

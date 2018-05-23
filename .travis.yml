@@ -1,12 +1,24 @@
-sudo: false
+dist: trusty
+sudo: required
 language: scala
+addons:
+  chrome: stable
 jdk:
 - oraclejdk8
 scala:
 - 2.12.6
 - 2.11.12
+cache:
+  directories:
+    - "$HOME/.ivy2/cache"
+    - "$HOME/.sbt/boot"
+before_script:
+- nvm install 10 # nodejs < 10 fails finding URL class
+- version=$(curl -s https://chromedriver.storage.googleapis.com/LATEST_RELEASE) &&
+    wget "https://chromedriver.storage.googleapis.com/$version/chromedriver_linux64.zip"
+- mkdir -p chromedriver && unzip chromedriver_linux64.zip -d chromedriver/
+- export PATH="$PATH:$PWD/chromedriver/"
 script:
-- nvm install 10
 - sbt ++$TRAVIS_SCALA_VERSION rootJVM/test &&
-     sbt ++$TRAVIS_SCALA_VERSION rootJS/test
+    xvfb-run sbt ++$TRAVIS_SCALA_VERSION rootJS/test
 - '[ "${TRAVIS_PULL_REQUEST}" = "false" ] && sbt updateImpactSubmit || true'

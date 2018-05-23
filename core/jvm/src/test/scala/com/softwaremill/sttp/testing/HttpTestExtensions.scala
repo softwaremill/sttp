@@ -21,7 +21,7 @@ trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
         case Some(data) => Files.write(file, data)
       }
     }.flatMap { _ =>
-      f(file)
+      f(File.fromPath(file))
     }
 
     result.onComplete(_ => Files.deleteIfExists(file))
@@ -82,7 +82,7 @@ trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
   "download file overwrite" - {
     "fail at trying to save file to a restricted location" in {
       val path = Paths.get("/").resolve("textfile.txt")
-      val req = sttp.get(uri"$endpoint/download/text").response(asFile(path))
+      val req = sttp.get(uri"$endpoint/download/text").response(asFile(path.toFile))
       Future(req.send()).flatMap(_.toFuture()).failed.collect {
         case caught: IOException => caught.getMessage shouldBe "Permission denied"
       }
@@ -90,7 +90,7 @@ trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
 
     "fail when file exists and overwrite flag is false" in {
       withTemporaryFile(Some(testBodyBytes)) { file =>
-        val req = sttp.get(uri"$endpoint/download/text").response(asFile(file))
+        val req = sttp.get(uri"$endpoint/download/text").response(asSttpFile(file))
 
         Future(req.send()).flatMap(_.toFuture()).failed.collect {
           case caught: IOException =>
@@ -103,7 +103,7 @@ trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
       withTemporaryFile(Some(testBodyBytes)) { file =>
         val req = sttp
           .get(uri"$endpoint/download/text")
-          .response(asFile(file, overwrite = true))
+          .response(asSttpFile(file, overwrite = true))
         req.send().toFuture().map { resp =>
           sha256FileHash(resp.unsafeBody) shouldBe textFileHash
         }

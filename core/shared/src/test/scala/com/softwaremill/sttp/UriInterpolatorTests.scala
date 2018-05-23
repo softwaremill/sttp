@@ -37,6 +37,9 @@ class UriInterpolatorTests extends FunSuite with Matchers {
     ),
     "authority" -> List(
       (uri"http://$v1.com", s"http://$v1.com"),
+      (uri"http://$v2.com", s"http://$v2encoded.com"),
+      (uri"http://$v1.$v2.com", s"http://$v1.$v2encoded.com"),
+      (uri"http://$v1$v2.com", s"http://$v1$v2encoded.com"),
       (uri"http://z$v1.com", s"http://z$v1.com"),
       (uri"http://$None.example.com", s"http://example.com"),
       (uri"http://$None.$None.example.com", s"http://example.com"),
@@ -112,8 +115,8 @@ class UriInterpolatorTests extends FunSuite with Matchers {
       (uri"http://example.com#$None", s"http://example.com")
     ),
     "everything" -> List(
-      (uri"${"http"}://$v1.$v1.com/$v1/$v2?$v1=$v2&$v3=$v4#$v1",
-       s"http://$v1.$v1.com/$v1/$v2encoded?$v1=$v2queryEncoded&$v3encoded=$v4#$v1")
+      (uri"${"http"}://$v1.$v2.com/$v1/$v2?$v1=$v2&$v3=$v4#$v1",
+       s"http://$v1.$v2encoded.com/$v1/$v2encoded?$v1=$v2queryEncoded&$v3encoded=$v4#$v1")
     ),
     "embed whole url" -> List(
       (uri"${"http://example.com:123/a"}/b/c", "http://example.com:123/a/b/c"),

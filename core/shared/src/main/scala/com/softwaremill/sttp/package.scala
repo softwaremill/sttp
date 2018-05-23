@@ -10,7 +10,7 @@ import scala.collection.immutable.Seq
 import scala.concurrent.duration._
 import scala.language.higherKinds
 
-package object sttp {
+package object sttp extends sttpExtensions {
   type Id[X] = X
   type Empty[X] = None.type
 
@@ -110,7 +110,7 @@ package object sttp {
 
   def asStream[S]: ResponseAs[S, S] = ResponseAsStream[S, S]()
 
-  def asFile(file: File, overwrite: Boolean = false): ResponseAs[File, Nothing] =
+  private[sttp] def asSttpFile(file: File, overwrite: Boolean = false): ResponseAs[File, Nothing] =
     ResponseAsFile(file, overwrite)
 
   // multipart factory methods

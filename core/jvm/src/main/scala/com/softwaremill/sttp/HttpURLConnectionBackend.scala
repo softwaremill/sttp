@@ -8,6 +8,8 @@ import java.nio.file.Files
 import java.util.concurrent.ThreadLocalRandom
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
 
+import com.softwaremill.sttp.file.{File => sttpFile}
+
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 import scala.concurrent.duration.Duration
@@ -246,7 +248,8 @@ class HttpURLConnectionBackend private (opts: SttpBackendOptions, customizeConne
         throw new IllegalStateException()
 
       case ResponseAsFile(output, overwrite) =>
-        FileHelpers.saveFile(output.toFile, is, overwrite)
+        val f = FileHelpers.saveFile(output.toFile, is, overwrite)
+        sttpFile.fromFile(f)
 
     }
   }
@@ -271,9 +274,11 @@ class HttpURLConnectionBackend private (opts: SttpBackendOptions, customizeConne
 
 object HttpURLConnectionBackend {
 
-  def apply(options: SttpBackendOptions = SttpBackendOptions.Default, customizeConnection: HttpURLConnection => Unit = {
-    _ =>
-      ()
-  }): SttpBackend[Id, Nothing] =
+  def apply(
+      options: SttpBackendOptions = SttpBackendOptions.Default,
+      customizeConnection: HttpURLConnection => Unit = { _ =>
+        ()
+      }
+  ): SttpBackend[Id, Nothing] =
     new FollowRedirectsBackend[Id, Nothing](new HttpURLConnectionBackend(options, customizeConnection))
 }

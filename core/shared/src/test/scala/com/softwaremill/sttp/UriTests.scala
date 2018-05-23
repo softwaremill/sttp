@@ -22,12 +22,12 @@ class UriTests extends FunSuite with Matchers {
     Uri("http", None, "example.com", None, List(""), List(QF.KeyValue("p", "v"), QF.KeyValue("p", "v")), None) -> "http://example.com/?p=v&p=v",
     Uri("http",
         None,
-        "example.com",
+        "exa mple.com",
         None,
         List("a b", "z", "ą:ę"),
         List(QF.KeyValue("p:1", "v&v"), QF.KeyValue("p2", "v v")),
         None) ->
-      "http://example.com/a%20b/z/%C4%85:%C4%99?p:1=v%26v&p2=v+v",
+      "http://exa%20mple.com/a%20b/z/%C4%85:%C4%99?p:1=v%26v&p2=v+v",
     Uri("http", Some(UserInfo("us&e/r", Some("pa ss"))), "example.com", None, Nil, Nil, None) ->
       "http://us&e%2Fr:pa%20ss@example.com",
     Uri("http", None, "example.com", None, Nil, Nil, Some("f:g/h i")) ->

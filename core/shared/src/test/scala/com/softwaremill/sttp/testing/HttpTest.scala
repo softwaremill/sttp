@@ -256,7 +256,7 @@ trait HttpTest[R[_]]
 
     "download a binary file using asFile" in {
       withTemporaryNonExistentFile { file =>
-        val req = sttp.get(uri"$endpoint/download/binary").response(asFile(file))
+        val req = sttp.get(uri"$endpoint/download/binary").response(asSttpFile(file))
         req.send().toFuture().map { resp =>
           sha256FileHash(resp.unsafeBody) shouldBe binaryFileHash
         }
@@ -265,7 +265,7 @@ trait HttpTest[R[_]]
 
     "download a text file using asFile" in {
       withTemporaryNonExistentFile { file =>
-        val req = sttp.get(uri"$endpoint/download/text").response(asFile(file))
+        val req = sttp.get(uri"$endpoint/download/text").response(asSttpFile(file))
         req.send().toFuture().map { resp =>
           sha256FileHash(resp.unsafeBody) shouldBe textFileHash
         }

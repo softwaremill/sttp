@@ -33,6 +33,8 @@ val commonSettings = Seq(
 )
 
 val commonJSSettings = Seq(
+  // slow down for CI
+  parallelExecution in Test := false,
   // https://github.com/scalaz/scalaz/pull/1734#issuecomment-385627061
   scalaJSLinkerConfig ~= {
     _.withBatchMode(System.getenv("CONTINUOUS_INTEGRATION") == "true")
@@ -46,6 +48,27 @@ val commonJSSettings = Seq(
         s"-P:scalajs:mapSourceURI:$dir->$url/v${version.value}/"
       }
   }
+) ++ browserTestSettings
+
+lazy val browserTestSettings = Seq(
+  jsEnv in Test := {
+    val debugging = false // set to true to help debugging
+
+    new org.scalajs.jsenv.selenium.SeleniumJSEnv(
+      {
+        val options = new org.openqa.selenium.chrome.ChromeOptions()
+        val args = Seq(
+          "auto-open-devtools-for-tabs", // devtools needs to be open to capture network requests
+          "allow-file-access-from-files" // change the origin header from 'null' to 'file'
+        ) ++ (if (debugging) Seq.empty else Seq("headless"))
+        options.addArguments(args: _*)
+        val capabilities = org.openqa.selenium.remote.DesiredCapabilities.chrome()
+        capabilities.setCapability(org.openqa.selenium.chrome.ChromeOptions.CAPABILITY, options)
+        capabilities
+      },
+      org.scalajs.jsenv.selenium.SeleniumJSEnv.Config().withKeepAlive(debugging)
+    )
+  }
 )
 
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.1"
@@ -57,7 +80,13 @@ val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion
 lazy val rootProject = (project in file("."))
   .settings(commonSettings: _*)
   .settings(skip in publish := true, name := "sttp")
-  .aggregate(rootJVM, rootJS)
+  .aggregate(
+    rootJVM,
+    rootJS,
+    // leave akkaHttpBackend out of rootJVM due to
+    // https://github.com/akka/akka-http/issues/1930
+    akkaHttpBackend
+  )
 
 lazy val rootJVM = project
   .in(file(".jvm"))
@@ -68,7 +97,7 @@ lazy val rootJVM = project
     catsJVM,
     monixJVM,
     scalaz,
-    akkaHttpBackend,
+//    akkaHttpBackend,
     asyncHttpClientBackend,
     asyncHttpClientFutureBackend,
     asyncHttpClientScalazBackend,

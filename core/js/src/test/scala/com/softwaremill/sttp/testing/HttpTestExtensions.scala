@@ -19,6 +19,6 @@ trait HttpTestExtensions[R[_]] { self: HttpTest[R] =>
         `type` = "text/plain"
       )
     )
-    f(file)
+    f(File.fromDomFile(file))
   }
 }
