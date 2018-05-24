@@ -131,7 +131,7 @@ case class RequestT[U[_], T, +S](
     * If content length is not yet specified, will be set to the length
     * of the given file.
     */
-  def body(f: File): RequestT[U, T, S] =
+  private[sttp] def body(f: File): RequestT[U, T, S] =
     withBasicBody(FileBody(f))
       .setContentLengthIfMissing(f.size)
 

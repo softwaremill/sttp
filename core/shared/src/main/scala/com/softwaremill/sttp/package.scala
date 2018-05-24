@@ -156,7 +156,7 @@ package object sttp extends sttpExtensions {
     *
     * File name will be set to the name of the file.
     */
-  def multipart(name: String, file: File): Multipart =
+  private[sttp] def multipart(name: String, file: File): Multipart =
     Multipart(name,
               FileBody(file),
               fileName = Some(file.name),
