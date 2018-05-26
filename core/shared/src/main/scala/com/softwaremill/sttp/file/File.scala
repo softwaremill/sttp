@@ -4,7 +4,7 @@ package com.softwaremill.sttp.file
   * A platform agnostic file abstraction.
   *
   * Different platforms have different file representations. Each platform
-  * should provide conversions in the `FileObjectExtensions` trait to convert
+  * should provide conversions in the `FileCompanionExtensions` trait to convert
   * between their supported representations and the `File` abstraction.
   */
 abstract class File private[file] (val underlying: Any) extends FileExtensions {
@@ -12,5 +12,5 @@ abstract class File private[file] (val underlying: Any) extends FileExtensions {
   def size: Long
 }
 
-object File extends FileObjectExtensions {
+object File extends FileCompanionExtensions {
 }

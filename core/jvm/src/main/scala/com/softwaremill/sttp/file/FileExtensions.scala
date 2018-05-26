@@ -10,7 +10,7 @@ trait FileExtensions { self: File =>
   def toFile: java.io.File = toPath.toFile
 }
 
-trait FileObjectExtensions {
+trait FileCompanionExtensions {
 
   def fromPath(path: Path): File = new File(path) {
     val name: String = path.getFileName.toString

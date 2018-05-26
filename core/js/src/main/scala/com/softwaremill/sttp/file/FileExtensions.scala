@@ -8,7 +8,7 @@ trait FileExtensions { self: File =>
   def toDomFile: DomFile = underlying.asInstanceOf[DomFile]
 }
 
-trait FileObjectExtensions {
+trait FileCompanionExtensions {
 
   def fromDomFile(file: DomFile): File = new File(file) {
     val name: String = file.name
