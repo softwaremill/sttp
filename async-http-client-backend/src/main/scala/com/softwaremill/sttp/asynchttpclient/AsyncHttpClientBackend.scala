@@ -5,7 +5,7 @@ import java.nio.charset.Charset
 
 import com.softwaremill.sttp.ResponseAs.EagerResponseHandler
 import com.softwaremill.sttp._
-import com.softwaremill.sttp.file.{File => sttpFile}
+import com.softwaremill.sttp.internal.SttpFile
 import io.netty.buffer.ByteBuf
 import io.netty.handler.codec.http.HttpHeaders
 import org.asynchttpclient.AsyncHandler.State
@@ -267,7 +267,7 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
           case ResponseAsFile(file, overwrite) =>
             Try {
               val f = FileHelpers.saveFile(file.toFile, response.getResponseBodyAsStream, overwrite)
-              sttpFile.fromFile(f)
+              SttpFile.fromFile(f)
             }
         }
     }

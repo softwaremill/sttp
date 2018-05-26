@@ -6,14 +6,14 @@ import java.security.MessageDigest
 import java.time.{ZoneId, ZonedDateTime}
 
 import com.softwaremill.sttp._
-import com.softwaremill.sttp.file.File
+import com.softwaremill.sttp.internal.SttpFile
 
 import scala.concurrent.Future
 import scala.language.higherKinds
 
 trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
 
-  override protected def withTemporaryFile[T](content: Option[Array[Byte]])(f: File => Future[T]): Future[T] = {
+  override protected def withTemporaryFile[T](content: Option[Array[Byte]])(f: SttpFile => Future[T]): Future[T] = {
     val file = Files.createTempFile("sttp", "sttp")
     val result = Future {
       content match {
@@ -21,7 +21,7 @@ trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
         case Some(data) => Files.write(file, data)
       }
     }.flatMap { _ =>
-      f(File.fromPath(file))
+      f(SttpFile.fromPath(file))
     }
 
     result.onComplete(_ => Files.deleteIfExists(file))
@@ -35,7 +35,7 @@ trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
     hash.map(0xFF & _).map("%02x".format(_)).mkString
   }
 
-  override protected def sha256FileHash(file: File): String = {
+  override protected def sha256FileHash(file: SttpFile): String = {
     sha256Hash(Files.readAllBytes(file.toPath))
   }
 

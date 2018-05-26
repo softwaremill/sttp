@@ -3,7 +3,7 @@ package com.softwaremill.sttp
 import java.io.InputStream
 import java.nio.ByteBuffer
 
-import com.softwaremill.sttp.file.File
+import com.softwaremill.sttp.internal.SttpFile
 
 import scala.collection.immutable.Seq
 
@@ -36,7 +36,7 @@ case class InputStreamBody(
 ) extends BasicRequestBody
 
 case class FileBody(
-    f: File,
+    f: SttpFile,
     defaultContentType: Option[String] = Some(ApplicationOctetStreamContentType)
 ) extends BasicRequestBody
 

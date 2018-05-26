@@ -3,7 +3,7 @@ package com.softwaremill.sttp.testing
 import java.io.ByteArrayInputStream
 import java.nio.ByteBuffer
 
-import com.softwaremill.sttp.file.File
+import com.softwaremill.sttp.internal.SttpFile
 import com.softwaremill.sttp._
 import org.scalatest.{AsyncFreeSpec, BeforeAndAfterAll, Matchers, OptionValues}
 
@@ -246,11 +246,11 @@ trait HttpTest[R[_]]
     }
   }
 
-  protected def withTemporaryFile[T](content: Option[Array[Byte]])(f: File => Future[T]): Future[T]
-  private def withTemporaryNonExistentFile[T](f: File => Future[T]): Future[T] = withTemporaryFile(None)(f)
+  protected def withTemporaryFile[T](content: Option[Array[Byte]])(f: SttpFile => Future[T]): Future[T]
+  private def withTemporaryNonExistentFile[T](f: SttpFile => Future[T]): Future[T] = withTemporaryFile(None)(f)
 
   protected def sha256Hash(bytes: Array[Byte]): String
-  protected def sha256FileHash(file: File): String
+  protected def sha256FileHash(file: SttpFile): String
 
   "download file" - {
 

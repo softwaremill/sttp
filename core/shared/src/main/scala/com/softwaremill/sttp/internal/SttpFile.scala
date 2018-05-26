@@ -1,4 +1,4 @@
-package com.softwaremill.sttp.file
+package com.softwaremill.sttp.internal
 
 /**
   * A platform agnostic file abstraction.
@@ -7,10 +7,10 @@ package com.softwaremill.sttp.file
   * should provide conversions in the `FileCompanionExtensions` trait to convert
   * between their supported representations and the `File` abstraction.
   */
-abstract class File private[file] (val underlying: Any) extends FileExtensions {
+abstract class SttpFile private[internal] (val underlying: Any) extends SttpFileExtensions {
   def name: String
   def size: Long
 }
 
-object File extends FileCompanionExtensions {
+object SttpFile extends SttpFileCompanionExtensions {
 }

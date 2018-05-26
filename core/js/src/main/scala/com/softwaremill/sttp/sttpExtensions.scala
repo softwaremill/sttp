@@ -1,12 +1,12 @@
 package com.softwaremill.sttp
 
 import com.softwaremill.sttp.dom.experimental.{File => DomFile}
-import com.softwaremill.sttp.file.{File => sttpFile}
+import com.softwaremill.sttp.internal.SttpFile
 
 trait sttpExtensions {
 
   def asFile(file: DomFile, overwrite: Boolean = false): ResponseAs[DomFile, Nothing] = {
-    ResponseAsFile(sttpFile.fromDomFile(file), overwrite).map(_.toDomFile)
+    ResponseAsFile(SttpFile.fromDomFile(file), overwrite).map(_.toDomFile)
   }
 
   /**
@@ -16,6 +16,6 @@ trait sttpExtensions {
     * File name will be set to the name of the file.
     */
   def multipartFile(name: String, file: DomFile): Multipart =
-    multipartSttpFile(name, sttpFile.fromDomFile(file))
+    multipartSttpFile(name, SttpFile.fromDomFile(file))
 
 }

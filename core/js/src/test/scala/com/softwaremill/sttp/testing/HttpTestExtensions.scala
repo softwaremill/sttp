@@ -7,11 +7,11 @@ import scala.scalajs.js.JSConverters._
 
 import com.softwaremill.sttp.dom.experimental.FilePropertyBag
 import com.softwaremill.sttp.dom.experimental.{File => DomFile}
-import com.softwaremill.sttp.file.File
+import com.softwaremill.sttp.internal.SttpFile
 
 trait HttpTestExtensions[R[_]] { self: HttpTest[R] =>
 
-  protected def withTemporaryFile[T](content: String)(f: File => Future[T]): Future[T] = {
+  protected def withTemporaryFile[T](content: String)(f: SttpFile => Future[T]): Future[T] = {
     val file = new DomFile(
       Array(content.asInstanceOf[js.Any]).toJSArray,
       "temp.txt",
@@ -19,6 +19,6 @@ trait HttpTestExtensions[R[_]] { self: HttpTest[R] =>
         `type` = "text/plain"
       )
     )
-    f(File.fromDomFile(file))
+    f(SttpFile.fromDomFile(file))
   }
 }

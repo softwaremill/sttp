@@ -82,10 +82,7 @@ lazy val rootProject = (project in file("."))
   .settings(skip in publish := true, name := "sttp")
   .aggregate(
     rootJVM,
-    rootJS,
-    // leave akkaHttpBackend out of rootJVM due to
-    // https://github.com/akka/akka-http/issues/1930
-    akkaHttpBackend
+    rootJS
   )
 
 lazy val rootJVM = project
@@ -97,6 +94,7 @@ lazy val rootJVM = project
     catsJVM,
     monixJVM,
     scalaz,
+    // might fail due to // https://github.com/akka/akka-http/issues/1930
     akkaHttpBackend,
     asyncHttpClientBackend,
     asyncHttpClientFutureBackend,

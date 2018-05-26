@@ -3,7 +3,7 @@ package com.softwaremill.sttp.testing
 import java.io.InputStream
 
 import com.softwaremill.sttp._
-import com.softwaremill.sttp.file.File
+import com.softwaremill.sttp.internal.SttpFile
 import com.softwaremill.sttp.testing.SttpBackendStub._
 
 import scala.concurrent.Future
@@ -194,7 +194,7 @@ object SttpBackendStub {
         None
       case ResponseAsFile(file, overwrite) =>
         b match {
-          case f: File => Some(f)
+          case f: SttpFile => Some(f)
           case _       => None
         }
       case MappedResponseAs(raw, g) =>

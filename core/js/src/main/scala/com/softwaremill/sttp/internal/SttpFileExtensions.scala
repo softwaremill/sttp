@@ -1,16 +1,16 @@
-package com.softwaremill.sttp.file
+package com.softwaremill.sttp.internal
 
 import com.softwaremill.sttp.dom.experimental.{File => DomFile}
 
 // wrap a DomFile
-trait FileExtensions { self: File =>
+trait SttpFileExtensions { self: SttpFile =>
 
   def toDomFile: DomFile = underlying.asInstanceOf[DomFile]
 }
 
-trait FileCompanionExtensions {
+trait SttpFileCompanionExtensions {
 
-  def fromDomFile(file: DomFile): File = new File(file) {
+  def fromDomFile(file: DomFile): SttpFile = new SttpFile(file) {
     val name: String = file.name
     val size: Long = file.size.toLong
   }

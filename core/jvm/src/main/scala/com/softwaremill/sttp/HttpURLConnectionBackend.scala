@@ -8,7 +8,7 @@ import java.nio.file.Files
 import java.util.concurrent.ThreadLocalRandom
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
 
-import com.softwaremill.sttp.file.{File => sttpFile}
+import com.softwaremill.sttp.internal.SttpFile
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
@@ -249,7 +249,7 @@ class HttpURLConnectionBackend private (opts: SttpBackendOptions, customizeConne
 
       case ResponseAsFile(output, overwrite) =>
         val f = FileHelpers.saveFile(output.toFile, is, overwrite)
-        sttpFile.fromFile(f)
+        SttpFile.fromFile(f)
 
     }
   }

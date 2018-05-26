@@ -4,7 +4,7 @@ import java.io.InputStream
 import java.nio.ByteBuffer
 import java.util.Base64
 
-import com.softwaremill.sttp.file.File
+import com.softwaremill.sttp.internal.SttpFile
 
 import scala.collection.immutable.Seq
 import scala.concurrent.duration.Duration
@@ -131,7 +131,7 @@ case class RequestT[U[_], T, +S](
     * If content length is not yet specified, will be set to the length
     * of the given file.
     */
-  private[sttp] def body(f: File): RequestT[U, T, S] =
+  private[sttp] def body(f: SttpFile): RequestT[U, T, S] =
     withBasicBody(FileBody(f))
       .setContentLengthIfMissing(f.size)
 

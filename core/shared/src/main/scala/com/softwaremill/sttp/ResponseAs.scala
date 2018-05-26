@@ -2,7 +2,7 @@ package com.softwaremill.sttp
 
 import java.net.URLDecoder
 
-import com.softwaremill.sttp.file.File
+import com.softwaremill.sttp.internal.SttpFile
 
 import scala.collection.immutable.Seq
 import scala.language.higherKinds
@@ -35,7 +35,7 @@ case class MappedResponseAs[T, T2, S](raw: BasicResponseAs[T, S], g: T => T2) ex
     MappedResponseAs[T, T3, S](raw, g andThen f)
 }
 
-case class ResponseAsFile(output: File, overwrite: Boolean) extends BasicResponseAs[File, Nothing]
+case class ResponseAsFile(output: SttpFile, overwrite: Boolean) extends BasicResponseAs[SttpFile, Nothing]
 
 object ResponseAs {
   private[sttp] def parseParams(s: String, encoding: String): Seq[(String, String)] = {

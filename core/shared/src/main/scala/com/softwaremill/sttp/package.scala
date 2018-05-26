@@ -3,7 +3,7 @@ package com.softwaremill
 import java.io.{ByteArrayOutputStream, InputStream, OutputStream }
 import java.nio.ByteBuffer
 
-import com.softwaremill.sttp.file.File
+import com.softwaremill.sttp.internal.SttpFile
 
 import scala.annotation.{implicitNotFound, tailrec}
 import scala.collection.immutable.Seq
@@ -110,7 +110,7 @@ package object sttp extends sttpExtensions {
 
   def asStream[S]: ResponseAs[S, S] = ResponseAsStream[S, S]()
 
-  private[sttp] def asSttpFile(file: File, overwrite: Boolean = false): ResponseAs[File, Nothing] =
+  private[sttp] def asSttpFile(file: SttpFile, overwrite: Boolean = false): ResponseAs[SttpFile, Nothing] =
     ResponseAsFile(file, overwrite)
 
   // multipart factory methods
@@ -156,7 +156,7 @@ package object sttp extends sttpExtensions {
     *
     * File name will be set to the name of the file.
     */
-  private[sttp] def multipartSttpFile(name: String, file: File): Multipart =
+  private[sttp] def multipartSttpFile(name: String, file: SttpFile): Multipart =
     Multipart(name,
               FileBody(file),
               fileName = Some(file.name),
