@@ -16,6 +16,6 @@ trait sttpExtensions {
     * File name will be set to the name of the file.
     */
   def multipartFile(name: String, file: DomFile): Multipart =
-    multipart(name, sttpFile.fromDomFile(file))
+    multipartSttpFile(name, sttpFile.fromDomFile(file))
 
 }

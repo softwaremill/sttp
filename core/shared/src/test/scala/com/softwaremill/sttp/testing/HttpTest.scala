@@ -292,7 +292,7 @@ trait HttpTest[R[_]]
 
     "send a multipart message with a file" in {
       withTemporaryFile(Some(testBodyBytes)) { f =>
-        val req = mp.multipartBody(multipart("p1", f), multipart("p2", "v2"))
+        val req = mp.multipartBody(multipartSttpFile("p1", f), multipart("p2", "v2"))
         req.send().toFuture().map { resp =>
           resp.unsafeBody should be(s"p1=$testBody (${f.name}), p2=v2")
         }
