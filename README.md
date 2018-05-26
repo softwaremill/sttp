@@ -70,3 +70,14 @@ If you have a question, or hit a problem, feel free to ask on our [gitter channe
 Or, if you encounter a bug, something is unclear in the code or documentation, don’t hesitate and open an issue on GitHub.
 
 We are also always looking for contributions and new ideas, so if you’d like to get into the project, check out the [open issues](https://github.com/softwaremill/sttp/issues), or post your own suggestions!
+
+### Testing
+
+Running the tests using the JS backend has some prerequisities:
+
+* Install [Google Chrome](https://www.google.com/chrome/)
+* Download [ChromeDriver](https://sites.google.com/a/chromium.org/chromedriver/downloads) and 
+[install it](https://sites.google.com/a/chromium.org/chromedriver/getting-started)
+
+Note that running the default `test` task will run the tests using both the JVM and JS backends.
+If you'd like to run the tests using *only* the JVM backend, execute: `sbt rootJVM/test`.

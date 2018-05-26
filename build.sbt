@@ -97,7 +97,7 @@ lazy val rootJVM = project
     catsJVM,
     monixJVM,
     scalaz,
-//    akkaHttpBackend,
+    akkaHttpBackend,
     asyncHttpClientBackend,
     asyncHttpClientFutureBackend,
     asyncHttpClientScalazBackend,
