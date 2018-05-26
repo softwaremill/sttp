@@ -5,6 +5,7 @@ import java.nio.charset.Charset
 
 import com.softwaremill.sttp.ResponseAs.EagerResponseHandler
 import com.softwaremill.sttp._
+import com.softwaremill.sttp.file.{File => sttpFile}
 import io.netty.buffer.ByteBuf
 import io.netty.handler.codec.http.HttpHeaders
 import org.asynchttpclient.AsyncHandler.State
@@ -172,7 +173,7 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
       case InputStreamBody(b, _) =>
         rb.setBody(b)
 
-      case PathBody(b, _) =>
+      case FileBody(b, _) =>
         rb.setBody(b.toFile)
 
       case StreamBody(s) =>
@@ -207,7 +208,7 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
         // sadly async http client only supports parts that are strings,
         // byte arrays or files
         new ByteArrayPart(nameWithFilename, toByteArray(b))
-      case PathBody(b, _) =>
+      case FileBody(b, _) =>
         new FilePart(mp.name, b.toFile, null, null, mp.fileName.orNull)
     }
 
@@ -264,9 +265,10 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
             Failure(new IllegalStateException("Requested a streaming response, trying to read eagerly."))
 
           case ResponseAsFile(file, overwrite) =>
-            Try(
-              ResponseAs
-                .saveFile(file, response.getResponseBodyAsStream, overwrite))
+            Try {
+              val f = FileHelpers.saveFile(file.toFile, response.getResponseBodyAsStream, overwrite)
+              sttpFile.fromFile(f)
+            }
         }
     }
 
