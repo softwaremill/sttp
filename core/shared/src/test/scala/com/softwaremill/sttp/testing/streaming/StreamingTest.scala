@@ -52,11 +52,14 @@ trait StreamingTest[R[_], S]
   }
 
   "receive a stream from an https site" in {
+    val numChunks = 100
+    val url = uri"https://httpbin.org/stream/$numChunks"
+
     sttp
     // of course, you should never rely on the internet being available
     // in tests, but that's so much easier than setting up an https
     // testing server
-      .get(uri"https://softwaremill.com")
+      .get(url)
       .response(asStream[S])
       .send()
       .toFuture()
@@ -64,7 +67,9 @@ trait StreamingTest[R[_], S]
         bodyConsumer(response.unsafeBody).toFuture()
       }
       .map { responseBody =>
-        responseBody should include("</div>")
+        val urlRegex = s""""${url.toString}"""".r
+
+        urlRegex.findAllIn(responseBody).length shouldBe numChunks
       }
   }
 

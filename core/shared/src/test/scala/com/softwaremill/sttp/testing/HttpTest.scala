@@ -11,6 +11,8 @@ import scala.concurrent.duration._
 import scala.concurrent.Future
 import scala.language.higherKinds
 
+import org.scalatest.Assertion
+
 trait HttpTest[R[_]]
     extends AsyncFreeSpec
     with Matchers
@@ -21,9 +23,8 @@ trait HttpTest[R[_]]
 
   protected def endpoint: String
 
-  protected val binaryFileHash = "2fab8aa91221d3ce09599386643995fc90554f729739c7082b499ae7a720de30"
-  protected val textFileHash = "c57c912fdd2f88f1e8d09d4514744cf706809dd7e352f9aad3ef9bcb586a46a4"
-  private val textWithSpecialCharacters = "Żółć!"
+  protected val binaryFileHash = "565370873a38d91f34a3091082e63933"
+  protected val textFileHash = "b048a88ece8e4ec5eb386b8fc5006d13"
 
   implicit val backend: SttpBackend[R, Nothing]
   implicit val convertToFuture: ConvertToFuture[R]
@@ -34,6 +35,9 @@ trait HttpTest[R[_]]
   private val expectedPostEchoResponse = "POST /echo this is the body"
 
   protected val sttpIgnore = com.softwaremill.sttp.ignore
+
+  // set to false if the backend implementation does not use the FollowRedirectsBackend
+  protected def usesFollowRedirectsBackend: Boolean = true
 
   "parse response" - {
     "as string" in {
@@ -167,13 +171,15 @@ trait HttpTest[R[_]]
     }
   }
 
+  protected def cacheControlHeaders = Set("no-cache", "max-age=1000")
+
   "headers" - {
     def getHeaders = sttp.get(uri"$endpoint/set_headers")
 
     "read response headers" in {
       getHeaders.response(sttpIgnore).send().toFuture().map { response =>
-        response.headers should have length (6)
-        response.headers("Cache-Control").toSet should be(Set("no-cache", "max-age=1000"))
+        response.headers should have length (4 + cacheControlHeaders.size)
+        response.headers("Cache-Control").toSet should be(cacheControlHeaders)
         response.header("Server").exists(_.startsWith("akka-http")) should be(true)
         response.contentType should be(Some("text/plain; charset=UTF-8"))
         response.contentLength should be(Some(2L))
@@ -249,16 +255,16 @@ trait HttpTest[R[_]]
   protected def withTemporaryFile[T](content: Option[Array[Byte]])(f: SttpFile => Future[T]): Future[T]
   private def withTemporaryNonExistentFile[T](f: SttpFile => Future[T]): Future[T] = withTemporaryFile(None)(f)
 
-  protected def sha256Hash(bytes: Array[Byte]): String
-  protected def sha256FileHash(file: SttpFile): String
+  protected def md5Hash(bytes: Array[Byte]): String
+  protected def md5FileHash(file: SttpFile): Future[String]
 
   "download file" - {
 
     "download a binary file using asFile" in {
       withTemporaryNonExistentFile { file =>
         val req = sttp.get(uri"$endpoint/download/binary").response(asSttpFile(file))
-        req.send().toFuture().map { resp =>
-          sha256FileHash(resp.unsafeBody) shouldBe binaryFileHash
+        req.send().toFuture().flatMap { resp =>
+          md5FileHash(resp.unsafeBody).map { _ shouldBe binaryFileHash }
         }
       }
     }
@@ -266,11 +272,17 @@ trait HttpTest[R[_]]
     "download a text file using asFile" in {
       withTemporaryNonExistentFile { file =>
         val req = sttp.get(uri"$endpoint/download/text").response(asSttpFile(file))
-        req.send().toFuture().map { resp =>
-          sha256FileHash(resp.unsafeBody) shouldBe textFileHash
+        req.send().toFuture().flatMap { resp =>
+          md5FileHash(resp.unsafeBody).map { _ shouldBe textFileHash }
         }
       }
     }
+  }
+
+  protected def multipartStringDefaultFileName: Option[String] = None
+  private def defaultFileName = multipartStringDefaultFileName match {
+    case None => ""
+    case Some(name) => s" ($name)"
   }
 
   "multipart" - {
@@ -279,7 +291,7 @@ trait HttpTest[R[_]]
     "send a multipart message" in {
       val req = mp.multipartBody(multipart("p1", "v1"), multipart("p2", "v2"))
       req.send().toFuture().map { resp =>
-        resp.unsafeBody should be("p1=v1, p2=v2")
+        resp.unsafeBody should be(s"p1=v1$defaultFileName, p2=v2$defaultFileName")
       }
     }
 
@@ -294,9 +306,20 @@ trait HttpTest[R[_]]
       withTemporaryFile(Some(testBodyBytes)) { f =>
         val req = mp.multipartBody(multipartSttpFile("p1", f), multipart("p2", "v2"))
         req.send().toFuture().map { resp =>
-          resp.unsafeBody should be(s"p1=$testBody (${f.name}), p2=v2")
+          resp.unsafeBody should be(s"p1=$testBody (${f.name}), p2=v2$defaultFileName")
         }
       }
+    }
+  }
+
+  protected def expectRedirectResponse(
+    response: R[Response[String]],
+    code: Int
+  ): Future[Assertion] = {
+    response.toFuture().map { resp =>
+      resp.code should be(code)
+      resp.body should be('left)
+      resp.history should be('empty)
     }
   }
 
@@ -308,18 +331,11 @@ trait HttpTest[R[_]]
     def loop = sttp.post(uri"$endpoint/redirect/loop")
 
     "not redirect when redirects shouldn't be followed (temporary)" in {
-      r1.followRedirects(false).send().toFuture().map { resp =>
-        resp.code should be(307)
-        resp.body should be('left)
-        resp.history should be('empty)
-      }
+      expectRedirectResponse(r1.followRedirects(false).send(), 307)
     }
 
     "not redirect when redirects shouldn't be followed (permanent)" in {
-      r2.followRedirects(false).send().toFuture().map { resp =>
-        resp.code should be(308)
-        resp.body should be('left)
-      }
+      expectRedirectResponse(r2.followRedirects(false).send(), 308)
     }
 
     "redirect when redirects should be followed" in {
@@ -343,47 +359,45 @@ trait HttpTest[R[_]]
       }
     }
 
-    "keep a single history entry of redirect responses" in {
-      r3.send().toFuture().map { resp =>
-        resp.code should be(200)
-        resp.unsafeBody should be(r4response)
-        resp.history should have size (1)
-        resp.history(0).code should be(302)
+    if (usesFollowRedirectsBackend) {
+      "keep a single history entry of redirect responses" in {
+        r3.send().toFuture().map { resp =>
+          resp.code should be(200)
+          resp.unsafeBody should be(r4response)
+          resp.history should have size (1)
+          resp.history(0).code should be(302)
+        }
       }
-    }
 
-    "keep whole history of redirect responses" in {
-      r1.send().toFuture().map { resp =>
-        resp.code should be(200)
-        resp.unsafeBody should be(r4response)
-        resp.history should have size (3)
-        resp.history(0).code should be(307)
-        resp.history(1).code should be(308)
-        resp.history(2).code should be(302)
+      "keep whole history of redirect responses" in {
+        r1.send().toFuture().map { resp =>
+          resp.code should be(200)
+          resp.unsafeBody should be(r4response)
+          resp.history should have size (3)
+          resp.history(0).code should be(307)
+          resp.history(1).code should be(308)
+          resp.history(2).code should be(302)
+        }
       }
-    }
 
-    "break redirect loops" in {
-      loop.send().toFuture().map { resp =>
-        resp.code should be(0)
-        resp.history should have size (FollowRedirectsBackend.MaxRedirects)
+      "break redirect loops" in {
+        loop.send().toFuture().map { resp =>
+          resp.code should be(0)
+          resp.history should have size (FollowRedirectsBackend.MaxRedirects)
+        }
       }
-    }
 
-    "break redirect loops after user-specified count" in {
-      val maxRedirects = 10
-      loop.maxRedirects(maxRedirects).send().toFuture().map { resp =>
-        resp.code should be(0)
-        resp.history should have size (maxRedirects)
+      "break redirect loops after user-specified count" in {
+        val maxRedirects = 10
+        loop.maxRedirects(maxRedirects).send().toFuture().map { resp =>
+          resp.code should be(0)
+          resp.history should have size (maxRedirects)
+        }
       }
     }
 
     "not redirect when maxRedirects is less than or equal to 0" in {
-      loop.maxRedirects(-1).send().toFuture().map { resp =>
-        resp.code should be(302)
-        resp.body should be('left)
-        resp.history should be('empty)
-      }
+      expectRedirectResponse(loop.maxRedirects(-1).send(), 302)
     }
   }
 
@@ -421,16 +435,6 @@ trait HttpTest[R[_]]
     "parse an empty error response as empty string" in {
       postEmptyResponse.send().toFuture().map { response =>
         response.body should be(Left(""))
-      }
-    }
-  }
-
-  "encoding" - {
-    "read response body encoded using ISO-8859-2, as specified in the header, overriding the default" in {
-      val request = sttp.get(uri"$endpoint/respond_with_iso_8859_2")
-
-      request.send().toFuture().map { response =>
-        response.unsafeBody should be(textWithSpecialCharacters)
       }
     }
   }

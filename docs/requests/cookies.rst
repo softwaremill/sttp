@@ -5,6 +5,8 @@ Cookies
 
 Cookies sent in requests are key-value pairs contained in the ``Cookie`` header. They can be set on a request in a couple of ways. The first is using the ``.cookie(name: String, value: String)`` method. This will yield a new request definition which, when sent, will contain the given cookie.
 
+Cookies are currently only available on the JVM.
+
 Cookies can also be set using the following methods::
 
   def cookie(nv: (String, String))

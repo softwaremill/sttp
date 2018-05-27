@@ -1,6 +1,9 @@
 // shadow sbt-scalajs' crossProject and CrossType until Scala.js 1.0.0 is released
 import sbtcrossproject.{crossProject, CrossType}
 
+lazy val testServerPort = settingKey[Int]("Port to run the http test server on")
+lazy val startTestServer = taskKey[Unit]("Start a http server used by tests")
+
 val commonSettings = Seq(
   organization := "com.softwaremill.sttp",
   scalaVersion := "2.12.6",
@@ -71,6 +74,24 @@ lazy val browserTestSettings = Seq(
   }
 )
 
+// start the test server before running tests
+def testServerSettings(config: Configuration) = Seq(
+  test in config := (test in config)
+    .dependsOn(
+      startTestServer in Test in Project("core", file("core"))
+    )
+    .value,
+  testOnly in config := (testOnly in config)
+    .dependsOn(
+      startTestServer in Test in Project("core", file("core"))
+    )
+    .evaluated,
+  testOptions in config += Tests.Setup(() => {
+    val port = (testServerPort in Test in Project("core", file("core"))).value
+    PollingUtils.waitUntilServerAvailable(new URL(s"http://localhost:$port"))
+  })
+)
+
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.1"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % "2.5.12"
 
@@ -132,14 +153,25 @@ lazy val core = crossProject(JSPlatform, JVMPlatform)
   .jsSettings(
     libraryDependencies ++= Seq(
       "org.scala-js" %%% "scalajs-dom" % "0.9.5"
+    ),
+    jsDependencies ++= Seq(
+      "org.webjars.npm" % "spark-md5" % "3.0.0" % "test" / "spark-md5.js" minified "spark-md5.min.js"
     )
   )
+  .jsSettings(browserTestSettings)
+  .jsSettings(testServerSettings(Test))
   .jvmSettings(
     libraryDependencies ++= Seq(
       akkaHttp % "test",
+      "ch.megard" %% "akka-http-cors" % "0.3.0" % "test",
       akkaStreams % "test",
       "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test"
-    )
+    ),
+    mainClass in reStart := Some("com.softwaremill.sttp.testing.HttpServer"),
+    reStartArgs := Seq(s"${(testServerPort in Test).value}"),
+    fullClasspath in reStart := (fullClasspath in Test).value,
+    testServerPort in Test := 51823,
+    startTestServer in Test := reStart.toTask("").value
   )
 lazy val coreJS = core.js
 lazy val coreJVM = core.jvm
@@ -161,10 +193,11 @@ lazy val catsJVM = cats.jvm.dependsOn(coreJVM % "compile->compile;test->test")
 
 lazy val monix = crossProject(JSPlatform, JVMPlatform)
   .withoutSuffixFor(JVMPlatform)
-  .crossType(CrossType.Pure)
+  .crossType(CrossType.Full)
   .in(file("implementations/monix"))
   .settings(commonSettings: _*)
   .jsSettings(commonJSSettings: _*)
+  .jsSettings(testServerSettings(Test))
   .settings(
     name := "monix",
     publishArtifact in Test := true,
