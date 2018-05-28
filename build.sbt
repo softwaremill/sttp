@@ -288,13 +288,13 @@ lazy val json4s: Project = (project in file("json/json4s"))
   .settings(
     name := "json4s",
     libraryDependencies ++= Seq(
-      "org.json4s" %% "json4s-native" % "3.5.3",
+      "org.json4s" %% "json4s-native" % "3.5.4",
       "org.scalatest" %% "scalatest" % scalaTestVersion % "test"
     )
   )
   .dependsOn(coreJVM)
 
-lazy val braveVersion = "4.19.2"
+lazy val braveVersion = "5.0.0"
 
 lazy val braveBackend: Project = (project in file("metrics/brave-backend"))
   .settings(commonSettings: _*)
