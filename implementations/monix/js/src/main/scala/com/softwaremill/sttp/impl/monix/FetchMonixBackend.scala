@@ -48,7 +48,7 @@ class FetchMonixBackend private (fetchOptions: FetchOptions)
     Task
       .delay {
 
-        val reader = response.body.getReader()
+        lazy val reader = response.body.getReader()
 
         def read() = transformPromise(reader.read())
 

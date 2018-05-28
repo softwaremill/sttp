@@ -6,7 +6,7 @@ import com.softwaremill.sttp.SttpBackend
 import monix.eval.Task
 import monix.reactive.Observable
 
-class MonixFetchStreamingTest extends MonixStreamingTest {
+class FetchMonixStreamingTest extends MonixStreamingTest {
 
   override protected def endpoint: String = "localhost:51823"
 

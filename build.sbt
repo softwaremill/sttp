@@ -53,6 +53,7 @@ val commonJSSettings = Seq(
   }
 ) ++ browserTestSettings
 
+// run JavaScript tests inside Chrome
 lazy val browserTestSettings = Seq(
   jsEnv in Test := {
     val debugging = false // set to true to help debugging
@@ -74,7 +75,8 @@ lazy val browserTestSettings = Seq(
   }
 )
 
-// start the test server before running tests
+// start a test server before running tests
+// this is required as JavaScript tests run inside a nodejs/browser environment
 def testServerSettings(config: Configuration) = Seq(
   test in config := (test in config)
     .dependsOn(
@@ -167,8 +169,10 @@ lazy val core = crossProject(JSPlatform, JVMPlatform)
       akkaStreams % "test",
       "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test"
     ),
+    // the test server needs to be started before running any JavaScript tests
+    // `reStart` cannot be scoped so it cant be only added to Test
     mainClass in reStart := Some("com.softwaremill.sttp.testing.HttpServer"),
-    reStartArgs := Seq(s"${(testServerPort in Test).value}"),
+    reStartArgs in reStart := Seq(s"${(testServerPort in Test).value}"),
     fullClasspath in reStart := (fullClasspath in Test).value,
     testServerPort in Test := 51823,
     startTestServer in Test := reStart.toTask("").value

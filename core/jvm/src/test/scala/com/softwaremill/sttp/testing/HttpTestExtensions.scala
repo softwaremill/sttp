@@ -114,7 +114,7 @@ trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
           .get(uri"$endpoint/download/text")
           .response(asSttpFile(file, overwrite = true))
         req.send().toFuture().flatMap { resp =>
-          md5FileHash(resp.unsafeBody).map { _ shouldBe textFileHash }
+          md5FileHash(resp.unsafeBody).map { _ shouldBe textFileMD5Hash }
         }
       }
     }

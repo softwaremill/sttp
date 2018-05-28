@@ -1,6 +1,5 @@
 package com.softwaremill.sttp.testing
 
-import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Promise
 import scala.language.higherKinds
@@ -17,9 +16,7 @@ import org.scalajs.dom.FileReader
 import org.scalajs.dom.raw.Event
 import org.scalajs.dom.raw.UIEvent
 
-trait HttpTestExtensions[R[_]] { self: HttpTest[R] =>
-
-  implicit override def executionContext: ExecutionContext = ExecutionContext.Implicits.global
+trait HttpTestExtensions[R[_]] extends JSAsyncExecutionContext { self: HttpTest[R] =>
 
   override protected def withTemporaryFile[T](content: Option[Array[Byte]])(f: SttpFile => Future[T]): Future[T] = {
     val data = content.getOrElse(Array.empty)

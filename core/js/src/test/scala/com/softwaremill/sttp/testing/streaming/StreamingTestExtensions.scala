@@ -1,9 +1,8 @@
 package com.softwaremill.sttp.testing.streaming
 
-import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
 
-trait StreamingTestExtensions[R[_], S] { self: StreamingTest[R, S] =>
+import com.softwaremill.sttp.testing.JSAsyncExecutionContext
 
-  implicit override def executionContext: ExecutionContext = ExecutionContext.Implicits.global
+trait StreamingTestExtensions[R[_], S] extends JSAsyncExecutionContext { self: StreamingTest[R, S] =>
 }

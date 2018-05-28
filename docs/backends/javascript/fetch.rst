@@ -3,7 +3,11 @@ Fetch backend
 
 A JavaScript backend implemented using the `Fetch API <https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API>`_ and backed via ``Future``.
 
-To use, add an implicit value::
+To use, add the following dependency to your project::
+
+  "com.softwaremill.sttp" %%% "core" % "1.1.14"
+
+And add an implicit value::
 
   implicit val sttpBackend = FetchBackend()
 
@@ -18,7 +22,7 @@ Streaming support is provided via ``FetchMonixBackend``. Note that streaming sup
 
 To use, add the following dependency to your project::
 
-  "com.softwaremill.sttp" %% "monix" % "1.1.14"
+  "com.softwaremill.sttp" %%% "monix" % "1.1.14"
 
 An example of streaming a response::
 

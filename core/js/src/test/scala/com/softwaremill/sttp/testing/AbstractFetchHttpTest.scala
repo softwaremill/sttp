@@ -26,6 +26,6 @@ abstract class AbstractFetchHttpTest[R[_], -S] extends HttpTest[R] {
   // https://fetch.spec.whatwg.org/#concept-header-value
   override protected def cacheControlHeaders = Set("max-age=1000, no-cache")
 
-  // the only way to set the content type is to use a Blob which will default the filename to 'blob'
+  // the only way to set the content type is to use a Blob which has a default filename of 'blob'
   override protected def multipartStringDefaultFileName = Some("blob")
 }

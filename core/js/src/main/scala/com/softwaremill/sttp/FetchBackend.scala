@@ -3,18 +3,13 @@ package com.softwaremill.sttp
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.scalajs.js
-import scala.scalajs.js.JSConverters._
 import scala.scalajs.js.Promise
-import scala.scalajs.js.annotation.JSExport
 
 import org.scalajs.dom.experimental.BodyInit
 import org.scalajs.dom.experimental.{Response => FetchResponse}
 
 class FetchBackend private (fetchOptions: FetchOptions)(implicit ec: ExecutionContext)
     extends AbstractFetchBackend[Future, Nothing](fetchOptions)(new FutureMonad()) {
-
-  @JSExport("send")
-  def send_JS[T](request: Request[T, Nothing]): Promise[Response[T]] = send(request).toJSPromise
 
   override protected def addCancelTimeoutHook[T](result: Future[T], cancel: () => Unit): Future[T] = {
     result.onComplete(_ => cancel())

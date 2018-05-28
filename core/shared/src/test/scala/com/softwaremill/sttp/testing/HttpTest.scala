@@ -23,8 +23,8 @@ trait HttpTest[R[_]]
 
   protected def endpoint: String
 
-  protected val binaryFileHash = "565370873a38d91f34a3091082e63933"
-  protected val textFileHash = "b048a88ece8e4ec5eb386b8fc5006d13"
+  protected val binaryFileMD5Hash = "565370873a38d91f34a3091082e63933"
+  protected val textFileMD5Hash = "b048a88ece8e4ec5eb386b8fc5006d13"
 
   implicit val backend: SttpBackend[R, Nothing]
   implicit val convertToFuture: ConvertToFuture[R]
@@ -264,7 +264,7 @@ trait HttpTest[R[_]]
       withTemporaryNonExistentFile { file =>
         val req = sttp.get(uri"$endpoint/download/binary").response(asSttpFile(file))
         req.send().toFuture().flatMap { resp =>
-          md5FileHash(resp.unsafeBody).map { _ shouldBe binaryFileHash }
+          md5FileHash(resp.unsafeBody).map { _ shouldBe binaryFileMD5Hash }
         }
       }
     }
@@ -273,12 +273,13 @@ trait HttpTest[R[_]]
       withTemporaryNonExistentFile { file =>
         val req = sttp.get(uri"$endpoint/download/text").response(asSttpFile(file))
         req.send().toFuture().flatMap { resp =>
-          md5FileHash(resp.unsafeBody).map { _ shouldBe textFileHash }
+          md5FileHash(resp.unsafeBody).map { _ shouldBe textFileMD5Hash }
         }
       }
     }
   }
 
+  // in JavaScript the only way to set the content type is to use a Blob which defaults the filename to 'blob'
   protected def multipartStringDefaultFileName: Option[String] = None
   private def defaultFileName = multipartStringDefaultFileName match {
     case None => ""
