@@ -294,7 +294,7 @@ lazy val json4s: Project = (project in file("json/json4s"))
   )
   .dependsOn(coreJVM)
 
-lazy val braveVersion = "4.19.2"
+lazy val braveVersion = "5.0.0"
 
 lazy val braveBackend: Project = (project in file("metrics/brave-backend"))
   .settings(commonSettings: _*)
