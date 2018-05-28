@@ -288,7 +288,7 @@ lazy val json4s: Project = (project in file("json/json4s"))
   .settings(
     name := "json4s",
     libraryDependencies ++= Seq(
-      "org.json4s" %% "json4s-native" % "3.5.3",
+      "org.json4s" %% "json4s-native" % "3.5.4",
       "org.scalatest" %% "scalatest" % scalaTestVersion % "test"
     )
   )
