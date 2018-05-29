@@ -71,7 +71,7 @@ def testServerSettings(config: Configuration) = Seq(
 )
 
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.1"
-val akkaStreams = "com.typesafe.akka" %% "akka-stream" % "2.5.12"
+val akkaStreams = "com.typesafe.akka" %% "akka-stream" % "2.5.13"
 
 val scalaTestVersion = "3.0.5"
 val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion
