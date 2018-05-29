@@ -16,7 +16,7 @@ import org.scalajs.dom.FileReader
 import org.scalajs.dom.raw.Event
 import org.scalajs.dom.raw.UIEvent
 
-trait HttpTestExtensions[R[_]] extends JSAsyncExecutionContext { self: HttpTest[R] =>
+trait HttpTestExtensions[R[_]] extends AsyncExecutionContext { self: HttpTest[R] =>
 
   override protected def withTemporaryFile[T](content: Option[Array[Byte]])(f: SttpFile => Future[T]): Future[T] = {
     val data = content.getOrElse(Array.empty)

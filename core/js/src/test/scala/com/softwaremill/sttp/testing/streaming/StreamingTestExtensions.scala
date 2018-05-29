@@ -2,7 +2,7 @@ package com.softwaremill.sttp.testing.streaming
 
 import scala.language.higherKinds
 
-import com.softwaremill.sttp.testing.JSAsyncExecutionContext
+import com.softwaremill.sttp.testing.AsyncExecutionContext
 
-trait StreamingTestExtensions[R[_], S] extends JSAsyncExecutionContext { self: StreamingTest[R, S] =>
+trait StreamingTestExtensions[R[_], S] extends AsyncExecutionContext { self: StreamingTest[R, S] =>
 }

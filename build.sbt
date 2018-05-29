@@ -1,8 +1,8 @@
 // shadow sbt-scalajs' crossProject and CrossType until Scala.js 1.0.0 is released
 import sbtcrossproject.{CrossType, crossProject}
 
-lazy val testServerPort = settingKey[Int]("Port to run the http test server on")
-lazy val startTestServer = taskKey[Unit]("Start a http server used by tests")
+lazy val testServerPort = settingKey[Int]("Port to run the http test server on (used by JS tests)")
+lazy val startTestServer = taskKey[Unit]("Start a http server used by tests (used by JS tests)")
 
 val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   organization := "com.softwaremill.sttp",
@@ -28,8 +28,7 @@ val commonJSSettings = Seq(
   }
 ) ++ browserTestSettings
 
-// run JavaScript tests inside Chrome
-// tests need to run inside a browser due to jsdom not supporting fetch
+// run JS tests inside Chrome, due to jsdom not supporting fetch
 lazy val browserTestSettings = Seq(
   jsEnv in Test := {
     val debugging = false // set to true to help debugging
@@ -51,8 +50,7 @@ lazy val browserTestSettings = Seq(
   }
 )
 
-// start a test server before running tests
-// this is required as JavaScript tests run inside a nodejs/browser environment
+// start a test server before running tests; this is required as JS tests run inside a nodejs/browser environment
 def testServerSettings(config: Configuration) = Seq(
   test in config := (test in config)
     .dependsOn(
@@ -145,8 +143,8 @@ lazy val core = crossProject(JSPlatform, JVMPlatform)
       akkaStreams % "test",
       "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test"
     ),
-    // the test server needs to be started before running any JavaScript tests
-    // `reStart` cannot be scoped so it cant be only added to Test
+    // the test server needs to be started before running any JS tests
+    // `reStart` cannJSAsyncExecutionContextot be scoped so it can't be only added to Test
     mainClass in reStart := Some("com.softwaremill.sttp.testing.HttpServer"),
     reStartArgs in reStart := Seq(s"${(testServerPort in Test).value}"),
     fullClasspath in reStart := (fullClasspath in Test).value,

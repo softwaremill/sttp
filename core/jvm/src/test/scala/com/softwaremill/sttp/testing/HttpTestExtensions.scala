@@ -11,15 +11,7 @@ import com.softwaremill.sttp.internal.SttpFile
 import scala.concurrent.Future
 import scala.language.higherKinds
 
-object HttpTestExtensions {
-
-  private val textWithSpecialCharacters = "Żółć!"
-
-}
-
 trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
-  import HttpTestExtensions._
-
   override protected def withTemporaryFile[T](content: Option[Array[Byte]])(f: SttpFile => Future[T]): Future[T] = {
     val file = Files.createTempFile("sttp", "sttp")
     val result = Future {
@@ -169,7 +161,7 @@ trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
       val request = sttp.get(uri"$endpoint/respond_with_iso_8859_2")
 
       request.send().toFuture().map { response =>
-        response.unsafeBody should be(textWithSpecialCharacters)
+        response.unsafeBody should be("Żółć!")
       }
     }
   }

@@ -31,8 +31,7 @@ trait MonadAsyncError[R[_]] extends MonadError[R] {
   def async[T](register: (Either[Throwable, T] => Unit) => Unit): R[T]
 }
 
-object syntax {
-
+object monadSyntax {
   implicit final class MonadErrorOps[R[_], A](val r: R[A]) extends AnyVal {
     def map[B](f: A => B)(implicit ME: MonadError[R]): R[B] = ME.map(r)(f)
     def flatMap[B](f: A => R[B])(implicit ME: MonadError[R]): R[B] = ME.flatMap(r)(f)
@@ -68,7 +67,7 @@ class FutureMonad(implicit ec: ExecutionContext) extends MonadAsyncError[Future]
   override protected def handleWrappedError[T](rt: Future[T])(h: PartialFunction[Throwable, Future[T]]): Future[T] =
     rt.recoverWith(h)
 
-  override def async[T](register: ((Either[Throwable, T]) => Unit) => Unit): Future[T] = {
+  override def async[T](register: (Either[Throwable, T] => Unit) => Unit): Future[T] = {
     val p = Promise[T]()
     register {
       case Left(t)  => p.failure(t)

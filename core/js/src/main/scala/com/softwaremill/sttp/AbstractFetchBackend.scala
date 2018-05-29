@@ -13,7 +13,7 @@ import com.softwaremill.sttp.dom.experimental.AbortController
 import com.softwaremill.sttp.dom.experimental.FilePropertyBag
 import com.softwaremill.sttp.dom.experimental.{File => DomFile}
 import com.softwaremill.sttp.internal.SttpFile
-import com.softwaremill.sttp.syntax._
+import com.softwaremill.sttp.monadSyntax._
 import org.scalajs.dom.FormData
 import org.scalajs.dom.experimental.BodyInit
 import org.scalajs.dom.experimental.Fetch
@@ -43,10 +43,9 @@ final case class FetchOptions(
   *
   * @see https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API
   */
-abstract class AbstractFetchBackend[R[_], S](options: FetchOptions)(implicit ME: MonadError[R])
-    extends SttpBackend[R, S] {
+abstract class AbstractFetchBackend[R[_], S](options: FetchOptions)(rm: MonadError[R]) extends SttpBackend[R, S] {
 
-  override def responseMonad: MonadError[R] = ME
+  override implicit def responseMonad: MonadError[R] = rm
 
   override def send[T](request: Request[T, S]): R[Response[T]] = {
 
@@ -98,9 +97,9 @@ abstract class AbstractFetchBackend[R[_], S](options: FetchOptions)(implicit ME:
       }
       .flatMap { resp =>
         if (resp.`type` == ResponseType.opaqueredirect) {
-          ME.error[FetchResponse](new RuntimeException("Unexpected redirect"))
+          responseMonad.error[FetchResponse](new RuntimeException("Unexpected redirect"))
         } else {
-          ME.unit(resp)
+          responseMonad.unit(resp)
         }
       }
       .flatMap { resp =>
@@ -144,10 +143,10 @@ abstract class AbstractFetchBackend[R[_], S](options: FetchOptions)(implicit ME:
   private def createBody(body: RequestBody[S]): R[js.UndefOr[BodyInit]] = {
     body match {
       case NoBody =>
-        ME.unit(js.undefined) // skip
+        responseMonad.unit(js.undefined) // skip
 
       case b: BasicRequestBody =>
-        ME.unit(writeBasicBody(b))
+        responseMonad.unit(writeBasicBody(b))
 
       case StreamBody(s) =>
         handleStreamBody(s)
@@ -168,7 +167,7 @@ abstract class AbstractFetchBackend[R[_], S](options: FetchOptions)(implicit ME:
             case Some(fileName) => formData.append(part.name, blob, fileName)
           }
         }
-        ME.unit(formData)
+        responseMonad.unit(formData)
     }
   }
 
