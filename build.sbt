@@ -1,38 +1,13 @@
 // shadow sbt-scalajs' crossProject and CrossType until Scala.js 1.0.0 is released
-import sbtcrossproject.{crossProject, CrossType}
+import sbtcrossproject.{CrossType, crossProject}
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests")
 
-val commonSettings = Seq(
+val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   organization := "com.softwaremill.sttp",
   scalaVersion := "2.12.6",
-  crossScalaVersions := Seq(scalaVersion.value, "2.11.12"),
-  scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-Xlint"),
-  scalafmtOnCompile := true,
-  scalafmtVersion := "1.4.0",
-  // publishing
-  publishTo := Some(
-    if (isSnapshot.value)
-      Opts.resolver.sonatypeSnapshots
-    else
-      Opts.resolver.sonatypeStaging
-  ),
-  publishArtifact in Test := false,
-  publishMavenStyle := true,
-  scmInfo := Some(ScmInfo(url("https://github.com/softwaremill/sttp"), "scm:git:git@github.com/softwaremill/sttp.git")),
-  developers := List(Developer("adamw", "Adam Warski", "", url("https://softwaremill.com"))),
-  licenses := ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0.txt")) :: Nil,
-  homepage := Some(url("http://softwaremill.com/open-source")),
-  sonatypeProfileName := "com.softwaremill",
-  // sbt-release
-  releaseCrossBuild := true,
-  releasePublishArtifactsAction := PgpKeys.publishSigned.value,
-  releaseIgnoreUntrackedFiles := true,
-  releaseProcess := SttpRelease.steps,
-  // silence transitive eviction warnings
-  evictionWarningOptions in update := EvictionWarningOptions.default
-    .withWarnTransitiveEvictions(false)
+  crossScalaVersions := Seq(scalaVersion.value, "2.11.12")
 )
 
 val commonJSSettings = Seq(
