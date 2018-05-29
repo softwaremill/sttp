@@ -77,7 +77,7 @@ class HttpURLConnectionBackend private (opts: SttpBackendOptions, customizeConne
         writeBasicBody(b, os)
         Some(os)
 
-      case StreamBody(s) =>
+      case StreamBody(_) =>
         // we have an instance of nothing - everything's possible!
         None
 
@@ -151,8 +151,8 @@ class HttpURLConnectionBackend private (opts: SttpBackendOptions, customizeConne
             case StringBody(b, encoding, _) =>
               Some(b.getBytes(encoding).length.toLong)
             case ByteArrayBody(b, _)   => Some(b.length.toLong)
-            case ByteBufferBody(b, _)  => None
-            case InputStreamBody(b, _) => None
+            case ByteBufferBody(_, _)  => None
+            case InputStreamBody(_, _) => None
             case FileBody(b, _)        => Some(b.toFile.length())
           }
 

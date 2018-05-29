@@ -21,7 +21,7 @@ sealed trait ResponseAs[T, +S] {
   * handling method, but needs to be handled directly by the backend.
   */
 sealed trait BasicResponseAs[T, +S] extends ResponseAs[T, S] {
-  override def map[T2](f: (T) => T2): ResponseAs[T2, S] =
+  override def map[T2](f: T => T2): ResponseAs[T2, S] =
     MappedResponseAs[T, T2, S](this, f)
 }
 
@@ -61,8 +61,8 @@ object ResponseAs {
     def handle[T, R[_]](responseAs: ResponseAs[T, S], responseMonad: MonadError[R]): R[T] = {
 
       responseAs match {
-        case mra @ MappedResponseAs(raw, g) =>
-          responseMonad.map(responseMonad.fromTry(handleBasic(mra.raw)))(mra.g)
+        case MappedResponseAs(raw, g) =>
+          responseMonad.map(responseMonad.fromTry(handleBasic(raw)))(g)
         case bra: BasicResponseAs[T, S] =>
           responseMonad.fromTry(handleBasic(bra))
       }

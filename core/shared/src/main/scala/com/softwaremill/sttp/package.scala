@@ -215,7 +215,7 @@ package object sttp extends sttpExtensions {
       case s if s.startsWith("charset=") => s.substring(8)
     }
 
-  private[sttp] def transfer(is: InputStream, os: OutputStream) {
+  private[sttp] def transfer(is: InputStream, os: OutputStream): Unit = {
     var read = 0
     val buf = new Array[Byte](1024)
 

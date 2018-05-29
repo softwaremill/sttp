@@ -175,7 +175,7 @@ trait HttpTest[R[_]]
 
     "read response headers" in {
       getHeaders.response(sttpIgnore).send().toFuture().map { response =>
-        response.headers should have length (4 + cacheControlHeaders.size)
+        response.headers should have length (4 + cacheControlHeaders.size).toLong
         response.headers("Cache-Control").toSet should be(cacheControlHeaders)
         response.header("Server").exists(_.startsWith("akka-http")) should be(true)
         response.contentType should be(Some("text/plain; charset=UTF-8"))

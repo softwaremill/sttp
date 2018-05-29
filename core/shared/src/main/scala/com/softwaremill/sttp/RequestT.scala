@@ -97,7 +97,7 @@ case class RequestT[U[_], T, +S](
     */
   def body(b: String, encoding: String): RequestT[U, T, S] =
     withBasicBody(StringBody(b, encoding))
-      .setContentLengthIfMissing(b.getBytes(encoding).length)
+      .setContentLengthIfMissing(b.getBytes(encoding).length.toLong)
 
   /**
     * If content type is not yet specified, will be set to
@@ -108,7 +108,7 @@ case class RequestT[U[_], T, +S](
     */
   def body(b: Array[Byte]): RequestT[U, T, S] =
     withBasicBody(ByteArrayBody(b))
-      .setContentLengthIfMissing(b.length)
+      .setContentLengthIfMissing(b.length.toLong)
 
   /**
     * If content type is not yet specified, will be set to
@@ -255,7 +255,7 @@ case class RequestT[U[_], T, +S](
   private def formDataBody(fs: Seq[(String, String)], encoding: String): RequestT[U, T, S] = {
     val b = RequestBody.paramsToStringBody(fs, encoding)
     setContentTypeIfMissing(ApplicationFormContentType)
-      .setContentLengthIfMissing(b.s.getBytes(encoding).length)
+      .setContentLengthIfMissing(b.s.getBytes(encoding).length.toLong)
       .copy(body = b)
   }
 }

@@ -150,7 +150,7 @@ trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
     "break redirect loops" in {
       loop.send().toFuture().map { resp =>
         resp.code should be(0)
-        resp.history should have size (FollowRedirectsBackend.MaxRedirects)
+        resp.history should have size (FollowRedirectsBackend.MaxRedirects.toLong)
       }
     }
 
@@ -158,7 +158,7 @@ trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
       val maxRedirects = 10
       loop.maxRedirects(maxRedirects).send().toFuture().map { resp =>
         resp.code should be(0)
-        resp.history should have size (maxRedirects)
+        resp.history should have size (maxRedirects.toLong)
       }
     }
   }

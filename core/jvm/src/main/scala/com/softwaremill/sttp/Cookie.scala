@@ -81,7 +81,7 @@ object Cookie {
 
         return Some(cal.toZonedDateTime)
       } catch {
-        case e: Exception =>
+        case _: Exception =>
         // Ignore, try the next date format
       }
     }

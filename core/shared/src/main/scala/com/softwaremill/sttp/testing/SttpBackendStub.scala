@@ -190,9 +190,9 @@ object SttpBackendStub {
           case is: InputStream => Some(toByteArray(is))
           case _               => None
         }
-      case ras @ ResponseAsStream() =>
+      case ResponseAsStream() =>
         None
-      case ResponseAsFile(file, overwrite) =>
+      case ResponseAsFile(_, _) =>
         b match {
           case f: SttpFile => Some(f)
           case _       => None
