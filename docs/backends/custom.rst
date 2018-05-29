@@ -144,9 +144,9 @@ Example new backend
 
 Implementing a new backend is made easy as the tests are published in the ``core`` jar file under the ``tests`` classifier. Simply add the follow dependencies to your ``build.sbt``::
 
-  "com.softwaremill.sttp" %% "core" % sttpVersion % "test" classifier "tests",
-  "com.github.pathikrit" %% "better-files" % "3.4.0" % "test",
+  "com.softwaremill.sttp" %% "core" % "1.1.14" % "test" classifier "tests",
   "com.typesafe.akka" %% "akka-http" % "10.1.1" % "test",
+  "ch.megard" %% "akka-http-cors" % "0.3.0" % "test",
   "com.typesafe.akka" %% "akka-stream" % "2.5.12" % "test",
   "org.scalatest" %% "scalatest" % "3.0.5" % "test"
 

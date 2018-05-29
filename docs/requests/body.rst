@@ -41,8 +41,10 @@ Uploading files
 
 To upload a file, simply set the request body as a ``File`` or ``Path``::
 
-  def body(b: File)
+  def body(f: File)
   def body(b: Path)
+
+Note that on JavaScript only a ``Web/API/File`` is allowed.
 
 As with binary body methods, the content type will default to ``application/octet-stream``, and the content length will be set to the length of the file (unless specified explicitly).
 

@@ -8,10 +8,13 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.CacheDirectives._
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.server.Directives.{entity, path, _}
-import akka.http.scaladsl.server.Route
+import akka.http.scaladsl.server.{RejectionHandler, Route}
 import akka.http.scaladsl.server.directives.Credentials
+import akka.http.scaladsl.server.directives.RouteDirectives.complete
 import akka.stream.ActorMaterializer
 import akka.util.ByteString
+import ch.megard.akka.http.cors.scaladsl.CorsDirectives
+import ch.megard.akka.http.cors.scaladsl.settings.CorsSettings
 import org.scalatest.{BeforeAndAfterAll, Suite}
 
 import scala.concurrent.{Await, Future}
@@ -50,7 +53,7 @@ object HttpServer {
   }
 }
 
-private class HttpServer(port: Int) extends AutoCloseable {
+private class HttpServer(port: Int) extends AutoCloseable with CorsDirectives {
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -59,6 +62,9 @@ private class HttpServer(port: Int) extends AutoCloseable {
   private implicit val actorSystem: ActorSystem = ActorSystem("sttp-test-server")
   private implicit val materializer: ActorMaterializer = ActorMaterializer()
 
+  private val corsSettings = CorsSettings.defaultSettings
+    .withExposedHeaders(List("Server", "Date", "Cache-Control", "Content-Length", "Content-Type", "WWW-Authenticate"))
+
   private def paramsToString(m: Map[String, String]): String =
     m.toList.sortBy(_._1).map(p => s"${p._1}=${p._2}").mkString(" ")
 
@@ -66,7 +72,7 @@ private class HttpServer(port: Int) extends AutoCloseable {
   private val binaryFile = new java.io.File(getClass.getResource("/binaryfile.jpg").getFile)
   private val textWithSpecialCharacters = "Żółć!"
 
-  val serverRoutes: Route =
+  private val serverRoutes: Route =
     pathPrefix("echo") {
       pathPrefix("form_params") {
         formFieldMap { params =>
@@ -212,9 +218,19 @@ private class HttpServer(port: Int) extends AutoCloseable {
       }
     }
 
+  val corsServerRoutes: Route = {
+    handleRejections(CorsDirectives.corsRejectionHandler) {
+      cors(corsSettings) {
+        handleRejections(RejectionHandler.default) {
+          serverRoutes
+        }
+      }
+    }
+  }
+
   def start(): Future[Http.ServerBinding] = {
     unbindServer().flatMap { _ =>
-      val server = Http().bindAndHandle(serverRoutes, "localhost", port)
+      val server = Http().bindAndHandle(corsServerRoutes, "localhost", port)
       this.server = Some(server)
       server
     }

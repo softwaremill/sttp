@@ -14,6 +14,8 @@ The basic dependency which provides the API and the default synchronous backend 
 
 ``sttp`` is available for Scala 2.11 and 2.12, and requires Java 8. The core module has no transitive dependencies.
 
+``sttp`` is also available for Scala.js 0.6. Note that not all modules are compatible and there are no backends that can be used on both.
+
 Using Ammonite
 --------------
 
