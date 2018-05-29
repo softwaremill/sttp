@@ -1,7 +1,7 @@
 .. _prometheus_backend:
 
 Prometheus backend
-=============
+==================
 
 To use, add the following dependency to your project::
 

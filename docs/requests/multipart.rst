@@ -16,7 +16,7 @@ A single part of a multipart request consist of a mandatory name and a payload o
 * ``Map[String, String]``
 * ``Seq[(String, String)]``
 
-Note that on JavaScript ``Web/API/File`` replaces ``File`` and ``Path``.
+Note that in JavaScript ``Web/API/File`` replaces ``File`` and ``Path``.
 
 The content type of each part is by default the same as when setting simple bodies: ``text/plain`` for parts of type ``String``, ``application/x-www-form-urlencoded`` for parts of key-value pairs (form data) and ``application/octet-stream`` otherwise (for binary data).
 

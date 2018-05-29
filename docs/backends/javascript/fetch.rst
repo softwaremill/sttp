@@ -11,7 +11,7 @@ And add an implicit value::
 
   implicit val sttpBackend = FetchBackend()
 
-Timeouts are handled via the new `AbortController <https://developer.mozilla.org/en-US/docs/Web/API/AbortController>`_ class. As this class only recently appeared in browsers you may need to add a `polyfill <https://www.npmjs.com/package/abortcontroller-polyfill>`_`.
+Timeouts are handled via the new `AbortController <https://developer.mozilla.org/en-US/docs/Web/API/AbortController>`_ class. As this class only recently appeared in browsers you may need to add a `polyfill <https://www.npmjs.com/package/abortcontroller-polyfill>`_.
 
 As browsers do not allow access to redirect responses, if a request sets ``followRedirects`` to false then a redirect will cause the response to return an error.
 
@@ -43,4 +43,8 @@ An example of streaming a response::
       .response(asStream[Observable[ByteBuffer]])
       .send()
 
-Note that at the current time no browsers support passing a stream as the request body. As such, using a ``Fetch`` backend with a streaming request will result in it being converted into an in-memory array before being sent. Response bodies are returned as a stream.
+
+
+.. note::
+
+  Currently no browsers support passing a stream as the request body. As such, using the ``Fetch`` backend with a streaming request will result in it being converted into an in-memory array before being sent. Response bodies are returned as a "proper" stream.
