@@ -20,7 +20,7 @@ class AsyncHttpClientScalazBackend private (asyncHttpClient: AsyncHttpClient, cl
   override protected def publisherToStreamBody(p: Publisher[ByteBuffer]): Nothing =
     throw new IllegalStateException("This backend does not support streaming")
 
-  override protected def publisherToString(p: Publisher[ByteBuffer]): Task[String] =
+  override protected def publisherToBytes(p: Publisher[ByteBuffer]): Task[Array[Byte]] =
     throw new IllegalStateException("This backend does not support streaming")
 }
 

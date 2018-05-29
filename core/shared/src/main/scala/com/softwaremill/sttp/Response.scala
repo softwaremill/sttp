@@ -4,16 +4,15 @@ import scala.collection.immutable.Seq
 import scala.util.Try
 
 /**
-  * @param body `Right(T)`, if the request was successful (status code 2xx).
+  * @param rawErrorBody `Right(T)`, if the request was successful (status code 2xx).
   *            The body is then handled as specified in the request.
-  *            `Left(String)`, if the request wasn't successful (status code
-  *            3xx, 4xx or 5xx). In this case, the response body is read into
-  *            a `String`.
+  *            `Left(Array[Byte])`, if the request wasn't successful (status code
+  *            3xx, 4xx or 5xx).
   * @param history If redirects are followed, and there were redirects,
   *                contains responses for the intermediate requests.
   *                The first response (oldest) comes first.
   */
-case class Response[T](body: Either[String, T],
+case class Response[T](rawErrorBody: Either[Array[Byte], T],
                        code: Int,
                        statusText: String,
                        headers: Seq[(String, String)],
@@ -28,6 +27,16 @@ case class Response[T](body: Either[String, T],
     headers.find(_._1.equalsIgnoreCase(h)).map(_._2)
   def headers(h: String): Seq[String] =
     headers.filter(_._1.equalsIgnoreCase(h)).map(_._2)
+
+  lazy val body: Either[String, T] = rawErrorBody match {
+      case Left(bytes) => 
+            val charset = contentType
+              .flatMap(encodingFromContentType)
+              .getOrElse(Utf8)
+            Left(new String(bytes, charset))
+
+      case Right(r) => Right(r)
+    }
 
   def contentType: Option[String] = header(ContentTypeHeader)
   def contentLength: Option[Long] =

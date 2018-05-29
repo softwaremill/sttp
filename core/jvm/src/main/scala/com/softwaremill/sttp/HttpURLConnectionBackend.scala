@@ -218,7 +218,7 @@ class HttpURLConnectionBackend private (opts: SttpBackendOptions, customizeConne
     val body = if (codeIsSuccess(code)) {
       Right(readResponseBody(wrappedIs, responseAs, charsetFromHeaders))
     } else {
-      Left(readResponseBody(wrappedIs, asString, charsetFromHeaders))
+      Left(readResponseBody(wrappedIs, asByteArray, charsetFromHeaders))
     }
 
     Response(body, code, c.getResponseMessage, headers, Nil)

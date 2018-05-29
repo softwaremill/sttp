@@ -78,7 +78,7 @@ class AkkaHttpBackend private (actorSystem: ActorSystem,
           bodyFromAkka(r.response, decodeAkkaResponse(hr), charsetFromHeaders)
             .map(Right(_))
         } else {
-          bodyFromAkka(asString, decodeAkkaResponse(hr), charsetFromHeaders)
+          bodyFromAkka(asByteArray, decodeAkkaResponse(hr), charsetFromHeaders)
             .map(Left(_))
         }
 

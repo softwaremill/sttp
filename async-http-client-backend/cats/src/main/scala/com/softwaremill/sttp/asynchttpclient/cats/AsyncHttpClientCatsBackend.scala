@@ -26,7 +26,7 @@ class AsyncHttpClientCatsBackend[F[_]: Async] private (
   override protected def publisherToStreamBody(p: Publisher[ByteBuffer]): Nothing =
     throw new IllegalStateException("This backend does not support streaming")
 
-  override protected def publisherToString(p: Publisher[ByteBuffer]): F[String] =
+  override protected def publisherToBytes(p: Publisher[ByteBuffer]): F[Array[Byte]] =
     throw new IllegalStateException("This backend does not support streaming")
 }
 

@@ -35,13 +35,13 @@ class AsyncHttpClientFs2Backend[F[_]: Effect] private (asyncHttpClient: AsyncHtt
   override protected def publisherToStreamBody(p: Publisher[ByteBuffer]): Stream[F, ByteBuffer] =
     p.toStream[F]
 
-  override protected def publisherToString(p: Publisher[ByteBuffer]): F[String] = {
+  override protected def publisherToBytes(p: Publisher[ByteBuffer]): F[Array[Byte]] = {
     val bytes = p
       .toStream[F]
       .compile
       .fold(ByteBuffer.allocate(0))(concatByteBuffers)
 
-    implicitly[Effect[F]].map(bytes)(bb => new String(bb.array(), Utf8))
+    implicitly[Effect[F]].map(bytes)(_.array())
   }
 }
 

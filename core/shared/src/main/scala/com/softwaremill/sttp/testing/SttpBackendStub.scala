@@ -69,7 +69,7 @@ class SttpBackendStub[R[_], S] private (rm: MonadError[R],
       case Success(None) =>
         fallback match {
           case None =>
-            wrapResponse(Response[Nothing](Left("Not Found: " + request.uri), 404, "Not Found", Nil, Nil))
+            wrapResponse(Response[Nothing](Left(s"Not Found: ${request.uri}".getBytes(Utf8)), 404, "Not Found", Nil, Nil))
           case Some(fb) => fb.send(request)
         }
       case Failure(e) => rm.error(e)
@@ -91,7 +91,7 @@ class SttpBackendStub[R[_], S] private (rm: MonadError[R],
     def thenRespondServerError(): SttpBackendStub[R, S] =
       thenRespondWithCode(500, "Internal server error")
     def thenRespondWithCode(code: Int, msg: String = ""): SttpBackendStub[R, S] = {
-      val body = if (code >= 200 && code < 300) Right(msg) else Left(msg)
+      val body = if (code >= 200 && code < 300) Right(msg) else Left(msg.getBytes(Utf8))
       thenRespond(Response(body, code, msg, Nil, Nil))
     }
     def thenRespond[T](body: T): SttpBackendStub[R, S] =
@@ -168,7 +168,7 @@ object SttpBackendStub {
         case Left(_) => r.asInstanceOf[Response[DesiredRType]]
         case Right(body) =>
           val newBody: Any = tryAdjustResponseBody(ra, body).getOrElse(body)
-          r.copy(body = Right[String, DesiredRType](newBody.asInstanceOf[DesiredRType]))
+          r.copy(rawErrorBody = Right[Array[Byte], DesiredRType](newBody.asInstanceOf[DesiredRType]))
       }
     }
   }

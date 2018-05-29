@@ -89,7 +89,7 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean
     val body = if (codeIsSuccess(code)) {
       responseMonad.map(responseHandler(res).handle(responseAs, responseMonad))(Right(_))
     } else {
-      responseMonad.map(responseHandler(res).handle(asString, responseMonad))(Left(_))
+      responseMonad.map(responseHandler(res).handle(asByteArray, responseMonad))(Left(_))
     }
 
     val headers = res

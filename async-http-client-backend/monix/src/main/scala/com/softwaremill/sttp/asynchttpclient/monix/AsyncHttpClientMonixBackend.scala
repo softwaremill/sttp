@@ -22,13 +22,13 @@ class AsyncHttpClientMonixBackend private (asyncHttpClient: AsyncHttpClient, clo
   override protected def publisherToStreamBody(p: Publisher[ByteBuffer]): Observable[ByteBuffer] =
     Observable.fromReactivePublisher(p)
 
-  override protected def publisherToString(p: Publisher[ByteBuffer]): Task[String] = {
+  override protected def publisherToBytes(p: Publisher[ByteBuffer]): Task[Array[Byte]] = {
 
     val bytes = Observable
       .fromReactivePublisher(p)
       .foldLeftL(ByteBuffer.allocate(0))(concatByteBuffers)
 
-    bytes.map(bb => new String(bb.array(), Utf8))
+    bytes.map(_.array())
   }
 }
 

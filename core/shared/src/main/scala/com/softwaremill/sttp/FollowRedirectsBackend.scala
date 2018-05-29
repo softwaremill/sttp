@@ -30,7 +30,7 @@ class FollowRedirectsBackend[R[_], S](delegate: SttpBackend[R, S]) extends SttpB
 
     response.header(LocationHeader).fold(responseMonad.unit(response)) { loc =>
       if (redirects >= request.options.maxRedirects) {
-        responseMonad.unit(Response(Left("Too many redirects"), 0, "", Nil, Nil))
+        responseMonad.unit(Response(Left("Too many redirects".getBytes(Utf8)), 0, "", Nil, Nil))
       } else {
         followRedirect(request, response, redirects, loc)
       }
@@ -56,7 +56,7 @@ class FollowRedirectsBackend[R[_], S](delegate: SttpBackend[R, S]) extends SttpB
 
     responseMonad.map(redirectResponse) { rr =>
       val responseNoBody =
-        response.copy(body = response.body.right.map(_ => ()))
+        response.copy(rawErrorBody = response.rawErrorBody.right.map(_ => ()))
       rr.copy(history = responseNoBody :: rr.history)
     }
   }

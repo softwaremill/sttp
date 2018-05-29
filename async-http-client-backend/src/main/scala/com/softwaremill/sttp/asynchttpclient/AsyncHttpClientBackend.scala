@@ -62,7 +62,7 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
 
   protected def publisherToStreamBody(p: Publisher[ByteBuffer]): S
 
-  protected def publisherToString(p: Publisher[ByteBuffer]): R[String]
+  protected def publisherToBytes(p: Publisher[ByteBuffer]): R[Array[Byte]]
 
   private def eagerAsyncHandler[T](responseAs: ResponseAs[T, S],
                                    success: R[Response[T]] => Unit,
@@ -132,11 +132,11 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
           val b = if (codeIsSuccess(baseResponse.code)) {
             rm.unit(Right(responseAs.responseIsStream(s)))
           } else {
-            rm.map(publisherToString(p))(Left(_))
+            rm.map(publisherToBytes(p))(Left(_))
           }
 
-          success(rm.map(b) { bb: Either[String, T] =>
-            baseResponse.copy(body = bb)
+          success(rm.map(b) { bb: Either[Array[Byte], T] =>
+            baseResponse.copy(rawErrorBody = bb)
           })
         }
       }
@@ -223,11 +223,11 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
     val body = if (codeIsSuccess(base.code)) {
       rm.map(eagerResponseHandler(response).handle(responseAs, rm))(Right(_))
     } else {
-      rm.map(eagerResponseHandler(response).handle(asString, rm))(Left(_))
+      rm.map(eagerResponseHandler(response).handle(asByteArray, rm))(Left(_))
     }
 
-    rm.map(body) { b: Either[String, T] =>
-      base.copy(body = b)
+    rm.map(body) { b: Either[Array[Byte], T] =>
+      base.copy(rawErrorBody = b)
     }
   }
 
