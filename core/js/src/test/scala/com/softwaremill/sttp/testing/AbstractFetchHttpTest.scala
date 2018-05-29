@@ -10,9 +10,6 @@ abstract class AbstractFetchHttpTest[R[_], -S] extends HttpTest[R] {
 
   override protected def endpoint: String = "localhost:51823"
 
-  // the browser does not give access to redirect responses
-  override protected def usesFollowRedirectsBackend: Boolean = false
-
   override protected def expectRedirectResponse(
       response: R[Response[String]],
       code: Int

@@ -13,6 +13,8 @@ And add an implicit value::
 
 Timeouts are handled via the new `AbortController <https://developer.mozilla.org/en-US/docs/Web/API/AbortController>`_ class. As this class only recently appeared in browsers you may need to add a `polyfill <https://www.npmjs.com/package/abortcontroller-polyfill>`_`.
 
+As browsers do not allow access to redirect responses, if a request sets ``followRedirects`` to false then a redirect will cause the response to return an error.
+
 Note that ``Fetch`` does not pass cookies by default. If your request needs cookies then you will need to pass a ``FetchOptions`` instance with ``credentials`` set to either ``RequestCredentials.same-origin`` or ``RequestCredentials.include`` depending on your requirements.
 
 Streaming

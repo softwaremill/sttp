@@ -54,6 +54,7 @@ val commonJSSettings = Seq(
 ) ++ browserTestSettings
 
 // run JavaScript tests inside Chrome
+// tests need to run inside a browser due to jsdom not supporting fetch
 lazy val browserTestSettings = Seq(
   jsEnv in Test := {
     val debugging = false // set to true to help debugging

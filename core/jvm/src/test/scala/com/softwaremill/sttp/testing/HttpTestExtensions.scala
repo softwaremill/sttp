@@ -120,6 +120,49 @@ trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
     }
   }
 
+  // browsers do not allow access to redirect responses
+  "follow redirects" - {
+    def r1 = sttp.post(uri"$endpoint/redirect/r1")
+    def r3 = sttp.post(uri"$endpoint/redirect/r3")
+    val r4response = "819"
+    def loop = sttp.post(uri"$endpoint/redirect/loop")
+
+    "keep a single history entry of redirect responses" in {
+      r3.send().toFuture().map { resp =>
+        resp.code should be(200)
+        resp.unsafeBody should be(r4response)
+        resp.history should have size (1)
+        resp.history(0).code should be(302)
+      }
+    }
+
+    "keep whole history of redirect responses" in {
+      r1.send().toFuture().map { resp =>
+        resp.code should be(200)
+        resp.unsafeBody should be(r4response)
+        resp.history should have size (3)
+        resp.history(0).code should be(307)
+        resp.history(1).code should be(308)
+        resp.history(2).code should be(302)
+      }
+    }
+
+    "break redirect loops" in {
+      loop.send().toFuture().map { resp =>
+        resp.code should be(0)
+        resp.history should have size (FollowRedirectsBackend.MaxRedirects)
+      }
+    }
+
+    "break redirect loops after user-specified count" in {
+      val maxRedirects = 10
+      loop.maxRedirects(maxRedirects).send().toFuture().map { resp =>
+        resp.code should be(0)
+        resp.history should have size (maxRedirects)
+      }
+    }
+  }
+
   // scalajs only supports US_ASCII, ISO_8859_1, UTF_8, UTF_16BE, UTF_16LE, UTF_16
   "encoding" - {
     "read response body encoded using ISO-8859-2, as specified in the header, overriding the default" in {

@@ -36,9 +36,6 @@ trait HttpTest[R[_]]
 
   protected val sttpIgnore = com.softwaremill.sttp.ignore
 
-  // set to false if the backend implementation does not use the FollowRedirectsBackend
-  protected def usesFollowRedirectsBackend: Boolean = true
-
   "parse response" - {
     "as string" in {
       postEcho.body(testBody).send().toFuture().map { response =>
@@ -327,7 +324,6 @@ trait HttpTest[R[_]]
   "redirect" - {
     def r1 = sttp.post(uri"$endpoint/redirect/r1")
     def r2 = sttp.post(uri"$endpoint/redirect/r2")
-    def r3 = sttp.post(uri"$endpoint/redirect/r3")
     val r4response = "819"
     def loop = sttp.post(uri"$endpoint/redirect/loop")
 
@@ -357,43 +353,6 @@ trait HttpTest[R[_]]
       r2.response(asString.map(_.toInt)).send().toFuture().map { resp =>
         resp.code should be(200)
         resp.unsafeBody should be(r4response.toInt)
-      }
-    }
-
-    if (usesFollowRedirectsBackend) {
-      "keep a single history entry of redirect responses" in {
-        r3.send().toFuture().map { resp =>
-          resp.code should be(200)
-          resp.unsafeBody should be(r4response)
-          resp.history should have size (1)
-          resp.history(0).code should be(302)
-        }
-      }
-
-      "keep whole history of redirect responses" in {
-        r1.send().toFuture().map { resp =>
-          resp.code should be(200)
-          resp.unsafeBody should be(r4response)
-          resp.history should have size (3)
-          resp.history(0).code should be(307)
-          resp.history(1).code should be(308)
-          resp.history(2).code should be(302)
-        }
-      }
-
-      "break redirect loops" in {
-        loop.send().toFuture().map { resp =>
-          resp.code should be(0)
-          resp.history should have size (FollowRedirectsBackend.MaxRedirects)
-        }
-      }
-
-      "break redirect loops after user-specified count" in {
-        val maxRedirects = 10
-        loop.maxRedirects(maxRedirects).send().toFuture().map { resp =>
-          resp.code should be(0)
-          resp.history should have size (maxRedirects)
-        }
       }
     }
 
