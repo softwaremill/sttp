@@ -6,7 +6,7 @@ import java.nio.file.Paths
 import java.time.{ZoneId, ZonedDateTime}
 
 import akka.http.scaladsl.coding.{Deflate, Gzip, NoCoding}
-import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.{StatusCodes => AkkaStatusCodes, MediaTypes => AkkaMediaTypes, _}
 import akka.http.scaladsl.model.headers.CacheDirectives._
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.server.Directives._
@@ -139,19 +139,19 @@ class BasicTests
       }
     } ~ pathPrefix("redirect") {
       path("r1") {
-        redirect("/redirect/r2", StatusCodes.TemporaryRedirect)
+        redirect("/redirect/r2", AkkaStatusCodes.TemporaryRedirect)
       } ~
         path("r2") {
-          redirect("/redirect/r3", StatusCodes.PermanentRedirect)
+          redirect("/redirect/r3", AkkaStatusCodes.PermanentRedirect)
         } ~
         path("r3") {
-          redirect("/redirect/r4", StatusCodes.Found)
+          redirect("/redirect/r4", AkkaStatusCodes.Found)
         } ~
         path("r4") {
           complete("819")
         } ~
         path("loop") {
-          redirect("/redirect/loop", StatusCodes.Found)
+          redirect("/redirect/loop", AkkaStatusCodes.Found)
         }
     } ~ pathPrefix("timeout") {
       complete {
@@ -162,7 +162,7 @@ class BasicTests
         import akka.http.scaladsl.model._
         complete(
           HttpResponse(
-            status = StatusCodes.Unauthorized,
+            status = AkkaStatusCodes.Unauthorized,
             headers = Nil,
             entity = HttpEntity.Empty,
             protocol = HttpProtocols.`HTTP/1.1`
@@ -171,7 +171,8 @@ class BasicTests
     } ~ path("respond_with_iso_8859_2") {
       get { ctx =>
         val entity =
-          HttpEntity(MediaTypes.`text/plain`.withCharset(HttpCharset.custom("ISO-8859-2")), textWithSpecialCharacters)
+          HttpEntity(AkkaMediaTypes.`text/plain`.withCharset(HttpCharset.custom("ISO-8859-2")),
+                     textWithSpecialCharacters)
         ctx.complete(HttpResponse(200, entity = entity))
       }
     }
