@@ -17,27 +17,27 @@ sealed trait BasicRequestBody extends RequestBody[Nothing] {
 case class StringBody(
     s: String,
     encoding: String,
-    defaultContentType: Option[String] = Some(TextPlainContentType)
+    defaultContentType: Option[String] = Some(MediaTypes.Text)
 ) extends BasicRequestBody
 
 case class ByteArrayBody(
     b: Array[Byte],
-    defaultContentType: Option[String] = Some(ApplicationOctetStreamContentType)
+    defaultContentType: Option[String] = Some(MediaTypes.Binary)
 ) extends BasicRequestBody
 
 case class ByteBufferBody(
     b: ByteBuffer,
-    defaultContentType: Option[String] = Some(ApplicationOctetStreamContentType)
+    defaultContentType: Option[String] = Some(MediaTypes.Binary)
 ) extends BasicRequestBody
 
 case class InputStreamBody(
     b: InputStream,
-    defaultContentType: Option[String] = Some(ApplicationOctetStreamContentType)
+    defaultContentType: Option[String] = Some(MediaTypes.Binary)
 ) extends BasicRequestBody
 
 case class FileBody(
     f: SttpFile,
-    defaultContentType: Option[String] = Some(ApplicationOctetStreamContentType)
+    defaultContentType: Option[String] = Some(MediaTypes.Binary)
 ) extends BasicRequestBody
 
 case class StreamBody[S](s: S) extends RequestBody[S]

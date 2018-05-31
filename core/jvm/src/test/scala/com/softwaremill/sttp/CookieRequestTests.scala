@@ -8,7 +8,7 @@ class CookieRequestTests extends FlatSpec with Matchers {
     sttp
       .cookie("k", "v")
       .headers
-      .find(_._1 == CookieHeader)
+      .find(_._1 == HeaderNames.Cookie)
       .map(_._2) should be(Some("k=v"))
   }
 
@@ -16,7 +16,7 @@ class CookieRequestTests extends FlatSpec with Matchers {
     sttp
       .cookies("k1" -> "v1", "k2" -> "v2")
       .headers
-      .find(_._1 == CookieHeader)
+      .find(_._1 == HeaderNames.Cookie)
       .map(_._2) should be(Some("k1=v1; k2=v2"))
   }
 
@@ -25,18 +25,18 @@ class CookieRequestTests extends FlatSpec with Matchers {
       .cookie("k1", "v1")
       .cookie("k2" -> "v2")
       .headers
-      .filter(_._1 == CookieHeader)
+      .filter(_._1 == HeaderNames.Cookie)
       .map(_._2)
       .toSet should be(Set("k1=v1", "k2=v2"))
   }
 
   it should "set cookies from a response" in {
     val response =
-      Response(Right(()), 0, "", List((SetCookieHeader, "k1=v1"), (SetCookieHeader, "k2=v2")), Nil)
+      Response(Right(()), 0, "", List((HeaderNames.SetCookie, "k1=v1"), (HeaderNames.SetCookie, "k2=v2")), Nil)
     sttp
       .cookies(response)
       .headers
-      .find(_._1 == CookieHeader)
+      .find(_._1 == HeaderNames.Cookie)
       .map(_._2) should be(Some("k1=v1; k2=v2"))
   }
 

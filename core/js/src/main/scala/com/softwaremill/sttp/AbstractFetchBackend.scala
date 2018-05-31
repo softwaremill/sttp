@@ -203,7 +203,7 @@ abstract class AbstractFetchBackend[R[_], S](options: FetchOptions)(rm: MonadErr
 
       case ResponseAsString(enc) =>
         val charset = response.headers
-          .get(ContentTypeHeader)
+          .get(HeaderNames.ContentType)
           .toOption
           .flatMap(encodingFromContentType)
           .getOrElse(enc)

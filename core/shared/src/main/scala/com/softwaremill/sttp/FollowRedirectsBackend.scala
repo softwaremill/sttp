@@ -28,7 +28,7 @@ class FollowRedirectsBackend[R[_], S](delegate: SttpBackend[R, S]) extends SttpB
 
   private def followRedirect[T](request: Request[T, S], response: Response[T], redirects: Int): R[Response[T]] = {
 
-    response.header(LocationHeader).fold(responseMonad.unit(response)) { loc =>
+    response.header(HeaderNames.Location).fold(responseMonad.unit(response)) { loc =>
       if (redirects >= request.options.maxRedirects) {
         responseMonad.unit(Response(Left("Too many redirects".getBytes(Utf8)), 0, "", Nil, Nil))
       } else {

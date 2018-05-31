@@ -34,5 +34,5 @@ trait RequestTExtensions[U[_], T, +S] { self: RequestT[U, T, S] =>
   def cookies(cs: Seq[Cookie]): RequestT[U, T, S] =
     cookies(cs.map(c => (c.name, c.value)): _*)
   def cookies(nvs: (String, String)*): RequestT[U, T, S] =
-    header(CookieHeader, nvs.map(p => p._1 + "=" + p._2).mkString("; "))
+    header(HeaderNames.Cookie, nvs.map(p => p._1 + "=" + p._2).mkString("; "))
 }

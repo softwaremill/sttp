@@ -128,9 +128,9 @@ class HttpURLConnectionBackend private (opts: SttpBackendOptions, customizeConne
     // inspired by: https://github.com/scalaj/scalaj-http/blob/master/src/main/scala/scalaj/http/Http.scala#L542
     val partsWithHeaders = mp.parts.map { p =>
       val contentDisposition =
-        s"$ContentDispositionHeader: ${p.contentDispositionHeaderValue}"
+        s"${HeaderNames.ContentDisposition}: ${p.contentDispositionHeaderValue}"
       val contentTypeHeader =
-        p.contentType.map(ct => s"$ContentTypeHeader: $ct")
+        p.contentType.map(ct => s"${HeaderNames.ContentType}: $ct")
       val otherHeaders = p.additionalHeaders.map(h => s"${h._1}: ${h._2}")
       val allHeaders = List(contentDisposition) ++ contentTypeHeader.toList ++ otherHeaders
       (allHeaders.mkString(CrLf), p)
@@ -165,11 +165,11 @@ class HttpURLConnectionBackend private (opts: SttpBackendOptions, customizeConne
         case _                    => None
       }
 
-    c.setRequestProperty(ContentTypeHeader, "multipart/form-data; boundary=" + boundary)
+    c.setRequestProperty(HeaderNames.ContentType, "multipart/form-data; boundary=" + boundary)
 
     contentLength.foreach { cl =>
       c.setFixedLengthStreamingMode(cl)
-      c.setRequestProperty(ContentLengthHeader, cl.toString)
+      c.setRequestProperty(HeaderNames.ContentLength, cl.toString)
     }
 
     var total = 0L
@@ -208,14 +208,14 @@ class HttpURLConnectionBackend private (opts: SttpBackendOptions, customizeConne
     val headers = c.getHeaderFields.asScala.toVector
       .filter(_._1 != null)
       .flatMap { case (k, vv) => vv.asScala.map((k, _)) }
-    val contentEncoding = Option(c.getHeaderField(ContentEncodingHeader))
+    val contentEncoding = Option(c.getHeaderField(HeaderNames.ContentEncoding))
 
-    val charsetFromHeaders = Option(c.getHeaderField(ContentTypeHeader))
+    val charsetFromHeaders = Option(c.getHeaderField(HeaderNames.ContentType))
       .flatMap(encodingFromContentType)
 
     val code = c.getResponseCode
     val wrappedIs = wrapInput(contentEncoding, handleNullInput(is))
-    val body = if (codeIsSuccess(code)) {
+    val body = if (StatusCodes.isSuccess(code)) {
       Right(readResponseBody(wrappedIs, responseAs, charsetFromHeaders))
     } else {
       Left(readResponseBody(wrappedIs, asByteArray, charsetFromHeaders))

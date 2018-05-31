@@ -70,11 +70,11 @@ class AkkaHttpBackend private (actorSystem: ActorSystem,
 
         val headers = headersFromAkka(hr)
         val charsetFromHeaders = headers
-          .find(_._1 == ContentTypeHeader)
+          .find(_._1 == HeaderNames.ContentType)
           .map(_._2)
           .flatMap(encodingFromContentType)
 
-        val body = if (codeIsSuccess(code)) {
+        val body = if (com.softwaremill.sttp.StatusCodes.isSuccess(code)) {
           bodyFromAkka(r.response, decodeAkkaResponse(hr), charsetFromHeaders)
             .map(Right(_))
         } else {
@@ -144,9 +144,9 @@ class AkkaHttpBackend private (actorSystem: ActorSystem,
   }
 
   private def headersFromAkka(hr: HttpResponse): Seq[(String, String)] = {
-    val ch = ContentTypeHeader -> hr.entity.contentType.toString()
+    val ch = HeaderNames.ContentType -> hr.entity.contentType.toString()
     val cl =
-      hr.entity.contentLengthOption.map(ContentLengthHeader -> _.toString)
+      hr.entity.contentLengthOption.map(HeaderNames.ContentLength -> _.toString)
     val other = hr.headers.map(h => (h.name, h.value))
     ch :: (cl.toList ++ other)
   }

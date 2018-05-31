@@ -41,8 +41,8 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
       .prepareRequest(requestToAsync(r))
 
     rm.flatten(rm.async[R[Response[T]]] { cb =>
-      def success(r: R[Response[T]]) = cb(Right(r))
-      def error(t: Throwable) = cb(Left(t))
+      def success(r: R[Response[T]]): Unit = cb(Right(r))
+      def error(t: Throwable): Unit = cb(Left(t))
 
       r.response match {
         case ras @ ResponseAsStream() =>
@@ -129,7 +129,7 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
           val baseResponse = readResponseNoBody(builder.build())
           val p = publisher.getOrElse(EmptyPublisher)
           val s = publisherToStreamBody(p)
-          val b = if (codeIsSuccess(baseResponse.code)) {
+          val b = if (StatusCodes.isSuccess(baseResponse.code)) {
             rm.unit(Right(responseAs.responseIsStream(s)))
           } else {
             rm.map(publisherToBytes(p))(Left(_))
@@ -178,7 +178,7 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
 
       case StreamBody(s) =>
         val cl = r.headers
-          .find(_._1.equalsIgnoreCase(ContentLengthHeader))
+          .find(_._1.equalsIgnoreCase(HeaderNames.ContentLength))
           .map(_._2.toLong)
           .getOrElse(-1L)
         rb.setBody(streamBodyToPublisher(s), cl)
@@ -199,7 +199,7 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
 
     val bodyPart = mp.body match {
       case StringBody(b, encoding, _) =>
-        new StringPart(nameWithFilename, b, mp.contentType.getOrElse(TextPlainContentType), Charset.forName(encoding))
+        new StringPart(nameWithFilename, b, mp.contentType.getOrElse(MediaTypes.Text), Charset.forName(encoding))
       case ByteArrayBody(b, _) =>
         new ByteArrayPart(nameWithFilename, b)
       case ByteBufferBody(b, _) =>
@@ -220,7 +220,7 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
   private def readEagerResponse[T](response: AsyncResponse, responseAs: ResponseAs[T, S]): R[Response[T]] = {
     val base = readResponseNoBody(response)
 
-    val body = if (codeIsSuccess(base.code)) {
+    val body = if (StatusCodes.isSuccess(base.code)) {
       rm.map(eagerResponseHandler(response).handle(responseAs, rm))(Right(_))
     } else {
       rm.map(eagerResponseHandler(response).handle(asByteArray, rm))(Left(_))
@@ -253,7 +253,7 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
             Try(())
 
           case ResponseAsString(enc) =>
-            val charset = Option(response.getHeader(ContentTypeHeader))
+            val charset = Option(response.getHeader(HeaderNames.ContentType))
               .flatMap(encodingFromContentType)
               .getOrElse(enc)
             Try(response.getResponseBody(Charset.forName(charset)))

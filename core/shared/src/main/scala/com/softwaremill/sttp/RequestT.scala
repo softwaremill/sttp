@@ -54,11 +54,11 @@ case class RequestT[U[_], T, +S](
     this.copy[Id, T, S](uri = uri, method = Method.PATCH)
 
   def contentType(ct: String): RequestT[U, T, S] =
-    header(ContentTypeHeader, ct, replaceExisting = true)
+    header(HeaderNames.ContentType, ct, replaceExisting = true)
   def contentType(ct: String, encoding: String): RequestT[U, T, S] =
-    header(ContentTypeHeader, contentTypeWithEncoding(ct, encoding), replaceExisting = true)
+    header(HeaderNames.ContentType, contentTypeWithEncoding(ct, encoding), replaceExisting = true)
   def contentLength(l: Long): RequestT[U, T, S] =
-    header(ContentLengthHeader, l.toString, replaceExisting = true)
+    header(HeaderNames.ContentLength, l.toString, replaceExisting = true)
   def header(k: String, v: String, replaceExisting: Boolean = false): RequestT[U, T, S] = {
     val current =
       if (replaceExisting)
@@ -71,11 +71,11 @@ case class RequestT[U[_], T, +S](
   def headers(hs: (String, String)*): RequestT[U, T, S] =
     this.copy(headers = headers ++ hs)
   def auth: SpecifyAuthScheme[U, T, S] =
-    new SpecifyAuthScheme[U, T, S](AuthorizationHeader, this)
+    new SpecifyAuthScheme[U, T, S](HeaderNames.Authorization, this)
   def proxyAuth: SpecifyAuthScheme[U, T, S] =
-    new SpecifyAuthScheme[U, T, S](ProxyAuthorizationHeader, this)
+    new SpecifyAuthScheme[U, T, S](HeaderNames.ProxyAuthorization, this)
   def acceptEncoding(encoding: String): RequestT[U, T, S] =
-    header(AcceptEncodingHeader, encoding)
+    header(HeaderNames.AcceptEncoding, encoding)
 
   /**
     * Uses the `utf-8` encoding.
@@ -232,7 +232,7 @@ case class RequestT[U[_], T, +S](
   }
 
   private def hasContentType: Boolean =
-    headers.exists(_._1.equalsIgnoreCase(ContentTypeHeader))
+    headers.exists(_._1.equalsIgnoreCase(HeaderNames.ContentType))
   private def setContentTypeIfMissing(ct: String): RequestT[U, T, S] =
     if (hasContentType) this else contentType(ct)
 
@@ -248,13 +248,13 @@ case class RequestT[U[_], T, +S](
   }
 
   private def hasContentLength: Boolean =
-    headers.exists(_._1.equalsIgnoreCase(ContentLengthHeader))
+    headers.exists(_._1.equalsIgnoreCase(HeaderNames.ContentLength))
   private def setContentLengthIfMissing(l: => Long): RequestT[U, T, S] =
     if (hasContentLength) this else contentLength(l)
 
   private def formDataBody(fs: Seq[(String, String)], encoding: String): RequestT[U, T, S] = {
     val b = RequestBody.paramsToStringBody(fs, encoding)
-    setContentTypeIfMissing(ApplicationFormContentType)
+    setContentTypeIfMissing(MediaTypes.Form)
       .setContentLengthIfMissing(b.s.getBytes(encoding).length.toLong)
       .copy(body = b)
   }

@@ -8,7 +8,7 @@ class RequestTests extends FlatSpec with Matchers {
     sttp
       .body("test")
       .headers
-      .find(_._1.equalsIgnoreCase(ContentLengthHeader))
+      .find(_._1.equalsIgnoreCase(HeaderNames.ContentLength))
       .map(_._2) should be(Some("4"))
   }
 
@@ -16,7 +16,7 @@ class RequestTests extends FlatSpec with Matchers {
     sttp
       .body("ąęć")
       .headers
-      .find(_._1.equalsIgnoreCase(ContentLengthHeader))
+      .find(_._1.equalsIgnoreCase(HeaderNames.ContentLength))
       .map(_._2) should be(Some("6"))
   }
 
@@ -25,7 +25,7 @@ class RequestTests extends FlatSpec with Matchers {
       .contentLength(10)
       .body("a")
       .headers
-      .find(_._1.equalsIgnoreCase(ContentLengthHeader))
+      .find(_._1.equalsIgnoreCase(HeaderNames.ContentLength))
       .map(_._2) should be(Some("10"))
   }
 

@@ -32,27 +32,9 @@ package object sttp extends sttpExtensions {
 
   // constants
 
-  private[sttp] val ContentTypeHeader = "Content-Type"
-  private[sttp] val ContentLengthHeader = "Content-Length"
-  private[sttp] val SetCookieHeader = "Set-Cookie"
-  private[sttp] val CookieHeader = "Cookie"
-  private[sttp] val AuthorizationHeader = "Authorization"
-  private[sttp] val ProxyAuthorizationHeader = "Proxy-Authorization"
-  private[sttp] val AcceptEncodingHeader = "Accept-Encoding"
-  private[sttp] val ContentEncodingHeader = "Content-Encoding"
-  private[sttp] val ContentDispositionHeader = "Content-Disposition"
-  private[sttp] val LocationHeader = "Location"
   private[sttp] val Utf8 = "utf-8"
   private[sttp] val Iso88591 = "iso-8859-1"
   private[sttp] val CrLf = "\r\n"
-
-  private[sttp] val ApplicationOctetStreamContentType =
-    "application/octet-stream"
-  private[sttp] val ApplicationFormContentType =
-    "application/x-www-form-urlencoded"
-  private[sttp] val TextPlainContentType = "text/plain"
-  private[sttp] val MultipartFormDataContentType = "multipart/form-data"
-  private[sttp] val ApplicationJsonContentType = "application/json"
 
   // entry points
 
@@ -120,35 +102,35 @@ package object sttp extends sttpExtensions {
     * overridden later using the `contentType` method.
     */
   def multipart(name: String, data: String): Multipart =
-    Multipart(name, StringBody(data, Utf8), contentType = Some(contentTypeWithEncoding(TextPlainContentType, Utf8)))
+    Multipart(name, StringBody(data, Utf8), contentType = Some(contentTypeWithEncoding(MediaTypes.Text, Utf8)))
 
   /**
     * Content type will be set to `text/plain` with `utf-8` encoding, can be
     * overridden later using the `contentType` method.
     */
   def multipart(name: String, data: String, encoding: String): Multipart =
-    Multipart(name, StringBody(data, encoding), contentType = Some(contentTypeWithEncoding(TextPlainContentType, Utf8)))
+    Multipart(name, StringBody(data, encoding), contentType = Some(contentTypeWithEncoding(MediaTypes.Text, Utf8)))
 
   /**
     * Content type will be set to `application/octet-stream`, can be overridden
     * later using the `contentType` method.
     */
   def multipart(name: String, data: Array[Byte]): Multipart =
-    Multipart(name, ByteArrayBody(data), contentType = Some(ApplicationOctetStreamContentType))
+    Multipart(name, ByteArrayBody(data), contentType = Some(MediaTypes.Binary))
 
   /**
     * Content type will be set to `application/octet-stream`, can be overridden
     * later using the `contentType` method.
     */
   def multipart(name: String, data: ByteBuffer): Multipart =
-    Multipart(name, ByteBufferBody(data), contentType = Some(ApplicationOctetStreamContentType))
+    Multipart(name, ByteBufferBody(data), contentType = Some(MediaTypes.Binary))
 
   /**
     * Content type will be set to `application/octet-stream`, can be overridden
     * later using the `contentType` method.
     */
   def multipart(name: String, data: InputStream): Multipart =
-    Multipart(name, InputStreamBody(data), contentType = Some(ApplicationOctetStreamContentType))
+    Multipart(name, InputStreamBody(data), contentType = Some(MediaTypes.Binary))
 
   /**
     * Content type will be set to `application/octet-stream`, can be overridden
@@ -160,7 +142,7 @@ package object sttp extends sttpExtensions {
     Multipart(name,
               FileBody(file),
               fileName = Some(file.name),
-              contentType = Some(ApplicationOctetStreamContentType))
+              contentType = Some(MediaTypes.Binary))
 
   /**
     * Encodes the given parameters as form data using `utf-8`.
@@ -169,7 +151,7 @@ package object sttp extends sttpExtensions {
     * overridden later using the `contentType` method.
     */
   def multipart(name: String, fs: Map[String, String]): Multipart =
-    Multipart(name, RequestBody.paramsToStringBody(fs.toList, Utf8), contentType = Some(ApplicationFormContentType))
+    Multipart(name, RequestBody.paramsToStringBody(fs.toList, Utf8), contentType = Some(MediaTypes.Form))
 
   /**
     * Encodes the given parameters as form data.
@@ -178,7 +160,7 @@ package object sttp extends sttpExtensions {
     * overridden later using the `contentType` method.
     */
   def multipart(name: String, fs: Map[String, String], encoding: String): Multipart =
-    Multipart(name, RequestBody.paramsToStringBody(fs.toList, encoding), contentType = Some(ApplicationFormContentType))
+    Multipart(name, RequestBody.paramsToStringBody(fs.toList, encoding), contentType = Some(MediaTypes.Form))
 
   /**
     * Encodes the given parameters as form data using `utf-8`.
@@ -187,7 +169,7 @@ package object sttp extends sttpExtensions {
     * overridden later using the `contentType` method.
     */
   def multipart(name: String, fs: Seq[(String, String)]): Multipart =
-    Multipart(name, RequestBody.paramsToStringBody(fs, Utf8), contentType = Some(ApplicationFormContentType))
+    Multipart(name, RequestBody.paramsToStringBody(fs, Utf8), contentType = Some(MediaTypes.Form))
 
   /**
     * Encodes the given parameters as form data.
@@ -196,14 +178,14 @@ package object sttp extends sttpExtensions {
     * overridden later using the `contentType` method.
     */
   def multipart(name: String, fs: Seq[(String, String)], encoding: String): Multipart =
-    Multipart(name, RequestBody.paramsToStringBody(fs, encoding), contentType = Some(ApplicationFormContentType))
+    Multipart(name, RequestBody.paramsToStringBody(fs, encoding), contentType = Some(MediaTypes.Form))
 
   /**
     * Content type will be set to `application/octet-stream`, can be
     * overridden later using the `contentType` method.
     */
   def multipart[B: BodySerializer](name: String, b: B): Multipart =
-    Multipart(name, implicitly[BodySerializer[B]].apply(b), contentType = Some(ApplicationOctetStreamContentType))
+    Multipart(name, implicitly[BodySerializer[B]].apply(b), contentType = Some(MediaTypes.Binary))
 
   // util
 
@@ -236,8 +218,6 @@ package object sttp extends sttpExtensions {
     transfer(is, os)
     os.toByteArray
   }
-
-  private[sttp] def codeIsSuccess(c: Int): Boolean = c >= 200 && c < 300
 
   private[sttp] def concatByteBuffers(bb1: ByteBuffer, bb2: ByteBuffer): ByteBuffer =
     ByteBuffer

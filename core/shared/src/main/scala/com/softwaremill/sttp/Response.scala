@@ -18,10 +18,10 @@ case class Response[T](rawErrorBody: Either[Array[Byte], T],
                        headers: Seq[(String, String)],
                        history: List[Response[Unit]]) extends ResponseExtensions[T] {
   def is200: Boolean = code == 200
-  def isSuccess: Boolean = codeIsSuccess(code)
-  def isRedirect: Boolean = code >= 300 && code < 400
-  def isClientError: Boolean = code >= 400 && code < 500
-  def isServerError: Boolean = code >= 500 && code < 600
+  def isSuccess: Boolean = StatusCodes.isSuccess(code)
+  def isRedirect: Boolean = StatusCodes.isRedirect(code)
+  def isClientError: Boolean = StatusCodes.isClientError(code)
+  def isServerError: Boolean = StatusCodes.isServerError(code)
 
   def header(h: String): Option[String] =
     headers.find(_._1.equalsIgnoreCase(h)).map(_._2)
@@ -38,9 +38,9 @@ case class Response[T](rawErrorBody: Either[Array[Byte], T],
       case Right(r) => Right(r)
     }
 
-  def contentType: Option[String] = header(ContentTypeHeader)
+  def contentType: Option[String] = header(HeaderNames.ContentType)
   def contentLength: Option[Long] =
-    header(ContentLengthHeader).flatMap(cl => Try(cl.toLong).toOption)
+    header(HeaderNames.ContentLength).flatMap(cl => Try(cl.toLong).toOption)
 
   /**
     * Get the body of the response. If the status code wasn't 2xx (and there's

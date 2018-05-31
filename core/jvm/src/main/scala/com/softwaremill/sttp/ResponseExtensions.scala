@@ -8,6 +8,6 @@ import scala.collection.immutable.Seq
 trait ResponseExtensions[T] { self: Response[T] =>
 
   def cookies: Seq[Cookie] =
-    headers(SetCookieHeader)
+    headers(HeaderNames.SetCookie)
       .flatMap(h => HttpCookie.parse(h).asScala.map(hc => Cookie.apply(hc, h)))
 }

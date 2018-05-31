@@ -40,7 +40,7 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean
 
     //OkHttp support automatic gzip compression
     request.headers
-      .filter(_._1.equalsIgnoreCase(AcceptEncodingHeader) == false)
+      .filter(_._1.equalsIgnoreCase(HeaderNames.AcceptEncoding) == false)
       .foreach {
         case (name, value) => builder.addHeader(name, value)
       }
@@ -76,7 +76,7 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean
   }
 
   private def addMultipart(builder: OkHttpMultipartBody.Builder, mp: Multipart): Unit = {
-    val allHeaders = mp.additionalHeaders + (ContentDispositionHeader -> mp.contentDispositionHeaderValue)
+    val allHeaders = mp.additionalHeaders + (HeaderNames.ContentDisposition -> mp.contentDispositionHeaderValue)
     val headers = Headers.of(allHeaders.asJava)
 
     bodyToOkHttp(mp.body).foreach(builder.addPart(headers, _))
@@ -86,7 +86,7 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean
 
     val code = res.code()
 
-    val body = if (codeIsSuccess(code)) {
+    val body = if (StatusCodes.isSuccess(code)) {
       responseMonad.map(responseHandler(res).handle(responseAs, responseMonad))(Right(_))
     } else {
       responseMonad.map(responseHandler(res).handle(asByteArray, responseMonad))(Left(_))
@@ -108,7 +108,7 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean
           case IgnoreResponse =>
             Try(res.close())
           case ResponseAsString(encoding) =>
-            val charset = Option(res.header(ContentTypeHeader))
+            val charset = Option(res.header(HeaderNames.ContentType))
               .flatMap(encodingFromContentType)
               .getOrElse(encoding)
             val body = Try(res.body().source().readString(Charset.forName(charset)))
