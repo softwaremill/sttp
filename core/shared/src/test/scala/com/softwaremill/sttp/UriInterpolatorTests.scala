@@ -75,7 +75,9 @@ class UriInterpolatorTests extends FunSuite with Matchers {
       (uri"http://example.com/$v2/$v1", s"http://example.com/$v2encoded/$v1"),
       (uri"http://example.com/$v1/p/$v4", s"http://example.com/$v1/p/$v4encoded"),
       (uri"http://example.com/a/${List(v2, "c", v4)}/b", s"http://example.com/a/$v2encoded/c/$v4encoded/b"),
-      (uri"http://example.com/${"a/b/c".split('/')}", s"http://example.com/a/b/c")
+      (uri"http://example.com/${"a/b/c".split('/')}", s"http://example.com/a/b/c"),
+      (uri"http://example.com/a+b", s"http://example.com/a+b"),
+      (uri"http://example.com/a%20b", s"http://example.com/a%20b")
     ),
     "path with parameters" -> List(
       (uri"http://example.com/$v1?x=$v2", s"http://example.com/$v1?x=$v2queryEncoded"),
@@ -87,7 +89,8 @@ class UriInterpolatorTests extends FunSuite with Matchers {
       (uri"http://example.com?x=$v2", s"http://example.com?x=$v2queryEncoded"),
       (uri"http://example.com?x=$v3", s"http://example.com?x=$v3encoded"),
       (uri"http://example.com?x=$v1$v1", s"http://example.com?x=$v1$v1"),
-      (uri"http://example.com?x=z$v1", s"http://example.com?x=z$v1")
+      (uri"http://example.com?x=z$v1", s"http://example.com?x=z$v1"),
+      (uri"http://example.com?x=a+b", s"http://example.com?x=a+b"),
     ),
     "query parameter without value" -> List(
       (uri"http://example.com?$v1", s"http://example.com?$v1"),

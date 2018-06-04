@@ -1,7 +1,5 @@
 package com.softwaremill.sttp
 
-import java.net.URLDecoder
-
 import scala.annotation.tailrec
 
 object UriInterpolator {
@@ -392,11 +390,11 @@ object UriInterpolator {
             seqToQueryFragments(e.toSeq)
           case Left(Vector(ExpressionToken(e: Seq[_]))) =>
             seqToQueryFragments(e)
-          case Left(t) => tokensToStringOpt(t).map(QF.Value(_)).toVector
+          case Left(t) => tokensToStringOpt(t, decodePlusAsSpace = true).map(QF.Value(_)).toVector
           case Right((leftEq, _, rightEq)) =>
-            tokensToStringOpt(leftEq) match {
+            tokensToStringOpt(leftEq, decodePlusAsSpace = true) match {
               case Some(k) =>
-                tokensToStringSeq(rightEq).map(QF.KeyValue(k, _)).toVector
+                tokensToStringSeq(rightEq, decodePlusAsSpace = true).map(QF.KeyValue(k, _)).toVector
 
               case None =>
                 Vector.empty
@@ -451,7 +449,11 @@ object UriInterpolator {
       case x       => Some(x.toString)
     }
 
-    private def tokensToStringSeq(tokens: Vector[Token]): Seq[String] = {
+    /*
+    #102: the + sign should be decoded into a space only when it's part of the query. Otherwise, it should be
+    kept as-is.
+     */
+    private def tokensToStringSeq(tokens: Vector[Token], decodePlusAsSpace: Boolean = false): Seq[String] = {
       /*
       #40: when converting tokens to a string sequence, we have to look at
       groups of string/expression (value) tokens separated by others. If there
@@ -481,7 +483,7 @@ object UriInterpolator {
             val values = valueTs
               .flatMap {
                 case ExpressionToken(e) => anyToStringOpt(e)
-                case StringToken(s)     => Some(decode(s))
+                case StringToken(s)     => Some(decode(s, decodePlusAsSpace))
                 case _                  => None
               }
 
@@ -495,15 +497,15 @@ object UriInterpolator {
       doToSeq(tokens, Vector.empty)
     }
 
-    private def tokensToStringOpt(t: Vector[Token]): Option[String] = t match {
+    private def tokensToStringOpt(t: Vector[Token], decodePlusAsSpace: Boolean = false): Option[String] = t match {
       case Vector()                   => None
       case Vector(ExpressionToken(e)) => anyToStringOpt(e)
-      case _                          => Some(tokensToString(t))
+      case _                          => Some(tokensToString(t, decodePlusAsSpace))
     }
 
-    private def tokensToString(t: Vector[Token]): String =
+    private def tokensToString(t: Vector[Token], decodePlusAsSpace: Boolean = false): String =
       t.collect {
-          case StringToken(s)     => decode(s)
+          case StringToken(s)     => decode(s, decodePlusAsSpace)
           case ExpressionToken(e) => anyToString(e)
         }
         .mkString("")
@@ -524,7 +526,7 @@ object UriInterpolator {
       doSplit(v, Vector.empty)
     }
 
-    private def decode(s: String): String = URLDecoder.decode(s, Utf8)
+    private def decode(s: String, decodePlusAsSpace: Boolean): String = Rfc3986.decode(decodePlusAsSpace)(s)
   }
 
   /**
