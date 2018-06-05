@@ -23,7 +23,7 @@ object Rfc3986 {
     * @param encodePlus Should `+` (which is the encoded form of space
     * in the query) be %-encoded.
     */
-  def encode(allowedCharacters: Set[Char], spaceAsPlus: Boolean = false, encodePlus: Boolean = false)(
+  def encode(allowedCharacters: Set[Char], spaceAsPlus: Boolean = false, encodePlus: Boolean = false, enc: String = "UTF-8")(
       s: String): String = {
     val sb = new StringBuilder()
     // based on https://gist.github.com/teigen/5865923
@@ -32,7 +32,7 @@ object Rfc3986 {
       else if (allowedCharacters(c)) sb.append(c)
       else if (c == ' ' && spaceAsPlus) sb.append('+')
       else {
-        for (b <- c.toString.getBytes("UTF-8")) {
+        for (b <- c.toString.getBytes(enc)) {
           sb.append("%")
           sb.append(Rfc3986Compatibility.formatByte(b))
         }
