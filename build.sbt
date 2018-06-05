@@ -85,7 +85,8 @@ lazy val rootProject = (project in file("."))
   .settings(skip in publish := true, name := "sttp")
   .aggregate(
     rootJVM,
-    rootJS
+    rootJS,
+    rootNative
   )
 
 lazy val rootJVM = project
