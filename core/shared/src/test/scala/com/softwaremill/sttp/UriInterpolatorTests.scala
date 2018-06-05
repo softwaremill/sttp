@@ -90,7 +90,7 @@ class UriInterpolatorTests extends FunSuite with Matchers {
       (uri"http://example.com?x=$v3", s"http://example.com?x=$v3encoded"),
       (uri"http://example.com?x=$v1$v1", s"http://example.com?x=$v1$v1"),
       (uri"http://example.com?x=z$v1", s"http://example.com?x=z$v1"),
-      (uri"http://example.com?x=a+b", s"http://example.com?x=a+b"),
+      (uri"http://example.com?x=a+b", s"http://example.com?x=a+b")
     ),
     "query parameter without value" -> List(
       (uri"http://example.com?$v1", s"http://example.com?$v1"),
