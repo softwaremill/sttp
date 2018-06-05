@@ -73,7 +73,7 @@ trait HttpTest[R[_]]
     }
 
     "as parameters" in {
-      val params = List("a" -> "b", "c" -> "d", "e=" -> "&f")
+      val params = List("a" -> "b", "c" -> "d", "e" -> "=")
       sttp
         .post(uri"$endpoint/echo/form_params/as_params")
         .body(params: _*)
