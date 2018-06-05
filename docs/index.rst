@@ -35,6 +35,7 @@ For more examples, see the :ref:`usage examples <usage_examples>` section. Or ex
    goals
    community
    examples
+   constants
 
 .. toctree::
    :maxdepth: 2
