@@ -4,32 +4,31 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.scalanative.native.Zone
 import scala.util.Try
 
-class CurlBackend(verbose: Boolean = false)(implicit z: Zone)
-    extends AbstractCurlBackend[Id, Nothing](IdMonad, verbose)(z) {}
+class CurlBackend(verbose: Boolean = false) extends AbstractCurlBackend[Id, Nothing](IdMonad, verbose) {}
 
 object CurlBackend {
-  def apply(verbose: Boolean = false)(implicit z: Zone): SttpBackend[Id, Nothing] =
+  def apply(verbose: Boolean = false): SttpBackend[Id, Nothing] =
     new FollowRedirectsBackend[Id, Nothing](
-      new CurlBackend(verbose)(z): SttpBackend[Id, Nothing]
+      new CurlBackend(verbose): SttpBackend[Id, Nothing]
     )
 }
 
-class CurlTryBackend(verbose: Boolean = false)(implicit z: Zone)
-    extends AbstractCurlBackend[Try, Nothing](TryMonad, verbose)(z) {}
+class CurlTryBackend(verbose: Boolean = false) extends AbstractCurlBackend[Try, Nothing](TryMonad, verbose) {}
 
 object CurlTryBackend {
-  def apply(verbose: Boolean = false)(implicit z: Zone): SttpBackend[Try, Nothing] =
+  def apply(verbose: Boolean = false): SttpBackend[Try, Nothing] =
     new FollowRedirectsBackend[Try, Nothing](
-      new CurlTryBackend(verbose)(z): SttpBackend[Try, Nothing]
+      new CurlTryBackend(verbose): SttpBackend[Try, Nothing]
     )
 }
 
-class CurlFutureBackend(verbose: Boolean = false)(implicit z: Zone, ec: ExecutionContext)
-    extends AbstractCurlBackend[Future, Nothing](new FutureMonad()(ec), verbose)(z) {}
+class CurlFutureBackend(verbose: Boolean = false)(implicit ec: ExecutionContext)
+    extends AbstractCurlBackend[Future, Nothing](new FutureMonad()(ec), verbose) {}
 
 object CurlFutureBackend {
-  def apply(verbose: Boolean = false)(implicit z: Zone, ec: ExecutionContext): SttpBackend[Future, Nothing] =
+  def apply(verbose: Boolean = false)(
+      ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Nothing] =
     new FollowRedirectsBackend[Future, Nothing](
-      new CurlFutureBackend(verbose)(z, ec): SttpBackend[Future, Nothing]
+      new CurlFutureBackend(verbose)(ec): SttpBackend[Future, Nothing]
     )
 }

@@ -9,5 +9,5 @@ To use, add the following dependency to your project::
 
 And add one of implicit values::
 
-  implicit val sttpBackend = CurlBackend()(z: Zone)
+  implicit val sttpBackend = CurlBackend()
 

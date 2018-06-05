@@ -9,10 +9,9 @@ import com.softwaremill.sttp.curl.CurlCode.CurlCode
 import scala.collection.immutable.Seq
 import scala.scalanative.native.stdlib._
 import scala.scalanative.native.string._
-import scala.scalanative.native.{CSize, Ptr, Zone, _}
+import scala.scalanative.native.{CSize, Ptr, _}
 
-abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean = false)(implicit z: Zone)
-    extends SttpBackend[R, S] {
+abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean = false) extends SttpBackend[R, S] {
 
   override val responseMonad: MonadError[R] = rm
 
@@ -36,7 +35,7 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean 
       curl.option(HttpHeader, slist.ptr)
     }
 
-    val spaces = responseSpace(z)
+    val spaces = responseSpace
     curl.option(WriteFunction, AbstractCurlBackend.wdFunc)
     curl.option(WriteData, spaces.bodyResp)
     curl.option(HeaderData, spaces.headersResp)
@@ -64,6 +63,9 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean 
     CurlApi.slistFree(slist.ptr)
     free(!spaces.bodyResp._1)
     free(!spaces.headersResp._1)
+    free(spaces.bodyResp.cast[Ptr[Byte]])
+    free(spaces.headersResp.cast[Ptr[Byte]])
+    free(spaces.httpCode.cast[Ptr[Byte]])
     curl.cleanup()
 
     request.response match {
@@ -80,14 +82,14 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean 
     }
   }
 
-  private def responseSpace(implicit z: Zone): CurlSpaces = {
-    val bodyResp = alloc[CurlFetch]
-    !bodyResp._1 = malloc(4096).cast[CString] // realloc in writeData func
+  private def responseSpace: CurlSpaces = {
+    val bodyResp = malloc(sizeof[CurlFetch]).cast[Ptr[CurlFetch]]
+    !bodyResp._1 = malloc(4096).cast[CString]
     !bodyResp._2 = 0
-    val headersResp = alloc[CurlFetch]
-    !headersResp._1 = malloc(4096).cast[CString] // there is realloc in writeData func
+    val headersResp = malloc(sizeof[CurlFetch]).cast[Ptr[CurlFetch]]
+    !headersResp._1 = malloc(4096).cast[CString]
     !headersResp._2 = 0
-    val httpCode: Ptr[Long] = alloc[Long]
+    val httpCode = malloc(sizeof[Long]).cast[Ptr[Long]]
     new CurlSpaces(bodyResp, headersResp, httpCode)
   }
 

@@ -4,7 +4,8 @@ import com.softwaremill.sttp.curl.CurlCode.CurlCode
 import com.softwaremill.sttp.curl.CurlInfo.CurlInfo
 import com.softwaremill.sttp.curl.CurlOption.CurlOption
 
-import scala.scalanative.native.{Ptr, Zone, _}
+import scala.scalanative.native
+import scala.scalanative.native.{Ptr, _}
 
 private[sttp] object CurlApi {
 
@@ -21,13 +22,12 @@ private[sttp] object CurlApi {
   }
 
   implicit class CurlHandleOps(handle: CurlHandle) {
-    // todo: change returned types to use sttp R error monad and return handle
     def perform: CurlCode = CurlCode(CCurl.perform(handle))
 
     def cleanup(): Unit = CCurl.cleanup(handle)
 
-    def option(option: CurlOption, parameter: String)(implicit z: Zone): CurlCode = {
-      setopt(handle, option, toCString(parameter))
+    def option(option: CurlOption, parameter: String): CurlCode = native.Zone { implicit z =>
+      setopt(handle, option, toCString(parameter)(z))
     }
 
     def option(option: CurlOption, parameter: Long): CurlCode = {
@@ -65,8 +65,8 @@ private[sttp] object CurlApi {
 
   type SlistHandle = Ptr[CurlSlist]
 
-  def slistAppend(handle: SlistHandle, string: String)(implicit z: Zone): SlistHandle = {
-    CCurl.slistAppend(handle, toCString(string))
+  def slistAppend(handle: SlistHandle, string: String): SlistHandle = native.Zone { implicit z =>
+    CCurl.slistAppend(handle, toCString(string)(z))
   }
 
   def slistFree(handle: SlistHandle): Unit = {

@@ -9,5 +9,4 @@ package object curl {
   class CurlList(val ptr: Ptr[CurlSlist]) extends AnyVal {}
 
   class CurlSpaces(val bodyResp: Ptr[CurlFetch], val headersResp: Ptr[CurlFetch], val httpCode: Ptr[Long])
-      extends AnyRef {}
 }
