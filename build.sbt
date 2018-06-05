@@ -250,7 +250,7 @@ lazy val asyncHttpClientFs2Backend: Project =
         "com.github.zainab-ali" %% "fs2-reactive-streams" % "0.6.0"
       )
     )
-    .dependsOn(coreJVM % "compile->compile;test->test")
+    .dependsOn(catsJVM % "compile->compile;test->test")
 
 //-- okhttp
 lazy val okhttpBackend: Project = (project in file("okhttp-backend"))
