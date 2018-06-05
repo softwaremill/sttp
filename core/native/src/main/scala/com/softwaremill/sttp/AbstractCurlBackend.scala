@@ -67,7 +67,7 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean 
 
     request.response match {
       case ResponseAsString(encoding: String) =>
-        val rawErrorBody = if (codeIsSuccess((!httpCode).toInt)) {
+        val rawErrorBody = if (StatusCodes.isSuccess((!httpCode).toInt)) {
           Right(responseBody)
         } else {
           Left(responseBody.toCharArray.map(_.toByte))
