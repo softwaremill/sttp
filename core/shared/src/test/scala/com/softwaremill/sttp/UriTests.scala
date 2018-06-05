@@ -74,7 +74,7 @@ class UriTests extends FunSuite with Matchers {
     List(QF.KeyValue("k1&", "v1&", keyEncoding = QueryFragmentEncoding.Relaxed)) -> "k1&=v1%26",
     List(QF.KeyValue("k1&", "v1&", valueEncoding = QueryFragmentEncoding.Relaxed)) -> "k1%26=v1&",
     List(QF.Plain("ą/ę&+;?", encoding = QueryFragmentEncoding.Relaxed)) -> "%C4%85/%C4%99&+;?",
-    List(QF.KeyValue("k", "v1,v2", valueEncoding = QueryFragmentEncoding.All)) -> "k=v1,v2",
+    List(QF.KeyValue("k", "v1,v2", valueEncoding = QueryFragmentEncoding.All)) -> "k=v1%2Cv2",
     List(QF.KeyValue("k", "v1,v2")) -> "k=v1,v2",
     List(QF.KeyValue("k", "+1234")) -> "k=%2B1234",
     List(QF.KeyValue("k", "[]")) -> "k=%5B%5D",
@@ -90,7 +90,7 @@ class UriTests extends FunSuite with Matchers {
   }
 
   val hostTestData = List(
-    "www.mikołak.net" -> "http://www.miko%C5%82ak.net",
+    "www.mikołak.net" -> "http://www.xn--mikoak-6db.net",
     "192.168.1.0" -> "http://192.168.1.0",
     "::1" -> "http://[::1]",
     "2001:db8::ff00:42:8329" -> "http://[2001:db8::ff00:42:8329]",
