@@ -10,7 +10,7 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   crossScalaVersions := Seq(scalaVersion.value, "2.11.12")
 )
 
-val commonJSSettings = Seq(
+val commonJSSettings = commonSettings ++ Seq(
   // slow down for CI
   parallelExecution in Test := false,
   // https://github.com/scalaz/scalaz/pull/1734#issuecomment-385627061
@@ -128,22 +128,9 @@ lazy val rootNative = project
 
 lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .withoutSuffixFor(JVMPlatform)
-  .crossType {
-    new CrossType {
-      def projectDir(crossBase: File, projectType: String): File = crossBase / projectType
-      def projectDir(crossBase: File, platform: Platform): File = crossBase / platform.identifier
-      def sharedSrcDir(projectBase: File, conf: String): Option[File] = {
-        val dirOpt = projectBase.getName match {
-          case "native" if conf == "test" => None
-          case _ if conf == "test"        => Some("sharedTestsJvmJs")
-          case _                          => Some("shared")
-        }
-        dirOpt.map(projectBase.getParentFile / _ / "src" / conf / "scala")
-      }
-    }
-  }
+  .crossType(CrossType.Full)
   .in(file("core"))
-  .settings(commonSettings: _*)
+  .jvmSettings(commonSettings: _*)
   .jsSettings(commonJSSettings: _*)
   .nativeSettings(commonNativeSettings: _*)
   .settings(
@@ -163,6 +150,7 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   )
   .jsSettings(browserTestSettings)
   .jsSettings(testServerSettings(Test))
+  .nativeSettings(testServerSettings(Test))
   .jvmSettings(
     libraryDependencies ++= Seq(
       akkaHttp % "test",

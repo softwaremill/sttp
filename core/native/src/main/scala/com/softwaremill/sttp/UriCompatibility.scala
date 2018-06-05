@@ -1,29 +1,10 @@
 package com.softwaremill.sttp
 
-import java.net.URI
-
 private[sttp] object UriCompatibility {
 
-  def encodeDNSHost(str: String): String = new URI(s"http://$str").getHost
-
-  def encodeQuery(str: String, enc: String): String = {
-    val chars = str.getBytes(enc).map(_.toChar)
-    val encChars = chars.flatMap(ch => {
-      if (shouldEncode(ch)) {
-        encodeChar(ch).getBytes(enc)
-      } else {
-        Array(ch.toByte)
-      }
-    })
-
-    new String(encChars, enc)
+  def encodeDNSHost(host: String): String = {
+    Rfc3986.encode(Rfc3986.Host)(host)
   }
-
-  private def shouldEncode(char: Char): Boolean =
-    (char < 31 || char > 127) &&
-      Set(':', '/', '@', '!', '$', '\'', '(', ')', '*', '+', ',', ';', ' ', '%', '<', '>', '[', ']', '#', '{', '}', '^',
-        '`', '|', '?', '&', '\\', '=', '"').contains(char)
-
-  private def encodeChar(char: Char): String = "%" + "%04x".format(char.toInt).substring(2).toUpperCase
-
+  def encodeQuery(s: String, enc: String): String =
+    Rfc3986.encode(Rfc3986.Query)(s)
 }
