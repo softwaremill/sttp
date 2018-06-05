@@ -247,7 +247,7 @@ lazy val asyncHttpClientFs2Backend: Project =
   asyncHttpClientBackendProject("fs2")
     .settings(
       libraryDependencies ++= Seq(
-        "com.github.zainab-ali" %% "fs2-reactive-streams" % "0.5.1"
+        "com.github.zainab-ali" %% "fs2-reactive-streams" % "0.6.0"
       )
     )
     .dependsOn(coreJVM % "compile->compile;test->test")
