@@ -41,7 +41,7 @@ object Rfc3986 {
     sb.toString
   }
 
-  def decode(plusAsSpace: Boolean = false)(s: String): String = {
+  def decode(plusAsSpace: Boolean = false)(s: String, enc: String = Utf8): String = {
     // Copied from URLDecoder.decode with additional + handling (first case)
 
     var needToChange = false
@@ -86,7 +86,7 @@ object Rfc3986 {
             // "%x" will cause an exception to be thrown
             if ((i < numChars) && (c == '%'))
               throw new IllegalArgumentException("URLDecoder: Incomplete trailing escape (%) pattern")
-            sb.append(new String(bytes, 0, pos, Utf8))
+            sb.append(new String(bytes, 0, pos, enc))
           } catch {
             case e: NumberFormatException =>
               throw new IllegalArgumentException(

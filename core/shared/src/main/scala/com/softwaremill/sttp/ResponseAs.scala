@@ -1,7 +1,5 @@
 package com.softwaremill.sttp
 
-import java.net.URLDecoder
-
 import com.softwaremill.sttp.internal.SttpFile
 
 import scala.collection.immutable.Seq
@@ -44,7 +42,7 @@ object ResponseAs {
       .flatMap(kv =>
         kv.split("=", 2) match {
           case Array(k, v) =>
-            Some((URLDecoder.decode(k, encoding), URLDecoder.decode(v, encoding)))
+            Some((Rfc3986.decode()(k, encoding), Rfc3986.decode()(v, encoding)))
           case _ => None
       })
   }
