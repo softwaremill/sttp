@@ -128,7 +128,7 @@ lazy val core = crossProject(JSPlatform, JVMPlatform)
   )
   .jsSettings(
     libraryDependencies ++= Seq(
-      "org.scala-js" %%% "scalajs-dom" % "0.9.5"
+      "org.scala-js" %%% "scalajs-dom" % "0.9.6"
     ),
     jsDependencies ++= Seq(
       "org.webjars.npm" % "spark-md5" % "3.0.0" % "test" / "spark-md5.js" minified "spark-md5.min.js"
@@ -189,7 +189,7 @@ lazy val scalaz: Project = (project in file("implementations/scalaz"))
   .settings(
     name := "scalaz",
     publishArtifact in Test := true,
-    libraryDependencies ++= Seq("org.scalaz" %% "scalaz-concurrent" % "7.2.22")
+    libraryDependencies ++= Seq("org.scalaz" %% "scalaz-concurrent" % "7.2.24")
   )
   .dependsOn(coreJVM % "compile->compile;test->test")
 
@@ -215,7 +215,7 @@ lazy val asyncHttpClientBackend: Project =
     .settings(
       name := "async-http-client-backend",
       libraryDependencies ++= Seq(
-        "org.asynchttpclient" % "async-http-client" % "2.4.7"
+        "org.asynchttpclient" % "async-http-client" % "2.4.9"
       )
     )
     .dependsOn(coreJVM % "compile->compile;test->test")
