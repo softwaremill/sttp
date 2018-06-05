@@ -1,7 +1,7 @@
 package com.softwaremill.sttp
 
 import com.softwaremill.sttp.curl.CurlInfo._
-import com.softwaremill.sttp.curl.{CurlApi, CurlCode, CurlFetch, CurlSlistOps}
+import com.softwaremill.sttp.curl._
 import com.softwaremill.sttp.curl.CurlOption._
 import com.softwaremill.sttp.curl.CurlApi._
 import com.softwaremill.sttp.curl.CurlCode.CurlCode
@@ -18,7 +18,7 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean 
 
   override def close(): Unit = {}
 
-  private var slist: CurlSlistOps = _
+  private var slist: CurlList = _
 
   override def send[T](request: Request[T, S]): R[Response[T]] = {
     val curl = CurlApi.init
@@ -29,17 +29,17 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean 
     if (request.headers.size > 0) {
       slist = request.headers
         .map { case (headerName, headerValue) => s"$headerName: $headerValue" }
-        .foldLeft(new CurlSlistOps(null)) {
+        .foldLeft(new CurlList(null)) {
           case (acc, h) =>
-            new CurlSlistOps(CurlApi.slistAppend(acc.ptr, h))
+            new CurlList(CurlApi.slistAppend(acc.ptr, h))
         }
       curl.option(HttpHeader, slist.ptr)
     }
 
-    val (bodyResp, headersResp, httpCode) = responseSpace(z)
+    val spaces = responseSpace(z)
     curl.option(WriteFunction, AbstractCurlBackend.wdFunc)
-    curl.option(WriteData, bodyResp)
-    curl.option(HeaderData, headersResp)
+    curl.option(WriteData, spaces.bodyResp)
+    curl.option(HeaderData, spaces.headersResp)
     curl.option(Url, request.uri.toString)
     curl.option(TimeoutMs, request.options.readTimeout.toMillis)
     request.method match {
@@ -56,34 +56,31 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean 
 
     curl.perform
 
-    curl.info(ResponseCode, httpCode)
-    val responseBody = fromCString(!bodyResp._1)
-    val responseHeaders = parseHeaders(fromCString(!headersResp._1))
+    curl.info(ResponseCode, spaces.httpCode)
+    val responseBody = fromCString(!spaces.bodyResp._1)
+    val responseHeaders = parseHeaders(fromCString(!spaces.headersResp._1))
+    val httpCode = (!spaces.httpCode).toInt
 
     CurlApi.slistFree(slist.ptr)
-    free(!bodyResp._1)
-    free(!headersResp._1)
+    free(!spaces.bodyResp._1)
+    free(!spaces.headersResp._1)
     curl.cleanup()
 
     request.response match {
       case ResponseAsString(encoding: String) =>
-        val rawErrorBody = if (StatusCodes.isSuccess((!httpCode).toInt)) {
+        val rawErrorBody = if (StatusCodes.isSuccess(httpCode)) {
           Right(responseBody)
         } else {
           Left(responseBody.toCharArray.map(_.toByte))
         }
         responseMonad.unit(
-          Response(rawErrorBody,
-                   (!httpCode).toInt,
-                   responseHeaders.head._1.split(" ").last,
-                   responseHeaders.tail,
-                   List()))
+          Response(rawErrorBody, httpCode, responseHeaders.head._1.split(" ").last, responseHeaders.tail, List()))
       case _ =>
         responseMonad.error(new IllegalArgumentException("Unsupported response type"))
     }
   }
 
-  private def responseSpace(implicit z: Zone): (Ptr[CurlFetch], Ptr[CurlFetch], Ptr[Long]) = {
+  private def responseSpace(implicit z: Zone): CurlSpaces = {
     val bodyResp = alloc[CurlFetch]
     !bodyResp._1 = malloc(4096).cast[CString] // realloc in writeData func
     !bodyResp._2 = 0
@@ -91,7 +88,7 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean 
     !headersResp._1 = malloc(4096).cast[CString] // there is realloc in writeData func
     !headersResp._2 = 0
     val httpCode: Ptr[Long] = alloc[Long]
-    (bodyResp, headersResp, httpCode)
+    new CurlSpaces(bodyResp, headersResp, httpCode)
   }
 
   private def parseHeaders(str: String): Seq[(String, String)] = {
