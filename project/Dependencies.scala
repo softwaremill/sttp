@@ -9,31 +9,37 @@ object Dependencies {
 
   val circeVersion = "0.9.3"
 
-  val braveVersion = "4.18.2"
+  val braveVersion = "5.0.0"
 
   val akkaHttpVersion = "10.1.1"
 
-  val akkaHttpClientVersion = "2.4.4"
+  val akkaHttpClientVersion = "2.4.9"
 
-  val akkaStreamsVersion = "2.5.11"
+  val akkaStreamsVersion = "2.5.13"
 
-  val scalazConcurrentVersion = "7.2.21"
+  val scalazConcurrentVersion = "7.2.24"
 
   val catzEffectVersion = "1.0.0-RC"
 
-  val fs2ReactiveStreamsVersion = "0.5.1"
+  val fs2ReactiveStreamsVersion = "0.6.0"
 
   val okHttpVersion = "3.10.0"
 
-  val json4sVersion = "3.5.3"
+  val json4sVersion = "3.5.4"
 
-  val simpleClientVersion = "0.3.0"
+  val simpleClientVersion = "0.4.0"
 
   val typeSafeScalaLoggerVersion = "3.8.0"
 
   val betterFilesVersion = "3.4.0"
 
   val logbackClassicVersion = "1.2.3"
+
+  val scalaTestVersion = "3.0.5"
+
+  val akkaHttpCorsTestVersion = "0.3.0"
+
+  val sparkMd5TestVersion = "3.0.0"
 
   val monix = "io.monix" %% "monix" % monixVersion
 
@@ -77,6 +83,10 @@ object Dependencies {
 
   val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.13.5"
 
-  val scalaTest = "org.scalatest" %% "scalatest" % "3.0.5"
+  val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion
+
+  val akkaHttpCorsTest = "ch.megard" %% "akka-http-cors" % akkaHttpCorsTestVersion
+
+  val sparkMd5Test = "org.webjars.npm" % "spark-md5" % sparkMd5TestVersion
 
 }

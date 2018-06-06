@@ -10,16 +10,18 @@ Using sbt
 
 The basic dependency which provides the API and the default synchronous backend is::
 
-  "com.softwaremill.sttp" %% "core" % "1.1.13"
+  "com.softwaremill.sttp" %% "core" % "1.2.0-RC5"
 
 ``sttp`` is available for Scala 2.11 and 2.12, and requires Java 8. The core module has no transitive dependencies.
+
+``sttp`` is also available for Scala.js 0.6. Note that not all modules are compatible and there are no backends that can be used on both.
 
 Using Ammonite
 --------------
 
 If you are an `Ammonite <http://ammonite.io>`_ user, you can quickly start experimenting with sttp by copy-pasting the following::
 
-  import $ivy.`com.softwaremill.sttp::core:1.1.13`
+  import $ivy.`com.softwaremill.sttp::core:1.2.0-RC5`
   import com.softwaremill.sttp._
   implicit val backend = HttpURLConnectionBackend()
   sttp.get(uri"http://httpbin.org/ip").send()

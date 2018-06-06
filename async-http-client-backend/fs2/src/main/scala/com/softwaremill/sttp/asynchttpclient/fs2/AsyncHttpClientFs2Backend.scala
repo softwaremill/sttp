@@ -4,28 +4,21 @@ import java.nio.ByteBuffer
 
 import cats.effect._
 import com.softwaremill.sttp.asynchttpclient.AsyncHttpClientBackend
-import com.softwaremill.sttp.{
-  FollowRedirectsBackend,
-  MonadAsyncError,
-  SttpBackend,
-  SttpBackendOptions,
-  Utf8,
-  concatByteBuffers
-}
+import com.softwaremill.sttp.impl.cats.EffectMonadAsyncError
+import com.softwaremill.sttp.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions, concatByteBuffers}
 import fs2._
 import fs2.interop.reactivestreams._
 import io.netty.buffer.{ByteBuf, Unpooled}
 import org.asynchttpclient.{AsyncHttpClient, AsyncHttpClientConfig, DefaultAsyncHttpClient}
 import org.reactivestreams.Publisher
 
-import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
 
-class AsyncHttpClientFs2Backend[F[_]: Effect] private (asyncHttpClient: AsyncHttpClient, closeClient: Boolean)(
-    implicit ec: ExecutionContext)
+class AsyncHttpClientFs2Backend[F[_]: ConcurrentEffect] private (asyncHttpClient: AsyncHttpClient, closeClient: Boolean)(
+    implicit t: Timer[F])
     extends AsyncHttpClientBackend[F, Stream[F, ByteBuffer]](
       asyncHttpClient,
-      new EffectMonad,
+      new EffectMonadAsyncError,
       closeClient
     ) {
 
@@ -35,64 +28,31 @@ class AsyncHttpClientFs2Backend[F[_]: Effect] private (asyncHttpClient: AsyncHtt
   override protected def publisherToStreamBody(p: Publisher[ByteBuffer]): Stream[F, ByteBuffer] =
     p.toStream[F]
 
-  override protected def publisherToString(p: Publisher[ByteBuffer]): F[String] = {
+  override protected def publisherToBytes(p: Publisher[ByteBuffer]): F[Array[Byte]] = {
     val bytes = p
       .toStream[F]
       .compile
       .fold(ByteBuffer.allocate(0))(concatByteBuffers)
 
-    implicitly[Effect[F]].map(bytes)(bb => new String(bb.array(), Utf8))
+    implicitly[Effect[F]].map(bytes)(_.array())
   }
 }
 
 object AsyncHttpClientFs2Backend {
 
-  private def apply[F[_]: Effect](asyncHttpClient: AsyncHttpClient, closeClient: Boolean)(
-      implicit ec: ExecutionContext): SttpBackend[F, Stream[F, ByteBuffer]] =
+  private def apply[F[_]: ConcurrentEffect](asyncHttpClient: AsyncHttpClient, closeClient: Boolean)(
+      implicit t: Timer[F]): SttpBackend[F, Stream[F, ByteBuffer]] =
     new FollowRedirectsBackend(new AsyncHttpClientFs2Backend(asyncHttpClient, closeClient))
 
-  /**
-    * @param ec The execution context for running non-network related operations,
-    *           e.g. mapping responses. Defaults to the global execution
-    *           context.
-    */
-  def apply[F[_]: Effect](options: SttpBackendOptions = SttpBackendOptions.Default)(
-      implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[F, Stream[F, ByteBuffer]] =
+  def apply[F[_]: ConcurrentEffect](options: SttpBackendOptions = SttpBackendOptions.Default)(
+      implicit t: Timer[F]): SttpBackend[F, Stream[F, ByteBuffer]] =
     AsyncHttpClientFs2Backend[F](AsyncHttpClientBackend.defaultClient(options), closeClient = true)
 
-  /**
-    * @param ec The execution context for running non-network related operations,
-    *           e.g. mapping responses. Defaults to the global execution
-    *           context.
-    */
-  def usingConfig[F[_]: Effect](cfg: AsyncHttpClientConfig)(
-      implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[F, Stream[F, ByteBuffer]] =
+  def usingConfig[F[_]: ConcurrentEffect](cfg: AsyncHttpClientConfig)(
+      implicit t: Timer[F]): SttpBackend[F, Stream[F, ByteBuffer]] =
     AsyncHttpClientFs2Backend[F](new DefaultAsyncHttpClient(cfg), closeClient = true)
 
-  /**
-    * @param ec The execution context for running non-network related operations,
-    *           e.g. mapping responses. Defaults to the global execution
-    *           context.
-    */
-  def usingClient[F[_]: Effect](client: AsyncHttpClient)(
-      implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[F, Stream[F, ByteBuffer]] =
+  def usingClient[F[_]: ConcurrentEffect](client: AsyncHttpClient)(
+      implicit t: Timer[F]): SttpBackend[F, Stream[F, ByteBuffer]] =
     AsyncHttpClientFs2Backend[F](client, closeClient = false)
-}
-
-private[fs2] class EffectMonad[F[_]](implicit F: Effect[F]) extends MonadAsyncError[F] {
-
-  override def async[T](register: ((Either[Throwable, T]) => Unit) => Unit): F[T] =
-    F.async(register)
-
-  override def unit[T](t: T): F[T] = F.pure(t)
-
-  override def map[T, T2](fa: F[T])(f: (T) => T2): F[T2] = F.map(fa)(f)
-
-  override def flatMap[T, T2](fa: F[T])(f: (T) => F[T2]): F[T2] =
-    F.flatMap(fa)(f)
-
-  override def error[T](t: Throwable): F[T] = F.raiseError(t)
-
-  override protected def handleWrappedError[T](rt: F[T])(h: PartialFunction[Throwable, F[T]]): F[T] =
-    F.recoverWith(rt)(h)
 }

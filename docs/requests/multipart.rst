@@ -16,7 +16,9 @@ A single part of a multipart request consist of a mandatory name and a payload o
 * ``Map[String, String]``
 * ``Seq[(String, String)]``
 
-The content type of each part is by default the same as when setting simple bodies: ``text/plain`` for parts of type ``String``, ``application/x-www-form-urlencoded`` for parts of key-value pairs (form data) and ``application/octet-stream`` otherwise (for binary data). 
+Note that in JavaScript ``Web/API/File`` replaces ``File`` and ``Path``.
+
+The content type of each part is by default the same as when setting simple bodies: ``text/plain`` for parts of type ``String``, ``application/x-www-form-urlencoded`` for parts of key-value pairs (form data) and ``application/octet-stream`` otherwise (for binary data).
 
 The parts can be specified using either a ``Seq[Multipart]`` or by using multiple arguments::
 
@@ -37,7 +39,7 @@ Customising part meta-data
 For each part, an optional filename can be specified, as well as a custom content type and additional headers. The following methods are available on ``Multipart`` instances::
 
   case class Multipart {
-    def fileName(v: String): Multipart 
+    def fileName(v: String): Multipart
     def contentType(v: String): Multipart
     def header(k: String, v: String): Multipart
   }

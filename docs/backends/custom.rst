@@ -3,10 +3,10 @@
 Custom backends, logging, metrics
 =================================
 
-It is also entirely possible to write custom backends (if doing so, please consider contributing!) or wrap an existing one. One can even write completely generic wrappers for any delegate backend, as each backend comes equipped with a monad for the response type. This brings the possibility to ``map`` and ``flatMap`` over responses. 
+It is also entirely possible to write custom backends (if doing so, please consider contributing!) or wrap an existing one. One can even write completely generic wrappers for any delegate backend, as each backend comes equipped with a monad for the response type. This brings the possibility to ``map`` and ``flatMap`` over responses.
 
 Possible use-cases for wrapper-backend include:
- 
+
 * logging
 * capturing metrics
 * request signing (transforming the request before sending it to the delegate)
@@ -60,7 +60,7 @@ Below is an example on how to implement a backend wrapper, which sends metrics f
   class MetricWrapper[S](delegate: SttpBackend[Future, S],
                             metrics: MetricsServer)
       extends SttpBackend[Future, S] {
-  
+
     override def send[T](request: Request[T, S]): Future[Response[T]] = {
       val start = System.currentTimeMillis()
 
@@ -138,3 +138,28 @@ In some cases it's possible to implement a generic retry mechanism; such a mecha
   }
 
 Note that some backends also have built-in retry mechanisms, e.g. `akka-http <https://doc.akka.io/docs/akka-http/current/scala/http/client-side/host-level.html#retrying-a-request>`_ or `OkHttp <http://square.github.io/okhttp>`_ (see the builder's ``retryOnConnectionFailure`` method).
+
+Example new backend
+--------------------------------
+
+Implementing a new backend is made easy as the tests are published in the ``core`` jar file under the ``tests`` classifier. Simply add the follow dependencies to your ``build.sbt``::
+
+  "com.softwaremill.sttp" %% "core" % "1.2.0-RC5" % "test" classifier "tests",
+  "com.typesafe.akka" %% "akka-http" % "10.1.1" % "test",
+  "ch.megard" %% "akka-http-cors" % "0.3.0" % "test",
+  "com.typesafe.akka" %% "akka-stream" % "2.5.12" % "test",
+  "org.scalatest" %% "scalatest" % "3.0.5" % "test"
+
+Implement your backend and extend the ``HttpTest`` class::
+
+  import com.softwaremill.sttp.SttpBackend
+  import com.softwaremill.sttp.testing.{ConvertToFuture, HttpTest}
+
+  class MyCustomBackendHttpTest extends HttpTest[Future] {
+
+    override implicit val convertToFuture: ConvertToFuture[Future] = ConvertToFuture.future
+    override implicit lazy val backend: SttpBackend[Future, Nothing] = new MyCustomBackend()
+
+  }
+
+You can find a more detailed example in the `sttp-vertx <https://github.com/guymers/sttp-vertx>`_ repository.

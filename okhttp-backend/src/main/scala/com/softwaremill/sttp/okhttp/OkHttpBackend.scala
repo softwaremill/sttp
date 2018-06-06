@@ -40,7 +40,7 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean
 
     //OkHttp support automatic gzip compression
     request.headers
-      .filter(_._1.equalsIgnoreCase(AcceptEncodingHeader) == false)
+      .filter(_._1.equalsIgnoreCase(HeaderNames.AcceptEncoding) == false)
       .foreach {
         case (name, value) => builder.addHeader(name, value)
       }
@@ -63,7 +63,7 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean
             sink.writeAll(Okio.source(b))
           override def contentType(): MediaType = null
         })
-      case PathBody(b, _) =>
+      case FileBody(b, _) =>
         Some(OkHttpRequestBody.create(null, b.toFile))
       case StreamBody(s) =>
         streamToRequestBody(s)
@@ -76,7 +76,7 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean
   }
 
   private def addMultipart(builder: OkHttpMultipartBody.Builder, mp: Multipart): Unit = {
-    val allHeaders = mp.additionalHeaders + (ContentDispositionHeader -> mp.contentDispositionHeaderValue)
+    val allHeaders = mp.additionalHeaders + (HeaderNames.ContentDisposition -> mp.contentDispositionHeaderValue)
     val headers = Headers.of(allHeaders.asJava)
 
     bodyToOkHttp(mp.body).foreach(builder.addPart(headers, _))
@@ -86,10 +86,10 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean
 
     val code = res.code()
 
-    val body = if (codeIsSuccess(code)) {
+    val body = if (StatusCodes.isSuccess(code)) {
       responseMonad.map(responseHandler(res).handle(responseAs, responseMonad))(Right(_))
     } else {
-      responseMonad.map(responseHandler(res).handle(asString, responseMonad))(Left(_))
+      responseMonad.map(responseHandler(res).handle(asByteArray, responseMonad))(Left(_))
     }
 
     val headers = res
@@ -108,7 +108,7 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean
           case IgnoreResponse =>
             Try(res.close())
           case ResponseAsString(encoding) =>
-            val charset = Option(res.header(ContentTypeHeader))
+            val charset = Option(res.header(HeaderNames.ContentType))
               .flatMap(encodingFromContentType)
               .getOrElse(encoding)
             val body = Try(res.body().source().readString(Charset.forName(charset)))
@@ -121,9 +121,9 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean
           case ras @ ResponseAsStream() =>
             responseBodyToStream(res).map(ras.responseIsStream)
           case ResponseAsFile(file, overwrite) =>
-            val body = Try(ResponseAs.saveFile(file, res.body().byteStream(), overwrite))
+            val body = Try(FileHelpers.saveFile(file.toFile, res.body().byteStream(), overwrite))
             res.close()
-            body
+            body.map(_ => file)
         }
     }
 

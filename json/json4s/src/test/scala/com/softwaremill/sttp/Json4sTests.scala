@@ -41,12 +41,12 @@ class Json4sTests extends FlatSpec with Matchers with EitherValues {
 
     val ct = req.headers.toMap.get("Content-Type")
 
-    ct shouldBe Some(contentTypeWithEncoding(ApplicationJsonContentType, Utf8))
+    ct shouldBe Some(contentTypeWithEncoding(MediaTypes.Json, Utf8))
   }
 
   def extractBody[A[_], B, C](request: RequestT[A, B, C]): String =
     request.body match {
-      case StringBody(body, "utf-8", Some(ApplicationJsonContentType)) =>
+      case StringBody(body, "utf-8", Some(MediaTypes.Json)) =>
         body
       case wrongBody =>
         fail(s"Request body does not serialize to correct StringBody: $wrongBody")

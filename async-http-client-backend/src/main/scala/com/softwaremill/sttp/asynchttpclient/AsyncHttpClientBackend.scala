@@ -5,6 +5,7 @@ import java.nio.charset.Charset
 
 import com.softwaremill.sttp.ResponseAs.EagerResponseHandler
 import com.softwaremill.sttp._
+import com.softwaremill.sttp.internal.SttpFile
 import io.netty.buffer.ByteBuf
 import io.netty.handler.codec.http.HttpHeaders
 import org.asynchttpclient.AsyncHandler.State
@@ -40,8 +41,8 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
       .prepareRequest(requestToAsync(r))
 
     rm.flatten(rm.async[R[Response[T]]] { cb =>
-      def success(r: R[Response[T]]) = cb(Right(r))
-      def error(t: Throwable) = cb(Left(t))
+      def success(r: R[Response[T]]): Unit = cb(Right(r))
+      def error(t: Throwable): Unit = cb(Left(t))
 
       r.response match {
         case ras @ ResponseAsStream() =>
@@ -61,7 +62,7 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
 
   protected def publisherToStreamBody(p: Publisher[ByteBuffer]): S
 
-  protected def publisherToString(p: Publisher[ByteBuffer]): R[String]
+  protected def publisherToBytes(p: Publisher[ByteBuffer]): R[Array[Byte]]
 
   private def eagerAsyncHandler[T](responseAs: ResponseAs[T, S],
                                    success: R[Response[T]] => Unit,
@@ -128,14 +129,14 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
           val baseResponse = readResponseNoBody(builder.build())
           val p = publisher.getOrElse(EmptyPublisher)
           val s = publisherToStreamBody(p)
-          val b = if (codeIsSuccess(baseResponse.code)) {
+          val b = if (StatusCodes.isSuccess(baseResponse.code)) {
             rm.unit(Right(responseAs.responseIsStream(s)))
           } else {
-            rm.map(publisherToString(p))(Left(_))
+            rm.map(publisherToBytes(p))(Left(_))
           }
 
-          success(rm.map(b) { bb: Either[String, T] =>
-            baseResponse.copy(body = bb)
+          success(rm.map(b) { bb: Either[Array[Byte], T] =>
+            baseResponse.copy(rawErrorBody = bb)
           })
         }
       }
@@ -150,7 +151,7 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
     val readTimeout = r.options.readTimeout
     val rb = new RequestBuilder(r.method.m)
       .setUrl(r.uri.toString)
-      .setRequestTimeout(if (readTimeout.isFinite()) readTimeout.toMillis.toInt else -1)
+      .setReadTimeout(if (readTimeout.isFinite()) readTimeout.toMillis.toInt else -1)
     r.headers.foreach { case (k, v) => rb.setHeader(k, v) }
     setBody(r, r.body, rb)
     rb.build()
@@ -172,12 +173,12 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
       case InputStreamBody(b, _) =>
         rb.setBody(b)
 
-      case PathBody(b, _) =>
+      case FileBody(b, _) =>
         rb.setBody(b.toFile)
 
       case StreamBody(s) =>
         val cl = r.headers
-          .find(_._1.equalsIgnoreCase(ContentLengthHeader))
+          .find(_._1.equalsIgnoreCase(HeaderNames.ContentLength))
           .map(_._2.toLong)
           .getOrElse(-1L)
         rb.setBody(streamBodyToPublisher(s), cl)
@@ -198,7 +199,7 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
 
     val bodyPart = mp.body match {
       case StringBody(b, encoding, _) =>
-        new StringPart(nameWithFilename, b, mp.contentType.getOrElse(TextPlainContentType), Charset.forName(encoding))
+        new StringPart(nameWithFilename, b, mp.contentType.getOrElse(MediaTypes.Text), Charset.forName(encoding))
       case ByteArrayBody(b, _) =>
         new ByteArrayPart(nameWithFilename, b)
       case ByteBufferBody(b, _) =>
@@ -207,7 +208,7 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
         // sadly async http client only supports parts that are strings,
         // byte arrays or files
         new ByteArrayPart(nameWithFilename, toByteArray(b))
-      case PathBody(b, _) =>
+      case FileBody(b, _) =>
         new FilePart(mp.name, b.toFile, null, null, mp.fileName.orNull)
     }
 
@@ -219,14 +220,14 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
   private def readEagerResponse[T](response: AsyncResponse, responseAs: ResponseAs[T, S]): R[Response[T]] = {
     val base = readResponseNoBody(response)
 
-    val body = if (codeIsSuccess(base.code)) {
+    val body = if (StatusCodes.isSuccess(base.code)) {
       rm.map(eagerResponseHandler(response).handle(responseAs, rm))(Right(_))
     } else {
-      rm.map(eagerResponseHandler(response).handle(asString, rm))(Left(_))
+      rm.map(eagerResponseHandler(response).handle(asByteArray, rm))(Left(_))
     }
 
-    rm.map(body) { b: Either[String, T] =>
-      base.copy(body = b)
+    rm.map(body) { b: Either[Array[Byte], T] =>
+      base.copy(rawErrorBody = b)
     }
   }
 
@@ -252,7 +253,7 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
             Try(())
 
           case ResponseAsString(enc) =>
-            val charset = Option(response.getHeader(ContentTypeHeader))
+            val charset = Option(response.getHeader(HeaderNames.ContentType))
               .flatMap(encodingFromContentType)
               .getOrElse(enc)
             Try(response.getResponseBody(Charset.forName(charset)))
@@ -264,9 +265,10 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
             Failure(new IllegalStateException("Requested a streaming response, trying to read eagerly."))
 
           case ResponseAsFile(file, overwrite) =>
-            Try(
-              ResponseAs
-                .saveFile(file, response.getResponseBodyAsStream, overwrite))
+            Try {
+              val f = FileHelpers.saveFile(file.toFile, response.getResponseBodyAsStream, overwrite)
+              SttpFile.fromFile(f)
+            }
         }
     }
 

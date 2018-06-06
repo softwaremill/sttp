@@ -20,7 +20,7 @@ class AsyncHttpClientFutureBackend private (asyncHttpClient: AsyncHttpClient, cl
   override protected def publisherToStreamBody(p: Publisher[ByteBuffer]): Nothing =
     throw new IllegalStateException("This backend does not support streaming")
 
-  override protected def publisherToString(p: Publisher[ByteBuffer]): Future[String] =
+  override protected def publisherToBytes(p: Publisher[ByteBuffer]): Future[Array[Byte]] =
     throw new IllegalStateException("This backend does not support streaming")
 }
 

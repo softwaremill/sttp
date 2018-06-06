@@ -70,15 +70,15 @@ class AkkaHttpBackend private (actorSystem: ActorSystem,
 
         val headers = headersFromAkka(hr)
         val charsetFromHeaders = headers
-          .find(_._1 == ContentTypeHeader)
+          .find(_._1 == HeaderNames.ContentType)
           .map(_._2)
           .flatMap(encodingFromContentType)
 
-        val body = if (codeIsSuccess(code)) {
+        val body = if (com.softwaremill.sttp.StatusCodes.isSuccess(code)) {
           bodyFromAkka(r.response, decodeAkkaResponse(hr), charsetFromHeaders)
             .map(Right(_))
         } else {
-          bodyFromAkka(asString, decodeAkkaResponse(hr), charsetFromHeaders)
+          bodyFromAkka(asByteArray, decodeAkkaResponse(hr), charsetFromHeaders)
             .map(Left(_))
         }
 
@@ -139,14 +139,14 @@ class AkkaHttpBackend private (actorSystem: ActorSystem,
         Future.successful(r.responseIsStream(hr.entity.dataBytes))
 
       case ResponseAsFile(file, overwrite) =>
-        saved(file, overwrite).map(_ => file)
+        saved(file.toFile, overwrite).map(_ => file)
     }
   }
 
   private def headersFromAkka(hr: HttpResponse): Seq[(String, String)] = {
-    val ch = ContentTypeHeader -> hr.entity.contentType.toString()
+    val ch = HeaderNames.ContentType -> hr.entity.contentType.toString()
     val cl =
-      hr.entity.contentLengthOption.map(ContentLengthHeader -> _.toString)
+      hr.entity.contentLengthOption.map(HeaderNames.ContentLength -> _.toString)
     val other = hr.headers.map(h => (h.name, h.value))
     ch :: (cl.toList ++ other)
   }
@@ -203,7 +203,7 @@ class AkkaHttpBackend private (actorSystem: ActorSystem,
         case isb: InputStreamBody =>
           HttpEntity
             .IndefiniteLength(ct, StreamConverters.fromInputStream(() => isb.b))
-        case PathBody(b, _) => HttpEntity.fromPath(ct, b)
+        case FileBody(b, _) => HttpEntity.fromPath(ct, b.toPath)
       }
 
       for {
@@ -227,7 +227,7 @@ class AkkaHttpBackend private (actorSystem: ActorSystem,
           Success(ar.withEntity(HttpEntity(ct, ByteString(b))))
         case InputStreamBody(b, _) =>
           Success(ar.withEntity(HttpEntity(ct, StreamConverters.fromInputStream(() => b))))
-        case PathBody(b, _) => Success(ar.withEntity(ct, b))
+        case FileBody(b, _) => Success(ar.withEntity(ct, b.toPath))
         case StreamBody(s)  => Success(ar.withEntity(HttpEntity(ct, s)))
         case MultipartBody(ps) =>
           traverseTry(ps.map(toBodyPart))
