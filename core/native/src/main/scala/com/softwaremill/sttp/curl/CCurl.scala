@@ -27,4 +27,10 @@ private[sttp] object CCurl {
 
   @name("curl_easy_getinfo")
   def getInfo(handle: Ptr[CURL], info: CInt, parameter: Any): CInt = extern
+
+  @name("curl_easy_escape")
+  def encode(handle: Ptr[CURL], string: CString, lenght: Int): CString = extern
+
+  @name("curl_free")
+  def free(string: CString): Unit = extern
 }
