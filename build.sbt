@@ -29,6 +29,7 @@ val commonJSSettings = commonSettings ++ Seq(
 ) ++ browserTestSettings
 
 val commonNativeSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
+  organization := "com.softwaremill.sttp",
   scalaVersion := "2.11.12",
   crossScalaVersions := Seq("2.11.12"),
   nativeLinkStubs := true

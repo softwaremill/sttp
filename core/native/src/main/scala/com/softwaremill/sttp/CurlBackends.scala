@@ -1,10 +1,9 @@
 package com.softwaremill.sttp
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.scalanative.native.Zone
 import scala.util.Try
 
-class CurlBackend(verbose: Boolean = false) extends AbstractCurlBackend[Id, Nothing](IdMonad, verbose) {}
+private class CurlBackend(verbose: Boolean) extends AbstractCurlBackend[Id, Nothing](IdMonad, verbose) {}
 
 object CurlBackend {
   def apply(verbose: Boolean = false): SttpBackend[Id, Nothing] =
@@ -13,7 +12,7 @@ object CurlBackend {
     )
 }
 
-class CurlTryBackend(verbose: Boolean = false) extends AbstractCurlBackend[Try, Nothing](TryMonad, verbose) {}
+private class CurlTryBackend(verbose: Boolean) extends AbstractCurlBackend[Try, Nothing](TryMonad, verbose) {}
 
 object CurlTryBackend {
   def apply(verbose: Boolean = false): SttpBackend[Try, Nothing] =
@@ -22,7 +21,7 @@ object CurlTryBackend {
     )
 }
 
-class CurlFutureBackend(verbose: Boolean = false)(implicit ec: ExecutionContext)
+private class CurlFutureBackend(verbose: Boolean)(implicit ec: ExecutionContext)
     extends AbstractCurlBackend[Future, Nothing](new FutureMonad()(ec), verbose) {}
 
 object CurlFutureBackend {

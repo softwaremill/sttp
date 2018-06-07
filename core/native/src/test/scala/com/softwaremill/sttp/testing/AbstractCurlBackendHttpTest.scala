@@ -10,10 +10,7 @@ abstract class AbstractCurlBackendHttpTest[R[_], -S] extends HttpTest[R] {
 
   override protected def endpoint: String = "localhost:51823"
 
-  override protected def expectRedirectResponse(
-      response: R[Response[String]],
-      code: Int
-  ): Future[Assertion] = {
+  override protected def expectRedirectResponse(response: R[Response[String]], code: Int): Future[Assertion] = {
     response.toFuture().failed.map { t =>
       t.getMessage should be("Unexpected redirect")
     }
@@ -25,4 +22,5 @@ abstract class AbstractCurlBackendHttpTest[R[_], -S] extends HttpTest[R] {
 
   // the only way to set the content type is to use a Blob which has a default filename of 'blob'
   override protected def multipartStringDefaultFileName = Some("blob")
+
 }

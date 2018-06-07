@@ -30,7 +30,7 @@ private[sttp] object CurlApi {
 
     def cleanup(): Unit = CCurl.cleanup(handle)
 
-    def option(option: CurlOption, parameter: String): CurlCode = native.Zone { implicit z =>
+    def option(option: CurlOption, parameter: String)(implicit z: Zone): CurlCode = {
       setopt(handle, option, toCString(parameter)(z))
     }
 
@@ -74,13 +74,11 @@ private[sttp] object CurlApi {
     }
   }
 
-  type SlistHandle = Ptr[CurlSlist]
-
-  def slistAppend(handle: SlistHandle, string: String): SlistHandle = native.Zone { implicit z =>
+  def slistAppend(handle: Ptr[CurlSlist], string: String)(implicit z: Zone): Ptr[CurlSlist] = {
     CCurl.slistAppend(handle, toCString(string)(z))
   }
 
-  def slistFree(handle: SlistHandle): Unit = {
+  def slistFree(handle: Ptr[CurlSlist]): Unit = {
     CCurl.slistFree(handle)
   }
 }

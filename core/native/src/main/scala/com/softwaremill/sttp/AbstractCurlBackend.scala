@@ -1,12 +1,16 @@
 package com.softwaremill.sttp
 
+import java.io.ByteArrayInputStream
+
 import com.softwaremill.sttp.curl.CurlInfo._
 import com.softwaremill.sttp.curl._
 import com.softwaremill.sttp.curl.CurlOption._
 import com.softwaremill.sttp.curl.CurlApi._
 import com.softwaremill.sttp.curl.CurlCode.CurlCode
+import com.softwaremill.sttp.internal.SttpFile
 
 import scala.collection.immutable.Seq
+import scala.scalanative.native
 import scala.scalanative.native.stdlib._
 import scala.scalanative.native.string._
 import scala.scalanative.native.{CSize, Ptr, _}
@@ -19,7 +23,7 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean 
 
   private var slist: CurlList = _
 
-  override def send[T](request: Request[T, S]): R[Response[T]] = {
+  override def send[T](request: Request[T, S]): R[Response[T]] = native.Zone { implicit z =>
     val curl = CurlApi.init
     curl.option(Verbose, verbose)
     if (request.tags.nonEmpty) {
@@ -41,17 +45,7 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean 
     curl.option(HeaderData, spaces.headersResp)
     curl.option(Url, request.uri.toString)
     curl.option(TimeoutMs, request.options.readTimeout.toMillis)
-    request.method match {
-      case Method.GET     => curl.option(HttpGet, true)
-      case Method.HEAD    => curl.option(Head, true)
-      case Method.POST    => curl.option(Post, true)
-      case Method.PUT     => curl.option(Put, true)
-      case Method.DELETE  => curl.option(Post, true)
-      case Method.OPTIONS => curl.option(RtspRequest, true)
-      case Method.PATCH   => curl.option(CustomRequest, "PATCH")
-      case Method.CONNECT => curl.option(ConnectOnly, true)
-      case Method.TRACE   => curl.option(CustomRequest, "TRACE")
-    }
+    setMethod(curl, request.method)
 
     curl.perform
 
@@ -68,17 +62,19 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean 
     free(spaces.httpCode.cast[Ptr[Byte]])
     curl.cleanup()
 
-    request.response match {
-      case ResponseAsString(encoding: String) =>
-        val rawErrorBody = if (StatusCodes.isSuccess(httpCode)) {
-          Right(responseBody)
-        } else {
-          Left(responseBody.toCharArray.map(_.toByte))
-        }
-        responseMonad.unit(
-          Response(rawErrorBody, httpCode, responseHeaders.head._1.split(" ").last, responseHeaders.tail, List()))
-      case _ =>
-        responseMonad.error(new IllegalArgumentException("Unsupported response type"))
+    val body: R[Either[Array[Byte], T]] = if (StatusCodes.isSuccess(httpCode)) {
+      responseMonad.map(readResponseBody(responseBody, request.response))(Right.apply)
+    } else {
+      responseMonad.map(toByteArray(responseBody))(Left.apply)
+    }
+    responseMonad.map(body) { b =>
+      Response[T](
+        rawErrorBody = b,
+        code = httpCode,
+        statusText = responseHeaders.head._1.split(" ").last,
+        headers = responseHeaders.tail,
+        history = Nil
+      )
     }
   }
 
@@ -107,7 +103,7 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean 
     Seq.from(array: _*)
   }
 
-  private def setMethod(handle: CurlHandle, method: Method): R[CurlCode] = {
+  private def setMethod(handle: CurlHandle, method: Method)(implicit z: Zone): R[CurlCode] = {
     import com.softwaremill.sttp.curl.CurlApi._
     val m = method match {
       case Method.GET     => handle.option(HttpGet, true)
@@ -122,6 +118,25 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean 
     }
     lift(m)
   }
+
+  private def readResponseBody[T](response: String, responseAs: ResponseAs[T, S]): R[T] = {
+    responseAs match {
+      case MappedResponseAs(raw, g) => responseMonad.map(readResponseBody(response, raw))(g)
+      case IgnoreResponse           => responseMonad.unit((): Unit)
+      case ResponseAsString(enc)    => responseMonad.unit(response)
+      case ResponseAsByteArray      => toByteArray(response)
+      case ResponseAsFile(output, overwrite) =>
+        responseMonad.map(toByteArray(response)) { a =>
+          val is = new ByteArrayInputStream(a)
+          val f = FileHelpers.saveFile(output.toFile, is, overwrite)
+          SttpFile.fromFile(f)
+        }
+      case ResponseAsStream() =>
+        responseMonad.error(new IllegalStateException("CurlBackend does not support streaming responses"))
+    }
+  }
+
+  private def toByteArray(str: String): R[Array[Byte]] = responseMonad.unit(str.toCharArray.map(_.toByte))
 
   private def lift(code: CurlCode): R[CurlCode] = {
     code match {

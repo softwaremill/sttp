@@ -11,16 +11,16 @@ trait ConvertToFuture[R[_]] {
 
 object ConvertToFuture {
 
-  val id: ConvertToFuture[Id] = new ConvertToFuture[Id] {
+  lazy val id: ConvertToFuture[Id] = new ConvertToFuture[Id] {
     override def toFuture[T](value: Id[T]): Future[T] =
       Future.successful(value)
   }
 
-  val future: ConvertToFuture[Future] = new ConvertToFuture[Future] {
+  lazy val future: ConvertToFuture[Future] = new ConvertToFuture[Future] {
     override def toFuture[T](value: Future[T]): Future[T] = value
   }
 
-  val scalaTry: ConvertToFuture[Try] = new ConvertToFuture[Try] {
+  lazy val scalaTry: ConvertToFuture[Try] = new ConvertToFuture[Try] {
     override def toFuture[T](value: Try[T]): Future[T] = Future.fromTry(value)
   }
 }
