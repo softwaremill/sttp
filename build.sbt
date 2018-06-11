@@ -216,12 +216,11 @@ lazy val asyncHttpClientBackend: Project =
     )
     .dependsOn(coreJVM % "compile->compile;test->test")
 
-def asyncHttpClientBackendProject(proj: String): Project = {
+def asyncHttpClientBackendProject(proj: String): Project =
   Project(s"asyncHttpClientBackend${proj.capitalize}", file(s"async-http-client-backend/$proj"))
     .settings(commonSettings: _*)
     .settings(name := s"async-http-client-backend-$proj")
     .dependsOn(asyncHttpClientBackend)
-}
 
 lazy val asyncHttpClientFutureBackend: Project =
   asyncHttpClientBackendProject("future")
@@ -259,12 +258,11 @@ lazy val okhttpBackend: Project = (project in file("okhttp-backend"))
   )
   .dependsOn(coreJVM % "compile->compile;test->test")
 
-def okhttpBackendProject(proj: String): Project = {
+def okhttpBackendProject(proj: String): Project =
   Project(s"okhttpBackend${proj.capitalize}", file(s"okhttp-backend/$proj"))
     .settings(commonSettings: _*)
     .settings(name := s"okhttp-backend-$proj")
     .dependsOn(okhttpBackend)
-}
 
 lazy val okhttpMonixBackend: Project =
   okhttpBackendProject("monix")
