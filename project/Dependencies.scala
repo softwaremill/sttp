@@ -51,7 +51,7 @@ object Versions {
 
   val scalaCompilerVersion = "2.12.6"
 
-  val akkaHttpVersion = "10.1.1"
+  val akkaHttpVersion = "10.1.2"
 
   val akkaStreamsVersion = "2.5.13"
 
