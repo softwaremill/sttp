@@ -21,4 +21,3 @@ before_script:
 script:
 - sbt ++$TRAVIS_SCALA_VERSION rootJVM/test &&
     xvfb-run sbt ++$TRAVIS_SCALA_VERSION rootJS/test
-- '[ "${TRAVIS_PULL_REQUEST}" = "false" ] && sbt updateImpactSubmit || true'
