@@ -1,13 +1,15 @@
 // shadow sbt-scalajs' crossProject and CrossType until Scala.js 1.0.0 is released
 import sbtcrossproject.{CrossType, crossProject}
+import Versions._
+import Dependencies._
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on (used by JS tests)")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests (used by JS tests)")
 
 val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   organization := "com.softwaremill.sttp",
-  scalaVersion := "2.12.6",
-  crossScalaVersions := Seq(scalaVersion.value, "2.11.12")
+  scalaVersion := scalaCompilerVersion,
+  crossScalaVersions := Seq(scalaCompilerVersion, "2.11.12")
 )
 
 val commonJSSettings = Seq(
@@ -68,12 +70,6 @@ def testServerSettings(config: Configuration) = Seq(
   })
 )
 
-val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.2"
-val akkaStreams = "com.typesafe.akka" %% "akka-stream" % "2.5.13"
-
-val scalaTestVersion = "3.0.5"
-val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion
-
 lazy val rootProject = (project in file("."))
   .settings(commonSettings: _*)
   .settings(skip in publish := true, name := "sttp")
@@ -128,20 +124,20 @@ lazy val core = crossProject(JSPlatform, JVMPlatform)
   )
   .jsSettings(
     libraryDependencies ++= Seq(
-      "org.scala-js" %%% "scalajs-dom" % "0.9.6"
+      "org.scala-js" %%% "scalajs-dom" % scalaJsDomVersion
     ),
     jsDependencies ++= Seq(
-      "org.webjars.npm" % "spark-md5" % "3.0.0" % "test" / "spark-md5.js" minified "spark-md5.min.js"
+      sparkMd5Test / "spark-md5.js" minified "spark-md5.min.js"
     )
   )
   .jsSettings(browserTestSettings)
   .jsSettings(testServerSettings(Test))
   .jvmSettings(
     libraryDependencies ++= Seq(
-      akkaHttp % "test",
-      "ch.megard" %% "akka-http-cors" % "0.3.0" % "test",
-      akkaStreams % "test",
-      "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test"
+      akkaHttpTest,
+      akkaHttpCorsTest,
+      akkaStreamsTest,
+      scalaCompilerTest
     ),
     // the test server needs to be started before running any JS tests
     // `reStart` cannJSAsyncExecutionContextot be scoped so it can't be only added to Test
@@ -164,7 +160,7 @@ lazy val cats = crossProject(JSPlatform, JVMPlatform)
   .settings(
     name := "cats",
     publishArtifact in Test := true,
-    libraryDependencies ++= Seq("org.typelevel" %%% "cats-effect" % "1.0.0-RC2")
+    libraryDependencies ++= Seq("org.typelevel" %%% "cats-effect" % catzVersion)
   )
 lazy val catsJS = cats.js.dependsOn(coreJS % "compile->compile;test->test")
 lazy val catsJVM = cats.jvm.dependsOn(coreJVM % "compile->compile;test->test")
@@ -179,7 +175,7 @@ lazy val monix = crossProject(JSPlatform, JVMPlatform)
   .settings(
     name := "monix",
     publishArtifact in Test := true,
-    libraryDependencies ++= Seq("io.monix" %%% "monix" % "3.0.0-RC1")
+    libraryDependencies ++= Seq("io.monix" %%% "monix" % monixVersion)
   )
 lazy val monixJS = monix.js.dependsOn(coreJS % "compile->compile;test->test")
 lazy val monixJVM = monix.jvm.dependsOn(coreJVM % "compile->compile;test->test")
@@ -189,7 +185,7 @@ lazy val scalaz: Project = (project in file("implementations/scalaz"))
   .settings(
     name := "scalaz",
     publishArtifact in Test := true,
-    libraryDependencies ++= Seq("org.scalaz" %% "scalaz-concurrent" % "7.2.24")
+    libraryDependencies ++= Seq(scalazConcurrent)
   )
   .dependsOn(coreJVM % "compile->compile;test->test")
 
@@ -203,7 +199,7 @@ lazy val akkaHttpBackend: Project = (project in file("akka-http-backend"))
       akkaHttp,
       // provided as we don't want to create a transitive dependency on a specific streams version,
       // just as akka-http doesn't
-      akkaStreams % "provided"
+      akkaStreamProvided
     )
   )
   .dependsOn(coreJVM % "compile->compile;test->test")
@@ -215,17 +211,16 @@ lazy val asyncHttpClientBackend: Project =
     .settings(
       name := "async-http-client-backend",
       libraryDependencies ++= Seq(
-        "org.asynchttpclient" % "async-http-client" % "2.4.9"
+        asyncHttpClient
       )
     )
     .dependsOn(coreJVM % "compile->compile;test->test")
 
-def asyncHttpClientBackendProject(proj: String): Project = {
+def asyncHttpClientBackendProject(proj: String): Project =
   Project(s"asyncHttpClientBackend${proj.capitalize}", file(s"async-http-client-backend/$proj"))
     .settings(commonSettings: _*)
     .settings(name := s"async-http-client-backend-$proj")
     .dependsOn(asyncHttpClientBackend)
-}
 
 lazy val asyncHttpClientFutureBackend: Project =
   asyncHttpClientBackendProject("future")
@@ -247,7 +242,7 @@ lazy val asyncHttpClientFs2Backend: Project =
   asyncHttpClientBackendProject("fs2")
     .settings(
       libraryDependencies ++= Seq(
-        "com.github.zainab-ali" %% "fs2-reactive-streams" % "0.6.0"
+        f2sReactiveStream
       )
     )
     .dependsOn(catsJVM % "compile->compile;test->test")
@@ -258,23 +253,20 @@ lazy val okhttpBackend: Project = (project in file("okhttp-backend"))
   .settings(
     name := "okhttp-backend",
     libraryDependencies ++= Seq(
-      "com.squareup.okhttp3" % "okhttp" % "3.10.0"
+      okHttp
     )
   )
   .dependsOn(coreJVM % "compile->compile;test->test")
 
-def okhttpBackendProject(proj: String): Project = {
+def okhttpBackendProject(proj: String): Project =
   Project(s"okhttpBackend${proj.capitalize}", file(s"okhttp-backend/$proj"))
     .settings(commonSettings: _*)
     .settings(name := s"okhttp-backend-$proj")
     .dependsOn(okhttpBackend)
-}
 
 lazy val okhttpMonixBackend: Project =
   okhttpBackendProject("monix")
     .dependsOn(monixJVM % "compile->compile;test->test")
-
-lazy val circeVersion = "0.9.3"
 
 //----- json
 lazy val circe = crossProject(JSPlatform, JVMPlatform)
@@ -299,23 +291,21 @@ lazy val json4s: Project = (project in file("json/json4s"))
   .settings(
     name := "json4s",
     libraryDependencies ++= Seq(
-      "org.json4s" %% "json4s-native" % "3.5.4",
-      "org.scalatest" %% "scalatest" % scalaTestVersion % "test"
+      json4sNative,
+      scalaTest
     )
   )
   .dependsOn(coreJVM)
-
-lazy val braveVersion = "5.0.0"
 
 lazy val braveBackend: Project = (project in file("metrics/brave-backend"))
   .settings(commonSettings: _*)
   .settings(
     name := "brave-backend",
     libraryDependencies ++= Seq(
-      "io.zipkin.brave" % "brave" % braveVersion,
-      "io.zipkin.brave" % "brave-instrumentation-http" % braveVersion,
-      "io.zipkin.brave" % "brave-instrumentation-http-tests" % braveVersion % "test",
-      scalaTest % "test"
+      brave,
+      braveInstrumentationHttp,
+      braveInstrumentationHttpTest,
+      scalaTest
     )
   )
   .dependsOn(coreJVM)
@@ -325,8 +315,8 @@ lazy val prometheusBackend: Project = (project in file("metrics/prometheus-backe
   .settings(
     name := "prometheus-backend",
     libraryDependencies ++= Seq(
-      "io.prometheus" % "simpleclient" % "0.4.0",
-      scalaTest % "test"
+      simpleClient,
+      scalaTest
     )
   )
   .dependsOn(coreJVM)
