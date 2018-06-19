@@ -23,7 +23,7 @@ This module adds a method to the request and a function that can be given to a r
   // for the request Payload, and a decoder for the MyResponse
   val requestPayload: Payload = ???
   
-  val response: Either[io.circe.Error, MyResponse] =
+  val response: Response[Either[io.circe.Error, MyResponse]] =
     sttp
       .post(uri"...")
       .body(requestPayload)
