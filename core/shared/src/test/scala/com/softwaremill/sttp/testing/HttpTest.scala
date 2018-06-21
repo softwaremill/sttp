@@ -3,7 +3,6 @@ package com.softwaremill.sttp.testing
 import java.io.ByteArrayInputStream
 import java.nio.ByteBuffer
 
-import com.softwaremill.sttp.internal.SttpFile
 import com.softwaremill.sttp._
 import org.scalatest.{AsyncFreeSpec, BeforeAndAfterAll, Matchers, OptionValues}
 
@@ -29,10 +28,10 @@ trait HttpTest[R[_]]
   implicit val backend: SttpBackend[R, Nothing]
   implicit val convertToFuture: ConvertToFuture[R]
 
-  private def postEcho = sttp.post(uri"$endpoint/echo")
+  protected def postEcho = sttp.post(uri"$endpoint/echo")
   protected val testBody = "this is the body"
   protected val testBodyBytes = testBody.getBytes("UTF-8")
-  private val expectedPostEchoResponse = "POST /echo this is the body"
+  protected val expectedPostEchoResponse = "POST /echo this is the body"
 
   protected val sttpIgnore = com.softwaremill.sttp.ignore
 
@@ -129,14 +128,6 @@ trait HttpTest[R[_]]
         .map { response =>
           response.unsafeBody should be(expectedPostEchoResponse)
         }
-    }
-
-    "post a file" in {
-      withTemporaryFile(Some(testBodyBytes)) { f =>
-        postEcho.body(f).send().toFuture().map { response =>
-          response.unsafeBody should be(expectedPostEchoResponse)
-        }
-      }
     }
 
     "post form data" in {
@@ -249,36 +240,9 @@ trait HttpTest[R[_]]
     }
   }
 
-  protected def withTemporaryFile[T](content: Option[Array[Byte]])(f: SttpFile => Future[T]): Future[T]
-  private def withTemporaryNonExistentFile[T](f: SttpFile => Future[T]): Future[T] = withTemporaryFile(None)(f)
-
-  protected def md5Hash(bytes: Array[Byte]): String
-  protected def md5FileHash(file: SttpFile): Future[String]
-
-  "download file" - {
-
-    "download a binary file using asFile" in {
-      withTemporaryNonExistentFile { file =>
-        val req = sttp.get(uri"$endpoint/download/binary").response(asSttpFile(file))
-        req.send().toFuture().flatMap { resp =>
-          md5FileHash(resp.unsafeBody).map { _ shouldBe binaryFileMD5Hash }
-        }
-      }
-    }
-
-    "download a text file using asFile" in {
-      withTemporaryNonExistentFile { file =>
-        val req = sttp.get(uri"$endpoint/download/text").response(asSttpFile(file))
-        req.send().toFuture().flatMap { resp =>
-          md5FileHash(resp.unsafeBody).map { _ shouldBe textFileMD5Hash }
-        }
-      }
-    }
-  }
-
   // in JavaScript the only way to set the content type is to use a Blob which defaults the filename to 'blob'
   protected def multipartStringDefaultFileName: Option[String] = None
-  private def defaultFileName = multipartStringDefaultFileName match {
+  protected def defaultFileName = multipartStringDefaultFileName match {
     case None => ""
     case Some(name) => s" ($name)"
   }
@@ -297,15 +261,6 @@ trait HttpTest[R[_]]
       val req = mp.multipartBody(multipart("p1", "v1").fileName("f1"), multipart("p2", "v2").fileName("f2"))
       req.send().toFuture().map { resp =>
         resp.unsafeBody should be("p1=v1 (f1), p2=v2 (f2)")
-      }
-    }
-
-    "send a multipart message with a file" in {
-      withTemporaryFile(Some(testBodyBytes)) { f =>
-        val req = mp.multipartBody(multipartSttpFile("p1", f), multipart("p2", "v2"))
-        req.send().toFuture().map { resp =>
-          resp.unsafeBody should be(s"p1=$testBody (${f.name}), p2=v2$defaultFileName")
-        }
       }
     }
   }

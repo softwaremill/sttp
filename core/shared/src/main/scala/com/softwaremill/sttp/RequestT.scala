@@ -179,13 +179,6 @@ case class RequestT[U[_], T, +S](
   def body(fs: Seq[(String, String)], encoding: String): RequestT[U, T, S] =
     formDataBody(fs, encoding)
 
-  /**
-    * If content type is not yet specified, will be set to
-    * `application/octet-stream`.
-    */
-  def body[B: BodySerializer](b: B): RequestT[U, T, S] =
-    withBasicBody(implicitly[BodySerializer[B]].apply(b))
-
   def multipartBody(ps: Seq[Multipart]): RequestT[U, T, S] =
     this.copy(body = MultipartBody(ps))
 
@@ -236,7 +229,7 @@ case class RequestT[U[_], T, +S](
   private def setContentTypeIfMissing(ct: String): RequestT[U, T, S] =
     if (hasContentType) this else contentType(ct)
 
-  private def withBasicBody(body: BasicRequestBody) = {
+  private[sttp] def withBasicBody(body: BasicRequestBody) = {
     val defaultCt = body match {
       case StringBody(_, encoding, Some(ct)) =>
         Some(contentTypeWithEncoding(ct, encoding))

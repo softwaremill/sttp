@@ -27,6 +27,14 @@ trait RequestTExtensions[U[_], T, +S] { self: RequestT[U, T, S] =>
     */
   def body(path: Path): RequestT[U, T, S] = body(SttpFile.fromPath(path))
 
+  // this method needs to be in the extensions, so that it has lowest priority when considering overloading options
+  /**
+    * If content type is not yet specified, will be set to
+    * `application/octet-stream`.
+    */
+  def body[B: BodySerializer](b: B): RequestT[U, T, S] =
+    withBasicBody(implicitly[BodySerializer[B]].apply(b))
+
   def cookie(nv: (String, String)): RequestT[U, T, S] = cookies(nv)
   def cookie(n: String, v: String): RequestT[U, T, S] = cookies((n, v))
   def cookies(r: Response[_]): RequestT[U, T, S] =
