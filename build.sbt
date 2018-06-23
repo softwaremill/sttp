@@ -82,7 +82,6 @@ val scalaTestVersion = "3.2.0-SNAP10"
 val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion
 
 lazy val rootProject = (project in file("."))
-  .settings(commonSettings: _*)
   .settings(skip in publish := true, name := "sttp")
   .aggregate(
     rootJVM,
