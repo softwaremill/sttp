@@ -16,6 +16,7 @@ trait NativeHttpTest
     with Matchers
     with ToFutureWrapper
     with OptionValues
+    with EitherValues
     with BeforeAndAfterAll
     with NativeHttpTestExtensions {
 
@@ -117,12 +118,12 @@ trait NativeHttpTest
       response.unsafeBody should be(expectedPostEchoResponse)
     }
 
-//    "post a file" in {
-//      withTemporaryFile(Some(testBodyBytes)) { f =>
-//        val response = postEcho.body(f).send()
-//        response.unsafeBody should be(expectedPostEchoResponse)
-//      }
-//    }
+    "post a file" in {
+      withTemporaryFile(Some(testBodyBytes)) { f =>
+        val response = postEcho.body(f).send()
+        response.unsafeBody should be(expectedPostEchoResponse)
+      }
+    }
 
     "post form data" in {
       val response = sttp
@@ -193,66 +194,62 @@ trait NativeHttpTest
     }
   }
 
-//  "compression" - {
-//    def compress = sttp.get(uri"$endpoint/compress")
-//    val decompressedBody = "I'm compressed!"
-//
-//    "decompress using the default accept encoding header" in {
-//      val req = compress
-//      val resp = req.send()
-//      resp.unsafeBody should be(decompressedBody)
-//
-//    }
-//
-//    "decompress using gzip" in {
-//      val req = compress.header("Accept-Encoding", "gzip", replaceExisting = true)
-//      val resp = req.send()
-//      resp.unsafeBody should be(decompressedBody)
-//    }
-//
-//    "decompress using deflate" in {
-//      val req = compress.header("Accept-Encoding", "deflate", replaceExisting = true)
-//      val resp = req.send()
-//      resp.unsafeBody should be(decompressedBody)
-//    }
-//
-//    "work despite providing an unsupported encoding" in {
-//      val req = compress.header("Accept-Encoding", "br", replaceExisting = true)
-//      val resp = req.send()
-//      resp.unsafeBody should be(decompressedBody)
-//    }
-//  }
+  "compression" - {
+    def compress = sttp.get(uri"$endpoint/compress")
+    val decompressedBody = "I'm compressed!"
 
-  protected def withTemporaryFile[T](content: Option[Array[Byte]])(f: SttpFile => Future[T]): Future[T]
+    "decompress using the default accept encoding header" in {
+      val req = compress
+      val resp = req.send()
+      resp.unsafeBody should be(decompressedBody)
 
-  private def withTemporaryNonExistentFile[T](f: SttpFile => Future[T]): Future[T] = withTemporaryFile(None)(f)
+    }
+
+    "decompress using gzip" in {
+      val req = compress.header("Accept-Encoding", "gzip", replaceExisting = true)
+      val resp = req.send()
+      resp.unsafeBody should be(decompressedBody)
+    }
+
+    "decompress using deflate" in {
+      val req = compress.header("Accept-Encoding", "deflate", replaceExisting = true)
+      val resp = req.send()
+      resp.unsafeBody should be(decompressedBody)
+    }
+
+    "work despite providing an unsupported encoding" in {
+      val req = compress.header("Accept-Encoding", "br", replaceExisting = true)
+      val resp = req.send()
+      resp.unsafeBody should be(decompressedBody)
+    }
+  }
+
+  protected def withTemporaryFile[T](content: Option[Array[Byte]])(f: SttpFile => T): T
+
+  private def withTemporaryNonExistentFile[T](f: SttpFile => T): T = withTemporaryFile(None)(f)
 
   protected def md5Hash(bytes: Array[Byte]): String
 
-  protected def md5FileHash(file: SttpFile): Future[String]
+  protected def md5FileHash(file: SttpFile): String
 
-  /*
   "download file" - {
 
     "download a binary file using asFile" in {
       withTemporaryNonExistentFile { file =>
         val req = sttp.get(uri"$endpoint/download/binary").response(asSttpFile(file))
-        req.send().toFuture().flatMap { resp =>
-          md5FileHash(resp.unsafeBody).map { _ shouldBe binaryFileMD5Hash }
-        }
+        val resp = req.send()
+        md5FileHash(resp.unsafeBody).map { _ shouldBe binaryFileMD5Hash }
       }
     }
 
     "download a text file using asFile" in {
       withTemporaryNonExistentFile { file =>
         val req = sttp.get(uri"$endpoint/download/text").response(asSttpFile(file))
-        req.send().toFuture().flatMap { resp =>
-          md5FileHash(resp.unsafeBody).map { _ shouldBe textFileMD5Hash }
-        }
+        val resp = req.send()
+        md5FileHash(resp.unsafeBody).map { _ shouldBe textFileMD5Hash }
       }
     }
   }
-   */
   // in JavaScript the only way to set the content type is to use a Blob which defaults the filename to 'blob'
   protected def multipartStringDefaultFileName: Option[String] = None
 
@@ -260,34 +257,33 @@ trait NativeHttpTest
     case None       => ""
     case Some(name) => s" ($name)"
   }
-
   /*
-  "multipart" - {
-    def mp = sttp.post(uri"$endpoint/multipart")
 
-    "send a multipart message" in {
-      val req = mp.multipartBody(multipart("p1", "v1"), multipart("p2", "v2"))
-      req.send().toFuture().map { resp =>
-        resp.unsafeBody should be(s"p1=v1$defaultFileName, p2=v2$defaultFileName")
-      }
-    }
+   "multipart" - {
+     def mp = sttp.post(uri"$endpoint/multipart")
 
-    "send a multipart message with filenames" in {
-      val req = mp.multipartBody(multipart("p1", "v1").fileName("f1"), multipart("p2", "v2").fileName("f2"))
-      req.send().toFuture().map { resp =>
-        resp.unsafeBody should be("p1=v1 (f1), p2=v2 (f2)")
-      }
-    }
+     "send a multipart message" in {
+       val req = mp.multipartBody(multipart("p1", "v1"), multipart("p2", "v2"))
+       val resp = req.send()
+       resp.unsafeBody should be(s"p1=v1$defaultFileName, p2=v2$defaultFileName")
+     }
 
-    "send a multipart message with a file" in {
-      withTemporaryFile(Some(testBodyBytes)) { f =>
-        val req = mp.multipartBody(multipartSttpFile("p1", f), multipart("p2", "v2"))
-        req.send().toFuture().map { resp =>
-          resp.unsafeBody should be(s"p1=$testBody (${f.name}), p2=v2$defaultFileName")
-        }
-      }
-    }
-  }
+     "send a multipart message with filenames" in {
+       val req = mp.multipartBody(multipart("p1", "v1").fileName("f1"), multipart("p2", "v2").fileName("f2"))
+       req.send().toFuture().map { resp =>
+         resp.unsafeBody should be("p1=v1 (f1), p2=v2 (f2)")
+       }
+     }
+
+     "send a multipart message with a file" in {
+       withTemporaryFile(Some(testBodyBytes)) { f =>
+         val req = mp.multipartBody(multipartSttpFile("p1", f), multipart("p2", "v2"))
+         req.send().toFuture().map { resp =>
+           resp.unsafeBody should be(s"p1=$testBody (${f.name}), p2=v2$defaultFileName")
+         }
+       }
+     }
+   }
    */
 
   "redirect" - {
@@ -296,19 +292,21 @@ trait NativeHttpTest
     val r4response = "819"
     def loop = sttp.post(uri"$endpoint/redirect/loop")
 
-//    "not redirect when redirects shouldn't be followed (temporary)" in {
-//      val resp = r1.followRedirects(false).send()
-//      resp.code should be(307)
-//      resp.body should be('left)
-//      resp.history should be('empty)
-//    }
-//
-//    "not redirect when redirects shouldn't be followed (permanent)" in {
-//      val resp = r2.followRedirects(false).send()
-//      resp.code should be(308)
-//      resp.body should be('left)
-//      resp.history should be('empty)
-//    }
+    "not redirect when redirects shouldn't be followed (temporary)" in {
+      val resp = r1.followRedirects(false).send()
+      resp.code should be(307)
+      resp.body.left.value should be(
+        "The request should be repeated with <a href=\"/redirect/r2\">this URI</a>, but future requests can still use the original URI.")
+      resp.history should be(Nil)
+    }
+
+    "not redirect when redirects shouldn't be followed (permanent)" in {
+      val resp = r2.followRedirects(false).send()
+      resp.code should be(308)
+      resp.body.left.value should be(
+        "The request, and all future requests should be repeated using <a href=\"/redirect/r3\">this URI</a>.")
+      resp.history should be(Nil)
+    }
 
     "redirect when redirects should be followed" in {
       val resp = r2.send()
@@ -331,12 +329,13 @@ trait NativeHttpTest
 
     }
 
-//    "not redirect when maxRedirects is less than or equal to 0" in {
-//      val resp = loop.maxRedirects(-1).send()
-//      resp.code should be(302)
-//      resp.body should be('left)
-//      resp.history should be('empty)
-//    }
+    "not redirect when maxRedirects is less than or equal to 0" in {
+      val resp = loop.maxRedirects(-1).send()
+      resp.code should be(302)
+      resp.body.left.value should be(
+        "The requested resource temporarily resides under <a href=\"/redirect/loop\">this URI</a>.")
+      resp.history should be(Nil)
+    }
   }
 
   "timeout" - {
@@ -366,9 +365,9 @@ trait NativeHttpTest
         .body("{}")
         .contentType("application/json")
 
-//    "parse an empty error response as empty string" in {
-//      postEmptyResponse.send().body should be(Left(""))
-//    }
+    "parse an empty error response as empty string" in {
+      postEmptyResponse.send().body.left.value should be("")
+    }
   }
 
   override protected def afterAll(): Unit = {

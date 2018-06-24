@@ -3,25 +3,20 @@ package com.softwaremill.sttp.testing
 import java.nio.file.Files
 import java.security.MessageDigest
 
-import scala.concurrent.Future
 import scala.language.higherKinds
 import com.softwaremill.sttp.internal.SttpFile
 
-trait NativeHttpTestExtensions extends AsyncExecutionContext {
+trait NativeHttpTestExtensions {
   self: NativeHttpTest =>
 
-  override protected def withTemporaryFile[T](content: Option[Array[Byte]])(f: SttpFile => Future[T]): Future[T] = {
+  override protected def withTemporaryFile[T](content: Option[Array[Byte]])(f: SttpFile => T): T = {
     val file = Files.createTempFile("sttp", "sttp")
-    val result = Future {
-      content match {
-        case None       => Files.deleteIfExists(file)
-        case Some(data) => Files.write(file, data)
-      }
-    }.flatMap { _ =>
-      f(SttpFile.fromPath(file))
+    content match {
+      case None       => Files.deleteIfExists(file)
+      case Some(data) => Files.write(file, data)
     }
-
-    result.onComplete(_ => Files.deleteIfExists(file))
+    val result = f(SttpFile.fromPath(file))
+    Files.deleteIfExists(file)
     result
   }
 
@@ -32,9 +27,5 @@ trait NativeHttpTestExtensions extends AsyncExecutionContext {
     hash.map(0xFF & _).map("%02x".format(_)).mkString
   }
 
-  override protected def md5FileHash(file: SttpFile): Future[String] = {
-    Future.successful {
-      md5Hash(Files.readAllBytes(file.toPath))
-    }
-  }
+  override protected def md5FileHash(file: SttpFile): String = md5Hash(Files.readAllBytes(file.toPath))
 }

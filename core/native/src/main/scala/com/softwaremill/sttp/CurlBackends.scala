@@ -20,7 +20,7 @@ object CurlTryBackend {
       new CurlTryBackend(verbose): SttpBackend[Try, Nothing]
     )
 }
-
+/*
 private class CurlFutureBackend(verbose: Boolean)(implicit ec: ExecutionContext)
     extends AbstractCurlBackend[Future, Nothing](new FutureMonad()(ec), verbose) {}
 
@@ -31,3 +31,4 @@ object CurlFutureBackend {
       new CurlFutureBackend(verbose)(ec): SttpBackend[Future, Nothing]
     )
 }
+ */

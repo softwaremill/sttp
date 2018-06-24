@@ -16,7 +16,7 @@ import scala.scalanative.native.stdlib._
 import scala.scalanative.native.string._
 import scala.scalanative.native.{CSize, Ptr, _}
 
-abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean = false) extends SttpBackend[R, S] {
+abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean) extends SttpBackend[R, S] {
 
   override val responseMonad: MonadError[R] = rm
 
@@ -31,8 +31,13 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean 
       responseMonad.error(new UnsupportedOperationException("Tags are not supported"))
     }
     if (request.headers.size > 0) {
+
       slist = request.headers
-        .map { case (headerName, headerValue) => s"$headerName: $headerValue" }
+        .map {
+          case (headerName, headerValue) =>
+            if (headerName == "Accept-Encoding") curl.option(AcceptEncoding, headerValue)
+            s"$headerName: $headerValue"
+        }
         .foldLeft(new CurlList(null)) {
           case (acc, h) =>
             new CurlList(CurlApi.slistAppend(acc.ptr, h))
@@ -60,7 +65,8 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean 
         val str = Source.fromInputStream(b).mkString
         curl.option(PostFields, toCString(str))
       case FileBody(f, _) => //todo
-        responseMonad.error(new IllegalStateException("CurlBackend does not support file requestbody"))
+        val str = Source.fromFile(f.toFile).mkString
+        curl.option(PostFields, toCString(str))
       case StreamBody(_) => //todo
         responseMonad.error(new IllegalStateException("CurlBackend does not support stream request body"))
       case mp: MultipartBody => // todo
