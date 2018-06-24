@@ -2,14 +2,15 @@ package com.softwaremill.sttp
 
 import java.io.ByteArrayInputStream
 
-import com.softwaremill.sttp.curl.CurlInfo._
-import com.softwaremill.sttp.curl._
-import com.softwaremill.sttp.curl.CurlOption._
 import com.softwaremill.sttp.curl.CurlApi._
 import com.softwaremill.sttp.curl.CurlCode.CurlCode
+import com.softwaremill.sttp.curl.CurlInfo._
+import com.softwaremill.sttp.curl.CurlOption._
+import com.softwaremill.sttp.curl._
 import com.softwaremill.sttp.internal.SttpFile
 
 import scala.collection.immutable.Seq
+import scala.io.Source
 import scala.scalanative.native
 import scala.scalanative.native.stdlib._
 import scala.scalanative.native.string._
@@ -46,6 +47,26 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean 
     curl.option(Url, request.uri.toString)
     curl.option(TimeoutMs, request.options.readTimeout.toMillis)
     setMethod(curl, request.method)
+
+    // https://stackoverflow.com/questions/5016281/curllib-post-body-data-how-to
+    request.body match {
+      case StringBody(b, _, _) =>
+        curl.option(PostFields, toCString(b))
+      case ByteArrayBody(b, _) =>
+        curl.option(PostFields, toCString(new String(b)))
+      case ByteBufferBody(b, _) =>
+        curl.option(PostFields, toCString(new String(b.array)))
+      case InputStreamBody(b, _) =>
+        val str = Source.fromInputStream(b).mkString
+        curl.option(PostFields, toCString(str))
+      case FileBody(f, _) => //todo
+        responseMonad.error(new IllegalStateException("CurlBackend does not support file requestbody"))
+      case StreamBody(_) => //todo
+        responseMonad.error(new IllegalStateException("CurlBackend does not support stream request body"))
+      case mp: MultipartBody => // todo
+        responseMonad.error(new IllegalStateException("CurlBackend does not support multipart request body"))
+      case NoBody =>
+    }
 
     curl.perform
 
@@ -104,7 +125,9 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean 
   }
 
   private def setMethod(handle: CurlHandle, method: Method)(implicit z: Zone): R[CurlCode] = {
+
     import com.softwaremill.sttp.curl.CurlApi._
+
     val m = method match {
       case Method.GET     => handle.option(HttpGet, true)
       case Method.HEAD    => handle.option(Head, true)

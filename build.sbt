@@ -151,6 +151,11 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .jsSettings(browserTestSettings)
   .jsSettings(testServerSettings(Test))
   .nativeSettings(testServerSettings(Test))
+  .nativeSettings(
+    libraryDependencies ++= Seq(
+      "org.scala-native" %%% "test-interface" % "0.3.0"
+    )
+  )
   .jvmSettings(
     libraryDependencies ++= Seq(
       akkaHttp % "test",
