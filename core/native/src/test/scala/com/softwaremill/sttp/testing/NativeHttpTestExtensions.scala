@@ -3,7 +3,6 @@ package com.softwaremill.sttp.testing
 import java.nio.file.Files
 import java.security.MessageDigest
 
-import scala.language.higherKinds
 import com.softwaremill.sttp.internal.SttpFile
 
 trait NativeHttpTestExtensions {

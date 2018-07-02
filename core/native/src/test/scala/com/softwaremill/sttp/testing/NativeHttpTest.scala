@@ -8,8 +8,6 @@ import com.softwaremill.sttp._
 import org.scalatest._
 
 import scala.concurrent.duration._
-import scala.concurrent.Future
-import scala.language.higherKinds
 
 trait NativeHttpTest
     extends FreeSpec
@@ -20,7 +18,7 @@ trait NativeHttpTest
     with BeforeAndAfterAll
     with NativeHttpTestExtensions {
 
-  protected def endpoint: String
+  protected def endpoint: String = "localhost:51823"
 
   protected val binaryFileMD5Hash = "565370873a38d91f34a3091082e63933"
   protected val textFileMD5Hash = "b048a88ece8e4ec5eb386b8fc5006d13"
@@ -257,34 +255,30 @@ trait NativeHttpTest
     case None       => ""
     case Some(name) => s" ($name)"
   }
-  /*
 
-   "multipart" - {
-     def mp = sttp.post(uri"$endpoint/multipart")
+  "multipart" - {
+    def mp = sttp.post(uri"$endpoint/multipart")
 
-     "send a multipart message" in {
-       val req = mp.multipartBody(multipart("p1", "v1"), multipart("p2", "v2"))
-       val resp = req.send()
-       resp.unsafeBody should be(s"p1=v1$defaultFileName, p2=v2$defaultFileName")
-     }
+    "send a multipart message" ignore {
+      val req = mp.multipartBody(multipart("p1", "v1"), multipart("p2", "v2"))
+      val resp = req.send()
+      resp.unsafeBody should be(s"p1=v1$defaultFileName, p2=v2$defaultFileName")
+    }
 
-     "send a multipart message with filenames" in {
-       val req = mp.multipartBody(multipart("p1", "v1").fileName("f1"), multipart("p2", "v2").fileName("f2"))
-       req.send().toFuture().map { resp =>
-         resp.unsafeBody should be("p1=v1 (f1), p2=v2 (f2)")
-       }
-     }
+    "send a multipart message with filenames" ignore {
+      val req = mp.multipartBody(multipart("p1", "v1").fileName("f1"), multipart("p2", "v2").fileName("f2"))
+      val resp = req.send()
+      resp.unsafeBody should be("p1=v1 (f1), p2=v2 (f2)")
+    }
 
-     "send a multipart message with a file" in {
-       withTemporaryFile(Some(testBodyBytes)) { f =>
-         val req = mp.multipartBody(multipartSttpFile("p1", f), multipart("p2", "v2"))
-         req.send().toFuture().map { resp =>
-           resp.unsafeBody should be(s"p1=$testBody (${f.name}), p2=v2$defaultFileName")
-         }
-       }
-     }
-   }
-   */
+    "send a multipart message with a file" ignore {
+      withTemporaryFile(Some(testBodyBytes)) { f =>
+        val req = mp.multipartBody(multipartSttpFile("p1", f), multipart("p2", "v2"))
+        val resp = req.send()
+        resp.unsafeBody should be(s"p1=$testBody (${f.name}), p2=v2$defaultFileName")
+      }
+    }
+  }
 
   "redirect" - {
     def r1 = sttp.post(uri"$endpoint/redirect/r1")

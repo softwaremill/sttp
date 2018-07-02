@@ -1,8 +1,7 @@
 package com.softwaremill.sttp
 
-import com.softwaremill.sttp.testing.AbstractCurlBackendHttpTest
-import com.softwaremill.sttp.testing.ConvertToFuture
+import com.softwaremill.sttp.testing.NativeHttpTest
 
-class CurlBackendHttpTest extends AbstractCurlBackendHttpTest[Nothing] {
-  override implicit lazy val backend: SttpBackend[Id, Nothing] = CurlBackend(verbose = true)
+class CurlBackendHttpTest extends NativeHttpTest {
+  override implicit lazy val backend: SttpBackend[Id, Nothing] = CurlBackend()
 }

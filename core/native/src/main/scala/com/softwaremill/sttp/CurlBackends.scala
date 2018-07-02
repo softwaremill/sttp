@@ -1,6 +1,5 @@
 package com.softwaremill.sttp
 
-import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 private class CurlBackend(verbose: Boolean) extends AbstractCurlBackend[Id, Nothing](IdMonad, verbose) {}
@@ -20,15 +19,3 @@ object CurlTryBackend {
       new CurlTryBackend(verbose): SttpBackend[Try, Nothing]
     )
 }
-/*
-private class CurlFutureBackend(verbose: Boolean)(implicit ec: ExecutionContext)
-    extends AbstractCurlBackend[Future, Nothing](new FutureMonad()(ec), verbose) {}
-
-object CurlFutureBackend {
-  def apply(verbose: Boolean = false)(
-      ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Nothing] =
-    new FollowRedirectsBackend[Future, Nothing](
-      new CurlFutureBackend(verbose)(ec): SttpBackend[Future, Nothing]
-    )
-}
- */
