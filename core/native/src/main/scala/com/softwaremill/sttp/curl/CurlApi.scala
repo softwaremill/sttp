@@ -9,23 +9,19 @@ import scala.scalanative.native.{Ptr, _}
 
 private[sttp] object CurlApi {
 
-  type CurlHandle = Ptr[CURL]
+  type CurlHandle = Ptr[Curl]
+
+  type MimeHandle = Ptr[Mime]
+
+  type MimePartHandle = Ptr[MimePart]
+
+  type SlistHandle = Ptr[CurlSlist]
 
   def init: CurlHandle = CCurl.init
 
-  private def setopt(handle: CurlHandle, option: CurlOption, parameter: Any): CurlCode = {
-    CurlCode(CCurl.setopt(handle, option.id, parameter))
-  }
-
-  private def getInfo(handle: CurlHandle, curlInfo: CurlInfo, parameter: Any): CurlCode = {
-    CurlCode(CCurl.getInfo(handle, curlInfo.id, parameter))
-  }
-
-  private def enc(handle: CurlHandle, string: CString, length: Int): CString = {
-    CCurl.encode(handle, string, length)
-  }
-
   implicit class CurlHandleOps(handle: CurlHandle) {
+    def mime: MimeHandle = CCurl.mimeInit(handle)
+
     def perform: CurlCode = CurlCode(CCurl.perform(handle))
 
     def cleanup(): Unit = CCurl.cleanup(handle)
@@ -74,11 +70,51 @@ private[sttp] object CurlApi {
     }
   }
 
-  def slistAppend(handle: Ptr[CurlSlist], string: String)(implicit z: Zone): Ptr[CurlSlist] = {
-    CCurl.slistAppend(handle, toCString(string)(z))
+  private def setopt(handle: CurlHandle, option: CurlOption, parameter: Any): CurlCode = {
+    CurlCode(CCurl.setopt(handle, option.id, parameter))
   }
 
-  def slistFree(handle: Ptr[CurlSlist]): Unit = {
-    CCurl.slistFree(handle)
+  private def getInfo(handle: CurlHandle, curlInfo: CurlInfo, parameter: Any): CurlCode = {
+    CurlCode(CCurl.getInfo(handle, curlInfo.id, parameter))
+  }
+
+  private def enc(handle: CurlHandle, string: CString, length: Int): CString = {
+    CCurl.encode(handle, string, length)
+  }
+
+  implicit class MimeHandleOps(handle: MimeHandle) {
+    def free(): Unit = CCurl.mimeFree(handle)
+
+    def addPart(): MimePartHandle = CCurl.mimeAddPart(handle)
+  }
+
+  implicit class MimePartHandleOps(handle: MimePartHandle) {
+    def withName(name: String)(implicit zone: Zone): CurlCode = CCurl.mimeName(handle, toCString(name))
+
+    def withFileName(filename: String)(implicit zone: Zone): CurlCode = CCurl.mimeFilename(handle, toCString(filename))
+
+    def withMimeType(mimetype: String)(implicit zone: Zone): CurlCode = CCurl.mimeType(handle, toCString(mimetype))
+
+    def withEncoding(encoding: String)(implicit zone: Zone): CurlCode = CCurl.mimeEncoder(handle, toCString(encoding))
+
+    def withData(data: String, datasize: Int)(implicit zone: Zone): CurlCode =
+      CCurl.mimeData(handle, toCString(data), datasize: CSize)
+
+    def withFileData(filename: String)(implicit zone: Zone): CurlCode = CCurl.mimeFiledata(handle, toCString(filename))
+
+    def withSubParts(subparts: MimePartHandle): CurlCode = CCurl.mimeSubParts(handle, subparts)
+
+    def withHeaders(headers: Ptr[CurlSlist], takeOwnership: Int): CurlCode =
+      CCurl.mimeHeaders(handle, headers, takeOwnership)
+  }
+
+  implicit class SlistHandleOps(handle: SlistHandle) {
+    def append(string: String)(implicit z: Zone): Ptr[CurlSlist] = {
+      CCurl.slistAppend(handle, toCString(string)(z))
+    }
+
+    def free(): Unit = {
+      CCurl.slistFree(handle)
+    }
   }
 }

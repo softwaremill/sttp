@@ -1,5 +1,5 @@
 package com.softwaremill.sttp.curl
 
-import scala.scalanative.native.Ptr
+import com.softwaremill.sttp.curl.CurlApi.SlistHandle
 
-class CurlList(val ptr: Ptr[CurlSlist]) extends AnyVal {}
+class CurlList(val ptr: SlistHandle) extends AnyVal {}

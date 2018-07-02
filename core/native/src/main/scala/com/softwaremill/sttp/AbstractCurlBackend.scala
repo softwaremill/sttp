@@ -40,7 +40,7 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean)
         }
         .foldLeft(new CurlList(null)) {
           case (acc, h) =>
-            new CurlList(CurlApi.slistAppend(acc.ptr, h))
+            new CurlList(acc.ptr.append(h))
         }
       curl.option(HttpHeader, slist.ptr)
     }
@@ -53,26 +53,7 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean)
     curl.option(TimeoutMs, request.options.readTimeout.toMillis)
     setMethod(curl, request.method)
 
-    // https://stackoverflow.com/questions/5016281/curllib-post-body-data-how-to
-    request.body match {
-      case StringBody(b, _, _) =>
-        curl.option(PostFields, toCString(b))
-      case ByteArrayBody(b, _) =>
-        curl.option(PostFields, toCString(new String(b)))
-      case ByteBufferBody(b, _) =>
-        curl.option(PostFields, toCString(new String(b.array)))
-      case InputStreamBody(b, _) =>
-        val str = Source.fromInputStream(b).mkString
-        curl.option(PostFields, toCString(str))
-      case FileBody(f, _) => //todo
-        val str = Source.fromFile(f.toFile).mkString
-        curl.option(PostFields, toCString(str))
-      case StreamBody(_) => //todo
-        responseMonad.error(new IllegalStateException("CurlBackend does not support stream request body"))
-      case mp: MultipartBody => // todo
-        responseMonad.error(new IllegalStateException("CurlBackend does not support multipart request body"))
-      case NoBody =>
-    }
+    setRequestBody(curl, request.body)
 
     curl.perform
 
@@ -81,15 +62,15 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean)
     val responseHeaders = parseHeaders(fromCString(!spaces.headersResp._1))
     val httpCode = (!spaces.httpCode).toInt
 
-    CurlApi.slistFree(slist.ptr)
+    slist.ptr.free()
     free(!spaces.bodyResp._1)
     free(!spaces.headersResp._1)
-    free(spaces.bodyResp.cast[Ptr[Byte]])
-    free(spaces.headersResp.cast[Ptr[Byte]])
-    free(spaces.httpCode.cast[Ptr[Byte]])
+    free(spaces.bodyResp.cast[Ptr[CSignedChar]])
+    free(spaces.headersResp.cast[Ptr[CSignedChar]])
+    free(spaces.httpCode.cast[Ptr[CSignedChar]])
     curl.cleanup()
 
-    val body: R[Either[Array[Byte], T]] = if (StatusCodes.isSuccess(httpCode)) {
+    val body: R[Either[Array[CSignedChar], T]] = if (StatusCodes.isSuccess(httpCode)) {
       responseMonad.map(readResponseBody(responseBody, request.response))(Right.apply)
     } else {
       responseMonad.map(toByteArray(responseBody))(Left.apply)
@@ -102,6 +83,29 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean)
         headers = responseHeaders.tail,
         history = Nil
       )
+    }
+  }
+
+  private def setRequestBody(curl: CurlHandle, body: RequestBody[S])(implicit zone: Zone): Unit = { // fixme: don't return unit
+    // https://stackoverflow.com/questions/5016281/curllib-post-body-data-how-to
+    body match { // todo: assign to responseMonad object
+      case StringBody(b, _, _) =>
+        curl.option(PostFields, toCString(b))
+      case ByteArrayBody(b, _) =>
+        curl.option(PostFields, toCString(new String(b)))
+      case ByteBufferBody(b, _) =>
+        curl.option(PostFields, toCString(new String(b.array)))
+      case InputStreamBody(b, _) =>
+        val str = Source.fromInputStream(b).mkString
+        curl.option(PostFields, toCString(str))
+      case FileBody(f, _) =>
+        val str = Source.fromFile(f.toFile).mkString
+        curl.option(PostFields, toCString(str))
+      case mp: MultipartBody => // todo https://curl.haxx.se/libcurl/c/multi-post.html
+        responseMonad.error(new IllegalStateException("CurlBackend does not support multipart request body"))
+      case StreamBody(_) =>
+        responseMonad.error(new IllegalStateException("CurlBackend does not support stream request body"))
+      case NoBody =>
     }
   }
 
