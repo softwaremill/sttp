@@ -78,7 +78,7 @@ def testServerSettings(config: Configuration) = Seq(
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.1"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % "2.5.13"
 
-val scalaTestVersion = "3.2.0-SNAP10"
+val scalaTestVersion = "3.0.5"
 val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion
 
 lazy val rootProject = (project in file("."))
@@ -133,16 +133,19 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .jvmSettings(commonSettings: _*)
   .jsSettings(commonJSSettings: _*)
   .nativeSettings(commonNativeSettings: _*)
+  .jvmSettings(
+    libraryDependencies ++= Seq(
+      scalaTest % "test"
+    )
+  )
   .settings(
     name := "core",
-    libraryDependencies ++= Seq(
-      "org.scalatest" %%% "scalatest" % scalaTestVersion % "test"
-    ),
     publishArtifact in Test := true // allow implementations outside of this repo
   )
   .jsSettings(
     libraryDependencies ++= Seq(
-      "org.scala-js" %%% "scalajs-dom" % "0.9.6"
+      "org.scala-js" %%% "scalajs-dom" % "0.9.6",
+      "org.scalatest" %%% "scalatest" % scalaTestVersion % "test"
     ),
     jsDependencies ++= Seq(
       "org.webjars.npm" % "spark-md5" % "3.0.0" % "test" / "spark-md5.js" minified "spark-md5.min.js"
@@ -153,7 +156,8 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .nativeSettings(testServerSettings(Test))
   .nativeSettings(
     libraryDependencies ++= Seq(
-      "org.scala-native" %%% "test-interface" % "0.3.0"
+      "org.scala-native" %%% "test-interface" % "0.3.0",
+      "org.scalatest" %%% "scalatest" % "3.2.0-SNAP10" % "test"
     )
   )
   .jvmSettings(
@@ -171,7 +175,6 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     testServerPort in Test := 51823,
     startTestServer in Test := reStart.toTask("").value
   )
-
 lazy val coreJS = core.js
 lazy val coreJVM = core.jvm
 lazy val coreNative = core.native
