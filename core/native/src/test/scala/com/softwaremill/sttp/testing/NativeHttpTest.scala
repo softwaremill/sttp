@@ -259,19 +259,19 @@ trait NativeHttpTest
   "multipart" - {
     def mp = sttp.post(uri"$endpoint/multipart")
 
-    "send a multipart message" ignore {
+    "send a multipart message" in {
       val req = mp.multipartBody(multipart("p1", "v1"), multipart("p2", "v2"))
       val resp = req.send()
       resp.unsafeBody should be(s"p1=v1$defaultFileName, p2=v2$defaultFileName")
     }
 
-    "send a multipart message with filenames" ignore {
+    "send a multipart message with filenames" in {
       val req = mp.multipartBody(multipart("p1", "v1").fileName("f1"), multipart("p2", "v2").fileName("f2"))
       val resp = req.send()
       resp.unsafeBody should be("p1=v1 (f1), p2=v2 (f2)")
     }
 
-    "send a multipart message with a file" ignore {
+    "send a multipart message with a file" in {
       withTemporaryFile(Some(testBodyBytes)) { f =>
         val req = mp.multipartBody(multipartSttpFile("p1", f), multipart("p2", "v2"))
         val resp = req.send()

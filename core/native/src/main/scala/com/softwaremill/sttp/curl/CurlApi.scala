@@ -97,14 +97,14 @@ private[sttp] object CurlApi {
 
     def withEncoding(encoding: String)(implicit zone: Zone): CurlCode = CCurl.mimeEncoder(handle, toCString(encoding))
 
-    def withData(data: String, datasize: Int)(implicit zone: Zone): CurlCode =
+    def withData(data: String, datasize: Int = CurlZeroTerminated)(implicit zone: Zone): CurlCode =
       CCurl.mimeData(handle, toCString(data), datasize: CSize)
 
     def withFileData(filename: String)(implicit zone: Zone): CurlCode = CCurl.mimeFiledata(handle, toCString(filename))
 
     def withSubParts(subparts: MimePartHandle): CurlCode = CCurl.mimeSubParts(handle, subparts)
 
-    def withHeaders(headers: Ptr[CurlSlist], takeOwnership: Int): CurlCode =
+    def withHeaders(headers: Ptr[CurlSlist], takeOwnership: Int = 0): CurlCode =
       CCurl.mimeHeaders(handle, headers, takeOwnership)
   }
 

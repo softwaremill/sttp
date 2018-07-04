@@ -22,7 +22,8 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean)
 
   override def close(): Unit = {}
 
-  private var slist: CurlList = _
+  private var headers: CurlList = _
+  private var multiPartHeaders: Seq[CurlList] = Seq()
 
   override def send[T](request: Request[T, S]): R[Response[T]] = native.Zone { implicit z =>
     val curl = CurlApi.init
@@ -30,19 +31,16 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean)
     if (request.tags.nonEmpty) {
       responseMonad.error(new UnsupportedOperationException("Tags are not supported"))
     }
-    if (request.headers.size > 0) {
-
-      slist = request.headers
-        .map {
-          case (headerName, headerValue) =>
-            if (headerName == "Accept-Encoding") curl.option(AcceptEncoding, headerValue)
-            s"$headerName: $headerValue"
-        }
-        .foldLeft(new CurlList(null)) {
-          case (acc, h) =>
-            new CurlList(acc.ptr.append(h))
-        }
-      curl.option(HttpHeader, slist.ptr)
+    val reqHeaders = request.headers
+    if (reqHeaders.size > 0) {
+      reqHeaders.find(_._1 == "Accept-Encoding").foreach(h => curl.option(AcceptEncoding, h._2))
+      request.body match {
+        case _: MultipartBody =>
+          headers = transformHeaders(reqHeaders :+ "Content-Type" -> "multipart/form-data")
+        case _ =>
+          headers = transformHeaders(reqHeaders)
+      }
+      curl.option(HttpHeader, headers.ptr)
     }
 
     val spaces = responseSpace
@@ -62,7 +60,8 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean)
     val responseHeaders = parseHeaders(fromCString(!spaces.headersResp._1))
     val httpCode = (!spaces.httpCode).toInt
 
-    slist.ptr.free()
+    if (headers.ptr != null) headers.ptr.free()
+    multiPartHeaders.foreach(_.ptr.free())
     free(!spaces.bodyResp._1)
     free(!spaces.headersResp._1)
     free(spaces.bodyResp.cast[Ptr[CSignedChar]])
@@ -87,26 +86,56 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean)
   }
 
   private def setRequestBody(curl: CurlHandle, body: RequestBody[S])(implicit zone: Zone): Unit = { // fixme: don't return unit
-    // https://stackoverflow.com/questions/5016281/curllib-post-body-data-how-to
     body match { // todo: assign to responseMonad object
-      case StringBody(b, _, _) =>
-        curl.option(PostFields, toCString(b))
-      case ByteArrayBody(b, _) =>
-        curl.option(PostFields, toCString(new String(b)))
-      case ByteBufferBody(b, _) =>
-        curl.option(PostFields, toCString(new String(b.array)))
-      case InputStreamBody(b, _) =>
-        val str = Source.fromInputStream(b).mkString
+      case b: BasicRequestBody =>
+        val str = basicBodyToString(b)
         curl.option(PostFields, toCString(str))
-      case FileBody(f, _) =>
-        val str = Source.fromFile(f.toFile).mkString
-        curl.option(PostFields, toCString(str))
-      case mp: MultipartBody => // todo https://curl.haxx.se/libcurl/c/multi-post.html
-        responseMonad.error(new IllegalStateException("CurlBackend does not support multipart request body"))
+      case MultipartBody(parts) =>
+        val mime = curl.mime
+        parts.foreach {
+          case Multipart(name, partBody, fileName, contentType, additionalHeaders) =>
+            val part = mime.addPart()
+            part.withName(name)
+            val str = basicBodyToString(partBody)
+            part.withData(str)
+            if (fileName.isDefined) {
+              part.withFileName(fileName.get)
+            }
+            if (contentType.isDefined) {
+              part.withMimeType(contentType.get)
+            }
+            if (additionalHeaders.size > 0) {
+              val curlList = transformHeaders(additionalHeaders)
+              part.withHeaders(curlList.ptr)
+              multiPartHeaders = multiPartHeaders :+ curlList
+            }
+        }
+        curl.option(Mimepost, mime)
       case StreamBody(_) =>
         responseMonad.error(new IllegalStateException("CurlBackend does not support stream request body"))
       case NoBody =>
     }
+  }
+
+  private def basicBodyToString(body: BasicRequestBody): String =
+    body match { // todo: assign to responseMonad object
+      case StringBody(b, _, _)   => b
+      case ByteArrayBody(b, _)   => new String(b)
+      case ByteBufferBody(b, _)  => new String(b.array)
+      case InputStreamBody(b, _) => Source.fromInputStream(b).mkString
+      case FileBody(f, _)        => Source.fromFile(f.toFile).mkString
+    }
+
+  private def transformHeaders(reqHeaders: Iterable[(String, String)])(implicit z: Zone): CurlList = {
+    reqHeaders
+      .map {
+        case (headerName, headerValue) =>
+          s"$headerName: $headerValue"
+      }
+      .foldLeft(new CurlList(null)) {
+        case (acc, h) =>
+          new CurlList(acc.ptr.append(h))
+      }
   }
 
   private def responseSpace: CurlSpaces = {
