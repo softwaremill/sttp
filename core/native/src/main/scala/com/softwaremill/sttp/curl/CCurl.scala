@@ -4,15 +4,15 @@ import com.softwaremill.sttp.curl.CurlCode.CurlCode
 
 import scala.scalanative.native._
 
-private[sttp] trait Curl {}
+private[curl] trait Curl {}
 
-private[sttp] trait Mime {}
+private[curl] trait Mime {}
 
-private[sttp] trait MimePart {}
+private[curl] trait MimePart {}
 
 @link("curl")
 @extern
-private[sttp] object CCurl {
+private[curl] object CCurl {
   @name("curl_easy_init")
   def init: Ptr[Curl] = extern
 

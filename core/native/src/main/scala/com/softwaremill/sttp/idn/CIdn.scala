@@ -3,7 +3,7 @@ package com.softwaremill.sttp.idn
 import scala.scalanative.native._
 @link("idn")
 @extern
-private[sttp] object CIdn {
+private[idn] object CIdn {
 
   @name("idna_to_ascii_8z")
   def toAscii(input: CString, output: Ptr[CString], flags: CInt): CInt = extern
