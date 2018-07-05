@@ -1,6 +1,7 @@
 package com.softwaremill.sttp.idn
 
 import scala.scalanative.native._
+
 @link("idn")
 @extern
 private[idn] object CIdn {

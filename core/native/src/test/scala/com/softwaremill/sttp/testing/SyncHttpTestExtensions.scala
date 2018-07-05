@@ -5,8 +5,8 @@ import java.security.MessageDigest
 
 import com.softwaremill.sttp.internal.SttpFile
 
-trait NativeHttpTestExtensions {
-  self: NativeHttpTest =>
+trait SyncHttpTestExtensions {
+  self: SyncHttpTest =>
 
   override protected def withTemporaryFile[T](content: Option[Array[Byte]])(f: SttpFile => T): T = {
     val file = Files.createTempFile("sttp", "sttp")

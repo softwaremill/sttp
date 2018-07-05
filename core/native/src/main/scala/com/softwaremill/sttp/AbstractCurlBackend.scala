@@ -85,11 +85,26 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean)
     }
   }
 
-  private def setRequestBody(curl: CurlHandle, body: RequestBody[S])(implicit zone: Zone): Unit = { // fixme: don't return unit
+  private def setMethod(handle: CurlHandle, method: Method)(implicit z: Zone): R[CurlCode] = {
+    val m = method match {
+      case Method.GET     => handle.option(HttpGet, true)
+      case Method.HEAD    => handle.option(Head, true)
+      case Method.POST    => handle.option(Post, true)
+      case Method.PUT     => handle.option(Put, true)
+      case Method.DELETE  => handle.option(Post, true)
+      case Method.OPTIONS => handle.option(RtspRequest, true)
+      case Method.PATCH   => handle.option(CustomRequest, "PATCH")
+      case Method.CONNECT => handle.option(ConnectOnly, true)
+      case Method.TRACE   => handle.option(CustomRequest, "TRACE")
+    }
+    lift(m)
+  }
+
+  private def setRequestBody(curl: CurlHandle, body: RequestBody[S])(implicit zone: Zone): R[CurlCode] =
     body match { // todo: assign to responseMonad object
       case b: BasicRequestBody =>
         val str = basicBodyToString(b)
-        curl.option(PostFields, toCString(str))
+        lift(curl.option(PostFields, toCString(str)))
       case MultipartBody(parts) =>
         val mime = curl.mime
         parts.foreach {
@@ -110,33 +125,21 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean)
               multiPartHeaders = multiPartHeaders :+ curlList
             }
         }
-        curl.option(Mimepost, mime)
+        lift(curl.option(Mimepost, mime))
       case StreamBody(_) =>
         responseMonad.error(new IllegalStateException("CurlBackend does not support stream request body"))
       case NoBody =>
+        responseMonad.unit(CurlCode.Ok)
     }
-  }
 
   private def basicBodyToString(body: BasicRequestBody): String =
-    body match { // todo: assign to responseMonad object
+    body match {
       case StringBody(b, _, _)   => b
       case ByteArrayBody(b, _)   => new String(b)
       case ByteBufferBody(b, _)  => new String(b.array)
       case InputStreamBody(b, _) => Source.fromInputStream(b).mkString
       case FileBody(f, _)        => Source.fromFile(f.toFile).mkString
     }
-
-  private def transformHeaders(reqHeaders: Iterable[(String, String)])(implicit z: Zone): CurlList = {
-    reqHeaders
-      .map {
-        case (headerName, headerValue) =>
-          s"$headerName: $headerValue"
-      }
-      .foldLeft(new CurlList(null)) {
-        case (acc, h) =>
-          new CurlList(acc.ptr.append(h))
-      }
-  }
 
   private def responseSpace: CurlSpaces = {
     val bodyResp = malloc(sizeof[CurlFetch]).cast[Ptr[CurlFetch]]
@@ -163,24 +166,6 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean)
     Seq.from(array: _*)
   }
 
-  private def setMethod(handle: CurlHandle, method: Method)(implicit z: Zone): R[CurlCode] = {
-
-    import com.softwaremill.sttp.curl.CurlApi._
-
-    val m = method match {
-      case Method.GET     => handle.option(HttpGet, true)
-      case Method.HEAD    => handle.option(Head, true)
-      case Method.POST    => handle.option(Post, true)
-      case Method.PUT     => handle.option(Put, true)
-      case Method.DELETE  => handle.option(Post, true)
-      case Method.OPTIONS => handle.option(RtspRequest, true)
-      case Method.PATCH   => handle.option(CustomRequest, "PATCH")
-      case Method.CONNECT => handle.option(ConnectOnly, true)
-      case Method.TRACE   => handle.option(CustomRequest, "TRACE")
-    }
-    lift(m)
-  }
-
   private def readResponseBody[T](response: String, responseAs: ResponseAs[T, S]): R[T] = {
     responseAs match {
       case MappedResponseAs(raw, g) => responseMonad.map(readResponseBody(response, raw))(g)
@@ -196,6 +181,18 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean)
       case ResponseAsStream() =>
         responseMonad.error(new IllegalStateException("CurlBackend does not support streaming responses"))
     }
+  }
+
+  private def transformHeaders(reqHeaders: Iterable[(String, String)])(implicit z: Zone): CurlList = {
+    reqHeaders
+      .map {
+        case (headerName, headerValue) =>
+          s"$headerName: $headerValue"
+      }
+      .foldLeft(new CurlList(null)) {
+        case (acc, h) =>
+          new CurlList(acc.ptr.append(h))
+      }
   }
 
   private def toByteArray(str: String): R[Array[Byte]] = responseMonad.unit(str.toCharArray.map(_.toByte))

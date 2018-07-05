@@ -2,6 +2,8 @@ package com.softwaremill.sttp
 
 import scala.util.Try
 
+// Curl supports redirects, but it doesn't store the history, so using FollowRedirectsBackend is more convenient
+
 private class CurlBackend(verbose: Boolean) extends AbstractCurlBackend[Id, Nothing](IdMonad, verbose) {}
 
 object CurlBackend {

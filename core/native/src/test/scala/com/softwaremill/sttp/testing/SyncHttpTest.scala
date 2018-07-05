@@ -9,14 +9,14 @@ import org.scalatest._
 
 import scala.concurrent.duration._
 
-trait NativeHttpTest
+trait SyncHttpTest
     extends FreeSpec
     with Matchers
     with ToFutureWrapper
     with OptionValues
     with EitherValues
     with BeforeAndAfterAll
-    with NativeHttpTestExtensions {
+    with SyncHttpTestExtensions {
 
   protected def endpoint: String = "localhost:51823"
 
