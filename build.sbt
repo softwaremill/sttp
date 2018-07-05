@@ -7,7 +7,8 @@ lazy val startTestServer = taskKey[Unit]("Start a http server used by tests (use
 val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   organization := "com.softwaremill.sttp",
   scalaVersion := "2.12.6",
-  crossScalaVersions := Seq(scalaVersion.value, "2.11.12")
+  crossScalaVersions := Seq(scalaVersion.value, "2.11.12"),
+  scalafmtOnCompile := true
 )
 
 val commonJSSettings = Seq(
