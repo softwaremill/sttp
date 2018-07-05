@@ -1,13 +1,14 @@
-Fetch backend
+Curl backend
 =============
 
-A Scala Native backend implemented using the `Curl <https://github.com/curl/curl/blob/master/include/curl/curl.h>`_.
+A Scala Native backend implemented using `Curl <https://github.com/curl/curl/blob/master/include/curl/curl.h>`_.
 
 To use, add the following dependency to your project::
 
-  "com.softwaremill.sttp" %%% "core" % "1.2.0-RC1"
+  "com.softwaremill.sttp" %%% "core" % SttpCoreVersion
 
-And add one of implicit values::
+and initialize one of the backends::
 
   implicit val sttpBackend = CurlBackend()
+  implicit val sttpTryBackend = CurlTryBackend()
 
