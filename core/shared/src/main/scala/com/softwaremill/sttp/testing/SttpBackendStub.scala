@@ -91,11 +91,11 @@ class SttpBackendStub[R[_], S] private (rm: MonadError[R],
     def thenRespondServerError(): SttpBackendStub[R, S] =
       thenRespondWithCode(500, "Internal server error")
     def thenRespondWithCode(code: Int, msg: String = ""): SttpBackendStub[R, S] = {
-      val body = if (code >= 200 && code < 300) Right(msg) else Left(msg.getBytes(Utf8))
-      thenRespond(Response(body, code, msg, Nil, Nil))
+      val body = if (code >= 200 && code < 300) Right(msg) else Left(msg)
+      thenRespond(Response(body, code, msg))
     }
     def thenRespond[T](body: T): SttpBackendStub[R, S] =
-      thenRespond(Response[T](Right(body), 200, "OK", Nil, Nil))
+      thenRespond(Response[T](Right(body), 200, "OK"))
     def thenRespond[T](resp: => Response[T]): SttpBackendStub[R, S] = {
       val m: PartialFunction[Request[_, _], R[Response[_]]] = {
         case r if p(r) => rm.unit(resp)
