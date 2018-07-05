@@ -51,4 +51,10 @@ case class Response[T](rawErrorBody: Either[Array[Byte], T],
     case Left(v)  => throw new NoSuchElementException(s"Status code $code: $v")
     case Right(v) => v
   }
+
+  override def toString: String = {
+    // trying to include the string representation of the error, if possible
+    val b = Try(body).getOrElse(rawErrorBody.toString)
+    s"Response($b,$code,$statusText,$headers,$history)"
+  }
 }
