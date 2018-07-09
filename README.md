@@ -2,7 +2,7 @@
 
 [![Join the chat at https://gitter.im/softwaremill/sttp](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/softwaremill/sttp?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Build Status](https://travis-ci.org/softwaremill/sttp.svg?branch=master)](https://travis-ci.org/softwaremill/sttp)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.softwaremill.sttp/core_2.12/badge.svg?style=plastic)](https://maven-badges.herokuapp.com/maven-central/com.softwaremill.sttp/core_2.12)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.softwaremill.sttp/core_2.12/badge.png?style=plastic)](https://maven-badges.herokuapp.com/maven-central/com.softwaremill.sttp/core_2.12)
 
 
 The Scala HTTP client that you always wanted!
