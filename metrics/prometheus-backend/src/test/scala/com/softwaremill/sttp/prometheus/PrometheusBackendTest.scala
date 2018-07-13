@@ -4,7 +4,7 @@ import java.lang
 import java.util.concurrent.CountDownLatch
 
 import com.softwaremill.sttp.testing.SttpBackendStub
-import com.softwaremill.sttp.{HttpURLConnectionBackend, Id, sttp, _}
+import com.softwaremill.sttp._
 import io.prometheus.client.CollectorRegistry
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers, OptionValues}
@@ -15,12 +15,12 @@ import scala.concurrent.Future
 class PrometheusBackendTest extends FlatSpec with Matchers with BeforeAndAfter with Eventually with OptionValues {
 
   before {
-    CollectorRegistry.defaultRegistry.clear()
+    PrometheusBackend.clear(CollectorRegistry.defaultRegistry)
   }
 
   it should "use default histogram name" in {
     // given
-    val backendStub = SttpBackendStub(HttpURLConnectionBackend()).whenAnyRequest.thenRespondOk()
+    val backendStub = SttpBackendStub.synchronous.whenAnyRequest.thenRespondOk()
     val backend = PrometheusBackend[Id, Nothing](backendStub)
     val requestsNumber = 10
 
@@ -31,11 +31,26 @@ class PrometheusBackendTest extends FlatSpec with Matchers with BeforeAndAfter w
     getMetricVale(s"${PrometheusBackend.DefaultHistogramName}_count").value shouldBe requestsNumber
   }
 
+  it should "allow creating two prometheus backends" in {
+    // given
+    val backendStub = SttpBackendStub.synchronous.whenAnyRequest.thenRespondOk()
+    val histogramName = "test_two_backends"
+    val backend1 = PrometheusBackend[Id, Nothing](backendStub, requestToHistogramNameMapper = _ => Some(histogramName))
+    val backend2 = PrometheusBackend[Id, Nothing](backendStub, requestToHistogramNameMapper = _ => Some(histogramName))
+
+    // when
+    backend1.send(sttp.get(uri"http://127.0.0.1/foo"))
+    backend2.send(sttp.get(uri"http://127.0.0.1/foo"))
+
+    // then
+    getMetricVale(s"${histogramName}_count").value shouldBe 2
+  }
+
   it should "use mapped request to histogram name" in {
     // given
     val customHistogramName = "my_custom_histogram"
     val backend =
-      PrometheusBackend[Id, Nothing](SttpBackendStub(HttpURLConnectionBackend()), _ => Some(customHistogramName))
+      PrometheusBackend[Id, Nothing](SttpBackendStub.synchronous, _ => Some(customHistogramName))
     val requestsNumber = 5
 
     // when
@@ -49,7 +64,7 @@ class PrometheusBackendTest extends FlatSpec with Matchers with BeforeAndAfter w
   it should "disable histograms" in {
     // given
     val backend =
-      PrometheusBackend[Id, Nothing](SttpBackendStub(HttpURLConnectionBackend()), _ => None)
+      PrometheusBackend[Id, Nothing](SttpBackendStub.synchronous, _ => None)
     val requestsNumber = 6
 
     // when
