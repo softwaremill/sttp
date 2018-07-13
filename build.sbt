@@ -216,7 +216,7 @@ lazy val asyncHttpClientBackend: Project =
     .settings(
       name := "async-http-client-backend",
       libraryDependencies ++= Seq(
-        "org.asynchttpclient" % "async-http-client" % "2.5.0"
+        "org.asynchttpclient" % "async-http-client" % "2.5.2"
       )
     )
     .dependsOn(coreJVM % "compile->compile;test->test")
@@ -259,7 +259,7 @@ lazy val okhttpBackend: Project = (project in file("okhttp-backend"))
   .settings(
     name := "okhttp-backend",
     libraryDependencies ++= Seq(
-      "com.squareup.okhttp3" % "okhttp" % "3.10.0"
+      "com.squareup.okhttp3" % "okhttp" % "3.11.0"
     )
   )
   .dependsOn(coreJVM % "compile->compile;test->test")
@@ -306,7 +306,7 @@ lazy val json4s: Project = (project in file("json/json4s"))
   )
   .dependsOn(coreJVM)
 
-lazy val braveVersion = "5.0.0"
+lazy val braveVersion = "5.1.2"
 
 lazy val braveBackend: Project = (project in file("metrics/brave-backend"))
   .settings(commonSettings: _*)
