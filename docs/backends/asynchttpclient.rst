@@ -74,13 +74,15 @@ And receive responses as an observable stream::
   import java.nio.ByteBuffer
   import monix.eval.Task
   import monix.reactive.Observable
-  
+  import scala.concurrent.duration.Duration
+
   implicit val sttpBackend = AsyncHttpClientMonixBackend()
   
   val response: Task[Response[Observable[ByteBuffer]]] = 
     sttp
       .post(uri"...")
       .response(asStream[Observable[ByteBuffer]])
+      .readTimeout(Duration.Inf)
       .send()
 
 Streaming using fs2
@@ -113,6 +115,7 @@ Responses can also be streamed::
   import java.nio.ByteBuffer
   import cats.effect.IO
   import fs2.Stream
+  import scala.concurrent.duration.Duration
 
   implicit val sttpBackend = AsyncHttpClientFs2Backend[IO]()
 
@@ -120,4 +123,5 @@ Responses can also be streamed::
     sttp
       .post(uri"...")
       .response(asStream[Stream[IO, ByteBuffer]])
+      .readTimeout(Duration.Inf)
       .send()
