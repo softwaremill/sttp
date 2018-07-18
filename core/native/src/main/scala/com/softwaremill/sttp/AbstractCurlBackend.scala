@@ -53,35 +53,35 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean)
 
     setRequestBody(curl, request.body)
 
-    curl.perform
+    responseMonad.flatMap(lift(curl.perform)) { _ =>
+      curl.info(ResponseCode, spaces.httpCode)
+      val responseBody = fromCString(!spaces.bodyResp._1)
+      val responseHeaders = parseHeaders(fromCString(!spaces.headersResp._1))
+      val httpCode = (!spaces.httpCode).toInt
 
-    curl.info(ResponseCode, spaces.httpCode)
-    val responseBody = fromCString(!spaces.bodyResp._1)
-    val responseHeaders = parseHeaders(fromCString(!spaces.headersResp._1))
-    val httpCode = (!spaces.httpCode).toInt
+      if (headers.ptr != null) headers.ptr.free()
+      multiPartHeaders.foreach(_.ptr.free())
+      free(!spaces.bodyResp._1)
+      free(!spaces.headersResp._1)
+      free(spaces.bodyResp.cast[Ptr[CSignedChar]])
+      free(spaces.headersResp.cast[Ptr[CSignedChar]])
+      free(spaces.httpCode.cast[Ptr[CSignedChar]])
+      curl.cleanup()
 
-    if (headers.ptr != null) headers.ptr.free()
-    multiPartHeaders.foreach(_.ptr.free())
-    free(!spaces.bodyResp._1)
-    free(!spaces.headersResp._1)
-    free(spaces.bodyResp.cast[Ptr[CSignedChar]])
-    free(spaces.headersResp.cast[Ptr[CSignedChar]])
-    free(spaces.httpCode.cast[Ptr[CSignedChar]])
-    curl.cleanup()
-
-    val body: R[Either[Array[CSignedChar], T]] = if (StatusCodes.isSuccess(httpCode)) {
-      responseMonad.map(readResponseBody(responseBody, request.response))(Right.apply)
-    } else {
-      responseMonad.map(toByteArray(responseBody))(Left.apply)
-    }
-    responseMonad.map(body) { b =>
-      Response[T](
-        rawErrorBody = b,
-        code = httpCode,
-        statusText = responseHeaders.head._1.split(" ").last,
-        headers = responseHeaders.tail,
-        history = Nil
-      )
+      val body: R[Either[Array[CSignedChar], T]] = if (StatusCodes.isSuccess(httpCode)) {
+        responseMonad.map(readResponseBody(responseBody, request.response))(Right.apply)
+      } else {
+        responseMonad.map(toByteArray(responseBody))(Left.apply)
+      }
+      responseMonad.map(body) { b =>
+        Response[T](
+          rawErrorBody = b,
+          code = httpCode,
+          statusText = responseHeaders.head._1.split(" ").last,
+          headers = responseHeaders.tail,
+          history = Nil
+        )
+      }
     }
   }
 
