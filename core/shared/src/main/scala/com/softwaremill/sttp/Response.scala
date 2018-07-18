@@ -16,7 +16,8 @@ case class Response[T](rawErrorBody: Either[Array[Byte], T],
                        code: Int,
                        statusText: String,
                        headers: Seq[(String, String)],
-                       history: List[Response[Unit]]) extends ResponseExtensions[T] {
+                       history: List[Response[Unit]])
+    extends ResponseExtensions[T] {
   def is200: Boolean = code == 200
   def isSuccess: Boolean = StatusCodes.isSuccess(code)
   def isRedirect: Boolean = StatusCodes.isRedirect(code)
@@ -29,14 +30,14 @@ case class Response[T](rawErrorBody: Either[Array[Byte], T],
     headers.filter(_._1.equalsIgnoreCase(h)).map(_._2)
 
   lazy val body: Either[String, T] = rawErrorBody match {
-      case Left(bytes) => 
-            val charset = contentType
-              .flatMap(encodingFromContentType)
-              .getOrElse(Utf8)
-            Left(new String(bytes, charset))
+    case Left(bytes) =>
+      val charset = contentType
+        .flatMap(encodingFromContentType)
+        .getOrElse(Utf8)
+      Left(new String(bytes, charset))
 
-      case Right(r) => Right(r)
-    }
+    case Right(r) => Right(r)
+  }
 
   def contentType: Option[String] = header(HeaderNames.ContentType)
   def contentLength: Option[Long] =
@@ -51,4 +52,31 @@ case class Response[T](rawErrorBody: Either[Array[Byte], T],
     case Left(v)  => throw new NoSuchElementException(s"Status code $code: $v")
     case Right(v) => v
   }
+
+  override def toString: String = {
+    // trying to include the string representation of the error, if possible
+    val b = Try(body).getOrElse(rawErrorBody.toString)
+    s"Response($b,$code,$statusText,$headers,$history)"
+  }
+}
+
+object Response {
+  /**
+    * Convenience method to create a Response instance, mainly useful in tests using
+    * [[com.softwaremill.sttp.testing.SttpBackendStub]] and partial matchers.
+    */
+  def apply[T](body: Either[String, T], code: Int, statusText: String): Response[T] =
+    Response(body.left.map(_.getBytes(Utf8)), code, statusText, Nil, Nil)
+
+  /**
+    * Convenience method to create a Response instance, mainly useful in tests using
+    * [[com.softwaremill.sttp.testing.SttpBackendStub]] and partial matchers.
+    */
+  def ok[T](body: T): Response[T] = apply(Right(body), 200, "OK")
+
+  /**
+    * Convenience method to create a Response instance, mainly useful in tests using
+    * [[com.softwaremill.sttp.testing.SttpBackendStub]] and partial matchers.
+    */
+  def error(body: String, code: Int, statusText: String = "") = apply(Left(body), code, statusText)
 }

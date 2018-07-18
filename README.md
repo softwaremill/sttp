@@ -2,8 +2,8 @@
 
 [![Join the chat at https://gitter.im/softwaremill/sttp](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/softwaremill/sttp?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Build Status](https://travis-ci.org/softwaremill/sttp.svg?branch=master)](https://travis-ci.org/softwaremill/sttp)
-![Maven Central](https://img.shields.io/maven-central/v/com.softwaremill.sttp/core_2.12.svg)
-[![Dependencies](https://app.updateimpact.com/badge/634276070333485056/sttp.svg?config=compile)](https://app.updateimpact.com/latest/634276070333485056/sttp)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.softwaremill.sttp/core_2.12/badge.svg?style=plastic)](https://maven-badges.herokuapp.com/maven-central/com.softwaremill.sttp/core_2.12)
+
 
 The Scala HTTP client that you always wanted!
 
@@ -41,7 +41,7 @@ and its [follow-up](https://softwaremill.com/sttp-streaming-uri-interpolator/).
 If you are an [Ammonite](http://ammonite.io) user, you can quickly start experimenting with sttp by copy-pasting the following:
 
 ```scala
-import $ivy.`com.softwaremill.sttp::core:1.2.0-RC4`
+import $ivy.`com.softwaremill.sttp::core:1.2.3`
 import com.softwaremill.sttp._
 implicit val backend = HttpURLConnectionBackend()
 sttp.get(uri"http://httpbin.org/ip").send()
@@ -52,7 +52,7 @@ sttp.get(uri"http://httpbin.org/ip").send()
 Add the following dependency:
 
 ```scala
-"com.softwaremill.sttp" %% "core" % "1.2.0-RC4"
+"com.softwaremill.sttp" %% "core" % "1.2.3"
 ```
 
 Then, import:

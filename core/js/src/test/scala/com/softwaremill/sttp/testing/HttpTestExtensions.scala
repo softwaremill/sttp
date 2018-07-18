@@ -9,16 +9,16 @@ import scala.scalajs.js.JavaScriptException
 import scala.scalajs.js.annotation.JSGlobal
 import scala.scalajs.js.typedarray.AB2TA
 
+import com.softwaremill.sttp._
 import com.softwaremill.sttp.dom.experimental.FilePropertyBag
 import com.softwaremill.sttp.dom.experimental.{File => DomFile}
-import com.softwaremill.sttp.internal.SttpFile
 import org.scalajs.dom.FileReader
 import org.scalajs.dom.raw.Event
 import org.scalajs.dom.raw.UIEvent
 
 trait HttpTestExtensions[R[_]] extends AsyncExecutionContext { self: HttpTest[R] =>
 
-  override protected def withTemporaryFile[T](content: Option[Array[Byte]])(f: SttpFile => Future[T]): Future[T] = {
+  private def withTemporaryFile[T](content: Option[Array[Byte]])(f: DomFile => Future[T]): Future[T] = {
     val data = content.getOrElse(Array.empty)
     val file = new DomFile(
       Array(data.toTypedArray.asInstanceOf[js.Any]).toJSArray,
@@ -27,14 +27,16 @@ trait HttpTestExtensions[R[_]] extends AsyncExecutionContext { self: HttpTest[R]
         `type` = "text/plain"
       )
     )
-    f(SttpFile.fromDomFile(file))
+    f(file)
   }
 
-  override protected def md5Hash(bytes: Array[Byte]): String = {
+  private def withTemporaryNonExistentFile[T](f: DomFile => Future[T]): Future[T] = withTemporaryFile(None)(f)
+
+  private def md5Hash(bytes: Array[Byte]): String = {
     SparkMD5.ArrayBuffer.hash(bytes.toTypedArray.buffer)
   }
 
-  override protected def md5FileHash(file: SttpFile): Future[String] = {
+  private def md5FileHash(file: DomFile): Future[String] = {
     val p = Promise[String]()
 
     val fileReader = new FileReader()
@@ -45,9 +47,52 @@ trait HttpTestExtensions[R[_]] extends AsyncExecutionContext { self: HttpTest[R]
     }
     fileReader.onerror = (_: Event) => p.failure(JavaScriptException("Error reading file"))
     fileReader.onabort = (_: Event) => p.failure(JavaScriptException("File read aborted"))
-    fileReader.readAsArrayBuffer(file.toDomFile)
+    fileReader.readAsArrayBuffer(file)
 
     p.future
+  }
+
+  "body" - {
+    "post a file" in {
+      withTemporaryFile(Some(testBodyBytes)) { f =>
+        postEcho.body(f).send().toFuture().map { response =>
+          response.unsafeBody should be(expectedPostEchoResponse)
+        }
+      }
+    }
+  }
+
+  "download file" - {
+    "download a binary file using asFile" in {
+      withTemporaryNonExistentFile { file =>
+        val req = sttp.get(uri"$endpoint/download/binary").response(asFile(file))
+        req.send().toFuture().flatMap { resp =>
+          md5FileHash(resp.unsafeBody).map { _ shouldBe binaryFileMD5Hash }
+        }
+      }
+    }
+
+    "download a text file using asFile" in {
+      withTemporaryNonExistentFile { file =>
+        val req = sttp.get(uri"$endpoint/download/text").response(asFile(file))
+        req.send().toFuture().flatMap { resp =>
+          md5FileHash(resp.unsafeBody).map { _ shouldBe textFileMD5Hash }
+        }
+      }
+    }
+  }
+
+  "multipart" - {
+    def mp = sttp.post(uri"$endpoint/multipart")
+
+    "send a multipart message with a file" in {
+      withTemporaryFile(Some(testBodyBytes)) { f =>
+        val req = mp.multipartBody(multipartFile("p1", f), multipart("p2", "v2"))
+        req.send().toFuture().map { resp =>
+          resp.unsafeBody should be(s"p1=$testBody (${f.name}), p2=v2$defaultFileName")
+        }
+      }
+    }
   }
 }
 

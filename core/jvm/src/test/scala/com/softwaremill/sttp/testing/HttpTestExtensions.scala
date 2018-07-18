@@ -1,45 +1,16 @@
 package com.softwaremill.sttp.testing
 
-import java.io.IOException
+import java.io.{File, IOException}
 import java.nio.file.{Files, Paths}
 import java.security.MessageDigest
 import java.time.{ZoneId, ZonedDateTime}
 
 import com.softwaremill.sttp._
-import com.softwaremill.sttp.internal.SttpFile
 
 import scala.concurrent.Future
 import scala.language.higherKinds
 
 trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
-  override protected def withTemporaryFile[T](content: Option[Array[Byte]])(f: SttpFile => Future[T]): Future[T] = {
-    val file = Files.createTempFile("sttp", "sttp")
-    val result = Future {
-      content match {
-        case None       => Files.deleteIfExists(file)
-        case Some(data) => Files.write(file, data)
-      }
-    }.flatMap { _ =>
-      f(SttpFile.fromPath(file))
-    }
-
-    result.onComplete(_ => Files.deleteIfExists(file))
-    result
-  }
-
-  override protected def md5Hash(bytes: Array[Byte]): String = {
-    val md = MessageDigest.getInstance("MD5")
-    md.update(bytes)
-    val hash = md.digest()
-    hash.map(0xFF & _).map("%02x".format(_)).mkString
-  }
-
-  override protected def md5FileHash(file: SttpFile): Future[String] = {
-    Future.successful {
-      md5Hash(Files.readAllBytes(file.toPath))
-    }
-  }
-
   "cookies" - {
     "read response cookies" in {
       sttp
@@ -77,38 +48,6 @@ trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
                 .toEpochMilli
             ))
         }
-    }
-  }
-
-  "download file overwrite" - {
-    "fail at trying to save file to a restricted location" in {
-      val path = Paths.get("/").resolve("textfile.txt")
-      val req = sttp.get(uri"$endpoint/download/text").response(asFile(path.toFile))
-      Future(req.send()).flatMap(_.toFuture()).failed.collect {
-        case caught: IOException => caught.getMessage shouldBe "Permission denied"
-      }
-    }
-
-    "fail when file exists and overwrite flag is false" in {
-      withTemporaryFile(Some(testBodyBytes)) { file =>
-        val req = sttp.get(uri"$endpoint/download/text").response(asSttpFile(file))
-
-        Future(req.send()).flatMap(_.toFuture()).failed.collect {
-          case caught: IOException =>
-            caught.getMessage shouldBe s"File ${file.toFile.getAbsolutePath} exists - overwriting prohibited"
-        }
-      }
-    }
-
-    "not fail when file exists and overwrite flag is true" in {
-      withTemporaryFile(Some(testBodyBytes)) { file =>
-        val req = sttp
-          .get(uri"$endpoint/download/text")
-          .response(asSttpFile(file, overwrite = true))
-        req.send().toFuture().flatMap { resp =>
-          md5FileHash(resp.unsafeBody).map { _ shouldBe textFileMD5Hash }
-        }
-      }
     }
   }
 
@@ -162,6 +101,111 @@ trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
 
       request.send().toFuture().map { response =>
         response.unsafeBody should be("Żółć!")
+      }
+    }
+  }
+
+  private def withTemporaryFile[T](content: Option[Array[Byte]])(f: File => Future[T]): Future[T] = {
+    val file = Files.createTempFile("sttp", "sttp")
+    val result = Future {
+      content match {
+        case None       => Files.deleteIfExists(file)
+        case Some(data) => Files.write(file, data)
+      }
+    }.flatMap { _ =>
+      f(file.toFile)
+    }
+
+    result.onComplete(_ => Files.deleteIfExists(file))
+    result
+  }
+
+  private def withTemporaryNonExistentFile[T](f: File => Future[T]): Future[T] = withTemporaryFile(None)(f)
+
+  private def md5Hash(bytes: Array[Byte]): String = {
+    val md = MessageDigest.getInstance("MD5")
+    md.update(bytes)
+    val hash = md.digest()
+    hash.map(0xFF & _).map("%02x".format(_)).mkString
+  }
+
+  private def md5FileHash(file: File): Future[String] = {
+    Future.successful {
+      md5Hash(Files.readAllBytes(file.toPath))
+    }
+  }
+
+  "body" - {
+    "post a file" in {
+      withTemporaryFile(Some(testBodyBytes)) { f =>
+        postEcho.body(f).send().toFuture().map { response =>
+          response.unsafeBody should be(expectedPostEchoResponse)
+        }
+      }
+    }
+  }
+
+  "download file" - {
+    "download a binary file using asFile" in {
+      withTemporaryNonExistentFile { file =>
+        val req = sttp.get(uri"$endpoint/download/binary").response(asFile(file))
+        req.send().toFuture().flatMap { resp =>
+          md5FileHash(resp.unsafeBody).map { _ shouldBe binaryFileMD5Hash }
+        }
+      }
+    }
+
+    "download a text file using asFile" in {
+      withTemporaryNonExistentFile { file =>
+        val req = sttp.get(uri"$endpoint/download/text").response(asFile(file))
+        req.send().toFuture().flatMap { resp =>
+          md5FileHash(resp.unsafeBody).map { _ shouldBe textFileMD5Hash }
+        }
+      }
+    }
+  }
+
+  "download file overwrite" - {
+    "fail at trying to save file to a restricted location" in {
+      val path = Paths.get("/").resolve("textfile.txt")
+      val req = sttp.get(uri"$endpoint/download/text").response(asFile(path.toFile))
+      Future(req.send()).flatMap(_.toFuture()).failed.collect {
+        case caught: IOException => caught.getMessage shouldBe "Permission denied"
+      }
+    }
+
+    "fail when file exists and overwrite flag is false" in {
+      withTemporaryFile(Some(testBodyBytes)) { file =>
+        val req = sttp.get(uri"$endpoint/download/text").response(asFile(file))
+
+        Future(req.send()).flatMap(_.toFuture()).failed.collect {
+          case caught: IOException =>
+            caught.getMessage shouldBe s"File ${file.getAbsolutePath} exists - overwriting prohibited"
+        }
+      }
+    }
+
+    "not fail when file exists and overwrite flag is true" in {
+      withTemporaryFile(Some(testBodyBytes)) { file =>
+        val req = sttp
+          .get(uri"$endpoint/download/text")
+          .response(asFile(file, overwrite = true))
+        req.send().toFuture().flatMap { resp =>
+          md5FileHash(resp.unsafeBody).map { _ shouldBe textFileMD5Hash }
+        }
+      }
+    }
+  }
+
+  "multipart" - {
+    def mp = sttp.post(uri"$endpoint/multipart")
+
+    "send a multipart message with a file" in {
+      withTemporaryFile(Some(testBodyBytes)) { f =>
+        val req = mp.multipartBody(multipartFile("p1", f), multipart("p2", "v2"))
+        req.send().toFuture().map { resp =>
+          resp.unsafeBody should be(s"p1=$testBody (${f.getName}), p2=v2$defaultFileName")
+        }
       }
     }
   }

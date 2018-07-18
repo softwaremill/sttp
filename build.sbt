@@ -7,7 +7,8 @@ lazy val startTestServer = taskKey[Unit]("Start a http server used by tests (use
 val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   organization := "com.softwaremill.sttp",
   scalaVersion := "2.12.6",
-  crossScalaVersions := Seq(scalaVersion.value, "2.11.12")
+  crossScalaVersions := Seq(scalaVersion.value, "2.11.12"),
+  scalafmtOnCompile := true
 )
 
 val commonJSSettings = commonSettings ++ Seq(
@@ -75,7 +76,7 @@ def testServerSettings(config: Configuration) = Seq(
   })
 )
 
-val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.1"
+val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.3"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % "2.5.13"
 
 val scalaTestVersion = "3.0.5"
@@ -214,7 +215,7 @@ lazy val scalaz: Project = (project in file("implementations/scalaz"))
   .settings(
     name := "scalaz",
     publishArtifact in Test := true,
-    libraryDependencies ++= Seq("org.scalaz" %% "scalaz-concurrent" % "7.2.24")
+    libraryDependencies ++= Seq("org.scalaz" %% "scalaz-concurrent" % "7.2.25")
   )
   .dependsOn(coreJVM % "compile->compile;test->test")
 
@@ -240,7 +241,7 @@ lazy val asyncHttpClientBackend: Project =
     .settings(
       name := "async-http-client-backend",
       libraryDependencies ++= Seq(
-        "org.asynchttpclient" % "async-http-client" % "2.4.9"
+        "org.asynchttpclient" % "async-http-client" % "2.5.2"
       )
     )
     .dependsOn(coreJVM % "compile->compile;test->test")
@@ -283,7 +284,7 @@ lazy val okhttpBackend: Project = (project in file("okhttp-backend"))
   .settings(
     name := "okhttp-backend",
     libraryDependencies ++= Seq(
-      "com.squareup.okhttp3" % "okhttp" % "3.10.0"
+      "com.squareup.okhttp3" % "okhttp" % "3.11.0"
     )
   )
   .dependsOn(coreJVM % "compile->compile;test->test")
@@ -330,7 +331,7 @@ lazy val json4s: Project = (project in file("json/json4s"))
   )
   .dependsOn(coreJVM)
 
-lazy val braveVersion = "5.0.0"
+lazy val braveVersion = "5.1.2"
 
 lazy val braveBackend: Project = (project in file("metrics/brave-backend"))
   .settings(commonSettings: _*)

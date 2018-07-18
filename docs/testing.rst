@@ -8,9 +8,9 @@ Creating a stub backend
 
 An empty backend stub can be created using the following ways:
 
-* given an instance of a "real" backend, e.g. ``SttpBackendStub(HttpURLConnectionBackend())`` or ``SttpBackendStub(AsyncHttpClientScalazBackend())``. The stub will then use the same response wrapper and support the same type of streams as the given "real" backend.
-* by explicitly giving the response wrapper monad and supported streams type, e.g. ``SttpBackendStub[Task, Observable[ByteBuffer]](TaskMonad)``
 * by using one of the factory methods ``SttpBackendStub.synchronous`` or ``SttpBackendStub.asynchronousFuture``, which return stubs which use the ``Id`` or standard Scala's ``Future`` response wrappers without streaming support
+* by explicitly giving the response wrapper monad and supported streams type, e.g. ``SttpBackendStub[Task, Observable[ByteBuffer]](TaskMonad)``
+* given an instance of a "real" backend, e.g. ``SttpBackendStub(HttpURLConnectionBackend())`` or ``SttpBackendStub(AsyncHttpClientScalazBackend())``. The stub will then use the same response wrapper and support the same type of streams as the given "real" backend.
 * by specifying a fallback/delegate backend, see below
 
 Specifying behavior
@@ -18,7 +18,7 @@ Specifying behavior
 
 Behavior of the stub can be specified using a combination of the ``whenRequestMatches`` and ``thenResponse`` methods::
 
-  implicit val testingBackend = SttpBackendStub(HttpURLConnectionBackend())
+  implicit val testingBackend = SttpBackendStub.synchronous
     .whenRequestMatches(_.uri.path.startsWith(List("a", "b")))
     .thenRespond("Hello there!")
     .whenRequestMatches(_.method == Method.POST)
@@ -32,13 +32,15 @@ Behavior of the stub can be specified using a combination of the ``whenRequestMa
 
 It is also possible to match requests by partial function, returning a response. E.g.::
 
-  implicit val testingBackend = SttpBackendStub(HttpURLConnectionBackend())
+  implicit val testingBackend = SttpBackendStub.synchronous
     .whenRequestMatchesPartial({
       case r if r.uri.path.endsWith(List("partial10")) =>
-        Response(Right(10), 200, Nil, Nil)
+        Response.error("Not found", 404)
 
       case r if r.uri.path.endsWith(List("partialAda")) =>
-        Response(Right("Ada"), 200, Nil, Nil)
+        // additional verification of the request is possible
+        assert(r.body == StringBody("z"))
+        Response.ok("Ada")
     })
 
   val response1 = sttp.get(uri"http://example.org/partial10").send()
@@ -62,7 +64,7 @@ Another way to specify the behaviour is passing response wrapped in the result m
 
 The returned response may also depend on the request: ::
 
-  implicit val testingBackend = SttpBackendStub(HttpURLConnectionBackend()).whenAnyRequest
+  implicit val testingBackend = SttpBackendStub.synchronous.whenAnyRequest
     .thenRespondWrapped(req =>
       Response(Right("OK, got request sent to ${req.uri.host}"), 200, "", Nil, Nil)
     )
@@ -75,7 +77,7 @@ Simulating exceptions
 
 If you want to simulate an exception being thrown by a backend, e.g. a socket timeout exception, you can do so by throwing the appropriate exception instead of the response, e.g.::
 
-  implicit val testingBackend = SttpBackendStub(HttpURLConnectionBackend())
+  implicit val testingBackend = SttpBackendStub.synchronous
     .whenRequestMatches(_ => true)
     .thenRespond(throw new TimeoutException())
 
@@ -96,7 +98,7 @@ The following conversions are supported:
 
 For example::
 
-  implicit val testingBackend = SttpBackendStub(HttpURLConnectionBackend())
+  implicit val testingBackend = SttpBackendStub.synchronous
     .whenRequestMatches(_ => true)
     .thenRespond(""" {"username": "john", "age": 65 } """)
 

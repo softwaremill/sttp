@@ -37,11 +37,10 @@ class AkkaHttpBackend private (actorSystem: ActorSystem,
 
   private val http = Http()
 
-  private val connectionSettings = ClientConnectionSettings(actorSystem)
-    .withConnectingTimeout(opts.connectionTimeout)
-
   private val connectionPoolSettings = {
-    val base = customConnectionPoolSettings.getOrElse(ConnectionPoolSettings(actorSystem))
+    val base = customConnectionPoolSettings
+      .getOrElse(ConnectionPoolSettings(actorSystem))
+      .withUpdatedConnectionSettings(_.withConnectingTimeout(opts.connectionTimeout))
     opts.proxy match {
       case None => base
       case Some(p) =>
@@ -53,7 +52,7 @@ class AkkaHttpBackend private (actorSystem: ActorSystem,
     implicit val ec: ExecutionContext = this.ec
 
     val settings = connectionPoolSettings
-      .withConnectionSettings(connectionSettings.withIdleTimeout(r.options.readTimeout))
+      .withUpdatedConnectionSettings(_.withIdleTimeout(r.options.readTimeout))
 
     requestToAkka(r)
       .flatMap(setBodyOnAkka(r, r.body, _))
