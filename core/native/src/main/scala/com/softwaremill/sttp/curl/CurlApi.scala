@@ -85,7 +85,7 @@ private[sttp] object CurlApi {
 
     def withEncoding(encoding: String)(implicit zone: Zone): CurlCode = CCurl.mimeEncoder(handle, toCString(encoding))
 
-    def withData(data: String, datasize: Int = CurlZeroTerminated)(implicit zone: Zone): CurlCode =
+    def withData(data: String, datasize: Long = CurlZeroTerminated)(implicit zone: Zone): CurlCode =
       CCurl.mimeData(handle, toCString(data), datasize: CSize)
 
     def withFileData(filename: String)(implicit zone: Zone): CurlCode = CCurl.mimeFiledata(handle, toCString(filename))
