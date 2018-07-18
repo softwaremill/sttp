@@ -66,10 +66,4 @@ private[curl] object CCurl {
 
   @name("curl_slist_free_all")
   def slistFree(list: Ptr[CurlSlist]): Unit = extern
-
-  @name("curl_easy_escape")
-  def encode(handle: Ptr[Curl], string: CString, lenght: Int): CString = extern
-
-  @name("curl_free")
-  def free(string: CString): Unit = extern
 }

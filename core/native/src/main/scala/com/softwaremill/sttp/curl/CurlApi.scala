@@ -4,7 +4,6 @@ import com.softwaremill.sttp.curl.CurlCode.CurlCode
 import com.softwaremill.sttp.curl.CurlInfo.CurlInfo
 import com.softwaremill.sttp.curl.CurlOption.CurlOption
 
-import scala.scalanative.native
 import scala.scalanative.native.{Ptr, _}
 
 private[sttp] object CurlApi {
@@ -61,13 +60,6 @@ private[sttp] object CurlApi {
     def info(curlInfo: CurlInfo, parameter: Ptr[_]): CurlCode = {
       getInfo(handle, curlInfo, parameter)
     }
-
-    def encode(string: String): String = native.Zone { implicit z =>
-      val e = enc(handle, toCString(string), string.length)
-      val s = fromCString(e)
-      CCurl.free(e)
-      s
-    }
   }
 
   private def setopt(handle: CurlHandle, option: CurlOption, parameter: Any): CurlCode = {
@@ -76,10 +68,6 @@ private[sttp] object CurlApi {
 
   private def getInfo(handle: CurlHandle, curlInfo: CurlInfo, parameter: Any): CurlCode = {
     CurlCode(CCurl.getInfo(handle, curlInfo.id, parameter))
-  }
-
-  private def enc(handle: CurlHandle, string: CString, length: Int): CString = {
-    CCurl.encode(handle, string, length)
   }
 
   implicit class MimeHandleOps(handle: MimeHandle) {
