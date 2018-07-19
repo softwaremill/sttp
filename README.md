@@ -42,8 +42,7 @@ If you are an [Ammonite](http://ammonite.io) user, you can quickly start experim
 
 ```scala
 import $ivy.`com.softwaremill.sttp::core:1.2.3`
-import com.softwaremill.sttp._
-implicit val backend = HttpURLConnectionBackend()
+import com.softwaremill.sttp.quick._
 sttp.get(uri"http://httpbin.org/ip").send()
 ```
 
