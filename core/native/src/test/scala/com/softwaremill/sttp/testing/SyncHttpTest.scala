@@ -9,6 +9,10 @@ import org.scalatest._
 
 import scala.concurrent.duration._
 
+// This is a synchronous version of com.softwaremill.sttp.testing.HttpTest.
+// It had to be copied, because there are no async test specs in scala-test.
+// As soon as AsyncFreeSpec is released for Scala Native, this one should be drooped in favour of HttpTest.
+// The progress can be tracked within this issue: https://github.com/scalatest/scalatest/issues/1112.
 trait SyncHttpTest
     extends FreeSpec
     with Matchers
