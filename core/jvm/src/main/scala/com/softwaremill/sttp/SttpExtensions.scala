@@ -5,7 +5,7 @@ import java.nio.file.Path
 
 import com.softwaremill.sttp.internal.SttpFile
 
-trait SttpExtensions2 {
+trait SttpExtensions {
 
   def asFile(file: File, overwrite: Boolean = false): ResponseAs[File, Nothing] = {
     ResponseAsFile(SttpFile.fromFile(file), overwrite).map(_.toFile)

@@ -3,7 +3,7 @@ package com.softwaremill.sttp
 import com.softwaremill.sttp.dom.experimental.{File => DomFile}
 import com.softwaremill.sttp.internal.SttpFile
 
-trait SttpExtensions2 {
+trait SttpExtensions {
 
   def asFile(file: DomFile, overwrite: Boolean = false): ResponseAs[DomFile, Nothing] = {
     ResponseAsFile(SttpFile.fromDomFile(file), overwrite).map(_.toDomFile)
