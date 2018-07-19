@@ -1,5 +1,5 @@
 package com.softwaremill.sttp
 
-object simpleApi extends SttpApi {
+object quick extends SttpApi {
   implicit lazy val backend = HttpURLConnectionBackend()
 }
