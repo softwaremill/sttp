@@ -152,6 +152,7 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
     val rb = new RequestBuilder(r.method.m)
       .setUrl(r.uri.toString)
       .setReadTimeout(if (readTimeout.isFinite()) readTimeout.toMillis.toInt else -1)
+      .setRequestTimeout(if (readTimeout.isFinite()) readTimeout.toMillis.toInt else -1)
     r.headers.foreach { case (k, v) => rb.setHeader(k, v) }
     setBody(r, r.body, rb)
     rb.build()
