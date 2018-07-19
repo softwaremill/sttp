@@ -10,7 +10,7 @@ import scala.collection.immutable.Seq
 import scala.concurrent.duration._
 import scala.language.higherKinds
 
-trait SttpApi extends sttpExtensions {
+trait SttpApi extends SttpExtensions {
   type Id[X] = X
   type Empty[X] = None.type
 
