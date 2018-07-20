@@ -15,6 +15,7 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{FileIO, Source, StreamConverters}
 import akka.util.ByteString
 import com.softwaremill.sttp._
+import com.softwaremill.sttp.internal._
 
 import scala.collection.immutable.Seq
 import scala.concurrent.{ExecutionContext, Future}

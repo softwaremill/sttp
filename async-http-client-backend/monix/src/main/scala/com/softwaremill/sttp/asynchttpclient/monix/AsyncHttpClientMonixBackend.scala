@@ -4,7 +4,8 @@ import java.nio.ByteBuffer
 
 import com.softwaremill.sttp.asynchttpclient.AsyncHttpClientBackend
 import com.softwaremill.sttp.impl.monix.TaskMonadAsyncError
-import com.softwaremill.sttp.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions, Utf8, concatByteBuffers}
+import com.softwaremill.sttp._
+import com.softwaremill.sttp.internal._
 import io.netty.buffer.{ByteBuf, Unpooled}
 import monix.eval.Task
 import monix.execution.Scheduler

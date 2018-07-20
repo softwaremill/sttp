@@ -12,7 +12,7 @@ import scala.scalajs.js.typedarray._
 import com.softwaremill.sttp.dom.experimental.AbortController
 import com.softwaremill.sttp.dom.experimental.FilePropertyBag
 import com.softwaremill.sttp.dom.experimental.{File => DomFile}
-import com.softwaremill.sttp.internal.SttpFile
+import com.softwaremill.sttp.internal._
 import com.softwaremill.sttp.monadSyntax._
 import org.scalajs.dom.FormData
 import org.scalajs.dom.experimental.BodyInit

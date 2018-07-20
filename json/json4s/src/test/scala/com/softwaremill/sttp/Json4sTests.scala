@@ -1,5 +1,7 @@
 package com.softwaremill.sttp
 
+import com.softwaremill.sttp.internal._
+
 import org.json4s.ParserUtil.ParseException
 import org.scalatest._
 

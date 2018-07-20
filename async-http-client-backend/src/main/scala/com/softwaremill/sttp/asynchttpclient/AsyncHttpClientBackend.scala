@@ -5,7 +5,7 @@ import java.nio.charset.Charset
 
 import com.softwaremill.sttp.ResponseAs.EagerResponseHandler
 import com.softwaremill.sttp._
-import com.softwaremill.sttp.internal.SttpFile
+import com.softwaremill.sttp.internal._
 import io.netty.buffer.ByteBuf
 import io.netty.handler.codec.http.HttpHeaders
 import org.asynchttpclient.AsyncHandler.State

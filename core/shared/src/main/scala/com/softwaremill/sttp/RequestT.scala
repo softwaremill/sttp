@@ -4,7 +4,7 @@ import java.io.InputStream
 import java.nio.ByteBuffer
 import java.util.Base64
 
-import com.softwaremill.sttp.internal.SttpFile
+import com.softwaremill.sttp.internal._
 
 import scala.collection.immutable.Seq
 import scala.concurrent.duration.Duration

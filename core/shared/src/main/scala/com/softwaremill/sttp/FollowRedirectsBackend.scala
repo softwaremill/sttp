@@ -1,5 +1,7 @@
 package com.softwaremill.sttp
 
+import com.softwaremill.sttp.internal._
+
 import java.net.URI
 
 import scala.language.higherKinds

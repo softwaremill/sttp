@@ -1,5 +1,7 @@
 package com.softwaremill.sttp
 
+import com.softwaremill.sttp.internal._
+
 /**
   * Use the factory methods `multipart` to conveniently create instances of
   * this class. A part can be then further customised using `fileName`,

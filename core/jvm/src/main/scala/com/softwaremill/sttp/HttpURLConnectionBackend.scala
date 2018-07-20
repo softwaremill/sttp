@@ -8,7 +8,7 @@ import java.nio.file.Files
 import java.util.concurrent.ThreadLocalRandom
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
 
-import com.softwaremill.sttp.internal.SttpFile
+import com.softwaremill.sttp.internal._
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
