@@ -94,7 +94,7 @@ trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
     }
   }
 
-  // scalajs only supports US_ASCII, ISO_8859_1, UTF_8, UTF_16BE, UTF_16LE, UTF_16
+  // scalajs and scala native only support US_ASCII, ISO_8859_1, UTF_8, UTF_16BE, UTF_16LE, UTF_16
   "encoding" - {
     "read response body encoded using ISO-8859-2, as specified in the header, overriding the default" in {
       val request = sttp.get(uri"$endpoint/respond_with_iso_8859_2")

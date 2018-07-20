@@ -7,7 +7,7 @@ import com.softwaremill.sttp.curl.CurlCode.CurlCode
 import com.softwaremill.sttp.curl.CurlInfo._
 import com.softwaremill.sttp.curl.CurlOption._
 import com.softwaremill.sttp.curl._
-import com.softwaremill.sttp.internal.SttpFile
+import com.softwaremill.sttp.internal._
 
 import scala.collection.immutable.Seq
 import scala.io.Source
@@ -69,7 +69,7 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean)
       curl.cleanup()
 
       val body: R[Either[Array[CSignedChar], T]] = if (StatusCodes.isSuccess(httpCode)) {
-        responseMonad.map(readResponseBody(responseBody, request.response))(Right.apply)
+        responseMonad.map(readResponseBody(responseBody, request.response, responseHeaders))(Right.apply)
       } else {
         responseMonad.map(toByteArray(responseBody))(Left.apply)
       }
@@ -166,11 +166,18 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean)
     Seq.from(array: _*)
   }
 
-  private def readResponseBody[T](response: String, responseAs: ResponseAs[T, S]): R[T] = {
+  private def readResponseBody[T](response: String, responseAs: ResponseAs[T, S], headers: Seq[(String, String)]): R[T] = {
+
     responseAs match {
-      case MappedResponseAs(raw, g) => responseMonad.map(readResponseBody(response, raw))(g)
+      case MappedResponseAs(raw, g) => responseMonad.map(readResponseBody(response, raw, headers))(g)
       case IgnoreResponse           => responseMonad.unit((): Unit)
-      case ResponseAsString(enc)    => responseMonad.unit(response)
+      case ResponseAsString(enc)    =>
+        val charset = headers.toMap
+          .get(HeaderNames.ContentType)
+          .flatMap(encodingFromContentType)
+          .getOrElse(enc)
+        if (charset.compareToIgnoreCase(Utf8) == 0) responseMonad.unit(response)
+        else responseMonad.map(toByteArray(response))(r => new String(r, charset.toUpperCase))
       case ResponseAsByteArray      => toByteArray(response)
       case ResponseAsFile(output, overwrite) =>
         responseMonad.map(toByteArray(response)) { a =>

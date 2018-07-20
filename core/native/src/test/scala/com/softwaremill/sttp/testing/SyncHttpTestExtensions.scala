@@ -49,16 +49,6 @@ trait SyncHttpTestExtensions {
     }
   }
 
-  // scalajs only supports US_ASCII, ISO_8859_1, UTF_8, UTF_16BE, UTF_16LE, UTF_16
-  "encoding" - {
-    "read response body encoded using ISO-8859-2, as specified in the header, overriding the default" in {
-      val request = sttp.get(uri"$endpoint/respond_with_iso_8859_2")
-
-      val response = request.send()
-        response.unsafeBody should be("Żółć!")
-    }
-  }
-
   private def withTemporaryFile[T](content: Option[Array[Byte]])(f: File => T): T = {
     val file = Files.createTempFile("sttp", "sttp")
     content match {
