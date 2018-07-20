@@ -82,13 +82,17 @@ val akkaStreams = "com.typesafe.akka" %% "akka-stream" % "2.5.13"
 val scalaTestVersion = "3.0.5"
 val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion
 
+lazy val rootProjectAggregates: Seq[ProjectReference] = if (sys.env.isDefinedAt("STTP_NATIVE")) {
+  println("[info] STTP_NATIVE defined, including sttp-native in the aggregate projects")
+  List(rootJVM, rootJS, rootNative)
+} else {
+  println("[info] STTP_NATIVE *not* defined, *not* including sttp-native in the aggregate projects")
+  List(rootJVM, rootJS)
+}
+
 lazy val rootProject = (project in file("."))
   .settings(skip in publish := true, name := "sttp")
-  .aggregate(
-    rootJVM,
-    rootJS,
-    rootNative
-  )
+  .aggregate(rootProjectAggregates: _*)
 
 lazy val rootJVM = project
   .in(file(".jvm"))

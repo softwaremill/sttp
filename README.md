@@ -85,6 +85,12 @@ If you'd like to run the tests using *only* the JVM backend, execute: `sbt rootJ
 
 ### Building & testing the scala-native backend
 
+By default, sttp-native will **not** be included in the aggregate build of the root project. To include it, define the `STTP_NATIVE` environmental variable before running sbt, e.g.:
+
+```
+STTP_NATIVE=1 sbt
+```
+
 You might need to install some additional libraries, see the [scala native](http://www.scala-native.org/en/latest/user/setup.html) documentation site.
 
 On MacOS, you need to: `brew install llvm bdw-gc re2 libidn curl`. If your system curl is older than `7.56.0`, you'll need to use the updated brewl-curl when linking & compiling. To do that, create a `core/native/local.sbt` file, and add:
