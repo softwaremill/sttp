@@ -1,5 +1,6 @@
 package com.softwaremill.sttp
 
+import com.softwaremill.sttp.internal._
 import java.io.{File, FileOutputStream, IOException, InputStream}
 
 object FileHelpers {
