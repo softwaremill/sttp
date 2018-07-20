@@ -44,3 +44,12 @@ Class                            Response wrapper             Supported stream t
 ``FetchBackend``                 ``scala.concurrent.Future``  n/a
 ``FetchMonixBackend``            ``monix.eval.Task``          ``monix.reactive.Observable[ByteBuffer]``
 ================================ ============================ =========================================
+
+and Scala Native:
+
+================================ ============================ =========================================
+Class                            Response wrapper             Supported stream type
+================================ ============================ =========================================
+``CurlBackend``                  None (``id``)                n/a
+``CurlTryBackend``               ``scala.util.Try``           n/a
+================================ ============================ =========================================

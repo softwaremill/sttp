@@ -1,5 +1,5 @@
 // shadow sbt-scalajs' crossProject and CrossType until Scala.js 1.0.0 is released
-import sbtcrossproject.{CrossType, crossProject}
+import sbtcrossproject.{CrossType, Platform, crossProject}
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on (used by JS tests)")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests (used by JS tests)")
@@ -11,7 +11,7 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   scalafmtOnCompile := true
 )
 
-val commonJSSettings = Seq(
+val commonJSSettings = commonSettings ++ Seq(
   // slow down for CI
   parallelExecution in Test := false,
   // https://github.com/scalaz/scalaz/pull/1734#issuecomment-385627061
@@ -28,6 +28,13 @@ val commonJSSettings = Seq(
       }
   }
 ) ++ browserTestSettings
+
+val commonNativeSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
+  organization := "com.softwaremill.sttp",
+  scalaVersion := "2.11.12",
+  crossScalaVersions := Seq("2.11.12"),
+  nativeLinkStubs := true
+)
 
 // run JS tests inside Chrome, due to jsdom not supporting fetch
 lazy val browserTestSettings = Seq(
@@ -76,11 +83,11 @@ val scalaTestVersion = "3.0.5"
 val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion
 
 lazy val rootProject = (project in file("."))
-  .settings(commonSettings: _*)
   .settings(skip in publish := true, name := "sttp")
   .aggregate(
     rootJVM,
-    rootJS
+    rootJS,
+    rootNative
   )
 
 lazy val rootJVM = project
@@ -114,22 +121,32 @@ lazy val rootJS = project
   .settings(skip in publish := true, name := "sttpJS")
   .aggregate(coreJS, catsJS, monixJS, circeJS)
 
-lazy val core = crossProject(JSPlatform, JVMPlatform)
+lazy val rootNative = project
+  .in(file(".native"))
+  .settings(commonNativeSettings: _*)
+  .settings(skip in publish := true, name := "sttpNative")
+  .aggregate(coreNative)
+
+lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .withoutSuffixFor(JVMPlatform)
   .crossType(CrossType.Full)
   .in(file("core"))
-  .settings(commonSettings: _*)
+  .jvmSettings(commonSettings: _*)
   .jsSettings(commonJSSettings: _*)
+  .nativeSettings(commonNativeSettings: _*)
+  .jvmSettings(
+    libraryDependencies ++= Seq(
+      scalaTest % "test"
+    )
+  )
   .settings(
     name := "core",
-    libraryDependencies ++= Seq(
-      "org.scalatest" %%% "scalatest" % scalaTestVersion % "test"
-    ),
     publishArtifact in Test := true // allow implementations outside of this repo
   )
   .jsSettings(
     libraryDependencies ++= Seq(
-      "org.scala-js" %%% "scalajs-dom" % "0.9.6"
+      "org.scala-js" %%% "scalajs-dom" % "0.9.6",
+      "org.scalatest" %%% "scalatest" % scalaTestVersion % "test"
     ),
     jsDependencies ++= Seq(
       "org.webjars.npm" % "spark-md5" % "3.0.0" % "test" / "spark-md5.js" minified "spark-md5.min.js"
@@ -137,6 +154,13 @@ lazy val core = crossProject(JSPlatform, JVMPlatform)
   )
   .jsSettings(browserTestSettings)
   .jsSettings(testServerSettings(Test))
+  .nativeSettings(testServerSettings(Test))
+  .nativeSettings(
+    libraryDependencies ++= Seq(
+      "org.scala-native" %%% "test-interface" % "0.3.0",
+      "org.scalatest" %%% "scalatest" % "3.2.0-SNAP10" % "test"
+    )
+  )
   .jvmSettings(
     libraryDependencies ++= Seq(
       akkaHttp % "test",
@@ -154,6 +178,7 @@ lazy val core = crossProject(JSPlatform, JVMPlatform)
   )
 lazy val coreJS = core.js
 lazy val coreJVM = core.jvm
+lazy val coreNative = core.native
 
 //----- implementations
 lazy val cats = crossProject(JSPlatform, JVMPlatform)
