@@ -3,7 +3,6 @@ package com.softwaremill.sttp.testing
 import java.io.ByteArrayInputStream
 import java.nio.ByteBuffer
 
-import com.softwaremill.sttp.internal.SttpFile
 import com.softwaremill.sttp._
 import org.scalatest._
 
@@ -29,11 +28,10 @@ trait SyncHttpTest
 
   implicit val backend: SttpBackend[Id, Nothing]
 
-  private def postEcho = sttp.post(uri"$endpoint/echo")
-
+  protected def postEcho = sttp.post(uri"$endpoint/echo")
   protected val testBody = "this is the body"
   protected val testBodyBytes = testBody.getBytes("UTF-8")
-  private val expectedPostEchoResponse = "POST /echo this is the body"
+  protected val expectedPostEchoResponse = "POST /echo this is the body"
 
   protected val sttpIgnore = com.softwaremill.sttp.ignore
 
@@ -118,13 +116,6 @@ trait SyncHttpTest
         .body(ByteBuffer.wrap(testBodyBytes))
         .send()
       response.unsafeBody should be(expectedPostEchoResponse)
-    }
-
-    "post a file" in {
-      withTemporaryFile(Some(testBodyBytes)) { f =>
-        val response = postEcho.body(f).send()
-        response.unsafeBody should be(expectedPostEchoResponse)
-      }
     }
 
     "post form data" in {
@@ -226,36 +217,9 @@ trait SyncHttpTest
     }
   }
 
-  protected def withTemporaryFile[T](content: Option[Array[Byte]])(f: SttpFile => T): T
-
-  private def withTemporaryNonExistentFile[T](f: SttpFile => T): T = withTemporaryFile(None)(f)
-
-  protected def md5Hash(bytes: Array[Byte]): String
-
-  protected def md5FileHash(file: SttpFile): String
-
-  "download file" - {
-
-    "download a binary file using asFile" in {
-      withTemporaryNonExistentFile { file =>
-        val req = sttp.get(uri"$endpoint/download/binary").response(asSttpFile(file))
-        val resp = req.send()
-        md5FileHash(resp.unsafeBody).map { _ shouldBe binaryFileMD5Hash }
-      }
-    }
-
-    "download a text file using asFile" in {
-      withTemporaryNonExistentFile { file =>
-        val req = sttp.get(uri"$endpoint/download/text").response(asSttpFile(file))
-        val resp = req.send()
-        md5FileHash(resp.unsafeBody).map { _ shouldBe textFileMD5Hash }
-      }
-    }
-  }
   // in JavaScript the only way to set the content type is to use a Blob which defaults the filename to 'blob'
   protected def multipartStringDefaultFileName: Option[String] = None
-
-  private def defaultFileName = multipartStringDefaultFileName match {
+  protected def defaultFileName = multipartStringDefaultFileName match {
     case None       => ""
     case Some(name) => s" ($name)"
   }
@@ -273,14 +237,6 @@ trait SyncHttpTest
       val req = mp.multipartBody(multipart("p1", "v1").fileName("f1"), multipart("p2", "v2").fileName("f2"))
       val resp = req.send()
       resp.unsafeBody should be("p1=v1 (f1), p2=v2 (f2)")
-    }
-
-    "send a multipart message with a file" in {
-      withTemporaryFile(Some(testBodyBytes)) { f =>
-        val req = mp.multipartBody(multipartSttpFile("p1", f), multipart("p2", "v2"))
-        val resp = req.send()
-        resp.unsafeBody should be(s"p1=$testBody (${f.name}), p2=v2$defaultFileName")
-      }
     }
   }
 

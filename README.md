@@ -72,7 +72,7 @@ Or, if you encounter a bug, something is unclear in the code or documentation, d
 
 We are also always looking for contributions and new ideas, so if you’d like to get into the project, check out the [open issues](https://github.com/softwaremill/sttp/issues), or post your own suggestions!
 
-### Testing
+### Testing the Scala.JS backend
 
 Running the tests using the JS backend has some prerequisities:
 
@@ -82,3 +82,16 @@ Running the tests using the JS backend has some prerequisities:
 
 Note that running the default `test` task will run the tests using both the JVM and JS backends.
 If you'd like to run the tests using *only* the JVM backend, execute: `sbt rootJVM/test`.
+
+### Building & testing the scala-native backend
+
+You might need to install some additional libraries, see the [scala native](http://www.scala-native.org/en/latest/user/setup.html) documentation site.
+
+On MacOS, you need to: `brew install llvm bdw-gc re2 libidn curl`. If your system curl is older than `7.56.0`, you'll need to use the updated brewl-curl when linking & compiling. To do that, create a `core/native/local.sbt` file, and add:
+
+```
+nativeCompileOptions += "-I/usr/local/opt/curl/include"
+nativeLinkingOptions += "-L/usr/local/opt/curl/lib"
+```
+
+where the specific paths correspond to the output of the `brew install curl` command.
