@@ -25,7 +25,7 @@ If you are an `Ammonite <http://ammonite.io>`_ user, you can quickly start exper
   import com.softwaremill.sttp.quick._
   sttp.get(uri"http://httpbin.org/ip").send()
 
-Importing the ``quick`` object has the same effect as importing ``com.softwaremill.sttp._``, plus defining an implicit, synchronous ``HttpURLConnectionBackend`` so that sttp can be used right away.
+Importing the ``quick`` object has the same effect as importing ``com.softwaremill.sttp._``, plus defining an implicit synchronous backend (``val backend = HttpURLConnectionBackend()``), so that sttp can be used right away.
 
 Imports
 -------

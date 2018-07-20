@@ -46,6 +46,8 @@ import com.softwaremill.sttp.quick._
 sttp.get(uri"http://httpbin.org/ip").send()
 ```
 
+This brings in the sttp API and an implicit, synchronous backend.
+
 ## Quickstart with sbt
 
 Add the following dependency:
