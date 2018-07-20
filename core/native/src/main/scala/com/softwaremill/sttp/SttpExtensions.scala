@@ -1,3 +1,3 @@
 package com.softwaremill.sttp
 
-trait SttpExtensions2 {}
+trait SttpExtensions {}
