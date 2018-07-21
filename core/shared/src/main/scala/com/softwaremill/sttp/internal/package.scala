@@ -11,7 +11,7 @@ package object internal {
 
   private[sttp] def encodingFromContentType(ct: String): Option[String] =
     ct.split(";").map(_.trim.toLowerCase).collectFirst {
-      case s if s.startsWith("charset=") && s.substring(8) != "" => s.substring(8)
+      case s if s.startsWith("charset=") && s.substring(8).trim != "" => s.substring(8).trim
     }
 
   private[sttp] def transfer(is: InputStream, os: OutputStream): Unit = {
