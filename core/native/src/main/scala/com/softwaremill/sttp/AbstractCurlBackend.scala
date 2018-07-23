@@ -166,19 +166,21 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean)
     Seq.from(array: _*)
   }
 
-  private def readResponseBody[T](response: String, responseAs: ResponseAs[T, S], headers: Seq[(String, String)]): R[T] = {
+  private def readResponseBody[T](response: String,
+                                  responseAs: ResponseAs[T, S],
+                                  headers: Seq[(String, String)]): R[T] = {
 
     responseAs match {
       case MappedResponseAs(raw, g) => responseMonad.map(readResponseBody(response, raw, headers))(g)
       case IgnoreResponse           => responseMonad.unit((): Unit)
-      case ResponseAsString(enc)    =>
+      case ResponseAsString(enc) =>
         val charset = headers.toMap
           .get(HeaderNames.ContentType)
           .flatMap(encodingFromContentType)
           .getOrElse(enc)
         if (charset.compareToIgnoreCase(Utf8) == 0) responseMonad.unit(response)
         else responseMonad.map(toByteArray(response))(r => new String(r, charset.toUpperCase))
-      case ResponseAsByteArray      => toByteArray(response)
+      case ResponseAsByteArray => toByteArray(response)
       case ResponseAsFile(output, overwrite) =>
         responseMonad.map(toByteArray(response)) { a =>
           val is = new ByteArrayInputStream(a)

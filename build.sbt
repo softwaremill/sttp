@@ -6,12 +6,17 @@ lazy val startTestServer = taskKey[Unit]("Start a http server used by tests (use
 
 val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   organization := "com.softwaremill.sttp",
-  scalaVersion := "2.12.6",
-  crossScalaVersions := Seq(scalaVersion.value, "2.11.12"),
   scalafmtOnCompile := true
 )
 
-val commonJSSettings = commonSettings ++ Seq(
+val commonJvmJsSettings = commonSettings ++ Seq(
+  scalaVersion := "2.12.6",
+  crossScalaVersions := Seq(scalaVersion.value, "2.11.12"),
+)
+
+val commonJvmSettings = commonJvmJsSettings
+
+val commonJsSettings = commonJvmJsSettings ++ Seq(
   // slow down for CI
   parallelExecution in Test := false,
   // https://github.com/scalaz/scalaz/pull/1734#issuecomment-385627061
@@ -29,7 +34,7 @@ val commonJSSettings = commonSettings ++ Seq(
   }
 ) ++ browserTestSettings
 
-val commonNativeSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
+val commonNativeSettings = commonSettings ++ Seq(
   organization := "com.softwaremill.sttp",
   scalaVersion := "2.11.12",
   crossScalaVersions := Seq("2.11.12"),
@@ -91,12 +96,13 @@ lazy val rootProjectAggregates: Seq[ProjectReference] = if (sys.env.isDefinedAt(
 }
 
 lazy val rootProject = (project in file("."))
+  .settings(commonSettings: _*)
   .settings(skip in publish := true, name := "sttp")
   .aggregate(rootProjectAggregates: _*)
 
 lazy val rootJVM = project
   .in(file(".jvm"))
-  .settings(commonSettings: _*)
+  .settings(commonJvmJsSettings: _*)
   .settings(skip in publish := true, name := "sttpJVM")
   .aggregate(
     coreJVM,
@@ -121,7 +127,7 @@ lazy val rootJVM = project
 
 lazy val rootJS = project
   .in(file(".js"))
-  .settings(commonSettings: _*)
+  .settings(commonJvmJsSettings: _*)
   .settings(skip in publish := true, name := "sttpJS")
   .aggregate(coreJS, catsJS, monixJS, circeJS)
 
@@ -135,8 +141,8 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .withoutSuffixFor(JVMPlatform)
   .crossType(CrossType.Full)
   .in(file("core"))
-  .jvmSettings(commonSettings: _*)
-  .jsSettings(commonJSSettings: _*)
+  .jvmSettings(commonJvmSettings: _*)
+  .jsSettings(commonJsSettings: _*)
   .nativeSettings(commonNativeSettings: _*)
   .jvmSettings(
     libraryDependencies ++= Seq(
@@ -189,8 +195,8 @@ lazy val cats = crossProject(JSPlatform, JVMPlatform)
   .withoutSuffixFor(JVMPlatform)
   .crossType(CrossType.Pure)
   .in(file("implementations/cats"))
-  .settings(commonSettings: _*)
-  .jsSettings(commonJSSettings: _*)
+  .jvmSettings(commonJvmSettings: _*)
+  .jsSettings(commonJsSettings: _*)
   .settings(
     name := "cats",
     publishArtifact in Test := true,
@@ -203,8 +209,8 @@ lazy val monix = crossProject(JSPlatform, JVMPlatform)
   .withoutSuffixFor(JVMPlatform)
   .crossType(CrossType.Full)
   .in(file("implementations/monix"))
-  .settings(commonSettings: _*)
-  .jsSettings(commonJSSettings: _*)
+  .jvmSettings(commonJvmSettings: _*)
+  .jsSettings(commonJsSettings: _*)
   .jsSettings(testServerSettings(Test))
   .settings(
     name := "monix",
@@ -215,7 +221,7 @@ lazy val monixJS = monix.js.dependsOn(coreJS % "compile->compile;test->test")
 lazy val monixJVM = monix.jvm.dependsOn(coreJVM % "compile->compile;test->test")
 
 lazy val scalaz: Project = (project in file("implementations/scalaz"))
-  .settings(commonSettings: _*)
+  .settings(commonJvmSettings: _*)
   .settings(
     name := "scalaz",
     publishArtifact in Test := true,
@@ -226,7 +232,7 @@ lazy val scalaz: Project = (project in file("implementations/scalaz"))
 //----- backends
 //-- akka
 lazy val akkaHttpBackend: Project = (project in file("akka-http-backend"))
-  .settings(commonSettings: _*)
+  .settings(commonJvmSettings: _*)
   .settings(
     name := "akka-http-backend",
     libraryDependencies ++= Seq(
@@ -241,7 +247,7 @@ lazy val akkaHttpBackend: Project = (project in file("akka-http-backend"))
 //-- async http client
 lazy val asyncHttpClientBackend: Project =
   (project in file("async-http-client-backend"))
-    .settings(commonSettings: _*)
+    .settings(commonJvmSettings: _*)
     .settings(
       name := "async-http-client-backend",
       libraryDependencies ++= Seq(
@@ -252,7 +258,7 @@ lazy val asyncHttpClientBackend: Project =
 
 def asyncHttpClientBackendProject(proj: String): Project = {
   Project(s"asyncHttpClientBackend${proj.capitalize}", file(s"async-http-client-backend/$proj"))
-    .settings(commonSettings: _*)
+    .settings(commonJvmSettings: _*)
     .settings(name := s"async-http-client-backend-$proj")
     .dependsOn(asyncHttpClientBackend)
 }
@@ -284,7 +290,7 @@ lazy val asyncHttpClientFs2Backend: Project =
 
 //-- okhttp
 lazy val okhttpBackend: Project = (project in file("okhttp-backend"))
-  .settings(commonSettings: _*)
+  .settings(commonJvmSettings: _*)
   .settings(
     name := "okhttp-backend",
     libraryDependencies ++= Seq(
@@ -295,7 +301,7 @@ lazy val okhttpBackend: Project = (project in file("okhttp-backend"))
 
 def okhttpBackendProject(proj: String): Project = {
   Project(s"okhttpBackend${proj.capitalize}", file(s"okhttp-backend/$proj"))
-    .settings(commonSettings: _*)
+    .settings(commonJvmSettings: _*)
     .settings(name := s"okhttp-backend-$proj")
     .dependsOn(okhttpBackend)
 }
@@ -311,8 +317,8 @@ lazy val circe = crossProject(JSPlatform, JVMPlatform)
   .withoutSuffixFor(JVMPlatform)
   .crossType(CrossType.Pure)
   .in(file("json/circe"))
-  .settings(commonSettings: _*)
-  .jsSettings(commonJSSettings: _*)
+  .jvmSettings(commonJvmSettings: _*)
+  .jsSettings(commonJsSettings: _*)
   .settings(
     name := "circe",
     libraryDependencies ++= Seq(
@@ -325,7 +331,7 @@ lazy val circeJS = circe.js.dependsOn(coreJS)
 lazy val circeJVM = circe.jvm.dependsOn(coreJVM)
 
 lazy val json4s: Project = (project in file("json/json4s"))
-  .settings(commonSettings: _*)
+  .settings(commonJvmSettings: _*)
   .settings(
     name := "json4s",
     libraryDependencies ++= Seq(
@@ -338,7 +344,7 @@ lazy val json4s: Project = (project in file("json/json4s"))
 lazy val braveVersion = "5.1.2"
 
 lazy val braveBackend: Project = (project in file("metrics/brave-backend"))
-  .settings(commonSettings: _*)
+  .settings(commonJvmSettings: _*)
   .settings(
     name := "brave-backend",
     libraryDependencies ++= Seq(
@@ -351,7 +357,7 @@ lazy val braveBackend: Project = (project in file("metrics/brave-backend"))
   .dependsOn(coreJVM)
 
 lazy val prometheusBackend: Project = (project in file("metrics/prometheus-backend"))
-  .settings(commonSettings: _*)
+  .settings(commonJvmSettings: _*)
   .settings(
     name := "prometheus-backend",
     libraryDependencies ++= Seq(

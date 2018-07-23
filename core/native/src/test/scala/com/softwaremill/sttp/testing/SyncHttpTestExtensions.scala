@@ -19,33 +19,33 @@ trait SyncHttpTestExtensions {
 
     "keep a single history entry of redirect responses" in {
       val resp = r3.send()
-        resp.code should be(200)
-        resp.unsafeBody should be(r4response)
-        resp.history should have size (1)
-        resp.history(0).code should be(302)
+      resp.code should be(200)
+      resp.unsafeBody should be(r4response)
+      resp.history should have size (1)
+      resp.history(0).code should be(302)
     }
 
     "keep whole history of redirect responses" in {
       val resp = r1.send()
-        resp.code should be(200)
-        resp.unsafeBody should be(r4response)
-        resp.history should have size (3)
-        resp.history(0).code should be(307)
-        resp.history(1).code should be(308)
-        resp.history(2).code should be(302)
+      resp.code should be(200)
+      resp.unsafeBody should be(r4response)
+      resp.history should have size (3)
+      resp.history(0).code should be(307)
+      resp.history(1).code should be(308)
+      resp.history(2).code should be(302)
     }
 
     "break redirect loops" in {
       val resp = loop.send()
-        resp.code should be(0)
-        resp.history should have size (FollowRedirectsBackend.MaxRedirects.toLong)
+      resp.code should be(0)
+      resp.history should have size (FollowRedirectsBackend.MaxRedirects.toLong)
     }
 
     "break redirect loops after user-specified count" in {
       val maxRedirects = 10
       val resp = loop.maxRedirects(maxRedirects).send()
-        resp.code should be(0)
-        resp.history should have size (maxRedirects.toLong)
+      resp.code should be(0)
+      resp.history should have size (maxRedirects.toLong)
     }
   }
 
@@ -114,7 +114,7 @@ trait SyncHttpTestExtensions {
     "fail when file exists and overwrite flag is false" in {
       withTemporaryFile(Some(testBodyBytes)) { file =>
         val req = sttp.get(uri"$endpoint/download/text").response(asFile(file))
-        
+
         try {
           req.send()
           fail("IOException should be thrown")
@@ -130,7 +130,7 @@ trait SyncHttpTestExtensions {
           .get(uri"$endpoint/download/text")
           .response(asFile(file, overwrite = true))
         val resp = req.send()
-          md5FileHash(resp.unsafeBody).map { _ shouldBe textFileMD5Hash }
+        md5FileHash(resp.unsafeBody).map { _ shouldBe textFileMD5Hash }
       }
     }
   }
