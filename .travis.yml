@@ -15,6 +15,7 @@ cache:
 before_install:
   - sudo apt-get update
   - sudo apt-get install -y libunwind8-dev
+  - sudo apt-get install -y libre2-dev
 before_script:
 - nvm install 10 # nodejs < 10 fails finding URL class
 - version=$(curl -s https://chromedriver.storage.googleapis.com/LATEST_RELEASE) &&
@@ -22,6 +23,8 @@ before_script:
 - mkdir -p chromedriver && unzip chromedriver_linux64.zip -d chromedriver/
 - export PATH="$PATH:$PWD/chromedriver/"
 script:
-- sbt ++$TRAVIS_SCALA_VERSION rootJVM/test &&
-    xvfb-run sbt ++$TRAVIS_SCALA_VERSION rootJS/test &&
-    sbt rootNative/test
+- sbt rootNative/test
+
+# sbt ++$TRAVIS_SCALA_VERSION rootJVM/test &&
+#      xvfb-run sbt ++$TRAVIS_SCALA_VERSION rootJS/test &&
+
