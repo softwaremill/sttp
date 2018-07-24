@@ -143,10 +143,10 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean)
 
   private def responseSpace: CurlSpaces = {
     val bodyResp = malloc(sizeof[CurlFetch]).cast[Ptr[CurlFetch]]
-    !bodyResp._1 = malloc(4096).cast[CString]
+    !bodyResp._1 = calloc(4096, sizeof[CChar]).cast[CString]
     !bodyResp._2 = 0
     val headersResp = malloc(sizeof[CurlFetch]).cast[Ptr[CurlFetch]]
-    !headersResp._1 = malloc(4096).cast[CString]
+    !headersResp._1 = calloc(4096, sizeof[CChar]).cast[CString]
     !headersResp._2 = 0
     val httpCode = malloc(sizeof[Long]).cast[Ptr[Long]]
     new CurlSpaces(bodyResp, headersResp, httpCode)
