@@ -20,4 +20,5 @@ before_script:
 - export PATH="$PATH:$PWD/chromedriver/"
 script:
 - sbt ++$TRAVIS_SCALA_VERSION rootJVM/test &&
-    xvfb-run sbt ++$TRAVIS_SCALA_VERSION rootJS/test
+    xvfb-run sbt ++$TRAVIS_SCALA_VERSION rootJS/test &&
+    sbt rootNative/test
