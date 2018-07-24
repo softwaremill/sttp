@@ -13,9 +13,7 @@ cache:
     - "$HOME/.ivy2/cache"
     - "$HOME/.sbt/boot"
 before_install:
-  - sudo apt-get update
-  - sudo apt-get install -y libunwind8-dev
-  - sudo apt-get install -y libre2-dev
+  - bash project/travis_setup.sh
 before_script:
 - nvm install 10 # nodejs < 10 fails finding URL class
 - version=$(curl -s https://chromedriver.storage.googleapis.com/LATEST_RELEASE) &&
