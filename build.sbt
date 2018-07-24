@@ -24,7 +24,7 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
     updateVersionInDocs(organization.value),
     commitReleaseVersion,
     tagRelease,
-    releaseStepCommandAndRemaining("+publish"),
+    releaseStepCommandAndRemaining("+publishSigned"),
     setNextVersion,
     commitNextVersion,
     releaseStepCommand("sonatypeReleaseAll"),
