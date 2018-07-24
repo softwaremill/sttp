@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# From https://github.com/scala-native/scala-native/blob/master/scripts/travis_setup.sh
+# From https://github.com/scala-native/scala-native/blob/master/scripts/travis_setup.sh + install curl
 
 # Enable strict mode and fail the script on non-zero exit code,
 # unresolved variable or pipe failure.
@@ -30,7 +30,7 @@ else
     export CXX=clang++
 
     # Install Boehm GC and libunwind
-    sudo apt-get install libgc-dev libunwind8-dev
+    sudo apt-get install libgc-dev libunwind8-dev curl
 
     # Build and install re2 from source
     git clone https://code.googlesource.com/re2
