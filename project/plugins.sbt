@@ -6,4 +6,4 @@ addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.24")
 addSbtPlugin("org.portable-scala" % "sbt-scala-native-crossproject" % "0.5.0")
 addSbtPlugin("org.scala-native" % "sbt-scala-native" % "0.3.8")
 
-addSbtPlugin("com.softwaremill.sbt-softwaremill" % "sbt-softwaremill" % "1.3.5")
+addSbtPlugin("com.softwaremill.sbt-softwaremill" % "sbt-softwaremill" % "1.3.6")

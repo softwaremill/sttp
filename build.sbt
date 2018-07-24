@@ -2,6 +2,7 @@
 import sbtcrossproject.{CrossType, crossProject}
 import sbtrelease.ReleaseStateTransformations._
 import sbtrelease.ReleasePlugin.autoImport._
+import com.softwaremill.Publish.Release.updateVersionInDocs
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on (used by JS tests)")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests (used by JS tests)")
@@ -9,7 +10,8 @@ lazy val startTestServer = taskKey[Unit]("Start a http server used by tests (use
 val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   organization := "com.softwaremill.sttp",
   scalafmtOnCompile := true,
-  // https://github.com/sbt/sbt-release/issues/214
+  // cross-release doesn't work when subprojects have different cross versions
+  // work-around from https://github.com/sbt/sbt-release/issues/214
   releaseProcess := Seq(
     checkSnapshotDependencies,
     inquireVersions,
@@ -19,7 +21,7 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
     releaseStepCommandAndRemaining("+clean"),
     releaseStepCommandAndRemaining("+test"),
     setReleaseVersion,
-    releaseProcess.value.apply(6), // updateVersionInDocs
+    updateVersionInDocs(organization.value),
     commitReleaseVersion,
     tagRelease,
     releaseStepCommandAndRemaining("+publish"),
@@ -32,7 +34,7 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
 
 val commonJvmJsSettings = commonSettings ++ Seq(
   scalaVersion := "2.12.6",
-  crossScalaVersions := Seq(scalaVersion.value, "2.11.12"),
+  crossScalaVersions := Seq(scalaVersion.value, "2.11.12")
 )
 
 val commonJvmSettings = commonJvmJsSettings
@@ -118,7 +120,7 @@ lazy val rootProjectAggregates: Seq[ProjectReference] = if (sys.env.isDefinedAt(
 
 lazy val rootProject = (project in file("."))
   .settings(commonSettings: _*)
-  // setting version to 2.11 so that cross-releasing works
+  // setting version to 2.11 so that cross-releasing works. It's the only version supported by all modules.
   .settings(skip in publish := true, name := "sttp", scalaVersion := "2.11.12")
   .aggregate(rootProjectAggregates: _*)
 
