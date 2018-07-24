@@ -41,4 +41,25 @@ else
     make testinstall prefix=/usr
     popd
 
+    ## CURL
+
+    # Get latest (as of Jul 24, 2018) libcurl
+    mkdir ~/curl
+    cd ~/curl
+    wget http://curl.haxx.se/download/curl-7.61.0.tar.bz2
+    tar -xvjf curl-7.61.0.tar.bz2
+    cd curl-7.61.0
+
+    # The usual steps for building an app from source
+    # ./configure
+    # ./make
+    # sudo make install
+    ./configure
+    make
+    sudo make install
+
+    # Resolve any issues of C-level lib
+    # location caches ("shared library cache")
+    sudo ldconfig
+
 fi
