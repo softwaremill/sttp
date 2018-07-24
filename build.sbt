@@ -1,12 +1,33 @@
 // shadow sbt-scalajs' crossProject and CrossType until Scala.js 1.0.0 is released
 import sbtcrossproject.{CrossType, crossProject}
+import sbtrelease.ReleaseStateTransformations._
+import sbtrelease.ReleasePlugin.autoImport._
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on (used by JS tests)")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests (used by JS tests)")
 
 val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   organization := "com.softwaremill.sttp",
-  scalafmtOnCompile := true
+  scalafmtOnCompile := true,
+  // https://github.com/sbt/sbt-release/issues/214
+  releaseProcess := Seq(
+    checkSnapshotDependencies,
+    inquireVersions,
+    // publishing locally so that the pgp password prompt is displayed early
+    // in the process
+    releaseStepCommandAndRemaining("+publishLocalSigned"),
+    releaseStepCommandAndRemaining("+clean"),
+    releaseStepCommandAndRemaining("+test"),
+    setReleaseVersion,
+    releaseProcess.value.apply(6), // updateVersionInDocs
+    commitReleaseVersion,
+    tagRelease,
+    releaseStepCommandAndRemaining("+publish"),
+    setNextVersion,
+    commitNextVersion,
+    releaseStepCommand("sonatypeReleaseAll"),
+    pushChanges
+  )
 )
 
 val commonJvmJsSettings = commonSettings ++ Seq(
@@ -98,7 +119,7 @@ lazy val rootProjectAggregates: Seq[ProjectReference] = if (sys.env.isDefinedAt(
 lazy val rootProject = (project in file("."))
   .settings(commonSettings: _*)
   // setting version to 2.11 so that cross-releasing works
-  .settings(skip in publish := true, name := "sttp", scalaVersion := "2.11.12", crossScalaVersions := Seq(scalaVersion.value, "2.12.6"))
+  .settings(skip in publish := true, name := "sttp", scalaVersion := "2.11.12")
   .aggregate(rootProjectAggregates: _*)
 
 lazy val rootJVM = project
