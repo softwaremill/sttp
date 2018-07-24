@@ -21,8 +21,6 @@ before_script:
 - mkdir -p chromedriver && unzip chromedriver_linux64.zip -d chromedriver/
 - export PATH="$PATH:$PWD/chromedriver/"
 script:
-- sbt rootNative/test
-
-# sbt ++$TRAVIS_SCALA_VERSION rootJVM/test &&
-#      xvfb-run sbt ++$TRAVIS_SCALA_VERSION rootJS/test &&
-
+- sbt ++$TRAVIS_SCALA_VERSION rootJVM/test &&
+    xvfb-run sbt ++$TRAVIS_SCALA_VERSION rootJS/test &&
+    sbt rootNative/test
