@@ -40,7 +40,7 @@ and its [follow-up](https://softwaremill.com/sttp-streaming-uri-interpolator/).
 If you are an [Ammonite](http://ammonite.io) user, you can quickly start experimenting with sttp by copy-pasting the following:
 
 ```scala
-import $ivy.`com.softwaremill.sttp::core:1.3.0-RC2`
+import $ivy.`com.softwaremill.sttp::core:1.3.0-RC3`
 import com.softwaremill.sttp.quick._
 sttp.get(uri"http://httpbin.org/ip").send()
 ```
@@ -52,7 +52,7 @@ This brings in the sttp API and an implicit, synchronous backend.
 Add the following dependency:
 
 ```scala
-"com.softwaremill.sttp" %% "core" % "1.3.0-RC2"
+"com.softwaremill.sttp" %% "core" % "1.3.0-RC3"
 ```
 
 Then, import:
