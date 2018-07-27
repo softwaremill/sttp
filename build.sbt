@@ -145,6 +145,7 @@ lazy val rootJVM = project
     okhttpMonixBackend,
     circeJVM,
     json4s,
+    sprayJson,
     braveBackend,
     prometheusBackend
   )
@@ -360,6 +361,17 @@ lazy val json4s: Project = (project in file("json/json4s"))
     name := "json4s",
     libraryDependencies ++= Seq(
       "org.json4s" %% "json4s-native" % "3.5.4",
+      "org.scalatest" %% "scalatest" % scalaTestVersion % "test"
+    )
+  )
+  .dependsOn(coreJVM)
+
+lazy val sprayJson: Project = (project in file("json/spray-json"))
+  .settings(commonJvmSettings: _*)
+  .settings(
+    name := "spray-json",
+    libraryDependencies ++= Seq(
+      "io.spray" %% "spray-json" % "1.3.4",
       "org.scalatest" %% "scalatest" % scalaTestVersion % "test"
     )
   )

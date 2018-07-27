@@ -58,3 +58,38 @@ Usage example::
       .response(asJson[MyResponse])
       .send()
  
+spray-json
+----------
+
+To encode and decode JSON using `spray-json <https://github.com/spray/spray-json>`_, add the following dependency to your project::
+
+  "com.softwaremill.sttp" %% "spray-json" % "1.3.0-RC2"
+
+Using this module it is possible to set request bodies and read response bodies as your custom types, using the implicitly available instances of ``spray.json.JsonWriter`` / ``spray.json.JsonReader`` or ``spray.json.JsonFormat``.
+
+Usage example::
+
+  import com.softwaremill.sttp._
+  import com.softwaremill.sttp.sprayJson._
+  import spray.json._
+
+  implicit val backend = HttpURLConnectionBackend()
+
+  case class Payload(...)
+  object Payload {
+    implicit val jsonFormat: RootJsonFormat[Payload] = ...
+  }
+
+  case class MyResponse(...)
+  object MyResponse {
+    implicit val jsonFormat: RootJsonFormat[MyResponse] = ...
+  }
+
+  val requestPayload: Payload = Payload(...)
+
+  val response: Response[MyResponse] =
+    sttp
+      .post(uri"...")
+      .body(requestPayload)
+      .response(asJson[MyResponse])
+      .send()
