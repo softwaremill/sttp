@@ -27,7 +27,9 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean)
 
   override def send[T](request: Request[T, S]): R[Response[T]] = native.Zone { implicit z =>
     val curl = CurlApi.init
-    curl.option(Verbose, verbose)
+    if (verbose) {
+      curl.option(Verbose, true)
+    }
     if (request.tags.nonEmpty) {
       responseMonad.error(new UnsupportedOperationException("Tags are not supported"))
     }
