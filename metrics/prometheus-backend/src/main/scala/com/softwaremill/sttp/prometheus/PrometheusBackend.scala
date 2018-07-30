@@ -3,29 +3,32 @@ package com.softwaremill.sttp.prometheus
 import java.util.concurrent.ConcurrentHashMap
 
 import com.softwaremill.sttp.{FollowRedirectsBackend, MonadError, Request, Response, SttpBackend}
-import io.prometheus.client.{CollectorRegistry, Gauge, Histogram}
+import io.prometheus.client.{CollectorRegistry, Counter, Gauge, Histogram}
 
 import scala.collection.mutable
 import scala.language.higherKinds
-import scala.collection.JavaConverters._
 
 class PrometheusBackend[R[_], S] private (delegate: SttpBackend[R, S],
                                           requestToHistogramNameMapper: Request[_, S] => Option[String],
                                           requestToInProgressGaugeNameMapper: Request[_, S] => Option[String],
+                                          requestToSuccessCounterMapper: Request[_, S] => Option[String],
+                                          requestToErrorCounterMapper: Request[_, S] => Option[String],
+                                          requestToFailureCounterMapper: Request[_, S] => Option[String],
                                           collectorRegistry: CollectorRegistry,
-                                          histogramsCache: mutable.Map[String, Histogram],
-                                          gaugesCache: mutable.Map[String, Gauge])
+                                          histogramsCache: ConcurrentHashMap[String, Histogram],
+                                          gaugesCache: ConcurrentHashMap[String, Gauge],
+                                          countersCache: ConcurrentHashMap[String, Counter])
     extends SttpBackend[R, S] {
 
   override def send[T](request: Request[T, S]): R[Response[T]] = {
     val requestTimer: Option[Histogram.Timer] = for {
       histogramName: String <- requestToHistogramNameMapper(request)
-      histogram: Histogram = histogramsCache.getOrElseUpdate(histogramName, createNewHistogram(histogramName))
+      histogram: Histogram = getOrCreateMetric(histogramsCache, histogramName, createNewHistogram)
     } yield histogram.startTimer()
 
     val gauge: Option[Gauge] = for {
       gaugeName: String <- requestToInProgressGaugeNameMapper(request)
-    } yield gaugesCache.getOrElseUpdate(gaugeName, createNewGauge(gaugeName))
+    } yield getOrCreateMetric(gaugesCache, gaugeName, createNewGauge)
 
     gauge.foreach(_.inc())
 
@@ -33,12 +36,20 @@ class PrometheusBackend[R[_], S] private (delegate: SttpBackend[R, S],
       responseMonad.map(delegate.send(request)) { response =>
         requestTimer.foreach(_.observeDuration())
         gauge.foreach(_.dec())
+
+        if (response.isSuccess) {
+          incCounterIfMapped(request, requestToSuccessCounterMapper)
+        } else {
+          incCounterIfMapped(request, requestToErrorCounterMapper)
+        }
+
         response
       }
     ) {
       case e: Exception =>
         requestTimer.foreach(_.observeDuration())
         gauge.foreach(_.dec())
+        incCounterIfMapped(request, requestToFailureCounterMapper)
         responseMonad.error(e)
     }
   }
@@ -47,23 +58,43 @@ class PrometheusBackend[R[_], S] private (delegate: SttpBackend[R, S],
 
   override def responseMonad: MonadError[R] = delegate.responseMonad
 
-  private[this] def createNewHistogram(name: String): Histogram =
+  private def incCounterIfMapped[T](request: Request[T, S], mapper: Request[_, S] => Option[String]): Unit =
+    mapper(request).foreach { name =>
+      getOrCreateMetric(countersCache, name, createNewCounter).inc()
+    }
+
+  private def getOrCreateMetric[T](cache: ConcurrentHashMap[String, T], name: String, create: String => T): T =
+    cache.computeIfAbsent(name, (t: String) => create(t))
+
+  private def createNewHistogram(name: String): Histogram =
     Histogram.build().name(name).help(name).register(collectorRegistry)
 
-  private[this] def createNewGauge(name: String): Gauge =
+  private def createNewGauge(name: String): Gauge =
     Gauge.build().name(name).help(name).register(collectorRegistry)
+
+  private def createNewCounter(name: String): Counter =
+    Counter.build().name(name).help(name).register(collectorRegistry)
 }
 
 object PrometheusBackend {
 
   val DefaultHistogramName = "sttp_request_latency"
   val DefaultRequestsInProgressGaugeName = "sttp_requests_in_progress"
+  val DefaultSuccessCounterName = "sttp_requests_success_count"
+  val DefaultErrorCounterName = "sttp_requests_error_count"
+  val DefaultFailureCounterName = "sttp_requests_failure_count"
 
   def apply[R[_], S](delegate: SttpBackend[R, S],
                      requestToHistogramNameMapper: Request[_, S] => Option[String] = (_: Request[_, S]) =>
                        Some(DefaultHistogramName),
                      requestToInProgressGaugeNameMapper: Request[_, S] => Option[String] = (_: Request[_, S]) =>
                        Some(DefaultRequestsInProgressGaugeName),
+                     requestToSuccessCounterMapper: Request[_, S] => Option[String] = (_: Request[_, S]) =>
+                       Some(DefaultSuccessCounterName),
+                     requestToErrorCounterMapper: Request[_, S] => Option[String] = (_: Request[_, S]) =>
+                       Some(DefaultErrorCounterName),
+                     requestToFailureCounterMapper: Request[_, S] => Option[String] = (_: Request[_, S]) =>
+                       Some(DefaultFailureCounterName),
                      collectorRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry): SttpBackend[R, S] = {
     // redirects should be handled before prometheus
     new FollowRedirectsBackend(
@@ -71,9 +102,13 @@ object PrometheusBackend {
         delegate,
         requestToHistogramNameMapper,
         requestToInProgressGaugeNameMapper,
+        requestToSuccessCounterMapper,
+        requestToErrorCounterMapper,
+        requestToFailureCounterMapper,
         collectorRegistry,
-        histogramsCacheFor(collectorRegistry),
-        gaugesCacheFor(collectorRegistry)
+        cacheFor(histograms, collectorRegistry),
+        cacheFor(gauges, collectorRegistry),
+        cacheFor(counters, collectorRegistry)
       ))
   }
 
@@ -84,6 +119,7 @@ object PrometheusBackend {
     collectorRegistry.clear()
     histograms.remove(collectorRegistry)
     gauges.remove(collectorRegistry)
+    counters.remove(collectorRegistry)
   }
 
   /*
@@ -92,15 +128,13 @@ object PrometheusBackend {
   Hence, we need to store a global cache o created histograms/gauges, so that we can properly re-use them.
    */
 
-  private val histograms = new mutable.WeakHashMap[CollectorRegistry, mutable.Map[String, Histogram]]
-  private val gauges = new mutable.WeakHashMap[CollectorRegistry, mutable.Map[String, Gauge]]
+  private val histograms = new mutable.WeakHashMap[CollectorRegistry, ConcurrentHashMap[String, Histogram]]
+  private val gauges = new mutable.WeakHashMap[CollectorRegistry, ConcurrentHashMap[String, Gauge]]
+  private val counters = new mutable.WeakHashMap[CollectorRegistry, ConcurrentHashMap[String, Counter]]
 
-  private def histogramsCacheFor(collectorRegistry: CollectorRegistry): mutable.Map[String, Histogram] =
-    histograms.synchronized {
-      histograms.getOrElseUpdate(collectorRegistry, new ConcurrentHashMap[String, Histogram]().asScala)
+  private def cacheFor[T](cache: mutable.WeakHashMap[CollectorRegistry, ConcurrentHashMap[String, T]],
+                          collectorRegistry: CollectorRegistry): ConcurrentHashMap[String, T] =
+    cache.synchronized {
+      cache.getOrElseUpdate(collectorRegistry, new ConcurrentHashMap[String, T]())
     }
-
-  private def gaugesCacheFor(collectorRegistry: CollectorRegistry): mutable.Map[String, Gauge] = gauges.synchronized {
-    gauges.getOrElseUpdate(collectorRegistry, new ConcurrentHashMap[String, Gauge]().asScala)
-  }
 }

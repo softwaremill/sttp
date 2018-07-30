@@ -155,6 +155,22 @@ class PrometheusBackendTest extends FlatSpec with Matchers with BeforeAndAfter w
     }
   }
 
+  it should "use default counter name" in {
+    // given
+    val backendStub1 = SttpBackendStub.synchronous.whenAnyRequest.thenRespondOk()
+    val backendStub2 = SttpBackendStub.synchronous.whenAnyRequest.thenRespondNotFound()
+    val backend1 = PrometheusBackend[Id, Nothing](backendStub1)
+    val backend2 = PrometheusBackend[Id, Nothing](backendStub2)
+
+    // when
+    (0 until 10).foreach(_ => backend1.send(sttp.get(uri"http://127.0.0.1/foo")))
+    (0 until 5).foreach(_ => backend2.send(sttp.get(uri"http://127.0.0.1/foo")))
+
+    // then
+    getMetricVale(PrometheusBackend.DefaultSuccessCounterName).value shouldBe 10
+    getMetricVale(PrometheusBackend.DefaultErrorCounterName).value shouldBe 5
+  }
+
   private[this] def getMetricVale(name: String): Option[lang.Double] =
     Option(CollectorRegistry.defaultRegistry.getSampleValue(name))
 
