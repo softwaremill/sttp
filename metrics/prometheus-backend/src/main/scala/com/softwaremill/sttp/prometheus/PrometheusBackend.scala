@@ -64,7 +64,9 @@ class PrometheusBackend[R[_], S] private (delegate: SttpBackend[R, S],
     }
 
   private def getOrCreateMetric[T](cache: ConcurrentHashMap[String, T], name: String, create: String => T): T =
-    cache.computeIfAbsent(name, (t: String) => create(t))
+    cache.computeIfAbsent(name, new java.util.function.Function[String, T] {
+      override def apply(t: String): T = create(t)
+    })
 
   private def createNewHistogram(name: String): Histogram =
     Histogram.build().name(name).help(name).register(collectorRegistry)
