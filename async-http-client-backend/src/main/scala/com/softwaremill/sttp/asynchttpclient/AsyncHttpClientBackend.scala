@@ -10,9 +10,21 @@ import io.netty.buffer.ByteBuf
 import io.netty.handler.codec.http.HttpHeaders
 import org.asynchttpclient.AsyncHandler.State
 import org.asynchttpclient.handler.StreamedAsyncHandler
-import org.asynchttpclient.proxy.{ProxyServer, ProxyServerSelector}
+import org.asynchttpclient.proxy.ProxyServer
 import org.asynchttpclient.request.body.multipart.{ByteArrayPart, FilePart, StringPart}
-import org.asynchttpclient.{AsyncCompletionHandler, AsyncHandler, AsyncHttpClient, DefaultAsyncHttpClient, DefaultAsyncHttpClientConfig, HttpResponseBodyPart, HttpResponseStatus, Param, RequestBuilder, uri, Request => AsyncRequest, Response => AsyncResponse}
+import org.asynchttpclient.{
+  AsyncCompletionHandler,
+  AsyncHandler,
+  AsyncHttpClient,
+  DefaultAsyncHttpClient,
+  DefaultAsyncHttpClientConfig,
+  HttpResponseBodyPart,
+  HttpResponseStatus,
+  Param,
+  RequestBuilder,
+  Request => AsyncRequest,
+  Response => AsyncResponse
+}
 import org.reactivestreams.{Publisher, Subscriber, Subscription}
 
 import scala.collection.JavaConverters._
@@ -30,11 +42,10 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
 
     rm.flatten(rm.async[R[Response[T]]] { cb =>
       def success(r: R[Response[T]]): Unit = cb(Right(r))
-
       def error(t: Throwable): Unit = cb(Left(t))
 
       r.response match {
-        case ras@ResponseAsStream() =>
+        case ras @ ResponseAsStream() =>
           preparedRequest
             .execute(streamingAsyncHandler(ras, success, error))
 
@@ -79,12 +90,9 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
           override def subscribe(s: Subscriber[_ >: ByteBuffer]): Unit =
             p.subscribe(new Subscriber[HttpResponseBodyPart] {
               override def onError(t: Throwable): Unit = s.onError(t)
-
               override def onComplete(): Unit = s.onComplete()
-
               override def onNext(t: HttpResponseBodyPart): Unit =
                 s.onNext(t.getBodyByteBuffer)
-
               override def onSubscribe(v: Subscription): Unit =
                 s.onSubscribe(v)
             })
