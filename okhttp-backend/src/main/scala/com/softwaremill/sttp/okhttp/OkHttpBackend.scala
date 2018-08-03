@@ -149,7 +149,7 @@ object OkHttpBackend {
 
     clientBuilder = options.proxy match {
       case None    => clientBuilder
-      case Some(p) => clientBuilder.proxy(p.asJava)
+      case Some(p) => clientBuilder.proxySelector(p.asJavaProxySelector)
     }
 
     clientBuilder.build()

@@ -10,21 +10,9 @@ import io.netty.buffer.ByteBuf
 import io.netty.handler.codec.http.HttpHeaders
 import org.asynchttpclient.AsyncHandler.State
 import org.asynchttpclient.handler.StreamedAsyncHandler
-import org.asynchttpclient.proxy.ProxyServer
+import org.asynchttpclient.proxy.{ProxyServer, ProxyServerSelector}
 import org.asynchttpclient.request.body.multipart.{ByteArrayPart, FilePart, StringPart}
-import org.asynchttpclient.{
-  AsyncCompletionHandler,
-  AsyncHandler,
-  AsyncHttpClient,
-  DefaultAsyncHttpClient,
-  DefaultAsyncHttpClientConfig,
-  HttpResponseBodyPart,
-  HttpResponseStatus,
-  Param,
-  RequestBuilder,
-  Request => AsyncRequest,
-  Response => AsyncResponse
-}
+import org.asynchttpclient.{AsyncCompletionHandler, AsyncHandler, AsyncHttpClient, DefaultAsyncHttpClient, DefaultAsyncHttpClientConfig, HttpResponseBodyPart, HttpResponseStatus, Param, RequestBuilder, uri, Request => AsyncRequest, Response => AsyncResponse}
 import org.reactivestreams.{Publisher, Subscriber, Subscription}
 
 import scala.collection.JavaConverters._
@@ -34,7 +22,7 @@ import scala.util.{Failure, Try}
 abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
                                                rm: MonadAsyncError[R],
                                                closeClient: Boolean)
-    extends SttpBackend[R, S] {
+  extends SttpBackend[R, S] {
 
   override def send[T](r: Request[T, S]): R[Response[T]] = {
     val preparedRequest = asyncHttpClient
@@ -42,10 +30,11 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
 
     rm.flatten(rm.async[R[Response[T]]] { cb =>
       def success(r: R[Response[T]]): Unit = cb(Right(r))
+
       def error(t: Throwable): Unit = cb(Left(t))
 
       r.response match {
-        case ras @ ResponseAsStream() =>
+        case ras@ResponseAsStream() =>
           preparedRequest
             .execute(streamingAsyncHandler(ras, success, error))
 
@@ -90,9 +79,12 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
           override def subscribe(s: Subscriber[_ >: ByteBuffer]): Unit =
             p.subscribe(new Subscriber[HttpResponseBodyPart] {
               override def onError(t: Throwable): Unit = s.onError(t)
+
               override def onComplete(): Unit = s.onComplete()
+
               override def onNext(t: HttpResponseBodyPart): Unit =
                 s.onNext(t.getBodyByteBuffer)
+
               override def onSubscribe(v: Subscription): Unit =
                 s.onSubscribe(v)
             })
@@ -234,14 +226,14 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
 
   private def readResponseNoBody(response: AsyncResponse): Response[Unit] = {
     Response(Right(()),
-             response.getStatusCode,
-             response.getStatusText,
-             response.getHeaders
-               .iteratorAsString()
-               .asScala
-               .map(e => (e.getKey, e.getValue))
-               .toList,
-             Nil)
+      response.getStatusCode,
+      response.getStatusText,
+      response.getHeaders
+        .iteratorAsString()
+        .asScala
+        .map(e => (e.getKey, e.getValue))
+        .toList,
+      Nil)
   }
 
   private def eagerResponseHandler(response: AsyncResponse) =
@@ -289,7 +281,7 @@ object AsyncHttpClientBackend {
     configBuilder = options.proxy match {
       case None => configBuilder
       case Some(p) =>
-        configBuilder.setProxyServer(new ProxyServer.Builder(p.host, p.port).build())
+        configBuilder.setProxyServer(new ProxyServer.Builder(p.host, p.port).setNonProxyHosts(p.nonProxyHosts.asJava).build())
     }
 
     new DefaultAsyncHttpClient(configBuilder.build())
