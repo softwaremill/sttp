@@ -33,7 +33,8 @@ class CirceTests extends FlatSpec with Matchers with EitherValues {
 
     val responseAs = asJson[Outer]
 
-    runJsonResponseAs(responseAs)(body).left.value shouldBe an[io.circe.Error]
+    val result = runJsonResponseAs(responseAs)(body).left.value
+    result.original shouldBe body
   }
 
   it should "encode and decode back to the same thing" in {

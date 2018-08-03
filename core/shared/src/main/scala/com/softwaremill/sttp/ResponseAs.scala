@@ -67,3 +67,5 @@ object ResponseAs {
     }
   }
 }
+
+case class DeserializationError[T](original: String, error: T, message: String)
