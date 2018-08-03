@@ -77,8 +77,8 @@ object SttpBackendOptions {
     def system(hostProp: String, portProp: String, nonProxyHostsPropOption: Option[String], make: (String, Int, List[String]) => Proxy, defaultPort: Int) = {
       val host = Option(System.getProperty(hostProp))
       def port = Try(System.getProperty(portProp).toInt).getOrElse(defaultPort)
-      def nonProxyHosts = nonProxyHostsPropOption
-        .flatMap(nonProxyHostsProp => Try(System.getProperty(nonProxyHostsProp).split("|")).toOption)
+      def nonProxyHosts: List[String] = nonProxyHostsPropOption
+        .flatMap(nonProxyHostsProp => Try(System.getProperty(nonProxyHostsProp).split("|").toList).toOption)
         .getOrElse(Nil)
       host.map(make(_, port, nonProxyHosts))
     }
