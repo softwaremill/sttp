@@ -1,6 +1,8 @@
 package com.softwaremill.sttp
 
-import java.net.InetSocketAddress
+import java.io.IOException
+import java.net.{InetSocketAddress, SocketAddress, URI}
+import java.{net, util}
 
 import com.softwaremill.sttp.SttpBackendOptions._
 
@@ -21,8 +23,24 @@ case class SttpBackendOptions(
 }
 
 object SttpBackendOptions {
-  case class Proxy(host: String, port: Int, proxyType: ProxyType) {
-    def asJava = new java.net.Proxy(proxyType.asJava, inetSocketAddress)
+  case class Proxy(host: String, port: Int, proxyType: ProxyType, nonProxyHosts: List[String] = Nil) {
+    def asJavaProxySelector: net.ProxySelector = new net.ProxySelector {
+      override def select(uri: URI): util.List[net.Proxy] = {
+        val proxyList = new util.ArrayList[net.Proxy](1)
+        val uriHost = uri.getHost
+        if (uriHost.startsWith("127.0.0.1") || nonProxyHosts.forall(uriHost.startsWith)) {
+          proxyList.add(net.Proxy.NO_PROXY)
+        } else {
+          proxyList.add(asJavaProxy)
+        }
+        proxyList
+      }
+
+      override def connectFailed(uri: URI, sa: SocketAddress, ioe: IOException): Unit = {
+        throw new UnsupportedOperationException("Couldn't connect to the proxy server.")
+      }
+    }
+    def asJavaProxy = new java.net.Proxy(proxyType.asJava, inetSocketAddress)
     def inetSocketAddress: InetSocketAddress =
       InetSocketAddress.createUnresolved(host, port)
   }
@@ -56,18 +74,21 @@ object SttpBackendOptions {
     Empty.socksProxy(host, port)
 
   private def loadSystemProxy: Option[Proxy] = {
-    def system(hostProp: String, portProp: String, make: (String, Int) => Proxy, defaultPort: Int) = {
+    def system(hostProp: String, portProp: String, nonProxyHostsPropOption: Option[String], make: (String, Int, List[String]) => Proxy, defaultPort: Int) = {
       val host = Option(System.getProperty(hostProp))
       def port = Try(System.getProperty(portProp).toInt).getOrElse(defaultPort)
-      host.map(make(_, port))
+      def nonProxyHosts = nonProxyHostsPropOption
+        .flatMap(nonProxyHostsProp => Try(System.getProperty(nonProxyHostsProp).split("|")).toOption)
+        .getOrElse(Nil)
+      host.map(make(_, port, nonProxyHosts))
     }
 
-    def proxy(t: ProxyType)(host: String, port: Int) = Proxy(host, port, t)
+    def proxy(t: ProxyType)(host: String, port: Int, nonProxyHosts: List[String]) = Proxy(host, port, t, nonProxyHosts)
 
     import ProxyType._
-    val socks = system("socksProxyHost", "socksProxyPort", proxy(Socks), 1080)
-    val http = system("http.proxyHost", "http.proxyPort", proxy(Http), 80)
-    val https = system("https.proxyHost", "https.proxyPort", proxy(Http), 443)
+    val socks = system("socksProxyHost", "socksProxyPort", None, proxy(Socks), 1080)
+    val http = system("http.proxyHost", "http.proxyPort", Some("http.nonProxyHosts"), proxy(Http), 80)
+    val https = system("https.proxyHost", "https.proxyPort", Some("http.nonProxyHosts"), proxy(Http), 443)
 
     Seq(socks, http, https).find(_.isDefined).flatten
   }
