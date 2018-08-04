@@ -176,11 +176,17 @@ trait HttpTest[R[_]]
   }
 
   "errors" - {
-    def getHeaders = sttp.post(uri"$endpoint/set_headers")
-
     "return 405 when method not allowed" in {
-      getHeaders.response(sttpIgnore).send().toFuture().map { response =>
+      sttp.post(uri"$endpoint/set_headers").response(sttpIgnore).send().toFuture().map { response =>
         response.code should be(405)
+        response.isClientError should be(true)
+        response.body.isLeft should be(true)
+      }
+    }
+
+    "return 404 when method not found" in {
+      sttp.post(uri"$endpoint/not/found").response(sttpIgnore).send().toFuture().map { response =>
+        response.code should be(404)
         response.isClientError should be(true)
         response.body.isLeft should be(true)
       }
