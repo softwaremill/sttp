@@ -165,8 +165,8 @@ trait SyncHttpTest
       response.body.isLeft should be(true)
     }
 
-    "return 404 when method not found" in {
-      val response = sttp.post(uri"$endpoint/not/found").response(sttpIgnore).send()
+    "return 404 when not found" in {
+      val response = sttp.get(uri"$endpoint/not/found").response(sttpIgnore).send()
       response.code should be(404)
       response.isClientError should be(true)
       response.body.isLeft should be(true)
