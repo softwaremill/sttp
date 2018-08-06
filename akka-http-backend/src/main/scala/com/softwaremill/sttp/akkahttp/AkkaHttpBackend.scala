@@ -12,7 +12,7 @@ import akka.http.scaladsl.model.{Multipart => AkkaMultipart, _}
 import akka.http.scaladsl.settings.{ClientConnectionSettings, ConnectionPoolSettings}
 import akka.http.scaladsl.{ClientTransport, Http, HttpsConnectionContext}
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.{FileIO, Source, StreamConverters}
+import akka.stream.scaladsl.{FileIO, Sink, Source, StreamConverters}
 import akka.util.ByteString
 import com.softwaremill.sttp._
 import com.softwaremill.sttp.internal._
@@ -126,7 +126,8 @@ class AkkaHttpBackend private (actorSystem: ActorSystem,
         bodyFromAkka(raw, hr, charsetFromHeaders).map(g)
 
       case IgnoreResponse =>
-        hr.discardEntityBytes()
+        // todo: Replace with HttpResponse#discardEntityBytes() once https://github.com/akka/akka-http/issues/1459 is resolved
+        hr.entity.dataBytes.toMat(Sink.ignore)
         Future.successful(())
 
       case ResponseAsString(enc) =>
