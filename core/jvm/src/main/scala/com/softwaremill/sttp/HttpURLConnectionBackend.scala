@@ -58,7 +58,7 @@ class HttpURLConnectionBackend private (opts: SttpBackendOptions, customizeConne
   private def openConnection(uri: Uri): HttpURLConnection = {
     val url = new URL(uri.toString)
     val conn = opts.proxy match {
-      case Some(p) if !p.nonProxyHosts.exists(uri.host.startsWith) =>
+      case Some(p) if !p.ignoreProxy(uri.host) =>
         url.openConnection(p.asJavaProxy)
       case _ => url.openConnection()
     }

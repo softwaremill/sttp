@@ -1,7 +1,7 @@
 package com.softwaremill.sttp
 
 import java.io.IOException
-import java.net.{InetSocketAddress, SocketAddress, URI}
+import java.net.{InetSocketAddress, SocketAddress}
 import java.{net, util}
 
 import com.softwaremill.sttp.SttpBackendOptions._
@@ -24,11 +24,32 @@ case class SttpBackendOptions(
 
 object SttpBackendOptions {
   case class Proxy(host: String, port: Int, proxyType: ProxyType, nonProxyHosts: List[String] = Nil) {
+
+    //only matches prefix or suffix wild card(*)
+    private def isWildCardMatch(targetHost: String, nonProxyHost:String): Boolean = {
+      if (nonProxyHost.length > 1) {
+        if (nonProxyHost.charAt(0) == '*') {
+          targetHost.regionMatches(true, targetHost.length - nonProxyHost.length + 1, nonProxyHost, 1, nonProxyHost.length - 1)
+        }
+        else if (nonProxyHost.charAt(nonProxyHost.length - 1) == '*') {
+          targetHost.regionMatches(true, 0, nonProxyHost, 0, nonProxyHost.length - 1)
+        } else {
+          nonProxyHost.equalsIgnoreCase(targetHost)
+        }
+      } else {
+        nonProxyHost.equalsIgnoreCase(targetHost)
+      }
+    }
+
+    def ignoreProxy(host: String): Boolean = {
+      nonProxyHosts.exists(isWildCardMatch(host, _))
+    }
+
     def asJavaProxySelector: net.ProxySelector = new net.ProxySelector {
-      override def select(uri: URI): util.List[net.Proxy] = {
+      override def select(uri: net.URI): util.List[net.Proxy] = {
         val proxyList = new util.ArrayList[net.Proxy](1)
         val uriHost = uri.getHost
-        if (uriHost.startsWith("127.0.0.1") || nonProxyHosts.forall(uriHost.startsWith)) {
+        if (ignoreProxy(uriHost)) {
           proxyList.add(net.Proxy.NO_PROXY)
         } else {
           proxyList.add(asJavaProxy)
@@ -36,7 +57,7 @@ object SttpBackendOptions {
         proxyList
       }
 
-      override def connectFailed(uri: URI, sa: SocketAddress, ioe: IOException): Unit = {
+      override def connectFailed(uri: net.URI, sa: SocketAddress, ioe: IOException): Unit = {
         throw new UnsupportedOperationException("Couldn't connect to the proxy server.")
       }
     }
@@ -77,9 +98,12 @@ object SttpBackendOptions {
     def system(hostProp: String, portProp: String, nonProxyHostsPropOption: Option[String], make: (String, Int, List[String]) => Proxy, defaultPort: Int) = {
       val host = Option(System.getProperty(hostProp))
       def port = Try(System.getProperty(portProp).toInt).getOrElse(defaultPort)
-      def nonProxyHosts: List[String] = nonProxyHostsPropOption
-        .flatMap(nonProxyHostsProp => Try(System.getProperty(nonProxyHostsProp).split("|").toList).toOption)
-        .getOrElse(Nil)
+      def nonProxyHosts: List[String] = {
+        nonProxyHostsPropOption
+          .map(nonProxyHostsProp => Try(System.getProperty(nonProxyHostsProp)).toOption.getOrElse("localhost|127.*"))
+          .map(_.split("|").toList)
+          .getOrElse(Nil)
+      }
       host.map(make(_, port, nonProxyHosts))
     }
 

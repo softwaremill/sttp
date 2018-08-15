@@ -48,8 +48,8 @@ class AkkaHttpBackend private (actorSystem: ActorSystem,
   override def send[T](r: Request[T, S]): Future[Response[T]] = {
     implicit val ec: ExecutionContext = this.ec
 
-    val connectionPoolSettingsWithProxy =  opts.proxy match {
-      case Some(p) if !p.nonProxyHosts.contains(r.uri.host) =>
+    val connectionPoolSettingsWithProxy = opts.proxy match {
+      case Some(p) if !p.ignoreProxy(r.uri.host) =>
         connectionPoolSettings.withTransport(ClientTransport.httpsProxy(p.inetSocketAddress))
       case _ => connectionPoolSettings
     }

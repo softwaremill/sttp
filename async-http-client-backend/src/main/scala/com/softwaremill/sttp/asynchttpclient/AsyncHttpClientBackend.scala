@@ -34,7 +34,7 @@ import scala.util.{Failure, Try}
 abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
                                                rm: MonadAsyncError[R],
                                                closeClient: Boolean)
-  extends SttpBackend[R, S] {
+    extends SttpBackend[R, S] {
 
   override def send[T](r: Request[T, S]): R[Response[T]] = {
     val preparedRequest = asyncHttpClient
@@ -234,14 +234,14 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
 
   private def readResponseNoBody(response: AsyncResponse): Response[Unit] = {
     Response(Right(()),
-      response.getStatusCode,
-      response.getStatusText,
-      response.getHeaders
-        .iteratorAsString()
-        .asScala
-        .map(e => (e.getKey, e.getValue))
-        .toList,
-      Nil)
+             response.getStatusCode,
+             response.getStatusText,
+             response.getHeaders
+               .iteratorAsString()
+               .asScala
+               .map(e => (e.getKey, e.getValue))
+               .toList,
+             Nil)
   }
 
   private def eagerResponseHandler(response: AsyncResponse) =
@@ -289,7 +289,8 @@ object AsyncHttpClientBackend {
     configBuilder = options.proxy match {
       case None => configBuilder
       case Some(p) =>
-        configBuilder.setProxyServer(new ProxyServer.Builder(p.host, p.port).setNonProxyHosts(p.nonProxyHosts.asJava).build())
+        configBuilder.setProxyServer(
+          new ProxyServer.Builder(p.host, p.port).setNonProxyHosts(p.nonProxyHosts.asJava).build())
     }
 
     new DefaultAsyncHttpClient(configBuilder.build())
