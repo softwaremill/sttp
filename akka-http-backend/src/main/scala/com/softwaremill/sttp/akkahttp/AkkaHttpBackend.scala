@@ -38,12 +38,9 @@ class AkkaHttpBackend private (actorSystem: ActorSystem,
 
   private val http = Http()
 
-  private val connectionPoolSettings = {
-    val base = customConnectionPoolSettings
-      .getOrElse(ConnectionPoolSettings(actorSystem))
-      .withUpdatedConnectionSettings(_.withConnectingTimeout(opts.connectionTimeout))
-    base
-  }
+  private val connectionPoolSettings = customConnectionPoolSettings
+    .getOrElse(ConnectionPoolSettings(actorSystem))
+    .withUpdatedConnectionSettings(_.withConnectingTimeout(opts.connectionTimeout))
 
   override def send[T](r: Request[T, S]): Future[Response[T]] = {
     implicit val ec: ExecutionContext = this.ec

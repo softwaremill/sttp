@@ -112,6 +112,8 @@ object SttpBackendOptions {
     import ProxyType._
     val socks = system("socksProxyHost", "socksProxyPort", None, proxy(Socks), 1080)
     val http = system("http.proxyHost", "http.proxyPort", Some("http.nonProxyHosts"), proxy(Http), 80)
+
+    //https uses the nonProxyHosts of http
     val https = system("https.proxyHost", "https.proxyPort", Some("http.nonProxyHosts"), proxy(Http), 443)
 
     Seq(socks, http, https).find(_.isDefined).flatten
