@@ -38,21 +38,19 @@ class AkkaHttpBackend private (actorSystem: ActorSystem,
 
   private val http = Http()
 
-  private val connectionPoolSettings = {
-    val base = customConnectionPoolSettings
-      .getOrElse(ConnectionPoolSettings(actorSystem))
-      .withUpdatedConnectionSettings(_.withConnectingTimeout(opts.connectionTimeout))
-    opts.proxy match {
-      case None => base
-      case Some(p) =>
-        base.withTransport(ClientTransport.httpsProxy(p.inetSocketAddress))
-    }
-  }
+  private val connectionPoolSettings = customConnectionPoolSettings
+    .getOrElse(ConnectionPoolSettings(actorSystem))
+    .withUpdatedConnectionSettings(_.withConnectingTimeout(opts.connectionTimeout))
 
   override def send[T](r: Request[T, S]): Future[Response[T]] = {
     implicit val ec: ExecutionContext = this.ec
 
-    val settings = connectionPoolSettings
+    val connectionPoolSettingsWithProxy = opts.proxy match {
+      case Some(p) if !p.ignoreProxy(r.uri.host) =>
+        connectionPoolSettings.withTransport(ClientTransport.httpsProxy(p.inetSocketAddress))
+      case _ => connectionPoolSettings
+    }
+    val settings = connectionPoolSettingsWithProxy
       .withUpdatedConnectionSettings(_.withIdleTimeout(r.options.readTimeout))
 
     requestToAkka(r)

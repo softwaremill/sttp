@@ -289,7 +289,8 @@ object AsyncHttpClientBackend {
     configBuilder = options.proxy match {
       case None => configBuilder
       case Some(p) =>
-        configBuilder.setProxyServer(new ProxyServer.Builder(p.host, p.port).build())
+        configBuilder.setProxyServer(
+          new ProxyServer.Builder(p.host, p.port).setNonProxyHosts(p.nonProxyHosts.asJava).build())
     }
 
     new DefaultAsyncHttpClient(configBuilder.build())
