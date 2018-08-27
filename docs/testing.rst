@@ -16,7 +16,7 @@ An empty backend stub can be created using the following ways:
 Specifying behavior
 -------------------
 
-Behavior of the stub can be specified using a combination of the ``whenRequestMatches`` and ``thenResponse`` methods::
+Behavior of the stub can be specified using a combination of the ``whenRequestMatches`` and ``thenRespond`` methods::
 
   implicit val testingBackend = SttpBackendStub.synchronous
     .whenRequestMatches(_.uri.path.startsWith(List("a", "b")))
