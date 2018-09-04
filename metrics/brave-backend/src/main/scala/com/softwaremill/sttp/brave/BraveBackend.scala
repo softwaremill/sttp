@@ -5,7 +5,6 @@ import brave.propagation.{Propagation, TraceContext}
 import brave.{Span, Tracing}
 import com.softwaremill.sttp.brave.BraveBackend._
 import com.softwaremill.sttp.{FollowRedirectsBackend, MonadError, Request, Response, SttpBackend}
-import zipkin2.Endpoint
 
 import scala.language.higherKinds
 
@@ -115,14 +114,4 @@ object SttpHttpClientAdapter extends HttpClientAdapter[AnyRequest, AnyResponse] 
     request.headers.find(_._1.equalsIgnoreCase(name)).map(_._2).orNull
 
   override def statusCode(response: AnyResponse): Integer = response.code
-
-  override def parseServerAddress(req: AnyRequest, builder: Endpoint.Builder): Boolean = {
-
-    if (builder.parseIp(req.uri.host)) {
-      req.uri.port.foreach(builder.port(_))
-      true
-    } else {
-      false
-    }
-  }
 }

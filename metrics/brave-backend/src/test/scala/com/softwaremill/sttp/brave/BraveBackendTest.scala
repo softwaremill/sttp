@@ -79,10 +79,6 @@ class BraveBackendTest extends FlatSpec with Matchers with BeforeAndAfter {
     t.reportsClientKindToZipkin()
   }
 
-  it should "reportsServerAddress" in {
-    t.reportsServerAddress()
-  }
-
   it should "defaultSpanNameIsMethodName" in {
     t.defaultSpanNameIsMethodName()
   }

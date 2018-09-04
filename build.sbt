@@ -104,8 +104,8 @@ def testServerSettings(config: Configuration) = Seq(
   })
 )
 
-val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.3"
-val akkaStreams = "com.typesafe.akka" %% "akka-stream" % "2.5.13"
+val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.4"
+val akkaStreams = "com.typesafe.akka" %% "akka-stream" % "2.5.16"
 
 val scalaTestVersion = "3.0.5"
 val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion
@@ -225,7 +225,7 @@ lazy val cats = crossProject(JSPlatform, JVMPlatform)
   .settings(
     name := "cats",
     publishArtifact in Test := true,
-    libraryDependencies ++= Seq("org.typelevel" %%% "cats-effect" % "1.0.0-RC2")
+    libraryDependencies ++= Seq("org.typelevel" %%% "cats-effect" % "1.0.0-RC3")
   )
 lazy val catsJS = cats.js.dependsOn(coreJS % "compile->compile;test->test")
 lazy val catsJVM = cats.jvm.dependsOn(coreJVM % "compile->compile;test->test")
@@ -250,7 +250,7 @@ lazy val scalaz: Project = (project in file("implementations/scalaz"))
   .settings(
     name := "scalaz",
     publishArtifact in Test := true,
-    libraryDependencies ++= Seq("org.scalaz" %% "scalaz-concurrent" % "7.2.25")
+    libraryDependencies ++= Seq("org.scalaz" %% "scalaz-concurrent" % "7.2.26")
   )
   .dependsOn(coreJVM % "compile->compile;test->test")
 
@@ -308,7 +308,7 @@ lazy val asyncHttpClientFs2Backend: Project =
   asyncHttpClientBackendProject("fs2")
     .settings(
       libraryDependencies ++= Seq(
-        "com.github.zainab-ali" %% "fs2-reactive-streams" % "0.6.0"
+        "com.github.zainab-ali" %% "fs2-reactive-streams" % "0.7.0"
       )
     )
     .dependsOn(catsJVM % "compile->compile;test->test")
@@ -360,7 +360,7 @@ lazy val json4s: Project = (project in file("json/json4s"))
   .settings(
     name := "json4s",
     libraryDependencies ++= Seq(
-      "org.json4s" %% "json4s-native" % "3.5.4",
+      "org.json4s" %% "json4s-native" % "3.6.0",
       "org.scalatest" %% "scalatest" % scalaTestVersion % "test"
     )
   )
@@ -377,7 +377,7 @@ lazy val sprayJson: Project = (project in file("json/spray-json"))
   )
   .dependsOn(coreJVM)
 
-lazy val braveVersion = "5.1.2"
+lazy val braveVersion = "5.2.0"
 
 lazy val braveBackend: Project = (project in file("metrics/brave-backend"))
   .settings(commonJvmSettings: _*)
