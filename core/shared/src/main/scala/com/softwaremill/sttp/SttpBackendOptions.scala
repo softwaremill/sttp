@@ -101,7 +101,7 @@ object SttpBackendOptions {
       def nonProxyHosts: List[String] = {
         nonProxyHostsPropOption
           .map(nonProxyHostsProp => Try(System.getProperty(nonProxyHostsProp)).toOption.getOrElse("localhost|127.*"))
-          .map(_.split("|").toList)
+          .map(_.split('|').toList)
           .getOrElse(Nil)
       }
       host.map(make(_, port, nonProxyHosts))
