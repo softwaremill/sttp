@@ -69,9 +69,9 @@ trait StatusCodes {
 }
 
 object StatusCodes extends StatusCodes {
-  def isInformational(status: Int): Boolean = status / 100 == 1
-  def isSuccess(status: Int): Boolean = status / 100 == 2
-  def isRedirect(status: Int): Boolean = status / 100 == 3
-  def isClientError(status: Int): Boolean = status / 100 == 4
-  def isServerError(status: Int): Boolean = status / 100 == 5
+  def isInformational(status: StatusCode): Boolean = status / 100 == 1
+  def isSuccess(status: StatusCode): Boolean = status / 100 == 2
+  def isRedirect(status: StatusCode): Boolean = status / 100 == 3
+  def isClientError(status: StatusCode): Boolean = status / 100 == 4
+  def isServerError(status: StatusCode): Boolean = status / 100 == 5
 }

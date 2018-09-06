@@ -15,12 +15,12 @@ import scala.util.Try
   *                The first response (oldest) comes first.
   */
 case class Response[T](rawErrorBody: Either[Array[Byte], T],
-                       code: Int,
+                       code: StatusCode,
                        statusText: String,
                        headers: Seq[(String, String)],
                        history: List[Response[Unit]])
     extends ResponseExtensions[T] {
-  def is200: Boolean = code == 200
+  def is200: Boolean = code == StatusCodes.Ok
   def isSuccess: Boolean = StatusCodes.isSuccess(code)
   def isRedirect: Boolean = StatusCodes.isRedirect(code)
   def isClientError: Boolean = StatusCodes.isClientError(code)
@@ -67,7 +67,7 @@ object Response {
     * Convenience method to create a Response instance, mainly useful in tests using
     * [[com.softwaremill.sttp.testing.SttpBackendStub]] and partial matchers.
     */
-  def apply[T](body: Either[String, T], code: Int, statusText: String): Response[T] =
+  def apply[T](body: Either[String, T], code: StatusCode, statusText: String): Response[T] =
     Response(body.left.map(_.getBytes(Utf8)), code, statusText, Nil, Nil)
 
   /**
@@ -80,5 +80,5 @@ object Response {
     * Convenience method to create a Response instance, mainly useful in tests using
     * [[com.softwaremill.sttp.testing.SttpBackendStub]] and partial matchers.
     */
-  def error(body: String, code: Int, statusText: String = "") = apply(Left(body), code, statusText)
+  def error(body: String, code: StatusCode, statusText: String = "") = apply(Left(body), code, statusText)
 }
