@@ -104,7 +104,7 @@ def testServerSettings(config: Configuration) = Seq(
   })
 )
 
-val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.4"
+val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.5"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % "2.5.16"
 
 val scalaTestVersion = "3.0.5"
@@ -225,7 +225,7 @@ lazy val cats = crossProject(JSPlatform, JVMPlatform)
   .settings(
     name := "cats",
     publishArtifact in Test := true,
-    libraryDependencies ++= Seq("org.typelevel" %%% "cats-effect" % "1.0.0-RC3")
+    libraryDependencies ++= Seq("org.typelevel" %%% "cats-effect" % "1.0.0")
   )
 lazy val catsJS = cats.js.dependsOn(coreJS % "compile->compile;test->test")
 lazy val catsJVM = cats.jvm.dependsOn(coreJVM % "compile->compile;test->test")
