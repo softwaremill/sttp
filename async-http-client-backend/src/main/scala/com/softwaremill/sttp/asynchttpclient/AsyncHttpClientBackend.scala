@@ -4,6 +4,7 @@ import java.nio.ByteBuffer
 import java.nio.charset.Charset
 
 import com.softwaremill.sttp.ResponseAs.EagerResponseHandler
+import com.softwaremill.sttp.SttpBackendOptions.ProxyType.{Http, Socks}
 import com.softwaremill.sttp._
 import com.softwaremill.sttp.internal._
 import io.netty.buffer.ByteBuf
@@ -289,8 +290,17 @@ object AsyncHttpClientBackend {
     configBuilder = options.proxy match {
       case None => configBuilder
       case Some(p) =>
+        val proxyType: org.asynchttpclient.proxy.ProxyType =
+          p.proxyType match {
+            case Socks => org.asynchttpclient.proxy.ProxyType.SOCKS_V5
+            case Http  => org.asynchttpclient.proxy.ProxyType.HTTP
+          }
+
         configBuilder.setProxyServer(
-          new ProxyServer.Builder(p.host, p.port).setNonProxyHosts(p.nonProxyHosts.asJava).build())
+          new ProxyServer.Builder(p.host, p.port)
+            .setProxyType(proxyType) // Fix issue #145
+            .setNonProxyHosts(p.nonProxyHosts.asJava)
+            .build())
     }
 
     new DefaultAsyncHttpClient(configBuilder.build())
