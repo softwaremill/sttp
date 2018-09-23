@@ -21,6 +21,7 @@ import org.scalajs.dom.experimental.Headers
 import org.scalajs.dom.experimental.HttpMethod
 import org.scalajs.dom.experimental.RequestCredentials
 import org.scalajs.dom.experimental.RequestInit
+import org.scalajs.dom.experimental.RequestMode
 import org.scalajs.dom.experimental.RequestRedirect
 import org.scalajs.dom.experimental.ResponseType
 import org.scalajs.dom.experimental.{Request => FetchRequest}
@@ -30,12 +31,14 @@ import org.scalajs.dom.raw.BlobPropertyBag
 
 object FetchOptions {
   val Default = FetchOptions(
-    credentials = None
+    credentials = None,
+    mode = None
   )
 }
 
 final case class FetchOptions(
-    credentials: Option[RequestCredentials]
+    credentials: Option[RequestCredentials],
+    mode: Option[RequestMode]
 )
 
 /**
@@ -81,7 +84,8 @@ abstract class AbstractFetchBackend[R[_], S](options: FetchOptions)(rm: MonadErr
         headers = headers,
         body = body,
         credentials = options.credentials.orUndefined,
-        requestRedirect = redirect
+        requestRedirect = redirect,
+        mode = options.mode.orUndefined
       )
       val requestInitDynamic = requestInitStatic.asInstanceOf[js.Dynamic]
       signal.foreach(s => requestInitDynamic.updateDynamic("signal")(s))
