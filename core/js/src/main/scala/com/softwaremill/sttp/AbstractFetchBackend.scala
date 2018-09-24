@@ -209,6 +209,7 @@ abstract class AbstractFetchBackend[R[_], S](options: FetchOptions)(rm: MonadErr
         val charset = response.headers
           .get(HeaderNames.ContentType)
           .toOption
+          .filter(_ != null)
           .flatMap(encodingFromContentType)
           .getOrElse(enc)
         if (charset.compareToIgnoreCase(Utf8) == 0) transformPromise(response.text())
