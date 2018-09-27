@@ -7,7 +7,6 @@ import com.softwaremill.sttp.internal._
 
 import scala.collection.immutable.Seq
 import scala.concurrent.duration._
-import scala.language.higherKinds
 
 trait SttpApi extends SttpExtensions {
 

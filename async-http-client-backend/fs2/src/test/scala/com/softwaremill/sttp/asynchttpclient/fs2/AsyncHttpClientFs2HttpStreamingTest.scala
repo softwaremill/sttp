@@ -2,7 +2,7 @@ package com.softwaremill.sttp.asynchttpclient.fs2
 
 import java.nio.ByteBuffer
 
-import cats.effect.{ContextShift, IO, Timer}
+import cats.effect.{ContextShift, IO}
 import cats.instances.string._
 import com.softwaremill.sttp.SttpBackend
 import com.softwaremill.sttp.testing.streaming.StreamingTest
@@ -14,7 +14,6 @@ import scala.concurrent.{Future, ExecutionContext}
 class AsyncHttpClientFs2HttpStreamingTest extends StreamingTest[IO, Stream[IO, ByteBuffer]] {
 
   private implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.Implicits.global)
-  private implicit val t: Timer[IO] = IO.timer(ExecutionContext.Implicits.global)
 
   override implicit val backend: SttpBackend[IO, Stream[IO, ByteBuffer]] = AsyncHttpClientFs2Backend[IO]()
 

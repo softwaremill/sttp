@@ -2,6 +2,7 @@ package com.softwaremill.sttp.asynchttpclient.fs2
 
 import java.nio.ByteBuffer
 
+import cats.Functor
 import cats.effect._
 import com.softwaremill.sttp.asynchttpclient.AsyncHttpClientBackend
 import com.softwaremill.sttp.impl.cats.EffectMonadAsyncError
@@ -15,8 +16,7 @@ import org.reactivestreams.Publisher
 
 import scala.language.higherKinds
 
-class AsyncHttpClientFs2Backend[F[_]: ConcurrentEffect] private (asyncHttpClient: AsyncHttpClient, closeClient: Boolean)(
-    implicit t: Timer[F])
+class AsyncHttpClientFs2Backend[F[_]: ConcurrentEffect] private (asyncHttpClient: AsyncHttpClient, closeClient: Boolean)
     extends AsyncHttpClientBackend[F, Stream[F, ByteBuffer]](
       asyncHttpClient,
       new EffectMonadAsyncError,
@@ -35,25 +35,23 @@ class AsyncHttpClientFs2Backend[F[_]: ConcurrentEffect] private (asyncHttpClient
       .compile
       .fold(ByteBuffer.allocate(0))(concatByteBuffers)
 
-    implicitly[Effect[F]].map(bytes)(_.array())
+    Functor[F].map(bytes)(_.array())
   }
 }
 
 object AsyncHttpClientFs2Backend {
 
-  private def apply[F[_]: ConcurrentEffect](asyncHttpClient: AsyncHttpClient, closeClient: Boolean)(
-      implicit t: Timer[F]): SttpBackend[F, Stream[F, ByteBuffer]] =
+  private def apply[F[_]: ConcurrentEffect](asyncHttpClient: AsyncHttpClient,
+                                            closeClient: Boolean): SttpBackend[F, Stream[F, ByteBuffer]] =
     new FollowRedirectsBackend(new AsyncHttpClientFs2Backend(asyncHttpClient, closeClient))
 
-  def apply[F[_]: ConcurrentEffect](options: SttpBackendOptions = SttpBackendOptions.Default)(
-      implicit t: Timer[F]): SttpBackend[F, Stream[F, ByteBuffer]] =
-    AsyncHttpClientFs2Backend[F](AsyncHttpClientBackend.defaultClient(options), closeClient = true)
+  def apply[F[_]: ConcurrentEffect](
+      options: SttpBackendOptions = SttpBackendOptions.Default): SttpBackend[F, Stream[F, ByteBuffer]] =
+    apply[F](AsyncHttpClientBackend.defaultClient(options), closeClient = true)
 
-  def usingConfig[F[_]: ConcurrentEffect](cfg: AsyncHttpClientConfig)(
-      implicit t: Timer[F]): SttpBackend[F, Stream[F, ByteBuffer]] =
-    AsyncHttpClientFs2Backend[F](new DefaultAsyncHttpClient(cfg), closeClient = true)
+  def usingConfig[F[_]: ConcurrentEffect](cfg: AsyncHttpClientConfig): SttpBackend[F, Stream[F, ByteBuffer]] =
+    apply[F](new DefaultAsyncHttpClient(cfg), closeClient = true)
 
-  def usingClient[F[_]: ConcurrentEffect](client: AsyncHttpClient)(
-      implicit t: Timer[F]): SttpBackend[F, Stream[F, ByteBuffer]] =
-    AsyncHttpClientFs2Backend[F](client, closeClient = false)
+  def usingClient[F[_]: ConcurrentEffect](client: AsyncHttpClient): SttpBackend[F, Stream[F, ByteBuffer]] =
+    apply[F](client, closeClient = false)
 }
