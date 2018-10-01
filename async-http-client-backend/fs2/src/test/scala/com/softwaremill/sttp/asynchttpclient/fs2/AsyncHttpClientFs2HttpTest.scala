@@ -9,7 +9,6 @@ import scala.concurrent.{ExecutionContext, Future}
 class AsyncHttpClientFs2HttpTest extends HttpTest[IO] {
 
   private implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.Implicits.global)
-  private implicit val t: Timer[IO] = IO.timer(ExecutionContext.Implicits.global)
 
   override implicit val backend: SttpBackend[IO, Nothing] = AsyncHttpClientFs2Backend()
   override implicit val convertToFuture: ConvertToFuture[IO] = new ConvertToFuture[IO] {
