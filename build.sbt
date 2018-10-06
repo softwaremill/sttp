@@ -146,6 +146,7 @@ lazy val rootJVM = project
     circeJVM,
     json4s,
     sprayJson,
+    playJsonJVM,
     braveBackend,
     prometheusBackend
   )
@@ -154,7 +155,7 @@ lazy val rootJS = project
   .in(file(".js"))
   .settings(commonJvmJsSettings: _*)
   .settings(skip in publish := true, name := "sttpJS")
-  .aggregate(coreJS, catsJS, monixJS, circeJS)
+  .aggregate(coreJS, catsJS, monixJS, circeJS, playJsonJS)
 
 lazy val rootNative = project
   .in(file(".native"))
@@ -376,6 +377,22 @@ lazy val sprayJson: Project = (project in file("json/spray-json"))
     )
   )
   .dependsOn(coreJVM)
+
+lazy val playJson = crossProject(JSPlatform, JVMPlatform)
+  .withoutSuffixFor(JVMPlatform)
+  .crossType(CrossType.Pure)
+  .in(file("json/play-json"))
+  .jsSettings(commonJsSettings: _*)
+  .jvmSettings(commonJvmSettings: _*)
+  .settings(
+    name := "play-json",
+    libraryDependencies ++= Seq(
+      "com.typesafe.play" %%% "play-json" % "2.6.10",
+      "org.scalatest" %%% "scalatest" % scalaTestVersion % "test"
+    )
+  )
+lazy val playJsonJS = playJson.js.dependsOn(coreJS)
+lazy val playJsonJVM = playJson.jvm.dependsOn(coreJVM)
 
 lazy val braveVersion = "5.2.0"
 
