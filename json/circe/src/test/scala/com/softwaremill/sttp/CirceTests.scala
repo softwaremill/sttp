@@ -19,6 +19,15 @@ class CirceTests extends FlatSpec with Matchers with EitherValues {
     extractBody(req) shouldBe expected
   }
 
+  it should "use the given printer" in {
+    val body = Outer(Inner(42, true, "horses"), "cats")
+    implicit val printer = Printer.spaces4
+
+    val req = sttp.body(body)
+
+    extractBody(req) should include ("\n    \"foo")
+  }
+
   it should "decode arbitrary bodies given a decoder" in {
     val body = """{"foo":{"a":42,"b":true,"c":"horses"},"bar":"cats"}"""
     val expected = Outer(Inner(42, true, "horses"), "cats")
