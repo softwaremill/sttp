@@ -3,11 +3,13 @@ package com.softwaremill.sttp
 import com.softwaremill.sttp.internal._
 
 import org.json4s.ParserUtil.ParseException
+import org.json4s.jackson
 import org.scalatest._
 
 import scala.language.higherKinds
 
 class Json4sTests extends FlatSpec with Matchers with EitherValues {
+  implicit val serialization = jackson.Serialization
   import json4s._
   import Json4sTests._
 
