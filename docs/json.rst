@@ -98,3 +98,12 @@ Usage example::
       .body(requestPayload)
       .response(asJson[MyResponse])
       .send()
+
+play-json
+----------
+
+To encode and decode JSON using `play-json <https://www.playframework.com/documentat…>`_, add the following dependency to your project::
+
+  "com.softwaremill.sttp" %% "play-json" % "1.3.8"
+
+To use, add an import: ``import com.softwaremill.sttp.playJson._``.
