@@ -50,7 +50,9 @@ Often it's useful to setup system-wide logging for failed requests. This is poss
   import com.softwaremill.sttp.{MonadError, Request, Response, SttpBackend}
   import com.typesafe.scalalogging.StrictLogging
 
-  class LoggingSttpBackend[R[_], S](delegate: SttpBackend[R, S]) extends SttpBackend[R, S] with StrictLogging {
+  class LoggingSttpBackend[R[_], S](delegate: SttpBackend[R, S]) extends SttpBackend[R, S]
+    with StrictLogging {
+
     override def send[T](request: Request[T, S]): R[Response[T]] = {
       responseMonad.map(responseMonad.handleError(delegate.send(request)) {
         case e: Exception =>
