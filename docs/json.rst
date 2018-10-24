@@ -33,11 +33,14 @@ This module adds a method to the request and a function that can be given to a r
 Json4s
 ------
 
-To encode and decode json using json4s-native, add the following dependency to your project::
+To encode and decode json using json4s, add the following dependency to your project::
 
   "com.softwaremill.sttp" %% "json4s" % "1.3.8"
+  "org.json4s" %% "json4s-native" % "3.6.0"
 
-Using this module it is possible to set request bodies and read response bodies as case classes, using the implicitly available ``org.json4s.Formats`` (which defaults to ``org.json4s.DefaultFormats``).
+Note that in this example we are using the json4s-native backend, but you can use any other json4s backend.
+
+Using this module it is possible to set request bodies and read response bodies as case classes, using the implicitly available ``org.json4s.Formats`` (which defaults to ``org.json4s.DefaultFormats``), and by bringing an implicit ``Serialization`` into scope.
 
 Usage example::
 
@@ -50,6 +53,8 @@ Usage example::
   case class MyResponse(...)
 
   val requestPayload: Payload = Payload(...)
+
+  implicit val serialization =  org.json4s.native.Serialization
   
   val response: Response[MyResponse] =
     sttp
