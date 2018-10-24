@@ -74,7 +74,7 @@ Often it's useful to setup system-wide logging for failed requests. This is poss
 
 Note that there are three possible outcomes of a request:
 
-* an exception is thrown (handled with ``responseMonad.handleError``); here, this is logged with level ``ERROR``.
+* an exception is thrown (handled with ``responseMonad.handleError``), e.g. because of a connection error; here, this is logged with level ``ERROR``.
 * the response completes normally, but the server returns a non-2xx response code. Here, this case is logged with level ``WARN``.
 * the response completes normally with 2xx response code. Here, this case is logged with level ``DEBUG``.
 
