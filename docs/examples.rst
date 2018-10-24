@@ -36,6 +36,7 @@ Required dependencies::
   libraryDependencies ++= List(
     "com.softwaremill.sttp" %% "akka-http-backend" % "1.3.8",
     "com.softwaremill.sttp" %% "json4s" % "1.3.8"
+    "org.json4s" %% "json4s-native" % "3.6.0"
   )
 
 Example code::
@@ -48,6 +49,7 @@ Example code::
 
   case class HttpBinResponse(origin: String, headers: Map[String, String])
 
+  implicit val serialization =  org.json4s.native.Serialization
   val request = sttp
     .get(uri"https://httpbin.org/get")
     .response(asJson[HttpBinResponse])

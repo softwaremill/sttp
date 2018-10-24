@@ -356,12 +356,15 @@ lazy val circe = crossProject(JSPlatform, JVMPlatform)
 lazy val circeJS = circe.js.dependsOn(coreJS)
 lazy val circeJVM = circe.jvm.dependsOn(coreJVM)
 
+lazy val json4sVersion = "3.6.0"
+
 lazy val json4s: Project = (project in file("json/json4s"))
   .settings(commonJvmSettings: _*)
   .settings(
     name := "json4s",
     libraryDependencies ++= Seq(
-      "org.json4s" %% "json4s-native" % "3.6.0",
+      "org.json4s" %% "json4s-core" % json4sVersion,
+      "org.json4s" %% "json4s-native" % json4sVersion % "test",
       "org.scalatest" %% "scalatest" % scalaTestVersion % "test"
     )
   )
