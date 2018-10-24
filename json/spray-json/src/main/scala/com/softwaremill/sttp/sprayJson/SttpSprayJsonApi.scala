@@ -1,4 +1,4 @@
-package com.softwaremill.sttp.json.sprayjson
+package com.softwaremill.sttp.sprayJson
 
 import com.softwaremill.sttp.{BodySerializer, MediaTypes, ResponseAs, StringBody, asString}
 import com.softwaremill.sttp.internal.Utf8

@@ -1,4 +1,4 @@
-package com.softwaremill.sttp.playjson
+package com.softwaremill.sttp.playJson
 
 import com.softwaremill.sttp.{BodySerializer, DeserializationError, MediaTypes, ResponseAs, StringBody, asString}
 import com.softwaremill.sttp.internal.Utf8
