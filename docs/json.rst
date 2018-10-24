@@ -40,7 +40,7 @@ To encode and decode json using json4s, add the following dependency to your pro
 
 Note that in this example we are using the json4s-native backend, but you can use any other json4s backend.
 
-Using this module it is possible to set request bodies and read response bodies as case classes, using the implicitly available ``org.json4s.Formats`` (which defaults to ``org.json4s.DefaultFormats``), and by bringing an implicit ``Serialization`` into scope.
+Using this module it is possible to set request bodies and read response bodies as case classes, using the implicitly available ``org.json4s.Formats`` (which defaults to ``org.json4s.DefaultFormats``), and by bringing an implicit ``org.json4s.Serialization`` into scope.
 
 Usage example::
 
