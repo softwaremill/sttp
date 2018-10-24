@@ -42,6 +42,42 @@ For example::
     }
   }
 
+Example logging backend wrapper
+-------------------------------
+
+Often it's useful to setup system-wide logging for failed requests. This is possible using a backend wrapper. In this example, we are using ``scala-logging`` for the logging itself, but of course any logging library can be used::
+
+  import com.softwaremill.sttp.{MonadError, Request, Response, SttpBackend}
+  import com.typesafe.scalalogging.StrictLogging
+
+  class LoggingSttpBackend[R[_], S](delegate: SttpBackend[R, S]) extends SttpBackend[R, S] with StrictLogging {
+    override def send[T](request: Request[T, S]): R[Response[T]] = {
+      responseMonad.map(responseMonad.handleError(delegate.send(request)) {
+        case e: Exception =>
+          logger.error(s"Exception when sending request: $request", e)
+          responseMonad.error(e)
+      }) { response =>
+        if (response.isSuccess) {
+          logger.debug(s"For request: $request got response: $response")
+        } else {
+          logger.warn(s"For request: $request got response: $response")
+        }
+        response
+      }
+    }
+    override def close(): Unit = delegate.close()
+    override def responseMonad: MonadError[R] = delegate.responseMonad
+  }
+
+
+Note that there are three possible outcomes of a request:
+
+* an exception is thrown (handled with ``responseMonad.handleError``); here, this is logged with level ``ERROR``.
+* the response completes normally, but the server returns a non-2xx response code. Here, this case is logged with level ``WARN``.
+* the response completes normally with 2xx response code. Here, this case is logged with level ``DEBUG``.
+
+It's quite easy to customize this backend to your particular needs - just copy the code!
+
 Example metrics backend wrapper
 -------------------------------
 
