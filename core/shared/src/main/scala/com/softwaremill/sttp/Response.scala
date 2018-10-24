@@ -80,5 +80,5 @@ object Response {
     * Convenience method to create a Response instance, mainly useful in tests using
     * [[com.softwaremill.sttp.testing.SttpBackendStub]] and partial matchers.
     */
-  def error(body: String, code: StatusCode, statusText: String = "") = apply(Left(body), code, statusText)
+  def error[T](body: String, code: StatusCode, statusText: String = ""): Response[T] = apply(Left(body), code, statusText)
 }
