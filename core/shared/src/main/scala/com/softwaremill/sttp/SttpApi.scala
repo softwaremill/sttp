@@ -21,7 +21,7 @@ trait SttpApi extends SttpExtensions {
                                      NoBody,
                                      Vector(),
                                      asString,
-                                     RequestOptions(followRedirects = true, readTimeout = DefaultReadTimeout),
+                                     RequestOptions(followRedirects = true, DefaultReadTimeout, FollowRedirectsBackend.MaxRedirects),
                                      Map(),
                                      StatusCodes.isSuccess)
 

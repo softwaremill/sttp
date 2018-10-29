@@ -270,5 +270,5 @@ class SpecifyAuthScheme[U[_], T, +S](hn: String, rt: RequestT[U, T, S]) {
 case class RequestOptions(
     followRedirects: Boolean,
     readTimeout: Duration,
-    maxRedirects: Int = FollowRedirectsBackend.MaxRedirects
+    maxRedirects: Int
 )
