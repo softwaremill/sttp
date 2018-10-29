@@ -83,6 +83,34 @@ trait HttpTest[R[_]]
           response.unsafeBody.toList should be(params)
         }
     }
+
+    "as string with expected unsuccessful response" in {
+      val expectedStatus = 400
+      sttp
+        .post(uri"$endpoint/echo/custom_status/$expectedStatus")
+        .body(testBody)
+        .response(asString)
+        .parseResponseIf(_ == expectedStatus)
+        .send()
+        .toFuture()
+        .map { response =>
+          response.body should be(Right(s"POST /echo/custom_status/$expectedStatus $testBody"))
+        }
+    }
+
+    "as error string if status code is not supported" in {
+      val unexpectedStatus = 200
+      sttp
+        .post(uri"$endpoint/echo/custom_status/$unexpectedStatus")
+        .body(testBody)
+        .response(asString)
+        .parseResponseIf(_ != unexpectedStatus)
+        .send()
+        .toFuture()
+        .map { response =>
+          response.body should be(Left(s"POST /echo/custom_status/$unexpectedStatus $testBody"))
+        }
+    }
   }
 
   "parameters" - {

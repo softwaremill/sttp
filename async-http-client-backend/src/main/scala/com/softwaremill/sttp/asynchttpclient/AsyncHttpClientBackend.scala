@@ -48,11 +48,11 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
       r.response match {
         case ras @ ResponseAsStream() =>
           preparedRequest
-            .execute(streamingAsyncHandler(ras, success, error))
+            .execute(streamingAsyncHandler(ras, r.parseResponseCondition, success, error))
 
         case ra =>
           preparedRequest
-            .execute(eagerAsyncHandler(ra, success, error))
+            .execute(eagerAsyncHandler(ra, r.parseResponseCondition, success, error))
       }
     })
   }
@@ -66,18 +66,20 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
   protected def publisherToBytes(p: Publisher[ByteBuffer]): R[Array[Byte]]
 
   private def eagerAsyncHandler[T](responseAs: ResponseAs[T, S],
+                                   parseCondition: StatusCode => Boolean,
                                    success: R[Response[T]] => Unit,
                                    error: Throwable => Unit): AsyncHandler[Unit] = {
 
     new AsyncCompletionHandler[Unit] {
       override def onCompleted(response: AsyncResponse): Unit =
-        success(readEagerResponse(response, responseAs))
+        success(readEagerResponse(response, responseAs, parseCondition))
 
       override def onThrowable(t: Throwable): Unit = error(t)
     }
   }
 
   private def streamingAsyncHandler[T](responseAs: ResponseAsStream[T, S],
+                                       parseCondition: StatusCode => Boolean,
                                        success: R[Response[T]] => Unit,
                                        error: Throwable => Unit): AsyncHandler[Unit] = {
     new StreamedAsyncHandler[Unit] {
@@ -130,7 +132,7 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
           val baseResponse = readResponseNoBody(builder.build())
           val p = publisher.getOrElse(EmptyPublisher)
           val s = publisherToStreamBody(p)
-          val b = if (StatusCodes.isSuccess(baseResponse.code)) {
+          val b = if (parseCondition(baseResponse.code)) {
             rm.unit(Right(responseAs.responseIsStream(s)))
           } else {
             rm.map(publisherToBytes(p))(Left(_))
@@ -219,10 +221,12 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
     rb.addBodyPart(bodyPart)
   }
 
-  private def readEagerResponse[T](response: AsyncResponse, responseAs: ResponseAs[T, S]): R[Response[T]] = {
+  private def readEagerResponse[T](response: AsyncResponse,
+                                   responseAs: ResponseAs[T, S],
+                                   parseCondition: StatusCode => Boolean): R[Response[T]] = {
     val base = readResponseNoBody(response)
 
-    val body = if (StatusCodes.isSuccess(base.code)) {
+    val body = if (parseCondition(base.code)) {
       rm.map(eagerResponseHandler(response).handle(responseAs, rm))(Right(_))
     } else {
       rm.map(eagerResponseHandler(response).handle(asByteArray, rm))(Left(_))

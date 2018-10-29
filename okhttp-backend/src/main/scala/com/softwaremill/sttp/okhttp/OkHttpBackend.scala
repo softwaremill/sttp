@@ -83,11 +83,13 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean
     bodyToOkHttp(mp.body).foreach(builder.addPart(headers, _))
   }
 
-  private[okhttp] def readResponse[T](res: OkHttpResponse, responseAs: ResponseAs[T, S]): R[Response[T]] = {
+  private[okhttp] def readResponse[T](res: OkHttpResponse,
+                                      responseAs: ResponseAs[T, S],
+                                      parseCondition: StatusCode => Boolean): R[Response[T]] = {
 
     val code = res.code()
 
-    val body = if (StatusCodes.isSuccess(code)) {
+    val body = if (parseCondition(code)) {
       responseMonad.map(responseHandler(res).handle(responseAs, responseMonad))(Right(_))
     } else {
       responseMonad.map(responseHandler(res).handle(asByteArray, responseMonad))(Left(_))
@@ -175,7 +177,7 @@ class OkHttpSyncBackend private (client: OkHttpClient, closeClient: Boolean)
       .updateClientIfCustomReadTimeout(r, client)
       .newCall(request)
       .execute()
-    readResponse(response, r.response)
+    readResponse(response, r.response, r.parseResponseCondition)
   }
 
   override def responseMonad: MonadError[Id] = IdMonad
@@ -209,7 +211,7 @@ abstract class OkHttpAsyncBackend[R[_], S](client: OkHttpClient, rm: MonadAsyncE
             error(e)
 
           override def onResponse(call: Call, response: OkHttpResponse): Unit =
-            try success(readResponse(response, r.response))
+            try success(readResponse(response, r.response, r.parseResponseCondition))
             catch { case e: Exception => error(e) }
         })
     })

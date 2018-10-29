@@ -36,7 +36,8 @@ case class RequestT[U[_], T, +S](
     headers: Seq[(String, String)],
     response: ResponseAs[T, S],
     options: RequestOptions,
-    tags: Map[String, Any]
+    tags: Map[String, Any],
+    parseResponseCondition: StatusCode => Boolean = StatusCodes.isSuccess
 ) extends RequestTExtensions[U, T, S] {
   def get(uri: Uri): Request[T, S] =
     this.copy[Id, T, S](uri = uri, method = Method.GET)
@@ -215,6 +216,9 @@ case class RequestT[U[_], T, +S](
     this.copy(tags = tags + (k -> v))
 
   def tag(k: String): Option[Any] = tags.get(k)
+
+  def parseResponseIf(f: StatusCode => Boolean): RequestT[U, T, S] =
+    this.copy(parseResponseCondition = f)
 
   def send[R[_]]()(implicit backend: SttpBackend[R, S], isIdInRequest: IsIdInRequest[U]): R[Response[T]] = {
     // we could avoid the asInstanceOf by creating an artificial copy
