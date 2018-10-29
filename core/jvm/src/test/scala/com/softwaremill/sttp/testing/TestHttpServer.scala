@@ -15,6 +15,7 @@ import akka.stream.ActorMaterializer
 import akka.util.ByteString
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives
 import ch.megard.akka.http.cors.scaladsl.settings.CorsSettings
+import com.softwaremill.sttp.internal.toByteArray
 import org.scalatest.{BeforeAndAfterAll, Suite}
 
 import scala.concurrent.{Await, Future}
@@ -68,8 +69,8 @@ private class HttpServer(port: Int) extends AutoCloseable with CorsDirectives {
   private def paramsToString(m: Map[String, String]): String =
     m.toList.sortBy(_._1).map(p => s"${p._1}=${p._2}").mkString(" ")
 
-  private val textFile = new java.io.File(getClass.getResource("/textfile.txt").getFile)
-  private val binaryFile = new java.io.File(getClass.getResource("/binaryfile.jpg").getFile)
+  private val textFile = toByteArray(getClass.getResourceAsStream("/textfile.txt"))
+  private val binaryFile = toByteArray(getClass.getResourceAsStream("/binaryfile.jpg"))
   private val textWithSpecialCharacters = "Żółć!"
 
   private val serverRoutes: Route =
@@ -160,9 +161,9 @@ private class HttpServer(port: Int) extends AutoCloseable with CorsDirectives {
       }
     } ~ pathPrefix("download") {
       path("binary") {
-        getFromFile(binaryFile)
+        complete(HttpEntity(binaryFile))
       } ~ path("text") {
-        getFromFile(textFile)
+        complete(HttpEntity(textFile))
       }
     } ~ pathPrefix("multipart") {
       entity(as[akka.http.scaladsl.model.Multipart.FormData]) { fd =>
