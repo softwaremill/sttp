@@ -84,14 +84,11 @@ case class Uri(scheme: String,
   def paramsMap: Map[String, String] = paramsSeq.toMap
 
   def multiParamsMap: Map[String, Seq[String]] = {
-    if (queryFragments.isEmpty) Map.empty[String, Seq[String]]
-    else {
-      val m = mutable.Map.empty[String, ListBuffer[String]]
-      paramsSeq.foreach { case (key, value) =>
-        m.getOrElseUpdate(key, new ListBuffer[String]) += value
-      }
-      m.mapValues(_.toList).toMap
+    val m = mutable.Map.empty[String, ListBuffer[String]]
+    paramsSeq.foreach {
+      case (key, value) => m.getOrElseUpdate(key, new ListBuffer[String]) += value
     }
+    m.mapValues(_.toList).toMap
   }
 
   def paramsSeq: Seq[(String, String)] = queryFragments.collect {
