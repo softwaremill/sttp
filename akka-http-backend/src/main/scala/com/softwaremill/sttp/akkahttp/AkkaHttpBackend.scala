@@ -72,7 +72,7 @@ class AkkaHttpBackend private (actorSystem: ActorSystem,
           .map(_._2)
           .flatMap(encodingFromContentType)
 
-        val body = if (r.parseResponseCondition(code)) {
+        val body = if (r.parseResponseIf(code)) {
           bodyFromAkka(r.response, decodeAkkaResponse(hr), charsetFromHeaders)
             .map(Right(_))
         } else {

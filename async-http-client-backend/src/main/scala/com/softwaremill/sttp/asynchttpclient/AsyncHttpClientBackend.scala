@@ -48,11 +48,11 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
       r.response match {
         case ras @ ResponseAsStream() =>
           preparedRequest
-            .execute(streamingAsyncHandler(ras, r.parseResponseCondition, success, error))
+            .execute(streamingAsyncHandler(ras, r.parseResponseIf, success, error))
 
         case ra =>
           preparedRequest
-            .execute(eagerAsyncHandler(ra, r.parseResponseCondition, success, error))
+            .execute(eagerAsyncHandler(ra, r.parseResponseIf, success, error))
       }
     })
   }

@@ -70,7 +70,7 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean)
       free(spaces.httpCode.cast[Ptr[CSignedChar]])
       curl.cleanup()
 
-      val body: R[Either[Array[CSignedChar], T]] = if (request.parseResponseCondition(httpCode)) {
+      val body: R[Either[Array[CSignedChar], T]] = if (request.parseResponseIf(httpCode)) {
         responseMonad.map(readResponseBody(responseBody, request.response, responseHeaders))(Right.apply)
       } else {
         responseMonad.map(toByteArray(responseBody))(Left.apply)

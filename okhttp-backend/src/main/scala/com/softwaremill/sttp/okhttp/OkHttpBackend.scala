@@ -177,7 +177,7 @@ class OkHttpSyncBackend private (client: OkHttpClient, closeClient: Boolean)
       .updateClientIfCustomReadTimeout(r, client)
       .newCall(request)
       .execute()
-    readResponse(response, r.response, r.parseResponseCondition)
+    readResponse(response, r.response, r.parseResponseIf)
   }
 
   override def responseMonad: MonadError[Id] = IdMonad
@@ -211,7 +211,7 @@ abstract class OkHttpAsyncBackend[R[_], S](client: OkHttpClient, rm: MonadAsyncE
             error(e)
 
           override def onResponse(call: Call, response: OkHttpResponse): Unit =
-            try success(readResponse(response, r.response, r.parseResponseCondition))
+            try success(readResponse(response, r.response, r.parseResponseIf))
             catch { case e: Exception => error(e) }
         })
     })
