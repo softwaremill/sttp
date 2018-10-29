@@ -37,6 +37,22 @@ And to save the response to a file::
 
   As the handling of response is specified upfront, there's no need to "consume" the response body. It can be safely discarded if not needed.
 
+.. _responsebodyspec_handlenon2xx:
+
+Handling non 2xx responses
+--------------------------
+
+By default only a successful (2xx) response body can be obtained. To customize this behaviour use ``.parseResponseIf`` method::
+
+  val response =
+    sttp
+      .post(uri"...")
+      .body(requestPayload)
+      .response(asXxx)
+      .parseResponseIf(status => status == 400 || status == 200)
+      .send()
+
+
 .. _responsebodyspec_custom:
 
 Custom body deserializers

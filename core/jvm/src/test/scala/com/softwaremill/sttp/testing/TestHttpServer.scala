@@ -91,6 +91,22 @@ private class HttpServer(port: Int) extends AutoCloseable with CorsDirectives {
             .mkString(" "))
         }
       } ~
+        pathPrefix("custom_status") {
+          path(IntNumber) { status =>
+            post {
+              entity(as[String]) { body: String =>
+                complete(
+                  HttpResponse(
+                    status,
+                    entity = List("POST", s"/echo/custom_status/$status", body)
+                      .filter(_.nonEmpty)
+                      .mkString(" ")
+                  )
+                )
+              }
+            }
+          }
+        } ~
         post {
           parameterMap { params =>
             entity(as[String]) { body: String =>

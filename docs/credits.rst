@@ -10,3 +10,4 @@ Credits
 * `Gabriele Petronella <https://github.com/gabro>`_
 * `Paweł Stawicki <https://github.com/amorfis>`_
 * `Michał Siatkowski <https://github.com/atais>`_
+* `Marcin Kubala <https://github.com/mkubala>`_

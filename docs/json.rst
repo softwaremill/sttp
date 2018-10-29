@@ -5,6 +5,8 @@ JSON
 
 Adding support for JSON (or other format) bodies in requests/responses is a matter of providing a :ref:`body serializer <requestbody_custom>` and/or a :ref:`response body specification <responsebodyspec_custom>`. Both are quite straightforward to implement, so integrating with your favorite JSON library shouldn't be a problem. However, there are some integrations available out-of-the-box.
 
+Also read about :ref:`handling non 2xx responses <responsebodyspec_handlenon2xx>` if you need to unmarshal error responses.
+
 Circe
 -----
 
