@@ -44,12 +44,12 @@ class HttpURLConnectionBackend private (opts: SttpBackendOptions, customizeConne
 
     try {
       val is = c.getInputStream
-      readResponse(c, is, r.response, r.parseResponseIf)
+      readResponse(c, is, r.response, r.options.parseResponseIf)
     } catch {
       case e: CharacterCodingException     => throw e
       case e: UnsupportedEncodingException => throw e
       case _: IOException if c.getResponseCode != -1 =>
-        readResponse(c, c.getErrorStream, r.response, r.parseResponseIf)
+        readResponse(c, c.getErrorStream, r.response, r.options.parseResponseIf)
     }
   }
 

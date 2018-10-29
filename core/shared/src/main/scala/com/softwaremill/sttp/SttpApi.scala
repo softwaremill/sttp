@@ -16,14 +16,18 @@ trait SttpApi extends SttpExtensions {
     * An empty request with no headers.
     */
   val emptyRequest: RequestT[Empty, String, Nothing] =
-    RequestT[Empty, String, Nothing](None,
-                                     None,
-                                     NoBody,
-                                     Vector(),
-                                     asString,
-                                     RequestOptions(followRedirects = true, DefaultReadTimeout, FollowRedirectsBackend.MaxRedirects),
-                                     Map(),
-                                     StatusCodes.isSuccess)
+    RequestT[Empty, String, Nothing](
+      None,
+      None,
+      NoBody,
+      Vector(),
+      asString,
+      RequestOptions(followRedirects = true,
+                     DefaultReadTimeout,
+                     FollowRedirectsBackend.MaxRedirects,
+                     StatusCodes.isSuccess),
+      Map()
+    )
 
   /**
     * A starting request, with the following modifications comparing to

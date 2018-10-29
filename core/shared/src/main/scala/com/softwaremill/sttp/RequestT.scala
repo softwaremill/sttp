@@ -36,8 +36,7 @@ case class RequestT[U[_], T, +S](
     headers: Seq[(String, String)],
     response: ResponseAs[T, S],
     options: RequestOptions,
-    tags: Map[String, Any],
-    parseResponseIf: StatusCode => Boolean
+    tags: Map[String, Any]
 ) extends RequestTExtensions[U, T, S] {
   def get(uri: Uri): Request[T, S] =
     this.copy[Id, T, S](uri = uri, method = Method.GET)
@@ -218,7 +217,7 @@ case class RequestT[U[_], T, +S](
   def tag(k: String): Option[Any] = tags.get(k)
 
   def parseResponseIf(f: StatusCode => Boolean): RequestT[U, T, S] =
-    this.copy(parseResponseIf = f)
+    this.copy(options = options.copy(parseResponseIf = f))
 
   def send[R[_]]()(implicit backend: SttpBackend[R, S], isIdInRequest: IsIdInRequest[U]): R[Response[T]] = {
     // we could avoid the asInstanceOf by creating an artificial copy
@@ -270,5 +269,6 @@ class SpecifyAuthScheme[U[_], T, +S](hn: String, rt: RequestT[U, T, S]) {
 case class RequestOptions(
     followRedirects: Boolean,
     readTimeout: Duration,
-    maxRedirects: Int
+    maxRedirects: Int,
+    parseResponseIf: StatusCode => Boolean
 )
