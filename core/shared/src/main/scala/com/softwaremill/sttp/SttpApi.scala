@@ -22,7 +22,8 @@ trait SttpApi extends SttpExtensions {
                                      Vector(),
                                      asString,
                                      RequestOptions(followRedirects = true, readTimeout = DefaultReadTimeout),
-                                     Map())
+                                     Map(),
+                                     StatusCodes.isSuccess)
 
   /**
     * A starting request, with the following modifications comparing to
@@ -113,10 +114,7 @@ trait SttpApi extends SttpExtensions {
     * File name will be set to the name of the file.
     */
   private[sttp] def multipartSttpFile(name: String, file: SttpFile): Multipart =
-    Multipart(name,
-              FileBody(file),
-              fileName = Some(file.name),
-              contentType = Some(MediaTypes.Binary))
+    Multipart(name, FileBody(file), fileName = Some(file.name), contentType = Some(MediaTypes.Binary))
 
   /**
     * Encodes the given parameters as form data using `utf-8`.

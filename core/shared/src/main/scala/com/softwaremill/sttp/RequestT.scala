@@ -37,7 +37,7 @@ case class RequestT[U[_], T, +S](
     response: ResponseAs[T, S],
     options: RequestOptions,
     tags: Map[String, Any],
-    parseResponseCondition: StatusCode => Boolean = StatusCodes.isSuccess
+    parseResponseCondition: StatusCode => Boolean
 ) extends RequestTExtensions[U, T, S] {
   def get(uri: Uri): Request[T, S] =
     this.copy[Id, T, S](uri = uri, method = Method.GET)
