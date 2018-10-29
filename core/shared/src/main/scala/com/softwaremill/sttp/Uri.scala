@@ -6,6 +6,8 @@ import Uri.QueryFragment.{KeyValue, Plain, Value}
 
 import scala.annotation.tailrec
 import scala.collection.immutable.Seq
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
 /**
   * A [[https://en.wikipedia.org/wiki/Uniform_Resource_Identifier URI]].
@@ -80,6 +82,17 @@ case class Uri(scheme: String,
   }
 
   def paramsMap: Map[String, String] = paramsSeq.toMap
+
+  def multiParamsMap: Map[String, Seq[String]] = {
+    if (queryFragments.isEmpty) Map.empty[String, Seq[String]]
+    else {
+      val m = mutable.Map.empty[String, ListBuffer[String]]
+      paramsSeq.foreach { case (key, value) =>
+        m.getOrElseUpdate(key, new ListBuffer[String]) += value
+      }
+      m.mapValues(_.toList).toMap
+    }
+  }
 
   def paramsSeq: Seq[(String, String)] = queryFragments.collect {
     case KeyValue(k, v, _, _) => k -> v
