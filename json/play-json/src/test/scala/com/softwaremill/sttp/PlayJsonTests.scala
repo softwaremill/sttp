@@ -2,7 +2,6 @@ package com.softwaremill.sttp
 
 import com.softwaremill.sttp.internal._
 import com.softwaremill.sttp.playJson._
-
 import play.api.libs.json._
 import org.scalatest._
 
@@ -26,6 +25,39 @@ class PlayJsonTests extends FlatSpec with Matchers with EitherValues {
     val responseAs = asJson[Outer]
 
     runJsonResponseAs(responseAs)(body).right.value shouldBe expected
+  }
+
+  it should "decode None from empty body" in {
+    import OptionReads._
+
+    val responseAs = asJson[Option[Inner]]
+
+    runJsonResponseAs(responseAs)("").right.value shouldBe None
+  }
+
+  it should "decode Left(None) from empty body" in {
+    import OptionReads._
+    import EitherReads._
+
+    val responseAs = asJson[Either[Option[Inner], Outer]]
+
+    runJsonResponseAs(responseAs)("").right.value shouldBe Left(None)
+  }
+
+  it should "decode Right(None) from empty body" in {
+    import OptionReads._
+    import EitherReads._
+
+    val responseAs = asJson[Either[Outer, Option[Inner]]]
+
+    runJsonResponseAs(responseAs)("").right.value shouldBe Right(None)
+  }
+
+  it should "fail to decode from empty input" in {
+    val responseAs = asJson[Inner]
+
+    val result = runJsonResponseAs(responseAs)("").left.value
+    result.original shouldBe ""
   }
 
   it should "fail to read invalid json" in {
@@ -76,6 +108,15 @@ class PlayJsonTests extends FlatSpec with Matchers with EitherValues {
   object Outer {
     implicit val outerReads: Reads[Outer] = Json.reads[Outer]
     implicit val outerWrites: OWrites[Outer] = Json.writes[Outer]
+  }
+
+  object OptionReads {
+    implicit def reads[R: Reads]: Reads[Option[R]] = _.validateOpt[R]
+  }
+
+  object EitherReads {
+    implicit def reads[L: Reads, R: Reads]: Reads[Either[L, R]] =
+      implicitly[Reads[L]].map[Either[L, R]](Left(_)).orElse(implicitly[Reads[R]].map(Right(_)))
   }
 
   def extractBody[A[_], B, C](request: RequestT[A, B, C]): String =
