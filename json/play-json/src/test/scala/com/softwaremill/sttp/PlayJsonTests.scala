@@ -111,11 +111,11 @@ class PlayJsonTests extends FlatSpec with Matchers with EitherValues {
   }
 
   object OptionReads {
-    implicit def reads[R: Reads]: Reads[Option[R]] = _.validateOpt[R]
+    implicit def optionReads[R: Reads]: Reads[Option[R]] = _.validateOpt[R]
   }
 
   object EitherReads {
-    implicit def reads[L: Reads, R: Reads]: Reads[Either[L, R]] =
+    implicit def eitherReads[L: Reads, R: Reads]: Reads[Either[L, R]] =
       implicitly[Reads[L]].map[Either[L, R]](Left(_)).orElse(implicitly[Reads[R]].map(Right(_)))
   }
 
