@@ -29,6 +29,30 @@ class SprayJsonTests extends FlatSpec with Matchers with EitherValues {
     runJsonResponseAs(responseAs)(body) shouldBe expected
   }
 
+  it should "decode None from empty body" in {
+    val responseAs = asJson[Option[Inner]]
+
+    runJsonResponseAs(responseAs)("") shouldBe None
+  }
+
+  it should "decode Left(None) from empty body" in {
+    val responseAs = asJson[Either[Option[Inner], Outer]]
+
+    runJsonResponseAs(responseAs)("") shouldBe Left(None)
+  }
+
+  it should "decode Right(None) from empty body" in {
+    val responseAs = asJson[Either[Outer, Option[Inner]]]
+
+    runJsonResponseAs(responseAs)("") shouldBe Right(None)
+  }
+
+  it should "fail to decode from empty input" in {
+    val responseAs = asJson[Inner]
+
+    a[ParsingException] should be thrownBy runJsonResponseAs(responseAs)("")
+  }
+
   it should "fail to decode invalid json" in {
     val body = """not valid json"""
 

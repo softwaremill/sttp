@@ -1,7 +1,7 @@
 package com.softwaremill.sttp
 
 import com.softwaremill.sttp.internal._
-
+import org.json4s.MappingException
 import org.json4s.ParserUtil.ParseException
 import org.json4s.native
 import org.scalatest._
@@ -29,6 +29,30 @@ class Json4sTests extends FlatSpec with Matchers with EitherValues {
     val responseAs = asJson[Outer]
 
     runJsonResponseAs(responseAs)(body) shouldBe expected
+  }
+
+  it should "decode None from empty body" in {
+    val responseAs = asJson[Option[Inner]]
+
+    runJsonResponseAs(responseAs)("") shouldBe None
+  }
+
+  it should "decode Left(None) from empty body" in {
+    val responseAs = asJson[Either[Option[Inner], Outer]]
+
+    runJsonResponseAs(responseAs)("") shouldBe Left(None)
+  }
+
+  it should "decode Right(None) from empty body" in {
+    val responseAs = asJson[Either[Outer, Option[Inner]]]
+
+    runJsonResponseAs(responseAs)("") shouldBe Right(None)
+  }
+
+  it should "fail to decode from empty input" in {
+    val responseAs = asJson[Inner]
+
+    a[MappingException] should be thrownBy runJsonResponseAs(responseAs)("")
   }
 
   it should "fail to decode invalid json" in {

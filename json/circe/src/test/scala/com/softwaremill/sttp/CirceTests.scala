@@ -37,6 +37,34 @@ class CirceTests extends FlatSpec with Matchers with EitherValues {
     runJsonResponseAs(responseAs)(body).right.value shouldBe expected
   }
 
+  it should "decode None from empty body" in {
+    val responseAs = asJson[Option[Inner]]
+
+    runJsonResponseAs(responseAs)("").right.value shouldBe None
+  }
+
+  it should "decode Left(None) from empty body" in {
+    import EitherDecoders._
+    val responseAs = asJson[Either[Option[Inner], Outer]]
+
+    runJsonResponseAs(responseAs)("").right.value shouldBe Left(None)
+  }
+
+  it should "decode Right(None) from empty body" in {
+    import EitherDecoders._
+    val responseAs = asJson[Either[Outer, Option[Inner]]]
+
+    runJsonResponseAs(responseAs)("").right.value shouldBe Right(None)
+  }
+
+  it should "fail to decode from empty input" in {
+    val responseAs = asJson[Inner]
+
+    runJsonResponseAs(responseAs)("").left.value should matchPattern {
+      case DeserializationError("", _ :io.circe.ParsingFailure, _) =>
+    }
+  }
+
   it should "fail to decode invalid json" in {
     val body = """not valid json"""
 
@@ -89,6 +117,10 @@ class CirceTests extends FlatSpec with Matchers with EitherValues {
       Encoder.forProduct2("foo", "bar")(o => (o.foo, o.bar))
     implicit val decoder: Decoder[Outer] =
       Decoder.forProduct2("foo", "bar")(Outer.apply)
+  }
+
+  object EitherDecoders {
+    implicit def decoder[L: Decoder, R: Decoder]: Decoder[Either[L, R]] = implicitly[Decoder[L]].either(implicitly[Decoder[R]])
   }
 
   def extractBody[A[_], B, C](request: RequestT[A, B, C]): String =

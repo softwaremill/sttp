@@ -336,6 +336,19 @@ lazy val okhttpMonixBackend: Project =
   okhttpBackendProject("monix")
     .dependsOn(monixJVM % "compile->compile;test->test")
 
+lazy val jsonCommon = crossProject(JSPlatform, JVMPlatform)
+  .withoutSuffixFor(JVMPlatform)
+  .crossType(CrossType.Pure)
+  .in(file("json/common"))
+  .jvmSettings(commonJvmSettings: _*)
+  .jsSettings(commonJsSettings: _*)
+  .settings(
+    name := "json-common"
+  )
+
+lazy val jsonCommonJVM = jsonCommon.jvm
+lazy val jsonCommonJS = jsonCommon.js
+
 lazy val circeVersion = "0.9.3"
 
 //----- json
@@ -353,8 +366,8 @@ lazy val circe = crossProject(JSPlatform, JVMPlatform)
       "org.scalatest" %%% "scalatest" % scalaTestVersion % "test"
     )
   )
-lazy val circeJS = circe.js.dependsOn(coreJS)
-lazy val circeJVM = circe.jvm.dependsOn(coreJVM)
+lazy val circeJS = circe.js.dependsOn(coreJS, jsonCommonJS)
+lazy val circeJVM = circe.jvm.dependsOn(coreJVM, jsonCommonJVM)
 
 lazy val json4sVersion = "3.6.0"
 
@@ -368,7 +381,7 @@ lazy val json4s: Project = (project in file("json/json4s"))
       "org.scalatest" %% "scalatest" % scalaTestVersion % "test"
     )
   )
-  .dependsOn(coreJVM)
+  .dependsOn(coreJVM, jsonCommonJVM)
 
 lazy val sprayJson: Project = (project in file("json/spray-json"))
   .settings(commonJvmSettings: _*)
@@ -379,7 +392,7 @@ lazy val sprayJson: Project = (project in file("json/spray-json"))
       "org.scalatest" %% "scalatest" % scalaTestVersion % "test"
     )
   )
-  .dependsOn(coreJVM)
+  .dependsOn(coreJVM, jsonCommonJVM)
 
 lazy val playJson = crossProject(JSPlatform, JVMPlatform)
   .withoutSuffixFor(JVMPlatform)
@@ -394,8 +407,8 @@ lazy val playJson = crossProject(JSPlatform, JVMPlatform)
       "org.scalatest" %%% "scalatest" % scalaTestVersion % "test"
     )
   )
-lazy val playJsonJS = playJson.js.dependsOn(coreJS)
-lazy val playJsonJVM = playJson.jvm.dependsOn(coreJVM)
+lazy val playJsonJS = playJson.js.dependsOn(coreJS, jsonCommonJS)
+lazy val playJsonJVM = playJson.jvm.dependsOn(coreJVM, jsonCommonJVM)
 
 lazy val braveVersion = "5.2.0"
 
