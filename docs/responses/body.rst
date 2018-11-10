@@ -58,7 +58,7 @@ By default only a successful (2xx) response body can be obtained. To customize t
 Custom body deserializers
 -------------------------
 
-It's possible to define custom body deserializers by taking any of the built-in response specifications and mapping over them. Each ``ResponseAs`` instance has a ``map`` method, which can be used to transform it to a specification for another type. Each such value is immutable and can be used multiple times.
+It's possible to define custom body deserializers by taking any of the built-in response specifications and mapping over them. Each ``ResponseAs`` instance has ``map`` and ``mapWithHeaders`` methods, which can be used to transform it to a specification for another type (optionally using response headers). Each such value is immutable and can be used multiple times.
 
 As an example, to read the response body as an int, the following response specification can be defined (warning: this ignores the possibility of exceptions!)::
 
