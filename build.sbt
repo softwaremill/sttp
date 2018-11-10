@@ -105,7 +105,7 @@ def testServerSettings(config: Configuration) = Seq(
 )
 
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.5"
-val akkaStreams = "com.typesafe.akka" %% "akka-stream" % "2.5.16"
+val akkaStreams = "com.typesafe.akka" %% "akka-stream" % "2.5.18"
 
 val scalaTestVersion = "3.0.5"
 val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion
@@ -194,14 +194,14 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .nativeSettings(testServerSettings(Test))
   .nativeSettings(
     libraryDependencies ++= Seq(
-      "org.scala-native" %%% "test-interface" % "0.3.0",
+      "org.scala-native" %%% "test-interface" % "0.3.8",
       "org.scalatest" %%% "scalatest" % "3.2.0-SNAP10" % "test"
     )
   )
   .jvmSettings(
     libraryDependencies ++= Seq(
       akkaHttp % "test",
-      "ch.megard" %% "akka-http-cors" % "0.3.0" % "test",
+      "ch.megard" %% "akka-http-cors" % "0.3.1" % "test",
       akkaStreams % "test",
       "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test"
     ),
@@ -242,7 +242,7 @@ lazy val monix = crossProject(JSPlatform, JVMPlatform)
   .settings(
     name := "monix",
     publishArtifact in Test := true,
-    libraryDependencies ++= Seq("io.monix" %%% "monix" % "3.0.0-RC1")
+    libraryDependencies ++= Seq("io.monix" %%% "monix" % "3.0.0-RC2")
   )
 lazy val monixJS = monix.js.dependsOn(coreJS % "compile->compile;test->test")
 lazy val monixJVM = monix.jvm.dependsOn(coreJVM % "compile->compile;test->test")
@@ -252,7 +252,7 @@ lazy val scalaz: Project = (project in file("implementations/scalaz"))
   .settings(
     name := "scalaz",
     publishArtifact in Test := true,
-    libraryDependencies ++= Seq("org.scalaz" %% "scalaz-concurrent" % "7.2.26")
+    libraryDependencies ++= Seq("org.scalaz" %% "scalaz-concurrent" % "7.2.27")
   )
   .dependsOn(coreJVM % "compile->compile;test->test")
 
@@ -278,7 +278,7 @@ lazy val asyncHttpClientBackend: Project =
     .settings(
       name := "async-http-client-backend",
       libraryDependencies ++= Seq(
-        "org.asynchttpclient" % "async-http-client" % "2.5.2"
+        "org.asynchttpclient" % "async-http-client" % "2.6.0"
       )
     )
     .dependsOn(coreJVM % "compile->compile;test->test")
@@ -350,7 +350,7 @@ lazy val jsonCommon = crossProject(JSPlatform, JVMPlatform)
 lazy val jsonCommonJVM = jsonCommon.jvm
 lazy val jsonCommonJS = jsonCommon.js
 
-lazy val circeVersion = "0.9.3"
+lazy val circeVersion = "0.10.1"
 
 //----- json
 lazy val circe = crossProject(JSPlatform, JVMPlatform)
@@ -370,7 +370,7 @@ lazy val circe = crossProject(JSPlatform, JVMPlatform)
 lazy val circeJS = circe.js.dependsOn(coreJS, jsonCommonJS)
 lazy val circeJVM = circe.jvm.dependsOn(coreJVM, jsonCommonJVM)
 
-lazy val json4sVersion = "3.6.0"
+lazy val json4sVersion = "3.6.2"
 
 lazy val json4s: Project = (project in file("json/json4s"))
   .settings(commonJvmSettings: _*)
@@ -389,7 +389,7 @@ lazy val sprayJson: Project = (project in file("json/spray-json"))
   .settings(
     name := "spray-json",
     libraryDependencies ++= Seq(
-      "io.spray" %% "spray-json" % "1.3.4",
+      "io.spray" %% "spray-json" % "1.3.5",
       "org.scalatest" %% "scalatest" % scalaTestVersion % "test"
     )
   )
@@ -411,7 +411,7 @@ lazy val playJson = crossProject(JSPlatform, JVMPlatform)
 lazy val playJsonJS = playJson.js.dependsOn(coreJS, jsonCommonJS)
 lazy val playJsonJVM = playJson.jvm.dependsOn(coreJVM, jsonCommonJVM)
 
-lazy val braveVersion = "5.2.0"
+lazy val braveVersion = "5.5.0"
 
 lazy val braveBackend: Project = (project in file("metrics/brave-backend"))
   .settings(commonJvmSettings: _*)
@@ -431,7 +431,7 @@ lazy val prometheusBackend: Project = (project in file("metrics/prometheus-backe
   .settings(
     name := "prometheus-backend",
     libraryDependencies ++= Seq(
-      "io.prometheus" % "simpleclient" % "0.4.0",
+      "io.prometheus" % "simpleclient" % "0.5.0",
       scalaTest % "test"
     )
   )

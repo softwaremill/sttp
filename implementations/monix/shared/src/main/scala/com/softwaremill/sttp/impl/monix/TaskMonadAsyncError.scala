@@ -15,7 +15,7 @@ object TaskMonadAsyncError extends MonadAsyncError[Task] {
     fa.flatMap(f)
 
   override def async[T](register: ((Either[Throwable, T]) => Unit) => Unit): Task[T] =
-    Task.async { (_, cb) =>
+    Task.async { cb =>
       register {
         case Left(t)  => cb(Failure(t))
         case Right(t) => cb(Success(t))

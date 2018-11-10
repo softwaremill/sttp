@@ -32,10 +32,6 @@ trait HttpTestExtensions[R[_]] extends AsyncExecutionContext { self: HttpTest[R]
 
   private def withTemporaryNonExistentFile[T](f: DomFile => Future[T]): Future[T] = withTemporaryFile(None)(f)
 
-  private def md5Hash(bytes: Array[Byte]): String = {
-    SparkMD5.ArrayBuffer.hash(bytes.toTypedArray.buffer)
-  }
-
   private def md5FileHash(file: DomFile): Future[String] = {
     val p = Promise[String]()
 

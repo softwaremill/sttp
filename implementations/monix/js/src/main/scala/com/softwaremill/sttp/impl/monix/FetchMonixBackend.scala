@@ -61,7 +61,7 @@ class FetchMonixBackend private (fetchOptions: FetchOptions)
             }
           }
         }
-        go().doOnSubscriptionCancel(() => reader.cancel("Response body reader cancelled"))
+        go().doOnSubscriptionCancel(Task(reader.cancel("Response body reader cancelled")))
       }
       .map(ras.responseIsStream)
   }

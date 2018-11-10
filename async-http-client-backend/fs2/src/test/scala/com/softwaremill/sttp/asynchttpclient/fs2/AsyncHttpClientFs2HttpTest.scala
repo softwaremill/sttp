@@ -1,6 +1,6 @@
 package com.softwaremill.sttp.asynchttpclient.fs2
 
-import cats.effect.{ContextShift, IO, Timer}
+import cats.effect.{ContextShift, IO}
 import com.softwaremill.sttp.SttpBackend
 import com.softwaremill.sttp.testing.{ConvertToFuture, HttpTest}
 

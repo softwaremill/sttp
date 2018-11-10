@@ -5,7 +5,6 @@ import java.nio.file.{Files, Paths}
 import java.security.MessageDigest
 
 import com.softwaremill.sttp._
-import com.softwaremill.sttp.internal._
 
 trait SyncHttpTestExtensions {
   self: SyncHttpTest =>
@@ -107,7 +106,7 @@ trait SyncHttpTestExtensions {
         req.send()
         fail("IOException should be thrown")
       } catch {
-        case e => e.getMessage shouldBe "Permission denied"
+        case e: Exception => e.getMessage shouldBe "Permission denied"
       }
     }
 
@@ -119,7 +118,7 @@ trait SyncHttpTestExtensions {
           req.send()
           fail("IOException should be thrown")
         } catch {
-          case e => e.getMessage shouldBe s"File ${file.getAbsolutePath} exists - overwriting prohibited"
+          case e: Exception => e.getMessage shouldBe s"File ${file.getAbsolutePath} exists - overwriting prohibited"
         }
       }
     }

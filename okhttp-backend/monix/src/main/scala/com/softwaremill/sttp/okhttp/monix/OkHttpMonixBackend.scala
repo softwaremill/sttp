@@ -30,9 +30,9 @@ class OkHttpMonixBackend private (client: OkHttpClient, closeClient: Boolean)(im
   override def responseBodyToStream(res: okhttp3.Response): Try[Observable[ByteBuffer]] =
     Success(
       Observable
-        .fromInputStream(res.body().byteStream())
+        .fromInputStream(Task.now(res.body().byteStream()))
         .map(ByteBuffer.wrap)
-        .doAfterTerminate(_ => res.close()))
+        .guaranteeCase(_ => Task(res.close())))
 
   private def toIterable[T](observable: Observable[T])(implicit s: Scheduler): Iterable[T] =
     new Iterable[T] {

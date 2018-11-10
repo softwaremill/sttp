@@ -13,11 +13,11 @@ class SprayJsonTests extends FlatSpec with Matchers with EitherValues {
 
   it should "encode arbitrary json bodies" in {
     val body = Outer(Inner(42, true, "horses"), "cats")
-    val expected = """{"foo":{"a":42,"b":true,"c":"horses"},"bar":"cats"}"""
 
     val req = sttp.body(body)
 
-    extractBody(req) shouldBe expected
+    extractBody(req) should include(""""foo":{"a":42,"b":true,"c":"horses"}""")
+    extractBody(req) should include(""""bar":"cats"""")
   }
 
   it should "decode arbitrary bodies" in {
