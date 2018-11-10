@@ -218,8 +218,8 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
     (s.getBytes(Utf8), ResponseAsString(Utf8), Some(s)),
     (new ByteArrayInputStream(s.getBytes(Utf8)), ResponseAsString(Utf8), Some(s)),
     (10, ResponseAsString(Utf8), None),
-    ("10", MappedResponseAs(ResponseAsString(Utf8), (_: String).toInt), Some(10)),
-    (10, MappedResponseAs(ResponseAsString(Utf8), (_: String).toInt), None)
+    ("10", MappedResponseAs(ResponseAsString(Utf8), (s: String, _) => s.toInt), Some(10)),
+    (10, MappedResponseAs(ResponseAsString(Utf8), (s: String, _) => s.toInt), None)
   )
 
   behavior of "tryAdjustResponseBody"
@@ -228,7 +228,7 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
     (body, responseAs, expectedResult) <- adjustTestData
   } {
     it should s"adjust $body to $expectedResult when specified as $responseAs" in {
-      SttpBackendStub.tryAdjustResponseBody(responseAs, body) should be(expectedResult)
+      SttpBackendStub.tryAdjustResponseBody(responseAs, body, Headers(Nil)) should be(expectedResult)
     }
   }
 }

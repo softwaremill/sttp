@@ -11,9 +11,9 @@ import okhttp3.internal.http.HttpMethod
 import okhttp3.{
   Call,
   Callback,
-  Headers,
   MediaType,
   OkHttpClient,
+  Headers => OkHttpHeaders,
   MultipartBody => OkHttpMultipartBody,
   Request => OkHttpRequest,
   RequestBody => OkHttpRequestBody,
@@ -78,7 +78,7 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean
 
   private def addMultipart(builder: OkHttpMultipartBody.Builder, mp: Multipart): Unit = {
     val allHeaders = mp.additionalHeaders + (HeaderNames.ContentDisposition -> mp.contentDispositionHeaderValue)
-    val headers = Headers.of(allHeaders.asJava)
+    val headers = OkHttpHeaders.of(allHeaders.asJava)
 
     bodyToOkHttp(mp.body).foreach(builder.addPart(headers, _))
   }
@@ -89,19 +89,20 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean
 
     val code = res.code()
 
-    val body = if (parseCondition(code)) {
-      responseMonad.map(responseHandler(res).handle(responseAs, responseMonad))(Right(_))
-    } else {
-      responseMonad.map(responseHandler(res).handle(asByteArray, responseMonad))(Left(_))
-    }
-
     val headers = res
       .headers()
       .names()
       .asScala
       .flatMap(name => res.headers().values(name).asScala.map((name, _)))
+      .toList
 
-    responseMonad.map(body)(Response(_, res.code(), res.message(), headers.toList, Nil))
+    val body = if (parseCondition(code)) {
+      responseMonad.map(responseHandler(res).handle(responseAs, responseMonad, Headers(headers)))(Right(_))
+    } else {
+      responseMonad.map(responseHandler(res).handle(asByteArray, responseMonad, Headers(headers)))(Left(_))
+    }
+
+    responseMonad.map(body)(Response(_, res.code(), res.message(), headers, Nil))
   }
 
   private def responseHandler(res: OkHttpResponse) =

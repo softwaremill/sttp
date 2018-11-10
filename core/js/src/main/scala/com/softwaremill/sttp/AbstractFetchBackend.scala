@@ -17,7 +17,7 @@ import com.softwaremill.sttp.monadSyntax._
 import org.scalajs.dom.FormData
 import org.scalajs.dom.experimental.BodyInit
 import org.scalajs.dom.experimental.Fetch
-import org.scalajs.dom.experimental.Headers
+import org.scalajs.dom.experimental.{Headers => JSHeaders}
 import org.scalajs.dom.experimental.HttpMethod
 import org.scalajs.dom.experimental.RequestCredentials
 import org.scalajs.dom.experimental.RequestInit
@@ -69,7 +69,7 @@ abstract class AbstractFetchBackend[R[_], S](options: FetchOptions)(rm: MonadErr
 
     }
 
-    val headers = new Headers()
+    val headers = new JSHeaders()
     request.headers.foreach {
       case (name, value) =>
         headers.set(name, value)
@@ -107,8 +107,10 @@ abstract class AbstractFetchBackend[R[_], S](options: FetchOptions)(rm: MonadErr
         }
       }
       .flatMap { resp =>
+        val headers = convertResponseHeaders(resp.headers)
+
         val body: R[Either[Array[Byte], T]] = if (request.options.parseResponseIf(resp.status)) {
-          readResponseBody(resp, request.response).map(Right.apply)
+          readResponseBody(resp, request.response, Headers(headers)).map(Right.apply)
         } else {
           transformPromise(resp.text()).map(t => Left(t.getBytes(Utf8)))
         }
@@ -118,7 +120,7 @@ abstract class AbstractFetchBackend[R[_], S](options: FetchOptions)(rm: MonadErr
             rawErrorBody = b,
             code = resp.status,
             statusText = resp.statusText,
-            headers = convertResponseHeaders(resp.headers),
+            headers = headers,
             history = Nil
           )
         }
@@ -128,7 +130,7 @@ abstract class AbstractFetchBackend[R[_], S](options: FetchOptions)(rm: MonadErr
 
   protected def addCancelTimeoutHook[T](result: R[T], cancel: () => Unit): R[T]
 
-  private def convertResponseHeaders(headers: Headers): Seq[(String, String)] = {
+  private def convertResponseHeaders(headers: JSHeaders): Seq[(String, String)] = {
     headers
       .jsIterator()
       .toIterator
@@ -197,10 +199,10 @@ abstract class AbstractFetchBackend[R[_], S](options: FetchOptions)(rm: MonadErr
 
   protected def handleStreamBody(s: S): R[js.UndefOr[BodyInit]]
 
-  private def readResponseBody[T](response: FetchResponse, responseAs: ResponseAs[T, S]): R[T] = {
+  private def readResponseBody[T](response: FetchResponse, responseAs: ResponseAs[T, S], headers: Headers): R[T] = {
     responseAs match {
       case MappedResponseAs(raw, g) =>
-        readResponseBody(response, raw).map(g)
+        readResponseBody(response, raw, headers).map(t => g(t, headers))
 
       case IgnoreResponse =>
         transformPromise(response.arrayBuffer()).map(_ => ())

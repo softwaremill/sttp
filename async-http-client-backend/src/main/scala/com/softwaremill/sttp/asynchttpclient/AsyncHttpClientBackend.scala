@@ -227,9 +227,9 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
     val base = readResponseNoBody(response)
 
     val body = if (parseCondition(base.code)) {
-      rm.map(eagerResponseHandler(response).handle(responseAs, rm))(Right(_))
+      rm.map(eagerResponseHandler(response).handle(responseAs, rm, base))(Right(_))
     } else {
-      rm.map(eagerResponseHandler(response).handle(asByteArray, rm))(Left(_))
+      rm.map(eagerResponseHandler(response).handle(asByteArray, rm, base))(Left(_))
     }
 
     rm.map(body) { b: Either[Array[Byte], T] =>

@@ -217,21 +217,24 @@ class HttpURLConnectionBackend private (opts: SttpBackendOptions, customizeConne
     val code = c.getResponseCode
     val wrappedIs = wrapInput(contentEncoding, handleNullInput(is))
     val body = if (parseCondition(code)) {
-      Right(readResponseBody(wrappedIs, responseAs, charsetFromHeaders))
+      Right(readResponseBody(wrappedIs, responseAs, charsetFromHeaders, Headers(headers)))
     } else {
-      Left(readResponseBody(wrappedIs, asByteArray, charsetFromHeaders))
+      Left(readResponseBody(wrappedIs, asByteArray, charsetFromHeaders, Headers(headers)))
     }
 
     Response(body, code, c.getResponseMessage, headers, Nil)
   }
 
-  private def readResponseBody[T](is: InputStream, responseAs: ResponseAs[T, Nothing], charset: Option[String]): T = {
+  private def readResponseBody[T](is: InputStream,
+                                  responseAs: ResponseAs[T, Nothing],
+                                  charset: Option[String],
+                                  headers: Headers): T = {
 
     def asString(enc: String) =
       Source.fromInputStream(is, charset.getOrElse(enc)).mkString
 
     responseAs match {
-      case MappedResponseAs(raw, g) => g(readResponseBody(is, raw, charset))
+      case MappedResponseAs(raw, g) => g(readResponseBody(is, raw, charset, headers), headers)
 
       case IgnoreResponse =>
         @tailrec def consume(): Unit = if (is.read() != -1) consume()

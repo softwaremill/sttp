@@ -28,12 +28,12 @@ trait HttpTest[R[_]]
   implicit val backend: SttpBackend[R, Nothing]
   implicit val convertToFuture: ConvertToFuture[R]
 
-  protected def postEcho = sttp.post(uri"$endpoint/echo")
+  protected def postEcho: Request[String, Nothing] = sttp.post(uri"$endpoint/echo")
   protected val testBody = "this is the body"
-  protected val testBodyBytes = testBody.getBytes("UTF-8")
+  protected val testBodyBytes: Array[Byte] = testBody.getBytes("UTF-8")
   protected val expectedPostEchoResponse = "POST /echo this is the body"
 
-  protected val sttpIgnore = com.softwaremill.sttp.ignore
+  protected val sttpIgnore: ResponseAs[Unit, Nothing] = com.softwaremill.sttp.ignore
 
   "parse response" - {
     "as string" in {
@@ -61,6 +61,18 @@ trait HttpTest[R[_]]
         .toFuture()
         .map { response =>
           response.unsafeBody should be(expectedPostEchoResponse.length)
+        }
+    }
+
+    "as string with mapping using mapWithHeaders" in {
+      postEcho
+        .body(testBody)
+        .response(asString.mapWithHeaders { (b, h) => b + " " + h.contentType.getOrElse("") })
+        .send()
+        .toFuture()
+        .map { response =>
+          response.unsafeBody should include(expectedPostEchoResponse)
+          response.unsafeBody should include("text/plain")
         }
     }
 

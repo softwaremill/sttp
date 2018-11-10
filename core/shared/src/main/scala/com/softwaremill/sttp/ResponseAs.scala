@@ -11,7 +11,8 @@ import scala.util.Try
   * @tparam S If `T` is a stream, the type of the stream. Otherwise, `Nothing`.
   */
 sealed trait ResponseAs[T, +S] {
-  def map[T2](f: T => T2): ResponseAs[T2, S]
+  def map[T2](f: T => T2): ResponseAs[T2, S] = mapWithHeaders { case (t, _) => f(t) }
+  def mapWithHeaders[T2](f: (T, Headers) => T2): ResponseAs[T2, S]
 }
 
 /**
@@ -19,7 +20,7 @@ sealed trait ResponseAs[T, +S] {
   * handling method, but needs to be handled directly by the backend.
   */
 sealed trait BasicResponseAs[T, +S] extends ResponseAs[T, S] {
-  override def map[T2](f: T => T2): ResponseAs[T2, S] =
+  override def mapWithHeaders[T2](f: (T, Headers) => T2): ResponseAs[T2, S] =
     MappedResponseAs[T, T2, S](this, f)
 }
 
@@ -28,9 +29,9 @@ case class ResponseAsString(encoding: String) extends BasicResponseAs[String, No
 case object ResponseAsByteArray extends BasicResponseAs[Array[Byte], Nothing]
 case class ResponseAsStream[T, S]()(implicit val responseIsStream: S =:= T) extends BasicResponseAs[T, S]
 
-case class MappedResponseAs[T, T2, S](raw: BasicResponseAs[T, S], g: T => T2) extends ResponseAs[T2, S] {
-  override def map[T3](f: T2 => T3): ResponseAs[T3, S] =
-    MappedResponseAs[T, T3, S](raw, g andThen f)
+case class MappedResponseAs[T, T2, S](raw: BasicResponseAs[T, S], g: (T, Headers) => T2) extends ResponseAs[T2, S] {
+  override def mapWithHeaders[T3](f: (T2, Headers) => T3): ResponseAs[T3, S] =
+    MappedResponseAs[T, T3, S](raw, (t, h) => f(g(t, h), h))
 }
 
 case class ResponseAsFile(output: SttpFile, overwrite: Boolean) extends BasicResponseAs[SttpFile, Nothing]
@@ -56,11 +57,11 @@ object ResponseAs {
   private[sttp] trait EagerResponseHandler[S] {
     def handleBasic[T](bra: BasicResponseAs[T, S]): Try[T]
 
-    def handle[T, R[_]](responseAs: ResponseAs[T, S], responseMonad: MonadError[R]): R[T] = {
+    def handle[T, R[_]](responseAs: ResponseAs[T, S], responseMonad: MonadError[R], headers: Headers): R[T] = {
 
       responseAs match {
         case MappedResponseAs(raw, g) =>
-          responseMonad.map(responseMonad.fromTry(handleBasic(raw)))(g)
+          responseMonad.map(responseMonad.fromTry(handleBasic(raw)))(t => g(t, headers))
         case bra: BasicResponseAs[T, S] =>
           responseMonad.fromTry(handleBasic(bra))
       }

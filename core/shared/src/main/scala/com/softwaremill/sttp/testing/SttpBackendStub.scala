@@ -167,13 +167,13 @@ object SttpBackendStub {
       r.body match {
         case Left(_) => r.asInstanceOf[Response[DesiredRType]]
         case Right(body) =>
-          val newBody: Any = tryAdjustResponseBody(ra, body).getOrElse(body)
+          val newBody: Any = tryAdjustResponseBody(ra, body, r).getOrElse(body)
           r.copy(rawErrorBody = Right[Array[Byte], DesiredRType](newBody.asInstanceOf[DesiredRType]))
       }
     }
   }
 
-  private[sttp] def tryAdjustResponseBody[T, U](ra: ResponseAs[T, _], b: U): Option[T] = {
+  private[sttp] def tryAdjustResponseBody[T, U](ra: ResponseAs[T, _], b: U, headers: Headers): Option[T] = {
     ra match {
       case IgnoreResponse => Some(())
       case ResponseAsString(enc) =>
@@ -198,7 +198,7 @@ object SttpBackendStub {
           case _       => None
         }
       case MappedResponseAs(raw, g) =>
-        tryAdjustResponseBody(raw, b).map(g)
+        tryAdjustResponseBody(raw, b, headers).map(g(_, headers))
     }
   }
 }

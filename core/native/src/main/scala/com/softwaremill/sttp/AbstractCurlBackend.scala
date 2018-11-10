@@ -173,8 +173,9 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean)
                                   headers: Seq[(String, String)]): R[T] = {
 
     responseAs match {
-      case MappedResponseAs(raw, g) => responseMonad.map(readResponseBody(response, raw, headers))(g)
-      case IgnoreResponse           => responseMonad.unit((): Unit)
+      case MappedResponseAs(raw, g) =>
+        responseMonad.map(readResponseBody(response, raw, headers))(g(_, Headers(headers)))
+      case IgnoreResponse => responseMonad.unit((): Unit)
       case ResponseAsString(enc) =>
         val charset = headers.toMap
           .get(HeaderNames.ContentType)
