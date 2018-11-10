@@ -67,7 +67,7 @@ trait HttpTest[R[_]]
     "as string with mapping using mapWithHeaders" in {
       postEcho
         .body(testBody)
-        .response(asString.mapWithHeaders { (b, h) =>
+        .response(asString.mapWithMetadata { (b, h) =>
           b + " " + h.contentType.getOrElse("")
         })
         .send()

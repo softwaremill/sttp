@@ -58,7 +58,7 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean)
     responseMonad.flatMap(lift(curl.perform)) { _ =>
       curl.info(ResponseCode, spaces.httpCode)
       val responseBody = fromCString(!spaces.bodyResp._1)
-      val responseHeaders = parseHeaders(fromCString(!spaces.headersResp._1))
+      val responseHeaders_ = parseHeaders(fromCString(!spaces.headersResp._1))
       val httpCode = (!spaces.httpCode).toInt
 
       if (headers.ptr != null) headers.ptr.free()
@@ -70,8 +70,12 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean)
       free(spaces.httpCode.cast[Ptr[CSignedChar]])
       curl.cleanup()
 
+      val statusText = responseHeaders_.head._1.split(" ").last
+      val responseHeaders = responseHeaders_.tail
+      val responseMetadata = ResponseMetadata(responseHeaders, httpCode, statusText)
+
       val body: R[Either[Array[CSignedChar], T]] = if (request.options.parseResponseIf(httpCode)) {
-        responseMonad.map(readResponseBody(responseBody, request.response, responseHeaders))(Right.apply)
+        responseMonad.map(readResponseBody(responseBody, request.response, responseMetadata))(Right.apply)
       } else {
         responseMonad.map(toByteArray(responseBody))(Left.apply)
       }
@@ -79,8 +83,8 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean)
         Response[T](
           rawErrorBody = b,
           code = httpCode,
-          statusText = responseHeaders.head._1.split(" ").last,
-          headers = responseHeaders.tail,
+          statusText = statusText,
+          headers = responseHeaders,
           history = Nil
         )
       }
@@ -121,7 +125,7 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean)
             if (contentType.isDefined) {
               part.withMimeType(contentType.get)
             }
-            if (additionalHeaders.size > 0) {
+            if (additionalHeaders.nonEmpty) {
               val curlList = transformHeaders(additionalHeaders)
               part.withHeaders(curlList.ptr)
               multiPartHeaders = multiPartHeaders :+ curlList
@@ -170,14 +174,14 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean)
 
   private def readResponseBody[T](response: String,
                                   responseAs: ResponseAs[T, S],
-                                  headers: Seq[(String, String)]): R[T] = {
+                                  responseMetadata: ResponseMetadata): R[T] = {
 
     responseAs match {
       case MappedResponseAs(raw, g) =>
-        responseMonad.map(readResponseBody(response, raw, headers))(g(_, Headers(headers)))
+        responseMonad.map(readResponseBody(response, raw, responseMetadata))(g(_, responseMetadata))
       case IgnoreResponse => responseMonad.unit((): Unit)
       case ResponseAsString(enc) =>
-        val charset = headers.toMap
+        val charset = responseMetadata.headers.toMap
           .get(HeaderNames.ContentType)
           .flatMap(encodingFromContentType)
           .getOrElse(enc)

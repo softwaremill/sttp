@@ -84,7 +84,7 @@ class SprayJsonTests extends FlatSpec with Matchers with EitherValues {
         responseAs.raw match {
           case ResponseAsString("utf-8") =>
             s =>
-              responseAs.g(s, Headers(Nil))
+              responseAs.g(s, ResponseMetadata(Nil, 200, ""))
           case ResponseAsString(encoding) =>
             fail(s"MappedResponseAs wraps a ResponseAsString with wrong encoding: $encoding")
           case _ =>

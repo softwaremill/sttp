@@ -8,7 +8,6 @@ import scala.scalajs.js.JSConverters._
 import scala.scalajs.js.Promise
 import scala.scalajs.js.timers._
 import scala.scalajs.js.typedarray._
-
 import com.softwaremill.sttp.dom.experimental.AbortController
 import com.softwaremill.sttp.dom.experimental.FilePropertyBag
 import com.softwaremill.sttp.dom.experimental.{File => DomFile}
@@ -110,7 +109,8 @@ abstract class AbstractFetchBackend[R[_], S](options: FetchOptions)(rm: MonadErr
         val headers = convertResponseHeaders(resp.headers)
 
         val body: R[Either[Array[Byte], T]] = if (request.options.parseResponseIf(resp.status)) {
-          readResponseBody(resp, request.response, Headers(headers)).map(Right.apply)
+          readResponseBody(resp, request.response, ResponseMetadata(headers, resp.status, resp.statusText))
+            .map(Right.apply)
         } else {
           transformPromise(resp.text()).map(t => Left(t.getBytes(Utf8)))
         }
@@ -199,7 +199,9 @@ abstract class AbstractFetchBackend[R[_], S](options: FetchOptions)(rm: MonadErr
 
   protected def handleStreamBody(s: S): R[js.UndefOr[BodyInit]]
 
-  private def readResponseBody[T](response: FetchResponse, responseAs: ResponseAs[T, S], headers: Headers): R[T] = {
+  private def readResponseBody[T](response: FetchResponse,
+                                  responseAs: ResponseAs[T, S],
+                                  headers: ResponseMetadata): R[T] = {
     responseAs match {
       case MappedResponseAs(raw, g) =>
         readResponseBody(response, raw, headers).map(t => g(t, headers))

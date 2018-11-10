@@ -216,10 +216,11 @@ class HttpURLConnectionBackend private (opts: SttpBackendOptions, customizeConne
 
     val code = c.getResponseCode
     val wrappedIs = wrapInput(contentEncoding, handleNullInput(is))
+    val responseMetadata = ResponseMetadata(headers, code, c.getResponseMessage)
     val body = if (parseCondition(code)) {
-      Right(readResponseBody(wrappedIs, responseAs, charsetFromHeaders, Headers(headers)))
+      Right(readResponseBody(wrappedIs, responseAs, charsetFromHeaders, responseMetadata))
     } else {
-      Left(readResponseBody(wrappedIs, asByteArray, charsetFromHeaders, Headers(headers)))
+      Left(readResponseBody(wrappedIs, asByteArray, charsetFromHeaders, responseMetadata))
     }
 
     Response(body, code, c.getResponseMessage, headers, Nil)
@@ -228,7 +229,7 @@ class HttpURLConnectionBackend private (opts: SttpBackendOptions, customizeConne
   private def readResponseBody[T](is: InputStream,
                                   responseAs: ResponseAs[T, Nothing],
                                   charset: Option[String],
-                                  headers: Headers): T = {
+                                  headers: ResponseMetadata): T = {
 
     def asString(enc: String) =
       Source.fromInputStream(is, charset.getOrElse(enc)).mkString

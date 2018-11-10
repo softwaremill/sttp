@@ -174,7 +174,7 @@ object SttpBackendStub {
     }
   }
 
-  private[sttp] def tryAdjustResponseBody[T, U](ra: ResponseAs[T, _], b: U, headers: Headers): Option[T] = {
+  private[sttp] def tryAdjustResponseBody[T, U](ra: ResponseAs[T, _], b: U, headers: ResponseMetadata): Option[T] = {
     ra match {
       case IgnoreResponse => Some(())
       case ResponseAsString(enc) =>

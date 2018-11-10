@@ -20,12 +20,7 @@ case class Response[T](rawErrorBody: Either[Array[Byte], T],
                        headers: Seq[(String, String)],
                        history: List[Response[Unit]])
     extends ResponseExtensions[T]
-    with Headers {
-  def is200: Boolean = code == StatusCodes.Ok
-  def isSuccess: Boolean = StatusCodes.isSuccess(code)
-  def isRedirect: Boolean = StatusCodes.isRedirect(code)
-  def isClientError: Boolean = StatusCodes.isClientError(code)
-  def isServerError: Boolean = StatusCodes.isServerError(code)
+    with ResponseMetadata {
 
   lazy val body: Either[String, T] = rawErrorBody match {
     case Left(bytes) =>

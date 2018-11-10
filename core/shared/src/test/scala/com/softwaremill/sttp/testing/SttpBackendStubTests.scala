@@ -228,7 +228,7 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
     (body, responseAs, expectedResult) <- adjustTestData
   } {
     it should s"adjust $body to $expectedResult when specified as $responseAs" in {
-      SttpBackendStub.tryAdjustResponseBody(responseAs, body, Headers(Nil)) should be(expectedResult)
+      SttpBackendStub.tryAdjustResponseBody(responseAs, body, ResponseMetadata(Nil, 200, "")) should be(expectedResult)
     }
   }
 }

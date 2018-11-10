@@ -96,10 +96,11 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean
       .flatMap(name => res.headers().values(name).asScala.map((name, _)))
       .toList
 
+    val responseMetadata = ResponseMetadata(headers, res.code(), res.message())
     val body = if (parseCondition(code)) {
-      responseMonad.map(responseHandler(res).handle(responseAs, responseMonad, Headers(headers)))(Right(_))
+      responseMonad.map(responseHandler(res).handle(responseAs, responseMonad, responseMetadata))(Right(_))
     } else {
-      responseMonad.map(responseHandler(res).handle(asByteArray, responseMonad, Headers(headers)))(Left(_))
+      responseMonad.map(responseHandler(res).handle(asByteArray, responseMonad, responseMetadata))(Left(_))
     }
 
     responseMonad.map(body)(Response(_, res.code(), res.message(), headers, Nil))

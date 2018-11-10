@@ -72,11 +72,12 @@ class AkkaHttpBackend private (actorSystem: ActorSystem,
           .map(_._2)
           .flatMap(encodingFromContentType)
 
+        val responseMetadata = ResponseMetadata(headers, code, statusText)
         val body = if (r.options.parseResponseIf(code)) {
-          bodyFromAkka(r.response, decodeAkkaResponse(hr), charsetFromHeaders, Headers(headers))
+          bodyFromAkka(r.response, decodeAkkaResponse(hr), charsetFromHeaders, responseMetadata)
             .map(Right(_))
         } else {
-          bodyFromAkka(asByteArray, decodeAkkaResponse(hr), charsetFromHeaders, Headers(headers))
+          bodyFromAkka(asByteArray, decodeAkkaResponse(hr), charsetFromHeaders, responseMetadata)
             .map(Left(_))
         }
 
@@ -102,7 +103,7 @@ class AkkaHttpBackend private (actorSystem: ActorSystem,
   private def bodyFromAkka[T](rr: ResponseAs[T, S],
                               hr: HttpResponse,
                               charsetFromHeaders: Option[String],
-                              headers: Headers): Future[T] = {
+                              headers: ResponseMetadata): Future[T] = {
 
     implicit val ec: ExecutionContext = this.ec
 
