@@ -19,7 +19,8 @@ case class Response[T](rawErrorBody: Either[Array[Byte], T],
                        statusText: String,
                        headers: Seq[(String, String)],
                        history: List[Response[Unit]])
-    extends ResponseExtensions[T] with Headers {
+    extends ResponseExtensions[T]
+    with Headers {
   def is200: Boolean = code == StatusCodes.Ok
   def isSuccess: Boolean = StatusCodes.isSuccess(code)
   def isRedirect: Boolean = StatusCodes.isRedirect(code)
@@ -54,6 +55,7 @@ case class Response[T](rawErrorBody: Either[Array[Byte], T],
 }
 
 object Response {
+
   /**
     * Convenience method to create a Response instance, mainly useful in tests using
     * [[com.softwaremill.sttp.testing.SttpBackendStub]] and partial matchers.
@@ -71,5 +73,6 @@ object Response {
     * Convenience method to create a Response instance, mainly useful in tests using
     * [[com.softwaremill.sttp.testing.SttpBackendStub]] and partial matchers.
     */
-  def error[T](body: String, code: StatusCode, statusText: String = ""): Response[T] = apply(Left(body), code, statusText)
+  def error[T](body: String, code: StatusCode, statusText: String = ""): Response[T] =
+    apply(Left(body), code, statusText)
 }

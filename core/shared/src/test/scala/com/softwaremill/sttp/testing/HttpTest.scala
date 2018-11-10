@@ -67,7 +67,9 @@ trait HttpTest[R[_]]
     "as string with mapping using mapWithHeaders" in {
       postEcho
         .body(testBody)
-        .response(asString.mapWithHeaders { (b, h) => b + " " + h.contentType.getOrElse("") })
+        .response(asString.mapWithHeaders { (b, h) =>
+          b + " " + h.contentType.getOrElse("")
+        })
         .send()
         .toFuture()
         .map { response =>
@@ -289,7 +291,7 @@ trait HttpTest[R[_]]
   // in JavaScript the only way to set the content type is to use a Blob which defaults the filename to 'blob'
   protected def multipartStringDefaultFileName: Option[String] = None
   protected def defaultFileName = multipartStringDefaultFileName match {
-    case None => ""
+    case None       => ""
     case Some(name) => s" ($name)"
   }
 
@@ -312,8 +314,8 @@ trait HttpTest[R[_]]
   }
 
   protected def expectRedirectResponse(
-    response: R[Response[String]],
-    code: Int
+      response: R[Response[String]],
+      code: Int
   ): Future[Assertion] = {
     response.toFuture().map { resp =>
       resp.code should be(code)

@@ -7,7 +7,8 @@ import io.circe.{Decoder, Encoder, Printer}
 import io.circe.parser.decode
 
 trait SttpCirceApi {
-  implicit def circeBodySerializer[B](implicit encoder: Encoder[B], printer: Printer = Printer.noSpaces): BodySerializer[B] =
+  implicit def circeBodySerializer[B](implicit encoder: Encoder[B],
+                                      printer: Printer = Printer.noSpaces): BodySerializer[B] =
     b => StringBody(encoder(b).pretty(printer), Utf8, Some(MediaTypes.Json))
 
   def asJson[B: Decoder: IsOption]: ResponseAs[Either[DeserializationError[io.circe.Error], B], Nothing] =

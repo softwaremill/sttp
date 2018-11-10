@@ -69,7 +69,8 @@ class SttpBackendStub[R[_], S] private (rm: MonadError[R],
       case Success(None) =>
         fallback match {
           case None =>
-            wrapResponse(Response[Nothing](Left(s"Not Found: ${request.uri}".getBytes(Utf8)), 404, "Not Found", Nil, Nil))
+            wrapResponse(
+              Response[Nothing](Left(s"Not Found: ${request.uri}".getBytes(Utf8)), 404, "Not Found", Nil, Nil))
           case Some(fb) => fb.send(request)
         }
       case Failure(e) => rm.error(e)
@@ -195,7 +196,7 @@ object SttpBackendStub {
       case ResponseAsFile(_, _) =>
         b match {
           case f: SttpFile => Some(f)
-          case _       => None
+          case _           => None
         }
       case MappedResponseAs(raw, g) =>
         tryAdjustResponseBody(raw, b, headers).map(g(_, headers))

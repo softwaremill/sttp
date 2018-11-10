@@ -25,7 +25,7 @@ class CirceTests extends FlatSpec with Matchers with EitherValues {
 
     val req = sttp.body(body)
 
-    extractBody(req) should include ("\n    \"foo")
+    extractBody(req) should include("\n    \"foo")
   }
 
   it should "decode arbitrary bodies given a decoder" in {
@@ -61,7 +61,7 @@ class CirceTests extends FlatSpec with Matchers with EitherValues {
     val responseAs = asJson[Inner]
 
     runJsonResponseAs(responseAs)("").left.value should matchPattern {
-      case DeserializationError("", _ :io.circe.ParsingFailure, _) =>
+      case DeserializationError("", _: io.circe.ParsingFailure, _) =>
     }
   }
 
@@ -120,7 +120,8 @@ class CirceTests extends FlatSpec with Matchers with EitherValues {
   }
 
   object EitherDecoders {
-    implicit def decoder[L: Decoder, R: Decoder]: Decoder[Either[L, R]] = implicitly[Decoder[L]].either(implicitly[Decoder[R]])
+    implicit def decoder[L: Decoder, R: Decoder]: Decoder[Either[L, R]] =
+      implicitly[Decoder[L]].either(implicitly[Decoder[R]])
   }
 
   def extractBody[A[_], B, C](request: RequestT[A, B, C]): String =
@@ -136,7 +137,8 @@ class CirceTests extends FlatSpec with Matchers with EitherValues {
       case responseAs: MappedResponseAs[_, A, Nothing] =>
         responseAs.raw match {
           case ResponseAsString("utf-8") =>
-            s => responseAs.g(s, Headers(Nil))
+            s =>
+              responseAs.g(s, Headers(Nil))
           case ResponseAsString(encoding) =>
             fail(s"MappedResponseAs wraps a ResponseAsString with wrong encoding: $encoding")
           case _ =>

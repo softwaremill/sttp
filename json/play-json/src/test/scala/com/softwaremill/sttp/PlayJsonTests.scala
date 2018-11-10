@@ -134,7 +134,8 @@ class PlayJsonTests extends FlatSpec with Matchers with EitherValues {
       case responseAs: MappedResponseAs[_, A, Nothing] =>
         responseAs.raw match {
           case ResponseAsString("utf-8") =>
-            s => responseAs.g(s, Headers(Nil))
+            s =>
+              responseAs.g(s, Headers(Nil))
           case ResponseAsString(encoding) =>
             fail(s"MappedResponseAs wraps a ResponseAsString with wrong encoding: $encoding")
           case _ =>

@@ -6,7 +6,8 @@ class SttpBackendOptionsProxyTest extends FlatSpec with Matchers {
 
   "ignoreProxy" should "return true for a exact match with nonProxyHosts" in {
     val proxySetting = SttpBackendOptions.Proxy(
-      "fakeproxyserverhost", 8080,
+      "fakeproxyserverhost",
+      8080,
       SttpBackendOptions.ProxyType.Http,
       List("a.nonproxy.host", "localhost", "127.*")
     )
@@ -17,7 +18,8 @@ class SttpBackendOptionsProxyTest extends FlatSpec with Matchers {
 
   it should "return true for wildcard suffix match" in {
     val proxySetting = SttpBackendOptions.Proxy(
-      "fakeproxyserverhost", 8080,
+      "fakeproxyserverhost",
+      8080,
       SttpBackendOptions.ProxyType.Http,
       List("localhost", "127.*")
     )
@@ -28,7 +30,8 @@ class SttpBackendOptionsProxyTest extends FlatSpec with Matchers {
 
   it should "return true for wildcard prefix match" in {
     val proxySetting = SttpBackendOptions.Proxy(
-      "fakeproxyserverhost", 8080,
+      "fakeproxyserverhost",
+      8080,
       SttpBackendOptions.ProxyType.Http,
       List("localhost", "*.local", "127.*")
     )
@@ -39,7 +42,8 @@ class SttpBackendOptionsProxyTest extends FlatSpec with Matchers {
 
   it should "return false for others" in {
     val proxySetting = SttpBackendOptions.Proxy(
-      "fakeproxyserverhost", 8080,
+      "fakeproxyserverhost",
+      8080,
       SttpBackendOptions.ProxyType.Http,
       List("localhost", "*.local", "127.*")
     )

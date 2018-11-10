@@ -26,12 +26,15 @@ object SttpBackendOptions {
   case class Proxy(host: String, port: Int, proxyType: ProxyType, nonProxyHosts: List[String] = Nil) {
 
     //only matches prefix or suffix wild card(*)
-    private def isWildCardMatch(targetHost: String, nonProxyHost:String): Boolean = {
+    private def isWildCardMatch(targetHost: String, nonProxyHost: String): Boolean = {
       if (nonProxyHost.length > 1) {
         if (nonProxyHost.charAt(0) == '*') {
-          targetHost.regionMatches(true, targetHost.length - nonProxyHost.length + 1, nonProxyHost, 1, nonProxyHost.length - 1)
-        }
-        else if (nonProxyHost.charAt(nonProxyHost.length - 1) == '*') {
+          targetHost.regionMatches(true,
+                                   targetHost.length - nonProxyHost.length + 1,
+                                   nonProxyHost,
+                                   1,
+                                   nonProxyHost.length - 1)
+        } else if (nonProxyHost.charAt(nonProxyHost.length - 1) == '*') {
           targetHost.regionMatches(true, 0, nonProxyHost, 0, nonProxyHost.length - 1)
         } else {
           nonProxyHost.equalsIgnoreCase(targetHost)
@@ -95,12 +98,17 @@ object SttpBackendOptions {
     Empty.socksProxy(host, port)
 
   private def loadSystemProxy: Option[Proxy] = {
-    def system(hostProp: String, portProp: String, nonProxyHostsPropOption: Option[String], make: (String, Int, List[String]) => Proxy, defaultPort: Int) = {
+    def system(hostProp: String,
+               portProp: String,
+               nonProxyHostsPropOption: Option[String],
+               make: (String, Int, List[String]) => Proxy,
+               defaultPort: Int) = {
       val host = Option(System.getProperty(hostProp))
       def port = Try(System.getProperty(portProp).toInt).getOrElse(defaultPort)
       def nonProxyHosts: List[String] = {
         nonProxyHostsPropOption
-          .map(nonProxyHostsProp => Try(Option(System.getProperty(nonProxyHostsProp))).toOption.flatten.getOrElse("localhost|127.*"))
+          .map(nonProxyHostsProp =>
+            Try(Option(System.getProperty(nonProxyHostsProp))).toOption.flatten.getOrElse("localhost|127.*"))
           .map(_.split('|').toList)
           .getOrElse(Nil)
       }

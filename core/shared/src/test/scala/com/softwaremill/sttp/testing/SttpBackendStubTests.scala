@@ -174,7 +174,7 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
   }
 
   it should "not hold the calling thread when passed a future monad" in {
-    val LongTime= 10.seconds
+    val LongTime = 10.seconds
     val LongTimeMillis = LongTime.toMillis
     val before = System.currentTimeMillis()
 

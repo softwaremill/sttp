@@ -12,5 +12,4 @@ abstract class SttpFile private[internal] (val underlying: Any) extends SttpFile
   def size: Long
 }
 
-object SttpFile extends SttpFileCompanionExtensions {
-}
+object SttpFile extends SttpFileCompanionExtensions {}
