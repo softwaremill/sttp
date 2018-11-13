@@ -52,6 +52,8 @@ case class RequestT[U[_], T, +S](
     this.copy[Id, T, S](uri = uri, method = Method.OPTIONS)
   def patch(uri: Uri): Request[T, S] =
     this.copy[Id, T, S](uri = uri, method = Method.PATCH)
+  def method(method: Method, uri: Uri): Request[T, S] =
+    this.copy[Id, T, S](uri = uri, method = method)
 
   def contentType(ct: String): RequestT[U, T, S] =
     header(HeaderNames.ContentType, ct, replaceExisting = true)
