@@ -11,4 +11,4 @@ Other Scala HTTP clients
 * `RösHTTP <https://github.com/hmil/RosHTTP>`_
 * `Requests-Scala <https://github.com/lihaoyi/requests-scala>`_
 
-Also, check the `comparison by Marco Firrincielli <https://github.com/mfirry/scala-http-clients>`_ on how to implement a simple request using a number of Scala HTTP libraries.
+Also, check the `comparison by Marco Firrincieli <https://github.com/mfirry/scala-http-clients>`_ on how to implement a simple request using a number of Scala HTTP libraries.
