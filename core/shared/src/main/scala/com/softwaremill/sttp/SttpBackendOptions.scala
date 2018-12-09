@@ -76,6 +76,8 @@ object SttpBackendOptions {
     def asJavaProxy = new java.net.Proxy(proxyType.asJava, inetSocketAddress)
     def inetSocketAddress: InetSocketAddress =
       InetSocketAddress.createUnresolved(host, port)
+
+    def authenticated(username: String, password: String): Proxy = this.copy(auth = Some(ProxyAuth(username, password)))
   }
 
   sealed trait ProxyType {
@@ -134,12 +136,19 @@ object SttpBackendOptions {
 
     import ProxyType._
     val socks = system("socksProxyHost", "socksProxyPort", None, proxy(Socks), 1080)
+    // socks has system properties for specifying authentication
+    val socksWithAuth =
+      for {
+        plainSocks <- socks
+        username <- Option(System.getProperty("java.net.socks.username"))
+        password <- Option(System.getProperty("java.net.socks.password"))
+      } yield plainSocks.authenticated(username, password)
     val http = system("http.proxyHost", "http.proxyPort", Some("http.nonProxyHosts"), proxy(Http), 80)
 
     //https uses the nonProxyHosts of http
     val https = system("https.proxyHost", "https.proxyPort", Some("http.nonProxyHosts"), proxy(Http), 443)
 
-    Seq(socks, http, https).find(_.isDefined).flatten
+    Seq(socksWithAuth, socks, http, https).find(_.isDefined).flatten
   }
 
 }
