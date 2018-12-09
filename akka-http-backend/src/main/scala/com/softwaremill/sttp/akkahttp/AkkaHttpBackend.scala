@@ -7,7 +7,7 @@ import akka.event.LoggingAdapter
 import akka.http.scaladsl.coding.{Deflate, Gzip, NoCoding}
 import akka.http.scaladsl.model.ContentTypes.`application/octet-stream`
 import akka.http.scaladsl.model.HttpHeader.ParsingResult
-import akka.http.scaladsl.model.headers.{HttpEncodings, `Content-Length`, `Content-Type`}
+import akka.http.scaladsl.model.headers.{BasicHttpCredentials, HttpEncodings, `Content-Length`, `Content-Type`}
 import akka.http.scaladsl.model.{Multipart => AkkaMultipart, _}
 import akka.http.scaladsl.settings.{ClientConnectionSettings, ConnectionPoolSettings}
 import akka.http.scaladsl.{ClientTransport, Http, HttpsConnectionContext}
@@ -47,7 +47,13 @@ class AkkaHttpBackend private (actorSystem: ActorSystem,
 
     val connectionPoolSettingsWithProxy = opts.proxy match {
       case Some(p) if !p.ignoreProxy(r.uri.host) =>
-        connectionPoolSettings.withTransport(ClientTransport.httpsProxy(p.inetSocketAddress))
+        val clientTransport = p.auth match {
+          case Some(proxyAuth) =>
+            ClientTransport.httpsProxy(p.inetSocketAddress,
+                                       BasicHttpCredentials(proxyAuth.username, proxyAuth.password))
+          case None => ClientTransport.httpsProxy(p.inetSocketAddress)
+        }
+        connectionPoolSettings.withTransport(clientTransport)
       case _ => connectionPoolSettings
     }
     val settings = connectionPoolSettingsWithProxy

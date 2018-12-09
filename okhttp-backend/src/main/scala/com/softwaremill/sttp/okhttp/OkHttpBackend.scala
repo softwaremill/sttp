@@ -7,12 +7,16 @@ import java.util.concurrent.TimeUnit
 import com.softwaremill.sttp._
 import com.softwaremill.sttp.internal._
 import ResponseAs.EagerResponseHandler
+import com.softwaremill.sttp.SttpBackendOptions.Proxy
 import okhttp3.internal.http.HttpMethod
 import okhttp3.{
+  Authenticator,
   Call,
   Callback,
+  Credentials,
   MediaType,
   OkHttpClient,
+  Route,
   Headers => OkHttpHeaders,
   MultipartBody => OkHttpMultipartBody,
   Request => OkHttpRequest,
@@ -144,6 +148,13 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean
 
 object OkHttpBackend {
 
+  private class ProxyAuthenticator(auth: SttpBackendOptions.ProxyAuth) extends Authenticator {
+    override def authenticate(route: Route, response: OkHttpResponse): OkHttpRequest = {
+      val credential = Credentials.basic(auth.username, auth.password)
+      response.request.newBuilder.header("Proxy-Authorization", credential).build
+    }
+  }
+
   private[okhttp] def defaultClient(readTimeout: Long, options: SttpBackendOptions): OkHttpClient = {
     var clientBuilder = new OkHttpClient.Builder()
       .followRedirects(false)
@@ -152,7 +163,9 @@ object OkHttpBackend {
       .readTimeout(readTimeout, TimeUnit.MILLISECONDS)
 
     clientBuilder = options.proxy match {
-      case None    => clientBuilder
+      case None => clientBuilder
+      case Some(p @ Proxy(_, _, _, _, Some(auth))) =>
+        clientBuilder.proxySelector(p.asJavaProxySelector).proxyAuthenticator(new ProxyAuthenticator(auth))
       case Some(p) => clientBuilder.proxySelector(p.asJavaProxySelector)
     }
 

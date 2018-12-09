@@ -18,12 +18,21 @@ case class SttpBackendOptions(
     this.copy(connectionTimeout = ct)
   def httpProxy(host: String, port: Int): SttpBackendOptions =
     this.copy(proxy = Some(Proxy(host, port, ProxyType.Http)))
+  def httpProxy(host: String, port: Int, username: String, password: String): SttpBackendOptions =
+    this.copy(proxy = Some(Proxy(host, port, ProxyType.Http, auth = Some(ProxyAuth(username, password)))))
   def socksProxy(host: String, port: Int): SttpBackendOptions =
     this.copy(proxy = Some(Proxy(host, port, ProxyType.Socks)))
+  def socksProxy(host: String, port: Int, username: String, password: String): SttpBackendOptions =
+    this.copy(proxy = Some(Proxy(host, port, ProxyType.Socks, auth = Some(ProxyAuth(username, password)))))
 }
 
 object SttpBackendOptions {
-  case class Proxy(host: String, port: Int, proxyType: ProxyType, nonProxyHosts: List[String] = Nil) {
+  case class ProxyAuth(username: String, password: String)
+  case class Proxy(host: String,
+                   port: Int,
+                   proxyType: ProxyType,
+                   nonProxyHosts: List[String] = Nil,
+                   auth: Option[ProxyAuth] = None) {
 
     //only matches prefix or suffix wild card(*)
     private def isWildCardMatch(targetHost: String, nonProxyHost: String): Boolean = {
@@ -94,8 +103,14 @@ object SttpBackendOptions {
   def httpProxy(host: String, port: Int): SttpBackendOptions =
     Empty.httpProxy(host, port)
 
+  def httpProxy(host: String, port: Int, username: String, password: String): SttpBackendOptions =
+    Empty.httpProxy(host, port, username, password)
+
   def socksProxy(host: String, port: Int): SttpBackendOptions =
     Empty.socksProxy(host, port)
+
+  def socksProxy(host: String, port: Int, username: String, password: String): SttpBackendOptions =
+    Empty.socksProxy(host, port, username, password)
 
   private def loadSystemProxy: Option[Proxy] = {
     def system(hostProp: String,
