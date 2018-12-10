@@ -1,7 +1,7 @@
 package com.softwaremill.sttp
 
 import java.io._
-import java.net.{HttpURLConnection, URL}
+import java.net.{Authenticator, HttpURLConnection, PasswordAuthentication, URL}
 import java.nio.channels.Channels
 import java.nio.charset.CharacterCodingException
 import java.nio.file.Files
@@ -60,6 +60,14 @@ class HttpURLConnectionBackend private (opts: SttpBackendOptions, customizeConne
     val conn = opts.proxy match {
       case Some(p) if !p.ignoreProxy(uri.host) =>
         url.openConnection(p.asJavaProxy)
+
+        p.auth.foreach { proxyAuth =>
+          Authenticator.setDefault(new Authenticator() {
+            override def getPasswordAuthentication: PasswordAuthentication = {
+              new PasswordAuthentication(proxyAuth.username, proxyAuth.password.toCharArray)
+            }
+          })
+        }
       case _ => url.openConnection()
     }
 

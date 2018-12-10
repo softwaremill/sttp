@@ -22,5 +22,6 @@ Otherwise, proxy values can be specified manually when creating a backend::
     .get(uri"...")
     .send() // uses the proxy
 
-Or in case your proxy requires authentication (supported by the ``akka-http``, ``async-http-client`` and ``okhttp`` backends)::
+Or in case your proxy requires authentication (supported by the JVM backends)::
+
   SttpBackendOptions.httpProxy("some.host", 8080, "username", "password")
