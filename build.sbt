@@ -105,7 +105,7 @@ def testServerSettings(config: Configuration) = Seq(
 )
 
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.5"
-val akkaStreams = "com.typesafe.akka" %% "akka-stream" % "2.5.18"
+val akkaStreams = "com.typesafe.akka" %% "akka-stream" % "2.5.19"
 
 val scalaTestVersion = "3.0.5"
 val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion
@@ -227,7 +227,7 @@ lazy val cats = crossProject(JSPlatform, JVMPlatform)
   .settings(
     name := "cats",
     publishArtifact in Test := true,
-    libraryDependencies ++= Seq("org.typelevel" %%% "cats-effect" % "1.0.0")
+    libraryDependencies ++= Seq("org.typelevel" %%% "cats-effect" % "1.1.0")
   )
 lazy val catsJS = cats.js.dependsOn(coreJS % "compile->compile;test->test")
 lazy val catsJVM = cats.jvm.dependsOn(coreJVM % "compile->compile;test->test")
@@ -411,7 +411,7 @@ lazy val playJson = crossProject(JSPlatform, JVMPlatform)
 lazy val playJsonJS = playJson.js.dependsOn(coreJS, jsonCommonJS)
 lazy val playJsonJVM = playJson.jvm.dependsOn(coreJVM, jsonCommonJVM)
 
-lazy val braveVersion = "5.5.0"
+lazy val braveVersion = "5.5.2"
 
 lazy val braveBackend: Project = (project in file("metrics/brave-backend"))
   .settings(commonJvmSettings: _*)
@@ -431,7 +431,7 @@ lazy val prometheusBackend: Project = (project in file("metrics/prometheus-backe
   .settings(
     name := "prometheus-backend",
     libraryDependencies ++= Seq(
-      "io.prometheus" % "simpleclient" % "0.5.0",
+      "io.prometheus" % "simpleclient" % "0.6.0",
       scalaTest % "test"
     )
   )
