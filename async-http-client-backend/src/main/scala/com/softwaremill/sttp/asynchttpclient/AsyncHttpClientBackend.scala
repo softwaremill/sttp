@@ -22,6 +22,7 @@ import org.asynchttpclient.{
   HttpResponseBodyPart,
   HttpResponseStatus,
   Param,
+  Realm,
   RequestBuilder,
   Request => AsyncRequest,
   Response => AsyncResponse
@@ -304,6 +305,10 @@ object AsyncHttpClientBackend {
           new ProxyServer.Builder(p.host, p.port)
             .setProxyType(proxyType) // Fix issue #145
             .setNonProxyHosts(p.nonProxyHosts.asJava)
+            .setRealm(p.auth
+              .map(proxyAuth =>
+                new Realm.Builder(proxyAuth.username, proxyAuth.password).setScheme(Realm.AuthScheme.BASIC))
+              .orNull)
             .build())
     }
 
