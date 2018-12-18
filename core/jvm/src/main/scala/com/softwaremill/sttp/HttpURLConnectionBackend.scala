@@ -59,8 +59,6 @@ class HttpURLConnectionBackend private (opts: SttpBackendOptions, customizeConne
     val url = new URL(uri.toString)
     val conn = opts.proxy match {
       case Some(p) if !p.ignoreProxy(uri.host) =>
-        url.openConnection(p.asJavaProxy)
-
         p.auth.foreach { proxyAuth =>
           Authenticator.setDefault(new Authenticator() {
             override def getPasswordAuthentication: PasswordAuthentication = {
@@ -68,6 +66,8 @@ class HttpURLConnectionBackend private (opts: SttpBackendOptions, customizeConne
             }
           })
         }
+
+        url.openConnection(p.asJavaProxy)
       case _ => url.openConnection()
     }
 
