@@ -11,9 +11,9 @@ object implicits {
   }
 }
 
-private[cats] final class MappedKSttpBackend[F[_], -S, G[_]](wrapped: SttpBackend[F, S],
-                                                             mapping: F ~> G,
-                                                             val responseMonad: MonadError[G])
+private[scalaz] final class MappedKSttpBackend[F[_], -S, G[_]](wrapped: SttpBackend[F, S],
+                                                               mapping: F ~> G,
+                                                               val responseMonad: MonadError[G])
     extends SttpBackend[G, S] {
   def send[T](request: Request[T, S]): G[Response[T]] = mapping(wrapped.send(request))
 
