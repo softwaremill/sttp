@@ -18,6 +18,4 @@ trait SttpBackend[R[_], -S] {
     * backends, which map/flatMap over the return value of [[send]].
     */
   def responseMonad: MonadError[R]
-
-  def mapK[G[_]: MonadError](f: FunctionK[R, G]): SttpBackend[G, S] = new MappedKSttpBackend(this, f, implicitly)
 }
