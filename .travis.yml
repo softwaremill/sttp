@@ -1,5 +1,3 @@
-dist: trusty
-sudo: required
 language: scala
 addons:
   chrome: stable
@@ -8,10 +6,21 @@ jdk:
 scala:
 - 2.12.7
 - 2.11.12
+before_cache:
+  - du -h -d 1 $HOME/.ivy2/
+  - du -h -d 2 $HOME/.sbt/
+  - du -h -d 4 $HOME/.coursier/
+  - find $HOME/.sbt -name "*.lock" -type f -delete
+  - find $HOME/.ivy2/cache -name "ivydata-*.properties" -type f -delete
+  - find $HOME/.coursier/cache -name "*.lock" -type f -delete
 cache:
   directories:
-    - "$HOME/.ivy2/cache"
-    - "$HOME/.sbt/boot"
+    - $HOME/.sbt/1.0
+    - $HOME/.sbt/boot/scala*
+    - $HOME/.sbt/cache
+    - $HOME/.sbt/launchers
+    - $HOME/.ivy2/cache
+    - $HOME/.coursier
 before_install:
   - bash project/travis_setup.sh
 before_script:
