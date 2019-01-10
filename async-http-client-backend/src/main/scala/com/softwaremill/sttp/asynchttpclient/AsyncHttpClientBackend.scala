@@ -301,15 +301,18 @@ object AsyncHttpClientBackend {
             case Http  => org.asynchttpclient.proxy.ProxyType.HTTP
           }
 
-        configBuilder.setProxyServer(
-          new ProxyServer.Builder(p.host, p.port)
+        configBuilder.setProxyServer {
+          val builder = new ProxyServer.Builder(p.host, p.port)
             .setProxyType(proxyType) // Fix issue #145
             .setNonProxyHosts(p.nonProxyHosts.asJava)
-            .setRealm(p.auth
-              .map(proxyAuth =>
-                new Realm.Builder(proxyAuth.username, proxyAuth.password).setScheme(Realm.AuthScheme.BASIC))
-              .orNull)
-            .build())
+
+          p.auth.foreach { proxyAuth =>
+            builder.setRealm(
+              new Realm.Builder(proxyAuth.username, proxyAuth.password).setScheme(Realm.AuthScheme.BASIC))
+          }
+
+          builder.build()
+        }
     }
 
     new DefaultAsyncHttpClient(configBuilder.build())
