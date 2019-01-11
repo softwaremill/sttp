@@ -2,13 +2,13 @@ package com.softwaremill.sttp
 
 import scala.util.control.NonFatal
 
-/** A Backend that safely wraps SttpBackend exceptions in Either[Throwable, ?]'s
+/** A synchronous backend that safely wraps [[SttpBackend]] exceptions in `Either[Throwable, ?]`'s
   *
-  * @param delegate An SttpBackend which to which this backend forwards all requests
+  * @param delegate A synchronous `SttpBackend` which to which this backend forwards all requests
   * @tparam S The type of streams that are supported by the backend. `Nothing`,
   *           if streaming requests/responses is not supported by this backend.
   */
-class EitherBackend[-S](delegate: SttpBackend[Id, S]) extends SttpBackend[Either[Throwable, ?], S] {
+class EitherBackend[S](delegate: SttpBackend[Id, S]) extends SttpBackend[Either[Throwable, ?], S] {
 
   override def send[T](request: Request[T, S]): Either[Throwable, Response[T]] =
     try Right(delegate.send(request))
