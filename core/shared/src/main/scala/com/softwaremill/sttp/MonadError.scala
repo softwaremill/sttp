@@ -38,6 +38,34 @@ object monadSyntax {
   }
 }
 
+object EitherMonad extends MonadError[Either[Throwable, ?]] {
+  type R[+T] = Either[Throwable, T]
+
+  override def unit[T](t: T): R[T] =
+    Right(t)
+
+  override def map[T, T2](fa: R[T])(f: T => T2): R[T2] =
+    fa match {
+      case Right(b) => Right(f(b))
+      case _        => fa.asInstanceOf[R[T2]]
+    }
+
+  override def flatMap[T, T2](fa: R[T])(f: T => R[T2]): R[T2] =
+    fa match {
+      case Right(b) => f(b)
+      case _        => fa.asInstanceOf[R[T2]]
+    }
+
+  override def error[T](t: Throwable): R[T] =
+    Left(t)
+
+  override protected def handleWrappedError[T](rt: R[T])(h: PartialFunction[Throwable, R[T]]): R[T] =
+    rt match {
+      case Left(a) if h.isDefinedAt(a) => h(a)
+      case _                           => rt
+    }
+}
+
 object IdMonad extends MonadError[Id] {
   override def unit[T](t: T): Id[T] = t
   override def map[T, T2](fa: Id[T])(f: (T) => T2): Id[T2] = f(fa)
