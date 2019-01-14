@@ -166,14 +166,6 @@ trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
   }
 
   "download file overwrite" - {
-    "fail at trying to save file to a restricted location" in {
-      val path = Paths.get("/").resolve("textfile.txt")
-      val req = sttp.get(uri"$endpoint/download/text").response(asFile(path.toFile))
-      Future(req.send()).flatMap(_.toFuture()).failed.collect {
-        case caught: IOException => caught.getMessage shouldBe "Permission denied"
-      }
-    }
-
     "fail when file exists and overwrite flag is false" in {
       withTemporaryFile(Some(testBodyBytes)) { file =>
         val req = sttp.get(uri"$endpoint/download/text").response(asFile(file))
