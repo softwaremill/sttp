@@ -99,17 +99,6 @@ trait SyncHttpTestExtensions {
   }
 
   "download file overwrite" - {
-    "fail at trying to save file to a restricted location" in {
-      val path = Paths.get("/").resolve("textfile.txt")
-      val req = sttp.get(uri"$endpoint/download/text").response(asFile(path.toFile))
-      try {
-        req.send()
-        fail("IOException should be thrown")
-      } catch {
-        case e: Exception => e.getMessage shouldBe "Permission denied"
-      }
-    }
-
     "fail when file exists and overwrite flag is false" in {
       withTemporaryFile(Some(testBodyBytes)) { file =>
         val req = sttp.get(uri"$endpoint/download/text").response(asFile(file))
