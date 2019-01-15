@@ -81,23 +81,6 @@ If you want to simulate an exception being thrown by a backend, e.g. a socket ti
     .whenRequestMatches(_ => true)
     .thenRespond(throw new TimeoutException())
 
-Returning JSON
---------------
-
-If you want to retrun a JSON response, simply use `.withResponse(String)` as below:
-
-  implicit val testingBackend = SttpBackendStub.synchronous
-      .whenRequestMatches(...)
-      .thenRespond(
-        s"""
-          |{
-          |  "access_token":"1234567890",
-          |  "token_type":"bearer",
-          |  "expires_in":3600
-          |}
-        """.stripMargin
-      )
-
 Adjusting the response body type
 --------------------------------
 
@@ -113,11 +96,14 @@ The following conversions are supported:
 * ``InputStream`` and ``String`` to ``Array[Byte]``
 * ``InputStream``, ``String`` and ``Array[Byte]`` to custom types through mapped response specifications
 
-For example::
+Example: returning JSON
+-----------------------
+
+For example, if you want to return a JSON response, simply use `.withResponse(String)` as below:::
 
   implicit val testingBackend = SttpBackendStub.synchronous
     .whenRequestMatches(_ => true)
-    .thenRespond(""" {"username": "john", "age": 65 } """)
+    .thenRespond("" {"username": "john", "age": 65 } """)
 
   def parseUserJson(a: Array[Byte]): User = ...
 
