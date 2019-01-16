@@ -11,6 +11,7 @@ import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers, OptionValues}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.concurrent.blocking
 
 class PrometheusBackendTest extends FlatSpec with Matchers with BeforeAndAfter with Eventually with OptionValues {
 
@@ -28,7 +29,7 @@ class PrometheusBackendTest extends FlatSpec with Matchers with BeforeAndAfter w
     (0 until requestsNumber).foreach(_ => backend.send(sttp.get(uri"http://127.0.0.1/foo")))
 
     // then
-    getMetricVale(s"${PrometheusBackend.DefaultHistogramName}_count").value shouldBe requestsNumber
+    getMetricValue(s"${PrometheusBackend.DefaultHistogramName}_count").value shouldBe requestsNumber
   }
 
   it should "allow creating two prometheus backends" in {
@@ -43,7 +44,7 @@ class PrometheusBackendTest extends FlatSpec with Matchers with BeforeAndAfter w
     backend2.send(sttp.get(uri"http://127.0.0.1/foo"))
 
     // then
-    getMetricVale(s"${histogramName}_count").value shouldBe 2
+    getMetricValue(s"${histogramName}_count").value shouldBe 2
   }
 
   it should "use mapped request to histogram name" in {
@@ -57,8 +58,8 @@ class PrometheusBackendTest extends FlatSpec with Matchers with BeforeAndAfter w
     (0 until requestsNumber).foreach(_ => backend.send(sttp.get(uri"http://127.0.0.1/foo")))
 
     // then
-    getMetricVale(s"${PrometheusBackend.DefaultHistogramName}_count") shouldBe empty
-    getMetricVale(s"${customHistogramName}_count").value shouldBe requestsNumber
+    getMetricValue(s"${PrometheusBackend.DefaultHistogramName}_count") shouldBe empty
+    getMetricValue(s"${customHistogramName}_count").value shouldBe requestsNumber
   }
 
   it should "disable histograms" in {
@@ -71,7 +72,7 @@ class PrometheusBackendTest extends FlatSpec with Matchers with BeforeAndAfter w
     (0 until requestsNumber).foreach(_ => backend.send(sttp.get(uri"http://127.0.0.1/foo")))
 
     // then
-    getMetricVale(s"${PrometheusBackend.DefaultHistogramName}_count") shouldBe empty
+    getMetricValue(s"${PrometheusBackend.DefaultHistogramName}_count") shouldBe empty
   }
 
   it should "use default gauge name" in {
@@ -80,7 +81,7 @@ class PrometheusBackendTest extends FlatSpec with Matchers with BeforeAndAfter w
     val countDownLatch = new CountDownLatch(1)
     val backendStub = SttpBackendStub.asynchronousFuture.whenAnyRequest.thenRespondWrapped {
       Future {
-        countDownLatch.await()
+        blocking(countDownLatch.await())
         Response(Right(""), 200, "", Nil, Nil)
       }
     }
@@ -91,12 +92,12 @@ class PrometheusBackendTest extends FlatSpec with Matchers with BeforeAndAfter w
 
     // then
     eventually {
-      getMetricVale(PrometheusBackend.DefaultRequestsInProgressGaugeName).value shouldBe requestsNumber
+      getMetricValue(PrometheusBackend.DefaultRequestsInProgressGaugeName).value shouldBe requestsNumber
     }
 
     countDownLatch.countDown()
     eventually {
-      getMetricVale(PrometheusBackend.DefaultRequestsInProgressGaugeName).value shouldBe 0
+      getMetricValue(PrometheusBackend.DefaultRequestsInProgressGaugeName).value shouldBe 0
     }
   }
 
@@ -107,7 +108,7 @@ class PrometheusBackendTest extends FlatSpec with Matchers with BeforeAndAfter w
     val countDownLatch = new CountDownLatch(1)
     val backendStub = SttpBackendStub.asynchronousFuture.whenAnyRequest.thenRespondWrapped {
       Future {
-        countDownLatch.await()
+        blocking(countDownLatch.await())
         Response(Right(""), 200, "", Nil, Nil)
       }
     }
@@ -119,14 +120,14 @@ class PrometheusBackendTest extends FlatSpec with Matchers with BeforeAndAfter w
 
     // then
     eventually {
-      getMetricVale(PrometheusBackend.DefaultRequestsInProgressGaugeName) shouldBe empty
-      getMetricVale(customGaugeName).value shouldBe requestsNumber
+      getMetricValue(PrometheusBackend.DefaultRequestsInProgressGaugeName) shouldBe empty
+      getMetricValue(customGaugeName).value shouldBe requestsNumber
     }
 
     countDownLatch.countDown()
     eventually {
-      getMetricVale(PrometheusBackend.DefaultRequestsInProgressGaugeName) shouldBe empty
-      getMetricVale(customGaugeName).value shouldBe 0
+      getMetricValue(PrometheusBackend.DefaultRequestsInProgressGaugeName) shouldBe empty
+      getMetricValue(customGaugeName).value shouldBe 0
     }
   }
 
@@ -136,7 +137,7 @@ class PrometheusBackendTest extends FlatSpec with Matchers with BeforeAndAfter w
     val countDownLatch = new CountDownLatch(1)
     val backendStub = SttpBackendStub.asynchronousFuture.whenAnyRequest.thenRespondWrapped {
       Future {
-        countDownLatch.await()
+        blocking(countDownLatch.await())
         Response(Right(""), 200, "", Nil, Nil)
       }
     }
@@ -146,12 +147,12 @@ class PrometheusBackendTest extends FlatSpec with Matchers with BeforeAndAfter w
     (0 until requestsNumber).foreach(_ => backend.send(sttp.get(uri"http://127.0.0.1/foo")))
 
     // then
-    getMetricVale(PrometheusBackend.DefaultRequestsInProgressGaugeName) shouldBe empty
+    getMetricValue(PrometheusBackend.DefaultRequestsInProgressGaugeName) shouldBe empty
 
     countDownLatch.countDown()
     eventually {
-      getMetricVale(s"${PrometheusBackend.DefaultHistogramName}_count").value shouldBe requestsNumber
-      getMetricVale(PrometheusBackend.DefaultRequestsInProgressGaugeName) shouldBe empty
+      getMetricValue(s"${PrometheusBackend.DefaultHistogramName}_count").value shouldBe requestsNumber
+      getMetricValue(PrometheusBackend.DefaultRequestsInProgressGaugeName) shouldBe empty
     }
   }
 
@@ -167,11 +168,11 @@ class PrometheusBackendTest extends FlatSpec with Matchers with BeforeAndAfter w
     (0 until 5).foreach(_ => backend2.send(sttp.get(uri"http://127.0.0.1/foo")))
 
     // then
-    getMetricVale(PrometheusBackend.DefaultSuccessCounterName).value shouldBe 10
-    getMetricVale(PrometheusBackend.DefaultErrorCounterName).value shouldBe 5
+    getMetricValue(PrometheusBackend.DefaultSuccessCounterName).value shouldBe 10
+    getMetricValue(PrometheusBackend.DefaultErrorCounterName).value shouldBe 5
   }
 
-  private[this] def getMetricVale(name: String): Option[lang.Double] =
+  private[this] def getMetricValue(name: String): Option[lang.Double] =
     Option(CollectorRegistry.defaultRegistry.getSampleValue(name))
 
 }
