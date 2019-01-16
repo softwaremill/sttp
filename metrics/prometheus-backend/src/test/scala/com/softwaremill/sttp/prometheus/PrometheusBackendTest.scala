@@ -6,14 +6,14 @@ import java.util.concurrent.CountDownLatch
 import com.softwaremill.sttp.testing.SttpBackendStub
 import com.softwaremill.sttp._
 import io.prometheus.client.CollectorRegistry
-import org.scalatest.concurrent.Eventually
+import org.scalatest.concurrent.{Eventually, IntegrationPatience}
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers, OptionValues}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.blocking
 
-class PrometheusBackendTest extends FlatSpec with Matchers with BeforeAndAfter with Eventually with OptionValues {
+class PrometheusBackendTest extends FlatSpec with Matchers with BeforeAndAfter with Eventually with OptionValues with IntegrationPatience {
 
   before {
     PrometheusBackend.clear(CollectorRegistry.defaultRegistry)
