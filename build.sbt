@@ -74,6 +74,7 @@ lazy val browserTestSettings = Seq(
         val options = new org.openqa.selenium.chrome.ChromeOptions()
         val args = Seq(
           "auto-open-devtools-for-tabs", // devtools needs to be open to capture network requests
+          "no-sandbox",
           "allow-file-access-from-files" // change the origin header from 'null' to 'file'
         ) ++ (if (debugging) Seq.empty else Seq("headless"))
         options.addArguments(args: _*)
