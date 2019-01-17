@@ -44,9 +44,7 @@ class FollowRedirectsBackend[R[_], S](delegate: SttpBackend[R, S]) extends SttpB
                                 redirects: Int,
                                 loc: String): R[Response[T]] = {
 
-    def isRelative(uri: String) = !uri.contains("://")
-
-    val uri = if (isRelative(loc)) {
+    val uri = if (FollowRedirectsBackend.isRelative(loc)) {
       // using java's URI to resolve a relative URI
       uri"${new URI(request.uri.toString).resolve(loc).toString}"
     } else {
@@ -70,4 +68,6 @@ class FollowRedirectsBackend[R[_], S](delegate: SttpBackend[R, S]) extends SttpB
 
 object FollowRedirectsBackend {
   private[sttp] val MaxRedirects = 32
+
+  private[sttp] def isRelative(uri: String): Boolean = uri.trim.startsWith("/")
 }
