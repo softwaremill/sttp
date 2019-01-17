@@ -12,7 +12,7 @@ class FollowRedirectsBackendTest extends FunSuite with Matchers {
     ("https://server.com", false),
     ("  https://server2.com", false),
     ("HTTP://server.com", false),
-    ("httpS://server.com", false),
+    ("httpS://server.com", false)
   )
 
   for ((uri, isRelative) <- testData) {
