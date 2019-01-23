@@ -34,7 +34,7 @@ trait TestHttpServer extends BeforeAndAfterAll { this: Suite =>
       server.start().map { binding =>
         endpoint = s"localhost:${binding.localAddress.getPort}"
       },
-      10.seconds
+      16.seconds
     )
   }
 
