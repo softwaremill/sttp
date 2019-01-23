@@ -13,7 +13,13 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.blocking
 
-class PrometheusBackendTest extends FlatSpec with Matchers with BeforeAndAfter with Eventually with OptionValues with IntegrationPatience {
+class PrometheusBackendTest
+    extends FlatSpec
+    with Matchers
+    with BeforeAndAfter
+    with Eventually
+    with OptionValues
+    with IntegrationPatience {
 
   before {
     PrometheusBackend.clear(CollectorRegistry.defaultRegistry)
