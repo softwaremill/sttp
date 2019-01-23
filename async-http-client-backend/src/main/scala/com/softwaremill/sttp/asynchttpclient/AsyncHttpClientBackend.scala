@@ -46,14 +46,10 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
       def success(r: R[Response[T]]): Unit = cb(Right(r))
       def error(t: Throwable): Unit = cb(Left(t))
 
-      r.response match {
-        case ras @ ResponseAsStream() =>
-          preparedRequest
-            .execute(streamingAsyncHandler(ras, r.options.parseResponseIf, success, error))
-
-        case ra =>
-          preparedRequest
-            .execute(eagerAsyncHandler(ra, r.options.parseResponseIf, success, error))
+      if (isResponseAsStream(r.response)) {
+        preparedRequest.execute(streamingAsyncHandler(r.response, r.options.parseResponseIf, success, error))
+      } else {
+        preparedRequest.execute(eagerAsyncHandler(r.response, r.options.parseResponseIf, success, error))
       }
     })
   }
@@ -79,7 +75,7 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
     }
   }
 
-  private def streamingAsyncHandler[T](responseAs: ResponseAsStream[T, S],
+  private def streamingAsyncHandler[T](responseAs: ResponseAs[T, S],
                                        parseCondition: StatusCode => Boolean,
                                        success: R[Response[T]] => Unit,
                                        error: Throwable => Unit): AsyncHandler[Unit] = {
@@ -134,7 +130,7 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
           val p = publisher.getOrElse(EmptyPublisher)
           val s = publisherToStreamBody(p)
           val b = if (parseCondition(baseResponse.code)) {
-            rm.unit(Right(responseAs.responseIsStream(s)))
+            rm.unit(Right(handleBody(s, responseAs, baseResponse).asInstanceOf[T]))
           } else {
             rm.map(publisherToBytes(p))(Left(_))
           }
@@ -143,6 +139,13 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
             baseResponse.copy(rawErrorBody = bb)
           })
         }
+      }
+
+      private def handleBody(b: Any, r: ResponseAs[_, _], responseMetadata: ResponseMetadata): Any = r match {
+        case MappedResponseAs(raw, g) =>
+          g.asInstanceOf[(Any, ResponseMetadata) => Any](handleBody(b, raw, responseMetadata), responseMetadata)
+        case _: ResponseAsStream[T, S] => b
+        case _                         => throw new IllegalStateException("Requested a streaming response, trying to read eagerly.")
       }
 
       override def onThrowable(t: Throwable): Unit = {
@@ -278,6 +281,14 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
             }
         }
     }
+
+  private def isResponseAsStream(r: ResponseAs[_, _]): Boolean = {
+    r match {
+      case _: ResponseAsStream[_, _] => true
+      case MappedResponseAs(raw, _)  => isResponseAsStream(raw)
+      case _                         => false
+    }
+  }
 
   override def close(): Unit = {
     if (closeClient)

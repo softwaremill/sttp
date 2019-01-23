@@ -51,6 +51,22 @@ trait StreamingTest[R[_], S]
       }
   }
 
+  "receive a mapped stream" in {
+    sttp
+      .post(uri"$endpoint/streaming/echo")
+      .body(body)
+      .response(asStream[S].map(s => (s, true)))
+      .send()
+      .toFuture()
+      .flatMap { response =>
+        val (stream, flag) = response.unsafeBody
+        bodyConsumer(stream).toFuture().map((_, flag))
+      }
+      .map { responseBody =>
+        responseBody shouldBe ((body, true))
+      }
+  }
+
   "receive a stream from an https site" in {
     val numChunks = 100
     val url = uri"https://httpbin.org/stream/$numChunks"
