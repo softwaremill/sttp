@@ -45,6 +45,6 @@ For each part, an optional filename can be specified, as well as a custom conten
 For example::
 
   sttp.multipartBody(
-    multipart("logo", logoFile).fileName("logo.jpg").contentType("image/jpg"),
-    multipart("text", docFile).fileName("text.doc")
+    multipartFile("logo", logoFile).fileName("logo.jpg").contentType("image/jpg"),
+    multipartFile("text", docFile).fileName("text.doc")
   )
