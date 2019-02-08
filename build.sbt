@@ -134,11 +134,13 @@ lazy val rootJVM = project
     catsJVM,
     monixJVM,
     scalaz,
+    zio,
     // might fail due to // https://github.com/akka/akka-http/issues/1930
     akkaHttpBackend,
     asyncHttpClientBackend,
     asyncHttpClientFutureBackend,
     asyncHttpClientScalazBackend,
+    asyncHttpClientZioBackend,
     asyncHttpClientMonixBackend,
     asyncHttpClientCatsBackend,
     asyncHttpClientFs2Backend,
@@ -248,6 +250,15 @@ lazy val monix = crossProject(JSPlatform, JVMPlatform)
 lazy val monixJS = monix.js.dependsOn(coreJS % "compile->compile;test->test")
 lazy val monixJVM = monix.jvm.dependsOn(coreJVM % "compile->compile;test->test")
 
+lazy val zio: Project = (project in file("implementations/zio"))
+  .settings(commonJvmSettings: _*)
+  .settings(
+    name := "zio",
+    publishArtifact in Test := true,
+    libraryDependencies ++= Seq("org.scalaz" %% "scalaz-zio" % "0.6.1")
+  )
+  .dependsOn(coreJVM % "compile->compile;test->test")
+
 lazy val scalaz: Project = (project in file("implementations/scalaz"))
   .settings(commonJvmSettings: _*)
   .settings(
@@ -298,6 +309,10 @@ lazy val asyncHttpClientFutureBackend: Project =
 lazy val asyncHttpClientScalazBackend: Project =
   asyncHttpClientBackendProject("scalaz")
     .dependsOn(scalaz % "compile->compile;test->test")
+
+lazy val asyncHttpClientZioBackend: Project =
+  asyncHttpClientBackendProject("zio")
+    .dependsOn(zio % "compile->compile;test->test")
 
 lazy val asyncHttpClientMonixBackend: Project =
   asyncHttpClientBackendProject("monix")
