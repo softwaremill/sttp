@@ -104,7 +104,7 @@ class SttpBackendStub[R[_], S] private (rm: MonadError[R],
       new SttpBackendStub(rm, matchers.orElse(m), fallback)
     }
     def thenRespondCyclic[T](bodies: T*): SttpBackendStub[R, S] = {
-      thenRespond(bodies.map(body => Response[T](Right(body), 200, "OK")))
+      thenRespondCyclicResponses(bodies.map(body => Response[T](Right(body), 200, "OK")): _*)
     }
     def thenRespondCyclicResponses[T](responses: Response[T]*): SttpBackendStub[R, S] = {
       val iterator = Iterator.continually(responses).flatten
