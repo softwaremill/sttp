@@ -46,7 +46,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'sttp'
-copyright = u'2017, SoftwareMill'
+copyright = u'2019, SoftwareMill'
 author = u'SoftwareMill'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -162,9 +162,9 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'sttp', u'sttp Documentation',
-     author, 'sttp', 'One line description of project.',
-     'Miscellaneous'),
+    (master_doc, 'sttp', u'sttp documentation',
+     author, 'sttp', 'The Scala HTTP client you always wanted!',
+     'Scala'),
 ]
 
 highlight_language = 'scala'
