@@ -102,9 +102,10 @@ Requests can be sent with a streaming body like this::
   import com.softwaremill.sttp.asynchttpclient.fs2.AsyncHttpClientFs2Backend
 
   import java.nio.ByteBuffer
-  import cats.effect.IO
+  import cats.effect.{ContextShift, IO}
   import fs2.Stream
 
+  implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.Implicits.global)
   implicit val sttpBackend = AsyncHttpClientFs2Backend[IO]()
 
   val stream: Stream[IO, ByteBuffer] = ...
@@ -119,10 +120,11 @@ Responses can also be streamed::
   import com.softwaremill.sttp.asynchttpclient.fs2.AsyncHttpClientFs2Backend
 
   import java.nio.ByteBuffer
-  import cats.effect.IO
+  import cats.effect.{ContextShift, IO}
   import fs2.Stream
   import scala.concurrent.duration.Duration
 
+  implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.Implicits.global)
   implicit val sttpBackend = AsyncHttpClientFs2Backend[IO]()
 
   val response: IO[Response[Stream[IO, ByteBuffer]]] =
