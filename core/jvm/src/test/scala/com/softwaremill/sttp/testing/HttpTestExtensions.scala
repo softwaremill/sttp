@@ -92,6 +92,33 @@ trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
         resp.history should have size (maxRedirects.toLong)
       }
     }
+
+    val redirectToGetTestData = List(
+      (301, false, "POSTx"),
+      (302, false, "POSTx"),
+      (303, false, "GET"),
+      (307, false, "POSTx"),
+      (308, false, "POSTx"),
+      (301, true, "GET"),
+      (302, true, "GET"),
+      (303, true, "GET"),
+      (307, true, "POSTx"),
+      (308, true, "POSTx"),
+    )
+
+    for ((statusCode, redirectToGet, expectedBody) <- redirectToGetTestData) yield {
+      s"for $statusCode redirect, with redirect post to get = $redirectToGet, should return body $expectedBody" in {
+        sttp
+          .redirectToGet(redirectToGet)
+          .body("x")
+          .post(uri"$endpoint/redirect/get_after_post/r$statusCode")
+          .send()
+          .toFuture()
+          .map { resp =>
+            resp.unsafeBody shouldBe expectedBody
+          }
+      }
+    }
   }
 
   // scalajs and scala native only support US_ASCII, ISO_8859_1, UTF_8, UTF_16BE, UTF_16LE, UTF_16

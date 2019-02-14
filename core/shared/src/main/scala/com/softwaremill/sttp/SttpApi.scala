@@ -25,7 +25,8 @@ trait SttpApi extends SttpExtensions {
       RequestOptions(followRedirects = true,
                      DefaultReadTimeout,
                      FollowRedirectsBackend.MaxRedirects,
-                     StatusCodes.isSuccess),
+                     StatusCodes.isSuccess,
+                     redirectToGet = false),
       Map()
     )
 

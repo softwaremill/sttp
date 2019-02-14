@@ -103,12 +103,14 @@ class SttpBackendStub[R[_], S] private (rm: MonadError[R],
       }
       new SttpBackendStub(rm, matchers.orElse(m), fallback)
     }
+
     /**
       * Not thread-safe!
       */
     def thenRespondCyclic[T](bodies: T*): SttpBackendStub[R, S] = {
       thenRespondCyclicResponses(bodies.map(body => Response[T](Right(body), 200, "OK")): _*)
     }
+
     /**
       * Not thread-safe!
       */

@@ -209,6 +209,24 @@ private class HttpServer(port: Int) extends AutoCloseable with CorsDirectives {
         } ~
         path("loop") {
           redirect("/redirect/loop", StatusCodes.Found)
+        } ~
+        pathPrefix("get_after_post") {
+          path("r301") {
+            redirect("/redirect/get_after_post/result", StatusCodes.MovedPermanently)
+          } ~ path("r302") {
+            redirect("/redirect/get_after_post/result", StatusCodes.Found)
+          } ~ path("r303") {
+            redirect("/redirect/get_after_post/result", StatusCodes.SeeOther)
+          } ~ path("r307") {
+            redirect("/redirect/get_after_post/result", StatusCodes.TemporaryRedirect)
+          } ~ path("r308") {
+            redirect("/redirect/get_after_post/result", StatusCodes.PermanentRedirect)
+          } ~ path("result") {
+            entity(as[String]) { body =>
+              get(complete(s"GET$body")) ~
+                post(complete(s"POST$body"))
+            }
+          }
         }
     } ~ pathPrefix("timeout") {
       complete {

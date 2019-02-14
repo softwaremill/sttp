@@ -221,6 +221,18 @@ case class RequestT[U[_], T, +S](
   def parseResponseIf(f: StatusCode => Boolean): RequestT[U, T, S] =
     this.copy(options = options.copy(parseResponseIf = f))
 
+  /**
+    * When a POST or PUT request is redirected, should the redirect be a POST/PUT as well (with the original body),
+    * or should the request be converted to a GET without a body.
+    *
+    * Note that this only affects 301 and 302 redirects.
+    * 303 redirects are always converted, while 307 and 308 redirects always keep the same method.
+    *
+    * See https://developer.mozilla.org/en-US/docs/Web/HTTP/Redirections for details.
+    */
+  def redirectToGet(r: Boolean): RequestT[U, T, S] =
+    this.copy(options = options.copy(redirectToGet = r))
+
   def send[R[_]]()(implicit backend: SttpBackend[R, S], isIdInRequest: IsIdInRequest[U]): R[Response[T]] = {
     // we could avoid the asInstanceOf by creating an artificial copy
     // changing the method & url fields using `isIdInRequest`, but that
@@ -272,5 +284,6 @@ case class RequestOptions(
     followRedirects: Boolean,
     readTimeout: Duration,
     maxRedirects: Int,
-    parseResponseIf: StatusCode => Boolean
+    parseResponseIf: StatusCode => Boolean,
+    redirectToGet: Boolean
 )

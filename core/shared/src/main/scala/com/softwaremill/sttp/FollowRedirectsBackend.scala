@@ -52,13 +52,22 @@ class FollowRedirectsBackend[R[_], S](delegate: SttpBackend[R, S]) extends SttpB
     }
 
     val redirectResponse =
-      sendWithCounter(request.copy[Id, T, S](uri = uri), redirects + 1)
+      sendWithCounter(changePostPutToGet(request.copy[Id, T, S](uri = uri), response.code), redirects + 1)
 
     responseMonad.map(redirectResponse) { rr =>
       val responseNoBody =
         response.copy(rawErrorBody = response.rawErrorBody.right.map(_ => ()))
       rr.copy(history = responseNoBody :: rr.history)
     }
+  }
+
+  private def changePostPutToGet[T](r: Request[T, S], statusCode: StatusCode): Request[T, S] = {
+    val applicable = r.method == Method.POST || r.method == Method.PUT
+    val alwaysChanged = statusCode == StatusCodes.SeeOther
+    val neverChanged = statusCode == StatusCodes.TemporaryRedirect || statusCode == StatusCodes.PermanentRedirect
+    if (applicable && (r.options.redirectToGet || alwaysChanged) && !neverChanged) {
+      r.method(Method.GET, r.uri).copy(body = NoBody)
+    } else r
   }
 
   override def close(): Unit = delegate.close()
