@@ -103,6 +103,13 @@ class SttpBackendStub[R[_], S] private (rm: MonadError[R],
       }
       new SttpBackendStub(rm, matchers.orElse(m), fallback)
     }
+    def thenRespondCyclic[T](bodies: T*): SttpBackendStub[R, S] = {
+      thenRespondCyclicResponses(bodies.map(body => Response[T](Right(body), 200, "OK")): _*)
+    }
+    def thenRespondCyclicResponses[T](responses: Response[T]*): SttpBackendStub[R, S] = {
+      val iterator = Iterator.continually(responses).flatten
+      thenRespond(iterator.next)
+    }
     def thenRespondWrapped(resp: => R[Response[_]]): SttpBackendStub[R, S] = {
       val m: PartialFunction[Request[_, _], R[Response[_]]] = {
         case r if p(r) => resp

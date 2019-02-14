@@ -23,10 +23,10 @@ Behavior of the stub can be specified using a combination of the ``whenRequestMa
     .thenRespond("Hello there!")
     .whenRequestMatches(_.method == Method.POST)
     .thenRespondServerError()
-      
+
   val response1 = sttp.get(uri"http://example.org/a/b/c").send()
   // response1.body will be Right("Hello there")
-  
+
   val response2 = sttp.post(uri"http://example.org/d/e").send()
   // response2.code will be 500
 
@@ -71,6 +71,30 @@ The returned response may also depend on the request: ::
 
   val response = sttp.get(uri"http://example.org").send()
   // response.body will be Right("OK, got request sent to example.org")
+
+
+You can define consecutive raw responses that will be served: ::
+
+  implicit val testingBackend = SttpBackendStub.synchronous.whenAnyRequest
+    .thenRespondCyclic("first", "second", "third")
+
+  sttp.get(uri"http://example.org").send()       // Right("OK, first")
+  sttp.get(uri"http://example.org").send()       // Right("OK, second")
+  sttp.get(uri"http://example.org").send()       // Right("OK, third")
+  sttp.get(uri"http://example.org").send()       // Right("OK, first")
+
+Or multiple `Response` instances: ::
+
+  implicit val testingBackend = SttpBackendStub.synchronous.whenAnyRequest
+    .thenRespondCyclicResponses(
+      Response.ok[String]("first"),
+      Response.error[String]("error", 500, "Something went wrong")
+    )
+
+  sttp.get(uri"http://example.org").send()       // code will be 200
+  sttp.get(uri"http://example.org").send()       // code will be 500
+  sttp.get(uri"http://example.org").send()       // code will be 200
+
 
 Simulating exceptions
 ---------------------
@@ -124,10 +148,10 @@ It is also possible to create a stub backend which delegates calls to another (p
     SttpBackendStub.withFallback(HttpURLConnectionBackend())
       .whenRequestMatches(_.uri.path.startsWith(List("a")))
       .thenRespond("I'm a STUB!")
-      
+
   val response1 = sttp.get(uri"http://api.internal/a").send()
   // response1.body will be Right("I'm a STUB")
-  
+
   val response2 = sttp.post(uri"http://api.internal/b").send()
   // response2 will be whatever a "real" network call to api.internal/b returns
 
