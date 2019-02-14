@@ -3,17 +3,17 @@ async-http-client backend
 
 To use, add the following dependency to your project::
 
-  "com.softwaremill.sttp" %% "async-http-client-backend-future" % "1.5.9"
+  "com.softwaremill.sttp" %% "async-http-client-backend-future" % "1.5.10"
   // or
-  "com.softwaremill.sttp" %% "async-http-client-backend-scalaz" % "1.5.9"
+  "com.softwaremill.sttp" %% "async-http-client-backend-scalaz" % "1.5.10"
   // or
-  "com.softwaremill.sttp" %% "async-http-client-backend-zio" % "1.5.9"
+  "com.softwaremill.sttp" %% "async-http-client-backend-zio" % "1.5.10"
   // or
-  "com.softwaremill.sttp" %% "async-http-client-backend-monix" % "1.5.9"
+  "com.softwaremill.sttp" %% "async-http-client-backend-monix" % "1.5.10"
   // or
-  "com.softwaremill.sttp" %% "async-http-client-backend-cats" % "1.5.9"
+  "com.softwaremill.sttp" %% "async-http-client-backend-cats" % "1.5.10"
   // or
-  "com.softwaremill.sttp" %% "async-http-client-backend-fs2" % "1.5.9"
+  "com.softwaremill.sttp" %% "async-http-client-backend-fs2" % "1.5.10"
 
 This backend depends on `async-http-client <https://github.com/AsyncHttpClient/async-http-client>`_.
 A fully **asynchronous** backend, which uses `Netty <http://netty.io>`_ behind the
