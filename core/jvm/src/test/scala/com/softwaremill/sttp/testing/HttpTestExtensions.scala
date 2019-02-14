@@ -103,7 +103,7 @@ trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
       (302, true, "GET"),
       (303, true, "GET"),
       (307, true, "POSTx"),
-      (308, true, "POSTx"),
+      (308, true, "POSTx")
     )
 
     for ((statusCode, redirectToGet, expectedBody) <- redirectToGetTestData) yield {
