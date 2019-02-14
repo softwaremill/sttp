@@ -222,10 +222,10 @@ private class HttpServer(port: Int) extends AutoCloseable with CorsDirectives {
           } ~ path("r308") {
             redirect("/redirect/get_after_post/result", StatusCodes.PermanentRedirect)
           } ~ path("result") {
-            entity(as[String]) { body =>
-              get(complete(s"GET$body")) ~
+            get(complete(s"GET")) ~
+              entity(as[String]) { body =>
                 post(complete(s"POST$body"))
-            }
+              }
           }
         }
     } ~ pathPrefix("timeout") {
