@@ -63,7 +63,7 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
   protected def publisherToBytes(p: Publisher[ByteBuffer]): R[Array[Byte]]
 
   private def eagerAsyncHandler[T](responseAs: ResponseAs[T, S],
-                                   parseCondition: StatusCode => Boolean,
+                                   parseCondition: ResponseMetadata => Boolean,
                                    success: R[Response[T]] => Unit,
                                    error: Throwable => Unit): AsyncHandler[Unit] = {
 
@@ -76,7 +76,7 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
   }
 
   private def streamingAsyncHandler[T](responseAs: ResponseAs[T, S],
-                                       parseCondition: StatusCode => Boolean,
+                                       parseCondition: ResponseMetadata => Boolean,
                                        success: R[Response[T]] => Unit,
                                        error: Throwable => Unit): AsyncHandler[Unit] = {
     new StreamedAsyncHandler[Unit] {
@@ -227,9 +227,10 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
 
   private def readEagerResponse[T](response: AsyncResponse,
                                    responseAs: ResponseAs[T, S],
-                                   parseCondition: StatusCode => Boolean): R[Response[T]] = {
+                                   parseCondition: ResponseMetadata => Boolean): R[Response[T]] = {
     val base = readResponseNoBody(response)
 
+    val responseMetadata = ResponseMetadata(base.headers, base.code, base.statusText)
     val body = if (parseCondition(base.code)) {
       rm.map(eagerResponseHandler(response).handle(responseAs, rm, base))(Right(_))
     } else {

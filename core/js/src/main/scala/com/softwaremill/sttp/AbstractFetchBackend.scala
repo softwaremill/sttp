@@ -107,9 +107,10 @@ abstract class AbstractFetchBackend[R[_], S](options: FetchOptions)(rm: MonadErr
       }
       .flatMap { resp =>
         val headers = convertResponseHeaders(resp.headers)
+        val metadata = ResponseMetadata(headers, resp.status, resp.statusText)
 
-        val body: R[Either[Array[Byte], T]] = if (request.options.parseResponseIf(resp.status)) {
-          readResponseBody(resp, request.response, ResponseMetadata(headers, resp.status, resp.statusText))
+        val body: R[Either[Array[Byte], T]] = if (request.options.parseResponseIf(metadata)) {
+          readResponseBody(resp, request.response, metadata)
             .map(Right.apply)
         } else {
           transformPromise(resp.text()).map(t => Left(t.getBytes(Utf8)))
