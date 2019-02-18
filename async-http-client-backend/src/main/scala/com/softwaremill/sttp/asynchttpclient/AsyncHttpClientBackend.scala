@@ -129,7 +129,7 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
           val baseResponse = readResponseNoBody(builder.build())
           val p = publisher.getOrElse(EmptyPublisher)
           val s = publisherToStreamBody(p)
-          val b = if (parseCondition(baseResponse.code)) {
+          val b = if (parseCondition(baseResponse)) {
             rm.unit(Right(handleBody(s, responseAs, baseResponse).asInstanceOf[T]))
           } else {
             rm.map(publisherToBytes(p))(Left(_))
@@ -231,7 +231,7 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
     val base = readResponseNoBody(response)
 
     val responseMetadata = ResponseMetadata(base.headers, base.code, base.statusText)
-    val body = if (parseCondition(base.code)) {
+    val body = if (parseCondition(responseMetaData)) {
       rm.map(eagerResponseHandler(response).handle(responseAs, rm, base))(Right(_))
     } else {
       rm.map(eagerResponseHandler(response).handle(asByteArray, rm, base))(Left(_))
