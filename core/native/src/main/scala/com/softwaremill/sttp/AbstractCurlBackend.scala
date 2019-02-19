@@ -74,7 +74,7 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean)
       val responseHeaders = responseHeaders_.tail
       val responseMetadata = ResponseMetadata(responseHeaders, httpCode, statusText)
 
-      val body: R[Either[Array[CSignedChar], T]] = if (request.options.parseResponseIf(httpCode)) {
+      val body: R[Either[Array[CSignedChar], T]] = if (request.options.parseResponseIf(responseMetadata)) {
         responseMonad.map(readResponseBody(responseBody, request.response, responseMetadata))(Right.apply)
       } else {
         responseMonad.map(toByteArray(responseBody))(Left.apply)

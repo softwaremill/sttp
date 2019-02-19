@@ -89,7 +89,7 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean
 
   private[okhttp] def readResponse[T](res: OkHttpResponse,
                                       responseAs: ResponseAs[T, S],
-                                      parseCondition: StatusCode => Boolean): R[Response[T]] = {
+                                      parseCondition: ResponseMetadata => Boolean): R[Response[T]] = {
 
     val code = res.code()
 
@@ -101,7 +101,7 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean
       .toList
 
     val responseMetadata = ResponseMetadata(headers, res.code(), res.message())
-    val body = if (parseCondition(code)) {
+    val body = if (parseCondition(responseMetadata)) {
       responseMonad.map(responseHandler(res).handle(responseAs, responseMonad, responseMetadata))(Right(_))
     } else {
       responseMonad.map(responseHandler(res).handle(asByteArray, responseMonad, responseMetadata))(Left(_))

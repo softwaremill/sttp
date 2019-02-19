@@ -98,6 +98,20 @@ trait HttpTest[R[_]]
         }
     }
 
+    "as string with expected unsuccessful response via metadata" in {
+      val expectedStatus = 400
+      sttp
+        .post(uri"$endpoint/echo/custom_status/$expectedStatus")
+        .body(testBody)
+        .response(asString)
+        .parseResponseIfMetadata(_.code == expectedStatus)
+        .send()
+        .toFuture()
+        .map { response =>
+          response.body should be(Right(s"POST /echo/custom_status/$expectedStatus $testBody"))
+        }
+    }
+
     "as string with expected unsuccessful response" in {
       val expectedStatus = 400
       sttp

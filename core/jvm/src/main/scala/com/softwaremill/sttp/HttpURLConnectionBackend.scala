@@ -212,7 +212,7 @@ class HttpURLConnectionBackend private (opts: SttpBackendOptions, customizeConne
   private def readResponse[T](c: HttpURLConnection,
                               is: InputStream,
                               responseAs: ResponseAs[T, Nothing],
-                              parseCondition: StatusCode => Boolean): Response[T] = {
+                              parseCondition: ResponseMetadata => Boolean): Response[T] = {
 
     val headers = c.getHeaderFields.asScala.toVector
       .filter(_._1 != null)
@@ -225,7 +225,7 @@ class HttpURLConnectionBackend private (opts: SttpBackendOptions, customizeConne
     val code = c.getResponseCode
     val wrappedIs = wrapInput(contentEncoding, handleNullInput(is))
     val responseMetadata = ResponseMetadata(headers, code, c.getResponseMessage)
-    val body = if (parseCondition(code)) {
+    val body = if (parseCondition(responseMetadata)) {
       Right(readResponseBody(wrappedIs, responseAs, charsetFromHeaders, responseMetadata))
     } else {
       Left(readResponseBody(wrappedIs, asByteArray, charsetFromHeaders, responseMetadata))

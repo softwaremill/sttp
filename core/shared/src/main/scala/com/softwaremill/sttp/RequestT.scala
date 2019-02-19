@@ -219,6 +219,9 @@ case class RequestT[U[_], T, +S](
   def tag(k: String): Option[Any] = tags.get(k)
 
   def parseResponseIf(f: StatusCode => Boolean): RequestT[U, T, S] =
+    parseResponseIfMetadata(m => f(m.code))
+
+  def parseResponseIfMetadata(f: ResponseMetadata => Boolean): RequestT[U, T, S] =
     this.copy(options = options.copy(parseResponseIf = f))
 
   /**
@@ -284,6 +287,6 @@ case class RequestOptions(
     followRedirects: Boolean,
     readTimeout: Duration,
     maxRedirects: Int,
-    parseResponseIf: StatusCode => Boolean,
+    parseResponseIf: ResponseMetadata => Boolean,
     redirectToGet: Boolean
 )
