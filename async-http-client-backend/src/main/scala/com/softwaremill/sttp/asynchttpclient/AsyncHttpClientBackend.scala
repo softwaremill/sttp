@@ -231,7 +231,7 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
     val base = readResponseNoBody(response)
 
     val responseMetadata = ResponseMetadata(base.headers, base.code, base.statusText)
-    val body = if (parseCondition(responseMetaData)) {
+    val body = if (parseCondition(responseMetadata)) {
       rm.map(eagerResponseHandler(response).handle(responseAs, rm, base))(Right(_))
     } else {
       rm.map(eagerResponseHandler(response).handle(asByteArray, rm, base))(Left(_))
