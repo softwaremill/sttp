@@ -106,7 +106,7 @@ def testServerSettings(config: Configuration) = Seq(
 )
 
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.7"
-val akkaStreams = "com.typesafe.akka" %% "akka-stream" % "2.5.19"
+val akkaStreams = "com.typesafe.akka" %% "akka-stream" % "2.5.21"
 
 val scalaTestVersion = "3.0.5"
 val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion
@@ -204,7 +204,7 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .jvmSettings(
     libraryDependencies ++= Seq(
       akkaHttp % "test",
-      "ch.megard" %% "akka-http-cors" % "0.3.3" % "test",
+      "ch.megard" %% "akka-http-cors" % "0.3.4" % "test",
       akkaStreams % "test",
       "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test"
     ),
@@ -230,7 +230,7 @@ lazy val cats = crossProject(JSPlatform, JVMPlatform)
   .settings(
     name := "cats",
     publishArtifact in Test := true,
-    libraryDependencies ++= Seq("org.typelevel" %%% "cats-effect" % "1.1.0")
+    libraryDependencies ++= Seq("org.typelevel" %%% "cats-effect" % "1.2.0")
   )
 lazy val catsJS = cats.js.dependsOn(coreJS % "compile->compile;test->test")
 lazy val catsJVM = cats.jvm.dependsOn(coreJVM % "compile->compile;test->test")
@@ -255,7 +255,7 @@ lazy val zio: Project = (project in file("implementations/zio"))
   .settings(
     name := "zio",
     publishArtifact in Test := true,
-    libraryDependencies ++= Seq("org.scalaz" %% "scalaz-zio" % "0.6.1")
+    libraryDependencies ++= Seq("org.scalaz" %% "scalaz-zio" % "0.6.3")
   )
   .dependsOn(coreJVM % "compile->compile;test->test")
 
@@ -290,7 +290,7 @@ lazy val asyncHttpClientBackend: Project =
     .settings(
       name := "async-http-client-backend",
       libraryDependencies ++= Seq(
-        "org.asynchttpclient" % "async-http-client" % "2.6.0"
+        "org.asynchttpclient" % "async-http-client" % "2.7.0"
       )
     )
     .dependsOn(coreJVM % "compile->compile;test->test")
@@ -326,7 +326,7 @@ lazy val asyncHttpClientFs2Backend: Project =
   asyncHttpClientBackendProject("fs2")
     .settings(
       libraryDependencies ++= Seq(
-        "co.fs2" %% "fs2-reactive-streams" % "1.0.2"
+        "co.fs2" %% "fs2-reactive-streams" % "1.0.3"
       )
     )
     .dependsOn(catsJVM % "compile->compile;test->test")
@@ -337,7 +337,7 @@ lazy val okhttpBackend: Project = (project in file("okhttp-backend"))
   .settings(
     name := "okhttp-backend",
     libraryDependencies ++= Seq(
-      "com.squareup.okhttp3" % "okhttp" % "3.12.1"
+      "com.squareup.okhttp3" % "okhttp" % "3.13.1"
     )
   )
   .dependsOn(coreJVM % "compile->compile;test->test")
@@ -366,7 +366,7 @@ lazy val jsonCommon = crossProject(JSPlatform, JVMPlatform)
 lazy val jsonCommonJVM = jsonCommon.jvm
 lazy val jsonCommonJS = jsonCommon.js
 
-lazy val circeVersion = "0.11.0"
+lazy val circeVersion = "0.11.1"
 
 //----- json
 lazy val circe = crossProject(JSPlatform, JVMPlatform)
@@ -386,7 +386,7 @@ lazy val circe = crossProject(JSPlatform, JVMPlatform)
 lazy val circeJS = circe.js.dependsOn(coreJS, jsonCommonJS)
 lazy val circeJVM = circe.jvm.dependsOn(coreJVM, jsonCommonJVM)
 
-lazy val json4sVersion = "3.6.3"
+lazy val json4sVersion = "3.6.5"
 
 lazy val json4s: Project = (project in file("json/json4s"))
   .settings(commonJvmSettings: _*)
@@ -420,14 +420,14 @@ lazy val playJson = crossProject(JSPlatform, JVMPlatform)
   .settings(
     name := "play-json",
     libraryDependencies ++= Seq(
-      "com.typesafe.play" %%% "play-json" % "2.6.13",
+      "com.typesafe.play" %%% "play-json" % "2.7.1",
       "org.scalatest" %%% "scalatest" % scalaTestVersion % "test"
     )
   )
 lazy val playJsonJS = playJson.js.dependsOn(coreJS, jsonCommonJS)
 lazy val playJsonJVM = playJson.jvm.dependsOn(coreJVM, jsonCommonJVM)
 
-lazy val braveVersion = "5.6.0"
+lazy val braveVersion = "5.6.1"
 
 lazy val braveBackend: Project = (project in file("metrics/brave-backend"))
   .settings(commonJvmSettings: _*)
