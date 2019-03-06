@@ -108,7 +108,7 @@ def testServerSettings(config: Configuration) = Seq(
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.7"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % "2.5.21"
 
-val scalaTestVersion = "3.0.5"
+val scalaTestVersion = "3.0.6"
 val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion
 
 lazy val rootProjectAggregates: Seq[ProjectReference] = if (sys.env.isDefinedAt("STTP_NATIVE")) {
@@ -290,7 +290,7 @@ lazy val asyncHttpClientBackend: Project =
     .settings(
       name := "async-http-client-backend",
       libraryDependencies ++= Seq(
-        "org.asynchttpclient" % "async-http-client" % "2.7.0"
+        "org.asynchttpclient" % "async-http-client" % "2.8.1"
       )
     )
     .dependsOn(coreJVM % "compile->compile;test->test")
@@ -326,7 +326,7 @@ lazy val asyncHttpClientFs2Backend: Project =
   asyncHttpClientBackendProject("fs2")
     .settings(
       libraryDependencies ++= Seq(
-        "co.fs2" %% "fs2-reactive-streams" % "1.0.3"
+        "co.fs2" %% "fs2-reactive-streams" % "1.0.4"
       )
     )
     .dependsOn(catsJVM % "compile->compile;test->test")
