@@ -11,9 +11,9 @@ package object zio {
   val convertZioIoToFuture: ConvertToFuture[IO[Throwable, ?]] = new ConvertToFuture[IO[Throwable, ?]] {
     override def toFuture[T](value: IO[Throwable, T]): Future[T] = {
       val p = Promise[T]()
-      val rts = new RTS {}
+      val runtime = new DefaultRuntime {}
 
-      rts.unsafeRunSync(value) match {
+      runtime.unsafeRunSync(value) match {
         case scalaz.zio.Exit.Failure(c) =>
           p.complete(
             Failure(

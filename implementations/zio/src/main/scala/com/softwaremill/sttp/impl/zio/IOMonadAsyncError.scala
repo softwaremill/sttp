@@ -1,7 +1,7 @@
 package com.softwaremill.sttp.impl.zio
 
 import com.softwaremill.sttp.MonadAsyncError
-import scalaz.zio.IO
+import scalaz.zio.{IO, ZIO}
 
 object IOMonadAsyncError extends MonadAsyncError[IO[Throwable, ?]] {
   override def unit[T](t: T): IO[Throwable, T] = IO.succeed(t)
@@ -12,7 +12,7 @@ object IOMonadAsyncError extends MonadAsyncError[IO[Throwable, ?]] {
     fa.flatMap(f)
 
   override def async[T](register: (Either[Throwable, T] => Unit) => Unit): IO[Throwable, T] =
-    IO.async { cb =>
+    ZIO.effectAsync { cb =>
       register {
         case Left(t)  => cb(IO.fail(t))
         case Right(t) => cb(IO.succeed(t))

@@ -255,7 +255,7 @@ lazy val zio: Project = (project in file("implementations/zio"))
   .settings(
     name := "zio",
     publishArtifact in Test := true,
-    libraryDependencies ++= Seq("org.scalaz" %% "scalaz-zio" % "0.6.3")
+    libraryDependencies ++= Seq("org.scalaz" %% "scalaz-zio" % "1.0-RC1")
   )
   .dependsOn(coreJVM % "compile->compile;test->test")
 
