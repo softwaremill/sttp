@@ -32,6 +32,8 @@ println(response.unsafeBody)
 
 sttp documentation is available at [sttp.readthedocs.io](http://sttp.readthedocs.io).
 
+scaladoc is available at [https://www.javadoc.io](https://www.javadoc.io/doc/com.softwaremill.sttp/core_2.12/1.5.11)
+
 You can also take a look at the [introductory blog](https://softwaremill.com/introducing-sttp-the-scala-http-client/)
 and its [follow-up](https://softwaremill.com/sttp-streaming-uri-interpolator/).
 
