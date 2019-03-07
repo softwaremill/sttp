@@ -255,7 +255,8 @@ lazy val zio: Project = (project in file("implementations/zio"))
   .settings(
     name := "zio",
     publishArtifact in Test := true,
-    libraryDependencies ++= Seq("org.scalaz" %% "scalaz-zio" % "1.0-RC1")
+    libraryDependencies ++= Seq("org.scalaz" %% "scalaz-zio" % "1.0-RC1"),
+    crossScalaVersions := Seq(scalaVersion.value) // no 2.11 support
   )
   .dependsOn(coreJVM % "compile->compile;test->test")
 
@@ -312,6 +313,9 @@ lazy val asyncHttpClientScalazBackend: Project =
 
 lazy val asyncHttpClientZioBackend: Project =
   asyncHttpClientBackendProject("zio")
+    .settings(
+      crossScalaVersions := Seq(scalaVersion.value) // no 2.11 support
+    )
     .dependsOn(zio % "compile->compile;test->test")
 
 lazy val asyncHttpClientMonixBackend: Project =
