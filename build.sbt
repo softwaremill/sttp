@@ -4,6 +4,9 @@ import sbtrelease.ReleaseStateTransformations._
 import sbtrelease.ReleasePlugin.autoImport._
 import com.softwaremill.Publish.Release.updateVersionInDocs
 
+val scala2_11 = "2.11.12"
+val scala2_12 = "2.12.8"
+
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on (used by JS tests)")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests (used by JS tests)")
 
@@ -33,8 +36,8 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
 )
 
 val commonJvmJsSettings = commonSettings ++ Seq(
-  scalaVersion := "2.12.8",
-  crossScalaVersions := Seq(scalaVersion.value, "2.11.12")
+  scalaVersion := scala2_12,
+  crossScalaVersions := Seq(scalaVersion.value, scala2_11)
 )
 
 val commonJvmSettings = commonJvmJsSettings
@@ -59,8 +62,8 @@ val commonJsSettings = commonJvmJsSettings ++ Seq(
 
 val commonNativeSettings = commonSettings ++ Seq(
   organization := "com.softwaremill.sttp",
-  scalaVersion := "2.11.12",
-  crossScalaVersions := Seq("2.11.12"),
+  scalaVersion := scala2_11,
+  crossScalaVersions := Seq(scala2_11),
   nativeLinkStubs := true
 )
 
@@ -122,7 +125,7 @@ lazy val rootProjectAggregates: Seq[ProjectReference] = if (sys.env.isDefinedAt(
 lazy val rootProject = (project in file("."))
   .settings(commonSettings: _*)
   // setting version to 2.11 so that cross-releasing works. It's the only version supported by all modules.
-  .settings(skip in publish := true, name := "sttp", scalaVersion := "2.11.12")
+  .settings(skip in publish := true, name := "sttp", scalaVersion := scala2_11)
   .aggregate(rootProjectAggregates: _*)
 
 lazy val rootJVM = project
@@ -256,7 +259,8 @@ lazy val zio: Project = (project in file("implementations/zio"))
     name := "zio",
     publishArtifact in Test := true,
     libraryDependencies ++= Seq("org.scalaz" %% "scalaz-zio" % "1.0-RC1"),
-    crossScalaVersions := Seq(scalaVersion.value) // no 2.11 support
+    scalaVersion := scala2_12,
+    crossScalaVersions := Seq(scala2_12) // no 2.11 support
   )
   .dependsOn(coreJVM % "compile->compile;test->test")
 
@@ -314,7 +318,8 @@ lazy val asyncHttpClientScalazBackend: Project =
 lazy val asyncHttpClientZioBackend: Project =
   asyncHttpClientBackendProject("zio")
     .settings(
-      crossScalaVersions := Seq(scalaVersion.value) // no 2.11 support
+      scalaVersion := scala2_12,
+      crossScalaVersions := Seq(scala2_12) // no 2.11 support
     )
     .dependsOn(zio % "compile->compile;test->test")
 
