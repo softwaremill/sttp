@@ -110,9 +110,12 @@ def testServerSettings(config: Configuration) = Seq(
   })
 )
 
+// an ugly work-around for https://github.com/sbt/sbt/issues/3465
+// even if a project is 2.12-only, we fake that it's also 2.12-compatible
 val only2_12settings = Seq(
   publishArtifact := is2_12.value,
   skip := !is2_12.value,
+  test := (if (is2_12.value) libraryDependencies.value else {}),
   libraryDependencies := (if (is2_12.value) libraryDependencies.value else Nil)
 )
 
