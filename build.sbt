@@ -125,14 +125,14 @@ lazy val rootProjectAggregates: Seq[ProjectReference] = if (sys.env.isDefinedAt(
 lazy val rootProject = (project in file("."))
   .settings(commonSettings: _*)
   // setting version to 2.11 so that cross-releasing works. It's the only version supported by all modules.
-  .settings(skip in publish := true, name := "sttp", scalaVersion := scala2_11, crossScalaVersions := Seq())
+  .settings(skip in publish := true, name := "sttp")
   .aggregate(rootProjectAggregates: _*)
 
 lazy val rootJVM = project
   .in(file(".jvm"))
   .settings(commonJvmJsSettings: _*)
   // see work-around in https://github.com/sbt/sbt/issues/3465
-  .settings(skip in publish := true, name := "sttpJVM", crossScalaVersions := Seq())
+  .settings(skip in publish := true, name := "sttpJVM", scalaVersion := scala2_11, crossScalaVersions := Seq())
   .aggregate(
     coreJVM,
     catsJVM,
@@ -162,13 +162,13 @@ lazy val rootJVM = project
 lazy val rootJS = project
   .in(file(".js"))
   .settings(commonJvmJsSettings: _*)
-  .settings(skip in publish := true, name := "sttpJS")
+  .settings(skip in publish := true, name := "sttpJS", scalaVersion := scala2_11, crossScalaVersions := Seq())
   .aggregate(coreJS, catsJS, monixJS, jsonCommonJS, circeJS, playJsonJS)
 
 lazy val rootNative = project
   .in(file(".native"))
   .settings(commonNativeSettings: _*)
-  .settings(skip in publish := true, name := "sttpNative")
+  .settings(skip in publish := true, name := "sttpNative", scalaVersion := scala2_11, crossScalaVersions := Seq())
   .aggregate(coreNative)
 
 lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
