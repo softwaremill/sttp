@@ -9,6 +9,7 @@ val scala2_12 = "2.12.8"
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on (used by JS tests)")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests (used by JS tests)")
+lazy val is2_12 = settingKey[Boolean]("Is the scala version 2.12.")
 
 val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   organization := "com.softwaremill.sttp",
@@ -32,7 +33,8 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
     commitNextVersion,
     releaseStepCommand("sonatypeReleaseAll"),
     pushChanges
-  )
+  ),
+  is2_12 := (scalaVersion.value == scala2_12)
 )
 
 val commonJvmJsSettings = commonSettings ++ Seq(
@@ -108,6 +110,12 @@ def testServerSettings(config: Configuration) = Seq(
   })
 )
 
+val only2_12settings = Seq(
+  publishArtifact := is2_12.value,
+  skip := !is2_12.value,
+  libraryDependencies := (if (is2_12.value) libraryDependencies.value else Nil)
+)
+
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.7"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % "2.5.21"
 
@@ -131,8 +139,7 @@ lazy val rootProject = (project in file("."))
 lazy val rootJVM = project
   .in(file(".jvm"))
   .settings(commonJvmJsSettings: _*)
-  // see work-around in https://github.com/sbt/sbt/issues/3465
-  .settings(skip in publish := true, name := "sttpJVM", scalaVersion := scala2_11, crossScalaVersions := Seq())
+  .settings(skip in publish := true, name := "sttpJVM")
   .aggregate(
     coreJVM,
     catsJVM,
@@ -162,13 +169,13 @@ lazy val rootJVM = project
 lazy val rootJS = project
   .in(file(".js"))
   .settings(commonJvmJsSettings: _*)
-  .settings(skip in publish := true, name := "sttpJS", scalaVersion := scala2_11, crossScalaVersions := Seq())
+  .settings(skip in publish := true, name := "sttpJS")
   .aggregate(coreJS, catsJS, monixJS, jsonCommonJS, circeJS, playJsonJS)
 
 lazy val rootNative = project
   .in(file(".native"))
   .settings(commonNativeSettings: _*)
-  .settings(skip in publish := true, name := "sttpNative", scalaVersion := scala2_11, crossScalaVersions := Seq())
+  .settings(skip in publish := true, name := "sttpNative")
   .aggregate(coreNative)
 
 lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
@@ -259,10 +266,9 @@ lazy val zio: Project = (project in file("implementations/zio"))
   .settings(
     name := "zio",
     publishArtifact in Test := true,
-    libraryDependencies ++= Seq("org.scalaz" %% "scalaz-zio" % "1.0-RC1"),
-    scalaVersion := scala2_12,
-    crossScalaVersions := Seq(scala2_12) // no 2.11 support
+    libraryDependencies ++= Seq("org.scalaz" %% "scalaz-zio" % "1.0-RC1")
   )
+  .settings(only2_12settings)
   .dependsOn(coreJVM % "compile->compile;test->test")
 
 lazy val scalaz: Project = (project in file("implementations/scalaz"))
@@ -318,10 +324,7 @@ lazy val asyncHttpClientScalazBackend: Project =
 
 lazy val asyncHttpClientZioBackend: Project =
   asyncHttpClientBackendProject("zio")
-    .settings(
-      scalaVersion := scala2_12,
-      crossScalaVersions := Seq(scala2_12) // no 2.11 support
-    )
+    .settings(only2_12settings)
     .dependsOn(zio % "compile->compile;test->test")
 
 lazy val asyncHttpClientMonixBackend: Project =
