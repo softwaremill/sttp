@@ -21,18 +21,18 @@ Node.js
 ---------
 
 Running sttp in a node.js will require downloading modules that implement the various classes and functions used 
-by sttp, usually available in browser. At minima, you will need replacement for ``fetch``, ``AbortController`` and ``Headers``. To achieve this, you can either use ``npm`` directly, or the ``scalajs-bundler`` sbt plugin if you use sbt. 
+by sttp, usually available in browser. At minima, you will need replacement for ``fetch``, ``AbortController`` and ``Headers``. To achieve this, you can either use ``npm`` directly, or the ``scalajs-bundler`` sbt plugin if you use sbt :: 
 
-    npm install --save node-fetch
-    npm install --save abortcontroller-polyfill
-    npm install --save fetch-headers
+  npm install --save node-fetch
+  npm install --save abortcontroller-polyfill
+  npm install --save fetch-headers
 
-You then need to load the modules into your runtime. This can be done in your main method as such :
+You then need to load the modules into your runtime. This can be done in your main method as such ::
 
-    val g = scalajs.js.Dynamic.global
-    g.fetch = g.require("node-fetch")
-    g.require("abortcontroller-polyfill/dist/polyfill-patch-fetch")
-    g.Headers = g.require("fetch-headers")
+  val g = scalajs.js.Dynamic.global
+  g.fetch = g.require("node-fetch")
+  g.require("abortcontroller-polyfill/dist/polyfill-patch-fetch")
+  g.Headers = g.require("fetch-headers")
 
 Streaming
 ---------
