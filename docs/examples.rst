@@ -35,7 +35,7 @@ Required dependencies::
 
   libraryDependencies ++= List(
     "com.softwaremill.sttp" %% "akka-http-backend" % "1.5.11",
-    "com.softwaremill.sttp" %% "json4s" % "1.5.11"
+    "com.softwaremill.sttp" %% "json4s" % "1.5.11",
     "org.json4s" %% "json4s-native" % "3.6.0"
   )
 
