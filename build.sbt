@@ -9,6 +9,7 @@ val scala2_12 = "2.12.8"
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on (used by JS tests)")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests (used by JS tests)")
+lazy val is2_11 = settingKey[Boolean]("Is the scala version 2.11.")
 lazy val is2_12 = settingKey[Boolean]("Is the scala version 2.12.")
 
 val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
@@ -34,7 +35,24 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
     releaseStepCommand("sonatypeReleaseAll"),
     pushChanges
   ),
+  is2_11 := (scalaVersion.value == scala2_11),
   is2_12 := (scalaVersion.value == scala2_12)
+)
+
+// an ugly work-around for https://github.com/sbt/sbt/issues/3465
+// even if a project is 2.12-only, we fake that it's also 2.12-compatible
+val only2_12settings = Seq(
+  publishArtifact := is2_12.value,
+  skip := !is2_12.value,
+  test := (if (is2_12.value) libraryDependencies.value else {}),
+  libraryDependencies := (if (is2_12.value) libraryDependencies.value else Nil)
+)
+
+val only2_11settings = Seq(
+  publishArtifact := is2_11.value,
+  skip := !is2_11.value,
+  test := (if (is2_11.value) libraryDependencies.value else {}),
+  libraryDependencies := (if (is2_11.value) libraryDependencies.value else Nil)
 )
 
 val commonJvmJsSettings = commonSettings ++ Seq(
@@ -108,15 +126,6 @@ def testServerSettings(config: Configuration) = Seq(
     val port = (testServerPort in Test in Project("core", file("core"))).value
     PollingUtils.waitUntilServerAvailable(new URL(s"http://localhost:$port"))
   })
-)
-
-// an ugly work-around for https://github.com/sbt/sbt/issues/3465
-// even if a project is 2.12-only, we fake that it's also 2.12-compatible
-val only2_12settings = Seq(
-  publishArtifact := is2_12.value,
-  skip := !is2_12.value,
-  test := (if (is2_12.value) libraryDependencies.value else {}),
-  libraryDependencies := (if (is2_12.value) libraryDependencies.value else Nil)
 )
 
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.7"
@@ -215,6 +224,7 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
       "org.scalatest" %%% "scalatest" % "3.2.0-SNAP10" % "test"
     )
   )
+  .nativeSettings(only2_11settings)
   .jvmSettings(
     libraryDependencies ++= Seq(
       akkaHttp % "test",
