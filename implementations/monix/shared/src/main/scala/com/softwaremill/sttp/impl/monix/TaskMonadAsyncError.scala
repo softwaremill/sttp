@@ -2,7 +2,6 @@ package com.softwaremill.sttp.impl.monix
 
 import com.softwaremill.sttp.MonadAsyncError
 import monix.eval.Task
-import monix.execution.Cancelable
 
 import scala.util.{Failure, Success}
 
@@ -20,8 +19,6 @@ object TaskMonadAsyncError extends MonadAsyncError[Task] {
         case Left(t)  => cb(Failure(t))
         case Right(t) => cb(Success(t))
       }
-
-      Cancelable.empty
     }
 
   override def error[T](t: Throwable): Task[T] = Task.raiseError(t)
