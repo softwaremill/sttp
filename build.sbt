@@ -44,6 +44,7 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
 val only2_12settings = Seq(
   publishArtifact := is2_12.value,
   skip := !is2_12.value,
+  skip in publish := !is2_12.value,
   test := (if (is2_12.value) libraryDependencies.value else {}),
   libraryDependencies := (if (is2_12.value) libraryDependencies.value else Nil)
 )
@@ -51,13 +52,14 @@ val only2_12settings = Seq(
 val only2_11settings = Seq(
   publishArtifact := is2_11.value,
   skip := !is2_11.value,
+  skip in publish := !is2_11.value,
   test := (if (is2_11.value) libraryDependencies.value else {}),
   libraryDependencies := (if (is2_11.value) libraryDependencies.value else Nil)
 )
 
 val commonJvmJsSettings = commonSettings ++ Seq(
-  scalaVersion := scala2_12,
-  crossScalaVersions := Seq(scalaVersion.value, scala2_11)
+  scalaVersion := scala2_11,
+  crossScalaVersions := Seq(scalaVersion.value, scala2_12)
 )
 
 val commonJvmSettings = commonJvmJsSettings
