@@ -147,7 +147,7 @@ lazy val rootProjectAggregates: Seq[ProjectReference] = if (sys.env.isDefinedAt(
 lazy val rootProject = (project in file("."))
   .settings(commonSettings: _*)
   // setting version to 2.11 so that cross-releasing works. It's the only version supported by all modules.
-  .settings(skip in publish := true, name := "sttp")
+  .settings(skip in publish := true, name := "sttp", scalaVersion := scala2_11, crossScalaVersions := Seq())
   .aggregate(rootProjectAggregates: _*)
 
 lazy val rootJVM = project
