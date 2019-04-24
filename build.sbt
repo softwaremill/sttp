@@ -222,7 +222,7 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .nativeSettings(testServerSettings(Test))
   .nativeSettings(
     libraryDependencies ++= Seq(
-      "org.scala-native" %%% "test-interface" % "0.3.8",
+      "org.scala-native" %%% "test-interface" % "0.3.9",
       "org.scalatest" %%% "scalatest" % "3.2.0-SNAP10" % "test"
     )
   )
