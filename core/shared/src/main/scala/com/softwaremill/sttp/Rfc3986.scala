@@ -26,7 +26,8 @@ object Rfc3986 {
     * in the query) be %-encoded.
     */
   def encode(allowedCharacters: Set[Char], spaceAsPlus: Boolean = false, encodePlus: Boolean = false)(
-      s: String): String = {
+      s: String
+  ): String = {
     val sb = new StringBuilder()
     // based on https://gist.github.com/teigen/5865923
     for (c <- s) {
@@ -78,7 +79,8 @@ object Rfc3986 {
               val v = Integer.parseInt(s.substring(i + 1, i + 3), 16)
               if (v < 0)
                 throw new IllegalArgumentException(
-                  "URLDecoder: Illegal hex characters in escape (%) pattern - negative value")
+                  "URLDecoder: Illegal hex characters in escape (%) pattern - negative value"
+                )
               bytes(pos) = v.toByte
               pos += 1
               i += 3
@@ -92,7 +94,8 @@ object Rfc3986 {
           } catch {
             case e: NumberFormatException =>
               throw new IllegalArgumentException(
-                "URLDecoder: Illegal hex characters in escape (%) pattern - " + e.getMessage)
+                "URLDecoder: Illegal hex characters in escape (%) pattern - " + e.getMessage
+              )
           }
           needToChange = true
         case _ =>

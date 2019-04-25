@@ -21,7 +21,8 @@ object IOMonadAsyncError extends MonadAsyncError[IO[Throwable, ?]] {
 
   override def error[T](t: Throwable): IO[Throwable, T] = IO.fail(t)
 
-  override protected def handleWrappedError[T](rt: IO[Throwable, T])(
-      h: PartialFunction[Throwable, IO[Throwable, T]]): IO[Throwable, T] =
+  override protected def handleWrappedError[T](
+      rt: IO[Throwable, T]
+  )(h: PartialFunction[Throwable, IO[Throwable, T]]): IO[Throwable, T] =
     rt.catchSome(h)
 }

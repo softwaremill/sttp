@@ -20,11 +20,13 @@ trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
         .toFuture()
         .map { response =>
           response.cookies should have length (3)
-          response.cookies.toSet should be(Set(
-            Cookie("cookie1", "value1", secure = true, httpOnly = true, maxAge = Some(123L)),
-            Cookie("cookie2", "value2"),
-            Cookie("cookie3", "", domain = Some("xyz"), path = Some("a/b/c"))
-          ))
+          response.cookies.toSet should be(
+            Set(
+              Cookie("cookie1", "value1", secure = true, httpOnly = true, maxAge = Some(123L)),
+              Cookie("cookie2", "value2"),
+              Cookie("cookie3", "", domain = Some("xyz"), path = Some("a/b/c"))
+            )
+          )
         }
     }
 
@@ -46,7 +48,8 @@ trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
                 .of(1997, 12, 8, 12, 49, 12, 0, ZoneId.of("GMT"))
                 .toInstant
                 .toEpochMilli
-            ))
+            )
+          )
         }
     }
   }

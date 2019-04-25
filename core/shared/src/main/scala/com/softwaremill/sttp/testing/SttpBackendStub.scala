@@ -27,10 +27,11 @@ import scala.util.{Failure, Success, Try}
   * or headers. A [[ClassCastException]] might occur if for a given request,
   * a response is specified with the incorrect or inconvertible body type.
   */
-class SttpBackendStub[R[_], S] private (rm: MonadError[R],
-                                        matchers: PartialFunction[Request[_, _], R[Response[_]]],
-                                        fallback: Option[SttpBackend[R, S]])
-    extends SttpBackend[R, S] {
+class SttpBackendStub[R[_], S] private (
+    rm: MonadError[R],
+    matchers: PartialFunction[Request[_, _], R[Response[_]]],
+    fallback: Option[SttpBackend[R, S]]
+) extends SttpBackend[R, S] {
 
   /**
     * Specify how the stub backend should respond to requests matching the
@@ -70,7 +71,8 @@ class SttpBackendStub[R[_], S] private (rm: MonadError[R],
         fallback match {
           case None =>
             wrapResponse(
-              Response[Nothing](Left(s"Not Found: ${request.uri}".getBytes(Utf8)), 404, "Not Found", Nil, Nil))
+              Response[Nothing](Left(s"Not Found: ${request.uri}".getBytes(Utf8)), 404, "Not Found", Nil, Nil)
+            )
           case Some(fb) => fb.send(request)
         }
       case Failure(e) => rm.error(e)
@@ -178,7 +180,8 @@ object SttpBackendStub {
   private[sttp] def tryAdjustResponseType[DesiredRType, RType, M[_]](
       rm: MonadError[M],
       ra: ResponseAs[DesiredRType, _],
-      m: M[Response[RType]]): M[Response[DesiredRType]] = {
+      m: M[Response[RType]]
+  ): M[Response[DesiredRType]] = {
     rm.map[Response[RType], Response[DesiredRType]](m) { r =>
       r.body match {
         case Left(_) => r.asInstanceOf[Response[DesiredRType]]

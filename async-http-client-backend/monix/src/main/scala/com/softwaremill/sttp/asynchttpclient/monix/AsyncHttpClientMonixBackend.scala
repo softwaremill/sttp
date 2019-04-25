@@ -14,8 +14,8 @@ import org.asynchttpclient.{AsyncHttpClient, AsyncHttpClientConfig, DefaultAsync
 import org.reactivestreams.Publisher
 
 class AsyncHttpClientMonixBackend private (asyncHttpClient: AsyncHttpClient, closeClient: Boolean)(
-    implicit scheduler: Scheduler)
-    extends AsyncHttpClientBackend[Task, Observable[ByteBuffer]](asyncHttpClient, TaskMonadAsyncError, closeClient) {
+    implicit scheduler: Scheduler
+) extends AsyncHttpClientBackend[Task, Observable[ByteBuffer]](asyncHttpClient, TaskMonadAsyncError, closeClient) {
 
   override protected def streamBodyToPublisher(s: Observable[ByteBuffer]): Publisher[ByteBuf] =
     s.map(Unpooled.wrappedBuffer).toReactivePublisher
@@ -36,30 +36,34 @@ class AsyncHttpClientMonixBackend private (asyncHttpClient: AsyncHttpClient, clo
 object AsyncHttpClientMonixBackend {
 
   private def apply(asyncHttpClient: AsyncHttpClient, closeClient: Boolean)(
-      implicit scheduler: Scheduler): SttpBackend[Task, Observable[ByteBuffer]] =
+      implicit scheduler: Scheduler
+  ): SttpBackend[Task, Observable[ByteBuffer]] =
     new FollowRedirectsBackend(new AsyncHttpClientMonixBackend(asyncHttpClient, closeClient))
 
   /**
     * @param s The scheduler used for streaming request bodies. Defaults to the
     *          global scheduler.
     */
-  def apply(options: SttpBackendOptions = SttpBackendOptions.Default)(
-      implicit s: Scheduler = Scheduler.Implicits.global): SttpBackend[Task, Observable[ByteBuffer]] =
+  def apply(
+      options: SttpBackendOptions = SttpBackendOptions.Default
+  )(implicit s: Scheduler = Scheduler.Implicits.global): SttpBackend[Task, Observable[ByteBuffer]] =
     AsyncHttpClientMonixBackend(AsyncHttpClientBackend.defaultClient(options), closeClient = true)
 
   /**
     * @param s The scheduler used for streaming request bodies. Defaults to the
     *          global scheduler.
     */
-  def usingConfig(cfg: AsyncHttpClientConfig)(
-      implicit s: Scheduler = Scheduler.Implicits.global): SttpBackend[Task, Observable[ByteBuffer]] =
+  def usingConfig(
+      cfg: AsyncHttpClientConfig
+  )(implicit s: Scheduler = Scheduler.Implicits.global): SttpBackend[Task, Observable[ByteBuffer]] =
     AsyncHttpClientMonixBackend(new DefaultAsyncHttpClient(cfg), closeClient = true)
 
   /**
     * @param s The scheduler used for streaming request bodies. Defaults to the
     *          global scheduler.
     */
-  def usingClient(client: AsyncHttpClient)(
-      implicit s: Scheduler = Scheduler.Implicits.global): SttpBackend[Task, Observable[ByteBuffer]] =
+  def usingClient(
+      client: AsyncHttpClient
+  )(implicit s: Scheduler = Scheduler.Implicits.global): SttpBackend[Task, Observable[ByteBuffer]] =
     AsyncHttpClientMonixBackend(client, closeClient = false)
 }

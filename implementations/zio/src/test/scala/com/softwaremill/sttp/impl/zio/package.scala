@@ -17,7 +17,9 @@ package object zio {
         case scalaz.zio.Exit.Failure(c) =>
           p.complete(
             Failure(
-              c.failures.headOption.orElse(c.defects.headOption).getOrElse(new RuntimeException(s"Unknown cause: $c"))))
+              c.failures.headOption.orElse(c.defects.headOption).getOrElse(new RuntimeException(s"Unknown cause: $c"))
+            )
+          )
         case scalaz.zio.Exit.Success(v) => p.complete(Success(v))
       }
 

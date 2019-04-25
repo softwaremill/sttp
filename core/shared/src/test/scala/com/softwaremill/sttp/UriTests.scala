@@ -11,22 +11,26 @@ class UriTests extends FunSuite with Matchers {
 
   val wholeUriTestData = List(
     Uri("http", None, "example.com", None, Nil, Nil, None) -> "http://example.com",
-    Uri("https",
-        None,
-        "sub.example.com",
-        Some(8080),
-        List("a", "b", "xyz"),
-        List(QF.KeyValue("p1", "v1"), QF.KeyValue("p2", "v2")),
-        Some("f")) ->
+    Uri(
+      "https",
+      None,
+      "sub.example.com",
+      Some(8080),
+      List("a", "b", "xyz"),
+      List(QF.KeyValue("p1", "v1"), QF.KeyValue("p2", "v2")),
+      Some("f")
+    ) ->
       "https://sub.example.com:8080/a/b/xyz?p1=v1&p2=v2#f",
     Uri("http", None, "example.com", None, List(""), List(QF.KeyValue("p", "v"), QF.KeyValue("p", "v")), None) -> "http://example.com/?p=v&p=v",
-    Uri("http",
-        None,
-        "exa mple.com",
-        None,
-        List("a b", "z", "ą:ę"),
-        List(QF.KeyValue("p:1", "v&v"), QF.KeyValue("p2", "v v")),
-        None) ->
+    Uri(
+      "http",
+      None,
+      "exa mple.com",
+      None,
+      List("a b", "z", "ą:ę"),
+      List(QF.KeyValue("p:1", "v&v"), QF.KeyValue("p2", "v v")),
+      None
+    ) ->
       "http://exa%20mple.com/a%20b/z/%C4%85:%C4%99?p:1=v%26v&p2=v+v",
     Uri("http", Some(UserInfo("us&e/r", Some("pa ss"))), "example.com", None, Nil, Nil, None) ->
       "http://us&e%2Fr:pa%20ss@example.com",
@@ -64,11 +68,13 @@ class UriTests extends FunSuite with Matchers {
 
   val queryFragmentsTestData = List(
     List(QF.KeyValue("k1", "v1"), QF.KeyValue("k2", "v2"), QF.KeyValue("k3", "v3"), QF.KeyValue("k4", "v4")) -> "k1=v1&k2=v2&k3=v3&k4=v4",
-    List(QF.KeyValue("k1", "v1"),
-         QF.KeyValue("k2", "v2"),
-         QF.Plain("-abc-"),
-         QF.KeyValue("k3", "v3"),
-         QF.KeyValue("k4", "v4")) -> "k1=v1&k2=v2-abc-k3=v3&k4=v4",
+    List(
+      QF.KeyValue("k1", "v1"),
+      QF.KeyValue("k2", "v2"),
+      QF.Plain("-abc-"),
+      QF.KeyValue("k3", "v3"),
+      QF.KeyValue("k4", "v4")
+    ) -> "k1=v1&k2=v2-abc-k3=v3&k4=v4",
     List(QF.KeyValue("k1", "v1"), QF.Plain("&abc&"), QF.KeyValue("k2", "v2")) -> "k1=v1%26abc%26k2=v2",
     List(QF.KeyValue("k1", "v1"), QF.Plain("&abc&", encoding = QueryFragmentEncoding.Relaxed)) -> "k1=v1&abc&",
     List(QF.KeyValue("k1&", "v1&", keyEncoding = QueryFragmentEncoding.Relaxed)) -> "k1&=v1%26",

@@ -254,7 +254,8 @@ trait SyncHttpTest
       val resp = r1.followRedirects(false).send()
       resp.code should be(307)
       resp.body.left.value should be(
-        "The request should be repeated with <a href=\"/redirect/r2\">this URI</a>, but future requests can still use the original URI.")
+        "The request should be repeated with <a href=\"/redirect/r2\">this URI</a>, but future requests can still use the original URI."
+      )
       resp.history should be(Nil)
     }
 
@@ -262,7 +263,8 @@ trait SyncHttpTest
       val resp = r2.followRedirects(false).send()
       resp.code should be(308)
       resp.body.left.value should be(
-        "The request, and all future requests should be repeated using <a href=\"/redirect/r3\">this URI</a>.")
+        "The request, and all future requests should be repeated using <a href=\"/redirect/r3\">this URI</a>."
+      )
       resp.history should be(Nil)
     }
 
@@ -291,7 +293,8 @@ trait SyncHttpTest
       val resp = loop.maxRedirects(-1).send()
       resp.code should be(302)
       resp.body.left.value should be(
-        "The requested resource temporarily resides under <a href=\"/redirect/loop\">this URI</a>.")
+        "The requested resource temporarily resides under <a href=\"/redirect/loop\">this URI</a>."
+      )
       resp.history should be(Nil)
     }
   }

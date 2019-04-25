@@ -209,10 +209,12 @@ class HttpURLConnectionBackend private (opts: SttpBackendOptions, customizeConne
     Some(os)
   }
 
-  private def readResponse[T](c: HttpURLConnection,
-                              is: InputStream,
-                              responseAs: ResponseAs[T, Nothing],
-                              parseCondition: ResponseMetadata => Boolean): Response[T] = {
+  private def readResponse[T](
+      c: HttpURLConnection,
+      is: InputStream,
+      responseAs: ResponseAs[T, Nothing],
+      parseCondition: ResponseMetadata => Boolean
+  ): Response[T] = {
 
     val headers = c.getHeaderFields.asScala.toVector
       .filter(_._1 != null)
@@ -234,10 +236,12 @@ class HttpURLConnectionBackend private (opts: SttpBackendOptions, customizeConne
     Response(body, code, c.getResponseMessage, headers, Nil)
   }
 
-  private def readResponseBody[T](is: InputStream,
-                                  responseAs: ResponseAs[T, Nothing],
-                                  charset: Option[String],
-                                  headers: ResponseMetadata): T = {
+  private def readResponseBody[T](
+      is: InputStream,
+      responseAs: ResponseAs[T, Nothing],
+      charset: Option[String],
+      headers: ResponseMetadata
+  ): T = {
 
     def asString(enc: String) =
       Source.fromInputStream(is, charset.getOrElse(enc)).mkString

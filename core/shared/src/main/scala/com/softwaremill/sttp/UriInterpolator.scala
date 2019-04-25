@@ -187,7 +187,8 @@ object UriInterpolator {
         current: Tokenizer,
         terminators: Set[Char],
         separatorsToTokens: Map[Char, Token],
-        extraFragmentParser: String => Option[Vector[Token]] = _ => None): (Tokenizer, Vector[Token]) = {
+        extraFragmentParser: String => Option[Vector[Token]] = _ => None
+    ): (Tokenizer, Vector[Token]) = {
 
       def tokenizeFragment(f: String): Vector[Token] = {
         extraFragmentParser(f) match {
@@ -215,9 +216,11 @@ object UriInterpolator {
       }
     }
 
-    private def tokenizeAfterSeparator(beforeSeparatorTokens: Vector[Token],
-                                       separator: Char,
-                                       s: String): (Tokenizer, Vector[Token]) = {
+    private def tokenizeAfterSeparator(
+        beforeSeparatorTokens: Vector[Token],
+        separator: Char,
+        s: String
+    ): (Tokenizer, Vector[Token]) = {
 
       val (next, separatorToken) = separatorTokenizerAndToken(separator)
       val (nextNext, nextTokens) = next.tokenize(s)
@@ -421,11 +424,13 @@ object UriInterpolator {
       *
       * The component is terminated by any of `nextComponentTokens`.
       */
-    private def fromStartingToken(u: Uri,
-                                  t: Vector[Token],
-                                  startingToken: Token,
-                                  nextComponentTokens: Set[Token],
-                                  componentFromTokens: (Uri, Vector[Token]) => Uri): (Uri, Vector[Token]) = {
+    private def fromStartingToken(
+        u: Uri,
+        t: Vector[Token],
+        startingToken: Token,
+        nextComponentTokens: Set[Token],
+        componentFromTokens: (Uri, Vector[Token]) => Uri
+    ): (Uri, Vector[Token]) = {
 
       t match {
         case `startingToken` +: tt =>

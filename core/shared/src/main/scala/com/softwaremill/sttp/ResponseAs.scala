@@ -41,12 +41,14 @@ object ResponseAs {
   private[sttp] def parseParams(s: String, encoding: String): Seq[(String, String)] = {
     s.split("&")
       .toList
-      .flatMap(kv =>
-        kv.split("=", 2) match {
-          case Array(k, v) =>
-            Some((Rfc3986.decode()(k, encoding), Rfc3986.decode()(v, encoding)))
-          case _ => None
-      })
+      .flatMap(
+        kv =>
+          kv.split("=", 2) match {
+            case Array(k, v) =>
+              Some((Rfc3986.decode()(k, encoding), Rfc3986.decode()(v, encoding)))
+            case _ => None
+          }
+      )
   }
 
   /**

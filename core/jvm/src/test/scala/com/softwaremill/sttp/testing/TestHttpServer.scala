@@ -86,9 +86,11 @@ private class HttpServer(port: Int) extends AutoCloseable with CorsDirectives {
         }
       } ~ get {
         parameterMap { params =>
-          complete(List("GET", "/echo", paramsToString(params))
-            .filter(_.nonEmpty)
-            .mkString(" "))
+          complete(
+            List("GET", "/echo", paramsToString(params))
+              .filter(_.nonEmpty)
+              .mkString(" ")
+          )
         }
       } ~
         pathPrefix("custom_status") {
@@ -110,9 +112,11 @@ private class HttpServer(port: Int) extends AutoCloseable with CorsDirectives {
         post {
           parameterMap { params =>
             entity(as[String]) { body: String =>
-              complete(List("POST", "/echo", paramsToString(params), body)
-                .filter(_.nonEmpty)
-                .mkString(" "))
+              complete(
+                List("POST", "/echo", paramsToString(params), body)
+                  .filter(_.nonEmpty)
+                  .mkString(" ")
+              )
             }
           }
         }
@@ -243,7 +247,8 @@ private class HttpServer(port: Int) extends AutoCloseable with CorsDirectives {
             headers = Nil,
             entity = HttpEntity.Empty,
             protocol = HttpProtocols.`HTTP/1.1`
-          ))
+          )
+        )
       }
     } ~ path("respond_with_iso_8859_2") {
       get { ctx =>

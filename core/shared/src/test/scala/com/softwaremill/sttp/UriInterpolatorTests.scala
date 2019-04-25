@@ -104,8 +104,10 @@ class UriInterpolatorTests extends FunSuite with Matchers {
       (uri"http://example.com?a=${Some(v1)}&c=d", s"http://example.com?a=$v1&c=d")
     ),
     "parameter collections" -> List(
-      (uri"http://example.com?${Seq("a" -> "b", v2 -> v1, v1 -> v2)}",
-       s"http://example.com?a=b&$v2queryEncoded=$v1&$v1=$v2queryEncoded"),
+      (
+        uri"http://example.com?${Seq("a" -> "b", v2 -> v1, v1 -> v2)}",
+        s"http://example.com?a=b&$v2queryEncoded=$v1&$v1=$v2queryEncoded"
+      ),
       (uri"http://example.com?${Seq("a" -> "b", "a" -> "c")}", s"http://example.com?a=b&a=c"),
       (uri"http://example.com?${Map("a" -> "b")}", s"http://example.com?a=b"),
       (uri"http://example.com?x=y&${Map("a" -> "b")}", s"http://example.com?x=y&a=b"),
@@ -118,8 +120,10 @@ class UriInterpolatorTests extends FunSuite with Matchers {
       (uri"http://example.com#$None", s"http://example.com")
     ),
     "everything" -> List(
-      (uri"${"http"}://$v1.$v2.com/$v1/$v2?$v1=$v2&$v3=$v4#$v1",
-       s"http://$v1.$v2encoded.com/$v1/$v2encoded?$v1=$v2queryEncoded&$v3encoded=$v4#$v1")
+      (
+        uri"${"http"}://$v1.$v2.com/$v1/$v2?$v1=$v2&$v3=$v4#$v1",
+        s"http://$v1.$v2encoded.com/$v1/$v2encoded?$v1=$v2queryEncoded&$v3encoded=$v4#$v1"
+      )
     ),
     "embed whole url" -> List(
       (uri"${"http://example.com:123/a"}/b/c", "http://example.com:123/a/b/c"),

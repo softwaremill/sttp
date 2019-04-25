@@ -123,7 +123,8 @@ class BraveBackendTest extends FlatSpec with Matchers with BeforeAndAfter {
       _backend.send(
         sttp
           .get(uri"http://127.0.0.1:${t.server.getPort}/foo")
-          .tagWithTraceContext(parent.context()))
+          .tagWithTraceContext(parent.context())
+      )
     } finally parent.finish()
 
     val request = t.server.takeRequest

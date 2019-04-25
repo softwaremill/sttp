@@ -200,9 +200,11 @@ abstract class AbstractFetchBackend[R[_], S](options: FetchOptions)(rm: MonadErr
 
   protected def handleStreamBody(s: S): R[js.UndefOr[BodyInit]]
 
-  private def readResponseBody[T](response: FetchResponse,
-                                  responseAs: ResponseAs[T, S],
-                                  headers: ResponseMetadata): R[T] = {
+  private def readResponseBody[T](
+      response: FetchResponse,
+      responseAs: ResponseAs[T, S],
+      headers: ResponseMetadata
+  ): R[T] = {
     responseAs match {
       case MappedResponseAs(raw, g) =>
         readResponseBody(response, raw, headers).map(t => g(t, headers))

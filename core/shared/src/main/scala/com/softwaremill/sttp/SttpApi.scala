@@ -22,11 +22,13 @@ trait SttpApi extends SttpExtensions {
       NoBody,
       Vector(),
       asString,
-      RequestOptions(followRedirects = true,
-                     DefaultReadTimeout,
-                     FollowRedirectsBackend.MaxRedirects,
-                     m => StatusCodes.isSuccess(m.code),
-                     redirectToGet = false),
+      RequestOptions(
+        followRedirects = true,
+        DefaultReadTimeout,
+        FollowRedirectsBackend.MaxRedirects,
+        m => StatusCodes.isSuccess(m.code),
+        redirectToGet = false
+      ),
       Map()
     )
 

@@ -33,10 +33,11 @@ import scala.collection.JavaConverters._
 import scala.language.higherKinds
 import scala.util.{Failure, Try}
 
-abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
-                                               rm: MonadAsyncError[R],
-                                               closeClient: Boolean)
-    extends SttpBackend[R, S] {
+abstract class AsyncHttpClientBackend[R[_], S](
+    asyncHttpClient: AsyncHttpClient,
+    rm: MonadAsyncError[R],
+    closeClient: Boolean
+) extends SttpBackend[R, S] {
 
   override def send[T](r: Request[T, S]): R[Response[T]] = {
     val preparedRequest = asyncHttpClient
@@ -62,10 +63,12 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
 
   protected def publisherToBytes(p: Publisher[ByteBuffer]): R[Array[Byte]]
 
-  private def eagerAsyncHandler[T](responseAs: ResponseAs[T, S],
-                                   parseCondition: ResponseMetadata => Boolean,
-                                   success: R[Response[T]] => Unit,
-                                   error: Throwable => Unit): AsyncHandler[Unit] = {
+  private def eagerAsyncHandler[T](
+      responseAs: ResponseAs[T, S],
+      parseCondition: ResponseMetadata => Boolean,
+      success: R[Response[T]] => Unit,
+      error: Throwable => Unit
+  ): AsyncHandler[Unit] = {
 
     new AsyncCompletionHandler[Unit] {
       override def onCompleted(response: AsyncResponse): Unit =
@@ -75,10 +78,12 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
     }
   }
 
-  private def streamingAsyncHandler[T](responseAs: ResponseAs[T, S],
-                                       parseCondition: ResponseMetadata => Boolean,
-                                       success: R[Response[T]] => Unit,
-                                       error: Throwable => Unit): AsyncHandler[Unit] = {
+  private def streamingAsyncHandler[T](
+      responseAs: ResponseAs[T, S],
+      parseCondition: ResponseMetadata => Boolean,
+      success: R[Response[T]] => Unit,
+      error: Throwable => Unit
+  ): AsyncHandler[Unit] = {
     new StreamedAsyncHandler[Unit] {
       private val builder = new AsyncResponse.ResponseBuilder()
       private var publisher: Option[Publisher[ByteBuffer]] = None
@@ -225,9 +230,11 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
     rb.addBodyPart(bodyPart)
   }
 
-  private def readEagerResponse[T](response: AsyncResponse,
-                                   responseAs: ResponseAs[T, S],
-                                   parseCondition: ResponseMetadata => Boolean): R[Response[T]] = {
+  private def readEagerResponse[T](
+      response: AsyncResponse,
+      responseAs: ResponseAs[T, S],
+      parseCondition: ResponseMetadata => Boolean
+  ): R[Response[T]] = {
     val base = readResponseNoBody(response)
 
     val responseMetadata = ResponseMetadata(base.headers, base.code, base.statusText)
@@ -243,15 +250,17 @@ abstract class AsyncHttpClientBackend[R[_], S](asyncHttpClient: AsyncHttpClient,
   }
 
   private def readResponseNoBody(response: AsyncResponse): Response[Unit] = {
-    Response(Right(()),
-             response.getStatusCode,
-             response.getStatusText,
-             response.getHeaders
-               .iteratorAsString()
-               .asScala
-               .map(e => (e.getKey, e.getValue))
-               .toList,
-             Nil)
+    Response(
+      Right(()),
+      response.getStatusCode,
+      response.getStatusText,
+      response.getHeaders
+        .iteratorAsString()
+        .asScala
+        .map(e => (e.getKey, e.getValue))
+        .toList,
+      Nil
+    )
   }
 
   private def eagerResponseHandler(response: AsyncResponse) =
@@ -320,7 +329,8 @@ object AsyncHttpClientBackend {
 
           p.auth.foreach { proxyAuth =>
             builder.setRealm(
-              new Realm.Builder(proxyAuth.username, proxyAuth.password).setScheme(Realm.AuthScheme.BASIC))
+              new Realm.Builder(proxyAuth.username, proxyAuth.password).setScheme(Realm.AuthScheme.BASIC)
+            )
           }
 
           builder.build()

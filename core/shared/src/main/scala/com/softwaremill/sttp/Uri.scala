@@ -21,20 +21,24 @@ import scala.collection.mutable.ListBuffer
   * required, they need to be added manually as part of the plain query
   * fragment.
   */
-case class Uri(scheme: String,
-               userInfo: Option[UserInfo],
-               host: String,
-               port: Option[Int],
-               path: Seq[String],
-               queryFragments: Seq[QueryFragment],
-               fragment: Option[String]) {
+case class Uri(
+    scheme: String,
+    userInfo: Option[UserInfo],
+    host: String,
+    port: Option[Int],
+    path: Seq[String],
+    queryFragments: Seq[QueryFragment],
+    fragment: Option[String]
+) {
   import Rfc3986.encode
 
   private val AllowedSchemeCharacters = "[a-zA-Z][a-zA-Z0-9+-.]*".r
 
   require(host.nonEmpty, "Host cannot be empty")
-  require(AllowedSchemeCharacters.unapplySeq(scheme).isDefined,
-          "Scheme can only contain alphanumeric characters, +, - and .")
+  require(
+    AllowedSchemeCharacters.unapplySeq(scheme).isDefined,
+    "Scheme can only contain alphanumeric characters, +, - and ."
+  )
 
   def scheme(s: String): Uri = this.copy(scheme = s)
 
@@ -188,11 +192,12 @@ object Uri {
       * @param keyEncoding See [[Plain.encoding]]
       * @param valueEncoding See [[Plain.encoding]]
       */
-    case class KeyValue(k: String,
-                        v: String,
-                        keyEncoding: QueryFragmentEncoding = QueryFragmentEncoding.Standard,
-                        valueEncoding: QueryFragmentEncoding = QueryFragmentEncoding.Standard)
-        extends QueryFragment
+    case class KeyValue(
+        k: String,
+        v: String,
+        keyEncoding: QueryFragmentEncoding = QueryFragmentEncoding.Standard,
+        valueEncoding: QueryFragmentEncoding = QueryFragmentEncoding.Standard
+    ) extends QueryFragment
 
     /**
       * A query fragment which contains only the value, without a key.

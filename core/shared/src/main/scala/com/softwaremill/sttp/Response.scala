@@ -14,12 +14,13 @@ import scala.util.Try
   *                contains responses for the intermediate requests.
   *                The first response (oldest) comes first.
   */
-case class Response[T](rawErrorBody: Either[Array[Byte], T],
-                       code: StatusCode,
-                       statusText: String,
-                       headers: Seq[(String, String)],
-                       history: List[Response[Unit]])
-    extends ResponseExtensions[T]
+case class Response[T](
+    rawErrorBody: Either[Array[Byte], T],
+    code: StatusCode,
+    statusText: String,
+    headers: Seq[(String, String)],
+    history: List[Response[Unit]]
+) extends ResponseExtensions[T]
     with ResponseMetadata {
 
   lazy val body: Either[String, T] = rawErrorBody match {

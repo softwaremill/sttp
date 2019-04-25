@@ -39,10 +39,12 @@ class FollowRedirectsBackend[R[_], S](delegate: SttpBackend[R, S]) extends SttpB
     }
   }
 
-  private def followRedirect[T](request: Request[T, S],
-                                response: Response[T],
-                                redirects: Int,
-                                loc: String): R[Response[T]] = {
+  private def followRedirect[T](
+      request: Request[T, S],
+      response: Response[T],
+      redirects: Int,
+      loc: String
+  ): R[Response[T]] = {
 
     val uri = if (FollowRedirectsBackend.isRelative(loc)) {
       // using java's URI to resolve a relative URI

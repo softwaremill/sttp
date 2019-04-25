@@ -41,12 +41,15 @@ class AsyncHttpClientFs2Backend[F[_]: ConcurrentEffect] private (asyncHttpClient
 
 object AsyncHttpClientFs2Backend {
 
-  private def apply[F[_]: ConcurrentEffect](asyncHttpClient: AsyncHttpClient,
-                                            closeClient: Boolean): SttpBackend[F, Stream[F, ByteBuffer]] =
+  private def apply[F[_]: ConcurrentEffect](
+      asyncHttpClient: AsyncHttpClient,
+      closeClient: Boolean
+  ): SttpBackend[F, Stream[F, ByteBuffer]] =
     new FollowRedirectsBackend(new AsyncHttpClientFs2Backend(asyncHttpClient, closeClient))
 
   def apply[F[_]: ConcurrentEffect](
-      options: SttpBackendOptions = SttpBackendOptions.Default): SttpBackend[F, Stream[F, ByteBuffer]] =
+      options: SttpBackendOptions = SttpBackendOptions.Default
+  ): SttpBackend[F, Stream[F, ByteBuffer]] =
     apply[F](AsyncHttpClientBackend.defaultClient(options), closeClient = true)
 
   def usingConfig[F[_]: ConcurrentEffect](cfg: AsyncHttpClientConfig): SttpBackend[F, Stream[F, ByteBuffer]] =

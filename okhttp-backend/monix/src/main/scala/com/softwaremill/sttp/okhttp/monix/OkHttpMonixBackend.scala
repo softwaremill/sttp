@@ -32,7 +32,8 @@ class OkHttpMonixBackend private (client: OkHttpClient, closeClient: Boolean)(im
       Observable
         .fromInputStream(Task.now(res.body().byteStream()))
         .map(ByteBuffer.wrap)
-        .guaranteeCase(_ => Task(res.close())))
+        .guaranteeCase(_ => Task(res.close()))
+    )
 
   private def toIterable[T](observable: Observable[T])(implicit s: Scheduler): Iterable[T] =
     new Iterable[T] {
@@ -76,14 +77,17 @@ class OkHttpMonixBackend private (client: OkHttpClient, closeClient: Boolean)(im
 
 object OkHttpMonixBackend {
   private def apply(client: OkHttpClient, closeClient: Boolean)(
-      implicit s: Scheduler): SttpBackend[Task, Observable[ByteBuffer]] =
+      implicit s: Scheduler
+  ): SttpBackend[Task, Observable[ByteBuffer]] =
     new FollowRedirectsBackend(new OkHttpMonixBackend(client, closeClient)(s))
 
-  def apply(options: SttpBackendOptions = SttpBackendOptions.Default)(
-      implicit s: Scheduler = Scheduler.Implicits.global): SttpBackend[Task, Observable[ByteBuffer]] =
+  def apply(
+      options: SttpBackendOptions = SttpBackendOptions.Default
+  )(implicit s: Scheduler = Scheduler.Implicits.global): SttpBackend[Task, Observable[ByteBuffer]] =
     OkHttpMonixBackend(OkHttpBackend.defaultClient(DefaultReadTimeout.toMillis, options), closeClient = true)(s)
 
-  def usingClient(client: OkHttpClient)(
-      implicit s: Scheduler = Scheduler.Implicits.global): SttpBackend[Task, Observable[ByteBuffer]] =
+  def usingClient(
+      client: OkHttpClient
+  )(implicit s: Scheduler = Scheduler.Implicits.global): SttpBackend[Task, Observable[ByteBuffer]] =
     OkHttpMonixBackend(client, closeClient = false)(s)
 }

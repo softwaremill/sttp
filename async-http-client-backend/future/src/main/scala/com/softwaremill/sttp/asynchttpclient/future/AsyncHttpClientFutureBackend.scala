@@ -11,8 +11,8 @@ import org.reactivestreams.Publisher
 import scala.concurrent.{ExecutionContext, Future}
 
 class AsyncHttpClientFutureBackend private (asyncHttpClient: AsyncHttpClient, closeClient: Boolean)(
-    implicit ec: ExecutionContext)
-    extends AsyncHttpClientBackend[Future, Nothing](asyncHttpClient, new FutureMonad, closeClient) {
+    implicit ec: ExecutionContext
+) extends AsyncHttpClientBackend[Future, Nothing](asyncHttpClient, new FutureMonad, closeClient) {
 
   override protected def streamBodyToPublisher(s: Nothing): Publisher[ByteBuf] =
     s // nothing is everything
@@ -27,7 +27,8 @@ class AsyncHttpClientFutureBackend private (asyncHttpClient: AsyncHttpClient, cl
 object AsyncHttpClientFutureBackend {
 
   private def apply(asyncHttpClient: AsyncHttpClient, closeClient: Boolean)(
-      implicit ec: ExecutionContext): SttpBackend[Future, Nothing] =
+      implicit ec: ExecutionContext
+  ): SttpBackend[Future, Nothing] =
     new FollowRedirectsBackend[Future, Nothing](new AsyncHttpClientFutureBackend(asyncHttpClient, closeClient))
 
   /**
@@ -35,8 +36,9 @@ object AsyncHttpClientFutureBackend {
     *           e.g. mapping responses. Defaults to the global execution
     *           context.
     */
-  def apply(options: SttpBackendOptions = SttpBackendOptions.Default)(
-      implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Nothing] =
+  def apply(
+      options: SttpBackendOptions = SttpBackendOptions.Default
+  )(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Nothing] =
     AsyncHttpClientFutureBackend(AsyncHttpClientBackend.defaultClient(options), closeClient = true)
 
   /**
@@ -44,8 +46,9 @@ object AsyncHttpClientFutureBackend {
     *           e.g. mapping responses. Defaults to the global execution
     *           context.
     */
-  def usingConfig(cfg: AsyncHttpClientConfig)(
-      implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Nothing] =
+  def usingConfig(
+      cfg: AsyncHttpClientConfig
+  )(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Nothing] =
     AsyncHttpClientFutureBackend(new DefaultAsyncHttpClient(cfg), closeClient = true)
 
   /**
@@ -53,7 +56,8 @@ object AsyncHttpClientFutureBackend {
     *           e.g. mapping responses. Defaults to the global execution
     *           context.
     */
-  def usingClient(client: AsyncHttpClient)(
-      implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Nothing] =
+  def usingClient(
+      client: AsyncHttpClient
+  )(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Nothing] =
     AsyncHttpClientFutureBackend(client, closeClient = false)
 }

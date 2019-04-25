@@ -87,9 +87,11 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean
     bodyToOkHttp(mp.body).foreach(builder.addPart(headers, _))
   }
 
-  private[okhttp] def readResponse[T](res: OkHttpResponse,
-                                      responseAs: ResponseAs[T, S],
-                                      parseCondition: ResponseMetadata => Boolean): R[Response[T]] = {
+  private[okhttp] def readResponse[T](
+      res: OkHttpResponse,
+      responseAs: ResponseAs[T, S],
+      parseCondition: ResponseMetadata => Boolean
+  ): R[Response[T]] = {
 
     val code = res.code()
 
@@ -240,14 +242,17 @@ class OkHttpFutureBackend private (client: OkHttpClient, closeClient: Boolean)(i
 
 object OkHttpFutureBackend {
   private def apply(client: OkHttpClient, closeClient: Boolean)(
-      implicit ec: ExecutionContext): SttpBackend[Future, Nothing] =
+      implicit ec: ExecutionContext
+  ): SttpBackend[Future, Nothing] =
     new FollowRedirectsBackend[Future, Nothing](new OkHttpFutureBackend(client, closeClient))
 
-  def apply(options: SttpBackendOptions = SttpBackendOptions.Default)(
-      implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Nothing] =
+  def apply(
+      options: SttpBackendOptions = SttpBackendOptions.Default
+  )(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Nothing] =
     OkHttpFutureBackend(OkHttpBackend.defaultClient(DefaultReadTimeout.toMillis, options), closeClient = true)
 
-  def usingClient(client: OkHttpClient)(
-      implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Nothing] =
+  def usingClient(
+      client: OkHttpClient
+  )(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Nothing] =
     OkHttpFutureBackend(client, closeClient = false)
 }

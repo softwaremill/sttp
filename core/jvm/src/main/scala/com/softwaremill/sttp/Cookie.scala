@@ -8,14 +8,16 @@ import java.util.{Calendar, GregorianCalendar, Locale, TimeZone}
 import scala.util.Try
 
 // this is currently JVM only due to its dependencies on HttpCookie and time classes
-case class Cookie(name: String,
-                  value: String,
-                  expires: Option[ZonedDateTime] = None,
-                  maxAge: Option[Long] = None,
-                  domain: Option[String] = None,
-                  path: Option[String] = None,
-                  secure: Boolean = false,
-                  httpOnly: Boolean = false)
+case class Cookie(
+    name: String,
+    value: String,
+    expires: Option[ZonedDateTime] = None,
+    maxAge: Option[Long] = None,
+    domain: Option[String] = None,
+    path: Option[String] = None,
+    secure: Boolean = false,
+    httpOnly: Boolean = false
+)
 
 object Cookie {
   def apply(hc: HttpCookie, h: String): Cookie = {

@@ -172,9 +172,11 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean)
     Seq.from(array: _*)
   }
 
-  private def readResponseBody[T](response: String,
-                                  responseAs: ResponseAs[T, S],
-                                  responseMetadata: ResponseMetadata): R[T] = {
+  private def readResponseBody[T](
+      response: String,
+      responseAs: ResponseAs[T, S],
+      responseMetadata: ResponseMetadata
+  ): R[T] = {
 
     responseAs match {
       case MappedResponseAs(raw, g) =>
