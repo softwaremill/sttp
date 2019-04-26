@@ -63,12 +63,16 @@ class FollowRedirectsBackend[R[_], S](delegate: SttpBackend[R, S]) extends SttpB
     }
   }
 
+  private val contentHeaders = Set(HeaderNames.ContentLength, HeaderNames.ContentType, HeaderNames.ContentMd5)
+
   private def changePostPutToGet[T](r: Request[T, S], statusCode: StatusCode): Request[T, S] = {
     val applicable = r.method == Method.POST || r.method == Method.PUT
     val alwaysChanged = statusCode == StatusCodes.SeeOther
     val neverChanged = statusCode == StatusCodes.TemporaryRedirect || statusCode == StatusCodes.PermanentRedirect
     if (applicable && (r.options.redirectToGet || alwaysChanged) && !neverChanged) {
-      r.method(Method.GET, r.uri).copy(body = NoBody)
+      // when transforming POST or PUT into a get, content is dropped, also filter out content-related request headers
+      r.method(Method.GET, r.uri)
+        .copy(body = NoBody, headers = r.headers.filterNot(header => contentHeaders.contains(header._1)))
     } else r
   }
 
