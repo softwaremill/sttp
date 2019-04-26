@@ -11,7 +11,12 @@ import com.softwaremill.sttp.internal._
 import fs2._
 import fs2.interop.reactivestreams._
 import io.netty.buffer.{ByteBuf, Unpooled}
-import org.asynchttpclient.{AsyncHttpClient, AsyncHttpClientConfig, DefaultAsyncHttpClient}
+import org.asynchttpclient.{
+  AsyncHttpClient,
+  AsyncHttpClientConfig,
+  DefaultAsyncHttpClient,
+  DefaultAsyncHttpClientConfig
+}
 import org.reactivestreams.Publisher
 
 import scala.language.higherKinds
@@ -54,6 +59,15 @@ object AsyncHttpClientFs2Backend {
 
   def usingConfig[F[_]: ConcurrentEffect](cfg: AsyncHttpClientConfig): SttpBackend[F, Stream[F, ByteBuffer]] =
     apply[F](new DefaultAsyncHttpClient(cfg), closeClient = true)
+
+  def usingConfigBuilder[F[_]: ConcurrentEffect](
+      updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
+      options: SttpBackendOptions = SttpBackendOptions.Default
+  ): SttpBackend[F, Stream[F, ByteBuffer]] =
+    AsyncHttpClientFs2Backend[F](
+      AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
+      closeClient = true
+    )
 
   def usingClient[F[_]: ConcurrentEffect](client: AsyncHttpClient): SttpBackend[F, Stream[F, ByteBuffer]] =
     apply[F](client, closeClient = false)

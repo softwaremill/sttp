@@ -7,7 +7,12 @@ import com.softwaremill.sttp.asynchttpclient.AsyncHttpClientBackend
 import com.softwaremill.sttp.impl.cats.AsyncMonadAsyncError
 import com.softwaremill.sttp.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 import io.netty.buffer.ByteBuf
-import org.asynchttpclient.{AsyncHttpClient, AsyncHttpClientConfig, DefaultAsyncHttpClient}
+import org.asynchttpclient.{
+  AsyncHttpClient,
+  AsyncHttpClientConfig,
+  DefaultAsyncHttpClient,
+  DefaultAsyncHttpClientConfig
+}
 import org.reactivestreams.Publisher
 
 import scala.language.higherKinds
@@ -40,6 +45,15 @@ object AsyncHttpClientCatsBackend {
 
   def usingConfig[F[_]: Async](cfg: AsyncHttpClientConfig): SttpBackend[F, Nothing] =
     AsyncHttpClientCatsBackend(new DefaultAsyncHttpClient(cfg), closeClient = true)
+
+  def usingConfigBuilder[F[_]: Async](
+      updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
+      options: SttpBackendOptions = SttpBackendOptions.Default
+  ): SttpBackend[F, Nothing] =
+    AsyncHttpClientCatsBackend(
+      AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
+      closeClient = true
+    )
 
   def usingClient[F[_]: Async](client: AsyncHttpClient): SttpBackend[F, Nothing] =
     AsyncHttpClientCatsBackend(client, closeClient = false)

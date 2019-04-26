@@ -10,7 +10,12 @@ import io.netty.buffer.{ByteBuf, Unpooled}
 import monix.eval.Task
 import monix.execution.Scheduler
 import monix.reactive.Observable
-import org.asynchttpclient.{AsyncHttpClient, AsyncHttpClientConfig, DefaultAsyncHttpClient}
+import org.asynchttpclient.{
+  AsyncHttpClient,
+  AsyncHttpClientConfig,
+  DefaultAsyncHttpClient,
+  DefaultAsyncHttpClientConfig
+}
 import org.reactivestreams.Publisher
 
 class AsyncHttpClientMonixBackend private (asyncHttpClient: AsyncHttpClient, closeClient: Boolean)(
@@ -57,6 +62,19 @@ object AsyncHttpClientMonixBackend {
       cfg: AsyncHttpClientConfig
   )(implicit s: Scheduler = Scheduler.Implicits.global): SttpBackend[Task, Observable[ByteBuffer]] =
     AsyncHttpClientMonixBackend(new DefaultAsyncHttpClient(cfg), closeClient = true)
+
+  /**
+    * @param s The scheduler used for streaming request bodies. Defaults to the
+    *          global scheduler.
+    */
+  def usingConfigBuilder(
+      updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
+      options: SttpBackendOptions = SttpBackendOptions.Default
+  )(implicit s: Scheduler = Scheduler.Implicits.global): SttpBackend[Task, Observable[ByteBuffer]] =
+    AsyncHttpClientMonixBackend(
+      AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
+      closeClient = true
+    )
 
   /**
     * @param s The scheduler used for streaming request bodies. Defaults to the

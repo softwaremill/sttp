@@ -6,9 +6,13 @@ import com.softwaremill.sttp.asynchttpclient.AsyncHttpClientBackend
 import com.softwaremill.sttp.impl.scalaz.TaskMonadAsyncError
 import com.softwaremill.sttp.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 import io.netty.buffer.ByteBuf
-import org.asynchttpclient.{AsyncHttpClient, AsyncHttpClientConfig, DefaultAsyncHttpClient}
+import org.asynchttpclient.{
+  AsyncHttpClient,
+  AsyncHttpClientConfig,
+  DefaultAsyncHttpClient,
+  DefaultAsyncHttpClientConfig
+}
 import org.reactivestreams.Publisher
-
 import scalaz.concurrent.Task
 
 class AsyncHttpClientScalazBackend private (asyncHttpClient: AsyncHttpClient, closeClient: Boolean)
@@ -33,6 +37,15 @@ object AsyncHttpClientScalazBackend {
 
   def usingConfig(cfg: AsyncHttpClientConfig): SttpBackend[Task, Nothing] =
     AsyncHttpClientScalazBackend(new DefaultAsyncHttpClient(cfg), closeClient = true)
+
+  def usingConfigBuilder(
+      updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
+      options: SttpBackendOptions = SttpBackendOptions.Default
+  ): SttpBackend[Task, Nothing] =
+    AsyncHttpClientScalazBackend(
+      AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
+      closeClient = true
+    )
 
   def usingClient(client: AsyncHttpClient): SttpBackend[Task, Nothing] =
     AsyncHttpClientScalazBackend(client, closeClient = false)

@@ -11,7 +11,7 @@ import io.netty.buffer.ByteBuf
 import io.netty.handler.codec.http.HttpHeaders
 import org.asynchttpclient.AsyncHandler.State
 import org.asynchttpclient.handler.StreamedAsyncHandler
-import org.asynchttpclient.proxy.ProxyServer
+import org.asynchttpclient.proxy.{ProxyServer, ProxyType}
 import org.asynchttpclient.request.body.multipart.{ByteArrayPart, FilePart, StringPart}
 import org.asynchttpclient.{
   AsyncCompletionHandler,
@@ -308,15 +308,16 @@ abstract class AsyncHttpClientBackend[R[_], S](
 
 object AsyncHttpClientBackend {
 
-  private[asynchttpclient] def defaultClient(options: SttpBackendOptions): AsyncHttpClient = {
-
-    var configBuilder = new DefaultAsyncHttpClientConfig.Builder()
+  private[asynchttpclient] def defaultConfigBuilder(
+      options: SttpBackendOptions
+  ): DefaultAsyncHttpClientConfig.Builder = {
+    val configBuilder = new DefaultAsyncHttpClientConfig.Builder()
       .setConnectTimeout(options.connectionTimeout.toMillis.toInt)
 
-    configBuilder = options.proxy match {
+    options.proxy match {
       case None => configBuilder
       case Some(p) =>
-        val proxyType: org.asynchttpclient.proxy.ProxyType =
+        val proxyType: ProxyType =
           p.proxyType match {
             case Socks => org.asynchttpclient.proxy.ProxyType.SOCKS_V5
             case Http  => org.asynchttpclient.proxy.ProxyType.HTTP
@@ -336,8 +337,17 @@ object AsyncHttpClientBackend {
           builder.build()
         }
     }
+  }
 
-    new DefaultAsyncHttpClient(configBuilder.build())
+  private[asynchttpclient] def defaultClient(options: SttpBackendOptions): AsyncHttpClient = {
+    new DefaultAsyncHttpClient(defaultConfigBuilder(options).build())
+  }
+
+  private[asynchttpclient] def clientWithModifiedOptions(
+      options: SttpBackendOptions,
+      updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder
+  ): AsyncHttpClient = {
+    new DefaultAsyncHttpClient(updateConfig(defaultConfigBuilder(options)).build())
   }
 }
 
