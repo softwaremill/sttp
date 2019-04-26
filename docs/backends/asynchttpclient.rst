@@ -34,7 +34,7 @@ Next you'll need to add an implicit value::
   
   // or, if you're using the scalaz version:
   implicit val sttpBackend = AsyncHttpClientScalazBackend()
-  
+
   // or, if you're using the zio version:
   implicit val sttpBackend = AsyncHttpClientZioBackend()
   
@@ -43,7 +43,7 @@ Next you'll need to add an implicit value::
   
   // or, if you're using the cats effect version:
   implicit val sttpBackend = AsyncHttpClientCatsBackend[cats.effect.IO]()
-  
+
   // or, if you're using the fs2 version:
   implicit val sttpBackend = AsyncHttpClientFs2Backend[cats.effect.IO]()
   

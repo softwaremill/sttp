@@ -11,7 +11,7 @@ import io.netty.buffer.ByteBuf
 import io.netty.handler.codec.http.HttpHeaders
 import org.asynchttpclient.AsyncHandler.State
 import org.asynchttpclient.handler.StreamedAsyncHandler
-import org.asynchttpclient.proxy.{ProxyServer, ProxyType}
+import org.asynchttpclient.proxy.ProxyServer
 import org.asynchttpclient.request.body.multipart.{ByteArrayPart, FilePart, StringPart}
 import org.asynchttpclient.{
   AsyncCompletionHandler,
@@ -317,7 +317,7 @@ object AsyncHttpClientBackend {
     options.proxy match {
       case None => configBuilder
       case Some(p) =>
-        val proxyType: ProxyType =
+        val proxyType: org.asynchttpclient.proxy.ProxyType =
           p.proxyType match {
             case Socks => org.asynchttpclient.proxy.ProxyType.SOCKS_V5
             case Http  => org.asynchttpclient.proxy.ProxyType.HTTP
