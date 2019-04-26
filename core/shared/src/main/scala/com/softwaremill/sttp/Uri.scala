@@ -158,12 +158,13 @@ case class Uri(
         encode(Rfc3986.QueryWithBrackets, spaceAsPlus = true)(s)
     }
 
+  // TODO
   private val IpV6Pattern = "[0-9a-fA-F:]+".r
 
   private def encodeHost: String =
     host match {
-      case IpV6Pattern() => s"[$host]"
-      case _             => UriCompatibility.encodeDNSHost(host)
+      case IpV6Pattern() if host.count(_ == ':') >= 2 => s"[$host]"
+      case _                                          => UriCompatibility.encodeDNSHost(host)
     }
 
 }
