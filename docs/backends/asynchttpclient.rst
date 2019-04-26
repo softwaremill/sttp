@@ -17,7 +17,7 @@ To use, add the following dependency to your project::
 
 This backend depends on `async-http-client <https://github.com/AsyncHttpClient/async-http-client>`_.
 A fully **asynchronous** backend, which uses `Netty <http://netty.io>`_ behind the
-scenes.
+scenes. 
 
 The responses are wrapped depending on the dependency chosen in either a:
 
@@ -31,28 +31,28 @@ The responses are wrapped depending on the dependency chosen in either a:
 Next you'll need to add an implicit value::
 
   implicit val sttpBackend = AsyncHttpClientFutureBackend()
-
+  
   // or, if you're using the scalaz version:
   implicit val sttpBackend = AsyncHttpClientScalazBackend()
-
+  
   // or, if you're using the zio version:
   implicit val sttpBackend = AsyncHttpClientZioBackend()
-
+  
   // or, if you're using the monix version:
   implicit val sttpBackend = AsyncHttpClientMonixBackend()
-
+  
   // or, if you're using the cats effect version:
   implicit val sttpBackend = AsyncHttpClientCatsBackend[cats.effect.IO]()
-
+  
   // or, if you're using the fs2 version:
   implicit val sttpBackend = AsyncHttpClientFs2Backend[cats.effect.IO]()
-
+  
   // or, if you'd like to use custom configuration:
   implicit val sttpBackend = AsyncHttpClientFutureBackend.usingConfig(asyncHttpClientConfig)
-
+  
   // or, if you'd like to use adjust the configuration sttp creates:
   implicit val sttpBackend = AsyncHttpClientFutureBackend.usingConfigBuilder(adjustFunction, sttpOptions)
-
+  
   // or, if you'd like to instantiate the AsyncHttpClient yourself:
   implicit val sttpBackend = AsyncHttpClientFutureBackend.usingClient(asyncHttpClient)
 
@@ -63,10 +63,10 @@ The Monix backend supports streaming (as both Monix and Async Http Client suppor
 
   import com.softwaremill.sttp._
   import com.softwaremill.sttp.asynchttpclient.monix._
-
+  
   import java.nio.ByteBuffer
   import monix.reactive.Observable
-
+  
   implicit val sttpBackend = AsyncHttpClientMonixBackend()
 
   val obs: Observable[ByteBuffer] =  ...
@@ -79,15 +79,15 @@ And receive responses as an observable stream::
 
   import com.softwaremill.sttp._
   import com.softwaremill.sttp.asynchttpclient.monix._
-
+  
   import java.nio.ByteBuffer
   import monix.eval.Task
   import monix.reactive.Observable
   import scala.concurrent.duration.Duration
 
   implicit val sttpBackend = AsyncHttpClientMonixBackend()
-
-  val response: Task[Response[Observable[ByteBuffer]]] =
+  
+  val response: Task[Response[Observable[ByteBuffer]]] = 
     sttp
       .post(uri"...")
       .response(asStream[Observable[ByteBuffer]])
