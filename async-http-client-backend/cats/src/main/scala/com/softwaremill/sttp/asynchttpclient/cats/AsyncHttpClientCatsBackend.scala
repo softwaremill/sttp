@@ -46,6 +46,9 @@ object AsyncHttpClientCatsBackend {
   def usingConfig[F[_]: Async](cfg: AsyncHttpClientConfig): SttpBackend[F, Nothing] =
     AsyncHttpClientCatsBackend(new DefaultAsyncHttpClient(cfg), closeClient = true)
 
+  /**
+    * @param updateConfig A function which updates the default configuration (created basing on `options`).
+    */
   def usingConfigBuilder[F[_]: Async](
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default

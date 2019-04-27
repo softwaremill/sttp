@@ -38,6 +38,9 @@ object AsyncHttpClientScalazBackend {
   def usingConfig(cfg: AsyncHttpClientConfig): SttpBackend[Task, Nothing] =
     AsyncHttpClientScalazBackend(new DefaultAsyncHttpClient(cfg), closeClient = true)
 
+  /**
+    * @param updateConfig A function which updates the default configuration (created basing on `options`).
+    */
   def usingConfigBuilder(
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default

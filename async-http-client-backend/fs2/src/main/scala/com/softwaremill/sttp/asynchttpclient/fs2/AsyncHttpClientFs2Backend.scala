@@ -60,6 +60,9 @@ object AsyncHttpClientFs2Backend {
   def usingConfig[F[_]: ConcurrentEffect](cfg: AsyncHttpClientConfig): SttpBackend[F, Stream[F, ByteBuffer]] =
     apply[F](new DefaultAsyncHttpClient(cfg), closeClient = true)
 
+  /**
+    * @param updateConfig A function which updates the default configuration (created basing on `options`).
+    */
   def usingConfigBuilder[F[_]: ConcurrentEffect](
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default

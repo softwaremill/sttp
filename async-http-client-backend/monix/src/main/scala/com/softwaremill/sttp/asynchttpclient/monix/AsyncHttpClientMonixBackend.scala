@@ -64,6 +64,7 @@ object AsyncHttpClientMonixBackend {
     AsyncHttpClientMonixBackend(new DefaultAsyncHttpClient(cfg), closeClient = true)
 
   /**
+    * @param updateConfig A function which updates the default configuration (created basing on `options`).
     * @param s The scheduler used for streaming request bodies. Defaults to the
     *          global scheduler.
     */

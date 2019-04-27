@@ -57,6 +57,7 @@ object AsyncHttpClientFutureBackend {
     AsyncHttpClientFutureBackend(new DefaultAsyncHttpClient(cfg), closeClient = true)
 
   /**
+    * @param updateConfig A function which updates the default configuration (created basing on `options`).
     * @param ec The execution context for running non-network related operations,
     *           e.g. mapping responses. Defaults to the global execution
     *           context.
