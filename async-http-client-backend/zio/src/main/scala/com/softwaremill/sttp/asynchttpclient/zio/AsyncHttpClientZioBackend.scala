@@ -6,9 +6,13 @@ import com.softwaremill.sttp.asynchttpclient.AsyncHttpClientBackend
 import com.softwaremill.sttp.impl.zio.IOMonadAsyncError
 import com.softwaremill.sttp.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 import io.netty.buffer.ByteBuf
-import org.asynchttpclient.{AsyncHttpClient, AsyncHttpClientConfig, DefaultAsyncHttpClient}
+import org.asynchttpclient.{
+  AsyncHttpClient,
+  AsyncHttpClientConfig,
+  DefaultAsyncHttpClient,
+  DefaultAsyncHttpClientConfig
+}
 import org.reactivestreams.Publisher
-import scalaz.zio._
 
 class AsyncHttpClientZioBackend private (asyncHttpClient: AsyncHttpClient, closeClient: Boolean)
     extends AsyncHttpClientBackend[IO[Throwable, ?], Nothing](asyncHttpClient, IOMonadAsyncError, closeClient) {
@@ -32,6 +36,15 @@ object AsyncHttpClientZioBackend {
 
   def usingConfig(cfg: AsyncHttpClientConfig): SttpBackend[IO[Throwable, ?], Nothing] =
     AsyncHttpClientZioBackend(new DefaultAsyncHttpClient(cfg), closeClient = true)
+
+  def usingConfigBuilder(
+      updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
+      options: SttpBackendOptions = SttpBackendOptions.Default
+  ): SttpBackend[IO[Throwable, ?], Nothing] =
+    AsyncHttpClientZioBackend(
+      AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
+      closeClient = true
+    )
 
   def usingClient(client: AsyncHttpClient): SttpBackend[IO[Throwable, ?], Nothing] =
     AsyncHttpClientZioBackend(client, closeClient = false)

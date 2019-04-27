@@ -5,7 +5,12 @@ import java.nio.ByteBuffer
 import com.softwaremill.sttp.asynchttpclient.AsyncHttpClientBackend
 import com.softwaremill.sttp.{FollowRedirectsBackend, FutureMonad, SttpBackend, SttpBackendOptions}
 import io.netty.buffer.ByteBuf
-import org.asynchttpclient.{AsyncHttpClient, AsyncHttpClientConfig, DefaultAsyncHttpClient}
+import org.asynchttpclient.{
+  AsyncHttpClient,
+  AsyncHttpClientConfig,
+  DefaultAsyncHttpClient,
+  DefaultAsyncHttpClientConfig
+}
 import org.reactivestreams.Publisher
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -50,6 +55,20 @@ object AsyncHttpClientFutureBackend {
       cfg: AsyncHttpClientConfig
   )(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Nothing] =
     AsyncHttpClientFutureBackend(new DefaultAsyncHttpClient(cfg), closeClient = true)
+
+  /**
+    * @param ec The execution context for running non-network related operations,
+    *           e.g. mapping responses. Defaults to the global execution
+    *           context.
+    */
+  def usingConfigBuilder(
+      updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
+      options: SttpBackendOptions = SttpBackendOptions.Default
+  )(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Nothing] =
+    AsyncHttpClientFutureBackend(
+      AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
+      closeClient = true
+    )
 
   /**
     * @param ec The execution context for running non-network related operations,

@@ -308,12 +308,13 @@ abstract class AsyncHttpClientBackend[R[_], S](
 
 object AsyncHttpClientBackend {
 
-  private[asynchttpclient] def defaultClient(options: SttpBackendOptions): AsyncHttpClient = {
-
-    var configBuilder = new DefaultAsyncHttpClientConfig.Builder()
+  private[asynchttpclient] def defaultConfigBuilder(
+      options: SttpBackendOptions
+  ): DefaultAsyncHttpClientConfig.Builder = {
+    val configBuilder = new DefaultAsyncHttpClientConfig.Builder()
       .setConnectTimeout(options.connectionTimeout.toMillis.toInt)
 
-    configBuilder = options.proxy match {
+    options.proxy match {
       case None => configBuilder
       case Some(p) =>
         val proxyType: org.asynchttpclient.proxy.ProxyType =
@@ -336,8 +337,17 @@ object AsyncHttpClientBackend {
           builder.build()
         }
     }
+  }
 
-    new DefaultAsyncHttpClient(configBuilder.build())
+  private[asynchttpclient] def defaultClient(options: SttpBackendOptions): AsyncHttpClient = {
+    new DefaultAsyncHttpClient(defaultConfigBuilder(options).build())
+  }
+
+  private[asynchttpclient] def clientWithModifiedOptions(
+      options: SttpBackendOptions,
+      updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder
+  ): AsyncHttpClient = {
+    new DefaultAsyncHttpClient(updateConfig(defaultConfigBuilder(options)).build())
   }
 }
 

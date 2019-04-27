@@ -50,6 +50,9 @@ Next you'll need to add an implicit value::
   // or, if you'd like to use custom configuration:
   implicit val sttpBackend = AsyncHttpClientFutureBackend.usingConfig(asyncHttpClientConfig)
   
+  // or, if you'd like to use adjust the configuration sttp creates:
+  implicit val sttpBackend = AsyncHttpClientFutureBackend.usingConfigBuilder(adjustFunction, sttpOptions)
+  
   // or, if you'd like to instantiate the AsyncHttpClient yourself:
   implicit val sttpBackend = AsyncHttpClientFutureBackend.usingClient(asyncHttpClient)
 
