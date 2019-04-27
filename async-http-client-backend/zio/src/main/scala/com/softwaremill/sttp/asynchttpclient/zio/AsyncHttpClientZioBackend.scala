@@ -13,6 +13,7 @@ import org.asynchttpclient.{
   DefaultAsyncHttpClientConfig
 }
 import org.reactivestreams.Publisher
+import scalaz.zio._
 
 class AsyncHttpClientZioBackend private (asyncHttpClient: AsyncHttpClient, closeClient: Boolean)
     extends AsyncHttpClientBackend[IO[Throwable, ?], Nothing](asyncHttpClient, IOMonadAsyncError, closeClient) {
