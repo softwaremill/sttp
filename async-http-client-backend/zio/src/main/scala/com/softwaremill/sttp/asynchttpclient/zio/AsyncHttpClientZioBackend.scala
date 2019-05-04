@@ -25,7 +25,7 @@ class AsyncHttpClientZioBackend private (asyncHttpClient: AsyncHttpClient, close
 
   val runtime = new DefaultRuntime {}
 
-  private val bufferSize = 10 //TODO what should we set here?
+  private val bufferSize = 16
 
   override protected def streamBodyToPublisher(s: Stream[Throwable, ByteBuffer]): Publisher[ByteBuf] =
     runtime.unsafeRunSync(s.map(Unpooled.wrappedBuffer).toPublisher).toEither.right.get
