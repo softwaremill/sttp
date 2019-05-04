@@ -2,6 +2,8 @@ package com.softwaremill.sttp.asynchttpclient.zio
 
 import java.nio.ByteBuffer
 
+import com.softwaremill.sttp._
+import com.softwaremill.sttp.internal._
 import com.softwaremill.sttp.asynchttpclient.AsyncHttpClientBackend
 import com.softwaremill.sttp.impl.zio.IOMonadAsyncError
 import com.softwaremill.sttp.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
@@ -13,29 +15,43 @@ import org.asynchttpclient.{
   DefaultAsyncHttpClientConfig
 }
 import org.reactivestreams.Publisher
+import io.netty.buffer.{ByteBuf, Unpooled}
 import scalaz.zio._
+import scalaz.zio.stream._
+import scalaz.zio.interop.reactiveStreams._
 
 class AsyncHttpClientZioBackend private (asyncHttpClient: AsyncHttpClient, closeClient: Boolean)
-    extends AsyncHttpClientBackend[IO[Throwable, ?], Nothing](asyncHttpClient, IOMonadAsyncError, closeClient) {
+    extends AsyncHttpClientBackend[Task, Stream[Throwable, ByteBuffer]](asyncHttpClient, IOMonadAsyncError, closeClient) {
 
-  override protected def streamBodyToPublisher(s: Nothing): Publisher[ByteBuf] =
-    s // nothing is everything
+  val runtime = new DefaultRuntime {}
 
-  override protected def publisherToStreamBody(p: Publisher[ByteBuffer]): Nothing =
-    throw new IllegalStateException("This backend does not support streaming")
+  private val bufferSize = 10 //TODO what should we set here?
+
+  override protected def streamBodyToPublisher(s: Stream[Throwable, ByteBuffer]): Publisher[ByteBuf] =
+    runtime.unsafeRunSync(s.map(Unpooled.wrappedBuffer).toPublisher).toEither.right.get
+
+  override protected def publisherToStreamBody(p: Publisher[ByteBuffer]): Stream[Throwable, ByteBuffer] =
+    p.toStream(bufferSize)
 
   override protected def publisherToBytes(p: Publisher[ByteBuffer]): IO[Throwable, Array[Byte]] =
-    throw new IllegalStateException("This backend does not support streaming")
+    p.toStream(bufferSize).foldLeft(ByteBuffer.allocate(0))(concatByteBuffers).map(_.array())
 }
 
 object AsyncHttpClientZioBackend {
-  private def apply(asyncHttpClient: AsyncHttpClient, closeClient: Boolean): SttpBackend[IO[Throwable, ?], Nothing] =
-    new FollowRedirectsBackend[IO[Throwable, ?], Nothing](new AsyncHttpClientZioBackend(asyncHttpClient, closeClient))
+  private def apply(
+      asyncHttpClient: AsyncHttpClient,
+      closeClient: Boolean
+  ): SttpBackend[Task, Stream[Throwable, ByteBuffer]] =
+    new FollowRedirectsBackend[Task, Stream[Throwable, ByteBuffer]](
+      new AsyncHttpClientZioBackend(asyncHttpClient, closeClient)
+    )
 
-  def apply(options: SttpBackendOptions = SttpBackendOptions.Default): SttpBackend[IO[Throwable, ?], Nothing] =
+  def apply(
+      options: SttpBackendOptions = SttpBackendOptions.Default
+  ): SttpBackend[Task, Stream[Throwable, ByteBuffer]] =
     AsyncHttpClientZioBackend(AsyncHttpClientBackend.defaultClient(options), closeClient = true)
 
-  def usingConfig(cfg: AsyncHttpClientConfig): SttpBackend[IO[Throwable, ?], Nothing] =
+  def usingConfig(cfg: AsyncHttpClientConfig): SttpBackend[Task, Stream[Throwable, ByteBuffer]] =
     AsyncHttpClientZioBackend(new DefaultAsyncHttpClient(cfg), closeClient = true)
 
   /**
@@ -44,12 +60,12 @@ object AsyncHttpClientZioBackend {
   def usingConfigBuilder(
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default
-  ): SttpBackend[IO[Throwable, ?], Nothing] =
+  ): SttpBackend[Task, Stream[Throwable, ByteBuffer]] =
     AsyncHttpClientZioBackend(
       AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
       closeClient = true
     )
 
-  def usingClient(client: AsyncHttpClient): SttpBackend[IO[Throwable, ?], Nothing] =
+  def usingClient(client: AsyncHttpClient): SttpBackend[Task, Stream[Throwable, ByteBuffer]] =
     AsyncHttpClientZioBackend(client, closeClient = false)
 }
