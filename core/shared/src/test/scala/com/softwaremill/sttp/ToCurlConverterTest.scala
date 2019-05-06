@@ -58,15 +58,4 @@ class ToCurlConverterTest extends FlatSpec with Matchers {
       .toCurl
     curl should include("--data-binary <PLACEHOLDER>")
   }
-
-  it should "use filename when sending file" in {
-    val file = Files.createTempFile("sttp", "sttp").toFile
-    file.deleteOnExit()
-
-    val curl = sttp
-      .post(localhost)
-      .body(file)
-      .toCurl
-    curl should include(s"--data-binary @${file.getName}")
-  }
 }
