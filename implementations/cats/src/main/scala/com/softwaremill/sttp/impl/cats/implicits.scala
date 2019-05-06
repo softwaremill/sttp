@@ -1,16 +1,23 @@
 package com.softwaremill.sttp.impl.cats
 
-import com.softwaremill.sttp.{MonadError, Request, Response, SttpBackend}
+import cats.effect.Async
+import com.softwaremill.sttp.{MonadAsyncError, MonadError, Request, Response, SttpBackend}
 import cats.~>
 
 import scala.language.higherKinds
 
 object implicits extends CatsImplicits
 
-trait CatsImplicits {
+trait CatsImplicits extends LowLevelCatsImplicits {
   implicit def sttpBackendToCatsMappableSttpBackend[R[_], S](
       sttpBackend: SttpBackend[R, S]
   ): MappableSttpBackend[R, S] = new MappableSttpBackend(sttpBackend)
+
+  implicit def asyncMonadError[F[_]: Async]: MonadAsyncError[F] = new AsyncMonadAsyncError[F]
+}
+
+trait LowLevelCatsImplicits {
+  implicit def catsMonadError[F[_]](implicit E: cats.MonadError[F, Throwable]): MonadError[F] = new CatsMonadError[F]
 }
 
 class MappableSttpBackend[R[_], S] private[cats] (val sttpBackend: SttpBackend[R, S]) extends AnyVal {
