@@ -164,6 +164,7 @@ lazy val rootJVM = project
     asyncHttpClientFutureBackend,
     asyncHttpClientScalazBackend,
     asyncHttpClientZioBackend,
+    asyncHttpClientZioStreamsBackend,
     asyncHttpClientMonixBackend,
     asyncHttpClientCatsBackend,
     asyncHttpClientFs2Backend,
@@ -279,7 +280,9 @@ lazy val zio: Project = (project in file("implementations/zio"))
   .settings(
     name := "zio",
     publishArtifact in Test := true,
-    libraryDependencies ++= Seq("org.scalaz" %% "scalaz-zio" % "1.0-RC4")
+    libraryDependencies ++= Seq(
+      "org.scalaz" %% "scalaz-zio" % "1.0-RC4"
+      )
   )
   .settings(only2_12settings)
   .dependsOn(coreJVM % "compile->compile;test->test")
@@ -339,6 +342,16 @@ lazy val asyncHttpClientZioBackend: Project =
   asyncHttpClientBackendProject("zio")
     .settings(only2_12settings)
     .dependsOn(zio % "compile->compile;test->test")
+
+lazy val asyncHttpClientZioStreamsBackend: Project =
+  asyncHttpClientBackendProject("zio-streams")
+    .settings(
+      only2_12settings,    
+      libraryDependencies ++= Seq(
+      "org.scalaz" %% "scalaz-zio-streams" % "1.0-RC4",
+      "org.scalaz" %% "scalaz-zio-interop-reactivestreams" % "1.0-RC4"
+    ))
+    .dependsOn(zio % "compile->compile;test->test")    
 
 lazy val asyncHttpClientMonixBackend: Project =
   asyncHttpClientBackendProject("monix")
