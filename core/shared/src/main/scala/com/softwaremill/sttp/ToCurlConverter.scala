@@ -31,8 +31,13 @@ class ToCurlConverter[R <: RequestT[Id, _, _]] {
       case StringBody(text, _, _) if r.headers.toMap.get(HeaderNames.ContentType).forall(_ == MediaTypes.Form) =>
         s"""-F '$text'"""
       case StringBody(text, _, _) => s"""--data '$text'"""
-      case ByteArrayBody(_, _)    => ??? // TODO: what to do here?
-      case _                      => ""
+      case ByteArrayBody(_, _)    => s"--data-binary <PLACEHOLDER>"
+      case ByteBufferBody(_, _)   => s"--data-binary <PLACEHOLDER>"
+      case InputStreamBody(_, _)  => s"--data-binary <PLACEHOLDER>"
+      case StreamBody(_)          => s"--data-binary <PLACEHOLDER>"
+      case MultipartBody(_)       => s"--data-binary <PLACEHOLDER>"
+      case FileBody(file, _)      => s"""--data-binary @${file.name}"""
+      case NoBody                 => ""
     }
   }
 
