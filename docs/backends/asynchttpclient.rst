@@ -9,6 +9,8 @@ To use, add the following dependency to your project::
   // or
   "com.softwaremill.sttp" %% "async-http-client-backend-zio" % "1.5.15"
   // or
+  "com.softwaremill.sttp" %% "async-http-client-backend-zio-streams" % "1.5.15"
+  // or
   "com.softwaremill.sttp" %% "async-http-client-backend-monix" % "1.5.15"
   // or
   "com.softwaremill.sttp" %% "async-http-client-backend-cats" % "1.5.15"
@@ -37,6 +39,9 @@ Next you'll need to add an implicit value::
 
   // or, if you're using the zio version:
   implicit val sttpBackend = AsyncHttpClientZioBackend()
+
+  // or, if you're using the zio version with zio-streams for http streaming:
+  implicit val sttpBackend = AsyncHttpClientZioStreamsBackend()
   
   // or, if you're using the monix version:
   implicit val sttpBackend = AsyncHttpClientMonixBackend()
