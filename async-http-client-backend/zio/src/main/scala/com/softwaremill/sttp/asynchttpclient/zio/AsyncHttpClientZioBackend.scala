@@ -20,10 +20,8 @@ import scalaz.zio._
 import scalaz.zio.stream._
 import scalaz.zio.interop.reactiveStreams._
 
-class AsyncHttpClientZioBackend private (asyncHttpClient: AsyncHttpClient, closeClient: Boolean)
+class AsyncHttpClientZioBackend[R] private (runtime: Runtime[R], asyncHttpClient: AsyncHttpClient, closeClient: Boolean)
     extends AsyncHttpClientBackend[Task, Stream[Throwable, ByteBuffer]](asyncHttpClient, IOMonadAsyncError, closeClient) {
-
-  val runtime = new DefaultRuntime {}
 
   private val bufferSize = 16
 
@@ -38,34 +36,41 @@ class AsyncHttpClientZioBackend private (asyncHttpClient: AsyncHttpClient, close
 }
 
 object AsyncHttpClientZioBackend {
-  private def apply(
+  private def apply[R](
+      runtime: Runtime[R],
       asyncHttpClient: AsyncHttpClient,
       closeClient: Boolean
   ): SttpBackend[Task, Stream[Throwable, ByteBuffer]] =
     new FollowRedirectsBackend[Task, Stream[Throwable, ByteBuffer]](
-      new AsyncHttpClientZioBackend(asyncHttpClient, closeClient)
+      new AsyncHttpClientZioBackend(runtime, asyncHttpClient, closeClient)
     )
 
-  def apply(
+  def apply[R](
+      runtime: Runtime[R],
       options: SttpBackendOptions = SttpBackendOptions.Default
   ): SttpBackend[Task, Stream[Throwable, ByteBuffer]] =
-    AsyncHttpClientZioBackend(AsyncHttpClientBackend.defaultClient(options), closeClient = true)
+    AsyncHttpClientZioBackend(runtime, AsyncHttpClientBackend.defaultClient(options), closeClient = true)
 
-  def usingConfig(cfg: AsyncHttpClientConfig): SttpBackend[Task, Stream[Throwable, ByteBuffer]] =
-    AsyncHttpClientZioBackend(new DefaultAsyncHttpClient(cfg), closeClient = true)
+  def usingConfig[R](
+      runtime: Runtime[R],
+      cfg: AsyncHttpClientConfig
+  ): SttpBackend[Task, Stream[Throwable, ByteBuffer]] =
+    AsyncHttpClientZioBackend(runtime, new DefaultAsyncHttpClient(cfg), closeClient = true)
 
   /**
     * @param updateConfig A function which updates the default configuration (created basing on `options`).
     */
-  def usingConfigBuilder(
+  def usingConfigBuilder[R](
+      runtime: Runtime[R],
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default
   ): SttpBackend[Task, Stream[Throwable, ByteBuffer]] =
     AsyncHttpClientZioBackend(
+      runtime,
       AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
       closeClient = true
     )
 
-  def usingClient(client: AsyncHttpClient): SttpBackend[Task, Stream[Throwable, ByteBuffer]] =
-    AsyncHttpClientZioBackend(client, closeClient = false)
+  def usingClient[R](runtime: Runtime[R], client: AsyncHttpClient): SttpBackend[Task, Stream[Throwable, ByteBuffer]] =
+    AsyncHttpClientZioBackend(runtime, client, closeClient = false)
 }

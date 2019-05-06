@@ -10,6 +10,6 @@ import scalaz.zio.stream._
 class AsyncHttpClientZioHttpTest extends HttpTest[Task] {
 
   override implicit val backend: SttpBackend[Task, Stream[Throwable, ByteBuffer]] =
-    AsyncHttpClientZioBackend()
+    AsyncHttpClientZioBackend(new DefaultRuntime {})
   override implicit val convertToFuture: ConvertToFuture[Task] = convertZioIoToFuture
 }
