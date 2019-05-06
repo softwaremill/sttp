@@ -1,7 +1,6 @@
 package com.softwaremill.sttp
 
 import scala.collection.mutable
-import scala.language.higherKinds
 
 class ToCurlConverter[R <: RequestT[Id, _, _]] {
 
