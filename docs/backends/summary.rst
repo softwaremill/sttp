@@ -14,23 +14,23 @@ Each backend has two type parameters:
 
 Below is a summary of all the backends. See the sections on individual backend implementations for more information.
 
-================================ ============================ ================================================
-Class                            Response wrapper             Supported stream type
-================================ ============================ ================================================
-``HttpURLConnectionBackend``     None (``Id``)                n/a
-``TryHttpURLConnectionBackend``  ``scala.util.Try``           n/a
-``AkkaHttpBackend``              ``scala.concurrent.Future``  ``akka.stream.scaladsl.Source[ByteString, Any]``
-``AsyncHttpClientFutureBackend`` ``scala.concurrent.Future``  n/a
-``AsyncHttpClientScalazBackend`` ``scalaz.concurrent.Task``   n/a
-``AsyncHttpClientZioBackend``    ``scalaz.zio.IO``            n/a
-``AsyncHttpClientZioStreamsBackend``    ``scalaz.zio.IO``     ``Stream[Throwable, ByteBuffer]``
-``AsyncHttpClientMonixBackend``  ``monix.eval.Task``          ``monix.reactive.Observable[ByteBuffer]``
-``AsyncHttpClientCatsBackend``   ``F[_]: cats.effect.Async``  n/a
-``AsyncHttpClientFs2Backend``    ``F[_]: cats.effect.Async``  ``fs2.Stream[F, ByteBuffer]``
-``OkHttpSyncBackend``            None (``Id``)                n/a
-``OkHttpFutureBackend``          ``scala.concurrent.Future``  n/a
-``OkHttpMonixBackend``           ``monix.eval.Task``          ``monix.reactive.Observable[ByteBuffer]``
-================================ ============================ ================================================
+==================================== ============================ ================================================
+Class                                Response wrapper             Supported stream type
+==================================== ============================ ================================================
+``HttpURLConnectionBackend``         None (``Id``)                n/a
+``TryHttpURLConnectionBackend``      ``scala.util.Try``           n/a
+``AkkaHttpBackend``                  ``scala.concurrent.Future``  ``akka.stream.scaladsl.Source[ByteString, Any]``
+``AsyncHttpClientFutureBackend``     ``scala.concurrent.Future``  n/a
+``AsyncHttpClientScalazBackend``     ``scalaz.concurrent.Task``   n/a
+``AsyncHttpClientZioBackend``        ``scalaz.zio.IO``            n/a
+``AsyncHttpClientZioStreamsBackend`` ``scalaz.zio.IO``            ``Stream[Throwable, ByteBuffer]``
+``AsyncHttpClientMonixBackend``      ``monix.eval.Task``          ``monix.reactive.Observable[ByteBuffer]``
+``AsyncHttpClientCatsBackend``       ``F[_]: cats.effect.Async``  n/a
+``AsyncHttpClientFs2Backend``        ``F[_]: cats.effect.Async``  ``fs2.Stream[F, ByteBuffer]``
+``OkHttpSyncBackend``                None (``Id``)                n/a
+``OkHttpFutureBackend``              ``scala.concurrent.Future``  n/a
+``OkHttpMonixBackend``               ``monix.eval.Task``          ``monix.reactive.Observable[ByteBuffer]``
+==================================== ============================ ================================================
 
 There are also backends which wrap other backends to provide additional functionality. These include:
 
