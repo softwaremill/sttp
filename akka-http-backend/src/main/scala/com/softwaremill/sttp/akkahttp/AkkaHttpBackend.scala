@@ -320,13 +320,6 @@ private class AkkaHttpBackend(
     val _ = if (terminateActorSystemOnClose) actorSystem.terminate()
     ()
   }
-
-  private implicit class RichTry[T](t: Try[T]) {
-    def toFuture: Future[T] = t match {
-      case Success(v) => Future.successful(v)
-      case Failure(v) => Future.failed(v)
-    }
-  }
 }
 
 object AkkaHttpBackend {
