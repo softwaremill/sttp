@@ -306,7 +306,9 @@ lazy val akkaHttpBackend: Project = (project in file("akka-http-backend"))
       akkaHttp,
       // provided as we don't want to create a transitive dependency on a specific streams version,
       // just as akka-http doesn't
-      akkaStreams % "provided"
+      akkaStreams % "provided",
+      "com.typesafe.akka" %% "akka-stream-testkit" % "2.5.22" % Test,
+      "com.typesafe.akka" %% "akka-http-testkit" % "10.1.8" % Test
     )
   )
   .dependsOn(coreJVM % "compile->compile;test->test")

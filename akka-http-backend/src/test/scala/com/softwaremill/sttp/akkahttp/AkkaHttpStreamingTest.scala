@@ -17,7 +17,7 @@ class AkkaHttpStreamingTest extends StreamingTest[Future, Source[ByteString, Any
   private implicit val materializer: ActorMaterializer = ActorMaterializer()
 
   override implicit val backend: SttpBackend[Future, Source[ByteString, Any]] =
-    AkkaHttpBackend.usingActorSystem(actorSystem)
+    AkkaHttpBackend.usingActorSystem(actorSystem)()
 
   override implicit val convertToFuture: ConvertToFuture[Future] =
     ConvertToFuture.future
