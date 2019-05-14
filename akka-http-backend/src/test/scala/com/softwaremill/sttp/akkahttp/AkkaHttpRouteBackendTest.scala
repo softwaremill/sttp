@@ -37,21 +37,21 @@ class AkkaHttpRouteBackendTest extends AsyncWordSpec with ScalatestRouteTest wit
 
   "future route" should {
     "respond with 200" in {
-      backend.send(sttp.get(uri"localhost/futures/quick")).map { response =>
+      backend.send(sttp.get(uri"http://localhost/futures/quick")).map { response =>
         response.code shouldBe 200
         response.body.right.get shouldBe "done-quick"
       }
     }
 
     "respond with 200 in the buggy case" in {
-      backend.send(sttp.get(uri"localhost/futures/buggy")).map { response =>
+      backend.send(sttp.get(uri"http://localhost/futures/buggy")).map { response =>
         response.code shouldBe 200
         response.body.right.get shouldBe "done-buggy"
       }
     }
 
     "respond with 200 after a long running future" in {
-      backend.send(sttp.get(uri"localhost/futures/long")).map { response =>
+      backend.send(sttp.get(uri"http://localhost/futures/long")).map { response =>
         response.code shouldBe 200
         response.body.right.get shouldBe "done-long"
       }
@@ -81,7 +81,7 @@ class AkkaHttpRouteBackendTest extends AsyncWordSpec with ScalatestRouteTest wit
 
   "unmatched route" should {
     "respond with 404" in {
-      backend.send(sttp.get(uri"localhost/not-matching")).map { response =>
+      backend.send(sttp.get(uri"http://localhost/not-matching")).map { response =>
         response.code shouldBe 404
         response.body.left.get shouldBe "The requested resource could not be found."
       }
