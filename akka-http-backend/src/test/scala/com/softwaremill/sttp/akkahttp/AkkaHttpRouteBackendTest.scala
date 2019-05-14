@@ -6,12 +6,10 @@ import akka.actor.ActorSystem
 import com.softwaremill.sttp.SttpBackend
 import org.scalatest.{AsyncWordSpec, Matchers}
 
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.concurrent.duration._
-
 import akka.http.scaladsl.testkit.RouteTestTimeout
-import scala.concurrent.Promise
+import akka.http.scaladsl.unmarshalling.Unmarshal
 
 class AkkaHttpRouteBackendTest extends AsyncWordSpec with ScalatestRouteTest with Matchers {
 
@@ -61,22 +59,20 @@ class AkkaHttpRouteBackendTest extends AsyncWordSpec with ScalatestRouteTest wit
   //temporary test - only to show that the bug isn't in akka-http
   "future route directly in akka" should {
     "respond with 200" in {
-      Get("http://localhost/futures/quick") ~> Routes.route ~> check {
-        responseAs[String] shouldBe "done-quick"
-      }
+      stringResponse(Get("http://localhost/futures/quick") ~> Route.seal(Routes.route)) shouldBe "done-quick"
     }
 
     "respond with 200 in the buggy case" in {
-      Get("http://localhost/futures/buggy") ~> Routes.route ~> check {
-        responseAs[String] shouldBe "done-buggy"
-      }
+      stringResponse(Get("http://localhost/futures/buggy") ~> Route.seal(Routes.route)) shouldBe "done-buggy"
     }
 
     "respond with 200 after a long running future" in {
-      Get("http://localhost/futures/long") ~> Routes.route ~> check {
-        responseAs[String] shouldBe "done-long"
-      }
+      stringResponse(Get("http://localhost/futures/long") ~> Route.seal(Routes.route)) shouldBe "done-long"
     }
+  }
+
+  private def stringResponse(result: RouteTestResult): String = {
+    Await.result(Unmarshal(result.response).to[String], 5.seconds)
   }
 
   "unmatched route" should {
@@ -109,7 +105,7 @@ object Routes {
   private def longFuture()(implicit ec: ExecutionContext, system: ActorSystem): Future[String] = {
     val promise = Promise[String]()
 
-    system.scheduler.scheduleOnce(2.seconds) {
+    system.scheduler.scheduleOnce(1.seconds) {
       val _ = promise.success("done-long")
     }
 
