@@ -3,13 +3,14 @@ package com.softwaremill.sttp.akkahttp
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.actor.ActorSystem
+import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
+import akka.http.scaladsl.settings.ConnectionPoolSettings
 import com.softwaremill.sttp.SttpBackend
 import org.scalatest.{AsyncWordSpec, Matchers}
 
-import scala.concurrent.{Await, ExecutionContext, Future, Promise}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.concurrent.duration._
 import akka.http.scaladsl.testkit.RouteTestTimeout
-import akka.http.scaladsl.unmarshalling.Unmarshal
 
 class AkkaHttpRouteBackendTest extends AsyncWordSpec with ScalatestRouteTest with Matchers {
 
@@ -17,7 +18,18 @@ class AkkaHttpRouteBackendTest extends AsyncWordSpec with ScalatestRouteTest wit
 
   lazy val backend: SttpBackend[Future, Nothing] = {
     AkkaHttpBackend.usingActorSystem(system) {
-      AkkaHttpClient.fromStrict(request => (request ~> Route.seal(Routes.route)).response)
+      new AkkaHttpClient {
+        override def singleRequest(request: HttpRequest, settings: ConnectionPoolSettings): Future[HttpResponse] = {
+          val p = Promise[HttpResponse]()
+          val f = p.future
+
+          request ~> Route.seal(Routes.route) ~> check {
+            p.success(response)
+          }
+
+          f
+        }
+      }
     }
   }
 
@@ -54,25 +66,6 @@ class AkkaHttpRouteBackendTest extends AsyncWordSpec with ScalatestRouteTest wit
         response.body.right.get shouldBe "done-long"
       }
     }
-  }
-
-  //temporary test - only to show that the bug isn't in akka-http
-  "future route directly in akka" should {
-    "respond with 200" in {
-      stringResponse(Get("http://localhost/futures/quick") ~> Route.seal(Routes.route)) shouldBe "done-quick"
-    }
-
-    "respond with 200 in the buggy case" in {
-      stringResponse(Get("http://localhost/futures/buggy") ~> Route.seal(Routes.route)) shouldBe "done-buggy"
-    }
-
-    "respond with 200 after a long running future" in {
-      stringResponse(Get("http://localhost/futures/long") ~> Route.seal(Routes.route)) shouldBe "done-long"
-    }
-  }
-
-  private def stringResponse(result: RouteTestResult): String = {
-    Await.result(Unmarshal(result.response).to[String], 5.seconds)
   }
 
   "unmatched route" should {

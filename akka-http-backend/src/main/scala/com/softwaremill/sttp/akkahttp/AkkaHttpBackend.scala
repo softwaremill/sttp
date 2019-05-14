@@ -94,33 +94,35 @@ private class AkkaHttpBackend(
     val settings = connectionPoolSettingsWithProxy
       .withUpdatedConnectionSettings(_.withIdleTimeout(r.options.readTimeout))
 
-    Future
-      .fromTry(requestToAkka(r).flatMap(setBodyOnAkka(r, r.body, _)))
-      .flatMap { req =>
-        http.singleRequest(req, settings)
-      }
-      .flatMap { hr =>
-        val code = hr.status.intValue()
-        val statusText = hr.status.reason()
+    requestToAkka(r).flatMap(setBodyOnAkka(r, r.body, _)) match {
+      case Success(request) =>
+        http
+          .singleRequest(request, settings)
+          .flatMap { hr =>
+            val code = hr.status.intValue()
+            val statusText = hr.status.reason()
 
-        val headers = headersFromAkka(hr)
-        val charsetFromHeaders = headers
-          .collectFirst {
-            case (HeaderNames.ContentType, value) => value
+            val headers = headersFromAkka(hr)
+            val charsetFromHeaders = headers
+              .collectFirst {
+                case (HeaderNames.ContentType, value) => value
+              }
+              .flatMap(encodingFromContentType)
+
+            val responseMetadata = ResponseMetadata(headers, code, statusText)
+            val body = if (r.options.parseResponseIf(responseMetadata)) {
+              bodyFromAkka(r.response, decodeAkkaResponse(hr), charsetFromHeaders, responseMetadata)
+                .map(Right(_))
+            } else {
+              bodyFromAkka(asByteArray, decodeAkkaResponse(hr), charsetFromHeaders, responseMetadata)
+                .map(Left(_))
+            }
+
+            body.map(Response(_, code, statusText, headers, Nil))
           }
-          .flatMap(encodingFromContentType)
 
-        val responseMetadata = ResponseMetadata(headers, code, statusText)
-        val body = if (r.options.parseResponseIf(responseMetadata)) {
-          bodyFromAkka(r.response, decodeAkkaResponse(hr), charsetFromHeaders, responseMetadata)
-            .map(Right(_))
-        } else {
-          bodyFromAkka(asByteArray, decodeAkkaResponse(hr), charsetFromHeaders, responseMetadata)
-            .map(Left(_))
-        }
-
-        body.map(Response(_, code, statusText, headers, Nil))
-      }
+      case Failure(exception) => Future.failed(exception)
+    }
   }
 
   override def responseMonad: MonadError[Future] = new FutureMonad()(ec)
