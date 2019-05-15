@@ -18,10 +18,8 @@ class AkkaHttpRouteBackendTest extends AsyncWordSpec with Matchers with BeforeAn
     Await.result(system.terminate(), 5.seconds)
   }
 
-  lazy val backend: SttpBackend[Future, Nothing] = {
-    AkkaHttpBackend.usingActorSystem(system) {
-      AkkaHttpClient.fromAsyncHandler(Route.asyncHandler(Routes.route))
-    }
+  val backend: SttpBackend[Future, Nothing] = {
+    AkkaHttpBackend.usingClient(system, http = AkkaHttpClient.fromAsyncHandler(Route.asyncHandler(Routes.route)))
   }
 
   import com.softwaremill.sttp._
