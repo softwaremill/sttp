@@ -7,12 +7,9 @@ import org.scalatest.{AsyncWordSpec, BeforeAndAfterAll, Matchers}
 
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
-import akka.http.scaladsl.testkit.RouteTestTimeout
 import akka.stream.ActorMaterializer
 
 class AkkaHttpRouteBackendTest extends AsyncWordSpec with Matchers with BeforeAndAfterAll {
-
-  implicit val timeout = RouteTestTimeout(5.seconds)
 
   implicit val system = ActorSystem()
   implicit val materializer = ActorMaterializer()
