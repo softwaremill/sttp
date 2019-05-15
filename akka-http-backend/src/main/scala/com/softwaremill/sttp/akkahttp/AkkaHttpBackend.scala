@@ -94,34 +94,34 @@ private class AkkaHttpBackend(
     val settings = connectionPoolSettingsWithProxy
       .withUpdatedConnectionSettings(_.withIdleTimeout(r.options.readTimeout))
 
-    Future.fromTry(requestToAkka(r).flatMap(setBodyOnAkka(r, r.body, _))).flatMap {
-      request =>
+    Future
+      .fromTry(requestToAkka(r).flatMap(setBodyOnAkka(r, r.body, _)))
+      .flatMap { request =>
         http
           .singleRequest(request, settings)
-          .flatMap { hr =>
-            val code = hr.status.intValue()
-            val statusText = hr.status.reason()
+      }
+      .flatMap { hr =>
+        val code = hr.status.intValue()
+        val statusText = hr.status.reason()
 
-            val headers = headersFromAkka(hr)
-            val charsetFromHeaders = headers
-              .collectFirst {
-                case (HeaderNames.ContentType, value) => value
-              }
-              .flatMap(encodingFromContentType)
-
-            val responseMetadata = ResponseMetadata(headers, code, statusText)
-            val body = if (r.options.parseResponseIf(responseMetadata)) {
-              bodyFromAkka(r.response, decodeAkkaResponse(hr), charsetFromHeaders, responseMetadata)
-                .map(Right(_))
-            } else {
-              bodyFromAkka(asByteArray, decodeAkkaResponse(hr), charsetFromHeaders, responseMetadata)
-                .map(Left(_))
-            }
-
-            body.map(Response(_, code, statusText, headers, Nil))
+        val headers = headersFromAkka(hr)
+        val charsetFromHeaders = headers
+          .collectFirst {
+            case (HeaderNames.ContentType, value) => value
           }
+          .flatMap(encodingFromContentType)
 
-    }
+        val responseMetadata = ResponseMetadata(headers, code, statusText)
+        val body = if (r.options.parseResponseIf(responseMetadata)) {
+          bodyFromAkka(r.response, decodeAkkaResponse(hr), charsetFromHeaders, responseMetadata)
+            .map(Right(_))
+        } else {
+          bodyFromAkka(asByteArray, decodeAkkaResponse(hr), charsetFromHeaders, responseMetadata)
+            .map(Left(_))
+        }
+
+        body.map(Response(_, code, statusText, headers, Nil))
+      }
   }
 
   override def responseMonad: MonadError[Future] = new FutureMonad()(ec)
@@ -324,7 +324,7 @@ private class AkkaHttpBackend(
 }
 
 object AkkaHttpBackend {
-  private def make(
+  def make(
       actorSystem: ActorSystem,
       ec: ExecutionContext,
       terminateActorSystemOnClose: Boolean,
@@ -379,9 +379,9 @@ object AkkaHttpBackend {
       customHttpsContext: Option[HttpsConnectionContext] = None,
       customConnectionPoolSettings: Option[ConnectionPoolSettings] = None,
       customLog: Option[LoggingAdapter] = None
-  )(
-      http: AkkaHttpClient = AkkaHttpClient.fromAkkaHttpExt(actorSystem, customHttpsContext, customLog)
-  )(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Source[ByteString, Any]] =
+  )(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Source[ByteString, Any]] = {
+    val http: AkkaHttpClient = AkkaHttpClient.fromAkkaHttpExt(actorSystem, customHttpsContext, customLog)
+
     make(
       actorSystem,
       ec,
@@ -390,4 +390,5 @@ object AkkaHttpBackend {
       customConnectionPoolSettings,
       http
     )
+  }
 }
