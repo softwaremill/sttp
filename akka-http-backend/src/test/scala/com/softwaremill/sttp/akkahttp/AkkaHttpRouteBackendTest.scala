@@ -1,35 +1,29 @@
 package com.softwaremill.sttp.akkahttp
 
 import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.actor.ActorSystem
-import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
-import akka.http.scaladsl.settings.ConnectionPoolSettings
 import com.softwaremill.sttp.SttpBackend
-import org.scalatest.{AsyncWordSpec, Matchers}
+import org.scalatest.{AsyncWordSpec, BeforeAndAfterAll, Matchers}
 
-import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 import akka.http.scaladsl.testkit.RouteTestTimeout
+import akka.stream.ActorMaterializer
 
-class AkkaHttpRouteBackendTest extends AsyncWordSpec with ScalatestRouteTest with Matchers {
+class AkkaHttpRouteBackendTest extends AsyncWordSpec with Matchers with BeforeAndAfterAll {
 
   implicit val timeout = RouteTestTimeout(5.seconds)
 
+  implicit val system = ActorSystem()
+  implicit val materializer = ActorMaterializer()
+
+  override protected def afterAll(): Unit = {
+    Await.result(system.terminate(), 5.seconds)
+  }
+
   lazy val backend: SttpBackend[Future, Nothing] = {
     AkkaHttpBackend.usingActorSystem(system) {
-      new AkkaHttpClient {
-        override def singleRequest(request: HttpRequest, settings: ConnectionPoolSettings): Future[HttpResponse] = {
-          val p = Promise[HttpResponse]()
-          val f = p.future
-
-          request ~> Route.seal(Routes.route) ~> check {
-            p.success(response)
-          }
-
-          f
-        }
-      }
+      AkkaHttpClient.fromAsyncHandler(Route.asyncHandler(Routes.route))
     }
   }
 
@@ -41,29 +35,6 @@ class AkkaHttpRouteBackendTest extends AsyncWordSpec with ScalatestRouteTest wit
       backend.send(sttp.get(uri"localhost/hello")).map { response =>
         response.code shouldBe 200
         response.body.right.get shouldBe "Hello, world!"
-      }
-    }
-  }
-
-  "future route" should {
-    "respond with 200" in {
-      backend.send(sttp.get(uri"http://localhost/futures/quick")).map { response =>
-        response.code shouldBe 200
-        response.body.right.get shouldBe "done-quick"
-      }
-    }
-
-    "respond with 200 in the buggy case" in {
-      backend.send(sttp.get(uri"http://localhost/futures/buggy")).map { response =>
-        response.code shouldBe 200
-        response.body.right.get shouldBe "done-buggy"
-      }
-    }
-
-    "respond with 200 after a long running future" in {
-      backend.send(sttp.get(uri"http://localhost/futures/long")).map { response =>
-        response.code shouldBe 200
-        response.body.right.get shouldBe "done-long"
       }
     }
   }
@@ -82,26 +53,8 @@ class AkkaHttpRouteBackendTest extends AsyncWordSpec with ScalatestRouteTest wit
 object Routes {
   import akka.http.scaladsl.server.Directives._
 
-  def route(implicit ec: ExecutionContext, system: ActorSystem): Route =
+  val route: Route =
     pathPrefix("hello") {
       complete("Hello, world!")
-    } ~ pathPrefix("futures") {
-      pathPrefix("quick") {
-        complete(Future.successful("done-quick"))
-      } ~ pathPrefix("buggy") {
-        complete(Future.successful(()).map(_ => "done-buggy"))
-      } ~ pathPrefix("long") {
-        complete(longFuture())
-      }
     }
-
-  private def longFuture()(implicit ec: ExecutionContext, system: ActorSystem): Future[String] = {
-    val promise = Promise[String]()
-
-    system.scheduler.scheduleOnce(1.seconds) {
-      val _ = promise.success("done-long")
-    }
-
-    promise.future
-  }
 }

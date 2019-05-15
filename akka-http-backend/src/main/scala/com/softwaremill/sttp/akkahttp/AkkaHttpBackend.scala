@@ -50,9 +50,9 @@ object AkkaHttpClient {
     }
   }
 
-  def fromStrict(run: HttpRequest => HttpResponse): AkkaHttpClient = new AkkaHttpClient {
+  def fromAsyncHandler(run: HttpRequest => Future[HttpResponse]): AkkaHttpClient = new AkkaHttpClient {
     def singleRequest(request: HttpRequest, settings: ConnectionPoolSettings): Future[HttpResponse] =
-      Future.successful(run(request))
+      run(request)
   }
 }
 
@@ -94,8 +94,8 @@ private class AkkaHttpBackend(
     val settings = connectionPoolSettingsWithProxy
       .withUpdatedConnectionSettings(_.withIdleTimeout(r.options.readTimeout))
 
-    requestToAkka(r).flatMap(setBodyOnAkka(r, r.body, _)) match {
-      case Success(request) =>
+    Future.fromTry(requestToAkka(r).flatMap(setBodyOnAkka(r, r.body, _))).flatMap {
+      request =>
         http
           .singleRequest(request, settings)
           .flatMap { hr =>
@@ -121,7 +121,6 @@ private class AkkaHttpBackend(
             body.map(Response(_, code, statusText, headers, Nil))
           }
 
-      case Failure(exception) => Future.failed(exception)
     }
   }
 
