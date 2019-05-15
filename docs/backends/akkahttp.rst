@@ -52,3 +52,14 @@ To receive the response body as a stream::
       .response(asStream[Source[ByteString, Any]])
       .send()
     
+
+Testing
+---------------
+
+For testing, you can create a backend using any `HttpRequest => Future[HttpResponse]` function - including a `Route`.
+
+That way, you can "mock" a server that the backend will talk to, without starting any actual server or making any HTTP calls.
+
+  val backend: SttpBackend[Future, Nothing] = {
+    AkkaHttpBackend.usingClient(system, http = AkkaHttpClient.fromAsyncHandler(Route.asyncHandler(Routes.route)))
+  }
