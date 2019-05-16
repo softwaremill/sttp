@@ -4,9 +4,15 @@ import akka.actor.ActorSystem
 import akka.event.LoggingAdapter
 import akka.http.scaladsl.{Http, HttpsConnectionContext}
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
-import akka.http.scaladsl.settings.ConnectionPoolSettings
+import akka.http.scaladsl.settings.{ConnectionPoolSettings, ParserSettings, RoutingSettings}
+import akka.http.scaladsl.server.Route
 
 import scala.concurrent.Future
+import akka.stream.Materializer
+import akka.http.scaladsl.server.RoutingLog
+import scala.concurrent.ExecutionContextExecutor
+import akka.http.scaladsl.server.RejectionHandler
+import akka.http.scaladsl.server.ExceptionHandler
 
 trait AkkaHttpClient {
   def singleRequest(
@@ -37,8 +43,18 @@ object AkkaHttpClient {
     }
   }
 
-  def fromAsyncHandler(run: HttpRequest => Future[HttpResponse]): AkkaHttpClient = new AkkaHttpClient {
+  def stubFromAsyncHandler(run: HttpRequest => Future[HttpResponse]): AkkaHttpClient = new AkkaHttpClient {
     def singleRequest(request: HttpRequest, settings: ConnectionPoolSettings): Future[HttpResponse] =
       run(request)
   }
+
+  def stubFromRoute(route: Route)(
+      implicit routingSettings: RoutingSettings,
+      parserSettings: ParserSettings,
+      materializer: Materializer,
+      routingLog: RoutingLog,
+      executionContext: ExecutionContextExecutor = null,
+      rejectionHandler: RejectionHandler = RejectionHandler.default,
+      exceptionHandler: ExceptionHandler = null
+  ): AkkaHttpClient = stubFromAsyncHandler(Route.asyncHandler(route))
 }

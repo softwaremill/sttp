@@ -19,7 +19,7 @@ class AkkaHttpRouteBackendTest extends AsyncWordSpec with Matchers with BeforeAn
   }
 
   val backend: SttpBackend[Future, Nothing] = {
-    AkkaHttpBackend.usingClient(system, http = AkkaHttpClient.fromAsyncHandler(Route.asyncHandler(Routes.route)))
+    AkkaHttpBackend.usingClient(system, http = AkkaHttpClient.stubFromRoute(Routes.route))
   }
 
   import com.softwaremill.sttp._
