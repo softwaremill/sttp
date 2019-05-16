@@ -56,10 +56,13 @@ To receive the response body as a stream::
 Testing
 ---------------
 
-For testing, you can create a backend using any `HttpRequest => Future[HttpResponse]` function - including a `Route`.
+For testing, you can create a backend using any `HttpRequest => Future[HttpResponse]` function, or an akka-http `Route`.
 
 That way, you can "mock" a server that the backend will talk to, without starting any actual server or making any HTTP calls.
 
+If your application provides a client library for its dependants to use, this is a great way to ensure that the client
+actually matches the routes exposed by your application.
+
   val backend: SttpBackend[Future, Nothing] = {
-    AkkaHttpBackend.usingClient(system, http = AkkaHttpClient.fromAsyncHandler(Route.asyncHandler(Routes.route)))
+    AkkaHttpBackend.usingClient(system, http = AkkaHttpClient.stubFromRoute(Routes.route))
   }
