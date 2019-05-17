@@ -9,8 +9,8 @@ import akka.http.scaladsl.model.ContentTypes.`application/octet-stream`
 import akka.http.scaladsl.model.HttpHeader.ParsingResult
 import akka.http.scaladsl.model.headers.{BasicHttpCredentials, HttpEncodings, `Content-Length`, `Content-Type`}
 import akka.http.scaladsl.model.{Multipart => AkkaMultipart, _}
-import akka.http.scaladsl.settings.{ClientConnectionSettings, ConnectionPoolSettings}
-import akka.http.scaladsl.{ClientTransport, Http, HttpsConnectionContext}
+import akka.http.scaladsl.settings.ConnectionPoolSettings
+import akka.http.scaladsl.{ClientTransport, HttpsConnectionContext}
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{FileIO, Sink, Source, StreamConverters}
 import akka.util.ByteString
@@ -21,14 +21,13 @@ import scala.collection.immutable.Seq
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-class AkkaHttpBackend private (
+private class AkkaHttpBackend(
     actorSystem: ActorSystem,
     ec: ExecutionContext,
     terminateActorSystemOnClose: Boolean,
     opts: SttpBackendOptions,
-    customHttpsContext: Option[HttpsConnectionContext],
     customConnectionPoolSettings: Option[ConnectionPoolSettings],
-    customLog: Option[LoggingAdapter]
+    http: AkkaHttpClient
 ) extends SttpBackend[Future, Source[ByteString, Any]] {
 
   // the supported stream type
@@ -36,8 +35,6 @@ class AkkaHttpBackend private (
 
   private implicit val as: ActorSystem = actorSystem
   private implicit val materializer: ActorMaterializer = ActorMaterializer()
-
-  private val http = Http()
 
   private val connectionPoolSettings = customConnectionPoolSettings
     .getOrElse(ConnectionPoolSettings(actorSystem))
@@ -62,26 +59,21 @@ class AkkaHttpBackend private (
     val settings = connectionPoolSettingsWithProxy
       .withUpdatedConnectionSettings(_.withIdleTimeout(r.options.readTimeout))
 
-    requestToAkka(r)
-      .flatMap(setBodyOnAkka(r, r.body, _))
-      .toFuture
-      .flatMap(
-        req =>
-          http.singleRequest(
-            req,
-            settings = settings,
-            connectionContext = customHttpsContext.getOrElse(http.defaultClientHttpsContext),
-            log = customLog.getOrElse(actorSystem.log)
-          )
-      )
+    Future
+      .fromTry(requestToAkka(r).flatMap(setBodyOnAkka(r, r.body, _)))
+      .flatMap { request =>
+        http
+          .singleRequest(request, settings)
+      }
       .flatMap { hr =>
         val code = hr.status.intValue()
         val statusText = hr.status.reason()
 
         val headers = headersFromAkka(hr)
         val charsetFromHeaders = headers
-          .find(_._1 == HeaderNames.ContentType)
-          .map(_._2)
+          .collectFirst {
+            case (HeaderNames.ContentType, value) => value
+          }
           .flatMap(encodingFromContentType)
 
         val responseMetadata = ResponseMetadata(headers, code, statusText)
@@ -291,26 +283,18 @@ class AkkaHttpBackend private (
   }
 
   override def close(): Unit = {
-    if (terminateActorSystemOnClose) actorSystem.terminate()
-  }
-
-  private implicit class RichTry[T](t: Try[T]) {
-    def toFuture: Future[T] = t match {
-      case Success(v) => Future.successful(v)
-      case Failure(v) => Future.failed(v)
-    }
+    val _ = if (terminateActorSystemOnClose) actorSystem.terminate()
   }
 }
 
 object AkkaHttpBackend {
-  private def apply(
+  private def make(
       actorSystem: ActorSystem,
       ec: ExecutionContext,
       terminateActorSystemOnClose: Boolean,
       options: SttpBackendOptions,
-      customHttpsContext: Option[HttpsConnectionContext],
       customConnectionPoolSettings: Option[ConnectionPoolSettings],
-      customLog: Option[LoggingAdapter]
+      http: AkkaHttpClient
   ): SttpBackend[Future, Source[ByteString, Any]] =
     new FollowRedirectsBackend(
       new AkkaHttpBackend(
@@ -318,9 +302,8 @@ object AkkaHttpBackend {
         ec,
         terminateActorSystemOnClose,
         options,
-        customHttpsContext,
         customConnectionPoolSettings,
-        customLog
+        http
       )
     )
 
@@ -334,16 +317,18 @@ object AkkaHttpBackend {
       customHttpsContext: Option[HttpsConnectionContext] = None,
       customConnectionPoolSettings: Option[ConnectionPoolSettings] = None,
       customLog: Option[LoggingAdapter] = None
-  )(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Source[ByteString, Any]] =
-    AkkaHttpBackend(
-      ActorSystem("sttp"),
+  )(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Source[ByteString, Any]] = {
+    val actorSystem = ActorSystem("sttp")
+
+    make(
+      actorSystem,
       ec,
       terminateActorSystemOnClose = true,
       options,
-      customHttpsContext,
       customConnectionPoolSettings,
-      customLog
+      AkkaHttpClient.fromAkkaHttpExt(actorSystem, customHttpsContext, customLog)
     )
+  }
 
   /**
     * @param actorSystem The actor system which will be used for the http-client
@@ -358,14 +343,35 @@ object AkkaHttpBackend {
       customHttpsContext: Option[HttpsConnectionContext] = None,
       customConnectionPoolSettings: Option[ConnectionPoolSettings] = None,
       customLog: Option[LoggingAdapter] = None
-  )(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Source[ByteString, Any]] =
-    AkkaHttpBackend(
+  )(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Source[ByteString, Any]] = {
+    usingClient(
+      actorSystem,
+      options,
+      customConnectionPoolSettings,
+      AkkaHttpClient.fromAkkaHttpExt(actorSystem, customHttpsContext, customLog)
+    )
+  }
+
+  /**
+    * @param actorSystem The actor system which will be used for the http-client
+    *                    actors.
+    * @param ec The execution context for running non-network related operations,
+    *           e.g. mapping responses. Defaults to the global execution
+    *           context.
+    */
+  def usingClient(
+      actorSystem: ActorSystem,
+      options: SttpBackendOptions = SttpBackendOptions.Default,
+      customConnectionPoolSettings: Option[ConnectionPoolSettings] = None,
+      http: AkkaHttpClient
+  )(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Source[ByteString, Any]] = {
+    make(
       actorSystem,
       ec,
       terminateActorSystemOnClose = false,
       options,
-      customHttpsContext,
       customConnectionPoolSettings,
-      customLog
+      http
     )
+  }
 }
