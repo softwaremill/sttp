@@ -40,19 +40,21 @@ abstract class AsyncHttpClientBackend[R[_], S](
 ) extends SttpBackend[R, S] {
 
   override def send[T](r: Request[T, S]): R[Response[T]] = {
-    val preparedRequest = asyncHttpClient
-      .prepareRequest(requestToAsync(r))
+    val preparedRequest = rm.fromTry(Try(asyncHttpClient.prepareRequest(requestToAsync(r))))
 
-    rm.flatten(rm.async[R[Response[T]]] { cb =>
-      def success(r: R[Response[T]]): Unit = cb(Right(r))
-      def error(t: Throwable): Unit = cb(Left(t))
+    rm.flatMap(preparedRequest) { ahcRequest =>
+      rm.flatten(rm.async[R[Response[T]]] { cb =>
+        def success(r: R[Response[T]]): Unit = cb(Right(r))
 
-      if (isResponseAsStream(r.response)) {
-        preparedRequest.execute(streamingAsyncHandler(r.response, r.options.parseResponseIf, success, error))
-      } else {
-        preparedRequest.execute(eagerAsyncHandler(r.response, r.options.parseResponseIf, success, error))
-      }
-    })
+        def error(t: Throwable): Unit = cb(Left(t))
+
+        if (isResponseAsStream(r.response)) {
+          ahcRequest.execute(streamingAsyncHandler(r.response, r.options.parseResponseIf, success, error))
+        } else {
+          ahcRequest.execute(eagerAsyncHandler(r.response, r.options.parseResponseIf, success, error))
+        }
+      })
+    }
   }
 
   override def responseMonad: MonadError[R] = rm
