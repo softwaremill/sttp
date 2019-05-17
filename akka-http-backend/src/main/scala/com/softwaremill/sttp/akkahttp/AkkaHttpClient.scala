@@ -22,7 +22,7 @@ trait AkkaHttpClient {
 }
 
 object AkkaHttpClient {
-  def fromAkkaHttpExt(
+  def default(
       system: ActorSystem,
       connectionContext: Option[HttpsConnectionContext],
       customLog: Option[LoggingAdapter]

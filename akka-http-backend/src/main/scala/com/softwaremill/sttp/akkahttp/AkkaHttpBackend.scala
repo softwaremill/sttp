@@ -21,7 +21,7 @@ import scala.collection.immutable.Seq
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-private class AkkaHttpBackend(
+class AkkaHttpBackend private (
     actorSystem: ActorSystem,
     ec: ExecutionContext,
     terminateActorSystemOnClose: Boolean,
@@ -326,7 +326,7 @@ object AkkaHttpBackend {
       terminateActorSystemOnClose = true,
       options,
       customConnectionPoolSettings,
-      AkkaHttpClient.fromAkkaHttpExt(actorSystem, customHttpsContext, customLog)
+      AkkaHttpClient.default(actorSystem, customHttpsContext, customLog)
     )
   }
 
@@ -348,7 +348,7 @@ object AkkaHttpBackend {
       actorSystem,
       options,
       customConnectionPoolSettings,
-      AkkaHttpClient.fromAkkaHttpExt(actorSystem, customHttpsContext, customLog)
+      AkkaHttpClient.default(actorSystem, customHttpsContext, customLog)
     )
   }
 
