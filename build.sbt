@@ -425,7 +425,7 @@ lazy val circe = crossProject(JSPlatform, JVMPlatform)
 lazy val circeJS = circe.js.dependsOn(coreJS, jsonCommonJS)
 lazy val circeJVM = circe.jvm.dependsOn(coreJVM, jsonCommonJVM)
 
-lazy val json4sVersion = "3.6.5"
+lazy val json4sVersion = "3.6.6"
 
 lazy val json4s: Project = (project in file("json/json4s"))
   .settings(commonJvmSettings: _*)
