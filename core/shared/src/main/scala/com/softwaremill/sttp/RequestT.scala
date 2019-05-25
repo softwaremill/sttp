@@ -245,10 +245,6 @@ case class RequestT[U[_], T, +S](
   }
 
   def toCurl(implicit isIdInRequest: IsIdInRequest[U]): String = {
-    // we could avoid the asInstanceOf by creating an artificial copy
-    // changing the method & url fields using `isIdInRequest`, but that
-    // would be only to satisfy the type checker, and a needless copy at
-    // runtime.
     ToCurlConverter.requestToCurl(this.asInstanceOf[RequestT[Id, T, S]])
   }
 
