@@ -2,7 +2,6 @@ package com.softwaremill.sttp
 
 import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets
-import java.nio.file.Files
 
 import org.scalatest.{FlatSpec, Matchers}
 
