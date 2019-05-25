@@ -40,7 +40,7 @@ class ToCurlConverter[R <: RequestT[Id, _, _]] {
 
   private def extractOptions(r: R): String = {
     if (r.options.followRedirects) {
-      s"-L --max-redirs=${r.options.maxRedirects}"
+      s"-L --max-redirs ${r.options.maxRedirects}"
     } else {
       ""
     }

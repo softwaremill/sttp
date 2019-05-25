@@ -12,7 +12,7 @@ class ToCurlConverterTest extends FlatSpec with Matchers {
   it should "convert base request" in {
     sttp
       .get(localhost)
-      .toCurl shouldBe """curl -L --max-redirs=32 -X GET -H "Accept-Encoding: gzip, deflate" http://localhost"""
+      .toCurl shouldBe """curl -L --max-redirs 32 -X GET -H "Accept-Encoding: gzip, deflate" http://localhost"""
   }
 
   it should "convert request with method to curl" in {
@@ -48,7 +48,7 @@ class ToCurlConverterTest extends FlatSpec with Matchers {
 
   it should "convert request with options" in {
     sttp.followRedirects(false).get(localhost).toCurl should not include "-L"
-    sttp.maxRedirects(11).get(localhost).toCurl should include("--max-redirs=11")
+    sttp.maxRedirects(11).get(localhost).toCurl should include("--max-redirs 11")
   }
 
   it should "put placeholder when sending binary data" in {
