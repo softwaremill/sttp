@@ -1,7 +1,5 @@
 package com.softwaremill.sttp
 
-import scala.collection.mutable
-
 class ToCurlConverter[R <: RequestT[Id, _, _]] {
 
   def apply(request: R): String = {
@@ -41,12 +39,11 @@ class ToCurlConverter[R <: RequestT[Id, _, _]] {
   }
 
   private def extractOptions(r: R): String = {
-    val sb = mutable.ListBuffer[String]()
     if (r.options.followRedirects) {
-      sb.append("-L")
+      s"-L --max-redirs=${r.options.maxRedirects}"
+    } else {
+      ""
     }
-    sb.append(s"--max-redirs=${r.options.maxRedirects}")
-    sb.mkString(" ")
   }
 
   private def addSpaceIfNotEmpty(fInput: R => String): R => String =
