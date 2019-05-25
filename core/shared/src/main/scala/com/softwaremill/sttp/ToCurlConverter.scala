@@ -54,5 +54,5 @@ class ToCurlConverter[R <: RequestT[Id, _, _]] {
 }
 
 object ToCurlConverter {
-  implicit def requestToCurl[R <: Request[_, _]]: ToCurlConverter[R] = new ToCurlConverter[R]
+  def requestToCurl[R <: Request[_, _]]: ToCurlConverter[R] = new ToCurlConverter[R]
 }
