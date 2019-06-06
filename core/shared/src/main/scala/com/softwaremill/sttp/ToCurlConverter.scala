@@ -8,7 +8,7 @@ class ToCurlConverter[R <: RequestT[Id, _, _]] {
       .reduce((acc, item) => r => acc(r) + item(r))
       .apply(request)
 
-    s"curl$params ${request.uri}"
+    s"""curl$params "${request.uri}""""
   }
 
   private def extractMethod(r: R): String = {

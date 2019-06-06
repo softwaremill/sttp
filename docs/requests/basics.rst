@@ -60,5 +60,5 @@ For example converting given request::
 
 will result in following curl command::
 
-    curl -L --max-redirs 32 -X GET -H "Accept-Encoding: gzip, deflate" http://httpbin.org/ip
+    curl -L --max-redirs 32 -X GET -H "Accept-Encoding: gzip, deflate" "http://httpbin.org/ip"
 
