@@ -244,6 +244,10 @@ case class RequestT[U[_], T, +S](
     backend.send(this.asInstanceOf[RequestT[Id, T, S]])
   }
 
+  def toCurl(implicit isIdInRequest: IsIdInRequest[U]): String = {
+    ToCurlConverter.requestToCurl(this.asInstanceOf[RequestT[Id, T, S]])
+  }
+
   private def hasContentType: Boolean =
     headers.exists(_._1.equalsIgnoreCase(HeaderNames.ContentType))
   private def setContentTypeIfMissing(ct: String): RequestT[U, T, S] =

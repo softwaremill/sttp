@@ -49,3 +49,16 @@ sttp provides two starting requests:
 
 Both of these requests will by default read the response body into a UTF-8 ``String``. How the response body is handled is also part of the request definition. See the section on :ref:`response body specifications <responsebodyspec>` for more details on how to customize that.
 
+Debugging requests
+------------------
+
+sttp comes with builtin request to curl converter. To convert request to curl invocation use `toCurl` method.
+
+For example converting given request::
+
+    sttp.get(uri"http://httpbin.org/ip").toCurl
+
+will result in following curl command::
+
+    curl -L --max-redirs 32 -X GET -H "Accept-Encoding: gzip, deflate" "http://httpbin.org/ip"
+
