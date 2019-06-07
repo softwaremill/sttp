@@ -12,7 +12,7 @@ class ToCurlConverterTest extends FlatSpec with Matchers {
   it should "convert base request" in {
     sttp
       .get(uri"$localhost")
-      .toCurl shouldBe """curl -L --max-redirs 32 -X GET -H "Accept-Encoding: gzip, deflate" "http://localhost""""
+      .toCurl shouldBe """curl -L --max-redirs 32 -X GET "http://localhost""""
   }
 
   it should "convert request with method to curl" in {

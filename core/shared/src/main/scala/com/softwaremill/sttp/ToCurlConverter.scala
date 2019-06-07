@@ -17,6 +17,8 @@ class ToCurlConverter[R <: RequestT[Id, _, _]] {
 
   private def extractHeaders(r: R): String = {
     r.headers
+    // filtering out compression headers so that the results are human-readable, if possible
+      .filterNot(_._1.equalsIgnoreCase(HeaderNames.AcceptEncoding))
       .collect {
         case (k, v) => s"""-H "$k: $v""""
       }
