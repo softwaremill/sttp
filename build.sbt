@@ -131,7 +131,7 @@ def testServerSettings(config: Configuration) = Seq(
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.8"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % "2.5.23"
 
-val scalaTestVersion = "3.0.7"
+val scalaTestVersion = "3.0.8"
 val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion
 
 lazy val rootProjectAggregates: Seq[ProjectReference] = if (sys.env.isDefinedAt("STTP_NATIVE")) {
