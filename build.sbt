@@ -459,7 +459,7 @@ lazy val playJson = crossProject(JSPlatform, JVMPlatform)
   .settings(
     name := "play-json",
     libraryDependencies ++= Seq(
-      "com.typesafe.play" %%% "play-json" % "2.7.3",
+      "com.typesafe.play" %%% "play-json" % "2.7.4",
       "org.scalatest" %%% "scalatest" % scalaTestVersion % "test"
     )
   )
