@@ -58,4 +58,4 @@ Class                            Response wrapper             Supported stream t
 
 Finally, there are third-party backends:
 
-* `sttp-play-ws <https://github.com/ragb/sttp-play-ws>` for "standard" play-ws (not standalone).
+* `sttp-play-ws <https://github.com/ragb/sttp-play-ws>`_ for "standard" play-ws (not standalone).
