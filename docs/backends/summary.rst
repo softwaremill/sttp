@@ -55,3 +55,7 @@ Class                            Response wrapper             Supported stream t
 ``CurlBackend``                  None (``id``)                n/a
 ``CurlTryBackend``               ``scala.util.Try``           n/a
 ================================ ============================ =========================================
+
+Finally, there are third-party backends:
+
+* `sttp-play-ws <https://github.com/ragb/sttp-play-ws>` for "standard" play-ws (not standalone).
