@@ -60,5 +60,8 @@ For example converting given request::
 
 will result in following curl command::
 
-    curl -L --max-redirs 32 -X GET -H "Accept-Encoding: gzip, deflate" "http://httpbin.org/ip"
+    curl -L --max-redirs 32 -X GET "http://httpbin.org/ip"
 
+Note that the ```Accept-Encoding`` header, which is added by default to all requests (```Accept-Encoding: gzip, deflate``)
+is filtered out from the generated command, so that when running a request from the command line, the result has higher
+chance of being human-readable, and not compressed.
