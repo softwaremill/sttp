@@ -281,7 +281,7 @@ lazy val zio: Project = (project in file("implementations/zio"))
     name := "zio",
     publishArtifact in Test := true,
     libraryDependencies ++= Seq(
-      "org.scalaz" %% "scalaz-zio" % "1.0-RC4"
+      "org.scalaz" %% "scalaz-zio" % "1.0-RC5"
       )
   )
   .settings(only2_12settings)
@@ -348,8 +348,8 @@ lazy val asyncHttpClientZioStreamsBackend: Project =
     .settings(
       only2_12settings,    
       libraryDependencies ++= Seq(
-      "org.scalaz" %% "scalaz-zio-streams" % "1.0-RC4",
-      "org.scalaz" %% "scalaz-zio-interop-reactivestreams" % "1.0-RC4"
+      "org.scalaz" %% "scalaz-zio-streams" % "1.0-RC5",
+      "org.scalaz" %% "scalaz-zio-interop-reactivestreams" % "1.0-RC5"
     ))
     .dependsOn(zio % "compile->compile;test->test")    
 
