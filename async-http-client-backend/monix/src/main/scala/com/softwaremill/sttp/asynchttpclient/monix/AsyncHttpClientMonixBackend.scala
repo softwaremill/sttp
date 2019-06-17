@@ -22,6 +22,10 @@ class AsyncHttpClientMonixBackend private (asyncHttpClient: AsyncHttpClient, clo
     implicit scheduler: Scheduler
 ) extends AsyncHttpClientBackend[Task, Observable[ByteBuffer]](asyncHttpClient, TaskMonadAsyncError, closeClient) {
 
+  override def send[T](r: Request[T, Observable[ByteBuffer]]): Task[Response[T]] = {
+    super.send(r).guarantee(Task.shift)
+  }
+
   override protected def streamBodyToPublisher(s: Observable[ByteBuffer]): Publisher[ByteBuf] =
     s.map(Unpooled.wrappedBuffer).toReactivePublisher
 
