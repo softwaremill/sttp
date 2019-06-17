@@ -270,7 +270,7 @@ lazy val monix = crossProject(JSPlatform, JVMPlatform)
   .settings(
     name := "monix",
     publishArtifact in Test := true,
-    libraryDependencies ++= Seq("io.monix" %%% "monix" % "3.0.0-RC2")
+    libraryDependencies ++= Seq("io.monix" %%% "monix" % "3.0.0-RC3")
   )
 lazy val monixJS = monix.js.dependsOn(coreJS % "compile->compile;test->test")
 lazy val monixJVM = monix.jvm.dependsOn(coreJVM % "compile->compile;test->test")
