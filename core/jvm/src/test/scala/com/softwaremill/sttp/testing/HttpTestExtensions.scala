@@ -1,7 +1,7 @@
 package com.softwaremill.sttp.testing
 
 import java.io.{File, IOException}
-import java.nio.file.{Files, Paths}
+import java.nio.file.Files
 import java.security.MessageDigest
 import java.time.{ZoneId, ZonedDateTime}
 

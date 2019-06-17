@@ -215,7 +215,7 @@ trait HttpTest[R[_]]
     }
   }
 
-  protected def cacheControlHeaders = Set("no-cache", "max-age=1000")
+  protected def cacheControlHeaders: Set[String] = Set("no-cache", "max-age=1000")
 
   "headers" - {
     def getHeaders = sttp.get(uri"$endpoint/set_headers")
@@ -300,11 +300,18 @@ trait HttpTest[R[_]]
         resp.unsafeBody should be(decompressedBody)
       }
     }
+
+    "not attempt to decompress HEAD requests" in {
+      val req = sttp.head(uri"$endpoint/compress")
+      req.send().toFuture().map { resp =>
+        resp.code shouldBe StatusCodes.Ok
+      }
+    }
   }
 
   // in JavaScript the only way to set the content type is to use a Blob which defaults the filename to 'blob'
   protected def multipartStringDefaultFileName: Option[String] = None
-  protected def defaultFileName = multipartStringDefaultFileName match {
+  protected def defaultFileName: String = multipartStringDefaultFileName match {
     case None       => ""
     case Some(name) => s" ($name)"
   }

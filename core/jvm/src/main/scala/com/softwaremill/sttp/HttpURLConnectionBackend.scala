@@ -14,6 +14,7 @@ import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 import scala.concurrent.duration.Duration
 import scala.io.Source
+import scala.util.Try
 
 class HttpURLConnectionBackend private (opts: SttpBackendOptions, customizeConnection: HttpURLConnection => Unit)
     extends SttpBackend[Id, Nothing] {
@@ -225,7 +226,9 @@ class HttpURLConnectionBackend private (opts: SttpBackendOptions, customizeConne
       .flatMap(encodingFromContentType)
 
     val code = c.getResponseCode
-    val wrappedIs = wrapInput(contentEncoding, handleNullInput(is))
+    val wrappedIs = if (c.getRequestMethod != "HEAD") {
+      wrapInput(contentEncoding, handleNullInput(is))
+    } else is
     val responseMetadata = ResponseMetadata(headers, code, c.getResponseMessage)
     val body = if (parseCondition(responseMetadata)) {
       Right(readResponseBody(wrappedIs, responseAs, charsetFromHeaders, responseMetadata))
