@@ -268,6 +268,7 @@ lazy val monix = crossProject(JSPlatform, JVMPlatform)
   .in(file("implementations/monix"))
   .jvmSettings(commonJvmSettings: _*)
   .jsSettings(commonJsSettings: _*)
+  .jsSettings(browserTestSettings)
   .jsSettings(testServerSettings(Test))
   .settings(
     name := "monix",
