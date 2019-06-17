@@ -180,7 +180,7 @@ object OkHttpBackend {
     else
       client
         .newBuilder()
-        .readTimeout(if (readTimeout.isFinite()) readTimeout.toMillis else 0, TimeUnit.MILLISECONDS)
+        .readTimeout(if (readTimeout.isFinite) readTimeout.toMillis else 0, TimeUnit.MILLISECONDS)
         .build()
 
   }

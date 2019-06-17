@@ -59,7 +59,7 @@ class SttpBackendStub[R[_], S] private (
     * specification that is added yields a new stub instance.
     */
   def whenRequestMatchesPartial(partial: PartialFunction[Request[_, _], Response[_]]): SttpBackendStub[R, S] = {
-    val wrappedPartial = partial.andThen(rm.unit)
+    val wrappedPartial = partial.andThen(rm.unit _)
     new SttpBackendStub(rm, matchers.orElse(wrappedPartial), fallback)
   }
 

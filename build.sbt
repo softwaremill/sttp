@@ -6,11 +6,12 @@ import com.softwaremill.Publish.Release.updateVersionInDocs
 
 val scala2_11 = "2.11.12"
 val scala2_12 = "2.12.8"
+val scala2_13 = "2.13.0"
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on (used by JS tests)")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests (used by JS tests)")
 lazy val is2_11 = settingKey[Boolean]("Is the scala version 2.11.")
-lazy val is2_12 = settingKey[Boolean]("Is the scala version 2.12.")
+lazy val is2_11_or_2_12 = settingKey[Boolean]("Is the scala version 2.11 or 2.12.")
 
 val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   organization := "com.softwaremill.sttp",
@@ -36,18 +37,11 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
     pushChanges
   ),
   is2_11 := (scalaVersion.value == scala2_11),
-  is2_12 := (scalaVersion.value == scala2_12)
+  is2_11_or_2_12 := (scalaVersion.value == scala2_11) || (scalaVersion.value == scala2_12)
 )
 
 // an ugly work-around for https://github.com/sbt/sbt/issues/3465
-// even if a project is 2.12-only, we fake that it's also 2.12-compatible
-val only2_12settings = Seq(
-  publishArtifact := is2_12.value,
-  skip := !is2_12.value,
-  skip in publish := !is2_12.value,
-  libraryDependencies := (if (is2_12.value) libraryDependencies.value else Nil)
-)
-
+// even if a project is 2.11-only, we fake that it's also 2.12/2.13-compatible
 val only2_11settings = Seq(
   publishArtifact := is2_11.value,
   skip := !is2_11.value,
@@ -55,9 +49,16 @@ val only2_11settings = Seq(
   libraryDependencies := (if (is2_11.value) libraryDependencies.value else Nil)
 )
 
+val only2_11_and_2_12_settings = Seq(
+  publishArtifact := is2_11_or_2_12.value,
+  skip := !is2_11_or_2_12.value,
+  skip in publish := !is2_11_or_2_12.value,
+  libraryDependencies := (if (is2_11_or_2_12.value) libraryDependencies.value else Nil)
+)
+
 val commonJvmJsSettings = commonSettings ++ Seq(
   scalaVersion := scala2_11,
-  crossScalaVersions := Seq(scalaVersion.value, scala2_12)
+  crossScalaVersions := Seq(scalaVersion.value, scala2_12, scala2_13)
 )
 
 val commonJvmSettings = commonJvmJsSettings
@@ -257,6 +258,7 @@ lazy val cats = crossProject(JSPlatform, JVMPlatform)
     publishArtifact in Test := true,
     libraryDependencies ++= Seq("org.typelevel" %%% "cats-effect" % "1.3.1")
   )
+  .settings(only2_11_and_2_12_settings)
 lazy val catsJS = cats.js.dependsOn(coreJS % "compile->compile;test->test")
 lazy val catsJVM = cats.jvm.dependsOn(coreJVM % "compile->compile;test->test")
 
@@ -272,6 +274,7 @@ lazy val monix = crossProject(JSPlatform, JVMPlatform)
     publishArtifact in Test := true,
     libraryDependencies ++= Seq("io.monix" %%% "monix" % "3.0.0-RC3")
   )
+  .settings(only2_11_and_2_12_settings)
 lazy val monixJS = monix.js.dependsOn(coreJS % "compile->compile;test->test")
 lazy val monixJVM = monix.jvm.dependsOn(coreJVM % "compile->compile;test->test")
 
@@ -281,10 +284,10 @@ lazy val zio: Project = (project in file("implementations/zio"))
     name := "zio",
     publishArtifact in Test := true,
     libraryDependencies ++= Seq(
-      "org.scalaz" %% "scalaz-zio" % "1.0-RC4"
-      )
+      "org.scalaz" %% "scalaz-zio" % "1.0-RC5"
+    )
   )
-  .settings(only2_12settings)
+  .settings(only2_11_and_2_12_settings)
   .dependsOn(coreJVM % "compile->compile;test->test")
 
 lazy val scalaz: Project = (project in file("implementations/scalaz"))
@@ -340,25 +343,28 @@ lazy val asyncHttpClientScalazBackend: Project =
 
 lazy val asyncHttpClientZioBackend: Project =
   asyncHttpClientBackendProject("zio")
-    .settings(only2_12settings)
+    .settings(only2_11_and_2_12_settings)
     .dependsOn(zio % "compile->compile;test->test")
 
 lazy val asyncHttpClientZioStreamsBackend: Project =
   asyncHttpClientBackendProject("zio-streams")
     .settings(
-      only2_12settings,    
       libraryDependencies ++= Seq(
-      "org.scalaz" %% "scalaz-zio-streams" % "1.0-RC4",
-      "org.scalaz" %% "scalaz-zio-interop-reactivestreams" % "1.0-RC4"
-    ))
-    .dependsOn(zio % "compile->compile;test->test")    
+        "org.scalaz" %% "scalaz-zio-streams" % "1.0-RC5",
+        "org.scalaz" %% "scalaz-zio-interop-reactivestreams" % "1.0-RC5"
+      )
+    )
+    .settings(only2_11_and_2_12_settings)
+    .dependsOn(zio % "compile->compile;test->test")
 
 lazy val asyncHttpClientMonixBackend: Project =
   asyncHttpClientBackendProject("monix")
+    .settings(only2_11_and_2_12_settings)
     .dependsOn(monixJVM % "compile->compile;test->test")
 
 lazy val asyncHttpClientCatsBackend: Project =
   asyncHttpClientBackendProject("cats")
+    .settings(only2_11_and_2_12_settings)
     .dependsOn(catsJVM % "compile->compile;test->test")
 
 lazy val asyncHttpClientFs2Backend: Project =
@@ -368,6 +374,7 @@ lazy val asyncHttpClientFs2Backend: Project =
         "co.fs2" %% "fs2-reactive-streams" % "1.0.5"
       )
     )
+    .settings(only2_11_and_2_12_settings)
     .dependsOn(catsJVM % "compile->compile;test->test")
 
 //-- okhttp
@@ -390,6 +397,7 @@ def okhttpBackendProject(proj: String): Project = {
 
 lazy val okhttpMonixBackend: Project =
   okhttpBackendProject("monix")
+    .settings(only2_11_and_2_12_settings)
     .dependsOn(monixJVM % "compile->compile;test->test")
 
 lazy val jsonCommon = crossProject(JSPlatform, JVMPlatform)
@@ -422,6 +430,7 @@ lazy val circe = crossProject(JSPlatform, JVMPlatform)
       "org.scalatest" %%% "scalatest" % scalaTestVersion % "test"
     )
   )
+  .settings(only2_11_and_2_12_settings)
 lazy val circeJS = circe.js.dependsOn(coreJS, jsonCommonJS)
 lazy val circeJVM = circe.jvm.dependsOn(coreJVM, jsonCommonJVM)
 
@@ -466,7 +475,7 @@ lazy val playJson = crossProject(JSPlatform, JVMPlatform)
 lazy val playJsonJS = playJson.js.dependsOn(coreJS, jsonCommonJS)
 lazy val playJsonJVM = playJson.jvm.dependsOn(coreJVM, jsonCommonJVM)
 
-lazy val braveVersion = "5.6.5"
+lazy val braveVersion = "5.6.4"
 
 lazy val braveBackend: Project = (project in file("metrics/brave-backend"))
   .settings(commonJvmSettings: _*)

@@ -96,7 +96,7 @@ class HttpURLConnectionBackend private (opts: SttpBackendOptions, customizeConne
   }
 
   private def timeout(t: Duration): Int =
-    if (t.isFinite()) t.toMillis.toInt
+    if (t.isFinite) t.toMillis.toInt
     else 0
 
   private def writeBasicBody(body: BasicRequestBody, os: OutputStream): Unit = {
