@@ -79,7 +79,7 @@ val commonJsSettings = commonJvmJsSettings ++ Seq(
         s"-P:scalajs:mapSourceURI:$dir->$url/v${version.value}/"
       }
   }
-) ++ browserTestSettings
+)
 
 val commonNativeSettings = commonSettings ++ Seq(
   organization := "com.softwaremill.sttp",
