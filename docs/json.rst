@@ -25,7 +25,7 @@ This module adds a method to the request and a function that can be given to a r
   // for the request Payload, and a decoder for the MyResponse
   val requestPayload: Payload = ???
   
-  val response: Response[Either[io.circe.Error, MyResponse]] =
+  val response: Response[Either[DeserializationError[io.circe.Error], MyResponse]] =
     sttp
       .post(uri"...")
       .body(requestPayload)
@@ -104,7 +104,7 @@ Usage example::
 play-json
 ----------
 
-To encode and decode JSON using `play-json <https://www.playframework.com/documentat…>`_, add the following dependency to your project::
+To encode and decode JSON using `play-json <https://www.playframework.com>`_, add the following dependency to your project::
 
   "com.softwaremill.sttp" %% "play-json" % "1.6.0"
 
