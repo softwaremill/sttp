@@ -296,7 +296,7 @@ lazy val scalaz: Project = (project in file("implementations/scalaz"))
   .settings(
     name := "scalaz",
     publishArtifact in Test := true,
-    libraryDependencies ++= Seq("org.scalaz" %% "scalaz-concurrent" % "7.2.27")
+    libraryDependencies ++= Seq("org.scalaz" %% "scalaz-concurrent" % "7.2.28")
   )
   .dependsOn(coreJVM % "compile->compile;test->test")
 
@@ -322,7 +322,7 @@ lazy val asyncHttpClientBackend: Project =
     .settings(
       name := "async-http-client-backend",
       libraryDependencies ++= Seq(
-        "org.asynchttpclient" % "async-http-client" % "2.10.0"
+        "org.asynchttpclient" % "async-http-client" % "2.10.1"
       )
     )
     .dependsOn(coreJVM % "compile->compile;test->test")
@@ -384,7 +384,7 @@ lazy val okhttpBackend: Project = (project in file("okhttp-backend"))
   .settings(
     name := "okhttp-backend",
     libraryDependencies ++= Seq(
-      "com.squareup.okhttp3" % "okhttp" % "3.14.2"
+      "com.squareup.okhttp3" % "okhttp" % "4.0.0"
     )
   )
   .dependsOn(coreJVM % "compile->compile;test->test")
@@ -435,7 +435,7 @@ lazy val circe = crossProject(JSPlatform, JVMPlatform)
 lazy val circeJS = circe.js.dependsOn(coreJS, jsonCommonJS)
 lazy val circeJVM = circe.jvm.dependsOn(coreJVM, jsonCommonJVM)
 
-lazy val json4sVersion = "3.6.6"
+lazy val json4sVersion = "3.6.7"
 
 lazy val json4s: Project = (project in file("json/json4s"))
   .settings(commonJvmSettings: _*)
