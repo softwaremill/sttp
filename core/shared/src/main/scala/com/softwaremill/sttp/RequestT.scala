@@ -204,6 +204,9 @@ case class RequestT[U[_], T, +S](
   def mapResponse[T2](f: T => T2): RequestT[U, T2, S] =
     this.copy(response = response.map(f))
 
+  def flatMapResponse[T2, S2 >: S](f: T => Request[T2, S2]) =
+    this.copy(response = response.flatMap(f))
+
   def followRedirects(fr: Boolean): RequestT[U, T, S] =
     this.copy(options = options.copy(followRedirects = fr))
 

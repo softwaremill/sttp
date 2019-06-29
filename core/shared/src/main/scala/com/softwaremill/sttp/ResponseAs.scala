@@ -13,6 +13,9 @@ import scala.util.Try
 sealed trait ResponseAs[T, +S] {
   def map[T2](f: T => T2): ResponseAs[T2, S] = mapWithMetadata { case (t, _) => f(t) }
   def mapWithMetadata[T2](f: (T, ResponseMetadata) => T2): ResponseAs[T2, S]
+
+  def flatMap[T2, S2 >: S](f: T => Request[T2, S2]): ResponseAs[T2, S2] = flatMapWithMetadata { case (t, _) => f(t) }
+  def flatMapWithMetadata[T2, S2 >: S](f: (T, ResponseMetadata) => Request[T2, S2]): ResponseAs[T2, S2]
 }
 
 /**
@@ -22,6 +25,9 @@ sealed trait ResponseAs[T, +S] {
 sealed trait BasicResponseAs[T, +S] extends ResponseAs[T, S] {
   override def mapWithMetadata[T2](f: (T, ResponseMetadata) => T2): ResponseAs[T2, S] =
     MappedResponseAs[T, T2, S](this, f)
+
+  override def flatMapWithMetadata[T2, S2 >: S](f: (T, ResponseMetadata) => Request[T2, S2]): ResponseAs[T2, S2] =
+    FlatMappedResponseAs(this, f)
 }
 
 case object IgnoreResponse extends BasicResponseAs[Unit, Nothing]
@@ -33,6 +39,20 @@ case class MappedResponseAs[T, T2, S](raw: BasicResponseAs[T, S], g: (T, Respons
     extends ResponseAs[T2, S] {
   override def mapWithMetadata[T3](f: (T2, ResponseMetadata) => T3): ResponseAs[T3, S] =
     MappedResponseAs[T, T3, S](raw, (t, h) => f(g(t, h), h))
+
+  override def flatMapWithMetadata[T3, S2 >: S](f: (T2, ResponseMetadata) => Request[T3, S2]) =
+    FlatMappedResponseAs[T, T3, S2](raw, (t, h) => f(g(t, h), h))
+}
+
+case class FlatMappedResponseAs[T, T2, S](raw: BasicResponseAs[T, S], g: (T, ResponseMetadata) => Request[T2, S])
+    extends BasicResponseAs[T2, S] {
+
+  override def mapWithMetadata[T3](f: (T2, ResponseMetadata) => T3) =
+    MappedResponseAs(this, f)
+
+  override def flatMapWithMetadata[T3, S2 >: S](f: (T2, ResponseMetadata) => Request[T3, S2]): ResponseAs[T3, S2] = {
+    FlatMappedResponseAs(this, f)
+  }
 }
 
 case class ResponseAsFile(output: SttpFile, overwrite: Boolean) extends BasicResponseAs[SttpFile, Nothing]
