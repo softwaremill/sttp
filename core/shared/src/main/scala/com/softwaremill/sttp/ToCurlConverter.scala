@@ -8,7 +8,7 @@ class ToCurlConverter[R <: RequestT[Id, _, _]] {
       .reduce((acc, item) => r => acc(r) + item(r))
       .apply(request)
 
-    s"""curl$params "${request.uri}""""
+    s"""curl$params '${request.uri}'"""
   }
 
   private def extractMethod(r: R): String = {
@@ -20,7 +20,7 @@ class ToCurlConverter[R <: RequestT[Id, _, _]] {
     // filtering out compression headers so that the results are human-readable, if possible
       .filterNot(_._1.equalsIgnoreCase(HeaderNames.AcceptEncoding))
       .collect {
-        case (k, v) => s"""-H "$k: $v""""
+        case (k, v) => s"""-H '$k: $v'"""
       }
       .mkString(" ")
   }
@@ -28,8 +28,8 @@ class ToCurlConverter[R <: RequestT[Id, _, _]] {
   private def extractBody(r: R): String = {
     r.body match {
       case StringBody(text, _, _) if r.headers.toMap.get(HeaderNames.ContentType).forall(_ == MediaTypes.Form) =>
-        s"""-F '${text.replace("'", "\"'\"")}'"""
-      case StringBody(text, _, _) => s"""--data '${text.replace("'", "\"'\"")}'"""
+        s"""-F '${text.replace("'", "\\'")}'"""
+      case StringBody(text, _, _) => s"""--data '${text.replace("'", "\\'")}'"""
       case ByteArrayBody(_, _)    => s"--data-binary <PLACEHOLDER>"
       case ByteBufferBody(_, _)   => s"--data-binary <PLACEHOLDER>"
       case InputStreamBody(_, _)  => s"--data-binary <PLACEHOLDER>"
