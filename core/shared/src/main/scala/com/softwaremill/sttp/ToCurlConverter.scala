@@ -28,8 +28,8 @@ class ToCurlConverter[R <: RequestT[Id, _, _]] {
   private def extractBody(r: R): String = {
     r.body match {
       case StringBody(text, _, _) if r.headers.toMap.get(HeaderNames.ContentType).forall(_ == MediaTypes.Form) =>
-        s"""-F '${text.replace("'", "\"'\"")}'"""
-      case StringBody(text, _, _) => s"""--data '${text.replace("'", "\"'\"")}'"""
+        s"""-F "${text.replace("\"", "\\\"")}""""
+      case StringBody(text, _, _) => s"""--data "${text.replace("\"", "\\\"")}""""
       case ByteArrayBody(_, _)    => s"--data-binary <PLACEHOLDER>"
       case ByteBufferBody(_, _)   => s"--data-binary <PLACEHOLDER>"
       case InputStreamBody(_, _)  => s"--data-binary <PLACEHOLDER>"
