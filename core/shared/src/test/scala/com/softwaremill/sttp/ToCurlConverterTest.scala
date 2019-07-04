@@ -12,7 +12,7 @@ class ToCurlConverterTest extends FlatSpec with Matchers {
   it should "convert base request" in {
     sttp
       .get(uri"$localhost")
-      .toCurl shouldBe """curl -L --max-redirs 32 -X GET "http://localhost""""
+      .toCurl shouldBe """curl -L --max-redirs 32 -X GET 'http://localhost'"""
   }
 
   it should "convert request with method to curl" in {
@@ -27,25 +27,25 @@ class ToCurlConverterTest extends FlatSpec with Matchers {
 
   it should "convert request with header" in {
     sttp.header("User-Agent", "myapp").get(localhost).toCurl should include(
-      """-H "User-Agent: myapp""""
+      """-H 'User-Agent: myapp'"""
     )
   }
 
   it should "convert request with body" in {
     sttp.body(Map("name" -> "john", "org" -> "sml")).post(localhost).toCurl should include(
-      """-H "Content-Type: application/x-www-form-urlencoded" -H "Content-Length: 17" -F "name=john&org=sml""""
+      """-H 'Content-Type: application/x-www-form-urlencoded' -H 'Content-Length: 17' -F 'name=john&org=sml'"""
     )
     sttp.body("name=john").post(localhost).toCurl should include(
-      """-H "Content-Type: text/plain; charset=utf-8" -H "Content-Length: 9" --data "name=john""""
+      """-H 'Content-Type: text/plain; charset=utf-8' -H 'Content-Length: 9' --data 'name=john'"""
     )
     sttp.body("name=john", StandardCharsets.ISO_8859_1.name()).post(localhost).toCurl should include(
-      """ -H "Content-Type: text/plain; charset=ISO-8859-1" -H "Content-Length: 9" --data "name=john""""
+      """-H 'Content-Type: text/plain; charset=ISO-8859-1' -H 'Content-Length: 9' --data 'name=john'"""
     )
     sttp.body("name='john'").post(localhost).toCurl should include(
-      """-H "Content-Type: text/plain; charset=utf-8" -H "Content-Length: 11" --data "name='john'""""
+      """-H 'Content-Type: text/plain; charset=utf-8' -H 'Content-Length: 11' --data 'name=\'john\''"""
     )
     sttp.body("name=\"john\"").post(localhost).toCurl should include(
-      """-H "Content-Type: text/plain; charset=utf-8" -H "Content-Length: 11" --data "name=\"john\"""""
+      """-H 'Content-Type: text/plain; charset=utf-8' -H 'Content-Length: 11' --data 'name="john"'"""
     )
   }
 
