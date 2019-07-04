@@ -44,6 +44,9 @@ class ToCurlConverterTest extends FlatSpec with Matchers {
     sttp.body("name='john'").post(localhost).toCurl should include(
       """-H "Content-Type: text/plain; charset=utf-8" -H "Content-Length: 11" --data "name='john'""""
     )
+    sttp.body("name=\"john\"").post(localhost).toCurl should include(
+      """-H "Content-Type: text/plain; charset=utf-8" -H "Content-Length: 11" --data "name=\"john\"""""
+    )
   }
 
   it should "convert request with options" in {
