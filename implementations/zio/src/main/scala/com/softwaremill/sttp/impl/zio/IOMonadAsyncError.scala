@@ -1,7 +1,7 @@
 package com.softwaremill.sttp.impl.zio
 
 import com.softwaremill.sttp.MonadAsyncError
-import scalaz.zio.{IO, ZIO}
+import zio.{IO, ZIO}
 
 object IOMonadAsyncError extends MonadAsyncError[IO[Throwable, ?]] {
   override def unit[T](t: T): IO[Throwable, T] = IO.succeed(t)

@@ -1,11 +1,12 @@
 package com.softwaremill.sttp.asynchttpclient.ziostreams
 
 import java.nio.ByteBuffer
+
 import com.softwaremill.sttp.SttpBackend
 import com.softwaremill.sttp.impl.zio.convertZioIoToFuture
 import com.softwaremill.sttp.testing.{ConvertToFuture, HttpTest}
-import scalaz.zio._
-import scalaz.zio.stream._
+import zio._
+import zio.stream._
 
 class AsyncHttpClientZioStreamsHttpTest extends HttpTest[Task] {
 

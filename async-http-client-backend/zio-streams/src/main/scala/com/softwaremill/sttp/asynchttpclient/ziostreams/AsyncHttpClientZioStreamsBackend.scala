@@ -2,12 +2,11 @@ package com.softwaremill.sttp.asynchttpclient.ziostreams
 
 import java.nio.ByteBuffer
 
-import com.softwaremill.sttp._
-import com.softwaremill.sttp.internal._
 import com.softwaremill.sttp.asynchttpclient.AsyncHttpClientBackend
 import com.softwaremill.sttp.impl.zio.IOMonadAsyncError
+import com.softwaremill.sttp.internal._
 import com.softwaremill.sttp.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
-import io.netty.buffer.ByteBuf
+import io.netty.buffer.{ByteBuf, Unpooled}
 import org.asynchttpclient.{
   AsyncHttpClient,
   AsyncHttpClientConfig,
@@ -15,10 +14,9 @@ import org.asynchttpclient.{
   DefaultAsyncHttpClientConfig
 }
 import org.reactivestreams.Publisher
-import io.netty.buffer.{ByteBuf, Unpooled}
-import scalaz.zio._
-import scalaz.zio.stream._
-import scalaz.zio.interop.reactiveStreams._
+import zio._
+import zio.interop.reactiveStreams._
+import zio.stream._
 
 class AsyncHttpClientZioStreamsBackend[R] private (
     runtime: Runtime[R],

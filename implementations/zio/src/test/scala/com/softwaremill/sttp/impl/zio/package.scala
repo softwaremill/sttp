@@ -1,7 +1,7 @@
 package com.softwaremill.sttp.impl
 
 import com.softwaremill.sttp.testing.ConvertToFuture
-import scalaz.zio._
+import _root_.zio._
 
 import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success}
@@ -14,13 +14,13 @@ package object zio {
       val runtime = new DefaultRuntime {}
 
       runtime.unsafeRunSync(value) match {
-        case scalaz.zio.Exit.Failure(c) =>
+        case Exit.Failure(c) =>
           p.complete(
             Failure(
               c.failures.headOption.orElse(c.defects.headOption).getOrElse(new RuntimeException(s"Unknown cause: $c"))
             )
           )
-        case scalaz.zio.Exit.Success(v) => p.complete(Success(v))
+        case Exit.Success(v) => p.complete(Success(v))
       }
 
       p.future

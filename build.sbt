@@ -285,7 +285,7 @@ lazy val zio: Project = (project in file("implementations/zio"))
     name := "zio",
     publishArtifact in Test := true,
     libraryDependencies ++= Seq(
-      "org.scalaz" %% "scalaz-zio" % "1.0-RC5"
+      "dev.zio" %% "zio" % "1.0.0-RC9-4"
     )
   )
   .settings(only2_11_and_2_12_settings)
@@ -351,8 +351,8 @@ lazy val asyncHttpClientZioStreamsBackend: Project =
   asyncHttpClientBackendProject("zio-streams")
     .settings(
       libraryDependencies ++= Seq(
-        "org.scalaz" %% "scalaz-zio-streams" % "1.0-RC5",
-        "org.scalaz" %% "scalaz-zio-interop-reactivestreams" % "1.0-RC5"
+        "dev.zio" %% "zio-streams" % "1.0.0-RC9-4",
+        "dev.zio" %% "zio-interop-reactivestreams" % "1.0.2-RC1"
       )
     )
     .settings(only2_11_and_2_12_settings)
@@ -476,7 +476,7 @@ lazy val playJson = crossProject(JSPlatform, JVMPlatform)
 lazy val playJsonJS = playJson.js.dependsOn(coreJS, jsonCommonJS)
 lazy val playJsonJVM = playJson.jvm.dependsOn(coreJVM, jsonCommonJVM)
 
-lazy val braveVersion = "5.6.4"
+lazy val braveVersion = "5.6.8"
 
 lazy val braveBackend: Project = (project in file("metrics/brave-backend"))
   .settings(commonJvmSettings: _*)
