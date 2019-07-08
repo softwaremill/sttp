@@ -36,8 +36,8 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
     releaseStepCommand("sonatypeReleaseAll"),
     pushChanges
   ),
-  is2_11 := (scalaVersion.value == scala2_11),
-  is2_11_or_2_12 := (scalaVersion.value == scala2_11) || (scalaVersion.value == scala2_12)
+  is2_11 := scalaVersion.value.startsWith("2.11."),
+  is2_11_or_2_12 := scalaVersion.value.startsWith("2.11.") || scalaVersion.value.startsWith("2.12.")
 )
 
 // an ugly work-around for https://github.com/sbt/sbt/issues/3465
