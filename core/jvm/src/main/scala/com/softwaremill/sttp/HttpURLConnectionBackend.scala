@@ -16,7 +16,7 @@ import scala.concurrent.duration.Duration
 import scala.io.Source
 import scala.util.Try
 
-class HttpURLConnectionBackend private (opts: SttpBackendOptions, customizeConnection: HttpURLConnection => Unit)
+class HttpURLConnectionBackend protected (opts: SttpBackendOptions, customizeConnection: HttpURLConnection => Unit)
     extends SttpBackend[Id, Nothing] {
 
   override def send[T](r: Request[T, Nothing]): Response[T] = {
@@ -56,7 +56,7 @@ class HttpURLConnectionBackend private (opts: SttpBackendOptions, customizeConne
 
   override val responseMonad: MonadError[Id] = IdMonad
 
-  private def openConnection(uri: Uri): HttpURLConnection = {
+  protected def openConnection(uri: Uri): HttpURLConnection = {
     val url = new URL(uri.toString)
     val conn = opts.proxy match {
       case Some(p) if !p.ignoreProxy(uri.host) =>
