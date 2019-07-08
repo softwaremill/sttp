@@ -141,6 +141,35 @@ In the example above, the stub's rules specify that a response with a ``String``
 
 Note that no conversions will be attempted for streaming response bodies.
 
+Example: returning a file
+-------------------------
+
+If you want to return a file and have a response handler set up like this::
+
+  val destination = new File("path/to/file.ext")
+  sttp.get(uri"http://example.com").response(asFile(destination))
+
+Then set up the mock like this::
+
+  val fileResponseHandle = new File("path/to/file.ext")
+  SttpBackendStub.synchronous
+    .whenRequestMatches(_ => true)
+    .thenRespond(fileResponseHandle)
+
+the ``File`` set up in the stub will be returned as though it was the ``File`` set up as ``destination`` in the response handler above.
+This means that the file from ``fileResponseHandle`` is not written to ``destination``.
+
+If you actually want a file to be written you can set up the stub like this::
+
+  val sourceFile = new File("path/to/file.ext")
+  val destinationFile = new File("path/to/file.ext")
+  SttpBackendStub.synchronous
+    .whenRequestMatches(_ => true)
+    .thenRespondWrapped { _ =>
+      FileUtils.copyFile(sourceFile, destinationFile) // org.apache.commons.io
+      IO(Response(Right(destinationFile, 200, ""))
+    }
+
 Delegating to another backend
 -----------------------------
 
