@@ -1,7 +1,7 @@
 package com.softwaremill.sttp
 
 import java.io._
-import java.net.{Authenticator, HttpURLConnection, PasswordAuthentication, URL}
+import java.net.{Authenticator, HttpURLConnection, PasswordAuthentication, URL, URLConnection}
 import java.nio.channels.Channels
 import java.nio.charset.CharacterCodingException
 import java.nio.file.Files
@@ -16,7 +16,7 @@ import scala.concurrent.duration.Duration
 import scala.io.Source
 import scala.util.Try
 
-class HttpURLConnectionBackend private (opts: SttpBackendOptions, customizeConnection: HttpURLConnection => Unit)
+class HttpURLConnectionBackend protected (opts: SttpBackendOptions, customizeConnection: HttpURLConnection => Unit)
     extends SttpBackend[Id, Nothing] {
 
   override def send[T](r: Request[T, Nothing]): Response[T] = {
@@ -68,12 +68,16 @@ class HttpURLConnectionBackend private (opts: SttpBackendOptions, customizeConne
           })
         }
 
-        url.openConnection(p.asJavaProxy)
-      case _ => url.openConnection()
+        openConnection(url, p.asJavaProxy)
+      case _ => openConnection(url)
     }
 
     conn.asInstanceOf[HttpURLConnection]
   }
+
+  protected def openConnection(url: URL, p: java.net.Proxy): URLConnection = url.openConnection(p)
+
+  protected def openConnection(url: URL): URLConnection = url.openConnection()
 
   private def writeBody(body: RequestBody[Nothing], c: HttpURLConnection): Option[OutputStream] = {
     body match {
