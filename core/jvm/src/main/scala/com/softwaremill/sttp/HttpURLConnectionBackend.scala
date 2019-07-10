@@ -1,7 +1,7 @@
 package com.softwaremill.sttp
 
 import java.io._
-import java.net.{Authenticator, HttpURLConnection, PasswordAuthentication, URL}
+import java.net.{Authenticator, HttpURLConnection, PasswordAuthentication, URL, URLConnection}
 import java.nio.channels.Channels
 import java.nio.charset.CharacterCodingException
 import java.nio.file.Files
@@ -75,9 +75,9 @@ class HttpURLConnectionBackend protected (opts: SttpBackendOptions, customizeCon
     conn.asInstanceOf[HttpURLConnection]
   }
 
-  protected def openConnection(url: URL, p: java.net.Proxy): HttpURLConnection = url.openConnection(p)
+  protected def openConnection(url: URL, p: java.net.Proxy): URLConnection = url.openConnection(p)
 
-  protected def openConnection(url: URL): HttpURLConnection = url.openConnection()
+  protected def openConnection(url: URL): URLConnection = url.openConnection()
 
   private def writeBody(body: RequestBody[Nothing], c: HttpURLConnection): Option[OutputStream] = {
     body match {
