@@ -384,7 +384,7 @@ lazy val okhttpBackend: Project = (project in file("okhttp-backend"))
   .settings(
     name := "okhttp-backend",
     libraryDependencies ++= Seq(
-      "com.squareup.okhttp3" % "okhttp" % "4.0.0"
+      "com.squareup.okhttp3" % "okhttp" % "4.0.1"
     )
   )
   .dependsOn(coreJVM % "compile->compile;test->test")
