@@ -14,10 +14,13 @@ import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 import scala.concurrent.duration.Duration
 import scala.io.Source
-import scala.util.Try
 
-class HttpURLConnectionBackend protected (opts: SttpBackendOptions, customizeConnection: HttpURLConnection => Unit)
-    extends SttpBackend[Id, Nothing] {
+class HttpURLConnectionBackend private (
+    opts: SttpBackendOptions,
+    customizeConnection: HttpURLConnection => Unit,
+    createURL: String => URL,
+    openConnection: (URL, Option[java.net.Proxy]) => URLConnection
+) extends SttpBackend[Id, Nothing] {
 
   override def send[T](r: Request[T, Nothing]): Response[T] = {
     val c = openConnection(r.uri)
@@ -57,7 +60,7 @@ class HttpURLConnectionBackend protected (opts: SttpBackendOptions, customizeCon
   override val responseMonad: MonadError[Id] = IdMonad
 
   private def openConnection(uri: Uri): HttpURLConnection = {
-    val url = new URL(uri.toString)
+    val url = createURL(uri.toString)
     val conn = opts.proxy match {
       case Some(p) if !p.ignoreProxy(uri.host) =>
         p.auth.foreach { proxyAuth =>
@@ -68,16 +71,12 @@ class HttpURLConnectionBackend protected (opts: SttpBackendOptions, customizeCon
           })
         }
 
-        openConnection(url, p.asJavaProxy)
-      case _ => openConnection(url)
+        openConnection(url, Some(p.asJavaProxy))
+      case _ => openConnection(url, None)
     }
 
     conn.asInstanceOf[HttpURLConnection]
   }
-
-  protected def openConnection(url: URL, p: java.net.Proxy): URLConnection = url.openConnection(p)
-
-  protected def openConnection(url: URL): URLConnection = url.openConnection()
 
   private def writeBody(body: RequestBody[Nothing], c: HttpURLConnection): Option[OutputStream] = {
     body match {
@@ -300,9 +299,14 @@ object HttpURLConnectionBackend {
 
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default,
-      customizeConnection: HttpURLConnection => Unit = { _ =>
-        ()
+      customizeConnection: HttpURLConnection => Unit = _ => (),
+      createURL: String => URL = new URL(_),
+      openConnection: (URL, Option[java.net.Proxy]) => URLConnection = {
+        case (url, None)        => url.openConnection()
+        case (url, Some(proxy)) => url.openConnection(proxy)
       }
   ): SttpBackend[Id, Nothing] =
-    new FollowRedirectsBackend[Id, Nothing](new HttpURLConnectionBackend(options, customizeConnection))
+    new FollowRedirectsBackend[Id, Nothing](
+      new HttpURLConnectionBackend(options, customizeConnection, createURL, openConnection)
+    )
 }
