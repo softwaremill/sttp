@@ -56,7 +56,7 @@ class HttpURLConnectionBackend protected (opts: SttpBackendOptions, customizeCon
 
   override val responseMonad: MonadError[Id] = IdMonad
 
-  protected def openConnection(uri: Uri): HttpURLConnection = {
+  private def openConnection(uri: Uri): HttpURLConnection = {
     val url = new URL(uri.toString)
     val conn = opts.proxy match {
       case Some(p) if !p.ignoreProxy(uri.host) =>
@@ -68,12 +68,16 @@ class HttpURLConnectionBackend protected (opts: SttpBackendOptions, customizeCon
           })
         }
 
-        url.openConnection(p.asJavaProxy)
-      case _ => url.openConnection()
+        openConnection(url, p.asJavaProxy)
+      case _ => openConnection(url)
     }
 
     conn.asInstanceOf[HttpURLConnection]
   }
+
+  protected def openConnection(url: URL, p: java.net.Proxy): HttpURLConnection = url.openConnection(p)
+
+  protected def openConnection(url: URL): HttpURLConnection = url.openConnection()
 
   private def writeBody(body: RequestBody[Nothing], c: HttpURLConnection): Option[OutputStream] = {
     body match {
