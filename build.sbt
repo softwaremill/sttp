@@ -129,11 +129,27 @@ def testServerSettings(config: Configuration) = Seq(
   })
 )
 
+val circeVersion: Option[(Long, Long)] => String = {
+  case Some((2, 13)) => "0.12.0-M4"
+  case _             => "0.11.1"
+}
+val catsEffectVersion: Option[(Long, Long)] => String = {
+  case Some((2, 13)) => "2.0.0-M4"
+  case _             => "1.3.1"
+}
+val fs2Version: Option[(Long, Long)] => String = {
+  case Some((2, 13)) => "1.1.0-M1"
+  case _             => "1.0.5"
+}
+
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.8"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % "2.5.23"
 
 val scalaTestVersion = "3.0.8"
 val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion
+
+def dependenciesFor(version: String)(deps: (Option[(Long, Long)] => ModuleID)*): Seq[ModuleID] =
+  deps.map(_.apply(CrossVersion.partialVersion(version)))
 
 lazy val rootProjectAggregates: Seq[ProjectReference] = if (sys.env.isDefinedAt("STTP_NATIVE")) {
   println("[info] STTP_NATIVE defined, including sttp-native in the aggregate projects")
@@ -256,9 +272,10 @@ lazy val cats = crossProject(JSPlatform, JVMPlatform)
   .settings(
     name := "cats",
     publishArtifact in Test := true,
-    libraryDependencies ++= Seq("org.typelevel" %%% "cats-effect" % "1.3.1")
+    libraryDependencies ++= dependenciesFor(scalaVersion.value)(
+      "org.typelevel" %%% "cats-effect" % catsEffectVersion(_)
+    )
   )
-  .settings(only2_11_and_2_12_settings)
 lazy val catsJS = cats.js.dependsOn(coreJS % "compile->compile;test->test")
 lazy val catsJVM = cats.jvm.dependsOn(coreJVM % "compile->compile;test->test")
 
@@ -288,7 +305,6 @@ lazy val zio: Project = (project in file("implementations/zio"))
       "dev.zio" %% "zio" % "1.0.0-RC10-1"
     )
   )
-  .settings(only2_11_and_2_12_settings)
   .dependsOn(coreJVM % "compile->compile;test->test")
 
 lazy val scalaz: Project = (project in file("implementations/scalaz"))
@@ -344,7 +360,6 @@ lazy val asyncHttpClientScalazBackend: Project =
 
 lazy val asyncHttpClientZioBackend: Project =
   asyncHttpClientBackendProject("zio")
-    .settings(only2_11_and_2_12_settings)
     .dependsOn(zio % "compile->compile;test->test")
 
 lazy val asyncHttpClientZioStreamsBackend: Project =
@@ -365,17 +380,15 @@ lazy val asyncHttpClientMonixBackend: Project =
 
 lazy val asyncHttpClientCatsBackend: Project =
   asyncHttpClientBackendProject("cats")
-    .settings(only2_11_and_2_12_settings)
     .dependsOn(catsJVM % "compile->compile;test->test")
 
 lazy val asyncHttpClientFs2Backend: Project =
   asyncHttpClientBackendProject("fs2")
     .settings(
-      libraryDependencies ++= Seq(
-        "co.fs2" %% "fs2-reactive-streams" % "1.0.5"
+      libraryDependencies ++= dependenciesFor(scalaVersion.value)(
+        "co.fs2" %% "fs2-reactive-streams" % fs2Version(_)
       )
     )
-    .settings(only2_11_and_2_12_settings)
     .dependsOn(catsJVM % "compile->compile;test->test")
 
 //-- okhttp
@@ -414,8 +427,6 @@ lazy val jsonCommon = crossProject(JSPlatform, JVMPlatform)
 lazy val jsonCommonJVM = jsonCommon.jvm
 lazy val jsonCommonJS = jsonCommon.js
 
-lazy val circeVersion = "0.11.1"
-
 //----- json
 lazy val circe = crossProject(JSPlatform, JVMPlatform)
   .withoutSuffixFor(JVMPlatform)
@@ -425,13 +436,13 @@ lazy val circe = crossProject(JSPlatform, JVMPlatform)
   .jsSettings(commonJsSettings: _*)
   .settings(
     name := "circe",
-    libraryDependencies ++= Seq(
-      "io.circe" %%% "circe-core" % circeVersion,
-      "io.circe" %%% "circe-parser" % circeVersion,
-      "org.scalatest" %%% "scalatest" % scalaTestVersion % "test"
+    libraryDependencies ++= dependenciesFor(scalaVersion.value)(
+      "io.circe" %%% "circe-core" % circeVersion(_),
+      "io.circe" %%% "circe-parser" % circeVersion(_),
+      _ => "org.scalatest" %%% "scalatest" % scalaTestVersion % "test"
     )
   )
-  .settings(only2_11_and_2_12_settings)
+  .jsSettings(only2_11_and_2_12_settings) // circe-js for 2.13 fails to run tests with a linking error
 lazy val circeJS = circe.js.dependsOn(coreJS, jsonCommonJS)
 lazy val circeJVM = circe.jvm.dependsOn(coreJVM, jsonCommonJVM)
 
