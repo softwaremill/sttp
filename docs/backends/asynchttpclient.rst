@@ -25,7 +25,7 @@ The responses are wrapped depending on the dependency chosen in either a:
 
 * standard Scala ``Future``
 * `Scalaz <https://github.com/scalaz/scalaz>`_ ``Task``. There's a transitive dependency on ``scalaz-concurrent``.
-* `ZIO <https://github.com/scalaz/scalaz-zio>`_ ``IO``. There's a transitive dependency on ``scalaz-zio``.
+* `ZIO <https://github.com/zio/zio>`_ ``IO``. There's a transitive dependency on ``zio``.
 * `Monix <https://monix.io>`_ ``Task``. There's a transitive dependency on ``monix-eval``.
 * Any type implementing the `Cats Effect <https://github.com/typelevel/cats-effect>`_ ``Async`` typeclass, such as ``cats.effect.IO``. There's a transitive dependency on ``cats-effect``.
 * `fs2 <https://github.com/functional-streams-for-scala/fs2>`_ ``Stream``. There are transitive dependencies on ``fs2``, ``fs2-reactive-streams``, and ``cats-effect``.
