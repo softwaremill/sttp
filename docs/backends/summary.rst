@@ -59,4 +59,4 @@ Class                            Response wrapper             Supported stream t
 Finally, there are third-party backends:
 
 * `sttp-play-ws <https://github.com/ragb/sttp-play-ws>`_ for "standard" play-ws (not standalone).
-* `akkaMonixSttpBackend <https://github.com/fullfacing/akkaMonixSttpBackend>`_, an Akka-based backend, but using Monix's ``Task``s & ``Observable``s.
+* `akkaMonixSttpBackend <https://github.com/fullfacing/akkaMonixSttpBackend>`_, an Akka-based backend, but using Monix's ``Task`` & ``Observable``.
