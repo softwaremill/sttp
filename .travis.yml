@@ -2,7 +2,7 @@ language: scala
 addons:
   chrome: stable
 jdk:
-- oraclejdk8
+- openjdk8
 scala:
 - 2.12.8
 - 2.11.12
