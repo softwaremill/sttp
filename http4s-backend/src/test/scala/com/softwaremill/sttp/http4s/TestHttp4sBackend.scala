@@ -3,6 +3,9 @@ package com.softwaremill.sttp.http4s
 import cats.effect.{ContextShift, IO}
 import com.softwaremill.sttp.{MonadError, Request, Response, SttpBackend}
 import fs2.Stream
+import org.http4s.client.blaze.BlazeClientBuilder
+
+import scala.concurrent.ExecutionContext
 
 class TestHttp4sBackend(delegate: SttpBackend[IO, Stream[IO, Byte]], doClose: () => Unit)
     extends SttpBackend[IO, Stream[IO, Byte]] {
@@ -13,7 +16,9 @@ class TestHttp4sBackend(delegate: SttpBackend[IO, Stream[IO, Byte]], doClose: ()
 
 object TestHttp4sBackend {
   def apply()(implicit cf: ContextShift[IO]): TestHttp4sBackend = {
-    val (backend, doClose) = ExtractFromResource(Http4sBackend.usingDefaultClientBuilder[IO]())
+    val blazeClientBuilder = BlazeClientBuilder[IO](ExecutionContext.Implicits.global)
+      .withMaxTotalConnections(64)
+    val (backend, doClose) = ExtractFromResource(Http4sBackend.usingClientBuilder(blazeClientBuilder))
     new TestHttp4sBackend(backend, doClose)
   }
 }
