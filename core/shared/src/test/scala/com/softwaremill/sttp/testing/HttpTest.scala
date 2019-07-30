@@ -35,6 +35,8 @@ trait HttpTest[R[_]]
 
   protected val sttpIgnore: ResponseAs[Unit, Nothing] = com.softwaremill.sttp.ignore
 
+  protected def supportsRequestTimeout = true
+
   "parse response" - {
     "as string" in {
       postEcho.body(testBody).send().toFuture().map { response =>
@@ -385,26 +387,28 @@ trait HttpTest[R[_]]
     }
   }
 
-  "timeout" - {
-    "fail if read timeout is not big enough" in {
-      val request = sttp
-        .get(uri"$endpoint/timeout")
-        .readTimeout(200.milliseconds)
-        .response(asString)
+  if (supportsRequestTimeout) {
+    "timeout" - {
+      "fail if read timeout is not big enough" in {
+        val request = sttp
+          .get(uri"$endpoint/timeout")
+          .readTimeout(200.milliseconds)
+          .response(asString)
 
-      Future(request.send()).flatMap(_.toFuture()).failed.map { _ =>
-        succeed
+        Future(request.send()).flatMap(_.toFuture()).failed.map { _ =>
+          succeed
+        }
       }
-    }
 
-    "not fail if read timeout is big enough" in {
-      val request = sttp
-        .get(uri"$endpoint/timeout")
-        .readTimeout(5.seconds)
-        .response(asString)
+      "not fail if read timeout is big enough" in {
+        val request = sttp
+          .get(uri"$endpoint/timeout")
+          .readTimeout(5.seconds)
+          .response(asString)
 
-      request.send().toFuture().map { response =>
-        response.unsafeBody should be("Done")
+        request.send().toFuture().map { response =>
+          response.unsafeBody should be("Done")
+        }
       }
     }
   }

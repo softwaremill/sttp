@@ -23,13 +23,14 @@ Class                                Response wrapper             Supported stre
 ``AsyncHttpClientFutureBackend``     ``scala.concurrent.Future``  n/a
 ``AsyncHttpClientScalazBackend``     ``scalaz.concurrent.Task``   n/a
 ``AsyncHttpClientZioBackend``        ``zio.IO``                   n/a
-``AsyncHttpClientZioStreamsBackend`` ``zio.IO``                   ``Stream[Throwable, ByteBuffer]``
+``AsyncHttpClientZioStreamsBackend`` ``zio.IO``                   ``zio.stream.Stream[Throwable, ByteBuffer]``
 ``AsyncHttpClientMonixBackend``      ``monix.eval.Task``          ``monix.reactive.Observable[ByteBuffer]``
 ``AsyncHttpClientCatsBackend``       ``F[_]: cats.effect.Async``  n/a
 ``AsyncHttpClientFs2Backend``        ``F[_]: cats.effect.Async``  ``fs2.Stream[F, ByteBuffer]``
 ``OkHttpSyncBackend``                None (``Id``)                n/a
 ``OkHttpFutureBackend``              ``scala.concurrent.Future``  n/a
 ``OkHttpMonixBackend``               ``monix.eval.Task``          ``monix.reactive.Observable[ByteBuffer]``
+``Http4sBackend``                    ``F[_]: cats.effect.Effect`` ``fs2.Stream[F, Byte]``
 ==================================== ============================ ================================================
 
 There are also backends which wrap other backends to provide additional functionality. These include:

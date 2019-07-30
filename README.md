@@ -6,7 +6,7 @@
 
 The Scala HTTP client that you always wanted!
 
-sttp is an open-source library which provides a clean, programmer-friendly API to define HTTP requests and execute them using one of the wrapped backends, such as akka-http, async-http-client or OkHttp.
+sttp is an open-source library which provides a clean, programmer-friendly API to define HTTP requests and execute them using one of the wrapped backends, such as akka-http, async-http-client, http4s or OkHttp.
  
 ```scala
 import com.softwaremill.sttp._

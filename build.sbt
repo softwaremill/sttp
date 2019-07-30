@@ -187,6 +187,7 @@ lazy val rootJVM = project
     asyncHttpClientFs2Backend,
     okhttpBackend,
     okhttpMonixBackend,
+    http4sBackend,
     jsonCommonJVM,
     circeJVM,
     json4s,
@@ -414,6 +415,18 @@ lazy val okhttpMonixBackend: Project =
     .settings(only2_11_and_2_12_settings)
     .dependsOn(monixJVM % "compile->compile;test->test")
 
+//-- http4s
+lazy val http4sBackend: Project = (project in file("http4s-backend"))
+  .settings(commonJvmSettings: _*)
+  .settings(
+    name := "http4s-backend",
+    libraryDependencies ++= Seq(
+      "org.http4s" %% "http4s-blaze-client" % "0.20.6"
+    )
+  )
+  .dependsOn(catsJVM, coreJVM % "compile->compile;test->test")
+
+//----- json
 lazy val jsonCommon = crossProject(JSPlatform, JVMPlatform)
   .withoutSuffixFor(JVMPlatform)
   .crossType(CrossType.Pure)
@@ -427,7 +440,6 @@ lazy val jsonCommon = crossProject(JSPlatform, JVMPlatform)
 lazy val jsonCommonJVM = jsonCommon.jvm
 lazy val jsonCommonJS = jsonCommon.js
 
-//----- json
 lazy val circe = crossProject(JSPlatform, JVMPlatform)
   .withoutSuffixFor(JVMPlatform)
   .crossType(CrossType.Pure)
