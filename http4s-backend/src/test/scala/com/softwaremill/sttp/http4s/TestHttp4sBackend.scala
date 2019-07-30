@@ -6,7 +6,6 @@ import fs2.Stream
 import org.http4s.client.blaze.BlazeClientBuilder
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.duration._
 
 class TestHttp4sBackend(delegate: SttpBackend[IO, Stream[IO, Byte]], doClose: () => Unit)
     extends SttpBackend[IO, Stream[IO, Byte]] {
@@ -18,7 +17,6 @@ class TestHttp4sBackend(delegate: SttpBackend[IO, Stream[IO, Byte]], doClose: ()
 object TestHttp4sBackend {
   def apply()(implicit cf: ContextShift[IO]): TestHttp4sBackend = {
     val blazeClientBuilder = BlazeClientBuilder[IO](ExecutionContext.Implicits.global)
-      .withResponseHeaderTimeout(1.minute)
     val (backend, doClose) = ExtractFromResource(Http4sBackend.usingClientBuilder(blazeClientBuilder))
     new TestHttp4sBackend(backend, doClose)
   }
