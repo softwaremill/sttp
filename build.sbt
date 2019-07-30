@@ -424,6 +424,7 @@ lazy val http4sBackend: Project = (project in file("http4s-backend"))
       "org.http4s" %% "http4s-blaze-client" % "0.20.6"
     )
   )
+  .settings(only2_11_and_2_12_settings)
   .dependsOn(catsJVM, coreJVM % "compile->compile;test->test")
 
 //----- json
