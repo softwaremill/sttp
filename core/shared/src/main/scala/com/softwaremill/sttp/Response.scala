@@ -1,5 +1,7 @@
 package com.softwaremill.sttp
 
+import java.nio.charset.{Charset, StandardCharsets}
+
 import com.softwaremill.sttp.internal._
 
 import scala.collection.immutable.Seq
@@ -23,11 +25,15 @@ case class Response[T](
 ) extends ResponseExtensions[T]
     with ResponseMetadata {
 
-  lazy val body: Either[String, T] = rawErrorBody match {
+  lazy val body: Either[String, T] =
+    bodyEnc(StandardCharsets.UTF_8)
+
+  def bodyEnc(ch: Charset): Either[String, T] = rawErrorBody match {
     case Left(bytes) =>
       val charset = contentType
         .flatMap(encodingFromContentType)
-        .getOrElse(Utf8)
+        .map(Charset.forName)
+        .getOrElse(ch)
       Left(new String(bytes, charset))
 
     case Right(r) => Right(r)
