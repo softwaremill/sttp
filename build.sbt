@@ -143,7 +143,7 @@ val fs2Version: Option[(Long, Long)] => String = {
 }
 
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.9"
-val akkaStreams = "com.typesafe.akka" %% "akka-stream" % "2.5.23"
+val akkaStreams = "com.typesafe.akka" %% "akka-stream" % "2.5.24"
 
 val scalaTestVersion = "3.0.8"
 val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion
