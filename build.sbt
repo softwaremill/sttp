@@ -5,7 +5,7 @@ import sbtrelease.ReleasePlugin.autoImport._
 import com.softwaremill.Publish.Release.updateVersionInDocs
 
 val scala2_11 = "2.11.12"
-val scala2_12 = "2.12.8"
+val scala2_12 = "2.12.9"
 val scala2_13 = "2.13.0"
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on (used by JS tests)")
@@ -367,8 +367,8 @@ lazy val asyncHttpClientZioStreamsBackend: Project =
   asyncHttpClientBackendProject("zio-streams")
     .settings(
       libraryDependencies ++= Seq(
-        "dev.zio" %% "zio-streams" % "1.0.0-RC11-1",
-        "dev.zio" %% "zio-interop-reactivestreams" % "1.0.2-RC1"
+        "dev.zio" %% "zio-streams" % "1.0.0-RC10-1",
+        "dev.zio" %% "zio-interop-reactivestreams" % "1.0.2.0-RC3"
       )
     )
     .settings(only2_11_and_2_12_settings)
@@ -421,7 +421,7 @@ lazy val http4sBackend: Project = (project in file("http4s-backend"))
   .settings(
     name := "http4s-backend",
     libraryDependencies ++= Seq(
-      "org.http4s" %% "http4s-blaze-client" % "0.20.6"
+      "org.http4s" %% "http4s-blaze-client" % "0.20.10"
     )
   )
   .settings(only2_11_and_2_12_settings)
