@@ -5,7 +5,7 @@ import sbtrelease.ReleasePlugin.autoImport._
 import com.softwaremill.Publish.Release.updateVersionInDocs
 
 val scala2_11 = "2.11.12"
-val scala2_12 = "2.12.8"
+val scala2_12 = "2.12.9"
 val scala2_13 = "2.13.0"
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on (used by JS tests)")
