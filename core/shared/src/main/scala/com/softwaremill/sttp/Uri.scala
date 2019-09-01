@@ -189,7 +189,7 @@ object Uri {
   def apply(javaUri: URI): Uri = uri"${javaUri.toString}"
 
   def parse(uri: String): Try[Uri] =
-    Try(apply(URI.create(uri)))
+    Try(uri"$uri")
 
   sealed trait QueryFragment
   object QueryFragment {
