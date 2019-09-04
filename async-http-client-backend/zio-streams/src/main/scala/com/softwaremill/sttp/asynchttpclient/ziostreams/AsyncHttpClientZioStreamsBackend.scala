@@ -33,7 +33,7 @@ class AsyncHttpClientZioStreamsBackend[R] private (
     p.toStream(bufferSize)
 
   override protected def publisherToBytes(p: Publisher[ByteBuffer]): IO[Throwable, Array[Byte]] =
-    p.toStream(bufferSize).foldLeft(ByteBuffer.allocate(0))(concatByteBuffers).map(_.array()).use(ZIO.succeed)
+    p.toStream(bufferSize).foldLeft(ByteBuffer.allocate(0))(concatByteBuffers).map(_.array())
 }
 
 object AsyncHttpClientZioStreamsBackend {

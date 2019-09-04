@@ -143,7 +143,7 @@ val fs2Version: Option[(Long, Long)] => String = {
 }
 
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.9"
-val akkaStreams = "com.typesafe.akka" %% "akka-stream" % "2.5.23"
+val akkaStreams = "com.typesafe.akka" %% "akka-stream" % "2.5.25"
 
 val scalaTestVersion = "3.0.8"
 val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion
@@ -303,7 +303,7 @@ lazy val zio: Project = (project in file("implementations/zio"))
     name := "zio",
     publishArtifact in Test := true,
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio" % "1.0.0-RC10-1"
+      "dev.zio" %% "zio" % "1.0.0-RC12-1"
     )
   )
   .dependsOn(coreJVM % "compile->compile;test->test")
@@ -367,7 +367,7 @@ lazy val asyncHttpClientZioStreamsBackend: Project =
   asyncHttpClientBackendProject("zio-streams")
     .settings(
       libraryDependencies ++= Seq(
-        "dev.zio" %% "zio-streams" % "1.0.0-RC10-1",
+        "dev.zio" %% "zio-streams" % "1.0.0-RC12-1",
         "dev.zio" %% "zio-interop-reactivestreams" % "1.0.2.0-RC3"
       )
     )
@@ -398,7 +398,7 @@ lazy val okhttpBackend: Project = (project in file("okhttp-backend"))
   .settings(
     name := "okhttp-backend",
     libraryDependencies ++= Seq(
-      "com.squareup.okhttp3" % "okhttp" % "4.0.1"
+      "com.squareup.okhttp3" % "okhttp" % "4.1.0"
     )
   )
   .dependsOn(coreJVM % "compile->compile;test->test")
@@ -500,7 +500,7 @@ lazy val playJson = crossProject(JSPlatform, JVMPlatform)
 lazy val playJsonJS = playJson.js.dependsOn(coreJS, jsonCommonJS)
 lazy val playJsonJVM = playJson.jvm.dependsOn(coreJVM, jsonCommonJVM)
 
-lazy val braveVersion = "5.6.11"
+lazy val braveVersion = "5.6.10"
 
 lazy val braveBackend: Project = (project in file("metrics/brave-backend"))
   .settings(commonJvmSettings: _*)
