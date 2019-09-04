@@ -1,6 +1,7 @@
 package com.softwaremill.sttp
 
 import java.net.URI
+
 import Uri.{QueryFragment, QueryFragmentEncoding, UserInfo}
 import Uri.QueryFragment.{KeyValue, Plain, Value}
 
@@ -8,6 +9,7 @@ import scala.annotation.tailrec
 import scala.collection.immutable.Seq
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+import scala.util.Try
 
 /**
   * A [[https://en.wikipedia.org/wiki/Uniform_Resource_Identifier URI]].
@@ -185,6 +187,9 @@ object Uri {
   def apply(scheme: String, host: String, path: Seq[String]): Uri =
     Uri(scheme, None, host, None, path, Vector.empty, None)
   def apply(javaUri: URI): Uri = uri"${javaUri.toString}"
+
+  def parse(uri: String): Try[Uri] =
+    Try(uri"$uri")
 
   sealed trait QueryFragment
   object QueryFragment {
