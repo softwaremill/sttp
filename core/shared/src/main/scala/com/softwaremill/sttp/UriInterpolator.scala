@@ -67,7 +67,20 @@ object UriInterpolator {
             case x                       => x
           }
 
-          tokens = tokens ++ nextTokensWithoutEmptyPrefix
+          if (nextTokensWithoutEmptyPrefix.startsWith(Seq(SlashInPath)) &&
+              (tokens.endsWith(Seq(SlashInPath, StringToken(""))) ||
+              tokens.endsWith(Seq(PathStart, StringToken(""))))) {
+
+            /** remove trailing slash when path is added to an interpolated uri:
+              * {{{
+              *   val a = uri"http://example.com/" // notice the trailing slash
+              *   val b = uri"$a/xy" // "http://example.com/xy"
+              * }}}
+              */
+            tokens = tokens.dropRight(1) ++ nextTokensWithoutEmptyPrefix.tail
+          } else {
+            tokens = tokens ++ nextTokensWithoutEmptyPrefix
+          }
         }
 
         tokenizeExpressionAsString()
