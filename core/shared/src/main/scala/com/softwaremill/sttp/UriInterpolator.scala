@@ -67,19 +67,14 @@ object UriInterpolator {
             case x                       => x
           }
 
-          if (nextTokensWithoutEmptyPrefix.startsWith(Seq(SlashInPath)) &&
-              (tokens.endsWith(Seq(SlashInPath, StringToken(""))) ||
-              tokens.endsWith(Seq(PathStart, StringToken(""))))) {
+          def isSlash(t: Token) = t == SlashInPath || t == PathStart
 
-            /** remove trailing slash when path is added to an interpolated uri:
-              * {{{
-              *   val a = uri"http://example.com/" // notice the trailing slash
-              *   val b = uri"$a/xy" // "http://example.com/xy"
-              * }}}
-              */
-            tokens = tokens.dropRight(1) ++ nextTokensWithoutEmptyPrefix.tail
-          } else {
-            tokens = tokens ++ nextTokensWithoutEmptyPrefix
+          // remove trailing slash when path is added to an interpolated uri:
+          // val a = uri"http://example.com/" // notice the trailing slash
+          // val b = uri"$a/xy" // "http://example.com/xy"
+          (tokens, nextTokensWithoutEmptyPrefix) match {
+            case (ts :+ t :+ StringToken(""), SlashInPath +: nt) if isSlash(t) => tokens = ts ++ (t +: nt)
+            case _                                                             => tokens = tokens ++ nextTokensWithoutEmptyPrefix
           }
         }
 
@@ -534,6 +529,7 @@ object UriInterpolator {
     }
 
     private def splitToGroups[T](v: Vector[T], sep: T): Vector[Vector[T]] = {
+      @tailrec
       def doSplit(vv: Vector[T], acc: Vector[Vector[T]]): Vector[Vector[T]] = {
         vv.indexOf(sep) match {
           case -1 => acc :+ vv
@@ -558,6 +554,7 @@ object UriInterpolator {
     * mappings are not generated.
     */
   private def removeEmptyTokensAroundExp(tokens: Vector[Token]): Vector[Token] = {
+    @tailrec
     def doRemove(t: Vector[Token], acc: Vector[Token]): Vector[Token] =
       t match {
         case StringToken("") +: (e: ExpressionToken) +: tail =>
