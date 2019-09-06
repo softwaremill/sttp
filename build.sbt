@@ -31,9 +31,9 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
     commitReleaseVersion,
     tagRelease,
     releaseStepCommandAndRemaining("+publishSigned"),
+    releaseStepCommand("sonatypeBundleRelease"),
     setNextVersion,
     commitNextVersion,
-    releaseStepCommand("sonatypeReleaseAll"),
     pushChanges
   ),
   is2_11 := scalaVersion.value.startsWith("2.11."),
