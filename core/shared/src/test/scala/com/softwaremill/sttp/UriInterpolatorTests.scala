@@ -89,6 +89,12 @@ class UriInterpolatorTests extends FunSuite with Matchers {
       (uri"http://example.com/$v1?x=$v2", s"http://example.com/$v1?x=$v2queryEncoded"),
       (uri"http://example.com/$v1/$v2?x=$v2", s"http://example.com/$v1/$v2encoded?x=$v2queryEncoded")
     ),
+    "interpolated uri within interpolated uri with trailing slash + path" -> List(
+      (uri"${uri"http://example.com/"}/$v1", s"http://example.com/$v1"),
+      (uri"${uri"http://example.com/"}/$v1/", s"http://example.com/$v1/"),
+      (uri"${uri"http://example.com/$v1/"}/$v1", s"http://example.com/$v1/$v1"),
+      (uri"${uri"http://example.com/$v1/"}/$v1/", s"http://example.com/$v1/$v1/")
+    ),
     "query parameter values" -> List(
       (uri"http://example.com?x=$v1", s"http://example.com?x=$v1"),
       (uri"http://example.com/?x=$v1", s"http://example.com/?x=$v1"),
