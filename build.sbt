@@ -16,6 +16,8 @@ lazy val is2_11_or_2_12 = settingKey[Boolean]("Is the scala version 2.11 or 2.12
 val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   organization := "com.softwaremill.sttp",
   scalafmtOnCompile := true,
+  publishTo := sonatypePublishToBundle.value,
+  sonatypeBundleDirectory := (ThisBuild / baseDirectory).value / "target" / "sonatype-staging" / s"${version.value}",
   // cross-release doesn't work when subprojects have different cross versions
   // work-around from https://github.com/sbt/sbt-release/issues/214
   releaseProcess := Seq(
