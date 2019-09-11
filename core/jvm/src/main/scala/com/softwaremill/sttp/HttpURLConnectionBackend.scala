@@ -8,6 +8,7 @@ import java.nio.file.Files
 import java.util.concurrent.ThreadLocalRandom
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
 
+import com.github.ghik.silencer.silent
 import com.softwaremill.sttp.internal._
 
 import scala.annotation.tailrec
@@ -102,6 +103,7 @@ class HttpURLConnectionBackend private (
     if (t.isFinite) t.toMillis.toInt
     else 0
 
+  @silent("discarded")
   private def writeBasicBody(body: BasicRequestBody, os: OutputStream): Unit = {
     body match {
       case StringBody(b, encoding, _) =>

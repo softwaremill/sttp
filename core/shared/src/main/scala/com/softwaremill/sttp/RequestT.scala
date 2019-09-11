@@ -4,6 +4,7 @@ import java.io.InputStream
 import java.nio.ByteBuffer
 import java.util.Base64
 
+import com.github.ghik.silencer.silent
 import com.softwaremill.sttp.internal._
 
 import scala.collection.immutable.Seq
@@ -236,6 +237,7 @@ case class RequestT[U[_], T, +S](
   def redirectToGet(r: Boolean): RequestT[U, T, S] =
     this.copy(options = options.copy(redirectToGet = r))
 
+  @silent("never used")
   def send[R[_]]()(implicit backend: SttpBackend[R, S], isIdInRequest: IsIdInRequest[U]): R[Response[T]] = {
     // we could avoid the asInstanceOf by creating an artificial copy
     // changing the method & url fields using `isIdInRequest`, but that
@@ -244,6 +246,7 @@ case class RequestT[U[_], T, +S](
     backend.send(this.asInstanceOf[RequestT[Id, T, S]])
   }
 
+  @silent("never used")
   def toCurl(implicit isIdInRequest: IsIdInRequest[U]): String = {
     ToCurlConverter.requestToCurl(this.asInstanceOf[RequestT[Id, T, S]])
   }

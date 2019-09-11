@@ -13,6 +13,8 @@ lazy val startTestServer = taskKey[Unit]("Start a http server used by tests (use
 lazy val is2_11 = settingKey[Boolean]("Is the scala version 2.11.")
 lazy val is2_11_or_2_12 = settingKey[Boolean]("Is the scala version 2.11 or 2.12.")
 
+val silencerVersion = "1.4.3"
+
 val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   organization := "com.softwaremill.sttp",
   scalafmtOnCompile := true,
@@ -37,7 +39,11 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
     pushChanges
   ),
   is2_11 := scalaVersion.value.startsWith("2.11."),
-  is2_11_or_2_12 := scalaVersion.value.startsWith("2.11.") || scalaVersion.value.startsWith("2.12.")
+  is2_11_or_2_12 := scalaVersion.value.startsWith("2.11.") || scalaVersion.value.startsWith("2.12."),
+  libraryDependencies ++= Seq(
+    compilerPlugin("com.github.ghik" % "silencer-plugin" % silencerVersion cross CrossVersion.full),
+    "com.github.ghik" % "silencer-lib" % silencerVersion % Provided cross CrossVersion.full
+  )
 )
 
 // an ugly work-around for https://github.com/sbt/sbt/issues/3465

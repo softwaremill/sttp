@@ -1,5 +1,7 @@
 package com.softwaremill.sttp
 
+import com.github.ghik.silencer.silent
+
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.language.higherKinds
 import scala.util.{Failure, Success, Try}
@@ -95,6 +97,7 @@ class FutureMonad(implicit ec: ExecutionContext) extends MonadAsyncError[Future]
   override protected def handleWrappedError[T](rt: Future[T])(h: PartialFunction[Throwable, Future[T]]): Future[T] =
     rt.recoverWith(h)
 
+  @silent("discarded")
   override def async[T](register: (Either[Throwable, T] => Unit) => Unit): Future[T] = {
     val p = Promise[T]()
     register {

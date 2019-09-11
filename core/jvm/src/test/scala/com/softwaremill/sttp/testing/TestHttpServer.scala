@@ -15,6 +15,7 @@ import akka.stream.ActorMaterializer
 import akka.util.ByteString
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives
 import ch.megard.akka.http.cors.scaladsl.settings.CorsSettings
+import com.github.ghik.silencer.silent
 import com.softwaremill.sttp.internal.toByteArray
 import org.scalatest.{BeforeAndAfterAll, Suite}
 
@@ -47,6 +48,7 @@ trait TestHttpServer extends BeforeAndAfterAll { this: Suite =>
 
 object HttpServer {
 
+  @silent("discarded")
   def main(args: Array[String]): Unit = {
     val port = args.headOption.map(_.toInt).getOrElse(51823)
 
@@ -276,6 +278,7 @@ private class HttpServer(port: Int) extends AutoCloseable with CorsDirectives {
     }
   }
 
+  @silent("discarded")
   def close(): Unit = {
     val unbind = unbindServer()
     unbind.onComplete(_ => actorSystem.terminate())

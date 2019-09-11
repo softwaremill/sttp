@@ -5,11 +5,13 @@ import java.nio.file.Files
 import java.security.MessageDigest
 import java.time.{ZoneId, ZonedDateTime}
 
+import com.github.ghik.silencer.silent
 import com.softwaremill.sttp._
 
 import scala.concurrent.Future
 import scala.language.higherKinds
 
+@silent("discarded")
 trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
   "cookies" - {
     "read response cookies" in {

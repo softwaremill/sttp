@@ -3,6 +3,7 @@ package com.softwaremill.sttp.testing
 import java.io.ByteArrayInputStream
 import java.util.concurrent.TimeoutException
 
+import com.github.ghik.silencer.silent
 import com.softwaremill.sttp._
 import com.softwaremill.sttp.internal._
 import org.scalatest.concurrent.ScalaFutures
@@ -11,6 +12,7 @@ import org.scalatest.{FlatSpec, Matchers}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
+@silent("dead code")
 class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
   private val testingStub = SttpBackendStub(IdMonad)
     .whenRequestMatches(_.uri.path.startsWith(List("a", "b")))
