@@ -136,16 +136,8 @@ def testServerSettings(config: Configuration) = Seq(
 )
 
 val circeVersion: Option[(Long, Long)] => String = {
-  case Some((2, 13)) => "0.12.0-M4"
-  case _             => "0.11.1"
-}
-val catsEffectVersion: Option[(Long, Long)] => String = {
-  case Some((2, 13)) => "2.0.0"
-  case _             => "1.3.1"
-}
-val fs2Version: Option[(Long, Long)] => String = {
-  case Some((2, 13)) => "1.1.0-M1"
-  case _             => "1.0.5"
+  case Some((2, 11)) => "0.11.1"
+  case _             => "0.12.1"
 }
 
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.9"
@@ -279,8 +271,8 @@ lazy val cats = crossProject(JSPlatform, JVMPlatform)
   .settings(
     name := "cats",
     publishArtifact in Test := true,
-    libraryDependencies ++= dependenciesFor(scalaVersion.value)(
-      "org.typelevel" %%% "cats-effect" % catsEffectVersion(_)
+    libraryDependencies ++= Seq(
+      "org.typelevel" %%% "cats-effect" % "2.0.0"
     )
   )
 lazy val catsJS = cats.js.dependsOn(coreJS % "compile->compile;test->test")
@@ -299,7 +291,6 @@ lazy val monix = crossProject(JSPlatform, JVMPlatform)
     publishArtifact in Test := true,
     libraryDependencies ++= Seq("io.monix" %%% "monix" % "3.0.0")
   )
-  .settings(only2_11_and_2_12_settings)
 lazy val monixJS = monix.js.dependsOn(coreJS % "compile->compile;test->test")
 lazy val monixJVM = monix.jvm.dependsOn(coreJVM % "compile->compile;test->test")
 
@@ -382,7 +373,6 @@ lazy val asyncHttpClientZioStreamsBackend: Project =
 
 lazy val asyncHttpClientMonixBackend: Project =
   asyncHttpClientBackendProject("monix")
-    .settings(commonJvmJsSettings)
     .dependsOn(monixJVM % "compile->compile;test->test")
 
 lazy val asyncHttpClientCatsBackend: Project =
@@ -392,8 +382,8 @@ lazy val asyncHttpClientCatsBackend: Project =
 lazy val asyncHttpClientFs2Backend: Project =
   asyncHttpClientBackendProject("fs2")
     .settings(
-      libraryDependencies ++= dependenciesFor(scalaVersion.value)(
-        "co.fs2" %% "fs2-reactive-streams" % fs2Version(_)
+      libraryDependencies ++= Seq(
+        "co.fs2" %% "fs2-reactive-streams" % "2.0.0"
       )
     )
     .dependsOn(catsJVM % "compile->compile;test->test")
@@ -418,7 +408,6 @@ def okhttpBackendProject(proj: String): Project = {
 
 lazy val okhttpMonixBackend: Project =
   okhttpBackendProject("monix")
-    .settings(only2_11_and_2_12_settings)
     .dependsOn(monixJVM % "compile->compile;test->test")
 
 //-- http4s
