@@ -140,7 +140,7 @@ val circeVersion: Option[(Long, Long)] => String = {
   case _             => "0.11.1"
 }
 val catsEffectVersion: Option[(Long, Long)] => String = {
-  case Some((2, 13)) => "2.0.0-M4"
+  case Some((2, 13)) => "2.0.0"
   case _             => "1.3.1"
 }
 val fs2Version: Option[(Long, Long)] => String = {
@@ -297,7 +297,7 @@ lazy val monix = crossProject(JSPlatform, JVMPlatform)
   .settings(
     name := "monix",
     publishArtifact in Test := true,
-    libraryDependencies ++= Seq("io.monix" %%% "monix" % "3.0.0-RC3")
+    libraryDependencies ++= Seq("io.monix" %%% "monix" % "3.0.0")
   )
   .settings(only2_11_and_2_12_settings)
 lazy val monixJS = monix.js.dependsOn(coreJS % "compile->compile;test->test")
@@ -382,7 +382,7 @@ lazy val asyncHttpClientZioStreamsBackend: Project =
 
 lazy val asyncHttpClientMonixBackend: Project =
   asyncHttpClientBackendProject("monix")
-    .settings(only2_11_and_2_12_settings)
+    .settings(commonJvmJsSettings)
     .dependsOn(monixJVM % "compile->compile;test->test")
 
 lazy val asyncHttpClientCatsBackend: Project =
