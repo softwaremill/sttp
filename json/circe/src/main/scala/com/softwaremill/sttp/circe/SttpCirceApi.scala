@@ -13,8 +13,15 @@ trait SttpCirceApi {
   ): BodySerializer[B] =
     b => StringBody(encoder(b).pretty(printer), Utf8, Some(MediaTypes.Json))
 
-  def asJson[B: Decoder: IsOption]: ResponseAs[Either[DeserializationError[io.circe.Error], B], Nothing] =
+  def asJson[B: Decoder: IsOption]: ResponseAs[Either[ResponseError[io.circe.Error], B], Nothing] =
     asString(Utf8)
-      .map(JsonInput.sanitize[B])
-      .map(s => decode[B](s).left.map(e => DeserializationError(s, e, Show[io.circe.Error].show(e))))
+      .mapRight(JsonInput.sanitize[B])
+      .map {
+        case Left(s) => Left(HttpError(s))
+        case Right(s) =>
+          decode[B](s) match {
+            case Left(e)  => Left(DeserializationError(s, e, Show[io.circe.Error].show(e)))
+            case Right(b) => Right(b)
+          }
+      }
 }

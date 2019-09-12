@@ -219,12 +219,6 @@ case class RequestT[U[_], T, +S](
 
   def tag(k: String): Option[Any] = tags.get(k)
 
-  def parseResponseIf(f: StatusCode => Boolean): RequestT[U, T, S] =
-    parseResponseIfMetadata(m => f(m.code))
-
-  def parseResponseIfMetadata(f: ResponseMetadata => Boolean): RequestT[U, T, S] =
-    this.copy(options = options.copy(parseResponseIf = f))
-
   /**
     * When a POST or PUT request is redirected, should the redirect be a POST/PUT as well (with the original body),
     * or should the request be converted to a GET without a body.
@@ -280,6 +274,12 @@ case class RequestT[U[_], T, +S](
   }
 }
 
+object RequestT {
+  implicit class RichRequestTEither[U[_], L, R, S](r: RequestT[U, Either[L, R], S]) {
+    def mapResponseRight[R2](f: R => R2): RequestT[U, Either[L, R2], S] = r.copy(response = r.response.mapRight(f))
+  }
+}
+
 class SpecifyAuthScheme[U[_], T, +S](hn: String, rt: RequestT[U, T, S]) {
   def basic(user: String, password: String): RequestT[U, T, S] = {
     val c = new String(Base64.getEncoder.encode(s"$user:$password".getBytes(Utf8)), Utf8)
@@ -294,6 +294,5 @@ case class RequestOptions(
     followRedirects: Boolean,
     readTimeout: Duration,
     maxRedirects: Int,
-    parseResponseIf: ResponseMetadata => Boolean,
     redirectToGet: Boolean
 )

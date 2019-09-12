@@ -71,13 +71,7 @@ class AkkaHttpBackend private (
         val headers = headersFromAkka(hr)
 
         val responseMetadata = ResponseMetadata(headers, code, statusText)
-        val body = if (r.options.parseResponseIf(responseMetadata)) {
-          bodyFromAkka(r.response, decodeAkkaResponse(hr), responseMetadata)
-            .map(Right(_))
-        } else {
-          bodyFromAkka(asByteArray, decodeAkkaResponse(hr), responseMetadata)
-            .map(Left(_))
-        }
+        val body = bodyFromAkka(r.response, decodeAkkaResponse(hr), responseMetadata)
 
         body.map(Response(_, code, statusText, headers, Nil))
       }
@@ -101,7 +95,7 @@ class AkkaHttpBackend private (
   private def bodyFromAkka[T](
       rr: ResponseAs[T, S],
       hr: HttpResponse,
-      headers: ResponseMetadata
+      rm: ResponseMetadata
   ): Future[T] = {
 
     implicit val ec: ExecutionContext = this.ec
@@ -124,7 +118,9 @@ class AkkaHttpBackend private (
 
     rr match {
       case MappedResponseAs(raw, g) =>
-        bodyFromAkka(raw, hr, headers).map(t => g(t, headers))
+        bodyFromAkka(raw, hr, rm).map(t => g(t, rm))
+
+      case ResponseAsFromMetadata(f) => bodyFromAkka(f(rm), hr, rm)
 
       case IgnoreResponse =>
         // todo: Replace with HttpResponse#discardEntityBytes() once https://github.com/akka/akka-http/issues/1459 is resolved

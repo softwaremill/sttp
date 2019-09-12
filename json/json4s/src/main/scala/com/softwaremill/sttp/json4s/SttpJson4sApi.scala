@@ -1,6 +1,6 @@
 package com.softwaremill.sttp.json4s
 
-import com.softwaremill.sttp.{BodySerializer, MediaTypes, ResponseAs, StringBody, asString}
+import com.softwaremill.sttp._
 import com.softwaremill.sttp.internal.Utf8
 import org.json4s.{DefaultFormats, Formats, Serialization}
 
@@ -14,6 +14,6 @@ trait SttpJson4sApi {
   def asJson[B: Manifest](
       implicit formats: Formats = DefaultFormats,
       serialization: Serialization
-  ): ResponseAs[B, Nothing] =
-    asString(Utf8).map(s => serialization.read[B](s))
+  ): ResponseAs[Either[ResponseError[Exception], B], Nothing] =
+    ResponseAs.deserializeCatchingExceptions(asString(Utf8).mapRight(JsonInput.sanitize[B]), serialization.read[B])
 }

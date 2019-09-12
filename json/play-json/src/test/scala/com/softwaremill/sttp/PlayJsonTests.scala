@@ -24,7 +24,7 @@ class PlayJsonTests extends FlatSpec with Matchers with EitherValues {
 
     val responseAs = asJson[Outer]
 
-    runJsonResponseAs(responseAs)(body).right.value shouldBe expected
+    runJsonResponseAs(responseAs)(body) shouldBe Right(expected)
   }
 
   it should "decode None from empty body" in {
@@ -32,7 +32,7 @@ class PlayJsonTests extends FlatSpec with Matchers with EitherValues {
 
     val responseAs = asJson[Option[Inner]]
 
-    runJsonResponseAs(responseAs)("").right.value shouldBe None
+    runJsonResponseAs(responseAs)("") shouldBe Right(None)
   }
 
   it should "decode Left(None) from empty body" in {
@@ -41,7 +41,7 @@ class PlayJsonTests extends FlatSpec with Matchers with EitherValues {
 
     val responseAs = asJson[Either[Option[Inner], Outer]]
 
-    runJsonResponseAs(responseAs)("").right.value shouldBe Left(None)
+    runJsonResponseAs(responseAs)("") shouldBe Right(Left(None))
   }
 
   it should "decode Right(None) from empty body" in {
@@ -50,14 +50,15 @@ class PlayJsonTests extends FlatSpec with Matchers with EitherValues {
 
     val responseAs = asJson[Either[Outer, Option[Inner]]]
 
-    runJsonResponseAs(responseAs)("").right.value shouldBe Right(None)
+    runJsonResponseAs(responseAs)("") shouldBe Right(Right(None))
   }
 
   it should "fail to decode from empty input" in {
     val responseAs = asJson[Inner]
 
-    val result = runJsonResponseAs(responseAs)("").left.value
-    result.original shouldBe ""
+    runJsonResponseAs(responseAs)("") should matchPattern {
+      case Left(DeserializationError("", _, _)) =>
+    }
   }
 
   it should "fail to read invalid json" in {
@@ -65,8 +66,9 @@ class PlayJsonTests extends FlatSpec with Matchers with EitherValues {
 
     val responseAs = asJson[Outer]
 
-    val result = runJsonResponseAs(responseAs)(body).left.value
-    result.original shouldBe body
+    runJsonResponseAs(responseAs)(body) should matchPattern {
+      case Left(DeserializationError(`body`, _, _)) =>
+    }
   }
 
   it should "read and write back to the same thing" in {

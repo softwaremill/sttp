@@ -28,7 +28,7 @@ trait HttpTest[R[_]]
   implicit val backend: SttpBackend[R, Nothing]
   implicit val convertToFuture: ConvertToFuture[R]
 
-  protected def postEcho: Request[String, Nothing] = sttp.post(uri"$endpoint/echo")
+  protected def postEcho: Request[Either[String, String], Nothing] = sttp.post(uri"$endpoint/echo")
   protected val testBody = "this is the body"
   protected val testBodyBytes: Array[Byte] = testBody.getBytes("UTF-8")
   protected val expectedPostEchoResponse = "POST /echo this is the body"
@@ -40,49 +40,49 @@ trait HttpTest[R[_]]
   "parse response" - {
     "as string" in {
       postEcho.body(testBody).send().toFuture().map { response =>
-        response.unsafeBody should be(expectedPostEchoResponse)
+        response.body should be(Right(expectedPostEchoResponse))
       }
     }
 
     "as string with mapping using map" in {
       postEcho
         .body(testBody)
-        .response(asString.map(_.length))
+        .response(asString.mapRight(_.length))
         .send()
         .toFuture()
         .map { response =>
-          response.unsafeBody should be(expectedPostEchoResponse.length)
+          response.body should be(Right(expectedPostEchoResponse.length))
         }
     }
 
     "as string with mapping using mapResponse" in {
       postEcho
         .body(testBody)
-        .mapResponse(_.length)
+        .mapResponseRight(_.length)
         .send()
         .toFuture()
         .map { response =>
-          response.unsafeBody should be(expectedPostEchoResponse.length)
+          response.body should be(Right(expectedPostEchoResponse.length))
         }
     }
 
     "as string with mapping using mapWithHeaders" in {
       postEcho
         .body(testBody)
-        .response(asString.mapWithMetadata { (b, h) =>
+        .response(asStringAlways.mapWithMetadata { (b, h) =>
           b + " " + h.contentType.getOrElse("")
         })
         .send()
         .toFuture()
         .map { response =>
-          response.unsafeBody should include(expectedPostEchoResponse)
-          response.unsafeBody should include("text/plain")
+          response.body should include(expectedPostEchoResponse)
+          response.body should include("text/plain")
         }
     }
 
     "as a byte array" in {
       postEcho.body(testBody).response(asByteArray).send().toFuture().map { response =>
-        val fc = new String(response.unsafeBody, "UTF-8")
+        val fc = new String(response.body.right.get, "UTF-8")
         fc should be(expectedPostEchoResponse)
       }
     }
@@ -96,17 +96,16 @@ trait HttpTest[R[_]]
         .send()
         .toFuture()
         .map { response =>
-          response.unsafeBody.toList should be(params)
+          response.body.right.map(_.toList) should be(Right(params))
         }
     }
 
-    "as string with expected unsuccessful response via metadata" in {
+    "as string with response via metadata" in {
       val expectedStatus = 400
       sttp
         .post(uri"$endpoint/echo/custom_status/$expectedStatus")
         .body(testBody)
-        .response(asString)
-        .parseResponseIfMetadata(_.code == expectedStatus)
+        .response(asStringAlways.mapWithMetadata((r, m) => if (m.code == expectedStatus) Right(r) else Left(r)))
         .send()
         .toFuture()
         .map { response =>
@@ -114,27 +113,12 @@ trait HttpTest[R[_]]
         }
     }
 
-    "as string with expected unsuccessful response" in {
-      val expectedStatus = 400
-      sttp
-        .post(uri"$endpoint/echo/custom_status/$expectedStatus")
-        .body(testBody)
-        .response(asString)
-        .parseResponseIf(_ == expectedStatus)
-        .send()
-        .toFuture()
-        .map { response =>
-          response.body should be(Right(s"POST /echo/custom_status/$expectedStatus $testBody"))
-        }
-    }
-
-    "as error string if status code is not supported" in {
+    "as error string with response via metadata" in {
       val unexpectedStatus = 200
       sttp
         .post(uri"$endpoint/echo/custom_status/$unexpectedStatus")
         .body(testBody)
-        .response(asString)
-        .parseResponseIf(_ != unexpectedStatus)
+        .response(asStringAlways.mapWithMetadata((r, m) => if (m.code == unexpectedStatus) Left(r) else Right(r)))
         .send()
         .toFuture()
         .map { response =>
@@ -150,7 +134,7 @@ trait HttpTest[R[_]]
         .send()
         .toFuture()
         .map { response =>
-          response.unsafeBody should be("GET /echo p1=v1 p2=v2")
+          response.body should be(Right("GET /echo p1=v1 p2=v2"))
         }
     }
   }
@@ -158,13 +142,13 @@ trait HttpTest[R[_]]
   "body" - {
     "post a string" in {
       postEcho.body(testBody).send().toFuture().map { response =>
-        response.unsafeBody should be(expectedPostEchoResponse)
+        response.body should be(Right(expectedPostEchoResponse))
       }
     }
 
     "post a byte array" in {
       postEcho.body(testBodyBytes).send().toFuture().map { response =>
-        response.unsafeBody should be(expectedPostEchoResponse)
+        response.body should be(Right(expectedPostEchoResponse))
       }
     }
 
@@ -174,7 +158,7 @@ trait HttpTest[R[_]]
         .send()
         .toFuture()
         .map { response =>
-          response.unsafeBody should be(expectedPostEchoResponse)
+          response.body should be(Right(expectedPostEchoResponse))
         }
     }
 
@@ -184,7 +168,7 @@ trait HttpTest[R[_]]
         .send()
         .toFuture()
         .map { response =>
-          response.unsafeBody should be(expectedPostEchoResponse)
+          response.body should be(Right(expectedPostEchoResponse))
         }
     }
 
@@ -195,7 +179,7 @@ trait HttpTest[R[_]]
         .send()
         .toFuture()
         .map { response =>
-          response.unsafeBody should be("a=b c=d")
+          response.body should be(Right("a=b c=d"))
         }
     }
 
@@ -206,13 +190,13 @@ trait HttpTest[R[_]]
         .send()
         .toFuture()
         .map { response =>
-          response.unsafeBody should be("a==/b c:=/d")
+          response.body should be(Right("a==/b c:=/d"))
         }
     }
 
     "post without a body" in {
       postEcho.send().toFuture().map { response =>
-        response.unsafeBody should be("POST /echo")
+        response.body should be(Right("POST /echo"))
       }
     }
   }
@@ -235,7 +219,7 @@ trait HttpTest[R[_]]
 
   "errors" - {
     "return 405 when method not allowed" in {
-      sttp.post(uri"$endpoint/set_headers").response(sttpIgnore).send().toFuture().map { response =>
+      sttp.post(uri"$endpoint/set_headers").send().toFuture().map { response =>
         response.code should be(405)
         response.isClientError should be(true)
         response.body.isLeft should be(true)
@@ -243,7 +227,7 @@ trait HttpTest[R[_]]
     }
 
     "return 404 when not found" in {
-      sttp.get(uri"$endpoint/not/found").response(sttpIgnore).send().toFuture().map { response =>
+      sttp.get(uri"$endpoint/not/found").send().toFuture().map { response =>
         response.code should be(404)
         response.isClientError should be(true)
         response.body.isLeft should be(true)
@@ -252,7 +236,7 @@ trait HttpTest[R[_]]
   }
 
   "auth" - {
-    def secureBasic = sttp.get(uri"$endpoint/secure_basic")
+    def secureBasic = sttp.get(uri"$endpoint/secure_basic").response(asStringAlways)
 
     "return a 401 when authorization fails" in {
       val req = secureBasic
@@ -266,40 +250,40 @@ trait HttpTest[R[_]]
       val req = secureBasic.auth.basic("adam", "1234")
       req.send().toFuture().map { resp =>
         resp.code should be(200)
-        resp.unsafeBody should be("Hello, adam!")
+        resp.body should be("Hello, adam!")
       }
     }
   }
 
   "compression" - {
-    def compress = sttp.get(uri"$endpoint/compress")
+    def compress = sttp.get(uri"$endpoint/compress").response(asStringAlways)
     val decompressedBody = "I'm compressed!"
 
     "decompress using the default accept encoding header" in {
       val req = compress
       req.send().toFuture().map { resp =>
-        resp.unsafeBody should be(decompressedBody)
+        resp.body should be(decompressedBody)
       }
     }
 
     "decompress using gzip" in {
       val req = compress.header("Accept-Encoding", "gzip", replaceExisting = true)
       req.send().toFuture().map { resp =>
-        resp.unsafeBody should be(decompressedBody)
+        resp.body should be(decompressedBody)
       }
     }
 
     "decompress using deflate" in {
       val req = compress.header("Accept-Encoding", "deflate", replaceExisting = true)
       req.send().toFuture().map { resp =>
-        resp.unsafeBody should be(decompressedBody)
+        resp.body should be(decompressedBody)
       }
     }
 
     "work despite providing an unsupported encoding" in {
       val req = compress.header("Accept-Encoding", "br", replaceExisting = true)
       req.send().toFuture().map { resp =>
-        resp.unsafeBody should be(decompressedBody)
+        resp.body should be(decompressedBody)
       }
     }
 
@@ -319,19 +303,19 @@ trait HttpTest[R[_]]
   }
 
   "multipart" - {
-    def mp = sttp.post(uri"$endpoint/multipart")
+    def mp = sttp.post(uri"$endpoint/multipart").response(asStringAlways)
 
     "send a multipart message" in {
       val req = mp.multipartBody(multipart("p1", "v1"), multipart("p2", "v2"))
       req.send().toFuture().map { resp =>
-        resp.unsafeBody should be(s"p1=v1$defaultFileName, p2=v2$defaultFileName")
+        resp.body should be(s"p1=v1$defaultFileName, p2=v2$defaultFileName")
       }
     }
 
     "send a multipart message with filenames" in {
       val req = mp.multipartBody(multipart("p1", "v1").fileName("f1"), multipart("p2", "v2").fileName("f2"))
       req.send().toFuture().map { resp =>
-        resp.unsafeBody should be("p1=v1 (f1), p2=v2 (f2)")
+        resp.body should be("p1=v1 (f1), p2=v2 (f2)")
       }
     }
   }
@@ -342,16 +326,15 @@ trait HttpTest[R[_]]
   ): Future[Assertion] = {
     response.toFuture().map { resp =>
       resp.code should be(code)
-      resp.body should be('left)
       resp.history should be('empty)
     }
   }
 
   "redirect" - {
-    def r1 = sttp.post(uri"$endpoint/redirect/r1")
-    def r2 = sttp.post(uri"$endpoint/redirect/r2")
+    def r1 = sttp.post(uri"$endpoint/redirect/r1").response(asStringAlways)
+    def r2 = sttp.post(uri"$endpoint/redirect/r2").response(asStringAlways)
     val r4response = "819"
-    def loop = sttp.post(uri"$endpoint/redirect/loop")
+    def loop = sttp.post(uri"$endpoint/redirect/loop").response(asStringAlways)
 
     "not redirect when redirects shouldn't be followed (temporary)" in {
       expectRedirectResponse(r1.followRedirects(false).send(), 307)
@@ -364,21 +347,21 @@ trait HttpTest[R[_]]
     "redirect when redirects should be followed" in {
       r2.send().toFuture().map { resp =>
         resp.code should be(200)
-        resp.unsafeBody should be(r4response)
+        resp.body should be(r4response)
       }
     }
 
     "redirect twice when redirects should be followed" in {
       r1.send().toFuture().map { resp =>
         resp.code should be(200)
-        resp.unsafeBody should be(r4response)
+        resp.body should be(r4response)
       }
     }
 
     "redirect when redirects should be followed, and the response is parsed" in {
-      r2.response(asString.map(_.toInt)).send().toFuture().map { resp =>
+      r2.response(asString).mapResponseRight(_.toInt).send().toFuture().map { resp =>
         resp.code should be(200)
-        resp.unsafeBody should be(r4response.toInt)
+        resp.body should be(Right(r4response.toInt))
       }
     }
 
@@ -407,7 +390,7 @@ trait HttpTest[R[_]]
           .response(asString)
 
         request.send().toFuture().map { response =>
-          response.unsafeBody should be("Done")
+          response.body should be(Right("Done"))
         }
       }
     }

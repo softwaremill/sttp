@@ -34,11 +34,7 @@ class Http4sBackend[F[_]: Effect: ContextShift](client: Client[F], blockingExecu
       val statusText = response.status.reason
       val responseMetadata = ResponseMetadata(headers, code, statusText)
 
-      val body = if (r.options.parseResponseIf(responseMetadata)) {
-        bodyFromHttp4s(r.response, decompressResponseBodyIfNotHead(r.method, response), responseMetadata).map(_.asRight)
-      } else {
-        response.as[Array[Byte]].map(_.asLeft)
-      }
+      val body = bodyFromHttp4s(r.response, decompressResponseBodyIfNotHead(r.method, response), responseMetadata)
 
       body.map { b =>
         Response(b, code, statusText, headers, Nil)
@@ -154,6 +150,9 @@ class Http4sBackend[F[_]: Effect: ContextShift](client: Client[F], blockingExecu
     rr match {
       case MappedResponseAs(raw, g) =>
         bodyFromHttp4s(raw, hr, rm).map(g(_, rm))
+
+      case ResponseAsFromMetadata(f) =>
+        bodyFromHttp4s(f(rm), hr, rm)
 
       case IgnoreResponse =>
         hr.body.compile.drain

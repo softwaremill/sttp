@@ -18,12 +18,12 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
     .whenRequestMatches(_.uri.path.startsWith(List("a", "b")))
     .thenRespondOk()
     .whenRequestMatches(_.uri.paramsMap.get("p").contains("v"))
-    .thenRespond(10)
+    .thenRespond("10")
     .whenRequestMatches(_.method == Method.GET)
     .thenRespondServerError()
     .whenRequestMatchesPartial({
       case r if r.method == Method.POST && r.uri.path.endsWith(List("partial10")) =>
-        Response(Right(10), 200, "OK", Nil, Nil)
+        Response(Right("10"), 200, "OK", Nil, Nil)
       case r if r.method == Method.POST && r.uri.path.endsWith(List("partialAda")) =>
         Response(Right("Ada"), 200, "OK", Nil, Nil)
     })
@@ -45,7 +45,7 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
     implicit val b = testingStub
     val r = sttp
       .get(uri"http://example.org/d?p=v")
-      .response(asString.map(_.toInt))
+      .response(asString.mapRight(_.toInt))
       .send()
     r.body should be(Right(10))
   }
@@ -88,7 +88,7 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
     implicit val s = testingStub
     val r = sttp.post(uri"http://example.org/partial10").send()
     r.is200 should be(true)
-    r.body should be(Right(10))
+    r.body should be(Right("10"))
 
     val ada = sttp.post(uri"http://example.org/partialAda").send()
     ada.is200 should be(true)
@@ -121,8 +121,8 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
 
     val result = sttp
       .get(uri"http://example.org")
-      .mapResponse(_.toInt)
-      .mapResponse(_ * 2)
+      .mapResponseRight(_.toInt)
+      .mapResponseRight(_ * 2)
       .send()
 
     result.body should be(Right(20))
@@ -209,7 +209,7 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
     implicit val s: SttpBackend[Id, Nothing] = SttpBackendStub(IdMonad).whenAnyRequest
       .thenRespondCyclicResponses(
         Response.ok[String]("first"),
-        Response.error[String]("error", 500, "Something went wrong")
+        Response("error", 500, "Something went wrong")
       )
 
     sttp.get(uri"http://example.org").send().is200 should be(true)
@@ -239,12 +239,12 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
   private val s = "Hello, world!"
   private val adjustTestData = List[(Any, ResponseAs[_, _], Any)](
     (s, IgnoreResponse, Some(())),
-    (s, asString(Utf8), Some(s)),
-    (s.getBytes(Utf8), asString(Utf8), Some(s)),
-    (new ByteArrayInputStream(s.getBytes(Utf8)), asString(Utf8), Some(s)),
+    (s, asString(Utf8), Some(Right(s))),
+    (s.getBytes(Utf8), asString(Utf8), Some(Right(s))),
+    (new ByteArrayInputStream(s.getBytes(Utf8)), asString(Utf8), Some(Right(s))),
     (10, asString(Utf8), None),
-    ("10", asString(Utf8).map(_.toInt), Some(10)),
-    (11, asString(Utf8).map(_.toInt), None)
+    ("10", asString(Utf8).mapRight(_.toInt), Some(Right(10))),
+    (11, asString(Utf8).mapRight(_.toInt), None)
   )
 
   behavior of "tryAdjustResponseBody"

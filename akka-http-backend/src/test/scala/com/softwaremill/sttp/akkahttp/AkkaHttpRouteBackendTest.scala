@@ -8,12 +8,14 @@ import org.scalatest.{AsyncWordSpec, BeforeAndAfterAll, Matchers}
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 import akka.stream.ActorMaterializer
+import com.github.ghik.silencer.silent
 
 class AkkaHttpRouteBackendTest extends AsyncWordSpec with Matchers with BeforeAndAfterAll {
 
-  implicit val system = ActorSystem()
-  implicit val materializer = ActorMaterializer()
+  implicit val system: ActorSystem = ActorSystem()
+  implicit val materializer: ActorMaterializer = ActorMaterializer()
 
+  @silent("discarded")
   override protected def afterAll(): Unit = {
     Await.result(system.terminate(), 5.seconds)
   }

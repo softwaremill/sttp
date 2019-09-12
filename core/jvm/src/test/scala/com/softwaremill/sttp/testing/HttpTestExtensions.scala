@@ -58,15 +58,15 @@ trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
 
   // browsers do not allow access to redirect responses
   "follow redirects" - {
-    def r1 = sttp.post(uri"$endpoint/redirect/r1")
-    def r3 = sttp.post(uri"$endpoint/redirect/r3")
+    def r1 = sttp.post(uri"$endpoint/redirect/r1").response(asStringAlways)
+    def r3 = sttp.post(uri"$endpoint/redirect/r3").response(asStringAlways)
     val r4response = "819"
     def loop = sttp.post(uri"$endpoint/redirect/loop")
 
     "keep a single history entry of redirect responses" in {
       r3.send().toFuture().map { resp =>
         resp.code should be(200)
-        resp.unsafeBody should be(r4response)
+        resp.body should be(r4response)
         resp.history should have size (1)
         resp.history(0).code should be(302)
       }
@@ -75,7 +75,7 @@ trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
     "keep whole history of redirect responses" in {
       r1.send().toFuture().map { resp =>
         resp.code should be(200)
-        resp.unsafeBody should be(r4response)
+        resp.body should be(r4response)
         resp.history should have size (3)
         resp.history(0).code should be(307)
         resp.history(1).code should be(308)
@@ -84,17 +84,18 @@ trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
     }
 
     "break redirect loops" in {
-      loop.send().toFuture().map { resp =>
-        resp.code should be(0)
-        resp.history should have size (FollowRedirectsBackend.MaxRedirects.toLong)
+      // sync backends can throw exceptions when evaluating send(), before the toFuture() conversion
+      Future(loop.send().toFuture()).flatMap(identity).failed.map {
+        case TooManyRedirectsException(_, redirects) =>
+          redirects shouldBe FollowRedirectsBackend.MaxRedirects
       }
     }
 
     "break redirect loops after user-specified count" in {
       val maxRedirects = 10
-      loop.maxRedirects(maxRedirects).send().toFuture().map { resp =>
-        resp.code should be(0)
-        resp.history should have size (maxRedirects.toLong)
+      Future(loop.maxRedirects(maxRedirects).send().toFuture()).flatMap(identity).failed.collect {
+        case TooManyRedirectsException(_, redirects) =>
+          redirects shouldBe maxRedirects
       }
     }
 
@@ -117,10 +118,11 @@ trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
           .redirectToGet(redirectToGet)
           .body("x")
           .post(uri"$endpoint/redirect/get_after_post/r$statusCode")
+          .response(asStringAlways)
           .send()
           .toFuture()
           .map { resp =>
-            resp.unsafeBody shouldBe expectedBody
+            resp.body shouldBe expectedBody
           }
       }
     }
@@ -132,7 +134,7 @@ trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
       val request = sttp.get(uri"$endpoint/respond_with_iso_8859_2")
 
       request.send().toFuture().map { response =>
-        response.unsafeBody should be("Żółć!")
+        response.body should be(Right("Żółć!"))
       }
     }
   }
@@ -171,7 +173,7 @@ trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
     "post a file" in {
       withTemporaryFile(Some(testBodyBytes)) { f =>
         postEcho.body(f).send().toFuture().map { response =>
-          response.unsafeBody should be(expectedPostEchoResponse)
+          response.body should be(Right(expectedPostEchoResponse))
         }
       }
     }
@@ -182,7 +184,7 @@ trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
       withTemporaryNonExistentFile { file =>
         val req = sttp.get(uri"$endpoint/download/binary").response(asFile(file))
         req.send().toFuture().flatMap { resp =>
-          md5FileHash(resp.unsafeBody).map { _ shouldBe binaryFileMD5Hash }
+          md5FileHash(resp.body.right.get).map { _ shouldBe binaryFileMD5Hash }
         }
       }
     }
@@ -191,7 +193,7 @@ trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
       withTemporaryNonExistentFile { file =>
         val req = sttp.get(uri"$endpoint/download/text").response(asFile(file))
         req.send().toFuture().flatMap { resp =>
-          md5FileHash(resp.unsafeBody).map { _ shouldBe textFileMD5Hash }
+          md5FileHash(resp.body.right.get).map { _ shouldBe textFileMD5Hash }
         }
       }
     }
@@ -215,7 +217,7 @@ trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
           .get(uri"$endpoint/download/text")
           .response(asFile(file, overwrite = true))
         req.send().toFuture().flatMap { resp =>
-          md5FileHash(resp.unsafeBody).map { _ shouldBe textFileMD5Hash }
+          md5FileHash(resp.body.right.get).map { _ shouldBe textFileMD5Hash }
         }
       }
     }
@@ -228,7 +230,7 @@ trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
       withTemporaryFile(Some(testBodyBytes)) { f =>
         val req = mp.multipartBody(multipartFile("p1", f), multipart("p2", "v2"))
         req.send().toFuture().map { resp =>
-          resp.unsafeBody should be(s"p1=$testBody (${f.getName}), p2=v2$defaultFileName")
+          resp.body should be(Right(s"p1=$testBody (${f.getName}), p2=v2$defaultFileName"))
         }
       }
     }

@@ -3,6 +3,7 @@ package com.softwaremill.sttp.asynchttpclient
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
 
+import com.github.ghik.silencer.silent
 import com.softwaremill.sttp.ResponseAs.EagerResponseHandler
 import com.softwaremill.sttp.SttpBackendOptions.ProxyType.{Http, Socks}
 import com.softwaremill.sttp._
@@ -35,29 +36,30 @@ import scala.util.{Failure, Try}
 
 abstract class AsyncHttpClientBackend[R[_], S](
     asyncHttpClient: AsyncHttpClient,
-    rm: MonadAsyncError[R],
+    monad: MonadAsyncError[R],
     closeClient: Boolean
 ) extends SttpBackend[R, S] {
 
+  @silent("discarded")
   override def send[T](r: Request[T, S]): R[Response[T]] = {
-    val preparedRequest = rm.fromTry(Try(asyncHttpClient.prepareRequest(requestToAsync(r))))
+    val preparedRequest = monad.fromTry(Try(asyncHttpClient.prepareRequest(requestToAsync(r))))
 
-    rm.flatMap(preparedRequest) { ahcRequest =>
-      rm.flatten(rm.async[R[Response[T]]] { cb =>
+    monad.flatMap(preparedRequest) { ahcRequest =>
+      monad.flatten(monad.async[R[Response[T]]] { cb =>
         def success(r: R[Response[T]]): Unit = cb(Right(r))
 
         def error(t: Throwable): Unit = cb(Left(t))
 
         if (isResponseAsStream(r.response)) {
-          ahcRequest.execute(streamingAsyncHandler(r.response, r.options.parseResponseIf, success, error))
+          ahcRequest.execute(streamingAsyncHandler(r.response, success, error))
         } else {
-          ahcRequest.execute(eagerAsyncHandler(r.response, r.options.parseResponseIf, success, error))
+          ahcRequest.execute(eagerAsyncHandler(r.response, success, error))
         }
       })
     }
   }
 
-  override def responseMonad: MonadError[R] = rm
+  override def responseMonad: MonadError[R] = monad
 
   protected def streamBodyToPublisher(s: S): Publisher[ByteBuf]
 
@@ -67,14 +69,13 @@ abstract class AsyncHttpClientBackend[R[_], S](
 
   private def eagerAsyncHandler[T](
       responseAs: ResponseAs[T, S],
-      parseCondition: ResponseMetadata => Boolean,
       success: R[Response[T]] => Unit,
       error: Throwable => Unit
   ): AsyncHandler[Unit] = {
 
     new AsyncCompletionHandler[Unit] {
       override def onCompleted(response: AsyncResponse): Unit =
-        success(readEagerResponse(response, responseAs, parseCondition))
+        success(readEagerResponse(response, responseAs))
 
       override def onThrowable(t: Throwable): Unit = error(t)
     }
@@ -82,7 +83,6 @@ abstract class AsyncHttpClientBackend[R[_], S](
 
   private def streamingAsyncHandler[T](
       responseAs: ResponseAs[T, S],
-      parseCondition: ResponseMetadata => Boolean,
       success: R[Response[T]] => Unit,
       error: Throwable => Unit
   ): AsyncHandler[Unit] = {
@@ -136,22 +136,16 @@ abstract class AsyncHttpClientBackend[R[_], S](
           val baseResponse = readResponseNoBody(builder.build())
           val p = publisher.getOrElse(EmptyPublisher)
           val s = publisherToStreamBody(p)
-          val b = if (parseCondition(baseResponse)) {
-            rm.unit(Right(handleBody(s, responseAs, baseResponse).asInstanceOf[T]))
-          } else {
-            rm.map(publisherToBytes(p))(Left(_))
-          }
+          val b = handleBody(s, responseAs, baseResponse).asInstanceOf[T]
 
-          success(rm.map(b) { bb: Either[Array[Byte], T] =>
-            baseResponse.copy(rawErrorBody = bb)
-          })
+          success(monad.unit(baseResponse.copy(body = b)))
         }
       }
 
       private def handleBody(b: Any, r: ResponseAs[_, _], responseMetadata: ResponseMetadata): Any = r match {
         case MappedResponseAs(raw, g) =>
           g.asInstanceOf[(Any, ResponseMetadata) => Any](handleBody(b, raw, responseMetadata), responseMetadata)
-        case _: ResponseAsStream[T, S] => b
+        case _: ResponseAsStream[_, _] => b
         case _                         => throw new IllegalStateException("Requested a streaming response, trying to read eagerly.")
       }
 
@@ -172,6 +166,7 @@ abstract class AsyncHttpClientBackend[R[_], S](
     rb.build()
   }
 
+  @silent("discarded")
   private def setBody(r: Request[_, S], body: RequestBody[S], rb: RequestBuilder): Unit = {
     body match {
       case NoBody => // skip
@@ -203,6 +198,7 @@ abstract class AsyncHttpClientBackend[R[_], S](
     }
   }
 
+  @silent("discarded")
   private def addMultipartBody(rb: RequestBuilder, mp: Multipart): Unit = {
     // async http client only supports setting file names on file parts. To
     // set a file name on an arbitrary part we have to use a small "work
@@ -234,26 +230,17 @@ abstract class AsyncHttpClientBackend[R[_], S](
 
   private def readEagerResponse[T](
       response: AsyncResponse,
-      responseAs: ResponseAs[T, S],
-      parseCondition: ResponseMetadata => Boolean
+      responseAs: ResponseAs[T, S]
   ): R[Response[T]] = {
     val base = readResponseNoBody(response)
+    val body = eagerResponseHandler(response).handle(responseAs, monad, base)
 
-    val responseMetadata = ResponseMetadata(base.headers, base.code, base.statusText)
-    val body = if (parseCondition(responseMetadata)) {
-      rm.map(eagerResponseHandler(response).handle(responseAs, rm, base))(Right(_))
-    } else {
-      rm.map(eagerResponseHandler(response).handle(asByteArray, rm, base))(Left(_))
-    }
-
-    rm.map(body) { b: Either[Array[Byte], T] =>
-      base.copy(rawErrorBody = b)
-    }
+    monad.map(body)(b => base.copy(body = b))
   }
 
   private def readResponseNoBody(response: AsyncResponse): Response[Unit] = {
     Response(
-      Right(()),
+      (),
       response.getStatusCode,
       response.getStatusText,
       response.getHeaders

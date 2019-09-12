@@ -1,15 +1,6 @@
 package com.softwaremill.sttp.playJson
 
-import com.softwaremill.sttp.{
-  BodySerializer,
-  DeserializationError,
-  IsOption,
-  MediaTypes,
-  JsonInput,
-  ResponseAs,
-  StringBody,
-  asString
-}
+import com.softwaremill.sttp._
 import com.softwaremill.sttp.internal.Utf8
 import play.api.libs.json.{JsError, Json, Reads, Writes}
 
@@ -21,14 +12,21 @@ trait SttpPlayJsonApi {
 
   // Note: None of the play-json utilities attempt to catch invalid
   // json, so Json.parse needs to be wrapped in Try
-  def asJson[B: Reads: IsOption]: ResponseAs[Either[DeserializationError[JsError], B], Nothing] =
+  def asJson[B: Reads: IsOption]: ResponseAs[Either[ResponseError[JsError], B], Nothing] =
     asString(Utf8)
-      .map(JsonInput.sanitize[B])
-      .map { string =>
-        val parsed: Either[JsError, B] = Try(Json.parse(string)) match {
-          case Failure(t)    => Left(JsError(t.getMessage))
-          case Success(json) => Json.fromJson(json).asEither.left.map(JsError(_))
-        }
-        parsed.left.map(e => DeserializationError(string, e, Json.prettyPrint(JsError.toJson(e))))
+      .mapRight(JsonInput.sanitize[B])
+      .map {
+        case Left(s) => Left(HttpError(s))
+        case Right(s) =>
+          Try(Json.parse(s)) match {
+            case Failure(e: Exception) => Left(DeserializationError(s, JsError(e.getMessage), e.getMessage))
+            case Failure(t: Throwable) => throw t
+            case Success(json) =>
+              Json.fromJson(json).asEither match {
+                case Left(failures) =>
+                  Left(DeserializationError(s, JsError(failures), Json.prettyPrint(JsError.toJson(failures))))
+                case Right(success) => Right(success)
+              }
+          }
       }
 }

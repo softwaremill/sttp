@@ -74,14 +74,10 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean)
       val responseHeaders = responseHeaders_.tail
       val responseMetadata = ResponseMetadata(responseHeaders, httpCode, statusText)
 
-      val body: R[Either[Array[CSignedChar], T]] = if (request.options.parseResponseIf(responseMetadata)) {
-        responseMonad.map(readResponseBody(responseBody, request.response, responseMetadata))(Right.apply)
-      } else {
-        responseMonad.map(toByteArray(responseBody))(Left.apply)
-      }
+      val body: R[T] = readResponseBody(responseBody, request.response, responseMetadata)
       responseMonad.map(body) { b =>
         Response[T](
-          rawErrorBody = b,
+          body = b,
           code = httpCode,
           statusText = statusText,
           headers = responseHeaders,
@@ -181,8 +177,9 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean)
     responseAs match {
       case MappedResponseAs(raw, g) =>
         responseMonad.map(readResponseBody(response, raw, responseMetadata))(g(_, responseMetadata))
-      case IgnoreResponse      => responseMonad.unit((): Unit)
-      case ResponseAsByteArray => toByteArray(response)
+      case ResponseAsFromMetadata(f) => readResponseBody(response, f(responseMetadata), responseMetadata)
+      case IgnoreResponse            => responseMonad.unit((): Unit)
+      case ResponseAsByteArray       => toByteArray(response)
       case ResponseAsFile(output, overwrite) =>
         responseMonad.map(toByteArray(response)) { a =>
           val is = new ByteArrayInputStream(a)

@@ -1,7 +1,5 @@
 package com.softwaremill.sttp
 
-import com.softwaremill.sttp.internal._
-
 import java.net.URI
 
 import scala.language.higherKinds
@@ -32,7 +30,7 @@ class FollowRedirectsBackend[R[_], S](delegate: SttpBackend[R, S]) extends SttpB
 
     response.header(HeaderNames.Location).fold(responseMonad.unit(response)) { loc =>
       if (redirects >= request.options.maxRedirects) {
-        responseMonad.unit(Response(Left("Too many redirects".getBytes(Utf8)), 0, "", Nil, Nil))
+        responseMonad.error(TooManyRedirectsException(request.uri, redirects))
       } else {
         followRedirect(request, response, redirects, loc)
       }
@@ -57,8 +55,7 @@ class FollowRedirectsBackend[R[_], S](delegate: SttpBackend[R, S]) extends SttpB
       sendWithCounter(changePostPutToGet(request.copy[Id, T, S](uri = uri), response.code), redirects + 1)
 
     responseMonad.map(redirectResponse) { rr =>
-      val responseNoBody =
-        response.copy(rawErrorBody = response.rawErrorBody.right.map(_ => ()))
+      val responseNoBody = response.copy(body = ())
       rr.copy(history = responseNoBody :: rr.history)
     }
   }
@@ -86,3 +83,5 @@ object FollowRedirectsBackend {
 
   private[sttp] def isRelative(uri: String): Boolean = uri.trim.startsWith("/")
 }
+
+case class TooManyRedirectsException(uri: Uri, redirects: Int) extends RuntimeException

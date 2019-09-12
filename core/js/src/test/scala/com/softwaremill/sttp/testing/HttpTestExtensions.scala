@@ -52,7 +52,7 @@ trait HttpTestExtensions[R[_]] extends AsyncExecutionContext { self: HttpTest[R]
     "post a file" in {
       withTemporaryFile(Some(testBodyBytes)) { f =>
         postEcho.body(f).send().toFuture().map { response =>
-          response.unsafeBody should be(expectedPostEchoResponse)
+          response.body should be(Right(expectedPostEchoResponse))
         }
       }
     }
@@ -63,7 +63,7 @@ trait HttpTestExtensions[R[_]] extends AsyncExecutionContext { self: HttpTest[R]
       withTemporaryNonExistentFile { file =>
         val req = sttp.get(uri"$endpoint/download/binary").response(asFile(file))
         req.send().toFuture().flatMap { resp =>
-          md5FileHash(resp.unsafeBody).map { _ shouldBe binaryFileMD5Hash }
+          md5FileHash(resp.body.right.get).map { _ shouldBe binaryFileMD5Hash }
         }
       }
     }
@@ -72,7 +72,7 @@ trait HttpTestExtensions[R[_]] extends AsyncExecutionContext { self: HttpTest[R]
       withTemporaryNonExistentFile { file =>
         val req = sttp.get(uri"$endpoint/download/text").response(asFile(file))
         req.send().toFuture().flatMap { resp =>
-          md5FileHash(resp.unsafeBody).map { _ shouldBe textFileMD5Hash }
+          md5FileHash(resp.body.right.get).map { _ shouldBe textFileMD5Hash }
         }
       }
     }
@@ -85,7 +85,7 @@ trait HttpTestExtensions[R[_]] extends AsyncExecutionContext { self: HttpTest[R]
       withTemporaryFile(Some(testBodyBytes)) { f =>
         val req = mp.multipartBody(multipartFile("p1", f), multipart("p2", "v2"))
         req.send().toFuture().map { resp =>
-          resp.unsafeBody should be(s"p1=$testBody (${f.name}), p2=v2$defaultFileName")
+          resp.body should be(Right(s"p1=$testBody (${f.name}), p2=v2$defaultFileName"))
         }
       }
     }

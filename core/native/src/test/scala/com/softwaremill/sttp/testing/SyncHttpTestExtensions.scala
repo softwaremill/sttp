@@ -11,15 +11,15 @@ trait SyncHttpTestExtensions {
 
   // browsers do not allow access to redirect responses
   "follow redirects" - {
-    def r1 = sttp.post(uri"$endpoint/redirect/r1")
-    def r3 = sttp.post(uri"$endpoint/redirect/r3")
+    def r1 = sttp.post(uri"$endpoint/redirect/r1").response(asStringAlways)
+    def r3 = sttp.post(uri"$endpoint/redirect/r3").response(asStringAlways)
     val r4response = "819"
-    def loop = sttp.post(uri"$endpoint/redirect/loop")
+    def loop = sttp.post(uri"$endpoint/redirect/loop").response(asStringAlways)
 
     "keep a single history entry of redirect responses" in {
       val resp = r3.send()
       resp.code should be(200)
-      resp.unsafeBody should be(r4response)
+      resp.body should be(r4response)
       resp.history should have size (1)
       resp.history(0).code should be(302)
     }
@@ -27,7 +27,7 @@ trait SyncHttpTestExtensions {
     "keep whole history of redirect responses" in {
       val resp = r1.send()
       resp.code should be(200)
-      resp.unsafeBody should be(r4response)
+      resp.body should be(r4response)
       resp.history should have size (3)
       resp.history(0).code should be(307)
       resp.history(1).code should be(308)
@@ -35,16 +35,16 @@ trait SyncHttpTestExtensions {
     }
 
     "break redirect loops" in {
-      val resp = loop.send()
-      resp.code should be(0)
-      resp.history should have size (FollowRedirectsBackend.MaxRedirects.toLong)
+      intercept[TooManyRedirectsException] {
+        loop.send()
+      }.redirects shouldBe FollowRedirectsBackend.MaxRedirects
     }
 
     "break redirect loops after user-specified count" in {
       val maxRedirects = 10
-      val resp = loop.maxRedirects(maxRedirects).send()
-      resp.code should be(0)
-      resp.history should have size (maxRedirects.toLong)
+      intercept[TooManyRedirectsException] {
+        loop.maxRedirects(maxRedirects).send()
+      }.redirects shouldBe maxRedirects
     }
   }
 
@@ -74,7 +74,7 @@ trait SyncHttpTestExtensions {
     "post a file" in {
       withTemporaryFile(Some(testBodyBytes)) { f =>
         val response = postEcho.body(f).send()
-        response.unsafeBody should be(expectedPostEchoResponse)
+        response.body should be(Right(expectedPostEchoResponse))
       }
     }
   }
@@ -85,7 +85,7 @@ trait SyncHttpTestExtensions {
       withTemporaryNonExistentFile { file =>
         val req = sttp.get(uri"$endpoint/download/binary").response(asFile(file))
         val resp = req.send()
-        md5FileHash(resp.unsafeBody).map { _ shouldBe binaryFileMD5Hash }
+        md5FileHash(resp.body.right.get).map { _ shouldBe binaryFileMD5Hash }
       }
     }
 
@@ -93,7 +93,7 @@ trait SyncHttpTestExtensions {
       withTemporaryNonExistentFile { file =>
         val req = sttp.get(uri"$endpoint/download/text").response(asFile(file))
         val resp = req.send()
-        md5FileHash(resp.unsafeBody).map { _ shouldBe textFileMD5Hash }
+        md5FileHash(resp.body.right.get).map { _ shouldBe textFileMD5Hash }
       }
     }
   }
@@ -118,7 +118,7 @@ trait SyncHttpTestExtensions {
           .get(uri"$endpoint/download/text")
           .response(asFile(file, overwrite = true))
         val resp = req.send()
-        md5FileHash(resp.unsafeBody).map { _ shouldBe textFileMD5Hash }
+        md5FileHash(resp.body.right.get).map { _ shouldBe textFileMD5Hash }
       }
     }
   }
@@ -130,7 +130,7 @@ trait SyncHttpTestExtensions {
       withTemporaryFile(Some(testBodyBytes)) { f =>
         val req = mp.multipartBody(multipartFile("p1", f), multipart("p2", "v2"))
         val resp = req.send()
-        resp.unsafeBody should be(s"p1=$testBody (${f.getName}), p2=v2$defaultFileName")
+        resp.body should be(Right(s"p1=$testBody (${f.getName}), p2=v2$defaultFileName"))
       }
     }
   }

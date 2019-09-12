@@ -109,16 +109,11 @@ abstract class AbstractFetchBackend[R[_], S](options: FetchOptions)(rm: MonadErr
         val headers = convertResponseHeaders(resp.headers)
         val metadata = ResponseMetadata(headers, resp.status, resp.statusText)
 
-        val body: R[Either[Array[Byte], T]] = if (request.options.parseResponseIf(metadata)) {
-          readResponseBody(resp, request.response, metadata)
-            .map(Right.apply)
-        } else {
-          transformPromise(resp.text()).map(t => Left(t.getBytes(Utf8)))
-        }
+        val body: R[T] = readResponseBody(resp, request.response, metadata)
 
         body.map { b =>
           Response[T](
-            rawErrorBody = b,
+            body = b,
             code = resp.status,
             statusText = resp.statusText,
             headers = headers,
@@ -203,11 +198,14 @@ abstract class AbstractFetchBackend[R[_], S](options: FetchOptions)(rm: MonadErr
   private def readResponseBody[T](
       response: FetchResponse,
       responseAs: ResponseAs[T, S],
-      headers: ResponseMetadata
+      meta: ResponseMetadata
   ): R[T] = {
     responseAs match {
       case MappedResponseAs(raw, g) =>
-        readResponseBody(response, raw, headers).map(t => g(t, headers))
+        readResponseBody(response, raw, meta).map(t => g(t, meta))
+
+      case ResponseAsFromMetadata(f) =>
+        readResponseBody(response, f(meta), meta)
 
       case IgnoreResponse =>
         transformPromise(response.arrayBuffer()).map(_ => ())

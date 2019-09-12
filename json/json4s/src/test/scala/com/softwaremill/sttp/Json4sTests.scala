@@ -28,31 +28,33 @@ class Json4sTests extends FlatSpec with Matchers with EitherValues {
 
     val responseAs = asJson[Outer]
 
-    runJsonResponseAs(responseAs)(body) shouldBe expected
+    runJsonResponseAs(responseAs)(body) shouldBe Right(expected)
   }
 
   it should "decode None from empty body" in {
     val responseAs = asJson[Option[Inner]]
 
-    runJsonResponseAs(responseAs)("") shouldBe None
+    runJsonResponseAs(responseAs)("") shouldBe Right(None)
   }
 
   it should "decode Left(None) from empty body" in {
     val responseAs = asJson[Either[Option[Inner], Outer]]
 
-    runJsonResponseAs(responseAs)("") shouldBe Left(None)
+    runJsonResponseAs(responseAs)("") shouldBe Right(Left(None))
   }
 
   it should "decode Right(None) from empty body" in {
     val responseAs = asJson[Either[Outer, Option[Inner]]]
 
-    runJsonResponseAs(responseAs)("") shouldBe Right(None)
+    runJsonResponseAs(responseAs)("") shouldBe Right(Right(None))
   }
 
   it should "fail to decode from empty input" in {
     val responseAs = asJson[Inner]
 
-    a[MappingException] should be thrownBy runJsonResponseAs(responseAs)("")
+    runJsonResponseAs(responseAs)("") should matchPattern {
+      case Left(DeserializationError(_, _: MappingException, _)) =>
+    }
   }
 
   it should "fail to decode invalid json" in {
@@ -60,7 +62,9 @@ class Json4sTests extends FlatSpec with Matchers with EitherValues {
 
     val responseAs = asJson[Outer]
 
-    an[ParseException] should be thrownBy runJsonResponseAs(responseAs)(body)
+    runJsonResponseAs(responseAs)(body) should matchPattern {
+      case Left(DeserializationError(_, _: ParseException, _)) =>
+    }
   }
 
   it should "set the content type" in {

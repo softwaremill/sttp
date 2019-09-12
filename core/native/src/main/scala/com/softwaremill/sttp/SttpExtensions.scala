@@ -7,12 +7,12 @@ import com.softwaremill.sttp.internal.SttpFile
 
 trait SttpExtensions {
 
-  def asFile(file: File, overwrite: Boolean = false): ResponseAs[File, Nothing] = {
-    ResponseAsFile(SttpFile.fromFile(file), overwrite).map(_.toFile)
+  def asFile(file: File, overwrite: Boolean = false): ResponseAs[Either[String, File], Nothing] = {
+    asEither(asStringAlways, ResponseAsFile(SttpFile.fromFile(file), overwrite).map(_.toFile))
   }
 
-  def asPath(path: Path, overwrite: Boolean = false): ResponseAs[Path, Nothing] = {
-    ResponseAsFile(SttpFile.fromPath(path), overwrite).map(_.toPath)
+  def asPath(path: Path, overwrite: Boolean = false): ResponseAs[Either[String, Path], Nothing] = {
+    asEither(asStringAlways, ResponseAsFile(SttpFile.fromPath(path), overwrite).map(_.toPath))
   }
 
   /**

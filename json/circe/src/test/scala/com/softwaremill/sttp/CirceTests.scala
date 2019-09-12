@@ -70,8 +70,8 @@ class CirceTests extends FlatSpec with Matchers with EitherValues {
 
     val responseAs = asJson[Outer]
 
-    val result = runJsonResponseAs(responseAs)(body).left.value
-    result.original shouldBe body
+    val Left(DeserializationError(original, _, _)) = runJsonResponseAs(responseAs)(body)
+    original shouldBe body
   }
 
   it should "encode and decode back to the same thing" in {

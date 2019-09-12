@@ -15,8 +15,8 @@ trait SttpApi extends SttpExtensions {
   /**
     * An empty request with no headers.
     */
-  val emptyRequest: RequestT[Empty, String, Nothing] =
-    RequestT[Empty, String, Nothing](
+  val emptyRequest: RequestT[Empty, Either[String, String], Nothing] =
+    RequestT[Empty, Either[String, String], Nothing](
       None,
       None,
       NoBody,
@@ -26,7 +26,6 @@ trait SttpApi extends SttpExtensions {
         followRedirects = true,
         DefaultReadTimeout,
         FollowRedirectsBackend.MaxRedirects,
-        m => StatusCodes.isSuccess(m.code),
         redirectToGet = false
       ),
       Map()
@@ -39,7 +38,7 @@ trait SttpApi extends SttpExtensions {
     * - `Accept-Encoding` set to `gzip, deflate` (handled automatically by the
     *   library)
     */
-  val sttp: RequestT[Empty, String, Nothing] =
+  val sttp: RequestT[Empty, Either[String, String], Nothing] =
     emptyRequest.acceptEncoding("gzip, deflate")
 
   // response specifications
@@ -49,36 +48,56 @@ trait SttpApi extends SttpExtensions {
   /**
     * Use the `utf-8` charset by default, unless specified otherwise in the response headers.
     */
-  def asString: ResponseAs[String, Nothing] = asString(Utf8)
+  def asString: ResponseAs[Either[String, String], Nothing] = asString(Utf8)
+
+  /**
+    * Use the `utf-8` charset by default, unless specified otherwise in the response headers.
+    */
+  def asStringAlways: ResponseAs[String, Nothing] = asStringAlways(Utf8)
 
   /**
     * Use the given charset by default, unless specified otherwise in the response headers.
     */
-  def asString(charset: String): ResponseAs[String, Nothing] =
-    ResponseAsByteArray.mapWithMetadata { (bytes, metadata) =>
+  def asString(charset: String): ResponseAs[Either[String, String], Nothing] = asStringAlways(charset).mapWithMetadata {
+    (s, m) =>
+      if (m.isSuccess) Right(s) else Left(s)
+  }
+
+  def asStringAlways(charset: String): ResponseAs[String, Nothing] = asByteArrayAlways.mapWithMetadata {
+    (bytes, metadata) =>
       val charset2 = metadata.contentType.flatMap(charsetFromContentType).getOrElse(charset)
       new String(bytes, charset2)
-    }
+  }
 
-  def asByteArray: ResponseAs[Array[Byte], Nothing] =
-    ResponseAsByteArray
+  def asByteArray: ResponseAs[Either[String, Array[Byte]], Nothing] = asEither(asStringAlways, asByteArrayAlways)
+
+  def asByteArrayAlways: ResponseAs[Array[Byte], Nothing] = ResponseAsByteArray
 
   /**
-    * Use the `utf-8` encoding by default, unless specified otherwise in the response headers.
+    * Use the `utf-8` charset by default, unless specified otherwise in the response headers.
     */
-  def asParams: ResponseAs[Seq[(String, String)], Nothing] =
+  def asParams: ResponseAs[Either[String, Seq[(String, String)]], Nothing] =
     asParams(Utf8)
 
   /**
-    * Use the given encoding by default, unless specified otherwise in the response headers.
+    * Use the given charset by default, unless specified otherwise in the response headers.
     */
-  def asParams(encoding: String): ResponseAs[Seq[(String, String)], Nothing] =
-    asString(encoding).map(ResponseAs.parseParams(_, encoding))
+  def asParams(charset: String): ResponseAs[Either[String, Seq[(String, String)]], Nothing] =
+    asString(charset).mapRight(ResponseAs.parseParams(_, charset))
 
-  def asStream[S]: ResponseAs[S, S] = ResponseAsStream[S, S]()
+  def asStream[S]: ResponseAs[Either[String, S], S] = asEither(asStringAlways, asStreamAlways)
+
+  def asStreamAlways[S]: ResponseAs[S, S] = ResponseAsStream[S, S]()
 
   private[sttp] def asSttpFile(file: SttpFile, overwrite: Boolean = false): ResponseAs[SttpFile, Nothing] =
     ResponseAsFile(file, overwrite)
+
+  def fromMetadata[T, S](f: ResponseMetadata => ResponseAs[T, S]): ResponseAs[T, S] = ResponseAsFromMetadata(f)
+
+  def asEither[L, R, S](onError: ResponseAs[L, S], onSuccess: ResponseAs[R, S]): ResponseAs[Either[L, R], S] =
+    fromMetadata { rm =>
+      if (rm.isSuccess) onSuccess.map(Right(_)) else onError.map(Left(_))
+    }
 
   // multipart factory methods
 

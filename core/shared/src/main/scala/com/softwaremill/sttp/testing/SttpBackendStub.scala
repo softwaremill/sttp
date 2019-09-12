@@ -70,9 +70,7 @@ class SttpBackendStub[R[_], S] private (
       case Success(None) =>
         fallback match {
           case None =>
-            wrapResponse(
-              Response[Nothing](Left(s"Not Found: ${request.uri}".getBytes(Utf8)), 404, "Not Found", Nil, Nil)
-            )
+            wrapResponse(Response[String](s"Not Found: ${request.uri}", 404, "Not Found", Nil, Nil))
           case Some(fb) => fb.send(request)
         }
       case Failure(e) => rm.error(e)
@@ -98,7 +96,7 @@ class SttpBackendStub[R[_], S] private (
       thenRespond(Response(body, code, msg))
     }
     def thenRespond[T](body: T): SttpBackendStub[R, S] =
-      thenRespond(Response[T](Right(body), 200, "OK"))
+      thenRespond(Response[T](body, 200, "OK"))
     def thenRespond[T](resp: => Response[T]): SttpBackendStub[R, S] = {
       val m: PartialFunction[Request[_, _], R[Response[_]]] = {
         case r if p(r) => rm.unit(resp)
@@ -110,7 +108,7 @@ class SttpBackendStub[R[_], S] private (
       * Not thread-safe!
       */
     def thenRespondCyclic[T](bodies: T*): SttpBackendStub[R, S] = {
-      thenRespondCyclicResponses(bodies.map(body => Response[T](Right(body), 200, "OK")): _*)
+      thenRespondCyclicResponses(bodies.map(body => Response[T](body, 200, "OK")): _*)
     }
 
     /**
@@ -178,21 +176,17 @@ object SttpBackendStub {
     new SttpBackendStub[R, S2](fallback.responseMonad, PartialFunction.empty, Some(fallback))
 
   private[sttp] def tryAdjustResponseType[DesiredRType, RType, M[_]](
-      rm: MonadError[M],
+      me: MonadError[M],
       ra: ResponseAs[DesiredRType, _],
       m: M[Response[RType]]
   ): M[Response[DesiredRType]] = {
-    rm.map[Response[RType], Response[DesiredRType]](m) { r =>
-      r.body match {
-        case Left(_) => r.asInstanceOf[Response[DesiredRType]]
-        case Right(body) =>
-          val newBody: Any = tryAdjustResponseBody(ra, body, r).getOrElse(body)
-          r.copy(rawErrorBody = Right[Array[Byte], DesiredRType](newBody.asInstanceOf[DesiredRType]))
-      }
+    me.map[Response[RType], Response[DesiredRType]](m) { r =>
+      val newBody: Any = tryAdjustResponseBody(ra, r.body, r).getOrElse(r.body)
+      r.copy(body = newBody.asInstanceOf[DesiredRType])
     }
   }
 
-  private[sttp] def tryAdjustResponseBody[T, U](ra: ResponseAs[T, _], b: U, headers: ResponseMetadata): Option[T] = {
+  private[sttp] def tryAdjustResponseBody[T, U](ra: ResponseAs[T, _], b: U, rm: ResponseMetadata): Option[T] = {
     ra match {
       case IgnoreResponse => Some(())
       case ResponseAsByteArray =>
@@ -210,7 +204,9 @@ object SttpBackendStub {
           case _           => None
         }
       case MappedResponseAs(raw, g) =>
-        tryAdjustResponseBody(raw, b, headers).map(g(_, headers))
+        tryAdjustResponseBody(raw, b, rm).map(g(_, rm))
+      case ResponseAsFromMetadata(f) =>
+        tryAdjustResponseBody(f(rm), b, rm)
     }
   }
 }

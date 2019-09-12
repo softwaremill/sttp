@@ -48,12 +48,12 @@ class HttpURLConnectionBackend private (
 
     try {
       val is = c.getInputStream
-      readResponse(c, is, r.response, r.options.parseResponseIf)
+      readResponse(c, is, r.response)
     } catch {
       case e: CharacterCodingException     => throw e
       case e: UnsupportedEncodingException => throw e
       case _: IOException if c.getResponseCode != -1 =>
-        readResponse(c, c.getErrorStream, r.response, r.options.parseResponseIf)
+        readResponse(c, c.getErrorStream, r.response)
     }
   }
 
@@ -217,8 +217,7 @@ class HttpURLConnectionBackend private (
   private def readResponse[T](
       c: HttpURLConnection,
       is: InputStream,
-      responseAs: ResponseAs[T, Nothing],
-      parseCondition: ResponseMetadata => Boolean
+      responseAs: ResponseAs[T, Nothing]
   ): Response[T] = {
 
     val headers = c.getHeaderFields.asScala.toVector
@@ -231,11 +230,7 @@ class HttpURLConnectionBackend private (
       wrapInput(contentEncoding, handleNullInput(is))
     } else is
     val responseMetadata = ResponseMetadata(headers, code, c.getResponseMessage)
-    val body = if (parseCondition(responseMetadata)) {
-      Right(readResponseBody(wrappedIs, responseAs, responseMetadata))
-    } else {
-      Left(readResponseBody(wrappedIs, asByteArray, responseMetadata))
-    }
+    val body = readResponseBody(wrappedIs, responseAs, responseMetadata)
 
     Response(body, code, c.getResponseMessage, headers, Nil)
   }
@@ -243,10 +238,12 @@ class HttpURLConnectionBackend private (
   private def readResponseBody[T](
       is: InputStream,
       responseAs: ResponseAs[T, Nothing],
-      headers: ResponseMetadata
+      rm: ResponseMetadata
   ): T = {
     responseAs match {
-      case MappedResponseAs(raw, g) => g(readResponseBody(is, raw, headers), headers)
+      case MappedResponseAs(raw, g) => g(readResponseBody(is, raw, rm), rm)
+
+      case ResponseAsFromMetadata(f) => readResponseBody(is, f(rm), rm)
 
       case IgnoreResponse =>
         @tailrec def consume(): Unit = if (is.read() != -1) consume()

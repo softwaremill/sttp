@@ -32,7 +32,7 @@ trait StreamingTest[R[_], S]
       .send()
       .toFuture()
       .map { response =>
-        response.unsafeBody shouldBe body
+        response.body shouldBe Right(body)
       }
   }
 
@@ -40,11 +40,11 @@ trait StreamingTest[R[_], S]
     sttp
       .post(uri"$endpoint/streaming/echo")
       .body(body)
-      .response(asStream[S])
+      .response(asStreamAlways[S])
       .send()
       .toFuture()
       .flatMap { response =>
-        bodyConsumer(response.unsafeBody).toFuture()
+        bodyConsumer(response.body).toFuture()
       }
       .map { responseBody =>
         responseBody shouldBe body
@@ -55,11 +55,11 @@ trait StreamingTest[R[_], S]
     sttp
       .post(uri"$endpoint/streaming/echo")
       .body(body)
-      .response(asStream[S].map(s => (s, true)))
+      .response(asStreamAlways[S].map(s => (s, true)))
       .send()
       .toFuture()
       .flatMap { response =>
-        val (stream, flag) = response.unsafeBody
+        val (stream, flag) = response.body
         bodyConsumer(stream).toFuture().map((_, flag))
       }
       .map { responseBody =>
@@ -76,11 +76,11 @@ trait StreamingTest[R[_], S]
     // in tests, but that's so much easier than setting up an https
     // testing server
       .get(url)
-      .response(asStream[S])
+      .response(asStreamAlways[S])
       .send()
       .toFuture()
       .flatMap { response =>
-        bodyConsumer(response.unsafeBody).toFuture()
+        bodyConsumer(response.body).toFuture()
       }
       .map { responseBody =>
         val urlRegex = s""""${url.toString}"""".r
