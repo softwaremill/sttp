@@ -84,4 +84,4 @@ object FollowRedirectsBackend {
   private[sttp] def isRelative(uri: String): Boolean = uri.trim.startsWith("/")
 }
 
-case class TooManyRedirectsException(uri: Uri, redirects: Int) extends RuntimeException
+case class TooManyRedirectsException(uri: Uri, redirects: Int) extends Exception
