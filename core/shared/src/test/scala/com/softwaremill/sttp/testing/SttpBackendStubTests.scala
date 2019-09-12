@@ -196,7 +196,7 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
   }
 
   it should "serve consecutive raw responses" in {
-    implicit val s: SttpBackend[Id, Nothing] = SttpBackendStub(IdMonad).whenAnyRequest
+    implicit val s: SttpBackend[Identity, Nothing] = SttpBackendStub(IdMonad).whenAnyRequest
       .thenRespondCyclic("first", "second", "third")
 
     sttp.get(uri"http://example.org").send().body should be(Right("first"))
@@ -206,7 +206,7 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
   }
 
   it should "serve consecutive responses" in {
-    implicit val s: SttpBackend[Id, Nothing] = SttpBackendStub(IdMonad).whenAnyRequest
+    implicit val s: SttpBackend[Identity, Nothing] = SttpBackendStub(IdMonad).whenAnyRequest
       .thenRespondCyclicResponses(
         Response.ok[String]("first"),
         Response("error", 500, "Something went wrong")

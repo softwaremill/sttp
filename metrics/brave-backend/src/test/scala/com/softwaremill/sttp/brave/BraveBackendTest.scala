@@ -11,28 +11,28 @@ import zipkin2.Span
 class BraveBackendTest extends FlatSpec with Matchers with BeforeAndAfter {
 
   // test proxy - contains the brave instrumentation tests
-  private var t: ITHttpClient[SttpBackend[Id, Nothing]] = null
+  private var t: ITHttpClient[SttpBackend[Identity, Nothing]] = null
 
   // we need to extract these protected ITHttpClient members to use in the custom test
-  private var _backend: SttpBackend[Id, Nothing] = null
+  private var _backend: SttpBackend[Identity, Nothing] = null
   private var _httpTracing: HttpTracing = null
   private var _takeSpan: () => Span = null
 
   def newT(): Unit = {
-    t = new ITHttpClient[SttpBackend[Id, Nothing]]() {
-      override def post(client: SttpBackend[Id, Nothing], pathIncludingQuery: String, body: String): Unit = {
+    t = new ITHttpClient[SttpBackend[Identity, Nothing]]() {
+      override def post(client: SttpBackend[Identity, Nothing], pathIncludingQuery: String, body: String): Unit = {
         client.send(sttp.post(uri"${url(pathIncludingQuery)}").body(body))
       }
 
-      override def get(client: SttpBackend[Id, Nothing], pathIncludingQuery: String): Unit = {
+      override def get(client: SttpBackend[Identity, Nothing], pathIncludingQuery: String): Unit = {
         client.send(sttp.get(uri"${url(pathIncludingQuery)}"))
       }
 
-      override def closeClient(client: SttpBackend[Id, Nothing]): Unit =
+      override def closeClient(client: SttpBackend[Identity, Nothing]): Unit =
         client.close()
 
-      override def newClient(port: Int): SttpBackend[Id, Nothing] = {
-        _backend = BraveBackend[Id, Nothing](HttpURLConnectionBackend(), httpTracing)
+      override def newClient(port: Int): SttpBackend[Identity, Nothing] = {
+        _backend = BraveBackend[Identity, Nothing](HttpURLConnectionBackend(), httpTracing)
         _httpTracing = httpTracing
         _takeSpan = () => takeSpan()
 

@@ -1,6 +1,6 @@
 package com.softwaremill.sttp.testing
 
-import com.softwaremill.sttp.Id
+import com.softwaremill.sttp.Identity
 import scala.concurrent.Future
 import scala.language.higherKinds
 import scala.util.Try
@@ -11,8 +11,8 @@ trait ConvertToFuture[R[_]] {
 
 object ConvertToFuture {
 
-  lazy val id: ConvertToFuture[Id] = new ConvertToFuture[Id] {
-    override def toFuture[T](value: Id[T]): Future[T] =
+  lazy val id: ConvertToFuture[Identity] = new ConvertToFuture[Identity] {
+    override def toFuture[T](value: Identity[T]): Future[T] =
       Future.successful(value)
   }
 

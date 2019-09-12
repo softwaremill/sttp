@@ -13,7 +13,6 @@ import com.softwaremill.sttp.ResponseAsStream
 import com.softwaremill.sttp.SttpBackend
 import monix.eval.Task
 import monix.reactive.Observable
-import cats.syntax.functor._
 import org.scalajs.dom.experimental.BodyInit
 import org.scalajs.dom.experimental.{Response => FetchResponse}
 

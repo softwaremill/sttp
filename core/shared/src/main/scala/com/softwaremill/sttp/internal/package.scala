@@ -46,7 +46,7 @@ package object internal {
     "This is a partial request, the method & url are not specified. Use " +
       ".get(...), .post(...) etc. to obtain a non-partial request."
   )
-  private[sttp] type IsIdInRequest[U[_]] = U[Unit] =:= Id[Unit]
+  private[sttp] type IsIdInRequest[U[_]] = U[Unit] =:= Identity[Unit]
 
   private[sttp] val Utf8 = "utf-8"
   private[sttp] val Iso88591 = "iso-8859-1"

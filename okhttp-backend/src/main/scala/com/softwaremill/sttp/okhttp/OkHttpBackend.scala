@@ -173,7 +173,7 @@ object OkHttpBackend {
 }
 
 class OkHttpSyncBackend private (client: OkHttpClient, closeClient: Boolean)
-    extends OkHttpBackend[Id, Nothing](client, closeClient) {
+    extends OkHttpBackend[Identity, Nothing](client, closeClient) {
   override def send[T](r: Request[T, Nothing]): Response[T] = {
     val request = convertRequest(r)
     val response = OkHttpBackend
@@ -183,17 +183,17 @@ class OkHttpSyncBackend private (client: OkHttpClient, closeClient: Boolean)
     readResponse(response, r.response)
   }
 
-  override def responseMonad: MonadError[Id] = IdMonad
+  override def responseMonad: MonadError[Identity] = IdMonad
 }
 
 object OkHttpSyncBackend {
-  private def apply(client: OkHttpClient, closeClient: Boolean): SttpBackend[Id, Nothing] =
-    new FollowRedirectsBackend[Id, Nothing](new OkHttpSyncBackend(client, closeClient))
+  private def apply(client: OkHttpClient, closeClient: Boolean): SttpBackend[Identity, Nothing] =
+    new FollowRedirectsBackend[Identity, Nothing](new OkHttpSyncBackend(client, closeClient))
 
-  def apply(options: SttpBackendOptions = SttpBackendOptions.Default): SttpBackend[Id, Nothing] =
+  def apply(options: SttpBackendOptions = SttpBackendOptions.Default): SttpBackend[Identity, Nothing] =
     OkHttpSyncBackend(OkHttpBackend.defaultClient(DefaultReadTimeout.toMillis, options), closeClient = true)
 
-  def usingClient(client: OkHttpClient): SttpBackend[Id, Nothing] =
+  def usingClient(client: OkHttpClient): SttpBackend[Identity, Nothing] =
     OkHttpSyncBackend(client, closeClient = false)
 }
 

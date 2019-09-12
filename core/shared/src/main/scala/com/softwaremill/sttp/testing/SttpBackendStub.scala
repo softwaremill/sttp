@@ -139,8 +139,8 @@ object SttpBackendStub {
     * Create a stub synchronous backend (which doesn't wrap results in any
     * container), without streaming support.
     */
-  def synchronous: SttpBackendStub[Id, Nothing] =
-    new SttpBackendStub[Id, Nothing](IdMonad, PartialFunction.empty, None)
+  def synchronous: SttpBackendStub[Identity, Nothing] =
+    new SttpBackendStub[Identity, Nothing](IdMonad, PartialFunction.empty, None)
 
   /**
     * Create a stub asynchronous backend (which wraps results in Scala's

@@ -52,7 +52,7 @@ class FollowRedirectsBackend[R[_], S](delegate: SttpBackend[R, S]) extends SttpB
     }
 
     val redirectResponse =
-      sendWithCounter(changePostPutToGet(request.copy[Id, T, S](uri = uri), response.code), redirects + 1)
+      sendWithCounter(changePostPutToGet(request.copy[Identity, T, S](uri = uri), response.code), redirects + 1)
 
     responseMonad.map(redirectResponse) { rr =>
       val responseNoBody = response.copy(body = ())

@@ -1,6 +1,6 @@
 package com.softwaremill.sttp
 
-class ToCurlConverter[R <: RequestT[Id, _, _]] {
+class ToCurlConverter[R <: RequestT[Identity, _, _]] {
 
   def apply(request: R): String = {
     val params = List(extractOptions(_), extractMethod(_), extractHeaders(_), extractBody(_))

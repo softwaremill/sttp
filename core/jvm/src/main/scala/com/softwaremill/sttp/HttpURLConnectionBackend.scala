@@ -20,7 +20,7 @@ class HttpURLConnectionBackend private (
     customizeConnection: HttpURLConnection => Unit,
     createURL: String => URL,
     openConnection: (URL, Option[java.net.Proxy]) => URLConnection
-) extends SttpBackend[Id, Nothing] {
+) extends SttpBackend[Identity, Nothing] {
 
   override def send[T](r: Request[T, Nothing]): Response[T] = {
     val c = openConnection(r.uri)
@@ -57,7 +57,7 @@ class HttpURLConnectionBackend private (
     }
   }
 
-  override val responseMonad: MonadError[Id] = IdMonad
+  override val responseMonad: MonadError[Identity] = IdMonad
 
   private def openConnection(uri: Uri): HttpURLConnection = {
     val url = createURL(uri.toString)
@@ -292,8 +292,8 @@ object HttpURLConnectionBackend {
         case (url, None)        => url.openConnection()
         case (url, Some(proxy)) => url.openConnection(proxy)
       }
-  ): SttpBackend[Id, Nothing] =
-    new FollowRedirectsBackend[Id, Nothing](
+  ): SttpBackend[Identity, Nothing] =
+    new FollowRedirectsBackend[Identity, Nothing](
       new HttpURLConnectionBackend(options, customizeConnection, createURL, openConnection)
     )
 }

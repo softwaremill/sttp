@@ -1,11 +1,11 @@
 package com.softwaremill
 
 package object sttp extends SttpApi {
-  type Id[X] = X
+  type Identity[X] = X
   type Empty[X] = None.type
 
   type PartialRequest[T, +S] = RequestT[Empty, T, S]
-  type Request[T, +S] = RequestT[Id, T, S]
+  type Request[T, +S] = RequestT[Identity, T, S]
 
   /**
     * Provide an implicit value of this type to serialize arbitrary classes into a request body.

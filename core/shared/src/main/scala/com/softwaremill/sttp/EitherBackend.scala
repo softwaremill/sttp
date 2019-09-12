@@ -8,7 +8,7 @@ import scala.util.control.NonFatal
   * @tparam S The type of streams that are supported by the backend. `Nothing`,
   *           if streaming requests/responses is not supported by this backend.
   */
-class EitherBackend[S](delegate: SttpBackend[Id, S]) extends SttpBackend[Either[Throwable, ?], S] {
+class EitherBackend[S](delegate: SttpBackend[Identity, S]) extends SttpBackend[Either[Throwable, ?], S] {
 
   override def send[T](request: Request[T, S]): Either[Throwable, Response[T]] =
     try Right(delegate.send(request))

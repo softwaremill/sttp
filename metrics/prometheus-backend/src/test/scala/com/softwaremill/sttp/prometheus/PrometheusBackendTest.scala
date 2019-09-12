@@ -28,7 +28,7 @@ class PrometheusBackendTest
   it should "use default histogram name" in {
     // given
     val backendStub = SttpBackendStub.synchronous.whenAnyRequest.thenRespondOk()
-    val backend = PrometheusBackend[Id, Nothing](backendStub)
+    val backend = PrometheusBackend[Identity, Nothing](backendStub)
     val requestsNumber = 10
 
     // when
@@ -42,8 +42,10 @@ class PrometheusBackendTest
     // given
     val backendStub = SttpBackendStub.synchronous.whenAnyRequest.thenRespondOk()
     val histogramName = "test_two_backends"
-    val backend1 = PrometheusBackend[Id, Nothing](backendStub, requestToHistogramNameMapper = _ => Some(histogramName))
-    val backend2 = PrometheusBackend[Id, Nothing](backendStub, requestToHistogramNameMapper = _ => Some(histogramName))
+    val backend1 =
+      PrometheusBackend[Identity, Nothing](backendStub, requestToHistogramNameMapper = _ => Some(histogramName))
+    val backend2 =
+      PrometheusBackend[Identity, Nothing](backendStub, requestToHistogramNameMapper = _ => Some(histogramName))
 
     // when
     backend1.send(sttp.get(uri"http://127.0.0.1/foo"))
@@ -57,7 +59,7 @@ class PrometheusBackendTest
     // given
     val customHistogramName = "my_custom_histogram"
     val backend =
-      PrometheusBackend[Id, Nothing](SttpBackendStub.synchronous, _ => Some(customHistogramName))
+      PrometheusBackend[Identity, Nothing](SttpBackendStub.synchronous, _ => Some(customHistogramName))
     val requestsNumber = 5
 
     // when
@@ -71,7 +73,7 @@ class PrometheusBackendTest
   it should "disable histograms" in {
     // given
     val backend =
-      PrometheusBackend[Id, Nothing](SttpBackendStub.synchronous, _ => None)
+      PrometheusBackend[Identity, Nothing](SttpBackendStub.synchronous, _ => None)
     val requestsNumber = 6
 
     // when
@@ -166,8 +168,8 @@ class PrometheusBackendTest
     // given
     val backendStub1 = SttpBackendStub.synchronous.whenAnyRequest.thenRespondOk()
     val backendStub2 = SttpBackendStub.synchronous.whenAnyRequest.thenRespondNotFound()
-    val backend1 = PrometheusBackend[Id, Nothing](backendStub1)
-    val backend2 = PrometheusBackend[Id, Nothing](backendStub2)
+    val backend1 = PrometheusBackend[Identity, Nothing](backendStub1)
+    val backend2 = PrometheusBackend[Identity, Nothing](backendStub2)
 
     // when
     (0 until 10).foreach(_ => backend1.send(sttp.get(uri"http://127.0.0.1/foo")))

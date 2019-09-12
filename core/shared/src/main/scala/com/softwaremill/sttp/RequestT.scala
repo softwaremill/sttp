@@ -40,21 +40,21 @@ case class RequestT[U[_], T, +S](
     tags: Map[String, Any]
 ) extends RequestTExtensions[U, T, S] {
   def get(uri: Uri): Request[T, S] =
-    this.copy[Id, T, S](uri = uri, method = Method.GET)
+    this.copy[Identity, T, S](uri = uri, method = Method.GET)
   def head(uri: Uri): Request[T, S] =
-    this.copy[Id, T, S](uri = uri, method = Method.HEAD)
+    this.copy[Identity, T, S](uri = uri, method = Method.HEAD)
   def post(uri: Uri): Request[T, S] =
-    this.copy[Id, T, S](uri = uri, method = Method.POST)
+    this.copy[Identity, T, S](uri = uri, method = Method.POST)
   def put(uri: Uri): Request[T, S] =
-    this.copy[Id, T, S](uri = uri, method = Method.PUT)
+    this.copy[Identity, T, S](uri = uri, method = Method.PUT)
   def delete(uri: Uri): Request[T, S] =
-    this.copy[Id, T, S](uri = uri, method = Method.DELETE)
+    this.copy[Identity, T, S](uri = uri, method = Method.DELETE)
   def options(uri: Uri): Request[T, S] =
-    this.copy[Id, T, S](uri = uri, method = Method.OPTIONS)
+    this.copy[Identity, T, S](uri = uri, method = Method.OPTIONS)
   def patch(uri: Uri): Request[T, S] =
-    this.copy[Id, T, S](uri = uri, method = Method.PATCH)
+    this.copy[Identity, T, S](uri = uri, method = Method.PATCH)
   def method(method: Method, uri: Uri): Request[T, S] =
-    this.copy[Id, T, S](uri = uri, method = method)
+    this.copy[Identity, T, S](uri = uri, method = method)
 
   def contentType(ct: String): RequestT[U, T, S] =
     header(HeaderNames.ContentType, ct, replaceExisting = true)
@@ -237,12 +237,12 @@ case class RequestT[U[_], T, +S](
     // changing the method & url fields using `isIdInRequest`, but that
     // would be only to satisfy the type checker, and a needless copy at
     // runtime.
-    backend.send(this.asInstanceOf[RequestT[Id, T, S]])
+    backend.send(this.asInstanceOf[RequestT[Identity, T, S]])
   }
 
   @silent("never used")
   def toCurl(implicit isIdInRequest: IsIdInRequest[U]): String = {
-    ToCurlConverter.requestToCurl(this.asInstanceOf[RequestT[Id, T, S]])
+    ToCurlConverter.requestToCurl(this.asInstanceOf[RequestT[Identity, T, S]])
   }
 
   private def hasContentType: Boolean =
