@@ -13,7 +13,7 @@ trait CatsImplicits extends LowLevelCatsImplicits {
       sttpBackend: SttpBackend[R, S]
   ): MappableSttpBackend[R, S] = new MappableSttpBackend(sttpBackend)
 
-  implicit def asyncMonadError[F[_]: Async]: MonadAsyncError[F] = new AsyncMonadAsyncError[F]
+  implicit def asyncMonadError[F[_]: Async]: MonadAsyncError[F] = new CatsMonadAsyncError[F]
 }
 
 trait LowLevelCatsImplicits {

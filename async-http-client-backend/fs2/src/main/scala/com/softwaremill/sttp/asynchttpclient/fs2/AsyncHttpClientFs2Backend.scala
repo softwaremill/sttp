@@ -5,7 +5,7 @@ import java.nio.ByteBuffer
 import cats.Functor
 import cats.effect._
 import com.softwaremill.sttp.asynchttpclient.AsyncHttpClientBackend
-import com.softwaremill.sttp.impl.cats.EffectMonadAsyncError
+import com.softwaremill.sttp.impl.cats.CatsMonadAsyncError
 import com.softwaremill.sttp._
 import com.softwaremill.sttp.internal._
 import fs2._
@@ -24,7 +24,7 @@ import scala.language.higherKinds
 class AsyncHttpClientFs2Backend[F[_]: ConcurrentEffect] private (asyncHttpClient: AsyncHttpClient, closeClient: Boolean)
     extends AsyncHttpClientBackend[F, Stream[F, ByteBuffer]](
       asyncHttpClient,
-      new EffectMonadAsyncError,
+      new CatsMonadAsyncError,
       closeClient
     ) {
 

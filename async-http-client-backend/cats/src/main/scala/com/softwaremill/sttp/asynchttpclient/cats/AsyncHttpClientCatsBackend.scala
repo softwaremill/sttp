@@ -4,7 +4,7 @@ import java.nio.ByteBuffer
 
 import cats.effect.{Async, ContextShift}
 import com.softwaremill.sttp.asynchttpclient.AsyncHttpClientBackend
-import com.softwaremill.sttp.impl.cats.AsyncMonadAsyncError
+import com.softwaremill.sttp.impl.cats.CatsMonadAsyncError
 import com.softwaremill.sttp.{FollowRedirectsBackend, Request, Response, SttpBackend, SttpBackendOptions}
 import io.netty.buffer.ByteBuf
 import org.asynchttpclient.{
@@ -23,7 +23,7 @@ class AsyncHttpClientCatsBackend[F[_]: Async: ContextShift] private (
     closeClient: Boolean
 ) extends AsyncHttpClientBackend[F, Nothing](
       asyncHttpClient,
-      new AsyncMonadAsyncError,
+      new CatsMonadAsyncError,
       closeClient
     ) {
 
