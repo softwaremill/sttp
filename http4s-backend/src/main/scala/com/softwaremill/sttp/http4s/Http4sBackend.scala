@@ -134,7 +134,7 @@ class Http4sBackend[F[_]: Effect: ContextShift](client: Client[F], blockingExecu
   private def bodyFromHttp4s[T](
       rr: ResponseAs[T, Stream[F, Byte]],
       hr: http4s.Response[F],
-      rm: ResponseMetadata
+      meta: ResponseMetadata
   ): F[T] = {
     def saved(file: File, overwrite: Boolean) = {
       if (!file.exists()) {
@@ -149,10 +149,10 @@ class Http4sBackend[F[_]: Effect: ContextShift](client: Client[F], blockingExecu
 
     rr match {
       case MappedResponseAs(raw, g) =>
-        bodyFromHttp4s(raw, hr, rm).map(g(_, rm))
+        bodyFromHttp4s(raw, hr, meta).map(g(_, meta))
 
       case ResponseAsFromMetadata(f) =>
-        bodyFromHttp4s(f(rm), hr, rm)
+        bodyFromHttp4s(f(meta), hr, meta)
 
       case IgnoreResponse =>
         hr.body.compile.drain

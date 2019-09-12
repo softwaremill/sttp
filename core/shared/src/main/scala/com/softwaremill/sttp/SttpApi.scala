@@ -95,8 +95,8 @@ trait SttpApi extends SttpExtensions {
   def fromMetadata[T, S](f: ResponseMetadata => ResponseAs[T, S]): ResponseAs[T, S] = ResponseAsFromMetadata(f)
 
   def asEither[L, R, S](onError: ResponseAs[L, S], onSuccess: ResponseAs[R, S]): ResponseAs[Either[L, R], S] =
-    fromMetadata { rm =>
-      if (rm.isSuccess) onSuccess.map(Right(_)) else onError.map(Left(_))
+    fromMetadata { meta =>
+      if (meta.isSuccess) onSuccess.map(Right(_)) else onError.map(Left(_))
     }
 
   // multipart factory methods

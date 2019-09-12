@@ -197,12 +197,12 @@ object OkHttpSyncBackend {
     OkHttpSyncBackend(client, closeClient = false)
 }
 
-abstract class OkHttpAsyncBackend[R[_], S](client: OkHttpClient, rm: MonadAsyncError[R], closeClient: Boolean)
+abstract class OkHttpAsyncBackend[R[_], S](client: OkHttpClient, monad: MonadAsyncError[R], closeClient: Boolean)
     extends OkHttpBackend[R, S](client, closeClient) {
   override def send[T](r: Request[T, S]): R[Response[T]] = {
     val request = convertRequest(r)
 
-    rm.flatten(rm.async[R[Response[T]]] { cb =>
+    monad.flatten(monad.async[R[Response[T]]] { cb =>
       def success(r: R[Response[T]]) = cb(Right(r))
       def error(t: Throwable) = cb(Left(t))
 
@@ -220,7 +220,7 @@ abstract class OkHttpAsyncBackend[R[_], S](client: OkHttpClient, rm: MonadAsyncE
     })
   }
 
-  override def responseMonad: MonadError[R] = rm
+  override def responseMonad: MonadError[R] = monad
 }
 
 class OkHttpFutureBackend private (client: OkHttpClient, closeClient: Boolean)(implicit ec: ExecutionContext)

@@ -16,9 +16,9 @@ import scala.scalanative.native.stdlib._
 import scala.scalanative.native.string._
 import scala.scalanative.native.{CSize, Ptr, _}
 
-abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean) extends SttpBackend[R, S] {
+abstract class AbstractCurlBackend[R[_], S](monad: MonadError[R], verbose: Boolean) extends SttpBackend[R, S] {
 
-  override val responseMonad: MonadError[R] = rm
+  override val responseMonad: MonadError[R] = monad
 
   override def close(): Unit = {}
 

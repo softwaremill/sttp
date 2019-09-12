@@ -95,7 +95,7 @@ class AkkaHttpBackend private (
   private def bodyFromAkka[T](
       rr: ResponseAs[T, S],
       hr: HttpResponse,
-      rm: ResponseMetadata
+      meta: ResponseMetadata
   ): Future[T] = {
 
     implicit val ec: ExecutionContext = this.ec
@@ -118,9 +118,9 @@ class AkkaHttpBackend private (
 
     rr match {
       case MappedResponseAs(raw, g) =>
-        bodyFromAkka(raw, hr, rm).map(t => g(t, rm))
+        bodyFromAkka(raw, hr, meta).map(t => g(t, meta))
 
-      case ResponseAsFromMetadata(f) => bodyFromAkka(f(rm), hr, rm)
+      case ResponseAsFromMetadata(f) => bodyFromAkka(f(meta), hr, meta)
 
       case IgnoreResponse =>
         // todo: Replace with HttpResponse#discardEntityBytes() once https://github.com/akka/akka-http/issues/1459 is resolved
@@ -183,16 +183,16 @@ class AkkaHttpBackend private (
   }
 
   private def setBodyOnAkka(r: Request[_, S], body: RequestBody[S], ar: HttpRequest): Try[HttpRequest] = {
-    def ctWithEncoding(ct: ContentType, encoding: String) =
+    def ctWithCharset(ct: ContentType, charset: String) =
       HttpCharsets
-        .getForKey(encoding)
+        .getForKey(charset)
         .map(hc => ContentType.apply(ct.mediaType, () => hc))
         .getOrElse(ct)
 
     def toBodyPart(mp: Multipart): Try[AkkaMultipart.FormData.BodyPart] = {
       def entity(ct: ContentType) = mp.body match {
         case StringBody(b, encoding, _) =>
-          HttpEntity(ctWithEncoding(ct, encoding), b.getBytes(encoding))
+          HttpEntity(ctWithCharset(ct, encoding), b.getBytes(encoding))
         case ByteArrayBody(b, _)  => HttpEntity(ct, b)
         case ByteBufferBody(b, _) => HttpEntity(ct, ByteString(b))
         case isb: InputStreamBody =>
@@ -216,7 +216,7 @@ class AkkaHttpBackend private (
       body match {
         case NoBody => Success(ar)
         case StringBody(b, encoding, _) =>
-          Success(ar.withEntity(ctWithEncoding(ct, encoding), b.getBytes(encoding)))
+          Success(ar.withEntity(ctWithCharset(ct, encoding), b.getBytes(encoding)))
         case ByteArrayBody(b, _) => Success(ar.withEntity(HttpEntity(ct, b)))
         case ByteBufferBody(b, _) =>
           Success(ar.withEntity(HttpEntity(ct, ByteString(b))))

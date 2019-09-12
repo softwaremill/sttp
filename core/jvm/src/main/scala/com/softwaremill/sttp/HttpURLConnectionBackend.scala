@@ -238,12 +238,12 @@ class HttpURLConnectionBackend private (
   private def readResponseBody[T](
       is: InputStream,
       responseAs: ResponseAs[T, Nothing],
-      rm: ResponseMetadata
+      meta: ResponseMetadata
   ): T = {
     responseAs match {
-      case MappedResponseAs(raw, g) => g(readResponseBody(is, raw, rm), rm)
+      case MappedResponseAs(raw, g) => g(readResponseBody(is, raw, meta), meta)
 
-      case ResponseAsFromMetadata(f) => readResponseBody(is, f(rm), rm)
+      case ResponseAsFromMetadata(f) => readResponseBody(is, f(meta), meta)
 
       case IgnoreResponse =>
         @tailrec def consume(): Unit = if (is.read() != -1) consume()
