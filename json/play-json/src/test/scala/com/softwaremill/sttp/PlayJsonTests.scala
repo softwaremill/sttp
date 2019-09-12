@@ -84,7 +84,7 @@ class PlayJsonTests extends FlatSpec with Matchers with EitherValues {
 
     val ct = req.headers.toMap.get("Content-Type")
 
-    ct shouldBe Some(contentTypeWithEncoding(MediaTypes.Json, Utf8))
+    ct shouldBe Some(contentTypeWithCharset(MediaTypes.Json, Utf8))
   }
 
   it should "only set the content type if it was not set earlier" in {
@@ -133,12 +133,10 @@ class PlayJsonTests extends FlatSpec with Matchers with EitherValues {
     responseAs match {
       case responseAs: MappedResponseAs[_, A, Nothing] =>
         responseAs.raw match {
-          case ResponseAsString("utf-8") =>
-            s => responseAs.g(s, ResponseMetadata(Nil, 200, ""))
-          case ResponseAsString(encoding) =>
-            fail(s"MappedResponseAs wraps a ResponseAsString with wrong encoding: $encoding")
+          case ResponseAsByteArray =>
+            s => responseAs.g(s.getBytes(Utf8), ResponseMetadata(Nil, 200, ""))
           case _ =>
-            fail("MappedResponseAs does not wrap a ResponseAsString")
+            fail("MappedResponseAs does not wrap a ResponseAsByteArray")
         }
       case _ => fail("ResponseAs is not a MappedResponseAs")
     }

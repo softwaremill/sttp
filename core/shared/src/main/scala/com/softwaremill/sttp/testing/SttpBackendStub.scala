@@ -195,13 +195,6 @@ object SttpBackendStub {
   private[sttp] def tryAdjustResponseBody[T, U](ra: ResponseAs[T, _], b: U, headers: ResponseMetadata): Option[T] = {
     ra match {
       case IgnoreResponse => Some(())
-      case ResponseAsString(enc) =>
-        b match {
-          case s: String       => Some(s)
-          case a: Array[Byte]  => Some(new String(a, enc))
-          case is: InputStream => Some(new String(toByteArray(is), enc))
-          case _               => None
-        }
       case ResponseAsByteArray =>
         b match {
           case s: String       => Some(s.getBytes(Utf8))

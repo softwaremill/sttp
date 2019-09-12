@@ -274,12 +274,6 @@ abstract class AsyncHttpClientBackend[R[_], S](
             response.getResponseBodyAsBytes
             Try(())
 
-          case ResponseAsString(enc) =>
-            val charset = Option(response.getHeader(HeaderNames.ContentType))
-              .flatMap(encodingFromContentType)
-              .getOrElse(enc)
-            Try(response.getResponseBody(Charset.forName(charset)))
-
           case ResponseAsByteArray =>
             Try(response.getResponseBodyAsBytes)
 

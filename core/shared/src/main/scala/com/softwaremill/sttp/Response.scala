@@ -26,7 +26,7 @@ case class Response[T](
   lazy val body: Either[String, T] = rawErrorBody match {
     case Left(bytes) =>
       val charset = contentType
-        .flatMap(encodingFromContentType)
+        .flatMap(charsetFromContentType)
         .getOrElse(Utf8)
       Left(new String(bytes, charset))
 

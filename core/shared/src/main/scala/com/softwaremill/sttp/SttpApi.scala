@@ -47,15 +47,18 @@ trait SttpApi extends SttpExtensions {
   def ignore: ResponseAs[Unit, Nothing] = IgnoreResponse
 
   /**
-    * Use the `utf-8` encoding by default, unless specified otherwise in the response headers.
+    * Use the `utf-8` charset by default, unless specified otherwise in the response headers.
     */
   def asString: ResponseAs[String, Nothing] = asString(Utf8)
 
   /**
-    * Use the given encoding by default, unless specified otherwise in the response headers.
+    * Use the given charset by default, unless specified otherwise in the response headers.
     */
-  def asString(encoding: String): ResponseAs[String, Nothing] =
-    ResponseAsString(encoding)
+  def asString(charset: String): ResponseAs[String, Nothing] =
+    ResponseAsByteArray.mapWithMetadata { (bytes, metadata) =>
+      val charset2 = metadata.contentType.flatMap(charsetFromContentType).getOrElse(charset)
+      new String(bytes, charset2)
+    }
 
   def asByteArray: ResponseAs[Array[Byte], Nothing] =
     ResponseAsByteArray
@@ -84,14 +87,14 @@ trait SttpApi extends SttpExtensions {
     * overridden later using the `contentType` method.
     */
   def multipart(name: String, data: String): Multipart =
-    Multipart(name, StringBody(data, Utf8), contentType = Some(contentTypeWithEncoding(MediaTypes.Text, Utf8)))
+    Multipart(name, StringBody(data, Utf8), contentType = Some(contentTypeWithCharset(MediaTypes.Text, Utf8)))
 
   /**
     * Content type will be set to `text/plain` with `utf-8` encoding, can be
     * overridden later using the `contentType` method.
     */
   def multipart(name: String, data: String, encoding: String): Multipart =
-    Multipart(name, StringBody(data, encoding), contentType = Some(contentTypeWithEncoding(MediaTypes.Text, Utf8)))
+    Multipart(name, StringBody(data, encoding), contentType = Some(contentTypeWithCharset(MediaTypes.Text, Utf8)))
 
   /**
     * Content type will be set to `application/octet-stream`, can be overridden

@@ -212,16 +212,6 @@ abstract class AbstractFetchBackend[R[_], S](options: FetchOptions)(rm: MonadErr
       case IgnoreResponse =>
         transformPromise(response.arrayBuffer()).map(_ => ())
 
-      case ResponseAsString(enc) =>
-        val charset = response.headers
-          .get(HeaderNames.ContentType)
-          .toOption
-          .filter(_ != null)
-          .flatMap(encodingFromContentType)
-          .getOrElse(enc)
-        if (charset.compareToIgnoreCase(Utf8) == 0) transformPromise(response.text())
-        else responseToByteArray(response).map(bytes => new String(bytes, charset))
-
       case ResponseAsByteArray =>
         responseToByteArray(response)
 

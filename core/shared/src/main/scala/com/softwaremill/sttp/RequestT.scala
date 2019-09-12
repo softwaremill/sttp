@@ -59,7 +59,7 @@ case class RequestT[U[_], T, +S](
   def contentType(ct: String): RequestT[U, T, S] =
     header(HeaderNames.ContentType, ct, replaceExisting = true)
   def contentType(ct: String, encoding: String): RequestT[U, T, S] =
-    header(HeaderNames.ContentType, contentTypeWithEncoding(ct, encoding), replaceExisting = true)
+    header(HeaderNames.ContentType, contentTypeWithCharset(ct, encoding), replaceExisting = true)
   def contentLength(l: Long): RequestT[U, T, S] =
     header(HeaderNames.ContentLength, l.toString, replaceExisting = true)
   def header(k: String, v: String, replaceExisting: Boolean = false): RequestT[U, T, S] = {
@@ -259,7 +259,7 @@ case class RequestT[U[_], T, +S](
   private[sttp] def withBasicBody(body: BasicRequestBody) = {
     val defaultCt = body match {
       case StringBody(_, encoding, Some(ct)) =>
-        Some(contentTypeWithEncoding(ct, encoding))
+        Some(contentTypeWithCharset(ct, encoding))
       case _ =>
         body.defaultContentType
     }

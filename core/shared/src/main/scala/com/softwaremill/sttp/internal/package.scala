@@ -6,10 +6,10 @@ import java.nio.ByteBuffer
 import scala.annotation.{implicitNotFound, tailrec}
 
 package object internal {
-  private[sttp] def contentTypeWithEncoding(ct: String, enc: String): String =
-    s"$ct; charset=$enc"
+  private[sttp] def contentTypeWithCharset(ct: String, charset: String): String =
+    s"$ct; charset=$charset"
 
-  private[sttp] def encodingFromContentType(ct: String): Option[String] =
+  private[sttp] def charsetFromContentType(ct: String): Option[String] =
     ct.split(";").map(_.trim.toLowerCase).collectFirst {
       case s if s.startsWith("charset=") && s.substring(8).trim != "" => s.substring(8).trim
     }

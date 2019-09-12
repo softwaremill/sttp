@@ -158,10 +158,6 @@ class Http4sBackend[F[_]: Effect: ContextShift](client: Client[F], blockingExecu
       case IgnoreResponse =>
         hr.body.compile.drain
 
-      case ResponseAsString(enc) =>
-        implicit val charset: http4s.Charset = charsetToHttp4s(enc)
-        hr.as[String]
-
       case ResponseAsByteArray =>
         hr.as[Array[Byte]]
 

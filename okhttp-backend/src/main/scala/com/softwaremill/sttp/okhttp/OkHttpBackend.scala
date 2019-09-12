@@ -1,11 +1,9 @@
 package com.softwaremill.sttp.okhttp
 
 import java.io.IOException
-import java.nio.charset.Charset
 import java.util.concurrent.TimeUnit
 
 import com.softwaremill.sttp._
-import com.softwaremill.sttp.internal._
 import ResponseAs.EagerResponseHandler
 import com.softwaremill.sttp.SttpBackendOptions.Proxy
 import okhttp3.internal.http.HttpMethod
@@ -118,13 +116,6 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean
         bra match {
           case IgnoreResponse =>
             Try(res.close())
-          case ResponseAsString(encoding) =>
-            val charset = Option(res.header(HeaderNames.ContentType))
-              .flatMap(encodingFromContentType)
-              .getOrElse(encoding)
-            val body = Try(res.body().source().readString(Charset.forName(charset)))
-            res.close()
-            body
           case ResponseAsByteArray =>
             val body = Try(res.body().bytes())
             res.close()

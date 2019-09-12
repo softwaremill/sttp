@@ -181,14 +181,7 @@ abstract class AbstractCurlBackend[R[_], S](rm: MonadError[R], verbose: Boolean)
     responseAs match {
       case MappedResponseAs(raw, g) =>
         responseMonad.map(readResponseBody(response, raw, responseMetadata))(g(_, responseMetadata))
-      case IgnoreResponse => responseMonad.unit((): Unit)
-      case ResponseAsString(enc) =>
-        val charset = responseMetadata.headers.toMap
-          .get(HeaderNames.ContentType)
-          .flatMap(encodingFromContentType)
-          .getOrElse(enc)
-        if (charset.compareToIgnoreCase(Utf8) == 0) responseMonad.unit(response)
-        else responseMonad.map(toByteArray(response))(r => new String(r, charset.toUpperCase))
+      case IgnoreResponse      => responseMonad.unit((): Unit)
       case ResponseAsByteArray => toByteArray(response)
       case ResponseAsFile(output, overwrite) =>
         responseMonad.map(toByteArray(response)) { a =>

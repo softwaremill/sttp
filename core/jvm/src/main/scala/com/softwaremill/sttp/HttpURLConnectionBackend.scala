@@ -14,7 +14,6 @@ import com.softwaremill.sttp.internal._
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 import scala.concurrent.duration.Duration
-import scala.io.Source
 
 class HttpURLConnectionBackend private (
     opts: SttpBackendOptions,
@@ -227,18 +226,15 @@ class HttpURLConnectionBackend private (
       .flatMap { case (k, vv) => vv.asScala.map((k, _)) }
     val contentEncoding = Option(c.getHeaderField(HeaderNames.ContentEncoding))
 
-    val charsetFromHeaders = Option(c.getHeaderField(HeaderNames.ContentType))
-      .flatMap(encodingFromContentType)
-
     val code = c.getResponseCode
     val wrappedIs = if (c.getRequestMethod != "HEAD") {
       wrapInput(contentEncoding, handleNullInput(is))
     } else is
     val responseMetadata = ResponseMetadata(headers, code, c.getResponseMessage)
     val body = if (parseCondition(responseMetadata)) {
-      Right(readResponseBody(wrappedIs, responseAs, charsetFromHeaders, responseMetadata))
+      Right(readResponseBody(wrappedIs, responseAs, responseMetadata))
     } else {
-      Left(readResponseBody(wrappedIs, asByteArray, charsetFromHeaders, responseMetadata))
+      Left(readResponseBody(wrappedIs, asByteArray, responseMetadata))
     }
 
     Response(body, code, c.getResponseMessage, headers, Nil)
@@ -247,22 +243,14 @@ class HttpURLConnectionBackend private (
   private def readResponseBody[T](
       is: InputStream,
       responseAs: ResponseAs[T, Nothing],
-      charset: Option[String],
       headers: ResponseMetadata
   ): T = {
-
-    def asString(enc: String) =
-      Source.fromInputStream(is, charset.getOrElse(enc)).mkString
-
     responseAs match {
-      case MappedResponseAs(raw, g) => g(readResponseBody(is, raw, charset, headers), headers)
+      case MappedResponseAs(raw, g) => g(readResponseBody(is, raw, headers), headers)
 
       case IgnoreResponse =>
         @tailrec def consume(): Unit = if (is.read() != -1) consume()
         consume()
-
-      case ResponseAsString(enc) =>
-        asString(enc)
 
       case ResponseAsByteArray =>
         toByteArray(is)

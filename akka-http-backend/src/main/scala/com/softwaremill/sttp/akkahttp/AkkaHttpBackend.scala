@@ -15,7 +15,6 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{FileIO, Sink, Source, StreamConverters}
 import akka.util.ByteString
 import com.softwaremill.sttp._
-import com.softwaremill.sttp.internal._
 
 import scala.collection.immutable.Seq
 import scala.concurrent.{ExecutionContext, Future}
@@ -70,18 +69,13 @@ class AkkaHttpBackend private (
         val statusText = hr.status.reason()
 
         val headers = headersFromAkka(hr)
-        val charsetFromHeaders = headers
-          .collectFirst {
-            case (HeaderNames.ContentType, value) => value
-          }
-          .flatMap(encodingFromContentType)
 
         val responseMetadata = ResponseMetadata(headers, code, statusText)
         val body = if (r.options.parseResponseIf(responseMetadata)) {
-          bodyFromAkka(r.response, decodeAkkaResponse(hr), charsetFromHeaders, responseMetadata)
+          bodyFromAkka(r.response, decodeAkkaResponse(hr), responseMetadata)
             .map(Right(_))
         } else {
-          bodyFromAkka(asByteArray, decodeAkkaResponse(hr), charsetFromHeaders, responseMetadata)
+          bodyFromAkka(asByteArray, decodeAkkaResponse(hr), responseMetadata)
             .map(Left(_))
         }
 
@@ -107,7 +101,6 @@ class AkkaHttpBackend private (
   private def bodyFromAkka[T](
       rr: ResponseAs[T, S],
       hr: HttpResponse,
-      charsetFromHeaders: Option[String],
       headers: ResponseMetadata
   ): Future[T] = {
 
@@ -131,15 +124,12 @@ class AkkaHttpBackend private (
 
     rr match {
       case MappedResponseAs(raw, g) =>
-        bodyFromAkka(raw, hr, charsetFromHeaders, headers).map(t => g(t, headers))
+        bodyFromAkka(raw, hr, headers).map(t => g(t, headers))
 
       case IgnoreResponse =>
         // todo: Replace with HttpResponse#discardEntityBytes() once https://github.com/akka/akka-http/issues/1459 is resolved
         hr.entity.dataBytes.runWith(Sink.ignore)
         Future.successful(())
-
-      case ResponseAsString(enc) =>
-        asByteArray.map(new String(_, charsetFromHeaders.getOrElse(enc)))
 
       case ResponseAsByteArray =>
         asByteArray

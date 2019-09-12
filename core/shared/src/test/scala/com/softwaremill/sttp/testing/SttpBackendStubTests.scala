@@ -239,12 +239,12 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
   private val s = "Hello, world!"
   private val adjustTestData = List[(Any, ResponseAs[_, _], Any)](
     (s, IgnoreResponse, Some(())),
-    (s, ResponseAsString(Utf8), Some(s)),
-    (s.getBytes(Utf8), ResponseAsString(Utf8), Some(s)),
-    (new ByteArrayInputStream(s.getBytes(Utf8)), ResponseAsString(Utf8), Some(s)),
-    (10, ResponseAsString(Utf8), None),
-    ("10", MappedResponseAs(ResponseAsString(Utf8), (s: String, _) => s.toInt), Some(10)),
-    (10, MappedResponseAs(ResponseAsString(Utf8), (s: String, _) => s.toInt), None)
+    (s, asString(Utf8), Some(s)),
+    (s.getBytes(Utf8), asString(Utf8), Some(s)),
+    (new ByteArrayInputStream(s.getBytes(Utf8)), asString(Utf8), Some(s)),
+    (10, asString(Utf8), None),
+    ("10", asString(Utf8).map(_.toInt), Some(10)),
+    (11, asString(Utf8).map(_.toInt), None)
   )
 
   behavior of "tryAdjustResponseBody"
