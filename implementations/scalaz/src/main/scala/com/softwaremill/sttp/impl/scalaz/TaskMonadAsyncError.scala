@@ -1,7 +1,6 @@
 package com.softwaremill.sttp.impl.scalaz
 
-import com.softwaremill.sttp.MonadAsyncError
-
+import com.softwaremill.sttp.monad.MonadAsyncError
 import scalaz.concurrent.Task
 import scalaz.{-\/, \/-}
 

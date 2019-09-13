@@ -1,6 +1,7 @@
 package com.softwaremill.sttp
 
 import com.softwaremill.sttp.internal.SttpFile
+import com.softwaremill.sttp.monad.MonadError
 
 import scala.collection.immutable.Seq
 import scala.language.higherKinds

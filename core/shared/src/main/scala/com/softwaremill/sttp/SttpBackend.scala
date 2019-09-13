@@ -1,5 +1,7 @@
 package com.softwaremill.sttp
 
+import com.softwaremill.sttp.monad.MonadError
+
 import scala.language.higherKinds
 
 /**

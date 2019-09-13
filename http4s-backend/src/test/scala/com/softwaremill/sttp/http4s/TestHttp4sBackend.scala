@@ -1,7 +1,8 @@
 package com.softwaremill.sttp.http4s
 
 import cats.effect.{ContextShift, IO}
-import com.softwaremill.sttp.{MonadError, Request, Response, SttpBackend}
+import com.softwaremill.sttp.monad.MonadError
+import com.softwaremill.sttp.{Request, Response, SttpBackend}
 import fs2.Stream
 import org.http4s.client.blaze.BlazeClientBuilder
 

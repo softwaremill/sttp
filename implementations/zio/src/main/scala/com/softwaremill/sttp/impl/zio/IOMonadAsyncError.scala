@@ -1,6 +1,6 @@
 package com.softwaremill.sttp.impl.zio
 
-import com.softwaremill.sttp.MonadAsyncError
+import com.softwaremill.sttp.monad.MonadAsyncError
 import zio.{IO, ZIO}
 
 object IOMonadAsyncError extends MonadAsyncError[IO[Throwable, ?]] {

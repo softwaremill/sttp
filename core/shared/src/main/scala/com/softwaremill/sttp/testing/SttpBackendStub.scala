@@ -4,6 +4,7 @@ import java.io.InputStream
 
 import com.softwaremill.sttp._
 import com.softwaremill.sttp.internal._
+import com.softwaremill.sttp.monad.{FutureMonad, IdMonad, MonadError}
 import com.softwaremill.sttp.testing.SttpBackendStub._
 
 import scala.concurrent.Future

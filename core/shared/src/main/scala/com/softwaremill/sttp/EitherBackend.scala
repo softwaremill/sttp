@@ -1,5 +1,7 @@
 package com.softwaremill.sttp
 
+import com.softwaremill.sttp.monad.{EitherMonad, MonadError}
+
 import scala.util.control.NonFatal
 
 /** A synchronous backend that safely wraps [[SttpBackend]] exceptions in `Either[Throwable, ?]`'s

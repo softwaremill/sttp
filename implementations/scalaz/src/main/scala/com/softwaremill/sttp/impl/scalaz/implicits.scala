@@ -1,6 +1,7 @@
 package com.softwaremill.sttp.impl.scalaz
 
-import com.softwaremill.sttp.{MonadError, Request, Response, SttpBackend}
+import com.softwaremill.sttp.monad.MonadError
+import com.softwaremill.sttp.{Request, Response, SttpBackend}
 import scalaz.~>
 
 import scala.language.higherKinds

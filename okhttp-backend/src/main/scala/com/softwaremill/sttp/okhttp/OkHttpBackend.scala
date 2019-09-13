@@ -6,6 +6,7 @@ import java.util.concurrent.TimeUnit
 import com.softwaremill.sttp._
 import ResponseAs.EagerResponseHandler
 import com.softwaremill.sttp.SttpBackendOptions.Proxy
+import com.softwaremill.sttp.monad.{FutureMonad, IdMonad, MonadAsyncError, MonadError}
 import okhttp3.internal.http.HttpMethod
 import okhttp3.{
   Authenticator,

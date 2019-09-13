@@ -1,6 +1,6 @@
 package com.softwaremill.sttp.impl.cats
 
-import com.softwaremill.sttp.MonadError
+import com.softwaremill.sttp.monad.MonadError
 
 import scala.language.higherKinds
 

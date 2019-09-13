@@ -4,7 +4,8 @@ import brave.http.{HttpClientAdapter, HttpClientHandler, HttpTracing}
 import brave.propagation.{Propagation, TraceContext}
 import brave.{Span, Tracing}
 import com.softwaremill.sttp.brave.BraveBackend._
-import com.softwaremill.sttp.{FollowRedirectsBackend, MonadError, Request, Response, SttpBackend}
+import com.softwaremill.sttp.monad.MonadError
+import com.softwaremill.sttp.{FollowRedirectsBackend, Request, Response, SttpBackend}
 
 import scala.language.higherKinds
 

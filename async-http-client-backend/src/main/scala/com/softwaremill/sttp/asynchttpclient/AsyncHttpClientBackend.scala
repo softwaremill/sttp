@@ -8,6 +8,7 @@ import com.softwaremill.sttp.ResponseAs.EagerResponseHandler
 import com.softwaremill.sttp.SttpBackendOptions.ProxyType.{Http, Socks}
 import com.softwaremill.sttp._
 import com.softwaremill.sttp.internal._
+import com.softwaremill.sttp.monad.{MonadAsyncError, MonadError}
 import io.netty.buffer.ByteBuf
 import io.netty.handler.codec.http.HttpHeaders
 import org.asynchttpclient.AsyncHandler.State

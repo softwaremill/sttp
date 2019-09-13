@@ -1,10 +1,11 @@
 package com.softwaremill.sttp
 
+import com.softwaremill.sttp.monad.FutureMonad
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.scalajs.js
 import scala.scalajs.js.Promise
-
 import org.scalajs.dom.experimental.BodyInit
 import org.scalajs.dom.experimental.{Response => FetchResponse}
 

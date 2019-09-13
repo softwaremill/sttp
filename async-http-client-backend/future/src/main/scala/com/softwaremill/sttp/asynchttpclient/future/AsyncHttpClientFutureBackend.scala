@@ -3,7 +3,8 @@ package com.softwaremill.sttp.asynchttpclient.future
 import java.nio.ByteBuffer
 
 import com.softwaremill.sttp.asynchttpclient.AsyncHttpClientBackend
-import com.softwaremill.sttp.{FollowRedirectsBackend, FutureMonad, SttpBackend, SttpBackendOptions}
+import com.softwaremill.sttp.monad.FutureMonad
+import com.softwaremill.sttp.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 import io.netty.buffer.ByteBuf
 import org.asynchttpclient.{
   AsyncHttpClient,

@@ -1,6 +1,7 @@
-package com.softwaremill.sttp
+package com.softwaremill.sttp.monad
 
 import com.github.ghik.silencer.silent
+import com.softwaremill.sttp.Identity
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.language.higherKinds

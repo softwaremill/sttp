@@ -8,6 +8,7 @@ import cats.effect.{ConcurrentEffect, ContextShift, Effect, Resource}
 import cats.implicits._
 import com.softwaremill.sttp._
 import com.softwaremill.sttp.impl.cats.CatsMonadAsyncError
+import com.softwaremill.sttp.monad.MonadError
 import fs2.{Chunk, Stream}
 import org.http4s
 import org.http4s.client.Client
@@ -168,7 +169,7 @@ class Http4sBackend[F[_]: Effect: ContextShift](client: Client[F], blockingExecu
     }
   }
 
-  override def responseMonad: com.softwaremill.sttp.MonadError[F] = new CatsMonadAsyncError
+  override def responseMonad: MonadError[F] = new CatsMonadAsyncError
 
   // no-op. Client lifecycle is managed by Resource
   override def close(): Unit = ()

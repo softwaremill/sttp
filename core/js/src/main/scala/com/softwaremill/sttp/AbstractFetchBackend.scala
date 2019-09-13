@@ -12,7 +12,8 @@ import com.softwaremill.sttp.dom.experimental.AbortController
 import com.softwaremill.sttp.dom.experimental.FilePropertyBag
 import com.softwaremill.sttp.dom.experimental.{File => DomFile}
 import com.softwaremill.sttp.internal._
-import com.softwaremill.sttp.monadSyntax._
+import com.softwaremill.sttp.monad.MonadError
+import com.softwaremill.sttp.monad.monadSyntax._
 import org.scalajs.dom.FormData
 import org.scalajs.dom.experimental.BodyInit
 import org.scalajs.dom.experimental.Fetch

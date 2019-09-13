@@ -6,6 +6,7 @@ import java.util.concurrent.TimeoutException
 import com.github.ghik.silencer.silent
 import com.softwaremill.sttp._
 import com.softwaremill.sttp.internal._
+import com.softwaremill.sttp.monad.{FutureMonad, IdMonad}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FlatSpec, Matchers}
 

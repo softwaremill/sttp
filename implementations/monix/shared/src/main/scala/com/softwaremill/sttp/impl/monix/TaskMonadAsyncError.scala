@@ -1,6 +1,6 @@
 package com.softwaremill.sttp.impl.monix
 
-import com.softwaremill.sttp.MonadAsyncError
+import com.softwaremill.sttp.monad.MonadAsyncError
 import monix.eval.Task
 
 import scala.util.{Failure, Success}

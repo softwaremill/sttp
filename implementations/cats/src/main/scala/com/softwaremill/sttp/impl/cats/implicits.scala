@@ -1,8 +1,9 @@
 package com.softwaremill.sttp.impl.cats
 
 import cats.effect.Async
-import com.softwaremill.sttp.{MonadAsyncError, MonadError, Request, Response, SttpBackend}
+import com.softwaremill.sttp.{Request, Response, SttpBackend}
 import cats.~>
+import com.softwaremill.sttp.monad.{MonadAsyncError, MonadError}
 
 import scala.language.higherKinds
 

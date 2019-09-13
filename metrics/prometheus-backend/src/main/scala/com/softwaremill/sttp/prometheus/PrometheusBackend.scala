@@ -2,7 +2,9 @@ package com.softwaremill.sttp.prometheus
 
 import java.util.concurrent.ConcurrentHashMap
 
-import com.softwaremill.sttp.{FollowRedirectsBackend, MonadError, Request, Response, SttpBackend}
+import com.github.ghik.silencer.silent
+import com.softwaremill.sttp.monad.MonadError
+import com.softwaremill.sttp.{FollowRedirectsBackend, Request, Response, SttpBackend}
 import io.prometheus.client.{CollectorRegistry, Counter, Gauge, Histogram}
 
 import scala.collection.mutable
@@ -119,6 +121,7 @@ object PrometheusBackend {
   /**
     * Clear cached collectors (gauges and histograms) both from the given collector registry, and from the backend.
     */
+  @silent("discarded")
   def clear(collectorRegistry: CollectorRegistry): Unit = {
     collectorRegistry.clear()
     histograms.remove(collectorRegistry)

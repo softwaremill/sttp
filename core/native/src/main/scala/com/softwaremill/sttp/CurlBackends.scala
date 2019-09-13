@@ -1,5 +1,7 @@
 package com.softwaremill.sttp
 
+import com.softwaremill.sttp.monad.{IdMonad, TryMonad}
+
 import scala.util.Try
 
 // Curl supports redirects, but it doesn't store the history, so using FollowRedirectsBackend is more convenient

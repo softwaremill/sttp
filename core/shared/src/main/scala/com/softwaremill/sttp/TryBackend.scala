@@ -1,5 +1,7 @@
 package com.softwaremill.sttp
 
+import com.softwaremill.sttp.monad.{MonadError, TryMonad}
+
 import scala.util.Try
 
 /** A synchronous backend that safely wraps [[SttpBackend]] exceptions in `Try`'s

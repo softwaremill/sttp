@@ -2,6 +2,8 @@ package com.softwaremill.sttp
 
 import java.net.URI
 
+import com.softwaremill.sttp.monad.MonadError
+
 import scala.language.higherKinds
 
 class FollowRedirectsBackend[R[_], S](delegate: SttpBackend[R, S]) extends SttpBackend[R, S] {
