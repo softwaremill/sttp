@@ -15,7 +15,8 @@ class AsyncHttpClientFs2HttpStreamingTest extends StreamingTest[IO, Stream[IO, B
 
   private implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.Implicits.global)
 
-  override implicit val backend: SttpBackend[IO, Stream[IO, ByteBuffer]] = AsyncHttpClientFs2Backend[IO]()
+  override implicit val backend: SttpBackend[IO, Stream[IO, ByteBuffer]] =
+    AsyncHttpClientFs2Backend[IO]().unsafeRunSync()
 
   override implicit val convertToFuture: ConvertToFuture[IO] =
     new ConvertToFuture[IO] {

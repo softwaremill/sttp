@@ -55,8 +55,8 @@ object AsyncHttpClientMonixBackend {
     */
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default
-  )(implicit s: Scheduler = Scheduler.Implicits.global): SttpBackend[Task, Observable[ByteBuffer]] =
-    AsyncHttpClientMonixBackend(AsyncHttpClientBackend.defaultClient(options), closeClient = true)
+  )(implicit s: Scheduler = Scheduler.Implicits.global): Task[SttpBackend[Task, Observable[ByteBuffer]]] =
+    Task.eval(AsyncHttpClientMonixBackend(AsyncHttpClientBackend.defaultClient(options), closeClient = true))
 
   /**
     * @param s The scheduler used for streaming request bodies. Defaults to the
@@ -64,8 +64,8 @@ object AsyncHttpClientMonixBackend {
     */
   def usingConfig(
       cfg: AsyncHttpClientConfig
-  )(implicit s: Scheduler = Scheduler.Implicits.global): SttpBackend[Task, Observable[ByteBuffer]] =
-    AsyncHttpClientMonixBackend(new DefaultAsyncHttpClient(cfg), closeClient = true)
+  )(implicit s: Scheduler = Scheduler.Implicits.global): Task[SttpBackend[Task, Observable[ByteBuffer]]] =
+    Task.eval(AsyncHttpClientMonixBackend(new DefaultAsyncHttpClient(cfg), closeClient = true))
 
   /**
     * @param updateConfig A function which updates the default configuration (created basing on `options`).
@@ -75,10 +75,12 @@ object AsyncHttpClientMonixBackend {
   def usingConfigBuilder(
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default
-  )(implicit s: Scheduler = Scheduler.Implicits.global): SttpBackend[Task, Observable[ByteBuffer]] =
-    AsyncHttpClientMonixBackend(
-      AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
-      closeClient = true
+  )(implicit s: Scheduler = Scheduler.Implicits.global): Task[SttpBackend[Task, Observable[ByteBuffer]]] =
+    Task.eval(
+      AsyncHttpClientMonixBackend(
+        AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
+        closeClient = true
+      )
     )
 
   /**

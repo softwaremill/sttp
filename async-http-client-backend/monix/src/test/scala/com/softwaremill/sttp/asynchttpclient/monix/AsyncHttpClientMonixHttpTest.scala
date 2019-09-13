@@ -9,7 +9,7 @@ class AsyncHttpClientMonixHttpTest extends HttpTest[Task] {
 
   import monix.execution.Scheduler.Implicits.global
 
-  override implicit val backend: SttpBackend[Task, Nothing] = AsyncHttpClientMonixBackend()
+  override implicit val backend: SttpBackend[Task, Nothing] = AsyncHttpClientMonixBackend().runSyncUnsafe()
   override implicit val convertToFuture: ConvertToFuture[Task] = convertMonixTaskToFuture
 
 }

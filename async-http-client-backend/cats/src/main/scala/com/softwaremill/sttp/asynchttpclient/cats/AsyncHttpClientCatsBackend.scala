@@ -2,7 +2,7 @@ package com.softwaremill.sttp.asynchttpclient.cats
 
 import java.nio.ByteBuffer
 
-import cats.effect.{Async, ContextShift}
+import cats.effect.{Async, ContextShift, Sync}
 import com.softwaremill.sttp.asynchttpclient.AsyncHttpClientBackend
 import com.softwaremill.sttp.impl.cats.CatsMonadAsyncError
 import com.softwaremill.sttp.{FollowRedirectsBackend, Request, Response, SttpBackend, SttpBackendOptions}
@@ -54,14 +54,15 @@ object AsyncHttpClientCatsBackend {
     */
   def apply[F[_]: Async: ContextShift](
       options: SttpBackendOptions = SttpBackendOptions.Default
-  ): SttpBackend[F, Nothing] =
-    AsyncHttpClientCatsBackend(AsyncHttpClientBackend.defaultClient(options), closeClient = true)
+  ): F[SttpBackend[F, Nothing]] =
+    implicitly[Sync[F]]
+      .delay(AsyncHttpClientCatsBackend(AsyncHttpClientBackend.defaultClient(options), closeClient = true))
 
   /**
     * After sending a request, always shifts to the thread pool backing the given `ContextShift[F]`.
     */
-  def usingConfig[F[_]: Async: ContextShift](cfg: AsyncHttpClientConfig): SttpBackend[F, Nothing] =
-    AsyncHttpClientCatsBackend(new DefaultAsyncHttpClient(cfg), closeClient = true)
+  def usingConfig[F[_]: Async: ContextShift](cfg: AsyncHttpClientConfig): F[SttpBackend[F, Nothing]] =
+    implicitly[Sync[F]].delay(AsyncHttpClientCatsBackend(new DefaultAsyncHttpClient(cfg), closeClient = true))
 
   /**
     * After sending a request, always shifts to the thread pool backing the given `ContextShift[F]`.
@@ -70,10 +71,12 @@ object AsyncHttpClientCatsBackend {
   def usingConfigBuilder[F[_]: Async: ContextShift](
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default
-  ): SttpBackend[F, Nothing] =
-    AsyncHttpClientCatsBackend(
-      AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
-      closeClient = true
+  ): F[SttpBackend[F, Nothing]] =
+    implicitly[Sync[F]].delay(
+      AsyncHttpClientCatsBackend(
+        AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
+        closeClient = true
+      )
     )
 
   /**

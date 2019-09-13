@@ -54,11 +54,11 @@ object AsyncHttpClientFs2Backend {
 
   def apply[F[_]: ConcurrentEffect](
       options: SttpBackendOptions = SttpBackendOptions.Default
-  ): SttpBackend[F, Stream[F, ByteBuffer]] =
-    apply[F](AsyncHttpClientBackend.defaultClient(options), closeClient = true)
+  ): F[SttpBackend[F, Stream[F, ByteBuffer]]] =
+    implicitly[Sync[F]].delay(apply[F](AsyncHttpClientBackend.defaultClient(options), closeClient = true))
 
-  def usingConfig[F[_]: ConcurrentEffect](cfg: AsyncHttpClientConfig): SttpBackend[F, Stream[F, ByteBuffer]] =
-    apply[F](new DefaultAsyncHttpClient(cfg), closeClient = true)
+  def usingConfig[F[_]: ConcurrentEffect](cfg: AsyncHttpClientConfig): F[SttpBackend[F, Stream[F, ByteBuffer]]] =
+    implicitly[Sync[F]].delay(apply[F](new DefaultAsyncHttpClient(cfg), closeClient = true))
 
   /**
     * @param updateConfig A function which updates the default configuration (created basing on `options`).
@@ -66,10 +66,12 @@ object AsyncHttpClientFs2Backend {
   def usingConfigBuilder[F[_]: ConcurrentEffect](
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default
-  ): SttpBackend[F, Stream[F, ByteBuffer]] =
-    AsyncHttpClientFs2Backend[F](
-      AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
-      closeClient = true
+  ): F[SttpBackend[F, Stream[F, ByteBuffer]]] =
+    implicitly[Sync[F]].delay(
+      AsyncHttpClientFs2Backend[F](
+        AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
+        closeClient = true
+      )
     )
 
   def usingClient[F[_]: ConcurrentEffect](client: AsyncHttpClient): SttpBackend[F, Stream[F, ByteBuffer]] =

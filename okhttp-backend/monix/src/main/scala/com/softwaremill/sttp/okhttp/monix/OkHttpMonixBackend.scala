@@ -87,8 +87,10 @@ object OkHttpMonixBackend {
 
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default
-  )(implicit s: Scheduler = Scheduler.Implicits.global): SttpBackend[Task, Observable[ByteBuffer]] =
-    OkHttpMonixBackend(OkHttpBackend.defaultClient(DefaultReadTimeout.toMillis, options), closeClient = true)(s)
+  )(implicit s: Scheduler = Scheduler.Implicits.global): Task[SttpBackend[Task, Observable[ByteBuffer]]] =
+    Task.eval(
+      OkHttpMonixBackend(OkHttpBackend.defaultClient(DefaultReadTimeout.toMillis, options), closeClient = true)(s)
+    )
 
   def usingClient(
       client: OkHttpClient

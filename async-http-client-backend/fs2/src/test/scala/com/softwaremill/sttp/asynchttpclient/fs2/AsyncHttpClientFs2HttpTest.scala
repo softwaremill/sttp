@@ -10,7 +10,7 @@ class AsyncHttpClientFs2HttpTest extends HttpTest[IO] {
 
   private implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.Implicits.global)
 
-  override implicit val backend: SttpBackend[IO, Nothing] = AsyncHttpClientFs2Backend()
+  override implicit val backend: SttpBackend[IO, Nothing] = AsyncHttpClientFs2Backend[IO]().unsafeRunSync()
   override implicit val convertToFuture: ConvertToFuture[IO] = new ConvertToFuture[IO] {
     override def toFuture[T](value: IO[T]): Future[T] = value.unsafeToFuture()
   }

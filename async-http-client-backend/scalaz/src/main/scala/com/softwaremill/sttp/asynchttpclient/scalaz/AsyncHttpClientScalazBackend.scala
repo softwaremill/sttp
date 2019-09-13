@@ -32,11 +32,11 @@ object AsyncHttpClientScalazBackend {
   private def apply(asyncHttpClient: AsyncHttpClient, closeClient: Boolean): SttpBackend[Task, Nothing] =
     new FollowRedirectsBackend[Task, Nothing](new AsyncHttpClientScalazBackend(asyncHttpClient, closeClient))
 
-  def apply(options: SttpBackendOptions = SttpBackendOptions.Default): SttpBackend[Task, Nothing] =
-    AsyncHttpClientScalazBackend(AsyncHttpClientBackend.defaultClient(options), closeClient = true)
+  def apply(options: SttpBackendOptions = SttpBackendOptions.Default): Task[SttpBackend[Task, Nothing]] =
+    Task.delay(AsyncHttpClientScalazBackend(AsyncHttpClientBackend.defaultClient(options), closeClient = true))
 
-  def usingConfig(cfg: AsyncHttpClientConfig): SttpBackend[Task, Nothing] =
-    AsyncHttpClientScalazBackend(new DefaultAsyncHttpClient(cfg), closeClient = true)
+  def usingConfig(cfg: AsyncHttpClientConfig): Task[SttpBackend[Task, Nothing]] =
+    Task.delay(AsyncHttpClientScalazBackend(new DefaultAsyncHttpClient(cfg), closeClient = true))
 
   /**
     * @param updateConfig A function which updates the default configuration (created basing on `options`).
@@ -44,10 +44,12 @@ object AsyncHttpClientScalazBackend {
   def usingConfigBuilder(
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default
-  ): SttpBackend[Task, Nothing] =
-    AsyncHttpClientScalazBackend(
-      AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
-      closeClient = true
+  ): Task[SttpBackend[Task, Nothing]] =
+    Task.delay(
+      AsyncHttpClientScalazBackend(
+        AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
+        closeClient = true
+      )
     )
 
   def usingClient(client: AsyncHttpClient): SttpBackend[Task, Nothing] =

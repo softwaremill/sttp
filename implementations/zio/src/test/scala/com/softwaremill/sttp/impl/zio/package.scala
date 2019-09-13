@@ -7,11 +7,11 @@ import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success}
 
 package object zio {
+  val runtime: DefaultRuntime = new DefaultRuntime {}
 
   val convertZioIoToFuture: ConvertToFuture[IO[Throwable, ?]] = new ConvertToFuture[IO[Throwable, ?]] {
     override def toFuture[T](value: IO[Throwable, T]): Future[T] = {
       val p = Promise[T]()
-      val runtime = new DefaultRuntime {}
 
       runtime.unsafeRunSync(value) match {
         case Exit.Failure(c) =>

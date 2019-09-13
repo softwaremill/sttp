@@ -32,7 +32,7 @@ class AsyncHttpClientZioStreamsBackend[R] private (
   override protected def publisherToStreamBody(p: Publisher[ByteBuffer]): Stream[Throwable, ByteBuffer] =
     p.toStream(bufferSize)
 
-  override protected def publisherToBytes(p: Publisher[ByteBuffer]): IO[Throwable, Array[Byte]] =
+  override protected def publisherToBytes(p: Publisher[ByteBuffer]): Task[Array[Byte]] =
     p.toStream(bufferSize).foldLeft(ByteBuffer.allocate(0))(concatByteBuffers).map(_.array())
 }
 
@@ -49,14 +49,16 @@ object AsyncHttpClientZioStreamsBackend {
   def apply[R](
       runtime: Runtime[R],
       options: SttpBackendOptions = SttpBackendOptions.Default
-  ): SttpBackend[Task, Stream[Throwable, ByteBuffer]] =
-    AsyncHttpClientZioStreamsBackend(runtime, AsyncHttpClientBackend.defaultClient(options), closeClient = true)
+  ): Task[SttpBackend[Task, Stream[Throwable, ByteBuffer]]] =
+    Task.effect(
+      AsyncHttpClientZioStreamsBackend(runtime, AsyncHttpClientBackend.defaultClient(options), closeClient = true)
+    )
 
   def usingConfig[R](
       runtime: Runtime[R],
       cfg: AsyncHttpClientConfig
-  ): SttpBackend[Task, Stream[Throwable, ByteBuffer]] =
-    AsyncHttpClientZioStreamsBackend(runtime, new DefaultAsyncHttpClient(cfg), closeClient = true)
+  ): Task[SttpBackend[Task, Stream[Throwable, ByteBuffer]]] =
+    Task.effect(AsyncHttpClientZioStreamsBackend(runtime, new DefaultAsyncHttpClient(cfg), closeClient = true))
 
   /**
     * @param updateConfig A function which updates the default configuration (created basing on `options`).
@@ -65,11 +67,13 @@ object AsyncHttpClientZioStreamsBackend {
       runtime: Runtime[R],
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default
-  ): SttpBackend[Task, Stream[Throwable, ByteBuffer]] =
-    AsyncHttpClientZioStreamsBackend(
-      runtime,
-      AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
-      closeClient = true
+  ): Task[SttpBackend[Task, Stream[Throwable, ByteBuffer]]] =
+    Task.effect(
+      AsyncHttpClientZioStreamsBackend(
+        runtime,
+        AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
+        closeClient = true
+      )
     )
 
   def usingClient[R](runtime: Runtime[R], client: AsyncHttpClient): SttpBackend[Task, Stream[Throwable, ByteBuffer]] =

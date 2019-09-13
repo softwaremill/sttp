@@ -8,6 +8,6 @@ import scalaz.concurrent.Task
 
 class AsyncHttpClientScalazHttpTest extends HttpTest[Task] {
 
-  override implicit val backend: SttpBackend[Task, Nothing] = AsyncHttpClientScalazBackend()
+  override implicit val backend: SttpBackend[Task, Nothing] = AsyncHttpClientScalazBackend().unsafePerformSync
   override implicit val convertToFuture: ConvertToFuture[Task] = convertScalazTaskToFuture
 }
