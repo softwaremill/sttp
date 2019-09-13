@@ -13,7 +13,7 @@ import com.softwaremill.sttp.dom.experimental.FilePropertyBag
 import com.softwaremill.sttp.dom.experimental.{File => DomFile}
 import com.softwaremill.sttp.internal._
 import com.softwaremill.sttp.monad.MonadError
-import com.softwaremill.sttp.monad.monadSyntax._
+import com.softwaremill.sttp.monad.syntax._
 import org.scalajs.dom.FormData
 import org.scalajs.dom.experimental.BodyInit
 import org.scalajs.dom.experimental.Fetch
@@ -239,7 +239,7 @@ abstract class AbstractFetchBackend[R[_], S](options: FetchOptions)(monad: Monad
 
   protected def handleResponseAsStream[T](ras: ResponseAsStream[T, S], response: FetchResponse): R[T]
 
-  override def close(): Unit = ()
+  override def close(): R[Unit] = monad.unit(())
 
   protected def transformPromise[T](promise: => Promise[T]): R[T]
 

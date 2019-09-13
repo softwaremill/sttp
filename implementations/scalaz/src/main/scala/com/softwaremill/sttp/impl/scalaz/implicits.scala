@@ -26,5 +26,5 @@ private[scalaz] final class MappedKSttpBackend[F[_], -S, G[_]](
 ) extends SttpBackend[G, S] {
   def send[T](request: Request[T, S]): G[Response[T]] = mapping(wrapped.send(request))
 
-  def close(): Unit = wrapped.close()
+  def close(): G[Unit] = mapping(wrapped.close())
 }

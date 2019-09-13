@@ -130,9 +130,10 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean
   def responseBodyToStream(res: OkHttpResponse): Try[S] =
     Failure(new IllegalStateException("Streaming isn't supported"))
 
-  override def close(): Unit = if (closeClient) {
-    client.dispatcher().executorService().shutdown()
-  }
+  override def close(): R[Unit] =
+    if (closeClient) {
+      responseMonad.eval(client.dispatcher().executorService().shutdown())
+    } else responseMonad.unit(())
 }
 
 object OkHttpBackend {

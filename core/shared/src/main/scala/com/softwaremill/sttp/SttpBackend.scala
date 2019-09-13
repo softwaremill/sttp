@@ -13,7 +13,7 @@ import scala.language.higherKinds
 trait SttpBackend[R[_], -S] {
   def send[T](request: Request[T, S]): R[Response[T]]
 
-  def close(): Unit
+  def close(): R[Unit]
 
   /**
     * The monad in which the responses are wrapped. Allows writing wrapper

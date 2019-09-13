@@ -21,7 +21,7 @@ abstract class AbstractCurlBackend[R[_], S](monad: MonadError[R], verbose: Boole
 
   override val responseMonad: MonadError[R] = monad
 
-  override def close(): Unit = {}
+  override def close(): R[Unit] = monad.unit(())
 
   private var headers: CurlList = _
   private var multiPartHeaders: Seq[CurlList] = Seq()

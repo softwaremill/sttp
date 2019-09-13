@@ -22,6 +22,7 @@ trait MonadError[R[_]] {
     }
   }
 
+  def eval[T](t: => T): R[T] = map(unit(()))(_ => t)
   def flatten[T](ffa: R[R[T]]): R[T] = flatMap[R[T], T](ffa)(identity)
 
   def fromTry[T](t: Try[T]): R[T] = t match {
@@ -34,7 +35,7 @@ trait MonadAsyncError[R[_]] extends MonadError[R] {
   def async[T](register: (Either[Throwable, T] => Unit) => Unit): R[T]
 }
 
-object monadSyntax {
+object syntax {
   implicit final class MonadErrorOps[R[_], A](val r: R[A]) extends AnyVal {
     def map[B](f: A => B)(implicit ME: MonadError[R]): R[B] = ME.map(r)(f)
     def flatMap[B](f: A => R[B])(implicit ME: MonadError[R]): R[B] = ME.flatMap(r)(f)

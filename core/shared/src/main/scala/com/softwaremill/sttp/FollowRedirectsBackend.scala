@@ -75,7 +75,7 @@ class FollowRedirectsBackend[R[_], S](delegate: SttpBackend[R, S]) extends SttpB
     } else r
   }
 
-  override def close(): Unit = delegate.close()
+  override def close(): R[Unit] = delegate.close()
 
   override def responseMonad: MonadError[R] = delegate.responseMonad
 }

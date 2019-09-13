@@ -172,7 +172,7 @@ class Http4sBackend[F[_]: Effect: ContextShift](client: Client[F], blockingExecu
   override def responseMonad: MonadError[F] = new CatsMonadAsyncError
 
   // no-op. Client lifecycle is managed by Resource
-  override def close(): Unit = ()
+  override def close(): F[Unit] = responseMonad.unit(())
 }
 
 object Http4sBackend {

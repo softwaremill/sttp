@@ -269,8 +269,9 @@ class AkkaHttpBackend private (
     decoder.decodeMessage(response)
   }
 
-  override def close(): Unit = {
-    val _ = if (terminateActorSystemOnClose) actorSystem.terminate()
+  override def close(): Future[Unit] = {
+    import as.dispatcher
+    if (terminateActorSystemOnClose) actorSystem.terminate().map(_ => ()) else Future.successful(())
   }
 }
 

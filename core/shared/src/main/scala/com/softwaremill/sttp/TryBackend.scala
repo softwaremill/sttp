@@ -14,7 +14,7 @@ class TryBackend[S](delegate: SttpBackend[Identity, S]) extends SttpBackend[Try,
   override def send[T](request: Request[T, S]): Try[Response[T]] =
     Try(delegate.send(request))
 
-  override def close(): Unit = delegate.close()
+  override def close(): Try[Unit] = Try(delegate.close())
 
   override def responseMonad: MonadError[Try] = TryMonad
 }

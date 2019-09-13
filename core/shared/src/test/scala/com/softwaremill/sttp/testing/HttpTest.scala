@@ -411,7 +411,7 @@ trait HttpTest[R[_]]
   }
 
   override protected def afterAll(): Unit = {
-    backend.close()
+    backend.close().toFuture()
     super.afterAll()
   }
 

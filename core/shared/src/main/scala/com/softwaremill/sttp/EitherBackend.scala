@@ -12,13 +12,16 @@ import scala.util.control.NonFatal
   */
 class EitherBackend[S](delegate: SttpBackend[Identity, S]) extends SttpBackend[Either[Throwable, ?], S] {
 
-  override def send[T](request: Request[T, S]): Either[Throwable, Response[T]] =
-    try Right(delegate.send(request))
+  override def send[T](request: Request[T, S]): Either[Throwable, Response[T]] = doTry(delegate.send(request))
+
+  override def close(): Either[Throwable, Unit] = doTry(delegate.close())
+
+  private def doTry[T](t: => T): Either[Throwable, T] = {
+    try Right(t)
     catch {
       case NonFatal(e) => Left(e)
     }
-
-  override def close(): Unit = delegate.close()
+  }
 
   override def responseMonad: MonadError[Either[Throwable, ?]] = EitherMonad
 }

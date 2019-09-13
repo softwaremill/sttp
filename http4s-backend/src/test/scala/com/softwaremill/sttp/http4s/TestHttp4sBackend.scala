@@ -12,7 +12,7 @@ class TestHttp4sBackend(delegate: SttpBackend[IO, Stream[IO, Byte]], doClose: ()
     extends SttpBackend[IO, Stream[IO, Byte]] {
   override def send[T](request: Request[T, Stream[IO, Byte]]): IO[Response[T]] = delegate.send(request)
   override def responseMonad: MonadError[IO] = delegate.responseMonad
-  override def close(): Unit = doClose()
+  override def close(): IO[Unit] = IO(doClose())
 }
 
 object TestHttp4sBackend {

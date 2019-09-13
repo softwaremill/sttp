@@ -27,7 +27,7 @@ class BraveBackend[R[_], S] private (delegate: SttpBackend[R, S], httpTracing: H
     sendAndHandleReceive(startedSpan, tracedRequest)
   }
 
-  override def close(): Unit = delegate.close()
+  override def close(): R[Unit] = delegate.close()
 
   override def responseMonad: MonadError[R] = delegate.responseMonad
 

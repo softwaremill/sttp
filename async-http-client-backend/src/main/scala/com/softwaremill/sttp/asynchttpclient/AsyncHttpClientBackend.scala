@@ -8,7 +8,7 @@ import com.softwaremill.sttp.ResponseAs.EagerResponseHandler
 import com.softwaremill.sttp.SttpBackendOptions.ProxyType.{Http, Socks}
 import com.softwaremill.sttp._
 import com.softwaremill.sttp.internal._
-import com.softwaremill.sttp.monad.{MonadAsyncError, MonadError}
+import com.softwaremill.sttp.monad._
 import io.netty.buffer.ByteBuf
 import io.netty.handler.codec.http.HttpHeaders
 import org.asynchttpclient.AsyncHandler.State
@@ -284,9 +284,8 @@ abstract class AsyncHttpClientBackend[R[_], S](
     }
   }
 
-  override def close(): Unit = {
-    if (closeClient)
-      asyncHttpClient.close()
+  override def close(): R[Unit] = {
+    if (closeClient) monad.eval(asyncHttpClient.close()) else monad.unit(())
   }
 }
 
