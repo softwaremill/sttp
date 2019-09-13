@@ -1,4 +1,6 @@
-package com.softwaremill.sttp
+package com.softwaremill.sttp.internal
+
+import com.softwaremill.sttp.{ByteArrayBody, ByteBufferBody, FileBody, HeaderNames, Identity, InputStreamBody, MediaTypes, MultipartBody, NoBody, Request, RequestT, StreamBody, StringBody}
 
 class ToCurlConverter[R <: RequestT[Identity, _, _]] {
 
