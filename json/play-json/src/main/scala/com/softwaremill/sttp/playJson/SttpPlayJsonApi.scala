@@ -13,20 +13,17 @@ trait SttpPlayJsonApi {
   // Note: None of the play-json utilities attempt to catch invalid
   // json, so Json.parse needs to be wrapped in Try
   def asJson[B: Reads: IsOption]: ResponseAs[Either[ResponseError[JsError], B], Nothing] =
-    asString(Utf8)
-      .mapRight(JsonInput.sanitize[B])
-      .map {
-        case Left(s) => Left(HttpError(s))
-        case Right(s) =>
-          Try(Json.parse(s)) match {
-            case Failure(e: Exception) => Left(DeserializationError(s, JsError(e.getMessage)))
-            case Failure(t: Throwable) => throw t
-            case Success(json) =>
-              Json.fromJson(json).asEither match {
-                case Left(failures) =>
-                  Left(DeserializationError(s, JsError(failures)))
-                case Right(success) => Right(success)
-              }
-          }
-      }
+    ResponseAs.deserializeFromString(deserialize[B])
+
+  def deserialize[B: Reads: IsOption]: String => Either[JsError, B] = JsonInput.sanitize[B].andThen { s =>
+    Try(Json.parse(s)) match {
+      case Failure(e: Exception) => Left(JsError(e.getMessage))
+      case Failure(t: Throwable) => throw t
+      case Success(json) =>
+        Json.fromJson(json).asEither match {
+          case Left(failures) => Left(JsError(failures))
+          case Right(success) => Right(success)
+        }
+    }
+  }
 }

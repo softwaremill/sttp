@@ -1,6 +1,6 @@
 package com.softwaremill.sttp
 
-import com.softwaremill.sttp.internal.SttpFile
+import com.softwaremill.sttp.internal._
 import com.softwaremill.sttp.monad.MonadError
 
 import scala.collection.immutable.Seq
@@ -36,6 +36,7 @@ case class MappedResponseAs[T, T2, S](raw: ResponseAs[T, S], g: (T, ResponseMeta
 
 object ResponseAs {
   implicit class RichResponseAsEither[L, R, S](ra: ResponseAs[Either[L, R], S]) {
+    def mapLeft[L2](f: L => L2): ResponseAs[Either[L2, R], S] = ra.map(_.left.map(f))
     def mapRight[R2](f: R => R2): ResponseAs[Either[L, R2], S] = ra.map(_.right.map(f))
   }
 
@@ -74,15 +75,14 @@ object ResponseAs {
   }
 
   /**
-    * Tries to deserialize the right component of `base` using the given function. Any exception are represented as
-    * a [[DeserializationError]].
+    * Tries to deserialize the body from a string (read with the given charset), using the given deserialization
+    * function. Exceptions that occur during the deserialization are represented as [[DeserializationError]]s.
     */
-  def deserializeCatchingExceptions[T, S](
-      base: ResponseAs[Either[String, String], S],
-      doDeserialize: String => T
+  def deserializeFromStringCatchingExceptions[T, S](
+      doDeserialize: String => T,
+      charset: String = Utf8
   ): ResponseAs[Either[ResponseError[Exception], T], S] =
-    deserialize(
-      base,
+    deserializeFromString(
       (s: String) =>
         Try(doDeserialize(s)) match {
           case Failure(e: Exception) => Left(e)
@@ -91,11 +91,15 @@ object ResponseAs {
         }
     )
 
-  def deserialize[E, T, S](
-      base: ResponseAs[Either[String, String], S],
-      doDeserialize: String => Either[E, T]
+  /**
+    * Tries to deserialize the body from a string (read with the given charset), using the given deserialization
+    * function.
+    */
+  def deserializeFromString[E, T, S](
+      doDeserialize: String => Either[E, T],
+      charset: String = Utf8
   ): ResponseAs[Either[ResponseError[E], T], S] =
-    base
+    asString(charset)
       .map {
         case Left(s) => Left(HttpError(s))
         case Right(s) =>

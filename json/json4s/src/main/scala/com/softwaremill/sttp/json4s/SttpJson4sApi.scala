@@ -15,5 +15,11 @@ trait SttpJson4sApi {
       implicit formats: Formats = DefaultFormats,
       serialization: Serialization
   ): ResponseAs[Either[ResponseError[Exception], B], Nothing] =
-    ResponseAs.deserializeCatchingExceptions(asString(Utf8).mapRight(JsonInput.sanitize[B]), serialization.read[B])
+    ResponseAs.deserializeFromStringCatchingExceptions(deserialize[B])
+
+  def deserialize[B: Manifest](
+      implicit formats: Formats = DefaultFormats,
+      serialization: Serialization
+  ): String => B =
+    JsonInput.sanitize[B].andThen(serialization.read[B])
 }
