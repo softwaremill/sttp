@@ -61,7 +61,7 @@ class CirceTests extends FlatSpec with Matchers with EitherValues {
     val responseAs = asJson[Inner]
 
     runJsonResponseAs(responseAs)("").left.value should matchPattern {
-      case DeserializationError("", _: io.circe.ParsingFailure, _) =>
+      case DeserializationError("", _: io.circe.ParsingFailure) =>
     }
   }
 
@@ -70,7 +70,7 @@ class CirceTests extends FlatSpec with Matchers with EitherValues {
 
     val responseAs = asJson[Outer]
 
-    val Left(DeserializationError(original, _, _)) = runJsonResponseAs(responseAs)(body)
+    val Left(DeserializationError(original, _)) = runJsonResponseAs(responseAs)(body)
     original shouldBe body
   }
 

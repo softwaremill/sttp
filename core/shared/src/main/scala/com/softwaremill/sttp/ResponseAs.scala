@@ -79,20 +79,33 @@ object ResponseAs {
     */
   def deserializeCatchingExceptions[T, S](
       base: ResponseAs[Either[String, String], S],
-      deserialize: String => T
+      doDeserialize: String => T
   ): ResponseAs[Either[ResponseError[Exception], T], S] =
+    deserialize(
+      base,
+      (s: String) =>
+        Try(doDeserialize(s)) match {
+          case Failure(e: Exception) => Left(e)
+          case Failure(t: Throwable) => throw t
+          case Success(t)            => Right(t): Either[Exception, T]
+        }
+    )
+
+  def deserialize[E, T, S](
+      base: ResponseAs[Either[String, String], S],
+      doDeserialize: String => Either[E, T]
+  ): ResponseAs[Either[ResponseError[E], T], S] =
     base
       .map {
         case Left(s) => Left(HttpError(s))
         case Right(s) =>
-          Try(deserialize(s)) match {
-            case Failure(e: Exception) => Left(DeserializationError(s, e, e.getMessage))
-            case Failure(t: Throwable) => throw t
-            case Success(b)            => Right(b)
+          doDeserialize(s) match {
+            case Left(e)  => Left(DeserializationError(s, e))
+            case Right(b) => Right(b)
           }
       }
 }
 
 sealed abstract class ResponseError[+T] extends Exception
 case class HttpError(body: String) extends ResponseError[Nothing]
-case class DeserializationError[T](original: String, error: T, message: String) extends ResponseError[T]
+case class DeserializationError[T](original: String, error: T) extends ResponseError[T]

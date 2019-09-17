@@ -19,12 +19,12 @@ trait SttpPlayJsonApi {
         case Left(s) => Left(HttpError(s))
         case Right(s) =>
           Try(Json.parse(s)) match {
-            case Failure(e: Exception) => Left(DeserializationError(s, JsError(e.getMessage), e.getMessage))
+            case Failure(e: Exception) => Left(DeserializationError(s, JsError(e.getMessage)))
             case Failure(t: Throwable) => throw t
             case Success(json) =>
               Json.fromJson(json).asEither match {
                 case Left(failures) =>
-                  Left(DeserializationError(s, JsError(failures), Json.prettyPrint(JsError.toJson(failures))))
+                  Left(DeserializationError(s, JsError(failures)))
                 case Right(success) => Right(success)
               }
           }
