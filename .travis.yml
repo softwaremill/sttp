@@ -27,7 +27,7 @@ before_install:
   - bash project/travis_setup.sh
 before_script:
 - nvm install 10 # nodejs < 10 fails finding URL class
-- version="$(curl -s https://chromedriver.storage.googleapis.com/)" &&
+- version="$(curl -s https://chromedriver.storage.googleapis.com/LATEST_RELEASE)" &&
     wget "https://chromedriver.storage.googleapis.com/$version/chromedriver_linux64.zip"
 - mkdir -p chromedriver && unzip chromedriver_linux64.zip -d chromedriver/
 - export PATH="$PATH:$PWD/chromedriver/"
