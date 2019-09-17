@@ -13,9 +13,9 @@ trait SttpPlayJsonApi {
   // Note: None of the play-json utilities attempt to catch invalid
   // json, so Json.parse needs to be wrapped in Try
   def asJson[B: Reads: IsOption]: ResponseAs[Either[ResponseError[JsError], B], Nothing] =
-    ResponseAs.deserializeFromString(deserialize[B])
+    ResponseAs.deserializeFromString(deserializeJson[B])
 
-  def deserialize[B: Reads: IsOption]: String => Either[JsError, B] = JsonInput.sanitize[B].andThen { s =>
+  def deserializeJson[B: Reads: IsOption]: String => Either[JsError, B] = JsonInput.sanitize[B].andThen { s =>
     Try(Json.parse(s)) match {
       case Failure(e: Exception) => Left(JsError(e.getMessage))
       case Failure(t: Throwable) => throw t

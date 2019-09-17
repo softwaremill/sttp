@@ -9,8 +9,8 @@ trait SttpSprayJsonApi {
     b => StringBody(printer(b.toJson), Utf8, Some(MediaTypes.Json))
 
   def asJson[B: JsonReader: IsOption]: ResponseAs[Either[ResponseError[Exception], B], Nothing] =
-    ResponseAs.deserializeFromStringCatchingExceptions(deserialize[B])
+    ResponseAs.deserializeFromStringCatchingExceptions(deserializeJson[B])
 
-  def deserialize[B: JsonReader: IsOption]: String => B =
+  def deserializeJson[B: JsonReader: IsOption]: String => B =
     JsonInput.sanitize[B].andThen((_: String).parseJson.convertTo[B])
 }
