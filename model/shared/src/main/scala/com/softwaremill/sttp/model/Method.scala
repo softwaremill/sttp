@@ -1,4 +1,4 @@
-package com.softwaremill.sttp
+package com.softwaremill.sttp.model
 
 case class Method(m: String) extends AnyVal
 object Method {

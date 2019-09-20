@@ -1,5 +1,6 @@
 package com.softwaremill.sttp
 
+import com.softwaremill.sttp.model._
 import scala.collection.immutable.Seq
 import scala.util.Try
 

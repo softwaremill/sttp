@@ -1,4 +1,4 @@
-package com.softwaremill.sttp
+package com.softwaremill.sttp.model
 
 // https://www.iana.org/assignments/media-types/media-types.xhtml
 trait MediaTypes {

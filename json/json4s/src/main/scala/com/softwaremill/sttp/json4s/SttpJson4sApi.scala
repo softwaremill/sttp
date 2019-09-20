@@ -3,6 +3,7 @@ package com.softwaremill.sttp.json4s
 import com.softwaremill.sttp._
 import com.softwaremill.sttp.internal.Utf8
 import org.json4s.{DefaultFormats, Formats, Serialization}
+import com.softwaremill.sttp.model._
 
 trait SttpJson4sApi {
   implicit def json4sBodySerializer[B <: AnyRef](

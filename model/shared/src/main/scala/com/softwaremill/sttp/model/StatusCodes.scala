@@ -1,4 +1,4 @@
-package com.softwaremill.sttp
+package com.softwaremill.sttp.model
 
 // https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
 trait StatusCodes {

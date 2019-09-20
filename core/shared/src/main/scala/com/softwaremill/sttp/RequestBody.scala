@@ -3,6 +3,7 @@ package com.softwaremill.sttp
 import java.io.InputStream
 import java.nio.ByteBuffer
 
+import com.softwaremill.sttp.model._
 import com.softwaremill.sttp.internal.SttpFile
 
 import scala.collection.immutable.Seq

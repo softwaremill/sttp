@@ -2,6 +2,7 @@ package com.softwaremill.sttp.sprayJson
 
 import com.softwaremill.sttp._
 import com.softwaremill.sttp.internal.Utf8
+import com.softwaremill.sttp.model._
 import spray.json._
 
 trait SttpSprayJsonApi {

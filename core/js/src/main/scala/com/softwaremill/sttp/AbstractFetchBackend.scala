@@ -14,6 +14,7 @@ import com.softwaremill.sttp.dom.experimental.{File => DomFile}
 import com.softwaremill.sttp.internal._
 import com.softwaremill.sttp.monad.MonadError
 import com.softwaremill.sttp.monad.syntax._
+import com.softwaremill.sttp.model._
 import org.scalajs.dom.FormData
 import org.scalajs.dom.experimental.BodyInit
 import org.scalajs.dom.experimental.Fetch

@@ -8,6 +8,7 @@ import com.softwaremill.sttp.curl.CurlInfo._
 import com.softwaremill.sttp.curl.CurlOption._
 import com.softwaremill.sttp.curl._
 import com.softwaremill.sttp.internal._
+import com.softwaremill.sttp.model._
 import com.softwaremill.sttp.monad.MonadError
 
 import scala.collection.immutable.Seq

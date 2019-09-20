@@ -2,6 +2,7 @@ package com.softwaremill.sttp.circe
 
 import com.softwaremill.sttp._
 import com.softwaremill.sttp.internal.Utf8
+import com.softwaremill.sttp.model.MediaTypes
 import io.circe.{Decoder, Encoder, Printer}
 import io.circe.parser.decode
 

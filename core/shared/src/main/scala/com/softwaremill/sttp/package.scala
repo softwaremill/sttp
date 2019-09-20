@@ -12,6 +12,4 @@ package object sttp extends SttpApi {
     * Backends might also provide special logic for serializer instances which they define (e.g. to handle streaming).
     */
   type BodySerializer[B] = B => BasicRequestBody
-
-  type StatusCode = Int
 }

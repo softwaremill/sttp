@@ -5,6 +5,7 @@ import java.nio.file.Path
 
 import com.softwaremill.sttp.internal.SttpFile
 import scala.language.higherKinds
+import com.softwaremill.sttp.model._
 
 trait RequestTExtensions[U[_], T, +S] { self: RequestT[U, T, S] =>
 

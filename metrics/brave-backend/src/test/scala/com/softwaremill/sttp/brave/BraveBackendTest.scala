@@ -4,6 +4,7 @@ import brave.http.HttpTracing
 import brave.test.http.ITHttpClient
 import brave.internal.HexCodec
 import com.softwaremill.sttp._
+import com.softwaremill.sttp.model._
 import okhttp3.mockwebserver.MockResponse
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
 import zipkin2.Span

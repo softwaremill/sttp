@@ -1,5 +1,6 @@
 package com.softwaremill.sttp
 
+import com.softwaremill.sttp.model._
 import org.scalatest.{FlatSpec, Matchers}
 
 class RequestTests extends FlatSpec with Matchers {

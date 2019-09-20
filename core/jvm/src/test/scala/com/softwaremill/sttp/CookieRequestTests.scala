@@ -1,6 +1,7 @@
 package com.softwaremill.sttp
 
 import org.scalatest.{FlatSpec, Matchers}
+import com.softwaremill.sttp.model._
 
 class CookieRequestTests extends FlatSpec with Matchers {
 

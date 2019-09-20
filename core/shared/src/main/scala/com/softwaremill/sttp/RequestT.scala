@@ -6,6 +6,7 @@ import java.util.Base64
 
 import com.github.ghik.silencer.silent
 import com.softwaremill.sttp.internal._
+import com.softwaremill.sttp.model._
 
 import scala.collection.immutable.Seq
 import scala.concurrent.duration.Duration

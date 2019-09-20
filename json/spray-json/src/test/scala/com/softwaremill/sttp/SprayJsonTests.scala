@@ -3,6 +3,7 @@ package com.softwaremill.sttp
 import com.softwaremill.sttp.SprayJsonTests._
 import com.softwaremill.sttp.internal.{Utf8, contentTypeWithCharset}
 import com.softwaremill.sttp.sprayJson._
+import com.softwaremill.sttp.model._
 import org.scalatest.{EitherValues, FlatSpec, Matchers}
 import spray.json.DefaultJsonProtocol._
 import spray.json.JsonParser.ParsingException

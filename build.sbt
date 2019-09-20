@@ -168,6 +168,7 @@ lazy val rootJVM = project
   .settings(commonJvmJsSettings: _*)
   .settings(skip in publish := true, name := "sttpJVM")
   .aggregate(
+    modelJVM,
     coreJVM,
     catsJVM,
     monixJVM,
@@ -199,13 +200,27 @@ lazy val rootJS = project
   .in(file(".js"))
   .settings(commonJvmJsSettings: _*)
   .settings(skip in publish := true, name := "sttpJS")
-  .aggregate(coreJS, catsJS, monixJS, jsonCommonJS, circeJS, playJsonJS)
+  .aggregate(modelJS, coreJS, catsJS, monixJS, jsonCommonJS, circeJS, playJsonJS)
 
 lazy val rootNative = project
   .in(file(".native"))
   .settings(commonNativeSettings: _*)
   .settings(skip in publish := true, name := "sttpNative")
-  .aggregate(coreNative)
+  .aggregate(modelNative, coreNative)
+
+lazy val model = crossProject(JSPlatform, JVMPlatform, NativePlatform)
+  .withoutSuffixFor(JVMPlatform)
+  .crossType(CrossType.Full)
+  .in(file("model"))
+  .settings(name := "model")
+  .jvmSettings(commonJvmSettings: _*)
+  .jsSettings(commonJsSettings: _*)
+  .nativeSettings(commonNativeSettings: _*)
+  .nativeSettings(only2_11settings)
+
+lazy val modelJS = model.js
+lazy val modelJVM = model.jvm
+lazy val modelNative = model.native
 
 lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .withoutSuffixFor(JVMPlatform)
@@ -257,9 +272,9 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     testServerPort in Test := 51823,
     startTestServer in Test := reStart.toTask("").value
   )
-lazy val coreJS = core.js
-lazy val coreJVM = core.jvm
-lazy val coreNative = core.native
+lazy val coreJS = core.js.dependsOn(modelJS)
+lazy val coreJVM = core.jvm.dependsOn(modelJVM)
+lazy val coreNative = core.native.dependsOn(modelNative)
 
 //----- implementations
 lazy val cats = crossProject(JSPlatform, JVMPlatform)

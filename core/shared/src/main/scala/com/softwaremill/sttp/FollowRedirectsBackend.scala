@@ -2,6 +2,7 @@ package com.softwaremill.sttp
 
 import java.net.URI
 
+import com.softwaremill.sttp.model._
 import com.softwaremill.sttp.monad.MonadError
 
 import scala.language.higherKinds

@@ -1,6 +1,7 @@
 package com.softwaremill.sttp
 
 import com.softwaremill.sttp.internal._
+import com.softwaremill.sttp.model._
 
 import io.circe._
 import org.scalatest._

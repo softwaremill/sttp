@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream
 import java.nio.ByteBuffer
 
 import com.softwaremill.sttp._
+import com.softwaremill.sttp.model._
 import org.scalatest.{AsyncFreeSpec, BeforeAndAfterAll, Matchers, OptionValues}
 
 import scala.concurrent.duration._

@@ -2,6 +2,7 @@ package com.softwaremill.sttp
 
 import java.net.HttpCookie
 
+import com.softwaremill.sttp.model._
 import scala.collection.JavaConverters._
 import scala.collection.immutable.Seq
 

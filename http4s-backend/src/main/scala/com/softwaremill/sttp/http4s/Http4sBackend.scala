@@ -8,6 +8,7 @@ import cats.effect.{ConcurrentEffect, ContextShift, Effect, Resource}
 import cats.implicits._
 import com.softwaremill.sttp._
 import com.softwaremill.sttp.impl.cats.CatsMonadAsyncError
+import com.softwaremill.sttp.model._
 import com.softwaremill.sttp.monad.MonadError
 import fs2.{Chunk, Stream}
 import org.http4s

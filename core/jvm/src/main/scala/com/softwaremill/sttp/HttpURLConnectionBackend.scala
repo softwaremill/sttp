@@ -11,6 +11,7 @@ import java.util.zip.{GZIPInputStream, InflaterInputStream}
 import com.github.ghik.silencer.silent
 import com.softwaremill.sttp.internal._
 import com.softwaremill.sttp.monad.{IdMonad, MonadError}
+import com.softwaremill.sttp.model._
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
