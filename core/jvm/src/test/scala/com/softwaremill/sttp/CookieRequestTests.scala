@@ -6,7 +6,7 @@ import com.softwaremill.sttp.model._
 class CookieRequestTests extends FlatSpec with Matchers {
 
   "request cookies" should "be set from a name-value pair" in {
-    sttp
+    request
       .cookie("k", "v")
       .headers
       .find(_._1 == HeaderNames.Cookie)
@@ -14,7 +14,7 @@ class CookieRequestTests extends FlatSpec with Matchers {
   }
 
   it should "be set from multiple name-value pairs" in {
-    sttp
+    request
       .cookies("k1" -> "v1", "k2" -> "v2")
       .headers
       .find(_._1 == HeaderNames.Cookie)
@@ -22,7 +22,7 @@ class CookieRequestTests extends FlatSpec with Matchers {
   }
 
   it should "add multiple headers if invoked multiple times" in {
-    sttp
+    request
       .cookie("k1", "v1")
       .cookie("k2" -> "v2")
       .headers
@@ -34,7 +34,7 @@ class CookieRequestTests extends FlatSpec with Matchers {
   it should "set cookies from a response" in {
     val response =
       Response(Right(()), 0, "", List((HeaderNames.SetCookie, "k1=v1"), (HeaderNames.SetCookie, "k2=v2")), Nil)
-    sttp
+    request
       .cookies(response)
       .headers
       .find(_._1 == HeaderNames.Cookie)

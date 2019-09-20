@@ -29,7 +29,7 @@ trait HttpTest[R[_]]
   implicit val backend: SttpBackend[R, Nothing]
   implicit val convertToFuture: ConvertToFuture[R]
 
-  protected def postEcho: Request[Either[String, String], Nothing] = sttp.post(uri"$endpoint/echo")
+  protected def postEcho: Request[Either[String, String], Nothing] = request.post(uri"$endpoint/echo")
   protected val testBody = "this is the body"
   protected val testBodyBytes: Array[Byte] = testBody.getBytes("UTF-8")
   protected val expectedPostEchoResponse = "POST /echo this is the body"
@@ -90,7 +90,7 @@ trait HttpTest[R[_]]
 
     "as parameters" in {
       val params = List("a" -> "b", "c" -> "d", "e=" -> "&f")
-      sttp
+      request
         .post(uri"$endpoint/echo/form_params/as_params")
         .body(params: _*)
         .response(asParams)
@@ -103,7 +103,7 @@ trait HttpTest[R[_]]
 
     "as string with response via metadata" in {
       val expectedStatus = 400
-      sttp
+      request
         .post(uri"$endpoint/echo/custom_status/$expectedStatus")
         .body(testBody)
         .response(asStringAlways.mapWithMetadata((r, m) => if (m.code == expectedStatus) Right(r) else Left(r)))
@@ -116,7 +116,7 @@ trait HttpTest[R[_]]
 
     "as error string with response via metadata" in {
       val unexpectedStatus = 200
-      sttp
+      request
         .post(uri"$endpoint/echo/custom_status/$unexpectedStatus")
         .body(testBody)
         .response(asStringAlways.mapWithMetadata((r, m) => if (m.code == unexpectedStatus) Left(r) else Right(r)))
@@ -130,7 +130,7 @@ trait HttpTest[R[_]]
 
   "parameters" - {
     "make a get request with parameters" in {
-      sttp
+      request
         .get(uri"$endpoint/echo?p2=v2&p1=v1")
         .send()
         .toFuture()
@@ -174,7 +174,7 @@ trait HttpTest[R[_]]
     }
 
     "post form data" in {
-      sttp
+      request
         .post(uri"$endpoint/echo/form_params/as_string")
         .body("a" -> "b", "c" -> "d")
         .send()
@@ -185,7 +185,7 @@ trait HttpTest[R[_]]
     }
 
     "post form data with special characters" in {
-      sttp
+      request
         .post(uri"$endpoint/echo/form_params/as_string")
         .body("a=" -> "/b", "c:" -> "/d")
         .send()
@@ -205,7 +205,7 @@ trait HttpTest[R[_]]
   protected def cacheControlHeaders: Set[String] = Set("no-cache", "max-age=1000")
 
   "headers" - {
-    def getHeaders = sttp.get(uri"$endpoint/set_headers")
+    def getHeaders = request.get(uri"$endpoint/set_headers")
 
     "read response headers" in {
       getHeaders.response(sttpIgnore).send().toFuture().map { response =>
@@ -220,7 +220,7 @@ trait HttpTest[R[_]]
 
   "errors" - {
     "return 405 when method not allowed" in {
-      sttp.post(uri"$endpoint/set_headers").send().toFuture().map { response =>
+      request.post(uri"$endpoint/set_headers").send().toFuture().map { response =>
         response.code should be(405)
         response.isClientError should be(true)
         response.body.isLeft should be(true)
@@ -228,7 +228,7 @@ trait HttpTest[R[_]]
     }
 
     "return 404 when not found" in {
-      sttp.get(uri"$endpoint/not/found").send().toFuture().map { response =>
+      request.get(uri"$endpoint/not/found").send().toFuture().map { response =>
         response.code should be(404)
         response.isClientError should be(true)
         response.body.isLeft should be(true)
@@ -237,7 +237,7 @@ trait HttpTest[R[_]]
   }
 
   "auth" - {
-    def secureBasic = sttp.get(uri"$endpoint/secure_basic").response(asStringAlways)
+    def secureBasic = request.get(uri"$endpoint/secure_basic").response(asStringAlways)
 
     "return a 401 when authorization fails" in {
       val req = secureBasic
@@ -257,7 +257,7 @@ trait HttpTest[R[_]]
   }
 
   "compression" - {
-    def compress = sttp.get(uri"$endpoint/compress").response(asStringAlways)
+    def compress = request.get(uri"$endpoint/compress").response(asStringAlways)
     val decompressedBody = "I'm compressed!"
 
     "decompress using the default accept encoding header" in {
@@ -289,7 +289,7 @@ trait HttpTest[R[_]]
     }
 
     "not attempt to decompress HEAD requests" in {
-      val req = sttp.head(uri"$endpoint/compress")
+      val req = request.head(uri"$endpoint/compress")
       req.send().toFuture().map { resp =>
         resp.code shouldBe StatusCodes.Ok
       }
@@ -304,7 +304,7 @@ trait HttpTest[R[_]]
   }
 
   "multipart" - {
-    def mp = sttp.post(uri"$endpoint/multipart").response(asStringAlways)
+    def mp = request.post(uri"$endpoint/multipart").response(asStringAlways)
 
     "send a multipart message" in {
       val req = mp.multipartBody(multipart("p1", "v1"), multipart("p2", "v2"))
@@ -332,10 +332,10 @@ trait HttpTest[R[_]]
   }
 
   "redirect" - {
-    def r1 = sttp.post(uri"$endpoint/redirect/r1").response(asStringAlways)
-    def r2 = sttp.post(uri"$endpoint/redirect/r2").response(asStringAlways)
+    def r1 = request.post(uri"$endpoint/redirect/r1").response(asStringAlways)
+    def r2 = request.post(uri"$endpoint/redirect/r2").response(asStringAlways)
     val r4response = "819"
-    def loop = sttp.post(uri"$endpoint/redirect/loop").response(asStringAlways)
+    def loop = request.post(uri"$endpoint/redirect/loop").response(asStringAlways)
 
     "not redirect when redirects shouldn't be followed (temporary)" in {
       expectRedirectResponse(r1.followRedirects(false).send(), 307)
@@ -374,23 +374,23 @@ trait HttpTest[R[_]]
   if (supportsRequestTimeout) {
     "timeout" - {
       "fail if read timeout is not big enough" in {
-        val request = sttp
+        val req = request
           .get(uri"$endpoint/timeout")
           .readTimeout(200.milliseconds)
           .response(asString)
 
-        Future(request.send()).flatMap(_.toFuture()).failed.map { _ =>
+        Future(req.send()).flatMap(_.toFuture()).failed.map { _ =>
           succeed
         }
       }
 
       "not fail if read timeout is big enough" in {
-        val request = sttp
+        val req = request
           .get(uri"$endpoint/timeout")
           .readTimeout(5.seconds)
           .response(asString)
 
-        request.send().toFuture().map { response =>
+        req.send().toFuture().map { response =>
           response.body should be(Right("Done"))
         }
       }
@@ -399,7 +399,7 @@ trait HttpTest[R[_]]
 
   "empty response" - {
     def postEmptyResponse =
-      sttp
+      request
         .post(uri"$endpoint/empty_unauthorized_response")
         .body("{}")
         .contentType("application/json")

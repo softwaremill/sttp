@@ -61,7 +61,7 @@ trait HttpTestExtensions[R[_]] extends AsyncExecutionContext { self: HttpTest[R]
   "download file" - {
     "download a binary file using asFile" in {
       withTemporaryNonExistentFile { file =>
-        val req = sttp.get(uri"$endpoint/download/binary").response(asFile(file))
+        val req = request.get(uri"$endpoint/download/binary").response(asFile(file))
         req.send().toFuture().flatMap { resp =>
           md5FileHash(resp.body.right.get).map { _ shouldBe binaryFileMD5Hash }
         }
@@ -70,7 +70,7 @@ trait HttpTestExtensions[R[_]] extends AsyncExecutionContext { self: HttpTest[R]
 
     "download a text file using asFile" in {
       withTemporaryNonExistentFile { file =>
-        val req = sttp.get(uri"$endpoint/download/text").response(asFile(file))
+        val req = request.get(uri"$endpoint/download/text").response(asFile(file))
         req.send().toFuture().flatMap { resp =>
           md5FileHash(resp.body.right.get).map { _ shouldBe textFileMD5Hash }
         }
@@ -79,7 +79,7 @@ trait HttpTestExtensions[R[_]] extends AsyncExecutionContext { self: HttpTest[R]
   }
 
   "multipart" - {
-    def mp = sttp.post(uri"$endpoint/multipart")
+    def mp = request.post(uri"$endpoint/multipart")
 
     "send a multipart message with a file" in {
       withTemporaryFile(Some(testBodyBytes)) { f =>

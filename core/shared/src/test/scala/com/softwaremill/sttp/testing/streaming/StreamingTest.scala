@@ -26,7 +26,7 @@ trait StreamingTest[R[_], S]
   def bodyConsumer(stream: S): R[String]
 
   "stream request body" in {
-    sttp
+    request
       .post(uri"$endpoint/streaming/echo")
       .streamBody(bodyProducer(body))
       .send()
@@ -37,7 +37,7 @@ trait StreamingTest[R[_], S]
   }
 
   "receive a stream" in {
-    sttp
+    request
       .post(uri"$endpoint/streaming/echo")
       .body(body)
       .response(asStreamAlways[S])
@@ -52,7 +52,7 @@ trait StreamingTest[R[_], S]
   }
 
   "receive a mapped stream" in {
-    sttp
+    request
       .post(uri"$endpoint/streaming/echo")
       .body(body)
       .response(asStreamAlways[S].map(s => (s, true)))
@@ -71,7 +71,7 @@ trait StreamingTest[R[_], S]
     val numChunks = 100
     val url = uri"https://httpbin.org/stream/$numChunks"
 
-    sttp
+    request
     // of course, you should never rely on the internet being available
     // in tests, but that's so much easier than setting up an https
     // testing server

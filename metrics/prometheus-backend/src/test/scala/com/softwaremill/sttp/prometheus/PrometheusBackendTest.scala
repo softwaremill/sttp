@@ -32,7 +32,7 @@ class PrometheusBackendTest
     val requestsNumber = 10
 
     // when
-    (0 until requestsNumber).foreach(_ => backend.send(sttp.get(uri"http://127.0.0.1/foo")))
+    (0 until requestsNumber).foreach(_ => backend.send(request.get(uri"http://127.0.0.1/foo")))
 
     // then
     getMetricValue(s"${PrometheusBackend.DefaultHistogramName}_count").value shouldBe requestsNumber
@@ -48,8 +48,8 @@ class PrometheusBackendTest
       PrometheusBackend[Identity, Nothing](backendStub, requestToHistogramNameMapper = _ => Some(histogramName))
 
     // when
-    backend1.send(sttp.get(uri"http://127.0.0.1/foo"))
-    backend2.send(sttp.get(uri"http://127.0.0.1/foo"))
+    backend1.send(request.get(uri"http://127.0.0.1/foo"))
+    backend2.send(request.get(uri"http://127.0.0.1/foo"))
 
     // then
     getMetricValue(s"${histogramName}_count").value shouldBe 2
@@ -63,7 +63,7 @@ class PrometheusBackendTest
     val requestsNumber = 5
 
     // when
-    (0 until requestsNumber).foreach(_ => backend.send(sttp.get(uri"http://127.0.0.1/foo")))
+    (0 until requestsNumber).foreach(_ => backend.send(request.get(uri"http://127.0.0.1/foo")))
 
     // then
     getMetricValue(s"${PrometheusBackend.DefaultHistogramName}_count") shouldBe empty
@@ -77,7 +77,7 @@ class PrometheusBackendTest
     val requestsNumber = 6
 
     // when
-    (0 until requestsNumber).foreach(_ => backend.send(sttp.get(uri"http://127.0.0.1/foo")))
+    (0 until requestsNumber).foreach(_ => backend.send(request.get(uri"http://127.0.0.1/foo")))
 
     // then
     getMetricValue(s"${PrometheusBackend.DefaultHistogramName}_count") shouldBe empty
@@ -96,7 +96,7 @@ class PrometheusBackendTest
     val backend = PrometheusBackend[Future, Nothing](backendStub)
 
     // when
-    (0 until requestsNumber).foreach(_ => backend.send(sttp.get(uri"http://127.0.0.1/foo")))
+    (0 until requestsNumber).foreach(_ => backend.send(request.get(uri"http://127.0.0.1/foo")))
 
     // then
     eventually {
@@ -124,7 +124,7 @@ class PrometheusBackendTest
       PrometheusBackend[Future, Nothing](backendStub, requestToInProgressGaugeNameMapper = _ => Some(customGaugeName))
 
     // when
-    (0 until requestsNumber).foreach(_ => backend.send(sttp.get(uri"http://127.0.0.1/foo")))
+    (0 until requestsNumber).foreach(_ => backend.send(request.get(uri"http://127.0.0.1/foo")))
 
     // then
     eventually {
@@ -152,7 +152,7 @@ class PrometheusBackendTest
     val backend = PrometheusBackend[Future, Nothing](backendStub, requestToInProgressGaugeNameMapper = _ => None)
 
     // when
-    (0 until requestsNumber).foreach(_ => backend.send(sttp.get(uri"http://127.0.0.1/foo")))
+    (0 until requestsNumber).foreach(_ => backend.send(request.get(uri"http://127.0.0.1/foo")))
 
     // then
     getMetricValue(PrometheusBackend.DefaultRequestsInProgressGaugeName) shouldBe empty
@@ -172,8 +172,8 @@ class PrometheusBackendTest
     val backend2 = PrometheusBackend[Identity, Nothing](backendStub2)
 
     // when
-    (0 until 10).foreach(_ => backend1.send(sttp.get(uri"http://127.0.0.1/foo")))
-    (0 until 5).foreach(_ => backend2.send(sttp.get(uri"http://127.0.0.1/foo")))
+    (0 until 10).foreach(_ => backend1.send(request.get(uri"http://127.0.0.1/foo")))
+    (0 until 5).foreach(_ => backend2.send(request.get(uri"http://127.0.0.1/foo")))
 
     // then
     getMetricValue(PrometheusBackend.DefaultSuccessCounterName).value shouldBe 10

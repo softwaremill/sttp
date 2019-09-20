@@ -4,7 +4,6 @@ import brave.http.HttpTracing
 import brave.test.http.ITHttpClient
 import brave.internal.HexCodec
 import com.softwaremill.sttp._
-import com.softwaremill.sttp.model._
 import okhttp3.mockwebserver.MockResponse
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
 import zipkin2.Span
@@ -22,11 +21,11 @@ class BraveBackendTest extends FlatSpec with Matchers with BeforeAndAfter {
   def newT(): Unit = {
     t = new ITHttpClient[SttpBackend[Identity, Nothing]]() {
       override def post(client: SttpBackend[Identity, Nothing], pathIncludingQuery: String, body: String): Unit = {
-        client.send(sttp.post(uri"${url(pathIncludingQuery)}").body(body))
+        client.send(request.post(uri"${url(pathIncludingQuery)}").body(body))
       }
 
       override def get(client: SttpBackend[Identity, Nothing], pathIncludingQuery: String): Unit = {
-        client.send(sttp.get(uri"${url(pathIncludingQuery)}"))
+        client.send(request.get(uri"${url(pathIncludingQuery)}"))
       }
 
       override def closeClient(client: SttpBackend[Identity, Nothing]): Unit =
@@ -122,15 +121,15 @@ class BraveBackendTest extends FlatSpec with Matchers with BeforeAndAfter {
     try {
       import com.softwaremill.sttp.brave.BraveBackend._
       _backend.send(
-        sttp
+        request
           .get(uri"http://127.0.0.1:${t.server.getPort}/foo")
           .tagWithTraceContext(parent.context())
       )
     } finally parent.finish()
 
-    val request = t.server.takeRequest
-    request.getHeader("x-b3-traceId") should be(parent.context.traceIdString)
-    request.getHeader("x-b3-parentspanid") should be(HexCodec.toLowerHex(parent.context.spanId))
+    val req = t.server.takeRequest
+    req.getHeader("x-b3-traceId") should be(parent.context.traceIdString)
+    req.getHeader("x-b3-parentspanid") should be(HexCodec.toLowerHex(parent.context.spanId))
 
     Set(_takeSpan(), _takeSpan()).map(_.kind) should be(Set(null, Span.Kind.CLIENT))
   }

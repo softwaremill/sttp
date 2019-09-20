@@ -28,7 +28,7 @@ trait SyncHttpTest
 
   implicit val backend: SttpBackend[Identity, Nothing]
 
-  protected def postEcho = sttp.post(uri"$endpoint/echo")
+  protected def postEcho = request.post(uri"$endpoint/echo")
   protected val testBody = "this is the body"
   protected val testBodyBytes = testBody.getBytes("UTF-8")
   protected val expectedPostEchoResponse = "POST /echo this is the body"
@@ -69,7 +69,7 @@ trait SyncHttpTest
 
     "as parameters" in {
       val params = List("a" -> "b", "c" -> "d", "e=" -> "&f")
-      val response = sttp
+      val response = request
         .post(uri"$endpoint/echo/form_params/as_params")
         .body(params: _*)
         .response(asParams)
@@ -80,7 +80,7 @@ trait SyncHttpTest
 
   "parameters" - {
     "make a get request with parameters" in {
-      val response = sttp
+      val response = request
         .get(uri"$endpoint/echo?p2=v2&p1=v1")
         .send()
       response.body should be(Right("GET /echo p1=v1 p2=v2"))
@@ -117,7 +117,7 @@ trait SyncHttpTest
     }
 
     "post form data" in {
-      val response = sttp
+      val response = request
         .post(uri"$endpoint/echo/form_params/as_string")
         .body("a" -> "b", "c" -> "d")
         .send()
@@ -126,7 +126,7 @@ trait SyncHttpTest
     }
 
     "post form data with special characters" in {
-      val response = sttp
+      val response = request
         .post(uri"$endpoint/echo/form_params/as_string")
         .body("a=" -> "/b", "c:" -> "/d")
         .send()
@@ -143,7 +143,7 @@ trait SyncHttpTest
   protected def cacheControlHeaders = Set("no-cache", "max-age=1000")
 
   "headers" - {
-    def getHeaders = sttp.get(uri"$endpoint/set_headers")
+    def getHeaders = request.get(uri"$endpoint/set_headers")
     "read response headers" in {
       val response = getHeaders.response(sttpIgnore).send()
       response.headers should have length (4 + cacheControlHeaders.size).toLong
@@ -157,20 +157,20 @@ trait SyncHttpTest
 
   "errors" - {
     "return 405 when method not allowed" in {
-      val response = sttp.post(uri"$endpoint/set_headers").response(sttpIgnore).send()
+      val response = request.post(uri"$endpoint/set_headers").response(sttpIgnore).send()
       response.code should be(405)
       response.isClientError should be(true)
     }
 
     "return 404 when not found" in {
-      val response = sttp.get(uri"$endpoint/not/found").response(sttpIgnore).send()
+      val response = request.get(uri"$endpoint/not/found").response(sttpIgnore).send()
       response.code should be(404)
       response.isClientError should be(true)
     }
   }
 
   "auth" - {
-    def secureBasic = sttp.get(uri"$endpoint/secure_basic")
+    def secureBasic = request.get(uri"$endpoint/secure_basic")
 
     "return a 401 when authorization fails" in {
       val req = secureBasic
@@ -188,7 +188,7 @@ trait SyncHttpTest
   }
 
   "compression" - {
-    def compress = sttp.get(uri"$endpoint/compress")
+    def compress = request.get(uri"$endpoint/compress")
     val decompressedBody = "I'm compressed!"
 
     "decompress using the default accept encoding header" in {
@@ -225,7 +225,7 @@ trait SyncHttpTest
   }
 
   "multipart" - {
-    def mp = sttp.post(uri"$endpoint/multipart")
+    def mp = request.post(uri"$endpoint/multipart")
 
     "send a multipart message" in {
       val req = mp.multipartBody(multipart("p1", "v1"), multipart("p2", "v2"))
@@ -241,10 +241,10 @@ trait SyncHttpTest
   }
 
   "redirect" - {
-    def r1 = sttp.post(uri"$endpoint/redirect/r1").response(asStringAlways)
-    def r2 = sttp.post(uri"$endpoint/redirect/r2").response(asStringAlways)
+    def r1 = request.post(uri"$endpoint/redirect/r1").response(asStringAlways)
+    def r2 = request.post(uri"$endpoint/redirect/r2").response(asStringAlways)
     val r4response = "819"
-    def loop = sttp.post(uri"$endpoint/redirect/loop").response(asStringAlways)
+    def loop = request.post(uri"$endpoint/redirect/loop").response(asStringAlways)
 
     "not redirect when redirects shouldn't be followed (temporary)" in {
       val resp = r1.followRedirects(false).send()
@@ -294,27 +294,27 @@ trait SyncHttpTest
 
   "timeout" - {
     "fail if read timeout is not big enough" in {
-      val request = sttp
+      val req = request
         .get(uri"$endpoint/timeout")
         .readTimeout(200.milliseconds)
         .response(asString)
-      request.send()
+      req.send()
     }
 
     "not fail if read timeout is big enough" in {
-      val request = sttp
+      val req = request
         .get(uri"$endpoint/timeout")
         .readTimeout(5.seconds)
         .response(asString)
 
-      val response = request.send()
+      val response = req.send()
       response.body should be(Right("Done"))
     }
   }
 
   "empty response" - {
     def postEmptyResponse =
-      sttp
+      request
         .post(uri"$endpoint/empty_unauthorized_response")
         .body("{}")
         .contentType("application/json")

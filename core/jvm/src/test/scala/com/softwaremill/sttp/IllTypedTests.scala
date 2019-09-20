@@ -14,7 +14,7 @@ class IllTypedTests extends FlatSpec with Matchers {
         class MyStream[T]()
 
         implicit val sttpBackend = HttpURLConnectionBackend()
-        sttp.get(uri"http://example.com").response(asStream[MyStream[Byte]]).send()
+        request.get(uri"http://example.com").response(asStream[MyStream[Byte]]).send()
         """)
     }
 
@@ -28,7 +28,7 @@ class IllTypedTests extends FlatSpec with Matchers {
       EvalScala("""
         import com.softwaremill.sttp._
         implicit val sttpBackend = HttpURLConnectionBackend()
-        sttp.send()
+        request.send()
         """)
     }
 

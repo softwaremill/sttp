@@ -6,7 +6,7 @@ import org.scalatest.{FlatSpec, Matchers}
 class RequestTests extends FlatSpec with Matchers {
 
   "content length" should "be automatically set for a string body" in {
-    sttp
+    request
       .body("test")
       .headers
       .find(_._1.equalsIgnoreCase(HeaderNames.ContentLength))
@@ -14,7 +14,7 @@ class RequestTests extends FlatSpec with Matchers {
   }
 
   it should "be automatically set to the number of utf-8 bytes in a string" in {
-    sttp
+    request
       .body("ąęć")
       .headers
       .find(_._1.equalsIgnoreCase(HeaderNames.ContentLength))
@@ -22,7 +22,7 @@ class RequestTests extends FlatSpec with Matchers {
   }
 
   it should "not override an already specified content length" in {
-    sttp
+    request
       .contentLength(10)
       .body("a")
       .headers
@@ -31,6 +31,6 @@ class RequestTests extends FlatSpec with Matchers {
   }
 
   "request timeout" should "use default if not overridden" in {
-    sttp.options.readTimeout should be(DefaultReadTimeout)
+    request.options.readTimeout should be(DefaultReadTimeout)
   }
 }

@@ -18,7 +18,7 @@ class Json4sTests extends FlatSpec with Matchers with EitherValues {
     val body = Outer(Inner(42, true, "horses"), "cats")
     val expected = """{"foo":{"a":42,"b":true,"c":"horses"},"bar":"cats"}"""
 
-    val req = sttp.body(body)
+    val req = request.body(body)
 
     extractBody(req) shouldBe expected
   }
@@ -70,7 +70,7 @@ class Json4sTests extends FlatSpec with Matchers with EitherValues {
 
   it should "set the content type" in {
     val body = Outer(Inner(42, true, "horses"), "cats")
-    val req = sttp.body(body)
+    val req = request.body(body)
 
     val ct = req.headers.toMap.get("Content-Type")
 

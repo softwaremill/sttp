@@ -15,7 +15,7 @@ import scala.language.higherKinds
 trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
   "cookies" - {
     "read response cookies" in {
-      sttp
+      request
         .get(uri"$endpoint/set_cookies")
         .response(sttpIgnore)
         .send()
@@ -33,7 +33,7 @@ trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
     }
 
     "read response cookies with the expires attribute" in {
-      sttp
+      request
         .get(uri"$endpoint/set_cookies/with_expires")
         .response(sttpIgnore)
         .send()
@@ -58,10 +58,10 @@ trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
 
   // browsers do not allow access to redirect responses
   "follow redirects" - {
-    def r1 = sttp.post(uri"$endpoint/redirect/r1").response(asStringAlways)
-    def r3 = sttp.post(uri"$endpoint/redirect/r3").response(asStringAlways)
+    def r1 = request.post(uri"$endpoint/redirect/r1").response(asStringAlways)
+    def r3 = request.post(uri"$endpoint/redirect/r3").response(asStringAlways)
     val r4response = "819"
-    def loop = sttp.post(uri"$endpoint/redirect/loop")
+    def loop = request.post(uri"$endpoint/redirect/loop")
 
     "keep a single history entry of redirect responses" in {
       r3.send().toFuture().map { resp =>
@@ -114,7 +114,7 @@ trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
 
     for ((statusCode, redirectToGet, expectedBody) <- redirectToGetTestData) yield {
       s"for $statusCode redirect, with redirect post to get = $redirectToGet, should return body $expectedBody" in {
-        sttp
+        request
           .redirectToGet(redirectToGet)
           .body("x")
           .post(uri"$endpoint/redirect/get_after_post/r$statusCode")
@@ -131,9 +131,9 @@ trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
   // scalajs and scala native only support US_ASCII, ISO_8859_1, UTF_8, UTF_16BE, UTF_16LE, UTF_16
   "encoding" - {
     "read response body encoded using ISO-8859-2, as specified in the header, overriding the default" in {
-      val request = sttp.get(uri"$endpoint/respond_with_iso_8859_2")
+      val req = request.get(uri"$endpoint/respond_with_iso_8859_2")
 
-      request.send().toFuture().map { response =>
+      req.send().toFuture().map { response =>
         response.body should be(Right("Żółć!"))
       }
     }
@@ -182,7 +182,7 @@ trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
   "download file" - {
     "download a binary file using asFile" in {
       withTemporaryNonExistentFile { file =>
-        val req = sttp.get(uri"$endpoint/download/binary").response(asFile(file))
+        val req = request.get(uri"$endpoint/download/binary").response(asFile(file))
         req.send().toFuture().flatMap { resp =>
           md5FileHash(resp.body.right.get).map { _ shouldBe binaryFileMD5Hash }
         }
@@ -191,7 +191,7 @@ trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
 
     "download a text file using asFile" in {
       withTemporaryNonExistentFile { file =>
-        val req = sttp.get(uri"$endpoint/download/text").response(asFile(file))
+        val req = request.get(uri"$endpoint/download/text").response(asFile(file))
         req.send().toFuture().flatMap { resp =>
           md5FileHash(resp.body.right.get).map { _ shouldBe textFileMD5Hash }
         }
@@ -202,7 +202,7 @@ trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
   "download file overwrite" - {
     "fail when file exists and overwrite flag is false" in {
       withTemporaryFile(Some(testBodyBytes)) { file =>
-        val req = sttp.get(uri"$endpoint/download/text").response(asFile(file))
+        val req = request.get(uri"$endpoint/download/text").response(asFile(file))
 
         Future(req.send()).flatMap(_.toFuture()).failed.collect {
           case caught: IOException =>
@@ -213,7 +213,7 @@ trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
 
     "not fail when file exists and overwrite flag is true" in {
       withTemporaryFile(Some(testBodyBytes)) { file =>
-        val req = sttp
+        val req = request
           .get(uri"$endpoint/download/text")
           .response(asFile(file, overwrite = true))
         req.send().toFuture().flatMap { resp =>
@@ -224,7 +224,7 @@ trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
   }
 
   "multipart" - {
-    def mp = sttp.post(uri"$endpoint/multipart")
+    def mp = request.post(uri"$endpoint/multipart")
 
     "send a multipart message with a file" in {
       withTemporaryFile(Some(testBodyBytes)) { f =>
