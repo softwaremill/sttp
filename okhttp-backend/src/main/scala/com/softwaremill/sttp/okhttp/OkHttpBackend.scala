@@ -6,6 +6,7 @@ import java.util.concurrent.TimeUnit
 import com.softwaremill.sttp._
 import com.softwaremill.sttp.model._
 import ResponseAs.EagerResponseHandler
+import com.github.ghik.silencer.silent
 import com.softwaremill.sttp.SttpBackendOptions.Proxy
 import com.softwaremill.sttp.monad.{FutureMonad, IdMonad, MonadAsyncError, MonadError}
 import okhttp3.internal.http.HttpMethod
@@ -39,7 +40,7 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean
     val body = bodyToOkHttp(request.body)
     builder.method(request.method.m, body.getOrElse {
       if (HttpMethod.requiresRequestBody(request.method.m))
-        OkHttpRequestBody.create(null, "")
+        OkHttpRequestBody.create("", null)
       else null
     })
 
@@ -57,19 +58,20 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean
     body match {
       case NoBody => None
       case StringBody(b, _, _) =>
-        Some(OkHttpRequestBody.create(null, b))
+        Some(OkHttpRequestBody.create(b, null))
       case ByteArrayBody(b, _) =>
-        Some(OkHttpRequestBody.create(null, b))
+        Some(OkHttpRequestBody.create(b, null))
       case ByteBufferBody(b, _) =>
-        Some(OkHttpRequestBody.create(null, b.array()))
+        Some(OkHttpRequestBody.create(b.array(), null))
       case InputStreamBody(b, _) =>
         Some(new OkHttpRequestBody() {
+          @silent("discarded")
           override def writeTo(sink: BufferedSink): Unit =
             sink.writeAll(Okio.source(b))
           override def contentType(): MediaType = null
         })
       case FileBody(b, _) =>
-        Some(OkHttpRequestBody.create(null, b.toFile))
+        Some(OkHttpRequestBody.create(b.toFile, null))
       case StreamBody(s) =>
         streamToRequestBody(s)
       case MultipartBody(ps) =>
@@ -91,8 +93,6 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean
       res: OkHttpResponse,
       responseAs: ResponseAs[T, S]
   ): R[Response[T]] = {
-
-    val code = res.code()
 
     val headers = res
       .headers()
