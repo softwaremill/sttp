@@ -16,8 +16,8 @@ JSON encoding of bodies and decoding of responses can be handled using `Circe <h
 
 This module adds a method to the request and a function that can be given to a request to decode the response to a specific object::
 
-  import com.softwaremill.sttp._
-  import com.softwaremill.sttp.circe._
+  import sttp.client._
+  import sttp.client.circe._
   
   implicit val backend = HttpURLConnectionBackend()
   
@@ -46,8 +46,8 @@ Using this module it is possible to set request bodies and read response bodies 
 
 Usage example::
 
-  import com.softwaremill.sttp._
-  import com.softwaremill.sttp.json4s._
+  import sttp.client._
+  import sttp.client.json4s._
   
   implicit val backend = HttpURLConnectionBackend()
 
@@ -76,8 +76,8 @@ Using this module it is possible to set request bodies and read response bodies 
 
 Usage example::
 
-  import com.softwaremill.sttp._
-  import com.softwaremill.sttp.sprayJson._
+  import sttp.client._
+  import sttp.client.sprayJson._
   import spray.json._
 
   implicit val backend = HttpURLConnectionBackend()
@@ -108,4 +108,4 @@ To encode and decode JSON using `play-json <https://www.playframework.com>`_, ad
 
   "com.softwaremill.sttp" %% "play-json" % "1.6.6"
 
-To use, add an import: ``import com.softwaremill.sttp.playJson._``.
+To use, add an import: ``import sttp.client.playJson._``.

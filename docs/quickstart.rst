@@ -22,7 +22,7 @@ Using Ammonite
 If you are an `Ammonite <http://ammonite.io>`_ user, you can quickly start experimenting with sttp by copy-pasting the following::
 
   import $ivy.`com.softwaremill.sttp::core:1.6.6`
-  import com.softwaremill.sttp.quick._
+  import sttp.client.quick._
   sttp.get(uri"http://httpbin.org/ip").send()
 
 Importing the ``quick`` object has the same effect as importing ``com.softwaremill.sttp._``, plus defining an implicit synchronous backend (``val backend = HttpURLConnectionBackend()``), so that sttp can be used right away.
@@ -32,7 +32,7 @@ Imports
 
 Working with sttp is most convenient if you import the ``sttp`` package entirely::
 
-  import com.softwaremill.sttp._
+  import sttp.client._
 
 This brings into scope the starting point for defining requests and some helper methods. All examples in this guide assume that this import is in place.
 

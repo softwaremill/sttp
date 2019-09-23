@@ -47,7 +47,7 @@ Example logging backend wrapper
 
 Often it's useful to setup system-wide logging for failed requests. This is possible using a backend wrapper. In this example, we are using ``scala-logging`` for the logging itself, but of course any logging library can be used::
 
-  import com.softwaremill.sttp.{MonadError, Request, Response, SttpBackend}
+  import sttp.client.{MonadError, Request, Response, SttpBackend}
   import com.typesafe.scalalogging.StrictLogging
 
   class LoggingSttpBackend[R[_], S](delegate: SttpBackend[R, S]) extends SttpBackend[R, S]
@@ -142,7 +142,7 @@ Handling retries is a complex problem when it comes to HTTP requests. When is a 
 
 In some cases it's possible to implement a generic retry mechanism; such a mechanism should take into account logging, metrics, limiting the number of retries and a backoff mechanism. These mechanisms could be quite simple, or involve e.g. retry budgets (see `Finagle's <https://twitter.github.io/finagle/guide/Clients.html#retries>`_ documentation on retries). In sttp, it's possible to recover from errors using the ``responseMonad``. A starting point for a retrying backend could be::
 
-  import com.softwaremill.sttp.{MonadError, Request, Response, SttpBackend}
+  import sttp.client.{MonadError, Request, Response, SttpBackend}
 
   class RetryingBackend[R[_], S](
       delegate: SttpBackend[R, S],
@@ -190,8 +190,8 @@ Implementing a new backend is made easy as the tests are published in the ``core
 
 Implement your backend and extend the ``HttpTest`` class::
 
-  import com.softwaremill.sttp.SttpBackend
-  import com.softwaremill.sttp.testing.{ConvertToFuture, HttpTest}
+  import sttp.client.SttpBackend
+  import sttp.client.testing.{ConvertToFuture, HttpTest}
 
   class MyCustomBackendHttpTest extends HttpTest[Future] {
 

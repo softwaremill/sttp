@@ -12,7 +12,7 @@ Required dependencies::
 
 Example code::
 
-  import com.softwaremill.sttp._
+  import sttp.client._
 
   val signup = Some("yes")
 
@@ -41,9 +41,9 @@ Required dependencies::
 
 Example code::
 
-  import com.softwaremill.sttp._
-  import com.softwaremill.sttp.akkahttp._
-  import com.softwaremill.sttp.json4s._
+  import sttp.client._
+  import sttp.client.akkahttp._
+  import sttp.client.json4s._
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -74,8 +74,8 @@ Required dependencies::
 
 Example code::
 
-  import com.softwaremill.sttp._
-  import com.softwaremill.sttp.testing._
+  import sttp.client._
+  import sttp.client.testing._
 
   implicit val backend = SttpBackendStub.synchronous
     .whenRequestMatches(_.uri.paramsMap.contains("filter"))

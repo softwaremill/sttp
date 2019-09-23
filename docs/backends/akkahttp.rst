@@ -24,8 +24,8 @@ This backend supports sending and receiving `akka-streams <http://doc.akka.io/do
 
 To set the request body as a stream::
 
-  import com.softwaremill.sttp._
-  import com.softwaremill.sttp.akkahttp._
+  import sttp.client._
+  import sttp.client.akkahttp._
   
   import akka.stream.scaladsl.Source
   import akka.util.ByteString
@@ -38,8 +38,8 @@ To set the request body as a stream::
 
 To receive the response body as a stream::
 
-  import com.softwaremill.sttp._
-  import com.softwaremill.sttp.akkahttp._
+  import sttp.client._
+  import sttp.client.akkahttp._
   
   import akka.stream.scaladsl.Source
   import akka.util.ByteString

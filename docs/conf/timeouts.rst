@@ -8,7 +8,7 @@ sttp supports read and connection timeouts:
 
 How to use::
 
-  import com.softwaremill.sttp._
+  import sttp.client._
   import scala.concurrent.duration._
   
   // all backends provide a constructor that allows to specify backend options

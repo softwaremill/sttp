@@ -16,7 +16,7 @@ The brave backend wraps any other backend, and needs an instance of brave's ``Ht
 
 The backend obtains the current trace context using default Brave's propagation mechanisms. As it's often challenging to integrate context propagation in an asynchronous setting, there's also a possibility to add the trace context to the request's tags::
 
-  import com.softwaremill.sttp.brave.BraveBackend._
+  import sttp.client.brave.BraveBackend._
 
   val parent: TraceContext = ...
 

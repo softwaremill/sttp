@@ -45,8 +45,8 @@ To use, add the following dependency to your project::
 
 An example of streaming a response::
 
-  import com.softwaremill.sttp._
-  import com.softwaremill.sttp.impl.monix._
+  import sttp.client._
+  import sttp.client.impl.monix._
 
   import java.nio.ByteBuffer
   import monix.eval.Task

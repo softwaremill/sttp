@@ -13,7 +13,7 @@ Settings are loaded **in given order** and the **first existing value** is being
 
 Otherwise, proxy values can be specified manually when creating a backend::
  
-  import com.softwaremill.sttp._
+  import sttp.client._
   
   implicit val backend = HttpURLConnectionBackend(
     options = SttpBackendOptions.httpProxy("some.host", 8080))

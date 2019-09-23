@@ -265,8 +265,8 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
       "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test"
     ),
     // the test server needs to be started before running any JS tests
-    // `reStart` cannJSAsyncExecutionContextot be scoped so it can't be only added to Test
-    mainClass in reStart := Some("com.softwaremill.sttp.testing.HttpServer"),
+    // `reStart` cannot be scoped so it can't be only added to Test
+    mainClass in reStart := Some("sttp.client.testing.HttpServer"),
     reStartArgs in reStart := Seq(s"${(testServerPort in Test).value}"),
     fullClasspath in reStart := (fullClasspath in Test).value,
     testServerPort in Test := 51823,

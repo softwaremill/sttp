@@ -11,8 +11,8 @@ Some backends (see :ref:`backends summary <backends_summary>`) support streaming
 
 For example, using the :ref:`akka-http backend <akkahttp>`, a request with a streaming body can be defined as follows::
 
-  import com.softwaremill.sttp._
-  import com.softwaremill.sttp.akkahttp._
+  import sttp.client._
+  import sttp.client.akkahttp._
   
   import akka.stream.scaladsl.Source
   import akka.util.ByteString

@@ -9,7 +9,7 @@ The Scala HTTP client that you always wanted!
 sttp is an open-source library which provides a clean, programmer-friendly API to define HTTP requests and execute them using one of the wrapped backends, such as akka-http, async-http-client, http4s or OkHttp.
  
 ```scala
-import com.softwaremill.sttp._
+import sttp.client._
 
 val sort: Option[String] = None
 val query = "http language:scala"
@@ -43,7 +43,7 @@ If you are an [Ammonite](http://ammonite.io) user, you can quickly start experim
 
 ```scala
 import $ivy.`com.softwaremill.sttp::core:1.6.6`
-import com.softwaremill.sttp.quick._
+import sttp.client.quick._
 sttp.get(uri"http://httpbin.org/ip").send()
 ```
 
@@ -60,7 +60,7 @@ Add the following dependency:
 Then, import:
 
 ```scala
-import com.softwaremill.sttp._
+import sttp.client._
 ```
 
 Type `sttp.` and see where your IDE’s auto-complete gets you!

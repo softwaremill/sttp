@@ -7,7 +7,7 @@ Welcome!
 
 Here's a very quick example of sttp in action::
 
-  import com.softwaremill.sttp._
+  import sttp.client._
 
   val sort: Option[String] = None
   val query = "http language:scala"

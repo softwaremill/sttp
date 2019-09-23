@@ -66,8 +66,8 @@ Streaming using Monix
 
 The Monix backend supports streaming (as both Monix and Async Http Client support reactive streams ``Publisher`` s out of the box). The type of supported streams in this case is ``Observable[ByteBuffer]``. That is, you can set such an observable as a request body::
 
-  import com.softwaremill.sttp._
-  import com.softwaremill.sttp.asynchttpclient.monix._
+  import sttp.client._
+  import sttp.client.asynchttpclient.monix._
   
   import java.nio.ByteBuffer
   import monix.reactive.Observable
@@ -82,8 +82,8 @@ The Monix backend supports streaming (as both Monix and Async Http Client suppor
 
 And receive responses as an observable stream::
 
-  import com.softwaremill.sttp._
-  import com.softwaremill.sttp.asynchttpclient.monix._
+  import sttp.client._
+  import sttp.client.asynchttpclient.monix._
   
   import java.nio.ByteBuffer
   import monix.eval.Task
@@ -106,8 +106,8 @@ The fs2 backend supports streaming in any instance of the ``cats.effect.Effect``
 
 Requests can be sent with a streaming body like this::
 
-  import com.softwaremill.sttp._
-  import com.softwaremill.sttp.asynchttpclient.fs2.AsyncHttpClientFs2Backend
+  import sttp.client._
+  import sttp.client.asynchttpclient.fs2.AsyncHttpClientFs2Backend
 
   import java.nio.ByteBuffer
   import cats.effect.{ContextShift, IO}
@@ -124,8 +124,8 @@ Requests can be sent with a streaming body like this::
 
 Responses can also be streamed::
 
-  import com.softwaremill.sttp._
-  import com.softwaremill.sttp.asynchttpclient.fs2.AsyncHttpClientFs2Backend
+  import sttp.client._
+  import sttp.client.asynchttpclient.fs2.AsyncHttpClientFs2Backend
 
   import java.nio.ByteBuffer
   import cats.effect.{ContextShift, IO}

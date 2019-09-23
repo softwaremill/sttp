@@ -88,8 +88,8 @@ If the backend used supports streaming (see :ref:`backends summary <backends_sum
 
 For example, when using the :ref:`akka-http backend <akkahttp>`::
 
-  import com.softwaremill.sttp._
-  import com.softwaremill.sttp.akkahttp._
+  import sttp.client._
+  import sttp.client.akkahttp._
   
   import akka.stream.scaladsl.Source
   import akka.util.ByteString

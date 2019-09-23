@@ -11,7 +11,7 @@ Constants for common status codes are provided by the ``StatusCodes`` `trait and
 
 Example with objects::
 
-  import com.softwaremill.sttp._
+  import sttp.client._
 
   object Example {
     val request = sttp.header(HeaderNames.ContentType, MediaTypes.Json).get(uri"https://httpbin.org")
@@ -22,7 +22,7 @@ Example with objects::
 
 Example with traits::
 
-  import com.softwaremill.sttp._
+  import sttp.client._
 
   object Example extends HeaderNames with MediaTypes with StatusCodes {
     val request = sttp.header(ContentType, Json).get(uri"https://httpbin.org")

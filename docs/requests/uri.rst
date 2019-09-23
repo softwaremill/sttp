@@ -12,7 +12,7 @@ URI interpolator
 
 Using the URI interpolator it's possible to conveniently create ``Uri`` instances, for example::
 
-  import com.softwaremill.sttp._
+  import sttp.client._
   
   val user = "Mary Smith"
   val filter = "programming languages"
@@ -85,7 +85,7 @@ All features combined
 
 A fully-featured example::
 
-  import com.softwaremill.sttp._
+  import sttp.client._
   val secure = true
   val scheme = if (secure) "https" else "http"
   val subdomains = List("sub1", "sub2")
