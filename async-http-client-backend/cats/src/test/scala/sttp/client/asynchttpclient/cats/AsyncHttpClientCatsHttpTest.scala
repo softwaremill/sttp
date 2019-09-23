@@ -13,7 +13,7 @@ class AsyncHttpClientCatsHttpTest extends HttpTest[IO] {
 
   "illegal url exceptions" - {
     "should be wrapped in the effect wrapper" in {
-      request.get(uri"ps://sth.com").send().toFuture().failed.map { e =>
+      basicRequest.get(uri"ps://sth.com").send().toFuture().failed.map { e =>
         e shouldBe a[IllegalArgumentException]
       }
     }

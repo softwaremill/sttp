@@ -14,7 +14,7 @@ In its simplest form, the request's body can be set as a ``String``. By default,
 
 A ``String`` body can be set on a request as follows::
 
-  sttp.body("Hello, world!")
+  basicRequest.body("Hello, world!")
 
 It is also possible to use a different character encoding::
 

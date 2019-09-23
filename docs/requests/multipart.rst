@@ -25,7 +25,7 @@ The parts can be specified using either a ``Seq[Multipart]`` or by using multipl
 
 For example::
 
-  sttp.multipartBody(
+  basicRequest.multipartBody(
     multipart("text_part", "data1"),
     multipartFile("file_part", someFile), // someFile: File
     multipart("form_part", Map("x" -> "10", "y" -> "yes"))
@@ -44,7 +44,7 @@ For each part, an optional filename can be specified, as well as a custom conten
 
 For example::
 
-  sttp.multipartBody(
+  basicRequest.multipartBody(
     multipartFile("logo", logoFile).fileName("logo.jpg").contentType("image/jpg"),
     multipartFile("text", docFile).fileName("text.doc")
   )

@@ -11,10 +11,10 @@ trait SyncHttpTestExtensions {
 
   // browsers do not allow access to redirect responses
   "follow redirects" - {
-    def r1 = request.post(uri"$endpoint/redirect/r1").response(asStringAlways)
-    def r3 = request.post(uri"$endpoint/redirect/r3").response(asStringAlways)
+    def r1 = basicRequest.post(uri"$endpoint/redirect/r1").response(asStringAlways)
+    def r3 = basicRequest.post(uri"$endpoint/redirect/r3").response(asStringAlways)
     val r4response = "819"
-    def loop = request.post(uri"$endpoint/redirect/loop").response(asStringAlways)
+    def loop = basicRequest.post(uri"$endpoint/redirect/loop").response(asStringAlways)
 
     "keep a single history entry of redirect responses" in {
       val resp = r3.send()
@@ -83,7 +83,7 @@ trait SyncHttpTestExtensions {
 
     "download a binary file using asFile" in {
       withTemporaryNonExistentFile { file =>
-        val req = request.get(uri"$endpoint/download/binary").response(asFile(file))
+        val req = basicRequest.get(uri"$endpoint/download/binary").response(asFile(file))
         val resp = req.send()
         md5FileHash(resp.body.right.get).map { _ shouldBe binaryFileMD5Hash }
       }
@@ -91,7 +91,7 @@ trait SyncHttpTestExtensions {
 
     "download a text file using asFile" in {
       withTemporaryNonExistentFile { file =>
-        val req = request.get(uri"$endpoint/download/text").response(asFile(file))
+        val req = basicRequest.get(uri"$endpoint/download/text").response(asFile(file))
         val resp = req.send()
         md5FileHash(resp.body.right.get).map { _ shouldBe textFileMD5Hash }
       }
@@ -101,7 +101,7 @@ trait SyncHttpTestExtensions {
   "download file overwrite" - {
     "fail when file exists and overwrite flag is false" in {
       withTemporaryFile(Some(testBodyBytes)) { file =>
-        val req = request.get(uri"$endpoint/download/text").response(asFile(file))
+        val req = basicRequest.get(uri"$endpoint/download/text").response(asFile(file))
 
         try {
           req.send()
@@ -114,7 +114,7 @@ trait SyncHttpTestExtensions {
 
     "not fail when file exists and overwrite flag is true" in {
       withTemporaryFile(Some(testBodyBytes)) { file =>
-        val req = request
+        val req = basicRequest
           .get(uri"$endpoint/download/text")
           .response(asFile(file, overwrite = true))
         val resp = req.send()
@@ -124,7 +124,7 @@ trait SyncHttpTestExtensions {
   }
 
   "multipart" - {
-    def mp = request.post(uri"$endpoint/multipart")
+    def mp = basicRequest.post(uri"$endpoint/multipart")
 
     "send a multipart message with a file" in {
       withTemporaryFile(Some(testBodyBytes)) { f =>

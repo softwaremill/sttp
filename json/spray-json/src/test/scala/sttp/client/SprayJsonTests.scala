@@ -15,7 +15,7 @@ class SprayJsonTests extends FlatSpec with Matchers with EitherValues {
   it should "encode arbitrary json bodies" in {
     val body = Outer(Inner(42, true, "horses"), "cats")
 
-    val req = request.body(body)
+    val req = basicRequest.body(body)
 
     extractBody(req) should include(""""foo":{"a":42,"b":true,"c":"horses"}""")
     extractBody(req) should include(""""bar":"cats"""")
@@ -68,7 +68,7 @@ class SprayJsonTests extends FlatSpec with Matchers with EitherValues {
 
   it should "set the content type" in {
     val body = Outer(Inner(42, true, "horses"), "cats")
-    val req = request.body(body)
+    val req = basicRequest.body(body)
 
     val ct = req.headers.toMap.get("Content-Type")
 

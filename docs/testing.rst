@@ -26,10 +26,10 @@ Behavior of the stub can be specified using a combination of the ``whenRequestMa
     .whenRequestMatches(_.method == Method.POST)
     .thenRespondServerError()
 
-  val response1 = sttp.get(uri"http://example.org/a/b/c").send()
+  val response1 = basicRequest.get(uri"http://example.org/a/b/c").send()
   // response1.body will be Right("Hello there")
 
-  val response2 = sttp.post(uri"http://example.org/d/e").send()
+  val response2 = basicRequest.post(uri"http://example.org/d/e").send()
   // response2.code will be 500
 
 It is also possible to match requests by partial function, returning a response. E.g.::
@@ -45,10 +45,10 @@ It is also possible to match requests by partial function, returning a response.
         Response.ok("Ada")
     })
 
-  val response1 = sttp.get(uri"http://example.org/partial10").send()
+  val response1 = basicRequest.get(uri"http://example.org/partial10").send()
   // response1.body will be Right(10)
 
-  val response2 = sttp.post(uri"http://example.org/partialAda").send()
+  val response2 = basicRequest.post(uri"http://example.org/partialAda").send()
   // response2.body will be Right("Ada")
 
 This approach to testing has one caveat: the responses are not type-safe. That is, the stub backend cannot match on or verify that the type of the response body matches the response body type requested.
@@ -61,7 +61,7 @@ Another way to specify the behaviour is passing response wrapped in the result m
       Response(Right("OK"), 200, "", Nil, Nil)
     })
 
-  val responseFuture = sttp.get(uri"http://example.org").send()
+  val responseFuture = basicRequest.get(uri"http://example.org").send()
   // responseFuture will complete after 5 seconds with "OK" response
 
 The returned response may also depend on the request: ::
@@ -71,7 +71,7 @@ The returned response may also depend on the request: ::
       Response(Right("OK, got request sent to ${req.uri.host}"), 200, "", Nil, Nil)
     )
 
-  val response = sttp.get(uri"http://example.org").send()
+  val response = basicRequest.get(uri"http://example.org").send()
   // response.body will be Right("OK, got request sent to example.org")
 
 
@@ -80,10 +80,10 @@ You can define consecutive raw responses that will be served: ::
   implicit val testingBackend = SttpBackendStub.synchronous.whenAnyRequest
     .thenRespondCyclic("first", "second", "third")
 
-  sttp.get(uri"http://example.org").send()       // Right("OK, first")
-  sttp.get(uri"http://example.org").send()       // Right("OK, second")
-  sttp.get(uri"http://example.org").send()       // Right("OK, third")
-  sttp.get(uri"http://example.org").send()       // Right("OK, first")
+  basicRequest.get(uri"http://example.org").send()       // Right("OK, first")
+  basicRequest.get(uri"http://example.org").send()       // Right("OK, second")
+  basicRequest.get(uri"http://example.org").send()       // Right("OK, third")
+  basicRequest.get(uri"http://example.org").send()       // Right("OK, first")
 
 Or multiple `Response` instances: ::
 
@@ -93,9 +93,9 @@ Or multiple `Response` instances: ::
       Response.error[String]("error", 500, "Something went wrong")
     )
 
-  sttp.get(uri"http://example.org").send()       // code will be 200
-  sttp.get(uri"http://example.org").send()       // code will be 500
-  sttp.get(uri"http://example.org").send()       // code will be 200
+  basicRequest.get(uri"http://example.org").send()       // code will be 200
+  basicRequest.get(uri"http://example.org").send()       // code will be 500
+  basicRequest.get(uri"http://example.org").send()       // code will be 200
 
 
 Simulating exceptions
@@ -133,7 +133,7 @@ For example, if you want to return a JSON response, simply use `.withResponse(St
 
   def parseUserJson(a: Array[Byte]): User = ...
 
-  val response = sttp.get(uri"http://example.com")
+  val response = basicRequest.get(uri"http://example.com")
     .response(asByteArray.map(parseUserJson))
     .send()
 
@@ -147,7 +147,7 @@ Example: returning a file
 If you want to return a file and have a response handler set up like this::
 
   val destination = new File("path/to/file.ext")
-  sttp.get(uri"http://example.com").response(asFile(destination))
+  basicRequest.get(uri"http://example.com").response(asFile(destination))
 
 Then set up the mock like this::
 
@@ -180,9 +180,9 @@ It is also possible to create a stub backend which delegates calls to another (p
       .whenRequestMatches(_.uri.path.startsWith(List("a")))
       .thenRespond("I'm a STUB!")
 
-  val response1 = sttp.get(uri"http://api.internal/a").send()
+  val response1 = basicRequest.get(uri"http://api.internal/a").send()
   // response1.body will be Right("I'm a STUB")
 
-  val response2 = sttp.post(uri"http://api.internal/b").send()
+  val response2 = basicRequest.post(uri"http://api.internal/b").send()
   // response2 will be whatever a "real" network call to api.internal/b returns
 

@@ -22,9 +22,9 @@ It is often necessary to copy cookies from a response, e.g. after a login reques
   def cookies(r: Response[_])
 
   // Usage
-  sttp.cookies(response)
+  basicRequest.cookies(response)
 
-Or, it's also possible to store only the ``com.softwaremill.sttp.Cookie`` objects (a sequence of which can be obtained from a response), and set the on the request::
+Or, it's also possible to store only the ``sttp.client.Cookie`` objects (a sequence of which can be obtained from a response), and set the on the request::
 
   def cookies(cs: Seq[Cookie])
 

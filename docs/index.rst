@@ -14,7 +14,7 @@ Here's a very quick example of sttp in action::
 
   // the `query` parameter is automatically url-encoded
   // `sort` is removed, as the value is not defined
-  val request = sttp.get(uri"https://api.github.com/search/repositories?q=$query&sort=$sort")
+  val request = basicRequest.get(uri"https://api.github.com/search/repositories?q=$query&sort=$sort")
 
   implicit val backend = HttpURLConnectionBackend()
   val response = request.send()

@@ -39,14 +39,14 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
 
   "backend stub" should "use the first rule if it matches" in {
     implicit val b = testingStub
-    val r = request.get(uri"http://example.org/a/b/c").send()
+    val r = basicRequest.get(uri"http://example.org/a/b/c").send()
     r.is200 should be(true)
     r.body should be(Right(""))
   }
 
   it should "use subsequent rules if the first doesn't match" in {
     implicit val b = testingStub
-    val r = request
+    val r = basicRequest
       .get(uri"http://example.org/d?p=v")
       .response(asString.mapRight(_.toInt))
       .send()
@@ -55,45 +55,45 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
 
   it should "use the first specified rule if multiple match" in {
     implicit val b = testingStub
-    val r = request.get(uri"http://example.org/a/b/c?p=v").send()
+    val r = basicRequest.get(uri"http://example.org/a/b/c?p=v").send()
     r.is200 should be(true)
     r.body should be(Right(""))
   }
 
   it should "respond with monad with set response" in {
     implicit val b = testingStub
-    val r = request.post(uri"http://example.org:8080").send()
+    val r = basicRequest.post(uri"http://example.org:8080").send()
     r.is200 should be(true)
     r.body should be(Right("OK from monad"))
   }
 
   it should "respond with monad with response created from request" in {
     implicit val b = testingStub
-    val r = request.post(uri"http://example.org:8081").send()
+    val r = basicRequest.post(uri"http://example.org:8081").send()
     r.is200 should be(true)
     r.body should be(Right("OK from request. Request was sent to host: example.org"))
   }
 
   it should "use the default response if no rule matches" in {
     implicit val b = testingStub
-    val r = request.put(uri"http://example.org/d").send()
+    val r = basicRequest.put(uri"http://example.org/d").send()
     r.code should be(404)
   }
 
   it should "wrap responses in the desired monad" in {
     import scala.concurrent.ExecutionContext.Implicits.global
     implicit val b = SttpBackendStub(new FutureMonad())
-    val r = request.post(uri"http://example.org").send()
+    val r = basicRequest.post(uri"http://example.org").send()
     r.futureValue.code should be(404)
   }
 
   it should "use rules in partial function" in {
     implicit val s = testingStub
-    val r = request.post(uri"http://example.org/partial10").send()
+    val r = basicRequest.post(uri"http://example.org/partial10").send()
     r.is200 should be(true)
     r.body should be(Right("10"))
 
-    val ada = request.post(uri"http://example.org/partialAda").send()
+    val ada = basicRequest.post(uri"http://example.org/partialAda").send()
     ada.is200 should be(true)
     ada.body should be(Right("Ada"))
   }
@@ -104,7 +104,7 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
       .thenRespond(throw new TimeoutException())
 
     a[TimeoutException] should be thrownBy {
-      request.get(uri"http://example.org").send()
+      basicRequest.get(uri"http://example.org").send()
     }
   }
 
@@ -113,7 +113,7 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
       .whenRequestMatches(_ => true)
       .thenRespond(throw new TimeoutException())
 
-    val result = request.get(uri"http://example.org").send()
+    val result = basicRequest.get(uri"http://example.org").send()
     result.failed.futureValue shouldBe a[TimeoutException]
   }
 
@@ -122,7 +122,7 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
       .whenRequestMatches(_ => true)
       .thenRespond("10")
 
-    val result = request
+    val result = basicRequest
       .get(uri"http://example.org")
       .mapResponseRight(_.toInt)
       .mapResponseRight(_ * 2)
@@ -135,7 +135,7 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
     implicit val s = SttpBackendStub(IdMonad).whenAnyRequest
       .thenRespondWithCode(201)
 
-    val result = request
+    val result = basicRequest
       .get(uri"http://example.org")
       .send()
 
@@ -147,7 +147,7 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
     implicit val s = SttpBackendStub(IdMonad).whenAnyRequest
       .thenRespondWithCode(300)
 
-    val result = request
+    val result = basicRequest
       .get(uri"http://example.org")
       .send()
 
@@ -159,7 +159,7 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
     implicit val s = SttpBackendStub(IdMonad).whenAnyRequest
       .thenRespondWithCode(400)
 
-    val result = request
+    val result = basicRequest
       .get(uri"http://example.org")
       .send()
 
@@ -171,7 +171,7 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
     implicit val s = SttpBackendStub(IdMonad).whenAnyRequest
       .thenRespondWithCode(500)
 
-    val result = request
+    val result = basicRequest
       .get(uri"http://example.org")
       .send()
 
@@ -189,7 +189,7 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
         Response(Right("OK"), 200, "", Nil, Nil)
       })
 
-    request
+    basicRequest
       .get(uri"http://example.org")
       .send()
 
@@ -202,10 +202,10 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
     implicit val s: SttpBackend[Identity, Nothing] = SttpBackendStub(IdMonad).whenAnyRequest
       .thenRespondCyclic("first", "second", "third")
 
-    request.get(uri"http://example.org").send().body should be(Right("first"))
-    request.get(uri"http://example.org").send().body should be(Right("second"))
-    request.get(uri"http://example.org").send().body should be(Right("third"))
-    request.get(uri"http://example.org").send().body should be(Right("first"))
+    basicRequest.get(uri"http://example.org").send().body should be(Right("first"))
+    basicRequest.get(uri"http://example.org").send().body should be(Right("second"))
+    basicRequest.get(uri"http://example.org").send().body should be(Right("third"))
+    basicRequest.get(uri"http://example.org").send().body should be(Right("first"))
   }
 
   it should "serve consecutive responses" in {
@@ -215,9 +215,9 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
         Response("error", 500, "Something went wrong")
       )
 
-    request.get(uri"http://example.org").send().is200 should be(true)
-    request.get(uri"http://example.org").send().isServerError should be(true)
-    request.get(uri"http://example.org").send().is200 should be(true)
+    basicRequest.get(uri"http://example.org").send().is200 should be(true)
+    basicRequest.get(uri"http://example.org").send().isServerError should be(true)
+    basicRequest.get(uri"http://example.org").send().is200 should be(true)
   }
 
   private val testingStubWithFallback = SttpBackendStub
@@ -228,14 +228,14 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
   "backend stub with fallback" should "use the stub when response for a request is defined" in {
     implicit val b = testingStubWithFallback
 
-    val r = request.post(uri"http://example.org/c").send()
+    val r = basicRequest.post(uri"http://example.org/c").send()
     r.body should be(Right("ok"))
   }
 
   it should "delegate to the fallback for unhandled requests" in {
     implicit val b = testingStubWithFallback
 
-    val r = request.post(uri"http://example.org/a/b").send()
+    val r = basicRequest.post(uri"http://example.org/a/b").send()
     r.is200 should be(true)
   }
 

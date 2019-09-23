@@ -21,11 +21,11 @@ class BraveBackendTest extends FlatSpec with Matchers with BeforeAndAfter {
   def newT(): Unit = {
     t = new ITHttpClient[SttpBackend[Identity, Nothing]]() {
       override def post(client: SttpBackend[Identity, Nothing], pathIncludingQuery: String, body: String): Unit = {
-        client.send(request.post(uri"${url(pathIncludingQuery)}").body(body))
+        client.send(basicRequest.post(uri"${url(pathIncludingQuery)}").body(body))
       }
 
       override def get(client: SttpBackend[Identity, Nothing], pathIncludingQuery: String): Unit = {
-        client.send(request.get(uri"${url(pathIncludingQuery)}"))
+        client.send(basicRequest.get(uri"${url(pathIncludingQuery)}"))
       }
 
       override def closeClient(client: SttpBackend[Identity, Nothing]): Unit =
@@ -121,7 +121,7 @@ class BraveBackendTest extends FlatSpec with Matchers with BeforeAndAfter {
     try {
       import sttp.client.brave.BraveBackend._
       _backend.send(
-        request
+        basicRequest
           .get(uri"http://127.0.0.1:${t.server.getPort}/foo")
           .tagWithTraceContext(parent.context())
       )

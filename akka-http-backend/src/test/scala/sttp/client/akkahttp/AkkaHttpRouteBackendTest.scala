@@ -29,7 +29,7 @@ class AkkaHttpRouteBackendTest extends AsyncWordSpec with Matchers with BeforeAn
   "matched route" should {
 
     "respond" in {
-      backend.send(request.get(uri"localhost/hello")).map { response =>
+      backend.send(basicRequest.get(uri"localhost/hello")).map { response =>
         response.code shouldBe 200
         response.body.right.get shouldBe "Hello, world!"
       }
@@ -38,7 +38,7 @@ class AkkaHttpRouteBackendTest extends AsyncWordSpec with Matchers with BeforeAn
 
   "unmatched route" should {
     "respond with 404" in {
-      backend.send(request.get(uri"http://localhost/not-matching")).map { response =>
+      backend.send(basicRequest.get(uri"http://localhost/not-matching")).map { response =>
         response.code shouldBe 404
         response.body.left.get shouldBe "The requested resource could not be found."
       }

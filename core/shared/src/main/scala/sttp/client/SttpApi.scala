@@ -40,7 +40,7 @@ trait SttpApi extends SttpExtensions {
     * - `Accept-Encoding` set to `gzip, deflate` (handled automatically by the
     *   library)
     */
-  val request: RequestT[Empty, Either[String, String], Nothing] =
+  val basicRequest: RequestT[Empty, Either[String, String], Nothing] =
     emptyRequest.acceptEncoding("gzip, deflate")
 
   // response specifications

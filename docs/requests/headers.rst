@@ -3,7 +3,7 @@ Headers
 
 Arbitrary headers can be set on the request using the ``.header`` method::
 
-  sttp.header("User-Agent", "myapp")
+  basicRequest.header("User-Agent", "myapp")
 
 As with any other request definition modifier, this method will yield a new request, which has the given header set. The headers can be set at any point when defining the request, arbitrarily interleaved with other modifiers.
 

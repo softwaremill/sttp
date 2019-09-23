@@ -23,9 +23,9 @@ If you are an `Ammonite <http://ammonite.io>`_ user, you can quickly start exper
 
   import $ivy.`com.softwaremill.sttp::core:1.6.6`
   import sttp.client.quick._
-  sttp.get(uri"http://httpbin.org/ip").send()
+  basicRequest.get(uri"http://httpbin.org/ip").send()
 
-Importing the ``quick`` object has the same effect as importing ``com.softwaremill.sttp._``, plus defining an implicit synchronous backend (``val backend = HttpURLConnectionBackend()``), so that sttp can be used right away.
+Importing the ``quick`` object has the same effect as importing ``sttp.client._``, plus defining an implicit synchronous backend (``val backend = HttpURLConnectionBackend()``), so that sttp can be used right away.
 
 Imports
 -------
@@ -36,5 +36,5 @@ Working with sttp is most convenient if you import the ``sttp`` package entirely
 
 This brings into scope the starting point for defining requests and some helper methods. All examples in this guide assume that this import is in place.
 
-And that's all you need to start using sttp! To create and send your first request, import the above, type ``sttp.`` and see where your IDE's auto-complete gets you! Or, read on about the :ref:`basics of defining requests <request_basics>`.
+And that's all you need to start using sttp! To create and send your first request, import the above, type ``basicRequest.`` and see where your IDE's auto-complete gets you! Or, read on about the :ref:`basics of defining requests <request_basics>`.
 
