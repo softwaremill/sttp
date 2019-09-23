@@ -26,7 +26,7 @@ class HttpURLConnectionBackend private (
 
   override def send[T](r: Request[T, Nothing]): Response[T] = {
     val c = openConnection(r.uri)
-    c.setRequestMethod(r.method.m)
+    c.setRequestMethod(r.method.method)
     r.headers.foreach { case (k, v) => c.setRequestProperty(k, v) }
     c.setDoInput(true)
     c.setReadTimeout(timeout(r.options.readTimeout))

@@ -116,7 +116,7 @@ class AkkaHttpBackend private (
     case Method.PATCH   => HttpMethods.PATCH
     case Method.CONNECT => HttpMethods.CONNECT
     case Method.TRACE   => HttpMethods.TRACE
-    case _              => HttpMethod.custom(m.m)
+    case _              => HttpMethod.custom(m.method)
   }
 
   private def bodyFromAkka[T](

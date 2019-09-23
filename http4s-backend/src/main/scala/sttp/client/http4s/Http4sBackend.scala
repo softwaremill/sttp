@@ -65,7 +65,7 @@ class Http4sBackend[F[_]: Effect: ContextShift](client: Client[F], blockingExecu
     case Method.PATCH   => http4s.Method.PATCH
     case Method.CONNECT => http4s.Method.CONNECT
     case Method.TRACE   => http4s.Method.TRACE
-    case _              => http4s.Method.fromString(m.m).right.get
+    case _              => http4s.Method.fromString(m.method).right.get
   }
 
   private def charsetToHttp4s(encoding: String) = http4s.Charset.fromNioCharset(Charset.forName(encoding))

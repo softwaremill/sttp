@@ -107,7 +107,7 @@ object BraveBackend {
 
 object SttpHttpClientAdapter extends HttpClientAdapter[AnyRequest, AnyResponse] {
 
-  override def method(request: AnyRequest): String = request.method.m
+  override def method(request: AnyRequest): String = request.method.method
 
   override def url(request: AnyRequest): String = request.uri.toString
 

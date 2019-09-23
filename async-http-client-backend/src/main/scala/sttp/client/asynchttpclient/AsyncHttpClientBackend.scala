@@ -184,7 +184,7 @@ abstract class AsyncHttpClientBackend[R[_], S](
 
   private def requestToAsync(r: Request[_, S]): AsyncRequest = {
     val readTimeout = r.options.readTimeout
-    val rb = new RequestBuilder(r.method.m)
+    val rb = new RequestBuilder(r.method.method)
       .setUrl(r.uri.toString)
       .setReadTimeout(if (readTimeout.isFinite) readTimeout.toMillis.toInt else -1)
       .setRequestTimeout(if (readTimeout.isFinite) readTimeout.toMillis.toInt else -1)

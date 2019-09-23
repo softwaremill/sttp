@@ -51,8 +51,8 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean
       .url(request.uri.toString)
 
     val body = bodyToOkHttp(request.body)
-    builder.method(request.method.m, body.getOrElse {
-      if (HttpMethod.requiresRequestBody(request.method.m))
+    builder.method(request.method.method, body.getOrElse {
+      if (HttpMethod.requiresRequestBody(request.method.method))
         OkHttpRequestBody.create("", null)
       else null
     })

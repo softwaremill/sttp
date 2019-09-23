@@ -17,7 +17,7 @@ class ToCurlConverter[R <: RequestT[Identity, _, _]] {
   }
 
   private def extractMethod(r: R): String = {
-    s"-X ${r.method.m}"
+    s"-X ${r.method.method}"
   }
 
   private def extractHeaders(r: R): String = {

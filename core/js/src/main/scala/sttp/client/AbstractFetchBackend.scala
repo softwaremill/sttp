@@ -81,7 +81,7 @@ abstract class AbstractFetchBackend[R[_], S](options: FetchOptions)(monad: Monad
       val redirect = if (request.options.followRedirects) RequestRedirect.follow else RequestRedirect.manual
 
       val requestInitStatic = RequestInit(
-        method = request.method.m.asInstanceOf[HttpMethod],
+        method = request.method.method.asInstanceOf[HttpMethod],
         headers = headers,
         body = body,
         credentials = options.credentials.orUndefined,
