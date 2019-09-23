@@ -33,5 +33,5 @@ object Response {
     * Convenience method to create a Response instance, mainly useful in tests using
     * [[com.softwaremill.sttp.testing.SttpBackendStub]] and partial matchers.
     */
-  def ok[T](body: T): Response[T] = apply(body, 200, "OK")
+  def ok[T](body: T): Response[T] = apply(body, StatusCode.Ok, "OK")
 }

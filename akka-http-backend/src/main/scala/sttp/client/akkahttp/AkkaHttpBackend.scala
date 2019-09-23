@@ -8,14 +8,14 @@ import akka.http.scaladsl.coding.{Deflate, Gzip, NoCoding}
 import akka.http.scaladsl.model.ContentTypes.`application/octet-stream`
 import akka.http.scaladsl.model.HttpHeader.ParsingResult
 import akka.http.scaladsl.model.headers.{BasicHttpCredentials, HttpEncodings, `Content-Length`, `Content-Type`}
-import akka.http.scaladsl.model.{Multipart => AkkaMultipart, _}
+import akka.http.scaladsl.model.{Multipart => AkkaMultipart, StatusCode => _, _}
 import akka.http.scaladsl.settings.ConnectionPoolSettings
 import akka.http.scaladsl.{ClientTransport, HttpsConnectionContext}
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{FileIO, Sink, Source, StreamConverters}
 import akka.util.ByteString
 import sttp.client
-import sttp.client.model.{HeaderNames, Method}
+import sttp.client.model.{HeaderNames, Method, StatusCode}
 import sttp.client.monad.{FutureMonad, MonadError}
 import sttp.client.{
   ByteArrayBody,
@@ -92,7 +92,7 @@ class AkkaHttpBackend private (
           .singleRequest(request, settings)
       }
       .flatMap { hr =>
-        val code = hr.status.intValue()
+        val code = StatusCode(hr.status.intValue())
         val statusText = hr.status.reason()
 
         val headers = headersFromAkka(hr)

@@ -22,7 +22,7 @@ import okhttp3.{
 import okio.{BufferedSink, Okio}
 import sttp.client.ResponseAs.EagerResponseHandler
 import sttp.client.SttpBackendOptions.Proxy
-import sttp.client.model.HeaderNames
+import sttp.client.model.{HeaderNames, StatusCode}
 import sttp.client.monad.{FutureMonad, IdMonad, MonadAsyncError, MonadError}
 import sttp.client.{
   BasicResponseAs,
@@ -114,10 +114,10 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean
       .flatMap(name => res.headers().values(name).asScala.map((name, _)))
       .toList
 
-    val responseMetadata = ResponseMetadata(headers, res.code(), res.message())
+    val responseMetadata = ResponseMetadata(headers, StatusCode(res.code()), res.message())
     val body = responseHandler(res).handle(responseAs, responseMonad, responseMetadata)
 
-    responseMonad.map(body)(Response(_, res.code(), res.message(), headers, Nil))
+    responseMonad.map(body)(Response(_, StatusCode(res.code()), res.message(), headers, Nil))
   }
 
   private def responseHandler(res: OkHttpResponse) =

@@ -67,8 +67,8 @@ class FollowRedirectsBackend[R[_], S](delegate: SttpBackend[R, S]) extends SttpB
 
   private def changePostPutToGet[T](r: Request[T, S], statusCode: StatusCode): Request[T, S] = {
     val applicable = r.method == Method.POST || r.method == Method.PUT
-    val alwaysChanged = statusCode == StatusCodes.SeeOther
-    val neverChanged = statusCode == StatusCodes.TemporaryRedirect || statusCode == StatusCodes.PermanentRedirect
+    val alwaysChanged = statusCode == StatusCode.SeeOther
+    val neverChanged = statusCode == StatusCode.TemporaryRedirect || statusCode == StatusCode.PermanentRedirect
     if (applicable && (r.options.redirectToGet || alwaysChanged) && !neverChanged) {
       // when transforming POST or PUT into a get, content is dropped, also filter out content-related request headers
       r.method(Method.GET, r.uri)

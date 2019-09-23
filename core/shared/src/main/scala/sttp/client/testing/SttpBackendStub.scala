@@ -7,6 +7,7 @@ import sttp.client.internal._
 import sttp.client.monad.{FutureMonad, IdMonad, MonadError}
 import sttp.client.testing.SttpBackendStub._
 import sttp.client.internal.SttpFile
+import sttp.client.model.StatusCode
 import sttp.client.{IgnoreResponse, ResponseAs, ResponseAsByteArray, SttpBackend}
 
 import scala.concurrent.Future
@@ -73,7 +74,7 @@ class SttpBackendStub[R[_], S] private (
       case Success(None) =>
         fallback match {
           case None =>
-            wrapResponse(Response[String](s"Not Found: ${request.uri}", 404, "Not Found", Nil, Nil))
+            wrapResponse(Response[String](s"Not Found: ${request.uri}", StatusCode.NotFound, "Not Found", Nil, Nil))
           case Some(fb) => fb.send(request)
         }
       case Failure(e) => monad.error(e)
@@ -89,17 +90,17 @@ class SttpBackendStub[R[_], S] private (
 
   class WhenRequest(p: Request[_, _] => Boolean) {
     def thenRespondOk(): SttpBackendStub[R, S] =
-      thenRespondWithCode(200)
+      thenRespondWithCode(StatusCode.Ok)
     def thenRespondNotFound(): SttpBackendStub[R, S] =
-      thenRespondWithCode(404, "Not found")
+      thenRespondWithCode(StatusCode.NotFound, "Not found")
     def thenRespondServerError(): SttpBackendStub[R, S] =
-      thenRespondWithCode(500, "Internal server error")
-    def thenRespondWithCode(code: Int, msg: String = ""): SttpBackendStub[R, S] = {
-      val body = if (code >= 200 && code < 300) Right(msg) else Left(msg)
-      thenRespond(Response(body, code, msg))
+      thenRespondWithCode(StatusCode.InternalServerError, "Internal server error")
+    def thenRespondWithCode(status: StatusCode, msg: String = ""): SttpBackendStub[R, S] = {
+      val body = if (status.isSuccess) Right(msg) else Left(msg)
+      thenRespond(Response(body, status, msg))
     }
     def thenRespond[T](body: T): SttpBackendStub[R, S] =
-      thenRespond(Response[T](body, 200, "OK"))
+      thenRespond(Response[T](body, StatusCode.Ok, "OK"))
     def thenRespond[T](resp: => Response[T]): SttpBackendStub[R, S] = {
       val m: PartialFunction[Request[_, _], R[Response[_]]] = {
         case r if p(r) => monad.unit(resp)
@@ -111,7 +112,7 @@ class SttpBackendStub[R[_], S] private (
       * Not thread-safe!
       */
     def thenRespondCyclic[T](bodies: T*): SttpBackendStub[R, S] = {
-      thenRespondCyclicResponses(bodies.map(body => Response[T](body, 200, "OK")): _*)
+      thenRespondCyclicResponses(bodies.map(body => Response[T](body, StatusCode.Ok, "OK")): _*)
     }
 
     /**

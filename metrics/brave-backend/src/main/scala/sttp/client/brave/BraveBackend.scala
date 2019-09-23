@@ -114,5 +114,5 @@ object SttpHttpClientAdapter extends HttpClientAdapter[AnyRequest, AnyResponse] 
   override def requestHeader(request: AnyRequest, name: String): String =
     request.headers.find(_._1.equalsIgnoreCase(name)).map(_._2).orNull
 
-  override def statusCode(response: AnyResponse): Integer = response.code
+  override def statusCode(response: AnyResponse): Integer = response.code.code
 }

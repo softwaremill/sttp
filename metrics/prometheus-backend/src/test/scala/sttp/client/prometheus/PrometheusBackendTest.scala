@@ -8,6 +8,7 @@ import sttp.client._
 import io.prometheus.client.CollectorRegistry
 import org.scalatest.concurrent.{Eventually, IntegrationPatience}
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers, OptionValues}
+import sttp.client.model.StatusCode
 import sttp.client.testing.SttpBackendStub
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -91,7 +92,7 @@ class PrometheusBackendTest
     val backendStub = SttpBackendStub.asynchronousFuture.whenAnyRequest.thenRespondWrapped {
       Future {
         blocking(countDownLatch.await())
-        Response(Right(""), 200, "", Nil, Nil)
+        Response(Right(""), StatusCode.Ok, "", Nil, Nil)
       }
     }
     val backend = PrometheusBackend[Future, Nothing](backendStub)
@@ -118,7 +119,7 @@ class PrometheusBackendTest
     val backendStub = SttpBackendStub.asynchronousFuture.whenAnyRequest.thenRespondWrapped {
       Future {
         blocking(countDownLatch.await())
-        Response(Right(""), 200, "", Nil, Nil)
+        Response(Right(""), StatusCode.Ok, "", Nil, Nil)
       }
     }
     val backend =
@@ -147,7 +148,7 @@ class PrometheusBackendTest
     val backendStub = SttpBackendStub.asynchronousFuture.whenAnyRequest.thenRespondWrapped {
       Future {
         blocking(countDownLatch.await())
-        Response(Right(""), 200, "", Nil, Nil)
+        Response(Right(""), StatusCode.Ok, "", Nil, Nil)
       }
     }
     val backend = PrometheusBackend[Future, Nothing](backendStub, requestToInProgressGaugeNameMapper = _ => None)

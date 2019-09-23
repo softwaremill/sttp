@@ -33,7 +33,13 @@ class CookieRequestTests extends FlatSpec with Matchers {
 
   it should "set cookies from a response" in {
     val response =
-      Response(Right(()), 0, "", List((HeaderNames.SetCookie, "k1=v1"), (HeaderNames.SetCookie, "k2=v2")), Nil)
+      Response(
+        Right(()),
+        StatusCode.Ok,
+        "",
+        List((HeaderNames.SetCookie, "k1=v1"), (HeaderNames.SetCookie, "k2=v2")),
+        Nil
+      )
     basicRequest
       .cookies(response)
       .headers

@@ -6,6 +6,7 @@ import java.security.MessageDigest
 import java.time.{ZoneId, ZonedDateTime}
 
 import com.github.ghik.silencer.silent
+import sttp.client.model.StatusCode
 import sttp.client.{FollowRedirectsBackend, _}
 
 import scala.concurrent.Future
@@ -65,21 +66,21 @@ trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
 
     "keep a single history entry of redirect responses" in {
       r3.send().toFuture().map { resp =>
-        resp.code should be(200)
+        resp.code shouldBe StatusCode.Ok
         resp.body should be(r4response)
         resp.history should have size (1)
-        resp.history(0).code should be(302)
+        resp.history(0).code shouldBe StatusCode.Found
       }
     }
 
     "keep whole history of redirect responses" in {
       r1.send().toFuture().map { resp =>
-        resp.code should be(200)
+        resp.code shouldBe StatusCode.Ok
         resp.body should be(r4response)
         resp.history should have size (3)
-        resp.history(0).code should be(307)
-        resp.history(1).code should be(308)
-        resp.history(2).code should be(302)
+        resp.history(0).code shouldBe StatusCode.TemporaryRedirect
+        resp.history(1).code shouldBe StatusCode.PermanentRedirect
+        resp.history(2).code shouldBe StatusCode.Found
       }
     }
 

@@ -88,7 +88,7 @@ class SprayJsonTests extends FlatSpec with Matchers with EitherValues {
       case responseAs: MappedResponseAs[_, A, Nothing] =>
         responseAs.raw match {
           case ResponseAsByteArray =>
-            s => responseAs.g(s.getBytes(Utf8), ResponseMetadata(Nil, 200, ""))
+            s => responseAs.g(s.getBytes(Utf8), ResponseMetadata(Nil, StatusCode.Ok, ""))
           case _ =>
             fail("MappedResponseAs does not wrap a ResponseAsByteArray")
         }

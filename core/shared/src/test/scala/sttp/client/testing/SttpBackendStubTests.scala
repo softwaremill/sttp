@@ -26,15 +26,15 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
     .thenRespondServerError()
     .whenRequestMatchesPartial({
       case r if r.method == Method.POST && r.uri.path.endsWith(List("partial10")) =>
-        Response(Right("10"), 200, "OK", Nil, Nil)
+        Response(Right("10"), StatusCode.Ok, "OK", Nil, Nil)
       case r if r.method == Method.POST && r.uri.path.endsWith(List("partialAda")) =>
-        Response(Right("Ada"), 200, "OK", Nil, Nil)
+        Response(Right("Ada"), StatusCode.Ok, "OK", Nil, Nil)
     })
     .whenRequestMatches(_.uri.port.exists(_ == 8080))
-    .thenRespondWrapped(Response(Right("OK from monad"), 200, "OK", Nil, Nil))
+    .thenRespondWrapped(Response(Right("OK from monad"), StatusCode.Ok, "OK", Nil, Nil))
     .whenRequestMatches(_.uri.port.exists(_ == 8081))
     .thenRespondWrapped(
-      r => Response(Right(s"OK from request. Request was sent to host: ${r.uri.host}"), 200, "OK", Nil, Nil)
+      r => Response(Right(s"OK from request. Request was sent to host: ${r.uri.host}"), StatusCode.Ok, "OK", Nil, Nil)
     )
 
   "backend stub" should "use the first rule if it matches" in {
@@ -77,14 +77,14 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
   it should "use the default response if no rule matches" in {
     implicit val b = testingStub
     val r = basicRequest.put(uri"http://example.org/d").send()
-    r.code should be(404)
+    r.code shouldBe StatusCode.NotFound
   }
 
   it should "wrap responses in the desired monad" in {
     import scala.concurrent.ExecutionContext.Implicits.global
     implicit val b = SttpBackendStub(new FutureMonad())
     val r = basicRequest.post(uri"http://example.org").send()
-    r.futureValue.code should be(404)
+    r.futureValue.code shouldBe StatusCode.NotFound
   }
 
   it should "use rules in partial function" in {
@@ -133,7 +133,7 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
 
   it should "handle a 201 as a success" in {
     implicit val s = SttpBackendStub(IdMonad).whenAnyRequest
-      .thenRespondWithCode(201)
+      .thenRespondWithCode(StatusCode.Created)
 
     val result = basicRequest
       .get(uri"http://example.org")
@@ -145,7 +145,7 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
 
   it should "handle a 300 as a failure" in {
     implicit val s = SttpBackendStub(IdMonad).whenAnyRequest
-      .thenRespondWithCode(300)
+      .thenRespondWithCode(StatusCode.MultipleChoices)
 
     val result = basicRequest
       .get(uri"http://example.org")
@@ -157,7 +157,7 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
 
   it should "handle a 400 as a failure" in {
     implicit val s = SttpBackendStub(IdMonad).whenAnyRequest
-      .thenRespondWithCode(400)
+      .thenRespondWithCode(StatusCode.BadRequest)
 
     val result = basicRequest
       .get(uri"http://example.org")
@@ -169,7 +169,7 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
 
   it should "handle a 500 as a failure" in {
     implicit val s = SttpBackendStub(IdMonad).whenAnyRequest
-      .thenRespondWithCode(500)
+      .thenRespondWithCode(StatusCode.InternalServerError)
 
     val result = basicRequest
       .get(uri"http://example.org")
@@ -186,7 +186,7 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
 
     implicit val s = SttpBackendStub(new FutureMonad()).whenAnyRequest
       .thenRespondWrapped(Platform.delayedFuture(LongTime) {
-        Response(Right("OK"), 200, "", Nil, Nil)
+        Response(Right("OK"), StatusCode.Ok, "", Nil, Nil)
       })
 
     basicRequest
@@ -212,7 +212,7 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
     implicit val s: SttpBackend[Identity, Nothing] = SttpBackendStub(IdMonad).whenAnyRequest
       .thenRespondCyclicResponses(
         Response.ok[String]("first"),
-        Response("error", 500, "Something went wrong")
+        Response("error", StatusCode.InternalServerError, "Something went wrong")
       )
 
     basicRequest.get(uri"http://example.org").send().is200 should be(true)
@@ -256,7 +256,9 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
     (body, responseAs, expectedResult) <- adjustTestData
   } {
     it should s"adjust $body to $expectedResult when specified as $responseAs" in {
-      SttpBackendStub.tryAdjustResponseBody(responseAs, body, ResponseMetadata(Nil, 200, "")) should be(expectedResult)
+      SttpBackendStub.tryAdjustResponseBody(responseAs, body, ResponseMetadata(Nil, StatusCode.Ok, "")) should be(
+        expectedResult
+      )
     }
   }
 }

@@ -11,7 +11,7 @@ import org.http4s
 import org.http4s.client.Client
 import org.http4s.client.blaze.BlazeClientBuilder
 import sttp.client.impl.cats.CatsMonadAsyncError
-import sttp.client.model.{HeaderNames, Method}
+import sttp.client.model.{HeaderNames, Method, StatusCode}
 import sttp.client.monad.MonadError
 import sttp.client.{
   BasicRequestBody,
@@ -42,7 +42,7 @@ class Http4sBackend[F[_]: Effect: ContextShift](client: Client[F], blockingExecu
     )
 
     client.fetch(request) { response =>
-      val code = response.status.code
+      val code = StatusCode(response.status.code)
       val headers = response.headers.toList.map(h => h.name.value -> h.value)
       val statusText = response.status.reason
       val responseMetadata = ResponseMetadata(headers, code, statusText)

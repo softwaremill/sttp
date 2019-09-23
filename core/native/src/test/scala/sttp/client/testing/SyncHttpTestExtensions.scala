@@ -5,6 +5,7 @@ import java.nio.file.Files
 import java.security.MessageDigest
 
 import sttp.client._
+import sttp.client.model.StatusCode
 
 trait SyncHttpTestExtensions {
   self: SyncHttpTest =>
@@ -18,20 +19,20 @@ trait SyncHttpTestExtensions {
 
     "keep a single history entry of redirect responses" in {
       val resp = r3.send()
-      resp.code should be(200)
+      resp.code shouldBe StatusCode.Ok
       resp.body should be(r4response)
       resp.history should have size (1)
-      resp.history(0).code should be(302)
+      resp.history(0).code shouldBe StatusCode.Found
     }
 
     "keep whole history of redirect responses" in {
       val resp = r1.send()
-      resp.code should be(200)
+      resp.code shouldBe StatusCode.Ok
       resp.body should be(r4response)
       resp.history should have size (3)
-      resp.history(0).code should be(307)
-      resp.history(1).code should be(308)
-      resp.history(2).code should be(302)
+      resp.history(0).code shouldBe StatusCode.TemporaryRedirect
+      resp.history(1).code shouldBe StatusCode.PermanentRedirect
+      resp.history(2).code shouldBe StatusCode.Found
     }
 
     "break redirect loops" in {

@@ -4,7 +4,7 @@ import java.io.ByteArrayInputStream
 import java.nio.ByteBuffer
 
 import org.scalatest._
-import sttp.client.model.StatusCodes
+import sttp.client.model.StatusCode
 import sttp.client.{Response, ResponseAs, SttpBackend, _}
 
 import scala.concurrent.Future
@@ -100,28 +100,28 @@ trait HttpTest[R[_]]
     }
 
     "as string with response via metadata" in {
-      val expectedStatus = 400
+      val expectedStatus = StatusCode.BadRequest
       basicRequest
-        .post(uri"$endpoint/echo/custom_status/$expectedStatus")
+        .post(uri"$endpoint/echo/custom_status/${expectedStatus.code}")
         .body(testBody)
         .response(asStringAlways.mapWithMetadata((r, m) => if (m.code == expectedStatus) Right(r) else Left(r)))
         .send()
         .toFuture()
         .map { response =>
-          response.body should be(Right(s"POST /echo/custom_status/$expectedStatus $testBody"))
+          response.body should be(Right(s"POST /echo/custom_status/${expectedStatus.code} $testBody"))
         }
     }
 
     "as error string with response via metadata" in {
-      val unexpectedStatus = 200
+      val unexpectedStatus = StatusCode.Ok
       basicRequest
-        .post(uri"$endpoint/echo/custom_status/$unexpectedStatus")
+        .post(uri"$endpoint/echo/custom_status/${unexpectedStatus.code}")
         .body(testBody)
         .response(asStringAlways.mapWithMetadata((r, m) => if (m.code == unexpectedStatus) Left(r) else Right(r)))
         .send()
         .toFuture()
         .map { response =>
-          response.body should be(Left(s"POST /echo/custom_status/$unexpectedStatus $testBody"))
+          response.body should be(Left(s"POST /echo/custom_status/${unexpectedStatus.code} $testBody"))
         }
     }
   }
@@ -219,7 +219,7 @@ trait HttpTest[R[_]]
   "errors" - {
     "return 405 when method not allowed" in {
       basicRequest.post(uri"$endpoint/set_headers").send().toFuture().map { response =>
-        response.code should be(405)
+        response.code shouldBe StatusCode.MethodNotAllowed
         response.isClientError should be(true)
         response.body.isLeft should be(true)
       }
@@ -227,7 +227,7 @@ trait HttpTest[R[_]]
 
     "return 404 when not found" in {
       basicRequest.get(uri"$endpoint/not/found").send().toFuture().map { response =>
-        response.code should be(404)
+        response.code shouldBe StatusCode.NotFound
         response.isClientError should be(true)
         response.body.isLeft should be(true)
       }
@@ -240,7 +240,7 @@ trait HttpTest[R[_]]
     "return a 401 when authorization fails" in {
       val req = secureBasic
       req.send().toFuture().map { resp =>
-        resp.code should be(401)
+        resp.code shouldBe StatusCode.Unauthorized
         resp.header("WWW-Authenticate") should be(Some("""Basic realm="test realm",charset=UTF-8"""))
       }
     }
@@ -248,7 +248,7 @@ trait HttpTest[R[_]]
     "perform basic authorization" in {
       val req = secureBasic.auth.basic("adam", "1234")
       req.send().toFuture().map { resp =>
-        resp.code should be(200)
+        resp.code shouldBe StatusCode.Ok
         resp.body should be("Hello, adam!")
       }
     }
@@ -289,7 +289,7 @@ trait HttpTest[R[_]]
     "not attempt to decompress HEAD requests" in {
       val req = basicRequest.head(uri"$endpoint/compress")
       req.send().toFuture().map { resp =>
-        resp.code shouldBe StatusCodes.Ok
+        resp.code shouldBe StatusCode.Ok
       }
     }
   }
@@ -324,8 +324,8 @@ trait HttpTest[R[_]]
       code: Int
   ): Future[Assertion] = {
     response.toFuture().map { resp =>
-      resp.code should be(code)
-      resp.history should be('empty)
+      resp.code shouldBe StatusCode(code)
+      resp.history shouldBe 'empty
     }
   }
 
@@ -345,22 +345,22 @@ trait HttpTest[R[_]]
 
     "redirect when redirects should be followed" in {
       r2.send().toFuture().map { resp =>
-        resp.code should be(200)
-        resp.body should be(r4response)
+        resp.code shouldBe StatusCode.Ok
+        resp.body shouldBe r4response
       }
     }
 
     "redirect twice when redirects should be followed" in {
       r1.send().toFuture().map { resp =>
-        resp.code should be(200)
-        resp.body should be(r4response)
+        resp.code shouldBe StatusCode.Ok
+        resp.body shouldBe r4response
       }
     }
 
     "redirect when redirects should be followed, and the response is parsed" in {
       r2.response(asString).mapResponseRight(_.toInt).send().toFuture().map { resp =>
-        resp.code should be(200)
-        resp.body should be(Right(r4response.toInt))
+        resp.code shouldBe StatusCode.Ok
+        resp.body shouldBe Right(r4response.toInt)
       }
     }
 

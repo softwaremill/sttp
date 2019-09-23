@@ -1,7 +1,7 @@
 package sttp.client
 
 import sttp.client.model._
-import sttp.client.model.{HeaderNames, StatusCodes}
+import sttp.client.model.HeaderNames
 
 import scala.collection.immutable.Seq
 import scala.util.Try
@@ -15,11 +15,11 @@ trait ResponseMetadata {
 
   def code: StatusCode
   def statusText: String
-  def is200: Boolean = code == StatusCodes.Ok
-  def isSuccess: Boolean = StatusCodes.isSuccess(code)
-  def isRedirect: Boolean = StatusCodes.isRedirect(code)
-  def isClientError: Boolean = StatusCodes.isClientError(code)
-  def isServerError: Boolean = StatusCodes.isServerError(code)
+  def is200: Boolean = code == StatusCode.Ok
+  def isSuccess: Boolean = code.isSuccess
+  def isRedirect: Boolean = code.isRedirect
+  def isClientError: Boolean = code.isClientError
+  def isServerError: Boolean = code.isServerError
 }
 
 object ResponseMetadata {

@@ -61,7 +61,7 @@ abstract class AbstractCurlBackend[R[_], S](monad: MonadError[R], verbose: Boole
       curl.info(ResponseCode, spaces.httpCode)
       val responseBody = fromCString(!spaces.bodyResp._1)
       val responseHeaders_ = parseHeaders(fromCString(!spaces.headersResp._1))
-      val httpCode = (!spaces.httpCode).toInt
+      val httpCode = StatusCode((!spaces.httpCode).toInt)
 
       if (headers.ptr != null) headers.ptr.free()
       multiPartHeaders.foreach(_.ptr.free())

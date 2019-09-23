@@ -5,6 +5,7 @@ import java.nio.ByteBuffer
 
 import sttp.client._
 import org.scalatest._
+import sttp.client.model.StatusCode
 
 import scala.concurrent.duration._
 
@@ -158,13 +159,13 @@ trait SyncHttpTest
   "errors" - {
     "return 405 when method not allowed" in {
       val response = basicRequest.post(uri"$endpoint/set_headers").response(sttpIgnore).send()
-      response.code should be(405)
+      response.code shouldBe StatusCode.MethodNotAllowed
       response.isClientError should be(true)
     }
 
     "return 404 when not found" in {
       val response = basicRequest.get(uri"$endpoint/not/found").response(sttpIgnore).send()
-      response.code should be(404)
+      response.code shouldBe StatusCode.NotFound
       response.isClientError should be(true)
     }
   }
@@ -175,15 +176,15 @@ trait SyncHttpTest
     "return a 401 when authorization fails" in {
       val req = secureBasic
       val resp = req.send()
-      resp.code should be(401)
-      resp.header("WWW-Authenticate") should be(Some("""Basic realm="test realm",charset=UTF-8"""))
+      resp.code shouldBe StatusCode.Unauthorized
+      resp.header("WWW-Authenticate") shouldBe Some("""Basic realm="test realm",charset=UTF-8""")
     }
 
     "perform basic authorization" in {
       val req = secureBasic.auth.basic("adam", "1234")
       val resp = req.send()
-      resp.code should be(200)
-      resp.body should be(Right("Hello, adam!"))
+      resp.code shouldBe StatusCode.Ok
+      resp.body shouldBe Right("Hello, adam!")
     }
   }
 
@@ -248,7 +249,7 @@ trait SyncHttpTest
 
     "not redirect when redirects shouldn't be followed (temporary)" in {
       val resp = r1.followRedirects(false).send()
-      resp.code should be(307)
+      resp.code.code should be(307)
       resp.body should be(
         "The request should be repeated with <a href=\"/redirect/r2\">this URI</a>, but future requests can still use the original URI."
       )
@@ -257,7 +258,7 @@ trait SyncHttpTest
 
     "not redirect when redirects shouldn't be followed (permanent)" in {
       val resp = r2.followRedirects(false).send()
-      resp.code should be(308)
+      resp.code.code should be(308)
       resp.body should be(
         "The request, and all future requests should be repeated using <a href=\"/redirect/r3\">this URI</a>."
       )
@@ -266,25 +267,25 @@ trait SyncHttpTest
 
     "redirect when redirects should be followed" in {
       val resp = r2.send()
-      resp.code should be(200)
+      resp.code shouldBe StatusCode.Ok
       resp.body should be(r4response)
     }
 
     "redirect twice when redirects should be followed" in {
       val resp = r1.send()
-      resp.code should be(200)
+      resp.code shouldBe StatusCode.Ok
       resp.body should be(r4response)
     }
 
     "redirect when redirects should be followed, and the response is parsed" in {
       val resp = r2.response(asString.mapRight(_.toInt)).send()
-      resp.code should be(200)
+      resp.code shouldBe StatusCode.Ok
       resp.body should be(Right(r4response.toInt))
     }
 
     "not redirect when maxRedirects is less than or equal to 0" in {
       val resp = loop.maxRedirects(-1).send()
-      resp.code should be(302)
+      resp.code shouldBe StatusCode.Found
       resp.body should be(
         "The requested resource temporarily resides under <a href=\"/redirect/loop\">this URI</a>."
       )

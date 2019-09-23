@@ -17,6 +17,7 @@ import org.scalajs.dom.experimental.{
 import org.scalajs.dom.raw.{Blob, BlobPropertyBag}
 import sttp.client.dom.experimental.{AbortController, FilePropertyBag, File => DomFile}
 import sttp.client.internal.{SttpFile, _}
+import sttp.client.model.StatusCode
 import sttp.client.monad.MonadError
 import sttp.client.monad.syntax._
 
@@ -108,14 +109,14 @@ abstract class AbstractFetchBackend[R[_], S](options: FetchOptions)(monad: Monad
       }
       .flatMap { resp =>
         val headers = convertResponseHeaders(resp.headers)
-        val metadata = ResponseMetadata(headers, resp.status, resp.statusText)
+        val metadata = ResponseMetadata(headers, StatusCode(resp.status), resp.statusText)
 
         val body: R[T] = readResponseBody(resp, request.response, metadata)
 
         body.map { b =>
           Response[T](
             body = b,
-            code = resp.status,
+            code = StatusCode(resp.status),
             statusText = resp.statusText,
             headers = headers,
             history = Nil

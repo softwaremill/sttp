@@ -6,6 +6,7 @@ import akka.stream.ActorMaterializer
 import com.github.ghik.silencer.silent
 import org.scalatest.{AsyncWordSpec, BeforeAndAfterAll, Matchers}
 import sttp.client.SttpBackend
+import sttp.client.model.StatusCode
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
@@ -30,7 +31,7 @@ class AkkaHttpRouteBackendTest extends AsyncWordSpec with Matchers with BeforeAn
 
     "respond" in {
       backend.send(basicRequest.get(uri"localhost/hello")).map { response =>
-        response.code shouldBe 200
+        response.code shouldBe StatusCode.Ok
         response.body.right.get shouldBe "Hello, world!"
       }
     }
@@ -39,7 +40,7 @@ class AkkaHttpRouteBackendTest extends AsyncWordSpec with Matchers with BeforeAn
   "unmatched route" should {
     "respond with 404" in {
       backend.send(basicRequest.get(uri"http://localhost/not-matching")).map { response =>
-        response.code shouldBe 404
+        response.code shouldBe StatusCode.NotFound
         response.body.left.get shouldBe "The requested resource could not be found."
       }
     }

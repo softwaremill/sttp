@@ -29,7 +29,7 @@ import sttp.client
 import sttp.client.ResponseAs.EagerResponseHandler
 import sttp.client.SttpBackendOptions.ProxyType.{Http, Socks}
 import sttp.client.internal.{SttpFile, _}
-import sttp.client.model.{HeaderNames, MediaTypes}
+import sttp.client.model.{HeaderNames, MediaTypes, StatusCode}
 import sttp.client.monad.{MonadAsyncError, MonadError}
 import sttp.client.{
   BasicResponseAs,
@@ -268,7 +268,7 @@ abstract class AsyncHttpClientBackend[R[_], S](
   private def readResponseNoBody(response: AsyncResponse): Response[Unit] = {
     client.Response(
       (),
-      response.getStatusCode,
+      StatusCode(response.getStatusCode),
       response.getStatusText,
       response.getHeaders
         .iteratorAsString()
