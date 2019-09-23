@@ -3,19 +3,19 @@ async-http-client backend
 
 To use, add the following dependency to your project::
 
-  "com.softwaremill.sttp" %% "async-http-client-backend-future" % "1.6.6"
+  "com.softwaremill.sttp.client" %% "async-http-client-backend-future" % "1.6.6"
   // or
-  "com.softwaremill.sttp" %% "async-http-client-backend-scalaz" % "1.6.6"
+  "com.softwaremill.sttp.client" %% "async-http-client-backend-scalaz" % "1.6.6"
   // or
-  "com.softwaremill.sttp" %% "async-http-client-backend-zio" % "1.6.6"
+  "com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % "1.6.6"
   // or
-  "com.softwaremill.sttp" %% "async-http-client-backend-zio-streams" % "1.6.6"
+  "com.softwaremill.sttp.client" %% "async-http-client-backend-zio-streams" % "1.6.6"
   // or
-  "com.softwaremill.sttp" %% "async-http-client-backend-monix" % "1.6.6"
+  "com.softwaremill.sttp.client" %% "async-http-client-backend-monix" % "1.6.6"
   // or
-  "com.softwaremill.sttp" %% "async-http-client-backend-cats" % "1.6.6"
+  "com.softwaremill.sttp.client" %% "async-http-client-backend-cats" % "1.6.6"
   // or
-  "com.softwaremill.sttp" %% "async-http-client-backend-fs2" % "1.6.6"
+  "com.softwaremill.sttp.client" %% "async-http-client-backend-fs2" % "1.6.6"
 
 This backend depends on `async-http-client <https://github.com/AsyncHttpClient/async-http-client>`_.
 A fully **asynchronous** backend, which uses `Netty <http://netty.io>`_ behind the

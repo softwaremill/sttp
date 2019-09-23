@@ -10,7 +10,7 @@ Using sbt
 
 The basic dependency which provides the API and the default synchronous backend is::
 
-  "com.softwaremill.sttp" %% "core" % "1.6.6"
+  "com.softwaremill.sttp.client" %% "core" % "1.6.6"
 
 ``sttp`` is available for Scala 2.11 and 2.12, and requires Java 8. The core module has no transitive dependencies.
 

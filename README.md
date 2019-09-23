@@ -2,7 +2,7 @@
 
 [![Join the chat at https://gitter.im/softwaremill/sttp](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/softwaremill/sttp?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Build Status](https://travis-ci.org/softwaremill/sttp.svg?branch=master)](https://travis-ci.org/softwaremill/sttp)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.softwaremill.sttp/core_2.12/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.softwaremill.sttp/core_2.12)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.softwaremill.sttp.client/core_2.12/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.softwaremill.sttp.client/core_2.12)
 
 The Scala HTTP client that you always wanted!
 
@@ -32,7 +32,7 @@ println(response.unsafeBody)
 
 sttp documentation is available at [sttp.readthedocs.io](http://sttp.readthedocs.io).
 
-scaladoc is available at [https://www.javadoc.io](https://www.javadoc.io/doc/com.softwaremill.sttp/core_2.12/1.6.6)
+scaladoc is available at [https://www.javadoc.io](https://www.javadoc.io/doc/com.softwaremill.sttp.client/core_2.12/1.6.6)
 
 You can also take a look at the [introductory blog](https://softwaremill.com/introducing-sttp-the-scala-http-client/)
 and its [follow-up](https://softwaremill.com/sttp-streaming-uri-interpolator/).
@@ -42,7 +42,7 @@ and its [follow-up](https://softwaremill.com/sttp-streaming-uri-interpolator/).
 If you are an [Ammonite](http://ammonite.io) user, you can quickly start experimenting with sttp by copy-pasting the following:
 
 ```scala
-import $ivy.`com.softwaremill.sttp::core:1.6.6`
+import $ivy.`com.softwaremill.sttp.client::core:1.6.6`
 import sttp.client.quick._
 sttp.get(uri"http://httpbin.org/ip").send()
 ```
@@ -54,7 +54,7 @@ This brings in the sttp API and an implicit, synchronous backend.
 Add the following dependency:
 
 ```scala
-"com.softwaremill.sttp" %% "core" % "1.6.6"
+"com.softwaremill.sttp.client" %% "core" % "1.6.6"
 ```
 
 Then, import:
