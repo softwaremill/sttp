@@ -10,7 +10,7 @@ Using sbt
 
 The basic dependency which provides the API and the default synchronous backend is::
 
-  "com.softwaremill.sttp.client" %% "core" % "1.6.6"
+  "com.softwaremill.sttp.client" %% "core" % "2.0.0-M1"
 
 ``sttp`` is available for Scala 2.11 and 2.12, and requires Java 8. The core module has no transitive dependencies.
 
@@ -21,7 +21,7 @@ Using Ammonite
 
 If you are an `Ammonite <http://ammonite.io>`_ user, you can quickly start experimenting with sttp by copy-pasting the following::
 
-  import $ivy.`com.softwaremill.sttp::core:1.6.6`
+  import $ivy.`com.softwaremill.sttp::core:2.0.0-M1`
   import sttp.client.quick._
   basicRequest.get(uri"http://httpbin.org/ip").send()
 

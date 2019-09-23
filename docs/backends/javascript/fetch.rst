@@ -5,7 +5,7 @@ A JavaScript backend implemented using the `Fetch API <https://developer.mozilla
 
 To use, add the following dependency to your project::
 
-  "com.softwaremill.sttp.client" %%% "core" % "1.6.6"
+  "com.softwaremill.sttp.client" %%% "core" % "2.0.0-M1"
 
 And add an implicit value::
 
@@ -41,7 +41,7 @@ Streaming support is provided via ``FetchMonixBackend``. Note that streaming sup
 
 To use, add the following dependency to your project::
 
-  "com.softwaremill.sttp.client" %%% "monix" % "1.6.6"
+  "com.softwaremill.sttp.client" %%% "monix" % "2.0.0-M1"
 
 An example of streaming a response::
 

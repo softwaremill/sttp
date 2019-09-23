@@ -12,7 +12,7 @@ Circe
 
 JSON encoding of bodies and decoding of responses can be handled using `Circe <https://circe.github.io/circe/>`_ by the ``circe`` module. To use add the following dependency to your project::
 
-  "com.softwaremill.sttp.client" %% "circe" % "1.6.6"
+  "com.softwaremill.sttp.client" %% "circe" % "2.0.0-M1"
 
 This module adds a method to the request and a function that can be given to a request to decode the response to a specific object::
 
@@ -37,7 +37,7 @@ Json4s
 
 To encode and decode json using json4s, add the following dependency to your project::
 
-  "com.softwaremill.sttp.client" %% "json4s" % "1.6.6"
+  "com.softwaremill.sttp.client" %% "json4s" % "2.0.0-M1"
   "org.json4s" %% "json4s-native" % "3.6.0"
 
 Note that in this example we are using the json4s-native backend, but you can use any other json4s backend.
@@ -70,7 +70,7 @@ spray-json
 
 To encode and decode JSON using `spray-json <https://github.com/spray/spray-json>`_, add the following dependency to your project::
 
-  "com.softwaremill.sttp.client" %% "spray-json" % "1.6.6"
+  "com.softwaremill.sttp.client" %% "spray-json" % "2.0.0-M1"
 
 Using this module it is possible to set request bodies and read response bodies as your custom types, using the implicitly available instances of ``spray.json.JsonWriter`` / ``spray.json.JsonReader`` or ``spray.json.JsonFormat``.
 
@@ -106,6 +106,6 @@ play-json
 
 To encode and decode JSON using `play-json <https://www.playframework.com>`_, add the following dependency to your project::
 
-  "com.softwaremill.sttp.client" %% "play-json" % "1.6.6"
+  "com.softwaremill.sttp.client" %% "play-json" % "2.0.0-M1"
 
 To use, add an import: ``import sttp.client.playJson._``.
