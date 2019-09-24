@@ -6,28 +6,16 @@ import java.time.format.DateTimeFormatter
 import scala.util.{Failure, Success, Try}
 
 case class Cookie(
-    name: String,
-    value: String,
-    expires: Option[Instant] = None,
-    maxAge: Option[Long] = None,
-    domain: Option[String] = None,
-    path: Option[String] = None,
-    secure: Boolean = false,
-    httpOnly: Boolean = false
+    pair: CookiePair,
+    expires: Option[Instant],
+    maxAge: Option[Long],
+    domain: Option[String],
+    path: Option[String],
+    secure: Boolean,
+    httpOnly: Boolean
 ) {
-
-  private val AllowedNameCharacters = """[a-zA-Z0-9!#$%&'*+\-.^_`|~]*""".r
-  private val AllowedValueCharacters = """"?[a-zA-Z0-9!#$%&'()*+\-./:<=>?@\\[\\]^_`{|}~]*"?""".r
-
-  require(
-    AllowedNameCharacters.unapplySeq(name).isDefined,
-    "Cookie name can only contain alphanumeric characters and: !#$%&'*+\\-.^_`|~"
-  )
-
-  require(
-    AllowedValueCharacters.unapplySeq(name).isDefined,
-    "Cookie value can only contain alphanumeric characters and: !#$%&'()*+\\-./:<=>?@[]^_`{|}~, optionally surrounded by \""
-  )
+  def name: String = pair.name
+  def value: String = pair.value
 
   def asHeaderValue: String = {
     val components = List(
@@ -45,6 +33,17 @@ case class Cookie(
 }
 
 object Cookie {
+  def apply(
+      name: String,
+      value: String,
+      expires: Option[Instant] = None,
+      maxAge: Option[Long] = None,
+      domain: Option[String] = None,
+      path: Option[String] = None,
+      secure: Boolean = false,
+      httpOnly: Boolean = false
+  ): Cookie = Cookie(CookiePair(name, value), expires, maxAge, domain, path, secure, httpOnly)
+
   def parseHeaderValue(s: String): Either[String, Cookie] = {
     def splitkv(kv: String): (String, Option[String]) = kv.split("=", 2).map(_.trim) match {
       case Array(v1)     => (v1, None)
@@ -74,5 +73,31 @@ object Cookie {
     }
 
     result
+  }
+}
+
+case class CookiePair(name: String, value: String) {
+  private val AllowedNameCharacters = """[a-zA-Z0-9!#$%&'*+\-.^_`|~]*""".r
+  private val AllowedValueCharacters = """"?[a-zA-Z0-9!#$%&'()*+\-./:<=>?@\\[\\]^_`{|}~]*"?""".r
+
+  require(
+    AllowedNameCharacters.unapplySeq(name).isDefined,
+    "Cookie name can only contain alphanumeric characters and: !#$%&'*+\\-.^_`|~"
+  )
+
+  require(
+    AllowedValueCharacters.unapplySeq(name).isDefined,
+    "Cookie value can only contain alphanumeric characters and: !#$%&'()*+\\-./:<=>?@[]^_`{|}~, optionally surrounded by \""
+  )
+
+  def asHeaderValue: String = s"$name=$value"
+}
+
+object CookiePair {
+  def parseHeaderValue(s: String): CookiePair = {
+    s.split("=", 2).map(_.trim) match {
+      case Array(v1)     => CookiePair(v1, "")
+      case Array(v1, v2) => CookiePair(v1, v2)
+    }
   }
 }

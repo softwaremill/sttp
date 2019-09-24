@@ -46,4 +46,12 @@ class CookieTest extends FlatSpec with Matchers {
       cookie.asHeaderValue shouldBe expectedResult
     }
   }
+
+  it should "parse cookie pair" in {
+    CookiePair.parseHeaderValue("x=y") shouldBe CookiePair("x", "y")
+  }
+
+  it should "serialize cookie pair" in {
+    CookiePair("x", "y").asHeaderValue shouldBe "x=y"
+  }
 }
