@@ -15,7 +15,7 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{FileIO, Sink, Source, StreamConverters}
 import akka.util.ByteString
 import sttp.client
-import sttp.model.{HeaderNames, Method, StatusCode}
+import sttp.model.{Header, HeaderNames, Method, Part, StatusCode}
 import sttp.client.monad.{FutureMonad, MonadError}
 import sttp.client.{
   ByteArrayBody,
@@ -25,7 +25,6 @@ import sttp.client.{
   IgnoreResponse,
   InputStreamBody,
   MappedResponseAs,
-  Multipart,
   MultipartBody,
   NoBody,
   RequestBody,
@@ -42,7 +41,6 @@ import sttp.client.{
   SttpBackendOptions,
   _
 }
-import sttp.model.{Header, Method, StatusCode}
 
 import scala.collection.immutable.Seq
 import scala.concurrent.{ExecutionContext, Future}
@@ -217,7 +215,7 @@ class AkkaHttpBackend private (
         .map(hc => ContentType.apply(ct.mediaType, () => hc))
         .getOrElse(ct)
 
-    def toBodyPart(mp: Multipart): Try[AkkaMultipart.FormData.BodyPart] = {
+    def toBodyPart(mp: Part[BasicRequestBody]): Try[AkkaMultipart.FormData.BodyPart] = {
       def entity(ct: ContentType) = mp.body match {
         case StringBody(b, encoding, _) =>
           HttpEntity(ctWithCharset(ct, encoding), b.getBytes(encoding))

@@ -4,6 +4,7 @@ import sttp.client.dom.experimental.{File => DomFile}
 import sttp.client.internal.SttpFile
 import sttp.client.dom.experimental.File
 import sttp.client.internal.SttpFile
+import sttp.model.Part
 
 trait SttpExtensions {
 
@@ -17,7 +18,7 @@ trait SttpExtensions {
     *
     * File name will be set to the name of the file.
     */
-  def multipartFile(name: String, file: File): Multipart =
+  def multipartFile(name: String, file: File): Part[BasicRequestBody] =
     multipartSttpFile(name, SttpFile.fromDomFile(file))
 
 }

@@ -28,7 +28,6 @@ import sttp.client.{
   BasicResponseAs,
   FileHelpers,
   IgnoreResponse,
-  Multipart,
   NoBody,
   RequestBody,
   Response,
@@ -95,7 +94,7 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean
     }
   }
 
-  private def addMultipart(builder: OkHttpMultipartBody.Builder, mp: Multipart): Unit = {
+  private def addMultipart(builder: OkHttpMultipartBody.Builder, mp: Part[BasicRequestBody]): Unit = {
     val allHeaders = mp.additionalHeaders :+ Header(HeaderNames.ContentDisposition, mp.contentDispositionHeaderValue)
     val headers = OkHttpHeaders.of(allHeaders.map(h => (h.name, h.value)).toMap.asJava)
 

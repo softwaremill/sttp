@@ -8,8 +8,7 @@ import com.github.ghik.silencer.silent
 import sttp.client.internal._
 import sttp.model._
 import sttp.client.internal.{SttpFile, ToCurlConverter}
-import sttp.model.{HeaderNames, MediaTypes, Method}
-import sttp.model.{Header, Method}
+import sttp.model._
 
 import scala.collection.immutable.Seq
 import scala.concurrent.duration.Duration
@@ -186,10 +185,10 @@ case class RequestT[U[_], T, +S](
   def body(fs: Seq[(String, String)], encoding: String): RequestT[U, T, S] =
     formDataBody(fs, encoding)
 
-  def multipartBody(ps: Seq[Multipart]): RequestT[U, T, S] =
+  def multipartBody(ps: Seq[Part[BasicRequestBody]]): RequestT[U, T, S] =
     this.copy(body = MultipartBody(ps))
 
-  def multipartBody(p1: Multipart, ps: Multipart*): RequestT[U, T, S] =
+  def multipartBody(p1: Part[BasicRequestBody], ps: Part[BasicRequestBody]*): RequestT[U, T, S] =
     this.copy(body = MultipartBody(p1 :: ps.toList))
 
   def streamBody[S2 >: S](b: S2): RequestT[U, T, S2] =

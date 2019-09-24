@@ -4,6 +4,7 @@ import java.io.File
 import java.nio.file.Path
 
 import sttp.client.internal.SttpFile
+import sttp.model.Part
 
 trait SttpExtensions {
 
@@ -21,7 +22,7 @@ trait SttpExtensions {
     *
     * File name will be set to the name of the file.
     */
-  def multipartFile(name: String, data: File): Multipart =
+  def multipartFile(name: String, data: File): Part[BasicRequestBody] =
     multipartSttpFile(name, SttpFile.fromFile(data))
 
   /**
@@ -30,6 +31,6 @@ trait SttpExtensions {
     *
     * File name will be set to the name of the file.
     */
-  def multipartFile(name: String, data: Path): Multipart =
+  def multipartFile(name: String, data: Path): Part[BasicRequestBody] =
     multipartSttpFile(name, SttpFile.fromPath(data))
 }

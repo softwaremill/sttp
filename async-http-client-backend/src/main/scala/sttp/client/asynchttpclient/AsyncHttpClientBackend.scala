@@ -30,7 +30,7 @@ import sttp.client.ResponseAs.EagerResponseHandler
 import sttp.client.SttpBackendOptions.ProxyType.{Http, Socks}
 import sttp.client.internal.{SttpFile, _}
 import sttp.client.monad.{MonadAsyncError, MonadError}
-import sttp.model.{Header, HeaderNames, MediaTypes, StatusCode}
+import sttp.model.{Header, HeaderNames, MediaTypes, Part, StatusCode}
 import sttp.client.{
   BasicResponseAs,
   ByteArrayBody,
@@ -40,7 +40,6 @@ import sttp.client.{
   IgnoreResponse,
   InputStreamBody,
   MappedResponseAs,
-  Multipart,
   MultipartBody,
   NoBody,
   RequestBody,
@@ -226,7 +225,7 @@ abstract class AsyncHttpClientBackend[R[_], S](
   }
 
   @silent("discarded")
-  private def addMultipartBody(rb: RequestBuilder, mp: Multipart): Unit = {
+  private def addMultipartBody(rb: RequestBuilder, mp: Part[BasicRequestBody]): Unit = {
     // async http client only supports setting file names on file parts. To
     // set a file name on an arbitrary part we have to use a small "work
     // around", combining the file name with the name (surrounding quotes

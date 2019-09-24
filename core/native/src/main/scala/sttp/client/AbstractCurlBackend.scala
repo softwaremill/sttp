@@ -113,7 +113,7 @@ abstract class AbstractCurlBackend[R[_], S](monad: MonadError[R], verbose: Boole
       case MultipartBody(parts) =>
         val mime = curl.mime
         parts.foreach {
-          case Multipart(name, partBody, fileName, contentType, additionalHeaders) =>
+          case Part(name, partBody, fileName, contentType, _, additionalHeaders) =>
             val part = mime.addPart()
             part.withName(name)
             val str = basicBodyToString(partBody)

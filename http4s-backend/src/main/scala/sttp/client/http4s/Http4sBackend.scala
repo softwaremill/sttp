@@ -16,7 +16,6 @@ import sttp.client.monad.MonadError
 import sttp.client.{
   BasicRequestBody,
   IgnoreResponse,
-  Multipart,
   NoBody,
   RequestBody,
   Response,
@@ -111,7 +110,7 @@ class Http4sBackend[F[_]: Effect: ContextShift](client: Client[F], blockingExecu
     }
   }
 
-  private def multipartToHttp4s(mp: Multipart): http4s.multipart.Part[F] = {
+  private def multipartToHttp4s(mp: Part[BasicRequestBody]): http4s.multipart.Part[F] = {
     val contentDisposition = http4s.Header(HeaderNames.ContentDisposition, mp.contentDispositionHeaderValue)
     val contentTypeHeader = mp.contentType.map(ct => http4s.Header(HeaderNames.ContentType, ct))
     val otherHeaders = mp.additionalHeaders.map(h => http4s.Header(h.name, h.value))
