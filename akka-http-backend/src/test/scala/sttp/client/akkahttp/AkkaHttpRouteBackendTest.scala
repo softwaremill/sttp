@@ -6,7 +6,7 @@ import akka.stream.ActorMaterializer
 import com.github.ghik.silencer.silent
 import org.scalatest.{AsyncWordSpec, BeforeAndAfterAll, Matchers}
 import sttp.client.SttpBackend
-import sttp.client.model.StatusCode
+import sttp.model.StatusCode
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}

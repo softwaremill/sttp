@@ -1,7 +1,8 @@
 package sttp.client
 
 import org.scalatest.{FlatSpec, Matchers}
-import sttp.client.model._
+import sttp.model._
+import sttp.model.StatusCode
 
 class CookieRequestTests extends FlatSpec with Matchers {
 

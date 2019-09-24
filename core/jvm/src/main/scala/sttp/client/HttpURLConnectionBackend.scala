@@ -10,8 +10,9 @@ import java.util.zip.{GZIPInputStream, InflaterInputStream}
 
 import com.github.ghik.silencer.silent
 import sttp.client.internal.{SttpFile, _}
-import sttp.client.model._
+import sttp.model._
 import sttp.client.monad.{IdMonad, MonadError}
+import sttp.model.StatusCode
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._

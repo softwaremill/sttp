@@ -1,9 +1,9 @@
 package sttp.client.internal
 
 import sttp.client._
-import sttp.client.model._
+import sttp.model._
 import sttp.client.NoBody
-import sttp.client.model.{HeaderNames, MediaTypes}
+import sttp.model.MediaTypes
 
 class ToCurlConverter[R <: RequestT[Identity, _, _]] {
 

@@ -1,4 +1,4 @@
-package sttp.client.model
+package sttp.model
 
 case class StatusCode(code: Int) extends AnyVal {
   def isInformational: Boolean = code / 100 == 1

@@ -2,9 +2,10 @@ package sttp.client
 
 import sttp.client.internal._
 import sttp.client.playJson._
-import sttp.client.model._
+import sttp.model._
 import play.api.libs.json._
 import org.scalatest._
+import sttp.model.StatusCode
 
 class PlayJsonTests extends FlatSpec with Matchers with EitherValues {
 

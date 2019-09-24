@@ -1,7 +1,7 @@
 package sttp.client
 
 import org.scalatest.{FlatSpec, Matchers}
-import sttp.client.model.HeaderNames
+import sttp.model.HeaderNames
 
 class RequestTests extends FlatSpec with Matchers {
 

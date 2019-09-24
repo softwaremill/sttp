@@ -1,11 +1,11 @@
 package sttp.client.playJson
 
 import sttp.client._
-import sttp.client.model._
+import sttp.model._
 import sttp.client.internal.Utf8
 import play.api.libs.json.{JsError, Json, Reads, Writes}
 import sttp.client.{IsOption, JsonInput, ResponseAs, ResponseError}
-import sttp.client.model.MediaTypes
+import sttp.model.MediaTypes
 
 import scala.util.{Failure, Success, Try}
 

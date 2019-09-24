@@ -6,9 +6,10 @@ import java.util.Base64
 
 import com.github.ghik.silencer.silent
 import sttp.client.internal._
-import sttp.client.model._
+import sttp.model._
 import sttp.client.internal.{SttpFile, ToCurlConverter}
-import sttp.client.model.{HeaderNames, MediaTypes, Method}
+import sttp.model.{HeaderNames, MediaTypes, Method}
+import sttp.model.{Header, Method}
 
 import scala.collection.immutable.Seq
 import scala.concurrent.duration.Duration

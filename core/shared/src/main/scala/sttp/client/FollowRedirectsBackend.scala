@@ -2,8 +2,9 @@ package sttp.client
 
 import java.net.URI
 
-import sttp.client.model._
+import sttp.model._
 import sttp.client.monad.MonadError
+import sttp.model.{Method, StatusCode}
 
 import scala.language.higherKinds
 

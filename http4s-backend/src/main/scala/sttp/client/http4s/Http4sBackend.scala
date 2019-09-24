@@ -11,7 +11,7 @@ import org.http4s
 import org.http4s.client.Client
 import org.http4s.client.blaze.BlazeClientBuilder
 import sttp.client.impl.cats.CatsMonadAsyncError
-import sttp.client.model.{Header, HeaderNames, Method, StatusCode}
+import sttp.model._
 import sttp.client.monad.MonadError
 import sttp.client.{
   BasicRequestBody,
@@ -100,7 +100,7 @@ class Http4sBackend[F[_]: Effect: ContextShift](client: Client[F], blockingExecu
 
       case StreamBody(s) =>
         val cl = r.headers
-          .find(_.name.equalsIgnoreCase(HeaderNames.ContentLength))
+          .find(_.is(HeaderNames.ContentLength))
           .map(_.value.toLong)
         (http4s.Entity(s, cl), http4s.Headers.empty)
 

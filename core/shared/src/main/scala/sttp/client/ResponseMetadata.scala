@@ -1,7 +1,7 @@
 package sttp.client
 
-import sttp.client.model._
-import sttp.client.model.HeaderNames
+import sttp.model._
+import sttp.model.{Header, HeaderNames, StatusCode}
 
 import scala.collection.immutable.Seq
 import scala.util.Try

@@ -1,4 +1,4 @@
-package sttp.client.model
+package sttp.model
 
 // https://www.iana.org/assignments/message-headers/message-headers.xml#perm-headers
 trait HeaderNames {

@@ -8,8 +8,8 @@ import sttp.client._
 import io.prometheus.client.CollectorRegistry
 import org.scalatest.concurrent.{Eventually, IntegrationPatience}
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers, OptionValues}
-import sttp.client.model.StatusCode
 import sttp.client.testing.SttpBackendStub
+import sttp.model.StatusCode
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

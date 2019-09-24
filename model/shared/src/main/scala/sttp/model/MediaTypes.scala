@@ -1,4 +1,4 @@
-package sttp.client.model
+package sttp.model
 
 // https://www.iana.org/assignments/media-types/media-types.xhtml
 trait MediaTypes {

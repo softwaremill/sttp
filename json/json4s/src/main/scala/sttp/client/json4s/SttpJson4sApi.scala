@@ -3,7 +3,7 @@ package sttp.client.json4s
 import sttp.client._
 import sttp.client.internal.Utf8
 import org.json4s.{DefaultFormats, Formats, Serialization}
-import sttp.client.model._
+import sttp.model._
 import sttp.client.{ResponseAs, ResponseError}
 
 trait SttpJson4sApi {

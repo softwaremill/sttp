@@ -22,7 +22,7 @@ import okhttp3.{
 import okio.{BufferedSink, Okio}
 import sttp.client.ResponseAs.EagerResponseHandler
 import sttp.client.SttpBackendOptions.Proxy
-import sttp.client.model.{Header, HeaderNames, StatusCode}
+import sttp.model._
 import sttp.client.monad.{FutureMonad, IdMonad, MonadAsyncError, MonadError}
 import sttp.client.{
   BasicResponseAs,
@@ -59,7 +59,7 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean
 
     //OkHttp support automatic gzip compression
     request.headers
-      .filter(_.name.equalsIgnoreCase(HeaderNames.AcceptEncoding) == false)
+      .filter(_.is(HeaderNames.AcceptEncoding) == false)
       .foreach {
         case Header(name, value) => builder.addHeader(name, value)
       }

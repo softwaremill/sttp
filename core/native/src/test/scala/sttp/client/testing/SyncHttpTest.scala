@@ -5,7 +5,7 @@ import java.nio.ByteBuffer
 
 import sttp.client._
 import org.scalatest._
-import sttp.client.model.StatusCode
+import sttp.model.StatusCode
 
 import scala.concurrent.duration._
 

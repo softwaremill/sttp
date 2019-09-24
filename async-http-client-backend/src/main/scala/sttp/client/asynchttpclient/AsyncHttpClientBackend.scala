@@ -29,8 +29,8 @@ import sttp.client
 import sttp.client.ResponseAs.EagerResponseHandler
 import sttp.client.SttpBackendOptions.ProxyType.{Http, Socks}
 import sttp.client.internal.{SttpFile, _}
-import sttp.client.model.{Header, HeaderNames, MediaTypes, StatusCode}
 import sttp.client.monad.{MonadAsyncError, MonadError}
+import sttp.model.{Header, HeaderNames, MediaTypes, StatusCode}
 import sttp.client.{
   BasicResponseAs,
   ByteArrayBody,
@@ -215,7 +215,7 @@ abstract class AsyncHttpClientBackend[R[_], S](
 
       case StreamBody(s) =>
         val cl = r.headers
-          .find(_.name.equalsIgnoreCase(HeaderNames.ContentLength))
+          .find(_.is(HeaderNames.ContentLength))
           .map(_.value.toLong)
           .getOrElse(-1L)
         rb.setBody(streamBodyToPublisher(s), cl)

@@ -2,7 +2,7 @@ package sttp.client.sprayJson
 
 import sttp.client._
 import sttp.client.internal.Utf8
-import sttp.client.model._
+import sttp.model._
 import spray.json._
 import sttp.client.{IsOption, ResponseAs, ResponseError}
 

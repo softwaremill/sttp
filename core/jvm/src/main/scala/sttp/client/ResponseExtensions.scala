@@ -2,7 +2,7 @@ package sttp.client
 
 import java.net.HttpCookie
 
-import sttp.client.model._
+import sttp.model._
 import scala.collection.JavaConverters._
 import scala.collection.immutable.Seq
 

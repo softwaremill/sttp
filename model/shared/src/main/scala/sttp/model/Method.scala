@@ -1,4 +1,4 @@
-package sttp.client.model
+package sttp.model
 
 case class Method(method: String) extends AnyVal
 

@@ -1,6 +1,8 @@
 package sttp.client
 
-import sttp.client.model._
+import sttp.model._
+import sttp.model.{Header, StatusCode}
+
 import scala.collection.immutable.Seq
 
 /**

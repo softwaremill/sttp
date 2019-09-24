@@ -17,9 +17,10 @@ import org.scalajs.dom.experimental.{
 import org.scalajs.dom.raw.{Blob, BlobPropertyBag}
 import sttp.client.dom.experimental.{AbortController, FilePropertyBag, File => DomFile}
 import sttp.client.internal.{SttpFile, _}
-import sttp.client.model.{Header, StatusCode}
+import sttp.model.StatusCode
 import sttp.client.monad.MonadError
 import sttp.client.monad.syntax._
+import sttp.model.{Header, StatusCode}
 
 import scala.collection.immutable.Seq
 import scala.concurrent.duration.FiniteDuration

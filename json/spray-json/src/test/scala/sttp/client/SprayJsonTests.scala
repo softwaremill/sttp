@@ -3,11 +3,12 @@ package sttp.client
 import sttp.client.SprayJsonTests._
 import sttp.client.internal.{Utf8, contentTypeWithCharset}
 import sttp.client.sprayJson._
-import sttp.client.model._
+import sttp.model._
 import org.scalatest.{EitherValues, FlatSpec, Matchers}
 import spray.json.DefaultJsonProtocol._
 import spray.json.JsonParser.ParsingException
 import spray.json._
+import sttp.model.StatusCode
 
 class SprayJsonTests extends FlatSpec with Matchers with EitherValues {
   behavior of "The spray-json module"

@@ -6,8 +6,8 @@ import java.security.MessageDigest
 import java.time.{ZoneId, ZonedDateTime}
 
 import com.github.ghik.silencer.silent
-import sttp.client.model.StatusCode
 import sttp.client.{FollowRedirectsBackend, _}
+import sttp.model.StatusCode
 
 import scala.concurrent.Future
 import scala.language.higherKinds

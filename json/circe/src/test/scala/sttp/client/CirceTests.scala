@@ -3,7 +3,8 @@ package sttp.client
 import io.circe._
 import org.scalatest._
 import sttp.client.internal._
-import sttp.client.model._
+import sttp.model._
+import sttp.model.StatusCode
 
 import scala.language.higherKinds
 

@@ -6,11 +6,12 @@ import java.util.concurrent.TimeoutException
 import com.github.ghik.silencer.silent
 import sttp.client._
 import sttp.client.internal._
-import sttp.client.model._
+import sttp.model._
 import sttp.client.monad.{FutureMonad, IdMonad}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FlatSpec, Matchers}
 import sttp.client.{IgnoreResponse, ResponseAs, SttpBackend}
+import sttp.model.{Method, StatusCode}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._

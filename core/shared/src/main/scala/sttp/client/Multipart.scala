@@ -1,7 +1,7 @@
 package sttp.client
 
 import sttp.client.internal._
-import sttp.client.model.Header
+import sttp.model.Header
 
 /**
   * Use the factory methods `multipart` to conveniently create instances of

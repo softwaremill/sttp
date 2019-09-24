@@ -5,7 +5,7 @@ import java.nio.file.Files
 import java.security.MessageDigest
 
 import sttp.client._
-import sttp.client.model.StatusCode
+import sttp.model.StatusCode
 
 trait SyncHttpTestExtensions {
   self: SyncHttpTest =>

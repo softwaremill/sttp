@@ -4,7 +4,7 @@ import org.json4s.ParserUtil.ParseException
 import org.json4s.{MappingException, native}
 import org.scalatest._
 import sttp.client.internal._
-import sttp.client.model.{MediaTypes, StatusCode}
+import sttp.model._
 
 import scala.language.higherKinds
 
