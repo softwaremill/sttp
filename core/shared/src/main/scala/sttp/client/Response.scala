@@ -16,8 +16,7 @@ case class Response[T](
     statusText: String,
     headers: Seq[Header],
     history: List[Response[Unit]]
-) extends ResponseExtensions[T]
-    with ResponseMetadata {
+) extends ResponseMetadata {
 
   override def toString: String = s"Response($body,$code,$statusText,$headers,$history)"
 }

@@ -13,6 +13,10 @@ trait ResponseMetadata {
   def contentType: Option[String] = header(HeaderNames.ContentType)
   def contentLength: Option[Long] = header(HeaderNames.ContentLength).flatMap(cl => Try(cl.toLong).toOption)
 
+  def cookies: Seq[Cookie] =
+    headers(HeaderNames.SetCookie)
+      .map(h => Cookie.parseHeaderValue(h).fold(e => throw new RuntimeException(e), identity[Cookie]))
+
   def code: StatusCode
   def statusText: String
   def is200: Boolean = code == StatusCode.Ok

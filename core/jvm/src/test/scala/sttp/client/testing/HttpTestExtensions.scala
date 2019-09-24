@@ -7,7 +7,7 @@ import java.time.{ZoneId, ZonedDateTime}
 
 import com.github.ghik.silencer.silent
 import sttp.client.{FollowRedirectsBackend, _}
-import sttp.model.StatusCode
+import sttp.model.{Cookie, StatusCode}
 
 import scala.concurrent.Future
 import scala.language.higherKinds
@@ -45,7 +45,7 @@ trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
 
           c.name should be("c")
           c.value should be("v")
-          c.expires.map(_.toInstant.toEpochMilli) should be(
+          c.expires.map(_.toEpochMilli) should be(
             Some(
               ZonedDateTime
                 .of(1997, 12, 8, 12, 49, 12, 0, ZoneId.of("GMT"))
