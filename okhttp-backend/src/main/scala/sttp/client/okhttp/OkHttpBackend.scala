@@ -22,7 +22,7 @@ import okhttp3.{
 import okio.{BufferedSink, Okio}
 import sttp.client.ResponseAs.EagerResponseHandler
 import sttp.client.SttpBackendOptions.Proxy
-import sttp.client.model.{HeaderNames, StatusCode}
+import sttp.client.model.{Header, HeaderNames, StatusCode}
 import sttp.client.monad.{FutureMonad, IdMonad, MonadAsyncError, MonadError}
 import sttp.client.{
   BasicResponseAs,
@@ -59,9 +59,9 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean
 
     //OkHttp support automatic gzip compression
     request.headers
-      .filter(_._1.equalsIgnoreCase(HeaderNames.AcceptEncoding) == false)
+      .filter(_.name.equalsIgnoreCase(HeaderNames.AcceptEncoding) == false)
       .foreach {
-        case (name, value) => builder.addHeader(name, value)
+        case Header(name, value) => builder.addHeader(name, value)
       }
 
     builder.build()
@@ -96,8 +96,8 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean
   }
 
   private def addMultipart(builder: OkHttpMultipartBody.Builder, mp: Multipart): Unit = {
-    val allHeaders = mp.additionalHeaders + (HeaderNames.ContentDisposition -> mp.contentDispositionHeaderValue)
-    val headers = OkHttpHeaders.of(allHeaders.asJava)
+    val allHeaders = mp.additionalHeaders :+ Header(HeaderNames.ContentDisposition, mp.contentDispositionHeaderValue)
+    val headers = OkHttpHeaders.of(allHeaders.map(h => (h.name, h.value)).toMap.asJava)
 
     bodyToOkHttp(mp.body).foreach(builder.addPart(headers, _))
   }
@@ -111,7 +111,7 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean
       .headers()
       .names()
       .asScala
-      .flatMap(name => res.headers().values(name).asScala.map((name, _)))
+      .flatMap(name => res.headers().values(name).asScala.map(Header(name, _)))
       .toList
 
     val responseMetadata = ResponseMetadata(headers, StatusCode(res.code()), res.message())

@@ -11,7 +11,7 @@ import org.http4s
 import org.http4s.client.Client
 import org.http4s.client.blaze.BlazeClientBuilder
 import sttp.client.impl.cats.CatsMonadAsyncError
-import sttp.client.model.{HeaderNames, Method, StatusCode}
+import sttp.client.model.{Header, HeaderNames, Method, StatusCode}
 import sttp.client.monad.MonadError
 import sttp.client.{
   BasicRequestBody,
@@ -37,13 +37,13 @@ class Http4sBackend[F[_]: Effect: ContextShift](client: Client[F], blockingExecu
     val request = http4s.Request(
       method = methodToHttp4s(r.method),
       uri = http4s.Uri.unsafeFromString(r.uri.toString),
-      headers = http4s.Headers(r.headers.map(h => http4s.Header(h._1, h._2)).toList) ++ extraHeaders,
+      headers = http4s.Headers(r.headers.map(h => http4s.Header(h.name, h.value)).toList) ++ extraHeaders,
       body = entity.body
     )
 
     client.fetch(request) { response =>
       val code = StatusCode(response.status.code)
-      val headers = response.headers.toList.map(h => h.name.value -> h.value)
+      val headers = response.headers.toList.map(h => Header(h.name.value, h.value))
       val statusText = response.status.reason
       val responseMetadata = ResponseMetadata(headers, code, statusText)
 
@@ -100,8 +100,8 @@ class Http4sBackend[F[_]: Effect: ContextShift](client: Client[F], blockingExecu
 
       case StreamBody(s) =>
         val cl = r.headers
-          .find(_._1.equalsIgnoreCase(HeaderNames.ContentLength))
-          .map(_._2.toLong)
+          .find(_.name.equalsIgnoreCase(HeaderNames.ContentLength))
+          .map(_.value.toLong)
         (http4s.Entity(s, cl), http4s.Headers.empty)
 
       case MultipartBody(ps) =>
@@ -114,7 +114,7 @@ class Http4sBackend[F[_]: Effect: ContextShift](client: Client[F], blockingExecu
   private def multipartToHttp4s(mp: Multipart): http4s.multipart.Part[F] = {
     val contentDisposition = http4s.Header(HeaderNames.ContentDisposition, mp.contentDispositionHeaderValue)
     val contentTypeHeader = mp.contentType.map(ct => http4s.Header(HeaderNames.ContentType, ct))
-    val otherHeaders = mp.additionalHeaders.map(h => http4s.Header(h._1, h._2))
+    val otherHeaders = mp.additionalHeaders.map(h => http4s.Header(h.name, h.value))
     val allHeaders = List(contentDisposition) ++ contentTypeHeader.toList ++ otherHeaders
 
     http4s.multipart.Part(http4s.Headers(allHeaders), basicBodyToHttp4s(mp.body).body)

@@ -8,8 +8,10 @@ case class StatusCode(code: Int) extends AnyVal {
   def isServerError: Boolean = code / 100 == 5
 }
 
+object StatusCode extends StatusCodes
+
 // https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
-object StatusCode {
+trait StatusCodes {
   val Continue = StatusCode(100)
   val SwitchingProtocols = StatusCode(101)
   val Processing = StatusCode(102)

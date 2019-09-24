@@ -27,7 +27,7 @@ class HttpURLConnectionBackend private (
   override def send[T](r: Request[T, Nothing]): Response[T] = {
     val c = openConnection(r.uri)
     c.setRequestMethod(r.method.method)
-    r.headers.foreach { case (k, v) => c.setRequestProperty(k, v) }
+    r.headers.foreach { case Header(k, v) => c.setRequestProperty(k, v) }
     c.setDoInput(true)
     c.setReadTimeout(timeout(r.options.readTimeout))
     c.setConnectTimeout(timeout(opts.connectionTimeout))
@@ -146,7 +146,7 @@ class HttpURLConnectionBackend private (
         s"${HeaderNames.ContentDisposition}: ${p.contentDispositionHeaderValue}"
       val contentTypeHeader =
         p.contentType.map(ct => s"${HeaderNames.ContentType}: $ct")
-      val otherHeaders = p.additionalHeaders.map(h => s"${h._1}: ${h._2}")
+      val otherHeaders = p.additionalHeaders.map(h => s"${h.name}: ${h.value}")
       val allHeaders = List(contentDisposition) ++ contentTypeHeader.toList ++ otherHeaders
       (allHeaders.mkString(CrLf), p)
     }
@@ -224,7 +224,7 @@ class HttpURLConnectionBackend private (
 
     val headers = c.getHeaderFields.asScala.toVector
       .filter(_._1 != null)
-      .flatMap { case (k, vv) => vv.asScala.map((k, _)) }
+      .flatMap { case (k, vv) => vv.asScala.map(Header(k, _)) }
     val contentEncoding = Option(c.getHeaderField(HeaderNames.ContentEncoding))
 
     val code = StatusCode(c.getResponseCode)

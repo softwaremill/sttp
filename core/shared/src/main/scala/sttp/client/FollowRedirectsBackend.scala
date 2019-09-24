@@ -72,7 +72,7 @@ class FollowRedirectsBackend[R[_], S](delegate: SttpBackend[R, S]) extends SttpB
     if (applicable && (r.options.redirectToGet || alwaysChanged) && !neverChanged) {
       // when transforming POST or PUT into a get, content is dropped, also filter out content-related request headers
       r.method(Method.GET, r.uri)
-        .copy(body = NoBody, headers = r.headers.filterNot(header => contentHeaders.contains(header._1)))
+        .copy(body = NoBody, headers = r.headers.filterNot(header => contentHeaders.contains(header.name)))
     } else r
   }
 

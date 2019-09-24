@@ -12,7 +12,7 @@ case class Response[T](
     body: T,
     code: StatusCode,
     statusText: String,
-    headers: Seq[(String, String)],
+    headers: Seq[Header],
     history: List[Response[Unit]]
 ) extends ResponseExtensions[T]
     with ResponseMetadata {

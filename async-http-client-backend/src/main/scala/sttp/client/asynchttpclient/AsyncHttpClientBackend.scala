@@ -29,7 +29,7 @@ import sttp.client
 import sttp.client.ResponseAs.EagerResponseHandler
 import sttp.client.SttpBackendOptions.ProxyType.{Http, Socks}
 import sttp.client.internal.{SttpFile, _}
-import sttp.client.model.{HeaderNames, MediaTypes, StatusCode}
+import sttp.client.model.{Header, HeaderNames, MediaTypes, StatusCode}
 import sttp.client.monad.{MonadAsyncError, MonadError}
 import sttp.client.{
   BasicResponseAs,
@@ -188,7 +188,7 @@ abstract class AsyncHttpClientBackend[R[_], S](
       .setUrl(r.uri.toString)
       .setReadTimeout(if (readTimeout.isFinite) readTimeout.toMillis.toInt else -1)
       .setRequestTimeout(if (readTimeout.isFinite) readTimeout.toMillis.toInt else -1)
-    r.headers.foreach { case (k, v) => rb.setHeader(k, v) }
+    r.headers.foreach { case Header(k, v) => rb.setHeader(k, v) }
     setBody(r, r.body, rb)
     rb.build()
   }
@@ -215,8 +215,8 @@ abstract class AsyncHttpClientBackend[R[_], S](
 
       case StreamBody(s) =>
         val cl = r.headers
-          .find(_._1.equalsIgnoreCase(HeaderNames.ContentLength))
-          .map(_._2.toLong)
+          .find(_.name.equalsIgnoreCase(HeaderNames.ContentLength))
+          .map(_.value.toLong)
           .getOrElse(-1L)
         rb.setBody(streamBodyToPublisher(s), cl)
 
@@ -250,7 +250,7 @@ abstract class AsyncHttpClientBackend[R[_], S](
         new FilePart(mp.name, b.toFile, null, null, mp.fileName.orNull)
     }
 
-    bodyPart.setCustomHeaders(mp.additionalHeaders.map(h => new Param(h._1, h._2)).toList.asJava)
+    bodyPart.setCustomHeaders(mp.additionalHeaders.map(h => new Param(h.name, h.value)).toList.asJava)
 
     rb.addBodyPart(bodyPart)
   }
@@ -273,7 +273,7 @@ abstract class AsyncHttpClientBackend[R[_], S](
       response.getHeaders
         .iteratorAsString()
         .asScala
-        .map(e => (e.getKey, e.getValue))
+        .map(e => Header(e.getKey, e.getValue))
         .toList,
       Nil
     )

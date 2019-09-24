@@ -1,6 +1,7 @@
 package sttp.client
 
 import sttp.client.internal._
+import sttp.client.model.Header
 
 /**
   * Use the factory methods `multipart` to conveniently create instances of
@@ -12,12 +13,12 @@ case class Multipart(
     body: BasicRequestBody,
     fileName: Option[String] = None,
     contentType: Option[String] = None,
-    additionalHeaders: Map[String, String] = Map()
+    additionalHeaders: Seq[Header] = Nil
 ) {
   def fileName(v: String): Multipart = copy(fileName = Some(v))
   def contentType(v: String): Multipart = copy(contentType = Some(v))
-  def header(k: String, v: String): Multipart =
-    copy(additionalHeaders = additionalHeaders + (k -> v))
+  def header(h: Header): Multipart = copy(additionalHeaders = additionalHeaders :+ h)
+  def header(k: String, v: String): Multipart = header(Header(k, v))
 
   private[sttp] def contentDispositionHeaderValue: String = {
     def encodeHeaderValue(s: String): String =

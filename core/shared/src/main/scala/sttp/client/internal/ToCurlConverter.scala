@@ -23,16 +23,17 @@ class ToCurlConverter[R <: RequestT[Identity, _, _]] {
   private def extractHeaders(r: R): String = {
     r.headers
     // filtering out compression headers so that the results are human-readable, if possible
-      .filterNot(_._1.equalsIgnoreCase(HeaderNames.AcceptEncoding))
+      .filterNot(_.name.equalsIgnoreCase(HeaderNames.AcceptEncoding))
       .collect {
-        case (k, v) => s"""-H '$k: $v'"""
+        case Header(k, v) => s"""-H '$k: $v'"""
       }
       .mkString(" ")
   }
 
   private def extractBody(r: R): String = {
     r.body match {
-      case StringBody(text, _, _) if r.headers.toMap.get(HeaderNames.ContentType).forall(_ == MediaTypes.Form) =>
+      case StringBody(text, _, _)
+          if r.headers.map(h => (h.name, h.value)).toMap.get(HeaderNames.ContentType).forall(_ == MediaTypes.Form) =>
         s"""-F '${text.replace("'", "\\'")}'"""
       case StringBody(text, _, _) => s"""--data '${text.replace("'", "\\'")}'"""
       case ByteArrayBody(_, _)    => s"--data-binary <PLACEHOLDER>"

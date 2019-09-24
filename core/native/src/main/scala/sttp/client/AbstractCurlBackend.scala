@@ -5,7 +5,7 @@ import java.io.ByteArrayInputStream
 import sttp.client.curl.CurlApi._
 import sttp.client.curl.CurlCode.CurlCode
 import sttp.client.curl.CurlInfo._
-import sttp.client.curl.CurlOption._
+import sttp.client.curl.CurlOption.{Header => _, _}
 import sttp.client.curl._
 import sttp.client.internal._
 import sttp.client.model._
@@ -37,10 +37,10 @@ abstract class AbstractCurlBackend[R[_], S](monad: MonadError[R], verbose: Boole
     }
     val reqHeaders = request.headers
     if (reqHeaders.size > 0) {
-      reqHeaders.find(_._1 == "Accept-Encoding").foreach(h => curl.option(AcceptEncoding, h._2))
+      reqHeaders.find(_.name == "Accept-Encoding").foreach(h => curl.option(AcceptEncoding, h.value))
       request.body match {
         case _: MultipartBody =>
-          headers = transformHeaders(reqHeaders :+ "Content-Type" -> "multipart/form-data")
+          headers = transformHeaders(reqHeaders :+ Header("Content-Type", "multipart/form-data"))
         case _ =>
           headers = transformHeaders(reqHeaders)
       }
@@ -72,7 +72,7 @@ abstract class AbstractCurlBackend[R[_], S](monad: MonadError[R], verbose: Boole
       free(spaces.httpCode.cast[Ptr[CSignedChar]])
       curl.cleanup()
 
-      val statusText = responseHeaders_.head._1.split(" ").last
+      val statusText = responseHeaders_.head.name.split(" ").last
       val responseHeaders = responseHeaders_.tail
       val responseMetadata = ResponseMetadata(responseHeaders, httpCode, statusText)
 
@@ -156,16 +156,16 @@ abstract class AbstractCurlBackend[R[_], S](monad: MonadError[R], verbose: Boole
     new CurlSpaces(bodyResp, headersResp, httpCode)
   }
 
-  private def parseHeaders(str: String): Seq[(String, String)] = {
+  private def parseHeaders(str: String): Seq[Header] = {
     val array = str
       .split("\n")
       .filter(_.trim.length > 0)
       .map { line =>
         val split = line.split(":", 2)
         if (split.size == 2)
-          split(0).trim -> split(1).trim
+          Header(split(0).trim, split(1).trim)
         else
-          split(0).trim -> ""
+          Header(split(0).trim, "")
       }
     Seq.from(array: _*)
   }
@@ -193,10 +193,10 @@ abstract class AbstractCurlBackend[R[_], S](monad: MonadError[R], verbose: Boole
     }
   }
 
-  private def transformHeaders(reqHeaders: Iterable[(String, String)])(implicit z: Zone): CurlList = {
+  private def transformHeaders(reqHeaders: Iterable[Header])(implicit z: Zone): CurlList = {
     reqHeaders
       .map {
-        case (headerName, headerValue) =>
+        case Header(headerName, headerValue) =>
           s"$headerName: $headerValue"
       }
       .foldLeft(new CurlList(null)) {

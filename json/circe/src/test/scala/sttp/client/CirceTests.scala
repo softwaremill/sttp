@@ -87,7 +87,7 @@ class CirceTests extends FlatSpec with Matchers with EitherValues {
     val body = Outer(Inner(42, true, "horses"), "cats")
     val req = basicRequest.body(body)
 
-    val ct = req.headers.toMap.get("Content-Type")
+    val ct = req.headers.map(h => (h.name, h.value)).toMap.get("Content-Type")
 
     ct shouldBe Some(contentTypeWithCharset(MediaTypes.Json, Utf8))
   }
@@ -96,7 +96,7 @@ class CirceTests extends FlatSpec with Matchers with EitherValues {
     val body = Outer(Inner(42, true, "horses"), "cats")
     val req = basicRequest.contentType("horses/cats").body(body)
 
-    val ct = req.headers.toMap.get("Content-Type")
+    val ct = req.headers.map(h => (h.name, h.value)).toMap.get("Content-Type")
 
     ct shouldBe Some("horses/cats")
   }

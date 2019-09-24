@@ -37,7 +37,7 @@ case class RequestT[U[_], T, +S](
     method: U[Method],
     uri: U[Uri],
     body: RequestBody[S],
-    headers: Seq[(String, String)],
+    headers: Seq[Header],
     response: ResponseAs[T, S],
     options: RequestOptions,
     tags: Map[String, Any]
@@ -65,17 +65,17 @@ case class RequestT[U[_], T, +S](
     header(HeaderNames.ContentType, contentTypeWithCharset(ct, encoding), replaceExisting = true)
   def contentLength(l: Long): RequestT[U, T, S] =
     header(HeaderNames.ContentLength, l.toString, replaceExisting = true)
-  def header(k: String, v: String, replaceExisting: Boolean = false): RequestT[U, T, S] = {
+  def header(h: Header, replaceExisting: Boolean = false): RequestT[U, T, S] = {
     val current =
       if (replaceExisting)
-        headers.filterNot(_._1.equalsIgnoreCase(k))
+        headers.filterNot(_.name.equalsIgnoreCase(h.name))
       else headers
-    this.copy(headers = current :+ (k -> v))
+    this.copy(headers = current :+ h)
   }
-  def headers(hs: Map[String, String]): RequestT[U, T, S] =
-    headers(hs.toSeq: _*)
-  def headers(hs: (String, String)*): RequestT[U, T, S] =
-    this.copy(headers = headers ++ hs)
+  def header(k: String, v: String, replaceExisting: Boolean): RequestT[U, T, S] = header(Header(k, v), replaceExisting)
+  def header(k: String, v: String): RequestT[U, T, S] = header(Header(k, v))
+  def headers(hs: Map[String, String]): RequestT[U, T, S] = headers(hs.map(t => Header(t._1, t._2)).toSeq: _*)
+  def headers(hs: Header*): RequestT[U, T, S] = this.copy(headers = headers ++ hs)
   def auth: SpecifyAuthScheme[U, T, S] =
     new SpecifyAuthScheme[U, T, S](HeaderNames.Authorization, this)
   def proxyAuth: SpecifyAuthScheme[U, T, S] =
@@ -249,7 +249,7 @@ case class RequestT[U[_], T, +S](
   }
 
   private def hasContentType: Boolean =
-    headers.exists(_._1.equalsIgnoreCase(HeaderNames.ContentType))
+    headers.exists(_.name.equalsIgnoreCase(HeaderNames.ContentType))
   private def setContentTypeIfMissing(ct: String): RequestT[U, T, S] =
     if (hasContentType) this else contentType(ct)
 
@@ -265,7 +265,7 @@ case class RequestT[U[_], T, +S](
   }
 
   private def hasContentLength: Boolean =
-    headers.exists(_._1.equalsIgnoreCase(HeaderNames.ContentLength))
+    headers.exists(_.name.equalsIgnoreCase(HeaderNames.ContentLength))
   private def setContentLengthIfMissing(l: => Long): RequestT[U, T, S] =
     if (hasContentLength) this else contentLength(l)
 

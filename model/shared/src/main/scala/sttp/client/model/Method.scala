@@ -1,7 +1,10 @@
 package sttp.client.model
 
 case class Method(method: String) extends AnyVal
-object Method {
+
+object Method extends Methods
+
+trait Methods {
   val GET = Method("GET")
   val HEAD = Method("HEAD")
   val POST = Method("POST")

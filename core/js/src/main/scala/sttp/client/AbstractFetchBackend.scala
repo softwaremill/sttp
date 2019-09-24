@@ -17,7 +17,7 @@ import org.scalajs.dom.experimental.{
 import org.scalajs.dom.raw.{Blob, BlobPropertyBag}
 import sttp.client.dom.experimental.{AbortController, FilePropertyBag, File => DomFile}
 import sttp.client.internal.{SttpFile, _}
-import sttp.client.model.StatusCode
+import sttp.client.model.{Header, StatusCode}
 import sttp.client.monad.MonadError
 import sttp.client.monad.syntax._
 
@@ -72,7 +72,7 @@ abstract class AbstractFetchBackend[R[_], S](options: FetchOptions)(monad: Monad
 
     val headers = new JSHeaders()
     request.headers.foreach {
-      case (name, value) =>
+      case Header(name, value) =>
         headers.set(name, value)
     }
 
@@ -128,7 +128,7 @@ abstract class AbstractFetchBackend[R[_], S](options: FetchOptions)(monad: Monad
 
   protected def addCancelTimeoutHook[T](result: R[T], cancel: () => Unit): R[T]
 
-  private def convertResponseHeaders(headers: JSHeaders): Seq[(String, String)] = {
+  private def convertResponseHeaders(headers: JSHeaders): Seq[Header] = {
     headers
       .jsIterator()
       .toIterator
@@ -136,7 +136,7 @@ abstract class AbstractFetchBackend[R[_], S](options: FetchOptions)(monad: Monad
         // this will only ever be 2 but the types dont enforce that
         if (hs.length >= 2) {
           val name = hs(0)
-          hs.toList.drop(1).map(v => (name, v))
+          hs.toList.drop(1).map(v => Header(name, v))
         } else {
           Seq.empty
         }

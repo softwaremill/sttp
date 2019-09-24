@@ -112,7 +112,7 @@ object SttpHttpClientAdapter extends HttpClientAdapter[AnyRequest, AnyResponse] 
   override def url(request: AnyRequest): String = request.uri.toString
 
   override def requestHeader(request: AnyRequest, name: String): String =
-    request.headers.find(_._1.equalsIgnoreCase(name)).map(_._2).orNull
+    request.headers.find(_.name.equalsIgnoreCase(name)).map(_.value).orNull
 
   override def statusCode(response: AnyResponse): Integer = response.code.code
 }

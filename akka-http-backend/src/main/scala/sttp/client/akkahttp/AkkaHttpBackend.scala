@@ -15,7 +15,7 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{FileIO, Sink, Source, StreamConverters}
 import akka.util.ByteString
 import sttp.client
-import sttp.client.model.{HeaderNames, Method, StatusCode}
+import sttp.client.model.{Header, HeaderNames, Method, StatusCode}
 import sttp.client.monad.{FutureMonad, MonadError}
 import sttp.client.{
   ByteArrayBody,
@@ -165,11 +165,11 @@ class AkkaHttpBackend private (
     }
   }
 
-  private def headersFromAkka(hr: HttpResponse): Seq[(String, String)] = {
-    val ch = HeaderNames.ContentType -> hr.entity.contentType.toString()
+  private def headersFromAkka(hr: HttpResponse): Seq[Header] = {
+    val ch = Header(HeaderNames.ContentType, hr.entity.contentType.toString())
     val cl =
-      hr.entity.contentLengthOption.map(HeaderNames.ContentLength -> _.toString)
-    val other = hr.headers.map(h => (h.name, h.value))
+      hr.entity.contentLengthOption.map(v => Header(HeaderNames.ContentLength, v.toString))
+    val other = hr.headers.map(h => Header(h.name, h.value))
     ch :: (cl.toList ++ other)
   }
 
@@ -178,14 +178,14 @@ class AkkaHttpBackend private (
     headersToAkka(r.headers).map(ar.withHeaders)
   }
 
-  private def headersToAkka(headers: Seq[(String, String)]): Try[Seq[HttpHeader]] = {
+  private def headersToAkka(headers: Seq[Header]): Try[Seq[HttpHeader]] = {
     // content-type and content-length headers have to be set via the body
     // entity, not as headers
     val parsed =
       headers
         .filterNot(isContentType)
         .filterNot(isContentLength)
-        .map(h => HttpHeader.parse(h._1, h._2))
+        .map(h => HttpHeader.parse(h.name, h.value))
     val errors = parsed.collect {
       case ParsingResult.Error(e) => e
     }
@@ -262,7 +262,7 @@ class AkkaHttpBackend private (
     parseContentTypeOrOctetStream(
       r.headers
         .find(isContentType)
-        .map(_._2)
+        .map(_.value)
     )
   }
 
@@ -276,11 +276,11 @@ class AkkaHttpBackend private (
       .getOrElse(Success(`application/octet-stream`))
   }
 
-  private def isContentType(header: (String, String)) =
-    header._1.toLowerCase.contains(`Content-Type`.lowercaseName)
+  private def isContentType(header: Header) =
+    header.name.toLowerCase.contains(`Content-Type`.lowercaseName)
 
-  private def isContentLength(header: (String, String)) =
-    header._1.toLowerCase.contains(`Content-Length`.lowercaseName)
+  private def isContentLength(header: Header) =
+    header.value.toLowerCase.contains(`Content-Length`.lowercaseName)
 
   // http://doc.akka.io/docs/akka-http/10.0.7/scala/http/common/de-coding.html
   private def decodeAkkaResponse(response: HttpResponse): HttpResponse = {
