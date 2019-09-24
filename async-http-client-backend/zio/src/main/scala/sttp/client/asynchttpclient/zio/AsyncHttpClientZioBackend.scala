@@ -11,12 +11,12 @@ import org.asynchttpclient.{
 }
 import org.reactivestreams.Publisher
 import sttp.client.asynchttpclient.AsyncHttpClientBackend
-import sttp.client.impl.zio.IOMonadAsyncError
+import sttp.client.impl.zio.TaskMonadAsyncError
 import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 import zio._
 
 class AsyncHttpClientZioBackend private (asyncHttpClient: AsyncHttpClient, closeClient: Boolean)
-    extends AsyncHttpClientBackend[Task, Nothing](asyncHttpClient, IOMonadAsyncError, closeClient) {
+    extends AsyncHttpClientBackend[Task, Nothing](asyncHttpClient, TaskMonadAsyncError, closeClient) {
 
   override protected def streamBodyToPublisher(s: Nothing): Publisher[ByteBuf] =
     s // nothing is everything

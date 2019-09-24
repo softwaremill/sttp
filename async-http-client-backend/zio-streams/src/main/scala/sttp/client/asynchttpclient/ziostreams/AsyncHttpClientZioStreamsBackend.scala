@@ -11,7 +11,7 @@ import org.asynchttpclient.{
 }
 import org.reactivestreams.Publisher
 import sttp.client.asynchttpclient.AsyncHttpClientBackend
-import sttp.client.impl.zio.IOMonadAsyncError
+import sttp.client.impl.zio.TaskMonadAsyncError
 import sttp.client.internal._
 import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 import zio._
@@ -22,7 +22,7 @@ class AsyncHttpClientZioStreamsBackend[R] private (
     runtime: Runtime[R],
     asyncHttpClient: AsyncHttpClient,
     closeClient: Boolean
-) extends AsyncHttpClientBackend[Task, Stream[Throwable, ByteBuffer]](asyncHttpClient, IOMonadAsyncError, closeClient) {
+) extends AsyncHttpClientBackend[Task, Stream[Throwable, ByteBuffer]](asyncHttpClient, TaskMonadAsyncError, closeClient) {
 
   private val bufferSize = 16
 
