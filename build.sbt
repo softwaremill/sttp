@@ -144,6 +144,8 @@ val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.9"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % "2.5.25"
 
 val scalaTestVersion = "3.0.8"
+val scalaTestNativeVersion = "3.2.0-SNAP10"
+val scalaNativeTestInterfaceVersion = "0.3.9"
 val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion
 
 def dependenciesFor(version: String)(deps: (Option[(Long, Long)] => ModuleID)*): Seq[ModuleID] =
@@ -217,6 +219,14 @@ lazy val model = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .jsSettings(commonJsSettings: _*)
   .nativeSettings(commonNativeSettings: _*)
   .nativeSettings(only2_11settings)
+  .jvmSettings(libraryDependencies ++= Seq(scalaTest % "test"))
+  .jsSettings(libraryDependencies ++= Seq("org.scalatest" %%% "scalatest" % scalaTestVersion % "test"))
+  .nativeSettings(
+    libraryDependencies ++= Seq(
+      "org.scala-native" %%% "test-interface" % scalaNativeTestInterfaceVersion,
+      "org.scalatest" %%% "scalatest" % scalaTestNativeVersion % "test"
+    )
+  )
 
 lazy val modelJS = model.js
 lazy val modelJVM = model.jvm
@@ -252,8 +262,8 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .nativeSettings(testServerSettings(Test))
   .nativeSettings(
     libraryDependencies ++= Seq(
-      "org.scala-native" %%% "test-interface" % "0.3.9",
-      "org.scalatest" %%% "scalatest" % "3.2.0-SNAP10" % "test"
+      "org.scala-native" %%% "test-interface" % scalaNativeTestInterfaceVersion,
+      "org.scalatest" %%% "scalatest" % scalaTestNativeVersion % "test"
     )
   )
   .nativeSettings(only2_11settings)
