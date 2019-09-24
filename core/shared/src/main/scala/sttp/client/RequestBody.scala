@@ -47,7 +47,7 @@ case class StreamBody[S](s: S) extends RequestBody[S]
 case class MultipartBody(parts: Seq[Part[BasicRequestBody]]) extends RequestBody[Nothing]
 
 object RequestBody {
-  private[sttp] def paramsToStringBody(fs: Seq[(String, String)], encoding: String): StringBody = {
+  private[client] def paramsToStringBody(fs: Seq[(String, String)], encoding: String): StringBody = {
 
     val b = fs
       .map {

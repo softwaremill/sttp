@@ -83,9 +83,9 @@ class FollowRedirectsBackend[R[_], S](delegate: SttpBackend[R, S]) extends SttpB
 }
 
 object FollowRedirectsBackend {
-  private[sttp] val MaxRedirects = 32
+  private[client] val MaxRedirects = 32
 
-  private[sttp] def isRelative(uri: String): Boolean = uri.trim.startsWith("/")
+  private[client] def isRelative(uri: String): Boolean = uri.trim.startsWith("/")
 }
 
 case class TooManyRedirectsException(uri: Uri, redirects: Int) extends Exception

@@ -40,7 +40,7 @@ object ResponseAs {
     def mapRight[R2](f: R => R2): ResponseAs[Either[L, R2], S] = ra.map(_.right.map(f))
   }
 
-  private[sttp] def parseParams(s: String, charset: String): Seq[(String, String)] = {
+  private[client] def parseParams(s: String, charset: String): Seq[(String, String)] = {
     s.split("&")
       .toList
       .flatMap(
@@ -59,7 +59,7 @@ object ResponseAs {
     * wrapping the result in the target monad (`handleBasic` returns
     * `Try[T]`, not `R[T]`).
     */
-  private[sttp] trait EagerResponseHandler[S] {
+  private[client] trait EagerResponseHandler[S] {
     def handleBasic[T](bra: BasicResponseAs[T, S]): Try[T]
 
     def handle[T, R[_]](responseAs: ResponseAs[T, S], responseMonad: MonadError[R], meta: ResponseMetadata): R[T] = {

@@ -6,15 +6,15 @@ import java.nio.ByteBuffer
 import scala.annotation.{implicitNotFound, tailrec}
 
 package object internal {
-  private[sttp] def contentTypeWithCharset(ct: String, charset: String): String =
+  private[client] def contentTypeWithCharset(ct: String, charset: String): String =
     s"$ct; charset=$charset"
 
-  private[sttp] def charsetFromContentType(ct: String): Option[String] =
+  private[client] def charsetFromContentType(ct: String): Option[String] =
     ct.split(";").map(_.trim.toLowerCase).collectFirst {
       case s if s.startsWith("charset=") && s.substring(8).trim != "" => s.substring(8).trim
     }
 
-  private[sttp] def transfer(is: InputStream, os: OutputStream): Unit = {
+  private[client] def transfer(is: InputStream, os: OutputStream): Unit = {
     var read = 0
     val buf = new Array[Byte](1024)
 
@@ -30,13 +30,13 @@ package object internal {
     transfer()
   }
 
-  private[sttp] def toByteArray(is: InputStream): Array[Byte] = {
+  private[client] def toByteArray(is: InputStream): Array[Byte] = {
     val os = new ByteArrayOutputStream
     transfer(is, os)
     os.toByteArray
   }
 
-  private[sttp] def concatByteBuffers(bb1: ByteBuffer, bb2: ByteBuffer): ByteBuffer =
+  private[client] def concatByteBuffers(bb1: ByteBuffer, bb2: ByteBuffer): ByteBuffer =
     ByteBuffer
       .allocate(bb1.array().length + bb2.array().length)
       .put(bb1)
@@ -46,9 +46,9 @@ package object internal {
     "This is a partial request, the method & url are not specified. Use " +
       ".get(...), .post(...) etc. to obtain a non-partial request."
   )
-  private[sttp] type IsIdInRequest[U[_]] = U[Unit] =:= Identity[Unit]
+  private[client] type IsIdInRequest[U[_]] = U[Unit] =:= Identity[Unit]
 
-  private[sttp] val Utf8 = "utf-8"
-  private[sttp] val Iso88591 = "iso-8859-1"
-  private[sttp] val CrLf = "\r\n"
+  private[client] val Utf8 = "utf-8"
+  private[client] val Iso88591 = "iso-8859-1"
+  private[client] val CrLf = "\r\n"
 }

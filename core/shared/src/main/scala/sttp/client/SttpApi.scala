@@ -91,7 +91,7 @@ trait SttpApi extends SttpExtensions {
 
   def asStreamAlways[S]: ResponseAs[S, S] = ResponseAsStream[S, S]()
 
-  private[sttp] def asSttpFile(file: SttpFile, overwrite: Boolean = false): ResponseAs[SttpFile, Nothing] =
+  private[client] def asSttpFile(file: SttpFile, overwrite: Boolean = false): ResponseAs[SttpFile, Nothing] =
     ResponseAsFile(file, overwrite)
 
   def fromMetadata[T, S](f: ResponseMetadata => ResponseAs[T, S]): ResponseAs[T, S] = ResponseAsFromMetadata(f)
@@ -144,7 +144,7 @@ trait SttpApi extends SttpExtensions {
     *
     * File name will be set to the name of the file.
     */
-  private[sttp] def multipartSttpFile(name: String, file: SttpFile): Part[BasicRequestBody] =
+  private[client] def multipartSttpFile(name: String, file: SttpFile): Part[BasicRequestBody] =
     Part(name, FileBody(file), fileName = Some(file.name), contentType = Some(MediaTypes.Binary))
 
   /**

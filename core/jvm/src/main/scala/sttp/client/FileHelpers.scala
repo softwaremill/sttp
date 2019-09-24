@@ -6,7 +6,7 @@ import sttp.client.internal._
 
 object FileHelpers {
 
-  private[sttp] def saveFile(file: File, is: InputStream, overwrite: Boolean): File = {
+  private[client] def saveFile(file: File, is: InputStream, overwrite: Boolean): File = {
     if (!file.exists()) {
       if (file.getParentFile != null) {
         file.getParentFile.mkdirs()

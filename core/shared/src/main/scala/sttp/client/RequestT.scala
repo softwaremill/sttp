@@ -137,7 +137,7 @@ case class RequestT[U[_], T, +S](
     * If content length is not yet specified, will be set to the length
     * of the given file.
     */
-  private[sttp] def body(f: SttpFile): RequestT[U, T, S] =
+  private[client] def body(f: SttpFile): RequestT[U, T, S] =
     withBasicBody(FileBody(f))
       .setContentLengthIfMissing(f.size)
 
@@ -253,7 +253,7 @@ case class RequestT[U[_], T, +S](
   private def setContentTypeIfMissing(ct: String): RequestT[U, T, S] =
     if (hasContentType) this else contentType(ct)
 
-  private[sttp] def withBasicBody(body: BasicRequestBody) = {
+  private[client] def withBasicBody(body: BasicRequestBody) = {
     val defaultCt = body match {
       case StringBody(_, encoding, Some(ct)) =>
         Some(contentTypeWithCharset(ct, encoding))

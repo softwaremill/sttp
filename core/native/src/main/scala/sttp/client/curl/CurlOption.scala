@@ -1,6 +1,6 @@
 package sttp.client.curl
 
-private[sttp] object CurlOption extends Enumeration {
+private[client] object CurlOption extends Enumeration {
   type CurlOption = Value
 
   /** * This is the FILE * or void * the regular output should be written to. */

@@ -1,6 +1,6 @@
 package sttp.client.curl
 
-private[sttp] object CurlInfo extends Enumeration {
+private[client] object CurlInfo extends Enumeration {
   type CurlInfo = Value
 
   private val String: Int = 0x100000

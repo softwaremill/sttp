@@ -6,7 +6,7 @@ import sttp.client.curl.CurlOption.CurlOption
 
 import scala.scalanative.native.{Ptr, _}
 
-private[sttp] object CurlApi {
+private[client] object CurlApi {
 
   type CurlHandle = Ptr[Curl]
 

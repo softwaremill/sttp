@@ -1,6 +1,6 @@
 package sttp.client.curl
 
-private[sttp] object CurlCode extends Enumeration {
+private[client] object CurlCode extends Enumeration {
   type CurlCode = Value
   val Ok = Value(0, "OK")
   val UnsupportedProtocol = Value(1, "UNSUPPORTED_PROTOCOL")

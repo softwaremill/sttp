@@ -179,7 +179,7 @@ object SttpBackendStub {
   def withFallback[R[_], S, S2 <: S](fallback: SttpBackend[R, S]): SttpBackendStub[R, S2] =
     new SttpBackendStub[R, S2](fallback.responseMonad, PartialFunction.empty, Some(fallback))
 
-  private[sttp] def tryAdjustResponseType[DesiredRType, RType, M[_]](
+  private[client] def tryAdjustResponseType[DesiredRType, RType, M[_]](
       monad: MonadError[M],
       ra: ResponseAs[DesiredRType, _],
       m: M[Response[RType]]
@@ -190,7 +190,7 @@ object SttpBackendStub {
     }
   }
 
-  private[sttp] def tryAdjustResponseBody[T, U](ra: ResponseAs[T, _], b: U, meta: ResponseMetadata): Option[T] = {
+  private[client] def tryAdjustResponseBody[T, U](ra: ResponseAs[T, _], b: U, meta: ResponseMetadata): Option[T] = {
     ra match {
       case IgnoreResponse => Some(())
       case ResponseAsByteArray =>
