@@ -1,5 +1,7 @@
 package sttp.client
 
+import sttp.model.MultiQueryParams
+
 import scala.annotation.tailrec
 
 object UriInterpolator {
@@ -401,6 +403,8 @@ object UriInterpolator {
             seqToQueryFragments(e.toSeq)
           case Left(Vector(ExpressionToken(e: Seq[_]))) =>
             seqToQueryFragments(e)
+          case Left(Vector(ExpressionToken(mqp: MultiQueryParams))) =>
+            QF.fromMultiQueryParams(mqp).toVector
           case Left(t) => tokensToStringOpt(t, decodePlusAsSpace = true).map(QF.Value(_)).toVector
           case Right((leftEq, _, rightEq)) =>
             tokensToStringOpt(leftEq, decodePlusAsSpace = true) match {

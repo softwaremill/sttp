@@ -1,6 +1,7 @@
 package sttp.client
 
 import org.scalatest.{FunSuite, Matchers}
+import sttp.model.MultiQueryParams
 
 class UriInterpolatorTests extends FunSuite with Matchers {
   val v1 = "y"
@@ -119,7 +120,11 @@ class UriInterpolatorTests extends FunSuite with Matchers {
       (uri"http://example.com?x=y&${Map("a" -> "b")}", s"http://example.com?x=y&a=b"),
       (uri"http://example.com?x=y&${Map("a" -> None)}", s"http://example.com?x=y"),
       (uri"http://example.com?x=y&${Map("a" -> Some("b"))}", s"http://example.com?x=y&a=b"),
-      (uri"http://example.com?x=y&${Seq("a" -> None)}", s"http://example.com?x=y")
+      (uri"http://example.com?x=y&${Seq("a" -> None)}", s"http://example.com?x=y"),
+      (
+        uri"http://example.com?${MultiQueryParams.fromMultiSeq(List("x" -> List("1", "2"), "y" -> Nil))}",
+        s"http://example.com?x=1&x=2&y"
+      )
     ),
     "fragments" -> List(
       (uri"http://example.com#$v1", s"http://example.com#$v1"),

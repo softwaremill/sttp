@@ -4,6 +4,7 @@ import java.net.URI
 
 import Uri.{QueryFragment, QueryFragmentEncoding, UserInfo}
 import Uri.QueryFragment.{KeyValue, Plain, Value}
+import sttp.model.MultiQueryParams
 
 import scala.annotation.tailrec
 import scala.collection.immutable.Seq
@@ -77,6 +78,13 @@ case class Uri(
     * Adds the given parameters to the query.
     */
   def params(ps: Map[String, String]): Uri = params(ps.toSeq: _*)
+
+  /**
+    * Adds the given parameters to the query.
+    */
+  def params(mqp: MultiQueryParams): Uri = {
+    this.copy(queryFragments = queryFragments ++ QueryFragment.fromMultiQueryParams(mqp))
+  }
 
   /**
     * Adds the given parameters to the query.
@@ -227,6 +235,16 @@ object Uri {
       * [[https://stackoverflow.com/questions/2366260/whats-valid-and-whats-not-in-a-uri-query]]
       */
     case class Plain(v: String, encoding: QueryFragmentEncoding = QueryFragmentEncoding.Standard) extends QueryFragment
+
+    private[client] def fromMultiQueryParams(mqp: MultiQueryParams): Iterable[QueryFragment] = {
+      mqp.toMultiSeq.flatMap {
+        case (k, vs) =>
+          vs match {
+            case Seq() => List(Value(k))
+            case s     => s.map(v => KeyValue(k, v))
+          }
+      }
+    }
   }
 
   sealed trait QueryFragmentEncoding
