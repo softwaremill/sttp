@@ -10,7 +10,7 @@ import sttp.client.internal.SttpFile
 import scala.collection.immutable.Seq
 import scala.concurrent.duration._
 
-trait SttpApi extends SttpExtensions {
+trait SttpApi extends SttpExtensions with UriInterpolator {
 
   val DefaultReadTimeout: Duration = 1.minute
 
@@ -189,10 +189,4 @@ trait SttpApi extends SttpExtensions {
     */
   def multipart[B: BodySerializer](name: String, b: B): Part[BasicRequestBody] =
     Part(name, implicitly[BodySerializer[B]].apply(b), contentType = Some(MediaTypes.Binary))
-
-  // uri interpolator
-
-  implicit class UriContext(val sc: StringContext) {
-    def uri(args: Any*): Uri = UriInterpolator.interpolate(sc, args: _*)
-  }
 }

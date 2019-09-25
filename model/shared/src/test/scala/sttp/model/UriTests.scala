@@ -1,8 +1,8 @@
-package sttp.client
+package sttp.model
 
 import java.net.URI
 
-import sttp.client.Uri.{QueryFragment, QueryFragmentEncoding, UserInfo}
+import Uri._
 import org.scalatest.{FunSuite, Matchers, TryValues}
 
 class UriTests extends FunSuite with Matchers with TryValues {

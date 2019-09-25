@@ -1,10 +1,10 @@
-package sttp.client.idn
+package sttp.model.idn
 
-import scala.scalanative._
-import scala.scalanative.native.stdlib._
-import scala.scalanative.native.{Ptr, _}
+import scala.scalanative.native
+import scala.scalanative.native.stdlib.{free, malloc}
+import scala.scalanative.native.{CString, Ptr, fromCString, sizeof, toCString}
 
-private[client] object IdnApi {
+private[model] object IdnApi {
   def toAscii(input: String): String = native.Zone { implicit z =>
     val output: Ptr[CString] = malloc(sizeof[CString]).cast[Ptr[CString]]
     val rc = CIdn.toAscii(toCString(input), output, 0)

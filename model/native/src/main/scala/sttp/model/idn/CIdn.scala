@@ -1,6 +1,6 @@
-package sttp.client.idn
+package sttp.model.idn
 
-import scala.scalanative.native._
+import scala.scalanative.native.{CInt, CString, Ptr, extern, link, name}
 
 @link("idn")
 @extern

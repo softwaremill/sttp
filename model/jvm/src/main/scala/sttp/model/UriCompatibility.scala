@@ -1,8 +1,8 @@
-package sttp.client
+package sttp.model
 
 import java.net.URLEncoder
 
-private[client] object UriCompatibility {
+private[sttp] object UriCompatibility {
 
   def encodeDNSHost(host: String): String = {
     Rfc3986.encode(Rfc3986.Host)(java.net.IDN.toASCII(host))

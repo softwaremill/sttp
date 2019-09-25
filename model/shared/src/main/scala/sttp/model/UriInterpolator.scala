@@ -1,8 +1,12 @@
-package sttp.client
-
-import sttp.model.MultiQueryParams
+package sttp.model
 
 import scala.annotation.tailrec
+
+trait UriInterpolator {
+  implicit class UriContext(val sc: StringContext) {
+    def uri(args: Any*): Uri = UriInterpolator.interpolate(sc, args: _*)
+  }
+}
 
 object UriInterpolator {
 

@@ -1,5 +1,5 @@
 package sttp.client
 
 object quick extends SttpApi {
-  implicit lazy val backend = CurlBackend()
+  implicit lazy val backend: SttpBackend[Identity, Nothing] = CurlBackend()
 }

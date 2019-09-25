@@ -1,10 +1,9 @@
-package sttp.client
+package sttp.model
 
 import java.net.URI
 
-import Uri.{QueryFragment, QueryFragmentEncoding, UserInfo}
-import Uri.QueryFragment.{KeyValue, Plain, Value}
-import sttp.model.MultiQueryParams
+import sttp.model.Uri.QueryFragment.{KeyValue, Plain, Value}
+import sttp.model.Uri.{QueryFragment, QueryFragmentEncoding, UserInfo}
 
 import scala.annotation.tailrec
 import scala.collection.immutable.Seq
@@ -179,7 +178,7 @@ case class Uri(
 
 }
 
-object Uri {
+object Uri extends UriInterpolator {
   def apply(host: String): Uri =
     Uri("http", None, host, None, Vector.empty, Vector.empty, None)
   def apply(host: String, port: Int): Uri =
@@ -236,7 +235,7 @@ object Uri {
       */
     case class Plain(v: String, encoding: QueryFragmentEncoding = QueryFragmentEncoding.Standard) extends QueryFragment
 
-    private[client] def fromMultiQueryParams(mqp: MultiQueryParams): Iterable[QueryFragment] = {
+    private[model] def fromMultiQueryParams(mqp: MultiQueryParams): Iterable[QueryFragment] = {
       mqp.toMultiSeq.flatMap {
         case (k, vs) =>
           vs match {

@@ -22,7 +22,11 @@ class AsyncHttpClientZioStreamsBackend[R] private (
     runtime: Runtime[R],
     asyncHttpClient: AsyncHttpClient,
     closeClient: Boolean
-) extends AsyncHttpClientBackend[Task, Stream[Throwable, ByteBuffer]](asyncHttpClient, TaskMonadAsyncError, closeClient) {
+) extends AsyncHttpClientBackend[Task, Stream[Throwable, ByteBuffer]](
+      asyncHttpClient,
+      TaskMonadAsyncError,
+      closeClient
+    ) {
 
   private val bufferSize = 16
 

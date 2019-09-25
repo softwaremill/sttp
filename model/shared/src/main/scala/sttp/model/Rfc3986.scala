@@ -1,6 +1,4 @@
-package sttp.client
-
-import sttp.client.internal._
+package sttp.model
 
 object Rfc3986 {
 
@@ -44,7 +42,7 @@ object Rfc3986 {
     sb.toString
   }
 
-  def decode(plusAsSpace: Boolean = false)(s: String, enc: String = Utf8): String = {
+  def decode(plusAsSpace: Boolean = false)(s: String, enc: String = "utf-8"): String = {
     // Copied from URLDecoder.decode with additional + handling (first case)
 
     var needToChange = false

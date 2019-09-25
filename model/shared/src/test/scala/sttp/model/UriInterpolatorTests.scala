@@ -1,7 +1,7 @@
-package sttp.client
+package sttp.model
 
 import org.scalatest.{FunSuite, Matchers}
-import sttp.model.MultiQueryParams
+import Uri._
 
 class UriInterpolatorTests extends FunSuite with Matchers {
   val v1 = "y"

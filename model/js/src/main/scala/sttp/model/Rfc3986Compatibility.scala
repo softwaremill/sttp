@@ -1,6 +1,6 @@
-package sttp.client
+package sttp.model
 
-object Rfc3986Compatibility {
+private[model] object Rfc3986Compatibility {
 
   def formatByte(byte: Byte): String = {
     // negative bytes have leading F on scalajs

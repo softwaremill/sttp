@@ -220,7 +220,13 @@ lazy val model = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .nativeSettings(commonNativeSettings: _*)
   .nativeSettings(only2_11settings)
   .jvmSettings(libraryDependencies ++= Seq(scalaTest % "test"))
-  .jsSettings(libraryDependencies ++= Seq("org.scalatest" %%% "scalatest" % scalaTestVersion % "test"))
+  .jsSettings(
+    libraryDependencies ++= Seq(
+      "org.scala-js" %%% "scalajs-dom" % "0.9.7",
+      "org.scalatest" %%% "scalatest" % scalaTestVersion % "test"
+    )
+  )
+  .jsSettings(browserTestSettings)
   .nativeSettings(
     libraryDependencies ++= Seq(
       "org.scala-native" %%% "test-interface" % scalaNativeTestInterfaceVersion,
@@ -250,7 +256,6 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   )
   .jsSettings(
     libraryDependencies ++= Seq(
-      "org.scala-js" %%% "scalajs-dom" % "0.9.7",
       "org.scalatest" %%% "scalatest" % scalaTestVersion % "test"
     ),
     jsDependencies ++= Seq(
@@ -262,7 +267,6 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .nativeSettings(testServerSettings(Test))
   .nativeSettings(
     libraryDependencies ++= Seq(
-      "org.scala-native" %%% "test-interface" % scalaNativeTestInterfaceVersion,
       "org.scalatest" %%% "scalatest" % scalaTestNativeVersion % "test"
     )
   )
