@@ -11,7 +11,7 @@ Which one to choose?
 
 * for simple exploratory requests, use the synchronous ``HttpURLConnectionBackend``
 * if you have Akka in your stack, use ``AkkaHttpBackend``
-* otherwise, if you are using ``Future``s, use ``AsyncHttpClientFutureBackend``
+* otherwise, if you are using ``Future``, use ``AsyncHttpClientFutureBackend``
 * finally, if you are using a functional effect wrapper, use one of the "functional" async-http-client backends
 
 Each backend has two type parameters:
