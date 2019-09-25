@@ -58,7 +58,7 @@ Usage example::
 
   implicit val serialization = org.json4s.native.Serialization
   
-  val response: Response[MyResponse] =
+  val response: Response[Either[ResponseError[io.circe.Error], MyResponse]] =
     basicRequest
       .post(uri"...")
       .body(requestPayload)
@@ -94,7 +94,7 @@ Usage example::
 
   val requestPayload: Payload = Payload(...)
 
-  val response: Response[MyResponse] =
+  val response: Response[Either[ResponseError[io.circe.Error], MyResponse]] =
     basicRequest
       .post(uri"...")
       .body(requestPayload)
