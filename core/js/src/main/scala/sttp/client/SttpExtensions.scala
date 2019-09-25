@@ -9,7 +9,11 @@ import sttp.model.Part
 trait SttpExtensions {
 
   def asFile(file: File, overwrite: Boolean = false): ResponseAs[Either[String, File], Nothing] = {
-    asEither(asStringAlways, ResponseAsFile(SttpFile.fromDomFile(file), overwrite).map(_.toDomFile))
+    asEither(asStringAlways, asFileAlways(file, overwrite))
+  }
+
+  def asFileAlways(file: File, overwrite: Boolean = false): ResponseAs[File, Nothing] = {
+    ResponseAsFile(SttpFile.fromDomFile(file), overwrite).map(_.toDomFile)
   }
 
   /**
