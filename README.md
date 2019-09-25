@@ -32,7 +32,7 @@ println(response.unsafeBody)
 
 sttp documentation is available at [sttp.readthedocs.io](http://sttp.readthedocs.io).
 
-scaladoc is available at [https://www.javadoc.io](https://www.javadoc.io/doc/com.softwaremill.sttp.client/core_2.12/2.0.0-M1)
+scaladoc is available at [https://www.javadoc.io](https://www.javadoc.io/doc/com.softwaremill.sttp.client/core_2.12/2.0.0-M2)
 
 You can also take a look at the [introductory blog](https://softwaremill.com/introducing-sttp-the-scala-http-client/)
 and its [follow-up](https://softwaremill.com/sttp-streaming-uri-interpolator/).
@@ -42,7 +42,7 @@ and its [follow-up](https://softwaremill.com/sttp-streaming-uri-interpolator/).
 If you are an [Ammonite](http://ammonite.io) user, you can quickly start experimenting with sttp by copy-pasting the following:
 
 ```scala
-import $ivy.`com.softwaremill.sttp.client::core:2.0.0-M1`
+import $ivy.`com.softwaremill.sttp.client::core:2.0.0-M2`
 import sttp.client.quick._
 sttp.get(uri"http://httpbin.org/ip").send()
 ```
@@ -54,7 +54,7 @@ This brings in the sttp API and an implicit, synchronous backend.
 Add the following dependency:
 
 ```scala
-"com.softwaremill.sttp.client" %% "core" % "2.0.0-M1"
+"com.softwaremill.sttp.client" %% "core" % "2.0.0-M2"
 ```
 
 Then, import:

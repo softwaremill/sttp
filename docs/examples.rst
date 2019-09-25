@@ -8,7 +8,7 @@ POST a form using the synchronous backend
 
 Required dependencies::
 
-  libraryDependencies ++= List("com.softwaremill.sttp.client" %% "core" % "2.0.0-M1")
+  libraryDependencies ++= List("com.softwaremill.sttp.client" %% "core" % "2.0.0-M2")
 
 Example code::
 
@@ -34,8 +34,8 @@ GET and parse JSON using the akka-http backend and json4s
 Required dependencies::
 
   libraryDependencies ++= List(
-    "com.softwaremill.sttp.client" %% "akka-http-backend" % "2.0.0-M1",
-    "com.softwaremill.sttp.client" %% "json4s" % "2.0.0-M1",
+    "com.softwaremill.sttp.client" %% "akka-http-backend" % "2.0.0-M2",
+    "com.softwaremill.sttp.client" %% "json4s" % "2.0.0-M2",
     "org.json4s" %% "json4s-native" % "3.6.0"
   )
 
@@ -70,7 +70,7 @@ Test an endpoint requiring multiple parameters
 
 Required dependencies::
 
-  libraryDependencies ++= List("com.softwaremill.sttp.client" %% "core" % "2.0.0-M1")
+  libraryDependencies ++= List("com.softwaremill.sttp.client" %% "core" % "2.0.0-M2")
 
 Example code::
 
