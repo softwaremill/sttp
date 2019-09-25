@@ -13,7 +13,7 @@ See also the `introduction to sttp <https://softwaremill.com/introducing-sttp-th
 Non-goals of the project
 ------------------------
 
-* implement a full HTTP client. Instead, sttp wraps existing HTTP clients, providing a consistent, programmer-friendly API. All network-related concerns such as sending the requests, connection pooling, receiving responses are delegated to the chosen backend
+* implement a full HTTP client. Instead, sttp client wraps existing HTTP clients, providing a consistent, programmer-friendly API. All network-related concerns such as sending the requests, connection pooling, receiving responses are delegated to the chosen backend
 * provide ultimate flexibility in defining the request. While it's possible to define *most* valid HTTP requests, e.g. some of the less common body chunking approaches aren't available
 
 How is sttp different from other libraries?

@@ -76,7 +76,7 @@ The Monix backend supports streaming (as both Monix and Async Http Client suppor
 
   val obs: Observable[ByteBuffer] =  ...
 
-  sttp
+  basicRequest
     .streamBody(obs)
     .post(uri"...")
 
@@ -92,8 +92,8 @@ And receive responses as an observable stream::
 
   implicit val sttpBackend = AsyncHttpClientMonixBackend()
   
-  val response: Task[Response[Observable[ByteBuffer]]] = 
-    sttp
+  val response: Task[Response[Either[String, Observable[ByteBuffer]]]] =
+    basicRequest
       .post(uri"...")
       .response(asStream[Observable[ByteBuffer]])
       .readTimeout(Duration.Inf)
@@ -118,7 +118,7 @@ Requests can be sent with a streaming body like this::
 
   val stream: Stream[IO, ByteBuffer] = ...
 
-  sttp
+  basicRequest
     .streamBody(stream)
     .post(uri"...")
 
@@ -135,8 +135,8 @@ Responses can also be streamed::
   implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.Implicits.global)
   implicit val sttpBackend = AsyncHttpClientFs2Backend[IO]()
 
-  val response: IO[Response[Stream[IO, ByteBuffer]]] =
-    sttp
+  val response: IO[Response[Either[String, Stream[IO, ByteBuffer]]]] =
+    basicRequest
       .post(uri"...")
       .response(asStream[Stream[IO, ByteBuffer]])
       .readTimeout(Duration.Inf)

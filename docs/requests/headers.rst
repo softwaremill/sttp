@@ -11,11 +11,12 @@ While most headers should be set only once on a request, HTTP allows setting a h
 
 There are also variants of this method accepting a number of headers::
 
-  def header(k: String, v: String, replaceExisting: Boolean = false)
+  def header(h: Header, replaceExisting: Boolean = false)
+  def header(k: String, v: String)
+  def header(k: String, v: String, replaceExisting: Boolean)
   def headers(hs: Map[String, String])
   def headers(hs: (String, String)*)
-
-Both of the ``headers`` append the given headers to the ones currently in the request, without removing duplicates.
+  def headers(hs: Header*)
 
 Common headers
 --------------

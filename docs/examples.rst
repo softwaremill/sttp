@@ -16,7 +16,7 @@ Example code::
 
   val signup = Some("yes")
 
-  val request = sttp
+  val request = basicRequest
     // send the body as form data (x-www-form-urlencoded)
     .body(Map("name" -> "John", "surname" -> "doe"))
     // use an optional parameter in the URI
@@ -49,13 +49,14 @@ Example code::
 
   case class HttpBinResponse(origin: String, headers: Map[String, String])
 
-  implicit val serialization =  org.json4s.native.Serialization
-  val request = sttp
+  implicit val serialization = org.json4s.native.Serialization
+  val request = basicRequest
     .get(uri"https://httpbin.org/get")
     .response(asJson[HttpBinResponse])
 
   implicit val backend = AkkaHttpBackend()
-  val response: Future[Response[HttpBinResponse]] = request.send()
+  val response: Future[Response[Either[ResponseError[Exception], HttpBinResponse]]] =
+    request.send()
 
   for {
     r <- response
@@ -85,14 +86,14 @@ Example code::
 
   val parameters1 = Map("filter" -> "name=mary", "sort" -> "asc")
   println(
-    sttp
+    basicRequest
       .get(uri"http://example.org?search=true&$parameters1")
       .send()
       .unsafeBody)
 
   val parameters2 = Map("sort" -> "desc")
   println(
-    sttp
+    basicRequest
       .get(uri"http://example.org/secret/read?$parameters2")
       .send()
       .unsafeBody)

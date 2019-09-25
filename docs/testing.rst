@@ -129,7 +129,7 @@ For example, if you want to return a JSON response, simply use `.withResponse(St
 
   implicit val testingBackend = SttpBackendStub.synchronous
     .whenRequestMatches(_ => true)
-    .thenRespond("" {"username": "john", "age": 65 } """)
+    .thenRespond(""" {"username": "john", "age": 65 } """)
 
   def parseUserJson(a: Array[Byte]): User = ...
 

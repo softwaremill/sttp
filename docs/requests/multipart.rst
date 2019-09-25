@@ -3,7 +3,7 @@
 Multipart requests
 ==================
 
-To set a multipart body on a request, the ``multipartBody`` method should be used (instead of ``body``). Each body part is represented as an instance of ``Multipart``, which can be conveniently constructed using ``multipart`` methods coming from the ``com.softwaremill.sttp`` package.
+To set a multipart body on a request, the ``multipartBody`` method should be used (instead of ``body``). Each body part is represented as an instance of ``Part[BasicRequestBody]``, which can be conveniently constructed using ``multipart`` methods coming from the ``sttp.client`` package.
 
 A single part of a multipart request consist of a mandatory name and a payload of type:
 

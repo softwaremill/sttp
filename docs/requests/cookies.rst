@@ -12,6 +12,7 @@ Cookies can also be set using the following methods::
   def cookie(nv: (String, String))
   def cookie(n: String, v: String)
   def cookies(nvs: (String, String)*)
+  def cookies(cs: Iterable[Cookie])
 
 Cookies from responses
 ----------------------
@@ -24,7 +25,7 @@ It is often necessary to copy cookies from a response, e.g. after a login reques
   // Usage
   basicRequest.cookies(response)
 
-Or, it's also possible to store only the ``sttp.client.Cookie`` objects (a sequence of which can be obtained from a response), and set the on the request::
+Or, it's also possible to store only the ``sttp.model.Cookie`` objects (a sequence of which can be obtained from a response), and set the on the request::
 
   def cookies(cs: Seq[Cookie])
 

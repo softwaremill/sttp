@@ -1,7 +1,8 @@
-HTTP Constants
-==============
+HTTP Model
+==========
 
-sttp provides constants for common HTTP header names, media types, and status codes.
+`sttp model <https://github.com/softwaremill/sttp-model>`_ is a stand-alone project which provides a very basic HTTP
+model, along with constants for common HTTP header names, media types, and status codes.
 
 Constants for common header names are provided by the ``HeaderNames`` `trait and object <https://github.com/softwaremill/sttp/blob/master/core/shared/src/main/scala/com/softwaremill/sttp/HeaderNames.scala>`_.
 

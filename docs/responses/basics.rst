@@ -38,15 +38,4 @@ If the cookies from a response should be set without changes on the request, thi
 Obtaining the response body
 ---------------------------
 
-The response body can be obtained through the ``.body: Either[String, T]`` lazy value or the ``.rawErrorBody: Either[Array[Byte], T]`` property. ``T`` is the body deserialized as specified in the request - see the next section on :ref:`response body specifications <responsebodyspec>`.
-
-The response body is an either as the body can only be deserialized if the server responded with one of the expected status codes (by default it's any 2xx code). Otherwise, the response body is most probably an error message.
-
-Hence, ``response.body`` will be a:
-
-* ``Left(errorMessage)`` if the request is successful, but response code is not expected (non 2xx by default).
-* ``Right(deserializedBody``) if the request is successful and the response code is expected (2xx by default).
-
-To learn how to obtain non 2xx response body see :ref:`this section <responsebodyspec_handlenon2xx>`.
-
-You can also forcibly get the deserialized body, regardless of the response code and risking an exception being thrown, using the ``response.unsafeBody`` method.
+The response body can be obtained through the ``.body: T`` property. ``T`` is the body deserialized as specified in the request description - see the next section on :ref:`response body specifications <responsebodyspec>`.

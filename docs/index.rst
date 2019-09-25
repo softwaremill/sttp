@@ -3,9 +3,9 @@ sttp: the Scala HTTP client you always wanted!
 
 Welcome!
 
-`sttp <https://github.com/softwaremill/sttp>`_ is an open-source library which provides a clean, programmer-friendly API to define HTTP requests and execute them using one of the wrapped backends, such as `akka-http <https://doc.akka.io/docs/akka-http/current/scala/http/>`_, `async-http-client <https://github.com/AsyncHttpClient/async-http-client>`_, `http4s <https://http4s.org>`_ or `OkHttp <http://square.github.io/okhttp/>`_.
+`sttp client <https://github.com/softwaremill/sttp>`_ is an open-source library which provides a clean, programmer-friendly API to describe HTTP requests and execute them using one of the wrapped backends, such as `akka-http <https://doc.akka.io/docs/akka-http/current/scala/http/>`_, `async-http-client <https://github.com/AsyncHttpClient/async-http-client>`_, `http4s <https://http4s.org>`_ or `OkHttp <http://square.github.io/okhttp/>`_.
 
-Here's a very quick example of sttp in action::
+Here's a very quick example of sttp client in action::
 
   import sttp.client._
 
@@ -35,7 +35,7 @@ For more examples, see the :ref:`usage examples <usage_examples>` section. Or ex
    goals
    community
    examples
-   constants
+   model
 
 .. toctree::
    :maxdepth: 2

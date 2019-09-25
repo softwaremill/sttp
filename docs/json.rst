@@ -25,8 +25,8 @@ This module adds a method to the request and a function that can be given to a r
   // for the request Payload, and a decoder for the MyResponse
   val requestPayload: Payload = ???
   
-  val response: Response[Either[DeserializationError[io.circe.Error], MyResponse]] =
-    sttp
+  val response: Response[Either[ResponseError[io.circe.Error], MyResponse]] =
+    basicRequest
       .post(uri"...")
       .body(requestPayload)
       .response(asJson[MyResponse])
@@ -56,10 +56,10 @@ Usage example::
 
   val requestPayload: Payload = Payload(...)
 
-  implicit val serialization =  org.json4s.native.Serialization
+  implicit val serialization = org.json4s.native.Serialization
   
   val response: Response[MyResponse] =
-    sttp
+    basicRequest
       .post(uri"...")
       .body(requestPayload)
       .response(asJson[MyResponse])
@@ -95,7 +95,7 @@ Usage example::
   val requestPayload: Payload = Payload(...)
 
   val response: Response[MyResponse] =
-    sttp
+    basicRequest
       .post(uri"...")
       .body(requestPayload)
       .response(asJson[MyResponse])

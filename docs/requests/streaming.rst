@@ -19,7 +19,7 @@ For example, using the :ref:`akka-http backend <akkahttp>`, a request with a str
   
   val source: Source[ByteString, Any] =   ...
   
-  sttp
+  basicRequest
     .streamBody(source)
     .post(uri"...")
 

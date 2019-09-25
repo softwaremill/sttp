@@ -32,7 +32,7 @@ To set the request body as a stream::
   
   val source: Source[ByteString, Any] =   ...
   
-  sttp
+  basicRequest
     .streamBody(source)
     .post(uri"...")
 
@@ -46,8 +46,8 @@ To receive the response body as a stream::
   
   implicit val sttpBackend = AkkaHttpBackend()
   
-  val response: Future[Response[Source[ByteString, Any]]] = 
-    sttp
+  val response: Future[Response[Either[String, Source[ByteString, Any]]]] =
+    basicRequest
       .post(uri"...")
       .response(asStream[Source[ByteString, Any]])
       .send()

@@ -126,7 +126,7 @@ Below is an example on how to implement a backend wrapper, which sends metrics f
     new CloudMetricsServer()
   )
 
-  sttp
+  basicRequest
     .get(uri"http://company.com/api/service1")
     .tag("metric", "service1")
     .send()
@@ -178,7 +178,7 @@ In some cases it's possible to implement a generic retry mechanism; such a mecha
 Note that some backends also have built-in retry mechanisms, e.g. `akka-http <https://doc.akka.io/docs/akka-http/current/scala/http/client-side/host-level.html#retrying-a-request>`_ or `OkHttp <http://square.github.io/okhttp>`_ (see the builder's ``retryOnConnectionFailure`` method).
 
 Example new backend
---------------------------------
+-------------------
 
 Implementing a new backend is made easy as the tests are published in the ``core`` jar file under the ``tests`` classifier. Simply add the follow dependencies to your ``build.sbt``::
 

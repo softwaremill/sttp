@@ -20,7 +20,7 @@ The backend obtains the current trace context using default Brave's propagation 
 
   val parent: TraceContext = ...
 
-  sttp
+  basicRequest
     .get(...)
     .tagWithTraceContext(parent))
 

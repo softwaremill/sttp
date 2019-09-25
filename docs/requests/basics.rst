@@ -7,11 +7,11 @@ As mentioned in the :ref:`quickstart <quickstart>`, the following import will be
 
   import sttp.client._
 
-This brings into scope ``sttp``, the starting request. This request can be customised, each time yielding a new, immutable request definition (unless a mutable body is set on the request, such as a byte array). As the request definition is immutable, it can be freely stored in values, shared across threads, and customized multiple times in various ways.
+This brings into scope ``basicRequest``, the starting request. This request can be customised, each time yielding a new, immutable request definition (unless a mutable body is set on the request, such as a byte array). As the request definition is immutable, it can be freely stored in values, shared across threads, and customized multiple times in various ways.
 
 For example, we can set a cookie, ``String`` -body and specify that this should be a ``POST`` request to a given URI::
 
-  val request = sttp
+  val request = basicRequest
       .cookie("login", "me")
       .body("This is a test")
       .post(uri"http://endpoint.com/secret")
@@ -44,8 +44,8 @@ Starting requests
 
 sttp provides two starting requests:
 
-* ``sttp``, which is an empty request with the ``Accept-Encoding: gzip, deflate`` header added. That's the one that is most commonly used.
-* ``empty``, a completely empty request, with no headers at all.
+* ``basicRequest``, which is an empty request with the ``Accept-Encoding: gzip, deflate`` header added. That's the one that is most commonly used.
+* ``emptyRequest``, a completely empty request, with no headers at all.
 
 Both of these requests will by default read the response body into a UTF-8 ``String``. How the response body is handled is also part of the request definition. See the section on :ref:`response body specifications <responsebodyspec>` for more details on how to customize that.
 
@@ -56,12 +56,12 @@ sttp comes with builtin request to curl converter. To convert request to curl in
 
 For example converting given request::
 
-    sttp.get(uri"http://httpbin.org/ip").toCurl
+    basicRequest.get(uri"http://httpbin.org/ip").toCurl
 
 will result in following curl command::
 
     curl -L --max-redirs 32 -X GET "http://httpbin.org/ip"
 
-Note that the ```Accept-Encoding`` header, which is added by default to all requests (```Accept-Encoding: gzip, deflate``)
+Note that the ```Accept-Encoding`` header, which is added by default to all requests (``Accept-Encoding: gzip, deflate``)
 is filtered out from the generated command, so that when running a request from the command line, the result has higher
 chance of being human-readable, and not compressed.

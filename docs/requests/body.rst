@@ -83,7 +83,7 @@ For example, here's how to write a custom serializer for a case class, with seri
     StringBody(serialized, "UTF-8", Some("application/csv"))
   }
 
-  sttp.body(Person("mary", "smith", 67))
+  basicRequest.body(Person("mary", "smith", 67))
 
 See the implementations of the ``BasicRequestBody`` trait for more options.
 
