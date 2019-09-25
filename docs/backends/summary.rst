@@ -7,6 +7,13 @@ sttp supports a number of synchronous and asynchronous backends. It's the backen
 
 Choosing the right backend depends on a number of factors: if you are using sttp to explore some data, or is it a production system; are you using a synchronous, blocking architecture or an asynchronous one; do you work mostly with Scala's ``Future``, or maybe you use some form of a ``Task`` abstraction; finally, if you want to stream requests/responses, or not.
 
+Which one to choose?
+
+* for simple exploratory requests, use the synchronous ``HttpURLConnectionBackend``
+* if you have Akka in your stack, use ``AkkaHttpBackend``
+* otherwise, if you are using ``Future``s, use ``AsyncHttpClientFutureBackend``
+* finally, if you are using a functional effect wrapper, use one of the "functional" async-http-client backends
+
 Each backend has two type parameters:
 
 * ``R[_]``, the type constructor in which responses are wrapped. That is, when you invoke ``send()`` on a request description, do you get a ``Response[_]`` directly, or is it wrapped in a ``Future`` or a ``Task``?
