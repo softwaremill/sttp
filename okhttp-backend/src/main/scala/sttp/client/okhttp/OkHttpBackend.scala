@@ -22,11 +22,11 @@ import okhttp3.{
 import okio.{BufferedSink, Okio}
 import sttp.client.ResponseAs.EagerResponseHandler
 import sttp.client.SttpBackendOptions.Proxy
+import sttp.client.internal.FileHelpers
 import sttp.model._
 import sttp.client.monad.{FutureMonad, IdMonad, MonadAsyncError, MonadError}
 import sttp.client.{
   BasicResponseAs,
-  FileHelpers,
   IgnoreResponse,
   NoBody,
   RequestBody,

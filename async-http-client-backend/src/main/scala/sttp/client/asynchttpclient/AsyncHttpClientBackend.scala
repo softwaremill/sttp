@@ -36,7 +36,6 @@ import sttp.client.{
   ByteArrayBody,
   ByteBufferBody,
   FileBody,
-  FileHelpers,
   IgnoreResponse,
   InputStreamBody,
   MappedResponseAs,

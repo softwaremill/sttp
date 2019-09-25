@@ -1,12 +1,10 @@
-package sttp.client
+package sttp.client.internal
 
 import java.io.{File, FileOutputStream, IOException, InputStream}
 
-import sttp.client.internal._
+private[client] object FileHelpers {
 
-object FileHelpers {
-
-  private[client] def saveFile(file: File, is: InputStream, overwrite: Boolean): File = {
+  def saveFile(file: File, is: InputStream, overwrite: Boolean): File = {
     if (!file.exists()) {
       if (file.getParentFile != null) {
         file.getParentFile.mkdirs()
