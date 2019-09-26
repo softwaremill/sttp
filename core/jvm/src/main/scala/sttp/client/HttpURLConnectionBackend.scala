@@ -9,7 +9,7 @@ import java.util.concurrent.ThreadLocalRandom
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
 
 import com.github.ghik.silencer.silent
-import sttp.client.internal.{SttpFile, _}
+import sttp.client.internal._
 import sttp.model._
 import sttp.client.monad.{IdMonad, MonadError}
 import sttp.model.StatusCode
@@ -261,9 +261,8 @@ class HttpURLConnectionBackend private (
         throw new IllegalStateException()
 
       case ResponseAsFile(output) =>
-        val f = FileHelpers.saveFile(output.toFile, is)
-        SttpFile.fromFile(f)
-
+        FileHelpers.saveFile(output.toFile, is)
+        output
     }
   }
 

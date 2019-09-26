@@ -51,6 +51,21 @@ trait StreamingTest[R[_], S]
       }
   }
 
+  "receive a stream or error" in {
+    basicRequest
+      .post(uri"$endpoint/streaming/echo")
+      .body(body)
+      .response(asStream[S])
+      .send()
+      .toFuture()
+      .flatMap { response =>
+        bodyConsumer(response.body.right.get).toFuture()
+      }
+      .map { responseBody =>
+        responseBody shouldBe body
+      }
+  }
+
   "receive a mapped stream" in {
     basicRequest
       .post(uri"$endpoint/streaming/echo")

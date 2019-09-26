@@ -1,11 +1,13 @@
 package sttp.client.asynchttpclient.monix
 
+import java.io.File
 import java.nio.ByteBuffer
 
 import io.netty.buffer.{ByteBuf, Unpooled}
 import monix.eval.Task
 import monix.execution.Scheduler
 import monix.reactive.Observable
+import monix.nio.file._
 import org.asynchttpclient.{
   AsyncHttpClient,
   AsyncHttpClientConfig,
@@ -33,12 +35,19 @@ class AsyncHttpClientMonixBackend private (asyncHttpClient: AsyncHttpClient, clo
     Observable.fromReactivePublisher(p)
 
   override protected def publisherToBytes(p: Publisher[ByteBuffer]): Task[Array[Byte]] = {
-
     val bytes = Observable
       .fromReactivePublisher(p)
       .foldLeftL(ByteBuffer.allocate(0))(concatByteBuffers)
 
     bytes.map(_.array())
+  }
+
+  override protected def publisherToFile(p: Publisher[ByteBuffer], f: File): Task[Unit] = {
+    Observable
+      .fromReactivePublisher(p)
+      .map(_.array())
+      .consumeWith(writeAsync(f.toPath))
+      .map(_ => ())
   }
 }
 

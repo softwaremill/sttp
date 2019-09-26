@@ -312,6 +312,9 @@ lazy val monix = crossProject(JSPlatform, JVMPlatform)
   .crossType(CrossType.Full)
   .in(file("implementations/monix"))
   .jvmSettings(commonJvmSettings: _*)
+  .jvmSettings(
+    libraryDependencies ++= Seq("io.monix" %% "monix-nio" % "0.0.5")
+  )
   .jsSettings(commonJsSettings: _*)
   .jsSettings(browserTestSettings)
   .jsSettings(testServerSettings(Test))
@@ -393,8 +396,8 @@ lazy val asyncHttpClientZioStreamsBackend: Project =
   asyncHttpClientBackendProject("zio-streams")
     .settings(
       libraryDependencies ++= Seq(
-        "dev.zio" %% "zio-streams" % "1.0.0-RC12-1",
-        "dev.zio" %% "zio-interop-reactivestreams" % "1.0.3.0-RC1"
+        "dev.zio" %% "zio-streams" % "1.0.0-RC13",
+        "dev.zio" %% "zio-interop-reactivestreams" % "1.0.3.2-RC1"
       )
     )
     .settings(only2_11_and_2_12_settings)
@@ -408,11 +411,13 @@ lazy val asyncHttpClientCatsBackend: Project =
   asyncHttpClientBackendProject("cats")
     .dependsOn(catsJVM % "compile->compile;test->test")
 
+val fs2Version = "2.0.1"
 lazy val asyncHttpClientFs2Backend: Project =
   asyncHttpClientBackendProject("fs2")
     .settings(
       libraryDependencies ++= Seq(
-        "co.fs2" %% "fs2-reactive-streams" % "2.0.0"
+        "co.fs2" %% "fs2-reactive-streams" % fs2Version,
+        "co.fs2" %% "fs2-io" % fs2Version
       )
     )
     .dependsOn(catsJVM % "compile->compile;test->test")

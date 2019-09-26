@@ -36,12 +36,14 @@ package object internal {
     os.toByteArray
   }
 
-  private[client] def concatByteBuffers(bb1: ByteBuffer, bb2: ByteBuffer): ByteBuffer =
-    ByteBuffer
+  private[client] def concatByteBuffers(bb1: ByteBuffer, bb2: ByteBuffer): ByteBuffer = {
+    val buf = ByteBuffer
       .allocate(bb1.array().length + bb2.array().length)
       .put(bb1)
       .put(bb2)
-
+    buf.rewind()
+    buf
+  }
   @implicitNotFound(
     "This is a partial request, the method & url are not specified. Use " +
       ".get(...), .post(...) etc. to obtain a non-partial request."

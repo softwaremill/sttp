@@ -1,5 +1,6 @@
 package sttp.client.asynchttpclient.ziostreams
 
+import java.io.{File, FileOutputStream}
 import java.nio.ByteBuffer
 
 import io.netty.buffer.{ByteBuf, Unpooled}
@@ -15,6 +16,7 @@ import sttp.client.impl.zio.TaskMonadAsyncError
 import sttp.client.internal._
 import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 import zio._
+import zio.blocking.Blocking
 import zio.interop.reactiveStreams._
 import zio.stream._
 
@@ -37,7 +39,17 @@ class AsyncHttpClientZioStreamsBackend[R] private (
     p.toStream(bufferSize)
 
   override protected def publisherToBytes(p: Publisher[ByteBuffer]): Task[Array[Byte]] =
-    p.toStream(bufferSize).foldLeft(ByteBuffer.allocate(0))(concatByteBuffers).map(_.array())
+    p.toStream(bufferSize).fold(ByteBuffer.allocate(0))(concatByteBuffers).map(_.array())
+
+  override protected def publisherToFile(p: Publisher[ByteBuffer], f: File): Task[Unit] = {
+    blocking
+      .effectBlocking(new FileOutputStream(f))
+      .flatMap { os =>
+        p.toStream(bufferSize).map(b => Chunk.fromArray(b.array())).run(ZSink.fromOutputStream(os))
+      }
+      .unit
+      .provide(Blocking.Live)
+  }
 }
 
 object AsyncHttpClientZioStreamsBackend {

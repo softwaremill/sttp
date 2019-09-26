@@ -1,7 +1,9 @@
 package sttp.client.asynchttpclient
 
+import java.io.{ByteArrayInputStream, File}
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
+import java.util.concurrent.ConcurrentLinkedQueue
 
 import com.github.ghik.silencer.silent
 import io.netty.buffer.ByteBuf
@@ -11,7 +13,6 @@ import org.asynchttpclient.handler.StreamedAsyncHandler
 import org.asynchttpclient.proxy.ProxyServer
 import org.asynchttpclient.request.body.multipart.{ByteArrayPart, FilePart, StringPart}
 import org.asynchttpclient.{
-  AsyncCompletionHandler,
   AsyncHandler,
   AsyncHttpClient,
   DefaultAsyncHttpClient,
@@ -26,13 +27,10 @@ import org.asynchttpclient.{
 }
 import org.reactivestreams.{Publisher, Subscriber, Subscription}
 import sttp.client
-import sttp.client.ResponseAs.EagerResponseHandler
 import sttp.client.SttpBackendOptions.ProxyType.{Http, Socks}
-import sttp.client.internal.{SttpFile, _}
+import sttp.client.internal._
 import sttp.client.monad.{MonadAsyncError, MonadError}
-import sttp.model.{Header, HeaderNames, MediaTypes, Part, StatusCode}
 import sttp.client.{
-  BasicResponseAs,
   ByteArrayBody,
   ByteBufferBody,
   FileBody,
@@ -54,10 +52,11 @@ import sttp.client.{
   SttpBackendOptions,
   _
 }
+import sttp.model._
 
 import scala.collection.JavaConverters._
 import scala.language.higherKinds
-import scala.util.{Failure, Try}
+import scala.util.Try
 
 abstract class AsyncHttpClientBackend[R[_], S](
     asyncHttpClient: AsyncHttpClient,
@@ -72,14 +71,9 @@ abstract class AsyncHttpClientBackend[R[_], S](
     monad.flatMap(preparedRequest) { ahcRequest =>
       monad.flatten(monad.async[R[Response[T]]] { cb =>
         def success(r: R[Response[T]]): Unit = cb(Right(r))
-
         def error(t: Throwable): Unit = cb(Left(t))
 
-        if (isResponseAsStream(r.response)) {
-          ahcRequest.execute(streamingAsyncHandler(r.response, success, error))
-        } else {
-          ahcRequest.execute(eagerAsyncHandler(r.response, success, error))
-        }
+        ahcRequest.execute(streamingAsyncHandler(r.response, success, error))
       })
     }
   }
@@ -90,20 +84,17 @@ abstract class AsyncHttpClientBackend[R[_], S](
 
   protected def publisherToStreamBody(p: Publisher[ByteBuffer]): S
 
-  protected def publisherToBytes(p: Publisher[ByteBuffer]): R[Array[Byte]]
+  protected def publisherToBytes(p: Publisher[ByteBuffer]): R[Array[Byte]] = {
+    monad.async { cb =>
+      def success(r: ByteBuffer): Unit = cb(Right(r.array()))
+      def error(t: Throwable): Unit = cb(Left(t))
 
-  private def eagerAsyncHandler[T](
-      responseAs: ResponseAs[T, S],
-      success: R[Response[T]] => Unit,
-      error: Throwable => Unit
-  ): AsyncHandler[Unit] = {
-
-    new AsyncCompletionHandler[Unit] {
-      override def onCompleted(response: AsyncResponse): Unit =
-        success(readEagerResponse(response, responseAs))
-
-      override def onThrowable(t: Throwable): Unit = error(t)
+      p.subscribe(new SimpleSubscriber(success, error))
     }
+  }
+
+  protected def publisherToFile(p: Publisher[ByteBuffer], f: File): R[Unit] = {
+    monad.map(publisherToBytes(p))(bytes => FileHelpers.saveFile(f, new ByteArrayInputStream(bytes)))
   }
 
   private def streamingAsyncHandler[T](
@@ -160,19 +151,33 @@ abstract class AsyncHttpClientBackend[R[_], S](
 
           val baseResponse = readResponseNoBody(builder.build())
           val p = publisher.getOrElse(EmptyPublisher)
-          val s = publisherToStreamBody(p)
-          val b = handleBody(s, responseAs, baseResponse).asInstanceOf[T]
+          val b = handleBody(p, responseAs, baseResponse)
 
-          success(monad.unit(baseResponse.copy(body = b)))
+          success(monad.map(b)(t => baseResponse.copy(body = t)))
         }
       }
 
-      private def handleBody(b: Any, r: ResponseAs[_, _], responseMetadata: ResponseMetadata): Any = r match {
-        case MappedResponseAs(raw, g) =>
-          g.asInstanceOf[(Any, ResponseMetadata) => Any](handleBody(b, raw, responseMetadata), responseMetadata)
-        case _: ResponseAsStream[_, _] => b
-        case _                         => throw new IllegalStateException("Requested a streaming response, trying to read eagerly.")
-      }
+      private def handleBody[TT](
+          p: Publisher[ByteBuffer],
+          r: ResponseAs[TT, _],
+          responseMetadata: ResponseMetadata
+      ): R[TT] =
+        r match {
+          case MappedResponseAs(raw, g) =>
+            val nested = handleBody(p, raw, responseMetadata)
+            monad.map(nested)(g(_, responseMetadata))
+          case ResponseAsFromMetadata(f) => handleBody(p, f(responseMetadata), responseMetadata)
+          case _: ResponseAsStream[_, _] => monad.unit(publisherToStreamBody(p).asInstanceOf[TT])
+          case IgnoreResponse            =>
+            // getting the body and discarding it
+            monad.map(publisherToBytes(p))(_ => ())
+
+          case ResponseAsByteArray =>
+            publisherToBytes(p)
+
+          case ResponseAsFile(file) =>
+            monad.map(publisherToFile(p, file.toFile))(_ => file)
+        }
 
       override def onThrowable(t: Throwable): Unit = {
         error(t)
@@ -253,16 +258,6 @@ abstract class AsyncHttpClientBackend[R[_], S](
     rb.addBodyPart(bodyPart)
   }
 
-  private def readEagerResponse[T](
-      response: AsyncResponse,
-      responseAs: ResponseAs[T, S]
-  ): R[Response[T]] = {
-    val base = readResponseNoBody(response)
-    val body = eagerResponseHandler(response).handle(responseAs, monad, base)
-
-    monad.map(body)(b => base.copy(body = b))
-  }
-
   private def readResponseNoBody(response: AsyncResponse): Response[Unit] = {
     client.Response(
       (),
@@ -275,37 +270,6 @@ abstract class AsyncHttpClientBackend[R[_], S](
         .toList,
       Nil
     )
-  }
-
-  private def eagerResponseHandler(response: AsyncResponse) =
-    new EagerResponseHandler[S] {
-      override def handleBasic[T](bra: BasicResponseAs[T, S]): Try[T] =
-        bra match {
-          case IgnoreResponse =>
-            // getting the body and discarding it
-            response.getResponseBodyAsBytes
-            Try(())
-
-          case ResponseAsByteArray =>
-            Try(response.getResponseBodyAsBytes)
-
-          case ResponseAsStream() =>
-            Failure(new IllegalStateException("Requested a streaming response, trying to read eagerly."))
-
-          case ResponseAsFile(file) =>
-            Try {
-              val f = FileHelpers.saveFile(file.toFile, response.getResponseBodyAsStream)
-              SttpFile.fromFile(f)
-            }
-        }
-    }
-
-  private def isResponseAsStream(r: ResponseAs[_, _]): Boolean = {
-    r match {
-      case _: ResponseAsStream[_, _] => true
-      case MappedResponseAs(raw, _)  => isResponseAsStream(raw)
-      case _                         => false
-    }
   }
 
   override def close(): R[Unit] = {
@@ -358,8 +322,49 @@ object AsyncHttpClientBackend {
   }
 }
 
-object EmptyPublisher extends Publisher[ByteBuffer] {
+private[asynchttpclient] object EmptyPublisher extends Publisher[ByteBuffer] {
   override def subscribe(s: Subscriber[_ >: ByteBuffer]): Unit = {
     s.onComplete()
+  }
+}
+
+// based on org.asynchttpclient.request.body.generator.ReactiveStreamsBodyGenerator.SimpleSubscriber
+private[asynchttpclient] class SimpleSubscriber(success: ByteBuffer => Unit, error: Throwable => Unit)
+    extends Subscriber[ByteBuffer] {
+  private var subscription: Subscription = _
+  private val chunks = new ConcurrentLinkedQueue[Array[Byte]]()
+  private var size = 0
+
+  override def onSubscribe(s: Subscription): Unit = {
+    assert(s != null)
+    // If someone has made a mistake and added this Subscriber multiple times, let's handle it gracefully
+    if (this.subscription != null) {
+      s.cancel() // Cancel the additional subscription
+
+    } else {
+      subscription = s
+      subscription.request(Long.MaxValue)
+    }
+  }
+
+  @silent("discarded")
+  override def onNext(b: ByteBuffer): Unit = {
+    assert(b != null)
+    val a = b.array()
+    size += a.length
+    chunks.add(a)
+  }
+
+  override def onError(t: Throwable): Unit = {
+    assert(t != null)
+    chunks.clear()
+    error(t)
+  }
+
+  override def onComplete(): Unit = {
+    val result = ByteBuffer.allocate(size)
+    chunks.asScala.foreach(result.put)
+    chunks.clear()
+    success(result)
   }
 }

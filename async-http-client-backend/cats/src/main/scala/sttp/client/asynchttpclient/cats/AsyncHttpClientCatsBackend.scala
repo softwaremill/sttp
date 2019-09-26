@@ -1,5 +1,6 @@
 package sttp.client.asynchttpclient.cats
 
+import java.io.{ByteArrayInputStream, File}
 import java.nio.ByteBuffer
 
 import cats.effect.implicits._
@@ -14,7 +15,9 @@ import org.asynchttpclient.{
 import org.reactivestreams.Publisher
 import sttp.client.asynchttpclient.AsyncHttpClientBackend
 import sttp.client.impl.cats.CatsMonadAsyncError
+import sttp.client.internal.FileHelpers
 import sttp.client.{FollowRedirectsBackend, Request, Response, SttpBackend, SttpBackendOptions}
+import cats.implicits._
 
 import scala.language.higherKinds
 
@@ -37,8 +40,11 @@ class AsyncHttpClientCatsBackend[F[_]: Async: ContextShift] private (
   override protected def publisherToStreamBody(p: Publisher[ByteBuffer]): Nothing =
     throw new IllegalStateException("This backend does not support streaming")
 
-  override protected def publisherToBytes(p: Publisher[ByteBuffer]): F[Array[Byte]] =
-    throw new IllegalStateException("This backend does not support streaming")
+  override protected def publisherToFile(p: Publisher[ByteBuffer], f: File): F[Unit] = {
+    publisherToBytes(p)
+      .guarantee(implicitly[ContextShift[F]].shift)
+      .map(bytes => FileHelpers.saveFile(f, new ByteArrayInputStream(bytes)))
+  }
 }
 
 object AsyncHttpClientCatsBackend {

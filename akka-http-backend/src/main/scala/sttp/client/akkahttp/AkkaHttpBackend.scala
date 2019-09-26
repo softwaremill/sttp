@@ -1,6 +1,6 @@
 package sttp.client.akkahttp
 
-import java.io.{File, IOException, UnsupportedEncodingException}
+import java.io.{File, UnsupportedEncodingException}
 
 import akka.actor.ActorSystem
 import akka.event.LoggingAdapter

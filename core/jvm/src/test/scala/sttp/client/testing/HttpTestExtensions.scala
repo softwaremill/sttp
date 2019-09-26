@@ -190,6 +190,15 @@ trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
       }
     }
 
+    "download a binary file using asFile, overwriting its current content" in {
+      withTemporaryFile(Some(Array(1))) { file =>
+        val req = basicRequest.get(uri"$endpoint/download/binary").response(asFile(file))
+        req.send().toFuture().flatMap { resp =>
+          md5FileHash(resp.body.right.get).map { _ shouldBe binaryFileMD5Hash }
+        }
+      }
+    }
+
     "download a text file using asFile" in {
       withTemporaryNonExistentFile { file =>
         val req = basicRequest.get(uri"$endpoint/download/text").response(asFile(file))
