@@ -148,8 +148,7 @@ class AkkaHttpBackend private (
 
       case IgnoreResponse =>
         // todo: Replace with HttpResponse#discardEntityBytes() once https://github.com/akka/akka-http/issues/1459 is resolved
-        hr.entity.dataBytes.runWith(Sink.ignore)
-        Future.successful(())
+        hr.entity.dataBytes.runWith(Sink.ignore).map(_ => ())
 
       case ResponseAsByteArray =>
         asByteArray
