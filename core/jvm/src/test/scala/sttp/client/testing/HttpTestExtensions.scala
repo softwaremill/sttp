@@ -1,6 +1,6 @@
 package sttp.client.testing
 
-import java.io.{File, IOException}
+import java.io.File
 import java.nio.file.Files
 import java.security.MessageDigest
 import java.time.{ZoneId, ZonedDateTime}
@@ -193,30 +193,6 @@ trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
     "download a text file using asFile" in {
       withTemporaryNonExistentFile { file =>
         val req = basicRequest.get(uri"$endpoint/download/text").response(asFile(file))
-        req.send().toFuture().flatMap { resp =>
-          md5FileHash(resp.body.right.get).map { _ shouldBe textFileMD5Hash }
-        }
-      }
-    }
-  }
-
-  "download file overwrite" - {
-    "fail when file exists and overwrite flag is false" in {
-      withTemporaryFile(Some(testBodyBytes)) { file =>
-        val req = basicRequest.get(uri"$endpoint/download/text").response(asFile(file))
-
-        Future(req.send()).flatMap(_.toFuture()).failed.collect {
-          case caught: IOException =>
-            caught.getMessage shouldBe s"File ${file.getAbsolutePath} exists - overwriting prohibited"
-        }
-      }
-    }
-
-    "not fail when file exists and overwrite flag is true" in {
-      withTemporaryFile(Some(testBodyBytes)) { file =>
-        val req = basicRequest
-          .get(uri"$endpoint/download/text")
-          .response(asFile(file, overwrite = true))
         req.send().toFuture().flatMap { resp =>
           md5FileHash(resp.body.right.get).map { _ shouldBe textFileMD5Hash }
         }

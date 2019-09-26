@@ -183,10 +183,10 @@ abstract class AbstractCurlBackend[R[_], S](monad: MonadError[R], verbose: Boole
       case ResponseAsFromMetadata(f) => readResponseBody(response, f(responseMetadata), responseMetadata)
       case IgnoreResponse            => responseMonad.unit((): Unit)
       case ResponseAsByteArray       => toByteArray(response)
-      case ResponseAsFile(output, overwrite) =>
+      case ResponseAsFile(output) =>
         responseMonad.map(toByteArray(response)) { a =>
           val is = new ByteArrayInputStream(a)
-          val f = FileHelpers.saveFile(output.toFile, is, overwrite)
+          val f = FileHelpers.saveFile(output.toFile, is)
           SttpFile.fromFile(f)
         }
       case ResponseAsStream() =>

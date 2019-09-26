@@ -99,31 +99,6 @@ trait SyncHttpTestExtensions {
     }
   }
 
-  "download file overwrite" - {
-    "fail when file exists and overwrite flag is false" in {
-      withTemporaryFile(Some(testBodyBytes)) { file =>
-        val req = basicRequest.get(uri"$endpoint/download/text").response(asFile(file))
-
-        try {
-          req.send()
-          fail("IOException should be thrown")
-        } catch {
-          case e: Exception => e.getMessage shouldBe s"File ${file.getAbsolutePath} exists - overwriting prohibited"
-        }
-      }
-    }
-
-    "not fail when file exists and overwrite flag is true" in {
-      withTemporaryFile(Some(testBodyBytes)) { file =>
-        val req = basicRequest
-          .get(uri"$endpoint/download/text")
-          .response(asFile(file, overwrite = true))
-        val resp = req.send()
-        md5FileHash(resp.body.right.get).map { _ shouldBe textFileMD5Hash }
-      }
-    }
-  }
-
   "multipart" - {
     def mp = basicRequest.post(uri"$endpoint/multipart")
 

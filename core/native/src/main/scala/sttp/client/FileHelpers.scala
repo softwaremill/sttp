@@ -7,7 +7,7 @@ import sttp.client.internal._
 
 object FileHelpers {
 
-  private[client] def saveFile(file: File, is: InputStream, overwrite: Boolean): File = {
+  private[client] def saveFile(file: File, is: InputStream): File = {
     if (!file.exists()) {
       if (file.getParentFile != null) {
         file.getParentFile.mkdirs()
@@ -17,8 +17,6 @@ object FileHelpers {
       } catch {
         case e: AccessDeniedException => throw new IOException("Permission denied", e) // aligns SN bahavior with Java
       }
-    } else if (!overwrite) {
-      throw new IOException(s"File ${file.getAbsolutePath} exists - overwriting prohibited")
     }
 
     val os = new FileOutputStream(file)

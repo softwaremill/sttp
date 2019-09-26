@@ -26,7 +26,7 @@ sealed trait BasicResponseAs[T, +S] extends ResponseAs[T, S]
 case object IgnoreResponse extends BasicResponseAs[Unit, Nothing]
 case object ResponseAsByteArray extends BasicResponseAs[Array[Byte], Nothing]
 case class ResponseAsStream[T, S]()(implicit val responseIsStream: S =:= T) extends BasicResponseAs[T, S]
-case class ResponseAsFile(output: SttpFile, overwrite: Boolean) extends BasicResponseAs[SttpFile, Nothing]
+case class ResponseAsFile(output: SttpFile) extends BasicResponseAs[SttpFile, Nothing]
 
 case class ResponseAsFromMetadata[T, S](f: ResponseMetadata => ResponseAs[T, S]) extends ResponseAs[T, S]
 

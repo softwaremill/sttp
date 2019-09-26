@@ -260,8 +260,8 @@ class HttpURLConnectionBackend private (
         // Nothing. Oh well ...
         throw new IllegalStateException()
 
-      case ResponseAsFile(output, overwrite) =>
-        val f = FileHelpers.saveFile(output.toFile, is, overwrite)
+      case ResponseAsFile(output) =>
+        val f = FileHelpers.saveFile(output.toFile, is)
         SttpFile.fromFile(f)
 
     }

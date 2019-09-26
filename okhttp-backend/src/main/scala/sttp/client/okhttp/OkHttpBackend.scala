@@ -131,8 +131,8 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean
             body
           case ras @ ResponseAsStream() =>
             responseBodyToStream(res).map(ras.responseIsStream)
-          case ResponseAsFile(file, overwrite) =>
-            val body = Try(FileHelpers.saveFile(file.toFile, res.body().byteStream(), overwrite))
+          case ResponseAsFile(file) =>
+            val body = Try(FileHelpers.saveFile(file.toFile, res.body().byteStream()))
             res.close()
             body.map(_ => file)
         }

@@ -1,6 +1,6 @@
 package sttp.client.http4s
 
-import java.io.{File, IOException, InputStream, UnsupportedEncodingException}
+import java.io.{File, InputStream, UnsupportedEncodingException}
 import java.nio.charset.Charset
 
 import cats.data.NonEmptyList
@@ -148,12 +148,10 @@ class Http4sBackend[F[_]: Effect: ContextShift](client: Client[F], blockingExecu
       hr: http4s.Response[F],
       meta: ResponseMetadata
   ): F[T] = {
-    def saved(file: File, overwrite: Boolean) = {
+    def saved(file: File) = {
       if (!file.exists()) {
         file.getParentFile.mkdirs()
         file.createNewFile()
-      } else if (!overwrite) {
-        throw new IOException(s"File ${file.getAbsolutePath} exists - overwriting prohibited")
       }
 
       hr.body.through(fs2.io.file.writeAll(file.toPath, blockingExecutionContext)).compile.drain
@@ -175,8 +173,8 @@ class Http4sBackend[F[_]: Effect: ContextShift](client: Client[F], blockingExecu
       case r @ ResponseAsStream() =>
         r.responseIsStream(hr.body).pure[F]
 
-      case ResponseAsFile(file, overwrite) =>
-        saved(file.toFile, overwrite).map(_ => file)
+      case ResponseAsFile(file) =>
+        saved(file.toFile).map(_ => file)
     }
   }
 

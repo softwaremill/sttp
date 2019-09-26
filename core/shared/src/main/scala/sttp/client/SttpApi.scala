@@ -91,8 +91,8 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
 
   def asStreamAlways[S]: ResponseAs[S, S] = ResponseAsStream[S, S]()
 
-  private[client] def asSttpFile(file: SttpFile, overwrite: Boolean = false): ResponseAs[SttpFile, Nothing] =
-    ResponseAsFile(file, overwrite)
+  private[client] def asSttpFile(file: SttpFile): ResponseAs[SttpFile, Nothing] =
+    ResponseAsFile(file)
 
   def fromMetadata[T, S](f: ResponseMetadata => ResponseAs[T, S]): ResponseAs[T, S] = ResponseAsFromMetadata(f)
 

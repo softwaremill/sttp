@@ -1,19 +1,17 @@
 package sttp.client
 
-import sttp.client.dom.experimental.{File => DomFile}
-import sttp.client.internal.SttpFile
 import sttp.client.dom.experimental.File
 import sttp.client.internal.SttpFile
 import sttp.model.Part
 
 trait SttpExtensions {
 
-  def asFile(file: File, overwrite: Boolean = false): ResponseAs[Either[String, File], Nothing] = {
-    asEither(asStringAlways, asFileAlways(file, overwrite))
+  def asFile(file: File): ResponseAs[Either[String, File], Nothing] = {
+    asEither(asStringAlways, asFileAlways(file))
   }
 
-  def asFileAlways(file: File, overwrite: Boolean = false): ResponseAs[File, Nothing] = {
-    ResponseAsFile(SttpFile.fromDomFile(file), overwrite).map(_.toDomFile)
+  def asFileAlways(file: File): ResponseAs[File, Nothing] = {
+    ResponseAsFile(SttpFile.fromDomFile(file)).map(_.toDomFile)
   }
 
   /**

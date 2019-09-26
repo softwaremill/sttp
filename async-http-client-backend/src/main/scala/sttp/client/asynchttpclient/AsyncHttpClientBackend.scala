@@ -292,9 +292,9 @@ abstract class AsyncHttpClientBackend[R[_], S](
           case ResponseAsStream() =>
             Failure(new IllegalStateException("Requested a streaming response, trying to read eagerly."))
 
-          case ResponseAsFile(file, overwrite) =>
+          case ResponseAsFile(file) =>
             Try {
-              val f = FileHelpers.saveFile(file.toFile, response.getResponseBodyAsStream, overwrite)
+              val f = FileHelpers.saveFile(file.toFile, response.getResponseBodyAsStream)
               SttpFile.fromFile(f)
             }
         }

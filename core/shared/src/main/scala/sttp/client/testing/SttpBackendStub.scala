@@ -202,7 +202,7 @@ object SttpBackendStub {
         }
       case ResponseAsStream() =>
         None
-      case ResponseAsFile(_, _) =>
+      case ResponseAsFile(_) =>
         b match {
           case f: SttpFile => Some(f)
           case _           => None

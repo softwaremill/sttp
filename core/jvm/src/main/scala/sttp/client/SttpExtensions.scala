@@ -4,25 +4,24 @@ import java.io.File
 import java.nio.file.Path
 
 import sttp.client.internal.SttpFile
-import sttp.client.internal.SttpFile
 import sttp.model.Part
 
 trait SttpExtensions {
 
-  def asFile(file: File, overwrite: Boolean = false): ResponseAs[Either[String, File], Nothing] = {
-    asEither(asStringAlways, asFileAlways(file, overwrite))
+  def asFile(file: File): ResponseAs[Either[String, File], Nothing] = {
+    asEither(asStringAlways, asFileAlways(file))
   }
 
-  def asFileAlways(file: File, overwrite: Boolean = false): ResponseAs[File, Nothing] = {
-    ResponseAsFile(SttpFile.fromFile(file), overwrite).map(_.toFile)
+  def asFileAlways(file: File): ResponseAs[File, Nothing] = {
+    ResponseAsFile(SttpFile.fromFile(file)).map(_.toFile)
   }
 
-  def asPath(path: Path, overwrite: Boolean = false): ResponseAs[Either[String, Path], Nothing] = {
-    asEither(asStringAlways, asPathAlways(path, overwrite))
+  def asPath(path: Path): ResponseAs[Either[String, Path], Nothing] = {
+    asEither(asStringAlways, asPathAlways(path))
   }
 
-  def asPathAlways(path: Path, overwrite: Boolean = false): ResponseAs[Path, Nothing] = {
-    ResponseAsFile(SttpFile.fromPath(path), overwrite).map(_.toPath)
+  def asPathAlways(path: Path): ResponseAs[Path, Nothing] = {
+    ResponseAsFile(SttpFile.fromPath(path)).map(_.toPath)
   }
 
   /**

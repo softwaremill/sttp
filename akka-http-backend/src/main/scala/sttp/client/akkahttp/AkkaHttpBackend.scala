@@ -131,12 +131,10 @@ class AkkaHttpBackend private (
         .runFold(ByteString(""))(_ ++ _)
         .map(_.toArray[Byte])
 
-    def saved(file: File, overwrite: Boolean) = {
+    def saved(file: File) = {
       if (!file.exists()) {
         file.getParentFile.mkdirs()
         file.createNewFile()
-      } else if (!overwrite) {
-        throw new IOException(s"File ${file.getAbsolutePath} exists - overwriting prohibited")
       }
 
       hr.entity.dataBytes.runWith(FileIO.toPath(file.toPath))
@@ -159,8 +157,8 @@ class AkkaHttpBackend private (
       case r @ ResponseAsStream() =>
         Future.successful(r.responseIsStream(hr.entity.dataBytes))
 
-      case ResponseAsFile(file, overwrite) =>
-        saved(file.toFile, overwrite).map(_ => file)
+      case ResponseAsFile(file) =>
+        saved(file.toFile).map(_ => file)
     }
   }
 
