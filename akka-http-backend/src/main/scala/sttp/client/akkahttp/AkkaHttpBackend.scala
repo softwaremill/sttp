@@ -366,7 +366,7 @@ object AkkaHttpBackend {
       options,
       customConnectionPoolSettings,
       AkkaHttpClient.default(actorSystem, customHttpsContext, customLog),
-      customizeRequest: HttpRequest => HttpRequest
+      customizeRequest
     )
   }
 
