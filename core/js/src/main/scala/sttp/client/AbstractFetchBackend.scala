@@ -216,7 +216,7 @@ abstract class AbstractFetchBackend[R[_], S](options: FetchOptions)(monad: Monad
       case ResponseAsByteArray =>
         responseToByteArray(response)
 
-      case ResponseAsFile(file, _) =>
+      case ResponseAsFile(file) =>
         transformPromise(response.arrayBuffer()).map { ab =>
           SttpFile.fromDomFile(
             new DomFile(
