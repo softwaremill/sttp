@@ -87,8 +87,13 @@ case class RequestT[U[_], T, +S](
   def cookie(n: String, v: String): RequestT[U, T, S] = cookies((n, v))
   def cookies(r: Response[_]): RequestT[U, T, S] = cookies(r.cookies.map(c => (c.name, c.value)): _*)
   def cookies(cs: Iterable[Cookie]): RequestT[U, T, S] = cookies(cs.map(c => (c.name, c.value)).toSeq: _*)
-  def cookies(nvs: (String, String)*): RequestT[U, T, S] =
-    header(HeaderNames.Cookie, nvs.map(p => p._1 + "=" + p._2).mkString("; "))
+  def cookies(nvs: (String, String)*): RequestT[U, T, S] = {
+    header(
+      HeaderNames.Cookie,
+      (headers.find(_.name == HeaderNames.Cookie).map(_.value).toSeq ++ nvs.map(p => p._1 + "=" + p._2)).mkString("; "),
+      replaceExisting = true
+    )
+  }
 
   /**
     * Uses the `utf-8` encoding.
