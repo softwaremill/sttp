@@ -11,6 +11,7 @@ import monix.nio.file._
 import org.asynchttpclient.{
   AsyncHttpClient,
   AsyncHttpClientConfig,
+  BoundRequestBuilder,
   DefaultAsyncHttpClient,
   DefaultAsyncHttpClientConfig
 }
@@ -20,9 +21,18 @@ import sttp.client.impl.monix.TaskMonadAsyncError
 import sttp.client.internal._
 import sttp.client.{FollowRedirectsBackend, Response, SttpBackend, SttpBackendOptions, _}
 
-class AsyncHttpClientMonixBackend private (asyncHttpClient: AsyncHttpClient, closeClient: Boolean)(
+class AsyncHttpClientMonixBackend private (
+    asyncHttpClient: AsyncHttpClient,
+    closeClient: Boolean,
+    customizeRequest: BoundRequestBuilder => BoundRequestBuilder
+)(
     implicit scheduler: Scheduler
-) extends AsyncHttpClientBackend[Task, Observable[ByteBuffer]](asyncHttpClient, TaskMonadAsyncError, closeClient) {
+) extends AsyncHttpClientBackend[Task, Observable[ByteBuffer]](
+      asyncHttpClient,
+      TaskMonadAsyncError,
+      closeClient,
+      customizeRequest
+    ) {
 
   override def send[T](r: Request[T, Observable[ByteBuffer]]): Task[Response[T]] = {
     super.send(r).guarantee(Task.shift)
@@ -53,28 +63,36 @@ class AsyncHttpClientMonixBackend private (asyncHttpClient: AsyncHttpClient, clo
 
 object AsyncHttpClientMonixBackend {
 
-  private def apply(asyncHttpClient: AsyncHttpClient, closeClient: Boolean)(
+  private def apply(
+      asyncHttpClient: AsyncHttpClient,
+      closeClient: Boolean,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder
+  )(
       implicit scheduler: Scheduler
   ): SttpBackend[Task, Observable[ByteBuffer]] =
-    new FollowRedirectsBackend(new AsyncHttpClientMonixBackend(asyncHttpClient, closeClient))
+    new FollowRedirectsBackend(new AsyncHttpClientMonixBackend(asyncHttpClient, closeClient, customizeRequest))
 
   /**
     * @param s The scheduler used for streaming request bodies. Defaults to the
     *          global scheduler.
     */
   def apply(
-      options: SttpBackendOptions = SttpBackendOptions.Default
+      options: SttpBackendOptions = SttpBackendOptions.Default,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   )(implicit s: Scheduler = Scheduler.Implicits.global): Task[SttpBackend[Task, Observable[ByteBuffer]]] =
-    Task.eval(AsyncHttpClientMonixBackend(AsyncHttpClientBackend.defaultClient(options), closeClient = true))
+    Task.eval(
+      AsyncHttpClientMonixBackend(AsyncHttpClientBackend.defaultClient(options), closeClient = true, customizeRequest)
+    )
 
   /**
     * @param s The scheduler used for streaming request bodies. Defaults to the
     *          global scheduler.
     */
   def usingConfig(
-      cfg: AsyncHttpClientConfig
+      cfg: AsyncHttpClientConfig,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   )(implicit s: Scheduler = Scheduler.Implicits.global): Task[SttpBackend[Task, Observable[ByteBuffer]]] =
-    Task.eval(AsyncHttpClientMonixBackend(new DefaultAsyncHttpClient(cfg), closeClient = true))
+    Task.eval(AsyncHttpClientMonixBackend(new DefaultAsyncHttpClient(cfg), closeClient = true, customizeRequest))
 
   /**
     * @param updateConfig A function which updates the default configuration (created basing on `options`).
@@ -83,12 +101,14 @@ object AsyncHttpClientMonixBackend {
     */
   def usingConfigBuilder(
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
-      options: SttpBackendOptions = SttpBackendOptions.Default
+      options: SttpBackendOptions = SttpBackendOptions.Default,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   )(implicit s: Scheduler = Scheduler.Implicits.global): Task[SttpBackend[Task, Observable[ByteBuffer]]] =
     Task.eval(
       AsyncHttpClientMonixBackend(
         AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
-        closeClient = true
+        closeClient = true,
+        customizeRequest
       )
     )
 
@@ -97,7 +117,8 @@ object AsyncHttpClientMonixBackend {
     *          global scheduler.
     */
   def usingClient(
-      client: AsyncHttpClient
+      client: AsyncHttpClient,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   )(implicit s: Scheduler = Scheduler.Implicits.global): SttpBackend[Task, Observable[ByteBuffer]] =
-    AsyncHttpClientMonixBackend(client, closeClient = false)
+    AsyncHttpClientMonixBackend(client, closeClient = false, customizeRequest)
 }

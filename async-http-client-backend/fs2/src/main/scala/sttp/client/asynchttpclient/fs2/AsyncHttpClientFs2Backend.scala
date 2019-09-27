@@ -6,32 +6,28 @@ import java.nio.ByteBuffer
 import cats.effect._
 import cats.effect.implicits._
 import cats.implicits._
-import io.netty.buffer.{ByteBuf, Unpooled}
 import fs2.Stream
 import fs2.interop.reactivestreams._
-import org.asynchttpclient.{
-  AsyncHttpClient,
-  AsyncHttpClientConfig,
-  DefaultAsyncHttpClient,
-  DefaultAsyncHttpClientConfig
-}
+import io.netty.buffer.{ByteBuf, Unpooled}
+import org.asynchttpclient.{Request => _, Response => _, _}
 import org.reactivestreams.Publisher
 import sttp.client.asynchttpclient.AsyncHttpClientBackend
 import sttp.client.impl.cats.CatsMonadAsyncError
 import sttp.client.internal._
-import sttp.client._
-import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
+import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions, _}
 
 import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
 
 class AsyncHttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
     asyncHttpClient: AsyncHttpClient,
-    closeClient: Boolean
+    closeClient: Boolean,
+    customizeRequest: BoundRequestBuilder => BoundRequestBuilder
 ) extends AsyncHttpClientBackend[F, Stream[F, ByteBuffer]](
       asyncHttpClient,
       new CatsMonadAsyncError,
-      closeClient
+      closeClient,
+      customizeRequest
     ) {
 
   override def send[T](r: Request[T, Stream[F, ByteBuffer]]): F[Response[T]] = {
@@ -64,36 +60,43 @@ object AsyncHttpClientFs2Backend {
 
   private def apply[F[_]: ConcurrentEffect: ContextShift](
       asyncHttpClient: AsyncHttpClient,
-      closeClient: Boolean
+      closeClient: Boolean,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder
   ): SttpBackend[F, Stream[F, ByteBuffer]] =
-    new FollowRedirectsBackend(new AsyncHttpClientFs2Backend(asyncHttpClient, closeClient))
+    new FollowRedirectsBackend(new AsyncHttpClientFs2Backend(asyncHttpClient, closeClient, customizeRequest))
 
   def apply[F[_]: ConcurrentEffect: ContextShift](
-      options: SttpBackendOptions = SttpBackendOptions.Default
+      options: SttpBackendOptions = SttpBackendOptions.Default,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   ): F[SttpBackend[F, Stream[F, ByteBuffer]]] =
-    implicitly[Sync[F]].delay(apply[F](AsyncHttpClientBackend.defaultClient(options), closeClient = true))
+    implicitly[Sync[F]]
+      .delay(apply[F](AsyncHttpClientBackend.defaultClient(options), closeClient = true, customizeRequest))
 
   def usingConfig[F[_]: ConcurrentEffect: ContextShift](
-      cfg: AsyncHttpClientConfig
+      cfg: AsyncHttpClientConfig,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   ): F[SttpBackend[F, Stream[F, ByteBuffer]]] =
-    implicitly[Sync[F]].delay(apply[F](new DefaultAsyncHttpClient(cfg), closeClient = true))
+    implicitly[Sync[F]].delay(apply[F](new DefaultAsyncHttpClient(cfg), closeClient = true, customizeRequest))
 
   /**
     * @param updateConfig A function which updates the default configuration (created basing on `options`).
     */
   def usingConfigBuilder[F[_]: ConcurrentEffect: ContextShift](
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
-      options: SttpBackendOptions = SttpBackendOptions.Default
+      options: SttpBackendOptions = SttpBackendOptions.Default,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   ): F[SttpBackend[F, Stream[F, ByteBuffer]]] =
     implicitly[Sync[F]].delay(
       AsyncHttpClientFs2Backend[F](
         AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
-        closeClient = true
+        closeClient = true,
+        customizeRequest
       )
     )
 
   def usingClient[F[_]: ConcurrentEffect: ContextShift](
-      client: AsyncHttpClient
+      client: AsyncHttpClient,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   ): SttpBackend[F, Stream[F, ByteBuffer]] =
-    apply[F](client, closeClient = false)
+    apply[F](client, closeClient = false, customizeRequest)
 }
