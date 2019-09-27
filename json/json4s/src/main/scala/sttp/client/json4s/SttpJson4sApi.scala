@@ -17,7 +17,7 @@ trait SttpJson4sApi {
       implicit formats: Formats = DefaultFormats,
       serialization: Serialization
   ): ResponseAs[Either[ResponseError[Exception], B], Nothing] =
-    ResponseAs.deserializeFromStringCatchingExceptions(deserializeJson[B])
+    ResponseAs.deserializeFromStringCatchingExceptions(asString, deserializeJson[B])
 
   def deserializeJson[B: Manifest](
       implicit formats: Formats = DefaultFormats,

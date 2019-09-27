@@ -80,10 +80,11 @@ object ResponseAs {
     * function. Exceptions that occur during the deserialization are represented as [[DeserializationError]]s.
     */
   def deserializeFromStringCatchingExceptions[T, S](
-      doDeserialize: String => T,
-      charset: String = Utf8
+      base: ResponseAs[Either[String, String], S],
+      doDeserialize: String => T
   ): ResponseAs[Either[ResponseError[Exception], T], S] =
     deserializeFromString(
+      base,
       (s: String) =>
         Try(doDeserialize(s)) match {
           case Failure(e: Exception) => Left(e)
@@ -97,10 +98,10 @@ object ResponseAs {
     * function.
     */
   def deserializeFromString[E, T, S](
-      doDeserialize: String => Either[E, T],
-      charset: String = Utf8
+      base: ResponseAs[Either[String, String], S],
+      doDeserialize: String => Either[E, T]
   ): ResponseAs[Either[ResponseError[E], T], S] =
-    asString(charset)
+    base
       .map {
         case Left(s) => Left(HttpError(s))
         case Right(s) =>

@@ -15,7 +15,7 @@ trait SttpCirceApi {
     b => StringBody(encoder(b).pretty(printer), Utf8, Some(MediaTypes.Json))
 
   def asJson[B: Decoder: IsOption]: ResponseAs[Either[ResponseError[io.circe.Error], B], Nothing] =
-    ResponseAs.deserializeFromString(deserializeJson)
+    ResponseAs.deserializeFromString(asString, deserializeJson)
 
   def deserializeJson[B: Decoder: IsOption]: String => Either[io.circe.Error, B] =
     JsonInput.sanitize[B].andThen(decode[B])
