@@ -17,7 +17,6 @@ import org.scalajs.dom.experimental.{
 import org.scalajs.dom.raw.{Blob, BlobPropertyBag}
 import sttp.client.dom.experimental.{AbortController, FilePropertyBag, File => DomFile}
 import sttp.client.internal.{SttpFile, _}
-import sttp.model.StatusCode
 import sttp.client.monad.MonadError
 import sttp.client.monad.syntax._
 import sttp.model.{Header, StatusCode}
@@ -48,7 +47,9 @@ final case class FetchOptions(
   *
   * @see https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API
   */
-abstract class AbstractFetchBackend[R[_], S](options: FetchOptions)(monad: MonadError[R]) extends SttpBackend[R, S] {
+abstract class AbstractFetchBackend[R[_], S](options: FetchOptions, customizeRequest: FetchRequest => FetchRequest)(
+    monad: MonadError[R]
+) extends SttpBackend[R, S] {
 
   override implicit def responseMonad: MonadError[R] = monad
 
@@ -99,7 +100,7 @@ abstract class AbstractFetchBackend[R[_], S](options: FetchOptions)(monad: Monad
 
     val result = req
       .flatMap { r =>
-        transformPromise(Fetch.fetch(r))
+        transformPromise(Fetch.fetch(customizeRequest(r)))
       }
       .flatMap { resp =>
         if (resp.`type` == ResponseType.opaqueredirect) {

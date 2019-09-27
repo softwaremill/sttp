@@ -6,9 +6,11 @@ import sttp.client.monad.FutureMonad
 import scala.concurrent.{ExecutionContext, Future}
 import scala.scalajs.js
 import scala.scalajs.js.Promise
+import org.scalajs.dom.experimental.{Request => FetchRequest}
 
-class FetchBackend private (fetchOptions: FetchOptions)(implicit ec: ExecutionContext)
-    extends AbstractFetchBackend[Future, Nothing](fetchOptions)(new FutureMonad()) {
+class FetchBackend private (fetchOptions: FetchOptions, customizeRequest: FetchRequest => FetchRequest)(
+    implicit ec: ExecutionContext
+) extends AbstractFetchBackend[Future, Nothing](fetchOptions, customizeRequest)(new FutureMonad()) {
 
   override protected def addCancelTimeoutHook[T](result: Future[T], cancel: () => Unit): Future[T] = {
     result.onComplete(_ => cancel())
@@ -34,7 +36,8 @@ class FetchBackend private (fetchOptions: FetchOptions)(implicit ec: ExecutionCo
 object FetchBackend {
 
   def apply(
-      fetchOptions: FetchOptions = FetchOptions.Default
+      fetchOptions: FetchOptions = FetchOptions.Default,
+      customizeRequest: FetchRequest => FetchRequest = identity
   )(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Nothing] =
-    new FetchBackend(fetchOptions)
+    new FetchBackend(fetchOptions, customizeRequest)
 }
