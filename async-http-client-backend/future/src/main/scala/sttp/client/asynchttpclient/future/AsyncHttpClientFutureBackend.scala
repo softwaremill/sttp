@@ -6,6 +6,7 @@ import io.netty.buffer.ByteBuf
 import org.asynchttpclient.{
   AsyncHttpClient,
   AsyncHttpClientConfig,
+  BoundRequestBuilder,
   DefaultAsyncHttpClient,
   DefaultAsyncHttpClientConfig
 }
@@ -16,9 +17,13 @@ import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class AsyncHttpClientFutureBackend private (asyncHttpClient: AsyncHttpClient, closeClient: Boolean)(
+class AsyncHttpClientFutureBackend private (
+    asyncHttpClient: AsyncHttpClient,
+    closeClient: Boolean,
+    customizeRequest: BoundRequestBuilder => BoundRequestBuilder
+)(
     implicit ec: ExecutionContext
-) extends AsyncHttpClientBackend[Future, Nothing](asyncHttpClient, new FutureMonad, closeClient) {
+) extends AsyncHttpClientBackend[Future, Nothing](asyncHttpClient, new FutureMonad, closeClient, customizeRequest) {
 
   override protected def streamBodyToPublisher(s: Nothing): Publisher[ByteBuf] =
     s // nothing is everything
@@ -29,10 +34,16 @@ class AsyncHttpClientFutureBackend private (asyncHttpClient: AsyncHttpClient, cl
 
 object AsyncHttpClientFutureBackend {
 
-  private def apply(asyncHttpClient: AsyncHttpClient, closeClient: Boolean)(
+  private def apply(
+      asyncHttpClient: AsyncHttpClient,
+      closeClient: Boolean,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder
+  )(
       implicit ec: ExecutionContext
   ): SttpBackend[Future, Nothing] =
-    new FollowRedirectsBackend[Future, Nothing](new AsyncHttpClientFutureBackend(asyncHttpClient, closeClient))
+    new FollowRedirectsBackend[Future, Nothing](
+      new AsyncHttpClientFutureBackend(asyncHttpClient, closeClient, customizeRequest)
+    )
 
   /**
     * @param ec The execution context for running non-network related operations,
@@ -40,9 +51,10 @@ object AsyncHttpClientFutureBackend {
     *           context.
     */
   def apply(
-      options: SttpBackendOptions = SttpBackendOptions.Default
+      options: SttpBackendOptions = SttpBackendOptions.Default,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   )(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Nothing] =
-    AsyncHttpClientFutureBackend(AsyncHttpClientBackend.defaultClient(options), closeClient = true)
+    AsyncHttpClientFutureBackend(AsyncHttpClientBackend.defaultClient(options), closeClient = true, customizeRequest)
 
   /**
     * @param ec The execution context for running non-network related operations,
@@ -50,9 +62,10 @@ object AsyncHttpClientFutureBackend {
     *           context.
     */
   def usingConfig(
-      cfg: AsyncHttpClientConfig
+      cfg: AsyncHttpClientConfig,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   )(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Nothing] =
-    AsyncHttpClientFutureBackend(new DefaultAsyncHttpClient(cfg), closeClient = true)
+    AsyncHttpClientFutureBackend(new DefaultAsyncHttpClient(cfg), closeClient = true, customizeRequest)
 
   /**
     * @param updateConfig A function which updates the default configuration (created basing on `options`).
@@ -62,11 +75,13 @@ object AsyncHttpClientFutureBackend {
     */
   def usingConfigBuilder(
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
-      options: SttpBackendOptions = SttpBackendOptions.Default
+      options: SttpBackendOptions = SttpBackendOptions.Default,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   )(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Nothing] =
     AsyncHttpClientFutureBackend(
       AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
-      closeClient = true
+      closeClient = true,
+      customizeRequest
     )
 
   /**
@@ -75,7 +90,8 @@ object AsyncHttpClientFutureBackend {
     *           context.
     */
   def usingClient(
-      client: AsyncHttpClient
+      client: AsyncHttpClient,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   )(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Nothing] =
-    AsyncHttpClientFutureBackend(client, closeClient = false)
+    AsyncHttpClientFutureBackend(client, closeClient = false, customizeRequest)
 }

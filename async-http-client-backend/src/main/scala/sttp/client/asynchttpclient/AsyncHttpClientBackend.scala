@@ -15,6 +15,7 @@ import org.asynchttpclient.request.body.multipart.{ByteArrayPart, FilePart, Stri
 import org.asynchttpclient.{
   AsyncHandler,
   AsyncHttpClient,
+  BoundRequestBuilder,
   DefaultAsyncHttpClient,
   DefaultAsyncHttpClientConfig,
   HttpResponseBodyPart,
@@ -61,7 +62,8 @@ import scala.util.Try
 abstract class AsyncHttpClientBackend[R[_], S](
     asyncHttpClient: AsyncHttpClient,
     monad: MonadAsyncError[R],
-    closeClient: Boolean
+    closeClient: Boolean,
+    customizeRequest: BoundRequestBuilder => BoundRequestBuilder
 ) extends SttpBackend[R, S] {
 
   @silent("discarded")
@@ -73,7 +75,7 @@ abstract class AsyncHttpClientBackend[R[_], S](
         def success(r: R[Response[T]]): Unit = cb(Right(r))
         def error(t: Throwable): Unit = cb(Left(t))
 
-        ahcRequest.execute(streamingAsyncHandler(r.response, success, error))
+        customizeRequest(ahcRequest).execute(streamingAsyncHandler(r.response, success, error))
       })
     }
   }

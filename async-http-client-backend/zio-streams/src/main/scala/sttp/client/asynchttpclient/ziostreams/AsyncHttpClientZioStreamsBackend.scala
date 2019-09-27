@@ -7,6 +7,7 @@ import io.netty.buffer.{ByteBuf, Unpooled}
 import org.asynchttpclient.{
   AsyncHttpClient,
   AsyncHttpClientConfig,
+  BoundRequestBuilder,
   DefaultAsyncHttpClient,
   DefaultAsyncHttpClientConfig
 }
@@ -23,11 +24,13 @@ import zio.stream._
 class AsyncHttpClientZioStreamsBackend[R] private (
     runtime: Runtime[R],
     asyncHttpClient: AsyncHttpClient,
-    closeClient: Boolean
+    closeClient: Boolean,
+    customizeRequest: BoundRequestBuilder => BoundRequestBuilder
 ) extends AsyncHttpClientBackend[Task, Stream[Throwable, ByteBuffer]](
       asyncHttpClient,
       TaskMonadAsyncError,
-      closeClient
+      closeClient,
+      customizeRequest
     ) {
 
   private val bufferSize = 16
@@ -56,25 +59,35 @@ object AsyncHttpClientZioStreamsBackend {
   private def apply[R](
       runtime: Runtime[R],
       asyncHttpClient: AsyncHttpClient,
-      closeClient: Boolean
+      closeClient: Boolean,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder
   ): SttpBackend[Task, Stream[Throwable, ByteBuffer]] =
     new FollowRedirectsBackend[Task, Stream[Throwable, ByteBuffer]](
-      new AsyncHttpClientZioStreamsBackend(runtime, asyncHttpClient, closeClient)
+      new AsyncHttpClientZioStreamsBackend(runtime, asyncHttpClient, closeClient, customizeRequest)
     )
 
   def apply[R](
       runtime: Runtime[R],
-      options: SttpBackendOptions = SttpBackendOptions.Default
+      options: SttpBackendOptions = SttpBackendOptions.Default,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   ): Task[SttpBackend[Task, Stream[Throwable, ByteBuffer]]] =
     Task.effect(
-      AsyncHttpClientZioStreamsBackend(runtime, AsyncHttpClientBackend.defaultClient(options), closeClient = true)
+      AsyncHttpClientZioStreamsBackend(
+        runtime,
+        AsyncHttpClientBackend.defaultClient(options),
+        closeClient = true,
+        customizeRequest
+      )
     )
 
   def usingConfig[R](
       runtime: Runtime[R],
-      cfg: AsyncHttpClientConfig
+      cfg: AsyncHttpClientConfig,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   ): Task[SttpBackend[Task, Stream[Throwable, ByteBuffer]]] =
-    Task.effect(AsyncHttpClientZioStreamsBackend(runtime, new DefaultAsyncHttpClient(cfg), closeClient = true))
+    Task.effect(
+      AsyncHttpClientZioStreamsBackend(runtime, new DefaultAsyncHttpClient(cfg), closeClient = true, customizeRequest)
+    )
 
   /**
     * @param updateConfig A function which updates the default configuration (created basing on `options`).
@@ -82,16 +95,22 @@ object AsyncHttpClientZioStreamsBackend {
   def usingConfigBuilder[R](
       runtime: Runtime[R],
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
-      options: SttpBackendOptions = SttpBackendOptions.Default
+      options: SttpBackendOptions = SttpBackendOptions.Default,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   ): Task[SttpBackend[Task, Stream[Throwable, ByteBuffer]]] =
     Task.effect(
       AsyncHttpClientZioStreamsBackend(
         runtime,
         AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
-        closeClient = true
+        closeClient = true,
+        customizeRequest
       )
     )
 
-  def usingClient[R](runtime: Runtime[R], client: AsyncHttpClient): SttpBackend[Task, Stream[Throwable, ByteBuffer]] =
-    AsyncHttpClientZioStreamsBackend(runtime, client, closeClient = false)
+  def usingClient[R](
+      runtime: Runtime[R],
+      client: AsyncHttpClient,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+  ): SttpBackend[Task, Stream[Throwable, ByteBuffer]] =
+    AsyncHttpClientZioStreamsBackend(runtime, client, closeClient = false, customizeRequest)
 }

@@ -10,6 +10,7 @@ import sttp.client.{AbstractFetchBackend, FetchOptions, ResponseAsStream, SttpBa
 import scala.scalajs.js
 import scala.scalajs.js.Promise
 import scala.scalajs.js.typedarray.{Int8Array, _}
+import org.scalajs.dom.experimental.{Request => FetchRequest}
 
 /**
   * Uses the `ReadableStream` interface from the Streams API.
@@ -21,8 +22,8 @@ import scala.scalajs.js.typedarray.{Int8Array, _}
   *
   * @see https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream
   */
-class FetchMonixBackend private (fetchOptions: FetchOptions)
-    extends AbstractFetchBackend[Task, Observable[ByteBuffer]](fetchOptions)(TaskMonadAsyncError) {
+class FetchMonixBackend private (fetchOptions: FetchOptions, customizeRequest: FetchRequest => FetchRequest)
+    extends AbstractFetchBackend[Task, Observable[ByteBuffer]](fetchOptions, customizeRequest)(TaskMonadAsyncError) {
 
   override protected def addCancelTimeoutHook[T](result: Task[T], cancel: () => Unit): Task[T] = {
     val doCancel = Task.delay(cancel())
@@ -68,7 +69,8 @@ class FetchMonixBackend private (fetchOptions: FetchOptions)
 object FetchMonixBackend {
 
   def apply(
-      fetchOptions: FetchOptions = FetchOptions.Default
+      fetchOptions: FetchOptions = FetchOptions.Default,
+      customizeRequest: FetchRequest => FetchRequest = identity
   ): SttpBackend[Task, Observable[ByteBuffer]] =
-    new FetchMonixBackend(fetchOptions)
+    new FetchMonixBackend(fetchOptions, customizeRequest)
 }
