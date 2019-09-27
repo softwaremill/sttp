@@ -1,8 +1,7 @@
 package sttp.client
 
 import org.scalatest.{FlatSpec, Matchers}
-import sttp.model._
-import sttp.model.StatusCode
+import sttp.model.{StatusCode, _}
 
 class CookieRequestTests extends FlatSpec with Matchers {
 
@@ -26,10 +25,11 @@ class CookieRequestTests extends FlatSpec with Matchers {
     basicRequest
       .cookie("k1", "v1")
       .cookie("k2" -> "v2")
+      .cookies("k3" -> "v3", "k4" -> "v4")
       .headers
       .filter(_.name == HeaderNames.Cookie)
       .map(_.value)
-      .toSet should be(Set("k1=v1", "k2=v2"))
+      .toList should be(List("k1=v1; k2=v2; k3=v3; k4=v4"))
   }
 
   it should "set cookies from a response" in {
