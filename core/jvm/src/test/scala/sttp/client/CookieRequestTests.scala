@@ -25,10 +25,11 @@ class CookieRequestTests extends FlatSpec with Matchers {
     basicRequest
       .cookie("k1", "v1")
       .cookie("k2" -> "v2")
+      .cookies("k3" -> "v3", "k4" -> "v4")
       .headers
       .filter(_.name == HeaderNames.Cookie)
       .map(_.value)
-      .toList should be(List("k1=v1; k2=v2"))
+      .toList should be(List("k1=v1; k2=v2; k3=v3; k4=v4"))
   }
 
   it should "set cookies from a response" in {
