@@ -49,7 +49,7 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean
     val builder = new OkHttpRequest.Builder()
       .url(request.uri.toString)
 
-    val body = bodyToOkHttp(request.body)
+    val body = bodyToOkHttp(request.body, request.headers.find(_.is(HeaderNames.ContentType)).map(_.value))
     builder.method(request.method.method, body.getOrElse {
       if (HttpMethod.requiresRequestBody(request.method.method))
         OkHttpRequestBody.create("", null)
@@ -58,7 +58,7 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean
 
     //OkHttp support automatic gzip compression
     request.headers
-      .filter(_.is(HeaderNames.AcceptEncoding) == false)
+      .filterNot(h => h.is(HeaderNames.AcceptEncoding) || h.is(HeaderNames.ContentType))
       .foreach {
         case Header(name, value) => builder.addHeader(name, value)
       }
@@ -66,24 +66,25 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean
     builder.build()
   }
 
-  private def bodyToOkHttp[T](body: RequestBody[S]): Option[OkHttpRequestBody] = {
+  private def bodyToOkHttp[T](body: RequestBody[S], ct: Option[String]): Option[OkHttpRequestBody] = {
+    val mediaType = ct.flatMap(c => Try(MediaType.parse(c)).toOption).orNull
     body match {
       case NoBody => None
       case StringBody(b, _, _) =>
-        Some(OkHttpRequestBody.create(b, null))
+        Some(OkHttpRequestBody.create(b, mediaType))
       case ByteArrayBody(b, _) =>
-        Some(OkHttpRequestBody.create(b, null))
+        Some(OkHttpRequestBody.create(b, mediaType))
       case ByteBufferBody(b, _) =>
-        Some(OkHttpRequestBody.create(b.array(), null))
+        Some(OkHttpRequestBody.create(b.array(), mediaType))
       case InputStreamBody(b, _) =>
         Some(new OkHttpRequestBody() {
           @silent("discarded")
           override def writeTo(sink: BufferedSink): Unit =
             sink.writeAll(Okio.source(b))
-          override def contentType(): MediaType = null
+          override def contentType(): MediaType = mediaType
         })
       case FileBody(b, _) =>
-        Some(OkHttpRequestBody.create(b.toFile, null))
+        Some(OkHttpRequestBody.create(b.toFile, mediaType))
       case StreamBody(s) =>
         streamToRequestBody(s)
       case MultipartBody(ps) =>
@@ -99,7 +100,7 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean
     val headers =
       OkHttpHeaders.of(allHeaders.filterNot(_.is(HeaderNames.ContentType)).map(h => (h.name, h.value)).toMap.asJava)
 
-    bodyToOkHttp(mp.body).foreach(builder.addPart(headers, _))
+    bodyToOkHttp(mp.body, mp.contentType).foreach(builder.addPart(headers, _))
   }
 
   private[okhttp] def readResponse[T](
