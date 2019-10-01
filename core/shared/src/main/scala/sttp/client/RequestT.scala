@@ -86,7 +86,7 @@ case class RequestT[U[_], T, +S](
   def cookie(nv: (String, String)): RequestT[U, T, S] = cookies(nv)
   def cookie(n: String, v: String): RequestT[U, T, S] = cookies((n, v))
   def cookies(r: Response[_]): RequestT[U, T, S] = cookies(r.cookies.map(c => (c.name, c.value)): _*)
-  def cookies(cs: Iterable[Cookie]): RequestT[U, T, S] = cookies(cs.map(c => (c.name, c.value)).toSeq: _*)
+  def cookies(cs: Iterable[CookieWithMeta]): RequestT[U, T, S] = cookies(cs.map(c => (c.name, c.value)).toSeq: _*)
   def cookies(nvs: (String, String)*): RequestT[U, T, S] = {
     header(
       HeaderNames.Cookie,

@@ -13,9 +13,9 @@ trait ResponseMetadata {
   def contentType: Option[String] = header(HeaderNames.ContentType)
   def contentLength: Option[Long] = header(HeaderNames.ContentLength).flatMap(cl => Try(cl.toLong).toOption)
 
-  def cookies: Seq[Cookie] =
+  def cookies: Seq[CookieWithMeta] =
     headers(HeaderNames.SetCookie)
-      .map(h => Cookie.parseHeaderValue(h).fold(e => throw new RuntimeException(e), identity[Cookie]))
+      .map(h => CookieWithMeta.parseHeaderValue(h).fold(e => throw new RuntimeException(e), identity[CookieWithMeta]))
 
   def code: StatusCode
   def statusText: String

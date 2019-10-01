@@ -5,8 +5,8 @@ import java.time.format.DateTimeFormatter
 
 import scala.util.{Failure, Success, Try}
 
-case class Cookie(
-    pair: CookiePair,
+case class CookieWithMeta(
+    pair: Cookie,
     expires: Option[Instant],
     maxAge: Option[Long],
     domain: Option[String],
@@ -32,7 +32,7 @@ case class Cookie(
   }
 }
 
-object Cookie {
+object CookieWithMeta {
   def apply(
       name: String,
       value: String,
@@ -42,10 +42,10 @@ object Cookie {
       path: Option[String] = None,
       secure: Boolean = false,
       httpOnly: Boolean = false
-  ): Cookie = Cookie(CookiePair(name, value), expires, maxAge, domain, path, secure, httpOnly)
+  ): CookieWithMeta = CookieWithMeta(Cookie(name, value), expires, maxAge, domain, path, secure, httpOnly)
 
   // https://tools.ietf.org/html/rfc6265#section-4.1.1
-  def parseHeaderValue(s: String): Either[String, Cookie] = {
+  def parseHeaderValue(s: String): Either[String, CookieWithMeta] = {
     def splitkv(kv: String): (String, Option[String]) = kv.split("=", 2).map(_.trim) match {
       case Array(v1)     => (v1, None)
       case Array(v1, v2) => (v1, Some(v2))
@@ -54,7 +54,7 @@ object Cookie {
     val components = s.split(";").map(_.trim)
     val (first, other) = (components.head, components.tail)
     val (name, value) = splitkv(first)
-    var result: Either[String, Cookie] = Right(Cookie(name, value.getOrElse("")))
+    var result: Either[String, CookieWithMeta] = Right(CookieWithMeta(name, value.getOrElse("")))
     other.map(splitkv).foreach {
       case (k, Some(v)) if k.equalsIgnoreCase("expires") =>
         Try(Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(v))) match {
@@ -77,7 +77,7 @@ object Cookie {
   }
 }
 
-case class CookiePair(name: String, value: String) {
+case class Cookie(name: String, value: String) {
   private val AllowedNameCharacters = """[a-zA-Z0-9!#$%&'*+\-.^_`|~]*""".r
   private val AllowedValueCharacters = """"?[a-zA-Z0-9!#$%&'()*+\-./:<=>?@\\[\\]^_`{|}~]*"?""".r
 
@@ -94,13 +94,15 @@ case class CookiePair(name: String, value: String) {
   def asHeaderValue: String = s"$name=$value"
 }
 
-object CookiePair {
-  def parseHeaderValue(s: String): List[CookiePair] = {
+object Cookie {
+  def parseHeaderValue(s: String): List[Cookie] = {
     s.split(";").toList.map { ss =>
       ss.split("=", 2).map(_.trim) match {
-        case Array(v1)     => CookiePair(v1, "")
-        case Array(v1, v2) => CookiePair(v1, v2)
+        case Array(v1)     => Cookie(v1, "")
+        case Array(v1, v2) => Cookie(v1, v2)
       }
     }
   }
+
+  def asHeaderValue(cs: List[Cookie]): String = cs.map(_.asHeaderValue).mkString("; ")
 }

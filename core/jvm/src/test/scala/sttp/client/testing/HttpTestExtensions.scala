@@ -7,7 +7,7 @@ import java.time.{ZoneId, ZonedDateTime}
 
 import com.github.ghik.silencer.silent
 import sttp.client.{FollowRedirectsBackend, _}
-import sttp.model.{Cookie, StatusCode}
+import sttp.model.{CookieWithMeta, StatusCode}
 
 import scala.concurrent.Future
 import scala.language.higherKinds
@@ -25,9 +25,9 @@ trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
           response.cookies should have length (3)
           response.cookies.toSet should be(
             Set(
-              Cookie("cookie1", "value1", secure = true, httpOnly = true, maxAge = Some(123L)),
-              Cookie("cookie2", "value2"),
-              Cookie("cookie3", "", domain = Some("xyz"), path = Some("a/b/c"))
+              CookieWithMeta("cookie1", "value1", secure = true, httpOnly = true, maxAge = Some(123L)),
+              CookieWithMeta("cookie2", "value2"),
+              CookieWithMeta("cookie3", "", domain = Some("xyz"), path = Some("a/b/c"))
             )
           )
         }
