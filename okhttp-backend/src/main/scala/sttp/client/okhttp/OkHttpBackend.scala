@@ -95,8 +95,9 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean
   }
 
   private def addMultipart(builder: OkHttpMultipartBody.Builder, mp: Part[BasicRequestBody]): Unit = {
-    val allHeaders = mp.additionalHeaders :+ Header(HeaderNames.ContentDisposition, mp.contentDispositionHeaderValue)
-    val headers = OkHttpHeaders.of(allHeaders.map(h => (h.name, h.value)).toMap.asJava)
+    val allHeaders = mp.headers :+ Header(HeaderNames.ContentDisposition, mp.contentDispositionHeaderValue)
+    val headers =
+      OkHttpHeaders.of(allHeaders.filterNot(_.is(HeaderNames.ContentType)).map(h => (h.name, h.value)).toMap.asJava)
 
     bodyToOkHttp(mp.body).foreach(builder.addPart(headers, _))
   }

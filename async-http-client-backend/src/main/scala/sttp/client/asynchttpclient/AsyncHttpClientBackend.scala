@@ -237,7 +237,7 @@ abstract class AsyncHttpClientBackend[R[_], S](
     // around", combining the file name with the name (surrounding quotes
     // are added by ahc).
     def nameWithFilename = mp.fileName.fold(mp.name) { fn =>
-      s"""${mp.name}"; filename="$fn"""
+      s"""${mp.name}"; ${Part.FileNameDispositionParam}="$fn"""
     }
 
     val bodyPart = mp.body match {
@@ -255,7 +255,7 @@ abstract class AsyncHttpClientBackend[R[_], S](
         new FilePart(mp.name, b.toFile, null, null, mp.fileName.orNull)
     }
 
-    bodyPart.setCustomHeaders(mp.additionalHeaders.map(h => new Param(h.name, h.value)).toList.asJava)
+    bodyPart.setCustomHeaders(mp.headers.map(h => new Param(h.name, h.value)).toList.asJava)
 
     rb.addBodyPart(bodyPart)
   }

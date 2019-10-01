@@ -143,12 +143,9 @@ class HttpURLConnectionBackend private (
 
     // inspired by: https://github.com/scalaj/scalaj-http/blob/master/src/main/scala/scalaj/http/Http.scala#L542
     val partsWithHeaders = mp.parts.map { p =>
-      val contentDisposition =
-        s"${HeaderNames.ContentDisposition}: ${p.contentDispositionHeaderValue}"
-      val contentTypeHeader =
-        p.contentType.map(ct => s"${HeaderNames.ContentType}: $ct")
-      val otherHeaders = p.additionalHeaders.map(h => s"${h.name}: ${h.value}")
-      val allHeaders = List(contentDisposition) ++ contentTypeHeader.toList ++ otherHeaders
+      val contentDisposition = s"${HeaderNames.ContentDisposition}: ${p.contentDispositionHeaderValue}"
+      val otherHeaders = p.headers.map(h => s"${h.name}: ${h.value}")
+      val allHeaders = List(contentDisposition) ++ otherHeaders
       (allHeaders.mkString(CrLf), p)
     }
 

@@ -31,13 +31,13 @@ abstract class AbstractCurlBackend[R[_], S](monad: MonadError[R], verbose: Boole
   override def send[T](request: Request[T, S]): R[Response[T]] = native.Zone { implicit z =>
     val curl = CurlApi.init
     if (verbose) {
-      curl.option(Verbose, true)
+      curl.option(Verbose, parameter = true)
     }
     if (request.tags.nonEmpty) {
       responseMonad.error(new UnsupportedOperationException("Tags are not supported"))
     }
     val reqHeaders = request.headers
-    if (reqHeaders.size > 0) {
+    if (reqHeaders.nonEmpty) {
       reqHeaders.find(_.name == "Accept-Encoding").foreach(h => curl.option(AcceptEncoding, h.value))
       request.body match {
         case _: MultipartBody =>
@@ -113,19 +113,17 @@ abstract class AbstractCurlBackend[R[_], S](monad: MonadError[R], verbose: Boole
       case MultipartBody(parts) =>
         val mime = curl.mime
         parts.foreach {
-          case Part(name, partBody, fileName, contentType, _, additionalHeaders) =>
+          case p @ Part(name, partBody, _, headers) =>
             val part = mime.addPart()
             part.withName(name)
             val str = basicBodyToString(partBody)
             part.withData(str)
-            if (fileName.isDefined) {
-              part.withFileName(fileName.get)
-            }
-            if (contentType.isDefined) {
-              part.withMimeType(contentType.get)
-            }
-            if (additionalHeaders.nonEmpty) {
-              val curlList = transformHeaders(additionalHeaders)
+            p.fileName.foreach(part.withFileName(_))
+            p.contentType.foreach(part.withMimeType(_))
+
+            val otherHeaders = headers.filterNot(_.is(HeaderNames.ContentType))
+            if (otherHeaders.nonEmpty) {
+              val curlList = transformHeaders(otherHeaders)
               part.withHeaders(curlList.ptr)
               multiPartHeaders = multiPartHeaders :+ curlList
             }

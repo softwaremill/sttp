@@ -228,12 +228,9 @@ class AkkaHttpBackend private (
 
       for {
         ct <- parseContentTypeOrOctetStream(mp.contentType)
-        headers <- headersToAkka(mp.additionalHeaders.toList)
+        headers <- headersToAkka(mp.headers.toList)
       } yield {
-        val dispositionParams =
-          mp.fileName.fold(Map.empty[String, String])(fn => Map("filename" -> fn))
-
-        AkkaMultipart.FormData.BodyPart(mp.name, entity(ct), dispositionParams, headers)
+        AkkaMultipart.FormData.BodyPart(mp.name, entity(ct), mp.dispositionParams, headers)
       }
     }
 

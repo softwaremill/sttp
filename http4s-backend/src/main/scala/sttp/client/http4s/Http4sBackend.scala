@@ -116,9 +116,8 @@ class Http4sBackend[F[_]: Effect: ContextShift](
 
   private def multipartToHttp4s(mp: Part[BasicRequestBody]): http4s.multipart.Part[F] = {
     val contentDisposition = http4s.Header(HeaderNames.ContentDisposition, mp.contentDispositionHeaderValue)
-    val contentTypeHeader = mp.contentType.map(ct => http4s.Header(HeaderNames.ContentType, ct))
-    val otherHeaders = mp.additionalHeaders.map(h => http4s.Header(h.name, h.value))
-    val allHeaders = List(contentDisposition) ++ contentTypeHeader.toList ++ otherHeaders
+    val otherHeaders = mp.headers.map(h => http4s.Header(h.name, h.value))
+    val allHeaders = List(contentDisposition) ++ otherHeaders
 
     http4s.multipart.Part(http4s.Headers(allHeaders), basicBodyToHttp4s(mp.body).body)
   }
