@@ -27,6 +27,13 @@ object Response {
     * Convenience method to create a Response instance, mainly useful in tests using
     * [[com.softwaremill.sttp.testing.SttpBackendStub]] and partial matchers.
     */
+  def apply[T](body: T, code: StatusCode): Response[T] =
+    Response(body, code, "", Nil, Nil)
+
+  /**
+    * Convenience method to create a Response instance, mainly useful in tests using
+    * [[com.softwaremill.sttp.testing.SttpBackendStub]] and partial matchers.
+    */
   def apply[T](body: T, code: StatusCode, statusText: String): Response[T] =
     Response(body, code, statusText, Nil, Nil)
 
