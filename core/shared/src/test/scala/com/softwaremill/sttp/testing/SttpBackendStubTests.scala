@@ -111,7 +111,7 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
       .thenRespond(throw new TimeoutException())
 
     val result = sttp.get(uri"http://example.org").send()
-    result.failed.futureValue shouldBe a[TimeoutException]
+    result.failed.map(_ shouldBe a[TimeoutException])
   }
 
   it should "try to convert a basic response to a mapped one" in {
