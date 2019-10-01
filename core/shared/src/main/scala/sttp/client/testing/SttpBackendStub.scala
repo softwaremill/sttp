@@ -103,7 +103,7 @@ class SttpBackendStub[R[_], S] private (
       thenRespond(Response[T](body, StatusCode.Ok, "OK"))
     def thenRespond[T](resp: => Response[T]): SttpBackendStub[R, S] = {
       val m: PartialFunction[Request[_, _], R[Response[_]]] = {
-        case r if p(r) => monad.unit(resp)
+        case r if p(r) => monad.eval(resp)
       }
       new SttpBackendStub(monad, matchers.orElse(m), fallback)
     }
