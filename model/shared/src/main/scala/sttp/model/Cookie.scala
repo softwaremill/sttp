@@ -95,10 +95,12 @@ case class CookiePair(name: String, value: String) {
 }
 
 object CookiePair {
-  def parseHeaderValue(s: String): CookiePair = {
-    s.split("=", 2).map(_.trim) match {
-      case Array(v1)     => CookiePair(v1, "")
-      case Array(v1, v2) => CookiePair(v1, v2)
+  def parseHeaderValue(s: String): List[CookiePair] = {
+    s.split(";").toList.map { ss =>
+      ss.split("=", 2).map(_.trim) match {
+        case Array(v1)     => CookiePair(v1, "")
+        case Array(v1, v2) => CookiePair(v1, v2)
+      }
     }
   }
 }
