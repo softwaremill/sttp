@@ -66,10 +66,7 @@ case class RequestT[U[_], T, +S](
   def contentLength(l: Long): RequestT[U, T, S] =
     header(HeaderNames.ContentLength, l.toString, replaceExisting = true)
   def header(h: Header, replaceExisting: Boolean = false): RequestT[U, T, S] = {
-    val current =
-      if (replaceExisting)
-        headers.filterNot(_.name.equalsIgnoreCase(h.name))
-      else headers
+    val current = if (replaceExisting) headers.filterNot(_.is(h.name)) else headers
     this.copy(headers = current :+ h)
   }
   def header(k: String, v: String, replaceExisting: Boolean): RequestT[U, T, S] = header(Header(k, v), replaceExisting)

@@ -16,8 +16,12 @@ case class Part[T](
   def contentType(v: String): Part[T] = header(Header(HeaderNames.ContentType, v))
   def contentType: Option[String] = header(HeaderNames.ContentType)
 
-  def header(h: Header): Part[T] = copy(headers = headers :+ h)
+  def header(h: Header, replaceExisting: Boolean = false): Part[T] = {
+    val current = if (replaceExisting) headers.filterNot(_.is(h.name)) else headers
+    this.copy(headers = current :+ h)
+  }
   def header(k: String, v: String): Part[T] = header(Header(k, v))
+  def header(k: String, v: String, replaceExisting: Boolean): Part[T] = header(Header(k, v), replaceExisting)
 
   def header(k: String): Option[String] = headers.find(_.name == k).map(_.value)
 
