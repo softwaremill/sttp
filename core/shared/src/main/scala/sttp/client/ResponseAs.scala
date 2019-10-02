@@ -76,15 +76,24 @@ object ResponseAs {
   }
 
   /**
-    * Tries to deserialize the body from a string (read with the given charset), using the given deserialization
-    * function. Exceptions that occur during the deserialization are represented as [[DeserializationError]]s.
+    * Returns a function, which maps `Left` values to [[HttpError]]s, and attempts to deserialize `Right` values using
+    * the given function, catching any exceptions and representing them as [[DeserializationError]]s.
     */
-  def deserializeFromStringCatchingExceptions[T, S](
-      base: ResponseAs[Either[String, String], S],
+  def deserializeRightCatchingExceptions[T](
       doDeserialize: String => T
-  ): ResponseAs[Either[ResponseError[Exception], T], S] =
-    deserializeFromString(
-      base,
+  ): Either[String, String] => Either[ResponseError[Exception], T] = {
+    case Left(s)  => Left(HttpError(s))
+    case Right(s) => deserializeCatchingExceptions(doDeserialize)(s)
+  }
+
+  /**
+    * Returns a function, which attempts to deserialize `Right` values using the given function, catching any
+    * exceptions and representing them as [[DeserializationError]]s.
+    */
+  def deserializeCatchingExceptions[T](
+      doDeserialize: String => T
+  ): String => Either[DeserializationError[Exception], T] =
+    deserializeWithError(
       (s: String) =>
         Try(doDeserialize(s)) match {
           case Failure(e: Exception) => Left(e)
@@ -94,21 +103,25 @@ object ResponseAs {
     )
 
   /**
-    * Tries to deserialize the body from a string (read with the given charset), using the given deserialization
-    * function.
+    * Returns a function, which maps `Left` values to [[HttpError]]s, and attempts to deserialize `Right` values using
+    * the given function.
     */
-  def deserializeFromString[E, T, S](
-      base: ResponseAs[Either[String, String], S],
+  def deserializeRightWithError[E, T](
       doDeserialize: String => Either[E, T]
-  ): ResponseAs[Either[ResponseError[E], T], S] =
-    base
-      .map {
-        case Left(s) => Left(HttpError(s))
-        case Right(s) =>
-          doDeserialize(s) match {
-            case Left(e)  => Left(DeserializationError(s, e))
-            case Right(b) => Right(b)
-          }
+  ): Either[String, String] => Either[ResponseError[E], T] = {
+    case Left(s)  => Left(HttpError(s))
+    case Right(s) => deserializeWithError(doDeserialize)(s)
+  }
+
+  /**
+    * Converts a deserialization function, which returns errors of type `E`, into a function where errors are wrapped
+    * using [[DeserializationError]].
+    */
+  def deserializeWithError[E, T](doDeserialize: String => Either[E, T]): String => Either[DeserializationError[E], T] =
+    s =>
+      doDeserialize(s) match {
+        case Left(e)  => Left(DeserializationError(s, e))
+        case Right(b) => Right(b)
       }
 }
 

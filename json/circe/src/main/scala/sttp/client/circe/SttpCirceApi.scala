@@ -14,8 +14,22 @@ trait SttpCirceApi {
   ): BodySerializer[B] =
     b => StringBody(encoder(b).pretty(printer), Utf8, Some(MediaTypes.Json))
 
+  /**
+    * If the response is successful (2xx), tries to deserialize the body from a string into JSON. Returns:
+    * - `Right(b)` if the parsing was successful
+    * - `Left(HttpError(String))` if the response code was other than 2xx (deserialization is not attempted)
+    * - `Left(DeserializationError)` if there's an error during deserialization
+    */
   def asJson[B: Decoder: IsOption]: ResponseAs[Either[ResponseError[io.circe.Error], B], Nothing] =
-    ResponseAs.deserializeFromString(asString, deserializeJson)
+    asString.map(ResponseAs.deserializeRightWithError(deserializeJson))
+
+  /**
+    * Tries to deserialize the body from a string into JSON, regardless of the response code. Returns:
+    * - `Right(b)` if the parsing was successful
+    * - `Left(DeserializationError)` if there's an error during deserialization
+    */
+  def asJsonAlways[B: Decoder: IsOption]: ResponseAs[Either[DeserializationError[io.circe.Error], B], Nothing] =
+    asStringAlways.map(ResponseAs.deserializeWithError(deserializeJson))
 
   def deserializeJson[B: Decoder: IsOption]: String => Either[io.circe.Error, B] =
     JsonInput.sanitize[B].andThen(decode[B])
