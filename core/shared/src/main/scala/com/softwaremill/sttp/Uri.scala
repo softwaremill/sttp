@@ -2,7 +2,7 @@ package com.softwaremill.sttp
 
 import java.net.URI
 
-import Uri.{QueryFragment, QueryFragmentEncoding, UserInfo}
+import Uri.{PathEncoding, QueryFragment, QueryFragmentEncoding, UserInfo}
 import Uri.QueryFragment.{KeyValue, Plain, Value}
 
 import scala.annotation.tailrec
@@ -30,7 +30,8 @@ case class Uri(
     port: Option[Int],
     path: Seq[String],
     queryFragments: Seq[QueryFragment],
-    fragment: Option[String]
+    fragment: Option[String],
+    pathEncoding: PathEncoding = PathEncoding.All
 ) {
   import Rfc3986.encode
 
@@ -133,12 +134,18 @@ case class Uri(
           encodeQueryFragments(t, previousWasPlain = false, sb)
       }
 
+    def encodePathSegments(ps: Seq[String]): String =
+      pathEncoding match {
+        case PathEncoding.All => path.map(encode(Rfc3986.PathSegment)).mkString("/")
+        case PathEncoding.None => path.mkString("/")
+      }
+
     val schemeS = encode(Rfc3986.Scheme)(scheme)
     val userInfoS = userInfo.fold("")(encodeUserInfo(_) + "@")
     val hostS = encodeHost
     val portS = port.fold("")(":" + _)
     val pathPrefixS = if (path.isEmpty) "" else "/"
-    val pathS = path.map(encode(Rfc3986.PathSegment)).mkString("/")
+    val pathS = encodePathSegments(path)
     val queryPrefixS = if (queryFragments.isEmpty) "" else "?"
 
     val queryS = encodeQueryFragments(queryFragments.toList, previousWasPlain = true, new StringBuilder())
@@ -258,6 +265,21 @@ object Uri {
       * for discussion.
       */
     case object RelaxedWithBrackets extends QueryFragmentEncoding
+  }
+
+  sealed trait PathEncoding
+  object PathEncoding {
+    /**
+      * Automatically encode all path reserved characters per RFC3986.
+      **/
+    case object All extends PathEncoding
+
+    /**
+      * Doesn't perform any extra encoding and, rather, transparently passes
+      * path segments without encoding. Note that this option implies that
+      * users providing paths have already performed any necessary encoding.
+      */
+    case object None extends PathEncoding
   }
 
   case class UserInfo(username: String, password: Option[String])

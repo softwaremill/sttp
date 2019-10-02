@@ -2,7 +2,7 @@ package com.softwaremill.sttp
 
 import java.net.URI
 
-import com.softwaremill.sttp.Uri.{QueryFragment, QueryFragmentEncoding, UserInfo}
+import com.softwaremill.sttp.Uri.{PathEncoding, QueryFragment, QueryFragmentEncoding, UserInfo}
 import org.scalatest.{FunSuite, Matchers, TryValues}
 
 class UriTests extends FunSuite with Matchers with TryValues {
@@ -38,7 +38,9 @@ class UriTests extends FunSuite with Matchers with TryValues {
       "http://example.com#f:g/h%20i",
     Uri("http", None, "example.com", None, List("key=value"), Nil, None) ->
       "http://example.com/key=value",
-    Uri("2001:db8::ff00:42:8329", 8080) -> "http://[2001:db8::ff00:42:8329]:8080"
+    Uri("2001:db8::ff00:42:8329", 8080) -> "http://[2001:db8::ff00:42:8329]:8080",
+    Uri("example.com", 8080, List("hello%20world")).copy(pathEncoding = PathEncoding.None) ->
+      "http://example.com:8080/hello%20world"
   )
 
   for {
