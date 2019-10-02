@@ -220,5 +220,14 @@ trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
         }
       }
     }
+
+    "send a multipart message with custom file name" in {
+      withTemporaryFile(Some(testBodyBytes)) { f =>
+        val req = mp.multipartBody(multipartFile("p1", f).fileName("test.txt"))
+        req.send().toFuture().map { resp =>
+          resp.body should be(Right(s"p1=$testBody (test.txt)"))
+        }
+      }
+    }
   }
 }

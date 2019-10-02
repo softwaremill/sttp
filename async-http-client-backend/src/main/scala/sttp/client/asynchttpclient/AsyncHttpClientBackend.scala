@@ -240,22 +240,26 @@ abstract class AsyncHttpClientBackend[R[_], S](
       s"""${mp.name}"; ${Part.FileNameDispositionParam}="$fn"""
     }
 
+    val ctOrNull = mp.contentType.orNull
+
     val bodyPart = mp.body match {
       case StringBody(b, encoding, _) =>
         new StringPart(nameWithFilename, b, mp.contentType.getOrElse(MediaTypes.Text), Charset.forName(encoding))
       case ByteArrayBody(b, _) =>
-        new ByteArrayPart(nameWithFilename, b)
+        new ByteArrayPart(nameWithFilename, b, ctOrNull)
       case ByteBufferBody(b, _) =>
-        new ByteArrayPart(nameWithFilename, b.array())
+        new ByteArrayPart(nameWithFilename, b.array(), ctOrNull)
       case InputStreamBody(b, _) =>
         // sadly async http client only supports parts that are strings,
         // byte arrays or files
-        new ByteArrayPart(nameWithFilename, toByteArray(b))
+        new ByteArrayPart(nameWithFilename, toByteArray(b), ctOrNull)
       case FileBody(b, _) =>
-        new FilePart(mp.name, b.toFile, null, null, mp.fileName.orNull)
+        new FilePart(mp.name, b.toFile, ctOrNull, null, mp.fileName.orNull)
     }
 
-    bodyPart.setCustomHeaders(mp.headers.map(h => new Param(h.name, h.value)).toList.asJava)
+    bodyPart.setCustomHeaders(
+      mp.headers.filterNot(_.is(HeaderNames.ContentType)).map(h => new Param(h.name, h.value)).toList.asJava
+    )
 
     rb.addBodyPart(bodyPart)
   }
