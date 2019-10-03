@@ -8,6 +8,7 @@ import org.scalatest.{FunSuite, Matchers, TryValues}
 class UriTests extends FunSuite with Matchers with TryValues {
 
   val QF = QueryFragment
+  val PS = PathSegment
 
   val wholeUriTestData = List(
     Uri("http", None, "example.com", None, Nil, Nil, None) -> "http://example.com",
@@ -16,18 +17,18 @@ class UriTests extends FunSuite with Matchers with TryValues {
       None,
       "sub.example.com",
       Some(8080),
-      List("a", "b", "xyz"),
+      List(PS.Literal("a"), PS.Literal("b"), PS.Literal("xyz")),
       List(QF.KeyValue("p1", "v1"), QF.KeyValue("p2", "v2")),
       Some("f")
     ) ->
       "https://sub.example.com:8080/a/b/xyz?p1=v1&p2=v2#f",
-    Uri("http", None, "example.com", None, List(""), List(QF.KeyValue("p", "v"), QF.KeyValue("p", "v")), None) -> "http://example.com/?p=v&p=v",
+    Uri("http", None, "example.com", None, List(PS.Literal("")), List(QF.KeyValue("p", "v"), QF.KeyValue("p", "v")), None) -> "http://example.com/?p=v&p=v",
     Uri(
       "http",
       None,
       "exa mple.com",
       None,
-      List("a b", "z", "ą:ę"),
+      List(PS.Encoded("a b"), PS.Encoded("z"), PS.Encoded("ą:ę")),
       List(QF.KeyValue("p:1", "v&v"), QF.KeyValue("p2", "v v")),
       None
     ) ->
@@ -36,9 +37,12 @@ class UriTests extends FunSuite with Matchers with TryValues {
       "http://us&e%2Fr:pa%20ss@example.com",
     Uri("http", None, "example.com", None, Nil, Nil, Some("f:g/h i")) ->
       "http://example.com#f:g/h%20i",
-    Uri("http", None, "example.com", None, List("key=value"), Nil, None) ->
+    Uri("http", None, "example.com", None, List(PS.Encoded("key=value")), Nil, None) ->
       "http://example.com/key=value",
-    Uri("2001:db8::ff00:42:8329", 8080) -> "http://[2001:db8::ff00:42:8329]:8080"
+    Uri("http", None, "example.com", None, List(PS.Custom[String]("imnotyelling", _.toUpperCase)), Nil, None) ->
+      "http://example.com/IMNOTYELLING",
+    Uri("2001:db8::ff00:42:8329", 8080) ->
+      "http://[2001:db8::ff00:42:8329]:8080"
   )
 
   for {
@@ -152,6 +156,17 @@ class UriTests extends FunSuite with Matchers with TryValues {
   test("should have multi params with only values") {
     val uriAsString = "https://sub.example.com:8080?=v1&=v2"
     uri"$uriAsString".multiParamsMap should be(Map("" -> List("v1", "v2")))
+  }
+
+  test("should allow path segments to be supplied as a Seq") {
+    val segs = scala.collection.Seq[PathSegment](PS.Literal("hello"), PS.Encoded("world"))
+    val uri = Uri("example.com").pathSegments(segs)
+    uri.path should be(segs)
+  }
+
+  test("should allow path segments to be supplied as varargs") {
+    val uri = Uri("example.com").pathSegments(PS.Literal("hello"), PS.Encoded("world"), PS.Literal("yo"))
+    uri.path should be(Seq(PS.Literal("hello"), PS.Encoded("world"), PS.Literal("yo")))
   }
 
   val validationTestData = List(

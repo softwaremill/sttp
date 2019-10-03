@@ -2,8 +2,9 @@ package sttp.model
 
 import java.net.URI
 
+import sttp.model.Rfc3986.encode
 import sttp.model.Uri.QueryFragment.{KeyValue, Plain, Value}
-import sttp.model.Uri.{QueryFragment, QueryFragmentEncoding, UserInfo}
+import sttp.model.Uri.{QueryFragment, QueryFragmentEncoding, UserInfo, PathSegment}
 
 import scala.annotation.tailrec
 import scala.collection.immutable.Seq
@@ -28,7 +29,7 @@ case class Uri(
     userInfo: Option[UserInfo],
     host: String,
     port: Option[Int],
-    path: Seq[String],
+    path: Seq[PathSegment],
     queryFragments: Seq[QueryFragment],
     fragment: Option[String]
 ) {
@@ -60,13 +61,20 @@ case class Uri(
     // removing the leading slash, as it is added during serialization anyway
     val pWithoutLeadingSlash = if (p.startsWith("/")) p.substring(1) else p
     val ps = pWithoutLeadingSlash.split("/", -1).toList
-    this.copy(path = ps)
+    this.copy(path = ps.map(PathSegment.Encoded))
   }
 
   def path(p1: String, p2: String, ps: String*): Uri =
-    this.copy(path = p1 :: p2 :: ps.toList)
+    this.copy(path = (p1 :: p2 :: ps.toList).map(PathSegment.Encoded))
 
-  def path(ps: scala.collection.Seq[String]): Uri = this.copy(path = ps.toList)
+  def path(ps: scala.collection.Seq[String]): Uri =
+    this.copy(path = ps.toList.map(PathSegment.Encoded))
+
+  def pathSegments(p1: PathSegment, p2: PathSegment, ps: PathSegment*): Uri =
+    this.copy(path = (p1 :: p2 :: ps.toList))
+
+  def pathSegments(ps: scala.collection.Seq[PathSegment]): Uri =
+    this.copy(path = ps.toList)
 
   /**
     * Adds the given parameter to the query.
@@ -145,7 +153,7 @@ case class Uri(
     val hostS = encodeHost
     val portS = port.fold("")(":" + _)
     val pathPrefixS = if (path.isEmpty) "" else "/"
-    val pathS = path.map(encode(Rfc3986.PathSegment)).mkString("/")
+    val pathS = path.mkString("/")
     val queryPrefixS = if (queryFragments.isEmpty) "" else "?"
 
     val queryS = encodeQueryFragments(queryFragments.toList, previousWasPlain = true, new StringBuilder())
@@ -183,15 +191,15 @@ object Uri extends UriInterpolator {
     Uri("http", None, host, None, Vector.empty, Vector.empty, None)
   def apply(host: String, port: Int): Uri =
     Uri("http", None, host, Some(port), Vector.empty, Vector.empty, None)
-  def apply(host: String, port: Int, path: Seq[String]): Uri =
+  def apply(host: String, port: Int, path: Seq[PathSegment]): Uri =
     Uri("http", None, host, Some(port), path, Vector.empty, None)
   def apply(scheme: String, host: String): Uri =
     Uri(scheme, None, host, None, Vector.empty, Vector.empty, None)
   def apply(scheme: String, host: String, port: Int): Uri =
     Uri(scheme, None, host, Some(port), Vector.empty, Vector.empty, None)
-  def apply(scheme: String, host: String, port: Int, path: Seq[String]): Uri =
+  def apply(scheme: String, host: String, port: Int, path: Seq[PathSegment]): Uri =
     Uri(scheme, None, host, Some(port), path, Vector.empty, None)
-  def apply(scheme: String, host: String, path: Seq[String]): Uri =
+  def apply(scheme: String, host: String, path: Seq[PathSegment]): Uri =
     Uri(scheme, None, host, None, path, Vector.empty, None)
   def apply(javaUri: URI): Uri = uri"${javaUri.toString}"
 
@@ -278,4 +286,32 @@ object Uri extends UriInterpolator {
   }
 
   case class UserInfo(username: String, password: Option[String])
+
+  sealed trait PathSegment
+  object PathSegment {
+
+    /**
+      * Specify a path segment that should not be encoded or otherwise changed
+      * during path serialization.
+      */
+    case class Literal(seg: String) extends PathSegment {
+      override def toString: String = seg
+    }
+
+    /**
+      * Specify a path segment that should be automatically encoded per RFC3986
+      * during path serialization.
+      */
+    case class Encoded(seg: String) extends PathSegment {
+      override def toString: String = encode(Rfc3986.PathSegment)(seg)
+    }
+
+    /**
+      * Specify a path segment of a custom type that should be coded using the
+      * provided encoding method during path serialization.
+      */
+    case class Custom[A](seg: A, encode: A => String) extends PathSegment {
+      override def toString: String = encode(seg)
+    }
+  }
 }

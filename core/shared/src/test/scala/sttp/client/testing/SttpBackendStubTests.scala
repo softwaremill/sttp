@@ -11,6 +11,7 @@ import sttp.client.monad.{FutureMonad, IdMonad}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FlatSpec, Matchers}
 import sttp.client.{IgnoreResponse, ResponseAs, SttpBackend}
+import sttp.model.Uri.PathSegment
 import sttp.model.{Method, StatusCode}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -19,16 +20,16 @@ import scala.concurrent.duration._
 @silent("dead code")
 class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
   private val testingStub = SttpBackendStub(IdMonad)
-    .whenRequestMatches(_.uri.path.startsWith(List("a", "b")))
+    .whenRequestMatches(_.uri.path.startsWith(List(PathSegment.Encoded("a"), PathSegment.Encoded("b"))))
     .thenRespondOk()
     .whenRequestMatches(_.uri.paramsMap.get("p").contains("v"))
     .thenRespond("10")
     .whenRequestMatches(_.method == Method.GET)
     .thenRespondServerError()
     .whenRequestMatchesPartial({
-      case r if r.method == Method.POST && r.uri.path.endsWith(List("partial10")) =>
+      case r if r.method == Method.POST && r.uri.path.endsWith(List(PathSegment.Encoded("partial10"))) =>
         Response(Right("10"), StatusCode.Ok, "OK", Nil, Nil)
-      case r if r.method == Method.POST && r.uri.path.endsWith(List("partialAda")) =>
+      case r if r.method == Method.POST && r.uri.path.endsWith(List(PathSegment.Encoded("partialAda"))) =>
         Response(Right("Ada"), StatusCode.Ok, "OK", Nil, Nil)
     })
     .whenRequestMatches(_.uri.port.exists(_ == 8080))
@@ -223,7 +224,7 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
 
   private val testingStubWithFallback = SttpBackendStub
     .withFallback(testingStub)
-    .whenRequestMatches(_.uri.path.startsWith(List("c")))
+    .whenRequestMatches(_.uri.path.startsWith(List(PathSegment.Encoded("c"))))
     .thenRespond("ok")
 
   "backend stub with fallback" should "use the stub when response for a request is defined" in {
