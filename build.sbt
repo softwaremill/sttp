@@ -13,7 +13,7 @@ lazy val startTestServer = taskKey[Unit]("Start a http server used by tests (use
 lazy val is2_11 = settingKey[Boolean]("Is the scala version 2.11.")
 lazy val is2_11_or_2_12 = settingKey[Boolean]("Is the scala version 2.11 or 2.12.")
 
-val silencerVersion = "1.4.3"
+val silencerVersion = "1.4.4"
 
 val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   organization := "com.softwaremill.sttp",
