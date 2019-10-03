@@ -5,7 +5,7 @@ akka-http backend
 
 To use, add the following dependency to your project::
 
-  "com.softwaremill.sttp" %% "akka-http-backend" % "1.6.8"
+  "com.softwaremill.sttp" %% "akka-http-backend" % "1.7.0"
 
 This backend depends on `akka-http <http://doc.akka.io/docs/akka-http/current/scala/http/>`_. A fully **asynchronous** backend. Sending a request returns a response wrapped in a ``Future``.
 
