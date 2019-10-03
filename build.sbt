@@ -336,7 +336,7 @@ lazy val asyncHttpClientBackend: Project =
     .settings(
       name := "async-http-client-backend",
       libraryDependencies ++= Seq(
-        "org.asynchttpclient" % "async-http-client" % "2.10.2"
+        "org.asynchttpclient" % "async-http-client" % "2.10.3"
       )
     )
     .dependsOn(coreJVM % "compile->compile;test->test")
