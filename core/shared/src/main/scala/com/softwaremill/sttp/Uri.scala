@@ -136,7 +136,7 @@ case class Uri(
 
     def encodePathSegments(ps: Seq[String]): String =
       pathEncoding match {
-        case PathEncoding.All => path.map(encode(Rfc3986.PathSegment)).mkString("/")
+        case PathEncoding.All  => path.map(encode(Rfc3986.PathSegment)).mkString("/")
         case PathEncoding.None => path.mkString("/")
       }
 
@@ -269,6 +269,7 @@ object Uri {
 
   sealed trait PathEncoding
   object PathEncoding {
+
     /**
       * Automatically encode all path reserved characters per RFC3986.
       **/
