@@ -383,7 +383,7 @@ lazy val asyncHttpClientFs2Backend: Project =
   asyncHttpClientBackendProject("fs2")
     .settings(
       libraryDependencies ++= Seq(
-        "co.fs2" %% "fs2-reactive-streams" % "2.0.0"
+        "co.fs2" %% "fs2-reactive-streams" % "2.0.1"
       )
     )
     .dependsOn(catsJVM % "compile->compile;test->test")
