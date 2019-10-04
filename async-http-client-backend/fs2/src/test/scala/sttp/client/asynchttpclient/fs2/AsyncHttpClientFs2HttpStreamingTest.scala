@@ -24,8 +24,8 @@ class AsyncHttpClientFs2HttpStreamingTest extends StreamingTest[IO, Stream[IO, B
         value.unsafeToFuture()
     }
 
-  override def bodyProducer(body: String): Stream[IO, ByteBuffer] =
-    Stream.emits(body.getBytes("utf-8")).map(b => ByteBuffer.wrap(Array(b)))
+  override def bodyProducer(chunks: Iterable[Array[Byte]]): Stream[IO, ByteBuffer] =
+    Stream.emits(chunks.toSeq).map(ByteBuffer.wrap)
 
   override def bodyConsumer(stream: Stream[IO, ByteBuffer]): IO[String] =
     stream

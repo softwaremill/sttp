@@ -11,12 +11,10 @@ abstract class MonixStreamingTest extends StreamingTest[Task, Observable[ByteBuf
 
   override implicit val convertToFuture: ConvertToFuture[Task] = convertMonixTaskToFuture
 
-  override def bodyProducer(body: String): Observable[ByteBuffer] =
+  override def bodyProducer(chunks: Iterable[Array[Byte]]): Observable[ByteBuffer] =
     Observable
-      .fromIterable(
-        body.getBytes("utf-8")
-      )
-      .map(v => ByteBuffer.wrap(Array(v)))
+      .fromIterable(chunks)
+      .map(ByteBuffer.wrap)
 
   override def bodyConsumer(stream: Observable[ByteBuffer]): Task[String] =
     stream

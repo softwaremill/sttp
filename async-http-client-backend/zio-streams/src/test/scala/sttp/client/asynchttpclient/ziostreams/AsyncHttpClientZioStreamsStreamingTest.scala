@@ -16,8 +16,8 @@ class AsyncHttpClientZioStreamsStreamingTest extends StreamingTest[Task, Stream[
     runtime.unsafeRunSync(AsyncHttpClientZioStreamsBackend(runtime)).getOrElse(c => throw c.squash)
   override implicit val convertToFuture: ConvertToFuture[Task] = convertZioIoToFuture
 
-  override def bodyProducer(body: String): Stream[Throwable, ByteBuffer] =
-    Stream.apply(body.getBytes(Utf8).grouped(10).map(ByteBuffer.wrap).toSeq: _*)
+  override def bodyProducer(chunks: Iterable[Array[Byte]]): Stream[Throwable, ByteBuffer] =
+    Stream.apply(chunks.map(ByteBuffer.wrap).toSeq: _*)
 
   override def bodyConsumer(stream: Stream[Throwable, ByteBuffer]): Task[String] =
     stream.fold(ByteBuffer.allocate(0))(concatByteBuffers).map(_.array()).map(new String(_, Utf8))

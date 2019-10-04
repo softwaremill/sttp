@@ -4,6 +4,7 @@ import sttp.client._
 import sttp.client.testing.{ConvertToFuture, ToFutureWrapper}
 import org.scalatest.{AsyncFreeSpec, BeforeAndAfterAll, Matchers}
 import StreamingTest._
+import sttp.client.internal.Utf8
 
 import scala.language.higherKinds
 
@@ -20,14 +21,16 @@ trait StreamingTest[R[_], S]
 
   implicit def convertToFuture: ConvertToFuture[R]
 
-  def bodyProducer(body: String): S
+  def bodyProducer(chunks: Iterable[Array[Byte]]): S
+
+  private def stringBodyProducer(body: String): S = bodyProducer(body.getBytes(Utf8).grouped(10).toIterable)
 
   def bodyConsumer(stream: S): R[String]
 
   "stream request body" in {
     basicRequest
       .post(uri"$endpoint/streaming/echo")
-      .streamBody(bodyProducer(Body))
+      .streamBody(stringBodyProducer(Body))
       .send()
       .toFuture()
       .map { response =>
@@ -38,7 +41,7 @@ trait StreamingTest[R[_], S]
   "stream large request body" in {
     basicRequest
       .post(uri"$endpoint/streaming/echo")
-      .streamBody(bodyProducer(Body))
+      .streamBody(stringBodyProducer(Body))
       .send()
       .toFuture()
       .map { response =>

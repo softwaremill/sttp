@@ -18,8 +18,8 @@ class Http4sHttpStreamingTest extends StreamingTest[IO, Stream[IO, Byte]] {
     override def toFuture[T](value: IO[T]): Future[T] = value.unsafeToFuture()
   }
 
-  override def bodyProducer(body: String): Stream[IO, Byte] =
-    Stream.chunk(Chunk.array(body.getBytes("utf-8")))
+  override def bodyProducer(chunks: Iterable[Array[Byte]]): Stream[IO, Byte] =
+    Stream.chunk(Chunk.concatBytes(chunks.toSeq.map(Chunk.array)))
 
   override def bodyConsumer(stream: Stream[IO, Byte]): IO[String] =
     stream
