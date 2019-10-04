@@ -3,6 +3,7 @@ package sttp.client.testing.streaming
 import sttp.client._
 import sttp.client.testing.{ConvertToFuture, ToFutureWrapper}
 import org.scalatest.{AsyncFreeSpec, BeforeAndAfterAll, Matchers}
+import StreamingTest._
 
 import scala.language.higherKinds
 
@@ -15,8 +16,6 @@ trait StreamingTest[R[_], S]
 
   protected def endpoint: String
 
-  private val body = "streaming test"
-
   implicit def backend: SttpBackend[R, S]
 
   implicit def convertToFuture: ConvertToFuture[R]
@@ -28,18 +27,29 @@ trait StreamingTest[R[_], S]
   "stream request body" in {
     basicRequest
       .post(uri"$endpoint/streaming/echo")
-      .streamBody(bodyProducer(body))
+      .streamBody(bodyProducer(Body))
       .send()
       .toFuture()
       .map { response =>
-        response.body shouldBe Right(body)
+        response.body shouldBe Right(Body)
+      }
+  }
+
+  "stream large request body" in {
+    basicRequest
+      .post(uri"$endpoint/streaming/echo")
+      .streamBody(bodyProducer(Body))
+      .send()
+      .toFuture()
+      .map { response =>
+        response.body shouldBe Right(Body)
       }
   }
 
   "receive a stream" in {
     basicRequest
       .post(uri"$endpoint/streaming/echo")
-      .body(body)
+      .body(Body)
       .response(asStreamAlways[S])
       .send()
       .toFuture()
@@ -47,14 +57,34 @@ trait StreamingTest[R[_], S]
         bodyConsumer(response.body).toFuture()
       }
       .map { responseBody =>
-        responseBody shouldBe body
+        responseBody shouldBe Body
+      }
+  }
+
+  "receive a large stream" in {
+    basicRequest
+      .post(uri"$endpoint/streaming/echo")
+      .body(LargeBody)
+      .response(asStreamAlways[S])
+      .send()
+      .toFuture()
+      .flatMap { response =>
+        bodyConsumer(response.body).toFuture()
+      }
+      .map { responseBody =>
+        if (responseBody.length != LargeBody.length) {
+          fail(s"Response body had length ${responseBody.length}, instead of ${LargeBody.length}, starts with: ${responseBody
+            .take(512)}")
+        } else {
+          succeed
+        }
       }
   }
 
   "receive a stream or error" in {
     basicRequest
       .post(uri"$endpoint/streaming/echo")
-      .body(body)
+      .body(Body)
       .response(asStream[S])
       .send()
       .toFuture()
@@ -62,14 +92,14 @@ trait StreamingTest[R[_], S]
         bodyConsumer(response.body.right.get).toFuture()
       }
       .map { responseBody =>
-        responseBody shouldBe body
+        responseBody shouldBe Body
       }
   }
 
   "receive a mapped stream" in {
     basicRequest
       .post(uri"$endpoint/streaming/echo")
-      .body(body)
+      .body(Body)
       .response(asStreamAlways[S].map(s => (s, true)))
       .send()
       .toFuture()
@@ -78,7 +108,7 @@ trait StreamingTest[R[_], S]
         bodyConsumer(stream).toFuture().map((_, flag))
       }
       .map { responseBody =>
-        responseBody shouldBe ((body, true))
+        responseBody shouldBe ((Body, true))
       }
   }
 
@@ -109,4 +139,9 @@ trait StreamingTest[R[_], S]
     super.afterAll()
   }
 
+}
+
+object StreamingTest {
+  val Body = "streaming test"
+  val LargeBody: String = "x" * 25000000
 }
