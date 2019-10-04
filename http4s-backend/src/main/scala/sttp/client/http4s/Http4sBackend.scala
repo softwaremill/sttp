@@ -4,8 +4,10 @@ import java.io.{File, InputStream, UnsupportedEncodingException}
 import java.nio.charset.Charset
 
 import cats.data.NonEmptyList
-import cats.effect.{ConcurrentEffect, ContextShift, Effect, Resource}
+import cats.effect.concurrent.MVar
+import cats.effect.{ConcurrentEffect, ContextShift, Resource}
 import cats.implicits._
+import cats.effect.implicits._
 import fs2.{Chunk, Stream}
 import org.http4s.{Request => Http4sRequest}
 import org.http4s
@@ -29,7 +31,7 @@ import sttp.client.{
 import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
 
-class Http4sBackend[F[_]: Effect: ContextShift](
+class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
     client: Client[F],
     blockingExecutionContext: ExecutionContext,
     customizeRequest: Http4sRequest[F] => Http4sRequest[F]
@@ -44,16 +46,34 @@ class Http4sBackend[F[_]: Effect: ContextShift](
       body = entity.body
     )
 
-    client.fetch(customizeRequest(request)) { response =>
-      val code = StatusCode(response.status.code)
-      val headers = response.headers.toList.map(h => Header(h.name.value, h.value))
-      val statusText = response.status.reason
-      val responseMetadata = ResponseMetadata(headers, code, statusText)
+    // see adr0001
+    MVar.empty[F, Unit].flatMap { responseBodyCompleteVar =>
+      MVar.empty[F, Response[T]].flatMap { responseVar =>
+        val sendRequest = client.fetch(customizeRequest(request)) { response =>
+          val code = StatusCode(response.status.code)
+          val headers = response.headers.toList.map(h => Header(h.name.value, h.value))
+          val statusText = response.status.reason
+          val responseMetadata = ResponseMetadata(headers, code, statusText)
 
-      val body = bodyFromHttp4s(r.response, decompressResponseBodyIfNotHead(r.method, response), responseMetadata)
+          val body =
+            bodyFromHttp4s(
+              r.response,
+              signalResponseBodyComplete(
+                decompressResponseBodyIfNotHead(r.method, response),
+                responseBodyCompleteVar.put(())
+              ),
+              responseMetadata
+            )
 
-      body.map { b =>
-        Response(b, code, statusText, headers, Nil)
+          body
+            .map { b =>
+              Response(b, code, statusText, headers, Nil)
+            }
+            .flatMap(responseVar.put)
+            .flatMap(_ => responseBodyCompleteVar.take)
+        }
+
+        sendRequest.start >> responseVar.take
       }
     }
   }
@@ -122,6 +142,10 @@ class Http4sBackend[F[_]: Effect: ContextShift](
     http4s.multipart.Part(http4s.Headers(allHeaders), basicBodyToHttp4s(mp.body).body)
   }
 
+  private def signalResponseBodyComplete(hr: http4s.Response[F], signal: F[Unit]): http4s.Response[F] = {
+    hr.copy(body = hr.body.onFinalize(signal))
+  }
+
   private def decompressResponseBodyIfNotHead[T](m: Method, hr: http4s.Response[F]): http4s.Response[F] = {
     if (m == Method.HEAD) hr else decompressResponseBody(hr)
   }
@@ -188,14 +212,14 @@ class Http4sBackend[F[_]: Effect: ContextShift](
 }
 
 object Http4sBackend {
-  def usingClient[F[_]: Effect: ContextShift](
+  def usingClient[F[_]: ConcurrentEffect: ContextShift](
       client: Client[F],
       blockingExecutionContext: ExecutionContext = ExecutionContext.Implicits.global,
       customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _
   ): SttpBackend[F, Stream[F, Byte]] =
     new FollowRedirectsBackend(new Http4sBackend[F](client, blockingExecutionContext, customizeRequest))
 
-  def usingClientBuilder[F[_]: Effect: ContextShift](
+  def usingClientBuilder[F[_]: ConcurrentEffect: ContextShift](
       blazeClientBuilder: BlazeClientBuilder[F],
       blockingExecutionContext: ExecutionContext = ExecutionContext.Implicits.global,
       customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _

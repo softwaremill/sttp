@@ -143,5 +143,5 @@ trait StreamingTest[R[_], S]
 
 object StreamingTest {
   val Body = "streaming test"
-  val LargeBody: String = "x" * 25000000
+  val LargeBody: String = "x" * 4000000
 }
