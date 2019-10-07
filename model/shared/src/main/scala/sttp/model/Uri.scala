@@ -3,14 +3,13 @@ package sttp.model
 import java.net.URI
 
 import sttp.model.Uri.QuerySegment.{KeyValue, Plain, Value}
-import sttp.model.Uri.{QuerySegment, UserInfo}
+import sttp.model.Uri.{PathSegmentEncoding, QuerySegment, Segment, UserInfo}
 
 import scala.annotation.tailrec
 import scala.collection.immutable.Seq
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.util.Try
-
 import Rfc3986.encode
 
 /**
@@ -30,7 +29,7 @@ case class Uri(
     userInfo: Option[UserInfo],
     host: String,
     port: Option[Int],
-    path: Seq[String],
+    pathSegments: Seq[Segment],
     querySegments: Seq[QuerySegment],
     fragment: Option[String]
 ) {
@@ -56,17 +55,33 @@ case class Uri(
 
   def port(p: Option[Int]): Uri = this.copy(port = p)
 
+  //
+
+  /**
+    * Replace path with the given single-segment path.
+    */
   def path(p: String): Uri = {
     // removing the leading slash, as it is added during serialization anyway
     val pWithoutLeadingSlash = if (p.startsWith("/")) p.substring(1) else p
     val ps = pWithoutLeadingSlash.split("/", -1).toList
-    this.copy(path = ps)
+    path(ps)
   }
 
+  /**
+    * Replace path with the given path segments.
+    */
   def path(p1: String, p2: String, ps: String*): Uri =
-    this.copy(path = p1 :: p2 :: ps.toList)
+    path(p1 :: p2 :: ps.toList)
 
-  def path(ps: scala.collection.Seq[String]): Uri = this.copy(path = ps.toList)
+  /**
+    * Replace path with the given path segments.
+    */
+  def path(ps: scala.collection.Seq[String]): Uri =
+    this.copy(pathSegments = ps.toList.map(Segment(_, PathSegmentEncoding.Standard)))
+
+  def path: Seq[String] = pathSegments.map(_.v)
+
+  //
 
   /**
     * Adds the given parameter to the query.
@@ -111,9 +126,13 @@ case class Uri(
   def querySegment(qf: QuerySegment): Uri =
     this.copy(querySegments = querySegments :+ qf)
 
+  //
+
   def fragment(f: String): Uri = this.copy(fragment = Some(f))
 
   def fragment(f: Option[String]): Uri = this.copy(fragment = f)
+
+  //
 
   def toJavaUri: URI = new URI(toString())
 
@@ -173,19 +192,21 @@ object Uri extends UriInterpolator {
   def apply(host: String, port: Int): Uri =
     Uri("http", None, host, Some(port), Vector.empty, Vector.empty, None)
   def apply(host: String, port: Int, path: Seq[String]): Uri =
-    Uri("http", None, host, Some(port), path, Vector.empty, None)
+    Uri("http", None, host, Some(port), Vector.empty, Vector.empty, None).path(path)
   def apply(scheme: String, host: String): Uri =
     Uri(scheme, None, host, None, Vector.empty, Vector.empty, None)
   def apply(scheme: String, host: String, port: Int): Uri =
     Uri(scheme, None, host, Some(port), Vector.empty, Vector.empty, None)
   def apply(scheme: String, host: String, port: Int, path: Seq[String]): Uri =
-    Uri(scheme, None, host, Some(port), path, Vector.empty, None)
+    Uri(scheme, None, host, Some(port), Vector.empty, Vector.empty, None).path(path)
   def apply(scheme: String, host: String, path: Seq[String]): Uri =
-    Uri(scheme, None, host, None, path, Vector.empty, None)
+    Uri(scheme, None, host, None, Vector.empty, Vector.empty, None).path(path)
   def apply(javaUri: URI): Uri = uri"${javaUri.toString}"
 
   def parse(uri: String): Try[Uri] =
     Try(uri"$uri")
+
+  case class Segment(v: String, encoding: Encoding)
 
   sealed trait QuerySegment
   object QuerySegment {
@@ -235,6 +256,10 @@ object Uri extends UriInterpolator {
   }
 
   type Encoding = String => String
+
+  object PathSegmentEncoding {
+    val Standard: Encoding = encode(Rfc3986.PathSegment)
+  }
 
   object QuerySegmentEncoding {
 
