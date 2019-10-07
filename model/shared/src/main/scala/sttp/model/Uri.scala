@@ -3,7 +3,7 @@ package sttp.model
 import java.net.URI
 
 import sttp.model.Uri.QuerySegment.{KeyValue, Plain, Value}
-import sttp.model.Uri.{PathSegmentEncoding, QuerySegment, Segment, UserInfo}
+import sttp.model.Uri.{FragmentEncoding, HostSegment, PathSegment, QuerySegment, Segment, UserInfo}
 
 import scala.annotation.tailrec
 import scala.collection.immutable.Seq
@@ -27,15 +27,15 @@ import Rfc3986.encode
 case class Uri(
     scheme: String,
     userInfo: Option[UserInfo],
-    host: String,
+    hostSegment: Segment,
     port: Option[Int],
     pathSegments: Seq[Segment],
     querySegments: Seq[QuerySegment],
-    fragment: Option[String]
+    fragmentSegment: Option[Segment]
 ) {
   private val AllowedSchemeCharacters = "[a-zA-Z][a-zA-Z0-9+-.]*".r
 
-  require(host.nonEmpty, "Host cannot be empty")
+  require(hostSegment.v.nonEmpty, "Host cannot be empty")
   require(
     AllowedSchemeCharacters.unapplySeq(scheme).isDefined,
     "Scheme can only contain alphanumeric characters, +, - and ."
@@ -49,7 +49,19 @@ case class Uri(
   def userInfo(username: String, password: String): Uri =
     this.copy(userInfo = Some(UserInfo(username, Some(password))))
 
-  def host(h: String): Uri = this.copy(host = h)
+  /**
+    * Replace the host.
+    */
+  def host(h: String): Uri = hostSegment(HostSegment(h))
+
+  /**
+    * Replace the host.
+    */
+  def hostSegment(s: Segment): Uri = this.copy(hostSegment = s)
+
+  def host: String = hostSegment.v
+
+  //
 
   def port(p: Int): Uri = this.copy(port = Some(p))
 
@@ -77,7 +89,22 @@ case class Uri(
     * Replace path with the given path segments.
     */
   def path(ps: scala.collection.Seq[String]): Uri =
-    this.copy(pathSegments = ps.toList.map(Segment(_, PathSegmentEncoding.Standard)))
+    pathSegments(ps.toList.map(PathSegment(_)))
+
+  /**
+    * Replace path with the given path segment.
+    */
+  def pathSegment(s: Segment): Uri = pathSegments(List(s))
+
+  /**
+    * Replace path with the given path segment.
+    */
+  def pathSegments(s1: Segment, s2: Segment, ss: Segment*): Uri = pathSegments(s1 :: s2 :: ss.toList)
+
+  /**
+    * Replace path with the given path segments.
+    */
+  def pathSegments(ss: scala.collection.Seq[Segment]): Uri = this.copy(pathSegments = ss.toList)
 
   def path: Seq[String] = pathSegments.map(_.v)
 
@@ -128,9 +155,22 @@ case class Uri(
 
   //
 
-  def fragment(f: String): Uri = this.copy(fragment = Some(f))
+  /**
+    * Replace the fragment.
+    */
+  def fragment(f: String): Uri = fragment(Some(f))
 
-  def fragment(f: Option[String]): Uri = this.copy(fragment = f)
+  /**
+    * Replace the fragment.
+    */
+  def fragment(f: Option[String]): Uri = fragmentSegment(f.map(Segment(_, FragmentEncoding.Standard)))
+
+  /**
+    * Replace the fragment.
+    */
+  def fragmentSegment(s: Option[Segment]): Uri = this.copy(fragmentSegment = s)
+
+  def fragment: Option[String] = fragmentSegment.map(_.v)
 
   //
 
@@ -161,7 +201,7 @@ case class Uri(
 
     val schemeS = encode(Rfc3986.Scheme)(scheme)
     val userInfoS = userInfo.fold("")(encodeUserInfo(_) + "@")
-    val hostS = encodeHost
+    val hostS = hostSegment.encoded
     val portS = port.fold("")(":" + _)
     val pathPrefixS = if (pathSegments.isEmpty) "" else "/"
     val pathS = pathSegments.map(_.encoded).mkString("/")
@@ -170,37 +210,41 @@ case class Uri(
     val queryS = encodeQuerySegments(querySegments.toList, previousWasPlain = true, new StringBuilder())
 
     // https://stackoverflow.com/questions/2053132/is-a-colon-safe-for-friendly-url-use/2053640#2053640
-    val fragS = fragment.fold("")("#" + encode(Rfc3986.Fragment)(_))
+    val fragS = fragmentSegment.fold("")(s => "#" + s.encoded)
 
     s"$schemeS://$userInfoS$hostS$portS$pathPrefixS$pathS$queryPrefixS$queryS$fragS"
   }
-
-  // TODO
-  private val IpV6Pattern = "[0-9a-fA-F:]+".r
-
-  private def encodeHost: String =
-    host match {
-      case IpV6Pattern() if host.count(_ == ':') >= 2 => s"[$host]"
-      case _                                          => UriCompatibility.encodeDNSHost(host)
-    }
-
 }
 
 object Uri extends UriInterpolator {
   def apply(host: String): Uri =
-    Uri("http", None, host, None, Vector.empty, Vector.empty, None)
+    Uri("http", None, HostSegment(host), None, Vector.empty, Vector.empty, None)
   def apply(host: String, port: Int): Uri =
-    Uri("http", None, host, Some(port), Vector.empty, Vector.empty, None)
+    Uri("http", None, HostSegment(host), Some(port), Vector.empty, Vector.empty, None)
   def apply(host: String, port: Int, path: Seq[String]): Uri =
-    Uri("http", None, host, Some(port), Vector.empty, Vector.empty, None).path(path)
+    Uri("http", None, HostSegment(host), Some(port), Vector.empty, Vector.empty, None).path(path)
   def apply(scheme: String, host: String): Uri =
-    Uri(scheme, None, host, None, Vector.empty, Vector.empty, None)
+    Uri(scheme, None, HostSegment(host), None, Vector.empty, Vector.empty, None)
   def apply(scheme: String, host: String, port: Int): Uri =
-    Uri(scheme, None, host, Some(port), Vector.empty, Vector.empty, None)
+    Uri(scheme, None, HostSegment(host), Some(port), Vector.empty, Vector.empty, None)
   def apply(scheme: String, host: String, port: Int, path: Seq[String]): Uri =
-    Uri(scheme, None, host, Some(port), Vector.empty, Vector.empty, None).path(path)
+    Uri(scheme, None, HostSegment(host), Some(port), Vector.empty, Vector.empty, None).path(path)
   def apply(scheme: String, host: String, path: Seq[String]): Uri =
-    Uri(scheme, None, host, None, Vector.empty, Vector.empty, None).path(path)
+    Uri(scheme, None, HostSegment(host), None, Vector.empty, Vector.empty, None).path(path)
+  def apply(scheme: String, host: String, path: Seq[String], fragment: Option[String]): Uri =
+    Uri(scheme, None, HostSegment(host), None, Vector.empty, Vector.empty, None).path(path).fragment(fragment)
+
+  def apply(
+      scheme: String,
+      userInfo: Option[UserInfo],
+      host: String,
+      port: Option[Int],
+      path: Seq[String],
+      querySegments: Seq[QuerySegment],
+      fragment: Option[String]
+  ): Uri =
+    Uri(scheme, userInfo, HostSegment(host), port, Vector.empty, querySegments, None).path(path).fragment(fragment)
+
   def apply(javaUri: URI): Uri = uri"${javaUri.toString}"
 
   def parse(uri: String): Try[Uri] =
@@ -208,6 +252,14 @@ object Uri extends UriInterpolator {
 
   case class Segment(v: String, encoding: Encoding) {
     def encoded: String = encoding(v)
+  }
+
+  object HostSegment {
+    def apply(v: String): Segment = Segment(v, HostEncoding.Standard)
+  }
+
+  object PathSegment {
+    def apply(v: String): Segment = Segment(v, PathSegmentEncoding.Standard)
   }
 
   sealed trait QuerySegment
@@ -259,6 +311,16 @@ object Uri extends UriInterpolator {
 
   type Encoding = String => String
 
+  object HostEncoding {
+    // TODO
+    private val IpV6Pattern = "[0-9a-fA-F:]+".r
+
+    val Standard: Encoding = {
+      case s @ IpV6Pattern() if s.count(_ == ':') >= 2 => s"[$s]"
+      case s                                           => UriCompatibility.encodeDNSHost(s)
+    }
+  }
+
   object PathSegmentEncoding {
     val Standard: Encoding = encode(Rfc3986.PathSegment)
   }
@@ -291,6 +353,10 @@ object Uri extends UriInterpolator {
       * for discussion.
       */
     val RelaxedWithBrackets: Encoding = encode(Rfc3986.QueryWithBrackets, spaceAsPlus = true)
+  }
+
+  object FragmentEncoding {
+    val Standard: Encoding = encode(Rfc3986.Fragment)
   }
 
   case class UserInfo(username: String, password: Option[String])

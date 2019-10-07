@@ -7,7 +7,8 @@ import org.scalatest.{FunSuite, Matchers, TryValues}
 
 class UriTests extends FunSuite with Matchers with TryValues {
 
-  val PS = Segment(_: String, PathSegmentEncoding.Standard)
+  val HS = HostSegment
+  val PS = PathSegment
   val QS = QuerySegment
 
   val wholeUriTestData = List(
@@ -17,18 +18,18 @@ class UriTests extends FunSuite with Matchers with TryValues {
       None,
       "sub.example.com",
       Some(8080),
-      List(PS("a"), PS("b"), PS("xyz")),
+      List("a", "b", "xyz"),
       List(QS.KeyValue("p1", "v1"), QS.KeyValue("p2", "v2")),
       Some("f")
     ) ->
       "https://sub.example.com:8080/a/b/xyz?p1=v1&p2=v2#f",
-    Uri("http", None, "example.com", None, List(PS("")), List(QS.KeyValue("p", "v"), QS.KeyValue("p", "v")), None) -> "http://example.com/?p=v&p=v",
+    Uri("http", None, "example.com", None, List(""), List(QS.KeyValue("p", "v"), QS.KeyValue("p", "v")), None) -> "http://example.com/?p=v&p=v",
     Uri(
       "http",
       None,
       "exa mple.com",
       None,
-      List(PS("a b"), PS("z"), PS("ą:ę")),
+      List("a b", "z", "ą:ę"),
       List(QS.KeyValue("p:1", "v&v"), QS.KeyValue("p2", "v v")),
       None
     ) ->
@@ -37,10 +38,10 @@ class UriTests extends FunSuite with Matchers with TryValues {
       "http://us&e%2Fr:pa%20ss@example.com",
     Uri("http", None, "example.com", None, Nil, Nil, Some("f:g/h i")) ->
       "http://example.com#f:g/h%20i",
-    Uri("http", None, "example.com", None, List(PS("key=value")), Nil, None) ->
+    Uri("http", None, "example.com", None, List("key=value"), Nil, None) ->
       "http://example.com/key=value",
     Uri("2001:db8::ff00:42:8329", 8080) -> "http://[2001:db8::ff00:42:8329]:8080",
-    Uri("http", None, "example.com", None, List(Segment("a b", identity)), Nil, None) -> "http://example.com/a b"
+    Uri("http", None, HS("example.com"), None, List(Segment("a b", identity)), Nil, None) -> "http://example.com/a b"
   )
 
   for {
