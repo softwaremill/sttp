@@ -2,8 +2,8 @@ package sttp.model
 
 import java.net.URI
 
-import sttp.model.Uri.QueryFragment.{KeyValue, Plain, Value}
-import sttp.model.Uri.{QueryFragment, QueryFragmentEncoding, UserInfo}
+import sttp.model.Uri.QuerySegment.{KeyValue, Plain, Value}
+import sttp.model.Uri.{QuerySegment, UserInfo}
 
 import scala.annotation.tailrec
 import scala.collection.immutable.Seq
@@ -11,17 +11,19 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.util.Try
 
+import Rfc3986.encode
+
 /**
   * A [[https://en.wikipedia.org/wiki/Uniform_Resource_Identifier URI]].
   * All components (scheme, host, query, ...) are stored unencoded, and
   * become encoded upon serialization (using [[toString]]).
   *
-  * @param queryFragments Either key-value pairs, single values, or plain
-  * query fragments. Key value pairs will be serialized as `k=v`, and blocks
+  * @param querySegments Either key-value pairs, single values, or plain
+  * query segments. Key value pairs will be serialized as `k=v`, and blocks
   * of key-value pairs/single values will be combined using `&`. Note that no
-  * `&` or other separators are added around plain query fragments - if
+  * `&` or other separators are added around plain query segments - if
   * required, they need to be added manually as part of the plain query
-  * fragment.
+  * segment.
   */
 case class Uri(
     scheme: String,
@@ -29,11 +31,9 @@ case class Uri(
     host: String,
     port: Option[Int],
     path: Seq[String],
-    queryFragments: Seq[QueryFragment],
+    querySegments: Seq[QuerySegment],
     fragment: Option[String]
 ) {
-  import Rfc3986.encode
-
   private val AllowedSchemeCharacters = "[a-zA-Z][a-zA-Z0-9+-.]*".r
 
   require(host.nonEmpty, "Host cannot be empty")
@@ -82,14 +82,14 @@ case class Uri(
     * Adds the given parameters to the query.
     */
   def params(mqp: MultiQueryParams): Uri = {
-    this.copy(queryFragments = queryFragments ++ QueryFragment.fromMultiQueryParams(mqp))
+    this.copy(querySegments = querySegments ++ QuerySegment.fromMultiQueryParams(mqp))
   }
 
   /**
     * Adds the given parameters to the query.
     */
   def params(ps: (String, String)*): Uri = {
-    this.copy(queryFragments = queryFragments ++ ps.map {
+    this.copy(querySegments = querySegments ++ ps.map {
       case (k, v) => KeyValue(k, v)
     })
   }
@@ -104,12 +104,12 @@ case class Uri(
     m.mapValues(_.toList).toMap
   }
 
-  def paramsSeq: Seq[(String, String)] = queryFragments.collect {
+  def paramsSeq: Seq[(String, String)] = querySegments.collect {
     case KeyValue(k, v, _, _) => k -> v
   }
 
-  def queryFragment(qf: QueryFragment): Uri =
-    this.copy(queryFragments = queryFragments :+ qf)
+  def querySegment(qf: QuerySegment): Uri =
+    this.copy(querySegments = querySegments :+ qf)
 
   def fragment(f: String): Uri = this.copy(fragment = Some(f))
 
@@ -122,22 +122,22 @@ case class Uri(
       encode(Rfc3986.UserInfo)(ui.username) + ui.password.fold("")(":" + encode(Rfc3986.UserInfo)(_))
 
     @tailrec
-    def encodeQueryFragments(qfs: List[QueryFragment], previousWasPlain: Boolean, sb: StringBuilder): String =
-      qfs match {
+    def encodeQuerySegments(qss: List[QuerySegment], previousWasPlain: Boolean, sb: StringBuilder): String =
+      qss match {
         case Nil => sb.toString()
 
-        case Plain(v, re) :: t =>
-          encodeQueryFragments(t, previousWasPlain = true, sb.append(encodeQuery(v, re)))
+        case Plain(v, enc) :: t =>
+          encodeQuerySegments(t, previousWasPlain = true, sb.append(enc(v)))
 
-        case Value(v, re) :: t =>
+        case Value(v, enc) :: t =>
           if (!previousWasPlain) sb.append("&")
-          sb.append(encodeQuery(v, re))
-          encodeQueryFragments(t, previousWasPlain = false, sb)
+          sb.append(enc(v))
+          encodeQuerySegments(t, previousWasPlain = false, sb)
 
-        case KeyValue(k, v, reK, reV) :: t =>
+        case KeyValue(k, v, kEnc, vEnc) :: t =>
           if (!previousWasPlain) sb.append("&")
-          sb.append(encodeQuery(k, reK)).append("=").append(encodeQuery(v, reV))
-          encodeQueryFragments(t, previousWasPlain = false, sb)
+          sb.append(kEnc(k)).append("=").append(vEnc(v))
+          encodeQuerySegments(t, previousWasPlain = false, sb)
       }
 
     val schemeS = encode(Rfc3986.Scheme)(scheme)
@@ -146,26 +146,15 @@ case class Uri(
     val portS = port.fold("")(":" + _)
     val pathPrefixS = if (path.isEmpty) "" else "/"
     val pathS = path.map(encode(Rfc3986.PathSegment)).mkString("/")
-    val queryPrefixS = if (queryFragments.isEmpty) "" else "?"
+    val queryPrefixS = if (querySegments.isEmpty) "" else "?"
 
-    val queryS = encodeQueryFragments(queryFragments.toList, previousWasPlain = true, new StringBuilder())
+    val queryS = encodeQuerySegments(querySegments.toList, previousWasPlain = true, new StringBuilder())
 
     // https://stackoverflow.com/questions/2053132/is-a-colon-safe-for-friendly-url-use/2053640#2053640
     val fragS = fragment.fold("")("#" + encode(Rfc3986.Fragment)(_))
 
     s"$schemeS://$userInfoS$hostS$portS$pathPrefixS$pathS$queryPrefixS$queryS$fragS"
   }
-
-  private def encodeQuery(s: String, e: QueryFragmentEncoding): String =
-    e match {
-      case QueryFragmentEncoding.All => UriCompatibility.encodeQuery(s, "UTF-8")
-      case QueryFragmentEncoding.Standard =>
-        encode(Rfc3986.QueryNoStandardDelims, spaceAsPlus = true, encodePlus = true)(s)
-      case QueryFragmentEncoding.Relaxed =>
-        encode(Rfc3986.Query, spaceAsPlus = true)(s)
-      case QueryFragmentEncoding.RelaxedWithBrackets =>
-        encode(Rfc3986.QueryWithBrackets, spaceAsPlus = true)(s)
-    }
 
   // TODO
   private val IpV6Pattern = "[0-9a-fA-F:]+".r
@@ -198,8 +187,8 @@ object Uri extends UriInterpolator {
   def parse(uri: String): Try[Uri] =
     Try(uri"$uri")
 
-  sealed trait QueryFragment
-  object QueryFragment {
+  sealed trait QuerySegment
+  object QuerySegment {
 
     /**
       * @param keyEncoding See [[Plain.encoding]]
@@ -208,15 +197,14 @@ object Uri extends UriInterpolator {
     case class KeyValue(
         k: String,
         v: String,
-        keyEncoding: QueryFragmentEncoding = QueryFragmentEncoding.Standard,
-        valueEncoding: QueryFragmentEncoding = QueryFragmentEncoding.Standard
-    ) extends QueryFragment
+        keyEncoding: Encoding = QuerySegmentEncoding.Standard,
+        valueEncoding: Encoding = QuerySegmentEncoding.Standard
+    ) extends QuerySegment
 
     /**
       * A query fragment which contains only the value, without a key.
       */
-    case class Value(v: String, relaxedEncoding: QueryFragmentEncoding = QueryFragmentEncoding.Standard)
-        extends QueryFragment
+    case class Value(v: String, relaxedEncoding: Encoding = QuerySegmentEncoding.Standard) extends QuerySegment
 
     /**
       * A query fragment which will be inserted into the query, without and
@@ -233,9 +221,9 @@ object Uri extends UriInterpolator {
       * [[https://stackoverflow.com/questions/2322764/what-characters-must-be-escaped-in-an-http-query-string]]
       * [[https://stackoverflow.com/questions/2366260/whats-valid-and-whats-not-in-a-uri-query]]
       */
-    case class Plain(v: String, encoding: QueryFragmentEncoding = QueryFragmentEncoding.Standard) extends QueryFragment
+    case class Plain(v: String, encoding: Encoding = QuerySegmentEncoding.Standard) extends QuerySegment
 
-    private[model] def fromMultiQueryParams(mqp: MultiQueryParams): Iterable[QueryFragment] = {
+    private[model] def fromMultiQueryParams(mqp: MultiQueryParams): Iterable[QuerySegment] = {
       mqp.toMultiSeq.flatMap {
         case (k, vs) =>
           vs match {
@@ -246,25 +234,26 @@ object Uri extends UriInterpolator {
     }
   }
 
-  sealed trait QueryFragmentEncoding
-  object QueryFragmentEncoding {
+  type Encoding = String => String
+
+  object QuerySegmentEncoding {
 
     /**
       * Encodes all reserved characters using [[java.net.URLEncoder.encode()]].
       */
-    case object All extends QueryFragmentEncoding
+    val All: Encoding = UriCompatibility.encodeQuery(_, "UTF-8")
 
     /**
       * Encodes only the `&` and `=` reserved characters, which are usually
       * used to separate query parameter names and values.
       */
-    case object Standard extends QueryFragmentEncoding
+    val Standard: Encoding = encode(Rfc3986.QueryNoStandardDelims, spaceAsPlus = true, encodePlus = true)
 
     /**
       * Doesn't encode any of the reserved characters, leaving intact all
       * characters allowed in the query string as defined by RFC3986.
       */
-    case object Relaxed extends QueryFragmentEncoding
+    val Relaxed: Encoding = encode(Rfc3986.Query, spaceAsPlus = true)
 
     /**
       * Doesn't encode any of the reserved characters, leaving intact all
@@ -274,7 +263,7 @@ object Uri extends UriInterpolator {
       * https://stackoverflow.com/questions/11490326/is-array-syntax-using-square-brackets-in-url-query-strings-valid
       * for discussion.
       */
-    case object RelaxedWithBrackets extends QueryFragmentEncoding
+    val RelaxedWithBrackets: Encoding = encode(Rfc3986.QueryWithBrackets, spaceAsPlus = true)
   }
 
   case class UserInfo(username: String, password: Option[String])

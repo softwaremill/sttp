@@ -375,7 +375,7 @@ object UriInterpolator {
 
     case object Query extends UriBuilder {
 
-      import Uri.{QueryFragment => QF}
+      import Uri.{QuerySegment => QF}
 
       override def fromTokens(u: Uri, t: Vector[Token]): (Uri, Vector[Token]) =
         fromStartingToken(u, t, QueryStart, Set[Token](FragmentStart), queryFromTokens)
@@ -385,7 +385,7 @@ object UriInterpolator {
           splitToGroups(tokens, AmpInQuery)
             .flatMap(queryMappingsFromTokens)
 
-        u.copy(queryFragments = qfs)
+        u.copy(querySegments = qfs)
       }
 
       private def queryMappingsFromTokens(tokens: Vector[Token]): Vector[QF] = {

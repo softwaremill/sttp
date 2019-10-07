@@ -7,7 +7,7 @@ import org.scalatest.{FunSuite, Matchers, TryValues}
 
 class UriTests extends FunSuite with Matchers with TryValues {
 
-  val QF = QueryFragment
+  val QS = QuerySegment
 
   val wholeUriTestData = List(
     Uri("http", None, "example.com", None, Nil, Nil, None) -> "http://example.com",
@@ -17,18 +17,18 @@ class UriTests extends FunSuite with Matchers with TryValues {
       "sub.example.com",
       Some(8080),
       List("a", "b", "xyz"),
-      List(QF.KeyValue("p1", "v1"), QF.KeyValue("p2", "v2")),
+      List(QS.KeyValue("p1", "v1"), QS.KeyValue("p2", "v2")),
       Some("f")
     ) ->
       "https://sub.example.com:8080/a/b/xyz?p1=v1&p2=v2#f",
-    Uri("http", None, "example.com", None, List(""), List(QF.KeyValue("p", "v"), QF.KeyValue("p", "v")), None) -> "http://example.com/?p=v&p=v",
+    Uri("http", None, "example.com", None, List(""), List(QS.KeyValue("p", "v"), QS.KeyValue("p", "v")), None) -> "http://example.com/?p=v&p=v",
     Uri(
       "http",
       None,
       "exa mple.com",
       None,
       List("a b", "z", "ą:ę"),
-      List(QF.KeyValue("p:1", "v&v"), QF.KeyValue("p2", "v v")),
+      List(QS.KeyValue("p:1", "v&v"), QS.KeyValue("p2", "v v")),
       None
     ) ->
       "http://exa%20mple.com/a%20b/z/%C4%85:%C4%99?p:1=v%26v&p2=v+v",
@@ -66,32 +66,32 @@ class UriTests extends FunSuite with Matchers with TryValues {
     }
   }
 
-  val queryFragmentsTestData = List(
-    List(QF.KeyValue("k1", "v1"), QF.KeyValue("k2", "v2"), QF.KeyValue("k3", "v3"), QF.KeyValue("k4", "v4")) -> "k1=v1&k2=v2&k3=v3&k4=v4",
+  val querySegmentsTestData = List(
+    List(QS.KeyValue("k1", "v1"), QS.KeyValue("k2", "v2"), QS.KeyValue("k3", "v3"), QS.KeyValue("k4", "v4")) -> "k1=v1&k2=v2&k3=v3&k4=v4",
     List(
-      QF.KeyValue("k1", "v1"),
-      QF.KeyValue("k2", "v2"),
-      QF.Plain("-abc-"),
-      QF.KeyValue("k3", "v3"),
-      QF.KeyValue("k4", "v4")
+      QS.KeyValue("k1", "v1"),
+      QS.KeyValue("k2", "v2"),
+      QS.Plain("-abc-"),
+      QS.KeyValue("k3", "v3"),
+      QS.KeyValue("k4", "v4")
     ) -> "k1=v1&k2=v2-abc-k3=v3&k4=v4",
-    List(QF.KeyValue("k1", "v1"), QF.Plain("&abc&"), QF.KeyValue("k2", "v2")) -> "k1=v1%26abc%26k2=v2",
-    List(QF.KeyValue("k1", "v1"), QF.Plain("&abc&", encoding = QueryFragmentEncoding.Relaxed)) -> "k1=v1&abc&",
-    List(QF.KeyValue("k1&", "v1&", keyEncoding = QueryFragmentEncoding.Relaxed)) -> "k1&=v1%26",
-    List(QF.KeyValue("k1&", "v1&", valueEncoding = QueryFragmentEncoding.Relaxed)) -> "k1%26=v1&",
-    List(QF.Plain("ą/ę&+;?", encoding = QueryFragmentEncoding.Relaxed)) -> "%C4%85/%C4%99&+;?",
-    List(QF.KeyValue("k", "v1,v2", valueEncoding = QueryFragmentEncoding.All)) -> "k=v1%2Cv2",
-    List(QF.KeyValue("k", "v1,v2")) -> "k=v1,v2",
-    List(QF.KeyValue("k", "+1234")) -> "k=%2B1234",
-    List(QF.KeyValue("k", "[]")) -> "k=%5B%5D",
-    List(QF.KeyValue("k", "[]", valueEncoding = QueryFragmentEncoding.RelaxedWithBrackets)) -> "k=[]"
+    List(QS.KeyValue("k1", "v1"), QS.Plain("&abc&"), QS.KeyValue("k2", "v2")) -> "k1=v1%26abc%26k2=v2",
+    List(QS.KeyValue("k1", "v1"), QS.Plain("&abc&", encoding = QuerySegmentEncoding.Relaxed)) -> "k1=v1&abc&",
+    List(QS.KeyValue("k1&", "v1&", keyEncoding = QuerySegmentEncoding.Relaxed)) -> "k1&=v1%26",
+    List(QS.KeyValue("k1&", "v1&", valueEncoding = QuerySegmentEncoding.Relaxed)) -> "k1%26=v1&",
+    List(QS.Plain("ą/ę&+;?", encoding = QuerySegmentEncoding.Relaxed)) -> "%C4%85/%C4%99&+;?",
+    List(QS.KeyValue("k", "v1,v2", valueEncoding = QuerySegmentEncoding.All)) -> "k=v1%2Cv2",
+    List(QS.KeyValue("k", "v1,v2")) -> "k=v1,v2",
+    List(QS.KeyValue("k", "+1234")) -> "k=%2B1234",
+    List(QS.KeyValue("k", "[]")) -> "k=%5B%5D",
+    List(QS.KeyValue("k", "[]", valueEncoding = QuerySegmentEncoding.RelaxedWithBrackets)) -> "k=[]"
   )
 
   for {
-    (fragments, expected) <- queryFragmentsTestData
+    (segments, expected) <- querySegmentsTestData
   } {
-    test(s"$fragments should serialize to$expected") {
-      testUri.copy(queryFragments = fragments).toString should endWith(expected)
+    test(s"$segments should serialize to$expected") {
+      testUri.copy(querySegments = segments).toString should endWith(expected)
     }
   }
 
