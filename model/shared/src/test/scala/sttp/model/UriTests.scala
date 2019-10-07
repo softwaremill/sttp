@@ -39,7 +39,8 @@ class UriTests extends FunSuite with Matchers with TryValues {
       "http://example.com#f:g/h%20i",
     Uri("http", None, "example.com", None, List(PS("key=value")), Nil, None) ->
       "http://example.com/key=value",
-    Uri("2001:db8::ff00:42:8329", 8080) -> "http://[2001:db8::ff00:42:8329]:8080"
+    Uri("2001:db8::ff00:42:8329", 8080) -> "http://[2001:db8::ff00:42:8329]:8080",
+    Uri("http", None, "example.com", None, List(Segment("a b", identity)), Nil, None) -> "http://example.com/a b"
   )
 
   for {

@@ -163,8 +163,8 @@ case class Uri(
     val userInfoS = userInfo.fold("")(encodeUserInfo(_) + "@")
     val hostS = encodeHost
     val portS = port.fold("")(":" + _)
-    val pathPrefixS = if (path.isEmpty) "" else "/"
-    val pathS = path.map(encode(Rfc3986.PathSegment)).mkString("/")
+    val pathPrefixS = if (pathSegments.isEmpty) "" else "/"
+    val pathS = pathSegments.map(_.encoded).mkString("/")
     val queryPrefixS = if (querySegments.isEmpty) "" else "?"
 
     val queryS = encodeQuerySegments(querySegments.toList, previousWasPlain = true, new StringBuilder())
@@ -206,7 +206,9 @@ object Uri extends UriInterpolator {
   def parse(uri: String): Try[Uri] =
     Try(uri"$uri")
 
-  case class Segment(v: String, encoding: Encoding)
+  case class Segment(v: String, encoding: Encoding) {
+    def encoded: String = encoding(v)
+  }
 
   sealed trait QuerySegment
   object QuerySegment {
