@@ -64,7 +64,15 @@ class UriInterpolatorTests extends FunSuite with Matchers {
       (uri"http://[2001:0abcd:1bcde:2cdef::9f2e:0690:6969]/x", s"http://[2001:0abcd:1bcde:2cdef::9f2e:0690:6969]/x"),
       (uri"http://${"::1"}/x", s"http://[::1]/x"),
       (uri"http://${"::1"}:${8080}/x", s"http://[::1]:8080/x"),
-      (uri"http://${"2001:0abcd:1bcde:2cdef::9f2e:0690:6969"}/x", s"http://[2001:0abcd:1bcde:2cdef::9f2e:0690:6969]/x")
+      (uri"http://${"2001:0abcd:1bcde:2cdef::9f2e:0690:6969"}/x", s"http://[2001:0abcd:1bcde:2cdef::9f2e:0690:6969]/x"),
+      (
+        uri"http://${"2001:0db8:85a3:0000:0000:8a2e:0370:7334"}:8080",
+        "http://[2001:0db8:85a3:0000:0000:8a2e:0370:7334]:8080"
+      ),
+      (
+        uri"http://[2001:0db8:85a3:0000:0000:8a2e:0370:7334]:8080",
+        "http://[2001:0db8:85a3:0000:0000:8a2e:0370:7334]:8080"
+      )
     ),
     "ports" -> List(
       (uri"http://example.com:8080", s"http://example.com:8080"),
