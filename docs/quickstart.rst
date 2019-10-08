@@ -19,7 +19,7 @@ The basic dependency which provides the API and the default synchronous backend 
 Using Ammonite
 --------------
 
-If you are an `Ammonite <http://ammonite.io>`_ user, you can quickly start experimenting with sttp by copy-pasting the following::
+If you are an `Ammonite <https://ammonite.io>`_ user, you can quickly start experimenting with sttp by copy-pasting the following::
 
   import $ivy.`com.softwaremill.sttp::core:1.7.1`
   import com.softwaremill.sttp.quick._
