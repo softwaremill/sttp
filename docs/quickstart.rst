@@ -19,11 +19,11 @@ The basic dependency which provides the API and the default synchronous backend 
 Using Ammonite
 --------------
 
-If you are an `Ammonite <http://ammonite.io>`_ user, you can quickly start experimenting with sttp by copy-pasting the following::
+If you are an `Ammonite <https://ammonite.io>`_ user, you can quickly start experimenting with sttp by copy-pasting the following::
 
   import $ivy.`com.softwaremill.sttp::core:1.7.1`
   import com.softwaremill.sttp.quick._
-  sttp.get(uri"http://httpbin.org/ip").send()
+  sttp.get(uri"https://httpbin.org/ip").send()
 
 Importing the ``quick`` object has the same effect as importing ``com.softwaremill.sttp._``, plus defining an implicit synchronous backend (``val backend = HttpURLConnectionBackend()``), so that sttp can be used right away.
 
