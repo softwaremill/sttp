@@ -23,4 +23,6 @@ object TaskMonadAsyncError extends MonadAsyncError[Task] {
 
   override protected def handleWrappedError[T](rt: Task[T])(h: PartialFunction[Throwable, Task[T]]): Task[T] =
     rt.catchSome(h)
+
+  override def eval[T](t: => T): Task[T] = Task(t)
 }

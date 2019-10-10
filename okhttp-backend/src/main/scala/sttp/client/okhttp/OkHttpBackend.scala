@@ -211,15 +211,15 @@ class OkHttpSyncBackend private (client: OkHttpClient, closeClient: Boolean)
 
     val request = convertRequest(r)
 
-    val x = new ArrayBlockingQueue[Either[Throwable, WebSocketResponse[WS_RESULT]]](1)
+    val responseCell = new ArrayBlockingQueue[Either[Throwable, WebSocketResponse[WS_RESULT]]](1)
 
     val listener = new DelegatingWebSocketListener(
       handler.listener,
       (webSocket, response) => {
         val wsResponse = WebSocketResponse(readResponse(response, ignore), handler.wrIsWebSocket(webSocket))
-        x.add(Right(wsResponse))
+        responseCell.add(Right(wsResponse))
       },
-      t => x.add(Left(t)),
+      t => responseCell.add(Left(t)),
       handler.wrIsWebSocket
     )
 
@@ -227,7 +227,7 @@ class OkHttpSyncBackend private (client: OkHttpClient, closeClient: Boolean)
       .updateClientIfCustomReadTimeout(r, client)
       .newWebSocket(request, listener)
 
-    x.take().fold(throw _, identity)
+    responseCell.take().fold(throw _, identity)
   }
 
   override def responseMonad: MonadError[Identity] = IdMonad

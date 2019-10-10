@@ -79,6 +79,8 @@ object IdMonad extends MonadError[Identity] {
   override protected def handleWrappedError[T](rt: Identity[T])(
       h: PartialFunction[Throwable, Identity[T]]
   ): Identity[T] = rt
+
+  override def eval[T](t: => T): Identity[T] = t
 }
 object TryMonad extends MonadError[Try] {
   override def unit[T](t: T): Try[T] = Success(t)
@@ -89,6 +91,8 @@ object TryMonad extends MonadError[Try] {
   override def error[T](t: Throwable): Try[T] = Failure(t)
   override protected def handleWrappedError[T](rt: Try[T])(h: PartialFunction[Throwable, Try[T]]): Try[T] =
     rt.recoverWith(h)
+
+  override def eval[T](t: => T): Try[T] = Try(t)
 }
 class FutureMonad(implicit ec: ExecutionContext) extends MonadAsyncError[Future] {
 
@@ -100,6 +104,8 @@ class FutureMonad(implicit ec: ExecutionContext) extends MonadAsyncError[Future]
   override def error[T](t: Throwable): Future[T] = Future.failed(t)
   override protected def handleWrappedError[T](rt: Future[T])(h: PartialFunction[Throwable, Future[T]]): Future[T] =
     rt.recoverWith(h)
+
+  override def eval[T](t: => T): Future[T] = Future(t)
 
   @silent("discarded")
   override def async[T](register: (Either[Throwable, T] => Unit) => Unit): Future[T] = {

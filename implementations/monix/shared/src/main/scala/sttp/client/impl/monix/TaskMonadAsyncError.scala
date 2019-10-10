@@ -1,6 +1,5 @@
 package sttp.client.impl.monix
 
-import sttp.client.monad.MonadAsyncError
 import monix.eval.Task
 import sttp.client.monad.MonadAsyncError
 
@@ -26,4 +25,6 @@ object TaskMonadAsyncError extends MonadAsyncError[Task] {
 
   override protected def handleWrappedError[T](rt: Task[T])(h: PartialFunction[Throwable, Task[T]]): Task[T] =
     rt.onErrorRecoverWith(h)
+
+  override def eval[T](t: => T): Task[T] = Task(t)
 }
