@@ -13,7 +13,7 @@ lazy val startTestServer = taskKey[Unit]("Start a http server used by tests (use
 lazy val is2_11 = settingKey[Boolean]("Is the scala version 2.11.")
 lazy val is2_11_or_2_12 = settingKey[Boolean]("Is the scala version 2.11 or 2.12.")
 
-val silencerVersion = "1.4.3"
+val silencerVersion = "1.4.4"
 
 val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   organization := "com.softwaremill.sttp.client",
@@ -140,7 +140,7 @@ val circeVersion: Option[(Long, Long)] => String = {
   case _             => "0.12.1"
 }
 
-val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.9"
+val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.10"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % "2.5.25"
 
 val scalaTestVersion = "3.0.8"
@@ -332,7 +332,7 @@ lazy val zio: Project = (project in file("implementations/zio"))
     name := "zio",
     publishArtifact in Test := true,
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio" % "1.0.0-RC12-1"
+      "dev.zio" %% "zio" % "1.0.0-RC13"
     )
   )
   .dependsOn(coreJVM % "compile->compile;test->test")
@@ -368,7 +368,7 @@ lazy val asyncHttpClientBackend: Project =
     .settings(
       name := "async-http-client-backend",
       libraryDependencies ++= Seq(
-        "org.asynchttpclient" % "async-http-client" % "2.10.2"
+        "org.asynchttpclient" % "async-http-client" % "2.10.3"
       )
     )
     .dependsOn(coreJVM % "compile->compile;test->test")
@@ -428,7 +428,7 @@ lazy val okhttpBackend: Project = (project in file("okhttp-backend"))
   .settings(
     name := "okhttp-backend",
     libraryDependencies ++= Seq(
-      "com.squareup.okhttp3" % "okhttp" % "4.2.0"
+      "com.squareup.okhttp3" % "okhttp" % "4.2.1"
     )
   )
   .dependsOn(coreJVM % "compile->compile;test->test")
@@ -529,7 +529,7 @@ lazy val playJson = crossProject(JSPlatform, JVMPlatform)
 lazy val playJsonJS = playJson.js.dependsOn(coreJS, jsonCommonJS)
 lazy val playJsonJVM = playJson.jvm.dependsOn(coreJVM, jsonCommonJVM)
 
-lazy val braveVersion = "5.7.0"
+lazy val braveVersion = "5.8.0"
 
 lazy val braveBackend: Project = (project in file("metrics/brave-backend"))
   .settings(commonJvmSettings: _*)
@@ -549,7 +549,7 @@ lazy val prometheusBackend: Project = (project in file("metrics/prometheus-backe
   .settings(
     name := "prometheus-backend",
     libraryDependencies ++= Seq(
-      "io.prometheus" % "simpleclient" % "0.6.0",
+      "io.prometheus" % "simpleclient" % "0.7.0",
       scalaTest % "test"
     )
   )
