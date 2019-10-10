@@ -1,5 +1,6 @@
 package sttp.client.okhttp
 
+import java.net.ProtocolException
 import java.util.concurrent.ConcurrentLinkedQueue
 
 import com.github.ghik.silencer.silent
@@ -43,6 +44,16 @@ class OkHttpSyncWebsocketTest
     eventually {
       received.asScala.toList shouldBe List("test10", "test20")
     }
+  }
+
+  it should "error if the endpoint is not a websocket" in {
+    val t = intercept[Throwable] {
+      basicRequest
+        .get(uri"$wsEndpoint/echo")
+        .openWebsocket(WebSocketHandler[WebSocket](new WebSocketListener {}))
+    }
+
+    t shouldBe a[ProtocolException]
   }
 
   def collectingListener(queue: ConcurrentLinkedQueue[String]): WebSocketListener = new WebSocketListener {

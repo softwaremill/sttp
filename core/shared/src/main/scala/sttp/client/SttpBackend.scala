@@ -16,6 +16,13 @@ import scala.language.higherKinds
   */
 trait SttpBackend[R[_], -S, -WS_HANDLER[_]] {
   def send[T](request: Request[T, S]): R[Response[T]]
+
+  /**
+    * Opens a websocket, using the given backend-specific handler.
+    *
+    * If the connection doesn't result in a websocket being opened, a failed effect is
+    * returned, or an exception is thrown (depending on `R`).
+    */
   def openWebsocket[T, WS_RESULT](
       request: Request[T, S],
       handler: WS_HANDLER[WS_RESULT]
@@ -24,8 +31,8 @@ trait SttpBackend[R[_], -S, -WS_HANDLER[_]] {
   def close(): R[Unit]
 
   /**
-    * The monad in which the responses are wrapped. Allows writing wrapper
-    * backends, which map/flatMap over the return value of [[send]].
+    * The effect wrapper for responses. Allows writing wrapper backends, which map/flatMap over
+    * the return value of [[send]] and [[openWebsocket]].
     */
   def responseMonad: MonadError[R]
 }

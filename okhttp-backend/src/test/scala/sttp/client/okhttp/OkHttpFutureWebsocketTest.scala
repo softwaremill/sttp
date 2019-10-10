@@ -1,5 +1,6 @@
 package sttp.client.okhttp
 
+import java.net.ProtocolException
 import java.util.concurrent.ConcurrentLinkedQueue
 
 import com.github.ghik.silencer.silent
@@ -45,6 +46,16 @@ class OkHttpFutureWebsocketTest
         eventually {
           received.asScala.toList shouldBe List("test10", "test20")
         }
+      }
+  }
+
+  it should "error if the endpoint is not a websocket" in {
+    basicRequest
+      .get(uri"$wsEndpoint/echo")
+      .openWebsocket(WebSocketHandler[WebSocket](new WebSocketListener {}))
+      .failed
+      .map { t =>
+        t shouldBe a[ProtocolException]
       }
   }
 

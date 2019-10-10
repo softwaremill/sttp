@@ -94,7 +94,14 @@ class AkkaHttpBackend private (
       .flatMap(request => http.singleWebsocketRequest(request, handler, connectionSettings(r).connectionSettings))
       .flatMap {
         case (wsResponse, wsResult) =>
-          responseFromAkka(r, wsResponse.response).map(WebSocketResponse(_, wsResult))
+          responseFromAkka(r, wsResponse.response).map { r =>
+            if (r.code != StatusCode.SwitchingProtocols) {
+              throw new NotAWebsocketException(r)
+            } else {
+              WebSocketResponse(r, wsResult)
+            }
+          }
+
       }
   }
 
@@ -431,3 +438,5 @@ object AkkaHttpBackend {
     )
   }
 }
+
+class NotAWebsocketException(r: Response[_]) extends Exception

@@ -64,6 +64,12 @@ class AkkaHttpWebsocketTest
     }
   }
 
+  it should "error if the endpoint is not a websocket" in {
+    basicRequest.get(uri"$wsEndpoint/echo").openWebsocket(Flow.apply[Message]).failed.map { t =>
+      t shouldBe a[NotAWebsocketException]
+    }
+  }
+
   def collectionSink(queue: ConcurrentLinkedQueue[String]): Sink[Message, Future[Done]] =
     Sink
       .setup[Message, Future[Done]] { (_materializer, _) =>

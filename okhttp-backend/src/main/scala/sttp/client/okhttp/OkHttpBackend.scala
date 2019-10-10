@@ -212,14 +212,18 @@ class OkHttpSyncBackend private (client: OkHttpClient, closeClient: Boolean)
     val request = convertRequest(r)
 
     val responseCell = new ArrayBlockingQueue[Either[Throwable, WebSocketResponse[WS_RESULT]]](1)
+    @silent("discarded")
+    def fillCellError(t: Throwable): Unit = responseCell.add(Left(t))
+    @silent("discarded")
+    def fillCell(wr: WebSocketResponse[WS_RESULT]): Unit = responseCell.add(Right(wr))
 
     val listener = new DelegatingWebSocketListener(
       handler.listener,
       (webSocket, response) => {
         val wsResponse = WebSocketResponse(readResponse(response, ignore), handler.wrIsWebSocket(webSocket))
-        responseCell.add(Right(wsResponse))
+        fillCell(wsResponse)
       },
-      t => responseCell.add(Left(t)),
+      fillCellError,
       handler.wrIsWebSocket
     )
 
@@ -291,7 +295,7 @@ abstract class OkHttpAsyncBackend[R[_], S](client: OkHttpClient, monad: MonadAsy
         handler.wrIsWebSocket
       )
 
-      OkHttpBackend
+      val _ = OkHttpBackend
         .updateClientIfCustomReadTimeout(r, client)
         .newWebSocket(request, listener)
     })

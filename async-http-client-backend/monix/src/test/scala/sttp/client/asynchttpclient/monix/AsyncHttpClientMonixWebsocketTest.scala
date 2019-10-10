@@ -1,5 +1,6 @@
 package sttp.client.asynchttpclient.monix
 
+import java.io.IOException
 import java.util.concurrent.ConcurrentLinkedQueue
 
 import com.github.ghik.silencer.silent
@@ -53,6 +54,21 @@ class AsyncHttpClientMonixWebsocketTest
         }
       }
       .toFuture
+  }
+
+  it should "error if the endpoint is not a websocket" in {
+    basicRequest
+      .get(uri"$wsEndpoint/echo")
+      .openWebsocket(WebSocketHandler[WebSocket](new WebSocketListener {
+        override def onOpen(websocket: WebSocket): Unit = {}
+        override def onClose(websocket: WebSocket, code: Int, reason: String): Unit = {}
+        override def onError(t: Throwable): Unit = {}
+      }))
+      .failed
+      .map { t =>
+        t shouldBe a[IOException]
+      }
+      .toFuture()
   }
 
   def collectingListener(queue: ConcurrentLinkedQueue[String]): WebSocketListener = new WebSocketListener {
