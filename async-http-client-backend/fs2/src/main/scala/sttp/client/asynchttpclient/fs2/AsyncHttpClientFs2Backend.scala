@@ -11,7 +11,7 @@ import fs2.interop.reactivestreams._
 import io.netty.buffer.{ByteBuf, Unpooled}
 import org.asynchttpclient.{Request => _, Response => _, _}
 import org.reactivestreams.Publisher
-import sttp.client.asynchttpclient.AsyncHttpClientBackend
+import sttp.client.asynchttpclient.{AsyncHttpClientBackend, WebSocketHandler}
 import sttp.client.impl.cats.CatsMonadAsyncError
 import sttp.client.internal._
 import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions, _}
@@ -62,20 +62,20 @@ object AsyncHttpClientFs2Backend {
       asyncHttpClient: AsyncHttpClient,
       closeClient: Boolean,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder
-  ): SttpBackend[F, Stream[F, ByteBuffer]] =
+  ): SttpBackend[F, Stream[F, ByteBuffer], WebSocketHandler] =
     new FollowRedirectsBackend(new AsyncHttpClientFs2Backend(asyncHttpClient, closeClient, customizeRequest))
 
   def apply[F[_]: ConcurrentEffect: ContextShift](
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): F[SttpBackend[F, Stream[F, ByteBuffer]]] =
+  ): F[SttpBackend[F, Stream[F, ByteBuffer], WebSocketHandler]] =
     implicitly[Sync[F]]
       .delay(apply[F](AsyncHttpClientBackend.defaultClient(options), closeClient = true, customizeRequest))
 
   def usingConfig[F[_]: ConcurrentEffect: ContextShift](
       cfg: AsyncHttpClientConfig,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): F[SttpBackend[F, Stream[F, ByteBuffer]]] =
+  ): F[SttpBackend[F, Stream[F, ByteBuffer], WebSocketHandler]] =
     implicitly[Sync[F]].delay(apply[F](new DefaultAsyncHttpClient(cfg), closeClient = true, customizeRequest))
 
   /**
@@ -85,7 +85,7 @@ object AsyncHttpClientFs2Backend {
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): F[SttpBackend[F, Stream[F, ByteBuffer]]] =
+  ): F[SttpBackend[F, Stream[F, ByteBuffer], WebSocketHandler]] =
     implicitly[Sync[F]].delay(
       AsyncHttpClientFs2Backend[F](
         AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
@@ -97,6 +97,6 @@ object AsyncHttpClientFs2Backend {
   def usingClient[F[_]: ConcurrentEffect: ContextShift](
       client: AsyncHttpClient,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): SttpBackend[F, Stream[F, ByteBuffer]] =
+  ): SttpBackend[F, Stream[F, ByteBuffer], WebSocketHandler] =
     apply[F](client, closeClient = false, customizeRequest)
 }

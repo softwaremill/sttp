@@ -11,7 +11,7 @@ import org.asynchttpclient.{
   DefaultAsyncHttpClientConfig
 }
 import org.reactivestreams.Publisher
-import sttp.client.asynchttpclient.AsyncHttpClientBackend
+import sttp.client.asynchttpclient.{AsyncHttpClientBackend, WebSocketHandler}
 import sttp.client.impl.zio.TaskMonadAsyncError
 import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 import zio._
@@ -34,15 +34,15 @@ object AsyncHttpClientZioBackend {
       asyncHttpClient: AsyncHttpClient,
       closeClient: Boolean,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder
-  ): SttpBackend[Task, Nothing] =
-    new FollowRedirectsBackend[IO[Throwable, ?], Nothing](
+  ): SttpBackend[Task, Nothing, WebSocketHandler] =
+    new FollowRedirectsBackend[Task, Nothing, WebSocketHandler](
       new AsyncHttpClientZioBackend(asyncHttpClient, closeClient, customizeRequest)
     )
 
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): Task[SttpBackend[Task, Nothing]] =
+  ): Task[SttpBackend[Task, Nothing, WebSocketHandler]] =
     Task.effect(
       AsyncHttpClientZioBackend(AsyncHttpClientBackend.defaultClient(options), closeClient = true, customizeRequest)
     )
@@ -50,7 +50,7 @@ object AsyncHttpClientZioBackend {
   def usingConfig(
       cfg: AsyncHttpClientConfig,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): Task[SttpBackend[Task, Nothing]] =
+  ): Task[SttpBackend[Task, Nothing, WebSocketHandler]] =
     Task.effect(AsyncHttpClientZioBackend(new DefaultAsyncHttpClient(cfg), closeClient = true, customizeRequest))
 
   /**
@@ -60,7 +60,7 @@ object AsyncHttpClientZioBackend {
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): Task[SttpBackend[Task, Nothing]] =
+  ): Task[SttpBackend[Task, Nothing, WebSocketHandler]] =
     Task.effect(
       AsyncHttpClientZioBackend(
         AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
@@ -72,6 +72,6 @@ object AsyncHttpClientZioBackend {
   def usingClient(
       client: AsyncHttpClient,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): SttpBackend[IO[Throwable, ?], Nothing] =
+  ): SttpBackend[Task, Nothing, WebSocketHandler] =
     AsyncHttpClientZioBackend(client, closeClient = false, customizeRequest)
 }

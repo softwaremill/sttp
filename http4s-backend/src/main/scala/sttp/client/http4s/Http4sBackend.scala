@@ -35,7 +35,7 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
     client: Client[F],
     blockingExecutionContext: ExecutionContext,
     customizeRequest: Http4sRequest[F] => Http4sRequest[F]
-) extends SttpBackend[F, Stream[F, Byte]] {
+) extends SttpBackend[F, Stream[F, Byte], NothingT] {
 
   override def send[T](r: Request[T, Stream[F, Byte]]): F[Response[T]] = {
     val (entity, extraHeaders) = bodyToHttp4s(r, r.body)
@@ -77,6 +77,11 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
       }
     }
   }
+
+  override def openWebsocket[T, WS_RESULT](
+      request: Request[T, Stream[F, Byte]],
+      handler: NothingT[WS_RESULT]
+  ): F[WebSocketResponse[WS_RESULT]] = handler // nothing is everything
 
   private def methodToHttp4s(m: Method): http4s.Method = m match {
     case Method.GET     => http4s.Method.GET
@@ -216,14 +221,16 @@ object Http4sBackend {
       client: Client[F],
       blockingExecutionContext: ExecutionContext = ExecutionContext.Implicits.global,
       customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _
-  ): SttpBackend[F, Stream[F, Byte]] =
-    new FollowRedirectsBackend(new Http4sBackend[F](client, blockingExecutionContext, customizeRequest))
+  ): SttpBackend[F, Stream[F, Byte], NothingT] =
+    new FollowRedirectsBackend[F, Stream[F, Byte], NothingT](
+      new Http4sBackend[F](client, blockingExecutionContext, customizeRequest)
+    )
 
   def usingClientBuilder[F[_]: ConcurrentEffect: ContextShift](
       blazeClientBuilder: BlazeClientBuilder[F],
       blockingExecutionContext: ExecutionContext = ExecutionContext.Implicits.global,
       customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _
-  ): Resource[F, SttpBackend[F, Stream[F, Byte]]] = {
+  ): Resource[F, SttpBackend[F, Stream[F, Byte], NothingT]] = {
     blazeClientBuilder.resource.map(c => usingClient(c, blockingExecutionContext, customizeRequest))
   }
 
@@ -231,6 +238,6 @@ object Http4sBackend {
       clientExecutionContext: ExecutionContext = ExecutionContext.Implicits.global,
       blockingExecutionContext: ExecutionContext = ExecutionContext.Implicits.global,
       customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _
-  ): Resource[F, SttpBackend[F, Stream[F, Byte]]] =
+  ): Resource[F, SttpBackend[F, Stream[F, Byte], NothingT]] =
     usingClientBuilder(BlazeClientBuilder[F](clientExecutionContext), blockingExecutionContext, customizeRequest)
 }

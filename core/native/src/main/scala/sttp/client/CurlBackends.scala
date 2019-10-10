@@ -9,17 +9,17 @@ import scala.util.Try
 private class CurlBackend(verbose: Boolean) extends AbstractCurlBackend[Identity, Nothing](IdMonad, verbose) {}
 
 object CurlBackend {
-  def apply(verbose: Boolean = false): SttpBackend[Identity, Nothing] =
-    new FollowRedirectsBackend[Identity, Nothing](
-      new CurlBackend(verbose): SttpBackend[Identity, Nothing]
+  def apply(verbose: Boolean = false): SttpBackend[Identity, Nothing, NothingT] =
+    new FollowRedirectsBackend[Identity, Nothing, NothingT](
+      new CurlBackend(verbose): SttpBackend[Identity, Nothing, NothingT]
     )
 }
 
 private class CurlTryBackend(verbose: Boolean) extends AbstractCurlBackend[Try, Nothing](TryMonad, verbose) {}
 
 object CurlTryBackend {
-  def apply(verbose: Boolean = false): SttpBackend[Try, Nothing] =
-    new FollowRedirectsBackend[Try, Nothing](
-      new CurlTryBackend(verbose): SttpBackend[Try, Nothing]
+  def apply(verbose: Boolean = false): SttpBackend[Try, Nothing, NothingT] =
+    new FollowRedirectsBackend[Try, Nothing, NothingT](
+      new CurlTryBackend(verbose): SttpBackend[Try, Nothing, NothingT]
     )
 }

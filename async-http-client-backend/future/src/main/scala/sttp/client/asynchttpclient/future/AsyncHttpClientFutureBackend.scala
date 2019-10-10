@@ -11,7 +11,7 @@ import org.asynchttpclient.{
   DefaultAsyncHttpClientConfig
 }
 import org.reactivestreams.Publisher
-import sttp.client.asynchttpclient.AsyncHttpClientBackend
+import sttp.client.asynchttpclient.{AsyncHttpClientBackend, WebSocketHandler}
 import sttp.client.monad.FutureMonad
 import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 
@@ -40,8 +40,8 @@ object AsyncHttpClientFutureBackend {
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder
   )(
       implicit ec: ExecutionContext
-  ): SttpBackend[Future, Nothing] =
-    new FollowRedirectsBackend[Future, Nothing](
+  ): SttpBackend[Future, Nothing, WebSocketHandler] =
+    new FollowRedirectsBackend[Future, Nothing, WebSocketHandler](
       new AsyncHttpClientFutureBackend(asyncHttpClient, closeClient, customizeRequest)
     )
 
@@ -53,7 +53,7 @@ object AsyncHttpClientFutureBackend {
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  )(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Nothing] =
+  )(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Nothing, WebSocketHandler] =
     AsyncHttpClientFutureBackend(AsyncHttpClientBackend.defaultClient(options), closeClient = true, customizeRequest)
 
   /**
@@ -64,7 +64,7 @@ object AsyncHttpClientFutureBackend {
   def usingConfig(
       cfg: AsyncHttpClientConfig,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  )(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Nothing] =
+  )(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Nothing, WebSocketHandler] =
     AsyncHttpClientFutureBackend(new DefaultAsyncHttpClient(cfg), closeClient = true, customizeRequest)
 
   /**
@@ -77,7 +77,7 @@ object AsyncHttpClientFutureBackend {
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  )(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Nothing] =
+  )(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Nothing, WebSocketHandler] =
     AsyncHttpClientFutureBackend(
       AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
       closeClient = true,
@@ -92,6 +92,6 @@ object AsyncHttpClientFutureBackend {
   def usingClient(
       client: AsyncHttpClient,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  )(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Nothing] =
+  )(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Nothing, WebSocketHandler] =
     AsyncHttpClientFutureBackend(client, closeClient = false, customizeRequest)
 }

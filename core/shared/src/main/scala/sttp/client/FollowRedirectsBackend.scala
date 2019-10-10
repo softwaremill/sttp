@@ -8,10 +8,18 @@ import sttp.model.{Method, StatusCode}
 
 import scala.language.higherKinds
 
-class FollowRedirectsBackend[R[_], S](delegate: SttpBackend[R, S]) extends SttpBackend[R, S] {
+class FollowRedirectsBackend[R[_], S, WS_HANDLER[_]](delegate: SttpBackend[R, S, WS_HANDLER])
+    extends SttpBackend[R, S, WS_HANDLER] {
 
   def send[T](request: Request[T, S]): R[Response[T]] = {
     sendWithCounter(request, 0)
+  }
+
+  override def openWebsocket[T, WS_RESULT](
+      request: Request[T, S],
+      handler: WS_HANDLER[WS_RESULT]
+  ): R[WebSocketResponse[WS_RESULT]] = {
+    delegate.openWebsocket(request, handler) // TODO
   }
 
   private def sendWithCounter[T](request: Request[T, S], redirects: Int): R[Response[T]] = {

@@ -5,7 +5,7 @@ import java.nio.ByteBuffer
 import cats.effect.{ContextShift, IO}
 import cats.instances.string._
 import fs2.{Chunk, Stream, text}
-import sttp.client.SttpBackend
+import sttp.client.{NothingT, SttpBackend}
 import sttp.client.testing.ConvertToFuture
 import sttp.client.testing.streaming.StreamingTest
 
@@ -15,7 +15,7 @@ class AsyncHttpClientFs2HttpStreamingTest extends StreamingTest[IO, Stream[IO, B
 
   private implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.Implicits.global)
 
-  override implicit val backend: SttpBackend[IO, Stream[IO, ByteBuffer]] =
+  override implicit val backend: SttpBackend[IO, Stream[IO, ByteBuffer], NothingT] =
     AsyncHttpClientFs2Backend[IO]().unsafeRunSync()
 
   override implicit val convertToFuture: ConvertToFuture[IO] =

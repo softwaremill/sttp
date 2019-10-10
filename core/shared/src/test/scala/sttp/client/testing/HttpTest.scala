@@ -24,7 +24,7 @@ trait HttpTest[R[_]]
   protected val binaryFileMD5Hash = "565370873a38d91f34a3091082e63933"
   protected val textFileMD5Hash = "b048a88ece8e4ec5eb386b8fc5006d13"
 
-  implicit val backend: SttpBackend[R, Nothing]
+  implicit val backend: SttpBackend[R, Nothing, NothingT]
   implicit val convertToFuture: ConvertToFuture[R]
 
   protected def postEcho: Request[Either[String, String], Nothing] = basicRequest.post(uri"$endpoint/echo")

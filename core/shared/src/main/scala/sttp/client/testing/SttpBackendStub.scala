@@ -34,8 +34,8 @@ import scala.util.{Failure, Success, Try}
 class SttpBackendStub[R[_], S] private (
     monad: MonadError[R],
     matchers: PartialFunction[Request[_, _], R[Response[_]]],
-    fallback: Option[SttpBackend[R, S]]
-) extends SttpBackend[R, S] {
+    fallback: Option[SttpBackend[R, S, NothingT]]
+) extends SttpBackend[R, S, NothingT] { // TODO
 
   /**
     * Specify how the stub backend should respond to requests matching the
@@ -80,6 +80,9 @@ class SttpBackendStub[R[_], S] private (
       case Failure(e) => monad.error(e)
     }
   }
+
+  override def openWebsocket[T, WR](request: Request[T, S], handler: NothingT[WR]): R[WebSocketResponse[WR]] =
+    handler // nothing is everything
 
   private def wrapResponse[T](r: Response[_]): R[Response[T]] =
     monad.unit(r.asInstanceOf[Response[T]])
@@ -162,7 +165,7 @@ object SttpBackendStub {
     * @tparam S2 This is a work-around for the problem described here:
     *            [[https://stackoverflow.com/questions/46642623/cannot-infer-contravariant-nothing-type-parameter]].
     */
-  def apply[R[_], S, S2 <: S](c: SttpBackend[R, S]): SttpBackendStub[R, S2] =
+  def apply[R[_], S, S2 <: S](c: SttpBackend[R, S, NothingT]): SttpBackendStub[R, S2] =
     new SttpBackendStub[R, S2](c.responseMonad, PartialFunction.empty, None)
 
   /**
@@ -176,7 +179,7 @@ object SttpBackendStub {
     * Create a stub backend which delegates send requests to the given fallback
     * backend, if the request doesn't match any of the specified predicates.
     */
-  def withFallback[R[_], S, S2 <: S](fallback: SttpBackend[R, S]): SttpBackendStub[R, S2] =
+  def withFallback[R[_], S, S2 <: S](fallback: SttpBackend[R, S, NothingT]): SttpBackendStub[R, S2] =
     new SttpBackendStub[R, S2](fallback.responseMonad, PartialFunction.empty, Some(fallback))
 
   private[client] def tryAdjustResponseType[DesiredRType, RType, M[_]](

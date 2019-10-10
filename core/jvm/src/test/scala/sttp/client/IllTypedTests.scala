@@ -19,7 +19,7 @@ class IllTypedTests extends FlatSpec with Matchers {
     }
 
     thrown.getMessage should include(
-      "could not find implicit value for parameter backend: sttp.client.SttpBackend[R,MyStream[Byte]]"
+      "could not find implicit value for parameter backend: sttp.client.SttpBackend[R,MyStream[Byte],sttp.client.NothingT]"
     )
   }
 

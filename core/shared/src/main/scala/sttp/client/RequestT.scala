@@ -6,7 +6,6 @@ import java.util.Base64
 
 import com.github.ghik.silencer.silent
 import sttp.client.internal._
-import sttp.model._
 import sttp.client.internal.{SttpFile, ToCurlConverter}
 import sttp.model._
 
@@ -243,18 +242,27 @@ case class RequestT[U[_], T, +S](
   def redirectToGet(r: Boolean): RequestT[U, T, S] =
     this.copy(options = options.copy(redirectToGet = r))
 
+  def send[R[_]]()(
+      implicit backend: SttpBackend[R, S, NothingT],
+      isIdInRequest: IsIdInRequest[U]
+  ): R[Response[T]] = backend.send(asRequest)
+
+  def openWebsocket[R[_], WS_HANDLER[_], WS_RESULT](
+      handler: WS_HANDLER[WS_RESULT]
+  )(
+      implicit backend: SttpBackend[R, S, WS_HANDLER],
+      isIdInRequest: IsIdInRequest[U]
+  ): R[WebSocketResponse[WS_RESULT]] = backend.openWebsocket(asRequest, handler)
+
+  def toCurl(implicit isIdInRequest: IsIdInRequest[U]): String = ToCurlConverter.requestToCurl(asRequest)
+
   @silent("never used")
-  def send[R[_]]()(implicit backend: SttpBackend[R, S], isIdInRequest: IsIdInRequest[U]): R[Response[T]] = {
+  private def asRequest(implicit isIdInRequest: IsIdInRequest[U]): RequestT[Identity, T, S] = {
     // we could avoid the asInstanceOf by creating an artificial copy
     // changing the method & url fields using `isIdInRequest`, but that
     // would be only to satisfy the type checker, and a needless copy at
     // runtime.
-    backend.send(this.asInstanceOf[RequestT[Identity, T, S]])
-  }
-
-  @silent("never used")
-  def toCurl(implicit isIdInRequest: IsIdInRequest[U]): String = {
-    ToCurlConverter.requestToCurl(this.asInstanceOf[RequestT[Identity, T, S]])
+    this.asInstanceOf[RequestT[Identity, T, S]]
   }
 
   private def hasContentType: Boolean =

@@ -5,11 +5,12 @@ import brave.propagation.{Propagation, TraceContext}
 import brave.{Span, Tracing}
 import sttp.client.brave.BraveBackend._
 import sttp.client.monad.MonadError
-import sttp.client.{FollowRedirectsBackend, Request, Response, SttpBackend}
+import sttp.client.{FollowRedirectsBackend, NothingT, Request, Response, SttpBackend, WebSocketResponse}
 
 import scala.language.higherKinds
 
-class BraveBackend[R[_], S] private (delegate: SttpBackend[R, S], httpTracing: HttpTracing) extends SttpBackend[R, S] {
+class BraveBackend[R[_], S] private (delegate: SttpBackend[R, S, NothingT], httpTracing: HttpTracing)
+    extends SttpBackend[R, S, NothingT] {
 
   // .asInstanceOf as the create method lacks generics in its return type
   private val handler = HttpClientHandler
@@ -26,6 +27,11 @@ class BraveBackend[R[_], S] private (delegate: SttpBackend[R, S], httpTracing: H
 
     sendAndHandleReceive(startedSpan, tracedRequest)
   }
+
+  override def openWebsocket[T, WS_RESULT](
+      request: Request[T, S],
+      handler: NothingT[WS_RESULT]
+  ): R[WebSocketResponse[WS_RESULT]] = handler // nothing is everything
 
   override def close(): R[Unit] = delegate.close()
 
@@ -95,13 +101,13 @@ object BraveBackend {
   type AnyRequest = Request[_, _]
   type AnyResponse = Response[_]
 
-  def apply[R[_], S](delegate: SttpBackend[R, S], tracing: Tracing): SttpBackend[R, S] = {
+  def apply[R[_], S](delegate: SttpBackend[R, S, NothingT], tracing: Tracing): SttpBackend[R, S, NothingT] = {
     apply(delegate, HttpTracing.create(tracing))
   }
 
-  def apply[R[_], S](delegate: SttpBackend[R, S], httpTracing: HttpTracing): SttpBackend[R, S] = {
+  def apply[R[_], S](delegate: SttpBackend[R, S, NothingT], httpTracing: HttpTracing): SttpBackend[R, S, NothingT] = {
     // redirects should be handled before brave tracing, hence adding the follow-redirects backend on top
-    new FollowRedirectsBackend(new BraveBackend(delegate, httpTracing))
+    new FollowRedirectsBackend[R, S, NothingT](new BraveBackend(delegate, httpTracing))
   }
 }
 

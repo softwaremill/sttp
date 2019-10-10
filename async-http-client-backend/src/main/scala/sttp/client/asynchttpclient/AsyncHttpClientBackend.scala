@@ -12,6 +12,7 @@ import org.asynchttpclient.AsyncHandler.State
 import org.asynchttpclient.handler.StreamedAsyncHandler
 import org.asynchttpclient.proxy.ProxyServer
 import org.asynchttpclient.request.body.multipart.{ByteArrayPart, FilePart, StringPart}
+import org.asynchttpclient.ws.{WebSocket, WebSocketListener, WebSocketUpgradeHandler}
 import org.asynchttpclient.{
   AsyncHandler,
   AsyncHttpClient,
@@ -56,6 +57,7 @@ import sttp.client.{
 import sttp.model._
 
 import scala.collection.JavaConverters._
+import scala.collection.immutable.Seq
 import scala.language.higherKinds
 import scala.util.Try
 
@@ -64,19 +66,39 @@ abstract class AsyncHttpClientBackend[R[_], S](
     monad: MonadAsyncError[R],
     closeClient: Boolean,
     customizeRequest: BoundRequestBuilder => BoundRequestBuilder
-) extends SttpBackend[R, S] {
+) extends SttpBackend[R, S, WebSocketHandler] {
 
   @silent("discarded")
   override def send[T](r: Request[T, S]): R[Response[T]] = {
-    val preparedRequest = monad.fromTry(Try(asyncHttpClient.prepareRequest(requestToAsync(r))))
-
-    monad.flatMap(preparedRequest) { ahcRequest =>
+    monad.flatMap(preparedRequest(r)) { ahcRequest =>
       monad.flatten(monad.async[R[Response[T]]] { cb =>
         def success(r: R[Response[T]]): Unit = cb(Right(r))
         def error(t: Throwable): Unit = cb(Left(t))
 
-        customizeRequest(ahcRequest).execute(streamingAsyncHandler(r.response, success, error))
+        ahcRequest.execute(streamingAsyncHandler(r.response, success, error))
       })
+    }
+  }
+
+  override def openWebsocket[T, WS_RESULT](
+      r: Request[T, S],
+      handler: WebSocketHandler[WS_RESULT]
+  ): R[WebSocketResponse[WS_RESULT]] = {
+    monad.flatMap(preparedRequest(r)) { ahcRequest =>
+      monad.async[WebSocketResponse[WS_RESULT]] { cb =>
+        val initListener =
+          new WebSocketInitListener(
+            (r: WebSocketResponse[WS_RESULT]) => cb(Right(r)),
+            t => cb(Left(t)),
+            handler.wrIsWebSocket
+          )
+        val h = new WebSocketUpgradeHandler.Builder()
+          .addWebSocketListener(initListener)
+          .addWebSocketListener(handler.listener)
+          .build()
+
+        ahcRequest.execute(h)
+      }
     }
   }
 
@@ -187,6 +209,10 @@ abstract class AsyncHttpClientBackend[R[_], S](
     }
   }
 
+  private def preparedRequest(r: Request[_, S]): R[BoundRequestBuilder] = {
+    monad.map(monad.fromTry(Try(asyncHttpClient.prepareRequest(requestToAsync(r)))))(customizeRequest)
+  }
+
   private def requestToAsync(r: Request[_, S]): AsyncRequest = {
     val readTimeout = r.options.readTimeout
     val rb = new RequestBuilder(r.method.method)
@@ -269,17 +295,36 @@ abstract class AsyncHttpClientBackend[R[_], S](
       (),
       StatusCode(response.getStatusCode),
       response.getStatusText,
-      response.getHeaders
-        .iteratorAsString()
-        .asScala
-        .map(e => Header(e.getKey, e.getValue))
-        .toList,
+      readHeaders(response.getHeaders),
       Nil
     )
   }
 
+  private def readHeaders(h: HttpHeaders): Seq[Header] =
+    h.iteratorAsString()
+      .asScala
+      .map(e => Header(e.getKey, e.getValue))
+      .toList
+
   override def close(): R[Unit] = {
     if (closeClient) monad.eval(asyncHttpClient.close()) else monad.unit(())
+  }
+
+  private class WebSocketInitListener[WS_RESULT](
+      _onSuccess: WebSocketResponse[WS_RESULT] => Unit,
+      _onError: Throwable => Unit,
+      wrIsWebSocket: WebSocket =:= WS_RESULT
+  ) extends WebSocketListener {
+    override def onOpen(webSocket: WebSocket): Unit = {
+      webSocket.removeWebSocketListener(this)
+      _onSuccess(WebSocketResponse(Headers(readHeaders(webSocket.getUpgradeHeaders)), wrIsWebSocket(webSocket)))
+    }
+
+    override def onClose(webSocket: WebSocket, code: Int, reason: String): Unit = {
+      throw new IllegalStateException("Should never be called, as the listener should be removed after onOpen")
+    }
+
+    override def onError(t: Throwable): Unit = _onError(t)
   }
 }
 

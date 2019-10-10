@@ -16,7 +16,7 @@ import org.asynchttpclient.{
   DefaultAsyncHttpClientConfig
 }
 import org.reactivestreams.Publisher
-import sttp.client.asynchttpclient.AsyncHttpClientBackend
+import sttp.client.asynchttpclient.{AsyncHttpClientBackend, WebSocketHandler}
 import sttp.client.impl.monix.TaskMonadAsyncError
 import sttp.client.internal._
 import sttp.client.{FollowRedirectsBackend, Response, SttpBackend, SttpBackendOptions, _}
@@ -37,6 +37,11 @@ class AsyncHttpClientMonixBackend private (
   override def send[T](r: Request[T, Observable[ByteBuffer]]): Task[Response[T]] = {
     super.send(r).guarantee(Task.shift)
   }
+
+  override def openWebsocket[T, WS_RESULT](
+      r: Request[T, Observable[ByteBuffer]],
+      handler: WebSocketHandler[WS_RESULT]
+  ): Task[WebSocketResponse[WS_RESULT]] = super.openWebsocket(r, handler).guarantee(Task.shift)
 
   override protected def streamBodyToPublisher(s: Observable[ByteBuffer]): Publisher[ByteBuf] =
     s.map(Unpooled.wrappedBuffer).toReactivePublisher
@@ -69,7 +74,7 @@ object AsyncHttpClientMonixBackend {
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder
   )(
       implicit scheduler: Scheduler
-  ): SttpBackend[Task, Observable[ByteBuffer]] =
+  ): SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler] =
     new FollowRedirectsBackend(new AsyncHttpClientMonixBackend(asyncHttpClient, closeClient, customizeRequest))
 
   /**
@@ -79,7 +84,9 @@ object AsyncHttpClientMonixBackend {
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  )(implicit s: Scheduler = Scheduler.Implicits.global): Task[SttpBackend[Task, Observable[ByteBuffer]]] =
+  )(
+      implicit s: Scheduler = Scheduler.Implicits.global
+  ): Task[SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler]] =
     Task.eval(
       AsyncHttpClientMonixBackend(AsyncHttpClientBackend.defaultClient(options), closeClient = true, customizeRequest)
     )
@@ -91,7 +98,9 @@ object AsyncHttpClientMonixBackend {
   def usingConfig(
       cfg: AsyncHttpClientConfig,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  )(implicit s: Scheduler = Scheduler.Implicits.global): Task[SttpBackend[Task, Observable[ByteBuffer]]] =
+  )(
+      implicit s: Scheduler = Scheduler.Implicits.global
+  ): Task[SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler]] =
     Task.eval(AsyncHttpClientMonixBackend(new DefaultAsyncHttpClient(cfg), closeClient = true, customizeRequest))
 
   /**
@@ -103,7 +112,9 @@ object AsyncHttpClientMonixBackend {
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  )(implicit s: Scheduler = Scheduler.Implicits.global): Task[SttpBackend[Task, Observable[ByteBuffer]]] =
+  )(
+      implicit s: Scheduler = Scheduler.Implicits.global
+  ): Task[SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler]] =
     Task.eval(
       AsyncHttpClientMonixBackend(
         AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
@@ -119,6 +130,6 @@ object AsyncHttpClientMonixBackend {
   def usingClient(
       client: AsyncHttpClient,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  )(implicit s: Scheduler = Scheduler.Implicits.global): SttpBackend[Task, Observable[ByteBuffer]] =
+  )(implicit s: Scheduler = Scheduler.Implicits.global): SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler] =
     AsyncHttpClientMonixBackend(client, closeClient = false, customizeRequest)
 }

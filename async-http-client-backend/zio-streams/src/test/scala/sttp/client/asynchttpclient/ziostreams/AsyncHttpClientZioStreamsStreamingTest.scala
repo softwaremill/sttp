@@ -2,7 +2,7 @@ package sttp.client.asynchttpclient.ziostreams
 
 import java.nio.ByteBuffer
 
-import sttp.client.SttpBackend
+import sttp.client.{NothingT, SttpBackend}
 import sttp.client.impl.zio._
 import sttp.client.internal._
 import sttp.client.testing.ConvertToFuture
@@ -12,7 +12,7 @@ import zio.stream.Stream
 
 class AsyncHttpClientZioStreamsStreamingTest extends StreamingTest[Task, Stream[Throwable, ByteBuffer]] {
 
-  override implicit val backend: SttpBackend[Task, Stream[Throwable, ByteBuffer]] =
+  override implicit val backend: SttpBackend[Task, Stream[Throwable, ByteBuffer], NothingT] =
     runtime.unsafeRunSync(AsyncHttpClientZioStreamsBackend(runtime)).getOrElse(c => throw c.squash)
   override implicit val convertToFuture: ConvertToFuture[Task] = convertZioIoToFuture
 

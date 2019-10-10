@@ -3,17 +3,15 @@ package sttp.client.prometheus
 import java.util.concurrent.ConcurrentHashMap
 
 import com.github.ghik.silencer.silent
-import sttp.client.monad.MonadError
-import sttp.client.{FollowRedirectsBackend, Request, Response, SttpBackend}
+import sttp.client.{FollowRedirectsBackend, NothingT, Request, Response, SttpBackend, WebSocketResponse}
 import io.prometheus.client.{CollectorRegistry, Counter, Gauge, Histogram}
-import sttp.client.SttpBackend
 import sttp.client.monad.MonadError
 
 import scala.collection.mutable
 import scala.language.higherKinds
 
 class PrometheusBackend[R[_], S] private (
-    delegate: SttpBackend[R, S],
+    delegate: SttpBackend[R, S, NothingT],
     requestToHistogramNameMapper: Request[_, S] => Option[String],
     requestToInProgressGaugeNameMapper: Request[_, S] => Option[String],
     requestToSuccessCounterMapper: Request[_, S] => Option[String],
@@ -23,7 +21,7 @@ class PrometheusBackend[R[_], S] private (
     histogramsCache: ConcurrentHashMap[String, Histogram],
     gaugesCache: ConcurrentHashMap[String, Gauge],
     countersCache: ConcurrentHashMap[String, Counter]
-) extends SttpBackend[R, S] {
+) extends SttpBackend[R, S, NothingT] {
 
   override def send[T](request: Request[T, S]): R[Response[T]] = {
     val requestTimer: Option[Histogram.Timer] = for {
@@ -59,6 +57,11 @@ class PrometheusBackend[R[_], S] private (
     }
   }
 
+  override def openWebsocket[T, WS_RESULT](
+      request: Request[T, S],
+      handler: NothingT[WS_RESULT]
+  ): R[WebSocketResponse[WS_RESULT]] = handler // nothing is everything
+
   override def close(): R[Unit] = delegate.close()
 
   override def responseMonad: MonadError[R] = delegate.responseMonad
@@ -92,7 +95,7 @@ object PrometheusBackend {
   val DefaultFailureCounterName = "sttp_requests_failure_count"
 
   def apply[R[_], S](
-      delegate: SttpBackend[R, S],
+      delegate: SttpBackend[R, S, NothingT],
       requestToHistogramNameMapper: Request[_, S] => Option[String] = (_: Request[_, S]) => Some(DefaultHistogramName),
       requestToInProgressGaugeNameMapper: Request[_, S] => Option[String] = (_: Request[_, S]) =>
         Some(DefaultRequestsInProgressGaugeName),
@@ -102,9 +105,9 @@ object PrometheusBackend {
       requestToFailureCounterMapper: Request[_, S] => Option[String] = (_: Request[_, S]) =>
         Some(DefaultFailureCounterName),
       collectorRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry
-  ): SttpBackend[R, S] = {
+  ): SttpBackend[R, S, NothingT] = {
     // redirects should be handled before prometheus
-    new FollowRedirectsBackend(
+    new FollowRedirectsBackend[R, S, NothingT](
       new PrometheusBackend(
         delegate,
         requestToHistogramNameMapper,

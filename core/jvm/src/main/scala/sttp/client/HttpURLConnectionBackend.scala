@@ -23,7 +23,7 @@ class HttpURLConnectionBackend private (
     customizeConnection: HttpURLConnection => Unit,
     createURL: String => URL,
     openConnection: (URL, Option[java.net.Proxy]) => URLConnection
-) extends SttpBackend[Identity, Nothing] {
+) extends SttpBackend[Identity, Nothing, NothingT] {
 
   override def send[T](r: Request[T, Nothing]): Response[T] = {
     val c = openConnection(r.uri)
@@ -59,6 +59,12 @@ class HttpURLConnectionBackend private (
         readResponse(c, c.getErrorStream, r.response)
     }
   }
+
+  override def openWebsocket[T, WR](
+      request: Request[T, Nothing],
+      handler: NothingT[WR]
+  ): NothingT[WebSocketResponse[WR]] =
+    handler // nothing is everything
 
   override val responseMonad: MonadError[Identity] = IdMonad
 
@@ -291,8 +297,8 @@ object HttpURLConnectionBackend {
         case (url, None)        => url.openConnection()
         case (url, Some(proxy)) => url.openConnection(proxy)
       }
-  ): SttpBackend[Identity, Nothing] =
-    new FollowRedirectsBackend[Identity, Nothing](
+  ): SttpBackend[Identity, Nothing, NothingT] =
+    new FollowRedirectsBackend[Identity, Nothing, NothingT](
       new HttpURLConnectionBackend(options, customizeConnection, createURL, openConnection)
     )
 }

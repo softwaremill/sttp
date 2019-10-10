@@ -1,7 +1,8 @@
 package sttp.client.okhttp
 
 import java.io.IOException
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.{ArrayBlockingQueue, TimeUnit}
+import java.util.concurrent.atomic.AtomicBoolean
 
 import com.github.ghik.silencer.silent
 import okhttp3.internal.http.HttpMethod
@@ -13,13 +14,15 @@ import okhttp3.{
   MediaType,
   OkHttpClient,
   Route,
+  WebSocket,
+  WebSocketListener,
   Headers => OkHttpHeaders,
   MultipartBody => OkHttpMultipartBody,
   Request => OkHttpRequest,
   RequestBody => OkHttpRequestBody,
   Response => OkHttpResponse
 }
-import okio.{BufferedSink, Okio}
+import okio.{BufferedSink, ByteString, Okio}
 import sttp.client.ResponseAs.EagerResponseHandler
 import sttp.client.SttpBackendOptions.Proxy
 import sttp.client.internal.FileHelpers
@@ -43,7 +46,8 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 import scala.util.{Failure, Try}
 
-abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean) extends SttpBackend[R, S] {
+abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean)
+    extends SttpBackend[R, S, WebSocketHandler] {
 
   private[okhttp] def convertRequest[T](request: Request[T, S]): OkHttpRequest = {
     val builder = new OkHttpRequest.Builder()
@@ -200,17 +204,45 @@ class OkHttpSyncBackend private (client: OkHttpClient, closeClient: Boolean)
     readResponse(response, r.response)
   }
 
+  override def openWebsocket[T, WS_RESULT](
+      r: Request[T, Nothing],
+      handler: WebSocketHandler[WS_RESULT]
+  ): WebSocketResponse[WS_RESULT] = {
+
+    val request = convertRequest(r)
+
+    val x = new ArrayBlockingQueue[Either[Throwable, WebSocketResponse[WS_RESULT]]](1)
+
+    val listener = new DelegatingWebSocketListener(
+      handler.listener,
+      (webSocket, response) => {
+        val wsResponse = WebSocketResponse(readResponse(response, ignore), handler.wrIsWebSocket(webSocket))
+        x.add(Right(wsResponse))
+      },
+      t => x.add(Left(t)),
+      handler.wrIsWebSocket
+    )
+
+    OkHttpBackend
+      .updateClientIfCustomReadTimeout(r, client)
+      .newWebSocket(request, listener)
+
+    x.take().fold(throw _, identity)
+  }
+
   override def responseMonad: MonadError[Identity] = IdMonad
 }
 
 object OkHttpSyncBackend {
-  private def apply(client: OkHttpClient, closeClient: Boolean): SttpBackend[Identity, Nothing] =
-    new FollowRedirectsBackend[Identity, Nothing](new OkHttpSyncBackend(client, closeClient))
+  private def apply(client: OkHttpClient, closeClient: Boolean): SttpBackend[Identity, Nothing, WebSocketHandler] =
+    new FollowRedirectsBackend[Identity, Nothing, WebSocketHandler](new OkHttpSyncBackend(client, closeClient))
 
-  def apply(options: SttpBackendOptions = SttpBackendOptions.Default): SttpBackend[Identity, Nothing] =
+  def apply(
+      options: SttpBackendOptions = SttpBackendOptions.Default
+  ): SttpBackend[Identity, Nothing, WebSocketHandler] =
     OkHttpSyncBackend(OkHttpBackend.defaultClient(DefaultReadTimeout.toMillis, options), closeClient = true)
 
-  def usingClient(client: OkHttpClient): SttpBackend[Identity, Nothing] =
+  def usingClient(client: OkHttpClient): SttpBackend[Identity, Nothing, WebSocketHandler] =
     OkHttpSyncBackend(client, closeClient = false)
 }
 
@@ -220,8 +252,8 @@ abstract class OkHttpAsyncBackend[R[_], S](client: OkHttpClient, monad: MonadAsy
     val request = convertRequest(r)
 
     monad.flatten(monad.async[R[Response[T]]] { cb =>
-      def success(r: R[Response[T]]) = cb(Right(r))
-      def error(t: Throwable) = cb(Left(t))
+      def success(r: R[Response[T]]): Unit = cb(Right(r))
+      def error(t: Throwable): Unit = cb(Left(t))
 
       OkHttpBackend
         .updateClientIfCustomReadTimeout(r, client)
@@ -237,6 +269,34 @@ abstract class OkHttpAsyncBackend[R[_], S](client: OkHttpClient, monad: MonadAsy
     })
   }
 
+  override def openWebsocket[T, WS_RESULT](
+      r: Request[T, S],
+      handler: WebSocketHandler[WS_RESULT]
+  ): R[WebSocketResponse[WS_RESULT]] = {
+
+    val request = convertRequest(r)
+
+    monad.flatten(monad.async[R[WebSocketResponse[WS_RESULT]]] { cb =>
+      def success(r: R[WebSocketResponse[WS_RESULT]]): Unit = cb(Right(r))
+      def error(t: Throwable): Unit = cb(Left(t))
+
+      val listener = new DelegatingWebSocketListener(
+        handler.listener,
+        (webSocket, response) => {
+          val wsResponse =
+            monad.map(readResponse(response, ignore))(r => WebSocketResponse(r, handler.wrIsWebSocket(webSocket)))
+          success(wsResponse)
+        },
+        error,
+        handler.wrIsWebSocket
+      )
+
+      OkHttpBackend
+        .updateClientIfCustomReadTimeout(r, client)
+        .newWebSocket(request, listener)
+    })
+  }
+
   override def responseMonad: MonadError[R] = monad
 }
 
@@ -246,16 +306,46 @@ class OkHttpFutureBackend private (client: OkHttpClient, closeClient: Boolean)(i
 object OkHttpFutureBackend {
   private def apply(client: OkHttpClient, closeClient: Boolean)(
       implicit ec: ExecutionContext
-  ): SttpBackend[Future, Nothing] =
-    new FollowRedirectsBackend[Future, Nothing](new OkHttpFutureBackend(client, closeClient))
+  ): SttpBackend[Future, Nothing, WebSocketHandler] =
+    new FollowRedirectsBackend[Future, Nothing, WebSocketHandler](new OkHttpFutureBackend(client, closeClient))
 
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default
-  )(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Nothing] =
+  )(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Nothing, WebSocketHandler] =
     OkHttpFutureBackend(OkHttpBackend.defaultClient(DefaultReadTimeout.toMillis, options), closeClient = true)
 
   def usingClient(
       client: OkHttpClient
-  )(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Nothing] =
+  )(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Nothing, WebSocketHandler] =
     OkHttpFutureBackend(client, closeClient = false)
+}
+
+private[okhttp] class DelegatingWebSocketListener[WS_RESULT](
+    delegate: WebSocketListener,
+    onInitialOpen: (WebSocket, OkHttpResponse) => Unit,
+    onInitialError: Throwable => Unit,
+    wrIsWebSocket: WebSocket =:= WS_RESULT
+) extends WebSocketListener {
+  private val initialised = new AtomicBoolean(false)
+
+  override def onOpen(webSocket: WebSocket, response: OkHttpResponse): Unit = {
+    if (!initialised.getAndSet(true)) {
+      onInitialOpen(webSocket, response)
+    }
+    delegate.onOpen(webSocket, response)
+  }
+
+  override def onFailure(webSocket: WebSocket, t: Throwable, response: OkHttpResponse): Unit = {
+    if (!initialised.getAndSet(true)) {
+      onInitialError(t)
+    }
+    delegate.onFailure(webSocket, t, response)
+  }
+
+  override def onClosed(webSocket: WebSocket, code: Int, reason: String): Unit =
+    delegate.onClosed(webSocket, code, reason)
+  override def onClosing(webSocket: WebSocket, code: Int, reason: String): Unit =
+    delegate.onClosing(webSocket, code, reason)
+  override def onMessage(webSocket: WebSocket, text: String): Unit = delegate.onMessage(webSocket, text)
+  override def onMessage(webSocket: WebSocket, bytes: ByteString): Unit = delegate.onMessage(webSocket, bytes)
 }

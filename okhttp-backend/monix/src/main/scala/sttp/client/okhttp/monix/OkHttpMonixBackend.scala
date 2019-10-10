@@ -11,7 +11,7 @@ import monix.reactive.observers.Subscriber
 import okhttp3.{MediaType, OkHttpClient, RequestBody => OkHttpRequestBody}
 import okio.BufferedSink
 import sttp.client.impl.monix.TaskMonadAsyncError
-import sttp.client.okhttp.{OkHttpAsyncBackend, OkHttpBackend}
+import sttp.client.okhttp.{OkHttpAsyncBackend, OkHttpBackend, WebSocketHandler}
 import sttp.client.{SttpBackend, _}
 
 import scala.concurrent.Future
@@ -23,6 +23,11 @@ class OkHttpMonixBackend private (client: OkHttpClient, closeClient: Boolean)(im
   override def send[T](r: Request[T, Observable[ByteBuffer]]): Task[Response[T]] = {
     super.send(r).guarantee(Task.shift)
   }
+
+  override def openWebsocket[T, WS_RESULT](
+      r: Request[T, Observable[ByteBuffer]],
+      handler: WebSocketHandler[WS_RESULT]
+  ): Task[WebSocketResponse[WS_RESULT]] = super.openWebsocket(r, handler).guarantee(Task.shift)
 
   override def streamToRequestBody(stream: Observable[ByteBuffer]): Option[OkHttpRequestBody] =
     Some(new OkHttpRequestBody() {
@@ -82,18 +87,20 @@ class OkHttpMonixBackend private (client: OkHttpClient, closeClient: Boolean)(im
 object OkHttpMonixBackend {
   private def apply(client: OkHttpClient, closeClient: Boolean)(
       implicit s: Scheduler
-  ): SttpBackend[Task, Observable[ByteBuffer]] =
+  ): SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler] =
     new FollowRedirectsBackend(new OkHttpMonixBackend(client, closeClient)(s))
 
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default
-  )(implicit s: Scheduler = Scheduler.Implicits.global): Task[SttpBackend[Task, Observable[ByteBuffer]]] =
+  )(
+      implicit s: Scheduler = Scheduler.Implicits.global
+  ): Task[SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler]] =
     Task.eval(
       OkHttpMonixBackend(OkHttpBackend.defaultClient(DefaultReadTimeout.toMillis, options), closeClient = true)(s)
     )
 
   def usingClient(
       client: OkHttpClient
-  )(implicit s: Scheduler = Scheduler.Implicits.global): SttpBackend[Task, Observable[ByteBuffer]] =
+  )(implicit s: Scheduler = Scheduler.Implicits.global): SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler] =
     OkHttpMonixBackend(client, closeClient = false)(s)
 }

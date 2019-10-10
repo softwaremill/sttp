@@ -12,7 +12,7 @@ import org.asynchttpclient.{
   DefaultAsyncHttpClientConfig
 }
 import org.reactivestreams.Publisher
-import sttp.client.asynchttpclient.AsyncHttpClientBackend
+import sttp.client.asynchttpclient.{AsyncHttpClientBackend, WebSocketHandler}
 import sttp.client.impl.zio.TaskMonadAsyncError
 import sttp.client.internal._
 import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
@@ -61,8 +61,8 @@ object AsyncHttpClientZioStreamsBackend {
       asyncHttpClient: AsyncHttpClient,
       closeClient: Boolean,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder
-  ): SttpBackend[Task, Stream[Throwable, ByteBuffer]] =
-    new FollowRedirectsBackend[Task, Stream[Throwable, ByteBuffer]](
+  ): SttpBackend[Task, Stream[Throwable, ByteBuffer], WebSocketHandler] =
+    new FollowRedirectsBackend[Task, Stream[Throwable, ByteBuffer], WebSocketHandler](
       new AsyncHttpClientZioStreamsBackend(runtime, asyncHttpClient, closeClient, customizeRequest)
     )
 
@@ -70,7 +70,7 @@ object AsyncHttpClientZioStreamsBackend {
       runtime: Runtime[R],
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): Task[SttpBackend[Task, Stream[Throwable, ByteBuffer]]] =
+  ): Task[SttpBackend[Task, Stream[Throwable, ByteBuffer], WebSocketHandler]] =
     Task.effect(
       AsyncHttpClientZioStreamsBackend(
         runtime,
@@ -84,7 +84,7 @@ object AsyncHttpClientZioStreamsBackend {
       runtime: Runtime[R],
       cfg: AsyncHttpClientConfig,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): Task[SttpBackend[Task, Stream[Throwable, ByteBuffer]]] =
+  ): Task[SttpBackend[Task, Stream[Throwable, ByteBuffer], WebSocketHandler]] =
     Task.effect(
       AsyncHttpClientZioStreamsBackend(runtime, new DefaultAsyncHttpClient(cfg), closeClient = true, customizeRequest)
     )
@@ -97,7 +97,7 @@ object AsyncHttpClientZioStreamsBackend {
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): Task[SttpBackend[Task, Stream[Throwable, ByteBuffer]]] =
+  ): Task[SttpBackend[Task, Stream[Throwable, ByteBuffer], WebSocketHandler]] =
     Task.effect(
       AsyncHttpClientZioStreamsBackend(
         runtime,
@@ -111,6 +111,6 @@ object AsyncHttpClientZioStreamsBackend {
       runtime: Runtime[R],
       client: AsyncHttpClient,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): SttpBackend[Task, Stream[Throwable, ByteBuffer]] =
+  ): SttpBackend[Task, Stream[Throwable, ByteBuffer], WebSocketHandler] =
     AsyncHttpClientZioStreamsBackend(runtime, client, closeClient = false, customizeRequest)
 }

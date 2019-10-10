@@ -5,7 +5,7 @@ import akka.http.scaladsl.server.Route
 import akka.stream.ActorMaterializer
 import com.github.ghik.silencer.silent
 import org.scalatest.{AsyncWordSpec, BeforeAndAfterAll, Matchers}
-import sttp.client.SttpBackend
+import sttp.client.{NothingT, SttpBackend}
 import sttp.model.StatusCode
 
 import scala.concurrent.duration._
@@ -21,7 +21,7 @@ class AkkaHttpRouteBackendTest extends AsyncWordSpec with Matchers with BeforeAn
     Await.result(system.terminate(), 5.seconds)
   }
 
-  val backend: SttpBackend[Future, Nothing] = {
+  val backend: SttpBackend[Future, Nothing, NothingT] = {
     AkkaHttpBackend.usingClient(system, http = AkkaHttpClient.stubFromRoute(Routes.route))
   }
 

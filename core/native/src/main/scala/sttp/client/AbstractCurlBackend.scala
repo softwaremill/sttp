@@ -19,7 +19,8 @@ import scala.scalanative.native.stdlib._
 import scala.scalanative.native.string._
 import scala.scalanative.native.{CSize, Ptr, _}
 
-abstract class AbstractCurlBackend[R[_], S](monad: MonadError[R], verbose: Boolean) extends SttpBackend[R, S] {
+abstract class AbstractCurlBackend[R[_], S](monad: MonadError[R], verbose: Boolean)
+    extends SttpBackend[R, S, NothingT] {
 
   override val responseMonad: MonadError[R] = monad
 
@@ -89,6 +90,12 @@ abstract class AbstractCurlBackend[R[_], S](monad: MonadError[R], verbose: Boole
       }
     }
   }
+
+  override def openWebsocket[T, WS_RESULT](
+      request: Request[T, S],
+      handler: NothingT[WS_RESULT]
+  ): R[WebSocketResponse[WS_RESULT]] =
+    handler // nothing is everything
 
   private def setMethod(handle: CurlHandle, method: Method)(implicit z: Zone): R[CurlCode] = {
     val m = method match {

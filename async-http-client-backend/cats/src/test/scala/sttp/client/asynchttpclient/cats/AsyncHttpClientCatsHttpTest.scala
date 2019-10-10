@@ -8,7 +8,7 @@ import sttp.client.testing.{ConvertToFuture, HttpTest}
 class AsyncHttpClientCatsHttpTest extends HttpTest[IO] {
 
   implicit val cs: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionContext.global)
-  override implicit val backend: SttpBackend[IO, Nothing] = AsyncHttpClientCatsBackend[IO]().unsafeRunSync()
+  override implicit val backend: SttpBackend[IO, Nothing, NothingT] = AsyncHttpClientCatsBackend[IO]().unsafeRunSync()
   override implicit val convertToFuture: ConvertToFuture[IO] = convertCatsIOToFuture
 
   "illegal url exceptions" - {

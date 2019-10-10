@@ -17,7 +17,7 @@ trait StreamingTest[R[_], S]
 
   protected def endpoint: String
 
-  implicit def backend: SttpBackend[R, S]
+  implicit def backend: SttpBackend[R, S, NothingT]
 
   implicit def convertToFuture: ConvertToFuture[R]
 

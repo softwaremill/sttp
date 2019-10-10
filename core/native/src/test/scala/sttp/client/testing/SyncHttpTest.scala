@@ -27,7 +27,7 @@ trait SyncHttpTest
   protected val binaryFileMD5Hash = "565370873a38d91f34a3091082e63933"
   protected val textFileMD5Hash = "b048a88ece8e4ec5eb386b8fc5006d13"
 
-  implicit val backend: SttpBackend[Identity, Nothing]
+  implicit val backend: SttpBackend[Identity, Nothing, NothingT]
 
   protected def postEcho = basicRequest.post(uri"$endpoint/echo")
   protected val testBody = "this is the body"

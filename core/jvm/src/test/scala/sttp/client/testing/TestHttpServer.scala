@@ -7,11 +7,13 @@ import akka.http.scaladsl.coding.{Deflate, Gzip, NoCoding}
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.CacheDirectives._
 import akka.http.scaladsl.model.headers._
+import akka.http.scaladsl.model.ws.{BinaryMessage, Message, TextMessage}
 import akka.http.scaladsl.server.Directives.{entity, path, _}
 import akka.http.scaladsl.server.{RejectionHandler, Route}
 import akka.http.scaladsl.server.directives.Credentials
 import akka.http.scaladsl.server.directives.RouteDirectives.complete
 import akka.stream.ActorMaterializer
+import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
 import akka.util.ByteString
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives
 import ch.megard.akka.http.cors.scaladsl.settings.CorsSettings
@@ -25,7 +27,12 @@ import scala.concurrent.duration._
 trait TestHttpServer extends BeforeAndAfterAll { this: Suite =>
 
   private val server = new HttpServer(0)
-  protected var endpoint = "localhost:51823"
+
+  protected def endpoint = s"$host:$port"
+  protected def wsEndpoint = s"ws://$host:$port"
+
+  private var port = 51823
+  private var host = "localhost"
 
   override protected def beforeAll(): Unit = {
     import scala.concurrent.ExecutionContext.Implicits.global
@@ -33,7 +40,7 @@ trait TestHttpServer extends BeforeAndAfterAll { this: Suite =>
     super.beforeAll()
     Await.result(
       server.start().map { binding =>
-        endpoint = s"localhost:${binding.localAddress.getPort}"
+        port = binding.localAddress.getPort
       },
       16.seconds
     )
@@ -258,6 +265,23 @@ private class HttpServer(port: Int) extends AutoCloseable with CorsDirectives {
           HttpEntity(MediaTypes.`text/plain`.withCharset(HttpCharset.custom("ISO-8859-2")), textWithSpecialCharacters)
         ctx.complete(HttpResponse(200, entity = entity))
       }
+    } ~ pathPrefix("ws") {
+      path("echo") {
+        handleWebSocketMessages(Flow[Message].mapConcat {
+          case tm: TextMessage =>
+            TextMessage(Source.single("echo: ") ++ tm.textStream) :: Nil
+          case bm: BinaryMessage =>
+            bm.dataStream.runWith(Sink.ignore)
+            Nil
+        })
+      } ~
+        path("send_and_close") {
+          handleWebSocketMessages(
+            Flow.fromSinkAndSourceMat(Sink.ignore, Source(List(TextMessage("test10"), TextMessage("test20"))))(
+              Keep.right
+            )
+          )
+        }
     }
 
   val corsServerRoutes: Route = {

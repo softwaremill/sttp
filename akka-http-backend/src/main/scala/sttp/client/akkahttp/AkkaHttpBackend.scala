@@ -8,11 +8,12 @@ import akka.http.scaladsl.coding.{Deflate, Gzip, NoCoding}
 import akka.http.scaladsl.model.ContentTypes.`application/octet-stream`
 import akka.http.scaladsl.model.HttpHeader.ParsingResult
 import akka.http.scaladsl.model.headers.{BasicHttpCredentials, HttpEncodings, `Content-Length`, `Content-Type`}
+import akka.http.scaladsl.model.ws.{Message, WebSocketRequest}
 import akka.http.scaladsl.model.{Multipart => AkkaMultipart, StatusCode => _, _}
 import akka.http.scaladsl.settings.ConnectionPoolSettings
 import akka.http.scaladsl.{ClientTransport, HttpsConnectionContext}
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.{FileIO, Sink, Source, StreamConverters}
+import akka.stream.scaladsl.{FileIO, Flow, Sink, Source, StreamConverters}
 import akka.util.ByteString
 import sttp.client
 import sttp.model.{Header, HeaderNames, Method, Part, StatusCode}
@@ -53,8 +54,9 @@ class AkkaHttpBackend private (
     opts: SttpBackendOptions,
     customConnectionPoolSettings: Option[ConnectionPoolSettings],
     http: AkkaHttpClient,
-    customizeRequest: HttpRequest => HttpRequest
-) extends SttpBackend[Future, Source[ByteString, Any]] {
+    customizeRequest: HttpRequest => HttpRequest,
+    customizeWebsocketRequest: WebSocketRequest => WebSocketRequest
+) extends SttpBackend[Future, Source[ByteString, Any], Flow[Message, Message, *]] {
 
   // the supported stream type
   private type S = Source[ByteString, Any]
@@ -69,39 +71,30 @@ class AkkaHttpBackend private (
   override def send[T](r: Request[T, S]): Future[Response[T]] = {
     implicit val ec: ExecutionContext = this.ec
 
-    val connectionPoolSettingsWithProxy = opts.proxy match {
-      case Some(p) if !p.ignoreProxy(r.uri.host) =>
-        val clientTransport = p.auth match {
-          case Some(proxyAuth) =>
-            ClientTransport.httpsProxy(
-              p.inetSocketAddress,
-              BasicHttpCredentials(proxyAuth.username, proxyAuth.password)
-            )
-          case None => ClientTransport.httpsProxy(p.inetSocketAddress)
-        }
-        connectionPoolSettings.withTransport(clientTransport)
-      case _ => connectionPoolSettings
-    }
-    val settings = connectionPoolSettingsWithProxy
-      .withUpdatedConnectionSettings(_.withIdleTimeout(r.options.readTimeout))
-
     Future
       .fromTry(requestToAkka(r).flatMap(setBodyOnAkka(r, r.body, _)))
       .map(customizeRequest)
-      .flatMap { request =>
-        http
-          .singleRequest(request, settings)
-      }
-      .flatMap { hr =>
-        val code = StatusCode(hr.status.intValue())
-        val statusText = hr.status.reason()
+      .flatMap(request => http.singleRequest(request, connectionSettings(r)))
+      .flatMap(responseFromAkka(r, _))
+  }
 
-        val headers = headersFromAkka(hr)
+  override def openWebsocket[T, WS_RESULT](
+      r: Request[T, Source[ByteString, Any]],
+      handler: Flow[Message, Message, WS_RESULT]
+  ): Future[WebSocketResponse[WS_RESULT]] = {
 
-        val responseMetadata = client.ResponseMetadata(headers, code, statusText)
-        val body = bodyFromAkka(r.response, decodeAkkaResponse(hr), responseMetadata)
+    implicit val ec: ExecutionContext = this.ec
 
-        body.map(client.Response(_, code, statusText, headers, Nil))
+    val akkaWebsocketRequest = headersToAkka(r.headers)
+      .map(h => WebSocketRequest(uri = r.uri.toString, extraHeaders = h))
+      .map(customizeWebsocketRequest)
+
+    Future
+      .fromTry(akkaWebsocketRequest)
+      .flatMap(request => http.singleWebsocketRequest(request, handler, connectionSettings(r).connectionSettings))
+      .flatMap {
+        case (wsResponse, wsResult) =>
+          responseFromAkka(r, wsResponse.response).map(WebSocketResponse(_, wsResult))
       }
   }
 
@@ -161,6 +154,38 @@ class AkkaHttpBackend private (
       case ResponseAsFile(file) =>
         saved(file.toFile).map(_ => file)
     }
+  }
+
+  private def connectionSettings(r: Request[_, _]): ConnectionPoolSettings = {
+    val connectionPoolSettingsWithProxy = opts.proxy match {
+      case Some(p) if !p.ignoreProxy(r.uri.host) =>
+        val clientTransport = p.auth match {
+          case Some(proxyAuth) =>
+            ClientTransport.httpsProxy(
+              p.inetSocketAddress,
+              BasicHttpCredentials(proxyAuth.username, proxyAuth.password)
+            )
+          case None => ClientTransport.httpsProxy(p.inetSocketAddress)
+        }
+        connectionPoolSettings.withTransport(clientTransport)
+      case _ => connectionPoolSettings
+    }
+    connectionPoolSettingsWithProxy
+      .withUpdatedConnectionSettings(_.withIdleTimeout(r.options.readTimeout))
+  }
+
+  private def responseFromAkka[T](r: Request[T, S], hr: HttpResponse)(
+      implicit ec: ExecutionContext
+  ): Future[Response[T]] = {
+    val code = StatusCode(hr.status.intValue())
+    val statusText = hr.status.reason()
+
+    val headers = headersFromAkka(hr)
+
+    val responseMetadata = client.ResponseMetadata(headers, code, statusText)
+    val body = bodyFromAkka(r.response, decodeAkkaResponse(hr), responseMetadata)
+
+    body.map(client.Response(_, code, statusText, headers, Nil))
   }
 
   private def headersFromAkka(hr: HttpResponse): Seq[Header] = {
@@ -304,8 +329,9 @@ object AkkaHttpBackend {
       options: SttpBackendOptions,
       customConnectionPoolSettings: Option[ConnectionPoolSettings],
       http: AkkaHttpClient,
-      customizeRequest: HttpRequest => HttpRequest
-  ): SttpBackend[Future, Source[ByteString, Any]] =
+      customizeRequest: HttpRequest => HttpRequest,
+      customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity
+  ): SttpBackend[Future, Source[ByteString, Any], Flow[Message, Message, *]] =
     new FollowRedirectsBackend(
       new AkkaHttpBackend(
         actorSystem,
@@ -314,7 +340,8 @@ object AkkaHttpBackend {
         options,
         customConnectionPoolSettings,
         http,
-        customizeRequest
+        customizeRequest,
+        customizeWebsocketRequest
       )
     )
 
@@ -328,8 +355,11 @@ object AkkaHttpBackend {
       customHttpsContext: Option[HttpsConnectionContext] = None,
       customConnectionPoolSettings: Option[ConnectionPoolSettings] = None,
       customLog: Option[LoggingAdapter] = None,
-      customizeRequest: HttpRequest => HttpRequest = identity
-  )(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Source[ByteString, Any]] = {
+      customizeRequest: HttpRequest => HttpRequest = identity,
+      customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity
+  )(
+      implicit ec: ExecutionContext = ExecutionContext.Implicits.global
+  ): SttpBackend[Future, Source[ByteString, Any], Flow[Message, Message, *]] = {
     val actorSystem = ActorSystem("sttp")
 
     make(
@@ -339,7 +369,8 @@ object AkkaHttpBackend {
       options,
       customConnectionPoolSettings,
       AkkaHttpClient.default(actorSystem, customHttpsContext, customLog),
-      customizeRequest
+      customizeRequest,
+      customizeWebsocketRequest
     )
   }
 
@@ -356,14 +387,18 @@ object AkkaHttpBackend {
       customHttpsContext: Option[HttpsConnectionContext] = None,
       customConnectionPoolSettings: Option[ConnectionPoolSettings] = None,
       customLog: Option[LoggingAdapter] = None,
-      customizeRequest: HttpRequest => HttpRequest = identity
-  )(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Source[ByteString, Any]] = {
+      customizeRequest: HttpRequest => HttpRequest = identity,
+      customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity
+  )(
+      implicit ec: ExecutionContext = ExecutionContext.Implicits.global
+  ): SttpBackend[Future, Source[ByteString, Any], Flow[Message, Message, *]] = {
     usingClient(
       actorSystem,
       options,
       customConnectionPoolSettings,
       AkkaHttpClient.default(actorSystem, customHttpsContext, customLog),
-      customizeRequest
+      customizeRequest,
+      customizeWebsocketRequest
     )
   }
 
@@ -379,8 +414,11 @@ object AkkaHttpBackend {
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customConnectionPoolSettings: Option[ConnectionPoolSettings] = None,
       http: AkkaHttpClient,
-      customizeRequest: HttpRequest => HttpRequest = identity
-  )(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Source[ByteString, Any]] = {
+      customizeRequest: HttpRequest => HttpRequest = identity,
+      customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity
+  )(
+      implicit ec: ExecutionContext = ExecutionContext.Implicits.global
+  ): SttpBackend[Future, Source[ByteString, Any], Flow[Message, Message, *]] = {
     make(
       actorSystem,
       ec,
@@ -388,7 +426,8 @@ object AkkaHttpBackend {
       options,
       customConnectionPoolSettings,
       http,
-      customizeRequest
+      customizeRequest,
+      customizeWebsocketRequest
     )
   }
 }

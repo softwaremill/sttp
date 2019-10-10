@@ -49,7 +49,7 @@ final case class FetchOptions(
   */
 abstract class AbstractFetchBackend[R[_], S](options: FetchOptions, customizeRequest: FetchRequest => FetchRequest)(
     monad: MonadError[R]
-) extends SttpBackend[R, S] {
+) extends SttpBackend[R, S, NothingT] {
 
   override implicit def responseMonad: MonadError[R] = monad
 
@@ -127,6 +127,12 @@ abstract class AbstractFetchBackend[R[_], S](options: FetchOptions, customizeReq
       }
     addCancelTimeoutHook(result, cancelTimeout)
   }
+
+  override def openWebsocket[T, WS_RESULT](
+      request: Request[T, S],
+      handler: NothingT[WS_RESULT]
+  ): R[WebSocketResponse[WS_RESULT]] =
+    handler // nothing is everything
 
   protected def addCancelTimeoutHook[T](result: R[T], cancel: () => Unit): R[T]
 
