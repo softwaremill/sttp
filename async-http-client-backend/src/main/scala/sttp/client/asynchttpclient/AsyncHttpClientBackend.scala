@@ -68,14 +68,13 @@ abstract class AsyncHttpClientBackend[R[_], S](
     customizeRequest: BoundRequestBuilder => BoundRequestBuilder
 ) extends SttpBackend[R, S, WebSocketHandler] {
 
-  @silent("discarded")
   override def send[T](r: Request[T, S]): R[Response[T]] = {
     monad.flatMap(preparedRequest(r)) { ahcRequest =>
       monad.flatten(monad.async[R[Response[T]]] { cb =>
         def success(r: R[Response[T]]): Unit = cb(Right(r))
         def error(t: Throwable): Unit = cb(Left(t))
 
-        ahcRequest.execute(streamingAsyncHandler(r.response, success, error))
+        val _ = ahcRequest.execute(streamingAsyncHandler(r.response, success, error))
       })
     }
   }
@@ -90,14 +89,14 @@ abstract class AsyncHttpClientBackend[R[_], S](
           new WebSocketInitListener(
             (r: WebSocketResponse[WS_RESULT]) => cb(Right(r)),
             t => cb(Left(t)),
-            handler.wrIsWebSocket
+            handler.createResult
           )
         val h = new WebSocketUpgradeHandler.Builder()
           .addWebSocketListener(initListener)
           .addWebSocketListener(handler.listener)
           .build()
 
-        ahcRequest.execute(h)
+        val _ = ahcRequest.execute(h)
       }
     }
   }
@@ -313,11 +312,11 @@ abstract class AsyncHttpClientBackend[R[_], S](
   private class WebSocketInitListener[WS_RESULT](
       _onSuccess: WebSocketResponse[WS_RESULT] => Unit,
       _onError: Throwable => Unit,
-      wrIsWebSocket: WebSocket =:= WS_RESULT
+      createResult: WebSocket => WS_RESULT
   ) extends WebSocketListener {
     override def onOpen(webSocket: WebSocket): Unit = {
       webSocket.removeWebSocketListener(this)
-      _onSuccess(WebSocketResponse(Headers(readHeaders(webSocket.getUpgradeHeaders)), wrIsWebSocket(webSocket)))
+      _onSuccess(WebSocketResponse(Headers(readHeaders(webSocket.getUpgradeHeaders)), createResult(webSocket)))
     }
 
     override def onClose(webSocket: WebSocket, code: Int, reason: String): Unit = {
