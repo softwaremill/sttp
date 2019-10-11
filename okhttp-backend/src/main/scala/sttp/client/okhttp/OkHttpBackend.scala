@@ -28,6 +28,7 @@ import sttp.client.SttpBackendOptions.Proxy
 import sttp.client.internal.FileHelpers
 import sttp.model._
 import sttp.client.monad.{FutureMonad, IdMonad, MonadAsyncError, MonadError}
+import sttp.client.ws.WebSocketResponse
 import sttp.client.{
   BasicResponseAs,
   IgnoreResponse,
@@ -220,7 +221,8 @@ class OkHttpSyncBackend private (client: OkHttpClient, closeClient: Boolean)
     val listener = new DelegatingWebSocketListener(
       handler.listener,
       (webSocket, response) => {
-        val wsResponse = WebSocketResponse(readResponse(response, ignore), handler.wrIsWebSocket(webSocket))
+        val wsResponse =
+          sttp.client.ws.WebSocketResponse(readResponse(response, ignore), handler.wrIsWebSocket(webSocket))
         fillCell(wsResponse)
       },
       fillCellError,
@@ -288,7 +290,9 @@ abstract class OkHttpAsyncBackend[R[_], S](client: OkHttpClient, monad: MonadAsy
         handler.listener,
         (webSocket, response) => {
           val wsResponse =
-            monad.map(readResponse(response, ignore))(r => WebSocketResponse(r, handler.wrIsWebSocket(webSocket)))
+            monad.map(readResponse(response, ignore))(
+              r => sttp.client.ws.WebSocketResponse(r, handler.wrIsWebSocket(webSocket))
+            )
           success(wsResponse)
         },
         error,

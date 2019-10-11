@@ -16,6 +16,7 @@ import org.http4s.client.blaze.BlazeClientBuilder
 import sttp.client.impl.cats.CatsMonadAsyncError
 import sttp.model._
 import sttp.client.monad.MonadError
+import sttp.client.ws.WebSocketResponse
 import sttp.client.{
   BasicRequestBody,
   IgnoreResponse,

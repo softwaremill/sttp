@@ -2,7 +2,8 @@ package sttp.client.impl.scalaz
 
 import scalaz.~>
 import sttp.client.monad.MonadError
-import sttp.client.{Request, Response, SttpBackend, WebSocketResponse}
+import sttp.client.ws.WebSocketResponse
+import sttp.client.{Request, Response, SttpBackend}
 
 import scala.language.higherKinds
 

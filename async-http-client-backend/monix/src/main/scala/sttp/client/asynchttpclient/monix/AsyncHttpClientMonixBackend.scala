@@ -19,6 +19,7 @@ import org.reactivestreams.Publisher
 import sttp.client.asynchttpclient.{AsyncHttpClientBackend, WebSocketHandler}
 import sttp.client.impl.monix.TaskMonadAsyncError
 import sttp.client.internal._
+import sttp.client.ws.WebSocketResponse
 import sttp.client.{FollowRedirectsBackend, Response, SttpBackend, SttpBackendOptions, _}
 
 class AsyncHttpClientMonixBackend private (

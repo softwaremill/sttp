@@ -1,6 +1,7 @@
 package sttp.client
 
 import sttp.client.monad.MonadError
+import sttp.client.ws.WebSocketResponse
 
 import scala.language.higherKinds
 

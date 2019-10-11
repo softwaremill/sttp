@@ -7,6 +7,7 @@ import sttp.client.internal._
 import sttp.client.monad.{FutureMonad, IdMonad, MonadError}
 import sttp.client.testing.SttpBackendStub._
 import sttp.client.internal.SttpFile
+import sttp.client.ws.WebSocketResponse
 import sttp.client.{IgnoreResponse, ResponseAs, ResponseAsByteArray, SttpBackend}
 import sttp.model.StatusCode
 

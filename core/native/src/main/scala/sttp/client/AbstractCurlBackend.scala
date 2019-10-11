@@ -10,6 +10,7 @@ import sttp.client.curl._
 import sttp.client.internal._
 import sttp.model._
 import sttp.client.monad.MonadError
+import sttp.client.ws.WebSocketResponse
 import sttp.model.{Header, Method, StatusCode}
 
 import scala.collection.immutable.Seq

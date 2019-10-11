@@ -19,6 +19,7 @@ import sttp.client.dom.experimental.{AbortController, FilePropertyBag, File => D
 import sttp.client.internal.{SttpFile, _}
 import sttp.client.monad.MonadError
 import sttp.client.monad.syntax._
+import sttp.client.ws.WebSocketResponse
 import sttp.model.{Header, StatusCode}
 
 import scala.collection.immutable.Seq

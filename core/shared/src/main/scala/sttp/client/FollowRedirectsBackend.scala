@@ -4,6 +4,7 @@ import java.net.URI
 
 import sttp.model._
 import sttp.client.monad.MonadError
+import sttp.client.ws.WebSocketResponse
 import sttp.model.{Method, StatusCode}
 
 import scala.language.higherKinds

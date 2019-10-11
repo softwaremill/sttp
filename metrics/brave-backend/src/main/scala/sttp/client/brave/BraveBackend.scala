@@ -5,7 +5,8 @@ import brave.propagation.{Propagation, TraceContext}
 import brave.{Span, Tracing}
 import sttp.client.brave.BraveBackend._
 import sttp.client.monad.MonadError
-import sttp.client.{FollowRedirectsBackend, NothingT, Request, Response, SttpBackend, WebSocketResponse}
+import sttp.client.ws.WebSocketResponse
+import sttp.client.{FollowRedirectsBackend, NothingT, Request, Response, SttpBackend}
 
 import scala.language.higherKinds
 

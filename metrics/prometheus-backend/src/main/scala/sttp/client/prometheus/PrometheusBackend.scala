@@ -3,9 +3,10 @@ package sttp.client.prometheus
 import java.util.concurrent.ConcurrentHashMap
 
 import com.github.ghik.silencer.silent
-import sttp.client.{FollowRedirectsBackend, NothingT, Request, Response, SttpBackend, WebSocketResponse}
+import sttp.client.{FollowRedirectsBackend, NothingT, Request, Response, SttpBackend}
 import io.prometheus.client.{CollectorRegistry, Counter, Gauge, Histogram}
 import sttp.client.monad.MonadError
+import sttp.client.ws.WebSocketResponse
 
 import scala.collection.mutable
 import scala.language.higherKinds

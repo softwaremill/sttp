@@ -12,6 +12,7 @@ import com.github.ghik.silencer.silent
 import sttp.client.internal._
 import sttp.model._
 import sttp.client.monad.{IdMonad, MonadError}
+import sttp.client.ws.WebSocketResponse
 import sttp.model.StatusCode
 
 import scala.annotation.tailrec

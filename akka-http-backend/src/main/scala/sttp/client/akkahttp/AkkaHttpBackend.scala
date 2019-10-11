@@ -18,6 +18,7 @@ import akka.util.ByteString
 import sttp.client
 import sttp.model.{Header, HeaderNames, Method, Part, StatusCode}
 import sttp.client.monad.{FutureMonad, MonadError}
+import sttp.client.ws.WebSocketResponse
 import sttp.client.{
   ByteArrayBody,
   ByteBufferBody,
@@ -98,7 +99,7 @@ class AkkaHttpBackend private (
             if (r.code != StatusCode.SwitchingProtocols) {
               throw new NotAWebsocketException(r)
             } else {
-              WebSocketResponse(r, wsResult)
+              client.ws.WebSocketResponse(r, wsResult)
             }
           }
 

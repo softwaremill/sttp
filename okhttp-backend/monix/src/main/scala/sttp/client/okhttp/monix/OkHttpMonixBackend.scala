@@ -12,6 +12,7 @@ import okhttp3.{MediaType, OkHttpClient, RequestBody => OkHttpRequestBody}
 import okio.BufferedSink
 import sttp.client.impl.monix.TaskMonadAsyncError
 import sttp.client.okhttp.{OkHttpAsyncBackend, OkHttpBackend, WebSocketHandler}
+import sttp.client.ws.WebSocketResponse
 import sttp.client.{SttpBackend, _}
 
 import scala.concurrent.Future

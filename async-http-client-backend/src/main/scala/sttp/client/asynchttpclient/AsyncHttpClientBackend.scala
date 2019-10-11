@@ -32,6 +32,7 @@ import sttp.client
 import sttp.client.SttpBackendOptions.ProxyType.{Http, Socks}
 import sttp.client.internal._
 import sttp.client.monad.{MonadAsyncError, MonadError}
+import sttp.client.ws.WebSocketResponse
 import sttp.client.{
   ByteArrayBody,
   ByteBufferBody,
@@ -316,7 +317,9 @@ abstract class AsyncHttpClientBackend[R[_], S](
   ) extends WebSocketListener {
     override def onOpen(webSocket: WebSocket): Unit = {
       webSocket.removeWebSocketListener(this)
-      _onSuccess(WebSocketResponse(Headers(readHeaders(webSocket.getUpgradeHeaders)), createResult(webSocket)))
+      _onSuccess(
+        client.ws.WebSocketResponse(Headers(readHeaders(webSocket.getUpgradeHeaders)), createResult(webSocket))
+      )
     }
 
     override def onClose(webSocket: WebSocket, code: Int, reason: String): Unit = {

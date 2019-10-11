@@ -3,7 +3,8 @@ package sttp.client.impl.cats
 import cats.effect.Async
 import cats.~>
 import sttp.client.monad.{MonadAsyncError, MonadError}
-import sttp.client.{Request, Response, SttpBackend, WebSocketResponse}
+import sttp.client.ws.WebSocketResponse
+import sttp.client.{Request, Response, SttpBackend}
 
 import scala.language.higherKinds
 

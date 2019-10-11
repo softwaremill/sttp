@@ -2,9 +2,10 @@ package sttp.client.http4s
 
 import cats.effect.{ContextShift, IO}
 import sttp.client.monad.MonadError
-import sttp.client.{NothingT, Request, Response, SttpBackend, WebSocketResponse}
+import sttp.client.{NothingT, Request, Response, SttpBackend}
 import fs2.Stream
 import org.http4s.client.blaze.BlazeClientBuilder
+import sttp.client.ws.WebSocketResponse
 
 import scala.concurrent.ExecutionContext
 
