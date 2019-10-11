@@ -159,6 +159,8 @@ lazy val rootProjectAggregates: Seq[ProjectReference] = if (sys.env.isDefinedAt(
   List(rootJVM, rootJS)
 }
 
+val compileAndTest = "compile->compile;test->test"
+
 lazy val rootProject = (project in file("."))
   .settings(commonSettings: _*)
   // setting version to 2.11 so that cross-releasing works. Don't ask why.
@@ -304,8 +306,8 @@ lazy val cats = crossProject(JSPlatform, JVMPlatform)
       "org.typelevel" %%% "cats-effect" % "2.0.0"
     )
   )
-lazy val catsJS = cats.js.dependsOn(coreJS % "compile->compile;test->test")
-lazy val catsJVM = cats.jvm.dependsOn(coreJVM % "compile->compile;test->test")
+lazy val catsJS = cats.js.dependsOn(coreJS % compileAndTest)
+lazy val catsJVM = cats.jvm.dependsOn(coreJVM % compileAndTest)
 
 lazy val monix = crossProject(JSPlatform, JVMPlatform)
   .withoutSuffixFor(JVMPlatform)
@@ -323,8 +325,8 @@ lazy val monix = crossProject(JSPlatform, JVMPlatform)
     publishArtifact in Test := true,
     libraryDependencies ++= Seq("io.monix" %%% "monix" % "3.0.0")
   )
-lazy val monixJS = monix.js.dependsOn(coreJS % "compile->compile;test->test")
-lazy val monixJVM = monix.jvm.dependsOn(coreJVM % "compile->compile;test->test")
+lazy val monixJS = monix.js.dependsOn(coreJS % compileAndTest)
+lazy val monixJVM = monix.jvm.dependsOn(coreJVM % compileAndTest)
 
 lazy val zio: Project = (project in file("implementations/zio"))
   .settings(commonJvmSettings: _*)
@@ -335,7 +337,7 @@ lazy val zio: Project = (project in file("implementations/zio"))
       "dev.zio" %% "zio" % "1.0.0-RC13"
     )
   )
-  .dependsOn(coreJVM % "compile->compile;test->test")
+  .dependsOn(coreJVM % compileAndTest)
 
 lazy val scalaz: Project = (project in file("implementations/scalaz"))
   .settings(commonJvmSettings: _*)
@@ -344,7 +346,7 @@ lazy val scalaz: Project = (project in file("implementations/scalaz"))
     publishArtifact in Test := true,
     libraryDependencies ++= Seq("org.scalaz" %% "scalaz-concurrent" % "7.2.28")
   )
-  .dependsOn(coreJVM % "compile->compile;test->test")
+  .dependsOn(coreJVM % compileAndTest)
 
 //----- backends
 //-- akka
@@ -359,7 +361,7 @@ lazy val akkaHttpBackend: Project = (project in file("akka-http-backend"))
       akkaStreams % "provided"
     )
   )
-  .dependsOn(coreJVM % "compile->compile;test->test")
+  .dependsOn(coreJVM % compileAndTest)
 
 //-- async http client
 lazy val asyncHttpClientBackend: Project =
@@ -371,26 +373,26 @@ lazy val asyncHttpClientBackend: Project =
         "org.asynchttpclient" % "async-http-client" % "2.10.3"
       )
     )
-    .dependsOn(coreJVM % "compile->compile;test->test")
+    .dependsOn(coreJVM % compileAndTest)
 
 def asyncHttpClientBackendProject(proj: String): Project = {
   Project(s"asyncHttpClientBackend${proj.capitalize}", file(s"async-http-client-backend/$proj"))
     .settings(commonJvmSettings: _*)
     .settings(name := s"async-http-client-backend-$proj")
-    .dependsOn(asyncHttpClientBackend)
+    .dependsOn(asyncHttpClientBackend % compileAndTest)
 }
 
 lazy val asyncHttpClientFutureBackend: Project =
   asyncHttpClientBackendProject("future")
-    .dependsOn(coreJVM % "compile->compile;test->test")
+    .dependsOn(coreJVM % compileAndTest)
 
 lazy val asyncHttpClientScalazBackend: Project =
   asyncHttpClientBackendProject("scalaz")
-    .dependsOn(scalaz % "compile->compile;test->test")
+    .dependsOn(scalaz % compileAndTest)
 
 lazy val asyncHttpClientZioBackend: Project =
   asyncHttpClientBackendProject("zio")
-    .dependsOn(zio % "compile->compile;test->test")
+    .dependsOn(zio % compileAndTest)
 
 lazy val asyncHttpClientZioStreamsBackend: Project =
   asyncHttpClientBackendProject("zio-streams")
@@ -401,15 +403,15 @@ lazy val asyncHttpClientZioStreamsBackend: Project =
       )
     )
     .settings(only2_11_and_2_12_settings)
-    .dependsOn(zio % "compile->compile;test->test")
+    .dependsOn(zio % compileAndTest)
 
 lazy val asyncHttpClientMonixBackend: Project =
   asyncHttpClientBackendProject("monix")
-    .dependsOn(monixJVM % "compile->compile;test->test")
+    .dependsOn(monixJVM % compileAndTest)
 
 lazy val asyncHttpClientCatsBackend: Project =
   asyncHttpClientBackendProject("cats")
-    .dependsOn(catsJVM % "compile->compile;test->test")
+    .dependsOn(catsJVM % compileAndTest)
 
 val fs2Version = "2.0.1"
 lazy val asyncHttpClientFs2Backend: Project =
@@ -420,7 +422,7 @@ lazy val asyncHttpClientFs2Backend: Project =
         "co.fs2" %% "fs2-io" % fs2Version
       )
     )
-    .dependsOn(catsJVM % "compile->compile;test->test")
+    .dependsOn(catsJVM % compileAndTest)
 
 //-- okhttp
 lazy val okhttpBackend: Project = (project in file("okhttp-backend"))
@@ -431,7 +433,7 @@ lazy val okhttpBackend: Project = (project in file("okhttp-backend"))
       "com.squareup.okhttp3" % "okhttp" % "4.2.1"
     )
   )
-  .dependsOn(coreJVM % "compile->compile;test->test")
+  .dependsOn(coreJVM % compileAndTest)
 
 def okhttpBackendProject(proj: String): Project = {
   Project(s"okhttpBackend${proj.capitalize}", file(s"okhttp-backend/$proj"))
@@ -442,7 +444,7 @@ def okhttpBackendProject(proj: String): Project = {
 
 lazy val okhttpMonixBackend: Project =
   okhttpBackendProject("monix")
-    .dependsOn(monixJVM % "compile->compile;test->test")
+    .dependsOn(monixJVM % compileAndTest)
 
 //-- http4s
 lazy val http4sBackend: Project = (project in file("http4s-backend"))
@@ -454,7 +456,7 @@ lazy val http4sBackend: Project = (project in file("http4s-backend"))
     )
   )
   .settings(only2_11_and_2_12_settings)
-  .dependsOn(catsJVM, coreJVM % "compile->compile;test->test")
+  .dependsOn(catsJVM, coreJVM % compileAndTest)
 
 //----- json
 lazy val jsonCommon = crossProject(JSPlatform, JVMPlatform)

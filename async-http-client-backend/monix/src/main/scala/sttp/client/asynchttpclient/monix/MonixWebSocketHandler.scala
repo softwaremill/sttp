@@ -18,6 +18,9 @@ object MonixWebSocketHandler {
     override def poll: Task[A] = Task.deferFuture(queue.poll())
   }
 
+  /**
+    * Creates a new [[WebSocketHandler]] which should be used *once* to send and receive from a single websocket.
+    */
   def create(implicit s: Scheduler): WebSocketHandler[WebSocket[Task]] = {
     NativeWebSocketHandler(new MonixAsyncQueue[WebSocketEvent](), TaskMonadAsyncError)
   }

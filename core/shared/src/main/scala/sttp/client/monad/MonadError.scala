@@ -39,6 +39,7 @@ object syntax {
   implicit final class MonadErrorOps[R[_], A](val r: R[A]) extends AnyVal {
     def map[B](f: A => B)(implicit ME: MonadError[R]): R[B] = ME.map(r)(f)
     def flatMap[B](f: A => R[B])(implicit ME: MonadError[R]): R[B] = ME.flatMap(r)(f)
+    def >>[B](r2: R[B])(implicit ME: MonadError[R]): R[B] = ME.flatMap(r)(_ => r2)
   }
 
   implicit final class MonadErrorValueOps[R[_], A](val v: A) extends AnyVal {
