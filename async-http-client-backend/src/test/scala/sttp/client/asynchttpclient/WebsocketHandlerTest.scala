@@ -23,19 +23,31 @@ abstract class WebsocketHandlerTest[F[_]]
   implicit val convertToFuture: ConvertToFuture[F]
   implicit val monad: MonadError[F]
 
-  def createHandler: () => WebSocketHandler[WebSocket[F]]
+  def createHandler: Option[Int] => WebSocketHandler[WebSocket[F]]
 
   it should "send and receive two messages" in {
     basicRequest
       .get(uri"$wsEndpoint/ws/echo")
-      .openWebsocket(createHandler())
+      .openWebsocket(createHandler(None))
       .flatMap { response =>
-        val mws = response.result
-        mws.send(WebSocketFrame.text("test1")) >>
-          mws.send(WebSocketFrame.text("test2")) >>
-          mws.receive.map(_ shouldBe Right(WebSocketFrame.text("echo: test1"))) >>
-          mws.receive.map(_ shouldBe Right(WebSocketFrame.text("echo: test2"))) >>
-          mws.close >>
+        val ws = response.result
+        send(ws, 2) >>
+          receiveEcho(ws, 2) >>
+          ws.close >>
+          succeed.unit
+      }
+      .toFuture
+  }
+
+  it should "send and receive 1000 messages" in {
+    basicRequest
+      .get(uri"$wsEndpoint/ws/echo")
+      .openWebsocket(createHandler(None))
+      .flatMap { response =>
+        val ws = response.result
+        send(ws, 1000) >>
+          receiveEcho(ws, 1000) >>
+          ws.close >>
           succeed.unit
       }
       .toFuture
@@ -44,12 +56,12 @@ abstract class WebsocketHandlerTest[F[_]]
   it should "receive two messages" in {
     basicRequest
       .get(uri"$wsEndpoint/ws/send_and_close")
-      .openWebsocket(createHandler())
+      .openWebsocket(createHandler(None))
       .flatMap { response =>
-        val mws = response.result
-        mws.receive.map(_ shouldBe Right(WebSocketFrame.text("test10"))) >>
-          mws.receive.map(_ shouldBe Right(WebSocketFrame.text("test20"))) >>
-          mws.receive.map(_ shouldBe 'left)
+        val ws = response.result
+        ws.receive.map(_ shouldBe Right(WebSocketFrame.text("test10"))) >>
+          ws.receive.map(_ shouldBe Right(WebSocketFrame.text("test20"))) >>
+          ws.receive.map(_ shouldBe 'left)
       }
       .toFuture
   }
@@ -59,12 +71,40 @@ abstract class WebsocketHandlerTest[F[_]]
       .handleError {
         basicRequest
           .get(uri"$wsEndpoint/echo")
-          .openWebsocket(createHandler())
+          .openWebsocket(createHandler(None))
           .map(_ => fail: Assertion)
       } {
         case e: Exception => (e shouldBe a[IOException]).unit
       }
       .toFuture()
+  }
+
+  it should "error if incoming messages overflow the buffer" in {
+    monad
+      .handleError {
+        basicRequest
+          .get(uri"$wsEndpoint/ws/echo")
+          .openWebsocket(createHandler(Some(3)))
+          .flatMap { response =>
+            val ws = response.result
+            send(ws, 100) >>
+              // by now we expect to have received at least 4 back, which should overflow the buffer
+              ws.isOpen.map(_ shouldBe false)
+          }
+      } {
+        case _: Exception => succeed.unit
+      }
+      .toFuture()
+  }
+
+  def send(ws: WebSocket[F], count: Int): F[Unit] = {
+    val fs = (1 to count).map(i => ws.send(WebSocketFrame.text(s"test$i")))
+    fs.foldLeft(().unit)(_ >> _)
+  }
+
+  def receiveEcho(ws: WebSocket[F], count: Int): F[Assertion] = {
+    val fs = (1 to count).map(i => ws.receive.map(_ shouldBe Right(WebSocketFrame.text(s"echo: test$i"))))
+    fs.foldLeft(succeed.unit)(_ >> _)
   }
 
   override protected def afterAll(): Unit = {

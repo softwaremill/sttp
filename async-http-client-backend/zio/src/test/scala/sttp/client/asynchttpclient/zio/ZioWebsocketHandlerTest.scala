@@ -14,8 +14,8 @@ class ZioWebsocketHandlerTest extends WebsocketHandlerTest[Task] {
   override implicit val convertToFuture: ConvertToFuture[Task] = convertZioIoToFuture
   override implicit val monad: MonadError[Task] = TaskMonadAsyncError
 
-  override def createHandler: () => WebSocketHandler[WebSocket[Task]] =
-    () => runtime.unsafeRun(ZioWebSocketHandler.create)
+  override def createHandler: (Option[Int]) => WebSocketHandler[WebSocket[Task]] =
+    bufferCapacity => runtime.unsafeRun(ZioWebSocketHandler(bufferCapacity))
 
   override protected def afterAll(): Unit = {
     backend.close().toFuture

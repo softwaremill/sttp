@@ -4,6 +4,7 @@ import sttp.client.asynchttpclient.WebSocketHandler
 import sttp.client.asynchttpclient.internal.{AsyncQueue, NativeWebSocketHandler}
 import sttp.client.impl.zio.TaskMonadAsyncError
 import sttp.client.ws.{WebSocket, WebSocketEvent}
+import sttp.model.ws.WebSocketBufferFull
 import zio.{DefaultRuntime, Queue, Runtime, Task, UIO}
 
 object ZioWebSocketHandler {
@@ -12,7 +13,9 @@ object ZioWebSocketHandler {
       val _ = runtime.unsafeRunToFuture(queue.takeAll)
     }
     override def offer(t: A): Unit = {
-      val _ = runtime.unsafeRunToFuture(queue.offer(t))
+      if (!runtime.unsafeRun(queue.offer(t))) {
+        throw new WebSocketBufferFull()
+      }
     }
     override def poll: Task[A] = {
       queue.take
@@ -21,12 +24,18 @@ object ZioWebSocketHandler {
 
   /**
     * Creates a new [[WebSocketHandler]] which should be used *once* to send and receive from a single websocket.
+    * @param incomingBufferCapacity Should the buffer of incoming websocket events be bounded. If yes, unreceived
+    *                               events will some point cause the websocket to error and close. If no, unreceived
+    *                               messages will take up all available memory.
     */
-  def create: UIO[WebSocketHandler[WebSocket[Task]]] = {
-    Queue
-      .unbounded[WebSocketEvent]
-      .map(
-        q => NativeWebSocketHandler(new ZioAsyncQueue[WebSocketEvent](q, new DefaultRuntime {}), TaskMonadAsyncError)
-      )
+  def apply(incomingBufferCapacity: Option[Int] = None): UIO[WebSocketHandler[WebSocket[Task]]] = {
+    val queue = incomingBufferCapacity match {
+      case Some(capacity) => Queue.dropping[WebSocketEvent](capacity)
+      case None           => Queue.unbounded[WebSocketEvent]
+    }
+
+    queue.map(
+      q => NativeWebSocketHandler(new ZioAsyncQueue(q, new DefaultRuntime {}), TaskMonadAsyncError)
+    )
   }
 }

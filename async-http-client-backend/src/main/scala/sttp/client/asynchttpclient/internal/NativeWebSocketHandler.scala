@@ -5,34 +5,35 @@ import java.util.concurrent.atomic.AtomicBoolean
 import io.netty.util.concurrent.{Future, FutureListener}
 import org.asynchttpclient.ws.{WebSocket => AHCWebSocket, WebSocketListener => AHCWebSocketListener}
 import sttp.client.asynchttpclient.WebSocketHandler
+import sttp.client.monad.syntax._
 import sttp.client.monad.{MonadAsyncError, MonadError}
 import sttp.client.ws.{WebSocket, WebSocketEvent}
 import sttp.model.ws.{WebSocketClosed, WebSocketFrame}
 
 object NativeWebSocketHandler {
-  def apply[F[_]](queue: AsyncQueue[F, WebSocketEvent], monad: MonadAsyncError[F]): WebSocketHandler[WebSocket[F]] =
+  def apply[F[_]](queue: AsyncQueue[F, WebSocketEvent], monad: MonadAsyncError[F]): WebSocketHandler[WebSocket[F]] = {
+    val isOpen: AtomicBoolean = new AtomicBoolean(false)
     WebSocketHandler(
-      new AddToQueueListener(queue),
-      ahcWebSocketToWebSocket(_, queue, monad)
+      new AddToQueueListener(queue, isOpen),
+      ahcWebSocketToWebSocket(_, queue, isOpen, monad)
     )
+  }
 
   private def ahcWebSocketToWebSocket[F[_]](
       ws: AHCWebSocket,
       queue: AsyncQueue[F, WebSocketEvent],
+      _isOpen: AtomicBoolean,
       _monad: MonadAsyncError[F]
   ): WebSocket[F] = new WebSocket[F] {
-    private def _isOpen: AtomicBoolean = new AtomicBoolean(false)
-
     override def receive: F[Either[WebSocketEvent.Close, WebSocketFrame.Incoming]] = {
-      monad.flatMap(queue.poll) {
-        case WebSocketEvent.Open() => _isOpen.set(true); receive
+      queue.poll.flatMap {
+        case WebSocketEvent.Open() => receive
         case c: WebSocketEvent.Close =>
-          _isOpen.set(false)
           queue.offer(WebSocketEvent.Error(new WebSocketClosed))
           monad.unit(Left(c))
         case e @ WebSocketEvent.Error(t: Exception) =>
-          _isOpen.set(false)
-          queue.offer(e) // putting back the error so that subsequent invocations end in an error as well, instead of hanging
+          // putting back the error so that subsequent invocations end in an error as well, instead of hanging
+          queue.offer(e)
           monad.error(t)
         case WebSocketEvent.Error(t) => throw t
         case WebSocketEvent.Frame(f) => monad.unit(Right(f))
@@ -70,14 +71,20 @@ object NativeWebSocketHandler {
   }
 }
 
-class AddToQueueListener[F[_]](queue: AsyncQueue[F, WebSocketEvent]) extends AHCWebSocketListener {
-  override def onOpen(websocket: AHCWebSocket): Unit = queue.offer(WebSocketEvent.Open())
+class AddToQueueListener[F[_]](queue: AsyncQueue[F, WebSocketEvent], isOpen: AtomicBoolean)
+    extends AHCWebSocketListener {
+  override def onOpen(websocket: AHCWebSocket): Unit = {
+    isOpen.set(true)
+    queue.offer(WebSocketEvent.Open())
+  }
 
   override def onClose(websocket: AHCWebSocket, code: Int, reason: String): Unit = {
+    isOpen.set(false)
     queue.offer(WebSocketEvent.Close(code, reason))
   }
 
   override def onError(t: Throwable): Unit = {
+    isOpen.set(false)
     queue.clear() // removing any pending events so that the error is read first
     queue.offer(WebSocketEvent.Error(t))
   }

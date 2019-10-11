@@ -14,7 +14,7 @@ class MonixWebsocketHandlerTest extends WebsocketHandlerTest[Task] {
   implicit val convertToFuture: ConvertToFuture[Task] = convertMonixTaskToFuture
   override implicit val monad: MonadError[Task] = TaskMonadAsyncError
 
-  override def createHandler: () => WebSocketHandler[WebSocket[Task]] = () => MonixWebSocketHandler.create
+  override def createHandler: Option[Int] => WebSocketHandler[WebSocket[Task]] = MonixWebSocketHandler(_)
 
   override protected def afterAll(): Unit = {
     backend.close().toFuture
