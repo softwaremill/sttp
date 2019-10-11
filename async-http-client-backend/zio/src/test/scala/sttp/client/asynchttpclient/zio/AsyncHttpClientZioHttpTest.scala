@@ -7,7 +7,6 @@ import zio.Task
 
 class AsyncHttpClientZioHttpTest extends HttpTest[Task] {
 
-  override implicit val backend: SttpBackend[Task, Nothing, NothingT] =
-    runtime.unsafeRunSync(AsyncHttpClientZioBackend()).getOrElse(c => throw c.squash)
+  override implicit val backend: SttpBackend[Task, Nothing, NothingT] = runtime.unsafeRun(AsyncHttpClientZioBackend())
   override implicit val convertToFuture: ConvertToFuture[Task] = convertZioIoToFuture
 }
