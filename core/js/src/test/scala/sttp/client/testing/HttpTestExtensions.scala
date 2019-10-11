@@ -13,7 +13,7 @@ import scala.scalajs.js.JavaScriptException
 import scala.scalajs.js.annotation.JSGlobal
 import scala.scalajs.js.typedarray.AB2TA
 
-trait HttpTestExtensions[R[_]] extends AsyncExecutionContext { self: HttpTest[R] =>
+trait HttpTestExtensions[F[_]] extends AsyncExecutionContext { self: HttpTest[F] =>
 
   private def withTemporaryFile[T](content: Option[Array[Byte]])(f: DomFile => Future[T]): Future[T] = {
     val data = content.getOrElse(Array.empty)

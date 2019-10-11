@@ -7,14 +7,14 @@ import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.language.higherKinds
 import scala.util.{Failure, Success, Try}
 
-trait MonadError[R[_]] {
-  def unit[T](t: T): R[T]
-  def map[T, T2](fa: R[T])(f: T => T2): R[T2]
-  def flatMap[T, T2](fa: R[T])(f: T => R[T2]): R[T2]
+trait MonadError[F[_]] {
+  def unit[T](t: T): F[T]
+  def map[T, T2](fa: F[T])(f: T => T2): F[T2]
+  def flatMap[T, T2](fa: F[T])(f: T => F[T2]): F[T2]
 
-  def error[T](t: Throwable): R[T]
-  protected def handleWrappedError[T](rt: R[T])(h: PartialFunction[Throwable, R[T]]): R[T]
-  def handleError[T](rt: => R[T])(h: PartialFunction[Throwable, R[T]]): R[T] = {
+  def error[T](t: Throwable): F[T]
+  protected def handleWrappedError[T](rt: F[T])(h: PartialFunction[Throwable, F[T]]): F[T]
+  def handleError[T](rt: => F[T])(h: PartialFunction[Throwable, F[T]]): F[T] = {
     Try(rt) match {
       case Success(v)                     => handleWrappedError(v)(h)
       case Failure(e) if h.isDefinedAt(e) => h(e)
@@ -22,28 +22,28 @@ trait MonadError[R[_]] {
     }
   }
 
-  def eval[T](t: => T): R[T] = map(unit(()))(_ => t)
-  def flatten[T](ffa: R[R[T]]): R[T] = flatMap[R[T], T](ffa)(identity)
+  def eval[T](t: => T): F[T] = map(unit(()))(_ => t)
+  def flatten[T](ffa: F[F[T]]): F[T] = flatMap[F[T], T](ffa)(identity)
 
-  def fromTry[T](t: Try[T]): R[T] = t match {
+  def fromTry[T](t: Try[T]): F[T] = t match {
     case Success(v) => unit(v)
     case Failure(e) => error(e)
   }
 }
 
-trait MonadAsyncError[R[_]] extends MonadError[R] {
-  def async[T](register: (Either[Throwable, T] => Unit) => Unit): R[T]
+trait MonadAsyncError[F[_]] extends MonadError[F] {
+  def async[T](register: (Either[Throwable, T] => Unit) => Unit): F[T]
 }
 
 object syntax {
-  implicit final class MonadErrorOps[R[_], A](val r: R[A]) extends AnyVal {
-    def map[B](f: A => B)(implicit ME: MonadError[R]): R[B] = ME.map(r)(f)
-    def flatMap[B](f: A => R[B])(implicit ME: MonadError[R]): R[B] = ME.flatMap(r)(f)
-    def >>[B](r2: R[B])(implicit ME: MonadError[R]): R[B] = ME.flatMap(r)(_ => r2)
+  implicit final class MonadErrorOps[F[_], A](val r: F[A]) extends AnyVal {
+    def map[B](f: A => B)(implicit ME: MonadError[F]): F[B] = ME.map(r)(f)
+    def flatMap[B](f: A => F[B])(implicit ME: MonadError[F]): F[B] = ME.flatMap(r)(f)
+    def >>[B](r2: F[B])(implicit ME: MonadError[F]): F[B] = ME.flatMap(r)(_ => r2)
   }
 
-  implicit final class MonadErrorValueOps[R[_], A](val v: A) extends AnyVal {
-    def unit(implicit ME: MonadError[R]): R[A] = ME.unit(v)
+  implicit final class MonadErrorValueOps[F[_], A](val v: A) extends AnyVal {
+    def unit(implicit ME: MonadError[F]): F[A] = ME.unit(v)
   }
 }
 

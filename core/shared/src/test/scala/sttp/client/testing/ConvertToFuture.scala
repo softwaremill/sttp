@@ -6,8 +6,8 @@ import scala.concurrent.Future
 import scala.language.higherKinds
 import scala.util.Try
 
-trait ConvertToFuture[R[_]] {
-  def toFuture[T](value: R[T]): Future[T]
+trait ConvertToFuture[F[_]] {
+  def toFuture[T](value: F[T]): Future[T]
 }
 
 object ConvertToFuture {

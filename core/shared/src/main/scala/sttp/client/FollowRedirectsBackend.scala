@@ -9,21 +9,21 @@ import sttp.model.{Method, StatusCode}
 
 import scala.language.higherKinds
 
-class FollowRedirectsBackend[R[_], S, WS_HANDLER[_]](delegate: SttpBackend[R, S, WS_HANDLER])
-    extends SttpBackend[R, S, WS_HANDLER] {
+class FollowRedirectsBackend[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[F, S, WS_HANDLER])
+    extends SttpBackend[F, S, WS_HANDLER] {
 
-  def send[T](request: Request[T, S]): R[Response[T]] = {
+  def send[T](request: Request[T, S]): F[Response[T]] = {
     sendWithCounter(request, 0)
   }
 
   override def openWebsocket[T, WS_RESULT](
       request: Request[T, S],
       handler: WS_HANDLER[WS_RESULT]
-  ): R[WebSocketResponse[WS_RESULT]] = {
+  ): F[WebSocketResponse[WS_RESULT]] = {
     delegate.openWebsocket(request, handler) // TODO
   }
 
-  private def sendWithCounter[T](request: Request[T, S], redirects: Int): R[Response[T]] = {
+  private def sendWithCounter[T](request: Request[T, S], redirects: Int): F[Response[T]] = {
     // if there are nested follow redirect backends, disabling them and handling redirects here
     val resp = delegate.send(request.followRedirects(false))
     if (request.options.followRedirects) {
@@ -39,7 +39,7 @@ class FollowRedirectsBackend[R[_], S, WS_HANDLER[_]](delegate: SttpBackend[R, S,
     }
   }
 
-  private def followRedirect[T](request: Request[T, S], response: Response[T], redirects: Int): R[Response[T]] = {
+  private def followRedirect[T](request: Request[T, S], response: Response[T], redirects: Int): F[Response[T]] = {
 
     response.header(HeaderNames.Location).fold(responseMonad.unit(response)) { loc =>
       if (redirects >= request.options.maxRedirects) {
@@ -55,7 +55,7 @@ class FollowRedirectsBackend[R[_], S, WS_HANDLER[_]](delegate: SttpBackend[R, S,
       response: Response[T],
       redirects: Int,
       loc: String
-  ): R[Response[T]] = {
+  ): F[Response[T]] = {
 
     val uri = if (FollowRedirectsBackend.isRelative(loc)) {
       // using java's URI to resolve a relative URI
@@ -86,9 +86,9 @@ class FollowRedirectsBackend[R[_], S, WS_HANDLER[_]](delegate: SttpBackend[R, S,
     } else r
   }
 
-  override def close(): R[Unit] = delegate.close()
+  override def close(): F[Unit] = delegate.close()
 
-  override def responseMonad: MonadError[R] = delegate.responseMonad
+  override def responseMonad: MonadError[F] = delegate.responseMonad
 }
 
 object FollowRedirectsBackend {

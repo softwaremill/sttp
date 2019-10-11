@@ -10,8 +10,8 @@ import sttp.client.{FollowRedirectsBackend, NothingT, Request, Response, SttpBac
 
 import scala.language.higherKinds
 
-class BraveBackend[R[_], S] private (delegate: SttpBackend[R, S, NothingT], httpTracing: HttpTracing)
-    extends SttpBackend[R, S, NothingT] {
+class BraveBackend[F[_], S] private (delegate: SttpBackend[F, S, NothingT], httpTracing: HttpTracing)
+    extends SttpBackend[F, S, NothingT] {
 
   // .asInstanceOf as the create method lacks generics in its return type
   private val handler = HttpClientHandler
@@ -20,7 +20,7 @@ class BraveBackend[R[_], S] private (delegate: SttpBackend[R, S, NothingT], http
 
   private val tracer = httpTracing.tracing().tracer()
 
-  override def send[T](request: Request[T, S]): R[Response[T]] = {
+  override def send[T](request: Request[T, S]): F[Response[T]] = {
     val span = createSpan(request)
     val tracedRequest = injectTracing(span, request)
     val startedSpan =
@@ -32,11 +32,11 @@ class BraveBackend[R[_], S] private (delegate: SttpBackend[R, S, NothingT], http
   override def openWebsocket[T, WS_RESULT](
       request: Request[T, S],
       handler: NothingT[WS_RESULT]
-  ): R[WebSocketResponse[WS_RESULT]] = handler // nothing is everything
+  ): F[WebSocketResponse[WS_RESULT]] = handler // nothing is everything
 
-  override def close(): R[Unit] = delegate.close()
+  override def close(): F[Unit] = delegate.close()
 
-  override def responseMonad: MonadError[R] = delegate.responseMonad
+  override def responseMonad: MonadError[F] = delegate.responseMonad
 
   private def createSpan(request: AnyRequest): Span = {
     request
@@ -47,7 +47,7 @@ class BraveBackend[R[_], S] private (delegate: SttpBackend[R, S, NothingT], http
     }
   }
 
-  private def sendAndHandleReceive[T](span: Span, request: Request[T, S]): R[Response[T]] = {
+  private def sendAndHandleReceive[T](span: Span, request: Request[T, S]): F[Response[T]] = {
     val spanInScope = tracer.withSpanInScope(span)
 
     responseMonad.handleError(
@@ -102,13 +102,13 @@ object BraveBackend {
   type AnyRequest = Request[_, _]
   type AnyResponse = Response[_]
 
-  def apply[R[_], S](delegate: SttpBackend[R, S, NothingT], tracing: Tracing): SttpBackend[R, S, NothingT] = {
+  def apply[F[_], S](delegate: SttpBackend[F, S, NothingT], tracing: Tracing): SttpBackend[F, S, NothingT] = {
     apply(delegate, HttpTracing.create(tracing))
   }
 
-  def apply[R[_], S](delegate: SttpBackend[R, S, NothingT], httpTracing: HttpTracing): SttpBackend[R, S, NothingT] = {
+  def apply[F[_], S](delegate: SttpBackend[F, S, NothingT], httpTracing: HttpTracing): SttpBackend[F, S, NothingT] = {
     // redirects should be handled before brave tracing, hence adding the follow-redirects backend on top
-    new FollowRedirectsBackend[R, S, NothingT](new BraveBackend(delegate, httpTracing))
+    new FollowRedirectsBackend[F, S, NothingT](new BraveBackend(delegate, httpTracing))
   }
 }
 

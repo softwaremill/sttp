@@ -47,8 +47,8 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 import scala.util.{Failure, Try}
 
-abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean)
-    extends SttpBackend[R, S, WebSocketHandler] {
+abstract class OkHttpBackend[F[_], S](client: OkHttpClient, closeClient: Boolean)
+    extends SttpBackend[F, S, WebSocketHandler] {
 
   private[okhttp] def convertRequest[T](request: Request[T, S]): OkHttpRequest = {
     val builder = new OkHttpRequest.Builder()
@@ -111,7 +111,7 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean
   private[okhttp] def readResponse[T](
       res: OkHttpResponse,
       responseAs: ResponseAs[T, S]
-  ): R[Response[T]] = {
+  ): F[Response[T]] = {
 
     val headers = res
       .headers()
@@ -150,7 +150,7 @@ abstract class OkHttpBackend[R[_], S](client: OkHttpClient, closeClient: Boolean
   def responseBodyToStream(res: OkHttpResponse): Try[S] =
     Failure(new IllegalStateException("Streaming isn't supported"))
 
-  override def close(): R[Unit] =
+  override def close(): F[Unit] =
     if (closeClient) {
       responseMonad.eval(client.dispatcher().executorService().shutdown())
     } else responseMonad.unit(())
@@ -252,13 +252,13 @@ object OkHttpSyncBackend {
     OkHttpSyncBackend(client, closeClient = false)
 }
 
-abstract class OkHttpAsyncBackend[R[_], S](client: OkHttpClient, monad: MonadAsyncError[R], closeClient: Boolean)
-    extends OkHttpBackend[R, S](client, closeClient) {
-  override def send[T](r: Request[T, S]): R[Response[T]] = {
+abstract class OkHttpAsyncBackend[F[_], S](client: OkHttpClient, monad: MonadAsyncError[F], closeClient: Boolean)
+    extends OkHttpBackend[F, S](client, closeClient) {
+  override def send[T](r: Request[T, S]): F[Response[T]] = {
     val request = convertRequest(r)
 
-    monad.flatten(monad.async[R[Response[T]]] { cb =>
-      def success(r: R[Response[T]]): Unit = cb(Right(r))
+    monad.flatten(monad.async[F[Response[T]]] { cb =>
+      def success(r: F[Response[T]]): Unit = cb(Right(r))
       def error(t: Throwable): Unit = cb(Left(t))
 
       OkHttpBackend
@@ -278,12 +278,12 @@ abstract class OkHttpAsyncBackend[R[_], S](client: OkHttpClient, monad: MonadAsy
   override def openWebsocket[T, WS_RESULT](
       r: Request[T, S],
       handler: WebSocketHandler[WS_RESULT]
-  ): R[WebSocketResponse[WS_RESULT]] = {
+  ): F[WebSocketResponse[WS_RESULT]] = {
 
     val request = convertRequest(r)
 
-    monad.flatten(monad.async[R[WebSocketResponse[WS_RESULT]]] { cb =>
-      def success(r: R[WebSocketResponse[WS_RESULT]]): Unit = cb(Right(r))
+    monad.flatten(monad.async[F[WebSocketResponse[WS_RESULT]]] { cb =>
+      def success(r: F[WebSocketResponse[WS_RESULT]]): Unit = cb(Right(r))
       def error(t: Throwable): Unit = cb(Left(t))
 
       val listener = new DelegatingWebSocketListener(
@@ -305,7 +305,7 @@ abstract class OkHttpAsyncBackend[R[_], S](client: OkHttpClient, monad: MonadAsy
     })
   }
 
-  override def responseMonad: MonadError[R] = monad
+  override def responseMonad: MonadError[F] = monad
 }
 
 class OkHttpFutureBackend private (client: OkHttpClient, closeClient: Boolean)(implicit ec: ExecutionContext)

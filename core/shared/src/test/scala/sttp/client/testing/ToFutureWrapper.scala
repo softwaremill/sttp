@@ -7,8 +7,8 @@ import org.scalatest.exceptions.TestFailedException
 
 trait ToFutureWrapper {
 
-  implicit final class ConvertToFutureDecorator[R[_], T](wrapped: => R[T]) {
-    def toFuture()(implicit ctf: ConvertToFuture[R]): Future[T] = {
+  implicit final class ConvertToFutureDecorator[F[_], T](wrapped: => F[T]) {
+    def toFuture()(implicit ctf: ConvertToFuture[F]): Future[T] = {
       try {
         ctf.toFuture(wrapped)
       } catch {

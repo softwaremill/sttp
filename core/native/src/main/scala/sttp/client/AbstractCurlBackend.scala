@@ -20,17 +20,17 @@ import scala.scalanative.native.stdlib._
 import scala.scalanative.native.string._
 import scala.scalanative.native.{CSize, Ptr, _}
 
-abstract class AbstractCurlBackend[R[_], S](monad: MonadError[R], verbose: Boolean)
-    extends SttpBackend[R, S, NothingT] {
+abstract class AbstractCurlBackend[F[_], S](monad: MonadError[F], verbose: Boolean)
+    extends SttpBackend[F, S, NothingT] {
 
-  override val responseMonad: MonadError[R] = monad
+  override val responseMonad: MonadError[F] = monad
 
-  override def close(): R[Unit] = monad.unit(())
+  override def close(): F[Unit] = monad.unit(())
 
   private var headers: CurlList = _
   private var multiPartHeaders: Seq[CurlList] = Seq()
 
-  override def send[T](request: Request[T, S]): R[Response[T]] = native.Zone { implicit z =>
+  override def send[T](request: Request[T, S]): F[Response[T]] = native.Zone { implicit z =>
     val curl = CurlApi.init
     if (verbose) {
       curl.option(Verbose, parameter = true)
@@ -79,7 +79,7 @@ abstract class AbstractCurlBackend[R[_], S](monad: MonadError[R], verbose: Boole
       val responseHeaders = responseHeaders_.tail
       val responseMetadata = ResponseMetadata(responseHeaders, httpCode, statusText)
 
-      val body: R[T] = readResponseBody(responseBody, request.response, responseMetadata)
+      val body: F[T] = readResponseBody(responseBody, request.response, responseMetadata)
       responseMonad.map(body) { b =>
         Response[T](
           body = b,
@@ -95,10 +95,10 @@ abstract class AbstractCurlBackend[R[_], S](monad: MonadError[R], verbose: Boole
   override def openWebsocket[T, WS_RESULT](
       request: Request[T, S],
       handler: NothingT[WS_RESULT]
-  ): R[WebSocketResponse[WS_RESULT]] =
+  ): F[WebSocketResponse[WS_RESULT]] =
     handler // nothing is everything
 
-  private def setMethod(handle: CurlHandle, method: Method)(implicit z: Zone): R[CurlCode] = {
+  private def setMethod(handle: CurlHandle, method: Method)(implicit z: Zone): F[CurlCode] = {
     val m = method match {
       case Method.GET     => handle.option(HttpGet, true)
       case Method.HEAD    => handle.option(Head, true)
@@ -113,7 +113,7 @@ abstract class AbstractCurlBackend[R[_], S](monad: MonadError[R], verbose: Boole
     lift(m)
   }
 
-  private def setRequestBody(curl: CurlHandle, body: RequestBody[S])(implicit zone: Zone): R[CurlCode] =
+  private def setRequestBody(curl: CurlHandle, body: RequestBody[S])(implicit zone: Zone): F[CurlCode] =
     body match { // todo: assign to responseMonad object
       case b: BasicRequestBody =>
         val str = basicBodyToString(b)
@@ -181,7 +181,7 @@ abstract class AbstractCurlBackend[R[_], S](monad: MonadError[R], verbose: Boole
       response: String,
       responseAs: ResponseAs[T, S],
       responseMetadata: ResponseMetadata
-  ): R[T] = {
+  ): F[T] = {
 
     responseAs match {
       case MappedResponseAs(raw, g) =>
@@ -212,9 +212,9 @@ abstract class AbstractCurlBackend[R[_], S](monad: MonadError[R], verbose: Boole
       }
   }
 
-  private def toByteArray(str: String): R[Array[Byte]] = responseMonad.unit(str.toCharArray.map(_.toByte))
+  private def toByteArray(str: String): F[Array[Byte]] = responseMonad.unit(str.toCharArray.map(_.toByte))
 
-  private def lift(code: CurlCode): R[CurlCode] = {
+  private def lift(code: CurlCode): F[CurlCode] = {
     code match {
       case CurlCode.Ok => responseMonad.unit(code)
       case _           => responseMonad.error(new RuntimeException(s"Command failed with status $code"))

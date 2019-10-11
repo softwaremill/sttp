@@ -243,17 +243,17 @@ case class RequestT[U[_], T, +S](
   def redirectToGet(r: Boolean): RequestT[U, T, S] =
     this.copy(options = options.copy(redirectToGet = r))
 
-  def send[R[_]]()(
-      implicit backend: SttpBackend[R, S, NothingT],
+  def send[F[_]]()(
+      implicit backend: SttpBackend[F, S, NothingT],
       isIdInRequest: IsIdInRequest[U]
-  ): R[Response[T]] = backend.send(asRequest)
+  ): F[Response[T]] = backend.send(asRequest)
 
-  def openWebsocket[R[_], WS_HANDLER[_], WS_RESULT](
+  def openWebsocket[F[_], WS_HANDLER[_], WS_RESULT](
       handler: WS_HANDLER[WS_RESULT]
   )(
-      implicit backend: SttpBackend[R, S, WS_HANDLER],
+      implicit backend: SttpBackend[F, S, WS_HANDLER],
       isIdInRequest: IsIdInRequest[U]
-  ): R[WebSocketResponse[WS_RESULT]] = backend.openWebsocket(asRequest, handler)
+  ): F[WebSocketResponse[WS_RESULT]] = backend.openWebsocket(asRequest, handler)
 
   def toCurl(implicit isIdInRequest: IsIdInRequest[U]): String = ToCurlConverter.requestToCurl(asRequest)
 

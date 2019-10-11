@@ -22,9 +22,9 @@ trait LowLevelCatsImplicits {
   implicit def catsMonadError[F[_]](implicit E: cats.MonadError[F, Throwable]): MonadError[F] = new CatsMonadError[F]
 }
 
-class MappableSttpBackend[R[_], S, WS_HANDLER[_]] private[cats] (val sttpBackend: SttpBackend[R, S, WS_HANDLER])
+class MappableSttpBackend[F[_], S, WS_HANDLER[_]] private[cats] (val sttpBackend: SttpBackend[F, S, WS_HANDLER])
     extends AnyVal {
-  def mapK[G[_]: MonadError](f: R ~> G): SttpBackend[G, S, WS_HANDLER] =
+  def mapK[G[_]: MonadError](f: F ~> G): SttpBackend[G, S, WS_HANDLER] =
     new MappedKSttpBackend(sttpBackend, f, implicitly)
 }
 

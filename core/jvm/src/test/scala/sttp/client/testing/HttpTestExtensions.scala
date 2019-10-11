@@ -13,7 +13,7 @@ import scala.concurrent.Future
 import scala.language.higherKinds
 
 @silent("discarded")
-trait HttpTestExtensions[R[_]] extends TestHttpServer { self: HttpTest[R] =>
+trait HttpTestExtensions[F[_]] extends TestHttpServer { self: HttpTest[F] =>
   "cookies" - {
     "read response cookies" in {
       basicRequest

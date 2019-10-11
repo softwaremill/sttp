@@ -8,24 +8,24 @@ import sttp.client.internal.Utf8
 
 import scala.language.higherKinds
 
-trait StreamingTest[R[_], S]
+trait StreamingTest[F[_], S]
     extends AsyncFreeSpec
     with Matchers
     with ToFutureWrapper
     with BeforeAndAfterAll
-    with StreamingTestExtensions[R, S] {
+    with StreamingTestExtensions[F, S] {
 
   protected def endpoint: String
 
-  implicit def backend: SttpBackend[R, S, NothingT]
+  implicit def backend: SttpBackend[F, S, NothingT]
 
-  implicit def convertToFuture: ConvertToFuture[R]
+  implicit def convertToFuture: ConvertToFuture[F]
 
   def bodyProducer(chunks: Iterable[Array[Byte]]): S
 
   private def stringBodyProducer(body: String): S = bodyProducer(body.getBytes(Utf8).grouped(10).toIterable)
 
-  def bodyConsumer(stream: S): R[String]
+  def bodyConsumer(stream: S): F[String]
 
   "stream request body" in {
     basicRequest

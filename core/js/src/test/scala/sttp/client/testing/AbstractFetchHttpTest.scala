@@ -6,12 +6,12 @@ import sttp.client.Response
 import scala.concurrent.Future
 import scala.language.higherKinds
 
-abstract class AbstractFetchHttpTest[R[_], -S] extends HttpTest[R] {
+abstract class AbstractFetchHttpTest[F[_], -S] extends HttpTest[F] {
 
   override protected def endpoint: String = "localhost:51823"
 
   override protected def expectRedirectResponse(
-      response: R[Response[String]],
+      response: F[Response[String]],
       code: Int
   ): Future[Assertion] = {
     response.toFuture().failed.map { t =>

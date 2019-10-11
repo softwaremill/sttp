@@ -63,7 +63,7 @@ object ResponseAs {
   private[client] trait EagerResponseHandler[S] {
     def handleBasic[T](bra: BasicResponseAs[T, S]): Try[T]
 
-    def handle[T, R[_]](responseAs: ResponseAs[T, S], responseMonad: MonadError[R], meta: ResponseMetadata): R[T] = {
+    def handle[T, F[_]](responseAs: ResponseAs[T, S], responseMonad: MonadError[F], meta: ResponseMetadata): F[T] = {
 
       responseAs match {
         case MappedResponseAs(raw, g) =>

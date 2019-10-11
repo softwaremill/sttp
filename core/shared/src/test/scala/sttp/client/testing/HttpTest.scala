@@ -11,21 +11,21 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.language.higherKinds
 
-trait HttpTest[R[_]]
+trait HttpTest[F[_]]
     extends AsyncFreeSpec
     with Matchers
     with ToFutureWrapper
     with OptionValues
     with BeforeAndAfterAll
-    with HttpTestExtensions[R] {
+    with HttpTestExtensions[F] {
 
   protected def endpoint: String
 
   protected val binaryFileMD5Hash = "565370873a38d91f34a3091082e63933"
   protected val textFileMD5Hash = "b048a88ece8e4ec5eb386b8fc5006d13"
 
-  implicit val backend: SttpBackend[R, Nothing, NothingT]
-  implicit val convertToFuture: ConvertToFuture[R]
+  implicit val backend: SttpBackend[F, Nothing, NothingT]
+  implicit val convertToFuture: ConvertToFuture[F]
 
   protected def postEcho: Request[Either[String, String], Nothing] = basicRequest.post(uri"$endpoint/echo")
   protected val testBody = "this is the body"
@@ -320,7 +320,7 @@ trait HttpTest[R[_]]
   }
 
   protected def expectRedirectResponse(
-      response: R[Response[String]],
+      response: F[Response[String]],
       code: Int
   ): Future[Assertion] = {
     response.toFuture().map { resp =>
