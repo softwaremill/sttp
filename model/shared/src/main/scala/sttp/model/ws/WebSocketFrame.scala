@@ -21,8 +21,6 @@ object WebSocketFrame {
     * @param payload a binary payload
     * @param finalFragment flag indicating whether or not this is the last fragment
     * @param rsv optional extension bits
-    *
-    * @return an effect that will be completed once the frame will be actually written on the wire
     */
   case class Binary(payload: Array[Byte], finalFragment: Boolean, rsv: Option[Int]) extends Data
 
