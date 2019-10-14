@@ -29,13 +29,13 @@ class AsyncHttpClientZioBackend private (asyncHttpClient: AsyncHttpClient, close
 }
 
 object AsyncHttpClientZioBackend {
-  private def apply(asyncHttpClient: AsyncHttpClient, closeClient: Boolean): SttpBackend[IO[Throwable, ?], Nothing] =
-    new FollowRedirectsBackend[IO[Throwable, ?], Nothing](new AsyncHttpClientZioBackend(asyncHttpClient, closeClient))
+  private def apply(asyncHttpClient: AsyncHttpClient, closeClient: Boolean): SttpBackend[Task, Nothing] =
+    new FollowRedirectsBackend[Task, Nothing](new AsyncHttpClientZioBackend(asyncHttpClient, closeClient))
 
-  def apply(options: SttpBackendOptions = SttpBackendOptions.Default): SttpBackend[IO[Throwable, ?], Nothing] =
+  def apply(options: SttpBackendOptions = SttpBackendOptions.Default): SttpBackend[Task, Nothing] =
     AsyncHttpClientZioBackend(AsyncHttpClientBackend.defaultClient(options), closeClient = true)
 
-  def usingConfig(cfg: AsyncHttpClientConfig): SttpBackend[IO[Throwable, ?], Nothing] =
+  def usingConfig(cfg: AsyncHttpClientConfig): SttpBackend[Task, Nothing] =
     AsyncHttpClientZioBackend(new DefaultAsyncHttpClient(cfg), closeClient = true)
 
   /**
@@ -44,12 +44,12 @@ object AsyncHttpClientZioBackend {
   def usingConfigBuilder(
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default
-  ): SttpBackend[IO[Throwable, ?], Nothing] =
+  ): SttpBackend[Task, Nothing] =
     AsyncHttpClientZioBackend(
       AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
       closeClient = true
     )
 
-  def usingClient(client: AsyncHttpClient): SttpBackend[IO[Throwable, ?], Nothing] =
+  def usingClient(client: AsyncHttpClient): SttpBackend[Task, Nothing] =
     AsyncHttpClientZioBackend(client, closeClient = false)
 }
