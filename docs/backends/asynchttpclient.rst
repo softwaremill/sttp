@@ -72,13 +72,13 @@ The Monix backend supports streaming (as both Monix and Async Http Client suppor
   import java.nio.ByteBuffer
   import monix.reactive.Observable
   
-  implicit val sttpBackend = AsyncHttpClientMonixBackend()
+  AsyncHttpClientMonixBackend().flatMap { implicit backend =>
+    val obs: Observable[ByteBuffer] =  ...
 
-  val obs: Observable[ByteBuffer] =  ...
-
-  basicRequest
-    .streamBody(obs)
-    .post(uri"...")
+    basicRequest
+      .streamBody(obs)
+      .post(uri"...")
+  }
 
 And receive responses as an observable stream::
 
@@ -90,14 +90,14 @@ And receive responses as an observable stream::
   import monix.reactive.Observable
   import scala.concurrent.duration.Duration
 
-  implicit val sttpBackend = AsyncHttpClientMonixBackend()
-  
-  val response: Task[Response[Either[String, Observable[ByteBuffer]]]] =
-    basicRequest
-      .post(uri"...")
-      .response(asStream[Observable[ByteBuffer]])
-      .readTimeout(Duration.Inf)
-      .send()
+  AsyncHttpClientMonixBackend().flatMap { implicit backend =>
+    val response: Task[Response[Either[String, Observable[ByteBuffer]]]] =
+      basicRequest
+        .post(uri"...")
+        .response(asStream[Observable[ByteBuffer]])
+        .readTimeout(Duration.Inf)
+        .send()
+  }
 
 Streaming using fs2
 -------------------
@@ -114,13 +114,14 @@ Requests can be sent with a streaming body like this::
   import fs2.Stream
 
   implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.Implicits.global)
-  implicit val sttpBackend = AsyncHttpClientFs2Backend[IO]()
+  val effect = AsyncHttpClientFs2Backend[IO]().flatMap { implicit backend =>
+    val stream: Stream[IO, ByteBuffer] = ...
 
-  val stream: Stream[IO, ByteBuffer] = ...
-
-  basicRequest
-    .streamBody(stream)
-    .post(uri"...")
+    basicRequest
+      .streamBody(stream)
+      .post(uri"...")
+  }
+  // run the effect
 
 Responses can also be streamed::
 
@@ -133,11 +134,49 @@ Responses can also be streamed::
   import scala.concurrent.duration.Duration
 
   implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.Implicits.global)
-  implicit val sttpBackend = AsyncHttpClientFs2Backend[IO]()
+  val effect = AsyncHttpClientFs2Backend[IO]().flatMap { implicit backend =>
+    val response: IO[Response[Either[String, Stream[IO, ByteBuffer]]]] =
+      basicRequest
+        .post(uri"...")
+        .response(asStream[Stream[IO, ByteBuffer]])
+        .readTimeout(Duration.Inf)
+        .send()
 
-  val response: IO[Response[Either[String, Stream[IO, ByteBuffer]]]] =
-    basicRequest
-      .post(uri"...")
-      .response(asStream[Stream[IO, ByteBuffer]])
-      .readTimeout(Duration.Inf)
-      .send()
+    response
+  }
+  // run the effect
+
+Websockets
+----------
+
+The async-http-client backend supports websockets, where the websocket handler is of type ``sttp.client.asynchttpclient.WebSocketHandler``. An instance of this handler can be created in two ways.
+
+First, given an async-http-client-native ``org.asynchttpclient.ws.WebSocketListener``, you can lift it to a web socket handler using ``WebSocketHandler.fromListener``. This listener will receive lifecycle callbacks, as well as a callback each time a message is received. Note that the callbacks will be executed on the Netty (network) thread, so make sure not to run any blocking operations there, and delegate to other executors/thread pools if necessary. The value returned in the ``WebSocketResponse`` will be an instance of ``org.asynchttpclient.ws.WebSocket``, which allows sending messages.
+
+The second approach, available when using the Monix and ZIO backends, is to pass a ``MonixWebSocketHandler()`` or ``ZIOWebSocketHandler()``. This will create a listener, which will internally buffer incoming messages, and expose a ``sttp.client.ws.WebSocket[Task]`` interface for sending/receiving messages.
+
+Specifically, the ``WebSocket[Task]`` interface contains two methods, both of which return a ``Task`` (a lazily-evaluated description of a side-effecting, asynchronous process):
+
+* ``def receive: Task[Either[WebSocketEvent.Close, WebSocketFrame.Incoming]]`` which will complete once a message is available, and return either information that the websocket has been closed, or the incoming message
+* ``def send(f: WebSocketFrame, isContinuation: Boolean = false): Task[Unit]``, which should be used to send a message to the websocket. The ``WebSocketFrame`` companion object contains methods for creating binary/text messages. When using fragmentation, the first message should be sent using ``finalFragment = false``, and subsequent messages using ``isContinuation = true``.
+
+There are also other methods for receiving only text/binary messages, as well as automatically sending ``Pong`` responses when a ``Ping`` is received.
+
+Example usage::
+
+  import monix.eval.Task
+  import sttp.client._
+  import sttp.client.ws.{WebSocket, WebSocketResponse}
+  import sttp.model.ws.WebSocketFrame
+
+  val response: Task[WebSocketResponse[WebSocket[Task]]] = basicRequest
+    .get(uri"wss://echo.websocket.org")
+    .openWebsocket(MonixWebSocketHandler())
+
+  response.flatMap { r =>
+    val ws: WebSocket[Task] = r.result
+    val send = ws.send(WebSocketFrame.text("Hello!")
+    val receive = ws.receiveText().flatMap(t => Task(println(s"RECEIVED: $t")))
+    val close = ws.close()
+    send.flatMap(_ => receive).flatMap(_ => close)
+  }

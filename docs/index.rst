@@ -49,6 +49,7 @@ For more examples, see the :ref:`usage examples <usage_examples>` section. Or ex
    requests/body
    requests/multipart
    requests/streaming
+   requests/websockets
    requests/type
 
 .. toctree::

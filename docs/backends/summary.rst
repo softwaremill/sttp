@@ -14,31 +14,32 @@ Which one to choose?
 * otherwise, if you are using ``Future``, use ``AsyncHttpClientFutureBackend``
 * finally, if you are using a functional effect wrapper, use one of the "functional" async-http-client backends
 
-Each backend has two type parameters:
+Each backend has three type parameters:
 
-* ``R[_]``, the type constructor in which responses are wrapped. That is, when you invoke ``send()`` on a request description, do you get a ``Response[_]`` directly, or is it wrapped in a ``Future`` or a ``Task``?
+* ``F[_]``, the effects wrapper for responses. That is, when you invoke ``send()`` on a request description, do you get a ``Response[_]`` directly, or is it wrapped in a ``Future`` or a ``Task``?
 * ``S``, the type of supported streams. If ``Nothing``, streaming is not supported. Otherwise, the given type can be used to send request bodies or receive response bodies.
+* ``WS_HANDLER``, the type of supported websocket handlers. If ``NothingT``, websockets are not supported. Otherwise, websocket connections can be opened, given an instance of the handler
 
 Below is a summary of all the backends. See the sections on individual backend implementations for more information.
 
-==================================== ============================ ================================================
-Class                                Response wrapper             Supported stream type
-==================================== ============================ ================================================
-``HttpURLConnectionBackend``         None (``Id``)                n/a
-``TryHttpURLConnectionBackend``      ``scala.util.Try``           n/a
-``AkkaHttpBackend``                  ``scala.concurrent.Future``  ``akka.stream.scaladsl.Source[ByteString, Any]``
-``AsyncHttpClientFutureBackend``     ``scala.concurrent.Future``  n/a
-``AsyncHttpClientScalazBackend``     ``scalaz.concurrent.Task``   n/a
-``AsyncHttpClientZioBackend``        ``zio.IO``                   n/a
-``AsyncHttpClientZioStreamsBackend`` ``zio.IO``                   ``zio.stream.Stream[Throwable, ByteBuffer]``
-``AsyncHttpClientMonixBackend``      ``monix.eval.Task``          ``monix.reactive.Observable[ByteBuffer]``
-``AsyncHttpClientCatsBackend``       ``F[_]: cats.effect.Async``  n/a
-``AsyncHttpClientFs2Backend``        ``F[_]: cats.effect.Async``  ``fs2.Stream[F, ByteBuffer]``
-``OkHttpSyncBackend``                None (``Id``)                n/a
-``OkHttpFutureBackend``              ``scala.concurrent.Future``  n/a
-``OkHttpMonixBackend``               ``monix.eval.Task``          ``monix.reactive.Observable[ByteBuffer]``
-``Http4sBackend``                    ``F[_]: cats.effect.Effect`` ``fs2.Stream[F, Byte]``
-==================================== ============================ ================================================
+==================================== ============================ ================================================ ==================================================
+Class                                Response wrapper             Supported stream type                            Supported websocket handlers
+==================================== ============================ ================================================ ==================================================
+``HttpURLConnectionBackend``         None (``Id``)                n/a                                              n/a
+``TryHttpURLConnectionBackend``      ``scala.util.Try``           n/a                                              n/a
+``AkkaHttpBackend``                  ``scala.concurrent.Future``  ``akka.stream.scaladsl.Source[ByteString, Any]`` ``akka.stream.scaladsl.Flow[Message, Message, _]``
+``AsyncHttpClientFutureBackend``     ``scala.concurrent.Future``  n/a                                              ``sttp.client.asynchttpclient.WebSocketHandler``
+``AsyncHttpClientScalazBackend``     ``scalaz.concurrent.Task``   n/a                                              ``sttp.client.asynchttpclient.WebSocketHandler``
+``AsyncHttpClientZioBackend``        ``zio.IO``                   n/a                                              ``sttp.client.asynchttpclient.WebSocketHandler``
+``AsyncHttpClientZioStreamsBackend`` ``zio.IO``                   ``zio.stream.Stream[Throwable, ByteBuffer]``     n/a
+``AsyncHttpClientMonixBackend``      ``monix.eval.Task``          ``monix.reactive.Observable[ByteBuffer]``        ``sttp.client.asynchttpclient.WebSocketHandler``
+``AsyncHttpClientCatsBackend``       ``F[_]: cats.effect.Async``  n/a                                              ``sttp.client.asynchttpclient.WebSocketHandler``
+``AsyncHttpClientFs2Backend``        ``F[_]: cats.effect.Async``  ``fs2.Stream[F, ByteBuffer]``                    n/a
+``OkHttpSyncBackend``                None (``Id``)                n/a                                              ``sttp.client.okhttp.WebSocketHandler``
+``OkHttpFutureBackend``              ``scala.concurrent.Future``  n/a                                              ``sttp.client.okhttp.WebSocketHandler``
+``OkHttpMonixBackend``               ``monix.eval.Task``          ``monix.reactive.Observable[ByteBuffer]``        ``sttp.client.okhttp.WebSocketHandler``
+``Http4sBackend``                    ``F[_]: cats.effect.Effect`` ``fs2.Stream[F, Byte]``                          n/a
+==================================== ============================ ================================================ ==================================================
 
 There are also backends which wrap other backends to provide additional functionality. These include:
 
@@ -48,21 +49,21 @@ There are also backends which wrap other backends to provide additional function
 
 In additional there are also backends for JavaScript:
 
-================================ ============================ =========================================
-Class                            Response wrapper             Supported stream type
-================================ ============================ =========================================
-``FetchBackend``                 ``scala.concurrent.Future``  n/a
-``FetchMonixBackend``            ``monix.eval.Task``          ``monix.reactive.Observable[ByteBuffer]``
-================================ ============================ =========================================
+================================ ============================ ========================================= ============================
+Class                            Response wrapper             Supported stream type                     Supported websocket handlers
+================================ ============================ ========================================= ============================
+``FetchBackend``                 ``scala.concurrent.Future``  n/a                                       n/a
+``FetchMonixBackend``            ``monix.eval.Task``          ``monix.reactive.Observable[ByteBuffer]`` n/a
+================================ ============================ ========================================= ============================
 
 and Scala Native:
 
-================================ ============================ =========================================
-Class                            Response wrapper             Supported stream type
-================================ ============================ =========================================
-``CurlBackend``                  None (``id``)                n/a
-``CurlTryBackend``               ``scala.util.Try``           n/a
-================================ ============================ =========================================
+================================ ============================ ========================================= ============================
+Class                            Response wrapper             Supported stream type                     Supported websocket handlers
+================================ ============================ ========================================= ============================
+``CurlBackend``                  None (``id``)                n/a                                       n/a
+``CurlTryBackend``               ``scala.util.Try``           n/a                                       n/a
+================================ ============================ ========================================= ============================
 
 Finally, there are third-party backends:
 

@@ -63,6 +63,26 @@ That way, you can "mock" a server that the backend will talk to, without startin
 If your application provides a client library for its dependants to use, this is a great way to ensure that the client
 actually matches the routes exposed by your application::
 
-  val backend: SttpBackend[Future, Nothing] = {
+  val backend: SttpBackend[Future, Nothing, Flow[Message, Message, *]] = {
     AkkaHttpBackend.usingClient(system, http = AkkaHttpClient.stubFromRoute(Routes.route))
   }
+
+Websockets
+----------
+
+The akka-http backend supports websockets, where the websocket handler is of type ``akka.stream.scaladsl.Flow[Message, Message, _]``. That is, when opening a websocket connection, you need to provide the description of a stream, which will consume incoming websocket messages, and produce outgoing websocket messages. For example::
+
+  import akka.Done
+  import akka.stream.scaladsl.Flow
+  import akka.http.scaladsl.model.ws.Message
+
+  import sttp.client._
+  import sttp.client.ws.WebSocketResponse
+
+  import scala.concurrent.Future
+
+  val flow: Flow[Message, Message, Future[Done]] = ...
+  val response: Future[WebSocketResponse[Future[Done]]] =
+      basicRequest.get(uri"wss://echo.websocket.org").openWebsocket(flow)
+
+In this example, the given flow materialises to a ``Future[Done]``, however this value can be arbitrary and depends on the shape and definition of the message-processing stream. The ``Future[WebSocketResponse]`` will complete once the websocket is established and contain the materialised value.

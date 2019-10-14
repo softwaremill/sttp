@@ -29,14 +29,15 @@ This causes any further backend wrappers to handle a request which involves redi
 
 For example::
 
-  class MyWrapper[R[_], S] private (delegate: SttpBackend[R, S])
-    extends SttpBackend[R, S] {
+  class MyWrapper[F[_], S, WS_HANDLER[_]] private (delegate: SttpBackend[F, S, WS_HANDLER])
+    extends SttpBackend[R, S, WS_HANDLER] {
 
     ...
   }
 
   object MyWrapper {
-    def apply[R[_], S](delegate: SttpBackend[R, S]): SttpBackend[R, S] = {
+    def apply[F[_], S, WS_HANDLER[_]](
+      delegate: SttpBackend[F, S, WS_HANDLER]): SttpBackend[F, S, WS_HANDLER] = {
       // disables any other FollowRedirectsBackend-s further down the delegate chain
       new FollowRedirectsBackend(new MyWrapper(delegate))
     }
@@ -50,10 +51,11 @@ Often it's useful to setup system-wide logging for failed requests. This is poss
   import sttp.client.{MonadError, Request, Response, SttpBackend}
   import com.typesafe.scalalogging.StrictLogging
 
-  class LoggingSttpBackend[R[_], S](delegate: SttpBackend[R, S]) extends SttpBackend[R, S]
+  class LoggingSttpBackend[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[R, S, WS_HANDLER])
+    extends SttpBackend[R, S, WS_HANDLER]
     with StrictLogging {
 
-    override def send[T](request: Request[T, S]): R[Response[T]] = {
+    override def send[T](request: Request[T, S]): F[Response[T]] = {
       responseMonad.map(responseMonad.handleError(delegate.send(request)) {
         case e: Exception =>
           logger.error(s"Exception when sending request: $request", e)
@@ -67,8 +69,21 @@ Often it's useful to setup system-wide logging for failed requests. This is poss
         response
       }
     }
-    override def close(): Unit = delegate.close()
-    override def responseMonad: MonadError[R] = delegate.responseMonad
+    override def openWebsocket[T, WS_RESULT](
+        request: Request[T, S],
+        handler: WS_HANDLER[WS_RESULT]
+      ): F[WebSocketResponse[WS_RESULT]] = {
+      responseMonad.map(responseMonad.handleError(delegate.openWebsocket(request, handler)) {
+        case e: Exception =>
+          logger.error(s"Exception when opening a websocket request: $request", e)
+          responseMonad.error(e)
+        }) { response =>
+          logger.debug(s"For ws request: $request got headers: ${response.headers}")
+          response
+        }
+    }
+    override def close(): F[Unit] = delegate.close()
+    override def responseMonad: MonadError[F] = delegate.responseMonad
   }
 
 
@@ -95,9 +110,9 @@ Below is an example on how to implement a backend wrapper, which sends metrics f
   }
 
   // the backend wrapper
-  class MetricWrapper[S](delegate: SttpBackend[Future, S],
-                            metrics: MetricsServer)
-      extends SttpBackend[Future, S] {
+  class MetricWrapper[S](delegate: SttpBackend[Future, S, NothingT],
+                         metrics: MetricsServer)
+      extends SttpBackend[Future, S, NothingT] {
 
     override def send[T](request: Request[T, S]): Future[Response[T]] = {
       val start = System.currentTimeMillis()
@@ -115,7 +130,14 @@ Below is an example on how to implement a backend wrapper, which sends metrics f
       }
     }
 
-    override def close(): Unit = delegate.close()
+    override def openWebsocket[T, WS_RESULT](
+        request: Request[T, S],
+        handler: NothingT[WS_RESULT]
+      ): Future[WebSocketResponse[WS_RESULT]] = {
+      delegate.openWebsocket(request, handler) // No websocket support due to NothingT
+    }
+
+    override def close(): F[Unit] = delegate.close()
 
     override def responseMonad: MonadError[Future] = delegate.responseMonad
   }
@@ -144,18 +166,18 @@ In some cases it's possible to implement a generic retry mechanism; such a mecha
 
   import sttp.client.{MonadError, Request, Response, SttpBackend}
 
-  class RetryingBackend[R[_], S](
-      delegate: SttpBackend[R, S],
+  class RetryingBackend[F[_], S](
+      delegate: SttpBackend[F, S, NothingT],
       shouldRetry: (Request[_, _], Either[Throwable, Response[_]]) => Boolean,
       maxRetries: Int)
-      extends SttpBackend[R, S] {
+      extends SttpBackend[F, S, NothingT] {
 
-    override def send[T](request: Request[T, S]): R[Response[T]] = {
+    override def send[T](request: Request[T, S]): F[Response[T]] = {
       sendWithRetryCounter(request, 0)
     }
 
     private def sendWithRetryCounter[T](request: Request[T, S],
-                                        retries: Int): R[Response[T]] = {
+                                        retries: Int): F[Response[T]] = {
       val r = responseMonad.handleError(delegate.send(request)) {
         case t if shouldRetry(request, Left(t)) && retries < maxRetries =>
           sendWithRetryCounter(request, retries + 1)
@@ -170,9 +192,16 @@ In some cases it's possible to implement a generic retry mechanism; such a mecha
       }
     }
 
-    override def close(): Unit = delegate.close()
+    override def openWebsocket[T, WS_RESULT](
+        request: Request[T, S],
+        handler: NothingT[WS_RESULT]
+      ): Future[WebSocketResponse[WS_RESULT]] = {
+      delegate.openWebsocket(request, handler) // No websocket support due to NothingT
+    }
 
-    override def responseMonad: MonadError[R] = delegate.responseMonad
+    override def close(): F[Unit] = delegate.close()
+
+    override def responseMonad: MonadError[F] = delegate.responseMonad
   }
 
 Note that some backends also have built-in retry mechanisms, e.g. `akka-http <https://doc.akka.io/docs/akka-http/current/scala/http/client-side/host-level.html#retrying-a-request>`_ or `OkHttp <http://square.github.io/okhttp>`_ (see the builder's ``retryOnConnectionFailure`` method).
@@ -196,7 +225,7 @@ Implement your backend and extend the ``HttpTest`` class::
   class MyCustomBackendHttpTest extends HttpTest[Future] {
 
     override implicit val convertToFuture: ConvertToFuture[Future] = ConvertToFuture.future
-    override implicit lazy val backend: SttpBackend[Future, Nothing] = new MyCustomBackend()
+    override implicit lazy val backend: SttpBackend[Future, Nothing, NothingT] = new MyCustomBackend()
 
   }
 
