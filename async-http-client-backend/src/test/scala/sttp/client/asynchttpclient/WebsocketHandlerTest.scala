@@ -87,7 +87,7 @@ abstract class WebsocketHandlerTest[F[_]]
           .openWebsocket(createHandler(Some(3)))
           .flatMap { response =>
             val ws = response.result
-            send(ws, 100) >>
+            send(ws, 1000) >>
               // by now we expect to have received at least 4 back, which should overflow the buffer
               ws.isOpen.map(_ shouldBe false)
           }
