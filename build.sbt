@@ -17,7 +17,6 @@ val silencerVersion = "1.4.4"
 
 val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   organization := "com.softwaremill.sttp.client",
-  scalafmtOnCompile := true,
   // cross-release doesn't work when subprojects have different cross versions
   // work-around from https://github.com/sbt/sbt-release/issues/214
   releaseProcess := Seq(
