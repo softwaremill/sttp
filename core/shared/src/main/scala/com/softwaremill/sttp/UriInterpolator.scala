@@ -144,14 +144,22 @@ object UriInterpolator {
         }
       }
 
-      override def tokenize(s: String): (Tokenizer, Vector[Token]) =
-        tokenizeTerminatedFragment(
+      override def tokenize(s: String): (Tokenizer, Vector[Token]) = {
+        val (tokenizer, tokens) = tokenizeTerminatedFragment(
           s,
           this,
           Set('/', '?', '#'),
           Map(':' -> ColonInAuthority, '@' -> AtInAuthority, '.' -> DotInAuthority),
-          ipv6parser
+          Some(('[', ']'))
         )
+        val tokens2 = tokens.map {
+          case StringToken(s @ IpV6InAuthorityPattern()) =>
+            // removing the [] which are used to surround ipv6 adresses in URLs
+            StringToken(s.substring(1, s.length - 1))
+          case t => t
+        }
+        (tokenizer, tokens2)
+      }
     }
 
     object Path extends Tokenizer {
@@ -187,27 +195,24 @@ object UriInterpolator {
       * The rest of the string, after the terminators, is tokenized using
       * a tokenizer determined by the type of the terminator.
       *
-      * @param extraFragmentParser A context-specific parser which is given the
-      * option to tokenize a fragment (without terminators).
+      * @param separatorsEscape A context-specific pair of escape characters
+      *                         (start/stop), in which separators are not taken
+      *                         into account.
       */
     private def tokenizeTerminatedFragment(
         s: String,
         current: Tokenizer,
         terminators: Set[Char],
         separatorsToTokens: Map[Char, Token],
-        extraFragmentParser: String => Option[Vector[Token]] = _ => None
+        separatorsEscape: Option[(Char, Char)] = None
     ): (Tokenizer, Vector[Token]) = {
 
       def tokenizeFragment(f: String): Vector[Token] = {
-        extraFragmentParser(f) match {
-          case None =>
-            splitPreserveSeparators(f, separatorsToTokens.keySet).map { t =>
-              t.headOption.flatMap(separatorsToTokens.get) match {
-                case Some(token) => token
-                case None        => StringToken(t)
-              }
-            }
-          case Some(tt) => tt
+        splitPreserveSeparators(f, separatorsToTokens.keySet, separatorsEscape).map { t =>
+          t.headOption.flatMap(separatorsToTokens.get) match {
+            case Some(token) => token
+            case None        => StringToken(t)
+          }
         }
       }
 
@@ -215,7 +220,7 @@ object UriInterpolator {
       // terminated by /, ?, # or end of string (there might be other /, ?,
       // # later on e.g. in the query).
       // See: https://tools.ietf.org/html/rfc3986#section-3.2
-      split(s, terminators) match {
+      split(s, terminators, None) match {
         case Right((fragment, separator, rest)) =>
           tokenizeAfterSeparator(tokenizeFragment(fragment), separator, rest)
 
@@ -242,10 +247,10 @@ object UriInterpolator {
         case '#' => (Fragment, FragmentStart)
       }
 
-    private def splitPreserveSeparators(s: String, sep: Set[Char]): Vector[String] = {
+    private def splitPreserveSeparators(s: String, sep: Set[Char], escape: Option[(Char, Char)]): Vector[String] = {
       @tailrec
       def doSplit(s: String, acc: Vector[String]): Vector[String] = {
-        split(s, sep) match {
+        split(s, sep, escape) match {
           case Left(x) => acc :+ x
           case Right((before, separator, after)) =>
             doSplit(after, acc ++ Vector(before, separator.toString))
@@ -255,10 +260,43 @@ object UriInterpolator {
       doSplit(s, Vector.empty)
     }
 
-    private def split(s: String, sep: Set[Char]): Either[String, (String, Char, String)] = {
+    private def split(
+        s: String,
+        sep: Set[Char],
+        escape: Option[(Char, Char)]
+    ): Either[String, (String, Char, String)] = {
+      escape match {
+        case None    => splitNoEscape(s, sep)
+        case Some(e) => splitWithEscape(s, sep, e)
+      }
+    }
+
+    private def splitNoEscape(s: String, sep: Set[Char]): Either[String, (String, Char, String)] = {
       val i = s.indexWhere(sep.contains)
       if (i == -1) Left(s)
       else Right((s.substring(0, i), s.charAt(i), s.substring(i + 1)))
+    }
+
+    private def splitWithEscape(
+        s: String,
+        sep: Set[Char],
+        escape: (Char, Char)
+    ): Either[String, (String, Char, String)] = {
+      var inEscape: Boolean = false
+      for (i <- 0 until s.length) {
+        val c = s(i)
+        if (inEscape && c == escape._2) {
+          inEscape = false
+        } else if (!inEscape && c == escape._1) {
+          inEscape = true
+        } else if (!inEscape) {
+          if (sep.contains(c)) {
+            return Right((s.substring(0, i), s.charAt(i), s.substring(i + 1)))
+          }
+        }
+      }
+
+      Left(s)
     }
   }
 
