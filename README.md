@@ -24,13 +24,15 @@ val response = request.send()
 // response.header(...): Option[String]
 println(response.header("Content-Length")) 
 
-// response.unsafeBody: by default read into a String 
-println(response.unsafeBody)                     
+// response.body: by default read into an Either[String, String] to indicate failure or success 
+println(response.body)                     
 ```
 
 ## Documentation
 
-sttp documentation is available at [sttp.readthedocs.io](http://sttp.readthedocs.io).
+sttp (v2) documentation is available at [sttp.readthedocs.io](http://sttp.readthedocs.io).
+
+sttp (v1) documentation is available at [sttp.readthedocs.io/en/v1](https://sttp.readthedocs.io/en/v1).
 
 scaladoc is available at [https://www.javadoc.io](https://www.javadoc.io/doc/com.softwaremill.sttp.client/core_2.12/2.0.0-M6)
 
@@ -44,7 +46,7 @@ If you are an [Ammonite](http://ammonite.io) user, you can quickly start experim
 ```scala
 import $ivy.`com.softwaremill.sttp.client::core:2.0.0-M6`
 import sttp.client.quick._
-sttp.get(uri"http://httpbin.org/ip").send()
+basicRequest.get(uri"http://httpbin.org/ip").send()
 ```
 
 This brings in the sttp API and an implicit, synchronous backend.
