@@ -1,4 +1,4 @@
-# sttp
+![sttp](https://github.com/softwaremill/sttp/raw/master/banner.png)
 
 [![Join the chat at https://gitter.im/softwaremill/sttp](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/softwaremill/sttp?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Build Status](https://travis-ci.org/softwaremill/sttp.svg?branch=master)](https://travis-ci.org/softwaremill/sttp)
@@ -102,3 +102,11 @@ nativeLinkingOptions += "-L/usr/local/opt/curl/lib"
 ```
 
 where the specific paths correspond to the output of the `brew install curl` command.
+
+## Commercial Support
+
+We offer commercial support for sttp and related technologies, as well as development services. [Contact us](https://softwaremill.com) to learn more about our offer!
+
+## Copyright
+
+Copyright (C) 2017-2019 SoftwareMill [https://softwaremill.com](https://softwaremill.com).
