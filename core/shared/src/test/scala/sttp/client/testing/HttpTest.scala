@@ -374,7 +374,7 @@ trait HttpTest[F[_]]
             .toFuture()
             .map { resp =>
               println(resp.body)
-              resp.body should not include (header.name)
+              resp.body should not include header.toString
             }
         }
       }
