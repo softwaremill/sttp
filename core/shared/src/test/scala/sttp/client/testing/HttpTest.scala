@@ -5,7 +5,7 @@ import java.nio.ByteBuffer
 
 import org.scalatest._
 import sttp.client.{Response, ResponseAs, SttpBackend, _}
-import sttp.model.StatusCode
+import sttp.model.{Header, HeaderNames, Headers, MediaTypes, StatusCode}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -354,6 +354,29 @@ trait HttpTest[F[_]]
       r1.send().toFuture().map { resp =>
         resp.code shouldBe StatusCode.Ok
         resp.body shouldBe r4response
+      }
+    }
+
+    "strip sensitive headers" - {
+      val testData = List(
+        Header(HeaderNames.Authorization, "secret"),
+        Header(HeaderNames.Cookie, "A=B;"),
+        Header(HeaderNames.SetCookie, "A=B")
+      )
+
+      for (header <- testData) yield {
+        s"for $header redirect" in {
+          basicRequest
+            .get(uri"$endpoint/redirect/strip_sensitive_headers/r1")
+            .header(header)
+            .response(asStringAlways)
+            .send()
+            .toFuture()
+            .map { resp =>
+              println(resp.body)
+              resp.body should not include (header.name)
+            }
+        }
       }
     }
 

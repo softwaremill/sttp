@@ -40,7 +40,6 @@ class FollowRedirectsBackend[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[F, S,
   }
 
   private def followRedirect[T](request: Request[T, S], response: Response[T], redirects: Int): F[Response[T]] = {
-
     response.header(HeaderNames.Location).fold(responseMonad.unit(response)) { loc =>
       if (redirects >= request.options.maxRedirects) {
         responseMonad.error(TooManyRedirectsException(request.uri, redirects))
@@ -65,7 +64,16 @@ class FollowRedirectsBackend[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[F, S,
     }
 
     val redirectResponse =
-      sendWithCounter(changePostPutToGet(request.copy[Identity, T, S](uri = uri), response.code), redirects + 1)
+      sendWithCounter(
+        changePostPutToGet(
+          request.copy[Identity, T, S](
+            uri = uri,
+            headers = request.headers.filterNot(h => sensitiveHeaders.contains(h.name))
+          ),
+          response.code
+        ),
+        redirects + 1
+      )
 
     responseMonad.map(redirectResponse) { rr =>
       val responseNoBody = response.copy(body = ())
@@ -74,6 +82,7 @@ class FollowRedirectsBackend[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[F, S,
   }
 
   private val contentHeaders = Set(HeaderNames.ContentLength, HeaderNames.ContentType, HeaderNames.ContentMd5)
+  private val sensitiveHeaders = Set(HeaderNames.Authorization, HeaderNames.Cookie, HeaderNames.SetCookie)
 
   private def changePostPutToGet[T](r: Request[T, S], statusCode: StatusCode): Request[T, S] = {
     val applicable = r.method == Method.POST || r.method == Method.PUT

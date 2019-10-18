@@ -9,20 +9,20 @@ import akka.http.scaladsl.model.headers.CacheDirectives._
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.model.ws.{BinaryMessage, Message, TextMessage}
 import akka.http.scaladsl.server.Directives.{entity, path, _}
-import akka.http.scaladsl.server.{RejectionHandler, Route}
 import akka.http.scaladsl.server.directives.Credentials
 import akka.http.scaladsl.server.directives.RouteDirectives.complete
+import akka.http.scaladsl.server.{RejectionHandler, Route}
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
 import akka.util.ByteString
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives
 import ch.megard.akka.http.cors.scaladsl.settings.CorsSettings
 import com.github.ghik.silencer.silent
-import sttp.client.internal.toByteArray
 import org.scalatest.{BeforeAndAfterAll, Suite}
+import sttp.client.internal.toByteArray
 
-import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
 
 trait TestHttpServer extends BeforeAndAfterAll { this: Suite =>
 
@@ -240,7 +240,15 @@ private class HttpServer(port: Int) extends AutoCloseable with CorsDirectives {
                 post(complete(s"POST$body"))
               }
           }
+        } ~ pathPrefix("strip_sensitive_headers") {
+        path("r1") {
+          redirect("/redirect/strip_sensitive_headers/result", StatusCodes.PermanentRedirect)
+        } ~ path("result") {
+          extractRequest { req =>
+            complete(s"${req.headers.mkString(",")}")
+          }
         }
+      }
     } ~ pathPrefix("timeout") {
       complete {
         akka.pattern.after(1.second, using = actorSystem.scheduler)(
