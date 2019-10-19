@@ -6,7 +6,7 @@ import com.softwaremill.Publish.Release.updateVersionInDocs
 
 val scala2_11 = "2.11.12"
 val scala2_12 = "2.12.9"
-val scala2_13 = "2.13.0"
+val scala2_13 = "2.13.1"
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on (used by JS tests)")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests (used by JS tests)")
