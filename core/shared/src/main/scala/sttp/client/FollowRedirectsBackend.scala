@@ -2,10 +2,9 @@ package sttp.client
 
 import java.net.URI
 
-import sttp.model._
 import sttp.client.monad.MonadError
 import sttp.client.ws.WebSocketResponse
-import sttp.model.{Method, StatusCode}
+import sttp.model.{Method, StatusCode, _}
 
 import scala.language.higherKinds
 
@@ -64,21 +63,21 @@ class FollowRedirectsBackend[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[F, S,
     }
 
     val redirectResponse =
-      sendWithCounter(
-        changePostPutToGet(
-          request.copy[Identity, T, S](
-            uri = uri,
-            headers = request.headers.filterNot(h => sensitiveHeaders.contains(h.name))
-          ),
-          response.code
-        ),
-        redirects + 1
-      )
+      ((stripSensitiveHeaders[T](_)) andThen
+        (changePostPutToGet[T](_, response.code)) andThen
+        (sendWithCounter(_, redirects + 1)))
+        .apply(request.copy[Identity, T, S](uri = uri))
 
     responseMonad.map(redirectResponse) { rr =>
       val responseNoBody = response.copy(body = ())
       rr.copy(history = responseNoBody :: rr.history)
     }
+  }
+
+  private def stripSensitiveHeaders[T](request: Request[T, S]): Request[T, S] = {
+    request.copy[Identity, T, S](
+      headers = request.headers.filterNot(h => sensitiveHeaders.contains(h.name))
+    )
   }
 
   private val contentHeaders = Set(HeaderNames.ContentLength, HeaderNames.ContentType, HeaderNames.ContentMd5)
