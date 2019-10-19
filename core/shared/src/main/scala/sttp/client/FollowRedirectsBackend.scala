@@ -8,8 +8,11 @@ import sttp.model.{Method, StatusCode, _}
 
 import scala.language.higherKinds
 
-class FollowRedirectsBackend[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[F, S, WS_HANDLER])
-    extends SttpBackend[F, S, WS_HANDLER] {
+class FollowRedirectsBackend[F[_], S, WS_HANDLER[_]](
+    delegate: SttpBackend[F, S, WS_HANDLER],
+    contentHeaders: Set[String] = HeaderNames.ContentHeaders,
+    sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders
+) extends SttpBackend[F, S, WS_HANDLER] {
 
   def send[T](request: Request[T, S]): F[Response[T]] = {
     sendWithCounter(request, 0)
@@ -79,9 +82,6 @@ class FollowRedirectsBackend[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[F, S,
       headers = request.headers.filterNot(h => sensitiveHeaders.contains(h.name))
     )
   }
-
-  private val contentHeaders = Set(HeaderNames.ContentLength, HeaderNames.ContentType, HeaderNames.ContentMd5)
-  private val sensitiveHeaders = Set(HeaderNames.Authorization, HeaderNames.Cookie, HeaderNames.SetCookie)
 
   private def changePostPutToGet[T](r: Request[T, S], statusCode: StatusCode): Request[T, S] = {
     val applicable = r.method == Method.POST || r.method == Method.PUT
