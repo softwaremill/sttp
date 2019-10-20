@@ -2,15 +2,17 @@ package sttp.client
 
 import java.net.URI
 
-import sttp.model._
 import sttp.client.monad.MonadError
 import sttp.client.ws.WebSocketResponse
-import sttp.model.{Method, StatusCode}
+import sttp.model.{Method, StatusCode, _}
 
 import scala.language.higherKinds
 
-class FollowRedirectsBackend[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[F, S, WS_HANDLER])
-    extends SttpBackend[F, S, WS_HANDLER] {
+class FollowRedirectsBackend[F[_], S, WS_HANDLER[_]](
+    delegate: SttpBackend[F, S, WS_HANDLER],
+    contentHeaders: Set[String] = HeaderNames.ContentHeaders,
+    sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders
+) extends SttpBackend[F, S, WS_HANDLER] {
 
   def send[T](request: Request[T, S]): F[Response[T]] = {
     sendWithCounter(request, 0)
@@ -40,7 +42,6 @@ class FollowRedirectsBackend[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[F, S,
   }
 
   private def followRedirect[T](request: Request[T, S], response: Response[T], redirects: Int): F[Response[T]] = {
-
     response.header(HeaderNames.Location).fold(responseMonad.unit(response)) { loc =>
       if (redirects >= request.options.maxRedirects) {
         responseMonad.error(TooManyRedirectsException(request.uri, redirects))
@@ -65,7 +66,10 @@ class FollowRedirectsBackend[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[F, S,
     }
 
     val redirectResponse =
-      sendWithCounter(changePostPutToGet(request.copy[Identity, T, S](uri = uri), response.code), redirects + 1)
+      ((stripSensitiveHeaders[T](_)) andThen
+        (changePostPutToGet[T](_, response.code)) andThen
+        (sendWithCounter(_, redirects + 1)))
+        .apply(request.copy[Identity, T, S](uri = uri))
 
     responseMonad.map(redirectResponse) { rr =>
       val responseNoBody = response.copy(body = ())
@@ -73,7 +77,11 @@ class FollowRedirectsBackend[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[F, S,
     }
   }
 
-  private val contentHeaders = Set(HeaderNames.ContentLength, HeaderNames.ContentType, HeaderNames.ContentMd5)
+  private def stripSensitiveHeaders[T](request: Request[T, S]): Request[T, S] = {
+    request.copy[Identity, T, S](
+      headers = request.headers.filterNot(h => sensitiveHeaders.contains(h.name))
+    )
+  }
 
   private def changePostPutToGet[T](r: Request[T, S], statusCode: StatusCode): Request[T, S] = {
     val applicable = r.method == Method.POST || r.method == Method.PUT

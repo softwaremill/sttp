@@ -72,4 +72,7 @@ trait HeaderNames {
   val XRequestedWidth = "X-Requested-Width"
 }
 
-object HeaderNames extends HeaderNames
+object HeaderNames extends HeaderNames {
+  val ContentHeaders: Set[String] = Set(HeaderNames.ContentLength, HeaderNames.ContentType, HeaderNames.ContentMd5)
+  val SensitiveHeaders: Set[String] = Set(HeaderNames.Authorization, HeaderNames.Cookie, HeaderNames.SetCookie)
+}
