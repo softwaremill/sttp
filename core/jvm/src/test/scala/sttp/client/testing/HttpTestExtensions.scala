@@ -7,7 +7,7 @@ import java.time.{ZoneId, ZonedDateTime}
 
 import com.github.ghik.silencer.silent
 import sttp.client.{FollowRedirectsBackend, _}
-import sttp.model.{CookieWithMeta, StatusCode}
+import sttp.model.{CookieWithMeta, Header, HeaderNames, StatusCode}
 
 import scala.concurrent.Future
 import scala.language.higherKinds
@@ -125,6 +125,29 @@ trait HttpTestExtensions[F[_]] extends TestHttpServer { self: HttpTest[F] =>
           .map { resp =>
             resp.body shouldBe expectedBody
           }
+      }
+    }
+
+    "strip sensitive headers" - {
+      val testData = List(
+        Header(HeaderNames.Authorization, "secret"),
+        Header(HeaderNames.Cookie, "A=B;"),
+        Header(HeaderNames.SetCookie, "A=B")
+      )
+
+      for (header <- testData) yield {
+        s"for $header redirect" in {
+          basicRequest
+            .get(uri"$endpoint/redirect/strip_sensitive_headers/r1")
+            .header(header)
+            .response(asStringAlways)
+            .send()
+            .toFuture()
+            .map { resp =>
+              println(resp.body)
+              resp.body should not include header.toString
+            }
+        }
       }
     }
   }
