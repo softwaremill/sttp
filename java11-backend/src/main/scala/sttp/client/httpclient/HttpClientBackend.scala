@@ -2,13 +2,11 @@ package sttp.client.httpclient
 
 import java.io.ByteArrayInputStream
 import java.net.http.HttpRequest.{BodyPublisher, BodyPublishers}
-import java.net.http.HttpResponse.BodyHandlers
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
-import java.util.function.BiConsumer
+import java.time.{Duration => JDuration}
 
 import sttp.client.ResponseAs.EagerResponseHandler
 import sttp.client.internal.FileHelpers
-import sttp.client.monad.{IdMonad, MonadAsyncError, MonadError}
 import sttp.client.ws.WebSocketResponse
 import sttp.client.{
   BasicRequestBody,
@@ -16,7 +14,6 @@ import sttp.client.{
   ByteArrayBody,
   ByteBufferBody,
   FileBody,
-  Identity,
   IgnoreResponse,
   InputStreamBody,
   MultipartBody,
@@ -30,7 +27,8 @@ import sttp.client.{
   ResponseMetadata,
   StreamBody,
   StringBody,
-  SttpBackend
+  SttpBackend,
+  SttpBackendOptions
 }
 import sttp.model.{Header, HeaderNames, Part, StatusCode}
 
@@ -137,41 +135,39 @@ abstract class HttpClientBackend[F[_], S](client: HttpClient) extends SttpBacken
 
 }
 
-class HttpClientSyncBackend(client: HttpClient) extends HttpClientBackend[Identity, Nothing](client) {
-  override def send[T](request: Request[T, Nothing]): Identity[Response[T]] = {
-    val jRequest = convertRequest(request)
-    val response = client.send(jRequest, BodyHandlers.ofByteArray())
-    readResponse(response, request.response)
+object HttpBackend {
+
+//  private class ProxyAuthenticator(auth: SttpBackendOptions.ProxyAuth) extends Authenticator {
+//    override def authenticate(route: Route, response: OkHttpResponse): OkHttpRequest = {
+//      val credential = Credentials.basic(auth.username, auth.password)
+//      response.request.newBuilder.header("Proxy-Authorization", credential).build
+//    }
+//  }
+
+  private[httpclient] def defaultClient(readTimeout: Long, options: SttpBackendOptions): HttpClient = {
+    var clientBuilder = HttpClient
+      .newBuilder()
+      .followRedirects(HttpClient.Redirect.NEVER)
+      .connectTimeout(JDuration.ofMillis(options.connectionTimeout.toMillis))
+
+//    clientBuilder = options.proxy match {
+//      case None => clientBuilder
+//      case Some(p @ Proxy(_, _, _, _, Some(auth))) =>
+//        clientBuilder.proxySelector(p.asJavaProxySelector).proxyAuthenticator(new ProxyAuthenticator(auth))
+//      case Some(p) => clientBuilder.proxySelector(p.asJavaProxySelector)
+//    }
+
+    clientBuilder.build()
   }
 
-  override def responseMonad: MonadError[Identity] = IdMonad
-}
-
-class HttpClientAsyncBackend[F[_], S](client: HttpClient, monad: MonadAsyncError[F])
-    extends HttpClientBackend[F, S](client) {
-  override def send[T](request: Request[T, S]): F[Response[T]] = {
-    val jRequest = convertRequest(request)
-
-    monad.flatten(monad.async[F[Response[T]]] { cb: (Either[Throwable, F[Response[T]]] => Unit) =>
-      def success(r: F[Response[T]]): Unit = cb(Right(r))
-      def error(t: Throwable): Unit = cb(Left(t))
-
-      client
-        .sendAsync(jRequest, BodyHandlers.ofByteArray())
-        .whenComplete(new BiConsumer[HttpResponse[Array[Byte]], Throwable] {
-          override def accept(t: HttpResponse[Array[Byte]], u: Throwable): Unit = {
-            if (t != null) {
-              try success(readResponse(t, request.response))
-              catch { case e: Exception => error(e) }
-            }
-            if (u != null) {
-              error(u)
-            }
-          }
-        })
-      ()
-    })
-  }
-
-  override def responseMonad: MonadError[F] = monad
+//  private[okhttp] def updateClientIfCustomReadTimeout[T, S](r: Request[T, S], client: OkHttpClient): OkHttpClient = {
+//    val readTimeout = r.options.readTimeout
+//    if (readTimeout == DefaultReadTimeout) client
+//    else
+//      client
+//        .newBuilder()
+//        .readTimeout(if (readTimeout.isFinite) readTimeout.toMillis else 0, TimeUnit.MILLISECONDS)
+//        .build()
+//
+//  }
 }
