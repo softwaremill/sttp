@@ -1,13 +1,12 @@
 package sttp.client.httpclient
 
-import java.net.http.{HttpClient, HttpResponse}
 import java.net.http.HttpResponse.BodyHandlers
+import java.net.http.{HttpClient, HttpResponse}
 import java.util.function.BiConsumer
 
-import sttp.client
-import sttp.client.{FollowRedirectsBackend, Request, Response, SttpBackend, SttpBackendOptions}
 import sttp.client.monad.{FutureMonad, MonadAsyncError, MonadError}
 import sttp.client.ws.WebSocketResponse
+import sttp.client.{FollowRedirectsBackend, Request, Response, SttpBackend, SttpBackendOptions}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -52,7 +51,7 @@ object HttpClientFutureBackend {
   def apply(options: SttpBackendOptions = SttpBackendOptions.Default)(
       implicit ec: ExecutionContext = ExecutionContext.Implicits.global
   ): SttpBackend[Future, Nothing, WebSocketResponse] =
-    HttpClientFutureBackend(HttpBackend.defaultClient(client.DefaultReadTimeout.toMillis, options))
+    HttpClientFutureBackend(HttpBackend.defaultClient(options))
 
   def usingClient(client: HttpClient)(
       implicit ec: ExecutionContext = ExecutionContext.Implicits.global

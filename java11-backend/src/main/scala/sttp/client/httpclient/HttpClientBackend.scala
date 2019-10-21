@@ -3,9 +3,11 @@ package sttp.client.httpclient
 import java.io.ByteArrayInputStream
 import java.net.http.HttpRequest.{BodyPublisher, BodyPublishers}
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
+import java.net.{Authenticator, PasswordAuthentication}
 import java.time.{Duration => JDuration}
 
 import sttp.client.ResponseAs.EagerResponseHandler
+import sttp.client.SttpBackendOptions.Proxy
 import sttp.client.internal.FileHelpers
 import sttp.client.ws.WebSocketResponse
 import sttp.client.{
@@ -42,15 +44,12 @@ abstract class HttpClientBackend[F[_], S](client: HttpClient) extends SttpBacken
     val builder = HttpRequest
       .newBuilder()
       .uri(request.uri.toJavaUri)
-    val body: HttpRequest.BodyPublisher = bodyToHttpBody(request, builder)
-    builder.method(request.method.method, body)
+
+    builder.method(request.method.method, bodyToHttpBody(request, builder))
     request.headers
       .filterNot(_.name == HeaderNames.ContentLength)
       .foreach(h => builder.header(h.name, h.value))
-
-    val request1 = builder
-      .build()
-    request1
+    builder.timeout(JDuration.ofMillis(request.options.readTimeout.toMillis)).build()
   }
 
   private def bodyToHttpBody[T](request: Request[T, S], builder: HttpRequest.Builder) = {
@@ -137,37 +136,26 @@ abstract class HttpClientBackend[F[_], S](client: HttpClient) extends SttpBacken
 
 object HttpBackend {
 
-//  private class ProxyAuthenticator(auth: SttpBackendOptions.ProxyAuth) extends Authenticator {
-//    override def authenticate(route: Route, response: OkHttpResponse): OkHttpRequest = {
-//      val credential = Credentials.basic(auth.username, auth.password)
-//      response.request.newBuilder.header("Proxy-Authorization", credential).build
-//    }
-//  }
+  // TODO not sure if it works
+  private class ProxyAuthenticator(auth: SttpBackendOptions.ProxyAuth) extends Authenticator {
+    override def getPasswordAuthentication: PasswordAuthentication = {
+      new PasswordAuthentication(auth.username, auth.password.toCharArray)
+    }
+  }
 
-  private[httpclient] def defaultClient(readTimeout: Long, options: SttpBackendOptions): HttpClient = {
+  private[httpclient] def defaultClient(options: SttpBackendOptions): HttpClient = {
     var clientBuilder = HttpClient
       .newBuilder()
       .followRedirects(HttpClient.Redirect.NEVER)
       .connectTimeout(JDuration.ofMillis(options.connectionTimeout.toMillis))
 
-//    clientBuilder = options.proxy match {
-//      case None => clientBuilder
-//      case Some(p @ Proxy(_, _, _, _, Some(auth))) =>
-//        clientBuilder.proxySelector(p.asJavaProxySelector).proxyAuthenticator(new ProxyAuthenticator(auth))
-//      case Some(p) => clientBuilder.proxySelector(p.asJavaProxySelector)
-//    }
+    clientBuilder = options.proxy match {
+      case None => clientBuilder
+      case Some(p @ Proxy(_, _, _, _, Some(auth))) =>
+        clientBuilder.proxy(p.asJavaProxySelector).authenticator(new ProxyAuthenticator(auth))
+      case Some(p) => clientBuilder.proxy(p.asJavaProxySelector)
+    }
 
     clientBuilder.build()
   }
-
-//  private[okhttp] def updateClientIfCustomReadTimeout[T, S](r: Request[T, S], client: OkHttpClient): OkHttpClient = {
-//    val readTimeout = r.options.readTimeout
-//    if (readTimeout == DefaultReadTimeout) client
-//    else
-//      client
-//        .newBuilder()
-//        .readTimeout(if (readTimeout.isFinite) readTimeout.toMillis else 0, TimeUnit.MILLISECONDS)
-//        .build()
-//
-//  }
 }

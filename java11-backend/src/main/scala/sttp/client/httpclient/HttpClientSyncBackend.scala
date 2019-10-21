@@ -3,10 +3,9 @@ package sttp.client.httpclient
 import java.net.http.HttpClient
 import java.net.http.HttpResponse.BodyHandlers
 
-import sttp.client
 import sttp.client.monad.{IdMonad, MonadError}
-import sttp.client.{FollowRedirectsBackend, Identity, Request, Response, SttpBackend, SttpBackendOptions}
 import sttp.client.ws.WebSocketResponse
+import sttp.client.{FollowRedirectsBackend, Identity, Request, Response, SttpBackend, SttpBackendOptions}
 
 class HttpClientSyncBackend(client: HttpClient) extends HttpClientBackend[Identity, Nothing](client) {
   override def send[T](request: Request[T, Nothing]): Identity[Response[T]] = {
@@ -25,7 +24,7 @@ object HttpSyncBackend {
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default
   ): SttpBackend[Identity, Nothing, WebSocketResponse] =
-    HttpSyncBackend(HttpBackend.defaultClient(client.DefaultReadTimeout.toMillis, options))
+    HttpSyncBackend(HttpBackend.defaultClient(options))
 
   def usingClient(client: HttpClient): SttpBackend[Identity, Nothing, WebSocketResponse] =
     HttpSyncBackend(client)
