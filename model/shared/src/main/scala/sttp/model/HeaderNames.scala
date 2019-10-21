@@ -70,9 +70,9 @@ trait HeaderNames {
   val XForwardedPort = "X-Forwarded-Port"
   val XForwardedProto = "X-Forwarded-Proto"
   val XRequestedWidth = "X-Requested-Width"
-}
 
-object HeaderNames extends HeaderNames {
   val ContentHeaders: Set[String] = Set(HeaderNames.ContentLength, HeaderNames.ContentType, HeaderNames.ContentMd5)
   val SensitiveHeaders: Set[String] = Set(HeaderNames.Authorization, HeaderNames.Cookie, HeaderNames.SetCookie)
 }
+
+object HeaderNames extends HeaderNames
