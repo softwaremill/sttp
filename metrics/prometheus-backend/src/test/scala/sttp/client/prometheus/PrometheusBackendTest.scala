@@ -45,9 +45,15 @@ class PrometheusBackendTest
     val backendStub = SttpBackendStub.synchronous.whenAnyRequest.thenRespondOk()
     val histogramName = "test_two_backends"
     val backend1 =
-      PrometheusBackend[Identity, Nothing](backendStub, requestToHistogramNameMapper = _ => Some(histogramName))
+      PrometheusBackend[Identity, Nothing](
+        backendStub,
+        requestToHistogramNameMapper = _ => Some(CollectorNameWithLabels(histogramName))
+      )
     val backend2 =
-      PrometheusBackend[Identity, Nothing](backendStub, requestToHistogramNameMapper = _ => Some(histogramName))
+      PrometheusBackend[Identity, Nothing](
+        backendStub,
+        requestToHistogramNameMapper = _ => Some(CollectorNameWithLabels(histogramName))
+      )
 
     // when
     backend1.send(basicRequest.get(uri"http://127.0.0.1/foo"))
@@ -61,7 +67,10 @@ class PrometheusBackendTest
     // given
     val customHistogramName = "my_custom_histogram"
     val backend =
-      PrometheusBackend[Identity, Nothing](SttpBackendStub.synchronous, _ => Some(customHistogramName))
+      PrometheusBackend[Identity, Nothing](
+        SttpBackendStub.synchronous,
+        _ => Some(CollectorNameWithLabels(customHistogramName))
+      )
     val requestsNumber = 5
 
     // when
@@ -70,6 +79,27 @@ class PrometheusBackendTest
     // then
     getMetricValue(s"${PrometheusBackend.DefaultHistogramName}_count") shouldBe empty
     getMetricValue(s"${customHistogramName}_count").value shouldBe requestsNumber
+  }
+
+  it should "use mapped request to histogram name with labels" in {
+    // given
+    val customHistogramName = "my_custom_histogram"
+    val backend =
+      PrometheusBackend[Identity, Nothing](
+        SttpBackendStub.synchronous,
+        r => Some(CollectorNameWithLabels(customHistogramName, List("method" -> r.method.method)))
+      )
+    val requestsNumber1 = 5
+    val requestsNumber2 = 10
+
+    // when
+    (0 until requestsNumber1).foreach(_ => backend.send(basicRequest.get(uri"http://127.0.0.1/foo")))
+    (0 until requestsNumber2).foreach(_ => backend.send(basicRequest.post(uri"http://127.0.0.1/foo")))
+
+    // then
+    getMetricValue(s"${PrometheusBackend.DefaultHistogramName}_count") shouldBe empty
+    getMetricValue(s"${customHistogramName}_count", List("method" -> "GET")).value shouldBe requestsNumber1
+    getMetricValue(s"${customHistogramName}_count", List("method" -> "POST")).value shouldBe requestsNumber2
   }
 
   it should "disable histograms" in {
@@ -123,7 +153,10 @@ class PrometheusBackendTest
       }
     }
     val backend =
-      PrometheusBackend[Future, Nothing](backendStub, requestToInProgressGaugeNameMapper = _ => Some(customGaugeName))
+      PrometheusBackend[Future, Nothing](
+        backendStub,
+        requestToInProgressGaugeNameMapper = _ => Some(CollectorNameWithLabels(customGaugeName))
+      )
 
     // when
     (0 until requestsNumber).foreach(_ => backend.send(basicRequest.get(uri"http://127.0.0.1/foo")))
@@ -184,5 +217,8 @@ class PrometheusBackendTest
 
   private[this] def getMetricValue(name: String): Option[lang.Double] =
     Option(CollectorRegistry.defaultRegistry.getSampleValue(name))
+
+  private[this] def getMetricValue(name: String, labels: List[(String, String)]): Option[lang.Double] =
+    Option(CollectorRegistry.defaultRegistry.getSampleValue(name, labels.map(_._1).toArray, labels.map(_._2).toArray))
 
 }

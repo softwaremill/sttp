@@ -13,11 +13,11 @@ import scala.language.higherKinds
 
 class PrometheusBackend[F[_], S] private (
     delegate: SttpBackend[F, S, NothingT],
-    requestToHistogramNameMapper: Request[_, S] => Option[String],
-    requestToInProgressGaugeNameMapper: Request[_, S] => Option[String],
-    requestToSuccessCounterMapper: Request[_, S] => Option[String],
-    requestToErrorCounterMapper: Request[_, S] => Option[String],
-    requestToFailureCounterMapper: Request[_, S] => Option[String],
+    requestToHistogramNameMapper: Request[_, S] => Option[CollectorNameWithLabels],
+    requestToInProgressGaugeNameMapper: Request[_, S] => Option[CollectorNameWithLabels],
+    requestToSuccessCounterMapper: Request[_, S] => Option[CollectorNameWithLabels],
+    requestToErrorCounterMapper: Request[_, S] => Option[CollectorNameWithLabels],
+    requestToFailureCounterMapper: Request[_, S] => Option[CollectorNameWithLabels],
     collectorRegistry: CollectorRegistry,
     histogramsCache: ConcurrentHashMap[String, Histogram],
     gaugesCache: ConcurrentHashMap[String, Gauge],
@@ -26,13 +26,13 @@ class PrometheusBackend[F[_], S] private (
 
   override def send[T](request: Request[T, S]): F[Response[T]] = {
     val requestTimer: Option[Histogram.Timer] = for {
-      histogramName: String <- requestToHistogramNameMapper(request)
-      histogram: Histogram = getOrCreateMetric(histogramsCache, histogramName, createNewHistogram)
-    } yield histogram.startTimer()
+      histogramData <- requestToHistogramNameMapper(request)
+      histogram: Histogram = getOrCreateMetric(histogramsCache, histogramData, createNewHistogram)
+    } yield histogram.labels(histogramData.labelValues: _*).startTimer()
 
-    val gauge: Option[Gauge] = for {
-      gaugeName: String <- requestToInProgressGaugeNameMapper(request)
-    } yield getOrCreateMetric(gaugesCache, gaugeName, createNewGauge)
+    val gauge: Option[Gauge.Child] = for {
+      gaugeData <- requestToInProgressGaugeNameMapper(request)
+    } yield getOrCreateMetric(gaugesCache, gaugeData, createNewGauge).labels(gaugeData.labelValues: _*)
 
     gauge.foreach(_.inc())
 
@@ -67,24 +67,31 @@ class PrometheusBackend[F[_], S] private (
 
   override def responseMonad: MonadError[F] = delegate.responseMonad
 
-  private def incCounterIfMapped[T](request: Request[T, S], mapper: Request[_, S] => Option[String]): Unit =
-    mapper(request).foreach { name =>
-      getOrCreateMetric(countersCache, name, createNewCounter).inc()
+  private def incCounterIfMapped[T](
+      request: Request[T, S],
+      mapper: Request[_, S] => Option[CollectorNameWithLabels]
+  ): Unit =
+    mapper(request).foreach { data =>
+      getOrCreateMetric(countersCache, data, createNewCounter).labels(data.labelValues: _*).inc()
     }
 
-  private def getOrCreateMetric[T](cache: ConcurrentHashMap[String, T], name: String, create: String => T): T =
-    cache.computeIfAbsent(name, new java.util.function.Function[String, T] {
-      override def apply(t: String): T = create(t)
+  private def getOrCreateMetric[T](
+      cache: ConcurrentHashMap[String, T],
+      data: CollectorNameWithLabels,
+      create: CollectorNameWithLabels => T
+  ): T =
+    cache.computeIfAbsent(data.name, new java.util.function.Function[String, T] {
+      override def apply(t: String): T = create(data)
     })
 
-  private def createNewHistogram(name: String): Histogram =
-    Histogram.build().name(name).help(name).register(collectorRegistry)
+  private def createNewHistogram(data: CollectorNameWithLabels): Histogram =
+    Histogram.build().name(data.name).labelNames(data.labelNames: _*).help(data.name).register(collectorRegistry)
 
-  private def createNewGauge(name: String): Gauge =
-    Gauge.build().name(name).help(name).register(collectorRegistry)
+  private def createNewGauge(data: CollectorNameWithLabels): Gauge =
+    Gauge.build().name(data.name).labelNames(data.labelNames: _*).help(data.name).register(collectorRegistry)
 
-  private def createNewCounter(name: String): Counter =
-    Counter.build().name(name).help(name).register(collectorRegistry)
+  private def createNewCounter(data: CollectorNameWithLabels): Counter =
+    Counter.build().name(data.name).labelNames(data.labelNames: _*).help(data.name).register(collectorRegistry)
 }
 
 object PrometheusBackend {
@@ -97,14 +104,16 @@ object PrometheusBackend {
 
   def apply[F[_], S](
       delegate: SttpBackend[F, S, NothingT],
-      requestToHistogramNameMapper: Request[_, S] => Option[String] = (_: Request[_, S]) => Some(DefaultHistogramName),
-      requestToInProgressGaugeNameMapper: Request[_, S] => Option[String] = (_: Request[_, S]) =>
-        Some(DefaultRequestsInProgressGaugeName),
-      requestToSuccessCounterMapper: Request[_, S] => Option[String] = (_: Request[_, S]) =>
-        Some(DefaultSuccessCounterName),
-      requestToErrorCounterMapper: Request[_, S] => Option[String] = (_: Request[_, S]) => Some(DefaultErrorCounterName),
-      requestToFailureCounterMapper: Request[_, S] => Option[String] = (_: Request[_, S]) =>
-        Some(DefaultFailureCounterName),
+      requestToHistogramNameMapper: Request[_, S] => Option[CollectorNameWithLabels] = (_: Request[_, S]) =>
+        Some(CollectorNameWithLabels(DefaultHistogramName)),
+      requestToInProgressGaugeNameMapper: Request[_, S] => Option[CollectorNameWithLabels] = (_: Request[_, S]) =>
+        Some(CollectorNameWithLabels(DefaultRequestsInProgressGaugeName)),
+      requestToSuccessCounterMapper: Request[_, S] => Option[CollectorNameWithLabels] = (_: Request[_, S]) =>
+        Some(CollectorNameWithLabels(DefaultSuccessCounterName)),
+      requestToErrorCounterMapper: Request[_, S] => Option[CollectorNameWithLabels] = (_: Request[_, S]) =>
+        Some(CollectorNameWithLabels(DefaultErrorCounterName)),
+      requestToFailureCounterMapper: Request[_, S] => Option[CollectorNameWithLabels] = (_: Request[_, S]) =>
+        Some(CollectorNameWithLabels(DefaultFailureCounterName)),
       collectorRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry
   ): SttpBackend[F, S, NothingT] = {
     // redirects should be handled before prometheus
@@ -152,4 +161,13 @@ object PrometheusBackend {
     cache.synchronized {
       cache.getOrElseUpdate(collectorRegistry, new ConcurrentHashMap[String, T]())
     }
+}
+
+/**
+  * Represents the name of a collector, together with label names and values.
+  * The same labels must be always returned, and in the same order.
+  */
+case class CollectorNameWithLabels(name: String, labels: List[(String, String)] = Nil) {
+  def labelNames: Seq[String] = labels.map(_._1)
+  def labelValues: Seq[String] = labels.map(_._2)
 }
