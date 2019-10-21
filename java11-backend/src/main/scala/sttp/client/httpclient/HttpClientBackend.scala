@@ -5,7 +5,7 @@ import java.net.http.HttpRequest.{BodyPublisher, BodyPublishers}
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 import java.net.{Authenticator, PasswordAuthentication}
 import java.time.{Duration => JDuration}
-import java.util.zip.GZIPInputStream
+import java.util.zip.{GZIPInputStream, Inflater}
 
 import sttp.client.ResponseAs.EagerResponseHandler
 import sttp.client.SttpBackendOptions.Proxy
@@ -33,7 +33,7 @@ import sttp.client.{
   SttpBackend,
   SttpBackendOptions
 }
-import sttp.model.{Header, HeaderNames, Part, StatusCode}
+import sttp.model.{Header, HeaderNames, Method, Part, StatusCode}
 
 import scala.collection.JavaConverters._
 import scala.language.higherKinds
@@ -50,7 +50,7 @@ abstract class HttpClientBackend[F[_], S](client: HttpClient) extends SttpBacken
     request.headers
       .filterNot(_.name == HeaderNames.ContentLength)
       .foreach(h => builder.header(h.name, h.value))
-    builder.timeout(JDuration.ofMillis(request.options.readTimeout.toMillis)).build()
+    builder.timeout(JDuration.ofMillis(request.options.readTimeout.toMillis)).build() //TODO is this correct?
   }
 
   private def bodyToHttpBody[T](request: Request[T, S], builder: HttpRequest.Builder) = {
@@ -89,7 +89,6 @@ abstract class HttpClientBackend[F[_], S](client: HttpClient) extends SttpBacken
       res: HttpResponse[Array[Byte]],
       responseAs: ResponseAs[T, S]
   ): F[Response[T]] = {
-
     val headers = res
       .headers()
       .map()
@@ -103,8 +102,11 @@ abstract class HttpClientBackend[F[_], S](client: HttpClient) extends SttpBacken
     val responseMetadata = ResponseMetadata(headers, code, message)
 
     val encoding = headers.collectFirst { case h if h.is(HeaderNames.ContentEncoding) => h.value }
-    val byteBody = if (encoding.contains("gzip")) {
+    val method = Method(res.request().method())
+    val byteBody = if (encoding.contains("gzip") && method != Method.HEAD) {
       decompressGzip(res).toByteArray
+    } else if (encoding.contains("deflate") && method != Method.HEAD) {
+      decompressDeflate(res)
     } else {
       res.body()
     }
@@ -125,6 +127,15 @@ abstract class HttpClientBackend[F[_], S](client: HttpClient) extends SttpBacken
     }
   }
 
+  private def decompressDeflate[T](res: HttpResponse[Array[Byte]]) = {
+    val decompresser = new Inflater()
+    decompresser.setInput(res.body(), 0, res.body().length)
+    val result = new Array[Byte](res.body().length * 5) // TODO is 5 enough?
+    val resultLength = decompresser.inflate(result)
+    decompresser.end()
+    result.slice(0, resultLength)
+  }
+
   private def responseHandler(responseBody: Array[Byte]) =
     new EagerResponseHandler[S] {
       override def handleBasic[T](bra: BasicResponseAs[T, S]): Try[T] =
@@ -142,7 +153,7 @@ abstract class HttpClientBackend[F[_], S](client: HttpClient) extends SttpBacken
         }
     }
 
-  def responseBodyToStream(body: Array[Byte]): Try[S] =
+  def responseBodyToStream(body: Array[Byte]): Try[S] = // TODO this should accept HttpResponse rather than raw array of bytes
     Failure(new IllegalStateException("Streaming isn't supported"))
 
   override def openWebsocket[T, WS_RESULT](
