@@ -62,7 +62,7 @@ val only2_11_and_2_12_settings = Seq(
 )
 
 val commonJvmJsSettings = commonSettings ++ Seq(
-  scalaVersion := scala2_11,
+  scalaVersion := scala2_13,
   crossScalaVersions := Seq(scalaVersion.value, scala2_12, scala2_13)
 )
 
@@ -196,7 +196,8 @@ lazy val rootJVM = project
     sprayJson,
     playJsonJVM,
     braveBackend,
-    prometheusBackend
+    prometheusBackend,
+    java11backend
   )
 
 lazy val rootJS = project
@@ -555,3 +556,12 @@ lazy val prometheusBackend: Project = (project in file("metrics/prometheus-backe
     )
   )
   .dependsOn(coreJVM)
+
+//-- http4s
+lazy val java11backend: Project = (project in file("java11-backend"))
+  .settings(commonJvmSettings: _*)
+  .settings(
+    name := "java11-backend",
+    scalacOptions ++= Seq("-J--add-modules", "-Jjava.net.http")
+  )
+  .dependsOn(catsJVM, coreJVM % compileAndTest)
