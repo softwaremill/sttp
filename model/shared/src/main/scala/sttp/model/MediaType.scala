@@ -1,6 +1,5 @@
 package sttp.model
 
-import java.util.Locale
 import java.util.regex.Pattern
 
 case class MediaType(mainType: String, subType: String, charset: Option[String]) {
@@ -21,8 +20,8 @@ object MediaType extends MediaTypes {
     if (!typeSubtype.lookingAt()) {
       return Left(s"""No subtype found for: "$t"""")
     }
-    val mainType = typeSubtype.group(1).toLowerCase(Locale.US)
-    val subType = typeSubtype.group(2).toLowerCase(Locale.US)
+    val mainType = typeSubtype.group(1).toLowerCase
+    val subType = typeSubtype.group(2).toLowerCase
 
     var charset: Option[String] = None
     val parameter = PARAMETER.matcher(t)
