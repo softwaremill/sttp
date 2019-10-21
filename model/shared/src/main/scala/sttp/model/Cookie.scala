@@ -2,7 +2,6 @@ package sttp.model
 
 import java.time.{Instant, ZoneId}
 import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 import scala.util.{Failure, Success, Try}
 
@@ -104,7 +103,7 @@ object CookieWithMeta {
     val (first, other) = (components.head, components.tail)
     val (name, value) = splitkv(first)
     var result: Either[String, CookieWithMeta] = Right(CookieWithMeta(name, value.getOrElse("")))
-    other.map(splitkv).map(t => (t._1.toLowerCase(Locale.US), t._2)).foreach {
+    other.map(splitkv).map(t => (t._1.toLowerCase, t._2)).foreach {
       case (k, Some(v)) if k == "expires" =>
         Try(Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(v))) match {
           case Success(expires) => result = result.right.map(_.expires(Some(expires)))

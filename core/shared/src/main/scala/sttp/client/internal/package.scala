@@ -2,7 +2,6 @@ package sttp.client
 
 import java.io.{ByteArrayOutputStream, InputStream, OutputStream}
 import java.nio.ByteBuffer
-import java.util.Locale
 
 import scala.annotation.{implicitNotFound, tailrec}
 
@@ -11,7 +10,7 @@ package object internal {
     s"$ct; charset=$charset"
 
   private[client] def charsetFromContentType(ct: String): Option[String] =
-    ct.split(";").map(_.trim.toLowerCase(Locale.US)).collectFirst {
+    ct.split(";").map(_.trim.toLowerCase).collectFirst {
       case s if s.startsWith("charset=") && s.substring(8).trim != "" => s.substring(8).trim
     }
 

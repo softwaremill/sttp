@@ -304,9 +304,11 @@ class AkkaHttpBackend private (
       .getOrElse(Success(`application/octet-stream`))
   }
 
-  private def isContentType(header: Header) = header.is(HeaderNames.ContentType)
+  private def isContentType(header: Header) =
+    header.name.toLowerCase.contains(`Content-Type`.lowercaseName)
 
-  private def isContentLength(header: Header) = header.is(HeaderNames.ContentLength)
+  private def isContentLength(header: Header) =
+    header.value.toLowerCase.contains(`Content-Length`.lowercaseName)
 
   // http://doc.akka.io/docs/akka-http/10.0.7/scala/http/common/de-coding.html
   private def decodeAkkaResponse(response: HttpResponse): HttpResponse = {
