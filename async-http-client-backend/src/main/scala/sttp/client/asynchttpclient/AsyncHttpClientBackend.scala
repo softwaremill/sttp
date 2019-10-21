@@ -271,7 +271,12 @@ abstract class AsyncHttpClientBackend[F[_], S](
 
     val bodyPart = mp.body match {
       case StringBody(b, encoding, _) =>
-        new StringPart(nameWithFilename, b, mp.contentType.getOrElse(MediaTypes.Text), Charset.forName(encoding))
+        new StringPart(
+          nameWithFilename,
+          b,
+          mp.contentType.getOrElse(MediaType.TextPlain.toString),
+          Charset.forName(encoding)
+        )
       case ByteArrayBody(b, _) =>
         new ByteArrayPart(nameWithFilename, b, ctOrNull)
       case ByteBufferBody(b, _) =>

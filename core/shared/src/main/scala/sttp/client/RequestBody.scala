@@ -12,33 +12,33 @@ sealed trait RequestBody[+S]
 case object NoBody extends RequestBody[Nothing]
 
 sealed trait BasicRequestBody extends RequestBody[Nothing] {
-  def defaultContentType: Option[String]
+  def defaultContentType: Option[MediaType]
 }
 
 case class StringBody(
     s: String,
     encoding: String,
-    defaultContentType: Option[String] = Some(MediaTypes.Text)
+    defaultContentType: Option[MediaType] = Some(MediaType.TextPlain)
 ) extends BasicRequestBody
 
 case class ByteArrayBody(
     b: Array[Byte],
-    defaultContentType: Option[String] = Some(MediaTypes.Binary)
+    defaultContentType: Option[MediaType] = Some(MediaType.ApplicationOctetStream)
 ) extends BasicRequestBody
 
 case class ByteBufferBody(
     b: ByteBuffer,
-    defaultContentType: Option[String] = Some(MediaTypes.Binary)
+    defaultContentType: Option[MediaType] = Some(MediaType.ApplicationOctetStream)
 ) extends BasicRequestBody
 
 case class InputStreamBody(
     b: InputStream,
-    defaultContentType: Option[String] = Some(MediaTypes.Binary)
+    defaultContentType: Option[MediaType] = Some(MediaType.ApplicationOctetStream)
 ) extends BasicRequestBody
 
 case class FileBody(
     f: SttpFile,
-    defaultContentType: Option[String] = Some(MediaTypes.Binary)
+    defaultContentType: Option[MediaType] = Some(MediaType.ApplicationOctetStream)
 ) extends BasicRequestBody
 
 case class StreamBody[S](s: S) extends RequestBody[S]

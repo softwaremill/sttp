@@ -5,14 +5,14 @@ import sttp.client.internal.Utf8
 import io.circe.{Decoder, Encoder, Printer}
 import io.circe.parser.decode
 import sttp.client.{IsOption, ResponseAs, ResponseError}
-import sttp.model.MediaTypes
+import sttp.model.MediaType
 
 trait SttpCirceApi {
   implicit def circeBodySerializer[B](
       implicit encoder: Encoder[B],
       printer: Printer = Printer.noSpaces
   ): BodySerializer[B] =
-    b => StringBody(encoder(b).pretty(printer), Utf8, Some(MediaTypes.Json))
+    b => StringBody(encoder(b).pretty(printer), Utf8, Some(MediaType.ApplicationJson))
 
   /**
     * If the response is successful (2xx), tries to deserialize the body from a string into JSON. Returns:

@@ -11,7 +11,7 @@ trait SttpJson4sApi {
       implicit formats: Formats = DefaultFormats,
       serialization: Serialization
   ): BodySerializer[B] =
-    b => StringBody(serialization.write(b), Utf8, Some(MediaTypes.Json))
+    b => StringBody(serialization.write(b), Utf8, Some(MediaType.ApplicationJson))
 
   /**
     * If the response is successful (2xx), tries to deserialize the body from a string into JSON. Returns:

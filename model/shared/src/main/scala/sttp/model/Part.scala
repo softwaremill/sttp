@@ -13,6 +13,7 @@ case class Part[T](
   def fileName(v: String): Part[T] = dispositionParam(FileNameDispositionParam, v)
   def fileName: Option[String] = otherDispositionParams.get(FileNameDispositionParam)
 
+  def contentType(v: MediaType): Part[T] = header(Header(HeaderNames.ContentType, v.toString), replaceExisting = true)
   def contentType(v: String): Part[T] = header(Header(HeaderNames.ContentType, v), replaceExisting = true)
   def contentType: Option[String] = header(HeaderNames.ContentType)
 
@@ -37,7 +38,7 @@ object Part {
   def apply[T](
       name: String,
       body: T,
-      contentType: Option[String] = None,
+      contentType: Option[MediaType] = None,
       fileName: Option[String] = None,
       otherDispositionParams: Map[String, String] = Map.empty,
       otherHeaders: Seq[Header] = Nil

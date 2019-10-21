@@ -5,13 +5,13 @@ import sttp.model._
 import sttp.client.internal.Utf8
 import play.api.libs.json.{JsError, Json, Reads, Writes}
 import sttp.client.{IsOption, JsonInput, ResponseAs, ResponseError}
-import sttp.model.MediaTypes
+import sttp.model.MediaType
 
 import scala.util.{Failure, Success, Try}
 
 trait SttpPlayJsonApi {
   implicit def playJsonBodySerializer[B: Writes]: BodySerializer[B] =
-    b => StringBody(Json.stringify(Json.toJson(b)), Utf8, Some(MediaTypes.Json))
+    b => StringBody(Json.stringify(Json.toJson(b)), Utf8, Some(MediaType.ApplicationJson))
 
   /**
     * If the response is successful (2xx), tries to deserialize the body from a string into JSON. Returns:

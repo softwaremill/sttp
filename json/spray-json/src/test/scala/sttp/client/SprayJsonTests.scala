@@ -1,14 +1,13 @@
 package sttp.client
 
-import sttp.client.SprayJsonTests._
-import sttp.client.internal.{Utf8, contentTypeWithCharset}
-import sttp.client.sprayJson._
-import sttp.model._
 import org.scalatest.{EitherValues, FlatSpec, Matchers}
 import spray.json.DefaultJsonProtocol._
 import spray.json.JsonParser.ParsingException
 import spray.json._
-import sttp.model.StatusCode
+import sttp.client.SprayJsonTests._
+import sttp.client.internal.Utf8
+import sttp.client.sprayJson._
+import sttp.model.{StatusCode, _}
 
 class SprayJsonTests extends FlatSpec with Matchers with EitherValues {
   behavior of "The spray-json module"
@@ -73,12 +72,12 @@ class SprayJsonTests extends FlatSpec with Matchers with EitherValues {
 
     val ct = req.headers.map(h => (h.name, h.value)).toMap.get("Content-Type")
 
-    ct shouldBe Some(contentTypeWithCharset(MediaTypes.Json, Utf8))
+    ct shouldBe Some(MediaType.ApplicationJson.copy(charset = Some(Utf8)).toString)
   }
 
   def extractBody[A[_], B, C](request: RequestT[A, B, C]): String =
     request.body match {
-      case StringBody(body, "utf-8", Some(MediaTypes.Json)) =>
+      case StringBody(body, "utf-8", Some(MediaType.ApplicationJson)) =>
         body
       case wrongBody =>
         fail(s"Request body does not serialize to correct StringBody: $wrongBody")

@@ -108,35 +108,35 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     * overridden later using the `contentType` method.
     */
   def multipart(name: String, data: String): Part[BasicRequestBody] =
-    Part(name, StringBody(data, Utf8), contentType = Some(contentTypeWithCharset(MediaTypes.Text, Utf8)))
+    Part(name, StringBody(data, Utf8), contentType = Some(MediaType.TextPlainUtf8))
 
   /**
     * Content type will be set to `text/plain` with `utf-8` encoding, can be
     * overridden later using the `contentType` method.
     */
   def multipart(name: String, data: String, encoding: String): Part[BasicRequestBody] =
-    Part(name, StringBody(data, encoding), contentType = Some(contentTypeWithCharset(MediaTypes.Text, Utf8)))
+    Part(name, StringBody(data, encoding), contentType = Some(MediaType.TextPlainUtf8))
 
   /**
     * Content type will be set to `application/octet-stream`, can be overridden
     * later using the `contentType` method.
     */
   def multipart(name: String, data: Array[Byte]): Part[BasicRequestBody] =
-    Part(name, ByteArrayBody(data), contentType = Some(MediaTypes.Binary))
+    Part(name, ByteArrayBody(data), contentType = Some(MediaType.ApplicationOctetStream))
 
   /**
     * Content type will be set to `application/octet-stream`, can be overridden
     * later using the `contentType` method.
     */
   def multipart(name: String, data: ByteBuffer): Part[BasicRequestBody] =
-    Part(name, ByteBufferBody(data), contentType = Some(MediaTypes.Binary))
+    Part(name, ByteBufferBody(data), contentType = Some(MediaType.ApplicationOctetStream))
 
   /**
     * Content type will be set to `application/octet-stream`, can be overridden
     * later using the `contentType` method.
     */
   def multipart(name: String, data: InputStream): Part[BasicRequestBody] =
-    Part(name, InputStreamBody(data), contentType = Some(MediaTypes.Binary))
+    Part(name, InputStreamBody(data), contentType = Some(MediaType.ApplicationOctetStream))
 
   /**
     * Content type will be set to `application/octet-stream`, can be overridden
@@ -145,7 +145,7 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     * File name will be set to the name of the file.
     */
   private[client] def multipartSttpFile(name: String, file: SttpFile): Part[BasicRequestBody] =
-    Part(name, FileBody(file), fileName = Some(file.name), contentType = Some(MediaTypes.Binary))
+    Part(name, FileBody(file), fileName = Some(file.name), contentType = Some(MediaType.ApplicationOctetStream))
 
   /**
     * Encodes the given parameters as form data using `utf-8`.
@@ -154,7 +154,11 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     * overridden later using the `contentType` method.
     */
   def multipart(name: String, fs: Map[String, String]): Part[BasicRequestBody] =
-    Part(name, RequestBody.paramsToStringBody(fs.toList, Utf8), contentType = Some(MediaTypes.Form))
+    Part(
+      name,
+      RequestBody.paramsToStringBody(fs.toList, Utf8),
+      contentType = Some(MediaType.ApplicationXWwwFormUrlencoded)
+    )
 
   /**
     * Encodes the given parameters as form data.
@@ -163,7 +167,11 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     * overridden later using the `contentType` method.
     */
   def multipart(name: String, fs: Map[String, String], encoding: String): Part[BasicRequestBody] =
-    Part(name, RequestBody.paramsToStringBody(fs.toList, encoding), contentType = Some(MediaTypes.Form))
+    Part(
+      name,
+      RequestBody.paramsToStringBody(fs.toList, encoding),
+      contentType = Some(MediaType.ApplicationXWwwFormUrlencoded)
+    )
 
   /**
     * Encodes the given parameters as form data using `utf-8`.
@@ -172,7 +180,7 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     * overridden later using the `contentType` method.
     */
   def multipart(name: String, fs: Seq[(String, String)]): Part[BasicRequestBody] =
-    Part(name, RequestBody.paramsToStringBody(fs, Utf8), contentType = Some(MediaTypes.Form))
+    Part(name, RequestBody.paramsToStringBody(fs, Utf8), contentType = Some(MediaType.ApplicationXWwwFormUrlencoded))
 
   /**
     * Encodes the given parameters as form data.
@@ -181,12 +189,16 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     * overridden later using the `contentType` method.
     */
   def multipart(name: String, fs: Seq[(String, String)], encoding: String): Part[BasicRequestBody] =
-    Part(name, RequestBody.paramsToStringBody(fs, encoding), contentType = Some(MediaTypes.Form))
+    Part(
+      name,
+      RequestBody.paramsToStringBody(fs, encoding),
+      contentType = Some(MediaType.ApplicationXWwwFormUrlencoded)
+    )
 
   /**
     * Content type will be set to `application/octet-stream`, can be
     * overridden later using the `contentType` method.
     */
   def multipart[B: BodySerializer](name: String, b: B): Part[BasicRequestBody] =
-    Part(name, implicitly[BodySerializer[B]].apply(b), contentType = Some(MediaTypes.Binary))
+    Part(name, implicitly[BodySerializer[B]].apply(b), contentType = Some(MediaType.ApplicationXWwwFormUrlencoded))
 }

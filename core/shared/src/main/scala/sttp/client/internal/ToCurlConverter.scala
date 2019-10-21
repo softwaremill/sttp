@@ -3,7 +3,7 @@ package sttp.client.internal
 import sttp.client._
 import sttp.model._
 import sttp.client.NoBody
-import sttp.model.MediaTypes
+import sttp.model.MediaType
 
 class ToCurlConverter[R <: RequestT[Identity, _, _]] {
 
@@ -33,7 +33,11 @@ class ToCurlConverter[R <: RequestT[Identity, _, _]] {
   private def extractBody(r: R): String = {
     r.body match {
       case StringBody(text, _, _)
-          if r.headers.map(h => (h.name, h.value)).toMap.get(HeaderNames.ContentType).forall(_ == MediaTypes.Form) =>
+          if r.headers
+            .map(h => (h.name, h.value))
+            .toMap
+            .get(HeaderNames.ContentType)
+            .forall(_ == MediaType.ApplicationXWwwFormUrlencoded.toString) =>
         s"""-F '${text.replace("'", "\\'")}'"""
       case StringBody(text, _, _) => s"""--data '${text.replace("'", "\\'")}'"""
       case ByteArrayBody(_, _)    => s"--data-binary <PLACEHOLDER>"

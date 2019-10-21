@@ -61,6 +61,8 @@ case class RequestT[U[_], T, +S](
 
   def contentType(ct: String): RequestT[U, T, S] =
     header(HeaderNames.ContentType, ct, replaceExisting = true)
+  def contentType(mt: MediaType): RequestT[U, T, S] =
+    header(HeaderNames.ContentType, mt.toString, replaceExisting = true)
   def contentType(ct: String, encoding: String): RequestT[U, T, S] =
     header(HeaderNames.ContentType, contentTypeWithCharset(ct, encoding), replaceExisting = true)
   def contentLength(l: Long): RequestT[U, T, S] =
@@ -266,15 +268,14 @@ case class RequestT[U[_], T, +S](
     this.asInstanceOf[RequestT[Identity, T, S]]
   }
 
-  private def hasContentType: Boolean =
-    headers.exists(_.name.equalsIgnoreCase(HeaderNames.ContentType))
-  private def setContentTypeIfMissing(ct: String): RequestT[U, T, S] =
-    if (hasContentType) this else contentType(ct)
+  private def hasContentType: Boolean = headers.exists(_.is(HeaderNames.ContentType))
+  private def setContentTypeIfMissing(mt: MediaType): RequestT[U, T, S] =
+    if (hasContentType) this else contentType(mt)
 
   private[client] def withBasicBody(body: BasicRequestBody) = {
     val defaultCt = body match {
       case StringBody(_, encoding, Some(ct)) =>
-        Some(contentTypeWithCharset(ct, encoding))
+        Some(ct.copy(charset = Some(encoding)))
       case _ =>
         body.defaultContentType
     }
@@ -289,7 +290,7 @@ case class RequestT[U[_], T, +S](
 
   private def formDataBody(fs: Seq[(String, String)], encoding: String): RequestT[U, T, S] = {
     val b = RequestBody.paramsToStringBody(fs, encoding)
-    setContentTypeIfMissing(MediaTypes.Form)
+    setContentTypeIfMissing(MediaType.ApplicationXWwwFormUrlencoded)
       .setContentLengthIfMissing(b.s.getBytes(encoding).length.toLong)
       .copy(body = b)
   }
