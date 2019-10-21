@@ -56,6 +56,7 @@ import sttp.client.{
   _
 }
 import sttp.model._
+import sttp.client.monad.syntax._
 
 import scala.collection.JavaConverters._
 import scala.collection.immutable.Seq
@@ -64,13 +65,13 @@ import scala.util.Try
 
 abstract class AsyncHttpClientBackend[F[_], S](
     asyncHttpClient: AsyncHttpClient,
-    monad: MonadAsyncError[F],
+    private implicit val monad: MonadAsyncError[F],
     closeClient: Boolean,
     customizeRequest: BoundRequestBuilder => BoundRequestBuilder
 ) extends SttpBackend[F, S, WebSocketHandler] {
 
   override def send[T](r: Request[T, S]): F[Response[T]] = {
-    monad.flatMap(preparedRequest(r)) { ahcRequest =>
+    preparedRequest(r).flatMap { ahcRequest =>
       monad.flatten(monad.async[F[Response[T]]] { cb =>
         def success(r: F[Response[T]]): Unit = cb(Right(r))
         def error(t: Throwable): Unit = cb(Left(t))
@@ -84,7 +85,7 @@ abstract class AsyncHttpClientBackend[F[_], S](
       r: Request[T, S],
       handler: WebSocketHandler[WS_RESULT]
   ): F[WebSocketResponse[WS_RESULT]] = {
-    monad.flatMap(preparedRequest(r)) { ahcRequest =>
+    preparedRequest(r).flatMap { ahcRequest =>
       monad.async[WebSocketResponse[WS_RESULT]] { cb =>
         val initListener =
           new WebSocketInitListener(
@@ -118,7 +119,7 @@ abstract class AsyncHttpClientBackend[F[_], S](
   }
 
   protected def publisherToFile(p: Publisher[ByteBuffer], f: File): F[Unit] = {
-    monad.map(publisherToBytes(p))(bytes => FileHelpers.saveFile(f, new ByteArrayInputStream(bytes)))
+    publisherToBytes(p).map(bytes => FileHelpers.saveFile(f, new ByteArrayInputStream(bytes)))
   }
 
   private def streamingAsyncHandler[T](
@@ -177,7 +178,7 @@ abstract class AsyncHttpClientBackend[F[_], S](
           val p = publisher.getOrElse(EmptyPublisher)
           val b = handleBody(p, responseAs, baseResponse)
 
-          success(monad.map(b)(t => baseResponse.copy(body = t)))
+          success(b.map(t => baseResponse.copy(body = t)))
         }
       }
 
@@ -189,18 +190,18 @@ abstract class AsyncHttpClientBackend[F[_], S](
         r match {
           case MappedResponseAs(raw, g) =>
             val nested = handleBody(p, raw, responseMetadata)
-            monad.map(nested)(g(_, responseMetadata))
+            nested.map(g(_, responseMetadata))
           case ResponseAsFromMetadata(f) => handleBody(p, f(responseMetadata), responseMetadata)
           case _: ResponseAsStream[_, _] => monad.unit(publisherToStreamBody(p).asInstanceOf[TT])
           case IgnoreResponse            =>
             // getting the body and discarding it
-            monad.map(publisherToBytes(p))(_ => ())
+            publisherToBytes(p).map(_ => ())
 
           case ResponseAsByteArray =>
             publisherToBytes(p)
 
           case ResponseAsFile(file) =>
-            monad.map(publisherToFile(p, file.toFile))(_ => file)
+            publisherToFile(p, file.toFile).map(_ => file)
         }
 
       override def onThrowable(t: Throwable): Unit = {
@@ -210,7 +211,7 @@ abstract class AsyncHttpClientBackend[F[_], S](
   }
 
   private def preparedRequest(r: Request[_, S]): F[BoundRequestBuilder] = {
-    monad.map(monad.fromTry(Try(asyncHttpClient.prepareRequest(requestToAsync(r)))))(customizeRequest)
+    monad.fromTry(Try(asyncHttpClient.prepareRequest(requestToAsync(r)))).map(customizeRequest)
   }
 
   private def requestToAsync(r: Request[_, S]): AsyncRequest = {
