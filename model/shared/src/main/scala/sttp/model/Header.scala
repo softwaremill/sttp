@@ -1,12 +1,14 @@
 package sttp.model
 
+import java.util.Locale
+
 import scala.util.hashing.MurmurHash3
 
 class Header(val name: String, val value: String) {
   def is(otherName: String): Boolean = name.equalsIgnoreCase(otherName)
 
   override def toString: String = s"$name: $value"
-  override def hashCode(): Int = MurmurHash3.mixLast(name.toLowerCase.hashCode, value.hashCode)
+  override def hashCode(): Int = MurmurHash3.mixLast(name.toLowerCase(Locale.US).hashCode, value.hashCode)
   override def equals(that: Any): Boolean = that match {
     case h: AnyRef if this.eq(h) => true
     case h: Header               => is(h.name) && (value == h.value)

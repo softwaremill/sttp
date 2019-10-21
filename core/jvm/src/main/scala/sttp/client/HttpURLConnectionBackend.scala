@@ -5,6 +5,7 @@ import java.net._
 import java.nio.channels.Channels
 import java.nio.charset.CharacterCodingException
 import java.nio.file.Files
+import java.util.Locale
 import java.util.concurrent.ThreadLocalRandom
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
 
@@ -277,7 +278,7 @@ class HttpURLConnectionBackend private (
       is
 
   private def wrapInput(contentEncoding: Option[String], is: InputStream): InputStream =
-    contentEncoding.map(_.toLowerCase) match {
+    contentEncoding.map(_.toLowerCase(Locale.US)) match {
       case None            => is
       case Some("gzip")    => new GZIPInputStream(is)
       case Some("deflate") => new InflaterInputStream(is)
