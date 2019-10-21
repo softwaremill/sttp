@@ -44,21 +44,17 @@ class HttpClientFutureBackend private (client: HttpClient)(implicit ec: Executio
     extends HttpClientAsyncBackend[Future, Nothing](client, new FutureMonad)
 
 object HttpClientFutureBackend {
-  private def apply(client: HttpClient)(
-      implicit ec: ExecutionContext
-  ): SttpBackend[Future, Nothing, WebSocketResponse] =
+  private def apply(
+      client: HttpClient
+  )(implicit ec: ExecutionContext): SttpBackend[Future, Nothing, WebSocketResponse] =
     new FollowRedirectsBackend[Future, Nothing, WebSocketResponse](new HttpClientFutureBackend(client))
 
-  def apply(
-      options: SttpBackendOptions = SttpBackendOptions.Default
-  )(
+  def apply(options: SttpBackendOptions = SttpBackendOptions.Default)(
       implicit ec: ExecutionContext = ExecutionContext.Implicits.global
   ): SttpBackend[Future, Nothing, WebSocketResponse] =
     HttpClientFutureBackend(HttpBackend.defaultClient(client.DefaultReadTimeout.toMillis, options))
 
-  def usingClient(
-      client: HttpClient
-  )(
+  def usingClient(client: HttpClient)(
       implicit ec: ExecutionContext = ExecutionContext.Implicits.global
   ): SttpBackend[Future, Nothing, WebSocketResponse] =
     HttpClientFutureBackend(client)
