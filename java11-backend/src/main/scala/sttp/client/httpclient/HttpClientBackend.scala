@@ -104,7 +104,9 @@ class HttpClientBackend[F[_], S](client: HttpClient, monad: MonadAsyncError[F])
         case FileBody(f, _) =>
           val allHeaders = p.headers :+ Header(HeaderNames.ContentDisposition, p.contentDispositionHeaderValue)
           mpbp.addPart(p.name, f.toFile.toPath, allHeaders.map(h => h.name -> h.value).toMap.asJava)
-        case StringBody(b, _, _) => mpbp.addPart(p.name, b)
+        case StringBody(b, _, _) =>
+          val allHeaders = p.headers :+ Header(HeaderNames.ContentDisposition, p.contentDispositionHeaderValue)
+          mpbp.addPart(p.name, b, allHeaders.map(h => h.name -> h.value).toMap.asJava)
       }
     }
     mpbp

@@ -27,11 +27,12 @@ public class MultiPartBodyPublisher {
         return boundary;
     }
 
-    public MultiPartBodyPublisher addPart(String name, String value) {
+    public MultiPartBodyPublisher addPart(String name, String value, Map<String, String> headers) {
         PartsSpecification newPart = new PartsSpecification();
         newPart.type = PartsSpecification.TYPE.STRING;
         newPart.name = name;
         newPart.value = value;
+        newPart.headers = headers;
         partsSpecificationList.add(newPart);
         return this;
     }
@@ -120,39 +121,25 @@ public class MultiPartBodyPublisher {
             if (currentFileInput == null) {
                 if (!iter.hasNext()) return null;
                 PartsSpecification nextPart = iter.next();
+                String contentHeaders = nextPart.headers.entrySet().stream().map(e -> e.getKey() + ": " + e.getValue()).collect(Collectors.joining("\r\n"));
                 if (PartsSpecification.TYPE.STRING.equals(nextPart.type)) {
-                    String part =
-                            "--" + boundary + "\r\n" +
-                                    "Content-Disposition: form-data; name=" + nextPart.name + "\r\n" +
-                                    "Content-Type: text/plain; charset=UTF-8\r\n\r\n" +
-                                    nextPart.value + "\r\n";
+                    String part = "--" + boundary + "\r\n" +
+                            contentHeaders + "\r\n\r\n" +
+                            nextPart.value + "\r\n";
                     return part.getBytes(StandardCharsets.UTF_8);
                 }
                 if (PartsSpecification.TYPE.FINAL_BOUNDARY.equals(nextPart.type)) {
                     return nextPart.value.getBytes(StandardCharsets.UTF_8);
                 }
-                String filename;
-                String contentType;
                 if (PartsSpecification.TYPE.FILE.equals(nextPart.type)) {
                     Path path = nextPart.path;
-                    filename = path.getFileName().toString();
-                    contentType = Files.probeContentType(path);
-                    if (contentType == null) contentType = "application/octet-stream";
                     currentFileInput = Files.newInputStream(path);
                 } else {
-                    filename = nextPart.filename;
-                    contentType = nextPart.contentType;
-                    if (contentType == null) contentType = "application/octet-stream";
                     currentFileInput = nextPart.stream.get();
                 }
-                String contentHeaders = nextPart.headers.entrySet().stream().map(e -> e.getKey() + ": " + e.getValue()).collect(Collectors.joining("\r\n"));
                 String partHeader =
                         "--" + boundary + "\r\n" +
-                                contentHeaders+ "\r\n\r\n";
-                System.out.println("partHeader:");
-                System.out.println(partHeader);
-                System.out.println("ja");
-                System.out.println(contentHeaders);
+                                contentHeaders + "\r\n\r\n";
                 return partHeader.getBytes(StandardCharsets.UTF_8);
             } else {
                 byte[] buf = new byte[8192];
