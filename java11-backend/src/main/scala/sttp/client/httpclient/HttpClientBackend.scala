@@ -1,10 +1,11 @@
 package sttp.client.httpclient
 
-import java.io.ByteArrayInputStream
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import java.net.http.HttpRequest.{BodyPublisher, BodyPublishers}
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 import java.net.{Authenticator, PasswordAuthentication}
 import java.time.{Duration => JDuration}
+import java.util.zip.GZIPInputStream
 
 import sttp.client.ResponseAs.EagerResponseHandler
 import sttp.client.SttpBackendOptions.Proxy
@@ -100,29 +101,48 @@ abstract class HttpClientBackend[F[_], S](client: HttpClient) extends SttpBacken
     val code = StatusCode(res.statusCode())
     val message = "???" // TODO
     val responseMetadata = ResponseMetadata(headers, code, message)
-    val body = responseHandler(res).handle(responseAs, responseMonad, responseMetadata)
 
+    val encoding = headers.collectFirst { case h if h.is(HeaderNames.ContentEncoding) => h.value }
+    val byteBody = if (encoding.contains("gzip")) {
+      decompressGzip(res).toByteArray
+    } else {
+      res.body()
+    }
+    val body = responseHandler(byteBody).handle(responseAs, responseMonad, responseMetadata)
     responseMonad.map(body)(Response(_, code, message, headers, Nil))
   }
 
-  private def responseHandler(res: HttpResponse[Array[Byte]]) =
+  private def decompressGzip[T](res: HttpResponse[Array[Byte]]) = {
+    val outputStream = new ByteArrayOutputStream()
+    var inputStream: Option[GZIPInputStream] = None
+    try {
+      inputStream = Some(new GZIPInputStream(new ByteArrayInputStream(res.body())))
+      inputStream.foreach(_.transferTo(outputStream))
+      outputStream
+    } finally {
+      inputStream.foreach(_.close())
+      outputStream.close()
+    }
+  }
+
+  private def responseHandler(responseBody: Array[Byte]) =
     new EagerResponseHandler[S] {
       override def handleBasic[T](bra: BasicResponseAs[T, S]): Try[T] =
         bra match {
           case IgnoreResponse =>
             Try(())
           case ResponseAsByteArray =>
-            val body = Try(res.body())
+            val body = Try(responseBody)
             body
           case ras @ ResponseAsStream() =>
-            responseBodyToStream(res).map(ras.responseIsStream)
+            responseBodyToStream(responseBody).map(ras.responseIsStream)
           case ResponseAsFile(file) =>
-            val body = Try(FileHelpers.saveFile(file.toFile, new ByteArrayInputStream(res.body())))
+            val body = Try(FileHelpers.saveFile(file.toFile, new ByteArrayInputStream(responseBody)))
             body.map(_ => file)
         }
     }
 
-  def responseBodyToStream(res: HttpResponse[Array[Byte]]): Try[S] =
+  def responseBodyToStream(body: Array[Byte]): Try[S] =
     Failure(new IllegalStateException("Streaming isn't supported"))
 
   override def openWebsocket[T, WS_RESULT](
