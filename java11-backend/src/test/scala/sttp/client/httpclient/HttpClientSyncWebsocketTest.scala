@@ -27,8 +27,8 @@ class HttpClientSyncWebsocketTest
     val response = basicRequest
       .get(uri"$wsEndpoint/ws/echo")
       .openWebsocket(WebSocketHandler[WebSocket](collectingListener(received)))
-    response.result.sendText("test1", true)
-    response.result.sendText("test2", true)
+    response.result.sendText("test1", true).get()
+    response.result.sendText("test2", true).get()
     eventually {
       received.asScala.toList shouldBe List("echo: ", "test1", "", "echo: ", "test2", "")
     }
