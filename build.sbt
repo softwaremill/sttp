@@ -207,7 +207,7 @@ lazy val rootJVM = project
     playJsonJVM,
     braveBackend,
     prometheusBackend,
-    java11backend
+    httpClientBackend
   )
 
 lazy val rootJS = project
@@ -567,8 +567,8 @@ lazy val prometheusBackend: Project = (project in file("metrics/prometheus-backe
   )
   .dependsOn(coreJVM)
 
-//-- http4s
-lazy val java11backend: Project = (project in file("java11-backend"))
+//-- httpclient-java11
+lazy val httpClientBackend: Project = (project in file("httpclient-backend"))
   .settings(commonJvmSettings: _*)
   .settings(
     name := "java11-backend",
