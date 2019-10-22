@@ -57,9 +57,4 @@ class HttpClientFutureWebsocketTest
       super.onText(webSocket, data, last)
     }
   }
-
-  override protected def afterAll(): Unit = {
-    backend.close() //TODO doesn't make any sense, because there is no way to close this backend
-    super.afterAll()
-  }
 }

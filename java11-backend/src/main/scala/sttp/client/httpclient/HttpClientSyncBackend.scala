@@ -23,8 +23,6 @@ class HttpClientSyncBackend(client: HttpClient) extends HttpClientBackend[Identi
       request: Request[T, Nothing],
       handler: WebSocketHandler[WS_RESULT]
   ): Identity[WebSocketResponse[WS_RESULT]] = {
-//    val jRequest = convertRequest(request) //TODO we don't need it?
-
     val responseCell = new ArrayBlockingQueue[Either[Throwable, WebSocketResponse[WS_RESULT]]](1)
     @silent("discarded")
     def fillCellError(t: Throwable): Unit = responseCell.add(Left(t))

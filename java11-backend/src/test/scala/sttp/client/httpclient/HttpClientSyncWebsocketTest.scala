@@ -55,9 +55,4 @@ class HttpClientSyncWebsocketTest
     }
 
   }
-
-  override protected def afterAll(): Unit = {
-    backend.close()
-    super.afterAll()
-  }
 }

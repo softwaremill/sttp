@@ -158,7 +158,7 @@ abstract class HttpClientBackend[F[_], S](client: HttpClient) extends SttpBacken
         }
     }
 
-  def responseBodyToStream(body: Array[Byte]): Try[S] = // TODO this should accept HttpResponse rather than raw array of bytes
+  def responseBodyToStream(body: Array[Byte]): Try[S] =
     Failure(new IllegalStateException("Streaming isn't supported"))
 
   override def close(): F[Unit] = responseMonad.unit(())
