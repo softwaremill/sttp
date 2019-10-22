@@ -49,7 +49,7 @@ abstract class HttpClientBackend[F[_], S](client: HttpClient) extends SttpBacken
     request.headers
       .filterNot(_.name == HeaderNames.ContentLength)
       .foreach(h => builder.header(h.name, h.value))
-    builder.timeout(JDuration.ofMillis(request.options.readTimeout.toMillis)).build() //TODO is this correct?
+    builder.timeout(JDuration.ofMillis(request.options.readTimeout.toMillis)).build()
   }
 
   private def bodyToHttpBody[T](request: Request[T, S], builder: HttpRequest.Builder) = {
@@ -97,8 +97,7 @@ abstract class HttpClientBackend[F[_], S](client: HttpClient) extends SttpBacken
       .toList
 
     val code = StatusCode(res.statusCode())
-    val message = "???" // TODO
-    val responseMetadata = ResponseMetadata(headers, code, message)
+    val responseMetadata = ResponseMetadata(headers, code, "")
 
     val encoding = headers.collectFirst { case h if h.is(HeaderNames.ContentEncoding) => h.value }
     val method = Method(res.request().method())
@@ -110,9 +109,10 @@ abstract class HttpClientBackend[F[_], S](client: HttpClient) extends SttpBacken
       res.body()
     }
     val body = responseHandler(byteBody).handle(responseAs, responseMonad, responseMetadata)
-    responseMonad.map(body)(Response(_, code, message, headers, Nil))
+    responseMonad.map(body)(Response(_, code, "", headers, Nil))
   }
 
+  // https://github.com/ralscha/blog2019/blob/master/java11httpclient/client/src/main/java/ch/rasc/httpclient/Get.java#L182-L200
   private def decompressGzip[T](res: HttpResponse[Array[Byte]]) = {
     val outputStream = new ByteArrayOutputStream()
     var inputStream: Option[GZIPInputStream] = None
@@ -126,6 +126,7 @@ abstract class HttpClientBackend[F[_], S](client: HttpClient) extends SttpBacken
     }
   }
 
+  // https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/zip/Deflater.html
   private def decompressDeflate[T](res: HttpResponse[Array[Byte]]) = {
     val decompresser = new Inflater()
     decompresser.setInput(res.body(), 0, res.body().length)
