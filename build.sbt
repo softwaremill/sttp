@@ -13,6 +13,7 @@ lazy val startTestServer = taskKey[Unit]("Start a http server used by tests (use
 lazy val is2_11 = settingKey[Boolean]("Is the scala version 2.11.")
 lazy val is2_11_or_2_12 = settingKey[Boolean]("Is the scala version 2.11 or 2.12.")
 lazy val is2_13 = settingKey[Boolean]("Is the scala version 2.13.")
+lazy val javaVersion = settingKey[VersionNumber]("Java version")
 
 val silencerVersion = "1.4.4"
 
@@ -41,6 +42,7 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   is2_11 := scalaVersion.value.startsWith("2.11."),
   is2_11_or_2_12 := scalaVersion.value.startsWith("2.11.") || scalaVersion.value.startsWith("2.12."),
   is2_13 := scalaVersion.value.startsWith("2.13."),
+  javaVersion := VersionNumber(sys.props("java.specification.version")),
   libraryDependencies ++= Seq(
     compilerPlugin("com.github.ghik" % "silencer-plugin" % silencerVersion cross CrossVersion.full),
     "com.github.ghik" % "silencer-lib" % silencerVersion % Provided cross CrossVersion.full
@@ -63,10 +65,10 @@ val only2_11_and_2_12_settings = Seq(
   libraryDependencies := (if (is2_11_or_2_12.value) libraryDependencies.value else Nil)
 )
 
-val only2_13settings = Seq(
-  publishArtifact := is2_13.value,
-  skip := is2_11_or_2_12.value,
-  skip in publish := !is2_13.value
+val only2_13andJava11 = Seq(
+  publishArtifact := (is2_13.value && VersionNumber("11") == javaVersion.value),
+  skip := (is2_11_or_2_12.value || VersionNumber("11") != javaVersion.value),
+  skip in publish := (is2_11_or_2_12.value || VersionNumber("11") != javaVersion.value)
 )
 
 val commonJvmJsSettings = commonSettings ++ Seq(
@@ -572,5 +574,5 @@ lazy val java11backend: Project = (project in file("java11-backend"))
     name := "java11-backend",
     scalacOptions ++= Seq("-J--add-modules", "-Jjava.net.http")
   )
-  .settings(only2_13settings)
+  .settings(only2_13andJava11)
   .dependsOn(catsJVM, coreJVM % compileAndTest)
