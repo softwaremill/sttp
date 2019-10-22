@@ -5,6 +5,6 @@ import sttp.client.{Identity, NothingT, SttpBackend}
 
 class HttpClientSyncHttpTest extends HttpTest[Identity] {
 
-  override implicit val backend: SttpBackend[Identity, Nothing, NothingT] = HttpSyncBackend()
+  override implicit val backend: SttpBackend[Identity, Nothing, NothingT] = HttpClientSyncBackend()
   override implicit val convertToFuture: ConvertToFuture[Identity] = ConvertToFuture.id
 }

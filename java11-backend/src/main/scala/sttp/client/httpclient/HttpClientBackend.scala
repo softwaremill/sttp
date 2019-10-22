@@ -10,7 +10,6 @@ import java.util.zip.{GZIPInputStream, Inflater}
 import sttp.client.ResponseAs.EagerResponseHandler
 import sttp.client.SttpBackendOptions.Proxy
 import sttp.client.internal.FileHelpers
-import sttp.client.ws.WebSocketResponse
 import sttp.client.{
   BasicRequestBody,
   BasicResponseAs,
@@ -33,13 +32,13 @@ import sttp.client.{
   SttpBackend,
   SttpBackendOptions
 }
-import sttp.model.{Header, HeaderNames, Method, Part, StatusCode}
+import sttp.model._
 
 import scala.collection.JavaConverters._
 import scala.language.higherKinds
 import scala.util.{Failure, Try}
 
-abstract class HttpClientBackend[F[_], S](client: HttpClient) extends SttpBackend[F, S, WebSocketResponse] {
+abstract class HttpClientBackend[F[_], S](client: HttpClient) extends SttpBackend[F, S, WebSocketHandler] {
 
   private[httpclient] def convertRequest[T](request: Request[T, S]) = {
     val builder = HttpRequest
@@ -155,11 +154,6 @@ abstract class HttpClientBackend[F[_], S](client: HttpClient) extends SttpBacken
 
   def responseBodyToStream(body: Array[Byte]): Try[S] = // TODO this should accept HttpResponse rather than raw array of bytes
     Failure(new IllegalStateException("Streaming isn't supported"))
-
-  override def openWebsocket[T, WS_RESULT](
-      request: Request[T, S],
-      handler: WebSocketResponse[WS_RESULT]
-  ): F[WebSocketResponse[WS_RESULT]] = ???
 
   override def close(): F[Unit] = responseMonad.unit(())
 

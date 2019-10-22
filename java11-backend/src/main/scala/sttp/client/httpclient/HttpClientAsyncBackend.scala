@@ -7,6 +7,7 @@ import java.util.function.BiConsumer
 import sttp.client.monad.{FutureMonad, MonadAsyncError, MonadError}
 import sttp.client.ws.WebSocketResponse
 import sttp.client.{FollowRedirectsBackend, Request, Response, SttpBackend, SttpBackendOptions}
+import sttp.model.Headers
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -36,6 +37,32 @@ abstract class HttpClientAsyncBackend[F[_], S](client: HttpClient, monad: MonadA
     })
   }
 
+  override def openWebsocket[T, WS_RESULT](
+      request: Request[T, S],
+      handler: WebSocketHandler[WS_RESULT]
+  ): F[WebSocketResponse[WS_RESULT]] = {
+    monad.flatten(monad.async[F[WebSocketResponse[WS_RESULT]]] { cb =>
+      def success(r: F[WebSocketResponse[WS_RESULT]]): Unit = cb(Right(r))
+      def error(t: Throwable): Unit = cb(Left(t))
+
+      val listener = new DelegatingWebSocketListener(
+        handler.listener,
+        webSocket => {
+          val wsResponse =
+            monad.unit(sttp.client.ws.WebSocketResponse(Headers.apply(Seq.empty), handler.wrIsWebSocket(webSocket)))
+          success(wsResponse)
+        },
+        error,
+        handler.wrIsWebSocket
+      )
+
+      val _ = HttpClient
+        .newHttpClient()
+        .newWebSocketBuilder()
+        .buildAsync(request.uri.toJavaUri, listener)
+    })
+  }
+
   override def responseMonad: MonadError[F] = monad
 }
 
@@ -45,16 +72,16 @@ class HttpClientFutureBackend private (client: HttpClient)(implicit ec: Executio
 object HttpClientFutureBackend {
   private def apply(
       client: HttpClient
-  )(implicit ec: ExecutionContext): SttpBackend[Future, Nothing, WebSocketResponse] =
-    new FollowRedirectsBackend[Future, Nothing, WebSocketResponse](new HttpClientFutureBackend(client))
+  )(implicit ec: ExecutionContext): SttpBackend[Future, Nothing, WebSocketHandler] =
+    new FollowRedirectsBackend[Future, Nothing, WebSocketHandler](new HttpClientFutureBackend(client))
 
   def apply(options: SttpBackendOptions = SttpBackendOptions.Default)(
       implicit ec: ExecutionContext = ExecutionContext.Implicits.global
-  ): SttpBackend[Future, Nothing, WebSocketResponse] =
+  ): SttpBackend[Future, Nothing, WebSocketHandler] =
     HttpClientFutureBackend(HttpBackend.defaultClient(options))
 
   def usingClient(client: HttpClient)(
       implicit ec: ExecutionContext = ExecutionContext.Implicits.global
-  ): SttpBackend[Future, Nothing, WebSocketResponse] =
+  ): SttpBackend[Future, Nothing, WebSocketHandler] =
     HttpClientFutureBackend(client)
 }
