@@ -2,6 +2,7 @@ language: scala
 addons:
   chrome: stable
 jdk:
+- oraclejdk8
 - openjdk11
 dist: trusty
 scala:
@@ -32,6 +33,7 @@ before_script:
 - mkdir -p chromedriver && unzip chromedriver_linux64.zip -d chromedriver/
 - export PATH="$PATH:$PWD/chromedriver/"
 script:
-- sbt ++$TRAVIS_SCALA_VERSION rootJVM/test &&
+- echo TRAVIS_JDK_VERSION
+- test TRAVIS_JDK_VERSION == '11.0.2' && sbt ++$TRAVIS_SCALA_VERSION rootJVM/test &&
     xvfb-run sbt ++$TRAVIS_SCALA_VERSION rootJS/test &&
     sbt rootNative/test
