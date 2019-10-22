@@ -571,7 +571,7 @@ lazy val prometheusBackend: Project = (project in file("metrics/prometheus-backe
 lazy val httpClientBackend: Project = (project in file("httpclient-backend"))
   .settings(commonJvmSettings: _*)
   .settings(
-    name := "java11-backend",
+    name := "httpclient-backend",
     scalacOptions ++= Seq("-J--add-modules", "-Jjava.net.http")
   )
   .settings(only2_13andJava11)
