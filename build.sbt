@@ -12,6 +12,7 @@ lazy val testServerPort = settingKey[Int]("Port to run the http test server on (
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests (used by JS tests)")
 lazy val is2_11 = settingKey[Boolean]("Is the scala version 2.11.")
 lazy val is2_11_or_2_12 = settingKey[Boolean]("Is the scala version 2.11 or 2.12.")
+lazy val is2_13 = settingKey[Boolean]("Is the scala version 2.13.")
 
 val silencerVersion = "1.4.4"
 
@@ -39,6 +40,7 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   ),
   is2_11 := scalaVersion.value.startsWith("2.11."),
   is2_11_or_2_12 := scalaVersion.value.startsWith("2.11.") || scalaVersion.value.startsWith("2.12."),
+  is2_13 := scalaVersion.value.startsWith("2.13."),
   libraryDependencies ++= Seq(
     compilerPlugin("com.github.ghik" % "silencer-plugin" % silencerVersion cross CrossVersion.full),
     "com.github.ghik" % "silencer-lib" % silencerVersion % Provided cross CrossVersion.full
@@ -49,7 +51,7 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
 // even if a project is 2.11-only, we fake that it's also 2.12/2.13-compatible
 val only2_11settings = Seq(
   publishArtifact := is2_11.value,
-  skip := !is2_11.value,
+  skip := !is2_11.value && !is2_13.value,
   skip in publish := !is2_11.value,
   libraryDependencies := (if (is2_11.value) libraryDependencies.value else Nil)
 )
@@ -61,8 +63,14 @@ val only2_11_and_2_12_settings = Seq(
   libraryDependencies := (if (is2_11_or_2_12.value) libraryDependencies.value else Nil)
 )
 
+val only2_13settings = Seq(
+  publishArtifact := is2_13.value,
+  skip := is2_11_or_2_12.value,
+  skip in publish := !is2_13.value
+)
+
 val commonJvmJsSettings = commonSettings ++ Seq(
-  scalaVersion := scala2_13,
+  scalaVersion := scala2_11,
   crossScalaVersions := Seq(scalaVersion.value, scala2_12, scala2_13)
 )
 
@@ -564,4 +572,5 @@ lazy val java11backend: Project = (project in file("java11-backend"))
     name := "java11-backend",
     scalacOptions ++= Seq("-J--add-modules", "-Jjava.net.http")
   )
+  .settings(only2_13settings)
   .dependsOn(catsJVM, coreJVM % compileAndTest)
