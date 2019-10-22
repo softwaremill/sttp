@@ -128,12 +128,17 @@ abstract class HttpClientBackend[F[_], S](client: HttpClient) extends SttpBacken
 
   // https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/zip/Deflater.html
   private def decompressDeflate[T](res: HttpResponse[Array[Byte]]) = {
-    val decompresser = new Inflater()
-    decompresser.setInput(res.body(), 0, res.body().length)
-    val result = new Array[Byte](res.body().length * 5) // TODO is 5 enough?
-    val resultLength = decompresser.inflate(result)
-    decompresser.end()
-    result.slice(0, resultLength)
+    val inflater = new Inflater()
+    inflater.setInput(res.body())
+    val outputStream = new ByteArrayOutputStream()
+    val buffer = new Array[Byte](1024)
+    while (!inflater.finished()) {
+      val count = inflater.inflate(buffer)
+      outputStream.write(buffer, 0, count)
+    }
+    outputStream.close()
+    inflater.end()
+    outputStream.toByteArray
   }
 
   private def responseHandler(responseBody: Array[Byte]) =
