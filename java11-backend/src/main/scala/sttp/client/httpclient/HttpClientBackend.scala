@@ -130,7 +130,7 @@ abstract class HttpClientBackend[F[_], S](client: HttpClient) extends SttpBacken
   private def decompressDeflate[T](res: HttpResponse[Array[Byte]]) = {
     val inflater = new Inflater()
     inflater.setInput(res.body())
-    val outputStream = new ByteArrayOutputStream()
+    val outputStream = new ByteArrayOutputStream(res.body().length)
     val buffer = new Array[Byte](1024)
     while (!inflater.finished()) {
       val count = inflater.inflate(buffer)
