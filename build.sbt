@@ -76,7 +76,9 @@ val commonJvmJsSettings = commonSettings ++ Seq(
   crossScalaVersions := Seq(scalaVersion.value, scala2_12, scala2_13)
 )
 
-val commonJvmSettings = commonJvmJsSettings
+val commonJvmSettings = commonJvmJsSettings ++ Seq(
+  scalacOptions ++= Seq("-target:jvm-1.8")
+)
 
 val commonJsSettings = commonJvmJsSettings ++ Seq(
   // slow down for CI
@@ -572,7 +574,7 @@ lazy val httpClientBackend: Project = (project in file("httpclient-backend"))
   .settings(commonJvmSettings: _*)
   .settings(
     name := "httpclient-backend",
-    scalacOptions ++= Seq("-J--add-modules", "-Jjava.net.http")
+    scalacOptions ++= Seq("-J--add-modules", "-Jjava.net.http", "-target:jvm-11")
   )
   .settings(only2_13andJava11)
   .dependsOn(catsJVM, coreJVM % compileAndTest)
