@@ -228,7 +228,7 @@ Below is an example on how to implement a backend wrapper, which integrates with
         )(implicit monadError: MonadError[F]) extends SttpBackend[F, S, W] {
 
       override def send[T](request: Request[T, S]): F[Response[T]] = {
-        CircuitSttpBackend.decorateFuture(circuitBreaker, delegate.send(request))
+        CircuitSttpBackend.decorateF(circuitBreaker, delegate.send(request))
       }
 
       override def openWebsocket[T, WS_RESULT](
@@ -243,7 +243,7 @@ Below is an example on how to implement a backend wrapper, which integrates with
 
     object CircuitSttpBackend {
 
-      def decorateFuture[F[_], T](
+      def decorateF[F[_], T](
           circuitBreaker: CircuitBreaker,
           service: => F[Response[T]]
       )(implicit monadError: MonadError[F]): F[Response[T]] = {
@@ -271,6 +271,52 @@ Below is an example on how to implement a backend wrapper, which integrates with
       }
     }
 
+Example backend with rate limiter
+-------------------
+
+"Prepare for a scale and establish reliability and HA of your service."
+
+Below is an example on how to implement a backend wrapper, which integrates with rate-limiter module from resilience4j library and wraps any backend::
+
+    import io.github.resilience4j.ratelimiter.RateLimiter
+    import sttp.client.monad.MonadError
+    import sttp.client.ws.WebSocketResponse
+    import sttp.client.{Request, Response, SttpBackend}
+
+    class RateLimitingSttpBackend[F[_], S, W[_]](
+        rateLimiter: RateLimiter,
+        delegate: SttpBackend[F, S, W]
+        )(implicit monadError: MonadError[F]) extends SttpBackend[F, S, W] {
+
+      override def send[T](request: Request[T, S]): F[Response[T]] = {
+        RateLimitingSttpBackend.decorateF(rateLimiter, delegate.send(request))
+      }
+
+      override def openWebsocket[T, WS_RESULT](
+          request: Request[T, S],
+          handler: W[WS_RESULT]
+      ): F[WebSocketResponse[WS_RESULT]] = delegate.openWebsocket(request, handler)
+
+      override def close(): F[Unit] = delegate.close()
+
+      override def responseMonad: MonadError[F] = delegate.responseMonad
+    }
+
+    object RateLimitingSttpBackend {
+
+      def decorateF[F[_], T](
+          rateLimiter: RateLimiter,
+          service: => F[Response[T]]
+      )(implicit monadError: MonadError[F]): F[Response[T]] = {
+        try {
+          RateLimiter.waitForPermission(rateLimiter)
+          service
+        } catch {
+          case t: Throwable =>
+            monadError.error(t)
+        }
+      }
+    }
 
 Example new backend
 -------------------
