@@ -470,6 +470,16 @@ lazy val http4sBackend: Project = (project in file("http4s-backend"))
   .settings(only2_11_and_2_12_settings)
   .dependsOn(catsJVM, coreJVM % compileAndTest)
 
+//-- httpclient-java11
+lazy val httpClientBackend: Project = (project in file("httpclient-backend"))
+  .settings(commonJvmSettings: _*)
+  .settings(
+    name := "httpclient-backend",
+    scalacOptions ++= Seq("-J--add-modules", "-Jjava.net.http", "-target:jvm-11")
+  )
+  .settings(only2_13andJava11)
+  .dependsOn(catsJVM, coreJVM % compileAndTest)
+
 //----- json
 lazy val jsonCommon = crossProject(JSPlatform, JVMPlatform)
   .withoutSuffixFor(JVMPlatform)
@@ -568,13 +578,3 @@ lazy val prometheusBackend: Project = (project in file("metrics/prometheus-backe
     )
   )
   .dependsOn(coreJVM)
-
-//-- httpclient-java11
-lazy val httpClientBackend: Project = (project in file("httpclient-backend"))
-  .settings(commonJvmSettings: _*)
-  .settings(
-    name := "httpclient-backend",
-    scalacOptions ++= Seq("-J--add-modules", "-Jjava.net.http", "-target:jvm-11")
-  )
-  .settings(only2_13andJava11)
-  .dependsOn(catsJVM, coreJVM % compileAndTest)

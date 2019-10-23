@@ -39,6 +39,8 @@ Class                                Response wrapper             Supported stre
 ``OkHttpFutureBackend``              ``scala.concurrent.Future``  n/a                                              ``sttp.client.okhttp.WebSocketHandler``
 ``OkHttpMonixBackend``               ``monix.eval.Task``          ``monix.reactive.Observable[ByteBuffer]``        ``sttp.client.okhttp.WebSocketHandler``
 ``Http4sBackend``                    ``F[_]: cats.effect.Effect`` ``fs2.Stream[F, Byte]``                          n/a
+``HttpClientSyncBackend``            None (``Id``)                n/a                                              ``sttp.client.httpclient.WebSocketHandler``
+``HttpClientFutureBackend``          ``scala.concurrent.Future``  n/a                                              ``sttp.client.httpclient.WebSocketHandler``
 ==================================== ============================ ================================================ ==================================================
 
 There are also backends which wrap other backends to provide additional functionality. These include:

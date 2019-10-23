@@ -70,6 +70,7 @@ For more examples, see the :ref:`usage examples <usage_examples>` section. Or ex
    backends/asynchttpclient
    backends/okhttp
    backends/http4s
+   backends/httpclient
    backends/brave
    backends/prometheus
    backends/javascript/fetch
