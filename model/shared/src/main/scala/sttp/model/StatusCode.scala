@@ -6,6 +6,8 @@ case class StatusCode(code: Int) extends AnyVal {
   def isRedirect: Boolean = code / 100 == 3
   def isClientError: Boolean = code / 100 == 4
   def isServerError: Boolean = code / 100 == 5
+
+  override def toString: String = code.toString
 }
 
 object StatusCode extends StatusCodes

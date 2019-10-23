@@ -1,6 +1,8 @@
 package sttp.model
 
-case class Method(method: String) extends AnyVal
+case class Method(method: String) extends AnyVal {
+  override def toString: String = method
+}
 
 object Method extends Methods
 
