@@ -57,4 +57,9 @@ class HttpClientFutureWebsocketTest
       super.onText(webSocket, data, last)
     }
   }
+
+  override protected def afterAll(): Unit = {
+    backend.close()
+    super.afterAll()
+  }
 }

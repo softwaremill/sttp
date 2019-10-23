@@ -5,6 +5,8 @@ import java.net.http.HttpRequest.{BodyPublisher, BodyPublishers}
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 import java.net.{Authenticator, PasswordAuthentication}
 import java.time.{Duration => JDuration}
+import java.util.concurrent.{Executor, ThreadPoolExecutor}
+import java.util.function
 import java.util.zip.{GZIPInputStream, Inflater}
 
 import sttp.client.ResponseAs.EagerResponseHandler
@@ -38,7 +40,8 @@ import scala.collection.JavaConverters._
 import scala.language.higherKinds
 import scala.util.{Failure, Try}
 
-abstract class HttpClientBackend[F[_], S](client: HttpClient) extends SttpBackend[F, S, WebSocketHandler] {
+abstract class HttpClientBackend[F[_], S](client: HttpClient, closeClient: Boolean)
+    extends SttpBackend[F, S, WebSocketHandler] {
 
   private[httpclient] def convertRequest[T](request: Request[T, S]) = {
     val builder = HttpRequest
@@ -161,11 +164,23 @@ abstract class HttpClientBackend[F[_], S](client: HttpClient) extends SttpBacken
   def responseBodyToStream(body: Array[Byte]): Try[S] =
     Failure(new IllegalStateException("Streaming isn't supported"))
 
-  override def close(): F[Unit] = responseMonad.unit(())
+  override def close(): F[Unit] = {
+    if (closeClient) {
+      responseMonad.eval(
+        client
+          .executor()
+          .map(new function.Function[Executor, Unit] {
+            override def apply(t: Executor): Unit = t.asInstanceOf[ThreadPoolExecutor].shutdown()
+          })
+      )
+    } else {
+      responseMonad.unit(())
+    }
+  }
 
 }
 
-object HttpBackend {
+object HttpClientBackend {
 
   // TODO not sure if it works
   private class ProxyAuthenticator(auth: SttpBackendOptions.ProxyAuth) extends Authenticator {

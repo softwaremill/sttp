@@ -1,6 +1,5 @@
 package sttp.client.httpclient
 
-import java.net.ProtocolException
 import java.net.http.WebSocket
 import java.net.http.WebSocket.Listener
 import java.util.concurrent.{CompletionStage, ConcurrentLinkedQueue}
@@ -53,6 +52,10 @@ class HttpClientSyncWebsocketTest
       queue.add(data.toString)
       super.onText(webSocket, data, last)
     }
+  }
 
+  override protected def afterAll(): Unit = {
+    backend.close()
+    super.afterAll()
   }
 }

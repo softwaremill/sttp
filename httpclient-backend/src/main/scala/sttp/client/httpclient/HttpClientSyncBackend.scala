@@ -10,7 +10,8 @@ import sttp.client.ws.WebSocketResponse
 import sttp.client.{FollowRedirectsBackend, Identity, Request, Response, SttpBackend, SttpBackendOptions}
 import sttp.model.Headers
 
-class HttpClientSyncBackend(client: HttpClient) extends HttpClientBackend[Identity, Nothing](client) {
+class HttpClientSyncBackend(client: HttpClient, closeClient: Boolean)
+    extends HttpClientBackend[Identity, Nothing](client, closeClient) {
   override def send[T](request: Request[T, Nothing]): Identity[Response[T]] = {
     val jRequest = convertRequest(request)
     val response = client.send(jRequest, BodyHandlers.ofByteArray())
@@ -37,8 +38,7 @@ class HttpClientSyncBackend(client: HttpClient) extends HttpClientBackend[Identi
       fillCellError,
       handler.wrIsWebSocket
     )
-    HttpClient
-      .newHttpClient()
+    client
       .newWebSocketBuilder()
       .buildAsync(request.uri.toJavaUri, listener)
     responseCell.take().fold(throw _, identity)
@@ -46,14 +46,14 @@ class HttpClientSyncBackend(client: HttpClient) extends HttpClientBackend[Identi
 }
 
 object HttpClientSyncBackend {
-  private def apply(client: HttpClient): SttpBackend[Identity, Nothing, WebSocketHandler] =
-    new FollowRedirectsBackend[Identity, Nothing, WebSocketHandler](new HttpClientSyncBackend(client))
+  private def apply(client: HttpClient, closeClient: Boolean): SttpBackend[Identity, Nothing, WebSocketHandler] =
+    new FollowRedirectsBackend[Identity, Nothing, WebSocketHandler](new HttpClientSyncBackend(client, closeClient))
 
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default
   ): SttpBackend[Identity, Nothing, WebSocketHandler] =
-    HttpClientSyncBackend(HttpBackend.defaultClient(options))
+    HttpClientSyncBackend(HttpClientBackend.defaultClient(options), closeClient = true)
 
   def usingClient(client: HttpClient): SttpBackend[Identity, Nothing, WebSocketHandler] =
-    HttpClientSyncBackend(client)
+    HttpClientSyncBackend(client, closeClient = false)
 }
