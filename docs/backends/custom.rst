@@ -211,7 +211,9 @@ Example backend with circuit breaker
 
 "When a system is seriously struggling, failing fast is better than making clients wait."
 
-There are many libraries that can help you achieve such a behavior: hystrix, resilience4j, akka's circuit breaker or monix catnap to name a few.
+There are many libraries that can help you achieve such a behavior: `hystrix <https://github.com/Netflix/Hystrix>`_,
+`resilience4j <https://github.com/resilience4j/resilience4j>`_, `akka's circuit breaker <https://doc.akka.io/docs/akka/current/common/circuitbreaker.html>`_
+or `monix catnap <https://monix.io/docs/3x/catnap/circuit-breaker.html>`_ to name a few.
 Despite some small differences, both their apis and functionality are very similar, that's why we didn't want to support each of them explicitly.
 
 Below is an example on how to implement a backend wrapper, which integrates with circuit-breaker module from resilience4j library and wraps any backend::
