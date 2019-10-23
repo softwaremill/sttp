@@ -236,7 +236,8 @@ Below is an example on how to implement a backend wrapper, which integrates with
       override def openWebsocket[T, WS_RESULT](
           request: Request[T, S],
           handler: W[WS_RESULT]
-      ): F[WebSocketResponse[WS_RESULT]] = CircuitSttpBackend.decorateF(delegate.openWebsocket(request, handler))
+      ): F[WebSocketResponse[WS_RESULT]] =
+            CircuitSttpBackend.decorateF(delegate.openWebsocket(request, handler))
 
       override def close(): F[Unit] = delegate.close()
 
