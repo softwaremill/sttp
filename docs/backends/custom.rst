@@ -247,8 +247,8 @@ Below is an example on how to implement a backend wrapper, which integrates with
 
       def decorateF[F[_], T](
           circuitBreaker: CircuitBreaker,
-          service: => F[Response[T]]
-      )(implicit monadError: MonadError[F]): F[Response[T]] = {
+          service: => F[T]
+      )(implicit monadError: MonadError[F]): F[T] = {
 
         if (!circuitBreaker.tryAcquirePermission()) {
           monadError.error(CallNotPermittedException
@@ -308,8 +308,8 @@ Below is an example on how to implement a backend wrapper, which integrates with
 
       def decorateF[F[_], T](
           rateLimiter: RateLimiter,
-          service: => F[Response[T]]
-      )(implicit monadError: MonadError[F]): F[Response[T]] = {
+          service: => F[T]
+      )(implicit monadError: MonadError[F]): F[T] = {
         try {
           RateLimiter.waitForPermission(rateLimiter)
           service
