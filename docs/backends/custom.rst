@@ -206,6 +206,121 @@ In some cases it's possible to implement a generic retry mechanism; such a mecha
 
 Note that some backends also have built-in retry mechanisms, e.g. `akka-http <https://doc.akka.io/docs/akka-http/current/scala/http/client-side/host-level.html#retrying-a-request>`_ or `OkHttp <http://square.github.io/okhttp>`_ (see the builder's ``retryOnConnectionFailure`` method).
 
+Example backend with circuit breaker
+-------------------
+
+"When a system is seriously struggling, failing fast is better than making clients wait."
+
+There are many libraries that can help you achieve such a behavior: `hystrix <https://github.com/Netflix/Hystrix>`_,
+`resilience4j <https://github.com/resilience4j/resilience4j>`_, `akka's circuit breaker <https://doc.akka.io/docs/akka/current/common/circuitbreaker.html>`_
+or `monix catnap <https://monix.io/docs/3x/catnap/circuit-breaker.html>`_ to name a few.
+Despite some small differences, both their apis and functionality are very similar, that's why we didn't want to support each of them explicitly.
+
+Below is an example on how to implement a backend wrapper, which integrates with circuit-breaker module from resilience4j library and wraps any backend::
+
+    import io.github.resilience4j.circuitbreaker.{CallNotPermittedException, CircuitBreaker}
+    import sttp.client.monad.MonadError
+    import sttp.client.ws.WebSocketResponse
+    import sttp.client.{Request, Response, SttpBackend}
+    import java.util.concurrent.TimeUnit
+
+    class CircuitSttpBackend[F[_], S, W[_]](
+        circuitBreaker: CircuitBreaker,
+        delegate: SttpBackend[F, S, W]
+        )(implicit monadError: MonadError[F]) extends SttpBackend[F, S, W] {
+
+      override def send[T](request: Request[T, S]): F[Response[T]] = {
+        CircuitSttpBackend.decorateF(circuitBreaker, delegate.send(request))
+      }
+
+      override def openWebsocket[T, WS_RESULT](
+          request: Request[T, S],
+          handler: W[WS_RESULT]
+      ): F[WebSocketResponse[WS_RESULT]] =
+            CircuitSttpBackend.decorateF(delegate.openWebsocket(request, handler))
+
+      override def close(): F[Unit] = delegate.close()
+
+      override def responseMonad: MonadError[F] = delegate.responseMonad
+    }
+
+    object CircuitSttpBackend {
+
+      def decorateF[F[_], T](
+          circuitBreaker: CircuitBreaker,
+          service: => F[T]
+      )(implicit monadError: MonadError[F]): F[T] = {
+
+        if (!circuitBreaker.tryAcquirePermission()) {
+          monadError.error(CallNotPermittedException
+                                .createCallNotPermittedException(circuitBreaker))
+        } else {
+          val start = System.nanoTime()
+          try {
+            monadError.handleError(monadError.map(service) { r =>
+              circuitBreaker.onSuccess(System.nanoTime() - start, TimeUnit.NANOSECONDS)
+              r
+            }) {
+              case t =>
+                circuitBreaker.onError(System.nanoTime() - start, TimeUnit.NANOSECONDS, t)
+                monadError.error(t)
+            }
+          } catch {
+            case t: Throwable =>
+              circuitBreaker.onError(System.nanoTime() - start, TimeUnit.NANOSECONDS, t)
+              monadError.error(t)
+          }
+        }
+      }
+    }
+
+Example backend with rate limiter
+-------------------
+
+"Prepare for a scale and establish reliability and HA of your service."
+
+Below is an example on how to implement a backend wrapper, which integrates with rate-limiter module from resilience4j library and wraps any backend::
+
+    import io.github.resilience4j.ratelimiter.RateLimiter
+    import sttp.client.monad.MonadError
+    import sttp.client.ws.WebSocketResponse
+    import sttp.client.{Request, Response, SttpBackend}
+
+    class RateLimitingSttpBackend[F[_], S, W[_]](
+        rateLimiter: RateLimiter,
+        delegate: SttpBackend[F, S, W]
+        )(implicit monadError: MonadError[F]) extends SttpBackend[F, S, W] {
+
+      override def send[T](request: Request[T, S]): F[Response[T]] = {
+        RateLimitingSttpBackend.decorateF(rateLimiter, delegate.send(request))
+      }
+
+      override def openWebsocket[T, WS_RESULT](
+          request: Request[T, S],
+          handler: W[WS_RESULT]
+      ): F[WebSocketResponse[WS_RESULT]] = delegate.openWebsocket(request, handler)
+
+      override def close(): F[Unit] = delegate.close()
+
+      override def responseMonad: MonadError[F] = delegate.responseMonad
+    }
+
+    object RateLimitingSttpBackend {
+
+      def decorateF[F[_], T](
+          rateLimiter: RateLimiter,
+          service: => F[T]
+      )(implicit monadError: MonadError[F]): F[T] = {
+        try {
+          RateLimiter.waitForPermission(rateLimiter)
+          service
+        } catch {
+          case t: Throwable =>
+            monadError.error(t)
+        }
+      }
+    }
+
 Example new backend
 -------------------
 
