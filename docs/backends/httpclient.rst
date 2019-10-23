@@ -5,7 +5,7 @@ To use, add the following dependency to your project::
 
   "com.softwaremill.sttp.client" %% "httpclient-backend" % "2.0.0-M7"
 
-This backend is based on ``java.net.http.HttpClient`` available from Java 11 onwards and offerss
+This backend is based on ``java.net.http.HttpClient`` available from Java 11 onwards and offers:
 
 * a **synchronous** backend: ``HttpClientSyncBackend``
 * an **asynchronous**, ``Future``-based backend: ``HttpClientFutureBackend``
