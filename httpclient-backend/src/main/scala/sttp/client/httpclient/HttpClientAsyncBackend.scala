@@ -1,5 +1,6 @@
 package sttp.client.httpclient
 
+import java.io.InputStream
 import java.net.http.HttpResponse.BodyHandlers
 import java.net.http.{HttpClient, HttpResponse}
 import java.util.function.BiConsumer
@@ -21,9 +22,9 @@ abstract class HttpClientAsyncBackend[F[_], S](client: HttpClient, monad: MonadA
       def error(t: Throwable): Unit = cb(Left(t))
 
       client
-        .sendAsync(jRequest, BodyHandlers.ofByteArray())
-        .whenComplete(new BiConsumer[HttpResponse[Array[Byte]], Throwable] {
-          override def accept(t: HttpResponse[Array[Byte]], u: Throwable): Unit = {
+        .sendAsync(jRequest, BodyHandlers.ofInputStream())
+        .whenComplete(new BiConsumer[HttpResponse[InputStream], Throwable] {
+          override def accept(t: HttpResponse[InputStream], u: Throwable): Unit = {
             if (t != null) {
               try success(readResponse(t, request.response))
               catch { case e: Exception => error(e) }

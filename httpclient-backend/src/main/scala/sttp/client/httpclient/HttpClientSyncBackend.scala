@@ -14,7 +14,7 @@ class HttpClientSyncBackend(client: HttpClient, closeClient: Boolean)
     extends HttpClientBackend[Identity, Nothing](client, closeClient) {
   override def send[T](request: Request[T, Nothing]): Identity[Response[T]] = {
     val jRequest = convertRequest(request)
-    val response = client.send(jRequest, BodyHandlers.ofByteArray())
+    val response = client.send(jRequest, BodyHandlers.ofInputStream())
     readResponse(response, request.response)
   }
 
