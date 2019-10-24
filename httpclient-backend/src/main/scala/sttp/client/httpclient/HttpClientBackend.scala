@@ -99,11 +99,11 @@ abstract class HttpClientBackend[F[_], S](client: HttpClient, closeClient: Boole
       .flatMap(name => res.headers().map().asScala(name).asScala.map(Header(name, _)))
       .toList
 
-    val code = StatusCode(res.statusCode())
+    val code = StatusCode.notValidated(res.statusCode())
     val responseMetadata = ResponseMetadata(headers, code, "")
 
     val encoding = headers.collectFirst { case h if h.is(HeaderNames.ContentEncoding) => h.value }
-    val method = Method(res.request().method())
+    val method = Method.notValidated(res.request().method())
     val byteBody = if (encoding.contains("gzip") && method != Method.HEAD) {
       decompressGzip(res).toByteArray
     } else if (encoding.contains("deflate") && method != Method.HEAD) {

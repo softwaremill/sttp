@@ -2,6 +2,7 @@ package sttp.model
 
 /**
   * Represents query parameters, where each parameter can have 0, 1, or more values.
+  * All query parameters are assumed to be decoded.
   */
 class MultiQueryParams(ps: Seq[(String, Seq[String])]) {
   def toMap: Map[String, String] = toSeq.toMap

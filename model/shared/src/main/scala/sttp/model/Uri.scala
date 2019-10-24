@@ -15,7 +15,7 @@ import sttp.model.internal.Rfc3986.encode
 
 /**
   * A [[https://en.wikipedia.org/wiki/Uniform_Resource_Identifier URI]].
-  * All components (scheme, host, query, ...) are stored unencoded, and
+  * All components (scheme, host, query, ...) are stored decodec, and
   * become encoded upon serialization (using [[toString]]).
   *
   * @param querySegments Either key-value pairs, single values, or plain
@@ -139,13 +139,7 @@ case class Uri(
 
   def paramsMap: Map[String, String] = paramsSeq.toMap
 
-  def multiParamsMap: Map[String, Seq[String]] = {
-    val m = mutable.Map.empty[String, ListBuffer[String]]
-    paramsSeq.foreach {
-      case (key, value) => m.getOrElseUpdate(key, new ListBuffer[String]) += value
-    }
-    m.mapValues(_.toList).toMap
-  }
+  def multiParams: MultiQueryParams = MultiQueryParams.fromSeq(paramsSeq)
 
   def paramsSeq: Seq[(String, String)] = querySegments.collect {
     case KeyValue(k, v, _, _) => k -> v
