@@ -9,6 +9,7 @@ This backend is based on ``java.net.http.HttpClient`` available from Java 11 onw
 
 * a **synchronous** backend: ``HttpClientSyncBackend``
 * an **asynchronous**, ``Future``-based backend: ``HttpClientFutureBackend``
+* an **asynchronous**, ``Monix-Task``-based backend: ``HttpClientMonixBackend`` with streaming support
 
 Websockets
 ----------
