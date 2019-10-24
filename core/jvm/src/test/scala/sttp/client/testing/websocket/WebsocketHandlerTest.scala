@@ -1,4 +1,4 @@
-package sttp.client.asynchttpclient
+package sttp.client.testing.websocket
 
 import java.io.IOException
 
@@ -11,7 +11,7 @@ import sttp.client.testing.{ConvertToFuture, TestHttpServer, ToFutureWrapper}
 import sttp.client.ws.WebSocket
 import sttp.model.ws.WebSocketFrame
 
-abstract class WebsocketHandlerTest[F[_]]
+abstract class WebsocketHandlerTest[F[_], WS_HANDLER[_]]
     extends AsyncFlatSpec
     with Matchers
     with TestHttpServer
@@ -19,11 +19,11 @@ abstract class WebsocketHandlerTest[F[_]]
     with Eventually
     with IntegrationPatience {
 
-  implicit val backend: SttpBackend[F, Nothing, WebSocketHandler]
+  implicit val backend: SttpBackend[F, Nothing, WS_HANDLER]
   implicit val convertToFuture: ConvertToFuture[F]
   implicit val monad: MonadError[F]
 
-  def createHandler: Option[Int] => WebSocketHandler[WebSocket[F]]
+  def createHandler: Option[Int] => WS_HANDLER[WebSocket[F]]
 
   it should "send and receive two messages" in {
     basicRequest
