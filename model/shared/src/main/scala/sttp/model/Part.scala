@@ -2,6 +2,9 @@ package sttp.model
 
 import Part._
 
+/**
+  * A decoded representation of a multipart part.
+  */
 case class Part[T](
     name: String,
     body: T,
