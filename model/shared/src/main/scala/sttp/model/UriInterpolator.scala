@@ -1,5 +1,7 @@
 package sttp.model
 
+import sttp.model.internal.Rfc3986
+
 import scala.annotation.tailrec
 
 trait UriInterpolator {

@@ -1,4 +1,4 @@
-package sttp.model.idn
+package sttp.model.internal.idn
 
 import scala.scalanative.native
 import scala.scalanative.native.stdlib.{free, malloc}

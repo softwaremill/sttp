@@ -4,13 +4,14 @@ import java.net.URI
 
 import sttp.model.Uri.QuerySegment.{KeyValue, Plain, Value}
 import sttp.model.Uri.{FragmentEncoding, HostSegment, PathSegment, QuerySegment, Segment, UserInfo}
+import sttp.model.internal.{Rfc3986, UriCompatibility}
 
 import scala.annotation.tailrec
 import scala.collection.immutable.Seq
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.util.Try
-import Rfc3986.encode
+import sttp.model.internal.Rfc3986.encode
 
 /**
   * A [[https://en.wikipedia.org/wiki/Uniform_Resource_Identifier URI]].

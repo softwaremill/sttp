@@ -1,4 +1,4 @@
-package sttp.model
+package sttp.model.internal
 
 private[model] object Rfc3986Compatibility {
 

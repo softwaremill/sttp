@@ -5,6 +5,7 @@ import java.nio.ByteBuffer
 
 import sttp.model._
 import sttp.client.internal.SttpFile
+import sttp.model.internal.UriCompatibility
 
 import scala.collection.immutable.Seq
 

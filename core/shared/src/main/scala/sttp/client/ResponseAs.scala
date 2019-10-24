@@ -2,7 +2,7 @@ package sttp.client
 
 import sttp.client.internal._
 import sttp.client.monad.MonadError
-import sttp.model.Rfc3986
+import sttp.model.internal.Rfc3986
 
 import scala.collection.immutable.Seq
 import scala.language.higherKinds

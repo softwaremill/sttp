@@ -1,4 +1,4 @@
-package sttp.model
+package sttp.model.internal
 
 import java.net.URLEncoder
 

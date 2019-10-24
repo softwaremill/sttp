@@ -1,4 +1,4 @@
-package sttp.model
+package sttp.model.internal
 
 import org.scalajs.dom.experimental.URL
 
