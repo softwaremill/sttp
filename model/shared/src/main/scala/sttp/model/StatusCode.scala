@@ -1,6 +1,6 @@
 package sttp.model
 
-case class StatusCode(code: Int) extends AnyVal {
+class StatusCode private (val code: Int) extends AnyVal {
   def isInformational: Boolean = code / 100 == 1
   def isSuccess: Boolean = code / 100 == 2
   def isRedirect: Boolean = code / 100 == 3
@@ -10,7 +10,14 @@ case class StatusCode(code: Int) extends AnyVal {
   override def toString: String = code.toString
 }
 
-object StatusCode extends StatusCodes
+object StatusCode extends StatusCodes {
+  def apply(code: Int): StatusCode = validated(code).fold(e => throw new IllegalArgumentException(e), identity)
+  def validated(code: Int): Either[String, StatusCode] = {
+    if (code < 100 || code > 599) Left(s"Status code outside of the allowed range 100-599: $code")
+    else Right(new StatusCode(code))
+  }
+  def notValidated(code: Int) = new StatusCode(code)
+}
 
 // https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
 trait StatusCodes {
