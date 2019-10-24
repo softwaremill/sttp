@@ -32,11 +32,10 @@ class HttpClientSyncBackend(client: HttpClient, closeClient: Boolean)
     val listener = new DelegatingWebSocketListener(
       handler.listener,
       webSocket => {
-        val wsResponse = sttp.client.ws.WebSocketResponse(Headers.apply(Seq.empty), handler.wrIsWebSocket(webSocket))
+        val wsResponse = sttp.client.ws.WebSocketResponse(Headers.apply(Seq.empty), handler.createResult(webSocket))
         fillCell(wsResponse)
       },
-      fillCellError,
-      handler.wrIsWebSocket
+      fillCellError
     )
     client
       .newWebSocketBuilder()

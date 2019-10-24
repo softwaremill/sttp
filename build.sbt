@@ -485,7 +485,7 @@ def httpClientBackendProject(proj: String): Project = {
   Project(s"httpClientBackend${proj.capitalize}", file(s"httpclient-backend/$proj"))
     .settings(commonJvmSettings: _*)
     .settings(name := s"httpclient-backend-$proj")
-    .dependsOn(httpClientBackend)
+    .dependsOn(httpClientBackend % compileAndTest)
 }
 
 lazy val httpClientMonixBackend: Project =

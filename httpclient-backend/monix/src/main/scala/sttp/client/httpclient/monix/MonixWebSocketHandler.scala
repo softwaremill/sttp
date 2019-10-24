@@ -1,0 +1,36 @@
+package sttp.client.httpclient.monix
+
+import monix.eval.Task
+import monix.execution.{Scheduler, AsyncQueue => MonixAsyncQueue}
+import sttp.client.httpclient.WebSocketHandler
+import sttp.client.httpclient.monix.internal.{AsyncQueue, NativeWebSocketHandler}
+import sttp.client.impl.monix.TaskMonadAsyncError
+import sttp.client.ws.WebSocket
+import sttp.model.ws.WebSocketBufferFull
+
+object MonixWebSocketHandler {
+  private class MonixAsyncQueue[A](bufferCapacity: Option[Int])(implicit s: Scheduler) extends AsyncQueue[Task, A] {
+    private val queue = bufferCapacity match {
+      case Some(capacity) => MonixAsyncQueue.bounded[A](capacity)
+      case None           => MonixAsyncQueue.unbounded[A]()
+    }
+
+    override def clear(): Unit = queue.clear()
+    override def offer(t: A): Unit = {
+      if (!queue.tryOffer(t)) {
+        throw new WebSocketBufferFull()
+      }
+    }
+    override def poll: Task[A] = Task.deferFuture(queue.poll())
+  }
+
+  /**
+    * Creates a new [[WebSocketHandler]] which should be used *once* to send and receive from a single websocket.
+    * @param incomingBufferCapacity Should the buffer of incoming websocket events be bounded. If yes, unreceived
+    *                               events will some point cause the websocket to error and close. If no, unreceived
+    *                               messages will take up all available memory.
+    */
+  def apply(incomingBufferCapacity: Option[Int] = None)(implicit s: Scheduler): WebSocketHandler[WebSocket[Task]] = {
+    NativeWebSocketHandler(new MonixAsyncQueue(incomingBufferCapacity), TaskMonadAsyncError)
+  }
+}

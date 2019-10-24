@@ -14,6 +14,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 abstract class HttpClientAsyncBackend[F[_], S](client: HttpClient, monad: MonadAsyncError[F], closeClient: Boolean)
     extends HttpClientBackend[F, S](client, closeClient) {
+
   override def send[T](request: Request[T, S]): F[Response[T]] = {
     val jRequest = convertRequest(request)
 
@@ -50,11 +51,10 @@ abstract class HttpClientAsyncBackend[F[_], S](client: HttpClient, monad: MonadA
         handler.listener,
         webSocket => {
           val wsResponse =
-            monad.unit(sttp.client.ws.WebSocketResponse(Headers.apply(Seq.empty), handler.wrIsWebSocket(webSocket)))
+            monad.unit(sttp.client.ws.WebSocketResponse(Headers.apply(Seq.empty), handler.createResult(webSocket)))
           success(wsResponse)
         },
-        error,
-        handler.wrIsWebSocket
+        error
       )
 
       val _ = client
