@@ -13,6 +13,6 @@ class StatusCodeTests extends FlatSpec with Matchers {
   }
 
   it should "throw exceptions on invalid status codes" in {
-    an[IllegalArgumentException] shouldBe thrownBy(StatusCode(8))
+    an[IllegalArgumentException] shouldBe thrownBy(StatusCode.unsafeApply(8))
   }
 }

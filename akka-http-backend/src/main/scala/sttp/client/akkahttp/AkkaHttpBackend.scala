@@ -185,7 +185,7 @@ class AkkaHttpBackend private (
   private def responseFromAkka[T](r: Request[T, S], hr: HttpResponse)(
       implicit ec: ExecutionContext
   ): Future[Response[T]] = {
-    val code = StatusCode(hr.status.intValue())
+    val code = StatusCode.notValidated(hr.status.intValue())
     val statusText = hr.status.reason()
 
     val headers = headersFromAkka(hr)

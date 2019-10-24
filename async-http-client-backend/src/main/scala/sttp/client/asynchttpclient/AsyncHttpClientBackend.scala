@@ -299,7 +299,7 @@ abstract class AsyncHttpClientBackend[F[_], S](
   private def readResponseNoBody(response: AsyncResponse): Response[Unit] = {
     client.Response(
       (),
-      StatusCode(response.getStatusCode),
+      StatusCode.unsafeApply(response.getStatusCode),
       response.getStatusText,
       readHeaders(response.getHeaders),
       Nil

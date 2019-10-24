@@ -17,8 +17,8 @@ The conventions are:
 * constructors of the model classes are private; instances should be created through methods on the companion objects.
 * `[SthCompanionObject].parse(serialized: String): Either[String, Sth]`: returns an error message or an instance of
   the model class
-* `[SthCompanionObject].apply(values)`: creates an instance of the model class; validates the input values and in case
-  of an error, *throws an exception*. An error could be e.g. that the input values contain characters outside of
+* `[SthCompanionObject].unsafeApply(values)`: creates an instance of the model class; validates the input values and in 
+  case of an error, *throws an exception*. An error could be e.g. that the input values contain characters outside of
   the allowed range
 * `[SthCompanionObject].validated(...): Either[String, Sth]`: same as above, but doesn't throw exceptions. Instead,
   returns an error message or the model class instance

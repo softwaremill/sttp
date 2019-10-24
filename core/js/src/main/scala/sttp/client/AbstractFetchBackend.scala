@@ -112,14 +112,14 @@ abstract class AbstractFetchBackend[F[_], S](options: FetchOptions, customizeReq
       }
       .flatMap { resp =>
         val headers = convertResponseHeaders(resp.headers)
-        val metadata = ResponseMetadata(headers, StatusCode(resp.status), resp.statusText)
+        val metadata = ResponseMetadata(headers, StatusCode.notValidated(resp.status), resp.statusText)
 
         val body: F[T] = readResponseBody(resp, request.response, metadata)
 
         body.map { b =>
           Response[T](
             body = b,
-            code = StatusCode(resp.status),
+            code = StatusCode.notValidated(resp.status),
             statusText = resp.statusText,
             headers = headers,
             history = Nil

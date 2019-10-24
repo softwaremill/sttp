@@ -13,7 +13,7 @@ trait Headers {
 
   def cookies: Seq[CookieWithMeta] =
     headers(HeaderNames.SetCookie)
-      .map(h => CookieWithMeta.parseHeaderValue(h).fold(e => throw new RuntimeException(e), identity[CookieWithMeta]))
+      .map(h => CookieWithMeta.parse(h).fold(e => throw new RuntimeException(e), identity[CookieWithMeta]))
 }
 
 object Headers {

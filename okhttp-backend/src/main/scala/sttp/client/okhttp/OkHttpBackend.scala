@@ -120,10 +120,10 @@ abstract class OkHttpBackend[F[_], S](client: OkHttpClient, closeClient: Boolean
       .flatMap(name => res.headers().values(name).asScala.map(Header(name, _)))
       .toList
 
-    val responseMetadata = ResponseMetadata(headers, StatusCode(res.code()), res.message())
+    val responseMetadata = ResponseMetadata(headers, StatusCode.notValidated(res.code()), res.message())
     val body = responseHandler(res).handle(responseAs, responseMonad, responseMetadata)
 
-    responseMonad.map(body)(Response(_, StatusCode(res.code()), res.message(), headers, Nil))
+    responseMonad.map(body)(Response(_, StatusCode.notValidated(res.code()), res.message(), headers, Nil))
   }
 
   private def responseHandler(res: OkHttpResponse) =

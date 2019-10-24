@@ -3,39 +3,75 @@ package sttp.model
 import java.time.{Instant, ZoneId}
 import java.time.format.DateTimeFormatter
 
+import sttp.model.internal.Validate
+import sttp.model.internal.Validate._
+
 import scala.util.{Failure, Success, Try}
 
-case class Cookie(name: String, value: String) {
-  private val AllowedNameCharacters = """[a-zA-Z0-9!#$%&'*+\-.^_`|~]*""".r
-  private val AllowedValueCharacters = """"?[a-zA-Z0-9!#$%&'()*+\-./:<=>?@\\[\\]^_`{|}~]*"?""".r
+/**
+  * A cookie name-value pair.
+  *
+  * As there are no defined rules for encoding cookie names & values, these values should be treated as encoded values,
+  * which will end up unmodified in the header.
+  */
+case class Cookie private (name: String, value: String) {
 
-  require(
-    AllowedNameCharacters.unapplySeq(name).isDefined,
-    "Cookie name can only contain alphanumeric characters and: !#$%&'*+\\-.^_`|~"
-  )
-
-  require(
-    AllowedValueCharacters.unapplySeq(name).isDefined,
-    "Cookie value can only contain alphanumeric characters and: !#$%&'()*+\\-./:<=>?@[]^_`{|}~, optionally surrounded by \""
-  )
-
-  def asHeaderValue: String = s"$name=$value"
+  /**
+    * @return Representation of the cookie as in a header value, in the format: `[name]=[value]`.
+    */
+  override def toString: String = s"$name=$value"
 }
 
 object Cookie {
-  def parseHeaderValue(s: String): List[Cookie] = {
-    s.split(";").toList.map { ss =>
-      ss.split("=", 2).map(_.trim) match {
-        case Array(v1)     => Cookie(v1, "")
-        case Array(v1, v2) => Cookie(v1, v2)
-      }
-    }
+  private val AllowedNameCharacters = """[a-zA-Z0-9!#$%&'*+\-.^_`|~]*""".r
+  private val AllowedValueCharacters = """[\s\w!#$%&'"()*+\-./:<=>?@\\[\\]^_`{|}~]*""".r
+
+  private[model] def validateName(name: String): Option[String] = {
+    if (AllowedNameCharacters.unapplySeq(name).isEmpty) {
+      Some("Cookie name can only contain alphanumeric characters and: !#$%&'*+\\-.^_`|~")
+    } else None
   }
 
-  def asHeaderValue(cs: List[Cookie]): String = cs.map(_.asHeaderValue).mkString("; ")
+  private[model] def validateValue(value: String): Option[String] = {
+    if (AllowedValueCharacters.unapplySeq(value).isEmpty) {
+      Some(
+        "Cookie value can only contain alphanumeric characters, whitespace and: !#$%&'\"()*+\\-./:<=>?@[]^_`{|}~"
+      )
+    } else None
+  }
+
+  /**
+    * @throws IllegalArgumentException If the cookie attributes contain illegal characters.
+    */
+  def unsafeApply(name: String, value: String): Cookie = validated(name, value).getOrThrow
+
+  def validated(name: String, value: String): Either[String, Cookie] = {
+    Validate.all(validateName(name), validateValue(value))(new Cookie(name, value))
+  }
+
+  def notValidated(name: String, value: String): Cookie = new Cookie(name, value)
+
+  /**
+    * Parse the cookie, represented as a header value (in the format: `[name]=[value]`).
+    */
+  def parse(s: String): Either[String, List[Cookie]] = {
+    val cs = s.split(";").toList.map { ss =>
+      ss.split("=", 2).map(_.trim) match {
+        case Array(v1)     => Cookie.validated(v1, "")
+        case Array(v1, v2) => Cookie.validated(v1, v2)
+      }
+    }
+
+    Validate.sequence(cs)
+  }
+
+  /**
+    * @return Representation of the cookies as in a header value, in the format: `[name]=[value]; [name]=[value]; ...`.
+    */
+  def toString(cs: List[Cookie]): String = cs.map(_.toString).mkString("; ")
 }
 
-case class CookieValueWithMeta(
+case class CookieValueWithMeta private (
     value: String,
     expires: Option[Instant],
     maxAge: Option[Long],
@@ -45,7 +81,59 @@ case class CookieValueWithMeta(
     httpOnly: Boolean
 )
 
-case class CookieWithMeta(
+object CookieValueWithMeta {
+  private val AllowedAttrValueCharacters = """[^;\\0\a\\b\t\n\v\f\r\e]*""".r
+
+  private[model] def validateAttrValue(attrName: String, value: String): Option[String] = {
+    if (AllowedAttrValueCharacters.unapplySeq(value).isEmpty) {
+      Some(s"Value of attribute $attrName name can contain any characters except ; and control characters")
+    } else None
+  }
+  def unsafeApply(
+      value: String,
+      expires: Option[Instant],
+      maxAge: Option[Long],
+      domain: Option[String],
+      path: Option[String],
+      secure: Boolean,
+      httpOnly: Boolean
+  ): CookieValueWithMeta =
+    validated(value, expires, maxAge, domain, path, secure, httpOnly).getOrThrow
+
+  def validated(
+      value: String,
+      expires: Option[Instant],
+      maxAge: Option[Long],
+      domain: Option[String],
+      path: Option[String],
+      secure: Boolean,
+      httpOnly: Boolean
+  ): Either[String, CookieValueWithMeta] = {
+    Validate.all(
+      Cookie.validateValue(value),
+      path.flatMap(validateAttrValue("path", _)),
+      domain.flatMap(validateAttrValue("domain", _))
+    )(notValidated(value, expires, maxAge, domain, path, secure, httpOnly))
+  }
+
+  def notValidated(
+      value: String,
+      expires: Option[Instant],
+      maxAge: Option[Long],
+      domain: Option[String],
+      path: Option[String],
+      secure: Boolean,
+      httpOnly: Boolean
+  ): CookieValueWithMeta = new CookieValueWithMeta(value, expires, maxAge, domain, path, secure, httpOnly)
+}
+
+/**
+  * A cookie name-value pair with attributes.
+  *
+  * As there are no defined rules for encoding cookie names & values, these values should be treated as encoded values,
+  * which will end up unmodified in the header.
+  */
+case class CookieWithMeta private (
     name: String,
     valueWithMeta: CookieValueWithMeta
 ) {
@@ -65,7 +153,10 @@ case class CookieWithMeta(
   def secure(v: Boolean): CookieWithMeta = copy(valueWithMeta = valueWithMeta.copy(secure = v))
   def httpOnly(v: Boolean): CookieWithMeta = copy(valueWithMeta = valueWithMeta.copy(httpOnly = v))
 
-  def asHeaderValue: String = {
+  /**
+    * @return Representation of the cookie as in a header value, in the format: `[name]=[value]; [attr]=[value]; ...`.
+    */
+  override def toString: String = {
     val components = List(
       Some(s"$name=$value"),
       expires.map(e => s"Expires=${DateTimeFormatter.RFC_1123_DATE_TIME.format(e.atZone(ZoneId.of("GMT")))}"),
@@ -81,7 +172,7 @@ case class CookieWithMeta(
 }
 
 object CookieWithMeta {
-  def apply(
+  def unsafeApply(
       name: String,
       value: String,
       expires: Option[Instant] = None,
@@ -90,10 +181,50 @@ object CookieWithMeta {
       path: Option[String] = None,
       secure: Boolean = false,
       httpOnly: Boolean = false
-  ): CookieWithMeta = CookieWithMeta(name, CookieValueWithMeta(value, expires, maxAge, domain, path, secure, httpOnly))
+  ): CookieWithMeta =
+    validated(name, value, expires, maxAge, domain, path, secure, httpOnly).getOrThrow
+
+  def validated(
+      name: String,
+      value: String,
+      expires: Option[Instant] = None,
+      maxAge: Option[Long] = None,
+      domain: Option[String] = None,
+      path: Option[String] = None,
+      secure: Boolean = false,
+      httpOnly: Boolean = false
+  ): Either[String, CookieWithMeta] = {
+    Cookie.validateName(name) match {
+      case Some(e) => Left(e)
+      case None =>
+        CookieValueWithMeta.validated(value, expires, maxAge, domain, path, secure, httpOnly).right.map { v =>
+          notValidated(name, v)
+        }
+    }
+  }
+
+  def notValidated(
+      name: String,
+      value: String,
+      expires: Option[Instant] = None,
+      maxAge: Option[Long] = None,
+      domain: Option[String] = None,
+      path: Option[String] = None,
+      secure: Boolean = false,
+      httpOnly: Boolean = false
+  ): CookieWithMeta =
+    notValidated(name, CookieValueWithMeta.notValidated(value, expires, maxAge, domain, path, secure, httpOnly))
+
+  def notValidated(
+      name: String,
+      valueWithMeta: CookieValueWithMeta
+  ): CookieWithMeta = new CookieWithMeta(name, valueWithMeta)
 
   // https://tools.ietf.org/html/rfc6265#section-4.1.1
-  def parseHeaderValue(s: String): Either[String, CookieWithMeta] = {
+  /**
+    * Parse the cookie, represented as a header value (in the format: `[name]=[value]; [attr]=[value]; ...`).
+    */
+  def parse(s: String): Either[String, CookieWithMeta] = {
     def splitkv(kv: String): (String, Option[String]) = kv.split("=", 2).map(_.trim) match {
       case Array(v1)     => (v1, None)
       case Array(v1, v2) => (v1, Some(v2))
@@ -102,7 +233,7 @@ object CookieWithMeta {
     val components = s.split(";").map(_.trim)
     val (first, other) = (components.head, components.tail)
     val (name, value) = splitkv(first)
-    var result: Either[String, CookieWithMeta] = Right(CookieWithMeta(name, value.getOrElse("")))
+    var result: Either[String, CookieWithMeta] = Right(CookieWithMeta.notValidated(name, value.getOrElse("")))
     other.map(splitkv).map(t => (t._1.toLowerCase, t._2)).foreach {
       case (k, Some(v)) if k == "expires" =>
         Try(Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(v))) match {

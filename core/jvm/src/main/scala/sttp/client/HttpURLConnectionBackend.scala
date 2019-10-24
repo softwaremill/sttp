@@ -232,7 +232,7 @@ class HttpURLConnectionBackend private (
       .flatMap { case (k, vv) => vv.asScala.map(Header(k, _)) }
     val contentEncoding = Option(c.getHeaderField(HeaderNames.ContentEncoding))
 
-    val code = StatusCode(c.getResponseCode)
+    val code = StatusCode.notValidated(c.getResponseCode)
     val wrappedIs = if (c.getRequestMethod != "HEAD") {
       wrapInput(contentEncoding, handleNullInput(is))
     } else is

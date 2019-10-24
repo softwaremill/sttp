@@ -25,9 +25,9 @@ trait HttpTestExtensions[F[_]] extends TestHttpServer { self: HttpTest[F] =>
           response.cookies should have length (3)
           response.cookies.toSet should be(
             Set(
-              CookieWithMeta("cookie1", "value1", secure = true, httpOnly = true, maxAge = Some(123L)),
-              CookieWithMeta("cookie2", "value2"),
-              CookieWithMeta("cookie3", "", domain = Some("xyz"), path = Some("a/b/c"))
+              CookieWithMeta.unsafeApply("cookie1", "value1", secure = true, httpOnly = true, maxAge = Some(123L)),
+              CookieWithMeta.unsafeApply("cookie2", "value2"),
+              CookieWithMeta.unsafeApply("cookie3", "", domain = Some("xyz"), path = Some("a/b/c"))
             )
           )
         }

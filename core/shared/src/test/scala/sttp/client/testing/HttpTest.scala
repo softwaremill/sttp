@@ -324,7 +324,7 @@ trait HttpTest[F[_]]
       code: Int
   ): Future[Assertion] = {
     response.toFuture().map { resp =>
-      resp.code shouldBe StatusCode(code)
+      resp.code shouldBe StatusCode.notValidated(code)
       resp.history shouldBe 'empty
     }
   }
