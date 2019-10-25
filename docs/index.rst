@@ -35,9 +35,8 @@ For more examples, see the :ref:`usage examples <usage_examples>` section. Or ex
    goals
    community
    examples
-   model
 
-. toctree::
+.. toctree::
    :maxdepth: 2
    :caption: HTTP model
 
