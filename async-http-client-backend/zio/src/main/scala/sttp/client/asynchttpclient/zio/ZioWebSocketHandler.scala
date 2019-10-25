@@ -1,8 +1,9 @@
 package sttp.client.asynchttpclient.zio
 
 import sttp.client.asynchttpclient.WebSocketHandler
-import sttp.client.asynchttpclient.internal.{AsyncQueue, NativeWebSocketHandler}
+import sttp.client.asynchttpclient.internal.NativeWebSocketHandler
 import sttp.client.impl.zio.TaskMonadAsyncError
+import sttp.client.ws.internal.AsyncQueue
 import sttp.client.ws.{WebSocket, WebSocketEvent}
 import sttp.model.ws.WebSocketBufferFull
 import zio.{DefaultRuntime, Queue, Runtime, Task, UIO}

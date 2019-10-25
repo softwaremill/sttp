@@ -10,6 +10,7 @@ import java.util.function.BiConsumer
 import sttp.client.httpclient.WebSocketHandler
 import sttp.client.monad.syntax._
 import sttp.client.monad.{MonadAsyncError, MonadError}
+import sttp.client.ws.internal.AsyncQueue
 import sttp.client.ws.{WebSocket, WebSocketEvent}
 import sttp.model.ws.{WebSocketClosed, WebSocketFrame}
 

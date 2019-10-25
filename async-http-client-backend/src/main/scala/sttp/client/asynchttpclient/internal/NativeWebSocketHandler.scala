@@ -9,6 +9,7 @@ import sttp.client.monad.syntax._
 import sttp.client.monad.{MonadAsyncError, MonadError}
 import sttp.client.ws.{WebSocket, WebSocketEvent}
 import sttp.model.ws.{WebSocketClosed, WebSocketFrame}
+import sttp.client.ws.internal.AsyncQueue
 
 object NativeWebSocketHandler {
   def apply[F[_]](queue: AsyncQueue[F, WebSocketEvent], monad: MonadAsyncError[F]): WebSocketHandler[WebSocket[F]] = {
