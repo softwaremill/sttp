@@ -37,12 +37,18 @@ For more examples, see the :ref:`usage examples <usage_examples>` section. Or ex
    examples
    model
 
+. toctree::
+   :maxdepth: 2
+   :caption: HTTP model
+
+   model/model
+   model/uri
+
 .. toctree::
    :maxdepth: 2
    :caption: Request definition
 
    requests/basics
-   requests/uri
    requests/headers
    requests/cookies
    requests/authentication

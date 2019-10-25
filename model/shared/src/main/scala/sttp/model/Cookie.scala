@@ -23,6 +23,7 @@ case class Cookie private (name: String, value: String) {
 }
 
 object Cookie {
+  // see: https://stackoverflow.com/questions/1969232/allowed-characters-in-cookies/1969339
   private val AllowedValueCharacters = s"[^${Rfc2616.CTL}]*".r
 
   private[model] def validateName(name: String): Option[String] = {
