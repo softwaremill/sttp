@@ -5,7 +5,7 @@ import sttp.model.{Header, StatusCode}
 
 import scala.collection.immutable.Seq
 
-trait ResponseMetadata extends Headers {
+trait ResponseMetadata extends HasHeaders {
   def code: StatusCode
   def statusText: String
   def is200: Boolean = code == StatusCode.Ok

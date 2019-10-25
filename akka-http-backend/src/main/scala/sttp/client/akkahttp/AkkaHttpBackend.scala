@@ -16,7 +16,7 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{FileIO, Flow, Sink, Source, StreamConverters}
 import akka.util.ByteString
 import sttp.client
-import sttp.model.{Header, HeaderNames, Method, Part, StatusCode}
+import sttp.model.{Header, HeaderNames, Headers, Method, Part, StatusCode}
 import sttp.client.monad.{FutureMonad, MonadError}
 import sttp.client.ws.WebSocketResponse
 import sttp.client.{
@@ -99,7 +99,7 @@ class AkkaHttpBackend private (
             if (r.code != StatusCode.SwitchingProtocols) {
               throw new NotAWebsocketException(r)
             } else {
-              client.ws.WebSocketResponse(r, wsResult)
+              client.ws.WebSocketResponse(Headers(r.headers), wsResult)
             }
           }
 

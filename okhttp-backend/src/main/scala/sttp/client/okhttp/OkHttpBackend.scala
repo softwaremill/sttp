@@ -222,7 +222,8 @@ class OkHttpSyncBackend private (client: OkHttpClient, closeClient: Boolean)
       handler.listener,
       (webSocket, response) => {
         val wsResponse =
-          sttp.client.ws.WebSocketResponse(readResponse(response, ignore), handler.wrIsWebSocket(webSocket))
+          sttp.client.ws
+            .WebSocketResponse(Headers(readResponse(response, ignore).headers), handler.wrIsWebSocket(webSocket))
         fillCell(wsResponse)
       },
       fillCellError,
@@ -291,7 +292,7 @@ abstract class OkHttpAsyncBackend[F[_], S](client: OkHttpClient, monad: MonadAsy
         (webSocket, response) => {
           val wsResponse =
             monad.map(readResponse(response, ignore))(
-              r => sttp.client.ws.WebSocketResponse(r, handler.wrIsWebSocket(webSocket))
+              r => sttp.client.ws.WebSocketResponse(Headers(r.headers), handler.wrIsWebSocket(webSocket))
             )
           success(wsResponse)
         },

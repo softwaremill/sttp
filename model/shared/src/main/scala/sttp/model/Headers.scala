@@ -3,7 +3,9 @@ package sttp.model
 import scala.collection.immutable.Seq
 import scala.util.Try
 
-trait Headers {
+case class Headers(headers: Seq[Header]) extends HasHeaders
+
+trait HasHeaders {
   def headers: Seq[Header]
   def header(h: String): Option[String] = headers.find(_.is(h)).map(_.value)
   def headers(h: String): Seq[String] = headers.filter(_.is(h)).map(_.value)
@@ -14,11 +16,4 @@ trait Headers {
   def cookies: Seq[CookieWithMeta] =
     headers(HeaderNames.SetCookie)
       .map(h => CookieWithMeta.parse(h).fold(e => throw new RuntimeException(e), identity[CookieWithMeta]))
-}
-
-object Headers {
-  def apply(hs: Seq[Header]): Headers = new Headers {
-    override def headers: Seq[Header] = hs
-    override def toString = s"Headers(${hs.map(_.toString).mkString(",")})"
-  }
 }
