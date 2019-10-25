@@ -223,11 +223,10 @@ class OkHttpSyncBackend private (client: OkHttpClient, closeClient: Boolean)
       (webSocket, response) => {
         val wsResponse =
           sttp.client.ws
-            .WebSocketResponse(Headers(readResponse(response, ignore).headers), handler.wrIsWebSocket(webSocket))
+            .WebSocketResponse(Headers(readResponse(response, ignore).headers), handler.createResult(webSocket))
         fillCell(wsResponse)
       },
-      fillCellError,
-      handler.wrIsWebSocket
+      fillCellError
     )
 
     OkHttpBackend
@@ -292,12 +291,11 @@ abstract class OkHttpAsyncBackend[F[_], S](client: OkHttpClient, monad: MonadAsy
         (webSocket, response) => {
           val wsResponse =
             monad.map(readResponse(response, ignore))(
-              r => sttp.client.ws.WebSocketResponse(Headers(r.headers), handler.wrIsWebSocket(webSocket))
+              r => sttp.client.ws.WebSocketResponse(Headers(r.headers), handler.createResult(webSocket))
             )
           success(wsResponse)
         },
-        error,
-        handler.wrIsWebSocket
+        error
       )
 
       val _ = OkHttpBackend
@@ -332,8 +330,7 @@ object OkHttpFutureBackend {
 private[okhttp] class DelegatingWebSocketListener[WS_RESULT](
     delegate: WebSocketListener,
     onInitialOpen: (WebSocket, OkHttpResponse) => Unit,
-    onInitialError: Throwable => Unit,
-    wrIsWebSocket: WebSocket =:= WS_RESULT
+    onInitialError: Throwable => Unit
 ) extends WebSocketListener {
   private val initialised = new AtomicBoolean(false)
 
