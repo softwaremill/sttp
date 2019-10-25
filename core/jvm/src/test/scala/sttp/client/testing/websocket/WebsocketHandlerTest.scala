@@ -1,7 +1,5 @@
 package sttp.client.testing.websocket
 
-import java.io.IOException
-
 import org.scalatest.concurrent.{Eventually, IntegrationPatience}
 import org.scalatest.{Assertion, AsyncFlatSpec, Matchers}
 import sttp.client._
@@ -66,19 +64,6 @@ abstract class WebsocketHandlerTest[F[_], WS_HANDLER[_]]
       .toFuture
   }
 
-  it should "error if the endpoint is not a websocket" in {
-    monad
-      .handleError {
-        basicRequest
-          .get(uri"$wsEndpoint/echo")
-          .openWebsocket(createHandler(None))
-          .map(_ => fail: Assertion)
-      } {
-        case e: Exception => (e shouldBe a[IOException]).unit
-      }
-      .toFuture()
-  }
-
   it should "error if incoming messages overflow the buffer" in {
     monad
       .handleError {
@@ -102,10 +87,7 @@ abstract class WebsocketHandlerTest[F[_], WS_HANDLER[_]]
     fs.foldLeft(().unit)(_ >> _)
   }
 
-  def receiveEcho(ws: WebSocket[F], count: Int): F[Assertion] = {
-    val fs = (1 to count).map(i => ws.receive.map(_ shouldBe Right(WebSocketFrame.text(s"echo: test$i"))))
-    fs.foldLeft(succeed.unit)(_ >> _)
-  }
+  def receiveEcho(ws: WebSocket[F], count: Int): F[Assertion]
 
   override protected def afterAll(): Unit = {
     backend.close().toFuture
