@@ -4,7 +4,6 @@ import java.io.IOException
 
 import org.scalatest.Assertion
 import sttp.client.basicRequest
-import sttp.client.monad.MonadError
 import sttp.client.testing.websocket.WebsocketHandlerTest
 import sttp.client.ws.WebSocket
 import sttp.model.ws.WebSocketFrame
@@ -12,7 +11,6 @@ import sttp.client.monad.syntax._
 import sttp.model.Uri._
 
 abstract class AHCWebsocketHandlerTest[F[_]] extends WebsocketHandlerTest[F, WebSocketHandler] {
-  implicit val monad: MonadError[F]
 
   it should "error if the endpoint is not a websocket" in {
     monad
