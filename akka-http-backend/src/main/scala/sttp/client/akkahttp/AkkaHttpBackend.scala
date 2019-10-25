@@ -197,10 +197,10 @@ class AkkaHttpBackend private (
   }
 
   private def headersFromAkka(hr: HttpResponse): Seq[Header] = {
-    val ch = Header(HeaderNames.ContentType, hr.entity.contentType.toString())
+    val ch = Header.notValidated(HeaderNames.ContentType, hr.entity.contentType.toString())
     val cl =
-      hr.entity.contentLengthOption.map(v => Header(HeaderNames.ContentLength, v.toString))
-    val other = hr.headers.map(h => Header(h.name, h.value))
+      hr.entity.contentLengthOption.map(v => Header.notValidated(HeaderNames.ContentLength, v.toString))
+    val other = hr.headers.map(h => Header.notValidated(h.name, h.value))
     ch :: (cl.toList ++ other)
   }
 

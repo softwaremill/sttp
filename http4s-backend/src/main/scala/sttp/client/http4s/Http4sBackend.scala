@@ -52,7 +52,7 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
       MVar.empty[F, Response[T]].flatMap { responseVar =>
         val sendRequest = client.fetch(customizeRequest(request)) { response =>
           val code = StatusCode.unsafeApply(response.status.code)
-          val headers = response.headers.toList.map(h => Header(h.name.value, h.value))
+          val headers = response.headers.toList.map(h => Header.notValidated(h.name.value, h.value))
           val statusText = response.status.reason
           val responseMetadata = ResponseMetadata(headers, code, statusText)
 

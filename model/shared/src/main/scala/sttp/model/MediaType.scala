@@ -75,6 +75,10 @@ trait MediaTypes {
   val ImagePng = MediaType("image", "png")
   val ImageTiff = MediaType("image", "tiff")
 
+  val MultipartFormData = MediaType("multipart", "form-data")
+  val MultipartMixed = MediaType("multipart", "mixed")
+  val MultipartAlternative = MediaType("multipart", "alternative")
+
   val TextCacheManifest = MediaType("text", "cache-manifest")
   val TextCalendar = MediaType("text", "calendar")
   val TextCss = MediaType("text", "css")

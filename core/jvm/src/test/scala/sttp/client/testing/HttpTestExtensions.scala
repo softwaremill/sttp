@@ -130,9 +130,9 @@ trait HttpTestExtensions[F[_]] extends TestHttpServer { self: HttpTest[F] =>
 
     "strip sensitive headers" - {
       val testData = List(
-        Header(HeaderNames.Authorization, "secret"),
-        Header(HeaderNames.Cookie, "A=B;"),
-        Header(HeaderNames.SetCookie, "A=B")
+        Header.notValidated(HeaderNames.Authorization, "secret"),
+        Header.notValidated(HeaderNames.Cookie, "A=B;"),
+        Header.notValidated(HeaderNames.SetCookie, "A=B")
       )
 
       for (header <- testData) yield {

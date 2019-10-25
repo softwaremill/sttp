@@ -101,7 +101,7 @@ abstract class OkHttpBackend[F[_], S](client: OkHttpClient, closeClient: Boolean
   }
 
   private def addMultipart(builder: OkHttpMultipartBody.Builder, mp: Part[BasicRequestBody]): Unit = {
-    val allHeaders = mp.headers :+ Header(HeaderNames.ContentDisposition, mp.contentDispositionHeaderValue)
+    val allHeaders = mp.headers :+ Header.notValidated(HeaderNames.ContentDisposition, mp.contentDispositionHeaderValue)
     val headers =
       OkHttpHeaders.of(allHeaders.filterNot(_.is(HeaderNames.ContentType)).map(h => (h.name, h.value)).toMap.asJava)
 
@@ -117,7 +117,7 @@ abstract class OkHttpBackend[F[_], S](client: OkHttpClient, closeClient: Boolean
       .headers()
       .names()
       .asScala
-      .flatMap(name => res.headers().values(name).asScala.map(Header(name, _)))
+      .flatMap(name => res.headers().values(name).asScala.map(Header.notValidated(name, _)))
       .toList
 
     val responseMetadata = ResponseMetadata(headers, StatusCode.notValidated(res.code()), res.message())

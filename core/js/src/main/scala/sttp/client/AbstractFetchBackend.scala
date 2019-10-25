@@ -145,7 +145,7 @@ abstract class AbstractFetchBackend[F[_], S](options: FetchOptions, customizeReq
         // this will only ever be 2 but the types dont enforce that
         if (hs.length >= 2) {
           val name = hs(0)
-          hs.toList.drop(1).map(v => Header(name, v))
+          hs.toList.drop(1).map(v => Header.notValidated(name, v))
         } else {
           Seq.empty
         }

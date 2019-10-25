@@ -38,7 +38,7 @@ class CookieRequestTests extends FlatSpec with Matchers {
         Right(()),
         StatusCode.Ok,
         "",
-        List(Header(HeaderNames.SetCookie, "k1=v1"), Header(HeaderNames.SetCookie, "k2=v2")),
+        List(Header.notValidated(HeaderNames.SetCookie, "k1=v1"), Header.notValidated(HeaderNames.SetCookie, "k2=v2")),
         Nil
       )
     basicRequest

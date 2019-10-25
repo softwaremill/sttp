@@ -16,16 +16,18 @@ case class Part[T](
   def fileName(v: String): Part[T] = dispositionParam(FileNameDispositionParam, v)
   def fileName: Option[String] = otherDispositionParams.get(FileNameDispositionParam)
 
-  def contentType(v: MediaType): Part[T] = header(Header(HeaderNames.ContentType, v.toString), replaceExisting = true)
-  def contentType(v: String): Part[T] = header(Header(HeaderNames.ContentType, v), replaceExisting = true)
+  def contentType(v: MediaType): Part[T] =
+    header(Header.unsafeApply(HeaderNames.ContentType, v.toString), replaceExisting = true)
+  def contentType(v: String): Part[T] = header(Header.unsafeApply(HeaderNames.ContentType, v), replaceExisting = true)
   def contentType: Option[String] = header(HeaderNames.ContentType)
 
   def header(h: Header, replaceExisting: Boolean = false): Part[T] = {
     val current = if (replaceExisting) headers.filterNot(_.is(h.name)) else headers
     this.copy(headers = current :+ h)
   }
-  def header(k: String, v: String): Part[T] = header(Header(k, v))
-  def header(k: String, v: String, replaceExisting: Boolean): Part[T] = header(Header(k, v), replaceExisting)
+  def header(k: String, v: String): Part[T] = header(Header.notValidated(k, v))
+  def header(k: String, v: String, replaceExisting: Boolean): Part[T] =
+    header(Header.notValidated(k, v), replaceExisting)
 
   def header(k: String): Option[String] = headers.find(_.name == k).map(_.value)
 

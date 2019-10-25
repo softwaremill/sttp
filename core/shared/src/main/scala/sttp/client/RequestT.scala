@@ -71,9 +71,11 @@ case class RequestT[U[_], T, +S](
     val current = if (replaceExisting) headers.filterNot(_.is(h.name)) else headers
     this.copy(headers = current :+ h)
   }
-  def header(k: String, v: String, replaceExisting: Boolean): RequestT[U, T, S] = header(Header(k, v), replaceExisting)
-  def header(k: String, v: String): RequestT[U, T, S] = header(Header(k, v))
-  def headers(hs: Map[String, String]): RequestT[U, T, S] = headers(hs.map(t => Header(t._1, t._2)).toSeq: _*)
+  def header(k: String, v: String, replaceExisting: Boolean): RequestT[U, T, S] =
+    header(Header.notValidated(k, v), replaceExisting)
+  def header(k: String, v: String): RequestT[U, T, S] = header(Header.notValidated(k, v))
+  def headers(hs: Map[String, String]): RequestT[U, T, S] =
+    headers(hs.map(t => Header.notValidated(t._1, t._2)).toSeq: _*)
   def headers(hs: Header*): RequestT[U, T, S] = this.copy(headers = headers ++ hs)
   def auth: SpecifyAuthScheme[U, T, S] =
     new SpecifyAuthScheme[U, T, S](HeaderNames.Authorization, this)

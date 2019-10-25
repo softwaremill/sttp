@@ -309,7 +309,7 @@ abstract class AsyncHttpClientBackend[F[_], S](
   private def readHeaders(h: HttpHeaders): Seq[Header] =
     h.iteratorAsString()
       .asScala
-      .map(e => Header(e.getKey, e.getValue))
+      .map(e => Header.notValidated(e.getKey, e.getValue))
       .toList
 
   override def close(): F[Unit] = {

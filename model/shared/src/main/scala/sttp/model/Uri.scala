@@ -8,8 +8,6 @@ import sttp.model.internal.{Rfc3986, UriCompatibility}
 
 import scala.annotation.tailrec
 import scala.collection.immutable.Seq
-import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
 import scala.util.Try
 import sttp.model.internal.Rfc3986.encode
 

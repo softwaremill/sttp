@@ -43,7 +43,9 @@ abstract class AbstractCurlBackend[F[_], S](monad: MonadError[F], verbose: Boole
       reqHeaders.find(_.name == "Accept-Encoding").foreach(h => curl.option(AcceptEncoding, h.value))
       request.body match {
         case _: MultipartBody =>
-          headers = transformHeaders(reqHeaders :+ Header("Content-Type", "multipart/form-data"))
+          headers = transformHeaders(
+            reqHeaders :+ Header.notValidated(HeaderNames.ContentType, MediaType.MultipartFormData.toString)
+          )
         case _ =>
           headers = transformHeaders(reqHeaders)
       }
@@ -170,9 +172,9 @@ abstract class AbstractCurlBackend[F[_], S](monad: MonadError[F], verbose: Boole
       .map { line =>
         val split = line.split(":", 2)
         if (split.size == 2)
-          Header(split(0).trim, split(1).trim)
+          Header.notValidated(split(0).trim, split(1).trim)
         else
-          Header(split(0).trim, "")
+          Header.notValidated(split(0).trim, "")
       }
     Seq.from(array: _*)
   }

@@ -3,7 +3,7 @@ package sttp.model
 import java.time.{Instant, ZoneId}
 import java.time.format.DateTimeFormatter
 
-import sttp.model.internal.Validate
+import sttp.model.internal.{Rfc2616, Validate}
 import sttp.model.internal.Validate._
 
 import scala.util.{Failure, Success, Try}
@@ -11,8 +11,8 @@ import scala.util.{Failure, Success, Try}
 /**
   * A cookie name-value pair.
   *
-  * As there are no defined rules for encoding cookie names & values, these values should be treated as encoded values,
-  * which will end up unmodified in the header.
+  * The `name` and `value` should be already encoded (if necessary), as when serialised, they end up unmodified in
+  * the header.
   */
 case class Cookie private (name: String, value: String) {
 
@@ -23,11 +23,10 @@ case class Cookie private (name: String, value: String) {
 }
 
 object Cookie {
-  private val AllowedNameCharacters = """[a-zA-Z0-9!#$%&'*+\-.^_`|~]*""".r
-  private val AllowedValueCharacters = """[\s\w!#$%&'"()*+\-./:<=>?@\\[\\]^_`{|}~]*""".r
+  private val AllowedValueCharacters = s"[^${Rfc2616.CTL}]*".r
 
   private[model] def validateName(name: String): Option[String] = {
-    if (AllowedNameCharacters.unapplySeq(name).isEmpty) {
+    if (Rfc2616.Token.unapplySeq(name).isEmpty) {
       Some("Cookie name can only contain alphanumeric characters and: !#$%&'*+\\-.^_`|~")
     } else None
   }
@@ -82,7 +81,7 @@ case class CookieValueWithMeta private (
 )
 
 object CookieValueWithMeta {
-  private val AllowedAttrValueCharacters = """[^;\\0\a\\b\t\n\v\f\r\e]*""".r
+  private val AllowedAttrValueCharacters = s"""[^;${Rfc2616.CTL}]*""".r
 
   private[model] def validateAttrValue(attrName: String, value: String): Option[String] = {
     if (AllowedAttrValueCharacters.unapplySeq(value).isEmpty) {
@@ -130,8 +129,8 @@ object CookieValueWithMeta {
 /**
   * A cookie name-value pair with attributes.
   *
-  * As there are no defined rules for encoding cookie names & values, these values should be treated as encoded values,
-  * which will end up unmodified in the header.
+  * All `String` values should be already encoded (if necessary), as when serialised, they end up unmodified in the
+  * header.
   */
 case class CookieWithMeta private (
     name: String,
