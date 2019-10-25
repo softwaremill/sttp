@@ -44,7 +44,7 @@ abstract class AbstractCurlBackend[F[_], S](monad: MonadError[F], verbose: Boole
       request.body match {
         case _: MultipartBody =>
           headers = transformHeaders(
-            reqHeaders :+ Header.notValidated(HeaderNames.ContentType, MediaType.MultipartFormData.toString)
+            reqHeaders :+ Header.contentType(MediaType.MultipartFormData)
           )
         case _ =>
           headers = transformHeaders(reqHeaders)
