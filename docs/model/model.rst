@@ -26,7 +26,7 @@ For example, there's ``StatusCode.Ok``, ``Method.POST``, ``MediaType.ImageGif`` 
 
 These constants are also available as traits: ``StatusCodes``, ``MediaTypes`` and ``HeaderNames``.
 
-The model also contains aggregate/helper classes such as `Headers` and `MultiQueryParams`
+The model also contains aggregate/helper classes such as ``Headers`` and ``MultiQueryParams``
 
 Example with objects::
 
