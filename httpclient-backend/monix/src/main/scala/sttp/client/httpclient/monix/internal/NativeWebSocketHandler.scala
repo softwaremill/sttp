@@ -45,7 +45,7 @@ object NativeWebSocketHandler {
     }
 
     override def send(f: WebSocketFrame, isContinuation: Boolean = false): F[Unit] =
-      monad.flatten(monad.eval(fromNettyFuture(f match {
+      monad.flatten(monad.eval(fromCompletableFuture(f match {
         case WebSocketFrame.Text(payload, finalFragment, _) if !isContinuation =>
           ws.sendText(payload, finalFragment)
         case WebSocketFrame.Text(payload, finalFragment, _) if isContinuation =>
@@ -63,7 +63,7 @@ object NativeWebSocketHandler {
 
     override implicit def monad: MonadError[F] = _monad
 
-    private def fromNettyFuture(cf: CompletableFuture[JWebSocket]): F[Unit] = {
+    private def fromCompletableFuture(cf: CompletableFuture[JWebSocket]): F[Unit] = {
       _monad.async { cb =>
         cf.whenComplete(new BiConsumer[JWebSocket, Throwable] {
           override def accept(t: JWebSocket, error: Throwable): Unit = {
