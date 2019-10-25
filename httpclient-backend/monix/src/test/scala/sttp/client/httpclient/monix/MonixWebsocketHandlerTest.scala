@@ -14,6 +14,7 @@ import sttp.client.testing.ConvertToFuture
 import sttp.client.testing.websocket.WebsocketHandlerTest
 import sttp.client.ws.{WebSocket, WebSocketEvent}
 import sttp.model.ws.WebSocketFrame
+import scala.concurrent.duration._
 
 class MonixWebsocketHandlerTest extends WebsocketHandlerTest[Task, WebSocketHandler] {
   implicit val backend: SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler] =
@@ -29,7 +30,7 @@ class MonixWebsocketHandlerTest extends WebsocketHandlerTest[Task, WebSocketHand
       .openWebsocket(createHandler(Some(3)))
       .flatMap { response =>
         val ws = response.result
-        send(ws, 1000) >>
+        send(ws, 1000) >> Task.sleep(1 seconds) >>
           // by now we expect to have received at least 4 back, which should overflow the buffer
           ws.isOpen.map(_ shouldBe true)
       }

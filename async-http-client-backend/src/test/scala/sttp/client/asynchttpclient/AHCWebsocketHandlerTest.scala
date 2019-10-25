@@ -1,9 +1,9 @@
 package sttp.client.asynchttpclient
 
 import java.io.IOException
+import java.nio.channels.ClosedChannelException
 
 import org.scalatest.Assertion
-import org.scalatest.exceptions.TestFailedException
 import sttp.client.basicRequest
 import sttp.client.testing.websocket.WebsocketHandlerTest
 import sttp.client.ws.WebSocket
@@ -37,8 +37,7 @@ abstract class AHCWebsocketHandlerTest[F[_]] extends WebsocketHandlerTest[F, Web
           ws.isOpen.map(_ shouldBe false)
       }
       .handleError {
-        case e: TestFailedException => throw e // ws is still open
-        case _: Exception           => succeed.unit
+        case _: ClosedChannelException => succeed.unit
       }
       .toFuture()
   }
