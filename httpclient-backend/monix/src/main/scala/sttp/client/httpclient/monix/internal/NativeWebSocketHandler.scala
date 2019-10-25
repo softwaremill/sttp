@@ -40,7 +40,11 @@ object NativeWebSocketHandler {
           queue.offer(e)
           monad.error(t)
         case WebSocketEvent.Error(t) => throw t
-        case WebSocketEvent.Frame(f) => monad.unit(Right(f))
+        case WebSocketEvent.Frame(f) =>
+          monad.unit(Right(f)).map { frame =>
+            ws.request(1)
+            frame
+          }
       }
     }
 
@@ -89,22 +93,22 @@ class AddToQueueListener[F[_]](queue: AsyncQueue[F, WebSocketEvent], isOpen: Ato
 
   override def onText(webSocket: JWebSocket, data: CharSequence, last: Boolean): CompletionStage[_] = {
     onFrame(WebSocketFrame.Text(data.toString, last, None))
-    super.onText(webSocket, data, last)
+    null
   }
 
   override def onBinary(webSocket: JWebSocket, data: ByteBuffer, last: Boolean): CompletionStage[_] = {
     onFrame(WebSocketFrame.Binary(data.array(), last, None))
-    super.onBinary(webSocket, data, last)
+    null
   }
 
   override def onPing(webSocket: JWebSocket, message: ByteBuffer): CompletionStage[_] = {
     onFrame(WebSocketFrame.Ping(message.array()))
-    super.onPing(webSocket, message)
+    null
   }
 
   override def onPong(webSocket: JWebSocket, message: ByteBuffer): CompletionStage[_] = {
     onFrame(WebSocketFrame.Pong(message.array()))
-    super.onPong(webSocket, message)
+    null
   }
 
   override def onClose(webSocket: JWebSocket, statusCode: Int, reason: String): CompletionStage[_] = {

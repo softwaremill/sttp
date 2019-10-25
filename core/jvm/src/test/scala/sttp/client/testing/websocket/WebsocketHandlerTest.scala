@@ -64,24 +64,6 @@ abstract class WebsocketHandlerTest[F[_], WS_HANDLER[_]]
       .toFuture
   }
 
-  it should "error if incoming messages overflow the buffer" in {
-    monad
-      .handleError {
-        basicRequest
-          .get(uri"$wsEndpoint/ws/echo")
-          .openWebsocket(createHandler(Some(3)))
-          .flatMap { response =>
-            val ws = response.result
-            send(ws, 1000) >>
-              // by now we expect to have received at least 4 back, which should overflow the buffer
-              ws.isOpen.map(_ shouldBe false)
-          }
-      } {
-        case _: Exception => succeed.unit
-      }
-      .toFuture()
-  }
-
   def send(ws: WebSocket[F], count: Int): F[Unit] = {
     val fs = (1 to count).map(i => ws.send(WebSocketFrame.text(s"test$i")))
     fs.foldLeft(().unit)(_ >> _)

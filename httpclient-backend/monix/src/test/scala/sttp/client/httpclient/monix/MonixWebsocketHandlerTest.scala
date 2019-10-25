@@ -23,6 +23,19 @@ class MonixWebsocketHandlerTest extends WebsocketHandlerTest[Task, WebSocketHand
 
   def createHandler: Option[Int] => WebSocketHandler[WebSocket[Task]] = MonixWebSocketHandler(_)
 
+  it should "handle backpressure correctly" in {
+    basicRequest
+      .get(uri"$wsEndpoint/ws/echo")
+      .openWebsocket(createHandler(Some(3)))
+      .flatMap { response =>
+        val ws = response.result
+        send(ws, 1000) >>
+          // by now we expect to have received at least 4 back, which should overflow the buffer
+          ws.isOpen.map(_ shouldBe true)
+      }
+      .toFuture()
+  }
+
   def receiveEcho(ws: WebSocket[Task], count: Int): Task[Assertion] = {
     val fs = (1 to count).map { i =>
       Observable
