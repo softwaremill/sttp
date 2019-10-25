@@ -1,6 +1,6 @@
 package sttp.client.httpclient
 
-import java.net.http.HttpClient
+import java.net.http.{HttpClient, HttpRequest}
 import java.net.http.HttpResponse.BodyHandlers
 import java.util.concurrent.ArrayBlockingQueue
 
@@ -10,10 +10,13 @@ import sttp.client.ws.WebSocketResponse
 import sttp.client.{FollowRedirectsBackend, Identity, Request, Response, SttpBackend, SttpBackendOptions}
 import sttp.model.Headers
 
-class HttpClientSyncBackend(client: HttpClient, closeClient: Boolean)
-    extends HttpClientBackend[Identity, Nothing](client, closeClient) {
+class HttpClientSyncBackend private (
+    client: HttpClient,
+    closeClient: Boolean,
+    customizeRequest: HttpRequest => HttpRequest
+) extends HttpClientBackend[Identity, Nothing](client, closeClient) {
   override def send[T](request: Request[T, Nothing]): Identity[Response[T]] = {
-    val jRequest = convertRequest(request)
+    val jRequest = customizeRequest(convertRequest(request))
     val response = client.send(jRequest, BodyHandlers.ofInputStream())
     readResponse(response, request.response)
   }
@@ -45,14 +48,24 @@ class HttpClientSyncBackend(client: HttpClient, closeClient: Boolean)
 }
 
 object HttpClientSyncBackend {
-  private def apply(client: HttpClient, closeClient: Boolean): SttpBackend[Identity, Nothing, WebSocketHandler] =
-    new FollowRedirectsBackend[Identity, Nothing, WebSocketHandler](new HttpClientSyncBackend(client, closeClient))
+  private def apply(
+      client: HttpClient,
+      closeClient: Boolean,
+      customizeRequest: HttpRequest => HttpRequest
+  ): SttpBackend[Identity, Nothing, WebSocketHandler] =
+    new FollowRedirectsBackend[Identity, Nothing, WebSocketHandler](
+      new HttpClientSyncBackend(client, closeClient, customizeRequest)
+    )
 
   def apply(
-      options: SttpBackendOptions = SttpBackendOptions.Default
+      options: SttpBackendOptions = SttpBackendOptions.Default,
+      customizeRequest: HttpRequest => HttpRequest = identity
   ): SttpBackend[Identity, Nothing, WebSocketHandler] =
-    HttpClientSyncBackend(HttpClientBackend.defaultClient(options), closeClient = true)
+    HttpClientSyncBackend(HttpClientBackend.defaultClient(options), closeClient = true, customizeRequest)
 
-  def usingClient(client: HttpClient): SttpBackend[Identity, Nothing, WebSocketHandler] =
-    HttpClientSyncBackend(client, closeClient = false)
+  def usingClient(
+      client: HttpClient,
+      customizeRequest: HttpRequest => HttpRequest = identity
+  ): SttpBackend[Identity, Nothing, WebSocketHandler] =
+    HttpClientSyncBackend(client, closeClient = false, customizeRequest)
 }

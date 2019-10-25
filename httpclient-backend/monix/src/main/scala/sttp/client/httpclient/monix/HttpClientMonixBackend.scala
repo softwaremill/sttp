@@ -17,8 +17,17 @@ import sttp.client.{SttpBackend, _}
 
 import scala.util.{Success, Try}
 
-class HttpClientMonixBackend private (client: HttpClient, closeClient: Boolean)(implicit s: Scheduler)
-    extends HttpClientAsyncBackend[Task, Observable[ByteBuffer]](client, TaskMonadAsyncError, closeClient) {
+class HttpClientMonixBackend private (
+    client: HttpClient,
+    closeClient: Boolean,
+    customizeRequest: HttpRequest => HttpRequest
+)(implicit s: Scheduler)
+    extends HttpClientAsyncBackend[Task, Observable[ByteBuffer]](
+      client,
+      TaskMonadAsyncError,
+      closeClient,
+      customizeRequest
+    ) {
 
   override def send[T](request: Request[T, Observable[ByteBuffer]]): Task[Response[T]] = {
     super.send(request).guarantee(Task.shift)
@@ -48,20 +57,24 @@ class HttpClientMonixBackend private (client: HttpClient, closeClient: Boolean)(
 }
 
 object HttpClientMonixBackend {
-  private def apply(client: HttpClient, closeClient: Boolean)(
+  private def apply(client: HttpClient, closeClient: Boolean, customizeRequest: HttpRequest => HttpRequest)(
       implicit s: Scheduler
   ): SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler] =
-    new FollowRedirectsBackend(new HttpClientMonixBackend(client, closeClient)(s))
+    new FollowRedirectsBackend(new HttpClientMonixBackend(client, closeClient, customizeRequest)(s))
 
-  def apply(options: SttpBackendOptions = SttpBackendOptions.Default)(
+  def apply(
+      options: SttpBackendOptions = SttpBackendOptions.Default,
+      customizeRequest: HttpRequest => HttpRequest = identity
+  )(
       implicit s: Scheduler = Scheduler.Implicits.global
   ): Task[SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler]] =
     Task.eval(
-      HttpClientMonixBackend(HttpClientBackend.defaultClient(options), closeClient = true)(s)
+      HttpClientMonixBackend(HttpClientBackend.defaultClient(options), closeClient = true, customizeRequest)(s)
     )
 
   def usingClient(
-      client: HttpClient
+      client: HttpClient,
+      customizeRequest: HttpRequest => HttpRequest = identity
   )(implicit s: Scheduler = Scheduler.Implicits.global): SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler] =
-    HttpClientMonixBackend(client, closeClient = false)(s)
+    HttpClientMonixBackend(client, closeClient = false, customizeRequest)(s)
 }
