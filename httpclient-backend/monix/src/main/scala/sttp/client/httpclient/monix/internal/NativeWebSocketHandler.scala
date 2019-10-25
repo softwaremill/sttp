@@ -50,13 +50,9 @@ object NativeWebSocketHandler {
 
     override def send(f: WebSocketFrame, isContinuation: Boolean = false): F[Unit] =
       monad.flatten(monad.eval(fromCompletableFuture(f match {
-        case WebSocketFrame.Text(payload, finalFragment, _) if !isContinuation =>
+        case WebSocketFrame.Text(payload, finalFragment, _) =>
           ws.sendText(payload, finalFragment)
-        case WebSocketFrame.Text(payload, finalFragment, _) if isContinuation =>
-          ws.sendText(payload, finalFragment)
-        case WebSocketFrame.Binary(payload, finalFragment, _) if !isContinuation =>
-          ws.sendBinary(ByteBuffer.wrap(payload), finalFragment)
-        case WebSocketFrame.Binary(payload, finalFragment, _) if isContinuation =>
+        case WebSocketFrame.Binary(payload, finalFragment, _) =>
           ws.sendBinary(ByteBuffer.wrap(payload), finalFragment)
         case WebSocketFrame.Ping(payload)                 => ws.sendPing(ByteBuffer.wrap(payload))
         case WebSocketFrame.Pong(payload)                 => ws.sendPong(ByteBuffer.wrap(payload))
