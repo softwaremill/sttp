@@ -9,9 +9,10 @@ import org.scalatest.concurrent.{Eventually, IntegrationPatience}
 import org.scalatest.{AsyncFlatSpec, Matchers}
 import sttp.client._
 import sttp.client.monad.MonadError
+import sttp.client.monad.syntax._
+import sttp.client.testing.{ConvertToFuture, TestHttpServer, ToFutureWrapper}
 
 import scala.collection.JavaConverters._
-import sttp.client.testing.{ConvertToFuture, TestHttpServer, ToFutureWrapper}
 
 abstract class HttpClientWebsocketTest[F[_]]
     extends AsyncFlatSpec
@@ -26,12 +27,10 @@ abstract class HttpClientWebsocketTest[F[_]]
 
   it should "send and receive two messages" in {
     val received = new ConcurrentLinkedQueue[String]()
-    implicitly[MonadError[F]]
-      .map(
-        basicRequest
-          .get(uri"$wsEndpoint/ws/echo")
-          .openWebsocket(WebSocketHandler.fromListener(collectingListener(received)))
-      ) { response =>
+    basicRequest
+      .get(uri"$wsEndpoint/ws/echo")
+      .openWebsocket(WebSocketHandler.fromListener(collectingListener(received)))
+      .map { response =>
         response.result.sendText("test1", true).get()
         response.result.sendText("test2", true).get()
         eventually {
@@ -45,12 +44,10 @@ abstract class HttpClientWebsocketTest[F[_]]
 
   it should "receive two messages" in {
     val received = new ConcurrentLinkedQueue[String]()
-    implicitly[MonadError[F]]
-      .map(
-        basicRequest
-          .get(uri"$wsEndpoint/ws/send_and_close")
-          .openWebsocket(WebSocketHandler.fromListener(collectingListener(received)))
-      ) { _ =>
+    basicRequest
+      .get(uri"$wsEndpoint/ws/send_and_close")
+      .openWebsocket(WebSocketHandler.fromListener(collectingListener(received)))
+      .map { _ =>
         eventually {
           received.asScala.toList shouldBe List("test10", "test20")
         }
