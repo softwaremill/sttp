@@ -1,6 +1,7 @@
 package sttp.client.asynchttpclient.fs2
 
 import cats.effect._
+import cats.effect.concurrent.Semaphore
 import cats.implicits._
 import fs2.concurrent.InspectableQueue
 import sttp.client.asynchttpclient.WebSocketHandler
@@ -10,11 +11,17 @@ import sttp.client.ws.{WebSocket, WebSocketEvent}
 import sttp.model.ws.WebSocketBufferFull
 
 object Fs2WebSocketHandler {
-  private class Fs2AsyncQueue[F[_], A](queue: InspectableQueue[F, A])(implicit F: Effect[F]) extends AsyncQueue[F, A] {
+  private class Fs2AsyncQueue[F[_], A](queue: InspectableQueue[F, A], semaphore: Semaphore[F])(implicit F: Effect[F])
+      extends AsyncQueue[F, A] {
     override def clear(): Unit =
-      F.runAsync(queue.getSize.flatMap { size =>
-          queue.dequeue.take(size.toLong).compile.drain
-        })(IO.fromEither)
+      F.runAsync(
+          Bracket[F, Throwable].bracket(semaphore.acquire)(
+            _ =>
+              queue.getSize.flatMap { size =>
+                queue.dequeue.take(size.toLong).compile.drain
+              }
+          )(_ => semaphore.release)
+        )(IO.fromEither)
         .unsafeRunSync()
 
     override def offer(t: A): Unit =
@@ -24,7 +31,8 @@ object Fs2WebSocketHandler {
         })
         .unsafeRunSync()
 
-    override def poll: F[A] = queue.dequeue1
+    override def poll: F[A] =
+      Bracket[F, Throwable].bracket(semaphore.acquire)(_ => queue.dequeue1)(_ => semaphore.release)
   }
 
   /**
@@ -44,14 +52,15 @@ object Fs2WebSocketHandler {
     */
   def apply[F[_]](
       createQueue: F[InspectableQueue[F, WebSocketEvent]]
-  )(implicit F: Effect[F]): F[WebSocketHandler[WebSocket[F]]] = {
-    createQueue.flatMap { queue =>
-      F.delay {
-        NativeWebSocketHandler[F](
-          new Fs2AsyncQueue[F, WebSocketEvent](queue),
-          new CatsMonadAsyncError
-        )
-      }
+  )(implicit F: ConcurrentEffect[F]): F[WebSocketHandler[WebSocket[F]]] = {
+    (createQueue, Semaphore[F](1)).tupled.flatMap {
+      case (queue, semaphore) =>
+        F.delay {
+          NativeWebSocketHandler[F](
+            new Fs2AsyncQueue[F, WebSocketEvent](queue, semaphore),
+            new CatsMonadAsyncError
+          )
+        }
     }
   }
 }
