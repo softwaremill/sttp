@@ -19,7 +19,8 @@ class Fs2WebsocketHandlerTest extends WebsocketHandlerTest[IO] {
   implicit lazy val contextShift: ContextShift[IO] = IO.contextShift(implicitly)
   implicit lazy val timer: Timer[IO] = IO.timer(implicitly)
 
-  override def createHandler: Option[Int] => WebSocketHandler[WebSocket[IO]] = Fs2WebSocketHandler[IO](_).unsafeRunSync()
+  override def createHandler: Option[Int] => WebSocketHandler[WebSocket[IO]] =
+    Fs2WebSocketHandler[IO](_).unsafeRunSync()
 
   override protected def afterAll(): Unit = {
     backend.close().toFuture
