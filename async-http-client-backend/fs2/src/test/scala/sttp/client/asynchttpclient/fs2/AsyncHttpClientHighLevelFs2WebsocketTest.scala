@@ -2,7 +2,7 @@ package sttp.client.asynchttpclient.fs2
 
 import cats.effect.{ContextShift, IO, Timer}
 import sttp.client._
-import sttp.client.asynchttpclient.{AsyncHttpCientHighLevelWebsocketTest, WebSocketHandler}
+import sttp.client.asynchttpclient.{AsyncHttpClientHighLevelWebsocketTest, WebSocketHandler}
 import sttp.client.impl.cats.CatsMonadAsyncError
 import sttp.client.monad.MonadError
 import sttp.client.testing.ConvertToFuture
@@ -12,7 +12,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 import cats.implicits._
 
-class AsyncHttpClientHighLevelFs2WebsocketTest extends AsyncHttpCientHighLevelWebsocketTest[IO] {
+class AsyncHttpClientHighLevelFs2WebsocketTest extends AsyncHttpClientHighLevelWebsocketTest[IO] {
   implicit val backend: SttpBackend[IO, Nothing, WebSocketHandler] = AsyncHttpClientFs2Backend[IO]().unsafeRunSync()
   implicit val convertToFuture: ConvertToFuture[IO] = new ConvertToFuture[IO] {
     override def toFuture[T](value: IO[T]): Future[T] = value.unsafeToFuture()

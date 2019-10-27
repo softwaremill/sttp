@@ -259,6 +259,14 @@ case class RequestT[U[_], T, +S](
       isIdInRequest: IsIdInRequest[U]
   ): F[WebSocketResponse[WS_RESULT]] = backend.openWebsocket(asRequest, handler)
 
+  def openWebsocketF[F[_], WS_HANDLER[_], WS_RESULT](
+      handler: F[WS_HANDLER[WS_RESULT]]
+  )(
+      implicit backend: SttpBackend[F, S, WS_HANDLER],
+      isIdInRequest: IsIdInRequest[U]
+  ): F[WebSocketResponse[WS_RESULT]] =
+    backend.responseMonad.flatMap(handler)(handler => backend.openWebsocket(asRequest, handler))
+
   def toCurl(implicit isIdInRequest: IsIdInRequest[U]): String = ToCurlConverter.requestToCurl(asRequest)
 
   @silent("never used")
