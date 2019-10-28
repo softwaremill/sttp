@@ -14,6 +14,7 @@ import org.reactivestreams.Publisher
 import sttp.client.asynchttpclient.{AsyncHttpClientBackend, WebSocketHandler}
 import sttp.client.impl.cats.CatsMonadAsyncError
 import sttp.client.internal._
+import sttp.client.ws.WebSocketResponse
 import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions, _}
 
 import scala.concurrent.ExecutionContext
@@ -33,6 +34,11 @@ class AsyncHttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
   override def send[T](r: Request[T, Stream[F, ByteBuffer]]): F[Response[T]] = {
     super.send(r).guarantee(implicitly[ContextShift[F]].shift)
   }
+
+  override def openWebsocket[T, WS_RESULT](
+      r: Request[T, Stream[F, ByteBuffer]],
+      handler: WebSocketHandler[WS_RESULT]
+  ): F[WebSocketResponse[WS_RESULT]] = super.openWebsocket(r, handler).guarantee(ContextShift[F].shift)
 
   override protected def streamBodyToPublisher(s: Stream[F, ByteBuffer]): Publisher[ByteBuf] =
     s.map(Unpooled.wrappedBuffer).toUnicastPublisher

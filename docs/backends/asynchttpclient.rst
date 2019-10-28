@@ -19,7 +19,7 @@ To use, add the following dependency to your project::
 
 This backend depends on `async-http-client <https://github.com/AsyncHttpClient/async-http-client>`_.
 A fully **asynchronous** backend, which uses `Netty <http://netty.io>`_ behind the
-scenes. 
+scenes.
 
 The responses are wrapped depending on the dependency chosen in either a:
 
@@ -33,7 +33,7 @@ The responses are wrapped depending on the dependency chosen in either a:
 Next you'll need to add an implicit value::
 
   implicit val sttpBackend = AsyncHttpClientFutureBackend()
-  
+
   // or, if you're using the scalaz version:
   implicit val sttpBackend = AsyncHttpClientScalazBackend()
 
@@ -42,22 +42,22 @@ Next you'll need to add an implicit value::
 
   // or, if you're using the zio version with zio-streams for http streaming:
   implicit val sttpBackend = AsyncHttpClientZioStreamsBackend()
-  
+
   // or, if you're using the monix version:
   implicit val sttpBackend = AsyncHttpClientMonixBackend()
-  
+
   // or, if you're using the cats effect version:
   implicit val sttpBackend = AsyncHttpClientCatsBackend[cats.effect.IO]()
 
   // or, if you're using the fs2 version:
   implicit val sttpBackend = AsyncHttpClientFs2Backend[cats.effect.IO]()
-  
+
   // or, if you'd like to use custom configuration:
   implicit val sttpBackend = AsyncHttpClientFutureBackend.usingConfig(asyncHttpClientConfig)
-  
+
   // or, if you'd like to use adjust the configuration sttp creates:
   implicit val sttpBackend = AsyncHttpClientFutureBackend.usingConfigBuilder(adjustFunction, sttpOptions)
-  
+
   // or, if you'd like to instantiate the AsyncHttpClient yourself:
   implicit val sttpBackend = AsyncHttpClientFutureBackend.usingClient(asyncHttpClient)
 
@@ -68,10 +68,10 @@ The Monix backend supports streaming (as both Monix and Async Http Client suppor
 
   import sttp.client._
   import sttp.client.asynchttpclient.monix._
-  
+
   import java.nio.ByteBuffer
   import monix.reactive.Observable
-  
+
   AsyncHttpClientMonixBackend().flatMap { implicit backend =>
     val obs: Observable[ByteBuffer] =  ...
 
@@ -84,7 +84,7 @@ And receive responses as an observable stream::
 
   import sttp.client._
   import sttp.client.asynchttpclient.monix._
-  
+
   import java.nio.ByteBuffer
   import monix.eval.Task
   import monix.reactive.Observable
@@ -153,7 +153,7 @@ The async-http-client backend supports websockets, where the websocket handler i
 
 First, given an async-http-client-native ``org.asynchttpclient.ws.WebSocketListener``, you can lift it to a web socket handler using ``WebSocketHandler.fromListener``. This listener will receive lifecycle callbacks, as well as a callback each time a message is received. Note that the callbacks will be executed on the Netty (network) thread, so make sure not to run any blocking operations there, and delegate to other executors/thread pools if necessary. The value returned in the ``WebSocketResponse`` will be an instance of ``org.asynchttpclient.ws.WebSocket``, which allows sending messages.
 
-The second approach, available when using the Monix and ZIO backends, is to pass a ``MonixWebSocketHandler()`` or ``ZIOWebSocketHandler()``. This will create a listener, which will internally buffer incoming messages, and expose a ``sttp.client.ws.WebSocket[Task]`` interface for sending/receiving messages.
+The second approach, available when using the Monix, ZIO and fs2 backends, is to pass a ``MonixWebSocketHandler()``, ``ZIOWebSocketHandler()`` or ``Fs2WebSocketHandler()``. This will create a listener, which will internally buffer incoming messages, and expose a ``sttp.client.ws.WebSocket[Task]`` (``sttp.client.ws.WebSocket[F]`` for fs2 and any ``F[_] : ConcurrentEffect``) interface for sending/receiving messages.
 
 Specifically, the ``WebSocket[Task]`` interface contains two methods, both of which return a ``Task`` (a lazily-evaluated description of a side-effecting, asynchronous process):
 
