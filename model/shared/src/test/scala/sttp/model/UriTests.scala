@@ -121,9 +121,9 @@ class UriTests extends FunSuite with Matchers with TryValues {
 
   test("should parse raw string") {
     val uriAsString = "https://sub.example.com:8080/a/b/xyz?p1=v1&p2=v2#f"
-    Uri.parse(uriAsString).success.value.toString should be(uriAsString)
+    Uri.parse(uriAsString).right.map(_.toString) shouldBe Right(uriAsString)
     val badString = "xyz://foobar:80:37/?&?"
-    Uri.parse(badString).isFailure shouldBe true
+    Uri.parse(badString).isLeft shouldBe true
   }
 
   test("should convert to java URI") {

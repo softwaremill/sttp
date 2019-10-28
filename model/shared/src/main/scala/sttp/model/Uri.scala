@@ -8,12 +8,12 @@ import sttp.model.internal.{Rfc3986, UriCompatibility}
 
 import scala.annotation.tailrec
 import scala.collection.immutable.Seq
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 import sttp.model.internal.Rfc3986.encode
 
 /**
   * A [[https://en.wikipedia.org/wiki/Uniform_Resource_Identifier URI]].
-  * All components (scheme, host, query, ...) are stored decodec, and
+  * All components (scheme, host, query, ...) are stored decoded, and
   * become encoded upon serialization (using [[toString]]).
   *
   * @param querySegments Either key-value pairs, single values, or plain
@@ -240,8 +240,12 @@ object Uri extends UriInterpolator {
 
   def apply(javaUri: URI): Uri = uri"${javaUri.toString}"
 
-  def parse(uri: String): Try[Uri] =
-    Try(uri"$uri")
+  def parse(uri: String): Either[String, Uri] =
+    Try(uri"$uri") match {
+      case Success(u)            => Right(u)
+      case Failure(e: Exception) => Left(e.getMessage)
+      case Failure(t: Throwable) => throw t
+    }
 
   case class Segment(v: String, encoding: Encoding) {
     def encoded: String = encoding(v)
