@@ -1,13 +1,33 @@
 package sttp.model
 
+import internal.Validate._
 import java.util.regex.Pattern
 
-case class MediaType(mainType: String, subType: String, charset: Option[String]) {
+import sttp.model.internal.Validate
+import sttp.model.internal.Rfc2616._
+
+case class MediaType private (mainType: String, subType: String, charset: Option[String]) {
   override def toString: String = s"$mainType/$subType" + charset.fold("")(c => s"; charset=$c")
 }
 
 object MediaType extends MediaTypes {
-  def apply(mainType: String, subType: String): MediaType = MediaType(mainType, subType, None)
+
+  /**
+    * @throws IllegalArgumentException If the main type or subt type contain illegal characters.
+    */
+  def unsafeApply(mainType: String, subType: String, charset: Option[String] = None): MediaType =
+    validated(mainType, subType, charset).getOrThrow
+  def validated(mainType: String, subType: String, charset: Option[String] = None): Either[String, MediaType] = {
+    Validate.all(
+      validateToken("Main type", mainType),
+      validateToken("Sub type", subType),
+      charset.flatMap(validateToken("Charset", _))
+    )(
+      notValidated(mainType, subType, charset)
+    )
+  }
+  def notValidated(mainType: String, subType: String, charset: Option[String] = None): MediaType =
+    new MediaType(mainType, subType, charset)
 
   // based on https://github.com/square/okhttp/blob/20cd3a0/okhttp/src/main/java/okhttp3/MediaType.kt#L94
   private val TOKEN = "([a-zA-Z0-9-!#$%&'*+.^_`{|}~]+)"
@@ -55,38 +75,38 @@ object MediaType extends MediaTypes {
       }
     }
 
-    Right(MediaType(mainType, subType, charset))
+    Right(MediaType.notValidated(mainType, subType, charset))
   }
 }
 
 // https://www.iana.org/assignments/media-types/media-types.xhtml
 trait MediaTypes {
-  val ApplicationGzip = MediaType("application", "gzip")
-  val ApplicationJson = MediaType("application", "json")
-  val ApplicationOctetStream = MediaType("application", "octet-stream")
-  val ApplicationPdf = MediaType("application", "pdf")
-  val ApplicationRtf = MediaType("application", "rtf")
-  val ApplicationXhtml = MediaType("application", "xhtml+xml")
-  val ApplicationXml = MediaType("application", "xml")
-  val ApplicationXWwwFormUrlencoded = MediaType("application", "x-www-form-urlencoded")
+  val ApplicationGzip: MediaType = MediaType.notValidated("application", "gzip")
+  val ApplicationJson: MediaType = MediaType.notValidated("application", "json")
+  val ApplicationOctetStream: MediaType = MediaType.notValidated("application", "octet-stream")
+  val ApplicationPdf: MediaType = MediaType.notValidated("application", "pdf")
+  val ApplicationRtf: MediaType = MediaType.notValidated("application", "rtf")
+  val ApplicationXhtml: MediaType = MediaType.notValidated("application", "xhtml+xml")
+  val ApplicationXml: MediaType = MediaType.notValidated("application", "xml")
+  val ApplicationXWwwFormUrlencoded: MediaType = MediaType.notValidated("application", "x-www-form-urlencoded")
 
-  val ImageGif = MediaType("image", "gif")
-  val ImageJpeg = MediaType("image", "jpeg")
-  val ImagePng = MediaType("image", "png")
-  val ImageTiff = MediaType("image", "tiff")
+  val ImageGif: MediaType = MediaType.notValidated("image", "gif")
+  val ImageJpeg: MediaType = MediaType.notValidated("image", "jpeg")
+  val ImagePng: MediaType = MediaType.notValidated("image", "png")
+  val ImageTiff: MediaType = MediaType.notValidated("image", "tiff")
 
-  val MultipartFormData = MediaType("multipart", "form-data")
-  val MultipartMixed = MediaType("multipart", "mixed")
-  val MultipartAlternative = MediaType("multipart", "alternative")
+  val MultipartFormData: MediaType = MediaType.notValidated("multipart", "form-data")
+  val MultipartMixed: MediaType = MediaType.notValidated("multipart", "mixed")
+  val MultipartAlternative: MediaType = MediaType.notValidated("multipart", "alternative")
 
-  val TextCacheManifest = MediaType("text", "cache-manifest")
-  val TextCalendar = MediaType("text", "calendar")
-  val TextCss = MediaType("text", "css")
-  val TextCsv = MediaType("text", "csv")
-  val TextEventStream = MediaType("text", "event-stream")
-  val TextJavascript = MediaType("text", "javascript")
-  val TextHtml = MediaType("text", "html")
-  val TextPlain = MediaType("text", "plain")
+  val TextCacheManifest: MediaType = MediaType.notValidated("text", "cache-manifest")
+  val TextCalendar: MediaType = MediaType.notValidated("text", "calendar")
+  val TextCss: MediaType = MediaType.notValidated("text", "css")
+  val TextCsv: MediaType = MediaType.notValidated("text", "csv")
+  val TextEventStream: MediaType = MediaType.notValidated("text", "event-stream")
+  val TextJavascript: MediaType = MediaType.notValidated("text", "javascript")
+  val TextHtml: MediaType = MediaType.notValidated("text", "html")
+  val TextPlain: MediaType = MediaType.notValidated("text", "plain")
 
-  val TextPlainUtf8 = MediaType("text", "plain", Some("utf-8"))
+  val TextPlainUtf8: MediaType = MediaType.notValidated("text", "plain", Some("utf-8"))
 }

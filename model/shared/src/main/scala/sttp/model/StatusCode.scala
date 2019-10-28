@@ -22,7 +22,7 @@ object StatusCode extends StatusCodes {
     if (code < 100 || code > 599) Left(s"Status code outside of the allowed range 100-599: $code")
     else Right(notValidated(code))
   }
-  def notValidated(code: Int) = new StatusCode(code)
+  def notValidated(code: Int): StatusCode = new StatusCode(code)
 }
 
 // https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml

@@ -1,6 +1,7 @@
 package sttp.model
 
-import sttp.model.internal.{Rfc2616, Validate}
+import sttp.model.internal.Validate
+import sttp.model.internal.Rfc2616.validateToken
 import sttp.model.internal.Validate._
 
 import scala.util.hashing.MurmurHash3
@@ -33,19 +34,13 @@ class Header(val name: String, val value: String) {
 object Header {
   def unapply(h: Header): Option[(String, String)] = Some((h.name, h.value))
 
-  private[model] def validateName(name: String): Option[String] = {
-    if (Rfc2616.Token.unapplySeq(name).isEmpty) {
-      Some("Header name can not contain separators: ()<>@,;:\\\"/[]?={}, or whitespace.")
-    } else None
-  }
-
   /**
     * @throws IllegalArgumentException If the header name contains illegal characters.
     */
   def unsafeApply(name: String, value: String): Header = validated(name, value).getOrThrow
 
   def validated(name: String, value: String): Either[String, Header] = {
-    Validate.all(validateName(name))(new Header(name, value))
+    Validate.all(validateToken("Header name", name))(notValidated(name, value))
   }
 
   def notValidated(name: String, value: String): Header = new Header(name, value)

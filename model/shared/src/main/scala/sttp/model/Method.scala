@@ -1,7 +1,8 @@
 package sttp.model
 
 import internal.Validate._
-import sttp.model.internal.Rfc2616
+import sttp.model.internal.Validate
+import sttp.model.internal.Rfc2616.validateToken
 
 case class Method private (method: String) extends AnyVal {
   override def toString: String = method
@@ -13,11 +14,8 @@ object Method extends Methods {
     * @throws IllegalArgumentException If the method value is not a valid token.
     */
   def unsafeApply(method: String): Method = validated(method).getOrThrow
-  def validated(method: String): Either[String, Method] = {
-    if (Rfc2616.Token.unapplySeq(method).isEmpty) {
-      Left(s"Method can only contain ASCII characters except control and whitespace characters.")
-    } else Right(notValidated(method))
-  }
+  def validated(method: String): Either[String, Method] =
+    Validate.all(validateToken("Method", method))(notValidated(method))
   def notValidated(method: String) = new Method(method)
 }
 

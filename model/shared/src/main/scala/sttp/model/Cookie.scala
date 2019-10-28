@@ -5,6 +5,7 @@ import java.time.format.DateTimeFormatter
 
 import sttp.model.internal.{Rfc2616, Validate}
 import sttp.model.internal.Validate._
+import sttp.model.internal.Rfc2616.validateToken
 
 import scala.util.{Failure, Success, Try}
 
@@ -26,11 +27,7 @@ object Cookie {
   // see: https://stackoverflow.com/questions/1969232/allowed-characters-in-cookies/1969339
   private val AllowedValueCharacters = s"[^${Rfc2616.CTL}]*".r
 
-  private[model] def validateName(name: String): Option[String] = {
-    if (Rfc2616.Token.unapplySeq(name).isEmpty) {
-      Some("Cookie name can only contain alphanumeric characters and: !#$%&'*+\\-.^_`|~")
-    } else None
-  }
+  private[model] def validateName(name: String): Option[String] = validateToken("Cookie name", name)
 
   private[model] def validateValue(value: String): Option[String] = {
     if (AllowedValueCharacters.unapplySeq(value).isEmpty) {
