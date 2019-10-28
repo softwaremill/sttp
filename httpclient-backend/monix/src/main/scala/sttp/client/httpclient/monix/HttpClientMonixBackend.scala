@@ -4,15 +4,13 @@ import java.io.InputStream
 import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.{HttpClient, HttpRequest}
 import java.nio.ByteBuffer
-import java.util.concurrent.Flow
 
 import monix.eval.Task
 import monix.execution.Scheduler
-import monix.execution.cancelables.SingleAssignCancelable
 import monix.reactive.Observable
-import monix.reactive.observers.SafeSubscriber
 import sttp.client.httpclient.{HttpClientAsyncBackend, HttpClientBackend, WebSocketHandler}
 import sttp.client.impl.monix.TaskMonadAsyncError
+import sttp.client.ws.WebSocketResponse
 import sttp.client.{SttpBackend, _}
 
 import scala.util.{Success, Try}
@@ -45,6 +43,12 @@ class HttpClientMonixBackend private (
         .guaranteeCase(_ => Task(responseBody.close()))
     )
   }
+
+  override def openWebsocket[T, WS_RESULT](
+      request: Request[T, Observable[ByteBuffer]],
+      handler: WebSocketHandler[WS_RESULT]
+  ): Task[WebSocketResponse[WS_RESULT]] =
+    super.openWebsocket(request, handler).guarantee(Task.shift)
 }
 
 object HttpClientMonixBackend {
