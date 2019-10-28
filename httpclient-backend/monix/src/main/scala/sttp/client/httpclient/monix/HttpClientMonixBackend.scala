@@ -34,16 +34,7 @@ class HttpClientMonixBackend private (
   }
 
   override def streamToRequestBody(stream: Observable[ByteBuffer]): HttpRequest.BodyPublisher = {
-    BodyPublishers.fromPublisher(new Flow.Publisher[ByteBuffer] {
-      override def subscribe(subscriber: Flow.Subscriber[_ >: ByteBuffer]): Unit = {
-        val subscription = SingleAssignCancelable()
-        subscription := stream.unsafeSubscribeFn(
-          SafeSubscriber(
-            FlowSubscriberAsMonixSubscriber(subscriber, subscription)
-          )
-        )
-      }
-    })
+    BodyPublishers.fromPublisher(new ReactivePublisherJavaAdapter[ByteBuffer](stream.toReactivePublisher))
   }
 
   override def responseBodyToStream(responseBody: InputStream): Try[Observable[ByteBuffer]] = {
