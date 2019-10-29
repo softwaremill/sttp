@@ -10,6 +10,8 @@ import zio.clock.Clock
 import zio.{Schedule, Task, ZIO}
 import zio.duration._
 
+import scala.concurrent.duration.FiniteDuration
+
 class ZioWebsocketHandlerTest extends AHCWebsocketHandlerTest[Task] {
   override implicit val backend: SttpBackend[Task, Nothing, WebSocketHandler] =
     runtime.unsafeRun(AsyncHttpClientZioBackend())
@@ -19,7 +21,7 @@ class ZioWebsocketHandlerTest extends AHCWebsocketHandlerTest[Task] {
   override def createHandler: Option[Int] => WebSocketHandler[WebSocket[Task]] =
     bufferCapacity => runtime.unsafeRun(ZioWebSocketHandler(bufferCapacity))
 
-  override def eventually[T](f: => Task[T]): Task[T] = {
-    ZIO.sleep(10 millis).andThen(f).retry(Schedule.recurs(100)).provide(Clock.Live)
+  override def eventually[T](interval: FiniteDuration, attempts: Int)(f: => Task[T]): Task[T] = {
+    ZIO.sleep(interval.toMillis.millis).andThen(f).retry(Schedule.recurs(attempts)).provide(Clock.Live)
   }
 }

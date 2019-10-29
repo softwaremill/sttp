@@ -8,6 +8,8 @@ import sttp.client.testing.{ConvertToFuture, TestHttpServer, ToFutureWrapper}
 import sttp.client.ws.WebSocket
 import sttp.model.ws.WebSocketFrame
 
+import scala.concurrent.duration.FiniteDuration
+
 abstract class WebsocketHandlerTest[F[_], WS_HANDLER[_]]
     extends AsyncFlatSpec
     with Matchers
@@ -68,7 +70,7 @@ abstract class WebsocketHandlerTest[F[_], WS_HANDLER[_]]
 
   def receiveEcho(ws: WebSocket[F], count: Int): F[Assertion]
 
-  def eventually[T](f: => F[T]): F[T]
+  def eventually[T](interval: FiniteDuration, attempts: Int)(f: => F[T]): F[T]
 
   override protected def afterAll(): Unit = {
     backend.close().toFuture

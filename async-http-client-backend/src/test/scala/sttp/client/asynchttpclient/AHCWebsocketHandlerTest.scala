@@ -10,6 +10,7 @@ import sttp.client.ws.WebSocket
 import sttp.model.ws.WebSocketFrame
 import sttp.client.monad.syntax._
 import sttp.model.Uri._
+import scala.concurrent.duration._
 
 abstract class AHCWebsocketHandlerTest[F[_]] extends WebsocketHandlerTest[F, WebSocketHandler] {
 
@@ -33,7 +34,7 @@ abstract class AHCWebsocketHandlerTest[F[_]] extends WebsocketHandlerTest[F, Web
       .flatMap { response =>
         val ws = response.result
         send(ws, 4) >>
-          eventually {
+          eventually(10.millis, 100) {
             ws.isOpen.map(_ shouldBe false)
           }
       }

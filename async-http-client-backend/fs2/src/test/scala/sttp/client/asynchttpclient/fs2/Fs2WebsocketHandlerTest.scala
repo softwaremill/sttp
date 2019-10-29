@@ -24,10 +24,10 @@ class Fs2WebsocketHandlerTest extends AHCWebsocketHandlerTest[IO] {
   override def createHandler: Option[Int] => WebSocketHandler[WebSocket[IO]] =
     Fs2WebSocketHandler[IO](_).unsafeRunSync()
 
-  override def eventually[T](f: => IO[T]): IO[T] = {
+  override def eventually[T](interval: FiniteDuration, attempts: Int)(f: => IO[T]): IO[T] = {
     def tryWithCounter(i: Int): IO[T] = {
-      (IO.sleep(10 millis) >> f).recoverWith {
-        case _: Exception if i < 100 => tryWithCounter(i + 1)
+      (IO.sleep(interval) >> f).recoverWith {
+        case _: Exception if i < attempts => tryWithCounter(i + 1)
       }
     }
     tryWithCounter(0)

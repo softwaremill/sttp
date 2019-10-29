@@ -30,7 +30,7 @@ class MonixWebsocketHandlerTest extends WebsocketHandlerTest[Task, WebSocketHand
       .openWebsocket(createHandler(Some(3)))
       .flatMap { response =>
         val ws = response.result
-        send(ws, 1000) >> eventually { ws.isOpen.map(_ shouldBe true) }
+        send(ws, 1000) >> eventually(10.millis, 100) { ws.isOpen.map(_ shouldBe true) }
       }
       .toFuture()
   }
@@ -58,7 +58,7 @@ class MonixWebsocketHandlerTest extends WebsocketHandlerTest[Task, WebSocketHand
     fs.foldLeft(Task.now(succeed))(_ >> _)
   }
 
-  override def eventually[T](f: => Task[T]): Task[T] = {
-    (Task.sleep(10 millis) >> f).onErrorRestart(100)
+  override def eventually[T](interval: FiniteDuration, attempts: Int)(f: => Task[T]): Task[T] = {
+    (Task.sleep(interval) >> f).onErrorRestart(attempts.toLong)
   }
 }
