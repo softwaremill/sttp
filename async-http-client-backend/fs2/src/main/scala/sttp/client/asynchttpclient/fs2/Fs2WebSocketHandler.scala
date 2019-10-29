@@ -5,8 +5,9 @@ import cats.effect.concurrent.Semaphore
 import cats.implicits._
 import fs2.concurrent.InspectableQueue
 import sttp.client.asynchttpclient.WebSocketHandler
-import sttp.client.asynchttpclient.internal.{AsyncQueue, NativeWebSocketHandler}
+import sttp.client.asynchttpclient.internal.NativeWebSocketHandler
 import sttp.client.impl.cats.CatsMonadAsyncError
+import sttp.client.ws.internal.AsyncQueue
 import sttp.client.ws.{WebSocket, WebSocketEvent}
 import sttp.model.ws.WebSocketBufferFull
 

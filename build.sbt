@@ -68,6 +68,7 @@ val only2_11_and_2_12_settings = Seq(
 val only2_13andJava11 = Seq(
   publishArtifact := (is2_13.value && VersionNumber("11") == javaVersion.value),
   skip := (is2_11_or_2_12.value || VersionNumber("11") != javaVersion.value),
+  skip in compile := (is2_11_or_2_12.value || VersionNumber("11") != javaVersion.value),
   skip in publish := (is2_11_or_2_12.value || VersionNumber("11") != javaVersion.value)
 )
 
@@ -485,6 +486,7 @@ def httpClientBackendProject(proj: String): Project = {
   Project(s"httpClientBackend${proj.capitalize}", file(s"httpclient-backend/$proj"))
     .settings(commonJvmSettings: _*)
     .settings(name := s"httpclient-backend-$proj")
+    .settings(only2_13andJava11)
     .dependsOn(httpClientBackend % compileAndTest)
 }
 
