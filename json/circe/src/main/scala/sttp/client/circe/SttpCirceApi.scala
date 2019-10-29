@@ -31,6 +31,13 @@ trait SttpCirceApi {
   def asJsonAlways[B: Decoder: IsOption]: ResponseAs[Either[DeserializationError[io.circe.Error], B], Nothing] =
     asStringAlways.map(ResponseAs.deserializeWithError(deserializeJson))
 
+  /**
+    * Tries to deserialize the body from a string into JSON, regardless of the response code. Returns the parse
+    * result, or throws an exception is there's an error during deserialization
+    */
+  def asJsonAlwaysUnsafe[B: Decoder: IsOption]: ResponseAs[B, Nothing] =
+    asStringAlways.map(ResponseAs.deserializeOrThrow(deserializeJson))
+
   def deserializeJson[B: Decoder: IsOption]: String => Either[io.circe.Error, B] =
     JsonInput.sanitize[B].andThen(decode[B])
 }

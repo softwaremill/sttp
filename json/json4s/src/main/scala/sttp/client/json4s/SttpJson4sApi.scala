@@ -36,6 +36,16 @@ trait SttpJson4sApi {
   ): ResponseAs[Either[DeserializationError[Exception], B], Nothing] =
     asStringAlways.map(ResponseAs.deserializeCatchingExceptions(deserializeJson[B]))
 
+  /**
+    * Tries to deserialize the body from a string into JSON, regardless of the response code. Returns the parse
+    * result, or throws an exception is there's an error during deserialization
+    */
+  def asJsonAlwaysUnsafe[B: Manifest](
+      implicit formats: Formats = DefaultFormats,
+      serialization: Serialization
+  ): ResponseAs[B, Nothing] =
+    asStringAlways.map(deserializeJson)
+
   def deserializeJson[B: Manifest](
       implicit formats: Formats = DefaultFormats,
       serialization: Serialization

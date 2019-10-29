@@ -30,6 +30,13 @@ trait SttpPlayJsonApi {
   def asJsonAlways[B: Reads: IsOption]: ResponseAs[Either[DeserializationError[JsError], B], Nothing] =
     asStringAlways.map(ResponseAs.deserializeWithError(deserializeJson[B]))
 
+  /**
+    * Tries to deserialize the body from a string into JSON, regardless of the response code. Returns the parse
+    * result, or throws an exception is there's an error during deserialization
+    */
+  def asJsonAlwaysUnsafe[B: Reads: IsOption]: ResponseAs[B, Nothing] =
+    asStringAlways.map(ResponseAs.deserializeOrThrow(deserializeJson))
+
   // Note: None of the play-json utilities attempt to catch invalid
   // json, so Json.parse needs to be wrapped in Try
   def deserializeJson[B: Reads: IsOption]: String => Either[JsError, B] = JsonInput.sanitize[B].andThen { s =>

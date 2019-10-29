@@ -27,6 +27,13 @@ trait SttpSprayJsonApi {
   def asJsonAlways[B: JsonReader: IsOption]: ResponseAs[Either[DeserializationError[Exception], B], Nothing] =
     asStringAlways.map(ResponseAs.deserializeCatchingExceptions(deserializeJson[B]))
 
+  /**
+    * Tries to deserialize the body from a string into JSON, regardless of the response code. Returns the parse
+    * result, or throws an exception is there's an error during deserialization
+    */
+  def asJsonAlwaysUnsafe[B: JsonReader: IsOption]: ResponseAs[B, Nothing] =
+    asStringAlways.map(deserializeJson)
+
   def deserializeJson[B: JsonReader: IsOption]: String => B =
     JsonInput.sanitize[B].andThen((_: String).parseJson.convertTo[B])
 }

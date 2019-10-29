@@ -23,9 +23,15 @@ If you are an `Ammonite <https://ammonite.io>`_ user, you can quickly start expe
 
   import $ivy.`com.softwaremill.sttp::core:2.0.0-M7`
   import sttp.client.quick._
-  basicRequest.get(uri"http://httpbin.org/ip").send()
+  quickRequest.get(uri"http://httpbin.org/ip").send()
 
 Importing the ``quick`` object has the same effect as importing ``sttp.client._``, plus defining an implicit synchronous backend (``val backend = HttpURLConnectionBackend()``), so that sttp can be used right away.
+
+If the default ``HttpURLConnectionBackend`` for some reason is insufficient, you can also use one based on OkHttp::
+
+  import $ivy.`com.softwaremill.sttp::okhttp-backend:2.0.0-M7`
+  import sttp.client.okhttp.quick._
+  quickRequest.get(uri"http://httpbin.org/ip").send()
 
 Imports
 -------

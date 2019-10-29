@@ -16,6 +16,9 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
 
   /**
     * An empty request with no headers.
+    *
+    * Reads the response body as an `Either[String, String]`, where `Left` is used if the status code is non-2xx,
+    * and `Right` otherwise.
     */
   val emptyRequest: RequestT[Empty, Either[String, String], Nothing] =
     RequestT[Empty, Either[String, String], Nothing](
@@ -34,11 +37,11 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     )
 
   /**
-    * A starting request, with the following modifications comparing to
-    * `emptyRequest`:
+    * A starting request, with the following modification comparing to `emptyRequest`: `Accept-Encoding` is set to
+    * `gzip, deflate` (compression/decompression is handled automatically by the library).
     *
-    * - `Accept-Encoding` set to `gzip, deflate` (handled automatically by the
-    *   library)
+    * Reads the response body as an `Either[String, String]`, where `Left` is used if the status code is non-2xx,
+    * and `Right` otherwise.
     */
   val basicRequest: RequestT[Empty, Either[String, String], Nothing] =
     emptyRequest.acceptEncoding("gzip, deflate")

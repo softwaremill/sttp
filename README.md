@@ -46,7 +46,7 @@ If you are an [Ammonite](http://ammonite.io) user, you can quickly start experim
 ```scala
 import $ivy.`com.softwaremill.sttp.client::core:2.0.0-M7`
 import sttp.client.quick._
-basicRequest.get(uri"http://httpbin.org/ip").send()
+quickRequest.get(uri"http://httpbin.org/ip").send()
 ```
 
 This brings in the sttp API and an implicit, synchronous backend.

@@ -123,6 +123,17 @@ object ResponseAs {
         case Left(e)  => Left(DeserializationError(s, e))
         case Right(b) => Right(b)
       }
+
+  /**
+    * Converts a deserialization function, which returns errors of type `E`, into a function where errors are thrown
+    * as exceptions, and results are returned unwrapped.
+    */
+  def deserializeOrThrow[E, T](doDeserialize: String => Either[E, T]): String => T =
+    s =>
+      doDeserialize(s) match {
+        case Left(e)  => throw DeserializationError(s, e)
+        case Right(b) => b
+      }
 }
 
 sealed abstract class ResponseError[+T] extends Exception
