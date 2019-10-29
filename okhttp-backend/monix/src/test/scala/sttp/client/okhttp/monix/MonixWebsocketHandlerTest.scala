@@ -43,11 +43,13 @@ class MonixWebsocketHandlerTest extends WebsocketHandlerTest[Task, WebSocketHand
       .openWebsocket(createHandler(Some(3)))
       .flatMap { response =>
         val ws = response.result
-        send(ws, 1000) >> Task.sleep(1 seconds) >>
-          // by now we expect to have received at least 4 back, which should overflow the buffer
-          ws.isOpen.map(_ shouldBe false)
+        send(ws, 1000) >> eventually(ws.isOpen.map(_ shouldBe false))
       }
       .toFuture()
+  }
+
+  private def eventually[T](f: => Task[T]) = {
+    (Task.sleep(10 millis) >> f).onErrorRestart(100)
   }
 
   def receiveEcho(ws: WebSocket[Task], count: Int): Task[Assertion] = {
