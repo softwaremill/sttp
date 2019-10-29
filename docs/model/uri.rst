@@ -76,7 +76,7 @@ Sequences in the host part will be expanded to a subdomain sequence, and sequenc
 Special cases
 -------------
 
-If a string containing the protocol is embedded *as the very beginning*, it will not be escaped, allowing to embed entire addresses as prefixes, e.g.: ``uri"$endpoint/login"``, where ``val endpoint = "http://example.com/api"``.
+If a string containing the protocol is embedded *at the very beginning*, it will not be escaped, allowing to embed entire addresses as prefixes, e.g.: ``uri"$endpoint/login"``, where ``val endpoint = "http://example.com/api"``.
 
 This is useful when a base URI is stored in a value, and can then be used as a base for constructing more specific URIs.
 

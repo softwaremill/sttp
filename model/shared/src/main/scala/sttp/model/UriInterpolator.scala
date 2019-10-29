@@ -6,6 +6,33 @@ import scala.annotation.tailrec
 
 trait UriInterpolator {
   implicit class UriContext(val sc: StringContext) {
+
+    /**
+      * Parse the given string (with embedded expressions) as an uri.
+      *
+      * Any values embedded in the URI using the `${...}` syntax will be URL-encoded, taking into account the context.
+      * Parts of the URI given as literal strings (not embedded values), are assumed to be URL-encoded and thus will be
+      * decoded when creating the `Uri` instance.
+      *
+      * Embedded values can be optional for hosts (subdomains) query parameters and the fragment. If the value is
+      * `None`, the appropriate URI component will be removed.
+      *
+      * Sequences in the host part will be expanded to a subdomain sequence, and sequences in the path will be expanded
+      * to path components. Maps, sequences of tuples and sequences of values can be embedded in the query part.
+      * They will be expanded into query parameters. Maps and sequences of tuples can also contain optional values,
+      * for which mappings will be removed if `None`.
+      *
+      * All components of the URI can be embedded from values: scheme, username/password, host, port, path, query and
+      * fragment. The embedded values won't be further parsed, with the exception of the `:` in the host part, which is
+      * commonly used to pass in both the host and port.
+      *
+      * If a string containing the protocol is embedded at the very beginning, it will not be escaped, allowing to embed
+      * entire addresses as prefixes, e.g.: `uri"$endpoint/login"`, where `val endpoint = "http://example.com/api"`.
+      * This is useful when a base URI is stored in a value, and can then be used as a base for constructing more
+      * specific URIs.
+      *
+      * @throws IllegalArgumentException In case of a validation error. For a safe version, see [[Uri.parse()]].
+      */
     def uri(args: Any*): Uri = UriInterpolator.interpolate(sc, args: _*)
   }
 }
@@ -24,7 +51,7 @@ object UriInterpolator {
       UriBuilder.Fragment
     )
 
-    val startingUri = Uri("-")
+    val startingUri = Uri.unsafeApply("-")
 
     val (uri, leftTokens) =
       builders.foldLeft((startingUri, tokens)) {
