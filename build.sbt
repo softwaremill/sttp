@@ -152,7 +152,7 @@ val circeVersion: Option[(Long, Long)] => String = {
 }
 
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.10"
-val akkaStreams = "com.typesafe.akka" %% "akka-stream" % "2.5.25"
+val akkaStreams = "com.typesafe.akka" %% "akka-stream" % "2.5.26"
 
 val scalaTestVersion = "3.0.8"
 val scalaTestNativeVersion = "3.2.0-SNAP10"
