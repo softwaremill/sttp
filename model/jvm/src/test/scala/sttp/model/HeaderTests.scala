@@ -8,8 +8,8 @@ class HeaderTests extends FlatSpec with Matchers {
   }
 
   it should "validate status codes" in {
-    Header.validated("Aut ho", "a bc") shouldBe 'left
-    Header.validated(HeaderNames.Authorization, "xy z") shouldBe 'right
+    Header.safeApply("Aut ho", "a bc") shouldBe 'left
+    Header.safeApply(HeaderNames.Authorization, "xy z") shouldBe 'right
   }
 
   it should "throw exceptions on invalid headers" in {

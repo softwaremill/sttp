@@ -17,8 +17,8 @@ object StatusCode extends StatusCodes {
   /**
     * @throws IllegalArgumentException If the status code is out of range.
     */
-  def unsafeApply(code: Int): StatusCode = validated(code).getOrThrow
-  def validated(code: Int): Either[String, StatusCode] = {
+  def unsafeApply(code: Int): StatusCode = safeApply(code).getOrThrow
+  def safeApply(code: Int): Either[String, StatusCode] = {
     if (code < 100 || code > 599) Left(s"Status code outside of the allowed range 100-599: $code")
     else Right(notValidated(code))
   }

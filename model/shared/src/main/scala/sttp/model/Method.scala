@@ -13,8 +13,8 @@ object Method extends Methods {
   /**
     * @throws IllegalArgumentException If the method value is not a valid token.
     */
-  def unsafeApply(method: String): Method = validated(method).getOrThrow
-  def validated(method: String): Either[String, Method] =
+  def unsafeApply(method: String): Method = safeApply(method).getOrThrow
+  def safeApply(method: String): Either[String, Method] =
     Validate.all(validateToken("Method", method))(notValidated(method))
   def notValidated(method: String) = new Method(method)
 }

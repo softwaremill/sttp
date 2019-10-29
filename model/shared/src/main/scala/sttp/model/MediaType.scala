@@ -16,8 +16,8 @@ object MediaType extends MediaTypes {
     * @throws IllegalArgumentException If the main type or subt type contain illegal characters.
     */
   def unsafeApply(mainType: String, subType: String, charset: Option[String] = None): MediaType =
-    validated(mainType, subType, charset).getOrThrow
-  def validated(mainType: String, subType: String, charset: Option[String] = None): Either[String, MediaType] = {
+    safeApply(mainType, subType, charset).getOrThrow
+  def safeApply(mainType: String, subType: String, charset: Option[String] = None): Either[String, MediaType] = {
     Validate.all(
       validateToken("Main type", mainType),
       validateToken("Sub type", subType),

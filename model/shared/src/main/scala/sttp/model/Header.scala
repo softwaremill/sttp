@@ -37,9 +37,9 @@ object Header {
   /**
     * @throws IllegalArgumentException If the header name contains illegal characters.
     */
-  def unsafeApply(name: String, value: String): Header = validated(name, value).getOrThrow
+  def unsafeApply(name: String, value: String): Header = safeApply(name, value).getOrThrow
 
-  def validated(name: String, value: String): Either[String, Header] = {
+  def safeApply(name: String, value: String): Either[String, Header] = {
     Validate.all(validateToken("Header name", name))(notValidated(name, value))
   }
 

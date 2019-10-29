@@ -40,9 +40,9 @@ object Cookie {
   /**
     * @throws IllegalArgumentException If the cookie attributes contain illegal characters.
     */
-  def unsafeApply(name: String, value: String): Cookie = validated(name, value).getOrThrow
+  def unsafeApply(name: String, value: String): Cookie = safeApply(name, value).getOrThrow
 
-  def validated(name: String, value: String): Either[String, Cookie] = {
+  def safeApply(name: String, value: String): Either[String, Cookie] = {
     Validate.all(validateName(name), validateValue(value))(new Cookie(name, value))
   }
 
@@ -54,8 +54,8 @@ object Cookie {
   def parse(s: String): Either[String, List[Cookie]] = {
     val cs = s.split(";").toList.map { ss =>
       ss.split("=", 2).map(_.trim) match {
-        case Array(v1)     => Cookie.validated(v1, "")
-        case Array(v1, v2) => Cookie.validated(v1, v2)
+        case Array(v1)     => Cookie.safeApply(v1, "")
+        case Array(v1, v2) => Cookie.safeApply(v1, v2)
       }
     }
 
@@ -95,9 +95,9 @@ object CookieValueWithMeta {
       secure: Boolean,
       httpOnly: Boolean
   ): CookieValueWithMeta =
-    validated(value, expires, maxAge, domain, path, secure, httpOnly).getOrThrow
+    safeApply(value, expires, maxAge, domain, path, secure, httpOnly).getOrThrow
 
-  def validated(
+  def safeApply(
       value: String,
       expires: Option[Instant],
       maxAge: Option[Long],
@@ -179,9 +179,9 @@ object CookieWithMeta {
       secure: Boolean = false,
       httpOnly: Boolean = false
   ): CookieWithMeta =
-    validated(name, value, expires, maxAge, domain, path, secure, httpOnly).getOrThrow
+    safeApply(name, value, expires, maxAge, domain, path, secure, httpOnly).getOrThrow
 
-  def validated(
+  def safeApply(
       name: String,
       value: String,
       expires: Option[Instant] = None,
@@ -194,7 +194,7 @@ object CookieWithMeta {
     Cookie.validateName(name) match {
       case Some(e) => Left(e)
       case None =>
-        CookieValueWithMeta.validated(value, expires, maxAge, domain, path, secure, httpOnly).right.map { v =>
+        CookieValueWithMeta.safeApply(value, expires, maxAge, domain, path, secure, httpOnly).right.map { v =>
           notValidated(name, v)
         }
     }

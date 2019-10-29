@@ -34,9 +34,9 @@ class MediaTypeTests extends FlatSpec with Matchers {
   }
 
   it should "validate media types" in {
-    MediaType.validated("text", "p=lain") shouldBe 'left
-    MediaType.validated("text", "plain", Some("UTF=8")) shouldBe 'left
-    MediaType.validated("text", "plain") shouldBe Right(MediaType.TextPlain)
+    MediaType.safeApply("text", "p=lain") shouldBe 'left
+    MediaType.safeApply("text", "plain", Some("UTF=8")) shouldBe 'left
+    MediaType.safeApply("text", "plain") shouldBe Right(MediaType.TextPlain)
   }
 
   it should "throw exceptions on invalid media types" in {

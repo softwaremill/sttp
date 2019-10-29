@@ -8,8 +8,8 @@ class StatusCodeTests extends FlatSpec with Matchers {
   }
 
   it should "validate status codes" in {
-    StatusCode.validated(8) shouldBe 'left
-    StatusCode.validated(200) shouldBe Right(StatusCode.Ok)
+    StatusCode.safeApply(8) shouldBe 'left
+    StatusCode.safeApply(200) shouldBe Right(StatusCode.Ok)
   }
 
   it should "throw exceptions on invalid status codes" in {
