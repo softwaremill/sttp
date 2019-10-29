@@ -37,9 +37,13 @@ object Fs2WebSocketHandler {
 
   /**
     * Creates a new [[WebSocketHandler]] which should be used *once* to send and receive from a single websocket.
+    *
+    * The handler will internally buffer incoming messages, and expose an instance of the [[WebSocket]] interface for
+    * sending/receiving messages.
+    *
     * @param incomingBufferCapacity Should the buffer of incoming websocket events be bounded. If yes, unreceived
     *                               events will some point cause the websocket to error and close. If no, unreceived
-    *                               messages will take up all available memory.
+    *                               messages will eventually take up all available memory.
     */
   def apply[F[_]](
       incomingBufferCapacity: Option[Int] = None
@@ -48,6 +52,10 @@ object Fs2WebSocketHandler {
 
   /**
     * Creates a new [[WebSocketHandler]] which should be used *once* to send and receive from a single websocket.
+    *
+    * The handler will internally buffer incoming messages, and expose an instance of the [[WebSocket]] interface for
+    * sending/receiving messages.
+    *
     * @param createQueue Effect to create an [[InspectableQueue]] which is used to buffer incoming messages.
     */
   def apply[F[_]](
