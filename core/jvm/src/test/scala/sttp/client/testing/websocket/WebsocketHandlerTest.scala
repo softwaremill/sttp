@@ -1,6 +1,5 @@
 package sttp.client.testing.websocket
 
-import org.scalatest.concurrent.{Eventually, IntegrationPatience}
 import org.scalatest.{Assertion, AsyncFlatSpec, Matchers}
 import sttp.client._
 import sttp.client.monad.MonadError
@@ -13,9 +12,7 @@ abstract class WebsocketHandlerTest[F[_], WS_HANDLER[_]]
     extends AsyncFlatSpec
     with Matchers
     with TestHttpServer
-    with ToFutureWrapper
-    with Eventually
-    with IntegrationPatience {
+    with ToFutureWrapper {
 
   implicit val backend: SttpBackend[F, Nothing, WS_HANDLER]
   implicit val convertToFuture: ConvertToFuture[F]
