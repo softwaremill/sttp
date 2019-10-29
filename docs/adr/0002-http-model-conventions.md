@@ -20,7 +20,7 @@ The conventions are:
 * `[SthCompanionObject].unsafeApply(values)`: creates an instance of the model class; validates the input values and in 
   case of an error, *throws an exception*. An error could be e.g. that the input values contain characters outside of
   the allowed range
-* `[SthCompanionObject].validated(...): Either[String, Sth]`: same as above, but doesn't throw exceptions. Instead,
+* `[SthCompanionObject].safeApply(...): Either[String, Sth]`: same as above, but doesn't throw exceptions. Instead,
   returns an error message or the model class instance
 * `[SthCompanionObject].notValidated(...): Sth`: creates the model type, without validation, and without throwing
   exceptions 

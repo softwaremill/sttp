@@ -51,7 +51,6 @@ Example with traits::
     if (response.code == Ok) println("Ok!")
   }
 
-
 For more information see
  * https://en.wikipedia.org/wiki/List_of_HTTP_header_fields
  * https://en.wikipedia.org/wiki/Media_type

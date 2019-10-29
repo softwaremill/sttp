@@ -16,9 +16,8 @@ case class Part[T](
   def fileName(v: String): Part[T] = dispositionParam(FileNameDispositionParam, v)
   def fileName: Option[String] = otherDispositionParams.get(FileNameDispositionParam)
 
-  def contentType(v: MediaType): Part[T] =
-    header(Header.unsafeApply(HeaderNames.ContentType, v.toString), replaceExisting = true)
-  def contentType(v: String): Part[T] = header(Header.unsafeApply(HeaderNames.ContentType, v), replaceExisting = true)
+  def contentType(v: MediaType): Part[T] = header(Header.contentType(v), replaceExisting = true)
+  def contentType(v: String): Part[T] = header(Header.notValidated(HeaderNames.ContentType, v), replaceExisting = true)
   def contentType: Option[String] = header(HeaderNames.ContentType)
 
   def header(h: Header, replaceExisting: Boolean = false): Part[T] = {

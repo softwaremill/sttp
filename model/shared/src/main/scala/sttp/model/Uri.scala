@@ -17,6 +17,9 @@ import sttp.model.internal.Rfc3986.encode
   * All components (scheme, host, query, ...) are stored decoded, and
   * become encoded upon serialization (using [[toString]]).
   *
+  * Instances can be created using the uri interpolator: `uri"..."` (see [[UriInterpolator]]), or the factory methods
+  * on the [[Uri]] companion object.
+  *
   * @param querySegments Either key-value pairs, single values, or plain
   * query segments. Key value pairs will be serialized as `k=v`, and blocks
   * of key-value pairs/single values will be combined using `&`. Note that no

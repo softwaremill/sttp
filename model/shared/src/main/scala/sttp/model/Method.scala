@@ -20,13 +20,13 @@ object Method extends Methods {
 }
 
 trait Methods {
-  val GET: Method = Method.unsafeApply("GET")
-  val HEAD: Method = Method.unsafeApply("HEAD")
-  val POST: Method = Method.unsafeApply("POST")
-  val PUT: Method = Method.unsafeApply("PUT")
-  val DELETE: Method = Method.unsafeApply("DELETE")
-  val OPTIONS: Method = Method.unsafeApply("OPTIONS")
-  val PATCH: Method = Method.unsafeApply("PATCH")
-  val CONNECT: Method = Method.unsafeApply("CONNECT")
-  val TRACE: Method = Method.unsafeApply("TRACE")
+  val GET: Method = Method.notValidated("GET")
+  val HEAD: Method = Method.notValidated("HEAD")
+  val POST: Method = Method.notValidated("POST")
+  val PUT: Method = Method.notValidated("PUT")
+  val DELETE: Method = Method.notValidated("DELETE")
+  val OPTIONS: Method = Method.notValidated("OPTIONS")
+  val PATCH: Method = Method.notValidated("PATCH")
+  val CONNECT: Method = Method.notValidated("CONNECT")
+  val TRACE: Method = Method.notValidated("TRACE")
 }

@@ -29,16 +29,13 @@ object Cookie {
 
   private[model] def validateName(name: String): Option[String] = validateToken("Cookie name", name)
 
-  private[model] def validateValue(value: String): Option[String] = {
+  private[model] def validateValue(value: String): Option[String] =
     if (AllowedValueCharacters.unapplySeq(value).isEmpty) {
-      Some(
-        "Cookie value can only contain alphanumeric characters, whitespace and: !#$%&'\"()*+\\-./:<=>?@[]^_`{|}~"
-      )
+      Some("Cookie value can not contain control characters")
     } else None
-  }
 
   /**
-    * @throws IllegalArgumentException If the cookie attributes contain illegal characters.
+    * @throws IllegalArgumentException If the cookie name or value contain illegal characters.
     */
   def unsafeApply(name: String, value: String): Cookie = safeApply(name, value).getOrThrow
 
