@@ -36,7 +36,7 @@ class MonixWebsocketHandlerTest extends WebsocketHandlerTest[Task, WebSocketHand
   }
 
   private def eventually[T](f: => Task[T]) = {
-    (Task.sleep(10 millis) >> f).onErrorRestart(10)
+    (Task.sleep(10 millis) >> f).onErrorRestart(100)
   }
 
   def receiveEcho(ws: WebSocket[Task], count: Int): Task[Assertion] = {
