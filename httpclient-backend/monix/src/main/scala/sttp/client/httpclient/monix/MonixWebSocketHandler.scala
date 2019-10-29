@@ -58,9 +58,9 @@ object MonixWebSocketHandler {
           monad.error(t)
         case WebSocketEvent.Error(t) => throw t
         case WebSocketEvent.Frame(f) =>
-          monad.unit(Right(f)).map { frame =>
+          monad.eval {
             ws.request(1)
-            frame
+            Right(f)
           }
       }
     }
