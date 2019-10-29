@@ -9,6 +9,8 @@ import sttp.client.testing.ConvertToFuture
 import sttp.client.ws.WebSocket
 
 import scala.concurrent.Future
+import scala.concurrent.duration._
+import cats.implicits._
 
 class Fs2WebsocketHandlerTest extends AHCWebsocketHandlerTest[IO] {
   implicit val backend: SttpBackend[IO, Nothing, WebSocketHandler] = AsyncHttpClientFs2Backend[IO]().unsafeRunSync()
@@ -21,4 +23,13 @@ class Fs2WebsocketHandlerTest extends AHCWebsocketHandlerTest[IO] {
 
   override def createHandler: Option[Int] => WebSocketHandler[WebSocket[IO]] =
     Fs2WebSocketHandler[IO](_).unsafeRunSync()
+
+  override def eventually[T](f: => IO[T]): IO[T] = {
+    def tryWithCounter(i: Int): IO[T] = {
+      (IO.sleep(10 millis) >> f).recoverWith {
+        case _: Exception if i < 100 => tryWithCounter(i + 1)
+      }
+    }
+    tryWithCounter(0)
+  }
 }

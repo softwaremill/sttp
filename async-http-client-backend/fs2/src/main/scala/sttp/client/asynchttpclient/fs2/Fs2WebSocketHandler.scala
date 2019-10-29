@@ -15,22 +15,24 @@ object Fs2WebSocketHandler {
   private class Fs2AsyncQueue[F[_], A](queue: InspectableQueue[F, A], semaphore: Semaphore[F])(implicit F: Effect[F])
       extends AsyncQueue[F, A] {
     override def clear(): Unit =
-      F.runAsync(
+      F.toIO(
           Bracket[F, Throwable].bracket(semaphore.acquire)(
             _ =>
               queue.getSize.flatMap { size =>
                 queue.dequeue.take(size.toLong).compile.drain
               }
           )(_ => semaphore.release)
-        )(IO.fromEither)
+        )
         .unsafeRunSync()
 
-    override def offer(t: A): Unit =
-      F.runAsync(queue.offer1(t))(IO.fromEither(_).flatMap {
+    override def offer(t: A): Unit = {
+      F.toIO(queue.offer1(t))
+        .flatMap {
           case true  => IO.unit
           case false => IO.raiseError(new WebSocketBufferFull())
-        })
+        }
         .unsafeRunSync()
+    }
 
     override def poll: F[A] =
       Bracket[F, Throwable].bracket(semaphore.acquire)(_ => queue.dequeue1)(_ => semaphore.release)

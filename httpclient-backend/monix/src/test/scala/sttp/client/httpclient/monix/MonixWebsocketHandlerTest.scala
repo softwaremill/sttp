@@ -35,10 +35,6 @@ class MonixWebsocketHandlerTest extends WebsocketHandlerTest[Task, WebSocketHand
       .toFuture()
   }
 
-  private def eventually[T](f: => Task[T]) = {
-    (Task.sleep(10 millis) >> f).onErrorRestart(100)
-  }
-
   def receiveEcho(ws: WebSocket[Task], count: Int): Task[Assertion] = {
     val fs = (1 to count).map { i =>
       Observable
@@ -60,5 +56,9 @@ class MonixWebsocketHandlerTest extends WebsocketHandlerTest[Task, WebSocketHand
         .map(payload => payload shouldBe Right(s"echo: test$i"))
     }
     fs.foldLeft(Task.now(succeed))(_ >> _)
+  }
+
+  override def eventually[T](f: => Task[T]): Task[T] = {
+    (Task.sleep(10 millis) >> f).onErrorRestart(100)
   }
 }

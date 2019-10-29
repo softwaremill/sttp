@@ -68,6 +68,8 @@ abstract class WebsocketHandlerTest[F[_], WS_HANDLER[_]]
 
   def receiveEcho(ws: WebSocket[F], count: Int): F[Assertion]
 
+  def eventually[T](f: => F[T]): F[T]
+
   override protected def afterAll(): Unit = {
     backend.close().toFuture
     super.afterAll()
