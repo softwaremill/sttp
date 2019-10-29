@@ -187,6 +187,7 @@ lazy val rootJVM = project
     modelJVM,
     coreJVM,
     catsJVM,
+    fs2JVM,
     monixJVM,
     scalaz,
     zio,
@@ -218,7 +219,7 @@ lazy val rootJS = project
   .in(file(".js"))
   .settings(commonJvmJsSettings: _*)
   .settings(skip in publish := true, name := "sttpJS")
-  .aggregate(modelJS, coreJS, catsJS, monixJS, jsonCommonJS, circeJS, playJsonJS)
+  .aggregate(modelJS, coreJS, catsJS, fs2JS, monixJS, jsonCommonJS, circeJS, playJsonJS)
 
 lazy val rootNative = project
   .in(file(".native"))
@@ -322,6 +323,23 @@ lazy val cats = crossProject(JSPlatform, JVMPlatform)
   )
 lazy val catsJS = cats.js.dependsOn(coreJS % compileAndTest)
 lazy val catsJVM = cats.jvm.dependsOn(coreJVM % compileAndTest)
+
+val fs2Version = "2.0.1"
+lazy val fs2 = crossProject(JSPlatform, JVMPlatform)
+  .withoutSuffixFor(JVMPlatform)
+  .crossType(CrossType.Pure)
+  .in(file("implementations/fs2"))
+  .jvmSettings(commonJvmSettings: _*)
+  .jsSettings(commonJsSettings: _*)
+  .settings(
+    name := "fs2",
+    publishArtifact in Test := true,
+    libraryDependencies ++= Seq(
+      "co.fs2" %%% "fs2-core" % fs2Version
+    )
+  )
+lazy val fs2JS = fs2.js.dependsOn(coreJS % compileAndTest)
+lazy val fs2JVM = fs2.jvm.dependsOn(coreJVM % compileAndTest)
 
 lazy val monix = crossProject(JSPlatform, JVMPlatform)
   .withoutSuffixFor(JVMPlatform)
@@ -427,7 +445,6 @@ lazy val asyncHttpClientCatsBackend: Project =
   asyncHttpClientBackendProject("cats")
     .dependsOn(catsJVM % compileAndTest)
 
-val fs2Version = "2.0.1"
 lazy val asyncHttpClientFs2Backend: Project =
   asyncHttpClientBackendProject("fs2")
     .settings(
@@ -437,6 +454,7 @@ lazy val asyncHttpClientFs2Backend: Project =
       )
     )
     .dependsOn(catsJVM % compileAndTest)
+    .dependsOn(fs2JVM % compileAndTest)
 
 //-- okhttp
 lazy val okhttpBackend: Project = (project in file("okhttp-backend"))

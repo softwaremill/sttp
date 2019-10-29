@@ -11,7 +11,6 @@ class MonixAsyncQueue[A](bufferCapacity: Option[Int])(implicit s: Scheduler) ext
     case None           => MAsyncQueue.unbounded[A]()
   }
 
-  override def clear(): Unit = queue.clear()
   override def offer(t: A): Unit = {
     if (!queue.tryOffer(t)) {
       throw new WebSocketBufferFull()

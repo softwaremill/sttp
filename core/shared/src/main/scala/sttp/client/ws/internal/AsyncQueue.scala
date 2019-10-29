@@ -5,11 +5,6 @@ import scala.language.higherKinds
 trait AsyncQueue[F[_], T] {
 
   /**
-    * Eagerly clears the queue.
-    */
-  def clear(): Unit
-
-  /**
     * Eagerly adds the given item to the queue.
     */
   def offer(t: T): Unit

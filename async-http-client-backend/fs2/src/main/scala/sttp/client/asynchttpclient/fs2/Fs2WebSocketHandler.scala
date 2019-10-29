@@ -1,43 +1,15 @@
 package sttp.client.asynchttpclient.fs2
 
 import cats.effect._
-import cats.effect.concurrent.Semaphore
 import cats.implicits._
 import fs2.concurrent.InspectableQueue
 import sttp.client.asynchttpclient.WebSocketHandler
 import sttp.client.asynchttpclient.internal.NativeWebSocketHandler
 import sttp.client.impl.cats.CatsMonadAsyncError
-import sttp.client.ws.internal.AsyncQueue
+import sttp.client.impl.fs2.Fs2AsyncQueue
 import sttp.client.ws.{WebSocket, WebSocketEvent}
-import sttp.model.ws.WebSocketBufferFull
 
 object Fs2WebSocketHandler {
-  private class Fs2AsyncQueue[F[_], A](queue: InspectableQueue[F, A], semaphore: Semaphore[F])(implicit F: Effect[F])
-      extends AsyncQueue[F, A] {
-    override def clear(): Unit =
-      F.toIO(
-          Bracket[F, Throwable].bracket(semaphore.acquire)(
-            _ =>
-              queue.getSize.flatMap { size =>
-                queue.dequeue.take(size.toLong).compile.drain
-              }
-          )(_ => semaphore.release)
-        )
-        .unsafeRunSync()
-
-    override def offer(t: A): Unit = {
-      F.toIO(queue.offer1(t))
-        .flatMap {
-          case true  => IO.unit
-          case false => IO.raiseError(new WebSocketBufferFull())
-        }
-        .unsafeRunSync()
-    }
-
-    override def poll: F[A] =
-      Bracket[F, Throwable].bracket(semaphore.acquire)(_ => queue.dequeue1)(_ => semaphore.release)
-  }
-
   /**
     * Creates a new [[WebSocketHandler]] which should be used *once* to send and receive from a single websocket.
     *
@@ -64,14 +36,13 @@ object Fs2WebSocketHandler {
   def apply[F[_]](
       createQueue: F[InspectableQueue[F, WebSocketEvent]]
   )(implicit F: ConcurrentEffect[F]): F[WebSocketHandler[WebSocket[F]]] = {
-    (createQueue, Semaphore[F](1)).tupled.flatMap {
-      case (queue, semaphore) =>
-        F.delay {
-          NativeWebSocketHandler[F](
-            new Fs2AsyncQueue[F, WebSocketEvent](queue, semaphore),
-            new CatsMonadAsyncError
-          )
-        }
+    createQueue.flatMap { queue =>
+      F.delay {
+        NativeWebSocketHandler[F](
+          new Fs2AsyncQueue[F, WebSocketEvent](queue),
+          new CatsMonadAsyncError
+        )
+      }
     }
   }
 }
