@@ -1,13 +1,13 @@
 package sttp.client.httpclient
 
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
+import java.io.InputStream
 import java.net.http.HttpRequest.{BodyPublisher, BodyPublishers}
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 import java.net.{Authenticator, PasswordAuthentication}
 import java.time.{Duration => JDuration}
 import java.util.concurrent.{Executor, ThreadPoolExecutor}
 import java.util.function
-import java.util.zip.{GZIPInputStream, Inflater}
+import java.util.zip.{GZIPInputStream, InflaterInputStream}
 
 import sttp.client.ResponseAs.EagerResponseHandler
 import sttp.client.SttpBackendOptions.Proxy
@@ -88,7 +88,7 @@ abstract class HttpClientBackend[F[_], S](client: HttpClient, closeClient: Boole
   }
 
   private[httpclient] def readResponse[T](
-      res: HttpResponse[Array[Byte]],
+      res: HttpResponse[InputStream],
       responseAs: ResponseAs[T, S]
   ): F[Response[T]] = {
     val headers = res
@@ -105,9 +105,9 @@ abstract class HttpClientBackend[F[_], S](client: HttpClient, closeClient: Boole
     val encoding = headers.collectFirst { case h if h.is(HeaderNames.ContentEncoding) => h.value }
     val method = Method.notValidated(res.request().method())
     val byteBody = if (encoding.contains("gzip") && method != Method.HEAD) {
-      decompressGzip(res).toByteArray
+      new GZIPInputStream(res.body())
     } else if (encoding.contains("deflate") && method != Method.HEAD) {
-      decompressDeflate(res)
+      new InflaterInputStream(res.body())
     } else {
       res.body()
     }
@@ -115,53 +115,26 @@ abstract class HttpClientBackend[F[_], S](client: HttpClient, closeClient: Boole
     responseMonad.map(body)(Response(_, code, "", headers, Nil))
   }
 
-  // https://github.com/ralscha/blog2019/blob/master/java11httpclient/client/src/main/java/ch/rasc/httpclient/Get.java#L182-L200
-  private def decompressGzip[T](res: HttpResponse[Array[Byte]]) = {
-    val outputStream = new ByteArrayOutputStream()
-    var inputStream: Option[GZIPInputStream] = None
-    try {
-      inputStream = Some(new GZIPInputStream(new ByteArrayInputStream(res.body())))
-      inputStream.foreach(_.transferTo(outputStream))
-      outputStream
-    } finally {
-      inputStream.foreach(_.close())
-      outputStream.close()
-    }
-  }
-
-  // https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/zip/Deflater.html
-  private def decompressDeflate[T](res: HttpResponse[Array[Byte]]) = {
-    val inflater = new Inflater()
-    inflater.setInput(res.body())
-    val outputStream = new ByteArrayOutputStream(res.body().length)
-    val buffer = new Array[Byte](1024)
-    while (!inflater.finished()) {
-      val count = inflater.inflate(buffer)
-      outputStream.write(buffer, 0, count)
-    }
-    outputStream.close()
-    inflater.end()
-    outputStream.toByteArray
-  }
-
-  private def responseHandler(responseBody: Array[Byte]) =
+  private def responseHandler(responseBody: InputStream) =
     new EagerResponseHandler[S] {
       override def handleBasic[T](bra: BasicResponseAs[T, S]): Try[T] =
         bra match {
           case IgnoreResponse =>
-            Try(())
+            Try(responseBody.close())
           case ResponseAsByteArray =>
-            val body = Try(responseBody)
-            body
+            val result = Try(responseBody.readAllBytes())
+            responseBody.close()
+            result
           case ras @ ResponseAsStream() =>
             responseBodyToStream(responseBody).map(ras.responseIsStream)
           case ResponseAsFile(file) =>
-            val body = Try(FileHelpers.saveFile(file.toFile, new ByteArrayInputStream(responseBody)))
+            val body = Try(FileHelpers.saveFile(file.toFile, responseBody))
+            responseBody.close()
             body.map(_ => file)
         }
     }
 
-  def responseBodyToStream(body: Array[Byte]): Try[S] =
+  def responseBodyToStream(responseBody: InputStream): Try[S] =
     Failure(new IllegalStateException("Streaming isn't supported"))
 
   override def close(): F[Unit] = {

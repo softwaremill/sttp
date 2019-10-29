@@ -209,7 +209,8 @@ lazy val rootJVM = project
     playJsonJVM,
     braveBackend,
     prometheusBackend,
-    httpClientBackend
+    httpClientBackend,
+    httpClientMonixBackend
   )
 
 lazy val rootJS = project
@@ -479,6 +480,17 @@ lazy val httpClientBackend: Project = (project in file("httpclient-backend"))
   )
   .settings(only2_13andJava11)
   .dependsOn(catsJVM, coreJVM % compileAndTest)
+
+def httpClientBackendProject(proj: String): Project = {
+  Project(s"httpClientBackend${proj.capitalize}", file(s"httpclient-backend/$proj"))
+    .settings(commonJvmSettings: _*)
+    .settings(name := s"httpclient-backend-$proj")
+    .dependsOn(httpClientBackend % compileAndTest)
+}
+
+lazy val httpClientMonixBackend: Project =
+  httpClientBackendProject("monix")
+    .dependsOn(monixJVM % compileAndTest)
 
 //----- json
 lazy val jsonCommon = crossProject(JSPlatform, JVMPlatform)

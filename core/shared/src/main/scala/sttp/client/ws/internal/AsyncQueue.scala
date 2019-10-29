@@ -1,4 +1,6 @@
-package sttp.client.asynchttpclient.internal
+package sttp.client.ws.internal
+
+import scala.language.higherKinds
 
 trait AsyncQueue[F[_], T] {
 
