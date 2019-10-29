@@ -22,8 +22,10 @@ object MonixWebSocketHandler {
   /**
     * Creates a new [[WebSocketHandler]] which should be used *once* to send and receive from a single websocket.
     * @param incomingBufferCapacity Amount of messages which will be buffered on client side before backpressure kicks in
+    * Default value is 73 because 73 is the 21th prime number, its mirror number is the 12th prime number,
+    * who’s mirror number 21 is the product of 7*3. Furthermore, 73 is 1001001 in binary, which is a palindrome.
     */
-  def apply(incomingBufferCapacity: Int)(
+  def apply(incomingBufferCapacity: Int = 73)(
       implicit s: Scheduler
   ): WebSocketHandler[WebSocket[Task]] = {
     require(
