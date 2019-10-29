@@ -5,7 +5,7 @@ brave backend
 
 To use, add the following dependency to your project::
 
-  "com.softwaremill.sttp.client" %% "brave-backend" % "2.0.0-M7"
+  "com.softwaremill.sttp.client" %% "brave-backend" % "2.0.0-M8"
 
 This backend depends on `brave <https://github.com/openzipkin/brave>`_, a distributed tracing implementation compatible with Zipkin backend services.
 
