@@ -25,7 +25,7 @@ trait LowLevelListenerWebSocketTest[F[_], WS, WS_HANDLER[_]]
   implicit def backend: SttpBackend[F, Nothing, WS_HANDLER]
   implicit def convertToFuture: ConvertToFuture[F]
   private implicit lazy val monad: MonadError[F] = backend.responseMonad
-
+  def testErrorWhenEndpointIsNotWebsocket: Boolean = true
   def createHandler(onTextFrame: String => Unit): WS_HANDLER[WS]
   def sendText(ws: WS, t: String): Unit
   def sendCloseFrame(ws: WS): Unit
@@ -59,18 +59,19 @@ trait LowLevelListenerWebSocketTest[F[_], WS, WS_HANDLER[_]]
       }
       .toFuture
   }
-
-  it should "error if the endpoint is not a websocket" in {
-    monad
-      .handleError(
-        basicRequest
-          .get(uri"$wsEndpoint/echo")
-          .openWebsocket(createHandler(_ => ()))
-          .map(_ => fail("An exception should be thrown"): Assertion)
-      ) {
-        case e => (e shouldBe a[IOException]).unit
-      }
-      .toFuture()
+  if (testErrorWhenEndpointIsNotWebsocket) {
+    it should "error if the endpoint is not a websocket" in {
+      monad
+        .handleError(
+          basicRequest
+            .get(uri"$wsEndpoint/echo")
+            .openWebsocket(createHandler(_ => ()))
+            .map(_ => fail("An exception should be thrown"): Assertion)
+        ) {
+          case e => (e shouldBe a[IOException]).unit
+        }
+        .toFuture()
+    }
   }
 
   override protected def afterAll(): Unit = {
