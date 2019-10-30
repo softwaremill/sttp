@@ -17,11 +17,13 @@ In case of success, ``WebSocketResponse`` contains:
 Low-level and high-level websocket handlers
 -------------------------------------------
 
-Each backend which supports websockets, does so through a backend-specific websocket handler. Depending on the backend, this can be an implementation of a "low-level" Java listener interface (as in :ref:`async-http-client <asynchttpclient>`, :ref:`OkHttp <okhttp>` and :ref:`HttpClient <httpclient>`), a Scala stream (as in :ref:`akka-http <akkahttp>`), or some other other approach.
+Each backend which supports websockets, does so through a backend-specific websocket handler. Depending on the backend, this can be an implementation of a "low-level" Java listener interface (as in :ref:`async-http-client <asynchttpclient>`, :ref:`OkHttp <okhttp_backend>` and :ref:`HttpClient <httpclient>`), a Scala stream (as in :ref:`akka-http <akkahttp>`), or some other other approach.
 
 Additionally, some backends, on top of the "low-level" Java listeners also offer a higher-level, more "functional" approach to websockets. This is done by passing a specific handler instance when opening the websocket; refer to the documentation of individual backends for details.
 
-> The listeners created by the high-level handlers internally buffer incoming websocket events. In some implementations, when creating the handler, a bound can be specified for the size of the buffer. If the bound is specified and the buffer fills up (as can happen if the messages are not received, or processed slowly), the websocket will error and close. Otherwise, the buffer will potentially take up all available memory.
+.. note::
+
+  The listeners created by the high-level handlers internally buffer incoming websocket events. In some implementations, when creating the handler, a bound can be specified for the size of the buffer. If the bound is specified and the buffer fills up (as can happen if the messages are not received, or processed slowly), the websocket will error and close. Otherwise, the buffer will potentially take up all available memory.
 
 When the websocket is open, the response will contain an instance of ``sttp.client.ws.WebSocket[F]``, where ``F`` is the backend-specific effects wrapper, such as ``IO`` or ``Task``. This interface contains two methods, both of which return computations wrapped in the effects wrapper ``F`` (which typically is lazily-evaluated description of a side-effecting, asynchronous process):
 

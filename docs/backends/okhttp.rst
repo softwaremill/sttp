@@ -1,4 +1,4 @@
-.. _okhttp:
+.. _okhttp_backend:
 
 OkHttp backend
 ==============
