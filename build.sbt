@@ -600,6 +600,18 @@ lazy val braveBackend: Project = (project in file("metrics/brave-backend"))
   )
   .dependsOn(coreJVM)
 
+lazy val openTracingBackend: Project = (project in file("metrics/open-tracing-backend"))
+  .settings(commonJvmSettings: _*)
+  .settings(
+    name := "opentracing-backend",
+    libraryDependencies ++= Seq(
+      "io.opentracing" % "opentracing-api" % "0.33.0",
+      "io.opentracing" % "opentracing-mock" % "0.33.0" % "test",
+      scalaTest % "test"
+    )
+  )
+  .dependsOn(coreJVM)
+
 lazy val prometheusBackend: Project = (project in file("metrics/prometheus-backend"))
   .settings(commonJvmSettings: _*)
   .settings(
