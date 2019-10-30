@@ -76,6 +76,7 @@ For more examples, see the :ref:`usage examples <usage_examples>` section. Or ex
    backends/okhttp
    backends/http4s
    backends/httpclient
+   backends/opentracing
    backends/brave
    backends/prometheus
    backends/javascript/fetch
