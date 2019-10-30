@@ -6,12 +6,12 @@ import java.nio.channels.ClosedChannelException
 import org.scalatest.Assertion
 import sttp.client.basicRequest
 import sttp.client.monad.syntax._
-import sttp.client.testing.websocket.WebsocketHandlerTest
+import sttp.client.testing.websocket.HighLevelWebsocketTest
 import sttp.model.Uri._
 
 import scala.concurrent.duration._
 
-abstract class AHCWebsocketHandlerTest[F[_]] extends WebsocketHandlerTest[F, WebSocketHandler] {
+abstract class AsyncHttpCientHighLevelWebsocketTest[F[_]] extends HighLevelWebsocketTest[F, WebSocketHandler] {
 
   it should "error if the endpoint is not a websocket" in {
     monad

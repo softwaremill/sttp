@@ -10,7 +10,7 @@ import sttp.model.ws.WebSocketFrame
 
 import scala.concurrent.duration.FiniteDuration
 
-abstract class WebsocketHandlerTest[F[_], WS_HANDLER[_]]
+abstract class HighLevelWebsocketTest[F[_], WS_HANDLER[_]]
     extends AsyncFlatSpec
     with Matchers
     with TestHttpServer

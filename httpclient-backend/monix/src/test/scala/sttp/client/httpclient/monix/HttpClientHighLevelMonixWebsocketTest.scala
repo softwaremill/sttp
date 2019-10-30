@@ -10,12 +10,12 @@ import sttp.client.httpclient.WebSocketHandler
 import sttp.client.impl.monix.{TaskMonadAsyncError, convertMonixTaskToFuture}
 import sttp.client.monad.MonadError
 import sttp.client.testing.ConvertToFuture
-import sttp.client.testing.websocket.WebsocketHandlerTest
+import sttp.client.testing.websocket.HighLevelWebsocketTest
 import sttp.client.ws.WebSocket
 
 import scala.concurrent.duration._
 
-class MonixWebsocketHandlerTest extends WebsocketHandlerTest[Task, WebSocketHandler] {
+class HttpClientHighLevelMonixWebsocketTest extends HighLevelWebsocketTest[Task, WebSocketHandler] {
   implicit val backend: SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler] =
     HttpClientMonixBackend().runSyncUnsafe()
   implicit val convertToFuture: ConvertToFuture[Task] = convertMonixTaskToFuture
