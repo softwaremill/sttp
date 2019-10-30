@@ -10,7 +10,7 @@ Here's a very quick example of sttp client in action::
   import sttp.client._
 
   val sort: Option[String] = None
-  val query = "http language:scala"
+  val query = "language:scala"
 
   // the `query` parameter is automatically url-encoded
   // `sort` is removed, as the value is not defined
