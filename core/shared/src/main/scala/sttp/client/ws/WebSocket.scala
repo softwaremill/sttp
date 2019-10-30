@@ -7,7 +7,7 @@ import sttp.model.ws.WebSocketFrame
 import scala.language.higherKinds
 
 /**
-  * The `send` and `receive` methods may result in a failed effect, with either one of [[sttp.client.ws.WebSocketError]]
+  * The `send` and `receive` methods may result in a failed effect, with either one of [[sttp.model.ws.WebSocketError]]
   * exceptions, or a backend-specific exception.
   */
 trait WebSocket[F[_]] {
@@ -16,7 +16,7 @@ trait WebSocket[F[_]] {
   def isOpen: F[Boolean]
 
   /**
-    * Receive data frames, ignoring others.
+    * Receive a single data frame, ignoring others. The frame might be a fragment.
     * @param pongOnPing Should a [[WebSocketFrame.Pong]] be sent when a [[WebSocketFrame.Ping]] is received.
     */
   def receiveDataFrame(pongOnPing: Boolean = true): F[Either[WebSocketEvent.Close, WebSocketFrame.Data]] =
@@ -29,7 +29,8 @@ trait WebSocket[F[_]] {
     }
 
   /**
-    * Receive text data frames, ignoring others.
+    * Receive a single text data frame, ignoring others. The frame might be a fragment. To receive whole messages,
+    * use [[receiveText]].
     * @param pongOnPing Should a [[WebSocketFrame.Pong]] be sent when a [[WebSocketFrame.Ping]] is received.
     */
   def receiveTextFrame(pongOnPing: Boolean = true): F[Either[WebSocketEvent.Close, WebSocketFrame.Text]] =
@@ -40,7 +41,8 @@ trait WebSocket[F[_]] {
     }
 
   /**
-    * Receive binary data frames, ignoring others.
+    * Receive a single binary data frame, ignoring others. The frame might be a fragment. To receive whole messages,
+    * use [[receiveBinary]].
     * @param pongOnPing Should a [[WebSocketFrame.Pong]] be sent when a [[WebSocketFrame.Ping]] is received.
     */
   def receiveBinaryFrame(pongOnPing: Boolean = true): F[Either[WebSocketEvent.Close, WebSocketFrame.Binary]] =
@@ -51,7 +53,8 @@ trait WebSocket[F[_]] {
     }
 
   /**
-    * Accumulates text data frames ignoring others and returns combined results to the user
+    * Receive a single text message (which might come from multiple, fragmented frames).
+    * Ignores non-text frames and returns combined results.
     * @param pongOnPing Should a [[WebSocketFrame.Pong]] be sent when a [[WebSocketFrame.Ping]] is received.
     */
   def receiveText(pongOnPing: Boolean = true): F[Either[WebSocketEvent.Close, String]] = {
@@ -68,7 +71,8 @@ trait WebSocket[F[_]] {
   }
 
   /**
-    * Accumulates text data frames ignoring others and returns combined results to the user
+    * Receive a single binary message (which might come from multiple, fragmented frames).
+    * Ignores non-binary frames and returns combined results.
     * @param pongOnPing Should a [[WebSocketFrame.Pong]] be sent when a [[WebSocketFrame.Ping]] is received.
     */
   def receiveBinary(pongOnPing: Boolean): F[Either[WebSocketEvent.Close, Array[Byte]]] = {
