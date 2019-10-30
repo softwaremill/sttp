@@ -68,7 +68,10 @@ abstract class WebsocketHandlerTest[F[_], WS_HANDLER[_]]
     fs.foldLeft(().unit)(_ >> _)
   }
 
-  def receiveEcho(ws: WebSocket[F], count: Int): F[Assertion]
+  def receiveEcho(ws: WebSocket[F], count: Int): F[Assertion] = {
+    val fs = (1 to count).map(i => ws.receiveText().map(_ shouldBe Right(s"echo: test$i")))
+    fs.foldLeft(succeed.unit)(_ >> _)
+  }
 
   def eventually[T](interval: FiniteDuration, attempts: Int)(f: => F[T]): F[T]
 

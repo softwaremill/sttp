@@ -97,7 +97,6 @@ private class AddToQueueListener[F[_]](queue: AsyncQueue[F, WebSocketEvent], isO
 
   override def onFailure(webSocket: okhttp3.WebSocket, t: Throwable, response: Response): Unit = {
     isOpen.set(false)
-    queue.clear() // removing any pending events so that the error is read first
     queue.offer(WebSocketEvent.Error(t))
   }
 
