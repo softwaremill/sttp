@@ -1,7 +1,7 @@
-.. _Opentracing_backend:
+.. _opentracing_backend:
 
 Opentracing backend
-=============
+===================
 
 To use, add the following dependency to your project::
 
@@ -25,9 +25,8 @@ There is an additional method exposed to override default operation id::
     .get(...)
     .tagWithOperationId("register-user"))
 
-
 Integration with jaeger
----------------------
+-----------------------
 
 Using with `jaeger <https://www.jaegertracing.io/>`_ tracing
 
@@ -53,7 +52,8 @@ Create an instance of tracer::
 For more details about integration with jaeger click `here <https://github.com/jaegertracing/jaeger-client-java>`_
 
 Integration with brave
------------
+----------------------
+
 Using with `brave <https://github.com/openzipkin/brave>`_ tracing
 
 Add following dependency::
@@ -76,8 +76,8 @@ Create instance of tracer::
                                                 Arrays.asList("country-code", "user-id"))
                                         .build()
 
-        // Now, create a Brave tracing component with the service name you want to see in Zipkin.
-        //   (the dependency is io.zipkin.brave:brave)
+        // Now, create a Brave tracing component with the service name you want to see in
+        // Zipkin (the dependency is io.zipkin.brave:brave).
         val braveTracing = Tracing.newBuilder()
                               .localServiceName(serviceName)
                               .propagationFactory(propagationFactory)
@@ -87,6 +87,5 @@ Create instance of tracer::
         // use this to create an OpenTracing Tracer
         BraveTracer.create(braveTracing)
     }
-
 
 For more details about integration with brave click `here <https://github.com/openzipkin-contrib/brave-opentracing>`_

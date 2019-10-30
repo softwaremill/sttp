@@ -1,3 +1,5 @@
+.. _asynchttpclient:
+
 async-http-client backend
 =========================
 
@@ -151,32 +153,8 @@ Websockets
 
 The async-http-client backend supports websockets, where the websocket handler is of type ``sttp.client.asynchttpclient.WebSocketHandler``. An instance of this handler can be created in two ways.
 
-First, given an async-http-client-native ``org.asynchttpclient.ws.WebSocketListener``, you can lift it to a web socket handler using ``WebSocketHandler.fromListener``. This listener will receive lifecycle callbacks, as well as a callback each time a message is received. Note that the callbacks will be executed on the Netty (network) thread, so make sure not to run any blocking operations there, and delegate to other executors/thread pools if necessary. The value returned in the ``WebSocketResponse`` will be an instance of ``org.asynchttpclient.ws.WebSocket``, which allows sending messages.
+First (the "low-level" one), given an async-http-client-native ``org.asynchttpclient.ws.WebSocketListener``, you can lift it to a web socket handler using ``WebSocketHandler.fromListener``. This listener will receive lifecycle callbacks, as well as a callback each time a message is received. Note that the callbacks will be executed on the Netty (network) thread, so make sure not to run any blocking operations there, and delegate to other executors/thread pools if necessary. The value returned in the ``WebSocketResponse`` will be an instance of ``org.asynchttpclient.ws.WebSocket``, which allows sending messages.
 
-The second approach, available when using the Monix, ZIO and fs2 backends, is to pass a ``MonixWebSocketHandler()``, ``ZIOWebSocketHandler()`` or ``Fs2WebSocketHandler()``. This will create a listener, which will internally buffer incoming messages, and expose a ``sttp.client.ws.WebSocket[Task]`` (``sttp.client.ws.WebSocket[F]`` for fs2 and any ``F[_] : ConcurrentEffect``) interface for sending/receiving messages.
+The second, "high-level" approach, available when using the Monix, ZIO and fs2 backends, is to pass a ``MonixWebSocketHandler()``, ``ZIOWebSocketHandler()`` or ``Fs2WebSocketHandler()``. This will create a websocket handler and expose a ``sttp.client.ws.WebSocket[Task]`` (for Monix and ZIO) / ``sttp.client.ws.WebSocket[F]`` (for fs2 and any ``F[_] : ConcurrentEffect``) interface for sending/receiving messages.
 
-Specifically, the ``WebSocket[Task]`` interface contains two methods, both of which return a ``Task`` (a lazily-evaluated description of a side-effecting, asynchronous process):
-
-* ``def receive: Task[Either[WebSocketEvent.Close, WebSocketFrame.Incoming]]`` which will complete once a message is available, and return either information that the websocket has been closed, or the incoming message
-* ``def send(f: WebSocketFrame, isContinuation: Boolean = false): Task[Unit]``, which should be used to send a message to the websocket. The ``WebSocketFrame`` companion object contains methods for creating binary/text messages. When using fragmentation, the first message should be sent using ``finalFragment = false``, and subsequent messages using ``isContinuation = true``.
-
-There are also other methods for receiving only text/binary messages, as well as automatically sending ``Pong`` responses when a ``Ping`` is received.
-
-Example usage::
-
-  import monix.eval.Task
-  import sttp.client._
-  import sttp.client.ws.{WebSocket, WebSocketResponse}
-  import sttp.model.ws.WebSocketFrame
-
-  val response: Task[WebSocketResponse[WebSocket[Task]]] = basicRequest
-    .get(uri"wss://echo.websocket.org")
-    .openWebsocket(MonixWebSocketHandler())
-
-  response.flatMap { r =>
-    val ws: WebSocket[Task] = r.result
-    val send = ws.send(WebSocketFrame.text("Hello!")
-    val receive = ws.receiveText().flatMap(t => Task(println(s"RECEIVED: $t")))
-    val close = ws.close()
-    send.flatMap(_ => receive).flatMap(_ => close)
-  }
+See :ref:`websockets <websockets>` for details on how to use the high-level interface.
