@@ -9,8 +9,7 @@ import monix.eval.Task
 import monix.execution.Scheduler
 import monix.reactive.Observable
 import sttp.client.httpclient.{HttpClientAsyncBackend, HttpClientBackend, WebSocketHandler}
-import sttp.client.impl.monix.TaskMonadAsyncError
-import sttp.client.ws.WebSocketResponse
+import sttp.client.impl.monix.{ShiftToDefaultScheduler, TaskMonadAsyncError}
 import sttp.client.{SttpBackend, _}
 
 import scala.util.{Success, Try}
@@ -25,11 +24,8 @@ class HttpClientMonixBackend private (
       TaskMonadAsyncError,
       closeClient,
       customizeRequest
-    ) {
-
-  override def send[T](request: Request[T, Observable[ByteBuffer]]): Task[Response[T]] = {
-    super.send(request).guarantee(Task.shift)
-  }
+    )
+    with ShiftToDefaultScheduler[Task, Observable[ByteBuffer], WebSocketHandler] {
 
   override def streamToRequestBody(stream: Observable[ByteBuffer]): HttpRequest.BodyPublisher = {
     BodyPublishers.fromPublisher(new ReactivePublisherJavaAdapter[ByteBuffer](stream.toReactivePublisher))
@@ -43,12 +39,6 @@ class HttpClientMonixBackend private (
         .guaranteeCase(_ => Task(responseBody.close()))
     )
   }
-
-  override def openWebsocket[T, WS_RESULT](
-      request: Request[T, Observable[ByteBuffer]],
-      handler: WebSocketHandler[WS_RESULT]
-  ): Task[WebSocketResponse[WS_RESULT]] =
-    super.openWebsocket(request, handler).guarantee(Task.shift)
 }
 
 object HttpClientMonixBackend {
