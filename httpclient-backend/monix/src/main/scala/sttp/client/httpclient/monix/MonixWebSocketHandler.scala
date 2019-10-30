@@ -137,7 +137,6 @@ private class AddToQueueListener[F[_]](
 
   override def onError(webSocket: JWebSocket, error: Throwable): Unit = {
     isOpen.set(false)
-    queue.clear() // removing any pending events so that the error is read first
     queue.offer(WebSocketEvent.Error(error))
     super.onError(webSocket, error)
   }

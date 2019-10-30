@@ -13,7 +13,6 @@ import sttp.client.okhttp.WebSocketHandler
 import sttp.client.testing.ConvertToFuture
 import sttp.client.testing.websocket.WebsocketHandlerTest
 import sttp.client.ws.WebSocket
-import sttp.model.ws.WebSocketFrame
 import scala.concurrent.duration._
 
 class MonixWebsocketHandlerTest extends WebsocketHandlerTest[Task, WebSocketHandler] {
@@ -43,17 +42,12 @@ class MonixWebsocketHandlerTest extends WebsocketHandlerTest[Task, WebSocketHand
       .openWebsocket(createHandler(Some(3)))
       .flatMap { response =>
         val ws = response.result
-        send(ws, 1000) >> eventually(ws.isOpen.map(_ shouldBe false))
+        send(ws, 1000) >> eventually(10 millis, 100)(ws.isOpen.map(_ shouldBe false))
       }
       .toFuture()
   }
 
-  private def eventually[T](f: => Task[T]) = {
-    (Task.sleep(10 millis) >> f).onErrorRestart(100)
-  }
-
-  def receiveEcho(ws: WebSocket[Task], count: Int): Task[Assertion] = {
-    val fs = (1 to count).map(i => ws.receive.map(_ shouldBe Right(WebSocketFrame.text(s"echo: test$i"))))
-    fs.foldLeft(Task.now(succeed))(_ >> _)
+  override def eventually[T](interval: FiniteDuration, attempts: Int)(f: => Task[T]): Task[T] = {
+    (Task.sleep(interval) >> f).onErrorRestart(attempts)
   }
 }

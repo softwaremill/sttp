@@ -76,7 +76,7 @@ abstract class HttpClientBackend[F[_], S](client: HttpClient, closeClient: Boole
   private def multipartBody[T](parts: Seq[Part[BasicRequestBody]]) = {
     val multipartBuilder = new MultiPartBodyPublisher()
     parts.foreach { p =>
-      val allHeaders = p.headers :+ Header(HeaderNames.ContentDisposition, p.contentDispositionHeaderValue)
+      val allHeaders = p.headers :+ Header.notValidated(HeaderNames.ContentDisposition, p.contentDispositionHeaderValue)
       p.body match {
         case FileBody(f, _) =>
           multipartBuilder.addPart(p.name, f.toFile.toPath, allHeaders.map(h => h.name -> h.value).toMap.asJava)
@@ -96,7 +96,7 @@ abstract class HttpClientBackend[F[_], S](client: HttpClient, closeClient: Boole
       .map()
       .keySet()
       .asScala
-      .flatMap(name => res.headers().map().asScala(name).asScala.map(Header(name, _)))
+      .flatMap(name => res.headers().map().asScala(name).asScala.map(Header.notValidated(name, _)))
       .toList
 
     val code = StatusCode.notValidated(res.statusCode())

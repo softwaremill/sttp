@@ -36,4 +36,4 @@ script:
 - (test $TRAVIS_JDK_VERSION = "oraclejdk8" && sbt ++$TRAVIS_SCALA_VERSION rootJVM/test &&
     xvfb-run sbt ++$TRAVIS_SCALA_VERSION rootJS/test &&
     sbt rootNative/test) || true
-- (test $TRAVIS_JDK_VERSION = "openjdk11" && test $TRAVIS_SCALA_VERSION = "2.13.1" && sbt ++$TRAVIS_SCALA_VERSION java11backend/test) || true
+- (test $TRAVIS_JDK_VERSION = "openjdk11" && test $TRAVIS_SCALA_VERSION = "2.13.1" && sbt ++$TRAVIS_SCALA_VERSION httpClientBackend/test) || true
