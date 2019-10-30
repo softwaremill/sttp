@@ -86,7 +86,6 @@ class AddToQueueListener[F[_]](queue: AsyncQueue[F, WebSocketEvent], isOpen: Ato
 
   override def onError(t: Throwable): Unit = {
     isOpen.set(false)
-    queue.clear() // removing any pending events so that the error is read first
     queue.offer(WebSocketEvent.Error(t))
   }
 
