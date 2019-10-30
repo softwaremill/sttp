@@ -7,7 +7,7 @@ Since 2.0.0-M9 brave-backend is deprecated, you should use :ref:`opentracing bac
 
 To use, add the following dependency to your project::
 
-  "com.softwaremill.sttp.client" %% "brave-backend" % "2.0.0-M8"
+  "com.softwaremill.sttp.client" %% "brave-backend" % "2.0.0-M9"
 
 This backend depends on `brave <https://github.com/openzipkin/brave>`_, a distributed tracing implementation compatible with Zipkin backend services.
 
