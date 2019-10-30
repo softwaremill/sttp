@@ -12,7 +12,7 @@ sttp is an open-source library which provides a clean, programmer-friendly API t
 import sttp.client._
 
 val sort: Option[String] = None
-val query = "language:scala"
+val query = "http language:scala"
 
 // the `query` parameter is automatically url-encoded
 // `sort` is removed, as the value is not defined
