@@ -25,7 +25,7 @@ cache:
     - $HOME/.ivy2/cache
     - $HOME/.coursier
 before_install:
-  - (test $TRAVIS_JDK_VERSION = "oraclejdk8" && test $TRAVIS_SCALA_VERSION = "2.11.10" && bash project/travis_setup.sh) || true
+  - if [[ ($TRAVIS_JDK_VERSION = "oraclejdk8") && ($TRAVIS_SCALA_VERSION = "2.11.10") ]]; then bash project/travis_setup.sh; fi
 before_script:
 - nvm install 10 # nodejs < 10 fails finding URL class
 - version="$(curl -s https://chromedriver.storage.googleapis.com/LATEST_RELEASE)" &&
@@ -33,7 +33,5 @@ before_script:
 - mkdir -p chromedriver && unzip chromedriver_linux64.zip -d chromedriver/
 - export PATH="$PATH:$PWD/chromedriver/"
 script:
-- (test $TRAVIS_JDK_VERSION = "oraclejdk8" && sbt ++$TRAVIS_SCALA_VERSION rootJVM/test &&
-    xvfb-run sbt ++$TRAVIS_SCALA_VERSION rootJS/test &&
-    sbt rootNative/test) || true
-- (test $TRAVIS_JDK_VERSION = "openjdk11" && test $TRAVIS_SCALA_VERSION = "2.13.1" && sbt ++$TRAVIS_SCALA_VERSION java11backend/test) || true
+- if [[ ($TRAVIS_JDK_VERSION = "oraclejdk8") ]]; then sbt ++$TRAVIS_SCALA_VERSION rootJVM/test && xvfb-run sbt ++$TRAVIS_SCALA_VERSION rootJS/test && sbt rootNative/test; fi
+- if [[ ($TRAVIS_JDK_VERSION = "openjdk11") && ($TRAVIS_SCALA_VERSION = "2.13.1") ]]; then sbt ++$TRAVIS_SCALA_VERSION java11backend/test; fi
