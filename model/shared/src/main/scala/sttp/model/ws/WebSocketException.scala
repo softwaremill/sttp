@@ -1,7 +1,7 @@
 package sttp.model.ws
 
-class WebSocketError(t: Throwable) extends Exception
+trait WebSocketError
 
-class WebSocketClosed() extends Exception
+class WebSocketClosed() extends Exception with WebSocketError
 
-class WebSocketBufferFull() extends Exception
+class WebSocketBufferFull() extends Exception with WebSocketError

@@ -5,11 +5,10 @@ import java.nio.channels.ClosedChannelException
 
 import org.scalatest.Assertion
 import sttp.client.basicRequest
-import sttp.client.testing.websocket.WebsocketHandlerTest
-import sttp.client.ws.WebSocket
-import sttp.model.ws.WebSocketFrame
 import sttp.client.monad.syntax._
+import sttp.client.testing.websocket.WebsocketHandlerTest
 import sttp.model.Uri._
+
 import scala.concurrent.duration._
 
 abstract class AHCWebsocketHandlerTest[F[_]] extends WebsocketHandlerTest[F, WebSocketHandler] {
@@ -42,10 +41,5 @@ abstract class AHCWebsocketHandlerTest[F[_]] extends WebsocketHandlerTest[F, Web
         case _: ClosedChannelException => succeed.unit
       }
       .toFuture()
-  }
-
-  def receiveEcho(ws: WebSocket[F], count: Int): F[Assertion] = {
-    val fs = (1 to count).map(i => ws.receive.map(_ shouldBe Right(WebSocketFrame.text(s"echo: test$i"))))
-    fs.foldLeft(succeed.unit)(_ >> _)
   }
 }

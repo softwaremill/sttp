@@ -1,8 +1,9 @@
 .. _brave_backend:
 
 brave backend (deprecated)
-=============
-Since 2.0.0-M9 brave-backend is deprecated, you should use opentracing-backend with brave integration.
+==========================
+
+Since 2.0.0-M9 brave-backend is deprecated, you should use :ref:`opentracing backend <opentracing_backend>` with brave integration.
 
 To use, add the following dependency to your project::
 

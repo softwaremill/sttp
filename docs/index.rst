@@ -103,5 +103,4 @@ For more examples, see the :ref:`usage examples <usage_examples>` section. Or ex
 
    json
    other
-   credits
 
