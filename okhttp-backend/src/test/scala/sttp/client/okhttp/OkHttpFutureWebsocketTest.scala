@@ -26,7 +26,7 @@ class OkHttpFutureWebsocketTest
     val received = new ConcurrentLinkedQueue[String]()
     basicRequest
       .get(uri"$wsEndpoint/ws/echo")
-      .openWebsocket(WebSocketHandler[WebSocket](collectingListener(received)))
+      .openWebsocket(WebSocketHandler.fromListener(collectingListener(received)))
       .map { response =>
         response.result.send("test1") shouldBe true
         response.result.send("test2") shouldBe true
@@ -41,7 +41,7 @@ class OkHttpFutureWebsocketTest
     val received = new ConcurrentLinkedQueue[String]()
     basicRequest
       .get(uri"$wsEndpoint/ws/send_and_close")
-      .openWebsocket(WebSocketHandler[WebSocket](collectingListener(received)))
+      .openWebsocket(WebSocketHandler.fromListener(collectingListener(received)))
       .map { _ =>
         eventually {
           received.asScala.toList shouldBe List("test10", "test20")
@@ -52,7 +52,7 @@ class OkHttpFutureWebsocketTest
   it should "error if the endpoint is not a websocket" in {
     basicRequest
       .get(uri"$wsEndpoint/echo")
-      .openWebsocket(WebSocketHandler[WebSocket](new WebSocketListener {}))
+      .openWebsocket(WebSocketHandler.fromListener(new WebSocketListener {}))
       .failed
       .map { t =>
         t shouldBe a[ProtocolException]
