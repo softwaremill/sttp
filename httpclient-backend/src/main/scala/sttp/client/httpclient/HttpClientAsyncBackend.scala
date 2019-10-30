@@ -61,9 +61,10 @@ abstract class HttpClientAsyncBackend[F[_], S](
         error
       )
 
-      val _ = client
-        .newWebSocketBuilder()
-        .buildAsync(request.uri.toJavaUri, listener)
+      val wsBuilder = client.newWebSocketBuilder()
+      client.connectTimeout().map(wsBuilder.connectTimeout(_))
+      request.headers.foreach(h => wsBuilder.header(h.name, h.value))
+      val _ = wsBuilder.buildAsync(request.uri.toJavaUri, listener)
     })
   }
 
