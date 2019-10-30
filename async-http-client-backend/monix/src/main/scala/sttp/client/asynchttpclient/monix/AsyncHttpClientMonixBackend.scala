@@ -6,21 +6,14 @@ import java.nio.ByteBuffer
 import io.netty.buffer.{ByteBuf, Unpooled}
 import monix.eval.Task
 import monix.execution.Scheduler
-import monix.reactive.Observable
 import monix.nio.file._
-import org.asynchttpclient.{
-  AsyncHttpClient,
-  AsyncHttpClientConfig,
-  BoundRequestBuilder,
-  DefaultAsyncHttpClient,
-  DefaultAsyncHttpClientConfig
-}
+import monix.reactive.Observable
+import org.asynchttpclient._
 import org.reactivestreams.Publisher
 import sttp.client.asynchttpclient.{AsyncHttpClientBackend, WebSocketHandler}
-import sttp.client.impl.monix.TaskMonadAsyncError
+import sttp.client.impl.monix.{ShiftToDefaultScheduler, TaskMonadAsyncError}
 import sttp.client.internal._
-import sttp.client.ws.WebSocketResponse
-import sttp.client.{FollowRedirectsBackend, Response, SttpBackend, SttpBackendOptions, _}
+import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 
 class AsyncHttpClientMonixBackend private (
     asyncHttpClient: AsyncHttpClient,
@@ -33,16 +26,8 @@ class AsyncHttpClientMonixBackend private (
       TaskMonadAsyncError,
       closeClient,
       customizeRequest
-    ) {
-
-  override def send[T](r: Request[T, Observable[ByteBuffer]]): Task[Response[T]] = {
-    super.send(r).guarantee(Task.shift)
-  }
-
-  override def openWebsocket[T, WS_RESULT](
-      r: Request[T, Observable[ByteBuffer]],
-      handler: WebSocketHandler[WS_RESULT]
-  ): Task[WebSocketResponse[WS_RESULT]] = super.openWebsocket(r, handler).guarantee(Task.shift)
+    )
+    with ShiftToDefaultScheduler[Task, Observable[ByteBuffer], WebSocketHandler] {
 
   override protected def streamBodyToPublisher(s: Observable[ByteBuffer]): Publisher[ByteBuf] =
     s.map(Unpooled.wrappedBuffer).toReactivePublisher
