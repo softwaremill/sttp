@@ -46,6 +46,11 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
   val basicRequest: RequestT[Empty, Either[String, String], Nothing] =
     emptyRequest.acceptEncoding("gzip, deflate")
 
+  /**
+    * A starting request which always reads the response body as a string, regardless of the status code.
+    */
+  val quickRequest: RequestT[Empty, String, Nothing] = basicRequest.response(asStringAlways)
+
   // response specifications
 
   def ignore: ResponseAs[Unit, Nothing] = IgnoreResponse
