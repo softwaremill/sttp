@@ -4,6 +4,8 @@ import monix.eval.Task
 import sttp.client.ws.WebSocketResponse
 import sttp.client.{Request, Response, SttpBackend}
 
+import scala.language.higherKinds
+
 trait ShiftToDefaultScheduler[F[_], S, WS_HANDLER[_]] extends SttpBackend[Task, S, WS_HANDLER] {
 
   override abstract def openWebsocket[T, WS_RESULT](
