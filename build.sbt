@@ -54,6 +54,7 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
 val only2_11settings = Seq(
   publishArtifact := is2_11.value,
   skip := !is2_11.value && !is2_13.value,
+  skip in compile := !is2_11.value,
   skip in publish := !is2_11.value,
   libraryDependencies := (if (is2_11.value) libraryDependencies.value else Nil)
 )
@@ -61,6 +62,7 @@ val only2_11settings = Seq(
 val only2_11_and_2_12_settings = Seq(
   publishArtifact := is2_11_or_2_12.value,
   skip := !is2_11_or_2_12.value,
+  skip in compile := !is2_11_or_2_12.value,
   skip in publish := !is2_11_or_2_12.value,
   libraryDependencies := (if (is2_11_or_2_12.value) libraryDependencies.value else Nil)
 )
