@@ -6,6 +6,7 @@ import akka.Done
 import akka.http.scaladsl.model.ws.{Message, TextMessage}
 import akka.stream.Materializer
 import akka.stream.scaladsl._
+import com.github.ghik.silencer.silent
 import org.scalatest.concurrent.{Eventually, IntegrationPatience}
 import org.scalatest.{AsyncFlatSpec, Matchers}
 import sttp.client._
@@ -25,20 +26,21 @@ class AkkaHttpWebsocketTest
   implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
   implicit val backend: SttpBackend[Future, Nothing, Flow[Message, Message, *]] = AkkaHttpBackend()
 
-  it should "send and receive two messages" in {
+  it should "send and receive ten messages" in {
     val received = new ConcurrentLinkedQueue[String]()
 
     val sink: Sink[Message, Future[Done]] = collectionSink(received)
 
+    val n = 10
     val source: Source[Message, Promise[Option[Message]]] =
-      Source(List(TextMessage("test1"), TextMessage("test2"))).concatMat(Source.maybe[Message])(Keep.right)
+      Source((1 to n).map(i => TextMessage(s"test$i"))).concatMat(Source.maybe[Message])(Keep.right)
 
     val flow: Flow[Message, Message, (Future[Done], Promise[Option[Message]])] =
       Flow.fromSinkAndSourceMat(sink, source)(Keep.both)
 
     basicRequest.get(uri"$wsEndpoint/ws/echo").openWebsocket(flow).flatMap { r =>
       eventually {
-        received.asScala.toList shouldBe List("echo: test1", "echo: test2")
+        received.asScala.toList shouldBe (1 to n).map(i => s"echo: test$i").toList
       }
 
       r.result._2.complete(Success(None)) // the source should now complete
@@ -70,15 +72,22 @@ class AkkaHttpWebsocketTest
     }
   }
 
+  @silent("discard")
   def collectionSink(queue: ConcurrentLinkedQueue[String]): Sink[Message, Future[Done]] =
     Sink
       .setup[Message, Future[Done]] { (_materializer, _) =>
-        Sink.foreach[Message] {
-          case m: TextMessage =>
-            implicit val materializer: Materializer = _materializer
-            m.toStrict(1.second).foreach(s => queue.add(s.text))
-          case _ =>
-        }
+        Flow[Message]
+        // mapping with parallelism 1 so that messages don't get reordered
+          .mapAsync(1) {
+            case m: TextMessage =>
+              implicit val materializer: Materializer = _materializer
+              m.toStrict(1.second).map(Some(_))
+            case _ => Future.successful(None)
+          }
+          .collect {
+            case Some(TextMessage.Strict(text)) => text
+          }
+          .toMat(Sink.foreach(queue.add))(Keep.right)
       }
       .mapMaterializedValue(_.flatMap(identity))
 

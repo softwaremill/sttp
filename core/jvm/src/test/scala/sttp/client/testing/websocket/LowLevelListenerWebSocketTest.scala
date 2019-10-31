@@ -30,16 +30,18 @@ trait LowLevelListenerWebSocketTest[F[_], WS, WS_HANDLER[_]]
   def sendText(ws: WS, t: String): Unit
   def sendCloseFrame(ws: WS): Unit
 
-  it should "send and receive two messages" in {
+  it should "send and receive ten messages" in {
+    val n = 10
     val received = new ConcurrentLinkedQueue[String]()
     basicRequest
       .get(uri"$wsEndpoint/ws/echo")
       .openWebsocket(createHandler(received.add))
       .map { response =>
-        sendText(response.result, "test1")
-        sendText(response.result, "test2")
+        (1 to n).foreach { i =>
+          sendText(response.result, s"test$i")
+        }
         eventually {
-          received.asScala.toList shouldBe List("echo: test1", "echo: test2")
+          received.asScala.toList shouldBe (1 to n).map(i => s"echo: test$i").toList
         }
         sendCloseFrame(response.result)
         succeed
