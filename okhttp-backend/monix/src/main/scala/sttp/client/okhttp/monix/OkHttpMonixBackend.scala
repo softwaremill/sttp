@@ -10,25 +10,16 @@ import monix.reactive.Observable
 import monix.reactive.observers.Subscriber
 import okhttp3.{MediaType, OkHttpClient, RequestBody => OkHttpRequestBody}
 import okio.BufferedSink
-import sttp.client.impl.monix.TaskMonadAsyncError
+import sttp.client.impl.monix.{ShiftToDefaultScheduler, TaskMonadAsyncError}
 import sttp.client.okhttp.{OkHttpAsyncBackend, OkHttpBackend, WebSocketHandler}
-import sttp.client.ws.WebSocketResponse
 import sttp.client.{SttpBackend, _}
 
 import scala.concurrent.Future
 import scala.util.{Success, Try}
 
 class OkHttpMonixBackend private (client: OkHttpClient, closeClient: Boolean)(implicit s: Scheduler)
-    extends OkHttpAsyncBackend[Task, Observable[ByteBuffer]](client, TaskMonadAsyncError, closeClient) {
-
-  override def send[T](r: Request[T, Observable[ByteBuffer]]): Task[Response[T]] = {
-    super.send(r).guarantee(Task.shift)
-  }
-
-  override def openWebsocket[T, WS_RESULT](
-      r: Request[T, Observable[ByteBuffer]],
-      handler: WebSocketHandler[WS_RESULT]
-  ): Task[WebSocketResponse[WS_RESULT]] = super.openWebsocket(r, handler).guarantee(Task.shift)
+    extends OkHttpAsyncBackend[Task, Observable[ByteBuffer]](client, TaskMonadAsyncError, closeClient)
+    with ShiftToDefaultScheduler[Task, Observable[ByteBuffer], WebSocketHandler] {
 
   override def streamToRequestBody(stream: Observable[ByteBuffer]): Option[OkHttpRequestBody] =
     Some(new OkHttpRequestBody() {
