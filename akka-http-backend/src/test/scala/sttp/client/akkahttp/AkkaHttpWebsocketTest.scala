@@ -73,16 +73,12 @@ class AkkaHttpWebsocketTest
   def collectionSink(queue: ConcurrentLinkedQueue[String]): Sink[Message, Future[Done]] =
     Sink
       .setup[Message, Future[Done]] { (_materializer, _) =>
-        // For some reason, using Sink.foreach the messages sometimes end up in the wrong order.
-        // Trying with a Flow+map
-        Flow[Message]
-          .map {
-            case m: TextMessage =>
-              implicit val materializer: Materializer = _materializer
-              m.toStrict(1.second).foreach(s => queue.add(s.text))
-            case _ =>
-          }
-          .toMat(Sink.ignore)(Keep.right)
+        Sink.foreach[Message] {
+          case m: TextMessage =>
+            implicit val materializer: Materializer = _materializer
+            m.toStrict(1.second).foreach(s => queue.add(s.text))
+          case _ =>
+        }
       }
       .mapMaterializedValue(_.flatMap(identity))
 
