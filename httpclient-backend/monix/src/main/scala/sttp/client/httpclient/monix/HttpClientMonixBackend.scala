@@ -5,6 +5,7 @@ import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.{HttpClient, HttpRequest}
 import java.nio.ByteBuffer
 
+import cats.effect.Resource
 import monix.eval.Task
 import monix.execution.Scheduler
 import monix.reactive.Observable
@@ -56,6 +57,14 @@ object HttpClientMonixBackend {
     Task.eval(
       HttpClientMonixBackend(HttpClientBackend.defaultClient(options), closeClient = true, customizeRequest)(s)
     )
+
+  def resource(
+    options: SttpBackendOptions = SttpBackendOptions.Default,
+    customizeRequest: HttpRequest => HttpRequest = identity
+  )(
+    implicit s: Scheduler = Scheduler.Implicits.global
+  ): Resource[Task, SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler]] =
+    Resource.make(apply(options, customizeRequest))(_.close())
 
   def usingClient(
       client: HttpClient,

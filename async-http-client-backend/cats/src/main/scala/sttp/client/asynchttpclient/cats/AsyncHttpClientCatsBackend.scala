@@ -4,15 +4,9 @@ import java.io.{ByteArrayInputStream, File}
 import java.nio.ByteBuffer
 
 import cats.effect.implicits._
-import cats.effect.{Async, ContextShift, Sync}
+import cats.effect.{Async, ContextShift, Resource, Sync}
 import io.netty.buffer.ByteBuf
-import org.asynchttpclient.{
-  AsyncHttpClient,
-  AsyncHttpClientConfig,
-  BoundRequestBuilder,
-  DefaultAsyncHttpClient,
-  DefaultAsyncHttpClientConfig
-}
+import org.asynchttpclient.{AsyncHttpClient, AsyncHttpClientConfig, BoundRequestBuilder, DefaultAsyncHttpClient, DefaultAsyncHttpClientConfig}
 import org.reactivestreams.Publisher
 import sttp.client.asynchttpclient.{AsyncHttpClientBackend, WebSocketHandler}
 import sttp.client.impl.cats.CatsMonadAsyncError
@@ -63,10 +57,18 @@ object AsyncHttpClientCatsBackend {
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   ): F[SttpBackend[F, Nothing, WebSocketHandler]] =
-    implicitly[Sync[F]]
-      .delay(
+    Sync[F].delay(
         AsyncHttpClientCatsBackend(AsyncHttpClientBackend.defaultClient(options), closeClient = true, customizeRequest)
       )
+
+  /**
+    * Makes sure the backend is closed after usage.
+    */
+  def resource[F[_]: Async: ContextShift](
+    options: SttpBackendOptions = SttpBackendOptions.Default,
+    customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+  ): Resource[F, SttpBackend[F, Nothing, WebSocketHandler]] =
+    Resource.make(apply(options, customizeRequest))(_.close())
 
   /**
     * After sending a request, always shifts to the thread pool backing the given `ContextShift[F]`.
@@ -75,8 +77,7 @@ object AsyncHttpClientCatsBackend {
       cfg: AsyncHttpClientConfig,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   ): F[SttpBackend[F, Nothing, WebSocketHandler]] =
-    implicitly[Sync[F]]
-      .delay(AsyncHttpClientCatsBackend(new DefaultAsyncHttpClient(cfg), closeClient = true, customizeRequest))
+    Sync[F].delay(AsyncHttpClientCatsBackend(new DefaultAsyncHttpClient(cfg), closeClient = true, customizeRequest))
 
   /**
     * After sending a request, always shifts to the thread pool backing the given `ContextShift[F]`.
@@ -87,7 +88,7 @@ object AsyncHttpClientCatsBackend {
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   ): F[SttpBackend[F, Nothing, WebSocketHandler]] =
-    implicitly[Sync[F]].delay(
+    Sync[F].delay(
       AsyncHttpClientCatsBackend(
         AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
         closeClient = true,

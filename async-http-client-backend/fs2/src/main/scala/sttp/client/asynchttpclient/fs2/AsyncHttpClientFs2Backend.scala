@@ -78,6 +78,15 @@ object AsyncHttpClientFs2Backend {
     implicitly[Sync[F]]
       .delay(apply[F](AsyncHttpClientBackend.defaultClient(options), closeClient = true, customizeRequest))
 
+  /**
+    * Makes sure the backend is closed after usage.
+    */
+  def resource[F[_]: ConcurrentEffect: ContextShift](
+    options: SttpBackendOptions = SttpBackendOptions.Default,
+    customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+  ): Resource[F, SttpBackend[F, Stream[F, ByteBuffer], WebSocketHandler]] =
+    Resource.make(apply(options, customizeRequest))(_.close())
+
   def usingConfig[F[_]: ConcurrentEffect: ContextShift](
       cfg: AsyncHttpClientConfig,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
