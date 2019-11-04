@@ -53,3 +53,24 @@ Example usage with the Monix variant of the :ref:`async-http-client backend <bac
     send.flatMap(_ => receive).flatMap(_ => close)
   }
 
+High-level websocket handling for fs2
+-------------------------------------
+For fs2, there are some high-level helpers collected in ``sttp.client.asynchttpclient.fs2.Fs2Websockets`` which provide means to run the whole websocket communication
+through an fs2.Pipe. Example for a simple echo client like above::
+
+  import cats.effect.IO
+  import cats.implicits._
+  import sttp.client._
+  import sttp.client.ws._
+  import sttp.model.ws.WebSocketFrame
+
+  basicRequest
+    .get(uri"wss://echo.websocket.org")
+    .openWebsocketF(Fs2WebSocketHandler())
+    .flatMap { response =>
+      Fs2WebSockets.handleSocketThroughTextPipe(response.result) { in =>
+        val receive = in.evalMap(m => IO(println("Received"))
+        val send = Stream("Message 1".asRight, "Message 2".asRight, WebSocketFrame.close.asLeft)
+        send merge receive.drain
+      }
+    }

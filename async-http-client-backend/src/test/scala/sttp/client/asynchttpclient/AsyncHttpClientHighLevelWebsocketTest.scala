@@ -11,7 +11,7 @@ import sttp.model.Uri._
 
 import scala.concurrent.duration._
 
-abstract class AsyncHttpCientHighLevelWebsocketTest[F[_]] extends HighLevelWebsocketTest[F, WebSocketHandler] {
+abstract class AsyncHttpClientHighLevelWebsocketTest[F[_]] extends HighLevelWebsocketTest[F, WebSocketHandler] {
 
   it should "error if the endpoint is not a websocket" in {
     monad
