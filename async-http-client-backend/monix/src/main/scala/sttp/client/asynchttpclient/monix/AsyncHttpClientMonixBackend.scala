@@ -29,7 +29,6 @@ class AsyncHttpClientMonixBackend private (
       customizeRequest
     )
     with ShiftToDefaultScheduler[Task, Observable[ByteBuffer], WebSocketHandler] {
-
   override protected def streamBodyToPublisher(s: Observable[ByteBuffer]): Publisher[ByteBuf] =
     s.map(Unpooled.wrappedBuffer).toReactivePublisher
 
@@ -54,7 +53,6 @@ class AsyncHttpClientMonixBackend private (
 }
 
 object AsyncHttpClientMonixBackend {
-
   private def apply(
       asyncHttpClient: AsyncHttpClient,
       closeClient: Boolean,
@@ -82,10 +80,10 @@ object AsyncHttpClientMonixBackend {
     * Makes sure the backend is closed after usage.
     */
   def resource(
-    options: SttpBackendOptions = SttpBackendOptions.Default,
-    customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+      options: SttpBackendOptions = SttpBackendOptions.Default,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   )(
-    implicit s: Scheduler = Scheduler.Implicits.global
+      implicit s: Scheduler = Scheduler.Implicits.global
   ): Resource[Task, SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler]] =
     Resource.make(apply(options, customizeRequest))(_.close())
 
@@ -100,6 +98,17 @@ object AsyncHttpClientMonixBackend {
       implicit s: Scheduler = Scheduler.Implicits.global
   ): Task[SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler]] =
     Task.eval(AsyncHttpClientMonixBackend(new DefaultAsyncHttpClient(cfg), closeClient = true, customizeRequest))
+
+  /**
+    * Makes sure the backend is closed after usage.
+    */
+  def resourceUsingConfig(
+      cfg: AsyncHttpClientConfig,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+  )(
+      implicit s: Scheduler = Scheduler.Implicits.global
+  ): Resource[Task, SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler]] =
+    Resource.make(usingConfig(cfg, customizeRequest))(_.close())
 
   /**
     * @param updateConfig A function which updates the default configuration (created basing on `options`).
@@ -120,6 +129,21 @@ object AsyncHttpClientMonixBackend {
         customizeRequest
       )
     )
+
+  /**
+    * Makes sure the backend is closed after usage.
+    * @param updateConfig A function which updates the default configuration (created basing on `options`).
+    * @param s The scheduler used for streaming request bodies. Defaults to the
+    *          global scheduler.
+    */
+  def resourceUsingConfigBuilder(
+      updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
+      options: SttpBackendOptions = SttpBackendOptions.Default,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+  )(
+      implicit s: Scheduler = Scheduler.Implicits.global
+  ): Resource[Task, SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler]] =
+    Resource.make(usingConfigBuilder(updateConfig, options, customizeRequest))(_.close())
 
   /**
     * @param s The scheduler used for streaming request bodies. Defaults to the

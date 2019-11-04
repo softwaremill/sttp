@@ -30,7 +30,6 @@ class AsyncHttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
       closeClient,
       customizeRequest
     ) {
-
   override def send[T](r: Request[T, Stream[F, ByteBuffer]]): F[Response[T]] = {
     super.send(r).guarantee(implicitly[ContextShift[F]].shift)
   }
@@ -63,7 +62,6 @@ class AsyncHttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
 }
 
 object AsyncHttpClientFs2Backend {
-
   private def apply[F[_]: ConcurrentEffect: ContextShift](
       asyncHttpClient: AsyncHttpClient,
       closeClient: Boolean,
@@ -82,8 +80,8 @@ object AsyncHttpClientFs2Backend {
     * Makes sure the backend is closed after usage.
     */
   def resource[F[_]: ConcurrentEffect: ContextShift](
-    options: SttpBackendOptions = SttpBackendOptions.Default,
-    customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+      options: SttpBackendOptions = SttpBackendOptions.Default,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   ): Resource[F, SttpBackend[F, Stream[F, ByteBuffer], WebSocketHandler]] =
     Resource.make(apply(options, customizeRequest))(_.close())
 
@@ -92,6 +90,15 @@ object AsyncHttpClientFs2Backend {
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   ): F[SttpBackend[F, Stream[F, ByteBuffer], WebSocketHandler]] =
     implicitly[Sync[F]].delay(apply[F](new DefaultAsyncHttpClient(cfg), closeClient = true, customizeRequest))
+
+  /**
+    * Makes sure the backend is closed after usage.
+    */
+  def resourceUsingConfig[F[_]: ConcurrentEffect: ContextShift](
+      cfg: AsyncHttpClientConfig,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+  ): Resource[F, SttpBackend[F, Stream[F, ByteBuffer], WebSocketHandler]] =
+    Resource.make(usingConfig(cfg, customizeRequest))(_.close())
 
   /**
     * @param updateConfig A function which updates the default configuration (created basing on `options`).
@@ -108,6 +115,17 @@ object AsyncHttpClientFs2Backend {
         customizeRequest
       )
     )
+
+  /**
+    * Makes sure the backend is closed after usage.
+    * @param updateConfig A function which updates the default configuration (created basing on `options`).
+    */
+  def resourceUsingConfigBuilder[F[_]: ConcurrentEffect: ContextShift](
+      updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
+      options: SttpBackendOptions = SttpBackendOptions.Default,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+  ): Resource[F, SttpBackend[F, Stream[F, ByteBuffer], WebSocketHandler]] =
+    Resource.make(usingConfigBuilder(updateConfig, options, customizeRequest))(_.close())
 
   def usingClient[F[_]: ConcurrentEffect: ContextShift](
       client: AsyncHttpClient,
