@@ -17,7 +17,7 @@ In case of success, ``WebSocketResponse`` contains:
 Low-level and high-level websocket handlers
 -------------------------------------------
 
-Each backend which supports websockets, does so through a backend-specific websocket handler. Depending on the backend, this can be an implementation of a "low-level" Java listener interface (as in :ref:`async-http-client <asynchttpclient>`, :ref:`OkHttp <okhttp_backend>` and :ref:`HttpClient <httpclient>`), a Scala stream (as in :ref:`akka-http <akkahttp>`), or some other other approach.
+Each backend which supports websockets, does so through a backend-specific websocket handler. Depending on the backend, this can be an implementation of a "low-level" Java listener interface (as in :ref:`async-http-client <asynchttpclient>`, :ref:`OkHttp <okhttp_backend>` and :ref:`HttpClient <httpclient>`), a Scala stream (as in :ref:`akka-http <akkahttp>` and :ref:`fs2 <asynchttpclient>`), or some other other approach.
 
 Additionally, some backends, on top of the "low-level" Java listeners also offer a higher-level, more "functional" approach to websockets. This is done by passing a specific handler instance when opening the websocket; refer to the documentation of individual backends for details.
 
@@ -53,24 +53,4 @@ Example usage with the Monix variant of the :ref:`async-http-client backend <bac
     send.flatMap(_ => receive).flatMap(_ => close)
   }
 
-High-level websocket handling for fs2
--------------------------------------
-For fs2, there are some high-level helpers collected in ``sttp.client.asynchttpclient.fs2.Fs2Websockets`` which provide means to run the whole websocket communication
-through an fs2.Pipe. Example for a simple echo client like above::
-
-  import cats.effect.IO
-  import cats.implicits._
-  import sttp.client._
-  import sttp.client.ws._
-  import sttp.model.ws.WebSocketFrame
-
-  basicRequest
-    .get(uri"wss://echo.websocket.org")
-    .openWebsocketF(Fs2WebSocketHandler())
-    .flatMap { response =>
-      Fs2WebSockets.handleSocketThroughTextPipe(response.result) { in =>
-        val receive = in.evalMap(m => IO(println("Received"))
-        val send = Stream("Message 1".asRight, "Message 2".asRight, WebSocketFrame.close.asLeft)
-        send merge receive.drain
-      }
-    }
+The high-level handler can be further wrapped to obtain a stream, see the section on fs2 websockets in :ref:`async-http-client <asynchttpclient>`.

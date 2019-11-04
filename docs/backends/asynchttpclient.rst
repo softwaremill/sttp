@@ -158,3 +158,26 @@ First (the "low-level" one), given an async-http-client-native ``org.asynchttpcl
 The second, "high-level" approach, available when using the Monix, ZIO and fs2 backends, is to pass a ``MonixWebSocketHandler()``, ``ZIOWebSocketHandler()`` or ``Fs2WebSocketHandler()``. This will create a websocket handler and expose a ``sttp.client.ws.WebSocket[Task]`` (for Monix and ZIO) / ``sttp.client.ws.WebSocket[F]`` (for fs2 and any ``F[_] : ConcurrentEffect``) interface for sending/receiving messages.
 
 See :ref:`websockets <websockets>` for details on how to use the high-level interface.
+
+Streaming websockets using fs2
+------------------------------
+
+For fs2, there are additionally some high-level helpers collected in ``sttp.client.asynchttpclient.fs2.Fs2Websockets`` which provide means to run the whole websocket communication
+through an ``fs2.Pipe``. Example for a simple echo client::
+
+  import cats.effect.IO
+  import cats.implicits._
+  import sttp.client._
+  import sttp.client.ws._
+  import sttp.model.ws.WebSocketFrame
+
+  basicRequest
+    .get(uri"wss://echo.websocket.org")
+    .openWebsocketF(Fs2WebSocketHandler())
+    .flatMap { response =>
+      Fs2WebSockets.handleSocketThroughTextPipe(response.result) { in =>
+        val receive = in.evalMap(m => IO(println("Received"))
+        val send = Stream("Message 1".asRight, "Message 2".asRight, WebSocketFrame.close.asLeft)
+        send merge receive.drain
+      }
+    }
