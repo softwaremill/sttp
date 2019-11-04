@@ -3,6 +3,7 @@ package sttp.client.okhttp.monix
 import java.nio.ByteBuffer
 import java.util.concurrent.ArrayBlockingQueue
 
+import cats.effect.Resource
 import monix.eval.Task
 import monix.execution.Ack.Continue
 import monix.execution.{Ack, Scheduler}
@@ -90,6 +91,13 @@ object OkHttpMonixBackend {
     Task.eval(
       OkHttpMonixBackend(OkHttpBackend.defaultClient(DefaultReadTimeout.toMillis, options), closeClient = true)(s)
     )
+
+  def resource(
+    options: SttpBackendOptions = SttpBackendOptions.Default
+  )(
+    implicit s: Scheduler = Scheduler.Implicits.global
+  ): Resource[Task, SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler]] =
+    Resource.make(apply(options))(_.close())
 
   def usingClient(
       client: OkHttpClient

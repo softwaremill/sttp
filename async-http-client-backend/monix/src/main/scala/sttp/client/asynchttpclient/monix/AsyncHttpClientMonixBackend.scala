@@ -3,6 +3,7 @@ package sttp.client.asynchttpclient.monix
 import java.io.File
 import java.nio.ByteBuffer
 
+import cats.effect.Resource
 import io.netty.buffer.{ByteBuf, Unpooled}
 import monix.eval.Task
 import monix.execution.Scheduler
@@ -76,6 +77,17 @@ object AsyncHttpClientMonixBackend {
     Task.eval(
       AsyncHttpClientMonixBackend(AsyncHttpClientBackend.defaultClient(options), closeClient = true, customizeRequest)
     )
+
+  /**
+    * Makes sure the backend is closed after usage.
+    */
+  def resource(
+    options: SttpBackendOptions = SttpBackendOptions.Default,
+    customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+  )(
+    implicit s: Scheduler = Scheduler.Implicits.global
+  ): Resource[Task, SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler]] =
+    Resource.make(apply(options, customizeRequest))(_.close())
 
   /**
     * @param s The scheduler used for streaming request bodies. Defaults to the
