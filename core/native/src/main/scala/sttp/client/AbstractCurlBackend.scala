@@ -22,7 +22,6 @@ import scala.scalanative.native.{CSize, Ptr, _}
 
 abstract class AbstractCurlBackend[F[_], S](monad: MonadError[F], verbose: Boolean)
     extends SttpBackend[F, S, NothingT] {
-
   override val responseMonad: MonadError[F] = monad
 
   override def close(): F[Unit] = monad.unit(())
@@ -184,7 +183,6 @@ abstract class AbstractCurlBackend[F[_], S](monad: MonadError[F], verbose: Boole
       responseAs: ResponseAs[T, S],
       responseMetadata: ResponseMetadata
   ): F[T] = {
-
     responseAs match {
       case MappedResponseAs(raw, g) =>
         responseMonad.map(readResponseBody(response, raw, responseMetadata))(g(_, responseMetadata))

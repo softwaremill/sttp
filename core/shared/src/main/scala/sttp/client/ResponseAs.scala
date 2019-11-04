@@ -64,7 +64,6 @@ object ResponseAs {
     def handleBasic[T](bra: BasicResponseAs[T, S]): Try[T]
 
     def handle[T, F[_]](responseAs: ResponseAs[T, S], responseMonad: MonadError[F], meta: ResponseMetadata): F[T] = {
-
       responseAs match {
         case MappedResponseAs(raw, g) =>
           responseMonad.map(handle(raw, responseMonad, meta))(t => g(t, meta))

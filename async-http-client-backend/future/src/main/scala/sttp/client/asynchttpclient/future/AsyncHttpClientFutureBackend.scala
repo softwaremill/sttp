@@ -24,7 +24,6 @@ class AsyncHttpClientFutureBackend private (
 )(
     implicit ec: ExecutionContext
 ) extends AsyncHttpClientBackend[Future, Nothing](asyncHttpClient, new FutureMonad, closeClient, customizeRequest) {
-
   override protected def streamBodyToPublisher(s: Nothing): Publisher[ByteBuf] =
     s // nothing is everything
 
@@ -33,7 +32,6 @@ class AsyncHttpClientFutureBackend private (
 }
 
 object AsyncHttpClientFutureBackend {
-
   private def apply(
       asyncHttpClient: AsyncHttpClient,
       closeClient: Boolean,

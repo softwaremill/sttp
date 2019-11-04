@@ -8,7 +8,6 @@ import sttp.client.ws.{WebSocket, WebSocketEvent}
 import sttp.model.ws.WebSocketFrame
 
 object Fs2WebSockets {
-
   /**
     * Handle the websocket through a [[Pipe]] which receives the incoming events and produces the messages to be sent
     * to the server. Not that by the nature of a [[Pipe]], there no need that these two streams are coupled. Just make sure
@@ -71,11 +70,11 @@ object Fs2WebSockets {
     * @return an Unit effect describing the full run of the websocket through the pipe
     */
   def handleSocketThroughTextPipe[F[_]: ConcurrentEffect](
-    ws: WebSocket[F]
+      ws: WebSocket[F]
   )(pipe: Pipe[F, String, Either[WebSocketFrame.Close, String]]): F[Unit] =
     handleSocketThroughPipe[F](ws, sendPongOnPing = true) {
-      pipe.compose[Stream[F, WebSocketFrame.Incoming]](_.collect { case WebSocketFrame.Text(msg, _, _) => msg })
+      pipe
+        .compose[Stream[F, WebSocketFrame.Incoming]](_.collect { case WebSocketFrame.Text(msg, _, _) => msg })
         .andThen(_.map(_.fold(identity, WebSocketFrame.text)))
     }
-
 }

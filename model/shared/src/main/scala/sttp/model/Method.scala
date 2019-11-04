@@ -9,7 +9,6 @@ case class Method private (method: String) extends AnyVal {
 }
 
 object Method extends Methods {
-
   /**
     * @throws IllegalArgumentException If the method value is not a valid token.
     */

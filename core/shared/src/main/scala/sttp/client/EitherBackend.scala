@@ -18,7 +18,6 @@ import scala.util.control.NonFatal
   */
 class EitherBackend[S, WS_HANDLER[_]](delegate: SttpBackend[Identity, S, WS_HANDLER])
     extends SttpBackend[Either[Throwable, *], S, WS_HANDLER] {
-
   override def send[T](request: Request[T, S]): Either[Throwable, Response[T]] = doTry(delegate.send(request))
 
   override def openWebsocket[T, WS_RESULT](

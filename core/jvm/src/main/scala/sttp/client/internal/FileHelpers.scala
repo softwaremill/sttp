@@ -5,7 +5,6 @@ import java.io.{File, FileOutputStream, InputStream}
 import scala.util.control.NonFatal
 
 private[client] object FileHelpers {
-
   def saveFile(file: File, is: InputStream): Unit = {
     if (!file.exists()) {
       if (file.getParentFile != null) {

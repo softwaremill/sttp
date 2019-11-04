@@ -7,7 +7,6 @@ import sttp.client.internal.SttpFile
 import sttp.model.Part
 
 trait SttpExtensions {
-
   def asFile(file: File): ResponseAs[Either[String, File], Nothing] = {
     asEither(asStringAlways, asFileAlways(file))
   }

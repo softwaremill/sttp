@@ -11,7 +11,6 @@ case class MediaType private (mainType: String, subType: String, charset: Option
 }
 
 object MediaType extends MediaTypes {
-
   /**
     * @throws IllegalArgumentException If the main type or subt type contain illegal characters.
     */

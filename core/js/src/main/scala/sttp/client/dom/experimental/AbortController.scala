@@ -9,7 +9,6 @@ import scala.scalajs.js.annotation.JSGlobal
 @js.native
 @JSGlobal
 class AbortController() extends js.Object {
-
   val signal: AbortSignal = js.native
 
   def abort(): Unit = js.native

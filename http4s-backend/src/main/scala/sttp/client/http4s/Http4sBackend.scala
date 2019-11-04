@@ -37,7 +37,6 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
     blockingExecutionContext: ExecutionContext,
     customizeRequest: Http4sRequest[F] => Http4sRequest[F]
 ) extends SttpBackend[F, Stream[F, Byte], NothingT] {
-
   override def send[T](r: Request[T, Stream[F, Byte]]): F[Response[T]] = {
     val (entity, extraHeaders) = bodyToHttp4s(r, r.body)
     val request = Http4sRequest(

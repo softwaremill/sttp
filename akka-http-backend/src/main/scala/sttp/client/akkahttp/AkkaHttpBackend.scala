@@ -58,7 +58,6 @@ class AkkaHttpBackend private (
     customizeRequest: HttpRequest => HttpRequest,
     customizeWebsocketRequest: WebSocketRequest => WebSocketRequest
 ) extends SttpBackend[Future, Source[ByteString, Any], Flow[Message, Message, *]] {
-
   // the supported stream type
   private type S = Source[ByteString, Any]
 
@@ -83,7 +82,6 @@ class AkkaHttpBackend private (
       r: Request[T, Source[ByteString, Any]],
       handler: Flow[Message, Message, WS_RESULT]
   ): Future[WebSocketResponse[WS_RESULT]] = {
-
     implicit val ec: ExecutionContext = this.ec
 
     val akkaWebsocketRequest = headersToAkka(r.headers)
@@ -102,7 +100,6 @@ class AkkaHttpBackend private (
               client.ws.WebSocketResponse(Headers(r.headers), wsResult)
             }
           }
-
       }
   }
 
@@ -126,7 +123,6 @@ class AkkaHttpBackend private (
       hr: HttpResponse,
       meta: ResponseMetadata
   ): Future[T] = {
-
     implicit val ec: ExecutionContext = this.ec
 
     def asByteArray =

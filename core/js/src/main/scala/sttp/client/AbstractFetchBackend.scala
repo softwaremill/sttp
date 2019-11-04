@@ -51,11 +51,9 @@ final case class FetchOptions(
 abstract class AbstractFetchBackend[F[_], S](options: FetchOptions, customizeRequest: FetchRequest => FetchRequest)(
     monad: MonadError[F]
 ) extends SttpBackend[F, S, NothingT] {
-
   override implicit def responseMonad: MonadError[F] = monad
 
   override def send[T](request: Request[T, S]): F[Response[T]] = {
-
     // https://stackoverflow.com/q/31061838/4094860
     val readTimeout = request.options.readTimeout
     val (signal, cancelTimeout) = readTimeout match {
@@ -70,7 +68,6 @@ abstract class AbstractFetchBackend[F[_], S](options: FetchOptions, customizeReq
 
       case _ =>
         (None, () => ())
-
     }
 
     val headers = new JSHeaders()
@@ -237,7 +234,6 @@ abstract class AbstractFetchBackend[F[_], S](options: FetchOptions, customizeReq
 
       case ras @ ResponseAsStream() =>
         handleResponseAsStream(ras, response)
-
     }
   }
 
@@ -252,5 +248,4 @@ abstract class AbstractFetchBackend[F[_], S](options: FetchOptions, customizeReq
   override def close(): F[Unit] = monad.unit(())
 
   protected def transformPromise[T](promise: => Promise[T]): F[T]
-
 }

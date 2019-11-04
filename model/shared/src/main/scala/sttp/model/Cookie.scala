@@ -16,7 +16,6 @@ import scala.util.{Failure, Success, Try}
   * the header.
   */
 case class Cookie private (name: String, value: String) {
-
   /**
     * @return Representation of the cookie as in a header value, in the format: `[name]=[value]`.
     */

@@ -23,7 +23,6 @@ class PrometheusBackend[F[_], S] private (
     gaugesCache: ConcurrentHashMap[String, Gauge],
     countersCache: ConcurrentHashMap[String, Counter]
 ) extends SttpBackend[F, S, NothingT] {
-
   override def send[T](request: Request[T, S]): F[Response[T]] = {
     val requestTimer: Option[Histogram.Timer] = for {
       histogramData <- requestToHistogramNameMapper(request)
@@ -95,7 +94,6 @@ class PrometheusBackend[F[_], S] private (
 }
 
 object PrometheusBackend {
-
   val DefaultHistogramName = "sttp_request_latency"
   val DefaultRequestsInProgressGaugeName = "sttp_requests_in_progress"
   val DefaultSuccessCounterName = "sttp_requests_success_count"

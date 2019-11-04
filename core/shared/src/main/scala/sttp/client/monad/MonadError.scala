@@ -101,7 +101,6 @@ object TryMonad extends MonadError[Try] {
   override def eval[T](t: => T): Try[T] = Try(t)
 }
 class FutureMonad(implicit ec: ExecutionContext) extends MonadAsyncError[Future] {
-
   override def unit[T](t: T): Future[T] = Future.successful(t)
   override def map[T, T2](fa: Future[T])(f: (T) => T2): Future[T2] = fa.map(f)
   override def flatMap[T, T2](fa: Future[T])(f: (T) => Future[T2]): Future[T2] =

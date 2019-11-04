@@ -33,12 +33,13 @@ class Fs2WebsocketsTest extends AsyncFlatSpec with Matchers with TestHttpServer 
       .get(uri"$wsEndpoint/ws/echo")
       .openWebsocketF(createHandler(None))
       .product(Ref.of[IO, Queue[String]](Queue.empty))
-      .flatMap { case (response, results) =>
-        Fs2WebSockets.handleSocketThroughTextPipe(response.result) { in =>
-          val receive = in.evalMap(m => results.update(_.enqueue(m)))
-          val send = Stream("Message 1".asRight, "Message 2".asRight, WebSocketFrame.close.asLeft)
-          send merge receive.drain
-        } >> results.get.map(_ should contain theSameElementsInOrderAs List("echo: Message 1", "echo: Message 2"))
+      .flatMap {
+        case (response, results) =>
+          Fs2WebSockets.handleSocketThroughTextPipe(response.result) { in =>
+            val receive = in.evalMap(m => results.update(_.enqueue(m)))
+            val send = Stream("Message 1".asRight, "Message 2".asRight, WebSocketFrame.close.asLeft)
+            send merge receive.drain
+          } >> results.get.map(_ should contain theSameElementsInOrderAs List("echo: Message 1", "echo: Message 2"))
       }
       .toFuture()
   }
@@ -48,10 +49,11 @@ class Fs2WebsocketsTest extends AsyncFlatSpec with Matchers with TestHttpServer 
       .get(uri"$wsEndpoint/ws/send_and_close")
       .openWebsocketF(createHandler(None))
       .product(Ref.of[IO, Queue[String]](Queue.empty))
-      .flatMap { case (response, results) =>
-        Fs2WebSockets.handleSocketThroughTextPipe(response.result) { in =>
-          in.evalMap(m => results.update(_.enqueue(m))).drain
-        } >> results.get.map(_ should contain theSameElementsInOrderAs List("test10", "test20"))
+      .flatMap {
+        case (response, results) =>
+          Fs2WebSockets.handleSocketThroughTextPipe(response.result) { in =>
+            in.evalMap(m => results.update(_.enqueue(m))).drain
+          } >> results.get.map(_ should contain theSameElementsInOrderAs List("test10", "test20"))
       }
       .toFuture()
   }

@@ -18,7 +18,6 @@ abstract class HttpClientAsyncBackend[F[_], S](
     closeClient: Boolean,
     customizeRequest: HttpRequest => HttpRequest
 ) extends HttpClientBackend[F, S](client, closeClient) {
-
   override def send[T](request: Request[T, S]): F[Response[T]] = {
     val jRequest = customizeRequest(convertRequest(request))
 

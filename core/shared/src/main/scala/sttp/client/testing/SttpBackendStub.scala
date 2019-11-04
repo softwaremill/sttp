@@ -142,7 +142,6 @@ class SttpBackendStub[F[_], S] private (
 }
 
 object SttpBackendStub {
-
   /**
     * Create a stub synchronous backend (which doesn't wrap results in any
     * container), without streaming support.

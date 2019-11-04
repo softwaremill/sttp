@@ -15,9 +15,7 @@ class File(
     val name: String = js.native,
     options: FilePropertyBag = js.native
 ) extends Blob {
-
   val lastModified: Int = js.native
-
 }
 
 @js.native

@@ -84,7 +84,6 @@ object NativeWebSocketHandler {
 
 private class AddToQueueListener[F[_]](queue: AsyncQueue[F, WebSocketEvent], isOpen: AtomicBoolean)
     extends WebSocketListener {
-
   override def onClosed(webSocket: okhttp3.WebSocket, code: Int, reason: String): Unit = {
     isOpen.set(false)
     queue.offer(WebSocketEvent.Close(code, reason))

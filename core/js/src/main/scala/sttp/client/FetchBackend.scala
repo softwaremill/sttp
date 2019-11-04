@@ -11,7 +11,6 @@ import org.scalajs.dom.experimental.{Request => FetchRequest}
 class FetchBackend private (fetchOptions: FetchOptions, customizeRequest: FetchRequest => FetchRequest)(
     implicit ec: ExecutionContext
 ) extends AbstractFetchBackend[Future, Nothing](fetchOptions, customizeRequest)(new FutureMonad()) {
-
   override protected def addCancelTimeoutHook[T](result: Future[T], cancel: () => Unit): Future[T] = {
     result.onComplete(_ => cancel())
     result
@@ -30,11 +29,9 @@ class FetchBackend private (fetchOptions: FetchOptions, customizeRequest: FetchR
   }
 
   override protected def transformPromise[T](promise: => Promise[T]): Future[T] = promise.toFuture
-
 }
 
 object FetchBackend {
-
   def apply(
       fetchOptions: FetchOptions = FetchOptions.Default,
       customizeRequest: FetchRequest => FetchRequest = identity

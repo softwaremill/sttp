@@ -21,7 +21,6 @@ class AsyncHttpClientScalazBackend private (
     closeClient: Boolean,
     customizeRequest: BoundRequestBuilder => BoundRequestBuilder
 ) extends AsyncHttpClientBackend[Task, Nothing](asyncHttpClient, TaskMonadAsyncError, closeClient, customizeRequest) {
-
   override protected def streamBodyToPublisher(s: Nothing): Publisher[ByteBuf] =
     s // nothing is everything
 

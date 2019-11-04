@@ -36,7 +36,6 @@ case class Uri private (
     querySegments: Seq[QuerySegment],
     fragmentSegment: Option[Segment]
 ) {
-
   /**
     * Replace the scheme. Does not validate the new scheme value.
     */
@@ -417,7 +416,6 @@ object Uri extends UriInterpolator {
 
   sealed trait QuerySegment
   object QuerySegment {
-
     /**
       * @param keyEncoding See [[Plain.encoding]]
       * @param valueEncoding See [[Plain.encoding]]
@@ -479,7 +477,6 @@ object Uri extends UriInterpolator {
   }
 
   object QuerySegmentEncoding {
-
     /**
       * Encodes all reserved characters using [[java.net.URLEncoder.encode()]].
       */

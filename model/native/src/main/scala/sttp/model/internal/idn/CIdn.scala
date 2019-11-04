@@ -5,7 +5,6 @@ import scala.scalanative.native.{CInt, CString, Ptr, extern, link, name}
 @link("idn")
 @extern
 private[idn] object CIdn {
-
   @name("idna_to_ascii_8z")
   def toAscii(input: CString, output: Ptr[CString], flags: CInt): CInt = extern
 

@@ -13,7 +13,6 @@ case class SttpBackendOptions(
     connectionTimeout: FiniteDuration,
     proxy: Option[Proxy]
 ) {
-
   def connectionTimeout(ct: FiniteDuration): SttpBackendOptions =
     this.copy(connectionTimeout = ct)
   def httpProxy(host: String, port: Int): SttpBackendOptions =
@@ -35,7 +34,6 @@ object SttpBackendOptions {
       nonProxyHosts: List[String] = Nil,
       auth: Option[ProxyAuth] = None
   ) {
-
     //only matches prefix or suffix wild card(*)
     private def isWildCardMatch(targetHost: String, nonProxyHost: String): Boolean = {
       if (nonProxyHost.length > 1) {
@@ -158,5 +156,4 @@ object SttpBackendOptions {
 
     Seq(socksWithAuth, socks, http, https).find(_.isDefined).flatten
   }
-
 }

@@ -18,7 +18,6 @@ import sttp.client.ws.{WebSocket, WebSocketEvent}
 import sttp.model.ws.{WebSocketClosed, WebSocketFrame}
 
 object MonixWebSocketHandler {
-
   /**
     * Creates a new [[WebSocketHandler]] which should be used *once* to send and receive from a single websocket.
     * @param incomingBufferCapacity Amount of messages which will be buffered on client side before backpressure kicks in
@@ -94,7 +93,6 @@ object MonixWebSocketHandler {
       }
     }
   }
-
 }
 
 private class AddToQueueListener[F[_]](
@@ -102,7 +100,6 @@ private class AddToQueueListener[F[_]](
     isOpen: AtomicBoolean,
     incomingBufferCapacity: Int
 ) extends Listener {
-
   override def onOpen(webSocket: JWebSocket): Unit = {
     isOpen.set(true)
     queue.offer(WebSocketEvent.Open())

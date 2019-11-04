@@ -13,7 +13,6 @@ class StatusCode private (val code: Int) extends AnyVal {
 }
 
 object StatusCode extends StatusCodes {
-
   /**
     * @throws IllegalArgumentException If the status code is out of range.
     */

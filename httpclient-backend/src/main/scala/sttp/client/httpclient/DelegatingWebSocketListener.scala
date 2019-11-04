@@ -11,7 +11,6 @@ private[httpclient] class DelegatingWebSocketListener[WS_RESULT](
     onInitialOpen: WebSocket => Unit,
     onInitialError: Throwable => Unit
 ) extends Listener {
-
   private val initialised = new AtomicBoolean(false)
 
   override def onOpen(webSocket: WebSocket): Unit = {

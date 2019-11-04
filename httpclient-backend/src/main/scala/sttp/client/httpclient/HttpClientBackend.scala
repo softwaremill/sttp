@@ -42,7 +42,6 @@ import scala.util.{Failure, Try}
 
 abstract class HttpClientBackend[F[_], S](client: HttpClient, closeClient: Boolean)
     extends SttpBackend[F, S, WebSocketHandler] {
-
   private[httpclient] def convertRequest[T](request: Request[T, S]) = {
     val builder = HttpRequest
       .newBuilder()
@@ -150,11 +149,9 @@ abstract class HttpClientBackend[F[_], S](client: HttpClient, closeClient: Boole
       responseMonad.unit(())
     }
   }
-
 }
 
 object HttpClientBackend {
-
   // TODO not sure if it works
   private class ProxyAuthenticator(auth: SttpBackendOptions.ProxyAuth) extends Authenticator {
     override def getPasswordAuthentication: PasswordAuthentication = {

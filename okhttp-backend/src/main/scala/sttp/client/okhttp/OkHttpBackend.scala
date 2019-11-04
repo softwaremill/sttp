@@ -49,7 +49,6 @@ import scala.util.{Failure, Try}
 
 abstract class OkHttpBackend[F[_], S](client: OkHttpClient, closeClient: Boolean)
     extends SttpBackend[F, S, WebSocketHandler] {
-
   private[okhttp] def convertRequest[T](request: Request[T, S]): OkHttpRequest = {
     val builder = new OkHttpRequest.Builder()
       .url(request.uri.toString)
@@ -112,7 +111,6 @@ abstract class OkHttpBackend[F[_], S](client: OkHttpClient, closeClient: Boolean
       res: OkHttpResponse,
       responseAs: ResponseAs[T, S]
   ): F[Response[T]] = {
-
     val headers = res
       .headers()
       .names()
@@ -157,7 +155,6 @@ abstract class OkHttpBackend[F[_], S](client: OkHttpClient, closeClient: Boolean
 }
 
 object OkHttpBackend {
-
   private class ProxyAuthenticator(auth: SttpBackendOptions.ProxyAuth) extends Authenticator {
     override def authenticate(route: Route, response: OkHttpResponse): OkHttpRequest = {
       val credential = Credentials.basic(auth.username, auth.password)
@@ -190,7 +187,6 @@ object OkHttpBackend {
         .newBuilder()
         .readTimeout(if (readTimeout.isFinite) readTimeout.toMillis else 0, TimeUnit.MILLISECONDS)
         .build()
-
   }
 }
 
@@ -209,7 +205,6 @@ class OkHttpSyncBackend private (client: OkHttpClient, closeClient: Boolean)
       r: Request[T, Nothing],
       handler: WebSocketHandler[WS_RESULT]
   ): WebSocketResponse[WS_RESULT] = {
-
     val request = convertRequest(r)
 
     val responseCell = new ArrayBlockingQueue[Either[Throwable, WebSocketResponse[WS_RESULT]]](1)
@@ -279,7 +274,6 @@ abstract class OkHttpAsyncBackend[F[_], S](client: OkHttpClient, monad: MonadAsy
       r: Request[T, S],
       handler: WebSocketHandler[WS_RESULT]
   ): F[WebSocketResponse[WS_RESULT]] = {
-
     val request = convertRequest(r)
 
     monad.flatten(monad.async[F[WebSocketResponse[WS_RESULT]]] { cb =>

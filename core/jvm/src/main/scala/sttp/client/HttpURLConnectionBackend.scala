@@ -25,7 +25,6 @@ class HttpURLConnectionBackend private (
     createURL: String => URL,
     openConnection: (URL, Option[java.net.Proxy]) => URLConnection
 ) extends SttpBackend[Identity, Nothing, NothingT] {
-
   override def send[T](r: Request[T, Nothing]): Response[T] = {
     val c = openConnection(r.uri)
     c.setRequestMethod(r.method.method)
@@ -226,7 +225,6 @@ class HttpURLConnectionBackend private (
       is: InputStream,
       responseAs: ResponseAs[T, Nothing]
   ): Response[T] = {
-
     val headers = c.getHeaderFields.asScala.toVector
       .filter(_._1 != null)
       .flatMap { case (k, vv) => vv.asScala.map(Header.notValidated(k, _)) }
@@ -289,7 +287,6 @@ class HttpURLConnectionBackend private (
 }
 
 object HttpURLConnectionBackend {
-
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeConnection: HttpURLConnection => Unit = _ => (),

@@ -27,7 +27,6 @@ class HttpClientMonixBackend private (
       customizeRequest
     )
     with ShiftToDefaultScheduler[Task, Observable[ByteBuffer], WebSocketHandler] {
-
   override def streamToRequestBody(stream: Observable[ByteBuffer]): HttpRequest.BodyPublisher = {
     BodyPublishers.fromPublisher(new ReactivePublisherJavaAdapter[ByteBuffer](stream.toReactivePublisher))
   }
@@ -59,10 +58,10 @@ object HttpClientMonixBackend {
     )
 
   def resource(
-    options: SttpBackendOptions = SttpBackendOptions.Default,
-    customizeRequest: HttpRequest => HttpRequest = identity
+      options: SttpBackendOptions = SttpBackendOptions.Default,
+      customizeRequest: HttpRequest => HttpRequest = identity
   )(
-    implicit s: Scheduler = Scheduler.Implicits.global
+      implicit s: Scheduler = Scheduler.Implicits.global
   ): Resource[Task, SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler]] =
     Resource.make(apply(options, customizeRequest))(_.close())
 

@@ -48,7 +48,6 @@ case class MultipartBody(parts: Seq[Part[BasicRequestBody]]) extends RequestBody
 
 object RequestBody {
   private[client] def paramsToStringBody(fs: Seq[(String, String)], encoding: String): StringBody = {
-
     val b = fs
       .map {
         case (key, value) =>

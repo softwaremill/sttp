@@ -69,7 +69,6 @@ abstract class AsyncHttpClientBackend[F[_], S](
     closeClient: Boolean,
     customizeRequest: BoundRequestBuilder => BoundRequestBuilder
 ) extends SttpBackend[F, S, WebSocketHandler] {
-
   override def send[T](r: Request[T, S]): F[Response[T]] = {
     preparedRequest(r).flatMap { ahcRequest =>
       monad.flatten(monad.async[F[Response[T]]] { cb =>
@@ -337,7 +336,6 @@ abstract class AsyncHttpClientBackend[F[_], S](
 }
 
 object AsyncHttpClientBackend {
-
   private[asynchttpclient] def defaultConfigBuilder(
       options: SttpBackendOptions
   ): DefaultAsyncHttpClientConfig.Builder = {
@@ -399,7 +397,6 @@ private[asynchttpclient] class SimpleSubscriber(success: ByteBuffer => Unit, err
     // If someone has made a mistake and added this Subscriber multiple times, let's handle it gracefully
     if (this.subscription != null) {
       s.cancel() // Cancel the additional subscription
-
     } else {
       subscription = s
       subscription.request(Long.MaxValue)

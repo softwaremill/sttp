@@ -16,12 +16,10 @@ case class Response[T](
     headers: Seq[Header],
     history: List[Response[Unit]]
 ) extends ResponseMetadata {
-
   override def toString: String = s"Response($body,$code,$statusText,$headers,$history)"
 }
 
 object Response {
-
   /**
     * Convenience method to create a Response instance, mainly useful in tests using
     * [[sttp.client.testing.SttpBackendStub]] and partial matchers.

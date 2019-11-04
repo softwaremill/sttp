@@ -11,7 +11,6 @@ import scala.collection.immutable.Seq
 import scala.concurrent.duration._
 
 trait SttpApi extends SttpExtensions with UriInterpolator {
-
   val DefaultReadTimeout: Duration = 1.minute
 
   /**

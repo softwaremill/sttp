@@ -21,7 +21,6 @@ import scala.util.{Success, Try}
 class OkHttpMonixBackend private (client: OkHttpClient, closeClient: Boolean)(implicit s: Scheduler)
     extends OkHttpAsyncBackend[Task, Observable[ByteBuffer]](client, TaskMonadAsyncError, closeClient)
     with ShiftToDefaultScheduler[Task, Observable[ByteBuffer], WebSocketHandler] {
-
   override def streamToRequestBody(stream: Observable[ByteBuffer]): Option[OkHttpRequestBody] =
     Some(new OkHttpRequestBody() {
       override def writeTo(sink: BufferedSink): Unit =
@@ -93,9 +92,9 @@ object OkHttpMonixBackend {
     )
 
   def resource(
-    options: SttpBackendOptions = SttpBackendOptions.Default
+      options: SttpBackendOptions = SttpBackendOptions.Default
   )(
-    implicit s: Scheduler = Scheduler.Implicits.global
+      implicit s: Scheduler = Scheduler.Implicits.global
   ): Resource[Task, SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler]] =
     Resource.make(apply(options))(_.close())
 

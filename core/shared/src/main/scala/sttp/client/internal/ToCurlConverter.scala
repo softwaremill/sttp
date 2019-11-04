@@ -6,7 +6,6 @@ import sttp.client.NoBody
 import sttp.model.MediaType
 
 class ToCurlConverter[R <: RequestT[Identity, _, _]] {
-
   def apply(request: R): String = {
     val params = List(extractOptions(_), extractMethod(_), extractHeaders(_), extractBody(_))
       .map(addSpaceIfNotEmpty)

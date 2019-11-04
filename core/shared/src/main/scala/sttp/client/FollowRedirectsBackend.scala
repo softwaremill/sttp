@@ -13,7 +13,6 @@ class FollowRedirectsBackend[F[_], S, WS_HANDLER[_]](
     contentHeaders: Set[String] = HeaderNames.ContentHeaders,
     sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders
 ) extends SttpBackend[F, S, WS_HANDLER] {
-
   def send[T](request: Request[T, S]): F[Response[T]] = {
     sendWithCounter(request, 0)
   }
@@ -57,7 +56,6 @@ class FollowRedirectsBackend[F[_], S, WS_HANDLER[_]](
       redirects: Int,
       loc: String
   ): F[Response[T]] = {
-
     val uri = if (FollowRedirectsBackend.isRelative(loc)) {
       // using java's URI to resolve a relative URI
       uri"${new URI(request.uri.toString).resolve(loc).toString}"

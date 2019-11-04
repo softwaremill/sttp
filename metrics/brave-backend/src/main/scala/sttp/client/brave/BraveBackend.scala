@@ -13,7 +13,6 @@ import scala.language.higherKinds
 @deprecated("Use opentracing-backend with brave integration", since = "2.0.0-M9")
 class BraveBackend[F[_], S] private (delegate: SttpBackend[F, S, NothingT], httpTracing: HttpTracing)
     extends SttpBackend[F, S, NothingT] {
-
   // .asInstanceOf as the create method lacks generics in its return type
   private val handler = HttpClientHandler
     .create(httpTracing, SttpHttpClientAdapter)
@@ -116,7 +115,6 @@ object BraveBackend {
 }
 
 object SttpHttpClientAdapter extends HttpClientAdapter[AnyRequest, AnyResponse] {
-
   override def method(request: AnyRequest): String = request.method.method
 
   override def url(request: AnyRequest): String = request.uri.toString

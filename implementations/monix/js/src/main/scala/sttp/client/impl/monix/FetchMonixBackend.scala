@@ -24,7 +24,6 @@ import org.scalajs.dom.experimental.{Request => FetchRequest}
   */
 class FetchMonixBackend private (fetchOptions: FetchOptions, customizeRequest: FetchRequest => FetchRequest)
     extends AbstractFetchBackend[Task, Observable[ByteBuffer]](fetchOptions, customizeRequest)(TaskMonadAsyncError) {
-
   override protected def addCancelTimeoutHook[T](result: Task[T], cancel: () => Unit): Task[T] = {
     val doCancel = Task.delay(cancel())
     result.doOnCancel(doCancel).doOnFinish(_ => doCancel)
@@ -43,7 +42,6 @@ class FetchMonixBackend private (fetchOptions: FetchOptions, customizeRequest: F
   ): Task[T] = {
     Task
       .delay {
-
         lazy val reader = response.body.getReader()
 
         def read() = transformPromise(reader.read())
@@ -63,11 +61,9 @@ class FetchMonixBackend private (fetchOptions: FetchOptions, customizeRequest: F
   }
 
   override protected def transformPromise[T](promise: => Promise[T]): Task[T] = Task.fromFuture(promise.toFuture)
-
 }
 
 object FetchMonixBackend {
-
   def apply(
       fetchOptions: FetchOptions = FetchOptions.Default,
       customizeRequest: FetchRequest => FetchRequest = identity

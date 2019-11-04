@@ -32,7 +32,6 @@ class AsyncHttpClientZioStreamsBackend[R] private (
       closeClient,
       customizeRequest
     ) {
-
   private val bufferSize = 16
 
   override protected def streamBodyToPublisher(s: Stream[Throwable, ByteBuffer]): Publisher[ByteBuf] =

@@ -6,7 +6,6 @@ import scala.annotation.tailrec
 
 trait UriInterpolator {
   implicit class UriContext(val sc: StringContext) {
-
     /**
       * Parse the given string (with embedded expressions) as an uri.
       *
@@ -38,7 +37,6 @@ trait UriInterpolator {
 }
 
 object UriInterpolator {
-
   def interpolate(sc: StringContext, args: Any*): Uri = {
     val tokens = tokenize(sc, args: _*)
 
@@ -122,7 +120,6 @@ object UriInterpolator {
         tokenizer = nextTokenizer
         tokens = tokens ++ nextTokens
       }
-
     }
 
     removeEmptyTokensAroundExp(tokens)
@@ -241,7 +238,6 @@ object UriInterpolator {
         separatorsToTokens: Map[Char, Token],
         separatorsEscape: Option[(Char, Char)] = None
     ): (Tokenizer, Vector[Token]) = {
-
       def tokenizeFragment(f: String): Vector[Token] = {
         splitPreserveSeparators(f, separatorsToTokens.keySet, separatorsEscape).map { t =>
           t.headOption.flatMap(separatorsToTokens.get) match {
@@ -269,7 +265,6 @@ object UriInterpolator {
         separator: Char,
         s: String
     ): (Tokenizer, Vector[Token]) = {
-
       val (next, separatorToken) = separatorTokenizerAndToken(separator)
       val (nextNext, nextTokens) = next.tokenize(s)
       (nextNext, beforeSeparatorTokens ++ Vector(separatorToken) ++ nextTokens)
@@ -340,7 +335,6 @@ object UriInterpolator {
   }
 
   object UriBuilder {
-
     case object Scheme extends UriBuilder {
       override def fromTokens(u: Uri, t: Vector[Token]): (Uri, Vector[Token]) = {
         split(t, Set[Token](SchemeEnd)) match {
@@ -374,7 +368,6 @@ object UriInterpolator {
       }
 
       private def uiFromTokens(u: Uri, usernameTokens: Vector[Token], passwordTokens: Vector[Token]): Uri = {
-
         (tokensToStringOpt(usernameTokens), tokensToStringOpt(passwordTokens)) match {
           case (Some(un), Some(p)) => u.userInfo(un, p)
           case (Some(un), None)    => u.userInfo(un)
@@ -441,7 +434,6 @@ object UriInterpolator {
     }
 
     case object Query extends UriBuilder {
-
       import Uri.{QuerySegment => QF}
 
       override def fromTokens(u: Uri, t: Vector[Token]): (Uri, Vector[Token]) =
@@ -514,7 +506,6 @@ object UriInterpolator {
         nextComponentTokens: Set[Token],
         componentFromTokens: (Uri, Vector[Token]) => Uri
     ): (Uri, Vector[Token]) = {
-
       t match {
         case `startingToken` +: tt =>
           split(tt, nextComponentTokens) match {

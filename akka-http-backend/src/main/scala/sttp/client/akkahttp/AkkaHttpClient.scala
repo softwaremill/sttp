@@ -31,7 +31,6 @@ object AkkaHttpClient {
       connectionContext: Option[HttpsConnectionContext],
       customLog: Option[LoggingAdapter]
   ): AkkaHttpClient = new AkkaHttpClient {
-
     private val http = Http()(system)
 
     override def singleRequest(

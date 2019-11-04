@@ -13,7 +13,6 @@ import scala.util.hashing.MurmurHash3
   * the header.
   */
 class Header(val name: String, val value: String) {
-
   /**
     * Check if the name of this header is the same as the given one. The names are compared in a case-insensitive way.
     */

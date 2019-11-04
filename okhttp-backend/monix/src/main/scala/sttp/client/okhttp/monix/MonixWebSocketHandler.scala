@@ -8,7 +8,6 @@ import sttp.client.okhttp.monix.internal.NativeWebSocketHandler
 import sttp.client.ws.WebSocket
 
 object MonixWebSocketHandler {
-
   /**
     * Creates a new [[WebSocketHandler]] which should be used *once* to send and receive from a single websocket.
     * @param incomingBufferCapacity Should the buffer of incoming websocket events be bounded. If yes, unreceived

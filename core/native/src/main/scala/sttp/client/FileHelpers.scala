@@ -6,7 +6,6 @@ import java.nio.file.AccessDeniedException
 import sttp.client.internal._
 
 object FileHelpers {
-
   private[client] def saveFile(file: File, is: InputStream): File = {
     if (!file.exists()) {
       if (file.getParentFile != null) {
@@ -24,5 +23,4 @@ object FileHelpers {
     transfer(is, os)
     file
   }
-
 }
