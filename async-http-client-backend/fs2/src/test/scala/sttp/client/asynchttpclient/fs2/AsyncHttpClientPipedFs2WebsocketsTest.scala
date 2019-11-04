@@ -17,7 +17,11 @@ import scala.collection.immutable.Queue
 import scala.concurrent.duration._
 import scala.concurrent.Future
 
-class Fs2WebsocketsTest extends AsyncFlatSpec with Matchers with TestHttpServer with ToFutureWrapper {
+class AsyncHttpClientPipedFs2WebsocketsTest
+    extends AsyncFlatSpec
+    with Matchers
+    with TestHttpServer
+    with ToFutureWrapper {
   implicit val backend: SttpBackend[IO, Nothing, WebSocketHandler] = AsyncHttpClientFs2Backend[IO]().unsafeRunSync()
   implicit val convertToFuture: ConvertToFuture[IO] = new ConvertToFuture[IO] {
     override def toFuture[T](value: IO[T]): Future[T] = value.unsafeToFuture()
