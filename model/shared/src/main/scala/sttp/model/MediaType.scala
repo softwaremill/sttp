@@ -7,6 +7,9 @@ import sttp.model.internal.Validate
 import sttp.model.internal.Rfc2616._
 
 case class MediaType private (mainType: String, subType: String, charset: Option[String]) {
+  def charset(c: String): MediaType = copy(charset = Some(c))
+  def noCharset: MediaType = copy(charset = None)
+
   override def toString: String = s"$mainType/$subType" + charset.fold("")(c => s"; charset=$c")
 }
 
