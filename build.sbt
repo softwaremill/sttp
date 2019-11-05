@@ -326,7 +326,7 @@ lazy val cats = crossProject(JSPlatform, JVMPlatform)
 lazy val catsJS = cats.js.dependsOn(coreJS % compileAndTest)
 lazy val catsJVM = cats.jvm.dependsOn(coreJVM % compileAndTest)
 
-val fs2Version = "2.0.1"
+val fs2Version = "2.1.0"
 lazy val fs2 = crossProject(JSPlatform, JVMPlatform)
   .withoutSuffixFor(JVMPlatform)
   .crossType(CrossType.Pure)
