@@ -1,7 +1,7 @@
 package sttp.client
 
 import java.io.{ByteArrayOutputStream, InputStream, OutputStream}
-import java.nio.ByteBuffer
+import java.nio.{Buffer, ByteBuffer}
 
 import scala.annotation.{implicitNotFound, tailrec}
 
@@ -41,7 +41,9 @@ package object internal {
       .allocate(bb1.array().length + bb2.array().length)
       .put(bb1)
       .put(bb2)
-    buf.rewind()
+    // rewind() returns Buffer in Java8, and ByteBuffer in Java11
+    // calling the method from the base class to avoid NoSuchMethodError
+    (buf: Buffer).rewind()
     buf
   }
   @implicitNotFound(
