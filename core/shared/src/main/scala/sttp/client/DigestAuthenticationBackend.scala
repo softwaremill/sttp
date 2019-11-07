@@ -7,12 +7,14 @@ import sttp.client.DigestAuthenticationBackend._
 import sttp.client.monad.MonadError
 import sttp.client.monad.syntax._
 import sttp.client.ws.WebSocketResponse
-import sttp.model.HeaderNames
+import sttp.model.{HeaderNames, StatusCode}
 
 import scala.language.higherKinds
 import scala.util.Random
-import scala.util.matching.Regex
 
+//TODO: support auth-int
+//TODO: better params parsing
+//TODO: support stale param
 class DigestAuthenticationBackend[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[F, S, WS_HANDLER])
     extends SttpBackend[F, S, WS_HANDLER] {
   override def send[T](request: Request[T, S]): F[Response[T]] = {
@@ -20,29 +22,35 @@ class DigestAuthenticationBackend[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[
       val digestAuthData = request.tag(DigestAuthTag).get.asInstanceOf[DigestAuthData]
       implicit val m: MonadError[F] = responseMonad
       delegate.send(request).flatMap { response =>
-        if (response.code.code == 401) {
-          response
-            .header(HeaderNames.WwwAuthenticate)
-            .map { authHeader =>
-              println(authHeader)
-              (for {
-                realmMatch <- DigestRealmRegex.findFirstMatchIn(authHeader)
-                nonceMatch <- NonceRegex.findFirstMatchIn(authHeader)
-              } yield {
-                val authHeaderValue: String =
-                  calculateDigestAuth(request, digestAuthData, authHeader, realmMatch, nonceMatch)
-                println("=============")
-                authHeaderValue.split(",").foreach(println)
-                delegate.send(request.header(HeaderNames.Authorization, authHeaderValue))
-              }).getOrElse(response.unit)
+        response
+          .header(HeaderNames.WwwAuthenticate)
+          .map { wwwAuthHeader =>
+            if (response.code == StatusCode.Unauthorized) {
+              callWithDigestAuth(request, digestAuthData, response, wwwAuthHeader).getOrElse(response.unit)
+            } else {
+              response.unit
             }
-            .getOrElse(response.unit)
-        } else {
-          response.unit
-        }
+          }
+          .getOrElse(response.unit)
       }
     } else {
       delegate.send(request)
+    }
+  }
+
+  private def callWithDigestAuth[T](
+      request: Request[T, S],
+      digestAuthData: DigestAuthData,
+      response: Response[T],
+      wwwAuthHeader: String
+  )(implicit m: MonadError[F]) = {
+    for {
+      realmMatch <- DigestRealmRegex.findFirstMatchIn(wwwAuthHeader)
+      nonceMatch <- NonceRegex.findFirstMatchIn(wwwAuthHeader)
+    } yield {
+      val authHeaderValue =
+        calculateDigestAuth(request, digestAuthData, wwwAuthHeader, realmMatch.group(1), nonceMatch.group(1))
+      delegate.send(request.header(HeaderNames.Authorization, authHeaderValue))
     }
   }
 
@@ -50,8 +58,8 @@ class DigestAuthenticationBackend[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[
       request: Request[T, S],
       digestAuthData: DigestAuthData,
       authHeader: String,
-      realmMatch: Regex.Match,
-      nonceMatch: Regex.Match
+      realmMatch: String,
+      nonceMatch: String
   ) = {
     val qualityOfProtection = QopRegex.findFirstMatchIn(authHeader).map(_.group(1))
     val algorithm = AlgorithmRegex.findFirstMatchIn(authHeader).map(_.group(1)).getOrElse("MD5")
@@ -63,9 +71,9 @@ class DigestAuthenticationBackend[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[
       calculateResponseChallenge(
         request,
         digestAuthData,
-        realmMatch.group(1),
+        realmMatch,
         qualityOfProtection,
-        nonceMatch.group(1),
+        nonceMatch,
         digestUri,
         clientNonce,
         nonceCount,
@@ -74,8 +82,8 @@ class DigestAuthenticationBackend[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[
       )
     val authHeaderValue = createAuthHeaderValue(
       digestAuthData,
-      nonceMatch.group(1),
-      realmMatch.group(1),
+      nonceMatch,
+      realmMatch,
       qualityOfProtection,
       digestUri,
       clientNonce,

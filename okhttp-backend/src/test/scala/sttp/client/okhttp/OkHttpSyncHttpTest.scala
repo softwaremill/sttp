@@ -13,7 +13,7 @@ class OkHttpSyncHttpTest extends HttpTest[Identity] {
 
   "asdasd" in {
     val response = basicRequest
-      .get(uri"http://httpbin.org/digest-auth/auth/kasper/test/SHA-512/never")
+      .get(uri"http://httpbin.org/digest-auth/auth/kasper/test/SHA-512")
       .tag(DigestAuthenticationBackend.DigestAuthTag, DigestAuthenticationBackend.DigestAuthData("kasper", "test"))
       .send()
     response.code.code shouldBe 200
