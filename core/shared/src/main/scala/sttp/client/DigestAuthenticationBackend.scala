@@ -2,13 +2,12 @@ package sttp.client
 
 import java.nio.charset.Charset
 import java.security.MessageDigest
-import java.util.Base64
 
 import sttp.client.DigestAuthenticationBackend._
 import sttp.client.monad.MonadError
-import sttp.client.ws.WebSocketResponse
 import sttp.client.monad.syntax._
-import sttp.model.{HeaderNames, Headers}
+import sttp.client.ws.WebSocketResponse
+import sttp.model.HeaderNames
 
 import scala.language.higherKinds
 import scala.util.Random
@@ -70,7 +69,8 @@ class DigestAuthenticationBackend[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[
         digestUri,
         clientNonce,
         nonceCount,
-        messageDigest
+        messageDigest,
+        algorithm
       )
     val authHeaderValue = createAuthHeaderValue(
       digestAuthData,
@@ -95,10 +95,53 @@ class DigestAuthenticationBackend[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[
       digestUri: String,
       clientNonce: String,
       nonceCount: String,
+      messageDigest: MessageDigest,
+      algorithm: String
+  ) = {
+    val ha1 = calculateHa1(digestAuthData, realm, messageDigest, algorithm, nonce, clientNonce)
+    val ha2 = calculateHa2(request, qop, digestUri, messageDigest)
+    calculateChallange(qop, nonce, clientNonce, nonceCount, messageDigest, ha1, ha2)
+  }
+
+  private def calculateHa1[T](
+      digestAuthData: DigestAuthData,
+      realm: String,
+      messageDigest: MessageDigest,
+      algorithm: String,
+      nonce: String,
+      cnonce: String
+  ) = {
+    val base = md5HexString(s"${digestAuthData.username}:$realm:${digestAuthData.password}", messageDigest)
+    if (algorithm.equalsIgnoreCase("MD5-sess")) {
+      md5HexString(s"${base}:$nonce:$cnonce", messageDigest)
+    } else {
+      base
+    }
+  }
+
+  private def calculateChallange[T](
+      qop: Option[String],
+      nonce: String,
+      clientNonce: String,
+      nonceCount: String,
+      messageDigest: MessageDigest,
+      ha1: String,
+      ha2: String
+  ) = {
+    qop match {
+      case Some(v) if v == QualityOfProtectionAuth || v == QualityOfProtectionAuthInt =>
+        md5HexString(s"$ha1:$nonce:$nonceCount:$clientNonce:$v:$ha2", messageDigest)
+      case None => md5HexString(s"$ha1:$nonce:$ha2", messageDigest)
+    }
+  }
+
+  private def calculateHa2[T](
+      request: Request[T, S],
+      qop: Option[String],
+      digestUri: String,
       messageDigest: MessageDigest
   ) = {
-    val ha1 = md5HexString(s"${digestAuthData.username}:$realm:${digestAuthData.password}", messageDigest)
-    val ha2 = qop match {
+    qop match {
       case Some(QualityOfProtectionAuth) => md5HexString(s"${request.method.method}:$digestUri", messageDigest)
       case None                          => md5HexString(s"${request.method.method}:$digestUri", messageDigest)
       case Some(QualityOfProtectionAuthInt) =>
@@ -110,12 +153,6 @@ class DigestAuthenticationBackend[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[
           messageDigest
         ) //TODO
     }
-    val challenge = qop match {
-      case Some(v) if v == QualityOfProtectionAuth || v == QualityOfProtectionAuthInt =>
-        md5HexString(s"$ha1:$nonce:$nonceCount:$clientNonce:$v:$ha2", messageDigest)
-      case None => md5HexString(s"$ha1:$nonce:$ha2", messageDigest)
-    }
-    challenge
   }
 
   private def generateClientNonce[T]() = {
