@@ -16,8 +16,6 @@ import scala.util.matching.Regex
 
 class DigestAuthenticationBackend[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[F, S, WS_HANDLER])
     extends SttpBackend[F, S, WS_HANDLER] {
-  private val md5 = MessageDigest.getInstance("MD5")
-
   override def send[T](request: Request[T, S]): F[Response[T]] = {
     if (request.tag(DigestAuthTag).isDefined) {
       val digestAuthData = request.tag(DigestAuthTag).get.asInstanceOf[DigestAuthData]
@@ -32,31 +30,8 @@ class DigestAuthenticationBackend[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[
                 realmMatch <- DigestRealmRegex.findFirstMatchIn(authHeader)
                 nonceMatch <- NonceRegex.findFirstMatchIn(authHeader)
               } yield {
-                val qualityOfProtection = QopRegex.findFirstMatchIn(authHeader).map(_.group(1))
-                val digestUri = "/" + request.uri.pathSegments.map(_.v).mkString("/")
-                val clientNonce = generateClientNonce()
-                val nonceCount = "00000001"
-                val responseChallenge: String =
-                  calculateResponseChallenge(
-                    request,
-                    digestAuthData,
-                    realmMatch.group(1),
-                    qualityOfProtection,
-                    nonceMatch.group(1),
-                    digestUri,
-                    clientNonce,
-                    nonceCount
-                  )
-                val authHeaderValue = createAuthHeaderValue(
-                  digestAuthData,
-                  nonceMatch.group(1),
-                  realmMatch.group(1),
-                  qualityOfProtection,
-                  digestUri,
-                  clientNonce,
-                  responseChallenge,
-                  nonceCount
-                )
+                val authHeaderValue: String =
+                  calculateDigestAuth(request, digestAuthData, authHeader, realmMatch, nonceMatch)
                 println("=============")
                 authHeaderValue.split(",").foreach(println)
                 delegate.send(request.header(HeaderNames.Authorization, authHeaderValue))
@@ -72,6 +47,45 @@ class DigestAuthenticationBackend[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[
     }
   }
 
+  private def calculateDigestAuth[T](
+      request: Request[T, S],
+      digestAuthData: DigestAuthData,
+      authHeader: String,
+      realmMatch: Regex.Match,
+      nonceMatch: Regex.Match
+  ) = {
+    val qualityOfProtection = QopRegex.findFirstMatchIn(authHeader).map(_.group(1))
+    val algorithm = AlgorithmRegex.findFirstMatchIn(authHeader).map(_.group(1)).getOrElse("MD5")
+    val messageDigest = MessageDigest.getInstance(algorithm)
+    val digestUri = "/" + request.uri.pathSegments.map(_.v).mkString("/")
+    val clientNonce = generateClientNonce()
+    val nonceCount = "00000001"
+    val responseChallenge: String =
+      calculateResponseChallenge(
+        request,
+        digestAuthData,
+        realmMatch.group(1),
+        qualityOfProtection,
+        nonceMatch.group(1),
+        digestUri,
+        clientNonce,
+        nonceCount,
+        messageDigest
+      )
+    val authHeaderValue = createAuthHeaderValue(
+      digestAuthData,
+      nonceMatch.group(1),
+      realmMatch.group(1),
+      qualityOfProtection,
+      digestUri,
+      clientNonce,
+      responseChallenge,
+      nonceCount,
+      algorithm
+    )
+    authHeaderValue
+  }
+
   private def calculateResponseChallenge[T](
       request: Request[T, S],
       digestAuthData: DigestAuthData,
@@ -80,19 +94,26 @@ class DigestAuthenticationBackend[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[
       nonce: String,
       digestUri: String,
       clientNonce: String,
-      nonceCount: String
+      nonceCount: String,
+      messageDigest: MessageDigest
   ) = {
-    val ha1 = md5HexString(s"${digestAuthData.username}:$realm:${digestAuthData.password}")
+    val ha1 = md5HexString(s"${digestAuthData.username}:$realm:${digestAuthData.password}", messageDigest)
     val ha2 = qop match {
-      case Some(QualityOfProtectionAuth) => md5HexString(s"${request.method.method}:$digestUri")
-      case None                          => md5HexString(s"${request.method.method}:$digestUri")
+      case Some(QualityOfProtectionAuth) => md5HexString(s"${request.method.method}:$digestUri", messageDigest)
+      case None                          => md5HexString(s"${request.method.method}:$digestUri", messageDigest)
       case Some(QualityOfProtectionAuthInt) =>
-        md5HexString(s"${request.method.method}:$digestUri:${md5HexString("body")}") //TODO
+        md5HexString(
+          s"${request.method.method}:$digestUri:${byteArrayToHexString(messageDigest.digest(request.body match {
+            case NoBody                => throw new IllegalStateException("Qop auth-int cannot be used with a non-repeatable entity")
+            case StringBody(s, e, dct) => s.getBytes(Charset.forName(e))
+          }))}",
+          messageDigest
+        ) //TODO
     }
     val challenge = qop match {
       case Some(v) if v == QualityOfProtectionAuth || v == QualityOfProtectionAuthInt =>
-        md5HexString(s"$ha1:$nonce:$nonceCount:$clientNonce:$v:$ha2")
-      case None => md5HexString(s"$ha1:$nonce:$ha2")
+        md5HexString(s"$ha1:$nonce:$nonceCount:$clientNonce:$v:$ha2", messageDigest)
+      case None => md5HexString(s"$ha1:$nonce:$ha2", messageDigest)
     }
     challenge
   }
@@ -111,7 +132,8 @@ class DigestAuthenticationBackend[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[
       digestUri: String,
       clientNonce: String,
       challenge: String,
-      nonceCount: String
+      nonceCount: String,
+      algorithm: String
   ) = {
     val digestOut = Some(s"""Digest username="${digestAuthData.username}"""")
     val realmOut = Some(s"""realm="$realm"""")
@@ -121,13 +143,15 @@ class DigestAuthenticationBackend[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[
     val nc = Some(s"nc=$nonceCount")
     val challengeOut = Some(s"""response="$challenge"""")
     val cnonceOut = Some(s"""cnonce="$clientNonce"""")
+    val algorithmOut = Some(s"""algorithm="$algorithm"""")
     val authHeaderValue =
-      List(digestOut, realmOut, uriOut, nonceOut, qopOut, challengeOut, cnonceOut, nc).flatten.mkString(", ")
+      List(digestOut, realmOut, uriOut, nonceOut, qopOut, challengeOut, cnonceOut, nc, algorithmOut).flatten
+        .mkString(", ")
     authHeaderValue
   }
 
-  private def md5HexString(text: String) = {
-    byteArrayToHexString(md5.digest(text.getBytes(Charset.forName("UTF-8"))))
+  private def md5HexString(text: String, messageDigest: MessageDigest) = {
+    byteArrayToHexString(messageDigest.digest(text.getBytes(Charset.forName("UTF-8"))))
   }
 
   private def byteArrayToHexString(bytes: Seq[Byte]): String = {
@@ -152,6 +176,7 @@ object DigestAuthenticationBackend {
   val DigestRealmRegex = "Digest realm=\"(.*?)\"".r
   val QopRegex = "qop=\"(.*?)\"".r
   val NonceRegex = "nonce=\"(.*?)\"".r
+  val AlgorithmRegex = "algorithm=(.*?),".r
   val QualityOfProtectionAuth = "auth"
   val QualityOfProtectionAuthInt = "auth-int"
   case class DigestAuthData(username: String, password: String)
