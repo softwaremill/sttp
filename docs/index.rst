@@ -105,3 +105,11 @@ For more examples, see the :ref:`usage examples <usage_examples>` section. Or ex
    json
    other
 
+Other sttp projects
+-------------------
+
+sttp is a family of Scala HTTP-related projects, and currently includes:
+
+* sttp client: this project
+* `sttp tapir <https://github.com/softwaremill/tapir>`_: Typed API descRiptions
+* `sttp model <https://github.com/softwaremill/sttp-model>`_: simple HTTP model classes (used by client & tapir)
