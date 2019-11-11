@@ -155,11 +155,12 @@ class DigestAuthenticationBackend[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[
       case Some(QualityOfProtectionAuth) => md5HexString(s"${request.method.method}:$digestUri", messageDigest)
       case None                          => md5HexString(s"${request.method.method}:$digestUri", messageDigest)
       case Some(QualityOfProtectionAuthInt) =>
+        val body = request.body match {
+          case NoBody                => throw new IllegalStateException("Qop auth-int cannot be used with a non-repeatable entity")
+          case StringBody(s, e, dct) => s.getBytes(Charset.forName(e))
+        }
         md5HexString(
-          s"${request.method.method}:$digestUri:${byteArrayToHexString(messageDigest.digest(request.body match {
-            case NoBody                => throw new IllegalStateException("Qop auth-int cannot be used with a non-repeatable entity")
-            case StringBody(s, e, dct) => s.getBytes(Charset.forName(e))
-          }))}",
+          s"${request.method.method}:$digestUri:${byteArrayToHexString(messageDigest.digest(body))}",
           messageDigest
         ) //TODO
     }
