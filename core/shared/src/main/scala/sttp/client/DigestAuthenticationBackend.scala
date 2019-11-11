@@ -13,8 +13,8 @@ import scala.language.higherKinds
 import scala.util.Random
 
 //TODO: support auth-int
-//TODO: better params parsing
 //TODO: support stale param
+//TODO: auth-info
 class DigestAuthenticationBackend[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[F, S, WS_HANDLER])
     extends SttpBackend[F, S, WS_HANDLER] {
   override def send[T](request: Request[T, S]): F[Response[T]] = {
@@ -44,12 +44,13 @@ class DigestAuthenticationBackend[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[
       response: Response[T],
       wwwAuthHeader: String
   )(implicit m: MonadError[F]) = {
+    val parsed = WwwAuthHeaderParser.parse(wwwAuthHeader)
     for {
-      realmMatch <- DigestRealmRegex.findFirstMatchIn(wwwAuthHeader)
-      nonceMatch <- NonceRegex.findFirstMatchIn(wwwAuthHeader)
+      realm <- parsed.digestRealm
+      nonce <- parsed.nonce
     } yield {
       val authHeaderValue =
-        calculateDigestAuth(request, digestAuthData, wwwAuthHeader, realmMatch.group(1), nonceMatch.group(1))
+        calculateDigestAuth(request, digestAuthData, parsed, realm, nonce)
       delegate.send(request.header(HeaderNames.Authorization, authHeaderValue))
     }
   }
@@ -57,12 +58,12 @@ class DigestAuthenticationBackend[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[
   private def calculateDigestAuth[T](
       request: Request[T, S],
       digestAuthData: DigestAuthData,
-      authHeader: String,
+      wwwAuthHeader: WwwAuthHeaderValue,
       realmMatch: String,
       nonceMatch: String
   ) = {
-    val qualityOfProtection = QopRegex.findFirstMatchIn(authHeader).map(_.group(1))
-    val algorithm = AlgorithmRegex.findFirstMatchIn(authHeader).map(_.group(1)).getOrElse("MD5")
+    val qualityOfProtection = wwwAuthHeader.qop
+    val algorithm = wwwAuthHeader.algorithm.getOrElse("MD5")
     val messageDigest = MessageDigest.getInstance(algorithm)
     val digestUri = "/" + request.uri.pathSegments.map(_.v).mkString("/")
     val clientNonce = generateClientNonce()
@@ -108,7 +109,7 @@ class DigestAuthenticationBackend[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[
   ) = {
     val ha1 = calculateHa1(digestAuthData, realm, messageDigest, algorithm, nonce, clientNonce)
     val ha2 = calculateHa2(request, qop, digestUri, messageDigest)
-    calculateChallange(qop, nonce, clientNonce, nonceCount, messageDigest, ha1, ha2)
+    calculateChallenge(qop, nonce, clientNonce, nonceCount, messageDigest, ha1, ha2)
   }
 
   private def calculateHa1[T](
@@ -127,7 +128,7 @@ class DigestAuthenticationBackend[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[
     }
   }
 
-  private def calculateChallange[T](
+  private def calculateChallenge[T](
       qop: Option[String],
       nonce: String,
       clientNonce: String,
@@ -218,10 +219,6 @@ class DigestAuthenticationBackend[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[
 
 object DigestAuthenticationBackend {
   val DigestAuthTag = "__sttp_DigestAuth"
-  val DigestRealmRegex = "Digest realm=\"(.*?)\"".r
-  val QopRegex = "qop=\"(.*?)\"".r
-  val NonceRegex = "nonce=\"(.*?)\"".r
-  val AlgorithmRegex = "algorithm=(.*?),".r
   val QualityOfProtectionAuth = "auth"
   val QualityOfProtectionAuthInt = "auth-int"
   case class DigestAuthData(username: String, password: String)
