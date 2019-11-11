@@ -46,7 +46,7 @@ class DigestAuthenticationBackend[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[
   )(implicit m: MonadError[F]) = {
     val parsed = WwwAuthHeaderParser.parse(wwwAuthHeader)
     for {
-      realm <- parsed.digestRealm
+      realm <- parsed.realm
       nonce <- parsed.nonce
     } yield {
       val authHeaderValue =

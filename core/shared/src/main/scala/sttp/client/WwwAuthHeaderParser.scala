@@ -14,7 +14,7 @@ object WwwAuthHeaderParser {
 
 case class WwwAuthHeaderValue private (values: Map[String, String]) {
   val qop = values.get("qop")
-  val digestRealm = values.get("Digest realm")
+  val realm = values.get("realm")
   val nonce = values.get("nonce")
   val algorithm = values.get("algorithm")
   val stale = values.get("stale")
@@ -25,6 +25,8 @@ private case class KeyParser private (currentKey: String, parsed: Map[String, St
   override def parseNext(input: Char): Parser = {
     if (input == '=') {
       ValueParser(currentKey, parsed)
+    } else if (input == ' ') {
+      KeyParser("", parsed)
     } else {
       this.copy(currentKey = currentKey + input)
     }

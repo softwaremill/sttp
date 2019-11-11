@@ -9,7 +9,7 @@ class WwwAuthHeaderParserTest extends FlatSpec with Matchers {
         "Digest realm=\"Digest WF Realm\", qop=\"auth\", nonce=\"MTU3MzQ5MTE3MjQ3NzphY2I5NDgxNjdmODdiZGIwMzU1YTk5OTIxNDU1MmY0ZQ==\""
       )
       .values shouldBe Map(
-      "Digest realm" -> "Digest WF Realm",
+      "realm" -> "Digest WF Realm",
       "qop" -> "auth",
       "nonce" -> "MTU3MzQ5MTE3MjQ3NzphY2I5NDgxNjdmODdiZGIwMzU1YTk5OTIxNDU1MmY0ZQ=="
     )
@@ -26,7 +26,7 @@ class WwwAuthHeaderParserTest extends FlatSpec with Matchers {
           "stale=FALSE"
       )
       .values shouldBe Map(
-      "Digest realm" -> "me@kennethreitz.com",
+      "realm" -> "me@kennethreitz.com",
       "nonce" -> "399b4061bd576c9d9a22b698bd3f9367",
       "qop" -> "auth",
       "opaque" -> "47e2037ead3fd3dfe6260991da9e5db7",
