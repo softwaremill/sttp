@@ -25,7 +25,7 @@ class DigestAuthenticationBackend[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[
         response
           .header(HeaderNames.WwwAuthenticate)
           .map { wwwAuthHeader =>
-            if (response.code == StatusCode.Unauthorized) {
+            if (response.code == StatusCode.Unauthorized && wwwAuthHeader.contains("Digest")) {
               callWithDigestAuth(request, digestAuthData, response, wwwAuthHeader).getOrElse(response.unit)
             } else {
               response.unit
