@@ -90,7 +90,8 @@ class DigestAuthenticationBackend[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[
       clientNonce,
       responseChallenge,
       nonceCount,
-      algorithm
+      algorithm,
+      wwwAuthHeader.opaque
     )
     authHeaderValue
   }
@@ -179,7 +180,8 @@ class DigestAuthenticationBackend[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[
       clientNonce: String,
       challenge: String,
       nonceCount: String,
-      algorithm: String
+      algorithm: String,
+      opaque: Option[String]
   ) = {
     val digestOut = Some(s"""Digest username="${digestAuthData.username}"""")
     val realmOut = Some(s"""realm="$realm"""")
@@ -190,8 +192,9 @@ class DigestAuthenticationBackend[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[
     val challengeOut = Some(s"""response="$challenge"""")
     val cnonceOut = Some(s"""cnonce="$clientNonce"""")
     val algorithmOut = Some(s"""algorithm="$algorithm"""")
+    val opaqueOut = opaque.map(op => s"""opaque="$op"""")
     val authHeaderValue =
-      List(digestOut, realmOut, uriOut, nonceOut, qopOut, challengeOut, cnonceOut, nc, algorithmOut).flatten
+      List(digestOut, realmOut, uriOut, nonceOut, qopOut, challengeOut, cnonceOut, nc, algorithmOut, opaqueOut).flatten
         .mkString(", ")
     authHeaderValue
   }

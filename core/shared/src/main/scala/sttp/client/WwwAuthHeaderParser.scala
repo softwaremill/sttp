@@ -17,7 +17,7 @@ case class WwwAuthHeaderValue private (values: Map[String, String]) {
   val realm = values.get("realm")
   val nonce = values.get("nonce")
   val algorithm = values.get("algorithm")
-  val stale = values.get("stale")
+  val isStale = values.get("stale").map(_.equalsIgnoreCase("true"))
   val opaque = values.get("opaque")
 }
 
