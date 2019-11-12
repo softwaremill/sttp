@@ -349,7 +349,7 @@ lazy val monix = crossProject(JSPlatform, JVMPlatform)
   .in(file("implementations/monix"))
   .jvmSettings(commonJvmSettings: _*)
   .jvmSettings(
-    libraryDependencies ++= Seq("io.monix" %% "monix-nio" % "0.0.5")
+    libraryDependencies ++= Seq("io.monix" %% "monix-nio" % "0.0.6")
   )
   .jsSettings(commonJsSettings: _*)
   .jsSettings(browserTestSettings)
