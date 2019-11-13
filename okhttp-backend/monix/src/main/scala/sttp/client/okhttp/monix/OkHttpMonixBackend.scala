@@ -11,7 +11,7 @@ import monix.reactive.Observable
 import monix.reactive.observers.Subscriber
 import okhttp3.{MediaType, OkHttpClient, RequestBody => OkHttpRequestBody}
 import okio.BufferedSink
-import sttp.client.impl.monix.{ShiftToDefaultScheduler, TaskMonadAsyncError}
+import sttp.client.impl.monix.TaskMonadAsyncError
 import sttp.client.okhttp.{OkHttpAsyncBackend, OkHttpBackend, WebSocketHandler}
 import sttp.client.{SttpBackend, _}
 
@@ -19,8 +19,7 @@ import scala.concurrent.Future
 import scala.util.{Success, Try}
 
 class OkHttpMonixBackend private (client: OkHttpClient, closeClient: Boolean)(implicit s: Scheduler)
-    extends OkHttpAsyncBackend[Task, Observable[ByteBuffer]](client, TaskMonadAsyncError, closeClient)
-    with ShiftToDefaultScheduler[Task, Observable[ByteBuffer], WebSocketHandler] {
+    extends OkHttpAsyncBackend[Task, Observable[ByteBuffer]](client, TaskMonadAsyncError, closeClient) {
   override def streamToRequestBody(stream: Observable[ByteBuffer]): Option[OkHttpRequestBody] =
     Some(new OkHttpRequestBody() {
       override def writeTo(sink: BufferedSink): Unit =

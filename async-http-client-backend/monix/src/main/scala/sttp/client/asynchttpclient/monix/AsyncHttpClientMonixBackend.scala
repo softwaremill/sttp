@@ -12,7 +12,7 @@ import monix.reactive.Observable
 import org.asynchttpclient._
 import org.reactivestreams.Publisher
 import sttp.client.asynchttpclient.{AsyncHttpClientBackend, WebSocketHandler}
-import sttp.client.impl.monix.{ShiftToDefaultScheduler, TaskMonadAsyncError}
+import sttp.client.impl.monix.TaskMonadAsyncError
 import sttp.client.internal._
 import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 
@@ -27,8 +27,7 @@ class AsyncHttpClientMonixBackend private (
       TaskMonadAsyncError,
       closeClient,
       customizeRequest
-    )
-    with ShiftToDefaultScheduler[Task, Observable[ByteBuffer], WebSocketHandler] {
+    ) {
   override protected def streamBodyToPublisher(s: Observable[ByteBuffer]): Publisher[ByteBuf] =
     s.map(Unpooled.wrappedBuffer).toReactivePublisher
 
