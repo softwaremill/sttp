@@ -58,7 +58,7 @@ Usage example::
 
   implicit val serialization = org.json4s.native.Serialization
   
-  val response: Request[Either[ResponseError[Exception], MyResponse], Nothing] =
+  val response: Response[Either[ResponseError[Exception], MyResponse], Nothing] =
     basicRequest
       .post(uri"...")
       .body(requestPayload)
