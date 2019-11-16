@@ -17,7 +17,9 @@ class OkHttpSyncHttpTest extends HttpTest[Identity] {
       .tag(DigestAuthenticationBackend.DigestAuthTag, DigestAuthenticator.DigestAuthData("kasper", "test"))
       .send()
     response.code.code shouldBe 200
+  }
 
+  "123123" in {
     val response2 = basicRequest
       .get(uri"http://localhost:8080/secure/kasper")
       .tag(DigestAuthenticationBackend.DigestAuthTag, DigestAuthenticator.DigestAuthData("zon2e", "password"))

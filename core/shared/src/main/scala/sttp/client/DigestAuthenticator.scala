@@ -11,22 +11,22 @@ import scala.util.Random
 
 class DigestAuthenticator(digestAuthData: DigestAuthData) {
   def authenticate[T, _](request: Request[T, _], response: Response[T]): Option[Header] = {
-    response
-      .header(HeaderNames.WwwAuthenticate)
-      .flatMap { wwwAuthHeader =>
-        if (response.code == StatusCode.Unauthorized && wwwAuthHeader.contains("Digest")) {
-          Some(callWithDigestAuth(request, digestAuthData, wwwAuthHeader))
-        } else {
-          None
-        }
+    val wwwAuthRawHeaders = response
+      .headers(HeaderNames.WwwAuthenticate)
+    wwwAuthRawHeaders.find(_.contains("Digest")).flatMap { wwwAuthHeader =>
+      if (response.code == StatusCode.Unauthorized && wwwAuthHeader.contains("Digest")) {
+        callWithDigestAuth(request, digestAuthData, wwwAuthHeader)
+      } else {
+        None
       }
+    }
   }
 
   private def callWithDigestAuth[T](
       request: Request[T, _],
       digestAuthData: DigestAuthData,
       wwwAuthHeader: String
-  ): Header = {
+  ): Option[Header] = {
     val parsed = WwwAuthHeaderParser.parse(wwwAuthHeader)
     val authHeaderValue =
       calculateDigestAuth(
@@ -36,7 +36,7 @@ class DigestAuthenticator(digestAuthData: DigestAuthData) {
         parsed.realm.getOrElse(throw new IllegalArgumentException("Missing realm")),
         parsed.nonce.getOrElse(throw new IllegalArgumentException("Missing nonce"))
       )
-    Header.notValidated(HeaderNames.Authorization, authHeaderValue)
+    authHeaderValue.map(Header.notValidated(HeaderNames.Authorization, _))
   }
 
   private def calculateDigestAuth[T](
@@ -46,44 +46,57 @@ class DigestAuthenticator(digestAuthData: DigestAuthData) {
       realmMatch: String,
       nonceMatch: String
   ) = {
-    val qualityOfProtection = wwwAuthHeader.qop
-    val algorithm = wwwAuthHeader.algorithm.getOrElse("MD5")
-    val messageDigest = MessageDigest.getInstance(algorithm)
-    val digestUri =
-      (for {
-        path <- Option(request.uri.toJavaUri.getPath)
-        query <- Option(request.uri.toJavaUri.getQuery)
-      } yield path + query)
-        .getOrElse("/")
+    val isFirstOrShouldRetry =
+      if (request.headers
+            .find(_.name.equalsIgnoreCase(HeaderNames.Authorization))
+            .exists(_.value.contains("Digest"))) {
+        wwwAuthHeader.isStale.getOrElse(false)
+      } else {
+        true
+      }
+    if (isFirstOrShouldRetry) {
+      val qualityOfProtection = wwwAuthHeader.qop
+      val algorithm = wwwAuthHeader.algorithm.getOrElse("MD5")
+      val messageDigest = MessageDigest.getInstance(algorithm)
+      val digestUri =
+        (Option(request.uri.toJavaUri.getPath), Option(request.uri.toJavaUri.getQuery)) match {
+          case (Some(p), Some(q)) if p.trim.nonEmpty && q.trim.nonEmpty => p + q
+          case (Some(p), None) if p.trim.nonEmpty                       => p
+          case (None, Some(q)) if q.trim.nonEmpty                       => q
+          case _                                                        => "/"
+        }
 
-    val clientNonce = generateClientNonce()
-    val nonceCount = "00000001"
-    val responseChallenge: String =
-      calculateResponseChallenge(
-        request,
+      val clientNonce = generateClientNonce()
+      val nonceCount = "00000001"
+      val responseChallenge: String =
+        calculateResponseChallenge(
+          request,
+          digestAuthData,
+          realmMatch,
+          qualityOfProtection,
+          nonceMatch,
+          digestUri,
+          clientNonce,
+          nonceCount,
+          messageDigest,
+          algorithm
+        )
+      val authHeaderValue = createAuthHeaderValue(
         digestAuthData,
+        nonceMatch,
         realmMatch,
         qualityOfProtection,
-        nonceMatch,
         digestUri,
         clientNonce,
+        responseChallenge,
         nonceCount,
-        messageDigest,
-        algorithm
+        algorithm,
+        wwwAuthHeader.opaque
       )
-    val authHeaderValue = createAuthHeaderValue(
-      digestAuthData,
-      nonceMatch,
-      realmMatch,
-      qualityOfProtection,
-      digestUri,
-      clientNonce,
-      responseChallenge,
-      nonceCount,
-      algorithm,
-      wwwAuthHeader.opaque
-    )
-    authHeaderValue
+      Some(authHeaderValue)
+    } else {
+      None
+    }
   }
 
   private def calculateResponseChallenge[T](
