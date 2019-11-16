@@ -413,5 +413,4 @@ trait HttpTest[F[_]]
     backend.close().toFuture()
     super.afterAll()
   }
-
 }

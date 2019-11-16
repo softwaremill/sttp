@@ -10,7 +10,7 @@ import monix.eval.Task
 import monix.execution.Scheduler
 import monix.reactive.Observable
 import sttp.client.httpclient.{HttpClientAsyncBackend, HttpClientBackend, WebSocketHandler}
-import sttp.client.impl.monix.{ShiftToDefaultScheduler, TaskMonadAsyncError}
+import sttp.client.impl.monix.TaskMonadAsyncError
 import sttp.client.{SttpBackend, _}
 
 import scala.util.{Success, Try}
@@ -25,8 +25,7 @@ class HttpClientMonixBackend private (
       TaskMonadAsyncError,
       closeClient,
       customizeRequest
-    )
-    with ShiftToDefaultScheduler[Task, Observable[ByteBuffer], WebSocketHandler] {
+    ) {
   override def streamToRequestBody(stream: Observable[ByteBuffer]): HttpRequest.BodyPublisher = {
     BodyPublishers.fromPublisher(new ReactivePublisherJavaAdapter[ByteBuffer](stream.toReactivePublisher))
   }
