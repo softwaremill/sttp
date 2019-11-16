@@ -10,12 +10,12 @@ import scala.language.higherKinds
 import scala.util.Random
 
 class DigestAuthenticator(digestAuthData: DigestAuthData) {
-  def authenticate[T, S, F[_]](request: Request[T, S], response: Response[T]): Option[Header] = {
+  def authenticate[T, _](request: Request[T, _], response: Response[T]): Option[Header] = {
     response
       .header(HeaderNames.WwwAuthenticate)
       .flatMap { wwwAuthHeader =>
         if (response.code == StatusCode.Unauthorized && wwwAuthHeader.contains("Digest")) {
-          callWithDigestAuth(request, digestAuthData, wwwAuthHeader)
+          Some(callWithDigestAuth(request, digestAuthData, wwwAuthHeader))
         } else {
           None
         }
@@ -26,16 +26,17 @@ class DigestAuthenticator(digestAuthData: DigestAuthData) {
       request: Request[T, _],
       digestAuthData: DigestAuthData,
       wwwAuthHeader: String
-  ): Option[Header] = {
+  ): Header = {
     val parsed = WwwAuthHeaderParser.parse(wwwAuthHeader)
-    for {
-      realm <- parsed.realm
-      nonce <- parsed.nonce
-    } yield {
-      val authHeaderValue =
-        calculateDigestAuth(request, digestAuthData, parsed, realm, nonce)
-      Header.notValidated(HeaderNames.Authorization, authHeaderValue)
-    }
+    val authHeaderValue =
+      calculateDigestAuth(
+        request,
+        digestAuthData,
+        parsed,
+        parsed.realm.getOrElse(throw new IllegalArgumentException("Missing realm")),
+        parsed.nonce.getOrElse(throw new IllegalArgumentException("Missing nonce"))
+      )
+    Header.notValidated(HeaderNames.Authorization, authHeaderValue)
   }
 
   private def calculateDigestAuth[T](
@@ -48,7 +49,13 @@ class DigestAuthenticator(digestAuthData: DigestAuthData) {
     val qualityOfProtection = wwwAuthHeader.qop
     val algorithm = wwwAuthHeader.algorithm.getOrElse("MD5")
     val messageDigest = MessageDigest.getInstance(algorithm)
-    val digestUri = "/" + request.uri.pathSegments.map(_.v).mkString("/")
+    val digestUri =
+      (for {
+        path <- Option(request.uri.toJavaUri.getPath)
+        query <- Option(request.uri.toJavaUri.getQuery)
+      } yield path + query)
+        .getOrElse("/")
+
     val clientNonce = generateClientNonce()
     val nonceCount = "00000001"
     val responseChallenge: String =
@@ -171,11 +178,11 @@ class DigestAuthenticator(digestAuthData: DigestAuthData) {
     val realmOut = Some(s"""realm="$realm"""")
     val uriOut = Some(s"""uri="$digestUri"""")
     val nonceOut = Some(s"""nonce="$nonce"""")
-    val qopOut = qop.map(q => s"""qop="$q"""")
+    val qopOut = qop.map(q => s"""qop=$q""")
     val nc = Some(s"nc=$nonceCount")
     val challengeOut = Some(s"""response="$challenge"""")
     val cnonceOut = Some(s"""cnonce="$clientNonce"""")
-    val algorithmOut = Some(s"""algorithm="$algorithm"""")
+    val algorithmOut = Some(s"""algorithm=$algorithm""")
     val opaqueOut = opaque.map(op => s"""opaque="$op"""")
     val authHeaderValue =
       List(digestOut, realmOut, uriOut, nonceOut, qopOut, challengeOut, cnonceOut, nc, algorithmOut, opaqueOut).flatten

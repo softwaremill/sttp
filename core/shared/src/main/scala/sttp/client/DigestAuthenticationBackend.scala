@@ -38,4 +38,10 @@ class DigestAuthenticationBackend[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[
 
 object DigestAuthenticationBackend {
   val DigestAuthTag = "__sttp_DigestAuth"
+
+  implicit class DigestAuthRequest[U[_], T, S](requestT: RequestT[U, T, S]) {
+    def digestAuth(username: String, password: String): RequestT[U, T, S] = {
+      requestT.tag(DigestAuthTag, DigestAuthData(username, password))
+    }
+  }
 }
