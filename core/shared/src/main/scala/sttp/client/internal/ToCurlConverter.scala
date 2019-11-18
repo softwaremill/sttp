@@ -43,10 +43,22 @@ class ToCurlConverter[R <: RequestT[Identity, _, _]] {
       case ByteBufferBody(_, _)   => s"--data-binary <PLACEHOLDER>"
       case InputStreamBody(_, _)  => s"--data-binary <PLACEHOLDER>"
       case StreamBody(_)          => s"--data-binary <PLACEHOLDER>"
-      case MultipartBody(_)       => s"--data-binary <PLACEHOLDER>"
+      case MultipartBody(parts)   => handleMultipartBody(parts)
       case FileBody(file, _)      => s"""--data-binary @${file.name}"""
       case NoBody                 => ""
     }
+  }
+
+  def handleMultipartBody(parts: Seq[Part[BasicRequestBody]]): String = {
+    parts
+      .map { p =>
+        p.body match {
+          case StringBody(s, _, _) => s"--form '${p.name}=$s'"
+          case FileBody(f, _)      => s"--form '${p.name}=@${f.name}'"
+          case _                   => s"--data-binary <PLACEHOLDER>"
+        }
+      }
+      .mkString(" ")
   }
 
   private def extractOptions(r: R): String = {
