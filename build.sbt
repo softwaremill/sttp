@@ -293,7 +293,7 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .jvmSettings(
     libraryDependencies ++= Seq(
       akkaHttp % "test",
-      "ch.megard" %% "akka-http-cors" % "0.4.1" % "test",
+      "ch.megard" %% "akka-http-cors" % "0.4.2" % "test",
       akkaStreams % "test",
       "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test"
     ),
