@@ -7,7 +7,7 @@ import java.nio.file.Path
 import org.scalatest.{FlatSpec, Matchers}
 import sttp.client.internal.SttpFile
 
-class ToCurlConverterTest extends FlatSpec with Matchers {
+class ToCurlConverterTest extends FlatSpec with Matchers with ToCurlConverterTestExtension {
   private val localhost = uri"http://localhost"
 
   it should "convert base request" in {
@@ -68,15 +68,6 @@ class ToCurlConverterTest extends FlatSpec with Matchers {
   it should "render multipart form data if content is a plain string" in {
     basicRequest.multipartBody(multipart("k1", "v1"), multipart("k2", "v2")).post(localhost).toCurl should include(
       """--form 'k1=v1' --form 'k2=v2'"""
-    )
-  }
-
-  it should "render multipart form data if content is a file" in {
-    basicRequest
-      .multipartBody(multipartSttpFile("upload", SttpFile.fromPath(Path.of("myDataSet"))))
-      .post(localhost)
-      .toCurl should include(
-      """--form 'upload=@myDataSet'"""
     )
   }
 }
