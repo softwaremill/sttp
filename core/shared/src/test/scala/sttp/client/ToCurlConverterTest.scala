@@ -5,8 +5,7 @@ import java.nio.charset.StandardCharsets
 
 import org.scalatest.{FlatSpec, Matchers}
 
-class ToCurlConverterTest extends FlatSpec with Matchers {
-
+class ToCurlConverterTest extends FlatSpec with Matchers with ToCurlConverterTestExtension {
   private val localhost = uri"http://localhost"
 
   it should "convert base request" in {
@@ -62,5 +61,11 @@ class ToCurlConverterTest extends FlatSpec with Matchers {
       .body(new ByteArrayInputStream(testBodyBytes))
       .toCurl
     curl should include("--data-binary <PLACEHOLDER>")
+  }
+
+  it should "render multipart form data if content is a plain string" in {
+    basicRequest.multipartBody(multipart("k1", "v1"), multipart("k2", "v2")).post(localhost).toCurl should include(
+      """--form 'k1=v1' --form 'k2=v2'"""
+    )
   }
 }
