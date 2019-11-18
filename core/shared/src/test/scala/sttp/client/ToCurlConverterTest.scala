@@ -1,11 +1,9 @@
 package sttp.client
 
-import java.io.{ByteArrayInputStream, File}
+import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets
-import java.nio.file.Path
 
 import org.scalatest.{FlatSpec, Matchers}
-import sttp.client.internal.SttpFile
 
 class ToCurlConverterTest extends FlatSpec with Matchers with ToCurlConverterTestExtension {
   private val localhost = uri"http://localhost"
