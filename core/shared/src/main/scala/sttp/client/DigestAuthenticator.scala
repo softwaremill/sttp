@@ -1,7 +1,6 @@
 package sttp.client
 
 import java.nio.charset.Charset
-import java.nio.file.Files
 import java.security.MessageDigest
 
 import sttp.client.DigestAuthenticator._
@@ -10,7 +9,7 @@ import sttp.model.{Header, HeaderNames, StatusCode}
 import scala.language.higherKinds
 import scala.util.Random
 
-class DigestAuthenticator(digestAuthData: DigestAuthData) {
+private[client] class DigestAuthenticator(digestAuthData: DigestAuthData) {
   def authenticate[T, _](request: Request[T, _], response: Response[T]): Option[Header] = {
     val wwwAuthRawHeaders = response
       .headers(HeaderNames.WwwAuthenticate)
