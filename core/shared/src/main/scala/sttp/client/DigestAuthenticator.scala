@@ -172,8 +172,7 @@ private[client] class DigestAuthenticator(
               case InputStreamBody(b, _) => toByteArray(b)
               case _: FileBody           => throw new IllegalStateException("Qop auth-int cannot be used with a file body")
             }
-          case NoBody => throw new IllegalStateException("Qop auth-int cannot be used with a non-repeatable entity")
-          case _      => throw new IllegalStateException("Qop auth-int cannot be used with a non-basic body")
+          case _ => throw new IllegalStateException("Qop auth-int cannot be used with a non-basic body")
         }
         md5HexString(
           s"${request.method.method}:$digestUri:${byteArrayToHexString(messageDigest.digest(body))}",
