@@ -9,7 +9,10 @@ import sttp.model.{Header, HeaderNames, StatusCode}
 import scala.language.higherKinds
 import scala.util.Random
 
-private[client] class DigestAuthenticator(digestAuthData: DigestAuthData) {
+private[client] class DigestAuthenticator(
+    digestAuthData: DigestAuthData,
+    clientNonceGenerator: () => String = defaultClientNonceGenerator
+) {
   def authenticate[T, _](request: Request[T, _], response: Response[T]): Option[Header] = {
     val wwwAuthRawHeaders = response
       .headers(HeaderNames.WwwAuthenticate)
@@ -66,7 +69,7 @@ private[client] class DigestAuthenticator(digestAuthData: DigestAuthData) {
           case _                                                        => "/"
         }
 
-      val clientNonce = generateClientNonce()
+      val clientNonce = clientNonceGenerator()
       val nonceCount = "00000001"
       val responseChallenge: String =
         calculateResponseChallenge(
@@ -177,12 +180,6 @@ private[client] class DigestAuthenticator(digestAuthData: DigestAuthData) {
     }
   }
 
-  private def generateClientNonce[T]() = {
-    val bytes = new Array[Byte](16)
-    Random.nextBytes(bytes)
-    byteArrayToHexString(bytes)
-  }
-
   private def createAuthHeaderValue[T](
       digestAuthData: DigestAuthData,
       nonce: String,
@@ -210,6 +207,12 @@ private[client] class DigestAuthenticator(digestAuthData: DigestAuthData) {
         .mkString(", ")
     authHeaderValue
   }
+}
+
+object DigestAuthenticator {
+  val QualityOfProtectionAuth = "auth"
+  val QualityOfProtectionAuthInt = "auth-int"
+  case class DigestAuthData(username: String, password: String)
 
   private def md5HexString(text: String, messageDigest: MessageDigest) = {
     byteArrayToHexString(messageDigest.digest(text.getBytes(Charset.forName("UTF-8"))))
@@ -222,10 +225,10 @@ private[client] class DigestAuthenticator(digestAuthData: DigestAuthData) {
     }
     sb.toString
   }
-}
 
-object DigestAuthenticator {
-  val QualityOfProtectionAuth = "auth"
-  val QualityOfProtectionAuthInt = "auth-int"
-  case class DigestAuthData(username: String, password: String)
+  def defaultClientNonceGenerator(): String = {
+    val bytes = new Array[Byte](16)
+    Random.nextBytes(bytes)
+    byteArrayToHexString(bytes)
+  }
 }

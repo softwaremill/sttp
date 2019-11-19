@@ -20,6 +20,7 @@ import ch.megard.akka.http.cors.scaladsl.settings.CorsSettings
 import com.github.ghik.silencer.silent
 import org.scalatest.{BeforeAndAfterAll, Suite}
 import sttp.client.internal.toByteArray
+import sttp.model.HeaderNames
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
@@ -50,11 +51,9 @@ trait TestHttpServer extends BeforeAndAfterAll { this: Suite =>
     server.close()
     super.afterAll()
   }
-
 }
 
 object HttpServer {
-
   @silent("discarded")
   def main(args: Array[String]): Unit = {
     val port = args.headOption.map(_.toInt).getOrElse(51823)
@@ -64,7 +63,6 @@ object HttpServer {
 }
 
 private class HttpServer(port: Int) extends AutoCloseable with CorsDirectives {
-
   import scala.concurrent.ExecutionContext.Implicits.global
 
   private var server: Option[Future[Http.ServerBinding]] = None
@@ -183,6 +181,58 @@ private class HttpServer(port: Int) extends AutoCloseable with CorsDirectives {
         case _ => None
       }) { userName =>
         complete(s"Hello, $userName!")
+      }
+    } ~ path("secure_digest") {
+      get {
+        import akka.http.scaladsl.model._
+        extractCredentials {
+          case Some(_) =>
+            headerValueByName(HeaderNames.Authorization) { authHeader =>
+              if (authHeader.contains(
+                    """Digest algorithm=MD5,
+                      |cnonce=e5d93287aa8532c1f5df9e052fda4c38,
+                      |nc=00000001,
+                      |nonce="a2FzcGVya2FzcGVyCg==",
+                      |qop=auth,
+                      |realm=my-custom-realm,
+                      |response=f1f784de97f8badb4acec7c5f85eb877,
+                      |uri="/secure_digest",
+                      |username=adam""".stripMargin.replaceAll("\n", "")
+                  )) {
+                complete(
+                  HttpResponse(
+                    status = StatusCodes.OK,
+                    headers = Nil,
+                    entity = HttpEntity.Empty,
+                    protocol = HttpProtocols.`HTTP/1.1`
+                  )
+                )
+              } else {
+                complete(
+                  HttpResponse(
+                    status = StatusCodes.Unauthorized,
+                    headers = Nil,
+                    entity = HttpEntity.Empty,
+                    protocol = HttpProtocols.`HTTP/1.1`
+                  )
+                )
+              }
+            }
+          case None =>
+            complete(
+              HttpResponse(
+                status = StatusCodes.Unauthorized,
+                headers = List[HttpHeader](
+                  `WWW-Authenticate`.apply(
+                    HttpChallenge
+                      .apply("Digest", "my-custom-realm", Map("qop" -> "auth", "nonce" -> "a2FzcGVya2FzcGVyCg=="))
+                  )
+                ),
+                entity = HttpEntity.Empty,
+                protocol = HttpProtocols.`HTTP/1.1`
+              )
+            )
+        }
       }
     } ~ path("compress") {
       encodeResponseWith(Gzip, Deflate, NoCoding) {

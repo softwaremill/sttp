@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream
 import java.nio.ByteBuffer
 
 import org.scalatest._
+import sttp.client.internal.IsIdInRequest
 import sttp.client.{Response, ResponseAs, SttpBackend, _}
 import sttp.model.StatusCode
 
@@ -18,7 +19,6 @@ trait HttpTest[F[_]]
     with OptionValues
     with BeforeAndAfterAll
     with HttpTestExtensions[F] {
-
   protected def endpoint: String
 
   protected val binaryFileMD5Hash = "565370873a38d91f34a3091082e63933"
@@ -252,6 +252,15 @@ trait HttpTest[F[_]]
         resp.body should be("Hello, adam!")
       }
     }
+
+    "perform digest authorization" in {
+      implicit val digestBackend =
+        new DigestAuthenticationBackend[F, Nothing, NothingT](backend, () => "e5d93287aa8532c1f5df9e052fda4c38")
+      val req = basicRequest.get(uri"$endpoint/secure_digest").response(asStringAlways).auth.digest("adam", "1234")
+      req.send()(digestBackend, implicitly[IsIdInRequest[Identity]]).toFuture().map { resp =>
+        resp.code shouldBe StatusCode.Ok
+      }
+    }
   }
 
   "compression" - {
@@ -413,5 +422,4 @@ trait HttpTest[F[_]]
     backend.close().toFuture()
     super.afterAll()
   }
-
 }

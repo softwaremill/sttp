@@ -144,7 +144,6 @@ trait HttpTestExtensions[F[_]] extends TestHttpServer { self: HttpTest[F] =>
             .send()
             .toFuture()
             .map { resp =>
-              println(resp.body)
               resp.body should not include header.toString
             }
         }

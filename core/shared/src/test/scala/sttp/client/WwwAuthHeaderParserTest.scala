@@ -34,4 +34,16 @@ class WwwAuthHeaderParserTest extends FlatSpec with Matchers {
       "stale" -> "FALSE"
     )
   }
+
+  it should "parse header without spaces" in {
+    WwwAuthHeaderParser
+      .parse(
+        "Digest realm=\"Digest WF Realm\",qop=\"auth\",nonce=\"MTU3MzQ5MTE3MjQ3NzphY2I5NDgxNjdmODdiZGIwMzU1YTk5OTIxNDU1MmY0ZQ==\""
+      )
+      .values shouldBe Map(
+      "realm" -> "Digest WF Realm",
+      "qop" -> "auth",
+      "nonce" -> "MTU3MzQ5MTE3MjQ3NzphY2I5NDgxNjdmODdiZGIwMzU1YTk5OTIxNDU1MmY0ZQ=="
+    )
+  }
 }

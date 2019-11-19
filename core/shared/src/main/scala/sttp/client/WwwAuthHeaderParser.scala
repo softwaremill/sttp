@@ -98,6 +98,7 @@ private case class SeparatorParser(parsed: Map[String, String]) extends Parser {
     input match {
       case ',' => this
       case ' ' => KeyParser(parsed)
+      case o   => KeyParser(parsed).parseNext(o)
     }
   }
 

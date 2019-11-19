@@ -8,14 +8,16 @@ import sttp.client.ws.WebSocketResponse
 
 import scala.language.higherKinds
 
-class DigestAuthenticationBackend[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[F, S, WS_HANDLER])
-    extends SttpBackend[F, S, WS_HANDLER] {
+class DigestAuthenticationBackend[F[_], S, WS_HANDLER[_]](
+    delegate: SttpBackend[F, S, WS_HANDLER],
+    clientNonceGenerator: () => String = DigestAuthenticator.defaultClientNonceGenerator
+) extends SttpBackend[F, S, WS_HANDLER] {
   override def send[T](request: Request[T, S]): F[Response[T]] = {
     if (request.tag(DigestAuthTag).isDefined) {
       val digestAuthData = request.tag(DigestAuthTag).get.asInstanceOf[DigestAuthData]
       implicit val m: MonadError[F] = responseMonad
       delegate.send(request).flatMap { response =>
-        val header = new DigestAuthenticator(digestAuthData).authenticate(request, response)
+        val header = new DigestAuthenticator(digestAuthData, clientNonceGenerator).authenticate(request, response)
         header.map(h => delegate.send(request.header(h))).getOrElse(response.unit)
       }
     } else {
