@@ -1,6 +1,7 @@
 package sttp.client
 
 import java.nio.charset.Charset
+import java.nio.file.Files
 import java.security.MessageDigest
 
 import sttp.client.DigestAuthenticator._
@@ -14,7 +15,7 @@ class DigestAuthenticator(digestAuthData: DigestAuthData) {
     val wwwAuthRawHeaders = response
       .headers(HeaderNames.WwwAuthenticate)
     wwwAuthRawHeaders.find(_.contains("Digest")).flatMap { wwwAuthHeader =>
-      if (response.code == StatusCode.Unauthorized && wwwAuthHeader.contains("Digest")) {
+      if (response.code == StatusCode.Unauthorized) {
         callWithDigestAuth(request, digestAuthData, wwwAuthHeader)
       } else {
         None
@@ -126,7 +127,7 @@ class DigestAuthenticator(digestAuthData: DigestAuthData) {
   ) = {
     val base = md5HexString(s"${digestAuthData.username}:$realm:${digestAuthData.password}", messageDigest)
     if (algorithm.equalsIgnoreCase("MD5-sess")) {
-      md5HexString(s"${base}:$nonce:$cnonce", messageDigest)
+      md5HexString(s"$base:$nonce:$cnonce", messageDigest)
     } else {
       base
     }
@@ -159,13 +160,21 @@ class DigestAuthenticator(digestAuthData: DigestAuthData) {
       case None                          => md5HexString(s"${request.method.method}:$digestUri", messageDigest)
       case Some(QualityOfProtectionAuthInt) =>
         val body = request.body match {
-          case NoBody                => throw new IllegalStateException("Qop auth-int cannot be used with a non-repeatable entity")
-          case StringBody(s, e, dct) => s.getBytes(Charset.forName(e))
+          case brb: BasicRequestBody =>
+            brb match {
+              case StringBody(s, e, _)   => s.getBytes(Charset.forName(e))
+              case ByteArrayBody(b, _)   => b
+              case ByteBufferBody(b, _)  => b.array()
+              case InputStreamBody(b, _) => b.readAllBytes()
+              case _: FileBody           => throw new IllegalStateException("Qop auth-int cannot be used with a file body")
+            }
+          case NoBody => throw new IllegalStateException("Qop auth-int cannot be used with a non-repeatable entity")
+          case _      => throw new IllegalStateException("Qop auth-int cannot be used with a non-basic body")
         }
         md5HexString(
           s"${request.method.method}:$digestUri:${byteArrayToHexString(messageDigest.digest(body))}",
           messageDigest
-        ) //TODO
+        )
     }
   }
 

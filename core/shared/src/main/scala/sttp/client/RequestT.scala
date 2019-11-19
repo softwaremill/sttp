@@ -320,6 +320,11 @@ class SpecifyAuthScheme[U[_], T, +S](hn: String, rt: RequestT[U, T, S]) {
 
   def bearer(token: String): RequestT[U, T, S] =
     rt.header(hn, s"Bearer $token")
+
+  def digest(user: String, password: String): RequestT[U, T, S] = {
+    import DigestAuthenticationBackend._
+    rt.digestAuth(user, password)
+  }
 }
 
 case class RequestOptions(

@@ -1,7 +1,6 @@
 package sttp.client
 
 import org.scalatest.{FlatSpec, Matchers, OptionValues}
-import sttp.client.DigestAuthenticationBackend._
 import sttp.client.DigestAuthenticator.DigestAuthData
 import sttp.model.{Header, HeaderNames, StatusCode}
 
@@ -11,7 +10,8 @@ class DigestAuthenticatorTest extends FlatSpec with Matchers with OptionValues {
   it should "work" in {
     val request = basicRequest
       .get(uri"http://google.com")
-      .digestAuth("admin", "password")
+      .auth
+      .digest("admin", "password")
 
     val response =
       responseWithAuthorizationHeader("""Digest realm="myrealm", nonce="BBBBBB", algorithm=MD5, qop="auth"""")
@@ -22,7 +22,8 @@ class DigestAuthenticatorTest extends FlatSpec with Matchers with OptionValues {
   it should "throw exception when wwAuth header is invalid (missing nonce)" in {
     val request = basicRequest
       .get(uri"http://google.com")
-      .digestAuth("admin", "password")
+      .auth
+      .digest("admin", "password")
 
     val response =
       responseWithAuthorizationHeader("""Digest realm="myrealm", algorithm=MD5, qop="auth"""")
@@ -34,7 +35,8 @@ class DigestAuthenticatorTest extends FlatSpec with Matchers with OptionValues {
   it should "work with uri which has both - path and query" in {
     val request = basicRequest
       .get(uri"http://www.google.com/path/to/resource?parameter=value&parameter2=value2")
-      .digestAuth("admin", "password")
+      .auth
+      .digest("admin", "password")
 
     val response =
       responseWithAuthorizationHeader("""Digest realm="myrealm", nonce="BBBBBB", algorithm=MD5, qop="auth"""")
@@ -45,7 +47,8 @@ class DigestAuthenticatorTest extends FlatSpec with Matchers with OptionValues {
   it should "work with uri which has only path" in {
     val request = basicRequest
       .get(uri"http://www.google.com/path/to/resource")
-      .digestAuth("admin", "password")
+      .auth
+      .digest("admin", "password")
 
     val response =
       responseWithAuthorizationHeader("""Digest realm="myrealm", nonce="BBBBBB", algorithm=MD5, qop="auth"""")
@@ -56,7 +59,8 @@ class DigestAuthenticatorTest extends FlatSpec with Matchers with OptionValues {
   it should "work with uri which has only query" in {
     val request = basicRequest
       .get(uri"http://www.google.com/?parameter=value&parameter2=value2")
-      .digestAuth("admin", "password")
+      .auth
+      .digest("admin", "password")
 
     val response =
       responseWithAuthorizationHeader("""Digest realm="myrealm", nonce="BBBBBB", algorithm=MD5, qop="auth"""")
@@ -67,7 +71,8 @@ class DigestAuthenticatorTest extends FlatSpec with Matchers with OptionValues {
   it should "work with multiple wwwAuthHeaders" in {
     val request = basicRequest
       .get(uri"http://google.com")
-      .digestAuth("admin", "password")
+      .auth
+      .digest("admin", "password")
 
     val response =
       responseWithHeaders(
