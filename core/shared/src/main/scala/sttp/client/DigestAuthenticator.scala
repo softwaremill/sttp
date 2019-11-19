@@ -2,7 +2,7 @@ package sttp.client
 
 import java.nio.charset.Charset
 import java.security.MessageDigest
-
+import sttp.client.internal._
 import sttp.client.DigestAuthenticator._
 import sttp.model.{Header, HeaderNames, StatusCode}
 
@@ -169,7 +169,7 @@ private[client] class DigestAuthenticator(
               case StringBody(s, e, _)   => s.getBytes(Charset.forName(e))
               case ByteArrayBody(b, _)   => b
               case ByteBufferBody(b, _)  => b.array()
-              case InputStreamBody(b, _) => b.readAllBytes()
+              case InputStreamBody(b, _) => toByteArray(b)
               case _: FileBody           => throw new IllegalStateException("Qop auth-int cannot be used with a file body")
             }
           case NoBody => throw new IllegalStateException("Qop auth-int cannot be used with a non-repeatable entity")
