@@ -1,74 +1,75 @@
 package sttp.client
 
-import org.scalatest.{FlatSpec, Matchers, OptionValues}
+import org.scalatest.{FreeSpec, Matchers, OptionValues}
 import sttp.client.DigestAuthenticator.DigestAuthData
 import sttp.model.{Header, HeaderNames, StatusCode}
 
 import scala.util.{Failure, Try}
 
-class DigestAuthenticatorTest extends FlatSpec with Matchers with OptionValues {
-  it should "work" in {
+class DigestAuthenticatorTest extends FreeSpec with Matchers with OptionValues {
+  "should work" in {
     val request = basicRequest
       .get(uri"http://google.com")
       .auth
       .digest("admin", "password")
 
     val response =
-      responseWithAuthorizationHeader("""Digest realm="myrealm", nonce="BBBBBB", algorithm=MD5, qop="auth"""")
+      responseWithAuthenticateHeader("""Digest realm="myrealm", nonce="BBBBBB", algorithm=MD5, qop="auth"""")
     val header = new DigestAuthenticator(DigestAuthData("admin", "password")).authenticate(request, response)
+    header.value.name shouldBe HeaderNames.Authorization
     header.value.value should fullyMatch regex """Digest username="admin", realm="myrealm", uri="/", nonce="BBBBBB", qop=auth, response="[0-9a-f]+", cnonce="[0-9a-f]+", nc=000000\d\d, algorithm=MD5"""
   }
 
-  it should "throw exception when wwAuth header is invalid (missing nonce)" in {
+  "throw exception when wwAuth header is invalid (missing nonce)" in {
     val request = basicRequest
       .get(uri"http://google.com")
       .auth
       .digest("admin", "password")
 
     val response =
-      responseWithAuthorizationHeader("""Digest realm="myrealm", algorithm=MD5, qop="auth"""")
+      responseWithAuthenticateHeader("""Digest realm="myrealm", algorithm=MD5, qop="auth"""")
     Try(new DigestAuthenticator(DigestAuthData("admin", "password")).authenticate(request, response)) shouldBe a[
       Failure[IllegalArgumentException]
     ]
   }
 
-  it should "work with uri which has both - path and query" in {
+  "work with uri which has both - path and query" in {
     val request = basicRequest
       .get(uri"http://www.google.com/path/to/resource?parameter=value&parameter2=value2")
       .auth
       .digest("admin", "password")
 
     val response =
-      responseWithAuthorizationHeader("""Digest realm="myrealm", nonce="BBBBBB", algorithm=MD5, qop="auth"""")
+      responseWithAuthenticateHeader("""Digest realm="myrealm", nonce="BBBBBB", algorithm=MD5, qop="auth"""")
     val header = new DigestAuthenticator(DigestAuthData("admin", "password")).authenticate(request, response)
     header.value.value should fullyMatch regex """Digest username="admin", realm="myrealm", uri="/path/to/resource?parameter=value&parameter2=value2", nonce="BBBBBB", qop=auth, response="[0-9a-f]+", cnonce="[0-9a-f]+", nc=000000\d\d, algorithm=MD5"""
   }
 
-  it should "work with uri which has only path" in {
+  "work with uri which has only path" in {
     val request = basicRequest
       .get(uri"http://www.google.com/path/to/resource")
       .auth
       .digest("admin", "password")
 
     val response =
-      responseWithAuthorizationHeader("""Digest realm="myrealm", nonce="BBBBBB", algorithm=MD5, qop="auth"""")
+      responseWithAuthenticateHeader("""Digest realm="myrealm", nonce="BBBBBB", algorithm=MD5, qop="auth"""")
     val header = new DigestAuthenticator(DigestAuthData("admin", "password")).authenticate(request, response)
     header.value.value should fullyMatch regex """Digest username="admin", realm="myrealm", uri="/path/to/resource", nonce="BBBBBB", qop=auth, response="[0-9a-f]+", cnonce="[0-9a-f]+", nc=000000\d\d, algorithm=MD5"""
   }
 
-  it should "work with uri which has only query" in {
+  "work with uri which has only query" in {
     val request = basicRequest
       .get(uri"http://www.google.com/?parameter=value&parameter2=value2")
       .auth
       .digest("admin", "password")
 
     val response =
-      responseWithAuthorizationHeader("""Digest realm="myrealm", nonce="BBBBBB", algorithm=MD5, qop="auth"""")
+      responseWithAuthenticateHeader("""Digest realm="myrealm", nonce="BBBBBB", algorithm=MD5, qop="auth"""")
     val header = new DigestAuthenticator(DigestAuthData("admin", "password")).authenticate(request, response)
     header.value.value should fullyMatch regex """Digest username="admin", realm="myrealm", uri="/parameter=value&parameter2=value2", nonce="BBBBBB", qop=auth, response="[0-9a-f]+", cnonce="[0-9a-f]+", nc=000000\d\d, algorithm=MD5"""
   }
 
-  it should "work with multiple wwwAuthHeaders" in {
+  "work with multiple wwwAuthHeaders" in {
     val request = basicRequest
       .get(uri"http://google.com")
       .auth
@@ -91,7 +92,7 @@ class DigestAuthenticatorTest extends FlatSpec with Matchers with OptionValues {
     header.value.value should fullyMatch regex """Digest username="admin", realm="myrealm", uri="/", nonce="BBBBBB", qop=auth, response="[0-9a-f]+", cnonce="[0-9a-f]+", nc=000000\d\d, algorithm=MD5"""
   }
 
-  it should "not retry when password was wrong" in {
+  "not retry when password was wrong" in {
     val request = basicRequest
       .get(uri"http://google.com")
       .header(
@@ -101,13 +102,13 @@ class DigestAuthenticatorTest extends FlatSpec with Matchers with OptionValues {
         )
       )
     val response =
-      responseWithAuthorizationHeader("""Digest realm="myrealm", nonce="BBBBBB", algorithm=MD5, qop="auth"""")
+      responseWithAuthenticateHeader("""Digest realm="myrealm", nonce="BBBBBB", algorithm=MD5, qop="auth"""")
 
     val header = new DigestAuthenticator(DigestAuthData("admin", "password")).authenticate(request, response)
     header shouldBe empty
   }
 
-  it should "not retry when nonce is different" in {
+  "not retry when nonce is different" in {
     val request = basicRequest
       .get(uri"http://google.com")
       .header(
@@ -117,13 +118,13 @@ class DigestAuthenticatorTest extends FlatSpec with Matchers with OptionValues {
         )
       )
     val response =
-      responseWithAuthorizationHeader("""Digest realm="myrealm", nonce="BBBBBB", algorithm=MD5, qop="auth"""")
+      responseWithAuthenticateHeader("""Digest realm="myrealm", nonce="BBBBBB", algorithm=MD5, qop="auth"""")
 
     val header = new DigestAuthenticator(DigestAuthData("admin", "password")).authenticate(request, response)
     header shouldBe empty
   }
 
-  it should "retry when nonce is different but was stale" in {
+  "retry when nonce is different but was stale" in {
     val request = basicRequest
       .get(uri"http://google.com")
       .header(
@@ -133,7 +134,7 @@ class DigestAuthenticatorTest extends FlatSpec with Matchers with OptionValues {
         )
       )
     val response =
-      responseWithAuthorizationHeader(
+      responseWithAuthenticateHeader(
         """Digest realm="myrealm", nonce="BBBBBB", algorithm=MD5, qop="auth", stale=true"""
       )
 
@@ -141,7 +142,7 @@ class DigestAuthenticatorTest extends FlatSpec with Matchers with OptionValues {
     header.value.value should fullyMatch regex """Digest username="admin", realm="myrealm", uri="/", nonce="BBBBBB", qop=auth, response="[0-9a-f]+", cnonce="[0-9a-f]+", nc=000000\d\d, algorithm=MD5"""
   }
 
-  it should "retry when nonce is different but was stale (and quoted)" in {
+  "retry when nonce is different but was stale (and quoted)" in {
     val request = basicRequest
       .get(uri"http://google.com")
       .header(
@@ -151,7 +152,7 @@ class DigestAuthenticatorTest extends FlatSpec with Matchers with OptionValues {
         )
       )
     val response =
-      responseWithAuthorizationHeader(
+      responseWithAuthenticateHeader(
         """Digest realm="myrealm", nonce="BBBBBB", algorithm=MD5, qop="auth", stale="true""""
       )
 
@@ -159,11 +160,33 @@ class DigestAuthenticatorTest extends FlatSpec with Matchers with OptionValues {
     header.value.value should fullyMatch regex """Digest username="admin", realm="myrealm", uri="/", nonce="BBBBBB", qop=auth, response="[0-9a-f]+", cnonce="[0-9a-f]+", nc=000000\d\d, algorithm=MD5"""
   }
 
-  private def responseWithAuthorizationHeader(headerValue: String) = {
+  "proxy" - {
+    "should work" in {
+      val request = basicRequest
+        .get(uri"http://google.com")
+        .auth
+        .digest("admin", "password")
+
+      val response =
+        responseWithHeader(
+          """Digest realm="myrealm", nonce="BBBBBB", algorithm=MD5, qop="auth"""",
+          HeaderNames.ProxyAuthenticate
+        )
+      val header = new DigestAuthenticator(DigestAuthData("admin", "password")).authenticate(request, response)
+      header.value.name shouldBe HeaderNames.ProxyAuthorization
+      header.value.value should fullyMatch regex """Digest username="admin", realm="myrealm", uri="/", nonce="BBBBBB", qop=auth, response="[0-9a-f]+", cnonce="[0-9a-f]+", nc=000000\d\d, algorithm=MD5"""
+    }
+  }
+
+  private def responseWithAuthenticateHeader(headerValue: String) = {
+    responseWithHeader(headerValue, HeaderNames.WwwAuthenticate)
+  }
+
+  private def responseWithHeader(headerValue: String, headerName: String) = {
     responseWithHeaders(
       List(
         Header.notValidated(
-          HeaderNames.WwwAuthenticate,
+          headerName,
           headerValue
         )
       )

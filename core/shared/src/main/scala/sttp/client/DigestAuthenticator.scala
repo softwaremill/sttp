@@ -14,41 +14,43 @@ private[client] class DigestAuthenticator(
     clientNonceGenerator: () => String = defaultClientNonceGenerator
 ) {
   def authenticate[T, _](request: Request[T, _], response: Response[T]): Option[Header] = {
-    val wwwAuthRawHeaders = response
-      .headers(HeaderNames.WwwAuthenticate)
-    wwwAuthRawHeaders.find(_.contains("Digest")).flatMap { wwwAuthHeader =>
-      if (response.code == StatusCode.Unauthorized) {
-        callWithDigestAuth(request, digestAuthData, wwwAuthHeader)
+    responseHeaderValue(response.headers(HeaderNames.WwwAuthenticate), request, response.code)
+      .map(Header.notValidated(HeaderNames.Authorization, _))
+      .orElse(
+        responseHeaderValue(response.headers(HeaderNames.ProxyAuthenticate), request, response.code)
+          .map(Header.notValidated(HeaderNames.ProxyAuthorization, _))
+      )
+  }
+
+  private def responseHeaderValue(
+      authHeaderValues: Seq[String],
+      request: Request[_, _],
+      statusCode: StatusCode
+  ): Option[String] = {
+    val wwwAuthRawHeaders = authHeaderValues
+    wwwAuthRawHeaders.find(_.contains("Digest")).flatMap { inputHeader =>
+      if (statusCode == StatusCode.Unauthorized) {
+        val parsed = WwwAuthHeaderParser.parse(inputHeader)
+        responseHeaderValue(
+          request,
+          digestAuthData,
+          parsed,
+          parsed.realm.getOrElse(throw new IllegalArgumentException("Missing realm")),
+          parsed.nonce.getOrElse(throw new IllegalArgumentException("Missing nonce"))
+        )
       } else {
         None
       }
     }
   }
 
-  private def callWithDigestAuth[T](
-      request: Request[T, _],
-      digestAuthData: DigestAuthData,
-      wwwAuthHeader: String
-  ): Option[Header] = {
-    val parsed = WwwAuthHeaderParser.parse(wwwAuthHeader)
-    val authHeaderValue =
-      calculateDigestAuth(
-        request,
-        digestAuthData,
-        parsed,
-        parsed.realm.getOrElse(throw new IllegalArgumentException("Missing realm")),
-        parsed.nonce.getOrElse(throw new IllegalArgumentException("Missing nonce"))
-      )
-    authHeaderValue.map(Header.notValidated(HeaderNames.Authorization, _))
-  }
-
-  private def calculateDigestAuth[T](
+  private def responseHeaderValue[T](
       request: Request[T, _],
       digestAuthData: DigestAuthData,
       wwwAuthHeader: WwwAuthHeaderValue,
       realmMatch: String,
       nonceMatch: String
-  ) = {
+  ): Option[String] = {
     val isFirstOrShouldRetry =
       if (request.headers
             .find(_.name.equalsIgnoreCase(HeaderNames.Authorization))
