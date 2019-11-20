@@ -99,7 +99,7 @@ val commonJsSettings = commonJvmJsSettings ++ Seq(
         s"-P:scalajs:mapSourceURI:$dir->$url/v${version.value}/"
       }
   },
-  scalaJSModuleKind := ModuleKind.CommonJSModule
+  libraryDependencies ++= Seq("io.scalajs.npm" %%% "md5" % "1.0.2-4")
 )
 
 val commonNativeSettings = commonSettings ++ Seq(
