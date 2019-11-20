@@ -34,9 +34,9 @@ class DigestAuthenticationBackend[F[_], S, WS_HANDLER[_]](
     request
       .tag(digestTag)
       .map(_.asInstanceOf[DigestAuthData])
-      .map { digestAuthData =>
+      .flatMap { digestAuthData =>
         val header = digestAuthenticator(digestAuthData).authenticate(request, response)
-        header.map(h => delegate.send(request.header(h))).getOrElse(response.unit)
+        header.map(h => delegate.send(request.header(h)))
       }
       .getOrElse(response.unit)
   }
