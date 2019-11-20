@@ -15,6 +15,7 @@ private[client] class MessageDigestCompatibility(algorithm: String) {
   def digest(input: Array[Byte]): Array[Byte] = md(new String(input, "UTF-8")).getBytes("UTF-8")
 }
 
+// Copied from https://github.com/scalajs-io/md5
 @js.native
 @JSImport("md5", JSImport.Namespace)
 private object MD5 extends js.Object {
