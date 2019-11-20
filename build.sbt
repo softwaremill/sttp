@@ -98,7 +98,8 @@ val commonJsSettings = commonJvmJsSettings ++ Seq(
         val url = "https://raw.githubusercontent.com/softwaremill/sttp"
         s"-P:scalajs:mapSourceURI:$dir->$url/v${version.value}/"
       }
-  }
+  },
+  scalaJSModuleKind := ModuleKind.CommonJSModule
 )
 
 val commonNativeSettings = commonSettings ++ Seq(
