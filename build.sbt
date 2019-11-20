@@ -100,7 +100,8 @@ val commonJsSettings = commonJvmJsSettings ++ Seq(
       }
   },
   scalaJSModuleKind := ModuleKind.CommonJSModule,
-  libraryDependencies ++= Seq("io.scalajs.npm" %%% "md5" % "1.0.2-4")
+  libraryDependencies ++= Seq("io.scalajs.npm" %%% "md5" % "1.0.2-4"),
+  resolvers += Resolver.sonatypeRepo("releases")
 )
 
 val commonNativeSettings = commonSettings ++ Seq(
