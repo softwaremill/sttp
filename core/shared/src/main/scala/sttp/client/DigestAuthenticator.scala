@@ -1,7 +1,6 @@
 package sttp.client
 
 import java.nio.charset.Charset
-import java.security.MessageDigest
 import sttp.client.internal._
 import sttp.client.DigestAuthenticator._
 import sttp.model.{Header, HeaderNames, StatusCode}
@@ -62,7 +61,7 @@ private[client] class DigestAuthenticator(
     if (isFirstOrShouldRetry) {
       val qualityOfProtection = wwwAuthHeader.qop
       val algorithm = wwwAuthHeader.algorithm.getOrElse("MD5")
-      val messageDigest = MessageDigest.getInstance(algorithm)
+      val messageDigest = new MessageDigestCompatibility(algorithm)
       val digestUri =
         (Option(request.uri.toJavaUri.getPath), Option(request.uri.toJavaUri.getQuery)) match {
           case (Some(p), Some(q)) if p.trim.nonEmpty && q.trim.nonEmpty => p + q
@@ -113,7 +112,7 @@ private[client] class DigestAuthenticator(
       digestUri: String,
       clientNonce: String,
       nonceCount: String,
-      messageDigest: MessageDigest,
+      messageDigest: MessageDigestCompatibility,
       algorithm: String
   ) = {
     val ha1 = calculateHa1(digestAuthData, realm, messageDigest, algorithm, nonce, clientNonce)
@@ -124,7 +123,7 @@ private[client] class DigestAuthenticator(
   private def calculateHa1[T](
       digestAuthData: DigestAuthData,
       realm: String,
-      messageDigest: MessageDigest,
+      messageDigest: MessageDigestCompatibility,
       algorithm: String,
       nonce: String,
       cnonce: String
@@ -142,7 +141,7 @@ private[client] class DigestAuthenticator(
       nonce: String,
       clientNonce: String,
       nonceCount: String,
-      messageDigest: MessageDigest,
+      messageDigest: MessageDigestCompatibility,
       ha1: String,
       ha2: String
   ) = {
@@ -157,7 +156,7 @@ private[client] class DigestAuthenticator(
       request: Request[T, _],
       qop: Option[String],
       digestUri: String,
-      messageDigest: MessageDigest
+      messageDigest: MessageDigestCompatibility
   ) = {
     qop match {
       case Some(QualityOfProtectionAuth) => md5HexString(s"${request.method.method}:$digestUri", messageDigest)
@@ -215,7 +214,7 @@ object DigestAuthenticator {
   val QualityOfProtectionAuthInt = "auth-int"
   case class DigestAuthData(username: String, password: String)
 
-  private def md5HexString(text: String, messageDigest: MessageDigest) = {
+  private def md5HexString(text: String, messageDigest: MessageDigestCompatibility) = {
     byteArrayToHexString(messageDigest.digest(text.getBytes(Charset.forName("UTF-8"))))
   }
 
