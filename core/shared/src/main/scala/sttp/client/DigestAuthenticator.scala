@@ -8,17 +8,15 @@ import sttp.model.{Header, HeaderNames, StatusCode}
 import scala.language.higherKinds
 import scala.util.Random
 
-private[client] class DigestAuthenticator(
+private[client] class DigestAuthenticator private (
     digestAuthData: DigestAuthData,
-    clientNonceGenerator: () => String = defaultClientNonceGenerator
+    requestHeaderName: String,
+    responseHeaderName: String,
+    clientNonceGenerator: () => String
 ) {
   def authenticate[T, _](request: Request[T, _], response: Response[T]): Option[Header] = {
-    responseHeaderValue(response.headers(HeaderNames.WwwAuthenticate), request, response.code)
-      .map(Header.notValidated(HeaderNames.Authorization, _))
-      .orElse(
-        responseHeaderValue(response.headers(HeaderNames.ProxyAuthenticate), request, response.code)
-          .map(Header.notValidated(HeaderNames.ProxyAuthorization, _))
-      )
+    responseHeaderValue(response.headers(requestHeaderName), request, response.code)
+      .map(Header.notValidated(responseHeaderName, _))
   }
 
   private def responseHeaderValue(
@@ -209,7 +207,7 @@ private[client] class DigestAuthenticator(
   }
 }
 
-object DigestAuthenticator {
+private[client] object DigestAuthenticator {
   val QualityOfProtectionAuth = "auth"
   val QualityOfProtectionAuthInt = "auth-int"
   case class DigestAuthData(username: String, password: String)
@@ -231,4 +229,10 @@ object DigestAuthenticator {
     Random.nextBytes(bytes)
     byteArrayToHexString(bytes)
   }
+
+  def apply(data: DigestAuthData, clientNonceGenerator: () => String = defaultClientNonceGenerator) =
+    new DigestAuthenticator(data, HeaderNames.WwwAuthenticate, HeaderNames.Authorization, clientNonceGenerator)
+
+  def proxy(data: DigestAuthData, clientNonceGenerator: () => String = defaultClientNonceGenerator) =
+    new DigestAuthenticator(data, HeaderNames.ProxyAuthenticate, HeaderNames.ProxyAuthorization, clientNonceGenerator)
 }

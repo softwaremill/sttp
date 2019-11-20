@@ -5,6 +5,7 @@ import java.nio.ByteBuffer
 import java.util.Base64
 
 import com.github.ghik.silencer.silent
+import sttp.client.DigestAuthenticator.DigestAuthData
 import sttp.client.internal._
 import sttp.client.internal.{SttpFile, ToCurlConverter}
 import sttp.client.ws.WebSocketResponse
@@ -78,9 +79,9 @@ case class RequestT[U[_], T, +S](
     headers(hs.map(t => Header.notValidated(t._1, t._2)).toSeq: _*)
   def headers(hs: Header*): RequestT[U, T, S] = this.copy(headers = headers ++ hs)
   def auth: SpecifyAuthScheme[U, T, S] =
-    new SpecifyAuthScheme[U, T, S](HeaderNames.Authorization, this)
+    new SpecifyAuthScheme[U, T, S](HeaderNames.Authorization, this, DigestAuthenticationBackend.DigestAuthTag)
   def proxyAuth: SpecifyAuthScheme[U, T, S] =
-    new SpecifyAuthScheme[U, T, S](HeaderNames.ProxyAuthorization, this)
+    new SpecifyAuthScheme[U, T, S](HeaderNames.ProxyAuthorization, this, DigestAuthenticationBackend.ProxyDigestAuthTag)
   def acceptEncoding(encoding: String): RequestT[U, T, S] =
     header(HeaderNames.AcceptEncoding, encoding)
 
@@ -312,7 +313,7 @@ object RequestT {
   }
 }
 
-class SpecifyAuthScheme[U[_], T, +S](hn: String, rt: RequestT[U, T, S]) {
+class SpecifyAuthScheme[U[_], T, +S](hn: String, rt: RequestT[U, T, S], digestTag: String) {
   def basic(user: String, password: String): RequestT[U, T, S] = {
     val c = new String(Base64.getEncoder.encode(s"$user:$password".getBytes(Utf8)), Utf8)
     rt.header(hn, s"Basic $c")
@@ -322,8 +323,7 @@ class SpecifyAuthScheme[U[_], T, +S](hn: String, rt: RequestT[U, T, S]) {
     rt.header(hn, s"Bearer $token")
 
   def digest(user: String, password: String): RequestT[U, T, S] = {
-    import DigestAuthenticationBackend._
-    rt.digestAuth(user, password)
+    rt.tag(digestTag, DigestAuthData(user, password))
   }
 }
 

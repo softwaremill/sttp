@@ -12,17 +12,33 @@ class DigestAuthenticationBackend[F[_], S, WS_HANDLER[_]](
     delegate: SttpBackend[F, S, WS_HANDLER],
     clientNonceGenerator: () => String = DigestAuthenticator.defaultClientNonceGenerator
 ) extends SttpBackend[F, S, WS_HANDLER] {
+  private implicit val m: MonadError[F] = responseMonad
+
   override def send[T](request: Request[T, S]): F[Response[T]] = {
-    if (request.tag(DigestAuthTag).isDefined) {
-      val digestAuthData = request.tag(DigestAuthTag).get.asInstanceOf[DigestAuthData]
-      implicit val m: MonadError[F] = responseMonad
-      delegate.send(request).flatMap { response =>
-        val header = new DigestAuthenticator(digestAuthData, clientNonceGenerator).authenticate(request, response)
+    delegate
+      .send(request)
+      .flatMap { firstResponse =>
+        handleResponse(request, firstResponse, ProxyDigestAuthTag, DigestAuthenticator.proxy(_, clientNonceGenerator))
+      }
+      .flatMap { secondResponse =>
+        handleResponse(request, secondResponse, DigestAuthTag, DigestAuthenticator.apply(_, clientNonceGenerator))
+      }
+  }
+
+  private def handleResponse[T](
+      request: Request[T, S],
+      response: Response[T],
+      digestTag: String,
+      digestAuthenticator: DigestAuthData => DigestAuthenticator
+  ): F[Response[T]] = {
+    request
+      .tag(digestTag)
+      .map(_.asInstanceOf[DigestAuthData])
+      .map { digestAuthData =>
+        val header = digestAuthenticator(digestAuthData).authenticate(request, response)
         header.map(h => delegate.send(request.header(h))).getOrElse(response.unit)
       }
-    } else {
-      delegate.send(request)
-    }
+      .getOrElse(response.unit)
   }
 
   override def openWebsocket[T, WS_RESULT](
@@ -35,11 +51,6 @@ class DigestAuthenticationBackend[F[_], S, WS_HANDLER[_]](
 }
 
 object DigestAuthenticationBackend {
-  private val DigestAuthTag = "__sttp_DigestAuth"
-
-  implicit class DigestAuthRequest[U[_], T, S](requestT: RequestT[U, T, S]) {
-    def digestAuth(username: String, password: String): RequestT[U, T, S] = {
-      requestT.tag(DigestAuthTag, DigestAuthData(username, password))
-    }
-  }
+  val DigestAuthTag = "__sttp_DigestAuth"
+  val ProxyDigestAuthTag = "__sttp_ProxyDigestAuth"
 }
