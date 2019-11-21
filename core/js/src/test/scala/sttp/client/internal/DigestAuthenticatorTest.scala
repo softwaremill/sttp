@@ -1,7 +1,8 @@
-package sttp.client
+package sttp.client.internal
 
 import org.scalatest.{FreeSpec, Matchers, OptionValues}
-import sttp.client.DigestAuthenticator.DigestAuthData
+import sttp.client.internal.DigestAuthenticator.DigestAuthData
+import sttp.client._
 import sttp.model.{Header, HeaderNames, StatusCode}
 
 import scala.util.{Failure, Try}
