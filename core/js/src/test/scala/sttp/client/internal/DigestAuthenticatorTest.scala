@@ -14,9 +14,8 @@ class DigestAuthenticatorTest extends FreeSpec with Matchers with OptionValues {
       .auth
       .digest("admin", "password")
 
-    val response =
-      responseWithAuthenticateHeader("""Digest realm="myrealm", nonce="BBBBBB", algorithm=MD5, qop="auth"""")
-    val header = DigestAuthenticator(DigestAuthData("admin", "password")).authenticate(request, response)
+    val r = responseWithAuthenticateHeader("""Digest realm="myrealm", nonce="BBBBBB", algorithm=MD5, qop="auth"""")
+    val header = DigestAuthenticator(DigestAuthData("admin", "password")).authenticate(request, r)
     header.value.name shouldBe HeaderNames.Authorization
     header.value.value should fullyMatch regex """Digest username="admin", realm="myrealm", uri="/", nonce="BBBBBB", qop=auth, response="[0-9a-f]+", cnonce="[0-9a-f]+", nc=000000\d\d, algorithm=MD5"""
   }
@@ -27,9 +26,8 @@ class DigestAuthenticatorTest extends FreeSpec with Matchers with OptionValues {
       .auth
       .digest("admin", "password")
 
-    val response =
-      responseWithAuthenticateHeader("""Digest realm="myrealm", algorithm=MD5, qop="auth"""")
-    Try(DigestAuthenticator(DigestAuthData("admin", "password")).authenticate(request, response)) shouldBe a[
+    val r = responseWithAuthenticateHeader("""Digest realm="myrealm", algorithm=MD5, qop="auth"""")
+    Try(DigestAuthenticator(DigestAuthData("admin", "password")).authenticate(request, r)) shouldBe a[
       Failure[IllegalArgumentException]
     ]
   }
@@ -40,9 +38,8 @@ class DigestAuthenticatorTest extends FreeSpec with Matchers with OptionValues {
       .auth
       .digest("admin", "password")
 
-    val response =
-      responseWithAuthenticateHeader("""Digest realm="myrealm", nonce="BBBBBB", algorithm=MD5, qop="auth"""")
-    val header = DigestAuthenticator(DigestAuthData("admin", "password")).authenticate(request, response)
+    val r = responseWithAuthenticateHeader("""Digest realm="myrealm", nonce="BBBBBB", algorithm=MD5, qop="auth"""")
+    val header = DigestAuthenticator(DigestAuthData("admin", "password")).authenticate(request, r)
     header.value.value should fullyMatch regex """Digest username="admin", realm="myrealm", uri="/path/to/resource?parameter=value&parameter2=value2", nonce="BBBBBB", qop=auth, response="[0-9a-f]+", cnonce="[0-9a-f]+", nc=000000\d\d, algorithm=MD5"""
   }
 
@@ -52,9 +49,8 @@ class DigestAuthenticatorTest extends FreeSpec with Matchers with OptionValues {
       .auth
       .digest("admin", "password")
 
-    val response =
-      responseWithAuthenticateHeader("""Digest realm="myrealm", nonce="BBBBBB", algorithm=MD5, qop="auth"""")
-    val header = DigestAuthenticator(DigestAuthData("admin", "password")).authenticate(request, response)
+    val r = responseWithAuthenticateHeader("""Digest realm="myrealm", nonce="BBBBBB", algorithm=MD5, qop="auth"""")
+    val header = DigestAuthenticator(DigestAuthData("admin", "password")).authenticate(request, r)
     header.value.value should fullyMatch regex """Digest username="admin", realm="myrealm", uri="/path/to/resource", nonce="BBBBBB", qop=auth, response="[0-9a-f]+", cnonce="[0-9a-f]+", nc=000000\d\d, algorithm=MD5"""
   }
 
@@ -64,9 +60,8 @@ class DigestAuthenticatorTest extends FreeSpec with Matchers with OptionValues {
       .auth
       .digest("admin", "password")
 
-    val response =
-      responseWithAuthenticateHeader("""Digest realm="myrealm", nonce="BBBBBB", algorithm=MD5, qop="auth"""")
-    val header = DigestAuthenticator(DigestAuthData("admin", "password")).authenticate(request, response)
+    val r = responseWithAuthenticateHeader("""Digest realm="myrealm", nonce="BBBBBB", algorithm=MD5, qop="auth"""")
+    val header = DigestAuthenticator(DigestAuthData("admin", "password")).authenticate(request, r)
     header.value.value should fullyMatch regex """Digest username="admin", realm="myrealm", uri="/parameter=value&parameter2=value2", nonce="BBBBBB", qop=auth, response="[0-9a-f]+", cnonce="[0-9a-f]+", nc=000000\d\d, algorithm=MD5"""
   }
 
@@ -76,20 +71,20 @@ class DigestAuthenticatorTest extends FreeSpec with Matchers with OptionValues {
       .auth
       .digest("admin", "password")
 
-    val response =
-      responseWithHeaders(
-        List(
-          Header.notValidated(
-            HeaderNames.WwwAuthenticate,
-            """Digest realm="myrealm", nonce="BBBBBB", algorithm=MD5, qop="auth""""
-          ),
-          Header.notValidated(
-            HeaderNames.WwwAuthenticate,
-            """Basic realm="myrealm""""
-          )
-        ).reverse
-      )
-    val header = DigestAuthenticator(DigestAuthData("admin", "password")).authenticate(request, response)
+    val r = response(
+      List(
+        Header.notValidated(
+          HeaderNames.WwwAuthenticate,
+          """Digest realm="myrealm", nonce="BBBBBB", algorithm=MD5, qop="auth""""
+        ),
+        Header.notValidated(
+          HeaderNames.WwwAuthenticate,
+          """Basic realm="myrealm""""
+        )
+      ).reverse,
+      StatusCode.Unauthorized
+    )
+    val header = DigestAuthenticator(DigestAuthData("admin", "password")).authenticate(request, r)
     header.value.value should fullyMatch regex """Digest username="admin", realm="myrealm", uri="/", nonce="BBBBBB", qop=auth, response="[0-9a-f]+", cnonce="[0-9a-f]+", nc=000000\d\d, algorithm=MD5"""
   }
 
@@ -102,10 +97,8 @@ class DigestAuthenticatorTest extends FreeSpec with Matchers with OptionValues {
           """Digest username="admin", realm="myrealm", nonce="BBBBBB", uri="/", response="123456", qop=auth, nc=00000001, cnonce="1234567", algorithm=MD5"""
         )
       )
-    val response =
-      responseWithAuthenticateHeader("""Digest realm="myrealm", nonce="BBBBBB", algorithm=MD5, qop="auth"""")
-
-    val header = DigestAuthenticator(DigestAuthData("admin", "password")).authenticate(request, response)
+    val r = responseWithAuthenticateHeader("""Digest realm="myrealm", nonce="BBBBBB", algorithm=MD5, qop="auth"""")
+    val header = DigestAuthenticator(DigestAuthData("admin", "password")).authenticate(request, r)
     header shouldBe empty
   }
 
@@ -118,10 +111,8 @@ class DigestAuthenticatorTest extends FreeSpec with Matchers with OptionValues {
           """Digest username="admin", realm="myrealm", nonce="AAAAAA", uri="/", response="123456", qop=auth, nc=00000001, cnonce="1234567", algorithm=MD5"""
         )
       )
-    val response =
-      responseWithAuthenticateHeader("""Digest realm="myrealm", nonce="BBBBBB", algorithm=MD5, qop="auth"""")
-
-    val header = DigestAuthenticator(DigestAuthData("admin", "password")).authenticate(request, response)
+    val r = responseWithAuthenticateHeader("""Digest realm="myrealm", nonce="BBBBBB", algorithm=MD5, qop="auth"""")
+    val header = DigestAuthenticator(DigestAuthData("admin", "password")).authenticate(request, r)
     header shouldBe empty
   }
 
@@ -134,12 +125,11 @@ class DigestAuthenticatorTest extends FreeSpec with Matchers with OptionValues {
           """Digest username="admin", realm="myrealm", nonce="AAAAAA", uri="/", response="123456", qop=auth, nc=00000001, cnonce="1234567", algorithm=MD5"""
         )
       )
-    val response =
-      responseWithAuthenticateHeader(
-        """Digest realm="myrealm", nonce="BBBBBB", algorithm=MD5, qop="auth", stale=true"""
-      )
+    val r = responseWithAuthenticateHeader(
+      """Digest realm="myrealm", nonce="BBBBBB", algorithm=MD5, qop="auth", stale=true"""
+    )
 
-    val header = DigestAuthenticator(DigestAuthData("admin", "password")).authenticate(request, response)
+    val header = DigestAuthenticator(DigestAuthData("admin", "password")).authenticate(request, r)
     header.value.value should fullyMatch regex """Digest username="admin", realm="myrealm", uri="/", nonce="BBBBBB", qop=auth, response="[0-9a-f]+", cnonce="[0-9a-f]+", nc=000000\d\d, algorithm=MD5"""
   }
 
@@ -152,12 +142,11 @@ class DigestAuthenticatorTest extends FreeSpec with Matchers with OptionValues {
           """Digest username="admin", realm="myrealm", nonce="AAAAAA", uri="/", response="123456", qop=auth, nc=00000001, cnonce="1234567", algorithm=MD5"""
         )
       )
-    val response =
-      responseWithAuthenticateHeader(
-        """Digest realm="myrealm", nonce="BBBBBB", algorithm=MD5, qop="auth", stale="true""""
-      )
+    val r = responseWithAuthenticateHeader(
+      """Digest realm="myrealm", nonce="BBBBBB", algorithm=MD5, qop="auth", stale="true""""
+    )
 
-    val header = DigestAuthenticator(DigestAuthData("admin", "password")).authenticate(request, response)
+    val header = DigestAuthenticator(DigestAuthData("admin", "password")).authenticate(request, r)
     header.value.value should fullyMatch regex """Digest username="admin", realm="myrealm", uri="/", nonce="BBBBBB", qop=auth, response="[0-9a-f]+", cnonce="[0-9a-f]+", nc=000000\d\d, algorithm=MD5"""
   }
 
@@ -168,36 +157,41 @@ class DigestAuthenticatorTest extends FreeSpec with Matchers with OptionValues {
         .auth
         .digest("admin", "password")
 
-      val response =
-        responseWithHeader(
-          """Digest realm="myrealm", nonce="BBBBBB", algorithm=MD5, qop="auth"""",
-          HeaderNames.ProxyAuthenticate
-        )
-      val header = DigestAuthenticator.proxy(DigestAuthData("admin", "password")).authenticate(request, response)
+      val r = response(
+        """Digest realm="myrealm", nonce="BBBBBB", algorithm=MD5, qop="auth"""",
+        HeaderNames.ProxyAuthenticate,
+        StatusCode.ProxyAuthenticationRequired
+      )
+      val header = DigestAuthenticator.proxy(DigestAuthData("admin", "password")).authenticate(request, r)
       header.value.name shouldBe HeaderNames.ProxyAuthorization
       header.value.value should fullyMatch regex """Digest username="admin", realm="myrealm", uri="/", nonce="BBBBBB", qop=auth, response="[0-9a-f]+", cnonce="[0-9a-f]+", nc=000000\d\d, algorithm=MD5"""
     }
   }
 
   private def responseWithAuthenticateHeader(headerValue: String) = {
-    responseWithHeader(headerValue, HeaderNames.WwwAuthenticate)
+    response(headerValue, HeaderNames.WwwAuthenticate, StatusCode.Unauthorized)
   }
 
-  private def responseWithHeader(headerValue: String, headerName: String) = {
-    responseWithHeaders(
+  private def response(
+      headerValue: String,
+      headerName: String,
+      statusCode: StatusCode
+  ): Response[Either[String, String]] = {
+    response(
       List(
         Header.notValidated(
           headerName,
           headerValue
         )
-      )
+      ),
+      statusCode
     )
   }
 
-  private def responseWithHeaders(headers: List[Header]) = {
+  private def response(headers: List[Header], statusCode: StatusCode): Response[Either[String, String]] = {
     Response[Either[String, String]](
       Right(""),
-      StatusCode.Unauthorized,
+      statusCode,
       "Unauthorized",
       headers,
       List.empty

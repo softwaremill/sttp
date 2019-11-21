@@ -6,6 +6,7 @@ import sttp.client.internal.DigestAuthenticator.DigestAuthData
 import sttp.client.monad.MonadError
 import sttp.client.monad.syntax._
 import sttp.client.ws.WebSocketResponse
+import sttp.model.Header
 
 import scala.language.higherKinds
 
@@ -21,8 +22,14 @@ class DigestAuthenticationBackend[F[_], S, WS_HANDLER[_]](
       .flatMap { firstResponse =>
         handleResponse(request, firstResponse, ProxyDigestAuthTag, DigestAuthenticator.proxy(_, clientNonceGenerator))
       }
-      .flatMap { secondResponse =>
-        handleResponse(request, secondResponse, DigestAuthTag, DigestAuthenticator.apply(_, clientNonceGenerator))
+      .flatMap {
+        case (secondResponse, proxyAuthHeader) =>
+          handleResponse(
+            proxyAuthHeader.map(h => request.header(h)).getOrElse(request),
+            secondResponse,
+            DigestAuthTag,
+            DigestAuthenticator.apply(_, clientNonceGenerator)
+          ).map(_._1)
       }
   }
 
@@ -31,15 +38,15 @@ class DigestAuthenticationBackend[F[_], S, WS_HANDLER[_]](
       response: Response[T],
       digestTag: String,
       digestAuthenticator: DigestAuthData => DigestAuthenticator
-  ): F[Response[T]] = {
+  ): F[(Response[T], Option[Header])] = {
     request
       .tag(digestTag)
       .map(_.asInstanceOf[DigestAuthData])
       .flatMap { digestAuthData =>
         val header = digestAuthenticator(digestAuthData).authenticate(request, response)
-        header.map(h => delegate.send(request.header(h)))
+        header.map(h => delegate.send(request.header(h)).map(_ -> Option(h)))
       }
-      .getOrElse(response.unit)
+      .getOrElse((response -> Option.empty[Header]).unit)
   }
 
   override def openWebsocket[T, WS_RESULT](
