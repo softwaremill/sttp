@@ -1,8 +1,9 @@
-package sttp.client
+package sttp.client.internal
 
 import java.nio.charset.Charset
-import sttp.client.internal._
-import sttp.client.DigestAuthenticator._
+
+import sttp.client._
+import sttp.client.internal.DigestAuthenticator._
 import sttp.model.{Header, HeaderNames, StatusCode}
 
 import scala.language.higherKinds

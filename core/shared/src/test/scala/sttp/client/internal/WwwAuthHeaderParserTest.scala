@@ -1,4 +1,4 @@
-package sttp.client
+package sttp.client.internal
 
 import org.scalatest.{FlatSpec, Matchers}
 

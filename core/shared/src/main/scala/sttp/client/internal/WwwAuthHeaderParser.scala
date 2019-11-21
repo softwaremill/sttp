@@ -1,4 +1,4 @@
-package sttp.client
+package sttp.client.internal
 
 object WwwAuthHeaderParser {
   def parse(text: String): WwwAuthHeaderValue = {

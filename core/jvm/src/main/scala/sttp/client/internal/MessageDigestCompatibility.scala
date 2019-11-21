@@ -1,4 +1,4 @@
-package sttp.client
+package sttp.client.internal
 
 import java.security.MessageDigest
 

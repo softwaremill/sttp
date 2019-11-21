@@ -5,7 +5,7 @@ import java.nio.ByteBuffer
 import java.util.Base64
 
 import com.github.ghik.silencer.silent
-import sttp.client.DigestAuthenticator.DigestAuthData
+import sttp.client.internal.DigestAuthenticator.DigestAuthData
 import sttp.client.internal._
 import sttp.client.internal.{SttpFile, ToCurlConverter}
 import sttp.client.ws.WebSocketResponse

@@ -1,4 +1,4 @@
-package sttp.client
+package sttp.client.internal
 
 import io.scalajs.npm.md5.MD5
 

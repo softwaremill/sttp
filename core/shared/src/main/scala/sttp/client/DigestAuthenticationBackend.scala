@@ -1,7 +1,8 @@
 package sttp.client
 
 import sttp.client.DigestAuthenticationBackend._
-import sttp.client.DigestAuthenticator.DigestAuthData
+import sttp.client.internal.DigestAuthenticator
+import sttp.client.internal.DigestAuthenticator.DigestAuthData
 import sttp.client.monad.MonadError
 import sttp.client.monad.syntax._
 import sttp.client.ws.WebSocketResponse
@@ -51,6 +52,6 @@ class DigestAuthenticationBackend[F[_], S, WS_HANDLER[_]](
 }
 
 object DigestAuthenticationBackend {
-  val DigestAuthTag = "__sttp_DigestAuth"
-  val ProxyDigestAuthTag = "__sttp_ProxyDigestAuth"
+  private[client] val DigestAuthTag = "__sttp_DigestAuth"
+  private[client] val ProxyDigestAuthTag = "__sttp_ProxyDigestAuth"
 }

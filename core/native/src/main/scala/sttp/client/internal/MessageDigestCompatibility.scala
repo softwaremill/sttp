@@ -1,4 +1,4 @@
-package sttp.client
+package sttp.client.internal
 
 private[client] class MessageDigestCompatibility(algorithm: String) {
   def digest(input: Array[Byte]): Array[Byte] =
