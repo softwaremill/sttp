@@ -148,7 +148,7 @@ private[client] class DigestAuthenticator private (
     qop match {
       case Some(v) if v == QualityOfProtectionAuth || v == QualityOfProtectionAuthInt =>
         md5HexString(s"$ha1:$nonce:$nonceCount:$clientNonce:$v:$ha2", messageDigest)
-      case None => md5HexString(s"$ha1:$nonce:$ha2", messageDigest)
+      case _ => md5HexString(s"$ha1:$nonce:$ha2", messageDigest)
     }
   }
 
