@@ -6,6 +6,7 @@ import java.security.MessageDigest
 import java.time.{ZoneId, ZonedDateTime}
 
 import com.github.ghik.silencer.silent
+import sttp.client.internal.IsIdInRequest
 import sttp.client.{FollowRedirectsBackend, _}
 import sttp.model.{CookieWithMeta, Header, HeaderNames, StatusCode}
 
@@ -250,6 +251,17 @@ trait HttpTestExtensions[F[_]] extends TestHttpServer { self: HttpTest[F] =>
         req.send().toFuture().map { resp =>
           resp.body should be(Right(s"p1=$testBody (test.txt)"))
         }
+      }
+    }
+  }
+
+  "auth" - {
+    "perform digest authorization" in {
+      implicit val digestBackend: SttpBackend[F, Nothing, NothingT] =
+        new DigestAuthenticationBackend[F, Nothing, NothingT](backend, () => "e5d93287aa8532c1f5df9e052fda4c38")
+      val req = basicRequest.get(uri"$endpoint/secure_digest").response(asStringAlways).auth.digest("adam", "1234")
+      req.send()(digestBackend, implicitly[IsIdInRequest[Identity]]).toFuture().map { resp =>
+        resp.code shouldBe StatusCode.Ok
       }
     }
   }

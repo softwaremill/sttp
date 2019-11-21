@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream
 import java.nio.ByteBuffer
 
 import org.scalatest._
+import sttp.client.internal.IsIdInRequest
 import sttp.client.{Response, ResponseAs, SttpBackend, _}
 import sttp.model.StatusCode
 
@@ -18,7 +19,6 @@ trait HttpTest[F[_]]
     with OptionValues
     with BeforeAndAfterAll
     with HttpTestExtensions[F] {
-
   protected def endpoint: String
 
   protected val binaryFileMD5Hash = "565370873a38d91f34a3091082e63933"
