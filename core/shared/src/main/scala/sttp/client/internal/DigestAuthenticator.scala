@@ -13,6 +13,7 @@ private[client] class DigestAuthenticator private (
     digestAuthData: DigestAuthData,
     requestHeaderName: String,
     responseHeaderName: String,
+    unauthorizedStatusCode: StatusCode,
     clientNonceGenerator: () => String
 ) {
   def authenticate[T, _](request: Request[T, _], response: Response[T]): Option[Header] = {
@@ -27,7 +28,7 @@ private[client] class DigestAuthenticator private (
   ): Option[String] = {
     val wwwAuthRawHeaders = authHeaderValues
     wwwAuthRawHeaders.find(_.contains("Digest")).flatMap { inputHeader =>
-      if (statusCode == StatusCode.Unauthorized) {
+      if (statusCode == unauthorizedStatusCode) {
         val parsed = WwwAuthHeaderParser.parse(inputHeader)
         responseHeaderValue(
           request,
@@ -232,8 +233,20 @@ private[client] object DigestAuthenticator {
   }
 
   def apply(data: DigestAuthData, clientNonceGenerator: () => String = defaultClientNonceGenerator) =
-    new DigestAuthenticator(data, HeaderNames.WwwAuthenticate, HeaderNames.Authorization, clientNonceGenerator)
+    new DigestAuthenticator(
+      data,
+      HeaderNames.WwwAuthenticate,
+      HeaderNames.Authorization,
+      StatusCode.Unauthorized,
+      clientNonceGenerator
+    )
 
   def proxy(data: DigestAuthData, clientNonceGenerator: () => String = defaultClientNonceGenerator) =
-    new DigestAuthenticator(data, HeaderNames.ProxyAuthenticate, HeaderNames.ProxyAuthorization, clientNonceGenerator)
+    new DigestAuthenticator(
+      data,
+      HeaderNames.ProxyAuthenticate,
+      HeaderNames.ProxyAuthorization,
+      StatusCode.ProxyAuthenticationRequired,
+      clientNonceGenerator
+    )
 }
