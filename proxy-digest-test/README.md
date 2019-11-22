@@ -61,4 +61,4 @@ The document has moved
 ```
 
 ## Running the test
-`okhttpBackend/testOnly sttp.client.okhttp.OkHttpSyncDigestAuthProxyManualTest`
+`sbt okhttpBackend/testOnly sttp.client.okhttp.OkHttpSyncDigestAuthProxyManualTest`
