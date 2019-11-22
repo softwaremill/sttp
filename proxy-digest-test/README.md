@@ -61,4 +61,7 @@ The document has moved
 ```
 
 ## Running the test
+
+Remove the `@Ignore` annotation from `OkHttpSyncDigestAuthProxyManualTest` and run:
+
 `sbt okhttpBackend/testOnly sttp.client.okhttp.OkHttpSyncDigestAuthProxyManualTest`
