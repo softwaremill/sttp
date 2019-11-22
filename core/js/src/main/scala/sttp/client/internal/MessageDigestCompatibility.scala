@@ -1,12 +1,13 @@
 package sttp.client.internal
 
-import io.scalajs.npm.md5.MD5
+import scala.scalajs.js.JSConverters._
 
 private[client] class MessageDigestCompatibility(algorithm: String) {
-  private lazy val md = algorithm match {
-    case "MD5" => MD5
+  private lazy val md: scala.scalajs.js.typedarray.ArrayBuffer => String = algorithm match {
+    case "MD5" => SparkMD5.ArrayBuffer.hash(_)
     case _     => throw new IllegalArgumentException(s"Unsupported algorithm: $algorithm")
   }
 
-  def digest(input: Array[Byte]): Array[Byte] = md(new String(input, "UTF-8")).getBytes("UTF-8")
+  def digest(input: Array[Byte]): Array[Byte] =
+    md(input.toJSArray.asInstanceOf[scala.scalajs.js.typedarray.ArrayBuffer]).getBytes("UTF-8")
 }

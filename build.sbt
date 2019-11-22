@@ -98,10 +98,7 @@ val commonJsSettings = commonJvmJsSettings ++ Seq(
         val url = "https://raw.githubusercontent.com/softwaremill/sttp"
         s"-P:scalajs:mapSourceURI:$dir->$url/v${version.value}/"
       }
-  },
-  scalaJSModuleKind := ModuleKind.CommonJSModule,
-  libraryDependencies ++= Seq("io.scalajs.npm" %%% "md5" % "1.0.2-4"),
-  resolvers += Resolver.sonatypeRepo("releases")
+  }
 )
 
 val commonNativeSettings = commonSettings ++ Seq(

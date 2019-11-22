@@ -4,13 +4,13 @@ import org.scalajs.dom.FileReader
 import org.scalajs.dom.raw.{Event, UIEvent}
 import sttp.client._
 import sttp.client.dom.experimental.{FilePropertyBag, File => DomFile}
+import sttp.client.internal.SparkMD5
 
 import scala.concurrent.{Future, Promise}
 import scala.language.higherKinds
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
 import scala.scalajs.js.JavaScriptException
-import scala.scalajs.js.annotation.JSGlobal
 import scala.scalajs.js.typedarray.AB2TA
 
 trait HttpTestExtensions[F[_]] extends AsyncExecutionContext { self: HttpTest[F] =>
@@ -87,15 +87,4 @@ trait HttpTestExtensions[F[_]] extends AsyncExecutionContext { self: HttpTest[F]
       }
     }
   }
-}
-
-@js.native
-@JSGlobal
-object SparkMD5 extends js.Object {
-
-  @js.native
-  object ArrayBuffer extends js.Object {
-    def hash(arr: scala.scalajs.js.typedarray.ArrayBuffer, raw: Boolean = false): String = js.native
-  }
-
 }
