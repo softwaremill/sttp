@@ -5,7 +5,7 @@ Prometheus backend
 
 To use, add the following dependency to your project::
 
-  "com.softwaremill.sttp.client" %% "prometheus-backend" % "2.0.0-RC2"
+  "com.softwaremill.sttp.client" %% "prometheus-backend" % "2.0.0-RC3"
 
 This backend depends on `Prometheus JVM Client <https://github.com/prometheus/client_java>`_. Keep in mind this backend registers histograms and gathers request times, but you have to expose those metrics to `Prometheus <https://prometheus.io/>`_ e.g. using  `prometheus-akka-http <https://github.com/lonelyplanet/prometheus-akka-http>`_.
 
