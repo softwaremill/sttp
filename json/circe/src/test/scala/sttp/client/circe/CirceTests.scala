@@ -1,16 +1,14 @@
-package sttp.client
+package sttp.client.circe
 
 import io.circe._
 import org.scalatest._
 import sttp.client.internal._
+import sttp.client._
 import sttp.model._
-import sttp.model.StatusCode
 
 import scala.language.higherKinds
 
 class CirceTests extends FlatSpec with Matchers with EitherValues {
-  import circe._
-
   "The circe module" should "encode arbitrary bodies given an encoder" in {
     val body = Outer(Inner(42, true, "horses"), "cats")
     val expected = """{"foo":{"a":42,"b":true,"c":"horses"},"bar":"cats"}"""
