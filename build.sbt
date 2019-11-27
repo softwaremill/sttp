@@ -539,7 +539,8 @@ lazy val circe = crossProject(JSPlatform, JVMPlatform)
     libraryDependencies ++= dependenciesFor(scalaVersion.value)(
       "io.circe" %%% "circe-core" % circeVersion(_),
       "io.circe" %%% "circe-parser" % circeVersion(_),
-      _ => "org.scalatest" %%% "scalatest" % scalaTestVersion % "test"
+      "io.circe" %%% "circe-generic" % circeVersion(_) % Test,
+      _ => "org.scalatest" %%% "scalatest" % scalaTestVersion % Test
     )
   )
   .jsSettings(only2_11_and_2_12_settings) // circe-js for 2.13 fails to run tests with a linking error
