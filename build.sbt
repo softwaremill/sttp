@@ -12,6 +12,7 @@ lazy val testServerPort = settingKey[Int]("Port to run the http test server on (
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests (used by JS tests)")
 lazy val is2_11 = settingKey[Boolean]("Is the scala version 2.11.")
 lazy val is2_11_or_2_12 = settingKey[Boolean]("Is the scala version 2.11 or 2.12.")
+lazy val is2_12_or_2_13 = settingKey[Boolean]("Is the scala version 2.12 or 2.12.")
 lazy val is2_13 = settingKey[Boolean]("Is the scala version 2.13.")
 lazy val javaVersion = settingKey[VersionNumber]("Java version")
 
@@ -41,6 +42,7 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   ),
   is2_11 := scalaVersion.value.startsWith("2.11."),
   is2_11_or_2_12 := scalaVersion.value.startsWith("2.11.") || scalaVersion.value.startsWith("2.12."),
+  is2_12_or_2_13 := scalaVersion.value.startsWith("2.12.") || scalaVersion.value.startsWith("2.13."),
   is2_13 := scalaVersion.value.startsWith("2.13."),
   javaVersion := VersionNumber(sys.props("java.specification.version")),
   libraryDependencies ++= Seq(
@@ -65,6 +67,14 @@ val only2_11_and_2_12_settings = Seq(
   skip in compile := !is2_11_or_2_12.value,
   skip in publish := !is2_11_or_2_12.value,
   libraryDependencies := (if (is2_11_or_2_12.value) libraryDependencies.value else Nil)
+)
+
+val only2_12_and_2_13_settings = Seq(
+  publishArtifact := is2_12_or_2_13.value,
+  skip := !is2_12_or_2_13.value,
+  skip in compile := !is2_12_or_2_13.value,
+  skip in publish := !is2_12_or_2_13.value,
+  libraryDependencies := (if (is2_12_or_2_13.value) libraryDependencies.value else Nil)
 )
 
 val only2_13andJava11 = Seq(
@@ -436,7 +446,6 @@ lazy val asyncHttpClientZioStreamsBackend: Project =
         "dev.zio" %% "zio-interop-reactivestreams" % "1.0.3.5-RC2"
       )
     )
-    .settings(only2_11_and_2_12_settings)
     .dependsOn(zio % compileAndTest)
 
 lazy val asyncHttpClientMonixBackend: Project =
@@ -486,10 +495,10 @@ lazy val http4sBackend: Project = (project in file("http4s-backend"))
   .settings(
     name := "http4s-backend",
     libraryDependencies ++= Seq(
-      "org.http4s" %% "http4s-blaze-client" % "0.20.10"
+      "org.http4s" %% "http4s-blaze-client" % "0.21.0-M5"
     )
   )
-  .settings(only2_11_and_2_12_settings)
+  .settings(only2_12_and_2_13_settings)
   .dependsOn(catsJVM, coreJVM % compileAndTest)
 
 //-- httpclient-java11

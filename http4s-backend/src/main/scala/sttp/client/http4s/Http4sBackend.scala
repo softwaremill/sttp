@@ -5,7 +5,7 @@ import java.nio.charset.Charset
 
 import cats.data.NonEmptyList
 import cats.effect.concurrent.MVar
-import cats.effect.{ConcurrentEffect, ContextShift, Resource}
+import cats.effect.{Blocker, ConcurrentEffect, ContextShift, Resource}
 import cats.implicits._
 import cats.effect.implicits._
 import fs2.{Chunk, Stream}
@@ -34,7 +34,7 @@ import scala.language.higherKinds
 
 class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
     client: Client[F],
-    blockingExecutionContext: ExecutionContext,
+    blocker: Blocker,
     customizeRequest: Http4sRequest[F] => Http4sRequest[F]
 ) extends SttpBackend[F, Stream[F, Byte], NothingT] {
   override def send[T](r: Request[T, Stream[F, Byte]]): F[Response[T]] = {
@@ -110,10 +110,10 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
         http4s.EntityEncoder.chunkEncoder[F].contramap(Chunk.byteBuffer).toEntity(b)
 
       case InputStreamBody(b, _) =>
-        http4s.EntityEncoder.inputStreamEncoder[F, InputStream](blockingExecutionContext).toEntity(b.pure[F])
+        http4s.EntityEncoder.inputStreamEncoder[F, InputStream](blocker).toEntity(b.pure[F])
 
       case FileBody(b, _) =>
-        http4s.EntityEncoder.fileEncoder(blockingExecutionContext).toEntity(b.toFile)
+        http4s.EntityEncoder.fileEncoder(blocker).toEntity(b.toFile)
     }
   }
 
@@ -186,7 +186,7 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
         file.createNewFile()
       }
 
-      hr.body.through(fs2.io.file.writeAll(file.toPath, blockingExecutionContext)).compile.drain
+      hr.body.through(fs2.io.file.writeAll(file.toPath, blocker)).compile.drain
     }
 
     rr match {
@@ -219,25 +219,25 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
 object Http4sBackend {
   def usingClient[F[_]: ConcurrentEffect: ContextShift](
       client: Client[F],
-      blockingExecutionContext: ExecutionContext = ExecutionContext.Implicits.global,
+      blocker: Blocker = Blocker.liftExecutionContext(ExecutionContext.Implicits.global),
       customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _
   ): SttpBackend[F, Stream[F, Byte], NothingT] =
     new FollowRedirectsBackend[F, Stream[F, Byte], NothingT](
-      new Http4sBackend[F](client, blockingExecutionContext, customizeRequest)
+      new Http4sBackend[F](client, blocker, customizeRequest)
     )
 
   def usingClientBuilder[F[_]: ConcurrentEffect: ContextShift](
       blazeClientBuilder: BlazeClientBuilder[F],
-      blockingExecutionContext: ExecutionContext = ExecutionContext.Implicits.global,
+      blocker: Blocker = Blocker.liftExecutionContext(ExecutionContext.Implicits.global),
       customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _
   ): Resource[F, SttpBackend[F, Stream[F, Byte], NothingT]] = {
-    blazeClientBuilder.resource.map(c => usingClient(c, blockingExecutionContext, customizeRequest))
+    blazeClientBuilder.resource.map(c => usingClient(c, blocker, customizeRequest))
   }
 
   def usingDefaultClientBuilder[F[_]: ConcurrentEffect: ContextShift](
       clientExecutionContext: ExecutionContext = ExecutionContext.Implicits.global,
-      blockingExecutionContext: ExecutionContext = ExecutionContext.Implicits.global,
+      blocker: Blocker = Blocker.liftExecutionContext(ExecutionContext.Implicits.global),
       customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _
   ): Resource[F, SttpBackend[F, Stream[F, Byte], NothingT]] =
-    usingClientBuilder(BlazeClientBuilder[F](clientExecutionContext), blockingExecutionContext, customizeRequest)
+    usingClientBuilder(BlazeClientBuilder[F](clientExecutionContext), blocker, customizeRequest)
 }
