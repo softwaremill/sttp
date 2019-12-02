@@ -1,7 +1,5 @@
 package sttp.client.finagle
 
-import java.nio.charset.StandardCharsets
-
 import com.twitter.finagle.Http.Client
 import com.twitter.finagle.{Http, http}
 import sttp.client.{ByteArrayBody, ByteBufferBody, FileBody, FollowRedirectsBackend, IgnoreResponse, InputStreamBody, MappedResponseAs, NoBody, NothingT, Request, Response, ResponseAs, ResponseAsByteArray, ResponseAsFile, ResponseAsFromMetadata, ResponseAsStream, ResponseMetadata, StringBody, SttpBackend}
@@ -83,8 +81,9 @@ class FinagleBackend(client: Client) extends SttpBackend[TFuture, Nothing, Nothi
       case FileBody(f, _) =>
         val byteArray: Array[Byte] = Files.readBytes(f.toFile)
         val bArray = new Buf.ByteArray(byteArray, 0, f.size.toInt)
-        val formElement = FileElement(name = f.name, content = bArray, filename = Some(f.name))
-        requestBuilder.add(formElement).buildFormPost()
+        val formElement = FileElement(name = f.name, content = bArray, contentType = headers.get("Content-Type"), filename = Some(f.name))
+        val request = requestBuilder.add(formElement).buildFormPost(false)
+        request
       case NoBody => buildRequest(url, headers, finagleMethod, None)
       case StringBody(s, e, _) => buildRequest(url, headers, finagleMethod, Some(ByteArray(s.getBytes(e): _*)))
       case ByteArrayBody(b, _) => buildRequest(url, headers, finagleMethod, Some(ByteArray(b: _*)))
@@ -112,7 +111,13 @@ class FinagleBackend(client: Client) extends SttpBackend[TFuture, Nothing, Nothi
         TFuture.Done
 
       case ResponseAsByteArray =>
-        TFuture.const(util.Try(r.contentString.getBytes(StandardCharsets.UTF_8)))
+
+        TFuture.const(util.Try{
+          val bb = ByteBuffer.Owned.extract(r.content)
+          val b = new Array[Byte](bb.remaining)
+          bb.get(b)
+          b
+        })
 
       case ras @ ResponseAsStream() =>
         responseBodyToStream(r).map(ras.responseIsStream)
