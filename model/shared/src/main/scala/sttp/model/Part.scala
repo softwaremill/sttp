@@ -21,8 +21,11 @@ case class Part[T](
   def contentType: Option[String] = header(HeaderNames.ContentType)
 
   def header(h: Header, replaceExisting: Boolean = false): Part[T] = {
-    val current = if (replaceExisting) headers.filterNot(_.is(h.name)) else headers
-    this.copy(headers = current :+ h)
+    val headers = if(replaceExisting)
+      withReplaceExisting(h)
+    else
+      withAddIfDoesNotExist(h)
+    this.copy(headers = headers)
   }
   def header(k: String, v: String): Part[T] = header(Header.notValidated(k, v))
   def header(k: String, v: String, replaceExisting: Boolean): Part[T] =
@@ -36,6 +39,11 @@ case class Part[T](
   }
 
   def dispositionParams: Map[String, String] = otherDispositionParams + (NameDispositionParam -> name)
+
+  private def withReplaceExisting(header: Header): Seq[Header] =
+    headers.filterNot(_.is(header.name)) :+ header
+  private def withAddIfDoesNotExist(header: Header): Seq[Header] =
+    headers.find(_.name == header.name).fold(headers :+ header)(_ => headers)
 }
 
 object Part {
