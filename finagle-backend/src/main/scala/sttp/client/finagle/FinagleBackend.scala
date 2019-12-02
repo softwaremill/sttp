@@ -1,0 +1,139 @@
+package sttp.client.finagle
+
+import java.nio.charset.StandardCharsets
+
+import com.twitter.finagle.Http.Client
+import com.twitter.finagle.{Http, http}
+import sttp.client.{ByteArrayBody, ByteBufferBody, FileBody, FollowRedirectsBackend, IgnoreResponse, InputStreamBody, MappedResponseAs, NoBody, NothingT, Request, Response, ResponseAs, ResponseAsByteArray, ResponseAsFile, ResponseAsFromMetadata, ResponseAsStream, ResponseMetadata, StringBody, SttpBackend}
+import com.twitter.util.{Try, Future => TFuture}
+import sttp.client.monad.MonadError
+import sttp.client.ws.WebSocketResponse
+import com.twitter.finagle.http.{FileElement, RequestBuilder, Method => FMethod, Response => FResponse}
+import com.twitter.io.{Buf, Files}
+import com.twitter.io.Buf.{ByteArray, ByteBuffer}
+import com.twitter.util
+import sttp.client.internal.FileHelpers
+import sttp.model.{Header, Method, StatusCode}
+
+class FinagleBackend(client: Client) extends SttpBackend[TFuture, Nothing, NothingT] {
+  override def send[T](request: Request[T, Nothing]): TFuture[Response[T]] = {
+    val service = client.newService(s"${request.uri.host}:${request.uri.port.getOrElse(80)}")
+    val finagleRequest = requestBodyToFinagle(request)
+    service.apply(finagleRequest).flatMap{
+      fResponse =>
+        val code = StatusCode.unsafeApply(fResponse.statusCode)
+        val headers = fResponse.headerMap.map(h => Header.notValidated(h._1, h._2)).toList
+        val statusText = fResponse.status.reason
+        val responseMetadata = ResponseMetadata(headers, code, statusText)
+        val body = fromFinagleResponse(request.response, fResponse, responseMetadata)
+        body.map(sttp.client.Response(_, code, statusText, headers, Nil))
+    }
+  }
+
+  /**
+    * Opens a websocket, using the given backend-specific handler.
+    *
+    * If the connection doesn't result in a websocket being opened, a failed effect is
+    * returned, or an exception is thrown (depending on `F`).
+    */
+  override def openWebsocket[T, WS_RESULT](request: Request[T, Nothing], handler: NothingT[WS_RESULT]): TFuture[WebSocketResponse[WS_RESULT]] = handler
+
+  override def close(): TFuture[Unit] = TFuture.Done
+
+  /**
+    * The effect wrapper for responses. Allows writing wrapper backends, which map/flatMap over
+    * the return value of [[send]] and [[openWebsocket]].
+    */
+  override def responseMonad: MonadError[TFuture] = new MonadError[TFuture] {
+    override def unit[T](t: T): TFuture[T] = TFuture.apply(t)
+
+    override def map[T, T2](fa: TFuture[T])(f: T => T2): TFuture[T2] = fa.map(f)
+
+    override def flatMap[T, T2](fa: TFuture[T])(f: T => TFuture[T2]): TFuture[T2] = fa.flatMap(f)
+
+    override def error[T](t: Throwable): TFuture[T] = TFuture.exception(t)
+
+    override protected def handleWrappedError[T](rt: TFuture[T])(h: PartialFunction[Throwable, TFuture[T]]): TFuture[T] = rt.rescue(h)
+  }
+
+  def headersToMap(headers: Seq[Header]): Map[String, String] = {
+    headers.map(header => header.name -> header.value).toMap
+  }
+
+  def methodToFinagle(m: Method): FMethod = m match {
+    case Method.GET     => FMethod.Get
+    case Method.HEAD    => FMethod.Head
+    case Method.POST    => FMethod.Post
+    case Method.PUT     => FMethod.Put
+    case Method.DELETE  => FMethod.Delete
+    case Method.OPTIONS => FMethod.Options
+    case Method.PATCH   => FMethod.Patch
+    case Method.CONNECT => FMethod.Connect
+    case Method.TRACE   => FMethod.Trace
+    case _              => FMethod(m.method)
+  }
+
+  def requestBodyToFinagle(r: Request[_, Nothing]): http.Request = {
+    val finagleMethod = methodToFinagle(r.method)
+    val url = r.uri.toString
+    val headers = headersToMap(r.headers)
+    //val finagleRequestContent = requestContent(r)
+    val requestBuilder = RequestBuilder.create().url(r.uri.toString).addHeaders(headersToMap(r.headers))
+    r.body match {
+      case FileBody(f, _) =>
+        val byteArray: Array[Byte] = Files.readBytes(f.toFile)
+        val bArray = new Buf.ByteArray(byteArray, 0, f.size.toInt)
+        val formElement = FileElement(name = f.name, content = bArray, filename = Some(f.name))
+        requestBuilder.add(formElement).buildFormPost()
+      case NoBody => buildRequest(url, headers, finagleMethod, None)
+      case StringBody(s, e, _) => buildRequest(url, headers, finagleMethod, Some(ByteArray(s.getBytes(e): _*)))
+      case ByteArrayBody(b, _) => buildRequest(url, headers, finagleMethod, Some(ByteArray(b: _*)))
+      case ByteBufferBody(b, _) => buildRequest(url, headers, finagleMethod, Some(ByteBuffer.Owned(b)))
+      case InputStreamBody(is, _) => buildRequest(url, headers, finagleMethod, Some(ByteArray(Stream.continually(is.read).takeWhile(_ != -1).map(_.toByte).toArray: _*)))
+      case _ => buildRequest(url, headers, finagleMethod, None)
+    }
+    //requestBuilder.build(finagleMethod, finagleRequestContent)
+  }
+
+  def buildRequest(url: String, headers: Map[String, String], method: FMethod, content: Option[Buf]): http.Request = {
+    RequestBuilder.create().url(url).addHeaders(headers).build(method, content)
+  }
+
+  def fromFinagleResponse[T](rr: ResponseAs[T, Nothing],  r: FResponse, meta: ResponseMetadata): TFuture[T] = {
+
+
+    rr match {
+      case MappedResponseAs(raw, g) =>
+        fromFinagleResponse(raw, r, meta).map(h => g(h,meta))
+
+      case ResponseAsFromMetadata(f) => fromFinagleResponse(f(meta), r, meta)
+
+      case IgnoreResponse =>
+        TFuture.Done
+
+      case ResponseAsByteArray =>
+        TFuture.const(util.Try(r.contentString.getBytes(StandardCharsets.UTF_8)))
+
+      case ras @ ResponseAsStream() =>
+        responseBodyToStream(r).map(ras.responseIsStream)
+
+      case ResponseAsFile(file) =>
+        val body = TFuture.const(util.Try(FileHelpers.saveFile(file.toFile, r.getInputStream())))
+        body.map(_ => file)
+    }
+  }
+
+  def responseBodyToStream[T](r: FResponse): TFuture[T] =
+    TFuture.exception(new IllegalStateException("Streaming isn't supported"))
+}
+
+object FinagleBackend {
+
+  def apply(): SttpBackend[TFuture, Nothing, NothingT] = {
+    usingClient(Http.client)
+  }
+
+  def usingClient(client : Client) : SttpBackend[TFuture, Nothing, NothingT] = {
+    new FollowRedirectsBackend[TFuture, Nothing, NothingT](new FinagleBackend(client))
+  }
+}

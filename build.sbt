@@ -224,7 +224,8 @@ lazy val rootJVM = project
     braveBackend,
     prometheusBackend,
     httpClientBackend,
-    httpClientMonixBackend
+    httpClientMonixBackend,
+    finagleBackend
   )
 
 lazy val rootJS = project
@@ -522,6 +523,18 @@ def httpClientBackendProject(proj: String): Project = {
 lazy val httpClientMonixBackend: Project =
   httpClientBackendProject("monix")
     .dependsOn(monixJVM % compileAndTest)
+
+//-- finagle backend
+lazy val finagleBackend: Project = (project in file("finagle-backend"))
+  .settings(commonJvmSettings: _*)
+  .settings(
+    name := "finagle-backend",
+    libraryDependencies ++= Seq(
+      "com.twitter" %% "finagle-http" % "19.1.0"
+    )
+  )
+  .settings(only2_11_and_2_12_settings)
+  .dependsOn(coreJVM % compileAndTest)
 
 //----- json
 lazy val jsonCommon = crossProject(JSPlatform, JVMPlatform)
