@@ -79,6 +79,8 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
     implicit val b = testingStub
     val r = basicRequest.put(uri"http://example.org/d").send()
     r.code shouldBe StatusCode.NotFound
+    r.body shouldBe 'left
+    r.body.left.get should startWith("Not Found")
   }
 
   it should "wrap responses in the desired monad" in {
@@ -141,7 +143,6 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
       .send()
 
     result.body should be(Right(""))
-
   }
 
   it should "handle a 300 as a failure" in {
@@ -153,7 +154,6 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
       .send()
 
     result.body should be(Left(""))
-
   }
 
   it should "handle a 400 as a failure" in {
@@ -165,7 +165,6 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
       .send()
 
     result.body should be(Left(""))
-
   }
 
   it should "handle a 500 as a failure" in {
@@ -177,7 +176,6 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
       .send()
 
     result.body should be(Left(""))
-
   }
 
   it should "not hold the calling thread when passed a future monad" in {
