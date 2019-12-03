@@ -2,9 +2,10 @@ package sttp.model
 
 import java.time.{ZoneId, ZonedDateTime}
 
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class CookieTest extends FlatSpec with Matchers {
+class CookieTest extends AnyFlatSpec with Matchers {
   val parseCookieData = List(
     "user_id=5; Expires=Fri, 5 Oct 2018 14:28:00 GMT; Secure; HttpOnly" -> Right(
       CookieWithMeta.unsafeApply(

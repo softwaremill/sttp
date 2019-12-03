@@ -1,13 +1,15 @@
 package sttp.client.internal
 
-import org.scalatest.{FreeSpec, Matchers, OptionValues}
+import org.scalatest.OptionValues
 import sttp.client.internal.DigestAuthenticator.DigestAuthData
 import sttp.client._
 import sttp.model.{Header, HeaderNames, StatusCode}
 
 import scala.util.{Failure, Try}
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.should.Matchers
 
-class DigestAuthenticatorTest extends FreeSpec with Matchers with OptionValues {
+class DigestAuthenticatorTest extends AnyFreeSpec with Matchers with OptionValues {
   "should work" in {
     val request = basicRequest
       .get(uri"http://google.com")

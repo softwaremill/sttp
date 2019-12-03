@@ -7,8 +7,10 @@ import sttp.client._
 import sttp.model._
 
 import scala.language.higherKinds
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class CirceTests extends FlatSpec with Matchers with EitherValues {
+class CirceTests extends AnyFlatSpec with Matchers with EitherValues {
   "The circe module" should "encode arbitrary bodies given an encoder" in {
     val body = Outer(Inner(42, true, "horses"), "cats")
     val expected = """{"foo":{"a":42,"b":true,"c":"horses"},"bar":"cats"}"""

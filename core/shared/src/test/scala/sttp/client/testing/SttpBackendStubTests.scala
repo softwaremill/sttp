@@ -9,15 +9,16 @@ import sttp.client.internal._
 import sttp.model._
 import sttp.client.monad.{FutureMonad, IdMonad}
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.{FlatSpec, Matchers}
 import sttp.client.{IgnoreResponse, ResponseAs, SttpBackend}
 import sttp.model.{Method, StatusCode}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 @silent("dead code")
-class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
+class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
   private val testingStub = SttpBackendStub(IdMonad)
     .whenRequestMatches(_.uri.path.startsWith(List("a", "b")))
     .thenRespondOk()

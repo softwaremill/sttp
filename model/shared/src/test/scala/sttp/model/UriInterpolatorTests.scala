@@ -1,9 +1,10 @@
 package sttp.model
 
-import org.scalatest.{FunSuite, Matchers}
 import Uri._
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
-class UriInterpolatorTests extends FunSuite with Matchers {
+class UriInterpolatorTests extends AnyFunSuite with Matchers {
   val v1 = "y"
   val v2 = "a c"
   val v2queryEncoded = "a+c"

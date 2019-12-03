@@ -2,11 +2,13 @@ package sttp.client.testing.streaming
 
 import sttp.client._
 import sttp.client.testing.{ConvertToFuture, ToFutureWrapper}
-import org.scalatest.{AsyncFreeSpec, BeforeAndAfterAll, Matchers}
+import org.scalatest.BeforeAndAfterAll
 import StreamingTest._
 import sttp.client.internal.Utf8
 
 import scala.language.higherKinds
+import org.scalatest.freespec.AsyncFreeSpec
+import org.scalatest.matchers.should.Matchers
 
 trait StreamingTest[F[_], S]
     extends AsyncFreeSpec

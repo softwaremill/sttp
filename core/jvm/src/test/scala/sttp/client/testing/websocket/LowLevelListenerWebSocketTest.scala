@@ -5,13 +5,15 @@ import java.util.concurrent.ConcurrentLinkedQueue
 
 import com.github.ghik.silencer.silent
 import org.scalatest.concurrent.{Eventually, IntegrationPatience}
-import org.scalatest.{Assertion, AsyncFlatSpec, Matchers}
+import org.scalatest.Assertion
 import sttp.client._
 import sttp.client.monad.MonadError
 import sttp.client.testing.{ConvertToFuture, TestHttpServer, ToFutureWrapper}
 import sttp.client.monad.syntax._
 
 import scala.collection.JavaConverters._
+import org.scalatest.flatspec.AsyncFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 @silent("discarded")
 trait LowLevelListenerWebSocketTest[F[_], WS, WS_HANDLER[_]]

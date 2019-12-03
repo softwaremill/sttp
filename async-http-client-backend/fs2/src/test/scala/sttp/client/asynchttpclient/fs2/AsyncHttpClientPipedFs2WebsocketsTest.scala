@@ -4,7 +4,6 @@ import cats.effect.concurrent.Ref
 import cats.effect.{ContextShift, IO, Timer}
 import cats.implicits._
 import fs2._
-import org.scalatest.{AsyncFlatSpec, Matchers}
 import sttp.client._
 import sttp.client.asynchttpclient.WebSocketHandler
 import sttp.client.impl.cats.CatsMonadAsyncError
@@ -16,6 +15,8 @@ import sttp.model.ws.WebSocketFrame
 import scala.collection.immutable.Queue
 import scala.concurrent.duration._
 import scala.concurrent.Future
+import org.scalatest.flatspec.AsyncFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 class AsyncHttpClientPipedFs2WebsocketsTest
     extends AsyncFlatSpec

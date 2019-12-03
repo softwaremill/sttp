@@ -3,9 +3,11 @@ package sttp.model
 import java.net.URI
 
 import Uri._
-import org.scalatest.{FunSuite, Matchers, TryValues}
+import org.scalatest.TryValues
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
-class UriTests extends FunSuite with Matchers with TryValues {
+class UriTests extends AnyFunSuite with Matchers with TryValues {
 
   val HS = HostSegment
   val PS = PathSegment

@@ -1,11 +1,12 @@
 package sttp.client
 
-import org.scalatest.{FlatSpec, Matchers}
 import sttp.client.testing.EvalScala
 
 import scala.tools.reflect.ToolBoxError
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class IllTypedTests extends FlatSpec with Matchers {
+class IllTypedTests extends AnyFlatSpec with Matchers {
   "compilation" should "fail when trying to stream using the default backend" in {
     val thrown = intercept[ToolBoxError] {
       EvalScala("""

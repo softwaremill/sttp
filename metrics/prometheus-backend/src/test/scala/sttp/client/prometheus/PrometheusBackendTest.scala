@@ -7,16 +7,18 @@ import sttp.client.testing.SttpBackendStub
 import sttp.client._
 import io.prometheus.client.CollectorRegistry
 import org.scalatest.concurrent.{Eventually, IntegrationPatience}
-import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers, OptionValues}
+import org.scalatest.{BeforeAndAfter, OptionValues}
 import sttp.client.testing.SttpBackendStub
 import sttp.model.StatusCode
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.blocking
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 class PrometheusBackendTest
-    extends FlatSpec
+    extends AnyFlatSpec
     with Matchers
     with BeforeAndAfter
     with Eventually

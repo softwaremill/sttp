@@ -1,9 +1,10 @@
 package sttp.client
 
-import org.scalatest.{FlatSpec, Matchers}
 import sttp.model.{StatusCode, _}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class CookieRequestTests extends FlatSpec with Matchers {
+class CookieRequestTests extends AnyFlatSpec with Matchers {
 
   "request cookies" should "be set from a name-value pair" in {
     basicRequest

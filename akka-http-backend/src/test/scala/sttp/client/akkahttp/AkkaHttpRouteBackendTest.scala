@@ -4,12 +4,14 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.server.Route
 import akka.stream.ActorMaterializer
 import com.github.ghik.silencer.silent
-import org.scalatest.{AsyncWordSpec, BeforeAndAfterAll, Matchers}
+import org.scalatest.BeforeAndAfterAll
 import sttp.client.{NothingT, SttpBackend}
 import sttp.model.StatusCode
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AsyncWordSpec
 
 class AkkaHttpRouteBackendTest extends AsyncWordSpec with Matchers with BeforeAndAfterAll {
 

@@ -8,7 +8,6 @@ import akka.stream.Materializer
 import akka.stream.scaladsl._
 import com.github.ghik.silencer.silent
 import org.scalatest.concurrent.{Eventually, IntegrationPatience}
-import org.scalatest.{AsyncFlatSpec, Matchers}
 import sttp.client._
 import sttp.client.testing.TestHttpServer
 
@@ -16,6 +15,8 @@ import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.Success
+import org.scalatest.flatspec.AsyncFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 class AkkaHttpWebsocketTest
     extends AsyncFlatSpec

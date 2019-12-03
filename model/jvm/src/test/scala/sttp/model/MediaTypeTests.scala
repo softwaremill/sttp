@@ -1,8 +1,9 @@
 package sttp.model
 
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class MediaTypeTests extends FlatSpec with Matchers {
+class MediaTypeTests extends AnyFlatSpec with Matchers {
   val parseMediaTypeData = List(
     "text/html" -> Right(MediaType.unsafeApply("text", "html")),
     "text/html; charset=UTF-8" -> Right(MediaType.unsafeApply("text", "html", Some("UTF-8"))),
