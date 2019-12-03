@@ -79,7 +79,7 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
     implicit val b = testingStub
     val r = basicRequest.put(uri"http://example.org/d").send()
     r.code shouldBe StatusCode.NotFound
-    r.body shouldBe 'left
+    r.body.isLeft shouldBe true
     r.body.left.get should startWith("Not Found")
   }
 
