@@ -2,16 +2,18 @@ package sttp.client.finagle
 
 import com.twitter.finagle.Http.Client
 import com.twitter.finagle.{Http, http}
-import sttp.client.{ByteArrayBody, ByteBufferBody, FileBody, FollowRedirectsBackend, IgnoreResponse, InputStreamBody, MappedResponseAs, MultipartBody, NoBody, NothingT, Request, Response, ResponseAs, ResponseAsByteArray, ResponseAsFile, ResponseAsFromMetadata, ResponseAsStream, ResponseMetadata, StringBody, SttpBackend}
+import sttp.client.{BasicRequestBody, ByteArrayBody, ByteBufferBody, FileBody, FollowRedirectsBackend, IgnoreResponse, InputStreamBody, MappedResponseAs, MultipartBody, NoBody, NothingT, Request, Response, ResponseAs, ResponseAsByteArray, ResponseAsFile, ResponseAsFromMetadata, ResponseAsStream, ResponseMetadata, StringBody, SttpBackend}
 import com.twitter.util.{Try, Future => TFuture}
 import sttp.client.monad.MonadError
 import sttp.client.ws.WebSocketResponse
-import com.twitter.finagle.http.{FileElement, RequestBuilder, Method => FMethod, Response => FResponse}
+import com.twitter.finagle.http.{FileElement, RequestBuilder, SimpleElement, Method => FMethod, Response => FResponse}
 import com.twitter.io.{Buf, Files}
 import com.twitter.io.Buf.{ByteArray, ByteBuffer}
 import com.twitter.util
 import sttp.client.internal.FileHelpers
 import sttp.model.{Header, Method, StatusCode}
+
+import scala.io.Source
 
 class FinagleBackend(client: Client) extends SttpBackend[TFuture, Nothing, NothingT] {
   override def send[T](request: Request[T, Nothing]): TFuture[Response[T]] = {
@@ -75,24 +77,34 @@ class FinagleBackend(client: Client) extends SttpBackend[TFuture, Nothing, Nothi
     val finagleMethod = methodToFinagle(r.method)
     val url = r.uri.toString
     val headers = headersToMap(r.headers)
-    //val finagleRequestContent = requestContent(r)
-    val requestBuilder = RequestBuilder.create().url(r.uri.toString).addHeaders(headersToMap(r.headers))
+
     r.body match {
       case FileBody(f, _) =>
-        val byteArray: Array[Byte] = Files.readBytes(f.toFile)
-        val bArray = new Buf.ByteArray(byteArray, 0, f.size.toInt)
-        val formElement = FileElement(name = f.name, content = bArray, contentType = headers.get("Content-Type"), filename = Some(f.name))
-        val request = requestBuilder.add(formElement).buildFormPost(false)
-        request
+        val content : String = Source.fromFile(f.toFile).mkString
+        buildRequest(url, headers, finagleMethod, Some(ByteArray(content.getBytes: _*)))
       case NoBody => buildRequest(url, headers, finagleMethod, None)
       case StringBody(s, e, _) => buildRequest(url, headers, finagleMethod, Some(ByteArray(s.getBytes(e): _*)))
       case ByteArrayBody(b, _) => buildRequest(url, headers, finagleMethod, Some(ByteArray(b: _*)))
       case ByteBufferBody(b, _) => buildRequest(url, headers, finagleMethod, Some(ByteBuffer.Owned(b)))
       case InputStreamBody(is, _) => buildRequest(url, headers, finagleMethod, Some(ByteArray(Stream.continually(is.read).takeWhile(_ != -1).map(_.toByte).toArray: _*)))
+      case MultipartBody(parts) => val requestBuilder = RequestBuilder.create().url(r.uri.toString).addHeaders(headersToMap(r.headers))
+        val elements = parts.map {
+        part =>
+          (part.name, getBasicBodyContent(part.body))
+        }
+        requestBuilder.addFormElement(elements: _*).buildFormPost(true)
       case _ => buildRequest(url, headers, finagleMethod, None)
     }
   }
 
+  def getBasicBodyContent(basicRequestBody: BasicRequestBody): String = {
+    basicRequestBody match {
+      case StringBody(s, _, _) => s
+      case ByteArrayBody(b, _) => Source.fromBytes(b).mkString
+      case ByteBufferBody(b, _) => Source.fromBytes(b.array()).mkString
+      case InputStreamBody(is, _) => Source.fromInputStream(is).mkString
+    }
+  }
   def buildRequest(url: String, headers: Map[String, String], method: FMethod, content: Option[Buf]): http.Request = {
     RequestBuilder.create().url(url).addHeaders(headers).build(method, content)
   }
