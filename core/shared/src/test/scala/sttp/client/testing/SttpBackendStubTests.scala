@@ -7,7 +7,7 @@ import com.github.ghik.silencer.silent
 import sttp.client._
 import sttp.client.internal._
 import sttp.model._
-import sttp.client.monad.{FutureMonad, IdMonad}
+import sttp.client.monad.{FutureMonad, IdMonad, TryMonad}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FlatSpec, Matchers}
 import sttp.client.{IgnoreResponse, ResponseAs, SttpBackend}
@@ -15,6 +15,7 @@ import sttp.model.{Method, StatusCode}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
+import scala.util.Success
 
 @silent("dead code")
 class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
@@ -85,9 +86,9 @@ class SttpBackendStubTests extends FlatSpec with Matchers with ScalaFutures {
 
   it should "wrap responses in the desired monad" in {
     import scala.concurrent.ExecutionContext.Implicits.global
-    implicit val b = SttpBackendStub(new FutureMonad())
+    implicit val b = SttpBackendStub(TryMonad)
     val r = basicRequest.post(uri"http://example.org").send()
-    r.futureValue.code shouldBe StatusCode.NotFound
+    r.map(_.code) shouldBe Success(StatusCode.NotFound)
   }
 
   it should "use rules in partial function" in {
