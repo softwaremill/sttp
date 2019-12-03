@@ -2,7 +2,7 @@ package sttp.client.finagle
 
 import com.twitter.finagle.Http.Client
 import com.twitter.finagle.{Http, http}
-import sttp.client.{ByteArrayBody, ByteBufferBody, FileBody, FollowRedirectsBackend, IgnoreResponse, InputStreamBody, MappedResponseAs, NoBody, NothingT, Request, Response, ResponseAs, ResponseAsByteArray, ResponseAsFile, ResponseAsFromMetadata, ResponseAsStream, ResponseMetadata, StringBody, SttpBackend}
+import sttp.client.{ByteArrayBody, ByteBufferBody, FileBody, FollowRedirectsBackend, IgnoreResponse, InputStreamBody, MappedResponseAs, MultipartBody, NoBody, NothingT, Request, Response, ResponseAs, ResponseAsByteArray, ResponseAsFile, ResponseAsFromMetadata, ResponseAsStream, ResponseMetadata, StringBody, SttpBackend}
 import com.twitter.util.{Try, Future => TFuture}
 import sttp.client.monad.MonadError
 import sttp.client.ws.WebSocketResponse
@@ -24,7 +24,7 @@ class FinagleBackend(client: Client) extends SttpBackend[TFuture, Nothing, Nothi
         val statusText = fResponse.status.reason
         val responseMetadata = ResponseMetadata(headers, code, statusText)
         val body = fromFinagleResponse(request.response, fResponse, responseMetadata)
-        body.map(sttp.client.Response(_, code, statusText, headers, Nil))
+        service.close().flatMap(_ => body.map(sttp.client.Response(_, code, statusText, headers, Nil)))
     }
   }
 
@@ -91,7 +91,6 @@ class FinagleBackend(client: Client) extends SttpBackend[TFuture, Nothing, Nothi
       case InputStreamBody(is, _) => buildRequest(url, headers, finagleMethod, Some(ByteArray(Stream.continually(is.read).takeWhile(_ != -1).map(_.toByte).toArray: _*)))
       case _ => buildRequest(url, headers, finagleMethod, None)
     }
-    //requestBuilder.build(finagleMethod, finagleRequestContent)
   }
 
   def buildRequest(url: String, headers: Map[String, String], method: FMethod, content: Option[Buf]): http.Request = {
