@@ -7,9 +7,12 @@ import sttp.model.internal.Validate._
 import scala.util.hashing.MurmurHash3
 
 /**
-  * An HTTP header. The `name` property is case-insensitive during equality checks.
+  * An HTTP header. The [[name]] property is case-insensitive during equality checks.
   *
-  * The `name` and `value` should be already encoded (if necessary), as when serialised, they end up unmodified in
+  * To compare if two headers have the same name, use the [[is]] method, which does a case-insensitive check,
+  * instead of comparing the [[name]] property.
+  *
+  * The [[name]] and [[value]] should be already encoded (if necessary), as when serialised, they end up unmodified in
   * the header.
   */
 class Header(val name: String, val value: String) {

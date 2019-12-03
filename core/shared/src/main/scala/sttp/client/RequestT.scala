@@ -68,10 +68,20 @@ case class RequestT[U[_], T, +S](
     header(HeaderNames.ContentType, contentTypeWithCharset(ct, encoding), replaceExisting = true)
   def contentLength(l: Long): RequestT[U, T, S] =
     header(HeaderNames.ContentLength, l.toString, replaceExisting = true)
+
+  /**
+    * Adds the given header to the end of the headers sequence.
+    * @param replaceExisting If there's already a header with the same name, should it be dropped?
+    */
   def header(h: Header, replaceExisting: Boolean = false): RequestT[U, T, S] = {
     val current = if (replaceExisting) headers.filterNot(_.is(h.name)) else headers
     this.copy(headers = current :+ h)
   }
+
+  /**
+    * Adds the given header to the end of the headers sequence.
+    * @param replaceExisting If there's already a header with the same name, should it be dropped?
+    */
   def header(k: String, v: String, replaceExisting: Boolean): RequestT[U, T, S] =
     header(Header.notValidated(k, v), replaceExisting)
   def header(k: String, v: String): RequestT[U, T, S] = header(Header.notValidated(k, v))
