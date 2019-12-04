@@ -20,11 +20,20 @@ case class Part[T](
   def contentType(v: String): Part[T] = header(Header.notValidated(HeaderNames.ContentType, v), replaceExisting = true)
   def contentType: Option[String] = header(HeaderNames.ContentType)
 
+  /**
+    * Adds the given header to the end of the headers sequence.
+    * @param replaceExisting If there's already a header with the same name, should it be dropped?
+    */
   def header(h: Header, replaceExisting: Boolean = false): Part[T] = {
     val current = if (replaceExisting) headers.filterNot(_.is(h.name)) else headers
     this.copy(headers = current :+ h)
   }
   def header(k: String, v: String): Part[T] = header(Header.notValidated(k, v))
+
+  /**
+    * Adds the given header to the end of the headers sequence.
+    * @param replaceExisting If there's already a header with the same name, should it be dropped?
+    */
   def header(k: String, v: String, replaceExisting: Boolean): Part[T] =
     header(Header.notValidated(k, v), replaceExisting)
 
