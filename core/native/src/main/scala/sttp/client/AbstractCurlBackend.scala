@@ -15,10 +15,10 @@ import sttp.model.{Header, Method, StatusCode}
 
 import scala.collection.immutable.Seq
 import scala.io.Source
-import scala.scalanative.native
-import scala.scalanative.native.stdlib._
-import scala.scalanative.native.string._
-import scala.scalanative.native.{CSize, Ptr, _}
+import scala.scalanative.unsafe
+import scala.scalanative.libc.stdlib._
+import scala.scalanative.libc.string._
+import scala.scalanative.unsafe.{CSize, Ptr, _}
 
 abstract class AbstractCurlBackend[F[_], S](monad: MonadError[F], verbose: Boolean)
     extends SttpBackend[F, S, NothingT] {
@@ -29,7 +29,7 @@ abstract class AbstractCurlBackend[F[_], S](monad: MonadError[F], verbose: Boole
   private var headers: CurlList = _
   private var multiPartHeaders: Seq[CurlList] = Seq()
 
-  override def send[T](request: Request[T, S]): F[Response[T]] = native.Zone { implicit z =>
+  override def send[T](request: Request[T, S]): F[Response[T]] = unsafe.Zone { implicit z =>
     val curl = CurlApi.init
     if (verbose) {
       curl.option(Verbose, parameter = true)
@@ -63,17 +63,17 @@ abstract class AbstractCurlBackend[F[_], S](monad: MonadError[F], verbose: Boole
 
     responseMonad.flatMap(lift(curl.perform)) { _ =>
       curl.info(ResponseCode, spaces.httpCode)
-      val responseBody = fromCString(!spaces.bodyResp._1)
-      val responseHeaders_ = parseHeaders(fromCString(!spaces.headersResp._1))
+      val responseBody = fromCString((!spaces.bodyResp)._1)
+      val responseHeaders_ = parseHeaders(fromCString((!spaces.headersResp)._1))
       val httpCode = StatusCode.notValidated((!spaces.httpCode).toInt)
 
       if (headers.ptr != null) headers.ptr.free()
       multiPartHeaders.foreach(_.ptr.free())
-      free(!spaces.bodyResp._1)
-      free(!spaces.headersResp._1)
-      free(spaces.bodyResp.cast[Ptr[CSignedChar]])
-      free(spaces.headersResp.cast[Ptr[CSignedChar]])
-      free(spaces.httpCode.cast[Ptr[CSignedChar]])
+      free((!spaces.bodyResp)._1)
+      free((!spaces.headersResp)._1)
+      free(spaces.bodyResp.asInstanceOf[Ptr[CSignedChar]])
+      free(spaces.headersResp.asInstanceOf[Ptr[CSignedChar]])
+      free(spaces.httpCode.asInstanceOf[Ptr[CSignedChar]])
       curl.cleanup()
 
       val statusText = responseHeaders_.head.name.split(" ").last
@@ -154,13 +154,13 @@ abstract class AbstractCurlBackend[F[_], S](monad: MonadError[F], verbose: Boole
     }
 
   private def responseSpace: CurlSpaces = {
-    val bodyResp = malloc(sizeof[CurlFetch]).cast[Ptr[CurlFetch]]
-    !bodyResp._1 = calloc(4096, sizeof[CChar]).cast[CString]
-    !bodyResp._2 = 0
-    val headersResp = malloc(sizeof[CurlFetch]).cast[Ptr[CurlFetch]]
-    !headersResp._1 = calloc(4096, sizeof[CChar]).cast[CString]
-    !headersResp._2 = 0
-    val httpCode = malloc(sizeof[Long]).cast[Ptr[Long]]
+    val bodyResp = malloc(sizeof[CurlFetch]).asInstanceOf[Ptr[CurlFetch]]
+    (!bodyResp)._1 = calloc(4096, sizeof[CChar])
+    (!bodyResp)._2 = 0
+    val headersResp = malloc(sizeof[CurlFetch]).asInstanceOf[Ptr[CurlFetch]]
+    (!headersResp)._1 = calloc(4096, sizeof[CChar])
+    (!headersResp)._2 = 0
+    val httpCode = malloc(sizeof[Long]).asInstanceOf[Ptr[Long]]
     new CurlSpaces(bodyResp, headersResp, httpCode)
   }
 
@@ -175,7 +175,7 @@ abstract class AbstractCurlBackend[F[_], S](monad: MonadError[F], verbose: Boole
         else
           Header.notValidated(split(0).trim, "")
       }
-    Seq.from(array: _*)
+    Seq(array: _*)
   }
 
   private def readResponseBody[T](
@@ -223,15 +223,15 @@ abstract class AbstractCurlBackend[F[_], S](monad: MonadError[F], verbose: Boole
 }
 
 object AbstractCurlBackend {
-  def writeData(ptr: Ptr[Byte], size: CSize, nmemb: CSize, data: Ptr[CurlFetch]): CSize = {
-    val index: CSize = !data._2
-    val increment: CSize = size * nmemb
-    !data._2 = !data._2 + increment
-    !data._1 = realloc(!data._1, !data._2 + 1)
-    memcpy(!data._1 + index, ptr, increment)
-    !(!data._1).+(!data._2) = 0.toByte
-    size * nmemb
+  val wdFunc = new CFuncPtr4[Ptr[Byte], CSize, CSize, Ptr[CurlFetch], CSize] {
+    override def apply(ptr: Ptr[CChar], size: CSize, nmemb: CSize, data: Ptr[CurlFetch]): CSize = {
+      val index: CSize = (!data)._2
+      val increment: CSize = size * nmemb
+      (!data)._2 = (!data)._2 + increment
+      (!data)._1 = realloc((!data)._1, (!data)._2 + 1)
+      memcpy((!data)._1 + index, ptr, increment)
+      !(!data)._1.+((!data)._2) = 0.toByte
+      size * nmemb
+    }
   }
-
-  val wdFunc = CFunctionPtr.fromFunction4(writeData)
 }

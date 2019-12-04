@@ -4,7 +4,7 @@ import sttp.client.curl.CurlCode.CurlCode
 import sttp.client.curl.CurlInfo.CurlInfo
 import sttp.client.curl.CurlOption.CurlOption
 
-import scala.scalanative.native.{Ptr, _}
+import scala.scalanative.unsafe.{Ptr, _}
 
 private[client] object CurlApi {
   type CurlHandle = Ptr[Curl]
@@ -44,7 +44,7 @@ private[client] object CurlApi {
       setopt(handle, option, parameter)
     }
 
-    def option[FuncPtr >: CFunctionPtr](option: CurlOption, parameter: FuncPtr): CurlCode = {
+    def option[FuncPtr >: CFuncPtr](option: CurlOption, parameter: FuncPtr): CurlCode = {
       setopt(handle, option, parameter)
     }
 

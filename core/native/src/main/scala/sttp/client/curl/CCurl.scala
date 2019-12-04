@@ -2,7 +2,7 @@ package sttp.client.curl
 
 import sttp.client.curl.CurlCode.CurlCode
 
-import scala.scalanative.native._
+import scala.scalanative.unsafe._
 
 private[curl] trait Curl {}
 

@@ -5,7 +5,9 @@ import java.nio.ByteBuffer
 
 import sttp.client._
 import org.scalatest._
+import org.scalatest.freespec.AnyFreeSpec
 import sttp.model.StatusCode
+import org.scalatest.matchers.should.Matchers
 
 import scala.concurrent.duration._
 
@@ -14,14 +16,13 @@ import scala.concurrent.duration._
 // As soon as AsyncFreeSpec is released for Scala Native, this one should be drooped in favour of HttpTest.
 // The progress can be tracked within this issue: https://github.com/scalatest/scalatest/issues/1112.
 trait SyncHttpTest
-    extends FreeSpec
+    extends AnyFreeSpec
     with Matchers
     with ToFutureWrapper
     with OptionValues
     with EitherValues
     with BeforeAndAfterAll
     with SyncHttpTestExtensions {
-
   protected def endpoint: String = "localhost:51823"
 
   protected val binaryFileMD5Hash = "565370873a38d91f34a3091082e63933"
@@ -48,7 +49,6 @@ trait SyncHttpTest
         .response(asString.mapRight(_.length))
         .send()
       response.body should be(Right(expectedPostEchoResponse.length))
-
     }
 
     "as string with mapping using mapResponse" in {
@@ -94,13 +94,11 @@ trait SyncHttpTest
         .body(testBody)
         .send()
       response.body should be(Right(expectedPostEchoResponse))
-
     }
 
     "post a byte array" in {
       val response = postEcho.body(testBodyBytes).send()
       response.body should be(Right(expectedPostEchoResponse))
-
     }
 
     "post an input stream" in {
@@ -123,7 +121,6 @@ trait SyncHttpTest
         .body("a" -> "b", "c" -> "d")
         .send()
       response.body should be(Right("a=b c=d"))
-
     }
 
     "post form data with special characters" in {
@@ -137,7 +134,6 @@ trait SyncHttpTest
     "post without a body" in {
       val response = postEcho.send()
       response.body should be(Right("POST /echo"))
-
     }
   }
 
@@ -152,7 +148,6 @@ trait SyncHttpTest
       response.header("Server").exists(_.startsWith("akka-http")) should be(true)
       response.contentType should be(Some("text/plain; charset=UTF-8"))
       response.contentLength should be(Some(2L))
-
     }
   }
 
@@ -196,7 +191,6 @@ trait SyncHttpTest
       val req = compress
       val resp = req.send()
       resp.body should be(Right(decompressedBody))
-
     }
 
     "decompress using gzip" in {
@@ -329,5 +323,4 @@ trait SyncHttpTest
     backend.close()
     super.afterAll()
   }
-
 }
