@@ -1,6 +1,6 @@
 package sttp.client.testing.websocket
 
-import org.scalatest.{Assertion, AsyncFlatSpec, Matchers}
+import org.scalatest.Assertion
 import sttp.client._
 import sttp.client.monad.MonadError
 import sttp.client.monad.syntax._
@@ -9,6 +9,8 @@ import sttp.client.ws.WebSocket
 import sttp.model.ws.WebSocketFrame
 
 import scala.concurrent.duration.FiniteDuration
+import org.scalatest.flatspec.AsyncFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 abstract class HighLevelWebsocketTest[F[_], WS_HANDLER[_]]
     extends AsyncFlatSpec

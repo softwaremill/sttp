@@ -1,6 +1,6 @@
 package sttp.client
 
-import org.scalatest.{EitherValues, FlatSpec, Matchers}
+import org.scalatest.EitherValues
 import spray.json.DefaultJsonProtocol._
 import spray.json.JsonParser.ParsingException
 import spray.json._
@@ -8,8 +8,10 @@ import sttp.client.SprayJsonTests._
 import sttp.client.internal.Utf8
 import sttp.client.sprayJson._
 import sttp.model.{StatusCode, _}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class SprayJsonTests extends FlatSpec with Matchers with EitherValues {
+class SprayJsonTests extends AnyFlatSpec with Matchers with EitherValues {
   behavior of "The spray-json module"
 
   it should "encode arbitrary json bodies" in {

@@ -11,6 +11,8 @@ import sttp.model.StatusCode
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.language.higherKinds
+import org.scalatest.freespec.AsyncFreeSpec
+import org.scalatest.matchers.should.Matchers
 
 trait HttpTest[F[_]]
     extends AsyncFreeSpec

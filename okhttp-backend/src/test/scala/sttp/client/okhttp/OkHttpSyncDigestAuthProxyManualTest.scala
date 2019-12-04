@@ -1,8 +1,10 @@
 package sttp.client.okhttp
 
-import org.scalatest.{AsyncFreeSpec, Ignore, Matchers}
+import org.scalatest.Ignore
 import sttp.client._
 import sttp.client.testing.{ConvertToFuture, ToFutureWrapper}
+import org.scalatest.freespec.AsyncFreeSpec
+import org.scalatest.matchers.should.Matchers
 
 @Ignore
 class OkHttpSyncDigestAuthProxyManualTest extends AsyncFreeSpec with Matchers with ToFutureWrapper {

@@ -1,8 +1,9 @@
 package sttp.model
 
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class StatusCodeTests extends FlatSpec with Matchers {
+class StatusCodeTests extends AnyFlatSpec with Matchers {
   it should "return a string description of the status code" in {
     StatusCode.Accepted.toString shouldBe "202"
   }

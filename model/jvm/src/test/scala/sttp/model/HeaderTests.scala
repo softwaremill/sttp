@@ -1,8 +1,9 @@
 package sttp.model
 
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class HeaderTests extends FlatSpec with Matchers {
+class HeaderTests extends AnyFlatSpec with Matchers {
   it should "return a string description of the header" in {
     Header.unsafeApply(HeaderNames.Authorization, "xyz").toString shouldBe "Authorization: xyz"
   }

@@ -4,11 +4,13 @@ import brave.http.HttpTracing
 import brave.internal.HexCodec
 import brave.test.http.ITHttpClient
 import okhttp3.mockwebserver.MockResponse
-import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
+import org.scalatest.BeforeAndAfter
 import sttp.client.{SttpBackend, _}
 import zipkin2.Span
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class BraveBackendTest extends FlatSpec with Matchers with BeforeAndAfter {
+class BraveBackendTest extends AnyFlatSpec with Matchers with BeforeAndAfter {
 
   // test proxy - contains the brave instrumentation tests
   private var t: ITHttpClient[SttpBackend[Identity, Nothing, NothingT]] = null

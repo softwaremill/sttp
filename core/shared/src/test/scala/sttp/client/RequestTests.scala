@@ -1,9 +1,10 @@
 package sttp.client
 
-import org.scalatest.{FlatSpec, Matchers}
 import sttp.model.HeaderNames
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class RequestTests extends FlatSpec with Matchers {
+class RequestTests extends AnyFlatSpec with Matchers {
 
   "content length" should "be automatically set for a string body" in {
     basicRequest

@@ -1,8 +1,9 @@
 package sttp.client
 
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class SttpBackendOptionsProxyTest extends FlatSpec with Matchers {
+class SttpBackendOptionsProxyTest extends AnyFlatSpec with Matchers {
 
   "ignoreProxy" should "return true for a exact match with nonProxyHosts" in {
     val proxySetting = SttpBackendOptions.Proxy(

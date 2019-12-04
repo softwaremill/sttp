@@ -1,8 +1,9 @@
 package sttp.client.internal
 
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class WwwAuthHeaderParserTest extends FlatSpec with Matchers {
+class WwwAuthHeaderParserTest extends AnyFlatSpec with Matchers {
   it should "parse header with only quoted values" in {
     WwwAuthHeaderParser
       .parse(

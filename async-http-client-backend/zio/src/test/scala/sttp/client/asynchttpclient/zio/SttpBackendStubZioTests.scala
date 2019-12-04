@@ -1,14 +1,15 @@
 package sttp.client.asynchttpclient.zio
 
-import org.scalatest.{FlatSpec, Matchers}
 import org.scalatest.concurrent.ScalaFutures
 import sttp.client._
 import sttp.client.impl.zio.TaskMonadAsyncError
 import sttp.client.testing.SttpBackendStub
 import sttp.client.impl.zio._
 import zio.Task
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class SttpBackendStubZioTests extends FlatSpec with Matchers with ScalaFutures {
+class SttpBackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFutures {
 
   "backend stub" should "cycle through responses using a single sent request" in {
     // given

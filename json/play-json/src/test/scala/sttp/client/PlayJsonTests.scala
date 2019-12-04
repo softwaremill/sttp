@@ -6,8 +6,10 @@ import sttp.model._
 import play.api.libs.json._
 import org.scalatest._
 import sttp.model.StatusCode
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class PlayJsonTests extends FlatSpec with Matchers with EitherValues {
+class PlayJsonTests extends AnyFlatSpec with Matchers with EitherValues {
 
   "The play-json module" should "write arbitrary bodies given a Format" in {
     implicitly[Format[Outer]]

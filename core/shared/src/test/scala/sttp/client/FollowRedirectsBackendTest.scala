@@ -1,8 +1,9 @@
 package sttp.client
 
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
-class FollowRedirectsBackendTest extends FunSuite with Matchers {
+class FollowRedirectsBackendTest extends AnyFunSuite with Matchers {
   val testData = List(
     ("/x/y/z", true),
     ("  /x2/y/z", true),

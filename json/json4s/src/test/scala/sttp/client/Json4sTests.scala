@@ -7,8 +7,10 @@ import sttp.client.internal._
 import sttp.model._
 
 import scala.language.higherKinds
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class Json4sTests extends FlatSpec with Matchers with EitherValues {
+class Json4sTests extends AnyFlatSpec with Matchers with EitherValues {
   implicit val serialization = native.Serialization
   import Json4sTests._
   import json4s._

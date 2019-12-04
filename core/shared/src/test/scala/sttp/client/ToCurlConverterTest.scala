@@ -3,9 +3,10 @@ package sttp.client
 import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets
 
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class ToCurlConverterTest extends FlatSpec with Matchers with ToCurlConverterTestExtension {
+class ToCurlConverterTest extends AnyFlatSpec with Matchers with ToCurlConverterTestExtension {
   private val localhost = uri"http://localhost"
 
   it should "convert base request" in {
