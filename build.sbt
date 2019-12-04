@@ -1,5 +1,5 @@
-// shadow sbt-scalajs' crossProject and CrossType until Scala.js 1.0.0 is released
-import sbtcrossproject.{CrossType, crossProject}
+// shadow sbt-scalajs' crossProject and CrossType from Scala.js 0.6.x
+import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 import sbtrelease.ReleaseStateTransformations._
 import sbtrelease.ReleasePlugin.autoImport._
 import com.softwaremill.Publish.Release.updateVersionInDocs
@@ -55,7 +55,7 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
 // even if a project is 2.11-only, we fake that it's also 2.12/2.13-compatible
 val only2_11settings = Seq(
   publishArtifact := is2_11.value,
-  skip := !is2_11.value && !is2_13.value,
+  skip := !is2_11.value,
   skip in compile := !is2_11.value,
   skip in publish := !is2_11.value,
   libraryDependencies := (if (is2_11.value) libraryDependencies.value else Nil)
@@ -112,7 +112,6 @@ val commonJsSettings = commonJvmJsSettings ++ Seq(
 )
 
 val commonNativeSettings = commonSettings ++ Seq(
-  organization := "com.softwaremill.sttp.client",
   scalaVersion := scala2_11,
   crossScalaVersions := Seq(scala2_11),
   nativeLinkStubs := true
@@ -168,9 +167,11 @@ val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.11"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % "2.5.26"
 
 val scalaTestVersion = "3.1.0"
-val scalaTestNativeVersion = "3.2.0-SNAP10"
-val scalaNativeTestInterfaceVersion = "0.3.9"
+val scalaNativeTestInterfaceVersion = "0.4.0-M2"
+val scalaTestNativeVersion = "3.2.0-M2"
 val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion
+
+val modelVersion = "1.0.0-RC1"
 
 def dependenciesFor(version: String)(deps: (Option[(Long, Long)] => ModuleID)*): Seq[ModuleID] =
   deps.map(_.apply(CrossVersion.partialVersion(version)))
@@ -196,7 +197,6 @@ lazy val rootJVM = project
   .settings(commonJvmJsSettings: _*)
   .settings(skip in publish := true, name := "sttpJVM")
   .aggregate(
-    modelJVM,
     coreJVM,
     catsJVM,
     fs2JVM,
@@ -231,41 +231,13 @@ lazy val rootJS = project
   .in(file(".js"))
   .settings(commonJvmJsSettings: _*)
   .settings(skip in publish := true, name := "sttpJS")
-  .aggregate(modelJS, coreJS, catsJS, fs2JS, monixJS, jsonCommonJS, circeJS, playJsonJS)
+  .aggregate(coreJS, catsJS, fs2JS, monixJS, jsonCommonJS, circeJS, playJsonJS)
 
 lazy val rootNative = project
   .in(file(".native"))
   .settings(commonNativeSettings: _*)
   .settings(skip in publish := true, name := "sttpNative")
-  .aggregate(modelNative, coreNative)
-
-lazy val model = crossProject(JSPlatform, JVMPlatform, NativePlatform)
-  .withoutSuffixFor(JVMPlatform)
-  .crossType(CrossType.Full)
-  .in(file("model"))
-  .settings(name := "model")
-  .jvmSettings(commonJvmSettings: _*)
-  .jsSettings(commonJsSettings: _*)
-  .nativeSettings(commonNativeSettings: _*)
-  .nativeSettings(only2_11settings)
-  .jvmSettings(libraryDependencies ++= Seq(scalaTest % "test"))
-  .jsSettings(
-    libraryDependencies ++= Seq(
-      "org.scala-js" %%% "scalajs-dom" % "0.9.7",
-      "org.scalatest" %%% "scalatest" % scalaTestVersion % "test"
-    )
-  )
-  .jsSettings(browserTestSettings)
-  .nativeSettings(
-    libraryDependencies ++= Seq(
-      "org.scala-native" %%% "test-interface" % scalaNativeTestInterfaceVersion,
-      "org.scalatest" %%% "scalatest" % scalaTestNativeVersion % "test"
-    )
-  )
-
-lazy val modelJS = model.js
-lazy val modelJVM = model.jvm
-lazy val modelNative = model.native
+  .aggregate(coreNative)
 
 lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .withoutSuffixFor(JVMPlatform)
@@ -274,18 +246,14 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .jvmSettings(commonJvmSettings: _*)
   .jsSettings(commonJsSettings: _*)
   .nativeSettings(commonNativeSettings: _*)
-  .jvmSettings(
-    libraryDependencies ++= Seq(
-      scalaTest % "test"
-    )
-  )
   .settings(
     name := "core",
     publishArtifact in Test := true // allow implementations outside of this repo
   )
   .jsSettings(
     libraryDependencies ++= Seq(
-      "org.scalatest" %%% "scalatest" % scalaTestVersion % "test"
+      "com.softwaremill.sttp.model" %%% "core" % modelVersion,
+      "org.scalatest" %%% "scalatest" % scalaTestVersion % Test
     ),
     jsDependencies ++= Seq(
       "org.webjars.npm" % "spark-md5" % "3.0.0" % "test" / "spark-md5.js" minified "spark-md5.min.js"
@@ -296,16 +264,23 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .nativeSettings(testServerSettings(Test))
   .nativeSettings(
     libraryDependencies ++= Seq(
-      "org.scalatest" %%% "scalatest" % scalaTestNativeVersion % "test"
+      "com.softwaremill.sttp.model" %%% "core" % modelVersion,
+      "org.scala-native" %%% "test-interface" % scalaNativeTestInterfaceVersion % Test,
+      "org.scalatest" %%% "scalatest-shouldmatchers" % scalaTestNativeVersion % Test,
+      "org.scalatest" %%% "scalatest-flatspec" % scalaTestNativeVersion % Test,
+      "org.scalatest" %%% "scalatest-freespec" % scalaTestNativeVersion % Test,
+      "org.scalatest" %%% "scalatest-funsuite" % scalaTestNativeVersion % Test
     )
   )
   .nativeSettings(only2_11settings)
   .jvmSettings(
     libraryDependencies ++= Seq(
-      akkaHttp % "test",
-      "ch.megard" %% "akka-http-cors" % "0.4.2" % "test",
-      akkaStreams % "test",
-      "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test"
+      "com.softwaremill.sttp.model" %% "core" % modelVersion,
+      akkaHttp % Test,
+      "ch.megard" %% "akka-http-cors" % "0.4.2" % Test,
+      akkaStreams % Test,
+      "org.scala-lang" % "scala-compiler" % scalaVersion.value % Test,
+      scalaTest % Test
     ),
     // the test server needs to be started before running any JS tests
     // `reStart` cannot be scoped so it can't be only added to Test
@@ -315,9 +290,9 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     testServerPort in Test := 51823,
     startTestServer in Test := reStart.toTask("").value
   )
-lazy val coreJS = core.js.dependsOn(modelJS)
-lazy val coreJVM = core.jvm.dependsOn(modelJVM)
-lazy val coreNative = core.native.dependsOn(modelNative)
+lazy val coreJS = core.js
+lazy val coreJVM = core.jvm
+lazy val coreNative = core.native
 
 //----- implementations
 lazy val cats = crossProject(JSPlatform, JVMPlatform)
