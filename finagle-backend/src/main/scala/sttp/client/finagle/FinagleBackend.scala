@@ -6,20 +6,21 @@ import sttp.client.{BasicRequestBody, ByteArrayBody, ByteBufferBody, FileBody, F
 import com.twitter.util.{Try, Future => TFuture}
 import sttp.client.monad.MonadError
 import sttp.client.ws.WebSocketResponse
-import com.twitter.finagle.http.{FileElement, RequestBuilder, SimpleElement, Method => FMethod, Response => FResponse}
-import com.twitter.io.{Buf, Files}
+import com.twitter.finagle.http.{FileElement, FormElement, RequestBuilder, SimpleElement, Method => FMethod, Response => FResponse}
+import com.twitter.io.Buf
 import com.twitter.io.Buf.{ByteArray, ByteBuffer}
 import com.twitter.util
 import sttp.client.internal.FileHelpers
-import sttp.model.{Header, Method, StatusCode}
-
+import sttp.model.{Header, Method, Part, StatusCode}
+import com.twitter.finagle.util.DefaultTimer
+import com.twitter.util.Duration
 import scala.io.Source
 
 class FinagleBackend(client: Client) extends SttpBackend[TFuture, Nothing, NothingT] {
   override def send[T](request: Request[T, Nothing]): TFuture[Response[T]] = {
     val service = client.newService(s"${request.uri.host}:${request.uri.port.getOrElse(80)}")
     val finagleRequest = requestBodyToFinagle(request)
-    service.apply(finagleRequest).flatMap{
+    service.apply(finagleRequest).within(Duration.fromMilliseconds(request.options.readTimeout.toMillis))(DefaultTimer).flatMap{
       fResponse =>
         val code = StatusCode.unsafeApply(fResponse.statusCode)
         val headers = fResponse.headerMap.map(h => Header.notValidated(h._1, h._2)).toList
@@ -90,20 +91,29 @@ class FinagleBackend(client: Client) extends SttpBackend[TFuture, Nothing, Nothi
       case MultipartBody(parts) => val requestBuilder = RequestBuilder.create().url(r.uri.toString).addHeaders(headersToMap(r.headers))
         val elements = parts.map {
         part =>
-          (part.name, getBasicBodyContent(part.body))
+          getBasicBodyContent(part)
         }
-        requestBuilder.addFormElement(elements: _*).buildFormPost(true)
+        requestBuilder.add(elements).buildFormPost(true)
+        //requestBuilder.addFormElement(elements: _*).buildFormPost(true)
       case _ => buildRequest(url, headers, finagleMethod, None)
     }
   }
 
-  def getBasicBodyContent(basicRequestBody: BasicRequestBody): String = {
-    basicRequestBody match {
+  def getBasicBodyContent(part: Part[BasicRequestBody]): FormElement = {
+
+    val content: String = part.body match {
       case StringBody(s, _, _) => s
       case ByteArrayBody(b, _) => Source.fromBytes(b).mkString
       case ByteBufferBody(b, _) => Source.fromBytes(b.array()).mkString
       case InputStreamBody(is, _) => Source.fromInputStream(is).mkString
+      case FileBody(f, _) => Source.fromFile(f.toFile).mkString
     }
+
+    part.fileName match {
+      case Some(_) => FileElement(part.name, ByteArray(content.getBytes: _*), part.contentType, part.fileName)
+      case None  => SimpleElement(part.name, content)
+    }
+
   }
   def buildRequest(url: String, headers: Map[String, String], method: FMethod, content: Option[Buf]): http.Request = {
     RequestBuilder.create().url(url).addHeaders(headers).build(method, content)
