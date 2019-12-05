@@ -21,3 +21,6 @@ project/plugins/project/
 .keys*
 
 core/native/local.sbt
+
+# scala-native
+lowered.hnir
