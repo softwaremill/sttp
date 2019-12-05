@@ -12,15 +12,14 @@ import com.twitter.io.Buf.{ByteArray, ByteBuffer}
 import com.twitter.util
 import sttp.client.internal.FileHelpers
 import sttp.model.{Header, Method, Part, StatusCode}
-import com.twitter.finagle.util.DefaultTimer
 import com.twitter.util.Duration
 import scala.io.Source
 
 class FinagleBackend(client: Client) extends SttpBackend[TFuture, Nothing, NothingT] {
   override def send[T](request: Request[T, Nothing]): TFuture[Response[T]] = {
-    val service = client.newService(s"${request.uri.host}:${request.uri.port.getOrElse(80)}")
+    val service = client.withRequestTimeout(Duration.fromMilliseconds(request.options.readTimeout.toMillis)).newService(s"${request.uri.host}:${request.uri.port.getOrElse(80)}")
     val finagleRequest = requestBodyToFinagle(request)
-    service.apply(finagleRequest).within(Duration.fromMilliseconds(request.options.readTimeout.toMillis))(DefaultTimer).flatMap{
+    service.apply(finagleRequest).flatMap{
       fResponse =>
         val code = StatusCode.unsafeApply(fResponse.statusCode)
         val headers = fResponse.headerMap.map(h => Header.notValidated(h._1, h._2)).toList
@@ -55,6 +54,8 @@ class FinagleBackend(client: Client) extends SttpBackend[TFuture, Nothing, Nothi
     override def error[T](t: Throwable): TFuture[T] = TFuture.exception(t)
 
     override protected def handleWrappedError[T](rt: TFuture[T])(h: PartialFunction[Throwable, TFuture[T]]): TFuture[T] = rt.rescue(h)
+
+    override def eval[T](t: => T): TFuture[T] = TFuture(t)
   }
 
   def headersToMap(headers: Seq[Header]): Map[String, String] = {
@@ -129,7 +130,7 @@ class FinagleBackend(client: Client) extends SttpBackend[TFuture, Nothing, Nothi
       case ResponseAsFromMetadata(f) => fromFinagleResponse(f(meta), r, meta)
 
       case IgnoreResponse =>
-        TFuture.Done
+        TFuture(r.clearContent())
 
       case ResponseAsByteArray =>
 
