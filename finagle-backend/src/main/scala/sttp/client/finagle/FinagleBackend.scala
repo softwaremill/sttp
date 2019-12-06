@@ -1,7 +1,7 @@
 package sttp.client.finagle
 
 import com.twitter.finagle.Http.Client
-import com.twitter.finagle.{Http, http}
+import com.twitter.finagle.{Http, Service, http}
 import sttp.client.{BasicRequestBody, ByteArrayBody, ByteBufferBody, FileBody, FollowRedirectsBackend, IgnoreResponse, InputStreamBody, MappedResponseAs, MultipartBody, NoBody, NothingT, Request, Response, ResponseAs, ResponseAsByteArray, ResponseAsFile, ResponseAsFromMetadata, ResponseAsStream, ResponseMetadata, StringBody, SttpBackend}
 import com.twitter.util.{Try, Future => TFuture}
 import sttp.client.monad.MonadError
@@ -13,11 +13,12 @@ import com.twitter.util
 import sttp.client.internal.FileHelpers
 import sttp.model.{Header, Method, Part, StatusCode}
 import com.twitter.util.Duration
+
 import scala.io.Source
 
-class FinagleBackend(client: Client) extends SttpBackend[TFuture, Nothing, NothingT] {
+class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture, Nothing, NothingT] {
   override def send[T](request: Request[T, Nothing]): TFuture[Response[T]] = {
-    val service = client.withRequestTimeout(Duration.fromMilliseconds(request.options.readTimeout.toMillis)).newService(s"${request.uri.host}:${request.uri.port.getOrElse(80)}")
+    val service = getClient(client, request)
     val finagleRequest = requestBodyToFinagle(request)
     service.apply(finagleRequest).flatMap{
       fResponse =>
@@ -29,6 +30,7 @@ class FinagleBackend(client: Client) extends SttpBackend[TFuture, Nothing, Nothi
         service.close().flatMap(_ => body.map(sttp.client.Response(_, code, statusText, headers, Nil)))
     }
   }
+
 
   /**
     * Opens a websocket, using the given backend-specific handler.
@@ -58,11 +60,11 @@ class FinagleBackend(client: Client) extends SttpBackend[TFuture, Nothing, Nothi
     override def eval[T](t: => T): TFuture[T] = TFuture(t)
   }
 
-  def headersToMap(headers: Seq[Header]): Map[String, String] = {
+  private def headersToMap(headers: Seq[Header]): Map[String, String] = {
     headers.map(header => header.name -> header.value).toMap
   }
 
-  def methodToFinagle(m: Method): FMethod = m match {
+  private def methodToFinagle(m: Method): FMethod = m match {
     case Method.GET     => FMethod.Get
     case Method.HEAD    => FMethod.Head
     case Method.POST    => FMethod.Post
@@ -75,7 +77,7 @@ class FinagleBackend(client: Client) extends SttpBackend[TFuture, Nothing, Nothi
     case _              => FMethod(m.method)
   }
 
-  def requestBodyToFinagle(r: Request[_, Nothing]): http.Request = {
+  private def requestBodyToFinagle(r: Request[_, Nothing]): http.Request = {
     val finagleMethod = methodToFinagle(r.method)
     val url = r.uri.toString
     val headers = headersToMap(r.headers)
@@ -100,7 +102,7 @@ class FinagleBackend(client: Client) extends SttpBackend[TFuture, Nothing, Nothi
     }
   }
 
-  def getBasicBodyContent(part: Part[BasicRequestBody]): FormElement = {
+  private def getBasicBodyContent(part: Part[BasicRequestBody]): FormElement = {
 
     val content: String = part.body match {
       case StringBody(s, _, _) => s
@@ -116,11 +118,12 @@ class FinagleBackend(client: Client) extends SttpBackend[TFuture, Nothing, Nothi
     }
 
   }
-  def buildRequest(url: String, headers: Map[String, String], method: FMethod, content: Option[Buf]): http.Request = {
+
+  private def buildRequest(url: String, headers: Map[String, String], method: FMethod, content: Option[Buf]): http.Request = {
     RequestBuilder.create().url(url).addHeaders(headers).build(method, content)
   }
 
-  def fromFinagleResponse[T](rr: ResponseAs[T, Nothing],  r: FResponse, meta: ResponseMetadata): TFuture[T] = {
+  private def fromFinagleResponse[T](rr: ResponseAs[T, Nothing],  r: FResponse, meta: ResponseMetadata): TFuture[T] = {
 
 
     rr match {
@@ -150,17 +153,27 @@ class FinagleBackend(client: Client) extends SttpBackend[TFuture, Nothing, Nothi
     }
   }
 
-  def responseBodyToStream[T](r: FResponse): TFuture[T] =
+  private def responseBodyToStream[T](r: FResponse): TFuture[T] =
     TFuture.exception(new IllegalStateException("Streaming isn't supported"))
+
+  private def getClient(c: Option[Client], request: Request[_, Nothing]): Service[http.Request, FResponse] = {
+    val client = c.getOrElse {
+      request.uri.scheme match {
+        case "https" => Http.client.withTransport.tls
+        case _ => Http.client
+      }
+    }
+    client.withRequestTimeout(Duration.fromMilliseconds(request.options.readTimeout.toMillis)).newService(s"${request.uri.host}:${request.uri.port.getOrElse(80)}")
+  }
 }
 
 object FinagleBackend {
 
   def apply(): SttpBackend[TFuture, Nothing, NothingT] = {
-    usingClient(Http.client)
+    new FollowRedirectsBackend[TFuture, Nothing, NothingT](new FinagleBackend())
   }
 
   def usingClient(client : Client) : SttpBackend[TFuture, Nothing, NothingT] = {
-    new FollowRedirectsBackend[TFuture, Nothing, NothingT](new FinagleBackend(client))
+    new FollowRedirectsBackend[TFuture, Nothing, NothingT](new FinagleBackend(Some(client)))
   }
 }
