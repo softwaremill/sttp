@@ -59,12 +59,6 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
     }
   }
 
-  /**
-    * Opens a websocket, using the given backend-specific handler.
-    *
-    * If the connection doesn't result in a websocket being opened, a failed effect is
-    * returned, or an exception is thrown (depending on `F`).
-    */
   override def openWebsocket[T, WS_RESULT](
       request: Request[T, Nothing],
       handler: NothingT[WS_RESULT]
@@ -72,23 +66,14 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
 
   override def close(): TFuture[Unit] = TFuture.Done
 
-  /**
-    * The effect wrapper for responses. Allows writing wrapper backends, which map/flatMap over
-    * the return value of [[send]] and [[openWebsocket]].
-    */
   override def responseMonad: MonadError[TFuture] = new MonadError[TFuture] {
     override def unit[T](t: T): TFuture[T] = TFuture.apply(t)
-
     override def map[T, T2](fa: TFuture[T])(f: T => T2): TFuture[T2] = fa.map(f)
-
     override def flatMap[T, T2](fa: TFuture[T])(f: T => TFuture[T2]): TFuture[T2] = fa.flatMap(f)
-
     override def error[T](t: Throwable): TFuture[T] = TFuture.exception(t)
-
     override protected def handleWrappedError[T](rt: TFuture[T])(
         h: PartialFunction[Throwable, TFuture[T]]
     ): TFuture[T] = rt.rescue(h)
-
     override def eval[T](t: => T): TFuture[T] = TFuture(t)
   }
 
