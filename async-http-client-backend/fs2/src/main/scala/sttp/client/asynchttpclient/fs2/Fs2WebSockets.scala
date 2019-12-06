@@ -8,6 +8,7 @@ import sttp.client.ws.{WebSocket, WebSocketEvent}
 import sttp.model.ws.WebSocketFrame
 
 object Fs2WebSockets {
+
   /**
     * Handle the websocket through a [[Pipe]] which receives the incoming events and produces the messages to be sent
     * to the server. Not that by the nature of a [[Pipe]], there no need that these two streams are coupled. Just make sure

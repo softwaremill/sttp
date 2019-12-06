@@ -20,6 +20,7 @@ case class Response[T](
 }
 
 object Response {
+
   /**
     * Convenience method to create a Response instance, mainly useful in tests using
     * [[sttp.client.testing.SttpBackendStub]] and partial matchers.

@@ -10,6 +10,7 @@ import sttp.client.impl.fs2.Fs2AsyncQueue
 import sttp.client.ws.{WebSocket, WebSocketEvent}
 
 object Fs2WebSocketHandler {
+
   /**
     * Creates a new [[WebSocketHandler]] which should be used *once* to send and receive from a single websocket.
     *

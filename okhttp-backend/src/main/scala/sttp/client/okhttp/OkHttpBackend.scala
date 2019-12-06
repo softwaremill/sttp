@@ -284,8 +284,8 @@ abstract class OkHttpAsyncBackend[F[_], S](client: OkHttpClient, monad: MonadAsy
         handler.listener,
         (webSocket, response) => {
           val wsResponse =
-            monad.map(readResponse(response, ignore))(
-              r => sttp.client.ws.WebSocketResponse(Headers(r.headers), handler.createResult(webSocket))
+            monad.map(readResponse(response, ignore))(r =>
+              sttp.client.ws.WebSocketResponse(Headers(r.headers), handler.createResult(webSocket))
             )
           success(wsResponse)
         },

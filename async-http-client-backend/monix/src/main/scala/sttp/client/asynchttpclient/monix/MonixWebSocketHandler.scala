@@ -8,6 +8,7 @@ import sttp.client.impl.monix.{MonixAsyncQueue, TaskMonadAsyncError}
 import sttp.client.ws.WebSocket
 
 object MonixWebSocketHandler {
+
   /**
     * Creates a new [[WebSocketHandler]] which should be used *once* to send and receive from a single websocket.
     *

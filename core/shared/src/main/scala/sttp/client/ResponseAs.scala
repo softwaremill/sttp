@@ -44,13 +44,12 @@ object ResponseAs {
   private[client] def parseParams(s: String, charset: String): Seq[(String, String)] = {
     s.split("&")
       .toList
-      .flatMap(
-        kv =>
-          kv.split("=", 2) match {
-            case Array(k, v) =>
-              Some((Rfc3986.decode()(k, charset), Rfc3986.decode()(v, charset)))
-            case _ => None
-          }
+      .flatMap(kv =>
+        kv.split("=", 2) match {
+          case Array(k, v) =>
+            Some((Rfc3986.decode()(k, charset), Rfc3986.decode()(v, charset)))
+          case _ => None
+        }
       )
   }
 
@@ -92,13 +91,12 @@ object ResponseAs {
   def deserializeCatchingExceptions[T](
       doDeserialize: String => T
   ): String => Either[DeserializationError[Exception], T] =
-    deserializeWithError(
-      (s: String) =>
-        Try(doDeserialize(s)) match {
-          case Failure(e: Exception) => Left(e)
-          case Failure(t: Throwable) => throw t
-          case Success(t)            => Right(t): Either[Exception, T]
-        }
+    deserializeWithError((s: String) =>
+      Try(doDeserialize(s)) match {
+        case Failure(e: Exception) => Left(e)
+        case Failure(t: Throwable) => throw t
+        case Success(t)            => Right(t): Either[Exception, T]
+      }
     )
 
   /**

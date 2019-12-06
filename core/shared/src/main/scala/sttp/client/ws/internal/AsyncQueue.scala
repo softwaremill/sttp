@@ -3,6 +3,7 @@ package sttp.client.ws.internal
 import scala.language.higherKinds
 
 trait AsyncQueue[F[_], T] {
+
   /**
     * Eagerly adds the given item to the queue.
     */

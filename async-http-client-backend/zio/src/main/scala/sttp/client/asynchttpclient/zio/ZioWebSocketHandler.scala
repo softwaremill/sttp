@@ -36,8 +36,6 @@ object ZioWebSocketHandler {
       case None           => Queue.unbounded[WebSocketEvent]
     }
 
-    queue.map(
-      q => NativeWebSocketHandler(new ZioAsyncQueue(q, new DefaultRuntime {}), TaskMonadAsyncError)
-    )
+    queue.map(q => NativeWebSocketHandler(new ZioAsyncQueue(q, new DefaultRuntime {}), TaskMonadAsyncError))
   }
 }
