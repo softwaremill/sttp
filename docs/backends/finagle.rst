@@ -5,6 +5,11 @@ To use, add the following dependency to your project::
 
   "com.softwaremill.sttp.client" %% "finagle-backend" % "2.0.0-RC5"
 
+Next you'll need to add an implicit value::
+
+  import sttp.client.finagle.FinagleBackend
+  implicit val sttpBackend = FinagleBackend()
+
 This backend depends on `finagle <https://twitter.github.io/finagle/>`_, and offers an asynchronous backend, which
 wraps results in Twitter's ``Future``.
 
