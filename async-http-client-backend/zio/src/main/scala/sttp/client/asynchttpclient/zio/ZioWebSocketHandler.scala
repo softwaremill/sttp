@@ -6,7 +6,7 @@ import sttp.client.impl.zio.TaskMonadAsyncError
 import sttp.client.ws.internal.AsyncQueue
 import sttp.client.ws.{WebSocket, WebSocketEvent}
 import sttp.model.ws.WebSocketBufferFull
-import zio.{DefaultRuntime, Queue, Runtime, Task, UIO}
+import zio.{Queue, Runtime, Task, UIO, ZIO}
 
 object ZioWebSocketHandler {
   private class ZioAsyncQueue[A](queue: Queue[A], runtime: Runtime[Any]) extends AsyncQueue[Task, A] {
@@ -36,6 +36,8 @@ object ZioWebSocketHandler {
       case None           => Queue.unbounded[WebSocketEvent]
     }
 
-    queue.map(q => NativeWebSocketHandler(new ZioAsyncQueue(q, new DefaultRuntime {}), TaskMonadAsyncError))
+    ZIO
+      .runtime[Any]
+      .flatMap(runtime => queue.map(q => NativeWebSocketHandler(new ZioAsyncQueue(q, runtime), TaskMonadAsyncError)))
   }
 }
