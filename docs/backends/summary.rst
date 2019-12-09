@@ -31,7 +31,7 @@ Class                                Response wrapper             Supported stre
 ``AsyncHttpClientFutureBackend``     ``scala.concurrent.Future``  n/a                                              ``sttp.client.asynchttpclient.WebSocketHandler``
 ``AsyncHttpClientScalazBackend``     ``scalaz.concurrent.Task``   n/a                                              ``sttp.client.asynchttpclient.WebSocketHandler``
 ``AsyncHttpClientZioBackend``        ``zio.IO``                   n/a                                              ``sttp.client.asynchttpclient.WebSocketHandler``
-``AsyncHttpClientZioStreamsBackend`` ``zio.IO``                   ``zio.stream.Stream[Throwable, ByteBuffer]``     n/a
+``AsyncHttpClientZioStreamsBackend`` ``zio.IO``                   ``zio.stream.Stream[Throwable, ByteBuffer]``     ``sttp.client.asynchttpclient.WebSocketHandler``
 ``AsyncHttpClientMonixBackend``      ``monix.eval.Task``          ``monix.reactive.Observable[ByteBuffer]``        ``sttp.client.asynchttpclient.WebSocketHandler``
 ``AsyncHttpClientCatsBackend``       ``F[_]: cats.effect.Async``  n/a                                              ``sttp.client.asynchttpclient.WebSocketHandler``
 ``AsyncHttpClientFs2Backend``        ``F[_]: cats.effect.Async``  ``fs2.Stream[F, ByteBuffer]``                    ``sttp.client.asynchttpclient.WebSocketHandler``
