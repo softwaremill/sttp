@@ -21,7 +21,8 @@ object ZioWebSocketHandler {
   }
 
   /**
-    * Creates a new [[WebSocketHandler]] which should be used *once* to send and receive from a single websocket.
+    * Returns an effect, which creates a new [[WebSocketHandler]]. The handler should be used *once* to send and
+    * receive from a single websocket.
     *
     * The handler will internally buffer incoming messages, and expose an instance of the [[WebSocket]] interface for
     * sending/receiving messages.
@@ -31,7 +32,7 @@ object ZioWebSocketHandler {
     *                               messages will eventually take up all available memory.
     */
   def apply(incomingBufferCapacity: Option[Int] = None): UIO[WebSocketHandler[WebSocket[Task]]] = {
-    val queue = incomingBufferCapacity match {
+    def queue = incomingBufferCapacity match {
       case Some(capacity) => Queue.dropping[WebSocketEvent](capacity)
       case None           => Queue.unbounded[WebSocketEvent]
     }
