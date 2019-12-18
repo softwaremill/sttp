@@ -7,11 +7,11 @@ sttp supports basic, bearer-token based authentication and digest authentication
 
 Basic authentication, using which the username and password are encoded using Base64, can be added as follows::
 
-  sttp.auth.basic(username, password)
+  basicRequest.auth.basic(username, password)
 
 A bearer token can be added using::
 
-  sttp.auth.bearer(token)
+  basicRequest.auth.bearer(token)
 
 
 Digest authentication
