@@ -508,7 +508,7 @@ lazy val finagleBackend: Project = (project in file("finagle-backend"))
   .settings(
     name := "finagle-backend",
     libraryDependencies ++= Seq(
-      "com.twitter" %% "finagle-http" % "19.1.0"
+      "com.twitter" %% "finagle-http" % "19.12.0"
     )
   )
   .settings(only2_11_and_2_12_settings)
