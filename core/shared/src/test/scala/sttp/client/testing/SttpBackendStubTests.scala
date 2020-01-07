@@ -36,8 +36,8 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
     .whenRequestMatches(_.uri.port.exists(_ == 8080))
     .thenRespondWrapped(Response(Right("OK from monad"), StatusCode.Ok, "OK", Nil, Nil))
     .whenRequestMatches(_.uri.port.exists(_ == 8081))
-    .thenRespondWrapped(
-      r => Response(Right(s"OK from request. Request was sent to host: ${r.uri.host}"), StatusCode.Ok, "OK", Nil, Nil)
+    .thenRespondWrapped(r =>
+      Response(Right(s"OK from request. Request was sent to host: ${r.uri.host}"), StatusCode.Ok, "OK", Nil, Nil)
     )
 
   "backend stub" should "use the first rule if it matches" in {
@@ -219,6 +219,13 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
     basicRequest.get(uri"http://example.org").send().is200 should be(true)
     basicRequest.get(uri"http://example.org").send().isServerError should be(true)
     basicRequest.get(uri"http://example.org").send().is200 should be(true)
+  }
+
+  it should "always return a string when requested to do so" in {
+    implicit val s: SttpBackend[Identity, Nothing, NothingT] = SttpBackendStub(IdMonad).whenAnyRequest
+      .thenRespondServerError()
+
+    basicRequest.get(uri"http://example.org").response(asStringAlways).send().body shouldBe "Internal server error"
   }
 
   private val testingStubWithFallback = SttpBackendStub

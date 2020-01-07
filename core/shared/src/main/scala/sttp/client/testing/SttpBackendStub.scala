@@ -103,8 +103,7 @@ class SttpBackendStub[F[_], S] private (
     def thenRespondServerError(): SttpBackendStub[F, S] =
       thenRespondWithCode(StatusCode.InternalServerError, "Internal server error")
     def thenRespondWithCode(status: StatusCode, msg: String = ""): SttpBackendStub[F, S] = {
-      val body = if (status.isSuccess) Right(msg) else Left(msg)
-      thenRespond(Response(body, status, msg))
+      thenRespond(Response(msg, status, msg))
     }
     def thenRespond[T](body: T): SttpBackendStub[F, S] =
       thenRespond(Response[T](body, StatusCode.Ok, "OK"))
