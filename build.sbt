@@ -225,6 +225,7 @@ lazy val rootJVM = project
     sprayJson,
     playJsonJVM,
     braveBackend,
+    openTracingBackend,
     prometheusBackend,
     httpClientBackend,
     httpClientMonixBackend,
