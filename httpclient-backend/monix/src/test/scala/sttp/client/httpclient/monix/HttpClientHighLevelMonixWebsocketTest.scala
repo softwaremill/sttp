@@ -21,7 +21,7 @@ class HttpClientHighLevelMonixWebsocketTest extends HighLevelWebsocketTest[Task,
   implicit val convertToFuture: ConvertToFuture[Task] = convertMonixTaskToFuture
   implicit val monad: MonadError[Task] = TaskMonadAsyncError
 
-  def createHandler: Option[Int] => Task[WebSocketHandler[WebSocket[Task]]] = _ => Task(MonixWebSocketHandler(5))
+  def createHandler: Option[Int] => Task[WebSocketHandler[WebSocket[Task]]] = _ => MonixWebSocketHandler(5)
 
   it should "handle backpressure correctly" in {
     basicRequest
