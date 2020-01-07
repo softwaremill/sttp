@@ -14,7 +14,7 @@ import scala.util.Try
 
 class OpenTracingBackendTest extends FlatSpec with Matchers with BeforeAndAfter {
 
-  private val recordedRequests = mutable.MutableList[Request[_, _]]()
+  private val recordedRequests = mutable.ListBuffer[Request[_, _]]()
   private val tracer = new MockTracer()
   private implicit val backend: SttpBackend[Identity, Nothing, NothingT] =
     OpenTracingBackend[Identity, Nothing](
