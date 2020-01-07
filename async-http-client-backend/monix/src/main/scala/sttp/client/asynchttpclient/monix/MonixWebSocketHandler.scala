@@ -10,7 +10,8 @@ import sttp.client.ws.WebSocket
 object MonixWebSocketHandler {
 
   /**
-    * Creates a new [[WebSocketHandler]] which should be used *once* to send and receive from a single websocket.
+    * Returns an effect, which creates a new [[WebSocketHandler]]. The handler should be used *once* to send and
+    * receive from a single websocket.
     *
     * The handler will internally buffer incoming messages, and expose an instance of the [[WebSocket]] interface for
     * sending/receiving messages.
@@ -19,7 +20,9 @@ object MonixWebSocketHandler {
     *                               events will some point cause the websocket to error and close. If no, unreceived
     *                               messages will eventually take up all available memory.
     */
-  def apply(incomingBufferCapacity: Option[Int] = None)(implicit s: Scheduler): WebSocketHandler[WebSocket[Task]] = {
-    NativeWebSocketHandler(new MonixAsyncQueue(incomingBufferCapacity), TaskMonadAsyncError)
+  def apply(
+      incomingBufferCapacity: Option[Int] = None
+  )(implicit s: Scheduler): Task[WebSocketHandler[WebSocket[Task]]] = {
+    Task(NativeWebSocketHandler(new MonixAsyncQueue(incomingBufferCapacity), TaskMonadAsyncError))
   }
 }

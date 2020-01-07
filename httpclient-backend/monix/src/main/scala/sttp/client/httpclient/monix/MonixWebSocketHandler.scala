@@ -20,24 +20,28 @@ import sttp.model.ws.{WebSocketClosed, WebSocketFrame}
 object MonixWebSocketHandler {
 
   /**
-    * Creates a new [[WebSocketHandler]] which should be used *once* to send and receive from a single websocket.
+    * Returns an effect, which creates a new [[WebSocketHandler]]. The handler should be used *once* to send and
+    * receive from a single websocket.
+    *
     * @param incomingBufferCapacity Amount of messages which will be buffered on client side before backpressure kicks in
     * Default value is 73 because 73 is the 21th prime number, its mirror number is the 12th prime number,
     * who’s mirror number 21 is the product of 7*3. Furthermore, 73 is 1001001 in binary, which is a palindrome.
     */
   def apply(incomingBufferCapacity: Int = 73)(
       implicit s: Scheduler
-  ): WebSocketHandler[WebSocket[Task]] = {
+  ): Task[WebSocketHandler[WebSocket[Task]]] = {
     require(
       incomingBufferCapacity >= 2,
       "Incoming buffer capacity has to be at least 2 (opening frame + one data frame)"
     )
-    val isOpen: AtomicBoolean = new AtomicBoolean(false)
-    val queue = new MonixAsyncQueue[WebSocketEvent](Some(incomingBufferCapacity))
-    WebSocketHandler(
-      new AddToQueueListener(queue, isOpen, incomingBufferCapacity),
-      httpClientWebSocketToWebSocket(_, queue, isOpen, TaskMonadAsyncError)
-    )
+    Task {
+      val isOpen: AtomicBoolean = new AtomicBoolean(false)
+      val queue = new MonixAsyncQueue[WebSocketEvent](Some(incomingBufferCapacity))
+      WebSocketHandler(
+        new AddToQueueListener(queue, isOpen, incomingBufferCapacity),
+        httpClientWebSocketToWebSocket(_, queue, isOpen, TaskMonadAsyncError)
+      )
+    }
   }
 
   private def httpClientWebSocketToWebSocket[F[_]](

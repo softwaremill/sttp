@@ -18,8 +18,8 @@ class AsyncHttpClientHighLevelZioWebsocketTest extends AsyncHttpClientHighLevelW
   override implicit val convertToFuture: ConvertToFuture[Task] = convertZioIoToFuture
   override implicit val monad: MonadError[Task] = TaskMonadAsyncError
 
-  override def createHandler: Option[Int] => WebSocketHandler[WebSocket[Task]] =
-    bufferCapacity => runtime.unsafeRun(ZioWebSocketHandler(bufferCapacity))
+  override def createHandler: Option[Int] => Task[WebSocketHandler[WebSocket[Task]]] =
+    bufferCapacity => ZioWebSocketHandler(bufferCapacity)
 
   override def eventually[T](interval: FiniteDuration, attempts: Int)(f: => Task[T]): Task[T] = {
     ZIO.sleep(interval.toMillis.millis).andThen(f).retry(Schedule.recurs(attempts)).provide(Clock.Live)

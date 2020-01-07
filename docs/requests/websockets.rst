@@ -7,6 +7,8 @@ Apart from streaming, backends (see :ref:`backends summary <backends_summary>`) 
 
 The difference is that ``openWebsocket(handler)`` should be called instead of ``send()``, given an instance of a backend-specific websocket handler. Refer to documentation of individual backends for details on how to instantiate the handler.
 
+If creating the websocket handler is a side-effecting operation (and the handler is wrapped with an effects wrapper), the ``openWebsocketF(handler)`` can be used.
+
 After opening a websocket, a ``WebSocketResponse`` instance is returned, wrapped in a backend-specific effects wrapper, such as ``Future``, ``IO``, ``Task`` or no wrapper for synchronous backends. If the protocol upgrade hasn't been successful, the request will fail with an error (represented as an exception or a failed effects wrapper).
 
 In case of success, ``WebSocketResponse`` contains:
@@ -43,7 +45,7 @@ Example usage with the Monix variant of the :ref:`async-http-client backend <bac
 
   val response: Task[WebSocketResponse[WebSocket[Task]]] = basicRequest
     .get(uri"wss://echo.websocket.org")
-    .openWebsocket(MonixWebSocketHandler())
+    .openWebsocketF(MonixWebSocketHandler())
 
   response.flatMap { r =>
     val ws: WebSocket[Task] = r.result

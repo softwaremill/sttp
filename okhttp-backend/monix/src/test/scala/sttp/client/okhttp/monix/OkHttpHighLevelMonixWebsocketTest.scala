@@ -21,14 +21,14 @@ class OkHttpHighLevelMonixWebsocketTest extends HighLevelWebsocketTest[Task, Web
   override implicit val convertToFuture: ConvertToFuture[Task] = convertMonixTaskToFuture
   override implicit val monad: MonadError[Task] = TaskMonadAsyncError
 
-  override def createHandler: Option[Int] => WebSocketHandler[WebSocket[Task]] = MonixWebSocketHandler(_)
+  override def createHandler: Option[Int] => Task[WebSocketHandler[WebSocket[Task]]] = MonixWebSocketHandler(_)
 
   it should "error if the endpoint is not a websocket" in {
     monad
       .handleError {
         basicRequest
           .get(uri"$wsEndpoint/echo")
-          .openWebsocket(createHandler(None))
+          .openWebsocketF(createHandler(None))
           .map(_ => fail: Assertion)
       } {
         case e: Exception => (e shouldBe a[IOException]).unit
@@ -39,7 +39,7 @@ class OkHttpHighLevelMonixWebsocketTest extends HighLevelWebsocketTest[Task, Web
   it should "error if incoming messages overflow the buffer" in {
     basicRequest
       .get(uri"$wsEndpoint/ws/echo")
-      .openWebsocket(createHandler(Some(3)))
+      .openWebsocketF(createHandler(Some(3)))
       .flatMap { response =>
         val ws = response.result
         send(ws, 1000) >> eventually(10 millis, 100)(ws.isOpen.map(_ shouldBe false))

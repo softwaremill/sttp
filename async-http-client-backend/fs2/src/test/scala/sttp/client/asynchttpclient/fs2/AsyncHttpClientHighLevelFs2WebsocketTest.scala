@@ -21,8 +21,7 @@ class AsyncHttpClientHighLevelFs2WebsocketTest extends AsyncHttpClientHighLevelW
   implicit lazy val contextShift: ContextShift[IO] = IO.contextShift(implicitly)
   implicit lazy val timer: Timer[IO] = IO.timer(implicitly)
 
-  override def createHandler: Option[Int] => WebSocketHandler[WebSocket[IO]] =
-    Fs2WebSocketHandler[IO](_).unsafeRunSync()
+  override def createHandler: Option[Int] => IO[WebSocketHandler[WebSocket[IO]]] = Fs2WebSocketHandler[IO](_)
 
   override def eventually[T](interval: FiniteDuration, attempts: Int)(f: => IO[T]): IO[T] = {
     def tryWithCounter(i: Int): IO[T] = {

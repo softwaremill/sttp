@@ -18,7 +18,7 @@ abstract class AsyncHttpClientHighLevelWebsocketTest[F[_]] extends HighLevelWebs
       .handleError {
         basicRequest
           .get(uri"$wsEndpoint/echo")
-          .openWebsocket(createHandler(None))
+          .openWebsocketF(createHandler(None))
           .map(_ => fail: Assertion)
       } {
         case e: Exception => (e shouldBe a[IOException]).unit
@@ -29,7 +29,7 @@ abstract class AsyncHttpClientHighLevelWebsocketTest[F[_]] extends HighLevelWebs
   it should "error if incoming messages overflow the buffer" in {
     basicRequest
       .get(uri"$wsEndpoint/ws/echo")
-      .openWebsocket(createHandler(Some(3)))
+      .openWebsocketF(createHandler(Some(3)))
       .flatMap { response =>
         val ws = response.result
         send(ws, 4) >>

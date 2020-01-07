@@ -22,12 +22,12 @@ abstract class HighLevelWebsocketTest[F[_], WS_HANDLER[_]]
   implicit val convertToFuture: ConvertToFuture[F]
   implicit val monad: MonadError[F]
 
-  def createHandler: Option[Int] => WS_HANDLER[WebSocket[F]]
+  def createHandler: Option[Int] => F[WS_HANDLER[WebSocket[F]]]
 
   it should "send and receive two messages" in {
     basicRequest
       .get(uri"$wsEndpoint/ws/echo")
-      .openWebsocket(createHandler(None))
+      .openWebsocketF(createHandler(None))
       .flatMap { response =>
         val ws = response.result
         send(ws, 2) >>
@@ -41,7 +41,7 @@ abstract class HighLevelWebsocketTest[F[_], WS_HANDLER[_]]
   it should "send and receive 1000 messages" in {
     basicRequest
       .get(uri"$wsEndpoint/ws/echo")
-      .openWebsocket(createHandler(None))
+      .openWebsocketF(createHandler(None))
       .flatMap { response =>
         val ws = response.result
         send(ws, 1000) >>
@@ -55,7 +55,7 @@ abstract class HighLevelWebsocketTest[F[_], WS_HANDLER[_]]
   it should "receive two messages" in {
     basicRequest
       .get(uri"$wsEndpoint/ws/send_and_close")
-      .openWebsocket(createHandler(None))
+      .openWebsocketF(createHandler(None))
       .flatMap { response =>
         val ws = response.result
         ws.receive.map(_ shouldBe Right(WebSocketFrame.text("test10"))) >>

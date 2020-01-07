@@ -17,7 +17,7 @@ class AsyncHttpClientHighLevelMonixWebsocketTest extends AsyncHttpClientHighLeve
   override implicit val convertToFuture: ConvertToFuture[Task] = convertMonixTaskToFuture
   override implicit val monad: MonadError[Task] = TaskMonadAsyncError
 
-  override def createHandler: Option[Int] => WebSocketHandler[WebSocket[Task]] = MonixWebSocketHandler(_)
+  override def createHandler: Option[Int] => Task[WebSocketHandler[WebSocket[Task]]] = MonixWebSocketHandler(_)
 
   override def eventually[T](interval: FiniteDuration, attempts: Int)(f: => Task[T]): Task[T] = {
     (Task.sleep(interval) >> f).onErrorRestart(attempts.toLong)
