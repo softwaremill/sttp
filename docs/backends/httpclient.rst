@@ -5,7 +5,7 @@ HttpClient backend (Java 11+)
 
 To use, add the following dependency to your project::
 
-  "com.softwaremill.sttp.client" %% "httpclient-backend" % "2.0.0-RC5"
+  "com.softwaremill.sttp.client" %% "httpclient-backend" % "2.0.0-RC6"
 
 This backend is based on ``java.net.http.HttpClient`` available from Java 11 onwards and offers:
 
