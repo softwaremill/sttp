@@ -250,26 +250,27 @@ Below is an example on how to implement a backend wrapper, which integrates with
           circuitBreaker: CircuitBreaker,
           service: => F[T]
       )(implicit monadError: MonadError[F]): F[T] = {
-
-        if (!circuitBreaker.tryAcquirePermission()) {
-          monadError.error(CallNotPermittedException
-                                .createCallNotPermittedException(circuitBreaker))
-        } else {
-          val start = System.nanoTime()
-          try {
-            monadError.handleError(monadError.map(service) { r =>
-              circuitBreaker.onSuccess(System.nanoTime() - start, TimeUnit.NANOSECONDS)
-              r
-            }) {
-              case t =>
-                circuitBreaker.onError(System.nanoTime() - start, TimeUnit.NANOSECONDS, t)
-                monadError.error(t)
+        monadError.flatMap(monadError.unit(())) { _ =>
+            if (!circuitBreaker.tryAcquirePermission()) {
+              monadError.error(CallNotPermittedException
+                                    .createCallNotPermittedException(circuitBreaker))
+            } else {
+              val start = System.nanoTime()
+              try {
+                monadError.handleError(monadError.map(service) { r =>
+                  circuitBreaker.onSuccess(System.nanoTime() - start, TimeUnit.NANOSECONDS)
+                  r
+                }) {
+                  case t =>
+                    circuitBreaker.onError(System.nanoTime() - start, TimeUnit.NANOSECONDS, t)
+                    monadError.error(t)
+                }
+              } catch {
+                case t: Throwable =>
+                  circuitBreaker.onError(System.nanoTime() - start, TimeUnit.NANOSECONDS, t)
+                  monadError.error(t)
+              }
             }
-          } catch {
-            case t: Throwable =>
-              circuitBreaker.onError(System.nanoTime() - start, TimeUnit.NANOSECONDS, t)
-              monadError.error(t)
-          }
         }
       }
     }
@@ -311,12 +312,14 @@ Below is an example on how to implement a backend wrapper, which integrates with
           rateLimiter: RateLimiter,
           service: => F[T]
       )(implicit monadError: MonadError[F]): F[T] = {
-        try {
-          RateLimiter.waitForPermission(rateLimiter)
-          service
-        } catch {
-          case t: Throwable =>
-            monadError.error(t)
+        monadError.flatMap(monadError.unit(())){ _=>
+            try {
+              RateLimiter.waitForPermission(rateLimiter)
+              service
+            } catch {
+              case t: Throwable =>
+                monadError.error(t)
+            }
         }
       }
     }
