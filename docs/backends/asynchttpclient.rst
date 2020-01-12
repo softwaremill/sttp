@@ -176,7 +176,7 @@ through an ``fs2.Pipe``. Example for a simple echo client::
     .openWebsocketF(Fs2WebSocketHandler())
     .flatMap { response =>
       Fs2WebSockets.handleSocketThroughTextPipe(response.result) { in =>
-        val receive = in.evalMap(m => IO(println("Received"))
+        val receive = in.evalMap(m => IO(println("Received")))
         val send = Stream("Message 1".asRight, "Message 2".asRight, WebSocketFrame.close.asLeft)
         send merge receive.drain
       }
