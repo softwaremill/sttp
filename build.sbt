@@ -489,7 +489,7 @@ lazy val httpClientBackend: Project = (project in file("httpclient-backend"))
     scalacOptions ++= Seq("-J--add-modules", "-Jjava.net.http", "-target:jvm-11")
   )
   .settings(only2_13andJava11)
-  .dependsOn(catsJVM, coreJVM % compileAndTest)
+  .dependsOn(coreJVM % compileAndTest)
 
 def httpClientBackendProject(proj: String): Project = {
   Project(s"httpClientBackend${proj.capitalize}", file(s"httpclient-backend/$proj"))
