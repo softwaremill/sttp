@@ -1,6 +1,8 @@
 # Quickstart
 
-The main sttp client API comes in a single jar, with a single transitive dependency on the [sttp model](https://github.com/softwaremill/sttp-model). This also includes a default, synchronous backend, which is based on Java's `HttpURLConnection`. For production usages, you'll often want to use an alternate backend (but what's important is that the API remains the same!). See the section on [backends](backends/summary.md) for additional instructions.
+The main sttp client API comes in a single jar, with a single transitive dependency on the [sttp model](https://github.com/softwaremill/sttp-model). This also includes a default, synchronous backend, which is based on Java's `HttpURLConnection`. 
+
+To integrate with other parts of your application, you'll often need to use an alternate backend (but what's important is that the API remains the same!). See the section on [backends](backends/summary.md) for a short guide on which backend to choose, and a list of all implementations.
 
 ## Using sbt
 
@@ -24,7 +26,7 @@ import sttp.client.quick._
 quickRequest.get(uri"http://httpbin.org/ip").send()
 ```
 
-Importing the `quick` object has the same effect as importing `sttp.client._`, plus defining an implicit synchronous backend (`val backend = HttpURLConnectionBackend()`), so that sttp can be used right away.
+Importing the `quick` object has the same effect as importing `sttp.client._`, plus defining an implicit synchronous backend (`implict val backend = HttpURLConnectionBackend()`), so that sttp can be used right away.
 
 If the default `HttpURLConnectionBackend` for some reason is insufficient, you can also use one based on OkHttp:
 
@@ -44,4 +46,6 @@ import sttp.client._
 
 This brings into scope the starting point for defining requests and some helper methods. All examples in this guide assume that this import is in place.
 
-And that's all you need to start using sttp client! To create and send your first request, import the above, type `basicRequest.` and see where your IDE's auto-complete gets you! Or, read on about the [basics of defining requests](requests/basics.html).
+And that's all you need to start using sttp client! To create and send your first request, import the above, type `basicRequest.` and see where your IDE's auto-complete gets you! 
+
+Next, read on about the [how sttp client works](how.html).

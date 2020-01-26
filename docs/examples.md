@@ -5,7 +5,7 @@
 Required dependencies:
 
 ```scala            
-libraryDependencies ++= List("com.softwaremill.sttp.client" %% "core" % "2.0.0-RC6")                                                                         
+libraryDependencies ++= List("com.softwaremill.sttp.client" %% "core" % "2.0.0-RC6")
 ```
 
 Example code:

@@ -3,15 +3,17 @@
 Welcome!
 
 [sttp client](https://github.com/softwaremill/sttp) is an open-source library which provides a clean, programmer-friendly API to describe HTTP
-requests and execute them using one of the wrapped backends, such as [akka-http](https://doc.akka.io/docs/akka-http/current/scala/http/), [async-http-client](https://github.com/AsyncHttpClient/async-http-client), [http4s](https://http4s.org) or [OkHttp](http://square.github.io/okhttp/).
+requests and how to handle responses. Requests are sent using one of the backends, which wrap other Scala or Java HTTP client implementations. The backends can integrate with a variety of Scala stacks, providing both synchronous and asynchronous, procedural and functional interfaces.
+ 
+Backend implementations include ones based on [akka-http](https://doc.akka.io/docs/akka-http/current/scala/http/), [async-http-client](https://github.com/AsyncHttpClient/async-http-client), [http4s](https://http4s.org), [OkHttp](http://square.github.io/okhttp/), and HTTP clients which ship with Java. 
 
 Here's a very quick example of sttp client in action:
 
 ```scala
 import sttp.client._
 
-val sort: Option[String] = None
 val query = "http language:scala"
+val sort: Option[String] = None
 
 // the `query` parameter is automatically url-encoded
 // `sort` is removed, as the value is not defined
@@ -24,11 +26,12 @@ val response = request.send()
 // response.header(...): Option[String]
 println(response.header("Content-Length"))
 
-// response.body: by default read into an Either[String, String] to indicate failure or success 
+// response.body: by default read into an Either[String, String] 
+// to indicate failure or success 
 println(response.body)            
 ```
 
-For more examples, see the [usage examples](examples.md) section.
+For more examples, see the [usage examples](examples.md) section. To start using sttp client in your project, see the [quickstart](quickstart.md). Or, browse the documentation to find the topics that interest you the most!
 
 ## Other sttp projects
 
@@ -46,6 +49,7 @@ sttp is a family of Scala HTTP-related projects, and currently includes:
    :caption: Getting started
 
    quickstart
+   how
    goals
    community
    examples
