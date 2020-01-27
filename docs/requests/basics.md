@@ -23,6 +23,12 @@ There's a lot of ways in which you can customize a request, which are covered in
 
 Using the modifiers, each time we get a new request definition, but it's just a description: a data object; nothing is sent over the network until the `send()` method is invoked.
 
+## Query parameters and URIs
+
+Query parameters are specified as part of the URI, to which the request should be sent. The URI can only be set together with the request method (using `.get(Uri)`, `.post(Uri)`, etc.).
+
+The URI can be created programatically (by calling methods on the `Uri` class), or using the `uri` interpolator, which also allows embedding (and later escaping) values from the environment. See the documentation on [creating URIs](../model/uri.html) for more details.
+
 ## Sending a request
 
 A request definition can be created without knowing how it will be sent. But to send a request, a backend is needed. A default, synchronous backend based on Java's `HttpURLConnection` is provided out-of-the box.
@@ -43,9 +49,9 @@ The default backend doesn't wrap the response into any container, but other asyn
   Only requests with the request method and uri can be sent. If trying to send a request without these components specified, a compile-time error will be reported. On how this is implemented, see the documentation on the `type of request definitions <type.html>`_.
 ```
 
-## Starting requests
+## Initial requests
 
-sttp provides two starting requests:
+sttp provides two initial requests:
 
 * `basicRequest`, which is an empty request with the `Accept-Encoding: gzip, deflate` header added. That's the one that is most commonly used.
 * `emptyRequest`, a completely empty request, with no headers at all.

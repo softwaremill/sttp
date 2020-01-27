@@ -46,6 +46,17 @@ import sttp.client._
 
 This brings into scope the starting point for defining requests and some helper methods. All examples in this guide assume that this import is in place.
 
-And that's all you need to start using sttp client! To create and send your first request, import the above, type `basicRequest.` and see where your IDE's auto-complete gets you! 
+And that's all you need to start using sttp client! To create and send your first request, import the above, type `basicRequest.` and see where your IDE's auto-complete gets you! Here's a simple request, using the synchronous backend:
 
-Next, read on about the [how sttp client works](how.html).
+```scala
+import sttp.client._
+
+implicit val backend = HttpURLConnectionBackend()
+val response = basicRequest
+  .body("Hello, world!")  
+  .post(uri"https://httpbin.org/post?hello=world").send()
+
+println(response.body)            
+```
+
+Next, read on about the [how sttp client works](how.html) or see some [examples](examples.html).

@@ -4,7 +4,7 @@
 
 This first step when using sttp client is describing the request that you'd like to send. 
 
-A request is represented as an immutable data structure of type `RequestT` (as in Request Template). The basic request is provided as the `basicRequest` value, in the `sttp.client` package. It can be refined using one of the available methods, such as `.header`, `.body`, `.get(Uri)` or `.responseAs`.
+A request is represented as an immutable data structure of type `RequestT` (as in Request Template). The basic request is provided as the `basicRequest` value, in the `sttp.client` package. It can be refined using one of the available methods, such as `.header`, `.body`, `.get(Uri)`, `.responseAs`, etc.
 
 A `RequestT` value contains both information on what to include in the request, but also how to handle the response body. 
 

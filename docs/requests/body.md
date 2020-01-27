@@ -1,4 +1,4 @@
-# Setting the request body
+# Body
 
 ## Text data
 
