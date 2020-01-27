@@ -1,6 +1,6 @@
 # brave backend (deprecated)
 
-Since 2.0.0-RC6 brave-backend is deprecated, you should use [opentracing backend](opentracing.md) with brave integration.
+Since 2.0.0-RC6 brave-backend is deprecated, you should use [opentracing backend](opentracing.html) with brave integration.
 
 To use, add the following dependency to your project:
 

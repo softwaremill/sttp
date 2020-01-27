@@ -95,12 +95,17 @@ sttp is a family of Scala HTTP-related projects, and currently includes:
    backends/http4s
    backends/finagle
    backends/httpclient
-   backends/opentracing
-   backends/brave
-   backends/prometheus
    backends/javascript/fetch
-   backends/custom
-   backends/logging
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Backend wrappers
+
+   backends/wrappers/opentracing
+   backends/wrappers/brave
+   backends/wrappers/prometheus
+   backends/wrappers/slf4j
+   backends/wrappers/custom
 
 .. toctree::
    :maxdepth: 2

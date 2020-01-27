@@ -50,9 +50,10 @@ There are also backends which wrap other backends to provide additional
 functionality. These include:
 
 * `TryBackend`, which safely wraps any exceptions thrown by a synchronous backend in `scala.util.Try`
-* `OpenTracingBackend`, for OpenTracing-compatible distributed tracing. See the [dedicated section](opentracing.html).
-* `BraveBackend`, for Zipkin-compatible distributed tracing. See the [dedicated section](brave.html).
-* `PrometheusBackend`, for gathering Prometheus-format metrics. See the [dedicated section](prometheus.html).
+* `OpenTracingBackend`, for OpenTracing-compatible distributed tracing. See the [dedicated section](wrappers/opentracing.html).
+* `BraveBackend`, for Zipkin-compatible distributed tracing. See the [dedicated section](wrappers/brave.html).
+* `PrometheusBackend`, for gathering Prometheus-format metrics. See the [dedicated section](wrappers/prometheus.html).
+* slf4j backends, for logging. See the [dedicated section](wrappers/slf4j.html).
 
 In additional there are also backends for JavaScript:
 
@@ -64,6 +65,7 @@ Class                            Response wrapper             Supported stream t
 ``FetchMonixBackend``            ``monix.eval.Task``          ``monix.reactive.Observable[ByteBuffer]`` n/a
 ================================ ============================ ========================================= ============================
 ```
+
 Finally, there are third-party backends:
 
 * [sttp-play-ws](https://github.com/ragb/sttp-play-ws) for "standard" play-ws (not standalone).
