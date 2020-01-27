@@ -11,7 +11,7 @@ This backend depends on [akka-http](http://doc.akka.io/docs/akka-http/current/sc
 Note that you'll also need an explicit dependency on akka-streams, as akka-http doesn't depend on any specific akka-streams version. So you'll also need to add, for example:
 
 ```
-"com.typesafe.akka" %% "akka-stream" % "2.5.11"
+"com.typesafe.akka" %% "akka-stream" % "2.5.27"
 ```
 
 Next you'll need to add an implicit value:

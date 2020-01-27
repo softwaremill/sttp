@@ -23,7 +23,9 @@ Example with objects:
 import sttp.client._
 
 object Example {
-  val request = basicRequest.header(Header.contentType(MediaType.ApplicationJson)).get(uri"https://httpbin.org")
+  val request = basicRequest.header(Header.contentType(MediaType.ApplicationJson))
+    .get(uri"https://httpbin.org")
+
   implicit val backend = HttpURLConnectionBackend()
   val response = request.send()
   if (response.code == StatusCode.Ok) println("Ok!")
@@ -36,7 +38,8 @@ Example with traits:
 import sttp.client._
 
 object Example extends HeaderNames with MediaTypes with StatusCodes {
-  val request = basicRequest.header(ContentType, ApplicationJson.toString).get(uri"https://httpbin.org")
+  val request = basicRequest.header(ContentType, ApplicationJson.toString)
+    .get(uri"https://httpbin.org")
 
   implicit val backend = HttpURLConnectionBackend()
   val response = request.send()
