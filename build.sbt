@@ -173,7 +173,7 @@ val scalaNativeTestInterfaceVersion = "0.4.0-M2"
 val scalaTestNativeVersion = "3.2.0-M2"
 val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion
 
-val modelVersion = "1.0.0-RC1"
+val modelVersion = "1.0.0-RC3"
 
 def dependenciesFor(version: String)(deps: (Option[(Long, Long)] => ModuleID)*): Seq[ModuleID] =
   deps.map(_.apply(CrossVersion.partialVersion(version)))
