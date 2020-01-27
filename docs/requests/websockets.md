@@ -52,10 +52,9 @@ val response: Task[WebSocketResponse[WebSocket[Task]]] = basicRequest
 
 response.flatMap { r =>
   val ws: WebSocket[Task] = r.result
-  val send = ws.send(WebSocketFrame.text("Hello!")
+  val send = ws.send(WebSocketFrame.text("Hello!"))
   val receive = ws.receiveText().flatMap(t => Task(println(s"RECEIVED: $t")))
-  val close = ws.close()
-  send.flatMap(_ => receive).flatMap(_ => close)
+  send.flatMap(_ => receive).flatMap(_ => ws.close)
 }
 ```
 
