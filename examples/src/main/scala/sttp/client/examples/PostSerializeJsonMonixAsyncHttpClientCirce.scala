@@ -1,10 +1,9 @@
 package sttp.client.examples
 
-import sttp.client.asynchttpclient.monix.AsyncHttpClientMonixBackend
-
 object PostSerializeJsonMonixAsyncHttpClientCirce extends App {
   import sttp.client._
   import sttp.client.circe._
+  import sttp.client.asynchttpclient.monix._
   import io.circe.generic.auto._
 
   case class Info(x: Int, y: String)
