@@ -43,9 +43,6 @@ sttp (v1) documentation is available at [sttp.readthedocs.io/en/v1](https://sttp
 
 scaladoc is available at [https://www.javadoc.io](https://www.javadoc.io/doc/com.softwaremill.sttp.client/core_2.12/2.0.0-RC6)
 
-You can also take a look at the [introductory blog](https://softwaremill.com/introducing-sttp-the-scala-http-client/)
-and its [follow-up](https://softwaremill.com/sttp-streaming-uri-interpolator/).
-
 ## Quickstart with Ammonite
 
 If you are an [Ammonite](http://ammonite.io) user, you can quickly start experimenting with sttp by copy-pasting the following:

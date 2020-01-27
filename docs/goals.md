@@ -7,7 +7,12 @@
 * provide support for backend-specific request/response streaming
 * minimum dependencies
 
-See also the [introduction to sttp](https://softwaremill.com/introducing-sttp-the-scala-http-client) and [sttp streaming & URI interpolators](https://softwaremill.com/sttp-streaming-uri-interpolator) blogs.
+See also the blog posts:
+
+* [Introduction to sttp](https://softwaremill.com/introducing-sttp-the-scala-http-client)
+* [sttp streaming & URI interpolators](https://softwaremill.com/sttp-streaming-uri-interpolator)
+* [sttp2: an overview of proposed changes](https://blog.softwaremill.com/sttp2-an-overview-of-proposed-changes-8de23c94684f)
+* [Migrating to sttp client 2.x and tapir 0.12.x](https://blog.softwaremill.com/migrating-to-sttp-client-2-x-and-tapir-0-12-x-7956e6c79c52)
 
 ## Non-goals of the project
 
