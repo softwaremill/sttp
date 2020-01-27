@@ -1,5 +1,7 @@
 # Usage examples
 
+All of the examples are available [in the sources](https://github.com/softwaremill/sttp/blob/master/examples/src/main/scala/sttp/client/examples) in runnable form.
+
 ## POST a form using the synchronous backend
 
 Required dependencies:
@@ -69,7 +71,43 @@ for {
 }                             
 ```
 
-## Test an endpoint requiring multiple parameters
+## POST and serialize JSON using the Monix async-http-client backend and circe
+
+Required dependencies:
+
+```scala
+libraryDependencies ++= List(
+  "com.softwaremill.sttp.client" %% "async-http-client-backend-monix" % "2.0.0-RC6",
+  "com.softwaremill.sttp.client" %% "circe" % "2.0.0-RC6",
+  "io.circe" %% "circe-generic" % "0.12.1"
+)
+```
+
+Example code:
+
+```scala
+import sttp.client._
+import sttp.client.circe._
+import io.circe.generic.auto._
+
+case class Info(x: Int, y: String)
+
+val postTask = AsyncHttpClientMonixBackend().flatMap { implicit backend =>
+  val r = basicRequest
+    .body(Info(91, "abc"))
+    .post(uri"https://httpbin.org/post")
+
+  r.send().flatMap { response =>
+    println(s"""Got ${response.code} response, body:\n${response.body}""")
+    backend.close()
+  }
+}
+
+import monix.execution.Scheduler.Implicits.global
+postTask.runSyncUnsafe()
+```
+
+## Test an endpoint, which requires multiple query parameters
 
 Required dependencies:
 
@@ -94,12 +132,12 @@ println(
   basicRequest
     .get(uri"http://example.org?search=true&$parameters1")
     .send()
-    .unsafeBody)
+    .body)
 
 val parameters2 = Map("sort" -> "desc")
 println(
   basicRequest
     .get(uri"http://example.org/secret/read?$parameters2")
     .send()
-    .unsafeBody)
+    .body)
 ```
