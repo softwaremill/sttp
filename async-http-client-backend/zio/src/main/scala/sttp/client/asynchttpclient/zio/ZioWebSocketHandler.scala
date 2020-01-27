@@ -6,7 +6,7 @@ import sttp.client.impl.zio.TaskMonadAsyncError
 import sttp.client.ws.internal.AsyncQueue
 import sttp.client.ws.{WebSocket, WebSocketEvent}
 import sttp.model.ws.WebSocketBufferFull
-import zio.{Queue, Runtime, Task, UIO, ZIO}
+import zio.{Queue, Runtime, Task, ZIO}
 
 object ZioWebSocketHandler {
   private class ZioAsyncQueue[A](queue: Queue[A], runtime: Runtime[Any]) extends AsyncQueue[Task, A] {
@@ -31,7 +31,7 @@ object ZioWebSocketHandler {
     *                               events will some point cause the websocket to error and close. If no, unreceived
     *                               messages will eventually take up all available memory.
     */
-  def apply(incomingBufferCapacity: Option[Int] = None): UIO[WebSocketHandler[WebSocket[Task]]] = {
+  def apply(incomingBufferCapacity: Option[Int] = None): Task[WebSocketHandler[WebSocket[Task]]] = {
     def queue = incomingBufferCapacity match {
       case Some(capacity) => Queue.dropping[WebSocketEvent](capacity)
       case None           => Queue.unbounded[WebSocketEvent]

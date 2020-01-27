@@ -1,0 +1,236 @@
+# Usage examples
+
+All of the examples are available [in the sources](https://github.com/softwaremill/sttp/blob/master/examples/src/main/scala/sttp/client/examples) in runnable form.
+
+## POST a form using the synchronous backend
+
+Required dependencies:
+
+```scala            
+libraryDependencies ++= List("com.softwaremill.sttp.client" %% "core" % "2.0.0-RC6")
+```
+
+Example code:
+
+```scala
+import sttp.client._
+
+val signup = Some("yes")
+
+val request = basicRequest
+  // send the body as form data (x-www-form-urlencoded)
+  .body(Map("name" -> "John", "surname" -> "doe"))
+  // use an optional parameter in the URI
+  .post(uri"https://httpbin.org/post?signup=$signup")
+
+implicit val backend = HttpURLConnectionBackend()
+val response = request.send()
+
+println(response.body)
+println(response.headers)
+```
+
+## GET and parse JSON using the akka-http backend and json4s
+
+Required dependencies:
+
+```scala
+libraryDependencies ++= List(
+  "com.softwaremill.sttp.client" %% "akka-http-backend" % "2.0.0-RC6",
+  "com.softwaremill.sttp.client" %% "json4s" % "2.0.0-RC6",
+  "org.json4s" %% "json4s-native" % "3.6.0"
+)
+```
+
+Example code:
+
+```scala
+import sttp.client._
+import sttp.client.akkahttp._
+import sttp.client.json4s._
+
+import scala.concurrent.ExecutionContext.Implicits.global
+
+case class HttpBinResponse(origin: String, headers: Map[String, String])
+
+implicit val serialization = org.json4s.native.Serialization
+val request = basicRequest
+  .get(uri"https://httpbin.org/get")
+  .response(asJson[HttpBinResponse])
+
+implicit val backend = AkkaHttpBackend()
+val response: Future[Response[Either[ResponseError[Exception], HttpBinResponse]]] =
+  request.send()
+
+for {
+  r <- response
+} {
+  println(s"Got response code: ${r.code}")
+  println(r.body)
+  backend.close()
+}                             
+```
+
+## POST and serialize JSON using the Monix async-http-client backend and circe
+
+Required dependencies:
+
+```scala
+libraryDependencies ++= List(
+  "com.softwaremill.sttp.client" %% "async-http-client-backend-monix" % "2.0.0-RC6",
+  "com.softwaremill.sttp.client" %% "circe" % "2.0.0-RC6",
+  "io.circe" %% "circe-generic" % "0.12.1"
+)
+```
+
+Example code:
+
+```scala
+import sttp.client._
+import sttp.client.circe._               
+import sttp.client.asynchttpclient.monix._
+import io.circe.generic.auto._
+
+case class Info(x: Int, y: String)
+
+val postTask = AsyncHttpClientMonixBackend().flatMap { implicit backend =>
+  val r = basicRequest
+    .body(Info(91, "abc"))
+    .post(uri"https://httpbin.org/post")
+
+  r.send().flatMap { response =>
+    println(s"""Got ${response.code} response, body:\n${response.body}""")
+    backend.close()
+  }
+}
+
+import monix.execution.Scheduler.Implicits.global
+postTask.runSyncUnsafe()
+```
+
+## Test an endpoint, which requires multiple query parameters
+
+Required dependencies:
+
+```scala
+libraryDependencies ++= List("com.softwaremill.sttp.client" %% "core" % "2.0.0-RC6")
+```
+
+Example code:
+
+```scala
+import sttp.client._
+import sttp.client.testing._
+
+implicit val backend = SttpBackendStub.synchronous
+  .whenRequestMatches(_.uri.paramsMap.contains("filter"))
+  .thenRespond("Filtered")
+  .whenRequestMatches(_.uri.path.contains("secret"))
+  .thenRespond("42")
+
+val parameters1 = Map("filter" -> "name=mary", "sort" -> "asc")
+println(
+  basicRequest
+    .get(uri"http://example.org?search=true&$parameters1")
+    .send()
+    .body)
+
+val parameters2 = Map("sort" -> "desc")
+println(
+  basicRequest
+    .get(uri"http://example.org/secret/read?$parameters2")
+    .send()
+    .body)
+```
+
+## Open a websocket using the high-level websocket interface and ZIO
+
+Required dependencies:
+
+```scala
+libraryDependencies ++= List("com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % "2.0.0-RC6")
+```
+
+Example code:
+
+```scala
+import sttp.client._
+import sttp.client.asynchttpclient.zio._
+import sttp.client.ws.{WebSocket, WebSocketResponse}
+import sttp.model.ws.WebSocketFrame
+import zio._
+
+def useWebsocket(ws: WebSocket[Task]): Task[Unit] = {
+  def send(i: Int) = ws.send(WebSocketFrame.text(s"Hello $i!"))
+  val receive = ws.receiveText().flatMap(t => Task(println(s"RECEIVED: $t")))
+  send(1) *> send(2) *> receive *> receive *> ws.close
+}
+
+AsyncHttpClientZioBackend().flatMap { implicit backend =>
+  val response: Task[WebSocketResponse[WebSocket[Task]]] = basicRequest
+    .get(uri"wss://echo.websocket.org")
+    .openWebsocketF(ZioWebSocketHandler())
+
+  response
+    .flatMap(r => useWebsocket(r.result))
+    .flatMap(_ => backend.close())
+}
+```
+
+## Stream request and response bodies using fs2
+
+Required dependencies:
+
+```scala
+libraryDependencies ++= List("com.softwaremill.sttp.client" %% "async-http-client-backend-fs2" % "2.0.0-RC6")
+```
+
+Example code:
+
+```scala
+import sttp.client._
+import sttp.client.asynchttpclient.fs2.AsyncHttpClientFs2Backend
+
+import java.nio.ByteBuffer
+import cats.effect.{ContextShift, IO}
+import cats.instances.string._
+import fs2.{Stream, Chunk, text}
+
+implicit val cs: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionContext.Implicits.global)
+
+def streamRequestBody(implicit backend: SttpBackend[IO, Stream[IO, ByteBuffer], NothingT]): IO[Unit] = {
+  val stream: Stream[IO, ByteBuffer] = Stream.emits(List("Hello, ".getBytes, "world".getBytes)).map(ByteBuffer.wrap)
+
+  basicRequest
+    .streamBody(stream)
+    .post(uri"https://httpbin.org/post")
+    .send()
+    .map { response =>
+      println(s"RECEIVED:\n${response.body}")
+    }
+}
+
+def streamResponseBody(implicit backend: SttpBackend[IO, Stream[IO, ByteBuffer], NothingT]): IO[Unit] = {
+  basicRequest
+    .body("I want a stream!")
+    .post(uri"https://httpbin.org/post")
+    .response(asStreamAlways[Stream[IO, ByteBuffer]])
+    .send()
+    .flatMap { response =>
+      response.body
+        .map(bb => Chunk.array(bb.array))
+        .through(text.utf8DecodeC)
+        .compile
+        .foldMonoid
+    }
+    .map { body =>
+      println(s"RECEIVED:\n$body")
+    }
+}
+
+val effect = AsyncHttpClientFs2Backend[IO]().flatMap { implicit backend =>
+  streamRequestBody.flatMap(_ => streamResponseBody).flatMap(_ => backend.close())
+}
+
+effect.unsafeRunSync()
+``` 

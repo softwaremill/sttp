@@ -6,7 +6,14 @@
 
 The Scala HTTP client that you always wanted!
 
-sttp client is an open-source library which provides a clean, programmer-friendly API to define HTTP requests and execute them using one of the wrapped backends, such as akka-http, async-http-client, http4s or OkHttp.
+Welcome!
+
+[sttp client](https://github.com/softwaremill/sttp) is an open-source library which provides a clean, programmer-friendly API to describe HTTP
+requests and how to handle responses. Requests are sent using one of the backends, which wrap other Scala or Java HTTP client implementations. The backends can integrate with a variety of Scala stacks, providing both synchronous and asynchronous, procedural and functional interfaces.
+ 
+Backend implementations include ones based on [akka-http](https://doc.akka.io/docs/akka-http/current/scala/http/), [async-http-client](https://github.com/AsyncHttpClient/async-http-client), [http4s](https://http4s.org), [OkHttp](http://square.github.io/okhttp/), and HTTP clients which ship with Java. They integrate with [Akka](https://akka.io), [Monix](https://monix.io), [fs2](https://github.com/functional-streams-for-scala/fs2), [cats-effect](https://github.com/typelevel/cats-effect), [scalaz](https://github.com/scalaz/scalaz) and [ZIO](https://github.com/zio/zio). 
+
+Here's a very quick example of sttp client in action:
  
 ```scala
 import sttp.client._
@@ -35,9 +42,6 @@ sttp (v2) documentation is available at [sttp.readthedocs.io](http://sttp.readth
 sttp (v1) documentation is available at [sttp.readthedocs.io/en/v1](https://sttp.readthedocs.io/en/v1).
 
 scaladoc is available at [https://www.javadoc.io](https://www.javadoc.io/doc/com.softwaremill.sttp.client/core_2.12/2.0.0-RC6)
-
-You can also take a look at the [introductory blog](https://softwaremill.com/introducing-sttp-the-scala-http-client/)
-and its [follow-up](https://softwaremill.com/sttp-streaming-uri-interpolator/).
 
 ## Quickstart with Ammonite
 

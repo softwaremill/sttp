@@ -39,14 +39,21 @@ templates_path = ['_templates']
 # You can specify multiple suffix as a list of string:
 #
 # source_suffix = ['.rst', '.md']
-source_suffix = '.rst'
+from recommonmark.parser import CommonMarkParser
+from recommonmark.transform import AutoStructify
+
+source_parsers = {
+    '.md': CommonMarkParser,
+}
+
+source_suffix = ['.rst', '.md']
 
 # The master toctree document.
 master_doc = 'index'
 
 # General information about the project.
 project = u'sttp'
-copyright = u'2019, SoftwareMill'
+copyright = u'2020, SoftwareMill'
 author = u'SoftwareMill'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -168,4 +175,12 @@ texinfo_documents = [
 ]
 
 highlight_language = 'scala'
+
+# app setup hook
+def setup(app):
+    app.add_config_value('recommonmark_config', {
+        'auto_toc_tree_section': 'Contents',
+        'enable_auto_doc_ref': False
+    }, True)
+    app.add_transform(AutoStructify)
 
