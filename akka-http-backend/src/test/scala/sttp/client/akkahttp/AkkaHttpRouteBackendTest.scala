@@ -32,7 +32,7 @@ class AkkaHttpRouteBackendTest extends AsyncWordSpec with Matchers with BeforeAn
   "matched route" should {
 
     "respond" in {
-      backend.send(basicRequest.get(uri"localhost/hello")).map { response =>
+      backend.send(basicRequest.get(uri"http://localhost/hello")).map { response =>
         response.code shouldBe StatusCode.Ok
         response.body.right.get shouldBe "Hello, world!"
       }

@@ -8,7 +8,7 @@ import sttp.client.{NothingT, SttpBackend}
 
 class FetchMonixStreamingTest extends MonixStreamingTest {
 
-  override protected def endpoint: String = "localhost:51823"
+  override protected def endpoint: String = "http://localhost:51823"
 
   override implicit val backend: SttpBackend[Task, Observable[ByteBuffer], NothingT] = FetchMonixBackend()
 

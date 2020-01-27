@@ -23,7 +23,7 @@ trait SyncHttpTest
     with EitherValues
     with BeforeAndAfterAll
     with SyncHttpTestExtensions {
-  protected def endpoint: String = "localhost:51823"
+  protected def endpoint: String = "http://localhost:51823"
 
   protected val binaryFileMD5Hash = "565370873a38d91f34a3091082e63933"
   protected val textFileMD5Hash = "b048a88ece8e4ec5eb386b8fc5006d13"

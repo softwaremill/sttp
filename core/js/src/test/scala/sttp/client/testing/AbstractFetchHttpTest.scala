@@ -8,7 +8,7 @@ import scala.language.higherKinds
 
 abstract class AbstractFetchHttpTest[F[_], -S] extends HttpTest[F] {
 
-  override protected def endpoint: String = "localhost:51823"
+  override protected def endpoint: String = "http://localhost:51823"
 
   override protected def expectRedirectResponse(
       response: F[Response[String]],
