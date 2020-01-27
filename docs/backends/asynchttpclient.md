@@ -35,22 +35,22 @@ Next you'll need to add an implicit value:
 implicit val sttpBackend = AsyncHttpClientFutureBackend()
 
 // or, if you're using the scalaz version:
-implicit val sttpBackend = AsyncHttpClientScalazBackend()
+AsyncHttpClientScalazBackend().flatMap { implicit backend => ... }
 
 // or, if you're using the zio version:
-implicit val sttpBackend = AsyncHttpClientZioBackend()
+AsyncHttpClientZioBackend().flatMap { implicit backend => ... }
 
 // or, if you're using the zio version with zio-streams for http streaming:
-implicit val sttpBackend = AsyncHttpClientZioStreamsBackend()
+AsyncHttpClientZioStreamsBackend().flatMap { implicit backend => ... }
 
 // or, if you're using the monix version:
-implicit val sttpBackend = AsyncHttpClientMonixBackend()
+AsyncHttpClientMonixBackend().flatMap { implicit backend => ... }
 
 // or, if you're using the cats effect version:
-implicit val sttpBackend = AsyncHttpClientCatsBackend[cats.effect.IO]()
+AsyncHttpClientCatsBackend[cats.effect.IO]().flatMap { implicit backend => ... }
 
 // or, if you're using the fs2 version:
-implicit val sttpBackend = AsyncHttpClientFs2Backend[cats.effect.IO]()
+AsyncHttpClientFs2Backend[cats.effect.IO]().flatMap { implicit backend => ... }
 
 // or, if you'd like to use custom configuration:
 implicit val sttpBackend = AsyncHttpClientFutureBackend.usingConfig(asyncHttpClientConfig)
@@ -151,6 +151,53 @@ val effect = AsyncHttpClientFs2Backend[IO]().flatMap { implicit backend =>
   response
 }
 // run the effect
+```
+
+## Streaming using zio-streams
+
+The zio-streams backend supports streaming of type `Stream[Throwable, ByteBuffer]`.
+
+Requests can be sent with a streaming body like this:
+
+```scala
+import sttp.client._
+import sttp.client.asynchttpclient.zio._
+
+import java.nio.ByteBuffer
+
+import zio._
+import zio.stream._
+
+AsyncHttpClientZioStreamsBackend().flatMap { implicit backend =>
+  val s: Stream[Throwable, ByteBuffer] =  ...
+
+  basicRequest
+    .streamBody(s)
+    .post(uri"...")
+}
+```
+
+And receive response bodies as a stream:
+
+```scala
+import sttp.client._
+import sttp.client.asynchttpclient.zio._
+
+import java.nio.ByteBuffer
+
+import zio._
+import zio.stream._
+
+import scala.concurrent.duration.Duration
+
+AsyncHttpClientZioStreamsBackend().flatMap { implicit backend =>
+  val response: Task[Response[Either[String, Stream[Throwable, ByteBuffer]]]] =
+    basicRequest
+      .post(uri"...")
+      .response(asStream[Stream[Throwable, ByteBuffer]])
+      .readTimeout(Duration.Inf)
+      .send()
+}
 ```
 
 ## Websockets

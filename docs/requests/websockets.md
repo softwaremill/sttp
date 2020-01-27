@@ -27,6 +27,8 @@ Additionally, some backends, on top of the "low-level" Java listeners also offer
 
 ## Using the high-level websocket interface
 
+The high-level interface is available when using Monix, ZIO or fs2 [async-http-client](../backends/asynchttpclient.html) backends, the Monix [OkHttp](../backends/okhttp.html) backend, or the Monix [HttpClient](../backends/httpclient.html) backend.
+
 When the websocket is open, the response will contain an instance of `sttp.client.ws.WebSocket[F]`, where `F` is the backend-specific effects wrapper, such as `IO` or `Task`. This interface contains two methods, both of which return computations wrapped in the effects wrapper `F` (which typically is lazily-evaluated description of a side-effecting, asynchronous process):
 
 * `def receive: F[Either[WebSocketEvent.Close, WebSocketFrame.Incoming]]` which will complete once a message is available, and return either information that the websocket has been closed, or the incoming message
