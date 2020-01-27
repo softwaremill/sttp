@@ -48,8 +48,8 @@ Often it's useful to setup system-wide logging for failed requests. This is poss
 import sttp.client.{MonadError, Request, Response, SttpBackend}
 import com.typesafe.scalalogging.StrictLogging
 
-class LoggingSttpBackend[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[R, S, WS_HANDLER])
-  extends SttpBackend[R, S, WS_HANDLER]
+class LoggingSttpBackend[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[F, S, WS_HANDLER])
+  extends SttpBackend[F, S, WS_HANDLER]
   with StrictLogging {
 
   override def send[T](request: Request[T, S]): F[Response[T]] = {

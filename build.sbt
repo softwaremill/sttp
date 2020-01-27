@@ -173,7 +173,9 @@ val scalaNativeTestInterfaceVersion = "0.4.0-M2"
 val scalaTestNativeVersion = "3.2.0-M2"
 val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion
 
-val modelVersion = "1.0.0-RC1"
+val modelVersion = "1.0.0-RC4"
+
+val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
 
 def dependenciesFor(version: String)(deps: (Option[(Long, Long)] => ModuleID)*): Seq[ModuleID] =
   deps.map(_.apply(CrossVersion.partialVersion(version)))
@@ -230,6 +232,7 @@ lazy val rootJVM = project
     httpClientBackend,
     httpClientMonixBackend,
     finagleBackend,
+    slf4jBackend,
     examples
   )
 
@@ -628,6 +631,17 @@ lazy val prometheusBackend: Project = (project in file("metrics/prometheus-backe
   )
   .dependsOn(coreJVM)
 
+lazy val slf4jBackend: Project = (project in file("logging/slf4j"))
+  .settings(commonJvmSettings: _*)
+  .settings(
+    name := "slf4j-backend",
+    libraryDependencies ++= Seq(
+      "org.slf4j" % "slf4j-api" % "1.7.30",
+      scalaTest % Test
+    )
+  )
+  .dependsOn(coreJVM)
+
 lazy val examples: Project = (project in file("examples"))
   .settings(commonJvmSettings: _*)
   .settings(
@@ -636,7 +650,8 @@ lazy val examples: Project = (project in file("examples"))
     libraryDependencies ++= dependenciesFor(scalaVersion.value)(
       "io.circe" %% "circe-generic" % circeVersion(_),
       _ => "org.json4s" %% "json4s-native" % json4sVersion,
-      _ => akkaStreams
+      _ => akkaStreams,
+      _ => logback
     )
   )
   .dependsOn(
@@ -646,5 +661,6 @@ lazy val examples: Project = (project in file("examples"))
     akkaHttpBackend,
     asyncHttpClientFs2Backend,
     json4s,
-    circeJVM
+    circeJVM,
+    slf4jBackend
   )

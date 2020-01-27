@@ -100,6 +100,7 @@ sttp is a family of Scala HTTP-related projects, and currently includes:
    backends/prometheus
    backends/javascript/fetch
    backends/custom
+   backends/logging
 
 .. toctree::
    :maxdepth: 2
