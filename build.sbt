@@ -229,7 +229,8 @@ lazy val rootJVM = project
     prometheusBackend,
     httpClientBackend,
     httpClientMonixBackend,
-    finagleBackend
+    finagleBackend,
+    examples
   )
 
 lazy val rootJS = project
@@ -261,7 +262,7 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
       "org.scalatest" %%% "scalatest" % scalaTestVersion % Test
     ),
     jsDependencies ++= Seq(
-      "org.webjars.npm" % "spark-md5" % "3.0.0" % "test" / "spark-md5.js" minified "spark-md5.min.js"
+      "org.webjars.npm" % "spark-md5" % "3.0.0" % Test / "spark-md5.js" minified "spark-md5.min.js"
     )
   )
   .jsSettings(browserTestSettings)
@@ -453,7 +454,7 @@ lazy val okhttpBackend: Project = (project in file("okhttp-backend"))
   .settings(
     name := "okhttp-backend",
     libraryDependencies ++= Seq(
-      "com.squareup.okhttp3" % "okhttp" % "4.3.1"
+      "com.squareup.okhttp3" % "okhttp" % "4.3.0"
     )
   )
   .dependsOn(coreJVM % compileAndTest)
@@ -475,7 +476,7 @@ lazy val http4sBackend: Project = (project in file("http4s-backend"))
   .settings(
     name := "http4s-backend",
     libraryDependencies ++= Seq(
-      "org.http4s" %% "http4s-blaze-client" % "0.21.0-M5"
+      "org.http4s" %% "http4s-blaze-client" % "0.21.0-RC1"
     )
   )
   .settings(only2_12_and_2_13_settings)
@@ -489,7 +490,7 @@ lazy val httpClientBackend: Project = (project in file("httpclient-backend"))
     scalacOptions ++= Seq("-J--add-modules", "-Jjava.net.http", "-target:jvm-11")
   )
   .settings(only2_13andJava11)
-  .dependsOn(catsJVM, coreJVM % compileAndTest)
+  .dependsOn(coreJVM % compileAndTest)
 
 def httpClientBackendProject(proj: String): Project = {
   Project(s"httpClientBackend${proj.capitalize}", file(s"httpclient-backend/$proj"))
@@ -509,7 +510,7 @@ lazy val finagleBackend: Project = (project in file("finagle-backend"))
   .settings(
     name := "finagle-backend",
     libraryDependencies ++= Seq(
-      "com.twitter" %% "finagle-http" % "19.1.0"
+      "com.twitter" %% "finagle-http" % "19.12.0"
     )
   )
   .settings(only2_11_and_2_12_settings)
@@ -556,8 +557,8 @@ lazy val json4s: Project = (project in file("json/json4s"))
     name := "json4s",
     libraryDependencies ++= Seq(
       "org.json4s" %% "json4s-core" % json4sVersion,
-      "org.json4s" %% "json4s-native" % json4sVersion % "test",
-      "org.scalatest" %% "scalatest" % scalaTestVersion % "test"
+      "org.json4s" %% "json4s-native" % json4sVersion % Test,
+      "org.scalatest" %% "scalatest" % scalaTestVersion % Test
     )
   )
   .dependsOn(coreJVM, jsonCommonJVM)
@@ -568,7 +569,7 @@ lazy val sprayJson: Project = (project in file("json/spray-json"))
     name := "spray-json",
     libraryDependencies ++= Seq(
       "io.spray" %% "spray-json" % "1.3.5",
-      "org.scalatest" %% "scalatest" % scalaTestVersion % "test"
+      "org.scalatest" %% "scalatest" % scalaTestVersion % Test
     )
   )
   .dependsOn(coreJVM, jsonCommonJVM)
@@ -583,7 +584,7 @@ lazy val playJson = crossProject(JSPlatform, JVMPlatform)
     name := "play-json",
     libraryDependencies ++= Seq(
       "com.typesafe.play" %%% "play-json" % "2.7.4",
-      "org.scalatest" %%% "scalatest" % scalaTestVersion % "test"
+      "org.scalatest" %%% "scalatest" % scalaTestVersion % Test
     )
   )
 lazy val playJsonJS = playJson.js.dependsOn(coreJS, jsonCommonJS)
@@ -598,8 +599,8 @@ lazy val braveBackend: Project = (project in file("metrics/brave-backend"))
     libraryDependencies ++= Seq(
       "io.zipkin.brave" % "brave" % braveVersion,
       "io.zipkin.brave" % "brave-instrumentation-http" % braveVersion,
-      "io.zipkin.brave" % "brave-instrumentation-http-tests" % braveVersion % "test",
-      scalaTest % "test"
+      "io.zipkin.brave" % "brave-instrumentation-http-tests" % braveVersion % Test,
+      scalaTest % Test
     )
   )
   .dependsOn(coreJVM)
@@ -610,8 +611,8 @@ lazy val openTracingBackend: Project = (project in file("metrics/open-tracing-ba
     name := "opentracing-backend",
     libraryDependencies ++= Seq(
       "io.opentracing" % "opentracing-api" % "0.33.0",
-      "io.opentracing" % "opentracing-mock" % "0.33.0" % "test",
-      scalaTest % "test"
+      "io.opentracing" % "opentracing-mock" % "0.33.0" % Test,
+      scalaTest % Test
     )
   )
   .dependsOn(coreJVM)
@@ -621,8 +622,29 @@ lazy val prometheusBackend: Project = (project in file("metrics/prometheus-backe
   .settings(
     name := "prometheus-backend",
     libraryDependencies ++= Seq(
-      "io.prometheus" % "simpleclient" % "0.8.0",
-      scalaTest % "test"
+      "io.prometheus" % "simpleclient" % "0.8.1",
+      scalaTest % Test
     )
   )
   .dependsOn(coreJVM)
+
+lazy val examples: Project = (project in file("examples"))
+  .settings(commonJvmSettings: _*)
+  .settings(
+    name := "examples",
+    skip in publish := true,
+    libraryDependencies ++= dependenciesFor(scalaVersion.value)(
+      "io.circe" %% "circe-generic" % circeVersion(_),
+      _ => "org.json4s" %% "json4s-native" % json4sVersion,
+      _ => akkaStreams
+    )
+  )
+  .dependsOn(
+    coreJVM,
+    asyncHttpClientMonixBackend,
+    asyncHttpClientZioBackend,
+    akkaHttpBackend,
+    asyncHttpClientFs2Backend,
+    json4s,
+    circeJVM
+  )
