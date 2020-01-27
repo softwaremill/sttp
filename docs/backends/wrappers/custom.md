@@ -16,6 +16,14 @@ Tags can be added to a request using the `def tag(k: String, v: Any)` method, an
 
 Backends, or backend wrappers can use tags e.g. for logging, passing a metric name, using different connection pools, or even different delegate backends.
 
+## Listener backend
+
+The `sttp.client.listener.ListenerBackend` can make it easier to create backend wrappers which need to be notified about request lifecycle events: when a request is started, and when it completes either successfully or with an exception. This is possible by implementing a `sttp.client.listener.RequestListener`. This is how e.g. the [slf4j backend](slf4j.html) is implemented. 
+
+A request listener can associate a value with a request, which will then be passed to the request completion notification methods.
+
+A side-effecting request listener, of type `RequestListener[Identity, L]`, can be lifted to a request listener `RequestListener[F, L]` given a `MonadError[F]`, using the `RequestListener.lift` method.
+
 ## Backend wrappers and redirects
 
 By default redirects are handled at a low level, using a wrapper around the main, concrete backend: each of the backend factory methods, e.g. `HttpURLConnectionBackend()` returns a backend wrapped in `FollowRedirectsBackend`.
@@ -40,57 +48,11 @@ object MyWrapper {
 }
 ```
 
-## Example logging backend wrapper
+## Logging backend wrapper
 
-Often it's useful to setup system-wide logging for failed requests. This is possible using a backend wrapper. In this example, we are using `scala-logging` for the logging itself, but of course any logging library can be used:
+A good example on how to implement a logging backend wrapper is the [slf4j](slf4j.html) backend wrapper implementation. It uses the `ListenerBackend` to get notified about request lifecycle events, and logs messages created using `sttp.client.logging.LogMessages`.
 
-```scala
-import sttp.client.{MonadError, Request, Response, SttpBackend}
-import com.typesafe.scalalogging.StrictLogging
-
-class LoggingSttpBackend[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[F, S, WS_HANDLER])
-  extends SttpBackend[F, S, WS_HANDLER]
-  with StrictLogging {
-
-  override def send[T](request: Request[T, S]): F[Response[T]] = {
-    responseMonad.map(responseMonad.handleError(delegate.send(request)) {
-      case e: Exception =>
-        logger.error(s"Exception when sending request: $request", e)
-        responseMonad.error(e)
-    }) { response =>
-      if (response.isSuccess) {
-        logger.debug(s"For request: $request got response: $response")
-      } else {
-        logger.warn(s"For request: $request got response: $response")
-      }
-      response
-    }
-  }
-  override def openWebsocket[T, WS_RESULT](
-      request: Request[T, S],
-      handler: WS_HANDLER[WS_RESULT]
-    ): F[WebSocketResponse[WS_RESULT]] = {
-    responseMonad.map(responseMonad.handleError(delegate.openWebsocket(request, handler)) {
-      case e: Exception =>
-        logger.error(s"Exception when opening a websocket request: $request", e)
-        responseMonad.error(e)
-      }) { response =>
-        logger.debug(s"For ws request: $request got headers: ${response.headers}")
-        response
-      }
-  }
-  override def close(): F[Unit] = delegate.close()
-  override def responseMonad: MonadError[F] = delegate.responseMonad
-}
-```        
-
-Note that there are three possible outcomes of a request:
-
-* an exception is thrown (handled with `responseMonad.handleError`), e.g. because of a connection error; here, this is logged with level `ERROR`.
-* the response completes normally, but the server returns a non-2xx response code. Here, this case is logged with level `WARN`.
-* the response completes normally with 2xx response code. Here, this case is logged with level `DEBUG`.     
-
-It's quite easy to customize this backend to your particular needs - just copy the code!
+To adjust the logs to your needs, or to integrate with your logging framework, simply copy the code and modify as needed. 
 
 ## Example metrics backend wrapper
 
@@ -328,11 +290,7 @@ object RateLimitingSttpBackend {
 Implementing a new backend is made easy as the tests are published in the `core` jar file under the `tests` classifier. Simply add the follow dependencies to your `build.sbt`:
 
 ```
-"com.softwaremill.sttp.client" %% "core" % "2.0.0-RC6" % Test classifier "tests",
-"com.typesafe.akka" %% "akka-http" % "10.1.1" % Test,
-"ch.megard" %% "akka-http-cors" % "0.3.0" % Test,
-"com.typesafe.akka" %% "akka-stream" % "2.5.12" % Test,
-"org.scalatest" %% "scalatest" % "3.0.5" % Test
+"com.softwaremill.sttp.client" %% "core" % "2.0.0-RC6" % Test classifier "tests"
 ```
 
 Implement your backend and extend the `HttpTest` class:
