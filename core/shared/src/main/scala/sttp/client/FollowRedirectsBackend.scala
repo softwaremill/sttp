@@ -77,7 +77,7 @@ class FollowRedirectsBackend[F[_], S, WS_HANDLER[_]](
 
   private def stripSensitiveHeaders[T](request: Request[T, S]): Request[T, S] = {
     request.copy[Identity, T, S](
-      headers = request.headers.filterNot(h => sensitiveHeaders.contains(h.name))
+      headers = request.headers.filterNot(h => sensitiveHeaders.contains(h.name.toLowerCase()))
     )
   }
 
@@ -88,7 +88,10 @@ class FollowRedirectsBackend[F[_], S, WS_HANDLER[_]](
     if (applicable && (r.options.redirectToGet || alwaysChanged) && !neverChanged) {
       // when transforming POST or PUT into a get, content is dropped, also filter out content-related request headers
       r.method(Method.GET, r.uri)
-        .copy(body = NoBody, headers = r.headers.filterNot(header => contentHeaders.contains(header.name)))
+        .copy(
+          body = NoBody,
+          headers = r.headers.filterNot(header => contentHeaders.contains(header.name.toLowerCase()))
+        )
     } else r
   }
 

@@ -29,7 +29,7 @@ trait TestHttpServer extends BeforeAndAfterAll { this: Suite =>
 
   private val server = new HttpServer(0)
 
-  protected def endpoint = s"$host:$port"
+  protected def endpoint = s"http://$host:$port"
   protected def wsEndpoint = s"ws://$host:$port"
 
   private var port = 51823
