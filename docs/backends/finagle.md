@@ -1,4 +1,4 @@
-# Finagle backend
+# Twitter future (Finagle) backend
 
 To use, add the following dependency to your project:
 
@@ -18,4 +18,4 @@ This backend depends on [finagle](https://twitter.github.io/finagle/), and offer
 Please note that: 
 
 * the backend does not support `SttpBackendOptions`, that is specifying proxy settings (proxies are not implemented in http4s, see [this issue](https://github.com/http4s/http4s/issues/251)), as well as configuring the connect timeout 
-* the backend does not support streaming or websockets.
+* the backend does not support non-blocking [streaming](../requests/streaming.html) or websockets.

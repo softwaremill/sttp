@@ -72,7 +72,6 @@ sttp is a family of Scala HTTP-related projects, and currently includes:
    requests/body
    requests/multipart
    requests/streaming
-   requests/websockets
    requests/type
 
 .. toctree::
@@ -84,17 +83,26 @@ sttp is a family of Scala HTTP-related projects, and currently includes:
 
 .. toctree::
    :maxdepth: 2
+   :caption: Websockets
+
+   websockets
+
+.. toctree::
+   :maxdepth: 2
    :caption: Backends
 
    backends/summary
    backends/start_stop
-   backends/httpurlconnection
-   backends/akkahttp
-   backends/asynchttpclient
-   backends/okhttp
+   backends/synchronous
+   backends/akka
+   backends/future
+   backends/monix
+   backends/catseffect
+   backends/fs2
+   backends/scalaz
+   backends/zio
    backends/http4s
    backends/finagle
-   backends/httpclient
    backends/javascript/fetch
 
 .. toctree::

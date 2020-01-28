@@ -30,3 +30,5 @@ basicRequest
 ```eval_rst
 .. note:: A request with the body set as a stream can only be sent using a backend supporting exactly the given type of streams.
 ```
+
+It's also possible to specify that the [response body should be a stream](../responses/body.html#streaming).

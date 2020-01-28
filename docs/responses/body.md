@@ -91,7 +91,7 @@ def asStream[S]: ResponseAs[Either[String, S], S] = ResponseAsStream[S, S]()
 def asStreamAlways[S]: ResponseAs[S, S] = ResponseAsStream[S, S]()
 ```
 
-For example, when using the [akka-http backend](../backends/akkahttp.html):
+For example, when using the [Akk backend](../backends/akka.html):
 
 ```scala
 import sttp.client._

@@ -1,8 +1,8 @@
-# Fetch backend
+# JavaScript (Fetch) backend
 
 A JavaScript backend implemented using the [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) and backed via `Future`.
 
-To use, add the following dependency to your project:
+This is the default backend, available in the main jar for JS. To use, add the following dependency to your project:
 
 ```
 "com.softwaremill.sttp.client" %%% "core" % "2.0.0-RC6"

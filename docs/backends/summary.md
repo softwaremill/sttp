@@ -6,11 +6,10 @@ Choosing the right backend depends on a number of factors: whether you are using
 
 Which one to choose?
 
-* for simple exploratory requests, use the synchronous [HttpURLConnectionBackend](httpurlconnection.html)
-* if you have Akka in your stack, use [AkkaHttpBackend](akkahttp.html)
-* otherwise, if you are using `Future`, use [AsyncHttpClientFutureBackend](asynchttpclient.html)
-* finally, if you are using a functional effect wrapper, use one of the "functional" [async-http-client backends](asynchttpclient.html)
-* if you use Java11 or above, you can leverage a backend based on the built-in [HttpClient](httpclient.html) 
+* for simple exploratory requests, use the [synchronous](synchronous.html) `HttpURLConnectionBackend`
+* if you have Akka in your stack, use [Akka backend](akka.html)
+* otherwise, if you are using `Future`, use the `AsyncHttpClientFutureBackend` [Future](future.html) backend
+* finally, if you are using a functional effect wrapper, use one of the "functional" backends, for [ZIO](zio.html), [Monix](monix.html), [Scalaz](scalaz.html), [cats-effect](catseffect.html) or [fs2](fs2.html). 
 
 Each backend has three type parameters:
 
@@ -43,7 +42,6 @@ Class                                Response wrapper             Supported stre
 ``HttpClientMonixBackend``           ``monix.eval.Task``          ``monix.reactive.Observable[ByteBuffer]``        ``sttp.client.httpclient.WebSocketHandler``
 ``FinagleBackend``                   ``com.twitter.util.Future``  n/a                                              n/a
 ==================================== ============================ ================================================ ==================================================
-
 ```
 
 There are also backends which wrap other backends to provide additional

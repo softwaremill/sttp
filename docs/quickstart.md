@@ -1,6 +1,6 @@
 # Quickstart
 
-The main sttp client API comes in a single jar, with a single transitive dependency on the [sttp model](https://github.com/softwaremill/sttp-model). This also includes a default, synchronous backend, which is based on Java's `HttpURLConnection`. 
+The main sttp client API comes in a single jar, with a single transitive dependency on the [sttp model](https://github.com/softwaremill/sttp-model). This also includes a default, [synchronous](backends/synchronous.html) backend, which is based on Java's `HttpURLConnection`. 
 
 To integrate with other parts of your application, you'll often need to use an alternate backend (but what's important is that the API remains the same!). See the section on [backends](backends/summary.md) for a short guide on which backend to choose, and a list of all implementations.
 

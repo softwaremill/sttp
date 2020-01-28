@@ -1,17 +1,17 @@
-# akka-http backend
+# Akka backend
 
-To use, add the following dependency to your project:
+This backend is based on [akka-http](http://doc.akka.io/docs/akka-http/current/scala/http/). To use, add the following dependency to your project:
 
 ```
 "com.softwaremill.sttp.client" %% "akka-http-backend" % "2.0.0-RC6"
 ```
 
-This backend depends on [akka-http](http://doc.akka.io/docs/akka-http/current/scala/http/). A fully **asynchronous** backend. Sending a request returns a response wrapped in a `Future`.
+A fully **asynchronous** backend. Sending a request returns a response wrapped in a `Future`. There are also [other `Future`-based backends](future.html), which don't depend on Akka. 
 
 Note that you'll also need an explicit dependency on akka-streams, as akka-http doesn't depend on any specific akka-streams version. So you'll also need to add, for example:
 
 ```
-"com.typesafe.akka" %% "akka-stream" % "2.5.27"
+"com.typesafe.akka" %% "akka-stream" % "2.5.28"
 ```
 
 Next you'll need to add an implicit value:
@@ -61,7 +61,7 @@ val response: Future[Response[Either[String, Source[ByteString, Any]]]] =
 
 ## Testing
 
-For testing, you can create a backend using any `HttpRequest => Future[HttpResponse]` function, or an akka-http `Route`.
+Apart from testing using [the stub](../testing.html), you can create a backend using any `HttpRequest => Future[HttpResponse]` function, or an akka-http `Route`.
 
 That way, you can "mock" a server that the backend will talk to, without starting any actual server or making any HTTP calls.
 
@@ -75,7 +75,7 @@ val backend: SttpBackend[Future, Nothing, Flow[Message, Message, *]] = {
 
 ## Websockets
 
-The akka-http backend supports websockets, where the websocket handler is of type `akka.stream.scaladsl.Flow[Message, Message, _]`. That is, when opening a websocket connection, you need to provide the description of a stream, which will consume incoming websocket messages, and produce outgoing websocket messages. For example:
+The Akka backend supports websockets, where the websocket handler is of type `akka.stream.scaladsl.Flow[Message, Message, _]`. That is, when opening a websocket connection, you need to provide the description of a stream, which will consume incoming websocket messages, and produce outgoing websocket messages. For example:
 
 ```scala
 import akka.Done

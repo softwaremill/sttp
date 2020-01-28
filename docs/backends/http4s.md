@@ -1,12 +1,14 @@
 # Http4s backend
 
-To use, add the following dependency to your project:
+This backend is based on [http4s](https://http4s.org) (blaze client) and is **asynchronous**. To use, add the following dependency to your project:
 
 ```
 "com.softwaremill.sttp.client" %% "http4s-backend" % "2.0.0-RC6"
 ```
 
-This backend depends on [http4s](https://http4s.org) (blaze client), and offers an asynchronous backend, which can wrap results in any type implementing the [cats-effect](https://github.com/typelevel/cats-effect) `Effect` typeclass.
+The backend can be created for any type implementing the `cats.effect.Effect` typeclass, such as `cats.effect.IO`. Sending a request is a non-blocking, lazily-evaluated operation and results in a wrapped response. There's a transitive dependency on `http4s`. 
+
+There are also [other cats-effect-based backends](catseffect.html), which don't depend on http4s. 
 
 Please note that: 
 
@@ -15,4 +17,6 @@ Please note that:
 
 Instead, all custom timeout configuration should be done by creating a `org.http4s.client.Client[F]`, using `org.http4s.client.blaze.BlazeClientBuilder[F]` and passing it to the appropriate method of the `Http4sBackend` object.
 
-The backend supports streaming using fs2. For usage details, see the documentation on [streaming using fs2 with the async-http-backend](asynchttpclient.html#streaming-using-fs2).
+The backend supports streaming using fs2. For usage details, see the documentation on [streaming using fs2](fs2.html#streaming).
+
+The backend doesn't support websockets.
