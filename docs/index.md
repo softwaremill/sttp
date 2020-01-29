@@ -41,6 +41,12 @@ sttp is a family of Scala HTTP-related projects, and currently includes:
 * [sttp tapir](https://github.com/softwaremill/tapir): Typed API descRiptions
 * [sttp model](https://github.com/softwaremill/sttp-model): simple HTTP model classes (used by client & tapir)
 
+## Sponsors
+
+Development and maintenance of sttp client is sponsored by [SoftwareMill](https://softwaremill.com), a software development and consulting company. We help clients scale their business through software. Our areas of expertise include backends, distributed systems, blockchain, machine learning and data analytics.
+
+[![SoftwareMill](https://softwaremill.com/images/header-main-logo.3449d6a3.svg "SoftwareMill")](https://softwaremill.com)
+
 # Table of contents
 
 ```eval_rst
