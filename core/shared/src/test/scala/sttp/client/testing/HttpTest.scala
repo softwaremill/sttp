@@ -4,7 +4,6 @@ import java.io.ByteArrayInputStream
 import java.nio.ByteBuffer
 
 import org.scalatest._
-import sttp.client.internal.IsIdInRequest
 import sttp.client.{Response, ResponseAs, SttpBackend, _}
 import sttp.model.StatusCode
 

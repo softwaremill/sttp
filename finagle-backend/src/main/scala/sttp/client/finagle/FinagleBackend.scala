@@ -25,7 +25,7 @@ import sttp.client.{
   StringBody,
   SttpBackend
 }
-import com.twitter.util.{Try, Future => TFuture}
+import com.twitter.util.{Future => TFuture}
 import sttp.client.monad.MonadError
 import sttp.client.ws.WebSocketResponse
 import com.twitter.finagle.http.{
