@@ -15,6 +15,8 @@ import sttp.client._
 val myRequest = basicRequest.(...)
 ```
 
+An alternative to importing the `sttp.client._` package, is to extend the `sttp.client.SttpApi` trait. That way, multiple integrations can be grouped in one object, thus reducing the number of necessary imports.
+
 ## Send the request
 
 Once the request is described as a value, it can be sent. To send a request, you'll need to have an implicit value of type `SttpBackend` in scope. 

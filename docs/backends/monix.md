@@ -56,7 +56,7 @@ implicit val sttpBackend = OkHttpMonixBackend.usingClient(okHttpClient)
 
 This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supports HTTP/2.
 
-# Using HttpClient (Java 11+)
+## Using HttpClient (Java 11+)
 
 To use, add the following dependency to your project:
 

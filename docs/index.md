@@ -83,9 +83,10 @@ sttp is a family of Scala HTTP-related projects, and currently includes:
 
 .. toctree::
    :maxdepth: 2
-   :caption: Websockets
+   :caption: Other topics
 
    websockets
+   json
 
 .. toctree::
    :maxdepth: 2
@@ -134,6 +135,5 @@ sttp is a family of Scala HTTP-related projects, and currently includes:
    :maxdepth: 2
    :caption: More information
 
-   json
    other
 ```

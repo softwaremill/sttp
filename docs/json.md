@@ -2,6 +2,8 @@
 
 Adding support for JSON (or other format) bodies in requests/responses is a matter of providing a [body serializer](requests/body.md) and/or a [response body specification](responses/body.md). Both are quite straightforward to implement, so integrating with your favorite JSON library shouldn't be a problem. However, there are some integrations available out-of-the-box.
 
+Each integration is available as an import, which brings the implicit `BodySerializer`s and `asJson` methods into scope. Alternatively, these values are grouped intro traits (e.g. `sttp.client.circe.SttpCirceApi`), which can be extended to group multiple integrations in one object, and thus reduce the number of necessary imports.
+
 ## Circe
 
 JSON encoding of bodies and decoding of responses can be handled using [Circe](https://circe.github.io/circe/) by the `circe` module. To use add the following dependency to your project:
@@ -10,7 +12,10 @@ JSON encoding of bodies and decoding of responses can be handled using [Circe](h
 "com.softwaremill.sttp.client" %% "circe" % "2.0.0-RC7"
 ```
 
-This module adds a method to the request and a function that can be given to a request to decode the response to a specific object:
+This module adds a body serialized, so that json payloads can be sent as request bodies. To send a payload of type `T` as json, a `io.circe.Encoder[T]` implicit value must be available in scope.
+Automatic and semi-automatic derivation of encoders is possible by using the [circe-generic](https://circe.github.io/circe/codec.html) module. 
+ 
+Response can be parsed into json using `asJson[T]`, provided there's an implicit `io.circe.Decoder[T]` in scope. The decoding result will be represented as either a http/deserialization error, or the parsed value. For example:
 
 ```scala
 import sttp.client._
@@ -29,6 +34,8 @@ val response: Response[Either[ResponseError[io.circe.Error], MyResponse]] =
     .response(asJson[MyResponse])
     .send()
 ```
+
+Arbitrary JSON structures can be traversed by parsing the result as `io.circe.Json`, and using the [circe-optics](https://circe.github.io/circe/optics.html) module.
 
 ## Json4s
 

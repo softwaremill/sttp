@@ -1,4 +1,4 @@
-# Future-based backend
+# Future-based backends
 
 There are several backend implementations which are `scala.concurrent.Future`-based. These backends are **asynchronous**, sending a request is a non-blocking operation and results in a response wrapped in a `Future`. 
 
