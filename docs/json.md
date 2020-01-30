@@ -65,7 +65,7 @@ val requestPayload: Payload = Payload(...)
 
 implicit val serialization = org.json4s.native.Serialization
 
-val response: Response[Either[ResponseError[Exception], MyResponse], Nothing] =
+val response: Response[Either[ResponseError[Exception], MyResponse]] =
   basicRequest
     .post(uri"...")
     .body(requestPayload)
