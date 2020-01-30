@@ -3,95 +3,14 @@ package sttp.client.prometheus
 import java.util.concurrent.ConcurrentHashMap
 
 import com.github.ghik.silencer.silent
-import sttp.client.{FollowRedirectsBackend, NothingT, Request, Response, SttpBackend}
+import sttp.client.{FollowRedirectsBackend, Identity, NothingT, Request, Response, SttpBackend}
 import io.prometheus.client.{CollectorRegistry, Counter, Gauge, Histogram}
-import sttp.client.monad.MonadError
+import sttp.client.listener.{ListenerBackend, RequestListener}
+import sttp.client.prometheus.PrometheusBackend.RequestCollectors
 import sttp.client.ws.WebSocketResponse
 
 import scala.collection.mutable
 import scala.language.higherKinds
-
-class PrometheusBackend[F[_], S] private (
-    delegate: SttpBackend[F, S, NothingT],
-    requestToHistogramNameMapper: Request[_, S] => Option[CollectorNameWithLabels],
-    requestToInProgressGaugeNameMapper: Request[_, S] => Option[CollectorNameWithLabels],
-    requestToSuccessCounterMapper: Request[_, S] => Option[CollectorNameWithLabels],
-    requestToErrorCounterMapper: Request[_, S] => Option[CollectorNameWithLabels],
-    requestToFailureCounterMapper: Request[_, S] => Option[CollectorNameWithLabels],
-    collectorRegistry: CollectorRegistry,
-    histogramsCache: ConcurrentHashMap[String, Histogram],
-    gaugesCache: ConcurrentHashMap[String, Gauge],
-    countersCache: ConcurrentHashMap[String, Counter]
-) extends SttpBackend[F, S, NothingT] {
-  override def send[T](request: Request[T, S]): F[Response[T]] = {
-    val requestTimer: Option[Histogram.Timer] = for {
-      histogramData <- requestToHistogramNameMapper(request)
-      histogram: Histogram = getOrCreateMetric(histogramsCache, histogramData, createNewHistogram)
-    } yield histogram.labels(histogramData.labelValues: _*).startTimer()
-
-    val gauge: Option[Gauge.Child] = for {
-      gaugeData <- requestToInProgressGaugeNameMapper(request)
-    } yield getOrCreateMetric(gaugesCache, gaugeData, createNewGauge).labels(gaugeData.labelValues: _*)
-
-    gauge.foreach(_.inc())
-
-    responseMonad.handleError(
-      responseMonad.map(delegate.send(request)) { response =>
-        requestTimer.foreach(_.observeDuration())
-        gauge.foreach(_.dec())
-
-        if (response.isSuccess) {
-          incCounterIfMapped(request, requestToSuccessCounterMapper)
-        } else {
-          incCounterIfMapped(request, requestToErrorCounterMapper)
-        }
-
-        response
-      }
-    ) {
-      case e: Exception =>
-        requestTimer.foreach(_.observeDuration())
-        gauge.foreach(_.dec())
-        incCounterIfMapped(request, requestToFailureCounterMapper)
-        responseMonad.error(e)
-    }
-  }
-
-  override def openWebsocket[T, WS_RESULT](
-      request: Request[T, S],
-      handler: NothingT[WS_RESULT]
-  ): F[WebSocketResponse[WS_RESULT]] = handler // nothing is everything
-
-  override def close(): F[Unit] = delegate.close()
-
-  override def responseMonad: MonadError[F] = delegate.responseMonad
-
-  private def incCounterIfMapped[T](
-      request: Request[T, S],
-      mapper: Request[_, S] => Option[CollectorNameWithLabels]
-  ): Unit =
-    mapper(request).foreach { data =>
-      getOrCreateMetric(countersCache, data, createNewCounter).labels(data.labelValues: _*).inc()
-    }
-
-  private def getOrCreateMetric[T](
-      cache: ConcurrentHashMap[String, T],
-      data: CollectorNameWithLabels,
-      create: CollectorNameWithLabels => T
-  ): T =
-    cache.computeIfAbsent(data.name, new java.util.function.Function[String, T] {
-      override def apply(t: String): T = create(data)
-    })
-
-  private def createNewHistogram(data: CollectorNameWithLabels): Histogram =
-    Histogram.build().name(data.name).labelNames(data.labelNames: _*).help(data.name).register(collectorRegistry)
-
-  private def createNewGauge(data: CollectorNameWithLabels): Gauge =
-    Gauge.build().name(data.name).labelNames(data.labelNames: _*).help(data.name).register(collectorRegistry)
-
-  private def createNewCounter(data: CollectorNameWithLabels): Counter =
-    Counter.build().name(data.name).labelNames(data.labelNames: _*).help(data.name).register(collectorRegistry)
-}
 
 object PrometheusBackend {
   val DefaultHistogramName = "sttp_request_latency"
@@ -102,31 +21,36 @@ object PrometheusBackend {
 
   def apply[F[_], S](
       delegate: SttpBackend[F, S, NothingT],
-      requestToHistogramNameMapper: Request[_, S] => Option[CollectorNameWithLabels] = (_: Request[_, S]) =>
+      requestToHistogramNameMapper: Request[_, _] => Option[CollectorNameWithLabels] = (_: Request[_, _]) =>
         Some(CollectorNameWithLabels(DefaultHistogramName)),
-      requestToInProgressGaugeNameMapper: Request[_, S] => Option[CollectorNameWithLabels] = (_: Request[_, S]) =>
+      requestToInProgressGaugeNameMapper: Request[_, _] => Option[CollectorNameWithLabels] = (_: Request[_, _]) =>
         Some(CollectorNameWithLabels(DefaultRequestsInProgressGaugeName)),
-      requestToSuccessCounterMapper: Request[_, S] => Option[CollectorNameWithLabels] = (_: Request[_, S]) =>
+      requestToSuccessCounterMapper: Request[_, _] => Option[CollectorNameWithLabels] = (_: Request[_, _]) =>
         Some(CollectorNameWithLabels(DefaultSuccessCounterName)),
-      requestToErrorCounterMapper: Request[_, S] => Option[CollectorNameWithLabels] = (_: Request[_, S]) =>
+      requestToErrorCounterMapper: Request[_, _] => Option[CollectorNameWithLabels] = (_: Request[_, _]) =>
         Some(CollectorNameWithLabels(DefaultErrorCounterName)),
-      requestToFailureCounterMapper: Request[_, S] => Option[CollectorNameWithLabels] = (_: Request[_, S]) =>
+      requestToFailureCounterMapper: Request[_, _] => Option[CollectorNameWithLabels] = (_: Request[_, _]) =>
         Some(CollectorNameWithLabels(DefaultFailureCounterName)),
       collectorRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry
   ): SttpBackend[F, S, NothingT] = {
     // redirects should be handled before prometheus
     new FollowRedirectsBackend[F, S, NothingT](
-      new PrometheusBackend(
+      new ListenerBackend[F, S, NothingT, RequestCollectors](
         delegate,
-        requestToHistogramNameMapper,
-        requestToInProgressGaugeNameMapper,
-        requestToSuccessCounterMapper,
-        requestToErrorCounterMapper,
-        requestToFailureCounterMapper,
-        collectorRegistry,
-        cacheFor(histograms, collectorRegistry),
-        cacheFor(gauges, collectorRegistry),
-        cacheFor(counters, collectorRegistry)
+        RequestListener.lift(
+          new PrometheusListener(
+            requestToHistogramNameMapper,
+            requestToInProgressGaugeNameMapper,
+            requestToSuccessCounterMapper,
+            requestToErrorCounterMapper,
+            requestToFailureCounterMapper,
+            collectorRegistry,
+            cacheFor(histograms, collectorRegistry),
+            cacheFor(gauges, collectorRegistry),
+            cacheFor(counters, collectorRegistry)
+          ),
+          delegate.responseMonad
+        )
       )
     )
   }
@@ -159,6 +83,101 @@ object PrometheusBackend {
     cache.synchronized {
       cache.getOrElseUpdate(collectorRegistry, new ConcurrentHashMap[String, T]())
     }
+
+  type RequestCollectors = (Option[Histogram.Timer], Option[Gauge.Child])
+}
+
+class PrometheusListener(
+    requestToHistogramNameMapper: Request[_, _] => Option[CollectorNameWithLabels],
+    requestToInProgressGaugeNameMapper: Request[_, _] => Option[CollectorNameWithLabels],
+    requestToSuccessCounterMapper: Request[_, _] => Option[CollectorNameWithLabels],
+    requestToErrorCounterMapper: Request[_, _] => Option[CollectorNameWithLabels],
+    requestToFailureCounterMapper: Request[_, _] => Option[CollectorNameWithLabels],
+    collectorRegistry: CollectorRegistry,
+    histogramsCache: ConcurrentHashMap[String, Histogram],
+    gaugesCache: ConcurrentHashMap[String, Gauge],
+    countersCache: ConcurrentHashMap[String, Counter]
+) extends RequestListener[Identity, RequestCollectors] {
+
+  override def beforeRequest(request: Request[_, _]): RequestCollectors = {
+    val requestTimer: Option[Histogram.Timer] = for {
+      histogramData <- requestToHistogramNameMapper(request)
+      histogram: Histogram = getOrCreateMetric(histogramsCache, histogramData, createNewHistogram)
+    } yield histogram.labels(histogramData.labelValues: _*).startTimer()
+
+    val gauge: Option[Gauge.Child] = for {
+      gaugeData <- requestToInProgressGaugeNameMapper(request)
+    } yield getOrCreateMetric(gaugesCache, gaugeData, createNewGauge).labels(gaugeData.labelValues: _*)
+
+    gauge.foreach(_.inc())
+
+    (requestTimer, gauge)
+  }
+
+  override def requestException(
+      request: Request[_, _],
+      requestCollectors: RequestCollectors,
+      e: Exception
+  ): Unit = {
+    requestCollectors._1.foreach(_.observeDuration())
+    requestCollectors._2.foreach(_.dec())
+    incCounterIfMapped(request, requestToFailureCounterMapper)
+  }
+
+  override def requestSuccessful(
+      request: Request[_, _],
+      response: Response[_],
+      requestCollectors: RequestCollectors
+  ): Unit = {
+    requestCollectors._1.foreach(_.observeDuration())
+    requestCollectors._2.foreach(_.dec())
+
+    if (response.isSuccess) {
+      incCounterIfMapped(request, requestToSuccessCounterMapper)
+    } else {
+      incCounterIfMapped(request, requestToErrorCounterMapper)
+    }
+  }
+
+  override def beforeWebsocket(request: Request[_, _]): RequestCollectors = (None, None)
+
+  override def websocketException(
+      request: Request[_, _],
+      requestCollectors: RequestCollectors,
+      e: Exception
+  ): Unit = {}
+
+  override def websocketSuccessful(
+      request: Request[_, _],
+      response: WebSocketResponse[_],
+      requestCollectors: RequestCollectors
+  ): Unit = {}
+
+  private def incCounterIfMapped[T](
+      request: Request[_, _],
+      mapper: Request[_, _] => Option[CollectorNameWithLabels]
+  ): Unit =
+    mapper(request).foreach { data =>
+      getOrCreateMetric(countersCache, data, createNewCounter).labels(data.labelValues: _*).inc()
+    }
+
+  private def getOrCreateMetric[T](
+      cache: ConcurrentHashMap[String, T],
+      data: CollectorNameWithLabels,
+      create: CollectorNameWithLabels => T
+  ): T =
+    cache.computeIfAbsent(data.name, new java.util.function.Function[String, T] {
+      override def apply(t: String): T = create(data)
+    })
+
+  private def createNewHistogram(data: CollectorNameWithLabels): Histogram =
+    Histogram.build().name(data.name).labelNames(data.labelNames: _*).help(data.name).register(collectorRegistry)
+
+  private def createNewGauge(data: CollectorNameWithLabels): Gauge =
+    Gauge.build().name(data.name).labelNames(data.labelNames: _*).help(data.name).register(collectorRegistry)
+
+  private def createNewCounter(data: CollectorNameWithLabels): Counter =
+    Counter.build().name(data.name).labelNames(data.labelNames: _*).help(data.name).register(collectorRegistry)
 }
 
 /**
