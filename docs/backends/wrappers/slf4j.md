@@ -36,3 +36,5 @@ basicRequest.get(uri"https://httpbin.org/get").send()
 // Logs:
 // 21:14:23.735 [main] INFO sttp.client.logging.slf4j.Slf4jTimingBackend - For request: GET https://httpbin.org/get, got response: 200, took: 0.795s
 ```
+
+To create a customised logging backend, see the section on [custom backends](custom.html).

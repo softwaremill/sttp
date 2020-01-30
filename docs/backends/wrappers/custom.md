@@ -6,6 +6,8 @@ Possible use-cases for wrapper-backend include:
 
 * logging
 * capturing metrics
+* rate limiting
+* circuit breaking
 * request signing (transforming the request before sending it to the delegate)
 
 ## Request tagging
@@ -113,6 +115,8 @@ basicRequest
   .tag("metric", "service1")
   .send()
 ```
+
+See also the [Prometheus](prometheus.html) backend for an example implementation.
 
 ## Example retrying backend wrapper
 
