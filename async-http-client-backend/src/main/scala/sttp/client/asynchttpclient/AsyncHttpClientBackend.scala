@@ -63,7 +63,7 @@ import scala.collection.immutable.Seq
 import scala.language.higherKinds
 import scala.util.Try
 
-abstract class AsyncHttpClientBackend[F[_], S](
+abstract class AsyncHttpClientBackend[F[+_], S](
     asyncHttpClient: AsyncHttpClient,
     private implicit val monad: MonadAsyncError[F],
     closeClient: Boolean,

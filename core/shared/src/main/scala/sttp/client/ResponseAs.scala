@@ -12,7 +12,7 @@ import scala.util.{Failure, Success, Try}
   * @tparam T Target type as which the response will be read.
   * @tparam S If `T` is a stream, the type of the stream. Otherwise, `Nothing`.
   */
-sealed trait ResponseAs[T, +S] {
+sealed trait ResponseAs[+T, +S] {
   def map[T2](f: T => T2): ResponseAs[T2, S] = mapWithMetadata { case (t, _) => f(t) }
   def mapWithMetadata[T2](f: (T, ResponseMetadata) => T2): ResponseAs[T2, S] = MappedResponseAs[T, T2, S](this, f)
 }
@@ -21,14 +21,14 @@ sealed trait ResponseAs[T, +S] {
   * Response handling specification which isn't derived from another response
   * handling method, but needs to be handled directly by the backend.
   */
-sealed trait BasicResponseAs[T, +S] extends ResponseAs[T, S]
+sealed trait BasicResponseAs[+T, +S] extends ResponseAs[T, S]
 
 case object IgnoreResponse extends BasicResponseAs[Unit, Nothing]
 case object ResponseAsByteArray extends BasicResponseAs[Array[Byte], Nothing]
 case class ResponseAsStream[T, S]()(implicit val responseIsStream: S =:= T) extends BasicResponseAs[T, S]
 case class ResponseAsFile(output: SttpFile) extends BasicResponseAs[SttpFile, Nothing]
 
-case class ResponseAsFromMetadata[T, S](f: ResponseMetadata => ResponseAs[T, S]) extends ResponseAs[T, S]
+case class ResponseAsFromMetadata[+T, S](f: ResponseMetadata => ResponseAs[T, S]) extends ResponseAs[T, S]
 
 case class MappedResponseAs[T, T2, S](raw: ResponseAs[T, S], g: (T, ResponseMetadata) => T2) extends ResponseAs[T2, S] {
   override def mapWithMetadata[T3](f: (T2, ResponseMetadata) => T3): ResponseAs[T3, S] =

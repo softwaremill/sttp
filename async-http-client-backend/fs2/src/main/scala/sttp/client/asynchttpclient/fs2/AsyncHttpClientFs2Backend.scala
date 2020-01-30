@@ -20,7 +20,7 @@ import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions, _}
 import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
 
-class AsyncHttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
+class AsyncHttpClientFs2Backend[F[+_]: ConcurrentEffect: ContextShift] private (
     asyncHttpClient: AsyncHttpClient,
     closeClient: Boolean,
     customizeRequest: BoundRequestBuilder => BoundRequestBuilder
@@ -62,7 +62,7 @@ class AsyncHttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
 }
 
 object AsyncHttpClientFs2Backend {
-  private def apply[F[_]: ConcurrentEffect: ContextShift](
+  private def apply[F[+_]: ConcurrentEffect: ContextShift](
       asyncHttpClient: AsyncHttpClient,
       closeClient: Boolean,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder
