@@ -21,13 +21,13 @@ Response can be parsed into json using `asJson[T]`, provided there's an implicit
 import sttp.client._
 import sttp.client.circe._
 
-implicit val backend = HttpURLConnectionBackend()
+implicit val backend: SttpBackend[Identity, Nothing, NothingT] = HttpURLConnectionBackend()
 
 // Assume that there is an implicit circe encoder in scope
 // for the request Payload, and a decoder for the MyResponse
 val requestPayload: Payload = ???
 
-val response: Response[Either[ResponseError[io.circe.Error], MyResponse]] =
+val response: Identity[Response[Either[ResponseError[io.circe.Error], MyResponse]]] =
   basicRequest
     .post(uri"...")
     .body(requestPayload)
@@ -56,7 +56,7 @@ Usage example:
 import sttp.client._
 import sttp.client.json4s._
 
-implicit val backend = HttpURLConnectionBackend()
+implicit val backend: SttpBackend[Identity, Nothing, NothingT] = HttpURLConnectionBackend()
 
 case class Payload(...)
 case class MyResponse(...)
@@ -65,7 +65,7 @@ val requestPayload: Payload = Payload(...)
 
 implicit val serialization = org.json4s.native.Serialization
 
-val response: Response[Either[ResponseError[Exception], MyResponse]] =
+val response: Identity[Response[Either[ResponseError[Exception], MyResponse]]] =
   basicRequest
     .post(uri"...")
     .body(requestPayload)
@@ -90,7 +90,7 @@ import sttp.client._
 import sttp.client.sprayJson._
 import spray.json._
 
-implicit val backend = HttpURLConnectionBackend()
+implicit val backend: SttpBackend[Identity, Nothing, NothingT] = HttpURLConnectionBackend()
 
 case class Payload(...)
 object Payload {
@@ -104,7 +104,7 @@ object MyResponse {
 
 val requestPayload: Payload = Payload(...)
 
-val response: Response[Either[ResponseError[io.circe.Error], MyResponse]] =
+val response: Identity[Response[Either[ResponseError[io.circe.Error], MyResponse]]] =
   basicRequest
     .post(uri"...")
     .body(requestPayload)
