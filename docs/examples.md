@@ -234,3 +234,41 @@ val effect = AsyncHttpClientFs2Backend[IO]().flatMap { implicit backend =>
 
 effect.unsafeRunSync()
 ``` 
+
+## Retry a request using ZIO
+
+Required dependencies:
+
+```scala
+libraryDependencies ++= List("com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % "2.0.0-RC7")
+```
+
+Example code:
+
+```scala
+import sttp.client._
+import sttp.client.asynchttpclient.zio.AsyncHttpClientZioBackend
+
+import zio.{ZIO, Schedule}
+import zio.clock.Clock
+import zio.duration._
+
+AsyncHttpClientZioBackend()
+  .flatMap { implicit backend =>
+    val localhostRequest = basicRequest
+      .get(uri"http://localhost/test")
+      .response(asStringAlways)
+
+    val sendWithRetries: ZIO[Clock, Throwable, Response[String]] = localhostRequest
+      .send()
+      .either
+      .repeat(
+        Schedule.spaced(1.second) *>
+          Schedule.recurs(10) *>
+          Schedule.doWhile(result => RetryWhen.Default(localhostRequest, result))
+      )
+      .absolve
+
+    sendWithRetries *> backend.close()
+  }
+````

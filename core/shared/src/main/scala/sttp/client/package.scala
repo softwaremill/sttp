@@ -13,4 +13,6 @@ package object client extends SttpApi {
     * Backends might also provide special logic for serializer instances which they define (e.g. to handle streaming).
     */
   type BodySerializer[B] = B => BasicRequestBody
+
+  type RetryWhen = (Request[_, _], Either[Throwable, Response[_]]) => Boolean
 }

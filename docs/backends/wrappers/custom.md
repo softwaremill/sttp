@@ -6,9 +6,9 @@ Possible use-cases for wrapper-backend include:
 
 * logging
 * capturing metrics
-* rate limiting
-* circuit breaking
 * request signing (transforming the request before sending it to the delegate)
+
+See also the section on [resilience](../../resilience.html) which covers topics such as retries, circuit breaking and rate limiting.
 
 ## Request tagging
 
@@ -129,11 +129,11 @@ Handling retries is a complex problem when it comes to HTTP requests. When is a 
 In some cases it's possible to implement a generic retry mechanism; such a mechanism should take into account logging, metrics, limiting the number of retries and a backoff mechanism. These mechanisms could be quite simple, or involve e.g. retry budgets (see [Finagle's](https://twitter.github.io/finagle/guide/Clients.html#retries) documentation on retries). In sttp, it's possible to recover from errors using the `responseMonad`. A starting point for a retrying backend could be:
 
 ```scala
-import sttp.client.{MonadError, Request, Response, SttpBackend}
+import sttp.client.{MonadError, Request, Response, SttpBackend, RetryWhen}
 
 class RetryingBackend[F[_], S](
     delegate: SttpBackend[F, S, NothingT],
-    shouldRetry: (Request[_, _], Either[Throwable, Response[_]]) => Boolean,
+    shouldRetry: RetryWhen,
     maxRetries: Int)
     extends SttpBackend[F, S, NothingT] {
 
@@ -169,8 +169,6 @@ class RetryingBackend[F[_], S](
   override def responseMonad: MonadError[F] = delegate.responseMonad
 }
 ```                    
-
-Note that some backends also have built-in retry mechanisms, e.g. [akka-http](https://doc.akka.io/docs/akka-http/current/scala/http/client-side/host-level.html#retrying-a-request) or [OkHttp](http://square.github.io/okhttp) (see the builder's `retryOnConnectionFailure` method).
 
 ## Example backend with circuit breaker
 
