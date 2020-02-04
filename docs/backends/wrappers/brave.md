@@ -1,11 +1,11 @@
 # brave backend (deprecated)
 
-Since 2.0.0-RC7 brave-backend is deprecated, you should use [opentracing backend](opentracing.html) with brave integration.
+Since 2.0.0-RC8 brave-backend is deprecated, you should use [opentracing backend](opentracing.html) with brave integration.
 
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client" %% "brave-backend" % "2.0.0-RC7"
+"com.softwaremill.sttp.client" %% "brave-backend" % "2.0.0-RC8"
 ```
 
 This backend depends on [brave](https://github.com/openzipkin/brave), a distributed tracing implementation compatible with Zipkin backend services.
