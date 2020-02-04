@@ -133,6 +133,8 @@ object ResponseAs {
       }
 }
 
-sealed abstract class ResponseError[+T] extends Exception
+sealed abstract class ResponseError[+T] extends Exception {
+  def body: String
+}
 case class HttpError(body: String) extends ResponseError[Nothing]
-case class DeserializationError[T](original: String, error: T) extends ResponseError[T]
+case class DeserializationError[T](body: String, error: T) extends ResponseError[T]
