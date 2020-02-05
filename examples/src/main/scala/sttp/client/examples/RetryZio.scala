@@ -2,8 +2,7 @@ package sttp.client.examples
 
 import sttp.client._
 import sttp.client.asynchttpclient.zio.AsyncHttpClientZioBackend
-
-import zio.{ZIO, Schedule}
+import zio.{Schedule, ZIO}
 import zio.clock.Clock
 import zio.duration._
 
@@ -25,7 +24,7 @@ object RetryZio extends zio.App {
           )
           .absolve
 
-        sendWithRetries *> backend.close()
+        sendWithRetries.ensuring(backend.close().catchAll(_ => ZIO.unit))
       }
       .fold(_ => 1, _ => 0)
   }

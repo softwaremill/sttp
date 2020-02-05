@@ -173,7 +173,7 @@ AsyncHttpClientZioBackend().flatMap { implicit backend =>
 
   response
     .flatMap(r => useWebsocket(r.result))
-    .flatMap(_ => backend.close())
+    .ensuring(backend.close().catchAll(_ => ZIO.unit))
 }
 ```
 
@@ -269,6 +269,6 @@ AsyncHttpClientZioBackend()
       )
       .absolve
 
-    sendWithRetries *> backend.close()
+    sendWithRetries.ensuring(backend.close().catchAll(_ => ZIO.unit))
   }
 ````

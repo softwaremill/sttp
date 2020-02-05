@@ -20,7 +20,7 @@ object WebsocketZio extends zio.App {
 
     response
       .flatMap(r => useWebsocket(r.result))
-      .flatMap(_ => backend.close())
+      .ensuring(backend.close().catchAll(_ => ZIO.unit))
   }
 
   override def run(args: List[String]): ZIO[zio.ZEnv, Nothing, Int] = {
