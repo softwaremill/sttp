@@ -14,7 +14,7 @@ How the response body will be read is part of the request definition, as already
 To conveniently specify how to deserialize the response body, a number of `asXxx` methods are available. They can be used to provide a value for the request definition's `response` modifier:
 
 ```scala
-sttp.response(asByteArray)
+basicRequest.response(asByteArray)
 ```
 
 When the above request is completed and sent, it will result in a `Response[Either[String, Array[Byte]]]`. Other possible response specifications are:
@@ -34,20 +34,21 @@ def asFileAlways(file: File): ResponseAs[File, Nothing]
 def asPath(path: Path): ResponseAs[Either[String, Path], Nothing]
 def asPathAlways(path: Path): ResponseAs[Path], Nothing]
 
-def asEither[L, R, S](onError: ResponseAs[L, S], onSuccess: ResponseAs[R, S]): ResponseAs[Either[L, R], S]
+def asEither[L, R, S](onError: ResponseAs[L, S], 
+                      onSuccess: ResponseAs[R, S]): ResponseAs[Either[L, R], S]
 def fromMetadata[T, S](f: ResponseMetadata => ResponseAs[T, S]): ResponseAs[T, S]
 ```
 
 Hence, to discard the response body, simply specify:
 
 ```
-sttp.response(ignore)
+basicRequest.response(ignore)
 ```   
 
 And to save the response to a file:
 
 ```
-sttp.response(asFile(someFile))
+basicRequest.response(asFile(someFile))
 ```
 
 ```note:: As the handling of response is specified upfront, there's no need to "consume" the response body. It can be safely discarded if not needed.
@@ -62,7 +63,7 @@ As an example, to read the response body as an int, the following response speci
 ```scala
 val asInt: ResponseAs[Either[String, Int], Nothing] = asString.map(_.toInt)
 
-sttp
+basicRequest
   .response(asInt)
   ...
 ```
@@ -73,7 +74,7 @@ To integrate with a third-party JSON library, and always parse the response as a
 def parseJson(json: String): Either[JsonError, JsonAST] = ...
 val asJson: ResponseAs[Either[JsonError, JsonAST], Nothing] = asStringAlways.map(parseJson)
 
-sttp
+basicRequest
   .response(asJson)
   ...
 ```           
@@ -81,6 +82,8 @@ sttp
 For some mapped response specifications available out-of-the-box, see [json support](../json.html).
 
 Using the `fromMetadata` combinator, it's possible to dynamically specify how the response should be deserialized, basing on the response status code and response headers. The default `asString`, `asByteArray` response descriptions use this method to return a `Left` in case of non-2xx responses, and a `Right` otherwise.
+
+It's also possible to map over an existing response specification, by using the `request.mapResponse(...)` and `request.mapResponseRight(...)` methods (which is available, if the response body should be an either). That's equivalent to calling `request.response(request.response.map(...))`, that is setting a new response specification, to a modified old response specification; but with shorter syntax.
 
 ## Streaming
 
@@ -103,7 +106,7 @@ import akka.util.ByteString
 implicit val sttpBackend = AkkaHttpBackend() 
 
 val response: Future[Response[Source[Either[String, ByteString], Any]]] =
-  sttp
+  basicRequest
     .post(uri"...")
     .response(asStream[Source[ByteString, Any]])
     .send()    
