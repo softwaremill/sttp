@@ -42,7 +42,7 @@ object StreamFs2 extends App {
   }
 
   val effect = AsyncHttpClientFs2Backend[IO]().flatMap { implicit backend =>
-    streamRequestBody.flatMap(_ => streamResponseBody).flatMap(_ => backend.close())
+    streamRequestBody.flatMap(_ => streamResponseBody).guarantee(backend.close())
   }
 
   effect.unsafeRunSync()

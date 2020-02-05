@@ -5,6 +5,7 @@ object PostSerializeJsonMonixAsyncHttpClientCirce extends App {
   import sttp.client.circe._
   import sttp.client.asynchttpclient.monix._
   import io.circe.generic.auto._
+  import monix.eval.Task
 
   case class Info(x: Int, y: String)
 
@@ -13,10 +14,11 @@ object PostSerializeJsonMonixAsyncHttpClientCirce extends App {
       .body(Info(91, "abc"))
       .post(uri"https://httpbin.org/post")
 
-    r.send().flatMap { response =>
-      println(s"""Got ${response.code} response, body:\n${response.body}""")
-      backend.close()
-    }
+    r.send()
+      .flatMap { response =>
+        Task(println(s"""Got ${response.code} response, body:\n${response.body}"""))
+      }
+      .guarantee(backend.close())
   }
 
   import monix.execution.Scheduler.Implicits.global
