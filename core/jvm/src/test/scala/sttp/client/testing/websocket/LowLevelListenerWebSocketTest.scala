@@ -1,6 +1,5 @@
 package sttp.client.testing.websocket
 
-import java.io.IOException
 import java.util.concurrent.ConcurrentLinkedQueue
 
 import com.github.ghik.silencer.silent
@@ -72,7 +71,7 @@ trait LowLevelListenerWebSocketTest[F[_], WS, WS_HANDLER[_]]
             .openWebsocket(createHandler(_ => ()))
             .map(_ => fail("An exception should be thrown"): Assertion)
         ) {
-          case e => (e shouldBe a[IOException]).unit
+          case e => (e shouldBe a[SttpClientException]).unit
         }
         .toFuture()
     }

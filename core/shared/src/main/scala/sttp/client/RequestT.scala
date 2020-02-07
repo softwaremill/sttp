@@ -258,11 +258,35 @@ case class RequestT[U[_], T, +S](
   def redirectToGet(r: Boolean): RequestT[U, T, S] =
     this.copy(options = options.copy(redirectToGet = r))
 
+  /**
+    * Sends the request, using the backend from the implicit scope. Only requests for which the method & URI is
+    * specified can be sent.
+    *
+    * @return Depending on the backend, either the [[Response]] ([[Identity]] synchronous backends), or the
+    *         [[Response]] in a backend-specific wrapper: a failed effect (other backends).
+    *
+    *         The response body deserialized as specified by this request (see [[RequestT.response]]).
+    *
+    *         Exceptions can be thrown directly ([[Identity]] synchronous backends), or wrapped (asynchronous backends).
+    *         Known exceptions are converted by backends to one of [[SttpClientException]]. Other exceptions are thrown
+    *         unchanged.
+    */
   def send[F[_]]()(
       implicit backend: SttpBackend[F, S, NothingT],
       isIdInRequest: IsIdInRequest[U]
   ): F[Response[T]] = backend.send(asRequest)
 
+  /**
+    * Opens a websocket, using the backend from the implicit scope. Only requests for which the method & URI is
+    * specified can be sent. The backend must support handlers of the given type.
+    *
+    * @return Depending on the backend, either the [[WebSocketResponse]] ([[Identity]] synchronous backends), or the
+    *         [[WebSocketResponse]] in a backend-specific wrapper: a failed effect (other backends).
+    *
+    *         Exceptions can be thrown directly ([[Identity]] synchronous backends), or wrapped (asynchronous backends).
+    *         Known exceptions are converted by backends to one of [[SttpClientException]]. Other exceptions are thrown
+    *         unchanged.
+    */
   def openWebsocket[F[_], WS_HANDLER[_], WS_RESULT](
       handler: WS_HANDLER[WS_RESULT]
   )(

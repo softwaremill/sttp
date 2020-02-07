@@ -25,7 +25,7 @@ class HttpURLConnectionBackend private (
     createURL: String => URL,
     openConnection: (URL, Option[java.net.Proxy]) => URLConnection
 ) extends SttpBackend[Identity, Nothing, NothingT] {
-  override def send[T](r: Request[T, Nothing]): Response[T] = {
+  override def send[T](r: Request[T, Nothing]): Response[T] = adjustExceptions {
     val c = openConnection(r.uri)
     c.setRequestMethod(r.method.method)
     r.headers.foreach { case Header(k, v) => c.setRequestProperty(k, v) }
@@ -55,6 +55,7 @@ class HttpURLConnectionBackend private (
     } catch {
       case e: CharacterCodingException     => throw e
       case e: UnsupportedEncodingException => throw e
+      case e: SocketException              => throw e
       case _: IOException if c.getResponseCode != -1 =>
         readResponse(c, c.getErrorStream, r.response)
     }
@@ -282,6 +283,9 @@ class HttpURLConnectionBackend private (
       case Some(ce) =>
         throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
     }
+
+  private def adjustExceptions[T](t: => T): T =
+    SttpClientException.adjustSynchronousExceptions(t)(SttpClientException.defaultExceptionToSttpClientException)
 
   override def close(): Unit = {}
 }

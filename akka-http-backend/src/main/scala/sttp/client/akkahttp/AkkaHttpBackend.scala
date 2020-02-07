@@ -68,7 +68,7 @@ class AkkaHttpBackend private (
     .getOrElse(ConnectionPoolSettings(actorSystem))
     .withUpdatedConnectionSettings(_.withConnectingTimeout(opts.connectionTimeout))
 
-  override def send[T](r: Request[T, S]): Future[Response[T]] = {
+  override def send[T](r: Request[T, S]): Future[Response[T]] = adjustExceptions {
     implicit val ec: ExecutionContext = this.ec
 
     Future
@@ -81,7 +81,7 @@ class AkkaHttpBackend private (
   override def openWebsocket[T, WS_RESULT](
       r: Request[T, Source[ByteString, Any]],
       handler: Flow[Message, Message, WS_RESULT]
-  ): Future[WebSocketResponse[WS_RESULT]] = {
+  ): Future[WebSocketResponse[WS_RESULT]] = adjustExceptions {
     implicit val ec: ExecutionContext = this.ec
 
     val akkaWebsocketRequest = headersToAkka(r.headers)
@@ -317,6 +317,21 @@ class AkkaHttpBackend private (
     }
 
     decoder.decodeMessage(response)
+  }
+
+  private def adjustExceptions[T](t: => Future[T]): Future[T] =
+    SttpClientException.adjustExceptions(responseMonad)(t)(akkaExceptionToSttpClientException)
+
+  private def akkaExceptionToSttpClientException(e: Exception): Option[Exception] = e match {
+    case e: akka.stream.ConnectionException => Some(new SttpClientException.ConnectException(e))
+    case e: akka.stream.StreamTcpException =>
+      e.getCause match {
+        case ee: Exception =>
+          akkaExceptionToSttpClientException(ee).orElse(Some(new SttpClientException.ReadException(e)))
+        case _ => Some(new SttpClientException.ReadException(e))
+      }
+    case e: akka.stream.scaladsl.TcpIdleTimeoutException => Some(new SttpClientException.ReadException(e))
+    case e: Exception                                    => SttpClientException.defaultExceptionToSttpClientException(e)
   }
 
   override def close(): Future[Unit] = {

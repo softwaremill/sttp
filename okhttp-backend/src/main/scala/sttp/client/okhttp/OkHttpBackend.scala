@@ -192,7 +192,7 @@ object OkHttpBackend {
 
 class OkHttpSyncBackend private (client: OkHttpClient, closeClient: Boolean)
     extends OkHttpBackend[Identity, Nothing](client, closeClient) {
-  override def send[T](r: Request[T, Nothing]): Response[T] = {
+  override def send[T](r: Request[T, Nothing]): Response[T] = adjustExceptions {
     val request = convertRequest(r)
     val response = OkHttpBackend
       .updateClientIfCustomReadTimeout(r, client)
@@ -204,7 +204,7 @@ class OkHttpSyncBackend private (client: OkHttpClient, closeClient: Boolean)
   override def openWebsocket[T, WS_RESULT](
       r: Request[T, Nothing],
       handler: WebSocketHandler[WS_RESULT]
-  ): WebSocketResponse[WS_RESULT] = {
+  ): WebSocketResponse[WS_RESULT] = adjustExceptions {
     val request = convertRequest(r)
 
     val responseCell = new ArrayBlockingQueue[Either[Throwable, WebSocketResponse[WS_RESULT]]](1)
@@ -231,6 +231,9 @@ class OkHttpSyncBackend private (client: OkHttpClient, closeClient: Boolean)
     responseCell.take().fold(throw _, identity)
   }
 
+  private def adjustExceptions[T](t: => T): T =
+    SttpClientException.adjustSynchronousExceptions(t)(SttpClientException.defaultExceptionToSttpClientException)
+
   override def responseMonad: MonadError[Identity] = IdMonad
 }
 
@@ -249,7 +252,7 @@ object OkHttpSyncBackend {
 
 abstract class OkHttpAsyncBackend[F[_], S](client: OkHttpClient, monad: MonadAsyncError[F], closeClient: Boolean)
     extends OkHttpBackend[F, S](client, closeClient) {
-  override def send[T](r: Request[T, S]): F[Response[T]] = {
+  override def send[T](r: Request[T, S]): F[Response[T]] = adjustExceptions {
     val request = convertRequest(r)
 
     monad.flatten(monad.async[F[Response[T]]] { cb =>
@@ -273,7 +276,7 @@ abstract class OkHttpAsyncBackend[F[_], S](client: OkHttpClient, monad: MonadAsy
   override def openWebsocket[T, WS_RESULT](
       r: Request[T, S],
       handler: WebSocketHandler[WS_RESULT]
-  ): F[WebSocketResponse[WS_RESULT]] = {
+  ): F[WebSocketResponse[WS_RESULT]] = adjustExceptions {
     val request = convertRequest(r)
 
     monad.flatten(monad.async[F[WebSocketResponse[WS_RESULT]]] { cb =>
@@ -297,6 +300,9 @@ abstract class OkHttpAsyncBackend[F[_], S](client: OkHttpClient, monad: MonadAsy
         .newWebSocket(request, listener)
     })
   }
+
+  private def adjustExceptions[T](t: => F[T]): F[T] =
+    SttpClientException.adjustExceptions(monad)(t)(SttpClientException.defaultExceptionToSttpClientException)
 
   override def responseMonad: MonadError[F] = monad
 }

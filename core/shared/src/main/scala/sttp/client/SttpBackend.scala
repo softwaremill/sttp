@@ -6,13 +6,15 @@ import sttp.client.ws.WebSocketResponse
 import scala.language.higherKinds
 
 /**
-  * @tparam F The type constructor in which responses are wrapped. E.g. `Identity`
-  *           for synchronous backends, `Future` for asynchronous backends.
-  * @tparam S The type of streams that are supported by the backend. `Nothing`,
+  * @note Backends should try to classify exceptions into one of the categories specified by [[SttpClientException]].
+  *       Other exceptions should be thrown unchanged.
+  * @tparam F The type constructor in which responses are wrapped. E.g. [[Identity]]
+  *           for synchronous backends, [[scala.concurrent.Future]] for asynchronous backends.
+  * @tparam S The type of streams that are supported by the backend. [[Nothing]],
   *           if streaming requests/responses is not supported by this backend.
   * @tparam WS_HANDLER The type of websocket handlers, that are supported by this backend.
   *                    The handler is parametrised by the value that is being returned
-  *                    when the websocket is established. `NothingT`, if websockets are
+  *                    when the websocket is established. [[NothingT]], if websockets are
   *                    not supported.
   */
 trait SttpBackend[F[_], -S, -WS_HANDLER[_]] {

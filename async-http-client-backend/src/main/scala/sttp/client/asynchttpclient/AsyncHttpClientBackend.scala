@@ -69,7 +69,7 @@ abstract class AsyncHttpClientBackend[F[_], S](
     closeClient: Boolean,
     customizeRequest: BoundRequestBuilder => BoundRequestBuilder
 ) extends SttpBackend[F, S, WebSocketHandler] {
-  override def send[T](r: Request[T, S]): F[Response[T]] = {
+  override def send[T](r: Request[T, S]): F[Response[T]] = adjustExceptions {
     preparedRequest(r).flatMap { ahcRequest =>
       monad.flatten(monad.async[F[Response[T]]] { cb =>
         def success(r: F[Response[T]]): Unit = cb(Right(r))
@@ -83,7 +83,7 @@ abstract class AsyncHttpClientBackend[F[_], S](
   override def openWebsocket[T, WS_RESULT](
       r: Request[T, S],
       handler: WebSocketHandler[WS_RESULT]
-  ): F[WebSocketResponse[WS_RESULT]] = {
+  ): F[WebSocketResponse[WS_RESULT]] = adjustExceptions {
     preparedRequest(r).flatMap { ahcRequest =>
       monad.async[WebSocketResponse[WS_RESULT]] { cb =>
         val initListener =
@@ -333,6 +333,9 @@ abstract class AsyncHttpClientBackend[F[_], S](
 
     override def onError(t: Throwable): Unit = _onError(t)
   }
+
+  private def adjustExceptions[T](t: => F[T]): F[T] =
+    SttpClientException.adjustExceptions(responseMonad)(t)(SttpClientException.defaultExceptionToSttpClientException)
 }
 
 object AsyncHttpClientBackend {

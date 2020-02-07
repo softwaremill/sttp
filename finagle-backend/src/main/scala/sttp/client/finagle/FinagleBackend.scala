@@ -23,7 +23,8 @@ import sttp.client.{
   ResponseAsStream,
   ResponseMetadata,
   StringBody,
-  SttpBackend
+  SttpBackend,
+  SttpClientException
 }
 import com.twitter.util.{Future => TFuture}
 import sttp.client.monad.MonadError
@@ -46,7 +47,7 @@ import com.twitter.util.Duration
 import scala.io.Source
 
 class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture, Nothing, NothingT] {
-  override def send[T](request: Request[T, Nothing]): TFuture[Response[T]] = {
+  override def send[T](request: Request[T, Nothing]): TFuture[Response[T]] = adjustExceptions {
     val service = getClient(client, request)
     val finagleRequest = requestBodyToFinagle(request)
     service.apply(finagleRequest).flatMap { fResponse =>
@@ -192,6 +193,18 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
     client
       .withRequestTimeout(Duration.fromMilliseconds(request.options.readTimeout.toMillis))
       .newService(s"${request.uri.host}:${request.uri.port.getOrElse(80)}")
+  }
+
+  private def adjustExceptions[T](t: => TFuture[T]): TFuture[T] =
+    SttpClientException.adjustExceptions(responseMonad)(t)(exceptionToSttpClientException)
+
+  private def exceptionToSttpClientException(e: Exception): Option[Exception] = e match {
+    case e: com.twitter.finagle.NoBrokersAvailableException => Some(new SttpClientException.ConnectException(e))
+    case e: com.twitter.finagle.Failure if e.getCause.isInstanceOf[com.twitter.finagle.ConnectionFailedException] =>
+      Some(new SttpClientException.ConnectException(e))
+    case e: com.twitter.finagle.ChannelClosedException            => Some(new SttpClientException.ReadException(e))
+    case e: com.twitter.finagle.IndividualRequestTimeoutException => Some(new SttpClientException.ReadException(e))
+    case e: Exception                                             => SttpClientException.defaultExceptionToSttpClientException(e)
   }
 }
 

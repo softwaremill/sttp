@@ -299,6 +299,18 @@ private class HttpServer(port: Int) extends AutoCloseable with CorsDirectives {
           }
         }
       }
+    } ~ pathPrefix("error") {
+      complete(
+        HttpResponse(
+          status = StatusCodes.OK,
+          headers = Nil,
+          entity = HttpEntity(
+            MediaTypes.`application/octet-stream`,
+            Source.single(ByteString(1)).concat(Source.failed(new RuntimeException)): Source[ByteString, Any]
+          ),
+          protocol = HttpProtocols.`HTTP/1.1`
+        )
+      )
     } ~ pathPrefix("timeout") {
       complete {
         akka.pattern.after(1.second, using = actorSystem.scheduler)(

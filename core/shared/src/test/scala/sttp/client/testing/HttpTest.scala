@@ -36,6 +36,7 @@ trait HttpTest[F[_]]
   protected val sttpIgnore: ResponseAs[Unit, Nothing] = sttp.client.ignore
 
   protected def supportsRequestTimeout = true
+  protected def supportsSttpExceptions = true
 
   "parse response" - {
     "as string" in {
@@ -406,6 +407,53 @@ trait HttpTest[F[_]]
     "parse an empty error response as empty string" in {
       postEmptyResponse.send().toFuture().map { response =>
         response.body should be(Left(""))
+      }
+    }
+  }
+
+  if (supportsSttpExceptions) {
+    "exceptions" - {
+      "connection exceptions - unknown host" in {
+        val req = basicRequest
+          .get(uri"http://no-such-domain-1234.com")
+          .response(asString)
+
+        Future(req.send()).flatMap(_.toFuture()).failed.map { e =>
+          e shouldBe a[SttpClientException.ConnectException]
+        }
+      }
+
+      "connection exceptions - connection refused" in {
+        val req = basicRequest
+          .get(uri"http://localhost:1234")
+          .response(asString)
+
+        Future(req.send()).flatMap(_.toFuture()).failed.map { e =>
+          e shouldBe a[SttpClientException.ConnectException]
+        }
+      }
+
+      "read exceptions - error" in {
+        val req = basicRequest
+          .get(uri"$endpoint/error")
+          .response(asString)
+
+        Future(req.send()).flatMap(_.toFuture()).failed.map { e =>
+          e shouldBe a[SttpClientException.ReadException]
+        }
+      }
+
+      if (supportsRequestTimeout) {
+        "read exceptions - timeout" in {
+          val req = basicRequest
+            .get(uri"$endpoint/timeout")
+            .readTimeout(10.milliseconds)
+            .response(asString)
+
+          Future(req.send()).flatMap(_.toFuture()).failed.map { e =>
+            e shouldBe a[SttpClientException.ReadException]
+          }
+        }
       }
     }
   }

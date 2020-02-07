@@ -1,10 +1,9 @@
 package sttp.client.asynchttpclient
 
-import java.io.IOException
 import java.nio.channels.ClosedChannelException
 
 import org.scalatest.Assertion
-import sttp.client.basicRequest
+import sttp.client.{SttpClientException, basicRequest}
 import sttp.client.monad.syntax._
 import sttp.client.testing.websocket.HighLevelWebsocketTest
 import sttp.model.Uri._
@@ -21,7 +20,7 @@ abstract class AsyncHttpClientHighLevelWebsocketTest[F[_]] extends HighLevelWebs
           .openWebsocketF(createHandler(None))
           .map(_ => fail: Assertion)
       } {
-        case e: Exception => (e shouldBe a[IOException]).unit
+        case e: Exception => (e shouldBe a[SttpClientException]).unit
       }
       .toFuture()
   }

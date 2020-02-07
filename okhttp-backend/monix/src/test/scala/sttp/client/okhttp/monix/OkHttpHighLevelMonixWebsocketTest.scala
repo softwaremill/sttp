@@ -1,7 +1,5 @@
 package sttp.client.okhttp.monix
 
-import java.io.IOException
-
 import monix.eval.Task
 import monix.execution.Scheduler.Implicits.global
 import org.scalatest.Assertion
@@ -31,7 +29,7 @@ class OkHttpHighLevelMonixWebsocketTest extends HighLevelWebsocketTest[Task, Web
           .openWebsocketF(createHandler(None))
           .map(_ => fail: Assertion)
       } {
-        case e: Exception => (e shouldBe a[IOException]).unit
+        case e: Exception => (e shouldBe a[SttpClientException]).unit
       }
       .toFuture()
   }

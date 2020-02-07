@@ -7,7 +7,7 @@ import java.util.function.BiConsumer
 
 import sttp.client.monad.{FutureMonad, MonadAsyncError, MonadError}
 import sttp.client.ws.WebSocketResponse
-import sttp.client.{FollowRedirectsBackend, Request, Response, SttpBackend, SttpBackendOptions}
+import sttp.client.{FollowRedirectsBackend, Request, Response, SttpBackend, SttpBackendOptions, SttpClientException}
 import sttp.model.Headers
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -18,7 +18,7 @@ abstract class HttpClientAsyncBackend[F[_], S](
     closeClient: Boolean,
     customizeRequest: HttpRequest => HttpRequest
 ) extends HttpClientBackend[F, S](client, closeClient) {
-  override def send[T](request: Request[T, S]): F[Response[T]] = {
+  override def send[T](request: Request[T, S]): F[Response[T]] = adjustExceptions {
     val jRequest = customizeRequest(convertRequest(request))
 
     monad.flatten(monad.async[F[Response[T]]] { cb: (Either[Throwable, F[Response[T]]] => Unit) =>
@@ -45,7 +45,7 @@ abstract class HttpClientAsyncBackend[F[_], S](
   override def openWebsocket[T, WS_RESULT](
       request: Request[T, S],
       handler: WebSocketHandler[WS_RESULT]
-  ): F[WebSocketResponse[WS_RESULT]] = {
+  ): F[WebSocketResponse[WS_RESULT]] = adjustExceptions {
     monad.flatten(monad.async[F[WebSocketResponse[WS_RESULT]]] { cb =>
       def success(r: F[WebSocketResponse[WS_RESULT]]): Unit = cb(Right(r))
       def error(t: Throwable): Unit = cb(Left(t))
@@ -66,6 +66,9 @@ abstract class HttpClientAsyncBackend[F[_], S](
       val _ = wsBuilder.buildAsync(request.uri.toJavaUri, listener)
     })
   }
+
+  private def adjustExceptions[T](t: => F[T]): F[T] =
+    SttpClientException.adjustExceptions(responseMonad)(t)(SttpClientException.defaultExceptionToSttpClientException)
 
   override def responseMonad: MonadError[F] = monad
 }

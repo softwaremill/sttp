@@ -17,11 +17,8 @@ object RetryWhen {
   }
 
   val Default: RetryWhen = {
-    // we dont't know what kind of exception that is. When #419 is implemented, we can return true for connection
-    // exceptions (when we are sure that no data has been sent)
-    case (_, Left(_)) => false
-    case (request, Right(_)) =>
-      isBodyRetryable(request.body) && Method.isIdempotent(request.method)
+    case (_, Left(_: SttpClientException.ConnectException)) => true
+    case (_, Left(_))                                       => false
+    case (request, Right(_))                                => isBodyRetryable(request.body) && Method.isIdempotent(request.method)
   }
-
 }

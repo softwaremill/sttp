@@ -7,7 +7,15 @@ import java.util.concurrent.ArrayBlockingQueue
 import com.github.ghik.silencer.silent
 import sttp.client.monad.{IdMonad, MonadError}
 import sttp.client.ws.WebSocketResponse
-import sttp.client.{FollowRedirectsBackend, Identity, Request, Response, SttpBackend, SttpBackendOptions}
+import sttp.client.{
+  FollowRedirectsBackend,
+  Identity,
+  Request,
+  Response,
+  SttpBackend,
+  SttpBackendOptions,
+  SttpClientException
+}
 import sttp.model.Headers
 
 class HttpClientSyncBackend private (
@@ -15,7 +23,7 @@ class HttpClientSyncBackend private (
     closeClient: Boolean,
     customizeRequest: HttpRequest => HttpRequest
 ) extends HttpClientBackend[Identity, Nothing](client, closeClient) {
-  override def send[T](request: Request[T, Nothing]): Identity[Response[T]] = {
+  override def send[T](request: Request[T, Nothing]): Identity[Response[T]] = adjustExceptions {
     val jRequest = customizeRequest(convertRequest(request))
     val response = client.send(jRequest, BodyHandlers.ofInputStream())
     readResponse(response, request.response)
@@ -26,7 +34,7 @@ class HttpClientSyncBackend private (
   override def openWebsocket[T, WS_RESULT](
       request: Request[T, Nothing],
       handler: WebSocketHandler[WS_RESULT]
-  ): Identity[WebSocketResponse[WS_RESULT]] = {
+  ): Identity[WebSocketResponse[WS_RESULT]] = adjustExceptions {
     val responseCell = new ArrayBlockingQueue[Either[Throwable, WebSocketResponse[WS_RESULT]]](1)
     @silent("discarded")
     def fillCellError(t: Throwable): Unit = responseCell.add(Left(t))
@@ -45,6 +53,9 @@ class HttpClientSyncBackend private (
       .buildAsync(request.uri.toJavaUri, listener)
     responseCell.take().fold(throw _, identity)
   }
+
+  private def adjustExceptions[T](t: => T): T =
+    SttpClientException.adjustSynchronousExceptions(t)(SttpClientException.defaultExceptionToSttpClientException)
 }
 
 object HttpClientSyncBackend {

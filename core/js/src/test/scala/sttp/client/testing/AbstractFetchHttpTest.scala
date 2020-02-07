@@ -25,4 +25,7 @@ abstract class AbstractFetchHttpTest[F[_], -S] extends HttpTest[F] {
 
   // the only way to set the content type is to use a Blob which has a default filename of 'blob'
   override protected def multipartStringDefaultFileName = Some("blob")
+
+  // everything is reported as "scala.scalajs.js.JavaScriptException: TypeError: Failed to fetch"
+  override protected def supportsSttpExceptions = false
 }

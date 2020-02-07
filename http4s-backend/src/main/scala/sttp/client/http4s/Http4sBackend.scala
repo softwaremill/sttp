@@ -37,7 +37,7 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
     blocker: Blocker,
     customizeRequest: Http4sRequest[F] => Http4sRequest[F]
 ) extends SttpBackend[F, Stream[F, Byte], NothingT] {
-  override def send[T](r: Request[T, Stream[F, Byte]]): F[Response[T]] = {
+  override def send[T](r: Request[T, Stream[F, Byte]]): F[Response[T]] = adjustExceptions {
     val (entity, extraHeaders) = bodyToHttp4s(r, r.body)
     val request = Http4sRequest(
       method = methodToHttp4s(r.method),
@@ -48,32 +48,37 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
 
     // see adr0001
     MVar.empty[F, Unit].flatMap { responseBodyCompleteVar =>
-      MVar.empty[F, Response[T]].flatMap { responseVar =>
-        val sendRequest = client.fetch(customizeRequest(request)) { response =>
-          val code = StatusCode.unsafeApply(response.status.code)
-          val headers = response.headers.toList.map(h => Header.notValidated(h.name.value, h.value))
-          val statusText = response.status.reason
-          val responseMetadata = ResponseMetadata(headers, code, statusText)
+      MVar.empty[F, Either[Throwable, Response[T]]].flatMap { responseVar =>
+        val sendRequest = client
+          .fetch(customizeRequest(request)) { response =>
+            val code = StatusCode.unsafeApply(response.status.code)
+            val headers = response.headers.toList.map(h => Header.notValidated(h.name.value, h.value))
+            val statusText = response.status.reason
+            val responseMetadata = ResponseMetadata(headers, code, statusText)
 
-          val body =
-            bodyFromHttp4s(
-              r.response,
-              signalResponseBodyComplete(
-                decompressResponseBodyIfNotHead(r.method, response),
-                responseBodyCompleteVar.put(())
-              ),
-              responseMetadata
-            )
+            val body =
+              bodyFromHttp4s(
+                r.response,
+                signalResponseBodyComplete(
+                  decompressResponseBodyIfNotHead(r.method, response),
+                  responseBodyCompleteVar.put(())
+                ),
+                responseMetadata
+              )
 
-          body
-            .map { b =>
-              Response(b, code, statusText, headers, Nil)
-            }
-            .flatMap(responseVar.put)
-            .flatMap(_ => responseBodyCompleteVar.take)
+            body
+              .map { b =>
+                Response(b, code, statusText, headers, Nil)
+              }
+              .flatMap(r => responseVar.put(Right(r)))
+              .flatMap(_ => responseBodyCompleteVar.take)
+          }
+          .recoverWith { case t: Throwable => responseVar.put(Left(t)) }
+
+        sendRequest.start >> responseVar.take.flatMap {
+          case Left(t)  => implicitly[cats.ApplicativeError[F, Throwable]].raiseError(t)
+          case Right(r) => r.pure[F]
         }
-
-        sendRequest.start >> responseVar.take
       }
     }
   }
@@ -208,6 +213,16 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
       case ResponseAsFile(file) =>
         saved(file.toFile).map(_ => file)
     }
+  }
+
+  private def adjustExceptions[T](t: => F[T]): F[T] =
+    SttpClientException.adjustExceptions(responseMonad)(t)(http4sExceptionToSttpClientException)
+
+  private def http4sExceptionToSttpClientException(e: Exception): Option[Exception] = e match {
+    case e: org.http4s.client.ConnectionFailure => Some(new SttpClientException.ConnectException(e))
+    case e: org.http4s.InvalidBodyException     => Some(new SttpClientException.ReadException(e))
+    case e: org.http4s.InvalidResponseException => Some(new SttpClientException.ReadException(e))
+    case e: Exception                           => SttpClientException.defaultExceptionToSttpClientException(e)
   }
 
   override def responseMonad: MonadError[F] = new CatsMonadAsyncError

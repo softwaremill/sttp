@@ -8,12 +8,16 @@ import sttp.client.testing.ConvertToFuture
 import sttp.client.testing.streaming.StreamingTest
 
 import scala.concurrent.ExecutionContext.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
+
+import org.http4s.client.blaze.BlazeClientBuilder
 
 class Http4sHttpStreamingTest extends StreamingTest[IO, Stream[IO, Byte]] {
 
   implicit val contextShift: ContextShift[IO] = IO.contextShift(global)
-  override implicit val backend: SttpBackend[IO, Stream[IO, Byte], NothingT] = TestHttp4sBackend()
+  private val blazeClientBuilder = BlazeClientBuilder[IO](ExecutionContext.Implicits.global)
+  override implicit val backend: SttpBackend[IO, Stream[IO, Byte], NothingT] =
+    Http4sBackend.usingClientBuilder(blazeClientBuilder).allocated.unsafeRunSync()._1
   override implicit val convertToFuture: ConvertToFuture[IO] = new ConvertToFuture[IO] {
     override def toFuture[T](value: IO[T]): Future[T] = value.unsafeToFuture()
   }
