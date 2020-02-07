@@ -49,17 +49,6 @@ The default backend doesn't wrap the response into any container, but other asyn
   Only requests with the request method and uri can be sent. If trying to send a request without these components specified, a compile-time error will be reported. On how this is implemented, see the documentation on the `type of request definitions <type.html>`_.
 ```
 
-## Exceptions
-
-Sending a request (or opening a websocket) might fail due to a variety of reasons: invalid host, connection exception, broken sockets, invalid responses, and others. These failures are represented as exceptions, which are thrown instead of returning a response.
-
-The exceptions might be thrown directly (`Identity` synchronous backends), or returned in a backend-specific wrapper: a failed effect (other backends). Backends will try to categorise these exceptions into a `SttpClientException`, which has two subclasses:
-
-* `ConnectException`: when a connection (tcp socket) can't be established to the target host
-* `ReadException`: when a connection has been established, but there's any kind of problem receiving the response (e.g. a broken socket)
-
-In general, it's safe to assume that the request hasn't been sent in case of connect exceptions. With read exceptions, the target host might or might have not received and processed the request.
-
 ## Initial requests
 
 sttp provides two initial requests:

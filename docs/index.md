@@ -86,6 +86,7 @@ Development and maintenance of sttp client is sponsored by [SoftwareMill](https:
 
    responses/basics
    responses/body
+   responses/exceptions
 
 .. toctree::
    :maxdepth: 2
