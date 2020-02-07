@@ -593,7 +593,7 @@ lazy val playJson = crossProject(JSPlatform, JVMPlatform)
 lazy val playJsonJS = playJson.js.dependsOn(coreJS, jsonCommonJS)
 lazy val playJsonJVM = playJson.jvm.dependsOn(coreJVM, jsonCommonJVM)
 
-lazy val braveVersion = "5.9.3"
+lazy val braveVersion = "5.9.4"
 
 lazy val braveBackend: Project = (project in file("metrics/brave-backend"))
   .settings(commonJvmSettings: _*)
