@@ -162,7 +162,7 @@ def testServerSettings(config: Configuration) = Seq(
 
 val circeVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "0.11.1"
-  case _             => "0.12.1"
+  case _             => "0.13.0"
 }
 
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.11"
@@ -548,7 +548,7 @@ lazy val circe = crossProject(JSPlatform, JVMPlatform)
       _ => "org.scalatest" %%% "scalatest" % scalaTestVersion % Test
     )
   )
-  .jsSettings(only2_11_and_2_12_settings) // circe-js for 2.13 fails to run tests with a linking error
+
 lazy val circeJS = circe.js.dependsOn(coreJS, jsonCommonJS)
 lazy val circeJVM = circe.jvm.dependsOn(coreJVM, jsonCommonJVM)
 
