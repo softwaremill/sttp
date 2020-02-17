@@ -20,7 +20,7 @@ Class                                 Supported stream type                     
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client" %% "async-http-client-backend-future" % "2.0.0-RC9"
+"com.softwaremill.sttp.client" %% "async-http-client-backend-future" % "2.0.0-RC10"
 ```
 
 This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client) and uses [Netty](http://netty.io) behind the scenes.
@@ -47,7 +47,7 @@ implicit val sttpBackend = AsyncHttpClientFutureBackend.usingClient(asyncHttpCli
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client" %% "okhttp-backend" % "2.0.0-RC9"
+"com.softwaremill.sttp.client" %% "okhttp-backend" % "2.0.0-RC10"
 ```
 
 Create the backend using:
@@ -68,7 +68,7 @@ This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supp
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client" %% "httpclient-backend" % "2.0.0-RC9"
+"com.softwaremill.sttp.client" %% "httpclient-backend" % "2.0.0-RC10"
 ```
 
 Create the backend using:
