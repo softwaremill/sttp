@@ -13,7 +13,6 @@ import sttp.client.monad.syntax._
 import scala.collection.JavaConverters._
 import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.time.{Millis, Span}
 
 @silent("discarded")
 trait LowLevelListenerWebSocketTest[F[_], WS, WS_HANDLER[_]]
@@ -33,8 +32,6 @@ trait LowLevelListenerWebSocketTest[F[_], WS, WS_HANDLER[_]]
   def sendCloseFrame(ws: WS): Unit
 
   it should "send and receive ten messages" in {
-    implicit val patienceConfig: PatienceConfig = PatienceConfig(timeout = scaled(Span(300, Millis)), interval = scaled(Span(15, Millis)))
-
     val n = 10
     val received = new ConcurrentLinkedQueue[String]()
     basicRequest
