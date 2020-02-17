@@ -14,6 +14,7 @@ import org.reactivestreams.Publisher
 import scalaz.concurrent.Task
 import sttp.client.asynchttpclient.{AsyncHttpClientBackend, WebSocketHandler}
 import sttp.client.impl.scalaz.TaskMonadAsyncError
+import sttp.client.testing.SttpBackendStub
 import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 
 class AsyncHttpClientScalazBackend private (
@@ -73,4 +74,11 @@ object AsyncHttpClientScalazBackend {
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   ): SttpBackend[Task, Nothing, WebSocketHandler] =
     AsyncHttpClientScalazBackend(client, closeClient = false, customizeRequest)
+
+  /**
+    * Create a stub backend for testing, which uses the [[Task]] response wrapper, and doesn't support streaming.
+    *
+    * See [[SttpBackendStub]] for details on how to configure stub responses.
+    */
+  def stub: SttpBackendStub[Task, Nothing] = SttpBackendStub(TaskMonadAsyncError)
 }

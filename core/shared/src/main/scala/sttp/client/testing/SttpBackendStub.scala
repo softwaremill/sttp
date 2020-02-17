@@ -162,16 +162,6 @@ object SttpBackendStub {
   }
 
   /**
-    * Create a stub backend for testing, which uses the same response wrappers
-    * and supports the same stream type as the given "real" backend.
-    *
-    * @tparam S2 This is a work-around for the problem described here:
-    *            [[https://stackoverflow.com/questions/46642623/cannot-infer-contravariant-nothing-type-parameter]].
-    */
-  def apply[F[_], S, S2 <: S](c: SttpBackend[F, S, NothingT]): SttpBackendStub[F, S2] =
-    new SttpBackendStub[F, S2](c.responseMonad, PartialFunction.empty, None)
-
-  /**
     * Create a stub backend using the given response monad (which determines
     * how requests are wrapped), and any stream type.
     */

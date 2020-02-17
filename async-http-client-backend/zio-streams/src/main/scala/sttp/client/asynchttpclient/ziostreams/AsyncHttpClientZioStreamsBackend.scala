@@ -15,6 +15,7 @@ import org.reactivestreams.Publisher
 import sttp.client.asynchttpclient.{AsyncHttpClientBackend, WebSocketHandler}
 import sttp.client.impl.zio.TaskMonadAsyncError
 import sttp.client.internal._
+import sttp.client.testing.SttpBackendStub
 import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 import zio._
 import zio.blocking.Blocking
@@ -46,9 +47,7 @@ class AsyncHttpClientZioStreamsBackend[R] private (
   override protected def publisherToFile(p: Publisher[ByteBuffer], f: File): Task[Unit] = {
     blocking
       .effectBlocking(new FileOutputStream(f))
-      .flatMap { os =>
-        p.toStream(bufferSize).map(b => Chunk.fromArray(b.array())).run(ZSink.fromOutputStream(os))
-      }
+      .flatMap { os => p.toStream(bufferSize).map(b => Chunk.fromArray(b.array())).run(ZSink.fromOutputStream(os)) }
       .unit
       .provide(Blocking.Live)
   }
@@ -112,4 +111,12 @@ object AsyncHttpClientZioStreamsBackend {
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   ): SttpBackend[Task, Stream[Throwable, ByteBuffer], WebSocketHandler] =
     AsyncHttpClientZioStreamsBackend(runtime, client, closeClient = false, customizeRequest)
+
+  /**
+    * Create a stub backend for testing, which uses the [[Task]] response wrapper, and supports
+    * `Stream[Throwable, ByteBuffer]` streaming.
+    *
+    * See [[SttpBackendStub]] for details on how to configure stub responses.
+    */
+  def stub: SttpBackendStub[Task, Stream[Throwable, ByteBuffer]] = SttpBackendStub(TaskMonadAsyncError)
 }

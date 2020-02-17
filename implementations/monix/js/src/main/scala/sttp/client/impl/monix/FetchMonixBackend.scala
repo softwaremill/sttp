@@ -11,6 +11,7 @@ import scala.scalajs.js
 import scala.scalajs.js.Promise
 import scala.scalajs.js.typedarray.{Int8Array, _}
 import org.scalajs.dom.experimental.{Request => FetchRequest}
+import sttp.client.testing.SttpBackendStub
 
 /**
   * Uses the `ReadableStream` interface from the Streams API.
@@ -69,4 +70,12 @@ object FetchMonixBackend {
       customizeRequest: FetchRequest => FetchRequest = identity
   ): SttpBackend[Task, Observable[ByteBuffer], NothingT] =
     new FetchMonixBackend(fetchOptions, customizeRequest)
+
+  /**
+    * Create a stub backend for testing, which uses the [[Task]] response wrapper, and supports `Observable[ByteBuffer]`
+    * streaming.
+    *
+    * See [[SttpBackendStub]] for details on how to configure stub responses.
+    */
+  def stub: SttpBackendStub[Task, Observable[ByteBuffer]] = SttpBackendStub(TaskMonadAsyncError)
 }

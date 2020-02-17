@@ -43,6 +43,7 @@ import com.twitter.util
 import sttp.client.internal.FileHelpers
 import sttp.model.{Header, Method, Part, StatusCode}
 import com.twitter.util.Duration
+import sttp.client.testing.SttpBackendStub
 
 import scala.io.Source
 
@@ -67,16 +68,7 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
 
   override def close(): TFuture[Unit] = TFuture.Done
 
-  override def responseMonad: MonadError[TFuture] = new MonadError[TFuture] {
-    override def unit[T](t: T): TFuture[T] = TFuture.apply(t)
-    override def map[T, T2](fa: TFuture[T])(f: T => T2): TFuture[T2] = fa.map(f)
-    override def flatMap[T, T2](fa: TFuture[T])(f: T => TFuture[T2]): TFuture[T2] = fa.flatMap(f)
-    override def error[T](t: Throwable): TFuture[T] = TFuture.exception(t)
-    override protected def handleWrappedError[T](rt: TFuture[T])(
-        h: PartialFunction[Throwable, TFuture[T]]
-    ): TFuture[T] = rt.rescue(h)
-    override def eval[T](t: => T): TFuture[T] = TFuture(t)
-  }
+  override def responseMonad: MonadError[TFuture] = TFutureMonadError
 
   private def headersToMap(headers: Seq[Header]): Map[String, String] = {
     headers.map(header => header.name -> header.value).toMap
@@ -117,9 +109,7 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
         )
       case MultipartBody(parts) =>
         val requestBuilder = RequestBuilder.create().url(r.uri.toString).addHeaders(headersToMap(r.headers))
-        val elements = parts.map { part =>
-          getBasicBodyContent(part)
-        }
+        val elements = parts.map { part => getBasicBodyContent(part) }
         requestBuilder.add(elements).buildFormPost(true)
       //requestBuilder.addFormElement(elements: _*).buildFormPost(true)
       case _ => buildRequest(url, headers, finagleMethod, None)
@@ -208,6 +198,17 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
   }
 }
 
+object TFutureMonadError extends MonadError[TFuture] {
+  override def unit[T](t: T): TFuture[T] = TFuture.apply(t)
+  override def map[T, T2](fa: TFuture[T])(f: T => T2): TFuture[T2] = fa.map(f)
+  override def flatMap[T, T2](fa: TFuture[T])(f: T => TFuture[T2]): TFuture[T2] = fa.flatMap(f)
+  override def error[T](t: Throwable): TFuture[T] = TFuture.exception(t)
+  override protected def handleWrappedError[T](rt: TFuture[T])(
+      h: PartialFunction[Throwable, TFuture[T]]
+  ): TFuture[T] = rt.rescue(h)
+  override def eval[T](t: => T): TFuture[T] = TFuture(t)
+}
+
 object FinagleBackend {
 
   def apply(): SttpBackend[TFuture, Nothing, NothingT] = {
@@ -217,4 +218,11 @@ object FinagleBackend {
   def usingClient(client: Client): SttpBackend[TFuture, Nothing, NothingT] = {
     new FollowRedirectsBackend[TFuture, Nothing, NothingT](new FinagleBackend(Some(client)))
   }
+
+  /**
+    * Create a stub backend for testing, which uses the [[TFuture]] response wrapper, and doesn't support streaming.
+    *
+    * See [[SttpBackendStub]] for details on how to configure stub responses.
+    */
+  def stub: SttpBackendStub[TFuture, Nothing] = SttpBackendStub(TFutureMonadError)
 }

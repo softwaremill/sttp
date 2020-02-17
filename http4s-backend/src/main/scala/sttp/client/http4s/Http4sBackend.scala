@@ -5,7 +5,7 @@ import java.nio.charset.Charset
 
 import cats.data.NonEmptyList
 import cats.effect.concurrent.MVar
-import cats.effect.{Blocker, ConcurrentEffect, ContextShift, Resource}
+import cats.effect.{Async, Blocker, ConcurrentEffect, ContextShift, Resource}
 import cats.implicits._
 import cats.effect.implicits._
 import fs2.{Chunk, Stream}
@@ -16,6 +16,7 @@ import org.http4s.client.blaze.BlazeClientBuilder
 import sttp.client.impl.cats.CatsMonadAsyncError
 import sttp.model._
 import sttp.client.monad.MonadError
+import sttp.client.testing.SttpBackendStub
 import sttp.client.ws.WebSocketResponse
 import sttp.client.{
   BasicRequestBody,
@@ -67,9 +68,7 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
               )
 
             body
-              .map { b =>
-                Response(b, code, statusText, headers, Nil)
-              }
+              .map { b => Response(b, code, statusText, headers, Nil) }
               .flatMap(r => responseVar.put(Right(r)))
               .flatMap(_ => responseBodyCompleteVar.take)
           }
@@ -255,4 +254,12 @@ object Http4sBackend {
       customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _
   ): Resource[F, SttpBackend[F, Stream[F, Byte], NothingT]] =
     usingClientBuilder(BlazeClientBuilder[F](clientExecutionContext), blocker, customizeRequest)
+
+  /**
+    * Create a stub backend for testing, which uses the `F` response wrapper, and supports `Stream[F, Byte]`
+    * streaming.
+    *
+    * See [[SttpBackendStub]] for details on how to configure stub responses.
+    */
+  def stub[F[_]: Async]: SttpBackendStub[F, Stream[F, Byte]] = SttpBackendStub(new CatsMonadAsyncError)
 }

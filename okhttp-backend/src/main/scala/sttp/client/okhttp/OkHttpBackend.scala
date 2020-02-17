@@ -28,6 +28,7 @@ import sttp.client.SttpBackendOptions.Proxy
 import sttp.client.internal.FileHelpers
 import sttp.model._
 import sttp.client.monad.{FutureMonad, IdMonad, MonadAsyncError, MonadError}
+import sttp.client.testing.SttpBackendStub
 import sttp.client.ws.WebSocketResponse
 import sttp.client.{
   BasicResponseAs,
@@ -248,6 +249,13 @@ object OkHttpSyncBackend {
 
   def usingClient(client: OkHttpClient): SttpBackend[Identity, Nothing, WebSocketHandler] =
     OkHttpSyncBackend(client, closeClient = false)
+
+  /**
+    * Create a stub backend for testing, which uses the [[Identity]] response wrapper, and doesn't support streaming.
+    *
+    * See [[SttpBackendStub]] for details on how to configure stub responses.
+    */
+  def stub: SttpBackendStub[Identity, Nothing] = SttpBackendStub.synchronous
 }
 
 abstract class OkHttpAsyncBackend[F[_], S](client: OkHttpClient, monad: MonadAsyncError[F], closeClient: Boolean)
@@ -325,6 +333,14 @@ object OkHttpFutureBackend {
       client: OkHttpClient
   )(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Nothing, WebSocketHandler] =
     OkHttpFutureBackend(client, closeClient = false)
+
+  /**
+    * Create a stub backend for testing, which uses the [[Future]] response wrapper, and doesn't support streaming.
+    *
+    * See [[SttpBackendStub]] for details on how to configure stub responses.
+    */
+  def stub(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackendStub[Future, Nothing] =
+    SttpBackendStub(new FutureMonad())
 }
 
 private[okhttp] class DelegatingWebSocketListener[WS_RESULT](

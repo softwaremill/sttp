@@ -6,6 +6,7 @@ import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 import java.util.function.BiConsumer
 
 import sttp.client.monad.{FutureMonad, MonadAsyncError, MonadError}
+import sttp.client.testing.SttpBackendStub
 import sttp.client.ws.WebSocketResponse
 import sttp.client.{FollowRedirectsBackend, Request, Response, SttpBackend, SttpBackendOptions, SttpClientException}
 import sttp.model.Headers
@@ -21,24 +22,25 @@ abstract class HttpClientAsyncBackend[F[_], S](
   override def send[T](request: Request[T, S]): F[Response[T]] = adjustExceptions {
     val jRequest = customizeRequest(convertRequest(request))
 
-    monad.flatten(monad.async[F[Response[T]]] { cb: (Either[Throwable, F[Response[T]]] => Unit) =>
-      def success(r: F[Response[T]]): Unit = cb(Right(r))
-      def error(t: Throwable): Unit = cb(Left(t))
+    monad.flatten(monad.async[F[Response[T]]] {
+      cb: (Either[Throwable, F[Response[T]]] => Unit) =>
+        def success(r: F[Response[T]]): Unit = cb(Right(r))
+        def error(t: Throwable): Unit = cb(Left(t))
 
-      client
-        .sendAsync(jRequest, BodyHandlers.ofInputStream())
-        .whenComplete(new BiConsumer[HttpResponse[InputStream], Throwable] {
-          override def accept(t: HttpResponse[InputStream], u: Throwable): Unit = {
-            if (t != null) {
-              try success(readResponse(t, request.response))
-              catch { case e: Exception => error(e) }
+        client
+          .sendAsync(jRequest, BodyHandlers.ofInputStream())
+          .whenComplete(new BiConsumer[HttpResponse[InputStream], Throwable] {
+            override def accept(t: HttpResponse[InputStream], u: Throwable): Unit = {
+              if (t != null) {
+                try success(readResponse(t, request.response))
+                catch { case e: Exception => error(e) }
+              }
+              if (u != null) {
+                error(u)
+              }
             }
-            if (u != null) {
-              error(u)
-            }
-          }
-        })
-      ()
+          })
+        ()
     })
   }
 
@@ -102,4 +104,12 @@ object HttpClientFutureBackend {
       implicit ec: ExecutionContext = ExecutionContext.Implicits.global
   ): SttpBackend[Future, Nothing, WebSocketHandler] =
     HttpClientFutureBackend(client, closeClient = false, customizeRequest)
+
+  /**
+    * Create a stub backend for testing, which uses the [[Future]] response wrapper, and doesn't support streaming.
+    *
+    * See [[SttpBackendStub]] for details on how to configure stub responses.
+    */
+  def stub(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackendStub[Future, Nothing] =
+    SttpBackendStub(new FutureMonad())
 }

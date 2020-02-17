@@ -12,6 +12,7 @@ import com.github.ghik.silencer.silent
 import sttp.client.internal._
 import sttp.model._
 import sttp.client.monad.{IdMonad, MonadError}
+import sttp.client.testing.SttpBackendStub
 import sttp.client.ws.WebSocketResponse
 import sttp.model.StatusCode
 
@@ -303,4 +304,11 @@ object HttpURLConnectionBackend {
     new FollowRedirectsBackend[Identity, Nothing, NothingT](
       new HttpURLConnectionBackend(options, customizeConnection, createURL, openConnection)
     )
+
+  /**
+    * Create a stub backend for testing, which uses the [[Identity]] response wrapper, and doesn't support streaming.
+    *
+    * See [[SttpBackendStub]] for details on how to configure stub responses.
+    */
+  def stub: SttpBackendStub[Identity, Nothing] = SttpBackendStub.synchronous
 }

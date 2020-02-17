@@ -11,6 +11,7 @@ import monix.execution.Scheduler
 import monix.reactive.Observable
 import sttp.client.httpclient.{HttpClientAsyncBackend, HttpClientBackend, WebSocketHandler}
 import sttp.client.impl.monix.TaskMonadAsyncError
+import sttp.client.testing.SttpBackendStub
 import sttp.client.{SttpBackend, _}
 
 import scala.util.{Success, Try}
@@ -69,4 +70,12 @@ object HttpClientMonixBackend {
       customizeRequest: HttpRequest => HttpRequest = identity
   )(implicit s: Scheduler = Scheduler.Implicits.global): SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler] =
     HttpClientMonixBackend(client, closeClient = false, customizeRequest)(s)
+
+  /**
+    * Create a stub backend for testing, which uses the [[Task]] response wrapper, and supports `Observable[ByteBuffer]`
+    * streaming.
+    *
+    * See [[SttpBackendStub]] for details on how to configure stub responses.
+    */
+  def stub: SttpBackendStub[Task, Observable[ByteBuffer]] = SttpBackendStub(TaskMonadAsyncError)
 }

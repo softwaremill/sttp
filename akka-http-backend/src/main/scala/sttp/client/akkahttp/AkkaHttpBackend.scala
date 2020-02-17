@@ -18,6 +18,7 @@ import akka.util.ByteString
 import sttp.client
 import sttp.model.{Header, HeaderNames, Headers, Method, Part, StatusCode}
 import sttp.client.monad.{FutureMonad, MonadError}
+import sttp.client.testing.SttpBackendStub
 import sttp.client.ws.WebSocketResponse
 import sttp.client.{
   ByteArrayBody,
@@ -449,6 +450,14 @@ object AkkaHttpBackend {
       customizeWebsocketRequest
     )
   }
+
+  /**
+    * Create a stub backend for testing, which uses the [[Future]] response wrapper, and doesn't support streaming.
+    *
+    * See [[SttpBackendStub]] for details on how to configure stub responses.
+    */
+  def stub(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackendStub[Future, Nothing] =
+    SttpBackendStub(new FutureMonad())
 }
 
 class NotAWebsocketException(r: Response[_]) extends Exception

@@ -8,9 +8,9 @@ You can also create a stub backend using [akka-http routes](backends/akka.html).
 
 An empty backend stub can be created using the following ways:
 
-* by using one of the factory methods `SttpBackendStub.synchronous` or `SttpBackendStub.asynchronousFuture`, which return stubs which use the `Id` or standard Scala's `Future` response wrappers without streaming support
+* by calling `.stub` on the "real" base backend's companion object, e.g. `AsyncHttpClientZioBackend.stub` or `HttpClientMonixBackend.stub`
+* by using one of the factory methods `SttpBackendStub.synchronous` or `SttpBackendStub.asynchronousFuture`, which return stubs which use the `Identity` or standard Scala's `Future` response wrappers without streaming support
 * by explicitly giving the response wrapper monad and supported streams type, e.g. `SttpBackendStub[Task, Observable[ByteBuffer]](TaskMonad)`
-* given an instance of a "real" backend, e.g. `SttpBackendStub(HttpURLConnectionBackend())` or `SttpBackendStub(AsyncHttpClientScalazBackend())`. The stub will then use the same response wrapper and support the same type of streams as the given "real" backend.
 * by specifying a fallback/delegate backend, see below
 
 ## Specifying behavior
@@ -112,7 +112,7 @@ If you want to simulate an exception being thrown by a backend, e.g. a socket ti
 ```scala
 implicit val testingBackend = SttpBackendStub.synchronous
   .whenRequestMatches(_ => true)
-  .thenRespond(throw new TimeoutException())
+  .thenRespond(throw new SttpClientException.ConnectException(new RuntimeException))
 ```
 
 ## Adjusting the response body type

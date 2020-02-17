@@ -262,9 +262,7 @@ abstract class AsyncHttpClientBackend[F[_], S](
     // set a file name on an arbitrary part we have to use a small "work
     // around", combining the file name with the name (surrounding quotes
     // are added by ahc).
-    def nameWithFilename = mp.fileName.fold(mp.name) { fn =>
-      s"""${mp.name}"; ${Part.FileNameDispositionParam}="$fn"""
-    }
+    def nameWithFilename = mp.fileName.fold(mp.name) { fn => s"""${mp.name}"; ${Part.FileNameDispositionParam}="$fn""" }
 
     val ctOrNull = mp.contentType.orNull
 

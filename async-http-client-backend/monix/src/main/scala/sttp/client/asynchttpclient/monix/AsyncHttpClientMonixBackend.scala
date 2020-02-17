@@ -14,6 +14,7 @@ import org.reactivestreams.Publisher
 import sttp.client.asynchttpclient.{AsyncHttpClientBackend, WebSocketHandler}
 import sttp.client.impl.monix.TaskMonadAsyncError
 import sttp.client.internal._
+import sttp.client.testing.SttpBackendStub
 import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 
 class AsyncHttpClientMonixBackend private (
@@ -153,4 +154,12 @@ object AsyncHttpClientMonixBackend {
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   )(implicit s: Scheduler = Scheduler.Implicits.global): SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler] =
     AsyncHttpClientMonixBackend(client, closeClient = false, customizeRequest)
+
+  /**
+    * Create a stub backend for testing, which uses the [[Task]] response wrapper, and supports `Observable[ByteBuffer]`
+    * streaming.
+    *
+    * See [[SttpBackendStub]] for details on how to configure stub responses.
+    */
+  def stub: SttpBackendStub[Task, Observable[ByteBuffer]] = SttpBackendStub(TaskMonadAsyncError)
 }

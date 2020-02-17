@@ -14,6 +14,7 @@ import org.reactivestreams.Publisher
 import sttp.client.asynchttpclient.{AsyncHttpClientBackend, WebSocketHandler}
 import sttp.client.impl.cats.CatsMonadAsyncError
 import sttp.client.internal._
+import sttp.client.testing.SttpBackendStub
 import sttp.client.ws.WebSocketResponse
 import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions, _}
 
@@ -132,4 +133,12 @@ object AsyncHttpClientFs2Backend {
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   ): SttpBackend[F, Stream[F, ByteBuffer], WebSocketHandler] =
     apply[F](client, closeClient = false, customizeRequest)
+
+  /**
+    * Create a stub backend for testing, which uses the `F` response wrapper, and supports `Stream[F, ByteBuffer]`
+    * streaming.
+    *
+    * See [[SttpBackendStub]] for details on how to configure stub responses.
+    */
+  def stub[F[_]: Async]: SttpBackendStub[F, Stream[F, ByteBuffer]] = SttpBackendStub(new CatsMonadAsyncError())
 }

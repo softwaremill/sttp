@@ -19,6 +19,7 @@ import sttp.client.impl.cats.CatsMonadAsyncError
 import sttp.client.internal.FileHelpers
 import sttp.client.{FollowRedirectsBackend, Request, Response, SttpBackend, SttpBackendOptions}
 import cats.implicits._
+import sttp.client.testing.SttpBackendStub
 
 import scala.language.higherKinds
 
@@ -131,4 +132,11 @@ object AsyncHttpClientCatsBackend {
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   ): SttpBackend[F, Nothing, WebSocketHandler] =
     AsyncHttpClientCatsBackend(client, closeClient = false, customizeRequest)
+
+  /**
+    * Create a stub backend for testing, which uses the `F` response wrapper, and doesn't support streaming.
+    *
+    * See [[SttpBackendStub]] for details on how to configure stub responses.
+    */
+  def stub[F[_]: Async]: SttpBackendStub[F, Nothing] = SttpBackendStub(new CatsMonadAsyncError())
 }

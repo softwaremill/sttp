@@ -13,6 +13,7 @@ import org.asynchttpclient.{
 import org.reactivestreams.Publisher
 import sttp.client.asynchttpclient.{AsyncHttpClientBackend, WebSocketHandler}
 import sttp.client.impl.zio.TaskMonadAsyncError
+import sttp.client.testing.SttpBackendStub
 import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 import zio._
 
@@ -73,4 +74,11 @@ object AsyncHttpClientZioBackend {
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   ): SttpBackend[Task, Nothing, WebSocketHandler] =
     AsyncHttpClientZioBackend(client, closeClient = false, customizeRequest)
+
+  /**
+    * Create a stub backend for testing, which uses the [[Task]] response wrapper, and doesn't support streaming.
+    *
+    * See [[SttpBackendStub]] for details on how to configure stub responses.
+    */
+  def stub: SttpBackendStub[Task, Nothing] = SttpBackendStub(TaskMonadAsyncError)
 }

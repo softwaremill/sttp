@@ -6,6 +6,7 @@ import java.util.concurrent.ArrayBlockingQueue
 
 import com.github.ghik.silencer.silent
 import sttp.client.monad.{IdMonad, MonadError}
+import sttp.client.testing.SttpBackendStub
 import sttp.client.ws.WebSocketResponse
 import sttp.client.{
   FollowRedirectsBackend,
@@ -79,4 +80,11 @@ object HttpClientSyncBackend {
       customizeRequest: HttpRequest => HttpRequest = identity
   ): SttpBackend[Identity, Nothing, WebSocketHandler] =
     HttpClientSyncBackend(client, closeClient = false, customizeRequest)
+
+  /**
+    * Create a stub backend for testing, which uses the [[Identity]] response wrapper, and doesn't support streaming.
+    *
+    * See [[SttpBackendStub]] for details on how to configure stub responses.
+    */
+  def stub: SttpBackendStub[Identity, Nothing] = SttpBackendStub.synchronous
 }

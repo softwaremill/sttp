@@ -7,6 +7,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.scalajs.js
 import scala.scalajs.js.Promise
 import org.scalajs.dom.experimental.{Request => FetchRequest}
+import sttp.client.testing.SttpBackendStub
 
 class FetchBackend private (fetchOptions: FetchOptions, customizeRequest: FetchRequest => FetchRequest)(
     implicit ec: ExecutionContext
@@ -37,4 +38,12 @@ object FetchBackend {
       customizeRequest: FetchRequest => FetchRequest = identity
   )(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Nothing, NothingT] =
     new FetchBackend(fetchOptions, customizeRequest)
+
+  /**
+    * Create a stub backend for testing, which uses the [[Future]] response wrapper, and doesn't support streaming.
+    *
+    * See [[SttpBackendStub]] for details on how to configure stub responses.
+    */
+  def stub(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackendStub[Future, Nothing] =
+    SttpBackendStub(new FutureMonad())
 }
