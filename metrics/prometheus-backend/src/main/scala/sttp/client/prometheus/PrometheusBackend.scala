@@ -19,8 +19,8 @@ object PrometheusBackend {
   val DefaultErrorCounterName = "sttp_requests_error_count"
   val DefaultFailureCounterName = "sttp_requests_failure_count"
 
-  def apply[F[_], S](
-      delegate: SttpBackend[F, S, NothingT],
+  def apply[F[_], S, WS_HANDLER[_]](
+      delegate: SttpBackend[F, S, WS_HANDLER],
       requestToHistogramNameMapper: Request[_, _] => Option[CollectorNameWithLabels] = (_: Request[_, _]) =>
         Some(CollectorNameWithLabels(DefaultHistogramName)),
       requestToInProgressGaugeNameMapper: Request[_, _] => Option[CollectorNameWithLabels] = (_: Request[_, _]) =>
@@ -32,10 +32,10 @@ object PrometheusBackend {
       requestToFailureCounterMapper: Request[_, _] => Option[CollectorNameWithLabels] = (_: Request[_, _]) =>
         Some(CollectorNameWithLabels(DefaultFailureCounterName)),
       collectorRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry
-  ): SttpBackend[F, S, NothingT] = {
+  ): SttpBackend[F, S, WS_HANDLER] = {
     // redirects should be handled before prometheus
-    new FollowRedirectsBackend[F, S, NothingT](
-      new ListenerBackend[F, S, NothingT, RequestCollectors](
+    new FollowRedirectsBackend[F, S, WS_HANDLER](
+      new ListenerBackend[F, S, WS_HANDLER, RequestCollectors](
         delegate,
         RequestListener.lift(
           new PrometheusListener(
