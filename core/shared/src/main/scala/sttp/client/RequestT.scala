@@ -16,8 +16,10 @@ import scala.concurrent.duration.Duration
 import scala.language.higherKinds
 
 /**
-  * @param response What's the target type to which the response body should
-  *                 be read. Needs to be specified upfront so that the response
+  * Describes a HTTP request, along with a description of how the response body should be handled.
+  *
+  * @param response Description of how the response body should be handled.
+  *                 Needs to be specified upfront so that the response
   *                 is always consumed and hence there are no requirements on
   *                 client code to consume it. An exception to this are
   *                 streaming responses, which need to fully consumed by the
@@ -26,13 +28,14 @@ import scala.language.higherKinds
   *             logging, metrics, etc. Not used by default.
   * @tparam U Specifies if the method & uri are specified. By default can be
   *           either:
-  *           * `Empty`, which is a type constructor which always resolves to
-  *           `None`. This type of request is aliased to `PartialRequest`:
+  *           * [[Empty]], which is a type constructor which always resolves to
+  *           [[None]]. This type of request is aliased to [[PartialRequest]]:
   *           there's no method and uri specified, and the request cannot be
   *           sent.
-  *           * `Id`, which is an identity type constructor. This type of
-  *           request is aliased to `Request`: the method and uri are
+  *           * [[Identity]], which is an identity type constructor. This type of
+  *           request is aliased to [[Request]]: the method and uri are
   *           specified, and the request can be sent.
+  * @tparam T The target type, to which the response body should be read.
   */
 case class RequestT[U[_], T, +S](
     method: U[Method],

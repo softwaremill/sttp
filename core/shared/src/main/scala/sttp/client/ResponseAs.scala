@@ -9,8 +9,17 @@ import scala.language.higherKinds
 import scala.util.{Failure, Success, Try}
 
 /**
+  * Describes how response body should be handled.
+  *
+  * Apart from the basic cases (ignoring, reading as a byte array, stream or file), response body descriptions can be
+  * mapped over, to support custom types. The mapping can take into account the [[ResponseMetadata]], that is the
+  * headers and status code. Finally, response description can be determined dynamically depending on the response
+  * metadata.
+  *
+  * A number of `as[Type]` helper methods are available as part of [[SttpApi]] and when importing `sttp.client._`.
+  *
   * @tparam T Target type as which the response will be read.
-  * @tparam S If `T` is a stream, the type of the stream. Otherwise, `Nothing`.
+  * @tparam S If T is a stream, the type of the stream. Otherwise, `Nothing`.
   */
 sealed trait ResponseAs[+T, +S] {
   def map[T2](f: T => T2): ResponseAs[T2, S] = mapWithMetadata { case (t, _) => f(t) }

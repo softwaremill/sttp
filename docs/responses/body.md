@@ -4,22 +4,22 @@ By default, the received response body will be read as a `Either[String, String]
 
 The default `response.body` will be a:
 
-* `Left(errorMessage)` if the request is successful, but response code is not expected (non 2xx).
-* `Right(body)` if the request is successful and the response code is expected (2xx).
+* `Left(errorMessage)` if the request is successful, but response code is not 2xx.
+* `Right(body)` if the request is successful and the response code is 2xx.
 
-How the response body will be read is part of the request definition, as already when sending the request, the backend needs to know what to do with the response. The type to which the response body should be deserialized is the second type parameter of `RequestT`, and stored in the request definition as the `request.response: ResponseAs[T, S]` property.
+How the response body will be read is part of the request description, as already when sending the request, the backend needs to know what to do with the response. The type to which the response body should be deserialized is the second type parameter of `RequestT`, and stored in the request definition as the `request.response: ResponseAs[T, S]` property.
 
 ## Basic response specifications
 
-To conveniently specify how to deserialize the response body, a number of `asXxx` methods are available. They can be used to provide a value for the request definition's `response` modifier:
+To conveniently specify how to deserialize the response body, a number of `as[Type]` methods are available. They can be used to provide a value for the request description's `response` property:
 
 ```scala
 basicRequest.response(asByteArray)
 ```
 
-When the above request is completed and sent, it will result in a `Response[Either[String, Array[Byte]]]`. Other possible response specifications are:
+When the above request is completely described and sent, it will result in a `Response[Either[String, Array[Byte]]]` (where the left and right correspond to non-2xx and 2xx status codes, as above). Other possible response descriptions are:
 
-```
+```scala
 def ignore: ResponseAs[Unit, Nothing]
 def asString: ResponseAs[Either[String, String], Nothing]
 def asStringAlways: ResponseAs[String, Nothing]
@@ -39,7 +39,7 @@ def asEither[L, R, S](onError: ResponseAs[L, S],
 def fromMetadata[T, S](f: ResponseMetadata => ResponseAs[T, S]): ResponseAs[T, S]
 ```
 
-Hence, to discard the response body, simply specify:
+Hence, to discard the response body, the request description should include the following:
 
 ```
 basicRequest.response(ignore)
@@ -56,9 +56,13 @@ basicRequest.response(asFile(someFile))
 
 ## Custom body deserializers
 
-It's possible to define custom body deserializers by taking any of the built-in response specifications and mapping over them. Each `ResponseAs` instance has `map` and `mapWithMetadata` methods, which can be used to transform it to a specification for another type (optionally using response metadata, such as headers or the status code). Each such value is immutable and can be used multiple times.
+It's possible to define custom body deserializers by taking any of the built-in response descriptions and mapping over them. Each `ResponseAs` instance has `map` and `mapWithMetadata` methods, which can be used to transform it to a description for another type (optionally using response metadata, such as headers or the status code). Each such value is immutable and can be used multiple times.
 
-As an example, to read the response body as an int, the following response specification can be defined (warning: this ignores the possibility of exceptions!):
+```eval_rst
+.. note:: Alternatively, response descriptions can be modified directly from the request description, by using the ``request.mapResponse(...)`` and ``request.mapResponseRight(...)`` methods (which is available, if the response body is deserialized to an either). That's equivalent to calling ``request.response(request.response.map(...))``, that is setting a new response description, to a modified old response description; but with shorter syntax.
+```
+
+As an example, to read the response body as an int, the following response description can be defined (warning: this ignores the possibility of exceptions!):
 
 ```scala
 val asInt: ResponseAs[Either[String, Int], Nothing] = asString.map(_.toInt)
@@ -79,15 +83,31 @@ basicRequest
   ...
 ```           
 
-For some mapped response specifications available out-of-the-box, see [json support](../json.html).
+A number of JSON libraries are supported out-of-the-box, see [json support](../json.html).
 
-Using the `fromMetadata` combinator, it's possible to dynamically specify how the response should be deserialized, basing on the response status code and response headers. The default `asString`, `asByteArray` response descriptions use this method to return a `Left` in case of non-2xx responses, and a `Right` otherwise.
+Using the `fromMetadata` combinator, it's possible to dynamically specify how the response should be deserialized, basing on the response status code and response headers. The default `asString`, `asByteArray` response descriptions use this method to return a `Left` in case of non-2xx responses, and a `Right` otherwise. 
 
-It's also possible to map over an existing response specification, by using the `request.mapResponse(...)` and `request.mapResponseRight(...)` methods (which is available, if the response body should be an either). That's equivalent to calling `request.response(request.response.map(...))`, that is setting a new response specification, to a modified old response specification; but with shorter syntax.
+A more complex case, which uses Circe for deserializing JSON, choosing to which model to deserialize to depending on the status code, can look as following:
+
+```scala
+sealed trait MyModel
+case class SuccessModel(...) extends MyModel
+case class ErrorModel(...) extends MyModel
+
+val myRequest: Request[Either[ResponseError[io.circe.Error], MyModel], Nothing] =
+  basicRequest
+    .get(uri"https://example.com")
+    .response(fromMetadata { meta =>
+      meta.code match {
+        case StatusCode.Ok => asJson[SuccessModel]
+        case -             => asJson[ErrorModel]
+      }
+    })
+```
 
 ## Streaming
 
-If the backend used supports streaming (see [backends summary](../backends/summary.html)), it's possible to receive responses as a stream. This can be specified using the following method:
+If the backend used supports streaming (see [backends summary](../backends/summary.html)), it's possible to receive responses as a stream. This can be described using the following methods:
 
 ```scala
 def asStream[S]: ResponseAs[Either[String, S], S] = ResponseAsStream[S, S]()
