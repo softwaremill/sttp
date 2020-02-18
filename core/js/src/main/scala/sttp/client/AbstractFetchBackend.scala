@@ -217,7 +217,7 @@ abstract class AbstractFetchBackend[F[_], S](options: FetchOptions, customizeReq
         transformPromise(response.arrayBuffer()).map(_ => ())
 
       case ResponseAsByteArray =>
-        responseToByteArray(response).map(b => b) // adjusting type because ResponseAs is convariant
+        responseToByteArray(response).map(b => b) // adjusting type because ResponseAs is covariant
 
       case ResponseAsFile(file) =>
         transformPromise(response.arrayBuffer()).map { ab =>
@@ -231,7 +231,7 @@ abstract class AbstractFetchBackend[F[_], S](options: FetchOptions, customizeReq
         }
 
       case ras @ ResponseAsStream() =>
-        handleResponseAsStream(ras, response).map(b => b) // adjusting type because ResponseAs is convariant
+        handleResponseAsStream(ras, response).map(b => b) // adjusting type because ResponseAs is covariant
     }
   }
 
