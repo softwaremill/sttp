@@ -86,7 +86,6 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
   }
 
   it should "wrap responses in the desired monad" in {
-    import scala.concurrent.ExecutionContext.Implicits.global
     implicit val b = SttpBackendStub(TryMonad)
     val r = basicRequest.post(uri"http://example.org").send()
     r.map(_.code) shouldBe Success(StatusCode.NotFound)

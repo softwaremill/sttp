@@ -201,13 +201,13 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
         bodyFromHttp4s(f(meta), hr, meta)
 
       case IgnoreResponse =>
-        hr.body.compile.drain
+        hr.body.compile.drain.map(_ => ()) // adjusting type because ResponseAs is convariant
 
       case ResponseAsByteArray =>
-        hr.as[Array[Byte]]
+        hr.as[Array[Byte]].map(b => b) // adjusting type because ResponseAs is convariant
 
       case r @ ResponseAsStream() =>
-        r.responseIsStream(hr.body).pure[F]
+        r.responseIsStream(hr.body).pure[F].map(b => b) // adjusting type because ResponseAs is convariant
 
       case ResponseAsFile(file) =>
         saved(file.toFile).map(_ => file)

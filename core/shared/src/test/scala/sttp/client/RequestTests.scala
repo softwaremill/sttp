@@ -1,6 +1,6 @@
 package sttp.client
 
-import sttp.model.HeaderNames
+import sttp.model.{HeaderNames, StatusCode}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -33,5 +33,22 @@ class RequestTests extends AnyFlatSpec with Matchers {
 
   "request timeout" should "use default if not overridden" in {
     basicRequest.options.readTimeout should be(DefaultReadTimeout)
+  }
+
+  it should "compile multiple subtype response variants" in {
+    val asLeft: ResponseAs[Left[String, String], Nothing] = asStringAlways.map(Left(_))
+    val asRight: ResponseAs[Right[String, String], Nothing] = asStringAlways.map(Right(_))
+
+    def myRequest: Request[Either[String, String], Nothing] =
+      basicRequest
+        .get(uri"https://test.com")
+        .response {
+          fromMetadata { meta =>
+            meta.code match {
+              case StatusCode.Ok         => asLeft
+              case StatusCode.BadRequest => asRight
+            }
+          }
+        }
   }
 }

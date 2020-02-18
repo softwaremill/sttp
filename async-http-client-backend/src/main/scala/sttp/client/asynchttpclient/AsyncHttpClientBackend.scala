@@ -197,7 +197,7 @@ abstract class AsyncHttpClientBackend[F[_], S](
             publisherToBytes(p).map(_ => ())
 
           case ResponseAsByteArray =>
-            publisherToBytes(p)
+            publisherToBytes(p).map(b => b) // adjusting type because ResponseAs is convariant
 
           case ResponseAsFile(file) =>
             publisherToFile(p, file.toFile).map(_ => file)

@@ -12,7 +12,7 @@ import scala.util.{Failure, Success, Try}
   * @tparam T Target type as which the response will be read.
   * @tparam S If `T` is a stream, the type of the stream. Otherwise, `Nothing`.
   */
-sealed trait ResponseAs[T, +S] {
+sealed trait ResponseAs[+T, +S] {
   def map[T2](f: T => T2): ResponseAs[T2, S] = mapWithMetadata { case (t, _) => f(t) }
   def mapWithMetadata[T2](f: (T, ResponseMetadata) => T2): ResponseAs[T2, S] = MappedResponseAs[T, T2, S](this, f)
 }

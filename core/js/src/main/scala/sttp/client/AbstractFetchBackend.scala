@@ -97,9 +97,7 @@ abstract class AbstractFetchBackend[F[_], S](options: FetchOptions, customizeReq
     }
 
     val result = req
-      .flatMap { r =>
-        transformPromise(Fetch.fetch(customizeRequest(r)))
-      }
+      .flatMap { r => transformPromise(Fetch.fetch(customizeRequest(r))) }
       .flatMap { resp =>
         if (resp.`type` == ResponseType.opaqueredirect) {
           responseMonad.error[FetchResponse](new RuntimeException("Unexpected redirect"))
@@ -219,7 +217,7 @@ abstract class AbstractFetchBackend[F[_], S](options: FetchOptions, customizeReq
         transformPromise(response.arrayBuffer()).map(_ => ())
 
       case ResponseAsByteArray =>
-        responseToByteArray(response)
+        responseToByteArray(response).map(b => b) // adjusting type because ResponseAs is convariant
 
       case ResponseAsFile(file) =>
         transformPromise(response.arrayBuffer()).map { ab =>
@@ -233,14 +231,12 @@ abstract class AbstractFetchBackend[F[_], S](options: FetchOptions, customizeReq
         }
 
       case ras @ ResponseAsStream() =>
-        handleResponseAsStream(ras, response)
+        handleResponseAsStream(ras, response).map(b => b) // adjusting type because ResponseAs is convariant
     }
   }
 
   private def responseToByteArray(response: FetchResponse) = {
-    transformPromise(response.arrayBuffer()).map { ab =>
-      new Int8Array(ab).toArray
-    }
+    transformPromise(response.arrayBuffer()).map { ab => new Int8Array(ab).toArray }
   }
 
   protected def handleResponseAsStream[T](ras: ResponseAsStream[T, S], response: FetchResponse): F[T]
