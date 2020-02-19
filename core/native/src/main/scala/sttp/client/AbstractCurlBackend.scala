@@ -188,7 +188,7 @@ abstract class AbstractCurlBackend[F[_], S](monad: MonadError[F], verbose: Boole
         responseMonad.map(readResponseBody(response, raw, responseMetadata))(g(_, responseMetadata))
       case ResponseAsFromMetadata(f) => readResponseBody(response, f(responseMetadata), responseMetadata)
       case IgnoreResponse            => responseMonad.unit((): Unit)
-      case ResponseAsByteArray       => toByteArray(response)
+      case ResponseAsByteArray       => monad.map(toByteArray(response))(b => b)
       case ResponseAsFile(output) =>
         responseMonad.map(toByteArray(response)) { a =>
           val is = new ByteArrayInputStream(a)

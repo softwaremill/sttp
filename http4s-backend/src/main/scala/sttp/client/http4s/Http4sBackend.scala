@@ -5,7 +5,7 @@ import java.nio.charset.Charset
 
 import cats.data.NonEmptyList
 import cats.effect.concurrent.MVar
-import cats.effect.{Async, Blocker, ConcurrentEffect, ContextShift, Resource}
+import cats.effect.{Concurrent, Blocker, ConcurrentEffect, ContextShift, Resource}
 import cats.implicits._
 import cats.effect.implicits._
 import fs2.{Chunk, Stream}
@@ -261,5 +261,5 @@ object Http4sBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub[F[_]: Async]: SttpBackendStub[F, Stream[F, Byte]] = SttpBackendStub(new CatsMonadAsyncError)
+  def stub[F[_]: Concurrent]: SttpBackendStub[F, Stream[F, Byte]] = SttpBackendStub(new CatsMonadAsyncError)
 }

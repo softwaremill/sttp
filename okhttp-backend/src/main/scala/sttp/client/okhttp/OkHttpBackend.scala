@@ -27,7 +27,7 @@ import sttp.client.ResponseAs.EagerResponseHandler
 import sttp.client.SttpBackendOptions.Proxy
 import sttp.client.internal.FileHelpers
 import sttp.model._
-import sttp.client.monad.{FutureMonad, IdMonad, MonadAsyncError, MonadError}
+import sttp.client.monad.{Canceler, FutureMonad, IdMonad, MonadAsyncError, MonadError}
 import sttp.client.testing.SttpBackendStub
 import sttp.client.ws.WebSocketResponse
 import sttp.client.{
@@ -267,17 +267,20 @@ abstract class OkHttpAsyncBackend[F[_], S](client: OkHttpClient, monad: MonadAsy
       def success(r: F[Response[T]]): Unit = cb(Right(r))
       def error(t: Throwable): Unit = cb(Left(t))
 
-      OkHttpBackend
+      val call = OkHttpBackend
         .updateClientIfCustomReadTimeout(r, client)
         .newCall(request)
-        .enqueue(new Callback {
-          override def onFailure(call: Call, e: IOException): Unit =
-            error(e)
 
-          override def onResponse(call: Call, response: OkHttpResponse): Unit =
-            try success(readResponse(response, r.response))
-            catch { case e: Exception => error(e) }
-        })
+      call.enqueue(new Callback {
+        override def onFailure(call: Call, e: IOException): Unit =
+          error(e)
+
+        override def onResponse(call: Call, response: OkHttpResponse): Unit =
+          try success(readResponse(response, r.response))
+          catch { case e: Exception => error(e) }
+      })
+
+      Canceler(() => call.cancel())
     })
   }
 
@@ -303,9 +306,11 @@ abstract class OkHttpAsyncBackend[F[_], S](client: OkHttpClient, monad: MonadAsy
         error
       )
 
-      val _ = OkHttpBackend
+      val ws = OkHttpBackend
         .updateClientIfCustomReadTimeout(r, client)
         .newWebSocket(request, listener)
+
+      Canceler(() => ws.cancel())
     })
   }
 

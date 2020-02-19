@@ -32,8 +32,10 @@ trait MonadError[F[_]] {
 }
 
 trait MonadAsyncError[F[_]] extends MonadError[F] {
-  def async[T](register: (Either[Throwable, T] => Unit) => Unit): F[T]
+  def async[T](register: (Either[Throwable, T] => Unit) => Canceler): F[T]
 }
+
+case class Canceler(cancel: () => Unit)
 
 object syntax {
   implicit final class MonadErrorOps[F[_], A](val r: F[A]) extends AnyVal {
@@ -113,7 +115,7 @@ class FutureMonad(implicit ec: ExecutionContext) extends MonadAsyncError[Future]
   override def eval[T](t: => T): Future[T] = Future(t)
 
   @silent("discarded")
-  override def async[T](register: (Either[Throwable, T] => Unit) => Unit): Future[T] = {
+  override def async[T](register: (Either[Throwable, T] => Unit) => Canceler): Future[T] = {
     val p = Promise[T]()
     register {
       case Left(t)  => p.failure(t)

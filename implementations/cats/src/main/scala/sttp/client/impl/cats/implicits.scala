@@ -1,6 +1,6 @@
 package sttp.client.impl.cats
 
-import cats.effect.Async
+import cats.effect.Concurrent
 import cats.~>
 import sttp.client.monad.{MonadAsyncError, MonadError}
 import sttp.client.ws.WebSocketResponse
@@ -15,7 +15,7 @@ trait CatsImplicits extends LowLevelCatsImplicits {
       sttpBackend: SttpBackend[R, S, WS_HANDLER]
   ): MappableSttpBackend[R, S, WS_HANDLER] = new MappableSttpBackend(sttpBackend)
 
-  implicit def asyncMonadError[F[_]: Async]: MonadAsyncError[F] = new CatsMonadAsyncError[F]
+  implicit def asyncMonadError[F[_]: Concurrent]: MonadAsyncError[F] = new CatsMonadAsyncError[F]
 }
 
 trait LowLevelCatsImplicits {

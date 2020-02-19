@@ -6,7 +6,7 @@ import io.netty.util.concurrent.{Future, FutureListener}
 import org.asynchttpclient.ws.{WebSocket => AHCWebSocket, WebSocketListener => AHCWebSocketListener}
 import sttp.client.asynchttpclient.WebSocketHandler
 import sttp.client.monad.syntax._
-import sttp.client.monad.{MonadAsyncError, MonadError}
+import sttp.client.monad.{Canceler, MonadAsyncError, MonadError}
 import sttp.client.ws.{WebSocket, WebSocketEvent}
 import sttp.model.ws.{WebSocketClosed, WebSocketFrame}
 import sttp.client.ws.internal.AsyncQueue
@@ -62,11 +62,13 @@ object NativeWebSocketHandler {
 
     private def fromNettyFuture(f: io.netty.util.concurrent.Future[Void]): F[Unit] = {
       _monad.async { cb =>
-        val _ = f.addListener(new FutureListener[Void] {
+        val f2 = f.addListener(new FutureListener[Void] {
           override def operationComplete(future: Future[Void]): Unit = {
             if (future.isSuccess) cb(Right(())) else cb(Left(future.cause()))
           }
         })
+
+        Canceler(() => f2.cancel(true))
       }
     }
   }

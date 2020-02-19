@@ -1,6 +1,6 @@
 package sttp.client.impl.scalaz
 
-import sttp.client.monad.MonadAsyncError
+import sttp.client.monad.{Canceler, MonadAsyncError}
 import scalaz.concurrent.Task
 import scalaz.{-\/, \/-}
 
@@ -12,7 +12,7 @@ object TaskMonadAsyncError extends MonadAsyncError[Task] {
   override def flatMap[T, T2](fa: Task[T])(f: (T) => Task[T2]): Task[T2] =
     fa.flatMap(f)
 
-  override def async[T](register: ((Either[Throwable, T]) => Unit) => Unit): Task[T] =
+  override def async[T](register: (Either[Throwable, T] => Unit) => Canceler): Task[T] =
     Task.async { cb =>
       register {
         case Left(t)  => cb(-\/(t))

@@ -140,5 +140,5 @@ object AsyncHttpClientFs2Backend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub[F[_]: Async]: SttpBackendStub[F, Stream[F, ByteBuffer]] = SttpBackendStub(new CatsMonadAsyncError())
+  def stub[F[_]: Concurrent]: SttpBackendStub[F, Stream[F, ByteBuffer]] = SttpBackendStub(new CatsMonadAsyncError())
 }

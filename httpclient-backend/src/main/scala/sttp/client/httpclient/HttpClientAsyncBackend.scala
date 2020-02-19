@@ -5,7 +5,7 @@ import java.net.http.HttpResponse.BodyHandlers
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 import java.util.function.BiConsumer
 
-import sttp.client.monad.{FutureMonad, MonadAsyncError, MonadError}
+import sttp.client.monad.{Canceler, FutureMonad, MonadAsyncError, MonadError}
 import sttp.client.testing.SttpBackendStub
 import sttp.client.ws.WebSocketResponse
 import sttp.client.{FollowRedirectsBackend, Request, Response, SttpBackend, SttpBackendOptions, SttpClientException}
@@ -27,7 +27,7 @@ abstract class HttpClientAsyncBackend[F[_], S](
         def success(r: F[Response[T]]): Unit = cb(Right(r))
         def error(t: Throwable): Unit = cb(Left(t))
 
-        client
+        val cf = client
           .sendAsync(jRequest, BodyHandlers.ofInputStream())
           .whenComplete(new BiConsumer[HttpResponse[InputStream], Throwable] {
             override def accept(t: HttpResponse[InputStream], u: Throwable): Unit = {
@@ -40,7 +40,7 @@ abstract class HttpClientAsyncBackend[F[_], S](
               }
             }
           })
-        ()
+        Canceler(() => cf.cancel(true))
     })
   }
 
@@ -65,7 +65,8 @@ abstract class HttpClientAsyncBackend[F[_], S](
       val wsBuilder = client.newWebSocketBuilder()
       client.connectTimeout().map(wsBuilder.connectTimeout(_))
       request.headers.foreach(h => wsBuilder.header(h.name, h.value))
-      val _ = wsBuilder.buildAsync(request.uri.toJavaUri, listener)
+      val cf = wsBuilder.buildAsync(request.uri.toJavaUri, listener)
+      Canceler(() => cf.cancel(true))
     })
   }
 

@@ -12,7 +12,7 @@ import monix.execution.Scheduler
 import sttp.client.httpclient.WebSocketHandler
 import sttp.client.impl.monix.{MonixAsyncQueue, TaskMonadAsyncError}
 import sttp.client.monad.syntax._
-import sttp.client.monad.{MonadAsyncError, MonadError}
+import sttp.client.monad.{Canceler, MonadAsyncError, MonadError}
 import sttp.client.ws.internal.AsyncQueue
 import sttp.client.ws.{WebSocket, WebSocketEvent}
 import sttp.model.ws.{WebSocketClosed, WebSocketFrame}
@@ -95,6 +95,7 @@ object MonixWebSocketHandler {
             }
           }
         })
+        Canceler(() => cf.cancel(true))
       }
     }
   }

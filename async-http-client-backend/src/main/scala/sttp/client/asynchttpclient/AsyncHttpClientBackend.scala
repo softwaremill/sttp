@@ -4,6 +4,8 @@ import java.io.{ByteArrayInputStream, File}
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicReference
+import java.util.function.UnaryOperator
 
 import com.github.ghik.silencer.silent
 import io.netty.buffer.ByteBuf
@@ -31,7 +33,7 @@ import org.reactivestreams.{Publisher, Subscriber, Subscription}
 import sttp.client
 import sttp.client.SttpBackendOptions.ProxyType.{Http, Socks}
 import sttp.client.internal._
-import sttp.client.monad.{MonadAsyncError, MonadError}
+import sttp.client.monad.{Canceler, MonadAsyncError, MonadError}
 import sttp.client.ws.WebSocketResponse
 import sttp.client.{
   ByteArrayBody,
@@ -75,7 +77,8 @@ abstract class AsyncHttpClientBackend[F[_], S](
         def success(r: F[Response[T]]): Unit = cb(Right(r))
         def error(t: Throwable): Unit = cb(Left(t))
 
-        val _ = ahcRequest.execute(streamingAsyncHandler(r.response, success, error))
+        val lf = ahcRequest.execute(streamingAsyncHandler(r.response, success, error))
+        Canceler(() => lf.abort(new InterruptedException))
       })
     }
   }
@@ -97,7 +100,9 @@ abstract class AsyncHttpClientBackend[F[_], S](
           .addWebSocketListener(handler.listener)
           .build()
 
-        val _ = ahcRequest.execute(h)
+        val lf = ahcRequest.execute(h)
+
+        Canceler(() => lf.abort(new InterruptedException))
       }
     }
   }
@@ -113,7 +118,10 @@ abstract class AsyncHttpClientBackend[F[_], S](
       def success(r: ByteBuffer): Unit = cb(Right(r.array()))
       def error(t: Throwable): Unit = cb(Left(t))
 
-      p.subscribe(new SimpleSubscriber(success, error))
+      val subscriber = new SimpleSubscriber(success, error)
+      p.subscribe(subscriber)
+
+      Canceler(() => subscriber.cancel())
     }
   }
 
@@ -389,18 +397,33 @@ private[asynchttpclient] object EmptyPublisher extends Publisher[ByteBuffer] {
 // based on org.asynchttpclient.request.body.generator.ReactiveStreamsBodyGenerator.SimpleSubscriber
 private[asynchttpclient] class SimpleSubscriber(success: ByteBuffer => Unit, error: Throwable => Unit)
     extends Subscriber[ByteBuffer] {
-  private var subscription: Subscription = _
+  // a pair of values: (is cancelled, current subscription)
+  private val subscription = new AtomicReference[(Boolean, Subscription)]((false, null))
   private val chunks = new ConcurrentLinkedQueue[Array[Byte]]()
   private var size = 0
 
   override def onSubscribe(s: Subscription): Unit = {
     assert(s != null)
-    // If someone has made a mistake and added this Subscriber multiple times, let's handle it gracefully
-    if (this.subscription != null) {
-      s.cancel() // Cancel the additional subscription
-    } else {
-      subscription = s
-      subscription.request(Long.MaxValue)
+
+    // The following can be safely run multiple times, as cancel() is idempotent
+    val result = subscription.updateAndGet(new UnaryOperator[(Boolean, Subscription)] {
+      override def apply(current: (Boolean, Subscription)): (Boolean, Subscription) = {
+        // If someone has made a mistake and added this Subscriber multiple times, let's handle it gracefully
+        if (current._2 != null) {
+          current._2.cancel() // Cancel the additional subscription
+        }
+
+        if (current._1) { // already cancelled
+          s.cancel()
+          (true, null)
+        } else { // happy path
+          (false, s)
+        }
+      }
+    })
+
+    if (result._2 != null) {
+      result._2.request(Long.MaxValue) // not cancelled, we can request data
     }
   }
 
@@ -423,5 +446,17 @@ private[asynchttpclient] class SimpleSubscriber(success: ByteBuffer => Unit, err
     chunks.asScala.foreach(result.put)
     chunks.clear()
     success(result)
+  }
+
+  def cancel(): Unit = {
+    // subscription.cancel is idempotent:
+    // https://github.com/reactive-streams/reactive-streams-jvm/blob/v1.0.3/README.md#specification
+    // so the following can be safely retried
+    subscription.updateAndGet(new UnaryOperator[(Boolean, Subscription)] {
+      override def apply(current: (Boolean, Subscription)): (Boolean, Subscription) = {
+        if (current._2 != null) current._2.cancel()
+        (true, null)
+      }
+    })
   }
 }

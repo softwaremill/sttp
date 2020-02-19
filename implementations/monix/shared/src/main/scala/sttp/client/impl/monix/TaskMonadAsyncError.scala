@@ -1,7 +1,7 @@
 package sttp.client.impl.monix
 
 import monix.eval.Task
-import sttp.client.monad.MonadAsyncError
+import sttp.client.monad.{Canceler, MonadAsyncError}
 
 import scala.util.{Failure, Success}
 
@@ -13,12 +13,13 @@ object TaskMonadAsyncError extends MonadAsyncError[Task] {
   override def flatMap[T, T2](fa: Task[T])(f: (T) => Task[T2]): Task[T2] =
     fa.flatMap(f)
 
-  override def async[T](register: ((Either[Throwable, T]) => Unit) => Unit): Task[T] =
-    Task.async { cb =>
-      register {
+  override def async[T](register: (Either[Throwable, T] => Unit) => Canceler): Task[T] =
+    Task.cancelable { cb =>
+      val canceler = register {
         case Left(t)  => cb(Failure(t))
         case Right(t) => cb(Success(t))
       }
+      Task(canceler.cancel())
     }
 
   override def error[T](t: Throwable): Task[T] = Task.raiseError(t)
