@@ -10,7 +10,7 @@ To use, add the following dependency to your project:
 "com.softwaremill.sttp.client" %% "async-http-client-backend-monix" % "2.0.0-RC11"
 ```
            
-This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client) and uses [Netty](http://netty.io) behind the scenes.
+This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client), uses [Netty](http://netty.io) behind the scenes and supports effect cancellation.
 
 Next you'll need to add an implicit value:
 

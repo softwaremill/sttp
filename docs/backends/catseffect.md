@@ -1,6 +1,6 @@
 # cats-effect backend
 
-The [Cats Effect](https://github.com/typelevel/cats-effect) backend is **asynchronous**. It can be created for any type implementing the `cats.effect.Async` typeclass, such as `cats.effect.IO`. Sending a request is a non-blocking, lazily-evaluated operation and results in a wrapped response. There's a transitive dependency on `cats-effect`. 
+The [Cats Effect](https://github.com/typelevel/cats-effect) backend is **asynchronous**. It can be created for any type implementing the `cats.effect.Concurrent` typeclass, such as `cats.effect.IO`. Sending a request is a non-blocking, lazily-evaluated operation and results in a wrapped response. There's a transitive dependency on `cats-effect`. 
 
 To use, add the following dependency to your project:
 
@@ -8,9 +8,9 @@ To use, add the following dependency to your project:
 "com.softwaremill.sttp.client" %% "async-http-client-backend-cats" % "2.0.0-RC11"
 ```
            
-This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client) and uses [Netty](http://netty.io) behind the scenes. 
+This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client), uses [Netty](http://netty.io) behind the scenes and supports effect cancellation. 
 
-Alternatively, the [http4s](http4s.html) backend can also be created for instance of cats-effect's `Effect` typeclass, and supports streaming as in [fs2](fs2.html).  
+Alternatively, the [http4s](http4s.html) backend can also be created for a type implementing the cats-effect's `Effect` typeclass, and supports streaming as in [fs2](fs2.html).  
 
 Next you'll need to add an implicit value:
 
