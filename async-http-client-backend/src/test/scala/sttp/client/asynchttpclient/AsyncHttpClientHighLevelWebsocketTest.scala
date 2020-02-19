@@ -32,7 +32,7 @@ abstract class AsyncHttpClientHighLevelWebsocketTest[F[_]] extends HighLevelWebs
       .flatMap { response =>
         val ws = response.result
         send(ws, 4) >>
-          eventually(10.millis, 400) {
+          eventually(10.millis, 500) {
             ws.isOpen.map(_ shouldBe false)
           }
       }

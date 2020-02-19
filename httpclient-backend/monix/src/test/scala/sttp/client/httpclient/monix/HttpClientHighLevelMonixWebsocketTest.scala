@@ -29,7 +29,7 @@ class HttpClientHighLevelMonixWebsocketTest extends HighLevelWebsocketTest[Task,
       .openWebsocketF(createHandler(Some(3)))
       .flatMap { response =>
         val ws = response.result
-        send(ws, 1000) >> eventually(10.millis, 400) { ws.isOpen.map(_ shouldBe true) }
+        send(ws, 1000) >> eventually(10.millis, 500) { ws.isOpen.map(_ shouldBe true) }
       }
       .toFuture()
   }
