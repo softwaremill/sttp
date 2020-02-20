@@ -39,7 +39,9 @@ trait LowLevelListenerWebSocketTest[F[_], WS, WS_HANDLER[_]]
       .openWebsocket(createHandler(received.add))
       .map { response =>
         (1 to n).foreach { i =>
-          sendText(response.result, s"test$i")
+          val msg = s"test$i"
+          info(s"Sending text message: $msg")
+          sendText(response.result, msg)
         }
         eventually {
           received.asScala.toList shouldBe (1 to n).map(i => s"echo: test$i").toList

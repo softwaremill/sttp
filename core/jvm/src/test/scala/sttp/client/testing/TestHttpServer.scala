@@ -18,16 +18,16 @@ import akka.util.ByteString
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives
 import ch.megard.akka.http.cors.scaladsl.settings.CorsSettings
 import com.github.ghik.silencer.silent
-import org.scalatest.{BeforeAndAfterAll, Suite}
+import org.scalatest.{BeforeAndAfterAll, Informing, Suite}
 import sttp.client.internal.toByteArray
 import sttp.model.HeaderNames
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 
-trait TestHttpServer extends BeforeAndAfterAll { this: Suite =>
+trait TestHttpServer extends BeforeAndAfterAll { this: Suite with Informing =>
 
-  private val server = new HttpServer(0)
+  private val server = new HttpServer(0, info(_))
 
   protected def endpoint = s"http://$host:$port"
   protected def wsEndpoint = s"ws://$host:$port"
@@ -37,7 +37,6 @@ trait TestHttpServer extends BeforeAndAfterAll { this: Suite =>
 
   override protected def beforeAll(): Unit = {
     import scala.concurrent.ExecutionContext.Implicits.global
-
     super.beforeAll()
     Await.result(
       server.start().map { binding => port = binding.localAddress.getPort },
@@ -56,11 +55,11 @@ object HttpServer {
   def main(args: Array[String]): Unit = {
     val port = args.headOption.map(_.toInt).getOrElse(51823)
 
-    Await.result(new HttpServer(port).start(), 10.seconds)
+    Await.result(new HttpServer(port, println(_)).start(), 10.seconds)
   }
 }
 
-private class HttpServer(port: Int) extends AutoCloseable with CorsDirectives {
+private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable with CorsDirectives {
   import scala.concurrent.ExecutionContext.Implicits.global
 
   private var server: Option[Future[Http.ServerBinding]] = None
@@ -327,8 +326,10 @@ private class HttpServer(port: Int) extends AutoCloseable with CorsDirectives {
       path("echo") {
         handleWebSocketMessages(Flow[Message].mapConcat {
           case tm: TextMessage =>
+            info("Responding to text message")
             TextMessage(Source.single("echo: ") ++ tm.textStream) :: Nil
           case bm: BinaryMessage =>
+            info("Ignoring a binary message")
             bm.dataStream.runWith(Sink.ignore)
             Nil
         })
