@@ -277,7 +277,11 @@ abstract class OkHttpAsyncBackend[F[_], S](client: OkHttpClient, monad: MonadAsy
 
         override def onResponse(call: Call, response: OkHttpResponse): Unit =
           try success(readResponse(response, r.response))
-          catch { case e: Exception => error(e) }
+          catch {
+            case e: Exception =>
+              response.close()
+              error(e)
+          }
       })
 
       Canceler(() => call.cancel())
