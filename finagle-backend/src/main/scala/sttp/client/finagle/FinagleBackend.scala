@@ -37,6 +37,7 @@ import com.twitter.finagle.http.{
   Method => FMethod,
   Response => FResponse
 }
+import com.twitter.finagle.loadbalancer.Balancers
 import com.twitter.io.Buf
 import com.twitter.io.Buf.{ByteArray, ByteBuffer}
 import com.twitter.util
@@ -51,14 +52,19 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
   override def send[T](request: Request[T, Nothing]): TFuture[Response[T]] = adjustExceptions {
     val service = getClient(client, request)
     val finagleRequest = requestBodyToFinagle(request)
-    service.apply(finagleRequest).flatMap { fResponse =>
-      val code = StatusCode.unsafeApply(fResponse.statusCode)
-      val headers = fResponse.headerMap.map(h => Header.notValidated(h._1, h._2)).toList
-      val statusText = fResponse.status.reason
-      val responseMetadata = ResponseMetadata(headers, code, statusText)
-      val body = fromFinagleResponse(request.response, fResponse, responseMetadata)
-      service.close().flatMap(_ => body.map(sttp.client.Response(_, code, statusText, headers, Nil)))
-    }
+    service
+      .apply(finagleRequest)
+      .flatMap { fResponse =>
+        val code = StatusCode.unsafeApply(fResponse.statusCode)
+        val headers = fResponse.headerMap.map(h => Header.notValidated(h._1, h._2)).toList
+        val statusText = fResponse.status.reason
+        val responseMetadata = ResponseMetadata(headers, code, statusText)
+        val body = fromFinagleResponse(request.response, fResponse, responseMetadata)
+        service.close().flatMap(_ => body.map(sttp.client.Response(_, code, statusText, headers, Nil)))
+      }
+      .rescue {
+        case e: Exception => service.close().flatMap(_ => TFuture.exception(e))
+      }
   }
 
   override def openWebsocket[T, WS_RESULT](
