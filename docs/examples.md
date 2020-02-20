@@ -7,7 +7,7 @@ All of the examples are available [in the sources](https://github.com/softwaremi
 Required dependencies:
 
 ```scala            
-libraryDependencies ++= List("com.softwaremill.sttp.client" %% "core" % "2.0.0-RC11")
+libraryDependencies ++= List("com.softwaremill.sttp.client" %% "core" % "2.0.0-RC12")
 ```
 
 Example code:
@@ -36,8 +36,8 @@ Required dependencies:
 
 ```scala
 libraryDependencies ++= List(
-  "com.softwaremill.sttp.client" %% "akka-http-backend" % "2.0.0-RC11",
-  "com.softwaremill.sttp.client" %% "json4s" % "2.0.0-RC11",
+  "com.softwaremill.sttp.client" %% "akka-http-backend" % "2.0.0-RC12",
+  "com.softwaremill.sttp.client" %% "json4s" % "2.0.0-RC12",
   "org.json4s" %% "json4s-native" % "3.6.0"
 )
 ```
@@ -77,8 +77,8 @@ Required dependencies:
 
 ```scala
 libraryDependencies ++= List(
-  "com.softwaremill.sttp.client" %% "async-http-client-backend-monix" % "2.0.0-RC11",
-  "com.softwaremill.sttp.client" %% "circe" % "2.0.0-RC11",
+  "com.softwaremill.sttp.client" %% "async-http-client-backend-monix" % "2.0.0-RC12",
+  "com.softwaremill.sttp.client" %% "circe" % "2.0.0-RC12",
   "io.circe" %% "circe-generic" % "0.12.1"
 )
 ```
@@ -115,7 +115,7 @@ postTask.runSyncUnsafe()
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client" %% "core" % "2.0.0-RC11")
+libraryDependencies ++= List("com.softwaremill.sttp.client" %% "core" % "2.0.0-RC12")
 ```
 
 Example code:
@@ -150,7 +150,7 @@ println(
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % "2.0.0-RC11")
+libraryDependencies ++= List("com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % "2.0.0-RC12")
 ```
 
 Example code:
@@ -184,7 +184,7 @@ AsyncHttpClientZioBackend().flatMap { implicit backend =>
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client" %% "async-http-client-backend-fs2" % "2.0.0-RC11")
+libraryDependencies ++= List("com.softwaremill.sttp.client" %% "async-http-client-backend-fs2" % "2.0.0-RC12")
 ```
 
 Example code:
@@ -242,7 +242,7 @@ effect.unsafeRunSync()
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % "2.0.0-RC11")
+libraryDependencies ++= List("com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % "2.0.0-RC12")
 ```
 
 Example code:
