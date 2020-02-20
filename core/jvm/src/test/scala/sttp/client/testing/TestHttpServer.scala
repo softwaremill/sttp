@@ -40,9 +40,7 @@ trait TestHttpServer extends BeforeAndAfterAll { this: Suite =>
 
     super.beforeAll()
     Await.result(
-      server.start().map { binding =>
-        port = binding.localAddress.getPort
-      },
+      server.start().map { binding => port = binding.localAddress.getPort },
       16.seconds
     )
   }
@@ -130,11 +128,7 @@ private class HttpServer(port: Int) extends AutoCloseable with CorsDirectives {
     } ~ pathPrefix("streaming") {
       path("echo") {
         post {
-          parameterMap { _ =>
-            entity(as[String]) { body: String =>
-              complete(body)
-            }
-          }
+          parameterMap { _ => entity(as[String]) { body: String => complete(body) } }
         }
       }
     } ~ path("set_headers") {
@@ -179,9 +173,7 @@ private class HttpServer(port: Int) extends AutoCloseable with CorsDirectives {
         case c @ Credentials.Provided(un) if un == "adam" && c.verify("1234") =>
           Some(un)
         case _ => None
-      }) { userName =>
-        complete(s"Hello, $userName!")
-      }
+      }) { userName => complete(s"Hello, $userName!") }
     } ~ path("secure_digest") {
       get {
         import akka.http.scaladsl.model._
@@ -286,17 +278,13 @@ private class HttpServer(port: Int) extends AutoCloseable with CorsDirectives {
             redirect("/redirect/get_after_post/result", StatusCodes.PermanentRedirect)
           } ~ path("result") {
             get(complete(s"GET")) ~
-              entity(as[String]) { body =>
-                post(complete(s"POST$body"))
-              }
+              entity(as[String]) { body => post(complete(s"POST$body")) }
           }
         } ~ pathPrefix("strip_sensitive_headers") {
         path("r1") {
           redirect("/redirect/strip_sensitive_headers/result", StatusCodes.PermanentRedirect)
         } ~ path("result") {
-          extractRequest { req =>
-            complete(s"${req.headers.mkString(",")}")
-          }
+          extractRequest { req => complete(s"${req.headers.mkString(",")}") }
         }
       }
     } ~ pathPrefix("error") {
@@ -313,7 +301,7 @@ private class HttpServer(port: Int) extends AutoCloseable with CorsDirectives {
       )
     } ~ pathPrefix("timeout") {
       complete {
-        akka.pattern.after(1.second, using = actorSystem.scheduler)(
+        akka.pattern.after(2.seconds, using = actorSystem.scheduler)(
           Future.successful("Done")
         )
       }

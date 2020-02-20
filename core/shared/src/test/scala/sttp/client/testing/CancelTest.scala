@@ -34,7 +34,7 @@ trait CancelTest[F[_], S] extends AsyncFreeSpec with Matchers with ToFutureWrapp
           .flatMap { start =>
             timeoutToNone(req.send(), 100)
               .map { r =>
-                (System.currentTimeMillis() - start) should be < 1000L
+                (System.currentTimeMillis() - start) should be < 2000L
                 r shouldBe None
               }
           }
