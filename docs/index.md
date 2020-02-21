@@ -113,6 +113,7 @@ Development and maintenance of sttp client is sponsored by [SoftwareMill](https:
    backends/http4s
    backends/finagle
    backends/javascript/fetch
+   backends/native/curl
 
 .. toctree::
    :maxdepth: 2
