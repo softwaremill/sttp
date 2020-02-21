@@ -181,8 +181,8 @@ def dependenciesFor(version: String)(deps: (Option[(Long, Long)] => ModuleID)*):
   deps.map(_.apply(CrossVersion.partialVersion(version)))
 
 lazy val rootProjectAggregates: Seq[ProjectReference] = if (sys.env.isDefinedAt("STTP_NATIVE")) {
-  println("[info] STTP_NATIVE defined, including sttp-native in the aggregate projects [temporarily disabled]")
-  //List(rootJVM, rootJS, rootNative)
+  println("[info] STTP_NATIVE defined, including sttp-native in the aggregate projects")
+  List(rootJVM, rootJS, rootNative)
   List(rootJVM, rootJS)
 } else {
   println("[info] STTP_NATIVE *not* defined, *not* including sttp-native in the aggregate projects")

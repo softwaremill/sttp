@@ -20,13 +20,16 @@ private[curl] object CCurl {
   def cleanup(handle: Ptr[Curl]): Unit = extern
 
   @name("curl_easy_setopt")
-  def setopt(handle: Ptr[Curl], option: CInt, parameter: Any): CInt = extern
+  def setopt(handle: Ptr[Curl], option: CInt, parameter: Ptr[_]): CInt = extern
+
+  @name("curl_easy_setopt")
+  def setopt(handle: Ptr[Curl], option: CInt, parameter: CVarArgList): CInt = extern
 
   @name("curl_easy_perform")
   def perform(easy_handle: Ptr[Curl]): CInt = extern
 
   @name("curl_easy_getinfo")
-  def getInfo(handle: Ptr[Curl], info: CInt, parameter: Any): CInt = extern
+  def getInfo(handle: Ptr[Curl], info: CInt, parameter: Ptr[_]): CInt = extern
 
   @name("curl_mime_init")
   def mimeInit(easy: Ptr[Curl]): Ptr[Mime] = extern
