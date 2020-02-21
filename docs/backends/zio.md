@@ -5,7 +5,7 @@ The [ZIO](https://github.com/zio/zio) backends are **asynchronous**. Sending a r
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % "2.0.0-RC12"
+"com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % "2.0.0-RC13"
 ```
            
 This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client), uses [Netty](http://netty.io) behind the scenes and supports effect cancellation.
@@ -32,7 +32,7 @@ implicit val sttpBackend = AsyncHttpClientZioBackend.usingClient(asyncHttpClient
 To use streaming using zio-streams, add the following dependency instead:
 
 ```scala
-"com.softwaremill.sttp.client" %% "async-http-client-backend-zio-streams" % "2.0.0-RC12"
+"com.softwaremill.sttp.client" %% "async-http-client-backend-zio-streams" % "2.0.0-RC13"
 ```
 
 And use the `sttp.client.asynchttpclient.ziostreams.AsyncHttpClientZioStreamsBackend` backend implementation. The backend supports streaming of type `Stream[Throwable, ByteBuffer]`.
