@@ -22,5 +22,9 @@ project/plugins/project/
 
 core/native/local.sbt
 
+.metals/
+.bloop/
+project/metals.sbt
+
 # scala-native
 lowered.hnir

@@ -4,6 +4,7 @@ import sttp.client.curl.CurlCode.CurlCode
 import sttp.client.curl.CurlInfo.CurlInfo
 import sttp.client.curl.CurlOption.CurlOption
 
+import scala.scalanative.runtime.Boxes
 import scala.scalanative.unsafe.{Ptr, _}
 
 private[client] object CurlApi {
@@ -25,18 +26,18 @@ private[client] object CurlApi {
     def cleanup(): Unit = CCurl.cleanup(handle)
 
     def option(option: CurlOption, parameter: String)(implicit z: Zone): CurlCode = {
-      setopt(handle, option, toCString(parameter)(z))
+      setopt(handle, option, toCString(parameter))
     }
 
-    def option(option: CurlOption, parameter: Long): CurlCode = {
+    def option(option: CurlOption, parameter: Long)(implicit z: Zone): CurlCode = {
       setopt(handle, option, parameter)
     }
 
-    def option(option: CurlOption, parameter: Int): CurlCode = {
+    def option(option: CurlOption, parameter: Int)(implicit z: Zone): CurlCode = {
       setopt(handle, option, parameter)
     }
 
-    def option(option: CurlOption, parameter: Boolean): CurlCode = {
+    def option(option: CurlOption, parameter: Boolean)(implicit z: Zone): CurlCode = {
       setopt(handle, option, if (parameter) 1L else 0L)
     }
 
@@ -44,16 +45,18 @@ private[client] object CurlApi {
       setopt(handle, option, parameter)
     }
 
-    def option[FuncPtr >: CFuncPtr](option: CurlOption, parameter: FuncPtr): CurlCode = {
-      setopt(handle, option, parameter)
+    def option[FuncPtr <: CFuncPtr](option: CurlOption, parameter: FuncPtr)(implicit z: Zone): CurlCode = {
+      setopt(handle, option, Boxes.boxToPtr[Byte](Boxes.unboxToCFuncRawPtr(parameter)))
     }
 
-    def info(curlInfo: CurlInfo, parameter: Long): CurlCode = {
-      getInfo(handle, curlInfo, parameter)
+    def info(curlInfo: CurlInfo, parameter: Long)(implicit z: Zone): CurlCode = {
+      val lPtr = alloc[Long](sizeof[Long])
+      !lPtr = parameter
+      getInfo(handle, curlInfo, lPtr)
     }
 
-    def info(curlInfo: CurlInfo, parameter: String): CurlCode = {
-      getInfo(handle, curlInfo, parameter)
+    def info(curlInfo: CurlInfo, parameter: String)(implicit z: Zone): CurlCode = {
+      getInfo(handle, curlInfo, toCString(parameter))
     }
 
     def info(curlInfo: CurlInfo, parameter: Ptr[_]): CurlCode = {
@@ -61,11 +64,15 @@ private[client] object CurlApi {
     }
   }
 
-  private def setopt(handle: CurlHandle, option: CurlOption, parameter: Any): CurlCode = {
+  private def setopt(handle: CurlHandle, option: CurlOption, parameter: Ptr[_]): CurlCode = {
     CurlCode(CCurl.setopt(handle, option.id, parameter))
   }
 
-  private def getInfo(handle: CurlHandle, curlInfo: CurlInfo, parameter: Any): CurlCode = {
+  private def setopt(handle: CurlHandle, option: CurlOption, parameter: CVarArg)(implicit z: Zone): CurlCode = {
+     CurlCode(CCurl.setopt(handle, option.id, toCVarArgList(Seq(parameter))))
+  }
+
+  private def getInfo(handle: CurlHandle, curlInfo: CurlInfo, parameter: Ptr[_]): CurlCode = {
     CurlCode(CCurl.getInfo(handle, curlInfo.id, parameter))
   }
 
