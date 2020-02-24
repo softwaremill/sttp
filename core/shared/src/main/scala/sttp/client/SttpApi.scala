@@ -68,8 +68,7 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     * Use the given charset by default, unless specified otherwise in the response headers.
     */
   def asString(charset: String): ResponseAs[Either[String, String], Nothing] = asStringAlways(charset).mapWithMetadata {
-    (s, m) =>
-      if (m.isSuccess) Right(s) else Left(s)
+    (s, m) => if (m.isSuccess) Right(s) else Left(s)
   }
 
   def asStringAlways(charset: String): ResponseAs[String, Nothing] = asByteArrayAlways.mapWithMetadata {
@@ -104,9 +103,7 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
   def fromMetadata[T, S](f: ResponseMetadata => ResponseAs[T, S]): ResponseAs[T, S] = ResponseAsFromMetadata(f)
 
   def asEither[L, R, S](onError: ResponseAs[L, S], onSuccess: ResponseAs[R, S]): ResponseAs[Either[L, R], S] =
-    fromMetadata { meta =>
-      if (meta.isSuccess) onSuccess.map(Right(_)) else onError.map(Left(_))
-    }
+    fromMetadata { meta => if (meta.isSuccess) onSuccess.map(Right(_)) else onError.map(Left(_)) }
 
   // multipart factory methods
 

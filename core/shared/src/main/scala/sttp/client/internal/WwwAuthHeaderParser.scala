@@ -4,9 +4,7 @@ object WwwAuthHeaderParser {
   def parse(text: String): WwwAuthHeaderValue = {
     WwwAuthHeaderValue(
       text
-        .foldLeft(KeyParser(Map.empty): Parser) { (parser, char) =>
-          parser.parseNext(char)
-        }
+        .foldLeft(KeyParser(Map.empty): Parser) { (parser, char) => parser.parseNext(char) }
         .close()
     )
   }

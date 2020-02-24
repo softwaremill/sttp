@@ -69,7 +69,7 @@ private[client] object CurlApi {
   }
 
   private def setopt(handle: CurlHandle, option: CurlOption, parameter: CVarArg)(implicit z: Zone): CurlCode = {
-     CurlCode(CCurl.setopt(handle, option.id, toCVarArgList(Seq(parameter))))
+    CurlCode(CCurl.setopt(handle, option.id, toCVarArgList(Seq(parameter))))
   }
 
   private def getInfo(handle: CurlHandle, curlInfo: CurlInfo, parameter: Ptr[_]): CurlCode = {

@@ -22,25 +22,24 @@ abstract class HttpClientAsyncBackend[F[_], S](
   override def send[T](request: Request[T, S]): F[Response[T]] = adjustExceptions {
     val jRequest = customizeRequest(convertRequest(request))
 
-    monad.flatten(monad.async[F[Response[T]]] {
-      cb: (Either[Throwable, F[Response[T]]] => Unit) =>
-        def success(r: F[Response[T]]): Unit = cb(Right(r))
-        def error(t: Throwable): Unit = cb(Left(t))
+    monad.flatten(monad.async[F[Response[T]]] { cb: (Either[Throwable, F[Response[T]]] => Unit) =>
+      def success(r: F[Response[T]]): Unit = cb(Right(r))
+      def error(t: Throwable): Unit = cb(Left(t))
 
-        val cf = client
-          .sendAsync(jRequest, BodyHandlers.ofInputStream())
-          .whenComplete(new BiConsumer[HttpResponse[InputStream], Throwable] {
-            override def accept(t: HttpResponse[InputStream], u: Throwable): Unit = {
-              if (t != null) {
-                try success(readResponse(t, request.response))
-                catch { case e: Exception => error(e) }
-              }
-              if (u != null) {
-                error(u)
-              }
+      val cf = client
+        .sendAsync(jRequest, BodyHandlers.ofInputStream())
+        .whenComplete(new BiConsumer[HttpResponse[InputStream], Throwable] {
+          override def accept(t: HttpResponse[InputStream], u: Throwable): Unit = {
+            if (t != null) {
+              try success(readResponse(t, request.response))
+              catch { case e: Exception => error(e) }
             }
-          })
-        Canceler(() => cf.cancel(true))
+            if (u != null) {
+              error(u)
+            }
+          }
+        })
+      Canceler(() => cf.cancel(true))
     })
   }
 

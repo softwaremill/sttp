@@ -20,9 +20,7 @@ class ListenerBackend[F[_], S, WS_HANDLER[_], L](
           case e: Exception =>
             listener.requestException(request, t, e).flatMap(_ => responseMonad.error(e))
         }
-        .flatMap { response =>
-          listener.requestSuccessful(request, response, t).map(_ => response)
-        }
+        .flatMap { response => listener.requestSuccessful(request, response, t).map(_ => response) }
     }
   }
   override def openWebsocket[T, WS_RESULT](
@@ -35,9 +33,7 @@ class ListenerBackend[F[_], S, WS_HANDLER[_], L](
           case e: Exception =>
             listener.websocketException(request, t, e).flatMap(_ => responseMonad.error(e))
         }
-        .flatMap { response =>
-          listener.websocketSuccessful(request, response, t).map(_ => response)
-        }
+        .flatMap { response => listener.websocketSuccessful(request, response, t).map(_ => response) }
     }
   }
 

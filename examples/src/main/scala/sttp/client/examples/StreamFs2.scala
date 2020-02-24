@@ -18,9 +18,7 @@ object StreamFs2 extends App {
       .streamBody(stream)
       .post(uri"https://httpbin.org/post")
       .send()
-      .map { response =>
-        println(s"RECEIVED:\n${response.body}")
-      }
+      .map { response => println(s"RECEIVED:\n${response.body}") }
   }
 
   def streamResponseBody(implicit backend: SttpBackend[IO, Stream[IO, ByteBuffer], NothingT]): IO[Unit] = {
@@ -36,9 +34,7 @@ object StreamFs2 extends App {
           .compile
           .foldMonoid
       }
-      .map { body =>
-        println(s"RECEIVED:\n$body")
-      }
+      .map { body => println(s"RECEIVED:\n$body") }
   }
 
   val effect = AsyncHttpClientFs2Backend[IO]().flatMap { implicit backend =>
