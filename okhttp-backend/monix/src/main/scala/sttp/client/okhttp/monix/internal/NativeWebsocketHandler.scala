@@ -9,7 +9,7 @@ import sttp.client.monad.{MonadAsyncError, MonadError}
 import sttp.client.okhttp.WebSocketHandler
 import sttp.client.ws.internal.AsyncQueue
 import sttp.client.ws.{WebSocket, WebSocketEvent}
-import sttp.model.ws.{WebSocketClosed, WebSocketError, WebSocketFrame}
+import sttp.model.ws.{WebSocketClosed, WebSocketException, WebSocketFrame}
 
 object NativeWebSocketHandler {
   def apply[F[_]](queue: AsyncQueue[F, WebSocketEvent], monad: MonadAsyncError[F]): WebSocketHandler[WebSocket[F]] = {
@@ -81,7 +81,7 @@ class SendMessageException
     extends Exception(
       "Cannot enqueue next message. Socket is closed, closing or cancelled or this message would overflow the outgoing message buffer (16 MiB)"
     )
-    with WebSocketError
+    with WebSocketException
 
 private class AddToQueueListener[F[_]](queue: AsyncQueue[F, WebSocketEvent], isOpen: AtomicBoolean)
     extends WebSocketListener {

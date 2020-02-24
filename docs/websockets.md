@@ -46,7 +46,7 @@ When the websocket is open, the `WebSocketResponse` will contain an instance of 
 
 There are also other methods for receiving only text/binary messages, as well as automatically sending `Pong` responses when a `Ping` is received.
 
-If there's an error, a failed effects wrapper will be returned, containing one of the `sttp.client.ws.WebSocketError` exceptions, or a backend-specific exception.
+If there's an error, a failed effects wrapper will be returned, containing one of the `sttp.client.ws.WebSocketException` exceptions, or a backend-specific exception.
 
 Example usage with the [Monix](backends/monix.html) variant of the async-http-client backend:
 

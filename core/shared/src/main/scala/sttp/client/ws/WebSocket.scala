@@ -7,7 +7,7 @@ import sttp.model.ws.WebSocketFrame
 import scala.language.higherKinds
 
 /**
-  * The `send` and `receive` methods may result in a failed effect, with either one of [[sttp.model.ws.WebSocketError]]
+  * The `send` and `receive` methods may result in a failed effect, with either one of [[sttp.model.ws.WebSocketException]]
   * exceptions, or a backend-specific exception.
   */
 trait WebSocket[F[_]] {
