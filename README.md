@@ -37,9 +37,9 @@ println(response.body)
 
 ## Documentation
 
-sttp (v2) documentation is available at [sttp.readthedocs.io](http://sttp.readthedocs.io).
+sttp (v2) documentation is available at [sttp.softwaremill.com](http://sttp.softwaremill.com).
 
-sttp (v1) documentation is available at [sttp.readthedocs.io/en/v1](https://sttp.readthedocs.io/en/v1).
+sttp (v1) documentation is available at [sttp.softwaremill.com/en/v1](https://sttp.softwaremill.com/en/v1).
 
 scaladoc is available at [https://www.javadoc.io](https://www.javadoc.io/doc/com.softwaremill.sttp.client/core_2.12/2.0.1)
 
