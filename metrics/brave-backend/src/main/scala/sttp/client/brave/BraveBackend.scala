@@ -10,7 +10,7 @@ import sttp.client.{FollowRedirectsBackend, NothingT, Request, Response, SttpBac
 
 import scala.language.higherKinds
 
-@deprecated("Use opentracing-backend with brave integration", since = "2.0.0-M9")
+@deprecated("Use opentracing-backend with brave integration", since = "2.0.1-M9")
 class BraveBackend[F[_], S] private (delegate: SttpBackend[F, S, NothingT], httpTracing: HttpTracing)
     extends SttpBackend[F, S, NothingT] {
   // .asInstanceOf as the create method lacks generics in its return type
@@ -102,12 +102,12 @@ object BraveBackend {
   type AnyRequest = Request[_, _]
   type AnyResponse = Response[_]
 
-  @deprecated("Use opentracing-backend with brave integration", since = "2.0.0-M9")
+  @deprecated("Use opentracing-backend with brave integration", since = "2.0.1-M9")
   def apply[F[_], S](delegate: SttpBackend[F, S, NothingT], tracing: Tracing): SttpBackend[F, S, NothingT] = {
     apply(delegate, HttpTracing.create(tracing))
   }
 
-  @deprecated("Use opentracing-backend with brave integration", since = "2.0.0-M9")
+  @deprecated("Use opentracing-backend with brave integration", since = "2.0.1-M9")
   def apply[F[_], S](delegate: SttpBackend[F, S, NothingT], httpTracing: HttpTracing): SttpBackend[F, S, NothingT] = {
     // redirects should be handled before brave tracing, hence adding the follow-redirects backend on top
     new FollowRedirectsBackend[F, S, NothingT](new BraveBackend(delegate, httpTracing))
