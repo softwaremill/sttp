@@ -1,5 +1,7 @@
 package sttp.client
 
+import java.nio.ByteBuffer
+
 import org.scalajs.dom.FormData
 import org.scalajs.dom.experimental.{
   BodyInit,
@@ -189,7 +191,8 @@ abstract class AbstractFetchBackend[F[_], S](options: FetchOptions, customizeReq
         b.toTypedArray.asInstanceOf[BodyInit]
 
       case ByteBufferBody(b, _) =>
-        b.array().toTypedArray.asInstanceOf[BodyInit]
+        if (b.isReadOnly) cloneByteBuffer(b).array().toTypedArray.asInstanceOf[BodyInit]
+        else b.array().toTypedArray.asInstanceOf[BodyInit]
 
       case InputStreamBody(is, _) =>
         toByteArray(is).toTypedArray.asInstanceOf[BodyInit]
@@ -197,6 +200,16 @@ abstract class AbstractFetchBackend[F[_], S](options: FetchOptions, customizeReq
       case FileBody(f, _) =>
         f.toDomFile
     }
+  }
+
+  // https://stackoverflow.com/questions/3366925/deep-copy-duplicate-of-javas-bytebuffer
+  private def cloneByteBuffer(original: ByteBuffer): ByteBuffer = {
+    val clone =
+      if (original.isDirect) ByteBuffer.allocateDirect(original.capacity)
+      else ByteBuffer.allocate(original.capacity)
+    val readOnlyCopy = original.asReadOnlyBuffer
+    readOnlyCopy.rewind
+    clone.put(original).flip.position(original.position).limit(original.limit).order(original.order)
   }
 
   protected def handleStreamBody(s: S): F[js.UndefOr[BodyInit]]

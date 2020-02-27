@@ -4,6 +4,7 @@ import java.io.InputStream
 import java.net.http.HttpRequest.{BodyPublisher, BodyPublishers}
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 import java.net.{Authenticator, PasswordAuthentication}
+import java.nio.ByteBuffer
 import java.time.{Duration => JDuration}
 import java.util.concurrent.{Executor, ThreadPoolExecutor}
 import java.util.function
@@ -56,10 +57,12 @@ abstract class HttpClientBackend[F[_], S](client: HttpClient, closeClient: Boole
 
   private def bodyToHttpBody[T](request: Request[T, S], builder: HttpRequest.Builder) = {
     request.body match {
-      case NoBody                => BodyPublishers.noBody()
-      case StringBody(b, _, _)   => BodyPublishers.ofString(b)
-      case ByteArrayBody(b, _)   => BodyPublishers.ofByteArray(b)
-      case ByteBufferBody(b, _)  => BodyPublishers.ofByteArray(b.array())
+      case NoBody              => BodyPublishers.noBody()
+      case StringBody(b, _, _) => BodyPublishers.ofString(b)
+      case ByteArrayBody(b, _) => BodyPublishers.ofByteArray(b)
+      case ByteBufferBody(b, _) =>
+        if (b.isReadOnly) BodyPublishers.ofInputStream(() => new ByteBufferBackedInputStream(b))
+        else BodyPublishers.ofByteArray(b.array())
       case InputStreamBody(b, _) => BodyPublishers.ofInputStream(() => b)
       case FileBody(f, _)        => BodyPublishers.ofFile(f.toFile.toPath)
       case StreamBody(s)         => streamToRequestBody(s)
@@ -132,6 +135,21 @@ abstract class HttpClientBackend[F[_], S](client: HttpClient, closeClient: Boole
             body.map(_ => file)
         }
     }
+
+  // https://stackoverflow.com/a/6603018/362531
+  private class ByteBufferBackedInputStream(buf: ByteBuffer) extends InputStream {
+    override def read: Int = {
+      if (!buf.hasRemaining) return -1
+      buf.get & 0xFF
+    }
+
+    override def read(bytes: Array[Byte], off: Int, len: Int): Int = {
+      if (!buf.hasRemaining) return -1
+      val len2 = Math.min(len, buf.remaining)
+      buf.get(bytes, off, len2)
+      len2
+    }
+  }
 
   def responseBodyToStream(responseBody: InputStream): Try[S] =
     Failure(new IllegalStateException("Streaming isn't supported"))

@@ -80,7 +80,8 @@ abstract class OkHttpBackend[F[_], S](client: OkHttpClient, closeClient: Boolean
       case ByteArrayBody(b, _) =>
         Some(OkHttpRequestBody.create(b, mediaType))
       case ByteBufferBody(b, _) =>
-        Some(OkHttpRequestBody.create(b.array(), mediaType))
+        if (b.isReadOnly) Some(OkHttpRequestBody.create(ByteString.of(b), mediaType))
+        else Some(OkHttpRequestBody.create(b.array(), mediaType))
       case InputStreamBody(b, _) =>
         Some(new OkHttpRequestBody() {
           @silent("discarded")
