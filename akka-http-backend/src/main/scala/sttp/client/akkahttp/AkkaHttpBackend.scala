@@ -305,7 +305,7 @@ class AkkaHttpBackend private (
     header.name.toLowerCase.contains(`Content-Type`.lowercaseName)
 
   private def isContentLength(header: Header) =
-    header.value.toLowerCase.contains(`Content-Length`.lowercaseName)
+    header.name.toLowerCase.contains(`Content-Length`.lowercaseName)
 
   // http://doc.akka.io/docs/akka-http/10.0.7/scala/http/common/de-coding.html
   private def decodeAkkaResponse(response: HttpResponse): HttpResponse = {
