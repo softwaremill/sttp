@@ -313,7 +313,7 @@ lazy val cats = crossProject(JSPlatform, JVMPlatform)
     name := "cats",
     publishArtifact in Test := true,
     libraryDependencies ++= Seq(
-      "org.typelevel" %%% "cats-effect" % "2.0.1"
+      "org.typelevel" %%% "cats-effect" % "2.0.0"
     )
   )
 lazy val catsJS = cats.js.dependsOn(coreJS % compileAndTest)
