@@ -13,5 +13,5 @@ class AsyncHttpClientZioHttpTest extends HttpTest[Task] with CancelTest[Task, No
   override implicit val convertToFuture: ConvertToFuture[Task] = convertZioIoToFuture
 
   override def timeoutToNone[T](t: Task[T], timeoutMillis: Int): Task[Option[T]] =
-    t.timeout(timeoutMillis.milliseconds).provide(Clock.Live)
+    t.timeout(timeoutMillis.milliseconds).provideLayer(Clock.live)
 }

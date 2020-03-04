@@ -49,7 +49,7 @@ class AsyncHttpClientZioStreamsBackend[R] private (
       .effectBlocking(new FileOutputStream(f))
       .flatMap { os => p.toStream(bufferSize).map(b => Chunk.fromArray(b.array())).run(ZSink.fromOutputStream(os)) }
       .unit
-      .provide(Blocking.Live)
+      .provideLayer(Blocking.live)
   }
 }
 
