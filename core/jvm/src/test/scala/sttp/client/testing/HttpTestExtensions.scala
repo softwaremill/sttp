@@ -18,7 +18,7 @@ trait HttpTestExtensions[F[_]] extends TestHttpServer { self: HttpTest[F] =>
   "cookies" - {
     "read response cookies" in {
       basicRequest
-        .get(uri"$endpoint/set_cookies")
+        .get(uri"$endpoint/cookies/set")
         .response(sttpIgnore)
         .send()
         .toFuture()
@@ -36,7 +36,7 @@ trait HttpTestExtensions[F[_]] extends TestHttpServer { self: HttpTest[F] =>
 
     "read response cookies with the expires attribute" in {
       basicRequest
-        .get(uri"$endpoint/set_cookies/with_expires")
+        .get(uri"$endpoint/cookies/set_with_expires")
         .response(sttpIgnore)
         .send()
         .toFuture()
@@ -54,6 +54,22 @@ trait HttpTestExtensions[F[_]] extends TestHttpServer { self: HttpTest[F] =>
                 .toEpochMilli
             )
           )
+        }
+    }
+
+    "received cookies should not be cached and sent back" in {
+      basicRequest
+        .get(uri"$endpoint/cookies/set")
+        .response(sttpIgnore)
+        .send()
+        .toFuture()
+        .flatMap { _ =>
+          basicRequest
+            .get(uri"$endpoint/cookies/get_cookie2")
+            .response(asStringAlways)
+            .send()
+            .toFuture()
+            .map { response => response.body shouldBe "no cookie" }
         }
     }
   }
@@ -123,9 +139,7 @@ trait HttpTestExtensions[F[_]] extends TestHttpServer { self: HttpTest[F] =>
           .response(asStringAlways)
           .send()
           .toFuture()
-          .map { resp =>
-            resp.body shouldBe expectedBody
-          }
+          .map { resp => resp.body shouldBe expectedBody }
       }
     }
 
@@ -158,9 +172,7 @@ trait HttpTestExtensions[F[_]] extends TestHttpServer { self: HttpTest[F] =>
     "read response body encoded using ISO-8859-2, as specified in the header, overriding the default" in {
       val req = basicRequest.get(uri"$endpoint/respond_with_iso_8859_2")
 
-      req.send().toFuture().map { response =>
-        response.body should be(Right("Żółć!"))
-      }
+      req.send().toFuture().map { response => response.body should be(Right("Żółć!")) }
     }
   }
 
@@ -171,9 +183,7 @@ trait HttpTestExtensions[F[_]] extends TestHttpServer { self: HttpTest[F] =>
         case None       => Files.deleteIfExists(file)
         case Some(data) => Files.write(file, data)
       }
-    }.flatMap { _ =>
-      f(file.toFile)
-    }
+    }.flatMap { _ => f(file.toFile) }
 
     result.onComplete(_ => Files.deleteIfExists(file))
     result
@@ -197,9 +207,7 @@ trait HttpTestExtensions[F[_]] extends TestHttpServer { self: HttpTest[F] =>
   "body" - {
     "post a file" in {
       withTemporaryFile(Some(testBodyBytes)) { f =>
-        postEcho.body(f).send().toFuture().map { response =>
-          response.body should be(Right(expectedPostEchoResponse))
-        }
+        postEcho.body(f).send().toFuture().map { response => response.body should be(Right(expectedPostEchoResponse)) }
       }
     }
   }
@@ -208,27 +216,21 @@ trait HttpTestExtensions[F[_]] extends TestHttpServer { self: HttpTest[F] =>
     "download a binary file using asFile" in {
       withTemporaryNonExistentFile { file =>
         val req = basicRequest.get(uri"$endpoint/download/binary").response(asFile(file))
-        req.send().toFuture().flatMap { resp =>
-          md5FileHash(resp.body.right.get).map { _ shouldBe binaryFileMD5Hash }
-        }
+        req.send().toFuture().flatMap { resp => md5FileHash(resp.body.right.get).map { _ shouldBe binaryFileMD5Hash } }
       }
     }
 
     "download a binary file using asFile, overwriting its current content" in {
       withTemporaryFile(Some(Array(1))) { file =>
         val req = basicRequest.get(uri"$endpoint/download/binary").response(asFile(file))
-        req.send().toFuture().flatMap { resp =>
-          md5FileHash(resp.body.right.get).map { _ shouldBe binaryFileMD5Hash }
-        }
+        req.send().toFuture().flatMap { resp => md5FileHash(resp.body.right.get).map { _ shouldBe binaryFileMD5Hash } }
       }
     }
 
     "download a text file using asFile" in {
       withTemporaryNonExistentFile { file =>
         val req = basicRequest.get(uri"$endpoint/download/text").response(asFile(file))
-        req.send().toFuture().flatMap { resp =>
-          md5FileHash(resp.body.right.get).map { _ shouldBe textFileMD5Hash }
-        }
+        req.send().toFuture().flatMap { resp => md5FileHash(resp.body.right.get).map { _ shouldBe textFileMD5Hash } }
       }
     }
   }
@@ -248,9 +250,7 @@ trait HttpTestExtensions[F[_]] extends TestHttpServer { self: HttpTest[F] =>
     "send a multipart message with custom file name" in {
       withTemporaryFile(Some(testBodyBytes)) { f =>
         val req = mp.multipartBody(multipartFile("p1", f).fileName("test.txt"))
-        req.send().toFuture().map { resp =>
-          resp.body should be(Right(s"p1=$testBody (test.txt)"))
-        }
+        req.send().toFuture().map { resp => resp.body should be(Right(s"p1=$testBody (test.txt)")) }
       }
     }
   }

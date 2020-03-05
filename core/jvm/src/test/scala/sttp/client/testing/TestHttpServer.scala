@@ -138,12 +138,17 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
           }
         }
       }
-    } ~ pathPrefix("set_cookies") {
-      path("with_expires") {
+    } ~ pathPrefix("cookies") {
+      path("set_with_expires") {
         setCookie(HttpCookie("c", "v", expires = Some(DateTime(1997, 12, 8, 12, 49, 12)))) {
           complete("ok")
         }
-      } ~ get {
+      } ~ path("get_cookie2") {
+        optionalCookie("cookie2") {
+          case Some(c) => complete(s"${c.name}=${c.value}")
+          case None    => complete("no cookie")
+        }
+      } ~ path("set") {
         setCookie(
           HttpCookie(
             "cookie1",

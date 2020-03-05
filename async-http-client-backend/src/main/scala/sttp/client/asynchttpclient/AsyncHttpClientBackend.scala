@@ -350,6 +350,7 @@ object AsyncHttpClientBackend {
   ): DefaultAsyncHttpClientConfig.Builder = {
     val configBuilder = new DefaultAsyncHttpClientConfig.Builder()
       .setConnectTimeout(options.connectionTimeout.toMillis.toInt)
+      .setCookieStore(null)
 
     options.proxy match {
       case None => configBuilder
