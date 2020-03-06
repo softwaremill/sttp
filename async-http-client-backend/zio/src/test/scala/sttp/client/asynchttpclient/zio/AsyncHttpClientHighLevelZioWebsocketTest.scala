@@ -22,6 +22,6 @@ class AsyncHttpClientHighLevelZioWebsocketTest extends AsyncHttpClientHighLevelW
     bufferCapacity => ZioWebSocketHandler(bufferCapacity)
 
   override def eventually[T](interval: FiniteDuration, attempts: Int)(f: => Task[T]): Task[T] = {
-    ZIO.sleep(interval.toMillis.millis).andThen(f).retry(Schedule.recurs(attempts)).provide(Clock.Live)
+    ZIO.sleep(interval.toMillis.millis).andThen(f).retry(Schedule.recurs(attempts)).provideLayer(Clock.live)
   }
 }

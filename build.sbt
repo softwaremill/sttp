@@ -372,7 +372,7 @@ lazy val zio: Project = (project in file("implementations/zio"))
     name := "zio",
     publishArtifact in Test := true,
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio" % "1.0.0-RC17"
+      "dev.zio" %% "zio" % "1.0.0-RC18-1"
     )
   )
   .dependsOn(coreJVM % compileAndTest)
@@ -436,8 +436,8 @@ lazy val asyncHttpClientZioStreamsBackend: Project =
   asyncHttpClientBackendProject("zio-streams")
     .settings(
       libraryDependencies ++= Seq(
-        "dev.zio" %% "zio-streams" % "1.0.0-RC17",
-        "dev.zio" %% "zio-interop-reactivestreams" % "1.0.3.5-RC3"
+        "dev.zio" %% "zio-streams" % "1.0.0-RC18-1",
+        "dev.zio" %% "zio-interop-reactivestreams" % "1.0.3.5-RC4"
       )
     )
     .dependsOn(zio % compileAndTest)

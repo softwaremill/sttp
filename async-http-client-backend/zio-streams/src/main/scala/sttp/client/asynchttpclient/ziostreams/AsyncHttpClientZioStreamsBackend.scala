@@ -19,7 +19,7 @@ import sttp.client.testing.SttpBackendStub
 import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 import zio._
 import zio.blocking.Blocking
-import zio.interop.reactiveStreams._
+import zio.interop.reactivestreams._
 import zio.stream._
 
 class AsyncHttpClientZioStreamsBackend[R] private (
@@ -49,7 +49,7 @@ class AsyncHttpClientZioStreamsBackend[R] private (
       .effectBlocking(new FileOutputStream(f))
       .flatMap { os => p.toStream(bufferSize).map(b => Chunk.fromArray(b.array())).run(ZSink.fromOutputStream(os)) }
       .unit
-      .provide(Blocking.Live)
+      .provideLayer(Blocking.live)
   }
 }
 
