@@ -19,7 +19,7 @@ import sttp.client.testing.SttpBackendStub
 import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 import zio._
 import zio.blocking.Blocking
-import zio.interop.reactiveStreams._
+import zio.interop.reactivestreams._
 import zio.stream._
 
 class AsyncHttpClientZioStreamsBackend[R] private (
