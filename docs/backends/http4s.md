@@ -6,6 +6,18 @@ This backend is based on [http4s](https://http4s.org) (blaze client) and is **as
 "com.softwaremill.sttp.client" %% "http4s-backend" % "2.0.2"
 ```
 
+Next you'll need to add an implicit value:
+
+```scala
+import sttp.client.http4s._
+
+implicit val sttpBackend = Http4sBackend.usingClient(client)
+// or
+implicit val sttpBackend = Http4sBackend.usingClientBuilder(blazeClientBuilder)
+// or
+implicit val sttpBackend = Http4sBackend.usingDefaultClientBuilder()
+```
+
 The backend can be created for any type implementing the `cats.effect.Effect` typeclass, such as `cats.effect.IO`. Sending a request is a non-blocking, lazily-evaluated operation and results in a wrapped response. There's a transitive dependency on `http4s`. 
 
 There are also [other cats-effect-based backends](catseffect.html), which don't depend on http4s. 

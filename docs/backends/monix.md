@@ -12,7 +12,12 @@ To use, add the following dependency to your project:
            
 This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client), uses [Netty](http://netty.io) behind the scenes and supports effect cancellation.
 
-Next you'll need to add an implicit value:
+Next you'll need to define a backend instance as an implicit value. This can be done in two basic ways:
+
+* by creating a `Task`, which describes how the backend is created, or instantiating the backend directly. In this case, you'll need to close the backend manually
+* by creating a `Resource`, which will instantiate the backend and close it after it has been used
+
+A non-comprehensive summary of how the backend can be created is as follows:
 
 ```scala
 import sttp.client.asynchttpclient.monix.AsyncHttpClientMonixBackend

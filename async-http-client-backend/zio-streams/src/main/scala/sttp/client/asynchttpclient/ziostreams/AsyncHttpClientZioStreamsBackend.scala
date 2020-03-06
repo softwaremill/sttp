@@ -78,6 +78,13 @@ object AsyncHttpClientZioStreamsBackend {
       )
     )
 
+  def managed[R](
+      runtime: Runtime[R],
+      options: SttpBackendOptions = SttpBackendOptions.Default,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+  ): TaskManaged[SttpBackend[Task, Stream[Throwable, ByteBuffer], WebSocketHandler]] =
+    ZManaged.make(apply(runtime, options, customizeRequest))(_.close().ignore)
+
   def usingConfig[R](
       runtime: Runtime[R],
       cfg: AsyncHttpClientConfig,
@@ -86,6 +93,13 @@ object AsyncHttpClientZioStreamsBackend {
     Task.effect(
       AsyncHttpClientZioStreamsBackend(runtime, new DefaultAsyncHttpClient(cfg), closeClient = true, customizeRequest)
     )
+
+  def managedUsingConfig[R](
+      runtime: Runtime[R],
+      cfg: AsyncHttpClientConfig,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+  ): TaskManaged[SttpBackend[Task, Nothing, WebSocketHandler]] =
+    ZManaged.make(usingConfig(runtime, cfg, customizeRequest))(_.close().ignore)
 
   /**
     * @param updateConfig A function which updates the default configuration (created basing on `options`).
@@ -104,6 +118,17 @@ object AsyncHttpClientZioStreamsBackend {
         customizeRequest
       )
     )
+
+  /**
+    * @param updateConfig A function which updates the default configuration (created basing on `options`).
+    */
+  def managedUsingConfigBuilder[R](
+      runtime: Runtime[R],
+      updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
+      options: SttpBackendOptions = SttpBackendOptions.Default,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+  ): TaskManaged[SttpBackend[Task, Nothing, WebSocketHandler]] =
+    ZManaged.make(usingConfigBuilder(runtime, updateConfig, options, customizeRequest))(_.close().ignore)
 
   def usingClient[R](
       runtime: Runtime[R],

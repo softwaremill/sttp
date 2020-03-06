@@ -15,7 +15,7 @@ import sttp.client.asynchttpclient.{AsyncHttpClientBackend, WebSocketHandler}
 import sttp.client.impl.zio.TaskMonadAsyncError
 import sttp.client.testing.SttpBackendStub
 import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
-import zio._
+import zio.{TaskManaged, _}
 
 class AsyncHttpClientZioBackend private (
     asyncHttpClient: AsyncHttpClient,
@@ -47,11 +47,23 @@ object AsyncHttpClientZioBackend {
       AsyncHttpClientZioBackend(AsyncHttpClientBackend.defaultClient(options), closeClient = true, customizeRequest)
     )
 
+  def managed(
+      options: SttpBackendOptions = SttpBackendOptions.Default,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+  ): TaskManaged[SttpBackend[Task, Nothing, WebSocketHandler]] =
+    ZManaged.make(apply(options, customizeRequest))(_.close().ignore)
+
   def usingConfig(
       cfg: AsyncHttpClientConfig,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   ): Task[SttpBackend[Task, Nothing, WebSocketHandler]] =
     Task.effect(AsyncHttpClientZioBackend(new DefaultAsyncHttpClient(cfg), closeClient = true, customizeRequest))
+
+  def managedUsingConfig(
+      cfg: AsyncHttpClientConfig,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+  ): TaskManaged[SttpBackend[Task, Nothing, WebSocketHandler]] =
+    ZManaged.make(usingConfig(cfg, customizeRequest))(_.close().ignore)
 
   /**
     * @param updateConfig A function which updates the default configuration (created basing on `options`).
@@ -68,6 +80,16 @@ object AsyncHttpClientZioBackend {
         customizeRequest
       )
     )
+
+  /**
+    * @param updateConfig A function which updates the default configuration (created basing on `options`).
+    */
+  def managedUsingConfigBuilder(
+      updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
+      options: SttpBackendOptions = SttpBackendOptions.Default,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+  ): TaskManaged[SttpBackend[Task, Nothing, WebSocketHandler]] =
+    ZManaged.make(usingConfigBuilder(updateConfig, options, customizeRequest))(_.close().ignore)
 
   def usingClient(
       client: AsyncHttpClient,

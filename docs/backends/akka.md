@@ -17,6 +17,8 @@ Note that you'll also need an explicit dependency on akka-streams, as akka-http 
 Next you'll need to add an implicit value:
 
 ```scala
+import sttp.client.akkahttp._
+
 implicit val sttpBackend = AkkaHttpBackend()
 
 // or, if you'd like to use an existing actor system:
