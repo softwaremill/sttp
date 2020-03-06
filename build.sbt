@@ -164,6 +164,18 @@ val circeVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "0.11.1"
   case _             => "0.13.0"
 }
+val playJsonVersion: Option[(Long, Long)] => String = {
+  case Some((2, 11)) => "2.7.4"
+  case _             => "2.8.1"
+}
+val catsEffectVersion: Option[(Long, Long)] => String = {
+  case Some((2, 11)) => "2.0.0"
+  case _             => "2.1.2"
+}
+val fs2Version: Option[(Long, Long)] => String = {
+  case Some((2, 11)) => "2.1.0"
+  case _             => "2.2.2"
+}
 
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.11"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % "2.5.29"
@@ -173,7 +185,7 @@ val scalaNativeTestInterfaceVersion = "0.4.0-M2"
 val scalaTestNativeVersion = "3.2.0-M2"
 val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion
 
-val modelVersion = "1.0.0"
+val modelVersion = "1.0.1"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
 
@@ -312,14 +324,13 @@ lazy val cats = crossProject(JSPlatform, JVMPlatform)
   .settings(
     name := "cats",
     publishArtifact in Test := true,
-    libraryDependencies ++= Seq(
-      "org.typelevel" %%% "cats-effect" % "2.0.0"
+    libraryDependencies ++= dependenciesFor(scalaVersion.value)(
+      "org.typelevel" %%% "cats-effect" % catsEffectVersion(_)
     )
   )
 lazy val catsJS = cats.js.dependsOn(coreJS % compileAndTest)
 lazy val catsJVM = cats.jvm.dependsOn(coreJVM % compileAndTest)
 
-val fs2Version = "2.1.0"
 lazy val fs2 = crossProject(JSPlatform, JVMPlatform)
   .withoutSuffixFor(JVMPlatform)
   .crossType(CrossType.Pure)
@@ -329,8 +340,8 @@ lazy val fs2 = crossProject(JSPlatform, JVMPlatform)
   .settings(
     name := "fs2",
     publishArtifact in Test := true,
-    libraryDependencies ++= Seq(
-      "co.fs2" %%% "fs2-core" % fs2Version
+    libraryDependencies ++= dependenciesFor(scalaVersion.value)(
+      "co.fs2" %%% "fs2-core" % fs2Version(_)
     )
   )
 lazy val fs2JS = fs2.js.dependsOn(coreJS % compileAndTest)
@@ -397,7 +408,7 @@ lazy val asyncHttpClientBackend: Project =
     .settings(
       name := "async-http-client-backend",
       libraryDependencies ++= Seq(
-        "org.asynchttpclient" % "async-http-client" % "2.10.5"
+        "org.asynchttpclient" % "async-http-client" % "2.11.0"
       )
     )
     .dependsOn(coreJVM % compileAndTest)
@@ -442,9 +453,9 @@ lazy val asyncHttpClientCatsBackend: Project =
 lazy val asyncHttpClientFs2Backend: Project =
   asyncHttpClientBackendProject("fs2")
     .settings(
-      libraryDependencies ++= Seq(
-        "co.fs2" %% "fs2-reactive-streams" % fs2Version,
-        "co.fs2" %% "fs2-io" % fs2Version
+      libraryDependencies ++= dependenciesFor(scalaVersion.value)(
+        "co.fs2" %% "fs2-reactive-streams" % fs2Version(_),
+        "co.fs2" %% "fs2-io" % fs2Version(_)
       )
     )
     .dependsOn(catsJVM % compileAndTest)
@@ -584,9 +595,9 @@ lazy val playJson = crossProject(JSPlatform, JVMPlatform)
   .jvmSettings(commonJvmSettings: _*)
   .settings(
     name := "play-json",
-    libraryDependencies ++= Seq(
-      "com.typesafe.play" %%% "play-json" % "2.7.4",
-      "org.scalatest" %%% "scalatest" % scalaTestVersion % Test
+    libraryDependencies ++= dependenciesFor(scalaVersion.value)(
+      "com.typesafe.play" %%% "play-json" % playJsonVersion(_),
+      _ => "org.scalatest" %%% "scalatest" % scalaTestVersion % Test
     )
   )
 lazy val playJsonJS = playJson.js.dependsOn(coreJS, jsonCommonJS)

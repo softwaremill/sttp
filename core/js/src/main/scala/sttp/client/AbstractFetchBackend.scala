@@ -209,7 +209,13 @@ abstract class AbstractFetchBackend[F[_], S](options: FetchOptions, customizeReq
       else ByteBuffer.allocate(original.capacity)
     val readOnlyCopy = original.asReadOnlyBuffer
     readOnlyCopy.rewind
-    clone.put(original).flip.position(original.position).limit(original.limit).order(original.order)
+    clone
+      .put(original)
+      .flip
+      .position(original.position)
+      .limit(original.limit)
+      .asInstanceOf[ByteBuffer]
+      .order(original.order)
   }
 
   protected def handleStreamBody(s: S): F[js.UndefOr[BodyInit]]
