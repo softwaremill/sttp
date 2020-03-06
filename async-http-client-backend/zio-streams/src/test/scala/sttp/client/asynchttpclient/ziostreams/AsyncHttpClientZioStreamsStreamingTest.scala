@@ -13,7 +13,7 @@ import zio.stream.Stream
 class AsyncHttpClientZioStreamsStreamingTest extends StreamingTest[Task, Stream[Throwable, ByteBuffer]] {
 
   override implicit val backend: SttpBackend[Task, Stream[Throwable, ByteBuffer], NothingT] =
-    runtime.unsafeRunSync(AsyncHttpClientZioStreamsBackend(runtime)).getOrElse(c => throw c.squash)
+    runtime.unsafeRun(AsyncHttpClientZioStreamsBackend())
   override implicit val convertToFuture: ConvertToFuture[Task] = convertZioIoToFuture
 
   override def bodyProducer(chunks: Iterable[Array[Byte]]): Stream[Throwable, ByteBuffer] =

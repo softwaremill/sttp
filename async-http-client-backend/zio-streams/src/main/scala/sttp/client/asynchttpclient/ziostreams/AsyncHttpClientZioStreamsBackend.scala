@@ -64,71 +64,104 @@ object AsyncHttpClientZioStreamsBackend {
       new AsyncHttpClientZioStreamsBackend(runtime, asyncHttpClient, closeClient, customizeRequest)
     )
 
-  def apply[R](
-      runtime: Runtime[R],
+  def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   ): Task[SttpBackend[Task, Stream[Throwable, ByteBuffer], WebSocketHandler]] =
-    Task.effect(
-      AsyncHttpClientZioStreamsBackend(
-        runtime,
-        AsyncHttpClientBackend.defaultClient(options),
-        closeClient = true,
-        customizeRequest
+    ZIO
+      .runtime[Any]
+      .flatMap(runtime =>
+        Task.effect(
+          AsyncHttpClientZioStreamsBackend(
+            runtime,
+            AsyncHttpClientBackend.defaultClient(options),
+            closeClient = true,
+            customizeRequest
+          )
+        )
       )
-    )
 
-  def managed[R](
-      runtime: Runtime[R],
+  def managed(
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   ): TaskManaged[SttpBackend[Task, Stream[Throwable, ByteBuffer], WebSocketHandler]] =
-    ZManaged.make(apply(runtime, options, customizeRequest))(_.close().ignore)
+    ZManaged.make(apply(options, customizeRequest))(_.close().ignore)
 
-  def usingConfig[R](
-      runtime: Runtime[R],
-      cfg: AsyncHttpClientConfig,
-      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): Task[SttpBackend[Task, Stream[Throwable, ByteBuffer], WebSocketHandler]] =
-    Task.effect(
-      AsyncHttpClientZioStreamsBackend(runtime, new DefaultAsyncHttpClient(cfg), closeClient = true, customizeRequest)
-    )
-
-  def managedUsingConfig[R](
-      runtime: Runtime[R],
-      cfg: AsyncHttpClientConfig,
-      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): TaskManaged[SttpBackend[Task, Nothing, WebSocketHandler]] =
-    ZManaged.make(usingConfig(runtime, cfg, customizeRequest))(_.close().ignore)
-
-  /**
-    * @param updateConfig A function which updates the default configuration (created basing on `options`).
-    */
-  def usingConfigBuilder[R](
-      runtime: Runtime[R],
-      updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
+  def layer(
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+  ): ZLayer.NoDeps[Throwable, SttpClient] =
+    ZLayer.fromManaged(managed(options, customizeRequest))
+
+  def usingConfig(
+      cfg: AsyncHttpClientConfig,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   ): Task[SttpBackend[Task, Stream[Throwable, ByteBuffer], WebSocketHandler]] =
-    Task.effect(
-      AsyncHttpClientZioStreamsBackend(
-        runtime,
-        AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
-        closeClient = true,
-        customizeRequest
+    ZIO
+      .runtime[Any]
+      .flatMap(runtime =>
+        Task.effect(
+          AsyncHttpClientZioStreamsBackend(
+            runtime,
+            new DefaultAsyncHttpClient(cfg),
+            closeClient = true,
+            customizeRequest
+          )
+        )
       )
-    )
+
+  def managedUsingConfig(
+      cfg: AsyncHttpClientConfig,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+  ): TaskManaged[SttpBackend[Task, Stream[Throwable, ByteBuffer], WebSocketHandler]] =
+    ZManaged.make(usingConfig(cfg, customizeRequest))(_.close().ignore)
+
+  def layerUsingConfig(
+      cfg: AsyncHttpClientConfig,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+  ): ZLayer.NoDeps[Throwable, SttpClient] =
+    ZLayer.fromManaged(managedUsingConfig(cfg, customizeRequest))
 
   /**
     * @param updateConfig A function which updates the default configuration (created basing on `options`).
     */
-  def managedUsingConfigBuilder[R](
-      runtime: Runtime[R],
+  def usingConfigBuilder(
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): TaskManaged[SttpBackend[Task, Nothing, WebSocketHandler]] =
-    ZManaged.make(usingConfigBuilder(runtime, updateConfig, options, customizeRequest))(_.close().ignore)
+  ): Task[SttpBackend[Task, Stream[Throwable, ByteBuffer], WebSocketHandler]] =
+    ZIO
+      .runtime[Any]
+      .flatMap(runtime =>
+        Task.effect(
+          AsyncHttpClientZioStreamsBackend(
+            runtime,
+            AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
+            closeClient = true,
+            customizeRequest
+          )
+        )
+      )
+
+  /**
+    * @param updateConfig A function which updates the default configuration (created basing on `options`).
+    */
+  def managedUsingConfigBuilder(
+      updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
+      options: SttpBackendOptions = SttpBackendOptions.Default,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+  ): TaskManaged[SttpBackend[Task, Stream[Throwable, ByteBuffer], WebSocketHandler]] =
+    ZManaged.make(usingConfigBuilder(updateConfig, options, customizeRequest))(_.close().ignore)
+
+  /**
+    * @param updateConfig A function which updates the default configuration (created basing on `options`).
+    */
+  def layerUsingConfigBuilder(
+      updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
+      options: SttpBackendOptions = SttpBackendOptions.Default,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+  ): ZLayer.NoDeps[Throwable, SttpClient] =
+    ZLayer.fromManaged(managedUsingConfigBuilder(updateConfig, options, customizeRequest))
 
   def usingClient[R](
       runtime: Runtime[R],
@@ -136,6 +169,14 @@ object AsyncHttpClientZioStreamsBackend {
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   ): SttpBackend[Task, Stream[Throwable, ByteBuffer], WebSocketHandler] =
     AsyncHttpClientZioStreamsBackend(runtime, client, closeClient = false, customizeRequest)
+
+  def layerUsingClient(
+      client: AsyncHttpClient,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+  ): ZLayer.NoDeps[Nothing, SttpClient] =
+    ZLayer.fromAcquireRelease(UIO.runtime.map(runtime => usingClient(runtime, client, customizeRequest)))(
+      _.close().ignore
+    )
 
   /**
     * Create a stub backend for testing, which uses the [[Task]] response wrapper, and supports

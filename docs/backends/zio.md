@@ -35,6 +35,26 @@ AsyncHttpClientZioBackend.usingConfigBuilder(adjustFunction, sttpOptions).flatMa
 implicit val sttpBackend = AsyncHttpClientZioBackend.usingClient(asyncHttpClient)
 ```
 
+## ZIO environment
+
+As an alternative, ZIO environment can be used. In this case, a type alias is provided for the service definition (a streaming version is also available when using the streaming backend in the `ziostreams` package):
+
+```scala
+package sttp.client.asynchttpclient.zio
+
+type SttpClient = Has[SttpBackend[Task, Nothing, WebSocketHandler]]
+```
+
+The lifecycle of the `SttpClient` service is described by `ZLayer`s, which can be created using the `.layer`/`.layerUsingConfig`/... methods on `AsyncHttpClientZioBackend`.
+
+The `SttpClient` companion object contains effect descriptions which use the `SttpClient` service from the environment to send requests or open websockets. This is different from sttp usage with other effect libraries (which use an implicit backend when `.send()`/`.openWebsocket()` is invoked on the request), but is more in line with how other ZIO services work. For example:
+
+```scala
+val request = basicRequest.get(uri"https://httpbin.org/get")
+
+val send: ZIO[SttpClient, Throwable, Unit] = SttpClient.send(request)
+```
+
 ## Streaming
 
 To use streaming using zio-streams, add the following dependency instead:

@@ -11,6 +11,6 @@ import zio.stream._
 class AsyncHttpClientZioStreamsHttpTest extends HttpTest[Task] {
 
   override implicit val backend: SttpBackend[Task, Stream[Throwable, ByteBuffer], NothingT] =
-    runtime.unsafeRunSync(AsyncHttpClientZioStreamsBackend(runtime)).getOrElse(c => throw c.squash)
+    runtime.unsafeRun(AsyncHttpClientZioStreamsBackend())
   override implicit val convertToFuture: ConvertToFuture[Task] = convertZioIoToFuture
 }
