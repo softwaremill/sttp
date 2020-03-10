@@ -73,7 +73,7 @@ trait LowLevelListenerWebSocketTest[F[_], WS, WS_HANDLER[_]]
             .openWebsocket(createHandler(_ => ()))
             .map(_ => fail("An exception should be thrown"): Assertion)
         ) {
-          case e => (e shouldBe a[SttpClientException]).unit
+          case e => (e shouldBe a[SttpClientException.ReadException]).unit
         }
         .toFuture()
     }

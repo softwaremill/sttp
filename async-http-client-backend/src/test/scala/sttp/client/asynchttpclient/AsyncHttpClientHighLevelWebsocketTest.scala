@@ -20,7 +20,7 @@ abstract class AsyncHttpClientHighLevelWebsocketTest[F[_]] extends HighLevelWebs
           .openWebsocketF(createHandler(None))
           .map(_ => fail: Assertion)
       } {
-        case e: Exception => (e shouldBe a[SttpClientException]).unit
+        case e: Exception => (e shouldBe a[SttpClientException.ReadException]).unit
       }
       .toFuture()
   }

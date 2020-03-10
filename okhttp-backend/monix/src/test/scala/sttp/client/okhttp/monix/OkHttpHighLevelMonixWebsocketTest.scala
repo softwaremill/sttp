@@ -31,7 +31,7 @@ class OkHttpHighLevelMonixWebsocketTest extends HighLevelWebsocketTest[Task, Web
           .openWebsocketF(createHandler(None))
           .map(_ => fail: Assertion)
       } {
-        case e: Exception => (e shouldBe a[SttpClientException]).unit
+        case e: Exception => (e shouldBe a[SttpClientException.ReadException]).unit
       }
       .toFuture()
   }
