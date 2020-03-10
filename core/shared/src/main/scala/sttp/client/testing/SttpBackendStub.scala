@@ -32,7 +32,7 @@ import scala.util.{Failure, Success, Try}
   * or headers. A [[ClassCastException]] might occur if for a given request,
   * a response is specified with the incorrect or inconvertible body type.
   */
-class SttpBackendStub[F[_], S] private (
+class SttpBackendStub[F[_], S](
     monad: MonadError[F],
     matchers: PartialFunction[Request[_, _], F[Response[_]]],
     fallback: Option[SttpBackend[F, S, NothingT]]
