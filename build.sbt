@@ -185,7 +185,7 @@ val scalaNativeTestInterfaceVersion = "0.4.0-M2"
 val scalaTestNativeVersion = "3.2.0-M2"
 val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion
 
-val modelVersion = "1.0.1"
+val modelVersion = "1.0.2"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
 
