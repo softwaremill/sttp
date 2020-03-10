@@ -32,7 +32,11 @@ val response = request.send()
 println(response.header("Content-Length")) 
 
 // response.body: by default read into an Either[String, String] to indicate failure or success 
-println(response.body)                     
+println(response.body)           
+
+// alternatively, if you prefer to pass the backend explicitly, instead
+// of using implicits, you can also call:
+val sameResponse = backend.send(request)                      
 ```
 
 ## Documentation

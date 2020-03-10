@@ -205,24 +205,71 @@ Example code:
 ```scala
 import sttp.client._
 import sttp.client.asynchttpclient.zio._
-import sttp.client.ws.{WebSocket, WebSocketResponse}
+import sttp.client.ws.WebSocket
 import sttp.model.ws.WebSocketFrame
 import zio._
+import zio.console.Console
 
-def useWebsocket(ws: WebSocket[Task]): Task[Unit] = {
-  def send(i: Int) = ws.send(WebSocketFrame.text(s"Hello $i!"))
-  val receive = ws.receiveText().flatMap(t => Task(println(s"RECEIVED: $t")))
-  send(1) *> send(2) *> receive *> receive *> ws.close
+object WebsocketZio extends App {
+  def useWebsocket(ws: WebSocket[Task]): ZIO[Console, Throwable, Unit] = {
+    def send(i: Int) = ws.send(WebSocketFrame.text(s"Hello $i!"))
+    val receive = ws.receiveText().flatMap(t => console.putStrLn(s"RECEIVED: $t"))
+    send(1) *> send(2) *> receive *> receive *> ws.close
+  }
+
+  // create a description of a program, which requires two dependencies in the environment:
+  // the SttpClient, and the Console
+  val sendAndPrint: ZIO[Console with SttpClient, Throwable, Unit] = for {
+    response <- SttpClient.openWebsocket(basicRequest.get(uri"wss://echo.websocket.org"))
+    _ <- useWebsocket(response.result)
+  } yield ()
+
+  override def run(args: List[String]): ZIO[ZEnv, Nothing, Int] = {
+    // provide an implementation for the SttpClient dependency; other dependencies are
+    // provided by Zio
+    sendAndPrint.provideCustomLayer(AsyncHttpClientZioBackend.layer()).fold(_ => 1, _ => 0)
+  }
 }
+```
 
-AsyncHttpClientZioBackend().flatMap { implicit backend =>
-  val response: Task[WebSocketResponse[WebSocket[Task]]] = basicRequest
-    .get(uri"wss://echo.websocket.org")
-    .openWebsocketF(ZioWebSocketHandler())
+## Open a websocket using the high-level websocket interface and Monix
 
-  response
-    .flatMap(r => useWebsocket(r.result))
-    .ensuring(backend.close().catchAll(_ => ZIO.unit))
+Required dependencies:
+
+```scala
+libraryDependencies ++= List("com.softwaremill.sttp.client" %% "async-http-client-backend-monix" % "2.0.3")
+```
+
+Example code:
+
+```scala
+import monix.eval.Task
+import sttp.client._
+import sttp.client.ws.{WebSocket, WebSocketResponse}
+import sttp.model.ws.WebSocketFrame
+import sttp.client.asynchttpclient.monix.{AsyncHttpClientMonixBackend, MonixWebSocketHandler}
+import cats.implicits._
+
+object WebsocketMonix extends App {
+  import monix.execution.Scheduler.Implicits.global
+
+  def useWebsocket(ws: WebSocket[Task]): Task[Unit] = {
+    def send(i: Int) = ws.send(WebSocketFrame.text(s"Hello $i!"))
+    val receive = ws.receiveText().flatMap(t => Task(println(s"RECEIVED: $t")))
+    send(1) *> send(2) *> receive *> receive *> ws.close
+  }
+
+  val websocketTask: Task[Unit] = AsyncHttpClientMonixBackend().flatMap { implicit backend =>
+    val response: Task[WebSocketResponse[WebSocket[Task]]] = basicRequest
+      .get(uri"wss://echo.websocket.org")
+      .openWebsocketF(MonixWebSocketHandler())
+
+    response
+      .flatMap(r => useWebsocket(r.result))
+      .guarantee(backend.close())
+  }
+
+  websocketTask.runSyncUnsafe()
 }
 ```
 

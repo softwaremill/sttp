@@ -34,6 +34,13 @@ implicit val backend = HttpURLConnectionBackend()
 val response = myRequest.send()
 ```
 
+Alternatively, if you prefer to pass the backend explicitly, instead of using implicits, you can also send the request the following way:
+
+```scala
+val backend = HttpURLConnectionBackend()
+val response = backend.send(request)     
+```
+
 ## Next steps
 
 Read more about:

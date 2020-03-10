@@ -4,6 +4,8 @@ Apart from [streaming](requests/streaming.html), backends (see [backends summary
 
 The difference is that `openWebsocket(handler)` should be called instead of `send()`, given an instance of a backend-specific websocket handler. Refer to documentation of individual backends for details on how to instantiate the handler.
 
+As with regular requests, instead of calling `request.openWebsocket(handler)` and using an implicit backend instance, it is also possible to call `backend.openWebsocket(request, handler)`.
+
 If creating the websocket handler is a side-effecting operation (and the handler is wrapped with an effects wrapper), the `openWebsocketF(handler)` can be used.
 
 After opening a websocket, a `sttp.client.ws.WebSocketResponse` instance is returned, wrapped in a backend-specific effects wrapper, such as `Future`, `IO`, `Task` or no wrapper for synchronous backends. If the protocol upgrade hasn't been successful, the request will fail with an error (represented as an exception or a failed effects wrapper).
@@ -56,6 +58,9 @@ import sttp.client._
 import sttp.client.ws.{WebSocket, WebSocketResponse}
 import sttp.model.ws.WebSocketFrame
 import sttp.client.asynchttpclient.monix.MonixWebSocketHandler
+import sttp.client.asynchttpclient.WebSocketHandler
+
+implicit val backend: SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler] = ...
 
 val response: Task[WebSocketResponse[WebSocket[Task]]] = basicRequest
   .get(uri"wss://echo.websocket.org")

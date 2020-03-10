@@ -36,12 +36,18 @@ A request definition can be created without knowing how it will be sent. But to 
 To invoke the `send()` method on a request description, an implicit value of type `SttpBackend` needs to be in scope:
 
 ```scala
-    implicit val backend = HttpURLConnectionBackend()
-
-    val response: Response[String] = request.send()
+implicit val backend = HttpURLConnectionBackend()
+val response: Response[String] = request.send()
 ```        
 
 The default backend doesn't wrap the response into any container, but other asynchronous backends might do so. See the section on [backends](backends/summary.html) for more details.
+
+Alternatively, if you prefer to pass the backend explicitly, instead of using implicits, you can also send the request the following way:
+
+```scala
+val backend = HttpURLConnectionBackend()
+val response = backend.send(request)     
+```
 
 ```eval_rst
 .. note::
