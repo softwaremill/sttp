@@ -52,7 +52,15 @@ The `SttpClient` companion object contains effect descriptions which use the `St
 ```scala
 val request = basicRequest.get(uri"https://httpbin.org/get")
 
-val send: ZIO[SttpClient, Throwable, Unit] = SttpClient.send(request)
+val send: ZIO[SttpClient, Throwable, Response[Either[String, String]]] = SttpClient.send(request)
+```
+
+Example using websockets:
+
+```scala
+val request = basicRequest.get(uri"wss://echo.websocket.org")
+
+val open: ZIO[SttpClient, Throwable, WebSocketResponse[WebSocket[Task]]] = SttpClient.openWebsocket(request)
 ```
 
 ## Streaming
@@ -63,7 +71,7 @@ To use streaming using zio-streams, add the following dependency instead:
 "com.softwaremill.sttp.client" %% "async-http-client-backend-zio-streams" % "2.0.3"
 ```
 
-And use the `sttp.client.asynchttpclient.ziostreams.AsyncHttpClientZioStreamsBackend` backend implementation. The backend supports streaming of type `Stream[Throwable, ByteBuffer]`.
+And use the `sttp.client.asynchttpclient.ziostreams.AsyncHttpClientZioStreamsBackend` backend implementation. The backend supports streaming of type `Stream[Throwable, ByteBuffer]`. To leverage ZIO environment, use the `SttpStreamsClient` object to create request send/websocket open effects.
 
 Requests can be sent with a streaming body:
 
@@ -115,4 +123,6 @@ The ZIO backend supports:
 * high-level, "functional" websocket interface, through the `sttp.client.asynchttpclient.zio.ZioWebSocketHandler`
 * low-level interface by wrapping a low-level Java interface, `sttp.client.asynchttpclient.WebSocketHandler`
 
-See [websockets](../websockets.html) for details on how to use the high-level and low-level interfaces.
+See [websockets](../websockets.html) for details on how to use the high-level and low-level interfaces. Websockets
+opened using the `SttpClient.openWebsocket` and `SttpStreamsClient.openWebsocket` (leveraging ZIO environment) always
+use the high-level interface.

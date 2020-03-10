@@ -440,7 +440,7 @@ lazy val asyncHttpClientZioStreamsBackend: Project =
         "dev.zio" %% "zio-interop-reactivestreams" % "1.0.3.5-RC5"
       )
     )
-    .dependsOn(zio % compileAndTest)
+    .dependsOn(zio % compileAndTest, asyncHttpClientZioBackend)
 
 lazy val asyncHttpClientMonixBackend: Project =
   asyncHttpClientBackendProject("monix")
