@@ -46,6 +46,16 @@ package object internal {
     (buf: Buffer).rewind()
     buf
   }
+
+  /**
+    * Removes quotes surrounding the charset.
+    */
+  private[client] def sanitizeCharset(charset: String): String = {
+    val c2 = charset.trim()
+    val c3 = if (c2.startsWith("\"")) c2.substring(1) else c2
+    if (c3.endsWith("\"")) c3.substring(0, c3.length - 1) else c3
+  }
+
   @implicitNotFound(
     "This is a partial request, the method & url are not specified. Use " +
       ".get(...), .post(...) etc. to obtain a non-partial request."

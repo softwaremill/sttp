@@ -74,7 +74,8 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
   def asStringAlways(charset: String): ResponseAs[String, Nothing] = asByteArrayAlways.mapWithMetadata {
     (bytes, metadata) =>
       val charset2 = metadata.contentType.flatMap(charsetFromContentType).getOrElse(charset)
-      new String(bytes, charset2)
+      val charset3 = sanitizeCharset(charset2)
+      new String(bytes, charset3)
   }
 
   def asByteArray: ResponseAs[Either[String, Array[Byte]], Nothing] = asEither(asStringAlways, asByteArrayAlways)
@@ -90,8 +91,10 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
   /**
     * Use the given charset by default, unless specified otherwise in the response headers.
     */
-  def asParams(charset: String): ResponseAs[Either[String, Seq[(String, String)]], Nothing] =
-    asString(charset).mapRight(ResponseAs.parseParams(_, charset))
+  def asParams(charset: String): ResponseAs[Either[String, Seq[(String, String)]], Nothing] = {
+    val charset2 = sanitizeCharset(charset)
+    asString(charset2).mapRight(ResponseAs.parseParams(_, charset2))
+  }
 
   def asStream[S]: ResponseAs[Either[String, S], S] = asEither(asStringAlways, asStreamAlways)
 

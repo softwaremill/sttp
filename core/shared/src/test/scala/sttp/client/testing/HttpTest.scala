@@ -118,6 +118,15 @@ trait HttpTest[F[_]]
           response.body should be(Left(s"POST /echo/custom_status/${unexpectedStatus.code} $testBody"))
         }
     }
+
+    "as string, when the content type encoding is in quotes" in {
+      basicRequest
+        .post(uri"$endpoint/set_content_type_header_with_encoding_in_quotes")
+        .body(testBody)
+        .send()
+        .toFuture()
+        .map { response => response.body should be(Right(testBody)) }
+    }
   }
 
   "parameters" - {

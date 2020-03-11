@@ -172,6 +172,16 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
           }
         }
       }
+    } ~ path("set_content_type_header_with_encoding_in_quotes") {
+      entity(as[String]) { body: String =>
+        complete(
+          HttpResponse(
+            entity = HttpEntity(body).withContentType(
+              ContentType(MediaType.custom("text/plain", binary = false), () => HttpCharset.custom("\"utf-8\""))
+            )
+          )
+        )
+      }
     } ~ path("secure_basic") {
       authenticateBasic("test realm", {
         case c @ Credentials.Provided(un) if un == "adam" && c.verify("1234") =>
