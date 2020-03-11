@@ -310,7 +310,7 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
         )
       }
     } ~ path("empty_unauthorized_response") {
-      post {
+      (post | head) {
         import akka.http.scaladsl.model._
         complete(
           HttpResponse(

@@ -235,7 +235,7 @@ class HttpURLConnectionBackend private (
     val code = StatusCode.notValidated(c.getResponseCode)
     val wrappedIs = if (c.getRequestMethod != "HEAD") {
       wrapInput(contentEncoding, handleNullInput(is))
-    } else is
+    } else handleNullInput(is)
     val responseMetadata = ResponseMetadata(headers, code, c.getResponseMessage)
     val body = readResponseBody(wrappedIs, responseAs, responseMetadata)
 

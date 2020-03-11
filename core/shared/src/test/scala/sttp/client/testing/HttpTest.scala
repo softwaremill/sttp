@@ -368,14 +368,21 @@ trait HttpTest[F[_]]
   }
 
   "empty response" - {
+    def emptyAnauthroizedResponseUri = uri"$endpoint/empty_unauthorized_response"
     def postEmptyResponse =
       basicRequest
-        .post(uri"$endpoint/empty_unauthorized_response")
+        .post(emptyAnauthroizedResponseUri)
         .body("{}")
         .contentType("application/json")
 
     "parse an empty error response as empty string" in {
       postEmptyResponse.send().toFuture().map { response => response.body should be(Left("")) }
+    }
+
+    "in a head request" in {
+      basicRequest.head(emptyAnauthroizedResponseUri).send().toFuture().map { response =>
+        response.body should be(Left(""))
+      }
     }
   }
 
