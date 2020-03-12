@@ -7,7 +7,7 @@ import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success}
 
 package object zio {
-  val runtime: Runtime[Unit] = Runtime.default
+  val runtime: Runtime[ZEnv] = Runtime.default
 
   val convertZioIoToFuture: ConvertToFuture[Task] = new ConvertToFuture[Task] {
     override def toFuture[T](value: Task[T]): Future[T] = {

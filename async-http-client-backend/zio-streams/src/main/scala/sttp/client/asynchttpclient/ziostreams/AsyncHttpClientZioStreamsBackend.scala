@@ -90,7 +90,7 @@ object AsyncHttpClientZioStreamsBackend {
   def layer(
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): ZLayer.NoDeps[Throwable, SttpStreamsClient] =
+  ): Layer[Throwable, SttpStreamsClient] =
     ZLayer.fromManaged(managed(options, customizeRequest))
 
   def usingConfig(
@@ -119,7 +119,7 @@ object AsyncHttpClientZioStreamsBackend {
   def layerUsingConfig(
       cfg: AsyncHttpClientConfig,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): ZLayer.NoDeps[Throwable, SttpStreamsClient] =
+  ): Layer[Throwable, SttpStreamsClient] =
     ZLayer.fromManaged(managedUsingConfig(cfg, customizeRequest))
 
   /**
@@ -160,7 +160,7 @@ object AsyncHttpClientZioStreamsBackend {
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): ZLayer.NoDeps[Throwable, SttpStreamsClient] =
+  ): Layer[Throwable, SttpStreamsClient] =
     ZLayer.fromManaged(managedUsingConfigBuilder(updateConfig, options, customizeRequest))
 
   def usingClient[R](
@@ -173,7 +173,7 @@ object AsyncHttpClientZioStreamsBackend {
   def layerUsingClient(
       client: AsyncHttpClient,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): ZLayer.NoDeps[Nothing, SttpStreamsClient] =
+  ): Layer[Nothing, SttpStreamsClient] =
     ZLayer.fromAcquireRelease(UIO.runtime.map(runtime => usingClient(runtime, client, customizeRequest)))(
       _.close().ignore
     )
