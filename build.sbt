@@ -437,7 +437,7 @@ lazy val asyncHttpClientZioStreamsBackend: Project =
     .settings(
       libraryDependencies ++= Seq(
         "dev.zio" %% "zio-streams" % "1.0.0-RC18-1",
-        "dev.zio" %% "zio-interop-reactivestreams" % "1.0.3.5-RC5"
+        "dev.zio" %% "zio-interop-reactivestreams" % "1.0.3.5-RC6"
       )
     )
     .dependsOn(zio % compileAndTest, asyncHttpClientZioBackend)
