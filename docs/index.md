@@ -51,6 +51,14 @@ Development and maintenance of sttp client is sponsored by [SoftwareMill](https:
 
 [![](https://softwaremill.com/images/header-main-logo.3449d6a3.svg "SoftwareMill")](https://softwaremill.com)
 
+# Try sttp client in your browser!
+
+```eval_rst
+.. raw:: html
+
+   <iframe height="800px" frameborder="0" style="width: 100%" src="https://embed.scalafiddle.io/embed?sfid=4WexTtF/3&layout=v50"></iframe>
+```
+
 # Table of contents
 
 ```eval_rst
