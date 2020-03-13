@@ -16,14 +16,26 @@ OpenTracingBackend(wrappedBackend, tracer)
 
 Where tracer is an interface which can be implemented by any compatible library. See examples below.
 
-The backend obtains the current trace context using default spans's propagation mechanisms. There is an additional method exposed to override default operation id:
+The backend obtains the current trace context using default spans's propagation mechanisms. 
+
+There is an additional method exposed to override default operation id:
 
 ```scala
-import sttp.client.brave.OpenTracingBackend._
+import sttp.client.opentracing.OpenTracingBackend._
 
 basicRequest
   .get(...)
-  .tagWithOperationId("register-user"))
+  .tagWithOperationId("register-user")
+```
+
+There is an additional method exposed to customize generated span:
+
+```scala
+import sttp.client.opentracing.OpenTracingBackend._
+
+basicRequest
+  .get(...)
+  .tagWithTransformSpan(_.setTag("custom-tag", "custom-value").setOperationName("new-name").log("my-event"))
 ```
 
 ## Integration with jaeger
