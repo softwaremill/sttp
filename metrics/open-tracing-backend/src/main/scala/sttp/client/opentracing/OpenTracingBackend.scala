@@ -33,8 +33,8 @@ class OpenTracingBackend[F[_], S] private (delegate: SttpBackend[F, S, NothingT]
           .start()
 
         request
-          .tag(OpenTracingBackend.SpanTransformRequestTag)
-          .collectFirst { case spanTranform: SpanTransformer => spanTranform(span) }
+          .tag(OpenTracingBackend.SpanTransformerRequestTag)
+          .collectFirst { case spanTranformer: SpanTransformer => spanTranformer(span) }
           .getOrElse(span)
       }
       .flatMap { span =>
@@ -69,7 +69,7 @@ class OpenTracingBackend[F[_], S] private (delegate: SttpBackend[F, S, NothingT]
 
 object OpenTracingBackend {
   private val OperationIdRequestTag = "io.opentracing.tag.sttp.operationId"
-  private val SpanTransformRequestTag = "io.opentracing.tag.sttp.transform"
+  private val SpanTransformerRequestTag = "io.opentracing.tag.sttp.span.transformer"
   type SpanTransformer = Span => Span
 
   implicit class RichRequest[T, S](request: Request[T, S]) {
@@ -77,7 +77,7 @@ object OpenTracingBackend {
       request.tag(OperationIdRequestTag, operationId)
 
     def tagWithTransformSpan(transformSpan: SpanTransformer): Request[T, S] =
-      request.tag(SpanTransformRequestTag, transformSpan)
+      request.tag(SpanTransformerRequestTag, transformSpan)
   }
 
   def apply[F[_], S](delegate: SttpBackend[F, S, NothingT], tracer: Tracer): SttpBackend[F, S, NothingT] = {
