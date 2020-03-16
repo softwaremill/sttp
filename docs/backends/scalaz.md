@@ -5,7 +5,7 @@ The [Scalaz](https://github.com/scalaz/scalaz) backend is **asynchronous**. Send
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client" %% "async-http-client-backend-scalaz" % "2.0.5"
+"com.softwaremill.sttp.client" %% "async-http-client-backend-scalaz" % "2.0.6"
 ```
            
 This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client) and uses [Netty](http://netty.io) behind the scenes.
