@@ -23,10 +23,11 @@ A non-comprehensive summary of how the backend can be created is as follows:
 import sttp.client.asynchttpclient.cats.AsyncHttpClientCatsBackend
 import cats.effect._
 
-// You need to define an implicit ContextShift in order to create IO instances for the cats backend
+// an implicit ContextShift in required to create the backend; here, for `cats.effect.IO`:
 implicit val cs: ContextShift[IO] = IO.contextShift( scala.concurrent.ExecutionContext.global )
 
-// You also need to define explicitly an Effect type class instance (usually `cats.effect.IO`)
+// the type class instance needs to be provided explicitly (e.g. `cats.effect.IO`). 
+// the effect type must implement the Concurrent typeclass
 AsyncHttpClientCatsBackend[IO]().flatMap { implicit backend => ... }
 
 // or, if you'd like to use custom configuration:
