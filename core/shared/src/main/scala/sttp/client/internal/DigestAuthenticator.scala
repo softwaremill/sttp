@@ -64,9 +64,8 @@ private[client] class DigestAuthenticator private (
       val messageDigest = new MessageDigestCompatibility(algorithm)
       val digestUri =
         (Option(request.uri.toJavaUri.getPath), Option(request.uri.toJavaUri.getQuery)) match {
-          case (Some(p), Some(q)) if p.trim.nonEmpty && q.trim.nonEmpty => p + q
+          case (Some(p), Some(q)) if p.trim.nonEmpty && q.trim.nonEmpty => s"$p?$q"
           case (Some(p), None) if p.trim.nonEmpty                       => p
-          case (None, Some(q)) if q.trim.nonEmpty                       => q
           case _                                                        => "/"
         }
 
