@@ -42,7 +42,7 @@ class DigestAuthenticatorTest extends AnyFreeSpec with Matchers with OptionValue
 
     val r = responseWithAuthenticateHeader("""Digest realm="myrealm", nonce="BBBBBB", algorithm=MD5, qop="auth"""")
     val header = DigestAuthenticator(DigestAuthData("admin", "password")).authenticate(request, r)
-    header.value.value should fullyMatch regex """Digest username="admin", realm="myrealm", uri="/path/to/resource?parameter=value&parameter2=value2", nonce="BBBBBB", qop=auth, response="[0-9a-f]+", cnonce="[0-9a-f]+", nc=000000\d\d, algorithm=MD5"""
+    header.value.value should fullyMatch regex """Digest username="admin", realm="myrealm", uri="\/path\/to\/resource\?parameter=value&parameter2=value2", nonce="BBBBBB", qop=auth, response="[0-9a-f]+", cnonce="[0-9a-f]+", nc=000000\d\d, algorithm=MD5"""
   }
 
   "work with uri which has only path" in {
@@ -64,7 +64,9 @@ class DigestAuthenticatorTest extends AnyFreeSpec with Matchers with OptionValue
 
     val r = responseWithAuthenticateHeader("""Digest realm="myrealm", nonce="BBBBBB", algorithm=MD5, qop="auth"""")
     val header = DigestAuthenticator(DigestAuthData("admin", "password")).authenticate(request, r)
-    header.value.value should fullyMatch regex """Digest username="admin", realm="myrealm", uri="/parameter=value&parameter2=value2", nonce="BBBBBB", qop=auth, response="[0-9a-f]+", cnonce="[0-9a-f]+", nc=000000\d\d, algorithm=MD5"""
+    val expected =
+      """Digest username="admin", realm="myrealm", uri="\/\?parameter=value&parameter2=value2", nonce="BBBBBB", qop=auth, response="[0-9a-f]+", cnonce="[0-9a-f]+", nc=000000\d\d, algorithm=MD5"""
+    header.value.value should fullyMatch regex expected
   }
 
   "work with multiple wwwAuthHeaders" in {
