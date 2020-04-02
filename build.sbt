@@ -489,7 +489,7 @@ lazy val http4sBackend: Project = (project in file("http4s-backend"))
   .settings(
     name := "http4s-backend",
     libraryDependencies ++= Seq(
-      "org.http4s" %% "http4s-blaze-client" % "0.21.2"
+      "org.http4s" %% "http4s-blaze-client" % "0.21.3"
     )
   )
   .settings(only2_12_and_2_13_settings)
