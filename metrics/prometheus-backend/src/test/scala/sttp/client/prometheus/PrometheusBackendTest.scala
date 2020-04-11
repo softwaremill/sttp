@@ -49,12 +49,12 @@ class PrometheusBackendTest
     val backend1 =
       PrometheusBackend[Identity, Nothing, NothingT](
         backendStub,
-        requestToHistogramNameMapper = _ => Some(CollectorNameWithLabels(histogramName))
+        requestToHistogramNameMapper = _ => Some(HistogramCollectorConfig(histogramName))
       )
     val backend2 =
       PrometheusBackend[Identity, Nothing, NothingT](
         backendStub,
-        requestToHistogramNameMapper = _ => Some(CollectorNameWithLabels(histogramName))
+        requestToHistogramNameMapper = _ => Some(HistogramCollectorConfig(histogramName))
       )
 
     // when
@@ -71,7 +71,7 @@ class PrometheusBackendTest
     val backend =
       PrometheusBackend[Identity, Nothing, NothingT](
         SttpBackendStub.synchronous,
-        _ => Some(CollectorNameWithLabels(customHistogramName))
+        _ => Some(HistogramCollectorConfig(customHistogramName))
       )
     val requestsNumber = 5
 
@@ -89,7 +89,7 @@ class PrometheusBackendTest
     val backend =
       PrometheusBackend[Identity, Nothing, NothingT](
         SttpBackendStub.synchronous,
-        r => Some(CollectorNameWithLabels(customHistogramName, List("method" -> r.method.method)))
+        r => Some(HistogramCollectorConfig(customHistogramName, List("method" -> r.method.method)))
       )
     val requestsNumber1 = 5
     val requestsNumber2 = 10
@@ -157,7 +157,7 @@ class PrometheusBackendTest
     val backend =
       PrometheusBackend[Future, Nothing, NothingT](
         backendStub,
-        requestToInProgressGaugeNameMapper = _ => Some(CollectorNameWithLabels(customGaugeName))
+        requestToInProgressGaugeNameMapper = _ => Some(CollectorConfig(customGaugeName))
       )
 
     // when
