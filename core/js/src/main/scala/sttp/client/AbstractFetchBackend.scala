@@ -4,9 +4,13 @@ import java.nio.ByteBuffer
 
 import org.scalajs.dom.FormData
 import org.scalajs.dom.experimental.{
+  AbortSignal,
   BodyInit,
   Fetch,
+  HeadersInit,
   HttpMethod,
+  RequestCache,
+  ReferrerPolicy,
   RequestCredentials,
   RequestInit,
   RequestMode,
@@ -72,27 +76,47 @@ abstract class AbstractFetchBackend[F[_], S](options: FetchOptions, customizeReq
         (None, () => ())
     }
 
-    val headers = new JSHeaders()
+    val rheaders = new JSHeaders()
     request.headers.foreach {
       case Header(name, value) =>
-        headers.set(name, value)
+        rheaders.set(name, value)
     }
 
-    val req = createBody(request.body).map { body =>
+    val req = createBody(request.body).map { rbody =>
       // use manual so we can return a specific error instead of the generic "TypeError: Failed to fetch"
-      val redirect = if (request.options.followRedirects) RequestRedirect.follow else RequestRedirect.manual
+      val rredirect = if (request.options.followRedirects) RequestRedirect.follow else RequestRedirect.manual
 
-      val requestInitStatic = RequestInit(
-        method = request.method.method.asInstanceOf[HttpMethod],
-        headers = headers,
-        body = body,
-        credentials = options.credentials.orUndefined,
-        requestRedirect = redirect,
-        mode = options.mode.orUndefined
-      )
+      val requestInitStatic = new RequestInit(){
+        var method: js.UndefOr[HttpMethod] = request.method.method.asInstanceOf[HttpMethod]
+
+        var headers: js.UndefOr[HeadersInit] = rheaders
+
+        var body: js.UndefOr[BodyInit] = rbody
+
+        var referrer: js.UndefOr[String] = js.undefined
+
+        var referrerPolicy: js.UndefOr[ReferrerPolicy] = js.undefined
+
+        var mode: js.UndefOr[RequestMode] = options.mode.orUndefined
+
+        var credentials: js.UndefOr[RequestCredentials] = options.credentials.orUndefined
+      
+        var cache: js.UndefOr[RequestCache] = js.undefined
+      
+        var redirect: js.UndefOr[RequestRedirect] = rredirect
+      
+        var integrity: js.UndefOr[String] = js.undefined
+      
+        var keepalive: js.UndefOr[Boolean] = js.undefined
+      
+        var signal: js.UndefOr[AbortSignal] = js.undefined
+      
+        var window: js.UndefOr[Null] = js.undefined
+      }
+
       val requestInitDynamic = requestInitStatic.asInstanceOf[js.Dynamic]
       signal.foreach(s => requestInitDynamic.updateDynamic("signal")(s))
-      requestInitDynamic.updateDynamic("redirect")(redirect) // named wrong in RequestInit
+      requestInitDynamic.updateDynamic("redirect")(rredirect) // named wrong in RequestInit
       val requestInit = requestInitDynamic.asInstanceOf[RequestInit]
 
       new FetchRequest(request.uri.toString, requestInit)

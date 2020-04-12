@@ -86,16 +86,16 @@ val only2_13andJava11 = Seq(
   skip in publish := (is2_11_or_2_12.value || VersionNumber("11") != javaVersion.value)
 )
 
-val commonJvmJsSettings = commonSettings ++ Seq(
-  scalaVersion := scala2_11,
-  crossScalaVersions := Seq(scalaVersion.value, scala2_12, scala2_13)
-)
 
-val commonJvmSettings = commonJvmJsSettings ++ Seq(
+val commonJvmSettings = commonSettings ++ Seq(
+  scalaVersion := scala2_12,
+  crossScalaVersions := Seq(scalaVersion.value, scala2_13),
   scalacOptions ++= Seq("-target:jvm-1.8")
 )
 
-val commonJsSettings = commonJvmJsSettings ++ Seq(
+val commonJsSettings = commonSettings ++ Seq(
+  scalaVersion := scala2_12,
+  crossScalaVersions := Seq(scalaVersion.value, scala2_13),
   // slow down for CI
   parallelExecution in Test := false,
   // https://github.com/scalaz/scalaz/pull/1734#issuecomment-385627061
@@ -161,20 +161,28 @@ def testServerSettings(config: Configuration) = Seq(
 )
 
 val circeVersion: Option[(Long, Long)] => String = {
-  case Some((2, 11)) => "0.11.1"
+  case Some((2, 11)) => "0.11.2"
   case _             => "0.13.0"
 }
 val playJsonVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.7.4"
-  case _             => "2.8.1"
+  case _            
+   => "2.8.1"
 }
+val playJsonOrganisation: Option[(Long, Long)] => String = {
+  case Some((2, 11)) => "com.typesafe.play"
+  case _            
+   => "com.malliina"
+}
+
+//playJsonVersion
 val catsEffectVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.0.0"
   case _             => "2.1.2"
 }
 val fs2Version: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.1.0"
-  case _             => "2.2.2"
+  case _             => "2.3.0"
 }
 
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.11"
@@ -185,7 +193,7 @@ val scalaNativeTestInterfaceVersion = "0.4.0-M2"
 val scalaTestNativeVersion = "3.2.0-M2"
 val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion
 
-val modelVersion = "1.0.2"
+val modelVersion = "1.0.3-SNAPSHOT"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
 
@@ -210,7 +218,7 @@ lazy val rootProject = (project in file("."))
 
 lazy val rootJVM = project
   .in(file(".jvm"))
-  .settings(commonJvmJsSettings: _*)
+  .settings(commonJvmSettings: _*)
   .settings(skip in publish := true, name := "sttpJVM")
   .aggregate(
     coreJVM,
@@ -244,14 +252,14 @@ lazy val rootJVM = project
     httpClientMonixBackend,
     finagleBackend,
     slf4jBackend,
-    examples
+//TODO     examples
   )
 
 lazy val rootJS = project
   .in(file(".js"))
-  .settings(commonJvmJsSettings: _*)
+  .settings(commonJsSettings: _*)
   .settings(skip in publish := true, name := "sttpJS")
-  .aggregate(coreJS, catsJS, fs2JS, monixJS, jsonCommonJS, circeJS, playJsonJS)
+  .aggregate(coreJS, catsJS, fs2JS, /* TODO monixJS, */ jsonCommonJS, circeJS, playJsonJS)
 
 lazy val rootNative = project
   .in(file(".native"))
@@ -364,7 +372,7 @@ lazy val monix = crossProject(JSPlatform, JVMPlatform)
     publishArtifact in Test := true,
     libraryDependencies ++= Seq("io.monix" %%% "monix" % "3.1.0")
   )
-lazy val monixJS = monix.js.dependsOn(coreJS % compileAndTest)
+//TODO lazy val monixJS = monix.js.dependsOn(coreJS % compileAndTest)
 lazy val monixJVM = monix.jvm.dependsOn(coreJVM % compileAndTest)
 
 lazy val zio: Project = (project in file("implementations/zio"))
@@ -409,7 +417,7 @@ lazy val asyncHttpClientBackend: Project =
     .settings(
       name := "async-http-client-backend",
       libraryDependencies ++= Seq(
-        "org.asynchttpclient" % "async-http-client" % "2.11.0"
+        "org.asynchttpclient" % "async-http-client" % "2.12.1"
       )
     )
     .dependsOn(coreJVM % compileAndTest)
@@ -596,8 +604,8 @@ lazy val playJson = crossProject(JSPlatform, JVMPlatform)
   .jvmSettings(commonJvmSettings: _*)
   .settings(
     name := "play-json",
-    libraryDependencies ++= dependenciesFor(scalaVersion.value)(
-      "com.typesafe.play" %%% "play-json" % playJsonVersion(_),
+    libraryDependencies ++= dependenciesFor(scalaVersion.value)( tuple =>
+      playJsonOrganisation(tuple) %%% "play-json" % playJsonVersion(tuple),
       _ => "org.scalatest" %%% "scalatest" % scalaTestVersion % Test
     )
   )
