@@ -23,7 +23,7 @@ import sttp.client.asynchttpclient.zio.AsyncHttpClientZioBackend
 AsyncHttpClientZioBackend().flatMap { implicit backend => ... }
 
 // or, if you'd like the backend to be wrapped in a Managed:
-AsyncHttpClientMonixBackend.managed().use { implicit backend => ... }
+AsyncHttpClientZioBackend.managed().use { implicit backend => ... }
 
 // or, if you'd like to use custom configuration:
 AsyncHttpClientZioBackend.usingConfig(asyncHttpClientConfig).flatMap { implicit backend => ... }
