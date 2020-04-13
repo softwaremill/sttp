@@ -242,6 +242,7 @@ lazy val rootJVM = project
     prometheusBackend,
     httpClientBackend,
     httpClientMonixBackend,
+    httpClientFs2Backend,
     finagleBackend,
     slf4jBackend,
     examples
@@ -516,6 +517,16 @@ def httpClientBackendProject(proj: String): Project = {
 lazy val httpClientMonixBackend: Project =
   httpClientBackendProject("monix")
     .dependsOn(monixJVM % compileAndTest)
+
+lazy val httpClientFs2Backend: Project =
+  httpClientBackendProject("fs2")
+    .settings(
+      libraryDependencies ++= dependenciesFor(scalaVersion.value)(
+        "co.fs2" %% "fs2-reactive-streams" % fs2Version(_),
+        "co.fs2" %% "fs2-io" % fs2Version(_)
+      )
+    )
+    .dependsOn(fs2JVM % compileAndTest)
 
 //-- finagle backend
 lazy val finagleBackend: Project = (project in file("finagle-backend"))

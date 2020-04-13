@@ -16,6 +16,7 @@ abstract class HttpClientLowLevelListenerWebSocketTest[F[_]]
     WebSocketHandler.fromListener(new Listener {
       var accumulator: String = ""
       override def onText(webSocket: WebSocket, data: CharSequence, last: Boolean): CompletionStage[_] = {
+        println(data)
         if (last) {
           _onTextFrame(accumulator + data.toString)
           accumulator = ""
@@ -30,5 +31,5 @@ abstract class HttpClientLowLevelListenerWebSocketTest[F[_]]
   override def sendText(ws: WebSocket, t: String): Unit = ws.sendText(t.toString, true).get()
 
   @silent("discarded")
-  override def sendCloseFrame(ws: WebSocket): Unit = ws.sendClose(1000, "").get()
+  override def sendCloseFrame(ws: WebSocket): Unit = ws.sendClose(WebSocket.NORMAL_CLOSURE, "").get()
 }

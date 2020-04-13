@@ -12,7 +12,7 @@ import monix.reactive.Observable
 import sttp.client.httpclient.{HttpClientAsyncBackend, HttpClientBackend, WebSocketHandler}
 import sttp.client.impl.monix.TaskMonadAsyncError
 import sttp.client.testing.SttpBackendStub
-import sttp.client.{SttpBackend, _}
+import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 
 import scala.util.{Success, Try}
 
