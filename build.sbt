@@ -345,7 +345,7 @@ lazy val fs2 = crossProject(JSPlatform, JVMPlatform)
     )
   )
 lazy val fs2JS = fs2.js.dependsOn(coreJS % compileAndTest)
-lazy val fs2JVM = fs2.jvm.dependsOn(coreJVM % compileAndTest)
+lazy val fs2JVM = fs2.jvm.dependsOn(coreJVM % compileAndTest, catsJVM % compileAndTest)
 
 lazy val monix = crossProject(JSPlatform, JVMPlatform)
   .withoutSuffixFor(JVMPlatform)

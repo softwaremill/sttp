@@ -7,13 +7,13 @@ import fs2._
 import sttp.client._
 import sttp.client.asynchttpclient.WebSocketHandler
 import sttp.client.impl.cats.CatsMonadAsyncError
+import sttp.client.impl.fs2.Fs2WebSockets
 import sttp.client.monad.MonadError
 import sttp.client.testing.{ConvertToFuture, TestHttpServer, ToFutureWrapper}
 import sttp.client.ws.WebSocket
 import sttp.model.ws.WebSocketFrame
 
 import scala.collection.immutable.Queue
-import scala.concurrent.duration._
 import scala.concurrent.Future
 import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
