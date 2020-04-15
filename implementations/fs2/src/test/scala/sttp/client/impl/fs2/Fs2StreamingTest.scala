@@ -1,22 +1,18 @@
 package sttp.client.impl.fs2
 
-import java.nio.ByteBuffer
-
 import cats.effect.IO
-import cats.implicits._
-import fs2.{Chunk, Stream, text}
+import cats.instances.string._
+import fs2.{Chunk, Stream}
 import sttp.client.impl.cats.CatsTestBase
 import sttp.client.testing.streaming.StreamingTest
 
-trait Fs2StreamingTest extends StreamingTest[IO, Stream[IO, ByteBuffer]] with CatsTestBase {
+trait Fs2StreamingTest extends StreamingTest[IO, Stream[IO, Byte]] with CatsTestBase {
+  override def bodyProducer(chunks: Iterable[Array[Byte]]): Stream[IO, Byte] =
+    Stream.fromIterator[IO](chunks.iterator).flatMap(arr => Stream.chunk(Chunk.array(arr)))
 
-  override def bodyProducer(chunks: Iterable[Array[Byte]]): Stream[IO, ByteBuffer] =
-    Stream.emits(chunks.toSeq).map(ByteBuffer.wrap)
-
-  override def bodyConsumer(stream: Stream[IO, ByteBuffer]): IO[String] =
+  override def bodyConsumer(stream: fs2.Stream[IO, Byte]): IO[String] =
     stream
-      .map(Chunk.ByteBuffer(_))
-      .through(text.utf8DecodeC)
+      .through(fs2.text.utf8Decode)
       .compile
       .foldMonoid
 }

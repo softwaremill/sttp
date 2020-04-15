@@ -3,7 +3,6 @@ package sttp.client.httpclient.fs2
 import java.io.InputStream
 import java.net.http.{HttpClient, HttpRequest}
 import java.net.http.HttpRequest.BodyPublishers
-import java.nio.ByteBuffer
 
 import cats.effect._
 import cats.effect.implicits._
@@ -25,19 +24,19 @@ class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
     chunkSize: Int,
     closeClient: Boolean,
     customizeRequest: HttpRequest => HttpRequest
-) extends HttpClientAsyncBackend[F, Stream[F, ByteBuffer]](client, implicitly, closeClient, customizeRequest) {
+) extends HttpClientAsyncBackend[F, Stream[F, Byte]](client, implicitly, closeClient, customizeRequest) {
 
   override def openWebsocket[T, WS_RESULT](
-      request: sttp.client.Request[T, Stream[F, ByteBuffer]],
+      request: sttp.client.Request[T, Stream[F, Byte]],
       handler: WebSocketHandler[WS_RESULT]
   ): F[WebSocketResponse[WS_RESULT]] =
     super.openWebsocket(request, handler).guarantee(ContextShift[F].shift)
 
-  override def streamToRequestBody(stream: Stream[F, ByteBuffer]): HttpRequest.BodyPublisher =
-    BodyPublishers.fromPublisher(FlowAdapters.toFlowPublisher(stream.toUnicastPublisher()))
+  override def streamToRequestBody(stream: Stream[F, Byte]): HttpRequest.BodyPublisher =
+    BodyPublishers.fromPublisher(FlowAdapters.toFlowPublisher(stream.chunks.map(_.toByteBuffer).toUnicastPublisher()))
 
-  override def responseBodyToStream(responseBody: InputStream): Try[Stream[F, ByteBuffer]] =
-    Success(fs2.io.readInputStream(responseBody.pure[F], chunkSize, blocker).chunks.map(_.toByteBuffer))
+  override def responseBodyToStream(responseBody: InputStream): Try[Stream[F, Byte]] =
+    Success(fs2.io.readInputStream(responseBody.pure[F], chunkSize, blocker))
 }
 
 object HttpClientFs2Backend {
@@ -49,7 +48,7 @@ object HttpClientFs2Backend {
       chunkSize: Int,
       closeClient: Boolean,
       customizeRequest: HttpRequest => HttpRequest
-  ): SttpBackend[F, Stream[F, ByteBuffer], WebSocketHandler] =
+  ): SttpBackend[F, Stream[F, Byte], WebSocketHandler] =
     new FollowRedirectsBackend(new HttpClientFs2Backend(client, blocker, chunkSize, closeClient, customizeRequest))
 
   def apply[F[_]: ConcurrentEffect: ContextShift](
@@ -57,7 +56,7 @@ object HttpClientFs2Backend {
       chunkSize: Int = defaultChunkSize,
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity
-  ): F[SttpBackend[F, Stream[F, ByteBuffer], WebSocketHandler]] =
+  ): F[SttpBackend[F, Stream[F, Byte], WebSocketHandler]] =
     Sync[F].delay(
       HttpClientFs2Backend(
         HttpClientBackend.defaultClient(options),
@@ -73,7 +72,7 @@ object HttpClientFs2Backend {
       chunkSize: Int = defaultChunkSize,
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity
-  ): Resource[F, SttpBackend[F, Stream[F, ByteBuffer], WebSocketHandler]] =
+  ): Resource[F, SttpBackend[F, Stream[F, Byte], WebSocketHandler]] =
     Resource.make(apply(blocker, chunkSize, options, customizeRequest))(_.close())
 
   def usingClient[F[_]: ConcurrentEffect: ContextShift](
@@ -81,14 +80,14 @@ object HttpClientFs2Backend {
       blocker: Blocker,
       chunkSize: Int = defaultChunkSize,
       customizeRequest: HttpRequest => HttpRequest = identity
-  ): SttpBackend[F, Stream[F, ByteBuffer], WebSocketHandler] =
+  ): SttpBackend[F, Stream[F, Byte], WebSocketHandler] =
     HttpClientFs2Backend(client, blocker, chunkSize, closeClient = false, customizeRequest)
 
   /**
-    * Create a stub backend for testing, which uses the [[F]] response wrapper, and supports `Stream[F, ByteBuffer]`
+    * Create a stub backend for testing, which uses the [[F]] response wrapper, and supports `Stream[F, Byte]`
     * streaming.
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub[F[_]: Concurrent]: SttpBackendStub[F, Stream[F, ByteBuffer]] = SttpBackendStub(implicitly)
+  def stub[F[_]: Concurrent]: SttpBackendStub[F, Stream[F, Byte]] = SttpBackendStub(implicitly)
 }

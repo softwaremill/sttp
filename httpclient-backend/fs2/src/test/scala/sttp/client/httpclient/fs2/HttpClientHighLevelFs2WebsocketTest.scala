@@ -1,11 +1,9 @@
 package sttp.client.httpclient.fs2
 
-import cats.effect.{IO, Timer}
+import cats.effect.IO
 import cats.implicits._
 import sttp.client._
 import sttp.client.httpclient.WebSocketHandler
-import sttp.client.impl.cats.CatsMonadError
-import sttp.client.monad.MonadError
 import sttp.client.testing.websocket.HighLevelWebsocketTest
 import sttp.client.ws.WebSocket
 
