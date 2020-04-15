@@ -14,8 +14,6 @@ import scala.concurrent.duration._
 class HttpClientHighLevelFs2WebsocketTest
     extends HighLevelWebsocketTest[IO, WebSocketHandler]
     with HttpClientFs2TestBase {
-  private implicit val timer: Timer[IO] = IO.timer(implicitly)
-  override val monad: MonadError[IO] = new CatsMonadError[IO]
 
   override def createHandler: Option[Int] => IO[WebSocketHandler[WebSocket[IO]]] =
     Fs2WebSocketHandler[IO](_)

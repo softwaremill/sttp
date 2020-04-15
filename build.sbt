@@ -494,7 +494,7 @@ lazy val http4sBackend: Project = (project in file("http4s-backend"))
     )
   )
   .settings(only2_12_and_2_13_settings)
-  .dependsOn(catsJVM, coreJVM % compileAndTest)
+  .dependsOn(catsJVM % compileAndTest, coreJVM % compileAndTest)
 
 //-- httpclient-java11
 lazy val httpClientBackend: Project = (project in file("httpclient-backend"))
