@@ -16,7 +16,6 @@ abstract class HttpClientLowLevelListenerWebSocketTest[F[_]]
     WebSocketHandler.fromListener(new Listener {
       var accumulator: String = ""
       override def onText(webSocket: WebSocket, data: CharSequence, last: Boolean): CompletionStage[_] = {
-        println(data)
         if (last) {
           _onTextFrame(accumulator + data.toString)
           accumulator = ""
