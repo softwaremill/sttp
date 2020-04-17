@@ -13,6 +13,6 @@ class Http4sHttpStreamingTest extends Fs2StreamingTest {
 
   private val blazeClientBuilder = BlazeClientBuilder[IO](ExecutionContext.global)
   override implicit val backend: SttpBackend[IO, Stream[IO, Byte], NothingT] =
-    Http4sBackend.usingClientBuilder(blazeClientBuilder).allocated.unsafeRunSync()._1
+    Http4sBackend.usingClientBuilder(blazeClientBuilder, blocker).allocated.unsafeRunSync()._1
 
 }

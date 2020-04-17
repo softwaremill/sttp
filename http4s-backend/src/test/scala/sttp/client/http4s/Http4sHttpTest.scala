@@ -12,7 +12,7 @@ class Http4sHttpTest extends HttpTest[IO] with CatsTestBase {
   private val blazeClientBuilder = BlazeClientBuilder[IO](ExecutionContext.global)
 
   override implicit val backend: SttpBackend[IO, Nothing, NothingT] =
-    Http4sBackend.usingClientBuilder(blazeClientBuilder).allocated.unsafeRunSync()._1
+    Http4sBackend.usingClientBuilder(blazeClientBuilder, blocker).allocated.unsafeRunSync()._1
 
   override protected def supportsRequestTimeout = false
 }
