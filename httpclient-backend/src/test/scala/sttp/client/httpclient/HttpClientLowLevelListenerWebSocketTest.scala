@@ -30,5 +30,5 @@ abstract class HttpClientLowLevelListenerWebSocketTest[F[_]]
   override def sendText(ws: WebSocket, t: String): Unit = ws.sendText(t.toString, true).get()
 
   @silent("discarded")
-  override def sendCloseFrame(ws: WebSocket): Unit = ws.sendClose(1000, "").get()
+  override def sendCloseFrame(ws: WebSocket): Unit = ws.sendClose(WebSocket.NORMAL_CLOSURE, "").get()
 }

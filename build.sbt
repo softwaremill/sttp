@@ -242,6 +242,7 @@ lazy val rootJVM = project
     prometheusBackend,
     httpClientBackend,
     httpClientMonixBackend,
+    httpClientFs2Backend,
     finagleBackend,
     slf4jBackend,
     examples
@@ -344,8 +345,8 @@ lazy val fs2 = crossProject(JSPlatform, JVMPlatform)
       "co.fs2" %%% "fs2-core" % fs2Version(_)
     )
   )
-lazy val fs2JS = fs2.js.dependsOn(coreJS % compileAndTest)
-lazy val fs2JVM = fs2.jvm.dependsOn(coreJVM % compileAndTest)
+lazy val fs2JS = fs2.js.dependsOn(coreJS % compileAndTest, catsJS % compileAndTest)
+lazy val fs2JVM = fs2.jvm.dependsOn(coreJVM % compileAndTest, catsJVM % compileAndTest)
 
 lazy val monix = crossProject(JSPlatform, JVMPlatform)
   .withoutSuffixFor(JVMPlatform)
@@ -493,7 +494,7 @@ lazy val http4sBackend: Project = (project in file("http4s-backend"))
     )
   )
   .settings(only2_12_and_2_13_settings)
-  .dependsOn(catsJVM, coreJVM % compileAndTest)
+  .dependsOn(catsJVM % compileAndTest, coreJVM % compileAndTest, fs2JVM % "test->test")
 
 //-- httpclient-java11
 lazy val httpClientBackend: Project = (project in file("httpclient-backend"))
@@ -516,6 +517,16 @@ def httpClientBackendProject(proj: String): Project = {
 lazy val httpClientMonixBackend: Project =
   httpClientBackendProject("monix")
     .dependsOn(monixJVM % compileAndTest)
+
+lazy val httpClientFs2Backend: Project =
+  httpClientBackendProject("fs2")
+    .settings(
+      libraryDependencies ++= dependenciesFor(scalaVersion.value)(
+        "co.fs2" %% "fs2-reactive-streams" % fs2Version(_),
+        "co.fs2" %% "fs2-io" % fs2Version(_)
+      )
+    )
+    .dependsOn(fs2JVM % compileAndTest)
 
 //-- finagle backend
 lazy val finagleBackend: Project = (project in file("finagle-backend"))
