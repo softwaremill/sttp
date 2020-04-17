@@ -2,6 +2,8 @@
 
 The [fs2](https://github.com/functional-streams-for-scala/fs2) backend is **asynchronous**. It can be created for any type implementing the `cats.effect.Async` typeclass, such as `cats.effect.IO`. Sending a request is a non-blocking, lazily-evaluated operation and results in a wrapped response. There's a transitive dependency on `cats-effect`. 
 
+## Using async-http-client
+
 To use, add the following dependency to your project:
 
 ```scala
@@ -34,6 +36,30 @@ AsyncHttpClientFs2Backend.resource().use { implicit backend => ... }
 // or, if you'd like to instantiate the AsyncHttpClient yourself:
 implicit val sttpBackend = AsyncHttpClientFs2Backend.usingClient(asyncHttpClient)
 ```
+
+## Using HttpClient (Java 11+)
+
+To use, add the following dependency to your project:
+
+```
+"com.softwaremill.sttp.client" %% "httpclient-backend-fs2" % "2.0.7"
+```
+
+Create the backend using:
+
+```scala
+import sttp.client.httpclient.fs2.HttpClientFs2Backend
+
+HttpClientFs2Backend().flatMap { implicit backend => ... }
+
+// or, if you'd like the backend to be wrapped in cats-effect Resource:
+HttpClientFs2Backend.resource().use { implicit backend => ... }
+
+// or, if you'd like to instantiate the HttpClient yourself:
+implicit val sttpBackend = HttpClientFs2Backend.usingClient(httpClient)
+```
+
+This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards.
 
 ## Streaming
 
@@ -89,8 +115,8 @@ val effect = AsyncHttpClientFs2Backend[IO]().flatMap { implicit backend =>
 
 The fs2 backend supports:
 
-* high-level, "functional" websocket interface, through the `sttp.client.asynchttpclient.fs2.Fs2WebSocketHandler`
-* low-level interface by wrapping a low-level Java interface, `sttp.client.asynchttpclient.WebSocketHandler`
+* high-level, "functional" websocket interface, through the `sttp.client.asynchttpclient.fs2.Fs2WebSocketHandler` or `sttp.client.httpclient.fs2.Fs2WebSocketHandler`
+* low-level interface by wrapping a low-level Java interface, `sttp.client.asynchttpclient.WebSocketHandler` or `sttp.client.httpclient.WebSocketHandler`
 * streaming - see below
 
 See [websockets](../websockets.html) for details on how to use the high-level and low-level interfaces.
