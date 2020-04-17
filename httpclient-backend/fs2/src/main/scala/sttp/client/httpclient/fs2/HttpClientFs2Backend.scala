@@ -18,6 +18,8 @@ import sttp.client.testing.SttpBackendStub
 import scala.util.{Success, Try}
 import sttp.client.ws.WebSocketResponse
 
+import scala.concurrent.ExecutionContext
+
 class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
     client: HttpClient,
     blocker: Blocker,
@@ -52,7 +54,7 @@ object HttpClientFs2Backend {
     new FollowRedirectsBackend(new HttpClientFs2Backend(client, blocker, chunkSize, closeClient, customizeRequest))
 
   def apply[F[_]: ConcurrentEffect: ContextShift](
-      blocker: Blocker,
+      blocker: Blocker = Blocker.liftExecutionContext(ExecutionContext.Implicits.global),
       chunkSize: Int = defaultChunkSize,
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity
@@ -68,7 +70,7 @@ object HttpClientFs2Backend {
     )
 
   def resource[F[_]: ConcurrentEffect: ContextShift](
-      blocker: Blocker,
+      blocker: Blocker = Blocker.liftExecutionContext(ExecutionContext.Implicits.global),
       chunkSize: Int = defaultChunkSize,
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity
@@ -77,7 +79,7 @@ object HttpClientFs2Backend {
 
   def usingClient[F[_]: ConcurrentEffect: ContextShift](
       client: HttpClient,
-      blocker: Blocker,
+      blocker: Blocker = Blocker.liftExecutionContext(ExecutionContext.Implicits.global),
       chunkSize: Int = defaultChunkSize,
       customizeRequest: HttpRequest => HttpRequest = identity
   ): SttpBackend[F, Stream[F, Byte], WebSocketHandler] =
