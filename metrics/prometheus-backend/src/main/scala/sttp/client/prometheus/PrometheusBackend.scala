@@ -203,9 +203,9 @@ case class CollectorConfig(collectorName: String) extends BaseCollectorConfig(co
   */
 case class HistogramCollectorConfig(
     collectorName: String,
-    collectorLabels: List[(String, String)] = Nil,
+    labels: List[(String, String)] = Nil,
     buckets: List[Double] = HistogramCollectorConfig.DefaultBuckets
-) extends BaseCollectorConfig(collectorName)
+) extends BaseCollectorConfig(collectorName, labels)
 
 object HistogramCollectorConfig {
   val DefaultBuckets = List(.005, .01, .025, .05, .075, .1, .25, .5, .75, 1, 2.5, 5, 7.5, 10)
