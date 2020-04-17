@@ -3,7 +3,7 @@ package sttp.client.prometheus
 import java.util.concurrent.ConcurrentHashMap
 
 import com.github.ghik.silencer.silent
-import sttp.client.{FollowRedirectsBackend, Identity, NothingT, Request, Response, SttpBackend}
+import sttp.client.{FollowRedirectsBackend, Identity, Request, Response, SttpBackend}
 import io.prometheus.client.{CollectorRegistry, Counter, Gauge, Histogram}
 import sttp.client.listener.{ListenerBackend, RequestListener}
 import sttp.client.prometheus.PrometheusBackend.RequestCollectors
@@ -161,17 +161,23 @@ class PrometheusListener(
       getOrCreateMetric(countersCache, data, createNewCounter).labels(data.labelValues: _*).inc()
     }
 
-  private def getOrCreateMetric[T](
+  private def getOrCreateMetric[T, C <: BaseCollectorConfig](
       cache: ConcurrentHashMap[String, T],
-      data: BaseCollectorConfig,
-      create: BaseCollectorConfig => T
+      data: C,
+      create: C => T
   ): T =
     cache.computeIfAbsent(data.name, new java.util.function.Function[String, T] {
       override def apply(t: String): T = create(data)
     })
 
-  private def createNewHistogram(data: BaseCollectorConfig): Histogram =
-    Histogram.build().buckets(data.buckets: _*).name(data.name).labelNames(data.labelNames: _*).help(data.name).register(collectorRegistry)
+  private def createNewHistogram(data: HistogramCollectorConfig): Histogram =
+    Histogram
+      .build()
+      .buckets(data.buckets: _*)
+      .name(data.name)
+      .labelNames(data.labelNames: _*)
+      .help(data.name)
+      .register(collectorRegistry)
 
   private def createNewGauge(data: BaseCollectorConfig): Gauge =
     Gauge.build().name(data.name).labelNames(data.labelNames: _*).help(data.name).register(collectorRegistry)
@@ -181,27 +187,26 @@ class PrometheusListener(
 }
 
 class BaseCollectorConfig(collectorName: String, labels: List[(String, String)] = Nil) {
-  val defaultBuckets = List(.005, .01, .025, .05, .075, .1, .25, .5, .75, 1, 2.5, 5, 7.5, 10)
-
   def labelNames: Seq[String] = labels.map(_._1)
   def labelValues: Seq[String] = labels.map(_._2)
   def name: String = collectorName
-  def buckets: Seq[Double] = defaultBuckets
 }
 
 /**
- * Represents the name of a collector, together with label names and values.
- * The same labels must be always returned, and in the same order.
- */
+  * Represents the name of a collector, together with label names and values.
+  * The same labels must be always returned, and in the same order.
+  */
 case class CollectorConfig(collectorName: String) extends BaseCollectorConfig(collectorName)
 
 /**
- * Represents the name of a collector with configurable histogram buckets.
- */
+  * Represents the name of a collector with configurable histogram buckets.
+  */
 case class HistogramCollectorConfig(
-  collectorName: String,
-  collectorLabels: List[(String, String)] = Nil,
-  customBuckets: List[Double] = Nil
-) extends BaseCollectorConfig(collectorName) {
-  override def buckets: Seq[Double] = if (customBuckets.isEmpty) defaultBuckets else customBuckets
+    collectorName: String,
+    collectorLabels: List[(String, String)] = Nil,
+    buckets: List[Double] = HistogramCollectorConfig.DefaultBuckets
+) extends BaseCollectorConfig(collectorName)
+
+object HistogramCollectorConfig {
+  val DefaultBuckets = List(.005, .01, .025, .05, .075, .1, .25, .5, .75, 1, 2.5, 5, 7.5, 10)
 }
