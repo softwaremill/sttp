@@ -18,11 +18,11 @@ Slf4jTimingBackend(delegateBackend)
 Slf4jCurlBackend(delegateBackend)
 ```
 
-The logging backend logs `INFO`-level logs when a request is started, completes successfully or with an exception.
+The logging backend logs `DEBUG`-level logs when a request is started, completes successfully, and `ERROR`-level logs when it results in an exception.
 
 The timing backend logs `INFO`-level logs when a request completes successfully or with an exception, together with the number of seconds and milliseconds that the request took.
 
-The curl backend logs `INFO`-level logs when a request completes successfully or with an exception, together with the curl command that can be issued to reproduce the request.
+The curl backend logs `DEBUG`-level logs when a request completes successfully or with an exception, together with the curl command that can be issued to reproduce the request.
 
 Example usage:
 
