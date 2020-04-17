@@ -15,27 +15,27 @@ object Slf4jLoggingBackend {
 
 class Slf4jLoggingListener(logger: Logger) extends RequestListener[Identity, Unit] {
   override def beforeRequest(request: Request[_, _]): Identity[Unit] = {
-    logger.info(LogMessages.beforeRequestSend(request))
+    logger.debug(LogMessages.beforeRequestSend(request))
   }
 
   override def requestException(request: Request[_, _], tag: Unit, e: Exception): Identity[Unit] = {
-    logger.info(LogMessages.requestException(request), e)
+    logger.error(LogMessages.requestException(request), e)
   }
 
   override def requestSuccessful(request: Request[_, _], response: Response[_], tag: Unit): Identity[Unit] = {
     if (response.isSuccess) {
-      logger.info(LogMessages.response(request, response))
+      logger.debug(LogMessages.response(request, response))
     } else {
-      logger.info(LogMessages.response(request, response))
+      logger.debug(LogMessages.response(request, response))
     }
   }
 
   override def beforeWebsocket(request: Request[_, _]): Identity[Unit] = {
-    logger.info(LogMessages.beforeWebsocketOpen(request))
+    logger.debug(LogMessages.beforeWebsocketOpen(request))
   }
 
   override def websocketException(request: Request[_, _], tag: Unit, e: Exception): Identity[Unit] = {
-    logger.info(LogMessages.websocketException(request), e)
+    logger.error(LogMessages.websocketException(request), e)
   }
 
   override def websocketSuccessful(
@@ -43,6 +43,6 @@ class Slf4jLoggingListener(logger: Logger) extends RequestListener[Identity, Uni
       response: WebSocketResponse[_],
       tag: Unit
   ): Identity[Unit] = {
-    logger.info(LogMessages.websocketResponse(request, response))
+    logger.debug(LogMessages.websocketResponse(request, response))
   }
 }
