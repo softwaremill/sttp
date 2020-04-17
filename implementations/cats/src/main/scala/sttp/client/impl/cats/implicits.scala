@@ -11,19 +11,21 @@ import scala.language.higherKinds
 object implicits extends CatsImplicits
 
 trait CatsImplicits extends LowLevelCatsImplicits {
-  implicit def sttpBackendToCatsMappableSttpBackend[R[_], S, WS_HANDLER[_]](
+  implicit final def sttpBackendToCatsMappableSttpBackend[R[_], S, WS_HANDLER[_]](
       sttpBackend: SttpBackend[R, S, WS_HANDLER]
   ): MappableSttpBackend[R, S, WS_HANDLER] = new MappableSttpBackend(sttpBackend)
 
-  implicit def asyncMonadError[F[_]: Concurrent]: MonadAsyncError[F] = new CatsMonadAsyncError[F]
+  implicit final def asyncMonadError[F[_]: Concurrent]: MonadAsyncError[F] = new CatsMonadAsyncError[F]
 }
 
 trait LowLevelCatsImplicits {
-  implicit def catsMonadError[F[_]](implicit E: cats.MonadError[F, Throwable]): MonadError[F] = new CatsMonadError[F]
+  implicit final def catsMonadError[F[_]](implicit E: cats.MonadError[F, Throwable]): MonadError[F] =
+    new CatsMonadError[F]
 }
 
-class MappableSttpBackend[F[_], S, WS_HANDLER[_]] private[cats] (val sttpBackend: SttpBackend[F, S, WS_HANDLER])
-    extends AnyVal {
+final class MappableSttpBackend[F[_], S, WS_HANDLER[_]] private[cats] (
+    private val sttpBackend: SttpBackend[F, S, WS_HANDLER]
+) extends AnyVal {
   def mapK[G[_]: MonadError](f: F ~> G): SttpBackend[G, S, WS_HANDLER] =
     new MappedKSttpBackend(sttpBackend, f, implicitly)
 }
