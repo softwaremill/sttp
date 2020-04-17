@@ -1,6 +1,8 @@
 package sttp.client.internal
 
 private[client] class MessageDigestCompatibility(algorithm: String) {
+  require(algorithm == "MD5", s"Unsupported algorithm: $algorithm")
+
   def digest(input: Array[Byte]): Array[Byte] =
-    throw new UnsupportedOperationException("MessageDigest is currently not supported for native builds")
+    CryptoMd5.digest(input)
 }
