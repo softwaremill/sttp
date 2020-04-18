@@ -196,7 +196,7 @@ class BaseCollectorConfig(collectorName: String, labels: List[(String, String)] 
   * Represents the name of a collector, together with label names and values.
   * The same labels must be always returned, and in the same order.
   */
-case class CollectorConfig(collectorName: String) extends BaseCollectorConfig(collectorName)
+case class CollectorConfig(collectorName: String, labels: List[(String, String)] = Nil) extends BaseCollectorConfig(collectorName)
 
 /**
   * Represents the name of a collector with configurable histogram buckets.
