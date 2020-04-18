@@ -110,7 +110,12 @@ By default, sttp-native will **not** be included in the aggregate build of the r
 STTP_NATIVE=1 sbt
 ```
 
-You might need to install some additional libraries, see the [scala native](http://www.scala-native.org/en/latest/user/setup.html) documentation site.
+You might need to install some additional libraries, see the [scala native](http://www.scala-native.org/en/latest/user/setup.html) documentation site. On macos, you might additionally need:
+
+```
+ln -s /usr/local/opt/openssl/lib/libcrypto.dylib /usr/local/lib/
+ln -s /usr/local/opt/openssl/lib/libssl.dylib /usr/local/lib/
+```
 
 ## Commercial Support
 
