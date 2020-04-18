@@ -17,4 +17,4 @@ implicit val sttpTryBackend = CurlTryBackend()
 ```
 
 You need to have an environment with Scala Native [setup](https://scala-native.readthedocs.io/en/latest/user/setup.html)
-with additionally installed [libidn](https://www.gnu.org/software/libidn/) and `curl` in version `7.56.0` or newer.
+with additionally installed `libcrypto` (included in OpenSSL) and `curl` in version `7.56.0` or newer.
