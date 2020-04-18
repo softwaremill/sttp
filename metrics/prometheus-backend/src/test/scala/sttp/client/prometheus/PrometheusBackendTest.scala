@@ -28,7 +28,7 @@ class PrometheusBackendTest
     PrometheusBackend.clear(CollectorRegistry.defaultRegistry)
   }
 
-  it should "use default histogram name" in {
+  "prometheus" should "use default histogram name" in {
     // given
     val backendStub = SttpBackendStub.synchronous.whenAnyRequest.thenRespondOk()
     val backend = PrometheusBackend[Identity, Nothing, NothingT](backendStub)
@@ -128,8 +128,9 @@ class PrometheusBackendTest
 
     // then
     getMetricValue(s"${PrometheusBackend.DefaultRequestsInProgressGaugeName}_count") shouldBe empty
-    getMetricValue(s"${customGaugeName}_count", List("method" -> "GET")).value shouldBe requestsNumber1
-    getMetricValue(s"${customGaugeName}_count", List("method" -> "POST")).value shouldBe requestsNumber2
+    // the gauges should be created, but set to 0
+    getMetricValue(s"$customGaugeName", List("method" -> "GET")).value shouldBe 0.0
+    getMetricValue(s"$customGaugeName", List("method" -> "POST")).value shouldBe 0.0
   }
 
   it should "disable histograms" in {

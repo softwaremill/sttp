@@ -166,7 +166,7 @@ class PrometheusListener(
       data: C,
       create: C => T
   ): T =
-    cache.computeIfAbsent(data.name, new java.util.function.Function[String, T] {
+    cache.computeIfAbsent(data.collectorName, new java.util.function.Function[String, T] {
       override def apply(t: String): T = create(data)
     })
 
@@ -174,29 +174,41 @@ class PrometheusListener(
     Histogram
       .build()
       .buckets(data.buckets: _*)
-      .name(data.name)
+      .name(data.collectorName)
       .labelNames(data.labelNames: _*)
-      .help(data.name)
+      .help(data.collectorName)
       .register(collectorRegistry)
 
   private def createNewGauge(data: BaseCollectorConfig): Gauge =
-    Gauge.build().name(data.name).labelNames(data.labelNames: _*).help(data.name).register(collectorRegistry)
+    Gauge
+      .build()
+      .name(data.collectorName)
+      .labelNames(data.labelNames: _*)
+      .help(data.collectorName)
+      .register(collectorRegistry)
 
   private def createNewCounter(data: BaseCollectorConfig): Counter =
-    Counter.build().name(data.name).labelNames(data.labelNames: _*).help(data.name).register(collectorRegistry)
+    Counter
+      .build()
+      .name(data.collectorName)
+      .labelNames(data.labelNames: _*)
+      .help(data.collectorName)
+      .register(collectorRegistry)
 }
 
-class BaseCollectorConfig(collectorName: String, labels: List[(String, String)] = Nil) {
+trait BaseCollectorConfig {
+  def collectorName: String
+  def labels: List[(String, String)]
+
   def labelNames: Seq[String] = labels.map(_._1)
   def labelValues: Seq[String] = labels.map(_._2)
-  def name: String = collectorName
 }
 
 /**
   * Represents the name of a collector, together with label names and values.
   * The same labels must be always returned, and in the same order.
   */
-case class CollectorConfig(collectorName: String, labels: List[(String, String)] = Nil) extends BaseCollectorConfig(collectorName)
+case class CollectorConfig(collectorName: String, labels: List[(String, String)] = Nil) extends BaseCollectorConfig
 
 /**
   * Represents the name of a collector with configurable histogram buckets.
@@ -205,7 +217,7 @@ case class HistogramCollectorConfig(
     collectorName: String,
     labels: List[(String, String)] = Nil,
     buckets: List[Double] = HistogramCollectorConfig.DefaultBuckets
-) extends BaseCollectorConfig(collectorName, labels)
+) extends BaseCollectorConfig
 
 object HistogramCollectorConfig {
   val DefaultBuckets = List(.005, .01, .025, .05, .075, .1, .25, .5, .75, 1, 2.5, 5, 7.5, 10)
