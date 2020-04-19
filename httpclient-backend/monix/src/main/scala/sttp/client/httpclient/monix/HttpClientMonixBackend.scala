@@ -51,7 +51,7 @@ object HttpClientMonixBackend {
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity
   )(
-      implicit s: Scheduler = Scheduler.Implicits.global
+      implicit s: Scheduler = Scheduler.global
   ): Task[SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler]] =
     Task.eval(
       HttpClientMonixBackend(HttpClientBackend.defaultClient(options), closeClient = true, customizeRequest)(s)
@@ -61,14 +61,14 @@ object HttpClientMonixBackend {
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity
   )(
-      implicit s: Scheduler = Scheduler.Implicits.global
+      implicit s: Scheduler = Scheduler.global
   ): Resource[Task, SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler]] =
     Resource.make(apply(options, customizeRequest))(_.close())
 
   def usingClient(
       client: HttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity
-  )(implicit s: Scheduler = Scheduler.Implicits.global): SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler] =
+  )(implicit s: Scheduler = Scheduler.global): SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler] =
     HttpClientMonixBackend(client, closeClient = false, customizeRequest)(s)
 
   /**

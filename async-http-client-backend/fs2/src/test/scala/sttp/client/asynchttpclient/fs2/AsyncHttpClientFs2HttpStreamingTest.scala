@@ -10,7 +10,7 @@ import sttp.client.{NothingT, SttpBackend}
 import scala.concurrent.ExecutionContext
 
 class AsyncHttpClientFs2HttpStreamingTest extends Fs2ByteBufferStreamingTest {
-  private implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.Implicits.global)
+  private implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
 
   override implicit val backend: SttpBackend[IO, Stream[IO, ByteBuffer], NothingT] =
     AsyncHttpClientFs2Backend[IO]().unsafeRunSync()
