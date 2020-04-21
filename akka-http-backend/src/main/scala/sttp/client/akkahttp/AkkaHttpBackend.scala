@@ -378,7 +378,7 @@ object AkkaHttpBackend {
       customizeRequest: HttpRequest => HttpRequest = identity,
       customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity
   )(
-      implicit ec: ExecutionContext = ExecutionContext.Implicits.global
+      implicit ec: ExecutionContext = ExecutionContext.global
   ): SttpBackend[Future, Source[ByteString, Any], Flow[Message, Message, *]] = {
     val actorSystem = ActorSystem("sttp")
 
@@ -410,7 +410,7 @@ object AkkaHttpBackend {
       customizeRequest: HttpRequest => HttpRequest = identity,
       customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity
   )(
-      implicit ec: ExecutionContext = ExecutionContext.Implicits.global
+      implicit ec: ExecutionContext = ExecutionContext.global
   ): SttpBackend[Future, Source[ByteString, Any], Flow[Message, Message, *]] = {
     usingClient(
       actorSystem,
@@ -437,7 +437,7 @@ object AkkaHttpBackend {
       customizeRequest: HttpRequest => HttpRequest = identity,
       customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity
   )(
-      implicit ec: ExecutionContext = ExecutionContext.Implicits.global
+      implicit ec: ExecutionContext = ExecutionContext.global
   ): SttpBackend[Future, Source[ByteString, Any], Flow[Message, Message, *]] = {
     make(
       actorSystem,
@@ -456,7 +456,7 @@ object AkkaHttpBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackendStub[Future, Nothing] =
+  def stub(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackendStub[Future, Nothing] =
     SttpBackendStub(new FutureMonad())
 }
 

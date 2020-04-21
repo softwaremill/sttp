@@ -36,7 +36,7 @@ object FetchBackend {
   def apply(
       fetchOptions: FetchOptions = FetchOptions.Default,
       customizeRequest: FetchRequest => FetchRequest = identity
-  )(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Nothing, NothingT] =
+  )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, Nothing, NothingT] =
     new FetchBackend(fetchOptions, customizeRequest)
 
   /**
@@ -44,6 +44,6 @@ object FetchBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackendStub[Future, Nothing] =
+  def stub(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackendStub[Future, Nothing] =
     SttpBackendStub(new FutureMonad())
 }

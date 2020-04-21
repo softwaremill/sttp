@@ -75,7 +75,7 @@ import java.nio.ByteBuffer
 import cats.effect.{ContextShift, IO}
 import fs2.Stream
 
-implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.Implicits.global)
+implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
 val effect = AsyncHttpClientFs2Backend[IO]().flatMap { implicit backend =>
   val stream: Stream[IO, ByteBuffer] = ...
 
@@ -97,7 +97,7 @@ import cats.effect.{ContextShift, IO}
 import fs2.Stream
 import scala.concurrent.duration.Duration
 
-implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.Implicits.global)
+implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
 val effect = AsyncHttpClientFs2Backend[IO]().flatMap { implicit backend =>
   val response: IO[Response[Either[String, Stream[IO, ByteBuffer]]]] =
     basicRequest

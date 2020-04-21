@@ -292,7 +292,7 @@ import cats.effect.{ContextShift, IO}
 import cats.instances.string._
 import fs2.{Stream, Chunk, text}
 
-implicit val cs: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionContext.Implicits.global)
+implicit val cs: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionContext.global)
 
 def streamRequestBody(implicit backend: SttpBackend[IO, Stream[IO, ByteBuffer], NothingT]): IO[Unit] = {
   val stream: Stream[IO, ByteBuffer] = Stream.emits(List("Hello, ".getBytes, "world".getBytes)).map(ByteBuffer.wrap)
