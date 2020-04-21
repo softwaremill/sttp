@@ -201,6 +201,7 @@ lazy val rootProject = (project in file("."))
       braveBackend.projectRefs ++
       openTracingBackend.projectRefs ++
       prometheusBackend.projectRefs ++
+      zioTelemetryOpenTracingBackend.projectRefs ++
       httpClientBackend.projectRefs ++
       httpClientMonixBackend.projectRefs ++
       httpClientFs2Backend.projectRefs ++
@@ -629,6 +630,19 @@ lazy val prometheusBackend = (projectMatrix in file("metrics/prometheus-backend"
     )
   )
   .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13))
+  .dependsOn(core)
+
+lazy val zioTelemetryOpenTracingBackend = (projectMatrix in file("metrics/zio-telemetry-open-tracing-backend"))
+  .settings(commonJvmSettings)
+  .settings(
+    name := "zio-telemetry-opentracing-backend",
+    libraryDependencies ++= Seq(
+      "dev.zio" %% "zio-opentracing" % "0.3.0",
+      "org.scala-lang.modules" %% "scala-collection-compat" % "2.1.4"
+    )
+  )
+  .jvmPlatform(scalaVersions = List(scala2_12, scala2_13))
+  .dependsOn(zio % compileAndTest)
   .dependsOn(core)
 
 lazy val slf4jBackend = (projectMatrix in file("logging/slf4j"))

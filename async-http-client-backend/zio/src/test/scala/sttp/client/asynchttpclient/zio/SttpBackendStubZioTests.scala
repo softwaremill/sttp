@@ -2,7 +2,7 @@ package sttp.client.asynchttpclient.zio
 
 import org.scalatest.concurrent.ScalaFutures
 import sttp.client._
-import sttp.client.impl.zio.TaskMonadAsyncError
+import sttp.client.impl.zio.RIOMonadAsyncError
 import sttp.client.testing.SttpBackendStub
 import sttp.client.impl.zio._
 import zio.Task
@@ -13,7 +13,7 @@ class SttpBackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFuture
 
   "backend stub" should "cycle through responses using a single sent request" in {
     // given
-    implicit val b: SttpBackendStub[Task, Nothing] = SttpBackendStub(TaskMonadAsyncError)
+    implicit val b: SttpBackendStub[Task, Nothing] = SttpBackendStub(new RIOMonadAsyncError[Any])
       .whenRequestMatches(_ => true)
       .thenRespondCyclic("a", "b", "c")
 

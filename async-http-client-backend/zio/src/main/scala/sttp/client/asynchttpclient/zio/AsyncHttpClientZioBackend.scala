@@ -3,16 +3,10 @@ package sttp.client.asynchttpclient.zio
 import java.nio.ByteBuffer
 
 import io.netty.buffer.ByteBuf
-import org.asynchttpclient.{
-  AsyncHttpClient,
-  AsyncHttpClientConfig,
-  BoundRequestBuilder,
-  DefaultAsyncHttpClient,
-  DefaultAsyncHttpClientConfig
-}
+import org.asynchttpclient.{AsyncHttpClient, AsyncHttpClientConfig, BoundRequestBuilder, DefaultAsyncHttpClient, DefaultAsyncHttpClientConfig}
 import org.reactivestreams.Publisher
 import sttp.client.asynchttpclient.{AsyncHttpClientBackend, WebSocketHandler}
-import sttp.client.impl.zio.TaskMonadAsyncError
+import sttp.client.impl.zio.RIOMonadAsyncError
 import sttp.client.testing.SttpBackendStub
 import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 import zio.{TaskManaged, _}
@@ -21,7 +15,7 @@ class AsyncHttpClientZioBackend private (
     asyncHttpClient: AsyncHttpClient,
     closeClient: Boolean,
     customizeRequest: BoundRequestBuilder => BoundRequestBuilder
-) extends AsyncHttpClientBackend[Task, Nothing](asyncHttpClient, TaskMonadAsyncError, closeClient, customizeRequest) {
+) extends AsyncHttpClientBackend[Task, Nothing](asyncHttpClient, new RIOMonadAsyncError, closeClient, customizeRequest) {
   override protected def streamBodyToPublisher(s: Nothing): Publisher[ByteBuf] =
     s // nothing is everything
 
@@ -130,5 +124,5 @@ object AsyncHttpClientZioBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub: SttpBackendStub[Task, Nothing] = SttpBackendStub(TaskMonadAsyncError)
+  def stub: SttpBackendStub[Task, Nothing] = SttpBackendStub(new RIOMonadAsyncError)
 }
