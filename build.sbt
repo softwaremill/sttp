@@ -9,8 +9,8 @@ val scala2_12 = "2.12.10"
 val scala2_13 = "2.13.2"
 val scala3 = "0.22.0-RC1"
 
-lazy val testServerPort = settingKey[Int]("Port to run the http test server on (used by JS tests)")
-lazy val startTestServer = taskKey[Unit]("Start a http server used by tests (used by JS tests)")
+lazy val testServerPort = settingKey[Int]("Port to run the http test server on")
+lazy val startTestServer = taskKey[Unit]("Start a http server used by tests")
 lazy val javaVersion = settingKey[VersionNumber]("Java version")
 
 val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
