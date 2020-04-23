@@ -356,6 +356,9 @@ class SpecifyAuthScheme[U[_], T, +S](hn: String, rt: RequestT[U, T, S], digestTa
     rt.header(hn, s"Basic $c")
   }
 
+  def basicToken(token: String): RequestT[U, T, S] =
+    rt.header(hn, s"Basic $token")
+
   def bearer(token: String): RequestT[U, T, S] =
     rt.header(hn, s"Bearer $token")
 
