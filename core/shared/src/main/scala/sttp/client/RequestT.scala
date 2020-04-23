@@ -4,6 +4,8 @@ import java.io.InputStream
 import java.nio.ByteBuffer
 import java.util.Base64
 
+import io.circe.syntax._
+
 import com.github.ghik.silencer.silent
 import sttp.client.internal.DigestAuthenticator.DigestAuthData
 import sttp.client.internal._
@@ -88,6 +90,10 @@ case class RequestT[U[_], T, +S](
   def header(k: String, v: String, replaceExisting: Boolean): RequestT[U, T, S] =
     header(Header.notValidated(k, v), replaceExisting)
   def header(k: String, v: String): RequestT[U, T, S] = header(Header.notValidated(k, v))
+  def header(json: JSon): RequestT[U, T, S] = {
+    val auth = json.as[AuthData]
+    header(Header.notValidated(auth.login, auth.pass))
+  }
   def headers(hs: Map[String, String]): RequestT[U, T, S] =
     headers(hs.map(t => Header.notValidated(t._1, t._2)).toSeq: _*)
   def headers(hs: Header*): RequestT[U, T, S] = this.copy(headers = headers ++ hs)
@@ -370,3 +376,5 @@ case class RequestOptions(
     maxRedirects: Int,
     redirectToGet: Boolean
 )
+
+final case class AuthData(login: String, pass: String)
