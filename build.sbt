@@ -137,7 +137,7 @@ val scalaNativeTestInterfaceVersion = "0.4.0-M2"
 val scalaTestNativeVersion = "3.2.0-M2"
 val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion
 
-val modelVersion = "1.1.1"
+val modelVersion = "1.1.2"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
 
@@ -300,7 +300,7 @@ lazy val cats = (projectMatrix in file("implementations/cats"))
   )
   .dependsOn(core % compileAndTest)
   .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = commonJvmSettings)
-  .jsPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = commonJsSettings)
+  .jsPlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonJsSettings)
 
 lazy val fs2 = (projectMatrix in file("implementations/fs2"))
   .settings(
@@ -312,7 +312,7 @@ lazy val fs2 = (projectMatrix in file("implementations/fs2"))
   )
   .dependsOn(core % compileAndTest, cats % compileAndTest)
   .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = commonJvmSettings)
-  .jsPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = commonJsSettings)
+  .jsPlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonJsSettings)
 
 lazy val monix = (projectMatrix in file("implementations/monix"))
   .settings(
@@ -325,10 +325,10 @@ lazy val monix = (projectMatrix in file("implementations/monix"))
     scalaVersions = List(scala2_11, scala2_12, scala2_13),
     settings = commonJvmSettings ++ List(libraryDependencies ++= Seq("io.monix" %% "monix-nio" % "0.0.7"))
   )
-  .jsPlatform(
-    scalaVersions = List(scala2_11, scala2_12, scala2_13),
-    settings = commonJsSettings ++ browserTestSettings ++ testServerSettings
-  )
+//  .jsPlatform(
+//    scalaVersions = List(scala2_11, scala2_12, scala2_13),
+//    settings = commonJsSettings ++ browserTestSettings ++ testServerSettings
+//  )
 
 lazy val zio = (projectMatrix in file("implementations/zio"))
   .settings(commonJvmSettings)
@@ -542,7 +542,7 @@ lazy val circe = (projectMatrix in file("json/circe"))
     )
   )
   .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = commonJvmSettings)
-  .jsPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = commonJsSettings)
+  .jsPlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonJsSettings)
   .dependsOn(core, jsonCommon)
 
 lazy val json4sVersion = "3.6.7"
@@ -581,7 +581,7 @@ lazy val playJson = (projectMatrix in file("json/play-json"))
     )
   )
   .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = commonJvmSettings)
-  .jsPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = commonJsSettings)
+  //.jsPlatform(scalaVersions = List(scala2_13), settings = commonJsSettings)
   .dependsOn(core, jsonCommon)
 
 lazy val braveVersion = "5.11.2"
