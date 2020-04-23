@@ -8,7 +8,7 @@ dist: trusty
 scala:
 - 2.12.10
 - 2.11.12
-- 2.13.1
+- 2.13.2
 - 0.22.0-RC1
 before_cache:
   - du -h -d 1 $HOME/.ivy2/
