@@ -18,7 +18,8 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   // needed on sbt 1.3, but (for some unknown reason) only on 2.11.x
   closeClassLoaders := !scalaVersion.value.startsWith("2.11."),
   // cross-release doesn't work when subprojects have different cross versions
-  // work-around from https://github.com/sbt/sbt-release/issues/214
+  // work-around from https://github.com/sbt/sbt-release/issues/214,
+  releaseCrossBuild := false,
   releaseProcess := Seq(
     checkSnapshotDependencies,
     inquireVersions,
