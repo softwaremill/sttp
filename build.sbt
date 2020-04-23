@@ -38,7 +38,13 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
     commitNextVersion,
     pushChanges
   ),
-  javaVersion := VersionNumber(sys.props("java.specification.version"))
+  javaVersion := VersionNumber(sys.props("java.specification.version")),
+  // doc generation is broken in dotty
+  sources in (Compile, doc) := {
+    val scalaV = scalaVersion.value
+    val current = (sources in (Compile, doc)).value
+    if (scalaV == scala3) Seq() else current
+  }
 )
 
 val onlyJava11 = Seq(
