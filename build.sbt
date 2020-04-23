@@ -275,7 +275,6 @@ lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .jvmSettings(commonJvmSettings: _*)
   .jsSettings(commonJsSettings: _*)
   .nativeSettings(commonNativeSettings: _*)
-  .jsConfigure(_.enablePlugins(JSDependenciesPlugin))
   .settings(
     name := "core",
     publishArtifact in Test := true // allow implementations outside of this repo
