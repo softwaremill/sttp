@@ -4,7 +4,7 @@
 
 The basic model classes are: `Header`, `Cookie`, `CookieWithMeta`, `MediaType`, `Method`, `StatusCode` and `Uri`. The `.toString` methods of these classes returns a representation as in a HTTP request/response. See the ScalaDoc for more information.
 
-Constructors of the model classes are mostly private. Companion objects provide methods to construct model class instances, following these rules:
+Companion objects provide methods to construct model class instances, following these rules:
 
 * `.parse(serialized: String): Either[String, ModelClass]`: returns an error message or an instance of the model class
 * `.unsafeApply(values)`: creates an instance of the model class; validates the input values and in case of an error, throws an exception. An error could be e.g. that the input values contain characters outside of the allowed range
