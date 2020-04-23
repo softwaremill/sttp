@@ -6,7 +6,7 @@ import sbt.internal.ProjectMatrix
 
 val scala2_11 = "2.11.12"
 val scala2_12 = "2.12.10"
-val scala2_13 = "2.13.1"
+val scala2_13 = "2.13.2"
 val scala3 = "0.22.0-RC1"
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on (used by JS tests)")
@@ -113,7 +113,7 @@ val testServerSettings = Seq(
 )
 
 val circeVersion: Option[(Long, Long)] => String = {
-  case Some((2, 11)) => "0.11.1"
+  case Some((2, 11)) => "0.11.2"
   case _             => "0.13.0"
 }
 val playJsonVersion: Option[(Long, Long)] => String = {
@@ -126,7 +126,7 @@ val catsEffectVersion: Option[(Long, Long)] => String = {
 }
 val fs2Version: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.1.0"
-  case _             => "2.2.2"
+  case _             => "2.3.0"
 }
 
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.11"
@@ -137,7 +137,7 @@ val scalaNativeTestInterfaceVersion = "0.4.0-M2"
 val scalaTestNativeVersion = "3.2.0-M2"
 val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion
 
-val modelVersion = "1.1.1-SNAPSHOT"
+val modelVersion = "1.1.1"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
 
@@ -248,6 +248,7 @@ lazy val core = (projectMatrix in file("core"))
   .jsPlatform(
     scalaVersions = List(scala2_11, scala2_12, scala2_13),
     settings = {
+      JSDependenciesPlugin.projectSettings ++
       commonJsSettings ++ browserTestSettings ++ List(
         libraryDependencies ++= Seq(
           "com.softwaremill.sttp.model" %%% "core" % modelVersion,
