@@ -6,7 +6,7 @@ A Scala Native backend implemented using
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client" %%% "core" % "2.0.9"
+"com.softwaremill.sttp.client" %%% "core" % "2.1.0-RC1"
 ```
 
 and initialize one of the backends:

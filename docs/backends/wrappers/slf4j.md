@@ -5,7 +5,7 @@ There are three backend wrappers available, which log request & response informa
 To use the backend wrappers, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client" %% "slf4j-backend" % "2.0.9"
+"com.softwaremill.sttp.client" %% "slf4j-backend" % "2.1.0-RC1"
 ``` 
 
 The following backend wrappers are available:
