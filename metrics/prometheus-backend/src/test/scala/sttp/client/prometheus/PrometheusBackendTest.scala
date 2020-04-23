@@ -3,7 +3,6 @@ package sttp.client.prometheus
 import java.lang
 import java.util.concurrent.CountDownLatch
 
-import sttp.client.testing.SttpBackendStub
 import sttp.client._
 import io.prometheus.client.CollectorRegistry
 import org.scalatest.concurrent.{Eventually, IntegrationPatience}
@@ -29,7 +28,7 @@ class PrometheusBackendTest
     PrometheusBackend.clear(CollectorRegistry.defaultRegistry)
   }
 
-  it should "use default histogram name" in {
+  "prometheus" should "use default histogram name" in {
     // given
     val backendStub = SttpBackendStub.synchronous.whenAnyRequest.thenRespondOk()
     val backend = PrometheusBackend[Identity, Nothing, NothingT](backendStub)
@@ -49,12 +48,12 @@ class PrometheusBackendTest
     val backend1 =
       PrometheusBackend[Identity, Nothing, NothingT](
         backendStub,
-        requestToHistogramNameMapper = _ => Some(CollectorNameWithLabels(histogramName))
+        requestToHistogramNameMapper = _ => Some(HistogramCollectorConfig(histogramName))
       )
     val backend2 =
       PrometheusBackend[Identity, Nothing, NothingT](
         backendStub,
-        requestToHistogramNameMapper = _ => Some(CollectorNameWithLabels(histogramName))
+        requestToHistogramNameMapper = _ => Some(HistogramCollectorConfig(histogramName))
       )
 
     // when
@@ -71,7 +70,7 @@ class PrometheusBackendTest
     val backend =
       PrometheusBackend[Identity, Nothing, NothingT](
         SttpBackendStub.synchronous,
-        _ => Some(CollectorNameWithLabels(customHistogramName))
+        _ => Some(HistogramCollectorConfig(customHistogramName))
       )
     val requestsNumber = 5
 
@@ -83,13 +82,20 @@ class PrometheusBackendTest
     getMetricValue(s"${customHistogramName}_count").value shouldBe requestsNumber
   }
 
-  it should "use mapped request to histogram name with labels" in {
+  it should "use mapped request to histogram name with labels and buckets" in {
     // given
     val customHistogramName = "my_custom_histogram"
     val backend =
       PrometheusBackend[Identity, Nothing, NothingT](
         SttpBackendStub.synchronous,
-        r => Some(CollectorNameWithLabels(customHistogramName, List("method" -> r.method.method)))
+        r =>
+          Some(
+            HistogramCollectorConfig(
+              customHistogramName,
+              List("method" -> r.method.method),
+              (1 until 10).map(i => i.toDouble).toList
+            )
+          )
       )
     val requestsNumber1 = 5
     val requestsNumber2 = 10
@@ -102,6 +108,29 @@ class PrometheusBackendTest
     getMetricValue(s"${PrometheusBackend.DefaultHistogramName}_count") shouldBe empty
     getMetricValue(s"${customHistogramName}_count", List("method" -> "GET")).value shouldBe requestsNumber1
     getMetricValue(s"${customHistogramName}_count", List("method" -> "POST")).value shouldBe requestsNumber2
+  }
+
+  it should "use mapped request to gauge name with labels" in {
+    // given
+    val customGaugeName = "my_custom_gauge"
+    val backend =
+      PrometheusBackend[Identity, Nothing, NothingT](
+        SttpBackendStub.synchronous,
+        requestToInProgressGaugeNameMapper =
+          r => Some(CollectorConfig(customGaugeName, List("method" -> r.method.method)))
+      )
+    val requestsNumber1 = 5
+    val requestsNumber2 = 10
+
+    // when
+    (0 until requestsNumber1).foreach(_ => backend.send(basicRequest.get(uri"http://127.0.0.1/foo")))
+    (0 until requestsNumber2).foreach(_ => backend.send(basicRequest.post(uri"http://127.0.0.1/foo")))
+
+    // then
+    getMetricValue(s"${PrometheusBackend.DefaultRequestsInProgressGaugeName}_count") shouldBe empty
+    // the gauges should be created, but set to 0
+    getMetricValue(s"$customGaugeName", List("method" -> "GET")).value shouldBe 0.0
+    getMetricValue(s"$customGaugeName", List("method" -> "POST")).value shouldBe 0.0
   }
 
   it should "disable histograms" in {
@@ -157,7 +186,7 @@ class PrometheusBackendTest
     val backend =
       PrometheusBackend[Future, Nothing, NothingT](
         backendStub,
-        requestToInProgressGaugeNameMapper = _ => Some(CollectorNameWithLabels(customGaugeName))
+        requestToInProgressGaugeNameMapper = _ => Some(CollectorConfig(customGaugeName))
       )
 
     // when

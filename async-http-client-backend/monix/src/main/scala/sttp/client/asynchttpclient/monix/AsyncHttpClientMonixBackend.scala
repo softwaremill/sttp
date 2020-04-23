@@ -70,7 +70,7 @@ object AsyncHttpClientMonixBackend {
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   )(
-      implicit s: Scheduler = Scheduler.Implicits.global
+      implicit s: Scheduler = Scheduler.global
   ): Task[SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler]] =
     Task.eval(
       AsyncHttpClientMonixBackend(AsyncHttpClientBackend.defaultClient(options), closeClient = true, customizeRequest)
@@ -83,7 +83,7 @@ object AsyncHttpClientMonixBackend {
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   )(
-      implicit s: Scheduler = Scheduler.Implicits.global
+      implicit s: Scheduler = Scheduler.global
   ): Resource[Task, SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler]] =
     Resource.make(apply(options, customizeRequest))(_.close())
 
@@ -95,7 +95,7 @@ object AsyncHttpClientMonixBackend {
       cfg: AsyncHttpClientConfig,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   )(
-      implicit s: Scheduler = Scheduler.Implicits.global
+      implicit s: Scheduler = Scheduler.global
   ): Task[SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler]] =
     Task.eval(AsyncHttpClientMonixBackend(new DefaultAsyncHttpClient(cfg), closeClient = true, customizeRequest))
 
@@ -106,7 +106,7 @@ object AsyncHttpClientMonixBackend {
       cfg: AsyncHttpClientConfig,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   )(
-      implicit s: Scheduler = Scheduler.Implicits.global
+      implicit s: Scheduler = Scheduler.global
   ): Resource[Task, SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler]] =
     Resource.make(usingConfig(cfg, customizeRequest))(_.close())
 
@@ -120,7 +120,7 @@ object AsyncHttpClientMonixBackend {
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   )(
-      implicit s: Scheduler = Scheduler.Implicits.global
+      implicit s: Scheduler = Scheduler.global
   ): Task[SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler]] =
     Task.eval(
       AsyncHttpClientMonixBackend(
@@ -141,7 +141,7 @@ object AsyncHttpClientMonixBackend {
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   )(
-      implicit s: Scheduler = Scheduler.Implicits.global
+      implicit s: Scheduler = Scheduler.global
   ): Resource[Task, SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler]] =
     Resource.make(usingConfigBuilder(updateConfig, options, customizeRequest))(_.close())
 
@@ -152,7 +152,7 @@ object AsyncHttpClientMonixBackend {
   def usingClient(
       client: AsyncHttpClient,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  )(implicit s: Scheduler = Scheduler.Implicits.global): SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler] =
+  )(implicit s: Scheduler = Scheduler.global): SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler] =
     AsyncHttpClientMonixBackend(client, closeClient = false, customizeRequest)
 
   /**

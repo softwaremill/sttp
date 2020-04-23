@@ -49,7 +49,7 @@ sttp is a family of Scala HTTP-related projects, and currently includes:
 
 Development and maintenance of sttp client is sponsored by [SoftwareMill](https://softwaremill.com), a software development and consulting company. We help clients scale their business through software. Our areas of expertise include backends, distributed systems, blockchain, machine learning and data analytics.
 
-[![](https://softwaremill.com/images/header-main-logo.3449d6a3.svg "SoftwareMill")](https://softwaremill.com)
+[![](https://files.softwaremill.com/logo/logo.png "SoftwareMill")](https://softwaremill.com)
 
 # Try sttp client in your browser!
 

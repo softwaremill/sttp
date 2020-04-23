@@ -2,19 +2,15 @@ package sttp.client.asynchttpclient.cats
 
 import java.util.concurrent.TimeoutException
 
-import cats.effect.{ContextShift, IO, Timer}
+import cats.effect.IO
 import sttp.client._
-import sttp.client.impl.cats.convertCatsIOToFuture
-import sttp.client.testing.{CancelTest, ConvertToFuture, HttpTest}
+import sttp.client.impl.cats.CatsTestBase
+import sttp.client.testing.{CancelTest, HttpTest}
 
 import scala.concurrent.duration._
 
-class AsyncHttpClientCatsHttpTest extends HttpTest[IO] with CancelTest[IO, Nothing] {
-
-  implicit val cs: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionContext.global)
-  implicit val timer: Timer[IO] = IO.timer(scala.concurrent.ExecutionContext.global)
+class AsyncHttpClientCatsHttpTest extends HttpTest[IO] with CancelTest[IO, Nothing] with CatsTestBase {
   override implicit val backend: SttpBackend[IO, Nothing, NothingT] = AsyncHttpClientCatsBackend[IO]().unsafeRunSync()
-  override implicit val convertToFuture: ConvertToFuture[IO] = convertCatsIOToFuture
 
   "illegal url exceptions" - {
     "should be wrapped in the effect wrapper" in {

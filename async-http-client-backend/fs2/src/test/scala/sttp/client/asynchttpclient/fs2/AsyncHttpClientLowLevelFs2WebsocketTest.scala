@@ -1,22 +1,17 @@
 package sttp.client.asynchttpclient.fs2
 
-import cats.effect.{ContextShift, IO}
+import cats.effect.IO
 import com.github.ghik.silencer.silent
 import org.asynchttpclient.ws.{WebSocketListener, WebSocket => AHCWebSocket}
 import sttp.client._
 import sttp.client.asynchttpclient.WebSocketHandler
-import sttp.client.testing.ConvertToFuture
+import sttp.client.impl.cats.CatsTestBase
 import sttp.client.testing.websocket.LowLevelListenerWebSocketTest
 
-import scala.concurrent.Future
-
 class AsyncHttpClientLowLevelFs2WebsocketTest
-    extends LowLevelListenerWebSocketTest[IO, AHCWebSocket, WebSocketHandler] {
-  implicit val cs: ContextShift[IO] = IO.contextShift(implicitly)
+    extends LowLevelListenerWebSocketTest[IO, AHCWebSocket, WebSocketHandler]
+    with CatsTestBase {
   implicit val backend: SttpBackend[IO, Nothing, WebSocketHandler] = AsyncHttpClientFs2Backend[IO]().unsafeRunSync()
-  implicit val convertToFuture: ConvertToFuture[IO] = new ConvertToFuture[IO] {
-    override def toFuture[T](value: IO[T]): Future[T] = value.unsafeToFuture()
-  }
 
   override def createHandler(_onTextFrame: String => Unit): WebSocketHandler[AHCWebSocket] =
     WebSocketHandler.fromListener(new WebSocketListener {

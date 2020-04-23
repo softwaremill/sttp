@@ -6,7 +6,7 @@ A Scala Native backend implemented using
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client" %%% "core" % "2.0.7"
+"com.softwaremill.sttp.client" %%% "core" % "2.0.9"
 ```
 
 and initialize one of the backends:
@@ -17,4 +17,4 @@ implicit val sttpTryBackend = CurlTryBackend()
 ```
 
 You need to have an environment with Scala Native [setup](https://scala-native.readthedocs.io/en/latest/user/setup.html)
-with additionally installed [libidn](https://www.gnu.org/software/libidn/) and `curl` in version `7.56.0` or newer.
+with additionally installed `libcrypto` (included in OpenSSL) and `curl` in version `7.56.0` or newer.

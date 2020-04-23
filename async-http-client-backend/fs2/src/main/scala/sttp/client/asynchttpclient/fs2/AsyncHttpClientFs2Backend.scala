@@ -56,7 +56,7 @@ class AsyncHttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
   override protected def publisherToFile(p: Publisher[ByteBuffer], f: File): F[Unit] = {
     p.toStream[F]
       .flatMap(b => Stream.emits(b.array()))
-      .through(fs2.io.file.writeAll(f.toPath, Blocker.liftExecutionContext(ExecutionContext.Implicits.global)))
+      .through(fs2.io.file.writeAll(f.toPath, Blocker.liftExecutionContext(ExecutionContext.global)))
       .compile
       .drain
   }

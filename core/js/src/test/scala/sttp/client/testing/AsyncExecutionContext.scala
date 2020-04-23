@@ -12,5 +12,5 @@ import scala.concurrent.ExecutionContext
   *   using a wrong ExecutionContext for your task, please double check your Future.
   */
 trait AsyncExecutionContext { self: AsyncTestSuite =>
-  implicit override def executionContext: ExecutionContext = ExecutionContext.Implicits.global
+  implicit override def executionContext: ExecutionContext = ExecutionContext.global
 }

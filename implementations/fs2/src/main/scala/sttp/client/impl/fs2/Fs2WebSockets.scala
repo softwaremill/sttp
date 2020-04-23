@@ -1,4 +1,4 @@
-package sttp.client.asynchttpclient.fs2
+package sttp.client.impl.fs2
 
 import cats.effect.ConcurrentEffect
 import cats.effect.concurrent.Ref

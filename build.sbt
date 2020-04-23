@@ -193,7 +193,7 @@ val scalaNativeTestInterfaceVersion = "0.4.0-M2"
 val scalaTestNativeVersion = "3.2.0-M2"
 val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion
 
-val modelVersion = "1.0.3-SNAPSHOT"
+val modelVersion = "1.0.3"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
 
@@ -250,6 +250,7 @@ lazy val rootJVM = project
     prometheusBackend,
     httpClientBackend,
     httpClientMonixBackend,
+    httpClientFs2Backend,
     finagleBackend,
     slf4jBackend,
 //TODO     examples
@@ -353,8 +354,8 @@ lazy val fs2 = crossProject(JSPlatform, JVMPlatform)
       "co.fs2" %%% "fs2-core" % fs2Version(_)
     )
   )
-lazy val fs2JS = fs2.js.dependsOn(coreJS % compileAndTest)
-lazy val fs2JVM = fs2.jvm.dependsOn(coreJVM % compileAndTest)
+lazy val fs2JS = fs2.js.dependsOn(coreJS % compileAndTest, catsJS % compileAndTest)
+lazy val fs2JVM = fs2.jvm.dependsOn(coreJVM % compileAndTest, catsJVM % compileAndTest)
 
 lazy val monix = crossProject(JSPlatform, JVMPlatform)
   .withoutSuffixFor(JVMPlatform)
@@ -502,7 +503,7 @@ lazy val http4sBackend: Project = (project in file("http4s-backend"))
     )
   )
   .settings(only2_12_and_2_13_settings)
-  .dependsOn(catsJVM, coreJVM % compileAndTest)
+  .dependsOn(catsJVM % compileAndTest, coreJVM % compileAndTest, fs2JVM % "test->test")
 
 //-- httpclient-java11
 lazy val httpClientBackend: Project = (project in file("httpclient-backend"))
@@ -525,6 +526,16 @@ def httpClientBackendProject(proj: String): Project = {
 lazy val httpClientMonixBackend: Project =
   httpClientBackendProject("monix")
     .dependsOn(monixJVM % compileAndTest)
+
+lazy val httpClientFs2Backend: Project =
+  httpClientBackendProject("fs2")
+    .settings(
+      libraryDependencies ++= dependenciesFor(scalaVersion.value)(
+        "co.fs2" %% "fs2-reactive-streams" % fs2Version(_),
+        "co.fs2" %% "fs2-io" % fs2Version(_)
+      )
+    )
+    .dependsOn(fs2JVM % compileAndTest)
 
 //-- finagle backend
 lazy val finagleBackend: Project = (project in file("finagle-backend"))
@@ -612,7 +623,7 @@ lazy val playJson = crossProject(JSPlatform, JVMPlatform)
 lazy val playJsonJS = playJson.js.dependsOn(coreJS, jsonCommonJS)
 lazy val playJsonJVM = playJson.jvm.dependsOn(coreJVM, jsonCommonJVM)
 
-lazy val braveVersion = "5.10.2"
+lazy val braveVersion = "5.11.2"
 
 lazy val braveBackend: Project = (project in file("metrics/brave-backend"))
   .settings(commonJvmSettings: _*)

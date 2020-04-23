@@ -2,9 +2,6 @@
 
 Some backends (see [backends summary](../backends/summary.html)) support streaming bodies. If that's the case, you can set a stream of the supported type as a request body using the `streamBody` method, instead of the usual `body` method.
 
-```note:: 
-```
-
 ```eval_rst
 .. note::
 
