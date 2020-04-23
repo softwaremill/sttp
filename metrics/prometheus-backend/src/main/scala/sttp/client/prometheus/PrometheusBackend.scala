@@ -2,7 +2,6 @@ package sttp.client.prometheus
 
 import java.util.concurrent.ConcurrentHashMap
 
-import com.github.ghik.silencer.silent
 import sttp.client.{FollowRedirectsBackend, Identity, Request, Response, SttpBackend}
 import io.prometheus.client.{CollectorRegistry, Counter, Gauge, Histogram}
 import sttp.client.listener.{ListenerBackend, RequestListener}
@@ -58,7 +57,6 @@ object PrometheusBackend {
   /**
     * Clear cached collectors (gauges and histograms) both from the given collector registry, and from the backend.
     */
-  @silent("discarded")
   def clear(collectorRegistry: CollectorRegistry): Unit = {
     collectorRegistry.clear()
     histograms.remove(collectorRegistry)

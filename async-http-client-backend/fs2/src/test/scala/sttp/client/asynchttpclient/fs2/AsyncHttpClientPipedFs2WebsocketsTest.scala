@@ -8,9 +8,10 @@ import sttp.client._
 import sttp.client.asynchttpclient.WebSocketHandler
 import sttp.client.impl.cats.CatsTestBase
 import sttp.client.impl.fs2.Fs2WebSockets
-import sttp.client.testing.{TestHttpServer, ToFutureWrapper}
+import sttp.client.testing.ToFutureWrapper
 import sttp.client.ws.WebSocket
 import sttp.model.ws.WebSocketFrame
+import sttp.client.testing.HttpTest.wsEndpoint
 
 import scala.collection.immutable.Queue
 import org.scalatest.flatspec.AsyncFlatSpec
@@ -19,7 +20,6 @@ import org.scalatest.matchers.should.Matchers
 class AsyncHttpClientPipedFs2WebsocketsTest
     extends AsyncFlatSpec
     with Matchers
-    with TestHttpServer
     with ToFutureWrapper
     with CatsTestBase {
   implicit val backend: SttpBackend[IO, Nothing, WebSocketHandler] = AsyncHttpClientFs2Backend[IO]().unsafeRunSync()

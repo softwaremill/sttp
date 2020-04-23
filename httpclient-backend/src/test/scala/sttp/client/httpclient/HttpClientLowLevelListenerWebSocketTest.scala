@@ -4,7 +4,6 @@ import java.net.http.WebSocket
 import java.net.http.WebSocket.Listener
 import java.util.concurrent.CompletionStage
 
-import com.github.ghik.silencer.silent
 import sttp.client.testing.websocket.LowLevelListenerWebSocketTest
 
 abstract class HttpClientLowLevelListenerWebSocketTest[F[_]]
@@ -26,9 +25,7 @@ abstract class HttpClientLowLevelListenerWebSocketTest[F[_]]
       }
     })
 
-  @silent("discarded")
   override def sendText(ws: WebSocket, t: String): Unit = ws.sendText(t.toString, true).get()
 
-  @silent("discarded")
   override def sendCloseFrame(ws: WebSocket): Unit = ws.sendClose(WebSocket.NORMAL_CLOSURE, "").get()
 }

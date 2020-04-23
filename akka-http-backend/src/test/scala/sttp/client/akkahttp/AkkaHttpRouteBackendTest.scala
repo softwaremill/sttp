@@ -3,7 +3,6 @@ package sttp.client.akkahttp
 import akka.actor.ActorSystem
 import akka.http.scaladsl.server.Route
 import akka.stream.ActorMaterializer
-import com.github.ghik.silencer.silent
 import org.scalatest.BeforeAndAfterAll
 import sttp.client.{NothingT, SttpBackend}
 import sttp.model.StatusCode
@@ -18,7 +17,6 @@ class AkkaHttpRouteBackendTest extends AsyncWordSpec with Matchers with BeforeAn
   implicit val system: ActorSystem = ActorSystem()
   implicit val materializer: ActorMaterializer = ActorMaterializer()
 
-  @silent("discarded")
   override protected def afterAll(): Unit = {
     Await.result(system.terminate(), 5.seconds)
   }

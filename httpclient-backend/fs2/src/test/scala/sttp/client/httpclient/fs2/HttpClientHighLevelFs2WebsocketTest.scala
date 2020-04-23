@@ -6,6 +6,7 @@ import sttp.client._
 import sttp.client.httpclient.WebSocketHandler
 import sttp.client.testing.websocket.HighLevelWebsocketTest
 import sttp.client.ws.WebSocket
+import sttp.client.testing.HttpTest.wsEndpoint
 
 import scala.concurrent.duration._
 

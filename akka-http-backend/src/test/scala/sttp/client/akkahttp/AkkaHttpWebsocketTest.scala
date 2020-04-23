@@ -6,10 +6,9 @@ import akka.Done
 import akka.http.scaladsl.model.ws.{Message, TextMessage}
 import akka.stream.Materializer
 import akka.stream.scaladsl._
-import com.github.ghik.silencer.silent
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.{Eventually, IntegrationPatience}
 import sttp.client._
-import sttp.client.testing.TestHttpServer
 
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
@@ -17,11 +16,12 @@ import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.Success
 import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
+import sttp.client.testing.HttpTest.wsEndpoint
 
 class AkkaHttpWebsocketTest
     extends AsyncFlatSpec
     with Matchers
-    with TestHttpServer
+    with BeforeAndAfterAll
     with Eventually
     with IntegrationPatience {
   implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.global
@@ -73,7 +73,6 @@ class AkkaHttpWebsocketTest
     }
   }
 
-  @silent("discard")
   def collectionSink(queue: ConcurrentLinkedQueue[String]): Sink[Message, Future[Done]] =
     Sink
       .setup[Message, Future[Done]] { (_materializer, _) =>

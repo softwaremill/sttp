@@ -9,6 +9,7 @@ import sttp.client.testing.websocket.HighLevelWebsocketTest
 import sttp.model.Uri._
 
 import scala.concurrent.duration._
+import sttp.client.testing.HttpTest.wsEndpoint
 
 abstract class AsyncHttpClientHighLevelWebsocketTest[F[_]] extends HighLevelWebsocketTest[F, WebSocketHandler] {
 

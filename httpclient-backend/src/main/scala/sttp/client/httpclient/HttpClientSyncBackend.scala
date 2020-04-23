@@ -4,7 +4,6 @@ import java.net.http.{HttpClient, HttpRequest}
 import java.net.http.HttpResponse.BodyHandlers
 import java.util.concurrent.ArrayBlockingQueue
 
-import com.github.ghik.silencer.silent
 import sttp.client.monad.{IdMonad, MonadError}
 import sttp.client.testing.SttpBackendStub
 import sttp.client.ws.WebSocketResponse
@@ -37,9 +36,7 @@ class HttpClientSyncBackend private (
       handler: WebSocketHandler[WS_RESULT]
   ): Identity[WebSocketResponse[WS_RESULT]] = adjustExceptions {
     val responseCell = new ArrayBlockingQueue[Either[Throwable, WebSocketResponse[WS_RESULT]]](1)
-    @silent("discarded")
     def fillCellError(t: Throwable): Unit = responseCell.add(Left(t))
-    @silent("discarded")
     def fillCell(wr: WebSocketResponse[WS_RESULT]): Unit = responseCell.add(Right(wr))
     val listener = new DelegatingWebSocketListener(
       handler.listener,

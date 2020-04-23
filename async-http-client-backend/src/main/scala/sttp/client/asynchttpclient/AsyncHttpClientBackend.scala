@@ -7,7 +7,6 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.UnaryOperator
 
-import com.github.ghik.silencer.silent
 import io.netty.buffer.ByteBuf
 import io.netty.handler.codec.http.HttpHeaders
 import org.asynchttpclient.AsyncHandler.State
@@ -232,7 +231,6 @@ abstract class AsyncHttpClientBackend[F[_], S](
     rb.build()
   }
 
-  @silent("discarded")
   private def setBody(r: Request[_, S], body: RequestBody[S], rb: RequestBuilder): Unit = {
     body match {
       case NoBody => // skip
@@ -264,7 +262,6 @@ abstract class AsyncHttpClientBackend[F[_], S](
     }
   }
 
-  @silent("discarded")
   private def addMultipartBody(rb: RequestBuilder, mp: Part[BasicRequestBody]): Unit = {
     // async http client only supports setting file names on file parts. To
     // set a file name on an arbitrary part we have to use a small "work
@@ -314,7 +311,7 @@ abstract class AsyncHttpClientBackend[F[_], S](
   private def readHeaders(h: HttpHeaders): Seq[Header] =
     h.iteratorAsString()
       .asScala
-      .map(e => Header.notValidated(e.getKey, e.getValue))
+      .map(e => Header(e.getKey, e.getValue))
       .toList
 
   override def close(): F[Unit] = {
@@ -428,7 +425,6 @@ private[asynchttpclient] class SimpleSubscriber(success: ByteBuffer => Unit, err
     }
   }
 
-  @silent("discarded")
   override def onNext(b: ByteBuffer): Unit = {
     assert(b != null)
     val a = b.array()
