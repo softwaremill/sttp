@@ -22,7 +22,7 @@ abstract class HttpClientAsyncBackend[F[_], S](
   override def send[T](request: Request[T, S]): F[Response[T]] = adjustExceptions {
     val jRequest = customizeRequest(convertRequest(request))
 
-    monad.flatten(monad.async[F[Response[T]]] { cb: (Either[Throwable, F[Response[T]]] => Unit) =>
+    monad.flatten(monad.async[F[Response[T]]] { (cb: (Either[Throwable, F[Response[T]]] => Unit)) =>
       def success(r: F[Response[T]]): Unit = cb(Right(r))
       def error(t: Throwable): Unit = cb(Left(t))
 

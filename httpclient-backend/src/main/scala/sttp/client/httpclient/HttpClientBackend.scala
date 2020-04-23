@@ -4,7 +4,7 @@ import java.io.InputStream
 import java.net.http.HttpRequest.{BodyPublisher, BodyPublishers}
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 import java.net.{Authenticator, PasswordAuthentication}
-import java.nio.ByteBuffer
+import java.nio.{ByteBuffer, Buffer}
 import java.time.{Duration => JDuration}
 import java.util.concurrent.{Executor, ThreadPoolExecutor}
 import java.util.function
@@ -61,7 +61,7 @@ abstract class HttpClientBackend[F[_], S](client: HttpClient, closeClient: Boole
       case StringBody(b, _, _) => BodyPublishers.ofString(b)
       case ByteArrayBody(b, _) => BodyPublishers.ofByteArray(b)
       case ByteBufferBody(b, _) =>
-        if (b.isReadOnly) BodyPublishers.ofInputStream(() => new ByteBufferBackedInputStream(b))
+        if ((b: Buffer).isReadOnly()) BodyPublishers.ofInputStream(() => new ByteBufferBackedInputStream(b))
         else BodyPublishers.ofByteArray(b.array())
       case InputStreamBody(b, _) => BodyPublishers.ofInputStream(() => b)
       case FileBody(f, _)        => BodyPublishers.ofFile(f.toFile.toPath)
@@ -128,7 +128,8 @@ abstract class HttpClientBackend[F[_], S](client: HttpClient, closeClient: Boole
             responseBody.close()
             result
           case ras @ ResponseAsStream() =>
-            responseBodyToStream(responseBody).map(ras.responseIsStream)
+            // TODO: dotty requires the cast below
+            responseBodyToStream(responseBody).map(ras.responseIsStream.asInstanceOf[S =:= T])
           case ResponseAsFile(file) =>
             val body = Try(FileHelpers.saveFile(file.toFile, responseBody))
             responseBody.close()

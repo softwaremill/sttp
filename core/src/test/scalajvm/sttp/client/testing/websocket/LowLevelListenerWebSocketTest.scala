@@ -10,12 +10,15 @@ import sttp.client.testing.{ConvertToFuture, ToFutureWrapper}
 import sttp.client.monad.syntax._
 
 import scala.collection.JavaConverters._
-import org.scalatest.flatspec.AsyncFlatSpec
+import org.scalatest.SuiteMixin
+import org.scalatest.flatspec.AsyncFlatSpecLike
 import org.scalatest.matchers.should.Matchers
 import sttp.client.testing.HttpTest.wsEndpoint
 
+// TODO: change to `extends AsyncFlatSpec` when https://github.com/scalatest/scalatest/issues/1802 is fixed
 trait LowLevelListenerWebSocketTest[F[_], WS, WS_HANDLER[_]]
-    extends AsyncFlatSpec
+    extends SuiteMixin
+    with AsyncFlatSpecLike
     with Matchers
     with BeforeAndAfterAll
     with ToFutureWrapper
