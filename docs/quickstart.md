@@ -12,9 +12,9 @@ The basic dependency which provides the API and the default synchronous backend 
 "com.softwaremill.sttp.client" %% "core" % "2.0.9"
 ```
 
-`sttp client` is available for Scala 2.11, 2.12 and 2.13, and requires Java 8.
+`sttp client` is available for Scala 2.11, 2.12 and 2.13, and requires Java 8, as well as for Dotty (Scala3) 0.22.
 
-`sttp client` is also available for Scala.js 0.6. Note that not all modules are compatible and there are no backends that can be used on both.
+`sttp client` is also available for Scala.js 1.0. Note that not all modules are compatible and there are no backends that can be used on both. The last version compatible with Scala.js 0.6 was 2.0.9.
 
 ## Using Ammonite
 
