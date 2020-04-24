@@ -1,7 +1,6 @@
 # Curl backend
 
-A Scala Native backend implemented using
-[Curl](https://github.com/curl/curl/blob/master/include/curl/curl.h).
+A Scala Native backend implemented using [Curl](https://github.com/curl/curl/blob/master/include/curl/curl.h).
 
 To use, add the following dependency to your project:
 
