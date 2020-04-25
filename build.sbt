@@ -7,7 +7,7 @@ import sbt.internal.ProjectMatrix
 val scala2_11 = "2.11.12"
 val scala2_12 = "2.12.10"
 val scala2_13 = "2.13.2"
-val scala3 = "0.22.0-RC1"
+val scala3 = "0.22.0"
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests")
