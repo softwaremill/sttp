@@ -325,7 +325,7 @@ lazy val monix = (projectMatrix in file("implementations/monix"))
   .settings(
     name := "monix",
     publishArtifact in Test := true,
-    libraryDependencies ++= Seq("io.monix" %%% "monix" % "3.1.0")
+    libraryDependencies ++= Seq("io.monix" %%% "monix" % "3.2.0")
   )
   .dependsOn(core % compileAndTest)
   .jvmPlatform(
