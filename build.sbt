@@ -332,10 +332,10 @@ lazy val monix = (projectMatrix in file("implementations/monix"))
     scalaVersions = List(scala2_11, scala2_12, scala2_13),
     settings = commonJvmSettings ++ List(libraryDependencies ++= Seq("io.monix" %% "monix-nio" % "0.0.7"))
   )
-//  .jsPlatform(
-//    scalaVersions = List(scala2_11, scala2_12, scala2_13),
-//    settings = commonJsSettings ++ browserTestSettings ++ testServerSettings
-//  )
+  .jsPlatform(
+    scalaVersions = List(scala2_12, scala2_13),
+    settings = commonJsSettings ++ browserTestSettings ++ testServerSettings
+  )
 
 lazy val zio = (projectMatrix in file("implementations/zio"))
   .settings(commonJvmSettings)
@@ -588,7 +588,6 @@ lazy val playJson = (projectMatrix in file("json/play-json"))
     )
   )
   .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = commonJvmSettings)
-  //.jsPlatform(scalaVersions = List(scala2_13), settings = commonJsSettings)
   .dependsOn(core, jsonCommon)
 
 lazy val braveVersion = "5.11.2"
