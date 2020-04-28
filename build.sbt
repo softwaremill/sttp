@@ -472,7 +472,7 @@ lazy val http4sBackend = (projectMatrix in file("http4s-backend"))
   .settings(
     name := "http4s-backend",
     libraryDependencies ++= Seq(
-      "org.http4s" %% "http4s-blaze-client" % "0.21.3"
+      "org.http4s" %% "http4s-blaze-client" % "0.21.4"
     )
   )
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13))
