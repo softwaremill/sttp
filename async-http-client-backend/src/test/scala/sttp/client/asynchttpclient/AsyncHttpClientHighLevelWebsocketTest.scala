@@ -19,7 +19,7 @@ abstract class AsyncHttpClientHighLevelWebsocketTest[F[_]] extends HighLevelWebs
         basicRequest
           .get(uri"$wsEndpoint/echo")
           .openWebsocketF(createHandler(None))
-          .map(_ => fail: Assertion)
+          .map(_ => fail(): Assertion)
       } {
         case e: Exception => (e shouldBe a[SttpClientException.ReadException]).unit
       }

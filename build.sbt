@@ -55,7 +55,12 @@ val onlyJava11 = Seq(
 )
 
 val commonJvmSettings = commonSettings ++ Seq(
-  scalacOptions ++= Seq("-target:jvm-1.8")
+  scalacOptions ++= Seq("-target:jvm-1.8"),
+  scalacOptions := {
+    val current = scalacOptions.value
+    // https://github.com/lampepfl/dotty/pull/7775
+    if (isDotty.value) current ++ List("-language:implicitConversions", "-Ykind-projector") else current
+  }
 )
 
 val commonJsSettings = commonSettings ++ Seq(
@@ -250,12 +255,7 @@ lazy val core = (projectMatrix in file("core"))
         libraryDependencies ++= Seq(
           "com.softwaremill.sttp.model" %% "core" % modelVersion,
           scalaTest % Test
-        ),
-        scalacOptions := {
-          val current = scalacOptions.value
-          // https://github.com/lampepfl/dotty/pull/7775
-          if (isDotty.value) current ++ List("-language:implicitConversions", "-Ykind-projector") else current
-        }
+        )
       )
     }
   )
@@ -350,7 +350,7 @@ lazy val zio = (projectMatrix in file("implementations/zio"))
     )
   )
   .dependsOn(core % compileAndTest)
-  .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13))
+  .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13, scala3))
 
 lazy val scalaz = (projectMatrix in file("implementations/scalaz"))
   .settings(commonJvmSettings)
@@ -390,19 +390,19 @@ lazy val asyncHttpClientBackend = (projectMatrix in file("async-http-client-back
     )
   )
   .dependsOn(core % compileAndTest)
-  .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13))
+  .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13, scala3))
 
-def asyncHttpClientBackendProject(proj: String) = {
+def asyncHttpClientBackendProject(proj: String, includeDotty: Boolean = false) = {
   ProjectMatrix(s"asyncHttpClientBackend${proj.capitalize}", file(s"async-http-client-backend/$proj"))
     .settings(commonJvmSettings)
     .settings(testServerSettings)
     .settings(name := s"async-http-client-backend-$proj")
     .dependsOn(asyncHttpClientBackend % compileAndTest)
-    .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13))
+    .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13) ++ (if (includeDotty) List(scala3) else Nil))
 }
 
 lazy val asyncHttpClientFutureBackend =
-  asyncHttpClientBackendProject("future")
+  asyncHttpClientBackendProject("future", includeDotty = true)
     .dependsOn(core % compileAndTest)
 
 lazy val asyncHttpClientScalazBackend =
@@ -410,7 +410,7 @@ lazy val asyncHttpClientScalazBackend =
     .dependsOn(scalaz % compileAndTest)
 
 lazy val asyncHttpClientZioBackend =
-  asyncHttpClientBackendProject("zio")
+  asyncHttpClientBackendProject("zio", includeDotty = true)
     .dependsOn(zio % compileAndTest)
 
 lazy val asyncHttpClientZioStreamsBackend =
