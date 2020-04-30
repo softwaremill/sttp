@@ -76,6 +76,12 @@ val commonJsSettings = commonSettings ++ Seq(
   }
 )
 
+val commonJsBackeendSettings = JSDependenciesPlugin.projectSettings ++ List(
+  jsDependencies ++= Seq(
+    "org.webjars.npm" % "spark-md5" % "3.0.0" % Test / "spark-md5.js" minified "spark-md5.min.js"
+  )
+)
+
 val commonNativeSettings = commonSettings ++ Seq(
   nativeLinkStubs := true
 )
@@ -255,14 +261,10 @@ lazy val core = (projectMatrix in file("core"))
   .jsPlatform(
     scalaVersions = List(scala2_11, scala2_12, scala2_13),
     settings = {
-      JSDependenciesPlugin.projectSettings ++
-      commonJsSettings ++ browserTestSettings ++ List(
+        commonJsSettings ++ commonJsBackeendSettings ++ browserTestSettings ++ List(
         libraryDependencies ++= Seq(
           "com.softwaremill.sttp.model" %%% "core" % modelVersion,
           "org.scalatest" %%% "scalatest" % scalaTestVersion % Test
-        ),
-        jsDependencies ++= Seq(
-          "org.webjars.npm" % "spark-md5" % "3.0.0" % Test / "spark-md5.js" minified "spark-md5.min.js"
         )
       )
     }
@@ -325,7 +327,7 @@ lazy val monix = (projectMatrix in file("implementations/monix"))
   .settings(
     name := "monix",
     publishArtifact in Test := true,
-    libraryDependencies ++= Seq("io.monix" %%% "monix" % "3.2.0")
+    libraryDependencies ++= Seq("io.monix" %%% "monix" % "3.2.1")
   )
   .dependsOn(core % compileAndTest)
   .jvmPlatform(
@@ -334,7 +336,7 @@ lazy val monix = (projectMatrix in file("implementations/monix"))
   )
   .jsPlatform(
     scalaVersions = List(scala2_12, scala2_13),
-    settings = commonJsSettings ++ browserTestSettings ++ testServerSettings
+    settings = commonJsSettings ++ commonJsBackeendSettings ++ browserTestSettings ++ testServerSettings
   )
 
 lazy val zio = (projectMatrix in file("implementations/zio"))
