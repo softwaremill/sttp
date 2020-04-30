@@ -9,19 +9,19 @@ To integrate with other parts of your application, you'll often need to use an a
 The basic dependency which provides the API and the default synchronous backend is:
 
 ```scala
-"com.softwaremill.sttp.client" %% "core" % "2.1.0"
+"com.softwaremill.sttp.client" %% "core" % "2.1.1"
 ```
 
 `sttp client` is available for Scala 2.11, 2.12 and 2.13, and requires Java 8, as well as for Dotty (Scala 3) 0.22.
 
-`sttp client` is also available for Scala.js 1.0. Note that not all modules are compatible and there are no backends that can be used on both. The last version compatible with Scala.js 0.6 was 2.1.0.
+`sttp client` is also available for Scala.js 1.0. Note that not all modules are compatible and there are no backends that can be used on both. The last version compatible with Scala.js 0.6 was 2.1.1.
 
 ## Using Ammonite
 
 If you are an [Ammonite](https://ammonite.io) user, you can quickly start experimenting with sttp by copy-pasting the following:
 
 ```scala
-import $ivy.`com.softwaremill.sttp.client::core:2.1.0`
+import $ivy.`com.softwaremill.sttp.client::core:2.1.1`
 import sttp.client.quick._
 quickRequest.get(uri"http://httpbin.org/ip").send()
 ```
@@ -31,7 +31,7 @@ Importing the `quick` object has the same effect as importing `sttp.client._`, p
 If the default `HttpURLConnectionBackend` for some reason is insufficient, you can also use one based on OkHttp:
 
 ```scala
-import $ivy.`com.softwaremill.sttp.client::okhttp-backend:2.1.0`
+import $ivy.`com.softwaremill.sttp.client::okhttp-backend:2.1.1`
 import sttp.client.okhttp.quick._
 quickRequest.get(uri"http://httpbin.org/ip").send()
 ```
