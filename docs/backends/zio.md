@@ -8,7 +8,7 @@ To use, add the following dependency to your project:
 "com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % "2.1.0-RC1"
 ```
            
-This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client), uses [Netty](http://netty.io) behind the scenes and supports effect cancellation.
+This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client), uses [Netty](http://netty.io) behind the scenes and supports effect cancellation. This backend works with all Scala versions. A Dotty build is available as well.
 
 Next you'll need to define a backend instance as an implicit value. This can be done in two basic ways:
 

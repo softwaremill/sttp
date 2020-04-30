@@ -44,7 +44,7 @@ Class                                Response wrapper             Supported stre
 ==================================== ============================ ================================================ ==================================================
 ```
 
-The backends work with Scala 2.11, 2.12 and 2.13 (with some exceptions for 2.11). Moreover, `HttpURLConnectionBackend`, `HttpClientSyncBackend` and `HttpClientFutureBackend` work with Dotty.
+The backends work with Scala 2.11, 2.12 and 2.13 (with some exceptions for 2.11). Moreover, `HttpURLConnectionBackend`, `AsyncHttpClientFutureBackend`, `AsyncHttpClientZioBackend`, `HttpClientSyncBackend` and `HttpClientFutureBackend` are additionally built with Dotty (Scala 3).
 
 There are also backends which wrap other backends to provide additional functionality. These include:
 

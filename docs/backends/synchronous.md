@@ -12,7 +12,7 @@ To use, add an implicit value:
 implicit val sttpBackend = HttpURLConnectionBackend()
 ```
 
-This backend works with all Scala versions and Dotty.
+This backend works with all Scala versions. A Dotty build is available as well.
 
 ## Using OkHttp
 
@@ -54,7 +54,7 @@ implicit val sttpBackend = HttpClientSyncBackend()
 implicit val sttpBackend = HttpClientSyncBackend.usingClient(httpClient)
 ```
 
-This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards, works with all Scala versions and Dotty.
+This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards, works with all Scala versions. A Dotty build is available as well.
 
 ## Streaming
 
