@@ -3,7 +3,7 @@
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client" %% "zio-telemetry-opentracing-backend" % "2.1.0"
+"com.softwaremill.sttp.client" %% "zio-telemetry-opentracing-backend" % "2.1.1"
 ```
 
 This backend depends on [zio-opentracing](https://github.com/zio/zio-telemetry).
@@ -16,16 +16,22 @@ Here's how you construct `ZioTelemetryOpenTracingBackend`. I would recommend wra
 new ZioTelemetryOpenTracingBackend(zioBackend)
 ```
 
-We already append tags like `http.method`, `http.url` and `http.status_code`
-
-Additionally you can add tags per request by supplying a `RequestTagCollector`
+Additionally you can add tags per request by supplying a `ZioTelemetryOpenTracingTracer`
 
 ```scala
-val tagMethod: RequestTagCollector = new RequestTagCollector {
-  def collect[T](request: Request[T, Nothing]): Map[String, String] = Map("method" -> request.method.method)
+def sttpTracer: ZioTelemtrySttpTracer = new ZioTelemtrySttpTracer {
+    def before[T](request: Request[T, Nothing]): RIO[OpenTracing, Unit] =
+      OpenTracing.tag("span.kind", "client") *>
+      OpenTracing.tag("http.method", request.method.method) *>
+      OpenTracing.tag("http.url", request.uri.toString()) *>
+      OpenTracing.tag("type", "ext") *>
+      OpenTracing.tag("subtype", "http")
+    
+    def after[T](response: Response[T]): RIO[OpenTracing, Unit] =
+      OpenTracing.tag("http.status_code", response.code.code)
 }
 
-new ZioTelemetryOpenTracingBackend(zioBackend, tagMethod)
+new ZioTelemetryOpenTracingBackend(zioBackend, sttpTracer)
 ```
 
 

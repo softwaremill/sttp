@@ -10,23 +10,18 @@ import sttp.client.ws.WebSocketResponse
 import zio._
 import zio.telemetry.opentracing._
 
-class ZioTelemetryOpenTracingBackend[-WS_HANLDER[_]](other: SttpBackend[Task, Nothing, WS_HANLDER], requestTagCollector: RequestTagCollector = RequestTagCollector.empty) extends SttpBackend[RIO[OpenTracing, *], Nothing, WS_HANLDER] {
+class ZioTelemetryOpenTracingBackend[-WS_HANLDER[_]](other: SttpBackend[Task, Nothing, WS_HANLDER], tracer: ZioTelemetryOpenTracingTracer = ZioTelemetryOpenTracingTracer.empty) extends SttpBackend[RIO[OpenTracing, *], Nothing, WS_HANLDER] {
 
   @SuppressWarnings(Array("scalafix:Disable.toString"))
   def send[T](request: Request[T, Nothing]): RIO[OpenTracing, Response[T]] = {
     val headers = scala.collection.mutable.Map.empty[String, String]
     val buffer  = new TextMapAdapter(headers.asJava)
-    val tags = requestTagCollector.collect(request)
     OpenTracing.inject(Format.Builtin.HTTP_HEADERS, buffer).flatMap { _ =>
-      val operation = other
-        .send(request.headers(headers.toMap))
-        .span(s"${request.method.method} ${request.uri.path.mkString("/")}")
-        .tag("http.method", request.method.method)
-        .tag("http.url", request.uri.toString())
-
-      tags
-        .foldLeft(operation) { case (op, (name, value)) => op.tag(name, value)}
-        .flatMap(res => OpenTracing.tag("http.status_code", res.code.code) *> ZIO.succeed(res))
+      (for {
+        _ <- tracer.before(request)
+        resp <- other.send(request.headers(headers.toMap))
+        _ <- tracer.after(resp)
+      } yield resp).span(s"${request.method.method} ${request.uri.path.mkString("/")}")
     }
   }
 
@@ -38,12 +33,14 @@ class ZioTelemetryOpenTracingBackend[-WS_HANLDER[_]](other: SttpBackend[Task, No
   def responseMonad: MonadError[RIO[OpenTracing, *]] = new RIOMonadAsyncError[OpenTracing]
 }
 
-trait RequestTagCollector {
-  def collect[T](request: Request[T, Nothing]): Map[String, String]
+trait ZioTelemetryOpenTracingTracer {
+  def before[T](request: Request[T, Nothing]): RIO[OpenTracing, Unit]
+  def after[T](response: Response[T]): RIO[OpenTracing, Unit]
 }
 
-object RequestTagCollector {
-  val empty: RequestTagCollector = new RequestTagCollector {
-    def collect[T](request: Request[T, Nothing]): Map[String, String] = Map.empty
+object ZioTelemetryOpenTracingTracer {
+  val empty: ZioTelemetryOpenTracingTracer = new ZioTelemetryOpenTracingTracer {
+    def before[T](request: Request[T, Nothing]): RIO[OpenTracing, Unit] = ZIO.unit
+    def after[T](response: Response[T]): RIO[OpenTracing, Unit] = ZIO.unit
   }
 }
