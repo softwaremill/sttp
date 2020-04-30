@@ -8,7 +8,7 @@ To use, add the following dependency to your project:
 
 This backend depends on [zio-opentracing](https://github.com/zio/zio-telemetry).
 
-The opentracing backend wraps a `Task` based ZIO backend and yields a backend of `Backend[RIO[OpenTracing, *], Nothing, WS_HANDLER]`. The yielded effects are of type `RIO[OpenTracing, *]` which mean they can be a child of a other span created in your ZIO program.
+The opentracing backend wraps a `Task` based ZIO backend and yields a backend of type `SttpBackend[RIO[OpenTracing, *], Nothing, WS_HANDLER]`. The yielded effects are of type `RIO[OpenTracing, *]` which mean they can be a child of a other span created in your ZIO program.
 
 Here's how you construct `ZioTelemetryOpenTracingBackend`. I would recommend wrapping this is in `ZLayer`
 
