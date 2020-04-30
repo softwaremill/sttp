@@ -3,7 +3,7 @@
 This backend is based on [http4s](https://http4s.org) (blaze client) and is **asynchronous**. To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client" %% "http4s-backend" % "2.1.0-RC1"
+"com.softwaremill.sttp.client" %% "http4s-backend" % "2.1.0"
 ```
 
 Next you'll need to add an implicit value:
