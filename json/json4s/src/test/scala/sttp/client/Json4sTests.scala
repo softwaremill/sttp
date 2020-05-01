@@ -1,7 +1,7 @@
 package sttp.client
 
 import org.json4s.ParserUtil.ParseException
-import org.json4s.{MappingException, native}
+import org.json4s.{DefaultFormats, MappingException, native}
 import org.scalatest._
 import sttp.client.internal._
 import sttp.model._
@@ -12,6 +12,8 @@ import org.scalatest.matchers.should.Matchers
 
 class Json4sTests extends AnyFlatSpec with Matchers with EitherValues {
   implicit val serialization = native.Serialization
+  implicit val formats = DefaultFormats
+
   import Json4sTests._
   import json4s._
 
