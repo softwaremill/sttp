@@ -19,7 +19,7 @@ new ZioTelemetryOpenTracingBackend(zioBackend)
 Additionally you can add tags per request by supplying a `ZioTelemetryOpenTracingTracer`
 
 ```scala
-def sttpTracer: ZioTelemtrySttpTracer = new ZioTelemtrySttpTracer {
+def sttpTracer: ZioTelemetryOpenTracingTracer = new ZioTelemetryOpenTracingTracer {
     def before[T](request: Request[T, Nothing]): RIO[OpenTracing, Unit] =
       OpenTracing.tag("span.kind", "client") *>
       OpenTracing.tag("http.method", request.method.method) *>
