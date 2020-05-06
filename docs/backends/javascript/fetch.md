@@ -34,7 +34,7 @@ You then need to load the modules into your runtime. This can be done in
 your main method as such :
 
 ```scala
-val g = scalajs.js.Dynamic.global
+val g = scalajs.js.Dynamic.global.globalThis
 g.fetch = g.require("node-fetch")
 g.require("abortcontroller-polyfill/dist/polyfill-patch-fetch")
 g.Headers = g.require("fetch-headers")
