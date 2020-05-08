@@ -61,7 +61,8 @@ abstract class OkHttpBackend[F[_], S](client: OkHttpClient, closeClient: Boolean
       else null
     })
 
-    //OkHttp support automatic gzip compression
+    // OkHttp supports automatic gzip compression; if the accept-encoding header is added explicitly,
+    // then the response would also have to be manually decompressed.
     request.headers
       .filterNot(h => h.is(HeaderNames.AcceptEncoding) || h.is(HeaderNames.ContentType))
       .foreach {

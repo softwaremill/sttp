@@ -265,17 +265,17 @@ trait HttpTest[F[_]]
     }
 
     "decompress using gzip" in {
-      val req = compress.header("Accept-Encoding", "gzip", replaceExisting = true)
+      val req = compress.acceptEncoding("gzip")
       req.send().toFuture().map { resp => resp.body should be(decompressedBody) }
     }
 
     "decompress using deflate" in {
-      val req = compress.header("Accept-Encoding", "deflate", replaceExisting = true)
+      val req = compress.acceptEncoding("deflate")
       req.send().toFuture().map { resp => resp.body should be(decompressedBody) }
     }
 
     "work despite providing an unsupported encoding" in {
-      val req = compress.header("Accept-Encoding", "br", replaceExisting = true)
+      val req = compress.acceptEncoding("br")
       req.send().toFuture().map { resp => resp.body should be(decompressedBody) }
     }
 

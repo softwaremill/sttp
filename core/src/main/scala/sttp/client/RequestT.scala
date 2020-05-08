@@ -95,7 +95,7 @@ case class RequestT[U[_], T, +S](
   def proxyAuth: SpecifyAuthScheme[U, T, S] =
     new SpecifyAuthScheme[U, T, S](HeaderNames.ProxyAuthorization, this, DigestAuthenticationBackend.ProxyDigestAuthTag)
   def acceptEncoding(encoding: String): RequestT[U, T, S] =
-    header(HeaderNames.AcceptEncoding, encoding)
+    header(HeaderNames.AcceptEncoding, encoding, replaceExisting = true)
 
   def cookie(nv: (String, String)): RequestT[U, T, S] = cookies(nv)
   def cookie(n: String, v: String): RequestT[U, T, S] = cookies((n, v))
