@@ -188,7 +188,15 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
     }
     client
       .withRequestTimeout(Duration.fromMilliseconds(request.options.readTimeout.toMillis))
-      .newService(s"${request.uri.host}:${request.uri.port.getOrElse(80)}")
+      .newService(uriToFinagleDestination(request.uri))
+  }
+
+  private def uriToFinagleDestination(uri: Uri): String = {
+    val defaultPort = request.uri.scheme match {
+      case "https" => 443
+      case _       => 80
+    }
+    s"${request.uri.host}:${request.uri.port.getOrElse(defaultPort)}"
   }
 
   private def adjustExceptions[T](t: => TFuture[T]): TFuture[T] =
