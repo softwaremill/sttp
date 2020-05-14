@@ -111,7 +111,9 @@ abstract class HttpClientBackend[F[_], S](
     val encoding = headers.collectFirst { case h if h.is(HeaderNames.ContentEncoding) => h.value }
     val method = Method(res.request().method())
     val byteBody = if (method != Method.HEAD) {
-      customEncodingHandler.orElse(PartialFunction.fromFunction(standardEncoding.tupled))(res.body(), encoding)
+      encoding
+        .map(e => customEncodingHandler.orElse(PartialFunction.fromFunction(standardEncoding.tupled))(res.body() -> e))
+        .getOrElse(res.body())
     } else {
       res.body()
     }
@@ -119,11 +121,10 @@ abstract class HttpClientBackend[F[_], S](
     responseMonad.map(body)(Response(_, code, "", headers, Nil))
   }
 
-  private def standardEncoding: (InputStream, Option[String]) => InputStream = {
-    case (body, Some("gzip"))    => new GZIPInputStream(body)
-    case (body, Some("deflate")) => new InflaterInputStream(body)
-    case (_, Some(ce))           => throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
-    case (body, None)            => body
+  private def standardEncoding: (InputStream, String) => InputStream = {
+    case (body, "gzip")    => new GZIPInputStream(body)
+    case (body, "deflate") => new InflaterInputStream(body)
+    case (_, ce)           => throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
   }
 
   private def responseHandler(responseBody: InputStream) =
@@ -181,7 +182,7 @@ abstract class HttpClientBackend[F[_], S](
 
 object HttpClientBackend {
 
-  type EncodingHandler = PartialFunction[(InputStream, Option[String]), InputStream]
+  type EncodingHandler = PartialFunction[(InputStream, String), InputStream]
   // TODO not sure if it works
   private class ProxyAuthenticator(auth: SttpBackendOptions.ProxyAuth) extends Authenticator {
     override def getPasswordAuthentication: PasswordAuthentication = {
