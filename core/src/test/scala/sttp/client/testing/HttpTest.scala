@@ -7,12 +7,14 @@ import org.scalatest._
 import sttp.client.{Response, ResponseAs, SttpBackend, _}
 import sttp.model.StatusCode
 
-import scala.concurrent.Future
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 import scala.language.higherKinds
 import org.scalatest.freespec.{AsyncFreeSpec, AsyncFreeSpecLike}
 import org.scalatest.matchers.should.Matchers
 import HttpTest.endpoint
+
+import scala.util.Try
 
 // TODO: change to `extends AsyncFreeSpec` when https://github.com/scalatest/scalatest/issues/1802 is fixed
 trait HttpTest[F[_]]
@@ -283,14 +285,20 @@ trait HttpTest[F[_]]
       val req = basicRequest.head(uri"$endpoint/compress")
       req.send().toFuture().map { resp => resp.code shouldBe StatusCode.Ok }
     }
+
+    "should throw exception when response contains unsupported encoding" in {
+      val req = basicRequest.get(uri"$endpoint/compress-unsupported").response(asStringAlways)
+      Try(Await.result(req.send().toFuture(), Duration.Inf)).isSuccess shouldBe false
+    }
   }
 
   // in JavaScript the only way to set the content type is to use a Blob which defaults the filename to 'blob'
   protected def multipartStringDefaultFileName: Option[String] = None
-  protected def defaultFileName: String = multipartStringDefaultFileName match {
-    case None       => ""
-    case Some(name) => s" ($name)"
-  }
+  protected def defaultFileName: String =
+    multipartStringDefaultFileName match {
+      case None       => ""
+      case Some(name) => s" ($name)"
+    }
 
   "multipart" - {
     def mp = basicRequest.post(uri"$endpoint/multipart").response(asStringAlways)

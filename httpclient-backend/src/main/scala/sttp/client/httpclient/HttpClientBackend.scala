@@ -1,10 +1,10 @@
 package sttp.client.httpclient
 
-import java.io.InputStream
+import java.io.{InputStream, UnsupportedEncodingException}
 import java.net.http.HttpRequest.{BodyPublisher, BodyPublishers}
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 import java.net.{Authenticator, PasswordAuthentication}
-import java.nio.{ByteBuffer, Buffer}
+import java.nio.{Buffer, ByteBuffer}
 import java.time.{Duration => JDuration}
 import java.util.concurrent.{Executor, ThreadPoolExecutor}
 import java.util.function
@@ -106,10 +106,13 @@ abstract class HttpClientBackend[F[_], S](client: HttpClient, closeClient: Boole
 
     val encoding = headers.collectFirst { case h if h.is(HeaderNames.ContentEncoding) => h.value }
     val method = Method(res.request().method())
-    val byteBody = if (encoding.contains("gzip") && method != Method.HEAD) {
-      new GZIPInputStream(res.body())
-    } else if (encoding.contains("deflate") && method != Method.HEAD) {
-      new InflaterInputStream(res.body())
+    val byteBody = if (method != Method.HEAD) {
+      encoding match {
+        case Some("gzip")    => new GZIPInputStream(res.body())
+        case Some("deflate") => new InflaterInputStream(res.body())
+        case Some(ce)        => throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
+        case None            => res.body()
+      }
     } else {
       res.body()
     }
@@ -141,7 +144,7 @@ abstract class HttpClientBackend[F[_], S](client: HttpClient, closeClient: Boole
   private class ByteBufferBackedInputStream(buf: ByteBuffer) extends InputStream {
     override def read: Int = {
       if (!buf.hasRemaining) return -1
-      buf.get & 0xFF
+      buf.get & 0xff
     }
 
     override def read(bytes: Array[Byte], off: Int, len: Int): Int = {
