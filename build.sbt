@@ -593,7 +593,7 @@ lazy val playJson = (projectMatrix in file("json/play-json"))
   .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = commonJvmSettings)
   .dependsOn(core, jsonCommon)
 
-lazy val braveVersion = "5.11.2"
+lazy val braveVersion = "5.12.0"
 
 lazy val braveBackend = (projectMatrix in file("metrics/brave-backend"))
   .settings(commonJvmSettings)
