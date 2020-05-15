@@ -156,19 +156,23 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
         )
       }
     } ~ path("secure_basic") {
-      authenticateBasic("test realm", {
-        case c @ Credentials.Provided(un) if un == "adam" && c.verify("1234") =>
-          Some(un)
-        case _ => None
-      }) { userName => complete(s"Hello, $userName!") }
+      authenticateBasic(
+        "test realm",
+        {
+          case c @ Credentials.Provided(un) if un == "adam" && c.verify("1234") =>
+            Some(un)
+          case _ => None
+        }
+      ) { userName => complete(s"Hello, $userName!") }
     } ~ path("secure_digest") {
       get {
         import akka.http.scaladsl.model._
         extractCredentials {
           case Some(_) =>
             headerValueByName("Authorization") { authHeader =>
-              if (authHeader.contains(
-                    """Digest algorithm=MD5,
+              if (
+                authHeader.contains(
+                  """Digest algorithm=MD5,
                       |cnonce=e5d93287aa8532c1f5df9e052fda4c38,
                       |nc=00000001,
                       |nonce="a2FzcGVya2FzcGVyCg==",
@@ -177,7 +181,8 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
                       |response=f1f784de97f8badb4acec7c5f85eb877,
                       |uri="/secure_digest",
                       |username=adam""".stripMargin.replaceAll("\n", "")
-                  )) {
+                )
+              ) {
                 complete(
                   HttpResponse(
                     status = StatusCodes.OK,
@@ -314,7 +319,6 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
       path("echo") {
         handleWebSocketMessages(Flow[Message].mapConcat {
           case tm: TextMessage =>
-            info("Responding to text message")
             TextMessage(Source.single("echo: ") ++ tm.textStream) :: Nil
           case bm: BinaryMessage =>
             info("Ignoring a binary message")
