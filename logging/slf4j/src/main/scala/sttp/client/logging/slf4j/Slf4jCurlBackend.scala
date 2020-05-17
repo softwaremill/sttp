@@ -17,17 +17,17 @@ class Slf4jCurlListener(logger: Logger) extends RequestListener[Identity, Unit] 
   override def beforeRequest(request: Request[_, _]): Identity[Unit] = ()
 
   override def requestException(request: Request[_, _], tag: Unit, e: Exception): Identity[Unit] = {
-    logger.info(LogMessages.requestCurl(request, "exception"), e)
+    logger.debug(LogMessages.requestCurl(request, "exception"), e)
   }
 
   override def requestSuccessful(request: Request[_, _], response: Response[_], tag: Unit): Identity[Unit] = {
-    logger.info(LogMessages.requestCurl(request, response.code.toString()))
+    logger.debug(LogMessages.requestCurl(request, response.code.toString()))
   }
 
   override def beforeWebsocket(request: Request[_, _]): Identity[Unit] = ()
 
   override def websocketException(request: Request[_, _], tag: Unit, e: Exception): Identity[Unit] = {
-    logger.info(LogMessages.requestCurl(request, "exception"), e)
+    logger.debug(LogMessages.requestCurl(request, "exception"), e)
   }
 
   override def websocketSuccessful(
@@ -35,6 +35,6 @@ class Slf4jCurlListener(logger: Logger) extends RequestListener[Identity, Unit] 
       response: WebSocketResponse[_],
       tag: Unit
   ): Identity[Unit] = {
-    logger.info(LogMessages.requestCurl(request, "websocket"))
+    logger.debug(LogMessages.requestCurl(request, "websocket"))
   }
 }

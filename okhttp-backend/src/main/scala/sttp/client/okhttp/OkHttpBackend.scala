@@ -4,7 +4,6 @@ import java.io.IOException
 import java.util.concurrent.{ArrayBlockingQueue, TimeUnit}
 import java.util.concurrent.atomic.AtomicBoolean
 
-import com.github.ghik.silencer.silent
 import okhttp3.internal.http.HttpMethod
 import okhttp3.{
   Authenticator,
@@ -62,7 +61,8 @@ abstract class OkHttpBackend[F[_], S](client: OkHttpClient, closeClient: Boolean
       else null
     })
 
-    //OkHttp support automatic gzip compression
+    // OkHttp supports automatic gzip compression; if the accept-encoding header is added explicitly,
+    // then the response would also have to be manually decompressed.
     request.headers
       .filterNot(h => h.is(HeaderNames.AcceptEncoding) || h.is(HeaderNames.ContentType))
       .foreach {
@@ -85,7 +85,6 @@ abstract class OkHttpBackend[F[_], S](client: OkHttpClient, closeClient: Boolean
         else Some(OkHttpRequestBody.create(b.array(), mediaType))
       case InputStreamBody(b, _) =>
         Some(new OkHttpRequestBody() {
-          @silent("discarded")
           override def writeTo(sink: BufferedSink): Unit =
             sink.writeAll(Okio.source(b))
           override def contentType(): MediaType = mediaType
@@ -103,7 +102,7 @@ abstract class OkHttpBackend[F[_], S](client: OkHttpClient, closeClient: Boolean
   }
 
   private def addMultipart(builder: OkHttpMultipartBody.Builder, mp: Part[BasicRequestBody]): Unit = {
-    val allHeaders = mp.headers :+ Header.notValidated(HeaderNames.ContentDisposition, mp.contentDispositionHeaderValue)
+    val allHeaders = mp.headers :+ Header(HeaderNames.ContentDisposition, mp.contentDispositionHeaderValue)
     val headers =
       OkHttpHeaders.of(allHeaders.filterNot(_.is(HeaderNames.ContentType)).map(h => (h.name, h.value)).toMap.asJava)
 
@@ -118,13 +117,13 @@ abstract class OkHttpBackend[F[_], S](client: OkHttpClient, closeClient: Boolean
       .headers()
       .names()
       .asScala
-      .flatMap(name => res.headers().values(name).asScala.map(Header.notValidated(name, _)))
+      .flatMap(name => res.headers().values(name).asScala.map(Header(name, _)))
       .toList
 
-    val responseMetadata = ResponseMetadata(headers, StatusCode.notValidated(res.code()), res.message())
+    val responseMetadata = ResponseMetadata(headers, StatusCode(res.code()), res.message())
     val body = responseHandler(res).handle(responseAs, responseMonad, responseMetadata)
 
-    responseMonad.map(body)(Response(_, StatusCode.notValidated(res.code()), res.message(), headers, Nil))
+    responseMonad.map(body)(Response(_, StatusCode(res.code()), res.message(), headers, Nil))
   }
 
   private def responseHandler(res: OkHttpResponse) =
@@ -218,9 +217,7 @@ class OkHttpSyncBackend private (client: OkHttpClient, closeClient: Boolean)
     val request = convertRequest(r)
 
     val responseCell = new ArrayBlockingQueue[Either[Throwable, WebSocketResponse[WS_RESULT]]](1)
-    @silent("discarded")
     def fillCellError(t: Throwable): Unit = responseCell.add(Left(t))
-    @silent("discarded")
     def fillCell(wr: WebSocketResponse[WS_RESULT]): Unit = responseCell.add(Right(wr))
 
     val listener = new DelegatingWebSocketListener(
@@ -344,12 +341,12 @@ object OkHttpFutureBackend {
 
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default
-  )(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Nothing, WebSocketHandler] =
+  )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, Nothing, WebSocketHandler] =
     OkHttpFutureBackend(OkHttpBackend.defaultClient(DefaultReadTimeout.toMillis, options), closeClient = true)
 
   def usingClient(
       client: OkHttpClient
-  )(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackend[Future, Nothing, WebSocketHandler] =
+  )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, Nothing, WebSocketHandler] =
     OkHttpFutureBackend(client, closeClient = false)
 
   /**
@@ -357,7 +354,7 @@ object OkHttpFutureBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackendStub[Future, Nothing] =
+  def stub(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackendStub[Future, Nothing] =
     SttpBackendStub(new FutureMonad())
 }
 

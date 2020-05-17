@@ -22,7 +22,7 @@ abstract class HttpClientAsyncBackend[F[_], S](
   override def send[T](request: Request[T, S]): F[Response[T]] = adjustExceptions {
     val jRequest = customizeRequest(convertRequest(request))
 
-    monad.flatten(monad.async[F[Response[T]]] { cb: (Either[Throwable, F[Response[T]]] => Unit) =>
+    monad.flatten(monad.async[F[Response[T]]] { (cb: (Either[Throwable, F[Response[T]]] => Unit)) =>
       def success(r: F[Response[T]]): Unit = cb(Right(r))
       def error(t: Throwable): Unit = cb(Left(t))
 
@@ -96,12 +96,12 @@ object HttpClientFutureBackend {
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity
   )(
-      implicit ec: ExecutionContext = ExecutionContext.Implicits.global
+      implicit ec: ExecutionContext = ExecutionContext.global
   ): SttpBackend[Future, Nothing, WebSocketHandler] =
     HttpClientFutureBackend(HttpClientBackend.defaultClient(options), closeClient = true, customizeRequest)
 
   def usingClient(client: HttpClient, customizeRequest: HttpRequest => HttpRequest = identity)(
-      implicit ec: ExecutionContext = ExecutionContext.Implicits.global
+      implicit ec: ExecutionContext = ExecutionContext.global
   ): SttpBackend[Future, Nothing, WebSocketHandler] =
     HttpClientFutureBackend(client, closeClient = false, customizeRequest)
 
@@ -110,6 +110,6 @@ object HttpClientFutureBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackendStub[Future, Nothing] =
+  def stub(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackendStub[Future, Nothing] =
     SttpBackendStub(new FutureMonad())
 }

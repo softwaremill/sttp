@@ -9,6 +9,7 @@ import sttp.client.testing.websocket.HighLevelWebsocketTest
 import sttp.model.Uri._
 
 import scala.concurrent.duration._
+import sttp.client.testing.HttpTest.wsEndpoint
 
 abstract class AsyncHttpClientHighLevelWebsocketTest[F[_]] extends HighLevelWebsocketTest[F, WebSocketHandler] {
 
@@ -18,7 +19,7 @@ abstract class AsyncHttpClientHighLevelWebsocketTest[F[_]] extends HighLevelWebs
         basicRequest
           .get(uri"$wsEndpoint/echo")
           .openWebsocketF(createHandler(None))
-          .map(_ => fail: Assertion)
+          .map(_ => fail(): Assertion)
       } {
         case e: Exception => (e shouldBe a[SttpClientException.ReadException]).unit
       }

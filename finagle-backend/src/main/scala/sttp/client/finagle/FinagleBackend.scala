@@ -56,7 +56,7 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
       .apply(finagleRequest)
       .flatMap { fResponse =>
         val code = StatusCode.unsafeApply(fResponse.statusCode)
-        val headers = fResponse.headerMap.map(h => Header.notValidated(h._1, h._2)).toList
+        val headers = fResponse.headerMap.map(h => Header(h._1, h._2)).toList
         val statusText = fResponse.status.reason
         val responseMetadata = ResponseMetadata(headers, code, statusText)
         val body = fromFinagleResponse(request.response, fResponse, responseMetadata)

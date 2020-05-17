@@ -1,35 +1,28 @@
 package sttp.client.asynchttpclient.fs2
 
 import cats.effect.concurrent.Ref
-import cats.effect.{ContextShift, IO, Timer}
+import cats.effect.IO
 import cats.implicits._
 import fs2._
 import sttp.client._
 import sttp.client.asynchttpclient.WebSocketHandler
-import sttp.client.impl.cats.CatsMonadAsyncError
-import sttp.client.monad.MonadError
-import sttp.client.testing.{ConvertToFuture, TestHttpServer, ToFutureWrapper}
+import sttp.client.impl.cats.CatsTestBase
+import sttp.client.impl.fs2.Fs2WebSockets
+import sttp.client.testing.ToFutureWrapper
 import sttp.client.ws.WebSocket
 import sttp.model.ws.WebSocketFrame
+import sttp.client.testing.HttpTest.wsEndpoint
 
 import scala.collection.immutable.Queue
-import scala.concurrent.duration._
-import scala.concurrent.Future
 import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class AsyncHttpClientPipedFs2WebsocketsTest
     extends AsyncFlatSpec
     with Matchers
-    with TestHttpServer
-    with ToFutureWrapper {
+    with ToFutureWrapper
+    with CatsTestBase {
   implicit val backend: SttpBackend[IO, Nothing, WebSocketHandler] = AsyncHttpClientFs2Backend[IO]().unsafeRunSync()
-  implicit val convertToFuture: ConvertToFuture[IO] = new ConvertToFuture[IO] {
-    override def toFuture[T](value: IO[T]): Future[T] = value.unsafeToFuture()
-  }
-  implicit val monad: MonadError[IO] = new CatsMonadAsyncError[IO]
-  implicit lazy val contextShift: ContextShift[IO] = IO.contextShift(implicitly)
-  implicit lazy val timer: Timer[IO] = IO.timer(implicitly)
 
   def createHandler: Option[Int] => IO[WebSocketHandler[WebSocket[IO]]] = Fs2WebSocketHandler[IO](_)
 

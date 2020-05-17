@@ -182,7 +182,7 @@ class AkkaHttpBackend private (
   private def responseFromAkka[T](r: Request[T, S], hr: HttpResponse)(
       implicit ec: ExecutionContext
   ): Future[Response[T]] = {
-    val code = StatusCode.notValidated(hr.status.intValue())
+    val code = StatusCode(hr.status.intValue())
     val statusText = hr.status.reason()
 
     val headers = headersFromAkka(hr)
@@ -194,10 +194,10 @@ class AkkaHttpBackend private (
   }
 
   private def headersFromAkka(hr: HttpResponse): Seq[Header] = {
-    val ch = Header.notValidated(HeaderNames.ContentType, hr.entity.contentType.toString())
+    val ch = Header(HeaderNames.ContentType, hr.entity.contentType.toString())
     val cl =
       hr.entity.contentLengthOption.map(v => Header.contentLength(v))
-    val other = hr.headers.map(h => Header.notValidated(h.name, h.value))
+    val other = hr.headers.map(h => Header(h.name, h.value))
     ch :: (cl.toList ++ other)
   }
 
@@ -378,7 +378,7 @@ object AkkaHttpBackend {
       customizeRequest: HttpRequest => HttpRequest = identity,
       customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity
   )(
-      implicit ec: ExecutionContext = ExecutionContext.Implicits.global
+      implicit ec: ExecutionContext = ExecutionContext.global
   ): SttpBackend[Future, Source[ByteString, Any], Flow[Message, Message, *]] = {
     val actorSystem = ActorSystem("sttp")
 
@@ -410,7 +410,7 @@ object AkkaHttpBackend {
       customizeRequest: HttpRequest => HttpRequest = identity,
       customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity
   )(
-      implicit ec: ExecutionContext = ExecutionContext.Implicits.global
+      implicit ec: ExecutionContext = ExecutionContext.global
   ): SttpBackend[Future, Source[ByteString, Any], Flow[Message, Message, *]] = {
     usingClient(
       actorSystem,
@@ -437,7 +437,7 @@ object AkkaHttpBackend {
       customizeRequest: HttpRequest => HttpRequest = identity,
       customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity
   )(
-      implicit ec: ExecutionContext = ExecutionContext.Implicits.global
+      implicit ec: ExecutionContext = ExecutionContext.global
   ): SttpBackend[Future, Source[ByteString, Any], Flow[Message, Message, *]] = {
     make(
       actorSystem,
@@ -456,7 +456,7 @@ object AkkaHttpBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub(implicit ec: ExecutionContext = ExecutionContext.Implicits.global): SttpBackendStub[Future, Nothing] =
+  def stub(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackendStub[Future, Nothing] =
     SttpBackendStub(new FutureMonad())
 }
 

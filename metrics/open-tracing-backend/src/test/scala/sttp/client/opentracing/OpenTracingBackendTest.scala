@@ -108,6 +108,21 @@ class OpenTracingBackendTest extends FlatSpec with Matchers with BeforeAndAfter 
     tags(Tags.HTTP_METHOD.getKey) shouldBe Method.POST.method
     tags(Tags.HTTP_URL.getKey) shouldBe url.toJavaUri.toString
     tags(Tags.SPAN_KIND.getKey) shouldBe Tags.SPAN_KIND_CLIENT
-    tags(Tags.COMPONENT.getKey) shouldBe "opentracing-sttp-client"
+    tags(Tags.COMPONENT.getKey) shouldBe "sttp2-client"
+  }
+
+  it should "be able to adjust span" in {
+    import OpenTracingBackend._
+
+    val url = uri"http://stub/echo"
+    basicRequest
+      .post(url)
+      .tagWithTransformSpan(_.setTag("custom-tag", "custom-value").setOperationName("new-name").log("my-event"))
+      .send()
+
+    val span = tracer.finishedSpans().asScala.head
+    span.tags().get("custom-tag") shouldBe "custom-value"
+    span.operationName() shouldBe "new-name"
+    span.logEntries().get(0).fields().asScala shouldBe Map("event" -> "my-event")
   }
 }

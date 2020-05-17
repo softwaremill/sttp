@@ -49,7 +49,15 @@ sttp is a family of Scala HTTP-related projects, and currently includes:
 
 Development and maintenance of sttp client is sponsored by [SoftwareMill](https://softwaremill.com), a software development and consulting company. We help clients scale their business through software. Our areas of expertise include backends, distributed systems, blockchain, machine learning and data analytics.
 
-[![](https://softwaremill.com/images/header-main-logo.3449d6a3.svg "SoftwareMill")](https://softwaremill.com)
+[![](https://files.softwaremill.com/logo/logo.png "SoftwareMill")](https://softwaremill.com)
+
+# Try sttp client in your browser!
+
+```eval_rst
+.. raw:: html
+
+   <iframe height="800px" frameborder="0" style="width: 100%" src="https://embed.scalafiddle.io/embed?sfid=4WexTtF/3&layout=v50"></iframe>
+```
 
 # Table of contents
 
@@ -124,6 +132,7 @@ Development and maintenance of sttp client is sponsored by [SoftwareMill](https:
    :caption: Backend wrappers
 
    backends/wrappers/opentracing
+   backends/wrappers/zio-opentracing
    backends/wrappers/brave
    backends/wrappers/prometheus
    backends/wrappers/slf4j

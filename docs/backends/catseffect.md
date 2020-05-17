@@ -5,7 +5,7 @@ The [Cats Effect](https://github.com/typelevel/cats-effect) backend is **asynchr
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client" %% "async-http-client-backend-cats" % "2.0.4"
+"com.softwaremill.sttp.client" %% "async-http-client-backend-cats" % "2.1.1"
 ```
            
 This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client), uses [Netty](http://netty.io) behind the scenes and supports effect cancellation. 
@@ -21,20 +21,26 @@ A non-comprehensive summary of how the backend can be created is as follows:
 
 ```scala
 import sttp.client.asynchttpclient.cats.AsyncHttpClientCatsBackend
+import cats.effect._
 
-AsyncHttpClientCatsBackend().flatMap { implicit backend => ... }
+// an implicit ContextShift in required to create the backend; here, for `cats.effect.IO`:
+implicit val cs: ContextShift[IO] = IO.contextShift( scala.concurrent.ExecutionContext.global )
+
+// the type class instance needs to be provided explicitly (e.g. `cats.effect.IO`). 
+// the effect type must implement the Concurrent typeclass
+AsyncHttpClientCatsBackend[IO]().flatMap { implicit backend => ... }
 
 // or, if you'd like to use custom configuration:
-AsyncHttpClientCatsBackend.usingConfig(asyncHttpClientConfig).flatMap { implicit backend => ... }
+AsyncHttpClientCatsBackend.usingConfig[IO](asyncHttpClientConfig).flatMap { implicit backend => ... }
 
 // or, if you'd like to use adjust the configuration sttp creates:
-AsyncHttpClientCatsBackend.usingConfigBuilder(adjustFunction, sttpOptions).flatMap { implicit backend => ... }
+AsyncHttpClientCatsBackend.usingConfigBuilder[IO](adjustFunction, sttpOptions).flatMap { implicit backend => ... }
 
 // or, if you'd like the backend to be wrapped in cats-effect Resource:
-AsyncHttpClientCatsBackend.resource().use { implicit backend => ... }
+AsyncHttpClientCatsBackend.resource[IO]().use { implicit backend => ... }
 
 // or, if you'd like to instantiate the AsyncHttpClient yourself:
-implicit val sttpBackend = AsyncHttpClientCatsBackend.usingClient(asyncHttpClient)
+implicit val sttpBackend = AsyncHttpClientCatsBackend.usingClient[IO](asyncHttpClient)
 ```
 
 ## Streaming

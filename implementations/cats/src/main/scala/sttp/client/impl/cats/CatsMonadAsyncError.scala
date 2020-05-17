@@ -1,13 +1,11 @@
 package sttp.client.impl.cats
 
 import cats.effect.Concurrent
-import com.github.ghik.silencer.silent
 import sttp.client.monad.{Canceler, MonadAsyncError}
 
 import scala.language.higherKinds
 
 class CatsMonadAsyncError[F[_]](implicit F: Concurrent[F]) extends CatsMonadError[F] with MonadAsyncError[F] {
-  @silent("discarded")
   override def async[T](register: ((Either[Throwable, T]) => Unit) => Canceler): F[T] =
     F.cancelable(register.andThen(c => F.delay(c.cancel)))
 

@@ -12,12 +12,14 @@ To use, add an implicit value:
 implicit val sttpBackend = HttpURLConnectionBackend()
 ```
 
+This backend works with all Scala versions. A Dotty build is available as well.
+
 ## Using OkHttp
 
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client" %% "okhttp-backend" % "2.0.4"
+"com.softwaremill.sttp.client" %% "okhttp-backend" % "2.1.1"
 ```
 
 Create the backend using:
@@ -38,7 +40,7 @@ This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supp
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client" %% "httpclient-backend" % "2.0.4"
+"com.softwaremill.sttp.client" %% "httpclient-backend" % "2.1.1"
 ```
 
 Create the backend using:
@@ -52,7 +54,7 @@ implicit val sttpBackend = HttpClientSyncBackend()
 implicit val sttpBackend = HttpClientSyncBackend.usingClient(httpClient)
 ```
 
-This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards.
+This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards, works with all Scala versions. A Dotty build is available as well.
 
 ## Streaming
 

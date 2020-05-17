@@ -2,8 +2,7 @@ package sttp.client.prometheus
 
 import java.util.concurrent.ConcurrentHashMap
 
-import com.github.ghik.silencer.silent
-import sttp.client.{FollowRedirectsBackend, Identity, NothingT, Request, Response, SttpBackend}
+import sttp.client.{FollowRedirectsBackend, Identity, Request, Response, SttpBackend}
 import io.prometheus.client.{CollectorRegistry, Counter, Gauge, Histogram}
 import sttp.client.listener.{ListenerBackend, RequestListener}
 import sttp.client.prometheus.PrometheusBackend.RequestCollectors
@@ -21,16 +20,16 @@ object PrometheusBackend {
 
   def apply[F[_], S, WS_HANDLER[_]](
       delegate: SttpBackend[F, S, WS_HANDLER],
-      requestToHistogramNameMapper: Request[_, _] => Option[CollectorNameWithLabels] = (_: Request[_, _]) =>
-        Some(CollectorNameWithLabels(DefaultHistogramName)),
-      requestToInProgressGaugeNameMapper: Request[_, _] => Option[CollectorNameWithLabels] = (_: Request[_, _]) =>
-        Some(CollectorNameWithLabels(DefaultRequestsInProgressGaugeName)),
-      requestToSuccessCounterMapper: Request[_, _] => Option[CollectorNameWithLabels] = (_: Request[_, _]) =>
-        Some(CollectorNameWithLabels(DefaultSuccessCounterName)),
-      requestToErrorCounterMapper: Request[_, _] => Option[CollectorNameWithLabels] = (_: Request[_, _]) =>
-        Some(CollectorNameWithLabels(DefaultErrorCounterName)),
-      requestToFailureCounterMapper: Request[_, _] => Option[CollectorNameWithLabels] = (_: Request[_, _]) =>
-        Some(CollectorNameWithLabels(DefaultFailureCounterName)),
+      requestToHistogramNameMapper: Request[_, _] => Option[HistogramCollectorConfig] = (_: Request[_, _]) =>
+        Some(HistogramCollectorConfig(DefaultHistogramName)),
+      requestToInProgressGaugeNameMapper: Request[_, _] => Option[CollectorConfig] = (_: Request[_, _]) =>
+        Some(CollectorConfig(DefaultRequestsInProgressGaugeName)),
+      requestToSuccessCounterMapper: Request[_, _] => Option[CollectorConfig] = (_: Request[_, _]) =>
+        Some(CollectorConfig(DefaultSuccessCounterName)),
+      requestToErrorCounterMapper: Request[_, _] => Option[CollectorConfig] = (_: Request[_, _]) =>
+        Some(CollectorConfig(DefaultErrorCounterName)),
+      requestToFailureCounterMapper: Request[_, _] => Option[CollectorConfig] = (_: Request[_, _]) =>
+        Some(CollectorConfig(DefaultFailureCounterName)),
       collectorRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry
   ): SttpBackend[F, S, WS_HANDLER] = {
     // redirects should be handled before prometheus
@@ -58,7 +57,6 @@ object PrometheusBackend {
   /**
     * Clear cached collectors (gauges and histograms) both from the given collector registry, and from the backend.
     */
-  @silent("discarded")
   def clear(collectorRegistry: CollectorRegistry): Unit = {
     collectorRegistry.clear()
     histograms.remove(collectorRegistry)
@@ -88,11 +86,11 @@ object PrometheusBackend {
 }
 
 class PrometheusListener(
-    requestToHistogramNameMapper: Request[_, _] => Option[CollectorNameWithLabels],
-    requestToInProgressGaugeNameMapper: Request[_, _] => Option[CollectorNameWithLabels],
-    requestToSuccessCounterMapper: Request[_, _] => Option[CollectorNameWithLabels],
-    requestToErrorCounterMapper: Request[_, _] => Option[CollectorNameWithLabels],
-    requestToFailureCounterMapper: Request[_, _] => Option[CollectorNameWithLabels],
+    requestToHistogramNameMapper: Request[_, _] => Option[HistogramCollectorConfig],
+    requestToInProgressGaugeNameMapper: Request[_, _] => Option[CollectorConfig],
+    requestToSuccessCounterMapper: Request[_, _] => Option[CollectorConfig],
+    requestToErrorCounterMapper: Request[_, _] => Option[CollectorConfig],
+    requestToFailureCounterMapper: Request[_, _] => Option[CollectorConfig],
     collectorRegistry: CollectorRegistry,
     histogramsCache: ConcurrentHashMap[String, Histogram],
     gaugesCache: ConcurrentHashMap[String, Gauge],
@@ -155,36 +153,70 @@ class PrometheusListener(
 
   private def incCounterIfMapped[T](
       request: Request[_, _],
-      mapper: Request[_, _] => Option[CollectorNameWithLabels]
+      mapper: Request[_, _] => Option[BaseCollectorConfig]
   ): Unit =
     mapper(request).foreach { data =>
       getOrCreateMetric(countersCache, data, createNewCounter).labels(data.labelValues: _*).inc()
     }
 
-  private def getOrCreateMetric[T](
+  private def getOrCreateMetric[T, C <: BaseCollectorConfig](
       cache: ConcurrentHashMap[String, T],
-      data: CollectorNameWithLabels,
-      create: CollectorNameWithLabels => T
+      data: C,
+      create: C => T
   ): T =
-    cache.computeIfAbsent(data.name, new java.util.function.Function[String, T] {
+    cache.computeIfAbsent(data.collectorName, new java.util.function.Function[String, T] {
       override def apply(t: String): T = create(data)
     })
 
-  private def createNewHistogram(data: CollectorNameWithLabels): Histogram =
-    Histogram.build().name(data.name).labelNames(data.labelNames: _*).help(data.name).register(collectorRegistry)
+  private def createNewHistogram(data: HistogramCollectorConfig): Histogram =
+    Histogram
+      .build()
+      .buckets(data.buckets: _*)
+      .name(data.collectorName)
+      .labelNames(data.labelNames: _*)
+      .help(data.collectorName)
+      .register(collectorRegistry)
 
-  private def createNewGauge(data: CollectorNameWithLabels): Gauge =
-    Gauge.build().name(data.name).labelNames(data.labelNames: _*).help(data.name).register(collectorRegistry)
+  private def createNewGauge(data: BaseCollectorConfig): Gauge =
+    Gauge
+      .build()
+      .name(data.collectorName)
+      .labelNames(data.labelNames: _*)
+      .help(data.collectorName)
+      .register(collectorRegistry)
 
-  private def createNewCounter(data: CollectorNameWithLabels): Counter =
-    Counter.build().name(data.name).labelNames(data.labelNames: _*).help(data.name).register(collectorRegistry)
+  private def createNewCounter(data: BaseCollectorConfig): Counter =
+    Counter
+      .build()
+      .name(data.collectorName)
+      .labelNames(data.labelNames: _*)
+      .help(data.collectorName)
+      .register(collectorRegistry)
+}
+
+trait BaseCollectorConfig {
+  def collectorName: String
+  def labels: List[(String, String)]
+
+  def labelNames: Seq[String] = labels.map(_._1)
+  def labelValues: Seq[String] = labels.map(_._2)
 }
 
 /**
   * Represents the name of a collector, together with label names and values.
   * The same labels must be always returned, and in the same order.
   */
-case class CollectorNameWithLabels(name: String, labels: List[(String, String)] = Nil) {
-  def labelNames: Seq[String] = labels.map(_._1)
-  def labelValues: Seq[String] = labels.map(_._2)
+case class CollectorConfig(collectorName: String, labels: List[(String, String)] = Nil) extends BaseCollectorConfig
+
+/**
+  * Represents the name of a collector with configurable histogram buckets.
+  */
+case class HistogramCollectorConfig(
+    collectorName: String,
+    labels: List[(String, String)] = Nil,
+    buckets: List[Double] = HistogramCollectorConfig.DefaultBuckets
+) extends BaseCollectorConfig
+
+object HistogramCollectorConfig {
+  val DefaultBuckets = List(.005, .01, .025, .05, .075, .1, .25, .5, .75, 1, 2.5, 5, 7.5, 10)
 }

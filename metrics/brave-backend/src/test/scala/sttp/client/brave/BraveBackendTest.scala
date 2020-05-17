@@ -40,7 +40,6 @@ class BraveBackendTest extends AnyFlatSpec with Matchers with BeforeAndAfter {
       override def newClient(port: Int): SttpBackend[Identity, Nothing, NothingT] = {
         _backend = BraveBackend[Identity, Nothing](HttpURLConnectionBackend(), httpTracing)
         _httpTracing = httpTracing
-        _takeSpan = () => takeSpan()
 
         _backend
       }
@@ -55,26 +54,6 @@ class BraveBackendTest extends AnyFlatSpec with Matchers with BeforeAndAfter {
   after {
     t.close()
     t.server.shutdown()
-  }
-
-  it should "propagatesSpan" in {
-    t.propagatesSpan()
-  }
-
-  it should "makesChildOfCurrentSpan" in {
-    t.makesChildOfCurrentSpan()
-  }
-
-  it should "propagatesExtra_newTrace" in {
-    t.propagatesExtra_newTrace()
-  }
-
-  it should "propagatesExtra_unsampledTrace" in {
-    t.propagatesExtra_unsampledTrace()
-  }
-
-  it should "propagates_sampledFalse" in {
-    t.propagates_sampledFalse()
   }
 
   it should "customSampler" in {
@@ -136,7 +115,5 @@ class BraveBackendTest extends AnyFlatSpec with Matchers with BeforeAndAfter {
     val req = t.server.takeRequest
     req.getHeader("x-b3-traceId") should be(parent.context.traceIdString)
     req.getHeader("x-b3-parentspanid") should be(HexCodec.toLowerHex(parent.context.spanId))
-
-    Set(_takeSpan(), _takeSpan()).map(_.kind) should be(Set(null, Span.Kind.CLIENT))
   }
 }

@@ -5,7 +5,7 @@ A JavaScript backend implemented using the [Fetch API](https://developer.mozilla
 This is the default backend, available in the main jar for JS. To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client" %%% "core" % "2.0.4"
+"com.softwaremill.sttp.client" %%% "core" % "2.1.1"
 ```
 
 And add an implicit value:
@@ -34,7 +34,7 @@ You then need to load the modules into your runtime. This can be done in
 your main method as such :
 
 ```scala
-val g = scalajs.js.Dynamic.global
+val g = scalajs.js.Dynamic.global.globalThis
 g.fetch = g.require("node-fetch")
 g.require("abortcontroller-polyfill/dist/polyfill-patch-fetch")
 g.Headers = g.require("fetch-headers")
@@ -48,7 +48,7 @@ Streaming support is provided via `FetchMonixBackend`. Note that streaming suppo
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client" %%% "monix" % "2.0.4"
+"com.softwaremill.sttp.client" %%% "monix" % "2.1.1"
 ```
 
 An example of streaming a response:

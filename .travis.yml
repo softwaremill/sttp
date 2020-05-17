@@ -5,10 +5,6 @@ jdk:
 - oraclejdk8
 - openjdk11
 dist: trusty
-scala:
-- 2.12.10
-- 2.11.12
-- 2.13.1
 before_cache:
   - du -h -d 1 $HOME/.ivy2/
   - du -h -d 2 $HOME/.sbt/
@@ -33,6 +29,4 @@ before_script:
 - mkdir -p chromedriver && unzip chromedriver_linux64.zip -d chromedriver/
 - export PATH="$PATH:$PWD/chromedriver/"
 script:
-- if [[ ($TRAVIS_JDK_VERSION = "oraclejdk8") ]]; then sbt ++$TRAVIS_SCALA_VERSION rootJVM/test && xvfb-run sbt ++$TRAVIS_SCALA_VERSION rootJS/test; fi
-- if [[ ($TRAVIS_JDK_VERSION = "oraclejdk8") && ($TRAVIS_SCALA_VERSION =~ ^2.11.*) ]]; then sbt rootNative/test; fi
-- if [[ ($TRAVIS_JDK_VERSION = "openjdk11") && ($TRAVIS_SCALA_VERSION =~ ^2.13.*) ]]; then sbt ++$TRAVIS_SCALA_VERSION httpClientBackend/test && sbt ++$TRAVIS_SCALA_VERSION httpClientBackendMonix/test; fi
+- sbt test

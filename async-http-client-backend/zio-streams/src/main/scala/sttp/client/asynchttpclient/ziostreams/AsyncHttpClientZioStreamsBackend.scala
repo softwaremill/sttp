@@ -4,16 +4,10 @@ import java.io.{File, FileOutputStream}
 import java.nio.ByteBuffer
 
 import io.netty.buffer.{ByteBuf, Unpooled}
-import org.asynchttpclient.{
-  AsyncHttpClient,
-  AsyncHttpClientConfig,
-  BoundRequestBuilder,
-  DefaultAsyncHttpClient,
-  DefaultAsyncHttpClientConfig
-}
+import org.asynchttpclient.{AsyncHttpClient, AsyncHttpClientConfig, BoundRequestBuilder, DefaultAsyncHttpClient, DefaultAsyncHttpClientConfig}
 import org.reactivestreams.Publisher
 import sttp.client.asynchttpclient.{AsyncHttpClientBackend, WebSocketHandler}
-import sttp.client.impl.zio.TaskMonadAsyncError
+import sttp.client.impl.zio.RIOMonadAsyncError
 import sttp.client.internal._
 import sttp.client.testing.SttpBackendStub
 import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
@@ -29,7 +23,7 @@ class AsyncHttpClientZioStreamsBackend[R] private (
     customizeRequest: BoundRequestBuilder => BoundRequestBuilder
 ) extends AsyncHttpClientBackend[Task, Stream[Throwable, ByteBuffer]](
       asyncHttpClient,
-      TaskMonadAsyncError,
+      new RIOMonadAsyncError,
       closeClient,
       customizeRequest
     ) {
@@ -90,7 +84,7 @@ object AsyncHttpClientZioStreamsBackend {
   def layer(
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): ZLayer.NoDeps[Throwable, SttpStreamsClient] =
+  ): Layer[Throwable, SttpStreamsClient] =
     ZLayer.fromManaged(managed(options, customizeRequest))
 
   def usingConfig(
@@ -119,7 +113,7 @@ object AsyncHttpClientZioStreamsBackend {
   def layerUsingConfig(
       cfg: AsyncHttpClientConfig,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): ZLayer.NoDeps[Throwable, SttpStreamsClient] =
+  ): Layer[Throwable, SttpStreamsClient] =
     ZLayer.fromManaged(managedUsingConfig(cfg, customizeRequest))
 
   /**
@@ -160,7 +154,7 @@ object AsyncHttpClientZioStreamsBackend {
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): ZLayer.NoDeps[Throwable, SttpStreamsClient] =
+  ): Layer[Throwable, SttpStreamsClient] =
     ZLayer.fromManaged(managedUsingConfigBuilder(updateConfig, options, customizeRequest))
 
   def usingClient[R](
@@ -173,7 +167,7 @@ object AsyncHttpClientZioStreamsBackend {
   def layerUsingClient(
       client: AsyncHttpClient,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): ZLayer.NoDeps[Nothing, SttpStreamsClient] =
+  ): Layer[Nothing, SttpStreamsClient] =
     ZLayer.fromAcquireRelease(UIO.runtime.map(runtime => usingClient(runtime, client, customizeRequest)))(
       _.close().ignore
     )
@@ -184,5 +178,5 @@ object AsyncHttpClientZioStreamsBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub: SttpBackendStub[Task, Stream[Throwable, ByteBuffer]] = SttpBackendStub(TaskMonadAsyncError)
+  def stub: SttpBackendStub[Task, Stream[Throwable, ByteBuffer]] = SttpBackendStub(new RIOMonadAsyncError)
 }

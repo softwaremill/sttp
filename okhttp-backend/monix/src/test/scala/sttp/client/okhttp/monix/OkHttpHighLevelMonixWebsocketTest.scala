@@ -12,6 +12,7 @@ import sttp.client.okhttp.monix.internal.SendMessageException
 import sttp.client.testing.ConvertToFuture
 import sttp.client.testing.websocket.HighLevelWebsocketTest
 import sttp.client.ws.WebSocket
+import sttp.client.testing.HttpTest.wsEndpoint
 
 import scala.concurrent.duration._
 

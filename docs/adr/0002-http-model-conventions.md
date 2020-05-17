@@ -22,5 +22,5 @@ The conventions are:
   the allowed range
 * `[SthCompanionObject].safeApply(...): Either[String, Sth]`: same as above, but doesn't throw exceptions. Instead,
   returns an error message or the model class instance
-* `[SthCompanionObject].notValidated(...): Sth`: creates the model type, without validation, and without throwing
+* `[SthCompanionObject].apply(...): Sth`: creates the model type, without validation, and without throwing
   exceptions 

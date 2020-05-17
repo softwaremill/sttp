@@ -10,13 +10,14 @@ import scala.language.higherKinds
 object implicits extends ScalazImplicits
 
 trait ScalazImplicits {
-  implicit def sttpBackendToScalazMappableSttpBackend[F[_], S, WS_HANDLER[_]](
+  implicit final def sttpBackendToScalazMappableSttpBackend[F[_], S, WS_HANDLER[_]](
       sttpBackend: SttpBackend[F, S, WS_HANDLER]
   ): MappableSttpBackend[F, S, WS_HANDLER] = new MappableSttpBackend(sttpBackend)
 }
 
-class MappableSttpBackend[F[_], S, WS_HANDLER[_]] private[scalaz] (val sttpBackend: SttpBackend[F, S, WS_HANDLER])
-    extends AnyVal {
+final class MappableSttpBackend[F[_], S, WS_HANDLER[_]] private[scalaz] (
+    private val sttpBackend: SttpBackend[F, S, WS_HANDLER]
+) extends AnyVal {
   def mapK[G[_]: MonadError](f: F ~> G): SttpBackend[G, S, WS_HANDLER] =
     new MappedKSttpBackend(sttpBackend, f, implicitly)
 }

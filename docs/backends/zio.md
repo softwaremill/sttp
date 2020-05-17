@@ -5,10 +5,10 @@ The [ZIO](https://github.com/zio/zio) backends are **asynchronous**. Sending a r
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % "2.0.4"
+"com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % "2.1.1"
 ```
            
-This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client), uses [Netty](http://netty.io) behind the scenes and supports effect cancellation.
+This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client), uses [Netty](http://netty.io) behind the scenes and supports effect cancellation. This backend works with all Scala versions. A Dotty build is available as well.
 
 Next you'll need to define a backend instance as an implicit value. This can be done in two basic ways:
 
@@ -23,7 +23,7 @@ import sttp.client.asynchttpclient.zio.AsyncHttpClientZioBackend
 AsyncHttpClientZioBackend().flatMap { implicit backend => ... }
 
 // or, if you'd like the backend to be wrapped in a Managed:
-AsyncHttpClientMonixBackend.managed().use { implicit backend => ... }
+AsyncHttpClientZioBackend.managed().use { implicit backend => ... }
 
 // or, if you'd like to use custom configuration:
 AsyncHttpClientZioBackend.usingConfig(asyncHttpClientConfig).flatMap { implicit backend => ... }
@@ -68,7 +68,7 @@ val open: ZIO[SttpClient, Throwable, WebSocketResponse[WebSocket[Task]]] = SttpC
 To use streaming using zio-streams, add the following dependency instead:
 
 ```scala
-"com.softwaremill.sttp.client" %% "async-http-client-backend-zio-streams" % "2.0.4"
+"com.softwaremill.sttp.client" %% "async-http-client-backend-zio-streams" % "2.1.1"
 ```
 
 And use the `sttp.client.asynchttpclient.ziostreams.AsyncHttpClientZioStreamsBackend` backend implementation. The backend supports streaming of type `Stream[Throwable, ByteBuffer]`. To leverage ZIO environment, use the `SttpStreamsClient` object to create request send/websocket open effects.
