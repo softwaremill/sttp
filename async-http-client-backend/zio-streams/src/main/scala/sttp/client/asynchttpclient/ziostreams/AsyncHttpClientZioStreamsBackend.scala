@@ -41,7 +41,9 @@ class AsyncHttpClientZioStreamsBackend[R] private (
   override protected def publisherToFile(p: Publisher[ByteBuffer], f: File): Task[Unit] = {
     blocking
       .effectBlocking(new FileOutputStream(f))
-      .flatMap { os => p.toStream(bufferSize).map(b => Chunk.fromArray(b.array())).run(ZSink.fromOutputStream(os)) }
+      .flatMap { os =>
+        p.toStream(bufferSize).map(b => Chunk.fromArray(b.array())).flattenChunks.run(ZSink.fromOutputStream(os))
+      }
       .unit
       .provideLayer(Blocking.live)
   }

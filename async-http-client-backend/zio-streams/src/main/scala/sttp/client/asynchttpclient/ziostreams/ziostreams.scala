@@ -51,7 +51,9 @@ package object ziostreams {
         request: Request[T, Nothing]
     ): ZIO[SttpStreamsClient, Throwable, WebSocketResponse[WebSocket[Task]]] =
       ZioWebSocketHandler().flatMap(handler =>
-        ZIO.accessM(env => env.get[SttpBackend[Task, Nothing, WebSocketHandler]].openWebsocket(request, handler))
+        ZIO.accessM(env =>
+          env.get[SttpBackend[Task, Stream[Throwable, ByteBuffer], WebSocketHandler]].openWebsocket(request, handler)
+        )
       )
   }
 
