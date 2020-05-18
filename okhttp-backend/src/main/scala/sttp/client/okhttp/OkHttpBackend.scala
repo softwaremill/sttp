@@ -308,7 +308,7 @@ object OkHttpSyncBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub: SttpBackendStub[Identity, Nothing] = SttpBackendStub.synchronous
+  def stub: SttpBackendStub[Identity, Nothing, WebSocketHandler] = SttpBackendStub.synchronous
 }
 
 abstract class OkHttpAsyncBackend[F[_], S](
@@ -416,7 +416,7 @@ object OkHttpFutureBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackendStub[Future, Nothing] =
+  def stub(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackendStub[Future, Nothing, WebSocketHandler] =
     SttpBackendStub(new FutureMonad())
 }
 

@@ -7,7 +7,6 @@ import com.twitter.util.{Future => TFuture}
 import sttp.client.monad.MonadError
 import sttp.client.ws.WebSocketResponse
 import com.twitter.finagle.http.{FileElement, FormElement, RequestBuilder, SimpleElement, Method => FMethod, Response => FResponse}
-import com.twitter.finagle.loadbalancer.Balancers
 import com.twitter.io.Buf
 import com.twitter.io.Buf.{ByteArray, ByteBuffer}
 import com.twitter.util
@@ -208,5 +207,5 @@ object FinagleBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub: SttpBackendStub[TFuture, Nothing] = SttpBackendStub(TFutureMonadError)
+  def stub: SttpBackendStub[TFuture, Nothing, NothingT] = SttpBackendStub(TFutureMonadError)
 }

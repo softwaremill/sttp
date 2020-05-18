@@ -80,5 +80,5 @@ object AsyncHttpClientScalazBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub: SttpBackendStub[Task, Nothing] = SttpBackendStub(TaskMonadAsyncError)
+  def stub: SttpBackendStub[Task, Nothing, WebSocketHandler] = SttpBackendStub(TaskMonadAsyncError)
 }

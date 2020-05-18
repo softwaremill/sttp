@@ -279,5 +279,5 @@ object Http4sBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub[F[_]: Concurrent]: SttpBackendStub[F, Stream[F, Byte]] = SttpBackendStub(new CatsMonadAsyncError)
+  def stub[F[_]: Concurrent]: SttpBackendStub[F, Stream[F, Byte], NothingT] = SttpBackendStub(new CatsMonadAsyncError)
 }

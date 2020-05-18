@@ -104,5 +104,5 @@ object HttpClientFs2Backend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub[F[_]: Concurrent]: SttpBackendStub[F, Stream[F, Byte]] = SttpBackendStub(implicitly)
+  def stub[F[_]: Concurrent]: SttpBackendStub[F, Stream[F, Byte], WebSocketHandler] = SttpBackendStub(implicitly)
 }
