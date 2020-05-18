@@ -6,7 +6,7 @@ import sbt.internal.ProjectMatrix
 val scala2_11 = "2.11.12"
 val scala2_12 = "2.12.10"
 val scala2_13 = "2.13.2"
-val scala3 = "0.22.0"
+val scala3 = "0.23.0"
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests")
@@ -149,7 +149,7 @@ val fs2Version: Option[(Long, Long)] => String = {
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.12"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % "2.5.31"
 
-val scalaTestVersion = "3.1.1"
+val scalaTestVersion = "3.1.2"
 val scalaNativeTestInterfaceVersion = "0.4.0-M2"
 val scalaTestNativeVersion = "3.2.0-M2"
 val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion
@@ -349,7 +349,7 @@ lazy val zio = (projectMatrix in file("implementations/zio"))
     )
   )
   .dependsOn(core % compileAndTest)
-  .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13 /*, scala3*/ ))
+  .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13, scala3))
 
 lazy val scalaz = (projectMatrix in file("implementations/scalaz"))
   .settings(commonJvmSettings)
@@ -409,7 +409,7 @@ lazy val asyncHttpClientScalazBackend =
     .dependsOn(scalaz % compileAndTest)
 
 lazy val asyncHttpClientZioBackend =
-  asyncHttpClientBackendProject("zio")
+  asyncHttpClientBackendProject("zio", includeDotty = true)
     .dependsOn(zio % compileAndTest)
 
 lazy val asyncHttpClientZioStreamsBackend =
