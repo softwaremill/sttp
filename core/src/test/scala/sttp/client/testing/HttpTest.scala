@@ -39,6 +39,7 @@ trait HttpTest[F[_]]
 
   protected def supportsRequestTimeout = true
   protected def supportsSttpExceptions = true
+  protected def throwsExceptionOnUnsupportedEncoding = true
 
   "parse response" - {
     "as string" in {
@@ -284,11 +285,13 @@ trait HttpTest[F[_]]
       req.send().toFuture().map { resp => resp.code shouldBe StatusCode.Ok }
     }
 
-    "should throw exception when response contains unsupported encoding" in {
-      val req = basicRequest.get(uri"$endpoint/compress-unsupported").response(asStringAlways)
-      Future(req.send()).flatMap(_.toFuture()).failed.map { e =>
-        e shouldBe a[SttpClientException.ReadException]
-        e.getCause shouldBe an[UnsupportedEncodingException]
+    if (supportsSttpExceptions && throwsExceptionOnUnsupportedEncoding) {
+      "should throw exception when response contains unsupported encoding" in {
+        val req = basicRequest.get(uri"$endpoint/compress-unsupported").response(asStringAlways)
+        Future(req.send()).flatMap(_.toFuture()).failed.map { e =>
+          e shouldBe a[SttpClientException.ReadException]
+          e.getCause shouldBe an[UnsupportedEncodingException]
+        }
       }
     }
   }
