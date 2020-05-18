@@ -2,47 +2,17 @@ package sttp.client.finagle
 
 import com.twitter.finagle.Http.Client
 import com.twitter.finagle.{Http, Service, http}
-import sttp.client.{
-  BasicRequestBody,
-  ByteArrayBody,
-  ByteBufferBody,
-  FileBody,
-  FollowRedirectsBackend,
-  IgnoreResponse,
-  InputStreamBody,
-  MappedResponseAs,
-  MultipartBody,
-  NoBody,
-  NothingT,
-  Request,
-  Response,
-  ResponseAs,
-  ResponseAsByteArray,
-  ResponseAsFile,
-  ResponseAsFromMetadata,
-  ResponseAsStream,
-  ResponseMetadata,
-  StringBody,
-  SttpBackend,
-  SttpClientException
-}
+import sttp.client.{BasicRequestBody, ByteArrayBody, ByteBufferBody, FileBody, FollowRedirectsBackend, IgnoreResponse, InputStreamBody, MappedResponseAs, MultipartBody, NoBody, NothingT, Request, Response, ResponseAs, ResponseAsByteArray, ResponseAsFile, ResponseAsFromMetadata, ResponseAsStream, ResponseMetadata, StringBody, SttpBackend, SttpClientException}
 import com.twitter.util.{Future => TFuture}
 import sttp.client.monad.MonadError
 import sttp.client.ws.WebSocketResponse
-import com.twitter.finagle.http.{
-  FileElement,
-  FormElement,
-  RequestBuilder,
-  SimpleElement,
-  Method => FMethod,
-  Response => FResponse
-}
+import com.twitter.finagle.http.{FileElement, FormElement, RequestBuilder, SimpleElement, Method => FMethod, Response => FResponse}
 import com.twitter.finagle.loadbalancer.Balancers
 import com.twitter.io.Buf
 import com.twitter.io.Buf.{ByteArray, ByteBuffer}
 import com.twitter.util
 import sttp.client.internal.FileHelpers
-import sttp.model.{Header, Method, Part, StatusCode}
+import sttp.model.{Header, Method, Part, StatusCode, Uri}
 import com.twitter.util.Duration
 import sttp.client.testing.SttpBackendStub
 
@@ -192,11 +162,11 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
   }
 
   private def uriToFinagleDestination(uri: Uri): String = {
-    val defaultPort = request.uri.scheme match {
+    val defaultPort = uri.scheme match {
       case "https" => 443
       case _       => 80
     }
-    s"${request.uri.host}:${request.uri.port.getOrElse(defaultPort)}"
+    s"${uri.host}:${uri.port.getOrElse(defaultPort)}"
   }
 
   private def adjustExceptions[T](t: => TFuture[T]): TFuture[T] =

@@ -1,7 +1,7 @@
 package sttp.client.brave
 
 import brave.http.HttpTracing
-import brave.internal.HexCodec
+import brave.internal.codec.HexCodec
 import brave.test.http.ITHttpClient
 import okhttp3.mockwebserver.MockResponse
 import org.scalatest.BeforeAndAfter
