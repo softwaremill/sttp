@@ -219,7 +219,7 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
         }
       }
     } ~ path("compress-unsupported") {
-      respondWithHeader(`Content-Encoding`(HttpEncoding("asd"))) {
+      respondWithHeader(`Content-Encoding`(HttpEncoding("secret-encoding"))) {
         complete("I'm compressed!")
       }
     } ~ path("compress") {
