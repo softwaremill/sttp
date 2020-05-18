@@ -1,10 +1,10 @@
 package sttp.client.httpclient
 
-import java.io.{InputStream, UnsupportedEncodingException}
+import java.io.InputStream
 import java.net.http.HttpRequest.{BodyPublisher, BodyPublishers}
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 import java.net.{Authenticator, PasswordAuthentication}
-import java.nio.{Buffer, ByteBuffer}
+import java.nio.{ByteBuffer, Buffer}
 import java.time.{Duration => JDuration}
 import java.util.concurrent.{Executor, ThreadPoolExecutor}
 import java.util.function
@@ -12,7 +12,6 @@ import java.util.zip.{GZIPInputStream, InflaterInputStream}
 
 import sttp.client.ResponseAs.EagerResponseHandler
 import sttp.client.SttpBackendOptions.Proxy
-import sttp.client.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client.internal.FileHelpers
 import sttp.client.{
   BasicRequestBody,
@@ -42,11 +41,8 @@ import scala.collection.JavaConverters._
 import scala.language.higherKinds
 import scala.util.{Failure, Try}
 
-abstract class HttpClientBackend[F[_], S](
-    client: HttpClient,
-    closeClient: Boolean,
-    customEncodingHandler: EncodingHandler
-) extends SttpBackend[F, S, WebSocketHandler] {
+abstract class HttpClientBackend[F[_], S](client: HttpClient, closeClient: Boolean)
+    extends SttpBackend[F, S, WebSocketHandler] {
   private[httpclient] def convertRequest[T](request: Request[T, S]) = {
     val builder = HttpRequest
       .newBuilder()
@@ -110,21 +106,15 @@ abstract class HttpClientBackend[F[_], S](
 
     val encoding = headers.collectFirst { case h if h.is(HeaderNames.ContentEncoding) => h.value }
     val method = Method(res.request().method())
-    val byteBody = if (method != Method.HEAD) {
-      encoding
-        .map(e => customEncodingHandler.orElse(PartialFunction.fromFunction(standardEncoding.tupled))(res.body() -> e))
-        .getOrElse(res.body())
+    val byteBody = if (encoding.contains("gzip") && method != Method.HEAD) {
+      new GZIPInputStream(res.body())
+    } else if (encoding.contains("deflate") && method != Method.HEAD) {
+      new InflaterInputStream(res.body())
     } else {
       res.body()
     }
     val body = responseHandler(byteBody).handle(responseAs, responseMonad, responseMetadata)
     responseMonad.map(body)(Response(_, code, "", headers, Nil))
-  }
-
-  private def standardEncoding: (InputStream, String) => InputStream = {
-    case (body, "gzip")    => new GZIPInputStream(body)
-    case (body, "deflate") => new InflaterInputStream(body)
-    case (_, ce)           => throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
   }
 
   private def responseHandler(responseBody: InputStream) =
@@ -151,7 +141,7 @@ abstract class HttpClientBackend[F[_], S](
   private class ByteBufferBackedInputStream(buf: ByteBuffer) extends InputStream {
     override def read: Int = {
       if (!buf.hasRemaining) return -1
-      buf.get & 0xff
+      buf.get & 0xFF
     }
 
     override def read(bytes: Array[Byte], off: Int, len: Int): Int = {
@@ -181,8 +171,6 @@ abstract class HttpClientBackend[F[_], S](
 }
 
 object HttpClientBackend {
-
-  type EncodingHandler = PartialFunction[(InputStream, String), InputStream]
   // TODO not sure if it works
   private class ProxyAuthenticator(auth: SttpBackendOptions.ProxyAuth) extends Authenticator {
     override def getPasswordAuthentication: PasswordAuthentication = {
