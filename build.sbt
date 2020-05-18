@@ -208,7 +208,6 @@ lazy val rootProject = (project in file("."))
       json4s.projectRefs ++
       sprayJson.projectRefs ++
       playJson.projectRefs ++
-      braveBackend.projectRefs ++
       openTracingBackend.projectRefs ++
       prometheusBackend.projectRefs ++
       zioTelemetryOpenTracingBackend.projectRefs ++
@@ -591,22 +590,6 @@ lazy val playJson = (projectMatrix in file("json/play-json"))
   )
   .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = commonJvmSettings)
   .dependsOn(core, jsonCommon)
-
-lazy val braveVersion = "5.12.1"
-
-lazy val braveBackend = (projectMatrix in file("metrics/brave-backend"))
-  .settings(commonJvmSettings)
-  .settings(
-    name := "brave-backend",
-    libraryDependencies ++= Seq(
-      "io.zipkin.brave" % "brave" % braveVersion,
-      "io.zipkin.brave" % "brave-instrumentation-http" % braveVersion,
-      "io.zipkin.brave" % "brave-instrumentation-http-tests" % braveVersion % Test,
-      scalaTest % Test
-    )
-  )
-  .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13))
-  .dependsOn(core)
 
 lazy val openTracingBackend = (projectMatrix in file("metrics/open-tracing-backend"))
   .settings(commonJvmSettings)
