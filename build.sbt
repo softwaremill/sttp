@@ -1,4 +1,3 @@
-// shadow sbt-scalajs' crossProject and CrossType from Scala.js 0.6.x
 import sbtrelease.ReleaseStateTransformations._
 import sbtrelease.ReleasePlugin.autoImport._
 import com.softwaremill.Publish.Release.updateVersionInDocs
@@ -65,7 +64,7 @@ val commonJvmSettings = commonSettings ++ Seq(
 
 val commonJsSettings = commonSettings ++ Seq(
   // slow down for CI
-  parallelExecution in Test := false,
+  parallelExecution in Test := false, // TODO
   // https://github.com/scalaz/scalaz/pull/1734#issuecomment-385627061
   scalaJSLinkerConfig ~= {
     _.withBatchMode(System.getenv("CONTINUOUS_INTEGRATION") == "true")
