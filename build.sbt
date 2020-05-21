@@ -215,6 +215,7 @@ lazy val rootProject = (project in file("."))
       httpClientMonixBackend.projectRefs ++
       httpClientFs2Backend.projectRefs ++
       finagleBackend.projectRefs ++
+      scribeBackend.projectRefs ++
       slf4jBackend.projectRefs ++
       examples.projectRefs: _*
   )
@@ -627,6 +628,18 @@ lazy val zioTelemetryOpenTracingBackend = (projectMatrix in file("metrics/zio-te
   )
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13))
   .dependsOn(zio % compileAndTest)
+  .dependsOn(core)
+
+lazy val scribeBackend = (projectMatrix in file("logging/scribe"))
+  .settings(commonJvmSettings)
+  .settings(
+    name := "scribe-backend",
+    libraryDependencies ++= Seq(
+      "com.outr" %%% "scribe" % "2.7.12",
+      scalaTest % Test
+    )
+  )
+  .jvmPlatform(scalaVersions = List(scala2_12, scala2_13))
   .dependsOn(core)
 
 lazy val slf4jBackend = (projectMatrix in file("logging/slf4j"))
