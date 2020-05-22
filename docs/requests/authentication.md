@@ -46,3 +46,22 @@ Also keep in mind that there are some limitations with the current implementatio
 * there is no caching so each request will result in an additional round-trip (or two in case of proxy and server)
 * authorizationInfo is not supported
 * scalajs supports only md5 algorithm
+
+## OAuth2
+
+You can use sttp with OAuth2. Looking at the [OAuth2 protocol flow](https://tools.ietf.org/html/rfc6749#section-1.2), sttp might be helpful in the second and third step of the process:
+
+1. (A)/(B) - Your UI needs to enable the user to authenticate. Your application will then receive a callback from the authentication server, which will include an authentication code.
+
+2. (C)/(D) - You need to send a request to the authorisation server, passing in the authentication code from step 1. You'll receive an access token in response (and optionally a refresh token). For example, assuming that you're using github as your authentication server, that you've taken the values of `clientId` an `clientSecret` from the github settings, and that you have received `authCode` in step 1 above:
+```scala
+      case class TokenResponse(access_token: String, scope: String, token_type: String, refresh_token: Option[String])
+      val tokenRequest = basicRequest
+        .post(uri"https://github.com/login/oauth/access_token?code=$authCode&grant_type=authorization_code")
+        .auth
+        .basic(clientId, clientSecret)
+        .header("accept","application/json")
+      val authResponse = tokenRequest.response(asJson[TokenResponse]).send()
+      val accessToken = authResponse.map(_.body.map(_.access_token))
+```
+3. (E)/(F) - Once you have the access token, you can use it to request the protected resource from the resource server, depending on its specification.
