@@ -29,4 +29,5 @@ before_script:
 - mkdir -p chromedriver && unzip chromedriver_linux64.zip -d chromedriver/
 - export PATH="$PATH:$PWD/chromedriver/"
 script:
+- google-chrome --version
 - sbt test

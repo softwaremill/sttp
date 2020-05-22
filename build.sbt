@@ -10,7 +10,7 @@ val scala3 = "0.23.0"
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests")
-lazy val javaVersion = settingKey[VersionNumber]("Java version")
+lazy val javaVersion = settingKey[Int]("Java specification version major component")
 
 val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   organization := "com.softwaremill.sttp.client",
@@ -37,7 +37,7 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
     commitNextVersion,
     pushChanges
   ),
-  javaVersion := VersionNumber(sys.props("java.specification.version")),
+  javaVersion := VersionNumber(sys.props("java.specification.version"))._1.get.toInt,
   // doc generation is broken in dotty
   sources in (Compile, doc) := {
     val scalaV = scalaVersion.value
@@ -47,10 +47,10 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
 )
 
 val onlyJava11 = Seq(
-  publishArtifact := (VersionNumber("11") == javaVersion.value),
-  skip := (VersionNumber("11") != javaVersion.value),
-  skip in compile := (VersionNumber("11") != javaVersion.value),
-  skip in publish := (VersionNumber("11") != javaVersion.value)
+  publishArtifact := (javaVersion.value >= 11),
+  skip := (javaVersion.value < 11),
+  skip in compile := (javaVersion.value < 11),
+  skip in publish := (javaVersion.value < 11)
 )
 
 val commonJvmSettings = commonSettings ++ Seq(
