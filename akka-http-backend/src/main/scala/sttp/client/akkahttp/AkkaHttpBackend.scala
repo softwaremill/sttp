@@ -7,13 +7,7 @@ import akka.event.LoggingAdapter
 import akka.http.scaladsl.coding.{Deflate, Gzip, NoCoding}
 import akka.http.scaladsl.model.ContentTypes.`application/octet-stream`
 import akka.http.scaladsl.model.HttpHeader.ParsingResult
-import akka.http.scaladsl.model.headers.{
-  BasicHttpCredentials,
-  HttpEncoding,
-  HttpEncodings,
-  `Content-Length`,
-  `Content-Type`
-}
+import akka.http.scaladsl.model.headers.{BasicHttpCredentials, HttpEncodings, `Content-Length`, `Content-Type`}
 import akka.http.scaladsl.model.ws.{Message, WebSocketRequest}
 import akka.http.scaladsl.model.{Multipart => AkkaMultipart, StatusCode => _, _}
 import akka.http.scaladsl.settings.ConnectionPoolSettings
@@ -22,7 +16,6 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{FileIO, Flow, Sink, Source, StreamConverters}
 import akka.util.ByteString
 import sttp.client
-import sttp.client.akkahttp.AkkaHttpBackend.EncodingHandler
 import sttp.model.{Header, HeaderNames, Headers, Method, Part, StatusCode}
 import sttp.client.monad.{FutureMonad, MonadError}
 import sttp.client.testing.SttpBackendStub
@@ -64,8 +57,7 @@ class AkkaHttpBackend private (
     customConnectionPoolSettings: Option[ConnectionPoolSettings],
     http: AkkaHttpClient,
     customizeRequest: HttpRequest => HttpRequest,
-    customizeWebsocketRequest: WebSocketRequest => WebSocketRequest,
-    customEncodingHandler: EncodingHandler
+    customizeWebsocketRequest: WebSocketRequest => WebSocketRequest
 ) extends SttpBackend[Future, Source[ByteString, Any], Flow[Message, Message, *]] {
   // the supported stream type
   private type S = Source[ByteString, Any]
@@ -77,58 +69,55 @@ class AkkaHttpBackend private (
     .getOrElse(ConnectionPoolSettings(actorSystem))
     .withUpdatedConnectionSettings(_.withConnectingTimeout(opts.connectionTimeout))
 
-  override def send[T](r: Request[T, S]): Future[Response[T]] =
-    adjustExceptions {
-      implicit val ec: ExecutionContext = this.ec
+  override def send[T](r: Request[T, S]): Future[Response[T]] = adjustExceptions {
+    implicit val ec: ExecutionContext = this.ec
 
-      Future
-        .fromTry(requestToAkka(r).flatMap(setBodyOnAkka(r, r.body, _)))
-        .map(customizeRequest)
-        .flatMap(request => http.singleRequest(request, connectionSettings(r)))
-        .flatMap(responseFromAkka(r, _))
-    }
+    Future
+      .fromTry(requestToAkka(r).flatMap(setBodyOnAkka(r, r.body, _)))
+      .map(customizeRequest)
+      .flatMap(request => http.singleRequest(request, connectionSettings(r)))
+      .flatMap(responseFromAkka(r, _))
+  }
 
   override def openWebsocket[T, WS_RESULT](
       r: Request[T, Source[ByteString, Any]],
       handler: Flow[Message, Message, WS_RESULT]
-  ): Future[WebSocketResponse[WS_RESULT]] =
-    adjustExceptions {
-      implicit val ec: ExecutionContext = this.ec
+  ): Future[WebSocketResponse[WS_RESULT]] = adjustExceptions {
+    implicit val ec: ExecutionContext = this.ec
 
-      val akkaWebsocketRequest = headersToAkka(r.headers)
-        .map(h => WebSocketRequest(uri = r.uri.toString, extraHeaders = h))
-        .map(customizeWebsocketRequest)
+    val akkaWebsocketRequest = headersToAkka(r.headers)
+      .map(h => WebSocketRequest(uri = r.uri.toString, extraHeaders = h))
+      .map(customizeWebsocketRequest)
 
-      Future
-        .fromTry(akkaWebsocketRequest)
-        .flatMap(request => http.singleWebsocketRequest(request, handler, connectionSettings(r).connectionSettings))
-        .flatMap {
-          case (wsResponse, wsResult) =>
-            responseFromAkka(r, wsResponse.response).map { r =>
-              if (r.code != StatusCode.SwitchingProtocols) {
-                throw new NotAWebsocketException(r)
-              } else {
-                client.ws.WebSocketResponse(Headers(r.headers), wsResult)
-              }
+    Future
+      .fromTry(akkaWebsocketRequest)
+      .flatMap(request => http.singleWebsocketRequest(request, handler, connectionSettings(r).connectionSettings))
+      .flatMap {
+        case (wsResponse, wsResult) =>
+          responseFromAkka(r, wsResponse.response).map { r =>
+            if (r.code != StatusCode.SwitchingProtocols) {
+              throw new NotAWebsocketException(r)
+            } else {
+              client.ws.WebSocketResponse(Headers(r.headers), wsResult)
             }
-        }
-    }
+          }
+      }
+  }
 
   override def responseMonad: MonadError[Future] = new FutureMonad()(ec)
 
-  private def methodToAkka(m: Method): HttpMethod =
-    m match {
-      case Method.GET     => HttpMethods.GET
-      case Method.HEAD    => HttpMethods.HEAD
-      case Method.POST    => HttpMethods.POST
-      case Method.PUT     => HttpMethods.PUT
-      case Method.DELETE  => HttpMethods.DELETE
-      case Method.OPTIONS => HttpMethods.OPTIONS
-      case Method.PATCH   => HttpMethods.PATCH
-      case Method.CONNECT => HttpMethods.CONNECT
-      case Method.TRACE   => HttpMethods.TRACE
-      case _              => HttpMethod.custom(m.method)
-    }
+  private def methodToAkka(m: Method): HttpMethod = m match {
+    case Method.GET     => HttpMethods.GET
+    case Method.HEAD    => HttpMethods.HEAD
+    case Method.POST    => HttpMethods.POST
+    case Method.PUT     => HttpMethods.PUT
+    case Method.DELETE  => HttpMethods.DELETE
+    case Method.OPTIONS => HttpMethods.OPTIONS
+    case Method.PATCH   => HttpMethods.PATCH
+    case Method.CONNECT => HttpMethods.CONNECT
+    case Method.TRACE   => HttpMethods.TRACE
+    case _              => HttpMethod.custom(m.method)
+  }
 
   private def bodyFromAkka[T](
       rr: ResponseAs[T, S],
@@ -190,8 +179,8 @@ class AkkaHttpBackend private (
       .withUpdatedConnectionSettings(_.withIdleTimeout(r.options.readTimeout))
   }
 
-  private def responseFromAkka[T](r: Request[T, S], hr: HttpResponse)(implicit
-      ec: ExecutionContext
+  private def responseFromAkka[T](r: Request[T, S], hr: HttpResponse)(
+      implicit ec: ExecutionContext
   ): Future[Response[T]] = {
     val code = StatusCode(hr.status.intValue())
     val statusText = hr.status.reason()
@@ -256,17 +245,16 @@ class AkkaHttpBackend private (
         .getOrElse(ct)
 
     def toBodyPart(mp: Part[BasicRequestBody]): Try[AkkaMultipart.FormData.BodyPart] = {
-      def entity(ct: ContentType) =
-        mp.body match {
-          case StringBody(b, encoding, _) =>
-            HttpEntity(ctWithCharset(ct, encoding), b.getBytes(encoding))
-          case ByteArrayBody(b, _)  => HttpEntity(ct, b)
-          case ByteBufferBody(b, _) => HttpEntity(ct, ByteString(b))
-          case isb: InputStreamBody =>
-            HttpEntity
-              .IndefiniteLength(ct, StreamConverters.fromInputStream(() => isb.b))
-          case FileBody(b, _) => HttpEntity.fromPath(ct, b.toPath)
-        }
+      def entity(ct: ContentType) = mp.body match {
+        case StringBody(b, encoding, _) =>
+          HttpEntity(ctWithCharset(ct, encoding), b.getBytes(encoding))
+        case ByteArrayBody(b, _)  => HttpEntity(ct, b)
+        case ByteBufferBody(b, _) => HttpEntity(ct, ByteString(b))
+        case isb: InputStreamBody =>
+          HttpEntity
+            .IndefiniteLength(ct, StreamConverters.fromInputStream(() => isb.b))
+        case FileBody(b, _) => HttpEntity.fromPath(ct, b.toPath)
+      }
 
       for {
         ct <- parseContentTypeOrOctetStream(mp.contentType)
@@ -321,31 +309,31 @@ class AkkaHttpBackend private (
 
   // http://doc.akka.io/docs/akka-http/10.0.7/scala/http/common/de-coding.html
   private def decodeAkkaResponse(response: HttpResponse): HttpResponse = {
-    customEncodingHandler.orElse(EncodingHandler(standardEncoding)).apply(response -> response.encoding)
-  }
+    val decoder = response.encoding match {
+      case HttpEncodings.gzip     => Gzip
+      case HttpEncodings.deflate  => Deflate
+      case HttpEncodings.identity => NoCoding
+      case ce =>
+        throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
+    }
 
-  private def standardEncoding: (HttpResponse, HttpEncoding) => HttpResponse = {
-    case (body, HttpEncodings.gzip)     => Gzip.decodeMessage(body)
-    case (body, HttpEncodings.deflate)  => Deflate.decodeMessage(body)
-    case (body, HttpEncodings.identity) => NoCoding.decodeMessage(body)
-    case (_, ce)                        => throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
+    decoder.decodeMessage(response)
   }
 
   private def adjustExceptions[T](t: => Future[T]): Future[T] =
     SttpClientException.adjustExceptions(responseMonad)(t)(akkaExceptionToSttpClientException)
 
-  private def akkaExceptionToSttpClientException(e: Exception): Option[Exception] =
-    e match {
-      case e: akka.stream.ConnectionException => Some(new SttpClientException.ConnectException(e))
-      case e: akka.stream.StreamTcpException =>
-        e.getCause match {
-          case ee: Exception =>
-            akkaExceptionToSttpClientException(ee).orElse(Some(new SttpClientException.ReadException(e)))
-          case _ => Some(new SttpClientException.ReadException(e))
-        }
-      case e: akka.stream.scaladsl.TcpIdleTimeoutException => Some(new SttpClientException.ReadException(e))
-      case e: Exception                                    => SttpClientException.defaultExceptionToSttpClientException(e)
-    }
+  private def akkaExceptionToSttpClientException(e: Exception): Option[Exception] = e match {
+    case e: akka.stream.ConnectionException => Some(new SttpClientException.ConnectException(e))
+    case e: akka.stream.StreamTcpException =>
+      e.getCause match {
+        case ee: Exception =>
+          akkaExceptionToSttpClientException(ee).orElse(Some(new SttpClientException.ReadException(e)))
+        case _ => Some(new SttpClientException.ReadException(e))
+      }
+    case e: akka.stream.scaladsl.TcpIdleTimeoutException => Some(new SttpClientException.ReadException(e))
+    case e: Exception                                    => SttpClientException.defaultExceptionToSttpClientException(e)
+  }
 
   override def close(): Future[Unit] = {
     import as.dispatcher
@@ -354,13 +342,6 @@ class AkkaHttpBackend private (
 }
 
 object AkkaHttpBackend {
-  type EncodingHandler = PartialFunction[(HttpResponse, HttpEncoding), HttpResponse]
-  object EncodingHandler {
-    def apply(f: (HttpResponse, HttpEncoding) => HttpResponse): EncodingHandler = {
-      case (body, encoding) => f(body, encoding)
-    }
-  }
-
   private def make(
       actorSystem: ActorSystem,
       ec: ExecutionContext,
@@ -369,8 +350,7 @@ object AkkaHttpBackend {
       customConnectionPoolSettings: Option[ConnectionPoolSettings],
       http: AkkaHttpClient,
       customizeRequest: HttpRequest => HttpRequest,
-      customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity,
-      customEncodingHandler: EncodingHandler = PartialFunction.empty
+      customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity
   ): SttpBackend[Future, Source[ByteString, Any], Flow[Message, Message, *]] =
     new FollowRedirectsBackend(
       new AkkaHttpBackend(
@@ -381,8 +361,7 @@ object AkkaHttpBackend {
         customConnectionPoolSettings,
         http,
         customizeRequest,
-        customizeWebsocketRequest,
-        customEncodingHandler
+        customizeWebsocketRequest
       )
     )
 
@@ -397,10 +376,9 @@ object AkkaHttpBackend {
       customConnectionPoolSettings: Option[ConnectionPoolSettings] = None,
       customLog: Option[LoggingAdapter] = None,
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity,
-      customEncodingHandler: EncodingHandler = PartialFunction.empty
-  )(implicit
-      ec: ExecutionContext = ExecutionContext.global
+      customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity
+  )(
+      implicit ec: ExecutionContext = ExecutionContext.global
   ): SttpBackend[Future, Source[ByteString, Any], Flow[Message, Message, *]] = {
     val actorSystem = ActorSystem("sttp")
 
@@ -412,8 +390,7 @@ object AkkaHttpBackend {
       customConnectionPoolSettings,
       AkkaHttpClient.default(actorSystem, customHttpsContext, customLog),
       customizeRequest,
-      customizeWebsocketRequest,
-      customEncodingHandler
+      customizeWebsocketRequest
     )
   }
 
@@ -431,10 +408,9 @@ object AkkaHttpBackend {
       customConnectionPoolSettings: Option[ConnectionPoolSettings] = None,
       customLog: Option[LoggingAdapter] = None,
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity,
-      customEncodingHandler: EncodingHandler = PartialFunction.empty
-  )(implicit
-      ec: ExecutionContext = ExecutionContext.global
+      customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity
+  )(
+      implicit ec: ExecutionContext = ExecutionContext.global
   ): SttpBackend[Future, Source[ByteString, Any], Flow[Message, Message, *]] = {
     usingClient(
       actorSystem,
@@ -442,8 +418,7 @@ object AkkaHttpBackend {
       customConnectionPoolSettings,
       AkkaHttpClient.default(actorSystem, customHttpsContext, customLog),
       customizeRequest,
-      customizeWebsocketRequest,
-      customEncodingHandler
+      customizeWebsocketRequest
     )
   }
 
@@ -460,10 +435,9 @@ object AkkaHttpBackend {
       customConnectionPoolSettings: Option[ConnectionPoolSettings] = None,
       http: AkkaHttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity,
-      customEncodingHandler: EncodingHandler = PartialFunction.empty
-  )(implicit
-      ec: ExecutionContext = ExecutionContext.global
+      customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity
+  )(
+      implicit ec: ExecutionContext = ExecutionContext.global
   ): SttpBackend[Future, Source[ByteString, Any], Flow[Message, Message, *]] = {
     make(
       actorSystem,
@@ -473,8 +447,7 @@ object AkkaHttpBackend {
       customConnectionPoolSettings,
       http,
       customizeRequest,
-      customizeWebsocketRequest,
-      customEncodingHandler
+      customizeWebsocketRequest
     )
   }
 

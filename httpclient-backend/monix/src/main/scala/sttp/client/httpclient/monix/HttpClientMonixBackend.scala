@@ -9,7 +9,6 @@ import cats.effect.Resource
 import monix.eval.Task
 import monix.execution.Scheduler
 import monix.reactive.Observable
-import sttp.client.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client.httpclient.{HttpClientAsyncBackend, HttpClientBackend, WebSocketHandler}
 import sttp.client.impl.monix.TaskMonadAsyncError
 import sttp.client.testing.SttpBackendStub
@@ -20,15 +19,13 @@ import scala.util.{Success, Try}
 class HttpClientMonixBackend private (
     client: HttpClient,
     closeClient: Boolean,
-    customizeRequest: HttpRequest => HttpRequest,
-    customEncodingHandler: EncodingHandler
+    customizeRequest: HttpRequest => HttpRequest
 )(implicit s: Scheduler)
     extends HttpClientAsyncBackend[Task, Observable[ByteBuffer]](
       client,
       TaskMonadAsyncError,
       closeClient,
-      customizeRequest,
-      customEncodingHandler
+      customizeRequest
     ) {
   override def streamToRequestBody(stream: Observable[ByteBuffer]): HttpRequest.BodyPublisher = {
     BodyPublishers.fromPublisher(new ReactivePublisherJavaAdapter[ByteBuffer](stream.toReactivePublisher))
@@ -45,49 +42,34 @@ class HttpClientMonixBackend private (
 }
 
 object HttpClientMonixBackend {
-  private def apply(
-      client: HttpClient,
-      closeClient: Boolean,
-      customizeRequest: HttpRequest => HttpRequest,
-      customEncodingHandler: EncodingHandler
-  )(implicit
-      s: Scheduler
+  private def apply(client: HttpClient, closeClient: Boolean, customizeRequest: HttpRequest => HttpRequest)(
+      implicit s: Scheduler
   ): SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler] =
-    new FollowRedirectsBackend(
-      new HttpClientMonixBackend(client, closeClient, customizeRequest, customEncodingHandler)(s)
-    )
+    new FollowRedirectsBackend(new HttpClientMonixBackend(client, closeClient, customizeRequest)(s))
 
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default,
-      customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: EncodingHandler = PartialFunction.empty
-  )(implicit
-      s: Scheduler = Scheduler.global
+      customizeRequest: HttpRequest => HttpRequest = identity
+  )(
+      implicit s: Scheduler = Scheduler.global
   ): Task[SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler]] =
     Task.eval(
-      HttpClientMonixBackend(
-        HttpClientBackend.defaultClient(options),
-        closeClient = true,
-        customizeRequest,
-        customEncodingHandler
-      )(s)
+      HttpClientMonixBackend(HttpClientBackend.defaultClient(options), closeClient = true, customizeRequest)(s)
     )
 
   def resource(
       options: SttpBackendOptions = SttpBackendOptions.Default,
-      customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: EncodingHandler = PartialFunction.empty
-  )(implicit
-      s: Scheduler = Scheduler.global
+      customizeRequest: HttpRequest => HttpRequest = identity
+  )(
+      implicit s: Scheduler = Scheduler.global
   ): Resource[Task, SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler]] =
-    Resource.make(apply(options, customizeRequest, customEncodingHandler))(_.close())
+    Resource.make(apply(options, customizeRequest))(_.close())
 
   def usingClient(
       client: HttpClient,
-      customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: EncodingHandler = PartialFunction.empty
+      customizeRequest: HttpRequest => HttpRequest = identity
   )(implicit s: Scheduler = Scheduler.global): SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler] =
-    HttpClientMonixBackend(client, closeClient = false, customizeRequest, customEncodingHandler)(s)
+    HttpClientMonixBackend(client, closeClient = false, customizeRequest)(s)
 
   /**
     * Create a stub backend for testing, which uses the [[Task]] response wrapper, and supports `Observable[ByteBuffer]`
