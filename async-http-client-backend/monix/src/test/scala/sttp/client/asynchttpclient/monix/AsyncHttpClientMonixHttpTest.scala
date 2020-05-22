@@ -20,6 +20,4 @@ class AsyncHttpClientMonixHttpTest extends HttpTest[Task] with CancelTest[Task, 
       .onErrorRecover {
         case _: TimeoutException => None
       }
-
-  override def throwsExceptionOnUnsupportedEncoding = false
 }

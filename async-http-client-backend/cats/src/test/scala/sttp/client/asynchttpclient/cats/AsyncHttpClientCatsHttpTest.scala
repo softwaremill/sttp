@@ -25,6 +25,4 @@ class AsyncHttpClientCatsHttpTest extends HttpTest[IO] with CancelTest[IO, Nothi
         case _: TimeoutException => IO(None)
         case e                   => throw e
       }
-
-  override def throwsExceptionOnUnsupportedEncoding = false
 }

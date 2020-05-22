@@ -10,7 +10,6 @@ import cats.implicits._
 import fs2.Stream
 import fs2.interop.reactivestreams._
 import org.reactivestreams.FlowAdapters
-import sttp.client.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 import sttp.client.httpclient.{HttpClientAsyncBackend, HttpClientBackend, WebSocketHandler}
 import sttp.client.impl.cats.implicits._
@@ -24,15 +23,8 @@ class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
     blocker: Blocker,
     chunkSize: Int,
     closeClient: Boolean,
-    customizeRequest: HttpRequest => HttpRequest,
-    customEncodingHandler: EncodingHandler
-) extends HttpClientAsyncBackend[F, Stream[F, Byte]](
-      client,
-      implicitly,
-      closeClient,
-      customizeRequest,
-      customEncodingHandler
-    ) {
+    customizeRequest: HttpRequest => HttpRequest
+) extends HttpClientAsyncBackend[F, Stream[F, Byte]](client, implicitly, closeClient, customizeRequest) {
 
   override def openWebsocket[T, WS_RESULT](
       request: sttp.client.Request[T, Stream[F, Byte]],
@@ -55,19 +47,15 @@ object HttpClientFs2Backend {
       blocker: Blocker,
       chunkSize: Int,
       closeClient: Boolean,
-      customizeRequest: HttpRequest => HttpRequest,
-      customEncodingHandler: EncodingHandler
+      customizeRequest: HttpRequest => HttpRequest
   ): SttpBackend[F, Stream[F, Byte], WebSocketHandler] =
-    new FollowRedirectsBackend(
-      new HttpClientFs2Backend(client, blocker, chunkSize, closeClient, customizeRequest, customEncodingHandler)
-    )
+    new FollowRedirectsBackend(new HttpClientFs2Backend(client, blocker, chunkSize, closeClient, customizeRequest))
 
   def apply[F[_]: ConcurrentEffect: ContextShift](
       blocker: Blocker,
       chunkSize: Int = defaultChunkSize,
       options: SttpBackendOptions = SttpBackendOptions.Default,
-      customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: EncodingHandler = PartialFunction.empty
+      customizeRequest: HttpRequest => HttpRequest = identity
   ): F[SttpBackend[F, Stream[F, Byte], WebSocketHandler]] =
     Sync[F].delay(
       HttpClientFs2Backend(
@@ -75,8 +63,7 @@ object HttpClientFs2Backend {
         blocker,
         chunkSize,
         closeClient = true,
-        customizeRequest,
-        customEncodingHandler
+        customizeRequest
       )
     )
 
@@ -84,19 +71,17 @@ object HttpClientFs2Backend {
       blocker: Blocker,
       chunkSize: Int = defaultChunkSize,
       options: SttpBackendOptions = SttpBackendOptions.Default,
-      customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: EncodingHandler = PartialFunction.empty
+      customizeRequest: HttpRequest => HttpRequest = identity
   ): Resource[F, SttpBackend[F, Stream[F, Byte], WebSocketHandler]] =
-    Resource.make(apply(blocker, chunkSize, options, customizeRequest, customEncodingHandler))(_.close())
+    Resource.make(apply(blocker, chunkSize, options, customizeRequest))(_.close())
 
   def usingClient[F[_]: ConcurrentEffect: ContextShift](
       client: HttpClient,
       blocker: Blocker,
       chunkSize: Int = defaultChunkSize,
-      customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: EncodingHandler = PartialFunction.empty
+      customizeRequest: HttpRequest => HttpRequest = identity
   ): SttpBackend[F, Stream[F, Byte], WebSocketHandler] =
-    HttpClientFs2Backend(client, blocker, chunkSize, closeClient = false, customizeRequest, customEncodingHandler)
+    HttpClientFs2Backend(client, blocker, chunkSize, closeClient = false, customizeRequest)
 
   /**
     * Create a stub backend for testing, which uses the [[F]] response wrapper, and supports `Stream[F, Byte]`
