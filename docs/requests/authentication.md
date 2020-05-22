@@ -55,13 +55,13 @@ You can use sttp with OAuth2. Looking at the [OAuth2 protocol flow](https://tool
 
 2. (C)/(D) - You need to send a request to the authorisation server, passing in the authentication code from step 1. You'll receive an access token in response (and optionally a refresh token). For example, assuming that you're using github as your authentication server, that you've taken the values of `clientId` an `clientSecret` from the github settings, and that you have received `authCode` in step 1 above:
 ```scala
-      case class TokenResponse(access_token: String, scope: String, token_type: String, refresh_token: Option[String])
-      val tokenRequest = basicRequest
-        .post(uri"https://github.com/login/oauth/access_token?code=$authCode&grant_type=authorization_code")
-        .auth
-        .basic(clientId, clientSecret)
-        .header("accept","application/json")
-      val authResponse = tokenRequest.response(asJson[TokenResponse]).send()
-      val accessToken = authResponse.map(_.body.map(_.access_token))
+class TokenResponse(access_token: String, scope: String, token_type: String, refresh_token: Option[String])
+val tokenRequest = basicRequest
+    .post(uri"https://github.com/login/oauth/access_token?code=$authCode&grant_type=authorization_code")
+    .auth
+    .basic(clientId, clientSecret)
+    .header("accept","application/json")
+val authResponse = tokenRequest.response(asJson[TokenResponse]).send()
+val accessToken = authResponse.map(_.body.map(_.access_token))
 ```
 3. (E)/(F) - Once you have the access token, you can use it to request the protected resource from the resource server, depending on its specification.
