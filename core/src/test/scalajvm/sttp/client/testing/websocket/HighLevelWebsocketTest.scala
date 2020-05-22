@@ -1,24 +1,28 @@
 package sttp.client.testing.websocket
 
 import org.scalatest.{Assertion, BeforeAndAfterAll, SuiteMixin}
+import org.scalatest.concurrent.{Signaler, ThreadSignaler, TimeLimits}
+import org.scalatest.flatspec.AsyncFlatSpecLike
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.time.{Seconds, Span}
 import sttp.client._
+import sttp.client.SttpClientException.ReadException
 import sttp.client.monad.MonadError
 import sttp.client.monad.syntax._
 import sttp.client.testing.{ConvertToFuture, ToFutureWrapper}
+import sttp.client.testing.HttpTest.wsEndpoint
 import sttp.client.ws.WebSocket
 import sttp.model.ws.WebSocketFrame
 
 import scala.concurrent.duration.FiniteDuration
-import org.scalatest.flatspec.AsyncFlatSpecLike
-import org.scalatest.matchers.should.Matchers
-import sttp.client.testing.HttpTest.wsEndpoint
 
 abstract class HighLevelWebsocketTest[F[_], WS_HANDLER[_]]
     extends SuiteMixin
     with AsyncFlatSpecLike
     with BeforeAndAfterAll
     with Matchers
-    with ToFutureWrapper {
+    with ToFutureWrapper
+    with TimeLimits {
 
   implicit val backend: SttpBackend[F, Nothing, WS_HANDLER]
   implicit val convertToFuture: ConvertToFuture[F]
@@ -65,6 +69,20 @@ abstract class HighLevelWebsocketTest[F[_], WS_HANDLER[_]]
           ws.receive.map(_ shouldBe Symbol("left"))
       }
       .toFuture()
+  }
+
+  it should "fail correctly when can't open WebSocket" in {
+    implicit val signaler: Signaler = ThreadSignaler
+    failAfter(Span(15, Seconds)) {
+      basicRequest
+        .get(uri"$wsEndpoint/ws/404")
+        .openWebsocketF(createHandler(None))
+        .map(_ => fail("should not open WebSocket"))
+        .handleError {
+          case ex: ReadException => monad.unit(succeed)
+        }
+        .toFuture()
+    }
   }
 
   def send(ws: WebSocket[F], count: Int): F[Unit] = {
