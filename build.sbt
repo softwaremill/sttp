@@ -344,7 +344,7 @@ lazy val zio = (projectMatrix in file("implementations/zio"))
     name := "zio",
     publishArtifact in Test := true,
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio" % "1.0.0-RC19"
+      "dev.zio" %% "zio" % "1.0.0-RC20"
     )
   )
   .dependsOn(core % compileAndTest)
