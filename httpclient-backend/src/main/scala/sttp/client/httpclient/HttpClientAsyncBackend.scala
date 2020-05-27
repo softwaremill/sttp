@@ -64,7 +64,10 @@ abstract class HttpClientAsyncBackend[F[_], S](
       val wsBuilder = client.newWebSocketBuilder()
       client.connectTimeout().map(wsBuilder.connectTimeout(_))
       request.headers.foreach(h => wsBuilder.header(h.name, h.value))
-      val cf = wsBuilder.buildAsync(request.uri.toJavaUri, listener)
+      val cf = wsBuilder
+        .buildAsync(request.uri.toJavaUri, listener)
+        .thenApply(_ => ())
+        .exceptionally(t => cb(Left(t)))
       Canceler(() => cf.cancel(true))
     })
   }

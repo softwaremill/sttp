@@ -1,4 +1,3 @@
-// shadow sbt-scalajs' crossProject and CrossType from Scala.js 0.6.x
 import sbtrelease.ReleaseStateTransformations._
 import sbtrelease.ReleasePlugin.autoImport._
 import com.softwaremill.Publish.Release.updateVersionInDocs
@@ -7,11 +6,11 @@ import sbt.internal.ProjectMatrix
 val scala2_11 = "2.11.12"
 val scala2_12 = "2.12.10"
 val scala2_13 = "2.13.2"
-val scala3 = "0.22.0"
+val scala3 = "0.23.0"
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests")
-lazy val javaVersion = settingKey[VersionNumber]("Java version")
+lazy val javaVersion = settingKey[Int]("Java specification version major component")
 
 val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   organization := "com.softwaremill.sttp.client",
@@ -38,7 +37,7 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
     commitNextVersion,
     pushChanges
   ),
-  javaVersion := VersionNumber(sys.props("java.specification.version")),
+  javaVersion := VersionNumber(sys.props("java.specification.version"))._1.get.toInt,
   // doc generation is broken in dotty
   sources in (Compile, doc) := {
     val scalaV = scalaVersion.value
@@ -48,10 +47,10 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
 )
 
 val onlyJava11 = Seq(
-  publishArtifact := (VersionNumber("11") == javaVersion.value),
-  skip := (VersionNumber("11") != javaVersion.value),
-  skip in compile := (VersionNumber("11") != javaVersion.value),
-  skip in publish := (VersionNumber("11") != javaVersion.value)
+  publishArtifact := (javaVersion.value >= 11),
+  skip := (javaVersion.value < 11),
+  skip in compile := (javaVersion.value < 11),
+  skip in publish := (javaVersion.value < 11)
 )
 
 val commonJvmSettings = commonSettings ++ Seq(
@@ -65,7 +64,7 @@ val commonJvmSettings = commonSettings ++ Seq(
 
 val commonJsSettings = commonSettings ++ Seq(
   // slow down for CI
-  parallelExecution in Test := false,
+  parallelExecution in Test := false, // TODO
   // https://github.com/scalaz/scalaz/pull/1734#issuecomment-385627061
   scalaJSLinkerConfig ~= {
     _.withBatchMode(System.getenv("CONTINUOUS_INTEGRATION") == "true")
@@ -147,10 +146,10 @@ val fs2Version: Option[(Long, Long)] => String = {
   case _             => "2.3.0"
 }
 
-val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.11"
+val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.12"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % "2.5.31"
 
-val scalaTestVersion = "3.1.1"
+val scalaTestVersion = "3.1.2"
 val scalaNativeTestInterfaceVersion = "0.4.0-M2"
 val scalaTestNativeVersion = "3.2.0-M2"
 val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion
@@ -209,7 +208,6 @@ lazy val rootProject = (project in file("."))
       json4s.projectRefs ++
       sprayJson.projectRefs ++
       playJson.projectRefs ++
-      braveBackend.projectRefs ++
       openTracingBackend.projectRefs ++
       prometheusBackend.projectRefs ++
       zioTelemetryOpenTracingBackend.projectRefs ++
@@ -333,7 +331,7 @@ lazy val monix = (projectMatrix in file("implementations/monix"))
   .dependsOn(core % compileAndTest)
   .jvmPlatform(
     scalaVersions = List(scala2_11, scala2_12, scala2_13),
-    settings = commonJvmSettings ++ List(libraryDependencies ++= Seq("io.monix" %% "monix-nio" % "0.0.7"))
+    settings = commonJvmSettings ++ List(libraryDependencies ++= Seq("io.monix" %% "monix-nio" % "0.0.8"))
   )
   .jsPlatform(
     scalaVersions = List(scala2_12, scala2_13),
@@ -346,7 +344,7 @@ lazy val zio = (projectMatrix in file("implementations/zio"))
     name := "zio",
     publishArtifact in Test := true,
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio" % "1.0.0-RC18-2"
+      "dev.zio" %% "zio" % "1.0.0-RC19"
     )
   )
   .dependsOn(core % compileAndTest)
@@ -417,8 +415,8 @@ lazy val asyncHttpClientZioStreamsBackend =
   asyncHttpClientBackendProject("zio-streams")
     .settings(
       libraryDependencies ++= Seq(
-        "dev.zio" %% "zio-streams" % "1.0.0-RC18-2",
-        "dev.zio" %% "zio-interop-reactivestreams" % "1.0.3.5-RC7"
+        "dev.zio" %% "zio-streams" % "1.0.0-RC19-2",
+        "dev.zio" %% "zio-interop-reactivestreams" % "1.0.3.5-RC8"
       )
     )
     .dependsOn(zio % compileAndTest, asyncHttpClientZioBackend)
@@ -449,7 +447,7 @@ lazy val okhttpBackend = (projectMatrix in file("okhttp-backend"))
   .settings(
     name := "okhttp-backend",
     libraryDependencies ++= Seq(
-      "com.squareup.okhttp3" % "okhttp" % "4.6.0"
+      "com.squareup.okhttp3" % "okhttp" % "4.7.2"
     )
   )
   .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13))
@@ -593,22 +591,6 @@ lazy val playJson = (projectMatrix in file("json/play-json"))
   .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = commonJvmSettings)
   .dependsOn(core, jsonCommon)
 
-lazy val braveVersion = "5.11.2"
-
-lazy val braveBackend = (projectMatrix in file("metrics/brave-backend"))
-  .settings(commonJvmSettings)
-  .settings(
-    name := "brave-backend",
-    libraryDependencies ++= Seq(
-      "io.zipkin.brave" % "brave" % braveVersion,
-      "io.zipkin.brave" % "brave-instrumentation-http" % braveVersion,
-      "io.zipkin.brave" % "brave-instrumentation-http-tests" % braveVersion % Test,
-      scalaTest % Test
-    )
-  )
-  .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13))
-  .dependsOn(core)
-
 lazy val openTracingBackend = (projectMatrix in file("metrics/open-tracing-backend"))
   .settings(commonJvmSettings)
   .settings(
@@ -627,7 +609,7 @@ lazy val prometheusBackend = (projectMatrix in file("metrics/prometheus-backend"
   .settings(
     name := "prometheus-backend",
     libraryDependencies ++= Seq(
-      "io.prometheus" % "simpleclient" % "0.8.1",
+      "io.prometheus" % "simpleclient" % "0.9.0",
       scalaTest % Test
     )
   )
@@ -639,7 +621,7 @@ lazy val zioTelemetryOpenTracingBackend = (projectMatrix in file("metrics/zio-te
   .settings(
     name := "zio-telemetry-opentracing-backend",
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-opentracing" % "0.3.0",
+      "dev.zio" %% "zio-opentracing" % "0.4.0",
       "org.scala-lang.modules" %% "scala-collection-compat" % "2.1.6"
     )
   )

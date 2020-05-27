@@ -133,7 +133,6 @@ Development and maintenance of sttp client is sponsored by [SoftwareMill](https:
 
    backends/wrappers/opentracing
    backends/wrappers/zio-opentracing
-   backends/wrappers/brave
    backends/wrappers/prometheus
    backends/wrappers/slf4j
    backends/wrappers/custom

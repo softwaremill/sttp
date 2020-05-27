@@ -249,8 +249,8 @@ object Http4sBackend {
   }
 
   def usingDefaultClientBuilder[F[_]: ConcurrentEffect: ContextShift](
-      clientExecutionContext: ExecutionContext = ExecutionContext.global,
       blocker: Blocker,
+      clientExecutionContext: ExecutionContext = ExecutionContext.global,
       customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _
   ): Resource[F, SttpBackend[F, Stream[F, Byte], NothingT]] =
     usingClientBuilder(BlazeClientBuilder[F](clientExecutionContext), blocker, customizeRequest)
