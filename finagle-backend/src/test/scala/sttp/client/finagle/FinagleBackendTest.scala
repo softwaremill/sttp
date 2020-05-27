@@ -19,5 +19,5 @@ class FinagleBackendTest extends HttpTest[TFuture] {
       promise.future
     }
   }
-
+  override def throwsExceptionOnUnsupportedEncoding = false
 }

@@ -14,4 +14,6 @@ class AsyncHttpClientZioHttpTest extends HttpTest[Task] with CancelTest[Task, No
 
   override def timeoutToNone[T](t: Task[T], timeoutMillis: Int): Task[Option[T]] =
     t.timeout(timeoutMillis.milliseconds).provideLayer(Clock.live)
+
+  override def throwsExceptionOnUnsupportedEncoding = false
 }

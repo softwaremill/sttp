@@ -13,4 +13,6 @@ class AsyncHttpClientZioStreamsHttpTest extends HttpTest[Task] {
   override implicit val backend: SttpBackend[Task, Stream[Throwable, ByteBuffer], NothingT] =
     runtime.unsafeRun(AsyncHttpClientZioStreamsBackend())
   override implicit val convertToFuture: ConvertToFuture[Task] = convertZioIoToFuture
+
+  override def throwsExceptionOnUnsupportedEncoding = false
 }
