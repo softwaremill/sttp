@@ -344,7 +344,7 @@ lazy val zio = (projectMatrix in file("implementations/zio"))
     name := "zio",
     publishArtifact in Test := true,
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio" % "1.0.0-RC19"
+      "dev.zio" %% "zio" % "1.0.0-RC20"
     )
   )
   .dependsOn(core % compileAndTest)
@@ -415,8 +415,8 @@ lazy val asyncHttpClientZioStreamsBackend =
   asyncHttpClientBackendProject("zio-streams")
     .settings(
       libraryDependencies ++= Seq(
-        "dev.zio" %% "zio-streams" % "1.0.0-RC19-2",
-        "dev.zio" %% "zio-interop-reactivestreams" % "1.0.3.5-RC8"
+        "dev.zio" %% "zio-streams" % "1.0.0-RC20",
+        "dev.zio" %% "zio-interop-reactivestreams" % "1.0.3.5-RC10"
       )
     )
     .dependsOn(zio % compileAndTest, asyncHttpClientZioBackend)
@@ -621,7 +621,7 @@ lazy val zioTelemetryOpenTracingBackend = (projectMatrix in file("metrics/zio-te
   .settings(
     name := "zio-telemetry-opentracing-backend",
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-opentracing" % "0.4.0",
+      "dev.zio" %% "zio-opentracing" % "0.5.0",
       "org.scala-lang.modules" %% "scala-collection-compat" % "2.1.6"
     )
   )
