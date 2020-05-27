@@ -21,9 +21,9 @@ object WebsocketZio extends App {
     _ <- useWebsocket(response.result)
   } yield ()
 
-  override def run(args: List[String]): ZIO[ZEnv, Nothing, Int] = {
+  override def run(args: List[String]): ZIO[ZEnv, Nothing, ExitCode] = {
     // provide an implementation for the SttpClient dependency; other dependencies are
     // provided by Zio
-    sendAndPrint.provideCustomLayer(AsyncHttpClientZioBackend.layer()).fold(_ => 1, _ => 0)
+    sendAndPrint.provideCustomLayer(AsyncHttpClientZioBackend.layer()).fold(_ => ExitCode.failure, _ => ExitCode.success)
   }
 }

@@ -2,12 +2,12 @@ package sttp.client.examples
 
 import sttp.client._
 import sttp.client.asynchttpclient.zio.AsyncHttpClientZioBackend
-import zio.{Schedule, ZIO}
+import zio.{ExitCode, Schedule, ZIO}
 import zio.clock.Clock
 import zio.duration._
 
 object RetryZio extends zio.App {
-  override def run(args: List[String]): ZIO[zio.ZEnv, Nothing, Int] = {
+  override def run(args: List[String]): ZIO[zio.ZEnv, Nothing, ExitCode] = {
     AsyncHttpClientZioBackend()
       .flatMap { implicit backend =>
         val localhostRequest = basicRequest
@@ -24,8 +24,8 @@ object RetryZio extends zio.App {
           )
           .absolve
 
-        sendWithRetries.ensuring(backend.close().catchAll(_ => ZIO.unit))
+        sendWithRetries.ensuring(backend.close().ignore)
       }
-      .fold(_ => 1, _ => 0)
+      .fold(_ => ExitCode.failure, _ => ExitCode.success)
   }
 }
