@@ -1,18 +1,18 @@
 package sttp.client.testing
 
-import java.io.ByteArrayInputStream
+import java.io.{ByteArrayInputStream, UnsupportedEncodingException}
 import java.nio.ByteBuffer
 
 import org.scalatest._
+import org.scalatest.freespec.AsyncFreeSpecLike
+import org.scalatest.matchers.should.Matchers
+import sttp.client.testing.HttpTest.endpoint
 import sttp.client.{Response, ResponseAs, SttpBackend, _}
 import sttp.model.StatusCode
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.language.higherKinds
-import org.scalatest.freespec.{AsyncFreeSpec, AsyncFreeSpecLike}
-import org.scalatest.matchers.should.Matchers
-import HttpTest.endpoint
 
 // TODO: change to `extends AsyncFreeSpec` when https://github.com/scalatest/scalatest/issues/1802 is fixed
 trait HttpTest[F[_]]
@@ -39,6 +39,7 @@ trait HttpTest[F[_]]
 
   protected def supportsRequestTimeout = true
   protected def supportsSttpExceptions = true
+  protected def throwsExceptionOnUnsupportedEncoding = true
 
   "parse response" - {
     "as string" in {
@@ -283,14 +284,25 @@ trait HttpTest[F[_]]
       val req = basicRequest.head(uri"$endpoint/compress")
       req.send().toFuture().map { resp => resp.code shouldBe StatusCode.Ok }
     }
+
+    if (supportsSttpExceptions && throwsExceptionOnUnsupportedEncoding) {
+      "should throw exception when response contains unsupported encoding" in {
+        val req = basicRequest.get(uri"$endpoint/compress-unsupported").response(asStringAlways)
+        Future(req.send()).flatMap(_.toFuture()).failed.map { e =>
+          e shouldBe a[SttpClientException.ReadException]
+          e.getCause shouldBe an[UnsupportedEncodingException]
+        }
+      }
+    }
   }
 
   // in JavaScript the only way to set the content type is to use a Blob which defaults the filename to 'blob'
   protected def multipartStringDefaultFileName: Option[String] = None
-  protected def defaultFileName: String = multipartStringDefaultFileName match {
-    case None       => ""
-    case Some(name) => s" ($name)"
-  }
+  protected def defaultFileName: String =
+    multipartStringDefaultFileName match {
+      case None       => ""
+      case Some(name) => s" ($name)"
+    }
 
   "multipart" - {
     def mp = basicRequest.post(uri"$endpoint/multipart").response(asStringAlways)

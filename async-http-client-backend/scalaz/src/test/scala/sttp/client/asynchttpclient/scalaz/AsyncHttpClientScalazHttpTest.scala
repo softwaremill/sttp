@@ -9,4 +9,6 @@ class AsyncHttpClientScalazHttpTest extends HttpTest[Task] {
 
   override implicit val backend: SttpBackend[Task, Nothing, NothingT] = AsyncHttpClientScalazBackend().unsafePerformSync
   override implicit val convertToFuture: ConvertToFuture[Task] = convertScalazTaskToFuture
+
+  override def throwsExceptionOnUnsupportedEncoding = false
 }
