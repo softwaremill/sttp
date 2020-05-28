@@ -107,7 +107,7 @@ val browserTestSettings = Seq(
         ) ++ (if (debugging) Seq.empty else Seq("headless"))
         options.addArguments(args: _*)
         val capabilities = org.openqa.selenium.remote.DesiredCapabilities.chrome()
-        capabilities.setCapability("chrome.binary","target/chromedriver");
+        capabilities.setCapability("chrome.binary", "target/chromedriver");
         capabilities.setCapability(org.openqa.selenium.chrome.ChromeOptions.CAPABILITY, options)
         capabilities
       },
@@ -115,17 +115,21 @@ val browserTestSettings = Seq(
     )
   },
   downloadLatestChromeDriver := {
-    if(java.nio.file.Files.notExists(new File("target", "chromedriver").toPath)) {
+    if (java.nio.file.Files.notExists(new File("target", "chromedriver").toPath)) {
       println("ChromeDriver binary file not found, downloading")
-      val latestVersion = IO.readLinesURL(new URL("https://chromedriver.storage.googleapis.com/LATEST_RELEASE")).mkString
-      IO.unzipURL(new URL(s"https://chromedriver.storage.googleapis.com/$latestVersion/chromedriver_linux64.zip"), new File("target"))
-    }else{
+      val latestVersion =
+        IO.readLinesURL(new URL("https://chromedriver.storage.googleapis.com/LATEST_RELEASE")).mkString
+      IO.unzipURL(
+        new URL(s"https://chromedriver.storage.googleapis.com/$latestVersion/chromedriver_linux64.zip"),
+        new File("target")
+      )
+    } else {
       println("Detected chromedriver binary file, skipping downloading.")
     }
   },
   test in Test := (test in Test)
     .dependsOn(downloadLatestChromeDriver)
-      .value
+    .value
 )
 
 // start a test server before running tests of a backend; this is required both for JS tests run inside a
