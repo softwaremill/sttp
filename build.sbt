@@ -119,8 +119,13 @@ val browserTestSettings = Seq(
       println("ChromeDriver binary file not found, downloading")
       val latestVersion =
         IO.readLinesURL(new URL("https://chromedriver.storage.googleapis.com/LATEST_RELEASE")).mkString
+      val platformDependentName = System.getProperty("os.name") match {
+        case s if s.contains("win") => "chromedriver_win32.zip"
+        case s if s.contains("nux") => "chromedriver_linux64.zip"
+        case s if s.contains("mac") => "chromedriver_mac64.zip"
+      }
       IO.unzipURL(
-        new URL(s"https://chromedriver.storage.googleapis.com/$latestVersion/chromedriver_linux64.zip"),
+        new URL(s"https://chromedriver.storage.googleapis.com/$latestVersion/$platformDependentName"),
         new File("target")
       )
     } else {
