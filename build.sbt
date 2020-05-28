@@ -90,6 +90,8 @@ val commonNativeSettings = commonSettings ++ Seq(
   nativeLinkStubs := true
 )
 
+lazy val downloadLatestChromeDriver = taskKey[Unit]("Download latest chrome driver and extract it to ./target")
+
 // run JS tests inside Chrome, due to jsdom not supporting fetch
 val browserTestSettings = Seq(
   jsEnv in Test := {
@@ -105,12 +107,25 @@ val browserTestSettings = Seq(
         ) ++ (if (debugging) Seq.empty else Seq("headless"))
         options.addArguments(args: _*)
         val capabilities = org.openqa.selenium.remote.DesiredCapabilities.chrome()
+        capabilities.setCapability("chrome.binary","target/chromedriver");
         capabilities.setCapability(org.openqa.selenium.chrome.ChromeOptions.CAPABILITY, options)
         capabilities
       },
       org.scalajs.jsenv.selenium.SeleniumJSEnv.Config().withKeepAlive(debugging)
     )
-  }
+  },
+  downloadLatestChromeDriver := {
+    if(java.nio.file.Files.notExists(new File("target", "chromedriver").toPath)) {
+      println("ChromeDriver binary file not found, downloading")
+      val latestVersion = IO.readLinesURL(new URL("https://chromedriver.storage.googleapis.com/LATEST_RELEASE")).mkString
+      IO.unzipURL(new URL(s"https://chromedriver.storage.googleapis.com/$latestVersion/chromedriver_linux64.zip"), new File("target"))
+    }else{
+      println("Detected chromedriver binary file, skipping downloading.")
+    }
+  },
+  test in Test := (test in Test)
+    .dependsOn(downloadLatestChromeDriver)
+      .value
 )
 
 // start a test server before running tests of a backend; this is required both for JS tests run inside a
@@ -260,7 +275,7 @@ lazy val core = (projectMatrix in file("core"))
   .jsPlatform(
     scalaVersions = List(scala2_11, scala2_12, scala2_13),
     settings = {
-        commonJsSettings ++ commonJsBackeendSettings ++ browserTestSettings ++ List(
+      commonJsSettings ++ commonJsBackeendSettings ++ browserTestSettings ++ List(
         libraryDependencies ++= Seq(
           "com.softwaremill.sttp.model" %%% "core" % modelVersion,
           "org.scalatest" %%% "scalatest" % scalaTestVersion % Test

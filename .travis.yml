@@ -24,10 +24,5 @@ before_install:
   - if [[ ($TRAVIS_JDK_VERSION = "oraclejdk8") && ($TRAVIS_SCALA_VERSION =~ ^2.11.*) ]]; then bash project/travis_setup.sh; fi
 before_script:
 - nvm install 10 # nodejs < 10 fails finding URL class
-- version="$(curl -s https://chromedriver.storage.googleapis.com/LATEST_RELEASE)" &&
-    wget "https://chromedriver.storage.googleapis.com/$version/chromedriver_linux64.zip"
-- mkdir -p chromedriver && unzip chromedriver_linux64.zip -d chromedriver/
-- export PATH="$PATH:$PWD/chromedriver/"
 script:
-- google-chrome --version
 - sbt test
