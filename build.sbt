@@ -128,6 +128,7 @@ val browserTestSettings = Seq(
         new URL(s"https://chromedriver.storage.googleapis.com/$latestVersion/$platformDependentName"),
         new File("target")
       )
+      IO.chmod("rwxrwxr-x",new File("target","chromedriver"))
     } else {
       println("Detected chromedriver binary file, skipping downloading.")
     }
