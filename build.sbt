@@ -96,7 +96,7 @@ lazy val downloadLatestChromeDriver = taskKey[Unit]("Download latest chrome driv
 val browserTestSettings = Seq(
   jsEnv in Test := {
     val debugging = false // set to true to help debugging
-
+    System.setProperty("webdriver.chrome.driver", "target/chromedriver")
     new org.scalajs.jsenv.selenium.SeleniumJSEnv(
       {
         val options = new org.openqa.selenium.chrome.ChromeOptions()
@@ -107,7 +107,6 @@ val browserTestSettings = Seq(
         ) ++ (if (debugging) Seq.empty else Seq("headless"))
         options.addArguments(args: _*)
         val capabilities = org.openqa.selenium.remote.DesiredCapabilities.chrome()
-        capabilities.setCapability("chrome.binary", "target/chromedriver");
         capabilities.setCapability(org.openqa.selenium.chrome.ChromeOptions.CAPABILITY, options)
         capabilities
       },
