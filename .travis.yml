@@ -3,7 +3,7 @@ addons:
   chrome: stable
 jdk:
 - openjdk11
-dist: xenial
+dist: bionic
 before_cache:
   - du -h -d 1 $HOME/.ivy2/
   - du -h -d 2 $HOME/.sbt/
@@ -22,6 +22,8 @@ cache:
 before_install:
   - if [[ $TRAVIS_SCALA_VERSION =~ ^2.11.* ]]; then bash project/travis_setup.sh; fi
 before_script:
+- wget https://github.com/sormuras/bach/raw/master/install-jdk.sh
+- source install-jdk.sh --url https://cdn.azul.com/zulu/bin/zulu11.39.15-ca-jdk11.0.7-linux_x64.tar.gz
 - nvm install 10 # nodejs < 10 fails finding URL class
 - export PATH="$PATH:$PWD/target/chromedriver"
 script:
