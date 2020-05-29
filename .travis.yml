@@ -2,7 +2,6 @@ language: scala
 addons:
   chrome: stable
 jdk:
-- openjdk8
 - openjdk11
 dist: xenial
 before_cache:
@@ -21,7 +20,7 @@ cache:
     - $HOME/.ivy2/cache
     - $HOME/.coursier
 before_install:
-  - if [[ ($TRAVIS_JDK_VERSION = "oraclejdk8") && ($TRAVIS_SCALA_VERSION =~ ^2.11.*) ]]; then bash project/travis_setup.sh; fi
+  - if [[ $TRAVIS_SCALA_VERSION =~ ^2.11.* ]]; then bash project/travis_setup.sh; fi
 before_script:
 - nvm install 10 # nodejs < 10 fails finding URL class
 - export PATH="$PATH:$PWD/target/chromedriver"

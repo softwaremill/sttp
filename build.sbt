@@ -10,7 +10,6 @@ val scala3 = "0.23.0"
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests")
-lazy val javaVersion = settingKey[Int]("Java specification version major component")
 
 val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   organization := "com.softwaremill.sttp.client",
@@ -37,20 +36,12 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
     commitNextVersion,
     pushChanges
   ),
-  javaVersion := VersionNumber(sys.props("java.specification.version"))._1.get.toInt,
   // doc generation is broken in dotty
   sources in (Compile, doc) := {
     val scalaV = scalaVersion.value
     val current = (sources in (Compile, doc)).value
     if (scalaV == scala3) Seq() else current
   }
-)
-
-val onlyJava11 = Seq(
-  publishArtifact := (javaVersion.value >= 11),
-  skip := (javaVersion.value < 11),
-  skip in compile := (javaVersion.value < 11),
-  skip in publish := (javaVersion.value < 11)
 )
 
 val commonJvmSettings = commonSettings ++ Seq(
@@ -523,7 +514,6 @@ lazy val httpClientBackend = (projectMatrix in file("httpclient-backend"))
     }
   )
   .jvmPlatform(scalaVersions = List(scala2_13, scala3))
-  .settings(onlyJava11)
   .dependsOn(core % compileAndTest)
 
 def httpClientBackendProject(proj: String) = {
@@ -532,7 +522,6 @@ def httpClientBackendProject(proj: String) = {
     .settings(testServerSettings)
     .settings(name := s"httpclient-backend-$proj")
     .jvmPlatform(scalaVersions = List(scala2_13))
-    .settings(onlyJava11)
     .dependsOn(httpClientBackend % compileAndTest)
 }
 
