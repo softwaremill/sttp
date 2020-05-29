@@ -23,7 +23,6 @@ before_install:
   - if [[ $TRAVIS_SCALA_VERSION =~ ^2.11.* ]]; then bash project/travis_setup.sh; fi
 before_script:
 - nvm install 10 # nodejs < 10 fails finding URL class
-- export PATH="$PATH:$PWD/target/chromedriver"
 script:
 - google-chrome --version
 - sbt test
