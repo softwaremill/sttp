@@ -115,19 +115,26 @@ val browserTestSettings = Seq(
   },
   downloadLatestChromeDriver := {
     if (java.nio.file.Files.notExists(new File("target", "chromedriver").toPath)) {
-      println("ChromeDriver binary file not found, downloading")
+      println("ChromeDriver binary file not found. Detecting google-chrome version...")
+      import sys.process._
+      val chromeVersion = "google-chrome --version".!!.split(' ')(2)
+      println(s"Detected google-chrome version: $chromeVersion")
+      val withoutLastPart = chromeVersion.split('.').dropRight(1).mkString(".")
+      println(s"Selected release: $withoutLastPart")
       val latestVersion =
-        IO.readLinesURL(new URL("https://chromedriver.storage.googleapis.com/LATEST_RELEASE")).mkString
-      val platformDependentName = System.getProperty("os.name") match {
+        IO.readLinesURL(new URL(s"https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$withoutLastPart")).mkString
+      val osName = sys.props("os.name")
+      val platformDependentName = osName match {
         case s if s.contains("win") => "chromedriver_win32.zip"
         case s if s.contains("nux") => "chromedriver_linux64.zip"
         case s if s.contains("mac") => "chromedriver_mac64.zip"
       }
+      println(s"Downloading chrome driver version $latestVersion for $osName")
       IO.unzipURL(
         new URL(s"https://chromedriver.storage.googleapis.com/$latestVersion/$platformDependentName"),
         new File("target")
       )
-      IO.chmod("rwxrwxr-x",new File("target","chromedriver"))
+      IO.chmod("rwxrwxr-x", new File("target", "chromedriver"))
     } else {
       println("Detected chromedriver binary file, skipping downloading.")
     }
