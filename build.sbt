@@ -108,7 +108,6 @@ val browserTestSettings = Seq(
         options.addArguments(args: _*)
         val capabilities = org.openqa.selenium.remote.DesiredCapabilities.chrome()
         capabilities.setCapability(org.openqa.selenium.chrome.ChromeOptions.CAPABILITY, options)
-        capabilities.setCapability("chrome.binary","target/chromedriver")
         capabilities
       },
       org.scalajs.jsenv.selenium.SeleniumJSEnv.Config().withKeepAlive(debugging)
@@ -128,7 +127,7 @@ val browserTestSettings = Seq(
         new URL(s"https://chromedriver.storage.googleapis.com/$latestVersion/$platformDependentName"),
         new File("target")
       )
-      IO.chmod("rwxrwxr-x", new File("target", "chromedriver"))
+      IO.chmod("rwxrwxr-x",new File("target","chromedriver"))
     } else {
       println("Detected chromedriver binary file, skipping downloading.")
     }
