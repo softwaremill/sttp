@@ -40,6 +40,7 @@ Class                                Response wrapper             Supported stre
 ``HttpClientSyncBackend``            None (``Identity``)          n/a                                              ``sttp.client.httpclient.WebSocketHandler``
 ``HttpClientFutureBackend``          ``scala.concurrent.Future``  n/a                                              ``sttp.client.httpclient.WebSocketHandler``
 ``HttpClientMonixBackend``           ``monix.eval.Task``          ``monix.reactive.Observable[ByteBuffer]``        ``sttp.client.httpclient.WebSocketHandler``
+``HttpClientZioBackend``             ``zio.IO``                   n/a                                              n/a
 ``FinagleBackend``                   ``com.twitter.util.Future``  n/a                                              n/a
 ==================================== ============================ ================================================ ==================================================
 ```
@@ -54,7 +55,7 @@ There are also backends which wrap other backends to provide additional function
 * `PrometheusBackend`, for gathering Prometheus-format metrics. See the [dedicated section](wrappers/prometheus.html).
 * slf4j backends, for logging. See the [dedicated section](wrappers/slf4j.html).
 
-In additional there are also backends for JavaScript:
+In addition, there are also backends for JavaScript:
 
 ```eval_rst
 ================================ ============================ ========================================= ============================
