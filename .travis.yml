@@ -4,7 +4,7 @@ addons:
 jdk:
 - oraclejdk8
 - openjdk11
-dist: bionic
+dist: trusty
 before_cache:
   - du -h -d 1 $HOME/.ivy2/
   - du -h -d 2 $HOME/.sbt/

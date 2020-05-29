@@ -1,7 +1,7 @@
-import sbtrelease.ReleaseStateTransformations._
-import sbtrelease.ReleasePlugin.autoImport._
 import com.softwaremill.Publish.Release.updateVersionInDocs
 import sbt.internal.ProjectMatrix
+import sbtrelease.ReleasePlugin.autoImport._
+import sbtrelease.ReleaseStateTransformations._
 
 val scala2_11 = "2.11.12"
 val scala2_12 = "2.12.10"
@@ -122,7 +122,8 @@ val browserTestSettings = Seq(
       val withoutLastPart = chromeVersion.split('.').dropRight(1).mkString(".")
       println(s"Selected release: $withoutLastPart")
       val latestVersion =
-        IO.readLinesURL(new URL(s"https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$withoutLastPart")).mkString
+        IO.readLinesURL(new URL(s"https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$withoutLastPart"))
+          .mkString
       val osName = sys.props("os.name")
       val platformDependentName = osName match {
         case s if s.contains("win") => "chromedriver_win32.zip"
