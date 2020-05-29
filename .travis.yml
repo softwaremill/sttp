@@ -2,7 +2,7 @@ language: scala
 addons:
   chrome: stable
 jdk:
-- oraclejdk8
+- openjdk8
 - openjdk11
 dist: xenial
 before_cache:
