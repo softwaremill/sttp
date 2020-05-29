@@ -27,5 +27,6 @@ before_script:
 - nvm install 10 # nodejs < 10 fails finding URL class
 - export PATH="$PATH:$PWD/target/chromedriver"
 script:
+- java --version
 - google-chrome --version
 - sbt test
