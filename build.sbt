@@ -1,7 +1,7 @@
-import sbtrelease.ReleaseStateTransformations._
-import sbtrelease.ReleasePlugin.autoImport._
 import com.softwaremill.Publish.Release.updateVersionInDocs
 import sbt.internal.ProjectMatrix
+import sbtrelease.ReleasePlugin.autoImport._
+import sbtrelease.ReleaseStateTransformations._
 
 val scala2_11 = "2.11.12"
 val scala2_12 = "2.12.10"
@@ -10,7 +10,6 @@ val scala3 = "0.23.0"
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests")
-lazy val javaVersion = settingKey[Int]("Java specification version major component")
 
 val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   organization := "com.softwaremill.sttp.client",
@@ -37,20 +36,12 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
     commitNextVersion,
     pushChanges
   ),
-  javaVersion := VersionNumber(sys.props("java.specification.version"))._1.get.toInt,
   // doc generation is broken in dotty
   sources in (Compile, doc) := {
     val scalaV = scalaVersion.value
     val current = (sources in (Compile, doc)).value
     if (scalaV == scala3) Seq() else current
   }
-)
-
-val onlyJava11 = Seq(
-  publishArtifact := (javaVersion.value >= 11),
-  skip := (javaVersion.value < 11),
-  skip in compile := (javaVersion.value < 11),
-  skip in publish := (javaVersion.value < 11)
 )
 
 val commonJvmSettings = commonSettings ++ Seq(
@@ -90,11 +81,13 @@ val commonNativeSettings = commonSettings ++ Seq(
   nativeLinkStubs := true
 )
 
+lazy val downloadLatestChromeDriver = taskKey[Unit]("Download latest chrome driver and extract it to ./target")
+
 // run JS tests inside Chrome, due to jsdom not supporting fetch
 val browserTestSettings = Seq(
   jsEnv in Test := {
     val debugging = false // set to true to help debugging
-
+    System.setProperty("webdriver.chrome.driver", "target/chromedriver")
     new org.scalajs.jsenv.selenium.SeleniumJSEnv(
       {
         val options = new org.openqa.selenium.chrome.ChromeOptions()
@@ -110,7 +103,37 @@ val browserTestSettings = Seq(
       },
       org.scalajs.jsenv.selenium.SeleniumJSEnv.Config().withKeepAlive(debugging)
     )
-  }
+  },
+  downloadLatestChromeDriver := {
+    if (java.nio.file.Files.notExists(new File("target", "chromedriver").toPath)) {
+      println("ChromeDriver binary file not found. Detecting google-chrome version...")
+      import sys.process._
+      val chromeVersion = "google-chrome --version".!!.split(' ')(2)
+      println(s"Detected google-chrome version: $chromeVersion")
+      val withoutLastPart = chromeVersion.split('.').dropRight(1).mkString(".")
+      println(s"Selected release: $withoutLastPart")
+      val latestVersion =
+        IO.readLinesURL(new URL(s"https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$withoutLastPart"))
+          .mkString
+      val osName = sys.props("os.name")
+      val platformDependentName = osName match {
+        case s if s.contains("win") => "chromedriver_win32.zip"
+        case s if s.contains("nux") => "chromedriver_linux64.zip"
+        case s if s.contains("mac") => "chromedriver_mac64.zip"
+      }
+      println(s"Downloading chrome driver version $latestVersion for $osName")
+      IO.unzipURL(
+        new URL(s"https://chromedriver.storage.googleapis.com/$latestVersion/$platformDependentName"),
+        new File("target")
+      )
+      IO.chmod("rwxrwxr-x", new File("target", "chromedriver"))
+    } else {
+      println("Detected chromedriver binary file, skipping downloading.")
+    }
+  },
+  test in Test := (test in Test)
+    .dependsOn(downloadLatestChromeDriver)
+    .value
 )
 
 // start a test server before running tests of a backend; this is required both for JS tests run inside a
@@ -260,7 +283,7 @@ lazy val core = (projectMatrix in file("core"))
   .jsPlatform(
     scalaVersions = List(scala2_11, scala2_12, scala2_13),
     settings = {
-        commonJsSettings ++ commonJsBackeendSettings ++ browserTestSettings ++ List(
+      commonJsSettings ++ commonJsBackeendSettings ++ browserTestSettings ++ List(
         libraryDependencies ++= Seq(
           "com.softwaremill.sttp.model" %%% "core" % modelVersion,
           "org.scalatest" %%% "scalatest" % scalaTestVersion % Test
@@ -491,7 +514,6 @@ lazy val httpClientBackend = (projectMatrix in file("httpclient-backend"))
     }
   )
   .jvmPlatform(scalaVersions = List(scala2_13, scala3))
-  .settings(onlyJava11)
   .dependsOn(core % compileAndTest)
 
 def httpClientBackendProject(proj: String) = {
@@ -500,7 +522,6 @@ def httpClientBackendProject(proj: String) = {
     .settings(testServerSettings)
     .settings(name := s"httpclient-backend-$proj")
     .jvmPlatform(scalaVersions = List(scala2_13))
-    .settings(onlyJava11)
     .dependsOn(httpClientBackend % compileAndTest)
 }
 
