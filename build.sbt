@@ -108,18 +108,24 @@ val browserTestSettings = Seq(
     if (java.nio.file.Files.notExists(new File("target", "chromedriver").toPath)) {
       println("ChromeDriver binary file not found. Detecting google-chrome version...")
       import sys.process._
-      val chromeVersion = "google-chrome --version".!!.split(' ')(2)
+      val osName = sys.props("os.name")
+      val isMac = osName.toLowerCase.contains("mac")
+      val isWin = osName.toLowerCase.contains("win")
+      val chromeVersionExecutable = if (isMac)
+        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" else "google-chrome"
+      val chromeVersion = Seq(chromeVersionExecutable, "--version").!!.split(' ')(2)
       println(s"Detected google-chrome version: $chromeVersion")
       val withoutLastPart = chromeVersion.split('.').dropRight(1).mkString(".")
       println(s"Selected release: $withoutLastPart")
       val latestVersion =
         IO.readLinesURL(new URL(s"https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$withoutLastPart"))
           .mkString
-      val osName = sys.props("os.name")
-      val platformDependentName = osName match {
-        case s if s.contains("win") => "chromedriver_win32.zip"
-        case s if s.contains("nux") => "chromedriver_linux64.zip"
-        case s if s.contains("mac") => "chromedriver_mac64.zip"
+      val platformDependentName = if (isMac) {
+        "chromedriver_mac64.zip"
+      } else if (isWin) {
+        "chromedriver_win32.zip"
+      } else {
+        "chromedriver_linux64.zip"
       }
       println(s"Downloading chrome driver version $latestVersion for $osName")
       IO.unzipURL(
