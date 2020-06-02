@@ -71,7 +71,7 @@ val commonJsSettings = commonSettings ++ Seq(
   }
 )
 
-val commonJsBackeendSettings = JSDependenciesPlugin.projectSettings ++ List(
+val commonJsBackendSettings = JSDependenciesPlugin.projectSettings ++ List(
   jsDependencies ++= Seq(
     "org.webjars.npm" % "spark-md5" % "3.0.0" % Test / "spark-md5.js" minified "spark-md5.min.js"
   )
@@ -183,6 +183,8 @@ val scalaNativeTestInterfaceVersion = "0.4.0-M2"
 val scalaTestNativeVersion = "3.2.0-M2"
 val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion
 
+val zioVersion = "1.0.0-RC20"
+
 val modelVersion = "1.1.3"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
@@ -243,6 +245,7 @@ lazy val rootProject = (project in file("."))
       httpClientBackend.projectRefs ++
       httpClientMonixBackend.projectRefs ++
       httpClientFs2Backend.projectRefs ++
+      httpClientZioBackend.projectRefs ++
       finagleBackend.projectRefs ++
       slf4jBackend.projectRefs ++
       examples.projectRefs: _*
@@ -289,7 +292,7 @@ lazy val core = (projectMatrix in file("core"))
   .jsPlatform(
     scalaVersions = List(scala2_11, scala2_12, scala2_13),
     settings = {
-      commonJsSettings ++ commonJsBackeendSettings ++ browserTestSettings ++ List(
+      commonJsSettings ++ commonJsBackendSettings ++ browserTestSettings ++ List(
         libraryDependencies ++= Seq(
           "com.softwaremill.sttp.model" %%% "core" % modelVersion,
           "org.scalatest" %%% "scalatest" % scalaTestVersion % Test
@@ -364,7 +367,7 @@ lazy val monix = (projectMatrix in file("implementations/monix"))
   )
   .jsPlatform(
     scalaVersions = List(scala2_12, scala2_13),
-    settings = commonJsSettings ++ commonJsBackeendSettings ++ browserTestSettings ++ testServerSettings
+    settings = commonJsSettings ++ commonJsBackendSettings ++ browserTestSettings ++ testServerSettings
   )
 
 lazy val zio = (projectMatrix in file("implementations/zio"))
@@ -373,7 +376,7 @@ lazy val zio = (projectMatrix in file("implementations/zio"))
     name := "zio",
     publishArtifact in Test := true,
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio" % "1.0.0-RC20"
+      "dev.zio" %% "zio" % zioVersion
     )
   )
   .dependsOn(core % compileAndTest)
@@ -444,7 +447,7 @@ lazy val asyncHttpClientZioStreamsBackend =
   asyncHttpClientBackendProject("zio-streams")
     .settings(
       libraryDependencies ++= Seq(
-        "dev.zio" %% "zio-streams" % "1.0.0-RC20",
+        "dev.zio" %% "zio-streams" % zioVersion,
         "dev.zio" %% "zio-interop-reactivestreams" % "1.0.3.5-RC10"
       )
     )
@@ -544,6 +547,14 @@ lazy val httpClientFs2Backend =
       )
     )
     .dependsOn(fs2 % compileAndTest)
+
+lazy val httpClientZioBackend =
+  httpClientBackendProject("zio")
+    .settings(
+      libraryDependencies ++=
+        Seq("dev.zio" %% "zio" % zioVersion)
+    )
+    .dependsOn(zio % compileAndTest)
 
 //-- finagle backend
 lazy val finagleBackend = (projectMatrix in file("finagle-backend"))

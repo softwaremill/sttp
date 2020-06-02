@@ -2,6 +2,8 @@
 
 The [ZIO](https://github.com/zio/zio) backends are **asynchronous**. Sending a request is a non-blocking, lazily-evaluated operation and results in a response wrapped in a `zio.Task`. There's a transitive dependency on `zio`.
 
+## Using async-http-client
+
 To use, add the following dependency to your project:
 
 ```scala
@@ -34,6 +36,30 @@ AsyncHttpClientZioBackend.usingConfigBuilder(adjustFunction, sttpOptions).flatMa
 // or, if you'd like to instantiate the AsyncHttpClient yourself:
 implicit val sttpBackend = AsyncHttpClientZioBackend.usingClient(asyncHttpClient)
 ```
+
+## Using HttpClient (Java 11+)
+
+To use, add the following dependency to your project:
+
+```
+"com.softwaremill.sttp.client" %% "httpclient-backend-zio" % "2.1.5"
+```
+
+Create the backend using:
+
+```scala
+import sttp.client.httpclient.zio.HttpClientZioBackend
+
+HttpClientZioBackend().flatMap { implicit backend => ... }
+
+// or, if you'd like the backend to be wrapped in a Managed:
+HttpClientZioBackend.managed().use { implicit backend => ... }
+
+// or, if you'd like to instantiate the HttpClient yourself:
+implicit val sttpBackend = HttpClientZioBackend.usingClient(httpClient)
+```
+
+This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards.
 
 ## ZIO environment
 

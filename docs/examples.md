@@ -157,7 +157,7 @@ import monix.execution.Scheduler.Implicits.global
 postTask.runSyncUnsafe()
 ```
 
-## Test an endpoint, which requires multiple query parameters
+## Test an endpoint which requires multiple query parameters
 
 Required dependencies:
 
