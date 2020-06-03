@@ -13,6 +13,7 @@ lazy val startTestServer = taskKey[Unit]("Start a http server used by tests")
 
 val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   organization := "com.softwaremill.sttp.client",
+  scmInfo := Some(ScmInfo(url("https://github.com/softwaremill/sttp"), "scm:git@github.com:softwaremill/sttp.git")),
   // needed on sbt 1.3, but (for some unknown reason) only on 2.11.x
   closeClassLoaders := !scalaVersion.value.startsWith("2.11."),
   // cross-release doesn't work when subprojects have different cross versions
