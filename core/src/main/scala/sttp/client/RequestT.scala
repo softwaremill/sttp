@@ -87,6 +87,7 @@ case class RequestT[U[_], T, +S](
   def header(k: String, v: String, replaceExisting: Boolean): RequestT[U, T, S] =
     header(Header(k, v), replaceExisting)
   def header(k: String, v: String): RequestT[U, T, S] = header(Header(k, v))
+  def header(k: String, ov: Option[String]) = ov.fold(this)(header(k,_))
   def headers(hs: Map[String, String]): RequestT[U, T, S] =
     headers(hs.map(t => Header(t._1, t._2)).toSeq: _*)
   def headers(hs: Header*): RequestT[U, T, S] = this.copy(headers = headers ++ hs)
@@ -273,8 +274,8 @@ case class RequestT[U[_], T, +S](
     *         Known exceptions are converted by backends to one of [[SttpClientException]]. Other exceptions are thrown
     *         unchanged.
     */
-  def send[F[_]]()(
-      implicit backend: SttpBackend[F, S, NothingT],
+  def send[F[_]]()(implicit
+      backend: SttpBackend[F, S, NothingT],
       isIdInRequest: IsIdInRequest[U]
   ): F[Response[T]] = backend.send(asRequest)
 
@@ -291,15 +292,15 @@ case class RequestT[U[_], T, +S](
     */
   def openWebsocket[F[_], WS_HANDLER[_], WS_RESULT](
       handler: WS_HANDLER[WS_RESULT]
-  )(
-      implicit backend: SttpBackend[F, S, WS_HANDLER],
+  )(implicit
+      backend: SttpBackend[F, S, WS_HANDLER],
       isIdInRequest: IsIdInRequest[U]
   ): F[WebSocketResponse[WS_RESULT]] = backend.openWebsocket(asRequest, handler)
 
   def openWebsocketF[F[_], WS_HANDLER[_], WS_RESULT](
       handler: F[WS_HANDLER[WS_RESULT]]
-  )(
-      implicit backend: SttpBackend[F, S, WS_HANDLER],
+  )(implicit
+      backend: SttpBackend[F, S, WS_HANDLER],
       isIdInRequest: IsIdInRequest[U]
   ): F[WebSocketResponse[WS_RESULT]] =
     backend.responseMonad.flatMap(handler)(handler => backend.openWebsocket(asRequest, handler))
