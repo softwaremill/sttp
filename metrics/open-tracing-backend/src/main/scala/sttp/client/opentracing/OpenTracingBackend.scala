@@ -3,11 +3,12 @@ package sttp.client.opentracing
 import io.opentracing.tag.Tags
 import io.opentracing.{Span, Tracer}
 import io.opentracing.propagation.Format
+import io.opentracing.Tracer.SpanBuilder
 import sttp.client.monad.MonadError
 import sttp.client.ws.WebSocketResponse
 import sttp.client.{FollowRedirectsBackend, NothingT, Request, Response, SttpBackend}
 import sttp.client.monad.syntax._
-import sttp.client.opentracing.OpenTracingBackend.SpanTransformer
+import sttp.client.opentracing.OpenTracingBackend._
 
 import scala.collection.JavaConverters._
 
@@ -19,14 +20,22 @@ class OpenTracingBackend[F[_], S] private (delegate: SttpBackend[F, S, NothingT]
   override def send[T](request: Request[T, S]): F[Response[T]] =
     responseMonad
       .eval {
-        val span = tracer
-          .buildSpan(
-            request
-              .tag(OpenTracingBackend.OperationIdRequestTag)
-              .getOrElse("default-operation-id")
-              .toString
-          )
-          .withTag(Tags.SPAN_KIND, Tags.SPAN_KIND_CLIENT)
+        val spanBuilderTransformer: SpanBuilderTransformer =
+          request
+            .tag(OpenTracingBackend.SpanBuilderTransformerRequestTag)
+            .collectFirst {
+              case f: SpanBuilderTransformer => f
+            }
+            .getOrElse(identity)
+        val span = spanBuilderTransformer(
+          tracer
+            .buildSpan(
+              request
+                .tag(OpenTracingBackend.OperationIdRequestTag)
+                .getOrElse("default-operation-id")
+                .toString
+            )
+        ).withTag(Tags.SPAN_KIND, Tags.SPAN_KIND_CLIENT)
           .withTag(Tags.HTTP_METHOD, request.method.method)
           .withTag(Tags.HTTP_URL, request.uri.toString)
           .withTag(Tags.COMPONENT, "sttp2-client")
@@ -69,7 +78,9 @@ class OpenTracingBackend[F[_], S] private (delegate: SttpBackend[F, S, NothingT]
 
 object OpenTracingBackend {
   private val OperationIdRequestTag = "io.opentracing.tag.sttp.operationId"
+  private val SpanBuilderTransformerRequestTag = "io.opentracing.tag.sttp.span.builder.transformer"
   private val SpanTransformerRequestTag = "io.opentracing.tag.sttp.span.transformer"
+  type SpanBuilderTransformer = SpanBuilder => SpanBuilder
   type SpanTransformer = Span => Span
 
   implicit class RichRequest[T, S](request: Request[T, S]) {
@@ -78,6 +89,14 @@ object OpenTracingBackend {
 
     def tagWithTransformSpan(transformSpan: SpanTransformer): Request[T, S] =
       request.tag(SpanTransformerRequestTag, transformSpan)
+
+    /** Sets transformation of SpanBuilder used by OpenTracing backend to create Span this request execution. */
+    def tagWithTransformSpanBuilder(transformSpan: SpanBuilderTransformer): Request[T, S] =
+      request.tag(SpanBuilderTransformerRequestTag, transformSpan)
+
+    /** Sets parent Span for OpenTracing Span of this request execution. */
+    def setOpenTracingParentSpan(parent: Span): Request[T, S] =
+      tagWithTransformSpanBuilder(_.asChildOf(parent))
   }
 
   def apply[F[_], S](delegate: SttpBackend[F, S, NothingT], tracer: Tracer): SttpBackend[F, S, NothingT] = {
