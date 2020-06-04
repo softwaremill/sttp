@@ -9,6 +9,7 @@ import cats.effect.Resource
 import monix.eval.Task
 import monix.execution.Scheduler
 import monix.reactive.Observable
+import org.reactivestreams.FlowAdapters
 import sttp.client.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client.httpclient.{HttpClientAsyncBackend, HttpClientBackend, WebSocketHandler}
 import sttp.client.impl.monix.TaskMonadAsyncError
@@ -30,8 +31,8 @@ class HttpClientMonixBackend private (
       customizeRequest,
       customEncodingHandler
     ) {
-  override def streamToRequestBody(stream: Observable[ByteBuffer]): HttpRequest.BodyPublisher = {
-    BodyPublishers.fromPublisher(new ReactivePublisherJavaAdapter[ByteBuffer](stream.toReactivePublisher))
+  override def streamToRequestBody(stream: Observable[ByteBuffer]): Task[HttpRequest.BodyPublisher] = {
+    monad.eval(BodyPublishers.fromPublisher(FlowAdapters.toFlowPublisher(stream.toReactivePublisher)))
   }
 
   override def responseBodyToStream(responseBody: InputStream): Try[Observable[ByteBuffer]] = {

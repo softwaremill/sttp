@@ -14,7 +14,7 @@ class AsyncHttpClientZioStreamsStreamingTest extends StreamingTest[Task, Stream[
 
   override implicit val backend: SttpBackend[Task, Stream[Throwable, ByteBuffer], NothingT] =
     runtime.unsafeRun(AsyncHttpClientZioStreamsBackend())
-  override implicit val convertToFuture: ConvertToFuture[Task] = convertZioIoToFuture
+  override implicit val convertToFuture: ConvertToFuture[Task] = convertZioTaskToFuture
 
   override def bodyProducer(chunks: Iterable[Array[Byte]]): Stream[Throwable, ByteBuffer] =
     Stream.apply(chunks.map(ByteBuffer.wrap).toSeq: _*)

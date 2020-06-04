@@ -90,15 +90,16 @@ Global / downloadChromeDriver := {
     val osName = sys.props("os.name")
     val isMac = osName.toLowerCase.contains("mac")
     val isWin = osName.toLowerCase.contains("win")
-    val chromeVersionExecutable = if (isMac)
-      "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" else "google-chrome"
+    val chromeVersionExecutable =
+      if (isMac)
+        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+      else "google-chrome"
     val chromeVersion = Seq(chromeVersionExecutable, "--version").!!.split(' ')(2)
     println(s"Detected google-chrome version: $chromeVersion")
     val withoutLastPart = chromeVersion.split('.').dropRight(1).mkString(".")
     println(s"Selected release: $withoutLastPart")
     val latestVersion =
-      IO.readLinesURL(new URL(s"https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$withoutLastPart"))
-        .mkString
+      IO.readLinesURL(new URL(s"https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$withoutLastPart")).mkString
     val platformDependentName = if (isMac) {
       "chromedriver_mac64.zip"
     } else if (isWin) {
@@ -553,7 +554,11 @@ lazy val httpClientZioBackend =
   httpClientBackendProject("zio")
     .settings(
       libraryDependencies ++=
-        Seq("dev.zio" %% "zio" % zioVersion)
+        Seq(
+          "dev.zio" %% "zio" % zioVersion,
+          "dev.zio" %% "zio-streams" % zioVersion,
+          "dev.zio" %% "zio-interop-reactivestreams" % "1.0.3.5-RC10"
+        )
     )
     .dependsOn(zio % compileAndTest)
 

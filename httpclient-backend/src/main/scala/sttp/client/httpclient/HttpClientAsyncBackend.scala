@@ -3,7 +3,6 @@ package sttp.client.httpclient
 import java.io.InputStream
 import java.net.http.HttpResponse.BodyHandlers
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
-import java.util.function.BiConsumer
 
 import sttp.client.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client.monad.{Canceler, FutureMonad, MonadAsyncError, MonadError}
@@ -23,27 +22,30 @@ abstract class HttpClientAsyncBackend[F[_], S](
 ) extends HttpClientBackend[F, S](client, closeClient, customEncodingHandler) {
   override def send[T](request: Request[T, S]): F[Response[T]] =
     adjustExceptions {
-      val jRequest = customizeRequest(convertRequest(request))
+      monad.flatMap(convertRequest(request)) { convertedRequest =>
+        val jRequest = customizeRequest(convertedRequest)
 
-      monad.flatten(monad.async[F[Response[T]]] { (cb: (Either[Throwable, F[Response[T]]] => Unit)) =>
-        def success(r: F[Response[T]]): Unit = cb(Right(r))
-        def error(t: Throwable): Unit = cb(Left(t))
+        monad.flatten(monad.async[F[Response[T]]] { (cb: (Either[Throwable, F[Response[T]]] => Unit)) =>
+          def success(r: F[Response[T]]): Unit = cb(Right(r))
 
-        val cf = client
-          .sendAsync(jRequest, BodyHandlers.ofInputStream())
-          .whenComplete(new BiConsumer[HttpResponse[InputStream], Throwable] {
-            override def accept(t: HttpResponse[InputStream], u: Throwable): Unit = {
+          def error(t: Throwable): Unit = cb(Left(t))
+
+          val cf = client
+            .sendAsync(jRequest, BodyHandlers.ofInputStream())
+            .whenComplete((t: HttpResponse[InputStream], u: Throwable) => {
               if (t != null) {
                 try success(readResponse(t, request.response))
-                catch { case e: Exception => error(e) }
+                catch {
+                  case e: Exception => error(e)
+                }
               }
               if (u != null) {
                 error(u)
               }
-            }
-          })
-        Canceler(() => cf.cancel(true))
-      })
+            })
+          Canceler(() => cf.cancel(true))
+        })
+      }
     }
 
   override def openWebsocket[T, WS_RESULT](
@@ -135,6 +137,8 @@ object HttpClientFutureBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackendStub[Future, Nothing, WebSocketHandler] =
+  def stub(implicit
+      ec: ExecutionContext = ExecutionContext.global
+  ): SttpBackendStub[Future, Nothing, WebSocketHandler] =
     SttpBackendStub(new FutureMonad())
 }
