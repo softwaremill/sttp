@@ -138,5 +138,5 @@ object AsyncHttpClientCatsBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub[F[_]: Concurrent]: SttpBackendStub[F, Nothing] = SttpBackendStub(new CatsMonadAsyncError())
+  def stub[F[_]: Concurrent]: SttpBackendStub[F, Nothing, WebSocketHandler] = SttpBackendStub(new CatsMonadAsyncError())
 }

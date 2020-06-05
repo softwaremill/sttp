@@ -99,6 +99,6 @@ object AsyncHttpClientFutureBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackendStub[Future, Nothing] =
+  def stub(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackendStub[Future, Nothing, WebSocketHandler] =
     SttpBackendStub(new FutureMonad())
 }

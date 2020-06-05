@@ -77,5 +77,5 @@ object FetchMonixBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub: SttpBackendStub[Task, Observable[ByteBuffer]] = SttpBackendStub(TaskMonadAsyncError)
+  def stub: SttpBackendStub[Task, Observable[ByteBuffer], NothingT] = SttpBackendStub(TaskMonadAsyncError)
 }

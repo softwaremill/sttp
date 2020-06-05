@@ -26,7 +26,7 @@ The type of the handler is determined by the third type parameter of `SttpBacken
 The following backends support streaming websockets:
 
 * [Akka](../backends/akka.html#websockets)
-* [fs2](../backends/fs2.html#streaming-websockets)
+* [fs2](../backends/fs2.html#websockets)
 
 ## Using the high-level websocket interface
 

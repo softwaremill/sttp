@@ -95,5 +95,5 @@ object HttpClientSyncBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub: SttpBackendStub[Identity, Nothing] = SttpBackendStub.synchronous
+  def stub: SttpBackendStub[Identity, Nothing, WebSocketHandler] = SttpBackendStub.synchronous
 }
