@@ -6,6 +6,7 @@ import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
 import sttp.client.monad.IdMonad
 import sttp.client.testing.SttpBackendStub
 import sttp.client.{Identity, NothingT, SttpBackend, _}
+import sttp.client.opentracing.OpenTracingBackend._
 import sttp.model.{Method, StatusCode}
 
 import scala.collection.JavaConverters._
@@ -61,6 +62,25 @@ class OpenTracingBackendTest extends FlatSpec with Matchers with BeforeAndAfter 
     spans.asScala(0).parentId() shouldBe spanId
     spans.asScala(1).context().spanId() shouldBe spanId
     spans.asScala(1).operationName() shouldBe operationName
+  }
+
+  it should "make child of given span if defined" in {
+    val activeSpan = tracer.buildSpan("active-op").start()
+    tracer.activateSpan(activeSpan)
+    val parentSpan = tracer.buildSpan("parent-op").start()
+    val response = basicRequest.post(uri"http://stub/echo")
+      .tagWithOperationId("overridden-op")
+      .setOpenTracingParentSpan(parentSpan)
+      .send()
+    response.code shouldBe StatusCode.Ok
+    parentSpan.finish()
+
+    val spans = tracer.finishedSpans().asScala
+
+    spans should have size 2
+    spans(0).parentId shouldBe spans(1).context.spanId
+    spans(1).operationName shouldBe "parent-op"
+    spans(0).operationName shouldBe "overridden-op"
   }
 
   it should "propagate additional metadata" in {
