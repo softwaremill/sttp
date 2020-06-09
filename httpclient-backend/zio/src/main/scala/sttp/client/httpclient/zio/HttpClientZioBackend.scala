@@ -6,9 +6,10 @@ import java.net.http.{HttpClient, HttpRequest}
 import java.nio.ByteBuffer
 
 import org.reactivestreams.FlowAdapters
+import sttp.client.NothingT
 import sttp.client.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client.httpclient.{HttpClientAsyncBackend, HttpClientBackend}
-import sttp.client.httpclient.zio.HttpClientZioBackend.BlockingTask
+import sttp.client.httpclient.zio.BlockingTask
 import sttp.client.impl.zio.RIOMonadAsyncError
 import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 import zio._
@@ -47,7 +48,6 @@ class HttpClientZioBackend private (
 }
 
 object HttpClientZioBackend {
-  type BlockingTask[A] = ZIO[Blocking, Throwable, A]
 
   private val defaultChunkSize = 65536
 
@@ -57,8 +57,8 @@ object HttpClientZioBackend {
       customizeRequest: HttpRequest => HttpRequest,
       customEncodingHandler: EncodingHandler,
       chunkSize: Int
-  ): SttpBackend[BlockingTask, Nothing, Nothing] =
-    new FollowRedirectsBackend[BlockingTask, Nothing, Nothing](
+  ): SttpBackend[BlockingTask, ZStream[Blocking, Throwable, Byte], NothingT] =
+    new FollowRedirectsBackend[BlockingTask, ZStream[Blocking, Throwable, Byte], NothingT](
       new HttpClientZioBackend(
         client,
         closeClient,
@@ -73,7 +73,7 @@ object HttpClientZioBackend {
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: EncodingHandler = PartialFunction.empty,
       chunkSize: Int = defaultChunkSize
-  ): Task[SttpBackend[BlockingTask, Nothing, Nothing]] =
+  ): Task[SttpBackend[BlockingTask, ZStream[Blocking, Throwable, Byte], NothingT]] =
     Task.effect(
       HttpClientZioBackend(
         HttpClientBackend.defaultClient(options),
@@ -89,7 +89,7 @@ object HttpClientZioBackend {
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: EncodingHandler = PartialFunction.empty,
       chunkSize: Int = defaultChunkSize
-  ): ZManaged[Blocking, Throwable, SttpBackend[BlockingTask, Nothing, Nothing]] =
+  ): ZManaged[Blocking, Throwable, SttpBackend[BlockingTask, ZStream[Blocking, Throwable, Byte], NothingT]] =
     ZManaged.make(apply(options, customizeRequest, customEncodingHandler, chunkSize))(
       _.close().ignore
     )
@@ -99,7 +99,7 @@ object HttpClientZioBackend {
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: EncodingHandler = PartialFunction.empty,
       chunkSize: Int = defaultChunkSize
-  ): ZLayer[Blocking, Throwable, Has[SttpBackend[BlockingTask, Nothing, Nothing]]] = {
+  ): ZLayer[Blocking, Throwable, Has[SttpBackend[BlockingTask, ZStream[Blocking, Throwable, Byte], NothingT]]] = {
     ZLayer.fromManaged(
       (for {
         backend <- HttpClientZioBackend(
@@ -117,7 +117,7 @@ object HttpClientZioBackend {
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: EncodingHandler = PartialFunction.empty,
       chunkSize: Int = defaultChunkSize
-  ): SttpBackend[BlockingTask, Nothing, Nothing] =
+  ): SttpBackend[BlockingTask, ZStream[Blocking, Throwable, Byte], NothingT] =
     HttpClientZioBackend(
       client,
       closeClient = false,
@@ -131,7 +131,7 @@ object HttpClientZioBackend {
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: EncodingHandler = PartialFunction.empty,
       chunkSize: Int = defaultChunkSize
-  ): ZLayer[Blocking, Throwable, Has[SttpBackend[BlockingTask, Nothing, Nothing]]] = {
+  ): ZLayer[Blocking, Throwable, Has[SttpBackend[BlockingTask, ZStream[Blocking, Throwable, Byte], NothingT]]] = {
     ZLayer.fromManaged(
       ZManaged
         .makeEffect(
