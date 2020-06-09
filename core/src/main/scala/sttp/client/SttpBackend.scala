@@ -12,7 +12,7 @@ import scala.language.higherKinds
   *           for synchronous backends, [[scala.concurrent.Future]] for asynchronous backends.
   * @tparam S The type of streams that are supported by the backend. [[Nothing]],
   *           if streaming requests/responses is not supported by this backend.
-  * @tparam WS_HANDLER The type of websocket handlers, that are supported by this backend.
+  * @tparam WS_HANDLER The type of websocket handlers that are supported by this backend.
   *                    The handler is parametrised by the value that is being returned
   *                    when the websocket is established. [[NothingT]], if websockets are
   *                    not supported.
