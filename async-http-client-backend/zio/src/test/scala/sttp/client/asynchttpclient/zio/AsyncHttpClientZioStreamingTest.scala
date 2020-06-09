@@ -1,4 +1,4 @@
-package sttp.client.asynchttpclient.ziostreams
+package sttp.client.asynchttpclient.zio
 
 import java.nio.ByteBuffer
 
@@ -10,10 +10,10 @@ import sttp.client.testing.streaming.StreamingTest
 import zio.Task
 import zio.stream.Stream
 
-class AsyncHttpClientZioStreamsStreamingTest extends StreamingTest[Task, Stream[Throwable, ByteBuffer]] {
+class AsyncHttpClientZioStreamingTest extends StreamingTest[Task, Stream[Throwable, ByteBuffer]] {
 
   override implicit val backend: SttpBackend[Task, Stream[Throwable, ByteBuffer], NothingT] =
-    runtime.unsafeRun(AsyncHttpClientZioStreamsBackend())
+    runtime.unsafeRun(AsyncHttpClientZioBackend())
   override implicit val convertToFuture: ConvertToFuture[Task] = convertZioTaskToFuture
 
   override def bodyProducer(chunks: Iterable[Array[Byte]]): Stream[Throwable, ByteBuffer] =
