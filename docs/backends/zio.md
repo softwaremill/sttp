@@ -63,7 +63,7 @@ This backend is based on the built-in `java.net.http.HttpClient` available from 
 
 ## ZIO environment
 
-As an alternative, ZIO environment can be used. In this case, a type alias is provided for the service definition (a streaming version is also available when using the streaming backend in the `ziostreams` package):
+As an alternative to effectfully or resourcefully creating backend instances, ZIO environment can be used. In this case, a type alias is provided for the service definition (a streaming version is also available when using the streaming backend in the `ziostreams` package):
 
 ```scala
 package sttp.client.asynchttpclient.zio
@@ -91,7 +91,8 @@ val open: ZIO[SttpClient, Throwable, WebSocketResponse[WebSocket[Task]]] = SttpC
 
 ## Streaming
 
-To use streaming using zio-streams, add the following dependency instead:
+The ZIO based backends support streaming using zio-streams.
+The following example is for the AsyncHttpClient based backend. Use the following dependency:
 
 ```scala
 "com.softwaremill.sttp.client" %% "async-http-client-backend-zio-streams" % "2.1.5"

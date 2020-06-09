@@ -10,7 +10,7 @@ import zio.duration._
 class AsyncHttpClientZioHttpTest extends HttpTest[Task] with CancelTest[Task, Nothing] {
 
   override implicit val backend: SttpBackend[Task, Nothing, NothingT] = runtime.unsafeRun(AsyncHttpClientZioBackend())
-  override implicit val convertToFuture: ConvertToFuture[Task] = convertZioIoToFuture
+  override implicit val convertToFuture: ConvertToFuture[Task] = convertZioTaskToFuture
 
   override def timeoutToNone[T](t: Task[T], timeoutMillis: Int): Task[Option[T]] =
     t.timeout(timeoutMillis.milliseconds).provideLayer(Clock.live)

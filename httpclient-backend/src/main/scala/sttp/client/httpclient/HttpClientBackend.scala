@@ -14,6 +14,8 @@ import sttp.client.ResponseAs.EagerResponseHandler
 import sttp.client.SttpBackendOptions.Proxy
 import sttp.client.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client.internal.FileHelpers
+import sttp.client.monad.MonadError
+import sttp.client.monad.syntax._
 import sttp.client.{
   BasicRequestBody,
   BasicResponseAs,
@@ -47,37 +49,42 @@ abstract class HttpClientBackend[F[_], S](
     closeClient: Boolean,
     customEncodingHandler: EncodingHandler
 ) extends SttpBackend[F, S, WebSocketHandler] {
-  private[httpclient] def convertRequest[T](request: Request[T, S]) = {
+  private[httpclient] def convertRequest[T](request: Request[T, S]): F[HttpRequest] = {
     val builder = HttpRequest
       .newBuilder()
       .uri(request.uri.toJavaUri)
 
-    builder.method(request.method.method, bodyToHttpBody(request, builder))
-    request.headers
-      .filterNot(_.name == HeaderNames.ContentLength)
-      .foreach(h => builder.header(h.name, h.value))
-    builder.timeout(JDuration.ofMillis(request.options.readTimeout.toMillis)).build()
+    bodyToHttpBody(request, builder).map { httpBody =>
+      builder.method(request.method.method, httpBody)
+      request.headers
+        .filterNot(_.name == HeaderNames.ContentLength)
+        .foreach(h => builder.header(h.name, h.value))
+      builder.timeout(JDuration.ofMillis(request.options.readTimeout.toMillis)).build()
+    }
   }
 
-  private def bodyToHttpBody[T](request: Request[T, S], builder: HttpRequest.Builder) = {
+  implicit val monad: MonadError[F] = responseMonad
+
+  private def bodyToHttpBody[T](request: Request[T, S], builder: HttpRequest.Builder): F[BodyPublisher] = {
     request.body match {
-      case NoBody              => BodyPublishers.noBody()
-      case StringBody(b, _, _) => BodyPublishers.ofString(b)
-      case ByteArrayBody(b, _) => BodyPublishers.ofByteArray(b)
+      case NoBody              => BodyPublishers.noBody().unit
+      case StringBody(b, _, _) => BodyPublishers.ofString(b).unit
+      case ByteArrayBody(b, _) => BodyPublishers.ofByteArray(b).unit
       case ByteBufferBody(b, _) =>
-        if ((b: Buffer).isReadOnly()) BodyPublishers.ofInputStream(() => new ByteBufferBackedInputStream(b))
-        else BodyPublishers.ofByteArray(b.array())
-      case InputStreamBody(b, _) => BodyPublishers.ofInputStream(() => b)
-      case FileBody(f, _)        => BodyPublishers.ofFile(f.toFile.toPath)
+        if ((b: Buffer).isReadOnly()) BodyPublishers.ofInputStream(() => new ByteBufferBackedInputStream(b)).unit
+        else BodyPublishers.ofByteArray(b.array()).unit
+      case InputStreamBody(b, _) => BodyPublishers.ofInputStream(() => b).unit
+      case FileBody(f, _)        => BodyPublishers.ofFile(f.toFile.toPath).unit
       case StreamBody(s)         => streamToRequestBody(s)
       case MultipartBody(parts) =>
         val multipartBodyPublisher = multipartBody(parts)
         builder.header(HeaderNames.ContentType, s"multipart/form-data; boundary=${multipartBodyPublisher.getBoundary}")
-        multipartBodyPublisher.build()
+        multipartBodyPublisher.build().unit
     }
   }
 
-  def streamToRequestBody(stream: S): BodyPublisher = throw new IllegalStateException("Streaming isn't supported")
+  def streamToRequestBody(stream: S): F[BodyPublisher] =
+    responseMonad.error(new IllegalStateException("Streaming isn't supported"))
 
   private def multipartBody[T](parts: Seq[Part[BasicRequestBody]]) = {
     val multipartBuilder = new MultiPartBodyPublisher()
