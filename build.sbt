@@ -1,4 +1,5 @@
 import com.softwaremill.Publish.Release.updateVersionInDocs
+import sbt.Keys.publishArtifact
 import sbt.internal.ProjectMatrix
 import sbtrelease.ReleasePlugin.autoImport._
 import sbtrelease.ReleaseStateTransformations._
@@ -276,8 +277,7 @@ lazy val testServer2_13 = testServer.jvm(scala2_13)
 
 lazy val core = (projectMatrix in file("core"))
   .settings(
-    name := "core",
-    publishArtifact in Test := true // allow implementations outside of this repo
+    name := "core"
   )
   .settings(testServerSettings)
   .jvmPlatform(
@@ -287,7 +287,8 @@ lazy val core = (projectMatrix in file("core"))
         libraryDependencies ++= Seq(
           "com.softwaremill.sttp.model" %% "core" % modelVersion,
           scalaTest % Test
-        )
+        ),
+        publishArtifact in Test := true // allow implementations outside of this repo
       )
     }
   )
@@ -298,7 +299,8 @@ lazy val core = (projectMatrix in file("core"))
         libraryDependencies ++= Seq(
           "com.softwaremill.sttp.model" %%% "core" % modelVersion,
           "org.scalatest" %%% "scalatest" % scalaTestVersion % Test
-        )
+        ),
+        publishArtifact in Test := true 
       )
     }
   )
@@ -313,7 +315,8 @@ lazy val core = (projectMatrix in file("core"))
           "org.scalatest" %%% "scalatest-flatspec" % scalaTestNativeVersion % Test,
           "org.scalatest" %%% "scalatest-freespec" % scalaTestNativeVersion % Test,
           "org.scalatest" %%% "scalatest-funsuite" % scalaTestNativeVersion % Test
-        )
+        ),
+        publishArtifact in Test := true 
       )
     }
   )
