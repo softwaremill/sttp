@@ -43,7 +43,7 @@ class HttpURLConnectionBackend private (
       // we need to take care to:
       // (1) only call getOutputStream after the headers are set
       // (2) call it ony once
-      writeBody(r.body, c).foreach { os =>
+      writeBody(r, c).foreach { os =>
         os.flush()
         os.close()
       }
@@ -88,8 +88,8 @@ class HttpURLConnectionBackend private (
     conn.asInstanceOf[HttpURLConnection]
   }
 
-  private def writeBody(body: RequestBody[Nothing], c: HttpURLConnection): Option[OutputStream] = {
-    body match {
+  private def writeBody(r: Request[_, Nothing], c: HttpURLConnection): Option[OutputStream] = {
+    r.body match {
       case NoBody =>
         // skip
         None
@@ -104,7 +104,7 @@ class HttpURLConnectionBackend private (
         None
 
       case mp: MultipartBody =>
-        setMultipartBody(mp, c)
+        setMultipartBody(r, mp, c)
     }
   }
 
@@ -139,7 +139,7 @@ class HttpURLConnectionBackend private (
   private val BoundaryChars =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".toCharArray
 
-  private def setMultipartBody(mp: MultipartBody, c: HttpURLConnection): Option[OutputStream] = {
+  private def setMultipartBody(r: Request[_, Nothing], mp: MultipartBody, c: HttpURLConnection): Option[OutputStream] = {
     val boundary = {
       val tlr = ThreadLocalRandom.current()
       List
@@ -184,7 +184,8 @@ class HttpURLConnectionBackend private (
         case _                    => None
       }
 
-    c.setRequestProperty(HeaderNames.ContentType, "multipart/form-data; boundary=" + boundary)
+    val baseContentType = r.headers.find(_.is(HeaderNames.ContentType)).map(_.value).getOrElse("multipart/form-data")
+    c.setRequestProperty(HeaderNames.ContentType, s"$baseContentType; boundary=" + boundary)
 
     contentLength.foreach { cl =>
       c.setFixedLengthStreamingMode(cl)

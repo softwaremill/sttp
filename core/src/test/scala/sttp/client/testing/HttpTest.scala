@@ -39,6 +39,7 @@ trait HttpTest[F[_]]
 
   protected def supportsRequestTimeout = true
   protected def supportsSttpExceptions = true
+  protected def supportsCustomMultipartContentType = true
   protected def throwsExceptionOnUnsupportedEncoding = true
 
   "parse response" - {
@@ -315,6 +316,20 @@ trait HttpTest[F[_]]
     "send a multipart message with filenames" in {
       val req = mp.multipartBody(multipart("p1", "v1").fileName("f1"), multipart("p2", "v2").fileName("f2"))
       req.send().toFuture().map { resp => resp.body should be("p1=v1 (f1), p2=v2 (f2)") }
+    }
+
+    if (supportsCustomMultipartContentType) {
+      "send a multipart message with custom content type" in {
+        val req = basicRequest
+          .post(uri"$endpoint/multipart/other")
+          .response(asStringAlways)
+          .multipartBody(multipart("p1", "v1"))
+          .headers(Map("Content-Type" -> "multipart/mixed"))
+        req.send().toFuture().map { resp =>
+          resp.body should include("multipart/mixed")
+          resp.body should include("v1")
+        }
+      }
     }
   }
 

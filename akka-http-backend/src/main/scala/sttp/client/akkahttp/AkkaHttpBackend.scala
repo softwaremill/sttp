@@ -290,8 +290,24 @@ class AkkaHttpBackend private (
         case StreamBody(s)  => Success(ar.withEntity(HttpEntity(ct, s)))
         case MultipartBody(ps) =>
           traverseTry(ps.map(toBodyPart))
-            .map(bodyParts => ar.withEntity(AkkaMultipart.FormData(bodyParts: _*).toEntity()))
+            .flatMap(bodyParts => multipartEntity(r, bodyParts).map(ar.withEntity))
       }
+    }
+  }
+
+  private def multipartEntity(r: Request[_, _], bodyParts: Seq[AkkaMultipart.FormData.BodyPart]): Try[RequestEntity] = {
+    r.headers.find(isContentType) match {
+      case None => Success(AkkaMultipart.FormData(bodyParts: _*).toEntity())
+      case Some(ct) =>
+        parseContentType(ct.value).map(_.mediaType).flatMap {
+          case m: MediaType.Multipart =>
+            Success(
+              AkkaMultipart
+                .General(m, Source(bodyParts.map { bp => AkkaMultipart.General.BodyPart(bp.entity, bp.headers) }))
+                .toEntity()
+            )
+          case _ => Failure(new RuntimeException(s"Non-multipart content type: $ct"))
+        }
     }
   }
 
@@ -305,12 +321,14 @@ class AkkaHttpBackend private (
 
   private def parseContentTypeOrOctetStream(ctHeader: Option[String]): Try[ContentType] = {
     ctHeader
-      .map { ct =>
-        ContentType
-          .parse(ct)
-          .fold(errors => Failure(new RuntimeException(s"Cannot parse content type: $errors")), Success(_))
-      }
+      .map(parseContentType)
       .getOrElse(Success(`application/octet-stream`))
+  }
+
+  private def parseContentType(ctHeader: String): Try[ContentType] = {
+    ContentType
+      .parse(ctHeader)
+      .fold(errors => Failure(new RuntimeException(s"Cannot parse content type: $errors")), Success(_))
   }
 
   private def isContentType(header: Header) =
@@ -483,7 +501,9 @@ object AkkaHttpBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackendStub[Future, Nothing, Flow[Message, Message, *]] =
+  def stub(implicit
+      ec: ExecutionContext = ExecutionContext.global
+  ): SttpBackendStub[Future, Nothing, Flow[Message, Message, *]] =
     SttpBackendStub(new FutureMonad())
 }
 

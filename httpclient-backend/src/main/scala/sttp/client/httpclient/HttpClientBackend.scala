@@ -53,11 +53,20 @@ abstract class HttpClientBackend[F[_], S](
     val builder = HttpRequest
       .newBuilder()
       .uri(request.uri.toJavaUri)
-
-    bodyToHttpBody(request, builder).map { httpBody =>
+    
+    // Only setting the content type if it's present, and won't be set later with the mulitpart boundary added
+    val contentType: Option[String] = request.headers.find(_.is(HeaderNames.ContentType)).map(_.value)
+    contentType.foreach { ct =>
+      request.body match {
+        case _: MultipartBody => // skip, will be set later
+        case _ => builder.header(HeaderNames.ContentType, ct)
+      }
+    }
+    
+    bodyToHttpBody(request, builder, contentType).map { httpBody =>
       builder.method(request.method.method, httpBody)
       request.headers
-        .filterNot(_.name == HeaderNames.ContentLength)
+        .filterNot(h => (h.name == HeaderNames.ContentLength) || h.name == HeaderNames.ContentType)
         .foreach(h => builder.header(h.name, h.value))
       builder.timeout(JDuration.ofMillis(request.options.readTimeout.toMillis)).build()
     }
@@ -65,7 +74,7 @@ abstract class HttpClientBackend[F[_], S](
 
   implicit val monad: MonadError[F] = responseMonad
 
-  private def bodyToHttpBody[T](request: Request[T, S], builder: HttpRequest.Builder): F[BodyPublisher] = {
+  private def bodyToHttpBody[T](request: Request[T, S], builder: HttpRequest.Builder, contentType: Option[String]): F[BodyPublisher] = {
     request.body match {
       case NoBody              => BodyPublishers.noBody().unit
       case StringBody(b, _, _) => BodyPublishers.ofString(b).unit
@@ -78,7 +87,8 @@ abstract class HttpClientBackend[F[_], S](
       case StreamBody(s)         => streamToRequestBody(s)
       case MultipartBody(parts) =>
         val multipartBodyPublisher = multipartBody(parts)
-        builder.header(HeaderNames.ContentType, s"multipart/form-data; boundary=${multipartBodyPublisher.getBoundary}")
+        val baseContentType = contentType.getOrElse("multipart/form-data")
+        builder.header(HeaderNames.ContentType, s"$baseContentType; boundary=${multipartBodyPublisher.getBoundary}")
         multipartBodyPublisher.build().unit
     }
   }
