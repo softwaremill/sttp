@@ -442,7 +442,7 @@ lazy val asyncHttpClientScalazBackend =
     .dependsOn(scalaz % compileAndTest)
 
 lazy val asyncHttpClientZioBackend =
-  asyncHttpClientBackendProject("zio", includeDotty = true)
+  asyncHttpClientBackendProject("zio", includeDotty = false)
     .settings(
       libraryDependencies ++= Seq(
         "dev.zio" %% "zio-streams" % zioVersion,

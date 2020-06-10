@@ -1,6 +1,6 @@
 package sttp.client.httpclient.zio
 
-import sttp.client.httpclient.zio.HttpClientZioBackend.BlockingTask
+import sttp.client.httpclient.zio.BlockingTask
 import sttp.client.{NothingT, SttpBackend}
 import sttp.client.impl.zio._
 import sttp.client.testing.{ConvertToFuture, HttpTest}

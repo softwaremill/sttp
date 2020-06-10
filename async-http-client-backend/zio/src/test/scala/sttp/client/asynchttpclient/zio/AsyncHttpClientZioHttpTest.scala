@@ -1,7 +1,5 @@
 package sttp.client.asynchttpclient.zio
 
-import java.nio.ByteBuffer
-
 import sttp.client._
 import sttp.client.impl.zio._
 import sttp.client.testing.{CancelTest, ConvertToFuture, HttpTest}
@@ -12,7 +10,7 @@ import zio.duration._
 
 class AsyncHttpClientZioHttpTest extends HttpTest[Task] with CancelTest[Task, Nothing] {
 
-  override implicit val backend: SttpBackend[Task, Stream[Throwable, ByteBuffer], NothingT] =
+  override implicit val backend: SttpBackend[Task, Stream[Throwable, Byte], NothingT] =
     runtime.unsafeRun(AsyncHttpClientZioBackend())
   override implicit val convertToFuture: ConvertToFuture[Task] = convertZioTaskToFuture
 
