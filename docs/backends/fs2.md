@@ -63,7 +63,7 @@ This backend is based on the built-in `java.net.http.HttpClient` available from 
 
 ## Streaming
 
-The fs2 backend supports streaming for any instance of the `cats.effect.Effect` typeclass, such as `cats.effect.IO`. If `IO` is used then the type of supported streams is `fs2.Stream[IO, ByteBuffer]`.
+The fs2 backend supports streaming for any instance of the `cats.effect.Effect` typeclass, such as `cats.effect.IO`. If `IO` is used then the type of supported streams is `fs2.Stream[IO, Byte]`.
 
 Requests can be sent with a streaming body like this:
 
@@ -71,13 +71,12 @@ Requests can be sent with a streaming body like this:
 import sttp.client._
 import sttp.client.asynchttpclient.fs2.AsyncHttpClientFs2Backend
 
-import java.nio.ByteBuffer
 import cats.effect.{ContextShift, IO}
 import fs2.Stream
 
 implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
 val effect = AsyncHttpClientFs2Backend[IO]().flatMap { implicit backend =>
-  val stream: Stream[IO, ByteBuffer] = ...
+  val stream: Stream[IO, Byte] = ...
 
   basicRequest
     .streamBody(stream)
@@ -92,17 +91,16 @@ Responses can also be streamed:
 import sttp.client._
 import sttp.client.asynchttpclient.fs2.AsyncHttpClientFs2Backend
 
-import java.nio.ByteBuffer
 import cats.effect.{ContextShift, IO}
 import fs2.Stream
 import scala.concurrent.duration.Duration
 
 implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
 val effect = AsyncHttpClientFs2Backend[IO]().flatMap { implicit backend =>
-  val response: IO[Response[Either[String, Stream[IO, ByteBuffer]]]] =
+  val response: IO[Response[Either[String, Stream[IO, Byte]]]] =
     basicRequest
       .post(uri"...")
-      .response(asStream[Stream[IO, ByteBuffer]])
+      .response(asStream[Stream[IO, Byte]])
       .readTimeout(Duration.Inf)
       .send()
 

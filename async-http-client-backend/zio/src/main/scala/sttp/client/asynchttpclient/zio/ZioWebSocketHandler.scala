@@ -32,13 +32,16 @@ object ZioWebSocketHandler {
     *                               messages will eventually take up all available memory.
     */
   def apply(incomingBufferCapacity: Option[Int] = None): Task[WebSocketHandler[WebSocket[Task]]] = {
-    def queue = incomingBufferCapacity match {
-      case Some(capacity) => Queue.dropping[WebSocketEvent](capacity)
-      case None           => Queue.unbounded[WebSocketEvent]
-    }
+    def queue =
+      incomingBufferCapacity match {
+        case Some(capacity) => Queue.dropping[WebSocketEvent](capacity)
+        case None           => Queue.unbounded[WebSocketEvent]
+      }
 
     ZIO
       .runtime[Any]
-      .flatMap(runtime => queue.map(q => NativeWebSocketHandler(new ZioAsyncQueue(q, runtime), new RIOMonadAsyncError[Any])))
+      .flatMap(runtime =>
+        queue.map(q => NativeWebSocketHandler(new ZioAsyncQueue(q, runtime), new RIOMonadAsyncError[Any]))
+      )
   }
 }

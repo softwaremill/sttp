@@ -17,9 +17,9 @@ import sttp.client.internal._
 import sttp.client.testing.SttpBackendStub
 import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 import _root_.zio._
+import _root_.zio.blocking.Blocking
 import _root_.zio.interop.reactivestreams._
 import _root_.zio.stream._
-import _root_.zio.blocking.Blocking
 
 class AsyncHttpClientZioBackend private (
     runtime: Runtime[Any],
@@ -46,7 +46,7 @@ class AsyncHttpClientZioBackend private (
 
   override protected def publisherToFile(p: Publisher[ByteBuffer], f: File): Task[Unit] = {
     p.toStream(bufferSize)
-      .map(b => Chunk.fromArray(b.array()))
+      .map(Chunk.fromByteBuffer)
       .flattenChunks
       .run(ZSink.fromOutputStream(new FileOutputStream(f)))
       .unit
