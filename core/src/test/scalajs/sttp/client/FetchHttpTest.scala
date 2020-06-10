@@ -9,4 +9,5 @@ class FetchHttpTest extends AbstractFetchHttpTest[Future, Nothing] {
   override implicit val backend: SttpBackend[Future, Nothing, NothingT] = FetchBackend()
   override implicit val convertToFuture: ConvertToFuture[Future] = ConvertToFuture.future
 
+  override protected def supportsCustomMultipartContentType = false
 }
