@@ -39,6 +39,6 @@ object ZioWebSocketHandler {
 
     ZIO
       .runtime[Any]
-      .flatMap(runtime => queue.map(q => NativeWebSocketHandler(new ZioAsyncQueue(q, runtime), new RIOMonadAsyncError)))
+      .flatMap(runtime => queue.map(q => NativeWebSocketHandler(new ZioAsyncQueue(q, runtime), new RIOMonadAsyncError[Any])))
   }
 }

@@ -230,7 +230,6 @@ lazy val rootProject = (project in file("."))
       asyncHttpClientFutureBackend.projectRefs ++
       asyncHttpClientScalazBackend.projectRefs ++
       asyncHttpClientZioBackend.projectRefs ++
-      asyncHttpClientZioStreamsBackend.projectRefs ++
       asyncHttpClientMonixBackend.projectRefs ++
       asyncHttpClientCatsBackend.projectRefs ++
       asyncHttpClientFs2Backend.projectRefs ++
@@ -443,18 +442,14 @@ lazy val asyncHttpClientScalazBackend =
     .dependsOn(scalaz % compileAndTest)
 
 lazy val asyncHttpClientZioBackend =
-  asyncHttpClientBackendProject("zio", includeDotty = true)
-    .dependsOn(zio % compileAndTest)
-
-lazy val asyncHttpClientZioStreamsBackend =
-  asyncHttpClientBackendProject("zio-streams")
+  asyncHttpClientBackendProject("zio", includeDotty = false)
     .settings(
       libraryDependencies ++= Seq(
         "dev.zio" %% "zio-streams" % zioVersion,
         "dev.zio" %% "zio-interop-reactivestreams" % zioInteropRsVersion
       )
     )
-    .dependsOn(zio % compileAndTest, asyncHttpClientZioBackend)
+    .dependsOn(zio % compileAndTest)
 
 lazy val asyncHttpClientMonixBackend =
   asyncHttpClientBackendProject("monix")

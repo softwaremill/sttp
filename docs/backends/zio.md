@@ -63,12 +63,12 @@ This backend is based on the built-in `java.net.http.HttpClient` available from 
 
 ## ZIO environment
 
-As an alternative to effectfully or resourcefully creating backend instances, ZIO environment can be used. In this case, a type alias is provided for the service definition (a streaming version is also available when using the streaming backend in the `ziostreams` package):
+As an alternative to effectfully or resourcefully creating backend instances, ZIO environment can be used. In this case, a type alias is provided for the service definition:
 
 ```scala
 package sttp.client.asynchttpclient.zio
 
-type SttpClient = Has[SttpBackend[Task, Nothing, WebSocketHandler]]
+type SttpClient = Has[SttpBackend[Task, Stream[Throwable, Byte], WebSocketHandler]]
 ```
 
 The lifecycle of the `SttpClient` service is described by `ZLayer`s, which can be created using the `.layer`/`.layerUsingConfig`/... methods on `AsyncHttpClientZioBackend`.
@@ -91,28 +91,22 @@ val open: ZIO[SttpClient, Throwable, WebSocketResponse[WebSocket[Task]]] = SttpC
 
 ## Streaming
 
-The ZIO based backends support streaming using zio-streams.
-The following example is for the AsyncHttpClient based backend. Use the following dependency:
-
-```scala
-"com.softwaremill.sttp.client" %% "async-http-client-backend-zio-streams" % "2.1.5"
-```
-
-And use the `sttp.client.asynchttpclient.ziostreams.AsyncHttpClientZioStreamsBackend` backend implementation. The backend supports streaming of type `Stream[Throwable, ByteBuffer]`. To leverage ZIO environment, use the `SttpStreamsClient` object to create request send/websocket open effects.
+The ZIO based backends support streaming using zio-streams. The following example is for the AsyncHttpClient based
+backend.
+The backend supports streaming of type `Stream[Throwable, Byte]`. To leverage ZIO environment, use the
+`SttpClient` object to create request send/websocket open effects.
 
 Requests can be sent with a streaming body:
 
 ```scala
 import sttp.client._
-import sttp.client.asynchttpclient.ziostreams._
-
-import java.nio.ByteBuffer
+import sttp.client.asynchttpclient.zio._
 
 import zio._
 import zio.stream._
 
-AsyncHttpClientZioStreamsBackend().flatMap { implicit backend =>
-  val s: Stream[Throwable, ByteBuffer] =  ...
+AsyncHttpClientZioBackend().flatMap { implicit backend =>
+  val s: Stream[Throwable, Byte] =  ...
 
   basicRequest
     .streamBody(s)
@@ -126,18 +120,16 @@ And receive response bodies as a stream:
 import sttp.client._
 import sttp.client.asynchttpclient.ziostreams._
 
-import java.nio.ByteBuffer
-
 import zio._
 import zio.stream._
 
 import scala.concurrent.duration.Duration
 
 AsyncHttpClientZioStreamsBackend().flatMap { implicit backend =>
-  val response: Task[Response[Either[String, Stream[Throwable, ByteBuffer]]]] =
+  val response: Task[Response[Either[String, Stream[Throwable, Byte]]]] =
     basicRequest
       .post(uri"...")
-      .response(asStream[Stream[Throwable, ByteBuffer]])
+      .response(asStream[Stream[Throwable, Byte]])
       .readTimeout(Duration.Inf)
       .send()
 }
