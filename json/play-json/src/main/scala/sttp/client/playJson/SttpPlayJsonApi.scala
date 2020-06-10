@@ -39,15 +39,16 @@ trait SttpPlayJsonApi {
 
   // Note: None of the play-json utilities attempt to catch invalid
   // json, so Json.parse needs to be wrapped in Try
-  def deserializeJson[B: Reads: IsOption]: String => Either[JsError, B] = JsonInput.sanitize[B].andThen { s =>
-    Try(Json.parse(s)) match {
-      case Failure(e: Exception) => Left(JsError(e.getMessage))
-      case Failure(t: Throwable) => throw t
-      case Success(json) =>
-        Json.fromJson(json).asEither match {
-          case Left(failures) => Left(JsError(failures))
-          case Right(success) => Right(success)
-        }
+  def deserializeJson[B: Reads: IsOption]: String => Either[JsError, B] =
+    JsonInput.sanitize[B].andThen { s =>
+      Try(Json.parse(s)) match {
+        case Failure(e: Exception) => Left(JsError(e.getMessage))
+        case Failure(t: Throwable) => throw t
+        case Success(json) =>
+          Json.fromJson(json).asEither match {
+            case Left(failures) => Left(JsError(failures))
+            case Right(success) => Right(success)
+          }
+      }
     }
-  }
 }

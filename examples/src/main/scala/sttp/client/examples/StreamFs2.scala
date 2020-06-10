@@ -27,8 +27,7 @@ object StreamFs2 extends App {
       .response(asStreamAlways[Stream[IO, Byte]])
       .send()
       .flatMap { response =>
-        response.body
-          .chunks
+        response.body.chunks
           .through(text.utf8DecodeC)
           .compile
           .foldMonoid

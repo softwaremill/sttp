@@ -27,8 +27,8 @@ object MonixWebSocketHandler {
     * Default value is 73 because 73 is the 21th prime number, its mirror number is the 12th prime number,
     * who’s mirror number 21 is the product of 7*3. Furthermore, 73 is 1001001 in binary, which is a palindrome.
     */
-  def apply(incomingBufferCapacity: Int = 73)(
-      implicit s: Scheduler
+  def apply(incomingBufferCapacity: Int = 73)(implicit
+      s: Scheduler
   ): Task[WebSocketHandler[WebSocket[Task]]] = {
     require(
       incomingBufferCapacity >= 2,
@@ -49,56 +49,57 @@ object MonixWebSocketHandler {
       queue: AsyncQueue[F, WebSocketEvent],
       _isOpen: AtomicBoolean,
       _monad: MonadAsyncError[F]
-  ): WebSocket[F] = new WebSocket[F] {
-    override def receive: F[Either[WebSocketEvent.Close, WebSocketFrame.Incoming]] = {
-      queue.poll.flatMap {
-        case WebSocketEvent.Open() => receive
-        case c: WebSocketEvent.Close =>
-          queue.offer(WebSocketEvent.Error(new WebSocketClosed))
-          monad.unit(Left(c))
-        case e @ WebSocketEvent.Error(t: Exception) =>
-          // putting back the error so that subsequent invocations end in an error as well, instead of hanging
-          queue.offer(e)
-          monad.error(t)
-        case WebSocketEvent.Error(t) => throw t
-        case WebSocketEvent.Frame(f) =>
-          monad.eval {
-            ws.request(1)
-            Right(f)
-          }
-      }
-    }
-
-    override def send(f: WebSocketFrame, isContinuation: Boolean = false): F[Unit] =
-      monad.flatten(monad.eval(fromCompletableFuture(f match {
-        case WebSocketFrame.Text(payload, finalFragment, _) =>
-          ws.sendText(payload, finalFragment)
-        case WebSocketFrame.Binary(payload, finalFragment, _) =>
-          ws.sendBinary(ByteBuffer.wrap(payload), finalFragment)
-        case WebSocketFrame.Ping(payload)                 => ws.sendPing(ByteBuffer.wrap(payload))
-        case WebSocketFrame.Pong(payload)                 => ws.sendPong(ByteBuffer.wrap(payload))
-        case WebSocketFrame.Close(statusCode, reasonText) => ws.sendClose(statusCode, reasonText)
-      })))
-
-    override def isOpen: F[Boolean] = monad.eval(_isOpen.get())
-
-    override implicit def monad: MonadError[F] = _monad
-
-    private def fromCompletableFuture(cf: CompletableFuture[JWebSocket]): F[Unit] = {
-      _monad.async { cb =>
-        cf.whenComplete(new BiConsumer[JWebSocket, Throwable] {
-          override def accept(t: JWebSocket, error: Throwable): Unit = {
-            if (error != null) {
-              cb(Left(error))
-            } else {
-              cb(Right(()))
+  ): WebSocket[F] =
+    new WebSocket[F] {
+      override def receive: F[Either[WebSocketEvent.Close, WebSocketFrame.Incoming]] = {
+        queue.poll.flatMap {
+          case WebSocketEvent.Open() => receive
+          case c: WebSocketEvent.Close =>
+            queue.offer(WebSocketEvent.Error(new WebSocketClosed))
+            monad.unit(Left(c))
+          case e @ WebSocketEvent.Error(t: Exception) =>
+            // putting back the error so that subsequent invocations end in an error as well, instead of hanging
+            queue.offer(e)
+            monad.error(t)
+          case WebSocketEvent.Error(t) => throw t
+          case WebSocketEvent.Frame(f) =>
+            monad.eval {
+              ws.request(1)
+              Right(f)
             }
-          }
-        })
-        Canceler(() => cf.cancel(true))
+        }
+      }
+
+      override def send(f: WebSocketFrame, isContinuation: Boolean = false): F[Unit] =
+        monad.flatten(monad.eval(fromCompletableFuture(f match {
+          case WebSocketFrame.Text(payload, finalFragment, _) =>
+            ws.sendText(payload, finalFragment)
+          case WebSocketFrame.Binary(payload, finalFragment, _) =>
+            ws.sendBinary(ByteBuffer.wrap(payload), finalFragment)
+          case WebSocketFrame.Ping(payload)                 => ws.sendPing(ByteBuffer.wrap(payload))
+          case WebSocketFrame.Pong(payload)                 => ws.sendPong(ByteBuffer.wrap(payload))
+          case WebSocketFrame.Close(statusCode, reasonText) => ws.sendClose(statusCode, reasonText)
+        })))
+
+      override def isOpen: F[Boolean] = monad.eval(_isOpen.get())
+
+      override implicit def monad: MonadError[F] = _monad
+
+      private def fromCompletableFuture(cf: CompletableFuture[JWebSocket]): F[Unit] = {
+        _monad.async { cb =>
+          cf.whenComplete(new BiConsumer[JWebSocket, Throwable] {
+            override def accept(t: JWebSocket, error: Throwable): Unit = {
+              if (error != null) {
+                cb(Left(error))
+              } else {
+                cb(Right(()))
+              }
+            }
+          })
+          Canceler(() => cf.cancel(true))
+        }
       }
     }
-  }
 }
 
 private class AddToQueueListener[F[_]](

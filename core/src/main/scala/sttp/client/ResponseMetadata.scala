@@ -20,9 +20,10 @@ trait ResponseMetadata extends HasHeaders {
 }
 
 object ResponseMetadata {
-  def apply(h: Seq[Header], c: StatusCode, st: String): ResponseMetadata = new ResponseMetadata {
-    override def headers: Seq[Header] = h
-    override def code: StatusCode = c
-    override def statusText: String = st
-  }
+  def apply(h: Seq[Header], c: StatusCode, st: String): ResponseMetadata =
+    new ResponseMetadata {
+      override def headers: Seq[Header] = h
+      override def code: StatusCode = c
+      override def statusText: String = st
+    }
 }

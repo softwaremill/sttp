@@ -26,23 +26,24 @@ object SttpClientException {
   class ReadException(cause: Exception) extends SttpClientException(cause)
 
   @tailrec
-  def defaultExceptionToSttpClientException(e: Exception): Option[Exception] = e match {
-    case e: java.net.ConnectException             => Some(new ConnectException(e))
-    case e: java.net.UnknownHostException         => Some(new ConnectException(e))
-    case e: java.net.MalformedURLException        => Some(new ConnectException(e))
-    case e: java.net.NoRouteToHostException       => Some(new ConnectException(e))
-    case e: java.net.PortUnreachableException     => Some(new ConnectException(e))
-    case e: java.net.ProtocolException            => Some(new ConnectException(e))
-    case e: java.net.URISyntaxException           => Some(new ConnectException(e))
-    case e: java.net.SocketTimeoutException       => Some(new ReadException(e))
-    case e: java.net.UnknownServiceException      => Some(new ReadException(e))
-    case e: java.net.SocketException              => Some(new ReadException(e))
-    case e: java.util.concurrent.TimeoutException => Some(new ReadException(e))
-    case e: java.io.IOException                   => Some(new ReadException(e))
-    case e if e.getCause != null && e.getCause.isInstanceOf[Exception] =>
-      defaultExceptionToSttpClientException(e.getCause.asInstanceOf[Exception])
-    case _ => None
-  }
+  def defaultExceptionToSttpClientException(e: Exception): Option[Exception] =
+    e match {
+      case e: java.net.ConnectException             => Some(new ConnectException(e))
+      case e: java.net.UnknownHostException         => Some(new ConnectException(e))
+      case e: java.net.MalformedURLException        => Some(new ConnectException(e))
+      case e: java.net.NoRouteToHostException       => Some(new ConnectException(e))
+      case e: java.net.PortUnreachableException     => Some(new ConnectException(e))
+      case e: java.net.ProtocolException            => Some(new ConnectException(e))
+      case e: java.net.URISyntaxException           => Some(new ConnectException(e))
+      case e: java.net.SocketTimeoutException       => Some(new ReadException(e))
+      case e: java.net.UnknownServiceException      => Some(new ReadException(e))
+      case e: java.net.SocketException              => Some(new ReadException(e))
+      case e: java.util.concurrent.TimeoutException => Some(new ReadException(e))
+      case e: java.io.IOException                   => Some(new ReadException(e))
+      case e if e.getCause != null && e.getCause.isInstanceOf[Exception] =>
+        defaultExceptionToSttpClientException(e.getCause.asInstanceOf[Exception])
+      case _ => None
+    }
 
   def adjustSynchronousExceptions[T](t: => T)(usingFn: Exception => Option[Exception]): T = {
     try t

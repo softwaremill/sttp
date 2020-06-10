@@ -10,8 +10,9 @@ trait SttpFileExtensions { self: SttpFile =>
 }
 
 trait SttpFileCompanionExtensions {
-  def fromDomFile(file: File): SttpFile = new SttpFile(file) {
-    val name: String = file.name
-    val size: Long = file.size.toLong
-  }
+  def fromDomFile(file: File): SttpFile =
+    new SttpFile(file) {
+      val name: String = file.name
+      val size: Long = file.size.toLong
+    }
 }

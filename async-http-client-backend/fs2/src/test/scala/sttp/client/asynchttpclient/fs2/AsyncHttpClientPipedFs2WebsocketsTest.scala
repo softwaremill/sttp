@@ -17,11 +17,7 @@ import scala.collection.immutable.Queue
 import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-class AsyncHttpClientPipedFs2WebsocketsTest
-    extends AsyncFlatSpec
-    with Matchers
-    with ToFutureWrapper
-    with CatsTestBase {
+class AsyncHttpClientPipedFs2WebsocketsTest extends AsyncFlatSpec with Matchers with ToFutureWrapper with CatsTestBase {
   implicit val backend: SttpBackend[IO, Nothing, WebSocketHandler] = AsyncHttpClientFs2Backend[IO]().unsafeRunSync()
 
   def createHandler: Option[Int] => IO[WebSocketHandler[WebSocket[IO]]] = Fs2WebSocketHandler[IO](_)

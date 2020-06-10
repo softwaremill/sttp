@@ -51,9 +51,11 @@ private[client] class DigestAuthenticator private (
       nonceMatch: String
   ): Option[String] = {
     val isFirstOrShouldRetry =
-      if (request.headers
-            .find(_.name.equalsIgnoreCase(HeaderNames.Authorization))
-            .exists(_.value.contains("Digest"))) {
+      if (
+        request.headers
+          .find(_.name.equalsIgnoreCase(HeaderNames.Authorization))
+          .exists(_.value.contains("Digest"))
+      ) {
         wwwAuthHeader.isStale.getOrElse(false)
       } else {
         true

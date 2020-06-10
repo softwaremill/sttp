@@ -67,16 +67,17 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
   /**
     * Use the given charset by default, unless specified otherwise in the response headers.
     */
-  def asString(charset: String): ResponseAs[Either[String, String], Nothing] = asStringAlways(charset).mapWithMetadata {
-    (s, m) => if (m.isSuccess) Right(s) else Left(s)
-  }
+  def asString(charset: String): ResponseAs[Either[String, String], Nothing] =
+    asStringAlways(charset).mapWithMetadata { (s, m) =>
+      if (m.isSuccess) Right(s) else Left(s)
+    }
 
-  def asStringAlways(charset: String): ResponseAs[String, Nothing] = asByteArrayAlways.mapWithMetadata {
-    (bytes, metadata) =>
+  def asStringAlways(charset: String): ResponseAs[String, Nothing] =
+    asByteArrayAlways.mapWithMetadata { (bytes, metadata) =>
       val charset2 = metadata.contentType.flatMap(charsetFromContentType).getOrElse(charset)
       val charset3 = sanitizeCharset(charset2)
       new String(bytes, charset3)
-  }
+    }
 
   def asByteArray: ResponseAs[Either[String, Array[Byte]], Nothing] = asEither(asStringAlways, asByteArrayAlways)
 

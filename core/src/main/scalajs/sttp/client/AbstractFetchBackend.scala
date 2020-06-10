@@ -86,7 +86,7 @@ abstract class AbstractFetchBackend[F[_], S](options: FetchOptions, customizeReq
       // use manual so we can return a specific error instead of the generic "TypeError: Failed to fetch"
       val rredirect = if (request.options.followRedirects) RequestRedirect.follow else RequestRedirect.manual
 
-      val requestInitStatic = new RequestInit(){
+      val requestInitStatic = new RequestInit() {
         var method: js.UndefOr[HttpMethod] = request.method.method.asInstanceOf[HttpMethod]
 
         var headers: js.UndefOr[HeadersInit] = rheaders
@@ -100,17 +100,17 @@ abstract class AbstractFetchBackend[F[_], S](options: FetchOptions, customizeReq
         var mode: js.UndefOr[RequestMode] = options.mode.orUndefined
 
         var credentials: js.UndefOr[RequestCredentials] = options.credentials.orUndefined
-      
+
         var cache: js.UndefOr[RequestCache] = js.undefined
-      
+
         var redirect: js.UndefOr[RequestRedirect] = rredirect
-      
+
         var integrity: js.UndefOr[String] = js.undefined
-      
+
         var keepalive: js.UndefOr[Boolean] = js.undefined
-      
+
         var signal: js.UndefOr[AbortSignal] = js.undefined
-      
+
         var window: js.UndefOr[Null] = js.undefined
       }
 

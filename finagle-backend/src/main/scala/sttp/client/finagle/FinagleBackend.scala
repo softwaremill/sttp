@@ -2,11 +2,41 @@ package sttp.client.finagle
 
 import com.twitter.finagle.Http.Client
 import com.twitter.finagle.{Http, Service, http}
-import sttp.client.{BasicRequestBody, ByteArrayBody, ByteBufferBody, FileBody, FollowRedirectsBackend, IgnoreResponse, InputStreamBody, MappedResponseAs, MultipartBody, NoBody, NothingT, Request, Response, ResponseAs, ResponseAsByteArray, ResponseAsFile, ResponseAsFromMetadata, ResponseAsStream, ResponseMetadata, StringBody, SttpBackend, SttpClientException}
+import sttp.client.{
+  BasicRequestBody,
+  ByteArrayBody,
+  ByteBufferBody,
+  FileBody,
+  FollowRedirectsBackend,
+  IgnoreResponse,
+  InputStreamBody,
+  MappedResponseAs,
+  MultipartBody,
+  NoBody,
+  NothingT,
+  Request,
+  Response,
+  ResponseAs,
+  ResponseAsByteArray,
+  ResponseAsFile,
+  ResponseAsFromMetadata,
+  ResponseAsStream,
+  ResponseMetadata,
+  StringBody,
+  SttpBackend,
+  SttpClientException
+}
 import com.twitter.util.{Future => TFuture}
 import sttp.client.monad.MonadError
 import sttp.client.ws.WebSocketResponse
-import com.twitter.finagle.http.{FileElement, FormElement, RequestBuilder, SimpleElement, Method => FMethod, Response => FResponse}
+import com.twitter.finagle.http.{
+  FileElement,
+  FormElement,
+  RequestBuilder,
+  SimpleElement,
+  Method => FMethod,
+  Response => FResponse
+}
 import com.twitter.io.Buf
 import com.twitter.io.Buf.{ByteArray, ByteBuffer}
 import com.twitter.util
@@ -18,23 +48,24 @@ import sttp.client.testing.SttpBackendStub
 import scala.io.Source
 
 class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture, Nothing, NothingT] {
-  override def send[T](request: Request[T, Nothing]): TFuture[Response[T]] = adjustExceptions {
-    val service = getClient(client, request)
-    val finagleRequest = requestBodyToFinagle(request)
-    service
-      .apply(finagleRequest)
-      .flatMap { fResponse =>
-        val code = StatusCode.unsafeApply(fResponse.statusCode)
-        val headers = fResponse.headerMap.map(h => Header(h._1, h._2)).toList
-        val statusText = fResponse.status.reason
-        val responseMetadata = ResponseMetadata(headers, code, statusText)
-        val body = fromFinagleResponse(request.response, fResponse, responseMetadata)
-        service.close().flatMap(_ => body.map(sttp.client.Response(_, code, statusText, headers, Nil)))
-      }
-      .rescue {
-        case e: Exception => service.close().flatMap(_ => TFuture.exception(e))
-      }
-  }
+  override def send[T](request: Request[T, Nothing]): TFuture[Response[T]] =
+    adjustExceptions {
+      val service = getClient(client, request)
+      val finagleRequest = requestBodyToFinagle(request)
+      service
+        .apply(finagleRequest)
+        .flatMap { fResponse =>
+          val code = StatusCode.unsafeApply(fResponse.statusCode)
+          val headers = fResponse.headerMap.map(h => Header(h._1, h._2)).toList
+          val statusText = fResponse.status.reason
+          val responseMetadata = ResponseMetadata(headers, code, statusText)
+          val body = fromFinagleResponse(request.response, fResponse, responseMetadata)
+          service.close().flatMap(_ => body.map(sttp.client.Response(_, code, statusText, headers, Nil)))
+        }
+        .rescue {
+          case e: Exception => service.close().flatMap(_ => TFuture.exception(e))
+        }
+    }
 
   override def openWebsocket[T, WS_RESULT](
       request: Request[T, Nothing],
@@ -49,18 +80,19 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
     headers.map(header => header.name -> header.value).toMap
   }
 
-  private def methodToFinagle(m: Method): FMethod = m match {
-    case Method.GET     => FMethod.Get
-    case Method.HEAD    => FMethod.Head
-    case Method.POST    => FMethod.Post
-    case Method.PUT     => FMethod.Put
-    case Method.DELETE  => FMethod.Delete
-    case Method.OPTIONS => FMethod.Options
-    case Method.PATCH   => FMethod.Patch
-    case Method.CONNECT => FMethod.Connect
-    case Method.TRACE   => FMethod.Trace
-    case _              => FMethod(m.method)
-  }
+  private def methodToFinagle(m: Method): FMethod =
+    m match {
+      case Method.GET     => FMethod.Get
+      case Method.HEAD    => FMethod.Head
+      case Method.POST    => FMethod.Post
+      case Method.PUT     => FMethod.Put
+      case Method.DELETE  => FMethod.Delete
+      case Method.OPTIONS => FMethod.Options
+      case Method.PATCH   => FMethod.Patch
+      case Method.CONNECT => FMethod.Connect
+      case Method.TRACE   => FMethod.Trace
+      case _              => FMethod(m.method)
+    }
 
   private def requestBodyToFinagle(r: Request[_, Nothing]): http.Request = {
     val finagleMethod = methodToFinagle(r.method)
@@ -171,14 +203,15 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
   private def adjustExceptions[T](t: => TFuture[T]): TFuture[T] =
     SttpClientException.adjustExceptions(responseMonad)(t)(exceptionToSttpClientException)
 
-  private def exceptionToSttpClientException(e: Exception): Option[Exception] = e match {
-    case e: com.twitter.finagle.NoBrokersAvailableException => Some(new SttpClientException.ConnectException(e))
-    case e: com.twitter.finagle.Failure if e.getCause.isInstanceOf[com.twitter.finagle.ConnectionFailedException] =>
-      Some(new SttpClientException.ConnectException(e))
-    case e: com.twitter.finagle.ChannelClosedException            => Some(new SttpClientException.ReadException(e))
-    case e: com.twitter.finagle.IndividualRequestTimeoutException => Some(new SttpClientException.ReadException(e))
-    case e: Exception                                             => SttpClientException.defaultExceptionToSttpClientException(e)
-  }
+  private def exceptionToSttpClientException(e: Exception): Option[Exception] =
+    e match {
+      case e: com.twitter.finagle.NoBrokersAvailableException => Some(new SttpClientException.ConnectException(e))
+      case e: com.twitter.finagle.Failure if e.getCause.isInstanceOf[com.twitter.finagle.ConnectionFailedException] =>
+        Some(new SttpClientException.ConnectException(e))
+      case e: com.twitter.finagle.ChannelClosedException            => Some(new SttpClientException.ReadException(e))
+      case e: com.twitter.finagle.IndividualRequestTimeoutException => Some(new SttpClientException.ReadException(e))
+      case e: Exception                                             => SttpClientException.defaultExceptionToSttpClientException(e)
+    }
 }
 
 object TFutureMonadError extends MonadError[TFuture] {

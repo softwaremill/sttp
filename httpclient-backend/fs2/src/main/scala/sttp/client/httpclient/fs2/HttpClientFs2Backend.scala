@@ -41,7 +41,9 @@ class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
     super.openWebsocket(request, handler).guarantee(ContextShift[F].shift)
 
   override def streamToRequestBody(stream: Stream[F, Byte]): F[HttpRequest.BodyPublisher] =
-    monad.eval(BodyPublishers.fromPublisher(FlowAdapters.toFlowPublisher(stream.chunks.map(_.toByteBuffer).toUnicastPublisher())))
+    monad.eval(
+      BodyPublishers.fromPublisher(FlowAdapters.toFlowPublisher(stream.chunks.map(_.toByteBuffer).toUnicastPublisher()))
+    )
 
   override def responseBodyToStream(responseBody: InputStream): Try[Stream[F, Byte]] =
     Success(fs2.io.readInputStream(responseBody.pure[F], chunkSize, blocker))

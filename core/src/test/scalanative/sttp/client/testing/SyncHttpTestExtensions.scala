@@ -64,7 +64,7 @@ trait SyncHttpTestExtensions {
     val md = MessageDigest.getInstance("MD5")
     md.update(bytes, 0, bytes.length)
     val hash = md.digest()
-    hash.map(0xFF & _).map("%02x".format(_)).mkString
+    hash.map(0xff & _).map("%02x".format(_)).mkString
   }
 
   private def md5FileHash(file: File): String = md5Hash(Files.readAllBytes(file.toPath))

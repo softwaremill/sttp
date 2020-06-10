@@ -25,56 +25,57 @@ object NativeWebSocketHandler {
       queue: AsyncQueue[F, WebSocketEvent],
       _isOpen: AtomicBoolean,
       _monad: MonadAsyncError[F]
-  ): WebSocket[F] = new WebSocket[F] {
-    override def receive: F[Either[WebSocketEvent.Close, WebSocketFrame.Incoming]] = {
-      queue.poll
-        .flatMap {
-          case WebSocketEvent.Open() => receive
-          case c: WebSocketEvent.Close =>
-            queue.offer(WebSocketEvent.Error(new WebSocketClosed))
-            monad.unit(Left(c))
-          case e @ WebSocketEvent.Error(t: Exception) =>
-            // putting back the error so that subsequent invocations end in an error as well, instead of hanging
-            queue.offer(e)
-            monad.error(t)
-          case WebSocketEvent.Error(t) =>
-            throw t
-          case WebSocketEvent.Frame(f) =>
-            monad.unit(Right(f))
-        }
-    }
-
-    override def send(f: WebSocketFrame, isContinuation: Boolean = false): F[Unit] =
-      monad.flatten(monad.eval(f match {
-        case WebSocketFrame.Text(payload, _, _) =>
-          val bool = ws.send(payload)
-          fromBoolean(bool)
-        case WebSocketFrame.Binary(payload, _, _) =>
-          fromBoolean(ws.send(new ByteString(payload)))
-        case WebSocketFrame.Close(statusCode, reasonText) =>
-          if (ws.close(statusCode, reasonText)) {
-            _monad.unit(())
-          } else {
-            _monad.error(new WebSocketClosed)
+  ): WebSocket[F] =
+    new WebSocket[F] {
+      override def receive: F[Either[WebSocketEvent.Close, WebSocketFrame.Incoming]] = {
+        queue.poll
+          .flatMap {
+            case WebSocketEvent.Open() => receive
+            case c: WebSocketEvent.Close =>
+              queue.offer(WebSocketEvent.Error(new WebSocketClosed))
+              monad.unit(Left(c))
+            case e @ WebSocketEvent.Error(t: Exception) =>
+              // putting back the error so that subsequent invocations end in an error as well, instead of hanging
+              queue.offer(e)
+              monad.error(t)
+            case WebSocketEvent.Error(t) =>
+              throw t
+            case WebSocketEvent.Frame(f) =>
+              monad.unit(Right(f))
           }
-        case _: WebSocketFrame.Ping =>
-          _monad.error(new UnsupportedOperationException("Ping is handled by okhttp under the hood"))
-        case _: WebSocketFrame.Pong =>
-          _monad.error(new UnsupportedOperationException("Pong is handled by okhttp under the hood"))
-      }))
+      }
 
-    override def isOpen: F[Boolean] = monad.eval(_isOpen.get())
+      override def send(f: WebSocketFrame, isContinuation: Boolean = false): F[Unit] =
+        monad.flatten(monad.eval(f match {
+          case WebSocketFrame.Text(payload, _, _) =>
+            val bool = ws.send(payload)
+            fromBoolean(bool)
+          case WebSocketFrame.Binary(payload, _, _) =>
+            fromBoolean(ws.send(new ByteString(payload)))
+          case WebSocketFrame.Close(statusCode, reasonText) =>
+            if (ws.close(statusCode, reasonText)) {
+              _monad.unit(())
+            } else {
+              _monad.error(new WebSocketClosed)
+            }
+          case _: WebSocketFrame.Ping =>
+            _monad.error(new UnsupportedOperationException("Ping is handled by okhttp under the hood"))
+          case _: WebSocketFrame.Pong =>
+            _monad.error(new UnsupportedOperationException("Pong is handled by okhttp under the hood"))
+        }))
 
-    override implicit def monad: MonadError[F] = _monad
+      override def isOpen: F[Boolean] = monad.eval(_isOpen.get())
 
-    private def fromBoolean(result: Boolean): F[Unit] = {
-      if (!result) {
-        _monad.error(new SendMessageException)
-      } else {
-        _monad.unit(())
+      override implicit def monad: MonadError[F] = _monad
+
+      private def fromBoolean(result: Boolean): F[Unit] = {
+        if (!result) {
+          _monad.error(new SendMessageException)
+        } else {
+          _monad.unit(())
+        }
       }
     }
-  }
 }
 
 class SendMessageException

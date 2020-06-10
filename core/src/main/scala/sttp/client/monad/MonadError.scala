@@ -24,10 +24,11 @@ trait MonadError[F[_]] {
   def eval[T](t: => T): F[T] = map(unit(()))(_ => t)
   def flatten[T](ffa: F[F[T]]): F[T] = flatMap[F[T], T](ffa)(identity)
 
-  def fromTry[T](t: Try[T]): F[T] = t match {
-    case Success(v) => unit(v)
-    case Failure(e) => error(e)
-  }
+  def fromTry[T](t: Try[T]): F[T] =
+    t match {
+      case Success(v) => unit(v)
+      case Failure(e) => error(e)
+    }
 }
 
 trait MonadAsyncError[F[_]] extends MonadError[F] {

@@ -27,7 +27,12 @@ class AsyncHttpClientCatsBackend[F[_]: Concurrent: ContextShift] private (
     asyncHttpClient: AsyncHttpClient,
     closeClient: Boolean,
     customizeRequest: BoundRequestBuilder => BoundRequestBuilder
-) extends AsyncHttpClientBackend[F, Nothing](asyncHttpClient, new CatsMonadAsyncError, closeClient, customizeRequest) {
+) extends AsyncHttpClientBackend[F, Nothing](
+      asyncHttpClient,
+      new CatsMonadAsyncError,
+      closeClient,
+      customizeRequest
+    ) {
   override def send[T](r: Request[T, Nothing]): F[Response[T]] = {
     super.send(r).guarantee(implicitly[ContextShift[F]].shift)
   }

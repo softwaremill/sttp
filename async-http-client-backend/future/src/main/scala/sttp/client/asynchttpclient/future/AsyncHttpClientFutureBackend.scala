@@ -22,8 +22,8 @@ class AsyncHttpClientFutureBackend private (
     asyncHttpClient: AsyncHttpClient,
     closeClient: Boolean,
     customizeRequest: BoundRequestBuilder => BoundRequestBuilder
-)(
-    implicit ec: ExecutionContext
+)(implicit
+    ec: ExecutionContext
 ) extends AsyncHttpClientBackend[Future, Nothing](asyncHttpClient, new FutureMonad, closeClient, customizeRequest) {
   override protected def streamBodyToPublisher(s: Nothing): Publisher[ByteBuf] =
     s // nothing is everything
@@ -37,8 +37,8 @@ object AsyncHttpClientFutureBackend {
       asyncHttpClient: AsyncHttpClient,
       closeClient: Boolean,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder
-  )(
-      implicit ec: ExecutionContext
+  )(implicit
+      ec: ExecutionContext
   ): SttpBackend[Future, Nothing, WebSocketHandler] =
     new FollowRedirectsBackend[Future, Nothing, WebSocketHandler](
       new AsyncHttpClientFutureBackend(asyncHttpClient, closeClient, customizeRequest)
@@ -99,6 +99,8 @@ object AsyncHttpClientFutureBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackendStub[Future, Nothing, WebSocketHandler] =
+  def stub(implicit
+      ec: ExecutionContext = ExecutionContext.global
+  ): SttpBackendStub[Future, Nothing, WebSocketHandler] =
     SttpBackendStub(new FutureMonad())
 }

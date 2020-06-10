@@ -25,53 +25,54 @@ object NativeWebSocketHandler {
       queue: AsyncQueue[F, WebSocketEvent],
       _isOpen: AtomicBoolean,
       _monad: MonadAsyncError[F]
-  ): WebSocket[F] = new WebSocket[F] {
-    override def receive: F[Either[WebSocketEvent.Close, WebSocketFrame.Incoming]] = {
-      queue.poll.flatMap {
-        case WebSocketEvent.Open() => receive
-        case c: WebSocketEvent.Close =>
-          queue.offer(WebSocketEvent.Error(new WebSocketClosed))
-          monad.unit(Left(c))
-        case e @ WebSocketEvent.Error(t: Exception) =>
-          // putting back the error so that subsequent invocations end in an error as well, instead of hanging
-          queue.offer(e)
-          monad.error(t)
-        case WebSocketEvent.Error(t) => throw t
-        case WebSocketEvent.Frame(f) => monad.unit(Right(f))
+  ): WebSocket[F] =
+    new WebSocket[F] {
+      override def receive: F[Either[WebSocketEvent.Close, WebSocketFrame.Incoming]] = {
+        queue.poll.flatMap {
+          case WebSocketEvent.Open() => receive
+          case c: WebSocketEvent.Close =>
+            queue.offer(WebSocketEvent.Error(new WebSocketClosed))
+            monad.unit(Left(c))
+          case e @ WebSocketEvent.Error(t: Exception) =>
+            // putting back the error so that subsequent invocations end in an error as well, instead of hanging
+            queue.offer(e)
+            monad.error(t)
+          case WebSocketEvent.Error(t) => throw t
+          case WebSocketEvent.Frame(f) => monad.unit(Right(f))
+        }
+      }
+
+      override def send(f: WebSocketFrame, isContinuation: Boolean = false): F[Unit] =
+        monad.flatten(monad.eval(fromNettyFuture(f match {
+          case WebSocketFrame.Text(payload, finalFragment, rsv) if !isContinuation =>
+            ws.sendTextFrame(payload, finalFragment, rsv.getOrElse(0))
+          case WebSocketFrame.Text(payload, finalFragment, rsv) if isContinuation =>
+            ws.sendContinuationFrame(payload, finalFragment, rsv.getOrElse(0))
+          case WebSocketFrame.Binary(payload, finalFragment, rsv) if !isContinuation =>
+            ws.sendBinaryFrame(payload, finalFragment, rsv.getOrElse(0))
+          case WebSocketFrame.Binary(payload, finalFragment, rsv) if isContinuation =>
+            ws.sendContinuationFrame(payload, finalFragment, rsv.getOrElse(0))
+          case WebSocketFrame.Ping(payload)                 => ws.sendPingFrame(payload)
+          case WebSocketFrame.Pong(payload)                 => ws.sendPongFrame(payload)
+          case WebSocketFrame.Close(statusCode, reasonText) => ws.sendCloseFrame(statusCode, reasonText)
+        })))
+
+      override def isOpen: F[Boolean] = monad.eval(_isOpen.get())
+
+      override implicit def monad: MonadError[F] = _monad
+
+      private def fromNettyFuture(f: io.netty.util.concurrent.Future[Void]): F[Unit] = {
+        _monad.async { cb =>
+          val f2 = f.addListener(new FutureListener[Void] {
+            override def operationComplete(future: Future[Void]): Unit = {
+              if (future.isSuccess) cb(Right(())) else cb(Left(future.cause()))
+            }
+          })
+
+          Canceler(() => f2.cancel(true))
+        }
       }
     }
-
-    override def send(f: WebSocketFrame, isContinuation: Boolean = false): F[Unit] =
-      monad.flatten(monad.eval(fromNettyFuture(f match {
-        case WebSocketFrame.Text(payload, finalFragment, rsv) if !isContinuation =>
-          ws.sendTextFrame(payload, finalFragment, rsv.getOrElse(0))
-        case WebSocketFrame.Text(payload, finalFragment, rsv) if isContinuation =>
-          ws.sendContinuationFrame(payload, finalFragment, rsv.getOrElse(0))
-        case WebSocketFrame.Binary(payload, finalFragment, rsv) if !isContinuation =>
-          ws.sendBinaryFrame(payload, finalFragment, rsv.getOrElse(0))
-        case WebSocketFrame.Binary(payload, finalFragment, rsv) if isContinuation =>
-          ws.sendContinuationFrame(payload, finalFragment, rsv.getOrElse(0))
-        case WebSocketFrame.Ping(payload)                 => ws.sendPingFrame(payload)
-        case WebSocketFrame.Pong(payload)                 => ws.sendPongFrame(payload)
-        case WebSocketFrame.Close(statusCode, reasonText) => ws.sendCloseFrame(statusCode, reasonText)
-      })))
-
-    override def isOpen: F[Boolean] = monad.eval(_isOpen.get())
-
-    override implicit def monad: MonadError[F] = _monad
-
-    private def fromNettyFuture(f: io.netty.util.concurrent.Future[Void]): F[Unit] = {
-      _monad.async { cb =>
-        val f2 = f.addListener(new FutureListener[Void] {
-          override def operationComplete(future: Future[Void]): Unit = {
-            if (future.isSuccess) cb(Right(())) else cb(Left(future.cause()))
-          }
-        })
-
-        Canceler(() => f2.cancel(true))
-      }
-    }
-  }
 }
 
 class AddToQueueListener[F[_]](queue: AsyncQueue[F, WebSocketEvent], isOpen: AtomicBoolean)

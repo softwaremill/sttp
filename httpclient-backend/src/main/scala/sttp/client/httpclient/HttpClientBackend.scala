@@ -53,16 +53,16 @@ abstract class HttpClientBackend[F[_], S](
     val builder = HttpRequest
       .newBuilder()
       .uri(request.uri.toJavaUri)
-    
+
     // Only setting the content type if it's present, and won't be set later with the mulitpart boundary added
     val contentType: Option[String] = request.headers.find(_.is(HeaderNames.ContentType)).map(_.value)
     contentType.foreach { ct =>
       request.body match {
         case _: MultipartBody => // skip, will be set later
-        case _ => builder.header(HeaderNames.ContentType, ct)
+        case _                => builder.header(HeaderNames.ContentType, ct)
       }
     }
-    
+
     bodyToHttpBody(request, builder, contentType).map { httpBody =>
       builder.method(request.method.method, httpBody)
       request.headers
@@ -74,7 +74,11 @@ abstract class HttpClientBackend[F[_], S](
 
   implicit val monad: MonadError[F] = responseMonad
 
-  private def bodyToHttpBody[T](request: Request[T, S], builder: HttpRequest.Builder, contentType: Option[String]): F[BodyPublisher] = {
+  private def bodyToHttpBody[T](
+      request: Request[T, S],
+      builder: HttpRequest.Builder,
+      contentType: Option[String]
+  ): F[BodyPublisher] = {
     request.body match {
       case NoBody              => BodyPublishers.noBody().unit
       case StringBody(b, _, _) => BodyPublishers.ofString(b).unit

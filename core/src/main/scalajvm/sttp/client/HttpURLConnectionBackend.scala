@@ -25,41 +25,42 @@ class HttpURLConnectionBackend private (
     createURL: String => URL,
     openConnection: (URL, Option[java.net.Proxy]) => URLConnection
 ) extends SttpBackend[Identity, Nothing, NothingT] {
-  override def send[T](r: Request[T, Nothing]): Response[T] = adjustExceptions {
-    val c = openConnection(r.uri)
-    c.setRequestMethod(r.method.method)
-    r.headers.foreach { case Header(k, v) => c.setRequestProperty(k, v) }
-    c.setDoInput(true)
-    c.setReadTimeout(timeout(r.options.readTimeout))
-    c.setConnectTimeout(timeout(opts.connectionTimeout))
+  override def send[T](r: Request[T, Nothing]): Response[T] =
+    adjustExceptions {
+      val c = openConnection(r.uri)
+      c.setRequestMethod(r.method.method)
+      r.headers.foreach { case Header(k, v) => c.setRequestProperty(k, v) }
+      c.setDoInput(true)
+      c.setReadTimeout(timeout(r.options.readTimeout))
+      c.setConnectTimeout(timeout(opts.connectionTimeout))
 
-    // redirects are handled by FollowRedirectsBackend
-    c.setInstanceFollowRedirects(false)
+      // redirects are handled by FollowRedirectsBackend
+      c.setInstanceFollowRedirects(false)
 
-    customizeConnection(c)
+      customizeConnection(c)
 
-    if (r.body != NoBody) {
-      c.setDoOutput(true)
-      // we need to take care to:
-      // (1) only call getOutputStream after the headers are set
-      // (2) call it ony once
-      writeBody(r, c).foreach { os =>
-        os.flush()
-        os.close()
+      if (r.body != NoBody) {
+        c.setDoOutput(true)
+        // we need to take care to:
+        // (1) only call getOutputStream after the headers are set
+        // (2) call it ony once
+        writeBody(r, c).foreach { os =>
+          os.flush()
+          os.close()
+        }
+      }
+
+      try {
+        val is = c.getInputStream
+        readResponse(c, is, r.response)
+      } catch {
+        case e: CharacterCodingException     => throw e
+        case e: UnsupportedEncodingException => throw e
+        case e: SocketException              => throw e
+        case _: IOException if c.getResponseCode != -1 =>
+          readResponse(c, c.getErrorStream, r.response)
       }
     }
-
-    try {
-      val is = c.getInputStream
-      readResponse(c, is, r.response)
-    } catch {
-      case e: CharacterCodingException     => throw e
-      case e: UnsupportedEncodingException => throw e
-      case e: SocketException              => throw e
-      case _: IOException if c.getResponseCode != -1 =>
-        readResponse(c, c.getErrorStream, r.response)
-    }
-  }
 
   override def openWebsocket[T, WR](
       request: Request[T, Nothing],
@@ -139,7 +140,11 @@ class HttpURLConnectionBackend private (
   private val BoundaryChars =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".toCharArray
 
-  private def setMultipartBody(r: Request[_, Nothing], mp: MultipartBody, c: HttpURLConnection): Option[OutputStream] = {
+  private def setMultipartBody(
+      r: Request[_, Nothing],
+      mp: MultipartBody,
+      c: HttpURLConnection
+  ): Option[OutputStream] = {
     val boundary = {
       val tlr = ThreadLocalRandom.current()
       List

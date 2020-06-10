@@ -29,69 +29,70 @@ abstract class AbstractCurlBackend[F[_], S](monad: MonadError[F], verbose: Boole
   private var headers: CurlList = _
   private var multiPartHeaders: Seq[CurlList] = Seq()
 
-  override def send[T](request: Request[T, S]): F[Response[T]] = unsafe.Zone { implicit z =>
-    val curl = CurlApi.init
-    if (verbose) {
-      curl.option(Verbose, parameter = true)
-    }
-    if (request.tags.nonEmpty) {
-      responseMonad.error(new UnsupportedOperationException("Tags are not supported"))
-    }
-    val reqHeaders = request.headers
-    if (reqHeaders.nonEmpty) {
-      reqHeaders.find(_.name == "Accept-Encoding").foreach(h => curl.option(AcceptEncoding, h.value))
-      request.body match {
-        case _: MultipartBody =>
-          headers = transformHeaders(
-            reqHeaders :+ Header.contentType(MediaType.MultipartFormData)
+  override def send[T](request: Request[T, S]): F[Response[T]] =
+    unsafe.Zone { implicit z =>
+      val curl = CurlApi.init
+      if (verbose) {
+        curl.option(Verbose, parameter = true)
+      }
+      if (request.tags.nonEmpty) {
+        responseMonad.error(new UnsupportedOperationException("Tags are not supported"))
+      }
+      val reqHeaders = request.headers
+      if (reqHeaders.nonEmpty) {
+        reqHeaders.find(_.name == "Accept-Encoding").foreach(h => curl.option(AcceptEncoding, h.value))
+        request.body match {
+          case _: MultipartBody =>
+            headers = transformHeaders(
+              reqHeaders :+ Header.contentType(MediaType.MultipartFormData)
+            )
+          case _ =>
+            headers = transformHeaders(reqHeaders)
+        }
+        curl.option(HttpHeader, headers.ptr)
+      }
+
+      val spaces = responseSpace
+      curl.option(WriteFunction, AbstractCurlBackend.wdFunc)
+      curl.option(WriteData, spaces.bodyResp)
+      curl.option(HeaderData, spaces.headersResp)
+      curl.option(Url, request.uri.toString)
+      curl.option(TimeoutMs, request.options.readTimeout.toMillis)
+      setMethod(curl, request.method)
+
+      setRequestBody(curl, request.body)
+
+      responseMonad.flatMap(lift(curl.perform)) { _ =>
+        curl.info(ResponseCode, spaces.httpCode)
+        val responseBody = fromCString((!spaces.bodyResp)._1)
+        val responseHeaders_ = parseHeaders(fromCString((!spaces.headersResp)._1))
+        val httpCode = StatusCode((!spaces.httpCode).toInt)
+
+        if (headers.ptr != null) headers.ptr.free()
+        multiPartHeaders.foreach(_.ptr.free())
+        free((!spaces.bodyResp)._1)
+        free((!spaces.headersResp)._1)
+        free(spaces.bodyResp.asInstanceOf[Ptr[CSignedChar]])
+        free(spaces.headersResp.asInstanceOf[Ptr[CSignedChar]])
+        free(spaces.httpCode.asInstanceOf[Ptr[CSignedChar]])
+        curl.cleanup()
+
+        val statusText = responseHeaders_.head.name.split(" ").last
+        val responseHeaders = responseHeaders_.tail
+        val responseMetadata = ResponseMetadata(responseHeaders, httpCode, statusText)
+
+        val body: F[T] = readResponseBody(responseBody, request.response, responseMetadata)
+        responseMonad.map(body) { b =>
+          Response[T](
+            body = b,
+            code = httpCode,
+            statusText = statusText,
+            headers = responseHeaders,
+            history = Nil
           )
-        case _ =>
-          headers = transformHeaders(reqHeaders)
-      }
-      curl.option(HttpHeader, headers.ptr)
-    }
-
-    val spaces = responseSpace
-    curl.option(WriteFunction, AbstractCurlBackend.wdFunc)
-    curl.option(WriteData, spaces.bodyResp)
-    curl.option(HeaderData, spaces.headersResp)
-    curl.option(Url, request.uri.toString)
-    curl.option(TimeoutMs, request.options.readTimeout.toMillis)
-    setMethod(curl, request.method)
-
-    setRequestBody(curl, request.body)
-
-    responseMonad.flatMap(lift(curl.perform)) { _ =>
-      curl.info(ResponseCode, spaces.httpCode)
-      val responseBody = fromCString((!spaces.bodyResp)._1)
-      val responseHeaders_ = parseHeaders(fromCString((!spaces.headersResp)._1))
-      val httpCode = StatusCode((!spaces.httpCode).toInt)
-
-      if (headers.ptr != null) headers.ptr.free()
-      multiPartHeaders.foreach(_.ptr.free())
-      free((!spaces.bodyResp)._1)
-      free((!spaces.headersResp)._1)
-      free(spaces.bodyResp.asInstanceOf[Ptr[CSignedChar]])
-      free(spaces.headersResp.asInstanceOf[Ptr[CSignedChar]])
-      free(spaces.httpCode.asInstanceOf[Ptr[CSignedChar]])
-      curl.cleanup()
-
-      val statusText = responseHeaders_.head.name.split(" ").last
-      val responseHeaders = responseHeaders_.tail
-      val responseMetadata = ResponseMetadata(responseHeaders, httpCode, statusText)
-
-      val body: F[T] = readResponseBody(responseBody, request.response, responseMetadata)
-      responseMonad.map(body) { b =>
-        Response[T](
-          body = b,
-          code = httpCode,
-          statusText = statusText,
-          headers = responseHeaders,
-          history = Nil
-        )
+        }
       }
     }
-  }
 
   override def openWebsocket[T, WS_RESULT](
       request: Request[T, S],

@@ -87,7 +87,7 @@ case class RequestT[U[_], T, +S](
   def header(k: String, v: String, replaceExisting: Boolean): RequestT[U, T, S] =
     header(Header(k, v), replaceExisting)
   def header(k: String, v: String): RequestT[U, T, S] = header(Header(k, v))
-  def header(k: String, ov: Option[String]): RequestT[U, T, S]  = ov.fold(this)(header(k,_))
+  def header(k: String, ov: Option[String]): RequestT[U, T, S] = ov.fold(this)(header(k, _))
   def headers(hs: Map[String, String]): RequestT[U, T, S] =
     headers(hs.map(t => Header(t._1, t._2)).toSeq: _*)
   def headers(hs: Header*): RequestT[U, T, S] = this.copy(headers = headers ++ hs)

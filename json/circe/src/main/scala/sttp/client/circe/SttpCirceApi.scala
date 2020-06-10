@@ -8,8 +8,8 @@ import sttp.client.{IsOption, ResponseAs, ResponseError}
 import sttp.model.MediaType
 
 trait SttpCirceApi {
-  implicit def circeBodySerializer[B](
-      implicit encoder: Encoder[B],
+  implicit def circeBodySerializer[B](implicit
+      encoder: Encoder[B],
       printer: Printer = Printer.noSpaces
   ): BodySerializer[B] =
     b => StringBody(encoder(b).pretty(printer), Utf8, Some(MediaType.ApplicationJson))

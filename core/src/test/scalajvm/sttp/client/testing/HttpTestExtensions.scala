@@ -194,7 +194,7 @@ trait HttpTestExtensions[F[_]] { self: HttpTest[F] =>
     val md = MessageDigest.getInstance("MD5")
     md.update(bytes)
     val hash = md.digest()
-    hash.map(0xFF & _).map("%02x".format(_)).mkString
+    hash.map(0xff & _).map("%02x".format(_)).mkString
   }
 
   private def md5FileHash(file: File): Future[String] = {

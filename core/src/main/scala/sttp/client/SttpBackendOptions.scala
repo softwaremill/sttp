@@ -59,22 +59,23 @@ object SttpBackendOptions {
       nonProxyHosts.exists(isWildCardMatch(host, _))
     }
 
-    def asJavaProxySelector: net.ProxySelector = new net.ProxySelector {
-      override def select(uri: net.URI): util.List[net.Proxy] = {
-        val proxyList = new util.ArrayList[net.Proxy](1)
-        val uriHost = uri.getHost
-        if (ignoreProxy(uriHost)) {
-          proxyList.add(net.Proxy.NO_PROXY)
-        } else {
-          proxyList.add(asJavaProxy)
+    def asJavaProxySelector: net.ProxySelector =
+      new net.ProxySelector {
+        override def select(uri: net.URI): util.List[net.Proxy] = {
+          val proxyList = new util.ArrayList[net.Proxy](1)
+          val uriHost = uri.getHost
+          if (ignoreProxy(uriHost)) {
+            proxyList.add(net.Proxy.NO_PROXY)
+          } else {
+            proxyList.add(asJavaProxy)
+          }
+          proxyList
         }
-        proxyList
-      }
 
-      override def connectFailed(uri: net.URI, sa: SocketAddress, ioe: IOException): Unit = {
-        throw new UnsupportedOperationException("Couldn't connect to the proxy server.")
+        override def connectFailed(uri: net.URI, sa: SocketAddress, ioe: IOException): Unit = {
+          throw new UnsupportedOperationException("Couldn't connect to the proxy server.")
+        }
       }
-    }
     def asJavaProxy = new java.net.Proxy(proxyType.asJava, inetSocketAddress)
     def inetSocketAddress: InetSocketAddress =
       InetSocketAddress.createUnresolved(host, port)

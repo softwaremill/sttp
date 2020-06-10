@@ -30,52 +30,54 @@ object AkkaHttpClient {
       system: ActorSystem,
       connectionContext: Option[HttpsConnectionContext],
       customLog: Option[LoggingAdapter]
-  ): AkkaHttpClient = new AkkaHttpClient {
-    private val http = Http()(system)
+  ): AkkaHttpClient =
+    new AkkaHttpClient {
+      private val http = Http()(system)
 
-    override def singleRequest(
-        request: HttpRequest,
-        settings: ConnectionPoolSettings
-    ): Future[HttpResponse] = {
-      http.singleRequest(
-        request,
-        connectionContext.getOrElse(http.defaultClientHttpsContext),
-        settings,
-        customLog.getOrElse(system.log)
-      )
+      override def singleRequest(
+          request: HttpRequest,
+          settings: ConnectionPoolSettings
+      ): Future[HttpResponse] = {
+        http.singleRequest(
+          request,
+          connectionContext.getOrElse(http.defaultClientHttpsContext),
+          settings,
+          customLog.getOrElse(system.log)
+        )
+      }
+
+      override def singleWebsocketRequest[WS_RESULT](
+          request: WebSocketRequest,
+          clientFlow: Flow[Message, Message, WS_RESULT],
+          settings: ClientConnectionSettings
+      )(implicit ec: ExecutionContext, mat: Materializer): Future[(WebSocketUpgradeResponse, WS_RESULT)] = {
+        val (wsResponse, wsResult) = http.singleWebSocketRequest(
+          request,
+          clientFlow,
+          connectionContext.getOrElse(http.defaultClientHttpsContext),
+          None,
+          settings,
+          customLog.getOrElse(system.log)
+        )
+        wsResponse.map((_, wsResult))
+      }
     }
 
-    override def singleWebsocketRequest[WS_RESULT](
-        request: WebSocketRequest,
-        clientFlow: Flow[Message, Message, WS_RESULT],
-        settings: ClientConnectionSettings
-    )(implicit ec: ExecutionContext, mat: Materializer): Future[(WebSocketUpgradeResponse, WS_RESULT)] = {
-      val (wsResponse, wsResult) = http.singleWebSocketRequest(
-        request,
-        clientFlow,
-        connectionContext.getOrElse(http.defaultClientHttpsContext),
-        None,
-        settings,
-        customLog.getOrElse(system.log)
-      )
-      wsResponse.map((_, wsResult))
+  def stubFromAsyncHandler(run: HttpRequest => Future[HttpResponse]): AkkaHttpClient =
+    new AkkaHttpClient {
+      def singleRequest(request: HttpRequest, settings: ConnectionPoolSettings): Future[HttpResponse] =
+        run(request)
+
+      override def singleWebsocketRequest[WS_RESULT](
+          request: WebSocketRequest,
+          clientFlow: Flow[Message, Message, WS_RESULT],
+          settings: ClientConnectionSettings
+      )(implicit ec: ExecutionContext, mat: Materializer): Future[(WebSocketUpgradeResponse, WS_RESULT)] =
+        Future.failed(new RuntimeException("Websockets are not supported"))
     }
-  }
 
-  def stubFromAsyncHandler(run: HttpRequest => Future[HttpResponse]): AkkaHttpClient = new AkkaHttpClient {
-    def singleRequest(request: HttpRequest, settings: ConnectionPoolSettings): Future[HttpResponse] =
-      run(request)
-
-    override def singleWebsocketRequest[WS_RESULT](
-        request: WebSocketRequest,
-        clientFlow: Flow[Message, Message, WS_RESULT],
-        settings: ClientConnectionSettings
-    )(implicit ec: ExecutionContext, mat: Materializer): Future[(WebSocketUpgradeResponse, WS_RESULT)] =
-      Future.failed(new RuntimeException("Websockets are not supported"))
-  }
-
-  def stubFromRoute(route: Route)(
-      implicit routingSettings: RoutingSettings,
+  def stubFromRoute(route: Route)(implicit
+      routingSettings: RoutingSettings,
       parserSettings: ParserSettings,
       materializer: Materializer,
       routingLog: RoutingLog,

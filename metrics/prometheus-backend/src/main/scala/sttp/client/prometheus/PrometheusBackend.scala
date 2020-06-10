@@ -164,9 +164,12 @@ class PrometheusListener(
       data: C,
       create: C => T
   ): T =
-    cache.computeIfAbsent(data.collectorName, new java.util.function.Function[String, T] {
-      override def apply(t: String): T = create(data)
-    })
+    cache.computeIfAbsent(
+      data.collectorName,
+      new java.util.function.Function[String, T] {
+        override def apply(t: String): T = create(data)
+      }
+    )
 
   private def createNewHistogram(data: HistogramCollectorConfig): Histogram =
     Histogram

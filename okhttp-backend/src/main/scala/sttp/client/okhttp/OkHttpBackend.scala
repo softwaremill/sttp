@@ -415,7 +415,9 @@ object OkHttpFutureBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackendStub[Future, Nothing, WebSocketHandler] =
+  def stub(implicit
+      ec: ExecutionContext = ExecutionContext.global
+  ): SttpBackendStub[Future, Nothing, WebSocketHandler] =
     SttpBackendStub(new FutureMonad())
 }
 

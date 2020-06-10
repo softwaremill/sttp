@@ -70,41 +70,43 @@ abstract class AsyncHttpClientBackend[F[_], S](
     closeClient: Boolean,
     customizeRequest: BoundRequestBuilder => BoundRequestBuilder
 ) extends SttpBackend[F, S, WebSocketHandler] {
-  override def send[T](r: Request[T, S]): F[Response[T]] = adjustExceptions {
-    preparedRequest(r).flatMap { ahcRequest =>
-      monad.flatten(monad.async[F[Response[T]]] { cb =>
-        def success(r: F[Response[T]]): Unit = cb(Right(r))
-        def error(t: Throwable): Unit = cb(Left(t))
+  override def send[T](r: Request[T, S]): F[Response[T]] =
+    adjustExceptions {
+      preparedRequest(r).flatMap { ahcRequest =>
+        monad.flatten(monad.async[F[Response[T]]] { cb =>
+          def success(r: F[Response[T]]): Unit = cb(Right(r))
+          def error(t: Throwable): Unit = cb(Left(t))
 
-        val lf = ahcRequest.execute(streamingAsyncHandler(r.response, success, error))
-        Canceler(() => lf.abort(new InterruptedException))
-      })
+          val lf = ahcRequest.execute(streamingAsyncHandler(r.response, success, error))
+          Canceler(() => lf.abort(new InterruptedException))
+        })
+      }
     }
-  }
 
   override def openWebsocket[T, WS_RESULT](
       r: Request[T, S],
       handler: WebSocketHandler[WS_RESULT]
-  ): F[WebSocketResponse[WS_RESULT]] = adjustExceptions {
-    preparedRequest(r).flatMap { ahcRequest =>
-      monad.async[WebSocketResponse[WS_RESULT]] { cb =>
-        val initListener =
-          new WebSocketInitListener(
-            (r: WebSocketResponse[WS_RESULT]) => cb(Right(r)),
-            t => cb(Left(t)),
-            handler.createResult
-          )
-        val h = new WebSocketUpgradeHandler.Builder()
-          .addWebSocketListener(initListener)
-          .addWebSocketListener(handler.listener)
-          .build()
+  ): F[WebSocketResponse[WS_RESULT]] =
+    adjustExceptions {
+      preparedRequest(r).flatMap { ahcRequest =>
+        monad.async[WebSocketResponse[WS_RESULT]] { cb =>
+          val initListener =
+            new WebSocketInitListener(
+              (r: WebSocketResponse[WS_RESULT]) => cb(Right(r)),
+              t => cb(Left(t)),
+              handler.createResult
+            )
+          val h = new WebSocketUpgradeHandler.Builder()
+            .addWebSocketListener(initListener)
+            .addWebSocketListener(handler.listener)
+            .build()
 
-        val lf = ahcRequest.execute(h)
+          val lf = ahcRequest.execute(h)
 
-        Canceler(() => lf.abort(new InterruptedException))
+          Canceler(() => lf.abort(new InterruptedException))
+        }
       }
     }
-  }
 
   override def responseMonad: MonadError[F] = monad
 

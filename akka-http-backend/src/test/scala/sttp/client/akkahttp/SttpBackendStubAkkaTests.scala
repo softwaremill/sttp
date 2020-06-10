@@ -82,7 +82,8 @@ class SttpBackendStubAkkaTests extends AnyFlatSpec with Matchers with ScalaFutur
       .get(uri"wss://echo.websocket.org")
       .openWebsocket(clientFlow)
       .flatMap(_.result)
-      .futureValue.toList
+      .futureValue
+      .toList
 
     receivedMessages shouldBe List("Hi!", "echo: test1", "echo: test2").map(TextMessage(_))
   }

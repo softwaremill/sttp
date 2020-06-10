@@ -42,7 +42,7 @@ class OpenTracingBackendTest extends FlatSpec with Matchers with BeforeAndAfter 
     spans should have size 1
     val spanId = spans.asScala.head.context().spanId()
     val traceId = spans.asScala.head.context().traceId()
-    recordedRequests(0).headers.collectFirst { case h if h.name == "spanid"  => h.value } shouldBe Some(spanId.toString)
+    recordedRequests(0).headers.collectFirst { case h if h.name == "spanid" => h.value } shouldBe Some(spanId.toString)
     recordedRequests(0).headers.collectFirst { case h if h.name == "traceid" => h.value } shouldBe Some(
       traceId.toString
     )
@@ -68,7 +68,8 @@ class OpenTracingBackendTest extends FlatSpec with Matchers with BeforeAndAfter 
     val activeSpan = tracer.buildSpan("active-op").start()
     tracer.activateSpan(activeSpan)
     val parentSpan = tracer.buildSpan("parent-op").start()
-    val response = basicRequest.post(uri"http://stub/echo")
+    val response = basicRequest
+      .post(uri"http://stub/echo")
       .tagWithOperationId("overridden-op")
       .setOpenTracingParentSpan(parentSpan)
       .send()
