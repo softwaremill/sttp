@@ -233,6 +233,24 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
         complete(HttpEntity(textFile))
       }
     } ~ pathPrefix("multipart") {
+      pathPrefix("other") { 
+        extractRequest { request =>
+          entity(as[akka.http.scaladsl.model.Multipart.General]) { (fd: akka.http.scaladsl.model.Multipart.General) =>
+            complete {
+              fd.parts
+                .mapAsync(1) { p =>
+                  val fv = p.entity.dataBytes.runFold(ByteString())(_ ++ _)
+                  fv.map(_.utf8String)
+                }
+                .runFold(Vector.empty[String])(_ :+ _)
+                .map(v => v.mkString(", "))
+                .map(v =>
+                  s"${request.entity.contentType},$v"
+                )
+            }
+          }
+        }
+      } ~
       entity(as[akka.http.scaladsl.model.Multipart.FormData]) { (fd: akka.http.scaladsl.model.Multipart.FormData) =>
         complete {
           fd.parts

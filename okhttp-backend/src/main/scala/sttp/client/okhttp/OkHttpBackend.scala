@@ -99,8 +99,7 @@ abstract class OkHttpBackend[F[_], S](
       case StreamBody(s) =>
         streamToRequestBody(s)
       case MultipartBody(ps) =>
-        val b = new OkHttpMultipartBody.Builder()
-          .setType(OkHttpMultipartBody.FORM)
+        val b = new OkHttpMultipartBody.Builder().setType(Option(mediaType).getOrElse(OkHttpMultipartBody.FORM))
         ps.foreach(addMultipart(b, _))
         Some(b.build())
     }

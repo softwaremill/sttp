@@ -15,4 +15,5 @@ class Http4sHttpTest extends HttpTest[IO] with CatsTestBase {
     Http4sBackend.usingClientBuilder(blazeClientBuilder, blocker).allocated.unsafeRunSync()._1
 
   override protected def supportsRequestTimeout = false
+  override protected def supportsCustomMultipartContentType = false
 }
