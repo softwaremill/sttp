@@ -155,7 +155,7 @@ abstract class OkHttpBackend[F[_], S](
           case IgnoreResponse =>
             Try(responseBody.close())
           case ResponseAsByteArray =>
-            val body = Try(responseBody.readAllBytes())
+            val body = Try(Stream.continually(responseBody.read()).takeWhile(_ != -1).map(_.toByte).toArray)
             responseBody.close()
             body
           case ras @ ResponseAsStream() =>
