@@ -526,12 +526,12 @@ lazy val httpClientBackend = (projectMatrix in file("httpclient-backend"))
   .jvmPlatform(scalaVersions = List(scala2_13, scala3))
   .dependsOn(core % compileAndTest)
 
-def httpClientBackendProject(proj: String) = {
+def httpClientBackendProject(proj: String, includeDotty: Boolean = false) = {
   ProjectMatrix(s"httpClientBackend${proj.capitalize}", file(s"httpclient-backend/$proj"))
     .settings(commonJvmSettings)
     .settings(testServerSettings)
     .settings(name := s"httpclient-backend-$proj")
-    .jvmPlatform(scalaVersions = List(scala2_13))
+    .jvmPlatform(scalaVersions = List(scala2_13) ++ (if (includeDotty) List(scala3) else Nil))
     .dependsOn(httpClientBackend % compileAndTest)
 }
 
@@ -550,7 +550,7 @@ lazy val httpClientFs2Backend =
     .dependsOn(fs2 % compileAndTest)
 
 lazy val httpClientZioBackend =
-  httpClientBackendProject("zio")
+  httpClientBackendProject("zio", includeDotty = true)
     .settings(
       libraryDependencies ++=
         Seq(
