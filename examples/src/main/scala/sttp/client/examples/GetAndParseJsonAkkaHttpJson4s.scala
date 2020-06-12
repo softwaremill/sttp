@@ -12,6 +12,7 @@ object GetAndParseJsonAkkaHttpJson4s extends App {
   case class HttpBinResponse(origin: String, headers: Map[String, String])
 
   implicit val serialization = org.json4s.native.Serialization
+  implicit val formats = org.json4s.DefaultFormats
   val request = basicRequest
     .get(uri"https://httpbin.org/get")
     .response(asJson[HttpBinResponse])
