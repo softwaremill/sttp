@@ -20,4 +20,5 @@ class FinagleBackendTest extends HttpTest[TFuture] {
     }
   }
   override def throwsExceptionOnUnsupportedEncoding = false
+  override def supportsCustomMultipartContentType = false
 }

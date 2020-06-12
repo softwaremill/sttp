@@ -11,4 +11,6 @@ class FetchMonixHttpTest extends AbstractFetchHttpTest[Task, Observable[ByteBuff
 
   override implicit val backend: SttpBackend[Task, Observable[ByteBuffer], NothingT] = FetchMonixBackend()
   override implicit val convertToFuture: ConvertToFuture[Task] = convertMonixTaskToFuture
+
+  override protected def supportsCustomMultipartContentType = false
 }
