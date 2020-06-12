@@ -167,15 +167,15 @@ val circeVersion: Option[(Long, Long)] => String = {
 }
 val playJsonVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.7.4"
-  case _             => "2.8.1"
+  case _             => "2.9.0"
 }
 val catsEffectVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.0.0"
-  case _             => "2.1.2"
+  case _             => "2.1.3"
 }
 val fs2Version: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.1.0"
-  case _             => "2.3.0"
+  case _             => "2.4.1"
 }
 
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.12"
