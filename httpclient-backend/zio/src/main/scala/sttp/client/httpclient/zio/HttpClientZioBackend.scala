@@ -10,6 +10,7 @@ import sttp.client.NothingT
 import sttp.client.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client.httpclient.{HttpClientAsyncBackend, HttpClientBackend}
 import sttp.client.impl.zio.RIOMonadAsyncError
+import sttp.client.testing.SttpBackendStub
 import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 import zio._
 import zio.blocking.Blocking
