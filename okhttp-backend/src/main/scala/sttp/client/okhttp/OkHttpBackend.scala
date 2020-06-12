@@ -44,6 +44,7 @@ import sttp.client.{
   SttpBackendOptions,
   _
 }
+import sttp.client.internal.toByteArray
 
 import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
@@ -155,7 +156,7 @@ abstract class OkHttpBackend[F[_], S](
           case IgnoreResponse =>
             Try(responseBody.close())
           case ResponseAsByteArray =>
-            val body = Try(Stream.continually(responseBody.read()).takeWhile(_ != -1).map(_.toByte).toArray)
+            val body = Try(toByteArray(responseBody))
             responseBody.close()
             body
           case ras @ ResponseAsStream() =>
