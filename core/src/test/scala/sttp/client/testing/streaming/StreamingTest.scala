@@ -2,17 +2,19 @@ package sttp.client.testing.streaming
 
 import sttp.client._
 import sttp.client.testing.{ConvertToFuture, ToFutureWrapper}
-import org.scalatest.BeforeAndAfterAll
+import org.scalatest.{BeforeAndAfterAll, SuiteMixin}
+import org.scalatest.freespec.AsyncFreeSpecLike
 import StreamingTest._
 import sttp.client.internal.Utf8
 
 import scala.language.higherKinds
-import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
 import sttp.client.testing.HttpTest.endpoint
 
+// TODO: change to `extends AsyncFreeSpec` when https://github.com/scalatest/scalatest/issues/1802 is fixed
 trait StreamingTest[F[_], S]
-    extends AsyncFreeSpec
+  extends SuiteMixin
+    with AsyncFreeSpecLike
     with Matchers
     with ToFutureWrapper
     with BeforeAndAfterAll
