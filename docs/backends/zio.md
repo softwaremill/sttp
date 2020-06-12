@@ -67,18 +67,23 @@ As an alternative to effectfully or resourcefully creating backend instances, ZI
 
 ```scala
 package sttp.client.asynchttpclient.zio
-
 type SttpClient = Has[SttpBackend[Task, Stream[Throwable, Byte], WebSocketHandler]]
+
+// or, when using Java 11 & HttpClient
+
+package sttp.client.httpclient.zio
+type SttpClient = Has[SttpBackend[BlockingTask, ZStream[Blocking, Throwable, Byte], NothingT]]
 ```
 
-The lifecycle of the `SttpClient` service is described by `ZLayer`s, which can be created using the `.layer`/`.layerUsingConfig`/... methods on `AsyncHttpClientZioBackend`.
+The lifecycle of the `SttpClient` service is described by `ZLayer`s, which can be created using the `.layer`/`.layerUsingConfig`/... methods on `AsyncHttpClientZioBackend` / `HttpClientZioBackend`.
 
 The `SttpClient` companion object contains effect descriptions which use the `SttpClient` service from the environment to send requests or open websockets. This is different from sttp usage with other effect libraries (which use an implicit backend when `.send()`/`.openWebsocket()` is invoked on the request), but is more in line with how other ZIO services work. For example:
 
 ```scala
 val request = basicRequest.get(uri"https://httpbin.org/get")
 
-val send: ZIO[SttpClient, Throwable, Response[Either[String, String]]] = SttpClient.send(request)
+val send: ZIO[SttpClient, Throwable, Response[Either[String, String]]] = 
+  SttpClient.send(request)
 ```
 
 Example using websockets:
@@ -86,15 +91,15 @@ Example using websockets:
 ```scala
 val request = basicRequest.get(uri"wss://echo.websocket.org")
 
-val open: ZIO[SttpClient, Throwable, WebSocketResponse[WebSocket[Task]]] = SttpClient.openWebsocket(request)
+val open: ZIO[SttpClient, Throwable, WebSocketResponse[WebSocket[Task]]] = 
+  SttpClient.openWebsocket(request)
 ```
 
 ## Streaming
 
-The ZIO based backends support streaming using zio-streams. The following example is for the AsyncHttpClient based
-backend.
-The backend supports streaming of type `Stream[Throwable, Byte]`. To leverage ZIO environment, use the
-`SttpClient` object to create request send/websocket open effects.
+The ZIO based backends support streaming using zio-streams. The following example is using the `AsyncHttpClientZioBackend` backend, but works similarly with `HttpClientZioBackend`.
+
+The type of supported streams is `Stream[Throwable, Byte]`. To leverage ZIO environment, use the `SttpClient` object to create request send/websocket open effects.
 
 Requests can be sent with a streaming body:
 
@@ -105,34 +110,33 @@ import sttp.client.asynchttpclient.zio._
 import zio._
 import zio.stream._
 
-AsyncHttpClientZioBackend().flatMap { implicit backend =>
-  val s: Stream[Throwable, Byte] =  ...
+val s: Stream[Throwable, Byte] =  ...
 
-  basicRequest
-    .streamBody(s)
-    .post(uri"...")
-}
+val request = basicRequest
+  .streamBody(s)
+  .post(uri"...")
+
+SttpClient.send(request)
 ```
 
 And receive response bodies as a stream:
 
 ```scala
 import sttp.client._
-import sttp.client.asynchttpclient.ziostreams._
+import sttp.client.asynchttpclient.zio._
 
 import zio._
 import zio.stream._
 
 import scala.concurrent.duration.Duration
 
-AsyncHttpClientZioStreamsBackend().flatMap { implicit backend =>
-  val response: Task[Response[Either[String, Stream[Throwable, Byte]]]] =
-    basicRequest
-      .post(uri"...")
-      .response(asStream[Stream[Throwable, Byte]])
-      .readTimeout(Duration.Inf)
-      .send()
-}
+val request =
+  basicRequest
+    .post(uri"...")
+    .response(asStream[Stream[Throwable, Byte]])
+    .readTimeout(Duration.Inf)
+
+val response: ZIO[SttpClient, Throwable, Response[Either[String, Stream[Throwable, Byte]]]] = SttpClient.send(request)
 ```
 
 ## Websockets

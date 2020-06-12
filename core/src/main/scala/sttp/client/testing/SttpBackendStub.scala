@@ -159,10 +159,18 @@ class SttpBackendStub[F[_], S, WS_HANDLER[_]](
     }
 
     /**
-      * When [[openWebsocket()]] is called, it will ignore handler and return given result.
-      * This method is intended to be used when [[openWebsocket()]] is called with sttp supplied handlers
-      * that return wrapped WebSocket as WS_RESULT.
-      * */
+      * When [[openWebsocket()]] is called, the passed handler will be ignored, and the given result will be returned.
+      * This method of stubbing is best suited when using the "high-level" websockets, that is when `WS_RESULT` is
+      * [[WebSocket]].
+      */
+    def thenRespondWebSocket[WS_RESULT](result: WS_RESULT): SttpBackendStub[F, S, WS_HANDLER] =
+      thenRespondWebSocket(Headers(List.empty), result)
+
+    /**
+      * When [[openWebsocket()]] is called, the passed handler will be ignored, and the given result will be returned.
+      * This method of stubbing is best suited when using the "high-level" websockets, that is when `WS_RESULT` is
+      * [[WebSocket]].
+      */
     def thenRespondWebSocket[WS_RESULT](headers: Headers, result: WS_RESULT): SttpBackendStub[F, S, WS_HANDLER] = {
       val m: PartialFunction[Request[_, _], WhenOpenWebsocket[F, WS_HANDLER]] = {
         case r if p(r) =>
@@ -172,10 +180,22 @@ class SttpBackendStub[F[_], S, WS_HANDLER[_]](
     }
 
     /**
-      * When [[openWebsocket()]] is called, it will ignore handler and return given result.
-      * It is intended to be used when [[openWebsocket()]] is called with sttp supplied handlers
-      * It returns [[WebSocket]] built by [[WebSocketStub]] wrapped as WS_RESULT.
-      * */
+      * When [[openWebsocket()]] is called, the passed handler will be ignored, and the given result will be returned.
+      * This method of stubbing should be used when using the "high-level" websockets, that is when `WS_RESULT` is
+      * [[WebSocket]].
+      *
+     * The websocket instance will be built using the given [[WebSocketStub]].
+      */
+    def thenRespondWebSocket(wsStub: WebSocketStub[_]): SttpBackendStub[F, S, WS_HANDLER] =
+      thenRespondWebSocket(Headers(List.empty), wsStub)
+
+    /**
+      * When [[openWebsocket()]] is called, the passed handler will be ignored, and the given result will be returned.
+      * This method of stubbing should be used when using the "high-level" websockets, that is when `WS_RESULT` is
+      * [[WebSocket]].
+      *
+      * The websocket instance will be built using the given [[WebSocketStub]].
+      */
     def thenRespondWebSocket(headers: Headers, wsStub: WebSocketStub[_]): SttpBackendStub[F, S, WS_HANDLER] = {
       val m: PartialFunction[Request[_, _], WhenOpenWebsocket[F, WS_HANDLER]] = {
         case r if p(r) =>
@@ -185,11 +205,23 @@ class SttpBackendStub[F[_], S, WS_HANDLER[_]](
     }
 
     /**
-      * When [[openWebsocket()]] is called it uses given headers and handler to create result.
-      * It is intended to be used when [[openWebsocket()]] is called with user supplied handler that
-      * doesn't return WebSocket object to act on.
+      * When [[openWebsocket()]] is called, the given headers and handler are used to create the result.
+      * This method of stubbing is best suited when [[openWebsocket()]] is called with a handler that
+      * doesn't return a "high-level" [[WebSocket]], but instead e.g. a backend-specific stream.
       * */
-    def thenHandleOpenWebSocket[WS_RESULT](headers: Headers, useHandler: WS_HANDLER[WS_RESULT] => WS_RESULT) = {
+    def thenHandleOpenWebSocket[WS_RESULT](
+        useHandler: WS_HANDLER[WS_RESULT] => WS_RESULT
+    ): SttpBackendStub[F, S, WS_HANDLER] = thenHandleOpenWebSocket(Headers(List.empty), useHandler)
+
+    /**
+      * When [[openWebsocket()]] is called, the given headers and handler are used to create the result.
+      * This method of stubbing is best suited when [[openWebsocket()]] is called with a handler that
+      * doesn't return a "high-level" [[WebSocket]], but instead e.g. a backend-specific stream.
+      * */
+    def thenHandleOpenWebSocket[WS_RESULT](
+        headers: Headers,
+        useHandler: WS_HANDLER[WS_RESULT] => WS_RESULT
+    ): SttpBackendStub[F, S, WS_HANDLER] = {
       val m: PartialFunction[Request[_, _], WhenOpenWebsocket[F, WS_HANDLER]] = {
         case r if p(r) =>
           UseHandler(headers, useHandler.asInstanceOf[Any => WS_RESULT])
@@ -229,8 +261,8 @@ class SttpBackendStub[F[_], S, WS_HANDLER[_]](
 object SttpBackendStub {
 
   /**
-    * Create a stub synchronous backend (which doesn't wrap results in any
-    * container), without streaming support.
+    * Create a stub of a synchronous backend (which doesn't wrap results in any
+    * container), without streaming or websocket support.
     */
   def synchronous[WS_HANDLER[_]]: SttpBackendStub[Identity, Nothing, WS_HANDLER] =
     new SttpBackendStub[Identity, Nothing, WS_HANDLER](
@@ -241,8 +273,8 @@ object SttpBackendStub {
     )
 
   /**
-    * Create a stub asynchronous backend (which wraps results in Scala's
-    * built-in `Future`), without streaming support.
+    * Create a stub of an asynchronous backend (which wraps results in Scala's
+    * built-in [[Future]]), without streaming or websocket support.
     */
   def asynchronousFuture[WS_HANDLER[_]]: SttpBackendStub[Future, Nothing, WS_HANDLER] = {
     import scala.concurrent.ExecutionContext.Implicits.global
@@ -256,7 +288,7 @@ object SttpBackendStub {
 
   /**
     * Create a stub backend using the given response monad (which determines
-    * how requests are wrapped), any stream type and any web sockets handler.
+    * how requests are wrapped), any stream type and any websocket handler.
     */
   def apply[F[_], S, WS_RESPONSE[_]](responseMonad: MonadError[F]): SttpBackendStub[F, S, WS_RESPONSE] =
     new SttpBackendStub[F, S, WS_RESPONSE](
@@ -332,8 +364,12 @@ private[testing] case class ReturnWebsocketResponse[F[_], WS_RESULT](headers: He
     extends WhenOpenWebsocket[F, NothingT]
 
 /**
-  * A simple stub for web sockets that uses a queue of events for receive.
-  * New messages can be added to queue when `send` is invoked.
+  * A simple stub for websockets that uses a queue of responses which are returned when the client calls
+  * [[WebSocket.receive]].
+  *
+  * New messages can be added to queue in reaction to [[WebSocket.send]] being invoked, by specifying the
+  * behavior using one of the [[thenRespond]] variatns.
+  *
   * For more complex cases, please provide your own implementation of [[WebSocket]].
   */
 class WebSocketStub[S](
@@ -342,13 +378,21 @@ class WebSocketStub[S](
     makeNewResponses: (S, WebSocketFrame) => (S, List[Try[Either[WebSocketEvent.Close, WebSocketFrame.Incoming]]])
 ) {
 
-  /** Returns a stub that has the same initial messages but replaces the function that adds messages to receive when `sent` is called. */
+  /**
+    * Creates a stub that has the same initial responses, but replaces the function that adds messages to be
+    * received using [[WebSocket.receive]], in reaction to [[WebSocket.send]] being invoked.
+    */
   def thenRespond(addReceived: WebSocketFrame => List[WebSocketFrame.Incoming]): WebSocketStub[Unit] =
     thenRespondWith(
       addReceived.andThen(_.map(m => Success(Right(m): Either[WebSocketEvent.Close, WebSocketFrame.Incoming])))
     )
 
-  /** More powerful version of [[thenRespond()]]. Allows to use function that calls WebSocket to close or fails. */
+  /**
+    * Creates a stub that has the same initial responses, but replaces the function that adds responses to be
+    * received using [[WebSocket.receive]], in reaction to [[WebSocket.send]] being invoked.
+    *
+    * More powerful version of [[thenRespond]], as can result in the websocket to become closed.
+    */
   def thenRespondWith(
       addReceived: WebSocketFrame => List[Try[Either[WebSocketEvent.Close, WebSocketFrame.Incoming]]]
   ): WebSocketStub[Unit] =
@@ -358,7 +402,13 @@ class WebSocketStub[S](
       (_, frame) => ((), addReceived(frame))
     )
 
-  /** Allows to implement simple stateful logic for adding messages when `sent` is invoked. */
+  /**
+    * Creates a stub that has the same initial responses, but replaces the function that adds responses to be
+    * received using [[WebSocket.receive]], in reaction to [[WebSocket.send]] being invoked.
+    *
+    * More powerful version of [[thenRespond]], as the given function can additionally use state and implement stateful
+    * logic for computing response messages.
+    */
   def thenRespondS[S2](initial: S2)(
       onSend: (S2, WebSocketFrame) => (S2, List[WebSocketFrame.Incoming])
   ): WebSocketStub[S2] =
@@ -367,8 +417,13 @@ class WebSocketStub[S](
       (newState, messages.map(m => Success(Right(m): Either[WebSocketEvent.Close, WebSocketFrame.Incoming])))
     })
 
-  /** Allows to implement simple stateful logic for adding messages when `sent` is invoked
-    * with the possibility of signalling WebSocket closed or failure. */
+  /**
+    * Creates a stub that has the same initial responses, but replaces the function that adds responses to be
+    * received using [[WebSocket.receive]], in reaction to [[WebSocket.send]] being invoked.
+    *
+    * More powerful version of [[thenRespond]], as the given function can additionally use state and implement stateful
+    * logic for computing response messages, as well as result in the websocket to become closed.
+    */
   def thenRespondWithS[S2](initial: S2)(
       onSend: (S2, WebSocketFrame) => (S2, List[Try[Either[WebSocketEvent.Close, WebSocketFrame.Incoming]]])
   ): WebSocketStub[S2] = new WebSocketStub(initialResponses, initial, onSend)
@@ -380,7 +435,7 @@ class WebSocketStub[S](
       private var _isOpen: Boolean = true
       private var responses = initialResponses.toList
 
-      override def monad = m
+      override def monad: MonadError[F] = m
       override def isOpen: F[Boolean] = monad.unit(_isOpen)
 
       override def receive: F[Either[WebSocketEvent.Close, WebSocketFrame.Incoming]] =
@@ -422,15 +477,21 @@ class WebSocketStub[S](
 
 object WebSocketStub {
 
-  /** Creates a stub that has given responses prepared for 'receive' and doesn't add messages on 'send'. */
+  /**
+    * Creates a stub which will return the given responses when [[WebSocket.receive]] is called by the client.
+    * More messages can be enqueued to be returned by the stub by subsequently calling one of the
+    * [[WebSocketStub.thenRespond]] methods.
+    */
   def withInitialResponses(
       events: List[Try[Either[WebSocketEvent.Close, WebSocketFrame.Incoming]]]
   ): WebSocketStub[Unit] = {
     new WebSocketStub(events, (), (_, _) => ((), List.empty))
   }
 
-  /** Creates a stub that has given incoming frames prepared for 'receive' and doesn't add messages on 'send'.
-    * There is a more powerful version [[withInitialResponses()]] that takes a list of effects to return.
+  /**
+    * Creates a stub which will return the given messages when [[WebSocket.receive]] is called by the client.
+    * More messages can be enqueued to be returned by the stub by subsequently calling one of the
+    * [[WebSocketStub.thenRespond]] methods.
     */
   def withInitialIncoming(
       messages: List[WebSocketFrame.Incoming]
@@ -438,7 +499,11 @@ object WebSocketStub {
     withInitialResponses(messages.map(m => Success(Right(m): Either[WebSocketEvent.Close, WebSocketFrame.Incoming])))
   }
 
-  /** Creates a stub without any messages prepared for 'receive'. */
+  /**
+    * Creates a stub which won't return any initial responses when [[WebSocket.receive]] is called by the client.
+    * Messages can be enqueued to be returned by the stub by subsequently calling one of the
+    * [[WebSocketStub.thenRespond]] methods.
+    */
   def withNoInitialResponses: WebSocketStub[Unit] = withInitialResponses(List.empty)
 
 }

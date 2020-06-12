@@ -8,13 +8,10 @@ import _root_.zio.stream._
 package object zio {
 
   /**
-    * Experimental! ZIO-environment service definition, which is an SttpBackend.
+    * ZIO-environment service definition, which is an SttpBackend.
     */
   type SttpClient = Has[SttpBackend[Task, Stream[Throwable, Byte], WebSocketHandler]]
 
-  /**
-    * Experimental!
-    */
   object SttpClient {
 
     /**

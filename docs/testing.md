@@ -201,37 +201,43 @@ val response2 = basicRequest.post(uri"http://api.internal/b").send()
 
 ## Testing WebSockets
 
-Stub methods `whenRequestMatches` and `whenAnyRequest` also allow to specify behavior for `openWebsocket` call when 
-used together with `thenRespondWebSocket` or `thenHandleOpenWebSocket`. `thenRespondWebSocket` is intended for cases
-when sttp supplied `WebSocketHandler` is used, i.e. the cases where user's code manipulates `WebSocket[F]` to implement
-logic. This way `thenRespondWebSocket` can be used to return test double `WebSocket`.
+Stub methods `whenRequestMatches` and `whenAnyRequest` also allow specifying behavior when `openWebsocket` is called,
+using `thenRespondWebSocket` or `thenHandleOpenWebSocket`. 
 
-Example:
+The first behavior, `thenRespondWebSocket` is best suited when the [high-level](websockets.md) websocket interface
+is used, i.e. when the client code manipulates `WebSocket[F]` to implement the websocket-handling logic. 
+
+In this case, the handler that is passed to the `openWebsocket` call is ignored, and the test double `WebSocket`
+implementation is returned.
+
+For example:
+
 ```scala
 val testWebSocket: WebSocket[Task] = ???
 
 implicit val testingBackend =
   AsyncHttpClientZioBackend.stub
     .whenAnyRequest
-    .thenRespondWebSocket(Headers(List.empty), testWebSocket)
+    .thenRespondWebSocket(testWebSocket)
 
 for {
-  handler <- ZioWebSocketHandler() // using sttp supplied handler
+  handler <- ZioWebSocketHandler() // using sttp's "high-level" websockets
   openResponse <- testingBackend.openWebsocket(basicRequest.get(uri"wss://some.uri"), handler)
   webSocket = openResponse.result // interaction with WebSocket is interesting in this case
   message <- webSocket.receive
 } yield message
 ```
 
-## WebSocketStub
+### WebSocketStub
 
 `WebSocketStub` allows easy creation of stub `WebSocket` instances. Such instances wrap a state machine that can be used
-to simulate simple WebSockets interactions. The user sets initial responses for `receive` calls as well as logic to add
+to simulate simple WebSocket interactions. The user sets initial responses for `receive` calls as well as logic to add
 further messages in reaction to `send` calls. `SttpBackendStub` has a special API that accepts a `WebSocketStub` and
 builds a `WebSocket` instance out of it.
 
-Example:
-```
+For example:
+
+```scala
 val backend = SttpBackendStub.synchronous[Identity]
 val webSocketStub = WebSocketStub
   .withInitialIncoming(
@@ -241,17 +247,26 @@ val webSocketStub = WebSocketStub
     case (counter, tf: WebSocketFrame.Text) => (counter + 1, List(WebSocketFrame.text(s"echo: ${tf.payload}")))
     case (counter, _)                       => (counter, List.empty)
   }
-backend.whenAnyRequest.thenRespondWebSocket(Headers(List.empty), webSocketStub)
+
+backend.whenAnyRequest.thenRespondWebSocket(webSocketStub)
 ```
-There is a possiblity to add error responses as well, if it's not enough,
-then using a csutom implementation of `WebSocket` is recommended.
 
-## Using handler when testing WebSockets
+There is a possiblity to add error responses as well. If this is not enough, using a custom implementation of 
+the `WebSocket` trait is recommended.
 
-Akka backend works a bit differently in regard to WebSockets. In this case the user defines
-a `Flow[Message, Message, Mat]` to define WebSocket client behavior instead of working with `WebSocket` instance.`thenHandleOpenWebSocket` method allows to use given flow to simulate server side in tests.
+### Using the client-provided handler when testing WebSockets
 
-Example:
+[Akka backend](backends/akka.md) works a bit differently in regard to WebSockets. In this case the user defines
+a `Flow[Message, Message, Mat]` to define WebSocket client behavior.
+
+The `thenHandleOpenWebSocket` method allows specifying stub behavior, which uses the given client-flow to simulate 
+client-server interaction in tests.
+ 
+When the websocket behavior is captured by the handler (as is the case when using Akka), we can use the value passed by 
+the user to couple it with simulated server-side behavior, and run the whole interaction. 
+
+For example:
+
 ```scala
 // it should say Hi! and 42
 val behaviorToTest: Flow[Message, Message, Future[Done]] = ???
@@ -280,7 +295,7 @@ val testFlow: Flow[Message, Message, Future[Done]] => Future[Done] = clientFlow 
 }
 
 implicit val backend = AkkaHttpBackend.stub.whenAnyRequest
-  .thenHandleOpenWebSocket(Headers(List.empty), testFlow)
+  .thenHandleOpenWebSocket(testFlow)
 
 // code under test with test doubles
 backend

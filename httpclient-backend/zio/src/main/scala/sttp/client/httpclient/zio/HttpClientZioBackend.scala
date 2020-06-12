@@ -9,7 +9,6 @@ import org.reactivestreams.FlowAdapters
 import sttp.client.NothingT
 import sttp.client.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client.httpclient.{HttpClientAsyncBackend, HttpClientBackend}
-import sttp.client.httpclient.zio.BlockingTask
 import sttp.client.impl.zio.RIOMonadAsyncError
 import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 import zio._
@@ -144,4 +143,13 @@ object HttpClientZioBackend {
         )(_.close().ignore)
     )
   }
+
+  /**
+    * Create a stub backend for testing, which uses the [[BlockingTask]] response wrapper, and supports
+    * `Stream[Throwable, ByteBuffer]` streaming.
+    *
+    * See [[SttpBackendStub]] for details on how to configure stub responses.
+    */
+  def stub: SttpBackendStub[BlockingTask, ZStream[Blocking, Throwable, Byte], NothingT] =
+    SttpBackendStub(new RIOMonadAsyncError[Blocking])
 }

@@ -20,32 +20,31 @@ Each backend has three type parameters:
 Below is a summary of all the JVM backends; see the sections on individual backend implementations for more information:
 
 ```eval_rst
-==================================== ============================ ================================================ ==================================================
-Class                                Response wrapper             Supported stream type                            Supported websocket handlers
-==================================== ============================ ================================================ ==================================================
-``HttpURLConnectionBackend``         None (``Identity``)          n/a                                              n/a
-``TryHttpURLConnectionBackend``      ``scala.util.Try``           n/a                                              n/a
-``AkkaHttpBackend``                  ``scala.concurrent.Future``  ``akka.stream.scaladsl.Source[ByteString, Any]`` ``akka.stream.scaladsl.Flow[Message, Message, _]``
-``AsyncHttpClientFutureBackend``     ``scala.concurrent.Future``  n/a                                              ``sttp.client.asynchttpclient.WebSocketHandler``
-``AsyncHttpClientScalazBackend``     ``scalaz.concurrent.Task``   n/a                                              ``sttp.client.asynchttpclient.WebSocketHandler``
-``AsyncHttpClientZioBackend``        ``zio.IO``                   n/a                                              ``sttp.client.asynchttpclient.WebSocketHandler``
-``AsyncHttpClientZioStreamsBackend`` ``zio.IO``                   ``zio.stream.Stream[Throwable, ByteBuffer]``     ``sttp.client.asynchttpclient.WebSocketHandler``
-``AsyncHttpClientMonixBackend``      ``monix.eval.Task``          ``monix.reactive.Observable[ByteBuffer]``        ``sttp.client.asynchttpclient.WebSocketHandler``
-``AsyncHttpClientCatsBackend``       ``F[_]: cats.effect.Async``  n/a                                              ``sttp.client.asynchttpclient.WebSocketHandler``
-``AsyncHttpClientFs2Backend``        ``F[_]: cats.effect.Async``  ``fs2.Stream[F, ByteBuffer]``                    ``sttp.client.asynchttpclient.WebSocketHandler``
-``OkHttpSyncBackend``                None (``Identity``)          n/a                                              ``sttp.client.okhttp.WebSocketHandler``
-``OkHttpFutureBackend``              ``scala.concurrent.Future``  n/a                                              ``sttp.client.okhttp.WebSocketHandler``
-``OkHttpMonixBackend``               ``monix.eval.Task``          ``monix.reactive.Observable[ByteBuffer]``        ``sttp.client.okhttp.WebSocketHandler``
-``Http4sBackend``                    ``F[_]: cats.effect.Effect`` ``fs2.Stream[F, Byte]``                          n/a
-``HttpClientSyncBackend``            None (``Identity``)          n/a                                              ``sttp.client.httpclient.WebSocketHandler``
-``HttpClientFutureBackend``          ``scala.concurrent.Future``  n/a                                              ``sttp.client.httpclient.WebSocketHandler``
-``HttpClientMonixBackend``           ``monix.eval.Task``          ``monix.reactive.Observable[ByteBuffer]``        ``sttp.client.httpclient.WebSocketHandler``
-``HttpClientZioBackend``             ``zio.IO``                   n/a                                              n/a
-``FinagleBackend``                   ``com.twitter.util.Future``  n/a                                              n/a
-==================================== ============================ ================================================ ==================================================
+==================================== ============================ ================================================= ==================================================
+Class                                Response wrapper             Supported stream type                             Supported websocket handlers
+==================================== ============================ ================================================= ==================================================
+``HttpURLConnectionBackend``         None (``Identity``)          n/a                                               n/a
+``TryHttpURLConnectionBackend``      ``scala.util.Try``           n/a                                               n/a
+``AkkaHttpBackend``                  ``scala.concurrent.Future``  ``akka.stream.scaladsl.Source[ByteString, Any]``  ``akka.stream.scaladsl.Flow[Message, Message, _]``
+``AsyncHttpClientFutureBackend``     ``scala.concurrent.Future``  n/a                                               ``sttp.client.asynchttpclient.WebSocketHandler``
+``AsyncHttpClientScalazBackend``     ``scalaz.concurrent.Task``   n/a                                               ``sttp.client.asynchttpclient.WebSocketHandler``
+``AsyncHttpClientZioBackend``        ``zio.Task``                 ``zio.stream.Stream[Throwable, Byte]``            ``sttp.client.asynchttpclient.WebSocketHandler``
+``AsyncHttpClientMonixBackend``      ``monix.eval.Task``          ``monix.reactive.Observable[ByteBuffer]``         ``sttp.client.asynchttpclient.WebSocketHandler``
+``AsyncHttpClientCatsBackend``       ``F[_]: cats.effect.Async``  n/a                                               ``sttp.client.asynchttpclient.WebSocketHandler``
+``AsyncHttpClientFs2Backend``        ``F[_]: cats.effect.Async``  ``fs2.Stream[F, Byte]``                           ``sttp.client.asynchttpclient.WebSocketHandler``
+``OkHttpSyncBackend``                None (``Identity``)          n/a                                               ``sttp.client.okhttp.WebSocketHandler``
+``OkHttpFutureBackend``              ``scala.concurrent.Future``  n/a                                               ``sttp.client.okhttp.WebSocketHandler``
+``OkHttpMonixBackend``               ``monix.eval.Task``          ``monix.reactive.Observable[ByteBuffer]``         ``sttp.client.okhttp.WebSocketHandler``
+``Http4sBackend``                    ``F[_]: cats.effect.Effect`` ``fs2.Stream[F, Byte]``                           n/a
+``HttpClientSyncBackend``            None (``Identity``)          n/a                                               ``sttp.client.httpclient.WebSocketHandler``
+``HttpClientFutureBackend``          ``scala.concurrent.Future``  n/a                                               ``sttp.client.httpclient.WebSocketHandler``
+``HttpClientMonixBackend``           ``monix.eval.Task``          ``monix.reactive.Observable[ByteBuffer]``         ``sttp.client.httpclient.WebSocketHandler``
+``HttpClientZioBackend``             ``zio.RIO[Blocking, *]``     ``zio.stream.ZStream[Blocking, Throwable, Byte]`` n/a
+``FinagleBackend``                   ``com.twitter.util.Future``  n/a                                               n/a
+==================================== ============================ ================================================= ==================================================
 ```
 
-The backends work with Scala 2.11, 2.12 and 2.13 (with some exceptions for 2.11). Moreover, `HttpURLConnectionBackend`, `AsyncHttpClientFutureBackend`, `AsyncHttpClientZioBackend`, `HttpClientSyncBackend` and `HttpClientFutureBackend` are additionally built with Dotty (Scala 3).
+The backends work with Scala 2.11, 2.12 and 2.13 (with some exceptions for 2.11). Moreover, `HttpURLConnectionBackend`, `AsyncHttpClientFutureBackend`, `AsyncHttpClientZioBackend`, `HttpClientSyncBackend`, `HttpClientFutureBackend` and `HttpClientZioBackend` are additionally built with Dotty (Scala 3).
 
 There are also backends which wrap other backends to provide additional functionality. These include:
 
@@ -55,7 +54,7 @@ There are also backends which wrap other backends to provide additional function
 * `PrometheusBackend`, for gathering Prometheus-format metrics. See the [dedicated section](wrappers/prometheus.html).
 * slf4j backends, for logging. See the [dedicated section](wrappers/slf4j.html).
 
-In addition, there are also backends for JavaScript:
+In addition, there are also backends for Scala.JS:
 
 ```eval_rst
 ================================ ============================ ========================================= ============================

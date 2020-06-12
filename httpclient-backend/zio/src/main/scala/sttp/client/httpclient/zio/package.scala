@@ -7,16 +7,13 @@ import _root_.zio.stream.ZStream
 
 package object zio {
 
-  type BlockingTask[A] = ZIO[Blocking, Throwable, A]
+  type BlockingTask[A] = RIO[Blocking, A]
 
   /**
-    * Experimental! ZIO-environment service definition, which is an SttpBackend.
+    * ZIO-environment service definition, which is an SttpBackend.
     */
   type SttpClient = Has[SttpBackend[BlockingTask, ZStream[Blocking, Throwable, Byte], NothingT]]
 
-  /**
-    * Experimental!
-    */
   object SttpClient {
 
     /**

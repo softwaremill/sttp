@@ -54,6 +54,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 case class HttpBinResponse(origin: String, headers: Map[String, String])
 
 implicit val serialization = org.json4s.native.Serialization
+implicit val formats = org.json4s.DefaultFormats
 val request = basicRequest
   .get(uri"https://httpbin.org/get")
   .response(asJson[HttpBinResponse])
@@ -248,7 +249,6 @@ import sttp.client._
 import sttp.client.ws.{WebSocket, WebSocketResponse}
 import sttp.model.ws.WebSocketFrame
 import sttp.client.asynchttpclient.monix.{AsyncHttpClientMonixBackend, MonixWebSocketHandler}
-import cats.implicits._
 
 object WebsocketMonix extends App {
   import monix.execution.Scheduler.Implicits.global
