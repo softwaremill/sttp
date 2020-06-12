@@ -7,7 +7,7 @@ All of the examples are available [in the sources](https://github.com/softwaremi
 Required dependencies:
 
 ```scala            
-libraryDependencies ++= List("com.softwaremill.sttp.client" %% "core" % "2.1.5")
+libraryDependencies ++= List("com.softwaremill.sttp.client" %% "core" % "2.2.0")
 ```
 
 Example code:
@@ -36,8 +36,8 @@ Required dependencies:
 
 ```scala
 libraryDependencies ++= List(
-  "com.softwaremill.sttp.client" %% "akka-http-backend" % "2.1.5",
-  "com.softwaremill.sttp.client" %% "json4s" % "2.1.5",
+  "com.softwaremill.sttp.client" %% "akka-http-backend" % "2.2.0",
+  "com.softwaremill.sttp.client" %% "json4s" % "2.2.0",
   "org.json4s" %% "json4s-native" % "3.6.0"
 )
 ```
@@ -78,8 +78,8 @@ Required dependencies:
 
 ```scala
 libraryDependencies ++= List(
-  "com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % "2.1.5",
-  "com.softwaremill.sttp.client" %% "circe" % "2.1.5",
+  "com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % "2.2.0",
+  "com.softwaremill.sttp.client" %% "circe" % "2.2.0",
   "io.circe" %% "circe-generic" % "0.12.1"
 )
 ```
@@ -125,8 +125,8 @@ Required dependencies:
 
 ```scala
 libraryDependencies ++= List(
-  "com.softwaremill.sttp.client" %% "async-http-client-backend-monix" % "2.1.5",
-  "com.softwaremill.sttp.client" %% "circe" % "2.1.5",
+  "com.softwaremill.sttp.client" %% "async-http-client-backend-monix" % "2.2.0",
+  "com.softwaremill.sttp.client" %% "circe" % "2.2.0",
   "io.circe" %% "circe-generic" % "0.12.1"
 )
 ```
@@ -163,7 +163,7 @@ postTask.runSyncUnsafe()
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client" %% "core" % "2.1.5")
+libraryDependencies ++= List("com.softwaremill.sttp.client" %% "core" % "2.2.0")
 ```
 
 Example code:
@@ -198,7 +198,7 @@ println(
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % "2.1.5")
+libraryDependencies ++= List("com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % "2.2.0")
 ```
 
 Example code:
@@ -238,7 +238,7 @@ object WebsocketZio extends App {
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client" %% "async-http-client-backend-monix" % "2.1.5")
+libraryDependencies ++= List("com.softwaremill.sttp.client" %% "async-http-client-backend-monix" % "2.2.0")
 ```
 
 Example code:
@@ -278,7 +278,7 @@ object WebsocketMonix extends App {
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client" %% "async-http-client-backend-fs2" % "2.1.5")
+libraryDependencies ++= List("com.softwaremill.sttp.client" %% "async-http-client-backend-fs2" % "2.2.0")
 ```
 
 Example code:
@@ -331,7 +331,7 @@ effect.unsafeRunSync()
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % "2.1.5")
+libraryDependencies ++= List("com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % "2.2.0")
 ```
 
 Example code:
