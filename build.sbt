@@ -596,7 +596,7 @@ lazy val circe = (projectMatrix in file("json/circe"))
   .jsPlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonJsSettings)
   .dependsOn(core, jsonCommon)
 
-lazy val json4sVersion = "3.6.8"
+lazy val json4sVersion = "3.6.9"
 
 lazy val json4s = (projectMatrix in file("json/json4s"))
   .settings(commonJvmSettings)
