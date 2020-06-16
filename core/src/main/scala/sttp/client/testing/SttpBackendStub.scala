@@ -290,8 +290,8 @@ object SttpBackendStub {
     * Create a stub backend using the given response monad (which determines
     * how requests are wrapped), any stream type and any websocket handler.
     */
-  def apply[F[_], S, WS_RESPONSE[_]](responseMonad: MonadError[F]): SttpBackendStub[F, S, WS_RESPONSE] =
-    new SttpBackendStub[F, S, WS_RESPONSE](
+  def apply[F[_], S, WS_HANDLER[_]](responseMonad: MonadError[F]): SttpBackendStub[F, S, WS_HANDLER] =
+    new SttpBackendStub[F, S, WS_HANDLER](
       responseMonad,
       PartialFunction.empty,
       PartialFunction.empty,
