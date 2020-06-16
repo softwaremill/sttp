@@ -52,7 +52,6 @@ basicRequest.response(asFile(someFile))
 ```
 
 ```note:: As the handling of response is specified upfront, there's no need to "consume" the response body. It can be safely discarded if not needed.
-
 ```
 
 ## Custom body deserializers
@@ -134,5 +133,4 @@ val response: Future[Response[Source[Either[String, ByteString], Any]]] =
 ```
 
 ```note:: Unlike with non-streaming response handlers, each streaming response should be entirely consumed by client code.
-
 ```
