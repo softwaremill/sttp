@@ -12,7 +12,7 @@ libraryDependencies ++= List("com.softwaremill.sttp.client" %% "core" % "2.2.0")
 
 Example code:
 
-```scala
+```scala mdoc:compile-only
 import sttp.client._
 
 val signup = Some("yes")

@@ -711,17 +711,17 @@ lazy val examples = (projectMatrix in file("examples"))
     slf4jBackend
   )
 
-lazy val docs: ProjectMatrix = (projectMatrix in file("docs-generation")) // important: it must not be docs/
+lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // important: it must not be docs/
   .settings(commonSettings)
   .settings(publishArtifact := false, name := "docs")
   .dependsOn(core)
   .enablePlugins(MdocPlugin)
   .settings(
-    mdocIn := file("docs-generation/src"),
+    mdocIn := file("docs"),
     moduleName := "sttp-docs",
     mdocVariables := Map(
       "VERSION" -> version.value
     ),
-    mdocOut := file("docs")
+    mdocOut := file("generated-docs/out")
   )
   .jvmPlatform(scalaVersions = List(scala2_13))
