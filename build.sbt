@@ -722,6 +722,7 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     mdocVariables := Map(
       "VERSION" -> version.value
     ),
-    mdocOut := file("generated-docs/out")
+    mdocOut := file("generated-docs/out"),
+    mdocExtraArguments += "--no-link-hygiene"
   )
   .jvmPlatform(scalaVersions = List(scala2_13))
