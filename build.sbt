@@ -29,7 +29,7 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
     releaseStepCommandAndRemaining("clean"),
     releaseStepCommandAndRemaining("test"),
     setReleaseVersion,
-    releaseStepInputTask(docs.jvm(scala2_13) / mdoc),
+    releaseStepInputTask(docs.jvm(scala2_12) / mdoc),
     Release.stageChanges("docs"),
     updateVersionInDocs(organization.value),
     commitReleaseVersion,
@@ -711,6 +711,11 @@ lazy val examples = (projectMatrix in file("examples"))
     slf4jBackend
   )
 
+val compileDocs: TaskKey[Unit] = taskKey[Unit]("Compiles docs module throwing away its output")
+compileDocs := {
+  (docs.jvm(scala2_12) / mdoc).toTask(" --out target/sttp-docs").value
+}
+
 lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // important: it must not be docs/
   .settings(commonSettings)
   .settings(publishArtifact := false, name := "docs")
@@ -725,4 +730,4 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     mdocOut := file("generated-docs/out"),
     mdocExtraArguments += "--no-link-hygiene"
   )
-  .jvmPlatform(scalaVersions = List(scala2_13))
+  .jvmPlatform(scalaVersions = List(scala2_12))
