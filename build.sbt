@@ -30,7 +30,7 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
     releaseStepCommandAndRemaining("test"),
     setReleaseVersion,
     releaseStepInputTask(docs.jvm(scala2_12) / mdoc),
-    Release.stageChanges("docs"),
+    Release.stageChanges("generated-docs/out"),
     updateVersionInDocs(organization.value),
     commitReleaseVersion,
     tagRelease,
