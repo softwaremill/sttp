@@ -29,6 +29,8 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
     releaseStepCommandAndRemaining("clean"),
     releaseStepCommandAndRemaining("test"),
     setReleaseVersion,
+    releaseStepInputTask(docs.jvm(scala2_12) / mdoc),
+    Release.stageChanges("generated-docs/out"),
     updateVersionInDocs(organization.value),
     commitReleaseVersion,
     tagRelease,
@@ -251,7 +253,8 @@ lazy val rootProject = (project in file("."))
       httpClientZioBackend.projectRefs ++
       finagleBackend.projectRefs ++
       slf4jBackend.projectRefs ++
-      examples.projectRefs: _*
+      examples.projectRefs ++ 
+      docs.projectRefs: _*
   )
 
 lazy val testServer = (projectMatrix in file("testing/server"))
@@ -707,3 +710,24 @@ lazy val examples = (projectMatrix in file("examples"))
     circe,
     slf4jBackend
   )
+
+val compileDocs: TaskKey[Unit] = taskKey[Unit]("Compiles docs module throwing away its output")
+compileDocs := {
+  (docs.jvm(scala2_12) / mdoc).toTask(" --out target/sttp-docs").value
+}
+
+lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // important: it must not be docs/
+  .settings(commonSettings)
+  .settings(publishArtifact := false, name := "docs")
+  .dependsOn(core)
+  .enablePlugins(MdocPlugin)
+  .settings(
+    mdocIn := file("docs"),
+    moduleName := "sttp-docs",
+    mdocVariables := Map(
+      "VERSION" -> version.value
+    ),
+    mdocOut := file("generated-docs/out"),
+    mdocExtraArguments += "--no-link-hygiene"
+  )
+  .jvmPlatform(scalaVersions = List(scala2_12))

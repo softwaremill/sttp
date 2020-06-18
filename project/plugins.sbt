@@ -5,8 +5,9 @@ addSbtPlugin("org.scala-native" % "sbt-scala-native" % "0.4.0-M2")
 addSbtPlugin("io.spray" % "sbt-revolver" % "0.9.1")
 addSbtPlugin("com.eed3si9n" % "sbt-projectmatrix" % "0.5.2")
 
-val sbtSoftwareMillVersion = "1.9.6"
+val sbtSoftwareMillVersion = "1.9.7"
 addSbtPlugin("com.softwaremill.sbt-softwaremill" % "sbt-softwaremill-common" % sbtSoftwareMillVersion)
 addSbtPlugin("com.softwaremill.sbt-softwaremill" % "sbt-softwaremill-publish" % sbtSoftwareMillVersion)
 
 addSbtPlugin("ch.epfl.lamp" % "sbt-dotty" % "0.4.1")
+addSbtPlugin("org.scalameta" % "sbt-mdoc" % "2.2.2")
