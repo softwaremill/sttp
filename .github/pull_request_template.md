@@ -1,4 +1,5 @@
-Before submitting pull request make sure that you:
-- [ ] Checked if project compiles by running `sbt compile`
-- [ ] Verified docs compilation by running `sbt compileDocs`
-- [ ] Checked if tests pass by running `sbt test`
+Before submitting pull request:
+- [ ] Check if the project compiles by running `sbt compile`
+- [ ] Verify docs compilation by running `sbt compileDocs`
+- [ ] Check if tests pass by running `sbt test`
+- [ ] Format code by running `sbt scalafmt`
