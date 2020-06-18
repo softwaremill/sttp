@@ -47,9 +47,9 @@ class AsyncHttpClientPipedFs2WebsocketsTest extends AsyncFlatSpec with Matchers 
         case (response, results) =>
           Fs2WebSockets.handleSocketThroughTextPipe(response.result) { in =>
             in.evalMap(m => results.update(_.enqueue(m)).flatMap(_ => results.get.map(_.size))).flatMap {
-              case 2 => Stream(WebSocketFrame.close.asLeft) // closing after two messages are received
+              case 2 => Stream(None) // terminating the stream
               case _ => Stream.empty // waiting for more messages
-            }
+            }.unNoneTerminate
           } >> results.get.map(_ should contain theSameElementsInOrderAs List("test10", "test20"))
       }
       .toFuture()
