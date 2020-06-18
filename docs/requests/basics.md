@@ -40,7 +40,7 @@ implicit val backend = HttpURLConnectionBackend()
 val response: Response[String] = request.send()
 ```        
 
-The default backend doesn't wrap the response into any container, but other asynchronous backends might do so. See the section on [backends](backends/summary.md) for more details.
+The default backend doesn't wrap the response into any container, but other asynchronous backends might do so. See the section on [backends](../backends/summary.md) for more details.
 
 Alternatively, if you prefer to pass the backend explicitly, instead of using implicits, you can also send the request the following way:
 

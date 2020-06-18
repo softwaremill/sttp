@@ -1,6 +1,6 @@
 # Websockets
 
-Apart from [streaming](requests/streaming.md), backends (see [backends summary](../backends/summary.md)) can also optionally support websockets. Websocket requests are described exactly the same as regular requests, starting with `basicRequest`, adding headers, specifying the request method and uri.
+Apart from [streaming](requests/streaming.md), backends (see [backends summary](backends/summary.md)) can also optionally support websockets. Websocket requests are described exactly the same as regular requests, starting with `basicRequest`, adding headers, specifying the request method and uri.
 
 The difference is that `openWebsocket(handler)` should be called instead of `send()`, given an instance of a backend-specific websocket handler. Refer to documentation of individual backends for details on how to instantiate the handler.
 
@@ -25,16 +25,16 @@ The type of the handler is determined by the third type parameter of `SttpBacken
 
 The following backends support streaming websockets:
 
-* [Akka](../backends/akka.md#websockets)
-* [fs2](../backends/fs2.md#websockets)
+* [Akka](backends/akka.md#websockets)
+* [fs2](backends/fs2.md#websockets)
 
 ## Using the high-level websocket interface
 
 The high-level, "functional" interface to websockets is available when using the following backends and handlers:
  
-* [Monix](../backends/monix.md) and `MonixWebSocketHandler` from the appropriate package
-* [ZIO](../backends/zio.md) and `sttp.client.asynchttpclient.zio.ZioWebSocketHandler`
-* [fs2](../backends/fs2.md) and `sttp.client.asynchttpclient.fs2.Fs2WebSocketHandler`.
+* [Monix](backends/monix.md) and `MonixWebSocketHandler` from the appropriate package
+* [ZIO](backends/zio.md) and `sttp.client.asynchttpclient.zio.ZioWebSocketHandler`
+* [fs2](backends/fs2.md) and `sttp.client.asynchttpclient.fs2.Fs2WebSocketHandler`.
 
 ```eval_rst
 .. note::

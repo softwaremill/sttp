@@ -50,7 +50,6 @@ There are also backends which wrap other backends to provide additional function
 
 * `TryBackend`, which safely wraps any exceptions thrown by a synchronous backend in `scala.util.Try`
 * `OpenTracingBackend`, for OpenTracing-compatible distributed tracing. See the [dedicated section](wrappers/opentracing.md).
-* `BraveBackend`, for Zipkin-compatible distributed tracing. See the [dedicated section](wrappers/brave.md).
 * `PrometheusBackend`, for gathering Prometheus-format metrics. See the [dedicated section](wrappers/prometheus.md).
 * slf4j backends, for logging. See the [dedicated section](wrappers/slf4j.md).
 
