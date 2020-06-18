@@ -60,13 +60,13 @@ abstract class HighLevelWebsocketTest[F[_], WS_HANDLER[_]]
 
   it should "receive two messages" in {
     basicRequest
-      .get(uri"$wsEndpoint/ws/send_and_close")
+      .get(uri"$wsEndpoint/ws/send_and_wait")
       .openWebsocketF(createHandler(None))
       .flatMap { response =>
         val ws = response.result
         ws.receive.map(_ shouldBe Right(WebSocketFrame.text("test10"))) >>
           ws.receive.map(_ shouldBe Right(WebSocketFrame.text("test20"))) >>
-          ws.receive.map(_ shouldBe Symbol("left"))
+          ws.close.map(_ => succeed)
       }
       .toFuture()
   }

@@ -348,11 +348,10 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
             Nil
         })
       } ~
-        path("send_and_close") {
+        path("send_and_wait") {
+          // send two messages and wait until the socket is closed
           handleWebSocketMessages(
-            Flow.fromSinkAndSourceMat(Sink.ignore, Source(List(TextMessage("test10"), TextMessage("test20"))))(
-              Keep.right
-            )
+            Flow.fromSinkAndSourceCoupled(Sink.ignore, Source(List(TextMessage("test10"), TextMessage("test20"))) ++ Source.maybe)
           )
         }
     }

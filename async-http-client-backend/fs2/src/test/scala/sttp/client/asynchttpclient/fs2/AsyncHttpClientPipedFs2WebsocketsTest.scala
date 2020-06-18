@@ -40,13 +40,16 @@ class AsyncHttpClientPipedFs2WebsocketsTest extends AsyncFlatSpec with Matchers 
 
   it should "run a simple read-only client" in {
     basicRequest
-      .get(uri"$wsEndpoint/ws/send_and_close")
+      .get(uri"$wsEndpoint/ws/send_and_wait")
       .openWebsocketF(createHandler(None))
       .product(Ref.of[IO, Queue[String]](Queue.empty))
       .flatMap {
         case (response, results) =>
           Fs2WebSockets.handleSocketThroughTextPipe(response.result) { in =>
-            in.evalMap(m => results.update(_.enqueue(m))).drain
+            in.evalMap(m => results.update(_.enqueue(m)).flatMap(_ => results.get.map(_.size))).flatMap {
+              case 2 => Stream(WebSocketFrame.close.asLeft) // closing after two messages are received
+              case _ => Stream.empty // waiting for more messages
+            }
           } >> results.get.map(_ should contain theSameElementsInOrderAs List("test10", "test20"))
       }
       .toFuture()

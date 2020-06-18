@@ -57,12 +57,14 @@ trait LowLevelListenerWebSocketTest[F[_], WS, WS_HANDLER[_]]
   it should "receive two messages" in {
     val received = new ConcurrentLinkedQueue[String]()
     basicRequest
-      .get(uri"$wsEndpoint/ws/send_and_close")
+      .get(uri"$wsEndpoint/ws/send_and_wait")
       .openWebsocket(createHandler(received.add))
-      .map { _ =>
+      .map { response =>
         eventually {
           received.asScala.toList shouldBe List("test10", "test20")
         }
+        sendCloseFrame(response.result)
+        succeed
       }
       .toFuture()
   }

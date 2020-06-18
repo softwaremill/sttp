@@ -54,16 +54,15 @@ class AkkaHttpWebsocketTest
     val sink: Sink[Message, Future[Done]] = collectionSink(received)
     val source: Source[Message, Promise[Option[Message]]] = Source.maybe[Message]
 
-    val flow: Flow[Message, Message, (Future[Done], Promise[Option[Message]])] =
-      Flow.fromSinkAndSourceMat(sink, source)(Keep.both)
+    val flow: Flow[Message, Message, Promise[Option[Message]]] =
+      Flow.fromSinkAndSourceMat(sink, source)(Keep.right)
 
-    basicRequest.get(uri"$wsEndpoint/ws/send_and_close").openWebsocket(flow).flatMap { r =>
+    basicRequest.get(uri"$wsEndpoint/ws/send_and_wait").openWebsocket(flow).flatMap { r =>
       eventually {
         received.asScala.toList shouldBe List("test10", "test20")
       }
-
-      r.result._1
-        .map(_ => succeed) // the future should be completed once the stream completes (server should close the ws)
+      r.result.success(None) // closing
+      succeed
     }
   }
 
