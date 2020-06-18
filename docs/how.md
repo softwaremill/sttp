@@ -45,7 +45,7 @@ val response = backend.send(request)
 
 Read more about:
 
-* [describing the request](requests/basics.html)
+* [describing the request](requests/basics.md)
 * the [`RequestT` type](requests/type.html)
 * specifying how to handle the [response body](responses/body.html)
 * [available backends](backends/summary.html)
