@@ -2,7 +2,7 @@
 
 If you need a stub backend for use in tests instead of a "real" backend (you probably don't want to make HTTP calls during unit tests), you can use the `SttpBackendStub` class. It allows specifying how the backend should respond to requests matching given predicates.
 
-You can also create a stub backend using [akka-http routes](backends/akka.html).
+You can also create a stub backend using [akka-http routes](backends/akka.md).
 
 ## Creating a stub backend
 

@@ -5,7 +5,7 @@ Responses are represented as instances of the case class `Response[T]`, where `T
 If sending the request fails, either due to client or connection errors, an exception will be thrown (synchronous backends), or an error will be represented in the wrapper (e.g. a failed future).
 
 ```eval_rst
-.. note:: If the request completes, but results in a non-2xx return code, the request is still considered successful, that is, a ``Response[T]`` will be returned. See `response body specifications <body.html>`_ for details on how such cases are handled.
+.. note:: If the request completes, but results in a non-2xx return code, the request is still considered successful, that is, a ``Response[T]`` will be returned. See `response body specifications <body.md>`_ for details on how such cases are handled.
 ```
 
 ## Response code
@@ -36,9 +36,9 @@ Finally, it's possible to parse the response cookies into a sequence of the `Coo
 def cookies: Seq[Cookie]
 ```        
 
-If the cookies from a response should be set without changes on the request, this can be done directly; see the [cookies](../requests/cookies.html) section in the request definition documentation.
+If the cookies from a response should be set without changes on the request, this can be done directly; see the [cookies](../requests/cookies.md) section in the request definition documentation.
 
 ## Obtaining the response body
 
 The response body can be obtained through the `.body: T` property. `T` is the body deserialized as specified in the request description - see
-the next section on [response body specifications](body.html).
+the next section on [response body specifications](body.md).

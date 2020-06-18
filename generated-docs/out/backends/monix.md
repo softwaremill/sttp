@@ -133,4 +133,4 @@ The Monix backend supports:
 * high-level, "functional" websocket interface, through the `sttp.client.asynchttpclient.monix.MonixWebSocketHandler`
 * low-level interface by wrapping a low-level Java interface, `sttp.client.asynchttpclient.WebSocketHandler`
 
-See [websockets](../websockets.html) for details on how to use the high-level and low-level interfaces.
+See [websockets](../websockets.md) for details on how to use the high-level and low-level interfaces.

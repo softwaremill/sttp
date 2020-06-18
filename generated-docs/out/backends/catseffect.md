@@ -10,7 +10,7 @@ To use, add the following dependency to your project:
            
 This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client), uses [Netty](http://netty.io) behind the scenes and supports effect cancellation. 
 
-Alternatively, the [http4s](http4s.html) backend can also be created for a type implementing the cats-effect's `Effect` typeclass, and supports streaming as in [fs2](fs2.html).  
+Alternatively, the [http4s](http4s.md) backend can also be created for a type implementing the cats-effect's `Effect` typeclass, and supports streaming as in [fs2](fs2.md).  
 
 Next you'll need to define a backend instance as an implicit value. This can be done in two basic ways:
 
@@ -45,8 +45,8 @@ implicit val sttpBackend = AsyncHttpClientCatsBackend.usingClient[IO](asyncHttpC
 
 ## Streaming
 
-This backend doesn't support non-blocking [streaming](../requests/streaming.html).
+This backend doesn't support non-blocking [streaming](../requests/streaming.md).
 
 ## Websockets
 
-The backend supports websockets by wrapping a [low-level Java interface](../websockets.html), `sttp.client.asynchttpclient.WebSocketHandler`.
+The backend supports websockets by wrapping a [low-level Java interface](../websockets.md), `sttp.client.asynchttpclient.WebSocketHandler`.

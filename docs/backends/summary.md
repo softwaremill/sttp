@@ -6,10 +6,10 @@ Choosing the right backend depends on a number of factors: whether you are using
 
 Which one to choose?
 
-* for simple exploratory requests, use the [synchronous](synchronous.html) `HttpURLConnectionBackend`, or `HttpClientSyncBackend` if you are on Java11.
-* if you have Akka in your stack, use [Akka backend](akka.html)
-* otherwise, if you are using `Future`, use the `AsyncHttpClientFutureBackend` [Future](future.html) backend
-* finally, if you are using a functional effect wrapper, use one of the "functional" backends, for [ZIO](zio.html), [Monix](monix.html), [Scalaz](scalaz.html), [cats-effect](catseffect.html) or [fs2](fs2.html). 
+* for simple exploratory requests, use the [synchronous](synchronous.md) `HttpURLConnectionBackend`, or `HttpClientSyncBackend` if you are on Java11.
+* if you have Akka in your stack, use [Akka backend](akka.md)
+* otherwise, if you are using `Future`, use the `AsyncHttpClientFutureBackend` [Future](future.md) backend
+* finally, if you are using a functional effect wrapper, use one of the "functional" backends, for [ZIO](zio.md), [Monix](monix.md), [Scalaz](scalaz.md), [cats-effect](catseffect.md) or [fs2](fs2.md). 
 
 Each backend has three type parameters:
 
@@ -49,10 +49,10 @@ The backends work with Scala 2.11, 2.12 and 2.13 (with some exceptions for 2.11)
 There are also backends which wrap other backends to provide additional functionality. These include:
 
 * `TryBackend`, which safely wraps any exceptions thrown by a synchronous backend in `scala.util.Try`
-* `OpenTracingBackend`, for OpenTracing-compatible distributed tracing. See the [dedicated section](wrappers/opentracing.html).
-* `BraveBackend`, for Zipkin-compatible distributed tracing. See the [dedicated section](wrappers/brave.html).
-* `PrometheusBackend`, for gathering Prometheus-format metrics. See the [dedicated section](wrappers/prometheus.html).
-* slf4j backends, for logging. See the [dedicated section](wrappers/slf4j.html).
+* `OpenTracingBackend`, for OpenTracing-compatible distributed tracing. See the [dedicated section](wrappers/opentracing.md).
+* `BraveBackend`, for Zipkin-compatible distributed tracing. See the [dedicated section](wrappers/brave.md).
+* `PrometheusBackend`, for gathering Prometheus-format metrics. See the [dedicated section](wrappers/prometheus.md).
+* slf4j backends, for logging. See the [dedicated section](wrappers/slf4j.md).
 
 In addition, there are also backends for Scala.JS:
 

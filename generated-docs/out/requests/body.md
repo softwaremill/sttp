@@ -52,7 +52,7 @@ Note that on JavaScript only a `Web/API/File` is allowed.
 
 As with binary body methods, the content type will default to `application/octet-stream`, and the content length will be set to the length of the file (unless specified explicitly).
 
-See also [multi-part](multipart.html) and [streaming](streaming.html) support.
+See also [multi-part](multipart.md) and [streaming](streaming.md) support.
 
 ## Form data
 

@@ -32,4 +32,4 @@ def contentLength(l: Long)
 def acceptEncoding(encoding: String)
 ```    
 
-See also documentation on setting [cookies](cookies.html) and [authentication](authentication.html).
+See also documentation on setting [cookies](cookies.md) and [authentication](authentication.md).

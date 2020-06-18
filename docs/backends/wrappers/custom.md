@@ -8,7 +8,7 @@ Possible use-cases for wrapper-backend include:
 * capturing metrics
 * request signing (transforming the request before sending it to the delegate)
 
-See also the section on [resilience](../../resilience.html) which covers topics such as retries, circuit breaking and rate limiting.
+See also the section on [resilience](../../resilience.md) which covers topics such as retries, circuit breaking and rate limiting.
 
 ## Request tagging
 
@@ -20,7 +20,7 @@ Backends, or backend wrappers can use tags e.g. for logging, passing a metric na
 
 ## Listener backend
 
-The `sttp.client.listener.ListenerBackend` can make it easier to create backend wrappers which need to be notified about request lifecycle events: when a request is started, and when it completes either successfully or with an exception. This is possible by implementing a `sttp.client.listener.RequestListener`. This is how e.g. the [slf4j backend](slf4j.html) is implemented. 
+The `sttp.client.listener.ListenerBackend` can make it easier to create backend wrappers which need to be notified about request lifecycle events: when a request is started, and when it completes either successfully or with an exception. This is possible by implementing a `sttp.client.listener.RequestListener`. This is how e.g. the [slf4j backend](slf4j.md) is implemented. 
 
 A request listener can associate a value with a request, which will then be passed to the request completion notification methods.
 
@@ -52,7 +52,7 @@ object MyWrapper {
 
 ## Logging backend wrapper
 
-A good example on how to implement a logging backend wrapper is the [slf4j](slf4j.html) backend wrapper implementation. It uses the `ListenerBackend` to get notified about request lifecycle events, and logs messages created using `sttp.client.logging.LogMessages`.
+A good example on how to implement a logging backend wrapper is the [slf4j](slf4j.md) backend wrapper implementation. It uses the `ListenerBackend` to get notified about request lifecycle events, and logs messages created using `sttp.client.logging.LogMessages`.
 
 To adjust the logs to your needs, or to integrate with your logging framework, simply copy the code and modify as needed. 
 
@@ -116,7 +116,7 @@ basicRequest
   .send()
 ```
 
-See also the [Prometheus](prometheus.html) backend for an example implementation.
+See also the [Prometheus](prometheus.md) backend for an example implementation.
 
 ## Example retrying backend wrapper
 
@@ -126,7 +126,7 @@ Handling retries is a complex problem when it comes to HTTP requests. When is a 
 * only idempotent HTTP methods (such as `GET`) could potentially be retried
 * some HTTP status codes might also be retryable (e.g. `500 Internal Server Error` or `503 Service Unavailable`)
 
-In some cases it's possible to implement a generic retry mechanism; such a mechanism should take into account logging, metrics, limiting the number of retries and a backoff mechanism. These mechanisms could be quite simple, or involve e.g. retry budgets (see [Finagle's](https://twitter.github.io/finagle/guide/Clients.html#retries) documentation on retries). In sttp, it's possible to recover from errors using the `responseMonad`. A starting point for a retrying backend could be:
+In some cases it's possible to implement a generic retry mechanism; such a mechanism should take into account logging, metrics, limiting the number of retries and a backoff mechanism. These mechanisms could be quite simple, or involve e.g. retry budgets (see [Finagle's](https://twitter.github.io/finagle/guide/Clients.md#retries) documentation on retries). In sttp, it's possible to recover from errors using the `responseMonad`. A starting point for a retrying backend could be:
 
 ```scala
 import sttp.client.{MonadError, Request, Response, SttpBackend, RetryWhen}
@@ -317,4 +317,4 @@ When implementing a backend wrapper using cats, it might be useful to import:
 import sttp.client.impl.cats.implicits._
 ```
 
-from the cats integration module. The module should be available on the classpath when using the cats [async-http-client](asynchttpclient.html) backend. The object contains implicits to convert a cats `MonadError` into the sttp `MonadError`, as well as a way to map the effects wrapper used with the `.mapK` extension method for the backend. 
+from the cats integration module. The module should be available on the classpath when using the cats [async-http-client](asynchttpclient.md) backend. The object contains implicits to convert a cats `MonadError` into the sttp `MonadError`, as well as a way to map the effects wrapper used with the `.mapK` extension method for the backend. 

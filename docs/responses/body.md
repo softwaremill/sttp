@@ -84,7 +84,7 @@ basicRequest
   ...
 ```           
 
-A number of JSON libraries are supported out-of-the-box, see [json support](../json.html).
+A number of JSON libraries are supported out-of-the-box, see [json support](../json.md).
 
 Using the `fromMetadata` combinator, it's possible to dynamically specify how the response should be deserialized, basing on the response status code and response headers. The default `asString`, `asByteArray` response descriptions use this method to return a `Left` in case of non-2xx responses, and a `Right` otherwise. 
 
@@ -108,14 +108,14 @@ val myRequest: Request[Either[ResponseError[io.circe.Error], MyModel], Nothing] 
 
 ## Streaming
 
-If the backend used supports streaming (see [backends summary](../backends/summary.html)), it's possible to receive responses as a stream. This can be described using the following methods:
+If the backend used supports streaming (see [backends summary](../backends/summary.md)), it's possible to receive responses as a stream. This can be described using the following methods:
 
 ```scala
 def asStream[S]: ResponseAs[Either[String, S], S] = ResponseAsStream[S, S]()
 def asStreamAlways[S]: ResponseAs[S, S] = ResponseAsStream[S, S]()
 ```
 
-For example, when using the [Akka backend](../backends/akka.html):
+For example, when using the [Akka backend](../backends/akka.md):
 
 ```scala
 import sttp.client._

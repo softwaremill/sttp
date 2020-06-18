@@ -2,7 +2,7 @@
 
 There are several backend implementations which are `scala.concurrent.Future`-based. These backends are **asynchronous**, sending a request is a non-blocking operation and results in a response wrapped in a `Future`. 
 
-Apart from the ones described below, also the [Akka](akka.html) backend is `Future`-based.
+Apart from the ones described below, also the [Akka](akka.md) backend is `Future`-based.
 
 ```eval_rst
 ===================================== ================================================ ====================================
@@ -86,12 +86,12 @@ This backend is based on the built-in `java.net.http.HttpClient` available from 
 
 ## Streaming
 
-The [Akka backend](akka.html) supports streaming using akka-streams.
+The [Akka backend](akka.md) supports streaming using akka-streams.
 
-Other backends don't support non-blocking [streaming](../requests/streaming.html).
+Other backends don't support non-blocking [streaming](../requests/streaming.md).
 
 ## Websockets
 
-The [Akka backend](akka.html) supports websockets through a high-level, streaming, akka-streams-based interface.
+The [Akka backend](akka.md) supports websockets through a high-level, streaming, akka-streams-based interface.
 
-Other backends support websockets by wrapping the appropriate [low-level Java interface](../websockets.html).
+Other backends support websockets by wrapping the appropriate [low-level Java interface](../websockets.md).

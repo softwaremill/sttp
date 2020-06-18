@@ -6,7 +6,7 @@ This backend is based on [akka-http](http://doc.akka.io/docs/akka-http/current/s
 "com.softwaremill.sttp.client" %% "akka-http-backend" % "2.2.0"
 ```
 
-A fully **asynchronous** backend. Sending a request returns a response wrapped in a `Future`. There are also [other `Future`-based backends](future.html), which don't depend on Akka. 
+A fully **asynchronous** backend. Sending a request returns a response wrapped in a `Future`. There are also [other `Future`-based backends](future.md), which don't depend on Akka. 
 
 Note that you'll also need an explicit dependency on akka-streams, as akka-http doesn't depend on any specific akka-streams version. So you'll also need to add, for example:
 
@@ -63,7 +63,7 @@ val response: Future[Response[Either[String, Source[ByteString, Any]]]] =
 
 ## Testing
 
-Apart from testing using [the stub](../testing.html), you can create a backend using any `HttpRequest => Future[HttpResponse]` function, or an akka-http `Route`.
+Apart from testing using [the stub](../testing.md), you can create a backend using any `HttpRequest => Future[HttpResponse]` function, or an akka-http `Route`.
 
 That way, you can "mock" a server that the backend will talk to, without starting any actual server or making any HTTP calls.
 

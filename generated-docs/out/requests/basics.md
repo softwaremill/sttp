@@ -1,6 +1,6 @@
 # Request definition basics
 
-As mentioned in the [quickstart](../quickstart.html), the following import will be needed:
+As mentioned in the [quickstart](../quickstart.md), the following import will be needed:
 
 ```scala
 import sttp.client._
@@ -27,7 +27,7 @@ Using the modifiers, each time we get a new request definition, but it's just a 
 
 Query parameters are specified as part of the URI, to which the request should be sent. The URI can only be set together with the request method (using `.get(Uri)`, `.post(Uri)`, etc.).
 
-The URI can be created programatically (by calling methods on the `Uri` class), or using the `uri` interpolator, which also allows embedding (and later escaping) values from the environment. See the documentation on [creating URIs](../model/uri.html) for more details.
+The URI can be created programatically (by calling methods on the `Uri` class), or using the `uri` interpolator, which also allows embedding (and later escaping) values from the environment. See the documentation on [creating URIs](../model/uri.md) for more details.
 
 ## Sending a request
 
@@ -40,7 +40,7 @@ implicit val backend = HttpURLConnectionBackend()
 val response: Response[String] = request.send()
 ```        
 
-The default backend doesn't wrap the response into any container, but other asynchronous backends might do so. See the section on [backends](backends/summary.html) for more details.
+The default backend doesn't wrap the response into any container, but other asynchronous backends might do so. See the section on [backends](backends/summary.md) for more details.
 
 Alternatively, if you prefer to pass the backend explicitly, instead of using implicits, you can also send the request the following way:
 
@@ -52,7 +52,7 @@ val response = backend.send(request)
 ```eval_rst
 .. note::
 
-  Only requests with the request method and uri can be sent. If trying to send a request without these components specified, a compile-time error will be reported. On how this is implemented, see the documentation on the `type of request definitions <type.html>`_.
+  Only requests with the request method and uri can be sent. If trying to send a request without these components specified, a compile-time error will be reported. On how this is implemented, see the documentation on the `type of request definitions <type.md>`_.
 ```
 
 ## Initial requests
@@ -62,7 +62,7 @@ sttp provides two initial requests:
 * `basicRequest`, which is an empty request with the `Accept-Encoding: gzip, deflate` header added. That's the one that is most commonly used.
 * `emptyRequest`, a completely empty request, with no headers at all.
 
-Both of these requests will by default read the response body into a UTF-8 `String`. How the response body is handled is also part of the request definition. See the section on [response body specifications](../responses/body.html) for more details on how to customize that.
+Both of these requests will by default read the response body into a UTF-8 `String`. How the response body is handled is also part of the request definition. See the section on [response body specifications](../responses/body.md) for more details on how to customize that.
 
 ## Debugging requests
 

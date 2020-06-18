@@ -29,8 +29,8 @@ implicit val sttpBackend = AsyncHttpClientScalazBackend.usingClient(asyncHttpCli
 
 ## Streaming
 
-This backend doesn't support non-blocking [streaming](../requests/streaming.html).
+This backend doesn't support non-blocking [streaming](../requests/streaming.md).
 
 ## Websockets
 
-The backend supports websockets by wrapping a [low-level Java interface](../websockets.html), `sttp.client.asynchttpclient.WebSocketHandler`.
+The backend supports websockets by wrapping a [low-level Java interface](../websockets.md), `sttp.client.asynchttpclient.WebSocketHandler`.

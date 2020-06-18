@@ -146,6 +146,6 @@ The ZIO backend supports:
 * high-level, "functional" websocket interface, through the `sttp.client.asynchttpclient.zio.ZioWebSocketHandler`
 * low-level interface by wrapping a low-level Java interface, `sttp.client.asynchttpclient.WebSocketHandler`
 
-See [websockets](../websockets.html) for details on how to use the high-level and low-level interfaces. Websockets
+See [websockets](../websockets.md) for details on how to use the high-level and low-level interfaces. Websockets
 opened using the `SttpClient.openWebsocket` and `SttpStreamsClient.openWebsocket` (leveraging ZIO environment) always
 use the high-level interface.

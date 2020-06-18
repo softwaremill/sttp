@@ -58,13 +58,13 @@ This backend is based on the built-in `java.net.http.HttpClient` available from 
 
 ## Streaming
 
-Synchronous backends don't support non-blocking [streaming](../requests/streaming.html).
+Synchronous backends don't support non-blocking [streaming](../requests/streaming.md).
 
 ## Websockets
 
 The `HttpURLConnection`-based backend doesn't support websockets.
 
-OkHttp and HttpClient backends support websockets by wrapping a [low-level Java interface](../websockets.html):
+OkHttp and HttpClient backends support websockets by wrapping a [low-level Java interface](../websockets.md):
  
 * `sttp.client.okhttp.WebSocketHandler`, or
 * `sttp.client.httpclient.WebSocketHandler`

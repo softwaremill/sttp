@@ -117,7 +117,7 @@ The fs2 backend supports:
 * low-level interface by wrapping a low-level Java interface, `sttp.client.asynchttpclient.WebSocketHandler` or `sttp.client.httpclient.WebSocketHandler`
 * streaming - see below
 
-See [websockets](../websockets.html) for details on how to use the high-level and low-level interfaces.
+See [websockets](../websockets.md) for details on how to use the high-level and low-level interfaces.
 
 ## Streaming websockets 
 

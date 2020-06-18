@@ -31,7 +31,7 @@ Blocker[IO].flatMap(Http4sBackend.usingDefaultClientBuilder[IO](_)).use { implic
 
 Sending a request is a non-blocking, lazily-evaluated operation and results in a wrapped response. There's a transitive dependency on `http4s`. 
 
-There are also [other cats-effect-based backends](catseffect.html), which don't depend on http4s. 
+There are also [other cats-effect-based backends](catseffect.md), which don't depend on http4s. 
 
 Please note that: 
 
@@ -40,6 +40,6 @@ Please note that:
 
 Instead, all custom timeout configuration should be done by creating a `org.http4s.client.Client[F]`, using `org.http4s.client.blaze.BlazeClientBuilder[F]` and passing it to the appropriate method of the `Http4sBackend` object.
 
-The backend supports streaming using fs2. For usage details, see the documentation on [streaming using fs2](fs2.html#streaming).
+The backend supports streaming using fs2. For usage details, see the documentation on [streaming using fs2](fs2.md#streaming).
 
 The backend doesn't support websockets.
