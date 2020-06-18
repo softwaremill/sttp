@@ -28,11 +28,11 @@ println(response.header("Content-Length"))
 
 // response.body: by default read into an Either[String, String] 
 // to indicate failure or success 
-println(response.body)       
+println(response.body)              
 
 // alternatively, if you prefer to pass the backend explicitly, instead
 // of using implicits, you can also call:
-val sameResponse = backend.send(request)     
+val sameResponse = backend.send(request)
 ```
 
 For more examples, see the [usage examples](examples.md) section. To start using sttp client in your project, see the [quickstart](quickstart.md). Or, browse the documentation to find the topics that interest you the most!

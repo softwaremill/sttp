@@ -9,7 +9,7 @@ Backend implementations include ones based on [akka-http](https://doc.akka.io/do
 
 Here's a very quick example of sttp client in action:
 
-```scala
+```scala mdoc:compile-only
 import sttp.client._
 
 val query = "http language:scala"
