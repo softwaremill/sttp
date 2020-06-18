@@ -12,7 +12,7 @@ To start describing a request, import the sttp client package and customise `bas
 
 ```scala
 import sttp.client._
-val myRequest = basicRequest.(...)
+val myRequest: Request[_, _] = ??? // basicRequest.(...)
 ```
 
 An alternative to importing the `sttp.client._` package, is to extend the `sttp.client.SttpApi` trait. That way, multiple integrations can be grouped in one object, thus reducing the number of necessary imports.
@@ -30,6 +30,8 @@ Backends manage the connection pool, thread pools for handling responses, depend
 For example, the following sends a synchronous request, using the default JVM backend:
 
 ```scala
+import sttp.client._
+val myRequest: Request[String, Nothing] = ???
 implicit val backend = HttpURLConnectionBackend()
 val response = myRequest.send()
 ```
@@ -37,8 +39,10 @@ val response = myRequest.send()
 Alternatively, if you prefer to pass the backend explicitly, instead of using implicits, you can also send the request the following way:
 
 ```scala
+import sttp.client._
+val myRequest: Request[String, Nothing] = ???
 val backend = HttpURLConnectionBackend()
-val response = backend.send(request)     
+val response = backend.send(myRequest)
 ```
 
 ## Next steps
