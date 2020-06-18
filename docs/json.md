@@ -4,6 +4,12 @@ Adding support for JSON (or other format) bodies in requests/responses is a matt
 
 Each integration is available as an import, which brings the implicit `BodySerializer`s and `asJson` methods into scope. Alternatively, these values are grouped intro traits (e.g. `sttp.client.circe.SttpCirceApi`), which can be extended to group multiple integrations in one object, and thus reduce the number of necessary imports.
 
+Following data class will be used through the next few examples:
+```scala mdoc
+case class Payload(data: String)
+case class MyResponse(data: String)
+```
+
 ## Circe
 
 JSON encoding of bodies and decoding of responses can be handled using [Circe](https://circe.github.io/circe/) by the `circe` module. To use add the following dependency to your project:
@@ -17,15 +23,14 @@ Automatic and semi-automatic derivation of encoders is possible by using the [ci
  
 Response can be parsed into json using `asJson[T]`, provided there's an implicit `io.circe.Decoder[T]` in scope. The decoding result will be represented as either a http/deserialization error, or the parsed value. For example:
 
-```scala
+```scala mdoc:compile-only
 import sttp.client._
 import sttp.client.circe._
 
 implicit val backend: SttpBackend[Identity, Nothing, NothingT] = HttpURLConnectionBackend()
 
-// Assume that there is an implicit circe encoder in scope
-// for the request Payload, and a decoder for the MyResponse
-val requestPayload: Payload = ???
+import io.circe.generic.auto._
+val requestPayload: Payload = Payload("some data")
 
 val response: Identity[Response[Either[ResponseError[io.circe.Error], MyResponse]]] =
   basicRequest
@@ -52,18 +57,16 @@ Using this module it is possible to set request bodies and read response bodies 
 
 Usage example:
 
-```scala
+```scala mdoc:compile-only
 import sttp.client._
 import sttp.client.json4s._
 
 implicit val backend: SttpBackend[Identity, Nothing, NothingT] = HttpURLConnectionBackend()
 
-case class Payload(...)
-case class MyResponse(...)
-
-val requestPayload: Payload = Payload(...)
+val requestPayload: Payload = Payload("some data")
 
 implicit val serialization = org.json4s.native.Serialization
+implicit val formats = org.json4s.DefaultFormats
 
 val response: Identity[Response[Either[ResponseError[Exception], MyResponse]]] =
   basicRequest
@@ -85,26 +88,19 @@ Using this module it is possible to set request bodies and read response bodies 
 
 Usage example:
 
-```scala
+```scala mdoc:compile-only
 import sttp.client._
 import sttp.client.sprayJson._
 import spray.json._
 
 implicit val backend: SttpBackend[Identity, Nothing, NothingT] = HttpURLConnectionBackend()
 
-case class Payload(...)
-object Payload {
-  implicit val jsonFormat: RootJsonFormat[Payload] = ...
-}
+implicit val payloadJsonFormat: RootJsonFormat[Payload] = ???
+implicit val myResponseJsonFormat: RootJsonFormat[MyResponse] = ???
 
-case class MyResponse(...)
-object MyResponse {
-  implicit val jsonFormat: RootJsonFormat[MyResponse] = ...
-}
+val requestPayload: Payload = Payload("some data")
 
-val requestPayload: Payload = Payload(...)
-
-val response: Identity[Response[Either[ResponseError[io.circe.Error], MyResponse]]] =
+val response: Identity[Response[Either[ResponseError[Exception], MyResponse]]] =
   basicRequest
     .post(uri"...")
     .body(requestPayload)
