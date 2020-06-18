@@ -44,7 +44,8 @@ libraryDependencies ++= List(
 
 Example code:
 
-```scala
+```scala mdoc:compile-only
+import scala.concurrent.Future
 import sttp.client._
 import sttp.client.akkahttp._
 import sttp.client.json4s._
@@ -86,17 +87,17 @@ libraryDependencies ++= List(
 
 Example code:
 
-```scala
+```scala mdoc:compile-only
 import sttp.client._
 import sttp.client.circe._
 import sttp.client.asynchttpclient.zio._
 import io.circe.generic.auto._
-import zio._
+import zio.{App => ZApp, _}
 import zio.console.Console
 
-object GetAndParseJsonZioCirce extends App {
+object GetAndParseJsonZioCirce extends ZApp {
 
-  override def run(args: List[String]): ZIO[ZEnv, Nothing, Int] = {
+  override def run(args: List[String]): ZIO[ZEnv, Nothing, ExitCode] = {
 
     case class HttpBinResponse(origin: String, headers: Map[String, String])
 
@@ -114,7 +115,7 @@ object GetAndParseJsonZioCirce extends App {
 
     // provide an implementation for the SttpClient dependency; other dependencies are
     // provided by Zio
-    sendAndPrint.provideCustomLayer(AsyncHttpClientZioBackend.layer()).fold(_ => 1, _ => 0)
+    sendAndPrint.provideCustomLayer(AsyncHttpClientZioBackend.layer()).fold(_ => ExitCode.failure, _ => ExitCode.success)
   }
 }
 ```
@@ -133,7 +134,7 @@ libraryDependencies ++= List(
 
 Example code:
 
-```scala
+```scala mdoc:compile-only
 import sttp.client._
 import sttp.client.circe._
 import sttp.client.asynchttpclient.monix._
@@ -168,7 +169,7 @@ libraryDependencies ++= List("com.softwaremill.sttp.client" %% "core" % "2.2.1")
 
 Example code:
 
-```scala
+```scala mdoc:compile-only
 import sttp.client._
 import sttp.client.testing._
 
@@ -203,15 +204,15 @@ libraryDependencies ++= List("com.softwaremill.sttp.client" %% "async-http-clien
 
 Example code:
 
-```scala
+```scala mdoc:compile-only
 import sttp.client._
 import sttp.client.asynchttpclient.zio._
 import sttp.client.ws.WebSocket
 import sttp.model.ws.WebSocketFrame
-import zio._
+import zio.{App => ZApp, _}
 import zio.console.Console
 
-object WebsocketZio extends App {
+object WebsocketZio extends ZApp {
   def useWebsocket(ws: WebSocket[Task]): ZIO[Console, Throwable, Unit] = {
     def send(i: Int) = ws.send(WebSocketFrame.text(s"Hello $i!"))
     val receive = ws.receiveText().flatMap(t => console.putStrLn(s"RECEIVED: $t"))
@@ -225,10 +226,10 @@ object WebsocketZio extends App {
     _ <- useWebsocket(response.result)
   } yield ()
 
-  override def run(args: List[String]): ZIO[ZEnv, Nothing, Int] = {
+  override def run(args: List[String]): ZIO[ZEnv, Nothing, ExitCode] = {
     // provide an implementation for the SttpClient dependency; other dependencies are
     // provided by Zio
-    sendAndPrint.provideCustomLayer(AsyncHttpClientZioBackend.layer()).fold(_ => 1, _ => 0)
+    sendAndPrint.provideCustomLayer(AsyncHttpClientZioBackend.layer()).fold(_ => ExitCode.failure, _ => ExitCode.success)
   }
 }
 ```
@@ -243,7 +244,7 @@ libraryDependencies ++= List("com.softwaremill.sttp.client" %% "async-http-clien
 
 Example code:
 
-```scala
+```scala mdoc:compile-only
 import monix.eval.Task
 import sttp.client._
 import sttp.client.ws.{WebSocket, WebSocketResponse}
@@ -283,7 +284,7 @@ libraryDependencies ++= List("com.softwaremill.sttp.client" %% "async-http-clien
 
 Example code:
 
-```scala
+```scala mdoc:compile-only
 import sttp.client._
 import sttp.client.asynchttpclient.fs2.AsyncHttpClientFs2Backend
 
@@ -336,7 +337,7 @@ libraryDependencies ++= List("com.softwaremill.sttp.client" %% "async-http-clien
 
 Example code:
 
-```scala
+```scala mdoc:compile-only
 import sttp.client._
 import sttp.client.asynchttpclient.zio.AsyncHttpClientZioBackend
 

@@ -253,7 +253,7 @@ lazy val rootProject = (project in file("."))
       httpClientZioBackend.projectRefs ++
       finagleBackend.projectRefs ++
       slf4jBackend.projectRefs ++
-      examples.projectRefs ++ 
+      examples.projectRefs ++
       docs.projectRefs: _*
   )
 
@@ -303,7 +303,7 @@ lazy val core = (projectMatrix in file("core"))
           "com.softwaremill.sttp.model" %%% "core" % modelVersion,
           "org.scalatest" %%% "scalatest" % scalaTestVersion % Test
         ),
-        publishArtifact in Test := true 
+        publishArtifact in Test := true
       )
     }
   )
@@ -319,7 +319,7 @@ lazy val core = (projectMatrix in file("core"))
           "org.scalatest" %%% "scalatest-freespec" % scalaTestNativeVersion % Test,
           "org.scalatest" %%% "scalatest-funsuite" % scalaTestNativeVersion % Test
         ),
-        publishArtifact in Test := true 
+        publishArtifact in Test := true
       )
     }
   )
@@ -718,8 +718,16 @@ compileDocs := {
 
 lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // important: it must not be docs/
   .settings(commonSettings)
-  .settings(publishArtifact := false, name := "docs")
-  .dependsOn(core)
+  .settings(
+    publishArtifact := false,
+    name := "docs",
+    libraryDependencies ++= Seq(
+      "org.json4s" %% "json4s-native" % json4sVersion,
+      "io.circe" %% "circe-generic" % "0.12.1",
+      akkaStreams
+    )
+  )
+  .dependsOn(core, akkaHttpBackend, json4s, circe, asyncHttpClientZioBackend, asyncHttpClientMonixBackend, asyncHttpClientFs2Backend)
   .enablePlugins(MdocPlugin)
   .settings(
     mdocIn := file("docs"),

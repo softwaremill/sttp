@@ -45,6 +45,7 @@ libraryDependencies ++= List(
 Example code:
 
 ```scala
+import scala.concurrent.Future
 import sttp.client._
 import sttp.client.akkahttp._
 import sttp.client.json4s._
@@ -69,7 +70,7 @@ for {
   println(s"Got response code: ${r.code}")
   println(r.body)
   backend.close()
-}                             
+}
 ```
 
 ## GET and parse JSON using the ZIO async-http-client backend and circe
@@ -91,12 +92,12 @@ import sttp.client._
 import sttp.client.circe._
 import sttp.client.asynchttpclient.zio._
 import io.circe.generic.auto._
-import zio._
+import zio.{App => ZApp, _}
 import zio.console.Console
 
-object GetAndParseJsonZioCirce extends App {
+object GetAndParseJsonZioCirce extends ZApp {
 
-  override def run(args: List[String]): ZIO[ZEnv, Nothing, Int] = {
+  override def run(args: List[String]): ZIO[ZEnv, Nothing, ExitCode] = {
 
     case class HttpBinResponse(origin: String, headers: Map[String, String])
 
@@ -114,7 +115,7 @@ object GetAndParseJsonZioCirce extends App {
 
     // provide an implementation for the SttpClient dependency; other dependencies are
     // provided by Zio
-    sendAndPrint.provideCustomLayer(AsyncHttpClientZioBackend.layer()).fold(_ => 1, _ => 0)
+    sendAndPrint.provideCustomLayer(AsyncHttpClientZioBackend.layer()).fold(_ => ExitCode.failure, _ => ExitCode.success)
   }
 }
 ```
@@ -208,10 +209,10 @@ import sttp.client._
 import sttp.client.asynchttpclient.zio._
 import sttp.client.ws.WebSocket
 import sttp.model.ws.WebSocketFrame
-import zio._
+import zio.{App => ZApp, _}
 import zio.console.Console
 
-object WebsocketZio extends App {
+object WebsocketZio extends ZApp {
   def useWebsocket(ws: WebSocket[Task]): ZIO[Console, Throwable, Unit] = {
     def send(i: Int) = ws.send(WebSocketFrame.text(s"Hello $i!"))
     val receive = ws.receiveText().flatMap(t => console.putStrLn(s"RECEIVED: $t"))
@@ -225,10 +226,10 @@ object WebsocketZio extends App {
     _ <- useWebsocket(response.result)
   } yield ()
 
-  override def run(args: List[String]): ZIO[ZEnv, Nothing, Int] = {
+  override def run(args: List[String]): ZIO[ZEnv, Nothing, ExitCode] = {
     // provide an implementation for the SttpClient dependency; other dependencies are
     // provided by Zio
-    sendAndPrint.provideCustomLayer(AsyncHttpClientZioBackend.layer()).fold(_ => 1, _ => 0)
+    sendAndPrint.provideCustomLayer(AsyncHttpClientZioBackend.layer()).fold(_ => ExitCode.failure, _ => ExitCode.success)
   }
 }
 ```
