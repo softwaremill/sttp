@@ -184,7 +184,7 @@ class SttpBackendStub[F[_], S, WS_HANDLER[_]](
       * This method of stubbing should be used when using the "high-level" websockets, that is when `WS_RESULT` is
       * [[WebSocket]].
       *
-     * The websocket instance will be built using the given [[WebSocketStub]].
+      * The websocket instance will be built using the given [[WebSocketStub]].
       */
     def thenRespondWebSocket(wsStub: WebSocketStub[_]): SttpBackendStub[F, S, WS_HANDLER] =
       thenRespondWebSocket(Headers(List.empty), wsStub)
@@ -208,7 +208,7 @@ class SttpBackendStub[F[_], S, WS_HANDLER[_]](
       * When [[openWebsocket()]] is called, the given headers and handler are used to create the result.
       * This method of stubbing is best suited when [[openWebsocket()]] is called with a handler that
       * doesn't return a "high-level" [[WebSocket]], but instead e.g. a backend-specific stream.
-      * */
+      */
     def thenHandleOpenWebSocket[WS_RESULT](
         useHandler: WS_HANDLER[WS_RESULT] => WS_RESULT
     ): SttpBackendStub[F, S, WS_HANDLER] = thenHandleOpenWebSocket(Headers(List.empty), useHandler)
@@ -217,7 +217,7 @@ class SttpBackendStub[F[_], S, WS_HANDLER[_]](
       * When [[openWebsocket()]] is called, the given headers and handler are used to create the result.
       * This method of stubbing is best suited when [[openWebsocket()]] is called with a handler that
       * doesn't return a "high-level" [[WebSocket]], but instead e.g. a backend-specific stream.
-      * */
+      */
     def thenHandleOpenWebSocket[WS_RESULT](
         headers: Headers,
         useHandler: WS_HANDLER[WS_RESULT] => WS_RESULT

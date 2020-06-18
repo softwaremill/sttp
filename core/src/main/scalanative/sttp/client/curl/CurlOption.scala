@@ -188,7 +188,7 @@ private[client] object CurlOption extends Enumeration {
 
   /** Set the krb4/5 security level, this also enables krb4/5 awareness.  This
     * is a string, 'clear', 'safe', 'confidential' or 'private'.  If the string
-    * is set but doesn't match one of these, 'private' will be used.  */
+    * is set but doesn't match one of these, 'private' will be used. */
   val KrbLevel = Value(10000 + 63)
 
   /** Set if we should verify the peer in ssl handshake, set 1 to verify. */
@@ -247,7 +247,7 @@ private[client] object CurlOption extends Enumeration {
   val SslVerifyHost = Value(81)
 
   /** Specify which file name to write all known cookies in after completed
-    *operation. Set file name to "-" (dash) to make it go to stdout. */
+    * operation. Set file name to "-" (dash) to make it go to stdout. */
   val CookieJar = Value(10000 + 82)
 
   /** Specify which SSL ciphers to use */
@@ -302,7 +302,7 @@ private[client] object CurlOption extends Enumeration {
   val Buffersize = Value(98)
 
   /** Instruct libcurl to not use any signal/alarm handlers, even when using
-    *timeouts. This option is useful for multi-threaded applications.
+    * timeouts. This option is useful for multi-threaded applications.
     * See libcurl-the-guide for more background information. */
   val Nosignal = Value(99)
 
@@ -436,13 +436,13 @@ private[client] object CurlOption extends Enumeration {
   val IgnoreContentLength = Value(136)
 
   /** Set to non-zero to skip the IP address received in a 227 PASV FTP server
-    *response. Typically used for FTP-SSL purposes but is not restricted to
-    *that. libcurl will then instead use the same IP address it used for the
+    * response. Typically used for FTP-SSL purposes but is not restricted to
+    * that. libcurl will then instead use the same IP address it used for the
     * control connection. */
   val FtpSkipPasvIp = Value(137)
 
   /** Select "file method" to use when doing FTP, see the curl_ftpmethod
-    *above. */
+    * above. */
   val FtpFilemethod = Value(138)
 
   /** Local port number to bind the socket to */
@@ -558,9 +558,9 @@ private[client] object CurlOption extends Enumeration {
   /** Comma separated list of hostnames defining no-proxy zones. These should
     * match both hostnames directly, and hostnames within a domain. For
     * example, local.com will match local.com and www.local.com, but NOT
-    *notlocal.com or www.notlocal.com. For compatibility with other
+    * notlocal.com or www.notlocal.com. For compatibility with other
     * implementations of this, .local.com will be considered to be the same as
-    *local.com. A single * is the only valid wildcard, and effectively
+    * local.com. A single * is the only valid wildcard, and effectively
     * disables the use of proxy. */
   val Noproxy = Value(10000 + 177)
 
@@ -573,7 +573,7 @@ private[client] object CurlOption extends Enumeration {
   /** set the bitmask for the protocols that are allowed to be used for the
     * transfer, which thus helps the app which takes URLs from users or other
     * external inputs and want to restrict what protocol(s) to deal
-    *with. Defaults to CURLPROTO_ALL. */
+    * with. Defaults to CURLPROTO_ALL. */
   val Protocols = Value(181)
 
   /** set the bitmask for the protocols that libcurl is allowed to follow to,

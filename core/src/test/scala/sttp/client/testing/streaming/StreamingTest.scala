@@ -13,7 +13,7 @@ import sttp.client.testing.HttpTest.endpoint
 
 // TODO: change to `extends AsyncFreeSpec` when https://github.com/scalatest/scalatest/issues/1802 is fixed
 trait StreamingTest[F[_], S]
-  extends SuiteMixin
+    extends SuiteMixin
     with AsyncFreeSpecLike
     with Matchers
     with ToFutureWrapper
