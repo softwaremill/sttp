@@ -12,7 +12,7 @@ object ZioWebSocketHandler {
   private class ZioAsyncQueue[A](queue: Queue[A], runtime: Runtime[Any]) extends AsyncQueue[BlockingTask, A] {
     override def offer(t: A): Unit = {
       if (!runtime.unsafeRun(queue.offer(t))) {
-        throw new WebSocketBufferFull()
+        throw new IllegalStateException("Error while placing item in the queue")
       }
     }
     override def poll: BlockingTask[A] = {
