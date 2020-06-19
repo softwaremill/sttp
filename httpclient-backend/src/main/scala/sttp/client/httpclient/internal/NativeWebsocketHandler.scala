@@ -5,7 +5,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.net.http.WebSocket.Listener
 import java.net.http.{WebSocket => JWebSocket}
 import sttp.client.ws.WebSocketEvent
-import sttp.model.ws.WebSocketFrame
 import sttp.client.monad.syntax._
 import java.util.concurrent.CompletionStage
 import java.nio.ByteBuffer
