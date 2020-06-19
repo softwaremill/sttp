@@ -724,6 +724,7 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     libraryDependencies ++= Seq(
       "org.json4s" %% "json4s-native" % json4sVersion,
       "io.circe" %% "circe-generic" % "0.12.1",
+      "commons-io" % "commons-io" % "2.7",
       akkaStreams
     )
   )
