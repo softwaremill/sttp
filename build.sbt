@@ -737,7 +737,10 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     asyncHttpClientMonixBackend,
     asyncHttpClientFs2Backend,
     asyncHttpClientCatsBackend,
+    asyncHttpClientFutureBackend,
+    okhttpBackend,
     sprayJson,
+    httpClientBackend,
     httpClientFs2Backend
   )
   .enablePlugins(MdocPlugin)
