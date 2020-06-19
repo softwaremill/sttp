@@ -2,7 +2,8 @@ package sttp.client.akkahttp
 
 import java.io.{File, UnsupportedEncodingException}
 
-import akka.actor.ActorSystem
+import akka.Done
+import akka.actor.{ActorSystem, CoordinatedShutdown}
 import akka.event.LoggingAdapter
 import akka.http.scaladsl.coding.{Deflate, Gzip, NoCoding}
 import akka.http.scaladsl.model.ContentTypes.`application/octet-stream`
@@ -17,7 +18,7 @@ import akka.http.scaladsl.model.headers.{
 import akka.http.scaladsl.model.ws.{Message, WebSocketRequest}
 import akka.http.scaladsl.model.{Multipart => AkkaMultipart, StatusCode => _, _}
 import akka.http.scaladsl.settings.ConnectionPoolSettings
-import akka.http.scaladsl.{ClientTransport, HttpsConnectionContext}
+import akka.http.scaladsl.{ClientTransport, Http, HttpsConnectionContext}
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{FileIO, Flow, Sink, Source, StreamConverters}
 import akka.util.ByteString
@@ -367,7 +368,13 @@ class AkkaHttpBackend private (
 
   override def close(): Future[Unit] = {
     import as.dispatcher
-    if (terminateActorSystemOnClose) actorSystem.terminate().map(_ => ()) else Future.successful(())
+    if (terminateActorSystemOnClose) {
+      CoordinatedShutdown(as).addTask(
+        CoordinatedShutdown.PhaseServiceRequestsDone,
+        "shut down all connection pools"
+      )(() => Http(as).shutdownAllConnectionPools.map(_ => Done))
+      actorSystem.terminate().map(_ => ())
+    } else Future.successful(())
   }
 }
 
