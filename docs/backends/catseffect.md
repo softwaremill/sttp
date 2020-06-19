@@ -8,7 +8,7 @@ To use, add the following dependency to your project:
 "com.softwaremill.sttp.client" %% "async-http-client-backend-cats" % "2.2.1"
 ```
 And some imports:
-```scala mdoc
+```scala mdoc:silent
 import sttp.client._
 import sttp.client.asynchttpclient.cats.AsyncHttpClientCatsBackend
 import cats.effect._

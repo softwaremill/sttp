@@ -8,7 +8,7 @@ To use, add the following dependency to your project:
 
 Next you'll need to add an implicit value:
 
-```scala
+```scala mdoc:compile-only
 import sttp.client.finagle.FinagleBackend
 implicit val sttpBackend = FinagleBackend()
 ```

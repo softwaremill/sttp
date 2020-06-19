@@ -728,7 +728,18 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
       akkaStreams
     )
   )
-  .dependsOn(core, akkaHttpBackend, json4s, circe, asyncHttpClientZioBackend, asyncHttpClientMonixBackend, asyncHttpClientFs2Backend, asyncHttpClientCatsBackend, sprayJson)
+  .dependsOn(
+    core,
+    akkaHttpBackend,
+    json4s,
+    circe,
+    asyncHttpClientZioBackend,
+    asyncHttpClientMonixBackend,
+    asyncHttpClientFs2Backend,
+    asyncHttpClientCatsBackend,
+    sprayJson,
+    finagleBackend
+  )
   .enablePlugins(MdocPlugin)
   .settings(
     mdocIn := file("docs"),
