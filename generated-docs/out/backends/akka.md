@@ -91,7 +91,6 @@ val backend = AkkaHttpBackend.usingClient(system, http = AkkaHttpClient.stubFrom
 The Akka backend supports websockets, where the websocket handler is of type `akka.stream.scaladsl.Flow[Message, Message, _]`. That is, when opening a websocket connection, you need to provide the description of a stream, which will consume incoming websocket messages, and produce outgoing websocket messages. For example:
 
 ```scala
-import scala.concurrent.Future
 import akka.Done
 import akka.stream.scaladsl.Flow
 import akka.http.scaladsl.model.ws.Message

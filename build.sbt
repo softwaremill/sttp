@@ -29,7 +29,7 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
     releaseStepCommandAndRemaining("clean"),
     releaseStepCommandAndRemaining("test"),
     setReleaseVersion,
-    releaseStepInputTask(docs.jvm(scala2_12) / mdoc),
+    releaseStepInputTask(docs.jvm(scala2_13) / mdoc),
     Release.stageChanges("generated-docs/out"),
     updateVersionInDocs(organization.value),
     commitReleaseVersion,
@@ -713,7 +713,7 @@ lazy val examples = (projectMatrix in file("examples"))
 
 val compileDocs: TaskKey[Unit] = taskKey[Unit]("Compiles docs module throwing away its output")
 compileDocs := {
-  (docs.jvm(scala2_12) / mdoc).toTask(" --out target/sttp-docs").value
+  (docs.jvm(scala2_13) / mdoc).toTask(" --out target/sttp-docs").value
 }
 
 lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // important: it must not be docs/
@@ -738,7 +738,7 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     asyncHttpClientFs2Backend,
     asyncHttpClientCatsBackend,
     sprayJson,
-    finagleBackend
+    httpClientFs2Backend
   )
   .enablePlugins(MdocPlugin)
   .settings(
@@ -749,4 +749,4 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     ),
     mdocOut := file("generated-docs/out")
   )
-  .jvmPlatform(scalaVersions = List(scala2_12))
+  .jvmPlatform(scalaVersions = List(scala2_13))

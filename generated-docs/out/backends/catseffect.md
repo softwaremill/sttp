@@ -33,7 +33,7 @@ A non-comprehensive summary of how the backend can be created is as follows:
 // the effect type must implement the Concurrent typeclass
 AsyncHttpClientCatsBackend[IO]().flatMap { implicit backend => ??? }
 ```
-or, if you'd like to use custom configuration:
+or, if you'd like to use a custom configuration:
 ```scala
 import org.asynchttpclient.AsyncHttpClientConfig
 val config: AsyncHttpClientConfig = ???
