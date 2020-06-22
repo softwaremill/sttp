@@ -18,22 +18,30 @@ Response headers are available through the `.headers` property, which gives all 
 
 Individual headers can be obtained using the methods:
 
-```scala
-def header(h: String): Option[String]
-def headers(h: String): Seq[String]
+```scala mdoc:silent
+import sttp.client._
+implicit val backend = HttpURLConnectionBackend()
+val request = basicRequest
+    .get(uri"http://endpoint.com/example")
+val response = request.send()
+
+val singleHeader: Option[String] = response.header("Server")
+val multipleHeaders: Seq[String] = response.headers("Allow")
 ```
 
 There are also helper methods available to read some commonly accessed headers:
 
-```scala
-def contentType: Option[String]
-def contentLength: Option[Long]
+```scala mdoc:compile-only
+val contentType: Option[String] = response.contentType
+val contentLength: Option[Long] = response.contentLength
 ```
 
 Finally, it's possible to parse the response cookies into a sequence of the `Cookie` case class:
 
-```scala
-def cookies: Seq[Cookie]
+```scala mdoc:compile-only
+import sttp.model._
+
+val cookies: Seq[Cookie] = ???
 ```        
 
 If the cookies from a response should be set without changes on the request, this can be done directly; see the [cookies](../requests/cookies.md) section in the request definition documentation.
