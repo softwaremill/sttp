@@ -10,8 +10,9 @@ The `Uri` class is immutable, and can be constructed by hand, but in many cases 
 
 Using the URI interpolator it's possible to conveniently create `Uri` instances, for example:
 
-```scala
+```scala mdoc:compile-only
 import sttp.client._
+import sttp.model._
 
 val user = "Mary Smith"
 val filter = "programming languages"
@@ -28,15 +29,17 @@ Any values embedded in the URI will be URL-encoded, taking into account the cont
 
 All components of the URI can be embedded from values: scheme, username/password, host, port, path, query and fragment. The embedded values won't be further parsed, with the exception of the `:` in the host part, which is commonly used to pass in both the host and port:
 
-```scala
+```scala mdoc
+import sttp.client._
+
+// the embedded / is escaped
 println(uri"http://example.org/${"a/b"}")
-// the embedded / is escaped: http://example.org/a%2Fb
 
+// the embedded / is not escaped
 println(uri"http://example.org/${"a"}/${"b"}")
-// the embedded / is escaped: http://example.org/a/b
 
+// the embedded : is not escaped
 println(uri"http://${"example.org:8080"}")
-// the embedded : is not escaped: http://example.org:8080 
 ```
 
 Both the `Uri` class and the interpolator can be used stand-alone, without using the rest of sttp. Conversions are available both from and to `java.net.URI`; `Uri.toString` returns the URI as a `String`.
