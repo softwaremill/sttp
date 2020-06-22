@@ -2,7 +2,7 @@
 
 As mentioned in the [quickstart](../quickstart.md), the following import will be needed:
 
-```scala
+```scala mdoc
 import sttp.client._
 ```
 
@@ -10,7 +10,7 @@ This brings into scope `basicRequest`, the starting request. This request can be
 
 For example, we can set a cookie, `String` -body and specify that this should be a `POST` request to a given URI:
 
-```scala
+```scala mdoc:silent
 val request = basicRequest
     .cookie("login", "me")
     .body("This is a test")
@@ -35,16 +35,16 @@ A request definition can be created without knowing how it will be sent. But to 
 
 To invoke the `send()` method on a request description, an implicit value of type `SttpBackend` needs to be in scope:
 
-```scala
+```scala mdoc:compile-only
 implicit val backend = HttpURLConnectionBackend()
-val response: Response[String] = request.send()
+val response = request.send()
 ```        
 
 The default backend doesn't wrap the response into any container, but other asynchronous backends might do so. See the section on [backends](../backends/summary.md) for more details.
 
 Alternatively, if you prefer to pass the backend explicitly, instead of using implicits, you can also send the request the following way:
 
-```scala
+```scala mdoc:compile-only
 val backend = HttpURLConnectionBackend()
 val response = backend.send(request)     
 ```
@@ -68,16 +68,10 @@ Both of these requests will by default read the response body into a UTF-8 `Stri
 
 sttp comes with builtin request to curl converter. To convert request to curl invocation use `.toCurl` method.
 
-For example converting given request:
+For example:
 
-```scala
+```scala mdoc
 basicRequest.get(uri"http://httpbin.org/ip").toCurl
-```
-
-will result in following curl command:
-
-```scala
-curl -L --max-redirs 32 -X GET "http://httpbin.org/ip"
 ```
 
 Note that the `Accept-Encoding` header, which is added by default to all requests (`Accept-Encoding: gzip, deflate`) is filtered out from the generated command, so that when running a request from the command line, the result has higher chance of being human-readable, and not compressed.
