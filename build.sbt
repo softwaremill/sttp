@@ -725,8 +725,11 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
       "org.json4s" %% "json4s-native" % json4sVersion,
       "io.circe" %% "circe-generic" % "0.12.1",
       "commons-io" % "commons-io" % "2.7",
-      "io.github.resilience4j" % "resilience4j-circuitbreaker" % "1.5.0",
+      "io.github.resilience4j" % "resilience4j-circuitbreaker" % "1.5.0", //TODO extract to variables and reuse in mdoc
       "io.github.resilience4j" % "resilience4j-ratelimiter" % "1.5.0",
+      "io.jaegertracing" % "jaeger-client" % "1.0.0",
+      "io.opentracing.brave" % "brave-opentracing" % "0.34.2",
+      "io.zipkin.reporter2" % "zipkin-sender-okhttp3" % "2.15.0",
       akkaStreams
     )
   )
@@ -748,7 +751,8 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     httpClientFs2Backend,
     http4sBackend,
     httpClientMonixBackend,
-    httpClientZioBackend
+    httpClientZioBackend,
+    openTracingBackend
   )
   .enablePlugins(MdocPlugin)
   .settings(

@@ -20,21 +20,23 @@ The backend obtains the current trace context using default spans's propagation 
 
 There is an additional method exposed to override default operation id:
 
-```scala
+```scala mdoc:compile-only
+import sttp.client._
 import sttp.client.opentracing.OpenTracingBackend._
 
 basicRequest
-  .get(...)
+  .get(???)
   .tagWithOperationId("register-user")
 ```
 
 There is an additional method exposed to customize generated span:
 
-```scala
+```scala mdoc:compile-only
+import sttp.client._
 import sttp.client.opentracing.OpenTracingBackend._
 
 basicRequest
-  .get(...)
+  .get(???)
   .tagWithTransformSpan(_.setTag("custom-tag", "custom-value").setOperationName("new-name").log("my-event"))
 ```
 
@@ -50,11 +52,11 @@ libraryDependencies += "io.jaegertracing" % "jaeger-client" % "1.0.0"
 
 Create an instance of tracer:
 
-```scala
+```scala mdoc:compile-only
+import io.opentracing.Tracer
 import io.jaegertracing.Configuration
 import io.jaegertracing.Configuration.ReporterConfiguration
 import io.jaegertracing.Configuration.SamplerConfiguration
-import io.jaegertracing.internal.JaegerTracer
 
 def initTracer(serviceName: String ): Tracer = {
   val samplerConfig = SamplerConfiguration.fromEnv().withType("const").withParam(1)
@@ -79,7 +81,15 @@ libraryDependencies += "io.opentracing.brave" % "brave-opentracing" % "0.34.2"
 
 Create instance of tracer:
 
-```scala
+```scala mdoc:compile-only
+import io.opentracing.Tracer
+import zipkin2.reporter.AsyncReporter
+import zipkin2.reporter.okhttp3.OkHttpSender
+import brave.propagation.{ExtraFieldPropagation, B3Propagation}
+import brave.Tracing
+import brave.opentracing.BraveTracer
+import java.util.Arrays
+
 def initTracer(zipkinUrl: String, serviceName: String): Tracer = {
   // Configure a reporter, which controls how often spans are sent
   //   (the dependency is io.zipkin.reporter2:zipkin-sender-okhttp3)
