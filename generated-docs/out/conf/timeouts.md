@@ -15,7 +15,7 @@ import scala.concurrent.duration._
 implicit val backend = HttpURLConnectionBackend(
   options = SttpBackendOptions.connectionTimeout(1.minute))
 
-sttp
+basicRequest
   .get(uri"...")
   .readTimeout(5.minutes) // or Duration.Inf to turn read timeout off
   .send()
