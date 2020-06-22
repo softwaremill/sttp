@@ -1,12 +1,10 @@
 package sttp.client.httpclient.monix
 
-import monix.catnap.MVar
 import monix.eval.Task
 import monix.execution.Scheduler
 import sttp.client.httpclient.WebSocketHandler
 import sttp.client.httpclient.internal.NativeWebSocketHandler
-import sttp.client.impl.monix.TaskMonadAsyncError
-import sttp.client.ws.internal.AsyncQueue
+import sttp.client.impl.monix.{MonixAsyncQueue, TaskMonadAsyncError}
 import sttp.client.ws.{WebSocket, WebSocketEvent}
 
 object MonixWebSocketHandler {
@@ -19,18 +17,8 @@ object MonixWebSocketHandler {
       s: Scheduler
   ): Task[WebSocketHandler[WebSocket[Task]]] = {
     Task {
-      val queue = new SingleElementQueue[WebSocketEvent]
+      val queue = new MonixAsyncQueue[WebSocketEvent](Some(2))
       NativeWebSocketHandler(queue, TaskMonadAsyncError)
     }
   }
-}
-
-private class SingleElementQueue[A](implicit s: Scheduler) extends AsyncQueue[Task, A] {
-  private val mvar = MVar.empty[Task, A]().runSyncUnsafe()
-
-  override def offer(t: A): Unit =
-    mvar.put(t).runSyncUnsafe()
-
-  override def poll: Task[A] =
-    mvar.take
 }
