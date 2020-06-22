@@ -19,8 +19,9 @@ The model also contains aggregate/helper classes such as `Headers` and `MultiQue
 
 Example with objects:
 
-```scala
+```scala mdoc:compile-only
 import sttp.client._
+import sttp.model._
 
 object Example {
   val request = basicRequest.header(Header.contentType(MediaType.ApplicationJson))
@@ -34,8 +35,9 @@ object Example {
 
 Example with traits:
 
-```scala
+```scala mdoc:compile-only
 import sttp.client._
+import sttp.model._
 
 object Example extends HeaderNames with MediaTypes with StatusCodes {
   val request = basicRequest.header(ContentType, ApplicationJson.toString)
