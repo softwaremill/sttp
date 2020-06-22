@@ -733,6 +733,7 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     akkaHttpBackend,
     json4s,
     circe,
+    sprayJson,
     asyncHttpClientZioBackend,
     asyncHttpClientMonixBackend,
     asyncHttpClientFs2Backend,
@@ -740,12 +741,12 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     asyncHttpClientFutureBackend,
     asyncHttpClientScalazBackend,
     okhttpBackend,
-    sprayJson,
+    okhttpMonixBackend,
     httpClientBackend,
     httpClientFs2Backend,
     http4sBackend,
-    okhttpMonixBackend,
-    httpClientMonixBackend
+    httpClientMonixBackend,
+    httpClientZioBackend
   )
   .enablePlugins(MdocPlugin)
   .settings(
