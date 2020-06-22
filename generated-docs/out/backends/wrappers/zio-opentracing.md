@@ -19,6 +19,13 @@ new ZioTelemetryOpenTracingBackend(zioBackend)
 Additionally you can add tags per request by supplying a `ZioTelemetryOpenTracingTracer`
 
 ```scala
+import sttp.client._
+import zio._
+import zio.telemetry.opentracing._
+import sttp.client.ziotelemetry.opentracing._
+
+implicit val zioBackend: SttpBackend[Task, Nothing, NothingT] = ???
+
 def sttpTracer: ZioTelemetryOpenTracingTracer = new ZioTelemetryOpenTracingTracer {
     def before[T](request: Request[T, Nothing]): RIO[OpenTracing, Unit] =
       OpenTracing.tag("span.kind", "client") *>
@@ -31,7 +38,7 @@ def sttpTracer: ZioTelemetryOpenTracingTracer = new ZioTelemetryOpenTracingTrace
       OpenTracing.tag("http.status_code", response.code.code)
 }
 
-new ZioTelemetryOpenTracingBackend(zioBackend, sttpTracer)
+new ZioTelemetryOpenTracingBackend[NothingT](zioBackend, sttpTracer)
 ```
 
 
