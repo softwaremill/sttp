@@ -10,12 +10,14 @@ To use the backend wrappers, add the following dependency to your project:
 
 The following backend wrappers are available:
 
-```scala
+```scala mdoc:compile-only
+import sttp.client._
 import sttp.client.logging.slf4j._
+val delegateBackend: SttpBackend[Identity, Nothing, NothingT] = ???
 
-Slf4jLoggingBackend(delegateBackend)
-Slf4jTimingBackend(delegateBackend)
-Slf4jCurlBackend(delegateBackend)
+Slf4jLoggingBackend[Identity, Nothing, NothingT](delegateBackend)
+Slf4jTimingBackend[Identity, Nothing, NothingT](delegateBackend)
+Slf4jCurlBackend[Identity, Nothing, NothingT](delegateBackend)
 ```
 
 The logging backend logs `DEBUG`-level logs when a request is started, completes successfully, and `ERROR`-level logs when it results in an exception.
@@ -26,7 +28,7 @@ The curl backend logs `DEBUG`-level logs when a request completes successfully o
 
 Example usage:
 
-```scala
+```scala mdoc:compile-only
 import sttp.client._
 import sttp.client.logging.slf4j.Slf4jTimingBackend
 
