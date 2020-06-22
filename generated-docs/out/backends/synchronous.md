@@ -28,8 +28,13 @@ Create the backend using:
 import sttp.client.okhttp.OkHttpSyncBackend
 
 implicit val sttpBackend = OkHttpSyncBackend()
+```
+or, if you'd like to instantiate the OkHttpClient yourself:
+```scala
+import sttp.client.okhttp.OkHttpSyncBackend
+import okhttp3._
 
-// or, if you'd like to instantiate the OkHttpClient yourself:
+val okHttpClient: OkHttpClient = ???
 implicit val sttpBackend = OkHttpSyncBackend.usingClient(okHttpClient)
 ```
 
@@ -49,8 +54,12 @@ Create the backend using:
 import sttp.client.httpclient.HttpClientSyncBackend
 
 implicit val sttpBackend = HttpClientSyncBackend()
-
-// or, if you'd like to instantiate the HttpClient yourself:
+```
+or, if you'd like to instantiate the HttpClient yourself:
+```scala
+import sttp.client.httpclient.HttpClientSyncBackend
+import java.net.http.HttpClient
+val httpClient: HttpClient = ???
 implicit val sttpBackend = HttpClientSyncBackend.usingClient(httpClient)
 ```
 
