@@ -8,7 +8,6 @@ This backend is based on [http4s](https://http4s.org) (blaze client) and is **as
 
 Add some imports as well:
 ```scala mdoc:silent
-import sttp.client._
 import cats.effect._
 import sttp.client.http4s._
 import scala.concurrent._

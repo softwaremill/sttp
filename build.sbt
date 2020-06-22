@@ -742,7 +742,9 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     sprayJson,
     httpClientBackend,
     httpClientFs2Backend,
-    http4sBackend
+    http4sBackend,
+    okhttpMonixBackend,
+    httpClientMonixBackend
   )
   .enablePlugins(MdocPlugin)
   .settings(
