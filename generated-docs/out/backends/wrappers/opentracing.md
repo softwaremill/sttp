@@ -79,7 +79,7 @@ Add following dependency:
 libraryDependencies += "io.opentracing.brave" % "brave-opentracing" % "0.34.2"
 ```
 
-Create instance of tracer:
+Create an instance of tracer:
 
 ```scala
 import io.opentracing.Tracer

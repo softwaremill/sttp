@@ -752,7 +752,8 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     http4sBackend,
     httpClientMonixBackend,
     httpClientZioBackend,
-    openTracingBackend
+    openTracingBackend,
+    prometheusBackend
   )
   .enablePlugins(MdocPlugin)
   .settings(
