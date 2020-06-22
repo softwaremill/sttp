@@ -725,11 +725,13 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
       "org.json4s" %% "json4s-native" % json4sVersion,
       "io.circe" %% "circe-generic" % "0.12.1",
       "commons-io" % "commons-io" % "2.7",
+      "io.github.resilience4j" % "resilience4j-circuitbreaker" % "1.5.0",
+      "io.github.resilience4j" % "resilience4j-ratelimiter" % "1.5.0",
       akkaStreams
     )
   )
   .dependsOn(
-    core,
+    core % "compile->test",
     akkaHttpBackend,
     json4s,
     circe,
