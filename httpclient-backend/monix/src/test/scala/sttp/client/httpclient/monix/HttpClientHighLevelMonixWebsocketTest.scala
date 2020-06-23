@@ -22,12 +22,12 @@ class HttpClientHighLevelMonixWebsocketTest extends HighLevelWebsocketTest[Task,
   implicit val convertToFuture: ConvertToFuture[Task] = convertMonixTaskToFuture
   implicit val monad: MonadError[Task] = TaskMonadAsyncError
 
-  def createHandler: Option[Int] => Task[WebSocketHandler[WebSocket[Task]]] = _ => MonixWebSocketHandler(5)
+  override def createHandler: Option[Int] => Task[WebSocketHandler[WebSocket[Task]]] = _ => MonixWebSocketHandler()
 
   it should "handle backpressure correctly" in {
     basicRequest
       .get(uri"$wsEndpoint/ws/echo")
-      .openWebsocketF(createHandler(Some(3)))
+      .openWebsocketF(createHandler(None))
       .flatMap { response =>
         val ws = response.result
         send(ws, 1000) >> eventually(10.millis, 500) { ws.isOpen.map(_ shouldBe true) }
