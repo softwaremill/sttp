@@ -3,7 +3,7 @@
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client" %% "opentracing-backend" % "2.2.0"
+"com.softwaremill.sttp.client" %% "opentracing-backend" % "2.2.1"
 ```
 
 This backend depends on [opentracing](https://github.com/opentracing/opentracing-java), a standardized set of api for distributed tracing.

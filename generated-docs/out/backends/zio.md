@@ -143,8 +143,8 @@ val response: ZIO[SttpClient, Throwable, Response[Either[String, Stream[Throwabl
 
 The ZIO backend supports:
 
-* high-level, "functional" websocket interface, through the `sttp.client.asynchttpclient.zio.ZioWebSocketHandler`
-* low-level interface by wrapping a low-level Java interface, `sttp.client.asynchttpclient.WebSocketHandler`
+* high-level, "functional" websocket interface, through the `ZioWebSocketHandler` from the appropriate package
+* low-level interface by wrapping a low-level Java interface, `WebSocketHandler` from the appropriate package
 
 See [websockets](../websockets.md) for details on how to use the high-level and low-level interfaces. Websockets
 opened using the `SttpClient.openWebsocket` and `SttpStreamsClient.openWebsocket` (leveraging ZIO environment) always

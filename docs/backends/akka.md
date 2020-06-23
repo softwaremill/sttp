@@ -3,7 +3,7 @@
 This backend is based on [akka-http](http://doc.akka.io/docs/akka-http/current/scala/http/). To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client" %% "akka-http-backend" % "2.2.0"
+"com.softwaremill.sttp.client" %% "akka-http-backend" % "2.2.1"
 ```
 
 A fully **asynchronous** backend. Sending a request returns a response wrapped in a `Future`. There are also [other `Future`-based backends](future.md), which don't depend on Akka. 

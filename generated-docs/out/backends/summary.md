@@ -39,7 +39,7 @@ Class                                Response wrapper             Supported stre
 ``HttpClientSyncBackend``            None (``Identity``)          n/a                                               ``sttp.client.httpclient.WebSocketHandler``
 ``HttpClientFutureBackend``          ``scala.concurrent.Future``  n/a                                               ``sttp.client.httpclient.WebSocketHandler``
 ``HttpClientMonixBackend``           ``monix.eval.Task``          ``monix.reactive.Observable[ByteBuffer]``         ``sttp.client.httpclient.WebSocketHandler``
-``HttpClientZioBackend``             ``zio.RIO[Blocking, *]``     ``zio.stream.ZStream[Blocking, Throwable, Byte]`` n/a
+``HttpClientZioBackend``             ``zio.RIO[Blocking, *]``     ``zio.stream.ZStream[Blocking, Throwable, Byte]`` ``sttp.client.httpclient.WebSocketHandler``
 ``FinagleBackend``                   ``com.twitter.util.Future``  n/a                                               n/a
 ==================================== ============================ ================================================= ==================================================
 ```

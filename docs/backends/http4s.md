@@ -3,7 +3,7 @@
 This backend is based on [http4s](https://http4s.org) (blaze client) and is **asynchronous**. To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client" %% "http4s-backend" % "2.2.0"
+"com.softwaremill.sttp.client" %% "http4s-backend" % "2.2.1"
 ```
 
 To create the backend, you'll need to provide a `cats.effect.Blocker` instance, which should be passed as a parameter, when defining the backend:
