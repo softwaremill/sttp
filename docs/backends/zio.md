@@ -127,7 +127,6 @@ Requests can be sent with a streaming body:
 import sttp.client._
 import sttp.client.asynchttpclient.zio._
 
-import zio._
 import zio.stream._
 
 val s: Stream[Throwable, Byte] =  ???
