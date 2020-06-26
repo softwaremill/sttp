@@ -15,6 +15,4 @@ There are two type aliases for the request template that are used:
 
 As `basicRequest`, the starting request, by default reads the body into a `Either[String, String]`, its type is:
 
-```scala
-basicRequest: PartialRequest[Either[String, String], Nothing]
-```
+`basicRequest: PartialRequest[Either[String, String], Nothing]`
