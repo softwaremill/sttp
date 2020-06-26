@@ -20,35 +20,36 @@ import scala.util.{Failure, Success, Try}
   * A number of `as[Type]` helper methods are available as part of [[SttpApi]] and when importing `sttp.client._`.
   *
   * @tparam T Target type as which the response will be read.
-  * @tparam S If T is a stream, the type of the stream. Otherwise, `Nothing`.
+  * @tparam R TODO
   */
-sealed trait ResponseAs[+T, +S] {
-  def map[T2](f: T => T2): ResponseAs[T2, S] = mapWithMetadata { case (t, _) => f(t) }
-  def mapWithMetadata[T2](f: (T, ResponseMetadata) => T2): ResponseAs[T2, S] = MappedResponseAs[T, T2, S](this, f)
+sealed trait ResponseAs[+T, -R] {
+  def map[T2](f: T => T2): ResponseAs[T2, R] = mapWithMetadata { case (t, _) => f(t) }
+  def mapWithMetadata[T2](f: (T, ResponseMetadata) => T2): ResponseAs[T2, R] = MappedResponseAs[T, T2, R](this, f)
 }
 
 /**
   * Response handling specification which isn't derived from another response
   * handling method, but needs to be handled directly by the backend.
   */
-sealed trait BasicResponseAs[T, +S] extends ResponseAs[T, S]
+sealed trait BasicResponseAs[T, -R] extends ResponseAs[T, R]
 
-case object IgnoreResponse extends BasicResponseAs[Unit, Nothing]
-case object ResponseAsByteArray extends BasicResponseAs[Array[Byte], Nothing]
-case class ResponseAsStream[T, S]()(implicit val responseIsStream: S =:= T) extends BasicResponseAs[T, S]
-case class ResponseAsFile(output: SttpFile) extends BasicResponseAs[SttpFile, Nothing]
+case object IgnoreResponse extends BasicResponseAs[Unit, Any]
+case object ResponseAsByteArray extends BasicResponseAs[Array[Byte], Any]
+// TODO: dependent types are not supported in extends. We have to rely on the `asStream` method
+case class ResponseAsStream[BinaryStream, S] private[client] (s: Streams[S]) extends ResponseAs[BinaryStream, S]
+case class ResponseAsFile(output: SttpFile) extends BasicResponseAs[SttpFile, Any]
 
-case class ResponseAsFromMetadata[T, S](f: ResponseMetadata => ResponseAs[T, S]) extends ResponseAs[T, S]
+case class ResponseAsFromMetadata[T, R](f: ResponseMetadata => ResponseAs[T, R]) extends ResponseAs[T, R]
 
-case class MappedResponseAs[T, T2, S](raw: ResponseAs[T, S], g: (T, ResponseMetadata) => T2) extends ResponseAs[T2, S] {
-  override def mapWithMetadata[T3](f: (T2, ResponseMetadata) => T3): ResponseAs[T3, S] =
-    MappedResponseAs[T, T3, S](raw, (t, h) => f(g(t, h), h))
+case class MappedResponseAs[T, T2, R](raw: ResponseAs[T, R], g: (T, ResponseMetadata) => T2) extends ResponseAs[T2, R] {
+  override def mapWithMetadata[T3](f: (T2, ResponseMetadata) => T3): ResponseAs[T3, R] =
+    MappedResponseAs[T, T3, R](raw, (t, h) => f(g(t, h), h))
 }
 
 object ResponseAs {
-  implicit class RichResponseAsEither[L, R, S](ra: ResponseAs[Either[L, R], S]) {
-    def mapLeft[L2](f: L => L2): ResponseAs[Either[L2, R], S] = ra.map(_.left.map(f))
-    def mapRight[R2](f: R => R2): ResponseAs[Either[L, R2], S] = ra.map(_.right.map(f))
+  implicit class RichResponseAsEither[A, B, R](ra: ResponseAs[Either[A, B], R]) {
+    def mapLeft[L2](f: A => L2): ResponseAs[Either[L2, B], R] = ra.map(_.left.map(f))
+    def mapRight[R2](f: B => R2): ResponseAs[Either[A, R2], R] = ra.map(_.right.map(f))
   }
 
   private[client] def parseParams(s: String, charset: String): Seq[(String, String)] = {
@@ -67,17 +68,17 @@ object ResponseAs {
     * Handles responses according to the given specification when basic
     * response specifications can be handled eagerly, that is without
     * wrapping the result in the target monad (`handleBasic` returns
-    * `Try[T]`, not `R[T]`).
+    * `Try[T]`, not `F[T]`).
     */
-  private[client] trait EagerResponseHandler[S] {
-    def handleBasic[T](bra: BasicResponseAs[T, S]): Try[T]
+  private[client] trait EagerResponseHandler[R] {
+    def handleBasic[T](bra: BasicResponseAs[T, R]): Try[T]
 
-    def handle[T, F[_]](responseAs: ResponseAs[T, S], responseMonad: MonadError[F], meta: ResponseMetadata): F[T] = {
+    def handle[T, F[_]](responseAs: ResponseAs[T, R], responseMonad: MonadError[F], meta: ResponseMetadata): F[T] = {
       responseAs match {
         case MappedResponseAs(raw, g) =>
           responseMonad.map(handle(raw, responseMonad, meta))(t => g(t, meta))
         case ResponseAsFromMetadata(f) => handle(f(meta), responseMonad, meta)
-        case bra: BasicResponseAs[T, S] =>
+        case bra: BasicResponseAs[T, R] =>
           responseMonad.fromTry(handleBasic(bra))
       }
     }

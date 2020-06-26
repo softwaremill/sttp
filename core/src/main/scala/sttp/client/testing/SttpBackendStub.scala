@@ -35,12 +35,12 @@ import scala.util.{Failure, Success, Try}
   * or headers. A [[ClassCastException]] might occur if for a given request,
   * a response is specified with the incorrect or inconvertible body type.
   */
-class SttpBackendStub[F[_], S, WS_HANDLER[_]](
+class SttpBackendStub[F[_], P, WS_HANDLER[_]](
     monad: MonadError[F],
     matchers: PartialFunction[Request[_, _], F[Response[_]]],
     wsMatchers: PartialFunction[Request[_, _], WhenOpenWebsocket[F, WS_HANDLER]],
-    fallback: Option[SttpBackend[F, S, WS_HANDLER]]
-) extends SttpBackend[F, S, WS_HANDLER] {
+    fallback: Option[SttpBackend[F, P, WS_HANDLER]]
+) extends SttpBackend[F, P, WS_HANDLER] {
 
   /**
     * Specify how the stub backend should respond to requests matching the
@@ -69,10 +69,10 @@ class SttpBackendStub[F[_], S, WS_HANDLER[_]](
     */
   def whenRequestMatchesPartial(
       partial: PartialFunction[Request[_, _], Response[_]]
-  ): SttpBackendStub[F, S, WS_HANDLER] = {
+  ): SttpBackendStub[F, P, WS_HANDLER] = {
     val wrappedPartial: PartialFunction[Request[_, _], F[Response[_]]] =
       partial.andThen((r: Response[_]) => monad.unit(r))
-    new SttpBackendStub[F, S, WS_HANDLER](monad, matchers.orElse(wrappedPartial), wsMatchers, fallback)
+    new SttpBackendStub[F, P, WS_HANDLER](monad, matchers.orElse(wrappedPartial), wsMatchers, fallback)
   }
 
   /**
@@ -81,10 +81,10 @@ class SttpBackendStub[F[_], S, WS_HANDLER[_]](
     */
   def whenRequestMatchesPartialReturnWebSocketResponse[WS_RESULT](
       partial: PartialFunction[Request[_, _], (Headers, WS_RESULT)]
-  ): SttpBackendStub[F, S, WS_HANDLER] = {
+  ): SttpBackendStub[F, P, WS_HANDLER] = {
     val wrappedPartial: PartialFunction[Request[_, _], WhenOpenWebsocket[F, WS_HANDLER]] =
       partial.andThen((r) => ReturnWebsocketResponse(r._1, () => monad.unit(r._2)))
-    new SttpBackendStub[F, S, WS_HANDLER](monad, matchers, wsMatchers.orElse(wrappedPartial), fallback)
+    new SttpBackendStub[F, P, WS_HANDLER](monad, matchers, wsMatchers.orElse(wrappedPartial), fallback)
   }
 
   /**
@@ -93,13 +93,13 @@ class SttpBackendStub[F[_], S, WS_HANDLER[_]](
     */
   def whenRequestMatchesPartialHandleOpenWebsocket[WS_RESULT](
       partial: PartialFunction[Request[_, _], (Headers, WS_HANDLER[WS_RESULT] => WS_RESULT)]
-  ): SttpBackendStub[F, S, WS_HANDLER] = {
+  ): SttpBackendStub[F, P, WS_HANDLER] = {
     val wrappedPartial: PartialFunction[Request[_, _], WhenOpenWebsocket[F, WS_HANDLER]] =
       partial.andThen((r) => UseHandler(r._1, r._2.asInstanceOf[Any => WS_RESULT]))
-    new SttpBackendStub[F, S, WS_HANDLER](monad, matchers, wsMatchers.orElse(wrappedPartial), fallback)
+    new SttpBackendStub[F, P, WS_HANDLER](monad, matchers, wsMatchers.orElse(wrappedPartial), fallback)
   }
 
-  override def send[T](request: Request[T, S]): F[Response[T]] = {
+  override def send[T, R >: P](request: Request[T, R]): F[Response[T]] = {
     Try(matchers.lift(request)) match {
       case Success(Some(response)) =>
         tryAdjustResponseType(monad, request.response, response.asInstanceOf[F[Response[T]]])
@@ -116,7 +116,10 @@ class SttpBackendStub[F[_], S, WS_HANDLER[_]](
     }
   }
 
-  override def openWebsocket[T, WR](request: Request[T, S], handler: WS_HANDLER[WR]): F[WebSocketResponse[WR]] = {
+  override def openWebsocket[T, WR, R >: P](
+      request: Request[T, R],
+      handler: WS_HANDLER[WR]
+  ): F[WebSocketResponse[WR]] = {
     Try(wsMatchers.lift(request)) match {
       case Success(Some(UseHandler(headers, useHandler))) =>
         val use = useHandler.asInstanceOf[WS_HANDLER[WR] => WR]
@@ -140,22 +143,22 @@ class SttpBackendStub[F[_], S, WS_HANDLER[_]](
   override def responseMonad: MonadError[F] = monad
 
   class WhenRequest(p: Request[_, _] => Boolean) {
-    def thenRespondOk(): SttpBackendStub[F, S, WS_HANDLER] =
+    def thenRespondOk(): SttpBackendStub[F, P, WS_HANDLER] =
       thenRespondWithCode(StatusCode.Ok)
-    def thenRespondNotFound(): SttpBackendStub[F, S, WS_HANDLER] =
+    def thenRespondNotFound(): SttpBackendStub[F, P, WS_HANDLER] =
       thenRespondWithCode(StatusCode.NotFound, "Not found")
-    def thenRespondServerError(): SttpBackendStub[F, S, WS_HANDLER] =
+    def thenRespondServerError(): SttpBackendStub[F, P, WS_HANDLER] =
       thenRespondWithCode(StatusCode.InternalServerError, "Internal server error")
-    def thenRespondWithCode(status: StatusCode, msg: String = ""): SttpBackendStub[F, S, WS_HANDLER] = {
+    def thenRespondWithCode(status: StatusCode, msg: String = ""): SttpBackendStub[F, P, WS_HANDLER] = {
       thenRespond(Response(msg, status, msg))
     }
-    def thenRespond[T](body: T): SttpBackendStub[F, S, WS_HANDLER] =
+    def thenRespond[T](body: T): SttpBackendStub[F, P, WS_HANDLER] =
       thenRespond(Response[T](body, StatusCode.Ok, "OK"))
-    def thenRespond[T](resp: => Response[T]): SttpBackendStub[F, S, WS_HANDLER] = {
+    def thenRespond[T](resp: => Response[T]): SttpBackendStub[F, P, WS_HANDLER] = {
       val m: PartialFunction[Request[_, _], F[Response[_]]] = {
         case r if p(r) => monad.eval(resp)
       }
-      new SttpBackendStub[F, S, WS_HANDLER](monad, matchers.orElse(m), wsMatchers, fallback)
+      new SttpBackendStub[F, P, WS_HANDLER](monad, matchers.orElse(m), wsMatchers, fallback)
     }
 
     /**
@@ -163,7 +166,7 @@ class SttpBackendStub[F[_], S, WS_HANDLER[_]](
       * This method of stubbing is best suited when using the "high-level" websockets, that is when `WS_RESULT` is
       * [[WebSocket]].
       */
-    def thenRespondWebSocket[WS_RESULT](result: WS_RESULT): SttpBackendStub[F, S, WS_HANDLER] =
+    def thenRespondWebSocket[WS_RESULT](result: WS_RESULT): SttpBackendStub[F, P, WS_HANDLER] =
       thenRespondWebSocket(Headers(List.empty), result)
 
     /**
@@ -171,12 +174,12 @@ class SttpBackendStub[F[_], S, WS_HANDLER[_]](
       * This method of stubbing is best suited when using the "high-level" websockets, that is when `WS_RESULT` is
       * [[WebSocket]].
       */
-    def thenRespondWebSocket[WS_RESULT](headers: Headers, result: WS_RESULT): SttpBackendStub[F, S, WS_HANDLER] = {
+    def thenRespondWebSocket[WS_RESULT](headers: Headers, result: WS_RESULT): SttpBackendStub[F, P, WS_HANDLER] = {
       val m: PartialFunction[Request[_, _], WhenOpenWebsocket[F, WS_HANDLER]] = {
         case r if p(r) =>
           ReturnWebsocketResponse(headers, () => monad.unit(result))
       }
-      new SttpBackendStub[F, S, WS_HANDLER](monad, matchers, wsMatchers.orElse(m), fallback)
+      new SttpBackendStub[F, P, WS_HANDLER](monad, matchers, wsMatchers.orElse(m), fallback)
     }
 
     /**
@@ -186,7 +189,7 @@ class SttpBackendStub[F[_], S, WS_HANDLER[_]](
       *
       * The websocket instance will be built using the given [[WebSocketStub]].
       */
-    def thenRespondWebSocket(wsStub: WebSocketStub[_]): SttpBackendStub[F, S, WS_HANDLER] =
+    def thenRespondWebSocket(wsStub: WebSocketStub[_]): SttpBackendStub[F, P, WS_HANDLER] =
       thenRespondWebSocket(Headers(List.empty), wsStub)
 
     /**
@@ -196,12 +199,12 @@ class SttpBackendStub[F[_], S, WS_HANDLER[_]](
       *
       * The websocket instance will be built using the given [[WebSocketStub]].
       */
-    def thenRespondWebSocket(headers: Headers, wsStub: WebSocketStub[_]): SttpBackendStub[F, S, WS_HANDLER] = {
+    def thenRespondWebSocket(headers: Headers, wsStub: WebSocketStub[_]): SttpBackendStub[F, P, WS_HANDLER] = {
       val m: PartialFunction[Request[_, _], WhenOpenWebsocket[F, WS_HANDLER]] = {
         case r if p(r) =>
           ReturnWebsocketResponse(headers, () => monad.unit(wsStub.build(monad)))
       }
-      new SttpBackendStub[F, S, WS_HANDLER](monad, matchers, wsMatchers.orElse(m), fallback)
+      new SttpBackendStub[F, P, WS_HANDLER](monad, matchers, wsMatchers.orElse(m), fallback)
     }
 
     /**
@@ -211,7 +214,7 @@ class SttpBackendStub[F[_], S, WS_HANDLER[_]](
       */
     def thenHandleOpenWebSocket[WS_RESULT](
         useHandler: WS_HANDLER[WS_RESULT] => WS_RESULT
-    ): SttpBackendStub[F, S, WS_HANDLER] = thenHandleOpenWebSocket(Headers(List.empty), useHandler)
+    ): SttpBackendStub[F, P, WS_HANDLER] = thenHandleOpenWebSocket(Headers(List.empty), useHandler)
 
     /**
       * When [[openWebsocket()]] is called, the given headers and handler are used to create the result.
@@ -221,39 +224,39 @@ class SttpBackendStub[F[_], S, WS_HANDLER[_]](
     def thenHandleOpenWebSocket[WS_RESULT](
         headers: Headers,
         useHandler: WS_HANDLER[WS_RESULT] => WS_RESULT
-    ): SttpBackendStub[F, S, WS_HANDLER] = {
+    ): SttpBackendStub[F, P, WS_HANDLER] = {
       val m: PartialFunction[Request[_, _], WhenOpenWebsocket[F, WS_HANDLER]] = {
         case r if p(r) =>
           UseHandler(headers, useHandler.asInstanceOf[Any => WS_RESULT])
       }
-      new SttpBackendStub[F, S, WS_HANDLER](monad, matchers, wsMatchers.orElse(m), fallback)
+      new SttpBackendStub[F, P, WS_HANDLER](monad, matchers, wsMatchers.orElse(m), fallback)
     }
 
     /**
       * Not thread-safe!
       */
-    def thenRespondCyclic[T](bodies: T*): SttpBackendStub[F, S, WS_HANDLER] = {
+    def thenRespondCyclic[T](bodies: T*): SttpBackendStub[F, P, WS_HANDLER] = {
       thenRespondCyclicResponses(bodies.map(body => Response[T](body, StatusCode.Ok, "OK")): _*)
     }
 
     /**
       * Not thread-safe!
       */
-    def thenRespondCyclicResponses[T](responses: Response[T]*): SttpBackendStub[F, S, WS_HANDLER] = {
+    def thenRespondCyclicResponses[T](responses: Response[T]*): SttpBackendStub[F, P, WS_HANDLER] = {
       val iterator = Iterator.continually(responses).flatten
       thenRespond(iterator.next)
     }
-    def thenRespondWrapped(resp: => F[Response[_]]): SttpBackendStub[F, S, WS_HANDLER] = {
+    def thenRespondWrapped(resp: => F[Response[_]]): SttpBackendStub[F, P, WS_HANDLER] = {
       val m: PartialFunction[Request[_, _], F[Response[_]]] = {
         case r if p(r) => resp
       }
-      new SttpBackendStub[F, S, WS_HANDLER](monad, matchers.orElse(m), wsMatchers, fallback)
+      new SttpBackendStub[F, P, WS_HANDLER](monad, matchers.orElse(m), wsMatchers, fallback)
     }
-    def thenRespondWrapped(resp: Request[_, _] => F[Response[_]]): SttpBackendStub[F, S, WS_HANDLER] = {
+    def thenRespondWrapped(resp: Request[_, _] => F[Response[_]]): SttpBackendStub[F, P, WS_HANDLER] = {
       val m: PartialFunction[Request[_, _], F[Response[_]]] = {
         case r if p(r) => resp(r)
       }
-      new SttpBackendStub[F, S, WS_HANDLER](monad, matchers.orElse(m), wsMatchers, fallback)
+      new SttpBackendStub[F, P, WS_HANDLER](monad, matchers.orElse(m), wsMatchers, fallback)
     }
   }
 }
@@ -302,10 +305,10 @@ object SttpBackendStub {
     * Create a stub backend which delegates send requests to the given fallback
     * backend, if the request doesn't match any of the specified predicates.
     */
-  def withFallback[F[_], S, S2 <: S, WS_HANDLER[_]](
-      fallback: SttpBackend[F, S, WS_HANDLER]
-  ): SttpBackendStub[F, S2, WS_HANDLER] =
-    new SttpBackendStub[F, S2, WS_HANDLER](
+  def withFallback[F[_], P, R >: P, WS_HANDLER[_]](
+      fallback: SttpBackend[F, P, WS_HANDLER]
+  ): SttpBackendStub[F, R, WS_HANDLER] =
+    new SttpBackendStub[F, R, WS_HANDLER](
       fallback.responseMonad,
       PartialFunction.empty,
       PartialFunction.empty,
@@ -333,7 +336,7 @@ object SttpBackendStub {
           case is: InputStream => Some(toByteArray(is))
           case _               => None
         }
-      case ResponseAsStream() =>
+      case ResponseAsStream(_) =>
         None
       case ResponseAsFile(_) =>
         b match {

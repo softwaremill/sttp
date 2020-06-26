@@ -19,8 +19,8 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     * Reads the response body as an `Either[String, String]`, where `Left` is used if the status code is non-2xx,
     * and `Right` otherwise.
     */
-  val emptyRequest: RequestT[Empty, Either[String, String], Nothing] =
-    RequestT[Empty, Either[String, String], Nothing](
+  val emptyRequest: RequestT[Empty, Either[String, String], Any] =
+    RequestT[Empty, Either[String, String], Any](
       None,
       None,
       NoBody,
@@ -42,71 +42,71 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     * Reads the response body as an `Either[String, String]`, where `Left` is used if the status code is non-2xx,
     * and `Right` otherwise.
     */
-  val basicRequest: RequestT[Empty, Either[String, String], Nothing] =
+  val basicRequest: RequestT[Empty, Either[String, String], Any] =
     emptyRequest.acceptEncoding("gzip, deflate")
 
   /**
     * A starting request which always reads the response body as a string, regardless of the status code.
     */
-  val quickRequest: RequestT[Empty, String, Nothing] = basicRequest.response(asStringAlways)
+  val quickRequest: RequestT[Empty, String, Any] = basicRequest.response(asStringAlways)
 
   // response specifications
 
-  def ignore: ResponseAs[Unit, Nothing] = IgnoreResponse
+  def ignore: ResponseAs[Unit, Any] = IgnoreResponse
 
   /**
     * Use the `utf-8` charset by default, unless specified otherwise in the response headers.
     */
-  def asString: ResponseAs[Either[String, String], Nothing] = asString(Utf8)
+  def asString: ResponseAs[Either[String, String], Any] = asString(Utf8)
 
   /**
     * Use the `utf-8` charset by default, unless specified otherwise in the response headers.
     */
-  def asStringAlways: ResponseAs[String, Nothing] = asStringAlways(Utf8)
+  def asStringAlways: ResponseAs[String, Any] = asStringAlways(Utf8)
 
   /**
     * Use the given charset by default, unless specified otherwise in the response headers.
     */
-  def asString(charset: String): ResponseAs[Either[String, String], Nothing] =
+  def asString(charset: String): ResponseAs[Either[String, String], Any] =
     asStringAlways(charset).mapWithMetadata { (s, m) =>
       if (m.isSuccess) Right(s) else Left(s)
     }
 
-  def asStringAlways(charset: String): ResponseAs[String, Nothing] =
+  def asStringAlways(charset: String): ResponseAs[String, Any] =
     asByteArrayAlways.mapWithMetadata { (bytes, metadata) =>
       val charset2 = metadata.contentType.flatMap(charsetFromContentType).getOrElse(charset)
       val charset3 = sanitizeCharset(charset2)
       new String(bytes, charset3)
     }
 
-  def asByteArray: ResponseAs[Either[String, Array[Byte]], Nothing] = asEither(asStringAlways, asByteArrayAlways)
+  def asByteArray: ResponseAs[Either[String, Array[Byte]], Any] = asEither(asStringAlways, asByteArrayAlways)
 
-  def asByteArrayAlways: ResponseAs[Array[Byte], Nothing] = ResponseAsByteArray
+  def asByteArrayAlways: ResponseAs[Array[Byte], Any] = ResponseAsByteArray
 
   /**
     * Use the `utf-8` charset by default, unless specified otherwise in the response headers.
     */
-  def asParams: ResponseAs[Either[String, Seq[(String, String)]], Nothing] =
-    asParams(Utf8)
+  def asParams: ResponseAs[Either[String, Seq[(String, String)]], Any] = asParams(Utf8)
 
   /**
     * Use the given charset by default, unless specified otherwise in the response headers.
     */
-  def asParams(charset: String): ResponseAs[Either[String, Seq[(String, String)]], Nothing] = {
+  def asParams(charset: String): ResponseAs[Either[String, Seq[(String, String)]], Any] = {
     val charset2 = sanitizeCharset(charset)
     asString(charset2).mapRight(ResponseAs.parseParams(_, charset2))
   }
 
-  def asStream[S]: ResponseAs[Either[String, S], S] = asEither(asStringAlways, asStreamAlways)
+  def asStream[S](s: Streams[S]): ResponseAs[Either[String, s.BinaryStream], S] =
+    asEither(asStringAlways, asStreamAlways(s))
 
-  def asStreamAlways[S]: ResponseAs[S, S] = ResponseAsStream[S, S]()
+  def asStreamAlways[S](s: Streams[S]): ResponseAs[s.BinaryStream, S] = ResponseAsStream[s.BinaryStream, S](s)
 
-  private[client] def asSttpFile(file: SttpFile): ResponseAs[SttpFile, Nothing] =
+  private[client] def asSttpFile(file: SttpFile): ResponseAs[SttpFile, Any] =
     ResponseAsFile(file)
 
-  def fromMetadata[T, S](f: ResponseMetadata => ResponseAs[T, S]): ResponseAs[T, S] = ResponseAsFromMetadata(f)
+  def fromMetadata[T, R](f: ResponseMetadata => ResponseAs[T, R]): ResponseAs[T, R] = ResponseAsFromMetadata(f)
 
-  def asEither[L, R, S](onError: ResponseAs[L, S], onSuccess: ResponseAs[R, S]): ResponseAs[Either[L, R], S] =
+  def asEither[A, B, R](onError: ResponseAs[A, R], onSuccess: ResponseAs[B, R]): ResponseAs[Either[A, B], R] =
     fromMetadata { meta => if (meta.isSuccess) onSuccess.map(Right(_)) else onError.map(Left(_)) }
 
   // multipart factory methods

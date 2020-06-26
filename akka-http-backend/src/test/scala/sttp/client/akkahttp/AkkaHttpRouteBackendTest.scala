@@ -21,9 +21,8 @@ class AkkaHttpRouteBackendTest extends AsyncWordSpec with Matchers with BeforeAn
     Await.result(system.terminate(), 5.seconds)
   }
 
-  val backend: SttpBackend[Future, Nothing, NothingT] = {
+  val backend: SttpBackend[Future, Any, NothingT] =
     AkkaHttpBackend.usingClient(system, http = AkkaHttpClient.stubFromRoute(Routes.route))
-  }
 
   import sttp.client._
 

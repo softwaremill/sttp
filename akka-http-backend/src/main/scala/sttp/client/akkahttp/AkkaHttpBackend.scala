@@ -67,10 +67,7 @@ class AkkaHttpBackend private (
     customizeRequest: HttpRequest => HttpRequest,
     customizeWebsocketRequest: WebSocketRequest => WebSocketRequest,
     customEncodingHandler: EncodingHandler
-) extends SttpBackend[Future, Source[ByteString, Any], Flow[Message, Message, *]] {
-  // the supported stream type
-  private type S = Source[ByteString, Any]
-
+) extends SttpBackend[Future, AkkaStreams, Flow[Message, Message, *]] {
   private implicit val as: ActorSystem = actorSystem
   private implicit val materializer: ActorMaterializer = ActorMaterializer()
 
@@ -78,7 +75,7 @@ class AkkaHttpBackend private (
     .getOrElse(ConnectionPoolSettings(actorSystem))
     .withUpdatedConnectionSettings(_.withConnectingTimeout(opts.connectionTimeout))
 
-  override def send[T](r: Request[T, S]): Future[Response[T]] =
+  override def send[T, R >: AkkaStreams](r: Request[T, R]): Future[Response[T]] =
     adjustExceptions {
       implicit val ec: ExecutionContext = this.ec
 
@@ -89,8 +86,8 @@ class AkkaHttpBackend private (
         .flatMap(responseFromAkka(r, _))
     }
 
-  override def openWebsocket[T, WS_RESULT](
-      r: Request[T, Source[ByteString, Any]],
+  override def openWebsocket[T, WS_RESULT, R >: AkkaStreams](
+      r: Request[T, R],
       handler: Flow[Message, Message, WS_RESULT]
   ): Future[WebSocketResponse[WS_RESULT]] =
     adjustExceptions {
@@ -132,7 +129,7 @@ class AkkaHttpBackend private (
     }
 
   private def bodyFromAkka[T](
-      rr: ResponseAs[T, S],
+      rr: ResponseAs[T, AkkaStreams],
       hr: HttpResponse,
       meta: ResponseMetadata
   ): Future[T] = {
@@ -165,8 +162,8 @@ class AkkaHttpBackend private (
       case ResponseAsByteArray =>
         asByteArray
 
-      case r @ ResponseAsStream() =>
-        Future.successful(r.responseIsStream(hr.entity.dataBytes))
+      case r @ ResponseAsStream(s) =>
+        Future.successful(hr.entity.dataBytes.asInstanceOf[T])
 
       case ResponseAsFile(file) =>
         saved(file.toFile).map(_ => file)
@@ -191,7 +188,7 @@ class AkkaHttpBackend private (
       .withUpdatedConnectionSettings(_.withIdleTimeout(r.options.readTimeout))
   }
 
-  private def responseFromAkka[T](r: Request[T, S], hr: HttpResponse)(implicit
+  private def responseFromAkka[T](r: Request[T, AkkaStreams], hr: HttpResponse)(implicit
       ec: ExecutionContext
   ): Future[Response[T]] = {
     val code = StatusCode(hr.status.intValue())
@@ -213,7 +210,7 @@ class AkkaHttpBackend private (
     ch :: (cl.toList ++ other)
   }
 
-  private def requestToAkka(r: Request[_, S]): Try[HttpRequest] = {
+  private def requestToAkka(r: Request[_, AkkaStreams]): Try[HttpRequest] = {
     val ar = HttpRequest(uri = r.uri.toString, method = methodToAkka(r.method))
     headersToAkka(r.headers).map(ar.withHeaders)
   }
@@ -249,7 +246,11 @@ class AkkaHttpBackend private (
     else Failure[Seq[T]](fs.head.exception)
   }
 
-  private def setBodyOnAkka(r: Request[_, S], body: RequestBody[S], ar: HttpRequest): Try[HttpRequest] = {
+  private def setBodyOnAkka(
+      r: Request[_, AkkaStreams],
+      body: RequestBody[AkkaStreams],
+      ar: HttpRequest
+  ): Try[HttpRequest] = {
     def ctWithCharset(ct: ContentType, charset: String) =
       HttpCharsets
         .getForKey(charset)
@@ -288,7 +289,7 @@ class AkkaHttpBackend private (
         case InputStreamBody(b, _) =>
           Success(ar.withEntity(HttpEntity(ct, StreamConverters.fromInputStream(() => b))))
         case FileBody(b, _) => Success(ar.withEntity(ct, b.toPath))
-        case StreamBody(s)  => Success(ar.withEntity(HttpEntity(ct, s)))
+        case StreamBody(s)  => Success(ar.withEntity(HttpEntity(ct, s.asInstanceOf[AkkaStreams.BinaryStream])))
         case MultipartBody(ps) =>
           traverseTry(ps.map(toBodyPart))
             .flatMap(bodyParts => multipartEntity(r, bodyParts).map(ar.withEntity))
@@ -312,7 +313,7 @@ class AkkaHttpBackend private (
     }
   }
 
-  private def parseContentTypeOrOctetStream(r: Request[_, S]): Try[ContentType] = {
+  private def parseContentTypeOrOctetStream(r: Request[_, _]): Try[ContentType] = {
     parseContentTypeOrOctetStream(
       r.headers
         .find(isContentType)
@@ -396,7 +397,7 @@ object AkkaHttpBackend {
       customizeRequest: HttpRequest => HttpRequest,
       customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity,
       customEncodingHandler: EncodingHandler = PartialFunction.empty
-  ): SttpBackend[Future, Source[ByteString, Any], Flow[Message, Message, *]] =
+  ): SttpBackend[Future, AkkaStreams, Flow[Message, Message, *]] =
     new FollowRedirectsBackend(
       new AkkaHttpBackend(
         actorSystem,
@@ -426,7 +427,7 @@ object AkkaHttpBackend {
       customEncodingHandler: EncodingHandler = PartialFunction.empty
   )(implicit
       ec: ExecutionContext = ExecutionContext.global
-  ): SttpBackend[Future, Source[ByteString, Any], Flow[Message, Message, *]] = {
+  ): SttpBackend[Future, AkkaStreams, Flow[Message, Message, *]] = {
     val actorSystem = ActorSystem("sttp")
 
     make(
@@ -460,7 +461,7 @@ object AkkaHttpBackend {
       customEncodingHandler: EncodingHandler = PartialFunction.empty
   )(implicit
       ec: ExecutionContext = ExecutionContext.global
-  ): SttpBackend[Future, Source[ByteString, Any], Flow[Message, Message, *]] = {
+  ): SttpBackend[Future, AkkaStreams, Flow[Message, Message, *]] = {
     usingClient(
       actorSystem,
       options,
@@ -489,7 +490,7 @@ object AkkaHttpBackend {
       customEncodingHandler: EncodingHandler = PartialFunction.empty
   )(implicit
       ec: ExecutionContext = ExecutionContext.global
-  ): SttpBackend[Future, Source[ByteString, Any], Flow[Message, Message, *]] = {
+  ): SttpBackend[Future, AkkaStreams, Flow[Message, Message, *]] = {
     make(
       actorSystem,
       ec,
@@ -510,7 +511,7 @@ object AkkaHttpBackend {
     */
   def stub(implicit
       ec: ExecutionContext = ExecutionContext.global
-  ): SttpBackendStub[Future, Nothing, Flow[Message, Message, *]] =
+  ): SttpBackendStub[Future, Any, Flow[Message, Message, *]] =
     SttpBackendStub(new FutureMonad())
 }
 

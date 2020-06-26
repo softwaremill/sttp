@@ -27,15 +27,15 @@ trait HttpTest[F[_]]
   protected val binaryFileMD5Hash = "565370873a38d91f34a3091082e63933"
   protected val textFileMD5Hash = "b048a88ece8e4ec5eb386b8fc5006d13"
 
-  implicit val backend: SttpBackend[F, Nothing, NothingT]
+  implicit val backend: SttpBackend[F, Any, NothingT]
   implicit val convertToFuture: ConvertToFuture[F]
 
-  protected def postEcho: Request[Either[String, String], Nothing] = basicRequest.post(uri"$endpoint/echo")
+  protected def postEcho: Request[Either[String, String], Any] = basicRequest.post(uri"$endpoint/echo")
   protected val testBody = "this is the body"
   protected val testBodyBytes: Array[Byte] = testBody.getBytes("UTF-8")
   protected val expectedPostEchoResponse = "POST /echo this is the body"
 
-  protected val sttpIgnore: ResponseAs[Unit, Nothing] = sttp.client.ignore
+  protected val sttpIgnore: ResponseAs[Unit, Any] = sttp.client.ignore
 
   protected def supportsRequestTimeout = true
   protected def supportsSttpExceptions = true

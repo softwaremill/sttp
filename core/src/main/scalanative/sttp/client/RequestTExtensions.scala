@@ -7,7 +7,7 @@ import sttp.client.internal._
 
 import scala.language.higherKinds
 
-trait RequestTExtensions[U[_], T, +S] { self: RequestT[U, T, S] =>
+trait RequestTExtensions[U[_], T, -R] { self: RequestT[U, T, R] =>
 
   /**
     * If content type is not yet specified, will be set to
@@ -16,7 +16,7 @@ trait RequestTExtensions[U[_], T, +S] { self: RequestT[U, T, S] =>
     * If content length is not yet specified, will be set to the length
     * of the given file.
     */
-  def body(file: File): RequestT[U, T, S] = body(SttpFile.fromFile(file))
+  def body(file: File): RequestT[U, T, R] = body(SttpFile.fromFile(file))
 
   /**
     * If content type is not yet specified, will be set to
@@ -25,13 +25,13 @@ trait RequestTExtensions[U[_], T, +S] { self: RequestT[U, T, S] =>
     * If content length is not yet specified, will be set to the length
     * of the given file.
     */
-  def body(path: Path): RequestT[U, T, S] = body(SttpFile.fromPath(path))
+  def body(path: Path): RequestT[U, T, R] = body(SttpFile.fromPath(path))
 
   // this method needs to be in the extensions, so that it has lowest priority when considering overloading options
   /**
     * If content type is not yet specified, will be set to
     * `application/octet-stream`.
     */
-  def body[B: BodySerializer](b: B): RequestT[U, T, S] =
+  def body[B: BodySerializer](b: B): RequestT[U, T, R] =
     withBasicBody(implicitly[BodySerializer[B]].apply(b))
 }

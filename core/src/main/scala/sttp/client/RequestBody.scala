@@ -9,10 +9,10 @@ import sttp.model.internal.UriCompatibility
 
 import scala.collection.immutable.Seq
 
-sealed trait RequestBody[+S]
-case object NoBody extends RequestBody[Nothing]
+sealed trait RequestBody[-R]
+case object NoBody extends RequestBody[Any]
 
-sealed trait BasicRequestBody extends RequestBody[Nothing] {
+sealed trait BasicRequestBody extends RequestBody[Any] {
   def defaultContentType: Option[MediaType]
 }
 
@@ -42,9 +42,10 @@ case class FileBody(
     defaultContentType: Option[MediaType] = Some(MediaType.ApplicationOctetStream)
 ) extends BasicRequestBody
 
-case class StreamBody[S](s: S) extends RequestBody[S]
+// TODO: dependent types are not supported in extends. We have to rely on the `streamBody` method to use the correct type parameters
+case class StreamBody[BinaryStream, S] private[client] (s: BinaryStream) extends RequestBody[S]
 
-case class MultipartBody(parts: Seq[Part[BasicRequestBody]]) extends RequestBody[Nothing]
+case class MultipartBody(parts: Seq[Part[BasicRequestBody]]) extends RequestBody[Any]
 
 object RequestBody {
   private[client] def paramsToStringBody(fs: Seq[(String, String)], encoding: String): StringBody = {

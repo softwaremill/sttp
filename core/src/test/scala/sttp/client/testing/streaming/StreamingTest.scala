@@ -12,7 +12,7 @@ import org.scalatest.matchers.should.Matchers
 import sttp.client.testing.HttpTest.endpoint
 
 // TODO: change to `extends AsyncFreeSpec` when https://github.com/scalatest/scalatest/issues/1802 is fixed
-trait StreamingTest[F[_], S]
+abstract class StreamingTest[F[_], S]
     extends SuiteMixin
     with AsyncFreeSpecLike
     with Matchers
@@ -20,20 +20,23 @@ trait StreamingTest[F[_], S]
     with BeforeAndAfterAll
     with StreamingTestExtensions[F, S] {
 
+  val streams: Streams[S]
+
   implicit def backend: SttpBackend[F, S, NothingT]
 
   implicit def convertToFuture: ConvertToFuture[F]
 
-  def bodyProducer(chunks: Iterable[Array[Byte]]): S
+  def bodyProducer(chunks: Iterable[Array[Byte]]): streams.BinaryStream
 
-  private def stringBodyProducer(body: String): S = bodyProducer(body.getBytes(Utf8).grouped(10).toIterable)
+  private def stringBodyProducer(body: String): streams.BinaryStream =
+    bodyProducer(body.getBytes(Utf8).grouped(10).toIterable)
 
-  def bodyConsumer(stream: S): F[String]
+  def bodyConsumer(stream: streams.BinaryStream): F[String]
 
   "stream request body" in {
     basicRequest
       .post(uri"$endpoint/streaming/echo")
-      .streamBody(stringBodyProducer(Body))
+      .streamBody(streams)(stringBodyProducer(Body))
       .send()
       .toFuture()
       .map { response =>
@@ -44,7 +47,7 @@ trait StreamingTest[F[_], S]
   "stream large request body" in {
     basicRequest
       .post(uri"$endpoint/streaming/echo")
-      .streamBody(stringBodyProducer(Body))
+      .streamBody(streams)(stringBodyProducer(Body))
       .send()
       .toFuture()
       .map { response =>
@@ -53,11 +56,12 @@ trait StreamingTest[F[_], S]
   }
 
   "receive a stream" in {
-    basicRequest
+    // TODO: for some reason these explicit types are needed in Dotty
+    val r0: RequestT[Identity, streams.BinaryStream, S] = basicRequest
       .post(uri"$endpoint/streaming/echo")
       .body(Body)
-      .response(asStreamAlways[S])
-      .send()
+      .response(asStreamAlways(streams))
+    r0.send()
       .toFuture()
       .flatMap { response =>
         bodyConsumer(response.body).toFuture()
@@ -68,11 +72,12 @@ trait StreamingTest[F[_], S]
   }
 
   "receive a large stream" in {
-    basicRequest
+    // TODO: for some reason these explicit types are needed in Dotty
+    val r0: RequestT[Identity, streams.BinaryStream, S] = basicRequest
       .post(uri"$endpoint/streaming/echo")
       .body(LargeBody)
-      .response(asStreamAlways[S])
-      .send()
+      .response(asStreamAlways(streams))
+    r0.send()
       .toFuture()
       .flatMap { response =>
         bodyConsumer(response.body).toFuture()
@@ -88,11 +93,12 @@ trait StreamingTest[F[_], S]
   }
 
   "receive a stream or error" in {
-    basicRequest
+    // TODO: for some reason these explicit types are needed in Dotty
+    val r0: RequestT[Identity, Either[String, streams.BinaryStream], S] = basicRequest
       .post(uri"$endpoint/streaming/echo")
       .body(Body)
-      .response(asStream[S])
-      .send()
+      .response(asStream(streams))
+    r0.send()
       .toFuture()
       .flatMap { response =>
         bodyConsumer(response.body.right.get).toFuture()
@@ -103,10 +109,12 @@ trait StreamingTest[F[_], S]
   }
 
   "receive a mapped stream" in {
-    basicRequest
+    // TODO: for some reason these explicit types are needed in Dotty
+    val r0: RequestT[Identity, (streams.BinaryStream, Boolean), S] = basicRequest
       .post(uri"$endpoint/streaming/echo")
       .body(Body)
-      .response(asStreamAlways[S].map(s => (s, true)))
+      .response(asStreamAlways(streams).map(s => (s, true)))
+    r0
       .send()
       .toFuture()
       .flatMap { response =>
@@ -122,12 +130,15 @@ trait StreamingTest[F[_], S]
     val numChunks = 100
     val url = uri"https://httpbin.org/stream/$numChunks"
 
-    basicRequest
+    // TODO: for some reason these explicit types are needed in Dotty
+    val r0: RequestT[Identity, streams.BinaryStream, S] = basicRequest
     // of course, you should never rely on the internet being available
     // in tests, but that's so much easier than setting up an https
     // testing server
       .get(url)
-      .response(asStreamAlways[S])
+      .response(asStreamAlways(streams))
+
+    r0
       .send()
       .toFuture()
       .flatMap { response =>

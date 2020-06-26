@@ -25,7 +25,7 @@ class HttpURLConnectionBackend private (
     createURL: String => URL,
     openConnection: (URL, Option[java.net.Proxy]) => URLConnection
 ) extends SttpBackend[Identity, Nothing, NothingT] {
-  override def send[T](r: Request[T, Nothing]): Response[T] =
+  override def send[T, R >: Nothing](r: Request[T, R]): Response[T] =
     adjustExceptions {
       val c = openConnection(r.uri)
       c.setRequestMethod(r.method.method)
@@ -62,8 +62,8 @@ class HttpURLConnectionBackend private (
       }
     }
 
-  override def openWebsocket[T, WR](
-      request: Request[T, Nothing],
+  override def openWebsocket[T, WR, R >: Nothing](
+      request: Request[T, R],
       handler: NothingT[WR]
   ): NothingT[WebSocketResponse[WR]] =
     handler // nothing is everything
@@ -263,7 +263,7 @@ class HttpURLConnectionBackend private (
       case ResponseAsByteArray =>
         toByteArray(is)
 
-      case ResponseAsStream() =>
+      case ResponseAsStream(_) =>
         // only possible when the user requests the response as a stream of
         // Nothing. Oh well ...
         throw new IllegalStateException()

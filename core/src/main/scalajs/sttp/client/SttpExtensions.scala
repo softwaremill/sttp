@@ -5,11 +5,11 @@ import sttp.client.internal.SttpFile
 import sttp.model.Part
 
 trait SttpExtensions {
-  def asFile(file: File): ResponseAs[Either[String, File], Nothing] = {
+  def asFile(file: File): ResponseAs[Either[String, File], Any] = {
     asEither(asStringAlways, asFileAlways(file))
   }
 
-  def asFileAlways(file: File): ResponseAs[File, Nothing] = {
+  def asFileAlways(file: File): ResponseAs[File, Any] = {
     ResponseAsFile(SttpFile.fromDomFile(file)).map(_.toDomFile)
   }
 

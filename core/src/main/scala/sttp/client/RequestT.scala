@@ -35,47 +35,48 @@ import scala.language.higherKinds
   *           request is aliased to [[Request]]: the method and uri are
   *           specified, and the request can be sent.
   * @tparam T The target type, to which the response body should be read.
+  *  @tparam R TODO
   */
-case class RequestT[U[_], T, +S](
+case class RequestT[U[_], T, -R](
     method: U[Method],
     uri: U[Uri],
-    body: RequestBody[S],
+    body: RequestBody[R],
     headers: Seq[Header],
-    response: ResponseAs[T, S],
+    response: ResponseAs[T, R],
     options: RequestOptions,
     tags: Map[String, Any]
-) extends RequestTExtensions[U, T, S] {
-  def get(uri: Uri): Request[T, S] =
-    this.copy[Identity, T, S](uri = uri, method = Method.GET)
-  def head(uri: Uri): Request[T, S] =
-    this.copy[Identity, T, S](uri = uri, method = Method.HEAD)
-  def post(uri: Uri): Request[T, S] =
-    this.copy[Identity, T, S](uri = uri, method = Method.POST)
-  def put(uri: Uri): Request[T, S] =
-    this.copy[Identity, T, S](uri = uri, method = Method.PUT)
-  def delete(uri: Uri): Request[T, S] =
-    this.copy[Identity, T, S](uri = uri, method = Method.DELETE)
-  def options(uri: Uri): Request[T, S] =
-    this.copy[Identity, T, S](uri = uri, method = Method.OPTIONS)
-  def patch(uri: Uri): Request[T, S] =
-    this.copy[Identity, T, S](uri = uri, method = Method.PATCH)
-  def method(method: Method, uri: Uri): Request[T, S] =
-    this.copy[Identity, T, S](uri = uri, method = method)
+) extends RequestTExtensions[U, T, R] {
+  def get(uri: Uri): Request[T, R] =
+    this.copy[Identity, T, R](uri = uri, method = Method.GET)
+  def head(uri: Uri): Request[T, R] =
+    this.copy[Identity, T, R](uri = uri, method = Method.HEAD)
+  def post(uri: Uri): Request[T, R] =
+    this.copy[Identity, T, R](uri = uri, method = Method.POST)
+  def put(uri: Uri): Request[T, R] =
+    this.copy[Identity, T, R](uri = uri, method = Method.PUT)
+  def delete(uri: Uri): Request[T, R] =
+    this.copy[Identity, T, R](uri = uri, method = Method.DELETE)
+  def options(uri: Uri): Request[T, R] =
+    this.copy[Identity, T, R](uri = uri, method = Method.OPTIONS)
+  def patch(uri: Uri): Request[T, R] =
+    this.copy[Identity, T, R](uri = uri, method = Method.PATCH)
+  def method(method: Method, uri: Uri): Request[T, R] =
+    this.copy[Identity, T, R](uri = uri, method = method)
 
-  def contentType(ct: String): RequestT[U, T, S] =
+  def contentType(ct: String): RequestT[U, T, R] =
     header(HeaderNames.ContentType, ct, replaceExisting = true)
-  def contentType(mt: MediaType): RequestT[U, T, S] =
+  def contentType(mt: MediaType): RequestT[U, T, R] =
     header(HeaderNames.ContentType, mt.toString, replaceExisting = true)
-  def contentType(ct: String, encoding: String): RequestT[U, T, S] =
+  def contentType(ct: String, encoding: String): RequestT[U, T, R] =
     header(HeaderNames.ContentType, contentTypeWithCharset(ct, encoding), replaceExisting = true)
-  def contentLength(l: Long): RequestT[U, T, S] =
+  def contentLength(l: Long): RequestT[U, T, R] =
     header(HeaderNames.ContentLength, l.toString, replaceExisting = true)
 
   /**
     * Adds the given header to the end of the headers sequence.
     * @param replaceExisting If there's already a header with the same name, should it be dropped?
     */
-  def header(h: Header, replaceExisting: Boolean = false): RequestT[U, T, S] = {
+  def header(h: Header, replaceExisting: Boolean = false): RequestT[U, T, R] = {
     val current = if (replaceExisting) headers.filterNot(_.is(h.name)) else headers
     this.copy(headers = current :+ h)
   }
@@ -84,25 +85,25 @@ case class RequestT[U[_], T, +S](
     * Adds the given header to the end of the headers sequence.
     * @param replaceExisting If there's already a header with the same name, should it be dropped?
     */
-  def header(k: String, v: String, replaceExisting: Boolean): RequestT[U, T, S] =
+  def header(k: String, v: String, replaceExisting: Boolean): RequestT[U, T, R] =
     header(Header(k, v), replaceExisting)
-  def header(k: String, v: String): RequestT[U, T, S] = header(Header(k, v))
-  def header(k: String, ov: Option[String]): RequestT[U, T, S] = ov.fold(this)(header(k, _))
-  def headers(hs: Map[String, String]): RequestT[U, T, S] =
+  def header(k: String, v: String): RequestT[U, T, R] = header(Header(k, v))
+  def header(k: String, ov: Option[String]): RequestT[U, T, R] = ov.fold(this)(header(k, _))
+  def headers(hs: Map[String, String]): RequestT[U, T, R] =
     headers(hs.map(t => Header(t._1, t._2)).toSeq: _*)
-  def headers(hs: Header*): RequestT[U, T, S] = this.copy(headers = headers ++ hs)
-  def auth: SpecifyAuthScheme[U, T, S] =
-    new SpecifyAuthScheme[U, T, S](HeaderNames.Authorization, this, DigestAuthenticationBackend.DigestAuthTag)
-  def proxyAuth: SpecifyAuthScheme[U, T, S] =
-    new SpecifyAuthScheme[U, T, S](HeaderNames.ProxyAuthorization, this, DigestAuthenticationBackend.ProxyDigestAuthTag)
-  def acceptEncoding(encoding: String): RequestT[U, T, S] =
+  def headers(hs: Header*): RequestT[U, T, R] = this.copy(headers = headers ++ hs)
+  def auth: SpecifyAuthScheme[U, T, R] =
+    new SpecifyAuthScheme[U, T, R](HeaderNames.Authorization, this, DigestAuthenticationBackend.DigestAuthTag)
+  def proxyAuth: SpecifyAuthScheme[U, T, R] =
+    new SpecifyAuthScheme[U, T, R](HeaderNames.ProxyAuthorization, this, DigestAuthenticationBackend.ProxyDigestAuthTag)
+  def acceptEncoding(encoding: String): RequestT[U, T, R] =
     header(HeaderNames.AcceptEncoding, encoding, replaceExisting = true)
 
-  def cookie(nv: (String, String)): RequestT[U, T, S] = cookies(nv)
-  def cookie(n: String, v: String): RequestT[U, T, S] = cookies((n, v))
-  def cookies(r: Response[_]): RequestT[U, T, S] = cookies(r.cookies.map(c => (c.name, c.value)): _*)
-  def cookies(cs: Iterable[CookieWithMeta]): RequestT[U, T, S] = cookies(cs.map(c => (c.name, c.value)).toSeq: _*)
-  def cookies(nvs: (String, String)*): RequestT[U, T, S] = {
+  def cookie(nv: (String, String)): RequestT[U, T, R] = cookies(nv)
+  def cookie(n: String, v: String): RequestT[U, T, R] = cookies((n, v))
+  def cookies(r: Response[_]): RequestT[U, T, R] = cookies(r.cookies.map(c => (c.name, c.value)): _*)
+  def cookies(cs: Iterable[CookieWithMeta]): RequestT[U, T, R] = cookies(cs.map(c => (c.name, c.value)).toSeq: _*)
+  def cookies(nvs: (String, String)*): RequestT[U, T, R] = {
     header(
       HeaderNames.Cookie,
       (headers.find(_.name == HeaderNames.Cookie).map(_.value).toSeq ++ nvs.map(p => p._1 + "=" + p._2)).mkString("; "),
@@ -119,7 +120,7 @@ case class RequestT[U[_], T, +S](
     * If content length is not yet specified, will be set to the number of
     * bytes in the string using the `utf-8` encoding.
     */
-  def body(b: String): RequestT[U, T, S] = body(b, Utf8)
+  def body(b: String): RequestT[U, T, R] = body(b, Utf8)
 
   /**
     * If content type is not yet specified, will be set to `text/plain`
@@ -128,7 +129,7 @@ case class RequestT[U[_], T, +S](
     * If content length is not yet specified, will be set to the number of
     * bytes in the string using the given encoding.
     */
-  def body(b: String, encoding: String): RequestT[U, T, S] =
+  def body(b: String, encoding: String): RequestT[U, T, R] =
     withBasicBody(StringBody(b, encoding))
       .setContentLengthIfMissing(b.getBytes(encoding).length.toLong)
 
@@ -139,7 +140,7 @@ case class RequestT[U[_], T, +S](
     * If content length is not yet specified, will be set to the length
     * of the given array.
     */
-  def body(b: Array[Byte]): RequestT[U, T, S] =
+  def body(b: Array[Byte]): RequestT[U, T, R] =
     withBasicBody(ByteArrayBody(b))
       .setContentLengthIfMissing(b.length.toLong)
 
@@ -147,14 +148,14 @@ case class RequestT[U[_], T, +S](
     * If content type is not yet specified, will be set to
     * `application/octet-stream`.
     */
-  def body(b: ByteBuffer): RequestT[U, T, S] =
+  def body(b: ByteBuffer): RequestT[U, T, R] =
     withBasicBody(ByteBufferBody(b))
 
   /**
     * If content type is not yet specified, will be set to
     * `application/octet-stream`.
     */
-  def body(b: InputStream): RequestT[U, T, S] =
+  def body(b: InputStream): RequestT[U, T, R] =
     withBasicBody(InputStreamBody(b))
 
   /**
@@ -164,7 +165,7 @@ case class RequestT[U[_], T, +S](
     * If content length is not yet specified, will be set to the length
     * of the given file.
     */
-  private[client] def body(f: SttpFile): RequestT[U, T, S] =
+  private[client] def body(f: SttpFile): RequestT[U, T, R] =
     withBasicBody(FileBody(f))
       .setContentLengthIfMissing(f.size)
 
@@ -176,7 +177,7 @@ case class RequestT[U[_], T, +S](
     * If content length is not yet specified, will be set to the length
     * of the number of bytes in the url-encoded parameter string.
     */
-  def body(fs: Map[String, String]): RequestT[U, T, S] =
+  def body(fs: Map[String, String]): RequestT[U, T, R] =
     formDataBody(fs.toList, Utf8)
 
   /**
@@ -187,7 +188,7 @@ case class RequestT[U[_], T, +S](
     * If content length is not yet specified, will be set to the length
     * of the number of bytes in the url-encoded parameter string.
     */
-  def body(fs: Map[String, String], encoding: String): RequestT[U, T, S] =
+  def body(fs: Map[String, String], encoding: String): RequestT[U, T, R] =
     formDataBody(fs.toList, encoding)
 
   /**
@@ -198,7 +199,7 @@ case class RequestT[U[_], T, +S](
     * If content length is not yet specified, will be set to the length
     * of the number of bytes in the url-encoded parameter string.
     */
-  def body(fs: (String, String)*): RequestT[U, T, S] =
+  def body(fs: (String, String)*): RequestT[U, T, R] =
     formDataBody(fs.toList, Utf8)
 
   /**
@@ -209,19 +210,19 @@ case class RequestT[U[_], T, +S](
     * If content length is not yet specified, will be set to the length
     * of the number of bytes in the url-encoded parameter string.
     */
-  def body(fs: Seq[(String, String)], encoding: String): RequestT[U, T, S] =
+  def body(fs: Seq[(String, String)], encoding: String): RequestT[U, T, R] =
     formDataBody(fs, encoding)
 
-  def multipartBody(ps: Seq[Part[BasicRequestBody]]): RequestT[U, T, S] =
+  def multipartBody(ps: Seq[Part[BasicRequestBody]]): RequestT[U, T, R] =
     this.copy(body = MultipartBody(ps))
 
-  def multipartBody(p1: Part[BasicRequestBody], ps: Part[BasicRequestBody]*): RequestT[U, T, S] =
+  def multipartBody(p1: Part[BasicRequestBody], ps: Part[BasicRequestBody]*): RequestT[U, T, R] =
     this.copy(body = MultipartBody(p1 :: ps.toList))
 
-  def streamBody[S2 >: S](b: S2): RequestT[U, T, S2] =
-    copy[U, T, S2](body = StreamBody(b))
+  def streamBody[S](s: Streams[S])(b: s.BinaryStream): RequestT[U, T, R with S] =
+    copy[U, T, R with S](body = StreamBody(b))
 
-  def readTimeout(t: Duration): RequestT[U, T, S] =
+  def readTimeout(t: Duration): RequestT[U, T, R] =
     this.copy(options = options.copy(readTimeout = t))
 
   /**
@@ -229,22 +230,22 @@ case class RequestT[U[_], T, +S](
     * Note that this replaces any previous specifications, which also includes
     * any previous `mapResponse` invocations.
     */
-  def response[T2, S2 >: S](ra: ResponseAs[T2, S2]): RequestT[U, T2, S2] =
+  def response[T2, R2](ra: ResponseAs[T2, R2]): RequestT[U, T2, R with R2] =
     this.copy(response = ra)
 
-  def mapResponse[T2](f: T => T2): RequestT[U, T2, S] =
+  def mapResponse[T2](f: T => T2): RequestT[U, T2, R] =
     this.copy(response = response.map(f))
 
-  def followRedirects(fr: Boolean): RequestT[U, T, S] =
+  def followRedirects(fr: Boolean): RequestT[U, T, R] =
     this.copy(options = options.copy(followRedirects = fr))
 
-  def maxRedirects(n: Int): RequestT[U, T, S] =
+  def maxRedirects(n: Int): RequestT[U, T, R] =
     if (n <= 0)
       this.copy(options = options.copy(followRedirects = false))
     else
       this.copy(options = options.copy(followRedirects = true, maxRedirects = n))
 
-  def tag(k: String, v: Any): RequestT[U, T, S] =
+  def tag(k: String, v: Any): RequestT[U, T, R] =
     this.copy(tags = tags + (k -> v))
 
   def tag(k: String): Option[Any] = tags.get(k)
@@ -258,7 +259,7 @@ case class RequestT[U[_], T, +S](
     *
     * See https://developer.mozilla.org/en-US/docs/Web/HTTP/Redirections for details.
     */
-  def redirectToGet(r: Boolean): RequestT[U, T, S] =
+  def redirectToGet(r: Boolean): RequestT[U, T, R] =
     this.copy(options = options.copy(redirectToGet = r))
 
   /**
@@ -275,7 +276,7 @@ case class RequestT[U[_], T, +S](
     *         unchanged.
     */
   def send[F[_]]()(implicit
-      backend: SttpBackend[F, S, NothingT],
+      backend: SttpBackend[F, R, NothingT],
       isIdInRequest: IsIdInRequest[U]
   ): F[Response[T]] = backend.send(asRequest)
 
@@ -293,30 +294,30 @@ case class RequestT[U[_], T, +S](
   def openWebsocket[F[_], WS_HANDLER[_], WS_RESULT](
       handler: WS_HANDLER[WS_RESULT]
   )(implicit
-      backend: SttpBackend[F, S, WS_HANDLER],
+      backend: SttpBackend[F, R, WS_HANDLER],
       isIdInRequest: IsIdInRequest[U]
   ): F[WebSocketResponse[WS_RESULT]] = backend.openWebsocket(asRequest, handler)
 
   def openWebsocketF[F[_], WS_HANDLER[_], WS_RESULT](
       handler: F[WS_HANDLER[WS_RESULT]]
   )(implicit
-      backend: SttpBackend[F, S, WS_HANDLER],
+      backend: SttpBackend[F, R, WS_HANDLER],
       isIdInRequest: IsIdInRequest[U]
   ): F[WebSocketResponse[WS_RESULT]] =
     backend.responseMonad.flatMap(handler)(handler => backend.openWebsocket(asRequest, handler))
 
   def toCurl(implicit isIdInRequest: IsIdInRequest[U]): String = ToCurlConverter.requestToCurl(asRequest)
 
-  private def asRequest(implicit isIdInRequest: IsIdInRequest[U]): RequestT[Identity, T, S] = {
+  private def asRequest(implicit isIdInRequest: IsIdInRequest[U]): RequestT[Identity, T, R] = {
     // we could avoid the asInstanceOf by creating an artificial copy
     // changing the method & url fields using `isIdInRequest`, but that
     // would be only to satisfy the type checker, and a needless copy at
     // runtime.
-    this.asInstanceOf[RequestT[Identity, T, S]]
+    this.asInstanceOf[RequestT[Identity, T, R]]
   }
 
   private def hasContentType: Boolean = headers.exists(_.is(HeaderNames.ContentType))
-  private def setContentTypeIfMissing(mt: MediaType): RequestT[U, T, S] =
+  private def setContentTypeIfMissing(mt: MediaType): RequestT[U, T, R] =
     if (hasContentType) this else contentType(mt)
 
   private[client] def withBasicBody(body: BasicRequestBody) = {
@@ -332,10 +333,10 @@ case class RequestT[U[_], T, +S](
 
   private def hasContentLength: Boolean =
     headers.exists(_.name.equalsIgnoreCase(HeaderNames.ContentLength))
-  private def setContentLengthIfMissing(l: => Long): RequestT[U, T, S] =
+  private def setContentLengthIfMissing(l: => Long): RequestT[U, T, R] =
     if (hasContentLength) this else contentLength(l)
 
-  private def formDataBody(fs: Seq[(String, String)], encoding: String): RequestT[U, T, S] = {
+  private def formDataBody(fs: Seq[(String, String)], encoding: String): RequestT[U, T, R] = {
     val b = RequestBody.paramsToStringBody(fs, encoding)
     setContentTypeIfMissing(MediaType.ApplicationXWwwFormUrlencoded)
       .setContentLengthIfMissing(b.s.getBytes(encoding).length.toLong)
@@ -344,24 +345,24 @@ case class RequestT[U[_], T, +S](
 }
 
 object RequestT {
-  implicit class RichRequestTEither[U[_], L, R, S](r: RequestT[U, Either[L, R], S]) {
-    def mapResponseRight[R2](f: R => R2): RequestT[U, Either[L, R2], S] = r.copy(response = r.response.mapRight(f))
+  implicit class RichRequestTEither[U[_], A, B, R](r: RequestT[U, Either[A, B], R]) {
+    def mapResponseRight[B2](f: B => B2): RequestT[U, Either[A, B2], R] = r.copy(response = r.response.mapRight(f))
   }
 }
 
-class SpecifyAuthScheme[U[_], T, +S](hn: String, rt: RequestT[U, T, S], digestTag: String) {
-  def basic(user: String, password: String): RequestT[U, T, S] = {
+class SpecifyAuthScheme[U[_], T, -R](hn: String, rt: RequestT[U, T, R], digestTag: String) {
+  def basic(user: String, password: String): RequestT[U, T, R] = {
     val c = new String(Base64.getEncoder.encode(s"$user:$password".getBytes(Utf8)), Utf8)
     rt.header(hn, s"Basic $c")
   }
 
-  def basicToken(token: String): RequestT[U, T, S] =
+  def basicToken(token: String): RequestT[U, T, R] =
     rt.header(hn, s"Basic $token")
 
-  def bearer(token: String): RequestT[U, T, S] =
+  def bearer(token: String): RequestT[U, T, R] =
     rt.header(hn, s"Bearer $token")
 
-  def digest(user: String, password: String): RequestT[U, T, S] = {
+  def digest(user: String, password: String): RequestT[U, T, R] = {
     rt.tag(digestTag, DigestAuthData(user, password))
   }
 }

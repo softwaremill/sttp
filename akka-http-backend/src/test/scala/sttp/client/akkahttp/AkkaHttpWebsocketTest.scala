@@ -25,7 +25,7 @@ class AkkaHttpWebsocketTest
     with Eventually
     with IntegrationPatience {
   implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.global
-  implicit val backend: SttpBackend[Future, Nothing, Flow[Message, Message, *]] = AkkaHttpBackend()
+  implicit val backend: SttpBackend[Future, Any, Flow[Message, Message, *]] = AkkaHttpBackend()
 
   it should "send and receive ten messages" in {
     val received = new ConcurrentLinkedQueue[String]()

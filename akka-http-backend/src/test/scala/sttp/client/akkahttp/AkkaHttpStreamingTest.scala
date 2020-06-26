@@ -10,12 +10,13 @@ import sttp.client.testing.streaming.StreamingTest
 
 import scala.concurrent.Future
 
-class AkkaHttpStreamingTest extends StreamingTest[Future, Source[ByteString, Any]] {
+class AkkaHttpStreamingTest extends StreamingTest[Future, AkkaStreams] {
+  override val streams: AkkaStreams = AkkaStreams
 
   private implicit val actorSystem: ActorSystem = ActorSystem("sttp-test")
   private implicit val materializer: ActorMaterializer = ActorMaterializer()
 
-  override implicit val backend: SttpBackend[Future, Source[ByteString, Any], NothingT] =
+  override implicit val backend: SttpBackend[Future, AkkaStreams, NothingT] =
     AkkaHttpBackend.usingActorSystem(actorSystem)
 
   override implicit val convertToFuture: ConvertToFuture[Future] =

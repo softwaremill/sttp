@@ -5,8 +5,8 @@ package object client extends SttpApi {
   type Empty[X] = None.type
   type NothingT[X] = Nothing
 
-  type PartialRequest[T, +S] = RequestT[Empty, T, S]
-  type Request[T, +S] = RequestT[Identity, T, S]
+  type PartialRequest[T, -R] = RequestT[Empty, T, R]
+  type Request[T, -R] = RequestT[Identity, T, R]
 
   /**
     * Provide an implicit value of this type to serialize arbitrary classes into a request body.

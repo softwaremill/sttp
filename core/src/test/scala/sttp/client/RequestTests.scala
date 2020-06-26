@@ -36,10 +36,10 @@ class RequestTests extends AnyFlatSpec with Matchers {
   }
 
   it should "compile multiple subtype response variants" in {
-    val asLeft: ResponseAs[Left[String, String], Nothing] = asStringAlways.map(Left(_))
-    val asRight: ResponseAs[Right[String, String], Nothing] = asStringAlways.map(Right(_))
+    val asLeft: ResponseAs[Left[String, String], Any] = asStringAlways.map(Left(_))
+    val asRight: ResponseAs[Right[String, String], Any] = asStringAlways.map(Right(_))
 
-    def myRequest: Request[Either[String, String], Nothing] =
+    def myRequest: Request[Either[String, String], Any] =
       basicRequest
         .get(uri"https://test.com")
         .response {

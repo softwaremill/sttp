@@ -7,19 +7,19 @@ import sttp.client.internal.SttpFile
 import sttp.model.Part
 
 trait SttpExtensions {
-  def asFile(file: File): ResponseAs[Either[String, File], Nothing] = {
+  def asFile(file: File): ResponseAs[Either[String, File], Any] = {
     asEither(asStringAlways, asFileAlways(file))
   }
 
-  def asFileAlways(file: File): ResponseAs[File, Nothing] = {
+  def asFileAlways(file: File): ResponseAs[File, Any] = {
     ResponseAsFile(SttpFile.fromFile(file)).map(_.toFile)
   }
 
-  def asPath(path: Path): ResponseAs[Either[String, Path], Nothing] = {
+  def asPath(path: Path): ResponseAs[Either[String, Path], Any] = {
     asEither(asStringAlways, asPathAlways(path))
   }
 
-  def asPathAlways(path: Path): ResponseAs[Path, Nothing] = {
+  def asPathAlways(path: Path): ResponseAs[Path, Any] = {
     ResponseAsFile(SttpFile.fromPath(path)).map(_.toPath)
   }
 
