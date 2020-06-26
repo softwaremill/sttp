@@ -35,8 +35,13 @@ sealed trait BasicResponseAs[T, -R] extends ResponseAs[T, R]
 
 case object IgnoreResponse extends BasicResponseAs[Unit, Any]
 case object ResponseAsByteArray extends BasicResponseAs[Array[Byte], Any]
-// TODO: dependent types are not supported in extends. We have to rely on the `asStream` method
-case class ResponseAsStream[BinaryStream, S] private[client] (s: Streams[S]) extends ResponseAs[BinaryStream, S]
+// Path-dependent types are not supported in constructor arguments or the extends clause. Thus we cannot express the 
+// fact that `BinaryStream =:= s.BinaryStream`. We have to rely on correct construction via the companion object and
+// perform typecasts when the request is deconstructed.
+case class ResponseAsStream[BinaryStream, S] private (s: Streams[S]) extends ResponseAs[BinaryStream, S]
+object ResponseAsStream {
+  def apply[S](s: Streams[S]): ResponseAs[s.BinaryStream, S] = new ResponseAsStream(s)
+}
 case class ResponseAsFile(output: SttpFile) extends BasicResponseAs[SttpFile, Any]
 
 case class ResponseAsFromMetadata[T, R](f: ResponseMetadata => ResponseAs[T, R]) extends ResponseAs[T, R]

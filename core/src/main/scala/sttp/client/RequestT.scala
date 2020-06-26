@@ -220,7 +220,7 @@ case class RequestT[U[_], T, -R](
     this.copy(body = MultipartBody(p1 :: ps.toList))
 
   def streamBody[S](s: Streams[S])(b: s.BinaryStream): RequestT[U, T, R with S] =
-    copy[U, T, R with S](body = StreamBody(b))
+    copy[U, T, R with S](body = StreamBody(s)(b))
 
   def readTimeout(t: Duration): RequestT[U, T, R] =
     this.copy(options = options.copy(readTimeout = t))

@@ -162,8 +162,8 @@ class AkkaHttpBackend private (
       case ResponseAsByteArray =>
         asByteArray
 
-      case r @ ResponseAsStream(s) =>
-        Future.successful(hr.entity.dataBytes.asInstanceOf[T])
+      case ResponseAsStream(_) =>
+        Future.successful(hr.entity.dataBytes.asInstanceOf[T]) 
 
       case ResponseAsFile(file) =>
         saved(file.toFile).map(_ => file)

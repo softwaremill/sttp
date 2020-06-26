@@ -99,7 +99,7 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
   def asStream[S](s: Streams[S]): ResponseAs[Either[String, s.BinaryStream], S] =
     asEither(asStringAlways, asStreamAlways(s))
 
-  def asStreamAlways[S](s: Streams[S]): ResponseAs[s.BinaryStream, S] = ResponseAsStream[s.BinaryStream, S](s)
+  def asStreamAlways[S](s: Streams[S]): ResponseAs[s.BinaryStream, S] = ResponseAsStream(s)
 
   private[client] def asSttpFile(file: SttpFile): ResponseAs[SttpFile, Any] =
     ResponseAsFile(file)

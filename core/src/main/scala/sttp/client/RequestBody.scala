@@ -42,8 +42,13 @@ case class FileBody(
     defaultContentType: Option[MediaType] = Some(MediaType.ApplicationOctetStream)
 ) extends BasicRequestBody
 
-// TODO: dependent types are not supported in extends. We have to rely on the `streamBody` method to use the correct type parameters
-case class StreamBody[BinaryStream, S] private[client] (s: BinaryStream) extends RequestBody[S]
+// Path-dependent types are not supported in constructor arguments or the extends clause. Thus we cannot express the 
+// fact that `BinaryStream =:= s.BinaryStream`. We have to rely on correct construction via the companion object and
+// perform typecasts when the request is deconstructed.
+case class StreamBody[BinaryStream, S] private (b: BinaryStream) extends RequestBody[S]
+object StreamBody {
+  def apply[S](s: Streams[S])(b: s.BinaryStream): StreamBody[s.BinaryStream, S] = new StreamBody(b)
+}
 
 case class MultipartBody(parts: Seq[Part[BasicRequestBody]]) extends RequestBody[Any]
 
