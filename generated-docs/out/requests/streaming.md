@@ -12,12 +12,12 @@ For example, using the [akka-http backend](../backends/akka.md), a request with 
 
 ```scala
 import sttp.client._
-import sttp.client.akkahttp._
 
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 
-val source: Source[ByteString, Any] =   ...
+val chunks = "Streaming test".getBytes("utf-8").grouped(10).to(Iterable)
+val source: Source[ByteString, Any] = Source.apply(chunks.toList.map(ByteString(_)))
 
 basicRequest
   .streamBody(source)
