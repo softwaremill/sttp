@@ -13,7 +13,9 @@ How the response body will be read is part of the request description, as alread
 
 To conveniently specify how to deserialize the response body, a number of `as[Type]` methods are available. They can be used to provide a value for the request description's `response` property:
 
-```scala
+```scala mdoc:compile-only
+import sttp.client._
+
 basicRequest.response(asByteArray)
 ```
 
@@ -32,7 +34,7 @@ def asParams(encoding: String): ResponseAs[Either[String, Seq[(String, String)]]
 def asFile(file: File): ResponseAs[Either[String, File], Nothing]
 def asFileAlways(file: File): ResponseAs[File, Nothing]
 def asPath(path: Path): ResponseAs[Either[String, Path], Nothing]
-def asPathAlways(path: Path): ResponseAs[Path], Nothing]
+def asPathAlways(path: Path): ResponseAs[Path, Nothing]
 
 def asEither[L, R, S](onError: ResponseAs[L, S], 
                       onSuccess: ResponseAs[R, S]): ResponseAs[Either[L, R], S]
@@ -41,13 +43,19 @@ def fromMetadata[T, S](f: ResponseMetadata => ResponseAs[T, S]): ResponseAs[T, S
 
 Hence, to discard the response body, the request description should include the following:
 
-```
+```scala mdoc:compile-only
+import sttp.client._
+
 basicRequest.response(ignore)
 ```   
 
 And to save the response to a file:
 
-```
+```scala mdoc:compile-only
+import sttp.client._
+import java.io._
+
+val someFile = new File("some/path")
 basicRequest.response(asFile(someFile))
 ```
 
@@ -65,12 +73,14 @@ It's possible to define custom body deserializers by taking any of the built-in 
 
 As an example, to read the response body as an int, the following response description can be defined (warning: this ignores the possibility of exceptions!):
 
-```scala
-val asInt: ResponseAs[Either[String, Int], Nothing] = asString.map(_.toInt)
+```scala mdoc:compile-only
+import sttp.client._
+
+val asInt: ResponseAs[Either[String, Int], Nothing] = asString.mapRight(_.toInt)
 
 basicRequest
+  .get(uri"http://example.com")
   .response(asInt)
-  ...
 ```
 
 To integrate with a third-party JSON library, and always parse the response as a json (regardless of the status code):
@@ -81,7 +91,6 @@ val asJson: ResponseAs[Either[JsonError, JsonAST], Nothing] = asStringAlways.map
 
 basicRequest
   .response(asJson)
-  ...
 ```           
 
 A number of JSON libraries are supported out-of-the-box, see [json support](../json.md).
