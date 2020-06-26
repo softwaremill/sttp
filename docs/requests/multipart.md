@@ -17,14 +17,21 @@ The content type of each part is by default the same as when setting simple bodi
 
 The parts can be specified using either a `Seq[Multipart]` or by using multiple arguments:
 
-```scala
-def multipartBody(ps: Seq[Multipart])
-def multipartBody(p1: Multipart, ps: Multipart*)
+```scala mdoc:compile-only
+import sttp.client._
+
+basicRequest.multipartBody(Seq(multipart("p1", "v1"), multipart("p2", "v2")))
+basicRequest.multipartBody(multipart("p1", "v1"), multipart("p2", "v2"))
 ```        
 
 For example:
 
-```scala
+```scala mdoc:compile-only
+import sttp.client._
+import java.io._
+
+val someFile = new File("/sample/path")
+
 basicRequest.multipartBody(
   multipart("text_part", "data1"),
   multipartFile("file_part", someFile), // someFile: File
@@ -34,19 +41,14 @@ basicRequest.multipartBody(
 
 ## Customising part meta-data
 
-For each part, an optional filename can be specified, as well as a custom content type and additional headers. The following methods are available on `Multipart` instances:
+For each part, an optional filename can be specified, as well as a custom content type and additional headers. For example:
 
-```scala
-case class Multipart {
-  def fileName(v: String): Multipart
-  def contentType(v: String): Multipart
-  def header(k: String, v: String): Multipart
-}
-```
+```scala mdoc:compile-only
+import sttp.client._
+import java.io._
 
-For example:
-
-```scala
+val logoFile = new File("/sample/path/logo123.jpg")
+val docFile = new File("/sample/path/doc123.doc")
 basicRequest.multipartBody(
   multipartFile("logo", logoFile).fileName("logo.jpg").contentType("image/jpg"),
   multipartFile("text", docFile).fileName("text.doc")
