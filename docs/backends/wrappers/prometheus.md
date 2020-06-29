@@ -3,7 +3,7 @@
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client" %% "prometheus-backend" % "2.2.1"
+"com.softwaremill.sttp.client" %% "prometheus-backend" % "@VERSION@"
 ```
 and some imports:
 ```scala mdoc

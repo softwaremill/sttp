@@ -3,7 +3,7 @@
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client" %% "zio-telemetry-opentracing-backend" % "2.2.1"
+"com.softwaremill.sttp.client" %% "zio-telemetry-opentracing-backend" % "@VERSION@"
 ```
 
 This backend depends on [zio-opentracing](https://github.com/zio/zio-telemetry).
