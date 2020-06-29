@@ -16,7 +16,7 @@ import cats.effect._
 import sttp.client._
 
 // an implicit ContextShift in required to create a concurrent instance for `cats.effect.IO`:
-implicit val cs: ContextShift[IO] = IO.contextShift( scala.concurrent.ExecutionContext.global )
+implicit val cs: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionContext.global)
 ```
            
 This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client) and uses [Netty](http://netty.io) behind the scenes.
@@ -71,8 +71,10 @@ import sttp.client.httpclient.fs2.HttpClientFs2Backend
 import cats.effect._
 import sttp.client._
 
-// an implicit ContextShift in required to create a concurrent instance for `cats.effect.IO`:
-implicit val cs: ContextShift[IO] = IO.contextShift( scala.concurrent.ExecutionContext.global )
+// an implicit ContextShift is required to create a concurrent instance for `cats.effect.IO`,
+// as well as a Blocker instance. Note that you'll probably want to use a different thread
+// pool for blocking.
+implicit val cs: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionContext.global)
 val blocker = Blocker.liftExecutionContext(scala.concurrent.ExecutionContext.global)
 ```
 

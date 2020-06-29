@@ -12,27 +12,11 @@ import cats.effect._
 import sttp.client.http4s._
 import scala.concurrent._
 
-// an implicit ContextShift in required to create a concurrent instance for `cats.effect.IO`:
+// an implicit ContextShift is required to create a concurrent instance for `cats.effect.IO`,
+// as well as a Blocker instance. Note that you'll probably want to use a different thread
+// pool for blocking.
 implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
 val blocker: cats.effect.Blocker = Blocker.liftExecutionContext(ExecutionContext.global)
-```
-
-To create the backend, you'll need to provide a `cats.effect.Blocker` instance, which should be passed as a parameter, when defining the backend:
-
-```scala
-import org.http4s.client.Client
-val client: Client[IO] = ???
-implicit val backend = Http4sBackend.usingClient[IO](client, blocker)
-```
-or
-```scala
-import org.http4s.client.blaze._
-val blazeClientBuilder: BlazeClientBuilder[IO] = ???
-Http4sBackend.usingClientBuilder[IO](blazeClientBuilder, blocker).use { implicit backend => ??? }
-```
-or
-```scala
-Http4sBackend.usingDefaultClientBuilder[IO](blocker).use { implicit backend => ??? }
 ```
 
 The backend can be created for any type implementing the `cats.effect.ConcurrentEffect` typeclass, such as `cats.effect.IO`. Moreover, an implicit `ContextShift` will have to be in scope as well.

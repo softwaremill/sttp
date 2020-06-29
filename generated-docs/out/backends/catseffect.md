@@ -7,14 +7,14 @@ To use, add the following dependency to your project:
 ```scala
 "com.softwaremill.sttp.client" %% "async-http-client-backend-cats" % "2.2.2-SNAPSHOT"
 ```
-And some imports:
+You'll need the following imports and implicits to create the backend:
 ```scala
 import sttp.client._
 import sttp.client.asynchttpclient.cats.AsyncHttpClientCatsBackend
 import cats.effect._
 
 // an implicit ContextShift in required to create the backend; here, for `cats.effect.IO`:
-implicit val cs: ContextShift[IO] = IO.contextShift( scala.concurrent.ExecutionContext.global )
+implicit val cs: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionContext.global)
 ```
            
 This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client), uses [Netty](http://netty.io) behind the scenes and supports effect cancellation. 
