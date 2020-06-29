@@ -41,7 +41,7 @@ Finally, it's possible to parse the response cookies into a sequence of the `Coo
 ```scala mdoc:compile-only
 import sttp.model._
 
-val cookies: Seq[Cookie] = ???
+val cookies: Seq[Cookie] = response.cookies
 ```        
 
 If the cookies from a response should be set without changes on the request, this can be done directly; see the [cookies](../requests/cookies.md) section in the request definition documentation.
