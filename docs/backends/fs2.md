@@ -72,7 +72,7 @@ import cats.effect._
 import sttp.client._
 
 // an implicit ContextShift in required to create a concurrent instance for `cats.effect.IO`:
-implicit val cs: ContextShift[IO] = IO.contextShift( scala.concurrent.ExecutionContext.global )
+implicit val cs: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionContext.global)
 val blocker = Blocker.liftExecutionContext(scala.concurrent.ExecutionContext.global)
 ```
 
