@@ -14,7 +14,7 @@ import sttp.client.asynchttpclient.cats.AsyncHttpClientCatsBackend
 import cats.effect._
 
 // an implicit ContextShift in required to create the backend; here, for `cats.effect.IO`:
-implicit val cs: ContextShift[IO] = IO.contextShift( scala.concurrent.ExecutionContext.global )
+implicit val cs: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionContext.global)
 ```
            
 This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client), uses [Netty](http://netty.io) behind the scenes and supports effect cancellation. 
