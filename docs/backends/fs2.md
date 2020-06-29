@@ -16,7 +16,7 @@ import cats.effect._
 import sttp.client._
 
 // an implicit ContextShift in required to create a concurrent instance for `cats.effect.IO`:
-implicit val cs: ContextShift[IO] = IO.contextShift( scala.concurrent.ExecutionContext.global )
+implicit val cs: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionContext.global)
 ```
            
 This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client) and uses [Netty](http://netty.io) behind the scenes.
