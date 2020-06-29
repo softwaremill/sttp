@@ -91,7 +91,7 @@ val asJson: ResponseAs[Either[JsonError, JsonAST], Nothing] = asStringAlways.map
 
 basicRequest
   .response(asJson)
-```           
+```
 
 A number of JSON libraries are supported out-of-the-box, see [json support](../json.md).
 
@@ -100,9 +100,17 @@ Using the `fromMetadata` combinator, it's possible to dynamically specify how th
 A more complex case, which uses Circe for deserializing JSON, choosing to which model to deserialize to depending on the status code, can look as following:
 
 ```scala
+import sttp.client._
+import sttp.model._
+import sttp.client.circe._
+import io.circe._
+import io.circe.generic.semiauto._
+
 sealed trait MyModel
-case class SuccessModel(...) extends MyModel
-case class ErrorModel(...) extends MyModel
+case class SuccessModel(name: String, age: Int) extends MyModel
+case class ErrorModel(message: String) extends MyModel
+implicit val successModelDecoder: Decoder[SuccessModel] = deriveDecoder[SuccessModel]
+implicit val errorModelDecoder: Decoder[ErrorModel] = deriveDecoder[ErrorModel]
 
 val myRequest: Request[Either[ResponseError[io.circe.Error], MyModel], Nothing] =
   basicRequest
@@ -110,7 +118,7 @@ val myRequest: Request[Either[ResponseError[io.circe.Error], MyModel], Nothing] 
     .response(fromMetadata { meta =>
       meta.code match {
         case StatusCode.Ok => asJson[SuccessModel]
-        case -             => asJson[ErrorModel]
+        case _             => asJson[ErrorModel]
       }
     })
 ```
@@ -127,19 +135,19 @@ def asStreamAlways[S]: ResponseAs[S, S] = ResponseAsStream[S, S]()
 For example, when using the [Akka backend](../backends/akka.md):
 
 ```scala
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
+import scala.concurrent.Future
 import sttp.client._
 import sttp.client.akkahttp._
 
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+implicit val sttpBackend: SttpBackend[Future, Source[ByteString, Any], NothingT] = AkkaHttpBackend()
 
-implicit val sttpBackend = AkkaHttpBackend() 
-
-val response: Future[Response[Source[Either[String, ByteString], Any]]] =
+val response: Future[Response[Either[String, Source[ByteString, Any]]]] =
   basicRequest
     .post(uri"...")
     .response(asStream[Source[ByteString, Any]])
-    .send()    
+    .send()
 ```
 
 ```note:: Unlike with non-streaming response handlers, each streaming response should be entirely consumed by client code.
