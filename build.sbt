@@ -188,7 +188,7 @@ val scalaNativeTestInterfaceVersion = "0.4.0-M2"
 val scalaTestNativeVersion = "3.2.0-M2"
 val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion
 
-val zioVersion = "1.0.0-RC21-1"
+val zioVersion = "1.0.0-RC21-2"
 val zioInteropRsVersion = "1.0.3.5-RC12"
 
 val modelVersion = "1.1.3"
