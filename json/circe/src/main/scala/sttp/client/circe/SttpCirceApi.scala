@@ -1,9 +1,9 @@
 package sttp.client.circe
 
+import sttp.client._
 import io.circe.parser.decode
 import io.circe.{Decoder, Encoder, Printer}
 import sttp.client.internal.Utf8
-import sttp.client.{IsOption, ResponseAs, ResponseError, _}
 import sttp.model.MediaType
 
 trait SttpCirceApi {
