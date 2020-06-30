@@ -95,6 +95,24 @@ basicRequest
 
 A number of JSON libraries are supported out-of-the-box, see [json support](../json.md).
 
+Sometimes it might be useful to model some http error responses right away. We can do that using `asTypedErrors` method:
+```scala
+case class SuccessModel(...)
+sealed trait MyErrorModel
+case class Conflict(...) extends MyErrorModel
+case class ServerError(...) extends MyErrorModel
+
+val myRequest: Request[Either[ResponseErrorTyped[MyErrorModel, io.circe.Error], MyModel], Nothing] =
+  basicRequest
+    .get(uri"https://example.com")
+    .response(asTypedError(asJsonAlways[SuccessModel]){
+      case StatusCode.Conflict => asJsonAlways[Conflict]
+      case StatusCode.ServerError => asJsonAlways[ServerError]
+    })
+```
+
+There is also an unsafe variant of above method which in case of deserialization error or any unspecified http error throws related exception.
+
 Using the `fromMetadata` combinator, it's possible to dynamically specify how the response should be deserialized, basing on the response status code and response headers. The default `asString`, `asByteArray` response descriptions use this method to return a `Left` in case of non-2xx responses, and a `Right` otherwise. 
 
 A more complex case, which uses Circe for deserializing JSON, choosing to which model to deserialize to depending on the status code, can look as following:

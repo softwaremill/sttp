@@ -8,6 +8,8 @@ package object client extends SttpApi {
   type PartialRequest[T, +S] = RequestT[Empty, T, S]
   type Request[T, +S] = RequestT[Identity, T, S]
 
+  type ResponseError[DE] = ResponseErrorTyped[String, DE]
+
   /**
     * Provide an implicit value of this type to serialize arbitrary classes into a request body.
     * Backends might also provide special logic for serializer instances which they define (e.g. to handle streaming).

@@ -95,6 +95,31 @@ basicRequest
 
 A number of JSON libraries are supported out-of-the-box, see [json support](../json.md).
 
+Sometimes it might be useful to model some http error responses right away. We can do that by using `either` combine with `fromStatusCodes`:
+```scala mdoc:compile-only
+import sttp.client._
+import sttp.model._
+import sttp.client.circe._
+import io.circe._
+import io.circe.generic.auto._
+
+case class MyModel(p1: Int)
+sealed trait MyErrorModel
+case class Conflict(message: String) extends MyErrorModel
+case class BadRequest(message: String) extends MyErrorModel
+case class GenericError(message: String) extends MyErrorModel
+
+basicRequest
+  .get(uri"https://example.com")
+  .response(either(fromStatusCode{
+    case StatusCode.Conflict => asJsonAlways[Conflict]
+    case StatusCode.BadRequest => asJsonAlways[BadRequest]
+    case _ => asStringAlways.map(s=>Right(GenericError(s)))
+  }, asJsonAlways[MyModel]))
+```
+
+There is also an unsafe variant of above method (`eitherUnsafe`) which in case of deserialization error or any unspecified http error throws related exception.
+
 Using the `fromMetadata` combinator, it's possible to dynamically specify how the response should be deserialized, basing on the response status code and response headers. The default `asString`, `asByteArray` response descriptions use this method to return a `Left` in case of non-2xx responses, and a `Right` otherwise. 
 
 A more complex case, which uses Circe for deserializing JSON, choosing to which model to deserialize to depending on the status code, can look as following:
@@ -104,13 +129,11 @@ import sttp.client._
 import sttp.model._
 import sttp.client.circe._
 import io.circe._
-import io.circe.generic.semiauto._
+import io.circe.generic.auto._
 
 sealed trait MyModel
 case class SuccessModel(name: String, age: Int) extends MyModel
 case class ErrorModel(message: String) extends MyModel
-implicit val successModelDecoder: Decoder[SuccessModel] = deriveDecoder[SuccessModel]
-implicit val errorModelDecoder: Decoder[ErrorModel] = deriveDecoder[ErrorModel]
 
 val myRequest: Request[Either[ResponseError[io.circe.Error], MyModel], Nothing] =
   basicRequest

@@ -3,9 +3,8 @@ package sttp.client
 import java.io.InputStream
 import java.nio.ByteBuffer
 
-import sttp.client.internal._
+import sttp.client.internal.{SttpFile, _}
 import sttp.model._
-import sttp.client.internal.SttpFile
 
 import scala.collection.immutable.Seq
 import scala.concurrent.duration._
@@ -209,4 +208,56 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     */
   def multipart[B: BodySerializer](name: String, b: B): Part[BasicRequestBody] =
     Part(name, implicitly[BodySerializer[B]].apply(b), contentType = Some(MediaType.ApplicationXWwwFormUrlencoded))
+
+  /**
+    * Allows to provide different mappings for success and error responses
+    * @param onError transformation which will be applied if the response is unsuccessful (non 2xx)
+    * @param onSuccess transformation which will be applied if the response is successful (2xx)
+    * @tparam DE underlying type of deserialization failure
+    * @tparam HE type which represents known error cases
+    * @tparam T type of the successful response
+    */
+  def either[DE, HE, T](
+      onError: ResponseAs[Either[DeserializationError[DE], HE], Nothing],
+      onSuccess: ResponseAs[Either[DeserializationError[DE], T], Nothing]
+  ): ResponseAs[Either[ResponseErrorTyped[HE, DE], T], Nothing] = {
+    fromMetadata { meta =>
+      if (meta.isSuccess) {
+        onSuccess
+      } else {
+        onError.map {
+          case Left(a)  => Left(a)
+          case Right(b) => Left(HttpError(b))
+        }
+      }
+    }
+  }
+
+  def fromStatusCode[DE, T](
+      mapping: StatusCode => ResponseAs[Either[DeserializationError[DE], T], Nothing]
+  ): ResponseAs[Either[DeserializationError[DE], T], Nothing] = {
+    fromMetadata { meta =>
+      mapping(meta.code)
+    }
+  }
+
+  /**
+    * Same as #either but throws deserialization error if either success or error deserialization fails
+    * @param onSuccess transformation which will be applied if the response is successful (2xx)
+    * @param onError transformation which will be applied if the response is unsuccessful (non 2xx)
+    * @tparam E type which represents known error cases
+    * @tparam T type of the successful response
+    * @return
+    */
+  def eitherUnsafe[E, T](
+      onSuccess: ResponseAs[T, Nothing]
+  )(onError: ResponseAs[E, Nothing]): ResponseAs[Either[E, T], Nothing] = {
+    fromMetadata { meta =>
+      if (meta.isSuccess) {
+        onSuccess.map(Right(_))
+      } else {
+        onError.map(Left(_))
+      }
+    }
+  }
 }

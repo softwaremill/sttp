@@ -1,10 +1,9 @@
 package sttp.client.sprayJson
 
-import sttp.client._
-import sttp.client.internal.Utf8
-import sttp.model._
 import spray.json._
-import sttp.client.{IsOption, ResponseAs, ResponseError}
+import sttp.client.internal.Utf8
+import sttp.client.{IsOption, ResponseAs, _}
+import sttp.model._
 
 trait SttpSprayJsonApi {
   implicit def sprayBodySerializer[B: JsonWriter](implicit printer: JsonPrinter = CompactPrinter): BodySerializer[B] =

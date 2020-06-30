@@ -115,7 +115,7 @@ object ResponseAs {
     */
   def deserializeRightWithError[E: ShowError, T](
       doDeserialize: String => Either[E, T]
-  ): (Either[String, String], ResponseMetadata) => Either[ResponseError[E], T] = {
+  ): (Either[String, String], ResponseMetadata) => Either[ResponseErrorTyped[String, E], T] = {
     case (Left(s), meta)  => Left(HttpError(s, meta.code))
     case (Right(s), _) => deserializeWithError(doDeserialize)(implicitly[ShowError[E]])(s)
   }
@@ -145,11 +145,11 @@ object ResponseAs {
       }
 }
 
-sealed abstract class ResponseError[+T](error: String) extends Exception(error)
-case class HttpError(body: String, statusCode: StatusCode)
-    extends ResponseError[Nothing](s"statusCode: $statusCode, response: $body")
-case class DeserializationError[T: ShowError](body: String, error: T)
-    extends ResponseError[T](implicitly[ShowError[T]].show(error))
+sealed abstract class ResponseErrorTyped[+HE, +DE](error: String) extends Exception(error)
+case class HttpError[HE](body: HE, statusCode: StatusCode)
+    extends ResponseErrorTyped[HE, Nothing](s"statusCode: $statusCode, response: $body")
+case class DeserializationError[DE: ShowError](body: String, error: DE)
+    extends ResponseErrorTyped[Nothing, DE](implicitly[ShowError[DE]].show(error))
 
 trait ShowError[-T] {
   def show(t: T): String

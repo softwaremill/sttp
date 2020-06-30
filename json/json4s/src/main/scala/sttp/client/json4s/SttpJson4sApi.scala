@@ -1,10 +1,9 @@
 package sttp.client.json4s
 
-import sttp.client._
-import sttp.client.internal.Utf8
 import org.json4s.{Formats, Serialization}
+import sttp.client.{ResponseAs, _}
+import sttp.client.internal.Utf8
 import sttp.model._
-import sttp.client.{ResponseAs, ResponseError}
 
 trait SttpJson4sApi {
   implicit def json4sBodySerializer[B <: AnyRef](implicit
