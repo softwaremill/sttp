@@ -1,5 +1,5 @@
 libraryDependencies += "org.scala-js" %% "scalajs-env-selenium" % "1.0.0"
-addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.1.0")
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.1.1")
 addSbtPlugin("org.scala-js" % "sbt-jsdependencies" % "1.0.1")
 addSbtPlugin("org.scala-native" % "sbt-scala-native" % "0.4.0-M2")
 addSbtPlugin("io.spray" % "sbt-revolver" % "0.9.1")
