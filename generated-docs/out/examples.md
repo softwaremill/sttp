@@ -92,10 +92,10 @@ import sttp.client._
 import sttp.client.circe._
 import sttp.client.asynchttpclient.zio._
 import io.circe.generic.auto._
-import zio.{App => ZApp, _}
+import zio._
 import zio.console.Console
 
-object GetAndParseJsonZioCirce extends ZApp {
+object GetAndParseJsonZioCirce extends zio.App {
 
   override def run(args: List[String]): ZIO[ZEnv, Nothing, ExitCode] = {
 
