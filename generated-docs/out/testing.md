@@ -67,7 +67,8 @@ This approach to testing has one caveat: the responses are not type-safe. That i
 Another way to specify the behaviour is passing response wrapped in the result monad to the stub. It is useful if you need to test a scenario with a slow server, when the response should be not returned immediately, but after some time. Example with Futures:
 
 ```scala
-implicit val testingBackend = SttpBackendStub.asynchronousFuture.whenAnyRequest
+implicit val testingBackend = SttpBackendStub.asynchronousFuture
+  .whenAnyRequest
   .thenRespondWrapped(Future {
     Thread.sleep(5000)
     Response(Right("OK"), StatusCode.Ok, "", Nil, Nil)
@@ -79,7 +80,8 @@ val responseFuture = basicRequest.get(uri"http://example.org").send()
 The returned response may also depend on the request: 
 
 ```scala
-implicit val testingBackend = SttpBackendStub.synchronous.whenAnyRequest
+implicit val testingBackend = SttpBackendStub.synchronous
+  .whenAnyRequest
   .thenRespondWrapped(req =>
     Response(Right(s"OK, got request sent to ${req.uri.host}"), StatusCode.Ok, "", Nil, Nil)
   )
@@ -90,7 +92,8 @@ val response = basicRequest.get(uri"http://example.org").send()
 You can define consecutive raw responses that will be served:
 
 ```scala
-implicit val testingBackend:SttpBackendStub[Identity, Nothing, NothingT] = SttpBackendStub.synchronous.whenAnyRequest
+implicit val testingBackend:SttpBackendStub[Identity, Nothing, NothingT] = SttpBackendStub.synchronous
+  .whenAnyRequest
   .thenRespondCyclic("first", "second", "third")
 
 basicRequest.get(uri"http://example.org").send()       // Right("OK, first")       // Right("OK, first")
@@ -102,7 +105,8 @@ basicRequest.get(uri"http://example.org").send()       // Right("OK, first")
 Or multiple `Response` instances:
 
 ```scala
-implicit val testingBackend:SttpBackendStub[Identity, Nothing, NothingT] = SttpBackendStub.synchronous.whenAnyRequest
+implicit val testingBackend:SttpBackendStub[Identity, Nothing, NothingT] = SttpBackendStub.synchronous
+  .whenAnyRequest
   .thenRespondCyclicResponses(
     Response.ok[String]("first"),
     Response("error", StatusCode.InternalServerError, "Something went wrong")
