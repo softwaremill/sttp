@@ -19,14 +19,15 @@ Response headers are available through the `.headers` property, which gives all 
 Individual headers can be obtained using the methods:
 
 ```scala
+import sttp.model._
 import sttp.client._
 implicit val backend = HttpURLConnectionBackend()
 val request = basicRequest
     .get(uri"http://endpoint.com/example")
 val response = request.send()
 
-val singleHeader: Option[String] = response.header("Server")
-val multipleHeaders: Seq[String] = response.headers("Allow")
+val singleHeader: Option[String] = response.header(HeaderNames.Server)
+val multipleHeaders: Seq[String] = response.headers(HeaderNames.Allow)
 ```
 
 There are also helper methods available to read some commonly accessed headers:
