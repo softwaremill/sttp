@@ -29,14 +29,16 @@ To set a binary-data body, the following methods are available:
 ```scala mdoc:compile-only
 import sttp.client._
 
-val textAsBytes = "Hello, world!".getBytes
-basicRequest.body(textAsBytes)
+val bytes: Array[Byte] = ???
+basicRequest.body(bytes)
 
 import java.nio.ByteBuffer
-basicRequest.body(ByteBuffer.wrap(textAsBytes))
+val byteBuffer: java.nio.ByteBuffer = ???
+basicRequest.body(byteBuffer)
 
 import java.io.ByteArrayInputStream
-basicRequest.body(new ByteArrayInputStream(textAsBytes))
+val inputStream: ByteArrayInputStream = ???
+basicRequest.body(inputStream)
 ```
 
 If not specified before, these methods will set the content type to `application/octet-stream`. When using a byte array, additionally the content length will be set to the length of the array (unless specified explicitly).
