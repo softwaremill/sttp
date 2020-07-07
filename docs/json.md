@@ -6,8 +6,8 @@ Each integration is available as an import, which brings the implicit `BodySeria
 
 Following data class will be used through the next few examples:
 ```scala mdoc
-case class Payload(data: String)
-case class MyResponse(data: String)
+case class RequestPayload(data: String)
+case class ResponsePayload(data: String)
 ```
 
 ## Circe
@@ -30,13 +30,13 @@ import sttp.client.circe._
 implicit val backend: SttpBackend[Identity, Nothing, NothingT] = HttpURLConnectionBackend()
 
 import io.circe.generic.auto._
-val requestPayload: Payload = Payload("some data")
+val requestPayload = RequestPayload("some data")
 
-val response: Identity[Response[Either[ResponseError[io.circe.Error], MyResponse]]] =
+val response: Identity[Response[Either[ResponseError[io.circe.Error], ResponsePayload]]] =
   basicRequest
     .post(uri"...")
     .body(requestPayload)
-    .response(asJson[MyResponse])
+    .response(asJson[ResponsePayload])
     .send()
 ```
 
@@ -63,16 +63,16 @@ import sttp.client.json4s._
 
 implicit val backend: SttpBackend[Identity, Nothing, NothingT] = HttpURLConnectionBackend()
 
-val requestPayload: Payload = Payload("some data")
+val requestPayload = RequestPayload("some data")
 
 implicit val serialization = org.json4s.native.Serialization
 implicit val formats = org.json4s.DefaultFormats
 
-val response: Identity[Response[Either[ResponseError[Exception], MyResponse]]] =
+val response: Identity[Response[Either[ResponseError[Exception], ResponsePayload]]] =
   basicRequest
     .post(uri"...")
     .body(requestPayload)
-    .response(asJson[MyResponse])
+    .response(asJson[ResponsePayload])
     .send()
 ```
 
@@ -95,16 +95,16 @@ import spray.json._
 
 implicit val backend: SttpBackend[Identity, Nothing, NothingT] = HttpURLConnectionBackend()
 
-implicit val payloadJsonFormat: RootJsonFormat[Payload] = ???
-implicit val myResponseJsonFormat: RootJsonFormat[MyResponse] = ???
+implicit val payloadJsonFormat: RootJsonFormat[RequestPayload] = ???
+implicit val myResponseJsonFormat: RootJsonFormat[ResponsePayload] = ???
 
-val requestPayload: Payload = Payload("some data")
+val requestPayload = RequestPayload("some data")
 
-val response: Identity[Response[Either[ResponseError[Exception], MyResponse]]] =
+val response: Identity[Response[Either[ResponseError[Exception], ResponsePayload]]] =
   basicRequest
     .post(uri"...")
     .body(requestPayload)
-    .response(asJson[MyResponse])
+    .response(asJson[ResponsePayload])
     .send()
 ```
 
