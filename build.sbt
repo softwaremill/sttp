@@ -716,20 +716,34 @@ compileDocs := {
   (docs.jvm(scala2_13) / mdoc).toTask(" --out target/sttp-docs").value
 }
 
+val jeagerClientVersion = "1.0.0"
+val braveOpentracingVersion = "0.34.2"
+val zipkinSenderOkHttpVersion = "2.15.0"
+
 lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // important: it must not be docs/
+  .enablePlugins(MdocPlugin)
   .settings(commonSettings)
   .settings(
+    mdocIn := file("docs"),
+    moduleName := "sttp-docs",
+    mdocVariables := Map(
+      "VERSION" -> version.value,
+      "JEAGER_CLIENT_VERSION" -> jeagerClientVersion,
+      "BRAVE_OPENTRACING_VERSION" -> braveOpentracingVersion,
+      "ZIPKIN_SENDER_OKHTTP_VERSION" -> zipkinSenderOkHttpVersion
+    ),
+    mdocOut := file("generated-docs/out"),
     publishArtifact := false,
     name := "docs",
     libraryDependencies ++= Seq(
       "org.json4s" %% "json4s-native" % json4sVersion,
       "io.circe" %% "circe-generic" % "0.12.1",
       "commons-io" % "commons-io" % "2.7",
-      "io.github.resilience4j" % "resilience4j-circuitbreaker" % "1.5.0", //TODO extract to variables and reuse in mdoc
+      "io.github.resilience4j" % "resilience4j-circuitbreaker" % "1.5.0",
       "io.github.resilience4j" % "resilience4j-ratelimiter" % "1.5.0",
-      "io.jaegertracing" % "jaeger-client" % "1.0.0",
-      "io.opentracing.brave" % "brave-opentracing" % "0.34.2",
-      "io.zipkin.reporter2" % "zipkin-sender-okhttp3" % "2.15.0",
+      "io.jaegertracing" % "jaeger-client" % jeagerClientVersion,
+      "io.opentracing.brave" % "brave-opentracing" % braveOpentracingVersion,
+      "io.zipkin.reporter2" % "zipkin-sender-okhttp3" % zipkinSenderOkHttpVersion,
       akkaStreams
     )
   )
@@ -756,14 +770,5 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     prometheusBackend,
     slf4jBackend,
     zioTelemetryOpenTracingBackend
-  )
-  .enablePlugins(MdocPlugin)
-  .settings(
-    mdocIn := file("docs"),
-    moduleName := "sttp-docs",
-    mdocVariables := Map(
-      "VERSION" -> version.value
-    ),
-    mdocOut := file("generated-docs/out")
   )
   .jvmPlatform(scalaVersions = List(scala2_13))

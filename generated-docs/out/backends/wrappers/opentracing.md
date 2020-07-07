@@ -77,6 +77,8 @@ Add following dependency:
 
 ```
 libraryDependencies += "io.opentracing.brave" % "brave-opentracing" % "0.34.2"
+// and for integrationw with okHttp:
+libraryDependencies += "io.zipkin.reporter2" % "zipkin-sender-okhttp3" % "2.15.0" 
 ```
 
 Create an instance of tracer:
@@ -92,7 +94,6 @@ import java.util.Arrays
 
 def initTracer(zipkinUrl: String, serviceName: String): Tracer = {
   // Configure a reporter, which controls how often spans are sent
-  //   (the dependency is io.zipkin.reporter2:zipkin-sender-okhttp3)
   val sender = OkHttpSender.create(zipkinUrl)
   val spanReporter = AsyncReporter.create(sender)
 

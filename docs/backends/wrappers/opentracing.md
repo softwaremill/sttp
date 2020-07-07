@@ -47,7 +47,7 @@ Using with [jaeger](https://www.jaegertracing.io/) tracing
 Add following dependency:
 
 ```
-libraryDependencies += "io.jaegertracing" % "jaeger-client" % "1.0.0"
+libraryDependencies += "io.jaegertracing" % "jaeger-client" % "@JEAGER_CLIENT_VERSION@"
 ```
 
 Create an instance of tracer:
@@ -76,7 +76,9 @@ Using with [brave](https://github.com/openzipkin/brave) tracing
 Add following dependency:
 
 ```
-libraryDependencies += "io.opentracing.brave" % "brave-opentracing" % "0.34.2"
+libraryDependencies += "io.opentracing.brave" % "brave-opentracing" % "@BRAVE_OPENTRACING_VERSION@"
+// and for integrationw with okHttp:
+libraryDependencies += "io.zipkin.reporter2" % "zipkin-sender-okhttp3" % "@ZIPKIN_SENDER_OKHTTP_VERSION@" 
 ```
 
 Create an instance of tracer:
@@ -92,7 +94,6 @@ import java.util.Arrays
 
 def initTracer(zipkinUrl: String, serviceName: String): Tracer = {
   // Configure a reporter, which controls how often spans are sent
-  //   (the dependency is io.zipkin.reporter2:zipkin-sender-okhttp3)
   val sender = OkHttpSender.create(zipkinUrl)
   val spanReporter = AsyncReporter.create(sender)
 
