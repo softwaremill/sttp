@@ -37,7 +37,7 @@ To invoke the `send()` method on a request description, an implicit value of typ
 
 ```scala
 implicit val backend = HttpURLConnectionBackend()
-val response = request.send()
+val response: Identity[Response[Either[String, String]]] = request.send()
 ```        
 
 The default backend doesn't wrap the response into any container, but other asynchronous backends might do so. See the section on [backends](../backends/summary.md) for more details.
