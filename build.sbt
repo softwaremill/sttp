@@ -181,7 +181,8 @@ val fs2Version: Option[(Long, Long)] => String = {
 }
 
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.12"
-val akkaStreams = "com.typesafe.akka" %% "akka-stream" % "2.5.31"
+val akkaStreamVersion = "2.5.31"
+val akkaStreams = "com.typesafe.akka" %% "akka-stream" % akkaStreamVersion
 
 val scalaTestVersion = "3.1.2"
 val scalaNativeTestInterfaceVersion = "0.4.0-M2"
@@ -731,7 +732,8 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
       "VERSION" -> version.value,
       "JEAGER_CLIENT_VERSION" -> jeagerClientVersion,
       "BRAVE_OPENTRACING_VERSION" -> braveOpentracingVersion,
-      "ZIPKIN_SENDER_OKHTTP_VERSION" -> zipkinSenderOkHttpVersion
+      "ZIPKIN_SENDER_OKHTTP_VERSION" -> zipkinSenderOkHttpVersion,
+      "AKKA_STREAM_VERSION" -> akkaStreamVersion
     ),
     mdocOut := file("generated-docs/out"),
     publishArtifact := false,

@@ -11,7 +11,7 @@ A fully **asynchronous** backend. Sending a request returns a response wrapped i
 Note that you'll also need an explicit dependency on akka-streams, as akka-http doesn't depend on any specific akka-streams version. So you'll also need to add, for example:
 
 ```
-"com.typesafe.akka" %% "akka-stream" % "2.5.28"
+"com.typesafe.akka" %% "akka-stream" % "2.5.31"
 ```
 
 Next you'll need to add an implicit value:
