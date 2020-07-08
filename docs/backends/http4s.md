@@ -12,9 +12,9 @@ import cats.effect._
 import sttp.client.http4s._
 import scala.concurrent._
 
-// an implicit ContextShift is required to create a concurrent instance for `cats.effect.IO`,
-// as well as a Blocker instance. Note that you'll probably want to use a different thread
-// pool for blocking.
+// an implicit `cats.effect.ContextShift` is required to create an instance of `cats.effect.Concurrent` 
+// for `cats.effect.IO`,  as well as a `cats.effect.Blocker` instance. 
+// Note that you'll probably want to use a different thread pool for blocking.
 implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
 val blocker: cats.effect.Blocker = Blocker.liftExecutionContext(ExecutionContext.global)
 ```

@@ -15,7 +15,8 @@ import sttp.client.asynchttpclient.fs2.AsyncHttpClientFs2Backend
 import cats.effect._
 import sttp.client._
 
-// an implicit ContextShift in required to create a concurrent instance for `cats.effect.IO`:
+// an implicit `cats.effect.ContextShift` in required to create an instance of `cats.effectConcurrent`
+// for `cats.effect.IO`:
 implicit val cs: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionContext.global)
 ```
            
@@ -71,8 +72,8 @@ import sttp.client.httpclient.fs2.HttpClientFs2Backend
 import cats.effect._
 import sttp.client._
 
-// an implicit ContextShift is required to create a concurrent instance for `cats.effect.IO`,
-// as well as a Blocker instance. Note that you'll probably want to use a different thread
+// an implicit `cats.effect.ContextShift` is required to create a concurrent instance for `cats.effect.IO`,
+// as well as a `cats.effect.Blocker` instance. Note that you'll probably want to use a different thread
 // pool for blocking.
 implicit val cs: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionContext.global)
 val blocker = Blocker.liftExecutionContext(scala.concurrent.ExecutionContext.global)

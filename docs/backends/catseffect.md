@@ -13,7 +13,7 @@ import sttp.client._
 import sttp.client.asynchttpclient.cats.AsyncHttpClientCatsBackend
 import cats.effect._
 
-// an implicit ContextShift in required to create the backend; here, for `cats.effect.IO`:
+// an implicit `cats.effect.ContextShift` in required to create the backend; here, for `cats.effect.IO`:
 implicit val cs: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionContext.global)
 ```
            
