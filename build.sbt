@@ -195,6 +195,10 @@ val modelVersion = "1.1.3"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
 
+val jeagerClientVersion = "1.0.0"
+val braveOpentracingVersion = "0.34.2"
+val zipkinSenderOkHttpVersion = "2.15.0"
+
 def dependenciesFor(version: String)(deps: (Option[(Long, Long)] => ModuleID)*): Seq[ModuleID] =
   deps.map(_.apply(CrossVersion.partialVersion(version)))
 
@@ -715,10 +719,6 @@ val compileDocs: TaskKey[Unit] = taskKey[Unit]("Compiles docs module throwing aw
 compileDocs := {
   (docs.jvm(scala2_13) / mdoc).toTask(" --out target/sttp-docs").value
 }
-
-val jeagerClientVersion = "1.0.0"
-val braveOpentracingVersion = "0.34.2"
-val zipkinSenderOkHttpVersion = "2.15.0"
 
 lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // important: it must not be docs/
   .enablePlugins(MdocPlugin)
