@@ -198,6 +198,7 @@ val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
 val jeagerClientVersion = "1.0.0"
 val braveOpentracingVersion = "0.34.2"
 val zipkinSenderOkHttpVersion = "2.15.0"
+val resilience4jVersion = "1.5.0"
 
 def dependenciesFor(version: String)(deps: (Option[(Long, Long)] => ModuleID)*): Seq[ModuleID] =
   deps.map(_.apply(CrossVersion.partialVersion(version)))
@@ -739,8 +740,8 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
       "org.json4s" %% "json4s-native" % json4sVersion,
       "io.circe" %% "circe-generic" % "0.12.1",
       "commons-io" % "commons-io" % "2.7",
-      "io.github.resilience4j" % "resilience4j-circuitbreaker" % "1.5.0",
-      "io.github.resilience4j" % "resilience4j-ratelimiter" % "1.5.0",
+      "io.github.resilience4j" % "resilience4j-circuitbreaker" % resilience4jVersion,
+      "io.github.resilience4j" % "resilience4j-ratelimiter" % resilience4jVersion,
       "io.jaegertracing" % "jaeger-client" % jeagerClientVersion,
       "io.opentracing.brave" % "brave-opentracing" % braveOpentracingVersion,
       "io.zipkin.reporter2" % "zipkin-sender-okhttp3" % zipkinSenderOkHttpVersion,
