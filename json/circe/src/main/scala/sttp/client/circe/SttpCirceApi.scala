@@ -12,7 +12,7 @@ trait SttpCirceApi {
   implicit val errorMessageForCirceError: ErrorMessage[io.circe.Error] = new ErrorMessage[circe.Error] {
     override def extract(t: circe.Error): String = t.getMessage
   }
-  
+
   implicit def circeBodySerializer[B](implicit
       encoder: Encoder[B],
       printer: Printer = Printer.noSpaces

@@ -123,7 +123,9 @@ object ResponseAs {
     * Converts a deserialization function, which returns errors of type `E`, into a function where errors are wrapped
     * using [[DeserializationError]].
     */
-  def deserializeWithError[E: ErrorMessage, T](doDeserialize: String => Either[E, T]): String => Either[DeserializationError[E], T] =
+  def deserializeWithError[E: ErrorMessage, T](
+      doDeserialize: String => Either[E, T]
+  ): String => Either[DeserializationError[E], T] =
     s =>
       doDeserialize(s) match {
         case Left(e)  => Left(DeserializationError(s, e))
@@ -142,13 +144,13 @@ object ResponseAs {
       }
 }
 
-sealed abstract class ResponseError[+T](body: String) extends Exception(body) 
+sealed abstract class ResponseError[+T](body: String) extends Exception(body)
 case class HttpError(body: String) extends ResponseError[Nothing](body)
-case class DeserializationError[T:ErrorMessage](body: String, error: T) extends ResponseError[T](implicitly[ErrorMessage[T]].extract(error))
-
+case class DeserializationError[T: ErrorMessage](body: String, error: T)
+    extends ResponseError[T](implicitly[ErrorMessage[T]].extract(error))
 
 trait ErrorMessage[T] {
-  def extract(t: T) : String
+  def extract(t: T): String
 }
 
 object ErrorMessage {
