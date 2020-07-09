@@ -196,8 +196,8 @@ val modelVersion = "1.1.3"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
 
-val jeagerClientVersion = "1.3.1"
-val braveOpentracingVersion = "0.34.2"
+val jeagerClientVersion = "1.0.0"
+val braveOpentracingVersion = "0.37.2"
 val zipkinSenderOkHttpVersion = "2.15.0"
 val resilience4jVersion = "1.5.0"
 
@@ -740,7 +740,7 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     name := "docs",
     libraryDependencies ++= Seq(
       "org.json4s" %% "json4s-native" % json4sVersion,
-      "io.circe" %% "circe-generic" % "0.12.1",
+      "io.circe" %% "circe-generic" % "0.12.3",
       "commons-io" % "commons-io" % "2.7",
       "io.github.resilience4j" % "resilience4j-circuitbreaker" % resilience4jVersion,
       "io.github.resilience4j" % "resilience4j-ratelimiter" % resilience4jVersion,
