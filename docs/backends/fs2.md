@@ -15,7 +15,7 @@ import sttp.client.asynchttpclient.fs2.AsyncHttpClientFs2Backend
 import cats.effect._
 import sttp.client._
 
-// an implicit `cats.effect.ContextShift` in required to create an instance of `cats.effectConcurrent`
+// an implicit `cats.effect.ContextShift` in required to create an instance of `cats.effect.Concurrent`
 // for `cats.effect.IO`:
 implicit val cs: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionContext.global)
 ```
