@@ -7,7 +7,7 @@ The [fs2](https://github.com/functional-streams-for-scala/fs2) backend is **asyn
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client" %% "async-http-client-backend-fs2" % "2.2.2-SNAPSHOT"
+"com.softwaremill.sttp.client" %% "async-http-client-backend-fs2" % "2.2.1"
 ```
 And some imports:
 ```scala
@@ -15,7 +15,7 @@ import sttp.client.asynchttpclient.fs2.AsyncHttpClientFs2Backend
 import cats.effect._
 import sttp.client._
 
-// an implicit `cats.effect.ContextShift` in required to create an instance of `cats.effectConcurrent`
+// an implicit `cats.effect.ContextShift` in required to create an instance of `cats.effect.Concurrent`
 // for `cats.effect.IO`:
 implicit val cs: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionContext.global)
 ```
@@ -64,7 +64,7 @@ implicit val sttpBackend = AsyncHttpClientFs2Backend.usingClient[IO](asyncHttpCl
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client" %% "httpclient-backend-fs2" % "2.2.2-SNAPSHOT"
+"com.softwaremill.sttp.client" %% "httpclient-backend-fs2" % "2.2.1"
 ```
 And some imports:
 ```scala
