@@ -11,14 +11,15 @@ In its simplest form, the request's body can be set as a `String`. By default, t
 A `String` body can be set on a request as follows:
 
 ```scala
+import sttp.client._
 basicRequest.body("Hello, world!")
 ```
 
 It is also possible to use a different character encoding:
 
 ```scala
-def body(b: String)
-def body(b: String, encoding: String)
+import sttp.client._
+basicRequest.body("Hello, world!", "utf-8")
 ```
 
 ## Binary data
@@ -26,9 +27,18 @@ def body(b: String, encoding: String)
 To set a binary-data body, the following methods are available:
 
 ```scala
-def body(b: Array[Byte])
-def body(b: ByteBuffer)
-def body(b: InputStream)
+import sttp.client._
+
+val bytes: Array[Byte] = ???
+basicRequest.body(bytes)
+
+import java.nio.ByteBuffer
+val byteBuffer: java.nio.ByteBuffer = ???
+basicRequest.body(byteBuffer)
+
+import java.io.ByteArrayInputStream
+val inputStream: ByteArrayInputStream = ???
+basicRequest.body(inputStream)
 ```
 
 If not specified before, these methods will set the content type to `application/octet-stream`. When using a byte array, additionally the content length will be set to the length of the array (unless specified explicitly).
@@ -44,8 +54,13 @@ If not specified before, these methods will set the content type to `application
 To upload a file, simply set the request body as a `File` or `Path`:
 
 ```scala
-def body(f: File)
-def body(b: Path)
+import sttp.client._
+
+import java.io.File
+basicRequest.body(new File("data.txt"))
+
+import java.nio.file.Path
+basicRequest.body(Path.of("data.txt"))
 ```
 
 Note that on JavaScript only a `Web/API/File` is allowed.
@@ -61,10 +76,11 @@ If you set the body as a `Map[String, String]` or `Seq[(String, String)]`, it wi
 By default, the `UTF-8` encoding is used, but can be also specified explicitly:
 
 ```scala
-def body(fs: Map[String, String])
-def body(fs: Map[String, String], encoding: String)
-def body(fs: (String, String)*)
-def body(fs: Seq[(String, String)], encoding: String)
+import sttp.client._
+basicRequest.body(Map("k1" -> "v1"))
+basicRequest.body(Map("k1" -> "v1"), "utf-8")
+basicRequest.body("k1" -> "v1", "k2" -> "v2")
+basicRequest.body(Seq("k1" -> "v1", "k2" -> "v2"), "utf-8")
 ```        
 
 ## Custom body serializers
@@ -80,15 +96,17 @@ A `BasicRequestBody` is a wrapper for one of the supported request body types: a
 For example, here's how to write a custom serializer for a case class, with serializer-specific default content type:
 
 ```scala
+import sttp.client._
+import sttp.model.MediaType
 case class Person(name: String, surname: String, age: Int)
 
 // for this example, assuming names/surnames can't contain commas
 implicit val personSerializer: BodySerializer[Person] = { p: Person =>
   val serialized = s"${p.name},${p.surname},${p.age}"
-  StringBody(serialized, "UTF-8", Some("application/csv"))
+  StringBody(serialized, "UTF-8", Some(MediaType.TextCsv))
 }
 
-basicRequest.body(Person("mary", "smith", 67))   
+basicRequest.body(Person("mary", "smith", 67))
 ```
 
 See the implementations of the `BasicRequestBody` trait for more options.

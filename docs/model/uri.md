@@ -10,8 +10,9 @@ The `Uri` class is immutable, and can be constructed by hand, but in many cases 
 
 Using the URI interpolator it's possible to conveniently create `Uri` instances, for example:
 
-```scala
+```scala mdoc:compile-only
 import sttp.client._
+import sttp.model._
 
 val user = "Mary Smith"
 val filter = "programming languages"
@@ -28,15 +29,17 @@ Any values embedded in the URI will be URL-encoded, taking into account the cont
 
 All components of the URI can be embedded from values: scheme, username/password, host, port, path, query and fragment. The embedded values won't be further parsed, with the exception of the `:` in the host part, which is commonly used to pass in both the host and port:
 
-```scala
+```scala mdoc
+import sttp.client._
+
+// the embedded / is escaped
 println(uri"http://example.org/${"a/b"}")
-// the embedded / is escaped: http://example.org/a%2Fb
 
+// the embedded / is not escaped
 println(uri"http://example.org/${"a"}/${"b"}")
-// the embedded / is escaped: http://example.org/a/b
 
+// the embedded : is not escaped
 println(uri"http://${"example.org:8080"}")
-// the embedded : is not escaped: http://example.org:8080 
 ```
 
 Both the `Uri` class and the interpolator can be used stand-alone, without using the rest of sttp. Conversions are available both from and to `java.net.URI`; `Uri.toString` returns the URI as a `String`.
@@ -45,18 +48,17 @@ Both the `Uri` class and the interpolator can be used stand-alone, without using
 
 The URI interpolator supports optional values for hosts (subdomains), query parameters and the fragment. If the value is `None`, the appropriate URI component will be removed. For example:
 
-```scala
+```scala mdoc:silent
 val v1 = None
 val v2 = Some("v2")
+```
 
-val u1 = uri"http://example.com?p1=$v1&p2=v2"
-assert(u1.toString == "http://example.com?p2=v2")
+```scala mdoc
+println(uri"http://example.com?p1=$v1&p2=v2")
 
-val u2 = uri"http://$v1.$v2.example.com"
-assert(u2.toString == "http://v2.example.com")
+println(uri"http://$v1.$v2.example.com")
 
-val u3 = uri"http://example.com#$v1"
-assert(u3.toString == "http://example.com")
+println(uri"http://example.com#$v1")
 ```                  
 
 ## Maps and sequences
@@ -65,18 +67,22 @@ Maps, sequences of tuples and sequences of values can be embedded in the query p
 
 For example:
 
-```scala
+```scala mdoc:silent
 val ps = Map("p1" -> "v1", "p2" -> "v2")
-val u4 = uri"http://example.com?$ps&p3=p4"
-assert(u4.toString == "http://example.com?p1=v1&p2=v2&p3=p4")
+```
+
+```scala mdoc
+println(uri"http://example.com?$ps&p3=p4")
 ```
 
 Sequences in the host part will be expanded to a subdomain sequence, and sequences in the path will be expanded to path components:
 
-```scala
-val ps = List("a", "b", "c")
-val u5 = uri"http://example.com/$ps"
-assert(u5.toString == "http://example.com/a/b/c")
+```scala mdoc:silent
+val params = List("a", "b", "c")
+```
+
+```scala mdoc
+println(uri"http://example.com/$params")
 ```        
 
 ## Special cases
@@ -89,16 +95,15 @@ This is useful when a base URI is stored in a value, and can then be used as a b
 
 A fully-featured example:
 
-```scala
+```scala mdoc:silent
 import sttp.client._
 val secure = true
 val scheme = if (secure) "https" else "http"
 val subdomains = List("sub1", "sub2")
 val vx = Some("y z")
-val params = Map("a" -> 1, "b" -> 2)
+val paramMap = Map("a" -> 1, "b" -> 2)
 val jumpTo = Some("section2")
-uri"$scheme://$subdomains.example.com?x=$vx&$params#$jumpTo"
-
-// generates:
-// https://sub1.sub2.example.com?x=y+z&a=1&b=2#section2
+```
+```scala mdoc
+println(uri"$scheme://$subdomains.example.com?x=$vx&$paramMap#$jumpTo")
 ```

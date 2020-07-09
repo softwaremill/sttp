@@ -21,6 +21,7 @@ Example with objects:
 
 ```scala
 import sttp.client._
+import sttp.model._
 
 object Example {
   val request = basicRequest.header(Header.contentType(MediaType.ApplicationJson))
@@ -36,6 +37,7 @@ Example with traits:
 
 ```scala
 import sttp.client._
+import sttp.model._
 
 object Example extends HeaderNames with MediaTypes with StatusCodes {
   val request = basicRequest.header(ContentType, ApplicationJson.toString)
@@ -44,7 +46,7 @@ object Example extends HeaderNames with MediaTypes with StatusCodes {
   implicit val backend = HttpURLConnectionBackend()
   val response = request.send()
   if (response.code == Ok) println("Ok!")
-}     
+}
 ```
 
 For more information see

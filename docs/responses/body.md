@@ -13,7 +13,9 @@ How the response body will be read is part of the request description, as alread
 
 To conveniently specify how to deserialize the response body, a number of `as[Type]` methods are available. They can be used to provide a value for the request description's `response` property:
 
-```scala
+```scala mdoc:compile-only
+import sttp.client._
+
 basicRequest.response(asByteArray)
 ```
 
@@ -32,7 +34,7 @@ def asParams(encoding: String): ResponseAs[Either[String, Seq[(String, String)]]
 def asFile(file: File): ResponseAs[Either[String, File], Nothing]
 def asFileAlways(file: File): ResponseAs[File, Nothing]
 def asPath(path: Path): ResponseAs[Either[String, Path], Nothing]
-def asPathAlways(path: Path): ResponseAs[Path], Nothing]
+def asPathAlways(path: Path): ResponseAs[Path, Nothing]
 
 def asEither[L, R, S](onError: ResponseAs[L, S], 
                       onSuccess: ResponseAs[R, S]): ResponseAs[Either[L, R], S]
@@ -41,13 +43,19 @@ def fromMetadata[T, S](f: ResponseMetadata => ResponseAs[T, S]): ResponseAs[T, S
 
 Hence, to discard the response body, the request description should include the following:
 
-```
+```scala mdoc:compile-only
+import sttp.client._
+
 basicRequest.response(ignore)
 ```   
 
 And to save the response to a file:
 
-```
+```scala mdoc:compile-only
+import sttp.client._
+import java.io._
+
+val someFile = new File("some/path")
 basicRequest.response(asFile(someFile))
 ```
 
@@ -65,12 +73,14 @@ It's possible to define custom body deserializers by taking any of the built-in 
 
 As an example, to read the response body as an int, the following response description can be defined (warning: this ignores the possibility of exceptions!):
 
-```scala
-val asInt: ResponseAs[Either[String, Int], Nothing] = asString.map(_.toInt)
+```scala mdoc:compile-only
+import sttp.client._
+
+val asInt: ResponseAs[Either[String, Int], Nothing] = asString.mapRight(_.toInt)
 
 basicRequest
+  .get(uri"http://example.com")
   .response(asInt)
-  ...
 ```
 
 To integrate with a third-party JSON library, and always parse the response as a json (regardless of the status code):
@@ -81,8 +91,7 @@ val asJson: ResponseAs[Either[JsonError, JsonAST], Nothing] = asStringAlways.map
 
 basicRequest
   .response(asJson)
-  ...
-```           
+```
 
 A number of JSON libraries are supported out-of-the-box, see [json support](../json.md).
 
@@ -90,10 +99,18 @@ Using the `fromMetadata` combinator, it's possible to dynamically specify how th
 
 A more complex case, which uses Circe for deserializing JSON, choosing to which model to deserialize to depending on the status code, can look as following:
 
-```scala
+```scala mdoc:compile-only
+import sttp.client._
+import sttp.model._
+import sttp.client.circe._
+import io.circe._
+import io.circe.generic.semiauto._
+
 sealed trait MyModel
-case class SuccessModel(...) extends MyModel
-case class ErrorModel(...) extends MyModel
+case class SuccessModel(name: String, age: Int) extends MyModel
+case class ErrorModel(message: String) extends MyModel
+implicit val successModelDecoder: Decoder[SuccessModel] = deriveDecoder[SuccessModel]
+implicit val errorModelDecoder: Decoder[ErrorModel] = deriveDecoder[ErrorModel]
 
 val myRequest: Request[Either[ResponseError[io.circe.Error], MyModel], Nothing] =
   basicRequest
@@ -101,7 +118,7 @@ val myRequest: Request[Either[ResponseError[io.circe.Error], MyModel], Nothing] 
     .response(fromMetadata { meta =>
       meta.code match {
         case StatusCode.Ok => asJson[SuccessModel]
-        case -             => asJson[ErrorModel]
+        case _             => asJson[ErrorModel]
       }
     })
 ```
@@ -117,16 +134,16 @@ def asStreamAlways[S]: ResponseAs[S, S] = ResponseAsStream[S, S]()
 
 For example, when using the [Akka backend](../backends/akka.md):
 
-```scala
+```scala mdoc:compile-only
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
+import scala.concurrent.Future
 import sttp.client._
 import sttp.client.akkahttp._
 
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+implicit val sttpBackend: SttpBackend[Future, Source[ByteString, Any], NothingT] = AkkaHttpBackend()
 
-implicit val sttpBackend = AkkaHttpBackend() 
-
-val response: Future[Response[Source[Either[String, ByteString], Any]]] =
+val response: Future[Response[Either[String, Source[ByteString, Any]]]] =
   basicRequest
     .post(uri"...")
     .response(asStream[Source[ByteString, Any]])

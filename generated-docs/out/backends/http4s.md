@@ -3,21 +3,20 @@
 This backend is based on [http4s](https://http4s.org) (blaze client) and is **asynchronous**. To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client" %% "http4s-backend" % "2.2.0"
+"com.softwaremill.sttp.client" %% "http4s-backend" % "2.2.1"
 ```
 
-To create the backend, you'll need to provide a `cats.effect.Blocker` instance, which should be passed as a parameter, when defining the backend:
-
+Add some imports as well:
 ```scala
+import cats.effect._
 import sttp.client.http4s._
+import scala.concurrent._
 
-val blocker: cats.effect.Blocker = ...
-
-Http4sBackend.usingClient(client, blocker).use { implicit backend => ... }
-// or
-Http4sBackend.usingClientBuilder(blazeClientBuilder, blocker).use { implicit backend => ... }
-// or
-Http4sBackend.usingDefaultClientBuilder(blocker).use { implicit backend => ... }
+// an implicit `cats.effect.ContextShift` is required to create an instance of `cats.effect.Concurrent` 
+// for `cats.effect.IO`,  as well as a `cats.effect.Blocker` instance. 
+// Note that you'll probably want to use a different thread pool for blocking.
+implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
+val blocker: cats.effect.Blocker = Blocker.liftExecutionContext(ExecutionContext.global)
 ```
 
 The backend can be created for any type implementing the `cats.effect.ConcurrentEffect` typeclass, such as `cats.effect.IO`. Moreover, an implicit `ContextShift` will have to be in scope as well.

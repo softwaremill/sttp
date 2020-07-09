@@ -52,15 +52,18 @@ If there's an error, a failed effects wrapper will be returned, containing one o
 
 Example usage with the [Monix](backends/monix.md) variant of the async-http-client backend:
 
-```scala
+```scala mdoc:compile-only
 import monix.eval.Task
+import monix.reactive.Observable
+import java.nio.ByteBuffer
 import sttp.client._
 import sttp.client.ws.{WebSocket, WebSocketResponse}
 import sttp.model.ws.WebSocketFrame
 import sttp.client.asynchttpclient.monix.MonixWebSocketHandler
 import sttp.client.asynchttpclient.WebSocketHandler
+import monix.execution.Scheduler.Implicits.global
 
-implicit val backend: SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler] = ...
+implicit val backend: SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler] = ???
 
 val response: Task[WebSocketResponse[WebSocket[Task]]] = basicRequest
   .get(uri"wss://echo.websocket.org")

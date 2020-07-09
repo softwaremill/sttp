@@ -19,17 +19,22 @@ This backend works with all Scala versions. A Dotty build is available as well.
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client" %% "okhttp-backend" % "2.2.1"
+"com.softwaremill.sttp.client" %% "okhttp-backend" % "@VERSION@"
 ```
 
 Create the backend using:
 
-```scala
+```scala mdoc:compile-only
 import sttp.client.okhttp.OkHttpSyncBackend
 
 implicit val sttpBackend = OkHttpSyncBackend()
+```
+or, if you'd like to instantiate the OkHttpClient yourself:
+```scala mdoc:compile-only
+import sttp.client.okhttp.OkHttpSyncBackend
+import okhttp3._
 
-// or, if you'd like to instantiate the OkHttpClient yourself:
+val okHttpClient: OkHttpClient = ???
 implicit val sttpBackend = OkHttpSyncBackend.usingClient(okHttpClient)
 ```
 
@@ -40,17 +45,21 @@ This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supp
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client" %% "httpclient-backend" % "2.2.1"
+"com.softwaremill.sttp.client" %% "httpclient-backend" % "@VERSION@"
 ```
 
 Create the backend using:
 
-```scala
+```scala mdoc:compile-only
 import sttp.client.httpclient.HttpClientSyncBackend
 
 implicit val sttpBackend = HttpClientSyncBackend()
-
-// or, if you'd like to instantiate the HttpClient yourself:
+```
+or, if you'd like to instantiate the HttpClient yourself:
+```scala mdoc:compile-only
+import sttp.client.httpclient.HttpClientSyncBackend
+import java.net.http.HttpClient
+val httpClient: HttpClient = ???
 implicit val sttpBackend = HttpClientSyncBackend.usingClient(httpClient)
 ```
 

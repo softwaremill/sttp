@@ -29,7 +29,7 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
     releaseStepCommandAndRemaining("clean"),
     releaseStepCommandAndRemaining("test"),
     setReleaseVersion,
-    releaseStepInputTask(docs.jvm(scala2_12) / mdoc),
+    releaseStepInputTask(docs.jvm(scala2_13) / mdoc),
     Release.stageChanges("generated-docs/out"),
     updateVersionInDocs(organization.value),
     commitReleaseVersion,
@@ -181,7 +181,8 @@ val fs2Version: Option[(Long, Long)] => String = {
 }
 
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.12"
-val akkaStreams = "com.typesafe.akka" %% "akka-stream" % "2.5.31"
+val akkaStreamVersion = "2.5.31"
+val akkaStreams = "com.typesafe.akka" %% "akka-stream" % akkaStreamVersion
 
 val scalaTestVersion = "3.1.2"
 val scalaNativeTestInterfaceVersion = "0.4.0-M2"
@@ -194,6 +195,11 @@ val zioInteropRsVersion = "1.0.3.5-RC12"
 val modelVersion = "1.1.3"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
+
+val jeagerClientVersion = "1.0.0"
+val braveOpentracingVersion = "0.34.2"
+val zipkinSenderOkHttpVersion = "2.15.0"
+val resilience4jVersion = "1.5.0"
 
 def dependenciesFor(version: String)(deps: (Option[(Long, Long)] => ModuleID)*): Seq[ModuleID] =
   deps.map(_.apply(CrossVersion.partialVersion(version)))
@@ -253,7 +259,7 @@ lazy val rootProject = (project in file("."))
       httpClientZioBackend.projectRefs ++
       finagleBackend.projectRefs ++
       slf4jBackend.projectRefs ++
-      examples.projectRefs ++ 
+      examples.projectRefs ++
       docs.projectRefs: _*
   )
 
@@ -303,7 +309,7 @@ lazy val core = (projectMatrix in file("core"))
           "com.softwaremill.sttp.model" %%% "core" % modelVersion,
           "org.scalatest" %%% "scalatest" % scalaTestVersion % Test
         ),
-        publishArtifact in Test := true 
+        publishArtifact in Test := true
       )
     }
   )
@@ -319,7 +325,7 @@ lazy val core = (projectMatrix in file("core"))
           "org.scalatest" %%% "scalatest-freespec" % scalaTestNativeVersion % Test,
           "org.scalatest" %%% "scalatest-funsuite" % scalaTestNativeVersion % Test
         ),
-        publishArtifact in Test := true 
+        publishArtifact in Test := true
       )
     }
   )
@@ -713,20 +719,59 @@ lazy val examples = (projectMatrix in file("examples"))
 
 val compileDocs: TaskKey[Unit] = taskKey[Unit]("Compiles docs module throwing away its output")
 compileDocs := {
-  (docs.jvm(scala2_12) / mdoc).toTask(" --out target/sttp-docs").value
+  (docs.jvm(scala2_13) / mdoc).toTask(" --out target/sttp-docs").value
 }
 
 lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // important: it must not be docs/
-  .settings(commonSettings)
-  .settings(publishArtifact := false, name := "docs")
-  .dependsOn(core)
   .enablePlugins(MdocPlugin)
+  .settings(commonSettings)
   .settings(
     mdocIn := file("docs"),
     moduleName := "sttp-docs",
     mdocVariables := Map(
-      "VERSION" -> version.value
+      "VERSION" -> version.value,
+      "JEAGER_CLIENT_VERSION" -> jeagerClientVersion,
+      "BRAVE_OPENTRACING_VERSION" -> braveOpentracingVersion,
+      "ZIPKIN_SENDER_OKHTTP_VERSION" -> zipkinSenderOkHttpVersion,
+      "AKKA_STREAM_VERSION" -> akkaStreamVersion
     ),
-    mdocOut := file("generated-docs/out")
+    mdocOut := file("generated-docs/out"),
+    publishArtifact := false,
+    name := "docs",
+    libraryDependencies ++= Seq(
+      "org.json4s" %% "json4s-native" % json4sVersion,
+      "io.circe" %% "circe-generic" % "0.12.1",
+      "commons-io" % "commons-io" % "2.7",
+      "io.github.resilience4j" % "resilience4j-circuitbreaker" % resilience4jVersion,
+      "io.github.resilience4j" % "resilience4j-ratelimiter" % resilience4jVersion,
+      "io.jaegertracing" % "jaeger-client" % jeagerClientVersion,
+      "io.opentracing.brave" % "brave-opentracing" % braveOpentracingVersion,
+      "io.zipkin.reporter2" % "zipkin-sender-okhttp3" % zipkinSenderOkHttpVersion,
+      akkaStreams
+    )
   )
-  .jvmPlatform(scalaVersions = List(scala2_12))
+  .dependsOn(
+    core % "compile->test",
+    akkaHttpBackend,
+    json4s,
+    circe,
+    sprayJson,
+    asyncHttpClientZioBackend,
+    asyncHttpClientMonixBackend,
+    asyncHttpClientFs2Backend,
+    asyncHttpClientCatsBackend,
+    asyncHttpClientFutureBackend,
+    asyncHttpClientScalazBackend,
+    okhttpBackend,
+    okhttpMonixBackend,
+    httpClientBackend,
+    httpClientFs2Backend,
+    http4sBackend,
+    httpClientMonixBackend,
+    httpClientZioBackend,
+    openTracingBackend,
+    prometheusBackend,
+    slf4jBackend,
+    zioTelemetryOpenTracingBackend
+  )
+  .jvmPlatform(scalaVersions = List(scala2_13))

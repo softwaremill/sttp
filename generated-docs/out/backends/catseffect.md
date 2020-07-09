@@ -5,7 +5,16 @@ The [Cats Effect](https://github.com/typelevel/cats-effect) backend is **asynchr
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client" %% "async-http-client-backend-cats" % "2.2.0"
+"com.softwaremill.sttp.client" %% "async-http-client-backend-cats" % "2.2.1"
+```
+You'll need the following imports and implicits to create the backend:
+```scala
+import sttp.client._
+import sttp.client.asynchttpclient.cats.AsyncHttpClientCatsBackend
+import cats.effect._
+
+// an implicit `cats.effect.ContextShift` in required to create the backend; here, for `cats.effect.IO`:
+implicit val cs: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionContext.global)
 ```
            
 This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client), uses [Netty](http://netty.io) behind the scenes and supports effect cancellation. 
@@ -20,26 +29,33 @@ Next you'll need to define a backend instance as an implicit value. This can be 
 A non-comprehensive summary of how the backend can be created is as follows:
 
 ```scala
-import sttp.client.asynchttpclient.cats.AsyncHttpClientCatsBackend
-import cats.effect._
-
-// an implicit ContextShift in required to create the backend; here, for `cats.effect.IO`:
-implicit val cs: ContextShift[IO] = IO.contextShift( scala.concurrent.ExecutionContext.global )
-
 // the type class instance needs to be provided explicitly (e.g. `cats.effect.IO`). 
 // the effect type must implement the Concurrent typeclass
-AsyncHttpClientCatsBackend[IO]().flatMap { implicit backend => ... }
+AsyncHttpClientCatsBackend[IO]().flatMap { implicit backend => ??? }
+```
+or, if you'd like to use a custom configuration:
+```scala
+import org.asynchttpclient.AsyncHttpClientConfig
+val config: AsyncHttpClientConfig = ???
+AsyncHttpClientCatsBackend.usingConfig[IO](config).flatMap { implicit backend => ??? }
+```
+or, if you'd like to use adjust the configuration sttp creates:
+```scala
+import org.asynchttpclient.DefaultAsyncHttpClientConfig
 
-// or, if you'd like to use custom configuration:
-AsyncHttpClientCatsBackend.usingConfig[IO](asyncHttpClientConfig).flatMap { implicit backend => ... }
+val sttpOptions: SttpBackendOptions = SttpBackendOptions.Default  
+val adjustFunction: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder = ???
+AsyncHttpClientCatsBackend.usingConfigBuilder[IO](adjustFunction, sttpOptions).flatMap { implicit backend => ??? }
+```
+or, if you'd like the backend to be wrapped in cats-effect Resource:
+```scala
+AsyncHttpClientCatsBackend.resource[IO]().use { implicit backend => ??? }
+```
+or, if you'd like to instantiate the AsyncHttpClient yourself:
+```scala
+import org.asynchttpclient.AsyncHttpClient
 
-// or, if you'd like to use adjust the configuration sttp creates:
-AsyncHttpClientCatsBackend.usingConfigBuilder[IO](adjustFunction, sttpOptions).flatMap { implicit backend => ... }
-
-// or, if you'd like the backend to be wrapped in cats-effect Resource:
-AsyncHttpClientCatsBackend.resource[IO]().use { implicit backend => ... }
-
-// or, if you'd like to instantiate the AsyncHttpClient yourself:
+val asyncHttpClient: AsyncHttpClient = ???  
 implicit val sttpBackend = AsyncHttpClientCatsBackend.usingClient[IO](asyncHttpClient)
 ```
 

@@ -20,25 +20,39 @@ Class                                 Supported stream type                     
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client" %% "async-http-client-backend-future" % "2.2.1"
+"com.softwaremill.sttp.client" %% "async-http-client-backend-future" % "@VERSION@"
 ```
-
+And some imports:
+```scala mdoc
+import sttp.client._
+import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
+```
 This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client) and uses [Netty](http://netty.io) behind the scenes.
 
 Next you'll need to add an implicit value:
-
-```scala
-import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
-
+```scala mdoc:compile-only
 implicit val sttpBackend = AsyncHttpClientFutureBackend()
+```
+or, if you'd like to use custom configuration:
+```scala mdoc:compile-only
+import org.asynchttpclient.AsyncHttpClientConfig
 
-// or, if you'd like to use custom configuration:
-implicit val sttpBackend = AsyncHttpClientFutureBackend.usingConfig(asyncHttpClientConfig)
+val config: AsyncHttpClientConfig = ???
+implicit val sttpBackend = AsyncHttpClientFutureBackend.usingConfig(config)
+```
+or, if you'd like to use adjust the configuration sttp creates:
+```scala mdoc:compile-only
+import org.asynchttpclient.DefaultAsyncHttpClientConfig
 
-// or, if you'd like to use adjust the configuration sttp creates:
+val sttpOptions: SttpBackendOptions = SttpBackendOptions.Default 
+val adjustFunction: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder = ???
 implicit val sttpBackend = AsyncHttpClientFutureBackend.usingConfigBuilder(adjustFunction, sttpOptions)
+```
+or, if you'd like to instantiate the AsyncHttpClient yourself:
+```scala mdoc:compile-only
+import org.asynchttpclient.AsyncHttpClient
 
-// or, if you'd like to instantiate the AsyncHttpClient yourself:
+val asyncHttpClient: AsyncHttpClient = ??? 
 implicit val sttpBackend = AsyncHttpClientFutureBackend.usingClient(asyncHttpClient)
 ```
 
@@ -47,17 +61,23 @@ implicit val sttpBackend = AsyncHttpClientFutureBackend.usingClient(asyncHttpCli
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client" %% "okhttp-backend" % "2.2.1"
+"com.softwaremill.sttp.client" %% "okhttp-backend" % "@VERSION@"
+```
+and some imports:
+```scala mdoc:reset:silent
+import sttp.client.okhttp.OkHttpFutureBackend
+import scala.concurrent.ExecutionContext.Implicits.global
 ```
 
 Create the backend using:
-
-```scala
-import sttp.client.okhttp.OkHttpFutureBackend
-
+```scala mdoc:compile-only
 implicit val sttpBackend = OkHttpFutureBackend()
+```
+or, if you'd like to instantiate the OkHttpClient yourself:
+```scala mdoc:compile-only
+import okhttp3.OkHttpClient
 
-// or, if you'd like to instantiate the OkHttpClient yourself:
+val asyncHttpClient: OkHttpClient = ??? 
 implicit val sttpBackend = OkHttpFutureBackend.usingClient(asyncHttpClient)
 ```
 
@@ -68,18 +88,25 @@ This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supp
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client" %% "httpclient-backend" % "2.2.1"
+"com.softwaremill.sttp.client" %% "httpclient-backend" % "@VERSION@"
+```
+and some imports:
+```scala mdoc:reset:silent
+import sttp.client.httpclient.HttpClientFutureBackend
+import scala.concurrent.ExecutionContext.Implicits.global
 ```
 
 Create the backend using:
 
-```scala
-import sttp.client.httpclient.HttpClientFutureBackend
-
+```scala mdoc:compile-only
 implicit val sttpBackend = HttpClientFutureBackend()
+```
+or, if you'd like to instantiate the HttpClient yourself:
+```scala mdoc:compile-only
+import java.net.http.HttpClient
 
-// or, if you'd like to instantiate the HttpClient yourself:
-implicit val sttpBackend = HttpClientFutureBackend.usingClient(httpClient)
+val client: HttpClient = ??? 
+implicit val sttpBackend = HttpClientFutureBackend.usingClient(client)
 ```
 
 This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards, works with all Scala versions. A Dotty build is available as well.

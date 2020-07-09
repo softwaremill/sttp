@@ -35,10 +35,22 @@ This causes any further backend wrappers to handle a request which involves redi
 For example:
 
 ```scala
+import sttp.client._
+import sttp.client.ws._
+import sttp.client.monad._
 class MyWrapper[F[_], S, WS_HANDLER[_]] private (delegate: SttpBackend[F, S, WS_HANDLER])
-  extends SttpBackend[R, S, WS_HANDLER] {
+  extends SttpBackend[F, S, WS_HANDLER] {
 
-  ...
+  def send[T](request: Request[T, S]): F[Response[T]] = ???
+
+  def openWebsocket[T, WS_RESULT](
+      request: Request[T, S],
+      handler: WS_HANDLER[WS_RESULT]
+    ): F[WebSocketResponse[WS_RESULT]] = ???
+
+  def close(): F[Unit] = ???
+
+  def responseMonad: MonadError[F] = ???
 }
 
 object MyWrapper {
@@ -62,6 +74,13 @@ Below is an example on how to implement a backend wrapper, which sends
 metrics for completed requests and wraps any `Future`-based backend:
 
 ```scala
+import sttp.client._
+import sttp.client.monad._
+import sttp.client.ws._
+import sttp.client.akkahttp._
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util._
 // the metrics infrastructure
 trait MetricsServer {
   def reportDuration(name: String, duration: Long): Unit
@@ -99,7 +118,7 @@ class MetricWrapper[S](delegate: SttpBackend[Future, S, NothingT],
     delegate.openWebsocket(request, handler) // No websocket support due to NothingT
   }
 
-  override def close(): F[Unit] = delegate.close()
+  override def close(): Future[Unit] = delegate.close()
 
   override def responseMonad: MonadError[Future] = delegate.responseMonad
 }
@@ -129,7 +148,9 @@ Handling retries is a complex problem when it comes to HTTP requests. When is a 
 In some cases it's possible to implement a generic retry mechanism; such a mechanism should take into account logging, metrics, limiting the number of retries and a backoff mechanism. These mechanisms could be quite simple, or involve e.g. retry budgets (see [Finagle's](https://twitter.github.io/finagle/guide/Clients.md#retries) documentation on retries). In sttp, it's possible to recover from errors using the `responseMonad`. A starting point for a retrying backend could be:
 
 ```scala
-import sttp.client.{MonadError, Request, Response, SttpBackend, RetryWhen}
+import sttp.client._
+import sttp.client.monad._
+import sttp.client.ws._
 
 class RetryingBackend[F[_], S](
     delegate: SttpBackend[F, S, NothingT],
@@ -160,7 +181,7 @@ class RetryingBackend[F[_], S](
   override def openWebsocket[T, WS_RESULT](
       request: Request[T, S],
       handler: NothingT[WS_RESULT]
-    ): Future[WebSocketResponse[WS_RESULT]] = {
+    ): F[WebSocketResponse[WS_RESULT]] = {
     delegate.openWebsocket(request, handler) // No websocket support due to NothingT
   }
 
@@ -198,7 +219,7 @@ class CircuitSttpBackend[F[_], S, W[_]](
       request: Request[T, S],
       handler: W[WS_RESULT]
   ): F[WebSocketResponse[WS_RESULT]] =
-        CircuitSttpBackend.decorateF(delegate.openWebsocket(request, handler))
+        CircuitSttpBackend.decorateF(circuitBreaker, delegate.openWebsocket(request, handler))
 
   override def close(): F[Unit] = delegate.close()
 
@@ -292,18 +313,19 @@ object RateLimitingSttpBackend {
 Implementing a new backend is made easy as the tests are published in the `core` jar file under the `tests` classifier. Simply add the follow dependencies to your `build.sbt`:
 
 ```
-"com.softwaremill.sttp.client" %% "core" % "2.2.0" % Test classifier "tests"
+"com.softwaremill.sttp.client" %% "core" % "2.2.1" % Test classifier "tests"
 ```
 
 Implement your backend and extend the `HttpTest` class:
 
 ```scala
-import sttp.client.SttpBackend
+import sttp.client._
 import sttp.client.testing.{ConvertToFuture, HttpTest}
+import scala.concurrent.Future
 
 class MyCustomBackendHttpTest extends HttpTest[Future] {
   override implicit val convertToFuture: ConvertToFuture[Future] = ConvertToFuture.future
-  override implicit lazy val backend: SttpBackend[Future, Nothing, NothingT] = new MyCustomBackend()
+  override implicit lazy val backend: SttpBackend[Future, Nothing, NothingT] = ??? //new MyCustomBackend()
 }
 ```
 

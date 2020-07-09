@@ -12,20 +12,21 @@ Settings are loaded **in given order** and the **first existing value** is being
 
 Otherwise, proxy values can be specified manually when creating a backend:
 
-```scala
+```scala mdoc:compile-only
 import sttp.client._
 
 implicit val backend = HttpURLConnectionBackend(
   options = SttpBackendOptions.httpProxy("some.host", 8080))
 
-sttp
+basicRequest
   .get(uri"...")
   .send() // uses the proxy
 ```
 
-Or in case your proxy requires authentication (supported by the JVM
-backends):
+Or in case your proxy requires authentication (supported by the JVM backends):
 
-```scala
+```scala mdoc:compile-only
+import sttp.client._
+
 SttpBackendOptions.httpProxy("some.host", 8080, "username", "password")
 ```

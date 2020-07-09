@@ -13,11 +13,23 @@ An empty backend stub can be created using the following ways:
 * by explicitly giving the response wrapper monad and supported streams type, e.g. `SttpBackendStub[Task, Observable[ByteBuffer]](TaskMonad)`
 * by specifying a fallback/delegate backend, see below
 
+Some code which will be reused among following examples:
+```scala mdoc
+import sttp.client._
+import sttp.model._
+import sttp.client.testing._
+import java.io.File
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global 
+
+case class User(id: String)
+``` 
+
 ## Specifying behavior
 
 Behavior of the stub can be specified using a combination of the `whenRequestMatches` and `thenRespond` methods:
 
-```scala
+```scala mdoc:compile-only
 implicit val testingBackend = SttpBackendStub.synchronous
   .whenRequestMatches(_.uri.path.startsWith(List("a", "b")))
   .thenRespond("Hello there!")
@@ -33,15 +45,15 @@ val response2 = basicRequest.post(uri"http://example.org/d/e").send()
 
 It is also possible to match requests by partial function, returning a response. E.g.:
 
-```scala
+```scala mdoc:compile-only
 implicit val testingBackend = SttpBackendStub.synchronous
   .whenRequestMatchesPartial({
     case r if r.uri.path.endsWith(List("partial10")) =>
-      Response.error("Not found", 404)
+      Response("Not found", StatusCode.NotFound)
 
     case r if r.uri.path.endsWith(List("partialAda")) =>
       // additional verification of the request is possible
-      assert(r.body == StringBody("z"))
+      assert(r.body == StringBody("z", "utf-8"))
       Response.ok("Ada")
   })
 
@@ -56,11 +68,12 @@ This approach to testing has one caveat: the responses are not type-safe. That i
 
 Another way to specify the behaviour is passing response wrapped in the result monad to the stub. It is useful if you need to test a scenario with a slow server, when the response should be not returned immediately, but after some time. Example with Futures:
 
-```scala
-implicit val testingBackend = SttpBackendStub.asynchronousFuture.whenAnyRequest
+```scala mdoc:compile-only
+implicit val testingBackend = SttpBackendStub.asynchronousFuture
+  .whenAnyRequest
   .thenRespondWrapped(Future {
     Thread.sleep(5000)
-    Response(Right("OK"), 200, "", Nil, Nil)
+    Response(Right("OK"), StatusCode.Ok, "", Nil, Nil)
   })
 
 val responseFuture = basicRequest.get(uri"http://example.org").send()
@@ -69,10 +82,11 @@ val responseFuture = basicRequest.get(uri"http://example.org").send()
 
 The returned response may also depend on the request: 
 
-```scala
-implicit val testingBackend = SttpBackendStub.synchronous.whenAnyRequest
+```scala mdoc:compile-only
+implicit val testingBackend = SttpBackendStub.synchronous
+  .whenAnyRequest
   .thenRespondWrapped(req =>
-    Response(Right("OK, got request sent to ${req.uri.host}"), 200, "", Nil, Nil)
+    Response(Right(s"OK, got request sent to ${req.uri.host}"), StatusCode.Ok, "", Nil, Nil)
   )
 
 val response = basicRequest.get(uri"http://example.org").send()
@@ -81,8 +95,9 @@ val response = basicRequest.get(uri"http://example.org").send()
 
 You can define consecutive raw responses that will be served:
 
-```scala
-implicit val testingBackend = SttpBackendStub.synchronous.whenAnyRequest
+```scala mdoc:compile-only
+implicit val testingBackend:SttpBackendStub[Identity, Nothing, NothingT] = SttpBackendStub.synchronous
+  .whenAnyRequest
   .thenRespondCyclic("first", "second", "third")
 
 basicRequest.get(uri"http://example.org").send()       // Right("OK, first")
@@ -93,11 +108,12 @@ basicRequest.get(uri"http://example.org").send()       // Right("OK, first")
 
 Or multiple `Response` instances:
 
-```scala
-implicit val testingBackend = SttpBackendStub.synchronous.whenAnyRequest
+```scala mdoc:compile-only
+implicit val testingBackend:SttpBackendStub[Identity, Nothing, NothingT] = SttpBackendStub.synchronous
+  .whenAnyRequest
   .thenRespondCyclicResponses(
     Response.ok[String]("first"),
-    Response.error[String]("error", 500, "Something went wrong")
+    Response("error", StatusCode.InternalServerError, "Something went wrong")
   )
 
 basicRequest.get(uri"http://example.org").send()       // code will be 200
@@ -109,7 +125,7 @@ basicRequest.get(uri"http://example.org").send()       // code will be 200
 
 If you want to simulate an exception being thrown by a backend, e.g. a socket timeout exception, you can do so by throwing the appropriate exception instead of the response, e.g.:
 
-```scala
+```scala mdoc:compile-only
 implicit val testingBackend = SttpBackendStub.synchronous
   .whenRequestMatches(_ => true)
   .thenRespond(throw new SttpClientException.ConnectException(new RuntimeException))
@@ -133,15 +149,15 @@ The following conversions are supported:
 
 For example, if you want to return a JSON response, simply use `.withResponse(String)` as below:
 
-```scala
+```scala mdoc:compile-only
 implicit val testingBackend = SttpBackendStub.synchronous
   .whenRequestMatches(_ => true)
   .thenRespond(""" {"username": "john", "age": 65 } """)
 
-def parseUserJson(a: Array[Byte]): User = ...
+def parseUserJson(a: Array[Byte]): User = ???
 
 val response = basicRequest.get(uri"http://example.com")
-  .response(asByteArray.map(parseUserJson))
+  .response(asByteArrayAlways.map(parseUserJson))
   .send()
 ```                                                                  
 
@@ -153,14 +169,14 @@ Note that no conversions will be attempted for streaming response bodies.
 
 If you want to return a file and have a response handler set up like this:
 
-```scala
+```scala mdoc:compile-only
 val destination = new File("path/to/file.ext")
 basicRequest.get(uri"http://example.com").response(asFile(destination))
 ```
 
 Then set up the mock like this:
 
-```scala
+```scala mdoc:compile-only
 val fileResponseHandle = new File("path/to/file.ext")
 SttpBackendStub.synchronous
   .whenRequestMatches(_ => true)
@@ -171,14 +187,19 @@ the `File` set up in the stub will be returned as though it was the `File` set u
 
 If you actually want a file to be written you can set up the stub like this:
 
-```scala
+```scala mdoc:compile-only
+import org.apache.commons.io.FileUtils
+import cats.effect.IO
+import sttp.client.impl.cats.implicits._
+import sttp.client.monad.MonadError
+
 val sourceFile = new File("path/to/file.ext")
 val destinationFile = new File("path/to/file.ext")
-SttpBackendStub.synchronous
+SttpBackendStub(implicitly[MonadError[IO]])
   .whenRequestMatches(_ => true)
   .thenRespondWrapped { _ =>
-    FileUtils.copyFile(sourceFile, destinationFile) // org.apache.commons.io
-    IO(Response(Right(destinationFile, 200, ""))
+    FileUtils.copyFile(sourceFile, destinationFile)
+    IO(Response(Right(destinationFile), StatusCode.Ok, ""))
   }
 ```
 
@@ -186,9 +207,9 @@ SttpBackendStub.synchronous
 
 It is also possible to create a stub backend which delegates calls to another (possibly "real") backend if none of the specified predicates match a request. This can be useful during development, to partially stub a yet incomplete API with which we integrate:
 
-```scala
+```scala mdoc:compile-only
 implicit val testingBackend =
-  SttpBackendStub.withFallback(HttpURLConnectionBackend())
+  SttpBackendStub.withFallback[Identity,Nothing,Nothing,NothingT](HttpURLConnectionBackend())
     .whenRequestMatches(_.uri.path.startsWith(List("a")))
     .thenRespond("I'm a STUB!")
 
@@ -212,7 +233,11 @@ implementation is returned.
 
 For example:
 
-```scala
+```scala mdoc:compile-only
+import sttp.client.ws._
+import zio.{App => _, _}
+import sttp.client.asynchttpclient.zio._
+
 val testWebSocket: WebSocket[Task] = ???
 
 implicit val testingBackend =
@@ -237,7 +262,9 @@ builds a `WebSocket` instance out of it.
 
 For example:
 
-```scala
+```scala mdoc:compile-only
+import sttp.model.ws._
+
 val backend = SttpBackendStub.synchronous[Identity]
 val webSocketStub = WebSocketStub
   .withInitialIncoming(
@@ -267,7 +294,19 @@ the user to couple it with simulated server-side behavior, and run the whole int
 
 For example:
 
-```scala
+```scala mdoc:compile-only
+import akka.stream.scaladsl._
+import akka.Done
+import akka.http.scaladsl.model.ws._
+import akka.stream._
+import akka.actor.ActorSystem
+import sttp.client.akkahttp._
+import scala.concurrent.Await
+import scala.concurrent.duration._
+
+implicit val system = ActorSystem("sttp-ws-test")
+implicit val materializer = ActorMaterializer()
+
 // it should say Hi! and 42
 val behaviorToTest: Flow[Message, Message, Future[Done]] = ???
 // setup test double
@@ -298,10 +337,9 @@ implicit val backend = AkkaHttpBackend.stub.whenAnyRequest
   .thenHandleOpenWebSocket(testFlow)
 
 // code under test with test doubles
-backend
+Await.ready(backend
   .openWebsocket(basicRequest.get(uri"wss://echo.websocket.org"), behaviorToTest)
-  .flatMap(_.result)
-  .futureValue
+  .flatMap(_.result), Duration.Inf)
 // assertions can be performed
-received.reverse shouldBe List("Hi!", "42")
+assert(received.reverse == List("Hi!", "42"))
 ```

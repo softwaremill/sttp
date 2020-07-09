@@ -5,25 +5,36 @@ The [Scalaz](https://github.com/scalaz/scalaz) backend is **asynchronous**. Send
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client" %% "async-http-client-backend-scalaz" % "2.2.1"
+"com.softwaremill.sttp.client" %% "async-http-client-backend-scalaz" % "@VERSION@"
 ```
            
 This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client) and uses [Netty](http://netty.io) behind the scenes.
 
 Next you'll need to add an implicit value:
 
-```scala
+```scala mdoc:compile-only
+import sttp.client._
 import sttp.client.asynchttpclient.scalaz.AsyncHttpClientScalazBackend
 
-AsyncHttpClientScalazBackend().flatMap { implicit backend => ... }
+AsyncHttpClientScalazBackend().flatMap { implicit backend => ??? }
 
 // or, if you'd like to use custom configuration:
-AsyncHttpClientScalazBackend.usingConfig(asyncHttpClientConfig).flatMap { implicit backend => ... }
+import org.asynchttpclient.AsyncHttpClientConfig
+val config: AsyncHttpClientConfig = ???
+
+AsyncHttpClientScalazBackend.usingConfig(config).flatMap { implicit backend => ??? }
 
 // or, if you'd like to use adjust the configuration sttp creates:
-AsyncHttpClientScalazBackend.usingConfigBuilder(adjustFunction, sttpOptions).flatMap { implicit backend => ... }
+import org.asynchttpclient.DefaultAsyncHttpClientConfig
+val sttpOptions: SttpBackendOptions = SttpBackendOptions.Default 
+val adjustFunction: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder = ???
+
+AsyncHttpClientScalazBackend.usingConfigBuilder(adjustFunction, sttpOptions).flatMap { implicit backend => ??? }
 
 // or, if you'd like to instantiate the AsyncHttpClient yourself:
+import org.asynchttpclient.AsyncHttpClient
+val asyncHttpClient: AsyncHttpClient = ???
+
 implicit val sttpBackend = AsyncHttpClientScalazBackend.usingClient(asyncHttpClient)
 ```
 

@@ -5,17 +5,19 @@ There are three backend wrappers available, which log request & response informa
 To use the backend wrappers, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client" %% "slf4j-backend" % "2.2.0"
+"com.softwaremill.sttp.client" %% "slf4j-backend" % "2.2.1"
 ``` 
 
 The following backend wrappers are available:
 
 ```scala
+import sttp.client._
 import sttp.client.logging.slf4j._
+val delegateBackend: SttpBackend[Identity, Nothing, NothingT] = ???
 
-Slf4jLoggingBackend(delegateBackend)
-Slf4jTimingBackend(delegateBackend)
-Slf4jCurlBackend(delegateBackend)
+Slf4jLoggingBackend[Identity, Nothing, NothingT](delegateBackend)
+Slf4jTimingBackend[Identity, Nothing, NothingT](delegateBackend)
+Slf4jCurlBackend[Identity, Nothing, NothingT](delegateBackend)
 ```
 
 The logging backend logs `DEBUG`-level logs when a request is started, completes successfully, and `ERROR`-level logs when it results in an exception.
@@ -32,9 +34,6 @@ import sttp.client.logging.slf4j.Slf4jTimingBackend
 
 implicit val backend = Slf4jTimingBackend[Identity, Nothing, NothingT](HttpURLConnectionBackend())
 basicRequest.get(uri"https://httpbin.org/get").send()
-
-// Logs:
-// 21:14:23.735 [main] INFO sttp.client.logging.slf4j.Slf4jTimingBackend - For request: GET https://httpbin.org/get, got response: 200, took: 0.795s
 ```
 
 To create a customised logging backend, see the section on [custom backends](custom.md).

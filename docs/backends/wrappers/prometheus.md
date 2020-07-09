@@ -3,37 +3,47 @@
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client" %% "prometheus-backend" % "2.2.1"
+"com.softwaremill.sttp.client" %% "prometheus-backend" % "@VERSION@"
 ```
+and some imports:
+```scala mdoc
+import sttp.client.prometheus._
+```
+
 
 This backend depends on [Prometheus JVM Client](https://github.com/prometheus/client_java). Keep in mind this backend registers histograms and gathers request times, but you have to expose those metrics to [Prometheus](https://prometheus.io/) e.g. using [prometheus-akka-http](https://github.com/lonelyplanet/prometheus-akka-http).
 
 The Prometheus backend wraps any other backend, for example:
 
-```scala
+```scala mdoc:compile-only
+import sttp.client.akkahttp._
 implicit val sttpBackend = PrometheusBackend(AkkaHttpBackend())
 ```
 
 It gathers request execution times in `Histogram`. It uses by default `sttp_request_latency` name, defined in `PrometheusBackend.DefaultHistogramName`. It is possible to define custom histograms name by passing function mapping request to histogram name:
 
-```scala
-implicit val sttpBackend = PrometheusBackend(AkkaHttpBackend(), request => Some(request.uri.host))
+```scala mdoc:compile-only
+import sttp.client.akkahttp._
+implicit val sttpBackend = PrometheusBackend(AkkaHttpBackend(), requestToHistogramNameMapper = request => Some(HistogramCollectorConfig(request.uri.host)))
 ```
 
 You can disable request histograms by passing `None` returning function:
 
-```scala
-implicit val sttpBackend = PrometheusBackend(AkkaHttpBackend(), _ => None)
+```scala mdoc:compile-only
+import sttp.client.akkahttp._
+implicit val sttpBackend = PrometheusBackend(AkkaHttpBackend(), requestToHistogramNameMapper = _ => None)
 ```
 
 This backend also offers `Gauge` with currently in-progress requests number. It uses by default `sttp_requests_in_progress` name, defined in `PrometheusBackend.DefaultRequestsInProgressGaugeName`. It is possible to define custom gauge name by passing function mapping request to gauge name:
 
-```scala
-implicit val sttpBackend = PrometheusBackend(AkkaHttpBackend(), requestToInProgressGaugeNameMapper = request => Some(request.uri.host))
+```scala mdoc:compile-only
+import sttp.client.akkahttp._
+implicit val sttpBackend = PrometheusBackend(AkkaHttpBackend(), requestToInProgressGaugeNameMapper = request => Some(CollectorConfig(request.uri.host)))
 ```
 
 You can disable request in-progress gauges by passing `None` returning function:
 
-```scala
+```scala mdoc:compile-only
+import sttp.client.akkahttp._
 implicit val sttpBackend = PrometheusBackend(AkkaHttpBackend(), requestToInProgressGaugeNameMapper = _ => None)
 ```

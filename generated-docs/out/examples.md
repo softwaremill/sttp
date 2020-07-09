@@ -7,7 +7,7 @@ All of the examples are available [in the sources](https://github.com/softwaremi
 Required dependencies:
 
 ```scala            
-libraryDependencies ++= List("com.softwaremill.sttp.client" %% "core" % "2.2.0")
+libraryDependencies ++= List("com.softwaremill.sttp.client" %% "core" % "2.2.1")
 ```
 
 Example code:
@@ -36,8 +36,8 @@ Required dependencies:
 
 ```scala
 libraryDependencies ++= List(
-  "com.softwaremill.sttp.client" %% "akka-http-backend" % "2.2.0",
-  "com.softwaremill.sttp.client" %% "json4s" % "2.2.0",
+  "com.softwaremill.sttp.client" %% "akka-http-backend" % "2.2.1",
+  "com.softwaremill.sttp.client" %% "json4s" % "2.2.1",
   "org.json4s" %% "json4s-native" % "3.6.0"
 )
 ```
@@ -45,6 +45,7 @@ libraryDependencies ++= List(
 Example code:
 
 ```scala
+import scala.concurrent.Future
 import sttp.client._
 import sttp.client.akkahttp._
 import sttp.client.json4s._
@@ -69,7 +70,7 @@ for {
   println(s"Got response code: ${r.code}")
   println(r.body)
   backend.close()
-}                             
+}
 ```
 
 ## GET and parse JSON using the ZIO async-http-client backend and circe
@@ -78,8 +79,8 @@ Required dependencies:
 
 ```scala
 libraryDependencies ++= List(
-  "com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % "2.2.0",
-  "com.softwaremill.sttp.client" %% "circe" % "2.2.0",
+  "com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % "2.2.1",
+  "com.softwaremill.sttp.client" %% "circe" % "2.2.1",
   "io.circe" %% "circe-generic" % "0.12.1"
 )
 ```
@@ -94,9 +95,9 @@ import io.circe.generic.auto._
 import zio._
 import zio.console.Console
 
-object GetAndParseJsonZioCirce extends App {
+object GetAndParseJsonZioCirce extends zio.App {
 
-  override def run(args: List[String]): ZIO[ZEnv, Nothing, Int] = {
+  override def run(args: List[String]): ZIO[ZEnv, Nothing, ExitCode] = {
 
     case class HttpBinResponse(origin: String, headers: Map[String, String])
 
@@ -114,7 +115,7 @@ object GetAndParseJsonZioCirce extends App {
 
     // provide an implementation for the SttpClient dependency; other dependencies are
     // provided by Zio
-    sendAndPrint.provideCustomLayer(AsyncHttpClientZioBackend.layer()).fold(_ => 1, _ => 0)
+    sendAndPrint.provideCustomLayer(AsyncHttpClientZioBackend.layer()).fold(_ => ExitCode.failure, _ => ExitCode.success)
   }
 }
 ```
@@ -125,8 +126,8 @@ Required dependencies:
 
 ```scala
 libraryDependencies ++= List(
-  "com.softwaremill.sttp.client" %% "async-http-client-backend-monix" % "2.2.0",
-  "com.softwaremill.sttp.client" %% "circe" % "2.2.0",
+  "com.softwaremill.sttp.client" %% "async-http-client-backend-monix" % "2.2.1",
+  "com.softwaremill.sttp.client" %% "circe" % "2.2.1",
   "io.circe" %% "circe-generic" % "0.12.1"
 )
 ```
@@ -163,7 +164,7 @@ postTask.runSyncUnsafe()
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client" %% "core" % "2.2.0")
+libraryDependencies ++= List("com.softwaremill.sttp.client" %% "core" % "2.2.1")
 ```
 
 Example code:
@@ -198,7 +199,7 @@ println(
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % "2.2.0")
+libraryDependencies ++= List("com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % "2.2.1")
 ```
 
 Example code:
@@ -208,10 +209,10 @@ import sttp.client._
 import sttp.client.asynchttpclient.zio._
 import sttp.client.ws.WebSocket
 import sttp.model.ws.WebSocketFrame
-import zio._
+import zio.{App => ZApp, _}
 import zio.console.Console
 
-object WebsocketZio extends App {
+object WebsocketZio extends ZApp {
   def useWebsocket(ws: WebSocket[Task]): ZIO[Console, Throwable, Unit] = {
     def send(i: Int) = ws.send(WebSocketFrame.text(s"Hello $i!"))
     val receive = ws.receiveText().flatMap(t => console.putStrLn(s"RECEIVED: $t"))
@@ -225,10 +226,10 @@ object WebsocketZio extends App {
     _ <- useWebsocket(response.result)
   } yield ()
 
-  override def run(args: List[String]): ZIO[ZEnv, Nothing, Int] = {
+  override def run(args: List[String]): ZIO[ZEnv, Nothing, ExitCode] = {
     // provide an implementation for the SttpClient dependency; other dependencies are
     // provided by Zio
-    sendAndPrint.provideCustomLayer(AsyncHttpClientZioBackend.layer()).fold(_ => 1, _ => 0)
+    sendAndPrint.provideCustomLayer(AsyncHttpClientZioBackend.layer()).fold(_ => ExitCode.failure, _ => ExitCode.success)
   }
 }
 ```
@@ -238,7 +239,7 @@ object WebsocketZio extends App {
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client" %% "async-http-client-backend-monix" % "2.2.0")
+libraryDependencies ++= List("com.softwaremill.sttp.client" %% "async-http-client-backend-monix" % "2.2.1")
 ```
 
 Example code:
@@ -278,7 +279,7 @@ object WebsocketMonix extends App {
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client" %% "async-http-client-backend-fs2" % "2.2.0")
+libraryDependencies ++= List("com.softwaremill.sttp.client" %% "async-http-client-backend-fs2" % "2.2.1")
 ```
 
 Example code:
@@ -331,7 +332,7 @@ effect.unsafeRunSync()
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % "2.2.0")
+libraryDependencies ++= List("com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % "2.2.1")
 ```
 
 Example code:
