@@ -10,6 +10,10 @@ import sttp.model.MediaType
 import scala.util.{Failure, Success, Try}
 
 trait SttpPlayJsonApi {
+  implicit val errorMessageForPlayError: ErrorMessage[JsError] = new ErrorMessage[JsError] {
+    override def extract(t: JsError): String = t.errors.mkString(",")
+  } 
+  
   implicit def playJsonBodySerializer[B: Writes]: BodySerializer[B] =
     b => StringBody(Json.stringify(Json.toJson(b)), Utf8, Some(MediaType.ApplicationJson))
 

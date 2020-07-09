@@ -1,5 +1,6 @@
 package sttp.client.circe
 
+import io.circe
 import sttp.client._
 import sttp.client.internal.Utf8
 import io.circe.{Decoder, Encoder, Printer}
@@ -8,6 +9,10 @@ import sttp.client.{IsOption, ResponseAs, ResponseError}
 import sttp.model.MediaType
 
 trait SttpCirceApi {
+  implicit val errorMessageForCirceError: ErrorMessage[io.circe.Error] = new ErrorMessage[circe.Error] {
+    override def extract(t: circe.Error): String = t.getMessage
+  }
+  
   implicit def circeBodySerializer[B](implicit
       encoder: Encoder[B],
       printer: Printer = Printer.noSpaces
