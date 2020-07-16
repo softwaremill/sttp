@@ -285,8 +285,7 @@ class HttpURLConnectionBackend private (
       case None            => is
       case Some("gzip")    => new GZIPInputStream(is)
       case Some("deflate") => new InflaterInputStream(is)
-      case Some(ce) =>
-        throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
+      case _               => is
     }
 
   private def adjustExceptions[T](t: => T): T =
