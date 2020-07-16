@@ -280,7 +280,7 @@ class HttpURLConnectionBackend private (
     contentEncoding.map(_.toLowerCase) match {
       case Some("gzip")    => new GZIPInputStream(is)
       case Some("deflate") => new InflaterInputStream(is)
-      case _ =>               is
+      case _               => is
     }
 
   private def adjustExceptions[T](t: => T): T =
