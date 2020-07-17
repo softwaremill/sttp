@@ -99,9 +99,7 @@ object HttpClientZioBackend {
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: EncodingHandler = PartialFunction.empty,
       chunkSize: Int = defaultChunkSize
-  ): ZLayer[Blocking, Throwable, Has[
-    SttpBackend[BlockingTask, ZStream[Blocking, Throwable, Byte], WebSocketHandler]
-  ]] = {
+  ): ZLayer[Blocking, Throwable, SttpClient] = {
     ZLayer.fromManaged(
       (for {
         backend <- HttpClientZioBackend(
@@ -133,9 +131,7 @@ object HttpClientZioBackend {
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: EncodingHandler = PartialFunction.empty,
       chunkSize: Int = defaultChunkSize
-  ): ZLayer[Blocking, Throwable, Has[
-    SttpBackend[BlockingTask, ZStream[Blocking, Throwable, Byte], WebSocketHandler]
-  ]] = {
+  ): ZLayer[Blocking, Throwable, SttpClient] = {
     ZLayer.fromManaged(
       ZManaged
         .makeEffect(
