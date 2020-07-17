@@ -1,13 +1,13 @@
 package sttp.client.circe
 
-import sttp.client._
-import sttp.client.internal.Utf8
-import io.circe.{Decoder, Encoder, Printer}
 import io.circe.parser.decode
-import sttp.client.{IsOption, ResponseAs, ResponseError}
+import io.circe.{Decoder, Encoder, Printer}
+import sttp.client.internal.Utf8
+import sttp.client.{IsOption, ResponseAs, ResponseError, _}
 import sttp.model.MediaType
 
 trait SttpCirceApi {
+
   implicit def circeBodySerializer[B](implicit
       encoder: Encoder[B],
       printer: Printer = Printer.noSpaces
@@ -21,7 +21,7 @@ trait SttpCirceApi {
     * - `Left(DeserializationError)` if there's an error during deserialization
     */
   def asJson[B: Decoder: IsOption]: ResponseAs[Either[ResponseError[io.circe.Error], B], Nothing] =
-    asString.map(ResponseAs.deserializeRightWithError(deserializeJson))
+    asString.mapWithMetadata(ResponseAs.deserializeRightWithError(deserializeJson))
 
   /**
     * Tries to deserialize the body from a string into JSON, regardless of the response code. Returns:

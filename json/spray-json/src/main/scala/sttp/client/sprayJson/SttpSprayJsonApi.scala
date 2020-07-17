@@ -17,7 +17,7 @@ trait SttpSprayJsonApi {
     * - `Left(DeserializationError)` if there's an error during deserialization
     */
   def asJson[B: JsonReader: IsOption]: ResponseAs[Either[ResponseError[Exception], B], Nothing] =
-    asString.map(ResponseAs.deserializeRightCatchingExceptions(deserializeJson[B]))
+    asString.mapWithMetadata(ResponseAs.deserializeRightCatchingExceptions(deserializeJson[B]))
 
   /**
     * Tries to deserialize the body from a string into JSON, regardless of the response code. Returns:

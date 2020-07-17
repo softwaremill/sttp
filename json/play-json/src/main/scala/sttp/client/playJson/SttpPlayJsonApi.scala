@@ -10,6 +10,10 @@ import sttp.model.MediaType
 import scala.util.{Failure, Success, Try}
 
 trait SttpPlayJsonApi {
+  implicit val errorMessageForPlayError: ShowError[JsError] = new ShowError[JsError] {
+    override def show(t: JsError): String = t.errors.mkString(",")
+  }
+
   implicit def playJsonBodySerializer[B: Writes]: BodySerializer[B] =
     b => StringBody(Json.stringify(Json.toJson(b)), Utf8, Some(MediaType.ApplicationJson))
 
@@ -20,7 +24,7 @@ trait SttpPlayJsonApi {
     * - `Left(DeserializationError)` if there's an error during deserialization
     */
   def asJson[B: Reads: IsOption]: ResponseAs[Either[ResponseError[JsError], B], Nothing] =
-    asString.map(ResponseAs.deserializeRightWithError(deserializeJson[B]))
+    asString.mapWithMetadata(ResponseAs.deserializeRightWithError(deserializeJson[B]))
 
   /**
     * Tries to deserialize the body from a string into JSON, regardless of the response code. Returns:

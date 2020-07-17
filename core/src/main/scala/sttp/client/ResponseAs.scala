@@ -2,6 +2,7 @@ package sttp.client
 
 import sttp.client.internal._
 import sttp.client.monad.MonadError
+import sttp.model.StatusCode
 import sttp.model.internal.Rfc3986
 
 import scala.collection.immutable.Seq
@@ -88,9 +89,9 @@ object ResponseAs {
     */
   def deserializeRightCatchingExceptions[T](
       doDeserialize: String => T
-  ): Either[String, String] => Either[ResponseError[Exception], T] = {
-    case Left(s)  => Left(HttpError(s))
-    case Right(s) => deserializeCatchingExceptions(doDeserialize)(s)
+  ): (Either[String, String], ResponseMetadata) => Either[ResponseError[Exception], T] = {
+    case (Left(s), meta) => Left(HttpError(s, meta.code))
+    case (Right(s), _)   => deserializeCatchingExceptions(doDeserialize)(s)
   }
 
   /**
@@ -112,18 +113,20 @@ object ResponseAs {
     * Returns a function, which maps `Left` values to [[HttpError]]s, and attempts to deserialize `Right` values using
     * the given function.
     */
-  def deserializeRightWithError[E, T](
+  def deserializeRightWithError[E: ShowError, T](
       doDeserialize: String => Either[E, T]
-  ): Either[String, String] => Either[ResponseError[E], T] = {
-    case Left(s)  => Left(HttpError(s))
-    case Right(s) => deserializeWithError(doDeserialize)(s)
+  ): (Either[String, String], ResponseMetadata) => Either[ResponseError[E], T] = {
+    case (Left(s), meta)  => Left(HttpError(s, meta.code))
+    case (Right(s), _) => deserializeWithError(doDeserialize)(implicitly[ShowError[E]])(s)
   }
 
   /**
     * Converts a deserialization function, which returns errors of type `E`, into a function where errors are wrapped
     * using [[DeserializationError]].
     */
-  def deserializeWithError[E, T](doDeserialize: String => Either[E, T]): String => Either[DeserializationError[E], T] =
+  def deserializeWithError[E: ShowError, T](
+      doDeserialize: String => Either[E, T]
+  ): String => Either[DeserializationError[E], T] =
     s =>
       doDeserialize(s) match {
         case Left(e)  => Left(DeserializationError(s, e))
@@ -134,7 +137,7 @@ object ResponseAs {
     * Converts a deserialization function, which returns errors of type `E`, into a function where errors are thrown
     * as exceptions, and results are returned unwrapped.
     */
-  def deserializeOrThrow[E, T](doDeserialize: String => Either[E, T]): String => T =
+  def deserializeOrThrow[E: ShowError, T](doDeserialize: String => Either[E, T]): String => T =
     s =>
       doDeserialize(s) match {
         case Left(e)  => throw DeserializationError(s, e)
@@ -142,8 +145,18 @@ object ResponseAs {
       }
 }
 
-sealed abstract class ResponseError[+T] extends Exception {
-  def body: String
+sealed abstract class ResponseError[+T](error: String) extends Exception(error)
+case class HttpError(body: String, statusCode: StatusCode)
+    extends ResponseError[Nothing](s"statusCode: $statusCode, response: $body")
+case class DeserializationError[T: ShowError](body: String, error: T)
+    extends ResponseError[T](implicitly[ShowError[T]].show(error))
+
+trait ShowError[-T] {
+  def show(t: T): String
 }
-case class HttpError(body: String) extends ResponseError[Nothing]
-case class DeserializationError[T](body: String, error: T) extends ResponseError[T]
+
+object ShowError {
+  implicit val showErrorMessageFromException: ShowError[Exception] = new ShowError[Exception] {
+    override def show(t: Exception): String = t.getMessage
+  }
+}

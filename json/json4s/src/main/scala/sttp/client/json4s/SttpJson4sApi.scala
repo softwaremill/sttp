@@ -23,7 +23,7 @@ trait SttpJson4sApi {
       formats: Formats,
       serialization: Serialization
   ): ResponseAs[Either[ResponseError[Exception], B], Nothing] =
-    asString.map(ResponseAs.deserializeRightCatchingExceptions(deserializeJson[B]))
+    asString.mapWithMetadata(ResponseAs.deserializeRightCatchingExceptions(deserializeJson[B]))
 
   /**
     * Tries to deserialize the body from a string into JSON, regardless of the response code. Returns:
