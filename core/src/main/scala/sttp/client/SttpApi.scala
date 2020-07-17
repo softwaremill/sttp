@@ -263,7 +263,7 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
       } else {
         onError.map {
           case Left(a)  => Left(a)
-          case Right(b) => Left(HttpError(b))
+          case Right(b) => Left(HttpError(b, meta.code))
         }
       }
     }
