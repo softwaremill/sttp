@@ -107,6 +107,7 @@ Development and maintenance of sttp client is sponsored by [SoftwareMill](https:
    websockets
    json
    resilience
+   openapi
 
 .. toctree::
    :maxdepth: 2
