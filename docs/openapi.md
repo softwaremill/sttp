@@ -1,7 +1,6 @@
 # OpenApi
 
-Sttp request definitions can be automatically generated from server's openapi description 
-using scala-sttp-openapi generator.
+Sttp request definitions can be automatically generated from openapi description using sttp-openapi generator.
 
 For sttp-openapi generator's configuration options refer to: https://openapi-generator.tech/docs/generators/scala-sttp
 
