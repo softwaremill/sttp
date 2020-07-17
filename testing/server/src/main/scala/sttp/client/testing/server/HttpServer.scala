@@ -224,7 +224,7 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
       }
     } ~ path("compress-custom") {
       respondWithHeader(`Content-Encoding`(HttpEncoding("custom"))) {
-        complete("I'm compressed!")
+        complete("I'm compressed, but who cares! Must be overwritten by client encoder")
       }
     } ~ path("compress") {
       encodeResponseWith(Gzip, Deflate, NoCoding) {
