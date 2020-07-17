@@ -95,7 +95,7 @@ basicRequest
 
 A number of JSON libraries are supported out-of-the-box, see [json support](../json.md).
 
-Sometimes it might be useful to model some http error responses right away. We can do that by using `either` combine with `fromStatusCodes`:
+Sometimes it might be useful to model some http error responses right away. We can do that by using `either` combined with `fromStatusCodes`:
 ```scala mdoc:compile-only
 import sttp.client._
 import sttp.model._
