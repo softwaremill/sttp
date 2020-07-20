@@ -717,6 +717,7 @@ lazy val examples = (projectMatrix in file("examples"))
     slf4jBackend
   )
 
+//TODO this should be invoked by compilation process, see #https://github.com/scalameta/mdoc/issues/355
 val compileDocs: TaskKey[Unit] = taskKey[Unit]("Compiles docs module throwing away its output")
 compileDocs := {
   (docs.jvm(scala2_13) / mdoc).toTask(" --out target/sttp-docs").value
