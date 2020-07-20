@@ -87,8 +87,8 @@ lazy val petstoreApi: Project = project
     openApiOutputDir := baseDirectory.value.name,
     openApiIgnoreFileOverride := s"${baseDirectory.in(ThisBuild).value.getPath}/openapi-ignore-file",
     libraryDependencies ++= Seq(
-      "com.softwaremill.sttp.client" %% "core" % "2.2.0",
-      "com.softwaremill.sttp.client" %% "json4s" % "2.2.0",
+      "com.softwaremill.sttp.client" %% "core" % "2.2.2",
+      "com.softwaremill.sttp.client" %% "json4s" % "2.2.2",
       "org.json4s" %% "json4s-jackson" % "3.6.8"
     ),
     (compile in Compile) := ((compile in Compile) dependsOn openApiGenerate).value,
