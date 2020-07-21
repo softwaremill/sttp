@@ -8,9 +8,9 @@ import sttp.client.monad.MonadError
 
 import sttp.client.testing.HttpTest.endpoint
 
-trait CancelTest[F[_], S] extends AsyncFreeSpecLike with Matchers with ToFutureWrapper with BeforeAndAfterAll {
+trait CancelTest[F[_], P] extends AsyncFreeSpecLike with Matchers with ToFutureWrapper with BeforeAndAfterAll {
 
-  implicit def backend: SttpBackend[F, S, NothingT]
+  implicit def backend: SttpBackend[F, P, NothingT]
 
   implicit def convertToFuture: ConvertToFuture[F]
 

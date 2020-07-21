@@ -12,7 +12,7 @@ import sttp.client.ws.WebSocket
 import scala.concurrent.duration._
 
 class AsyncHttpClientHighLevelMonixWebsocketTest extends AsyncHttpClientHighLevelWebsocketTest[Task] {
-  override implicit val backend: SttpBackend[Task, Nothing, WebSocketHandler] =
+  override implicit val backend: SttpBackend[Task, Any, WebSocketHandler] =
     AsyncHttpClientMonixBackend().runSyncUnsafe()
   override implicit val convertToFuture: ConvertToFuture[Task] = convertMonixTaskToFuture
   override implicit val monad: MonadError[Task] = TaskMonadAsyncError

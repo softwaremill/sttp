@@ -25,7 +25,7 @@ trait LowLevelListenerWebSocketTest[F[_], WS, WS_HANDLER[_]]
     with Eventually
     with IntegrationPatience {
 
-  implicit def backend: SttpBackend[F, Nothing, WS_HANDLER]
+  implicit def backend: SttpBackend[F, Any, WS_HANDLER]
   implicit def convertToFuture: ConvertToFuture[F]
   private implicit lazy val monad: MonadError[F] = backend.responseMonad
   def testErrorWhenEndpointIsNotWebsocket: Boolean = true

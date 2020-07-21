@@ -12,7 +12,7 @@ import monix.reactive.Observable
 import org.asynchttpclient._
 import org.reactivestreams.Publisher
 import sttp.client.asynchttpclient.{AsyncHttpClientBackend, WebSocketHandler}
-import sttp.client.impl.monix.TaskMonadAsyncError
+import sttp.client.impl.monix.{MonixStreams, TaskMonadAsyncError}
 import sttp.client.internal._
 import sttp.client.testing.SttpBackendStub
 import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
@@ -23,12 +23,15 @@ class AsyncHttpClientMonixBackend private (
     customizeRequest: BoundRequestBuilder => BoundRequestBuilder
 )(implicit
     scheduler: Scheduler
-) extends AsyncHttpClientBackend[Task, Observable[ByteBuffer]](
+) extends AsyncHttpClientBackend[Task, MonixStreams, MonixStreams](
       asyncHttpClient,
       TaskMonadAsyncError,
       closeClient,
       customizeRequest
     ) {
+
+  override val streams: MonixStreams = MonixStreams
+
   override protected def streamBodyToPublisher(s: Observable[ByteBuffer]): Publisher[ByteBuf] =
     s.map(Unpooled.wrappedBuffer).toReactivePublisher
 
@@ -59,7 +62,7 @@ object AsyncHttpClientMonixBackend {
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder
   )(implicit
       scheduler: Scheduler
-  ): SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler] =
+  ): SttpBackend[Task, MonixStreams, WebSocketHandler] =
     new FollowRedirectsBackend(new AsyncHttpClientMonixBackend(asyncHttpClient, closeClient, customizeRequest))
 
   /**
@@ -71,7 +74,7 @@ object AsyncHttpClientMonixBackend {
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   )(implicit
       s: Scheduler = Scheduler.global
-  ): Task[SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler]] =
+  ): Task[SttpBackend[Task, MonixStreams, WebSocketHandler]] =
     Task.eval(
       AsyncHttpClientMonixBackend(AsyncHttpClientBackend.defaultClient(options), closeClient = true, customizeRequest)
     )
@@ -84,7 +87,7 @@ object AsyncHttpClientMonixBackend {
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   )(implicit
       s: Scheduler = Scheduler.global
-  ): Resource[Task, SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler]] =
+  ): Resource[Task, SttpBackend[Task, MonixStreams, WebSocketHandler]] =
     Resource.make(apply(options, customizeRequest))(_.close())
 
   /**
@@ -96,7 +99,7 @@ object AsyncHttpClientMonixBackend {
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   )(implicit
       s: Scheduler = Scheduler.global
-  ): Task[SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler]] =
+  ): Task[SttpBackend[Task, MonixStreams, WebSocketHandler]] =
     Task.eval(AsyncHttpClientMonixBackend(new DefaultAsyncHttpClient(cfg), closeClient = true, customizeRequest))
 
   /**
@@ -107,7 +110,7 @@ object AsyncHttpClientMonixBackend {
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   )(implicit
       s: Scheduler = Scheduler.global
-  ): Resource[Task, SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler]] =
+  ): Resource[Task, SttpBackend[Task, MonixStreams, WebSocketHandler]] =
     Resource.make(usingConfig(cfg, customizeRequest))(_.close())
 
   /**
@@ -121,7 +124,7 @@ object AsyncHttpClientMonixBackend {
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   )(implicit
       s: Scheduler = Scheduler.global
-  ): Task[SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler]] =
+  ): Task[SttpBackend[Task, MonixStreams, WebSocketHandler]] =
     Task.eval(
       AsyncHttpClientMonixBackend(
         AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
@@ -142,7 +145,7 @@ object AsyncHttpClientMonixBackend {
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   )(implicit
       s: Scheduler = Scheduler.global
-  ): Resource[Task, SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler]] =
+  ): Resource[Task, SttpBackend[Task, MonixStreams, WebSocketHandler]] =
     Resource.make(usingConfigBuilder(updateConfig, options, customizeRequest))(_.close())
 
   /**
@@ -152,7 +155,7 @@ object AsyncHttpClientMonixBackend {
   def usingClient(
       client: AsyncHttpClient,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  )(implicit s: Scheduler = Scheduler.global): SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler] =
+  )(implicit s: Scheduler = Scheduler.global): SttpBackend[Task, MonixStreams, WebSocketHandler] =
     AsyncHttpClientMonixBackend(client, closeClient = false, customizeRequest)
 
   /**
@@ -161,5 +164,5 @@ object AsyncHttpClientMonixBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub: SttpBackendStub[Task, Observable[ByteBuffer], WebSocketHandler] = SttpBackendStub(TaskMonadAsyncError)
+  def stub: SttpBackendStub[Task, MonixStreams, WebSocketHandler] = SttpBackendStub(TaskMonadAsyncError)
 }

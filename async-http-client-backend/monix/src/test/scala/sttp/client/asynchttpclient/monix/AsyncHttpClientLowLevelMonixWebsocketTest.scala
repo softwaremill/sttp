@@ -11,7 +11,7 @@ import sttp.client.testing.websocket.LowLevelListenerWebSocketTest
 
 class AsyncHttpClientLowLevelMonixWebsocketTest
     extends LowLevelListenerWebSocketTest[Task, AHCWebSocket, WebSocketHandler] {
-  override implicit val backend: SttpBackend[Task, Nothing, WebSocketHandler] =
+  override implicit val backend: SttpBackend[Task, Any, WebSocketHandler] =
     AsyncHttpClientMonixBackend().runSyncUnsafe()
   override implicit val convertToFuture: ConvertToFuture[Task] = convertMonixTaskToFuture
 

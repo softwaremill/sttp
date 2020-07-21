@@ -24,7 +24,7 @@ abstract class HighLevelWebsocketTest[F[_], WS_HANDLER[_]]
     with ToFutureWrapper
     with TimeLimits {
 
-  implicit val backend: SttpBackend[F, Nothing, WS_HANDLER]
+  implicit val backend: SttpBackend[F, Any, WS_HANDLER]
   implicit val convertToFuture: ConvertToFuture[F]
   implicit val monad: MonadError[F]
 

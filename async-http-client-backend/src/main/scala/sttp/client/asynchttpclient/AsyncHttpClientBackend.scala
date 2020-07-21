@@ -64,13 +64,16 @@ import scala.collection.immutable.Seq
 import scala.language.higherKinds
 import scala.util.Try
 
-abstract class AsyncHttpClientBackend[F[_], S](
+abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P <: Streams[S]](
     asyncHttpClient: AsyncHttpClient,
     private implicit val monad: MonadAsyncError[F],
     closeClient: Boolean,
     customizeRequest: BoundRequestBuilder => BoundRequestBuilder
-) extends SttpBackend[F, S, WebSocketHandler] {
-  override def send[T](r: Request[T, S]): F[Response[T]] =
+) extends SttpBackend[F, P, WebSocketHandler] {
+
+  val streams: Streams[S]
+
+  override def send[T, R >: P](r: Request[T, R]): F[Response[T]] =
     adjustExceptions {
       preparedRequest(r).flatMap { ahcRequest =>
         monad.flatten(monad.async[F[Response[T]]] { cb =>
@@ -83,8 +86,8 @@ abstract class AsyncHttpClientBackend[F[_], S](
       }
     }
 
-  override def openWebsocket[T, WS_RESULT](
-      r: Request[T, S],
+  override def openWebsocket[T, WS_RESULT, R >: P](
+      r: Request[T, R],
       handler: WebSocketHandler[WS_RESULT]
   ): F[WebSocketResponse[WS_RESULT]] =
     adjustExceptions {
@@ -110,9 +113,9 @@ abstract class AsyncHttpClientBackend[F[_], S](
 
   override def responseMonad: MonadError[F] = monad
 
-  protected def streamBodyToPublisher(s: S): Publisher[ByteBuf]
+  protected def streamBodyToPublisher(s: streams.BinaryStream): Publisher[ByteBuf]
 
-  protected def publisherToStreamBody(p: Publisher[ByteBuffer]): S
+  protected def publisherToStreamBody(p: Publisher[ByteBuffer]): streams.BinaryStream
 
   protected def publisherToBytes(p: Publisher[ByteBuffer]): F[Array[Byte]] = {
     monad.async { cb =>
@@ -130,8 +133,8 @@ abstract class AsyncHttpClientBackend[F[_], S](
     publisherToBytes(p).map(bytes => FileHelpers.saveFile(f, new ByteArrayInputStream(bytes)))
   }
 
-  private def streamingAsyncHandler[T](
-      responseAs: ResponseAs[T, S],
+  private def streamingAsyncHandler[T, R >: P](
+      responseAs: ResponseAs[T, R],
       success: F[Response[T]] => Unit,
       error: Throwable => Unit
   ): AsyncHandler[Unit] = {
@@ -218,11 +221,11 @@ abstract class AsyncHttpClientBackend[F[_], S](
     }
   }
 
-  private def preparedRequest(r: Request[_, S]): F[BoundRequestBuilder] = {
+  private def preparedRequest[R >: P](r: Request[_, R]): F[BoundRequestBuilder] = {
     monad.fromTry(Try(asyncHttpClient.prepareRequest(requestToAsync(r)))).map(customizeRequest)
   }
 
-  private def requestToAsync(r: Request[_, S]): AsyncRequest = {
+  private def requestToAsync[R >: P](r: Request[_, R]): AsyncRequest = {
     val readTimeout = r.options.readTimeout
     val rb = new RequestBuilder(r.method.method)
       .setUrl(r.uri.toString)
@@ -233,7 +236,7 @@ abstract class AsyncHttpClientBackend[F[_], S](
     rb.build()
   }
 
-  private def setBody(r: Request[_, S], body: RequestBody[S], rb: RequestBuilder): Unit = {
+  private def setBody[R >: P](r: Request[_, R], body: RequestBody[R], rb: RequestBuilder): Unit = {
     body match {
       case NoBody => // skip
 
@@ -257,7 +260,7 @@ abstract class AsyncHttpClientBackend[F[_], S](
           .find(_.is(HeaderNames.ContentLength))
           .map(_.value.toLong)
           .getOrElse(-1L)
-        rb.setBody(streamBodyToPublisher(s), cl)
+        rb.setBody(streamBodyToPublisher(s.asInstanceOf[streams.BinaryStream]), cl)
 
       case MultipartBody(ps) =>
         ps.foreach(addMultipartBody(rb, _))

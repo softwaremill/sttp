@@ -7,7 +7,8 @@ import monix.reactive.Observable
 import sttp.client.testing.ConvertToFuture
 import sttp.client.testing.streaming.StreamingTest
 
-abstract class MonixStreamingTest extends StreamingTest[Task, Observable[ByteBuffer]] {
+abstract class MonixStreamingTest extends StreamingTest[Task, MonixStreams] {
+  override val streams: MonixStreams = MonixStreams
 
   override implicit val convertToFuture: ConvertToFuture[Task] = convertMonixTaskToFuture
 
