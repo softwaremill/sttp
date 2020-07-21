@@ -163,6 +163,9 @@ val testServerSettings = Seq(
   })
 )
 
+def intellijImportOnly213 = ideSkipProject := (scalaVersion.value != scala2_13)
+def intellijSkipImport = ideSkipProject := true
+
 val circeVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "0.11.2"
   case _             => "0.13.0"
@@ -280,6 +283,7 @@ lazy val testServer = (projectMatrix in file("testing/server"))
     testServerPort := 51823,
     startTestServer := reStart.toTask("").value
   )
+  .settings(intellijImportOnly213)
   .jvmPlatform(scalaVersions = List(scala2_13))
 
 lazy val testServer2_13 = testServer.jvm(scala2_13)
@@ -292,7 +296,7 @@ lazy val core = (projectMatrix in file("core"))
   .jvmPlatform(
     scalaVersions = List(scala2_11, scala2_12, scala2_13, scala3),
     settings = {
-      commonJvmSettings ++ List(
+      commonJvmSettings ++ intellijImportOnly213 ++ List(
         libraryDependencies ++= Seq(
           "com.softwaremill.sttp.model" %% "core" % modelVersion,
           scalaTest % Test
@@ -304,7 +308,7 @@ lazy val core = (projectMatrix in file("core"))
   .jsPlatform(
     scalaVersions = List(scala2_11, scala2_12, scala2_13),
     settings = {
-      commonJsSettings ++ commonJsBackendSettings ++ browserTestSettings ++ List(
+      commonJsSettings ++ commonJsBackendSettings ++ browserTestSettings ++ intellijSkipImport ++ List(
         libraryDependencies ++= Seq(
           "com.softwaremill.sttp.model" %%% "core" % modelVersion,
           "org.scalatest" %%% "scalatest" % scalaTestVersion % Test
@@ -316,7 +320,7 @@ lazy val core = (projectMatrix in file("core"))
   .nativePlatform(
     scalaVersions = List(scala2_11),
     settings = {
-      commonNativeSettings ++ List(
+      commonNativeSettings ++ intellijSkipImport ++ List(
         libraryDependencies ++= Seq(
           "com.softwaremill.sttp.model" %%% "core" % modelVersion,
           "org.scala-native" %%% "test-interface" % scalaNativeTestInterfaceVersion % Test,
@@ -353,8 +357,11 @@ lazy val cats = (projectMatrix in file("implementations/cats"))
     )
   )
   .dependsOn(core % compileAndTest)
-  .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = commonJvmSettings)
-  .jsPlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonJsSettings)
+  .jvmPlatform(
+    scalaVersions = List(scala2_11, scala2_12, scala2_13),
+    settings = commonJvmSettings ++ intellijImportOnly213
+  )
+  .jsPlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonJsSettings ++ intellijSkipImport)
 
 lazy val fs2 = (projectMatrix in file("implementations/fs2"))
   .settings(
@@ -365,8 +372,11 @@ lazy val fs2 = (projectMatrix in file("implementations/fs2"))
     )
   )
   .dependsOn(core % compileAndTest, cats % compileAndTest)
-  .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = commonJvmSettings)
-  .jsPlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonJsSettings)
+  .jvmPlatform(
+    scalaVersions = List(scala2_11, scala2_12, scala2_13),
+    settings = commonJvmSettings ++ intellijImportOnly213
+  )
+  .jsPlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonJsSettings ++ intellijSkipImport)
 
 lazy val monix = (projectMatrix in file("implementations/monix"))
   .settings(
@@ -377,11 +387,14 @@ lazy val monix = (projectMatrix in file("implementations/monix"))
   .dependsOn(core % compileAndTest)
   .jvmPlatform(
     scalaVersions = List(scala2_11, scala2_12, scala2_13),
-    settings = commonJvmSettings ++ List(libraryDependencies ++= Seq("io.monix" %% "monix-nio" % "0.0.8"))
+    settings = commonJvmSettings ++ intellijImportOnly213 ++ List(
+      libraryDependencies ++= Seq("io.monix" %% "monix-nio" % "0.0.8")
+    )
   )
   .jsPlatform(
     scalaVersions = List(scala2_12, scala2_13),
-    settings = commonJsSettings ++ commonJsBackendSettings ++ browserTestSettings ++ testServerSettings
+    settings =
+      commonJsSettings ++ intellijSkipImport ++ commonJsBackendSettings ++ browserTestSettings ++ testServerSettings
   )
 
 lazy val zio = (projectMatrix in file("implementations/zio"))
@@ -394,7 +407,10 @@ lazy val zio = (projectMatrix in file("implementations/zio"))
     )
   )
   .dependsOn(core % compileAndTest)
-  .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13, scala3))
+  .jvmPlatform(
+    scalaVersions = List(scala2_11, scala2_12, scala2_13, scala3),
+    settings = intellijImportOnly213
+  )
 
 lazy val scalaz = (projectMatrix in file("implementations/scalaz"))
   .settings(commonJvmSettings)
@@ -404,7 +420,10 @@ lazy val scalaz = (projectMatrix in file("implementations/scalaz"))
     libraryDependencies ++= Seq("org.scalaz" %% "scalaz-concurrent" % "7.2.30")
   )
   .dependsOn(core % compileAndTest)
-  .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13))
+  .jvmPlatform(
+    scalaVersions = List(scala2_11, scala2_12, scala2_13),
+    settings = intellijImportOnly213
+  )
 
 //----- backends
 //-- akka
@@ -421,7 +440,10 @@ lazy val akkaHttpBackend = (projectMatrix in file("akka-http-backend"))
     )
   )
   .dependsOn(core % compileAndTest)
-  .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13))
+  .jvmPlatform(
+    scalaVersions = List(scala2_11, scala2_12, scala2_13),
+    settings = intellijImportOnly213
+  )
 
 //-- async http client
 lazy val asyncHttpClientBackend = (projectMatrix in file("async-http-client-backend"))
@@ -434,7 +456,10 @@ lazy val asyncHttpClientBackend = (projectMatrix in file("async-http-client-back
     )
   )
   .dependsOn(core % compileAndTest)
-  .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13, scala3))
+  .jvmPlatform(
+    scalaVersions = List(scala2_11, scala2_12, scala2_13, scala3),
+    settings = intellijImportOnly213
+  )
 
 def asyncHttpClientBackendProject(proj: String, includeDotty: Boolean = false) = {
   ProjectMatrix(s"asyncHttpClientBackend${proj.capitalize}", file(s"async-http-client-backend/$proj"))
@@ -442,7 +467,10 @@ def asyncHttpClientBackendProject(proj: String, includeDotty: Boolean = false) =
     .settings(testServerSettings)
     .settings(name := s"async-http-client-backend-$proj")
     .dependsOn(asyncHttpClientBackend % compileAndTest)
-    .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13) ++ (if (includeDotty) List(scala3) else Nil))
+    .jvmPlatform(
+      scalaVersions = List(scala2_11, scala2_12, scala2_13) ++ (if (includeDotty) List(scala3) else Nil),
+      settings = intellijImportOnly213
+    )
 }
 
 lazy val asyncHttpClientFutureBackend =
@@ -492,7 +520,7 @@ lazy val okhttpBackend = (projectMatrix in file("okhttp-backend"))
       "com.squareup.okhttp3" % "okhttp" % "4.8.0"
     )
   )
-  .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13))
+  .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = intellijImportOnly213)
   .dependsOn(core % compileAndTest)
 
 def okhttpBackendProject(proj: String) = {
@@ -500,7 +528,7 @@ def okhttpBackendProject(proj: String) = {
     .settings(commonJvmSettings)
     .settings(testServerSettings)
     .settings(name := s"okhttp-backend-$proj")
-    .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13))
+    .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = intellijImportOnly213)
     .dependsOn(okhttpBackend)
 }
 
@@ -518,7 +546,7 @@ lazy val http4sBackend = (projectMatrix in file("http4s-backend"))
       "org.http4s" %% "http4s-blaze-client" % "0.21.6"
     )
   )
-  .jvmPlatform(scalaVersions = List(scala2_12, scala2_13))
+  .jvmPlatform(scalaVersions = List(scala2_12, scala2_13), settings = intellijImportOnly213)
   .dependsOn(cats % compileAndTest, core % compileAndTest, fs2 % "test->test")
 
 //-- httpclient-java11
@@ -532,7 +560,7 @@ lazy val httpClientBackend = (projectMatrix in file("httpclient-backend"))
       if (scalaVersion.value == scala3) Nil else List("-target:jvm-11")
     }
   )
-  .jvmPlatform(scalaVersions = List(scala2_13, scala3))
+  .jvmPlatform(scalaVersions = List(scala2_13, scala3), settings = intellijImportOnly213)
   .dependsOn(core % compileAndTest)
 
 def httpClientBackendProject(proj: String, includeDotty: Boolean = false) = {
@@ -540,7 +568,10 @@ def httpClientBackendProject(proj: String, includeDotty: Boolean = false) = {
     .settings(commonJvmSettings)
     .settings(testServerSettings)
     .settings(name := s"httpclient-backend-$proj")
-    .jvmPlatform(scalaVersions = List(scala2_13) ++ (if (includeDotty) List(scala3) else Nil))
+    .jvmPlatform(
+      scalaVersions = List(scala2_13) ++ (if (includeDotty) List(scala3) else Nil),
+      settings = intellijImportOnly213
+    )
     .dependsOn(httpClientBackend % compileAndTest)
 }
 
@@ -580,7 +611,7 @@ lazy val finagleBackend = (projectMatrix in file("finagle-backend"))
       "com.twitter" %% "finagle-http" % "20.6.0"
     )
   )
-  .jvmPlatform(scalaVersions = List(scala2_11, scala2_12))
+  .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = intellijImportOnly213)
   .dependsOn(core % compileAndTest)
 
 //----- json
@@ -588,8 +619,11 @@ lazy val jsonCommon = (projectMatrix in (file("json/common")))
   .settings(
     name := "json-common"
   )
-  .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = commonJvmSettings)
-  .jsPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = commonJsSettings)
+  .jvmPlatform(
+    scalaVersions = List(scala2_11, scala2_12, scala2_13),
+    settings = commonJvmSettings ++ intellijImportOnly213
+  )
+  .jsPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = commonJsSettings ++ intellijSkipImport)
 
 lazy val circe = (projectMatrix in file("json/circe"))
   .settings(
@@ -601,8 +635,11 @@ lazy val circe = (projectMatrix in file("json/circe"))
       _ => "org.scalatest" %%% "scalatest" % scalaTestVersion % Test
     )
   )
-  .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = commonJvmSettings)
-  .jsPlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonJsSettings)
+  .jvmPlatform(
+    scalaVersions = List(scala2_11, scala2_12, scala2_13),
+    settings = commonJvmSettings ++ intellijImportOnly213
+  )
+  .jsPlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonJsSettings ++ intellijSkipImport)
   .dependsOn(core, jsonCommon)
 
 lazy val json4sVersion = "3.6.9"
@@ -617,7 +654,7 @@ lazy val json4s = (projectMatrix in file("json/json4s"))
       "org.scalatest" %% "scalatest" % scalaTestVersion % Test
     )
   )
-  .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13))
+  .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = intellijImportOnly213)
   .dependsOn(core, jsonCommon)
 
 lazy val sprayJson = (projectMatrix in file("json/spray-json"))
@@ -629,7 +666,7 @@ lazy val sprayJson = (projectMatrix in file("json/spray-json"))
       "org.scalatest" %% "scalatest" % scalaTestVersion % Test
     )
   )
-  .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13))
+  .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = intellijImportOnly213)
   .dependsOn(core, jsonCommon)
 
 lazy val playJson = (projectMatrix in file("json/play-json"))
@@ -640,7 +677,10 @@ lazy val playJson = (projectMatrix in file("json/play-json"))
       _ => "org.scalatest" %%% "scalatest" % scalaTestVersion % Test
     )
   )
-  .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = commonJvmSettings)
+  .jvmPlatform(
+    scalaVersions = List(scala2_11, scala2_12, scala2_13),
+    settings = commonJvmSettings ++ intellijImportOnly213
+  )
   .dependsOn(core, jsonCommon)
 
 lazy val openTracingBackend = (projectMatrix in file("metrics/open-tracing-backend"))
@@ -653,7 +693,7 @@ lazy val openTracingBackend = (projectMatrix in file("metrics/open-tracing-backe
       scalaTest % Test
     )
   )
-  .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13))
+  .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = intellijImportOnly213)
   .dependsOn(core)
 
 lazy val prometheusBackend = (projectMatrix in file("metrics/prometheus-backend"))
@@ -665,7 +705,7 @@ lazy val prometheusBackend = (projectMatrix in file("metrics/prometheus-backend"
       scalaTest % Test
     )
   )
-  .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13))
+  .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = intellijImportOnly213)
   .dependsOn(core)
 
 lazy val zioTelemetryOpenTracingBackend = (projectMatrix in file("metrics/zio-telemetry-open-tracing-backend"))
@@ -677,7 +717,7 @@ lazy val zioTelemetryOpenTracingBackend = (projectMatrix in file("metrics/zio-te
       "org.scala-lang.modules" %% "scala-collection-compat" % "2.1.6"
     )
   )
-  .jvmPlatform(scalaVersions = List(scala2_12, scala2_13))
+  .jvmPlatform(scalaVersions = List(scala2_12, scala2_13), settings = intellijImportOnly213)
   .dependsOn(zio % compileAndTest)
   .dependsOn(core)
 
@@ -690,7 +730,7 @@ lazy val slf4jBackend = (projectMatrix in file("logging/slf4j"))
       scalaTest % Test
     )
   )
-  .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13))
+  .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = intellijImportOnly213)
   .dependsOn(core)
 
 lazy val examples = (projectMatrix in file("examples"))
@@ -705,7 +745,7 @@ lazy val examples = (projectMatrix in file("examples"))
       _ => logback
     )
   )
-  .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13))
+  .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = intellijImportOnly213)
   .dependsOn(
     core,
     asyncHttpClientMonixBackend,
@@ -717,6 +757,7 @@ lazy val examples = (projectMatrix in file("examples"))
     slf4jBackend
   )
 
+//TODO this should be invoked by compilation process, see #https://github.com/scalameta/mdoc/issues/355
 val compileDocs: TaskKey[Unit] = taskKey[Unit]("Compiles docs module throwing away its output")
 compileDocs := {
   (docs.jvm(scala2_13) / mdoc).toTask(" --out target/sttp-docs").value
