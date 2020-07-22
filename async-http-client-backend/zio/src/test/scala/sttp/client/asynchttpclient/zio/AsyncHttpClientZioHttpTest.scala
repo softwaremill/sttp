@@ -5,12 +5,11 @@ import sttp.client.impl.zio._
 import sttp.client.testing.{CancelTest, ConvertToFuture, HttpTest}
 import zio.Task
 import zio.clock.Clock
-import zio.stream.Stream
 import zio.duration._
 
-class AsyncHttpClientZioHttpTest extends HttpTest[Task] with CancelTest[Task, Nothing] {
+class AsyncHttpClientZioHttpTest extends HttpTest[Task] with CancelTest[Task, Any] {
 
-  override implicit val backend: SttpBackend[Task, Stream[Throwable, Byte], NothingT] =
+  override implicit val backend: SttpBackend[Task, Any, NothingT] =
     runtime.unsafeRun(AsyncHttpClientZioBackend())
   override implicit val convertToFuture: ConvertToFuture[Task] = convertZioTaskToFuture
 

@@ -13,7 +13,7 @@ import zio.duration._
 import scala.concurrent.duration.FiniteDuration
 
 class AsyncHttpClientHighLevelZioWebsocketTest extends AsyncHttpClientHighLevelWebsocketTest[Task] {
-  override implicit val backend: SttpBackend[Task, Nothing, WebSocketHandler] =
+  override implicit val backend: SttpBackend[Task, Any, WebSocketHandler] =
     runtime.unsafeRun(AsyncHttpClientZioBackend())
   override implicit val convertToFuture: ConvertToFuture[Task] = convertZioTaskToFuture
   override implicit val monad: MonadError[Task] = new RIOMonadAsyncError

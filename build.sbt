@@ -403,6 +403,7 @@ lazy val zio = (projectMatrix in file("implementations/zio"))
     name := "zio",
     publishArtifact in Test := true,
     libraryDependencies ++= Seq(
+      "dev.zio" %% "zio-streams" % zioVersion,
       "dev.zio" %% "zio" % zioVersion
     )
   )
@@ -485,7 +486,6 @@ lazy val asyncHttpClientZioBackend =
   asyncHttpClientBackendProject("zio", includeDotty = false)
     .settings(
       libraryDependencies ++= Seq(
-        "dev.zio" %% "zio-streams" % zioVersion,
         "dev.zio" %% "zio-interop-reactivestreams" % zioInteropRsVersion
       )
     )
@@ -594,8 +594,6 @@ lazy val httpClientZioBackend =
     .settings(
       libraryDependencies ++=
         Seq(
-          "dev.zio" %% "zio" % zioVersion,
-          "dev.zio" %% "zio-streams" % zioVersion,
           "dev.zio" %% "zio-interop-reactivestreams" % zioInteropRsVersion
         )
     )

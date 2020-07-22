@@ -14,6 +14,7 @@ import org.reactivestreams.Publisher
 import scalaz.concurrent.Task
 import sttp.client.asynchttpclient.{AsyncHttpClientBackend, WebSocketHandler}
 import sttp.client.impl.scalaz.TaskMonadAsyncError
+import sttp.client.internal.NoStreams
 import sttp.client.testing.SttpBackendStub
 import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 
@@ -21,7 +22,15 @@ class AsyncHttpClientScalazBackend private (
     asyncHttpClient: AsyncHttpClient,
     closeClient: Boolean,
     customizeRequest: BoundRequestBuilder => BoundRequestBuilder
-) extends AsyncHttpClientBackend[Task, Nothing](asyncHttpClient, TaskMonadAsyncError, closeClient, customizeRequest) {
+) extends AsyncHttpClientBackend[Task, Nothing, Any](
+      asyncHttpClient,
+      TaskMonadAsyncError,
+      closeClient,
+      customizeRequest
+    ) {
+
+  override val streams: NoStreams = NoStreams
+
   override protected def streamBodyToPublisher(s: Nothing): Publisher[ByteBuf] =
     s // nothing is everything
 
@@ -34,15 +43,13 @@ object AsyncHttpClientScalazBackend {
       asyncHttpClient: AsyncHttpClient,
       closeClient: Boolean,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder
-  ): SttpBackend[Task, Nothing, WebSocketHandler] =
-    new FollowRedirectsBackend[Task, Nothing, WebSocketHandler](
-      new AsyncHttpClientScalazBackend(asyncHttpClient, closeClient, customizeRequest)
-    )
+  ): SttpBackend[Task, Any, WebSocketHandler] =
+    new FollowRedirectsBackend(new AsyncHttpClientScalazBackend(asyncHttpClient, closeClient, customizeRequest))
 
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): Task[SttpBackend[Task, Nothing, WebSocketHandler]] =
+  ): Task[SttpBackend[Task, Any, WebSocketHandler]] =
     Task.delay(
       AsyncHttpClientScalazBackend(AsyncHttpClientBackend.defaultClient(options), closeClient = true, customizeRequest)
     )
@@ -50,7 +57,7 @@ object AsyncHttpClientScalazBackend {
   def usingConfig(
       cfg: AsyncHttpClientConfig,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): Task[SttpBackend[Task, Nothing, WebSocketHandler]] =
+  ): Task[SttpBackend[Task, Any, WebSocketHandler]] =
     Task.delay(AsyncHttpClientScalazBackend(new DefaultAsyncHttpClient(cfg), closeClient = true, customizeRequest))
 
   /**
@@ -60,7 +67,7 @@ object AsyncHttpClientScalazBackend {
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): Task[SttpBackend[Task, Nothing, WebSocketHandler]] =
+  ): Task[SttpBackend[Task, Any, WebSocketHandler]] =
     Task.delay(
       AsyncHttpClientScalazBackend(
         AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
@@ -72,7 +79,7 @@ object AsyncHttpClientScalazBackend {
   def usingClient(
       client: AsyncHttpClient,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): SttpBackend[Task, Nothing, WebSocketHandler] =
+  ): SttpBackend[Task, Any, WebSocketHandler] =
     AsyncHttpClientScalazBackend(client, closeClient = false, customizeRequest)
 
   /**
@@ -80,5 +87,5 @@ object AsyncHttpClientScalazBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub: SttpBackendStub[Task, Nothing, WebSocketHandler] = SttpBackendStub(TaskMonadAsyncError)
+  def stub: SttpBackendStub[Task, Any, WebSocketHandler] = SttpBackendStub(TaskMonadAsyncError)
 }
