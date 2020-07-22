@@ -14,7 +14,7 @@ import org.reactivestreams.Publisher
 import sttp.client.asynchttpclient.{AsyncHttpClientBackend, WebSocketHandler}
 import sttp.client.monad.FutureMonad
 import sttp.client.testing.SttpBackendStub
-import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
+import sttp.client.{FollowRedirectsBackend, NoStreams, Streams, SttpBackend, SttpBackendOptions}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -24,7 +24,15 @@ class AsyncHttpClientFutureBackend private (
     customizeRequest: BoundRequestBuilder => BoundRequestBuilder
 )(implicit
     ec: ExecutionContext
-) extends AsyncHttpClientBackend[Future, Nothing](asyncHttpClient, new FutureMonad, closeClient, customizeRequest) {
+) extends AsyncHttpClientBackend[Future, Nothing, Any](
+      asyncHttpClient,
+      new FutureMonad,
+      closeClient,
+      customizeRequest
+    ) {
+
+  override val streams: NoStreams = NoStreams
+
   override protected def streamBodyToPublisher(s: Nothing): Publisher[ByteBuf] =
     s // nothing is everything
 
@@ -39,8 +47,8 @@ object AsyncHttpClientFutureBackend {
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder
   )(implicit
       ec: ExecutionContext
-  ): SttpBackend[Future, Nothing, WebSocketHandler] =
-    new FollowRedirectsBackend[Future, Nothing, WebSocketHandler](
+  ): SttpBackend[Future, Any, WebSocketHandler] =
+    new FollowRedirectsBackend[Future, Any, WebSocketHandler](
       new AsyncHttpClientFutureBackend(asyncHttpClient, closeClient, customizeRequest)
     )
 
@@ -52,7 +60,7 @@ object AsyncHttpClientFutureBackend {
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, Nothing, WebSocketHandler] =
+  )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, Any, WebSocketHandler] =
     AsyncHttpClientFutureBackend(AsyncHttpClientBackend.defaultClient(options), closeClient = true, customizeRequest)
 
   /**
@@ -63,7 +71,7 @@ object AsyncHttpClientFutureBackend {
   def usingConfig(
       cfg: AsyncHttpClientConfig,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, Nothing, WebSocketHandler] =
+  )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, Any, WebSocketHandler] =
     AsyncHttpClientFutureBackend(new DefaultAsyncHttpClient(cfg), closeClient = true, customizeRequest)
 
   /**
@@ -76,7 +84,7 @@ object AsyncHttpClientFutureBackend {
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, Nothing, WebSocketHandler] =
+  )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, Any, WebSocketHandler] =
     AsyncHttpClientFutureBackend(
       AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
       closeClient = true,
@@ -91,7 +99,7 @@ object AsyncHttpClientFutureBackend {
   def usingClient(
       client: AsyncHttpClient,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, Nothing, WebSocketHandler] =
+  )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, Any, WebSocketHandler] =
     AsyncHttpClientFutureBackend(client, closeClient = false, customizeRequest)
 
   /**
@@ -101,6 +109,6 @@ object AsyncHttpClientFutureBackend {
     */
   def stub(implicit
       ec: ExecutionContext = ExecutionContext.global
-  ): SttpBackendStub[Future, Nothing, WebSocketHandler] =
+  ): SttpBackendStub[Future, Any, WebSocketHandler] =
     SttpBackendStub(new FutureMonad())
 }

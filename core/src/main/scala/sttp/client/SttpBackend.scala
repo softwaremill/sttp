@@ -10,7 +10,7 @@ import scala.language.higherKinds
   *       Other exceptions should be thrown unchanged.
   * @tparam F The type constructor in which responses are wrapped. E.g. [[Identity]]
   *           for synchronous backends, [[scala.concurrent.Future]] for asynchronous backends.
-  * @tparam P TODO (capabilities provided by the backend)
+  * @tparam P TODO (supported capabilities)
   * @tparam WS_HANDLER The type of websocket handlers that are supported by this backend.
   *                    The handler is parametrised by the value that is being returned
   *                    when the websocket is established. [[NothingT]], if websockets are
