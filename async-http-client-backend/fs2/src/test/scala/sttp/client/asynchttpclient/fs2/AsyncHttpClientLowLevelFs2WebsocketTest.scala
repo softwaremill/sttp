@@ -10,7 +10,7 @@ import sttp.client.testing.websocket.LowLevelListenerWebSocketTest
 class AsyncHttpClientLowLevelFs2WebsocketTest
     extends LowLevelListenerWebSocketTest[IO, AHCWebSocket, WebSocketHandler]
     with CatsTestBase {
-  implicit val backend: SttpBackend[IO, Nothing, WebSocketHandler] = AsyncHttpClientFs2Backend[IO]().unsafeRunSync()
+  implicit val backend: SttpBackend[IO, Any, WebSocketHandler] = AsyncHttpClientFs2Backend[IO]().unsafeRunSync()
 
   override def createHandler(_onTextFrame: String => Unit): WebSocketHandler[AHCWebSocket] =
     WebSocketHandler.fromListener(new WebSocketListener {

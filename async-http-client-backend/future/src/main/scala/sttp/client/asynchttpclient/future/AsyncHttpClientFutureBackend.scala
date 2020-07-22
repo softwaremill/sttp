@@ -12,9 +12,10 @@ import org.asynchttpclient.{
 }
 import org.reactivestreams.Publisher
 import sttp.client.asynchttpclient.{AsyncHttpClientBackend, WebSocketHandler}
+import sttp.client.internal.NoStreams
 import sttp.client.monad.FutureMonad
 import sttp.client.testing.SttpBackendStub
-import sttp.client.{FollowRedirectsBackend, NoStreams, Streams, SttpBackend, SttpBackendOptions}
+import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -48,9 +49,7 @@ object AsyncHttpClientFutureBackend {
   )(implicit
       ec: ExecutionContext
   ): SttpBackend[Future, Any, WebSocketHandler] =
-    new FollowRedirectsBackend[Future, Any, WebSocketHandler](
-      new AsyncHttpClientFutureBackend(asyncHttpClient, closeClient, customizeRequest)
-    )
+    new FollowRedirectsBackend(new AsyncHttpClientFutureBackend(asyncHttpClient, closeClient, customizeRequest))
 
   /**
     * @param ec The execution context for running non-network related operations,

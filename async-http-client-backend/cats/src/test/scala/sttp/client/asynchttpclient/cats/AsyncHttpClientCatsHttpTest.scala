@@ -9,8 +9,8 @@ import sttp.client.testing.{CancelTest, HttpTest}
 
 import scala.concurrent.duration._
 
-class AsyncHttpClientCatsHttpTest extends HttpTest[IO] with CancelTest[IO, Nothing] with CatsTestBase {
-  override implicit val backend: SttpBackend[IO, Nothing, NothingT] = AsyncHttpClientCatsBackend[IO]().unsafeRunSync()
+class AsyncHttpClientCatsHttpTest extends HttpTest[IO] with CancelTest[IO, Any] with CatsTestBase {
+  override implicit val backend: SttpBackend[IO, Any, NothingT] = AsyncHttpClientCatsBackend[IO]().unsafeRunSync()
 
   "illegal url exceptions" - {
     "should be wrapped in the effect wrapper" in {

@@ -11,8 +11,3 @@ class Streams[S] {
 trait Effect[F[_]]
 
 trait WebSockets
-
-trait NoStreams extends Streams[Nothing] {
-  override type BinaryStream = Nothing
-}
-object NoStreams extends NoStreams

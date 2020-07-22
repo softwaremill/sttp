@@ -18,7 +18,7 @@ import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class AsyncHttpClientPipedFs2WebsocketsTest extends AsyncFlatSpec with Matchers with ToFutureWrapper with CatsTestBase {
-  implicit val backend: SttpBackend[IO, Nothing, WebSocketHandler] = AsyncHttpClientFs2Backend[IO]().unsafeRunSync()
+  implicit val backend: SttpBackend[IO, Any, WebSocketHandler] = AsyncHttpClientFs2Backend[IO]().unsafeRunSync()
 
   def createHandler: Option[Int] => IO[WebSocketHandler[WebSocket[IO]]] = Fs2WebSocketHandler[IO](_)
 
@@ -46,10 +46,12 @@ class AsyncHttpClientPipedFs2WebsocketsTest extends AsyncFlatSpec with Matchers 
       .flatMap {
         case (response, results) =>
           Fs2WebSockets.handleSocketThroughTextPipe(response.result) { in =>
-            in.evalMap(m => results.update(_.enqueue(m)).flatMap(_ => results.get.map(_.size))).flatMap {
-              case 2 => Stream(None) // terminating the stream
-              case _ => Stream.empty // waiting for more messages
-            }.unNoneTerminate
+            in.evalMap(m => results.update(_.enqueue(m)).flatMap(_ => results.get.map(_.size)))
+              .flatMap {
+                case 2 => Stream(None) // terminating the stream
+                case _ => Stream.empty // waiting for more messages
+              }
+              .unNoneTerminate
           } >> results.get.map(_ should contain theSameElementsInOrderAs List("test10", "test20"))
       }
       .toFuture()

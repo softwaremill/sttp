@@ -6,7 +6,9 @@ import fs2.{Chunk, Stream}
 import sttp.client.impl.cats.CatsTestBase
 import sttp.client.testing.streaming.StreamingTest
 
-trait Fs2StreamingTest extends StreamingTest[IO, Stream[IO, Byte]] with CatsTestBase {
+trait Fs2StreamingTest extends StreamingTest[IO, Fs2Streams[IO]] with CatsTestBase {
+  override val streams: Fs2Streams[IO] = new Fs2Streams[IO] {}
+
   override def bodyProducer(chunks: Iterable[Array[Byte]]): Stream[IO, Byte] =
     Stream.fromIterator[IO](chunks.iterator).flatMap(arr => Stream.chunk(Chunk.array(arr)))
 

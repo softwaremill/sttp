@@ -10,7 +10,7 @@ import scala.concurrent.duration._
 import cats.implicits._
 
 class AsyncHttpClientHighLevelFs2WebsocketTest extends AsyncHttpClientHighLevelWebsocketTest[IO] with CatsTestBase {
-  implicit val backend: SttpBackend[IO, Nothing, WebSocketHandler] = AsyncHttpClientFs2Backend[IO]().unsafeRunSync()
+  implicit val backend: SttpBackend[IO, Any, WebSocketHandler] = AsyncHttpClientFs2Backend[IO]().unsafeRunSync()
 
   override def createHandler: Option[Int] => IO[WebSocketHandler[WebSocket[IO]]] = Fs2WebSocketHandler[IO](_)
 
