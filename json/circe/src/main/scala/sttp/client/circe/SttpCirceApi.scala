@@ -22,34 +22,34 @@ trait SttpCirceApi {
     * - `Left(HttpError(String))` if the response code was other than 2xx (deserialization is not attempted)
     * - `Left(DeserializationError)` if there's an error during deserialization
     */
-  def asJson[B: Decoder: IsOption]: ResponseAs[Choice[HttpError[String],DeserializationError[io.circe.Error],B], Nothing] =
+  def asJson[B: Decoder: IsOption]
+      : ResponseAs[Choice[HttpError[String], DeserializationError[io.circe.Error], B], Nothing] =
     ???
 
-  def unsafeHttp[L<: Exception,M,R] : Choice[L,M,R] => Choice[Nothing,M,R]= {
-    case Choice.Left(value) => throw value
+  def unsafeHttp[L <: Exception, M, R]: Choice[L, M, R] => Choice[Nothing, M, R] = {
+    case Choice.Left(value)   => throw value
     case Choice.Middle(value) => Choice.Middle(value)
-    case Choice.Right(value) => Choice.Right(value)
+    case Choice.Right(value)  => Choice.Right(value)
   }
-  
-  def unsafeDeserialization[L,M<:Exception,R] : Choice[L,M,R] => Choice[L,Nothing,R]= {
-    case Choice.Left(value) => Choice.Left(value)
+
+  def unsafeDeserialization[L, M <: Exception, R]: Choice[L, M, R] => Choice[L, Nothing, R] = {
+    case Choice.Left(value)   => Choice.Left(value)
     case Choice.Middle(value) => throw value
-    case Choice.Right(value) => Choice.Right(value)
+    case Choice.Right(value)  => Choice.Right(value)
   }
-  
+
   {
-    val l : Either[Nothing, String ]  = ???
+    val l: Either[Nothing, String] = ???
     l.merge
     import sttp.client.circe.SttpCirceApi._
 
-    val value: ResponseAs[Choice[HttpError[String], DeserializationError[circe.Error], String], Nothing] = asJson[String]
-    val value1: ResponseAs[Either[DeserializationError[circe.Error], String], Nothing] = value.map(unsafeHttp).merge
-    val value2: ResponseAs[Either[HttpError[String], String], Nothing] = asJson[String].map(unsafeDeserialization).merge
-    val value3: ResponseAs[String, Nothing] = asJson[String].map(unsafeHttp).map(unsafeDeserialization).merge
+    val value: ResponseAs[Choice[HttpError[String], DeserializationError[circe.Error], String], Nothing] =
+      asJson[String]
+    val value1: ResponseAs[Either[DeserializationError[circe.Error], String], Nothing] = value.map(unsafeHttp).merge2
+    val value2: ResponseAs[Either[HttpError[String], String], Nothing] = asJson[String].map(unsafeDeserialization).merge2
+    val value3: ResponseAs[String, Nothing] = asJson[String].map(unsafeHttp).map(unsafeDeserialization).merge2
   }
-  
 
-  
   /**
     * Tries to deserialize the body from a string into JSON, regardless of the response code. Returns:
     * - `Right(b)` if the parsing was successful
@@ -72,39 +72,45 @@ trait SttpCirceApi {
 object SttpCirceApi {
   trait =:!=[A, B]
 
-  implicit def neq[A, B] : A =:!= B = new =:!=[A, B] {}
-  implicit def neqAmbig1[A] : A =:!= A = ???
-  implicit def neqAmbig2[A] : A =:!= A = ???
-  
-  class MergeableChoice[A,B](private val x: Choice[B, B, A])(implicit ev: B =:= A) {
-    def merge: A = x match {
-      case Choice.Right(a) => a
-      case Choice.Middle(a) => ev.apply(a)
-      case Choice.Left(a)  => ev.apply(a)
-    }
+  implicit def neq[A, B]: A =:!= B = new =:!=[A, B] {}
+  implicit def neqAmbig1[A]: A =:!= A = ???
+  implicit def neqAmbig2[A]: A =:!= A = ???
+
+  class MergeableChoice[A, B](private val x: Choice[B, B, A])(implicit ev: B =:= A) {
+    def merge: A =
+      x match {
+        case Choice.Right(a)  => a
+        case Choice.Middle(a) => ev.apply(a)
+        case Choice.Left(a)   => ev.apply(a)
+      }
   }
 
-  class PartiallyMergeableChoice2[A,B](private val x: Choice[B, B, A])(implicit ev: B =:!= A) {
-    def merge: Either[B,A] = x match {
-      case Choice.Right(a) => Right(a)
-      case Choice.Middle(a) => Left(a)
-      case Choice.Left(a)  => Left(a)
-    }
+  class PartiallyMergeableChoice2[A, B](private val x: Choice[B, B, A])(implicit ev: B =:!= A) {
+    def merge: Either[B, A] =
+      x match {
+        case Choice.Right(a)  => Right(a)
+        case Choice.Middle(a) => Left(a)
+        case Choice.Left(a)   => Left(a)
+      }
   }
   
-  implicit class RichResponseAs[T,S](v: ResponseAs[T,S]) {
-    def merge[R](implicit merger: Merger[T,R]): ResponseAs[R, S] = {
-      v.map(v=> merger.merge(v))
+  implicit class RichResponseAs2[A,B, +S](v: ResponseAs[Choice[B,B,A], S]) {
+    def merge2(implicit ev: B =:= A): ResponseAs[A, S] = {
+      v.map(s=> new MergeableChoice(s).merge)
+    }
+
+    def merge2(implicit ev: B =:!= A): ResponseAs[Either[B,A], S] = {
+      v.map(s=> new PartiallyMergeableChoice2(s).merge)
     }
   }
 }
 
-sealed abstract class Choice[+L,+M,+R]() {
-  def triMap[L2,M2,R2](f: L=>L2)(g: M=>M2)(h: R=>R2) : Choice[L2,M2,R2] = {
+sealed abstract class Choice[+L, +M, +R]() {
+  def triMap[L2, M2, R2](f: L => L2)(g: M => M2)(h: R => R2): Choice[L2, M2, R2] = {
     this match {
-      case Choice.Left(value) => Choice.Left(f(value))
-      case Choice.Middle(value) =>Choice.Middle(g(value))
-      case Choice.Right(value) =>Choice.Right(h(value))
+      case Choice.Left(value)   => Choice.Left(f(value))
+      case Choice.Middle(value) => Choice.Middle(g(value))
+      case Choice.Right(value)  => Choice.Right(h(value))
     }
   }
 }
@@ -112,27 +118,6 @@ sealed abstract class Choice[+L,+M,+R]() {
 object Choice {
   case class Left[L](value: L) extends Choice[L, Nothing, Nothing]
   case class Middle[M](value: M) extends Choice[Nothing, M, Nothing]
-  case class Right[R](value: R) extends Choice[Nothing,Nothing, R]
+  case class Right[R](value: R) extends Choice[Nothing, Nothing, R]
 }
 
-trait Merger[-T,R] {
-  def merge(t:T):R
-}
-
-object Merger extends LowPrMergerInstances {
-  implicit def mergeChoice[A,B](implicit ev: B =:!= A) : Merger[Choice[B,B,A],Either[B,A]] = new Merger[Choice[B,B,A],Either[B,A]] {
-    override def merge(t: Choice[B, B, A]): Either[B, A] = {
-      new PartiallyMergeableChoice2(t).merge
-    }
-  } 
-  
-  implicit def mergeChoiceSingle[A,B](implicit ev: B =:= A): Merger[Choice[B,B,A],A] = new Merger[Choice[B,B,A],A] {
-    override def merge(t: Choice[B, B, A]): A = new MergeableChoice(t).merge
-  }
-}
-
-trait LowPrMergerInstances  {
-  implicit def anyMerger[T]:Merger[T,T] = new Merger[T,T] {
-    override def merge(t: T): T = t
-  }
-}
