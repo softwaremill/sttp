@@ -4,6 +4,7 @@ import io.circe
 import sttp.client._
 import io.circe.parser.decode
 import io.circe.{Decoder, Encoder, Printer}
+import sttp.client.circe.SttpCirceApi.{=:!=, MergeableChoice, PartiallyMergeableChoice2}
 import sttp.client.internal.Utf8
 import sttp.model.MediaType
 
@@ -42,9 +43,9 @@ trait SttpCirceApi {
     import sttp.client.circe.SttpCirceApi._
 
     val value: ResponseAs[Choice[HttpError[String], DeserializationError[circe.Error], String], Nothing] = asJson[String]
-    val value1: ResponseAs[Either[DeserializationError[circe.Error], String], Nothing] = value.map(unsafeHttp).map(_.merge)
-    val value2: ResponseAs[Either[HttpError[String], String], Nothing] = asJson[String].map(unsafeDeserialization).map(_.merge)
-    val value3: ResponseAs[String, Nothing] = asJson[String].map(unsafeHttp).map(unsafeDeserialization).map(_.merge)
+    val value1: ResponseAs[Either[DeserializationError[circe.Error], String], Nothing] = value.map(unsafeHttp).merge
+    val value2: ResponseAs[Either[HttpError[String], String], Nothing] = asJson[String].map(unsafeDeserialization).merge
+    val value3: ResponseAs[String, Nothing] = asJson[String].map(unsafeHttp).map(unsafeDeserialization).merge
   }
   
 
@@ -75,7 +76,7 @@ object SttpCirceApi {
   implicit def neqAmbig1[A] : A =:!= A = ???
   implicit def neqAmbig2[A] : A =:!= A = ???
   
-  implicit class MergeableChoice[A,B](private val x: Choice[B, B, A])(implicit ev: B =:= A) {
+  class MergeableChoice[A,B](private val x: Choice[B, B, A])(implicit ev: B =:= A) {
     def merge: A = x match {
       case Choice.Right(a) => a
       case Choice.Middle(a) => ev.apply(a)
@@ -83,11 +84,17 @@ object SttpCirceApi {
     }
   }
 
-  implicit class PartiallyMergeableChoice2[A,B](private val x: Choice[B, B, A])(implicit ev: B =:!= A) {
+  class PartiallyMergeableChoice2[A,B](private val x: Choice[B, B, A])(implicit ev: B =:!= A) {
     def merge: Either[B,A] = x match {
       case Choice.Right(a) => Right(a)
       case Choice.Middle(a) => Left(a)
       case Choice.Left(a)  => Left(a)
+    }
+  }
+  
+  implicit class RichResponseAs[T,S](v: ResponseAs[T,S]) {
+    def merge[R](implicit merger: Merger[T,R]): ResponseAs[R, S] = {
+      v.map(v=> merger.merge(v))
     }
   }
 }
@@ -106,4 +113,26 @@ object Choice {
   case class Left[L](value: L) extends Choice[L, Nothing, Nothing]
   case class Middle[M](value: M) extends Choice[Nothing, M, Nothing]
   case class Right[R](value: R) extends Choice[Nothing,Nothing, R]
+}
+
+trait Merger[-T,R] {
+  def merge(t:T):R
+}
+
+object Merger extends LowPrMergerInstances {
+  implicit def mergeChoice[A,B](implicit ev: B =:!= A) : Merger[Choice[B,B,A],Either[B,A]] = new Merger[Choice[B,B,A],Either[B,A]] {
+    override def merge(t: Choice[B, B, A]): Either[B, A] = {
+      new PartiallyMergeableChoice2(t).merge
+    }
+  } 
+  
+  implicit def mergeChoiceSingle[A,B](implicit ev: B =:= A): Merger[Choice[B,B,A],A] = new Merger[Choice[B,B,A],A] {
+    override def merge(t: Choice[B, B, A]): A = new MergeableChoice(t).merge
+  }
+}
+
+trait LowPrMergerInstances  {
+  implicit def anyMerger[T]:Merger[T,T] = new Merger[T,T] {
+    override def merge(t: T): T = t
+  }
 }
