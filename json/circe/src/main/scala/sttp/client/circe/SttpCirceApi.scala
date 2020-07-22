@@ -45,9 +45,9 @@ trait SttpCirceApi {
 
     val value: ResponseAs[Choice[HttpError[String], DeserializationError[circe.Error], String], Nothing] =
       asJson[String]
-    val value1: ResponseAs[Either[DeserializationError[circe.Error], String], Nothing] = value.map(unsafeHttp).merge2
-    val value2: ResponseAs[Either[HttpError[String], String], Nothing] = asJson[String].map(unsafeDeserialization).merge2
-    val value3: ResponseAs[String, Nothing] = asJson[String].map(unsafeHttp).map(unsafeDeserialization).merge2
+    val value1 = value.map(unsafeHttp).merge2
+    val value2 = asJson[String].map(unsafeDeserialization).merge2
+    val value3 = asJson[String].map(unsafeHttp).map(unsafeDeserialization).merge2
   }
 
   /**
@@ -94,12 +94,14 @@ object SttpCirceApi {
       }
   }
   
-  implicit class RichResponseAs2[A,B, +S](v: ResponseAs[Choice[B,B,A], S]) {
-    def merge2(implicit ev: B =:= A): ResponseAs[A, S] = {
+  implicit class RichResponseAs2[A,B, +S](v: ResponseAs[Choice[B,B,A], S])(implicit ev: B =:= A) {
+    def merge2: ResponseAs[A, S] = {
       v.map(s=> new MergeableChoice(s).merge)
     }
-
-    def merge2(implicit ev: B =:!= A): ResponseAs[Either[B,A], S] = {
+  }
+  
+  implicit class RichResponseAs3[A,B,+S](v:ResponseAs[Choice[B,B,A],S])(implicit ev: B =:!= A){
+    def merge2: ResponseAs[Either[B,A], S] = {
       v.map(s=> new PartiallyMergeableChoice2(s).merge)
     }
   }
