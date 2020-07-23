@@ -9,7 +9,6 @@ import sttp.client.prometheus.PrometheusBackend.RequestCollectors
 import sttp.client.ws.WebSocketResponse
 
 import scala.collection.mutable
-import scala.language.higherKinds
 
 object PrometheusBackend {
   val DefaultHistogramName = "sttp_request_latency"
@@ -18,8 +17,8 @@ object PrometheusBackend {
   val DefaultErrorCounterName = "sttp_requests_error_count"
   val DefaultFailureCounterName = "sttp_requests_failure_count"
 
-  def apply[F[_], S, WS_HANDLER[_]](
-      delegate: SttpBackend[F, S, WS_HANDLER],
+  def apply[F[_], P, WS_HANDLER[_]](
+      delegate: SttpBackend[F, P, WS_HANDLER],
       requestToHistogramNameMapper: Request[_, _] => Option[HistogramCollectorConfig] = (_: Request[_, _]) =>
         Some(HistogramCollectorConfig(DefaultHistogramName)),
       requestToInProgressGaugeNameMapper: Request[_, _] => Option[CollectorConfig] = (_: Request[_, _]) =>
@@ -31,10 +30,10 @@ object PrometheusBackend {
       requestToFailureCounterMapper: Request[_, _] => Option[CollectorConfig] = (_: Request[_, _]) =>
         Some(CollectorConfig(DefaultFailureCounterName)),
       collectorRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry
-  ): SttpBackend[F, S, WS_HANDLER] = {
+  ): SttpBackend[F, P, WS_HANDLER] = {
     // redirects should be handled before prometheus
-    new FollowRedirectsBackend[F, S, WS_HANDLER](
-      new ListenerBackend[F, S, WS_HANDLER, RequestCollectors](
+    new FollowRedirectsBackend[F, P, WS_HANDLER](
+      new ListenerBackend[F, P, WS_HANDLER, RequestCollectors](
         delegate,
         RequestListener.lift(
           new PrometheusListener(

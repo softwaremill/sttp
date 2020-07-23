@@ -12,12 +12,12 @@ import sttp.client.opentracing.OpenTracingBackend._
 
 import scala.collection.JavaConverters._
 
-class OpenTracingBackend[F[_], S] private (delegate: SttpBackend[F, S, NothingT], tracer: Tracer)
-    extends SttpBackend[F, S, NothingT] {
+class OpenTracingBackend[F[_], P] private (delegate: SttpBackend[F, P, NothingT], tracer: Tracer)
+    extends SttpBackend[F, P, NothingT] {
 
   private implicit val _monad: MonadError[F] = responseMonad
 
-  override def send[T](request: Request[T, S]): F[Response[T]] =
+  override def send[T, R >: P](request: Request[T, R]): F[Response[T]] =
     responseMonad
       .eval {
         val spanBuilderTransformer: SpanBuilderTransformer =
@@ -66,8 +66,8 @@ class OpenTracingBackend[F[_], S] private (delegate: SttpBackend[F, S, NothingT]
         }
       }
 
-  override def openWebsocket[T, WS_RESULT](
-      request: Request[T, S],
+  override def openWebsocket[T, WS_RESULT, R >: P](
+      request: Request[T, R],
       handler: NothingT[WS_RESULT]
   ): F[WebSocketResponse[WS_RESULT]] = handler
 
@@ -99,7 +99,7 @@ object OpenTracingBackend {
       tagWithTransformSpanBuilder(_.asChildOf(parent))
   }
 
-  def apply[F[_], S](delegate: SttpBackend[F, S, NothingT], tracer: Tracer): SttpBackend[F, S, NothingT] = {
-    new FollowRedirectsBackend[F, S, NothingT](new OpenTracingBackend(delegate, tracer))
+  def apply[F[_], P](delegate: SttpBackend[F, P, NothingT], tracer: Tracer): SttpBackend[F, P, NothingT] = {
+    new FollowRedirectsBackend[F, P, NothingT](new OpenTracingBackend(delegate, tracer))
   }
 }
