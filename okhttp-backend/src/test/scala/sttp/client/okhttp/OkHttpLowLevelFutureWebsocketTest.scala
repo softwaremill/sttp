@@ -8,7 +8,7 @@ import sttp.client.testing.websocket.LowLevelListenerWebSocketTest
 import scala.concurrent.Future
 
 class OkHttpLowLevelFutureWebsocketTest extends LowLevelListenerWebSocketTest[Future, WebSocket, WebSocketHandler] {
-  override implicit val backend: SttpBackend[Future, Nothing, WebSocketHandler] = OkHttpFutureBackend()
+  override implicit val backend: SttpBackend[Future, Any, WebSocketHandler] = OkHttpFutureBackend()
   override implicit val convertToFuture: ConvertToFuture[Future] = ConvertToFuture.future
 
   override def createHandler(_onTextFrame: String => Unit): WebSocketHandler[WebSocket] =

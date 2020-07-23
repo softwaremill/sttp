@@ -6,7 +6,7 @@ import sttp.client.testing.ConvertToFuture
 import sttp.client.testing.websocket.LowLevelListenerWebSocketTest
 
 class OkHttpLowLevelSyncWebsocketTest extends LowLevelListenerWebSocketTest[Identity, WebSocket, WebSocketHandler] {
-  override implicit val backend: SttpBackend[Identity, Nothing, WebSocketHandler] = OkHttpSyncBackend()
+  override implicit val backend: SttpBackend[Identity, Any, WebSocketHandler] = OkHttpSyncBackend()
   override implicit val convertToFuture: ConvertToFuture[Identity] = ConvertToFuture.id
 
   override def createHandler(_onTextFrame: String => Unit): WebSocketHandler[WebSocket] =

@@ -26,7 +26,7 @@ import okio.{BufferedSink, ByteString, Okio}
 import sttp.client.ResponseAs.EagerResponseHandler
 import sttp.client.SttpBackendOptions.Proxy
 import sttp.client.SttpClientException.ReadException
-import sttp.client.internal.FileHelpers
+import sttp.client.internal.{FileHelpers, NoStreams, toByteArray}
 import sttp.model._
 import sttp.client.monad.{Canceler, FutureMonad, IdMonad, MonadAsyncError, MonadError}
 import sttp.client.okhttp.OkHttpBackend.EncodingHandler
@@ -44,19 +44,21 @@ import sttp.client.{
   SttpBackendOptions,
   _
 }
-import sttp.client.internal.toByteArray
 
 import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 import scala.util.{Failure, Try}
 
-abstract class OkHttpBackend[F[_], S](
+abstract class OkHttpBackend[F[_], S <: Streams[S], P](
     client: OkHttpClient,
     closeClient: Boolean,
     customEncodingHandler: EncodingHandler
-) extends SttpBackend[F, S, WebSocketHandler] {
-  private[okhttp] def convertRequest[T](request: Request[T, S]): OkHttpRequest = {
+) extends SttpBackend[F, P, WebSocketHandler] {
+
+  val streams: Streams[S]
+
+  private[okhttp] def convertRequest[T, R >: P](request: Request[T, R]): OkHttpRequest = {
     val builder = new OkHttpRequest.Builder()
       .url(request.uri.toString)
 
@@ -78,7 +80,7 @@ abstract class OkHttpBackend[F[_], S](
     builder.build()
   }
 
-  private def bodyToOkHttp[T](body: RequestBody[S], ct: Option[String]): Option[OkHttpRequestBody] = {
+  private def bodyToOkHttp[T, R >: P](body: RequestBody[R], ct: Option[String]): Option[OkHttpRequestBody] = {
     val mediaType = ct.flatMap(c => Try(MediaType.parse(c)).toOption).orNull
     body match {
       case NoBody => None
@@ -98,7 +100,7 @@ abstract class OkHttpBackend[F[_], S](
       case FileBody(b, _) =>
         Some(OkHttpRequestBody.create(b.toFile, mediaType))
       case StreamBody(s) =>
-        streamToRequestBody(s)
+        streamToRequestBody(s.asInstanceOf[streams.BinaryStream])
       case MultipartBody(ps) =>
         val b = new OkHttpMultipartBody.Builder().setType(Option(mediaType).getOrElse(OkHttpMultipartBody.FORM))
         ps.foreach(addMultipart(b, _))
@@ -114,9 +116,9 @@ abstract class OkHttpBackend[F[_], S](
     bodyToOkHttp(mp.body, mp.contentType).foreach(builder.addPart(headers, _))
   }
 
-  private[okhttp] def readResponse[T](
+  private[okhttp] def readResponse[T, R >: P](
       res: OkHttpResponse,
-      responseAs: ResponseAs[T, S]
+      responseAs: ResponseAs[T, R]
   ): F[Response[T]] = {
     val headers = res
       .headers()
@@ -149,9 +151,9 @@ abstract class OkHttpBackend[F[_], S](
     case (_, ce)           => throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
   }
 
-  private def responseHandler(responseBody: InputStream) =
-    new EagerResponseHandler[S] {
-      override def handleBasic[T](bra: BasicResponseAs[T, S]): Try[T] =
+  private def responseHandler[R >: P](responseBody: InputStream) =
+    new EagerResponseHandler[R] {
+      override def handleBasic[T](bra: BasicResponseAs[T, R]): Try[T] =
         bra match {
           case IgnoreResponse =>
             Try(responseBody.close())
@@ -159,8 +161,8 @@ abstract class OkHttpBackend[F[_], S](
             val body = Try(toByteArray(responseBody))
             responseBody.close()
             body
-          case ras @ ResponseAsStream() =>
-            responseBodyToStream(responseBody).map(ras.responseIsStream)
+          case _: ResponseAsStream[_, _] =>
+            responseBodyToStream(responseBody).asInstanceOf[Try[T]]
           case ResponseAsFile(file) =>
             val body = Try(FileHelpers.saveFile(file.toFile, responseBody))
             responseBody.close()
@@ -168,7 +170,7 @@ abstract class OkHttpBackend[F[_], S](
         }
     }
 
-  def streamToRequestBody(stream: S): Option[OkHttpRequestBody] = None
+  def streamToRequestBody(stream: streams.BinaryStream): Option[OkHttpRequestBody] = None
 
   def responseBodyToStream(inputStream: InputStream): Try[S] =
     Failure(new IllegalStateException("Streaming isn't supported"))
@@ -231,23 +233,26 @@ object OkHttpBackend {
 }
 
 class OkHttpSyncBackend private (client: OkHttpClient, closeClient: Boolean, customEncodingHandler: EncodingHandler)
-    extends OkHttpBackend[Identity, Nothing](client, closeClient, customEncodingHandler) {
-  override def send[T](r: Request[T, Nothing]): Response[T] =
+    extends OkHttpBackend[Identity, Nothing, Any](client, closeClient, customEncodingHandler) {
+
+  override val streams: Streams[Nothing] = NoStreams
+
+  override def send[T, R >: Any](request: Request[T, R]): Identity[Response[T]] =
     adjustExceptions(isWebsocket = false) {
-      val request = convertRequest(r)
+      val nativeRequest = convertRequest(request)
       val response = OkHttpBackend
-        .updateClientIfCustomReadTimeout(r, client)
-        .newCall(request)
+        .updateClientIfCustomReadTimeout(request, client)
+        .newCall(nativeRequest)
         .execute()
-      readResponse(response, r.response)
+      readResponse(response, request.response)
     }
 
-  override def openWebsocket[T, WS_RESULT](
-      r: Request[T, Nothing],
+  override def openWebsocket[T, WS_RESULT, R >: Any](
+      request: Request[T, R],
       handler: WebSocketHandler[WS_RESULT]
-  ): WebSocketResponse[WS_RESULT] =
+  ): Identity[WebSocketResponse[WS_RESULT]] =
     adjustExceptions(isWebsocket = true) {
-      val request = convertRequest(r)
+      val nativeRequest = convertRequest(request)
 
       val responseCell = new ArrayBlockingQueue[Either[Throwable, WebSocketResponse[WS_RESULT]]](1)
       def fillCellError(t: Throwable): Unit = responseCell.add(Left(t))
@@ -265,8 +270,8 @@ class OkHttpSyncBackend private (client: OkHttpClient, closeClient: Boolean, cus
       )
 
       OkHttpBackend
-        .updateClientIfCustomReadTimeout(r, client)
-        .newWebSocket(request, listener)
+        .updateClientIfCustomReadTimeout(request, client)
+        .newWebSocket(nativeRequest, listener)
 
       responseCell.take().fold(throw _, identity)
     }
@@ -282,15 +287,15 @@ object OkHttpSyncBackend {
       client: OkHttpClient,
       closeClient: Boolean,
       customEncodingHandler: EncodingHandler
-  ): SttpBackend[Identity, Nothing, WebSocketHandler] =
-    new FollowRedirectsBackend[Identity, Nothing, WebSocketHandler](
+  ): SttpBackend[Identity, Any, WebSocketHandler] =
+    new FollowRedirectsBackend(
       new OkHttpSyncBackend(client, closeClient, customEncodingHandler)
     )
 
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customEncodingHandler: EncodingHandler = PartialFunction.empty
-  ): SttpBackend[Identity, Nothing, WebSocketHandler] =
+  ): SttpBackend[Identity, Any, WebSocketHandler] =
     OkHttpSyncBackend(
       OkHttpBackend.defaultClient(DefaultReadTimeout.toMillis, options),
       closeClient = true,
@@ -300,7 +305,7 @@ object OkHttpSyncBackend {
   def usingClient(
       client: OkHttpClient,
       customEncodingHandler: EncodingHandler = PartialFunction.empty
-  ): SttpBackend[Identity, Nothing, WebSocketHandler] =
+  ): SttpBackend[Identity, Any, WebSocketHandler] =
     OkHttpSyncBackend(client, closeClient = false, customEncodingHandler)
 
   /**
@@ -308,33 +313,34 @@ object OkHttpSyncBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub: SttpBackendStub[Identity, Nothing, WebSocketHandler] = SttpBackendStub.synchronous
+  def stub: SttpBackendStub[Identity, Any, WebSocketHandler] = SttpBackendStub.synchronous
 }
 
-abstract class OkHttpAsyncBackend[F[_], S](
+abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](
     client: OkHttpClient,
     monad: MonadAsyncError[F],
     closeClient: Boolean,
     customEncodingHandler: EncodingHandler
-) extends OkHttpBackend[F, S](client, closeClient, customEncodingHandler) {
-  override def send[T](r: Request[T, S]): F[Response[T]] =
+) extends OkHttpBackend[F, S, P](client, closeClient, customEncodingHandler) {
+
+  override def send[T, R >: P](request: Request[T, R]): F[Response[T]] =
     adjustExceptions(isWebsocket = false) {
-      val request = convertRequest(r)
+      val nativeRequest = convertRequest(request)
 
       monad.flatten(monad.async[F[Response[T]]] { cb =>
         def success(r: F[Response[T]]): Unit = cb(Right(r))
         def error(t: Throwable): Unit = cb(Left(t))
 
         val call = OkHttpBackend
-          .updateClientIfCustomReadTimeout(r, client)
-          .newCall(request)
+          .updateClientIfCustomReadTimeout(request, client)
+          .newCall(nativeRequest)
 
         call.enqueue(new Callback {
           override def onFailure(call: Call, e: IOException): Unit =
             error(e)
 
           override def onResponse(call: Call, response: OkHttpResponse): Unit =
-            try success(readResponse(response, r.response))
+            try success(readResponse(response, request.response))
             catch {
               case e: Exception =>
                 response.close()
@@ -346,12 +352,12 @@ abstract class OkHttpAsyncBackend[F[_], S](
       })
     }
 
-  override def openWebsocket[T, WS_RESULT](
-      r: Request[T, S],
+  override def openWebsocket[T, WS_RESULT, R >: P](
+      request: Request[T, R],
       handler: WebSocketHandler[WS_RESULT]
   ): F[WebSocketResponse[WS_RESULT]] =
     adjustExceptions(isWebsocket = true) {
-      val request = convertRequest(r)
+      val nativeRequest = convertRequest(request)
 
       monad.flatten(monad.async[F[WebSocketResponse[WS_RESULT]]] { cb =>
         def success(r: F[WebSocketResponse[WS_RESULT]]): Unit = cb(Right(r))
@@ -370,8 +376,8 @@ abstract class OkHttpAsyncBackend[F[_], S](
         )
 
         val ws = OkHttpBackend
-          .updateClientIfCustomReadTimeout(r, client)
-          .newWebSocket(request, listener)
+          .updateClientIfCustomReadTimeout(request, client)
+          .newWebSocket(nativeRequest, listener)
 
         Canceler(() => ws.cancel())
       })
@@ -385,20 +391,22 @@ abstract class OkHttpAsyncBackend[F[_], S](
 
 class OkHttpFutureBackend private (client: OkHttpClient, closeClient: Boolean, customEncodingHandler: EncodingHandler)(
     implicit ec: ExecutionContext
-) extends OkHttpAsyncBackend[Future, Nothing](client, new FutureMonad, closeClient, customEncodingHandler) {}
+) extends OkHttpAsyncBackend[Future, Nothing, Any](client, new FutureMonad, closeClient, customEncodingHandler) {
+  override val streams: Streams[Nothing] = NoStreams
+}
 
 object OkHttpFutureBackend {
   private def apply(client: OkHttpClient, closeClient: Boolean, customEncodingHandler: EncodingHandler)(implicit
       ec: ExecutionContext
-  ): SttpBackend[Future, Nothing, WebSocketHandler] =
-    new FollowRedirectsBackend[Future, Nothing, WebSocketHandler](
+  ): SttpBackend[Future, Any, WebSocketHandler] =
+    new FollowRedirectsBackend(
       new OkHttpFutureBackend(client, closeClient, customEncodingHandler)
     )
 
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customEncodingHandler: EncodingHandler = PartialFunction.empty
-  )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, Nothing, WebSocketHandler] =
+  )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, Any, WebSocketHandler] =
     OkHttpFutureBackend(
       OkHttpBackend.defaultClient(DefaultReadTimeout.toMillis, options),
       closeClient = true,
@@ -408,7 +416,7 @@ object OkHttpFutureBackend {
   def usingClient(
       client: OkHttpClient,
       customEncodingHandler: EncodingHandler = PartialFunction.empty
-  )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, Nothing, WebSocketHandler] =
+  )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, Any, WebSocketHandler] =
     OkHttpFutureBackend(client, closeClient = false, customEncodingHandler)
 
   /**
