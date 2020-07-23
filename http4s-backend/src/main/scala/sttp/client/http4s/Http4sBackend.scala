@@ -15,6 +15,7 @@ import org.http4s.client.Client
 import org.http4s.client.blaze.BlazeClientBuilder
 import sttp.client.http4s.Http4sBackend.EncodingHandler
 import sttp.client.impl.cats.CatsMonadAsyncError
+import sttp.client.impl.fs2.Fs2Streams
 import sttp.model._
 import sttp.client.monad.MonadError
 import sttp.client.testing.SttpBackendStub
@@ -32,15 +33,14 @@ import sttp.client.{
 }
 
 import scala.concurrent.ExecutionContext
-import scala.language.higherKinds
 
 class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
     client: Client[F],
     blocker: Blocker,
     customizeRequest: Http4sRequest[F] => Http4sRequest[F],
     customEncodingHandler: EncodingHandler[F]
-) extends SttpBackend[F, Stream[F, Byte], NothingT] {
-  override def send[T](r: Request[T, Stream[F, Byte]]): F[Response[T]] =
+) extends SttpBackend[F, Fs2Streams[F], NothingT] {
+  override def send[T, R >: Fs2Streams[F]](r: Request[T, R]): F[Response[T]] =
     adjustExceptions {
       val (entity, extraHeaders) = bodyToHttp4s(r, r.body)
       val request = Http4sRequest(
@@ -54,7 +54,8 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
       MVar.empty[F, Unit].flatMap { responseBodyCompleteVar =>
         MVar.empty[F, Either[Throwable, Response[T]]].flatMap { responseVar =>
           val sendRequest = client
-            .fetch(customizeRequest(request)) { response =>
+            .run(customizeRequest(request))
+            .use { response =>
               val code = StatusCode.unsafeApply(response.status.code)
               val headers = response.headers.toList.map(h => Header(h.name.value, h.value))
               val statusText = response.status.reason
@@ -85,8 +86,8 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
       }
     }
 
-  override def openWebsocket[T, WS_RESULT](
-      request: Request[T, Stream[F, Byte]],
+  override def openWebsocket[T, WS_RESULT, R >: Fs2Streams[F]](
+      request: Request[T, R],
       handler: NothingT[WS_RESULT]
   ): F[WebSocketResponse[WS_RESULT]] = handler // nothing is everything
 
@@ -126,8 +127,8 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
   }
 
   private def bodyToHttp4s(
-      r: Request[_, Stream[F, Byte]],
-      body: RequestBody[Stream[F, Byte]]
+      r: Request[_, Fs2Streams[F]],
+      body: RequestBody[Fs2Streams[F]]
   ): (http4s.Entity[F], http4s.Headers) = {
     body match {
       case NoBody => (http4s.Entity(http4s.EmptyBody: http4s.EntityBody[F]), http4s.Headers.empty)
@@ -138,7 +139,7 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
         val cl = r.headers
           .find(_.is(HeaderNames.ContentLength))
           .map(_.value.toLong)
-        (http4s.Entity(s, cl), http4s.Headers.empty)
+        (http4s.Entity(s.asInstanceOf[Stream[F, Byte]], cl), http4s.Headers.empty)
 
       case MultipartBody(ps) =>
         val parts = ps.toVector.map(multipartToHttp4s)
@@ -186,7 +187,7 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
   }
 
   private def bodyFromHttp4s[T](
-      rr: ResponseAs[T, Stream[F, Byte]],
+      rr: ResponseAs[T, Fs2Streams[F]],
       hr: http4s.Response[F],
       meta: ResponseMetadata
   ): F[T] = {
@@ -212,8 +213,8 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
       case ResponseAsByteArray =>
         hr.as[Array[Byte]].map(b => b) // adjusting type because ResponseAs is covariant
 
-      case r @ ResponseAsStream() =>
-        r.responseIsStream(hr.body).pure[F].map(b => b) // adjusting type because ResponseAs is covariant
+      case _: ResponseAsStream[_, _] =>
+        hr.body.asInstanceOf[T].pure[F]
 
       case ResponseAsFile(file) =>
         saved(file.toFile).map(_ => file)
@@ -251,8 +252,8 @@ object Http4sBackend {
       blocker: Blocker,
       customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _,
       customEncodingHandler: EncodingHandler[F] = PartialFunction.empty
-  ): SttpBackend[F, Stream[F, Byte], NothingT] =
-    new FollowRedirectsBackend[F, Stream[F, Byte], NothingT](
+  ): SttpBackend[F, Fs2Streams[F], NothingT] =
+    new FollowRedirectsBackend[F, Fs2Streams[F], NothingT](
       new Http4sBackend[F](client, blocker, customizeRequest, customEncodingHandler)
     )
 
@@ -261,7 +262,7 @@ object Http4sBackend {
       blocker: Blocker,
       customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _,
       customEncodingHandler: EncodingHandler[F] = PartialFunction.empty
-  ): Resource[F, SttpBackend[F, Stream[F, Byte], NothingT]] = {
+  ): Resource[F, SttpBackend[F, Fs2Streams[F], NothingT]] = {
     blazeClientBuilder.resource.map(c => usingClient(c, blocker, customizeRequest, customEncodingHandler))
   }
 
@@ -270,7 +271,7 @@ object Http4sBackend {
       clientExecutionContext: ExecutionContext = ExecutionContext.global,
       customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _,
       customEncodingHandler: EncodingHandler[F] = PartialFunction.empty
-  ): Resource[F, SttpBackend[F, Stream[F, Byte], NothingT]] =
+  ): Resource[F, SttpBackend[F, Fs2Streams[F], NothingT]] =
     usingClientBuilder(BlazeClientBuilder[F](clientExecutionContext), blocker, customizeRequest, customEncodingHandler)
 
   /**
@@ -279,5 +280,5 @@ object Http4sBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub[F[_]: Concurrent]: SttpBackendStub[F, Stream[F, Byte], NothingT] = SttpBackendStub(new CatsMonadAsyncError)
+  def stub[F[_]: Concurrent]: SttpBackendStub[F, Fs2Streams[F], NothingT] = SttpBackendStub(new CatsMonadAsyncError)
 }

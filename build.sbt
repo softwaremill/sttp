@@ -547,7 +547,7 @@ lazy val http4sBackend = (projectMatrix in file("http4s-backend"))
     )
   )
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13), settings = intellijImportOnly213)
-  .dependsOn(cats % compileAndTest, core % compileAndTest, fs2 % "test->test")
+  .dependsOn(cats % compileAndTest, core % compileAndTest, fs2 % "compile->compile;test->test")
 
 //-- httpclient-java11
 lazy val httpClientBackend = (projectMatrix in file("httpclient-backend"))
