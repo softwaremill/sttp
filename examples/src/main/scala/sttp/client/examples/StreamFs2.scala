@@ -1,5 +1,7 @@
 package sttp.client.examples
 
+import sttp.client.impl.fs2.Fs2Streams
+
 object StreamFs2 extends App {
   import sttp.client._
   import sttp.client.asynchttpclient.fs2.AsyncHttpClientFs2Backend
@@ -10,21 +12,21 @@ object StreamFs2 extends App {
 
   implicit val cs: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionContext.global)
 
-  def streamRequestBody(implicit backend: SttpBackend[IO, Stream[IO, Byte], NothingT]): IO[Unit] = {
+  def streamRequestBody(implicit backend: SttpBackend[IO, Fs2Streams[IO], NothingT]): IO[Unit] = {
     val stream: Stream[IO, Byte] = Stream.emits("Hello, world".getBytes)
 
     basicRequest
-      .streamBody(stream)
+      .streamBody(Fs2Streams[IO])(stream)
       .post(uri"https://httpbin.org/post")
       .send()
       .map { response => println(s"RECEIVED:\n${response.body}") }
   }
 
-  def streamResponseBody(implicit backend: SttpBackend[IO, Stream[IO, Byte], NothingT]): IO[Unit] = {
+  def streamResponseBody(implicit backend: SttpBackend[IO, Fs2Streams[IO], NothingT]): IO[Unit] = {
     basicRequest
       .body("I want a stream!")
       .post(uri"https://httpbin.org/post")
-      .response(asStreamAlways[Stream[IO, Byte]])
+      .response(asStreamAlways(Fs2Streams[IO]))
       .send()
       .flatMap { response =>
         response.body.chunks

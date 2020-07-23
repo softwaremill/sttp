@@ -32,7 +32,7 @@ class AsyncHttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
       customizeRequest
     ) {
 
-  override val streams: Fs2Streams[F] = new Fs2Streams[F] {}
+  override val streams: Fs2Streams[F] = Fs2Streams[F]
 
   override def send[T, R >: Fs2Streams[F]](r: Request[T, R]): F[Response[T]] = {
     super.send(r).guarantee(implicitly[ContextShift[F]].shift)

@@ -35,7 +35,7 @@ class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
       customEncodingHandler
     ) {
 
-  override val streams: Fs2Streams[F] = new Fs2Streams[F] {}
+  override val streams: Fs2Streams[F] = Fs2Streams[F]
 
   override def openWebsocket[T, WS_RESULT, R >: Fs2Streams[F]](
       request: sttp.client.Request[T, R],
