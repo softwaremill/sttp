@@ -47,8 +47,8 @@ import sttp.client.testing.SttpBackendStub
 
 import scala.io.Source
 
-class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture, Nothing, NothingT] {
-  override def send[T](request: Request[T, Nothing]): TFuture[Response[T]] =
+class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture, Any, NothingT] {
+  override def send[T, R >: Any](request: Request[T, R]): TFuture[Response[T]] =
     adjustExceptions {
       val service = getClient(client, request)
       val finagleRequest = requestBodyToFinagle(request)
@@ -67,8 +67,8 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
         }
     }
 
-  override def openWebsocket[T, WS_RESULT](
-      request: Request[T, Nothing],
+  override def openWebsocket[T, WS_RESULT, R >: Any](
+      request: Request[T, R],
       handler: NothingT[WS_RESULT]
   ): TFuture[WebSocketResponse[WS_RESULT]] = handler
 
@@ -168,8 +168,7 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
           b
         })
 
-      case ras @ ResponseAsStream() =>
-        responseBodyToStream(r).map(ras.responseIsStream)
+      case ResponseAsStream(_) => responseBodyToStream(r)
 
       case ResponseAsFile(file) =>
         val body = TFuture.const(util.Try(FileHelpers.saveFile(file.toFile, r.getInputStream())))
@@ -227,12 +226,12 @@ object TFutureMonadError extends MonadError[TFuture] {
 
 object FinagleBackend {
 
-  def apply(): SttpBackend[TFuture, Nothing, NothingT] = {
-    new FollowRedirectsBackend[TFuture, Nothing, NothingT](new FinagleBackend())
+  def apply(): SttpBackend[TFuture, Any, NothingT] = {
+    new FollowRedirectsBackend[TFuture, Any, NothingT](new FinagleBackend())
   }
 
-  def usingClient(client: Client): SttpBackend[TFuture, Nothing, NothingT] = {
-    new FollowRedirectsBackend[TFuture, Nothing, NothingT](new FinagleBackend(Some(client)))
+  def usingClient(client: Client): SttpBackend[TFuture, Any, NothingT] = {
+    new FollowRedirectsBackend[TFuture, Any, NothingT](new FinagleBackend(Some(client)))
   }
 
   /**
@@ -240,5 +239,5 @@ object FinagleBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub: SttpBackendStub[TFuture, Nothing, NothingT] = SttpBackendStub(TFutureMonadError)
+  def stub: SttpBackendStub[TFuture, Any, NothingT] = SttpBackendStub(TFutureMonadError)
 }
