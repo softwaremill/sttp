@@ -267,8 +267,8 @@ object SttpBackendStub {
     * Create a stub of a synchronous backend (which doesn't wrap results in any
     * container), without streaming or websocket support.
     */
-  def synchronous[WS_HANDLER[_]]: SttpBackendStub[Identity, Nothing, WS_HANDLER] =
-    new SttpBackendStub[Identity, Nothing, WS_HANDLER](
+  def synchronous[WS_HANDLER[_]]: SttpBackendStub[Identity, Any, WS_HANDLER] =
+    new SttpBackendStub(
       IdMonad,
       PartialFunction.empty,
       PartialFunction.empty,
@@ -279,9 +279,9 @@ object SttpBackendStub {
     * Create a stub of an asynchronous backend (which wraps results in Scala's
     * built-in [[Future]]), without streaming or websocket support.
     */
-  def asynchronousFuture[WS_HANDLER[_]]: SttpBackendStub[Future, Nothing, WS_HANDLER] = {
+  def asynchronousFuture[WS_HANDLER[_]]: SttpBackendStub[Future, Any, WS_HANDLER] = {
     import scala.concurrent.ExecutionContext.Implicits.global
-    new SttpBackendStub[Future, Nothing, WS_HANDLER](
+    new SttpBackendStub(
       new FutureMonad(),
       PartialFunction.empty,
       PartialFunction.empty,
@@ -293,8 +293,8 @@ object SttpBackendStub {
     * Create a stub backend using the given response monad (which determines
     * how requests are wrapped), any stream type and any websocket handler.
     */
-  def apply[F[_], S, WS_HANDLER[_]](responseMonad: MonadError[F]): SttpBackendStub[F, S, WS_HANDLER] =
-    new SttpBackendStub[F, S, WS_HANDLER](
+  def apply[F[_], P, WS_HANDLER[_]](responseMonad: MonadError[F]): SttpBackendStub[F, P, WS_HANDLER] =
+    new SttpBackendStub[F, P, WS_HANDLER](
       responseMonad,
       PartialFunction.empty,
       PartialFunction.empty,

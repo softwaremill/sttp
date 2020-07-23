@@ -9,7 +9,6 @@ import sttp.client.testing.HttpTest.wsEndpoint
 import sttp.client.testing.websocket.HighLevelWebsocketTest
 import sttp.client.ws.WebSocket
 import zio.blocking.Blocking
-import zio.stream.ZStream
 import sttp.client.impl.zio._
 import zio.clock.Clock
 import zio.{Schedule, ZIO}
@@ -18,7 +17,7 @@ import scala.concurrent.duration._
 import zio.duration.Duration
 
 class HttpClientHighLevelZioWebsocketTest extends HighLevelWebsocketTest[BlockingTask, WebSocketHandler] {
-  implicit val backend: SttpBackend[BlockingTask, ZStream[Blocking, Throwable, Byte], WebSocketHandler] =
+  implicit val backend: SttpBackend[BlockingTask, BlockingZioStreams, WebSocketHandler] =
     runtime.unsafeRun(HttpClientZioBackend())
   implicit val convertToFuture: ConvertToFuture[BlockingTask] = convertZioBlockingTaskToFuture
   implicit val monad: MonadError[BlockingTask] = new RIOMonadAsyncError

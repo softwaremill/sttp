@@ -1,12 +1,11 @@
 package sttp.client.httpclient.zio
 
-import sttp.client.httpclient.zio.BlockingTask
 import sttp.client._
 import sttp.client.impl.zio._
 import sttp.client.testing.{ConvertToFuture, HttpTest}
 
 class HttpClientZioHttpTest extends HttpTest[BlockingTask] {
-  override implicit val backend: SttpBackend[BlockingTask, Nothing, NothingT] =
+  override implicit val backend: SttpBackend[BlockingTask, Any, NothingT] =
     runtime.unsafeRun(HttpClientZioBackend())
   override implicit val convertToFuture: ConvertToFuture[BlockingTask] = convertZioBlockingTaskToFuture
 

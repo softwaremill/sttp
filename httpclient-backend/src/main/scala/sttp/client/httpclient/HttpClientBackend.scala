@@ -34,6 +34,7 @@ import sttp.client.{
   ResponseAsStream,
   ResponseMetadata,
   StreamBody,
+  Streams,
   StringBody,
   SttpBackend,
   SttpBackendOptions
@@ -41,15 +42,16 @@ import sttp.client.{
 import sttp.model._
 
 import scala.collection.JavaConverters._
-import scala.language.higherKinds
 import scala.util.{Failure, Try}
 
-abstract class HttpClientBackend[F[_], S](
+abstract class HttpClientBackend[F[_], S, P](
     client: HttpClient,
     closeClient: Boolean,
     customEncodingHandler: EncodingHandler
-) extends SttpBackend[F, S, WebSocketHandler] {
-  private[httpclient] def convertRequest[T](request: Request[T, S]): F[HttpRequest] = {
+) extends SttpBackend[F, P, WebSocketHandler] {
+  val streams: Streams[S]
+
+  private[httpclient] def convertRequest[T, R >: P](request: Request[T, R]): F[HttpRequest] = {
     val builder = HttpRequest
       .newBuilder()
       .uri(request.uri.toJavaUri)
@@ -74,8 +76,8 @@ abstract class HttpClientBackend[F[_], S](
 
   implicit val monad: MonadError[F] = responseMonad
 
-  private def bodyToHttpBody[T](
-      request: Request[T, S],
+  private def bodyToHttpBody[T, R >: P](
+      request: Request[T, R],
       builder: HttpRequest.Builder,
       contentType: Option[String]
   ): F[BodyPublisher] = {
@@ -88,7 +90,7 @@ abstract class HttpClientBackend[F[_], S](
         else BodyPublishers.ofByteArray(b.array()).unit
       case InputStreamBody(b, _) => BodyPublishers.ofInputStream(() => b).unit
       case FileBody(f, _)        => BodyPublishers.ofFile(f.toFile.toPath).unit
-      case StreamBody(s)         => streamToRequestBody(s)
+      case StreamBody(s)         => streamToRequestBody(s.asInstanceOf[streams.BinaryStream])
       case MultipartBody(parts) =>
         val multipartBodyPublisher = multipartBody(parts)
         val baseContentType = contentType.getOrElse("multipart/form-data")
@@ -97,7 +99,7 @@ abstract class HttpClientBackend[F[_], S](
     }
   }
 
-  def streamToRequestBody(stream: S): F[BodyPublisher] =
+  def streamToRequestBody(stream: streams.BinaryStream): F[BodyPublisher] =
     responseMonad.error(new IllegalStateException("Streaming isn't supported"))
 
   private def multipartBody[T](parts: Seq[Part[BasicRequestBody]]) = {
@@ -114,9 +116,9 @@ abstract class HttpClientBackend[F[_], S](
     multipartBuilder
   }
 
-  private[httpclient] def readResponse[T](
+  private[httpclient] def readResponse[T, R >: P](
       res: HttpResponse[InputStream],
-      responseAs: ResponseAs[T, S]
+      responseAs: ResponseAs[T, R]
   ): F[Response[T]] = {
     val headers = res
       .headers()
@@ -148,9 +150,9 @@ abstract class HttpClientBackend[F[_], S](
     case (_, ce)           => throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
   }
 
-  private def responseHandler(responseBody: InputStream) =
-    new EagerResponseHandler[S] {
-      override def handleBasic[T](bra: BasicResponseAs[T, S]): Try[T] =
+  private def responseHandler[R >: P](responseBody: InputStream) =
+    new EagerResponseHandler[R] {
+      override def handleBasic[T](bra: BasicResponseAs[T, R]): Try[T] =
         bra match {
           case IgnoreResponse =>
             Try(responseBody.close())
@@ -158,9 +160,8 @@ abstract class HttpClientBackend[F[_], S](
             val result = Try(responseBody.readAllBytes())
             responseBody.close()
             result
-          case ras @ ResponseAsStream() =>
-            // TODO: dotty requires the cast below
-            responseBodyToStream(responseBody).map(ras.responseIsStream.asInstanceOf[S =:= T])
+          case _: ResponseAsStream[_, _] =>
+            responseBodyToStream(responseBody).asInstanceOf[Try[T]]
           case ResponseAsFile(file) =>
             val body = Try(FileHelpers.saveFile(file.toFile, responseBody))
             responseBody.close()
@@ -183,7 +184,7 @@ abstract class HttpClientBackend[F[_], S](
     }
   }
 
-  def responseBodyToStream(responseBody: InputStream): Try[S] =
+  def responseBodyToStream(responseBody: InputStream): Try[streams.BinaryStream] =
     Failure(new IllegalStateException("Streaming isn't supported"))
 
   override def close(): F[Unit] = {

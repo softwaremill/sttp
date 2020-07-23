@@ -9,15 +9,16 @@ import zio._
 import zio.blocking.Blocking
 import zio.stream._
 
-class HttpClientZioStreamingTest extends StreamingTest[BlockingTask, Stream[Throwable, Byte]] {
+class HttpClientZioStreamingTest extends StreamingTest[BlockingTask, BlockingZioStreams] {
+  override val streams: BlockingZioStreams = BlockingZioStreams
 
-  override implicit val backend: SttpBackend[BlockingTask, ZStream[Blocking, Throwable, Byte], NothingT] =
+  override implicit val backend: SttpBackend[BlockingTask, BlockingZioStreams, NothingT] =
     runtime.unsafeRun(HttpClientZioBackend())
   override implicit val convertToFuture: ConvertToFuture[BlockingTask] = convertZioBlockingTaskToFuture
 
-  override def bodyProducer(chunks: Iterable[Array[Byte]]): Stream[Throwable, Byte] =
+  override def bodyProducer(chunks: Iterable[Array[Byte]]): ZStream[Blocking, Throwable, Byte] =
     Stream.fromChunks(chunks.map(Chunk.fromArray).toSeq: _*)
 
-  override def bodyConsumer(stream: Stream[Throwable, Byte]): Task[String] =
+  override def bodyConsumer(stream: ZStream[Blocking, Throwable, Byte]): BlockingTask[String] =
     stream.runCollect.map(bytes => new String(bytes.toArray, Utf8))
 }

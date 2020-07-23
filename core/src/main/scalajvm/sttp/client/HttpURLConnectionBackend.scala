@@ -314,5 +314,5 @@ object HttpURLConnectionBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub: SttpBackendStub[Identity, Nothing, NothingT] = SttpBackendStub.synchronous
+  def stub: SttpBackendStub[Identity, Any, NothingT] = SttpBackendStub.synchronous
 }

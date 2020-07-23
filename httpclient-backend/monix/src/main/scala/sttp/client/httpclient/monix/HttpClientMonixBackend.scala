@@ -12,7 +12,7 @@ import monix.reactive.Observable
 import org.reactivestreams.FlowAdapters
 import sttp.client.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client.httpclient.{HttpClientAsyncBackend, HttpClientBackend, WebSocketHandler}
-import sttp.client.impl.monix.TaskMonadAsyncError
+import sttp.client.impl.monix.{MonixStreams, TaskMonadAsyncError}
 import sttp.client.testing.SttpBackendStub
 import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 
@@ -24,13 +24,16 @@ class HttpClientMonixBackend private (
     customizeRequest: HttpRequest => HttpRequest,
     customEncodingHandler: EncodingHandler
 )(implicit s: Scheduler)
-    extends HttpClientAsyncBackend[Task, Observable[ByteBuffer]](
+    extends HttpClientAsyncBackend[Task, MonixStreams, MonixStreams](
       client,
       TaskMonadAsyncError,
       closeClient,
       customizeRequest,
       customEncodingHandler
     ) {
+
+  override val streams: MonixStreams = MonixStreams
+
   override def streamToRequestBody(stream: Observable[ByteBuffer]): Task[HttpRequest.BodyPublisher] = {
     monad.eval(BodyPublishers.fromPublisher(FlowAdapters.toFlowPublisher(stream.toReactivePublisher)))
   }
@@ -53,7 +56,7 @@ object HttpClientMonixBackend {
       customEncodingHandler: EncodingHandler
   )(implicit
       s: Scheduler
-  ): SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler] =
+  ): SttpBackend[Task, MonixStreams, WebSocketHandler] =
     new FollowRedirectsBackend(
       new HttpClientMonixBackend(client, closeClient, customizeRequest, customEncodingHandler)(s)
     )
@@ -64,7 +67,7 @@ object HttpClientMonixBackend {
       customEncodingHandler: EncodingHandler = PartialFunction.empty
   )(implicit
       s: Scheduler = Scheduler.global
-  ): Task[SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler]] =
+  ): Task[SttpBackend[Task, MonixStreams, WebSocketHandler]] =
     Task.eval(
       HttpClientMonixBackend(
         HttpClientBackend.defaultClient(options),
@@ -80,14 +83,14 @@ object HttpClientMonixBackend {
       customEncodingHandler: EncodingHandler = PartialFunction.empty
   )(implicit
       s: Scheduler = Scheduler.global
-  ): Resource[Task, SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler]] =
+  ): Resource[Task, SttpBackend[Task, MonixStreams, WebSocketHandler]] =
     Resource.make(apply(options, customizeRequest, customEncodingHandler))(_.close())
 
   def usingClient(
       client: HttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: EncodingHandler = PartialFunction.empty
-  )(implicit s: Scheduler = Scheduler.global): SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler] =
+  )(implicit s: Scheduler = Scheduler.global): SttpBackend[Task, MonixStreams, WebSocketHandler] =
     HttpClientMonixBackend(client, closeClient = false, customizeRequest, customEncodingHandler)(s)
 
   /**
@@ -96,5 +99,5 @@ object HttpClientMonixBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub: SttpBackendStub[Task, Observable[ByteBuffer], WebSocketHandler] = SttpBackendStub(TaskMonadAsyncError)
+  def stub: SttpBackendStub[Task, MonixStreams, WebSocketHandler] = SttpBackendStub(TaskMonadAsyncError)
 }

@@ -9,7 +9,7 @@ import org.reactivestreams.FlowAdapters
 import sttp.client.NothingT
 import sttp.client.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client.httpclient.{HttpClientAsyncBackend, HttpClientBackend, WebSocketHandler}
-import sttp.client.impl.zio.RIOMonadAsyncError
+import sttp.client.impl.zio.{RIOMonadAsyncError, BlockingZioStreams}
 import sttp.client.testing.SttpBackendStub
 import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 import zio._
@@ -25,13 +25,15 @@ class HttpClientZioBackend private (
     customizeRequest: HttpRequest => HttpRequest,
     customEncodingHandler: EncodingHandler,
     chunkSize: Int
-) extends HttpClientAsyncBackend[BlockingTask, ZStream[Blocking, Throwable, Byte]](
+) extends HttpClientAsyncBackend[BlockingTask, BlockingZioStreams, BlockingZioStreams](
       client,
       new RIOMonadAsyncError[Blocking],
       closeClient,
       customizeRequest,
       customEncodingHandler
     ) {
+
+  override val streams: BlockingZioStreams = BlockingZioStreams
 
   override def streamToRequestBody(
       stream: ZStream[Blocking, Throwable, Byte]
@@ -57,8 +59,8 @@ object HttpClientZioBackend {
       customizeRequest: HttpRequest => HttpRequest,
       customEncodingHandler: EncodingHandler,
       chunkSize: Int
-  ): SttpBackend[BlockingTask, ZStream[Blocking, Throwable, Byte], WebSocketHandler] =
-    new FollowRedirectsBackend[BlockingTask, ZStream[Blocking, Throwable, Byte], WebSocketHandler](
+  ): SttpBackend[BlockingTask, BlockingZioStreams, WebSocketHandler] =
+    new FollowRedirectsBackend[BlockingTask, BlockingZioStreams, WebSocketHandler](
       new HttpClientZioBackend(
         client,
         closeClient,
@@ -73,7 +75,7 @@ object HttpClientZioBackend {
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: EncodingHandler = PartialFunction.empty,
       chunkSize: Int = defaultChunkSize
-  ): Task[SttpBackend[BlockingTask, ZStream[Blocking, Throwable, Byte], WebSocketHandler]] =
+  ): Task[SttpBackend[BlockingTask, BlockingZioStreams, WebSocketHandler]] =
     Task.effect(
       HttpClientZioBackend(
         HttpClientBackend.defaultClient(options),
@@ -89,7 +91,7 @@ object HttpClientZioBackend {
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: EncodingHandler = PartialFunction.empty,
       chunkSize: Int = defaultChunkSize
-  ): ZManaged[Blocking, Throwable, SttpBackend[BlockingTask, ZStream[Blocking, Throwable, Byte], WebSocketHandler]] =
+  ): ZManaged[Blocking, Throwable, SttpBackend[BlockingTask, BlockingZioStreams, WebSocketHandler]] =
     ZManaged.make(apply(options, customizeRequest, customEncodingHandler, chunkSize))(
       _.close().ignore
     )
@@ -117,7 +119,7 @@ object HttpClientZioBackend {
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: EncodingHandler = PartialFunction.empty,
       chunkSize: Int = defaultChunkSize
-  ): SttpBackend[BlockingTask, ZStream[Blocking, Throwable, Byte], WebSocketHandler] =
+  ): SttpBackend[BlockingTask, BlockingZioStreams, WebSocketHandler] =
     HttpClientZioBackend(
       client,
       closeClient = false,
@@ -151,6 +153,6 @@ object HttpClientZioBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub: SttpBackendStub[BlockingTask, ZStream[Blocking, Throwable, Byte], NothingT] =
+  def stub: SttpBackendStub[BlockingTask, BlockingZioStreams, NothingT] =
     SttpBackendStub(new RIOMonadAsyncError[Blocking])
 }

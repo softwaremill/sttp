@@ -5,6 +5,7 @@ import java.net.http.HttpResponse.BodyHandlers
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 
 import sttp.client.httpclient.HttpClientBackend.EncodingHandler
+import sttp.client.internal.NoStreams
 import sttp.client.monad.{Canceler, FutureMonad, MonadAsyncError, MonadError}
 import sttp.client.testing.SttpBackendStub
 import sttp.client.ws.WebSocketResponse
@@ -13,14 +14,14 @@ import sttp.model.Headers
 
 import scala.concurrent.{ExecutionContext, Future}
 
-abstract class HttpClientAsyncBackend[F[_], S](
+abstract class HttpClientAsyncBackend[F[_], S, P](
     client: HttpClient,
     monad: MonadAsyncError[F],
     closeClient: Boolean,
     customizeRequest: HttpRequest => HttpRequest,
     customEncodingHandler: EncodingHandler
-) extends HttpClientBackend[F, S](client, closeClient, customEncodingHandler) {
-  override def send[T](request: Request[T, S]): F[Response[T]] =
+) extends HttpClientBackend[F, S, P](client, closeClient, customEncodingHandler) {
+  override def send[T, R >: P](request: Request[T, R]): F[Response[T]] =
     adjustExceptions {
       monad.flatMap(convertRequest(request)) { convertedRequest =>
         val jRequest = customizeRequest(convertedRequest)
@@ -48,8 +49,8 @@ abstract class HttpClientAsyncBackend[F[_], S](
       }
     }
 
-  override def openWebsocket[T, WS_RESULT](
-      request: Request[T, S],
+  override def openWebsocket[T, WS_RESULT, R >: P](
+      request: Request[T, R],
       handler: WebSocketHandler[WS_RESULT]
   ): F[WebSocketResponse[WS_RESULT]] =
     adjustExceptions {
@@ -90,13 +91,15 @@ class HttpClientFutureBackend private (
     customizeRequest: HttpRequest => HttpRequest,
     customEncodingHandler: EncodingHandler
 )(implicit ec: ExecutionContext)
-    extends HttpClientAsyncBackend[Future, Nothing](
+    extends HttpClientAsyncBackend[Future, Nothing, Any](
       client,
       new FutureMonad,
       closeClient,
       customizeRequest,
       customEncodingHandler
-    )
+    ) {
+  override val streams: NoStreams = NoStreams
+}
 
 object HttpClientFutureBackend {
   private def apply(
@@ -104,8 +107,8 @@ object HttpClientFutureBackend {
       closeClient: Boolean,
       customizeRequest: HttpRequest => HttpRequest,
       customEncodingHandler: EncodingHandler
-  )(implicit ec: ExecutionContext): SttpBackend[Future, Nothing, WebSocketHandler] =
-    new FollowRedirectsBackend[Future, Nothing, WebSocketHandler](
+  )(implicit ec: ExecutionContext): SttpBackend[Future, Any, WebSocketHandler] =
+    new FollowRedirectsBackend(
       new HttpClientFutureBackend(client, closeClient, customizeRequest, customEncodingHandler)
     )
 
@@ -113,9 +116,7 @@ object HttpClientFutureBackend {
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: EncodingHandler = PartialFunction.empty
-  )(implicit
-      ec: ExecutionContext = ExecutionContext.global
-  ): SttpBackend[Future, Nothing, WebSocketHandler] =
+  )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, Any, WebSocketHandler] =
     HttpClientFutureBackend(
       HttpClientBackend.defaultClient(options),
       closeClient = true,
@@ -127,9 +128,7 @@ object HttpClientFutureBackend {
       client: HttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: EncodingHandler = PartialFunction.empty
-  )(implicit
-      ec: ExecutionContext = ExecutionContext.global
-  ): SttpBackend[Future, Nothing, WebSocketHandler] =
+  )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, Any, WebSocketHandler] =
     HttpClientFutureBackend(client, closeClient = false, customizeRequest, customEncodingHandler)
 
   /**
@@ -137,8 +136,6 @@ object HttpClientFutureBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub(implicit
-      ec: ExecutionContext = ExecutionContext.global
-  ): SttpBackendStub[Future, Nothing, WebSocketHandler] =
+  def stub(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackendStub[Future, Any, WebSocketHandler] =
     SttpBackendStub(new FutureMonad())
 }

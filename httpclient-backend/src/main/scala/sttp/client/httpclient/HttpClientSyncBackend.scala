@@ -5,6 +5,7 @@ import java.net.http.HttpResponse.BodyHandlers
 import java.util.concurrent.ArrayBlockingQueue
 
 import sttp.client.httpclient.HttpClientBackend.EncodingHandler
+import sttp.client.internal.NoStreams
 import sttp.client.monad.{IdMonad, MonadError}
 import sttp.client.testing.SttpBackendStub
 import sttp.client.ws.WebSocketResponse
@@ -13,6 +14,7 @@ import sttp.client.{
   Identity,
   Request,
   Response,
+  Streams,
   SttpBackend,
   SttpBackendOptions,
   SttpClientException
@@ -24,8 +26,11 @@ class HttpClientSyncBackend private (
     closeClient: Boolean,
     customizeRequest: HttpRequest => HttpRequest,
     customEncodingHandler: EncodingHandler
-) extends HttpClientBackend[Identity, Nothing](client, closeClient, customEncodingHandler) {
-  override def send[T](request: Request[T, Nothing]): Identity[Response[T]] =
+) extends HttpClientBackend[Identity, Nothing, Any](client, closeClient, customEncodingHandler) {
+
+  override val streams: NoStreams = NoStreams
+
+  override def send[T, R >: Any](request: Request[T, R]): Identity[Response[T]] =
     adjustExceptions {
       val jRequest = customizeRequest(convertRequest(request))
       val response = client.send(jRequest, BodyHandlers.ofInputStream())
@@ -34,8 +39,8 @@ class HttpClientSyncBackend private (
 
   override def responseMonad: MonadError[Identity] = IdMonad
 
-  override def openWebsocket[T, WS_RESULT](
-      request: Request[T, Nothing],
+  override def openWebsocket[T, WS_RESULT, R >: Any](
+      request: Request[T, R],
       handler: WebSocketHandler[WS_RESULT]
   ): Identity[WebSocketResponse[WS_RESULT]] =
     adjustExceptions {
@@ -66,8 +71,8 @@ object HttpClientSyncBackend {
       closeClient: Boolean,
       customizeRequest: HttpRequest => HttpRequest,
       customEncodingHandler: EncodingHandler
-  ): SttpBackend[Identity, Nothing, WebSocketHandler] =
-    new FollowRedirectsBackend[Identity, Nothing, WebSocketHandler](
+  ): SttpBackend[Identity, Any, WebSocketHandler] =
+    new FollowRedirectsBackend(
       new HttpClientSyncBackend(client, closeClient, customizeRequest, customEncodingHandler)
     )
 
@@ -75,7 +80,7 @@ object HttpClientSyncBackend {
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: EncodingHandler = PartialFunction.empty
-  ): SttpBackend[Identity, Nothing, WebSocketHandler] =
+  ): SttpBackend[Identity, Any, WebSocketHandler] =
     HttpClientSyncBackend(
       HttpClientBackend.defaultClient(options),
       closeClient = true,
@@ -87,7 +92,7 @@ object HttpClientSyncBackend {
       client: HttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: EncodingHandler = PartialFunction.empty
-  ): SttpBackend[Identity, Nothing, WebSocketHandler] =
+  ): SttpBackend[Identity, Any, WebSocketHandler] =
     HttpClientSyncBackend(client, closeClient = false, customizeRequest, customEncodingHandler)
 
   /**
@@ -95,5 +100,5 @@ object HttpClientSyncBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub: SttpBackendStub[Identity, Nothing, WebSocketHandler] = SttpBackendStub.synchronous
+  def stub: SttpBackendStub[Identity, Any, WebSocketHandler] = SttpBackendStub.synchronous
 }

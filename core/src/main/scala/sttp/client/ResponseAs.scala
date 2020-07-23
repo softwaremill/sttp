@@ -35,10 +35,10 @@ sealed trait BasicResponseAs[T, -R] extends ResponseAs[T, R]
 
 case object IgnoreResponse extends BasicResponseAs[Unit, Any]
 case object ResponseAsByteArray extends BasicResponseAs[Array[Byte], Any]
-// Path-dependent types are not supported in constructor arguments or the extends clause. Thus we cannot express the 
+// Path-dependent types are not supported in constructor arguments or the extends clause. Thus we cannot express the
 // fact that `BinaryStream =:= s.BinaryStream`. We have to rely on correct construction via the companion object and
 // perform typecasts when the request is deconstructed.
-case class ResponseAsStream[BinaryStream, S] private (s: Streams[S]) extends ResponseAs[BinaryStream, S]
+case class ResponseAsStream[BinaryStream, S] private (s: Streams[S]) extends BasicResponseAs[BinaryStream, S]
 object ResponseAsStream {
   def apply[S](s: Streams[S]): ResponseAs[s.BinaryStream, S] = new ResponseAsStream(s)
 }
@@ -122,8 +122,8 @@ object ResponseAs {
   def deserializeRightWithError[E: ShowError, T](
       doDeserialize: String => Either[E, T]
   ): (Either[String, String], ResponseMetadata) => Either[ResponseError[E], T] = {
-    case (Left(s), meta)  => Left(HttpError(s, meta.code))
-    case (Right(s), _) => deserializeWithError(doDeserialize)(implicitly[ShowError[E]])(s)
+    case (Left(s), meta) => Left(HttpError(s, meta.code))
+    case (Right(s), _)   => deserializeWithError(doDeserialize)(implicitly[ShowError[E]])(s)
   }
 
   /**

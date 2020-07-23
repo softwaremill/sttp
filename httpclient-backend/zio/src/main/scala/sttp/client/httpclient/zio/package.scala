@@ -4,7 +4,7 @@ import sttp.client._
 import sttp.client.ws.{WebSocket, WebSocketResponse}
 import _root_.zio._
 import _root_.zio.blocking.Blocking
-import _root_.zio.stream.ZStream
+import sttp.client.impl.zio.BlockingZioStreams
 
 package object zio {
 
@@ -13,7 +13,7 @@ package object zio {
   /**
     * ZIO-environment service definition, which is an SttpBackend.
     */
-  type SttpClient = Has[SttpBackend[BlockingTask, ZStream[Blocking, Throwable, Byte], WebSocketHandler]]
+  type SttpClient = Has[SttpBackend[BlockingTask, BlockingZioStreams, WebSocketHandler]]
 
   object SttpClient {
 
@@ -29,10 +29,8 @@ package object zio {
       *
       *         Known exceptions are converted to one of [[SttpClientException]]. Other exceptions are kept unchanged.
       */
-    def send[T](request: Request[T, Nothing]): ZIO[SttpClient with Blocking, Throwable, Response[T]] =
-      ZIO.accessM(env =>
-        env.get[SttpBackend[BlockingTask, ZStream[Blocking, Throwable, Byte], WebSocketHandler]].send(request)
-      )
+    def send[T](request: Request[T, BlockingZioStreams]): ZIO[SttpClient with Blocking, Throwable, Response[T]] =
+      ZIO.accessM(env => env.get[SttpBackend[BlockingTask, BlockingZioStreams, WebSocketHandler]].send(request))
 
     /**
       * Opens a websocket. Only requests for which the method & URI are specified can be sent.
@@ -47,11 +45,11 @@ package object zio {
       *         Known exceptions are converted to one of [[SttpClientException]]. Other exceptions are kept unchanged.
       */
     def openWebsocket[T, WS_RESULT](
-        request: Request[T, Nothing]
+        request: Request[T, BlockingZioStreams]
     ): ZIO[SttpClient with Blocking, Throwable, WebSocketResponse[WebSocket[BlockingTask]]] =
       ZioWebSocketHandler().flatMap(handler =>
         ZIO.accessM(env =>
-          env.get[SttpBackend[BlockingTask, ZStream[Blocking, Throwable, Byte], WebSocketHandler]].openWebsocket(request, handler)
+          env.get[SttpBackend[BlockingTask, BlockingZioStreams, WebSocketHandler]].openWebsocket(request, handler)
         )
       )
   }
