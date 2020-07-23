@@ -6,7 +6,7 @@ import sbtrelease.ReleaseStateTransformations._
 
 val scala2_11 = "2.11.12"
 val scala2_12 = "2.12.10"
-val scala2_13 = "2.13.2"
+val scala2_13 = "2.13.3"
 val scala3 = "0.24.0"
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on")
