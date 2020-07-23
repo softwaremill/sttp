@@ -54,12 +54,14 @@ final case class FetchOptions(
   *
   * @see https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API
   */
-abstract class AbstractFetchBackend[F[_], S](options: FetchOptions, customizeRequest: FetchRequest => FetchRequest)(
+abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](options: FetchOptions, customizeRequest: FetchRequest => FetchRequest)(
     monad: MonadError[F]
-) extends SttpBackend[F, S, NothingT] {
+) extends SttpBackend[F, P, NothingT] {
   override implicit def responseMonad: MonadError[F] = monad
 
-  override def send[T](request: Request[T, S]): F[Response[T]] = {
+  val streams: Streams[S]
+
+  override def send[T, R >: P](request: Request[T, R]): F[Response[T]] = {
     // https://stackoverflow.com/q/31061838/4094860
     val readTimeout = request.options.readTimeout
     val (signal, cancelTimeout) = readTimeout match {
@@ -150,8 +152,8 @@ abstract class AbstractFetchBackend[F[_], S](options: FetchOptions, customizeReq
     addCancelTimeoutHook(result, cancelTimeout)
   }
 
-  override def openWebsocket[T, WS_RESULT](
-      request: Request[T, S],
+  override def openWebsocket[T, WS_RESULT, R >: P](
+      request: Request[T, R],
       handler: NothingT[WS_RESULT]
   ): F[WebSocketResponse[WS_RESULT]] =
     handler // nothing is everything
@@ -174,7 +176,7 @@ abstract class AbstractFetchBackend[F[_], S](options: FetchOptions, customizeReq
       .toList
   }
 
-  private def createBody(body: RequestBody[S]): F[js.UndefOr[BodyInit]] = {
+  private def createBody[R >: P](body: RequestBody[R]): F[js.UndefOr[BodyInit]] = {
     body match {
       case NoBody =>
         responseMonad.unit(js.undefined) // skip
@@ -183,7 +185,7 @@ abstract class AbstractFetchBackend[F[_], S](options: FetchOptions, customizeReq
         responseMonad.unit(writeBasicBody(b))
 
       case StreamBody(s) =>
-        handleStreamBody(s)
+        handleStreamBody(s.asInstanceOf[streams.BinaryStream])
 
       case mp: MultipartBody =>
         val formData = new FormData()
@@ -242,11 +244,11 @@ abstract class AbstractFetchBackend[F[_], S](options: FetchOptions, customizeReq
       .order(original.order)
   }
 
-  protected def handleStreamBody(s: S): F[js.UndefOr[BodyInit]]
+  protected def handleStreamBody(s: streams.BinaryStream): F[js.UndefOr[BodyInit]]
 
-  private def readResponseBody[T](
+  private def readResponseBody[T, R >: P](
       response: FetchResponse,
-      responseAs: ResponseAs[T, S],
+      responseAs: ResponseAs[T, R],
       meta: ResponseMetadata
   ): F[T] = {
     responseAs match {
@@ -273,8 +275,8 @@ abstract class AbstractFetchBackend[F[_], S](options: FetchOptions, customizeReq
           )
         }
 
-      case ras @ ResponseAsStream() =>
-        handleResponseAsStream(ras, response).map(b => b) // adjusting type because ResponseAs is covariant
+      case _: ResponseAsStream[_, _] =>
+        handleResponseAsStream(response)
     }
   }
 
@@ -282,7 +284,7 @@ abstract class AbstractFetchBackend[F[_], S](options: FetchOptions, customizeReq
     transformPromise(response.arrayBuffer()).map { ab => new Int8Array(ab).toArray }
   }
 
-  protected def handleResponseAsStream[T](ras: ResponseAsStream[T, S], response: FetchResponse): F[T]
+  protected def handleResponseAsStream[T](response: FetchResponse): F[T]
 
   override def close(): F[Unit] = monad.unit(())
 

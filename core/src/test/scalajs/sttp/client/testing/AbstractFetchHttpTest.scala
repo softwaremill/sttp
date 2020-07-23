@@ -6,7 +6,7 @@ import sttp.client.Response
 import scala.concurrent.Future
 import scala.language.higherKinds
 
-abstract class AbstractFetchHttpTest[F[_], -S] extends HttpTest[F] {
+abstract class AbstractFetchHttpTest[F[_], +P] extends HttpTest[F] {
   override protected def expectRedirectResponse(
       response: F[Response[String]],
       code: Int

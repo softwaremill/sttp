@@ -20,8 +20,8 @@ import scala.scalanative.libc.stdlib._
 import scala.scalanative.libc.string._
 import scala.scalanative.unsafe.{CSize, Ptr, _}
 
-abstract class AbstractCurlBackend[F[_], S](monad: MonadError[F], verbose: Boolean)
-    extends SttpBackend[F, S, NothingT] {
+abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
+    extends SttpBackend[F, Any, NothingT] {
   override val responseMonad: MonadError[F] = monad
 
   override def close(): F[Unit] = monad.unit(())
@@ -29,7 +29,7 @@ abstract class AbstractCurlBackend[F[_], S](monad: MonadError[F], verbose: Boole
   private var headers: CurlList = _
   private var multiPartHeaders: Seq[CurlList] = Seq()
 
-  override def send[T](request: Request[T, S]): F[Response[T]] =
+  override def send[T, R >: Any](request: Request[T, R]): F[Response[T]] =
     unsafe.Zone { implicit z =>
       val curl = CurlApi.init
       if (verbose) {
@@ -94,8 +94,8 @@ abstract class AbstractCurlBackend[F[_], S](monad: MonadError[F], verbose: Boole
       }
     }
 
-  override def openWebsocket[T, WS_RESULT](
-      request: Request[T, S],
+  override def openWebsocket[T, WS_RESULT, R >: Any](
+      request: Request[T, R],
       handler: NothingT[WS_RESULT]
   ): F[WebSocketResponse[WS_RESULT]] =
     handler // nothing is everything
@@ -115,7 +115,7 @@ abstract class AbstractCurlBackend[F[_], S](monad: MonadError[F], verbose: Boole
     lift(m)
   }
 
-  private def setRequestBody(curl: CurlHandle, body: RequestBody[S])(implicit zone: Zone): F[CurlCode] =
+  private def setRequestBody[R >: Any](curl: CurlHandle, body: RequestBody[R])(implicit zone: Zone): F[CurlCode] =
     body match { // todo: assign to responseMonad object
       case b: BasicRequestBody =>
         val str = basicBodyToString(b)
@@ -179,9 +179,9 @@ abstract class AbstractCurlBackend[F[_], S](monad: MonadError[F], verbose: Boole
     Seq(array: _*)
   }
 
-  private def readResponseBody[T](
+  private def readResponseBody[T, R >: Any](
       response: String,
-      responseAs: ResponseAs[T, S],
+      responseAs: ResponseAs[T, R],
       responseMetadata: ResponseMetadata
   ): F[T] = {
     responseAs match {
@@ -196,7 +196,7 @@ abstract class AbstractCurlBackend[F[_], S](monad: MonadError[F], verbose: Boole
           val f = FileHelpers.saveFile(output.toFile, is)
           SttpFile.fromFile(f)
         }
-      case ResponseAsStream() =>
+      case ResponseAsStream(_) =>
         responseMonad.error(new IllegalStateException("CurlBackend does not support streaming responses"))
     }
   }

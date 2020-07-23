@@ -8,10 +8,14 @@ import scala.scalajs.js
 import scala.scalajs.js.Promise
 import org.scalajs.dom.experimental.{Request => FetchRequest}
 import sttp.client.testing.SttpBackendStub
+import sttp.client.internal.NoStreams
 
 class FetchBackend private (fetchOptions: FetchOptions, customizeRequest: FetchRequest => FetchRequest)(implicit
     ec: ExecutionContext
-) extends AbstractFetchBackend[Future, Nothing](fetchOptions, customizeRequest)(new FutureMonad()) {
+) extends AbstractFetchBackend[Future, Nothing, Any](fetchOptions, customizeRequest)(new FutureMonad()) {
+
+  override val streams: NoStreams = NoStreams
+
   override protected def addCancelTimeoutHook[T](result: Future[T], cancel: () => Unit): Future[T] = {
     result.onComplete(_ => cancel())
     result
@@ -23,7 +27,6 @@ class FetchBackend private (fetchOptions: FetchOptions, customizeRequest: FetchR
   }
 
   override protected def handleResponseAsStream[T](
-      ras: ResponseAsStream[T, Nothing],
       response: FetchResponse
   ): Future[Nothing] = {
     throw new IllegalStateException("Future FetchBackend does not support streaming responses")
@@ -36,7 +39,7 @@ object FetchBackend {
   def apply(
       fetchOptions: FetchOptions = FetchOptions.Default,
       customizeRequest: FetchRequest => FetchRequest = identity
-  )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, Nothing, NothingT] =
+  )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, Any, NothingT] =
     new FetchBackend(fetchOptions, customizeRequest)
 
   /**
@@ -44,6 +47,6 @@ object FetchBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackendStub[Future, Nothing, NothingT] =
+  def stub(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackendStub[Future, Any, NothingT] =
     SttpBackendStub(new FutureMonad())
 }
