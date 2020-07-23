@@ -172,7 +172,7 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
 
   def streamToRequestBody(stream: streams.BinaryStream): Option[OkHttpRequestBody] = None
 
-  def responseBodyToStream(inputStream: InputStream): Try[S] =
+  def responseBodyToStream(inputStream: InputStream): Try[streams.BinaryStream] =
     Failure(new IllegalStateException("Streaming isn't supported"))
 
   override def close(): F[Unit] =

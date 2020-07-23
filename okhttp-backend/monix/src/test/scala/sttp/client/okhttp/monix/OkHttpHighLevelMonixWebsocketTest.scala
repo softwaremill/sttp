@@ -4,7 +4,7 @@ import monix.eval.Task
 import monix.execution.Scheduler.Implicits.global
 import org.scalatest.Assertion
 import sttp.client._
-import sttp.client.impl.monix.{TaskMonadAsyncError, convertMonixTaskToFuture}
+import sttp.client.impl.monix.{MonixStreams, TaskMonadAsyncError, convertMonixTaskToFuture}
 import sttp.client.monad.MonadError
 import sttp.client.monad.syntax._
 import sttp.client.okhttp.WebSocketHandler
@@ -17,7 +17,7 @@ import sttp.client.testing.HttpTest.wsEndpoint
 import scala.concurrent.duration._
 
 class OkHttpHighLevelMonixWebsocketTest extends HighLevelWebsocketTest[Task, WebSocketHandler] {
-  override implicit val backend: SttpBackend[Task, Nothing, WebSocketHandler] =
+  override implicit val backend: SttpBackend[Task, MonixStreams, WebSocketHandler] =
     OkHttpMonixBackend().runSyncUnsafe()
   override implicit val convertToFuture: ConvertToFuture[Task] = convertMonixTaskToFuture
   override implicit val monad: MonadError[Task] = TaskMonadAsyncError
