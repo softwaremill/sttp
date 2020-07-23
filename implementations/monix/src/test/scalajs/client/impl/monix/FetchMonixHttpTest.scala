@@ -1,15 +1,13 @@
 package sttp.client.impl.monix
 
-import java.nio.ByteBuffer
-
 import monix.eval.Task
-import monix.reactive.Observable
 import sttp.client.{NothingT, SttpBackend}
 import sttp.client.testing.{AbstractFetchHttpTest, ConvertToFuture}
+import sttp.client.impl.monix.MonixStreams
 
-class FetchMonixHttpTest extends AbstractFetchHttpTest[Task, Observable[ByteBuffer]] {
+class FetchMonixHttpTest extends AbstractFetchHttpTest[Task, MonixStreams] {
 
-  override implicit val backend: SttpBackend[Task, Observable[ByteBuffer], NothingT] = FetchMonixBackend()
+  override implicit val backend: SttpBackend[Task, MonixStreams, NothingT] = FetchMonixBackend()
   override implicit val convertToFuture: ConvertToFuture[Task] = convertMonixTaskToFuture
 
   override protected def supportsCustomMultipartContentType = false

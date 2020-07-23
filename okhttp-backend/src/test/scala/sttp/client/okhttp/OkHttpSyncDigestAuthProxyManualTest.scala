@@ -8,8 +8,8 @@ import org.scalatest.matchers.should.Matchers
 
 @Ignore
 class OkHttpSyncDigestAuthProxyManualTest extends AsyncFreeSpec with Matchers with ToFutureWrapper {
-  implicit val backend: SttpBackend[Identity, Nothing, NothingT] =
-    new DigestAuthenticationBackend[Identity, Nothing, NothingT](
+  implicit val backend: SttpBackend[Identity, Any, NothingT] =
+    new DigestAuthenticationBackend[Identity, Any, NothingT](
       OkHttpSyncBackend(options = SttpBackendOptions.httpProxy("localhost", 3128))
     )
 

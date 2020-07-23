@@ -26,7 +26,7 @@ class FetchBackend private (fetchOptions: FetchOptions, customizeRequest: FetchR
     Future.successful(js.undefined)
   }
 
-  override protected def handleResponseAsStream[T](
+  override protected def handleResponseAsStream(
       response: FetchResponse
   ): Future[Nothing] = {
     throw new IllegalStateException("Future FetchBackend does not support streaming responses")

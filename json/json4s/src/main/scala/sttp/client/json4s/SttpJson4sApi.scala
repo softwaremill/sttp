@@ -22,7 +22,7 @@ trait SttpJson4sApi {
   def asJson[B: Manifest](implicit
       formats: Formats,
       serialization: Serialization
-  ): ResponseAs[Either[ResponseError[Exception], B], Nothing] =
+  ): ResponseAs[Either[ResponseError[Exception], B], Any] =
     asString.mapWithMetadata(ResponseAs.deserializeRightCatchingExceptions(deserializeJson[B]))
 
   /**
@@ -33,7 +33,7 @@ trait SttpJson4sApi {
   def asJsonAlways[B: Manifest](implicit
       formats: Formats,
       serialization: Serialization
-  ): ResponseAs[Either[DeserializationError[Exception], B], Nothing] =
+  ): ResponseAs[Either[DeserializationError[Exception], B], Any] =
     asStringAlways.map(ResponseAs.deserializeCatchingExceptions(deserializeJson[B]))
 
   /**
@@ -43,7 +43,7 @@ trait SttpJson4sApi {
   def asJsonAlwaysUnsafe[B: Manifest](implicit
       formats: Formats,
       serialization: Serialization
-  ): ResponseAs[B, Nothing] =
+  ): ResponseAs[B, Any] =
     asStringAlways.map(deserializeJson)
 
   def deserializeJson[B: Manifest](implicit

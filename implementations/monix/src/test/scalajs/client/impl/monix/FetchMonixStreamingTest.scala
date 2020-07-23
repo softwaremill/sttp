@@ -1,11 +1,9 @@
 package sttp.client.impl.monix
 
-import java.nio.ByteBuffer
-
 import monix.eval.Task
-import monix.reactive.Observable
 import sttp.client.{NothingT, SttpBackend}
+import sttp.client.impl.monix.MonixStreams
 
 class FetchMonixStreamingTest extends MonixStreamingTest {
-  override implicit val backend: SttpBackend[Task, Observable[ByteBuffer], NothingT] = FetchMonixBackend()
+  override implicit val backend: SttpBackend[Task, MonixStreams, NothingT] = FetchMonixBackend()
 }

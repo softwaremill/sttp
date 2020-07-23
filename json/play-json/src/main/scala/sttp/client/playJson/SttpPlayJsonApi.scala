@@ -23,7 +23,7 @@ trait SttpPlayJsonApi {
     * - `Left(HttpError(String))` if the response code was other than 2xx (deserialization is not attempted)
     * - `Left(DeserializationError)` if there's an error during deserialization
     */
-  def asJson[B: Reads: IsOption]: ResponseAs[Either[ResponseError[JsError], B], Nothing] =
+  def asJson[B: Reads: IsOption]: ResponseAs[Either[ResponseError[JsError], B], Any] =
     asString.mapWithMetadata(ResponseAs.deserializeRightWithError(deserializeJson[B]))
 
   /**
@@ -31,14 +31,14 @@ trait SttpPlayJsonApi {
     * - `Right(b)` if the parsing was successful
     * - `Left(DeserializationError)` if there's an error during deserialization
     */
-  def asJsonAlways[B: Reads: IsOption]: ResponseAs[Either[DeserializationError[JsError], B], Nothing] =
+  def asJsonAlways[B: Reads: IsOption]: ResponseAs[Either[DeserializationError[JsError], B], Any] =
     asStringAlways.map(ResponseAs.deserializeWithError(deserializeJson[B]))
 
   /**
     * Tries to deserialize the body from a string into JSON, regardless of the response code. Returns the parse
     * result, or throws an exception is there's an error during deserialization
     */
-  def asJsonAlwaysUnsafe[B: Reads: IsOption]: ResponseAs[B, Nothing] =
+  def asJsonAlwaysUnsafe[B: Reads: IsOption]: ResponseAs[B, Any] =
     asStringAlways.map(ResponseAs.deserializeOrThrow(deserializeJson))
 
   // Note: None of the play-json utilities attempt to catch invalid

@@ -20,7 +20,7 @@ trait SttpCirceApi {
     * - `Left(HttpError(String))` if the response code was other than 2xx (deserialization is not attempted)
     * - `Left(DeserializationError)` if there's an error during deserialization
     */
-  def asJson[B: Decoder: IsOption]: ResponseAs[Either[ResponseError[io.circe.Error], B], Nothing] =
+  def asJson[B: Decoder: IsOption]: ResponseAs[Either[ResponseError[io.circe.Error], B], Any] =
     asString.mapWithMetadata(ResponseAs.deserializeRightWithError(deserializeJson))
 
   /**
@@ -28,14 +28,14 @@ trait SttpCirceApi {
     * - `Right(b)` if the parsing was successful
     * - `Left(DeserializationError)` if there's an error during deserialization
     */
-  def asJsonAlways[B: Decoder: IsOption]: ResponseAs[Either[DeserializationError[io.circe.Error], B], Nothing] =
+  def asJsonAlways[B: Decoder: IsOption]: ResponseAs[Either[DeserializationError[io.circe.Error], B], Any] =
     asStringAlways.map(ResponseAs.deserializeWithError(deserializeJson))
 
   /**
     * Tries to deserialize the body from a string into JSON, regardless of the response code. Returns the parse
     * result, or throws an exception is there's an error during deserialization
     */
-  def asJsonAlwaysUnsafe[B: Decoder: IsOption]: ResponseAs[B, Nothing] =
+  def asJsonAlwaysUnsafe[B: Decoder: IsOption]: ResponseAs[B, Any] =
     asStringAlways.map(ResponseAs.deserializeOrThrow(deserializeJson))
 
   def deserializeJson[B: Decoder: IsOption]: String => Either[io.circe.Error, B] =

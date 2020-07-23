@@ -30,7 +30,6 @@ import sttp.model.{Header, StatusCode}
 
 import scala.collection.immutable.Seq
 import scala.concurrent.duration.FiniteDuration
-import scala.language.higherKinds
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
 import scala.scalajs.js.Promise
@@ -276,7 +275,7 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](options: FetchOpti
         }
 
       case _: ResponseAsStream[_, _] =>
-        handleResponseAsStream(response)
+        handleResponseAsStream(response).asInstanceOf[F[T]]
     }
   }
 
@@ -284,7 +283,7 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](options: FetchOpti
     transformPromise(response.arrayBuffer()).map { ab => new Int8Array(ab).toArray }
   }
 
-  protected def handleResponseAsStream[T](response: FetchResponse): F[T]
+  protected def handleResponseAsStream(response: FetchResponse): F[streams.BinaryStream]
 
   override def close(): F[Unit] = monad.unit(())
 

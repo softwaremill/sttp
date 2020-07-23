@@ -12,6 +12,7 @@ import scala.scalajs.js.Promise
 import scala.scalajs.js.typedarray.{Int8Array, _}
 import org.scalajs.dom.experimental.{Request => FetchRequest}
 import sttp.client.testing.SttpBackendStub
+import sttp.client.impl.monix.MonixStreams
 
 /**
   * Uses the `ReadableStream` interface from the Streams API.
@@ -24,7 +25,10 @@ import sttp.client.testing.SttpBackendStub
   * @see https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream
   */
 class FetchMonixBackend private (fetchOptions: FetchOptions, customizeRequest: FetchRequest => FetchRequest)
-    extends AbstractFetchBackend[Task, Observable[ByteBuffer]](fetchOptions, customizeRequest)(TaskMonadAsyncError) {
+    extends AbstractFetchBackend[Task, MonixStreams, MonixStreams](fetchOptions, customizeRequest)(TaskMonadAsyncError) {
+
+  override val streams: MonixStreams = MonixStreams
+
   override protected def addCancelTimeoutHook[T](result: Task[T], cancel: () => Unit): Task[T] = {
     val doCancel = Task.delay(cancel())
     result.doOnCancel(doCancel).doOnFinish(_ => doCancel)
@@ -37,10 +41,7 @@ class FetchMonixBackend private (fetchOptions: FetchOptions, customizeRequest: F
     bytes.map(_.toTypedArray.asInstanceOf[BodyInit])
   }
 
-  override protected def handleResponseAsStream[T](
-      ras: ResponseAsStream[T, Observable[ByteBuffer]],
-      response: FetchResponse
-  ): Task[T] = {
+  override protected def handleResponseAsStream(response: FetchResponse): Task[Observable[ByteBuffer]] = {
     Task
       .delay {
         lazy val reader = response.body.getReader()
@@ -58,7 +59,6 @@ class FetchMonixBackend private (fetchOptions: FetchOptions, customizeRequest: F
         }
         go().doOnSubscriptionCancel(Task(reader.cancel("Response body reader cancelled")).void)
       }
-      .map(ras.responseIsStream)
   }
 
   override protected def transformPromise[T](promise: => Promise[T]): Task[T] = Task.fromFuture(promise.toFuture)
@@ -68,7 +68,7 @@ object FetchMonixBackend {
   def apply(
       fetchOptions: FetchOptions = FetchOptions.Default,
       customizeRequest: FetchRequest => FetchRequest = identity
-  ): SttpBackend[Task, Observable[ByteBuffer], NothingT] =
+  ): SttpBackend[Task, MonixStreams, NothingT] =
     new FetchMonixBackend(fetchOptions, customizeRequest)
 
   /**
@@ -77,5 +77,5 @@ object FetchMonixBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub: SttpBackendStub[Task, Observable[ByteBuffer], NothingT] = SttpBackendStub(TaskMonadAsyncError)
+  def stub: SttpBackendStub[Task, MonixStreams, NothingT] = SttpBackendStub(TaskMonadAsyncError)
 }

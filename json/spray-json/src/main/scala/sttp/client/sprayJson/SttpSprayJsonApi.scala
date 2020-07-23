@@ -16,7 +16,7 @@ trait SttpSprayJsonApi {
     * - `Left(HttpError(String))` if the response code was other than 2xx (deserialization is not attempted)
     * - `Left(DeserializationError)` if there's an error during deserialization
     */
-  def asJson[B: JsonReader: IsOption]: ResponseAs[Either[ResponseError[Exception], B], Nothing] =
+  def asJson[B: JsonReader: IsOption]: ResponseAs[Either[ResponseError[Exception], B], Any] =
     asString.mapWithMetadata(ResponseAs.deserializeRightCatchingExceptions(deserializeJson[B]))
 
   /**
@@ -24,14 +24,14 @@ trait SttpSprayJsonApi {
     * - `Right(b)` if the parsing was successful
     * - `Left(DeserializationError)` if there's an error during deserialization
     */
-  def asJsonAlways[B: JsonReader: IsOption]: ResponseAs[Either[DeserializationError[Exception], B], Nothing] =
+  def asJsonAlways[B: JsonReader: IsOption]: ResponseAs[Either[DeserializationError[Exception], B], Any] =
     asStringAlways.map(ResponseAs.deserializeCatchingExceptions(deserializeJson[B]))
 
   /**
     * Tries to deserialize the body from a string into JSON, regardless of the response code. Returns the parse
     * result, or throws an exception is there's an error during deserialization
     */
-  def asJsonAlwaysUnsafe[B: JsonReader: IsOption]: ResponseAs[B, Nothing] =
+  def asJsonAlwaysUnsafe[B: JsonReader: IsOption]: ResponseAs[B, Any] =
     asStringAlways.map(deserializeJson)
 
   def deserializeJson[B: JsonReader: IsOption]: String => B =

@@ -6,7 +6,6 @@ import sttp.client.internal._
 import sttp.client._
 import sttp.model._
 
-import scala.language.higherKinds
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
