@@ -228,6 +228,7 @@ abstract class AsyncHttpClientBackend[F[_], S](
       .setUrl(r.uri.toString)
       .setReadTimeout(if (readTimeout.isFinite) readTimeout.toMillis.toInt else -1)
       .setRequestTimeout(if (readTimeout.isFinite) readTimeout.toMillis.toInt else -1)
+      .setFollowRedirect(r.options.followRedirects)
     r.headers.foreach { case Header(k, v) => rb.setHeader(k, v) }
     setBody(r, r.body, rb)
     rb.build()
