@@ -19,7 +19,7 @@ This backend works with all Scala versions. A Dotty build is available as well.
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client" %% "okhttp-backend" % "2.2.2"
+"com.softwaremill.sttp.client" %% "okhttp-backend" % "2.2.3"
 ```
 
 Create the backend using:
@@ -45,7 +45,7 @@ This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supp
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client" %% "httpclient-backend" % "2.2.2"
+"com.softwaremill.sttp.client" %% "httpclient-backend" % "2.2.3"
 ```
 
 Create the backend using:

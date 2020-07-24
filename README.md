@@ -45,14 +45,14 @@ sttp (v2) documentation is available at [sttp.softwaremill.com](http://sttp.soft
 
 sttp (v1) documentation is available at [sttp.softwaremill.com/en/v1](https://sttp.softwaremill.com/en/v1).
 
-scaladoc is available at [https://www.javadoc.io](https://www.javadoc.io/doc/com.softwaremill.sttp.client/core_2.12/2.2.2)
+scaladoc is available at [https://www.javadoc.io](https://www.javadoc.io/doc/com.softwaremill.sttp.client/core_2.12/2.2.3)
 
 ## Quickstart with Ammonite
 
 If you are an [Ammonite](http://ammonite.io) user, you can quickly start experimenting with sttp by copy-pasting the following:
 
 ```scala
-import $ivy.`com.softwaremill.sttp.client::core:2.2.2`
+import $ivy.`com.softwaremill.sttp.client::core:2.2.3`
 import sttp.client.quick._
 quickRequest.get(uri"http://httpbin.org/ip").send()
 ```
@@ -64,7 +64,7 @@ This brings in the sttp API and an implicit, synchronous backend.
 Add the following dependency:
 
 ```scala
-"com.softwaremill.sttp.client" %% "core" % "2.2.2"
+"com.softwaremill.sttp.client" %% "core" % "2.2.3"
 ```
 
 Then, import:
