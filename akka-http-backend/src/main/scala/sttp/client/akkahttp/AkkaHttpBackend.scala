@@ -44,7 +44,7 @@ import sttp.client.{
   ResponseAsByteArray,
   ResponseAsFile,
   ResponseAsFromMetadata,
-  ResponseAsStream,
+  ResponseAsStreamUnsafe,
   ResponseMetadata,
   StreamBody,
   StringBody,
@@ -162,8 +162,8 @@ class AkkaHttpBackend private (
       case ResponseAsByteArray =>
         asByteArray
 
-      case ResponseAsStream(_) =>
-        Future.successful(hr.entity.dataBytes.asInstanceOf[T]) 
+      case ResponseAsStreamUnsafe(_) =>
+        Future.successful(hr.entity.dataBytes.asInstanceOf[T])
 
       case ResponseAsFile(file) =>
         saved(file.toFile).map(_ => file)

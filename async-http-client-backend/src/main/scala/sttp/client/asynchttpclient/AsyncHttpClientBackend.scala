@@ -48,7 +48,7 @@ import sttp.client.{
   ResponseAs,
   ResponseAsByteArray,
   ResponseAsFile,
-  ResponseAsStream,
+  ResponseAsStreamUnsafe,
   ResponseMetadata,
   StreamBody,
   StringBody,
@@ -202,9 +202,9 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
           case MappedResponseAs(raw, g) =>
             val nested = handleBody(p, raw, responseMetadata)
             nested.map(g(_, responseMetadata))
-          case ResponseAsFromMetadata(f) => handleBody(p, f(responseMetadata), responseMetadata)
-          case _: ResponseAsStream[_, _] => monad.unit(publisherToStreamBody(p).asInstanceOf[TT])
-          case IgnoreResponse            =>
+          case ResponseAsFromMetadata(f)       => handleBody(p, f(responseMetadata), responseMetadata)
+          case _: ResponseAsStreamUnsafe[_, _] => monad.unit(publisherToStreamBody(p).asInstanceOf[TT])
+          case IgnoreResponse                  =>
             // getting the body and discarding it
             publisherToBytes(p).map(_ => ())
 

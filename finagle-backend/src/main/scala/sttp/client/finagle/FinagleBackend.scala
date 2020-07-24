@@ -20,7 +20,7 @@ import sttp.client.{
   ResponseAsByteArray,
   ResponseAsFile,
   ResponseAsFromMetadata,
-  ResponseAsStream,
+  ResponseAsStreamUnsafe,
   ResponseMetadata,
   StringBody,
   SttpBackend,
@@ -168,7 +168,7 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
           b
         })
 
-      case ResponseAsStream(_) => responseBodyToStream(r)
+      case ResponseAsStreamUnsafe(_) => responseBodyToStream(r)
 
       case ResponseAsFile(file) =>
         val body = TFuture.const(util.Try(FileHelpers.saveFile(file.toFile, r.getInputStream())))

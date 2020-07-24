@@ -263,7 +263,7 @@ class HttpURLConnectionBackend private (
       case ResponseAsByteArray =>
         toByteArray(is)
 
-      case ResponseAsStream(_) =>
+      case ResponseAsStreamUnsafe(_) =>
         // only possible when the user requests the response as a stream of
         // Nothing. Oh well ...
         throw new IllegalStateException()

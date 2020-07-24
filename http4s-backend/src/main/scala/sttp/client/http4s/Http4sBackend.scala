@@ -213,7 +213,7 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
       case ResponseAsByteArray =>
         hr.as[Array[Byte]].map(b => b) // adjusting type because ResponseAs is covariant
 
-      case _: ResponseAsStream[_, _] =>
+      case _: ResponseAsStreamUnsafe[_, _] =>
         hr.body.asInstanceOf[T].pure[F]
 
       case ResponseAsFile(file) =>

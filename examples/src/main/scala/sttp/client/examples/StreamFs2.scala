@@ -26,7 +26,7 @@ object StreamFs2 extends App {
     basicRequest
       .body("I want a stream!")
       .post(uri"https://httpbin.org/post")
-      .response(asStreamAlways(Fs2Streams[IO]))
+      .response(asStreamUnsafeAlways(Fs2Streams[IO]))
       .send()
       .flatMap { response =>
         response.body.chunks

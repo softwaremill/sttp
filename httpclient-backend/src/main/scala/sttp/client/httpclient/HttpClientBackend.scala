@@ -31,7 +31,7 @@ import sttp.client.{
   ResponseAs,
   ResponseAsByteArray,
   ResponseAsFile,
-  ResponseAsStream,
+  ResponseAsStreamUnsafe,
   ResponseMetadata,
   StreamBody,
   Streams,
@@ -160,7 +160,7 @@ abstract class HttpClientBackend[F[_], S, P](
             val result = Try(responseBody.readAllBytes())
             responseBody.close()
             result
-          case _: ResponseAsStream[_, _] =>
+          case _: ResponseAsStreamUnsafe[_, _] =>
             responseBodyToStream(responseBody).asInstanceOf[Try[T]]
           case ResponseAsFile(file) =>
             val body = Try(FileHelpers.saveFile(file.toFile, responseBody))

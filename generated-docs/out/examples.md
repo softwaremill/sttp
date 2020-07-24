@@ -308,7 +308,7 @@ def streamResponseBody(implicit backend: SttpBackend[IO, Stream[IO, Byte], Nothi
   basicRequest
     .body("I want a stream!")
     .post(uri"https://httpbin.org/post")
-    .response(asStreamAlways[Stream[IO, Byte]])
+    .response(asStreamUnsafeAlways[Stream[IO, Byte]])
     .send()
     .flatMap { response =>
       response.body

@@ -274,7 +274,7 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](options: FetchOpti
           )
         }
 
-      case _: ResponseAsStream[_, _] =>
+      case _: ResponseAsStreamUnsafe[_, _] =>
         handleResponseAsStream(response).asInstanceOf[F[T]]
     }
   }

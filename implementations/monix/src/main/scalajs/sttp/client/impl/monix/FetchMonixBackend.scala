@@ -5,7 +5,7 @@ import java.nio.ByteBuffer
 import monix.eval.Task
 import monix.reactive.Observable
 import org.scalajs.dom.experimental.{BodyInit, Response => FetchResponse}
-import sttp.client.{AbstractFetchBackend, FetchOptions, NothingT, ResponseAsStream, SttpBackend}
+import sttp.client.{AbstractFetchBackend, FetchOptions, NothingT, ResponseAsStreamUnsafe, SttpBackend}
 
 import scala.scalajs.js
 import scala.scalajs.js.Promise

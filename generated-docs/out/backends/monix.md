@@ -133,7 +133,7 @@ AsyncHttpClientMonixBackend().flatMap { implicit backend =>
   val response: Task[Response[Either[String, Observable[ByteBuffer]]]] =
     basicRequest
       .post(uri"...")
-      .response(asStream[Observable[ByteBuffer]])
+      .response(asStreamUnsafe[Observable[ByteBuffer]])
       .readTimeout(Duration.Inf)
       .send()
     response

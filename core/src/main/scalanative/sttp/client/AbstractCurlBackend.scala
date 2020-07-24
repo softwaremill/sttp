@@ -196,7 +196,7 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
           val f = FileHelpers.saveFile(output.toFile, is)
           SttpFile.fromFile(f)
         }
-      case ResponseAsStream(_) =>
+      case ResponseAsStreamUnsafe(_) =>
         responseMonad.error(new IllegalStateException("CurlBackend does not support streaming responses"))
     }
   }

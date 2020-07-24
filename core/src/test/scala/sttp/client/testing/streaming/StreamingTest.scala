@@ -60,7 +60,7 @@ abstract class StreamingTest[F[_], S]
     val r0: RequestT[Identity, streams.BinaryStream, S] = basicRequest
       .post(uri"$endpoint/streaming/echo")
       .body(Body)
-      .response(asStreamAlways(streams))
+      .response(asStreamUnsafeAlways(streams))
     r0.send()
       .toFuture()
       .flatMap { response =>
@@ -76,7 +76,7 @@ abstract class StreamingTest[F[_], S]
     val r0: RequestT[Identity, streams.BinaryStream, S] = basicRequest
       .post(uri"$endpoint/streaming/echo")
       .body(LargeBody)
-      .response(asStreamAlways(streams))
+      .response(asStreamUnsafeAlways(streams))
     r0.send()
       .toFuture()
       .flatMap { response =>
@@ -97,7 +97,7 @@ abstract class StreamingTest[F[_], S]
     val r0: RequestT[Identity, Either[String, streams.BinaryStream], S] = basicRequest
       .post(uri"$endpoint/streaming/echo")
       .body(Body)
-      .response(asStream(streams))
+      .response(asStreamUnsafe(streams))
     r0.send()
       .toFuture()
       .flatMap { response =>
@@ -113,7 +113,7 @@ abstract class StreamingTest[F[_], S]
     val r0: RequestT[Identity, (streams.BinaryStream, Boolean), S] = basicRequest
       .post(uri"$endpoint/streaming/echo")
       .body(Body)
-      .response(asStreamAlways(streams).map(s => (s, true)))
+      .response(asStreamUnsafeAlways(streams).map(s => (s, true)))
     r0
       .send()
       .toFuture()
@@ -132,11 +132,11 @@ abstract class StreamingTest[F[_], S]
 
     // TODO: for some reason these explicit types are needed in Dotty
     val r0: RequestT[Identity, streams.BinaryStream, S] = basicRequest
-    // of course, you should never rely on the internet being available
-    // in tests, but that's so much easier than setting up an https
-    // testing server
+      // of course, you should never rely on the internet being available
+      // in tests, but that's so much easier than setting up an https
+      // testing server
       .get(url)
-      .response(asStreamAlways(streams))
+      .response(asStreamUnsafeAlways(streams))
 
     r0
       .send()

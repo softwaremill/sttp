@@ -61,7 +61,7 @@ implicit val sttpBackend = AkkaHttpBackend()
 val response: Future[Response[Either[String, Source[ByteString, Any]]]] =
   basicRequest
     .post(uri"...")
-    .response(asStream[Source[ByteString, Any]])
+    .response(asStreamUnsafe[Source[ByteString, Any]])
     .send()
 ```
 

@@ -336,7 +336,7 @@ object SttpBackendStub {
           case is: InputStream => Some(toByteArray(is))
           case _               => None
         }
-      case ResponseAsStream(_) =>
+      case ResponseAsStreamUnsafe(_) =>
         None
       case ResponseAsFile(_) =>
         b match {

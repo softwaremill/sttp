@@ -96,10 +96,10 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     asString(charset2).mapRight(ResponseAs.parseParams(_, charset2))
   }
 
-  def asStream[S](s: Streams[S]): ResponseAs[Either[String, s.BinaryStream], S] =
-    asEither(asStringAlways, asStreamAlways(s))
+  def asStreamUnsafe[S](s: Streams[S]): ResponseAs[Either[String, s.BinaryStream], S] =
+    asEither(asStringAlways, asStreamUnsafeAlways(s))
 
-  def asStreamAlways[S](s: Streams[S]): ResponseAs[s.BinaryStream, S] = ResponseAsStream(s)
+  def asStreamUnsafeAlways[S](s: Streams[S]): ResponseAs[s.BinaryStream, S] = ResponseAsStreamUnsafe(s)
 
   private[client] def asSttpFile(file: SttpFile): ResponseAs[SttpFile, Any] =
     ResponseAsFile(file)

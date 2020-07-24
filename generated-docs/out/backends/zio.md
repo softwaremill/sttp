@@ -152,7 +152,7 @@ import scala.concurrent.duration.Duration
 val request =
   basicRequest
     .post(uri"...")
-    .response(asStream[Stream[Throwable, Byte]])
+    .response(asStreamUnsafe[Stream[Throwable, Byte]])
     .readTimeout(Duration.Inf)
 
 val response: ZIO[SttpClient, Throwable, Response[Either[String, Stream[Throwable, Byte]]]] = SttpClient.send(request)

@@ -161,7 +161,7 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
             val body = Try(toByteArray(responseBody))
             responseBody.close()
             body
-          case _: ResponseAsStream[_, _] =>
+          case _: ResponseAsStreamUnsafe[_, _] =>
             responseBodyToStream(responseBody).asInstanceOf[Try[T]]
           case ResponseAsFile(file) =>
             val body = Try(FileHelpers.saveFile(file.toFile, responseBody))
