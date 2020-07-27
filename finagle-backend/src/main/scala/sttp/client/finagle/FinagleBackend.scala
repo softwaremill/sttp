@@ -6,6 +6,7 @@ import sttp.client.{
   BasicRequestBody,
   ByteArrayBody,
   ByteBufferBody,
+  Effect,
   FileBody,
   FollowRedirectsBackend,
   IgnoreResponse,
@@ -20,6 +21,7 @@ import sttp.client.{
   ResponseAsByteArray,
   ResponseAsFile,
   ResponseAsFromMetadata,
+  ResponseAsStream,
   ResponseAsStreamUnsafe,
   ResponseMetadata,
   StringBody,
@@ -48,7 +50,8 @@ import sttp.client.testing.SttpBackendStub
 import scala.io.Source
 
 class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture, Any, NothingT] {
-  override def send[T, R >: Any](request: Request[T, R]): TFuture[Response[T]] =
+  type PE = Any with Effect[TFuture]
+  override def send[T, R >: PE](request: Request[T, R]): TFuture[Response[T]] =
     adjustExceptions {
       val service = getClient(client, request)
       val finagleRequest = requestBodyToFinagle(request)
@@ -67,7 +70,7 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
         }
     }
 
-  override def openWebsocket[T, WS_RESULT, R >: Any](
+  override def openWebsocket[T, WS_RESULT, R >: PE](
       request: Request[T, R],
       handler: NothingT[WS_RESULT]
   ): TFuture[WebSocketResponse[WS_RESULT]] = handler
@@ -168,7 +171,8 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
           b
         })
 
-      case ResponseAsStreamUnsafe(_) => responseBodyToStream(r)
+      case ResponseAsStream(_, _)    => streamingNotSupported()
+      case ResponseAsStreamUnsafe(_) => streamingNotSupported()
 
       case ResponseAsFile(file) =>
         val body = TFuture.const(util.Try(FileHelpers.saveFile(file.toFile, r.getInputStream())))
@@ -176,7 +180,7 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
     }
   }
 
-  private def responseBodyToStream[T](r: FResponse): TFuture[T] =
+  private def streamingNotSupported[T](): TFuture[T] =
     TFuture.exception(new IllegalStateException("Streaming isn't supported"))
 
   private def getClient(c: Option[Client], request: Request[_, Nothing]): Service[http.Request, FResponse] = {
