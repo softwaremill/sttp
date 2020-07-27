@@ -40,7 +40,8 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
     customizeRequest: Http4sRequest[F] => Http4sRequest[F],
     customEncodingHandler: EncodingHandler[F]
 ) extends SttpBackend[F, Fs2Streams[F], NothingT] {
-  override def send[T, R >: Fs2Streams[F]](r: Request[T, R]): F[Response[T]] =
+  type PE = Fs2Streams[F] with Effect[F]
+  override def send[T, R >: PE](r: Request[T, R]): F[Response[T]] =
     adjustExceptions {
       val (entity, extraHeaders) = bodyToHttp4s(r, r.body)
       val request = Http4sRequest(
@@ -61,13 +62,15 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
               val statusText = response.status.reason
               val responseMetadata = ResponseMetadata(headers, code, statusText)
 
+              val signalBodyComplete = responseBodyCompleteVar.tryPut(()).map(_ => ())
               val body =
                 bodyFromHttp4s(
                   r.response,
-                  signalResponseBodyComplete(
+                  onFinalizeSignal(
                     decompressResponseBodyIfNotHead(r.method, response),
-                    responseBodyCompleteVar.put(())
+                    signalBodyComplete
                   ),
+                  signalBodyComplete,
                   responseMetadata
                 )
 
@@ -86,7 +89,7 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
       }
     }
 
-  override def openWebsocket[T, WS_RESULT, R >: Fs2Streams[F]](
+  override def openWebsocket[T, WS_RESULT, R >: PE](
       request: Request[T, R],
       handler: NothingT[WS_RESULT]
   ): F[WebSocketResponse[WS_RESULT]] = handler // nothing is everything
@@ -126,9 +129,9 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
     }
   }
 
-  private def bodyToHttp4s(
-      r: Request[_, Fs2Streams[F]],
-      body: RequestBody[Fs2Streams[F]]
+  private def bodyToHttp4s[R >: PE](
+      r: Request[_, R],
+      body: RequestBody[R]
   ): (http4s.Entity[F], http4s.Headers) = {
     body match {
       case NoBody => (http4s.Entity(http4s.EmptyBody: http4s.EntityBody[F]), http4s.Headers.empty)
@@ -156,7 +159,7 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
     http4s.multipart.Part(http4s.Headers(allHeaders), basicBodyToHttp4s(mp.body).body)
   }
 
-  private def signalResponseBodyComplete(hr: http4s.Response[F], signal: F[Unit]): http4s.Response[F] = {
+  private def onFinalizeSignal(hr: http4s.Response[F], signal: F[Unit]): http4s.Response[F] = {
     hr.copy(body = hr.body.onFinalize(signal))
   }
 
@@ -186,9 +189,10 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
     case (_, contentCoding) => throw new UnsupportedEncodingException(s"Unsupported encoding: ${contentCoding.coding}")
   }
 
-  private def bodyFromHttp4s[T](
-      rr: ResponseAs[T, Fs2Streams[F]],
+  private def bodyFromHttp4s[T, R >: PE](
+      rr: ResponseAs[T, PE],
       hr: http4s.Response[F],
+      signalBodyComplete: F[Unit],
       meta: ResponseMetadata
   ): F[T] = {
     def saved(file: File) = {
@@ -202,16 +206,19 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
 
     rr match {
       case MappedResponseAs(raw, g) =>
-        bodyFromHttp4s(raw, hr, meta).map(g(_, meta))
+        bodyFromHttp4s(raw, hr, signalBodyComplete, meta).map(g(_, meta))
 
       case ResponseAsFromMetadata(f) =>
-        bodyFromHttp4s(f(meta), hr, meta)
+        bodyFromHttp4s(f(meta), hr, signalBodyComplete, meta)
 
       case IgnoreResponse =>
         hr.body.compile.drain.map(_ => ()) // adjusting type because ResponseAs is covariant
 
       case ResponseAsByteArray =>
         hr.as[Array[Byte]].map(b => b) // adjusting type because ResponseAs is covariant
+
+      case ras: ResponseAsStream[_, _, _, _] =>
+        ras.f.asInstanceOf[Stream[F, Byte] => F[T]](hr.body).guarantee(signalBodyComplete)
 
       case _: ResponseAsStreamUnsafe[_, _] =>
         hr.body.asInstanceOf[T].pure[F]
