@@ -28,6 +28,14 @@ trait MonadError[F[_]] {
       case Success(v) => unit(v)
       case Failure(e) => error(e)
     }
+
+  def ensure[T](f: F[T], e: => F[Unit]): F[T] = {
+    handleError(
+      flatMap(f)(v => map(e)(_ => v))
+    ) {
+      case t => flatMap(e)(_ => error(t))
+    }
+  }
 }
 
 trait MonadAsyncError[F[_]] extends MonadError[F] {

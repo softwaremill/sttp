@@ -208,11 +208,10 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
             nested.map(g(_, responseMetadata))
           case ResponseAsFromMetadata(f) => handleBody(p, f(responseMetadata), responseMetadata)
           case ResponseAsStream(_, f) =>
-            f.asInstanceOf[streams.BinaryStream => F[TT]](publisherToStreamBody(p))
-              .flatMap(v => ignoreIfNotSubscribed(p).map(_ => v))
-              .handleError {
-                case t => ignoreIfNotSubscribed(p).flatMap(_ => monad.error(t))
-              }
+            monad.ensure(
+              f.asInstanceOf[streams.BinaryStream => F[TT]](publisherToStreamBody(p)),
+              ignoreIfNotSubscribed(p)
+            )
 
           case _: ResponseAsStreamUnsafe[_, _] => monad.unit(publisherToStreamBody(p).asInstanceOf[TT])
           case IgnoreResponse                  =>

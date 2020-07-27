@@ -1,6 +1,6 @@
 package sttp.client.okhttp
 
-import sttp.client.{NothingT, SttpBackend}
+import sttp.client.SttpBackend
 import sttp.client.testing.{ConvertToFuture, HttpTest}
 
 import scala.concurrent.Future

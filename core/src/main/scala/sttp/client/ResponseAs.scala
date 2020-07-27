@@ -39,7 +39,7 @@ case object ResponseAsByteArray extends BasicResponseAs[Array[Byte], Any]
 // fact that `BinaryStream =:= s.BinaryStream`. We have to rely on correct construction via the companion object and
 // perform typecasts when the request is deconstructed.
 case class ResponseAsStream[F[_], T, Stream, S] private (s: Streams[S], f: Stream => F[T])
-    extends BasicResponseAs[T, Effect[F] with S]
+    extends ResponseAs[T, Effect[F] with S]
 object ResponseAsStream {
   def apply[F[_], T, S](s: Streams[S])(f: s.BinaryStream => F[T]): ResponseAs[T, Effect[F] with S] =
     new ResponseAsStream(s, f)
@@ -83,14 +83,16 @@ object ResponseAs {
     * wrapping the result in the target monad (`handleBasic` returns
     * `Try[T]`, not `F[T]`).
     */
-  private[client] trait EagerResponseHandler[R] {
+  private[client] trait EagerResponseHandler[R, F[_]] {
     def handleBasic[T](bra: BasicResponseAs[T, R]): Try[T]
+    def handleStream[T](ras: ResponseAsStream[F, _, _, _]): F[T]
 
-    def handle[T, F[_]](responseAs: ResponseAs[T, R], responseMonad: MonadError[F], meta: ResponseMetadata): F[T] = {
+    def handle[T](responseAs: ResponseAs[T, R], responseMonad: MonadError[F], meta: ResponseMetadata): F[T] = {
       responseAs match {
         case MappedResponseAs(raw, g) =>
           responseMonad.map(handle(raw, responseMonad, meta))(t => g(t, meta))
-        case ResponseAsFromMetadata(f) => handle(f(meta), responseMonad, meta)
+        case ResponseAsFromMetadata(f)         => handle(f(meta), responseMonad, meta)
+        case ras: ResponseAsStream[F, _, _, _] => handleStream(ras)
         case bra: BasicResponseAs[T, R] =>
           responseMonad.fromTry(handleBasic(bra))
       }

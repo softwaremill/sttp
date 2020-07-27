@@ -47,7 +47,6 @@ import sttp.client.{
 
 import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
-import scala.language.higherKinds
 import scala.util.{Failure, Try}
 
 abstract class OkHttpBackend[F[_], S <: Streams[S], P](
@@ -57,8 +56,9 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
 ) extends SttpBackend[F, P, WebSocketHandler] {
 
   val streams: Streams[S]
+  type PE = P with Effect[F]
 
-  private[okhttp] def convertRequest[T, R >: P](request: Request[T, R]): OkHttpRequest = {
+  private[okhttp] def convertRequest[T, R >: PE](request: Request[T, R]): OkHttpRequest = {
     val builder = new OkHttpRequest.Builder()
       .url(request.uri.toString)
 
@@ -80,7 +80,7 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
     builder.build()
   }
 
-  private def bodyToOkHttp[T, R >: P](body: RequestBody[R], ct: Option[String]): Option[OkHttpRequestBody] = {
+  private def bodyToOkHttp[T, R >: PE](body: RequestBody[R], ct: Option[String]): Option[OkHttpRequestBody] = {
     val mediaType = ct.flatMap(c => Try(MediaType.parse(c)).toOption).orNull
     body match {
       case NoBody => None
@@ -116,7 +116,7 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
     bodyToOkHttp(mp.body, mp.contentType).foreach(builder.addPart(headers, _))
   }
 
-  private[okhttp] def readResponse[T, R >: P](
+  private[okhttp] def readResponse[T, R >: PE](
       res: OkHttpResponse,
       responseAs: ResponseAs[T, R]
   ): F[Response[T]] = {
@@ -151,8 +151,16 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
     case (_, ce)           => throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
   }
 
-  private def responseHandler[R >: P](responseBody: InputStream) =
-    new EagerResponseHandler[R] {
+  private def responseHandler[R >: PE](responseBody: InputStream): EagerResponseHandler[R, F] =
+    new EagerResponseHandler[R, F] {
+      override def handleStream[T](ras: ResponseAsStream[F, _, _, _]): F[T] =
+        responseMonad.ensure(
+          responseMonad.flatMap(responseMonad.fromTry(responseBodyToStream(responseBody)))(
+            ras.f.asInstanceOf[streams.BinaryStream => F[T]]
+          ),
+          responseMonad.eval(responseBody.close())
+        )
+
       override def handleBasic[T](bra: BasicResponseAs[T, R]): Try[T] =
         bra match {
           case IgnoreResponse =>
@@ -237,7 +245,7 @@ class OkHttpSyncBackend private (client: OkHttpClient, closeClient: Boolean, cus
 
   override val streams: Streams[Nothing] = NoStreams
 
-  override def send[T, R >: Any](request: Request[T, R]): Identity[Response[T]] =
+  override def send[T, R >: PE](request: Request[T, R]): Identity[Response[T]] =
     adjustExceptions(isWebsocket = false) {
       val nativeRequest = convertRequest(request)
       val response = OkHttpBackend
@@ -247,7 +255,7 @@ class OkHttpSyncBackend private (client: OkHttpClient, closeClient: Boolean, cus
       readResponse(response, request.response)
     }
 
-  override def openWebsocket[T, WS_RESULT, R >: Any](
+  override def openWebsocket[T, WS_RESULT, R >: PE](
       request: Request[T, R],
       handler: WebSocketHandler[WS_RESULT]
   ): Identity[WebSocketResponse[WS_RESULT]] =
@@ -323,7 +331,7 @@ abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](
     customEncodingHandler: EncodingHandler
 ) extends OkHttpBackend[F, S, P](client, closeClient, customEncodingHandler) {
 
-  override def send[T, R >: P](request: Request[T, R]): F[Response[T]] =
+  override def send[T, R >: PE](request: Request[T, R]): F[Response[T]] =
     adjustExceptions(isWebsocket = false) {
       val nativeRequest = convertRequest(request)
 
@@ -352,7 +360,7 @@ abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](
       })
     }
 
-  override def openWebsocket[T, WS_RESULT, R >: P](
+  override def openWebsocket[T, WS_RESULT, R >: PE](
       request: Request[T, R],
       handler: WebSocketHandler[WS_RESULT]
   ): F[WebSocketResponse[WS_RESULT]] =
