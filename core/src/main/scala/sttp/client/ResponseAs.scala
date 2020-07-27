@@ -6,7 +6,6 @@ import sttp.model.StatusCode
 import sttp.model.internal.Rfc3986
 
 import scala.collection.immutable.Seq
-import scala.language.higherKinds
 import scala.util.{Failure, Success, Try}
 
 /**
@@ -35,13 +34,22 @@ sealed trait BasicResponseAs[T, -R] extends ResponseAs[T, R]
 
 case object IgnoreResponse extends BasicResponseAs[Unit, Any]
 case object ResponseAsByteArray extends BasicResponseAs[Array[Byte], Any]
+
 // Path-dependent types are not supported in constructor arguments or the extends clause. Thus we cannot express the
 // fact that `BinaryStream =:= s.BinaryStream`. We have to rely on correct construction via the companion object and
 // perform typecasts when the request is deconstructed.
+case class ResponseAsStream[F[_], T, Stream, S] private (s: Streams[S], f: Stream => F[T])
+    extends BasicResponseAs[T, Effect[F] with S]
+object ResponseAsStream {
+  def apply[F[_], T, S](s: Streams[S])(f: s.BinaryStream => F[T]): ResponseAs[T, Effect[F] with S] =
+    new ResponseAsStream(s, f)
+}
+
 case class ResponseAsStreamUnsafe[BinaryStream, S] private (s: Streams[S]) extends BasicResponseAs[BinaryStream, S]
 object ResponseAsStreamUnsafe {
   def apply[S](s: Streams[S]): ResponseAs[s.BinaryStream, S] = new ResponseAsStreamUnsafe(s)
 }
+
 case class ResponseAsFile(output: SttpFile) extends BasicResponseAs[SttpFile, Any]
 
 case class ResponseAsFromMetadata[T, R](f: ResponseMetadata => ResponseAs[T, R]) extends ResponseAs[T, R]

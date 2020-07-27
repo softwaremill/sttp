@@ -7,12 +7,12 @@ import java.util.Base64
 import sttp.client.internal.DigestAuthenticator.DigestAuthData
 import sttp.client.internal._
 import sttp.client.internal.{SttpFile, ToCurlConverter}
+import sttp.client.monad.FunctionK
 import sttp.client.ws.WebSocketResponse
 import sttp.model._
 
 import scala.collection.immutable.Seq
 import scala.concurrent.duration.Duration
-import scala.language.higherKinds
 
 /**
   * Describes a HTTP request, along with a description of how the response body should be handled.
@@ -275,10 +275,11 @@ case class RequestT[U[_], T, -R](
     *         Known exceptions are converted by backends to one of [[SttpClientException]]. Other exceptions are thrown
     *         unchanged.
     */
-  def send[F[_]]()(implicit
-      backend: SttpBackend[F, R, NothingT],
+  def send[F[_], P]()(implicit
+      backend: SttpBackend[F, P, NothingT],
+      pEffectFIsR: P with Effect[F] <:< R,
       isIdInRequest: IsIdInRequest[U]
-  ): F[Response[T]] = backend.send(asRequest)
+  ): F[Response[T]] = backend.send(asRequest.asInstanceOf[Request[T, P with Effect[F]]]) // as witnessed by pEffectFIsR
 
   /**
     * Opens a websocket, using the backend from the implicit scope. Only requests for which the method & URI are
@@ -307,6 +308,50 @@ case class RequestT[U[_], T, -R](
     backend.responseMonad.flatMap(handler)(handler => backend.openWebsocket(asRequest, handler))
 
   def toCurl(implicit isIdInRequest: IsIdInRequest[U]): String = ToCurlConverter.requestToCurl(asRequest)
+
+  /**
+    * Change the effect type that's used by the response specification of this request, if the response specification
+    * requires the `Effect[F]` capability.
+    * @param fk A transformation between effects `F` and `G`
+    * @tparam F The source effect type.
+    * @tparam G The target effect type.
+    * @tparam R0 The requirements of this request, without the `Effect[F]` capability.
+    */
+  def mapEffect[F[_], G[_], R0](
+      fk: FunctionK[F, G]
+  )(implicit rHasEffectF: R0 with Effect[F] <:< R): RequestT[U, T, R0 with Effect[G]] = {
+    RequestT(
+      method,
+      uri,
+      body.asInstanceOf[RequestBody[R0 with Effect[G]]], // request body can't use the Effect capability
+      headers,
+      mapResponseEffect[T, R0, F, G](
+        response.asInstanceOf[ResponseAs[T, R0 with Effect[F]]], // this is witnessed by rHasEffectF
+        fk
+      ),
+      options,
+      tags
+    )
+  }
+
+  private def mapResponseEffect[TT, R0, F[_], G[_]](
+      r: ResponseAs[TT, R0 with Effect[F]],
+      fk: FunctionK[F, G]
+  ): ResponseAs[TT, R0 with Effect[G]] = {
+    r match {
+      case IgnoreResponse      => IgnoreResponse
+      case ResponseAsByteArray => ResponseAsByteArray
+      case ResponseAsStream(s, f) =>
+        ResponseAsStream(s, f.asInstanceOf[Any => F[Any]].andThen(fk.apply(_)))
+          .asInstanceOf[ResponseAs[TT, R0 with Effect[G]]]
+      case ResponseAsStreamUnsafe(s) => ResponseAsStreamUnsafe(s)
+      case ResponseAsFile(output)    => ResponseAsFile(output)
+      case ResponseAsFromMetadata(f) =>
+        ResponseAsFromMetadata[TT, R0 with Effect[G]](rm => mapResponseEffect[TT, R0, F, G](f(rm), fk))
+      case MappedResponseAs(raw, g) =>
+        MappedResponseAs(mapResponseEffect[Any, R0, F, G](raw, fk), g).asInstanceOf[ResponseAs[TT, R0 with Effect[G]]]
+    }
+  }
 
   private def asRequest(implicit isIdInRequest: IsIdInRequest[U]): RequestT[Identity, T, R] = {
     // we could avoid the asInstanceOf by creating an artificial copy

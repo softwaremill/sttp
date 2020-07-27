@@ -24,8 +24,8 @@ class HttpURLConnectionBackend private (
     customizeConnection: HttpURLConnection => Unit,
     createURL: String => URL,
     openConnection: (URL, Option[java.net.Proxy]) => URLConnection
-) extends SttpBackend[Identity, Nothing, NothingT] {
-  override def send[T, R >: Nothing](r: Request[T, R]): Response[T] =
+) extends SttpBackend[Identity, Any, NothingT] {
+  override def send[T, R >: Any with Effect[Identity]](r: Request[T, R]): Response[T] =
     adjustExceptions {
       val c = openConnection(r.uri)
       c.setRequestMethod(r.method.method)
@@ -62,7 +62,7 @@ class HttpURLConnectionBackend private (
       }
     }
 
-  override def openWebsocket[T, WR, R >: Nothing](
+  override def openWebsocket[T, WR, R >: Any with Effect[Identity]](
       request: Request[T, R],
       handler: NothingT[WR]
   ): NothingT[WebSocketResponse[WR]] =
@@ -260,13 +260,14 @@ class HttpURLConnectionBackend private (
         @tailrec def consume(): Unit = if (is.read() != -1) consume()
         consume()
 
-      case ResponseAsByteArray =>
-        toByteArray(is)
+      case ResponseAsByteArray => toByteArray(is)
 
-      case ResponseAsStreamUnsafe(_) =>
+      case ResponseAsStream(_, _) =>
         // only possible when the user requests the response as a stream of
         // Nothing. Oh well ...
         throw new IllegalStateException()
+
+      case ResponseAsStreamUnsafe(_) => throw new IllegalStateException()
 
       case ResponseAsFile(output) =>
         FileHelpers.saveFile(output.toFile, is)
@@ -304,8 +305,8 @@ object HttpURLConnectionBackend {
         case (url, None)        => url.openConnection()
         case (url, Some(proxy)) => url.openConnection(proxy)
       }
-  ): SttpBackend[Identity, Nothing, NothingT] =
-    new FollowRedirectsBackend[Identity, Nothing, NothingT](
+  ): SttpBackend[Identity, Any, NothingT] =
+    new FollowRedirectsBackend[Identity, Any, NothingT](
       new HttpURLConnectionBackend(options, customizeConnection, createURL, openConnection)
     )
 

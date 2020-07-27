@@ -68,6 +68,8 @@ class AkkaHttpBackend private (
     customizeWebsocketRequest: WebSocketRequest => WebSocketRequest,
     customEncodingHandler: EncodingHandler
 ) extends SttpBackend[Future, AkkaStreams, Flow[Message, Message, *]] {
+  type P = AkkaStreams with Effect[Future]
+
   private implicit val as: ActorSystem = actorSystem
   private implicit val materializer: ActorMaterializer = ActorMaterializer()
 
@@ -75,7 +77,7 @@ class AkkaHttpBackend private (
     .getOrElse(ConnectionPoolSettings(actorSystem))
     .withUpdatedConnectionSettings(_.withConnectingTimeout(opts.connectionTimeout))
 
-  override def send[T, R >: AkkaStreams](r: Request[T, R]): Future[Response[T]] =
+  override def send[T, R >: P](r: Request[T, R]): Future[Response[T]] =
     adjustExceptions {
       implicit val ec: ExecutionContext = this.ec
 
@@ -86,7 +88,7 @@ class AkkaHttpBackend private (
         .flatMap(responseFromAkka(r, _))
     }
 
-  override def openWebsocket[T, WS_RESULT, R >: AkkaStreams](
+  override def openWebsocket[T, WS_RESULT, R >: P](
       r: Request[T, R],
       handler: Flow[Message, Message, WS_RESULT]
   ): Future[WebSocketResponse[WS_RESULT]] =
@@ -129,7 +131,7 @@ class AkkaHttpBackend private (
     }
 
   private def bodyFromAkka[T](
-      rr: ResponseAs[T, AkkaStreams],
+      rr: ResponseAs[T, P],
       hr: HttpResponse,
       meta: ResponseMetadata
   ): Future[T] = {
@@ -162,6 +164,10 @@ class AkkaHttpBackend private (
       case ResponseAsByteArray =>
         asByteArray
 
+      case ResponseAsStream(_, f) =>
+        // todo: how to ensure that the stream is closed after the future returned by f completes?
+        f.asInstanceOf[AkkaStreams.BinaryStream => Future[T]](hr.entity.dataBytes)
+
       case ResponseAsStreamUnsafe(_) =>
         Future.successful(hr.entity.dataBytes.asInstanceOf[T])
 
@@ -188,7 +194,7 @@ class AkkaHttpBackend private (
       .withUpdatedConnectionSettings(_.withIdleTimeout(r.options.readTimeout))
   }
 
-  private def responseFromAkka[T](r: Request[T, AkkaStreams], hr: HttpResponse)(implicit
+  private def responseFromAkka[T](r: Request[T, P], hr: HttpResponse)(implicit
       ec: ExecutionContext
   ): Future[Response[T]] = {
     val code = StatusCode(hr.status.intValue())
@@ -210,7 +216,7 @@ class AkkaHttpBackend private (
     ch :: (cl.toList ++ other)
   }
 
-  private def requestToAkka(r: Request[_, AkkaStreams]): Try[HttpRequest] = {
+  private def requestToAkka(r: Request[_, P]): Try[HttpRequest] = {
     val ar = HttpRequest(uri = r.uri.toString, method = methodToAkka(r.method))
     headersToAkka(r.headers).map(ar.withHeaders)
   }
@@ -247,8 +253,8 @@ class AkkaHttpBackend private (
   }
 
   private def setBodyOnAkka(
-      r: Request[_, AkkaStreams],
-      body: RequestBody[AkkaStreams],
+      r: Request[_, P],
+      body: RequestBody[P],
       ar: HttpRequest
   ): Try[HttpRequest] = {
     def ctWithCharset(ct: ContentType, charset: String) =

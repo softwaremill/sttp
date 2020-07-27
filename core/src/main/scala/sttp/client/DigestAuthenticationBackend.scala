@@ -16,7 +16,7 @@ class DigestAuthenticationBackend[F[_], P, WS_HANDLER[_]](
 ) extends SttpBackend[F, P, WS_HANDLER] {
   private implicit val m: MonadError[F] = responseMonad
 
-  override def send[T, R >: P](request: Request[T, R]): F[Response[T]] = {
+  override def send[T, R >: P with Effect[F]](request: Request[T, R]): F[Response[T]] = {
     delegate
       .send(request)
       .flatMap { firstResponse =>
@@ -33,7 +33,7 @@ class DigestAuthenticationBackend[F[_], P, WS_HANDLER[_]](
       }
   }
 
-  private def handleResponse[T, R >: P](
+  private def handleResponse[T, R >: P with Effect[F]](
       request: Request[T, R],
       response: Response[T],
       digestTag: String,
@@ -49,7 +49,7 @@ class DigestAuthenticationBackend[F[_], P, WS_HANDLER[_]](
       .getOrElse((response -> Option.empty[Header]).unit)
   }
 
-  override def openWebsocket[T, WS_RESULT, R >: P](
+  override def openWebsocket[T, WS_RESULT, R >: P with Effect[F]](
       request: Request[T, R],
       handler: WS_HANDLER[WS_RESULT]
   ): F[WebSocketResponse[WS_RESULT]] = delegate.openWebsocket(request, handler)

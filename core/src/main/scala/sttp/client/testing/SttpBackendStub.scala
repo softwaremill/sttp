@@ -15,7 +15,6 @@ import sttp.model.{Headers, StatusCode}
 import sttp.model.ws.WebSocketFrame
 
 import scala.concurrent.Future
-import scala.language.higherKinds
 import scala.util.{Failure, Success, Try}
 
 /**
@@ -99,7 +98,7 @@ class SttpBackendStub[F[_], P, WS_HANDLER[_]](
     new SttpBackendStub[F, P, WS_HANDLER](monad, matchers, wsMatchers.orElse(wrappedPartial), fallback)
   }
 
-  override def send[T, R >: P](request: Request[T, R]): F[Response[T]] = {
+  override def send[T, R >: P with Effect[F]](request: Request[T, R]): F[Response[T]] = {
     Try(matchers.lift(request)) match {
       case Success(Some(response)) =>
         tryAdjustResponseType(monad, request.response, response.asInstanceOf[F[Response[T]]])
@@ -116,7 +115,7 @@ class SttpBackendStub[F[_], P, WS_HANDLER[_]](
     }
   }
 
-  override def openWebsocket[T, WR, R >: P](
+  override def openWebsocket[T, WR, R >: P with Effect[F]](
       request: Request[T, R],
       handler: WS_HANDLER[WR]
   ): F[WebSocketResponse[WR]] = {
@@ -305,10 +304,10 @@ object SttpBackendStub {
     * Create a stub backend which delegates send requests to the given fallback
     * backend, if the request doesn't match any of the specified predicates.
     */
-  def withFallback[F[_], P, R >: P, WS_HANDLER[_]](
-      fallback: SttpBackend[F, P, WS_HANDLER]
-  ): SttpBackendStub[F, R, WS_HANDLER] =
-    new SttpBackendStub[F, R, WS_HANDLER](
+  def withFallback[F[_], P0, P1 >: P0, WS_HANDLER[_]](
+      fallback: SttpBackend[F, P0, WS_HANDLER]
+  ): SttpBackendStub[F, P1, WS_HANDLER] =
+    new SttpBackendStub[F, P1, WS_HANDLER](
       fallback.responseMonad,
       PartialFunction.empty,
       PartialFunction.empty,
@@ -336,6 +335,8 @@ object SttpBackendStub {
           case is: InputStream => Some(toByteArray(is))
           case _               => None
         }
+      case ResponseAsStream(_, _) =>
+        None
       case ResponseAsStreamUnsafe(_) =>
         None
       case ResponseAsFile(_) =>

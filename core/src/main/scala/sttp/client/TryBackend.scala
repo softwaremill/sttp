@@ -1,9 +1,8 @@
 package sttp.client
 
-import sttp.client.monad.{MonadError, TryMonad}
+import sttp.client.monad.{FunctionK, MonadError, TryMonad}
 import sttp.client.ws.WebSocketResponse
 
-import scala.language.higherKinds
 import scala.util.Try
 
 /** A synchronous backend that safely wraps [[SttpBackend]] exceptions in `Try`'s
@@ -17,16 +16,28 @@ import scala.util.Try
   */
 class TryBackend[P, WS_HANDLER[_]](delegate: SttpBackend[Identity, P, WS_HANDLER])
     extends SttpBackend[Try, P, WS_HANDLER] {
-  override def send[T, R >: P](request: Request[T, R]): Try[Response[T]] =
-    Try(delegate.send(request))
+  override def send[T, R >: P with Effect[Try]](request: Request[T, R]): Try[Response[T]] =
+    Try(
+      delegate.send((request: Request[T, P with Effect[Try]]).mapEffect[Try, Identity, P](tryToId))
+    )
 
-  override def openWebsocket[T, WS_RESULT, R >: P](
+  override def openWebsocket[T, WS_RESULT, R >: P with Effect[Try]](
       request: Request[T, R],
       handler: WS_HANDLER[WS_RESULT]
   ): Try[WebSocketResponse[WS_RESULT]] =
-    Try(delegate.openWebsocket(request, handler))
+    Try(
+      delegate.openWebsocket(
+        (request: Request[T, P with Effect[Try]]).mapEffect[Try, Identity, P](tryToId),
+        handler
+      )
+    )
 
   override def close(): Try[Unit] = Try(delegate.close())
 
   override def responseMonad: MonadError[Try] = TryMonad
+
+  private val tryToId: FunctionK[Try, Identity] =
+    new FunctionK[Try, Identity] {
+      override def apply[A](fa: Try[A]): Identity[A] = fa.get
+    }
 }

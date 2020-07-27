@@ -13,7 +13,7 @@ class ListenerBackend[F[_], P, WS_HANDLER[_], L](
     listener: RequestListener[F, L]
 ) extends SttpBackend[F, P, WS_HANDLER] {
 
-  override def send[T, R >: P](request: Request[T, R]): F[Response[T]] = {
+  override def send[T, R >: P with Effect[F]](request: Request[T, R]): F[Response[T]] = {
     listener.beforeRequest(request).flatMap { t =>
       responseMonad
         .handleError(delegate.send(request)) {
@@ -23,7 +23,7 @@ class ListenerBackend[F[_], P, WS_HANDLER[_], L](
         .flatMap { response => listener.requestSuccessful(request, response, t).map(_ => response) }
     }
   }
-  override def openWebsocket[T, WS_RESULT, R >: P](
+  override def openWebsocket[T, WS_RESULT, R >: P with Effect[F]](
       request: Request[T, R],
       handler: WS_HANDLER[WS_RESULT]
   ): F[WebSocketResponse[WS_RESULT]] = {
