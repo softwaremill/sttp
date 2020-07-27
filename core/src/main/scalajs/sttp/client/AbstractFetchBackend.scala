@@ -59,8 +59,9 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](options: FetchOpti
   override implicit def responseMonad: MonadError[F] = monad
 
   val streams: Streams[S]
+  type PE = P with Effect[F]
 
-  override def send[T, R >: P](request: Request[T, R]): F[Response[T]] = {
+  override def send[T, R >: PE](request: Request[T, R]): F[Response[T]] = {
     // https://stackoverflow.com/q/31061838/4094860
     val readTimeout = request.options.readTimeout
     val (signal, cancelTimeout) = readTimeout match {
@@ -151,7 +152,7 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](options: FetchOpti
     addCancelTimeoutHook(result, cancelTimeout)
   }
 
-  override def openWebsocket[T, WS_RESULT, R >: P](
+  override def openWebsocket[T, WS_RESULT, R >: PE](
       request: Request[T, R],
       handler: NothingT[WS_RESULT]
   ): F[WebSocketResponse[WS_RESULT]] =
@@ -175,7 +176,7 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](options: FetchOpti
       .toList
   }
 
-  private def createBody[R >: P](body: RequestBody[R]): F[js.UndefOr[BodyInit]] = {
+  private def createBody[R >: PE](body: RequestBody[R]): F[js.UndefOr[BodyInit]] = {
     body match {
       case NoBody =>
         responseMonad.unit(js.undefined) // skip
@@ -245,7 +246,7 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](options: FetchOpti
 
   protected def handleStreamBody(s: streams.BinaryStream): F[js.UndefOr[BodyInit]]
 
-  private def readResponseBody[T, R >: P](
+  private def readResponseBody[T, R >: PE](
       response: FetchResponse,
       responseAs: ResponseAs[T, R],
       meta: ResponseMetadata

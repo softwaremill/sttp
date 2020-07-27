@@ -16,7 +16,7 @@ class ZioTelemetryOpenTracingBackend[-WS_HANLDER[_]](
 ) extends SttpBackend[RIO[OpenTracing, *], Any, WS_HANLDER] {
 
   @SuppressWarnings(Array("scalafix:Disable.toString"))
-  def send[T, R >: Any](request: Request[T, R]): RIO[OpenTracing, Response[T]] = {
+  def send[T, R >: Any with Effect[Task]](request: Request[T, R]): RIO[OpenTracing, Response[T]] = {
     val headers = scala.collection.mutable.Map.empty[String, String]
     val buffer = new TextMapAdapter(headers.asJava)
     OpenTracing.inject(Format.Builtin.HTTP_HEADERS, buffer).flatMap { _ =>
@@ -28,7 +28,7 @@ class ZioTelemetryOpenTracingBackend[-WS_HANLDER[_]](
     }
   }
 
-  def openWebsocket[T, WS_RESULT, R >: Any](
+  def openWebsocket[T, WS_RESULT, R >: Any with Effect[Task]](
       request: Request[T, R],
       handler: WS_HANLDER[WS_RESULT]
   ): RIO[OpenTracing, WebSocketResponse[WS_RESULT]] =

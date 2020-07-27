@@ -6,7 +6,7 @@ import io.opentracing.propagation.Format
 import io.opentracing.Tracer.SpanBuilder
 import sttp.client.monad.MonadError
 import sttp.client.ws.WebSocketResponse
-import sttp.client.{FollowRedirectsBackend, NothingT, Request, Response, SttpBackend}
+import sttp.client.{Effect, FollowRedirectsBackend, NothingT, Request, Response, SttpBackend}
 import sttp.client.monad.syntax._
 import sttp.client.opentracing.OpenTracingBackend._
 
@@ -16,8 +16,9 @@ class OpenTracingBackend[F[_], P] private (delegate: SttpBackend[F, P, NothingT]
     extends SttpBackend[F, P, NothingT] {
 
   private implicit val _monad: MonadError[F] = responseMonad
+  type PE = P with Effect[F]
 
-  override def send[T, R >: P](request: Request[T, R]): F[Response[T]] =
+  override def send[T, R >: PE](request: Request[T, R]): F[Response[T]] =
     responseMonad
       .eval {
         val spanBuilderTransformer: SpanBuilderTransformer =
@@ -66,7 +67,7 @@ class OpenTracingBackend[F[_], P] private (delegate: SttpBackend[F, P, NothingT]
         }
       }
 
-  override def openWebsocket[T, WS_RESULT, R >: P](
+  override def openWebsocket[T, WS_RESULT, R >: PE](
       request: Request[T, R],
       handler: NothingT[WS_RESULT]
   ): F[WebSocketResponse[WS_RESULT]] = handler

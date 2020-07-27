@@ -29,7 +29,9 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
   private var headers: CurlList = _
   private var multiPartHeaders: Seq[CurlList] = Seq()
 
-  override def send[T, R >: Any](request: Request[T, R]): F[Response[T]] =
+  type PE = Any with Effect[F]
+
+  override def send[T, R >: PE](request: Request[T, R]): F[Response[T]] =
     unsafe.Zone { implicit z =>
       val curl = CurlApi.init
       if (verbose) {
@@ -94,7 +96,7 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
       }
     }
 
-  override def openWebsocket[T, WS_RESULT, R >: Any](
+  override def openWebsocket[T, WS_RESULT, R >: PE](
       request: Request[T, R],
       handler: NothingT[WS_RESULT]
   ): F[WebSocketResponse[WS_RESULT]] =
@@ -115,7 +117,7 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
     lift(m)
   }
 
-  private def setRequestBody[R >: Any](curl: CurlHandle, body: RequestBody[R])(implicit zone: Zone): F[CurlCode] =
+  private def setRequestBody[R >: PE](curl: CurlHandle, body: RequestBody[R])(implicit zone: Zone): F[CurlCode] =
     body match { // todo: assign to responseMonad object
       case b: BasicRequestBody =>
         val str = basicBodyToString(b)
@@ -179,7 +181,7 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
     Seq(array: _*)
   }
 
-  private def readResponseBody[T, R >: Any](
+  private def readResponseBody[T, R >: PE](
       response: String,
       responseAs: ResponseAs[T, R],
       responseMetadata: ResponseMetadata
