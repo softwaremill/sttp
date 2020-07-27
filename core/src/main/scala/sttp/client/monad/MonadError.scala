@@ -3,7 +3,6 @@ package sttp.client.monad
 import sttp.client.Identity
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.language.higherKinds
 import scala.util.{Failure, Success, Try}
 
 trait MonadError[F[_]] {

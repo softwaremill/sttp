@@ -68,16 +68,17 @@ abstract class StreamingTest[F[_], S]
       }
   }
 
-  "receive a stream and consume it, if there's a processing error" in {
+  "receive a stream and ignore it (without consuming)" in {
     // TODO: for some reason these explicit types are needed in Dotty
     val r0: RequestT[Identity, String, Effect[F] with S] = basicRequest
       .post(uri"$endpoint/streaming/echo")
       .body(Body)
-      .response(asStreamAlways(streams)(bodyConsumer(_)))
+      // if the backend has any, mechanisms to consume an incorrectly handled (ignored) stream should kick in
+      .response(asStreamAlways(streams)(_ => bodyConsumer(stringBodyProducer("ignore"))))
     r0.send()
       .toFuture()
       .map { response =>
-        response.body shouldBe Body
+        response.body shouldBe "ignore"
       }
   }
 

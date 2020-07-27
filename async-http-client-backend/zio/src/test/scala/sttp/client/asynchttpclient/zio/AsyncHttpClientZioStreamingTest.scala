@@ -1,6 +1,6 @@
 package sttp.client.asynchttpclient.zio
 
-import sttp.client.{NothingT, Streams, SttpBackend}
+import sttp.client.{NothingT, SttpBackend}
 import sttp.client.impl.zio._
 import sttp.client.internal._
 import sttp.client.testing.ConvertToFuture

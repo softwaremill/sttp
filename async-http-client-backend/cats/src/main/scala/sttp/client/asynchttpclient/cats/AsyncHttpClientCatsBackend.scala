@@ -34,7 +34,7 @@ class AsyncHttpClientCatsBackend[F[_]: Concurrent: ContextShift] private (
 
   override val streams: NoStreams = NoStreams
 
-  override def send[T, R >: Any](r: Request[T, R]): F[Response[T]] = {
+  override def send[T, R >: Any with sttp.client.Effect[F]](r: Request[T, R]): F[Response[T]] = {
     super.send(r).guarantee(implicitly[ContextShift[F]].shift)
   }
 

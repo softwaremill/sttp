@@ -34,11 +34,11 @@ class AsyncHttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
 
   override val streams: Fs2Streams[F] = Fs2Streams[F]
 
-  override def send[T, R >: Fs2Streams[F]](r: Request[T, R]): F[Response[T]] = {
+  override def send[T, R >: Fs2Streams[F] with sttp.client.Effect[F]](r: Request[T, R]): F[Response[T]] = {
     super.send(r).guarantee(implicitly[ContextShift[F]].shift)
   }
 
-  override def openWebsocket[T, WS_RESULT, R >: Fs2Streams[F]](
+  override def openWebsocket[T, WS_RESULT, R >: Fs2Streams[F] with sttp.client.Effect[F]](
       r: Request[T, R],
       handler: WebSocketHandler[WS_RESULT]
   ): F[WebSocketResponse[WS_RESULT]] = super.openWebsocket(r, handler).guarantee(ContextShift[F].shift)

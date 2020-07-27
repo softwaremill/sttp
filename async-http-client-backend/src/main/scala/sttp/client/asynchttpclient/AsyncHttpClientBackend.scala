@@ -61,7 +61,6 @@ import sttp.client.monad.syntax._
 
 import scala.collection.JavaConverters._
 import scala.collection.immutable.Seq
-import scala.language.higherKinds
 import scala.util.Try
 
 abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
@@ -72,8 +71,9 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
 ) extends SttpBackend[F, P, WebSocketHandler] {
 
   val streams: Streams[S]
+  type PE = P with Effect[F]
 
-  override def send[T, R >: P](r: Request[T, R]): F[Response[T]] =
+  override def send[T, R >: PE](r: Request[T, R]): F[Response[T]] =
     adjustExceptions {
       preparedRequest(r).flatMap { ahcRequest =>
         monad.flatten(monad.async[F[Response[T]]] { cb =>
@@ -86,7 +86,7 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
       }
     }
 
-  override def openWebsocket[T, WS_RESULT, R >: P](
+  override def openWebsocket[T, WS_RESULT, R >: PE](
       r: Request[T, R],
       handler: WebSocketHandler[WS_RESULT]
   ): F[WebSocketResponse[WS_RESULT]] =
@@ -133,7 +133,7 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
     publisherToBytes(p).map(bytes => FileHelpers.saveFile(f, new ByteArrayInputStream(bytes)))
   }
 
-  private def streamingAsyncHandler[T, R >: P](
+  private def streamingAsyncHandler[T, R >: PE](
       responseAs: ResponseAs[T, R],
       success: F[Response[T]] => Unit,
       error: Throwable => Unit
@@ -142,11 +142,14 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
       private val builder = new AsyncResponse.ResponseBuilder()
       private var publisher: Option[Publisher[ByteBuffer]] = None
       private var completed = false
+      // when using asStream(...), trying to detect ignored streams, where a subscription never happened
+      @volatile private var subscribed = false
 
       override def onStream(p: Publisher[HttpResponseBodyPart]): AsyncHandler.State = {
         // Sadly we don't have .map on Publisher
         publisher = Some(new Publisher[ByteBuffer] {
-          override def subscribe(s: Subscriber[_ >: ByteBuffer]): Unit =
+          override def subscribe(s: Subscriber[_ >: ByteBuffer]): Unit = {
+            subscribed = true
             p.subscribe(new Subscriber[HttpResponseBodyPart] {
               override def onError(t: Throwable): Unit = s.onError(t)
               override def onComplete(): Unit = s.onComplete()
@@ -155,6 +158,7 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
               override def onSubscribe(v: Subscription): Unit =
                 s.onSubscribe(v)
             })
+          }
         })
         // #2: sometimes onCompleted() isn't called, only onStream(); this
         // seems to be true esp for https sites. For these cases, completing
@@ -202,7 +206,14 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
           case MappedResponseAs(raw, g) =>
             val nested = handleBody(p, raw, responseMetadata)
             nested.map(g(_, responseMetadata))
-          case ResponseAsFromMetadata(f)       => handleBody(p, f(responseMetadata), responseMetadata)
+          case ResponseAsFromMetadata(f) => handleBody(p, f(responseMetadata), responseMetadata)
+          case ResponseAsStream(_, f) =>
+            f.asInstanceOf[streams.BinaryStream => F[TT]](publisherToStreamBody(p))
+              .flatMap(v => ignoreIfNotSubscribed(p).map(_ => v))
+              .handleError {
+                case t => ignoreIfNotSubscribed(p).flatMap(_ => monad.error(t))
+              }
+
           case _: ResponseAsStreamUnsafe[_, _] => monad.unit(publisherToStreamBody(p).asInstanceOf[TT])
           case IgnoreResponse                  =>
             // getting the body and discarding it
@@ -215,17 +226,21 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
             publisherToFile(p, file.toFile).map(_ => file)
         }
 
+      private def ignoreIfNotSubscribed(p: Publisher[ByteBuffer]): F[Unit] = {
+        if (subscribed) monad.unit(()) else ignorePublisher(p)
+      }
+
       override def onThrowable(t: Throwable): Unit = {
         error(t)
       }
     }
   }
 
-  private def preparedRequest[R >: P](r: Request[_, R]): F[BoundRequestBuilder] = {
+  private def preparedRequest[R >: PE](r: Request[_, R]): F[BoundRequestBuilder] = {
     monad.fromTry(Try(asyncHttpClient.prepareRequest(requestToAsync(r)))).map(customizeRequest)
   }
 
-  private def requestToAsync[R >: P](r: Request[_, R]): AsyncRequest = {
+  private def requestToAsync[R >: PE](r: Request[_, R]): AsyncRequest = {
     val readTimeout = r.options.readTimeout
     val rb = new RequestBuilder(r.method.method)
       .setUrl(r.uri.toString)
@@ -236,7 +251,7 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
     rb.build()
   }
 
-  private def setBody[R >: P](r: Request[_, R], body: RequestBody[R], rb: RequestBuilder): Unit = {
+  private def setBody[R >: PE](r: Request[_, R], body: RequestBody[R], rb: RequestBuilder): Unit = {
     body match {
       case NoBody => // skip
 
@@ -344,6 +359,14 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
 
   private def adjustExceptions[T](t: => F[T]): F[T] =
     SttpClientException.adjustExceptions(responseMonad)(t)(SttpClientException.defaultExceptionToSttpClientException)
+
+  private def ignorePublisher(p: Publisher[ByteBuffer]): F[Unit] = {
+    monad.async { cb =>
+      val subscriber = new IgnoreSubscriber(() => cb(Right(())), t => cb(Left(t)))
+      p.subscribe(subscriber)
+      Canceler(() => ())
+    }
+  }
 }
 
 object AsyncHttpClientBackend {
@@ -460,5 +483,28 @@ private[asynchttpclient] class SimpleSubscriber(success: ByteBuffer => Unit, err
         (true, null)
       }
     })
+  }
+}
+
+/**
+  * A subscriber which does its best to signal that it's not interested in the data being sent.
+  */
+private[asynchttpclient] class IgnoreSubscriber(success: () => Unit, error: Throwable => Unit)
+    extends Subscriber[ByteBuffer] {
+  override def onSubscribe(s: Subscription): Unit = {
+    s.cancel()
+    success()
+  }
+
+  override def onNext(b: ByteBuffer): Unit = {
+    // ignore
+  }
+
+  override def onError(t: Throwable): Unit = {
+    error(t)
+  }
+
+  override def onComplete(): Unit = {
+    success()
   }
 }
