@@ -26,15 +26,9 @@ object StreamFs2 extends App {
     basicRequest
       .body("I want a stream!")
       .post(uri"https://httpbin.org/post")
-      .response(asStreamUnsafeAlways(Fs2Streams[IO]))
+      .response(asStreamAlways(Fs2Streams[IO])(_.chunks.through(text.utf8DecodeC).compile.foldMonoid))
       .send()
-      .flatMap { response =>
-        response.body.chunks
-          .through(text.utf8DecodeC)
-          .compile
-          .foldMonoid
-      }
-      .map { body => println(s"RECEIVED:\n$body") }
+      .map { response => println(s"RECEIVED:\n${response.body}") }
   }
 
   val effect = AsyncHttpClientFs2Backend[IO]().flatMap { implicit backend =>
