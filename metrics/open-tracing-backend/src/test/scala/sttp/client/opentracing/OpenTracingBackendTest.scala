@@ -17,7 +17,7 @@ class OpenTracingBackendTest extends FlatSpec with Matchers with BeforeAndAfter 
 
   private val recordedRequests = mutable.ListBuffer[Request[_, _]]()
   private val tracer = new MockTracer()
-  private implicit val backend: SttpBackend[Identity, Nothing, NothingT] =
+  private implicit val backend: SttpBackend[Identity, Any, NothingT] =
     OpenTracingBackend[Identity, Nothing](
       SttpBackendStub.apply(IdMonad).whenRequestMatchesPartial {
         case r if r.uri.toString.contains("echo") =>
