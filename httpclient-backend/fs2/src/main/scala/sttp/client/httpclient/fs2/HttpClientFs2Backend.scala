@@ -11,7 +11,7 @@ import fs2.Stream
 import fs2.interop.reactivestreams._
 import org.reactivestreams.FlowAdapters
 import sttp.client.httpclient.HttpClientBackend.EncodingHandler
-import sttp.client.{FollowRedirectsBackend, Streams, SttpBackend, SttpBackendOptions}
+import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 import sttp.client.httpclient.{HttpClientAsyncBackend, HttpClientBackend, WebSocketHandler}
 import sttp.client.impl.cats.implicits._
 import sttp.client.impl.fs2.Fs2Streams
@@ -37,7 +37,7 @@ class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
 
   override val streams: Fs2Streams[F] = Fs2Streams[F]
 
-  override def openWebsocket[T, WS_RESULT, R >: Fs2Streams[F]](
+  override def openWebsocket[T, WS_RESULT, R >: PE](
       request: sttp.client.Request[T, R],
       handler: WebSocketHandler[WS_RESULT]
   ): F[WebSocketResponse[WS_RESULT]] =

@@ -21,6 +21,7 @@ import sttp.client.{
   BasicResponseAs,
   ByteArrayBody,
   ByteBufferBody,
+  Effect,
   FileBody,
   IgnoreResponse,
   InputStreamBody,
@@ -31,6 +32,7 @@ import sttp.client.{
   ResponseAs,
   ResponseAsByteArray,
   ResponseAsFile,
+  ResponseAsStream,
   ResponseAsStreamUnsafe,
   ResponseMetadata,
   StreamBody,
@@ -50,8 +52,9 @@ abstract class HttpClientBackend[F[_], S, P](
     customEncodingHandler: EncodingHandler
 ) extends SttpBackend[F, P, WebSocketHandler] {
   val streams: Streams[S]
+  type PE = P with Effect[F]
 
-  private[httpclient] def convertRequest[T, R >: P](request: Request[T, R]): F[HttpRequest] = {
+  private[httpclient] def convertRequest[T, R >: PE](request: Request[T, R]): F[HttpRequest] = {
     val builder = HttpRequest
       .newBuilder()
       .uri(request.uri.toJavaUri)
@@ -76,7 +79,7 @@ abstract class HttpClientBackend[F[_], S, P](
 
   implicit val monad: MonadError[F] = responseMonad
 
-  private def bodyToHttpBody[T, R >: P](
+  private def bodyToHttpBody[T, R >: PE](
       request: Request[T, R],
       builder: HttpRequest.Builder,
       contentType: Option[String]
@@ -116,7 +119,7 @@ abstract class HttpClientBackend[F[_], S, P](
     multipartBuilder
   }
 
-  private[httpclient] def readResponse[T, R >: P](
+  private[httpclient] def readResponse[T, R >: PE](
       res: HttpResponse[InputStream],
       responseAs: ResponseAs[T, R]
   ): F[Response[T]] = {
@@ -150,8 +153,17 @@ abstract class HttpClientBackend[F[_], S, P](
     case (_, ce)           => throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
   }
 
-  private def responseHandler[R >: P](responseBody: InputStream) =
-    new EagerResponseHandler[R] {
+  private def responseHandler[R >: PE](responseBody: InputStream) =
+    new EagerResponseHandler[R, F] {
+      override def handleStream[T](ras: ResponseAsStream[F, _, _, _]): F[T] = {
+        responseMonad.ensure(
+          responseMonad.flatMap(responseMonad.fromTry(responseBodyToStream(responseBody)))(
+            ras.f.asInstanceOf[streams.BinaryStream => F[T]]
+          ),
+          responseMonad.eval(responseBody.close())
+        )
+      }
+
       override def handleBasic[T](bra: BasicResponseAs[T, R]): Try[T] =
         bra match {
           case IgnoreResponse =>

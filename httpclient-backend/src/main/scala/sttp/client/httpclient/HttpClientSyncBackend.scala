@@ -10,6 +10,7 @@ import sttp.client.monad.{IdMonad, MonadError}
 import sttp.client.testing.SttpBackendStub
 import sttp.client.ws.WebSocketResponse
 import sttp.client.{
+  Effect,
   FollowRedirectsBackend,
   Identity,
   Request,
@@ -30,7 +31,7 @@ class HttpClientSyncBackend private (
 
   override val streams: NoStreams = NoStreams
 
-  override def send[T, R >: Any](request: Request[T, R]): Identity[Response[T]] =
+  override def send[T, R >: PE](request: Request[T, R]): Identity[Response[T]] =
     adjustExceptions {
       val jRequest = customizeRequest(convertRequest(request))
       val response = client.send(jRequest, BodyHandlers.ofInputStream())
@@ -39,7 +40,7 @@ class HttpClientSyncBackend private (
 
   override def responseMonad: MonadError[Identity] = IdMonad
 
-  override def openWebsocket[T, WS_RESULT, R >: Any](
+  override def openWebsocket[T, WS_RESULT, R >: PE](
       request: Request[T, R],
       handler: WebSocketHandler[WS_RESULT]
   ): Identity[WebSocketResponse[WS_RESULT]] =

@@ -21,7 +21,7 @@ abstract class HttpClientAsyncBackend[F[_], S, P](
     customizeRequest: HttpRequest => HttpRequest,
     customEncodingHandler: EncodingHandler
 ) extends HttpClientBackend[F, S, P](client, closeClient, customEncodingHandler) {
-  override def send[T, R >: P](request: Request[T, R]): F[Response[T]] =
+  override def send[T, R >: PE](request: Request[T, R]): F[Response[T]] =
     adjustExceptions {
       monad.flatMap(convertRequest(request)) { convertedRequest =>
         val jRequest = customizeRequest(convertedRequest)
@@ -49,7 +49,7 @@ abstract class HttpClientAsyncBackend[F[_], S, P](
       }
     }
 
-  override def openWebsocket[T, WS_RESULT, R >: P](
+  override def openWebsocket[T, WS_RESULT, R >: PE](
       request: Request[T, R],
       handler: WebSocketHandler[WS_RESULT]
   ): F[WebSocketResponse[WS_RESULT]] =
