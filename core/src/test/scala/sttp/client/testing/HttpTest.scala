@@ -12,7 +12,6 @@ import sttp.model.StatusCode
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.language.higherKinds
 
 // TODO: change to `extends AsyncFreeSpec` when https://github.com/scalatest/scalatest/issues/1802 is fixed
 trait HttpTest[F[_]]
@@ -27,7 +26,7 @@ trait HttpTest[F[_]]
   protected val binaryFileMD5Hash = "565370873a38d91f34a3091082e63933"
   protected val textFileMD5Hash = "b048a88ece8e4ec5eb386b8fc5006d13"
 
-  implicit val backend: SttpBackend[F, Any, NothingT]
+  implicit val backend: SttpBackend[F, Any]
   implicit val convertToFuture: ConvertToFuture[F]
 
   protected def postEcho: Request[Either[String, String], Any] = basicRequest.post(uri"$endpoint/echo")

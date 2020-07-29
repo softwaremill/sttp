@@ -1,7 +1,6 @@
 package sttp.client
 
-import sttp.client.monad.{FunctionK, MonadError, TryMonad}
-import sttp.client.ws.WebSocketResponse
+import sttp.client.monad.{FunctionK, MapEffect, MonadError, TryMonad}
 
 import scala.util.Try
 
@@ -9,26 +8,18 @@ import scala.util.Try
   *
   * @param delegate A synchronous `SttpBackend` which to which this backend forwards all requests
   * @tparam P TODO
-  * @tparam WS_HANDLER The type of websocket handlers, that are supported by this backend.
-  *                    The handler is parametrised by the value that is being returned
-  *                    when the websocket is established. `NothingT`, if websockets are
-  *                    not supported.
   */
-class TryBackend[P, WS_HANDLER[_]](delegate: SttpBackend[Identity, P, WS_HANDLER])
-    extends SttpBackend[Try, P, WS_HANDLER] {
+class TryBackend[P](delegate: SttpBackend[Identity, P]) extends SttpBackend[Try, P] {
   override def send[T, R >: P with Effect[Try]](request: Request[T, R]): Try[Response[T]] =
     Try(
-      delegate.send((request: Request[T, P with Effect[Try]]).mapEffect[Try, Identity, P](tryToId))
-    )
-
-  override def openWebsocket[T, WS_RESULT, R >: P with Effect[Try]](
-      request: Request[T, R],
-      handler: WS_HANDLER[WS_RESULT]
-  ): Try[WebSocketResponse[WS_RESULT]] =
-    Try(
-      delegate.openWebsocket(
-        (request: Request[T, P with Effect[Try]]).mapEffect[Try, Identity, P](tryToId),
-        handler
+      delegate.send(
+        MapEffect[Try, Identity, Identity, T, P](
+          request: Request[T, P with Effect[Try]],
+          tryToId,
+          idToTry,
+          responseMonad,
+          delegate.responseMonad
+        )
       )
     )
 
@@ -39,5 +30,10 @@ class TryBackend[P, WS_HANDLER[_]](delegate: SttpBackend[Identity, P, WS_HANDLER
   private val tryToId: FunctionK[Try, Identity] =
     new FunctionK[Try, Identity] {
       override def apply[A](fa: Try[A]): Identity[A] = fa.get
+    }
+
+  private val idToTry: FunctionK[Identity, Try] =
+    new FunctionK[Identity, Try] {
+      override def apply[A](fa: Identity[A]): Try[A] = Try(fa)
     }
 }

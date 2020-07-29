@@ -4,8 +4,6 @@ import java.net.http.WebSocket
 import java.net.http.WebSocket.Listener
 import java.util.concurrent.CompletionStage
 
-import sttp.client.testing.websocket.LowLevelListenerWebSocketTest
-
 abstract class HttpClientLowLevelListenerWebSocketTest[F[_]]
     extends LowLevelListenerWebSocketTest[F, WebSocket, WebSocketHandler] {
 

@@ -3,7 +3,6 @@ package sttp.client.okhttp
 import okhttp3.{WebSocket, WebSocketListener}
 import sttp.client._
 import sttp.client.testing.ConvertToFuture
-import sttp.client.testing.websocket.LowLevelListenerWebSocketTest
 
 import scala.concurrent.Future
 

@@ -5,15 +5,12 @@ import sttp.client.internal.DigestAuthenticator
 import sttp.client.internal.DigestAuthenticator.DigestAuthData
 import sttp.client.monad.MonadError
 import sttp.client.monad.syntax._
-import sttp.client.ws.WebSocketResponse
 import sttp.model.Header
 
-import scala.language.higherKinds
-
-class DigestAuthenticationBackend[F[_], P, WS_HANDLER[_]](
-    delegate: SttpBackend[F, P, WS_HANDLER],
+class DigestAuthenticationBackend[F[_], P](
+    delegate: SttpBackend[F, P],
     clientNonceGenerator: () => String = DigestAuthenticator.defaultClientNonceGenerator
-) extends SttpBackend[F, P, WS_HANDLER] {
+) extends SttpBackend[F, P] {
   private implicit val m: MonadError[F] = responseMonad
 
   override def send[T, R >: P with Effect[F]](request: Request[T, R]): F[Response[T]] = {
@@ -48,11 +45,6 @@ class DigestAuthenticationBackend[F[_], P, WS_HANDLER[_]](
       }
       .getOrElse((response -> Option.empty[Header]).unit)
   }
-
-  override def openWebsocket[T, WS_RESULT, R >: P with Effect[F]](
-      request: Request[T, R],
-      handler: WS_HANDLER[WS_RESULT]
-  ): F[WebSocketResponse[WS_RESULT]] = delegate.openWebsocket(request, handler)
 
   override def close(): F[Unit] = delegate.close()
   override def responseMonad: MonadError[F] = delegate.responseMonad

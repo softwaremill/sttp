@@ -16,7 +16,6 @@ import sttp.client.impl.cats.CatsMonadAsyncError
 import sttp.client.impl.fs2.Fs2Streams
 import sttp.client.internal._
 import sttp.client.testing.SttpBackendStub
-import sttp.client.ws.WebSocketResponse
 import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions, _}
 
 import scala.concurrent.ExecutionContext

@@ -1,7 +1,7 @@
 package sttp.client.httpclient
 
 import sttp.client._
-import sttp.client.ws.{WebSocket, WebSocketResponse}
+import sttp.client.ws.WebSocket
 import _root_.zio._
 import _root_.zio.blocking.Blocking
 import sttp.client.impl.zio.BlockingZioStreams

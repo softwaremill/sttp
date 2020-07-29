@@ -2,8 +2,10 @@ package sttp.client
 
 import sttp.client.internal._
 import sttp.client.monad.MonadError
+import sttp.client.ws.WebSocket
 import sttp.model.StatusCode
 import sttp.model.internal.Rfc3986
+import sttp.model.ws.WebSocketFrame
 
 import scala.collection.immutable.Seq
 import scala.util.{Failure, Success, Try}
@@ -31,6 +33,7 @@ sealed trait ResponseAs[+T, -R] {
   * handling method, but needs to be handled directly by the backend.
   */
 sealed trait BasicResponseAs[T, -R] extends ResponseAs[T, R]
+sealed trait WebSocketResponseAs[T, -R] extends ResponseAs[T, R]
 
 case object IgnoreResponse extends BasicResponseAs[Unit, Any]
 case object ResponseAsByteArray extends BasicResponseAs[Array[Byte], Any]
@@ -51,6 +54,12 @@ object ResponseAsStreamUnsafe {
 }
 
 case class ResponseAsFile(output: SttpFile) extends BasicResponseAs[SttpFile, Any]
+
+case class ResponseAsWebSocket[F[_], T](f: WebSocket[F] => F[T])
+    extends WebSocketResponseAs[T, Effect[F] with WebSockets]
+case class ResponseAsWebSocketUnsafe[F[_]]() extends WebSocketResponseAs[WebSocket[F], Effect[F] with WebSockets]
+case class ResponseAsWebSocketStream[S, Pipe[_, _]](s: Streams[S], p: Pipe[WebSocketFrame, WebSocketFrame])
+    extends WebSocketResponseAs[Unit, S with WebSockets]
 
 case class ResponseAsFromMetadata[T, R](f: ResponseMetadata => ResponseAs[T, R]) extends ResponseAs[T, R]
 
@@ -93,6 +102,7 @@ object ResponseAs {
           responseMonad.map(handle(raw, responseMonad, meta))(t => g(t, meta))
         case ResponseAsFromMetadata(f)         => handle(f(meta), responseMonad, meta)
         case ras: ResponseAsStream[F, _, _, _] => handleStream(ras)
+        case _: ResponseAsWebSocket[_, _]      => throw new IllegalStateException("WebSockets are not supported.")
         case bra: BasicResponseAs[T, R] =>
           responseMonad.fromTry(handleBasic(bra))
       }

@@ -57,7 +57,7 @@ import monix.eval.Task
 import monix.reactive.Observable
 import java.nio.ByteBuffer
 import sttp.client._
-import sttp.client.ws.{WebSocket, WebSocketResponse}
+import sttp.client.ws.WebSocket
 import sttp.model.ws.WebSocketFrame
 import sttp.client.asynchttpclient.monix.MonixWebSocketHandler
 import sttp.client.asynchttpclient.WebSocketHandler

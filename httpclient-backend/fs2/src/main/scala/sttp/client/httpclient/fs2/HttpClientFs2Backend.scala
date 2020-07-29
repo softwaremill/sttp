@@ -18,7 +18,6 @@ import sttp.client.impl.fs2.Fs2Streams
 import sttp.client.testing.SttpBackendStub
 
 import scala.util.{Success, Try}
-import sttp.client.ws.WebSocketResponse
 
 class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
     client: HttpClient,

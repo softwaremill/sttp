@@ -8,7 +8,6 @@ import sttp.client.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client.internal.NoStreams
 import sttp.client.monad.{IdMonad, MonadError}
 import sttp.client.testing.SttpBackendStub
-import sttp.client.ws.WebSocketResponse
 import sttp.client.{
   Effect,
   FollowRedirectsBackend,

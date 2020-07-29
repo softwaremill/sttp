@@ -31,7 +31,6 @@ import sttp.model._
 import sttp.client.monad.{Canceler, FutureMonad, IdMonad, MonadAsyncError, MonadError}
 import sttp.client.okhttp.OkHttpBackend.EncodingHandler
 import sttp.client.testing.SttpBackendStub
-import sttp.client.ws.WebSocketResponse
 import sttp.client.{
   BasicResponseAs,
   IgnoreResponse,

@@ -3,15 +3,14 @@ package sttp.client.impl.cats
 import cats.effect.Concurrent
 import cats.~>
 import sttp.client.monad.{FunctionK, MonadAsyncError, MonadError}
-import sttp.client.ws.WebSocketResponse
 import sttp.client.{Effect, Request, Response, SttpBackend}
 
 object implicits extends CatsImplicits
 
 trait CatsImplicits extends LowLevelCatsImplicits {
-  implicit final def sttpBackendToCatsMappableSttpBackend[R[_], P, WS_HANDLER[_]](
-      sttpBackend: SttpBackend[R, P, WS_HANDLER]
-  ): MappableSttpBackend[R, P, WS_HANDLER] = new MappableSttpBackend(sttpBackend)
+  implicit final def sttpBackendToCatsMappableSttpBackend[R[_], P](
+      sttpBackend: SttpBackend[R, P]
+  ): MappableSttpBackend[R, P] = new MappableSttpBackend(sttpBackend)
 
   implicit final def asyncMonadError[F[_]: Concurrent]: MonadAsyncError[F] = new CatsMonadAsyncError[F]
 }
@@ -21,27 +20,21 @@ trait LowLevelCatsImplicits {
     new CatsMonadError[F]
 }
 
-final class MappableSttpBackend[F[_], P, WS_HANDLER[_]] private[cats] (
-    private val sttpBackend: SttpBackend[F, P, WS_HANDLER]
+final class MappableSttpBackend[F[_], P] private[cats] (
+    private val sttpBackend: SttpBackend[F, P]
 ) extends AnyVal {
-  def mapK[G[_]: MonadError](f: F ~> G, g: G ~> F): SttpBackend[G, P, WS_HANDLER] =
+  def mapK[G[_]: MonadError](f: F ~> G, g: G ~> F): SttpBackend[G, P] =
     new MappedKSttpBackend(sttpBackend, f, g, implicitly)
 }
 
 private[cats] final class MappedKSttpBackend[F[_], +P, WS_HANDLER[_], G[_]](
-    wrapped: SttpBackend[F, P, WS_HANDLER],
+    wrapped: SttpBackend[F, P],
     f: F ~> G,
     g: G ~> F,
     val responseMonad: MonadError[G]
-) extends SttpBackend[G, P, WS_HANDLER] {
+) extends SttpBackend[G, P] {
   def send[T, R >: P with Effect[G]](request: Request[T, R]): G[Response[T]] =
     f(wrapped.send((request: Request[T, P with Effect[G]]).mapEffect[G, F, P](gAsFunctionK)))
-
-  override def openWebsocket[T, WS_RESULT, R >: P with Effect[G]](
-      request: Request[T, R],
-      handler: WS_HANDLER[WS_RESULT]
-  ): G[WebSocketResponse[WS_RESULT]] =
-    f(wrapped.openWebsocket((request: Request[T, P with Effect[G]]).mapEffect[G, F, P](gAsFunctionK), handler))
 
   def close(): G[Unit] = f(wrapped.close())
 

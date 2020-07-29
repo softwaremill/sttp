@@ -1,61 +1,26 @@
 package sttp.client.akkahttp
 
-import java.io.{File, UnsupportedEncodingException}
+import java.io.UnsupportedEncodingException
 
-import akka.Done
+import akka.{Done, NotUsed}
 import akka.actor.{ActorSystem, CoordinatedShutdown}
 import akka.event.LoggingAdapter
 import akka.http.scaladsl.coding.{Deflate, Gzip, NoCoding}
-import akka.http.scaladsl.model.ContentTypes.`application/octet-stream`
-import akka.http.scaladsl.model.HttpHeader.ParsingResult
-import akka.http.scaladsl.model.headers.{
-  BasicHttpCredentials,
-  HttpEncoding,
-  HttpEncodings,
-  `Content-Length`,
-  `Content-Type`
-}
+import akka.http.scaladsl.model.headers.{BasicHttpCredentials, HttpEncoding, HttpEncodings}
 import akka.http.scaladsl.model.ws.{Message, WebSocketRequest}
-import akka.http.scaladsl.model.{Multipart => AkkaMultipart, StatusCode => _, _}
+import akka.http.scaladsl.model.{StatusCode => _, _}
 import akka.http.scaladsl.settings.ConnectionPoolSettings
 import akka.http.scaladsl.{ClientTransport, Http, HttpsConnectionContext}
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.{FileIO, Flow, Sink, Source, StreamConverters}
-import akka.util.ByteString
+import akka.stream.scaladsl.Flow
 import sttp.client
 import sttp.client.akkahttp.AkkaHttpBackend.EncodingHandler
-import sttp.model.{Header, HeaderNames, Headers, Method, Part, StatusCode}
 import sttp.client.monad.{FutureMonad, MonadError}
 import sttp.client.testing.SttpBackendStub
-import sttp.client.ws.WebSocketResponse
-import sttp.client.{
-  ByteArrayBody,
-  ByteBufferBody,
-  FileBody,
-  FollowRedirectsBackend,
-  IgnoreResponse,
-  InputStreamBody,
-  MappedResponseAs,
-  MultipartBody,
-  NoBody,
-  RequestBody,
-  Response,
-  ResponseAs,
-  ResponseAsByteArray,
-  ResponseAsFile,
-  ResponseAsFromMetadata,
-  ResponseAsStreamUnsafe,
-  ResponseMetadata,
-  StreamBody,
-  StringBody,
-  SttpBackend,
-  SttpBackendOptions,
-  _
-}
+import sttp.client.{FollowRedirectsBackend, Response, SttpBackend, SttpBackendOptions, _}
+import sttp.model.StatusCode
 
-import scala.collection.immutable.Seq
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 
 class AkkaHttpBackend private (
     actorSystem: ActorSystem,
@@ -67,114 +32,54 @@ class AkkaHttpBackend private (
     customizeRequest: HttpRequest => HttpRequest,
     customizeWebsocketRequest: WebSocketRequest => WebSocketRequest,
     customEncodingHandler: EncodingHandler
-) extends SttpBackend[Future, AkkaStreams, Flow[Message, Message, *]] {
-  type P = AkkaStreams with Effect[Future]
+) extends SttpBackend[Future, AkkaStreams with WebSockets] {
+  type PE = AkkaStreams with Effect[Future] with WebSockets
 
   private implicit val as: ActorSystem = actorSystem
   private implicit val materializer: ActorMaterializer = ActorMaterializer()
+  private implicit val _ec: ExecutionContext = ec
 
   private val connectionPoolSettings = customConnectionPoolSettings
     .getOrElse(ConnectionPoolSettings(actorSystem))
     .withUpdatedConnectionSettings(_.withConnectingTimeout(opts.connectionTimeout))
 
-  override def send[T, R >: P](r: Request[T, R]): Future[Response[T]] =
+  override def send[T, R >: PE](r: Request[T, R]): Future[Response[T]] =
     adjustExceptions {
-      implicit val ec: ExecutionContext = this.ec
-
-      Future
-        .fromTry(requestToAkka(r).flatMap(setBodyOnAkka(r, r.body, _)))
-        .map(customizeRequest)
-        .flatMap(request => http.singleRequest(request, connectionSettings(r)))
-        .flatMap(responseFromAkka(r, _))
+      if (r.isWebSocket) sendWebSocket(r) else sendRegular(r)
     }
 
-  override def openWebsocket[T, WS_RESULT, R >: P](
-      r: Request[T, R],
-      handler: Flow[Message, Message, WS_RESULT]
-  ): Future[WebSocketResponse[WS_RESULT]] =
-    adjustExceptions {
-      implicit val ec: ExecutionContext = this.ec
+  private def sendRegular[T, R >: PE](r: Request[T, R]): Future[Response[T]] = {
+    Future
+      .fromTry(ToAkka.request(r).flatMap(BodyToAkka(r, r.body, _)))
+      .map(customizeRequest)
+      .flatMap(request => http.singleRequest(request, connectionSettings(r)))
+      .flatMap(responseFromAkka(r, _, None))
+  }
 
-      val akkaWebsocketRequest = headersToAkka(r.headers)
-        .map(h => WebSocketRequest(uri = r.uri.toString, extraHeaders = h))
-        .map(customizeWebsocketRequest)
+  private def sendWebSocket[T, R >: PE](r: Request[T, R]): Future[Response[T]] = {
+    val akkaWebsocketRequest = ToAkka
+      .headers(r.headers)
+      .map(h => WebSocketRequest(uri = r.uri.toString, extraHeaders = h))
+      .map(customizeWebsocketRequest)
 
-      Future
-        .fromTry(akkaWebsocketRequest)
-        .flatMap(request => http.singleWebsocketRequest(request, handler, connectionSettings(r).connectionSettings))
-        .flatMap {
-          case (wsResponse, wsResult) =>
-            responseFromAkka(r, wsResponse.response).map { r =>
-              if (r.code != StatusCode.SwitchingProtocols) {
-                throw new NotAWebsocketException(r)
-              } else {
-                client.ws.WebSocketResponse(Headers(r.headers), wsResult)
-              }
-            }
-        }
-    }
+    val flowPromise = Promise[Flow[Message, Message, NotUsed]]()
+
+    Future
+      .fromTry(akkaWebsocketRequest)
+      .flatMap(request =>
+        http.singleWebsocketRequest(
+          request,
+          Flow.futureFlow(flowPromise.future),
+          connectionSettings(r).connectionSettings
+        )
+      )
+      .flatMap {
+        case (wsResponse, _) =>
+          responseFromAkka(r, wsResponse.response, Some(flowPromise))
+      }
+  }
 
   override def responseMonad: MonadError[Future] = new FutureMonad()(ec)
-
-  private def methodToAkka(m: Method): HttpMethod =
-    m match {
-      case Method.GET     => HttpMethods.GET
-      case Method.HEAD    => HttpMethods.HEAD
-      case Method.POST    => HttpMethods.POST
-      case Method.PUT     => HttpMethods.PUT
-      case Method.DELETE  => HttpMethods.DELETE
-      case Method.OPTIONS => HttpMethods.OPTIONS
-      case Method.PATCH   => HttpMethods.PATCH
-      case Method.CONNECT => HttpMethods.CONNECT
-      case Method.TRACE   => HttpMethods.TRACE
-      case _              => HttpMethod.custom(m.method)
-    }
-
-  private def bodyFromAkka[T](
-      rr: ResponseAs[T, P],
-      hr: HttpResponse,
-      meta: ResponseMetadata
-  ): Future[T] = {
-    implicit val ec: ExecutionContext = this.ec
-
-    def asByteArray =
-      hr.entity.dataBytes
-        .runFold(ByteString(""))(_ ++ _)
-        .map(_.toArray[Byte])
-
-    def saved(file: File) = {
-      if (!file.exists()) {
-        file.getParentFile.mkdirs()
-        file.createNewFile()
-      }
-
-      hr.entity.dataBytes.runWith(FileIO.toPath(file.toPath))
-    }
-
-    rr match {
-      case MappedResponseAs(raw, g) =>
-        bodyFromAkka(raw, hr, meta).map(t => g(t, meta))
-
-      case ResponseAsFromMetadata(f) => bodyFromAkka(f(meta), hr, meta)
-
-      case IgnoreResponse =>
-        // todo: Replace with HttpResponse#discardEntityBytes() once https://github.com/akka/akka-http/issues/1459 is resolved
-        hr.entity.dataBytes.runWith(Sink.ignore).map(_ => ())
-
-      case ResponseAsByteArray =>
-        asByteArray
-
-      case ResponseAsStream(_, f) =>
-        // todo: how to ensure that the stream is closed after the future returned by f completes?
-        f.asInstanceOf[AkkaStreams.BinaryStream => Future[T]](hr.entity.dataBytes)
-
-      case ResponseAsStreamUnsafe(_) =>
-        Future.successful(hr.entity.dataBytes.asInstanceOf[T])
-
-      case ResponseAsFile(file) =>
-        saved(file.toFile).map(_ => file)
-    }
-  }
 
   private def connectionSettings(r: Request[_, _]): ConnectionPoolSettings = {
     val connectionPoolSettingsWithProxy = opts.proxy match {
@@ -194,156 +99,21 @@ class AkkaHttpBackend private (
       .withUpdatedConnectionSettings(_.withIdleTimeout(r.options.readTimeout))
   }
 
-  private def responseFromAkka[T](r: Request[T, P], hr: HttpResponse)(implicit
-      ec: ExecutionContext
+  private def responseFromAkka[T](
+      r: Request[T, PE],
+      hr: HttpResponse,
+      wsFlow: Option[Promise[Flow[Message, Message, NotUsed]]]
   ): Future[Response[T]] = {
     val code = StatusCode(hr.status.intValue())
     val statusText = hr.status.reason()
 
-    val headers = headersFromAkka(hr)
+    val headers = FromAkka.headers(hr)
 
     val responseMetadata = client.ResponseMetadata(headers, code, statusText)
-    val body = bodyFromAkka(r.response, decodeAkkaResponse(hr), responseMetadata)
+    val body = BodyFromAkka(r.response, decodeAkkaResponse(hr), responseMetadata, wsFlow)
 
     body.map(client.Response(_, code, statusText, headers, Nil))
   }
-
-  private def headersFromAkka(hr: HttpResponse): Seq[Header] = {
-    val ch = Header(HeaderNames.ContentType, hr.entity.contentType.toString())
-    val cl =
-      hr.entity.contentLengthOption.map(v => Header.contentLength(v))
-    val other = hr.headers.map(h => Header(h.name, h.value))
-    ch :: (cl.toList ++ other)
-  }
-
-  private def requestToAkka(r: Request[_, P]): Try[HttpRequest] = {
-    val ar = HttpRequest(uri = r.uri.toString, method = methodToAkka(r.method))
-    headersToAkka(r.headers).map(ar.withHeaders)
-  }
-
-  private def headersToAkka(headers: Seq[Header]): Try[Seq[HttpHeader]] = {
-    // content-type and content-length headers have to be set via the body
-    // entity, not as headers
-    val parsed =
-      headers
-        .filterNot(isContentType)
-        .filterNot(isContentLength)
-        .map(h => HttpHeader.parse(h.name, h.value))
-    val errors = parsed.collect {
-      case ParsingResult.Error(e) => e
-    }
-    if (errors.isEmpty) {
-      val headers = parsed.collect {
-        case ParsingResult.Ok(h, _) => h
-      }
-
-      Success(headers.toList)
-    } else {
-      Failure(new RuntimeException(s"Cannot parse headers: $errors"))
-    }
-  }
-
-  private def traverseTry[T](l: Seq[Try[T]]): Try[Seq[T]] = {
-    // https://stackoverflow.com/questions/15495678/flatten-scala-try
-    val (ss: Seq[Success[T]] @unchecked, fs: Seq[Failure[T]] @unchecked) =
-      l.partition(_.isSuccess)
-
-    if (fs.isEmpty) Success(ss.map(_.get))
-    else Failure[Seq[T]](fs.head.exception)
-  }
-
-  private def setBodyOnAkka(
-      r: Request[_, P],
-      body: RequestBody[P],
-      ar: HttpRequest
-  ): Try[HttpRequest] = {
-    def ctWithCharset(ct: ContentType, charset: String) =
-      HttpCharsets
-        .getForKey(charset)
-        .map(hc => ContentType.apply(ct.mediaType, () => hc))
-        .getOrElse(ct)
-
-    def toBodyPart(mp: Part[BasicRequestBody]): Try[AkkaMultipart.FormData.BodyPart] = {
-      def entity(ct: ContentType) =
-        mp.body match {
-          case StringBody(b, encoding, _) =>
-            HttpEntity(ctWithCharset(ct, encoding), b.getBytes(encoding))
-          case ByteArrayBody(b, _)  => HttpEntity(ct, b)
-          case ByteBufferBody(b, _) => HttpEntity(ct, ByteString(b))
-          case isb: InputStreamBody =>
-            HttpEntity
-              .IndefiniteLength(ct, StreamConverters.fromInputStream(() => isb.b))
-          case FileBody(b, _) => HttpEntity.fromPath(ct, b.toPath)
-        }
-
-      for {
-        ct <- parseContentTypeOrOctetStream(mp.contentType)
-        headers <- headersToAkka(mp.headers.toList)
-      } yield {
-        AkkaMultipart.FormData.BodyPart(mp.name, entity(ct), mp.dispositionParams, headers)
-      }
-    }
-
-    parseContentTypeOrOctetStream(r).flatMap { ct =>
-      body match {
-        case NoBody => Success(ar)
-        case StringBody(b, encoding, _) =>
-          Success(ar.withEntity(ctWithCharset(ct, encoding), b.getBytes(encoding)))
-        case ByteArrayBody(b, _) => Success(ar.withEntity(HttpEntity(ct, b)))
-        case ByteBufferBody(b, _) =>
-          Success(ar.withEntity(HttpEntity(ct, ByteString(b))))
-        case InputStreamBody(b, _) =>
-          Success(ar.withEntity(HttpEntity(ct, StreamConverters.fromInputStream(() => b))))
-        case FileBody(b, _) => Success(ar.withEntity(ct, b.toPath))
-        case StreamBody(s)  => Success(ar.withEntity(HttpEntity(ct, s.asInstanceOf[AkkaStreams.BinaryStream])))
-        case MultipartBody(ps) =>
-          traverseTry(ps.map(toBodyPart))
-            .flatMap(bodyParts => multipartEntity(r, bodyParts).map(ar.withEntity))
-      }
-    }
-  }
-
-  private def multipartEntity(r: Request[_, _], bodyParts: Seq[AkkaMultipart.FormData.BodyPart]): Try[RequestEntity] = {
-    r.headers.find(isContentType) match {
-      case None => Success(AkkaMultipart.FormData(bodyParts: _*).toEntity())
-      case Some(ct) =>
-        parseContentType(ct.value).map(_.mediaType).flatMap {
-          case m: MediaType.Multipart =>
-            Success(
-              AkkaMultipart
-                .General(m, Source(bodyParts.map { bp => AkkaMultipart.General.BodyPart(bp.entity, bp.headers) }))
-                .toEntity()
-            )
-          case _ => Failure(new RuntimeException(s"Non-multipart content type: $ct"))
-        }
-    }
-  }
-
-  private def parseContentTypeOrOctetStream(r: Request[_, _]): Try[ContentType] = {
-    parseContentTypeOrOctetStream(
-      r.headers
-        .find(isContentType)
-        .map(_.value)
-    )
-  }
-
-  private def parseContentTypeOrOctetStream(ctHeader: Option[String]): Try[ContentType] = {
-    ctHeader
-      .map(parseContentType)
-      .getOrElse(Success(`application/octet-stream`))
-  }
-
-  private def parseContentType(ctHeader: String): Try[ContentType] = {
-    ContentType
-      .parse(ctHeader)
-      .fold(errors => Failure(new RuntimeException(s"Cannot parse content type: $errors")), Success(_))
-  }
-
-  private def isContentType(header: Header) =
-    header.name.toLowerCase.contains(`Content-Type`.lowercaseName)
-
-  private def isContentLength(header: Header) =
-    header.name.toLowerCase.contains(`Content-Length`.lowercaseName)
 
   // http://doc.akka.io/docs/akka-http/10.0.7/scala/http/common/de-coding.html
   private def decodeAkkaResponse(response: HttpResponse): HttpResponse = {
@@ -358,23 +128,9 @@ class AkkaHttpBackend private (
   }
 
   private def adjustExceptions[T](t: => Future[T]): Future[T] =
-    SttpClientException.adjustExceptions(responseMonad)(t)(akkaExceptionToSttpClientException)
-
-  private def akkaExceptionToSttpClientException(e: Exception): Option[Exception] =
-    e match {
-      case e: akka.stream.ConnectionException => Some(new SttpClientException.ConnectException(e))
-      case e: akka.stream.StreamTcpException =>
-        e.getCause match {
-          case ee: Exception =>
-            akkaExceptionToSttpClientException(ee).orElse(Some(new SttpClientException.ReadException(e)))
-          case _ => Some(new SttpClientException.ReadException(e))
-        }
-      case e: akka.stream.scaladsl.TcpIdleTimeoutException => Some(new SttpClientException.ReadException(e))
-      case e: Exception                                    => SttpClientException.defaultExceptionToSttpClientException(e)
-    }
+    SttpClientException.adjustExceptions(responseMonad)(t)(FromAkka.exception)
 
   override def close(): Future[Unit] = {
-    import as.dispatcher
     if (terminateActorSystemOnClose) {
       CoordinatedShutdown(as).addTask(
         CoordinatedShutdown.PhaseServiceRequestsDone,
@@ -403,7 +159,7 @@ object AkkaHttpBackend {
       customizeRequest: HttpRequest => HttpRequest,
       customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity,
       customEncodingHandler: EncodingHandler = PartialFunction.empty
-  ): SttpBackend[Future, AkkaStreams, Flow[Message, Message, *]] =
+  ): SttpBackend[Future, AkkaStreams with WebSockets] =
     new FollowRedirectsBackend(
       new AkkaHttpBackend(
         actorSystem,
@@ -433,7 +189,7 @@ object AkkaHttpBackend {
       customEncodingHandler: EncodingHandler = PartialFunction.empty
   )(implicit
       ec: ExecutionContext = ExecutionContext.global
-  ): SttpBackend[Future, AkkaStreams, Flow[Message, Message, *]] = {
+  ): SttpBackend[Future, AkkaStreams with WebSockets] = {
     val actorSystem = ActorSystem("sttp")
 
     make(
@@ -467,7 +223,7 @@ object AkkaHttpBackend {
       customEncodingHandler: EncodingHandler = PartialFunction.empty
   )(implicit
       ec: ExecutionContext = ExecutionContext.global
-  ): SttpBackend[Future, AkkaStreams, Flow[Message, Message, *]] = {
+  ): SttpBackend[Future, AkkaStreams with WebSockets] = {
     usingClient(
       actorSystem,
       options,
@@ -496,7 +252,7 @@ object AkkaHttpBackend {
       customEncodingHandler: EncodingHandler = PartialFunction.empty
   )(implicit
       ec: ExecutionContext = ExecutionContext.global
-  ): SttpBackend[Future, AkkaStreams, Flow[Message, Message, *]] = {
+  ): SttpBackend[Future, AkkaStreams with WebSockets] = {
     make(
       actorSystem,
       ec,
@@ -515,10 +271,8 @@ object AkkaHttpBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub(implicit
-      ec: ExecutionContext = ExecutionContext.global
-  ): SttpBackendStub[Future, Any, Flow[Message, Message, *]] =
+  def stub(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackendStub[Future, Any] =
     SttpBackendStub(new FutureMonad())
 }
 
-class NotAWebsocketException(r: Response[_]) extends Exception
+class NotAWebsocketException(statusCode: Int) extends Exception(s"Not a websocket. Got response code: $statusCode")

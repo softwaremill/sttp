@@ -8,6 +8,6 @@ object TryHttpURLConnectionBackend {
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeConnection: HttpURLConnection => Unit = _ => ()
-  ): SttpBackend[Try, Any, NothingT] =
-    new TryBackend[Any, NothingT](HttpURLConnectionBackend(options, customizeConnection))
+  ): SttpBackend[Try, Any] =
+    new TryBackend[Any](HttpURLConnectionBackend(options, customizeConnection))
 }

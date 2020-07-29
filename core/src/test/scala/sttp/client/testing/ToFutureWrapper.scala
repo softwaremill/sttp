@@ -1,7 +1,6 @@
 package sttp.client.testing
 
 import scala.concurrent.Future
-import scala.language.higherKinds
 
 import org.scalatest.exceptions.TestFailedException
 

@@ -1,10 +1,11 @@
 package sttp.client.akkahttp
 
-import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.{Flow, Source}
 import akka.util.ByteString
 import sttp.client.Streams
 
 trait AkkaStreams extends Streams[AkkaStreams] {
   override type BinaryStream = Source[ByteString, Any]
+  override type Pipe[A, B] = Flow[A, B, Any]
 }
 object AkkaStreams extends AkkaStreams

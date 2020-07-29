@@ -6,6 +6,8 @@ import java.nio.ByteBuffer
 import sttp.client.internal._
 import sttp.model._
 import sttp.client.internal.SttpFile
+import sttp.client.ws.WebSocket
+import sttp.model.ws.WebSocketFrame
 
 import scala.collection.immutable.Seq
 import scala.concurrent.duration._
@@ -26,6 +28,7 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
       NoBody,
       Vector(),
       asString,
+      isWebSocket = false,
       RequestOptions(
         followRedirects = true,
         DefaultReadTimeout,
@@ -110,10 +113,35 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
   private[client] def asSttpFile(file: SttpFile): ResponseAs[SttpFile, Any] =
     ResponseAsFile(file)
 
+  def asWebSocket[F[_], T](f: WebSocket[F] => F[T]): ResponseAs[Either[String, T], Effect[F] with WebSockets] =
+    asWebSocketEither(asStringAlways, asWebSocketAlways(f))
+
+  def asWebSocketAlways[F[_], T](f: WebSocket[F] => F[T]): ResponseAs[T, Effect[F] with WebSockets] =
+    ResponseAsWebSocket(f)
+
+  def asWebSocketUnsafe[F[_]]: ResponseAs[Either[String, WebSocket[F]], Effect[F] with WebSockets] =
+    asWebSocketEither(asStringAlways, asWebSocketUnsafeAlways)
+
+  def asWebSocketUnsafeAlways[F[_]]: ResponseAs[WebSocket[F], Effect[F] with WebSockets] = ResponseAsWebSocketUnsafe()
+
+  def asWebSocketStream[S](
+      s: Streams[S]
+  )(p: s.Pipe[WebSocketFrame, WebSocketFrame]): ResponseAs[Either[String, Unit], S with WebSockets] =
+    asWebSocketEither(asStringAlways, asWebSocketStreamAlways(s)(p))
+
+  def asWebSocketStreamAlways[S](s: Streams[S])(
+      p: s.Pipe[WebSocketFrame, WebSocketFrame]
+  ): ResponseAs[Unit, S with WebSockets] = ResponseAsWebSocketStream(s, p)
+
   def fromMetadata[T, R](f: ResponseMetadata => ResponseAs[T, R]): ResponseAs[T, R] = ResponseAsFromMetadata(f)
 
   def asEither[A, B, R](onError: ResponseAs[A, R], onSuccess: ResponseAs[B, R]): ResponseAs[Either[A, B], R] =
     fromMetadata { meta => if (meta.isSuccess) onSuccess.map(Right(_)) else onError.map(Left(_)) }
+
+  def asWebSocketEither[A, B, R](onError: ResponseAs[A, R], onSuccess: ResponseAs[B, R]): ResponseAs[Either[A, B], R] =
+    fromMetadata { meta =>
+      if (meta.code == StatusCode.SwitchingProtocols) onSuccess.map(Right(_)) else onError.map(Left(_))
+    }
 
   // multipart factory methods
 

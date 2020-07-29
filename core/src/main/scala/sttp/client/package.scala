@@ -3,7 +3,6 @@ package sttp
 package object client extends SttpApi {
   type Identity[X] = X
   type Empty[X] = None.type
-  type NothingT[X] = Nothing
 
   type PartialRequest[T, -R] = RequestT[Empty, T, R]
   type Request[T, -R] = RequestT[Identity, T, R]

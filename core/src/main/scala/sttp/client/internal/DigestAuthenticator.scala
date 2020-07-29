@@ -6,7 +6,6 @@ import sttp.client._
 import sttp.client.internal.DigestAuthenticator._
 import sttp.model.{Header, HeaderNames, StatusCode}
 
-import scala.language.higherKinds
 import scala.util.Random
 
 private[client] class DigestAuthenticator private (

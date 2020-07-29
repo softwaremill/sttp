@@ -10,13 +10,13 @@ import sttp.client.monad.syntax._
 import sttp.client.okhttp.WebSocketHandler
 import sttp.client.okhttp.monix.internal.SendMessageException
 import sttp.client.testing.ConvertToFuture
-import sttp.client.testing.websocket.HighLevelWebsocketTest
+import sttp.client.testing.websocket.WebSocketTest
 import sttp.client.ws.WebSocket
 import sttp.client.testing.HttpTest.wsEndpoint
 
 import scala.concurrent.duration._
 
-class OkHttpHighLevelMonixWebsocketTest extends HighLevelWebsocketTest[Task, WebSocketHandler] {
+class OkHttpHighLevelMonixWebsocketTest extends WebSocketTest[Task, WebSocketHandler] {
   override implicit val backend: SttpBackend[Task, MonixStreams, WebSocketHandler] =
     OkHttpMonixBackend().runSyncUnsafe()
   override implicit val convertToFuture: ConvertToFuture[Task] = convertMonixTaskToFuture

@@ -4,15 +4,13 @@ import cats.effect.IO
 import cats.implicits._
 import sttp.client._
 import sttp.client.httpclient.WebSocketHandler
-import sttp.client.testing.websocket.HighLevelWebsocketTest
+import sttp.client.testing.websocket.WebSocketTest
 import sttp.client.ws.WebSocket
 import sttp.client.testing.HttpTest.wsEndpoint
 
 import scala.concurrent.duration._
 
-class HttpClientHighLevelFs2WebsocketTest
-    extends HighLevelWebsocketTest[IO, WebSocketHandler]
-    with HttpClientFs2TestBase {
+class HttpClientHighLevelFs2WebsocketTest extends WebSocketTest[IO, WebSocketHandler] with HttpClientFs2TestBase {
 
   override def createHandler: Option[Int] => IO[WebSocketHandler[WebSocket[IO]]] =
     Fs2WebSocketHandler[IO](_)

@@ -33,7 +33,6 @@ import sttp.client
 import sttp.client.SttpBackendOptions.ProxyType.{Http, Socks}
 import sttp.client.internal._
 import sttp.client.monad.{Canceler, MonadAsyncError, MonadError}
-import sttp.client.ws.WebSocketResponse
 import sttp.client.{
   ByteArrayBody,
   ByteBufferBody,

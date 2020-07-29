@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
-import sttp.client.{NothingT, SttpBackend}
+import sttp.client.SttpBackend
 import sttp.client.testing.ConvertToFuture
 import sttp.client.testing.streaming.StreamingTest
 
@@ -16,7 +16,7 @@ class AkkaHttpStreamingTest extends StreamingTest[Future, AkkaStreams] {
   private implicit val actorSystem: ActorSystem = ActorSystem("sttp-test")
   private implicit val materializer: ActorMaterializer = ActorMaterializer()
 
-  override implicit val backend: SttpBackend[Future, AkkaStreams, NothingT] =
+  override implicit val backend: SttpBackend[Future, AkkaStreams] =
     AkkaHttpBackend.usingActorSystem(actorSystem)
 
   override implicit val convertToFuture: ConvertToFuture[Future] =

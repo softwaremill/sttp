@@ -3,25 +3,17 @@ package sttp.client
 import java.net.URI
 
 import sttp.client.monad.MonadError
-import sttp.client.ws.WebSocketResponse
 import sttp.model.{Method, StatusCode, _}
 
-class FollowRedirectsBackend[F[_], P, WS_HANDLER[_]](
-    delegate: SttpBackend[F, P, WS_HANDLER],
+class FollowRedirectsBackend[F[_], P](
+    delegate: SttpBackend[F, P],
     contentHeaders: Set[String] = HeaderNames.ContentHeaders,
     sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders
-) extends SttpBackend[F, P, WS_HANDLER] {
+) extends SttpBackend[F, P] {
   type PE = P with Effect[F]
 
   override def send[T, R >: PE](request: Request[T, R]): F[Response[T]] = {
     sendWithCounter(request, 0)
-  }
-
-  override def openWebsocket[T, WS_RESULT, R >: PE](
-      request: Request[T, R],
-      handler: WS_HANDLER[WS_RESULT]
-  ): F[WebSocketResponse[WS_RESULT]] = {
-    delegate.openWebsocket(request, handler) // TODO
   }
 
   private def sendWithCounter[T, R >: PE](request: Request[T, R], redirects: Int): F[Response[T]] = {

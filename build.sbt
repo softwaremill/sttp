@@ -184,7 +184,7 @@ val fs2Version: Option[(Long, Long)] => String = {
 }
 
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.12"
-val akkaStreamVersion = "2.5.31"
+val akkaStreamVersion = "2.6.8"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % akkaStreamVersion
 
 val scalaTestVersion = "3.1.2"
@@ -442,7 +442,7 @@ lazy val akkaHttpBackend = (projectMatrix in file("akka-http-backend"))
   )
   .dependsOn(core % compileAndTest)
   .jvmPlatform(
-    scalaVersions = List(scala2_11, scala2_12, scala2_13),
+    scalaVersions = List(scala2_12, scala2_13),
     settings = intellijImportOnly213
   )
 
@@ -743,7 +743,7 @@ lazy val examples = (projectMatrix in file("examples"))
       _ => logback
     )
   )
-  .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = intellijImportOnly213)
+  .jvmPlatform(scalaVersions = List(scala2_12, scala2_13), settings = intellijImportOnly213)
   .dependsOn(
     core,
     asyncHttpClientMonixBackend,

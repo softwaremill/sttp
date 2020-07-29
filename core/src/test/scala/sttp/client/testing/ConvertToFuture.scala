@@ -3,7 +3,6 @@ package sttp.client.testing
 import sttp.client.Identity
 
 import scala.concurrent.Future
-import scala.language.higherKinds
 import scala.util.Try
 
 trait ConvertToFuture[F[_]] {

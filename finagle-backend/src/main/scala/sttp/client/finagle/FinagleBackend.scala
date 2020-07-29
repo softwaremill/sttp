@@ -30,7 +30,6 @@ import sttp.client.{
 }
 import com.twitter.util.{Future => TFuture}
 import sttp.client.monad.MonadError
-import sttp.client.ws.WebSocketResponse
 import com.twitter.finagle.http.{
   FileElement,
   FormElement,

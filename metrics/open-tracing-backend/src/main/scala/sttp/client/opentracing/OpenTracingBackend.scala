@@ -5,7 +5,6 @@ import io.opentracing.{Span, Tracer}
 import io.opentracing.propagation.Format
 import io.opentracing.Tracer.SpanBuilder
 import sttp.client.monad.MonadError
-import sttp.client.ws.WebSocketResponse
 import sttp.client.{Effect, FollowRedirectsBackend, NothingT, Request, Response, SttpBackend}
 import sttp.client.monad.syntax._
 import sttp.client.opentracing.OpenTracingBackend._

@@ -202,7 +202,6 @@ Below is an example on how to implement a backend wrapper, which integrates with
 ```scala
 import io.github.resilience4j.circuitbreaker.{CallNotPermittedException, CircuitBreaker}
 import sttp.client.monad.MonadError
-import sttp.client.ws.WebSocketResponse
 import sttp.client.{Request, Response, SttpBackend}
 import java.util.concurrent.TimeUnit
 
@@ -267,7 +266,6 @@ Below is an example on how to implement a backend wrapper, which integrates with
 ```scala
 import io.github.resilience4j.ratelimiter.RateLimiter
 import sttp.client.monad.MonadError
-import sttp.client.ws.WebSocketResponse
 import sttp.client.{Request, Response, SttpBackend}
 
 class RateLimitingSttpBackend[F[_], S, W[_]](

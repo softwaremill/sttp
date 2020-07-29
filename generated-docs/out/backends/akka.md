@@ -95,7 +95,6 @@ import akka.Done
 import akka.stream.scaladsl.Flow
 import akka.http.scaladsl.model.ws.Message
 import sttp.client._
-import sttp.client.ws.WebSocketResponse
 import scala.concurrent.Future
 import sttp.client.akkahttp._
 

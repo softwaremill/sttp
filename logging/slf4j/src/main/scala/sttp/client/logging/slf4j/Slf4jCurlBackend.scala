@@ -3,7 +3,6 @@ package sttp.client.logging.slf4j
 import org.slf4j.{Logger, LoggerFactory}
 import sttp.client.listener.{ListenerBackend, RequestListener}
 import sttp.client.logging.LogMessages
-import sttp.client.ws.WebSocketResponse
 import sttp.client.{Identity, Request, Response, SttpBackend}
 
 object Slf4jCurlBackend {

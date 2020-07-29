@@ -14,8 +14,7 @@ import akka.http.scaladsl.server.Directives.{entity, path, _}
 import akka.http.scaladsl.server.directives.Credentials
 import akka.http.scaladsl.server.directives.RouteDirectives.complete
 import akka.http.scaladsl.server.{RejectionHandler, Route}
-import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
+import akka.stream.scaladsl.{Flow, Sink, Source}
 import akka.util.ByteString
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives
 import ch.megard.akka.http.cors.scaladsl.settings.CorsSettings
@@ -38,7 +37,6 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
   private var server: Option[Future[Http.ServerBinding]] = None
 
   private implicit val actorSystem: ActorSystem = ActorSystem("sttp-test-server")
-  private implicit val materializer: ActorMaterializer = ActorMaterializer()
 
   private val corsSettings = CorsSettings.defaultSettings
     .withExposedHeaders(List("Server", "Date", "Cache-Control", "Content-Length", "Content-Type", "WWW-Authenticate"))
@@ -233,7 +231,7 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
         complete(HttpEntity(textFile))
       }
     } ~ pathPrefix("multipart") {
-      pathPrefix("other") { 
+      pathPrefix("other") {
         extractRequest { request =>
           entity(as[akka.http.scaladsl.model.Multipart.General]) { (fd: akka.http.scaladsl.model.Multipart.General) =>
             complete {
@@ -244,25 +242,23 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
                 }
                 .runFold(Vector.empty[String])(_ :+ _)
                 .map(v => v.mkString(", "))
-                .map(v =>
-                  s"${request.entity.contentType},$v"
-                )
+                .map(v => s"${request.entity.contentType},$v")
             }
           }
         }
       } ~
-      entity(as[akka.http.scaladsl.model.Multipart.FormData]) { (fd: akka.http.scaladsl.model.Multipart.FormData) =>
-        complete {
-          fd.parts
-            .mapAsync(1) { p =>
-              val fv = p.entity.dataBytes.runFold(ByteString())(_ ++ _)
-              fv.map(_.utf8String)
-                .map(v => p.name + "=" + v + p.filename.fold("")(fn => s" ($fn)"))
-            }
-            .runFold(Vector.empty[String])(_ :+ _)
-            .map(v => v.mkString(", "))
+        entity(as[akka.http.scaladsl.model.Multipart.FormData]) { (fd: akka.http.scaladsl.model.Multipart.FormData) =>
+          complete {
+            fd.parts
+              .mapAsync(1) { p =>
+                val fv = p.entity.dataBytes.runFold(ByteString())(_ ++ _)
+                fv.map(_.utf8String)
+                  .map(v => p.name + "=" + v + p.filename.fold("")(fn => s" ($fn)"))
+              }
+              .runFold(Vector.empty[String])(_ :+ _)
+              .map(v => v.mkString(", "))
+          }
         }
-      }
     } ~ pathPrefix("redirect") {
       path("r1") {
         redirect("/redirect/r2", StatusCodes.TemporaryRedirect)
@@ -351,7 +347,10 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
         path("send_and_wait") {
           // send two messages and wait until the socket is closed
           handleWebSocketMessages(
-            Flow.fromSinkAndSourceCoupled(Sink.ignore, Source(List(TextMessage("test10"), TextMessage("test20"))) ++ Source.maybe)
+            Flow.fromSinkAndSourceCoupled(
+              Sink.ignore,
+              Source(List(TextMessage("test10"), TextMessage("test20"))) ++ Source.maybe
+            )
           )
         }
     }

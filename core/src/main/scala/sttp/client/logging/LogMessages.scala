@@ -1,6 +1,5 @@
 package sttp.client.logging
 
-import sttp.client.ws.WebSocketResponse
 import sttp.client.{Request, Response}
 import sttp.model.Header
 
@@ -27,18 +26,10 @@ object LogMessages {
 
   //
 
-  def beforeWebsocketOpen(request: Request[_, _]): String =
-    s"Opening websocket: ${requestToString(request)}"
-
-  def websocketException(request: Request[_, _]): String =
-    s"Exception when opening websocket: ${requestToString(request)}"
-
-  def websocketResponse(request: Request[_, _], response: WebSocketResponse[_]): String =
-    s"For websocket request: ${requestToString(request)}, got response headers: ${headersToString(response.headers.headers)}"
-
-  //
-
-  def requestToString(request: Request[_, _]): String = s"${request.method} ${request.uri}"
+  def requestToString(request: Request[_, _]): String = {
+    val ws = if (request.isWebSocket) " (WebSocket) " else ""
+    s"${request.method}$ws ${request.uri}"
+  }
 
   def responseToString(response: Response[_]): String =
     s"${response.code}, headers: ${headersToString(response.headers)}"

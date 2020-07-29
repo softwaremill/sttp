@@ -19,7 +19,6 @@ import sttp.client.impl.fs2.Fs2Streams
 import sttp.model._
 import sttp.client.monad.MonadError
 import sttp.client.testing.SttpBackendStub
-import sttp.client.ws.WebSocketResponse
 import sttp.client.{
   BasicRequestBody,
   IgnoreResponse,

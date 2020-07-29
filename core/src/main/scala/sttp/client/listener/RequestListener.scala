@@ -1,7 +1,6 @@
 package sttp.client.listener
 
 import sttp.client.monad.MonadError
-import sttp.client.ws.WebSocketResponse
 import sttp.client.{Identity, Request, Response}
 
 /**
@@ -14,12 +13,6 @@ trait RequestListener[F[_], L] {
   def beforeRequest(request: Request[_, _]): F[L]
   def requestException(request: Request[_, _], tag: L, e: Exception): F[Unit]
   def requestSuccessful(request: Request[_, _], response: Response[_], tag: L): F[Unit]
-
-  //
-
-  def beforeWebsocket(request: Request[_, _]): F[L]
-  def websocketException(request: Request[_, _], tag: L, e: Exception): F[Unit]
-  def websocketSuccessful(request: Request[_, _], response: WebSocketResponse[_], tag: L): F[Unit]
 }
 
 object RequestListener {
@@ -30,10 +23,5 @@ object RequestListener {
         monadError.eval(delegate.requestException(request, tag, e))
       override def requestSuccessful(request: Request[_, _], response: Response[_], tag: L): F[Unit] =
         monadError.eval(delegate.requestSuccessful(request, response, tag))
-      override def beforeWebsocket(request: Request[_, _]): F[L] = monadError.eval(delegate.beforeWebsocket(request))
-      override def websocketException(request: Request[_, _], tag: L, e: Exception): F[Unit] =
-        monadError.eval(delegate.websocketException(request, tag, e))
-      override def websocketSuccessful(request: Request[_, _], response: WebSocketResponse[_], tag: L): F[Unit] =
-        monadError.eval(delegate.websocketSuccessful(request, response, tag))
     }
 }

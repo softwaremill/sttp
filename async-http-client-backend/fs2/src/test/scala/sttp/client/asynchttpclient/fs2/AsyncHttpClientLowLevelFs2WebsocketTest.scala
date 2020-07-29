@@ -5,7 +5,6 @@ import org.asynchttpclient.ws.{WebSocketListener, WebSocket => AHCWebSocket}
 import sttp.client._
 import sttp.client.asynchttpclient.WebSocketHandler
 import sttp.client.impl.cats.CatsTestBase
-import sttp.client.testing.websocket.LowLevelListenerWebSocketTest
 
 class AsyncHttpClientLowLevelFs2WebsocketTest
     extends LowLevelListenerWebSocketTest[IO, AHCWebSocket, WebSocketHandler]

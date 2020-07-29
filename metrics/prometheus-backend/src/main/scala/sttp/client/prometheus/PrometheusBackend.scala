@@ -6,7 +6,6 @@ import sttp.client.{FollowRedirectsBackend, Identity, Request, Response, SttpBac
 import io.prometheus.client.{CollectorRegistry, Counter, Gauge, Histogram}
 import sttp.client.listener.{ListenerBackend, RequestListener}
 import sttp.client.prometheus.PrometheusBackend.RequestCollectors
-import sttp.client.ws.WebSocketResponse
 
 import scala.collection.mutable
 

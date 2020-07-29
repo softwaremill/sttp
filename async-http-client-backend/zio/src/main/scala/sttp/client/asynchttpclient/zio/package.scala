@@ -1,7 +1,7 @@
 package sttp.client.asynchttpclient
 
 import sttp.client._
-import sttp.client.ws.{WebSocket, WebSocketResponse}
+import sttp.client.ws.WebSocket
 import _root_.zio._
 import sttp.client.impl.zio.ZioStreams
 

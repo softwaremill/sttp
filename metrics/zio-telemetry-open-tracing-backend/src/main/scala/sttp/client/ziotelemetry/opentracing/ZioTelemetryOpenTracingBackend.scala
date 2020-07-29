@@ -6,7 +6,6 @@ import scala.jdk.CollectionConverters._
 import sttp.client._
 import sttp.client.impl.zio.RIOMonadAsyncError
 import sttp.client.monad.MonadError
-import sttp.client.ws.WebSocketResponse
 import zio._
 import zio.telemetry.opentracing._
 

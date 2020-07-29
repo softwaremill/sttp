@@ -1,7 +1,7 @@
 package sttp.client.impl.fs2
 
 import cats.effect.{Effect, IO}
-import fs2.concurrent.InspectableQueue
+import fs2.Pipe concurrent.InspectableQueue
 import sttp.client.ws.internal.AsyncQueue
 import sttp.model.ws.WebSocketBufferFull
 

@@ -1,7 +1,6 @@
 package sttp.client
 
-import sttp.client.monad.{EitherMonad, FunctionK, MonadError}
-import sttp.client.ws.WebSocketResponse
+import sttp.client.monad.{EitherMonad, FunctionK, MapEffect, MonadError}
 
 import scala.util.control.NonFatal
 
@@ -9,32 +8,20 @@ import scala.util.control.NonFatal
   *
   * @param delegate A synchronous `SttpBackend` which to which this backend forwards all requests
   * @tparam P TODO
-  * @tparam WS_HANDLER The type of websocket handlers, that are supported by this backend.
-  *                    The handler is parametrised by the value that is being returned
-  *                    when the websocket is established. `NothingT`, if websockets are
-  *                    not supported.
   */
-class EitherBackend[P, WS_HANDLER[_]](delegate: SttpBackend[Identity, P, WS_HANDLER])
-    extends SttpBackend[Either[Throwable, *], P, WS_HANDLER] {
+class EitherBackend[P](delegate: SttpBackend[Identity, P]) extends SttpBackend[Either[Throwable, *], P] {
   override def send[T, R >: P with Effect[Either[Throwable, *]]](
       request: Request[T, R]
   ): Either[Throwable, Response[T]] =
     doTry(
       delegate.send(
-        (request: Request[T, P with Effect[Either[Throwable, *]]])
-          .mapEffect[Either[Throwable, *], Identity, P](eitherToId)
-      )
-    )
-
-  override def openWebsocket[T, WS_RESULT, R >: P with Effect[Either[Throwable, *]]](
-      request: Request[T, R],
-      handler: WS_HANDLER[WS_RESULT]
-  ): Either[Throwable, WebSocketResponse[WS_RESULT]] =
-    doTry(
-      delegate.openWebsocket(
-        (request: Request[T, P with Effect[Either[Throwable, *]]])
-          .mapEffect[Either[Throwable, *], Identity, P](eitherToId),
-        handler
+        MapEffect[Either[Throwable, *], Identity, Identity, T, P](
+          request: Request[T, P with Effect[Either[Throwable, *]]],
+          eitherToId,
+          idToEither,
+          responseMonad,
+          delegate.responseMonad
+        )
       )
     )
 
@@ -56,5 +43,10 @@ class EitherBackend[P, WS_HANDLER[_]](delegate: SttpBackend[Identity, P, WS_HAND
           case Left(e)  => throw e
           case Right(v) => v
         }
+    }
+
+  private val idToEither: FunctionK[Identity, Either[Throwable, *]] =
+    new FunctionK[Identity, Either[Throwable, *]] {
+      override def apply[A](fa: Identity[A]): Either[Throwable, A] = Right(fa)
     }
 }

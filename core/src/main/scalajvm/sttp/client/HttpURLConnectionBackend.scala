@@ -12,7 +12,6 @@ import sttp.client.internal._
 import sttp.model._
 import sttp.client.monad.{IdMonad, MonadError}
 import sttp.client.testing.SttpBackendStub
-import sttp.client.ws.WebSocketResponse
 import sttp.model.StatusCode
 
 import scala.annotation.tailrec
@@ -24,7 +23,7 @@ class HttpURLConnectionBackend private (
     customizeConnection: HttpURLConnection => Unit,
     createURL: String => URL,
     openConnection: (URL, Option[java.net.Proxy]) => URLConnection
-) extends SttpBackend[Identity, Any, NothingT] {
+) extends SttpBackend[Identity, Any] {
   override def send[T, R >: Any with Effect[Identity]](r: Request[T, R]): Response[T] =
     adjustExceptions {
       val c = openConnection(r.uri)
@@ -61,12 +60,6 @@ class HttpURLConnectionBackend private (
           readResponse(c, c.getErrorStream, r.response)
       }
     }
-
-  override def openWebsocket[T, WR, R >: Any with Effect[Identity]](
-      request: Request[T, R],
-      handler: NothingT[WR]
-  ): NothingT[WebSocketResponse[WR]] =
-    handler // nothing is everything
 
   override val responseMonad: MonadError[Identity] = IdMonad
 
@@ -305,8 +298,8 @@ object HttpURLConnectionBackend {
         case (url, None)        => url.openConnection()
         case (url, Some(proxy)) => url.openConnection(proxy)
       }
-  ): SttpBackend[Identity, Any, NothingT] =
-    new FollowRedirectsBackend[Identity, Any, NothingT](
+  ): SttpBackend[Identity, Any] =
+    new FollowRedirectsBackend[Identity, Any](
       new HttpURLConnectionBackend(options, customizeConnection, createURL, openConnection)
     )
 
@@ -315,5 +308,5 @@ object HttpURLConnectionBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub: SttpBackendStub[Identity, Any, NothingT] = SttpBackendStub.synchronous
+  def stub: SttpBackendStub[Identity, Any] = SttpBackendStub.synchronous
 }

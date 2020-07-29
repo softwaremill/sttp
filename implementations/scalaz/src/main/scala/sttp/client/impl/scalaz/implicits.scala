@@ -2,7 +2,6 @@ package sttp.client.impl.scalaz
 
 import scalaz.~>
 import sttp.client.monad.{FunctionK, MonadError}
-import sttp.client.ws.WebSocketResponse
 import sttp.client.{Effect, Request, Response, SttpBackend}
 
 object implicits extends ScalazImplicits

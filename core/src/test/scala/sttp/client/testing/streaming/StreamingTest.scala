@@ -7,7 +7,6 @@ import org.scalatest.freespec.AsyncFreeSpecLike
 import StreamingTest._
 import sttp.client.internal.Utf8
 
-import scala.language.higherKinds
 import org.scalatest.matchers.should.Matchers
 import sttp.client.testing.HttpTest.endpoint
 
@@ -22,7 +21,7 @@ abstract class StreamingTest[F[_], S]
 
   val streams: Streams[S]
 
-  implicit def backend: SttpBackend[F, S, NothingT]
+  implicit def backend: SttpBackend[F, S]
 
   implicit def convertToFuture: ConvertToFuture[F]
 

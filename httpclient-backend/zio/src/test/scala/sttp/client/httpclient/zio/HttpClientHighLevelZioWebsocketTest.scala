@@ -6,7 +6,7 @@ import sttp.client.impl.zio.RIOMonadAsyncError
 import sttp.client.monad.MonadError
 import sttp.client.testing.ConvertToFuture
 import sttp.client.testing.HttpTest.wsEndpoint
-import sttp.client.testing.websocket.HighLevelWebsocketTest
+import sttp.client.testing.websocket.WebSocketTest
 import sttp.client.ws.WebSocket
 import zio.blocking.Blocking
 import sttp.client.impl.zio._
@@ -16,7 +16,7 @@ import zio.{Schedule, ZIO}
 import scala.concurrent.duration._
 import zio.duration.Duration
 
-class HttpClientHighLevelZioWebsocketTest extends HighLevelWebsocketTest[BlockingTask, WebSocketHandler] {
+class HttpClientHighLevelZioWebsocketTest extends WebSocketTest[BlockingTask, WebSocketHandler] {
   implicit val backend: SttpBackend[BlockingTask, BlockingZioStreams, WebSocketHandler] =
     runtime.unsafeRun(HttpClientZioBackend())
   implicit val convertToFuture: ConvertToFuture[BlockingTask] = convertZioBlockingTaskToFuture

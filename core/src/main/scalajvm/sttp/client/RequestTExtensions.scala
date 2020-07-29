@@ -3,7 +3,6 @@ package sttp.client
 import java.io.File
 import java.nio.file.Path
 
-import scala.language.higherKinds
 import sttp.client.internal.SttpFile
 
 trait RequestTExtensions[U[_], T, -R] { self: RequestT[U, T, R] =>

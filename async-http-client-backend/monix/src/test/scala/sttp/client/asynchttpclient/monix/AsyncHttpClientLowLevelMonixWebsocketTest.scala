@@ -7,7 +7,6 @@ import sttp.client._
 import sttp.client.asynchttpclient.WebSocketHandler
 import sttp.client.impl.monix.convertMonixTaskToFuture
 import sttp.client.testing.ConvertToFuture
-import sttp.client.testing.websocket.LowLevelListenerWebSocketTest
 
 class AsyncHttpClientLowLevelMonixWebsocketTest
     extends LowLevelListenerWebSocketTest[Task, AHCWebSocket, WebSocketHandler] {
