@@ -305,7 +305,6 @@ import scala.concurrent.Await
 import scala.concurrent.duration._
 
 implicit val system = ActorSystem("sttp-ws-test")
-implicit val materializer = ActorMaterializer()
 
 // it should say Hi! and 42
 val behaviorToTest: Flow[Message, Message, Future[Done]] = ???

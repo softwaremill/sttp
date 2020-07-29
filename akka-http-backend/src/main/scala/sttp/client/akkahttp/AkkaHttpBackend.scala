@@ -11,7 +11,6 @@ import akka.http.scaladsl.model.ws.{Message, WebSocketRequest}
 import akka.http.scaladsl.model.{StatusCode => _, _}
 import akka.http.scaladsl.settings.ConnectionPoolSettings
 import akka.http.scaladsl.{ClientTransport, Http, HttpsConnectionContext}
-import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Flow
 import sttp.client
 import sttp.client.akkahttp.AkkaHttpBackend.EncodingHandler
@@ -36,7 +35,6 @@ class AkkaHttpBackend private (
   type PE = AkkaStreams with Effect[Future] with WebSockets
 
   private implicit val as: ActorSystem = actorSystem
-  private implicit val materializer: ActorMaterializer = ActorMaterializer()
   private implicit val _ec: ExecutionContext = ec
 
   private val connectionPoolSettings = customConnectionPoolSettings

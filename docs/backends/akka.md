@@ -77,11 +77,9 @@ If your application provides a client library for its dependants to use, this is
 import sttp.client.akkahttp._
 import akka.http.scaladsl.server.Route
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 
 val route: Route = ???
 implicit val system: ActorSystem = ???
-implicit val materializer: ActorMaterializer = ActorMaterializer()
 
 val backend = AkkaHttpBackend.usingClient(system, http = AkkaHttpClient.stubFromRoute(route))
 ```
