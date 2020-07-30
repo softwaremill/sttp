@@ -14,9 +14,7 @@ import sttp.client.testing.HttpTest.wsEndpoint
 import sttp.client.ws.WebSocket
 import sttp.model.ws.WebSocketFrame
 
-import scala.concurrent.duration.FiniteDuration
-
-abstract class WebSocketTest[F[_]]
+abstract class WebSocketTest[F[_], S]
     extends SuiteMixin
     with AsyncFlatSpecLike
     with BeforeAndAfterAll
@@ -24,7 +22,8 @@ abstract class WebSocketTest[F[_]]
     with ToFutureWrapper
     with TimeLimits {
 
-  implicit val backend: SttpBackend[F, WebSockets]
+  val streams: Streams[S]
+  implicit val backend: SttpBackend[F, S with WebSockets]
   implicit val convertToFuture: ConvertToFuture[F]
   implicit val monad: MonadError[F]
 
@@ -32,10 +31,11 @@ abstract class WebSocketTest[F[_]]
     basicRequest
       .get(uri"$wsEndpoint/ws/echo")
       .response(asWebSocketAlways { ws: WebSocket[F] =>
-        send(ws, 3) >>
-          receiveEcho(ws, 3) >>
-          ws.close >>
-          succeed.unit
+        for {
+          _ <- send(ws, 3)
+          _ <- receiveEcho(ws, 3)
+          _ <- ws.close
+        } yield succeed
       })
       .send()
       .map(_ => succeed)
@@ -49,10 +49,12 @@ abstract class WebSocketTest[F[_]]
       .send()
       .flatMap { response =>
         val ws = response.body
-        send(ws, 2) >>
-          receiveEcho(ws, 2) >>
-          ws.close >>
-          succeed.unit
+
+        for {
+          _ <- send(ws, 2)
+          _ <- receiveEcho(ws, 2)
+          _ <- ws.close
+        } yield succeed
       }
       .toFuture()
   }
@@ -64,10 +66,12 @@ abstract class WebSocketTest[F[_]]
       .send()
       .flatMap { response =>
         val ws = response.body
-        send(ws, 1000) >>
-          receiveEcho(ws, 1000) >>
-          ws.close >>
-          succeed.unit
+
+        for {
+          _ <- send(ws, 1000)
+          _ <- receiveEcho(ws, 1000)
+          _ <- ws.close
+        } yield succeed
       }
       .toFuture()
   }
@@ -115,15 +119,31 @@ abstract class WebSocketTest[F[_]]
     }
   }
 
+  it should "use pipe to process websocket messages" in {
+    basicRequest
+      .get(uri"$wsEndpoint/ws/send_and_expect_echo")
+      .response(asWebSocketStreamAlways(streams)(functionToPipe {
+        case WebSocketFrame.Text(payload, _, _) =>
+          WebSocketFrame.text(payload + "-echo")
+      }))
+      .send()
+      .map(_ => succeed)
+      .toFuture()
+  }
+
   def send(ws: WebSocket[F], count: Int): F[Unit] = {
-    val fs = (1 to count).map(i => ws.send(WebSocketFrame.text(s"test$i")))
-    fs.foldLeft(().unit)(_ >> _)
+    val fs = (1 to count).map(i => () => ws.send(WebSocketFrame.text(s"test$i")))
+    fs.foldLeft(().unit)((f1, lazy_f2) => f1.flatMap(_ => lazy_f2()))
   }
 
   def receiveEcho(ws: WebSocket[F], count: Int): F[Assertion] = {
     val fs = (1 to count).map(i => () => ws.receiveText().map(_ shouldBe Right(s"echo: test$i")))
     fs.foldLeft(succeed.unit)((f1, lazy_f2) => f1.flatMap(_ => lazy_f2()))
   }
+
+  def functionToPipe(
+      f: WebSocketFrame.Incoming => WebSocketFrame
+  ): streams.Pipe[WebSocketFrame.Incoming, WebSocketFrame]
 
   // TODO def eventually[T](interval: FiniteDuration, attempts: Int)(f: => F[T]): F[T]
 

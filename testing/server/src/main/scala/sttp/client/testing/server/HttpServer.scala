@@ -2,7 +2,7 @@ package sttp.client.testing.server
 
 import java.io.{ByteArrayOutputStream, InputStream, OutputStream}
 
-import akka.Done
+import akka.{Done, NotUsed}
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.coding.{Deflate, Gzip, NoCoding}
@@ -21,7 +21,7 @@ import ch.megard.akka.http.cors.scaladsl.settings.CorsSettings
 
 import scala.annotation.tailrec
 import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{Await, Future, Promise}
 
 object HttpServer {
   def main(args: Array[String]): Unit = {
@@ -352,6 +352,30 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
               Source(List(TextMessage("test10"), TextMessage("test20"))) ++ Source.maybe
             )
           )
+        } ~
+        path("send_and_expect_echo") {
+          extractRequest { _ => // to make sure the route is evaluated on each request
+            val sourcePromise = Promise[Source[Message, NotUsed]]()
+            // send two messages and expect a correct echo response
+            handleWebSocketMessages(
+              Flow.fromSinkAndSourceCoupled(
+                Sink.fold(1) {
+                  case (counter, msg) =>
+                    val expectedMsg = s"test$counter-echo"
+                    msg match {
+                      case TextMessage.Strict(`expectedMsg`) =>
+                        if (counter == 3) sourcePromise.success(Source.empty)
+                        if (counter > 3) throw new IllegalArgumentException("Got more messages than expected!")
+                        counter + 1
+                      case _ =>
+                        throw new IllegalArgumentException(s"Wrong message, expected: $expectedMsg, but got: $msg")
+                    }
+                },
+                Source(List(TextMessage("test1"), TextMessage("test2"), TextMessage("test3"))) ++ Source
+                  .lazyFutureSource(() => sourcePromise.future)
+              )
+            )
+          }
         }
     }
 
