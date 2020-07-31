@@ -2,8 +2,8 @@ package sttp.client.impl.cats
 
 import cats.effect.Concurrent
 import cats.~>
-import sttp.client.monad.{FunctionK, MonadAsyncError, MonadError}
-import sttp.client.{Effect, Request, Response, SttpBackend}
+import sttp.client.monad.{FunctionK, MapEffect, MonadAsyncError, MonadError}
+import sttp.client.{Effect, Identity, Request, Response, SttpBackend}
 
 object implicits extends CatsImplicits
 
@@ -34,12 +34,22 @@ private[cats] final class MappedKSttpBackend[F[_], +P, WS_HANDLER[_], G[_]](
     val responseMonad: MonadError[G]
 ) extends SttpBackend[G, P] {
   def send[T, R >: P with Effect[G]](request: Request[T, R]): G[Response[T]] =
-    f(wrapped.send((request: Request[T, P with Effect[G]]).mapEffect[G, F, P](gAsFunctionK)))
+    f(
+      wrapped.send(
+        MapEffect[G, F, Identity, T, P](
+          request: Request[T, P with Effect[G]],
+          asFunctionK(g),
+          asFunctionK(f),
+          responseMonad,
+          wrapped.responseMonad
+        )
+      )
+    )
 
   def close(): G[Unit] = f(wrapped.close())
 
-  private def gAsFunctionK =
-    new FunctionK[G, F] {
-      override def apply[A](fa: G[A]): F[A] = g(fa)
+  private def asFunctionK[A[_], B[_]](ab: A ~> B) =
+    new FunctionK[A, B] {
+      override def apply[X](x: A[X]): B[X] = ab(x)
     }
 }

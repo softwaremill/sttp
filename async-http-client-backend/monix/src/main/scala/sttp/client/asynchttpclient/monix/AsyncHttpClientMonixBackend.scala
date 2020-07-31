@@ -34,7 +34,7 @@ class AsyncHttpClientMonixBackend private (
       TaskMonadAsyncError,
       closeClient,
       customizeRequest
-    ) { outer =>
+    ) {
 
   override val streams: MonixStreams = MonixStreams
 
