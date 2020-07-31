@@ -126,11 +126,11 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
 
   def asWebSocketStream[S](
       s: Streams[S]
-  )(p: s.Pipe[WebSocketFrame.Incoming, WebSocketFrame]): ResponseAs[Either[String, Unit], S with WebSockets] =
+  )(p: s.Pipe[WebSocketFrame.Data[_], WebSocketFrame]): ResponseAs[Either[String, Unit], S with WebSockets] =
     asWebSocketEither(asStringAlways, asWebSocketStreamAlways(s)(p))
 
   def asWebSocketStreamAlways[S](s: Streams[S])(
-      p: s.Pipe[WebSocketFrame.Incoming, WebSocketFrame]
+      p: s.Pipe[WebSocketFrame.Data[_], WebSocketFrame]
   ): ResponseAs[Unit, S with WebSockets] = ResponseAsWebSocketStream(s, p)
 
   def fromMetadata[T, R](f: ResponseMetadata => ResponseAs[T, R]): ResponseAs[T, R] = ResponseAsFromMetadata(f)

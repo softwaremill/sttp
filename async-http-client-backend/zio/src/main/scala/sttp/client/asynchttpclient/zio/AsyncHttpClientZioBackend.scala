@@ -16,7 +16,7 @@ import sttp.client.asynchttpclient.{AsyncHttpClientBackend, WebSocketHandler}
 import sttp.client.impl.zio.{RIOMonadAsyncError, ZioStreams}
 import sttp.client.internal._
 import sttp.client.testing.SttpBackendStub
-import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
+import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions, WebSockets}
 import _root_.zio._
 import _root_.zio.blocking.Blocking
 import _root_.zio.interop.reactivestreams._
@@ -27,7 +27,7 @@ class AsyncHttpClientZioBackend private (
     asyncHttpClient: AsyncHttpClient,
     closeClient: Boolean,
     customizeRequest: BoundRequestBuilder => BoundRequestBuilder
-) extends AsyncHttpClientBackend[Task, ZioStreams, ZioStreams](
+) extends AsyncHttpClientBackend[Task, ZioStreams, ZioStreams with WebSockets](
       asyncHttpClient,
       new RIOMonadAsyncError[Any],
       closeClient,
@@ -64,13 +64,13 @@ object AsyncHttpClientZioBackend {
       asyncHttpClient: AsyncHttpClient,
       closeClient: Boolean,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder
-  ): SttpBackend[Task, ZioStreams, WebSocketHandler] =
+  ): SttpBackend[Task, ZioStreams with WebSockets] =
     new FollowRedirectsBackend(new AsyncHttpClientZioBackend(runtime, asyncHttpClient, closeClient, customizeRequest))
 
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): Task[SttpBackend[Task, ZioStreams, WebSocketHandler]] =
+  ): Task[SttpBackend[Task, ZioStreams with WebSockets]] =
     ZIO
       .runtime[Any]
       .flatMap(runtime =>
@@ -87,7 +87,7 @@ object AsyncHttpClientZioBackend {
   def managed(
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): TaskManaged[SttpBackend[Task, ZioStreams, WebSocketHandler]] =
+  ): TaskManaged[SttpBackend[Task, ZioStreams with WebSockets]] =
     ZManaged.make(apply(options, customizeRequest))(_.close().ignore)
 
   def layer(
@@ -99,7 +99,7 @@ object AsyncHttpClientZioBackend {
   def usingConfig(
       cfg: AsyncHttpClientConfig,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): Task[SttpBackend[Task, ZioStreams, WebSocketHandler]] =
+  ): Task[SttpBackend[Task, ZioStreams with WebSockets]] =
     ZIO
       .runtime[Any]
       .flatMap(runtime =>
@@ -116,7 +116,7 @@ object AsyncHttpClientZioBackend {
   def managedUsingConfig(
       cfg: AsyncHttpClientConfig,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): TaskManaged[SttpBackend[Task, ZioStreams, WebSocketHandler]] =
+  ): TaskManaged[SttpBackend[Task, ZioStreams with WebSockets]] =
     ZManaged.make(usingConfig(cfg, customizeRequest))(_.close().ignore)
 
   def layerUsingConfig(
@@ -132,7 +132,7 @@ object AsyncHttpClientZioBackend {
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): Task[SttpBackend[Task, ZioStreams, WebSocketHandler]] =
+  ): Task[SttpBackend[Task, ZioStreams with WebSockets]] =
     ZIO
       .runtime[Any]
       .flatMap(runtime =>
@@ -153,7 +153,7 @@ object AsyncHttpClientZioBackend {
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): TaskManaged[SttpBackend[Task, ZioStreams, WebSocketHandler]] =
+  ): TaskManaged[SttpBackend[Task, ZioStreams with WebSockets]] =
     ZManaged.make(usingConfigBuilder(updateConfig, options, customizeRequest))(_.close().ignore)
 
   /**
@@ -170,7 +170,7 @@ object AsyncHttpClientZioBackend {
       runtime: Runtime[R],
       client: AsyncHttpClient,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): SttpBackend[Task, ZioStreams, WebSocketHandler] =
+  ): SttpBackend[Task, ZioStreams with WebSockets] =
     AsyncHttpClientZioBackend(runtime, client, closeClient = false, customizeRequest)
 
   def layerUsingClient(
@@ -187,6 +187,6 @@ object AsyncHttpClientZioBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub: SttpBackendStub[Task, ZioStreams, WebSocketHandler] =
+  def stub: SttpBackendStub[Task, ZioStreams with WebSockets] =
     SttpBackendStub(new RIOMonadAsyncError[Any])
 }

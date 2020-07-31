@@ -1,13 +1,14 @@
 package sttp.client.httpclient.internal
 
-import sttp.client.ws.internal.AsyncQueue
+import sttp.client.ws.internal.{AsyncQueue, WebSocketEvent}
 import java.util.concurrent.atomic.AtomicBoolean
 import java.net.http.WebSocket.Listener
 import java.net.http.{WebSocket => JWebSocket}
-import sttp.client.ws.WebSocketEvent
+
 import sttp.client.monad.syntax._
 import java.util.concurrent.CompletionStage
 import java.nio.ByteBuffer
+
 import sttp.client.httpclient.WebSocketHandler
 import sttp.client.monad.MonadAsyncError
 import sttp.client.ws.WebSocket
@@ -15,6 +16,7 @@ import sttp.model.ws.{WebSocketClosed, WebSocketFrame}
 import sttp.client.monad.MonadError
 import java.util.concurrent.CompletableFuture
 import java.util.function.BiConsumer
+
 import sttp.client.monad.Canceler
 
 private[httpclient] object NativeWebSocketHandler {

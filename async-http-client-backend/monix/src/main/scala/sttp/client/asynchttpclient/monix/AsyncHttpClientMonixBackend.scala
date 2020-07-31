@@ -7,23 +7,29 @@ import cats.effect.Resource
 import io.netty.buffer.{ByteBuf, Unpooled}
 import monix.eval.Task
 import monix.execution.Scheduler
+import monix.execution.cancelables.BooleanCancelable
 import monix.nio.file._
 import monix.reactive.Observable
 import org.asynchttpclient._
 import org.reactivestreams.Publisher
-import sttp.client.asynchttpclient.{AsyncHttpClientBackend, WebSocketHandler}
-import sttp.client.impl.monix.{MonixStreams, TaskMonadAsyncError}
+import sttp.client.asynchttpclient.{AsyncHttpClientBackend, BodyFromAHC}
+import sttp.client.impl.monix.{MonixAsyncQueue, MonixStreams, TaskMonadAsyncError}
 import sttp.client.internal._
+import sttp.client.monad.MonadAsyncError
 import sttp.client.testing.SttpBackendStub
-import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
+import sttp.client.ws.WebSocket
+import sttp.client.ws.internal.AsyncQueue
+import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions, WebSockets}
+import sttp.model.ws.WebSocketFrame
 
 class AsyncHttpClientMonixBackend private (
     asyncHttpClient: AsyncHttpClient,
     closeClient: Boolean,
-    customizeRequest: BoundRequestBuilder => BoundRequestBuilder
+    customizeRequest: BoundRequestBuilder => BoundRequestBuilder,
+    webSocketBufferCapacity: Option[Int]
 )(implicit
     scheduler: Scheduler
-) extends AsyncHttpClientBackend[Task, MonixStreams, MonixStreams](
+) extends AsyncHttpClientBackend[Task, MonixStreams, MonixStreams with WebSockets](
       asyncHttpClient,
       TaskMonadAsyncError,
       closeClient,
@@ -32,38 +38,68 @@ class AsyncHttpClientMonixBackend private (
 
   override val streams: MonixStreams = MonixStreams
 
+  override protected def bodyFromAHC: BodyFromAHC[Task, MonixStreams] =
+    new BodyFromAHC[Task, MonixStreams] {
+      override val streams: MonixStreams = MonixStreams
+      override implicit val monad: MonadAsyncError[Task] = TaskMonadAsyncError
+
+      override def publisherToStream(p: Publisher[ByteBuffer]): Observable[ByteBuffer] =
+        Observable.fromReactivePublisher(p)
+
+      override def publisherToBytes(p: Publisher[ByteBuffer]): Task[Array[Byte]] = {
+        val bytes = Observable
+          .fromReactivePublisher(p)
+          .foldLeftL(ByteBuffer.allocate(0))(concatByteBuffers)
+
+        bytes.map(_.array())
+      }
+
+      override def publisherToFile(p: Publisher[ByteBuffer], f: File): Task[Unit] = {
+        Observable
+          .fromReactivePublisher(p)
+          .map(_.array())
+          .consumeWith(writeAsync(f.toPath))
+          .map(_ => ())
+      }
+
+      override def compileWebSocketPipe(
+          ws: WebSocket[Task],
+          pipe: Observable[WebSocketFrame.Data[_]] => Observable[WebSocketFrame]
+      ): Task[Unit] = {
+        Task(BooleanCancelable()).flatMap { wsClosed =>
+          Observable
+            .repeatEvalF(ws.receive)
+            .flatMap {
+              case Left(WebSocketFrame.Close(_, _))    => Observable.fromTask(Task(wsClosed.cancel()))
+              case Right(WebSocketFrame.Ping(payload)) => Observable.fromTask(ws.send(WebSocketFrame.Pong(payload)))
+              case Right(WebSocketFrame.Pong(_))       => Observable.empty
+              case Right(in: WebSocketFrame.Data[_])   => pipe(Observable(in)).mapEval(ws.send(_))
+            }
+            .takeWhileNotCanceled(wsClosed)
+            .completedL
+            .guarantee(ws.close)
+        }
+      }
+    }
+
+  override protected def createAsyncQueue[T]: AsyncQueue[Task, T] = new MonixAsyncQueue[T](webSocketBufferCapacity)
+
   override protected def streamBodyToPublisher(s: Observable[ByteBuffer]): Publisher[ByteBuf] =
     s.map(Unpooled.wrappedBuffer).toReactivePublisher
-
-  override protected def publisherToStreamBody(p: Publisher[ByteBuffer]): Observable[ByteBuffer] =
-    Observable.fromReactivePublisher(p)
-
-  override protected def publisherToBytes(p: Publisher[ByteBuffer]): Task[Array[Byte]] = {
-    val bytes = Observable
-      .fromReactivePublisher(p)
-      .foldLeftL(ByteBuffer.allocate(0))(concatByteBuffers)
-
-    bytes.map(_.array())
-  }
-
-  override protected def publisherToFile(p: Publisher[ByteBuffer], f: File): Task[Unit] = {
-    Observable
-      .fromReactivePublisher(p)
-      .map(_.array())
-      .consumeWith(writeAsync(f.toPath))
-      .map(_ => ())
-  }
 }
 
 object AsyncHttpClientMonixBackend {
   private def apply(
       asyncHttpClient: AsyncHttpClient,
       closeClient: Boolean,
-      customizeRequest: BoundRequestBuilder => BoundRequestBuilder
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder,
+      webSocketBufferCapacity: Option[Int]
   )(implicit
       scheduler: Scheduler
-  ): SttpBackend[Task, MonixStreams, WebSocketHandler] =
-    new FollowRedirectsBackend(new AsyncHttpClientMonixBackend(asyncHttpClient, closeClient, customizeRequest))
+  ): SttpBackend[Task, MonixStreams with WebSockets] =
+    new FollowRedirectsBackend(
+      new AsyncHttpClientMonixBackend(asyncHttpClient, closeClient, customizeRequest, webSocketBufferCapacity)
+    )
 
   /**
     * @param s The scheduler used for streaming request bodies. Defaults to the
@@ -71,12 +107,18 @@ object AsyncHttpClientMonixBackend {
     */
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default,
-      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
+      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   )(implicit
       s: Scheduler = Scheduler.global
-  ): Task[SttpBackend[Task, MonixStreams, WebSocketHandler]] =
+  ): Task[SttpBackend[Task, MonixStreams with WebSockets]] =
     Task.eval(
-      AsyncHttpClientMonixBackend(AsyncHttpClientBackend.defaultClient(options), closeClient = true, customizeRequest)
+      AsyncHttpClientMonixBackend(
+        AsyncHttpClientBackend.defaultClient(options),
+        closeClient = true,
+        customizeRequest,
+        webSocketBufferCapacity
+      )
     )
 
   /**
@@ -84,11 +126,12 @@ object AsyncHttpClientMonixBackend {
     */
   def resource(
       options: SttpBackendOptions = SttpBackendOptions.Default,
-      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
+      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   )(implicit
       s: Scheduler = Scheduler.global
-  ): Resource[Task, SttpBackend[Task, MonixStreams, WebSocketHandler]] =
-    Resource.make(apply(options, customizeRequest))(_.close())
+  ): Resource[Task, SttpBackend[Task, MonixStreams with WebSockets]] =
+    Resource.make(apply(options, customizeRequest, webSocketBufferCapacity))(_.close())
 
   /**
     * @param s The scheduler used for streaming request bodies. Defaults to the
@@ -96,22 +139,31 @@ object AsyncHttpClientMonixBackend {
     */
   def usingConfig(
       cfg: AsyncHttpClientConfig,
-      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
+      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   )(implicit
       s: Scheduler = Scheduler.global
-  ): Task[SttpBackend[Task, MonixStreams, WebSocketHandler]] =
-    Task.eval(AsyncHttpClientMonixBackend(new DefaultAsyncHttpClient(cfg), closeClient = true, customizeRequest))
+  ): Task[SttpBackend[Task, MonixStreams with WebSockets]] =
+    Task.eval(
+      AsyncHttpClientMonixBackend(
+        new DefaultAsyncHttpClient(cfg),
+        closeClient = true,
+        customizeRequest,
+        webSocketBufferCapacity
+      )
+    )
 
   /**
     * Makes sure the backend is closed after usage.
     */
   def resourceUsingConfig(
       cfg: AsyncHttpClientConfig,
-      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
+      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   )(implicit
       s: Scheduler = Scheduler.global
-  ): Resource[Task, SttpBackend[Task, MonixStreams, WebSocketHandler]] =
-    Resource.make(usingConfig(cfg, customizeRequest))(_.close())
+  ): Resource[Task, SttpBackend[Task, MonixStreams with WebSockets]] =
+    Resource.make(usingConfig(cfg, customizeRequest, webSocketBufferCapacity))(_.close())
 
   /**
     * @param updateConfig A function which updates the default configuration (created basing on `options`).
@@ -121,15 +173,17 @@ object AsyncHttpClientMonixBackend {
   def usingConfigBuilder(
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default,
-      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
+      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   )(implicit
       s: Scheduler = Scheduler.global
-  ): Task[SttpBackend[Task, MonixStreams, WebSocketHandler]] =
+  ): Task[SttpBackend[Task, MonixStreams with WebSockets]] =
     Task.eval(
       AsyncHttpClientMonixBackend(
         AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
         closeClient = true,
-        customizeRequest
+        customizeRequest,
+        webSocketBufferCapacity
       )
     )
 
@@ -142,11 +196,12 @@ object AsyncHttpClientMonixBackend {
   def resourceUsingConfigBuilder(
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default,
-      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
+      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   )(implicit
       s: Scheduler = Scheduler.global
-  ): Resource[Task, SttpBackend[Task, MonixStreams, WebSocketHandler]] =
-    Resource.make(usingConfigBuilder(updateConfig, options, customizeRequest))(_.close())
+  ): Resource[Task, SttpBackend[Task, MonixStreams with WebSockets]] =
+    Resource.make(usingConfigBuilder(updateConfig, options, customizeRequest, webSocketBufferCapacity))(_.close())
 
   /**
     * @param s The scheduler used for streaming request bodies. Defaults to the
@@ -154,9 +209,10 @@ object AsyncHttpClientMonixBackend {
     */
   def usingClient(
       client: AsyncHttpClient,
-      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  )(implicit s: Scheduler = Scheduler.global): SttpBackend[Task, MonixStreams, WebSocketHandler] =
-    AsyncHttpClientMonixBackend(client, closeClient = false, customizeRequest)
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
+      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
+  )(implicit s: Scheduler = Scheduler.global): SttpBackend[Task, MonixStreams with WebSockets] =
+    AsyncHttpClientMonixBackend(client, closeClient = false, customizeRequest, webSocketBufferCapacity)
 
   /**
     * Create a stub backend for testing, which uses the [[Task]] response wrapper, and supports `Observable[ByteBuffer]`
@@ -164,5 +220,5 @@ object AsyncHttpClientMonixBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub: SttpBackendStub[Task, MonixStreams, WebSocketHandler] = SttpBackendStub(TaskMonadAsyncError)
+  def stub: SttpBackendStub[Task, MonixStreams with WebSockets] = SttpBackendStub(TaskMonadAsyncError)
 }

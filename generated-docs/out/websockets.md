@@ -59,7 +59,6 @@ import java.nio.ByteBuffer
 import sttp.client._
 import sttp.client.ws.WebSocket
 import sttp.model.ws.WebSocketFrame
-import sttp.client.asynchttpclient.monix.MonixWebSocketHandler
 import sttp.client.asynchttpclient.WebSocketHandler
 import monix.execution.Scheduler.Implicits.global
 

@@ -1,11 +1,7 @@
 package sttp.client.asynchttpclient
 
-import java.io.{ByteArrayInputStream, File}
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
-import java.util.concurrent.ConcurrentLinkedQueue
-import java.util.concurrent.atomic.AtomicReference
-import java.util.function.UnaryOperator
 
 import io.netty.buffer.ByteBuf
 import io.netty.handler.codec.http.HttpHeaders
@@ -13,7 +9,7 @@ import org.asynchttpclient.AsyncHandler.State
 import org.asynchttpclient.handler.StreamedAsyncHandler
 import org.asynchttpclient.proxy.ProxyServer
 import org.asynchttpclient.request.body.multipart.{ByteArrayPart, FilePart, StringPart}
-import org.asynchttpclient.ws.{WebSocket, WebSocketListener, WebSocketUpgradeHandler}
+import org.asynchttpclient.ws.{WebSocketListener, WebSocketUpgradeHandler, WebSocket => AHCWebSocket}
 import org.asynchttpclient.{
   AsyncHandler,
   AsyncHttpClient,
@@ -32,23 +28,19 @@ import org.reactivestreams.{Publisher, Subscriber, Subscription}
 import sttp.client
 import sttp.client.SttpBackendOptions.ProxyType.{Http, Socks}
 import sttp.client.internal._
+import sttp.client.monad.syntax._
 import sttp.client.monad.{Canceler, MonadAsyncError, MonadError}
+import sttp.client.ws.internal.AsyncQueue
 import sttp.client.{
   ByteArrayBody,
   ByteBufferBody,
   FileBody,
-  IgnoreResponse,
   InputStreamBody,
-  MappedResponseAs,
   MultipartBody,
   NoBody,
   RequestBody,
   Response,
   ResponseAs,
-  ResponseAsByteArray,
-  ResponseAsFile,
-  ResponseAsStreamUnsafe,
-  ResponseMetadata,
   StreamBody,
   StringBody,
   SttpBackend,
@@ -56,7 +48,6 @@ import sttp.client.{
   _
 }
 import sttp.model._
-import sttp.client.monad.syntax._
 
 import scala.collection.JavaConverters._
 import scala.collection.immutable.Seq
@@ -67,7 +58,7 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
     private implicit val monad: MonadAsyncError[F],
     closeClient: Boolean,
     customizeRequest: BoundRequestBuilder => BoundRequestBuilder
-) extends SttpBackend[F, P, WebSocketHandler] {
+) extends SttpBackend[F, P] {
 
   val streams: Streams[S]
   type PE = P with Effect[F]
@@ -75,62 +66,42 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
   override def send[T, R >: PE](r: Request[T, R]): F[Response[T]] =
     adjustExceptions {
       preparedRequest(r).flatMap { ahcRequest =>
-        monad.flatten(monad.async[F[Response[T]]] { cb =>
-          def success(r: F[Response[T]]): Unit = cb(Right(r))
-          def error(t: Throwable): Unit = cb(Left(t))
-
-          val lf = ahcRequest.execute(streamingAsyncHandler(r.response, success, error))
-          Canceler(() => lf.abort(new InterruptedException))
-        })
+        if (r.isWebSocket) sendWebSocket(r, ahcRequest) else sendRegular(r, ahcRequest)
       }
     }
 
-  override def openWebsocket[T, WS_RESULT, R >: PE](
+  private def sendRegular[T, R >: PE](r: Request[T, R], ahcRequest: BoundRequestBuilder): F[Response[T]] = {
+    monad.flatten(monad.async[F[Response[T]]] { cb =>
+      def success(r: F[Response[T]]): Unit = cb(Right(r))
+      def error(t: Throwable): Unit = cb(Left(t))
+
+      val lf = ahcRequest.execute(streamingAsyncHandler(r.response, success, error))
+      Canceler(() => lf.abort(new InterruptedException))
+    })
+  }
+
+  private def sendWebSocket[T, R >: PE](
       r: Request[T, R],
-      handler: WebSocketHandler[WS_RESULT]
-  ): F[WebSocketResponse[WS_RESULT]] =
-    adjustExceptions {
-      preparedRequest(r).flatMap { ahcRequest =>
-        monad.async[WebSocketResponse[WS_RESULT]] { cb =>
-          val initListener =
-            new WebSocketInitListener(
-              (r: WebSocketResponse[WS_RESULT]) => cb(Right(r)),
-              t => cb(Left(t)),
-              handler.createResult
-            )
-          val h = new WebSocketUpgradeHandler.Builder()
-            .addWebSocketListener(initListener)
-            .addWebSocketListener(handler.listener)
-            .build()
+      ahcRequest: BoundRequestBuilder
+  ): F[Response[T]] =
+    monad.flatten(monad.async[F[Response[T]]] { cb =>
+      val initListener = new WebSocketInitListener(r.response, (r: F[Response[T]]) => cb(Right(r)), t => cb(Left(t)))
+      val h = new WebSocketUpgradeHandler.Builder()
+        .addWebSocketListener(initListener)
+        .build()
 
-          val lf = ahcRequest.execute(h)
+      val lf = ahcRequest.execute(h)
 
-          Canceler(() => lf.abort(new InterruptedException))
-        }
-      }
-    }
+      Canceler(() => lf.abort(new InterruptedException))
+    })
 
   override def responseMonad: MonadError[F] = monad
 
+  protected def bodyFromAHC: BodyFromAHC[F, S]
+
+  protected def createAsyncQueue[T]: AsyncQueue[F, T]
+
   protected def streamBodyToPublisher(s: streams.BinaryStream): Publisher[ByteBuf]
-
-  protected def publisherToStreamBody(p: Publisher[ByteBuffer]): streams.BinaryStream
-
-  protected def publisherToBytes(p: Publisher[ByteBuffer]): F[Array[Byte]] = {
-    monad.async { cb =>
-      def success(r: ByteBuffer): Unit = cb(Right(r.array()))
-      def error(t: Throwable): Unit = cb(Left(t))
-
-      val subscriber = new SimpleSubscriber(success, error)
-      p.subscribe(subscriber)
-
-      Canceler(() => subscriber.cancel())
-    }
-  }
-
-  protected def publisherToFile(p: Publisher[ByteBuffer], f: File): F[Unit] = {
-    publisherToBytes(p).map(bytes => FileHelpers.saveFile(f, new ByteArrayInputStream(bytes)))
-  }
 
   private def streamingAsyncHandler[T, R >: PE](
       responseAs: ResponseAs[T, R],
@@ -190,48 +161,37 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
 
           val baseResponse = readResponseNoBody(builder.build())
           val p = publisher.getOrElse(EmptyPublisher)
-          val b = handleBody(p, responseAs, baseResponse)
+          val b = bodyFromAHC(p, responseAs, baseResponse, () => subscribed, None)
 
           success(b.map(t => baseResponse.copy(body = t)))
         }
-      }
-
-      private def handleBody[TT](
-          p: Publisher[ByteBuffer],
-          r: ResponseAs[TT, _],
-          responseMetadata: ResponseMetadata
-      ): F[TT] =
-        r match {
-          case MappedResponseAs(raw, g) =>
-            val nested = handleBody(p, raw, responseMetadata)
-            nested.map(g(_, responseMetadata))
-          case ResponseAsFromMetadata(f) => handleBody(p, f(responseMetadata), responseMetadata)
-          case ResponseAsStream(_, f) =>
-            monad.ensure(
-              f.asInstanceOf[streams.BinaryStream => F[TT]](publisherToStreamBody(p)),
-              ignoreIfNotSubscribed(p)
-            )
-
-          case _: ResponseAsStreamUnsafe[_, _] => monad.unit(publisherToStreamBody(p).asInstanceOf[TT])
-          case IgnoreResponse                  =>
-            // getting the body and discarding it
-            publisherToBytes(p).map(_ => ())
-
-          case ResponseAsByteArray =>
-            publisherToBytes(p).map(b => b) // adjusting type because ResponseAs is covariant
-
-          case ResponseAsFile(file) =>
-            publisherToFile(p, file.toFile).map(_ => file)
-        }
-
-      private def ignoreIfNotSubscribed(p: Publisher[ByteBuffer]): F[Unit] = {
-        if (subscribed) monad.unit(()) else ignorePublisher(p)
       }
 
       override def onThrowable(t: Throwable): Unit = {
         error(t)
       }
     }
+  }
+
+  private class WebSocketInitListener[T](
+      responseAs: ResponseAs[T, _],
+      success: F[Response[T]] => Unit,
+      error: Throwable => Unit
+  ) extends WebSocketListener {
+    override def onOpen(ahcWebSocket: AHCWebSocket): Unit = {
+      ahcWebSocket.removeWebSocketListener(this)
+      val webSocket = WebSocketImpl.newCoupledToAHCWebSocket(ahcWebSocket, createAsyncQueue)
+      val baseResponse =
+        Response((), StatusCode.SwitchingProtocols, "", readHeaders(ahcWebSocket.getUpgradeHeaders), Nil)
+      val bf = bodyFromAHC(EmptyPublisher, responseAs, baseResponse, () => false, Some(webSocket))
+      success(bf.map(b => baseResponse.copy(body = b)))
+    }
+
+    override def onClose(webSocket: AHCWebSocket, code: Int, reason: String): Unit = {
+      throw new IllegalStateException("Should never be called, as the listener should be removed after onOpen")
+    }
+
+    override def onError(t: Throwable): Unit = error(t)
   }
 
   private def preparedRequest[R >: PE](r: Request[_, R]): F[BoundRequestBuilder] = {
@@ -336,38 +296,13 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
     if (closeClient) monad.eval(asyncHttpClient.close()) else monad.unit(())
   }
 
-  private class WebSocketInitListener[WS_RESULT](
-      _onSuccess: WebSocketResponse[WS_RESULT] => Unit,
-      _onError: Throwable => Unit,
-      createResult: WebSocket => WS_RESULT
-  ) extends WebSocketListener {
-    override def onOpen(webSocket: WebSocket): Unit = {
-      webSocket.removeWebSocketListener(this)
-      _onSuccess(
-        client.ws.WebSocketResponse(Headers(readHeaders(webSocket.getUpgradeHeaders)), createResult(webSocket))
-      )
-    }
-
-    override def onClose(webSocket: WebSocket, code: Int, reason: String): Unit = {
-      throw new IllegalStateException("Should never be called, as the listener should be removed after onOpen")
-    }
-
-    override def onError(t: Throwable): Unit = _onError(t)
-  }
-
   private def adjustExceptions[T](t: => F[T]): F[T] =
     SttpClientException.adjustExceptions(responseMonad)(t)(SttpClientException.defaultExceptionToSttpClientException)
-
-  private def ignorePublisher(p: Publisher[ByteBuffer]): F[Unit] = {
-    monad.async { cb =>
-      val subscriber = new IgnoreSubscriber(() => cb(Right(())), t => cb(Left(t)))
-      p.subscribe(subscriber)
-      Canceler(() => ())
-    }
-  }
 }
 
 object AsyncHttpClientBackend {
+  val DefaultWebSocketBufferCapacity: Option[Int] = Some(1024)
+
   private[asynchttpclient] def defaultConfigBuilder(
       options: SttpBackendOptions
   ): DefaultAsyncHttpClientConfig.Builder = {
@@ -409,100 +344,5 @@ object AsyncHttpClientBackend {
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder
   ): AsyncHttpClient = {
     new DefaultAsyncHttpClient(updateConfig(defaultConfigBuilder(options)).build())
-  }
-}
-
-private[asynchttpclient] object EmptyPublisher extends Publisher[ByteBuffer] {
-  override def subscribe(s: Subscriber[_ >: ByteBuffer]): Unit = {
-    s.onComplete()
-  }
-}
-
-// based on org.asynchttpclient.request.body.generator.ReactiveStreamsBodyGenerator.SimpleSubscriber
-private[asynchttpclient] class SimpleSubscriber(success: ByteBuffer => Unit, error: Throwable => Unit)
-    extends Subscriber[ByteBuffer] {
-  // a pair of values: (is cancelled, current subscription)
-  private val subscription = new AtomicReference[(Boolean, Subscription)]((false, null))
-  private val chunks = new ConcurrentLinkedQueue[Array[Byte]]()
-  private var size = 0
-
-  override def onSubscribe(s: Subscription): Unit = {
-    assert(s != null)
-
-    // The following can be safely run multiple times, as cancel() is idempotent
-    val result = subscription.updateAndGet(new UnaryOperator[(Boolean, Subscription)] {
-      override def apply(current: (Boolean, Subscription)): (Boolean, Subscription) = {
-        // If someone has made a mistake and added this Subscriber multiple times, let's handle it gracefully
-        if (current._2 != null) {
-          current._2.cancel() // Cancel the additional subscription
-        }
-
-        if (current._1) { // already cancelled
-          s.cancel()
-          (true, null)
-        } else { // happy path
-          (false, s)
-        }
-      }
-    })
-
-    if (result._2 != null) {
-      result._2.request(Long.MaxValue) // not cancelled, we can request data
-    }
-  }
-
-  override def onNext(b: ByteBuffer): Unit = {
-    assert(b != null)
-    val a = b.array()
-    size += a.length
-    chunks.add(a)
-  }
-
-  override def onError(t: Throwable): Unit = {
-    assert(t != null)
-    chunks.clear()
-    error(t)
-  }
-
-  override def onComplete(): Unit = {
-    val result = ByteBuffer.allocate(size)
-    chunks.asScala.foreach(result.put)
-    chunks.clear()
-    success(result)
-  }
-
-  def cancel(): Unit = {
-    // subscription.cancel is idempotent:
-    // https://github.com/reactive-streams/reactive-streams-jvm/blob/v1.0.3/README.md#specification
-    // so the following can be safely retried
-    subscription.updateAndGet(new UnaryOperator[(Boolean, Subscription)] {
-      override def apply(current: (Boolean, Subscription)): (Boolean, Subscription) = {
-        if (current._2 != null) current._2.cancel()
-        (true, null)
-      }
-    })
-  }
-}
-
-/**
-  * A subscriber which does its best to signal that it's not interested in the data being sent.
-  */
-private[asynchttpclient] class IgnoreSubscriber(success: () => Unit, error: Throwable => Unit)
-    extends Subscriber[ByteBuffer] {
-  override def onSubscribe(s: Subscription): Unit = {
-    s.cancel()
-    success()
-  }
-
-  override def onNext(b: ByteBuffer): Unit = {
-    // ignore
-  }
-
-  override def onError(t: Throwable): Unit = {
-    error(t)
-  }
-
-  override def onComplete(): Unit = {
-    success()
   }
 }

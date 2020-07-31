@@ -7,7 +7,7 @@ import sttp.client._
 import sttp.client.testing.SttpBackendStub
 import sttp.client.impl.zio._
 import sttp.client.monad.MonadError
-import sttp.client.ws.{WebSocket, WebSocketEvent}
+import sttp.client.ws.WebSocket
 import sttp.model.Headers
 import sttp.model.ws._
 import zio._

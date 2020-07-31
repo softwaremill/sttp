@@ -6,7 +6,7 @@ import org.scalatest.matchers.should.Matchers
 import sttp.client._
 import sttp.client.testing.WebSocketStub
 import sttp.client.impl.zio._
-import sttp.client.ws.WebSocketEvent
+import sttp.client.ws.internal.WebSocketEvent
 import sttp.model.Headers
 import sttp.model.ws.WebSocketFrame
 

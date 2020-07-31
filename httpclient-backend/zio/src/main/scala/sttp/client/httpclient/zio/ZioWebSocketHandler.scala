@@ -3,8 +3,8 @@ package sttp.client.httpclient.zio
 import sttp.client.httpclient.WebSocketHandler
 import sttp.client.httpclient.internal.NativeWebSocketHandler
 import sttp.client.impl.zio.RIOMonadAsyncError
-import sttp.client.ws.{WebSocket, WebSocketEvent}
-import sttp.client.ws.internal.AsyncQueue
+import sttp.client.ws.WebSocket
+import sttp.client.ws.internal.{AsyncQueue, WebSocketEvent}
 import zio.{Queue, Runtime, Task, ZIO}
 
 object ZioWebSocketHandler {

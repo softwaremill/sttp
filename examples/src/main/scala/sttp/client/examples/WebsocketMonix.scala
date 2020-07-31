@@ -4,7 +4,7 @@ import monix.eval.Task
 import sttp.client._
 import sttp.client.ws.WebSocket
 import sttp.model.ws.WebSocketFrame
-import sttp.client.asynchttpclient.monix.{AsyncHttpClientMonixBackend, MonixWebSocketHandler}
+import sttp.client.asynchttpclient.monix.AsyncHttpClientMonixBackend
 
 object WebsocketMonix extends App {
   import monix.execution.Scheduler.Implicits.global

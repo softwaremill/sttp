@@ -27,6 +27,8 @@ abstract class WebSocketTest[F[_], S]
   implicit val convertToFuture: ConvertToFuture[F]
   implicit val monad: MonadError[F]
 
+  def throwsWhenNotAWebSocket: Boolean = false
+
   it should "send and receive three messages" in {
     basicRequest
       .get(uri"$wsEndpoint/ws/echo")
@@ -115,6 +117,9 @@ abstract class WebSocketTest[F[_], S]
         .map {
           _.body.isLeft shouldBe true
         }
+        .handleError {
+          case _: ReadException if throwsWhenNotAWebSocket => succeed.unit
+        }
         .toFuture()
     }
   }
@@ -142,10 +147,8 @@ abstract class WebSocketTest[F[_], S]
   }
 
   def functionToPipe(
-      f: WebSocketFrame.Incoming => WebSocketFrame
-  ): streams.Pipe[WebSocketFrame.Incoming, WebSocketFrame]
-
-  // TODO def eventually[T](interval: FiniteDuration, attempts: Int)(f: => F[T]): F[T]
+      f: WebSocketFrame.Data[_] => WebSocketFrame
+  ): streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]
 
   override protected def afterAll(): Unit = {
     backend.close().toFuture()

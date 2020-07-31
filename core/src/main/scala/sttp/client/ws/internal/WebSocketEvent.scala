@@ -1,13 +1,10 @@
-package sttp.client.ws
+package sttp.client.ws.internal
 
 import sttp.model.ws.WebSocketFrame
 
-@deprecated
 sealed trait WebSocketEvent
-@deprecated
 object WebSocketEvent {
   case class Open() extends WebSocketEvent
-  case class Close(code: Int, reason: String) extends WebSocketEvent
   case class Error(t: Throwable) extends WebSocketEvent
-  case class Frame(f: WebSocketFrame.Incoming) extends WebSocketEvent
+  case class Frame(f: WebSocketFrame) extends WebSocketEvent
 }

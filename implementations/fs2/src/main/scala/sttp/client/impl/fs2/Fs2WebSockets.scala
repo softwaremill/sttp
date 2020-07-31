@@ -4,7 +4,7 @@ import cats.effect.ConcurrentEffect
 import cats.effect.concurrent.Ref
 import cats.effect.implicits._
 import fs2.{Pipe, Stream}
-import sttp.client.ws.{WebSocket, WebSocketEvent}
+import sttp.client.ws.WebSocket
 import sttp.model.ws.WebSocketFrame
 
 object Fs2WebSockets {
@@ -30,7 +30,7 @@ object Fs2WebSockets {
         Stream
           .repeatEval(ws.receive) // read incoming messages
           .flatMap {
-            case Left(WebSocketEvent.Close(code, reason)) =>
+            case Left(WebSocketFrame.Close(code, reason)) =>
               Stream.eval(closeRef.set(Some(WebSocketFrame.Close(code, reason)))).as(None)
             case Right(WebSocketFrame.Ping(payload)) if sendPongOnPing =>
               Stream.eval(ws.send(WebSocketFrame.Pong(payload))).drain

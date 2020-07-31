@@ -7,8 +7,8 @@ import okio.ByteString
 import sttp.client.monad.syntax._
 import sttp.client.monad.{MonadAsyncError, MonadError}
 import sttp.client.okhttp.WebSocketHandler
-import sttp.client.ws.internal.AsyncQueue
-import sttp.client.ws.{WebSocket, WebSocketEvent}
+import sttp.client.ws.internal.{AsyncQueue, WebSocketEvent}
+import sttp.client.ws.WebSocket
 import sttp.model.ws.{WebSocketClosed, WebSocketException, WebSocketFrame}
 
 object NativeWebSocketHandler {

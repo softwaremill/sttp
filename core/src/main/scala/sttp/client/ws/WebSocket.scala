@@ -87,6 +87,9 @@ trait WebSocket[F[_]] {
     }
   }
 
+  /**
+    * Idempotent when used sequentially.
+    */
   def close: F[Unit] = send(WebSocketFrame.close)
 
   implicit def monad: MonadError[F]

@@ -5,7 +5,8 @@ import monix.execution.Scheduler
 import sttp.client.httpclient.WebSocketHandler
 import sttp.client.httpclient.internal.NativeWebSocketHandler
 import sttp.client.impl.monix.{MonixAsyncQueue, TaskMonadAsyncError}
-import sttp.client.ws.{WebSocket, WebSocketEvent}
+import sttp.client.ws.WebSocket
+import sttp.client.ws.internal.WebSocketEvent
 
 object MonixWebSocketHandler {
   val IncomingBufferCapacity = 2 // has to be at least 2 (opening frame + one data frame)

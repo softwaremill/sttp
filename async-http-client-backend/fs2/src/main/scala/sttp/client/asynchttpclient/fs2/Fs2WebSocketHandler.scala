@@ -3,11 +3,11 @@ package sttp.client.asynchttpclient.fs2
 import cats.effect._
 import cats.implicits._
 import fs2.concurrent.InspectableQueue
-import sttp.client.asynchttpclient.WebSocketHandler
-import sttp.client.asynchttpclient.internal.NativeWebSocketHandler
+import sttp.client.asynchttpclient.{WebSocketHandler, WebSocketImpl}
 import sttp.client.impl.cats.CatsMonadAsyncError
 import sttp.client.impl.fs2.Fs2AsyncQueue
-import sttp.client.ws.{WebSocket, WebSocketEvent}
+import sttp.client.ws.WebSocket
+import sttp.client.ws.internal.WebSocketEvent
 
 object Fs2WebSocketHandler {
 

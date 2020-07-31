@@ -58,7 +58,7 @@ case class ResponseAsFile(output: SttpFile) extends BasicResponseAs[SttpFile, An
 case class ResponseAsWebSocket[F[_], T](f: WebSocket[F] => F[T])
     extends WebSocketResponseAs[T, Effect[F] with WebSockets]
 case class ResponseAsWebSocketUnsafe[F[_]]() extends WebSocketResponseAs[WebSocket[F], Effect[F] with WebSockets]
-case class ResponseAsWebSocketStream[S, Pipe[_, _]](s: Streams[S], p: Pipe[WebSocketFrame.Incoming, WebSocketFrame])
+case class ResponseAsWebSocketStream[S, Pipe[_, _]](s: Streams[S], p: Pipe[WebSocketFrame.Data[_], WebSocketFrame])
     extends WebSocketResponseAs[Unit, S with WebSockets]
 
 case class ResponseAsFromMetadata[T, R](f: ResponseMetadata => ResponseAs[T, R]) extends ResponseAs[T, R]

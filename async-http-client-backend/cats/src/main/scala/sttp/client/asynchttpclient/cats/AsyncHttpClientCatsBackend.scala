@@ -17,7 +17,7 @@ import org.reactivestreams.Publisher
 import sttp.client.asynchttpclient.{AsyncHttpClientBackend, WebSocketHandler}
 import sttp.client.impl.cats.CatsMonadAsyncError
 import sttp.client.internal.{FileHelpers, NoStreams}
-import sttp.client.{FollowRedirectsBackend, Request, Response, SttpBackend, SttpBackendOptions}
+import sttp.client.{FollowRedirectsBackend, Request, Response, SttpBackend, SttpBackendOptions, WebSockets}
 import cats.implicits._
 import sttp.client.testing.SttpBackendStub
 
@@ -25,7 +25,7 @@ class AsyncHttpClientCatsBackend[F[_]: Concurrent: ContextShift] private (
     asyncHttpClient: AsyncHttpClient,
     closeClient: Boolean,
     customizeRequest: BoundRequestBuilder => BoundRequestBuilder
-) extends AsyncHttpClientBackend[F, Nothing, Any](
+) extends AsyncHttpClientBackend[F, Nothing, WebSockets](
       asyncHttpClient,
       new CatsMonadAsyncError,
       closeClient,
@@ -56,8 +56,8 @@ object AsyncHttpClientCatsBackend {
       asyncHttpClient: AsyncHttpClient,
       closeClient: Boolean,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder
-  ): SttpBackend[F, Any, WebSocketHandler] =
-    new FollowRedirectsBackend[F, Any, WebSocketHandler](
+  ): SttpBackend[F, WebSockets] =
+    new FollowRedirectsBackend[F, WebSockets](
       new AsyncHttpClientCatsBackend(asyncHttpClient, closeClient, customizeRequest)
     )
 
@@ -67,7 +67,7 @@ object AsyncHttpClientCatsBackend {
   def apply[F[_]: Concurrent: ContextShift](
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): F[SttpBackend[F, Any, WebSocketHandler]] =
+  ): F[SttpBackend[F, WebSockets]] =
     Sync[F].delay(
       AsyncHttpClientCatsBackend(AsyncHttpClientBackend.defaultClient(options), closeClient = true, customizeRequest)
     )
@@ -79,7 +79,7 @@ object AsyncHttpClientCatsBackend {
   def resource[F[_]: Concurrent: ContextShift](
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): Resource[F, SttpBackend[F, Any, WebSocketHandler]] =
+  ): Resource[F, SttpBackend[F, WebSockets]] =
     Resource.make(apply(options, customizeRequest))(_.close())
 
   /**
@@ -88,7 +88,7 @@ object AsyncHttpClientCatsBackend {
   def usingConfig[F[_]: Concurrent: ContextShift](
       cfg: AsyncHttpClientConfig,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): F[SttpBackend[F, Any, WebSocketHandler]] =
+  ): F[SttpBackend[F, WebSockets]] =
     Sync[F].delay(AsyncHttpClientCatsBackend(new DefaultAsyncHttpClient(cfg), closeClient = true, customizeRequest))
 
   /**
@@ -98,7 +98,7 @@ object AsyncHttpClientCatsBackend {
   def resourceUsingConfig[F[_]: Concurrent: ContextShift](
       cfg: AsyncHttpClientConfig,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): Resource[F, SttpBackend[F, Any, WebSocketHandler]] =
+  ): Resource[F, SttpBackend[F, WebSockets]] =
     Resource.make(usingConfig(cfg, customizeRequest))(_.close())
 
   /**
@@ -109,7 +109,7 @@ object AsyncHttpClientCatsBackend {
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): F[SttpBackend[F, Any, WebSocketHandler]] =
+  ): F[SttpBackend[F, WebSockets]] =
     Sync[F].delay(
       AsyncHttpClientCatsBackend(
         AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
@@ -127,7 +127,7 @@ object AsyncHttpClientCatsBackend {
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): Resource[F, SttpBackend[F, Any, WebSocketHandler]] =
+  ): Resource[F, SttpBackend[F, WebSockets]] =
     Resource.make(usingConfigBuilder(updateConfig, options, customizeRequest))(_.close())
 
   /**
@@ -136,7 +136,7 @@ object AsyncHttpClientCatsBackend {
   def usingClient[F[_]: Concurrent: ContextShift](
       client: AsyncHttpClient,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): SttpBackend[F, Any, WebSocketHandler] =
+  ): SttpBackend[F, WebSockets] =
     AsyncHttpClientCatsBackend(client, closeClient = false, customizeRequest)
 
   /**
@@ -144,5 +144,5 @@ object AsyncHttpClientCatsBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub[F[_]: Concurrent]: SttpBackendStub[F, Any, WebSocketHandler] = SttpBackendStub(new CatsMonadAsyncError())
+  def stub[F[_]: Concurrent]: SttpBackendStub[F, WebSockets] = SttpBackendStub(new CatsMonadAsyncError())
 }

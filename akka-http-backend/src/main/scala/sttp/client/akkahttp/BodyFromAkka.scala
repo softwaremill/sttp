@@ -111,7 +111,7 @@ private[akkahttp] object BodyFromAkka {
 
         val flow = Flow[Message]
           .mapAsync(1)(messageToFrame)
-          .via(p.asInstanceOf[AkkaStreams.Pipe[WebSocketFrame, WebSocketFrame]])
+          .via(p.asInstanceOf[AkkaStreams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]])
           .mapConcat {
             case incoming: WebSocketFrame.Incoming => frameToMessage(incoming).toSeq
             case WebSocketFrame.Close(_, _)        => throw new WebSocketClosed()
@@ -184,8 +184,8 @@ private[akkahttp] object BodyFromAkka {
             }
 
           case WebSocketFrame.Close(_, _) =>
-            open.set(false)
-            sourceQueue.complete()
+            val wasOpen = open.getAndSet(false)
+            if (wasOpen) sourceQueue.complete()
             sourceQueue.watchCompletion().map(_ => ())
         }
 
@@ -199,7 +199,7 @@ private[akkahttp] object BodyFromAkka {
 
   private def messageToFrame(
       m: Message
-  )(implicit ec: ExecutionContext, mat: Materializer): Future[WebSocketFrame.Incoming] =
+  )(implicit ec: ExecutionContext, mat: Materializer): Future[WebSocketFrame.Data[_]] =
     m match {
       case msg: TextMessage =>
         msg.textStream.runFold("")(_ + _).map(t => WebSocketFrame.text(t))
