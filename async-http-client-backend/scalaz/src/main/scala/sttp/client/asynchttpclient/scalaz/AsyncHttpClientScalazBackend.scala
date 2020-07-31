@@ -48,7 +48,7 @@ class AsyncHttpClientScalazBackend private (
       override protected def streamToPublisher(s: Nothing): Publisher[ByteBuf] = s // nothing is everything
     }
 
-  override protected def createAsyncQueue[T]: AsyncQueue[Task, T] =
+  override protected def createAsyncQueue[T]: Task[AsyncQueue[Task, T]] =
     throw new IllegalStateException("Web sockets are not supported!")
 }
 

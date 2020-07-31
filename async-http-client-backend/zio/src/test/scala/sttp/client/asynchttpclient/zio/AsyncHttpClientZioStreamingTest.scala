@@ -1,6 +1,6 @@
 package sttp.client.asynchttpclient.zio
 
-import sttp.client.{NothingT, SttpBackend}
+import sttp.client.SttpBackend
 import sttp.client.impl.zio._
 import sttp.client.internal._
 import sttp.client.testing.ConvertToFuture
@@ -11,7 +11,7 @@ import zio.stream.Stream
 class AsyncHttpClientZioStreamingTest extends StreamingTest[Task, ZioStreams] {
   override val streams: ZioStreams = ZioStreams
 
-  override implicit val backend: SttpBackend[Task, ZioStreams, NothingT] =
+  override implicit val backend: SttpBackend[Task, ZioStreams] =
     runtime.unsafeRun(AsyncHttpClientZioBackend())
   override implicit val convertToFuture: ConvertToFuture[Task] = convertZioTaskToFuture
 

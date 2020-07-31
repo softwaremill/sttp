@@ -25,7 +25,7 @@ import sttp.client
 import sttp.client.SttpBackendOptions.ProxyType.{Http, Socks}
 import sttp.client.monad.syntax._
 import sttp.client.monad.{Canceler, MonadAsyncError, MonadError}
-import sttp.client.ws.internal.AsyncQueue
+import sttp.client.ws.internal.{AsyncQueue, WebSocketEvent}
 import sttp.client.{Response, ResponseAs, SttpBackend, SttpBackendOptions, _}
 import sttp.model._
 
@@ -80,7 +80,7 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
   protected def bodyFromAHC: BodyFromAHC[F, S]
   protected def bodyToAHC: BodyToAHC[F, S]
 
-  protected def createAsyncQueue[T]: AsyncQueue[F, T]
+  protected def createAsyncQueue[T]: F[AsyncQueue[F, T]]
 
   private def streamingAsyncHandler[T, R >: PE](
       responseAs: ResponseAs[T, R],
@@ -159,11 +159,13 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
   ) extends WebSocketListener {
     override def onOpen(ahcWebSocket: AHCWebSocket): Unit = {
       ahcWebSocket.removeWebSocketListener(this)
-      val webSocket = WebSocketImpl.newCoupledToAHCWebSocket(ahcWebSocket, createAsyncQueue)
-      val baseResponse =
-        Response((), StatusCode.SwitchingProtocols, "", readHeaders(ahcWebSocket.getUpgradeHeaders), Nil)
-      val bf = bodyFromAHC(EmptyPublisher, responseAs, baseResponse, () => false, Some(webSocket))
-      success(bf.map(b => baseResponse.copy(body = b)))
+      success(createAsyncQueue[WebSocketEvent].flatMap { queue =>
+        val webSocket = WebSocketImpl.newCoupledToAHCWebSocket(ahcWebSocket, queue)
+        val baseResponse =
+          Response((), StatusCode.SwitchingProtocols, "", readHeaders(ahcWebSocket.getUpgradeHeaders), Nil)
+        val bf = bodyFromAHC(EmptyPublisher, responseAs, baseResponse, () => false, Some(webSocket))
+        bf.map(b => baseResponse.copy(body = b))
+      })
     }
 
     override def onClose(webSocket: AHCWebSocket, code: Int, reason: String): Unit = {
