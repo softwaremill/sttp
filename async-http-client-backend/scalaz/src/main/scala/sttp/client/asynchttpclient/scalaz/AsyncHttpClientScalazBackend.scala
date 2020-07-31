@@ -12,17 +12,20 @@ import org.asynchttpclient.{
 }
 import org.reactivestreams.Publisher
 import scalaz.concurrent.Task
-import sttp.client.asynchttpclient.{AsyncHttpClientBackend, WebSocketHandler}
+import sttp.client.asynchttpclient.{AsyncHttpClientBackend, BodyFromAHC, BodyToAHC}
 import sttp.client.impl.scalaz.TaskMonadAsyncError
 import sttp.client.internal.NoStreams
+import sttp.client.monad.MonadAsyncError
 import sttp.client.testing.SttpBackendStub
-import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions, WebSockets}
+import sttp.client.ws.WebSocket
+import sttp.client.ws.internal.AsyncQueue
+import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 
 class AsyncHttpClientScalazBackend private (
     asyncHttpClient: AsyncHttpClient,
     closeClient: Boolean,
     customizeRequest: BoundRequestBuilder => BoundRequestBuilder
-) extends AsyncHttpClientBackend[Task, Nothing, WebSockets](
+) extends AsyncHttpClientBackend[Task, Nothing, Any](
       asyncHttpClient,
       TaskMonadAsyncError,
       closeClient,
@@ -31,11 +34,22 @@ class AsyncHttpClientScalazBackend private (
 
   override val streams: NoStreams = NoStreams
 
-  override protected def streamBodyToPublisher(s: Nothing): Publisher[ByteBuf] =
-    s // nothing is everything
+  override protected val bodyFromAHC: BodyFromAHC[Task, Nothing] = new BodyFromAHC[Task, Nothing] {
+    override val streams: NoStreams = NoStreams
+    override implicit val monad: MonadAsyncError[Task] = TaskMonadAsyncError
+    override def publisherToStream(p: Publisher[ByteBuffer]): Nothing =
+      throw new IllegalStateException("This backend does not support streaming")
+    override def compileWebSocketPipe(ws: WebSocket[Task], pipe: Nothing): Task[Unit] = pipe // nothing is everything
+  }
 
-  override protected def publisherToStreamBody(p: Publisher[ByteBuffer]): Nothing =
-    throw new IllegalStateException("This backend does not support streaming")
+  override protected def bodyToAHC: BodyToAHC[Task, Nothing] =
+    new BodyToAHC[Task, Nothing] {
+      override val streams: NoStreams = NoStreams
+      override protected def streamToPublisher(s: Nothing): Publisher[ByteBuf] = s // nothing is everything
+    }
+
+  override protected def createAsyncQueue[T]: AsyncQueue[Task, T] =
+    throw new IllegalStateException("Web sockets are not supported!")
 }
 
 object AsyncHttpClientScalazBackend {
@@ -43,13 +57,13 @@ object AsyncHttpClientScalazBackend {
       asyncHttpClient: AsyncHttpClient,
       closeClient: Boolean,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder
-  ): SttpBackend[Task, WebSockets] =
+  ): SttpBackend[Task, Any] =
     new FollowRedirectsBackend(new AsyncHttpClientScalazBackend(asyncHttpClient, closeClient, customizeRequest))
 
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): Task[SttpBackend[Task, WebSockets]] =
+  ): Task[SttpBackend[Task, Any]] =
     Task.delay(
       AsyncHttpClientScalazBackend(AsyncHttpClientBackend.defaultClient(options), closeClient = true, customizeRequest)
     )
@@ -57,7 +71,7 @@ object AsyncHttpClientScalazBackend {
   def usingConfig(
       cfg: AsyncHttpClientConfig,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): Task[SttpBackend[Task, WebSockets]] =
+  ): Task[SttpBackend[Task, Any]] =
     Task.delay(AsyncHttpClientScalazBackend(new DefaultAsyncHttpClient(cfg), closeClient = true, customizeRequest))
 
   /**
@@ -67,7 +81,7 @@ object AsyncHttpClientScalazBackend {
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): Task[SttpBackend[Task, WebSockets]] =
+  ): Task[SttpBackend[Task, Any]] =
     Task.delay(
       AsyncHttpClientScalazBackend(
         AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
@@ -79,7 +93,7 @@ object AsyncHttpClientScalazBackend {
   def usingClient(
       client: AsyncHttpClient,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): SttpBackend[Task, WebSockets] =
+  ): SttpBackend[Task, Any] =
     AsyncHttpClientScalazBackend(client, closeClient = false, customizeRequest)
 
   /**
@@ -87,5 +101,5 @@ object AsyncHttpClientScalazBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub: SttpBackendStub[Task, WebSockets] = SttpBackendStub(TaskMonadAsyncError)
+  def stub: SttpBackendStub[Task, Any] = SttpBackendStub(TaskMonadAsyncError)
 }

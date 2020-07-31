@@ -11,11 +11,13 @@ import org.asynchttpclient.{
   DefaultAsyncHttpClientConfig
 }
 import org.reactivestreams.Publisher
-import sttp.client.asynchttpclient.{AsyncHttpClientBackend, WebSocketHandler}
+import sttp.client.asynchttpclient.{AsyncHttpClientBackend, BodyFromAHC, BodyToAHC}
 import sttp.client.internal.NoStreams
-import sttp.client.monad.FutureMonad
+import sttp.client.monad.{FutureMonad, MonadAsyncError}
 import sttp.client.testing.SttpBackendStub
-import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions, WebSockets}
+import sttp.client.ws.WebSocket
+import sttp.client.ws.internal.AsyncQueue
+import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -25,7 +27,7 @@ class AsyncHttpClientFutureBackend private (
     customizeRequest: BoundRequestBuilder => BoundRequestBuilder
 )(implicit
     ec: ExecutionContext
-) extends AsyncHttpClientBackend[Future, Nothing, WebSockets](
+) extends AsyncHttpClientBackend[Future, Nothing, Any](
       asyncHttpClient,
       new FutureMonad,
       closeClient,
@@ -34,11 +36,23 @@ class AsyncHttpClientFutureBackend private (
 
   override val streams: NoStreams = NoStreams
 
-  override protected def streamBodyToPublisher(s: Nothing): Publisher[ByteBuf] =
-    s // nothing is everything
+  override protected val bodyFromAHC: BodyFromAHC[Future, Nothing] = new BodyFromAHC[Future, Nothing] {
+    override val streams: NoStreams = NoStreams
+    override implicit val monad: MonadAsyncError[Future] = new FutureMonad
+    override def publisherToStream(p: Publisher[ByteBuffer]): Nothing =
+      throw new IllegalStateException("This backend does not support streaming")
+    override def compileWebSocketPipe(ws: WebSocket[Future], pipe: Nothing): Future[Unit] =
+      pipe // nothing is everything
+  }
 
-  override protected def publisherToStreamBody(p: Publisher[ByteBuffer]): Nothing =
-    throw new IllegalStateException("This backend does not support streaming")
+  override protected def bodyToAHC: BodyToAHC[Future, Nothing] =
+    new BodyToAHC[Future, Nothing] {
+      override val streams: NoStreams = NoStreams
+      override protected def streamToPublisher(s: Nothing): Publisher[ByteBuf] = s // nothing is everything
+    }
+
+  override protected def createAsyncQueue[T]: AsyncQueue[Future, T] =
+    throw new IllegalStateException("Web sockets are not supported!")
 }
 
 object AsyncHttpClientFutureBackend {
@@ -48,7 +62,7 @@ object AsyncHttpClientFutureBackend {
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder
   )(implicit
       ec: ExecutionContext
-  ): SttpBackend[Future, WebSockets] =
+  ): SttpBackend[Future, Any] =
     new FollowRedirectsBackend(new AsyncHttpClientFutureBackend(asyncHttpClient, closeClient, customizeRequest))
 
   /**
@@ -59,7 +73,7 @@ object AsyncHttpClientFutureBackend {
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, WebSockets] =
+  )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, Any] =
     AsyncHttpClientFutureBackend(AsyncHttpClientBackend.defaultClient(options), closeClient = true, customizeRequest)
 
   /**
@@ -70,7 +84,7 @@ object AsyncHttpClientFutureBackend {
   def usingConfig(
       cfg: AsyncHttpClientConfig,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, WebSockets] =
+  )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, Any] =
     AsyncHttpClientFutureBackend(new DefaultAsyncHttpClient(cfg), closeClient = true, customizeRequest)
 
   /**
@@ -83,7 +97,7 @@ object AsyncHttpClientFutureBackend {
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, WebSockets] =
+  )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, Any] =
     AsyncHttpClientFutureBackend(
       AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
       closeClient = true,
@@ -98,7 +112,7 @@ object AsyncHttpClientFutureBackend {
   def usingClient(
       client: AsyncHttpClient,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, WebSockets] =
+  )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, Any] =
     AsyncHttpClientFutureBackend(client, closeClient = false, customizeRequest)
 
   /**
@@ -108,6 +122,6 @@ object AsyncHttpClientFutureBackend {
     */
   def stub(implicit
       ec: ExecutionContext = ExecutionContext.global
-  ): SttpBackendStub[Future, WebSockets] =
+  ): SttpBackendStub[Future, Any] =
     SttpBackendStub(new FutureMonad())
 }
