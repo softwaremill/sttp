@@ -12,7 +12,7 @@ import monix.nio.file._
 import monix.reactive.Observable
 import org.asynchttpclient._
 import org.reactivestreams.Publisher
-import sttp.client.asynchttpclient.{AsyncHttpClientBackend, BodyFromAHC}
+import sttp.client.asynchttpclient.{AsyncHttpClientBackend, BodyFromAHC, BodyToAHC}
 import sttp.client.impl.monix.{MonixAsyncQueue, MonixStreams, TaskMonadAsyncError}
 import sttp.client.internal._
 import sttp.client.monad.MonadAsyncError
@@ -34,11 +34,11 @@ class AsyncHttpClientMonixBackend private (
       TaskMonadAsyncError,
       closeClient,
       customizeRequest
-    ) {
+    ) { outer =>
 
   override val streams: MonixStreams = MonixStreams
 
-  override protected def bodyFromAHC: BodyFromAHC[Task, MonixStreams] =
+  override protected val bodyFromAHC: BodyFromAHC[Task, MonixStreams] =
     new BodyFromAHC[Task, MonixStreams] {
       override val streams: MonixStreams = MonixStreams
       override implicit val monad: MonadAsyncError[Task] = TaskMonadAsyncError
@@ -82,10 +82,14 @@ class AsyncHttpClientMonixBackend private (
       }
     }
 
-  override protected def createAsyncQueue[T]: AsyncQueue[Task, T] = new MonixAsyncQueue[T](webSocketBufferCapacity)
+  override protected val bodyToAHC: BodyToAHC[Task, MonixStreams] = new BodyToAHC[Task, MonixStreams] {
+    override val streams: MonixStreams = MonixStreams
 
-  override protected def streamBodyToPublisher(s: Observable[ByteBuffer]): Publisher[ByteBuf] =
-    s.map(Unpooled.wrappedBuffer).toReactivePublisher
+    override protected def streamToPublisher(s: Observable[ByteBuffer]): Publisher[ByteBuf] =
+      s.map(Unpooled.wrappedBuffer).toReactivePublisher
+  }
+
+  override protected def createAsyncQueue[T]: AsyncQueue[Task, T] = new MonixAsyncQueue[T](webSocketBufferCapacity)
 }
 
 object AsyncHttpClientMonixBackend {
