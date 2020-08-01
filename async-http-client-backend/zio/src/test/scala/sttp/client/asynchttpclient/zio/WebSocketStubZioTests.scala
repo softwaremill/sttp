@@ -3,29 +3,20 @@ package sttp.client.asynchttpclient.zio
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import sttp.client._
 import sttp.client.testing.WebSocketStub
 import sttp.client.impl.zio._
-import sttp.client.ws.internal.WebSocketEvent
-import sttp.model.Headers
 import sttp.model.ws.WebSocketFrame
 
 import scala.util.{Failure, Success}
 
+// TODO: move to core?
 class WebSocketStubZioTests extends AnyFlatSpec with Matchers with ScalaFutures {
-
-  def mkBackend(webSocketStub: WebSocketStub[_]) =
-    AsyncHttpClientZioBackend.stub
-      .whenRequestMatches(_ => true)
-      .thenRespondWebSocket(Headers(List.empty), webSocketStub)
 
   "web socket stub" should "return initial Incoming frames on 'receive'" in {
     val frames = List("a", "b", "c").map(WebSocketFrame.text(_))
     val webSocketStub = WebSocketStub.withInitialIncoming(frames)
-    implicit val b = mkBackend(webSocketStub)
+    val ws = webSocketStub.build(new RIOMonadAsyncError[Any])
     val test = for {
-      handler <- ZioWebSocketHandler()
-      ws <- basicRequest.get(uri"http://example.org/a/b/c").openWebsocket(handler).map(_.result)
       msg1 <- ws.receive
       msg2 <- ws.receive
       msg3 <- ws.receive
@@ -38,10 +29,8 @@ class WebSocketStubZioTests extends AnyFlatSpec with Matchers with ScalaFutures 
     val okFrame = WebSocketFrame.text("abc")
     val exception = new Exception("boom")
     val webSocketStub = WebSocketStub.withInitialResponses(List(Success(Right(okFrame)), Failure(exception)))
-    implicit val b = mkBackend(webSocketStub)
+    val ws = webSocketStub.build(new RIOMonadAsyncError[Any])
     val test = for {
-      handler <- ZioWebSocketHandler()
-      ws <- basicRequest.get(uri"http://example.org/a/b/c").openWebsocket(handler).map(_.result)
       msg <- ws.receive
       err <- ws.receive.either
     } yield (msg, err)
@@ -60,10 +49,8 @@ class WebSocketStubZioTests extends AnyFlatSpec with Matchers with ScalaFutures 
         case `expectedFrame` => List(secondFrame, thirdFrame)
         case _               => List.empty
       }
-    implicit val b = mkBackend(webSocketStub)
+    val ws = webSocketStub.build(new RIOMonadAsyncError[Any])
     val test = for {
-      handler <- ZioWebSocketHandler()
-      ws <- basicRequest.get(uri"http://example.org/a/b/c").openWebsocket(handler).map(_.result)
       msg1 <- ws.receive
       err1 <- ws.receive.either
       _ <- ws.send(WebSocketFrame.text("not expected"))
@@ -84,10 +71,8 @@ class WebSocketStubZioTests extends AnyFlatSpec with Matchers with ScalaFutures 
       .thenRespondWith {
         case _ => List(Success(Right(ok)), Failure(exception))
       }
-    implicit val b = mkBackend(webSocketStub)
+    val ws = webSocketStub.build(new RIOMonadAsyncError[Any])
     val test = for {
-      handler <- ZioWebSocketHandler()
-      ws <- basicRequest.get(uri"http://example.org/a/b/c").openWebsocket(handler).map(_.result)
       _ <- ws.send(WebSocketFrame.text("let's add responses"))
       msg <- ws.receive
       err1 <- ws.receive.either
@@ -99,20 +84,17 @@ class WebSocketStubZioTests extends AnyFlatSpec with Matchers with ScalaFutures 
 
   it should "be closed after sending Close event" in {
     val ok = WebSocketFrame.text("ok")
-    val closeEvent = WebSocketEvent.Close(500, "internal error")
-    val webSocketStub = WebSocketStub.withInitialResponses(List(Success(Left(closeEvent)), Success(Right(ok))))
-
-    implicit val b = mkBackend(webSocketStub)
+    val closeFrame = WebSocketFrame.Close(500, "internal error")
+    val webSocketStub = WebSocketStub.withInitialResponses(List(Success(Left(closeFrame)), Success(Right(ok))))
+    val ws = webSocketStub.build(new RIOMonadAsyncError[Any])
     val test = for {
-      handler <- ZioWebSocketHandler()
-      ws <- basicRequest.get(uri"http://example.org/a/b/c").openWebsocket(handler).map(_.result)
       _ <- ws.send(WebSocketFrame.text("let's add responses"))
       close <- ws.receive
       isOpen <- ws.isOpen
       err <- ws.receive.either
     } yield (close, isOpen, err.isLeft)
 
-    runtime.unsafeRun(test) shouldBe ((Left(closeEvent), false, true))
+    runtime.unsafeRun(test) shouldBe ((Left(closeFrame), false, true))
   }
 
   it should "use state to add next responses" in {
@@ -120,10 +102,8 @@ class WebSocketStubZioTests extends AnyFlatSpec with Matchers with ScalaFutures 
       .thenRespondWithS(0) {
         case (counter, _) => (counter + 1, List(Success(Right(WebSocketFrame.text(s"No. $counter")))))
       }
-    implicit val b = mkBackend(webSocketStub)
+    val ws = webSocketStub.build(new RIOMonadAsyncError[Any])
     val test = for {
-      handler <- ZioWebSocketHandler()
-      ws <- basicRequest.get(uri"http://example.org/a/b/c").openWebsocket(handler).map(_.result)
       _ <- ws.send(WebSocketFrame.text("a"))
       _ <- ws.send(WebSocketFrame.text("b"))
       _ <- ws.send(WebSocketFrame.text("c"))

@@ -5,7 +5,10 @@ import java.nio.ByteBuffer
 
 import _root_.zio._
 import _root_.zio.blocking.Blocking
-import _root_.zio.interop.reactivestreams._
+import _root_.zio.interop.reactivestreams.{
+  publisherToStream => publisherToZioStream,
+  streamToPublisher => zioStreamToPublisher
+}
 import _root_.zio.stream._
 import io.netty.buffer.{ByteBuf, Unpooled}
 import org.asynchttpclient.{
@@ -21,8 +24,10 @@ import sttp.client.impl.zio.{RIOMonadAsyncError, ZioAsyncQueue, ZioStreams}
 import sttp.client.internal._
 import sttp.client.monad.MonadAsyncError
 import sttp.client.testing.SttpBackendStub
+import sttp.client.ws.WebSocket
 import sttp.client.ws.internal.AsyncQueue
 import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions, WebSockets}
+import sttp.model.ws.WebSocketFrame
 
 class AsyncHttpClientZioBackend private (
     runtime: Runtime[Any],
@@ -60,6 +65,23 @@ class AsyncHttpClientZioBackend private (
           .unit
           .provideLayer(Blocking.live)
       }
+
+      override def compileWebSocketPipe(
+          ws: WebSocket[Task],
+          pipe: Transducer[Throwable, WebSocketFrame.Data[_], WebSocketFrame]
+      ): Task[Unit] =
+        Ref.make(false).flatMap { closed =>
+          Stream
+            .repeatEffect(ws.receive)
+            .flatMap {
+              case Left(WebSocketFrame.Close(_, _))    => Stream.fromEffect(closed.set(true))
+              case Right(WebSocketFrame.Ping(payload)) => Stream.fromEffect(ws.send(WebSocketFrame.Pong(payload)))
+              case Right(WebSocketFrame.Pong(_))       => Stream.empty
+              case Right(in: WebSocketFrame.Data[_])   => Stream(in).transduce(pipe).mapM(ws.send(_))
+            }
+            .foreachWhile(_ => closed.get)
+            .ensuring(ws.close.catchAll(_ => ZIO.unit))
+        }
     }
 
   override protected val bodyToAHC: BodyToAHC[Task, ZioStreams] = new BodyToAHC[Task, ZioStreams] {

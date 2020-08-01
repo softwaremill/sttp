@@ -294,7 +294,7 @@ class WebSocketStub[S](
       onSend: (S2, WebSocketFrame) => (S2, List[Try[Either[WebSocketFrame.Close, WebSocketFrame.Incoming]]])
   ): WebSocketStub[S2] = new WebSocketStub(initialResponses, initial, onSend)
 
-  private[testing] def build[F[_]](implicit m: MonadError[F]): WebSocket[F] =
+  def build[F[_]](implicit m: MonadError[F]): WebSocket[F] =
     new WebSocket[F] {
 
       private var state: S = initialState
