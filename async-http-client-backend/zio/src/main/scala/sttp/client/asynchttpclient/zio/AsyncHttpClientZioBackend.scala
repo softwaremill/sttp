@@ -20,7 +20,7 @@ import org.asynchttpclient.{
 }
 import org.reactivestreams.Publisher
 import sttp.client.asynchttpclient.{AsyncHttpClientBackend, BodyFromAHC, BodyToAHC}
-import sttp.client.impl.zio.{RIOMonadAsyncError, ZioAsyncQueue, ZioStreams}
+import sttp.client.impl.zio.{RIOMonadAsyncError, ZioAsyncQueue, ZioStreams, ZioWebSockets}
 import sttp.client.internal._
 import sttp.client.monad.MonadAsyncError
 import sttp.client.testing.SttpBackendStub
@@ -69,19 +69,7 @@ class AsyncHttpClientZioBackend private (
       override def compileWebSocketPipe(
           ws: WebSocket[Task],
           pipe: Transducer[Throwable, WebSocketFrame.Data[_], WebSocketFrame]
-      ): Task[Unit] =
-        Ref.make(false).flatMap { closed =>
-          Stream
-            .repeatEffect(ws.receive)
-            .flatMap {
-              case Left(WebSocketFrame.Close(_, _))    => Stream.fromEffect(closed.set(true))
-              case Right(WebSocketFrame.Ping(payload)) => Stream.fromEffect(ws.send(WebSocketFrame.Pong(payload)))
-              case Right(WebSocketFrame.Pong(_))       => Stream.empty
-              case Right(in: WebSocketFrame.Data[_])   => Stream(in).transduce(pipe).mapM(ws.send(_))
-            }
-            .foreachWhile(_ => closed.get)
-            .ensuring(ws.close.catchAll(_ => ZIO.unit))
-        }
+      ): Task[Unit] = ZioWebSockets.compilePipe(ws, pipe)
     }
 
   override protected val bodyToAHC: BodyToAHC[Task, ZioStreams] = new BodyToAHC[Task, ZioStreams] {

@@ -7,13 +7,12 @@ import cats.effect.Resource
 import io.netty.buffer.{ByteBuf, Unpooled}
 import monix.eval.Task
 import monix.execution.Scheduler
-import monix.execution.cancelables.BooleanCancelable
 import monix.nio.file._
 import monix.reactive.Observable
 import org.asynchttpclient._
 import org.reactivestreams.Publisher
 import sttp.client.asynchttpclient.{AsyncHttpClientBackend, BodyFromAHC, BodyToAHC}
-import sttp.client.impl.monix.{MonixAsyncQueue, MonixStreams, TaskMonadAsyncError}
+import sttp.client.impl.monix.{MonixAsyncQueue, MonixStreams, MonixWebSockets, TaskMonadAsyncError}
 import sttp.client.internal._
 import sttp.client.monad.MonadAsyncError
 import sttp.client.testing.SttpBackendStub
@@ -65,21 +64,7 @@ class AsyncHttpClientMonixBackend private (
       override def compileWebSocketPipe(
           ws: WebSocket[Task],
           pipe: Observable[WebSocketFrame.Data[_]] => Observable[WebSocketFrame]
-      ): Task[Unit] = {
-        Task(BooleanCancelable()).flatMap { wsClosed =>
-          Observable
-            .repeatEvalF(ws.receive)
-            .flatMap {
-              case Left(WebSocketFrame.Close(_, _))    => Observable.fromTask(Task(wsClosed.cancel()))
-              case Right(WebSocketFrame.Ping(payload)) => Observable.fromTask(ws.send(WebSocketFrame.Pong(payload)))
-              case Right(WebSocketFrame.Pong(_))       => Observable.empty
-              case Right(in: WebSocketFrame.Data[_])   => pipe(Observable(in)).mapEval(ws.send(_))
-            }
-            .takeWhileNotCanceled(wsClosed)
-            .completedL
-            .guarantee(ws.close)
-        }
-      }
+      ): Task[Unit] = MonixWebSockets.compilePipe(ws, pipe)
     }
 
   override protected val bodyToAHC: BodyToAHC[Task, MonixStreams] = new BodyToAHC[Task, MonixStreams] {
