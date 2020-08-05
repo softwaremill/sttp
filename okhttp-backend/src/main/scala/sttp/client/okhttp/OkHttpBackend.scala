@@ -1,30 +1,28 @@
 package sttp.client.okhttp
 
 import java.io.{IOException, InputStream, UnsupportedEncodingException}
-import java.util.concurrent.{ArrayBlockingQueue, TimeUnit}
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.{ArrayBlockingQueue, TimeUnit}
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
 
 import okhttp3.internal.http.HttpMethod
-import okhttp3.{Authenticator, Call, Callback, Credentials, MediaType, OkHttpClient, Route, WebSocket=>OkHttpWebSocket, WebSocketListener, Headers => OkHttpHeaders, MultipartBody => OkHttpMultipartBody, Request => OkHttpRequest, RequestBody => OkHttpRequestBody, Response => OkHttpResponse}
-import okio.{BufferedSink, ByteString, Okio}
-import sttp.client.ResponseAs.EagerResponseHandler
+import okhttp3.{Authenticator, Call, Callback, Credentials, OkHttpClient, Route, WebSocketListener, Request => OkHttpRequest, RequestBody => OkHttpRequestBody, Response => OkHttpResponse, WebSocket => OkHttpWebSocket}
+import okio.ByteString
 import sttp.client.SttpBackendOptions.Proxy
 import sttp.client.SttpClientException.ReadException
-import sttp.client.internal.{FileHelpers, NoStreams, toByteArray}
-import sttp.model._
-import sttp.client.monad.{Canceler, FutureMonad, IdMonad, MonadAsyncError, MonadError}
+import sttp.client.internal.NoStreams
+import sttp.client.monad.syntax._
+import sttp.client.monad._
 import sttp.client.okhttp.OkHttpBackend.EncodingHandler
 import sttp.client.testing.SttpBackendStub
 import sttp.client.ws.WebSocket
 import sttp.client.ws.internal.{AsyncQueue, WebSocketEvent}
-import sttp.client.{BasicResponseAs, IgnoreResponse, NoBody, RequestBody, Response, ResponseAs, ResponseAsByteArray, SttpBackend, SttpBackendOptions, _}
+import sttp.client.{Response, ResponseAs, SttpBackend, SttpBackendOptions, _}
+import sttp.model._
 import sttp.model.ws.WebSocketFrame
-import sttp.client.monad.syntax._
 
 import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Try}
 
 abstract class OkHttpBackend[F[_], S <: Streams[S], P](
     client: OkHttpClient,
@@ -56,42 +54,9 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
 
     builder.build()
   }
-
-  private def bodyToOkHttp[T, R >: PE](body: RequestBody[R], ct: Option[String]): Option[OkHttpRequestBody] = {
-    val mediaType = ct.flatMap(c => Try(MediaType.parse(c)).toOption).orNull
-    body match {
-      case NoBody => None
-      case StringBody(b, _, _) =>
-        Some(OkHttpRequestBody.create(b, mediaType))
-      case ByteArrayBody(b, _) =>
-        Some(OkHttpRequestBody.create(b, mediaType))
-      case ByteBufferBody(b, _) =>
-        if (b.isReadOnly) Some(OkHttpRequestBody.create(ByteString.of(b), mediaType))
-        else Some(OkHttpRequestBody.create(b.array(), mediaType))
-      case InputStreamBody(b, _) =>
-        Some(new OkHttpRequestBody() {
-          override def writeTo(sink: BufferedSink): Unit =
-            sink.writeAll(Okio.source(b))
-          override def contentType(): MediaType = mediaType
-        })
-      case FileBody(b, _) =>
-        Some(OkHttpRequestBody.create(b.toFile, mediaType))
-      case StreamBody(s) =>
-        streamToRequestBody(s.asInstanceOf[streams.BinaryStream])
-      case MultipartBody(ps) =>
-        val b = new OkHttpMultipartBody.Builder().setType(Option(mediaType).getOrElse(OkHttpMultipartBody.FORM))
-        ps.foreach(addMultipart(b, _))
-        Some(b.build())
-    }
-  }
-
-  private def addMultipart(builder: OkHttpMultipartBody.Builder, mp: Part[BasicRequestBody]): Unit = {
-    val allHeaders = mp.headers :+ Header(HeaderNames.ContentDisposition, mp.contentDispositionHeaderValue)
-    val headers =
-      OkHttpHeaders.of(allHeaders.filterNot(_.is(HeaderNames.ContentType)).map(h => (h.name, h.value)).toMap.asJava)
-
-    bodyToOkHttp(mp.body, mp.contentType).foreach(builder.addPart(headers, _))
-  }
+  
+  protected val bodyToOkHttp: BodyToOkHttp[F,S]
+  protected val bodyFromOkHttp: BodyFromOkHttp[F,S]
 
   private[okhttp] def readResponse[T, R >: PE](
       res: OkHttpResponse,
@@ -112,7 +77,7 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
       res.body().byteStream()
     }
 
-    val body = responseHandler(byteBody).handle(responseAs, responseMonad, responseMetadata)
+    val body = bodyFromOkHttp(byteBody,responseAs, responseMonad, responseMetadata)
     responseMonad.map(body)(Response(_, StatusCode(res.code()), res.message(), headers, Nil))
   }
 
@@ -130,39 +95,7 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
     case (body, "deflate") => new InflaterInputStream(body)
     case (_, ce)           => throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
   }
-
-  private def responseHandler[R >: PE](responseBody: InputStream): EagerResponseHandler[R, F] =
-    new EagerResponseHandler[R, F] {
-      override def handleStream[T](ras: ResponseAsStream[F, _, _, _]): F[T] =
-        responseMonad.ensure(
-          responseMonad.flatMap(responseMonad.fromTry(responseBodyToStream(responseBody)))(
-            ras.f.asInstanceOf[streams.BinaryStream => F[T]]
-          ),
-          responseMonad.eval(responseBody.close())
-        )
-
-      override def handleBasic[T](bra: BasicResponseAs[T, R]): Try[T] =
-        bra match {
-          case IgnoreResponse =>
-            Try(responseBody.close())
-          case ResponseAsByteArray =>
-            val body = Try(toByteArray(responseBody))
-            responseBody.close()
-            body
-          case _: ResponseAsStreamUnsafe[_, _] =>
-            responseBodyToStream(responseBody).asInstanceOf[Try[T]]
-          case ResponseAsFile(file) =>
-            val body = Try(FileHelpers.saveFile(file.toFile, responseBody))
-            responseBody.close()
-            body.map(_ => file)
-        }
-    }
-
-  def streamToRequestBody(stream: streams.BinaryStream): Option[OkHttpRequestBody] = None
-
-  def responseBodyToStream(inputStream: InputStream): Try[streams.BinaryStream] =
-    Failure(new IllegalStateException("Streaming isn't supported"))
-
+  
   override def close(): F[Unit] =
     if (closeClient) {
       responseMonad.eval(client.dispatcher().executorService().shutdown())
@@ -171,15 +104,6 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
 
   protected def createAsyncQueue[T]: F[AsyncQueue[F, T]]
 
-  protected def bodyFromWs[TT](r: WebSocketResponseAs[TT, _], ws: WebSocket[F]): F[TT] =
-    r match {
-      case ResponseAsWebSocket(f)      => f.asInstanceOf[WebSocket[F] => F[TT]](ws).ensure(ws.close)
-      case ResponseAsWebSocketUnsafe() => ws.unit.asInstanceOf[F[TT]]
-      case ResponseAsWebSocketStream(_, p) =>
-        compileWebSocketPipe(ws, p.asInstanceOf[streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]])
-    }
-
-  protected def compileWebSocketPipe(ws: WebSocket[F], pipe: streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]): F[Unit]
 }
 
 object OkHttpBackend {
@@ -257,7 +181,7 @@ class OkHttpSyncBackend private (client: OkHttpClient, closeClient: Boolean, cus
       val isOpen = new AtomicBoolean(false)
       val webSocket = new WebSocketImpl(nativeWs, queue, isOpen)
       val baseResponse = readResponse(response, ignore)
-      val wsResponse = bodyFromWs(request.response.asInstanceOf[WebSocketResponseAs[T, R]], webSocket).map(b => baseResponse.copy(body = b))
+      val wsResponse = bodyFromOkHttp.fromWs(request.response.asInstanceOf[WebSocketResponseAs[T, R]], webSocket).map(b => baseResponse.copy(body = b))
       fillCell(wsResponse)
     },fillCellError)
 
@@ -284,7 +208,17 @@ class OkHttpSyncBackend private (client: OkHttpClient, closeClient: Boolean, cus
 
   override def responseMonad: MonadError[Identity] = IdMonad
 
-  override protected def compileWebSocketPipe(ws: WebSocket[Identity], pipe: Nothing): Identity[Unit] = pipe
+  override protected val bodyFromOkHttp: BodyFromOkHttp[Identity, Nothing] = new BodyFromOkHttp[Identity,Nothing] {
+    override val streams: Streams[Nothing] = OkHttpSyncBackend.this.streams
+    override implicit val monad: MonadError[Identity] = OkHttpSyncBackend.this.responseMonad
+    override def responseBodyToStream(inputStream: InputStream): Nothing = throw new IllegalStateException("Streaming isn't supported")
+    override protected def compileWebSocketPipe(ws: WebSocket[Identity], pipe: Nothing): Identity[Unit] = pipe
+  }
+
+  override protected val bodyToOkHttp: BodyToOkHttp[Identity, Nothing] = new BodyToOkHttp[Identity,Nothing] {
+    override val streams: Streams[Nothing] = OkHttpSyncBackend.this.streams
+    override def streamToRequestBody(stream: Nothing): OkHttpRequestBody = stream 
+  }
 
   override protected def createAsyncQueue[T]: Identity[AsyncQueue[Identity, T]] = ??? //TODO
 }
@@ -379,7 +313,7 @@ abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](
               val listener = new DelegatingWebSocketListener(new AddToQueueListener(queue,isOpen), { (nativeWs, response) =>
                 val webSocket = new WebSocketImpl(nativeWs, queue, isOpen)
                 val wsResponse = readResponse(response, ignore).flatMap { baseResponse =>
-                  bodyFromWs(request.response.asInstanceOf[WebSocketResponseAs[T, R]], webSocket).map(b => baseResponse.copy(body = b))
+                  bodyFromOkHttp.fromWs(request.response.asInstanceOf[WebSocketResponseAs[T, R]], webSocket).map(b => baseResponse.copy(body = b))
                 }
                 cb(Right(wsResponse))
               }, e => cb(Left(e)))
@@ -406,7 +340,17 @@ class OkHttpFutureBackend private (client: OkHttpClient, closeClient: Boolean, c
 
   override protected def createAsyncQueue[T]: Future[AsyncQueue[Future, T]] = throw new IllegalStateException("Web sockets are not supported!") //TODO why?
 
-  override protected def compileWebSocketPipe(ws: WebSocket[Future], pipe: Nothing): Future[Unit] = pipe
+  override protected val bodyFromOkHttp: BodyFromOkHttp[Future, Nothing] = new BodyFromOkHttp[Future, Nothing] {
+    override val streams: Streams[Nothing] = OkHttpFutureBackend.this.streams
+    override implicit val monad: MonadError[Future] = OkHttpFutureBackend.this.responseMonad
+    override def responseBodyToStream(inputStream: InputStream): Nothing = throw new IllegalStateException("Streaming is not supported")
+    override protected def compileWebSocketPipe(ws: WebSocket[Future], pipe: Nothing): Future[Unit] = pipe
+  }
+
+  override protected val bodyToOkHttp: BodyToOkHttp[Future, Nothing] = new BodyToOkHttp[Future, Nothing] {
+    override val streams: Streams[Nothing] = OkHttpFutureBackend.this.streams
+    override def streamToRequestBody(stream: Nothing): OkHttpRequestBody = stream
+  }
 }
 
 object OkHttpFutureBackend {
