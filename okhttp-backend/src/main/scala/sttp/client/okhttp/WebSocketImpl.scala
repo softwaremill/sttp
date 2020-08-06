@@ -36,12 +36,11 @@ class WebSocketImpl[F[_]](ws: OkHttpWebSocket, queue: AsyncQueue[F, WebSocketEve
   override def send(f: WebSocketFrame, isContinuation: Boolean = false): F[Unit] =
     monad.flatten(monad.eval(f match {
       case WebSocketFrame.Text(payload, _, _) =>
-        val bool = ws.send(payload)
-        fromBoolean(bool)
+        fromBoolean(ws.send(payload))
       case WebSocketFrame.Binary(payload, _, _) =>
         fromBoolean(ws.send(new ByteString(payload)))
       case WebSocketFrame.Close(statusCode, reasonText) =>
-        if (ws.close(statusCode, reasonText)) { // TODO: should be like sequentially idempotent? (like in ahc)
+        if (ws.close(statusCode, reasonText)) { // TODO: should be sequentially idempotent? (like in ahc)
           monad.unit(())
         } else {
           monad.error(new WebSocketClosed)
