@@ -4,7 +4,21 @@ import java.io.InputStream
 
 import sttp.client.ResponseAs.EagerResponseHandler
 import sttp.client.internal.{FileHelpers, toByteArray}
-import sttp.client.{BasicResponseAs, IgnoreResponse, ResponseAs, ResponseAsByteArray, ResponseAsFile, ResponseAsStream, ResponseAsStreamUnsafe, ResponseAsWebSocket, ResponseAsWebSocketStream, ResponseAsWebSocketUnsafe, ResponseMetadata, Streams, WebSocketResponseAs}
+import sttp.client.{
+  BasicResponseAs,
+  IgnoreResponse,
+  ResponseAs,
+  ResponseAsByteArray,
+  ResponseAsFile,
+  ResponseAsStream,
+  ResponseAsStreamUnsafe,
+  ResponseAsWebSocket,
+  ResponseAsWebSocketStream,
+  ResponseAsWebSocketUnsafe,
+  ResponseMetadata,
+  Streams,
+  WebSocketResponseAs
+}
 import sttp.client.monad.{MonadAsyncError, MonadError}
 import sttp.client.ws.WebSocket
 import sttp.model.ws.WebSocketFrame
@@ -12,7 +26,7 @@ import sttp.client.monad.syntax._
 
 import scala.util.Try
 
-trait BodyFromOkHttp[F[_],S] {
+trait BodyFromOkHttp[F[_], S] {
   val streams: Streams[S]
   implicit def monad: MonadError[F]
 
@@ -26,15 +40,17 @@ trait BodyFromOkHttp[F[_],S] {
         compileWebSocketPipe(ws, p.asInstanceOf[streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]])
     }
 
-  protected def compileWebSocketPipe(ws: WebSocket[F], pipe: streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]): F[Unit]
+  def compileWebSocketPipe(ws: WebSocket[F], pipe: streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]): F[Unit]
 
-  def apply[T](byteBody: InputStream,responseAs: ResponseAs[T, _],responseMetadata: ResponseMetadata): F[T] = responseHandler(byteBody).handle(responseAs, monad, responseMetadata)
-  
+  def apply[T](byteBody: InputStream, responseAs: ResponseAs[T, _], responseMetadata: ResponseMetadata): F[T] =
+    responseHandler(byteBody).handle(responseAs, monad, responseMetadata)
+
   private def responseHandler[R](responseBody: InputStream): EagerResponseHandler[R, F] =
     new EagerResponseHandler[R, F] { //TODO do we still need it?
       override def handleStream[T](ras: ResponseAsStream[F, _, _, _]): F[T] = {
-        ras.f.asInstanceOf[streams.BinaryStream => F[T]](responseBodyToStream(responseBody))
-        .ensure(monad.eval(responseBody.close()))
+        ras.f
+          .asInstanceOf[streams.BinaryStream => F[T]](responseBodyToStream(responseBody))
+          .ensure(monad.eval(responseBody.close()))
       }
 
       override def handleBasic[T](bra: BasicResponseAs[T, R]): Try[T] =

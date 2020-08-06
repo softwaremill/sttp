@@ -6,7 +6,19 @@ import java.util.concurrent.{ArrayBlockingQueue, TimeUnit}
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
 
 import okhttp3.internal.http.HttpMethod
-import okhttp3.{Authenticator, Call, Callback, Credentials, OkHttpClient, Route, WebSocketListener, Request => OkHttpRequest, RequestBody => OkHttpRequestBody, Response => OkHttpResponse, WebSocket => OkHttpWebSocket}
+import okhttp3.{
+  Authenticator,
+  Call,
+  Callback,
+  Credentials,
+  OkHttpClient,
+  Route,
+  WebSocketListener,
+  Request => OkHttpRequest,
+  RequestBody => OkHttpRequestBody,
+  Response => OkHttpResponse,
+  WebSocket => OkHttpWebSocket
+}
 import okio.ByteString
 import sttp.client.SttpBackendOptions.Proxy
 import sttp.client.SttpClientException.ReadException
@@ -54,9 +66,9 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
 
     builder.build()
   }
-  
-  protected val bodyToOkHttp: BodyToOkHttp[F,S]
-  protected val bodyFromOkHttp: BodyFromOkHttp[F,S]
+
+  protected val bodyToOkHttp: BodyToOkHttp[F, S]
+  protected val bodyFromOkHttp: BodyFromOkHttp[F, S]
 
   private[okhttp] def readResponse[T, R >: PE](
       res: OkHttpResponse,
@@ -77,7 +89,7 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
       res.body().byteStream()
     }
 
-    val body = bodyFromOkHttp(byteBody,responseAs, responseMonad, responseMetadata)
+    val body = bodyFromOkHttp(byteBody, responseAs, responseMetadata)
     responseMonad.map(body)(Response(_, StatusCode(res.code()), res.message(), headers, Nil))
   }
 
@@ -95,12 +107,11 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
     case (body, "deflate") => new InflaterInputStream(body)
     case (_, ce)           => throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
   }
-  
+
   override def close(): F[Unit] =
     if (closeClient) {
       responseMonad.eval(client.dispatcher().executorService().shutdown())
     } else responseMonad.unit(())
-
 
   protected def createAsyncQueue[T]: F[AsyncQueue[F, T]]
 
@@ -165,32 +176,40 @@ class OkHttpSyncBackend private (client: OkHttpClient, closeClient: Boolean, cus
   override def send[T, R >: PE](request: Request[T, R]): Identity[Response[T]] = {
     if (request.isWebSocket) {
       sendWebSocket(request)
-    }else{
+    } else {
       sendRegular(request)
     }
   }
 
-  private def sendWebSocket[R >: PE, T](request: Request[T, R]) = adjustExceptions(isWebsocket = true) {
-    val nativeRequest = convertRequest(request)
-    val responseCell = new ArrayBlockingQueue[Either[Throwable, Response[T]]](1)
-    def fillCellError(t: Throwable): Unit = responseCell.add(Left(t))
-    def fillCell(wr: Response[T]): Unit = responseCell.add(Right(wr))
-    
-    val listener = new DelegatingWebSocketListener(???,{ (nativeWs,response)=> //TODO
-      val queue = createAsyncQueue[WebSocketEvent] // TODO should it be the arrayBlockingQueue?
-      val isOpen = new AtomicBoolean(false)
-      val webSocket = new WebSocketImpl(nativeWs, queue, isOpen)
-      val baseResponse = readResponse(response, ignore)
-      val wsResponse = bodyFromOkHttp.fromWs(request.response.asInstanceOf[WebSocketResponseAs[T, R]], webSocket).map(b => baseResponse.copy(body = b))
-      fillCell(wsResponse)
-    },fillCellError)
+  private def sendWebSocket[R >: PE, T](request: Request[T, R]) =
+    adjustExceptions(isWebsocket = true) {
+      val nativeRequest = convertRequest(request)
+      val responseCell = new ArrayBlockingQueue[Either[Throwable, Response[T]]](1)
+      def fillCellError(t: Throwable): Unit = responseCell.add(Left(t))
+      def fillCell(wr: Response[T]): Unit = responseCell.add(Right(wr))
 
-    OkHttpBackend
-      .updateClientIfCustomReadTimeout(request, client)
-      .newWebSocket(nativeRequest, listener)
-    
-    responseCell.take().fold(throw _, identity)
-  }
+      implicit val m = responseMonad
+      val listener = new DelegatingWebSocketListener(
+        ???,
+        { (nativeWs, response) => //TODO
+          val queue = createAsyncQueue[WebSocketEvent] // TODO should it be the arrayBlockingQueue?
+          val isOpen = new AtomicBoolean(false)
+          val webSocket = new WebSocketImpl(nativeWs, queue, isOpen)
+          val baseResponse = readResponse(response, ignore)
+          val wsResponse = bodyFromOkHttp
+            .fromWs(request.response.asInstanceOf[WebSocketResponseAs[T, R]], webSocket)
+            .map(b => baseResponse.copy(body = b))
+          fillCell(wsResponse)
+        },
+        fillCellError
+      )
+
+      OkHttpBackend
+        .updateClientIfCustomReadTimeout(request, client)
+        .newWebSocket(nativeRequest, listener)
+
+      responseCell.take().fold(throw _, identity)
+    }
 
   private def sendRegular[R >: PE, T](request: Request[T, R]) = {
     adjustExceptions(isWebsocket = false) {
@@ -208,16 +227,17 @@ class OkHttpSyncBackend private (client: OkHttpClient, closeClient: Boolean, cus
 
   override def responseMonad: MonadError[Identity] = IdMonad
 
-  override protected val bodyFromOkHttp: BodyFromOkHttp[Identity, Nothing] = new BodyFromOkHttp[Identity,Nothing] {
-    override val streams: Streams[Nothing] = OkHttpSyncBackend.this.streams
+  override protected val bodyFromOkHttp: BodyFromOkHttp[Identity, Nothing] = new BodyFromOkHttp[Identity, Nothing] {
+    override val streams: NoStreams = NoStreams
     override implicit val monad: MonadError[Identity] = OkHttpSyncBackend.this.responseMonad
-    override def responseBodyToStream(inputStream: InputStream): Nothing = throw new IllegalStateException("Streaming isn't supported")
-    override protected def compileWebSocketPipe(ws: WebSocket[Identity], pipe: Nothing): Identity[Unit] = pipe
+    override def responseBodyToStream(inputStream: InputStream): Nothing =
+      throw new IllegalStateException("Streaming isn't supported")
+    override def compileWebSocketPipe(ws: WebSocket[Identity], pipe: Nothing): Identity[Unit] = pipe
   }
 
-  override protected val bodyToOkHttp: BodyToOkHttp[Identity, Nothing] = new BodyToOkHttp[Identity,Nothing] {
-    override val streams: Streams[Nothing] = OkHttpSyncBackend.this.streams
-    override def streamToRequestBody(stream: Nothing): OkHttpRequestBody = stream 
+  override protected val bodyToOkHttp: BodyToOkHttp[Identity, Nothing] = new BodyToOkHttp[Identity, Nothing] {
+    override val streams: NoStreams = NoStreams
+    override def streamToRequestBody(stream: Nothing): OkHttpRequestBody = stream
   }
 
   override protected def createAsyncQueue[T]: Identity[AsyncQueue[Identity, T]] = ??? //TODO
@@ -254,7 +274,7 @@ object OkHttpSyncBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub: SttpBackendStub[Identity, Any] = SttpBackendStub.synchronous//TODO websockets?
+  def stub: SttpBackendStub[Identity, Any] = SttpBackendStub.synchronous //TODO websockets?
 }
 
 abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](
@@ -265,44 +285,46 @@ abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](
 ) extends OkHttpBackend[F, S, P](client, closeClient, customEncodingHandler) {
 
   override def send[T, R >: PE](request: Request[T, R]): F[Response[T]] = {
-      if(request.isWebSocket) {
-        sendWebSocket(request)
-      }else{
-        sendRegular(request)
+    if (request.isWebSocket) {
+      sendWebSocket(request)
+    } else {
+      sendRegular(request)
     }
   }
 
-  private def sendRegular[R >: PE, T](request: Request[T, R]) = adjustExceptions(isWebsocket = false) {
-    val nativeRequest = convertRequest(request)
-    monad.flatten(monad.async[F[Response[T]]] { cb =>
-      def success(r: F[Response[T]]): Unit = cb(Right(r))
+  private def sendRegular[R >: PE, T](request: Request[T, R]) =
+    adjustExceptions(isWebsocket = false) {
+      val nativeRequest = convertRequest(request)
+      monad.flatten(monad.async[F[Response[T]]] { cb =>
+        def success(r: F[Response[T]]): Unit = cb(Right(r))
 
-      def error(t: Throwable): Unit = cb(Left(t))
+        def error(t: Throwable): Unit = cb(Left(t))
 
-      val call = OkHttpBackend
-        .updateClientIfCustomReadTimeout(request, client)
-        .newCall(nativeRequest)
+        val call = OkHttpBackend
+          .updateClientIfCustomReadTimeout(request, client)
+          .newCall(nativeRequest)
 
-      call.enqueue(new Callback {
-        override def onFailure(call: Call, e: IOException): Unit =
-          error(e)
+        call.enqueue(new Callback {
+          override def onFailure(call: Call, e: IOException): Unit =
+            error(e)
 
-        override def onResponse(call: Call, response: OkHttpResponse): Unit =
-          try success(readResponse(response, request.response))
-          catch {
-            case e: Exception =>
-              response.close()
-              error(e)
-          }
+          override def onResponse(call: Call, response: OkHttpResponse): Unit =
+            try success(readResponse(response, request.response))
+            catch {
+              case e: Exception =>
+                response.close()
+                error(e)
+            }
+        })
+
+        Canceler(() => call.cancel())
       })
-
-      Canceler(() => call.cancel())
-    })
-  }
+    }
 
   def sendWebSocket[T, R >: PE](
       request: Request[T, R]
-  ): F[Response[T]] = adjustExceptions(isWebsocket = true) {
+  ): F[Response[T]] =
+    adjustExceptions(isWebsocket = true) {
       implicit val m = monad
       val nativeRequest = convertRequest(request)
       monad.flatten(
@@ -310,21 +332,28 @@ abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](
           .flatMap { queue =>
             monad.async[F[Response[T]]] { cb =>
               val isOpen = new AtomicBoolean(false)
-              val listener = new DelegatingWebSocketListener(new AddToQueueListener(queue,isOpen), { (nativeWs, response) =>
-                val webSocket = new WebSocketImpl(nativeWs, queue, isOpen)
-                val wsResponse = readResponse(response, ignore).flatMap { baseResponse =>
-                  bodyFromOkHttp.fromWs(request.response.asInstanceOf[WebSocketResponseAs[T, R]], webSocket).map(b => baseResponse.copy(body = b))
-                }
-                cb(Right(wsResponse))
-              }, e => cb(Left(e)))
-      
+              val listener = new DelegatingWebSocketListener(
+                new AddToQueueListener(queue, isOpen),
+                { (nativeWs, response) =>
+                  val webSocket = new WebSocketImpl(nativeWs, queue, isOpen)
+                  val wsResponse = readResponse(response, ignore).flatMap { baseResponse =>
+                    bodyFromOkHttp
+                      .fromWs(request.response.asInstanceOf[WebSocketResponseAs[T, R]], webSocket)
+                      .map(b => baseResponse.copy(body = b))
+                  }
+                  cb(Right(wsResponse))
+                },
+                e => cb(Left(e))
+              )
+
               val ws = OkHttpBackend
                 .updateClientIfCustomReadTimeout(request, client)
                 .newWebSocket(nativeRequest, listener)
-      
+
               Canceler(() => ws.cancel())
             }
-      })
+          }
+      )
     }
 
   private def adjustExceptions[T](isWebsocket: Boolean)(t: => F[T]): F[T] =
@@ -338,17 +367,19 @@ class OkHttpFutureBackend private (client: OkHttpClient, closeClient: Boolean, c
 ) extends OkHttpAsyncBackend[Future, Nothing, Any](client, new FutureMonad, closeClient, customEncodingHandler) {
   override val streams: Streams[Nothing] = NoStreams
 
-  override protected def createAsyncQueue[T]: Future[AsyncQueue[Future, T]] = throw new IllegalStateException("Web sockets are not supported!") //TODO why?
+  override protected def createAsyncQueue[T]: Future[AsyncQueue[Future, T]] =
+    throw new IllegalStateException("Web sockets are not supported!") //TODO why?
 
   override protected val bodyFromOkHttp: BodyFromOkHttp[Future, Nothing] = new BodyFromOkHttp[Future, Nothing] {
-    override val streams: Streams[Nothing] = OkHttpFutureBackend.this.streams
+    override val streams: NoStreams = NoStreams
     override implicit val monad: MonadError[Future] = OkHttpFutureBackend.this.responseMonad
-    override def responseBodyToStream(inputStream: InputStream): Nothing = throw new IllegalStateException("Streaming is not supported")
-    override protected def compileWebSocketPipe(ws: WebSocket[Future], pipe: Nothing): Future[Unit] = pipe
+    override def responseBodyToStream(inputStream: InputStream): Nothing =
+      throw new IllegalStateException("Streaming is not supported")
+    override def compileWebSocketPipe(ws: WebSocket[Future], pipe: Nothing): Future[Unit] = pipe
   }
 
   override protected val bodyToOkHttp: BodyToOkHttp[Future, Nothing] = new BodyToOkHttp[Future, Nothing] {
-    override val streams: Streams[Nothing] = OkHttpFutureBackend.this.streams
+    override val streams: NoStreams = NoStreams
     override def streamToRequestBody(stream: Nothing): OkHttpRequestBody = stream
   }
 }
@@ -417,9 +448,8 @@ private[okhttp] class DelegatingWebSocketListener(
   override def onMessage(webSocket: OkHttpWebSocket, bytes: ByteString): Unit = delegate.onMessage(webSocket, bytes)
 }
 
-class AddToQueueListener[F[_]](queue: AsyncQueue[F, WebSocketEvent], isOpen: AtomicBoolean)
-  extends WebSocketListener {
-  override def onOpen(websocket: OkHttpWebSocket,response: OkHttpResponse): Unit = {
+class AddToQueueListener[F[_]](queue: AsyncQueue[F, WebSocketEvent], isOpen: AtomicBoolean) extends WebSocketListener {
+  override def onOpen(websocket: OkHttpWebSocket, response: OkHttpResponse): Unit = {
     isOpen.set(true)
     queue.offer(WebSocketEvent.Open())
   }
