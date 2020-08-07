@@ -36,8 +36,6 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
     tagRelease,
     releaseStepCommandAndRemaining("publishSigned"),
     releaseStepCommand("sonatypeBundleRelease"),
-    setNextVersion,
-    commitNextVersion,
     pushChanges
   ),
   // doc generation is broken in dotty
