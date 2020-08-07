@@ -85,9 +85,11 @@ abstract class WebSocketTest[F[_], S]
       .send()
       .flatMap { response =>
         val ws = response.body
-        ws.receive.map(_ shouldBe Right(WebSocketFrame.text("test10"))) >>
-          ws.receive.map(_ shouldBe Right(WebSocketFrame.text("test20"))) >>
-          ws.close.map(_ => succeed)
+        for {
+          _ <- ws.receive.map(_ shouldBe Right(WebSocketFrame.text("test10")))
+          _ <- ws.receive.map(_ shouldBe Right(WebSocketFrame.text("test20")))
+          _ <- ws.close
+        } yield succeed
       }
       .toFuture()
   }
