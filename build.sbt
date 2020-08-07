@@ -5,8 +5,8 @@ import sbtrelease.ReleasePlugin.autoImport._
 import sbtrelease.ReleaseStateTransformations._
 
 val scala2_11 = "2.11.12"
-val scala2_12 = "2.12.10"
-val scala2_13 = "2.13.2"
+val scala2_12 = "2.12.12"
+val scala2_13 = "2.13.3"
 val scala3 = "0.23.0"
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on")
@@ -174,11 +174,11 @@ val playJsonVersion: Option[(Long, Long)] => String = {
 }
 val catsEffectVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.0.0"
-  case _             => "2.1.3"
+  case _             => "2.1.4"
 }
 val fs2Version: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.1.0"
-  case _             => "2.4.1"
+  case _             => "2.4.2"
 }
 
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.12"
@@ -406,7 +406,7 @@ lazy val zio = (projectMatrix in file("implementations/zio"))
   )
   .dependsOn(core % compileAndTest)
   .jvmPlatform(
-    scalaVersions = List(scala2_11, scala2_12, scala2_13/*, scala3*/),
+    scalaVersions = List(scala2_11, scala2_12, scala2_13 /*, scala3*/ ),
     settings = intellijImportOnly213
   )
 
