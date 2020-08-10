@@ -41,7 +41,6 @@ case class RequestT[U[_], T, -R](
     body: RequestBody[R],
     headers: Seq[Header],
     response: ResponseAs[T, R],
-    isWebSocket: Boolean,
     options: RequestOptions,
     tags: Map[String, Any]
 ) extends RequestTExtensions[U, T, R] {
@@ -229,15 +228,13 @@ case class RequestT[U[_], T, -R](
     * Note that this replaces any previous specifications, which also includes
     * any previous `mapResponse` invocations.
     */
-  def response[T2, R2](
-      ra: ResponseAs[T2, R2]
-  )(implicit r2HasWebSockets: HasWebsockets[R2]): RequestT[U, T2, R with R2] =
-    this.copy(response = ra, isWebSocket = r2HasWebSockets.value)
+  def response[T2, R2](ra: ResponseAs[T2, R2]): RequestT[U, T2, R with R2] =
+    this.copy(response = ra)
 
   def mapResponse[T2](f: T => T2): RequestT[U, T2, R] =
     this.copy(response = response.map(f))
 
-  def isWebSocket(w: Boolean): RequestT[U, T, R] = this.copy(isWebSocket = w)
+  def isWebSocket: Boolean = ResponseAs.isWebSocket(response)
 
   def followRedirects(fr: Boolean): RequestT[U, T, R] =
     this.copy(options = options.copy(followRedirects = fr))

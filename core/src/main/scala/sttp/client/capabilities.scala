@@ -12,9 +12,3 @@ class Streams[S] {
 trait Effect[F[_]]
 
 trait WebSockets
-
-trait HasWebsockets[R] { def value: Boolean }
-object HasWebsockets {
-  implicit def hasWebSockets[R <: WebSockets]: HasWebsockets[R] = new HasWebsockets[R] { def value = true }
-  implicit def hasNoWebSockets[R]: HasWebsockets[R] = new HasWebsockets[R] { def value = false }
-}

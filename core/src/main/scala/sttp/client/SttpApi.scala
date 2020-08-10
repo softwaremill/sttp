@@ -28,7 +28,6 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
       NoBody,
       Vector(),
       asString,
-      isWebSocket = false,
       RequestOptions(
         followRedirects = true,
         DefaultReadTimeout,

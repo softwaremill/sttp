@@ -174,6 +174,16 @@ object ResponseAs {
         case Left(e)  => throw DeserializationError(s, e)
         case Right(b) => b
       }
+
+  def isWebSocket[T, R](ra: ResponseAs[_, _]): Boolean =
+    ra match {
+      case _: BasicResponseAs[_, _]     => false
+      case _: WebSocketResponseAs[_, _] => true
+      case ResponseAsStream(_, _)       => false
+      case ResponseAsFromMetadata(conditions, default) =>
+        conditions.exists(c => isWebSocket(c.responseAs)) || isWebSocket(default)
+      case MappedResponseAs(raw, _) => isWebSocket(raw)
+    }
 }
 
 sealed abstract class ResponseError[+T](error: String) extends Exception(error)

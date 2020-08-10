@@ -49,7 +49,6 @@ object MapEffect {
         fm,
         gm
       ),
-      r.isWebSocket,
       r.options,
       r.tags
     )
