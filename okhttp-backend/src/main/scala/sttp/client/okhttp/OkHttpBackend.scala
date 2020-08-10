@@ -503,6 +503,11 @@ class AddToQueueListener[F[_]](queue: AsyncQueue[F, WebSocketEvent], isOpen: Ato
     queue.offer(WebSocketEvent.Frame(WebSocketFrame.Close(code, reason)))
   }
 
+  override def onClosing(webSocket: OkHttpWebSocket, code: Int, reason: String): Unit = {
+    isOpen.set(false)
+    queue.offer(WebSocketEvent.Frame(WebSocketFrame.Close(code, reason)))
+  }
+
   override def onFailure(webSocket: OkHttpWebSocket, t: Throwable, response: OkHttpResponse): Unit = {
     isOpen.set(false)
     queue.offer(WebSocketEvent.Error(t))

@@ -27,20 +27,6 @@ class OkHttpSyncWebsocketTest extends WebSocketTest[Identity, Nothing] {
   override def throwsWhenNotAWebSocket: Boolean = true
   override def supportStreaming: Boolean = false
 
-  it should "error if the endpoint is not a websocket" in {
-    monad
-      .handleError {
-        basicRequest
-          .get(uri"$wsEndpoint/echo")
-          .response(asWebSocket { _: WebSocket[Future] => Future(()) })
-          .send()
-          .map(_ => fail: Assertion)
-      } {
-        case e: Exception => (e shouldBe a[SttpClientException.ReadException]).unit
-      }
-      .toFuture()
-  }
-
   it should "error if incoming messages overflow the buffer" in {
     basicRequest
       .get(uri"$wsEndpoint/ws/echo")
