@@ -61,7 +61,12 @@ case class ResponseAsWebSocketUnsafe[F[_]]() extends WebSocketResponseAs[WebSock
 case class ResponseAsWebSocketStream[S, Pipe[_, _]](s: Streams[S], p: Pipe[WebSocketFrame.Data[_], WebSocketFrame])
     extends WebSocketResponseAs[Unit, S with WebSockets]
 
-case class ResponseAsFromMetadata[T, R](f: ResponseMetadata => ResponseAs[T, R]) extends ResponseAs[T, R]
+case class ConditionalResponseAs[+T, R](condition: ResponseMetadata => Boolean, responseAs: ResponseAs[T, R])
+case class ResponseAsFromMetadata[T, R](conditions: List[ConditionalResponseAs[T, R]], default: ResponseAs[T, R])
+    extends ResponseAs[T, R] {
+  def apply(meta: ResponseMetadata): ResponseAs[T, R] =
+    conditions.find(mapping => mapping.condition(meta)).map(_.responseAs).getOrElse(default)
+}
 
 case class MappedResponseAs[T, T2, R](raw: ResponseAs[T, R], g: (T, ResponseMetadata) => T2) extends ResponseAs[T2, R] {
   override def mapWithMetadata[T3](f: (T2, ResponseMetadata) => T3): ResponseAs[T3, R] =
@@ -100,7 +105,7 @@ object ResponseAs {
       responseAs match {
         case MappedResponseAs(raw, g) =>
           responseMonad.map(handle(raw, responseMonad, meta))(t => g(t, meta))
-        case ResponseAsFromMetadata(f)         => handle(f(meta), responseMonad, meta)
+        case rfm: ResponseAsFromMetadata[T, R] => handle(rfm(meta), responseMonad, meta)
         case ras: ResponseAsStream[F, _, _, _] => handleStream(ras)
         case _: ResponseAsWebSocket[_, _]      => throw new IllegalStateException("WebSockets are not supported.")
         case bra: BasicResponseAs[T, R] =>

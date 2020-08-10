@@ -133,15 +133,17 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
       p: s.Pipe[WebSocketFrame.Data[_], WebSocketFrame]
   ): ResponseAs[Unit, S with WebSockets] = ResponseAsWebSocketStream(s, p)
 
-  def fromMetadata[T, R](f: ResponseMetadata => ResponseAs[T, R]): ResponseAs[T, R] = ResponseAsFromMetadata(f)
+  def fromMetadata[T, R](default: ResponseAs[T, R], conditions: ConditionalResponseAs[T, R]*): ResponseAs[T, R] =
+    ResponseAsFromMetadata(conditions.toList, default)
 
   def asEither[A, B, R](onError: ResponseAs[A, R], onSuccess: ResponseAs[B, R]): ResponseAs[Either[A, B], R] =
-    fromMetadata { meta => if (meta.isSuccess) onSuccess.map(Right(_)) else onError.map(Left(_)) }
+    fromMetadata(onError.map(Left(_)), ConditionalResponseAs(_.isSuccess, onSuccess.map(Right(_))))
 
   def asWebSocketEither[A, B, R](onError: ResponseAs[A, R], onSuccess: ResponseAs[B, R]): ResponseAs[Either[A, B], R] =
-    fromMetadata { meta =>
-      if (meta.code == StatusCode.SwitchingProtocols) onSuccess.map(Right(_)) else onError.map(Left(_))
-    }
+    fromMetadata(
+      onError.map(Left(_)),
+      ConditionalResponseAs(_.code == StatusCode.SwitchingProtocols, onSuccess.map(Right(_)))
+    )
 
   // multipart factory methods
 

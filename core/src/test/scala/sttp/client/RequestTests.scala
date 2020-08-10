@@ -43,12 +43,7 @@ class RequestTests extends AnyFlatSpec with Matchers {
       basicRequest
         .get(uri"https://test.com")
         .response {
-          fromMetadata { meta =>
-            meta.code match {
-              case StatusCode.Ok         => asLeft
-              case StatusCode.BadRequest => asRight
-            }
-          }
+          fromMetadata(asRight, ConditionalResponseAs(_.code == StatusCode.Ok, asLeft))
         }
   }
 }

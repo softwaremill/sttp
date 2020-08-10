@@ -63,7 +63,7 @@ private[asynchttpclient] trait BodyFromAHC[F[_], S] {
       case MappedResponseAs(raw, g) =>
         val nested = apply(p, raw, responseMetadata, isSubscribed, ws)
         nested.map(g(_, responseMetadata))
-      case ResponseAsFromMetadata(f) => apply(p, f(responseMetadata), responseMetadata, isSubscribed, ws)
+      case rfm: ResponseAsFromMetadata[TT, _] => apply(p, rfm(responseMetadata), responseMetadata, isSubscribed, ws)
 
       case ResponseAsStream(_, f) =>
         f.asInstanceOf[streams.BinaryStream => F[TT]](publisherToStream(p))
