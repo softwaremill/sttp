@@ -5,10 +5,9 @@ import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue, LinkedBlockingQu
 import sttp.client.ws.internal.AsyncQueue
 import sttp.model.ws.WebSocketBufferFull
 
-import scala.concurrent.ExecutionContext.Implicits.global //TODO is it safe to use Ec.global?
-import scala.concurrent.{Future, blocking}
+import scala.concurrent.{ExecutionContext, Future, blocking}
 
-class FutureAsyncQueue[T](capacity: Option[Int]) extends AsyncQueue[Future, T] {
+class FutureAsyncQueue[T](capacity: Option[Int])(implicit ec: ExecutionContext) extends AsyncQueue[Future, T] {
 
   private val queue: BlockingQueue[T] = capacity match {
     case Some(value) => new ArrayBlockingQueue[T](value)

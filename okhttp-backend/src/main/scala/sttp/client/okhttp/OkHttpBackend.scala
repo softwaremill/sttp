@@ -32,11 +32,10 @@ import sttp.client.ws.internal.{AsyncQueue, WebSocketEvent}
 import sttp.client.{Response, ResponseAs, SttpBackend, SttpBackendOptions, _}
 import sttp.model._
 import sttp.model.ws.WebSocketFrame
-import scala.concurrent.ExecutionContext.Implicits.global //TODO ?
 
 import scala.collection.JavaConverters._
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext, Future, blocking}
 
 abstract class OkHttpBackend[F[_], S <: Streams[S], P](
     client: OkHttpClient,
@@ -176,7 +175,7 @@ class OkHttpSyncBackend private (
     customEncodingHandler: EncodingHandler,
     webSocketBufferCapacity: Option[Int]
 ) extends OkHttpBackend[Identity, Nothing, WebSockets](client, closeClient, customEncodingHandler) {
-
+  private implicit val ec: ExecutionContext = ExecutionContext.global
   override val streams: Streams[Nothing] = NoStreams
 
   override def send[T, R >: PE](request: Request[T, R]): Identity[Response[T]] = {
@@ -203,7 +202,11 @@ class OkHttpSyncBackend private (
           val webSocket = new WebSocketImpl(nativeWs, queue, isOpen)
           val baseResponse = readResponse(response, ignore)
           val wsResponse =
-            Future(bodyFromOkHttp(new ByteArrayInputStream(Array()), request.response, baseResponse, Some(webSocket)))
+            Future(
+              blocking(
+                bodyFromOkHttp(new ByteArrayInputStream(Array()), request.response, baseResponse, Some(webSocket))
+              )
+            )
               .map(b => baseResponse.copy(body = b))
           fillCell(wsResponse)
         },
