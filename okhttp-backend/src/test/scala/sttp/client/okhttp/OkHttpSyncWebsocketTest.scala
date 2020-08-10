@@ -2,17 +2,13 @@ package sttp.client.okhttp
 
 import org.scalatest.Assertion
 import sttp.client._
-import sttp.client.internal.NoStreams
 import sttp.client.monad.syntax._
-import sttp.client.monad.{FutureMonad, IdMonad, MonadError}
+import sttp.client.monad.{IdMonad, MonadError}
 import sttp.client.testing.ConvertToFuture
 import sttp.client.testing.HttpTest.wsEndpoint
 import sttp.client.testing.websocket.WebSocketTest
-import sttp.client.ws.WebSocket
 
-import scala.annotation.tailrec
 import scala.concurrent.duration._
-import scala.concurrent.{Future, blocking}
 
 class OkHttpSyncWebsocketTest extends WebSocketTest[Identity] {
   override implicit val backend: SttpBackend[Identity, WebSockets] = OkHttpSyncBackend()
@@ -20,7 +16,6 @@ class OkHttpSyncWebsocketTest extends WebSocketTest[Identity] {
   override implicit val monad: MonadError[Identity] = IdMonad
 
   override def throwsWhenNotAWebSocket: Boolean = true
-  override def supportStreaming: Boolean = false
 
   it should "error if incoming messages overflow the buffer" in {
     basicRequest

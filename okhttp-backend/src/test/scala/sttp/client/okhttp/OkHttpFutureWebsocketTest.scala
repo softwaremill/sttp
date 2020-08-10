@@ -2,7 +2,6 @@ package sttp.client.okhttp
 
 import org.scalatest.Assertion
 import sttp.client._
-import sttp.client.internal.NoStreams
 import sttp.client.monad.{FutureMonad, MonadError}
 import sttp.client.testing.ConvertToFuture
 import sttp.client.testing.HttpTest.wsEndpoint
@@ -17,7 +16,6 @@ class OkHttpFutureWebsocketTest extends WebSocketTest[Future] {
   override implicit val monad: MonadError[Future] = new FutureMonad()
 
   override def throwsWhenNotAWebSocket: Boolean = true
-  override def supportStreaming: Boolean = false
 
   it should "error if incoming messages overflow the buffer" in {
     basicRequest

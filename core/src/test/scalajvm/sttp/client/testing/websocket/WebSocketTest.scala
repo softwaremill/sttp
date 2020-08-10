@@ -27,7 +27,6 @@ abstract class WebSocketTest[F[_]]
   implicit val monad: MonadError[F]
 
   def throwsWhenNotAWebSocket: Boolean = false
-  def supportStreaming: Boolean = true
 
   it should "send and receive three messages" in {
     basicRequest
