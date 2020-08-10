@@ -45,7 +45,7 @@ trait MonadAsyncError[F[_]] extends MonadError[F] {
 case class Canceler(cancel: () => Unit)
 
 object syntax {
-  implicit final class MonadErrorOps[F[_], A](private val r: F[A]) extends AnyVal {
+  implicit final class MonadErrorOps[F[_], A](r: => F[A]) {
     def map[B](f: A => B)(implicit ME: MonadError[F]): F[B] = ME.map(r)(f)
     def flatMap[B](f: A => F[B])(implicit ME: MonadError[F]): F[B] = ME.flatMap(r)(f)
     def >>[B](r2: F[B])(implicit ME: MonadError[F]): F[B] = ME.flatMap(r)(_ => r2)

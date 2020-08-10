@@ -25,5 +25,5 @@ class SyncQueue[T](capacity: Option[Int]) extends AsyncQueue[Identity, T] {
   /**
     * Takes an element from the queue or suspends, until one is available. May be eager or lazy, depending on `F`.
     */
-  override def poll: Identity[T] = queue.poll()
+  override def poll: Identity[T] = queue.take()
 }

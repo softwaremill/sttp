@@ -32,9 +32,11 @@ import sttp.client.ws.internal.{AsyncQueue, WebSocketEvent}
 import sttp.client.{Response, ResponseAs, SttpBackend, SttpBackendOptions, _}
 import sttp.model._
 import sttp.model.ws.WebSocketFrame
+import scala.concurrent.ExecutionContext.Implicits.global //TODO ?
 
 import scala.collection.JavaConverters._
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 abstract class OkHttpBackend[F[_], S <: Streams[S], P](
     client: OkHttpClient,
@@ -188,9 +190,9 @@ class OkHttpSyncBackend private (
   private def sendWebSocket[R >: PE, T](request: Request[T, R]) =
     adjustExceptions(isWebsocket = true) {
       val nativeRequest = convertRequest(request)
-      val responseCell = new ArrayBlockingQueue[Either[Throwable, Response[T]]](1)
+      val responseCell = new ArrayBlockingQueue[Either[Throwable, Future[Response[T]]]](5)
       def fillCellError(t: Throwable): Unit = responseCell.add(Left(t))
-      def fillCell(wr: Response[T]): Unit = responseCell.add(Right(wr))
+      def fillCell(wr: Future[Response[T]]): Unit = responseCell.add(Right(wr))
 
       implicit val m = responseMonad
       val queue = createAsyncQueue[WebSocketEvent]
@@ -201,7 +203,7 @@ class OkHttpSyncBackend private (
           val webSocket = new WebSocketImpl(nativeWs, queue, isOpen)
           val baseResponse = readResponse(response, ignore)
           val wsResponse =
-            bodyFromOkHttp(new ByteArrayInputStream(Array()), request.response, baseResponse, Some(webSocket))
+            Future(bodyFromOkHttp(new ByteArrayInputStream(Array()), request.response, baseResponse, Some(webSocket)))
               .map(b => baseResponse.copy(body = b))
           fillCell(wsResponse)
         },
@@ -212,7 +214,8 @@ class OkHttpSyncBackend private (
         .updateClientIfCustomReadTimeout(request, client)
         .newWebSocket(nativeRequest, listener)
 
-      responseCell.take().fold(throw _, identity)
+      val response = responseCell.take().fold(throw _, identity)
+      Await.result(response, Duration.Inf)
     }
 
   private def sendRegular[R >: PE, T](request: Request[T, R]) = {

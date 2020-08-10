@@ -24,7 +24,10 @@ class OkHttpSyncWebsocketTest extends WebSocketTest[Identity, Nothing] {
   override def functionToPipe(f: sttp.model.ws.WebSocketFrame.Data[_] => sttp.model.ws.WebSocketFrame): Nothing =
     throw new IllegalStateException()
 
-  ignore should "error if the endpoint is not a websocket" in {
+  override def throwsWhenNotAWebSocket: Boolean = true
+  override def supportStreaming: Boolean = false
+
+  it should "error if the endpoint is not a websocket" in {
     monad
       .handleError {
         basicRequest
@@ -38,12 +41,12 @@ class OkHttpSyncWebsocketTest extends WebSocketTest[Identity, Nothing] {
       .toFuture()
   }
 
-  ignore should "error if incoming messages overflow the buffer" in {
+  it should "error if incoming messages overflow the buffer" in {
     basicRequest
       .get(uri"$wsEndpoint/ws/echo")
       .response(asWebSocket[Identity, Assertion] { ws =>
-        send(ws, OkHttpBackend.DefaultWebSocketBufferCapacity.get + 1) >> eventually(10 millis, 400)(() =>
-          ws.isOpen.map(_ shouldBe false)
+        send(ws, OkHttpBackend.DefaultWebSocketBufferCapacity.get + 1).flatMap(_ =>
+          eventually(10 millis, 400)(() => ws.isOpen.map(_ shouldBe false))
         )
       })
       .send()
