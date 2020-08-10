@@ -11,15 +11,10 @@ import sttp.client.testing.websocket.WebSocketTest
 import scala.concurrent.{Future, blocking}
 import scala.concurrent.duration._
 
-class OkHttpFutureWebsocketTest extends WebSocketTest[Future, Nothing] {
-  override val streams: NoStreams = NoStreams
-  override implicit val backend: SttpBackend[Future, Nothing with WebSockets] =
-    OkHttpFutureBackend().asInstanceOf[SttpBackend[Future, Nothing with WebSockets]] //TODO how to remove nothing
+class OkHttpFutureWebsocketTest extends WebSocketTest[Future] {
+  override implicit val backend: SttpBackend[Future, WebSockets] = OkHttpFutureBackend()
   override implicit val convertToFuture: ConvertToFuture[Future] = ConvertToFuture.future
   override implicit val monad: MonadError[Future] = new FutureMonad()
-
-  override def functionToPipe(f: sttp.model.ws.WebSocketFrame.Data[_] => sttp.model.ws.WebSocketFrame): Nothing =
-    throw new IllegalStateException()
 
   override def throwsWhenNotAWebSocket: Boolean = true
   override def supportStreaming: Boolean = false

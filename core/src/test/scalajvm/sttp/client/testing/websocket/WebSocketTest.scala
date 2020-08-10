@@ -14,7 +14,7 @@ import sttp.client.testing.HttpTest.wsEndpoint
 import sttp.client.ws.WebSocket
 import sttp.model.ws.WebSocketFrame
 
-abstract class WebSocketTest[F[_], S]
+abstract class WebSocketTest[F[_]]
     extends SuiteMixin
     with AsyncFlatSpecLike
     with BeforeAndAfterAll
@@ -22,8 +22,7 @@ abstract class WebSocketTest[F[_], S]
     with ToFutureWrapper
     with TimeLimits {
 
-  val streams: Streams[S]
-  implicit val backend: SttpBackend[F, S with WebSockets]
+  implicit val backend: SttpBackend[F, WebSockets]
   implicit val convertToFuture: ConvertToFuture[F]
   implicit val monad: MonadError[F]
 
@@ -127,20 +126,6 @@ abstract class WebSocketTest[F[_], S]
     }
   }
 
-  if (supportStreaming) {
-    it should "use pipe to process websocket messages" in {
-      basicRequest
-        .get(uri"$wsEndpoint/ws/send_and_expect_echo")
-        .response(asWebSocketStreamAlways(streams)(functionToPipe {
-          case WebSocketFrame.Text(payload, _, _) =>
-            WebSocketFrame.text(payload + "-echo")
-        }))
-        .send()
-        .map(_ => succeed)
-        .toFuture()
-    }
-  }
-
   def send(ws: WebSocket[F], count: Int): F[Unit] = {
     val fs = (1 to count).map(i => () => ws.send(WebSocketFrame.text(s"test$i")))
     fs.foldLeft(().unit)((f1, lazy_f2) => f1.flatMap(_ => lazy_f2()))
@@ -150,10 +135,6 @@ abstract class WebSocketTest[F[_], S]
     val fs = (1 to count).map(i => () => ws.receiveText().map(_ shouldBe Right(s"echo: test$i")))
     fs.foldLeft(succeed.unit)((f1, lazy_f2) => f1.flatMap(_ => lazy_f2()))
   }
-
-  def functionToPipe(
-      f: WebSocketFrame.Data[_] => WebSocketFrame
-  ): streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]
 
   override protected def afterAll(): Unit = {
     backend.close().toFuture()

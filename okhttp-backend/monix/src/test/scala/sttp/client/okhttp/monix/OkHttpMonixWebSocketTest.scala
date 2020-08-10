@@ -10,7 +10,7 @@ import sttp.client.impl.monix.{MonixStreams, TaskMonadAsyncError, convertMonixTa
 import sttp.client.monad.MonadError
 import sttp.client.monad.syntax._
 import sttp.client.okhttp.OkHttpBackend
-import sttp.client.testing.ConvertToFuture
+import sttp.client.testing.{ConvertToFuture, WebSocketStreamingTest}
 import sttp.client.testing.HttpTest.wsEndpoint
 import sttp.client.testing.websocket.WebSocketTest
 import sttp.client.ws.WebSocket
@@ -18,7 +18,7 @@ import sttp.model.ws.WebSocketFrame
 
 import scala.concurrent.duration._
 
-class OkHttpMonixWebSocketTest extends WebSocketTest[Task, MonixStreams] {
+class OkHttpMonixWebSocketTest extends WebSocketTest[Task] with WebSocketStreamingTest[Task, MonixStreams] {
   override val streams: MonixStreams = MonixStreams
   override implicit val backend: SttpBackend[Task, MonixStreams with WebSockets] =
     OkHttpMonixBackend().runSyncUnsafe()

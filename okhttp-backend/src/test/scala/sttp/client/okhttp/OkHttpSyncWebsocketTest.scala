@@ -14,15 +14,10 @@ import scala.annotation.tailrec
 import scala.concurrent.duration._
 import scala.concurrent.{Future, blocking}
 
-class OkHttpSyncWebsocketTest extends WebSocketTest[Identity, Nothing] {
-  override val streams: NoStreams = NoStreams
-  override implicit val backend: SttpBackend[Identity, Nothing with WebSockets] =
-    OkHttpSyncBackend().asInstanceOf[SttpBackend[Identity, Nothing with WebSockets]] //TODO how to remove nothing
+class OkHttpSyncWebsocketTest extends WebSocketTest[Identity] {
+  override implicit val backend: SttpBackend[Identity, WebSockets] = OkHttpSyncBackend()
   override implicit val convertToFuture: ConvertToFuture[Identity] = ConvertToFuture.id
   override implicit val monad: MonadError[Identity] = IdMonad
-
-  override def functionToPipe(f: sttp.model.ws.WebSocketFrame.Data[_] => sttp.model.ws.WebSocketFrame): Nothing =
-    throw new IllegalStateException()
 
   override def throwsWhenNotAWebSocket: Boolean = true
   override def supportStreaming: Boolean = false

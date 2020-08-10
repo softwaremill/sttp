@@ -7,11 +7,12 @@ import sttp.client.monad.syntax._
 import sttp.client.testing.websocket.WebSocketTest
 import sttp.model.Uri._
 import sttp.client.testing.HttpTest.wsEndpoint
+import sttp.client.testing.WebSocketStreamingTest
 import sttp.client.ws.WebSocket
 
 import scala.concurrent.duration._
 
-abstract class AsyncHttpClientWebSocketTest[F[_], S] extends WebSocketTest[F, S] {
+abstract class AsyncHttpClientWebSocketTest[F[_], S] extends WebSocketTest[F] with WebSocketStreamingTest[F, S] {
 
   it should "error if incoming messages overflow the buffer" in {
     basicRequest

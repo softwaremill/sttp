@@ -3,13 +3,13 @@ package sttp.client.akkahttp
 import akka.stream.scaladsl.Flow
 import sttp.client._
 import sttp.client.monad.{FutureMonad, MonadError}
-import sttp.client.testing.ConvertToFuture
+import sttp.client.testing.{ConvertToFuture, WebSocketStreamingTest}
 import sttp.client.testing.websocket.WebSocketTest
 import sttp.model.ws.WebSocketFrame
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class AkkaHttpWebSocketTest extends WebSocketTest[Future, AkkaStreams] {
+class AkkaHttpWebSocketTest extends WebSocketTest[Future] with WebSocketStreamingTest[Future, AkkaStreams] {
   override val streams: AkkaStreams = AkkaStreams
   implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.global
 
