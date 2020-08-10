@@ -17,10 +17,11 @@ abstract class AsyncHttpClientWebSocketTest[F[_], S] extends WebSocketTest[F, S]
     basicRequest
       .get(uri"$wsEndpoint/ws/echo")
       .response(asWebSocketAlways { ws: WebSocket[F] =>
-        send(ws, AsyncHttpClientBackend.DefaultWebSocketBufferCapacity.get + 1) >>
+        send(ws, AsyncHttpClientBackend.DefaultWebSocketBufferCapacity.get + 1).flatMap { _ =>
           eventually(10.millis, 500) {
             ws.isOpen.map(_ shouldBe false)
           }
+        }
       })
       .send()
       .map(_.body)
