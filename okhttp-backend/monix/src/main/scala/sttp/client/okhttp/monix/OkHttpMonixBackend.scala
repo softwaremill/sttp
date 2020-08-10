@@ -73,7 +73,7 @@ class OkHttpMonixBackend private (
         new Iterator[T] {
           case object Completed extends Exception
 
-          val blockingQueue = new ArrayBlockingQueue[Either[Throwable, T]](100)
+          val blockingQueue = new ArrayBlockingQueue[Either[Throwable, T]](1)
 
           observable.executeAsync.subscribe(new Subscriber[T] {
             override implicit def scheduler: Scheduler = s
