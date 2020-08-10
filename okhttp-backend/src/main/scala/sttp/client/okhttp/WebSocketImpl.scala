@@ -22,9 +22,10 @@ class WebSocketImpl[F[_]](ws: OkHttpWebSocket, queue: AsyncQueue[F, WebSocketEve
     queue.poll.flatMap {
       case WebSocketEvent.Open() =>
         receive
-      case e @ WebSocketEvent.Error(t) =>
+      case e @ WebSocketEvent.Error(t: Exception) =>
         queue.offer(e)
         monad.error(t)
+      case WebSocketEvent.Error(t) => throw t
       case WebSocketEvent.Frame(f: WebSocketFrame.Incoming) =>
         monad.unit(Right(f))
       case WebSocketEvent.Frame(f: WebSocketFrame.Close) =>
@@ -40,10 +41,11 @@ class WebSocketImpl[F[_]](ws: OkHttpWebSocket, queue: AsyncQueue[F, WebSocketEve
       case WebSocketFrame.Binary(payload, _, _) =>
         fromBoolean(ws.send(new ByteString(payload)))
       case WebSocketFrame.Close(statusCode, reasonText) =>
-        if (ws.close(statusCode, reasonText)) { // TODO: should be sequentially idempotent? (like in ahc)
-          monad.unit(())
+        val wasOpen = _isOpen.getAndSet(false)
+        if (wasOpen) {
+          fromBoolean(ws.close(statusCode, reasonText))
         } else {
-          monad.error(new WebSocketClosed)
+          ().unit
         }
       case _: WebSocketFrame.Ping =>
         monad.error(new UnsupportedOperationException("Ping is handled by okhttp under the hood"))

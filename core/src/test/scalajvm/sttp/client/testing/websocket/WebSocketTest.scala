@@ -28,6 +28,7 @@ abstract class WebSocketTest[F[_], S]
   implicit val monad: MonadError[F]
 
   def throwsWhenNotAWebSocket: Boolean = false
+  def supportStreaming: Boolean = true
 
   it should "send and receive three messages" in {
     basicRequest
@@ -126,16 +127,18 @@ abstract class WebSocketTest[F[_], S]
     }
   }
 
-  it should "use pipe to process websocket messages" in {
-    basicRequest
-      .get(uri"$wsEndpoint/ws/send_and_expect_echo")
-      .response(asWebSocketStreamAlways(streams)(functionToPipe {
-        case WebSocketFrame.Text(payload, _, _) =>
-          WebSocketFrame.text(payload + "-echo")
-      }))
-      .send()
-      .map(_ => succeed)
-      .toFuture()
+  if (supportStreaming) {
+    it should "use pipe to process websocket messages" in {
+      basicRequest
+        .get(uri"$wsEndpoint/ws/send_and_expect_echo")
+        .response(asWebSocketStreamAlways(streams)(functionToPipe {
+          case WebSocketFrame.Text(payload, _, _) =>
+            WebSocketFrame.text(payload + "-echo")
+        }))
+        .send()
+        .map(_ => succeed)
+        .toFuture()
+    }
   }
 
   def send(ws: WebSocket[F], count: Int): F[Unit] = {

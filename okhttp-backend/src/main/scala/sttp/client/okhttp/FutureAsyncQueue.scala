@@ -1,12 +1,12 @@
 package sttp.client.okhttp
 
-import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue, ConcurrentLinkedQueue, LinkedBlockingQueue}
+import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue, LinkedBlockingQueue}
 
 import sttp.client.ws.internal.AsyncQueue
 import sttp.model.ws.WebSocketBufferFull
 
+import scala.concurrent.ExecutionContext.Implicits.global //TODO is it safe to use Ec.global?
 import scala.concurrent.{Future, blocking}
-import scala.concurrent.ExecutionContext.Implicits.global //TODO ??? or should we call blocking {}?
 
 class FutureAsyncQueue[T](capacity: Option[Int]) extends AsyncQueue[Future, T] {
 
@@ -27,5 +27,5 @@ class FutureAsyncQueue[T](capacity: Option[Int]) extends AsyncQueue[Future, T] {
   /**
     * Takes an element from the queue or suspends, until one is available. May be eager or lazy, depending on `F`.
     */
-  override def poll: Future[T] = Future(blocking(queue.poll()))
+  override def poll: Future[T] = Future(blocking(queue.take()))
 }

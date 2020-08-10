@@ -9,7 +9,6 @@ import sttp.client.testing.ConvertToFuture
 import sttp.client.testing.HttpTest.wsEndpoint
 import sttp.client.testing.websocket.WebSocketTest
 import sttp.client.ws.WebSocket
-import sttp.model.ws.WebSocketFrame
 
 import scala.concurrent.{Future, blocking}
 import scala.concurrent.duration._
@@ -24,7 +23,10 @@ class OkHttpFutureWebsocketTest extends WebSocketTest[Future, Nothing] {
   override def functionToPipe(f: sttp.model.ws.WebSocketFrame.Data[_] => sttp.model.ws.WebSocketFrame): Nothing =
     throw new IllegalStateException()
 
-  ignore should "error if the endpoint is not a websocket" in {
+  override def throwsWhenNotAWebSocket: Boolean = true
+  override def supportStreaming: Boolean = false
+
+  it should "error if the endpoint is not a websocket" in {
     monad
       .handleError {
         basicRequest
@@ -42,9 +44,10 @@ class OkHttpFutureWebsocketTest extends WebSocketTest[Future, Nothing] {
     basicRequest
       .get(uri"$wsEndpoint/ws/echo")
       .response(asWebSocketAlways[Future, Assertion] { ws =>
-        send(ws, OkHttpBackend.DefaultWebSocketBufferCapacity.get + 1) >> eventually(10.millis, 400)(() =>
-          ws.isOpen.map(_ shouldBe false)
-        )
+        for {
+          _ <- send(ws, OkHttpBackend.DefaultWebSocketBufferCapacity.get + 1)
+          result <- eventually(10.millis, 400)(() => ws.isOpen.map(_ shouldBe false))
+        } yield result
       })
       .send()
       .map(_.body)
@@ -54,9 +57,8 @@ class OkHttpFutureWebsocketTest extends WebSocketTest[Future, Nothing] {
   }
 
   private def eventually[T](interval: FiniteDuration, attempts: Int)(f: () => Future[T]): Future[T] = {
-    println("eventually")
-    (Future(blocking(Thread.sleep(interval.toMillis))) >> f()).recoverWith {
-      case e if attempts > 0 => eventually(interval, attempts - 1)(f)
+    Future(blocking(Thread.sleep(interval.toMillis))).flatMap(_ => f()).recoverWith {
+      case _ if attempts > 0 => eventually(interval, attempts - 1)(f)
     }
   }
 }
