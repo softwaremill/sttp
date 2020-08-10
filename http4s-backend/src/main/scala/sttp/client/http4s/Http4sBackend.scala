@@ -38,7 +38,7 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
     blocker: Blocker,
     customizeRequest: Http4sRequest[F] => Http4sRequest[F],
     customEncodingHandler: EncodingHandler[F]
-) extends SttpBackend[F, Fs2Streams[F], NothingT] {
+) extends SttpBackend[F, Fs2Streams[F]] {
   type PE = Fs2Streams[F] with Effect[F]
   override def send[T, R >: PE](r: Request[T, R]): F[Response[T]] =
     adjustExceptions {
@@ -87,11 +87,6 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
         }
       }
     }
-
-  override def openWebsocket[T, WS_RESULT, R >: PE](
-      request: Request[T, R],
-      handler: NothingT[WS_RESULT]
-  ): F[WebSocketResponse[WS_RESULT]] = handler // nothing is everything
 
   private def methodToHttp4s(m: Method): http4s.Method =
     m match {
@@ -207,8 +202,8 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
       case MappedResponseAs(raw, g) =>
         bodyFromHttp4s(raw, hr, signalBodyComplete, meta).map(g(_, meta))
 
-      case ResponseAsFromMetadata(f) =>
-        bodyFromHttp4s(f(meta), hr, signalBodyComplete, meta)
+      case raf: ResponseAsFromMetadata[T, R] =>
+        bodyFromHttp4s(raf(meta), hr, signalBodyComplete, meta)
 
       case IgnoreResponse =>
         hr.body.compile.drain.map(_ => ()) // adjusting type because ResponseAs is covariant
@@ -258,8 +253,8 @@ object Http4sBackend {
       blocker: Blocker,
       customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _,
       customEncodingHandler: EncodingHandler[F] = PartialFunction.empty
-  ): SttpBackend[F, Fs2Streams[F], NothingT] =
-    new FollowRedirectsBackend[F, Fs2Streams[F], NothingT](
+  ): SttpBackend[F, Fs2Streams[F]] =
+    new FollowRedirectsBackend[F, Fs2Streams[F]](
       new Http4sBackend[F](client, blocker, customizeRequest, customEncodingHandler)
     )
 
@@ -268,7 +263,7 @@ object Http4sBackend {
       blocker: Blocker,
       customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _,
       customEncodingHandler: EncodingHandler[F] = PartialFunction.empty
-  ): Resource[F, SttpBackend[F, Fs2Streams[F], NothingT]] = {
+  ): Resource[F, SttpBackend[F, Fs2Streams[F]]] = {
     blazeClientBuilder.resource.map(c => usingClient(c, blocker, customizeRequest, customEncodingHandler))
   }
 
@@ -277,7 +272,7 @@ object Http4sBackend {
       clientExecutionContext: ExecutionContext = ExecutionContext.global,
       customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _,
       customEncodingHandler: EncodingHandler[F] = PartialFunction.empty
-  ): Resource[F, SttpBackend[F, Fs2Streams[F], NothingT]] =
+  ): Resource[F, SttpBackend[F, Fs2Streams[F]]] =
     usingClientBuilder(BlazeClientBuilder[F](clientExecutionContext), blocker, customizeRequest, customEncodingHandler)
 
   /**
@@ -286,5 +281,5 @@ object Http4sBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub[F[_]: Concurrent]: SttpBackendStub[F, Fs2Streams[F], NothingT] = SttpBackendStub(new CatsMonadAsyncError)
+  def stub[F[_]: Concurrent]: SttpBackendStub[F, Fs2Streams[F]] = SttpBackendStub(new CatsMonadAsyncError)
 }
