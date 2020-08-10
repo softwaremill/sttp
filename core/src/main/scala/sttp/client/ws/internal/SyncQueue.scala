@@ -1,13 +1,11 @@
-package sttp.client.okhttp
+package sttp.client.ws.internal
 
 import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue, LinkedBlockingQueue}
 
-import sttp.client.ws.internal.AsyncQueue
+import sttp.client.Identity
 import sttp.model.ws.WebSocketBufferFull
 
-import scala.concurrent.{ExecutionContext, Future, blocking}
-
-class FutureAsyncQueue[T](capacity: Option[Int])(implicit ec: ExecutionContext) extends AsyncQueue[Future, T] {
+class SyncQueue[T](capacity: Option[Int]) extends AsyncQueue[Identity, T] {
 
   private val queue: BlockingQueue[T] = capacity match {
     case Some(value) => new ArrayBlockingQueue[T](value)
@@ -26,5 +24,5 @@ class FutureAsyncQueue[T](capacity: Option[Int])(implicit ec: ExecutionContext) 
   /**
     * Takes an element from the queue or suspends, until one is available. May be eager or lazy, depending on `F`.
     */
-  override def poll: Future[T] = Future(blocking(queue.take()))
+  override def poll: Identity[T] = queue.take()
 }

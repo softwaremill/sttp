@@ -28,7 +28,7 @@ import sttp.client.monad._
 import sttp.client.okhttp.OkHttpBackend.EncodingHandler
 import sttp.client.testing.SttpBackendStub
 import sttp.client.ws.WebSocket
-import sttp.client.ws.internal.{AsyncQueue, WebSocketEvent}
+import sttp.client.ws.internal.{AsyncQueue, FutureAsyncQueue, SyncQueue, WebSocketEvent}
 import sttp.client.{Response, ResponseAs, SttpBackend, SttpBackendOptions, _}
 import sttp.model._
 import sttp.model.ws.WebSocketFrame
@@ -345,27 +345,8 @@ abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](
       monad.flatten(
         createAsyncQueue[WebSocketEvent]
           .flatMap { queue =>
-            val isOpen = new AtomicBoolean(false)
-            val addToQueue = new AddToQueueListener(queue, isOpen)
             monad.async[F[Response[T]]] { cb =>
-              val listener = new DelegatingWebSocketListener(
-                addToQueue,
-                { (nativeWs, response) =>
-                  val webSocket = new WebSocketImpl(nativeWs, queue, isOpen)
-                  val wsResponse = readResponse(response, ignore)
-                    .flatMap { baseResponse =>
-                      bodyFromOkHttp(
-                        new ByteArrayInputStream(Array()), //TODO ugly hack
-                        request.response,
-                        baseResponse,
-                        Some(webSocket)
-                      ).map(b => baseResponse.copy(body = b))
-                    }
-                  cb(Right(wsResponse))
-                },
-                e => cb(Left(e))
-              )
-
+              val listener = createListener(queue, cb, request)
               val ws = OkHttpBackend
                 .updateClientIfCustomReadTimeout(request, client)
                 .newWebSocket(nativeRequest, listener)
@@ -375,6 +356,36 @@ abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](
           }
       )
     }
+
+  private def createListener[R >: PE, T](
+      queue: AsyncQueue[F, WebSocketEvent],
+      cb: Either[Throwable, F[Response[T]]] => Unit,
+      request: Request[T, R]
+  )(implicit m: MonadAsyncError[F]): DelegatingWebSocketListener = {
+    val isOpen = new AtomicBoolean(false)
+    val addToQueue = new AddToQueueListener(queue, isOpen)
+
+    def onOpen(nativeWs: OkHttpWebSocket, response: OkHttpResponse) = {
+      val webSocket = new WebSocketImpl(nativeWs, queue, isOpen)
+      val wsResponse = readResponse(response, ignore)
+        .flatMap { baseResponse =>
+          bodyFromOkHttp(
+            new ByteArrayInputStream(Array()), //TODO ugly hack
+            request.response,
+            baseResponse,
+            Some(webSocket)
+          ).map(b => baseResponse.copy(body = b))
+        }
+      cb(Right(wsResponse))
+    }
+    def onError(e: Throwable) = cb(Left(e))
+
+    new DelegatingWebSocketListener(
+      addToQueue,
+      onOpen,
+      onError
+    )
+  }
 
   private def adjustExceptions[T](isWebsocket: Boolean)(t: => F[T]): F[T] =
     SttpClientException.adjustExceptions(monad)(t)(OkHttpBackend.exceptionToSttpClientException(isWebsocket, _))
