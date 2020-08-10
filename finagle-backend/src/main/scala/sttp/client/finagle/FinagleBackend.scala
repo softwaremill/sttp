@@ -14,7 +14,6 @@ import sttp.client.{
   MappedResponseAs,
   MultipartBody,
   NoBody,
-  NothingT,
   Request,
   Response,
   ResponseAs,
@@ -48,7 +47,7 @@ import sttp.client.testing.SttpBackendStub
 
 import scala.io.Source
 
-class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture, Any, NothingT] {
+class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture, Any] {
   type PE = Any with Effect[TFuture]
   override def send[T, R >: PE](request: Request[T, R]): TFuture[Response[T]] =
     adjustExceptions {
@@ -68,11 +67,6 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
           case e: Exception => service.close().flatMap(_ => TFuture.exception(e))
         }
     }
-
-  override def openWebsocket[T, WS_RESULT, R >: PE](
-      request: Request[T, R],
-      handler: NothingT[WS_RESULT]
-  ): TFuture[WebSocketResponse[WS_RESULT]] = handler
 
   override def close(): TFuture[Unit] = TFuture.Done
 
@@ -157,7 +151,7 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
       case MappedResponseAs(raw, g) =>
         fromFinagleResponse(raw, r, meta).map(h => g(h, meta))
 
-      case ResponseAsFromMetadata(f) => fromFinagleResponse(f(meta), r, meta)
+      case raf: ResponseAsFromMetadata[T, Nothing] => fromFinagleResponse(raf(meta), r, meta)
 
       case IgnoreResponse =>
         TFuture(r.clearContent())
@@ -229,12 +223,12 @@ object TFutureMonadError extends MonadError[TFuture] {
 
 object FinagleBackend {
 
-  def apply(): SttpBackend[TFuture, Any, NothingT] = {
-    new FollowRedirectsBackend[TFuture, Any, NothingT](new FinagleBackend())
+  def apply(): SttpBackend[TFuture, Any] = {
+    new FollowRedirectsBackend[TFuture, Any](new FinagleBackend())
   }
 
-  def usingClient(client: Client): SttpBackend[TFuture, Any, NothingT] = {
-    new FollowRedirectsBackend[TFuture, Any, NothingT](new FinagleBackend(Some(client)))
+  def usingClient(client: Client): SttpBackend[TFuture, Any] = {
+    new FollowRedirectsBackend[TFuture, Any](new FinagleBackend(Some(client)))
   }
 
   /**
@@ -242,5 +236,5 @@ object FinagleBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub: SttpBackendStub[TFuture, Any, NothingT] = SttpBackendStub(TFutureMonadError)
+  def stub: SttpBackendStub[TFuture, Any] = SttpBackendStub(TFutureMonadError)
 }
