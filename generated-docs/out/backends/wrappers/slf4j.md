@@ -32,8 +32,8 @@ Example usage:
 import sttp.client._
 import sttp.client.logging.slf4j.Slf4jTimingBackend
 
-implicit val backend = Slf4jTimingBackend(HttpURLConnectionBackend())
-basicRequest.get(uri"https://httpbin.org/get").send()
+val backend = Slf4jTimingBackend(HttpURLConnectionBackend())
+basicRequest.get(uri"https://httpbin.org/get").send(backend)
 ```
 
 To create a customised logging backend, see the section on [custom backends](custom.md).

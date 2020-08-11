@@ -12,12 +12,12 @@ class SttpBackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFuture
 
   "backend stub" should "cycle through responses using a single sent request" in {
     // given
-    implicit val b: SttpBackendStub[Task, Any] = SttpBackendStub(new RIOMonadAsyncError[Any])
+    val backend: SttpBackendStub[Task, Any] = SttpBackendStub(new RIOMonadAsyncError[Any])
       .whenRequestMatches(_ => true)
       .thenRespondCyclic("a", "b", "c")
 
     // when
-    val r = basicRequest.get(uri"http://example.org/a/b/c").send()
+    val r = basicRequest.get(uri"http://example.org/a/b/c").send(backend)
 
     // then
     runtime.unsafeRun(r).body shouldBe Right("a")

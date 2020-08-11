@@ -12,7 +12,7 @@ import sttp.client.monad.syntax._
 
 trait WebSocketStreamingTest[F[_], S] extends ToFutureWrapper { outer: Suite with AsyncFlatSpecLike =>
   val streams: Streams[S]
-  implicit val backend: SttpBackend[F, S with WebSockets]
+  val backend: SttpBackend[F, S with WebSockets]
   implicit val monad: MonadError[F]
   implicit val convertToFuture: ConvertToFuture[F]
 
@@ -23,7 +23,7 @@ trait WebSocketStreamingTest[F[_], S] extends ToFutureWrapper { outer: Suite wit
         case WebSocketFrame.Text(payload, _, _) =>
           WebSocketFrame.text(payload + "-echo")
       }))
-      .send()
+      .send(backend)
       .map(_ => succeed)
       .toFuture()
   }

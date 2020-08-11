@@ -23,8 +23,8 @@ val request = basicRequest
   // use an optional parameter in the URI
   .post(uri"https://httpbin.org/post?signup=$signup")
 
-implicit val backend = HttpURLConnectionBackend()
-val response = request.send()
+val backend = HttpURLConnectionBackend()
+val response = request.send(backend)
 
 println(response.body)
 println(response.headers)
@@ -60,9 +60,9 @@ val request = basicRequest
   .get(uri"https://httpbin.org/get")
   .response(asJson[HttpBinResponse])
 
-implicit val backend = AkkaHttpBackend()
+val backend = AkkaHttpBackend()
 val response: Future[Response[Either[ResponseError[Exception], HttpBinResponse]]] =
-  request.send()
+  request.send(backend)
 
 for {
   r <- response
@@ -143,12 +143,12 @@ import monix.eval.Task
 
 case class Info(x: Int, y: String)
 
-val postTask = AsyncHttpClientMonixBackend().flatMap { implicit backend =>
+val postTask = AsyncHttpClientMonixBackend().flatMap { backend =>
   val r = basicRequest
     .body(Info(91, "abc"))
     .post(uri"https://httpbin.org/post")
 
-  r.send()
+  r.send(backend)
     .flatMap { response =>
       Task(println(s"""Got ${response.code} response, body:\n${response.body}"""))
     }
@@ -173,7 +173,7 @@ Example code:
 import sttp.client._
 import sttp.client.testing._
 
-implicit val backend = SttpBackendStub.synchronous
+val backend = SttpBackendStub.synchronous
   .whenRequestMatches(_.uri.paramsMap.contains("filter"))
   .thenRespond("Filtered")
   .whenRequestMatches(_.uri.path.contains("secret"))
@@ -183,14 +183,14 @@ val parameters1 = Map("filter" -> "name=mary", "sort" -> "asc")
 println(
   basicRequest
     .get(uri"http://example.org?search=true&$parameters1")
-    .send()
+    .send(backend)
     .body)
 
 val parameters2 = Map("sort" -> "desc")
 println(
   basicRequest
     .get(uri"http://example.org/secret/read?$parameters2")
-    .send()
+    .send(backend)
     .body)
 ```
 
@@ -346,13 +346,13 @@ import zio.clock.Clock
 import zio.duration._
 
 AsyncHttpClientZioBackend()
-  .flatMap { implicit backend =>
+  .flatMap { backend =>
     val localhostRequest = basicRequest
       .get(uri"http://localhost/test")
       .response(asStringAlways)
 
     val sendWithRetries: ZIO[Clock, Throwable, Response[String]] = localhostRequest
-      .send()
+      .send(backend)
       .either
       .repeat(
         Schedule.spaced(1.second) *>

@@ -19,7 +19,7 @@ class OpenTracingBackendTest extends AnyFlatSpec with Matchers with BeforeAndAft
 
   private val recordedRequests = mutable.ListBuffer[Request[_, _]]()
   private val tracer = new MockTracer()
-  private implicit val backend: SttpBackend[Identity, Any] =
+  private val backend: SttpBackend[Identity, Any] =
     OpenTracingBackend[Identity, Nothing](
       SttpBackendStub.apply(IdMonad).whenRequestMatchesPartial {
         case r if r.uri.toString.contains("echo") =>
@@ -37,7 +37,7 @@ class OpenTracingBackendTest extends AnyFlatSpec with Matchers with BeforeAndAft
   }
 
   "OpenTracingBackendTest" should "propagate span" in {
-    val response = basicRequest.post(uri"http://stub/echo").send()
+    val response = basicRequest.post(uri"http://stub/echo").send(backend)
     response.code shouldBe StatusCode.Ok
 
     val spans = tracer.finishedSpans()
@@ -54,7 +54,7 @@ class OpenTracingBackendTest extends AnyFlatSpec with Matchers with BeforeAndAft
     val operationName = "my-custom-ops-id"
     val span = tracer.buildSpan(operationName).start()
     tracer.activateSpan(span)
-    val response = basicRequest.post(uri"http://stub/echo").send()
+    val response = basicRequest.post(uri"http://stub/echo").send(backend)
     response.code shouldBe StatusCode.Ok
     span.finish()
 
@@ -74,7 +74,7 @@ class OpenTracingBackendTest extends AnyFlatSpec with Matchers with BeforeAndAft
       .post(uri"http://stub/echo")
       .tagWithOperationId("overridden-op")
       .setOpenTracingParentSpan(parentSpan)
-      .send()
+      .send(backend)
     response.code shouldBe StatusCode.Ok
     parentSpan.finish()
 
@@ -90,7 +90,7 @@ class OpenTracingBackendTest extends AnyFlatSpec with Matchers with BeforeAndAft
     val span = tracer.buildSpan("my-custom-ops-id").start()
     span.setBaggageItem("baggage1", "hello")
     tracer.activateSpan(span)
-    val response = basicRequest.post(uri"http://stub/echo").send()
+    val response = basicRequest.post(uri"http://stub/echo").send(backend)
     response.code shouldBe StatusCode.Ok
     span.finish()
 
@@ -100,14 +100,14 @@ class OpenTracingBackendTest extends AnyFlatSpec with Matchers with BeforeAndAft
   }
 
   it should "add status code when response is not error" in {
-    val response = basicRequest.post(uri"http://stub/echo").send()
+    val response = basicRequest.post(uri"http://stub/echo").send(backend)
     response.code shouldBe StatusCode.Ok
 
     tracer.finishedSpans().asScala.head.tags().asScala(Tags.HTTP_STATUS.getKey) shouldBe StatusCode.Ok.code
   }
 
   it should "add logs if response is error" in {
-    Try(basicRequest.post(uri"http://stub/error").send())
+    Try(basicRequest.post(uri"http://stub/error").send(backend))
 
     val finishedSpan = tracer
       .finishedSpans()
@@ -126,7 +126,7 @@ class OpenTracingBackendTest extends AnyFlatSpec with Matchers with BeforeAndAft
 
   it should "add standard tags during http call" in {
     val url = uri"http://stub/echo"
-    basicRequest.post(url).send()
+    basicRequest.post(url).send(backend)
     val tags = tracer.finishedSpans().asScala.head.tags().asScala
     tags(Tags.HTTP_METHOD.getKey) shouldBe Method.POST.method
     tags(Tags.HTTP_URL.getKey) shouldBe url.toJavaUri.toString
@@ -141,7 +141,7 @@ class OpenTracingBackendTest extends AnyFlatSpec with Matchers with BeforeAndAft
     basicRequest
       .post(url)
       .tagWithTransformSpan(_.setTag("custom-tag", "custom-value").setOperationName("new-name").log("my-event"))
-      .send()
+      .send(backend)
 
     val span = tracer.finishedSpans().asScala.head
     span.tags().get("custom-tag") shouldBe "custom-value"

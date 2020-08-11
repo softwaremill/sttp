@@ -8,7 +8,7 @@ import scala.concurrent.{Future, Promise}
 
 class FinagleBackendTest extends HttpTest[TFuture] {
 
-  override implicit val backend: SttpBackend[TFuture, Any] = FinagleBackend()
+  override val backend: SttpBackend[TFuture, Any] = FinagleBackend()
   override implicit val convertToFuture: ConvertToFuture[TFuture] = new ConvertToFuture[TFuture] {
     override def toFuture[T](value: TFuture[T]): Future[T] = {
       val promise: Promise[T] = Promise()

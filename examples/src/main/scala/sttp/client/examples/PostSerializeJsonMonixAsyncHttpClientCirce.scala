@@ -9,12 +9,12 @@ object PostSerializeJsonMonixAsyncHttpClientCirce extends App {
 
   case class Info(x: Int, y: String)
 
-  val postTask = AsyncHttpClientMonixBackend().flatMap { implicit backend =>
+  val postTask = AsyncHttpClientMonixBackend().flatMap { backend =>
     val r = basicRequest
       .body(Info(91, "abc"))
       .post(uri"https://httpbin.org/post")
 
-    r.send()
+    r.send(backend)
       .flatMap { response => Task(println(s"""Got ${response.code} response, body:\n${response.body}""")) }
       .guarantee(backend.close())
   }

@@ -18,7 +18,7 @@ trait SyncHttpTestExtensions {
     def loop = basicRequest.post(uri"$endpoint/redirect/loop").response(asStringAlways)
 
     "keep a single history entry of redirect responses" in {
-      val resp = r3.send()
+      val resp = r3.send(backend)
       resp.code shouldBe StatusCode.Ok
       resp.body should be(r4response)
       resp.history should have size (1)
@@ -26,7 +26,7 @@ trait SyncHttpTestExtensions {
     }
 
     "keep whole history of redirect responses" in {
-      val resp = r1.send()
+      val resp = r1.send(backend)
       resp.code shouldBe StatusCode.Ok
       resp.body should be(r4response)
       resp.history should have size (3)
@@ -37,14 +37,14 @@ trait SyncHttpTestExtensions {
 
     "break redirect loops" in {
       intercept[TooManyRedirectsException] {
-        loop.send()
+        loop.send(backend)
       }.redirects shouldBe FollowRedirectsBackend.MaxRedirects
     }
 
     "break redirect loops after user-specified count" in {
       val maxRedirects = 10
       intercept[TooManyRedirectsException] {
-        loop.maxRedirects(maxRedirects).send()
+        loop.maxRedirects(maxRedirects).send(backend)
       }.redirects shouldBe maxRedirects
     }
   }
@@ -74,7 +74,7 @@ trait SyncHttpTestExtensions {
   "body" - {
     "post a file" in {
       withTemporaryFile(Some(testBodyBytes)) { f =>
-        val response = postEcho.body(f).send()
+        val response = postEcho.body(f).send(backend)
         response.body should be(Right(expectedPostEchoResponse))
       }
     }
@@ -85,7 +85,7 @@ trait SyncHttpTestExtensions {
     "download a binary file using asFile" in {
       withTemporaryNonExistentFile { file =>
         val req = basicRequest.get(uri"$endpoint/download/binary").response(asFile(file))
-        val resp = req.send()
+        val resp = req.send(backend)
         md5FileHash(resp.body.right.get).map { _ shouldBe binaryFileMD5Hash }
       }
     }
@@ -93,7 +93,7 @@ trait SyncHttpTestExtensions {
     "download a text file using asFile" in {
       withTemporaryNonExistentFile { file =>
         val req = basicRequest.get(uri"$endpoint/download/text").response(asFile(file))
-        val resp = req.send()
+        val resp = req.send(backend)
         md5FileHash(resp.body.right.get).map { _ shouldBe textFileMD5Hash }
       }
     }
@@ -105,7 +105,7 @@ trait SyncHttpTestExtensions {
     "send a multipart message with a file" in {
       withTemporaryFile(Some(testBodyBytes)) { f =>
         val req = mp.multipartBody(multipartFile("p1", f), multipart("p2", "v2"))
-        val resp = req.send()
+        val resp = req.send(backend)
         resp.body should be(Right(s"p1=$testBody (${f.getName}), p2=v2$defaultFileName"))
       }
     }

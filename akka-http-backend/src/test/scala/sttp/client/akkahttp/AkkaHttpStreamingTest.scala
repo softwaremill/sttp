@@ -14,7 +14,7 @@ class AkkaHttpStreamingTest extends StreamingTest[Future, AkkaStreams] {
 
   private implicit val actorSystem: ActorSystem = ActorSystem("sttp-test")
 
-  override implicit val backend: SttpBackend[Future, AkkaStreams] =
+  override val backend: SttpBackend[Future, AkkaStreams] =
     AkkaHttpBackend.usingActorSystem(actorSystem)
 
   override implicit val convertToFuture: ConvertToFuture[Future] =

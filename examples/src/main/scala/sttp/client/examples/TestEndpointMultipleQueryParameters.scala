@@ -4,7 +4,7 @@ object TestEndpointMultipleQueryParameters extends App {
   import sttp.client._
   import sttp.client.testing._
 
-  implicit val backend = SttpBackendStub.synchronous
+  val backend = SttpBackendStub.synchronous
     .whenRequestMatches(_.uri.paramsMap.contains("filter"))
     .thenRespond("Filtered")
     .whenRequestMatches(_.uri.path.contains("secret"))
@@ -14,7 +14,7 @@ object TestEndpointMultipleQueryParameters extends App {
   println(
     basicRequest
       .get(uri"http://example.org?search=true&$parameters1")
-      .send()
+      .send(backend)
       .body
   )
 
@@ -22,7 +22,7 @@ object TestEndpointMultipleQueryParameters extends App {
   println(
     basicRequest
       .get(uri"http://example.org/secret/read?$parameters2")
-      .send()
+      .send(backend)
       .body
   )
 }

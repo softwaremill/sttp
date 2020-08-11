@@ -7,7 +7,7 @@ import scala.concurrent.Future
 
 class AsyncHttpClientFutureHttpTest extends HttpTest[Future] {
 
-  override implicit val backend: SttpBackend[Future, Any] = AsyncHttpClientFutureBackend()
+  override val backend: SttpBackend[Future, Any] = AsyncHttpClientFutureBackend()
   override implicit val convertToFuture: ConvertToFuture[Future] = ConvertToFuture.future
 
   override def throwsExceptionOnUnsupportedEncoding = false

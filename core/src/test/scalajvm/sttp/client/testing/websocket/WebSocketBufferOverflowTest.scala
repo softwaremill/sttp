@@ -14,7 +14,7 @@ import scala.concurrent.duration.FiniteDuration
 import sttp.client.monad.syntax._
 
 trait WebSocketBufferOverflowTest[F[_]] { outer: Suite with AsyncFlatSpecLike with WebSocketTest[F] =>
-  implicit val backend: SttpBackend[F, WebSockets]
+  val backend: SttpBackend[F, WebSockets]
   implicit val monad: MonadError[F]
   implicit val convertToFuture: ConvertToFuture[F]
   def bufferCapacity: Int
@@ -29,7 +29,7 @@ trait WebSocketBufferOverflowTest[F[_]] { outer: Suite with AsyncFlatSpecLike wi
           }
         }
       })
-      .send()
+      .send(backend)
       .map(_.body)
       .handleError {
         case _: ClosedChannelException => succeed.unit

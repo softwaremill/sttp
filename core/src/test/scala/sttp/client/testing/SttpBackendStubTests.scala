@@ -38,88 +38,88 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
     )
 
   "backend stub" should "use the first rule if it matches" in {
-    implicit val b = testingStub
-    val r = basicRequest.get(uri"http://example.org/a/b/c").send()
+    val backend = testingStub
+    val r = basicRequest.get(uri"http://example.org/a/b/c").send(backend)
     r.is200 should be(true)
     r.body should be(Right(""))
   }
 
   it should "use subsequent rules if the first doesn't match" in {
-    implicit val b = testingStub
+    val backend = testingStub
     val r = basicRequest
       .get(uri"http://example.org/d?p=v")
       .response(asString.mapRight(_.toInt))
-      .send()
+      .send(backend)
     r.body should be(Right(10))
   }
 
   it should "use the first specified rule if multiple match" in {
-    implicit val b = testingStub
-    val r = basicRequest.get(uri"http://example.org/a/b/c?p=v").send()
+    val backend = testingStub
+    val r = basicRequest.get(uri"http://example.org/a/b/c?p=v").send(backend)
     r.is200 should be(true)
     r.body should be(Right(""))
   }
 
   it should "respond with monad with set response" in {
-    implicit val b = testingStub
-    val r = basicRequest.post(uri"http://example.org:8080").send()
+    val backend = testingStub
+    val r = basicRequest.post(uri"http://example.org:8080").send(backend)
     r.is200 should be(true)
     r.body should be(Right("OK from monad"))
   }
 
   it should "respond with monad with response created from request" in {
-    implicit val b = testingStub
-    val r = basicRequest.post(uri"http://example.org:8081").send()
+    val backend = testingStub
+    val r = basicRequest.post(uri"http://example.org:8081").send(backend)
     r.is200 should be(true)
     r.body should be(Right("OK from request. Request was sent to host: example.org"))
   }
 
   it should "use the default response if no rule matches" in {
-    implicit val b = testingStub
-    val r = basicRequest.put(uri"http://example.org/d").send()
+    val backend = testingStub
+    val r = basicRequest.put(uri"http://example.org/d").send(backend)
     r.code shouldBe StatusCode.NotFound
     r.body.isLeft shouldBe true
     r.body.left.get should startWith("Not Found")
   }
 
   it should "wrap responses in the desired monad" in {
-    implicit val b = SttpBackendStub[Try, Any](TryMonad)
-    val r = basicRequest.post(uri"http://example.org").send()
+    val backend = SttpBackendStub[Try, Any](TryMonad)
+    val r = basicRequest.post(uri"http://example.org").send(backend)
     r.map(_.code) shouldBe Success(StatusCode.NotFound)
   }
 
   it should "use rules in partial function" in {
-    implicit val s = testingStub
-    val r = basicRequest.post(uri"http://example.org/partial10").send()
+    val backend = testingStub
+    val r = basicRequest.post(uri"http://example.org/partial10").send(backend)
     r.is200 should be(true)
     r.body should be(Right("10"))
 
-    val ada = basicRequest.post(uri"http://example.org/partialAda").send()
+    val ada = basicRequest.post(uri"http://example.org/partialAda").send(backend)
     ada.is200 should be(true)
     ada.body should be(Right("Ada"))
   }
 
   it should "handle exceptions thrown instead of a response (synchronous)" in {
-    implicit val s = SttpBackendStub[Identity, Any](IdMonad)
+    val backend = SttpBackendStub[Identity, Any](IdMonad)
       .whenRequestMatches(_ => true)
       .thenRespond(throw new TimeoutException())
 
     a[TimeoutException] should be thrownBy {
-      basicRequest.get(uri"http://example.org").send()
+      basicRequest.get(uri"http://example.org").send(backend)
     }
   }
 
   it should "handle exceptions thrown instead of a response (asynchronous)" in {
-    implicit val s: SttpBackendStub[Future, Any] = SttpBackendStub(new FutureMonad())
+    val backend: SttpBackendStub[Future, Any] = SttpBackendStub(new FutureMonad())
       .whenRequestMatches(_ => true)
       .thenRespond(throw new TimeoutException())
 
-    val result = basicRequest.get(uri"http://example.org").send()
+    val result = basicRequest.get(uri"http://example.org").send(backend)
     result.failed.map(_ shouldBe a[TimeoutException])
   }
 
   it should "try to convert a basic response to a mapped one" in {
-    implicit val s = SttpBackendStub[Identity, Any](IdMonad)
+    val backend = SttpBackendStub[Identity, Any](IdMonad)
       .whenRequestMatches(_ => true)
       .thenRespond("10")
 
@@ -127,51 +127,51 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
       .get(uri"http://example.org")
       .mapResponseRight(_.toInt)
       .mapResponseRight(_ * 2)
-      .send()
+      .send(backend)
 
     result.body should be(Right(20))
   }
 
   it should "handle a 201 as a success" in {
-    implicit val s = SttpBackendStub[Identity, Any](IdMonad).whenAnyRequest
+    val backend = SttpBackendStub[Identity, Any](IdMonad).whenAnyRequest
       .thenRespondWithCode(StatusCode.Created)
 
     val result = basicRequest
       .get(uri"http://example.org")
-      .send()
+      .send(backend)
 
     result.body should be(Right(""))
   }
 
   it should "handle a 300 as a failure" in {
-    implicit val s = SttpBackendStub[Identity, Any](IdMonad).whenAnyRequest
+    val backend = SttpBackendStub[Identity, Any](IdMonad).whenAnyRequest
       .thenRespondWithCode(StatusCode.MultipleChoices)
 
     val result = basicRequest
       .get(uri"http://example.org")
-      .send()
+      .send(backend)
 
     result.body should be(Left(""))
   }
 
   it should "handle a 400 as a failure" in {
-    implicit val s = SttpBackendStub[Identity, Any](IdMonad).whenAnyRequest
+    val backend = SttpBackendStub[Identity, Any](IdMonad).whenAnyRequest
       .thenRespondWithCode(StatusCode.BadRequest)
 
     val result = basicRequest
       .get(uri"http://example.org")
-      .send()
+      .send(backend)
 
     result.body should be(Left(""))
   }
 
   it should "handle a 500 as a failure" in {
-    implicit val s = SttpBackendStub[Identity, Any](IdMonad).whenAnyRequest
+    val backend = SttpBackendStub[Identity, Any](IdMonad).whenAnyRequest
       .thenRespondWithCode(StatusCode.InternalServerError)
 
     val result = basicRequest
       .get(uri"http://example.org")
-      .send()
+      .send(backend)
 
     result.body should be(Left(""))
   }
@@ -181,14 +181,14 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
     val LongTimeMillis = LongTime.toMillis
     val before = System.currentTimeMillis()
 
-    implicit val s: SttpBackendStub[Future, Any] = SttpBackendStub(new FutureMonad()).whenAnyRequest
+    val backend: SttpBackendStub[Future, Any] = SttpBackendStub(new FutureMonad()).whenAnyRequest
       .thenRespondWrapped(Platform.delayedFuture(LongTime) {
         Response(Right("OK"), StatusCode.Ok, "", Nil, Nil)
       })
 
     basicRequest
       .get(uri"http://example.org")
-      .send()
+      .send(backend)
 
     val after = System.currentTimeMillis()
 
@@ -196,32 +196,36 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
   }
 
   it should "serve consecutive raw responses" in {
-    implicit val s: SttpBackend[Identity, Any] = SttpBackendStub(IdMonad).whenAnyRequest
+    val backend: SttpBackend[Identity, Any] = SttpBackendStub(IdMonad).whenAnyRequest
       .thenRespondCyclic("first", "second", "third")
 
-    basicRequest.get(uri"http://example.org").send().body should be(Right("first"))
-    basicRequest.get(uri"http://example.org").send().body should be(Right("second"))
-    basicRequest.get(uri"http://example.org").send().body should be(Right("third"))
-    basicRequest.get(uri"http://example.org").send().body should be(Right("first"))
+    basicRequest.get(uri"http://example.org").send(backend).body should be(Right("first"))
+    basicRequest.get(uri"http://example.org").send(backend).body should be(Right("second"))
+    basicRequest.get(uri"http://example.org").send(backend).body should be(Right("third"))
+    basicRequest.get(uri"http://example.org").send(backend).body should be(Right("first"))
   }
 
   it should "serve consecutive responses" in {
-    implicit val s: SttpBackend[Identity, Any] = SttpBackendStub(IdMonad).whenAnyRequest
+    val backend: SttpBackend[Identity, Any] = SttpBackendStub(IdMonad).whenAnyRequest
       .thenRespondCyclicResponses(
         Response.ok[String]("first"),
         Response("error", StatusCode.InternalServerError, "Something went wrong")
       )
 
-    basicRequest.get(uri"http://example.org").send().is200 should be(true)
-    basicRequest.get(uri"http://example.org").send().isServerError should be(true)
-    basicRequest.get(uri"http://example.org").send().is200 should be(true)
+    basicRequest.get(uri"http://example.org").send(backend).is200 should be(true)
+    basicRequest.get(uri"http://example.org").send(backend).isServerError should be(true)
+    basicRequest.get(uri"http://example.org").send(backend).is200 should be(true)
   }
 
   it should "always return a string when requested to do so" in {
-    implicit val s: SttpBackend[Identity, Any] = SttpBackendStub(IdMonad).whenAnyRequest
+    val backend: SttpBackend[Identity, Any] = SttpBackendStub(IdMonad).whenAnyRequest
       .thenRespondServerError()
 
-    basicRequest.get(uri"http://example.org").response(asStringAlways).send().body shouldBe "Internal server error"
+    basicRequest
+      .get(uri"http://example.org")
+      .response(asStringAlways)
+      .send(backend)
+      .body shouldBe "Internal server error"
   }
 
   private val testingStubWithFallback = SttpBackendStub
@@ -230,16 +234,16 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
     .thenRespond("ok")
 
   "backend stub with fallback" should "use the stub when response for a request is defined" in {
-    implicit val b = testingStubWithFallback
+    val backend = testingStubWithFallback
 
-    val r = basicRequest.post(uri"http://example.org/c").send()
+    val r = basicRequest.post(uri"http://example.org/c").send(backend)
     r.body should be(Right("ok"))
   }
 
   it should "delegate to the fallback for unhandled requests" in {
-    implicit val b = testingStubWithFallback
+    val backend = testingStubWithFallback
 
-    val r = basicRequest.post(uri"http://example.org/a/b").send()
+    val r = basicRequest.post(uri"http://example.org/a/b").send(backend)
     r.is200 should be(true)
   }
 

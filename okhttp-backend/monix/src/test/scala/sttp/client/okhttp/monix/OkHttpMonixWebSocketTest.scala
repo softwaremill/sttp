@@ -18,7 +18,7 @@ class OkHttpMonixWebSocketTest
     with WebSocketStreamingTest[Task, MonixStreams]
     with WebSocketBufferOverflowTest[Task] {
   override val streams: MonixStreams = MonixStreams
-  override implicit val backend: SttpBackend[Task, MonixStreams with WebSockets] =
+  override val backend: SttpBackend[Task, MonixStreams with WebSockets] =
     OkHttpMonixBackend().runSyncUnsafe()
   override implicit val convertToFuture: ConvertToFuture[Task] = convertMonixTaskToFuture
   override implicit val monad: MonadError[Task] = TaskMonadAsyncError

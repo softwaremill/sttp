@@ -6,6 +6,6 @@ import sttp.client.SttpBackend
 import sttp.client.impl.monix.{MonixStreamingTest, MonixStreams}
 
 class AsyncHttpClientMonixStreamingTest extends MonixStreamingTest {
-  override implicit val backend: SttpBackend[Task, MonixStreams] =
+  override val backend: SttpBackend[Task, MonixStreams] =
     AsyncHttpClientMonixBackend().runSyncUnsafe()
 }

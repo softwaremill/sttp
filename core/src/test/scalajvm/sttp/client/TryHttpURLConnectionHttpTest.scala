@@ -7,6 +7,6 @@ import sttp.client.testing.HttpTest
 
 class TryHttpURLConnectionHttpTest extends HttpTest[Try] {
 
-  override implicit val backend: SttpBackend[Try, Any] = TryHttpURLConnectionBackend()
+  override val backend: SttpBackend[Try, Any] = TryHttpURLConnectionBackend()
   override implicit val convertToFuture: ConvertToFuture[Try] = ConvertToFuture.scalaTry
 }

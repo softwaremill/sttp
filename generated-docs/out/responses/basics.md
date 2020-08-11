@@ -21,10 +21,9 @@ Individual headers can be obtained using the methods:
 ```scala
 import sttp.model._
 import sttp.client._
-implicit val backend = HttpURLConnectionBackend()
-val request = basicRequest
-    .get(uri"http://endpoint.com/example")
-val response = request.send()
+val backend = HttpURLConnectionBackend()
+val request = basicRequest.get(uri"http://endpoint.com/example")
+val response = request.send(backend)
 
 val singleHeader: Option[String] = response.header(HeaderNames.Server)
 val multipleHeaders: Seq[String] = response.headers(HeaderNames.Allow)

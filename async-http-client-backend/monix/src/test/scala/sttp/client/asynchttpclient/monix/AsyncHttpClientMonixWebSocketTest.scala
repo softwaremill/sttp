@@ -15,7 +15,7 @@ import scala.concurrent.duration.FiniteDuration
 class AsyncHttpClientMonixWebSocketTest extends AsyncHttpClientWebSocketTest[Task, MonixStreams] {
   override val streams: MonixStreams = MonixStreams
 
-  override implicit val backend: SttpBackend[Task, MonixStreams with WebSockets] =
+  override val backend: SttpBackend[Task, MonixStreams with WebSockets] =
     AsyncHttpClientMonixBackend().runSyncUnsafe()
   override implicit val convertToFuture: ConvertToFuture[Task] = convertMonixTaskToFuture
   override implicit val monad: MonadError[Task] = TaskMonadAsyncError

@@ -6,7 +6,7 @@ import sttp.client.impl.cats.CatsTestBase
 import sttp.client.testing.HttpTest
 
 class AsyncHttpClientFs2HttpTest extends HttpTest[IO] with CatsTestBase {
-  override implicit val backend: SttpBackend[IO, Any] = AsyncHttpClientFs2Backend[IO]().unsafeRunSync()
+  override val backend: SttpBackend[IO, Any] = AsyncHttpClientFs2Backend[IO]().unsafeRunSync()
 
   override def throwsExceptionOnUnsupportedEncoding = false
 }

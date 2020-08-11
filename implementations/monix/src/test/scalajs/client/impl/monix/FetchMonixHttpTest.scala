@@ -7,7 +7,7 @@ import sttp.client.impl.monix.MonixStreams
 
 class FetchMonixHttpTest extends AbstractFetchHttpTest[Task, MonixStreams] {
 
-  override implicit val backend: SttpBackend[Task, MonixStreams] = FetchMonixBackend()
+  override val backend: SttpBackend[Task, MonixStreams] = FetchMonixBackend()
   override implicit val convertToFuture: ConvertToFuture[Task] = convertMonixTaskToFuture
 
   override protected def supportsCustomMultipartContentType = false

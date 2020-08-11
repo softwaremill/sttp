@@ -13,7 +13,7 @@ class AkkaHttpWebSocketTest extends WebSocketTest[Future] with WebSocketStreamin
   override val streams: AkkaStreams = AkkaStreams
   implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.global
 
-  override implicit val backend: SttpBackend[Future, AkkaStreams with WebSockets] = AkkaHttpBackend()
+  override val backend: SttpBackend[Future, AkkaStreams with WebSockets] = AkkaHttpBackend()
   override implicit val convertToFuture: ConvertToFuture[Future] = ConvertToFuture.future
   override implicit val monad: MonadError[Future] = new FutureMonad
 

@@ -51,10 +51,10 @@ And that's all you need to start using sttp client! To create and send your firs
 ```scala
 import sttp.client._
 
-implicit val backend = HttpURLConnectionBackend()
+val backend = HttpURLConnectionBackend()
 val response = basicRequest
   .body("Hello, world!")  
-  .post(uri"https://httpbin.org/post?hello=world").send()
+  .post(uri"https://httpbin.org/post?hello=world").send(backend)
 
 println(response.body)            
 ```

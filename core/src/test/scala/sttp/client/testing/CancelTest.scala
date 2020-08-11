@@ -10,7 +10,7 @@ import sttp.client.testing.HttpTest.endpoint
 
 trait CancelTest[F[_], P] extends AsyncFreeSpecLike with Matchers with ToFutureWrapper with BeforeAndAfterAll {
 
-  implicit def backend: SttpBackend[F, P]
+  def backend: SttpBackend[F, P]
 
   implicit def convertToFuture: ConvertToFuture[F]
 
@@ -30,7 +30,7 @@ trait CancelTest[F[_], P] extends AsyncFreeSpecLike with Matchers with ToFutureW
       convertToFuture.toFuture(
         now
           .flatMap { start =>
-            timeoutToNone(req.send(), 100)
+            timeoutToNone(req.send(backend), 100)
               .map { r =>
                 (System.currentTimeMillis() - start) should be < 2000L
                 r shouldBe None

@@ -8,7 +8,7 @@ import org.scalatest.matchers.should.Matchers
 
 @Ignore
 class OkHttpSyncDigestAuthProxyManualTest extends AsyncFreeSpec with Matchers with ToFutureWrapper {
-  implicit val backend: SttpBackend[Identity, WebSockets] =
+  val backend: SttpBackend[Identity, WebSockets] =
     new DigestAuthenticationBackend[Identity, WebSockets](
       OkHttpSyncBackend(options = SttpBackendOptions.httpProxy("localhost", 3128))
     )
@@ -22,7 +22,7 @@ class OkHttpSyncDigestAuthProxyManualTest extends AsyncFreeSpec with Matchers wi
       .digest("andrzej", "test")
       .proxyAuth
       .digest("kasper", "qweqwe")
-      .send()
+      .send(backend)
     response.code.code shouldBe 200
   }
 }

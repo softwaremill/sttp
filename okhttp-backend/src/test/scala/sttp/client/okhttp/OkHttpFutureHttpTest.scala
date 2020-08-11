@@ -7,6 +7,6 @@ import scala.concurrent.Future
 
 class OkHttpFutureHttpTest extends HttpTest[Future] {
 
-  override implicit val backend: SttpBackend[Future, WebSockets] = OkHttpFutureBackend()
+  override val backend: SttpBackend[Future, WebSockets] = OkHttpFutureBackend()
   override implicit val convertToFuture: ConvertToFuture[Future] = ConvertToFuture.future
 }

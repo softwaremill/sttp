@@ -22,7 +22,7 @@ abstract class WebSocketTest[F[_]]
     with ToFutureWrapper
     with TimeLimits {
 
-  implicit val backend: SttpBackend[F, WebSockets]
+  val backend: SttpBackend[F, WebSockets]
   implicit val convertToFuture: ConvertToFuture[F]
   implicit val monad: MonadError[F]
 
@@ -38,7 +38,7 @@ abstract class WebSocketTest[F[_]]
           _ <- ws.close
         } yield succeed
       })
-      .send()
+      .send(backend)
       .map(_ => succeed)
       .toFuture()
   }
@@ -47,7 +47,7 @@ abstract class WebSocketTest[F[_]]
     basicRequest
       .get(uri"$wsEndpoint/ws/echo")
       .response(asWebSocketUnsafeAlways[F])
-      .send()
+      .send(backend)
       .flatMap { response =>
         val ws = response.body
 
@@ -64,7 +64,7 @@ abstract class WebSocketTest[F[_]]
     basicRequest
       .get(uri"$wsEndpoint/ws/echo")
       .response(asWebSocketUnsafeAlways[F])
-      .send()
+      .send(backend)
       .flatMap { response =>
         val ws = response.body
 
@@ -81,7 +81,7 @@ abstract class WebSocketTest[F[_]]
     basicRequest
       .get(uri"$wsEndpoint/ws/send_and_wait")
       .response(asWebSocketUnsafeAlways[F])
-      .send()
+      .send(backend)
       .flatMap { response =>
         val ws = response.body
         for {
@@ -99,7 +99,7 @@ abstract class WebSocketTest[F[_]]
       basicRequest
         .get(uri"$wsEndpoint/ws/404")
         .response(asWebSocketUnsafeAlways[F])
-        .send()
+        .send(backend)
         .map(_ => fail("should not open WebSocket"))
         .handleError {
           case _: ReadException => monad.unit(succeed)
@@ -114,7 +114,7 @@ abstract class WebSocketTest[F[_]]
       basicRequest
         .get(uri"$wsEndpoint/ws/404")
         .response(asWebSocketUnsafe[F])
-        .send()
+        .send(backend)
         .map {
           _.body.isLeft shouldBe true
         }

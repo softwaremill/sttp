@@ -17,7 +17,7 @@ trait HttpTestExtensions[F[_]] { self: HttpTest[F] =>
       basicRequest
         .get(uri"$endpoint/cookies/set")
         .response(sttpIgnore)
-        .send()
+        .send(backend)
         .toFuture()
         .map { response =>
           response.cookies should have length (3)
@@ -35,7 +35,7 @@ trait HttpTestExtensions[F[_]] { self: HttpTest[F] =>
       basicRequest
         .get(uri"$endpoint/cookies/set_with_expires")
         .response(sttpIgnore)
-        .send()
+        .send(backend)
         .toFuture()
         .map { response =>
           response.cookies should have length (1)
@@ -58,13 +58,13 @@ trait HttpTestExtensions[F[_]] { self: HttpTest[F] =>
       basicRequest
         .get(uri"$endpoint/cookies/set")
         .response(sttpIgnore)
-        .send()
+        .send(backend)
         .toFuture()
         .flatMap { _ =>
           basicRequest
             .get(uri"$endpoint/cookies/get_cookie2")
             .response(asStringAlways)
-            .send()
+            .send(backend)
             .toFuture()
             .map { response => response.body shouldBe "no cookie" }
         }
@@ -79,7 +79,7 @@ trait HttpTestExtensions[F[_]] { self: HttpTest[F] =>
     def loop = basicRequest.post(uri"$endpoint/redirect/loop")
 
     "keep a single history entry of redirect responses" in {
-      r3.send().toFuture().map { resp =>
+      r3.send(backend).toFuture().map { resp =>
         resp.code shouldBe StatusCode.Ok
         resp.body should be(r4response)
         resp.history should have size (1)
@@ -88,7 +88,7 @@ trait HttpTestExtensions[F[_]] { self: HttpTest[F] =>
     }
 
     "keep whole history of redirect responses" in {
-      r1.send().toFuture().map { resp =>
+      r1.send(backend).toFuture().map { resp =>
         resp.code shouldBe StatusCode.Ok
         resp.body should be(r4response)
         resp.history should have size (3)
@@ -100,7 +100,7 @@ trait HttpTestExtensions[F[_]] { self: HttpTest[F] =>
 
     "break redirect loops" in {
       // sync backends can throw exceptions when evaluating send(), before the toFuture() conversion
-      Future(loop.send().toFuture()).flatMap(identity).failed.map {
+      Future(loop.send(backend).toFuture()).flatMap(identity).failed.map {
         case TooManyRedirectsException(_, redirects) =>
           redirects shouldBe FollowRedirectsBackend.MaxRedirects
       }
@@ -108,7 +108,7 @@ trait HttpTestExtensions[F[_]] { self: HttpTest[F] =>
 
     "break redirect loops after user-specified count" in {
       val maxRedirects = 10
-      Future(loop.maxRedirects(maxRedirects).send().toFuture()).flatMap(identity).failed.collect {
+      Future(loop.maxRedirects(maxRedirects).send(backend).toFuture()).flatMap(identity).failed.collect {
         case TooManyRedirectsException(_, redirects) =>
           redirects shouldBe maxRedirects
       }
@@ -134,7 +134,7 @@ trait HttpTestExtensions[F[_]] { self: HttpTest[F] =>
           .body("x")
           .post(uri"$endpoint/redirect/get_after_post/r$statusCode")
           .response(asStringAlways)
-          .send()
+          .send(backend)
           .toFuture()
           .map { resp => resp.body shouldBe expectedBody }
       }
@@ -153,7 +153,7 @@ trait HttpTestExtensions[F[_]] { self: HttpTest[F] =>
             .get(uri"$endpoint/redirect/strip_sensitive_headers/r1")
             .header(header)
             .response(asStringAlways)
-            .send()
+            .send(backend)
             .toFuture()
             .map { resp =>
               println(resp.body)
@@ -169,7 +169,7 @@ trait HttpTestExtensions[F[_]] { self: HttpTest[F] =>
     "read response body encoded using ISO-8859-2, as specified in the header, overriding the default" in {
       val req = basicRequest.get(uri"$endpoint/respond_with_iso_8859_2")
 
-      req.send().toFuture().map { response => response.body should be(Right("Żółć!")) }
+      req.send(backend).toFuture().map { response => response.body should be(Right("Żółć!")) }
     }
   }
 
@@ -204,7 +204,9 @@ trait HttpTestExtensions[F[_]] { self: HttpTest[F] =>
   "body" - {
     "post a file" in {
       withTemporaryFile(Some(testBodyBytes)) { f =>
-        postEcho.body(f).send().toFuture().map { response => response.body should be(Right(expectedPostEchoResponse)) }
+        postEcho.body(f).send(backend).toFuture().map { response =>
+          response.body should be(Right(expectedPostEchoResponse))
+        }
       }
     }
   }
@@ -213,21 +215,27 @@ trait HttpTestExtensions[F[_]] { self: HttpTest[F] =>
     "download a binary file using asFile" in {
       withTemporaryNonExistentFile { file =>
         val req = basicRequest.get(uri"$endpoint/download/binary").response(asFile(file))
-        req.send().toFuture().flatMap { resp => md5FileHash(resp.body.right.get).map { _ shouldBe binaryFileMD5Hash } }
+        req.send(backend).toFuture().flatMap { resp =>
+          md5FileHash(resp.body.right.get).map { _ shouldBe binaryFileMD5Hash }
+        }
       }
     }
 
     "download a binary file using asFile, overwriting its current content" in {
       withTemporaryFile(Some(Array(1))) { file =>
         val req = basicRequest.get(uri"$endpoint/download/binary").response(asFile(file))
-        req.send().toFuture().flatMap { resp => md5FileHash(resp.body.right.get).map { _ shouldBe binaryFileMD5Hash } }
+        req.send(backend).toFuture().flatMap { resp =>
+          md5FileHash(resp.body.right.get).map { _ shouldBe binaryFileMD5Hash }
+        }
       }
     }
 
     "download a text file using asFile" in {
       withTemporaryNonExistentFile { file =>
         val req = basicRequest.get(uri"$endpoint/download/text").response(asFile(file))
-        req.send().toFuture().flatMap { resp => md5FileHash(resp.body.right.get).map { _ shouldBe textFileMD5Hash } }
+        req.send(backend).toFuture().flatMap { resp =>
+          md5FileHash(resp.body.right.get).map { _ shouldBe textFileMD5Hash }
+        }
       }
     }
   }
@@ -238,7 +246,7 @@ trait HttpTestExtensions[F[_]] { self: HttpTest[F] =>
     "send a multipart message with a file" in {
       withTemporaryFile(Some(testBodyBytes)) { f =>
         val req = mp.multipartBody(multipartFile("p1", f), multipart("p2", "v2"))
-        req.send().toFuture().map { resp =>
+        req.send(backend).toFuture().map { resp =>
           resp.body should be(Right(s"p1=$testBody (${f.getName}), p2=v2$defaultFileName"))
         }
       }
@@ -247,7 +255,7 @@ trait HttpTestExtensions[F[_]] { self: HttpTest[F] =>
     "send a multipart message with custom file name" in {
       withTemporaryFile(Some(testBodyBytes)) { f =>
         val req = mp.multipartBody(multipartFile("p1", f).fileName("test.txt"))
-        req.send().toFuture().map { resp => resp.body should be(Right(s"p1=$testBody (test.txt)")) }
+        req.send(backend).toFuture().map { resp => resp.body should be(Right(s"p1=$testBody (test.txt)")) }
       }
     }
   }

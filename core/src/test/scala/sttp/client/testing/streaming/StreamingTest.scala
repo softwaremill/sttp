@@ -21,7 +21,7 @@ abstract class StreamingTest[F[_], S]
 
   val streams: Streams[S]
 
-  implicit def backend: SttpBackend[F, S]
+  def backend: SttpBackend[F, S]
 
   implicit def convertToFuture: ConvertToFuture[F]
 
@@ -36,7 +36,7 @@ abstract class StreamingTest[F[_], S]
     basicRequest
       .post(uri"$endpoint/streaming/echo")
       .streamBody(streams)(stringBodyProducer(Body))
-      .send()
+      .send(backend)
       .toFuture()
       .map { response =>
         response.body shouldBe Right(Body)
@@ -47,7 +47,7 @@ abstract class StreamingTest[F[_], S]
     basicRequest
       .post(uri"$endpoint/streaming/echo")
       .streamBody(streams)(stringBodyProducer(Body))
-      .send()
+      .send(backend)
       .toFuture()
       .map { response =>
         response.body shouldBe Right(Body)
@@ -60,7 +60,7 @@ abstract class StreamingTest[F[_], S]
       .post(uri"$endpoint/streaming/echo")
       .body(Body)
       .response(asStreamAlways(streams)(bodyConsumer(_)))
-    r0.send()
+    r0.send(backend)
       .toFuture()
       .map { response =>
         response.body shouldBe Body
@@ -74,7 +74,7 @@ abstract class StreamingTest[F[_], S]
       .body(Body)
       // if the backend has any, mechanisms to consume an incorrectly handled (ignored) stream should kick in
       .response(asStreamAlways(streams)(_ => bodyConsumer(stringBodyProducer("ignore"))))
-    r0.send()
+    r0.send(backend)
       .toFuture()
       .map { response =>
         response.body shouldBe "ignore"
@@ -87,7 +87,7 @@ abstract class StreamingTest[F[_], S]
       .post(uri"$endpoint/streaming/echo")
       .body(Body)
       .response(asStreamUnsafeAlways(streams))
-    r0.send()
+    r0.send(backend)
       .toFuture()
       .flatMap { response =>
         bodyConsumer(response.body).toFuture()
@@ -103,7 +103,7 @@ abstract class StreamingTest[F[_], S]
       .post(uri"$endpoint/streaming/echo")
       .body(LargeBody)
       .response(asStreamUnsafeAlways(streams))
-    r0.send()
+    r0.send(backend)
       .toFuture()
       .flatMap { response =>
         bodyConsumer(response.body).toFuture()
@@ -124,7 +124,7 @@ abstract class StreamingTest[F[_], S]
       .post(uri"$endpoint/streaming/echo")
       .body(Body)
       .response(asStreamUnsafe(streams))
-    r0.send()
+    r0.send(backend)
       .toFuture()
       .flatMap { response =>
         bodyConsumer(response.body.right.get).toFuture()
@@ -141,7 +141,7 @@ abstract class StreamingTest[F[_], S]
       .body(Body)
       .response(asStreamUnsafeAlways(streams).map(s => (s, true)))
     r0
-      .send()
+      .send(backend)
       .toFuture()
       .flatMap { response =>
         val (stream, flag) = response.body
@@ -165,7 +165,7 @@ abstract class StreamingTest[F[_], S]
       .response(asStreamUnsafeAlways(streams))
 
     r0
-      .send()
+      .send(backend)
       .toFuture()
       .flatMap { response =>
         bodyConsumer(response.body).toFuture()

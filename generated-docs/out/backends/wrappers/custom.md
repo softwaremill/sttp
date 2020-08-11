@@ -124,7 +124,7 @@ class MetricWrapper[S](delegate: SttpBackend[Future, S, NothingT],
 }
 
 // example usage
-implicit val backend = new MetricWrapper(
+val backend = new MetricWrapper(
   AkkaHttpBackend(),
   new CloudMetricsServer()
 )
@@ -132,7 +132,7 @@ implicit val backend = new MetricWrapper(
 basicRequest
   .get(uri"http://company.com/api/service1")
   .tag("metric", "service1")
-  .send()
+  .send(backend)
 ```
 
 See also the [Prometheus](prometheus.md) backend for an example implementation.

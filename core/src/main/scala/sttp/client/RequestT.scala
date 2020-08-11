@@ -275,10 +275,33 @@ case class RequestT[U[_], T, -R](
     *         Known exceptions are converted by backends to one of [[SttpClientException]]. Other exceptions are thrown
     *         unchanged.
     */
+  @deprecated(message = "use request.send(backend), providing the backend explicitly", since = "3.0.0")
   def send[F[_], P]()(implicit
       backend: SttpBackend[F, P],
       pEffectFIsR: P with Effect[F] <:< R,
       isIdInRequest: IsIdInRequest[U]
+  ): F[Response[T]] =
+    send(backend)(
+      isIdInRequest,
+      pEffectFIsR
+    ) // the order of implicits must be different so that the signatures are different
+
+  /**
+    * Sends the request, using the backend from the implicit scope. Only requests for which the method & URI are
+    * specified can be sent.
+    *
+    * @return Depending on the backend, either the [[Response]] ([[Identity]] synchronous backends), or the
+    *         [[Response]] in a backend-specific wrapper, or a failed effect (other backends).
+    *
+    *         The response body is deserialized as specified by this request (see [[RequestT.response]]).
+    *
+    *         Exceptions can be thrown directly ([[Identity]] synchronous backends), or wrapped (asynchronous backends).
+    *         Known exceptions are converted by backends to one of [[SttpClientException]]. Other exceptions are thrown
+    *         unchanged.
+    */
+  def send[F[_], P](backend: SttpBackend[F, P])(implicit
+      isIdInRequest: IsIdInRequest[U],
+      pEffectFIsR: P with Effect[F] <:< R
   ): F[Response[T]] = backend.send(asRequest.asInstanceOf[Request[T, P with Effect[F]]]) // as witnessed by pEffectFIsR
 
   def toCurl(implicit isIdInRequest: IsIdInRequest[U]): String = ToCurlConverter.requestToCurl(asRequest)

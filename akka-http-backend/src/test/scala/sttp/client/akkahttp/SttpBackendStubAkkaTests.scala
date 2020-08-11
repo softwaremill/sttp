@@ -21,12 +21,12 @@ class SttpBackendStubAkkaTests extends AnyFlatSpec with Matchers with ScalaFutur
 
   "backend stub" should "cycle through responses using a single sent request" in {
     // given
-    implicit val backend = AkkaHttpBackend.stub
+    val backend = AkkaHttpBackend.stub
       .whenRequestMatches(_ => true)
       .thenRespondCyclic("a", "b", "c")
 
     // when
-    def r = basicRequest.get(uri"http://example.org/a/b/c").send().futureValue
+    def r = basicRequest.get(uri"http://example.org/a/b/c").send(backend).futureValue
 
     // then
     r.body shouldBe Right("a")

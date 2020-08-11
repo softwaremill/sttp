@@ -28,7 +28,7 @@ trait SyncHttpTest
   protected val binaryFileMD5Hash = "565370873a38d91f34a3091082e63933"
   protected val textFileMD5Hash = "b048a88ece8e4ec5eb386b8fc5006d13"
 
-  implicit val backend: SttpBackend[Identity, Any]
+  val backend: SttpBackend[Identity, Any]
 
   protected def postEcho = basicRequest.post(uri"$endpoint/echo")
   protected val testBody = "this is the body"
@@ -39,7 +39,7 @@ trait SyncHttpTest
 
   "parse response" - {
     "as string" in {
-      val response = postEcho.body(testBody).send()
+      val response = postEcho.body(testBody).send(backend)
       response.body should be(Right(expectedPostEchoResponse))
     }
 
@@ -47,7 +47,7 @@ trait SyncHttpTest
       val response = postEcho
         .body(testBody)
         .response(asString.mapRight(_.length))
-        .send()
+        .send(backend)
       response.body should be(Right(expectedPostEchoResponse.length))
     }
 
@@ -55,7 +55,7 @@ trait SyncHttpTest
       val response = postEcho
         .body(testBody)
         .mapResponseRight(_.length)
-        .send()
+        .send(backend)
       response.body should be(Right(expectedPostEchoResponse.length))
     }
 
@@ -63,7 +63,7 @@ trait SyncHttpTest
       val response = postEcho
         .body(testBody)
         .response(asByteArrayAlways)
-        .send()
+        .send(backend)
       val fc = new String(response.body, "UTF-8")
       fc should be(expectedPostEchoResponse)
     }
@@ -74,7 +74,7 @@ trait SyncHttpTest
         .post(uri"$endpoint/echo/form_params/as_params")
         .body(params: _*)
         .response(asParams)
-        .send()
+        .send(backend)
       response.body.right.map(_.toList) should be(Right(params))
     }
   }
@@ -83,7 +83,7 @@ trait SyncHttpTest
     "make a get request with parameters" in {
       val response = basicRequest
         .get(uri"$endpoint/echo?p2=v2&p1=v1")
-        .send()
+        .send(backend)
       response.body should be(Right("GET /echo p1=v1 p2=v2"))
     }
   }
@@ -92,26 +92,26 @@ trait SyncHttpTest
     "post a string" in {
       val response = postEcho
         .body(testBody)
-        .send()
+        .send(backend)
       response.body should be(Right(expectedPostEchoResponse))
     }
 
     "post a byte array" in {
-      val response = postEcho.body(testBodyBytes).send()
+      val response = postEcho.body(testBodyBytes).send(backend)
       response.body should be(Right(expectedPostEchoResponse))
     }
 
     "post an input stream" in {
       val response = postEcho
         .body(new ByteArrayInputStream(testBodyBytes))
-        .send()
+        .send(backend)
       response.body should be(Right(expectedPostEchoResponse))
     }
 
     "post a byte buffer" in {
       val response = postEcho
         .body(ByteBuffer.wrap(testBodyBytes))
-        .send()
+        .send(backend)
       response.body should be(Right(expectedPostEchoResponse))
     }
 
@@ -119,7 +119,7 @@ trait SyncHttpTest
       val response = basicRequest
         .post(uri"$endpoint/echo/form_params/as_string")
         .body("a" -> "b", "c" -> "d")
-        .send()
+        .send(backend)
       response.body should be(Right("a=b c=d"))
     }
 
@@ -127,12 +127,12 @@ trait SyncHttpTest
       val response = basicRequest
         .post(uri"$endpoint/echo/form_params/as_string")
         .body("a=" -> "/b", "c:" -> "/d")
-        .send()
+        .send(backend)
       response.body should be(Right("a==/b c:=/d"))
     }
 
     "post without a body" in {
-      val response = postEcho.send()
+      val response = postEcho.send(backend)
       response.body should be(Right("POST /echo"))
     }
   }
@@ -142,7 +142,7 @@ trait SyncHttpTest
   "headers" - {
     def getHeaders = basicRequest.get(uri"$endpoint/set_headers")
     "read response headers" in {
-      val response = getHeaders.response(sttpIgnore).send()
+      val response = getHeaders.response(sttpIgnore).send(backend)
       response.headers should have length (4 + cacheControlHeaders.size).toLong
       response.headers("Cache-Control").toSet should be(cacheControlHeaders)
       response.header("Server").exists(_.startsWith("akka-http")) should be(true)
@@ -153,13 +153,13 @@ trait SyncHttpTest
 
   "errors" - {
     "return 405 when method not allowed" in {
-      val response = basicRequest.post(uri"$endpoint/set_headers").response(sttpIgnore).send()
+      val response = basicRequest.post(uri"$endpoint/set_headers").response(sttpIgnore).send(backend)
       response.code shouldBe StatusCode.MethodNotAllowed
       response.isClientError should be(true)
     }
 
     "return 404 when not found" in {
-      val response = basicRequest.get(uri"$endpoint/not/found").response(sttpIgnore).send()
+      val response = basicRequest.get(uri"$endpoint/not/found").response(sttpIgnore).send(backend)
       response.code shouldBe StatusCode.NotFound
       response.isClientError should be(true)
     }
@@ -170,14 +170,14 @@ trait SyncHttpTest
 
     "return a 401 when authorization fails" in {
       val req = secureBasic
-      val resp = req.send()
+      val resp = req.send(backend)
       resp.code shouldBe StatusCode.Unauthorized
       resp.header("WWW-Authenticate") shouldBe Some("""Basic realm="test realm",charset=UTF-8""")
     }
 
     "perform basic authorization" in {
       val req = secureBasic.auth.basic("adam", "1234")
-      val resp = req.send()
+      val resp = req.send(backend)
       resp.code shouldBe StatusCode.Ok
       resp.body shouldBe Right("Hello, adam!")
     }
@@ -189,25 +189,25 @@ trait SyncHttpTest
 
     "decompress using the default accept encoding header" in {
       val req = compress
-      val resp = req.send()
+      val resp = req.send(backend)
       resp.body should be(Right(decompressedBody))
     }
 
     "decompress using gzip" in {
       val req = compress.header("Accept-Encoding", "gzip", replaceExisting = true)
-      val resp = req.send()
+      val resp = req.send(backend)
       resp.body should be(Right(decompressedBody))
     }
 
     "decompress using deflate" in {
       val req = compress.header("Accept-Encoding", "deflate", replaceExisting = true)
-      val resp = req.send()
+      val resp = req.send(backend)
       resp.body should be(Right(decompressedBody))
     }
 
     "work despite providing an unsupported encoding" in {
       val req = compress.header("Accept-Encoding", "br", replaceExisting = true)
-      val resp = req.send()
+      val resp = req.send(backend)
       resp.body should be(Right(decompressedBody))
     }
   }
@@ -225,13 +225,13 @@ trait SyncHttpTest
 
     "send a multipart message" in {
       val req = mp.multipartBody(multipart("p1", "v1"), multipart("p2", "v2"))
-      val resp = req.send()
+      val resp = req.send(backend)
       resp.body should be(Right(s"p1=v1$defaultFileName, p2=v2$defaultFileName"))
     }
 
     "send a multipart message with filenames" in {
       val req = mp.multipartBody(multipart("p1", "v1").fileName("f1"), multipart("p2", "v2").fileName("f2"))
-      val resp = req.send()
+      val resp = req.send(backend)
       resp.body should be(Right("p1=v1 (f1), p2=v2 (f2)"))
     }
   }
@@ -243,7 +243,7 @@ trait SyncHttpTest
     def loop = basicRequest.post(uri"$endpoint/redirect/loop").response(asStringAlways)
 
     "not redirect when redirects shouldn't be followed (temporary)" in {
-      val resp = r1.followRedirects(false).send()
+      val resp = r1.followRedirects(false).send(backend)
       resp.code.code should be(307)
       resp.body should be(
         "The request should be repeated with <a href=\"/redirect/r2\">this URI</a>, but future requests can still use the original URI."
@@ -252,7 +252,7 @@ trait SyncHttpTest
     }
 
     "not redirect when redirects shouldn't be followed (permanent)" in {
-      val resp = r2.followRedirects(false).send()
+      val resp = r2.followRedirects(false).send(backend)
       resp.code.code should be(308)
       resp.body should be(
         "The request, and all future requests should be repeated using <a href=\"/redirect/r3\">this URI</a>."
@@ -261,25 +261,25 @@ trait SyncHttpTest
     }
 
     "redirect when redirects should be followed" in {
-      val resp = r2.send()
+      val resp = r2.send(backend)
       resp.code shouldBe StatusCode.Ok
       resp.body should be(r4response)
     }
 
     "redirect twice when redirects should be followed" in {
-      val resp = r1.send()
+      val resp = r1.send(backend)
       resp.code shouldBe StatusCode.Ok
       resp.body should be(r4response)
     }
 
     "redirect when redirects should be followed, and the response is parsed" in {
-      val resp = r2.response(asString.mapRight(_.toInt)).send()
+      val resp = r2.response(asString.mapRight(_.toInt)).send(backend)
       resp.code shouldBe StatusCode.Ok
       resp.body should be(Right(r4response.toInt))
     }
 
     "not redirect when maxRedirects is less than or equal to 0" in {
-      val resp = loop.maxRedirects(-1).send()
+      val resp = loop.maxRedirects(-1).send(backend)
       resp.code shouldBe StatusCode.Found
       resp.body should be(
         "The requested resource temporarily resides under <a href=\"/redirect/loop\">this URI</a>."
@@ -294,7 +294,7 @@ trait SyncHttpTest
         .get(uri"$endpoint/timeout")
         .readTimeout(200.milliseconds)
         .response(asString)
-      req.send()
+      req.send(backend)
     }
 
     "not fail if read timeout is big enough" in {
@@ -303,7 +303,7 @@ trait SyncHttpTest
         .readTimeout(5.seconds)
         .response(asString)
 
-      val response = req.send()
+      val response = req.send(backend)
       response.body should be(Right("Done"))
     }
   }
@@ -316,7 +316,7 @@ trait SyncHttpTest
         .contentType("application/json")
 
     "parse an empty error response as empty string" in {
-      postEmptyResponse.send().body.left.value should be("")
+      postEmptyResponse.send(backend).body.left.value should be("")
     }
   }
 

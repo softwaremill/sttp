@@ -11,7 +11,7 @@ import sttp.client.testing.websocket.WebSocketTest
 import scala.concurrent.duration._
 
 class OkHttpSyncWebsocketTest extends WebSocketTest[Identity] {
-  override implicit val backend: SttpBackend[Identity, WebSockets] = OkHttpSyncBackend()
+  override val backend: SttpBackend[Identity, WebSockets] = OkHttpSyncBackend()
   override implicit val convertToFuture: ConvertToFuture[Identity] = ConvertToFuture.id
   override implicit val monad: MonadError[Identity] = IdMonad
 
@@ -25,7 +25,7 @@ class OkHttpSyncWebsocketTest extends WebSocketTest[Identity] {
           eventually(10 millis, 400)(() => ws.isOpen.map(_ shouldBe false))
         )
       })
-      .send()
+      .send(backend)
       .map(_.body) match {
       case Left(value)  => throw new RuntimeException(value)
       case Right(value) => succeed

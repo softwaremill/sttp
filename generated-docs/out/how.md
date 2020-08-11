@@ -32,17 +32,8 @@ For example, the following sends a synchronous request, using the default JVM ba
 ```scala
 import sttp.client._
 val myRequest: Request[String, Nothing] = ???
-implicit val backend = HttpURLConnectionBackend()
-val response = myRequest.send()
-```
-
-Alternatively, if you prefer to pass the backend explicitly, instead of using implicits, you can also send the request the following way:
-
-```scala
-import sttp.client._
-val myRequest: Request[String, Nothing] = ???
 val backend = HttpURLConnectionBackend()
-val response = backend.send(myRequest)
+val response = myRequest.send(backend)
 ```
 
 ## Next steps

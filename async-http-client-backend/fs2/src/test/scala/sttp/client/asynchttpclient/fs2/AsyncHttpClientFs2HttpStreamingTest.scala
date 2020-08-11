@@ -9,6 +9,6 @@ import scala.concurrent.ExecutionContext
 class AsyncHttpClientFs2HttpStreamingTest extends Fs2StreamingTest {
   private implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
 
-  override implicit val backend: SttpBackend[IO, Fs2Streams[IO]] =
+  override val backend: SttpBackend[IO, Fs2Streams[IO]] =
     AsyncHttpClientFs2Backend[IO]().unsafeRunSync()
 }

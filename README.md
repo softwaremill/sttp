@@ -25,18 +25,14 @@ val query = "http language:scala"
 // `sort` is removed, as the value is not defined
 val request = basicRequest.get(uri"https://api.github.com/search/repositories?q=$query&sort=$sort")
   
-implicit val backend = HttpURLConnectionBackend()
-val response = request.send()
+val backend = HttpURLConnectionBackend()
+val response = request.send(backend)
 
 // response.header(...): Option[String]
 println(response.header("Content-Length")) 
 
 // response.body: by default read into an Either[String, String] to indicate failure or success 
-println(response.body)           
-
-// alternatively, if you prefer to pass the backend explicitly, instead
-// of using implicits, you can also call:
-val sameResponse = backend.send(request)                      
+println(response.body)                                 
 ```
 
 ## Documentation

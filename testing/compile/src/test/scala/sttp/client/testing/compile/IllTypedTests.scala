@@ -13,8 +13,8 @@ class IllTypedTests extends AnyFlatSpec with Matchers {
 
         class MyStream[T]()
 
-        implicit val sttpBackend = HttpURLConnectionBackend()
-        basicRequest.get(uri"http://example.com").response(asStream[MyStream[Byte]]).send()
+        val backend = HttpURLConnectionBackend()
+        basicRequest.get(uri"http://example.com").response(asStream[MyStream[Byte]]).send(backend)
         """)
     }
 
@@ -27,8 +27,8 @@ class IllTypedTests extends AnyFlatSpec with Matchers {
     val thrown = intercept[ToolBoxError] {
       EvalScala("""
         import sttp.client._
-        implicit val sttpBackend = HttpURLConnectionBackend()
-        basicRequest.send()
+        val backend = HttpURLConnectionBackend()
+        basicRequest.send(backend)
         """)
     }
 

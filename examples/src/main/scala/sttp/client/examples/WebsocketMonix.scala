@@ -15,11 +15,11 @@ object WebsocketMonix extends App {
     send(1) *> send(2) *> receive *> receive *> ws.close
   }
 
-  val websocketTask: Task[Unit] = AsyncHttpClientMonixBackend.resource().use { implicit backend =>
+  val websocketTask: Task[Unit] = AsyncHttpClientMonixBackend.resource().use { backend =>
     basicRequest
       .response(asWebSocket(useWebsocket))
       .get(uri"wss://echo.websocket.org")
-      .send()
+      .send(backend)
       .map(_ => ())
   }
 

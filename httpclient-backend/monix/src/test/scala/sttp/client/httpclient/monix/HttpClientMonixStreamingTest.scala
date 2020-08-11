@@ -6,6 +6,6 @@ import sttp.client.SttpBackend
 import monix.execution.Scheduler.Implicits.global
 
 class HttpClientMonixStreamingTest extends MonixStreamingTest {
-  override implicit val backend: SttpBackend[Task, MonixStreams] =
+  override val backend: SttpBackend[Task, MonixStreams] =
     HttpClientMonixBackend().runSyncUnsafe()
 }

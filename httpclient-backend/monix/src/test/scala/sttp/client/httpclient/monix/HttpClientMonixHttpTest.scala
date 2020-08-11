@@ -8,6 +8,6 @@ import monix.execution.Scheduler.Implicits.global
 
 class HttpClientMonixHttpTest extends HttpTest[Task] {
 
-  override implicit val backend: SttpBackend[Task, Any] = HttpClientMonixBackend().runSyncUnsafe()
+  override val backend: SttpBackend[Task, Any] = HttpClientMonixBackend().runSyncUnsafe()
   override implicit val convertToFuture: ConvertToFuture[Task] = convertMonixTaskToFuture
 }

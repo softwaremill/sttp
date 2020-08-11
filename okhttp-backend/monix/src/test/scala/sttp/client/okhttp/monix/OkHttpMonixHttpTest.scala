@@ -8,6 +8,6 @@ import sttp.client.testing.{ConvertToFuture, HttpTest}
 
 class OkHttpMonixHttpTest extends HttpTest[Task] {
 
-  override implicit val backend: SttpBackend[Task, MonixStreams] = OkHttpMonixBackend().runSyncUnsafe()
+  override val backend: SttpBackend[Task, MonixStreams] = OkHttpMonixBackend().runSyncUnsafe()
   override implicit val convertToFuture: ConvertToFuture[Task] = convertMonixTaskToFuture
 }

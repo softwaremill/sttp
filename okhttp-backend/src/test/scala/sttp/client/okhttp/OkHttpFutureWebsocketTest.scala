@@ -9,7 +9,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{Future, blocking}
 
 class OkHttpFutureWebsocketTest extends WebSocketTest[Future] with WebSocketBufferOverflowTest[Future] {
-  override implicit val backend: SttpBackend[Future, WebSockets] = OkHttpFutureBackend()
+  override val backend: SttpBackend[Future, WebSockets] = OkHttpFutureBackend()
   override implicit val convertToFuture: ConvertToFuture[Future] = ConvertToFuture.future
   override implicit val monad: MonadError[Future] = new FutureMonad()
 
