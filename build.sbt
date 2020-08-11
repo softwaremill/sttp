@@ -7,7 +7,7 @@ import sbtrelease.ReleaseStateTransformations._
 val scala2_11 = "2.11.12"
 val scala2_12 = "2.12.12"
 val scala2_13 = "2.13.3"
-val scala3 = "0.23.0"
+val scala3 = "0.26.0-RC1"
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests")
@@ -185,15 +185,14 @@ val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.12"
 val akkaStreamVersion = "2.5.31"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % akkaStreamVersion
 
-val scalaTestVersion = "3.1.2"
+val scalaTestVersion = "3.2.1"
 val scalaNativeTestInterfaceVersion = "0.4.0-M2"
-val scalaTestNativeVersion = "3.2.0-M2"
 val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion
 
 val zioVersion = "1.0.0"
 val zioInteropRsVersion = "1.0.3.5"
 
-val modelVersion = "1.1.3"
+val modelVersion = "1.1.4"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
 
@@ -322,10 +321,10 @@ lazy val core = (projectMatrix in file("core"))
         libraryDependencies ++= Seq(
           "com.softwaremill.sttp.model" %%% "core" % modelVersion,
           "org.scala-native" %%% "test-interface" % scalaNativeTestInterfaceVersion % Test,
-          "org.scalatest" %%% "scalatest-shouldmatchers" % scalaTestNativeVersion % Test,
-          "org.scalatest" %%% "scalatest-flatspec" % scalaTestNativeVersion % Test,
-          "org.scalatest" %%% "scalatest-freespec" % scalaTestNativeVersion % Test,
-          "org.scalatest" %%% "scalatest-funsuite" % scalaTestNativeVersion % Test
+          "org.scalatest" %%% "scalatest-shouldmatchers" % scalaTestVersion % Test,
+          "org.scalatest" %%% "scalatest-flatspec" % scalaTestVersion % Test,
+          "org.scalatest" %%% "scalatest-freespec" % scalaTestVersion % Test,
+          "org.scalatest" %%% "scalatest-funsuite" % scalaTestVersion % Test
         ),
         publishArtifact in Test := true
       )
@@ -406,7 +405,7 @@ lazy val zio = (projectMatrix in file("implementations/zio"))
   )
   .dependsOn(core % compileAndTest)
   .jvmPlatform(
-    scalaVersions = List(scala2_11, scala2_12, scala2_13 /*, scala3*/ ),
+    scalaVersions = List(scala2_11, scala2_12, scala2_13, scala3),
     settings = intellijImportOnly213
   )
 
@@ -480,7 +479,7 @@ lazy val asyncHttpClientScalazBackend =
     .dependsOn(scalaz % compileAndTest)
 
 lazy val asyncHttpClientZioBackend =
-  asyncHttpClientBackendProject("zio", includeDotty = false)
+  asyncHttpClientBackendProject("zio", includeDotty = true)
     .settings(
       libraryDependencies ++= Seq(
         "dev.zio" %% "zio-streams" % zioVersion,
@@ -588,7 +587,7 @@ lazy val httpClientFs2Backend =
     .dependsOn(fs2 % compileAndTest)
 
 lazy val httpClientZioBackend =
-  httpClientBackendProject("zio", includeDotty = false)
+  httpClientBackendProject("zio", includeDotty = true)
     .settings(
       libraryDependencies ++=
         Seq(

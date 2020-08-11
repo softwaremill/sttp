@@ -2,7 +2,9 @@ package sttp.client.opentracing
 
 import io.opentracing.mock.MockTracer
 import io.opentracing.tag.Tags
-import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
+import org.scalatest.BeforeAndAfter
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import sttp.client.monad.IdMonad
 import sttp.client.testing.SttpBackendStub
 import sttp.client.{Identity, NothingT, SttpBackend, _}
@@ -13,7 +15,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.util.Try
 
-class OpenTracingBackendTest extends FlatSpec with Matchers with BeforeAndAfter {
+class OpenTracingBackendTest extends AnyFlatSpec with Matchers with BeforeAndAfter {
 
   private val recordedRequests = mutable.ListBuffer[Request[_, _]]()
   private val tracer = new MockTracer()
