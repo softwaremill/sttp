@@ -19,12 +19,12 @@ private[httpclient] class WebSocketImpl[F[_]](
     _isOpen: AtomicBoolean,
     _monad: MonadAsyncError[F]
 ) extends WebSocket[F] {
-  override def receive: F[Either[WebSocketFrame.Close, WebSocketFrame.Incoming]] = {
+  override def receive: F[WebSocketFrame] = {
     queue.poll.flatMap {
       case WebSocketEvent.Open() => receive
       case WebSocketEvent.Frame(c: WebSocketFrame.Close) =>
         queue.offer(WebSocketEvent.Error(new WebSocketClosed))
-        monad.unit(Left(c))
+        monad.unit(c)
       case e @ WebSocketEvent.Error(t: Exception) =>
         // putting back the error so that subsequent invocations end in an error as well, instead of hanging
         queue.offer(e)
@@ -33,7 +33,7 @@ private[httpclient] class WebSocketImpl[F[_]](
       case WebSocketEvent.Frame(f: WebSocketFrame.Incoming) =>
         monad.eval {
           ws.request(1)
-          Right(f)
+          f
         }
     }
   }

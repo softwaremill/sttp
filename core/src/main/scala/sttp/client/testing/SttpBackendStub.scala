@@ -304,16 +304,16 @@ class WebSocketStub[S](
       override def monad: MonadError[F] = m
       override def isOpen: F[Boolean] = monad.unit(_isOpen)
 
-      override def receive: F[Either[WebSocketFrame.Close, WebSocketFrame.Incoming]] =
+      override def receive: F[WebSocketFrame] =
         synchronized {
           if (_isOpen) {
             responses.headOption match {
               case Some(Success(Right(response))) =>
                 responses = responses.tail
-                monad.unit(Right(response))
+                monad.unit(response)
               case Some(Success(Left(close))) =>
                 _isOpen = false
-                monad.unit(Left(close))
+                monad.unit(close)
               case Some(Failure(e)) =>
                 _isOpen = false
                 monad.error(e)

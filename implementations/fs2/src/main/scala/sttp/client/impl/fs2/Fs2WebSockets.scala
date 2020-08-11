@@ -27,13 +27,13 @@ object Fs2WebSockets {
         Stream
           .repeatEval(ws.receive) // read incoming messages
           .flatMap[F, Option[WebSocketFrame.Data[_]]] {
-            case Left(WebSocketFrame.Close(code, reason)) =>
+            case WebSocketFrame.Close(code, reason) =>
               Stream.eval(closeRef.set(Some(WebSocketFrame.Close(code, reason)))).as(None)
-            case Right(WebSocketFrame.Ping(payload)) =>
+            case WebSocketFrame.Ping(payload) =>
               Stream.eval(ws.send(WebSocketFrame.Pong(payload))).drain
-            case Right(WebSocketFrame.Pong(_)) =>
+            case WebSocketFrame.Pong(_) =>
               Stream.empty // ignore
-            case Right(in: WebSocketFrame.Data[_]) => Stream.emit(Some(in))
+            case in: WebSocketFrame.Data[_] => Stream.emit(Some(in))
           }
           .unNoneTerminate // terminate once we got a Close
           .through(pipe)

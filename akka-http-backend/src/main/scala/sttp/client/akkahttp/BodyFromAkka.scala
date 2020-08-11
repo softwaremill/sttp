@@ -149,13 +149,13 @@ private[akkahttp] object BodyFromAkka {
       private val open = new AtomicBoolean(true)
       private val closeReceived = new AtomicBoolean(false)
 
-      override def receive: Future[Either[WebSocketFrame.Close, WebSocketFrame.Incoming]] = {
+      override def receive: Future[WebSocketFrame] = {
         val result = sinkQueue.pull().flatMap {
-          case Some(m) => messageToFrame(m).map(Right(_))
+          case Some(m) => messageToFrame(m)
           case None =>
             open.set(false)
             val c = closeReceived.getAndSet(true)
-            if (!c) Future.successful(Left(WebSocketFrame.close))
+            if (!c) Future.successful(WebSocketFrame.close)
             else Future.failed(new WebSocketClosed())
         }
 

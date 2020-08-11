@@ -14,7 +14,7 @@ trait WebSocket[F[_]] {
     * After receiving a close frame, no further interactions with the web socket should happen. Subsequent invocations
     * of `receive`, as well as `send`, will fail with the [[sttp.model.ws.WebSocketClosed]] exception.
     */
-  def receive: F[Either[WebSocketFrame.Close, WebSocketFrame.Incoming]]
+  def receive: F[WebSocketFrame]
   def send(f: WebSocketFrame, isContinuation: Boolean = false): F[Unit]
   def isOpen: F[Boolean]
 
@@ -24,9 +24,9 @@ trait WebSocket[F[_]] {
     */
   def receiveDataFrame(pongOnPing: Boolean = true): F[Either[WebSocketFrame.Close, WebSocketFrame.Data[_]]] =
     receive.flatMap {
-      case Left(close)                      => (Left(close): Either[WebSocketFrame.Close, WebSocketFrame.Data[_]]).unit
-      case Right(d: WebSocketFrame.Data[_]) => (Right(d): Either[WebSocketFrame.Close, WebSocketFrame.Data[_]]).unit
-      case Right(WebSocketFrame.Ping(payload)) if pongOnPing =>
+      case close: WebSocketFrame.Close => (Left(close): Either[WebSocketFrame.Close, WebSocketFrame.Data[_]]).unit
+      case d: WebSocketFrame.Data[_]   => (Right(d): Either[WebSocketFrame.Close, WebSocketFrame.Data[_]]).unit
+      case WebSocketFrame.Ping(payload) if pongOnPing =>
         send(WebSocketFrame.Pong(payload)).flatMap(_ => receiveDataFrame(pongOnPing))
       case _ => receiveDataFrame(pongOnPing)
     }

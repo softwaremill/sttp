@@ -15,10 +15,10 @@ object MonixWebSockets {
       Observable
         .repeatEvalF(ws.receive)
         .flatMap {
-          case Left(WebSocketFrame.Close(_, _))    => Observable.fromTask(Task(wsClosed.cancel()))
-          case Right(WebSocketFrame.Ping(payload)) => Observable.fromTask(ws.send(WebSocketFrame.Pong(payload)))
-          case Right(WebSocketFrame.Pong(_))       => Observable.empty
-          case Right(in: WebSocketFrame.Data[_])   => pipe(Observable(in)).mapEval(ws.send(_))
+          case WebSocketFrame.Close(_, _)   => Observable.fromTask(Task(wsClosed.cancel()))
+          case WebSocketFrame.Ping(payload) => Observable.fromTask(ws.send(WebSocketFrame.Pong(payload)))
+          case WebSocketFrame.Pong(_)       => Observable.empty
+          case in: WebSocketFrame.Data[_]   => pipe(Observable(in)).mapEval(ws.send(_))
         }
         .takeWhileNotCanceled(wsClosed)
         .completedL

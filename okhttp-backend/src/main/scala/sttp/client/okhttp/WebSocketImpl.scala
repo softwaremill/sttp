@@ -22,7 +22,7 @@ private[okhttp] class WebSocketImpl[F[_]](
     * After receiving a close frame, no further interactions with the web socket should happen. Subsequent invocations
     * of `receive`, as well as `send`, will fail with the [[sttp.model.ws.WebSocketClosed]] exception.
     */
-  override def receive: F[Either[WebSocketFrame.Close, WebSocketFrame.Incoming]] = {
+  override def receive: F[WebSocketFrame] = {
     queue.poll.flatMap {
       case WebSocketEvent.Open() =>
         receive
@@ -31,10 +31,10 @@ private[okhttp] class WebSocketImpl[F[_]](
         monad.error(t)
       case WebSocketEvent.Error(t) => throw t
       case WebSocketEvent.Frame(f: WebSocketFrame.Incoming) =>
-        monad.unit(Right(f))
+        monad.unit(f)
       case WebSocketEvent.Frame(f: WebSocketFrame.Close) =>
         queue.offer(WebSocketEvent.Error(new WebSocketClosed))
-        monad.unit(Left(f))
+        monad.unit(f)
     }
   }
 

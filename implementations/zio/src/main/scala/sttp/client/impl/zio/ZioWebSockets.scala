@@ -14,10 +14,10 @@ object ZioWebSockets {
       Stream
         .repeatEffect(ws.receive)
         .flatMap {
-          case Left(WebSocketFrame.Close(_, _))    => Stream.fromEffect(closed.set(true))
-          case Right(WebSocketFrame.Ping(payload)) => Stream.fromEffect(ws.send(WebSocketFrame.Pong(payload)))
-          case Right(WebSocketFrame.Pong(_))       => Stream.empty
-          case Right(in: WebSocketFrame.Data[_])   => Stream(in).transduce(pipe).mapM(ws.send(_))
+          case WebSocketFrame.Close(_, _)   => Stream.fromEffect(closed.set(true))
+          case WebSocketFrame.Ping(payload) => Stream.fromEffect(ws.send(WebSocketFrame.Pong(payload)))
+          case WebSocketFrame.Pong(_)       => Stream.empty
+          case in: WebSocketFrame.Data[_]   => Stream(in).transduce(pipe).mapM(ws.send(_))
         }
         .foreachWhile(_ => closed.get)
         .ensuring(ws.close.catchAll(_ => ZIO.unit))
