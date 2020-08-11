@@ -38,57 +38,56 @@ class OkHttpSyncBackend private (
   override val streams: Streams[Nothing] = NoStreams
 
   override def send[T, R >: PE](request: Request[T, R]): Identity[Response[T]] = {
-    if (request.isWebSocket) {
-      sendWebSocket(request)
-    } else {
-      sendRegular(request)
+    adjustExceptions(request.isWebSocket) {
+      if (request.isWebSocket) {
+        sendWebSocket(request)
+      } else {
+        sendRegular(request)
+      }
     }
   }
 
-  private def sendWebSocket[R >: PE, T](request: Request[T, R]) =
-    adjustExceptions(isWebsocket = true) {
-      val nativeRequest = convertRequest(request)
-      val responseCell = new ArrayBlockingQueue[Either[Throwable, Future[Response[T]]]](5)
-      def fillCellError(t: Throwable): Unit = responseCell.add(Left(t))
-      def fillCell(wr: Future[Response[T]]): Unit = responseCell.add(Right(wr))
+  private def sendWebSocket[R >: PE, T](request: Request[T, R]) = {
+    val nativeRequest = convertRequest(request)
+    val responseCell = new ArrayBlockingQueue[Either[Throwable, Future[Response[T]]]](5)
+    def fillCellError(t: Throwable): Unit = responseCell.add(Left(t))
+    def fillCell(wr: Future[Response[T]]): Unit = responseCell.add(Right(wr))
 
-      implicit val m = responseMonad
-      val queue = createAsyncQueue[WebSocketEvent]
-      val isOpen = new AtomicBoolean(false)
-      val listener = new DelegatingWebSocketListener(
-        new AddToQueueListener(queue, isOpen),
-        { (nativeWs, response) =>
-          val webSocket = new WebSocketImpl(nativeWs, queue, isOpen)
-          val baseResponse = readResponse(response, ignore)
-          val wsResponse =
-            Future(
-              blocking(
-                bodyFromOkHttp(new ByteArrayInputStream(Array()), request.response, baseResponse, Some(webSocket))
-              )
+    implicit val m = responseMonad
+    val queue = createAsyncQueue[WebSocketEvent]
+    val isOpen = new AtomicBoolean(false)
+    val listener = new DelegatingWebSocketListener(
+      new AddToQueueListener(queue, isOpen),
+      { (nativeWs, response) =>
+        val webSocket = new WebSocketImpl(nativeWs, queue, isOpen)
+        val baseResponse = readResponse(response, ignore)
+        val wsResponse =
+          Future(
+            blocking(
+              bodyFromOkHttp(new ByteArrayInputStream(Array()), request.response, baseResponse, Some(webSocket))
             )
-              .map(b => baseResponse.copy(body = b))
-          fillCell(wsResponse)
-        },
-        fillCellError
-      )
+          )
+            .map(b => baseResponse.copy(body = b))
+        fillCell(wsResponse)
+      },
+      fillCellError
+    )
 
-      OkHttpBackend
-        .updateClientIfCustomReadTimeout(request, client)
-        .newWebSocket(nativeRequest, listener)
+    OkHttpBackend
+      .updateClientIfCustomReadTimeout(request, client)
+      .newWebSocket(nativeRequest, listener)
 
-      val response = responseCell.take().fold(throw _, identity)
-      Await.result(response, Duration.Inf)
-    }
+    val response = responseCell.take().fold(throw _, identity)
+    Await.result(response, Duration.Inf)
+  }
 
   private def sendRegular[R >: PE, T](request: Request[T, R]) = {
-    adjustExceptions(isWebsocket = false) {
-      val nativeRequest = convertRequest(request)
-      val response = OkHttpBackend
-        .updateClientIfCustomReadTimeout(request, client)
-        .newCall(nativeRequest)
-        .execute()
-      readResponse(response, request.response)
-    }
+    val nativeRequest = convertRequest(request)
+    val response = OkHttpBackend
+      .updateClientIfCustomReadTimeout(request, client)
+      .newCall(nativeRequest)
+      .execute()
+    readResponse(response, request.response)
   }
 
   private def adjustExceptions[T](isWebsocket: Boolean)(t: => T): T =

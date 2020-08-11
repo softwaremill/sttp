@@ -18,62 +18,62 @@ abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](
 ) extends OkHttpBackend[F, S, P](client, closeClient, customEncodingHandler) {
 
   override def send[T, R >: PE](request: Request[T, R]): F[Response[T]] = {
-    if (request.isWebSocket) {
-      sendWebSocket(request)
-    } else {
-      sendRegular(request)
+    adjustExceptions(request.isWebSocket) {
+      if (request.isWebSocket) {
+        sendWebSocket(request)
+      } else {
+        sendRegular(request)
+      }
     }
   }
 
-  private def sendRegular[R >: PE, T](request: Request[T, R]) =
-    adjustExceptions(isWebsocket = false) {
-      val nativeRequest = convertRequest(request)
-      monad.flatten(monad.async[F[Response[T]]] { cb =>
-        def success(r: F[Response[T]]): Unit = cb(Right(r))
+  private def sendRegular[R >: PE, T](request: Request[T, R]) = {
+    val nativeRequest = convertRequest(request)
+    monad.flatten(monad.async[F[Response[T]]] { cb =>
+      def success(r: F[Response[T]]): Unit = cb(Right(r))
 
-        def error(t: Throwable): Unit = cb(Left(t))
+      def error(t: Throwable): Unit = cb(Left(t))
 
-        val call = OkHttpBackend
-          .updateClientIfCustomReadTimeout(request, client)
-          .newCall(nativeRequest)
+      val call = OkHttpBackend
+        .updateClientIfCustomReadTimeout(request, client)
+        .newCall(nativeRequest)
 
-        call.enqueue(new Callback {
-          override def onFailure(call: Call, e: IOException): Unit =
-            error(e)
+      call.enqueue(new Callback {
+        override def onFailure(call: Call, e: IOException): Unit =
+          error(e)
 
-          override def onResponse(call: Call, response: OkHttpResponse): Unit =
-            try success(readResponse(response, request.response))
-            catch {
-              case e: Exception =>
-                response.close()
-                error(e)
-            }
-        })
-
-        Canceler(() => call.cancel())
+        override def onResponse(call: Call, response: OkHttpResponse): Unit =
+          try success(readResponse(response, request.response))
+          catch {
+            case e: Exception =>
+              response.close()
+              error(e)
+          }
       })
-    }
+
+      Canceler(() => call.cancel())
+    })
+  }
 
   def sendWebSocket[T, R >: PE](
       request: Request[T, R]
-  ): F[Response[T]] =
-    adjustExceptions(isWebsocket = true) {
-      implicit val m = monad
-      val nativeRequest = convertRequest(request)
-      monad.flatten(
-        createAsyncQueue[WebSocketEvent]
-          .flatMap { queue =>
-            monad.async[F[Response[T]]] { cb =>
-              val listener = createListener(queue, cb, request)
-              val ws = OkHttpBackend
-                .updateClientIfCustomReadTimeout(request, client)
-                .newWebSocket(nativeRequest, listener)
+  ): F[Response[T]] = {
+    implicit val m = monad
+    val nativeRequest = convertRequest(request)
+    monad.flatten(
+      createAsyncQueue[WebSocketEvent]
+        .flatMap { queue =>
+          monad.async[F[Response[T]]] { cb =>
+            val listener = createListener(queue, cb, request)
+            val ws = OkHttpBackend
+              .updateClientIfCustomReadTimeout(request, client)
+              .newWebSocket(nativeRequest, listener)
 
-              Canceler(() => ws.cancel())
-            }
+            Canceler(() => ws.cancel())
           }
-      )
-    }
+        }
+    )
+  }
 
   private def createListener[R >: PE, T](
       queue: AsyncQueue[F, WebSocketEvent],
