@@ -1,6 +1,6 @@
 package sttp.client.okhttp
 
-import java.io.{ByteArrayInputStream, IOException}
+import java.io.IOException
 import java.util.concurrent.atomic.AtomicBoolean
 
 import okhttp3.{Call, Callback, OkHttpClient, Response => OkHttpResponse, WebSocket => OkHttpWebSocket}
