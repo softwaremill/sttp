@@ -219,11 +219,11 @@ object SttpBackendStub {
           case f: SttpFile => Some(f)
           case _           => None
         }
-      case ResponseAsWebSocket(_)          => None
-      case ResponseAsWebSocketUnsafe()     => None
-      case ResponseAsWebSocketStream(_, _) => None
-      case MappedResponseAs(raw, g)        => tryAdjustResponseBody(raw, b, meta).map(g(_, meta))
-      case ResponseAsFromMetadata(f)       => tryAdjustResponseBody(f(meta), b, meta)
+      case ResponseAsWebSocket(_)            => None
+      case ResponseAsWebSocketUnsafe()       => None
+      case ResponseAsWebSocketStream(_, _)   => None
+      case MappedResponseAs(raw, g)          => tryAdjustResponseBody(raw, b, meta).map(g(_, meta))
+      case rfm: ResponseAsFromMetadata[_, _] => tryAdjustResponseBody(rfm(meta), b, meta)
     }
   }
 }

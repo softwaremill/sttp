@@ -1,6 +1,7 @@
 package sttp.client.monad
 
 import sttp.client.{
+  ConditionalResponseAs,
   Effect,
   IgnoreResponse,
   MappedResponseAs,
@@ -48,7 +49,6 @@ object MapEffect {
         fm,
         gm
       ),
-      r.isWebSocket,
       r.options,
       r.tags
     )
@@ -75,8 +75,11 @@ object MapEffect {
       case ResponseAsWebSocketUnsafe() => ResponseAsWebSocketUnsafe().asInstanceOf[ResponseAs[TT, R0 with Effect[G]]]
       case ResponseAsWebSocketStream(s, p) =>
         ResponseAsWebSocketStream(s, p).asInstanceOf[ResponseAs[TT, R0 with Effect[G]]]
-      case ResponseAsFromMetadata(f) =>
-        ResponseAsFromMetadata[TT, R0 with Effect[G]](rm => apply[TT, R0, F, G](f(rm), fk, gk, fm, gm))
+      case ResponseAsFromMetadata(conditions, default) =>
+        ResponseAsFromMetadata[TT, R0 with Effect[G]](
+          conditions.map(c => ConditionalResponseAs(c.condition, apply[TT, R0, F, G](c.responseAs, fk, gk, fm, gm))),
+          apply[TT, R0, F, G](default, fk, gk, fm, gm)
+        )
       case MappedResponseAs(raw, g) =>
         MappedResponseAs(apply[Any, R0, F, G](raw, fk, gk, fm, gm), g).asInstanceOf[ResponseAs[TT, R0 with Effect[G]]]
     }

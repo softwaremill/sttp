@@ -57,7 +57,7 @@ private[akkahttp] object BodyFromAkka {
       case MappedResponseAs(raw, g) =>
         apply(raw, hr, meta, wsFlow).map(t => g(t, meta))
 
-      case ResponseAsFromMetadata(f) => apply(f(meta), hr, meta, wsFlow)
+      case rfm: ResponseAsFromMetadata[T, R] => apply(rfm(meta), hr, meta, wsFlow)
 
       case IgnoreResponse =>
         // todo: Replace with HttpResponse#discardEntityBytes() once https://github.com/akka/akka-http/issues/1459 is resolved
