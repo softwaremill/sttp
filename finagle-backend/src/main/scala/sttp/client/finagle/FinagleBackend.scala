@@ -50,7 +50,7 @@ import scala.io.Source
 class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture, Any] {
   type PE = Any with Effect[TFuture]
   override def send[T, R >: PE](request: Request[T, R]): TFuture[Response[T]] =
-    adjustExceptions {
+    adjustExceptions(request) {
       val service = getClient(client, request)
       val finagleRequest = requestBodyToFinagle(request)
       service
@@ -196,17 +196,19 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
     s"${uri.host}:${uri.port.getOrElse(defaultPort)}"
   }
 
-  private def adjustExceptions[T](t: => TFuture[T]): TFuture[T] =
-    SttpClientException.adjustExceptions(responseMonad)(t)(exceptionToSttpClientException)
+  private def adjustExceptions[T](request: Request[_, _])(t: => TFuture[T]): TFuture[T] =
+    SttpClientException.adjustExceptions(responseMonad)(t)(exceptionToSttpClientException(request, _))
 
-  private def exceptionToSttpClientException(e: Exception): Option[Exception] =
+  private def exceptionToSttpClientException(request: Request[_, _], e: Exception): Option[Exception] =
     e match {
-      case e: com.twitter.finagle.NoBrokersAvailableException => Some(new SttpClientException.ConnectException(e))
+      case e: com.twitter.finagle.NoBrokersAvailableException =>
+        Some(new SttpClientException.ConnectException(request, e))
       case e: com.twitter.finagle.Failure if e.getCause.isInstanceOf[com.twitter.finagle.ConnectionFailedException] =>
-        Some(new SttpClientException.ConnectException(e))
-      case e: com.twitter.finagle.ChannelClosedException            => Some(new SttpClientException.ReadException(e))
-      case e: com.twitter.finagle.IndividualRequestTimeoutException => Some(new SttpClientException.ReadException(e))
-      case e: Exception                                             => SttpClientException.defaultExceptionToSttpClientException(e)
+        Some(new SttpClientException.ConnectException(request, e))
+      case e: com.twitter.finagle.ChannelClosedException => Some(new SttpClientException.ReadException(request, e))
+      case e: com.twitter.finagle.IndividualRequestTimeoutException =>
+        Some(new SttpClientException.ReadException(request, e))
+      case e: Exception => SttpClientException.defaultExceptionToSttpClientException(request, e)
     }
 }
 

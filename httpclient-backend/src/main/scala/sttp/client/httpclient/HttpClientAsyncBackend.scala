@@ -21,7 +21,7 @@ abstract class HttpClientAsyncBackend[F[_], S, P](
     customEncodingHandler: EncodingHandler
 ) extends HttpClientBackend[F, S, P](client, closeClient, customEncodingHandler) {
   override def send[T, R >: PE](request: Request[T, R]): F[Response[T]] =
-    adjustExceptions {
+    adjustExceptions(request) {
       if (request.isWebSocket) sendWebSocket(request) else sendRegular(request)
     }
 
@@ -93,8 +93,10 @@ abstract class HttpClientAsyncBackend[F[_], S, P](
       }
   }
 
-  private def adjustExceptions[T](t: => F[T]): F[T] =
-    SttpClientException.adjustExceptions(responseMonad)(t)(SttpClientException.defaultExceptionToSttpClientException)
+  private def adjustExceptions[T](request: Request[_, _])(t: => F[T]): F[T] =
+    SttpClientException.adjustExceptions(responseMonad)(t)(
+      SttpClientException.defaultExceptionToSttpClientException(request, _)
+    )
 
   override def responseMonad: MonadError[F] = monad
 }

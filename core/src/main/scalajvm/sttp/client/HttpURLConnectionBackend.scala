@@ -26,7 +26,7 @@ class HttpURLConnectionBackend private (
     customEncodingHandler: EncodingHandler = PartialFunction.empty
 ) extends SttpBackend[Identity, Any] {
   override def send[T, R >: Any with Effect[Identity]](r: Request[T, R]): Response[T] =
-    adjustExceptions {
+    adjustExceptions(r) {
       val c = openConnection(r.uri)
       c.setRequestMethod(r.method.method)
       r.headers.foreach { case Header(k, v) => c.setRequestProperty(k, v) }
@@ -285,8 +285,10 @@ class HttpURLConnectionBackend private (
         throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
     }
 
-  private def adjustExceptions[T](t: => T): T =
-    SttpClientException.adjustExceptions(responseMonad)(t)(SttpClientException.defaultExceptionToSttpClientException)
+  private def adjustExceptions[T](request: Request[_, _])(t: => T): T =
+    SttpClientException.adjustExceptions(responseMonad)(t)(
+      SttpClientException.defaultExceptionToSttpClientException(request, _)
+    )
 
   override def close(): Unit = {}
 }

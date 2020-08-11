@@ -44,7 +44,7 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
   type PE = P with Effect[F]
 
   override def send[T, R >: PE](r: Request[T, R]): F[Response[T]] =
-    adjustExceptions {
+    adjustExceptions(r) {
       preparedRequest(r).flatMap { ahcRequest =>
         if (r.isWebSocket) sendWebSocket(r, ahcRequest) else sendRegular(r, ahcRequest)
       }
@@ -210,8 +210,10 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
     if (closeClient) monad.eval(asyncHttpClient.close()) else monad.unit(())
   }
 
-  private def adjustExceptions[T](t: => F[T]): F[T] =
-    SttpClientException.adjustExceptions(responseMonad)(t)(SttpClientException.defaultExceptionToSttpClientException)
+  private def adjustExceptions[T](request: Request[_, _])(t: => F[T]): F[T] =
+    SttpClientException.adjustExceptions(responseMonad)(t)(
+      SttpClientException.defaultExceptionToSttpClientException(request, _)
+    )
 }
 
 object AsyncHttpClientBackend {

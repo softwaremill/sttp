@@ -33,7 +33,7 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
   type PE = P with Effect[F]
 
   override def send[T, R >: PE](request: Request[T, R]): F[Response[T]] = {
-    adjustExceptions(request.isWebSocket) {
+    adjustExceptions(request.isWebSocket, request) {
       if (request.isWebSocket) {
         sendWebSocket(request)
       } else {
@@ -45,8 +45,10 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
   protected def sendRegular[T, R >: PE](request: Request[T, R]): F[Response[T]]
   protected def sendWebSocket[T, R >: PE](request: Request[T, R]): F[Response[T]]
 
-  private def adjustExceptions[T](isWebsocket: Boolean)(t: => F[T]): F[T] =
-    SttpClientException.adjustExceptions(responseMonad)(t)(OkHttpBackend.exceptionToSttpClientException(isWebsocket, _))
+  private def adjustExceptions[T](isWebsocket: Boolean, request: Request[_, _])(t: => F[T]): F[T] =
+    SttpClientException.adjustExceptions(responseMonad)(t)(
+      OkHttpBackend.exceptionToSttpClientException(isWebsocket, request, _)
+    )
 
   private[okhttp] def convertRequest[T, R >: PE](request: Request[T, R]): OkHttpRequest = {
     val builder = new OkHttpRequest.Builder()
@@ -162,11 +164,15 @@ object OkHttpBackend {
         .build()
   }
 
-  private[okhttp] def exceptionToSttpClientException(isWebsocket: Boolean, e: Exception): Option[Exception] =
+  private[okhttp] def exceptionToSttpClientException(
+      isWebsocket: Boolean,
+      request: Request[_, _],
+      e: Exception
+  ): Option[Exception] =
     e match {
       // if the websocket protocol upgrade fails, OkHttp throws a ProtocolException - however the whole request has
       // been already sent, so this is not a TCP-level connect exception
-      case e: java.net.ProtocolException if isWebsocket => Some(new ReadException(e))
-      case e                                            => SttpClientException.defaultExceptionToSttpClientException(e)
+      case e: java.net.ProtocolException if isWebsocket => Some(new ReadException(request, e))
+      case e                                            => SttpClientException.defaultExceptionToSttpClientException(request, e)
     }
 }

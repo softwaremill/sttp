@@ -30,7 +30,7 @@ class HttpClientSyncBackend private (
   override val streams: NoStreams = NoStreams
 
   override def send[T, R >: PE](request: Request[T, R]): Identity[Response[T]] =
-    adjustExceptions {
+    adjustExceptions(request) {
       val jRequest = customizeRequest(convertRequest(request))
       val response = client.send(jRequest, BodyHandlers.ofInputStream())
       readResponse(response, response.body(), request.response, None)
@@ -38,8 +38,10 @@ class HttpClientSyncBackend private (
 
   override def responseMonad: MonadError[Identity] = IdMonad
 
-  private def adjustExceptions[T](t: => T): T =
-    SttpClientException.adjustExceptions(responseMonad)(t)(SttpClientException.defaultExceptionToSttpClientException)
+  private def adjustExceptions[T](request: Request[_, _])(t: => T): T =
+    SttpClientException.adjustExceptions(responseMonad)(t)(
+      SttpClientException.defaultExceptionToSttpClientException(request, _)
+    )
 
   override protected val bodyToHttpClient: BodyToHttpClient[Identity, Nothing] =
     new BodyToHttpClient[Identity, Nothing] {

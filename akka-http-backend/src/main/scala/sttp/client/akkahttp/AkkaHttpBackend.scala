@@ -42,7 +42,7 @@ class AkkaHttpBackend private (
     .withUpdatedConnectionSettings(_.withConnectingTimeout(opts.connectionTimeout))
 
   override def send[T, R >: PE](r: Request[T, R]): Future[Response[T]] =
-    adjustExceptions {
+    adjustExceptions(r) {
       if (r.isWebSocket) sendWebSocket(r) else sendRegular(r)
     }
 
@@ -125,8 +125,8 @@ class AkkaHttpBackend private (
     case (_, ce)                        => throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
   }
 
-  private def adjustExceptions[T](t: => Future[T]): Future[T] =
-    SttpClientException.adjustExceptions(responseMonad)(t)(FromAkka.exception)
+  private def adjustExceptions[T](request: Request[_, _])(t: => Future[T]): Future[T] =
+    SttpClientException.adjustExceptions(responseMonad)(t)(FromAkka.exception(request, _))
 
   override def close(): Future[Unit] = {
     if (terminateActorSystemOnClose) {

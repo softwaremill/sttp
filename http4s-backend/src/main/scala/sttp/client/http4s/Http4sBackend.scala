@@ -41,7 +41,7 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
 ) extends SttpBackend[F, Fs2Streams[F]] {
   type PE = Fs2Streams[F] with Effect[F]
   override def send[T, R >: PE](r: Request[T, R]): F[Response[T]] =
-    adjustExceptions {
+    adjustExceptions(r) {
       val (entity, extraHeaders) = bodyToHttp4s(r, r.body)
       val request = Http4sRequest(
         method = methodToHttp4s(r.method),
@@ -222,15 +222,15 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
     }
   }
 
-  private def adjustExceptions[T](t: => F[T]): F[T] =
-    SttpClientException.adjustExceptions(responseMonad)(t)(http4sExceptionToSttpClientException)
+  private def adjustExceptions[T](r: Request[_, _])(t: => F[T]): F[T] =
+    SttpClientException.adjustExceptions(responseMonad)(t)(http4sExceptionToSttpClientException(r, _))
 
-  private def http4sExceptionToSttpClientException(e: Exception): Option[Exception] =
+  private def http4sExceptionToSttpClientException(request: Request[_, _], e: Exception): Option[Exception] =
     e match {
-      case e: org.http4s.client.ConnectionFailure => Some(new SttpClientException.ConnectException(e))
-      case e: org.http4s.InvalidBodyException     => Some(new SttpClientException.ReadException(e))
-      case e: org.http4s.InvalidResponseException => Some(new SttpClientException.ReadException(e))
-      case e: Exception                           => SttpClientException.defaultExceptionToSttpClientException(e)
+      case e: org.http4s.client.ConnectionFailure => Some(new SttpClientException.ConnectException(request, e))
+      case e: org.http4s.InvalidBodyException     => Some(new SttpClientException.ReadException(request, e))
+      case e: org.http4s.InvalidResponseException => Some(new SttpClientException.ReadException(request, e))
+      case e: Exception                           => SttpClientException.defaultExceptionToSttpClientException(request, e)
     }
 
   override def responseMonad: MonadError[F] = new CatsMonadAsyncError

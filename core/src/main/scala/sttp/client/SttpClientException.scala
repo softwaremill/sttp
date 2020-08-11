@@ -13,35 +13,37 @@ import scala.annotation.tailrec
   * In general, it's safe to assume that the request hasn't been sent in case of connect exceptions. With read
   * exceptions, the target host might or might have not received and processed the request.
   *
-  * The [[SttpBackend.send]] and [[SttpBackend.openWebsocket]] methods might also throw other exceptions, due to
+  * The [[SttpBackend.send]] methods might also throw other exceptions, due to
   * programming errors, bugs in the underlying implementations, bugs in sttp or an uncovered exception.
   *
+  * @param request The request, which was being sent when the exception was thrown
   * @param cause The original exception.
   */
-abstract class SttpClientException(cause: Exception) extends Exception(cause)
+abstract class SttpClientException(request: Request[_, _], cause: Exception)
+    extends Exception(s"Exception when sending request: ${request.method} ${request.uri}", cause)
 
 object SttpClientException {
-  class ConnectException(cause: Exception) extends SttpClientException(cause)
+  class ConnectException(request: Request[_, _], cause: Exception) extends SttpClientException(request, cause)
 
-  class ReadException(cause: Exception) extends SttpClientException(cause)
+  class ReadException(request: Request[_, _], cause: Exception) extends SttpClientException(request, cause)
 
   @tailrec
-  def defaultExceptionToSttpClientException(e: Exception): Option[Exception] =
+  def defaultExceptionToSttpClientException(request: Request[_, _], e: Exception): Option[Exception] =
     e match {
-      case e: java.net.ConnectException             => Some(new ConnectException(e))
-      case e: java.net.UnknownHostException         => Some(new ConnectException(e))
-      case e: java.net.MalformedURLException        => Some(new ConnectException(e))
-      case e: java.net.NoRouteToHostException       => Some(new ConnectException(e))
-      case e: java.net.PortUnreachableException     => Some(new ConnectException(e))
-      case e: java.net.ProtocolException            => Some(new ConnectException(e))
-      case e: java.net.URISyntaxException           => Some(new ConnectException(e))
-      case e: java.net.SocketTimeoutException       => Some(new ReadException(e))
-      case e: java.net.UnknownServiceException      => Some(new ReadException(e))
-      case e: java.net.SocketException              => Some(new ReadException(e))
-      case e: java.util.concurrent.TimeoutException => Some(new ReadException(e))
-      case e: java.io.IOException                   => Some(new ReadException(e))
+      case e: java.net.ConnectException             => Some(new ConnectException(request, e))
+      case e: java.net.UnknownHostException         => Some(new ConnectException(request, e))
+      case e: java.net.MalformedURLException        => Some(new ConnectException(request, e))
+      case e: java.net.NoRouteToHostException       => Some(new ConnectException(request, e))
+      case e: java.net.PortUnreachableException     => Some(new ConnectException(request, e))
+      case e: java.net.ProtocolException            => Some(new ConnectException(request, e))
+      case e: java.net.URISyntaxException           => Some(new ConnectException(request, e))
+      case e: java.net.SocketTimeoutException       => Some(new ReadException(request, e))
+      case e: java.net.UnknownServiceException      => Some(new ReadException(request, e))
+      case e: java.net.SocketException              => Some(new ReadException(request, e))
+      case e: java.util.concurrent.TimeoutException => Some(new ReadException(request, e))
+      case e: java.io.IOException                   => Some(new ReadException(request, e))
       case e if e.getCause != null && e.getCause.isInstanceOf[Exception] =>
-        defaultExceptionToSttpClientException(e.getCause.asInstanceOf[Exception])
+        defaultExceptionToSttpClientException(request, e.getCause.asInstanceOf[Exception])
       case _ => None
     }
 
