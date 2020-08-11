@@ -33,12 +33,15 @@ trait HttpTest[F[_]]
   protected val testBody = "this is the body"
   protected val testBodyBytes: Array[Byte] = testBody.getBytes("UTF-8")
   protected val expectedPostEchoResponse = "POST /echo this is the body"
+  protected val customEncoding = "custom"
+  protected val customEncodedData = "custom-data"
 
   protected val sttpIgnore: ResponseAs[Unit, Any] = sttp.client.ignore
 
   protected def supportsRequestTimeout = true
   protected def supportsSttpExceptions = true
   protected def supportsCustomMultipartContentType = true
+  protected def supportsCustomContentEncoding = false
   protected def throwsExceptionOnUnsupportedEncoding = true
 
   "parse response" - {
@@ -283,6 +286,13 @@ trait HttpTest[F[_]]
     "not attempt to decompress HEAD requests" in {
       val req = basicRequest.head(uri"$endpoint/compress")
       req.send().toFuture().map { resp => resp.code shouldBe StatusCode.Ok }
+    }
+
+    if (supportsCustomContentEncoding) {
+      "decompress using custom content encoding" in {
+        val req = basicRequest.get(uri"$endpoint/compress-custom").acceptEncoding(customEncoding).response(asStringAlways)
+        req.send().toFuture().map { resp => resp.body should be(customEncodedData) }
+      }
     }
 
     if (supportsSttpExceptions && throwsExceptionOnUnsupportedEncoding) {

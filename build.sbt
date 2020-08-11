@@ -5,9 +5,9 @@ import sbtrelease.ReleasePlugin.autoImport._
 import sbtrelease.ReleaseStateTransformations._
 
 val scala2_11 = "2.11.12"
-val scala2_12 = "2.12.10"
+val scala2_12 = "2.12.12"
 val scala2_13 = "2.13.3"
-val scala3 = "0.24.0"
+val scala3 = "0.26.0-RC1"
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests")
@@ -36,8 +36,6 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
     tagRelease,
     releaseStepCommandAndRemaining("publishSigned"),
     releaseStepCommand("sonatypeBundleRelease"),
-    setNextVersion,
-    commitNextVersion,
     pushChanges
   ),
   // doc generation is broken in dotty
@@ -176,30 +174,29 @@ val playJsonVersion: Option[(Long, Long)] => String = {
 }
 val catsEffectVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.0.0"
-  case _             => "2.1.3"
+  case _             => "2.1.4"
 }
 val fs2Version: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.1.0"
-  case _             => "2.4.1"
+  case _             => "2.4.2"
 }
 
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.12"
 val akkaStreamVersion = "2.6.8"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % akkaStreamVersion
 
-val scalaTestVersion = "3.1.2"
+val scalaTestVersion = "3.2.1"
 val scalaNativeTestInterfaceVersion = "0.4.0-M2"
-val scalaTestNativeVersion = "3.2.0-M2"
 val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion
 
-val zioVersion = "1.0.0-RC21-2"
-val zioInteropRsVersion = "1.0.3.5-RC12"
+val zioVersion = "1.0.0"
+val zioInteropRsVersion = "1.0.3.5"
 
-val modelVersion = "1.1.3"
+val modelVersion = "1.1.4"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
 
-val jeagerClientVersion = "1.3.1"
+val jeagerClientVersion = "1.3.2"
 val braveOpentracingVersion = "0.37.2"
 val zipkinSenderOkHttpVersion = "2.15.0"
 val resilience4jVersion = "1.5.0"
@@ -324,10 +321,10 @@ lazy val core = (projectMatrix in file("core"))
         libraryDependencies ++= Seq(
           "com.softwaremill.sttp.model" %%% "core" % modelVersion,
           "org.scala-native" %%% "test-interface" % scalaNativeTestInterfaceVersion % Test,
-          "org.scalatest" %%% "scalatest-shouldmatchers" % scalaTestNativeVersion % Test,
-          "org.scalatest" %%% "scalatest-flatspec" % scalaTestNativeVersion % Test,
-          "org.scalatest" %%% "scalatest-freespec" % scalaTestNativeVersion % Test,
-          "org.scalatest" %%% "scalatest-funsuite" % scalaTestNativeVersion % Test
+          "org.scalatest" %%% "scalatest-shouldmatchers" % scalaTestVersion % Test,
+          "org.scalatest" %%% "scalatest-flatspec" % scalaTestVersion % Test,
+          "org.scalatest" %%% "scalatest-freespec" % scalaTestVersion % Test,
+          "org.scalatest" %%% "scalatest-funsuite" % scalaTestVersion % Test
         ),
         publishArtifact in Test := true
       )
@@ -483,7 +480,7 @@ lazy val asyncHttpClientScalazBackend =
     .dependsOn(scalaz % compileAndTest)
 
 lazy val asyncHttpClientZioBackend =
-  asyncHttpClientBackendProject("zio", includeDotty = false)
+  asyncHttpClientBackendProject("zio", includeDotty = true)
     .settings(
       libraryDependencies ++= Seq(
         "dev.zio" %% "zio-interop-reactivestreams" % zioInteropRsVersion
@@ -517,7 +514,7 @@ lazy val okhttpBackend = (projectMatrix in file("okhttp-backend"))
   .settings(
     name := "okhttp-backend",
     libraryDependencies ++= Seq(
-      "com.squareup.okhttp3" % "okhttp" % "4.8.0"
+      "com.squareup.okhttp3" % "okhttp" % "4.8.1"
     )
   )
   .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = intellijImportOnly213)
@@ -543,7 +540,7 @@ lazy val http4sBackend = (projectMatrix in file("http4s-backend"))
   .settings(
     name := "http4s-backend",
     libraryDependencies ++= Seq(
-      "org.http4s" %% "http4s-blaze-client" % "0.21.6"
+      "org.http4s" %% "http4s-blaze-client" % "0.21.7"
     )
   )
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13), settings = intellijImportOnly213)
@@ -606,7 +603,7 @@ lazy val finagleBackend = (projectMatrix in file("finagle-backend"))
   .settings(
     name := "finagle-backend",
     libraryDependencies ++= Seq(
-      "com.twitter" %% "finagle-http" % "20.6.0"
+      "com.twitter" %% "finagle-http" % "20.7.0"
     )
   )
   .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = intellijImportOnly213)
@@ -711,7 +708,7 @@ lazy val zioTelemetryOpenTracingBackend = (projectMatrix in file("metrics/zio-te
   .settings(
     name := "zio-telemetry-opentracing-backend",
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-opentracing" % "0.6.0",
+      "dev.zio" %% "zio-opentracing" % "0.7.0",
       "org.scala-lang.modules" %% "scala-collection-compat" % "2.1.6"
     )
   )

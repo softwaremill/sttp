@@ -8,8 +8,8 @@ import java.nio.file.Files
 import java.util.concurrent.ThreadLocalRandom
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
 
+import sttp.client.HttpURLConnectionBackend.EncodingHandler
 import sttp.client.internal._
-import sttp.model._
 import sttp.client.monad.{IdMonad, MonadError}
 import sttp.client.testing.SttpBackendStub
 import sttp.model.StatusCode
@@ -22,7 +22,8 @@ class HttpURLConnectionBackend private (
     opts: SttpBackendOptions,
     customizeConnection: HttpURLConnection => Unit,
     createURL: String => URL,
-    openConnection: (URL, Option[java.net.Proxy]) => URLConnection
+    openConnection: (URL, Option[java.net.Proxy]) => URLConnection,
+    customEncodingHandler: EncodingHandler = PartialFunction.empty
 ) extends SttpBackend[Identity, Any] {
   override def send[T, R >: Any with Effect[Identity]](r: Request[T, R]): Response[T] =
     adjustExceptions {
@@ -276,9 +277,10 @@ class HttpURLConnectionBackend private (
 
   private def wrapInput(contentEncoding: Option[String], is: InputStream): InputStream =
     contentEncoding.map(_.toLowerCase) match {
-      case None            => is
-      case Some("gzip")    => new GZIPInputStream(is)
-      case Some("deflate") => new InflaterInputStream(is)
+      case None                                                    => is
+      case Some("gzip")                                            => new GZIPInputStream(is)
+      case Some("deflate")                                         => new InflaterInputStream(is)
+      case Some(ce) if customEncodingHandler.isDefinedAt((is, ce)) => customEncodingHandler(is -> ce)
       case Some(ce) =>
         throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
     }
@@ -290,6 +292,14 @@ class HttpURLConnectionBackend private (
 }
 
 object HttpURLConnectionBackend {
+
+  type EncodingHandler = PartialFunction[(InputStream, String), InputStream]
+
+  private[client] val defaultOpenConnection: (URL, Option[java.net.Proxy]) => URLConnection = {
+    case (url, None)        => url.openConnection()
+    case (url, Some(proxy)) => url.openConnection(proxy)
+  }
+
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeConnection: HttpURLConnection => Unit = _ => (),
@@ -297,10 +307,11 @@ object HttpURLConnectionBackend {
       openConnection: (URL, Option[java.net.Proxy]) => URLConnection = {
         case (url, None)        => url.openConnection()
         case (url, Some(proxy)) => url.openConnection(proxy)
-      }
+      },
+      customEncodingHandler: EncodingHandler = PartialFunction.empty
   ): SttpBackend[Identity, Any] =
     new FollowRedirectsBackend[Identity, Any](
-      new HttpURLConnectionBackend(options, customizeConnection, createURL, openConnection)
+      new HttpURLConnectionBackend(options, customizeConnection, createURL, openConnection, customEncodingHandler)
     )
 
   /**

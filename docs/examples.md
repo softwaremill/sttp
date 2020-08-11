@@ -350,7 +350,7 @@ AsyncHttpClientZioBackend()
       .repeat(
         Schedule.spaced(1.second) *>
           Schedule.recurs(10) *>
-          Schedule.doWhile(result => RetryWhen.Default(localhostRequest, result))
+          Schedule.recurWhile(result => RetryWhen.Default(localhostRequest, result))
       )
       .absolve
 

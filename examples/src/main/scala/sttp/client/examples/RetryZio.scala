@@ -20,12 +20,11 @@ object RetryZio extends zio.App {
           .repeat(
             Schedule.spaced(1.second) *>
               Schedule.recurs(10) *>
-              Schedule.doWhile(result => RetryWhen.Default(localhostRequest, result))
+              Schedule.recurWhile(result => RetryWhen.Default(localhostRequest, result))
           )
           .absolve
 
         sendWithRetries.ensuring(backend.close().ignore)
-      }
-      .fold(_ => ExitCode.failure, _ => ExitCode.success)
+      }.exitCode
   }
 }

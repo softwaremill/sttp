@@ -2,10 +2,9 @@ package sttp.client.testing.server
 
 import java.io.{ByteArrayOutputStream, InputStream, OutputStream}
 
-import akka.{Done, NotUsed}
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.coding.{Deflate, Gzip, NoCoding}
+import akka.http.scaladsl.coding._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.CacheDirectives._
 import akka.http.scaladsl.model.headers._
@@ -16,6 +15,7 @@ import akka.http.scaladsl.server.directives.RouteDirectives.complete
 import akka.http.scaladsl.server.{RejectionHandler, Route}
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import akka.util.ByteString
+import akka.{Done, NotUsed}
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives
 import ch.megard.akka.http.cors.scaladsl.settings.CorsSettings
 
@@ -219,6 +219,10 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
     } ~ path("compress-unsupported") {
       respondWithHeader(`Content-Encoding`(HttpEncoding("secret-encoding"))) {
         complete("I'm compressed!")
+      }
+    } ~ path("compress-custom") {
+      respondWithHeader(`Content-Encoding`(HttpEncoding("custom"))) {
+        complete("I'm compressed, but who cares! Must be overwritten by client encoder")
       }
     } ~ path("compress") {
       encodeResponseWith(Gzip, Deflate, NoCoding) {

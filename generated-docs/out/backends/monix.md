@@ -7,7 +7,7 @@ There are several backend implementations which are `monix.eval.Task`-based. The
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client" %% "async-http-client-backend-monix" % "2.2.2"
+"com.softwaremill.sttp.client" %% "async-http-client-backend-monix" % "2.2.4"
 ```
            
 This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client), uses [Netty](http://netty.io) behind the scenes and supports effect cancellation.
@@ -50,7 +50,7 @@ implicit val sttpBackend = AsyncHttpClientMonixBackend.usingClient(asyncHttpClie
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client" %% "okhttp-backend-monix" % "2.2.2"
+"com.softwaremill.sttp.client" %% "okhttp-backend-monix" % "2.2.4"
 ```
 
 Create the backend using:
@@ -76,7 +76,7 @@ This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supp
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client" %% "httpclient-backend-monix" % "2.2.2"
+"com.softwaremill.sttp.client" %% "httpclient-backend-monix" % "2.2.4"
 ```
 
 Create the backend using:
