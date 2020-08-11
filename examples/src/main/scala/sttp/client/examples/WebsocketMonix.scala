@@ -15,14 +15,12 @@ object WebsocketMonix extends App {
     send(1) *> send(2) *> receive *> receive *> ws.close
   }
 
-  val websocketTask: Task[Unit] = AsyncHttpClientMonixBackend().flatMap { implicit backend =>
-    val response: Task[WebSocketResponse[WebSocket[Task]]] = basicRequest
+  val websocketTask: Task[Unit] = AsyncHttpClientMonixBackend.resource().use { implicit backend =>
+    basicRequest
+      .response(asWebSocket(useWebsocket))
       .get(uri"wss://echo.websocket.org")
-      .openWebsocketF(MonixWebSocketHandler())
-
-    response
-      .flatMap(r => useWebsocket(r.result))
-      .guarantee(backend.close())
+      .send()
+      .map(_ => ())
   }
 
   websocketTask.runSyncUnsafe()

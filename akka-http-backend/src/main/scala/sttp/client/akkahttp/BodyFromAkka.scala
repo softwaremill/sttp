@@ -113,7 +113,7 @@ private[akkahttp] object BodyFromAkka {
           .mapAsync(1)(messageToFrame)
           .via(p.asInstanceOf[AkkaStreams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]])
           .mapConcat {
-            case incoming: WebSocketFrame.Incoming => frameToMessage(incoming).toSeq
+            case incoming: WebSocketFrame.Incoming => frameToMessage(incoming).toList
             case WebSocketFrame.Close(_, _)        => throw new WebSocketClosed()
           }
           .watchTermination() { (notUsed, done) =>

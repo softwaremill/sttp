@@ -60,7 +60,7 @@ private[okhttp] trait BodyFromOkHttp[F[_], S] {
         ras.f
           .asInstanceOf[streams.BinaryStream => F[T]](responseBodyToStream(responseBody))
           .ensure(monad.eval(responseBody.close()))
-      case ResponseAsFromMetadata(f) => apply(responseBody, f(responseMetadata), responseMetadata, ws)
+      case raf: ResponseAsFromMetadata[T, _] => apply(responseBody, raf(responseMetadata), responseMetadata, ws)
       case MappedResponseAs(raw, g) =>
         monad.map(apply(responseBody, raw, responseMetadata, ws))(t => g(t, responseMetadata))
     }

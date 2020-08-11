@@ -25,7 +25,9 @@ package object zio {
       *
       *         Known exceptions are converted to one of [[SttpClientException]]. Other exceptions are kept unchanged.
       */
-    def send[T](request: Request[T, ZioStreams]): ZIO[SttpClient, Throwable, Response[T]] =
+    def send[T](
+        request: Request[T, Effect[Task] with ZioStreams with WebSockets]
+    ): ZIO[SttpClient, Throwable, Response[T]] =
       ZIO.accessM(env => env.get[SttpBackend[Task, ZioStreams with WebSockets]].send(request))
   }
 }

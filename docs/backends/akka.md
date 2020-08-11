@@ -35,6 +35,7 @@ To set the request body as a stream:
 
 ```scala mdoc:compile-only
 import sttp.client._
+import sttp.client.akkahttp._
 
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
@@ -42,7 +43,7 @@ import akka.util.ByteString
 val source: Source[ByteString, Any] = ???
 
 basicRequest
-  .streamBody(source)
+  .streamBody(AkkaStreams)(source)
   .post(uri"...")
 ```
 
@@ -61,7 +62,7 @@ implicit val sttpBackend = AkkaHttpBackend()
 val response: Future[Response[Either[String, Source[ByteString, Any]]]] =
   basicRequest
     .post(uri"...")
-    .response(asStream[Source[ByteString, Any]])
+    .response(asStream(AkkaStreams))
     .send()           
 ```
 
@@ -93,7 +94,6 @@ import akka.Done
 import akka.stream.scaladsl.Flow
 import akka.http.scaladsl.model.ws.Message
 import sttp.client._
-import sttp.client.ws.WebSocketResponse
 import scala.concurrent.Future
 import sttp.client.akkahttp._
 

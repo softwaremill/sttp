@@ -4,8 +4,8 @@ import sttp.client.testing.websocket.{WebSocketBufferOverflowTest, WebSocketStre
 
 abstract class AsyncHttpClientWebSocketTest[F[_], S]
     extends WebSocketTest[F]
-    with WebSocketStreamingTest[F, S]
-    with WebSocketBufferOverflowTest[F] {
+    with WebSocketBufferOverflowTest[F]
+    with WebSocketStreamingTest[F, S] {
 
   override def throwsWhenNotAWebSocket: Boolean = true
 

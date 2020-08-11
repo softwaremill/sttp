@@ -8,7 +8,7 @@ import sttp.client.logging.LogMessages
 object Slf4jLoggingBackend {
   private val logger = LoggerFactory.getLogger("sttp.client.logging.slf4j.Slf4jLoggingBackend")
 
-  def apply[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[F, S, WS_HANDLER]): SttpBackend[F, S, WS_HANDLER] =
+  def apply[F[_], S](delegate: SttpBackend[F, S]): SttpBackend[F, S] =
     ListenerBackend.lift(delegate, new Slf4jLoggingListener(logger))
 }
 
@@ -27,21 +27,5 @@ class Slf4jLoggingListener(logger: Logger) extends RequestListener[Identity, Uni
     } else {
       logger.debug(LogMessages.response(request, response))
     }
-  }
-
-  override def beforeWebsocket(request: Request[_, _]): Identity[Unit] = {
-    logger.debug(LogMessages.beforeWebsocketOpen(request))
-  }
-
-  override def websocketException(request: Request[_, _], tag: Unit, e: Exception): Identity[Unit] = {
-    logger.error(LogMessages.websocketException(request), e)
-  }
-
-  override def websocketSuccessful(
-      request: Request[_, _],
-      response: WebSocketResponse[_],
-      tag: Unit
-  ): Identity[Unit] = {
-    logger.debug(LogMessages.websocketResponse(request, response))
   }
 }

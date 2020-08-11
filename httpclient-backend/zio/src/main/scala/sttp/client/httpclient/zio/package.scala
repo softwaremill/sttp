@@ -12,7 +12,7 @@ package object zio {
   /**
     * ZIO-environment service definition, which is an SttpBackend.
     */
-  type SttpClient = Has[SttpBackend[BlockingTask, BlockingZioStreams]]
+  type SttpClient = Has[SttpBackend[BlockingTask, BlockingZioStreams with WebSockets]]
 
   object SttpClient {
 
@@ -28,7 +28,9 @@ package object zio {
       *
       *         Known exceptions are converted to one of [[SttpClientException]]. Other exceptions are kept unchanged.
       */
-    def send[T](request: Request[T, BlockingZioStreams]): ZIO[SttpClient with Blocking, Throwable, Response[T]] =
-      ZIO.accessM(env => env.get[SttpBackend[BlockingTask, BlockingZioStreams]].send(request))
+    def send[T](
+        request: Request[T, BlockingZioStreams with Effect[BlockingTask] with WebSockets]
+    ): ZIO[SttpClient with Blocking, Throwable, Response[T]] =
+      ZIO.accessM(env => env.get[SttpBackend[BlockingTask, BlockingZioStreams with WebSockets]].send(request))
   }
 }

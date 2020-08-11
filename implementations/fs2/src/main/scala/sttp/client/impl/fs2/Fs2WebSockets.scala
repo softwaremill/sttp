@@ -26,7 +26,7 @@ object Fs2WebSockets {
       .flatMap { closeRef =>
         Stream
           .repeatEval(ws.receive) // read incoming messages
-          .flatMap {
+          .flatMap[F, Option[WebSocketFrame.Data[_]]] {
             case Left(WebSocketFrame.Close(code, reason)) =>
               Stream.eval(closeRef.set(Some(WebSocketFrame.Close(code, reason)))).as(None)
             case Right(WebSocketFrame.Ping(payload)) =>

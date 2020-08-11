@@ -248,8 +248,8 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](options: FetchOpti
       case MappedResponseAs(raw, g) =>
         readResponseBody(response, raw, meta).map(t => g(t, meta))
 
-      case ResponseAsFromMetadata(f) =>
-        readResponseBody(response, f(meta), meta)
+      case raf: ResponseAsFromMetadata[T, R] =>
+        readResponseBody(response, raf(meta), meta)
 
       case IgnoreResponse =>
         transformPromise(response.arrayBuffer()).map(_ => ())
