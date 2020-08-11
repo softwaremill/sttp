@@ -12,7 +12,7 @@ import sttp.client.HttpURLConnectionBackend.EncodingHandler
 import sttp.client.internal._
 import sttp.client.monad.{IdMonad, MonadError}
 import sttp.client.testing.SttpBackendStub
-import sttp.model.StatusCode
+import sttp.model.{Header, HeaderNames, StatusCode, Uri}
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._

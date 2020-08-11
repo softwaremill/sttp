@@ -20,7 +20,7 @@ import scala.scalanative.libc.string._
 import scala.scalanative.unsafe.{CSize, Ptr, _}
 
 abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
-    extends SttpBackend[F, Any, NothingT] {
+    extends SttpBackend[F, Any] {
   override val responseMonad: MonadError[F] = monad
 
   override def close(): F[Unit] = monad.unit(())
@@ -94,12 +94,6 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
         }
       }
     }
-
-  override def openWebsocket[T, WS_RESULT, R >: PE](
-      request: Request[T, R],
-      handler: NothingT[WS_RESULT]
-  ): F[WebSocketResponse[WS_RESULT]] =
-    handler // nothing is everything
 
   private def setMethod(handle: CurlHandle, method: Method)(implicit z: Zone): F[CurlCode] = {
     val m = method match {
@@ -188,7 +182,7 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
     responseAs match {
       case MappedResponseAs(raw, g) =>
         responseMonad.map(readResponseBody(response, raw, responseMetadata))(g(_, responseMetadata))
-      case ResponseAsFromMetadata(f) => readResponseBody(response, f(responseMetadata), responseMetadata)
+      case raf: ResponseAsFromMetadata[T, R] => readResponseBody(response, raf(responseMetadata), responseMetadata)
       case IgnoreResponse            => responseMonad.unit((): Unit)
       case ResponseAsByteArray       => monad.map(toByteArray(response))(b => b)
       case ResponseAsFile(output) =>
