@@ -20,8 +20,8 @@ val sort: Option[String] = None
 val request = basicRequest.get(
   uri"https://api.github.com/search/repositories?q=$query&sort=$sort")
 
-implicit val backend = HttpURLConnectionBackend()
-val response = request.send()
+val backend = HttpURLConnectionBackend()
+val response = request.send(backend)
 
 // response.header(...): Option[String]
 println(response.header("Content-Length"))

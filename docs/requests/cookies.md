@@ -24,12 +24,12 @@ It is often necessary to copy cookies from a response, e.g. after a login reques
 ```scala mdoc:compile-only
 import sttp.client._
 
-implicit val backend = HttpURLConnectionBackend()
+val backend = HttpURLConnectionBackend()
 val loginRequest = basicRequest
     .cookie("login", "me")
     .body("This is a test")
     .post(uri"http://endpoint.com")
-val response = loginRequest.send()
+val response = loginRequest.send(backend)
 
 basicRequest.cookies(response)
 ```   
@@ -39,12 +39,12 @@ Or, it's also possible to store only the `sttp.model.CookieWithMeta` objects (a 
 ```scala mdoc:compile-only
 import sttp.client._
 
-implicit val backend = HttpURLConnectionBackend()
+val backend = HttpURLConnectionBackend()
 val loginRequest = basicRequest
     .cookie("login", "me")
     .body("This is a test")
     .post(uri"http://endpoint.com")
-val response = loginRequest.send()
+val response = loginRequest.send(backend)
 val cookiesFromResponse = response.cookies
 
 basicRequest.cookies(cookiesFromResponse)

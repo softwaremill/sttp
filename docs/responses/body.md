@@ -141,13 +141,13 @@ import scala.concurrent.Future
 import sttp.client._
 import sttp.client.akkahttp._
 
-implicit val sttpBackend: SttpBackend[Future, Source[ByteString, Any], NothingT] = AkkaHttpBackend()
+val backend: SttpBackend[Future, Source[ByteString, Any], NothingT] = AkkaHttpBackend()
 
 val response: Future[Response[Either[String, Source[ByteString, Any]]]] =
   basicRequest
     .post(uri"...")
     .response(asStream[Source[ByteString, Any]])
-    .send()    
+    .send(backend)    
 ```
 
 ```note:: Unlike with non-streaming response handlers, each streaming response should be entirely consumed by client code.

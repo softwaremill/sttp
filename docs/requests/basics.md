@@ -33,21 +33,14 @@ The URI can be created programatically (by calling methods on the `Uri` class), 
 
 A request definition can be created without knowing how it will be sent. But to send a request, a backend is needed. A default, synchronous backend based on Java's `HttpURLConnection` is provided out-of-the box.
 
-To invoke the `send()` method on a request description, an implicit value of type `SttpBackend` needs to be in scope:
-
-```scala mdoc:compile-only
-implicit val backend = HttpURLConnectionBackend()
-val response: Identity[Response[Either[String, String]]] = request.send()
-```        
-
-The default backend doesn't wrap the response into any container, but other asynchronous backends might do so. See the section on [backends](../backends/summary.md) for more details.
-
-Alternatively, if you prefer to pass the backend explicitly, instead of using implicits, you can also send the request the following way:
+To invoke the `send(backend)` method on a request description, an implicit value of type `SttpBackend` needs to be in scope:
 
 ```scala mdoc:compile-only
 val backend = HttpURLConnectionBackend()
-val response = backend.send(request)     
-```
+val response: Identity[Response[Either[String, String]]] = request.send(backend)
+```        
+
+The default backend doesn't wrap the response into any container, but other asynchronous backends might do so. See the section on [backends](../backends/summary.md) for more details.
 
 ```eval_rst
 .. note::

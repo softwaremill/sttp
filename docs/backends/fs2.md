@@ -109,13 +109,13 @@ import sttp.client._
 import sttp.client.asynchttpclient.fs2.AsyncHttpClientFs2Backend
 import fs2.Stream
 
-val effect = AsyncHttpClientFs2Backend[IO]().flatMap { implicit backend =>
+val effect = AsyncHttpClientFs2Backend[IO]().flatMap { backend =>
   val stream: Stream[IO, Byte] = ???
 
   basicRequest
     .streamBody(stream)
     .post(uri"...")
-    .send()
+    .send(backend)
 }
 // run the effect
 ```
@@ -127,13 +127,13 @@ import sttp.client.asynchttpclient.fs2.AsyncHttpClientFs2Backend
 import fs2.Stream
 import scala.concurrent.duration.Duration
 
-val effect = AsyncHttpClientFs2Backend[IO]().flatMap { implicit backend =>
+val effect = AsyncHttpClientFs2Backend[IO]().flatMap { backend =>
   val response: IO[Response[Either[String, Stream[IO, Byte]]]] =
     basicRequest
       .post(uri"...")
       .response(asStream[Stream[IO, Byte]])
       .readTimeout(Duration.Inf)
-      .send()
+      .send(backend)
 
   response
 }

@@ -23,7 +23,7 @@ If you are an [Ammonite](https://ammonite.io) user, you can quickly start experi
 ```scala
 import $ivy.`com.softwaremill.sttp.client::core:@VERSION@`
 import sttp.client.quick._
-quickRequest.get(uri"http://httpbin.org/ip").send()
+quickRequest.get(uri"http://httpbin.org/ip").send(backend)
 ```
 
 Importing the `quick` object has the same effect as importing `sttp.client._`, plus defining an implicit synchronous backend (`implict val backend = HttpURLConnectionBackend()`), so that sttp can be used right away.
@@ -33,7 +33,7 @@ If the default `HttpURLConnectionBackend` for some reason is insufficient, you c
 ```scala
 import $ivy.`com.softwaremill.sttp.client::okhttp-backend:@VERSION@`
 import sttp.client.okhttp.quick._
-quickRequest.get(uri"http://httpbin.org/ip").send()
+quickRequest.get(uri"http://httpbin.org/ip").send(backend)
 ```
 
 ## Imports

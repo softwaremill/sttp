@@ -19,11 +19,11 @@ An alternative to importing the `sttp.client._` package, is to extend the `sttp.
 
 ## Send the request
 
-Once the request is described as a value, it can be sent. To send a request, you'll need to have an implicit value of type `SttpBackend` in scope. 
+Once the request is described as a value, it can be sent. To send a request, you'll need an `SttpBackend`. 
 
 The backend is where most of the work happens: the request is translated to a backend-specific form; a connection is opened, data sent and received; finally, the backend-specific response is translated to sttp's `Response`, as described in the request.
 
-A backend can be synchronous, that is, sending a request can be a blocking operation. When invoking `myRequest.send()`, you'll get a value of type `Response[T]`. Backends can also be asynchronous, and evaluate the send operation eagarly or lazily. For example, when using the [Akka backend](backends/akka.md), `myRequest.send()` will return a `Future[Response[T]]`: an eagerly-evaluated, asynchronous result. When using a [Monix backend](backends/monix.md), you'll get back a `Task[Response[T]]`: a lazily-evaluated, but also non-blocking and asynchronous result. 
+A backend can be synchronous, that is, sending a request can be a blocking operation. When invoking `myRequest.send(backend)`, you'll get a value of type `Response[T]`. Backends can also be asynchronous, and evaluate the send operation eagerly or lazily. For example, when using the [Akka backend](backends/akka.md), `myRequest.send(backend)` will return a `Future[Response[T]]`: an eagerly-evaluated, asynchronous result. When using a [Monix backend](backends/monix.md), you'll get back a `Task[Response[T]]`: a lazily-evaluated, but also non-blocking and asynchronous result. 
 
 Backends manage the connection pool, thread pools for handling responses, depending on the implementation provide various configuration options, and optionally support [streaming](requests/streaming.md) and [websockets](websockets.md). They typically need to be created upon application startup, and closed when the application terminates. 
 
@@ -32,17 +32,8 @@ For example, the following sends a synchronous request, using the default JVM ba
 ```scala mdoc:compile-only
 import sttp.client._
 val myRequest: Request[String, Nothing] = ???
-implicit val backend = HttpURLConnectionBackend()
-val response = myRequest.send()
-```
-
-Alternatively, if you prefer to pass the backend explicitly, instead of using implicits, you can also send the request the following way:
-
-```scala mdoc:compile-only
-import sttp.client._
-val myRequest: Request[String, Nothing] = ???
 val backend = HttpURLConnectionBackend()
-val response = backend.send(myRequest)     
+val response = myRequest.send(backend)
 ```
 
 ## Next steps

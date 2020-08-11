@@ -57,13 +57,13 @@ import sttp.client.akkahttp._
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 
-implicit val sttpBackend = AkkaHttpBackend()
+val backend = AkkaHttpBackend()
 
 val response: Future[Response[Either[String, Source[ByteString, Any]]]] =
   basicRequest
     .post(uri"...")
     .response(asStream(AkkaStreams))
-    .send()           
+    .send(backend)           
 ```
 
 ## Testing
@@ -97,7 +97,7 @@ import sttp.client._
 import scala.concurrent.Future
 import sttp.client.akkahttp._
 
-implicit val backend : AkkaHttpBackend = ???
+val backend : AkkaHttpBackend = ???
 val flow: Flow[Message, Message, Future[Done]] = ???
 val response: Future[WebSocketResponse[Future[Done]]] =
     basicRequest.get(uri"wss://echo.websocket.org").openWebsocket(flow)

@@ -2,7 +2,7 @@
 
 Apart from [streaming](requests/streaming.md), backends (see [backends summary](backends/summary.md)) can also optionally support websockets. Websocket requests are described exactly the same as regular requests, starting with `basicRequest`, adding headers, specifying the request method and uri.
 
-The difference is that `openWebsocket(handler)` should be called instead of `send()`, given an instance of a backend-specific websocket handler. Refer to documentation of individual backends for details on how to instantiate the handler.
+The difference is that `openWebsocket(handler)` should be called instead of `send(backend)`, given an instance of a backend-specific websocket handler. Refer to documentation of individual backends for details on how to instantiate the handler.
 
 As with regular requests, instead of calling `request.openWebsocket(handler)` and using an implicit backend instance, it is also possible to call `backend.openWebsocket(request, handler)`.
 

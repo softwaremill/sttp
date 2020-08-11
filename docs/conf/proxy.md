@@ -15,12 +15,12 @@ Otherwise, proxy values can be specified manually when creating a backend:
 ```scala mdoc:compile-only
 import sttp.client._
 
-implicit val backend = HttpURLConnectionBackend(
+val backend = HttpURLConnectionBackend(
   options = SttpBackendOptions.httpProxy("some.host", 8080))
 
 basicRequest
   .get(uri"...")
-  .send() // uses the proxy
+  .send(backend) // uses the proxy
 ```
 
 Or in case your proxy requires authentication (supported by the JVM backends):

@@ -23,8 +23,8 @@ val request = basicRequest
   // use an optional parameter in the URI
   .post(uri"https://httpbin.org/post?signup=$signup")
 
-implicit val backend = HttpURLConnectionBackend()
-val response = request.send()
+val backend = HttpURLConnectionBackend()
+val response = request.send(backend)
 
 println(response.body)
 println(response.headers)
@@ -60,9 +60,9 @@ val request = basicRequest
   .get(uri"https://httpbin.org/get")
   .response(asJson[HttpBinResponse])
 
-implicit val backend = AkkaHttpBackend()
+val backend = AkkaHttpBackend()
 val response: Future[Response[Either[ResponseError[Exception], HttpBinResponse]]] =
-  request.send()
+  request.send(backend)
 
 for {
   r <- response
@@ -95,8 +95,7 @@ import io.circe.generic.auto._
 import zio._
 import zio.console.Console
 
-object GetAndParseJsonZioCirce extends zio.App {
-
+object GetAndParseJsonZioCirce extends App {
   override def run(args: List[String]): ZIO[ZEnv, Nothing, ExitCode] = {
 
     case class HttpBinResponse(origin: String, headers: Map[String, String])
@@ -115,7 +114,9 @@ object GetAndParseJsonZioCirce extends zio.App {
 
     // provide an implementation for the SttpClient dependency; other dependencies are
     // provided by Zio
-    sendAndPrint.provideCustomLayer(AsyncHttpClientZioBackend.layer()).fold(_ => ExitCode.failure, _ => ExitCode.success)
+    sendAndPrint
+      .provideCustomLayer(AsyncHttpClientZioBackend.layer())
+      .exitCode
   }
 }
 ```
@@ -143,12 +144,12 @@ import monix.eval.Task
 
 case class Info(x: Int, y: String)
 
-val postTask = AsyncHttpClientMonixBackend().flatMap { implicit backend =>
+val postTask = AsyncHttpClientMonixBackend().flatMap { backend =>
   val r = basicRequest
     .body(Info(91, "abc"))
     .post(uri"https://httpbin.org/post")
 
-  r.send()
+  r.send(backend)
     .flatMap { response =>
       Task(println(s"""Got ${response.code} response, body:\n${response.body}"""))
     }
@@ -173,7 +174,7 @@ Example code:
 import sttp.client._
 import sttp.client.testing._
 
-implicit val backend = SttpBackendStub.synchronous
+val backend = SttpBackendStub.synchronous
   .whenRequestMatches(_.uri.paramsMap.contains("filter"))
   .thenRespond("Filtered")
   .whenRequestMatches(_.uri.path.contains("secret"))
@@ -183,14 +184,14 @@ val parameters1 = Map("filter" -> "name=mary", "sort" -> "asc")
 println(
   basicRequest
     .get(uri"http://example.org?search=true&$parameters1")
-    .send()
+    .send(backend)
     .body)
 
 val parameters2 = Map("sort" -> "desc")
 println(
   basicRequest
     .get(uri"http://example.org/secret/read?$parameters2")
-    .send()
+    .send(backend)
     .body)
 ```
 
@@ -209,10 +210,10 @@ import sttp.client._
 import sttp.client.asynchttpclient.zio._
 import sttp.client.ws.WebSocket
 import sttp.model.ws.WebSocketFrame
-import zio.{App => ZApp, _}
+import zio._
 import zio.console.Console
 
-object WebsocketZio extends ZApp {
+object WebsocketZio extends App {
   def useWebsocket(ws: WebSocket[Task]): ZIO[Console, Throwable, Unit] = {
     def send(i: Int) = ws.send(WebSocketFrame.text(s"Hello $i!"))
     val receive = ws.receiveText().flatMap(t => console.putStrLn(s"RECEIVED: $t"))
@@ -222,14 +223,15 @@ object WebsocketZio extends ZApp {
   // create a description of a program, which requires two dependencies in the environment:
   // the SttpClient, and the Console
   val sendAndPrint: ZIO[Console with SttpClient, Throwable, Unit] = for {
-    response <- SttpClient.openWebsocket(basicRequest.get(uri"wss://echo.websocket.org"))
-    _ <- useWebsocket(response.result)
+    response <- SttpClient.send(basicRequest.get(uri"wss://echo.websocket.org").response(asWebSocketUnsafeAlways[Task]))
+    _ <- useWebsocket(response.body)
   } yield ()
 
   override def run(args: List[String]): ZIO[ZEnv, Nothing, ExitCode] = {
     // provide an implementation for the SttpClient dependency; other dependencies are
     // provided by Zio
-    sendAndPrint.provideCustomLayer(AsyncHttpClientZioBackend.layer()).fold(_ => ExitCode.failure, _ => ExitCode.success)
+    sendAndPrint
+      .provideCustomLayer(AsyncHttpClientZioBackend.layer()).exitCode
   }
 }
 ```
@@ -247,9 +249,9 @@ Example code:
 ```scala mdoc:compile-only
 import monix.eval.Task
 import sttp.client._
-import sttp.client.ws.{WebSocket, WebSocketResponse}
+import sttp.client.ws.WebSocket
 import sttp.model.ws.WebSocketFrame
-import sttp.client.asynchttpclient.monix.{AsyncHttpClientMonixBackend, MonixWebSocketHandler}
+import sttp.client.asynchttpclient.monix.AsyncHttpClientMonixBackend
 
 object WebsocketMonix extends App {
   import monix.execution.Scheduler.Implicits.global
@@ -260,14 +262,12 @@ object WebsocketMonix extends App {
     send(1) *> send(2) *> receive *> receive *> ws.close
   }
 
-  val websocketTask: Task[Unit] = AsyncHttpClientMonixBackend().flatMap { implicit backend =>
-    val response: Task[WebSocketResponse[WebSocket[Task]]] = basicRequest
+  val websocketTask: Task[Unit] = AsyncHttpClientMonixBackend.resource().use { backend =>
+    basicRequest
+      .response(asWebSocket(useWebsocket))
       .get(uri"wss://echo.websocket.org")
-      .openWebsocketF(MonixWebSocketHandler())
-
-    response
-      .flatMap(r => useWebsocket(r.result))
-      .guarantee(backend.close())
+      .send(backend)
+      .map(_ => ())
   }
 
   websocketTask.runSyncUnsafe()
@@ -294,13 +294,13 @@ import fs2.{Stream, text}
 
 implicit val cs: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionContext.global)
 
-def streamRequestBody(implicit backend: SttpBackend[IO, Stream[IO, Byte], NothingT]): IO[Unit] = {
+def streamRequestBody(backend: SttpBackend[IO, Stream[IO, Byte], NothingT]): IO[Unit] = {
   val stream: Stream[IO, Byte] = Stream.emits("Hello, world".getBytes)
 
   basicRequest
     .streamBody(stream)
     .post(uri"https://httpbin.org/post")
-    .send()
+    .send(backend)
     .map { response => println(s"RECEIVED:\n${response.body}") }
 }
 
@@ -309,7 +309,7 @@ def streamResponseBody(implicit backend: SttpBackend[IO, Fs2Streams[IO], Nothing
     .body("I want a stream!")
     .post(uri"https://httpbin.org/post")
     .response(asStreamAlways(Fs2Streams[IO])(_.chunks.through(text.utf8DecodeC).compile.foldMonoid))
-    .send()
+    .send(backend)
     .map { response => println(s"RECEIVED:\n${response.body}") }
 }
 
@@ -333,27 +333,29 @@ Example code:
 ```scala mdoc:compile-only
 import sttp.client._
 import sttp.client.asynchttpclient.zio.AsyncHttpClientZioBackend
-
-import zio.{ZIO, Schedule}
+import zio.{ExitCode, Schedule, ZIO}
 import zio.clock.Clock
 import zio.duration._
 
-AsyncHttpClientZioBackend()
-  .flatMap { implicit backend =>
-    val localhostRequest = basicRequest
-      .get(uri"http://localhost/test")
-      .response(asStringAlways)
+object RetryZio extends zio.App {
+  override def run(args: List[String]): ZIO[zio.ZEnv, Nothing, ExitCode] = {
+    AsyncHttpClientZioBackend().flatMap { backend =>
+      val localhostRequest = basicRequest
+        .get(uri"http://localhost/test")
+        .response(asStringAlways)
 
-    val sendWithRetries: ZIO[Clock, Throwable, Response[String]] = localhostRequest
-      .send()
-      .either
-      .repeat(
-        Schedule.spaced(1.second) *>
-          Schedule.recurs(10) *>
-          Schedule.recurWhile(result => RetryWhen.Default(localhostRequest, result))
-      )
-      .absolve
+      val sendWithRetries: ZIO[Clock, Throwable, Response[String]] = localhostRequest
+        .send(backend)
+        .either
+        .repeat(
+          Schedule.spaced(1.second) *>
+            Schedule.recurs(10) *>
+            Schedule.recurWhile(result => RetryWhen.Default(localhostRequest, result))
+        )
+        .absolve
 
-    sendWithRetries.ensuring(backend.close().catchAll(_ => ZIO.unit))
+      sendWithRetries.ensuring(backend.close().ignore)
+    }.exitCode
   }
+}
 ````

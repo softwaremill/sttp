@@ -61,13 +61,13 @@ import java.nio.ByteBuffer
 import monix.eval.Task
 import monix.reactive.Observable
 
-implicit val sttpBackend = FetchMonixBackend()
+val backend = FetchMonixBackend()
 
 val response: Task[Response[Observable[ByteBuffer]]] =
   sttp
     .post(uri"...")
     .response(asStream[Observable[ByteBuffer]])
-    .send()
+    .send(backend)
 ```      
 
 ```eval_rst
