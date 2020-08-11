@@ -1,12 +1,13 @@
-package sttp.client.testing
+package sttp.client.testing.websocket
 
 import org.scalatest.Suite
 import org.scalatest.flatspec.AsyncFlatSpecLike
-import sttp.client.{asWebSocketStreamAlways, basicRequest}
+import sttp.client.monad.MonadError
 import sttp.client.testing.HttpTest.wsEndpoint
+import sttp.client.testing.{ConvertToFuture, ToFutureWrapper}
+import sttp.client.{Streams, SttpBackend, WebSockets, asWebSocketStreamAlways, basicRequest}
 import sttp.model.ws.WebSocketFrame
 import sttp.client._
-import sttp.client.monad._
 import sttp.client.monad.syntax._
 
 trait WebSocketStreamingTest[F[_], S] extends ToFutureWrapper { outer: Suite with AsyncFlatSpecLike =>

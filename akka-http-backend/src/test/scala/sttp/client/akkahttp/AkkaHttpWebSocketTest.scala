@@ -3,8 +3,8 @@ package sttp.client.akkahttp
 import akka.stream.scaladsl.Flow
 import sttp.client._
 import sttp.client.monad.{FutureMonad, MonadError}
-import sttp.client.testing.{ConvertToFuture, WebSocketStreamingTest}
-import sttp.client.testing.websocket.WebSocketTest
+import sttp.client.testing.ConvertToFuture
+import sttp.client.testing.websocket.{WebSocketStreamingTest, WebSocketTest}
 import sttp.model.ws.WebSocketFrame
 
 import scala.concurrent.{ExecutionContext, Future}
