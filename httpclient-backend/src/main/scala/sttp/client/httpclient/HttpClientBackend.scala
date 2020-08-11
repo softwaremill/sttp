@@ -1,58 +1,43 @@
 package sttp.client.httpclient
 
 import java.io.{InputStream, UnsupportedEncodingException}
-import java.net.http.HttpRequest.{BodyPublisher, BodyPublishers}
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 import java.net.{Authenticator, PasswordAuthentication}
-import java.nio.{Buffer, ByteBuffer}
 import java.time.{Duration => JDuration}
 import java.util.concurrent.{Executor, ThreadPoolExecutor}
 import java.util.function
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
 
-import sttp.client.ResponseAs.EagerResponseHandler
 import sttp.client.SttpBackendOptions.Proxy
 import sttp.client.httpclient.HttpClientBackend.EncodingHandler
-import sttp.client.internal.FileHelpers
 import sttp.client.monad.MonadError
 import sttp.client.monad.syntax._
+import sttp.client.ws.WebSocket
 import sttp.client.{
-  BasicRequestBody,
-  BasicResponseAs,
-  ByteArrayBody,
-  ByteBufferBody,
   Effect,
-  FileBody,
-  IgnoreResponse,
-  InputStreamBody,
   MultipartBody,
-  NoBody,
   Request,
   Response,
   ResponseAs,
-  ResponseAsByteArray,
-  ResponseAsFile,
-  ResponseAsStream,
-  ResponseAsStreamUnsafe,
   ResponseMetadata,
-  StreamBody,
   Streams,
-  StringBody,
   SttpBackend,
   SttpBackendOptions
 }
 import sttp.model._
 
 import scala.collection.JavaConverters._
-import scala.util.{Failure, Try}
 
 abstract class HttpClientBackend[F[_], S, P](
     client: HttpClient,
     closeClient: Boolean,
     customEncodingHandler: EncodingHandler
-) extends SttpBackend[F, P, WebSocketHandler] {
+) extends SttpBackend[F, P] {
   val streams: Streams[S]
   type PE = P with Effect[F]
+
+  protected def bodyToHttpClient: BodyToHttpClient[F, S]
+  protected def bodyFromHttpClient: BodyFromHttpClient[F, S]
 
   private[httpclient] def convertRequest[T, R >: PE](request: Request[T, R]): F[HttpRequest] = {
     val builder = HttpRequest
@@ -68,7 +53,7 @@ abstract class HttpClientBackend[F[_], S, P](
       }
     }
 
-    bodyToHttpBody(request, builder, contentType).map { httpBody =>
+    bodyToHttpClient(request, builder, contentType).map { httpBody =>
       builder.method(request.method.method, httpBody)
       request.headers
         .filterNot(h => (h.name == HeaderNames.ContentLength) || h.name == HeaderNames.ContentType)
@@ -77,58 +62,17 @@ abstract class HttpClientBackend[F[_], S, P](
     }
   }
 
-  implicit val monad: MonadError[F] = responseMonad
-
-  private def bodyToHttpBody[T, R >: PE](
-      request: Request[T, R],
-      builder: HttpRequest.Builder,
-      contentType: Option[String]
-  ): F[BodyPublisher] = {
-    request.body match {
-      case NoBody              => BodyPublishers.noBody().unit
-      case StringBody(b, _, _) => BodyPublishers.ofString(b).unit
-      case ByteArrayBody(b, _) => BodyPublishers.ofByteArray(b).unit
-      case ByteBufferBody(b, _) =>
-        if ((b: Buffer).isReadOnly()) BodyPublishers.ofInputStream(() => new ByteBufferBackedInputStream(b)).unit
-        else BodyPublishers.ofByteArray(b.array()).unit
-      case InputStreamBody(b, _) => BodyPublishers.ofInputStream(() => b).unit
-      case FileBody(f, _)        => BodyPublishers.ofFile(f.toFile.toPath).unit
-      case StreamBody(s)         => streamToRequestBody(s.asInstanceOf[streams.BinaryStream])
-      case MultipartBody(parts) =>
-        val multipartBodyPublisher = multipartBody(parts)
-        val baseContentType = contentType.getOrElse("multipart/form-data")
-        builder.header(HeaderNames.ContentType, s"$baseContentType; boundary=${multipartBodyPublisher.getBoundary}")
-        multipartBodyPublisher.build().unit
-    }
-  }
-
-  def streamToRequestBody(stream: streams.BinaryStream): F[BodyPublisher] =
-    responseMonad.error(new IllegalStateException("Streaming isn't supported"))
-
-  private def multipartBody[T](parts: Seq[Part[BasicRequestBody]]) = {
-    val multipartBuilder = new MultiPartBodyPublisher()
-    parts.foreach { p =>
-      val allHeaders = p.headers :+ Header(HeaderNames.ContentDisposition, p.contentDispositionHeaderValue)
-      p.body match {
-        case FileBody(f, _) =>
-          multipartBuilder.addPart(p.name, f.toFile.toPath, allHeaders.map(h => h.name -> h.value).toMap.asJava)
-        case StringBody(b, _, _) =>
-          multipartBuilder.addPart(p.name, b, allHeaders.map(h => h.name -> h.value).toMap.asJava)
-      }
-    }
-    multipartBuilder
-  }
+  private implicit val monad: MonadError[F] = responseMonad
 
   private[httpclient] def readResponse[T, R >: PE](
-      res: HttpResponse[InputStream],
-      responseAs: ResponseAs[T, R]
+      res: HttpResponse[_],
+      resBody: InputStream,
+      responseAs: ResponseAs[T, R],
+      ws: Option[WebSocket[F]]
   ): F[Response[T]] = {
-    val headers = res
-      .headers()
-      .map()
-      .keySet()
-      .asScala
-      .flatMap(name => res.headers().map().asScala(name).asScala.map(Header(name, _)))
+    val headersMap = res.headers().map().asScala
+    val headers = headersMap.keySet
+      .flatMap(name => headersMap(name).asScala.map(Header(name, _)))
       .toList
 
     val code = StatusCode(res.statusCode())
@@ -138,12 +82,12 @@ abstract class HttpClientBackend[F[_], S, P](
     val method = Method(res.request().method())
     val byteBody = if (method != Method.HEAD) {
       encoding
-        .map(e => customEncodingHandler.orElse(PartialFunction.fromFunction(standardEncoding.tupled))(res.body() -> e))
-        .getOrElse(res.body())
+        .map(e => customEncodingHandler.orElse(PartialFunction.fromFunction(standardEncoding.tupled))(resBody -> e))
+        .getOrElse(resBody)
     } else {
-      res.body()
+      resBody
     }
-    val body = responseHandler(byteBody).handle(responseAs, responseMonad, responseMetadata)
+    val body = bodyFromHttpClient(byteBody, responseAs, responseMetadata, ws)
     responseMonad.map(body)(Response(_, code, "", headers, Nil))
   }
 
@@ -152,52 +96,6 @@ abstract class HttpClientBackend[F[_], S, P](
     case (body, "deflate") => new InflaterInputStream(body)
     case (_, ce)           => throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
   }
-
-  private def responseHandler[R >: PE](responseBody: InputStream) =
-    new EagerResponseHandler[R, F] {
-      override def handleStream[T](ras: ResponseAsStream[F, _, _, _]): F[T] = {
-        responseMonad.ensure(
-          responseMonad.flatMap(responseMonad.fromTry(responseBodyToStream(responseBody)))(
-            ras.f.asInstanceOf[streams.BinaryStream => F[T]]
-          ),
-          responseMonad.eval(responseBody.close())
-        )
-      }
-
-      override def handleBasic[T](bra: BasicResponseAs[T, R]): Try[T] =
-        bra match {
-          case IgnoreResponse =>
-            Try(responseBody.close())
-          case ResponseAsByteArray =>
-            val result = Try(responseBody.readAllBytes())
-            responseBody.close()
-            result
-          case _: ResponseAsStreamUnsafe[_, _] =>
-            responseBodyToStream(responseBody).asInstanceOf[Try[T]]
-          case ResponseAsFile(file) =>
-            val body = Try(FileHelpers.saveFile(file.toFile, responseBody))
-            responseBody.close()
-            body.map(_ => file)
-        }
-    }
-
-  // https://stackoverflow.com/a/6603018/362531
-  private class ByteBufferBackedInputStream(buf: ByteBuffer) extends InputStream {
-    override def read: Int = {
-      if (!buf.hasRemaining) return -1
-      buf.get & 0xff
-    }
-
-    override def read(bytes: Array[Byte], off: Int, len: Int): Int = {
-      if (!buf.hasRemaining) return -1
-      val len2 = Math.min(len, buf.remaining)
-      buf.get(bytes, off, len2)
-      len2
-    }
-  }
-
-  def responseBodyToStream(responseBody: InputStream): Try[streams.BinaryStream] =
-    Failure(new IllegalStateException("Streaming isn't supported"))
 
   override def close(): F[Unit] = {
     if (closeClient) {

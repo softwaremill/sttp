@@ -61,7 +61,7 @@ trait WebSocket[F[_]] {
     * @param pongOnPing Should a [[WebSocketFrame.Pong]] be sent when a [[WebSocketFrame.Ping]] is received.
     */
   def receiveText(pongOnPing: Boolean = true): F[Either[WebSocketFrame.Close, String]] =
-    receiveConcat(receiveTextFrame(pongOnPing), _ + _)
+    receiveConcat(() => receiveTextFrame(pongOnPing), _ + _)
 
   /**
     * Receive a single binary message (which might come from multiple, fragmented frames).
@@ -69,13 +69,13 @@ trait WebSocket[F[_]] {
     * @param pongOnPing Should a [[WebSocketFrame.Pong]] be sent when a [[WebSocketFrame.Ping]] is received.
     */
   def receiveBinary(pongOnPing: Boolean): F[Either[WebSocketFrame.Close, Array[Byte]]] =
-    receiveConcat(receiveBinaryFrame(pongOnPing), _ ++ _)
+    receiveConcat(() => receiveBinaryFrame(pongOnPing), _ ++ _)
 
   private def receiveConcat[T, U <: WebSocketFrame.Data[T]](
-      receiveSingle: F[Either[WebSocketFrame.Close, U]],
+      receiveSingle: () => F[Either[WebSocketFrame.Close, U]],
       combine: (T, T) => T
   ): F[Either[WebSocketFrame.Close, T]] = {
-    receiveSingle.flatMap {
+    receiveSingle().flatMap {
       case Left(close) => (Left(close): Either[WebSocketFrame.Close, T]).unit
       case Right(data) if !data.finalFragment =>
         receiveConcat(receiveSingle, combine).flatMap {

@@ -1,7 +1,6 @@
 package sttp.client
 
 import sttp.client.internal._
-import sttp.client.monad.MonadError
 import sttp.client.ws.WebSocket
 import sttp.model.StatusCode
 import sttp.model.internal.Rfc3986
@@ -89,29 +88,6 @@ object ResponseAs {
           case _ => None
         }
       )
-  }
-
-  /**
-    * Handles responses according to the given specification when basic
-    * response specifications can be handled eagerly, that is without
-    * wrapping the result in the target monad (`handleBasic` returns
-    * `Try[T]`, not `F[T]`).
-    */
-  private[client] trait EagerResponseHandler[R, F[_]] {
-    def handleBasic[T](bra: BasicResponseAs[T, R]): Try[T]
-    def handleStream[T](ras: ResponseAsStream[F, _, _, _]): F[T]
-
-    def handle[T](responseAs: ResponseAs[T, R], responseMonad: MonadError[F], meta: ResponseMetadata): F[T] = {
-      responseAs match {
-        case MappedResponseAs(raw, g) =>
-          responseMonad.map(handle(raw, responseMonad, meta))(t => g(t, meta))
-        case rfm: ResponseAsFromMetadata[T, R] => handle(rfm(meta), responseMonad, meta)
-        case ras: ResponseAsStream[F, _, _, _] => handleStream(ras)
-        case _: ResponseAsWebSocket[_, _]      => throw new IllegalStateException("WebSockets are not supported.")
-        case bra: BasicResponseAs[T, R] =>
-          responseMonad.fromTry(handleBasic(bra))
-      }
-    }
   }
 
   /**

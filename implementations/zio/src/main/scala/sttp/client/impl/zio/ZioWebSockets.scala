@@ -3,12 +3,12 @@ package sttp.client.impl.zio
 import sttp.client.ws.WebSocket
 import sttp.model.ws.WebSocketFrame
 import zio.{Ref, ZIO}
-import zio.stream.{Stream, Transducer}
+import zio.stream.{Stream, ZTransducer}
 
 object ZioWebSockets {
   def compilePipe[R](
       ws: WebSocket[ZIO[R, Throwable, *]],
-      pipe: Transducer[Throwable, WebSocketFrame.Data[_], WebSocketFrame]
+      pipe: ZTransducer[R, Throwable, WebSocketFrame.Data[_], WebSocketFrame]
   ): ZIO[R, Throwable, Unit] =
     Ref.make(false).flatMap { closed =>
       Stream

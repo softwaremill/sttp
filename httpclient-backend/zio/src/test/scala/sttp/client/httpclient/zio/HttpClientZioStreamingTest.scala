@@ -1,6 +1,6 @@
 package sttp.client.httpclient.zio
 
-import sttp.client.{NothingT, SttpBackend}
+import sttp.client.SttpBackend
 import sttp.client.impl.zio._
 import sttp.client.internal._
 import sttp.client.testing.ConvertToFuture
@@ -12,7 +12,7 @@ import zio.stream._
 class HttpClientZioStreamingTest extends StreamingTest[BlockingTask, BlockingZioStreams] {
   override val streams: BlockingZioStreams = BlockingZioStreams
 
-  override implicit val backend: SttpBackend[BlockingTask, BlockingZioStreams, NothingT] =
+  override implicit val backend: SttpBackend[BlockingTask, BlockingZioStreams] =
     runtime.unsafeRun(HttpClientZioBackend())
   override implicit val convertToFuture: ConvertToFuture[BlockingTask] = convertZioBlockingTaskToFuture
 

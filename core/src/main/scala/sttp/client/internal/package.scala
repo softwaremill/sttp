@@ -1,6 +1,6 @@
 package sttp.client
 
-import java.io.{ByteArrayOutputStream, InputStream, OutputStream}
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream, InputStream, OutputStream}
 import java.nio.{Buffer, ByteBuffer}
 
 import scala.annotation.{implicitNotFound, tailrec}
@@ -35,6 +35,8 @@ package object internal {
     transfer(is, os)
     os.toByteArray
   }
+
+  private[client] def emptyInputStream(): InputStream = new ByteArrayInputStream(Array[Byte]())
 
   private[client] def concatByteBuffers(bb1: ByteBuffer, bb2: ByteBuffer): ByteBuffer = {
     val buf = ByteBuffer
