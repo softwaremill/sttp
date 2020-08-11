@@ -37,17 +37,7 @@ class OkHttpSyncBackend private (
   private implicit val ec: ExecutionContext = ExecutionContext.global
   override val streams: Streams[Nothing] = NoStreams
 
-  override def send[T, R >: PE](request: Request[T, R]): Identity[Response[T]] = {
-    adjustExceptions(request.isWebSocket) {
-      if (request.isWebSocket) {
-        sendWebSocket(request)
-      } else {
-        sendRegular(request)
-      }
-    }
-  }
-
-  private def sendWebSocket[R >: PE, T](request: Request[T, R]) = {
+  override protected def sendWebSocket[T, R >: PE](request: Request[T, R]): Identity[Response[T]] = {
     val nativeRequest = convertRequest(request)
     val responseCell = new ArrayBlockingQueue[Either[Throwable, Future[Response[T]]]](5)
     def fillCellError(t: Throwable): Unit = responseCell.add(Left(t))
@@ -81,7 +71,7 @@ class OkHttpSyncBackend private (
     Await.result(response, Duration.Inf)
   }
 
-  private def sendRegular[R >: PE, T](request: Request[T, R]) = {
+  override protected def sendRegular[T, R >: PE](request: Request[T, R]): Identity[Response[T]] = {
     val nativeRequest = convertRequest(request)
     val response = OkHttpBackend
       .updateClientIfCustomReadTimeout(request, client)
@@ -89,9 +79,6 @@ class OkHttpSyncBackend private (
       .execute()
     readResponse(response, request.response)
   }
-
-  private def adjustExceptions[T](isWebsocket: Boolean)(t: => T): T =
-    SttpClientException.adjustSynchronousExceptions(t)(OkHttpBackend.exceptionToSttpClientException(isWebsocket, _))
 
   override def responseMonad: MonadError[Identity] = IdMonad
 

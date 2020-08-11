@@ -32,6 +32,22 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
   val streams: Streams[S]
   type PE = P with Effect[F]
 
+  override def send[T, R >: PE](request: Request[T, R]): F[Response[T]] = {
+    adjustExceptions(request.isWebSocket) {
+      if (request.isWebSocket) {
+        sendWebSocket(request)
+      } else {
+        sendRegular(request)
+      }
+    }
+  }
+
+  protected def sendRegular[T, R >: PE](request: Request[T, R]): F[Response[T]]
+  protected def sendWebSocket[T, R >: PE](request: Request[T, R]): F[Response[T]]
+
+  private def adjustExceptions[T](isWebsocket: Boolean)(t: => F[T]): F[T] =
+    SttpClientException.adjustExceptions(responseMonad)(t)(OkHttpBackend.exceptionToSttpClientException(isWebsocket, _))
+
   private[okhttp] def convertRequest[T, R >: PE](request: Request[T, R]): OkHttpRequest = {
     val builder = new OkHttpRequest.Builder()
       .url(request.uri.toString)

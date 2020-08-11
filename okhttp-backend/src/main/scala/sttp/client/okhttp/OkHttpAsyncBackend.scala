@@ -4,11 +4,11 @@ import java.io.{ByteArrayInputStream, IOException}
 import java.util.concurrent.atomic.AtomicBoolean
 
 import okhttp3.{Call, Callback, OkHttpClient, Response => OkHttpResponse, WebSocket => OkHttpWebSocket}
+import sttp.client.monad.syntax._
 import sttp.client.monad.{Canceler, MonadAsyncError, MonadError}
 import sttp.client.okhttp.OkHttpBackend.EncodingHandler
 import sttp.client.ws.internal.{AsyncQueue, WebSocketEvent}
-import sttp.client.{Request, Response, Streams, SttpClientException, ignore}
-import sttp.client.monad.syntax._
+import sttp.client.{Request, Response, Streams, ignore}
 
 abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](
     client: OkHttpClient,
@@ -17,17 +17,7 @@ abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](
     customEncodingHandler: EncodingHandler
 ) extends OkHttpBackend[F, S, P](client, closeClient, customEncodingHandler) {
 
-  override def send[T, R >: PE](request: Request[T, R]): F[Response[T]] = {
-    adjustExceptions(request.isWebSocket) {
-      if (request.isWebSocket) {
-        sendWebSocket(request)
-      } else {
-        sendRegular(request)
-      }
-    }
-  }
-
-  private def sendRegular[R >: PE, T](request: Request[T, R]) = {
+  override protected def sendRegular[T, R >: PE](request: Request[T, R]): F[Response[T]] = {
     val nativeRequest = convertRequest(request)
     monad.flatten(monad.async[F[Response[T]]] { cb =>
       def success(r: F[Response[T]]): Unit = cb(Right(r))
@@ -55,7 +45,7 @@ abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](
     })
   }
 
-  def sendWebSocket[T, R >: PE](
+  override protected def sendWebSocket[T, R >: PE](
       request: Request[T, R]
   ): F[Response[T]] = {
     implicit val m = monad
@@ -104,9 +94,6 @@ abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](
       onError
     )
   }
-
-  private def adjustExceptions[T](isWebsocket: Boolean)(t: => F[T]): F[T] =
-    SttpClientException.adjustExceptions(monad)(t)(OkHttpBackend.exceptionToSttpClientException(isWebsocket, _))
 
   override def responseMonad: MonadError[F] = monad
 }

@@ -45,13 +45,6 @@ object SttpClientException {
       case _ => None
     }
 
-  def adjustSynchronousExceptions[T](t: => T)(usingFn: Exception => Option[Exception]): T = {
-    try t
-    catch {
-      case e: Exception => throw usingFn(e).getOrElse(e)
-    }
-  }
-
   def adjustExceptions[F[_], T](
       monadError: MonadError[F]
   )(t: => F[T])(usingFn: Exception => Option[Exception]): F[T] = {
