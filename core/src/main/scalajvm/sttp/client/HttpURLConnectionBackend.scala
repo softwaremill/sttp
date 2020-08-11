@@ -284,7 +284,7 @@ class HttpURLConnectionBackend private (
     }
 
   private def adjustExceptions[T](t: => T): T =
-    SttpClientException.adjustSynchronousExceptions(t)(SttpClientException.defaultExceptionToSttpClientException)
+    SttpClientException.adjustExceptions(responseMonad)(t)(SttpClientException.defaultExceptionToSttpClientException)
 
   override def close(): Unit = {}
 }
