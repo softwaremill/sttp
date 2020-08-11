@@ -30,7 +30,7 @@ import scala.util.{Failure, Success, Try}
   * or headers. A [[ClassCastException]] might occur if for a given request,
   * a response is specified with the incorrect or inconvertible body type.
   */
-class SttpBackendStub[F[_], P](
+class SttpBackendStub[F[_], +P](
     monad: MonadError[F],
     matchers: PartialFunction[Request[_, _], F[Response[_]]],
     fallback: Option[SttpBackend[F, P]]
@@ -145,9 +145,9 @@ object SttpBackendStub {
 
   /**
     * Create a stub of a synchronous backend (which doesn't wrap results in any
-    * container), without streaming or websocket support.
+    * container), without streaming.
     */
-  def synchronous: SttpBackendStub[Identity, Any] =
+  def synchronous: SttpBackendStub[Identity, WebSockets] =
     new SttpBackendStub(
       IdMonad,
       PartialFunction.empty,
@@ -156,9 +156,9 @@ object SttpBackendStub {
 
   /**
     * Create a stub of an asynchronous backend (which wraps results in Scala's
-    * built-in [[Future]]), without streaming or websocket support.
+    * built-in [[Future]]), without streaming.
     */
-  def asynchronousFuture: SttpBackendStub[Future, Any] = {
+  def asynchronousFuture: SttpBackendStub[Future, WebSockets] = {
     import scala.concurrent.ExecutionContext.Implicits.global
     new SttpBackendStub(
       new FutureMonad(),

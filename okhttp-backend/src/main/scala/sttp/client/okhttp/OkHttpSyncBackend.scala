@@ -134,5 +134,5 @@ object OkHttpSyncBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub: SttpBackendStub[Identity, Any] = SttpBackendStub.synchronous //TODO websockets?
+  def stub: SttpBackendStub[Identity, WebSockets] = SttpBackendStub.synchronous
 }

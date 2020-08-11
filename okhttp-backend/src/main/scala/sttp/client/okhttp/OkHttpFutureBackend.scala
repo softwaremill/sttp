@@ -79,6 +79,5 @@ object OkHttpFutureBackend {
     */
   def stub(implicit
       ec: ExecutionContext = ExecutionContext.global
-  ): SttpBackendStub[Future, WebSockets] =
-    SttpBackendStub(new FutureMonad())
+  ): SttpBackendStub[Future, WebSockets] = SttpBackendStub.asynchronousFuture
 }
