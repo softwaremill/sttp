@@ -25,7 +25,9 @@ import sttp.client.impl.monix.MonixStreams
   * @see https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream
   */
 class FetchMonixBackend private (fetchOptions: FetchOptions, customizeRequest: FetchRequest => FetchRequest)
-    extends AbstractFetchBackend[Task, MonixStreams, MonixStreams](fetchOptions, customizeRequest)(TaskMonadAsyncError) {
+    extends AbstractFetchBackend[Task, MonixStreams, MonixStreams](fetchOptions, customizeRequest)(
+      TaskMonadAsyncError
+    ) {
 
   override val streams: MonixStreams = MonixStreams
 

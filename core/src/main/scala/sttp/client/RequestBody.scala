@@ -42,7 +42,7 @@ case class FileBody(
     defaultContentType: Option[MediaType] = Some(MediaType.ApplicationOctetStream)
 ) extends BasicRequestBody
 
-// Path-dependent types are not supported in constructor arguments or the extends clause. Thus we cannot express the 
+// Path-dependent types are not supported in constructor arguments or the extends clause. Thus we cannot express the
 // fact that `BinaryStream =:= s.BinaryStream`. We have to rely on correct construction via the companion object and
 // perform typecasts when the request is deconstructed.
 case class StreamBody[BinaryStream, S] private (b: BinaryStream) extends RequestBody[S]

@@ -25,6 +25,7 @@ object WebsocketZio extends App {
     // provide an implementation for the SttpClient dependency; other dependencies are
     // provided by Zio
     sendAndPrint
-      .provideCustomLayer(AsyncHttpClientZioBackend.layer()).exitCode
+      .provideCustomLayer(AsyncHttpClientZioBackend.layer())
+      .exitCode
   }
 }

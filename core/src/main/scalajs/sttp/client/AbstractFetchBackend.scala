@@ -52,7 +52,10 @@ final case class FetchOptions(
   *
   * @see https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API
   */
-abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](options: FetchOptions, customizeRequest: FetchRequest => FetchRequest)(
+abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
+    options: FetchOptions,
+    customizeRequest: FetchRequest => FetchRequest
+)(
     monad: MonadError[F]
 ) extends SttpBackend[F, P] {
   override implicit def responseMonad: MonadError[F] = monad

@@ -3,7 +3,8 @@ package sttp.client.curl
 private[client] object CurlOption extends Enumeration {
   type CurlOption = Value
 
-  /** * This is the FILE * or void * the regular output should be written to. */
+  /** * This is the FILE * or void * the regular output should be written to.
+    */
   val WriteData = Value(10000 + 1)
 
   /** The full URL to get/put */
@@ -28,15 +29,18 @@ private[client] object CurlOption extends Enumeration {
   val ReadData = Value(10000 + 9)
 
   /** Buffer to receive error messages in, must be at least CURL_ERROR_SIZE
-    * bytes big. */
+    * bytes big.
+    */
   val ErrorBuffer = Value(10000 + 10)
 
   /** Function that will be called to store the output (instead of fwrite). The
-    * parameters will use fwrite() syntax, make sure to follow them. */
+    * parameters will use fwrite() syntax, make sure to follow them.
+    */
   val WriteFunction = Value(20000 + 11)
 
   /** Function that will be called to read the input (instead of fread). The
-    * parameters will use fread() syntax, make sure to follow them. */
+    * parameters will use fread() syntax, make sure to follow them.
+    */
   val ReadFunction = Value(10000 + 12)
 
   /** Time-out the read operation after this amount of seconds */
@@ -60,7 +64,8 @@ private[client] object CurlOption extends Enumeration {
   val Referer = Value(10000 + 16)
 
   /** Set the FTP PORT string (interface name, named or numerical IP address)
-    * Use i.e '-' to use default address. */
+    * Use i.e '-' to use default address.
+    */
   val FtpPort = Value(10000 + 17)
 
   /** Set the User-Agent string (examined by some CGIs) */
@@ -84,7 +89,8 @@ private[client] object CurlOption extends Enumeration {
   val Cookie = Value(10000 + 22)
 
   /** This points to a linked list of headers, struct curl_slist kind. This
-    * list is also used for RTSP (in spite of its name) */
+    * list is also used for RTSP (in spite of its name)
+    */
   val HttpHeader = Value(10000 + 23)
 
   /** This points to a linked list of post entries, struct curl_httppost */
@@ -103,15 +109,18 @@ private[client] object CurlOption extends Enumeration {
   val Quote = Value(10000 + 28)
 
   /** send FILE * or void * to store headers to, if you use a callback it
-    * is simply passed to the callback unmodified */
+    * is simply passed to the callback unmodified
+    */
   val HeaderData = Value(10000 + 29)
 
   /** point to a file to read the initial cookies from, also enables
-    * "cookie awareness" */
+    * "cookie awareness"
+    */
   val CookieFile = Value(10000 + 31)
 
   /** What version to specifically try to use.
-    * See CURL_SSLVERSION defines below. */
+    * See CURL_SSLVERSION defines below.
+    */
   val SslVersion = Value(32)
 
   /** Custom request, for customizing the get command like
@@ -154,7 +163,8 @@ private[client] object CurlOption extends Enumeration {
   val Append = Value(50)
 
   /** Specify whether to read the user+password from the .netrc or the URL.
-    * This must be one of the CURL_NETRC_* enums below. */
+    * This must be one of the CURL_NETRC_* enums below.
+    */
   val Netrc = Value(51)
 
   /** use Location: Luke! */
@@ -167,14 +177,16 @@ private[client] object CurlOption extends Enumeration {
   val Put = Value(54)
 
   /** Data passed to the CURLOPT_PROGRESSFUNCTION and CURLOPT_XFERINFOFUNCTION
-    * callbacks */
+    * callbacks
+    */
   val ProgressData = Value(10000 + 57)
 
   /** We want the referrer field set automatically when following locations */
   val AutoReferer = Value(58)
 
   /** Port of the proxy, can be set in the proxy string as well with:
-    * "[host]:[port]" */
+    * "[host]:[port]"
+    */
   val ProxyPort = Value(59)
 
   /** size of the POST input data, if strlen() is not good to use */
@@ -188,21 +200,24 @@ private[client] object CurlOption extends Enumeration {
 
   /** Set the krb4/5 security level, this also enables krb4/5 awareness.  This
     * is a string, 'clear', 'safe', 'confidential' or 'private'.  If the string
-    * is set but doesn't match one of these, 'private' will be used. */
+    * is set but doesn't match one of these, 'private' will be used.
+    */
   val KrbLevel = Value(10000 + 63)
 
   /** Set if we should verify the peer in ssl handshake, set 1 to verify. */
   val SslVerifyPeer = Value(64)
 
   /** The CApath or CAfile used to validate the peer certificate
-    * this option is used only if SSL_VERIFYPEER is true */
+    * this option is used only if SSL_VERIFYPEER is true
+    */
   val CaInfo = Value(10000 + 65)
 
   /** Maximum number of http redirects to follow */
   val MaxRedirects = Value(68)
 
   /** Pass a long set to 1 to get the date of the requested document (if
-    * possible)! Pass a zero to shut it off. */
+    * possible)! Pass a zero to shut it off.
+    */
   val FileTime = Value(69)
 
   /** This points to a linked list of telnet options */
@@ -213,27 +228,32 @@ private[client] object CurlOption extends Enumeration {
 
   /** Set to explicitly use a new connection for the upcoming transfer.
     * Do not use this unless you're absolutely sure of this, as it makes the
-    * operation slower and is less friendly for the network. */
+    * operation slower and is less friendly for the network.
+    */
   val FreshConnect = Value(74)
 
   /** Set to explicitly forbid the upcoming transfer's connection to be re-used
     * when done. Do not use this unless you're absolutely sure of this, as it
-    * makes the operation slower and is less friendly for the network. */
+    * makes the operation slower and is less friendly for the network.
+    */
   val ForbidReuse = Value(75)
 
   /** Set to a file name that contains random data for libcurl to use to
-    * seed the random engine when doing SSL connects. */
+    * seed the random engine when doing SSL connects.
+    */
   val RandomFile = Value(10000 + 76)
 
   /** Set to the Entropy Gathering Daemon socket pathname */
   val EntropyGatheringDaemonSocket = Value(10000 + 77)
 
   /** Time-out connect operations after this amount of seconds, if connects are
-    * OK within this time, then fine... This only aborts the connect phase. */
+    * OK within this time, then fine... This only aborts the connect phase.
+    */
   val ConnectTimeout = Value(78)
 
   /** Function that will be called to store headers (instead of fwrite). The
-    * parameters will use fwrite() syntax, make sure to follow them. */
+    * parameters will use fwrite() syntax, make sure to follow them.
+    */
   val HeaderFunction = Value(20000 + 79)
 
   /** Set this to force the HTTP request to get back to GET. Only really usable
@@ -243,23 +263,27 @@ private[client] object CurlOption extends Enumeration {
 
   /** Set if we should verify the Common name from the peer certificate in ssl
     * handshake, set 1 to check existence, 2 to ensure that it matches the
-    * provided hostname. */
+    * provided hostname.
+    */
   val SslVerifyHost = Value(81)
 
   /** Specify which file name to write all known cookies in after completed
-    * operation. Set file name to "-" (dash) to make it go to stdout. */
+    * operation. Set file name to "-" (dash) to make it go to stdout.
+    */
   val CookieJar = Value(10000 + 82)
 
   /** Specify which SSL ciphers to use */
   val SslCipherList = Value(10000 + 83)
 
   /** Specify which HTTP version to use! This must be set to one of the
-    * CURL_HTTP_VERSION* enums set below. */
+    * CURL_HTTP_VERSION* enums set below.
+    */
   val HttpVersion = Value(84)
 
   /** Specifically switch on or off the FTP engine's use of the EPSV command. By
     * default, that one will always be attempted before the more traditional
-    * PASV command. */
+    * PASV command.
+    */
   val FtpUseEpsv = Value(85)
 
   /** type of the file keeping your SSL-certificate ("DER", "PEM", "ENG") */
@@ -295,7 +319,8 @@ private[client] object CurlOption extends Enumeration {
   val Cookiesession = Value(96)
 
   /** The CApath directory used to validate the peer certificate
-    * this option is used only if SSL_VERIFYPEER is true */
+    * this option is used only if SSL_VERIFYPEER is true
+    */
   val Capath = Value(10000 + 97)
 
   /** Instruct libcurl to use a smaller receive buffer */
@@ -303,7 +328,8 @@ private[client] object CurlOption extends Enumeration {
 
   /** Instruct libcurl to not use any signal/alarm handlers, even when using
     * timeouts. This option is useful for multi-threaded applications.
-    * See libcurl-the-guide for more background information. */
+    * See libcurl-the-guide for more background information.
+    */
   val Nosignal = Value(99)
 
   /** Provide a CURLShare for mutexing non-ts data */
@@ -311,12 +337,14 @@ private[client] object CurlOption extends Enumeration {
 
   /** indicates type of proxy. accepted values are CURLPROXY_HTTP (default),
     * CURLPROXY_HTTPS, CURLPROXY_SOCKS4, CURLPROXY_SOCKS4A and
-    * CURLPROXY_SOCKS5. */
+    * CURLPROXY_SOCKS5.
+    */
   val Proxytype = Value(101)
 
   /** Set the Accept-Encoding string. Use this to tell a server you would like
     * the response to be compressed. Before 7.21.6, this was known as
-    * CURLOPT_ENCODING */
+    * CURLOPT_ENCODING
+    */
   val AcceptEncoding = Value(10000 + 102)
 
   /** Set pointer to private data */
@@ -327,26 +355,31 @@ private[client] object CurlOption extends Enumeration {
 
   /** Continue to send authentication (user+password) when following locations,
     * even when hostname changed. This can potentially send off the name
-    * and password to whatever host the server decides. */
+    * and password to whatever host the server decides.
+    */
   val UnrestrictedAuth = Value(105)
 
   /** Specifically switch on or off the FTP engine's use of the EPRT command (
     * it also disables the LPRT attempt). By default, those ones will always be
-    * attempted before the good old traditional PORT command. */
+    * attempted before the good old traditional PORT command.
+    */
   val FtpUseEprt = Value(106)
 
   /** Set this to a bitmask value to enable the particular authentications
     * methods you like. Use this in combination with CURLOPT_USERPWD.
-    * Note that setting multiple bits may cause extra network round-trips. */
+    * Note that setting multiple bits may cause extra network round-trips.
+    */
   val Httpauth = Value(107)
 
   /** Set the ssl context callback function, currently only for OpenSSL ssl_ctx
     * in second argument. The function must be matching the
-    * curl_ssl_ctx_callback proto. */
+    * curl_ssl_ctx_callback proto.
+    */
   val SslCtxFunction = Value(20000 + 108)
 
   /** Set the userdata for the ssl context callback function's third
-    * argument */
+    * argument
+    */
   val SslCtxData = Value(10000 + 109)
 
   /** FTP Option that causes missing dirs to be created on the remote server.
@@ -357,24 +390,28 @@ private[client] object CurlOption extends Enumeration {
 
   /** Set this to a bitmask value to enable the particular authentications
     * methods you like. Use this in combination with CURLOPT_PROXYUSERPWD.
-    * Note that setting multiple bits may cause extra network round-trips. */
+    * Note that setting multiple bits may cause extra network round-trips.
+    */
   val Proxyauth = Value(111)
 
   /** FTP option that changes the timeout, in seconds, associated with
     * getting a response.  This is different from transfer timeout time and
     * essentially places a demand on the FTP server to acknowledge commands
-    * in a timely manner. */
+    * in a timely manner.
+    */
   val FtpResponseTimeout = Value(112)
 
   /** Set this option to one of the CURL_IPRESOLVE_* defines (see below) to
     * tell libcurl to resolve names to those IP versions only. This only has
-    * affect on systems with support for more than one, i.e IPv4 _and_ IPv6. */
+    * affect on systems with support for more than one, i.e IPv4 _and_ IPv6.
+    */
   val Ipresolve = Value(113)
 
   /** Set this option to limit the size of a file that will be downloaded from
     * an HTTP or FTP server.
     * Note there is also _LARGE version which adds large file support for
-    * platforms which have larger off_t sizes.  See MAXFILESIZE_LARGE below. */
+    * platforms which have larger off_t sizes.  See MAXFILESIZE_LARGE below.
+    */
   val Maxfilesize = Value(114)
 
   /** See the comment for INFILESIZE above, but in short, specifies
@@ -395,7 +432,8 @@ private[client] object CurlOption extends Enumeration {
   /** Set this option to the file name of your .netrc file you want libcurl
     * to parse (using the CURLOPT_NETRC option). If not set, libcurl will do
     * a poor attempt to find the user's home directory and check for a .netrc
-    * file in there. */
+    * file in there.
+    */
   val NetrcFile = Value(10000 + 118)
 
   /** Enable SSL/TLS for FTP, pick one of:
@@ -426,7 +464,8 @@ private[client] object CurlOption extends Enumeration {
   val Ioctldata = Value(10000 + 131)
 
   /** zero terminated string for pass on to the FTP server when asked for
-    * "account" info */
+    * "account" info
+    */
   val FtpAccount = Value(10000 + 134)
 
   /** feed cookie into cookie engine */
@@ -438,11 +477,13 @@ private[client] object CurlOption extends Enumeration {
   /** Set to non-zero to skip the IP address received in a 227 PASV FTP server
     * response. Typically used for FTP-SSL purposes but is not restricted to
     * that. libcurl will then instead use the same IP address it used for the
-    * control connection. */
+    * control connection.
+    */
   val FtpSkipPasvIp = Value(137)
 
   /** Select "file method" to use when doing FTP, see the curl_ftpmethod
-    * above. */
+    * above.
+    */
   val FtpFilemethod = Value(138)
 
   /** Local port number to bind the socket to */
@@ -454,20 +495,24 @@ private[client] object CurlOption extends Enumeration {
   val Localportrange = Value(140)
 
   /** no transfer, set up connection and let application use the socket by
-    * extracting it with CURLINFO_LASTSOCKET */
+    * extracting it with CURLINFO_LASTSOCKET
+    */
   val ConnectOnly = Value(141)
 
   /** Function that will be called to convert from the
-    * network encoding (instead of using the iconv calls in libcurl) */
+    * network encoding (instead of using the iconv calls in libcurl)
+    */
   val ConvFromNetworkFunction = Value(20000 + 142)
 
   /** Function that will be called to convert to the
-    * network encoding (instead of using the iconv calls in libcurl) */
+    * network encoding (instead of using the iconv calls in libcurl)
+    */
   val ConvToNetworkFunction = Value(20000 + 143)
 
   /** Function that will be called to convert from UTF8
     * (instead of using the iconv calls in libcurl)
-    * Note that this is used only for SSL certificate processing */
+    * Note that this is used only for SSL certificate processing
+    */
   val ConvFromUtf8Function = Value(20000 + 144)
 
   /** if the connection proceeds too quickly then need to slow it down */
@@ -483,7 +528,8 @@ private[client] object CurlOption extends Enumeration {
   val Sockoptdata = Value(10000 + 149)
 
   /** set to 0 to disable session ID re-use for this transfer, default is
-    * enabled (== 1) */
+    * enabled (== 1)
+    */
   val SslSessionidCache = Value(150)
 
   /** allowed SSH authentication methods */
@@ -501,17 +547,20 @@ private[client] object CurlOption extends Enumeration {
   val ConnectTimeoutMs = Value(156)
 
   /** set to zero to disable the libcurl's decoding and thus pass the raw body
-    * data to the application even when it is encoded/compressed */
+    * data to the application even when it is encoded/compressed
+    */
   val HttpTransferDecoding = Value(157)
   val HttpContentDecoding = Value(158)
 
   /** Permission used when creating new files and directories on the remote
-    * server for protocols that support it, SFTP/SCP/FILE */
+    * server for protocols that support it, SFTP/SCP/FILE
+    */
   val NewFilePerms = Value(159)
   val NewDirectoryPerms = Value(160)
 
   /** Set the behaviour of POST when redirecting. Values must be set to one
-    * of CURL_REDIR* defines below. This used to be called CURLOPT_POST301 */
+    * of CURL_REDIR* defines below. This used to be called CURLOPT_POST301
+    */
   val Postredir = Value(161)
 
   /** used by scp/sftp to verify the host's public key */
@@ -520,7 +569,8 @@ private[client] object CurlOption extends Enumeration {
   /** Callback function for opening socket (instead of socket(2)). Optionally,
     * callback is able change the address or refuse to connect returning
     * CURL_SOCKET_BAD.  The callback should have type
-    * curl_opensocket_callback */
+    * curl_opensocket_callback
+    */
   val Opensocketfunction = Value(20000 + 163)
   val Opensocketdata = Value(10000 + 164)
 
@@ -544,7 +594,8 @@ private[client] object CurlOption extends Enumeration {
   val AddressScope = Value(171)
 
   /** Collect certificate chain info and allow it to get retrievable with
-    * CURLINFO_CERTINFO after the transfer is complete. */
+    * CURLINFO_CERTINFO after the transfer is complete.
+    */
   val Certinfo = Value(172)
 
   /** "name" and "pwd" to use when fetching. */
@@ -561,7 +612,8 @@ private[client] object CurlOption extends Enumeration {
     * notlocal.com or www.notlocal.com. For compatibility with other
     * implementations of this, .local.com will be considered to be the same as
     * local.com. A single * is the only valid wildcard, and effectively
-    * disables the use of proxy. */
+    * disables the use of proxy.
+    */
   val Noproxy = Value(10000 + 177)
 
   /** block size for TFTP transfers */
@@ -573,20 +625,23 @@ private[client] object CurlOption extends Enumeration {
   /** set the bitmask for the protocols that are allowed to be used for the
     * transfer, which thus helps the app which takes URLs from users or other
     * external inputs and want to restrict what protocol(s) to deal
-    * with. Defaults to CURLPROTO_ALL. */
+    * with. Defaults to CURLPROTO_ALL.
+    */
   val Protocols = Value(181)
 
   /** set the bitmask for the protocols that libcurl is allowed to follow to,
     * as a subset of the CURLOPT_PROTOCOLS ones. That means the protocol needs
     * to be set in both bitmasks to be allowed to get redirected to. Defaults
-    * to all protocols except FILE and SCP. */
+    * to all protocols except FILE and SCP.
+    */
   val RedirProtocols = Value(182)
 
   /** set the SSH knownhost file name to use */
   val SshKnownhosts = Value(10000 + 183)
 
   /** set the SSH host key callback, must point to a curl_sshkeycallback
-    * function */
+    * function
+    */
   val SshKeyfunction = Value(20000 + 184)
 
   /** set the SSH host key callback custom pointer */
@@ -629,11 +684,13 @@ private[client] object CurlOption extends Enumeration {
   val Wildcardmatch = Value(197)
 
   /** Directory matching callback called before downloading of an
-    * individual file (chunk) started */
+    * individual file (chunk) started
+    */
   val ChunkBgnFunction = Value(20000 + 198)
 
   /** Directory matching callback called after the file (chunk)
-    * was downloaded, or skipped */
+    * was downloaded, or skipped
+    */
   val ChunkEndFunction = Value(20000 + 199)
 
   /** Change match (fnmatch-like) callback for wildcard matching */
@@ -668,7 +725,8 @@ private[client] object CurlOption extends Enumeration {
   val TransferEncoding = Value(207)
 
   /** Callback function for closing socket (instead of close(2)). The callback
-    * should have type curl_closesocket_callback */
+    * should have type curl_closesocket_callback
+    */
   val Closesocketfunction = Value(20000 + 208)
   val Closesocketdata = Value(10000 + 209)
 
@@ -679,7 +737,8 @@ private[client] object CurlOption extends Enumeration {
   val DnsServers = Value(10000 + 211)
 
   /** Time-out accept operations (currently for FTP only) after this amount
-    * of milliseconds. */
+    * of milliseconds.
+    */
   val AccepttimeoutMs = Value(212)
 
   /** Set TCP keepalive */
@@ -700,7 +759,8 @@ private[client] object CurlOption extends Enumeration {
 
   /** Function that will be called instead of the internal progress display
     * function. This function should be defined as the curl_xferinfo_callback
-    * prototype defines. (Deprecates CURLOPT_PROGRESSFUNCTION) */
+    * prototype defines. (Deprecates CURLOPT_PROGRESSFUNCTION)
+    */
   val Xferinfofunction = Value(20000 + 219)
 
   /** The XOAUTH2 bearer token */
@@ -708,15 +768,18 @@ private[client] object CurlOption extends Enumeration {
 
   /** Set the interface string to use as outgoing network
     * interface for DNS requests.
-    * Only supported by the c-ares DNS backend */
+    * Only supported by the c-ares DNS backend
+    */
   val DnsInterface = Value(10000 + 221)
 
   /** Set the local IPv4 address to use for outgoing DNS requests.
-    * Only supported by the c-ares DNS backend */
+    * Only supported by the c-ares DNS backend
+    */
   val DnsLocalIp4 = Value(10000 + 222)
 
   /** Set the local IPv6 address to use for outgoing DNS requests.
-    * Only supported by the c-ares DNS backend */
+    * Only supported by the c-ares DNS backend
+    */
   val DnsLocalIp6 = Value(10000 + 223)
 
   /** Set authentication options directly */
@@ -729,18 +792,21 @@ private[client] object CurlOption extends Enumeration {
   val SslEnableAlpn = Value(226)
 
   /** Time to wait for a response to a HTTP request containing an
-    * Expect: 100-continue header before sending the data anyway. */
+    * Expect: 100-continue header before sending the data anyway.
+    */
   val Expect_100TimeoutMs = Value(227)
 
   /** This points to a linked list of headers used for proxy requests only,
-    * struct curl_slist kind */
+    * struct curl_slist kind
+    */
   val Proxyheader = Value(10000 + 228)
 
   /** Pass in a bitmask of "header options" */
   val Headeropt = Value(229)
 
   /** The public key in DER form used to validate the peer public key
-    * this option is used only if SSL_VERIFYPEER is true */
+    * this option is used only if SSL_VERIFYPEER is true
+    */
   val Pinnedpublickey = Value(10000 + 230)
 
   /** Path to Unix domain socket */
@@ -780,35 +846,42 @@ private[client] object CurlOption extends Enumeration {
   val TftpNoOptions = Value(242)
 
   /** Linked-list of host:port:connect-to-host:connect-to-port,
-    * overrides the URL's host:port (only for the network layer) */
+    * overrides the URL's host:port (only for the network layer)
+    */
   val ConnectTo = Value(10000 + 243)
 
   /** Set TCP Fast Open */
   val TcpFastopen = Value(244)
 
   /** Continue to send data if the server responds early with an
-    * HTTP status code >= 300 */
+    * HTTP status code >= 300
+    */
   val KeepSendingOnError = Value(245)
 
   /** The CApath or CAfile used to validate the proxy certificate
-    * this option is used only if PROXY_SSL_VERIFYPEER is true */
+    * this option is used only if PROXY_SSL_VERIFYPEER is true
+    */
   val ProxyCainfo = Value(10000 + 246)
 
   /** The CApath directory used to validate the proxy certificate
-    * this option is used only if PROXY_SSL_VERIFYPEER is true */
+    * this option is used only if PROXY_SSL_VERIFYPEER is true
+    */
   val ProxyCapath = Value(10000 + 247)
 
   /** Set if we should verify the proxy in ssl handshake,
-    * set 1 to verify. */
+    * set 1 to verify.
+    */
   val ProxySslVerifypeer = Value(248)
 
   /** Set if we should verify the Common name from the proxy certificate in ssl
     * handshake, set 1 to check existence, 2 to ensure that it matches
-    * the provided hostname. */
+    * the provided hostname.
+    */
   val ProxySslVerifyhost = Value(249)
 
   /** What version to specifically try to use for proxy.
-    * See CURL_SSLVERSION defines below. */
+    * See CURL_SSLVERSION defines below.
+    */
   val ProxySslversion = Value(250)
 
   /** Set a username for authenticated TLS for proxy */
@@ -824,14 +897,16 @@ private[client] object CurlOption extends Enumeration {
   val ProxySslcert = Value(10000 + 254)
 
   /** type of the file keeping your SSL-certificate ("DER", "PEM", "ENG") for
-    * proxy */
+    * proxy
+    */
   val ProxySslcerttype = Value(10000 + 255)
 
   /** name of the file keeping your private SSL-key for proxy */
   val ProxySslkey = Value(10000 + 256)
 
   /** type of the file keeping your private SSL-key ("DER", "PEM", "ENG") for
-    * proxy */
+    * proxy
+    */
   val ProxySslkeytype = Value(10000 + 257)
 
   /** password for the SSL private key for proxy */
@@ -844,14 +919,16 @@ private[client] object CurlOption extends Enumeration {
   val ProxyCrlfile = Value(10000 + 260)
 
   /** Enable/disable specific SSL features with a bitmask for proxy, see
-    * CURLSSLOPT_* */
+    * CURLSSLOPT_*
+    */
   val ProxySslOptions = Value(261)
 
   /** Name of pre proxy to use. */
   val PreProxy = Value(10000 + 262)
 
   /** The public key in DER form used to validate the proxy public key
-    * this option is used only if PROXY_SSL_VERIFYPEER is true */
+    * this option is used only if PROXY_SSL_VERIFYPEER is true
+    */
   val ProxyPinnedpublickey = Value(10000 + 263)
 
   /** Path to an abstract Unix domain socket */
@@ -873,7 +950,8 @@ private[client] object CurlOption extends Enumeration {
   val Mimepost = Value(10000 + 269)
 
   /** Time to use with the CURLOPT_TIMECONDITION. Specified in number of
-    * seconds since 1 Jan 1970. */
+    * seconds since 1 Jan 1970.
+    */
   val TimevalueLarge = Value(30000 + 270)
 
   /** Head start in milliseconds to give happy eyeballs. */
