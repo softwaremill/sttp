@@ -78,7 +78,7 @@ abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](
       val wsResponse = readResponse(response, ignore)
         .flatMap { baseResponse =>
           bodyFromOkHttp(
-            new ByteArrayInputStream(Array()), //TODO ugly hack
+            response.body().byteStream(),
             request.response,
             baseResponse,
             Some(webSocket)
