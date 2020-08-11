@@ -2,7 +2,7 @@ package sttp.client.okhttp.monix
 
 import monix.eval.Task
 import monix.execution.Scheduler.Implicits.global
-import sttp.client.{SttpBackend, WebSockets}
+import sttp.client.SttpBackend
 import sttp.client.impl.monix.{MonixStreams, convertMonixTaskToFuture}
 import sttp.client.testing.{ConvertToFuture, HttpTest}
 

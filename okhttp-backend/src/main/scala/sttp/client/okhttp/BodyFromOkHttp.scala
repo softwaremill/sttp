@@ -27,7 +27,7 @@ import sttp.model.ws.WebSocketFrame
 
 import scala.util.Try
 
-trait BodyFromOkHttp[F[_], S] {
+private[okhttp] trait BodyFromOkHttp[F[_], S] {
   val streams: Streams[S]
   implicit def monad: MonadError[F]
 

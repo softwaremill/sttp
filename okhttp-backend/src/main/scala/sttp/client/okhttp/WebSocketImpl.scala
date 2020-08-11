@@ -2,7 +2,7 @@ package sttp.client.okhttp
 
 import java.util.concurrent.atomic.AtomicBoolean
 
-import okhttp3.{WebSocket => OkHttpWebSocket}
+import okhttp3.{WebSocketListener, WebSocket => OkHttpWebSocket, Response => OkHttpResponse}
 import okio.ByteString
 import sttp.client.monad.MonadError
 import sttp.client.ws.WebSocket
@@ -10,7 +10,11 @@ import sttp.client.ws.internal.{AsyncQueue, WebSocketEvent}
 import sttp.model.ws.{WebSocketClosed, WebSocketException, WebSocketFrame}
 import sttp.client.monad.syntax._
 
-class WebSocketImpl[F[_]](ws: OkHttpWebSocket, queue: AsyncQueue[F, WebSocketEvent], _isOpen: AtomicBoolean)(implicit
+private[okhttp] class WebSocketImpl[F[_]](
+    ws: OkHttpWebSocket,
+    queue: AsyncQueue[F, WebSocketEvent],
+    _isOpen: AtomicBoolean
+)(implicit
     val monad: MonadError[F]
 ) extends WebSocket[F] {
 
@@ -69,3 +73,63 @@ class SendMessageException
       "Cannot enqueue next message. Socket is closed, closing or cancelled or this message would overflow the outgoing message buffer (16 MiB)"
     )
     with WebSocketException
+
+private[okhttp] class DelegatingWebSocketListener(
+    delegate: WebSocketListener,
+    onInitialOpen: (OkHttpWebSocket, OkHttpResponse) => Unit,
+    onInitialError: Throwable => Unit
+) extends WebSocketListener {
+  private val initialised = new AtomicBoolean(false)
+
+  override def onOpen(webSocket: OkHttpWebSocket, response: OkHttpResponse): Unit = {
+    if (!initialised.getAndSet(true)) {
+      onInitialOpen(webSocket, response)
+    }
+    delegate.onOpen(webSocket, response)
+  }
+
+  override def onFailure(webSocket: OkHttpWebSocket, t: Throwable, response: OkHttpResponse): Unit = {
+    if (!initialised.getAndSet(true)) {
+      onInitialError(t)
+    }
+    delegate.onFailure(webSocket, t, response)
+  }
+
+  override def onClosed(webSocket: OkHttpWebSocket, code: Int, reason: String): Unit =
+    delegate.onClosed(webSocket, code, reason)
+  override def onClosing(webSocket: OkHttpWebSocket, code: Int, reason: String): Unit =
+    delegate.onClosing(webSocket, code, reason)
+  override def onMessage(webSocket: OkHttpWebSocket, text: String): Unit = delegate.onMessage(webSocket, text)
+  override def onMessage(webSocket: OkHttpWebSocket, bytes: ByteString): Unit = delegate.onMessage(webSocket, bytes)
+}
+
+private[okhttp] class AddToQueueListener[F[_]](queue: AsyncQueue[F, WebSocketEvent], isOpen: AtomicBoolean)
+    extends WebSocketListener {
+  override def onOpen(websocket: OkHttpWebSocket, response: OkHttpResponse): Unit = {
+    isOpen.set(true)
+    queue.offer(WebSocketEvent.Open())
+  }
+
+  override def onClosed(webSocket: OkHttpWebSocket, code: Int, reason: String): Unit = {
+    isOpen.set(false)
+    queue.offer(WebSocketEvent.Frame(WebSocketFrame.Close(code, reason)))
+  }
+
+  override def onClosing(webSocket: OkHttpWebSocket, code: Int, reason: String): Unit = {
+    isOpen.set(false)
+    queue.offer(WebSocketEvent.Frame(WebSocketFrame.Close(code, reason)))
+  }
+
+  override def onFailure(webSocket: OkHttpWebSocket, t: Throwable, response: OkHttpResponse): Unit = {
+    isOpen.set(false)
+    queue.offer(WebSocketEvent.Error(t))
+  }
+
+  override def onMessage(webSocket: OkHttpWebSocket, bytes: ByteString): Unit =
+    onFrame(WebSocketFrame.Binary(bytes.toByteArray, finalFragment = true, None))
+  override def onMessage(webSocket: OkHttpWebSocket, text: String): Unit = {
+    onFrame(WebSocketFrame.Text(text, finalFragment = true, None))
+  }
+
+  private def onFrame(f: WebSocketFrame.Incoming): Unit = queue.offer(WebSocketEvent.Frame(f))
+}

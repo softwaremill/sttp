@@ -25,7 +25,7 @@ import sttp.model.{Header, HeaderNames, Part}
 import scala.collection.JavaConverters._
 import scala.util.Try
 
-trait BodyToOkHttp[F[_], S] {
+private[okhttp] trait BodyToOkHttp[F[_], S] {
   val streams: Streams[S]
   def streamToRequestBody(stream: streams.BinaryStream): OkHttpRequestBody
 
