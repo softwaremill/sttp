@@ -54,7 +54,7 @@ class OkHttpSyncBackend private (
         val wsResponse =
           Future(
             blocking(
-              bodyFromOkHttp(new ByteArrayInputStream(Array()), request.response, baseResponse, Some(webSocket))
+              bodyFromOkHttp(response.body().byteStream(), request.response, baseResponse, Some(webSocket))
             )
           )
             .map(b => baseResponse.copy(body = b))
