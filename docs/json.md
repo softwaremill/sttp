@@ -27,7 +27,7 @@ Response can be parsed into json using `asJson[T]`, provided there's an implicit
 import sttp.client._
 import sttp.client.circe._
 
-implicit val backend: SttpBackend[Identity, Nothing, NothingT] = HttpURLConnectionBackend()
+implicit val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
 
 import io.circe.generic.auto._
 val requestPayload = RequestPayload("some data")
@@ -61,7 +61,7 @@ Usage example:
 import sttp.client._
 import sttp.client.json4s._
 
-implicit val backend: SttpBackend[Identity, Nothing, NothingT] = HttpURLConnectionBackend()
+implicit val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
 
 val requestPayload = RequestPayload("some data")
 
@@ -93,7 +93,7 @@ import sttp.client._
 import sttp.client.sprayJson._
 import spray.json._
 
-implicit val backend: SttpBackend[Identity, Nothing, NothingT] = HttpURLConnectionBackend()
+implicit val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
 
 implicit val payloadJsonFormat: RootJsonFormat[RequestPayload] = ???
 implicit val myResponseJsonFormat: RootJsonFormat[ResponsePayload] = ???

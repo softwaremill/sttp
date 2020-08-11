@@ -92,7 +92,7 @@ val response = basicRequest.get(uri"http://example.org").send()
 You can define consecutive raw responses that will be served:
 
 ```scala
-implicit val testingBackend:SttpBackendStub[Identity, Nothing, NothingT] = SttpBackendStub.synchronous
+implicit val testingBackend:SttpBackendStub[Identity, Any] = SttpBackendStub.synchronous
   .whenAnyRequest
   .thenRespondCyclic("first", "second", "third")
 
@@ -105,7 +105,7 @@ basicRequest.get(uri"http://example.org").send()       // Right("OK, first")
 Or multiple `Response` instances:
 
 ```scala
-implicit val testingBackend:SttpBackendStub[Identity, Nothing, NothingT] = SttpBackendStub.synchronous
+implicit val testingBackend:SttpBackendStub[Identity, Any] = SttpBackendStub.synchronous
   .whenAnyRequest
   .thenRespondCyclicResponses(
     Response.ok[String]("first"),
@@ -205,7 +205,7 @@ It is also possible to create a stub backend which delegates calls to another (p
 
 ```scala
 implicit val testingBackend =
-  SttpBackendStub.withFallback[Identity,Nothing,Nothing,NothingT](HttpURLConnectionBackend())
+  SttpBackendStub.withFallback(HttpURLConnectionBackend())
     .whenRequestMatches(_.uri.path.startsWith(List("a")))
     .thenRespond("I'm a STUB!")
 

@@ -31,7 +31,7 @@ class PrometheusBackendTest
   "prometheus" should "use default histogram name" in {
     // given
     val backendStub = SttpBackendStub.synchronous.whenAnyRequest.thenRespondOk()
-    val backend = PrometheusBackend[Identity, Any, NothingT](backendStub)
+    val backend = PrometheusBackend[Identity, Any](backendStub)
     val requestsNumber = 10
 
     // when
@@ -46,12 +46,12 @@ class PrometheusBackendTest
     val backendStub = SttpBackendStub.synchronous.whenAnyRequest.thenRespondOk()
     val histogramName = "test_two_backends"
     val backend1 =
-      PrometheusBackend[Identity, Any, NothingT](
+      PrometheusBackend[Identity, Any](
         backendStub,
         requestToHistogramNameMapper = _ => Some(HistogramCollectorConfig(histogramName))
       )
     val backend2 =
-      PrometheusBackend[Identity, Any, NothingT](
+      PrometheusBackend[Identity, Any](
         backendStub,
         requestToHistogramNameMapper = _ => Some(HistogramCollectorConfig(histogramName))
       )
@@ -68,7 +68,7 @@ class PrometheusBackendTest
     // given
     val customHistogramName = "my_custom_histogram"
     val backend =
-      PrometheusBackend[Identity, Any, NothingT](
+      PrometheusBackend[Identity, Any](
         SttpBackendStub.synchronous,
         _ => Some(HistogramCollectorConfig(customHistogramName))
       )
@@ -86,7 +86,7 @@ class PrometheusBackendTest
     // given
     val customHistogramName = "my_custom_histogram"
     val backend =
-      PrometheusBackend[Identity, Any, NothingT](
+      PrometheusBackend[Identity, Any](
         SttpBackendStub.synchronous,
         r =>
           Some(
@@ -114,7 +114,7 @@ class PrometheusBackendTest
     // given
     val customGaugeName = "my_custom_gauge"
     val backend =
-      PrometheusBackend[Identity, Any, NothingT](
+      PrometheusBackend[Identity, Any](
         SttpBackendStub.synchronous,
         requestToInProgressGaugeNameMapper =
           r => Some(CollectorConfig(customGaugeName, List("method" -> r.method.method)))
@@ -136,7 +136,7 @@ class PrometheusBackendTest
   it should "disable histograms" in {
     // given
     val backend =
-      PrometheusBackend[Identity, Any, NothingT](SttpBackendStub.synchronous, _ => None)
+      PrometheusBackend[Identity, Any](SttpBackendStub.synchronous, _ => None)
     val requestsNumber = 6
 
     // when
@@ -156,7 +156,7 @@ class PrometheusBackendTest
         Response(Right(""), StatusCode.Ok, "", Nil, Nil)
       }
     }
-    val backend = PrometheusBackend[Future, Any, NothingT](backendStub)
+    val backend = PrometheusBackend[Future, Any](backendStub)
 
     // when
     (0 until requestsNumber).foreach(_ => backend.send(basicRequest.get(uri"http://127.0.0.1/foo")))
@@ -184,7 +184,7 @@ class PrometheusBackendTest
       }
     }
     val backend =
-      PrometheusBackend[Future, Any, NothingT](
+      PrometheusBackend[Future, Any](
         backendStub,
         requestToInProgressGaugeNameMapper = _ => Some(CollectorConfig(customGaugeName))
       )
@@ -216,7 +216,7 @@ class PrometheusBackendTest
       }
     }
     val backend =
-      PrometheusBackend[Future, Any, NothingT](backendStub, requestToInProgressGaugeNameMapper = _ => None)
+      PrometheusBackend[Future, Any](backendStub, requestToInProgressGaugeNameMapper = _ => None)
 
     // when
     (0 until requestsNumber).foreach(_ => backend.send(basicRequest.get(uri"http://127.0.0.1/foo")))
@@ -235,8 +235,8 @@ class PrometheusBackendTest
     // given
     val backendStub1 = SttpBackendStub.synchronous.whenAnyRequest.thenRespondOk()
     val backendStub2 = SttpBackendStub.synchronous.whenAnyRequest.thenRespondNotFound()
-    val backend1 = PrometheusBackend[Identity, Any, NothingT](backendStub1)
-    val backend2 = PrometheusBackend[Identity, Any, NothingT](backendStub2)
+    val backend1 = PrometheusBackend[Identity, Any](backendStub1)
+    val backend2 = PrometheusBackend[Identity, Any](backendStub2)
 
     // when
     (0 until 10).foreach(_ => backend1.send(basicRequest.get(uri"http://127.0.0.1/foo")))

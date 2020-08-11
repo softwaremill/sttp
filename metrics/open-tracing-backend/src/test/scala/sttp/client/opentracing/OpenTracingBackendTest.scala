@@ -5,7 +5,7 @@ import io.opentracing.tag.Tags
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
 import sttp.client.monad.IdMonad
 import sttp.client.testing.SttpBackendStub
-import sttp.client.{Identity, NothingT, SttpBackend, _}
+import sttp.client.{Identity, SttpBackend, _}
 import sttp.client.opentracing.OpenTracingBackend._
 import sttp.model.{Method, StatusCode}
 
@@ -17,7 +17,7 @@ class OpenTracingBackendTest extends FlatSpec with Matchers with BeforeAndAfter 
 
   private val recordedRequests = mutable.ListBuffer[Request[_, _]]()
   private val tracer = new MockTracer()
-  private implicit val backend: SttpBackend[Identity, Any, NothingT] =
+  private implicit val backend: SttpBackend[Identity, Any] =
     OpenTracingBackend[Identity, Nothing](
       SttpBackendStub.apply(IdMonad).whenRequestMatchesPartial {
         case r if r.uri.toString.contains("echo") =>

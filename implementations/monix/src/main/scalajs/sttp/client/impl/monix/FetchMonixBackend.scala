@@ -5,7 +5,7 @@ import java.nio.ByteBuffer
 import monix.eval.Task
 import monix.reactive.Observable
 import org.scalajs.dom.experimental.{BodyInit, Response => FetchResponse}
-import sttp.client.{AbstractFetchBackend, FetchOptions, NothingT, ResponseAsStreamUnsafe, SttpBackend}
+import sttp.client.{AbstractFetchBackend, FetchOptions, ResponseAsStreamUnsafe, SttpBackend}
 
 import scala.scalajs.js
 import scala.scalajs.js.Promise
@@ -68,7 +68,7 @@ object FetchMonixBackend {
   def apply(
       fetchOptions: FetchOptions = FetchOptions.Default,
       customizeRequest: FetchRequest => FetchRequest = identity
-  ): SttpBackend[Task, MonixStreams, NothingT] =
+  ): SttpBackend[Task, MonixStreams] =
     new FetchMonixBackend(fetchOptions, customizeRequest)
 
   /**
@@ -77,5 +77,5 @@ object FetchMonixBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub: SttpBackendStub[Task, MonixStreams, NothingT] = SttpBackendStub(TaskMonadAsyncError)
+  def stub: SttpBackendStub[Task, MonixStreams] = SttpBackendStub(TaskMonadAsyncError)
 }

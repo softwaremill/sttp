@@ -13,11 +13,11 @@ The following backend wrappers are available:
 ```scala mdoc:compile-only
 import sttp.client._
 import sttp.client.logging.slf4j._
-val delegateBackend: SttpBackend[Identity, Nothing, NothingT] = ???
+val delegateBackend: SttpBackend[Identity, Any] = ???
 
-Slf4jLoggingBackend[Identity, Nothing, NothingT](delegateBackend)
-Slf4jTimingBackend[Identity, Nothing, NothingT](delegateBackend)
-Slf4jCurlBackend[Identity, Nothing, NothingT](delegateBackend)
+Slf4jLoggingBackend(delegateBackend)
+Slf4jTimingBackend(delegateBackend)
+Slf4jCurlBackend(delegateBackend)
 ```
 
 The logging backend logs `DEBUG`-level logs when a request is started, completes successfully, and `ERROR`-level logs when it results in an exception.
@@ -32,7 +32,7 @@ Example usage:
 import sttp.client._
 import sttp.client.logging.slf4j.Slf4jTimingBackend
 
-implicit val backend = Slf4jTimingBackend[Identity, Nothing, NothingT](HttpURLConnectionBackend())
+implicit val backend = Slf4jTimingBackend(HttpURLConnectionBackend())
 basicRequest.get(uri"https://httpbin.org/get").send()
 
 // Logs:

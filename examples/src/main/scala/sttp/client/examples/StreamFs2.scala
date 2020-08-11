@@ -12,7 +12,7 @@ object StreamFs2 extends App {
 
   implicit val cs: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionContext.global)
 
-  def streamRequestBody(implicit backend: SttpBackend[IO, Fs2Streams[IO], NothingT]): IO[Unit] = {
+  def streamRequestBody(implicit backend: SttpBackend[IO, Fs2Streams[IO]]): IO[Unit] = {
     val stream: Stream[IO, Byte] = Stream.emits("Hello, world".getBytes)
 
     basicRequest
@@ -22,7 +22,7 @@ object StreamFs2 extends App {
       .map { response => println(s"RECEIVED:\n${response.body}") }
   }
 
-  def streamResponseBody(implicit backend: SttpBackend[IO, Fs2Streams[IO], NothingT]): IO[Unit] = {
+  def streamResponseBody(implicit backend: SttpBackend[IO, Fs2Streams[IO]]): IO[Unit] = {
     basicRequest
       .body("I want a stream!")
       .post(uri"https://httpbin.org/post")

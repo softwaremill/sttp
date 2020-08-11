@@ -16,8 +16,8 @@ object PrometheusBackend {
   val DefaultErrorCounterName = "sttp_requests_error_count"
   val DefaultFailureCounterName = "sttp_requests_failure_count"
 
-  def apply[F[_], P, WS_HANDLER[_]](
-      delegate: SttpBackend[F, P, WS_HANDLER],
+  def apply[F[_], P](
+      delegate: SttpBackend[F, P],
       requestToHistogramNameMapper: Request[_, _] => Option[HistogramCollectorConfig] = (_: Request[_, _]) =>
         Some(HistogramCollectorConfig(DefaultHistogramName)),
       requestToInProgressGaugeNameMapper: Request[_, _] => Option[CollectorConfig] = (_: Request[_, _]) =>
@@ -29,10 +29,10 @@ object PrometheusBackend {
       requestToFailureCounterMapper: Request[_, _] => Option[CollectorConfig] = (_: Request[_, _]) =>
         Some(CollectorConfig(DefaultFailureCounterName)),
       collectorRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry
-  ): SttpBackend[F, P, WS_HANDLER] = {
+  ): SttpBackend[F, P] = {
     // redirects should be handled before prometheus
-    new FollowRedirectsBackend[F, P, WS_HANDLER](
-      new ListenerBackend[F, P, WS_HANDLER, RequestCollectors](
+    new FollowRedirectsBackend[F, P](
+      new ListenerBackend[F, P, RequestCollectors](
         delegate,
         RequestListener.lift(
           new PrometheusListener(
@@ -134,20 +134,6 @@ class PrometheusListener(
       incCounterIfMapped(request, requestToErrorCounterMapper)
     }
   }
-
-  override def beforeWebsocket(request: Request[_, _]): RequestCollectors = (None, None)
-
-  override def websocketException(
-      request: Request[_, _],
-      requestCollectors: RequestCollectors,
-      e: Exception
-  ): Unit = {}
-
-  override def websocketSuccessful(
-      request: Request[_, _],
-      response: WebSocketResponse[_],
-      requestCollectors: RequestCollectors
-  ): Unit = {}
 
   private def incCounterIfMapped[T](
       request: Request[_, _],

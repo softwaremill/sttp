@@ -26,8 +26,8 @@ This type of authentication works differently. In its assumptions it is based on
 In order to add digest authentication support just wrap other backend as follows:
 
 ```scala mdoc:compile-only
-val myBackend: SttpBackend[Identity, Nothing, NothingT] = HttpURLConnectionBackend()
-new DigestAuthenticationBackend[Identity, Nothing, NothingT](myBackend)
+val myBackend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
+new DigestAuthenticationBackend(myBackend)
 ```
 
 Then only thing which we need to do is to pass our credentials to the relevant request:

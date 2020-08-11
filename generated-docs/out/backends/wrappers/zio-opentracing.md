@@ -24,7 +24,7 @@ import zio._
 import zio.telemetry.opentracing._
 import sttp.client.ziotelemetry.opentracing._
 
-implicit val zioBackend: SttpBackend[Task, Nothing, NothingT] = ???
+implicit val zioBackend: SttpBackend[Task, Any] = ???
 
 def sttpTracer: ZioTelemetryOpenTracingTracer = new ZioTelemetryOpenTracingTracer {
     def before[T](request: Request[T, Nothing]): RIO[OpenTracing, Unit] =
@@ -38,7 +38,7 @@ def sttpTracer: ZioTelemetryOpenTracingTracer = new ZioTelemetryOpenTracingTrace
       OpenTracing.tag("http.status_code", response.code.code)
 }
 
-new ZioTelemetryOpenTracingBackend[NothingT](zioBackend, sttpTracer)
+new ZioTelemetryOpenTracingBackend(zioBackend, sttpTracer)
 ```
 
 
