@@ -2,7 +2,7 @@
 
 Resilience covers areas such as retries, circuit breaking and rate limiting.
 
-sttp client doesn't have the above built-in, as these concepts are usually best handled on a higher level. Sending a request (that is, invoking `myRequest.send()` using an implicit backend that is in scope), can be viewed as a:
+sttp client doesn't have the above built-in, as these concepts are usually best handled on a higher level. Sending a request (that is, invoking `myRequest.send(backend)` using an implicit backend that is in scope), can be viewed as a:
 
 * `() => Response[T]` function for synchronous backends
 * `() => Future[Response[T]]` for `Future`-based asynchronous backends

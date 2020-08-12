@@ -1,6 +1,6 @@
 # Custom backends, logging, metrics
 
-It is also entirely possible to write custom backends (if doing so, please consider contributing!) or wrap an existing one. One can even write completely generic wrappers for any delegate backend, as each backend comes equipped with a monad for the response type. This brings the possibility to `map` and `flatMap` over responses.
+It is also entirely possible to write custom backends (if doing so, please consider contributing!) or wrap an existing one. One can even write completely generic wrappers for any delegate backend, as each backend comes equipped with a monad for the used effect type. This brings the possibility to `map` and `flatMap` over responses.
 
 Possible use-cases for wrapper-backend include:
 
@@ -38,15 +38,11 @@ For example:
 import sttp.client._
 import sttp.client.ws._
 import sttp.client.monad._
-class MyWrapper[F[_], S, WS_HANDLER[_]] private (delegate: SttpBackend[F, S, WS_HANDLER])
-  extends SttpBackend[F, S, WS_HANDLER] {
 
-  def send[T](request: Request[T, S]): F[Response[T]] = ???
+class MyWrapper[F[_], P] private (delegate: SttpBackend[F, P])
+  extends SttpBackend[F, P] {
 
-  def openWebsocket[T, WS_RESULT](
-      request: Request[T, S],
-      handler: WS_HANDLER[WS_RESULT]
-    ): F[WebSocketResponse[WS_RESULT]] = ???
+  def send[T, R >: P with Effect[F]](request: Request[T, R]): F[Response[T]] = ???
 
   def close(): F[Unit] = ???
 
@@ -54,8 +50,8 @@ class MyWrapper[F[_], S, WS_HANDLER[_]] private (delegate: SttpBackend[F, S, WS_
 }
 
 object MyWrapper {
-  def apply[F[_], S, WS_HANDLER[_]](
-    delegate: SttpBackend[F, S, WS_HANDLER]): SttpBackend[F, S, WS_HANDLER] = {
+  def apply[F[_], P](
+    delegate: SttpBackend[F, P]): SttpBackend[F, P] = {
     // disables any other FollowRedirectsBackend-s further down the delegate chain
     new FollowRedirectsBackend(new MyWrapper(delegate))
   }
@@ -91,11 +87,11 @@ class CloudMetricsServer extends MetricsServer {
 }
 
 // the backend wrapper
-class MetricWrapper[S](delegate: SttpBackend[Future, S, NothingT],
+class MetricWrapper[P](delegate: SttpBackend[Future, P],
                        metrics: MetricsServer)
-    extends SttpBackend[Future, S, NothingT] {
+    extends SttpBackend[Future, P] {
 
-  override def send[T](request: Request[T, S]): Future[Response[T]] = {
+  override def send[T, R >: P with Effect[Future]](request: Request[T, R]): Future[Response[T]] = {
     val start = System.currentTimeMillis()
 
     def report(metricSuffix: String): Unit = {
@@ -111,20 +107,13 @@ class MetricWrapper[S](delegate: SttpBackend[Future, S, NothingT],
     }
   }
 
-  override def openWebsocket[T, WS_RESULT](
-      request: Request[T, S],
-      handler: NothingT[WS_RESULT]
-    ): Future[WebSocketResponse[WS_RESULT]] = {
-    delegate.openWebsocket(request, handler) // No websocket support due to NothingT
-  }
-
   override def close(): Future[Unit] = delegate.close()
 
   override def responseMonad: MonadError[Future] = delegate.responseMonad
 }
 
 // example usage
-implicit val backend = new MetricWrapper(
+val backend = new MetricWrapper(
   AkkaHttpBackend(),
   new CloudMetricsServer()
 )
@@ -132,7 +121,7 @@ implicit val backend = new MetricWrapper(
 basicRequest
   .get(uri"http://company.com/api/service1")
   .tag("metric", "service1")
-  .send()
+  .send(backend)
 ```
 
 See also the [Prometheus](prometheus.md) backend for an example implementation.
@@ -152,18 +141,19 @@ import sttp.client._
 import sttp.client.monad._
 import sttp.client.ws._
 
-class RetryingBackend[F[_], S](
-    delegate: SttpBackend[F, S, NothingT],
+class RetryingBackend[F[_], P](
+    delegate: SttpBackend[F, P],
     shouldRetry: RetryWhen,
     maxRetries: Int)
-    extends SttpBackend[F, S, NothingT] {
+    extends SttpBackend[F, P] {
 
-  override def send[T](request: Request[T, S]): F[Response[T]] = {
+  override def send[T, R >: P with Effect[F]](request: Request[T, R]): F[Response[T]] = {
     sendWithRetryCounter(request, 0)
   }
 
-  private def sendWithRetryCounter[T](request: Request[T, S],
-                                      retries: Int): F[Response[T]] = {
+  private def sendWithRetryCounter[T, R >: P with Effect[F]](
+    request: Request[T, R], retries: Int): F[Response[T]] = {
+
     val r = responseMonad.handleError(delegate.send(request)) {
       case t if shouldRetry(request, Left(t)) && retries < maxRetries =>
         sendWithRetryCounter(request, retries + 1)
@@ -176,13 +166,6 @@ class RetryingBackend[F[_], S](
         responseMonad.unit(resp)
       }
     }
-  }
-
-  override def openWebsocket[T, WS_RESULT](
-      request: Request[T, S],
-      handler: NothingT[WS_RESULT]
-    ): F[WebSocketResponse[WS_RESULT]] = {
-    delegate.openWebsocket(request, handler) // No websocket support due to NothingT
   }
 
   override def close(): F[Unit] = delegate.close()
@@ -201,25 +184,19 @@ Below is an example on how to implement a backend wrapper, which integrates with
 
 ```scala mdoc:compile-only
 import io.github.resilience4j.circuitbreaker.{CallNotPermittedException, CircuitBreaker}
+import sttp.client.Effect
 import sttp.client.monad.MonadError
-import sttp.client.ws.WebSocketResponse
 import sttp.client.{Request, Response, SttpBackend}
 import java.util.concurrent.TimeUnit
 
-class CircuitSttpBackend[F[_], S, W[_]](
+class CircuitSttpBackend[F[_], P](
     circuitBreaker: CircuitBreaker,
-    delegate: SttpBackend[F, S, W]
-    )(implicit monadError: MonadError[F]) extends SttpBackend[F, S, W] {
+    delegate: SttpBackend[F, P]
+    )(implicit monadError: MonadError[F]) extends SttpBackend[F, P] {
 
-  override def send[T](request: Request[T, S]): F[Response[T]] = {
+  override def send[T, R >: P with Effect[F]](request: Request[T, R]): F[Response[T]] = {
     CircuitSttpBackend.decorateF(circuitBreaker, delegate.send(request))
   }
-
-  override def openWebsocket[T, WS_RESULT](
-      request: Request[T, S],
-      handler: W[WS_RESULT]
-  ): F[WebSocketResponse[WS_RESULT]] =
-        CircuitSttpBackend.decorateF(circuitBreaker, delegate.openWebsocket(request, handler))
 
   override def close(): F[Unit] = delegate.close()
 
@@ -266,23 +243,18 @@ Below is an example on how to implement a backend wrapper, which integrates with
 
 ```scala mdoc:compile-only
 import io.github.resilience4j.ratelimiter.RateLimiter
+import sttp.client.Effect
 import sttp.client.monad.MonadError
-import sttp.client.ws.WebSocketResponse
 import sttp.client.{Request, Response, SttpBackend}
 
-class RateLimitingSttpBackend[F[_], S, W[_]](
+class RateLimitingSttpBackend[F[_], P](
     rateLimiter: RateLimiter,
-    delegate: SttpBackend[F, S, W]
-    )(implicit monadError: MonadError[F]) extends SttpBackend[F, S, W] {
+    delegate: SttpBackend[F, P]
+    )(implicit monadError: MonadError[F]) extends SttpBackend[F, P] {
 
-  override def send[T](request: Request[T, S]): F[Response[T]] = {
+  override def send[T, R >: P with Effect[F]](request: Request[T, R]): F[Response[T]] = {
     RateLimitingSttpBackend.decorateF(rateLimiter, delegate.send(request))
   }
-
-  override def openWebsocket[T, WS_RESULT](
-      request: Request[T, S],
-      handler: W[WS_RESULT]
-  ): F[WebSocketResponse[WS_RESULT]] = delegate.openWebsocket(request, handler)
 
   override def close(): F[Unit] = delegate.close()
 
@@ -325,7 +297,7 @@ import scala.concurrent.Future
 
 class MyCustomBackendHttpTest extends HttpTest[Future] {
   override implicit val convertToFuture: ConvertToFuture[Future] = ConvertToFuture.future
-  override implicit lazy val backend: SttpBackend[Future, Nothing, NothingT] = ??? //new MyCustomBackend()
+  override implicit lazy val backend: SttpBackend[Future, Any] = ??? //new MyCustomBackend()
 }
 ```
 

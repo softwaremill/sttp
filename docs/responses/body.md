@@ -7,11 +7,11 @@ The default `response.body` will be a:
 * `Left(errorMessage)` if the request is successful, but response code is not 2xx.
 * `Right(body)` if the request is successful and the response code is 2xx.
 
-How the response body will be read is part of the request description, as already when sending the request, the backend needs to know what to do with the response. The type to which the response body should be deserialized is the second type parameter of `RequestT`, and stored in the request definition as the `request.response: ResponseAs[T, S]` property.
+How the response body will be read is part of the request description, as already when sending the request, the backend needs to know what to do with the response. The type to which the response body should be deserialized is the second type parameter of `RequestT`, and stored in the request definition as the `request.response: ResponseAs[T, R]` property.
 
 ## Basic response specifications
 
-To conveniently specify how to deserialize the response body, a number of `as[Type]` methods are available. They can be used to provide a value for the request description's `response` property:
+To conveniently specify how to deserialize the response body, a number of `as(...Type...)` methods are available. They can be used to provide a value for the request description's `response` property:
 
 ```scala mdoc:compile-only
 import sttp.client._
@@ -19,26 +19,33 @@ import sttp.client._
 basicRequest.response(asByteArray)
 ```
 
-When the above request is completely described and sent, it will result in a `Response[Either[String, Array[Byte]]]` (where the left and right correspond to non-2xx and 2xx status codes, as above). Other possible response descriptions are:
+When the above request is completely described and sent, it will result in a `Response[Either[String, Array[Byte]]]` (where the left and right correspond to non-2xx and 2xx status codes, as above). 
 
-```scala
-def ignore: ResponseAs[Unit, Nothing]
-def asString: ResponseAs[Either[String, String], Nothing]
-def asStringAlways: ResponseAs[String, Nothing]
-def asString(encoding: String): ResponseAs[Either[String, String], Nothing]
-def asStringAlways(encoding: String): ResponseAs[String, Nothing]
-def asByteArray: ResponseAs[Either[String, Array[Byte]], Nothing]
-def asByteArrayAlways: ResponseAs[Array[Byte], Nothing]
-def asParams: ResponseAs[Either[String, Seq[(String, String)]], Nothing]
-def asParams(encoding: String): ResponseAs[Either[String, Seq[(String, String)]], Nothing]
-def asFile(file: File): ResponseAs[Either[String, File], Nothing]
-def asFileAlways(file: File): ResponseAs[File, Nothing]
-def asPath(path: Path): ResponseAs[Either[String, Path], Nothing]
-def asPathAlways(path: Path): ResponseAs[Path, Nothing]
+Other possible response descriptions include (the first type parameter of `ResponseAs` specifies the type returned as the response body, the second - the capabilities that the backend is required to support to send the request; `Any` means no special requirements):
 
-def asEither[L, R, S](onError: ResponseAs[L, S], 
-                      onSuccess: ResponseAs[R, S]): ResponseAs[Either[L, R], S]
-def fromMetadata[T, S](f: ResponseMetadata => ResponseAs[T, S]): ResponseAs[T, S]
+```scala mdoc:compile-only
+import sttp.client._
+import java.io.File
+import java.nio.file.Path
+
+def ignore: ResponseAs[Unit, Any] = ???
+def asString: ResponseAs[Either[String, String], Any] = ???
+def asStringAlways: ResponseAs[String, Any] = ???
+def asString(encoding: String): ResponseAs[Either[String, String], Any] = ???
+def asStringAlways(encoding: String): ResponseAs[String, Any] = ???
+def asByteArray: ResponseAs[Either[String, Array[Byte]], Any] = ???
+def asByteArrayAlways: ResponseAs[Array[Byte], Any] = ???
+def asParams: ResponseAs[Either[String, Seq[(String, String)]], Any] = ???
+def asParams(encoding: String): ResponseAs[Either[String, Seq[(String, String)]], Any] = ???
+def asFile(file: File): ResponseAs[Either[String, File], Any] = ???
+def asFileAlways(file: File): ResponseAs[File, Any] = ???
+def asPath(path: Path): ResponseAs[Either[String, Path], Any] = ???
+def asPathAlways(path: Path): ResponseAs[Path, Any] = ???
+
+def asEither[A, B, R](onError: ResponseAs[A, R], 
+                      onSuccess: ResponseAs[B, R]): ResponseAs[Either[A, B], R] = ???
+def fromMetadata[T, R](default: ResponseAs[T, R], 
+                       conditions: ConditionalResponseAs[T, R]*): ResponseAs[T, R] = ???
 ```
 
 Hence, to discard the response body, the request description should include the following:
@@ -76,7 +83,7 @@ As an example, to read the response body as an int, the following response descr
 ```scala mdoc:compile-only
 import sttp.client._
 
-val asInt: ResponseAs[Either[String, Int], Nothing] = asString.mapRight(_.toInt)
+val asInt: ResponseAs[Either[String, Int], Any] = asString.mapRight(_.toInt)
 
 basicRequest
   .get(uri"http://example.com")
@@ -85,9 +92,14 @@ basicRequest
 
 To integrate with a third-party JSON library, and always parse the response as a json (regardless of the status code):
 
-```scala
-def parseJson(json: String): Either[JsonError, JsonAST] = ...
-val asJson: ResponseAs[Either[JsonError, JsonAST], Nothing] = asStringAlways.map(parseJson)
+```scala mdoc:compile-only
+import sttp.client._
+
+type JsonError
+type JsonAST
+
+def parseJson(json: String): Either[JsonError, JsonAST] = ???
+val asJson: ResponseAs[Either[JsonError, JsonAST], Any] = asStringAlways.map(parseJson)
 
 basicRequest
   .response(asJson)
@@ -115,22 +127,37 @@ implicit val errorModelDecoder: Decoder[ErrorModel] = deriveDecoder[ErrorModel]
 val myRequest: Request[Either[ResponseError[io.circe.Error], MyModel], Nothing] =
   basicRequest
     .get(uri"https://example.com")
-    .response(fromMetadata { meta =>
-      meta.code match {
-        case StatusCode.Ok => asJson[SuccessModel]
-        case _             => asJson[ErrorModel]
-      }
-    })
+    .response(fromMetadata(
+        asJson[ErrorModel], 
+        ConditionalResponseAs(_.code == StatusCode.Ok, asJson[SuccessModel])
+    ))
 ```
 
 ## Streaming
 
 If the backend used supports streaming (see [backends summary](../backends/summary.md)), it's possible to receive responses as a stream. This can be described using the following methods:
 
-```scala
-def asStream[S]: ResponseAs[Either[String, S], S] = ResponseAsStream[S, S]()
-def asStreamAlways[S]: ResponseAs[S, S] = ResponseAsStream[S, S]()
+```scala mdoc:compile-only
+import sttp.client._
+
+def asStream[F[_], T, S](s: Streams[S])(f: s.BinaryStream => F[T]): 
+  ResponseAs[Either[String, T], Effect[F] with S] = ???
+
+def asStreamAlways[F[_], T, S](s: Streams[S])(f: s.BinaryStream => F[T]): 
+  ResponseAs[T, Effect[F] with S] = ???
+
+def asStreamUnsafe[S](s: Streams[S]): 
+  ResponseAs[Either[String, s.BinaryStream], S] = ???
+
+def asStreamUnsafeAlways[S](s: Streams[S]): 
+  ResponseAs[s.BinaryStream, S] = ???
 ```
+
+All of these specifications require the streaming capability to be passes as a parameter, an implementation of `Streams[S]`. This is used to determine the type of binary streams that are supported, and to require that the backend used to send the request supports the given type of streams. These implementations are provided by the backend implementations, e.g. `AkkaStreams` or `Fs2Streams[F]`. 
+
+The first two "safe" variants passes the response stream to the user-provided function, which should consume the stream entirely. Once the effect returned by the function is complete, the backend will try to close the stream (if the streaming implementation allows it).
+
+The "unsafe" variants return the stream directly to the user, and then it's up to the user of the code to consume and close the stream, releasing any resources held by the HTTP connection.
 
 For example, when using the [Akka backend](../backends/akka.md):
 
@@ -141,15 +168,11 @@ import scala.concurrent.Future
 import sttp.client._
 import sttp.client.akkahttp._
 
-val backend: SttpBackend[Future, Source[ByteString, Any], NothingT] = AkkaHttpBackend()
+val backend: SttpBackend[Future, AkkaStreams] = AkkaHttpBackend()
 
 val response: Future[Response[Either[String, Source[ByteString, Any]]]] =
   basicRequest
     .post(uri"...")
-    .response(asStream[Source[ByteString, Any]])
+    .response(asStreamUnsafe(AkkaStreams))
     .send(backend)    
-```
-
-```note:: Unlike with non-streaming response handlers, each streaming response should be entirely consumed by client code.
-
 ```

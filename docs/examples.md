@@ -95,7 +95,7 @@ import io.circe.generic.auto._
 import zio._
 import zio.console.Console
 
-object GetAndParseJsonZioCirce extends App {
+object GetAndParseJsonZioCirce extends zio.App {
   override def run(args: List[String]): ZIO[ZEnv, Nothing, ExitCode] = {
 
     case class HttpBinResponse(origin: String, headers: Map[String, String])
@@ -213,7 +213,7 @@ import sttp.model.ws.WebSocketFrame
 import zio._
 import zio.console.Console
 
-object WebsocketZio extends App {
+object WebsocketZio extends zio.App {
   def useWebsocket(ws: WebSocket[Task]): ZIO[Console, Throwable, Unit] = {
     def send(i: Int) = ws.send(WebSocketFrame.text(s"Hello $i!"))
     val receive = ws.receiveText().flatMap(t => console.putStrLn(s"RECEIVED: $t"))
@@ -287,37 +287,40 @@ Example code:
 ```scala mdoc:compile-only
 import sttp.client._
 import sttp.client.asynchttpclient.fs2.AsyncHttpClientFs2Backend
+import sttp.client.impl.fs2.Fs2Streams
 
 import cats.effect.{ContextShift, IO}
 import cats.instances.string._
 import fs2.{Stream, text}
 
-implicit val cs: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionContext.global)
+object StreamFs2 extends App {
+  implicit val cs: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionContext.global)
 
-def streamRequestBody(backend: SttpBackend[IO, Stream[IO, Byte], NothingT]): IO[Unit] = {
-  val stream: Stream[IO, Byte] = Stream.emits("Hello, world".getBytes)
+  def streamRequestBody(backend: SttpBackend[IO, Fs2Streams[IO]]): IO[Unit] = {
+    val stream: Stream[IO, Byte] = Stream.emits("Hello, world".getBytes)
 
-  basicRequest
-    .streamBody(stream)
-    .post(uri"https://httpbin.org/post")
-    .send(backend)
-    .map { response => println(s"RECEIVED:\n${response.body}") }
+    basicRequest
+      .streamBody(Fs2Streams[IO])(stream)
+      .post(uri"https://httpbin.org/post")
+      .send(backend)
+      .map { response => println(s"RECEIVED:\n${response.body}") }
+  }
+
+  def streamResponseBody(backend: SttpBackend[IO, Fs2Streams[IO]]): IO[Unit] = {
+    basicRequest
+      .body("I want a stream!")
+      .post(uri"https://httpbin.org/post")
+      .response(asStreamAlways(Fs2Streams[IO])(_.chunks.through(text.utf8DecodeC).compile.foldMonoid))
+      .send(backend)
+      .map { response => println(s"RECEIVED:\n${response.body}") }
+  }
+
+  val effect = AsyncHttpClientFs2Backend[IO]().flatMap { backend =>
+    streamRequestBody(backend).flatMap(_ => streamResponseBody(backend)).guarantee(backend.close())
+  }
+
+  effect.unsafeRunSync()
 }
-
-def streamResponseBody(implicit backend: SttpBackend[IO, Fs2Streams[IO], NothingT]): IO[Unit] = {
-  basicRequest
-    .body("I want a stream!")
-    .post(uri"https://httpbin.org/post")
-    .response(asStreamAlways(Fs2Streams[IO])(_.chunks.through(text.utf8DecodeC).compile.foldMonoid))
-    .send(backend)
-    .map { response => println(s"RECEIVED:\n${response.body}") }
-}
-
-val effect = AsyncHttpClientFs2Backend[IO]().flatMap { implicit backend =>
-  streamRequestBody.flatMap(_ => streamResponseBody).guarantee(backend.close())
-}
-
-effect.unsafeRunSync()
 ``` 
 
 ## Retry a request using ZIO

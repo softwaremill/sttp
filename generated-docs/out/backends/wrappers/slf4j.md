@@ -13,7 +13,7 @@ The following backend wrappers are available:
 ```scala
 import sttp.client._
 import sttp.client.logging.slf4j._
-val delegateBackend: SttpBackend[Identity, Nothing] = ???
+val delegateBackend: SttpBackend[Identity, Any] = ???
 
 Slf4jLoggingBackend(delegateBackend)
 Slf4jTimingBackend(delegateBackend)

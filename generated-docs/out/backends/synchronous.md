@@ -9,7 +9,8 @@ The default **synchronous** backend, available in the main jar for the JVM.
 To use, add an implicit value:
 
 ```scala
-implicit val sttpBackend = HttpURLConnectionBackend()
+import sttp.client._
+val backend = HttpURLConnectionBackend()
 ```
 
 This backend works with all Scala versions. A Dotty build is available as well.
@@ -27,15 +28,17 @@ Create the backend using:
 ```scala
 import sttp.client.okhttp.OkHttpSyncBackend
 
-implicit val sttpBackend = OkHttpSyncBackend()
+val backend = OkHttpSyncBackend()
 ```
+
 or, if you'd like to instantiate the OkHttpClient yourself:
+
 ```scala
 import sttp.client.okhttp.OkHttpSyncBackend
 import okhttp3._
 
 val okHttpClient: OkHttpClient = ???
-implicit val sttpBackend = OkHttpSyncBackend.usingClient(okHttpClient)
+val backend = OkHttpSyncBackend.usingClient(okHttpClient)
 ```
 
 This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supports HTTP/2.
@@ -53,14 +56,16 @@ Create the backend using:
 ```scala
 import sttp.client.httpclient.HttpClientSyncBackend
 
-implicit val sttpBackend = HttpClientSyncBackend()
+val backend = HttpClientSyncBackend()
 ```
+
 or, if you'd like to instantiate the HttpClient yourself:
+
 ```scala
 import sttp.client.httpclient.HttpClientSyncBackend
 import java.net.http.HttpClient
 val httpClient: HttpClient = ???
-implicit val sttpBackend = HttpClientSyncBackend.usingClient(httpClient)
+val backend = HttpClientSyncBackend.usingClient(httpClient)
 ```
 
 This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards, works with all Scala versions. A Dotty build is available as well.
@@ -71,9 +76,4 @@ Synchronous backends don't support non-blocking [streaming](../requests/streamin
 
 ## Websockets
 
-The `HttpURLConnection`-based backend doesn't support websockets.
-
-OkHttp and HttpClient backends support websockets by wrapping a [low-level Java interface](../websockets.md):
- 
-* `sttp.client.okhttp.WebSocketHandler`, or
-* `sttp.client.httpclient.WebSocketHandler`
+Only the OkHttp backend support regular [websockets](../websockets.md).

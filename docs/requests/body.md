@@ -33,7 +33,7 @@ val bytes: Array[Byte] = ???
 basicRequest.body(bytes)
 
 import java.nio.ByteBuffer
-val byteBuffer: java.nio.ByteBuffer = ???
+val byteBuffer: ByteBuffer = ???
 basicRequest.body(byteBuffer)
 
 import java.io.ByteArrayInputStream

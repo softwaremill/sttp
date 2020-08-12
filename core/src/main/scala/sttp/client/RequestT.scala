@@ -15,12 +15,14 @@ import scala.concurrent.duration.Duration
 /**
   * Describes a HTTP request, along with a description of how the response body should be handled.
   *
+  * The request can be sent using a [[SttpBackend]], which provides a superset of the required capabilities.
+  *
   * @param response Description of how the response body should be handled.
   *                 Needs to be specified upfront so that the response
   *                 is always consumed and hence there are no requirements on
   *                 client code to consume it. An exception to this are
-  *                 streaming responses, which need to fully consumed by the
-  *                 client if such a response type is requested.
+  *                 unsafe streaming and websocket responses, which need to
+  *                 be consumed/closed by the client.
   * @param tags Request-specific tags which can be used by backends for
   *             logging, metrics, etc. Not used by default.
   * @tparam U Specifies if the method & uri are specified. By default can be
@@ -33,7 +35,9 @@ import scala.concurrent.duration.Duration
   *           request is aliased to [[Request]]: the method and uri are
   *           specified, and the request can be sent.
   * @tparam T The target type, to which the response body should be read.
-  * @tparam R TODO
+  * @tparam R The backend capabilities required by the request or response description. This might be `Any` (no
+  *           requirements), [[Effect]] (the backend must support the given effect type), [[Streams]] (the ability to
+  *           send and receive streaming bodies) or [[WebSockets]] (the ability to handle websocket requests).
   */
 case class RequestT[U[_], T, -R](
     method: U[Method],
@@ -266,12 +270,15 @@ case class RequestT[U[_], T, -R](
     * Sends the request, using the backend from the implicit scope. Only requests for which the method & URI are
     * specified can be sent.
     *
-    * @return Depending on the backend, either the [[Response]] ([[Identity]] synchronous backends), or the
-    *         [[Response]] in a backend-specific wrapper, or a failed effect (other backends).
+    * The required capabilities must be a subset of the capabilities provided by the backend.
+    *
+    * @return For synchronous backends (when the effect type is [[Identity]]), [[Response]] is returned directly
+    *         and exceptions are thrown.
+    *         For asynchronous backends (when the effect type is e.g. [[scala.concurrent.Future]]), an effect containing
+    *         the [[Response]] is returned. Exceptions are represented as failed effects (e.g. failed futures).
     *
     *         The response body is deserialized as specified by this request (see [[RequestT.response]]).
     *
-    *         Exceptions can be thrown directly ([[Identity]] synchronous backends), or wrapped (asynchronous backends).
     *         Known exceptions are converted by backends to one of [[SttpClientException]]. Other exceptions are thrown
     *         unchanged.
     */
@@ -287,15 +294,17 @@ case class RequestT[U[_], T, -R](
     ) // the order of implicits must be different so that the signatures are different
 
   /**
-    * Sends the request, using the backend from the implicit scope. Only requests for which the method & URI are
-    * specified can be sent.
+    * Sends the request, using the given backend. Only requests for which the method & URI are specified can be sent.
     *
-    * @return Depending on the backend, either the [[Response]] ([[Identity]] synchronous backends), or the
-    *         [[Response]] in a backend-specific wrapper, or a failed effect (other backends).
+    * The required capabilities must be a subset of the capabilities provided by the backend.
+    *
+    * @return For synchronous backends (when the effect type is [[Identity]]), [[Response]] is returned directly
+    *         and exceptions are thrown.
+    *         For asynchronous backends (when the effect type is e.g. [[scala.concurrent.Future]]), an effect containing
+    *         the [[Response]] is returned. Exceptions are represented as failed effects (e.g. failed futures).
     *
     *         The response body is deserialized as specified by this request (see [[RequestT.response]]).
     *
-    *         Exceptions can be thrown directly ([[Identity]] synchronous backends), or wrapped (asynchronous backends).
     *         Known exceptions are converted by backends to one of [[SttpClientException]]. Other exceptions are thrown
     *         unchanged.
     */

@@ -16,26 +16,26 @@ Next you'll need to add an implicit value:
 import sttp.client._
 import sttp.client.asynchttpclient.scalaz.AsyncHttpClientScalazBackend
 
-AsyncHttpClientScalazBackend().flatMap { implicit backend => ??? }
+AsyncHttpClientScalazBackend().flatMap { backend => ??? }
 
 // or, if you'd like to use custom configuration:
 import org.asynchttpclient.AsyncHttpClientConfig
 val config: AsyncHttpClientConfig = ???
 
-AsyncHttpClientScalazBackend.usingConfig(config).flatMap { implicit backend => ??? }
+AsyncHttpClientScalazBackend.usingConfig(config).flatMap { backend => ??? }
 
 // or, if you'd like to use adjust the configuration sttp creates:
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
 val sttpOptions: SttpBackendOptions = SttpBackendOptions.Default  
 val adjustFunction: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder = ???
 
-AsyncHttpClientScalazBackend.usingConfigBuilder(adjustFunction, sttpOptions).flatMap { implicit backend => ??? }
+AsyncHttpClientScalazBackend.usingConfigBuilder(adjustFunction, sttpOptions).flatMap { backend => ??? }
 
 // or, if you'd like to instantiate the AsyncHttpClient yourself:
 import org.asynchttpclient.AsyncHttpClient
 val asyncHttpClient: AsyncHttpClient = ???
 
-implicit val sttpBackend = AsyncHttpClientScalazBackend.usingClient(asyncHttpClient)
+val backend = AsyncHttpClientScalazBackend.usingClient(asyncHttpClient)
 ```
 
 ## Streaming
@@ -44,4 +44,4 @@ This backend doesn't support non-blocking [streaming](../requests/streaming.md).
 
 ## Websockets
 
-The backend supports websockets by wrapping a [low-level Java interface](../websockets.md), `sttp.client.asynchttpclient.WebSocketHandler`.
+The backend doesn't support [websockets](../websockets.md).

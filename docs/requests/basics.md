@@ -12,22 +12,22 @@ For example, we can set a cookie, `String` -body and specify that this should be
 
 ```scala mdoc:silent
 val request = basicRequest
-    .cookie("login", "me")
-    .body("This is a test")
-    .post(uri"http://endpoint.com/secret")
+  .cookie("login", "me")
+  .body("This is a test")
+  .post(uri"http://endpoint.com/secret")
 ```
 
 The request parameters (headers, cookies, body etc.) can be specified **in any order**. It doesn't matter if the request method, the body, the headers or connection options are specified in this sequence or another. This way you can build arbitrary request templates, capturing all that's common among your requests, and customizing as needed. Remember that each time a modifier is applied to a request, you get a new immutable object.
 
 There's a lot of ways in which you can customize a request, which are covered in this guide. Another option is to just explore the API: most of the methods are self-explanatory and carry scaladocs if needed.
 
-Using the modifiers, each time we get a new request definition, but it's just a description: a data object; nothing is sent over the network until the `send()` method is invoked.
+Using the modifiers, each time we get a new request definition, but it's just a description: a data object; nothing is sent over the network until the `send(backend)` method is invoked.
 
 ## Query parameters and URIs
 
 Query parameters are specified as part of the URI, to which the request should be sent. The URI can only be set together with the request method (using `.get(Uri)`, `.post(Uri)`, etc.).
 
-The URI can be created programatically (by calling methods on the `Uri` class), or using the `uri` interpolator, which also allows embedding (and later escaping) values from the environment. See the documentation on [creating URIs](../model/uri.md) for more details.
+The URI can be created programmatically (by calling methods on the `Uri` class), or using the `uri` interpolator, which also allows embedding (and later escaping) values from the environment. See the documentation on [creating URIs](../model/uri.md) for more details.
 
 ## Sending a request
 
@@ -40,7 +40,7 @@ val backend = HttpURLConnectionBackend()
 val response: Identity[Response[Either[String, String]]] = request.send(backend)
 ```        
 
-The default backend doesn't wrap the response into any container, but other asynchronous backends might do so. See the section on [backends](../backends/summary.md) for more details.
+The default backend uses the `Identity` effect to return responses, which is equivalent to a synchronous call (no effect at all). Other asynchronous backends use other effect types. See the section on [backends](../backends/summary.md) for more details.
 
 ```eval_rst
 .. note::

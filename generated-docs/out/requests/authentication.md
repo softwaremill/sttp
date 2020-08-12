@@ -26,8 +26,8 @@ This type of authentication works differently. In its assumptions it is based on
 In order to add digest authentication support just wrap other backend as follows:
 
 ```scala
-val myBackend: SttpBackend[Identity, Nothing, NothingT] = HttpURLConnectionBackend()
-new DigestAuthenticationBackend[Identity, Nothing, NothingT](myBackend)
+val myBackend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
+new DigestAuthenticationBackend(myBackend)
 ```
 
 Then only thing which we need to do is to pass our credentials to the relevant request:
@@ -69,14 +69,15 @@ val clientId = "myClient123"
 val clientSecret = "s3cret"
 case class MyTokenResponse(access_token: String, scope: String, token_type: String, refresh_token: Option[String])
 implicit val tokenResponseDecoder: Decoder[MyTokenResponse] = deriveDecoder[MyTokenResponse]
-implicit val myBackend = HttpURLConnectionBackend()
+val backend = HttpURLConnectionBackend()
 
 val tokenRequest = basicRequest
     .post(uri"https://github.com/login/oauth/access_token?code=$authCode&grant_type=authorization_code")
     .auth
     .basic(clientId, clientSecret)
     .header("accept","application/json")
-val authResponse = tokenRequest.response(asJson[MyTokenResponse]).send()
+val authResponse = tokenRequest.response(asJson[MyTokenResponse]).send(backend)
 val accessToken = authResponse.body.map(_.access_token)
 ```
+
 3. (E)/(F) - Once you have the access token, you can use it to request the protected resource from the resource server, depending on its specification.

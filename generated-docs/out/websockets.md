@@ -1,87 +1,56 @@
-# Websockets
+# WebSockets
 
-Apart from [streaming](requests/streaming.md), backends (see [backends summary](backends/summary.md)) can also optionally support websockets. Websocket requests are described exactly the same as regular requests, starting with `basicRequest`, adding headers, specifying the request method and uri.
+One of the optional capabilities (represented as `WebSockets`) that a backend can support are websockets (see [backends summary](backends/summary.md)). Websocket requests are described exactly the same as regular requests, starting with `basicRequest`, adding headers, specifying the request method and uri.
 
-The difference is that `openWebsocket(handler)` should be called instead of `send()`, given an instance of a backend-specific websocket handler. Refer to documentation of individual backends for details on how to instantiate the handler.
+A websocket request will be sent instead of a regular one if the response specification includes handling the response as a websocket. A number of `asWebSocket(...)` methods are available, giving a couple of variants of working with websockets.
 
-As with regular requests, instead of calling `request.openWebsocket(handler)` and using an implicit backend instance, it is also possible to call `backend.openWebsocket(request, handler)`.
+## Using `WebSocket`
 
-If creating the websocket handler is a side-effecting operation (and the handler is wrapped with an effects wrapper), the `openWebsocketF(handler)` can be used.
-
-After opening a websocket, an `sttp.client.ws.WebSocketResponse` instance is returned, wrapped in a backend-specific effects wrapper, such as `Future`, `IO`, `Task` or no wrapper for synchronous backends. If the protocol upgrade hasn't been successful, the request will fail with an error (represented as an exception or a failed effects wrapper).
-
-In case of success, `WebSocketResponse` contains:
-
-* the headers returned when opening the websocket
-* a handler-specific and backend-specific value, which can be used to interact with the websocket, or somehow representing the result of the connection
-
-## Websocket handlers
-
-Each backend which supports websockets, does so through a backend-specific websocket handler. Depending on the backend, this can be an implementation of a "low-level" Java listener interface, a "high-level" interface build on top of these listeners, or a backend-specific Scala stream. 
-
-The type of the handler is determined by the third type parameter of `SttpBackend`.
-
-## Streaming websockets
-
-The following backends support streaming websockets:
-
-* [Akka](backends/akka.md#websockets)
-* [fs2](backends/fs2.md#websockets)
-
-## Using the high-level websocket interface
-
-The high-level, "functional" interface to websockets is available when using the following backends and handlers:
+The first possibility is using `sttp.client.ws.WebSocket[F]`, where `F` is the backend-specific effects wrapper, such as `Future` or `IO`. It contains two basic methods, both of which use the `F` effect to return results:
  
-* [Monix](backends/monix.md) and `MonixWebSocketHandler` from the appropriate package
-* [ZIO](backends/zio.md) and `ZioWebSocketHandler` from the appropriate package
-* [fs2](backends/fs2.md) and `sttp.client.asynchttpclient.fs2.Fs2WebSocketHandler`.
+* `def receive: F[WebSocketFrame.Incoming]` which will complete once a message is available, and return the next incoming frame (which can be a data, ping, pong or close)
+* `def send(f: WebSocketFrame, isContinuation: Boolean = false): F[Unit]`, which sends a message to the websocket. The `WebSocketFrame` companion object contains methods for creating binary/text messages. When using fragmentation, the first message should be sent using `finalFragment = false`, and subsequent messages using `isContinuation = true`.
+ 
+The `WebSocket` trait also contains other methods for receiving only text/binary messages, as well as automatically sending `Pong` responses when a `Ping` is received.
 
-```eval_rst
-.. note::
-  The listeners created by the high-level handlers internally buffer incoming websocket events. In some implementations, when creating the handler, a bound can be specified for the size of the buffer. If the bound is specified and the buffer fills up (as can happen if the messages are not received, or processed slowly), the websocket will error and close. Otherwise, the buffer will potentially take up all available memory.
-```
+The following response specifications which use `WebSocket[F]` are available (the first type parameter of `ResponseAs` specifies the type returned as the response body, the second - the capabilities that the backend is required to support to send the request):
 
-When the websocket is open, the `WebSocketResponse` will contain an instance of `sttp.client.ws.WebSocket[F]`, where `F` is the backend-specific effects wrapper, such as `IO` or `Task`. This interface contains two methods, both of which return computations wrapped in the effects wrapper `F` (which typically is lazily-evaluated description of a side-effecting, asynchronous process):
-
-* `def receive: F[Either[WebSocketEvent.Close, WebSocketFrame.Incoming]]` which will complete once a message is available, and return either information that the websocket has been closed, or the incoming message
-* `def send(f: WebSocketFrame, isContinuation: Boolean = false): F[Unit]`, which should be used to send a message to the websocket. The `WebSocketFrame` companion object contains methods for creating binary/text messages. When using fragmentation, the first message should be sent using `finalFragment = false`, and subsequent messages using `isContinuation = true`.
-
-There are also other methods for receiving only text/binary messages, as well as automatically sending `Pong` responses when a `Ping` is received.
-
-If there's an error, a failed effects wrapper will be returned, containing one of the `sttp.client.ws.WebSocketException` exceptions, or a backend-specific exception.
-
-Example usage with the [Monix](backends/monix.md) variant of the async-http-client backend:
-
-```scala
-import monix.eval.Task
-import monix.reactive.Observable
-import java.nio.ByteBuffer
+```mdoc:compile-only
 import sttp.client._
-import sttp.client.ws.WebSocket
-import sttp.model.ws.WebSocketFrame
-import sttp.client.asynchttpclient.WebSocketHandler
-import monix.execution.Scheduler.Implicits.global
 
-implicit val backend: SttpBackend[Task, Observable[ByteBuffer], WebSocketHandler] = ???
+def asWebSocket[F[_], T](f: WebSocket[F] => F[T]): 
+  ResponseAs[Either[String, T], Effect[F] with WebSockets] = ???
 
-val response: Task[WebSocketResponse[WebSocket[Task]]] = basicRequest
-  .get(uri"wss://echo.websocket.org")
-  .openWebsocketF(MonixWebSocketHandler())
+def asWebSocketAlways[F[_], T](f: WebSocket[F] => F[T]): 
+  ResponseAs[T, Effect[F] with WebSockets] = ???
 
-response.flatMap { r =>
-  val ws: WebSocket[Task] = r.result
-  val send = ws.send(WebSocketFrame.text("Hello!"))
-  val receive = ws.receiveText().flatMap(t => Task(println(s"RECEIVED: $t")))
-  send.flatMap(_ => receive).flatMap(_ => ws.close)
-}
+def asWebSocketUnsafe[F[_]]: 
+  ResponseAs[Either[String, WebSocket[F]], Effect[F] with WebSockets] = ???
+
+def asWebSocketUnsafeAlways[F[_]]: 
+  ResponseAs[WebSocket[F], Effect[F] with WebSockets] = ???
 ```
 
-## Using the low-level websocket interface
+The first variant, `asWebSocket`, passes an open `WebSocket` to the user-provided function. This function should return an effect which completes, once interaction with the websocket is finished. The backend can then safely close the websocket. The value that's returned as the response body is either an error (represented as a `String`), in case the websocket upgrade didn't complete successfully, or the value returned by the websocket-interacting method. 
 
-Given a backend-native low-level Java interface, you can lift it to a web socket handler using `WebSocketHandler.fromListener` (from the appropriate package). This listener will receive lifecycle callbacks, as well as a callback each time a message is received. Note that the callbacks will be executed on the network thread, so make sure not to run any blocking operations there, and delegate to other executors/thread pools if necessary. The value returned in the `WebSocketResponse` will be a backend-native instance.
- 
-The types of the handlers, low-level Java interfaces and resulting websocket interfaces are, depending on the backend implementation:
+The second variant (`asWebSocketAlways`) is similar, but any errors due to failed websocket protocol upgrades are represented as failed effects (exceptions).
 
-* `sttp.client.asynchttpclient.WebSocketHandler` / `org.asynchttpclient.ws.WebSocketListener` / `org.asynchttpclient.ws.WebSocket` 
-* `sttp.client.okhttp.WebSocketHandler` / `okhttp3.WebSocketListener` / `okhttp3.WebSocket`
-* `sttp.client.httpclient.WebSocketHandler` / `java.net.http.WebSocket.Listener` / `java.net.http.WebSocket`
+The remaining two variants return the open `WebSocket` directly, as the response body. It is then the responsibility of the client code to close the websocket, once it's no longer needed.
+
+See also the [examples](examples.md), which include examples involving websockets.
+
+## Using streams
+
+Another possibility is to work with websockets by providing a streaming stage, which transforms incoming data frames into outgoing frames. This can be e.g. an [Akka](backends/akka.md) `Flow` or a [fs2](backends/fs2.md) `Pipe`.
+
+The following response specifications are available: 
+
+```mdoc:compile-only
+def asWebSocketStream[S](s: Streams[S])(p: s.Pipe[WebSocketFrame.Data[_], WebSocketFrame]): 
+  ResponseAs[Either[String, Unit], S with WebSockets] = ???
+
+def asWebSocketStreamAlways[S](s: Streams[S])(p: s.Pipe[WebSocketFrame.Data[_], WebSocketFrame]): 
+  ResponseAs[Unit, S with WebSockets] = ???
+```
+
+Using streaming websockets requires the backend to support the given streaming capability (see also [streaming](requests/streaming.md)). Streaming capabilities are described as implementations of `Streams[S]`, and are provided by backend implementations, e.g. `AkkaStreams` or `Fs2Streams[F]`.

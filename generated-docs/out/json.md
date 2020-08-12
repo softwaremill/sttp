@@ -27,7 +27,7 @@ Response can be parsed into json using `asJson[T]`, provided there's an implicit
 import sttp.client._
 import sttp.client.circe._
 
-implicit val backend: SttpBackend[Identity, Nothing, NothingT] = HttpURLConnectionBackend()
+val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
 
 import io.circe.generic.auto._
 val requestPayload = RequestPayload("some data")
@@ -37,7 +37,7 @@ val response: Identity[Response[Either[ResponseError[io.circe.Error], ResponsePa
     .post(uri"...")
     .body(requestPayload)
     .response(asJson[ResponsePayload])
-    .send()
+    .send(backend)
 ```
 
 Arbitrary JSON structures can be traversed by parsing the result as `io.circe.Json`, and using the [circe-optics](https://circe.github.io/circe/optics.html) module.
@@ -61,7 +61,7 @@ Usage example:
 import sttp.client._
 import sttp.client.json4s._
 
-implicit val backend: SttpBackend[Identity, Nothing, NothingT] = HttpURLConnectionBackend()
+val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
 
 val requestPayload = RequestPayload("some data")
 
@@ -73,7 +73,7 @@ val response: Identity[Response[Either[ResponseError[Exception], ResponsePayload
     .post(uri"...")
     .body(requestPayload)
     .response(asJson[ResponsePayload])
-    .send()
+    .send(backend)
 ```
 
 ## spray-json
@@ -93,7 +93,7 @@ import sttp.client._
 import sttp.client.sprayJson._
 import spray.json._
 
-implicit val backend: SttpBackend[Identity, Nothing, NothingT] = HttpURLConnectionBackend()
+val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
 
 implicit val payloadJsonFormat: RootJsonFormat[RequestPayload] = ???
 implicit val myResponseJsonFormat: RootJsonFormat[ResponsePayload] = ???
@@ -105,7 +105,7 @@ val response: Identity[Response[Either[ResponseError[Exception], ResponsePayload
     .post(uri"...")
     .body(requestPayload)
     .response(asJson[ResponsePayload])
-    .send()
+    .send(backend)
 ```
 
 ## play-json

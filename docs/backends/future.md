@@ -5,14 +5,14 @@ There are several backend implementations which are `scala.concurrent.Future`-ba
 Apart from the ones described below, also the [Akka](akka.md) backend is `Future`-based.
 
 ```eval_rst
-===================================== ================================================ ====================================
+===================================== ================================================ ==========================
 Class                                 Supported stream type                            Websocket support
-===================================== ================================================ ====================================
-``AkkaHttpBackend``                   ``akka.stream.scaladsl.Source[ByteString, Any]`` akka-streams
-``AsyncHttpClientFutureBackend``      n/a                                              wrapping a low-level Java interface
-``OkHttpFutureBackend``               n/a                                              wrapping a low-level Java interface
-``HttpClientFutureBackend`` (Java11+) n/a                                              wrapping a low-level Java interface
-===================================== ================================================ ====================================
+===================================== ================================================ ==========================
+``AkkaHttpBackend``                   ``akka.stream.scaladsl.Source[ByteString, Any]`` yes (regular & streaming)
+``AsyncHttpClientFutureBackend``      n/a                                              no
+``OkHttpFutureBackend``               n/a                                              yes (regular)
+``HttpClientFutureBackend`` (Java11+) n/a                                              yes (regular)
+===================================== ================================================ ==========================
 ```
 
 ## Using async-http-client
@@ -22,38 +22,48 @@ To use, add the following dependency to your project:
 ```scala
 "com.softwaremill.sttp.client" %% "async-http-client-backend-future" % "@VERSION@"
 ```
+
 And some imports:
+
 ```scala mdoc
 import sttp.client._
 import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
 ```
+
 This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client) and uses [Netty](http://netty.io) behind the scenes.
 
-Next you'll need to add an implicit value:
+Next you'll need to create the backend instance:
+
 ```scala mdoc:compile-only
-implicit val sttpBackend = AsyncHttpClientFutureBackend()
+val backend = AsyncHttpClientFutureBackend()
 ```
+
 or, if you'd like to use custom configuration:
+
 ```scala mdoc:compile-only
 import org.asynchttpclient.AsyncHttpClientConfig
 
 val config: AsyncHttpClientConfig = ???
-implicit val sttpBackend = AsyncHttpClientFutureBackend.usingConfig(config)
+val backend = AsyncHttpClientFutureBackend.usingConfig(config)
 ```
+
 or, if you'd like to use adjust the configuration sttp creates:
+
 ```scala mdoc:compile-only
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
 
 val sttpOptions: SttpBackendOptions = SttpBackendOptions.Default 
 val adjustFunction: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder = ???
-implicit val sttpBackend = AsyncHttpClientFutureBackend.usingConfigBuilder(adjustFunction, sttpOptions)
+val backend = AsyncHttpClientFutureBackend.usingConfigBuilder(adjustFunction, sttpOptions)
 ```
+
 or, if you'd like to instantiate the AsyncHttpClient yourself:
+
 ```scala mdoc:compile-only
 import org.asynchttpclient.AsyncHttpClient
 
 val asyncHttpClient: AsyncHttpClient = ??? 
-implicit val sttpBackend = AsyncHttpClientFutureBackend.usingClient(asyncHttpClient)
+val backend = AsyncHttpClientFutureBackend.usingClient(asyncHttpClient)
 ```
 
 ## Using OkHttp
@@ -63,22 +73,27 @@ To use, add the following dependency to your project:
 ```scala
 "com.softwaremill.sttp.client" %% "okhttp-backend" % "@VERSION@"
 ```
+
 and some imports:
+
 ```scala mdoc:reset:silent
 import sttp.client.okhttp.OkHttpFutureBackend
 import scala.concurrent.ExecutionContext.Implicits.global
 ```
 
 Create the backend using:
+
 ```scala mdoc:compile-only
-implicit val sttpBackend = OkHttpFutureBackend()
+val backend = OkHttpFutureBackend()
 ```
+
 or, if you'd like to instantiate the OkHttpClient yourself:
+
 ```scala mdoc:compile-only
 import okhttp3.OkHttpClient
 
 val asyncHttpClient: OkHttpClient = ??? 
-implicit val sttpBackend = OkHttpFutureBackend.usingClient(asyncHttpClient)
+val backend = OkHttpFutureBackend.usingClient(asyncHttpClient)
 ```
 
 This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supports HTTP/2.
@@ -90,7 +105,9 @@ To use, add the following dependency to your project:
 ```
 "com.softwaremill.sttp.client" %% "httpclient-backend" % "@VERSION@"
 ```
+
 and some imports:
+
 ```scala mdoc:reset:silent
 import sttp.client.httpclient.HttpClientFutureBackend
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -99,14 +116,16 @@ import scala.concurrent.ExecutionContext.Implicits.global
 Create the backend using:
 
 ```scala mdoc:compile-only
-implicit val sttpBackend = HttpClientFutureBackend()
+val backend = HttpClientFutureBackend()
 ```
+
 or, if you'd like to instantiate the HttpClient yourself:
+
 ```scala mdoc:compile-only
 import java.net.http.HttpClient
 
 val client: HttpClient = ??? 
-implicit val sttpBackend = HttpClientFutureBackend.usingClient(client)
+val backend = HttpClientFutureBackend.usingClient(client)
 ```
 
 This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards, works with all Scala versions. A Dotty build is available as well.
@@ -119,6 +138,4 @@ Other backends don't support non-blocking [streaming](../requests/streaming.md).
 
 ## Websockets
 
-The [Akka backend](akka.md) supports websockets through a high-level, streaming, akka-streams-based interface.
-
-Other backends support websockets by wrapping the appropriate [low-level Java interface](../websockets.md).
+Some of the backends (see above) support regular and streaming [websockets](../websockets.md).

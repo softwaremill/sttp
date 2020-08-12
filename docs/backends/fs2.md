@@ -9,7 +9,9 @@ To use, add the following dependency to your project:
 ```scala
 "com.softwaremill.sttp.client" %% "async-http-client-backend-fs2" % "@VERSION@"
 ```
+
 And some imports:
+
 ```scala mdoc:silent
 import sttp.client.asynchttpclient.fs2.AsyncHttpClientFs2Backend
 import cats.effect._
@@ -30,33 +32,41 @@ Next you'll need to define a backend instance as an implicit value. This can be 
 A non-comprehensive summary of how the backend can be created is as follows:
 
 ```scala mdoc:compile-only
-AsyncHttpClientFs2Backend[IO]().flatMap { implicit backend => ??? }
+AsyncHttpClientFs2Backend[IO]().flatMap { backend => ??? }
 ```
+
 or, if you'd like to use a custom configuration:
+
 ```scala mdoc:compile-only
 import org.asynchttpclient.AsyncHttpClientConfig
 
 val config: AsyncHttpClientConfig = ???
-AsyncHttpClientFs2Backend.usingConfig[IO](config).flatMap { implicit backend => ??? }
+AsyncHttpClientFs2Backend.usingConfig[IO](config).flatMap { backend => ??? }
 ```
+
 or, if you'd like to use adjust the configuration sttp creates:
+
 ```scala mdoc:compile-only
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
 
 val sttpOptions: SttpBackendOptions = SttpBackendOptions.Default 
 val adjustFunction: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder = ???
-AsyncHttpClientFs2Backend.usingConfigBuilder[IO](adjustFunction, sttpOptions).flatMap { implicit backend => ??? }
+AsyncHttpClientFs2Backend.usingConfigBuilder[IO](adjustFunction, sttpOptions).flatMap { backend => ??? }
 ```
+
 or, if you'd like the backend to be wrapped in cats-effect Resource:
+
 ```scala mdoc:compile-only
-AsyncHttpClientFs2Backend.resource[IO]().use { implicit backend => ??? }
+AsyncHttpClientFs2Backend.resource[IO]().use { backend => ??? }
 ```
+
 or, if you'd like to instantiate the AsyncHttpClient yourself:
+
 ```scala mdoc:compile-only
 import org.asynchttpclient.AsyncHttpClient
 
 val asyncHttpClient: AsyncHttpClient = ??? 
-implicit val sttpBackend = AsyncHttpClientFs2Backend.usingClient[IO](asyncHttpClient)
+val backend = AsyncHttpClientFs2Backend.usingClient[IO](asyncHttpClient)
 ```
 
 ## Using HttpClient (Java 11+)
@@ -66,7 +76,9 @@ To use, add the following dependency to your project:
 ```
 "com.softwaremill.sttp.client" %% "httpclient-backend-fs2" % "@VERSION@"
 ```
+
 And some imports:
+
 ```scala mdoc:reset:silent
 import sttp.client.httpclient.fs2.HttpClientFs2Backend
 import cats.effect._
@@ -83,37 +95,42 @@ Create the backend using:
 
 ```scala mdoc:compile-only
 import sttp.client.httpclient.fs2.HttpClientFs2Backend
-HttpClientFs2Backend[IO](blocker).flatMap { implicit backend => ??? }
+HttpClientFs2Backend[IO](blocker).flatMap { backend => ??? }
 ```
+
 or, if you'd like the backend to be wrapped in cats-effect Resource:
+
 ```scala mdoc:compile-only
-HttpClientFs2Backend.resource[IO](blocker).use { implicit backend => ??? }
+HttpClientFs2Backend.resource[IO](blocker).use { backend => ??? }
 ```
+
 or, if you'd like to instantiate the HttpClient yourself:
+
 ```scala mdoc:compile-only
 import java.net.http.HttpClient
 val httpClient: HttpClient = ???
-implicit val sttpBackend = HttpClientFs2Backend.usingClient[IO](httpClient, blocker)
+val backend = HttpClientFs2Backend.usingClient[IO](httpClient, blocker)
 ```
 
 This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards.
 
 ## Streaming
 
-The fs2 backend supports streaming for any instance of the `cats.effect.Effect` typeclass, such as `cats.effect.IO`. If `IO` is used then the type of supported streams is `fs2.Stream[IO, Byte]`.
+The fs2 backend supports streaming for any instance of the `cats.effect.Effect` typeclass, such as `cats.effect.IO`. If `IO` is used then the type of supported streams is `fs2.Stream[IO, Byte]`. The streams capability is represented as `sttp.client.fs2.Fs2Streams`.
 
 Requests can be sent with a streaming body like this:
 
 ```scala mdoc:compile-only
 import sttp.client._
 import sttp.client.asynchttpclient.fs2.AsyncHttpClientFs2Backend
+import sttp.client.impl.fs2.Fs2Streams
 import fs2.Stream
 
 val effect = AsyncHttpClientFs2Backend[IO]().flatMap { backend =>
   val stream: Stream[IO, Byte] = ???
 
   basicRequest
-    .streamBody(stream)
+    .streamBody(Fs2Streams[IO])(stream)
     .post(uri"...")
     .send(backend)
 }
@@ -126,12 +143,13 @@ Responses can also be streamed:
 import sttp.client.asynchttpclient.fs2.AsyncHttpClientFs2Backend
 import fs2.Stream
 import scala.concurrent.duration.Duration
+import sttp.client.impl.fs2.Fs2Streams
 
 val effect = AsyncHttpClientFs2Backend[IO]().flatMap { backend =>
   val response: IO[Response[Either[String, Stream[IO, Byte]]]] =
     basicRequest
       .post(uri"...")
-      .response(asStream[Stream[IO, Byte]])
+      .response(asStreamUnsafe(Fs2Streams[IO]))
       .readTimeout(Duration.Inf)
       .send(backend)
 
@@ -142,35 +160,4 @@ val effect = AsyncHttpClientFs2Backend[IO]().flatMap { backend =>
 
 ## Websockets
 
-The fs2 backend supports:
-
-* high-level, "functional" websocket interface, through the `sttp.client.asynchttpclient.fs2.Fs2WebSocketHandler` or `sttp.client.httpclient.fs2.Fs2WebSocketHandler`
-* low-level interface by wrapping a low-level Java interface, `sttp.client.asynchttpclient.WebSocketHandler` or `sttp.client.httpclient.WebSocketHandler`
-* streaming - see below
-
-See [websockets](../websockets.md) for details on how to use the high-level and low-level interfaces.
-
-## Streaming websockets 
-
-There are additionally high-level helpers collected in `sttp.client.asynchttpclient.fs2.Fs2Websockets` which provide means to run the whole websocket communication through an `fs2.Pipe`. Example for a simple echo client:
-
-```scala mdoc:compile-only
-import sttp.client.ws._
-import sttp.model.ws.WebSocketFrame
-import sttp.client.asynchttpclient.fs2._
-import sttp.client.impl.fs2._
-import sttp.client.asynchttpclient.WebSocketHandler
-import cats.implicits._
-
-implicit val backend: SttpBackend[IO, fs2.Stream[IO, Byte], WebSocketHandler] = ???
-basicRequest
-  .get(uri"wss://echo.websocket.org")
-  .openWebsocketF(Fs2WebSocketHandler[IO]())
-  .flatMap { response =>
-    Fs2WebSockets.handleSocketThroughTextPipe(response.result) { in =>
-      val receive = in.evalMap(m => IO(println("Received")))
-      val send = fs2.Stream("Message 1".asRight, "Message 2".asRight, WebSocketFrame.close.asLeft)
-      send merge receive.drain
-    }
-  }
-```
+The fs2 backend supports both regular and streaming [websockets](../websockets.md).

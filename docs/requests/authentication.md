@@ -79,4 +79,5 @@ val tokenRequest = basicRequest
 val authResponse = tokenRequest.response(asJson[MyTokenResponse]).send(backend)
 val accessToken = authResponse.body.map(_.access_token)
 ```
+
 3. (E)/(F) - Once you have the access token, you can use it to request the protected resource from the resource server, depending on its specification.

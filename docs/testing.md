@@ -14,6 +14,7 @@ An empty backend stub can be created using the following ways:
 * by specifying a fallback/delegate backend, see below
 
 Some code which will be reused among following examples:
+
 ```scala mdoc
 import sttp.client._
 import sttp.model._
@@ -96,7 +97,7 @@ val response = basicRequest.get(uri"http://example.org").send(testingBackend)
 You can define consecutive raw responses that will be served:
 
 ```scala mdoc:compile-only
-val testingBackend: SttpBackendStub[Identity, Nothing, NothingT] = SttpBackendStub.synchronous
+val testingBackend: SttpBackendStub[Identity, Any] = SttpBackendStub.synchronous
   .whenAnyRequest
   .thenRespondCyclic("first", "second", "third")
 
@@ -109,7 +110,7 @@ basicRequest.get(uri"http://example.org").send(testingBackend)       // Right("O
 Or multiple `Response` instances:
 
 ```scala mdoc:compile-only
-val testingBackend:SttpBackendStub[Identity, Nothing, NothingT] = SttpBackendStub.synchronous
+val testingBackend:SttpBackendStub[Identity, Any] = SttpBackendStub.synchronous
   .whenAnyRequest
   .thenRespondCyclicResponses(
     Response.ok[String]("first"),
@@ -128,7 +129,8 @@ If you want to simulate an exception being thrown by a backend, e.g. a socket ti
 ```scala mdoc:compile-only
 val testingBackend = SttpBackendStub.synchronous
   .whenRequestMatches(_ => true)
-  .thenRespond(throw new SttpClientException.ConnectException(new RuntimeException))
+  .thenRespond(throw new SttpClientException.ConnectException(
+    basicRequest.get(uri"http://example.com"), new RuntimeException))
 ```
 
 ## Adjusting the response body type
@@ -209,7 +211,7 @@ It is also possible to create a stub backend which delegates calls to another (p
 
 ```scala mdoc:compile-only
 val testingBackend =
-  SttpBackendStub.withFallback[Identity,Nothing,Nothing,NothingT](HttpURLConnectionBackend())
+  SttpBackendStub.withFallback(HttpURLConnectionBackend())
     .whenRequestMatches(_.uri.path.startsWith(List("a")))
     .thenRespond("I'm a STUB!")
 
@@ -240,6 +242,7 @@ import sttp.client.asynchttpclient.zio._
 
 val testWebSocket: WebSocket[Task] = ???
 
+/*
 implicit val testingBackend =
   AsyncHttpClientZioBackend.stub
     .whenAnyRequest
@@ -251,6 +254,7 @@ for {
   webSocket = openResponse.result // interaction with WebSocket is interesting in this case
   message <- webSocket.receive
 } yield message
+*/
 ```
 
 ### WebSocketStub
@@ -265,7 +269,7 @@ For example:
 ```scala mdoc:compile-only
 import sttp.model.ws._
 
-val backend = SttpBackendStub.synchronous[Identity]
+val backend = SttpBackendStub.synchronous
 val webSocketStub = WebSocketStub
   .withInitialIncoming(
     List(WebSocketFrame.text("Hello from the server!"))
@@ -275,7 +279,7 @@ val webSocketStub = WebSocketStub
     case (counter, _)                       => (counter, List.empty)
   }
 
-backend.whenAnyRequest.thenRespondWebSocket(webSocketStub)
+//backend.whenAnyRequest.thenRespondWebSocket(webSocketStub)
 ```
 
 There is a possiblity to add error responses as well. If this is not enough, using a custom implementation of 

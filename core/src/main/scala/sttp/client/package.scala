@@ -4,7 +4,14 @@ package object client extends SttpApi {
   type Identity[X] = X
   type Empty[X] = None.type
 
+  /**
+    * A [[RequestT]] without the method & uri specified (which cannot yet be sent).
+    */
   type PartialRequest[T, -R] = RequestT[Empty, T, R]
+
+  /**
+    * A [[RequestT]] with the method & uri specified. Such a request can be sent.
+    */
   type Request[T, -R] = RequestT[Identity, T, R]
 
   /**
