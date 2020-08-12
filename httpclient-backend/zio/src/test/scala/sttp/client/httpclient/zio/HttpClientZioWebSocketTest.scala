@@ -8,7 +8,7 @@ import sttp.client.testing.websocket.{WebSocketStreamingTest, WebSocketTest}
 import sttp.model.ws.WebSocketFrame
 import zio.stream.Transducer
 
-class HttpClientHighLevelZioWebsocketTest
+class HttpClientZioWebSocketTest
     extends WebSocketTest[BlockingTask]
     with WebSocketStreamingTest[BlockingTask, BlockingZioStreams] {
   implicit val backend: SttpBackend[BlockingTask, BlockingZioStreams with WebSockets] =
@@ -21,6 +21,4 @@ class HttpClientHighLevelZioWebsocketTest
       f: WebSocketFrame.Data[_] => WebSocketFrame
   ): Transducer[Throwable, WebSocketFrame.Data[_], WebSocketFrame] =
     Transducer.identity.map(f)
-
-  override def throwsWhenNotAWebSocket: Boolean = true
 }

@@ -3,6 +3,7 @@ package sttp.client.httpclient
 import java.io.{ByteArrayInputStream, InputStream}
 import java.net.http.HttpResponse.BodyHandlers
 import java.net.http.{HttpClient, HttpRequest, HttpResponse, WebSocketHandshakeException}
+import java.util.concurrent.CompletionException
 import java.util.concurrent.atomic.AtomicBoolean
 
 import sttp.client.httpclient.HttpClientBackend.EncodingHandler
@@ -88,8 +89,13 @@ abstract class HttpClientAsyncBackend[F[_], S, P](
         })
       }
       .handleError {
-        case e: WebSocketHandshakeException =>
-          readResponse(e.getResponse, emptyInputStream(), request.response, None)
+        case e: CompletionException if e.getCause.isInstanceOf[WebSocketHandshakeException] =>
+          readResponse(
+            e.getCause.asInstanceOf[WebSocketHandshakeException].getResponse,
+            emptyInputStream(),
+            request.response,
+            None
+          )
       }
   }
 

@@ -93,7 +93,7 @@ abstract class WebSocketTest[F[_]]
       .toFuture()
   }
 
-  it should "fail correctly when can't open web socket (unsafe)" in {
+  it should "fail correctly when can't open web socket (always, unsafe)" in {
     implicit val signaler: Signaler = ThreadSignaler
     failAfter(Span(15, Seconds)) {
       basicRequest
@@ -108,7 +108,7 @@ abstract class WebSocketTest[F[_]]
     }
   }
 
-  it should "fail correctly when can't open web socket" in {
+  it should "fail correctly when can't open web socket (unsafe)" in {
     implicit val signaler: Signaler = ThreadSignaler
     failAfter(Span(15, Seconds)) {
       basicRequest

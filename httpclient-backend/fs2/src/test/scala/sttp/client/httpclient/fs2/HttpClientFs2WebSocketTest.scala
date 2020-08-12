@@ -14,6 +14,4 @@ class HttpClientFs2WebSocketTest
   override def functionToPipe(
       f: WebSocketFrame.Data[_] => WebSocketFrame
   ): fs2.Pipe[IO, WebSocketFrame.Data[_], WebSocketFrame] = _.map(f)
-
-  override def throwsWhenNotAWebSocket: Boolean = true
 }

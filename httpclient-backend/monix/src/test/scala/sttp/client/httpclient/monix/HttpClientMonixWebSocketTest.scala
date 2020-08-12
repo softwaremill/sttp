@@ -20,6 +20,4 @@ class HttpClientMonixWebSocketTest extends WebSocketTest[Task] with WebSocketStr
   override def functionToPipe(
       f: WebSocketFrame.Data[_] => WebSocketFrame
   ): Observable[WebSocketFrame.Data[_]] => Observable[WebSocketFrame] = _.map(f)
-
-  override def throwsWhenNotAWebSocket: Boolean = true
 }
