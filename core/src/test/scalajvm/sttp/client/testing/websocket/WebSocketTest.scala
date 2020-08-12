@@ -85,8 +85,8 @@ abstract class WebSocketTest[F[_]]
       .flatMap { response =>
         val ws = response.body
         for {
-          _ <- ws.receive.map(_ shouldBe Right(WebSocketFrame.text("test10")))
-          _ <- ws.receive.map(_ shouldBe Right(WebSocketFrame.text("test20")))
+          _ <- ws.receive.map(_ shouldBe WebSocketFrame.text("test10"))
+          _ <- ws.receive.map(_ shouldBe WebSocketFrame.text("test20"))
           _ <- ws.close
         } yield succeed
       }
