@@ -40,7 +40,8 @@ class CookieRequestTests extends AnyFlatSpec with Matchers {
         StatusCode.Ok,
         "",
         List(Header(HeaderNames.SetCookie, "k1=v1"), Header(HeaderNames.SetCookie, "k2=v2")),
-        Nil
+        Nil,
+        Uri("")
       )
     basicRequest
       .cookies(response)

@@ -34,7 +34,7 @@ abstract class HttpClientAsyncBackend[F[_], S](
             .sendAsync(jRequest, BodyHandlers.ofInputStream())
             .whenComplete((t: HttpResponse[InputStream], u: Throwable) => {
               if (t != null) {
-                try success(readResponse(t, request.response))
+                try success(readResponse(t, request))
                 catch {
                   case e: Exception => error(e)
                 }

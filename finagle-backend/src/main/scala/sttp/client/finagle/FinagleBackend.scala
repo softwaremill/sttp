@@ -60,7 +60,7 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
           val statusText = fResponse.status.reason
           val responseMetadata = ResponseMetadata(headers, code, statusText)
           val body = fromFinagleResponse(request.response, fResponse, responseMetadata)
-          service.close().flatMap(_ => body.map(sttp.client.Response(_, code, statusText, headers, Nil)))
+          service.close().flatMap(_ => body.map(sttp.client.Response(_, code, statusText, headers, Nil, request.uri)))
         }
         .rescue {
           case e: Exception => service.close().flatMap(_ => TFuture.exception(e))

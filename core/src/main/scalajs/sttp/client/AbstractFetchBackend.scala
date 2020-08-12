@@ -143,7 +143,8 @@ abstract class AbstractFetchBackend[F[_], S](options: FetchOptions, customizeReq
             code = StatusCode(resp.status),
             statusText = resp.statusText,
             headers = headers,
-            history = Nil
+            history = Nil,
+            uri = request.uri
           )
         }
       }

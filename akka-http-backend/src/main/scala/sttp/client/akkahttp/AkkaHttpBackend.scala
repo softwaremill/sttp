@@ -202,7 +202,7 @@ class AkkaHttpBackend private (
     val responseMetadata = client.ResponseMetadata(headers, code, statusText)
     val body = bodyFromAkka(r.response, decodeAkkaResponse(hr), responseMetadata)
 
-    body.map(client.Response(_, code, statusText, headers, Nil))
+    body.map(client.Response(_, code, statusText, headers, Nil, r.uri))
   }
 
   private def headersFromAkka(hr: HttpResponse): Seq[Header] = {

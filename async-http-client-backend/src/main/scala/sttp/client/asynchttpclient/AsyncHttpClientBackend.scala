@@ -70,14 +70,14 @@ abstract class AsyncHttpClientBackend[F[_], S](
     closeClient: Boolean,
     customizeRequest: BoundRequestBuilder => BoundRequestBuilder
 ) extends SttpBackend[F, S, WebSocketHandler] {
-  override def send[T](r: Request[T, S]): F[Response[T]] =
+  override def send[T](request: Request[T, S]): F[Response[T]] =
     adjustExceptions {
-      preparedRequest(r).flatMap { ahcRequest =>
+      preparedRequest(request).flatMap { ahcRequest =>
         monad.flatten(monad.async[F[Response[T]]] { cb =>
           def success(r: F[Response[T]]): Unit = cb(Right(r))
           def error(t: Throwable): Unit = cb(Left(t))
 
-          val lf = ahcRequest.execute(streamingAsyncHandler(r.response, success, error))
+          val lf = ahcRequest.execute(streamingAsyncHandler(request, success, error))
           Canceler(() => lf.abort(new InterruptedException))
         })
       }
@@ -131,7 +131,7 @@ abstract class AsyncHttpClientBackend[F[_], S](
   }
 
   private def streamingAsyncHandler[T](
-      responseAs: ResponseAs[T, S],
+      request: Request[T, S],
       success: F[Response[T]] => Unit,
       error: Throwable => Unit
   ): AsyncHandler[Unit] = {
@@ -182,9 +182,9 @@ abstract class AsyncHttpClientBackend[F[_], S](
         if (!completed) {
           completed = true
 
-          val baseResponse = readResponseNoBody(builder.build())
+          val baseResponse = readResponseNoBody(request.uri, builder.build())
           val p = publisher.getOrElse(EmptyPublisher)
-          val b = handleBody(p, responseAs, baseResponse)
+          val b = handleBody(p, request.response, baseResponse)
 
           success(b.map(t => baseResponse.copy(body = t)))
         }
@@ -300,13 +300,14 @@ abstract class AsyncHttpClientBackend[F[_], S](
     rb.addBodyPart(bodyPart)
   }
 
-  private def readResponseNoBody(response: AsyncResponse): Response[Unit] = {
+  private def readResponseNoBody(uri: Uri, response: AsyncResponse): Response[Unit] = {
     client.Response(
       (),
       StatusCode.unsafeApply(response.getStatusCode),
       response.getStatusText,
       readHeaders(response.getHeaders),
-      Nil
+      Nil,
+      uri
     )
   }
 

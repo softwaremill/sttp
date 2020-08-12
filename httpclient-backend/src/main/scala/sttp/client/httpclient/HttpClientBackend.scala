@@ -116,7 +116,7 @@ abstract class HttpClientBackend[F[_], S](
 
   private[httpclient] def readResponse[T](
       res: HttpResponse[InputStream],
-      responseAs: ResponseAs[T, S]
+      request: Request[T, S]
   ): F[Response[T]] = {
     val headers = res
       .headers()
@@ -138,8 +138,8 @@ abstract class HttpClientBackend[F[_], S](
     } else {
       res.body()
     }
-    val body = responseHandler(byteBody).handle(responseAs, responseMonad, responseMetadata)
-    responseMonad.map(body)(Response(_, code, "", headers, Nil))
+    val body = responseHandler(byteBody).handle(request.response, responseMonad, responseMetadata)
+    responseMonad.map(body)(Response(_, code, "", headers, Nil, request.uri))
   }
 
   private def standardEncoding: (InputStream, String) => InputStream = {

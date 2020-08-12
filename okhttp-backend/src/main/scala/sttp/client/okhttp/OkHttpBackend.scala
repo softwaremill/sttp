@@ -116,7 +116,7 @@ abstract class OkHttpBackend[F[_], S](
 
   private[okhttp] def readResponse[T](
       res: OkHttpResponse,
-      responseAs: ResponseAs[T, S]
+      request: Request[T, S]
   ): F[Response[T]] = {
     val headers = res
       .headers()
@@ -139,8 +139,8 @@ abstract class OkHttpBackend[F[_], S](
       res.body().byteStream()
     }
 
-    val body = responseHandler(byteBody).handle(responseAs, responseMonad, responseMetadata)
-    responseMonad.map(body)(Response(_, StatusCode(res.code()), res.message(), headers, Nil))
+    val body = responseHandler(byteBody).handle(request.response, responseMonad, responseMetadata)
+    responseMonad.map(body)(Response(_, StatusCode(res.code()), res.message(), headers, Nil, request.uri))
   }
 
   private def standardEncoding: (InputStream, String) => InputStream = {
@@ -239,7 +239,7 @@ class OkHttpSyncBackend private (client: OkHttpClient, closeClient: Boolean, cus
         .updateClientIfCustomReadTimeout(r, client)
         .newCall(request)
         .execute()
-      readResponse(response, r.response)
+      readResponse(response, r)
     }
 
   override def openWebsocket[T, WS_RESULT](
@@ -258,7 +258,10 @@ class OkHttpSyncBackend private (client: OkHttpClient, closeClient: Boolean, cus
         (webSocket, response) => {
           val wsResponse =
             sttp.client.ws
-              .WebSocketResponse(Headers(readResponse(response, ignore).headers), handler.createResult(webSocket))
+              .WebSocketResponse(
+                Headers(readResponse(response, r.copy(response = ignore)).headers),
+                handler.createResult(webSocket)
+              )
           fillCell(wsResponse)
         },
         fillCellError
@@ -334,7 +337,7 @@ abstract class OkHttpAsyncBackend[F[_], S](
             error(e)
 
           override def onResponse(call: Call, response: OkHttpResponse): Unit =
-            try success(readResponse(response, r.response))
+            try success(readResponse(response, r))
             catch {
               case e: Exception =>
                 response.close()
@@ -361,7 +364,7 @@ abstract class OkHttpAsyncBackend[F[_], S](
           handler.listener,
           (webSocket, response) => {
             val wsResponse =
-              monad.map(readResponse(response, ignore))(r =>
+              monad.map(readResponse(response, r.copy(response = ignore)))(r =>
                 sttp.client.ws.WebSocketResponse(Headers(r.headers), handler.createResult(webSocket))
               )
             success(wsResponse)

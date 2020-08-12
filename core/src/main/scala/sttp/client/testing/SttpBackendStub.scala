@@ -107,7 +107,7 @@ class SttpBackendStub[F[_], S, WS_HANDLER[_]](
         fallback match {
           case None =>
             val response = wrapResponse(
-              Response[String](s"Not Found: ${request.uri}", StatusCode.NotFound, "Not Found", Nil, Nil)
+              Response[String](s"Not Found: ${request.uri}", StatusCode.NotFound, "Not Found", Nil, Nil, request.uri)
             )
             tryAdjustResponseType(monad, request.response, response)
           case Some(fb) => fb.send(request)

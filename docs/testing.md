@@ -71,9 +71,9 @@ Another way to specify the behaviour is passing response wrapped in the result m
 ```scala mdoc:compile-only
 implicit val testingBackend = SttpBackendStub.asynchronousFuture
   .whenAnyRequest
-  .thenRespondWrapped(Future {
+  .thenRespondWrapped(req => Future {
     Thread.sleep(5000)
-    Response(Right("OK"), StatusCode.Ok, "", Nil, Nil)
+    Response(Right("OK"), StatusCode.Ok, "", Nil, Nil, req.uri)
   })
 
 val responseFuture = basicRequest.get(uri"http://example.org").send()
@@ -86,7 +86,7 @@ The returned response may also depend on the request:
 implicit val testingBackend = SttpBackendStub.synchronous
   .whenAnyRequest
   .thenRespondWrapped(req =>
-    Response(Right(s"OK, got request sent to ${req.uri.host}"), StatusCode.Ok, "", Nil, Nil)
+    Response(Right(s"OK, got request sent to ${req.uri.host}"), StatusCode.Ok, "", Nil, Nil, req.uri)
   )
 
 val response = basicRequest.get(uri"http://example.org").send()

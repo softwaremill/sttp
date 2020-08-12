@@ -27,15 +27,15 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
     .thenRespondServerError()
     .whenRequestMatchesPartial({
       case r if r.method == Method.POST && r.uri.path.endsWith(List("partial10")) =>
-        Response(Right("10"), StatusCode.Ok, "OK", Nil, Nil)
+        Response(Right("10"), StatusCode.Ok, "OK", Nil, Nil, r.uri)
       case r if r.method == Method.POST && r.uri.path.endsWith(List("partialAda")) =>
-        Response(Right("Ada"), StatusCode.Ok, "OK", Nil, Nil)
+        Response(Right("Ada"), StatusCode.Ok, "OK", Nil, Nil, r.uri)
     })
     .whenRequestMatches(_.uri.port.exists(_ == 8080))
-    .thenRespondWrapped(Response(Right("OK from monad"), StatusCode.Ok, "OK", Nil, Nil))
+    .thenRespondWrapped(r => Response(Right("OK from monad"), StatusCode.Ok, "OK", Nil, Nil, r.uri))
     .whenRequestMatches(_.uri.port.exists(_ == 8081))
     .thenRespondWrapped(r =>
-      Response(Right(s"OK from request. Request was sent to host: ${r.uri.host}"), StatusCode.Ok, "OK", Nil, Nil)
+      Response(Right(s"OK from request. Request was sent to host: ${r.uri.host}"), StatusCode.Ok, "OK", Nil, Nil, r.uri)
     )
 
   "backend stub" should "use the first rule if it matches" in {
@@ -183,8 +183,8 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
     val before = System.currentTimeMillis()
 
     implicit val s: SttpBackendStub[Future, Nothing, NothingT] = SttpBackendStub(new FutureMonad()).whenAnyRequest
-      .thenRespondWrapped(Platform.delayedFuture(LongTime) {
-        Response(Right("OK"), StatusCode.Ok, "", Nil, Nil)
+      .thenRespondWrapped(r => Platform.delayedFuture(LongTime) {
+        Response(Right("OK"), StatusCode.Ok, "", Nil, Nil, r.uri)
       })
 
     basicRequest

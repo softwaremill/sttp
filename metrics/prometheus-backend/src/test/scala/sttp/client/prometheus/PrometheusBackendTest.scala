@@ -150,10 +150,10 @@ class PrometheusBackendTest
     // given
     val requestsNumber = 10
     val countDownLatch = new CountDownLatch(1)
-    val backendStub = SttpBackendStub.asynchronousFuture.whenAnyRequest.thenRespondWrapped {
+    val backendStub = SttpBackendStub.asynchronousFuture.whenAnyRequest.thenRespondWrapped { r =>
       Future {
         blocking(countDownLatch.await())
-        Response(Right(""), StatusCode.Ok, "", Nil, Nil)
+        Response(Right(""), StatusCode.Ok, "", Nil, Nil, r.uri)
       }
     }
     val backend = PrometheusBackend[Future, Nothing, NothingT](backendStub)
@@ -177,10 +177,10 @@ class PrometheusBackendTest
     val customGaugeName = "my_custom_gauge"
     val requestsNumber = 10
     val countDownLatch = new CountDownLatch(1)
-    val backendStub = SttpBackendStub.asynchronousFuture.whenAnyRequest.thenRespondWrapped {
+    val backendStub = SttpBackendStub.asynchronousFuture.whenAnyRequest.thenRespondWrapped { r =>
       Future {
         blocking(countDownLatch.await())
-        Response(Right(""), StatusCode.Ok, "", Nil, Nil)
+        Response(Right(""), StatusCode.Ok, "", Nil, Nil, r.uri)
       }
     }
     val backend =
@@ -209,10 +209,10 @@ class PrometheusBackendTest
     // given
     val requestsNumber = 10
     val countDownLatch = new CountDownLatch(1)
-    val backendStub = SttpBackendStub.asynchronousFuture.whenAnyRequest.thenRespondWrapped {
+    val backendStub = SttpBackendStub.asynchronousFuture.whenAnyRequest.thenRespondWrapped { r =>
       Future {
         blocking(countDownLatch.await())
-        Response(Right(""), StatusCode.Ok, "", Nil, Nil)
+        Response(Right(""), StatusCode.Ok, "", Nil, Nil, r.uri)
       }
     }
     val backend =

@@ -3,7 +3,7 @@ package sttp.client.internal
 import org.scalatest.OptionValues
 import sttp.client.internal.DigestAuthenticator.DigestAuthData
 import sttp.client._
-import sttp.model.{Header, HeaderNames, StatusCode}
+import sttp.model.{Header, HeaderNames, StatusCode, Uri}
 
 import scala.util.{Failure, Try}
 import org.scalatest.freespec.AnyFreeSpec
@@ -198,7 +198,8 @@ class DigestAuthenticatorTest extends AnyFreeSpec with Matchers with OptionValue
       statusCode,
       "Unauthorized",
       headers,
-      List.empty
+      List.empty,
+      Uri("")
     )
   }
 }
