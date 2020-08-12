@@ -74,7 +74,7 @@ class AsyncHttpClientMonixBackend private (
       s.map(Unpooled.wrappedBuffer).toReactivePublisher
   }
 
-  override protected def createAsyncQueue[T]: Task[SimpleQueue[Task, T]] =
+  override protected def createSimpleQueue[T]: Task[SimpleQueue[Task, T]] =
     Task.eval(new MonixSimpleQueue[T](webSocketBufferCapacity))
 }
 

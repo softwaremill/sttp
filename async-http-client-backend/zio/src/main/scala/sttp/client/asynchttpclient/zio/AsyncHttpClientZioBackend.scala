@@ -79,7 +79,7 @@ class AsyncHttpClientZioBackend private (
       runtime.unsafeRun(s.mapChunks(c => Chunk.single(Unpooled.wrappedBuffer(c.toArray))).toPublisher)
   }
 
-  override protected def createAsyncQueue[T]: Task[SimpleQueue[Task, T]] =
+  override protected def createSimpleQueue[T]: Task[SimpleQueue[Task, T]] =
     for {
       runtime <- ZIO.runtime[Any]
       queue <- webSocketBufferCapacity match {

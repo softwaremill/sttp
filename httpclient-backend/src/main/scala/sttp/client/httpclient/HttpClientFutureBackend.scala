@@ -48,7 +48,7 @@ class HttpClientFutureBackend private (
       ): Future[Unit] = pipe // nothing is everything
     }
 
-  override protected def createAsyncQueue[T]: Future[SimpleQueue[Future, T]] =
+  override protected def createSimpleQueue[T]: Future[SimpleQueue[Future, T]] =
     Future.successful(new FutureSimpleQueue[T](None))
 }
 

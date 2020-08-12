@@ -51,7 +51,7 @@ class AsyncHttpClientFutureBackend private (
       override protected def streamToPublisher(s: Nothing): Publisher[ByteBuf] = s // nothing is everything
     }
 
-  override protected def createAsyncQueue[T]: Future[SimpleQueue[Future, T]] =
+  override protected def createSimpleQueue[T]: Future[SimpleQueue[Future, T]] =
     throw new IllegalStateException("Web sockets are not supported!")
 }
 

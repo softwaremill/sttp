@@ -80,7 +80,7 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
   protected def bodyFromAHC: BodyFromAHC[F, S]
   protected def bodyToAHC: BodyToAHC[F, S]
 
-  protected def createAsyncQueue[T]: F[SimpleQueue[F, T]]
+  protected def createSimpleQueue[T]: F[SimpleQueue[F, T]]
 
   private def streamingAsyncHandler[T, R >: PE](
       responseAs: ResponseAs[T, R],
@@ -159,7 +159,7 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
   ) extends WebSocketListener {
     override def onOpen(ahcWebSocket: AHCWebSocket): Unit = {
       ahcWebSocket.removeWebSocketListener(this)
-      success(createAsyncQueue[WebSocketEvent].flatMap { queue =>
+      success(createSimpleQueue[WebSocketEvent].flatMap { queue =>
         val webSocket = WebSocketImpl.newCoupledToAHCWebSocket(ahcWebSocket, queue)
         val baseResponse =
           Response((), StatusCode.SwitchingProtocols, "", readHeaders(ahcWebSocket.getUpgradeHeaders), Nil)

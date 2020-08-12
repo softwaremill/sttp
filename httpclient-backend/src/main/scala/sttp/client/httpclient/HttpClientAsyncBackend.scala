@@ -25,7 +25,7 @@ abstract class HttpClientAsyncBackend[F[_], S, P](
       if (request.isWebSocket) sendWebSocket(request) else sendRegular(request)
     }
 
-  protected def createAsyncQueue[T]: F[SimpleQueue[F, T]]
+  protected def createSimpleQueue[T]: F[SimpleQueue[F, T]]
 
   private def sendRegular[T, R >: PE](request: Request[T, R]): F[Response[T]] = {
     monad.flatMap(convertRequest(request)) { convertedRequest =>
@@ -54,7 +54,7 @@ abstract class HttpClientAsyncBackend[F[_], S, P](
   }
 
   private def sendWebSocket[T, R >: PE](request: Request[T, R]): F[Response[T]] = {
-    createAsyncQueue[WebSocketEvent]
+    createSimpleQueue[WebSocketEvent]
       .flatMap { queue =>
         val isOpen: AtomicBoolean = new AtomicBoolean(false)
         monad.flatten(monad.async[F[Response[T]]] { cb =>

@@ -61,7 +61,7 @@ class AsyncHttpClientCatsBackend[F[_]: Concurrent: ContextShift] private (
       override protected def streamToPublisher(s: Nothing): Publisher[ByteBuf] = s // nothing is everything
     }
 
-  override protected def createAsyncQueue[T]: F[SimpleQueue[F, T]] =
+  override protected def createSimpleQueue[T]: F[SimpleQueue[F, T]] =
     throw new IllegalStateException("Web sockets are not supported!")
 }
 

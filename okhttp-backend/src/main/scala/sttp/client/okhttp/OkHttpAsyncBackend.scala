@@ -51,7 +51,7 @@ abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](
     implicit val m = monad
     val nativeRequest = convertRequest(request)
     monad.flatten(
-      createAsyncQueue[WebSocketEvent]
+      createSimpleQueue[WebSocketEvent]
         .flatMap { queue =>
           monad.async[F[Response[T]]] { cb =>
             val listener = createListener(queue, cb, request)

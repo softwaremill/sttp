@@ -61,7 +61,7 @@ class HttpClientMonixBackend private (
       ): Task[Unit] = MonixWebSockets.compilePipe(ws, pipe)
     }
 
-  override protected def createAsyncQueue[T]: Task[SimpleQueue[Task, T]] =
+  override protected def createSimpleQueue[T]: Task[SimpleQueue[Task, T]] =
     Task.eval(new MonixSimpleQueue[T](None))
 }
 

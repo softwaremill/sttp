@@ -118,7 +118,7 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
       responseMonad.eval(client.dispatcher().executorService().shutdown())
     } else responseMonad.unit(())
 
-  protected def createAsyncQueue[T]: F[SimpleQueue[F, T]]
+  protected def createSimpleQueue[T]: F[SimpleQueue[F, T]]
 
 }
 

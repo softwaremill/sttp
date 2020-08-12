@@ -81,7 +81,7 @@ class AsyncHttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
       s.chunks.map(c => Unpooled.wrappedBuffer(c.toArray)).toUnicastPublisher
   }
 
-  override protected def createAsyncQueue[T]: F[SimpleQueue[F, T]] =
+  override protected def createSimpleQueue[T]: F[SimpleQueue[F, T]] =
     webSocketBufferCapacity
       .fold(InspectableQueue.unbounded[F, T])(InspectableQueue.bounded)
       .map(new Fs2SimpleQueue(_))

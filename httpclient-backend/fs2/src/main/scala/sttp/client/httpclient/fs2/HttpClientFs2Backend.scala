@@ -66,7 +66,7 @@ class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
       ): F[Unit] = Fs2WebSockets.handleThroughPipe(ws)(pipe)
     }
 
-  override protected def createAsyncQueue[T]: F[SimpleQueue[F, T]] =
+  override protected def createSimpleQueue[T]: F[SimpleQueue[F, T]] =
     InspectableQueue.unbounded[F, T].map(new Fs2SimpleQueue(_))
 }
 

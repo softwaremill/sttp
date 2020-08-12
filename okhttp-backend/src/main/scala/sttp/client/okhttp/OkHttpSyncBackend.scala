@@ -44,7 +44,7 @@ class OkHttpSyncBackend private (
     def fillCell(wr: Future[Response[T]]): Unit = responseCell.add(Right(wr))
 
     implicit val m = responseMonad
-    val queue = createAsyncQueue[WebSocketEvent]
+    val queue = createSimpleQueue[WebSocketEvent]
     val isOpen = new AtomicBoolean(false)
     val listener = new DelegatingWebSocketListener(
       new AddToQueueListener(queue, isOpen),
@@ -95,7 +95,7 @@ class OkHttpSyncBackend private (
     override def streamToRequestBody(stream: Nothing): OkHttpRequestBody = stream
   }
 
-  override protected def createAsyncQueue[T]: Identity[SimpleQueue[Identity, T]] =
+  override protected def createSimpleQueue[T]: Identity[SimpleQueue[Identity, T]] =
     new SyncQueue[T](webSocketBufferCapacity)
 }
 

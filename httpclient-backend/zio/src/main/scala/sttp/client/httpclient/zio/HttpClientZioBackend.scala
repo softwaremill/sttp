@@ -62,7 +62,7 @@ class HttpClientZioBackend private (
       ): BlockingTask[Unit] = ZioWebSockets.compilePipe(ws, pipe)
     }
 
-  override protected def createAsyncQueue[T]: BlockingTask[SimpleQueue[BlockingTask, T]] =
+  override protected def createSimpleQueue[T]: BlockingTask[SimpleQueue[BlockingTask, T]] =
     for {
       runtime <- ZIO.runtime[Any]
       queue <- Queue.unbounded[T]

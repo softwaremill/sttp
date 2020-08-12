@@ -23,7 +23,7 @@ class OkHttpFutureBackend private (
 ) extends OkHttpAsyncBackend[Future, Nothing, WebSockets](client, new FutureMonad, closeClient, customEncodingHandler) {
   override val streams: Streams[Nothing] = NoStreams
 
-  override protected def createAsyncQueue[T]: Future[SimpleQueue[Future, T]] =
+  override protected def createSimpleQueue[T]: Future[SimpleQueue[Future, T]] =
     Future(new FutureSimpleQueue[T](webSocketBufferCapacity))
 
   override protected val bodyFromOkHttp: BodyFromOkHttp[Future, Nothing] = new BodyFromOkHttp[Future, Nothing] {
