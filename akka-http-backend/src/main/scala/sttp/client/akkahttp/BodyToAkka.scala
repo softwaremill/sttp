@@ -11,6 +11,7 @@ import akka.http.scaladsl.model.{
 }
 import akka.stream.scaladsl.{Source, StreamConverters}
 import akka.util.ByteString
+import sttp.capabilities.akka.AkkaStreams
 import sttp.client.{
   BasicRequestBody,
   ByteArrayBody,

@@ -4,8 +4,9 @@ import monix.eval.Task
 import monix.execution.Scheduler.Implicits.global
 import monix.reactive.Observable
 import sttp.capabilities.WebSockets
+import sttp.capabilities.monix.MonixStreams
 import sttp.client._
-import sttp.client.impl.monix.{MonixStreams, TaskMonadAsyncError, convertMonixTaskToFuture}
+import sttp.client.impl.monix.{TaskMonadAsyncError, convertMonixTaskToFuture}
 import sttp.monad.MonadError
 import sttp.client.okhttp.OkHttpBackend
 import sttp.client.testing.ConvertToFuture

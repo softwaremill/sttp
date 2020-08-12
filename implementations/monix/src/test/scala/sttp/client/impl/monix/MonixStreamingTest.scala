@@ -4,6 +4,7 @@ import java.nio.ByteBuffer
 
 import monix.eval.Task
 import monix.reactive.Observable
+import sttp.capabilities.monix.MonixStreams
 import sttp.client.testing.ConvertToFuture
 import sttp.client.testing.streaming.StreamingTest
 

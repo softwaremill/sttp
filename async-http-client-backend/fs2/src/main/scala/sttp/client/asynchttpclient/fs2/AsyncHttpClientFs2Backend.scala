@@ -13,9 +13,10 @@ import io.netty.buffer.{ByteBuf, Unpooled}
 import org.asynchttpclient.{Request => _, Response => _, _}
 import org.reactivestreams.Publisher
 import sttp.capabilities.WebSockets
+import sttp.capabilities.fs2.Fs2Streams
 import sttp.client.asynchttpclient.{AsyncHttpClientBackend, BodyFromAHC, BodyToAHC}
 import sttp.client.impl.cats.CatsMonadAsyncError
-import sttp.client.impl.fs2.{Fs2SimpleQueue, Fs2Streams, Fs2WebSockets}
+import sttp.client.impl.fs2.{Fs2SimpleQueue, Fs2WebSockets}
 import sttp.client.internal._
 import sttp.client.internal.ws.SimpleQueue
 import sttp.client.testing.SttpBackendStub

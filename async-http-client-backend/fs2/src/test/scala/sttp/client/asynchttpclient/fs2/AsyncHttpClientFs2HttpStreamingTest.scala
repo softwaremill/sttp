@@ -1,7 +1,8 @@
 package sttp.client.asynchttpclient.fs2
 
 import cats.effect.{ContextShift, IO}
-import sttp.client.impl.fs2.{Fs2StreamingTest, Fs2Streams}
+import sttp.capabilities.fs2.Fs2Streams
+import sttp.client.impl.fs2.Fs2StreamingTest
 import sttp.client.SttpBackend
 
 import scala.concurrent.ExecutionContext

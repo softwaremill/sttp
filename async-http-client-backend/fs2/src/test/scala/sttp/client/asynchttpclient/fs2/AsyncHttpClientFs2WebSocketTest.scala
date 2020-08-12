@@ -3,10 +3,10 @@ package sttp.client.asynchttpclient.fs2
 import cats.effect.IO
 import cats.implicits._
 import sttp.capabilities.WebSockets
+import sttp.capabilities.fs2.Fs2Streams
 import sttp.client._
 import sttp.client.asynchttpclient.AsyncHttpClientWebSocketTest
 import sttp.client.impl.cats.CatsTestBase
-import sttp.client.impl.fs2.Fs2Streams
 import sttp.ws.WebSocketFrame
 
 import scala.concurrent.duration._

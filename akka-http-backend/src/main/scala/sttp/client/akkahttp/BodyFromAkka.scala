@@ -9,6 +9,7 @@ import akka.http.scaladsl.model.ws.{BinaryMessage, Message, TextMessage}
 import akka.stream.{Materializer, OverflowStrategy, QueueOfferResult}
 import akka.stream.scaladsl.{FileIO, Flow, Sink, SinkQueueWithCancel, Source, SourceQueueWithComplete}
 import akka.util.ByteString
+import sttp.capabilities.akka.AkkaStreams
 import sttp.client.{
   IgnoreResponse,
   MappedResponseAs,

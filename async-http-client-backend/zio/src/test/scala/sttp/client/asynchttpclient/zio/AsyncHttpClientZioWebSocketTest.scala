@@ -1,9 +1,10 @@
 package sttp.client.asynchttpclient.zio
 
 import sttp.capabilities.WebSockets
+import sttp.capabilities.zio.ZioStreams
 import sttp.client._
 import sttp.client.asynchttpclient.AsyncHttpClientWebSocketTest
-import sttp.client.impl.zio.{RIOMonadAsyncError, ZioStreams, convertZioTaskToFuture, runtime}
+import sttp.client.impl.zio.{RIOMonadAsyncError, convertZioTaskToFuture, runtime}
 import sttp.monad.MonadError
 import sttp.client.testing.ConvertToFuture
 import sttp.ws.WebSocketFrame

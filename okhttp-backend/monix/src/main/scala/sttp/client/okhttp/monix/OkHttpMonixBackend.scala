@@ -13,7 +13,8 @@ import monix.reactive.observers.Subscriber
 import okhttp3.{MediaType, OkHttpClient, RequestBody => OkHttpRequestBody}
 import okio.BufferedSink
 import sttp.capabilities.WebSockets
-import sttp.client.impl.monix.{MonixSimpleQueue, MonixStreams, MonixWebSockets, TaskMonadAsyncError}
+import sttp.capabilities.monix.MonixStreams
+import sttp.client.impl.monix.{MonixSimpleQueue, MonixWebSockets, TaskMonadAsyncError}
 import sttp.client.internal.ws.SimpleQueue
 import sttp.monad.MonadError
 import sttp.client.okhttp.OkHttpBackend.EncodingHandler

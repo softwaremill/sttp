@@ -3,6 +3,7 @@ package sttp.client.impl.fs2
 import cats.effect.IO
 import cats.instances.string._
 import fs2.{Chunk, Stream}
+import sttp.capabilities.fs2.Fs2Streams
 import sttp.client.impl.cats.CatsTestBase
 import sttp.client.testing.streaming.StreamingTest
 

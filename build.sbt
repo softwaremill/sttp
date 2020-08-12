@@ -192,7 +192,7 @@ val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion
 val zioVersion = "1.0.0"
 val zioInteropRsVersion = "1.0.3.5"
 
-val sttpSharedVersion = "2.0.2-SNAPSHOT"
+val sttpSharedVersion = "2.0.3-SNAPSHOT"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
 
@@ -369,7 +369,8 @@ lazy val fs2 = (projectMatrix in file("implementations/fs2"))
     publishArtifact in Test := true,
     libraryDependencies ++= dependenciesFor(scalaVersion.value)(
       "co.fs2" %%% "fs2-core" % fs2Version(_)
-    )
+    ),
+    libraryDependencies += "com.softwaremill.sttp.shared" %% "fs2" % sttpSharedVersion
   )
   .dependsOn(core % compileAndTest, cats % compileAndTest)
   .jvmPlatform(
@@ -382,7 +383,10 @@ lazy val monix = (projectMatrix in file("implementations/monix"))
   .settings(
     name := "monix",
     publishArtifact in Test := true,
-    libraryDependencies ++= Seq("io.monix" %%% "monix" % "3.2.2")
+    libraryDependencies ++= Seq(
+      "io.monix" %%% "monix" % "3.2.2",
+      "com.softwaremill.sttp.shared" %%% "monix" % sttpSharedVersion
+    )
   )
   .dependsOn(core % compileAndTest)
   .jvmPlatform(
@@ -404,7 +408,8 @@ lazy val zio = (projectMatrix in file("implementations/zio"))
     publishArtifact in Test := true,
     libraryDependencies ++= Seq(
       "dev.zio" %% "zio-streams" % zioVersion,
-      "dev.zio" %% "zio" % zioVersion
+      "dev.zio" %% "zio" % zioVersion,
+      "com.softwaremill.sttp.shared" %% "zio" % sttpSharedVersion
     )
   )
   .dependsOn(core % compileAndTest)
@@ -437,7 +442,8 @@ lazy val akkaHttpBackend = (projectMatrix in file("akka-http-backend"))
       akkaHttp,
       // provided as we don't want to create a transitive dependency on a specific streams version,
       // just as akka-http doesn't
-      akkaStreams % "provided"
+      akkaStreams % "provided",
+      "com.softwaremill.sttp.shared" %% "akka" % sttpSharedVersion
     )
   )
   .dependsOn(core % compileAndTest)

@@ -2,11 +2,10 @@ package sttp.client.examples
 
 import sttp.client._
 import sttp.client.asynchttpclient.fs2.AsyncHttpClientFs2Backend
-import sttp.client.impl.fs2.Fs2Streams
-
 import cats.effect.{ContextShift, IO}
 import cats.instances.string._
 import fs2.{Stream, text}
+import sttp.capabilities.fs2.Fs2Streams
 
 object StreamFs2 extends App {
   implicit val cs: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionContext.global)

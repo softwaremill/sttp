@@ -2,6 +2,7 @@ package sttp.client.akkahttp
 
 import akka.stream.scaladsl.Flow
 import sttp.capabilities.WebSockets
+import sttp.capabilities.akka.AkkaStreams
 import sttp.client._
 import sttp.client.testing.ConvertToFuture
 import sttp.client.testing.websocket.{WebSocketStreamingTest, WebSocketTest}

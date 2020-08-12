@@ -2,10 +2,11 @@ package sttp.client.http4s
 
 import cats.effect.IO
 import sttp.client.SttpBackend
-import sttp.client.impl.fs2.{Fs2StreamingTest, Fs2Streams}
+import sttp.client.impl.fs2.Fs2StreamingTest
 
 import scala.concurrent.ExecutionContext
 import org.http4s.client.blaze.BlazeClientBuilder
+import sttp.capabilities.fs2.Fs2Streams
 
 class Http4sHttpStreamingTest extends Fs2StreamingTest {
 

@@ -13,9 +13,9 @@ import org.http4s.{ContentCoding, EntityBody, Request => Http4sRequest}
 import org.http4s
 import org.http4s.client.Client
 import org.http4s.client.blaze.BlazeClientBuilder
+import sttp.capabilities.fs2.Fs2Streams
 import sttp.client.http4s.Http4sBackend.EncodingHandler
 import sttp.client.impl.cats.CatsMonadAsyncError
-import sttp.client.impl.fs2.Fs2Streams
 import sttp.model._
 import sttp.monad.MonadError
 import sttp.client.testing.SttpBackendStub

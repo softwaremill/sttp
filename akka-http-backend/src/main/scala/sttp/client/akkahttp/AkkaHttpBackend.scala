@@ -12,6 +12,7 @@ import akka.http.scaladsl.model.{StatusCode => _, _}
 import akka.http.scaladsl.settings.ConnectionPoolSettings
 import akka.http.scaladsl.{ClientTransport, Http, HttpsConnectionContext}
 import akka.stream.scaladsl.Flow
+import sttp.capabilities.akka.AkkaStreams
 import sttp.capabilities.{Effect, WebSockets}
 import sttp.client
 import sttp.client.akkahttp.AkkaHttpBackend.EncodingHandler

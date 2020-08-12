@@ -1,5 +1,6 @@
 package sttp.client.asynchttpclient.zio
 
+import sttp.capabilities.zio.ZioStreams
 import sttp.client.SttpBackend
 import sttp.client.impl.zio._
 import sttp.client.internal._

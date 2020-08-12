@@ -12,8 +12,9 @@ import monix.reactive.Observable
 import org.asynchttpclient._
 import org.reactivestreams.Publisher
 import sttp.capabilities.WebSockets
+import sttp.capabilities.monix.MonixStreams
 import sttp.client.asynchttpclient.{AsyncHttpClientBackend, BodyFromAHC, BodyToAHC}
-import sttp.client.impl.monix.{MonixSimpleQueue, MonixStreams, MonixWebSockets, TaskMonadAsyncError}
+import sttp.client.impl.monix.{MonixSimpleQueue, MonixWebSockets, TaskMonadAsyncError}
 import sttp.client.internal._
 import sttp.client.internal.ws.SimpleQueue
 import sttp.client.testing.SttpBackendStub

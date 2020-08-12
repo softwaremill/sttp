@@ -1,6 +1,7 @@
 package sttp.client.httpclient.zio
 
 import sttp.capabilities.WebSockets
+import sttp.capabilities.zio.BlockingZioStreams
 import sttp.client._
 import sttp.client.impl.zio.{RIOMonadAsyncError, _}
 import sttp.monad.MonadError

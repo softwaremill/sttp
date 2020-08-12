@@ -3,6 +3,7 @@ package sttp.client.akkahttp
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
+import sttp.capabilities.akka.AkkaStreams
 import sttp.client.SttpBackend
 import sttp.client.testing.ConvertToFuture
 import sttp.client.testing.streaming.StreamingTest

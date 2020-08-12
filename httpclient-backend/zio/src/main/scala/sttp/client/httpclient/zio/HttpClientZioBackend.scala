@@ -8,7 +8,7 @@ import java.nio.ByteBuffer
 import org.reactivestreams.FlowAdapters
 import sttp.client.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client.httpclient.{BodyFromHttpClient, BodyToHttpClient, HttpClientAsyncBackend, HttpClientBackend}
-import sttp.client.impl.zio.{BlockingZioStreams, RIOMonadAsyncError, ZioSimpleQueue, ZioWebSockets}
+import sttp.client.impl.zio.{RIOMonadAsyncError, ZioSimpleQueue, ZioWebSockets}
 import sttp.monad.MonadError
 import sttp.client.testing.SttpBackendStub
 import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
@@ -16,6 +16,7 @@ import zio._
 import zio.blocking.Blocking
 import _root_.zio.interop.reactivestreams.{streamToPublisher => zioStreamToPublisher}
 import sttp.capabilities.WebSockets
+import sttp.capabilities.zio.BlockingZioStreams
 import sttp.client.internal.ws.SimpleQueue
 import sttp.ws.{WebSocket, WebSocketFrame}
 import zio.stream.{Stream, ZStream, ZTransducer}

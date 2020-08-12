@@ -20,8 +20,9 @@ import org.asynchttpclient.{
 }
 import org.reactivestreams.Publisher
 import sttp.capabilities.WebSockets
+import sttp.capabilities.zio.ZioStreams
 import sttp.client.asynchttpclient.{AsyncHttpClientBackend, BodyFromAHC, BodyToAHC}
-import sttp.client.impl.zio.{RIOMonadAsyncError, ZioSimpleQueue, ZioStreams, ZioWebSockets}
+import sttp.client.impl.zio.{RIOMonadAsyncError, ZioSimpleQueue, ZioWebSockets}
 import sttp.client.internal._
 import sttp.client.internal.ws.SimpleQueue
 import sttp.client.testing.SttpBackendStub

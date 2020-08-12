@@ -3,8 +3,8 @@ package sttp.client.httpclient
 import sttp.client._
 import _root_.zio._
 import _root_.zio.blocking.Blocking
+import sttp.capabilities.zio.BlockingZioStreams
 import sttp.capabilities.{Effect, WebSockets}
-import sttp.client.impl.zio.BlockingZioStreams
 
 package object zio {
 
