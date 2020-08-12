@@ -12,7 +12,7 @@ import scala.scalajs.js.Promise
 import scala.scalajs.js.typedarray.{Int8Array, _}
 import org.scalajs.dom.experimental.{Request => FetchRequest}
 import sttp.client.testing.SttpBackendStub
-import sttp.client.impl.monix.MonixStreams
+import sttp.capabilities.monix.MonixStreams
 
 /**
   * Uses the `ReadableStream` interface from the Streams API.
