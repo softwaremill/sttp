@@ -12,7 +12,7 @@ trait SttpCirceApi {
       encoder: Encoder[B],
       printer: Printer = Printer.noSpaces
   ): BodySerializer[B] =
-    b => StringBody(encoder(b).pretty(printer), Utf8, Some(MediaType.ApplicationJson))
+    b => StringBody(encoder(b).printWith(printer), Utf8, Some(MediaType.ApplicationJson))
 
   /**
     * If the response is successful (2xx), tries to deserialize the body from a string into JSON. Returns:
