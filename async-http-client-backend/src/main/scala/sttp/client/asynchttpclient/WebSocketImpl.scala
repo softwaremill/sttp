@@ -7,12 +7,12 @@ import org.asynchttpclient.ws.{WebSocket => AHCWebSocket, WebSocketListener => A
 import sttp.client.monad.syntax._
 import sttp.client.monad.{Canceler, MonadAsyncError}
 import sttp.client.ws.WebSocket
-import sttp.client.ws.internal.{AsyncQueue, WebSocketEvent}
+import sttp.client.ws.internal.{SimpleQueue, WebSocketEvent}
 import sttp.model.ws.{WebSocketClosed, WebSocketFrame}
 
 private[asynchttpclient] class WebSocketImpl[F[_]](
     ws: AHCWebSocket,
-    queue: AsyncQueue[F, WebSocketEvent],
+    queue: SimpleQueue[F, WebSocketEvent],
     _isOpen: AtomicBoolean,
     implicit val monad: MonadAsyncError[F]
 ) extends WebSocket[F] {
@@ -68,7 +68,7 @@ private[asynchttpclient] class WebSocketImpl[F[_]](
 object WebSocketImpl {
   def newCoupledToAHCWebSocket[F[_]](
       ws: AHCWebSocket,
-      queue: AsyncQueue[F, WebSocketEvent]
+      queue: SimpleQueue[F, WebSocketEvent]
   )(implicit monad: MonadAsyncError[F]): WebSocket[F] = {
     val isOpen: AtomicBoolean = new AtomicBoolean(false)
     ws.addWebSocketListener(new AddToQueueListener(queue, isOpen))
@@ -76,7 +76,7 @@ object WebSocketImpl {
   }
 }
 
-class AddToQueueListener[F[_]](queue: AsyncQueue[F, WebSocketEvent], isOpen: AtomicBoolean)
+class AddToQueueListener[F[_]](queue: SimpleQueue[F, WebSocketEvent], isOpen: AtomicBoolean)
     extends AHCWebSocketListener {
   override def onOpen(websocket: AHCWebSocket): Unit = {
     isOpen.set(true)

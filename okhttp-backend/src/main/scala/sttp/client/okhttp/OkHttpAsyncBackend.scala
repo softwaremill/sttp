@@ -7,7 +7,7 @@ import okhttp3.{Call, Callback, OkHttpClient, Response => OkHttpResponse, WebSoc
 import sttp.client.monad.syntax._
 import sttp.client.monad.{Canceler, MonadAsyncError, MonadError}
 import sttp.client.okhttp.OkHttpBackend.EncodingHandler
-import sttp.client.ws.internal.{AsyncQueue, WebSocketEvent}
+import sttp.client.ws.internal.{SimpleQueue, WebSocketEvent}
 import sttp.client.{Request, Response, Streams, ignore}
 
 abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](
@@ -66,7 +66,7 @@ abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](
   }
 
   private def createListener[R >: PE, T](
-      queue: AsyncQueue[F, WebSocketEvent],
+      queue: SimpleQueue[F, WebSocketEvent],
       cb: Either[Throwable, F[Response[T]]] => Unit,
       request: Request[T, R]
   )(implicit m: MonadAsyncError[F]): DelegatingWebSocketListener = {

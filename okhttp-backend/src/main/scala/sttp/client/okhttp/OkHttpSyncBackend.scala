@@ -10,7 +10,7 @@ import sttp.client.monad.{IdMonad, MonadError}
 import sttp.client.okhttp.OkHttpBackend.EncodingHandler
 import sttp.client.testing.SttpBackendStub
 import sttp.client.ws.WebSocket
-import sttp.client.ws.internal.{AsyncQueue, SyncQueue, WebSocketEvent}
+import sttp.client.ws.internal.{SimpleQueue, SyncQueue, WebSocketEvent}
 import sttp.client.{
   DefaultReadTimeout,
   FollowRedirectsBackend,
@@ -95,7 +95,7 @@ class OkHttpSyncBackend private (
     override def streamToRequestBody(stream: Nothing): OkHttpRequestBody = stream
   }
 
-  override protected def createAsyncQueue[T]: Identity[AsyncQueue[Identity, T]] =
+  override protected def createAsyncQueue[T]: Identity[SimpleQueue[Identity, T]] =
     new SyncQueue[T](webSocketBufferCapacity)
 }
 

@@ -9,7 +9,7 @@ import sttp.client.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client.internal.emptyInputStream
 import sttp.client.monad.syntax._
 import sttp.client.monad.{Canceler, MonadAsyncError, MonadError}
-import sttp.client.ws.internal.{AsyncQueue, WebSocketEvent}
+import sttp.client.ws.internal.{SimpleQueue, WebSocketEvent}
 import sttp.client.{Request, Response, SttpClientException}
 import sttp.model.StatusCode
 
@@ -25,7 +25,7 @@ abstract class HttpClientAsyncBackend[F[_], S, P](
       if (request.isWebSocket) sendWebSocket(request) else sendRegular(request)
     }
 
-  protected def createAsyncQueue[T]: F[AsyncQueue[F, T]]
+  protected def createAsyncQueue[T]: F[SimpleQueue[F, T]]
 
   private def sendRegular[T, R >: PE](request: Request[T, R]): F[Response[T]] = {
     monad.flatMap(convertRequest(request)) { convertedRequest =>

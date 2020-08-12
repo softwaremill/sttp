@@ -25,7 +25,7 @@ import sttp.client
 import sttp.client.SttpBackendOptions.ProxyType.{Http, Socks}
 import sttp.client.monad.syntax._
 import sttp.client.monad.{Canceler, MonadAsyncError, MonadError}
-import sttp.client.ws.internal.{AsyncQueue, WebSocketEvent}
+import sttp.client.ws.internal.{SimpleQueue, WebSocketEvent}
 import sttp.client.{Response, ResponseAs, SttpBackend, SttpBackendOptions, _}
 import sttp.model._
 
@@ -80,7 +80,7 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
   protected def bodyFromAHC: BodyFromAHC[F, S]
   protected def bodyToAHC: BodyToAHC[F, S]
 
-  protected def createAsyncQueue[T]: F[AsyncQueue[F, T]]
+  protected def createAsyncQueue[T]: F[SimpleQueue[F, T]]
 
   private def streamingAsyncHandler[T, R >: PE](
       responseAs: ResponseAs[T, R],

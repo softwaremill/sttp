@@ -22,7 +22,7 @@ import cats.implicits._
 import sttp.client.monad.MonadAsyncError
 import sttp.client.testing.SttpBackendStub
 import sttp.client.ws.WebSocket
-import sttp.client.ws.internal.AsyncQueue
+import sttp.client.ws.internal.SimpleQueue
 
 class AsyncHttpClientCatsBackend[F[_]: Concurrent: ContextShift] private (
     asyncHttpClient: AsyncHttpClient,
@@ -61,7 +61,7 @@ class AsyncHttpClientCatsBackend[F[_]: Concurrent: ContextShift] private (
       override protected def streamToPublisher(s: Nothing): Publisher[ByteBuf] = s // nothing is everything
     }
 
-  override protected def createAsyncQueue[T]: F[AsyncQueue[F, T]] =
+  override protected def createAsyncQueue[T]: F[SimpleQueue[F, T]] =
     throw new IllegalStateException("Web sockets are not supported!")
 }
 

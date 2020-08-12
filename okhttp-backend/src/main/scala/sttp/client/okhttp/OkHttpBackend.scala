@@ -17,7 +17,7 @@ import okhttp3.{
 import sttp.client.SttpBackendOptions.Proxy
 import sttp.client.SttpClientException.ReadException
 import sttp.client.okhttp.OkHttpBackend.EncodingHandler
-import sttp.client.ws.internal.AsyncQueue
+import sttp.client.ws.internal.SimpleQueue
 import sttp.client.{Response, ResponseAs, SttpBackend, SttpBackendOptions, _}
 import sttp.model._
 
@@ -118,7 +118,7 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
       responseMonad.eval(client.dispatcher().executorService().shutdown())
     } else responseMonad.unit(())
 
-  protected def createAsyncQueue[T]: F[AsyncQueue[F, T]]
+  protected def createAsyncQueue[T]: F[SimpleQueue[F, T]]
 
 }
 

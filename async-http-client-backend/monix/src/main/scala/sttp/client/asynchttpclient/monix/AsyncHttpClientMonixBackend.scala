@@ -12,12 +12,12 @@ import monix.reactive.Observable
 import org.asynchttpclient._
 import org.reactivestreams.Publisher
 import sttp.client.asynchttpclient.{AsyncHttpClientBackend, BodyFromAHC, BodyToAHC}
-import sttp.client.impl.monix.{MonixAsyncQueue, MonixStreams, MonixWebSockets, TaskMonadAsyncError}
+import sttp.client.impl.monix.{MonixSimpleQueue, MonixStreams, MonixWebSockets, TaskMonadAsyncError}
 import sttp.client.internal._
 import sttp.client.monad.MonadAsyncError
 import sttp.client.testing.SttpBackendStub
 import sttp.client.ws.WebSocket
-import sttp.client.ws.internal.AsyncQueue
+import sttp.client.ws.internal.SimpleQueue
 import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions, WebSockets}
 import sttp.model.ws.WebSocketFrame
 
@@ -74,8 +74,8 @@ class AsyncHttpClientMonixBackend private (
       s.map(Unpooled.wrappedBuffer).toReactivePublisher
   }
 
-  override protected def createAsyncQueue[T]: Task[AsyncQueue[Task, T]] =
-    Task.eval(new MonixAsyncQueue[T](webSocketBufferCapacity))
+  override protected def createAsyncQueue[T]: Task[SimpleQueue[Task, T]] =
+    Task.eval(new MonixSimpleQueue[T](webSocketBufferCapacity))
 }
 
 object AsyncHttpClientMonixBackend {

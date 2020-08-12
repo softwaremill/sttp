@@ -15,11 +15,11 @@ import sttp.client.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client.{FollowRedirectsBackend, Request, Response, SttpBackend, SttpBackendOptions, WebSockets}
 import sttp.client.httpclient.{BodyFromHttpClient, BodyToHttpClient, HttpClientAsyncBackend, HttpClientBackend}
 import sttp.client.impl.cats.implicits._
-import sttp.client.impl.fs2.{Fs2AsyncQueue, Fs2Streams, Fs2WebSockets}
+import sttp.client.impl.fs2.{Fs2SimpleQueue, Fs2Streams, Fs2WebSockets}
 import sttp.client.monad.MonadError
 import sttp.client.testing.SttpBackendStub
 import sttp.client.ws.WebSocket
-import sttp.client.ws.internal.AsyncQueue
+import sttp.client.ws.internal.SimpleQueue
 import sttp.model.ws.WebSocketFrame
 
 class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
@@ -66,8 +66,8 @@ class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
       ): F[Unit] = Fs2WebSockets.handleThroughPipe(ws)(pipe)
     }
 
-  override protected def createAsyncQueue[T]: F[AsyncQueue[F, T]] =
-    InspectableQueue.unbounded[F, T].map(new Fs2AsyncQueue(_))
+  override protected def createAsyncQueue[T]: F[SimpleQueue[F, T]] =
+    InspectableQueue.unbounded[F, T].map(new Fs2SimpleQueue(_))
 }
 
 object HttpClientFs2Backend {

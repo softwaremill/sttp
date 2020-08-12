@@ -14,12 +14,12 @@ import org.asynchttpclient.{Request => _, Response => _, _}
 import org.reactivestreams.Publisher
 import sttp.client.asynchttpclient.{AsyncHttpClientBackend, BodyFromAHC, BodyToAHC}
 import sttp.client.impl.cats.CatsMonadAsyncError
-import sttp.client.impl.fs2.{Fs2AsyncQueue, Fs2Streams, Fs2WebSockets}
+import sttp.client.impl.fs2.{Fs2SimpleQueue, Fs2Streams, Fs2WebSockets}
 import sttp.client.internal._
 import sttp.client.monad.MonadAsyncError
 import sttp.client.testing.SttpBackendStub
 import sttp.client.ws.WebSocket
-import sttp.client.ws.internal.AsyncQueue
+import sttp.client.ws.internal.SimpleQueue
 import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions, _}
 import sttp.model.ws.WebSocketFrame
 
@@ -81,10 +81,10 @@ class AsyncHttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
       s.chunks.map(c => Unpooled.wrappedBuffer(c.toArray)).toUnicastPublisher
   }
 
-  override protected def createAsyncQueue[T]: F[AsyncQueue[F, T]] =
+  override protected def createAsyncQueue[T]: F[SimpleQueue[F, T]] =
     webSocketBufferCapacity
       .fold(InspectableQueue.unbounded[F, T])(InspectableQueue.bounded)
-      .map(new Fs2AsyncQueue(_))
+      .map(new Fs2SimpleQueue(_))
 }
 
 object AsyncHttpClientFs2Backend {

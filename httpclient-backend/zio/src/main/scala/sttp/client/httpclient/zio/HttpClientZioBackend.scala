@@ -8,11 +8,11 @@ import java.nio.ByteBuffer
 import org.reactivestreams.FlowAdapters
 import sttp.client.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client.httpclient.{BodyFromHttpClient, BodyToHttpClient, HttpClientAsyncBackend, HttpClientBackend}
-import sttp.client.impl.zio.{BlockingZioStreams, RIOMonadAsyncError, ZioAsyncQueue, ZioWebSockets}
+import sttp.client.impl.zio.{BlockingZioStreams, RIOMonadAsyncError, ZioSimpleQueue, ZioWebSockets}
 import sttp.client.monad.MonadError
 import sttp.client.testing.SttpBackendStub
 import sttp.client.ws.WebSocket
-import sttp.client.ws.internal.AsyncQueue
+import sttp.client.ws.internal.SimpleQueue
 import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions, WebSockets}
 import sttp.model.ws.WebSocketFrame
 import zio._
@@ -62,11 +62,11 @@ class HttpClientZioBackend private (
       ): BlockingTask[Unit] = ZioWebSockets.compilePipe(ws, pipe)
     }
 
-  override protected def createAsyncQueue[T]: BlockingTask[AsyncQueue[BlockingTask, T]] =
+  override protected def createAsyncQueue[T]: BlockingTask[SimpleQueue[BlockingTask, T]] =
     for {
       runtime <- ZIO.runtime[Any]
       queue <- Queue.unbounded[T]
-    } yield new ZioAsyncQueue(queue, runtime)
+    } yield new ZioSimpleQueue(queue, runtime)
 }
 
 object HttpClientZioBackend {

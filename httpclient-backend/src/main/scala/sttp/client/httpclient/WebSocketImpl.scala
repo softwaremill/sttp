@@ -10,12 +10,12 @@ import java.net.http.{WebSocket => JWebSocket}
 import sttp.client.monad.{Canceler, MonadAsyncError, MonadError}
 import sttp.client.monad.syntax._
 import sttp.client.ws.WebSocket
-import sttp.client.ws.internal.{AsyncQueue, WebSocketEvent}
+import sttp.client.ws.internal.{SimpleQueue, WebSocketEvent}
 import sttp.model.ws.{WebSocketClosed, WebSocketFrame}
 
 private[httpclient] class WebSocketImpl[F[_]](
     ws: JWebSocket,
-    queue: AsyncQueue[F, WebSocketEvent],
+    queue: SimpleQueue[F, WebSocketEvent],
     _isOpen: AtomicBoolean,
     _monad: MonadAsyncError[F]
 ) extends WebSocket[F] {
@@ -76,7 +76,7 @@ private[httpclient] class WebSocketImpl[F[_]](
 }
 
 private[httpclient] class AddToQueueListener[F[_]](
-    queue: AsyncQueue[F, WebSocketEvent],
+    queue: SimpleQueue[F, WebSocketEvent],
     isOpen: AtomicBoolean
 ) extends Listener {
   override def onOpen(webSocket: JWebSocket): Unit = {

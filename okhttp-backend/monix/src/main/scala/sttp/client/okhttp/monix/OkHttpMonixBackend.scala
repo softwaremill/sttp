@@ -12,13 +12,13 @@ import monix.reactive.Observable
 import monix.reactive.observers.Subscriber
 import okhttp3.{MediaType, OkHttpClient, RequestBody => OkHttpRequestBody}
 import okio.BufferedSink
-import sttp.client.impl.monix.{MonixAsyncQueue, MonixStreams, MonixWebSockets, TaskMonadAsyncError}
+import sttp.client.impl.monix.{MonixSimpleQueue, MonixStreams, MonixWebSockets, TaskMonadAsyncError}
 import sttp.client.monad.MonadError
 import sttp.client.okhttp.OkHttpBackend.EncodingHandler
 import sttp.client.okhttp.{BodyFromOkHttp, BodyToOkHttp, OkHttpAsyncBackend, OkHttpBackend}
 import sttp.client.testing.SttpBackendStub
 import sttp.client.ws.WebSocket
-import sttp.client.ws.internal.AsyncQueue
+import sttp.client.ws.internal.SimpleQueue
 import sttp.client.{SttpBackend, _}
 import sttp.model.ws.WebSocketFrame
 
@@ -107,8 +107,8 @@ class OkHttpMonixBackend private (
         }
     }
 
-  override protected def createAsyncQueue[T]: Task[AsyncQueue[Task, T]] =
-    Task.eval(new MonixAsyncQueue[T](webSocketBufferCapacity))
+  override protected def createAsyncQueue[T]: Task[SimpleQueue[Task, T]] =
+    Task.eval(new MonixSimpleQueue[T](webSocketBufferCapacity))
 }
 
 object OkHttpMonixBackend {

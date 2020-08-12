@@ -1,6 +1,6 @@
 package sttp.client.ws.internal
 
-trait AsyncQueue[F[_], T] {
+trait SimpleQueue[F[_], T] {
 
   /**
     * Eagerly adds the given item to the queue.

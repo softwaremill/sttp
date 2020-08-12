@@ -6,13 +6,13 @@ import okhttp3.{WebSocketListener, WebSocket => OkHttpWebSocket, Response => OkH
 import okio.ByteString
 import sttp.client.monad.MonadError
 import sttp.client.ws.WebSocket
-import sttp.client.ws.internal.{AsyncQueue, WebSocketEvent}
+import sttp.client.ws.internal.{SimpleQueue, WebSocketEvent}
 import sttp.model.ws.{WebSocketClosed, WebSocketException, WebSocketFrame}
 import sttp.client.monad.syntax._
 
 private[okhttp] class WebSocketImpl[F[_]](
     ws: OkHttpWebSocket,
-    queue: AsyncQueue[F, WebSocketEvent],
+    queue: SimpleQueue[F, WebSocketEvent],
     _isOpen: AtomicBoolean
 )(implicit
     val monad: MonadError[F]
@@ -103,7 +103,7 @@ private[okhttp] class DelegatingWebSocketListener(
   override def onMessage(webSocket: OkHttpWebSocket, bytes: ByteString): Unit = delegate.onMessage(webSocket, bytes)
 }
 
-private[okhttp] class AddToQueueListener[F[_]](queue: AsyncQueue[F, WebSocketEvent], isOpen: AtomicBoolean)
+private[okhttp] class AddToQueueListener[F[_]](queue: SimpleQueue[F, WebSocketEvent], isOpen: AtomicBoolean)
     extends WebSocketListener {
   override def onOpen(websocket: OkHttpWebSocket, response: OkHttpResponse): Unit = {
     isOpen.set(true)

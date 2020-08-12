@@ -8,7 +8,7 @@ import sttp.client.monad.{FutureMonad, MonadError}
 import sttp.client.okhttp.OkHttpBackend.EncodingHandler
 import sttp.client.testing.SttpBackendStub
 import sttp.client.ws.WebSocket
-import sttp.client.ws.internal.{AsyncQueue, FutureAsyncQueue}
+import sttp.client.ws.internal.{SimpleQueue, FutureSimpleQueue}
 import sttp.client.{DefaultReadTimeout, FollowRedirectsBackend, Streams, SttpBackend, SttpBackendOptions, WebSockets}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -23,8 +23,8 @@ class OkHttpFutureBackend private (
 ) extends OkHttpAsyncBackend[Future, Nothing, WebSockets](client, new FutureMonad, closeClient, customEncodingHandler) {
   override val streams: Streams[Nothing] = NoStreams
 
-  override protected def createAsyncQueue[T]: Future[AsyncQueue[Future, T]] =
-    Future(new FutureAsyncQueue[T](webSocketBufferCapacity))
+  override protected def createAsyncQueue[T]: Future[SimpleQueue[Future, T]] =
+    Future(new FutureSimpleQueue[T](webSocketBufferCapacity))
 
   override protected val bodyFromOkHttp: BodyFromOkHttp[Future, Nothing] = new BodyFromOkHttp[Future, Nothing] {
     override val streams: NoStreams = NoStreams

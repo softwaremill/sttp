@@ -6,7 +6,7 @@ import sttp.model.ws.WebSocketBufferFull
 
 import scala.concurrent.{ExecutionContext, Future, blocking}
 
-class FutureAsyncQueue[T](capacity: Option[Int])(implicit ec: ExecutionContext) extends AsyncQueue[Future, T] {
+class FutureSimpleQueue[T](capacity: Option[Int])(implicit ec: ExecutionContext) extends SimpleQueue[Future, T] {
 
   private val queue: BlockingQueue[T] = capacity match {
     case Some(value) => new ArrayBlockingQueue[T](value)

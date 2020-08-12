@@ -18,7 +18,7 @@ import sttp.client.internal.NoStreams
 import sttp.client.monad.MonadAsyncError
 import sttp.client.testing.SttpBackendStub
 import sttp.client.ws.WebSocket
-import sttp.client.ws.internal.AsyncQueue
+import sttp.client.ws.internal.SimpleQueue
 import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 
 class AsyncHttpClientScalazBackend private (
@@ -48,7 +48,7 @@ class AsyncHttpClientScalazBackend private (
       override protected def streamToPublisher(s: Nothing): Publisher[ByteBuf] = s // nothing is everything
     }
 
-  override protected def createAsyncQueue[T]: Task[AsyncQueue[Task, T]] =
+  override protected def createAsyncQueue[T]: Task[SimpleQueue[Task, T]] =
     throw new IllegalStateException("Web sockets are not supported!")
 }
 

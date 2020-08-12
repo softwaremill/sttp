@@ -16,7 +16,7 @@ import sttp.client.internal.NoStreams
 import sttp.client.monad.{FutureMonad, MonadAsyncError}
 import sttp.client.testing.SttpBackendStub
 import sttp.client.ws.WebSocket
-import sttp.client.ws.internal.AsyncQueue
+import sttp.client.ws.internal.SimpleQueue
 import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -51,7 +51,7 @@ class AsyncHttpClientFutureBackend private (
       override protected def streamToPublisher(s: Nothing): Publisher[ByteBuf] = s // nothing is everything
     }
 
-  override protected def createAsyncQueue[T]: Future[AsyncQueue[Future, T]] =
+  override protected def createAsyncQueue[T]: Future[SimpleQueue[Future, T]] =
     throw new IllegalStateException("Web sockets are not supported!")
 }
 

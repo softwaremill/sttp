@@ -10,7 +10,7 @@ import sttp.client.internal.NoStreams
 import sttp.client.monad.{FutureMonad, MonadError}
 import sttp.client.testing.SttpBackendStub
 import sttp.client.ws.WebSocket
-import sttp.client.ws.internal.{AsyncQueue, FutureAsyncQueue}
+import sttp.client.ws.internal.{SimpleQueue, FutureSimpleQueue}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -48,8 +48,8 @@ class HttpClientFutureBackend private (
       ): Future[Unit] = pipe // nothing is everything
     }
 
-  override protected def createAsyncQueue[T]: Future[AsyncQueue[Future, T]] =
-    Future.successful(new FutureAsyncQueue[T](None))
+  override protected def createAsyncQueue[T]: Future[SimpleQueue[Future, T]] =
+    Future.successful(new FutureSimpleQueue[T](None))
 }
 
 object HttpClientFutureBackend {
