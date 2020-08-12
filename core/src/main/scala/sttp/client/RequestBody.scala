@@ -3,6 +3,7 @@ package sttp.client
 import java.io.InputStream
 import java.nio.ByteBuffer
 
+import sttp.capabilities.Streams
 import sttp.model._
 import sttp.client.internal.SttpFile
 import sttp.model.internal.UriCompatibility

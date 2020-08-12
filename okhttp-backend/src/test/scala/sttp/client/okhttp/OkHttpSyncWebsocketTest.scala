@@ -1,12 +1,14 @@
 package sttp.client.okhttp
 
 import org.scalatest.Assertion
+import sttp.capabilities.WebSockets
 import sttp.client._
-import sttp.client.monad.syntax._
-import sttp.client.monad.{IdMonad, MonadError}
+import sttp.monad.syntax._
+import sttp.client.monad.IdMonad
 import sttp.client.testing.ConvertToFuture
 import sttp.client.testing.HttpTest.wsEndpoint
 import sttp.client.testing.websocket.WebSocketTest
+import sttp.monad.MonadError
 
 import scala.concurrent.duration._
 

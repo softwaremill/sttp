@@ -3,11 +3,11 @@ package sttp.client
 import java.io.InputStream
 import java.nio.ByteBuffer
 
+import sttp.capabilities.{Effect, Streams, WebSockets}
 import sttp.client.internal._
 import sttp.model._
 import sttp.client.internal.SttpFile
-import sttp.client.ws.WebSocket
-import sttp.model.ws.WebSocketFrame
+import sttp.ws.{WebSocket, WebSocketFrame}
 
 import scala.collection.immutable.Seq
 import scala.concurrent.duration._

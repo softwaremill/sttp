@@ -10,15 +10,15 @@ import monix.eval.Task
 import monix.execution.Scheduler
 import monix.reactive.Observable
 import org.reactivestreams.FlowAdapters
+import sttp.capabilities.WebSockets
 import sttp.client.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client.httpclient.{BodyFromHttpClient, BodyToHttpClient, HttpClientAsyncBackend, HttpClientBackend}
 import sttp.client.impl.monix.{MonixSimpleQueue, MonixStreams, MonixWebSockets, TaskMonadAsyncError}
-import sttp.client.monad.MonadError
+import sttp.client.internal.ws.SimpleQueue
+import sttp.monad.MonadError
 import sttp.client.testing.SttpBackendStub
-import sttp.client.ws.WebSocket
-import sttp.client.ws.internal.SimpleQueue
-import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions, WebSockets}
-import sttp.model.ws.WebSocketFrame
+import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
+import sttp.ws.{WebSocket, WebSocketFrame}
 
 class HttpClientMonixBackend private (
     client: HttpClient,

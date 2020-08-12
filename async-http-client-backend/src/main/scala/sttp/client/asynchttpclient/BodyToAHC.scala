@@ -6,6 +6,7 @@ import io.netty.buffer.ByteBuf
 import org.asynchttpclient.{Param, RequestBuilder}
 import org.asynchttpclient.request.body.multipart.{ByteArrayPart, FilePart, StringPart}
 import org.reactivestreams.Publisher
+import sttp.capabilities.Streams
 import sttp.client.{
   BasicRequestBody,
   ByteArrayBody,
@@ -17,11 +18,11 @@ import sttp.client.{
   Request,
   RequestBody,
   StreamBody,
-  Streams,
   StringBody
 }
 import sttp.client.internal.toByteArray
 import sttp.model.{HeaderNames, MediaType, Part}
+
 import scala.collection.JavaConverters._
 
 private[asynchttpclient] trait BodyToAHC[F[_], S] {

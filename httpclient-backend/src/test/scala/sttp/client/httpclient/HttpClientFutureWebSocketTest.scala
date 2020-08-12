@@ -1,9 +1,10 @@
 package sttp.client.httpclient
 
-import sttp.client.monad.{FutureMonad, MonadError}
+import sttp.capabilities.WebSockets
 import sttp.client.testing.ConvertToFuture
 import sttp.client.testing.websocket.WebSocketTest
-import sttp.client.{SttpBackend, WebSockets}
+import sttp.client.SttpBackend
+import sttp.monad.{FutureMonad, MonadError}
 
 import scala.concurrent.Future
 

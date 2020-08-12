@@ -1,6 +1,6 @@
 package sttp.client
 
-import sttp.client.monad.MonadError
+import sttp.monad.MonadError
 
 import scala.annotation.tailrec
 

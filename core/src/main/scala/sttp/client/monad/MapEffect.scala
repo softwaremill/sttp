@@ -1,8 +1,8 @@
 package sttp.client.monad
 
+import sttp.capabilities.Effect
 import sttp.client.{
   ConditionalResponseAs,
-  Effect,
   IgnoreResponse,
   MappedResponseAs,
   RequestBody,
@@ -17,8 +17,8 @@ import sttp.client.{
   ResponseAsWebSocketStream,
   ResponseAsWebSocketUnsafe
 }
-import sttp.client.ws.WebSocket
-import sttp.model.ws.WebSocketFrame
+import sttp.monad.MonadError
+import sttp.ws.{WebSocket, WebSocketFrame}
 
 object MapEffect {
 

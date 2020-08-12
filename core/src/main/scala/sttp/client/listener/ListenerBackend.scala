@@ -1,8 +1,9 @@
 package sttp.client.listener
 
+import sttp.capabilities.Effect
 import sttp.client._
-import sttp.client.monad.MonadError
-import sttp.client.monad.syntax._
+import sttp.monad.MonadError
+import sttp.monad.syntax._
 
 /**
   * A backend wrapper which notifies the given [[RequestListener]] when a request starts and completes.

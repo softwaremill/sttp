@@ -1,6 +1,7 @@
 package sttp.client.httpclient.fs2
 
 import cats.effect.IO
+import sttp.capabilities.WebSockets
 import sttp.client._
 import sttp.client.impl.cats.CatsTestBase
 import sttp.client.impl.fs2.Fs2Streams

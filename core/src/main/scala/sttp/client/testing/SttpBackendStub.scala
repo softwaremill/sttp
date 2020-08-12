@@ -2,13 +2,14 @@ package sttp.client.testing
 
 import java.io.InputStream
 
+import sttp.capabilities.{Effect, WebSockets}
 import sttp.client.internal.{SttpFile, _}
-import sttp.client.monad.{FutureMonad, IdMonad, MonadError}
+import sttp.client.monad.IdMonad
 import sttp.client.testing.SttpBackendStub._
-import sttp.client.ws.WebSocket
 import sttp.client.{IgnoreResponse, ResponseAs, ResponseAsByteArray, SttpBackend, _}
 import sttp.model.StatusCode
-import sttp.model.ws.WebSocketFrame
+import sttp.monad.{FutureMonad, MonadError}
+import sttp.ws.{WebSocket, WebSocketFrame}
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}

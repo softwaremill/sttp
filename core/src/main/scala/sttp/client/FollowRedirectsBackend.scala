@@ -2,7 +2,8 @@ package sttp.client
 
 import java.net.URI
 
-import sttp.client.monad.MonadError
+import sttp.capabilities.Effect
+import sttp.monad.MonadError
 import sttp.model.{Method, StatusCode, _}
 
 class FollowRedirectsBackend[F[_], P](

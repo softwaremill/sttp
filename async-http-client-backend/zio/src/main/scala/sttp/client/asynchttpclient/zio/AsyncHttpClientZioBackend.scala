@@ -19,15 +19,15 @@ import org.asynchttpclient.{
   DefaultAsyncHttpClientConfig
 }
 import org.reactivestreams.Publisher
+import sttp.capabilities.WebSockets
 import sttp.client.asynchttpclient.{AsyncHttpClientBackend, BodyFromAHC, BodyToAHC}
 import sttp.client.impl.zio.{RIOMonadAsyncError, ZioSimpleQueue, ZioStreams, ZioWebSockets}
 import sttp.client.internal._
-import sttp.client.monad.MonadAsyncError
+import sttp.client.internal.ws.SimpleQueue
 import sttp.client.testing.SttpBackendStub
-import sttp.client.ws.WebSocket
-import sttp.client.ws.internal.SimpleQueue
-import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions, WebSockets}
-import sttp.model.ws.WebSocketFrame
+import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
+import sttp.monad.MonadAsyncError
+import sttp.ws.{WebSocket, WebSocketFrame}
 
 class AsyncHttpClientZioBackend private (
     runtime: Runtime[Any],

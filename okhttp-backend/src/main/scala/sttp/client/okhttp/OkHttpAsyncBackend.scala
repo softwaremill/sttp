@@ -4,11 +4,12 @@ import java.io.IOException
 import java.util.concurrent.atomic.AtomicBoolean
 
 import okhttp3.{Call, Callback, OkHttpClient, Response => OkHttpResponse, WebSocket => OkHttpWebSocket}
-import sttp.client.monad.syntax._
-import sttp.client.monad.{Canceler, MonadAsyncError, MonadError}
+import sttp.capabilities.Streams
+import sttp.client.internal.ws.{SimpleQueue, WebSocketEvent}
+import sttp.monad.syntax._
 import sttp.client.okhttp.OkHttpBackend.EncodingHandler
-import sttp.client.ws.internal.{SimpleQueue, WebSocketEvent}
-import sttp.client.{Request, Response, Streams, ignore}
+import sttp.client.{Request, Response, ignore}
+import sttp.monad.{Canceler, MonadAsyncError, MonadError}
 
 abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](
     client: OkHttpClient,

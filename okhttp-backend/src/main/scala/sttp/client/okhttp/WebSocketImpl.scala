@@ -2,13 +2,12 @@ package sttp.client.okhttp
 
 import java.util.concurrent.atomic.AtomicBoolean
 
-import okhttp3.{WebSocketListener, WebSocket => OkHttpWebSocket, Response => OkHttpResponse}
+import okhttp3.{WebSocketListener, Response => OkHttpResponse, WebSocket => OkHttpWebSocket}
 import okio.ByteString
-import sttp.client.monad.MonadError
-import sttp.client.ws.WebSocket
-import sttp.client.ws.internal.{SimpleQueue, WebSocketEvent}
-import sttp.model.ws.{WebSocketClosed, WebSocketException, WebSocketFrame}
-import sttp.client.monad.syntax._
+import sttp.client.internal.ws.{SimpleQueue, WebSocketEvent}
+import sttp.monad.MonadError
+import sttp.monad.syntax._
+import sttp.ws.{WebSocket, WebSocketClosed, WebSocketException, WebSocketFrame}
 
 private[okhttp] class WebSocketImpl[F[_]](
     ws: OkHttpWebSocket,
@@ -20,7 +19,7 @@ private[okhttp] class WebSocketImpl[F[_]](
 
   /**
     * After receiving a close frame, no further interactions with the web socket should happen. Subsequent invocations
-    * of `receive`, as well as `send`, will fail with the [[sttp.model.ws.WebSocketClosed]] exception.
+    * of `receive`, as well as `send`, will fail with the [[sttp.ws.WebSocketClosed]] exception.
     */
   override def receive: F[WebSocketFrame] = {
     queue.poll.flatMap {

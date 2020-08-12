@@ -5,6 +5,7 @@ import java.net.http.HttpRequest
 import java.net.http.HttpRequest.{BodyPublisher, BodyPublishers}
 import java.nio.{Buffer, ByteBuffer}
 
+import sttp.capabilities.Streams
 import sttp.client.{
   BasicRequestBody,
   ByteArrayBody,
@@ -15,11 +16,10 @@ import sttp.client.{
   NoBody,
   Request,
   StreamBody,
-  Streams,
   StringBody
 }
-import sttp.client.monad.MonadError
-import sttp.client.monad.syntax._
+import sttp.monad.MonadError
+import sttp.monad.syntax._
 import sttp.model.{Header, HeaderNames, Part}
 
 import scala.collection.JavaConverters._

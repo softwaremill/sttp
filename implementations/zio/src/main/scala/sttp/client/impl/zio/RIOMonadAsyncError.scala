@@ -1,6 +1,6 @@
 package sttp.client.impl.zio
 
-import sttp.client.monad.{Canceler, MonadAsyncError}
+import sttp.monad.{Canceler, MonadAsyncError}
 import zio.{RIO, UIO}
 
 class RIOMonadAsyncError[R] extends MonadAsyncError[RIO[R, *]] {

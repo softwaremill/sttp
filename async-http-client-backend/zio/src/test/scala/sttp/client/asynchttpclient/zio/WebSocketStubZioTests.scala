@@ -5,7 +5,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import sttp.client.testing.WebSocketStub
 import sttp.client.impl.zio._
-import sttp.model.ws.WebSocketFrame
+import sttp.ws.WebSocketFrame
 
 import scala.util.{Failure, Success}
 

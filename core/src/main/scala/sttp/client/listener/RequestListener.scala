@@ -1,6 +1,6 @@
 package sttp.client.listener
 
-import sttp.client.monad.MonadError
+import sttp.monad.MonadError
 import sttp.client.{Identity, Request, Response}
 
 /**

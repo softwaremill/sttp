@@ -1,7 +1,7 @@
 package sttp.client.impl.zio
 
-import sttp.client.ws.internal.SimpleQueue
-import sttp.model.ws.WebSocketBufferFull
+import sttp.client.internal.ws.SimpleQueue
+import sttp.ws.WebSocketBufferFull
 import zio.{Queue, RIO, Runtime}
 
 class ZioSimpleQueue[R, A](queue: Queue[A], runtime: Runtime[Any]) extends SimpleQueue[RIO[R, *], A] {

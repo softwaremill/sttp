@@ -1,7 +1,7 @@
 package sttp.client
 
 import org.scalajs.dom.experimental.{BodyInit, Response => FetchResponse}
-import sttp.client.monad.FutureMonad
+import sttp.monad.FutureMonad
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.scalajs.js

@@ -1,6 +1,8 @@
 package sttp.client
 
-import sttp.client.monad.{EitherMonad, FunctionK, MapEffect, MonadError}
+import sttp.capabilities.Effect
+import sttp.client.monad.{FunctionK, MapEffect}
+import sttp.monad.{EitherMonad, MonadError}
 
 import scala.util.control.NonFatal
 

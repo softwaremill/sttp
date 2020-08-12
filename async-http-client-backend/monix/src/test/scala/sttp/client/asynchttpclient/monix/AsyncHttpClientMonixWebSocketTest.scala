@@ -3,12 +3,13 @@ package sttp.client.asynchttpclient.monix
 import monix.eval.Task
 import monix.execution.Scheduler.Implicits.global
 import monix.reactive.Observable
+import sttp.capabilities.WebSockets
 import sttp.client._
 import sttp.client.asynchttpclient.AsyncHttpClientWebSocketTest
 import sttp.client.impl.monix.{MonixStreams, TaskMonadAsyncError, convertMonixTaskToFuture}
-import sttp.client.monad.MonadError
+import sttp.monad.MonadError
 import sttp.client.testing.ConvertToFuture
-import sttp.model.ws.WebSocketFrame
+import sttp.ws.WebSocketFrame
 
 import scala.concurrent.duration.FiniteDuration
 

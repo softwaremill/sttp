@@ -9,7 +9,7 @@ import sttp.client.curl.CurlOption.{Header => _, _}
 import sttp.client.curl._
 import sttp.client.internal._
 import sttp.model._
-import sttp.client.monad.MonadError
+import sttp.monad.MonadError
 import sttp.model.{Header, Method, StatusCode}
 
 import scala.collection.immutable.Seq

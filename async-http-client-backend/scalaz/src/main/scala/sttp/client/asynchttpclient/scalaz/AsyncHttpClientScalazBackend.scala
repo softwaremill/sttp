@@ -15,11 +15,11 @@ import scalaz.concurrent.Task
 import sttp.client.asynchttpclient.{AsyncHttpClientBackend, BodyFromAHC, BodyToAHC}
 import sttp.client.impl.scalaz.TaskMonadAsyncError
 import sttp.client.internal.NoStreams
-import sttp.client.monad.MonadAsyncError
+import sttp.client.internal.ws.SimpleQueue
 import sttp.client.testing.SttpBackendStub
-import sttp.client.ws.WebSocket
-import sttp.client.ws.internal.SimpleQueue
 import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
+import sttp.monad.MonadAsyncError
+import sttp.ws.WebSocket
 
 class AsyncHttpClientScalazBackend private (
     asyncHttpClient: AsyncHttpClient,

@@ -7,9 +7,8 @@ import java.net.http.{HttpClient, HttpRequest}
 
 import sttp.client.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client.internal.NoStreams
-import sttp.client.monad.{IdMonad, MonadError}
+import sttp.client.monad.IdMonad
 import sttp.client.testing.SttpBackendStub
-import sttp.client.ws.WebSocket
 import sttp.client.{
   FollowRedirectsBackend,
   Identity,
@@ -19,6 +18,8 @@ import sttp.client.{
   SttpBackendOptions,
   SttpClientException
 }
+import sttp.monad.MonadError
+import sttp.ws.WebSocket
 
 class HttpClientSyncBackend private (
     client: HttpClient,

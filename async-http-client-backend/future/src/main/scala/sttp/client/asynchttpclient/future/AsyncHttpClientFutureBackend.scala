@@ -13,11 +13,11 @@ import org.asynchttpclient.{
 import org.reactivestreams.Publisher
 import sttp.client.asynchttpclient.{AsyncHttpClientBackend, BodyFromAHC, BodyToAHC}
 import sttp.client.internal.NoStreams
-import sttp.client.monad.{FutureMonad, MonadAsyncError}
+import sttp.client.internal.ws.SimpleQueue
 import sttp.client.testing.SttpBackendStub
-import sttp.client.ws.WebSocket
-import sttp.client.ws.internal.SimpleQueue
 import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
+import sttp.monad.{FutureMonad, MonadAsyncError}
+import sttp.ws.WebSocket
 
 import scala.concurrent.{ExecutionContext, Future}
 

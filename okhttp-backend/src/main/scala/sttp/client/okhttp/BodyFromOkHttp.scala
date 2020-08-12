@@ -2,10 +2,10 @@ package sttp.client.okhttp
 
 import java.io.InputStream
 
+import sttp.capabilities.Streams
 import sttp.client.internal.{FileHelpers, toByteArray}
-import sttp.client.monad.MonadError
-import sttp.client.monad.syntax._
-import sttp.client.ws.WebSocket
+import sttp.monad.MonadError
+import sttp.monad.syntax._
 import sttp.client.{
   BasicResponseAs,
   IgnoreResponse,
@@ -20,10 +20,9 @@ import sttp.client.{
   ResponseAsWebSocketStream,
   ResponseAsWebSocketUnsafe,
   ResponseMetadata,
-  Streams,
   WebSocketResponseAs
 }
-import sttp.model.ws.WebSocketFrame
+import sttp.ws.{WebSocket, WebSocketFrame}
 
 import scala.util.Try
 

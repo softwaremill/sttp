@@ -14,10 +14,11 @@ import okhttp3.{
   RequestBody => OkHttpRequestBody,
   Response => OkHttpResponse
 }
+import sttp.capabilities.{Effect, Streams}
 import sttp.client.SttpBackendOptions.Proxy
 import sttp.client.SttpClientException.ReadException
+import sttp.client.internal.ws.SimpleQueue
 import sttp.client.okhttp.OkHttpBackend.EncodingHandler
-import sttp.client.ws.internal.SimpleQueue
 import sttp.client.{Response, ResponseAs, SttpBackend, SttpBackendOptions, _}
 import sttp.model._
 

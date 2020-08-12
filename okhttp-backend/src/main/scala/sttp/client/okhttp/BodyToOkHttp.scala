@@ -7,6 +7,7 @@ import okhttp3.{
   RequestBody => OkHttpRequestBody
 }
 import okio.{BufferedSink, ByteString, Okio}
+import sttp.capabilities.Streams
 import sttp.client.{
   BasicRequestBody,
   ByteArrayBody,
@@ -17,7 +18,6 @@ import sttp.client.{
   NoBody,
   RequestBody,
   StreamBody,
-  Streams,
   StringBody
 }
 import sttp.model.{Header, HeaderNames, Part}

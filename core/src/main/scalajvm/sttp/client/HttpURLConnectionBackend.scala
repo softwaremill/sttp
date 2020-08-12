@@ -8,11 +8,13 @@ import java.nio.file.Files
 import java.util.concurrent.ThreadLocalRandom
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
 
+import sttp.capabilities.Effect
 import sttp.client.HttpURLConnectionBackend.EncodingHandler
 import sttp.client.internal._
-import sttp.client.monad.{IdMonad, MonadError}
+import sttp.client.monad.IdMonad
 import sttp.client.testing.SttpBackendStub
 import sttp.model.{Header, HeaderNames, StatusCode, Uri}
+import sttp.monad.MonadError
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._

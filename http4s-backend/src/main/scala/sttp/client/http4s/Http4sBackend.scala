@@ -5,7 +5,7 @@ import java.nio.charset.Charset
 
 import cats.data.NonEmptyList
 import cats.effect.concurrent.MVar
-import cats.effect.{Blocker, Concurrent, ConcurrentEffect, ContextShift, Resource}
+import cats.effect.{Blocker, Concurrent, ConcurrentEffect, ContextShift, Effect, Resource}
 import cats.implicits._
 import cats.effect.implicits._
 import fs2.{Chunk, Stream}
@@ -17,7 +17,7 @@ import sttp.client.http4s.Http4sBackend.EncodingHandler
 import sttp.client.impl.cats.CatsMonadAsyncError
 import sttp.client.impl.fs2.Fs2Streams
 import sttp.model._
-import sttp.client.monad.MonadError
+import sttp.monad.MonadError
 import sttp.client.testing.SttpBackendStub
 import sttp.client.{
   BasicRequestBody,
@@ -39,7 +39,7 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
     customizeRequest: Http4sRequest[F] => Http4sRequest[F],
     customEncodingHandler: EncodingHandler[F]
 ) extends SttpBackend[F, Fs2Streams[F]] {
-  type PE = Fs2Streams[F] with Effect[F]
+  type PE = Fs2Streams[F] with sttp.capabilities.Effect[F]
   override def send[T, R >: PE](r: Request[T, R]): F[Response[T]] =
     adjustExceptions(r) {
       val (entity, extraHeaders) = bodyToHttp4s(r, r.body)

@@ -4,7 +4,7 @@ import cats.effect.{Blocker, ContextShift, IO, Timer}
 import sttp.client.testing.ConvertToFuture
 
 import scala.concurrent.ExecutionContext
-import sttp.client.monad.MonadError
+import sttp.monad.MonadError
 
 trait CatsTestBase {
   implicit def executionContext: ExecutionContext

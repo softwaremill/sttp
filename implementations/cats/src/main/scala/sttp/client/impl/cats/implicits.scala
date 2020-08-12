@@ -2,8 +2,10 @@ package sttp.client.impl.cats
 
 import cats.effect.Concurrent
 import cats.~>
-import sttp.client.monad.{FunctionK, MapEffect, MonadAsyncError, MonadError}
-import sttp.client.{Effect, Identity, Request, Response, SttpBackend}
+import sttp.capabilities.Effect
+import sttp.client.monad.{FunctionK, MapEffect}
+import sttp.client.{Identity, Request, Response, SttpBackend}
+import sttp.monad.{MonadAsyncError, MonadError}
 
 object implicits extends CatsImplicits
 
@@ -27,7 +29,7 @@ final class MappableSttpBackend[F[_], P] private[cats] (
     new MappedKSttpBackend(sttpBackend, f, g, implicitly)
 }
 
-private[cats] final class MappedKSttpBackend[F[_], +P, WS_HANDLER[_], G[_]](
+private[cats] final class MappedKSttpBackend[F[_], +P, G[_]](
     wrapped: SttpBackend[F, P],
     f: F ~> G,
     g: G ~> F,

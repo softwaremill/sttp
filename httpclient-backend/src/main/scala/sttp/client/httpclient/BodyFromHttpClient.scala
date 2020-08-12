@@ -2,6 +2,7 @@ package sttp.client.httpclient
 
 import java.io.InputStream
 
+import sttp.capabilities.Streams
 import sttp.client.internal.FileHelpers
 import sttp.client.{
   IgnoreResponse,
@@ -16,13 +17,11 @@ import sttp.client.{
   ResponseAsWebSocketStream,
   ResponseAsWebSocketUnsafe,
   ResponseMetadata,
-  Streams,
   WebSocketResponseAs
 }
-import sttp.client.monad.MonadError
-import sttp.client.ws.WebSocket
-import sttp.client.monad.syntax._
-import sttp.model.ws.WebSocketFrame
+import sttp.monad.MonadError
+import sttp.monad.syntax._
+import sttp.ws.{WebSocket, WebSocketFrame}
 
 private[httpclient] trait BodyFromHttpClient[F[_], S] {
   val streams: Streams[S]

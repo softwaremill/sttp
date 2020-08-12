@@ -2,6 +2,7 @@ package sttp.client.asynchttpclient
 
 import sttp.client._
 import _root_.zio._
+import sttp.capabilities.{Effect, WebSockets}
 import sttp.client.impl.zio.ZioStreams
 
 package object zio {

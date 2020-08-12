@@ -4,8 +4,7 @@ import cats.effect.ConcurrentEffect
 import cats.effect.concurrent.Ref
 import cats.effect.implicits._
 import fs2.{Pipe, Stream}
-import sttp.client.ws.WebSocket
-import sttp.model.ws.WebSocketFrame
+import sttp.ws.{WebSocket, WebSocketFrame}
 
 object Fs2WebSockets {
 

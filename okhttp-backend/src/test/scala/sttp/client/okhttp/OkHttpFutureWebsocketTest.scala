@@ -1,9 +1,10 @@
 package sttp.client.okhttp
 
+import sttp.capabilities.WebSockets
 import sttp.client._
-import sttp.client.monad.{FutureMonad, MonadError}
 import sttp.client.testing.ConvertToFuture
 import sttp.client.testing.websocket.{WebSocketBufferOverflowTest, WebSocketTest}
+import sttp.monad.{FutureMonad, MonadError}
 
 import scala.concurrent.duration._
 import scala.concurrent.{Future, blocking}

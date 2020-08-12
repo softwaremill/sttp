@@ -7,11 +7,10 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.BiConsumer
 import java.net.http.{WebSocket => JWebSocket}
 
-import sttp.client.monad.{Canceler, MonadAsyncError, MonadError}
-import sttp.client.monad.syntax._
-import sttp.client.ws.WebSocket
-import sttp.client.ws.internal.{SimpleQueue, WebSocketEvent}
-import sttp.model.ws.{WebSocketClosed, WebSocketFrame}
+import sttp.client.internal.ws.{SimpleQueue, WebSocketEvent}
+import sttp.monad.{Canceler, MonadAsyncError, MonadError}
+import sttp.monad.syntax._
+import sttp.ws.{WebSocket, WebSocketClosed, WebSocketFrame}
 
 private[httpclient] class WebSocketImpl[F[_]](
     ws: JWebSocket,

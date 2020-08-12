@@ -4,7 +4,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.freespec.AsyncFreeSpecLike
 import org.scalatest.matchers.should.Matchers
 import sttp.client._
-import sttp.client.monad.MonadError
+import sttp.monad.MonadError
 
 import sttp.client.testing.HttpTest.endpoint
 
@@ -19,7 +19,7 @@ trait CancelTest[F[_], P] extends AsyncFreeSpecLike with Matchers with ToFutureW
   "cancel" - {
     "a request in progress" in {
       implicit val monad: MonadError[F] = backend.responseMonad
-      import sttp.client.monad.syntax._
+      import sttp.monad.syntax._
 
       val req = basicRequest
         .get(uri"$endpoint/timeout")

@@ -11,15 +11,15 @@ import monix.nio.file._
 import monix.reactive.Observable
 import org.asynchttpclient._
 import org.reactivestreams.Publisher
+import sttp.capabilities.WebSockets
 import sttp.client.asynchttpclient.{AsyncHttpClientBackend, BodyFromAHC, BodyToAHC}
 import sttp.client.impl.monix.{MonixSimpleQueue, MonixStreams, MonixWebSockets, TaskMonadAsyncError}
 import sttp.client.internal._
-import sttp.client.monad.MonadAsyncError
+import sttp.client.internal.ws.SimpleQueue
 import sttp.client.testing.SttpBackendStub
-import sttp.client.ws.WebSocket
-import sttp.client.ws.internal.SimpleQueue
-import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions, WebSockets}
-import sttp.model.ws.WebSocketFrame
+import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
+import sttp.monad.MonadAsyncError
+import sttp.ws.{WebSocket, WebSocketFrame}
 
 class AsyncHttpClientMonixBackend private (
     asyncHttpClient: AsyncHttpClient,

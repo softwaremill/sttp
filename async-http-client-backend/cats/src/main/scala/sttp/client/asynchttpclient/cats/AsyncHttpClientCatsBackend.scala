@@ -19,10 +19,10 @@ import sttp.client.impl.cats.CatsMonadAsyncError
 import sttp.client.internal.{FileHelpers, NoStreams}
 import sttp.client.{FollowRedirectsBackend, Request, Response, SttpBackend, SttpBackendOptions}
 import cats.implicits._
-import sttp.client.monad.MonadAsyncError
+import sttp.client.internal.ws.SimpleQueue
 import sttp.client.testing.SttpBackendStub
-import sttp.client.ws.WebSocket
-import sttp.client.ws.internal.SimpleQueue
+import sttp.monad.MonadAsyncError
+import sttp.ws.WebSocket
 
 class AsyncHttpClientCatsBackend[F[_]: Concurrent: ContextShift] private (
     asyncHttpClient: AsyncHttpClient,
@@ -37,7 +37,7 @@ class AsyncHttpClientCatsBackend[F[_]: Concurrent: ContextShift] private (
 
   override val streams: NoStreams = NoStreams
 
-  override def send[T, R >: Any with sttp.client.Effect[F]](r: Request[T, R]): F[Response[T]] = {
+  override def send[T, R >: Any with sttp.capabilities.Effect[F]](r: Request[T, R]): F[Response[T]] = {
     super.send(r).guarantee(implicitly[ContextShift[F]].shift)
   }
 

@@ -1,10 +1,10 @@
 package sttp.client
 
+import sttp.capabilities.{Effect, Streams, WebSockets}
 import sttp.client.internal._
-import sttp.client.ws.WebSocket
 import sttp.model.StatusCode
 import sttp.model.internal.Rfc3986
-import sttp.model.ws.WebSocketFrame
+import sttp.ws.{WebSocket, WebSocketFrame}
 
 import scala.collection.immutable.Seq
 import scala.util.{Failure, Success, Try}

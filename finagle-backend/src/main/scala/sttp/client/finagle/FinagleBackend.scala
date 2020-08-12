@@ -6,7 +6,6 @@ import sttp.client.{
   BasicRequestBody,
   ByteArrayBody,
   ByteBufferBody,
-  Effect,
   FileBody,
   FollowRedirectsBackend,
   IgnoreResponse,
@@ -28,7 +27,7 @@ import sttp.client.{
   SttpClientException
 }
 import com.twitter.util.{Future => TFuture}
-import sttp.client.monad.MonadError
+import sttp.monad.MonadError
 import com.twitter.finagle.http.{
   FileElement,
   FormElement,
@@ -43,6 +42,7 @@ import com.twitter.util
 import sttp.client.internal.FileHelpers
 import sttp.model.{Header, Method, Part, StatusCode, Uri}
 import com.twitter.util.Duration
+import sttp.capabilities.Effect
 import sttp.client.testing.SttpBackendStub
 
 import scala.io.Source

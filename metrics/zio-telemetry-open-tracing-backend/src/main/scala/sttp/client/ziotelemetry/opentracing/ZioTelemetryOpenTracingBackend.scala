@@ -1,11 +1,13 @@
 package sttp.client.ziotelemetry.opentracing
 
 import io.opentracing.propagation.{Format, TextMapAdapter}
+import sttp.capabilities.Effect
 
 import scala.jdk.CollectionConverters._
 import sttp.client._
 import sttp.client.impl.zio.RIOMonadAsyncError
-import sttp.client.monad.{FunctionK, MapEffect, MonadError}
+import sttp.client.monad.{FunctionK, MapEffect}
+import sttp.monad.MonadError
 import zio._
 import zio.telemetry.opentracing._
 

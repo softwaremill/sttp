@@ -12,16 +12,16 @@ import fs2.interop.reactivestreams._
 import io.netty.buffer.{ByteBuf, Unpooled}
 import org.asynchttpclient.{Request => _, Response => _, _}
 import org.reactivestreams.Publisher
+import sttp.capabilities.WebSockets
 import sttp.client.asynchttpclient.{AsyncHttpClientBackend, BodyFromAHC, BodyToAHC}
 import sttp.client.impl.cats.CatsMonadAsyncError
 import sttp.client.impl.fs2.{Fs2SimpleQueue, Fs2Streams, Fs2WebSockets}
 import sttp.client.internal._
-import sttp.client.monad.MonadAsyncError
+import sttp.client.internal.ws.SimpleQueue
 import sttp.client.testing.SttpBackendStub
-import sttp.client.ws.WebSocket
-import sttp.client.ws.internal.SimpleQueue
 import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions, _}
-import sttp.model.ws.WebSocketFrame
+import sttp.monad.MonadAsyncError
+import sttp.ws.{WebSocket, WebSocketFrame}
 
 import scala.concurrent.ExecutionContext
 
@@ -39,7 +39,7 @@ class AsyncHttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
 
   override val streams: Fs2Streams[F] = Fs2Streams[F]
 
-  override def send[T, R >: sttp.client.Effect[F] with Fs2Streams[F] with WebSockets](
+  override def send[T, R >: sttp.capabilities.Effect[F] with Fs2Streams[F] with WebSockets](
       r: Request[T, R]
   ): F[Response[T]] = {
     super.send(r).guarantee(implicitly[ContextShift[F]].shift)

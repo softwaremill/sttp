@@ -1,8 +1,8 @@
 package sttp.client.impl.scalaz
 
-import sttp.client.monad.{Canceler, MonadAsyncError}
 import scalaz.concurrent.Task
 import scalaz.{-\/, \/-}
+import sttp.monad.{Canceler, MonadAsyncError}
 
 object TaskMonadAsyncError extends MonadAsyncError[Task] {
   override def unit[T](t: T): Task[T] = Task.point(t)

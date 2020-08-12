@@ -1,6 +1,6 @@
 package sttp.client.httpclient
 
-import java.io.{ByteArrayInputStream, InputStream}
+import java.io.InputStream
 import java.net.http.HttpResponse.BodyHandlers
 import java.net.http.{HttpClient, HttpRequest, HttpResponse, WebSocketHandshakeException}
 import java.util.concurrent.CompletionException
@@ -8,11 +8,12 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 import sttp.client.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client.internal.emptyInputStream
-import sttp.client.monad.syntax._
-import sttp.client.monad.{Canceler, MonadAsyncError, MonadError}
-import sttp.client.ws.internal.{SimpleQueue, WebSocketEvent}
+import sttp.client.internal.ws.{SimpleQueue, WebSocketEvent}
+import sttp.monad.syntax._
+import sttp.monad.{Canceler, MonadError}
 import sttp.client.{Request, Response, SttpClientException}
 import sttp.model.StatusCode
+import sttp.monad.MonadAsyncError
 
 abstract class HttpClientAsyncBackend[F[_], S, P](
     client: HttpClient,

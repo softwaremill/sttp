@@ -1,7 +1,7 @@
 package sttp.client.impl.zio
 
+import sttp.capabilities.Streams
 import zio.stream.{Stream, Transducer, ZStream, ZTransducer}
-import sttp.client.Streams
 import zio.blocking.Blocking
 
 trait ZioStreams extends Streams[ZioStreams] {

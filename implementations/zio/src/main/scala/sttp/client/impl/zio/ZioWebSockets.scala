@@ -1,7 +1,6 @@
 package sttp.client.impl.zio
 
-import sttp.client.ws.WebSocket
-import sttp.model.ws.WebSocketFrame
+import sttp.ws.{WebSocket, WebSocketFrame}
 import zio.{Ref, ZIO}
 import zio.stream.{Stream, ZTransducer}
 

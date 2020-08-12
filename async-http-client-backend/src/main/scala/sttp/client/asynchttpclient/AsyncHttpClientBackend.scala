@@ -21,11 +21,12 @@ import org.asynchttpclient.{
   Response => AsyncResponse
 }
 import org.reactivestreams.{Publisher, Subscriber, Subscription}
+import sttp.capabilities.{Effect, Streams}
 import sttp.client
 import sttp.client.SttpBackendOptions.ProxyType.{Http, Socks}
-import sttp.client.monad.syntax._
-import sttp.client.monad.{Canceler, MonadAsyncError, MonadError}
-import sttp.client.ws.internal.{SimpleQueue, WebSocketEvent}
+import sttp.client.internal.ws.{SimpleQueue, WebSocketEvent}
+import sttp.monad.syntax._
+import sttp.monad.{Canceler, MonadAsyncError, MonadError}
 import sttp.client.{Response, ResponseAs, SttpBackend, SttpBackendOptions, _}
 import sttp.model._
 

@@ -3,13 +3,14 @@ package sttp.client.okhttp
 import java.io.InputStream
 
 import okhttp3.{OkHttpClient, RequestBody => OkHttpRequestBody}
+import sttp.capabilities.{Streams, WebSockets}
 import sttp.client.internal.NoStreams
-import sttp.client.monad.{FutureMonad, MonadError}
+import sttp.client.internal.ws.{FutureSimpleQueue, SimpleQueue}
 import sttp.client.okhttp.OkHttpBackend.EncodingHandler
 import sttp.client.testing.SttpBackendStub
-import sttp.client.ws.WebSocket
-import sttp.client.ws.internal.{SimpleQueue, FutureSimpleQueue}
-import sttp.client.{DefaultReadTimeout, FollowRedirectsBackend, Streams, SttpBackend, SttpBackendOptions, WebSockets}
+import sttp.client.{DefaultReadTimeout, FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
+import sttp.monad.{FutureMonad, MonadError}
+import sttp.ws.WebSocket
 
 import scala.concurrent.{ExecutionContext, Future}
 

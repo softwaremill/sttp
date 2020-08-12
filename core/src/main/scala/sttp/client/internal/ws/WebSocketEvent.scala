@@ -1,6 +1,6 @@
-package sttp.client.ws.internal
+package sttp.client.internal.ws
 
-import sttp.model.ws.WebSocketFrame
+import sttp.ws.WebSocketFrame
 
 sealed trait WebSocketEvent
 object WebSocketEvent {

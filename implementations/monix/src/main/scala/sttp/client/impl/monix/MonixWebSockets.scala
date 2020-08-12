@@ -3,8 +3,7 @@ package sttp.client.impl.monix
 import monix.eval.Task
 import monix.execution.cancelables.BooleanCancelable
 import monix.reactive.Observable
-import sttp.client.ws.WebSocket
-import sttp.model.ws.WebSocketFrame
+import sttp.ws.{WebSocket, WebSocketFrame}
 
 object MonixWebSockets {
   def compilePipe(

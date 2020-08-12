@@ -9,8 +9,6 @@ import akka.http.scaladsl.model.ws.{BinaryMessage, Message, TextMessage}
 import akka.stream.{Materializer, OverflowStrategy, QueueOfferResult}
 import akka.stream.scaladsl.{FileIO, Flow, Sink, SinkQueueWithCancel, Source, SourceQueueWithComplete}
 import akka.util.ByteString
-import sttp.client.monad.{FutureMonad, MonadError}
-import sttp.client.ws.WebSocket
 import sttp.client.{
   IgnoreResponse,
   MappedResponseAs,
@@ -27,7 +25,8 @@ import sttp.client.{
   WebSocketResponseAs
 }
 import sttp.model.StatusCode
-import sttp.model.ws.{WebSocketBufferFull, WebSocketClosed, WebSocketFrame}
+import sttp.monad.{FutureMonad, MonadError}
+import sttp.ws.{WebSocket, WebSocketBufferFull, WebSocketClosed, WebSocketFrame}
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.Failure

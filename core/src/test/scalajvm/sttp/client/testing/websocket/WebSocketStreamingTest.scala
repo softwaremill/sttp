@@ -5,13 +5,14 @@ import java.util.concurrent.LinkedBlockingQueue
 import org.scalatest.Suite
 import org.scalatest.flatspec.AsyncFlatSpecLike
 import org.scalatest.matchers.should.Matchers
-import sttp.client.monad.MonadError
+import sttp.capabilities.{Streams, WebSockets}
+import sttp.monad.MonadError
 import sttp.client.testing.HttpTest.wsEndpoint
 import sttp.client.testing.{ConvertToFuture, ToFutureWrapper}
-import sttp.client.{Streams, SttpBackend, WebSockets, asWebSocketStreamAlways, basicRequest}
-import sttp.model.ws.WebSocketFrame
+import sttp.client.{SttpBackend, asWebSocketStreamAlways, basicRequest}
 import sttp.client._
-import sttp.client.monad.syntax._
+import sttp.monad.syntax._
+import sttp.ws.WebSocketFrame
 
 import scala.collection.JavaConverters._
 

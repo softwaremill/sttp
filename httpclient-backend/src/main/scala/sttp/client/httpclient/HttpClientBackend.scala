@@ -8,23 +8,14 @@ import java.util.concurrent.{Executor, ThreadPoolExecutor}
 import java.util.function
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
 
+import sttp.capabilities.{Effect, Streams}
 import sttp.client.SttpBackendOptions.Proxy
 import sttp.client.httpclient.HttpClientBackend.EncodingHandler
-import sttp.client.monad.MonadError
-import sttp.client.monad.syntax._
-import sttp.client.ws.WebSocket
-import sttp.client.{
-  Effect,
-  MultipartBody,
-  Request,
-  Response,
-  ResponseAs,
-  ResponseMetadata,
-  Streams,
-  SttpBackend,
-  SttpBackendOptions
-}
+import sttp.monad.MonadError
+import sttp.monad.syntax._
+import sttp.client.{MultipartBody, Request, Response, ResponseAs, ResponseMetadata, SttpBackend, SttpBackendOptions}
 import sttp.model._
+import sttp.ws.WebSocket
 
 import scala.collection.JavaConverters._
 

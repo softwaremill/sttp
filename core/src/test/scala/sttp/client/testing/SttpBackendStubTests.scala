@@ -8,8 +8,9 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import sttp.client._
 import sttp.client.internal._
-import sttp.client.monad.{FutureMonad, IdMonad, TryMonad}
+import sttp.client.monad.IdMonad
 import sttp.model._
+import sttp.monad.{FutureMonad, TryMonad}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

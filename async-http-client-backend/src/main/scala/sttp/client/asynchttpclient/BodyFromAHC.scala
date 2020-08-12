@@ -4,6 +4,7 @@ import java.io.{ByteArrayInputStream, File}
 import java.nio.ByteBuffer
 
 import org.reactivestreams.Publisher
+import sttp.capabilities.Streams
 import sttp.client.{
   IgnoreResponse,
   MappedResponseAs,
@@ -17,14 +18,12 @@ import sttp.client.{
   ResponseAsWebSocketStream,
   ResponseAsWebSocketUnsafe,
   ResponseMetadata,
-  Streams,
   WebSocketResponseAs
 }
 import sttp.client.internal.FileHelpers
-import sttp.client.monad.{Canceler, MonadAsyncError}
-import sttp.client.monad.syntax._
-import sttp.client.ws.WebSocket
-import sttp.model.ws.WebSocketFrame
+import sttp.monad.{Canceler, MonadAsyncError}
+import sttp.monad.syntax._
+import sttp.ws.{WebSocket, WebSocketFrame}
 
 private[asynchttpclient] trait BodyFromAHC[F[_], S] {
   val streams: Streams[S]

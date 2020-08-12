@@ -6,8 +6,8 @@ import org.scalatest.{BeforeAndAfterAll, SuiteMixin}
 import org.scalatest.freespec.AsyncFreeSpecLike
 import StreamingTest._
 import sttp.client.internal.Utf8
-
 import org.scalatest.matchers.should.Matchers
+import sttp.capabilities.{Effect, Streams}
 import sttp.client.testing.HttpTest.endpoint
 
 // TODO: change to `extends AsyncFreeSpec` when https://github.com/scalatest/scalatest/issues/1802 is fixed

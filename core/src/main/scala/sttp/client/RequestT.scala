@@ -4,6 +4,7 @@ import java.io.InputStream
 import java.nio.ByteBuffer
 import java.util.Base64
 
+import sttp.capabilities.{Effect, Streams}
 import sttp.client.internal.DigestAuthenticator.DigestAuthData
 import sttp.client.internal._
 import sttp.client.internal.{SttpFile, ToCurlConverter}

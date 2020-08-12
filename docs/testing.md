@@ -193,7 +193,7 @@ If you actually want a file to be written you can set up the stub like this:
 import org.apache.commons.io.FileUtils
 import cats.effect.IO
 import sttp.client.impl.cats.implicits._
-import sttp.client.monad.MonadError
+import sttp.monad.MonadError
 
 val sourceFile = new File("path/to/file.ext")
 val destinationFile = new File("path/to/file.ext")

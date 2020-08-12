@@ -2,8 +2,8 @@ package sttp.client.impl.fs2
 
 import cats.effect.{Effect, IO}
 import fs2.concurrent.InspectableQueue
-import sttp.client.ws.internal.SimpleQueue
-import sttp.model.ws.WebSocketBufferFull
+import sttp.client.internal.ws.SimpleQueue
+import sttp.ws.WebSocketBufferFull
 
 class Fs2SimpleQueue[F[_], A](queue: InspectableQueue[F, A])(implicit F: Effect[F]) extends SimpleQueue[F, A] {
   override def offer(t: A): Unit = {

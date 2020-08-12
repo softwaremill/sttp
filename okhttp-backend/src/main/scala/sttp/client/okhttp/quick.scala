@@ -1,5 +1,6 @@
 package sttp.client.okhttp
 
+import sttp.capabilities.WebSockets
 import sttp.client._
 
 object quick extends SttpApi {

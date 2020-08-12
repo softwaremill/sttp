@@ -4,11 +4,10 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 import io.netty.util.concurrent.{Future, FutureListener}
 import org.asynchttpclient.ws.{WebSocket => AHCWebSocket, WebSocketListener => AHCWebSocketListener}
-import sttp.client.monad.syntax._
-import sttp.client.monad.{Canceler, MonadAsyncError}
-import sttp.client.ws.WebSocket
-import sttp.client.ws.internal.{SimpleQueue, WebSocketEvent}
-import sttp.model.ws.{WebSocketClosed, WebSocketFrame}
+import sttp.client.internal.ws.{SimpleQueue, WebSocketEvent}
+import sttp.monad.syntax._
+import sttp.monad.{Canceler, MonadAsyncError}
+import sttp.ws.{WebSocket, WebSocketClosed, WebSocketFrame}
 
 private[asynchttpclient] class WebSocketImpl[F[_]](
     ws: AHCWebSocket,

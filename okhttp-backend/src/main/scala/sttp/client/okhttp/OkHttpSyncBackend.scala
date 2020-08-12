@@ -1,29 +1,28 @@
 package sttp.client.okhttp
 
-import java.io.{ByteArrayInputStream, InputStream}
+import java.io.InputStream
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.atomic.AtomicBoolean
 
 import okhttp3.{OkHttpClient, RequestBody => OkHttpRequestBody}
+import sttp.capabilities.{Streams, WebSockets}
 import sttp.client.internal.NoStreams
-import sttp.client.monad.{IdMonad, MonadError}
+import sttp.client.internal.ws.{SimpleQueue, SyncQueue, WebSocketEvent}
+import sttp.client.monad.IdMonad
 import sttp.client.okhttp.OkHttpBackend.EncodingHandler
 import sttp.client.testing.SttpBackendStub
-import sttp.client.ws.WebSocket
-import sttp.client.ws.internal.{SimpleQueue, SyncQueue, WebSocketEvent}
 import sttp.client.{
   DefaultReadTimeout,
   FollowRedirectsBackend,
   Identity,
   Request,
   Response,
-  Streams,
   SttpBackend,
   SttpBackendOptions,
-  SttpClientException,
-  WebSockets,
   ignore
 }
+import sttp.monad.MonadError
+import sttp.ws.WebSocket
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future, blocking}

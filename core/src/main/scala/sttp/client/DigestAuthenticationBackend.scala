@@ -1,10 +1,11 @@
 package sttp.client
 
+import sttp.capabilities.Effect
 import sttp.client.DigestAuthenticationBackend._
 import sttp.client.internal.DigestAuthenticator
 import sttp.client.internal.DigestAuthenticator.DigestAuthData
-import sttp.client.monad.MonadError
-import sttp.client.monad.syntax._
+import sttp.monad.MonadError
+import sttp.monad.syntax._
 import sttp.model.Header
 
 class DigestAuthenticationBackend[F[_], P](

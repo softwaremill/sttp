@@ -12,12 +12,13 @@ import akka.http.scaladsl.model.{StatusCode => _, _}
 import akka.http.scaladsl.settings.ConnectionPoolSettings
 import akka.http.scaladsl.{ClientTransport, Http, HttpsConnectionContext}
 import akka.stream.scaladsl.Flow
+import sttp.capabilities.{Effect, WebSockets}
 import sttp.client
 import sttp.client.akkahttp.AkkaHttpBackend.EncodingHandler
-import sttp.client.monad.{FutureMonad, MonadError}
 import sttp.client.testing.SttpBackendStub
 import sttp.client.{FollowRedirectsBackend, Response, SttpBackend, SttpBackendOptions, _}
 import sttp.model.StatusCode
+import sttp.monad.{FutureMonad, MonadError}
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 

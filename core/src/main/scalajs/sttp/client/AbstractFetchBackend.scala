@@ -21,10 +21,11 @@ import org.scalajs.dom.experimental.{
   Response => FetchResponse
 }
 import org.scalajs.dom.raw.{Blob, BlobPropertyBag}
+import sttp.capabilities.{Effect, Streams}
 import sttp.client.dom.experimental.{AbortController, FilePropertyBag, File => DomFile}
 import sttp.client.internal.{SttpFile, _}
-import sttp.client.monad.MonadError
-import sttp.client.monad.syntax._
+import sttp.monad.MonadError
+import sttp.monad.syntax._
 import sttp.model.{Header, StatusCode}
 
 import scala.collection.immutable.Seq
@@ -91,31 +92,19 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
       val rredirect = if (request.options.followRedirects) RequestRedirect.follow else RequestRedirect.manual
 
       val requestInitStatic = new RequestInit() {
-        var method: js.UndefOr[HttpMethod] = request.method.method.asInstanceOf[HttpMethod]
-
-        var headers: js.UndefOr[HeadersInit] = rheaders
-
-        var body: js.UndefOr[BodyInit] = rbody
-
-        var referrer: js.UndefOr[String] = js.undefined
-
-        var referrerPolicy: js.UndefOr[ReferrerPolicy] = js.undefined
-
-        var mode: js.UndefOr[RequestMode] = options.mode.orUndefined
-
-        var credentials: js.UndefOr[RequestCredentials] = options.credentials.orUndefined
-
-        var cache: js.UndefOr[RequestCache] = js.undefined
-
-        var redirect: js.UndefOr[RequestRedirect] = rredirect
-
-        var integrity: js.UndefOr[String] = js.undefined
-
-        var keepalive: js.UndefOr[Boolean] = js.undefined
-
-        var signal: js.UndefOr[AbortSignal] = js.undefined
-
-        var window: js.UndefOr[Null] = js.undefined
+        method = request.method.method.asInstanceOf[HttpMethod]
+        headers = rheaders
+        body = rbody
+        referrer = js.undefined
+        referrerPolicy = js.undefined
+        mode = options.mode.orUndefined
+        credentials = options.credentials.orUndefined
+        cache = js.undefined
+        redirect = rredirect
+        integrity = js.undefined
+        keepalive = js.undefined
+        signal = js.undefined
+        window = js.undefined
       }
 
       val requestInitDynamic = requestInitStatic.asInstanceOf[js.Dynamic]

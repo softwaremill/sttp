@@ -2,8 +2,7 @@ package sttp.client.examples
 
 import sttp.client._
 import sttp.client.asynchttpclient.zio._
-import sttp.client.ws.WebSocket
-import sttp.model.ws.WebSocketFrame
+import sttp.ws.{WebSocket, WebSocketFrame}
 import zio._
 import zio.console.Console
 

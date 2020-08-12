@@ -3,7 +3,7 @@ package sttp.client.httpclient.fs2
 import cats.effect.IO
 import sttp.client.impl.fs2.Fs2Streams
 import sttp.client.testing.websocket.{WebSocketStreamingTest, WebSocketTest}
-import sttp.model.ws.WebSocketFrame
+import sttp.ws.WebSocketFrame
 
 class HttpClientFs2WebSocketTest
     extends WebSocketTest[IO]

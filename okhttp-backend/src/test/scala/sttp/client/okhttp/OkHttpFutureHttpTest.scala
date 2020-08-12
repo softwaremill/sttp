@@ -1,6 +1,7 @@
 package sttp.client.okhttp
 
-import sttp.client.{SttpBackend, WebSockets}
+import sttp.capabilities.WebSockets
+import sttp.client.SttpBackend
 import sttp.client.testing.{ConvertToFuture, HttpTest}
 
 import scala.concurrent.Future

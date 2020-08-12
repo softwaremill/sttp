@@ -4,14 +4,16 @@ import java.nio.channels.ClosedChannelException
 
 import org.scalatest.Suite
 import org.scalatest.flatspec.AsyncFlatSpecLike
+import sttp.capabilities.WebSockets
 import sttp.client.testing.HttpTest.wsEndpoint
-import sttp.client.ws.WebSocket
 import sttp.client._
-import sttp.client.monad.MonadError
+import sttp.monad.MonadError
 import sttp.client.testing.ConvertToFuture
+
 import scala.concurrent.duration._
 import scala.concurrent.duration.FiniteDuration
-import sttp.client.monad.syntax._
+import sttp.monad.syntax._
+import sttp.ws.WebSocket
 
 trait WebSocketBufferOverflowTest[F[_]] { outer: Suite with AsyncFlatSpecLike with WebSocketTest[F] =>
   val backend: SttpBackend[F, WebSockets]

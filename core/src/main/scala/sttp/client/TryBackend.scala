@@ -1,6 +1,8 @@
 package sttp.client
 
-import sttp.client.monad.{FunctionK, MapEffect, MonadError, TryMonad}
+import sttp.capabilities.Effect
+import sttp.client.monad.{FunctionK, MapEffect}
+import sttp.monad.{MonadError, TryMonad}
 
 import scala.util.Try
 

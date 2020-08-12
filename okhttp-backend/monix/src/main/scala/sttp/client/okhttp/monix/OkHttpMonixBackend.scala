@@ -12,15 +12,15 @@ import monix.reactive.Observable
 import monix.reactive.observers.Subscriber
 import okhttp3.{MediaType, OkHttpClient, RequestBody => OkHttpRequestBody}
 import okio.BufferedSink
+import sttp.capabilities.WebSockets
 import sttp.client.impl.monix.{MonixSimpleQueue, MonixStreams, MonixWebSockets, TaskMonadAsyncError}
-import sttp.client.monad.MonadError
+import sttp.client.internal.ws.SimpleQueue
+import sttp.monad.MonadError
 import sttp.client.okhttp.OkHttpBackend.EncodingHandler
 import sttp.client.okhttp.{BodyFromOkHttp, BodyToOkHttp, OkHttpAsyncBackend, OkHttpBackend}
 import sttp.client.testing.SttpBackendStub
-import sttp.client.ws.WebSocket
-import sttp.client.ws.internal.SimpleQueue
 import sttp.client.{SttpBackend, _}
-import sttp.model.ws.WebSocketFrame
+import sttp.ws.{WebSocket, WebSocketFrame}
 
 import scala.concurrent.Future
 

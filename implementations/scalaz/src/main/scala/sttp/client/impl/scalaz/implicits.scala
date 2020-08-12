@@ -1,8 +1,10 @@
 package sttp.client.impl.scalaz
 
 import scalaz.~>
-import sttp.client.monad.{FunctionK, MapEffect, MonadError}
-import sttp.client.{Effect, Identity, Request, Response, SttpBackend}
+import sttp.capabilities.Effect
+import sttp.client.monad.{FunctionK, MapEffect}
+import sttp.client.{Identity, Request, Response, SttpBackend}
+import sttp.monad.MonadError
 
 object implicits extends ScalazImplicits
 
@@ -19,7 +21,7 @@ final class MappableSttpBackend[F[_], P] private[scalaz] (
     new MappedKSttpBackend(sttpBackend, f, g, implicitly)
 }
 
-private[scalaz] final class MappedKSttpBackend[F[_], +P, WS_HANDLER[_], G[_]](
+private[scalaz] final class MappedKSttpBackend[F[_], +P, G[_]](
     wrapped: SttpBackend[F, P],
     f: F ~> G,
     g: G ~> F,

@@ -4,9 +4,10 @@ import io.opentracing.tag.Tags
 import io.opentracing.{Span, Tracer}
 import io.opentracing.propagation.Format
 import io.opentracing.Tracer.SpanBuilder
-import sttp.client.monad.MonadError
-import sttp.client.{Effect, FollowRedirectsBackend, Request, Response, SttpBackend}
-import sttp.client.monad.syntax._
+import sttp.capabilities.Effect
+import sttp.monad.MonadError
+import sttp.monad.syntax._
+import sttp.client.{FollowRedirectsBackend, Request, Response, SttpBackend}
 import sttp.client.opentracing.OpenTracingBackend._
 
 import scala.collection.JavaConverters._

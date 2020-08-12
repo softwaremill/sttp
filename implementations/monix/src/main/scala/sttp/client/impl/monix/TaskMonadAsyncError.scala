@@ -1,7 +1,7 @@
 package sttp.client.impl.monix
 
 import monix.eval.Task
-import sttp.client.monad.{Canceler, MonadAsyncError}
+import sttp.monad.{Canceler, MonadAsyncError}
 
 import scala.util.{Failure, Success}
 

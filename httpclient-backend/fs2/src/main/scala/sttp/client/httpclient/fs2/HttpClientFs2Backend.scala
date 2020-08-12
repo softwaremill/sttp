@@ -11,16 +11,16 @@ import fs2.concurrent.InspectableQueue
 import fs2.{Pipe, Stream}
 import fs2.interop.reactivestreams._
 import org.reactivestreams.FlowAdapters
+import sttp.capabilities.WebSockets
 import sttp.client.httpclient.HttpClientBackend.EncodingHandler
-import sttp.client.{FollowRedirectsBackend, Request, Response, SttpBackend, SttpBackendOptions, WebSockets}
+import sttp.client.{FollowRedirectsBackend, Request, Response, SttpBackend, SttpBackendOptions}
 import sttp.client.httpclient.{BodyFromHttpClient, BodyToHttpClient, HttpClientAsyncBackend, HttpClientBackend}
 import sttp.client.impl.cats.implicits._
 import sttp.client.impl.fs2.{Fs2SimpleQueue, Fs2Streams, Fs2WebSockets}
-import sttp.client.monad.MonadError
+import sttp.client.internal.ws.SimpleQueue
+import sttp.monad.MonadError
 import sttp.client.testing.SttpBackendStub
-import sttp.client.ws.WebSocket
-import sttp.client.ws.internal.SimpleQueue
-import sttp.model.ws.WebSocketFrame
+import sttp.ws.{WebSocket, WebSocketFrame}
 
 class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
     client: HttpClient,

@@ -5,14 +5,14 @@ import org.scalatest.concurrent.{Signaler, ThreadSignaler, TimeLimits}
 import org.scalatest.flatspec.AsyncFlatSpecLike
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.{Seconds, Span}
+import sttp.capabilities.WebSockets
 import sttp.client._
 import sttp.client.SttpClientException.ReadException
-import sttp.client.monad.MonadError
-import sttp.client.monad.syntax._
+import sttp.monad.MonadError
+import sttp.monad.syntax._
 import sttp.client.testing.{ConvertToFuture, ToFutureWrapper}
 import sttp.client.testing.HttpTest.wsEndpoint
-import sttp.client.ws.WebSocket
-import sttp.model.ws.WebSocketFrame
+import sttp.ws.{WebSocket, WebSocketFrame}
 
 abstract class WebSocketTest[F[_]]
     extends SuiteMixin

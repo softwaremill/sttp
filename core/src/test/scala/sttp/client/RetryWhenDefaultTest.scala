@@ -19,11 +19,17 @@ class RetryWhenDefaultTest extends AnyFlatSpec with Matchers {
   }
 
   it should "retry connection exceptions" in {
-    RetryWhen.Default(simpleRequest, Left(new client.SttpClientException.ConnectException(null, null))) shouldBe true
+    RetryWhen.Default(
+      simpleRequest,
+      Left(new client.SttpClientException.ConnectException(basicRequest.get(uri"http://example.com"), null))
+    ) shouldBe true
   }
 
   it should "not retry read exceptions" in {
-    RetryWhen.Default(simpleRequest, Left(new client.SttpClientException.ReadException(null, null))) shouldBe false
+    RetryWhen.Default(
+      simpleRequest,
+      Left(new client.SttpClientException.ReadException(basicRequest.get(uri"http://example.com"), null))
+    ) shouldBe false
   }
 
   it should "not retry input stream bodies" in {
