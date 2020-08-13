@@ -21,6 +21,7 @@ import sttp.client.{
   WebSocketResponseAs
 }
 import sttp.client.internal.FileHelpers
+import sttp.client.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.monad.{Canceler, MonadAsyncError}
 import sttp.monad.syntax._
 import sttp.ws.{WebSocket, WebSocketFrame}
@@ -52,43 +53,50 @@ private[asynchttpclient] trait BodyFromAHC[F[_], S] {
   //
 
   def apply[TT](
-      p: Publisher[ByteBuffer],
-      r: ResponseAs[TT, _],
+      response: Either[Publisher[ByteBuffer], WebSocket[F]],
+      responseAs: ResponseAs[TT, _],
       responseMetadata: ResponseMetadata,
-      isSubscribed: () => Boolean,
-      ws: Option[WebSocket[F]]
+      isSubscribed: () => Boolean
   ): F[TT] =
-    r match {
-      case MappedResponseAs(raw, g) =>
-        val nested = apply(p, raw, responseMetadata, isSubscribed, ws)
+    (responseAs, response) match {
+      case (MappedResponseAs(raw, g), _) =>
+        val nested = apply(response, raw, responseMetadata, isSubscribed)
         nested.map(g(_, responseMetadata))
-      case rfm: ResponseAsFromMetadata[TT, _] => apply(p, rfm(responseMetadata), responseMetadata, isSubscribed, ws)
 
-      case ResponseAsStream(_, f) =>
+      case (rfm: ResponseAsFromMetadata[TT, _], _) =>
+        apply(response, rfm(responseMetadata), responseMetadata, isSubscribed)
+
+      case (ResponseAsStream(_, f), Left(p)) =>
         f.asInstanceOf[streams.BinaryStream => F[TT]](publisherToStream(p))
           .ensure(ignoreIfNotSubscribed(p, isSubscribed))
-      case _: ResponseAsStreamUnsafe[_, _] => monad.unit(publisherToStream(p).asInstanceOf[TT])
 
-      case IgnoreResponse =>
+      case (_: ResponseAsStreamUnsafe[_, _], Left(p)) => monad.unit(publisherToStream(p).asInstanceOf[TT])
+
+      case (IgnoreResponse, Left(p)) =>
         // getting the body and discarding it
         publisherToBytes(p).map(_ => ())
 
-      case ResponseAsByteArray =>
+      case (ResponseAsByteArray, Left(p)) =>
         publisherToBytes(p).map(b => b) // adjusting type because ResponseAs is covariant
 
-      case ResponseAsFile(f) =>
+      case (ResponseAsFile(f), Left(p)) =>
         publisherToFile(p, f.toFile).map(_ => f)
 
-      case wsr: WebSocketResponseAs[TT, _] =>
-        ws match {
-          case Some(webSocket) => bodyFromWs(wsr, webSocket)
-          case None            => throw new IllegalStateException("Illegal WebSockets usage")
-        }
+      case (wsr: WebSocketResponseAs[TT, _], Right(ws)) =>
+        bodyFromWs(wsr, ws)
+
+      case (_: WebSocketResponseAs[_, _], Left(p)) =>
+        ignoreIfNotSubscribed(p, isSubscribed).flatMap(_ =>
+          monad.error(new NotAWebSocketException(responseMetadata.code))
+        )
+
+      case (_, Right(ws)) =>
+        ws.close().flatMap(_ => monad.error(new GotAWebSocketException()))
     }
 
   private def bodyFromWs[TT](r: WebSocketResponseAs[TT, _], ws: WebSocket[F]): F[TT] =
     r match {
-      case ResponseAsWebSocket(f)      => f.asInstanceOf[WebSocket[F] => F[TT]](ws).ensure(ws.close)
+      case ResponseAsWebSocket(f)      => f.asInstanceOf[WebSocket[F] => F[TT]](ws).ensure(ws.close())
       case ResponseAsWebSocketUnsafe() => ws.unit.asInstanceOf[F[TT]]
       case ResponseAsWebSocketStream(_, p) =>
         compileWebSocketPipe(ws, p.asInstanceOf[streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]])

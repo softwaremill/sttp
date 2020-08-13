@@ -18,7 +18,7 @@ private[httpclient] class WebSocketImpl[F[_]](
     _isOpen: AtomicBoolean,
     _monad: MonadAsyncError[F]
 ) extends WebSocket[F] {
-  override def receive: F[WebSocketFrame] = {
+  override def receive(): F[WebSocketFrame] = {
     queue.poll.flatMap {
       case WebSocketEvent.Open() => receive
       case WebSocketEvent.Frame(c: WebSocketFrame.Close) =>
@@ -51,7 +51,7 @@ private[httpclient] class WebSocketImpl[F[_]](
         if (wasOpen) fromCompletableFuture(ws.sendClose(statusCode, reasonText)) else ().unit
     }))
 
-  override def isOpen: F[Boolean] = monad.eval(_isOpen.get())
+  override def isOpen(): F[Boolean] = monad.eval(_isOpen.get())
 
   override implicit def monad: MonadError[F] = _monad
 

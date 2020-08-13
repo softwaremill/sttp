@@ -27,7 +27,7 @@ trait WebSocketBufferOverflowTest[F[_]] { outer: Suite with AsyncFlatSpecLike wi
       .response(asWebSocketAlways { ws: WebSocket[F] =>
         send(ws, bufferCapacity + 1).flatMap { _ =>
           eventually(10.millis, 500) {
-            ws.isOpen.map(_ shouldBe false)
+            ws.isOpen().map(_ shouldBe false)
           }
         }
       })

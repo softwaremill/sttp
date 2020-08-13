@@ -12,7 +12,7 @@ object MonixWebSockets {
   ): Task[Unit] = {
     Task(BooleanCancelable()).flatMap { wsClosed =>
       Observable
-        .repeatEvalF(ws.receive)
+        .repeatEvalF(ws.receive())
         .flatMap {
           case WebSocketFrame.Close(_, _)   => Observable.fromTask(Task(wsClosed.cancel()))
           case WebSocketFrame.Ping(payload) => Observable.fromTask(ws.send(WebSocketFrame.Pong(payload)))
@@ -21,7 +21,7 @@ object MonixWebSockets {
         }
         .takeWhileNotCanceled(wsClosed)
         .completedL
-        .guarantee(ws.close)
+        .guarantee(ws.close())
     }
   }
 }

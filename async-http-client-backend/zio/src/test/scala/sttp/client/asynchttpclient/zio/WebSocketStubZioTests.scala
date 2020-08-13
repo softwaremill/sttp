@@ -17,9 +17,9 @@ class WebSocketStubZioTests extends AnyFlatSpec with Matchers with ScalaFutures 
     val webSocketStub = WebSocketStub.withInitialIncoming(frames)
     val ws = webSocketStub.build(new RIOMonadAsyncError[Any])
     val test = for {
-      msg1 <- ws.receive
-      msg2 <- ws.receive
-      msg3 <- ws.receive
+      msg1 <- ws.receive()
+      msg2 <- ws.receive()
+      msg3 <- ws.receive()
     } yield List(msg1, msg2, msg3)
 
     runtime.unsafeRun(test) shouldBe frames.map(Right(_))
@@ -31,8 +31,8 @@ class WebSocketStubZioTests extends AnyFlatSpec with Matchers with ScalaFutures 
     val webSocketStub = WebSocketStub.withInitialResponses(List(Success(Right(okFrame)), Failure(exception)))
     val ws = webSocketStub.build(new RIOMonadAsyncError[Any])
     val test = for {
-      msg <- ws.receive
-      err <- ws.receive.either
+      msg <- ws.receive()
+      err <- ws.receive().either
     } yield (msg, err)
 
     runtime.unsafeRun(test) shouldBe ((Right(okFrame), Left(exception)))
@@ -51,13 +51,13 @@ class WebSocketStubZioTests extends AnyFlatSpec with Matchers with ScalaFutures 
       }
     val ws = webSocketStub.build(new RIOMonadAsyncError[Any])
     val test = for {
-      msg1 <- ws.receive
-      err1 <- ws.receive.either
+      msg1 <- ws.receive()
+      err1 <- ws.receive().either
       _ <- ws.send(WebSocketFrame.text("not expected"))
-      err2 <- ws.receive.either
+      err2 <- ws.receive().either
       _ <- ws.send(expectedFrame)
-      msg2 <- ws.receive
-      msg3 <- ws.receive
+      msg2 <- ws.receive()
+      msg3 <- ws.receive()
     } yield (msg1, err1.isLeft, err2.isLeft, msg2, msg3)
 
     runtime.unsafeRun(test) shouldBe ((Right(firstFrame), true, true, Right(secondFrame), Right(thirdFrame)))
@@ -74,9 +74,9 @@ class WebSocketStubZioTests extends AnyFlatSpec with Matchers with ScalaFutures 
     val ws = webSocketStub.build(new RIOMonadAsyncError[Any])
     val test = for {
       _ <- ws.send(WebSocketFrame.text("let's add responses"))
-      msg <- ws.receive
-      err1 <- ws.receive.either
-      err2 <- ws.receive.either
+      msg <- ws.receive()
+      err1 <- ws.receive().either
+      err2 <- ws.receive().either
     } yield (msg, err1, err2.isLeft)
 
     runtime.unsafeRun(test) shouldBe ((Right(ok), Left(exception), true))
@@ -89,9 +89,9 @@ class WebSocketStubZioTests extends AnyFlatSpec with Matchers with ScalaFutures 
     val ws = webSocketStub.build(new RIOMonadAsyncError[Any])
     val test = for {
       _ <- ws.send(WebSocketFrame.text("let's add responses"))
-      close <- ws.receive
-      isOpen <- ws.isOpen
-      err <- ws.receive.either
+      close <- ws.receive()
+      isOpen <- ws.isOpen()
+      err <- ws.receive().either
     } yield (close, isOpen, err.isLeft)
 
     runtime.unsafeRun(test) shouldBe ((Left(closeFrame), false, true))
@@ -107,9 +107,9 @@ class WebSocketStubZioTests extends AnyFlatSpec with Matchers with ScalaFutures 
       _ <- ws.send(WebSocketFrame.text("a"))
       _ <- ws.send(WebSocketFrame.text("b"))
       _ <- ws.send(WebSocketFrame.text("c"))
-      msg1 <- ws.receive
-      msg2 <- ws.receive
-      msg3 <- ws.receive
+      msg1 <- ws.receive()
+      msg2 <- ws.receive()
+      msg3 <- ws.receive()
     } yield List(msg1, msg2, msg3)
 
     runtime.unsafeRun(test) shouldBe List("No. 0", "No. 1", "No. 2").map(s => Right(WebSocketFrame.text(s)))

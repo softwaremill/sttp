@@ -141,7 +141,7 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
 
           val baseResponse = readResponseNoBody(builder.build())
           val p = publisher.getOrElse(EmptyPublisher)
-          val b = bodyFromAHC(p, responseAs, baseResponse, () => subscribed, None)
+          val b = bodyFromAHC(Left(p), responseAs, baseResponse, () => subscribed)
 
           success(b.map(t => baseResponse.copy(body = t)))
         }
@@ -164,7 +164,7 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
         val webSocket = WebSocketImpl.newCoupledToAHCWebSocket(ahcWebSocket, queue)
         val baseResponse =
           Response((), StatusCode.SwitchingProtocols, "", readHeaders(ahcWebSocket.getUpgradeHeaders), Nil)
-        val bf = bodyFromAHC(EmptyPublisher, responseAs, baseResponse, () => false, Some(webSocket))
+        val bf = bodyFromAHC(Right(webSocket), responseAs, baseResponse, () => false)
         bf.map(b => baseResponse.copy(body = b))
       })
     }

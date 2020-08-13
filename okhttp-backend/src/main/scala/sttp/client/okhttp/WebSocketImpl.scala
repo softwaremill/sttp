@@ -21,7 +21,7 @@ private[okhttp] class WebSocketImpl[F[_]](
     * After receiving a close frame, no further interactions with the web socket should happen. Subsequent invocations
     * of `receive`, as well as `send`, will fail with the [[sttp.ws.WebSocketClosed]] exception.
     */
-  override def receive: F[WebSocketFrame] = {
+  override def receive(): F[WebSocketFrame] = {
     queue.poll.flatMap {
       case WebSocketEvent.Open() =>
         receive
@@ -64,14 +64,13 @@ private[okhttp] class WebSocketImpl[F[_]](
     }
   }
 
-  override def isOpen: F[Boolean] = monad.eval(_isOpen.get())
+  override def isOpen(): F[Boolean] = monad.eval(_isOpen.get())
 }
 
 class SendMessageException
-    extends Exception(
+    extends WebSocketException(
       "Cannot enqueue next message. Socket is closed, closing or cancelled or this message would overflow the outgoing message buffer (16 MiB)"
     )
-    with WebSocketException
 
 private[okhttp] class DelegatingWebSocketListener(
     delegate: WebSocketListener,

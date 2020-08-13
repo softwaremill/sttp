@@ -13,7 +13,7 @@ class MonixSimpleQueue[A](bufferCapacity: Option[Int])(implicit s: Scheduler) ex
 
   override def offer(t: A): Unit = {
     if (!queue.tryOffer(t)) {
-      throw new WebSocketBufferFull()
+      throw new WebSocketBufferFull(bufferCapacity.getOrElse(Int.MaxValue))
     }
   }
   override def poll: Task[A] = Task.deferFuture(queue.poll())

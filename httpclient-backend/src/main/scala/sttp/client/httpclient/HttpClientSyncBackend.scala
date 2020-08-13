@@ -34,7 +34,7 @@ class HttpClientSyncBackend private (
     adjustExceptions(request) {
       val jRequest = customizeRequest(convertRequest(request))
       val response = client.send(jRequest, BodyHandlers.ofInputStream())
-      readResponse(response, response.body(), request.response, None)
+      readResponse(response, Left(response.body()), request.response)
     }
 
   override def responseMonad: MonadError[Identity] = IdMonad

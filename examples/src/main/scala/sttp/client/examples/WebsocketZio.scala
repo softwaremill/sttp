@@ -10,7 +10,7 @@ object WebsocketZio extends App {
   def useWebsocket(ws: WebSocket[Task]): ZIO[Console, Throwable, Unit] = {
     def send(i: Int) = ws.send(WebSocketFrame.text(s"Hello $i!"))
     val receive = ws.receiveText().flatMap(t => console.putStrLn(s"RECEIVED: $t"))
-    send(1) *> send(2) *> receive *> receive *> ws.close
+    send(1) *> send(2) *> receive *> receive *> ws.close()
   }
 
   // create a description of a program, which requires two dependencies in the environment:

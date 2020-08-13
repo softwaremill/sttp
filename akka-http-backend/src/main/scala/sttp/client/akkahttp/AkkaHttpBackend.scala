@@ -7,7 +7,7 @@ import akka.actor.{ActorSystem, CoordinatedShutdown}
 import akka.event.LoggingAdapter
 import akka.http.scaladsl.coding.{Deflate, Gzip, NoCoding}
 import akka.http.scaladsl.model.headers.{BasicHttpCredentials, HttpEncoding, HttpEncodings}
-import akka.http.scaladsl.model.ws.{Message, WebSocketRequest}
+import akka.http.scaladsl.model.ws.{InvalidUpgradeResponse, Message, ValidUpgrade, WebSocketRequest}
 import akka.http.scaladsl.model.{StatusCode => _, _}
 import akka.http.scaladsl.settings.ConnectionPoolSettings
 import akka.http.scaladsl.{ClientTransport, Http, HttpsConnectionContext}
@@ -74,8 +74,11 @@ class AkkaHttpBackend private (
         )
       )
       .flatMap {
-        case (wsResponse, _) =>
-          responseFromAkka(r, wsResponse.response, Some(flowPromise))
+        case (ValidUpgrade(response, _), _) =>
+          responseFromAkka(r, response, Some(flowPromise))
+        case (InvalidUpgradeResponse(response, _), _) =>
+          flowPromise.failure(new InterruptedException)
+          responseFromAkka(r, response, None)
       }
   }
 
@@ -110,7 +113,7 @@ class AkkaHttpBackend private (
     val headers = FromAkka.headers(hr)
 
     val responseMetadata = client.ResponseMetadata(headers, code, statusText)
-    val body = BodyFromAkka(r.response, decodeAkkaResponse(hr), responseMetadata, wsFlow)
+    val body = BodyFromAkka(r.response, wsFlow.map(Right(_)).getOrElse(Left(decodeAkkaResponse(hr))), responseMetadata)
 
     body.map(client.Response(_, code, statusText, headers, Nil))
   }
@@ -274,5 +277,3 @@ object AkkaHttpBackend {
   def stub(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackendStub[Future, Any] =
     SttpBackendStub(new FutureMonad())
 }
-
-class NotAWebsocketException(statusCode: Int) extends Exception(s"Not a websocket. Got response code: $statusCode")

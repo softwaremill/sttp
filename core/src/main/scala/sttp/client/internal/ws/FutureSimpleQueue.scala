@@ -18,7 +18,7 @@ class FutureSimpleQueue[T](capacity: Option[Int])(implicit ec: ExecutionContext)
     */
   override def offer(t: T): Unit = {
     if (!queue.offer(t)) {
-      throw new WebSocketBufferFull()
+      throw new WebSocketBufferFull(capacity.getOrElse(Int.MaxValue))
     }
   }
 

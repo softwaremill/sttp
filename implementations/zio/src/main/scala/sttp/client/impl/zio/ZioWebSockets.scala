@@ -11,7 +11,7 @@ object ZioWebSockets {
   ): ZIO[R, Throwable, Unit] =
     Ref.make(false).flatMap { closed =>
       Stream
-        .repeatEffect(ws.receive)
+        .repeatEffect(ws.receive())
         .flatMap {
           case WebSocketFrame.Close(_, _)   => Stream.fromEffect(closed.set(true))
           case WebSocketFrame.Ping(payload) => Stream.fromEffect(ws.send(WebSocketFrame.Pong(payload)))
@@ -19,6 +19,6 @@ object ZioWebSockets {
           case in: WebSocketFrame.Data[_]   => Stream(in).transduce(pipe).mapM(ws.send(_))
         }
         .foreachWhile(_ => closed.get)
-        .ensuring(ws.close.catchAll(_ => ZIO.unit))
+        .ensuring(ws.close().catchAll(_ => ZIO.unit))
     }
 }

@@ -35,7 +35,7 @@ abstract class WebSocketTest[F[_]]
         for {
           _ <- send(ws, 3)
           _ <- receiveEcho(ws, 3)
-          _ <- ws.close
+          _ <- ws.close()
         } yield succeed
       })
       .send(backend)
@@ -54,7 +54,7 @@ abstract class WebSocketTest[F[_]]
         for {
           _ <- send(ws, 2)
           _ <- receiveEcho(ws, 2)
-          _ <- ws.close
+          _ <- ws.close()
         } yield succeed
       }
       .toFuture()
@@ -71,7 +71,7 @@ abstract class WebSocketTest[F[_]]
         for {
           _ <- send(ws, 1000)
           _ <- receiveEcho(ws, 1000)
-          _ <- ws.close
+          _ <- ws.close()
         } yield succeed
       }
       .toFuture()
@@ -85,9 +85,9 @@ abstract class WebSocketTest[F[_]]
       .flatMap { response =>
         val ws = response.body
         for {
-          _ <- ws.receive.map(_ shouldBe WebSocketFrame.text("test10"))
-          _ <- ws.receive.map(_ shouldBe WebSocketFrame.text("test20"))
-          _ <- ws.close
+          _ <- ws.receive().map(_ shouldBe WebSocketFrame.text("test10"))
+          _ <- ws.receive().map(_ shouldBe WebSocketFrame.text("test20"))
+          _ <- ws.close()
         } yield succeed
       }
       .toFuture()

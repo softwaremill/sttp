@@ -10,6 +10,7 @@ import akka.stream.{Materializer, OverflowStrategy, QueueOfferResult}
 import akka.stream.scaladsl.{FileIO, Flow, Sink, SinkQueueWithCancel, Source, SourceQueueWithComplete}
 import akka.util.ByteString
 import sttp.capabilities.akka.AkkaStreams
+import sttp.client.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.client.{
   IgnoreResponse,
   MappedResponseAs,
@@ -34,17 +35,16 @@ import scala.util.Failure
 
 private[akkahttp] object BodyFromAkka {
   def apply[T, R](
-      rr: ResponseAs[T, R],
-      hr: HttpResponse,
-      meta: ResponseMetadata,
-      wsFlow: Option[Promise[Flow[Message, Message, NotUsed]]]
+      responseAs: ResponseAs[T, R],
+      response: Either[HttpResponse, Promise[Flow[Message, Message, NotUsed]]],
+      meta: ResponseMetadata
   )(implicit ec: ExecutionContext, mat: Materializer): Future[T] = {
-    def asByteArray =
+    def asByteArray(hr: HttpResponse) =
       hr.entity.dataBytes
         .runFold(ByteString(""))(_ ++ _)
         .map(_.toArray[Byte])
 
-    def saved(file: File) = {
+    def saved(hr: HttpResponse, file: File) = {
       if (!file.exists()) {
         file.getParentFile.mkdirs()
         file.createNewFile()
@@ -53,53 +53,60 @@ private[akkahttp] object BodyFromAkka {
       hr.entity.dataBytes.runWith(FileIO.toPath(file.toPath))
     }
 
-    rr match {
-      case MappedResponseAs(raw, g) =>
-        apply(raw, hr, meta, wsFlow).map(t => g(t, meta))
+    (responseAs, response) match {
+      case (MappedResponseAs(raw, g), _) =>
+        apply(raw, response, meta).map(t => g(t, meta))
 
-      case rfm: ResponseAsFromMetadata[T, R] => apply(rfm(meta), hr, meta, wsFlow)
+      case (rfm: ResponseAsFromMetadata[T, R], _) => apply(rfm(meta), response, meta)
 
-      case IgnoreResponse =>
+      case (IgnoreResponse, Left(hr)) =>
         // todo: Replace with HttpResponse#discardEntityBytes() once https://github.com/akka/akka-http/issues/1459 is resolved
         hr.entity.dataBytes.runWith(Sink.ignore).map(_ => ())
 
-      case ResponseAsByteArray =>
-        asByteArray
+      case (ResponseAsByteArray, Left(hr)) =>
+        asByteArray(hr)
 
-      case ResponseAsStream(_, f) =>
+      case (ResponseAsStream(_, f), Left(hr)) =>
         // todo: how to ensure that the stream is closed after the future returned by f completes?
         f.asInstanceOf[AkkaStreams.BinaryStream => Future[T]](hr.entity.dataBytes)
 
-      case ResponseAsStreamUnsafe(_) =>
+      case (ResponseAsStreamUnsafe(_), Left(hr)) =>
         Future.successful(hr.entity.dataBytes.asInstanceOf[T])
 
-      case ResponseAsFile(file) =>
-        saved(file.toFile).map(_ => file)
+      case (ResponseAsFile(file), Left(hr)) =>
+        saved(hr, file.toFile).map(_ => file)
 
-      case wsr: WebSocketResponseAs[_, _] =>
-        wsFlow match {
-          case Some(promise) => wsFromAkka(wsr, hr, promise)
-          case None          => throw new IllegalStateException("Illegal WebSockets usage")
-        }
+      case (wsr: WebSocketResponseAs[_, _], Right(promise)) =>
+        wsFromAkka(wsr, promise)
+
+      case (_: WebSocketResponseAs[_, _], Left(hr)) =>
+        hr.entity
+          .discardBytes()
+          .future()
+          .flatMap(_ =>
+            Future.failed(
+              new NotAWebSocketException(StatusCode(hr.status.intValue()))
+            )
+          )
+
+      case (_, Right(promise)) =>
+        val e = new GotAWebSocketException()
+        promise.failure(e)
+        Future.failed(e)
     }
   }
 
   private def wsFromAkka[T, R](
       rr: WebSocketResponseAs[T, R],
-      hr: HttpResponse,
       wsFlow: Promise[Flow[Message, Message, NotUsed]]
   )(implicit ec: ExecutionContext, mat: Materializer): Future[T] = {
-    if (hr.status.intValue() != StatusCode.SwitchingProtocols.code) {
-      throw new NotAWebsocketException(hr.status.intValue())
-    }
-
     rr match {
       case ResponseAsWebSocket(f) =>
         val (flow, wsFuture) = webSocketAndFlow()
         wsFlow.success(flow)
         wsFuture.flatMap { ws =>
           val result = f.asInstanceOf[WebSocket[Future] => Future[T]](ws)
-          result.onComplete(_ => ws.close)
+          result.onComplete(_ => ws.close())
           result
         }
       case ResponseAsWebSocketUnsafe() =>
@@ -175,7 +182,7 @@ private[akkahttp] object BodyFromAkka {
                 sourceQueue.offer(m).flatMap {
                   case QueueOfferResult.Enqueued => Future.successful(())
                   case QueueOfferResult.Dropped =>
-                    Future.failed(throw new IllegalStateException(new WebSocketBufferFull()))
+                    Future.failed(throw new IllegalStateException(new WebSocketBufferFull(1)))
                   case QueueOfferResult.Failure(cause) => Future.failed(cause)
                   case QueueOfferResult.QueueClosed =>
                     Future.failed(throw new IllegalStateException(new WebSocketClosed()))

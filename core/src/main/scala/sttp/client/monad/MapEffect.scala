@@ -87,9 +87,9 @@ object MapEffect {
 
   private def apply[F[_], G[_]](ws: WebSocket[F], fk: FunctionK[F, G], gm: MonadError[G]): WebSocket[G] =
     new WebSocket[G] {
-      override def receive: G[WebSocketFrame] = fk(ws.receive)
+      override def receive(): G[WebSocketFrame] = fk(ws.receive())
       override def send(f: WebSocketFrame, isContinuation: Boolean): G[Unit] = fk(ws.send(f, isContinuation))
-      override def isOpen: G[Boolean] = fk(ws.isOpen)
+      override def isOpen(): G[Boolean] = fk(ws.isOpen())
       override implicit def monad: MonadError[G] = gm
     }
 }

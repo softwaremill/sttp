@@ -11,7 +11,7 @@ object WebsocketMonix extends App {
   def useWebsocket(ws: WebSocket[Task]): Task[Unit] = {
     def send(i: Int) = ws.send(WebSocketFrame.text(s"Hello $i!"))
     val receive = ws.receiveText().flatMap(t => Task(println(s"RECEIVED: $t")))
-    send(1) *> send(2) *> receive *> receive *> ws.close
+    send(1) *> send(2) *> receive *> receive *> ws.close()
   }
 
   val websocketTask: Task[Unit] = AsyncHttpClientMonixBackend.resource().use { backend =>

@@ -4,6 +4,7 @@ import java.io.InputStream
 
 import sttp.capabilities.Streams
 import sttp.client.internal.{FileHelpers, toByteArray}
+import sttp.client.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.monad.MonadError
 import sttp.monad.syntax._
 import sttp.client.{
@@ -34,7 +35,7 @@ private[okhttp] trait BodyFromOkHttp[F[_], S] {
 
   private def fromWs[TT](r: WebSocketResponseAs[TT, _], ws: WebSocket[F]): F[TT] =
     r match {
-      case ResponseAsWebSocket(f)      => f.asInstanceOf[WebSocket[F] => F[TT]](ws).ensure(ws.close)
+      case ResponseAsWebSocket(f)      => f.asInstanceOf[WebSocket[F] => F[TT]](ws).ensure(ws.close())
       case ResponseAsWebSocketUnsafe() => ws.unit.asInstanceOf[F[TT]]
       case ResponseAsWebSocketStream(_, p) =>
         compileWebSocketPipe(ws, p.asInstanceOf[streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]])
@@ -48,20 +49,22 @@ private[okhttp] trait BodyFromOkHttp[F[_], S] {
       responseMetadata: ResponseMetadata,
       ws: Option[WebSocket[F]]
   ): F[T] = {
-    responseAs match {
-      case bra: BasicResponseAs[T, _] => handleBasic(responseBody, bra)
-      case wr: WebSocketResponseAs[T, _] =>
-        ws match {
-          case Some(value) => fromWs(wr, value)
-          case None        => throw new IllegalStateException("something something")
-        }
-      case ras @ ResponseAsStream(s, f) =>
+    (responseAs, ws) match {
+      case (bra: BasicResponseAs[T, _], None) => handleBasic(responseBody, bra)
+      case (ras @ ResponseAsStream(s, f), None) =>
         ras.f
           .asInstanceOf[streams.BinaryStream => F[T]](responseBodyToStream(responseBody))
           .ensure(monad.eval(responseBody.close()))
-      case raf: ResponseAsFromMetadata[T, _] => apply(responseBody, raf(responseMetadata), responseMetadata, ws)
-      case MappedResponseAs(raw, g) =>
+      case (raf: ResponseAsFromMetadata[T, _], None) => apply(responseBody, raf(responseMetadata), responseMetadata, ws)
+      case (MappedResponseAs(raw, g), None) =>
         monad.map(apply(responseBody, raw, responseMetadata, ws))(t => g(t, responseMetadata))
+      case (wr: WebSocketResponseAs[T, _], Some(_ws)) =>
+        fromWs(wr, _ws)
+      case (_: WebSocketResponseAs[T, _], None) =>
+        responseBody.close()
+        monad.error(new NotAWebSocketException(responseMetadata.code))
+      case (_, Some(ws)) =>
+        ws.close().flatMap(_ => monad.error(new GotAWebSocketException()))
     }
   }
 

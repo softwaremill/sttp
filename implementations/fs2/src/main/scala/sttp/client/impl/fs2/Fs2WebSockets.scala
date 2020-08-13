@@ -24,7 +24,7 @@ object Fs2WebSockets {
       .eval(Ref.of[F, Option[WebSocketFrame.Close]](None))
       .flatMap { closeRef =>
         Stream
-          .repeatEval(ws.receive) // read incoming messages
+          .repeatEval(ws.receive()) // read incoming messages
           .flatMap[F, Option[WebSocketFrame.Data[_]]] {
             case WebSocketFrame.Close(code, reason) =>
               Stream.eval(closeRef.set(Some(WebSocketFrame.Close(code, reason)))).as(None)
@@ -42,6 +42,6 @@ object Fs2WebSockets {
       }
       .compile
       .drain
-      .guarantee(ws.close)
+      .guarantee(ws.close())
   }
 }

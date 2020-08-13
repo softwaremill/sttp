@@ -16,7 +16,7 @@ private[asynchttpclient] class WebSocketImpl[F[_]](
     implicit val monad: MonadAsyncError[F]
 ) extends WebSocket[F] {
 
-  override def receive: F[WebSocketFrame] = {
+  override def receive(): F[WebSocketFrame] = {
     queue.poll.flatMap {
       case WebSocketEvent.Open() => receive
       case WebSocketEvent.Frame(c: WebSocketFrame.Close) =>
@@ -49,7 +49,7 @@ private[asynchttpclient] class WebSocketImpl[F[_]](
         if (wasOpen) fromNettyFuture(ws.sendCloseFrame(statusCode, reasonText)) else ().unit
     }))
 
-  override def isOpen: F[Boolean] = monad.eval(_isOpen.get())
+  override def isOpen(): F[Boolean] = monad.eval(_isOpen.get())
 
   private def fromNettyFuture(f: io.netty.util.concurrent.Future[Void]): F[Unit] = {
     monad.async { cb =>

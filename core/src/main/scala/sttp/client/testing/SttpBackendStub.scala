@@ -303,9 +303,9 @@ class WebSocketStub[S](
       private var responses = initialResponses.toList
 
       override def monad: MonadError[F] = m
-      override def isOpen: F[Boolean] = monad.unit(_isOpen)
+      override def isOpen(): F[Boolean] = monad.unit(_isOpen)
 
-      override def receive: F[WebSocketFrame] =
+      override def receive(): F[WebSocketFrame] =
         synchronized {
           if (_isOpen) {
             responses.headOption match {
