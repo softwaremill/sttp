@@ -10,7 +10,6 @@ import sttp.client.testing.HttpTest.wsEndpoint
 import sttp.client.testing.websocket.WebSocketTest
 import sttp.monad.MonadError
 
-import scala.annotation.tailrec
 import scala.concurrent.duration._
 
 class OkHttpSyncWebsocketTest extends WebSocketTest[Identity] {
@@ -35,7 +34,6 @@ class OkHttpSyncWebsocketTest extends WebSocketTest[Identity] {
     }
   }
 
-  @tailrec
   private def eventually[T](interval: FiniteDuration, attempts: Int)(f: () => T): T = {
     Thread.sleep(interval.toMillis)
     try f()

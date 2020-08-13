@@ -68,7 +68,7 @@ class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
     }
 
   override protected def createSimpleQueue[T]: F[SimpleQueue[F, T]] =
-    InspectableQueue.unbounded[F, T].map(new Fs2SimpleQueue(_))
+    InspectableQueue.unbounded[F, T].map(new Fs2SimpleQueue(_, None))
 }
 
 object HttpClientFs2Backend {

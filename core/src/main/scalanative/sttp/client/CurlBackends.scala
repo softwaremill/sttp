@@ -1,6 +1,7 @@
 package sttp.client
 
-import sttp.client.monad.{IdMonad, TryMonad}
+import sttp.client.monad.IdMonad
+import sttp.monad.TryMonad
 
 import scala.util.Try
 

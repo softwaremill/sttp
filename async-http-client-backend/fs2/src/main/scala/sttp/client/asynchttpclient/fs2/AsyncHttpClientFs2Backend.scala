@@ -85,7 +85,7 @@ class AsyncHttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
   override protected def createSimpleQueue[T]: F[SimpleQueue[F, T]] =
     webSocketBufferCapacity
       .fold(InspectableQueue.unbounded[F, T])(InspectableQueue.bounded)
-      .map(new Fs2SimpleQueue(_))
+      .map(new Fs2SimpleQueue(_, webSocketBufferCapacity))
 }
 
 object AsyncHttpClientFs2Backend {
