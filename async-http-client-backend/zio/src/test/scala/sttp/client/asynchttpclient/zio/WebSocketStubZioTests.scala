@@ -10,7 +10,7 @@ import sttp.ws.WebSocketFrame
 import scala.util.{Failure, Success}
 
 // TODO: move to core?
-class WebSocketStubZioTests extends AnyFlatSpec with Matchers with ScalaFutures {
+class WebSocketStubZioTests extends AnyFlatSpec with Matchers with ScalaFutures with ZioTestBase {
 
   "web socket stub" should "return initial Incoming frames on 'receive'" in {
     val frames = List("a", "b", "c").map(WebSocketFrame.text(_))

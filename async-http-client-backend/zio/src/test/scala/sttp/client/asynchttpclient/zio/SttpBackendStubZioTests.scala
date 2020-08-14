@@ -8,7 +8,7 @@ import sttp.client.testing.SttpBackendStub
 import sttp.client.impl.zio._
 import zio._
 
-class SttpBackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFutures {
+class SttpBackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFutures with ZioTestBase {
 
   "backend stub" should "cycle through responses using a single sent request" in {
     // given

@@ -1,13 +1,13 @@
-package sttp.client.impl
+package sttp.client.impl.zio
 
-import _root_.zio._
-import _root_.zio.blocking.Blocking
 import sttp.client.testing.ConvertToFuture
+import zio.{Exit, Runtime, Task, ZEnv, ZIO}
+import zio.blocking.Blocking
 
 import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success}
 
-package object zio {
+trait ZioTestBase {
   val runtime: Runtime[ZEnv] = Runtime.default
 
   type BlockingTask[A] = ZIO[Blocking, Throwable, A]

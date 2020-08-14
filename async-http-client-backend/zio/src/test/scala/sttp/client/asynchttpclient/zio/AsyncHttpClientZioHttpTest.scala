@@ -1,13 +1,13 @@
 package sttp.client.asynchttpclient.zio
 
 import sttp.client._
-import sttp.client.impl.zio._
+import sttp.client.impl.zio.ZioTestBase
 import sttp.client.testing.{CancelTest, ConvertToFuture, HttpTest}
 import zio.Task
 import zio.clock.Clock
 import zio.duration._
 
-class AsyncHttpClientZioHttpTest extends HttpTest[Task] with CancelTest[Task, Any] {
+class AsyncHttpClientZioHttpTest extends HttpTest[Task] with CancelTest[Task, Any] with ZioTestBase {
 
   override val backend: SttpBackend[Task, Any] =
     runtime.unsafeRun(AsyncHttpClientZioBackend())
