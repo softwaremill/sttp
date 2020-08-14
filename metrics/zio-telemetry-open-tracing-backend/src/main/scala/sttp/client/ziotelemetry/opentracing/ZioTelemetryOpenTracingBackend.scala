@@ -5,37 +5,22 @@ import sttp.capabilities.Effect
 
 import scala.jdk.CollectionConverters._
 import sttp.client._
-import sttp.client.impl.zio.RIOMonadAsyncError
-import sttp.client.monad.{FunctionK, MapEffect}
+import sttp.client.impl.zio.{ExtendEnv, RIOMonadAsyncError}
 import sttp.monad.MonadError
 import zio._
 import zio.telemetry.opentracing._
 
-class ZioTelemetryOpenTracingBackend[+P](
-    other: SttpBackend[Task, P],
-    tracer: ZioTelemetryOpenTracingTracer = ZioTelemetryOpenTracingTracer.empty
+class ZioTelemetryOpenTracingBackend[+P] private (
+    other: SttpBackend[RIO[OpenTracing, *], P],
+    tracer: ZioTelemetryOpenTracingTracer
 ) extends SttpBackend[RIO[OpenTracing, *], P] {
-
-  @SuppressWarnings(Array("scalafix:Disable.toString"))
   def send[T, R >: P with Effect[RIO[OpenTracing, *]]](request: Request[T, R]): RIO[OpenTracing, Response[T]] = {
     val headers = scala.collection.mutable.Map.empty[String, String]
     val buffer = new TextMapAdapter(headers.asJava)
     OpenTracing.inject(Format.Builtin.HTTP_HEADERS, buffer).flatMap { _ =>
       (for {
         _ <- tracer.before(request)
-        ot <- ZIO.environment[OpenTracing]
-        mappedRequest = MapEffect[RIO[OpenTracing, *], Task, Identity, T, P](
-          request,
-          new FunctionK[RIO[OpenTracing, *], Task] {
-            override def apply[A](fa: RIO[OpenTracing, A]): Task[A] = fa.provide(ot)
-          },
-          new FunctionK[Task, RIO[OpenTracing, *]] {
-            override def apply[A](fa: Task[A]): RIO[OpenTracing, A] = fa
-          },
-          responseMonad,
-          other.responseMonad
-        )
-        resp <- other.send(mappedRequest.headers(headers.toMap))
+        resp <- other.send(request.headers(headers.toMap))
         _ <- tracer.after(resp)
       } yield resp).span(s"${request.method.method} ${request.uri.path.mkString("/")}")
     }
@@ -44,6 +29,15 @@ class ZioTelemetryOpenTracingBackend[+P](
   def close(): RIO[OpenTracing, Unit] = other.close()
 
   val responseMonad: MonadError[RIO[OpenTracing, *]] = new RIOMonadAsyncError[OpenTracing]
+}
+
+object ZioTelemetryOpenTracingBackend {
+  def apply[P](
+      other: SttpBackend[Task, P],
+      tracer: ZioTelemetryOpenTracingTracer = ZioTelemetryOpenTracingTracer.empty
+  ): SttpBackend[RIO[OpenTracing, *], P] = {
+    new ZioTelemetryOpenTracingBackend[P](other.extendEnv[OpenTracing], tracer)
+  }
 }
 
 trait ZioTelemetryOpenTracingTracer {
