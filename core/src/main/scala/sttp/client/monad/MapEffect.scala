@@ -2,6 +2,7 @@ package sttp.client.monad
 
 import sttp.capabilities.Effect
 import sttp.client.{
+  BasicResponseAs,
   ConditionalResponseAs,
   IgnoreResponse,
   MappedResponseAs,
@@ -15,7 +16,8 @@ import sttp.client.{
   ResponseAsStreamUnsafe,
   ResponseAsWebSocket,
   ResponseAsWebSocketStream,
-  ResponseAsWebSocketUnsafe
+  ResponseAsWebSocketUnsafe,
+  WebSocketResponseAs
 }
 import sttp.monad.MonadError
 import sttp.ws.{WebSocket, WebSocketFrame}
@@ -37,21 +39,25 @@ object MapEffect {
       fm: MonadError[F],
       gm: MonadError[G]
   ): RequestT[U, T, R0 with Effect[G]] = {
-    RequestT(
-      r.method,
-      r.uri,
-      r.body.asInstanceOf[RequestBody[R0 with Effect[G]]], // request body can't use the Effect capability
-      r.headers,
-      apply[T, R0, F, G](
-        r.response.asInstanceOf[ResponseAs[T, R0 with Effect[F]]], // this is witnessed by rHasEffectF
-        fk,
-        gk,
-        fm,
-        gm
-      ),
-      r.options,
-      r.tags
-    )
+    if (usesEffect(r.response)) {
+      RequestT(
+        r.method,
+        r.uri,
+        r.body.asInstanceOf[RequestBody[R0 with Effect[G]]], // request body can't use the Effect capability
+        r.headers,
+        apply[T, R0, F, G](
+          r.response.asInstanceOf[ResponseAs[T, R0 with Effect[F]]], // this is witnessed by rHasEffectF
+          fk,
+          gk,
+          fm,
+          gm
+        ),
+        r.options,
+        r.tags
+      )
+    } else {
+      r.asInstanceOf[RequestT[U, T, R0 with Effect[G]]]
+    }
   }
 
   private def apply[TT, R0, F[_], G[_]](
@@ -91,5 +97,16 @@ object MapEffect {
       override def send(f: WebSocketFrame, isContinuation: Boolean): G[Unit] = fk(ws.send(f, isContinuation))
       override def isOpen(): G[Boolean] = fk(ws.isOpen())
       override implicit def monad: MonadError[G] = gm
+    }
+
+  private def usesEffect(ra: ResponseAs[_, _]): Boolean =
+    ra match {
+      case ResponseAsWebSocket(_)      => true
+      case ResponseAsWebSocketUnsafe() => true
+      case ResponseAsStream(_, _)      => true
+      case ResponseAsFromMetadata(conditions, default) =>
+        usesEffect(default) || conditions.exists(c => usesEffect(c.responseAs))
+      case MappedResponseAs(raw, _) => usesEffect(raw)
+      case _                        => false
     }
 }
