@@ -2,7 +2,6 @@ package sttp.client.monad
 
 import sttp.capabilities.Effect
 import sttp.client.{
-  BasicResponseAs,
   ConditionalResponseAs,
   IgnoreResponse,
   MappedResponseAs,
@@ -16,8 +15,7 @@ import sttp.client.{
   ResponseAsStreamUnsafe,
   ResponseAsWebSocket,
   ResponseAsWebSocketStream,
-  ResponseAsWebSocketUnsafe,
-  WebSocketResponseAs
+  ResponseAsWebSocketUnsafe
 }
 import sttp.monad.MonadError
 import sttp.ws.{WebSocket, WebSocketFrame}

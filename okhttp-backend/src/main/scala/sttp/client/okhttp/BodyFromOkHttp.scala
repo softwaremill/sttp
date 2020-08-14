@@ -8,7 +8,6 @@ import sttp.client.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.monad.MonadError
 import sttp.monad.syntax._
 import sttp.client.{
-  BasicResponseAs,
   IgnoreResponse,
   MappedResponseAs,
   ResponseAs,
@@ -50,8 +49,23 @@ private[okhttp] trait BodyFromOkHttp[F[_], S] {
       ws: Option[WebSocket[F]]
   ): F[T] = {
     (responseAs, ws) match {
-      case (bra: BasicResponseAs[T, _], None) => handleBasic(responseBody, bra)
-      case (ras @ ResponseAsStream(s, f), None) =>
+      case (IgnoreResponse, None) =>
+        monad.eval(responseBody.close())
+      case (ResponseAsByteArray, None) =>
+        monad.fromTry {
+          val body = Try(toByteArray(responseBody))
+          responseBody.close()
+          body
+        }
+      case (_: ResponseAsStreamUnsafe[_, _], None) =>
+        monad.eval(responseBodyToStream(responseBody).asInstanceOf[T])
+      case (ResponseAsFile(file), None) =>
+        monad.fromTry {
+          val body = Try(FileHelpers.saveFile(file.toFile, responseBody))
+          responseBody.close()
+          body.map(_ => file)
+        }
+      case (ras @ ResponseAsStream(_, _), None) =>
         ras.f
           .asInstanceOf[streams.BinaryStream => F[T]](responseBodyToStream(responseBody))
           .ensure(monad.eval(responseBody.close()))
@@ -66,22 +80,5 @@ private[okhttp] trait BodyFromOkHttp[F[_], S] {
       case (_, Some(ws)) =>
         ws.close().flatMap(_ => monad.error(new GotAWebSocketException()))
     }
-  }
-
-  private def handleBasic[T](responseBody: InputStream, bra: BasicResponseAs[T, _]): F[T] = {
-    monad.fromTry(bra match {
-      case IgnoreResponse =>
-        Try(responseBody.close())
-      case ResponseAsByteArray =>
-        val body = Try(toByteArray(responseBody))
-        responseBody.close()
-        body
-      case _: ResponseAsStreamUnsafe[_, _] =>
-        Try(responseBodyToStream(responseBody).asInstanceOf[T])
-      case ResponseAsFile(file) =>
-        val body = Try(FileHelpers.saveFile(file.toFile, responseBody))
-        responseBody.close()
-        body.map(_ => file)
-    })
   }
 }

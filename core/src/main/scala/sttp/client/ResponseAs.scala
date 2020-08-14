@@ -27,15 +27,8 @@ sealed trait ResponseAs[+T, -R] {
   def mapWithMetadata[T2](f: (T, ResponseMetadata) => T2): ResponseAs[T2, R] = MappedResponseAs[T, T2, R](this, f)
 }
 
-/**
-  * Response handling specification which isn't derived from another response
-  * handling method, but needs to be handled directly by the backend.
-  */
-sealed trait BasicResponseAs[T, -R] extends ResponseAs[T, R]
-sealed trait WebSocketResponseAs[T, -R] extends ResponseAs[T, R]
-
-case object IgnoreResponse extends BasicResponseAs[Unit, Any]
-case object ResponseAsByteArray extends BasicResponseAs[Array[Byte], Any]
+case object IgnoreResponse extends ResponseAs[Unit, Any]
+case object ResponseAsByteArray extends ResponseAs[Array[Byte], Any]
 
 // Path-dependent types are not supported in constructor arguments or the extends clause. Thus we cannot express the
 // fact that `BinaryStream =:= s.BinaryStream`. We have to rely on correct construction via the companion object and
@@ -47,13 +40,14 @@ object ResponseAsStream {
     new ResponseAsStream(s, f)
 }
 
-case class ResponseAsStreamUnsafe[BinaryStream, S] private (s: Streams[S]) extends BasicResponseAs[BinaryStream, S]
+case class ResponseAsStreamUnsafe[BinaryStream, S] private (s: Streams[S]) extends ResponseAs[BinaryStream, S]
 object ResponseAsStreamUnsafe {
   def apply[S](s: Streams[S]): ResponseAs[s.BinaryStream, S] = new ResponseAsStreamUnsafe(s)
 }
 
-case class ResponseAsFile(output: SttpFile) extends BasicResponseAs[SttpFile, Any]
+case class ResponseAsFile(output: SttpFile) extends ResponseAs[SttpFile, Any]
 
+sealed trait WebSocketResponseAs[T, -R] extends ResponseAs[T, R]
 case class ResponseAsWebSocket[F[_], T](f: WebSocket[F] => F[T])
     extends WebSocketResponseAs[T, Effect[F] with WebSockets]
 case class ResponseAsWebSocketUnsafe[F[_]]() extends WebSocketResponseAs[WebSocket[F], Effect[F] with WebSockets]
@@ -153,12 +147,11 @@ object ResponseAs {
 
   def isWebSocket[T, R](ra: ResponseAs[_, _]): Boolean =
     ra match {
-      case _: BasicResponseAs[_, _]     => false
       case _: WebSocketResponseAs[_, _] => true
-      case ResponseAsStream(_, _)       => false
       case ResponseAsFromMetadata(conditions, default) =>
         conditions.exists(c => isWebSocket(c.responseAs)) || isWebSocket(default)
       case MappedResponseAs(raw, _) => isWebSocket(raw)
+      case _                        => false
     }
 }
 
