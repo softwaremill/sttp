@@ -14,13 +14,14 @@ object WebsocketMonix extends App {
     send(1) *> send(2) *> receive *> receive
   }
 
-  val websocketTask: Task[Unit] = AsyncHttpClientMonixBackend.resource().use { backend =>
-    basicRequest
-      .response(asWebSocket(useWebSocket))
-      .get(uri"wss://echo.websocket.org")
-      .send(backend)
-      .void
-  }
-
-  websocketTask.runSyncUnsafe()
+  AsyncHttpClientMonixBackend
+    .resource()
+    .use { backend =>
+      basicRequest
+        .response(asWebSocket(useWebSocket))
+        .get(uri"wss://echo.websocket.org")
+        .send(backend)
+        .void
+    }
+    .runSyncUnsafe()
 }
