@@ -5,7 +5,7 @@ import sttp.client._
 import sttp.client.asynchttpclient.monix.AsyncHttpClientMonixBackend
 import sttp.ws.{WebSocket, WebSocketFrame}
 
-object WebsocketMonix extends App {
+object WebSocketMonix extends App {
   import monix.execution.Scheduler.Implicits.global
 
   def useWebSocket(ws: WebSocket[Task]): Task[Unit] = {
