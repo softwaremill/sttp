@@ -33,8 +33,8 @@ package object zio {
       ZIO.accessM(env => env.get[SttpBackend[Task, ZioStreams with WebSockets]].send(request))
 
     /**
-      * A variant of [[send]] which allows the effects that are part of the response handling specification to use
-      * the `R` environment.
+      * A variant of [[send]] which allows the effects that are part of the response handling specification (when
+      * using websockets or resource-safe streaming) to use an `R` environment.
       */
     def sendR[T, R](
         request: Request[T, Effect[RIO[R, *]] with ZioStreams with WebSockets]

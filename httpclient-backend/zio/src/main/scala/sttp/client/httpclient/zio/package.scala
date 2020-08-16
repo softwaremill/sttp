@@ -36,8 +36,8 @@ package object zio {
       ZIO.accessM(env => env.get[SttpBackend[BlockingTask, BlockingZioStreams with WebSockets]].send(request))
 
     /**
-      * A variant of [[send]] which allows the effects that are part of the response handling specification to use
-      * the `Blocking with R` environment.
+      * A variant of [[send]] which allows the effects that are part of the response handling specification (when
+      * using websockets or resource-safe streaming) to use an `R` environment.
       */
     def sendR[T, R](
         request: Request[T, Effect[RIO[Blocking with R, *]] with BlockingZioStreams with WebSockets]
