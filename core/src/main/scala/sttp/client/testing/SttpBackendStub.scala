@@ -9,6 +9,7 @@ import sttp.client.testing.SttpBackendStub._
 import sttp.client.{IgnoreResponse, ResponseAs, ResponseAsByteArray, SttpBackend, _}
 import sttp.model.StatusCode
 import sttp.monad.{FutureMonad, MonadError}
+import sttp.monad.syntax._
 import sttp.ws.WebSocket
 import sttp.ws.testing.WebSocketStub
 
@@ -77,14 +78,14 @@ class SttpBackendStub[F[_], +P](
   override def send[T, R >: P with Effect[F]](request: Request[T, R]): F[Response[T]] = {
     Try(matchers.lift(request)) match {
       case Success(Some(response)) =>
-        tryAdjustResponseType(monad, request.response, response.asInstanceOf[F[Response[T]]])
+        tryAdjustResponseType(request.response, response.asInstanceOf[F[Response[T]]])(monad)
       case Success(None) =>
         fallback match {
           case None =>
             val response = wrapResponse(
               Response[String](s"Not Found: ${request.uri}", StatusCode.NotFound, "Not Found", Nil, Nil)
             )
-            tryAdjustResponseType(monad, request.response, response)
+            tryAdjustResponseType(request.response, response)(monad)
           case Some(fb) => fb.send(request)
         }
       case Failure(e) => monad.error(e)
@@ -198,60 +199,59 @@ object SttpBackendStub {
     )
 
   private[client] def tryAdjustResponseType[DesiredRType, RType, F[_]](
-      monad: MonadError[F],
       ra: ResponseAs[DesiredRType, _],
       m: F[Response[RType]]
-  ): F[Response[DesiredRType]] = {
-    monad.map[Response[RType], Response[DesiredRType]](m) { r =>
-      val newBody: Any = tryAdjustResponseBody(ra, r.body, r, monad).getOrElse(r.body)
-      r.copy(body = newBody.asInstanceOf[DesiredRType])
+  )(implicit monad: MonadError[F]): F[Response[DesiredRType]] = {
+    monad.flatMap[Response[RType], Response[DesiredRType]](m) { r =>
+      tryAdjustResponseBody(ra, r.body, r).getOrElse(monad.unit(r.body)).map { nb =>
+        r.copy(body = nb.asInstanceOf[DesiredRType])
+      }
     }
   }
 
   private[client] def tryAdjustResponseBody[F[_], T, U](
       ra: ResponseAs[T, _],
       b: U,
-      meta: ResponseMetadata,
-      monad: MonadError[F]
-  ): Option[T] = {
+      meta: ResponseMetadata
+  )(implicit monad: MonadError[F]): Option[F[T]] = {
     ra match {
-      case IgnoreResponse => Some(())
+      case IgnoreResponse => Some(().unit.asInstanceOf[F[T]])
       case ResponseAsByteArray =>
         b match {
-          case s: String       => Some(s.getBytes(Utf8))
-          case a: Array[Byte]  => Some(a)
-          case is: InputStream => Some(toByteArray(is))
+          case s: String       => Some(s.getBytes(Utf8).unit.asInstanceOf[F[T]])
+          case a: Array[Byte]  => Some(a.unit.asInstanceOf[F[T]])
+          case is: InputStream => Some(toByteArray(is).unit.asInstanceOf[F[T]])
           case _               => None
         }
       case ResponseAsStream(_, f) =>
         b match {
-          case RawStream(s) => Some(f.asInstanceOf[Any => T](s))
+          case RawStream(s) => Some(f.asInstanceOf[Any => F[T]](s))
           case _            => None
         }
       case ResponseAsStreamUnsafe(_) =>
         b match {
-          case RawStream(s) => Some(s.asInstanceOf[T])
+          case RawStream(s) => Some(s.unit.asInstanceOf[F[T]])
           case _            => None
         }
       case ResponseAsFile(_) =>
         b match {
-          case f: SttpFile => Some(f)
+          case f: SttpFile => Some(f.unit.asInstanceOf[F[T]])
           case _           => None
         }
       case ResponseAsWebSocket(f) =>
         b match {
-          case wss: WebSocketStub[_] => Some(f(wss.build(monad.asInstanceOf[MonadError[Any]])))
-          case ws: WebSocket[_]      => Some(f(ws))
+          case wss: WebSocketStub[_] => Some(f(wss.build(monad.asInstanceOf[MonadError[Any]])).asInstanceOf[F[T]])
+          case ws: WebSocket[_]      => Some(f(ws).asInstanceOf[F[T]])
           case _                     => None
         }
       case ResponseAsWebSocketUnsafe() =>
         b match {
-          case wss: WebSocketStub[_] => Some(wss.build(monad.asInstanceOf[MonadError[Any]]))
+          case wss: WebSocketStub[_] => Some(wss.build(monad.asInstanceOf[MonadError[Any]]).unit.asInstanceOf[F[T]])
           case _                     => None
         }
       case ResponseAsWebSocketStream(_, _)   => None
-      case MappedResponseAs(raw, g)          => tryAdjustResponseBody(raw, b, meta, monad).map(g(_, meta))
-      case rfm: ResponseAsFromMetadata[_, _] => tryAdjustResponseBody(rfm(meta), b, meta, monad)
+      case MappedResponseAs(raw, g)          => tryAdjustResponseBody(raw, b, meta).map(_.map(g(_, meta)))
+      case rfm: ResponseAsFromMetadata[_, _] => tryAdjustResponseBody(rfm(meta), b, meta)
     }
   }
 

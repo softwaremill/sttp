@@ -287,6 +287,22 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
     frame shouldBe Right(WebSocketFrame.text("hello"))
   }
 
+  it should "return a web socket, given a web socket, for a safe websocket request using the Try monad" in {
+    val backend: SttpBackend[Try, WebSockets] = SttpBackendStub[Try, WebSockets](TryMonad).whenAnyRequest
+      .thenRespond(
+        WebSocketStub.initialReceive(List(WebSocketFrame.text("hello"))).build(TryMonad),
+        StatusCode.SwitchingProtocols
+      )
+
+    val frame = basicRequest
+      .get(uri"ws://example.org")
+      .response(asWebSocket[Try, WebSocketFrame](ws => ws.receive()))
+      .send(backend)
+      .map(_.body)
+
+    frame shouldBe Success(Right(WebSocketFrame.text("hello")))
+  }
+
   trait TestStreams extends Streams[TestStreams] {
     override type BinaryStream = List[Byte]
     override type Pipe[A, B] = A => B
@@ -297,26 +313,39 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
     val backend: SttpBackend[Identity, TestStreams] = SttpBackendStub[Identity, TestStreams](IdMonad).whenAnyRequest
       .thenRespond(SttpBackendStub.RawStream(List(1: Byte)))
 
-    val frame = basicRequest
+    val result = basicRequest
       .get(uri"http://example.org")
       .response(asStreamUnsafe(TestStreams))
       .send(backend)
       .body
 
-    frame shouldBe Right(List(1: Byte))
+    result shouldBe Right(List(1: Byte))
   }
 
   it should "return a stream, given a stream, for a safe stream request" in {
     val backend: SttpBackend[Identity, TestStreams] = SttpBackendStub[Identity, TestStreams](IdMonad).whenAnyRequest
       .thenRespond(SttpBackendStub.RawStream(List(1: Byte)))
 
-    val frame = basicRequest
+    val result = basicRequest
       .get(uri"http://example.org")
       .response(asStream[Identity, Byte, TestStreams](TestStreams)(l => l.head))
       .send(backend)
       .body
 
-    frame shouldBe Right(1: Byte)
+    result shouldBe Right(1: Byte)
+  }
+
+  it should "return a stream, given a stream, for a safe stream request using the Try monad" in {
+    val backend: SttpBackend[Try, TestStreams] = SttpBackendStub[Try, TestStreams](TryMonad).whenAnyRequest
+      .thenRespond(SttpBackendStub.RawStream(List(1: Byte)))
+
+    val result = basicRequest
+      .get(uri"http://example.org")
+      .response(asStream[Try, Byte, TestStreams](TestStreams)(l => Success(l.head)))
+      .send(backend)
+      .map(_.body)
+
+    result shouldBe Success(Right(1: Byte))
   }
 
   private val testingStubWithFallback = SttpBackendStub
@@ -358,9 +387,8 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
       SttpBackendStub.tryAdjustResponseBody(
         responseAs,
         body,
-        ResponseMetadata(Nil, StatusCode.Ok, ""),
-        IdMonad
-      ) should be(
+        ResponseMetadata(Nil, StatusCode.Ok, "")
+      )(IdMonad) should be(
         expectedResult
       )
     }
