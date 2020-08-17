@@ -18,19 +18,22 @@ import scala.util.{Failure, Success, Try}
 /**
   * A stub backend to use in tests.
   *
-  * The stub can be configured to respond with a given response if the
-  * request matches a predicate (see the [[whenRequestMatches()]] method).
+  * The stub can be configured to respond with a given response if the request matches a predicate (see the
+  * [[whenRequestMatches()]] method).
   *
-  * Note however, that this is not type-safe with respect to the type of the
-  * response body - the stub doesn't have a way to check if the type of the
-  * body in the configured response is the same as the one specified by the
-  * request. Some conversions will be attempted (e.g. from a `String` to
-  * a custom mapped type, as specified in the request, see the documentation
-  * for more details).
+  * Note however, that this is not type-safe with respect to the type of the response body - the stub doesn't have a
+  * way to check if the type of the body in the configured response is the same as the one specified by the
+  * request. Some conversions will be attempted (e.g. from a `String` to a custom mapped type, as specified in the
+  * request, see the documentation for more details).
   *
-  * Hence, the predicates can match requests basing on the URI
-  * or headers. A [[ClassCastException]] might occur if for a given request,
-  * a response is specified with the incorrect or inconvertible body type.
+  * For web socket requests, the stub can be configured to returned both custom [[WebSocket]] implementations,
+  * as well as [[WebSocketStub]] instances.
+  *
+  * For requests which return the response as a stream, if the stub should return a raw stream value (which should then
+  * be passed to the stream-consuming function, or mapped to another value), it should be wrapped with [[RawStream]].
+  *
+  * Predicates can match requests basing on the URI or headers. A [[ClassCastException]] might occur if for a given
+  * request, a response is specified with the incorrect or inconvertible body type.
   */
 class SttpBackendStub[F[_], +P](
     monad: MonadError[F],
@@ -97,7 +100,7 @@ class SttpBackendStub[F[_], +P](
 
   class WhenRequest(p: Request[_, _] => Boolean) {
     def thenRespondOk(): SttpBackendStub[F, P] =
-      thenRespondWithCode(StatusCode.Ok)
+      thenRespondWithCode(StatusCode.Ok, "OK")
     def thenRespondNotFound(): SttpBackendStub[F, P] =
       thenRespondWithCode(StatusCode.NotFound, "Not found")
     def thenRespondServerError(): SttpBackendStub[F, P] =
@@ -107,6 +110,8 @@ class SttpBackendStub[F[_], +P](
     }
     def thenRespond[T](body: T): SttpBackendStub[F, P] =
       thenRespond(Response[T](body, StatusCode.Ok, "OK"))
+    def thenRespond[T](body: T, statusCode: StatusCode): SttpBackendStub[F, P] =
+      thenRespond(Response[T](body, statusCode))
     def thenRespond[T](resp: => Response[T]): SttpBackendStub[F, P] = {
       val m: PartialFunction[Request[_, _], F[Response[_]]] = {
         case r if p(r) => monad.eval(resp)
@@ -128,13 +133,13 @@ class SttpBackendStub[F[_], +P](
       val iterator = Iterator.continually(responses).flatten
       thenRespond(iterator.next)
     }
-    def thenRespondWrapped(resp: => F[Response[_]]): SttpBackendStub[F, P] = {
+    def thenRespondF(resp: => F[Response[_]]): SttpBackendStub[F, P] = {
       val m: PartialFunction[Request[_, _], F[Response[_]]] = {
         case r if p(r) => resp
       }
       new SttpBackendStub[F, P](monad, matchers.orElse(m), fallback)
     }
-    def thenRespondWrapped(resp: Request[_, _] => F[Response[_]]): SttpBackendStub[F, P] = {
+    def thenRespondF(resp: Request[_, _] => F[Response[_]]): SttpBackendStub[F, P] = {
       val m: PartialFunction[Request[_, _], F[Response[_]]] = {
         case r if p(r) => resp(r)
       }
@@ -146,8 +151,7 @@ class SttpBackendStub[F[_], +P](
 object SttpBackendStub {
 
   /**
-    * Create a stub of a synchronous backend (which doesn't wrap results in any
-    * container), without streaming.
+    * Create a stub of a synchronous backend (which doesn't use an effect type), without streaming.
     */
   def synchronous: SttpBackendStub[Identity, WebSockets] =
     new SttpBackendStub(
@@ -157,8 +161,8 @@ object SttpBackendStub {
     )
 
   /**
-    * Create a stub of an asynchronous backend (which wraps results in Scala's
-    * built-in [[Future]]), without streaming.
+    * Create a stub of an asynchronous backend (which uses the Scala's built-in [[Future]] as the effect type),
+    * without streaming.
     */
   def asynchronousFuture: SttpBackendStub[Future, WebSockets] = {
     import scala.concurrent.ExecutionContext.Implicits.global
@@ -170,8 +174,8 @@ object SttpBackendStub {
   }
 
   /**
-    * Create a stub backend using the given response monad (which determines
-    * how requests are wrapped), any stream type and any websocket handler.
+    * Create a stub backend using the given response monad (which determines the effect type for responses),
+    * and any capabilities (such as streaming or web socket support).
     */
   def apply[F[_], P](responseMonad: MonadError[F]): SttpBackendStub[F, P] =
     new SttpBackendStub[F, P](
@@ -181,8 +185,8 @@ object SttpBackendStub {
     )
 
   /**
-    * Create a stub backend which delegates send requests to the given fallback
-    * backend, if the request doesn't match any of the specified predicates.
+    * Create a stub backend which delegates send requests to the given fallback backend, if the request doesn't match
+    * any of the specified predicates.
     */
   def withFallback[F[_], P0, P1 >: P0](
       fallback: SttpBackend[F, P0]
@@ -219,8 +223,16 @@ object SttpBackendStub {
           case is: InputStream => Some(toByteArray(is))
           case _               => None
         }
-      case ResponseAsStream(_, _)    => None
-      case ResponseAsStreamUnsafe(_) => None
+      case ResponseAsStream(_, f) =>
+        b match {
+          case RawStream(s) => Some(f.asInstanceOf[Any => T](s))
+          case _            => None
+        }
+      case ResponseAsStreamUnsafe(_) =>
+        b match {
+          case RawStream(s) => Some(s.asInstanceOf[T])
+          case _            => None
+        }
       case ResponseAsFile(_) =>
         b match {
           case f: SttpFile => Some(f)
@@ -242,4 +254,6 @@ object SttpBackendStub {
       case rfm: ResponseAsFromMetadata[_, _] => tryAdjustResponseBody(rfm(meta), b, meta, monad)
     }
   }
+
+  case class RawStream[T](s: T)
 }
