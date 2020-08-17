@@ -102,9 +102,9 @@ This backend is based on the built-in `java.net.http.HttpClient` available from 
 The Monix backends support streaming. The streams capability is represented as `sttp.client.impl.monix.MonixStreams`. The type of supported streams in this case is `Observable[ByteBuffer]`. That is, you can set such an observable as a request body (using the async-http-client backend as an example, but any of the above backends can be used):
 
 ```scala
+import sttp.capabilities.monix.MonixStreams
 import sttp.client._
 import sttp.client.asynchttpclient.monix._
-import sttp.client.impl.monix.MonixStreams
 
 import java.nio.ByteBuffer
 import monix.reactive.Observable
@@ -122,9 +122,9 @@ AsyncHttpClientMonixBackend().flatMap { backend =>
 And receive responses as an observable stream:
 
 ```scala
+import sttp.capabilities.monix.MonixStreams
 import sttp.client._
 import sttp.client.asynchttpclient.monix._
-import sttp.client.impl.monix.MonixStreams
 
 import java.nio.ByteBuffer
 import monix.eval.Task

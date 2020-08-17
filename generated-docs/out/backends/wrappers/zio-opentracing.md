@@ -38,7 +38,7 @@ def sttpTracer: ZioTelemetryOpenTracingTracer = new ZioTelemetryOpenTracingTrace
       OpenTracing.tag("http.status_code", response.code.code)
 }
 
-new ZioTelemetryOpenTracingBackend(zioBackend, sttpTracer)
+ZioTelemetryOpenTracingBackend(zioBackend, sttpTracer)
 ```
 
 

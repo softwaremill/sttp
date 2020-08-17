@@ -36,8 +36,8 @@ This backend supports sending and receiving [akka-streams](http://doc.akka.io/do
 To set the request body as a stream:
 
 ```scala mdoc:compile-only
+import sttp.capabilities.akka.AkkaStreams
 import sttp.client._
-import sttp.client.akkahttp._
 
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
@@ -53,8 +53,9 @@ To receive the response body as a stream:
 
 ```scala mdoc:compile-only
 import scala.concurrent.Future
+import sttp.capabilities.akka.AkkaStreams
 import sttp.client._
-import sttp.client.akkahttp._
+import sttp.client.akkahttp.AkkaHttpBackend
 
 import akka.stream.scaladsl.Source
 import akka.util.ByteString

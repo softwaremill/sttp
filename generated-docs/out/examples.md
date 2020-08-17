@@ -208,8 +208,8 @@ Example code:
 ```scala
 import sttp.client._
 import sttp.client.asynchttpclient.zio._
-import sttp.client.ws.WebSocket
-import sttp.model.ws.WebSocketFrame
+import sttp.ws.WebSocket
+import sttp.ws.WebSocketFrame
 import zio._
 import zio.console.Console
 
@@ -217,7 +217,7 @@ object WebsocketZio extends zio.App {
   def useWebsocket(ws: WebSocket[Task]): ZIO[Console, Throwable, Unit] = {
     def send(i: Int) = ws.send(WebSocketFrame.text(s"Hello $i!"))
     val receive = ws.receiveText().flatMap(t => console.putStrLn(s"RECEIVED: $t"))
-    send(1) *> send(2) *> receive *> receive *> ws.close
+    send(1) *> send(2) *> receive *> receive *> ws.close()
   }
 
   // create a description of a program, which requires two dependencies in the environment:
@@ -249,8 +249,8 @@ Example code:
 ```scala
 import monix.eval.Task
 import sttp.client._
-import sttp.client.ws.WebSocket
-import sttp.model.ws.WebSocketFrame
+import sttp.ws.WebSocket
+import sttp.ws.WebSocketFrame
 import sttp.client.asynchttpclient.monix.AsyncHttpClientMonixBackend
 
 object WebsocketMonix extends App {
@@ -259,7 +259,7 @@ object WebsocketMonix extends App {
   def useWebsocket(ws: WebSocket[Task]): Task[Unit] = {
     def send(i: Int) = ws.send(WebSocketFrame.text(s"Hello $i!"))
     val receive = ws.receiveText().flatMap(t => Task(println(s"RECEIVED: $t")))
-    send(1) *> send(2) *> receive *> receive *> ws.close
+    send(1) *> send(2) *> receive *> receive *> ws.close()
   }
 
   val websocketTask: Task[Unit] = AsyncHttpClientMonixBackend.resource().use { backend =>
@@ -287,7 +287,7 @@ Example code:
 ```scala
 import sttp.client._
 import sttp.client.asynchttpclient.fs2.AsyncHttpClientFs2Backend
-import sttp.client.impl.fs2.Fs2Streams
+import sttp.capabilities.fs2.Fs2Streams
 
 import cats.effect.{ContextShift, IO}
 import cats.instances.string._

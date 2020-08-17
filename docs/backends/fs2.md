@@ -121,9 +121,9 @@ The fs2 backend supports streaming for any instance of the `cats.effect.Effect` 
 Requests can be sent with a streaming body like this:
 
 ```scala mdoc:compile-only
+import sttp.capabilities.fs2.Fs2Streams
 import sttp.client._
 import sttp.client.asynchttpclient.fs2.AsyncHttpClientFs2Backend
-import sttp.client.impl.fs2.Fs2Streams
 import fs2.Stream
 
 val effect = AsyncHttpClientFs2Backend[IO]().flatMap { backend =>
@@ -140,10 +140,10 @@ val effect = AsyncHttpClientFs2Backend[IO]().flatMap { backend =>
 Responses can also be streamed:
 
 ```scala mdoc:compile-only
+import sttp.capabilities.fs2.Fs2Streams
 import sttp.client.asynchttpclient.fs2.AsyncHttpClientFs2Backend
 import fs2.Stream
 import scala.concurrent.duration.Duration
-import sttp.client.impl.fs2.Fs2Streams
 
 val effect = AsyncHttpClientFs2Backend[IO]().flatMap { backend =>
   val response: IO[Response[Either[String, Stream[IO, Byte]]]] =

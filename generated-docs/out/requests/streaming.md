@@ -14,7 +14,7 @@ For example, using the [akka-http backend](../backends/akka.md), a request with 
 
 ```scala
 import sttp.client._
-import sttp.client.akkahttp._
+import sttp.capabilities.akka.AkkaStreams
 
 import akka.stream.scaladsl.Source
 import akka.util.ByteString

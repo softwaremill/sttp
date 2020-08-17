@@ -35,9 +35,9 @@ This causes any further backend wrappers to handle a request which involves redi
 For example:
 
 ```scala mdoc:compile-only
+import sttp.capabilities.Effect
 import sttp.client._
-import sttp.client.ws._
-import sttp.client.monad._
+import sttp.monad.MonadError
 
 class MyWrapper[F[_], P] private (delegate: SttpBackend[F, P])
   extends SttpBackend[F, P] {
@@ -70,9 +70,9 @@ Below is an example on how to implement a backend wrapper, which sends
 metrics for completed requests and wraps any `Future`-based backend:
 
 ```scala mdoc:compile-only
+import sttp.capabilities.Effect
 import sttp.client._
-import sttp.client.monad._
-import sttp.client.ws._
+import sttp.monad.MonadError
 import sttp.client.akkahttp._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -137,9 +137,9 @@ Handling retries is a complex problem when it comes to HTTP requests. When is a 
 In some cases it's possible to implement a generic retry mechanism; such a mechanism should take into account logging, metrics, limiting the number of retries and a backoff mechanism. These mechanisms could be quite simple, or involve e.g. retry budgets (see [Finagle's](https://twitter.github.io/finagle/guide/Clients.md#retries) documentation on retries). In sttp, it's possible to recover from errors using the `responseMonad`. A starting point for a retrying backend could be:
 
 ```scala mdoc:compile-only
+import sttp.capabilities.Effect
 import sttp.client._
-import sttp.client.monad._
-import sttp.client.ws._
+import sttp.monad.MonadError
 
 class RetryingBackend[F[_], P](
     delegate: SttpBackend[F, P],
@@ -184,9 +184,9 @@ Below is an example on how to implement a backend wrapper, which integrates with
 
 ```scala mdoc:compile-only
 import io.github.resilience4j.circuitbreaker.{CallNotPermittedException, CircuitBreaker}
-import sttp.client.Effect
-import sttp.monad.MonadError
+import sttp.capabilities.Effect
 import sttp.client.{Request, Response, SttpBackend}
+import sttp.monad.MonadError
 import java.util.concurrent.TimeUnit
 
 class CircuitSttpBackend[F[_], P](
@@ -243,7 +243,7 @@ Below is an example on how to implement a backend wrapper, which integrates with
 
 ```scala mdoc:compile-only
 import io.github.resilience4j.ratelimiter.RateLimiter
-import sttp.client.Effect
+import sttp.capabilities.Effect
 import sttp.monad.MonadError
 import sttp.client.{Request, Response, SttpBackend}
 

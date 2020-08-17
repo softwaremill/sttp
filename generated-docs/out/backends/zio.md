@@ -111,10 +111,9 @@ The type of supported streams is `Stream[Throwable, Byte]`. The streams capabili
 Requests can be sent with a streaming body:
 
 ```scala
+import sttp.capabilities.zio.ZioStreams
 import sttp.client._
-import sttp.client.asynchttpclient.zio._
-import sttp.client.impl.zio.ZioStreams
-
+import sttp.client.asynchttpclient.zio.SttpClient
 import zio.stream._
 
 val s: Stream[Throwable, Byte] =  ???
@@ -129,9 +128,9 @@ SttpClient.send(request)
 And receive response bodies as a stream:
 
 ```scala
+import sttp.capabilities.zio.ZioStreams
 import sttp.client._
-import sttp.client.asynchttpclient.zio._
-import sttp.client.impl.zio.ZioStreams
+import sttp.client.asynchttpclient.zio.SttpClient
 
 import zio._
 import zio.stream._

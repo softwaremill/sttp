@@ -138,6 +138,7 @@ val myRequest: Request[Either[ResponseError[io.circe.Error], MyModel], Nothing] 
 If the backend used supports streaming (see [backends summary](../backends/summary.md)), it's possible to receive responses as a stream. This can be described using the following methods:
 
 ```scala mdoc:compile-only
+import sttp.capabilities.{Effect, Streams}
 import sttp.client._
 
 def asStream[F[_], T, S](s: Streams[S])(f: s.BinaryStream => F[T]): 
@@ -165,8 +166,9 @@ For example, when using the [Akka backend](../backends/akka.md):
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import scala.concurrent.Future
+import sttp.capabilities.akka.AkkaStreams
 import sttp.client._
-import sttp.client.akkahttp._
+import sttp.client.akkahttp.AkkaHttpBackend
 
 val backend: SttpBackend[Future, AkkaStreams] = AkkaHttpBackend()
 
