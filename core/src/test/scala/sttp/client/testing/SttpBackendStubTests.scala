@@ -6,11 +6,14 @@ import java.util.concurrent.TimeoutException
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import sttp.capabilities.WebSockets
 import sttp.client._
 import sttp.client.internal._
 import sttp.client.monad.IdMonad
 import sttp.model._
 import sttp.monad.{FutureMonad, TryMonad}
+import sttp.ws.WebSocketFrame
+import sttp.ws.testing.WebSocketStub
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -219,7 +222,7 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
   }
 
   it should "always return a string when requested to do so" in {
-    val backend: SttpBackend[Identity, Any] = SttpBackendStub(IdMonad).whenAnyRequest
+    val backend: SttpBackend[Identity, Any] = SttpBackendStub.synchronous.whenAnyRequest
       .thenRespondServerError()
 
     basicRequest
@@ -227,6 +230,45 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
       .response(asStringAlways)
       .send(backend)
       .body shouldBe "Internal server error"
+  }
+
+  it should "return a web socket, given a stub, for an unsafe websocket request" in {
+    val backend: SttpBackend[Identity, WebSockets] = SttpBackendStub.synchronous.whenAnyRequest
+      .thenRespond(WebSocketStub.initialReceive(List(WebSocketFrame.text("hello"))))
+
+    val ws = basicRequest
+      .get(uri"ws://example.org")
+      .response(asWebSocketUnsafeAlways[Identity])
+      .send(backend)
+      .body
+
+    ws.receive() shouldBe WebSocketFrame.text("hello")
+  }
+
+  it should "return a web socket, given a stub, for a safe websocket request" in {
+    val backend: SttpBackend[Identity, WebSockets] = SttpBackendStub.synchronous.whenAnyRequest
+      .thenRespond(WebSocketStub.initialReceive(List(WebSocketFrame.text("hello"))))
+
+    val frame = basicRequest
+      .get(uri"ws://example.org")
+      .response(asWebSocketAlways[Identity, WebSocketFrame](ws => ws.receive()))
+      .send(backend)
+      .body
+
+    frame shouldBe WebSocketFrame.text("hello")
+  }
+
+  it should "return a web socket, given a web socket, for a safe websocket request" in {
+    val backend: SttpBackend[Identity, WebSockets] = SttpBackendStub.synchronous.whenAnyRequest
+      .thenRespond(WebSocketStub.initialReceive(List(WebSocketFrame.text("hello"))).build(IdMonad))
+
+    val frame = basicRequest
+      .get(uri"ws://example.org")
+      .response(asWebSocketAlways[Identity, WebSocketFrame](ws => ws.receive()))
+      .send(backend)
+      .body
+
+    frame shouldBe WebSocketFrame.text("hello")
   }
 
   private val testingStubWithFallback = SttpBackendStub
@@ -265,7 +307,12 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
     (body, responseAs, expectedResult) <- adjustTestData
   } {
     it should s"adjust $body to $expectedResult when specified as $responseAs" in {
-      SttpBackendStub.tryAdjustResponseBody(responseAs, body, ResponseMetadata(Nil, StatusCode.Ok, "")) should be(
+      SttpBackendStub.tryAdjustResponseBody(
+        responseAs,
+        body,
+        ResponseMetadata(Nil, StatusCode.Ok, ""),
+        IdMonad
+      ) should be(
         expectedResult
       )
     }
