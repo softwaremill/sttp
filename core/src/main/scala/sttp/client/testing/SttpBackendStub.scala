@@ -236,13 +236,13 @@ object SttpBackendStub {
         }
       case ResponseAsWebSocket(f) =>
         b match {
-          case wss: WebSocketStub[_] => Some(f(wss.build(monad.asInstanceOf[MonadError[Any]])).asInstanceOf[F[T]])
+          case wss: WebSocketStub[_] => Some(f.asInstanceOf[WebSocket[F] => F[T]](wss.build[F](monad)))
           case ws: WebSocket[_]      => Some(f(ws).asInstanceOf[F[T]])
           case _                     => None
         }
       case ResponseAsWebSocketUnsafe() =>
         b match {
-          case wss: WebSocketStub[_] => Some(wss.build(monad.asInstanceOf[MonadError[Any]]).unit.asInstanceOf[F[T]])
+          case wss: WebSocketStub[_] => Some(wss.build[F](monad).unit.asInstanceOf[F[T]])
           case _                     => None
         }
       case ResponseAsWebSocketStream(_, _)   => None
