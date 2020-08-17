@@ -18,7 +18,7 @@ import sttp.ws.testing.WebSocketStub
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.util.{Success, Try}
+import scala.util.{Failure, Success, Try}
 
 class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
   private val testingStub = SttpBackendStub[Identity, Any](IdMonad)
@@ -78,18 +78,20 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
     r.body should be(Right("OK from request. Request was sent to host: example.org"))
   }
 
-  it should "use the default response if no rule matches" in {
+  it should "use throw an exception if no rule matches" in {
     val backend = testingStub
-    val r = basicRequest.put(uri"http://example.org/d").send(backend)
-    r.code shouldBe StatusCode.NotFound
-    r.body.isLeft shouldBe true
-    r.body.left.get should startWith("Not Found")
+    assertThrows[IllegalArgumentException] {
+      basicRequest.put(uri"http://example.org/d").send(backend)
+    }
   }
 
-  it should "wrap responses in the desired monad" in {
+  it should "wrap exceptions in the desired monad" in {
     val backend = SttpBackendStub[Try, Any](TryMonad)
     val r = basicRequest.post(uri"http://example.org").send(backend)
-    r.map(_.code) shouldBe Success(StatusCode.NotFound)
+    r match {
+      case Failure(_: IllegalArgumentException) => succeed
+      case _                                    => fail(s"Should be a failure: $r")
+    }
   }
 
   it should "use rules in partial function" in {

@@ -81,11 +81,7 @@ class SttpBackendStub[F[_], +P](
         tryAdjustResponseType(request.response, response.asInstanceOf[F[Response[T]]])(monad)
       case Success(None) =>
         fallback match {
-          case None =>
-            val response = wrapResponse(
-              Response[String](s"Not Found: ${request.uri}", StatusCode.NotFound, "Not Found", Nil, Nil)
-            )
-            tryAdjustResponseType(request.response, response)(monad)
+          case None     => monad.error(new IllegalArgumentException(s"No behavior stubbed for request: $request"))
           case Some(fb) => fb.send(request)
         }
       case Failure(e) => monad.error(e)
