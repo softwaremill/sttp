@@ -48,7 +48,7 @@ class OkHttpSyncBackend private (
     val listener = new DelegatingWebSocketListener(
       new AddToQueueListener(queue, isOpen),
       { (nativeWs, response) =>
-        val webSocket = new WebSocketImpl(nativeWs, queue, isOpen)
+        val webSocket = new WebSocketImpl(nativeWs, queue, isOpen, response.headers())
         val baseResponse = readResponse(response, ignore)
         val wsResponse =
           Future(

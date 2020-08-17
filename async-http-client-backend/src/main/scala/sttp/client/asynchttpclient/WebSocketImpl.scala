@@ -5,9 +5,12 @@ import java.util.concurrent.atomic.AtomicBoolean
 import io.netty.util.concurrent.{Future, FutureListener}
 import org.asynchttpclient.ws.{WebSocket => AHCWebSocket, WebSocketListener => AHCWebSocketListener}
 import sttp.client.internal.ws.{SimpleQueue, WebSocketEvent}
+import sttp.model.{Header, Headers}
 import sttp.monad.syntax._
 import sttp.monad.{Canceler, MonadAsyncError}
 import sttp.ws.{WebSocket, WebSocketClosed, WebSocketFrame}
+
+import scala.collection.JavaConverters.asScalaIteratorConverter
 
 private[asynchttpclient] class WebSocketImpl[F[_]](
     ws: AHCWebSocket,
@@ -48,6 +51,9 @@ private[asynchttpclient] class WebSocketImpl[F[_]](
         // making close sequentially idempotent
         if (wasOpen) fromNettyFuture(ws.sendCloseFrame(statusCode, reasonText)) else ().unit
     }))
+
+  override def upgradeHeaders: Headers =
+    Headers(ws.getUpgradeHeaders.iteratorAsString().asScala.map(e => Header(e.getKey, e.getValue)).toList)
 
   override def isOpen(): F[Boolean] = monad.eval(_isOpen.get())
 

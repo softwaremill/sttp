@@ -75,7 +75,7 @@ abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](
     val addToQueue = new AddToQueueListener(queue, isOpen)
 
     def onOpen(nativeWs: OkHttpWebSocket, response: OkHttpResponse) = {
-      val webSocket = new WebSocketImpl(nativeWs, queue, isOpen)
+      val webSocket = new WebSocketImpl(nativeWs, queue, isOpen, response.headers())
       val wsResponse = readResponse(response, ignore)
         .flatMap { baseResponse =>
           bodyFromOkHttp(

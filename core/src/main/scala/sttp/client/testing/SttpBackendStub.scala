@@ -7,7 +7,7 @@ import sttp.client.internal.{SttpFile, _}
 import sttp.client.monad.IdMonad
 import sttp.client.testing.SttpBackendStub._
 import sttp.client.{IgnoreResponse, ResponseAs, ResponseAsByteArray, SttpBackend, _}
-import sttp.model.StatusCode
+import sttp.model.{Headers, StatusCode}
 import sttp.monad.{FutureMonad, MonadError}
 import sttp.ws.{WebSocket, WebSocketFrame}
 
@@ -339,6 +339,8 @@ class WebSocketStub[S](
             }
           }
         })
+
+      override val upgradeHeaders: Headers = Headers(Nil)
     }
 }
 

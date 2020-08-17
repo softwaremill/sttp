@@ -192,7 +192,7 @@ val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion
 val zioVersion = "1.0.0"
 val zioInteropRsVersion = "1.0.3.5"
 
-val sttpSharedVersion = "2.0.9-SNAPSHOT"
+val sttpSharedVersion = "2.0.10-SNAPSHOT"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
 
@@ -287,7 +287,13 @@ lazy val testServer2_13 = testServer.jvm(scala2_13)
 
 lazy val core = (projectMatrix in file("core"))
   .settings(
-    name := "core"
+    name := "core",
+    libraryDependencies ++= Seq(
+      "com.softwaremill.sttp.shared" %%% "core" % sttpSharedVersion,
+      "com.softwaremill.sttp.shared" %%% "model" % sttpSharedVersion,
+      "com.softwaremill.sttp.shared" %%% "ws" % sttpSharedVersion,
+      scalaTest % Test
+    )
   )
   .settings(testServerSettings)
   .jvmPlatform(
@@ -295,8 +301,6 @@ lazy val core = (projectMatrix in file("core"))
     settings = {
       commonJvmSettings ++ intellijImportOnly213 ++ List(
         libraryDependencies ++= Seq(
-          "com.softwaremill.sttp.shared" %% "core" % sttpSharedVersion,
-          "com.softwaremill.sttp.shared" %% "model" % sttpSharedVersion,
           scalaTest % Test
         ),
         publishArtifact in Test := true // allow implementations outside of this repo
@@ -308,8 +312,6 @@ lazy val core = (projectMatrix in file("core"))
     settings = {
       commonJsSettings ++ commonJsBackendSettings ++ browserTestSettings ++ intellijSkipImport ++ List(
         libraryDependencies ++= Seq(
-          "com.softwaremill.sttp.shared" %%% "core" % sttpSharedVersion,
-          "com.softwaremill.sttp.shared" %%% "model" % sttpSharedVersion,
           "org.scalatest" %%% "scalatest" % scalaTestVersion % Test
         ),
         publishArtifact in Test := true
@@ -321,8 +323,6 @@ lazy val core = (projectMatrix in file("core"))
     settings = {
       commonNativeSettings ++ intellijSkipImport ++ List(
         libraryDependencies ++= Seq(
-          "com.softwaremill.sttp.shared" %%% "core" % sttpSharedVersion,
-          "com.softwaremill.sttp.shared" %%% "model" % sttpSharedVersion,
           "org.scala-native" %%% "test-interface" % scalaNativeTestInterfaceVersion % Test,
           "org.scalatest" %%% "scalatest-shouldmatchers" % scalaTestVersion % Test,
           "org.scalatest" %%% "scalatest-flatspec" % scalaTestVersion % Test,

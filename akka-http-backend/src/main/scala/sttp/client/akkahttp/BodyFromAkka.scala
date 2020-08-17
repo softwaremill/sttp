@@ -26,7 +26,7 @@ import sttp.client.{
   ResponseMetadata,
   WebSocketResponseAs
 }
-import sttp.model.StatusCode
+import sttp.model.{Headers, StatusCode}
 import sttp.monad.{FutureMonad, MonadError}
 import sttp.ws.{WebSocket, WebSocketBufferFull, WebSocketClosed, WebSocketFrame}
 
@@ -77,7 +77,7 @@ private[akkahttp] object BodyFromAkka {
         saved(hr, file.toFile).map(_ => file)
 
       case (wsr: WebSocketResponseAs[_, _], Right(promise)) =>
-        wsFromAkka(wsr, promise)
+        wsFromAkka(wsr, promise, meta)
 
       case (_: WebSocketResponseAs[_, _], Left(hr)) =>
         hr.entity
@@ -98,11 +98,12 @@ private[akkahttp] object BodyFromAkka {
 
   private def wsFromAkka[T, R](
       rr: WebSocketResponseAs[T, R],
-      wsFlow: Promise[Flow[Message, Message, NotUsed]]
+      wsFlow: Promise[Flow[Message, Message, NotUsed]],
+      meta: ResponseMetadata
   )(implicit ec: ExecutionContext, mat: Materializer): Future[T] = {
     rr match {
       case ResponseAsWebSocket(f) =>
-        val (flow, wsFuture) = webSocketAndFlow()
+        val (flow, wsFuture) = webSocketAndFlow(meta)
         wsFlow.success(flow)
         wsFuture.flatMap { ws =>
           val result = f.asInstanceOf[WebSocket[Future] => Future[T]](ws)
@@ -110,7 +111,7 @@ private[akkahttp] object BodyFromAkka {
           result
         }
       case ResponseAsWebSocketUnsafe() =>
-        val (flow, wsFuture) = webSocketAndFlow()
+        val (flow, wsFuture) = webSocketAndFlow(meta)
         wsFlow.success(flow)
         wsFuture.asInstanceOf[Future[T]]
       case ResponseAsWebSocketStream(_, p) =>
@@ -134,7 +135,7 @@ private[akkahttp] object BodyFromAkka {
     }
   }
 
-  private def webSocketAndFlow()(implicit
+  private def webSocketAndFlow(meta: ResponseMetadata)(implicit
       ec: ExecutionContext,
       mat: Materializer
   ): (Flow[Message, Message, NotUsed], Future[WebSocket[Future]]) = {
@@ -195,6 +196,8 @@ private[akkahttp] object BodyFromAkka {
             if (wasOpen) sourceQueue.complete()
             sourceQueue.watchCompletion().map(_ => ())
         }
+
+      override def upgradeHeaders: Headers = Headers(meta.headers)
 
       override def isOpen: Future[Boolean] = Future.successful(open.get())
 

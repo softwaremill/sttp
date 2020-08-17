@@ -17,6 +17,7 @@ import sttp.client.{
   ResponseAsWebSocketStream,
   ResponseAsWebSocketUnsafe
 }
+import sttp.model.Headers
 import sttp.monad.MonadError
 import sttp.ws.{WebSocket, WebSocketFrame}
 
@@ -93,6 +94,7 @@ object MapEffect {
     new WebSocket[G] {
       override def receive(): G[WebSocketFrame] = fk(ws.receive())
       override def send(f: WebSocketFrame, isContinuation: Boolean): G[Unit] = fk(ws.send(f, isContinuation))
+      override def upgradeHeaders: Headers = ws.upgradeHeaders
       override def isOpen(): G[Boolean] = fk(ws.isOpen())
       override implicit def monad: MonadError[G] = gm
     }

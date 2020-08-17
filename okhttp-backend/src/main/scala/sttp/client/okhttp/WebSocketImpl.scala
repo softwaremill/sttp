@@ -2,17 +2,21 @@ package sttp.client.okhttp
 
 import java.util.concurrent.atomic.AtomicBoolean
 
-import okhttp3.{WebSocketListener, Response => OkHttpResponse, WebSocket => OkHttpWebSocket}
+import okhttp3.{WebSocketListener, Headers => OkHttpHeaders, Response => OkHttpResponse, WebSocket => OkHttpWebSocket}
 import okio.ByteString
 import sttp.client.internal.ws.{SimpleQueue, WebSocketEvent}
+import sttp.model.{Header, Headers}
 import sttp.monad.MonadError
 import sttp.monad.syntax._
 import sttp.ws.{WebSocket, WebSocketClosed, WebSocketException, WebSocketFrame}
 
+import scala.collection.JavaConverters.asScalaIteratorConverter
+
 private[okhttp] class WebSocketImpl[F[_]](
     ws: OkHttpWebSocket,
     queue: SimpleQueue[F, WebSocketEvent],
-    _isOpen: AtomicBoolean
+    _isOpen: AtomicBoolean,
+    _headers: OkHttpHeaders
 )(implicit
     val monad: MonadError[F]
 ) extends WebSocket[F] {
@@ -63,6 +67,10 @@ private[okhttp] class WebSocketImpl[F[_]](
       monad.unit(())
     }
   }
+
+  override lazy val upgradeHeaders: Headers = Headers(
+    _headers.iterator().asScala.map(p => Header(p.getFirst, p.getSecond)).toList
+  )
 
   override def isOpen(): F[Boolean] = monad.eval(_isOpen.get())
 }

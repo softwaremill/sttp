@@ -8,6 +8,7 @@ import java.util.function.BiConsumer
 import java.net.http.{WebSocket => JWebSocket}
 
 import sttp.client.internal.ws.{SimpleQueue, WebSocketEvent}
+import sttp.model.Headers
 import sttp.monad.{Canceler, MonadAsyncError, MonadError}
 import sttp.monad.syntax._
 import sttp.ws.{WebSocket, WebSocketClosed, WebSocketFrame}
@@ -50,6 +51,8 @@ private[httpclient] class WebSocketImpl[F[_]](
         // making close sequentially idempotent
         if (wasOpen) fromCompletableFuture(ws.sendClose(statusCode, reasonText)) else ().unit
     }))
+
+  override lazy val upgradeHeaders: Headers = Headers(Nil)
 
   override def isOpen(): F[Boolean] = monad.eval(_isOpen.get())
 
