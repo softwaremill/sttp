@@ -8,6 +8,7 @@ import sttp.client.curl.CurlInfo._
 import sttp.client.curl.CurlOption.{Header => _, _}
 import sttp.client.curl._
 import sttp.client.internal._
+import sttp.capabilities.Effect
 import sttp.model._
 import sttp.monad.MonadError
 import sttp.model.{Header, Method, StatusCode}
