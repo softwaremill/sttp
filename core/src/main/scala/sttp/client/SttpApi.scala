@@ -91,11 +91,23 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
   def asParams: ResponseAs[Either[String, Seq[(String, String)]], Any] = asParams(Utf8)
 
   /**
+    * Use the `utf-8` charset by default, unless specified otherwise in the response headers.
+    */
+  def asParamsAlways: ResponseAs[Seq[(String, String)], Any] = asParamsAlways(Utf8)
+
+  /**
     * Use the given charset by default, unless specified otherwise in the response headers.
     */
   def asParams(charset: String): ResponseAs[Either[String, Seq[(String, String)]], Any] = {
+    asEither(asStringAlways, asParamsAlways(charset))
+  }
+
+  /**
+    * Use the given charset by default, unless specified otherwise in the response headers.
+    */
+  def asParamsAlways(charset: String): ResponseAs[Seq[(String, String)], Any] = {
     val charset2 = sanitizeCharset(charset)
-    asString(charset2).mapRight(ResponseAs.parseParams(_, charset2))
+    asStringAlways(charset2).map(ResponseAs.parseParams(_, charset2))
   }
 
   def asStream[F[_], T, S](s: Streams[S])(f: s.BinaryStream => F[T]): ResponseAs[Either[String, T], Effect[F] with S] =
@@ -105,9 +117,9 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     ResponseAsStream(s)(f)
 
   def asStreamUnsafe[S](s: Streams[S]): ResponseAs[Either[String, s.BinaryStream], S] =
-    asEither(asStringAlways, asStreamUnsafeAlways(s))
+    asEither(asStringAlways, asStreamAlwaysUnsafe(s))
 
-  def asStreamUnsafeAlways[S](s: Streams[S]): ResponseAs[s.BinaryStream, S] = ResponseAsStreamUnsafe(s)
+  def asStreamAlwaysUnsafe[S](s: Streams[S]): ResponseAs[s.BinaryStream, S] = ResponseAsStreamUnsafe(s)
 
   private[client] def asSttpFile(file: SttpFile): ResponseAs[SttpFile, Any] =
     ResponseAsFile(file)
@@ -119,9 +131,9 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     ResponseAsWebSocket(f)
 
   def asWebSocketUnsafe[F[_]]: ResponseAs[Either[String, WebSocket[F]], Effect[F] with WebSockets] =
-    asWebSocketEither(asStringAlways, asWebSocketUnsafeAlways)
+    asWebSocketEither(asStringAlways, asWebSocketAlwaysUnsafe)
 
-  def asWebSocketUnsafeAlways[F[_]]: ResponseAs[WebSocket[F], Effect[F] with WebSockets] = ResponseAsWebSocketUnsafe()
+  def asWebSocketAlwaysUnsafe[F[_]]: ResponseAs[WebSocket[F], Effect[F] with WebSockets] = ResponseAsWebSocketUnsafe()
 
   def asWebSocketStream[S](
       s: Streams[S]
@@ -135,14 +147,41 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
   def fromMetadata[T, R](default: ResponseAs[T, R], conditions: ConditionalResponseAs[T, R]*): ResponseAs[T, R] =
     ResponseAsFromMetadata(conditions.toList, default)
 
+  /**
+    * Uses the `onSuccess` response specification for successful responses (2xx), and the `onError`
+    * specification otherwise.
+    */
   def asEither[A, B, R](onError: ResponseAs[A, R], onSuccess: ResponseAs[B, R]): ResponseAs[Either[A, B], R] =
     fromMetadata(onError.map(Left(_)), ConditionalResponseAs(_.isSuccess, onSuccess.map(Right(_))))
 
+  /**
+    * Uses the `onSuccess` response specification for 101 responses (switching protocols), and the `onError`
+    * specification otherwise.
+    */
   def asWebSocketEither[A, B, R](onError: ResponseAs[A, R], onSuccess: ResponseAs[B, R]): ResponseAs[Either[A, B], R] =
     fromMetadata(
       onError.map(Left(_)),
       ConditionalResponseAs(_.code == StatusCode.SwitchingProtocols, onSuccess.map(Right(_)))
     )
+
+  /**
+    * Uses different specifications for success (2xx) and error responses.
+    * @tparam DE type of deserialization failure
+    * @tparam HE type to which error responses are deserialized
+    * @tparam T type to which successful responses are deserialized
+    */
+  def asEitherDeserialized[DE, HE, T, R](
+      onError: ResponseAs[Either[DeserializationError[DE], HE], R],
+      onSuccess: ResponseAs[Either[DeserializationError[DE], T], R]
+  ): ResponseAs[Either[ResponseError[HE, DE], T], R] = {
+    fromMetadata(
+      onError.mapWithMetadata {
+        case (Left(a), _)     => Left(a)
+        case (Right(b), meta) => Left(HttpError(b, meta.code))
+      },
+      ConditionalResponseAs(_.isSuccess, onSuccess)
+    )
+  }
 
   // multipart factory methods
 
@@ -244,56 +283,4 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     */
   def multipart[B: BodySerializer](name: String, b: B): Part[BasicRequestBody] =
     Part(name, implicitly[BodySerializer[B]].apply(b), contentType = Some(MediaType.ApplicationXWwwFormUrlencoded))
-
-  /**
-    * Allows to provide different mappings for success and error responses
-    * @param onError transformation which will be applied if the response is unsuccessful (non 2xx)
-    * @param onSuccess transformation which will be applied if the response is successful (2xx)
-    * @tparam DE underlying type of deserialization failure
-    * @tparam HE type which represents known error cases
-    * @tparam T type of the successful response
-    */
-  def either[DE, HE, T](
-      onError: ResponseAs[Either[DeserializationError[DE], HE], Nothing],
-      onSuccess: ResponseAs[Either[DeserializationError[DE], T], Nothing]
-  ): ResponseAs[Either[ResponseErrorTyped[HE, DE], T], Nothing] = {
-    fromMetadata { meta =>
-      if (meta.isSuccess) {
-        onSuccess
-      } else {
-        onError.map {
-          case Left(a)  => Left(a)
-          case Right(b) => Left(HttpError(b, meta.code))
-        }
-      }
-    }
-  }
-
-  def fromStatusCode[DE, T](
-      mapping: StatusCode => ResponseAs[Either[DeserializationError[DE], T], Nothing]
-  ): ResponseAs[Either[DeserializationError[DE], T], Nothing] = {
-    fromMetadata { meta =>
-      mapping(meta.code)
-    }
-  }
-
-  /**
-    * Same as #either but throws deserialization error if either success or error deserialization fails
-    * @param onSuccess transformation which will be applied if the response is successful (2xx)
-    * @param onError transformation which will be applied if the response is unsuccessful (non 2xx)
-    * @tparam E type which represents known error cases
-    * @tparam T type of the successful response
-    * @return
-    */
-  def eitherUnsafe[E, T](
-      onSuccess: ResponseAs[T, Nothing]
-  )(onError: ResponseAs[E, Nothing]): ResponseAs[Either[E, T], Nothing] = {
-    fromMetadata { meta =>
-      if (meta.isSuccess) {
-        onSuccess.map(Right(_))
-      } else {
-        onError.map(Left(_))
-      }
-    }
-  }
 }

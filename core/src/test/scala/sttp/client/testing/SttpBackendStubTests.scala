@@ -240,7 +240,7 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
 
     val ws = basicRequest
       .get(uri"ws://example.org")
-      .response(asWebSocketUnsafeAlways[Identity])
+      .response(asWebSocketAlwaysUnsafe[Identity])
       .send(backend)
       .body
 

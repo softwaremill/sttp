@@ -86,7 +86,7 @@ abstract class StreamingTest[F[_], S]
     val r0: RequestT[Identity, streams.BinaryStream, S] = basicRequest
       .post(uri"$endpoint/streaming/echo")
       .body(Body)
-      .response(asStreamUnsafeAlways(streams))
+      .response(asStreamAlwaysUnsafe(streams))
     r0.send(backend)
       .toFuture()
       .flatMap { response =>
@@ -102,7 +102,7 @@ abstract class StreamingTest[F[_], S]
     val r0: RequestT[Identity, streams.BinaryStream, S] = basicRequest
       .post(uri"$endpoint/streaming/echo")
       .body(LargeBody)
-      .response(asStreamUnsafeAlways(streams))
+      .response(asStreamAlwaysUnsafe(streams))
     r0.send(backend)
       .toFuture()
       .flatMap { response =>
@@ -139,7 +139,7 @@ abstract class StreamingTest[F[_], S]
     val r0: RequestT[Identity, (streams.BinaryStream, Boolean), S] = basicRequest
       .post(uri"$endpoint/streaming/echo")
       .body(Body)
-      .response(asStreamUnsafeAlways(streams).map(s => (s, true)))
+      .response(asStreamAlwaysUnsafe(streams).map(s => (s, true)))
     r0
       .send(backend)
       .toFuture()
@@ -162,7 +162,7 @@ abstract class StreamingTest[F[_], S]
       // in tests, but that's so much easier than setting up an https
       // testing server
       .get(url)
-      .response(asStreamUnsafeAlways(streams))
+      .response(asStreamAlwaysUnsafe(streams))
 
     r0
       .send(backend)

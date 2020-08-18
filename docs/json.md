@@ -4,7 +4,28 @@ Adding support for JSON (or other format) bodies in requests/responses is a matt
 
 Each integration is available as an import, which brings the implicit `BodySerializer`s and `asJson` methods into scope. Alternatively, these values are grouped intro traits (e.g. `sttp.client.circe.SttpCirceApi`), which can be extended to group multiple integrations in one object, and thus reduce the number of necessary imports.
 
+The following variants of `asJson` methods are available:
+
+* regular - deserializes the body to json, only if the response is successful (2xx)
+* `always` - deserializes the body to json regardless of the status code
+* `unsafe` - throws deserialization exceptions, instead of representing including them on the left side of an `Either`
+* `either` - uses different deserializers for error and successful (2xx) responses
+
+The type signatures vary depending on the underlying library (required implicits and error representation differs), but they obey the following pattern:
+
+```scala mdoc:compile-only
+import sttp.client._
+
+def asJson[B]: ResponseAs[Either[ResponseError[String, Exception], B], Any] = ???
+def asJsonUnsafe[B]: ResponseAs[Either[String, B], Any] = ???
+def asJsonAlways[B]: ResponseAs[Either[DeserializationError[Exception], B], Any] = ???
+def asJsonAlwaysUnsafe[B]: ResponseAs[B, Any] = ???
+def asJsonEither[E, B]: ResponseAs[Either[ResponseError[E, Exception], B], Any] = ???
+def asJsonEitherUnsafe[E, B]: ResponseAs[Either[E, B], Any] = ???
+```
+
 Following data class will be used through the next few examples:
+
 ```scala mdoc
 case class RequestPayload(data: String)
 case class ResponsePayload(data: String)
@@ -32,7 +53,7 @@ val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
 import io.circe.generic.auto._
 val requestPayload = RequestPayload("some data")
 
-val response: Identity[Response[Either[ResponseError[io.circe.Error], ResponsePayload]]] =
+val response: Identity[Response[Either[ResponseError[String, io.circe.Error], ResponsePayload]]] =
   basicRequest
     .post(uri"...")
     .body(requestPayload)
@@ -68,7 +89,7 @@ val requestPayload = RequestPayload("some data")
 implicit val serialization = org.json4s.native.Serialization
 implicit val formats = org.json4s.DefaultFormats
 
-val response: Identity[Response[Either[ResponseError[Exception], ResponsePayload]]] =
+val response: Identity[Response[Either[ResponseError[String, Exception], ResponsePayload]]] =
   basicRequest
     .post(uri"...")
     .body(requestPayload)
@@ -100,7 +121,7 @@ implicit val myResponseJsonFormat: RootJsonFormat[ResponsePayload] = ???
 
 val requestPayload = RequestPayload("some data")
 
-val response: Identity[Response[Either[ResponseError[Exception], ResponsePayload]]] =
+val response: Identity[Response[Either[ResponseError[String, Exception], ResponsePayload]]] =
   basicRequest
     .post(uri"...")
     .body(requestPayload)

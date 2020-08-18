@@ -61,7 +61,7 @@ val request = basicRequest
   .response(asJson[HttpBinResponse])
 
 val backend = AkkaHttpBackend()
-val response: Future[Response[Either[ResponseError[Exception], HttpBinResponse]]] =
+val response: Future[Response[Either[ResponseError[String, Exception], HttpBinResponse]]] =
   request.send(backend)
 
 for {
@@ -223,7 +223,7 @@ object WebsocketZio extends zio.App {
   // create a description of a program, which requires two dependencies in the environment:
   // the SttpClient, and the Console
   val sendAndPrint: ZIO[Console with SttpClient, Throwable, Unit] = for {
-    response <- SttpClient.send(basicRequest.get(uri"wss://echo.websocket.org").response(asWebSocketUnsafeAlways[Task]))
+    response <- SttpClient.send(basicRequest.get(uri"wss://echo.websocket.org").response(asWebSocketAlwaysUnsafe[Task]))
     _ <- useWebsocket(response.body)
   } yield ()
 

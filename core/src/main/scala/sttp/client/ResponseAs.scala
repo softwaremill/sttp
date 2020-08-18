@@ -90,7 +90,7 @@ object ResponseAs {
     */
   def deserializeRightCatchingExceptions[T](
       doDeserialize: String => T
-  ): (Either[String, String], ResponseMetadata) => Either[ResponseError[Exception], T] = {
+  ): (Either[String, String], ResponseMetadata) => Either[ResponseError[String, Exception], T] = {
     case (Left(s), meta) => Left(HttpError(s, meta.code))
     case (Right(s), _)   => deserializeCatchingExceptions(doDeserialize)(s)
   }
@@ -116,9 +116,20 @@ object ResponseAs {
     */
   def deserializeRightWithError[E: ShowError, T](
       doDeserialize: String => Either[E, T]
-  ): (Either[String, String], ResponseMetadata) => Either[ResponseErrorTyped[String, E], T] = {
+  ): (Either[String, String], ResponseMetadata) => Either[ResponseError[String, E], T] = {
     case (Left(s), meta) => Left(HttpError(s, meta.code))
     case (Right(s), _)   => deserializeWithError(doDeserialize)(implicitly[ShowError[E]])(s)
+  }
+
+  /**
+    * Returns a function, which keeps `Left` unchanged, and attempts to deserialize `Right` values using
+    * the given function. If deserialization fails, an exception is thrown
+    */
+  def deserializeRightOrThrow[E: ShowError, T](
+      doDeserialize: String => Either[E, T]
+  ): Either[String, String] => Either[String, T] = {
+    case Left(s)  => Left(s)
+    case Right(s) => Right(deserializeOrThrow(doDeserialize)(implicitly[ShowError[E]])(s))
   }
 
   /**
@@ -155,11 +166,11 @@ object ResponseAs {
     }
 }
 
-sealed abstract class ResponseErrorTyped[+HE, +DE](error: String) extends Exception(error)
+sealed abstract class ResponseError[+HE, +DE](error: String) extends Exception(error)
 case class HttpError[HE](body: HE, statusCode: StatusCode)
-    extends ResponseErrorTyped[HE, Nothing](s"statusCode: $statusCode, response: $body")
+    extends ResponseError[HE, Nothing](s"statusCode: $statusCode, response: $body")
 case class DeserializationError[DE: ShowError](body: String, error: DE)
-    extends ResponseErrorTyped[Nothing, DE](implicitly[ShowError[DE]].show(error))
+    extends ResponseError[Nothing, DE](implicitly[ShowError[DE]].show(error))
 
 trait ShowError[-T] {
   def show(t: T): String

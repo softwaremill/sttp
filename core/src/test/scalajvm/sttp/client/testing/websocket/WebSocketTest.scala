@@ -46,7 +46,7 @@ abstract class WebSocketTest[F[_]]
   it should "send and receive two messages (unsafe)" in {
     basicRequest
       .get(uri"$wsEndpoint/ws/echo")
-      .response(asWebSocketUnsafeAlways[F])
+      .response(asWebSocketAlwaysUnsafe[F])
       .send(backend)
       .flatMap { response =>
         val ws = response.body
@@ -63,7 +63,7 @@ abstract class WebSocketTest[F[_]]
   it should "send and receive 1000 messages (unsafe)" in {
     basicRequest
       .get(uri"$wsEndpoint/ws/echo")
-      .response(asWebSocketUnsafeAlways[F])
+      .response(asWebSocketAlwaysUnsafe[F])
       .send(backend)
       .flatMap { response =>
         val ws = response.body
@@ -80,7 +80,7 @@ abstract class WebSocketTest[F[_]]
   it should "receive two messages (unsafe)" in {
     basicRequest
       .get(uri"$wsEndpoint/ws/send_and_wait")
-      .response(asWebSocketUnsafeAlways[F])
+      .response(asWebSocketAlwaysUnsafe[F])
       .send(backend)
       .flatMap { response =>
         val ws = response.body
@@ -98,7 +98,7 @@ abstract class WebSocketTest[F[_]]
     failAfter(Span(15, Seconds)) {
       basicRequest
         .get(uri"$wsEndpoint/ws/404")
-        .response(asWebSocketUnsafeAlways[F])
+        .response(asWebSocketAlwaysUnsafe[F])
         .send(backend)
         .map(_ => fail("should not open WebSocket"))
         .handleError {

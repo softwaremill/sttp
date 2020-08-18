@@ -5,7 +5,7 @@ By default, the received response body will be read as a `Either[String, String]
 The default `response.body` will be a:
 
 * `Left(errorMessage)` if the request is successful, but response code is not 2xx.
-* `Right(body)` if the request is successful and the response code is 2xx.
+* `Right(body)` if the request is successful, and the response code is 2xx.
 
 How the response body will be read is part of the request description, as already when sending the request, the backend needs to know what to do with the response. The type to which the response body should be deserialized is the second type parameter of `RequestT`, and stored in the request definition as the `request.response: ResponseAs[T, R]` property.
 
@@ -36,7 +36,9 @@ def asStringAlways(encoding: String): ResponseAs[String, Any] = ???
 def asByteArray: ResponseAs[Either[String, Array[Byte]], Any] = ???
 def asByteArrayAlways: ResponseAs[Array[Byte], Any] = ???
 def asParams: ResponseAs[Either[String, Seq[(String, String)]], Any] = ???
+def asParamsAlways: ResponseAs[Seq[(String, String)], Any] = ???
 def asParams(encoding: String): ResponseAs[Either[String, Seq[(String, String)]], Any] = ???
+def asParamsAlways(encoding: String): ResponseAs[Seq[(String, String)], Any] = ???
 def asFile(file: File): ResponseAs[Either[String, File], Any] = ???
 def asFileAlways(file: File): ResponseAs[File, Any] = ???
 def asPath(path: Path): ResponseAs[Either[String, Path], Any] = ???
@@ -107,6 +109,8 @@ basicRequest
 
 A number of JSON libraries are supported out-of-the-box, see [json support](../json.md).
 
+### Response-metadata dependent deserializers
+
 Using the `fromMetadata` combinator, it's possible to dynamically specify how the response should be deserialized, basing on the response status code and response headers. The default `asString`, `asByteArray` response descriptions use this method to return a `Left` in case of non-2xx responses, and a `Right` otherwise. 
 
 A more complex case, which uses Circe for deserializing JSON, choosing to which model to deserialize to depending on the status code, can look as following:
@@ -116,21 +120,39 @@ import sttp.client._
 import sttp.model._
 import sttp.client.circe._
 import io.circe._
-import io.circe.generic.semiauto._
+import io.circe.generic.auto._
 
 sealed trait MyModel
 case class SuccessModel(name: String, age: Int) extends MyModel
 case class ErrorModel(message: String) extends MyModel
-implicit val successModelDecoder: Decoder[SuccessModel] = deriveDecoder[SuccessModel]
-implicit val errorModelDecoder: Decoder[ErrorModel] = deriveDecoder[ErrorModel]
 
-val myRequest: Request[Either[ResponseError[io.circe.Error], MyModel], Nothing] =
+val myRequest: Request[Either[ResponseError[String, io.circe.Error], MyModel], Nothing] =
   basicRequest
     .get(uri"https://example.com")
     .response(fromMetadata(
         asJson[ErrorModel], 
         ConditionalResponseAs(_.code == StatusCode.Ok, asJson[SuccessModel])
     ))
+```
+
+The above example assumes that success and error models are part of one hierarchy (`MyModel`). Sometimes http errors are modelled independently of success. In this case, we can use `asJsonEither`, which uses `asEitherDeserialized` under the covers:
+
+```scala
+import sttp.client._
+import sttp.model._
+import sttp.client.circe._
+import io.circe._
+import io.circe.generic.auto._
+
+case class MyModel(p1: Int)
+sealed trait MyErrorModel
+case class Conflict(message: String) extends MyErrorModel
+case class BadRequest(message: String) extends MyErrorModel
+case class GenericError(message: String) extends MyErrorModel
+
+basicRequest
+  .get(uri"https://example.com")
+  .response(asJsonEither[MyErrorModel, MyModel])
 ```
 
 ## Streaming

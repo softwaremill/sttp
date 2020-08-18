@@ -21,8 +21,17 @@ trait SttpPlayJsonApi {
     * - `Left(HttpError(String))` if the response code was other than 2xx (deserialization is not attempted)
     * - `Left(DeserializationError)` if there's an error during deserialization
     */
-  def asJson[B: Reads: IsOption]: ResponseAs[Either[ResponseError[JsError], B], Any] =
+  def asJson[B: Reads: IsOption]: ResponseAs[Either[ResponseError[String, JsError], B], Any] =
     asString.mapWithMetadata(ResponseAs.deserializeRightWithError(deserializeJson[B]))
+
+  /**
+    * If the response is successful (2xx), tries to deserialize the body from a string into JSON. Returns:
+    * - `Right(b)` if the parsing was successful
+    * - `Left(String)` if the response code was other than 2xx (deserialization is not attempted)
+    * - throws an exception if there's an error during deserialization
+    */
+  def asJsonUnsafe[B: Reads: IsOption]: ResponseAs[Either[String, B], Any] =
+    asString.map(ResponseAs.deserializeRightOrThrow(deserializeJson))
 
   /**
     * Tries to deserialize the body from a string into JSON, regardless of the response code. Returns:
@@ -38,6 +47,28 @@ trait SttpPlayJsonApi {
     */
   def asJsonAlwaysUnsafe[B: Reads: IsOption]: ResponseAs[B, Any] =
     asStringAlways.map(ResponseAs.deserializeOrThrow(deserializeJson))
+
+  /**
+    * Tries to deserialize the body from a string into JSON, using different deserializers depending on the
+    * status code. Returns:
+    * - `Right(B)` if the response was 2xx and parsing was successful
+    * - `Left(HttpError(E))` if the response was other than 2xx and parsing was successful
+    * - `Left(DeserializationError)` if there's an error during deserialization
+    */
+  def asJsonEither[E: Reads: IsOption, B: Reads: IsOption]: ResponseAs[Either[ResponseError[E, JsError], B], Any] = {
+    asEitherDeserialized(asJsonAlways[E], asJsonAlways[B])
+  }
+
+  /**
+    * Tries to deserialize the body from a string into JSON, using different deserializers depending on the
+    * status code. Returns:
+    * - `Right(B)` if the response was 2xx and parsing was successful
+    * - `Left(E)` if the response was other than 2xx and parsing was successful
+    * - throws an exception if there's an error during deserialization
+    */
+  def asJsonEitherUnsafe[E: Reads: IsOption, B: Reads: IsOption]: ResponseAs[Either[E, B], Any] = {
+    asEither(asJsonAlwaysUnsafe[E], asJsonAlwaysUnsafe[B])
+  }
 
   // Note: None of the play-json utilities attempt to catch invalid
   // json, so Json.parse needs to be wrapped in Try
