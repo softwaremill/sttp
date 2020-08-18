@@ -25,7 +25,7 @@ package object client extends SttpApi {
   @deprecated(message = "use ResponseException", since = "3.0.0")
   type ResponseError[+HE, +DE] = ResponseException[HE, DE]
   @deprecated(message = "use HttpException", since = "3.0.0")
-  type HttpError[HE] = HttpException[HE]
+  type HttpError[HE] = HttpError[HE]
   @deprecated(message = "use DeserializationException", since = "3.0.0")
   type DeserializationError[DE] = DeserializationException[DE]
 }

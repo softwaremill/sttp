@@ -73,14 +73,14 @@ object ResponseAs {
 
     /**
       * If type to which response body should be deserialized is an `Either[A, B]`, either throws `A` (wrapped with
-      * a [[HttpException]] if it's not yet an exception), or returns `B`.
+      * a [[HttpError]] if it's not yet an exception), or returns `B`.
       */
     def failLeft: ResponseAs[B, R] =
       ra.mapWithMetadata {
         case (t, meta) =>
           t match {
             case Left(a: Exception) => throw a
-            case Left(a)            => throw HttpException(a, meta.code)
+            case Left(a)            => throw HttpError(a, meta.code)
             case Right(b)           => b
           }
       }
@@ -92,12 +92,12 @@ object ResponseAs {
 
     /**
       * If type to which response body should be deserialized is an `Either[ResponseException[HE, DE], B]`, either
-      * throws the [[DeserializationException]], or returns either the deserialized body in [[HttpException]], or
+      * throws the [[DeserializationException]], or returns either the deserialized body in [[HttpError]], or
       * the deserialized successful body `B`.
       */
     def failLeftDeserialize: ResponseAs[Either[HE, B], R] =
       ra.map {
-        case Left(HttpException(he, _))           => Left(he)
+        case Left(HttpError(he, _))               => Left(he)
         case Left(d: DeserializationException[_]) => throw d
         case Right(b)                             => Right(b)
       }
@@ -116,13 +116,13 @@ object ResponseAs {
   }
 
   /**
-    * Returns a function, which maps `Left` values to [[HttpException]]s, and attempts to deserialize `Right` values using
+    * Returns a function, which maps `Left` values to [[HttpError]]s, and attempts to deserialize `Right` values using
     * the given function, catching any exceptions and representing them as [[DeserializationException]]s.
     */
   def deserializeRightCatchingExceptions[T](
       doDeserialize: String => T
   ): (Either[String, String], ResponseMetadata) => Either[ResponseException[String, Exception], T] = {
-    case (Left(s), meta) => Left(HttpException(s, meta.code))
+    case (Left(s), meta) => Left(HttpError(s, meta.code))
     case (Right(s), _)   => deserializeCatchingExceptions(doDeserialize)(s)
   }
 
@@ -142,13 +142,13 @@ object ResponseAs {
     )
 
   /**
-    * Returns a function, which maps `Left` values to [[HttpException]]s, and attempts to deserialize `Right` values using
+    * Returns a function, which maps `Left` values to [[HttpError]]s, and attempts to deserialize `Right` values using
     * the given function.
     */
   def deserializeRightWithError[E: ShowError, T](
       doDeserialize: String => Either[E, T]
   ): (Either[String, String], ResponseMetadata) => Either[ResponseException[String, E], T] = {
-    case (Left(s), meta) => Left(HttpException(s, meta.code))
+    case (Left(s), meta) => Left(HttpError(s, meta.code))
     case (Right(s), _)   => deserializeWithError(doDeserialize)(implicitly[ShowError[E]])(s)
   }
 
@@ -198,7 +198,7 @@ object ResponseAs {
 }
 
 sealed abstract class ResponseException[+HE, +DE](error: String) extends Exception(error)
-case class HttpException[HE](body: HE, statusCode: StatusCode)
+case class HttpError[HE](body: HE, statusCode: StatusCode)
     extends ResponseException[HE, Nothing](s"statusCode: $statusCode, response: $body")
 case class DeserializationException[DE: ShowError](body: String, error: DE)
     extends ResponseException[Nothing, DE](implicitly[ShowError[DE]].show(error))

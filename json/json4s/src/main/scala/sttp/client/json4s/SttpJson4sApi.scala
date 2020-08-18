@@ -47,8 +47,8 @@ trait SttpJson4sApi {
       serialization: Serialization
   ): ResponseAs[Either[ResponseException[E, Exception], B], Any] = {
     asJson[B].mapLeft {
-      case HttpException(e, code) =>
-        ResponseAs.deserializeCatchingExceptions(deserializeJson[E])(e).fold(identity, HttpException(_, code))
+      case HttpError(e, code) =>
+        ResponseAs.deserializeCatchingExceptions(deserializeJson[E])(e).fold(identity, HttpError(_, code))
     }
   }
 

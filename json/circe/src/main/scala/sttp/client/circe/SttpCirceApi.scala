@@ -41,8 +41,8 @@ trait SttpCirceApi {
   def asJsonEither[E: Decoder: IsOption, B: Decoder: IsOption]
       : ResponseAs[Either[ResponseException[E, io.circe.Error], B], Any] = {
     asJson[B].mapLeft {
-      case HttpException(e, code) =>
-        deserializeJson[E].apply(e).fold(DeserializationException(e, _), HttpException(_, code))
+      case HttpError(e, code) =>
+        deserializeJson[E].apply(e).fold(DeserializationException(e, _), HttpError(_, code))
     }
   }
 
