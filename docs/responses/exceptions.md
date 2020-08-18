@@ -18,13 +18,13 @@ Unknown exceptions aren't categorised and are re-thrown unchanged.
 
 ## Deserialization errors
 
-Exceptions might also be thrown when deserializing the response body - depending on the specification of how to handle response bodies. The built-in deserializers (see e.g. [json](../json.md)) return errors represented as `ResponseError[HE, DE]`, which can either be a `HttpError` (protocol-level failures, containing a potentially deserialized body value) or a `DeserializationError` (containing a deserialization-library-specific exception).
+Exceptions might also be thrown when deserializing the response body - depending on the specification of how to handle response bodies. The built-in deserializers (see e.g. [json](../json.md)) return errors represented as `ResponseException[HE, DE]`, which can either be a `HttpError` (protocol-level failures, containing a potentially deserialized body value) or a `DeserializationException` (containing a deserialization-library-specific exception).
 
 This means that a typical `asJson` response specification will result in the body being read as:
 
 ```scala mdoc:silent
 import sttp.client._
-def asJson[T]: ResponseAs[Either[ResponseError[String, Exception], T], Any] = ???
+def asJson[T]: ResponseAs[Either[ResponseException[String, Exception], T], Any] = ???
 ``` 
 
 There are also "unsafe" variants of the built-in response specifications which represent deserialization exceptions as failed effects / throw them synchronously.
