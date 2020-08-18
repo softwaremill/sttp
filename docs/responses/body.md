@@ -72,6 +72,20 @@ basicRequest.response(asFile(someFile))
 
 ```
 
+## Failing when the response code is not 2xx
+
+Sometimes it's convenient to get a failed effect (or an exception thrown) when the response status code is not successful. In such cases, the response specification can be modified using the `.failLeft` combinator:
+
+```scala mdoc:compile-only
+import sttp.client._
+
+basicRequest.response(asString.failLeft): PartialRequest[String, Any]
+```
+
+The combinator works in all cases where the response body is specified to be deserialized as an `Either`. If the left is already an exception, it will be thrown unchanged. Otherwise, the left-value will be wrapped in an `HttpError`.
+
+```note:: While both ``asStringAlways`` and ``asString.failLeft`` have the type ``ResponseAs[String, Any]``, they are different. The first will return the response body as a string always, regardless of the responses' status code. The second will return a failed effect / throw a ``HttpError`` exception for non-2xx status codes, and the string as body only for 2xx status codes.```
+
 ## Custom body deserializers
 
 It's possible to define custom body deserializers by taking any of the built-in response descriptions and mapping over them. Each `ResponseAs` instance has `map` and `mapWithMetadata` methods, which can be used to transform it to a description for another type (optionally using response metadata, such as headers or the status code). Each such value is immutable and can be used multiple times.

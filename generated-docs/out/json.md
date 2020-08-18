@@ -16,11 +16,11 @@ The type signatures vary depending on the underlying library (required implicits
 ```scala
 import sttp.client._
 
-def asJson[B]: ResponseAs[Either[ResponseException[String, Exception], B], Any] = ???
+def asJson[B]: ResponseAs[Either[ResponseError[String, Exception], B], Any] = ???
 def asJsonUnsafe[B]: ResponseAs[Either[String, B], Any] = ???
-def asJsonAlways[B]: ResponseAs[Either[DeserializationException[Exception], B], Any] = ???
+def asJsonAlways[B]: ResponseAs[Either[DeserializationError[Exception], B], Any] = ???
 def asJsonAlwaysUnsafe[B]: ResponseAs[B, Any] = ???
-def asJsonEither[E, B]: ResponseAs[Either[ResponseException[E, Exception], B], Any] = ???
+def asJsonEither[E, B]: ResponseAs[Either[ResponseError[E, Exception], B], Any] = ???
 def asJsonEitherUnsafe[E, B]: ResponseAs[Either[E, B], Any] = ???
 ```
 
@@ -53,7 +53,7 @@ val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
 import io.circe.generic.auto._
 val requestPayload = RequestPayload("some data")
 
-val response: Identity[Response[Either[ResponseException[String, io.circe.Error], ResponsePayload]]] =
+val response: Identity[Response[Either[ResponseError[String, io.circe.Error], ResponsePayload]]] =
   basicRequest
     .post(uri"...")
     .body(requestPayload)
@@ -89,7 +89,7 @@ val requestPayload = RequestPayload("some data")
 implicit val serialization = org.json4s.native.Serialization
 implicit val formats = org.json4s.DefaultFormats
 
-val response: Identity[Response[Either[ResponseException[String, Exception], ResponsePayload]]] =
+val response: Identity[Response[Either[ResponseError[String, Exception], ResponsePayload]]] =
   basicRequest
     .post(uri"...")
     .body(requestPayload)
@@ -121,7 +121,7 @@ implicit val myResponseJsonFormat: RootJsonFormat[ResponsePayload] = ???
 
 val requestPayload = RequestPayload("some data")
 
-val response: Identity[Response[Either[ResponseException[String, Exception], ResponsePayload]]] =
+val response: Identity[Response[Either[ResponseError[String, Exception], ResponsePayload]]] =
   basicRequest
     .post(uri"...")
     .body(requestPayload)
