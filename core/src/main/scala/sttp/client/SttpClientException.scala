@@ -8,8 +8,8 @@ import scala.annotation.tailrec
 /**
   * Known exceptions that might occur when using a backend. Currently this covers:
   * - connect exceptions: when a connection (tcp socket) can't be established to the target host
-  * - read exceptions: when a connection has been established, but there's any kind of problem receiving the response
-  *   (e.g. a broken socket)
+  * - read exceptions: when a connection has been established, but there's any kind of problem receiving or
+  *   handling the response (e.g. a broken socket or a deserialization error)
   *
   * In general, it's safe to assume that the request hasn't been sent in case of connect exceptions. With read
   * exceptions, the target host might or might have not received and processed the request.
@@ -45,6 +45,7 @@ object SttpClientException {
       case e: java.io.IOException                   => Some(new ReadException(request, e))
       case e: NotAWebSocketException                => Some(new ReadException(request, e))
       case e: GotAWebSocketException                => Some(new ReadException(request, e))
+      case e: ResponseError[_, _]                   => Some(new ReadException(request, e))
       case e if e.getCause != null && e.getCause.isInstanceOf[Exception] =>
         defaultExceptionToSttpClientException(request, e.getCause.asInstanceOf[Exception])
       case _ => None
