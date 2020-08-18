@@ -164,25 +164,6 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
       ConditionalResponseAs(_.code == StatusCode.SwitchingProtocols, onSuccess.map(Right(_)))
     )
 
-  /**
-    * Uses different specifications for success (2xx) and error responses.
-    * @tparam DE type of deserialization failure
-    * @tparam HE type to which error responses are deserialized
-    * @tparam T type to which successful responses are deserialized
-    */
-  def asEitherDeserialized[DE, HE, T, R](
-      onError: ResponseAs[Either[DeserializationException[DE], HE], R],
-      onSuccess: ResponseAs[Either[DeserializationException[DE], T], R]
-  ): ResponseAs[Either[ResponseException[HE, DE], T], R] = {
-    fromMetadata(
-      onError.mapWithMetadata {
-        case (Left(a), _)     => Left(a)
-        case (Right(b), meta) => Left(HttpException(b, meta.code))
-      },
-      ConditionalResponseAs(_.isSuccess, onSuccess)
-    )
-  }
-
   // multipart factory methods
 
   /**

@@ -70,6 +70,37 @@ object ResponseAs {
   implicit class RichResponseAsEither[A, B, R](ra: ResponseAs[Either[A, B], R]) {
     def mapLeft[L2](f: A => L2): ResponseAs[Either[L2, B], R] = ra.map(_.left.map(f))
     def mapRight[R2](f: B => R2): ResponseAs[Either[A, R2], R] = ra.map(_.right.map(f))
+
+    /**
+      * If type to which response body should be deserialized is an `Either[A, B]`, either throws `A` (wrapped with
+      * a [[HttpException]] if it's not yet an exception), or returns `B`.
+      */
+    def failLeft: ResponseAs[B, R] =
+      ra.mapWithMetadata {
+        case (t, meta) =>
+          t match {
+            case Left(a: Exception) => throw a
+            case Left(a)            => throw HttpException(a, meta.code)
+            case Right(b)           => b
+          }
+      }
+  }
+
+  implicit class RichResponseAsEitherResponseException[HE, DE, B, R](
+      ra: ResponseAs[Either[ResponseException[HE, DE], B], R]
+  ) {
+
+    /**
+      * If type to which response body should be deserialized is an `Either[ResponseException[HE, DE], B]`, either
+      * throws the [[DeserializationException]], or returns either the deserialized body in [[HttpException]], or
+      * the deserialized successful body `B`.
+      */
+    def failLeftDeserialize: ResponseAs[Either[HE, B], R] =
+      ra.map {
+        case Left(HttpException(he, _))           => Left(he)
+        case Left(d: DeserializationException[_]) => throw d
+        case Right(b)                             => Right(b)
+      }
   }
 
   private[client] def parseParams(s: String, charset: String): Seq[(String, String)] = {

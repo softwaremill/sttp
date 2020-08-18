@@ -3,7 +3,7 @@ package sttp.client
 import org.scalatest.EitherValues
 import spray.json.DefaultJsonProtocol._
 import spray.json.JsonParser.ParsingException
-import spray.json._
+import spray.json.{DeserializationException => _, _}
 import sttp.client.SprayJsonTests._
 import sttp.client.internal.Utf8
 import sttp.client.sprayJson._
