@@ -61,7 +61,7 @@ class PlayJsonTests extends AnyFlatSpec with Matchers with EitherValues {
     val responseAs = asJson[Inner]
 
     runJsonResponseAs(responseAs)("") should matchPattern {
-      case Left(DeserializationError("", _)) =>
+      case Left(DeserializationException("", _)) =>
     }
   }
 
@@ -71,7 +71,7 @@ class PlayJsonTests extends AnyFlatSpec with Matchers with EitherValues {
     val responseAs = asJson[Outer]
 
     runJsonResponseAs(responseAs)(body) should matchPattern {
-      case Left(DeserializationError(`body`, _)) =>
+      case Left(DeserializationException(`body`, _)) =>
     }
   }
 

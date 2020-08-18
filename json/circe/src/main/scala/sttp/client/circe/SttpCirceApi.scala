@@ -20,7 +20,7 @@ trait SttpCirceApi {
     * - `Left(HttpError(String))` if the response code was other than 2xx (deserialization is not attempted)
     * - `Left(DeserializationError)` if there's an error during deserialization
     */
-  def asJson[B: Decoder: IsOption]: ResponseAs[Either[ResponseError[String, io.circe.Error], B], Any] =
+  def asJson[B: Decoder: IsOption]: ResponseAs[Either[ResponseException[String, io.circe.Error], B], Any] =
     asString.mapWithMetadata(ResponseAs.deserializeRightWithError(deserializeJson))
 
   /**
@@ -37,7 +37,7 @@ trait SttpCirceApi {
     * - `Right(b)` if the parsing was successful
     * - `Left(DeserializationError)` if there's an error during deserialization
     */
-  def asJsonAlways[B: Decoder: IsOption]: ResponseAs[Either[DeserializationError[io.circe.Error], B], Any] =
+  def asJsonAlways[B: Decoder: IsOption]: ResponseAs[Either[DeserializationException[io.circe.Error], B], Any] =
     asStringAlways.map(ResponseAs.deserializeWithError(deserializeJson))
 
   /**
@@ -55,7 +55,7 @@ trait SttpCirceApi {
     * - `Left(DeserializationError)` if there's an error during deserialization
     */
   def asJsonEither[E: Decoder: IsOption, B: Decoder: IsOption]
-      : ResponseAs[Either[ResponseError[E, io.circe.Error], B], Any] = {
+      : ResponseAs[Either[ResponseException[E, io.circe.Error], B], Any] = {
     asEitherDeserialized(asJsonAlways[E], asJsonAlways[B])
   }
 

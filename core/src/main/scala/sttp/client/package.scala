@@ -21,4 +21,11 @@ package object client extends SttpApi {
   type BodySerializer[B] = B => BasicRequestBody
 
   type RetryWhen = (Request[_, _], Either[Throwable, Response[_]]) => Boolean
+
+  @deprecated(message = "use ResponseException", since = "3.0.0")
+  type ResponseError[+HE, +DE] = ResponseException[HE, DE]
+  @deprecated(message = "use HttpException", since = "3.0.0")
+  type HttpError[HE] = HttpException[HE]
+  @deprecated(message = "use DeserializationException", since = "3.0.0")
+  type DeserializationError[DE] = DeserializationException[DE]
 }

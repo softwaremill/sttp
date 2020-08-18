@@ -61,7 +61,7 @@ val request = basicRequest
   .response(asJson[HttpBinResponse])
 
 val backend = AkkaHttpBackend()
-val response: Future[Response[Either[ResponseError[String, Exception], HttpBinResponse]]] =
+val response: Future[Response[Either[ResponseException[String, Exception], HttpBinResponse]]] =
   request.send(backend)
 
 for {

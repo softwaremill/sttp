@@ -126,7 +126,7 @@ sealed trait MyModel
 case class SuccessModel(name: String, age: Int) extends MyModel
 case class ErrorModel(message: String) extends MyModel
 
-val myRequest: Request[Either[ResponseError[String, io.circe.Error], MyModel], Nothing] =
+val myRequest: Request[Either[ResponseException[String, io.circe.Error], MyModel], Nothing] =
   basicRequest
     .get(uri"https://example.com")
     .response(fromMetadata(

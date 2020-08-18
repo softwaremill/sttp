@@ -1,6 +1,6 @@
 package sttp.client.sprayJson
 
-import spray.json._
+import spray.json.{DeserializationException => _, _}
 import sttp.client.internal.Utf8
 import sttp.client.{IsOption, ResponseAs, asEither, _}
 import sttp.model._
@@ -15,7 +15,7 @@ trait SttpSprayJsonApi {
     * - `Left(HttpError(String))` if the response code was other than 2xx (deserialization is not attempted)
     * - `Left(DeserializationError)` if there's an error during deserialization
     */
-  def asJson[B: JsonReader: IsOption]: ResponseAs[Either[ResponseError[String, Exception], B], Any] =
+  def asJson[B: JsonReader: IsOption]: ResponseAs[Either[ResponseException[String, Exception], B], Any] =
     asString.mapWithMetadata(ResponseAs.deserializeRightCatchingExceptions(deserializeJson[B]))
 
   /**
@@ -32,7 +32,7 @@ trait SttpSprayJsonApi {
     * - `Right(b)` if the parsing was successful
     * - `Left(DeserializationError)` if there's an error during deserialization
     */
-  def asJsonAlways[B: JsonReader: IsOption]: ResponseAs[Either[DeserializationError[Exception], B], Any] =
+  def asJsonAlways[B: JsonReader: IsOption]: ResponseAs[Either[DeserializationException[Exception], B], Any] =
     asStringAlways.map(ResponseAs.deserializeCatchingExceptions(deserializeJson[B]))
 
   /**
@@ -50,7 +50,7 @@ trait SttpSprayJsonApi {
     * - `Left(DeserializationError)` if there's an error during deserialization
     */
   def asJsonEither[E: JsonReader: IsOption, B: JsonReader: IsOption]
-      : ResponseAs[Either[ResponseError[E, Exception], B], Any] = {
+      : ResponseAs[Either[ResponseException[E, Exception], B], Any] = {
     asEitherDeserialized(asJsonAlways[E], asJsonAlways[B])
   }
 

@@ -57,7 +57,7 @@ class Json4sTests extends AnyFlatSpec with Matchers with EitherValues {
     val responseAs = asJson[Inner]
 
     runJsonResponseAs(responseAs)("") should matchPattern {
-      case Left(DeserializationError(_, _: MappingException)) =>
+      case Left(DeserializationException(_, _: MappingException)) =>
     }
   }
 
@@ -67,7 +67,7 @@ class Json4sTests extends AnyFlatSpec with Matchers with EitherValues {
     val responseAs = asJson[Outer]
 
     runJsonResponseAs(responseAs)(body) should matchPattern {
-      case Left(DeserializationError(_, _: ParseException)) =>
+      case Left(DeserializationException(_, _: ParseException)) =>
     }
   }
 

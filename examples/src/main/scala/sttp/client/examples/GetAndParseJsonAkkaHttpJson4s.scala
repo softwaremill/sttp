@@ -18,7 +18,7 @@ object GetAndParseJsonAkkaHttpJson4s extends App {
     .response(asJson[HttpBinResponse])
 
   val backend: SttpBackend[Future, Any] = AkkaHttpBackend()
-  val response: Future[Response[Either[ResponseError[String, Exception], HttpBinResponse]]] =
+  val response: Future[Response[Either[ResponseException[String, Exception], HttpBinResponse]]] =
     request.send(backend)
 
   for {

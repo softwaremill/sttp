@@ -85,23 +85,23 @@ object ResponseAs {
   }
 
   /**
-    * Returns a function, which maps `Left` values to [[HttpError]]s, and attempts to deserialize `Right` values using
-    * the given function, catching any exceptions and representing them as [[DeserializationError]]s.
+    * Returns a function, which maps `Left` values to [[HttpException]]s, and attempts to deserialize `Right` values using
+    * the given function, catching any exceptions and representing them as [[DeserializationException]]s.
     */
   def deserializeRightCatchingExceptions[T](
       doDeserialize: String => T
-  ): (Either[String, String], ResponseMetadata) => Either[ResponseError[String, Exception], T] = {
-    case (Left(s), meta) => Left(HttpError(s, meta.code))
+  ): (Either[String, String], ResponseMetadata) => Either[ResponseException[String, Exception], T] = {
+    case (Left(s), meta) => Left(HttpException(s, meta.code))
     case (Right(s), _)   => deserializeCatchingExceptions(doDeserialize)(s)
   }
 
   /**
     * Returns a function, which attempts to deserialize `Right` values using the given function, catching any
-    * exceptions and representing them as [[DeserializationError]]s.
+    * exceptions and representing them as [[DeserializationException]]s.
     */
   def deserializeCatchingExceptions[T](
       doDeserialize: String => T
-  ): String => Either[DeserializationError[Exception], T] =
+  ): String => Either[DeserializationException[Exception], T] =
     deserializeWithError((s: String) =>
       Try(doDeserialize(s)) match {
         case Failure(e: Exception) => Left(e)
@@ -111,13 +111,13 @@ object ResponseAs {
     )
 
   /**
-    * Returns a function, which maps `Left` values to [[HttpError]]s, and attempts to deserialize `Right` values using
+    * Returns a function, which maps `Left` values to [[HttpException]]s, and attempts to deserialize `Right` values using
     * the given function.
     */
   def deserializeRightWithError[E: ShowError, T](
       doDeserialize: String => Either[E, T]
-  ): (Either[String, String], ResponseMetadata) => Either[ResponseError[String, E], T] = {
-    case (Left(s), meta) => Left(HttpError(s, meta.code))
+  ): (Either[String, String], ResponseMetadata) => Either[ResponseException[String, E], T] = {
+    case (Left(s), meta) => Left(HttpException(s, meta.code))
     case (Right(s), _)   => deserializeWithError(doDeserialize)(implicitly[ShowError[E]])(s)
   }
 
@@ -134,14 +134,14 @@ object ResponseAs {
 
   /**
     * Converts a deserialization function, which returns errors of type `E`, into a function where errors are wrapped
-    * using [[DeserializationError]].
+    * using [[DeserializationException]].
     */
   def deserializeWithError[E: ShowError, T](
       doDeserialize: String => Either[E, T]
-  ): String => Either[DeserializationError[E], T] =
+  ): String => Either[DeserializationException[E], T] =
     s =>
       doDeserialize(s) match {
-        case Left(e)  => Left(DeserializationError(s, e))
+        case Left(e)  => Left(DeserializationException(s, e))
         case Right(b) => Right(b)
       }
 
@@ -152,7 +152,7 @@ object ResponseAs {
   def deserializeOrThrow[E: ShowError, T](doDeserialize: String => Either[E, T]): String => T =
     s =>
       doDeserialize(s) match {
-        case Left(e)  => throw DeserializationError(s, e)
+        case Left(e)  => throw DeserializationException(s, e)
         case Right(b) => b
       }
 
@@ -166,11 +166,11 @@ object ResponseAs {
     }
 }
 
-sealed abstract class ResponseError[+HE, +DE](error: String) extends Exception(error)
-case class HttpError[HE](body: HE, statusCode: StatusCode)
-    extends ResponseError[HE, Nothing](s"statusCode: $statusCode, response: $body")
-case class DeserializationError[DE: ShowError](body: String, error: DE)
-    extends ResponseError[Nothing, DE](implicitly[ShowError[DE]].show(error))
+sealed abstract class ResponseException[+HE, +DE](error: String) extends Exception(error)
+case class HttpException[HE](body: HE, statusCode: StatusCode)
+    extends ResponseException[HE, Nothing](s"statusCode: $statusCode, response: $body")
+case class DeserializationException[DE: ShowError](body: String, error: DE)
+    extends ResponseException[Nothing, DE](implicitly[ShowError[DE]].show(error))
 
 trait ShowError[-T] {
   def show(t: T): String

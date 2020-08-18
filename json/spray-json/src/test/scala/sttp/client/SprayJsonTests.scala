@@ -54,7 +54,7 @@ class SprayJsonTests extends AnyFlatSpec with Matchers with EitherValues {
     val responseAs = asJson[Inner]
 
     runJsonResponseAs(responseAs)("") should matchPattern {
-      case Left(DeserializationError(_, _: ParsingException)) =>
+      case Left(DeserializationException(_, _: ParsingException)) =>
     }
   }
 
@@ -64,7 +64,7 @@ class SprayJsonTests extends AnyFlatSpec with Matchers with EitherValues {
     val responseAs = asJson[Outer]
 
     runJsonResponseAs(responseAs)(body) should matchPattern {
-      case Left(DeserializationError(_, _: ParsingException)) =>
+      case Left(DeserializationException(_, _: ParsingException)) =>
     }
   }
 
