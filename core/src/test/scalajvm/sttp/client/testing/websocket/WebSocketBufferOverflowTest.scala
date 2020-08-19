@@ -24,7 +24,7 @@ trait WebSocketBufferOverflowTest[F[_]] { outer: Suite with AsyncFlatSpecLike wi
   it should "error if incoming messages overflow the buffer" in {
     basicRequest
       .get(uri"$wsEndpoint/ws/echo")
-      .response(asWebSocketAlways { ws: WebSocket[F] =>
+      .response(asWebSocketAlways { (ws: WebSocket[F]) =>
         send(ws, bufferCapacity + 1).flatMap { _ =>
           eventually(10.millis, 500) {
             ws.isOpen().map(_ shouldBe false)

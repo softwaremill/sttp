@@ -31,7 +31,7 @@ abstract class WebSocketTest[F[_]]
   it should "send and receive three messages" in {
     basicRequest
       .get(uri"$wsEndpoint/ws/echo")
-      .response(asWebSocketAlways { ws: WebSocket[F] =>
+      .response(asWebSocketAlways { (ws: WebSocket[F]) =>
         for {
           _ <- send(ws, 3)
           _ <- receiveEcho(ws, 3)

@@ -21,7 +21,7 @@ private[httpclient] class WebSocketImpl[F[_]](
 ) extends WebSocket[F] {
   override def receive(): F[WebSocketFrame] = {
     queue.poll.flatMap {
-      case WebSocketEvent.Open() => receive
+      case WebSocketEvent.Open() => receive()
       case WebSocketEvent.Frame(c: WebSocketFrame.Close) =>
         queue.offer(WebSocketEvent.Error(new WebSocketClosed))
         monad.unit(c)

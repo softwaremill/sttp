@@ -237,7 +237,7 @@ object SttpBackendStub {
       case ResponseAsWebSocket(f) =>
         b match {
           case wss: WebSocketStub[_] => Some(f.asInstanceOf[WebSocket[F] => F[T]](wss.build[F](monad)))
-          case ws: WebSocket[_]      => Some(f(ws).asInstanceOf[F[T]])
+          case ws: WebSocket[_]      => Some(f.asInstanceOf[WebSocket[F] => F[T]](ws.asInstanceOf[WebSocket[F]]))
           case _                     => None
         }
       case ResponseAsWebSocketUnsafe() =>

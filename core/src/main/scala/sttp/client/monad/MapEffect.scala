@@ -15,7 +15,8 @@ import sttp.client.{
   ResponseAsStreamUnsafe,
   ResponseAsWebSocket,
   ResponseAsWebSocketStream,
-  ResponseAsWebSocketUnsafe
+  ResponseAsWebSocketUnsafe,
+  ResponseMetadata
 }
 import sttp.model.Headers
 import sttp.monad.MonadError
@@ -44,13 +45,13 @@ object MapEffect {
         r.uri,
         r.body.asInstanceOf[RequestBody[R0 with Effect[G]]], // request body can't use the Effect capability
         r.headers,
-        apply[T, R0, F, G](
-          r.response.asInstanceOf[ResponseAs[T, R0 with Effect[F]]], // this is witnessed by rHasEffectF
+        apply[F, G](
+          r.response, // this is witnessed by rHasEffectF
           fk,
           gk,
           fm,
           gm
-        ),
+        ).asInstanceOf[ResponseAs[T, R0 with Effect[G]]],
         r.options,
         r.tags
       )
@@ -59,6 +60,43 @@ object MapEffect {
     }
   }
 
+  // TODO: an even more dumbed-down version of the slightly more type-safe version below, which is needed due to a
+  // TODO: bug in Dotty: https://github.com/lampepfl/dotty/issues/9533
+  private def apply[F[_], G[_]](
+      r: ResponseAs[_, _],
+      fk: FunctionK[F, G],
+      gk: FunctionK[G, F],
+      fm: MonadError[F],
+      gm: MonadError[G]
+  ): ResponseAs[_, _] = {
+    r match {
+      case IgnoreResponse      => IgnoreResponse
+      case ResponseAsByteArray => ResponseAsByteArray
+      case ResponseAsStream(s, f) =>
+        ResponseAsStream(s)(f.asInstanceOf[Any => F[Any]].andThen(fk.apply(_)))
+      case rasu: ResponseAsStreamUnsafe[_, _] => rasu
+      case ResponseAsFile(output)             => ResponseAsFile(output)
+      case ResponseAsWebSocket(f) =>
+        ResponseAsWebSocket((wg: WebSocket[G]) => fk(f.asInstanceOf[WebSocket[F] => F[Any]](apply[G, F](wg, gk, fm))))
+      case ResponseAsWebSocketUnsafe() => ResponseAsWebSocketUnsafe()
+      case ResponseAsWebSocketStream(s, p) =>
+        ResponseAsWebSocketStream(s, p)
+      case ResponseAsFromMetadata(conditions, default) =>
+        ResponseAsFromMetadata(
+          conditions.map(c =>
+            ConditionalResponseAs[Any, Any](
+              c.condition,
+              apply[F, G](c.responseAs, fk, gk, fm, gm).asInstanceOf[ResponseAs[Any, Any]]
+            )
+          ),
+          apply[F, G](default, fk, gk, fm, gm).asInstanceOf[ResponseAs[Any, Any]]
+        )
+      case MappedResponseAs(raw, g) =>
+        MappedResponseAs(apply[F, G](raw, fk, gk, fm, gm), g.asInstanceOf[(Any, ResponseMetadata) => Any])
+    }
+  }
+
+  /*
   private def apply[TT, R0, F[_], G[_]](
       r: ResponseAs[TT, R0 with Effect[F]],
       fk: FunctionK[F, G],
@@ -89,6 +127,7 @@ object MapEffect {
         MappedResponseAs(apply[Any, R0, F, G](raw, fk, gk, fm, gm), g).asInstanceOf[ResponseAs[TT, R0 with Effect[G]]]
     }
   }
+   */
 
   private def apply[F[_], G[_]](ws: WebSocket[F], fk: FunctionK[F, G], gm: MonadError[G]): WebSocket[G] =
     new WebSocket[G] {
