@@ -16,7 +16,8 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   organization := "com.softwaremill.sttp.client",
   scmInfo := Some(ScmInfo(url("https://github.com/softwaremill/sttp"), "scm:git@github.com:softwaremill/sttp.git")),
   // needed on sbt 1.3, but (for some unknown reason) only on 2.11.x
-  closeClassLoaders := !scalaVersion.value.startsWith("2.11."),
+  closeClassLoaders := false, //!scalaVersion.value.startsWith("2.11."),
+  parallelExecution in Test := false, // TODO
   // cross-release doesn't work when subprojects have different cross versions
   // work-around from https://github.com/sbt/sbt-release/issues/214,
   releaseCrossBuild := false,
@@ -654,7 +655,7 @@ lazy val json4s = (projectMatrix in file("json/json4s"))
     libraryDependencies ++= Seq(
       "org.json4s" %% "json4s-core" % json4sVersion,
       "org.json4s" %% "json4s-native" % json4sVersion % Test,
-      "org.scalatest" %% "scalatest" % scalaTestVersion % Test
+      scalaTest % Test
     )
   )
   .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = intellijImportOnly213)
@@ -666,7 +667,7 @@ lazy val sprayJson = (projectMatrix in file("json/spray-json"))
     name := "spray-json",
     libraryDependencies ++= Seq(
       "io.spray" %% "spray-json" % "1.3.5",
-      "org.scalatest" %% "scalatest" % scalaTestVersion % Test
+      scalaTest % Test
     )
   )
   .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = intellijImportOnly213)

@@ -65,16 +65,19 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
       r: Request[T, R],
       ahcRequest: BoundRequestBuilder
   ): F[Response[T]] =
-    monad.flatten(monad.async[F[Response[T]]] { cb =>
-      val initListener = new WebSocketInitListener(r.response, (r: F[Response[T]]) => cb(Right(r)), t => cb(Left(t)))
-      val h = new WebSocketUpgradeHandler.Builder()
-        .addWebSocketListener(initListener)
-        .build()
+    createSimpleQueue[WebSocketEvent].flatMap { queue =>
+      monad.flatten(monad.async[F[Response[T]]] { cb =>
+        val initListener =
+          new WebSocketInitListener(r.response, queue, (r: F[Response[T]]) => cb(Right(r)), t => cb(Left(t)))
+        val h = new WebSocketUpgradeHandler.Builder()
+          .addWebSocketListener(initListener)
+          .build()
 
-      val lf = ahcRequest.execute(h)
+        val lf = ahcRequest.execute(h)
 
-      Canceler(() => lf.abort(new InterruptedException))
-    })
+        Canceler(() => lf.abort(new InterruptedException))
+      })
+    }
 
   override def responseMonad: MonadError[F] = monad
 
@@ -155,18 +158,17 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
 
   private class WebSocketInitListener[T](
       responseAs: ResponseAs[T, _],
+      queue: SimpleQueue[F, WebSocketEvent],
       success: F[Response[T]] => Unit,
       error: Throwable => Unit
   ) extends WebSocketListener {
     override def onOpen(ahcWebSocket: AHCWebSocket): Unit = {
       ahcWebSocket.removeWebSocketListener(this)
-      success(createSimpleQueue[WebSocketEvent].flatMap { queue =>
-        val webSocket = WebSocketImpl.newCoupledToAHCWebSocket(ahcWebSocket, queue)
-        val baseResponse =
-          Response((), StatusCode.SwitchingProtocols, "", readHeaders(ahcWebSocket.getUpgradeHeaders), Nil)
-        val bf = bodyFromAHC(Right(webSocket), responseAs, baseResponse, () => false)
-        bf.map(b => baseResponse.copy(body = b))
-      })
+      val webSocket = WebSocketImpl.newCoupledToAHCWebSocket(ahcWebSocket, queue)
+      val baseResponse =
+        Response((), StatusCode.SwitchingProtocols, "", readHeaders(ahcWebSocket.getUpgradeHeaders), Nil)
+      val bf = bodyFromAHC(Right(webSocket), responseAs, baseResponse, () => false)
+      success(bf.map(b => baseResponse.copy(body = b)))
     }
 
     override def onClose(webSocket: AHCWebSocket, code: Int, reason: String): Unit = {
