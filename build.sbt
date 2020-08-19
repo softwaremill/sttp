@@ -192,7 +192,8 @@ val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion
 val zioVersion = "1.0.0"
 val zioInteropRsVersion = "1.0.3.5"
 
-val sttpSharedVersion = "2.0.12-SNAPSHOT"
+val sttpModelVersion = "1.2.0-RC1"
+val sttpSharedVersion = "1.0.0-RC1"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
 
@@ -289,8 +290,8 @@ lazy val core = (projectMatrix in file("core"))
   .settings(
     name := "core",
     libraryDependencies ++= Seq(
+      "com.softwaremill.sttp.model" %%% "core" % sttpModelVersion,
       "com.softwaremill.sttp.shared" %%% "core" % sttpSharedVersion,
-      "com.softwaremill.sttp.shared" %%% "model" % sttpSharedVersion,
       "com.softwaremill.sttp.shared" %%% "ws" % sttpSharedVersion
     )
   )
