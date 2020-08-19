@@ -8,7 +8,6 @@ The following variants of `asJson` methods are available:
 
 * regular - deserializes the body to json, only if the response is successful (2xx)
 * `always` - deserializes the body to json regardless of the status code
-* `unsafe` - throws deserialization exceptions, instead of representing including them on the left side of an `Either`
 * `either` - uses different deserializers for error and successful (2xx) responses
 
 The type signatures vary depending on the underlying library (required implicits and error representation differs), but they obey the following pattern:
@@ -17,12 +16,11 @@ The type signatures vary depending on the underlying library (required implicits
 import sttp.client._
 
 def asJson[B]: ResponseAs[Either[ResponseException[String, Exception], B], Any] = ???
-def asJsonUnsafe[B]: ResponseAs[Either[String, B], Any] = ???
 def asJsonAlways[B]: ResponseAs[Either[DeserializationException[Exception], B], Any] = ???
-def asJsonAlwaysUnsafe[B]: ResponseAs[B, Any] = ???
 def asJsonEither[E, B]: ResponseAs[Either[ResponseException[E, Exception], B], Any] = ???
-def asJsonEitherUnsafe[E, B]: ResponseAs[Either[E, B], Any] = ???
 ```
+
+The response specifications can be further refined using `.failLeft` and `.failLeftDeserialize`, see [response body specifications](responses/body.md).
 
 Following data class will be used through the next few examples:
 

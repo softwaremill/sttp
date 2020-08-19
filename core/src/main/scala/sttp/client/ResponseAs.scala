@@ -72,8 +72,8 @@ object ResponseAs {
     def mapRight[R2](f: B => R2): ResponseAs[Either[A, R2], R] = ra.map(_.right.map(f))
 
     /**
-      * If type to which response body should be deserialized is an `Either[A, B]`, either throws `A` (wrapped with
-      * a [[HttpError]] if it's not yet an exception), or returns `B`.
+      * If the type to which the response body should be deserialized is an `Either[A, B]`, either throws the `A`
+      * (wrapped with an [[HttpError]] if it's not yet an exception), or returns `B`.
       */
     def failLeft: ResponseAs[B, R] =
       ra.mapWithMetadata {
@@ -91,8 +91,8 @@ object ResponseAs {
   ) {
 
     /**
-      * If type to which response body should be deserialized is an `Either[ResponseException[HE, DE], B]`, either
-      * throws the [[DeserializationException]], or returns either the deserialized body in [[HttpError]], or
+      * If the type to which the response body should be deserialized is an `Either[ResponseException[HE, DE], B]`,
+      * either throws the [[DeserializationException]], returns the deserialized body from the [[HttpError]], or
       * the deserialized successful body `B`.
       */
     def failLeftDeserialize: ResponseAs[Either[HE, B], R] =
