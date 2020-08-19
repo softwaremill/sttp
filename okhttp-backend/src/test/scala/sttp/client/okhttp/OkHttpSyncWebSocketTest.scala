@@ -12,7 +12,7 @@ import sttp.monad.MonadError
 
 import scala.concurrent.duration._
 
-class OkHttpSyncWebsocketTest extends WebSocketTest[Identity] {
+class OkHttpSyncWebSocketTest extends WebSocketTest[Identity] {
   override val backend: SttpBackend[Identity, WebSockets] = OkHttpSyncBackend()
   override implicit val convertToFuture: ConvertToFuture[Identity] = ConvertToFuture.id
   override implicit val monad: MonadError[Identity] = IdMonad

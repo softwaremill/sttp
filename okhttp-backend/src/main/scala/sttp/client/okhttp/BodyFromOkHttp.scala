@@ -49,6 +49,9 @@ private[okhttp] trait BodyFromOkHttp[F[_], S] {
       ws: Option[WebSocket[F]]
   ): F[T] = {
     (responseAs, ws) match {
+      case (raf: ResponseAsFromMetadata[T, _], _) => apply(responseBody, raf(responseMetadata), responseMetadata, ws)
+      case (MappedResponseAs(raw, g), _) =>
+        monad.map(apply(responseBody, raw, responseMetadata, ws))(t => g(t, responseMetadata))
       case (IgnoreResponse, None) =>
         monad.eval(responseBody.close())
       case (ResponseAsByteArray, None) =>
@@ -69,9 +72,6 @@ private[okhttp] trait BodyFromOkHttp[F[_], S] {
         ras.f
           .asInstanceOf[streams.BinaryStream => F[T]](responseBodyToStream(responseBody))
           .ensure(monad.eval(responseBody.close()))
-      case (raf: ResponseAsFromMetadata[T, _], None) => apply(responseBody, raf(responseMetadata), responseMetadata, ws)
-      case (MappedResponseAs(raw, g), None) =>
-        monad.map(apply(responseBody, raw, responseMetadata, ws))(t => g(t, responseMetadata))
       case (wr: WebSocketResponseAs[T, _], Some(_ws)) =>
         fromWs(wr, _ws)
       case (_: WebSocketResponseAs[T, _], None) =>

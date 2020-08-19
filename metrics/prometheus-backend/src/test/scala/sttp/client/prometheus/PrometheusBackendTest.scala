@@ -28,10 +28,11 @@ class PrometheusBackendTest
     PrometheusBackend.clear(CollectorRegistry.defaultRegistry)
   }
 
+  val stubAlwaysOk = SttpBackendStub.synchronous.whenAnyRequest.thenRespondOk()
+
   "prometheus" should "use default histogram name" in {
     // given
-    val backendStub = SttpBackendStub.synchronous.whenAnyRequest.thenRespondOk()
-    val backend = PrometheusBackend[Identity, Any](backendStub)
+    val backend = PrometheusBackend[Identity, Any](stubAlwaysOk)
     val requestsNumber = 10
 
     // when
@@ -43,16 +44,15 @@ class PrometheusBackendTest
 
   it should "allow creating two prometheus backends" in {
     // given
-    val backendStub = SttpBackendStub.synchronous.whenAnyRequest.thenRespondOk()
     val histogramName = "test_two_backends"
     val backend1 =
       PrometheusBackend[Identity, Any](
-        backendStub,
+        stubAlwaysOk,
         requestToHistogramNameMapper = _ => Some(HistogramCollectorConfig(histogramName))
       )
     val backend2 =
       PrometheusBackend[Identity, Any](
-        backendStub,
+        stubAlwaysOk,
         requestToHistogramNameMapper = _ => Some(HistogramCollectorConfig(histogramName))
       )
 
@@ -69,7 +69,7 @@ class PrometheusBackendTest
     val customHistogramName = "my_custom_histogram"
     val backend =
       PrometheusBackend[Identity, Any](
-        SttpBackendStub.synchronous,
+        stubAlwaysOk,
         _ => Some(HistogramCollectorConfig(customHistogramName))
       )
     val requestsNumber = 5
@@ -87,7 +87,7 @@ class PrometheusBackendTest
     val customHistogramName = "my_custom_histogram"
     val backend =
       PrometheusBackend[Identity, Any](
-        SttpBackendStub.synchronous,
+        stubAlwaysOk,
         r =>
           Some(
             HistogramCollectorConfig(
@@ -115,7 +115,7 @@ class PrometheusBackendTest
     val customGaugeName = "my_custom_gauge"
     val backend =
       PrometheusBackend[Identity, Any](
-        SttpBackendStub.synchronous,
+        stubAlwaysOk,
         requestToInProgressGaugeNameMapper =
           r => Some(CollectorConfig(customGaugeName, List("method" -> r.method.method)))
       )
@@ -136,7 +136,7 @@ class PrometheusBackendTest
   it should "disable histograms" in {
     // given
     val backend =
-      PrometheusBackend[Identity, Any](SttpBackendStub.synchronous, _ => None)
+      PrometheusBackend[Identity, Any](stubAlwaysOk, _ => None)
     val requestsNumber = 6
 
     // when

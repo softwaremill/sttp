@@ -4,13 +4,9 @@ import java.nio.ByteBuffer
 
 import org.scalajs.dom.FormData
 import org.scalajs.dom.experimental.{
-  AbortSignal,
   BodyInit,
   Fetch,
-  HeadersInit,
   HttpMethod,
-  RequestCache,
-  ReferrerPolicy,
   RequestCredentials,
   RequestInit,
   RequestMode,
@@ -261,7 +257,12 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
         }
 
       case _: ResponseAsStreamUnsafe[_, _] =>
-        handleResponseAsStream(response).asInstanceOf[F[T]]
+        handleResponseAsStream(response).map(_._1).asInstanceOf[F[T]]
+
+      case ResponseAsStream(_, f) =>
+        handleResponseAsStream(response).flatMap { case (stream, cancel) =>
+          f.asInstanceOf[streams.BinaryStream => F[T]](stream).ensure(cancel())
+        }
     }
   }
 
@@ -269,7 +270,7 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
     transformPromise(response.arrayBuffer()).map { ab => new Int8Array(ab).toArray }
   }
 
-  protected def handleResponseAsStream(response: FetchResponse): F[streams.BinaryStream]
+  protected def handleResponseAsStream(response: FetchResponse): F[(streams.BinaryStream, () => F[Unit])]
 
   override def close(): F[Unit] = monad.unit(())
 

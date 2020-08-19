@@ -291,8 +291,7 @@ lazy val core = (projectMatrix in file("core"))
     libraryDependencies ++= Seq(
       "com.softwaremill.sttp.shared" %%% "core" % sttpSharedVersion,
       "com.softwaremill.sttp.shared" %%% "model" % sttpSharedVersion,
-      "com.softwaremill.sttp.shared" %%% "ws" % sttpSharedVersion,
-      scalaTest % Test
+      "com.softwaremill.sttp.shared" %%% "ws" % sttpSharedVersion
     )
   )
   .settings(testServerSettings)

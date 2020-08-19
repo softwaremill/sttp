@@ -5,7 +5,7 @@ import java.nio.ByteBuffer
 import monix.eval.Task
 import monix.reactive.Observable
 import org.scalajs.dom.experimental.{BodyInit, Response => FetchResponse}
-import sttp.client.{AbstractFetchBackend, FetchOptions, ResponseAsStreamUnsafe, SttpBackend}
+import sttp.client.{AbstractFetchBackend, FetchOptions, SttpBackend}
 
 import scala.scalajs.js
 import scala.scalajs.js.Promise
@@ -43,7 +43,7 @@ class FetchMonixBackend private (fetchOptions: FetchOptions, customizeRequest: F
     bytes.map(_.toTypedArray.asInstanceOf[BodyInit])
   }
 
-  override protected def handleResponseAsStream(response: FetchResponse): Task[Observable[ByteBuffer]] = {
+  override protected def handleResponseAsStream(response: FetchResponse): Task[(Observable[ByteBuffer], () => Task[Unit])] = {
     Task
       .delay {
         lazy val reader = response.body.getReader()
@@ -59,7 +59,8 @@ class FetchMonixBackend private (fetchOptions: FetchOptions, customizeRequest: F
             }
           }
         }
-        go().doOnSubscriptionCancel(Task(reader.cancel("Response body reader cancelled")).void)
+        val cancel = Task(reader.cancel("Response body reader cancelled")).void
+        (go().doOnSubscriptionCancel(cancel), () => cancel)
       }
   }
 
