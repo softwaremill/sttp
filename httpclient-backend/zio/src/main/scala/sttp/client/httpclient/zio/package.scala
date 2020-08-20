@@ -16,7 +16,7 @@ package object zio {
   type SttpClient = Has[SttpClient.Service]
 
   object SttpClient {
-    
+
     type Service = SttpBackend[BlockingTask, ZStream[Blocking, Throwable, Byte], WebSocketHandler]
 
     /**
@@ -32,9 +32,7 @@ package object zio {
       *         Known exceptions are converted to one of [[SttpClientException]]. Other exceptions are kept unchanged.
       */
     def send[T](request: Request[T, Nothing]): ZIO[SttpClient with Blocking, Throwable, Response[T]] =
-      ZIO.accessM(env =>
-        env.get[SttpBackend[BlockingTask, ZStream[Blocking, Throwable, Byte], WebSocketHandler]].send(request)
-      )
+      ZIO.accessM(env => env.get[Service].send(request))
 
     /**
       * Opens a websocket. Only requests for which the method & URI are specified can be sent.
@@ -51,10 +49,6 @@ package object zio {
     def openWebsocket[T, WS_RESULT](
         request: Request[T, Nothing]
     ): ZIO[SttpClient with Blocking, Throwable, WebSocketResponse[WebSocket[BlockingTask]]] =
-      ZioWebSocketHandler().flatMap(handler =>
-        ZIO.accessM(env =>
-          env.get[SttpBackend[BlockingTask, ZStream[Blocking, Throwable, Byte], WebSocketHandler]].openWebsocket(request, handler)
-        )
-      )
+      ZioWebSocketHandler().flatMap(handler => ZIO.accessM(env => env.get[Service].openWebsocket(request, handler)))
   }
 }

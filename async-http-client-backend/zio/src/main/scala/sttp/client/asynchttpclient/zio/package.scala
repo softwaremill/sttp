@@ -10,9 +10,11 @@ package object zio {
   /**
     * ZIO-environment service definition, which is an SttpBackend.
     */
-  type SttpClient = Has[SttpBackend[Task, Stream[Throwable, Byte], WebSocketHandler]]
+  type SttpClient = Has[SttpClient.Service]
 
   object SttpClient {
+
+    type Service = SttpBackend[Task, Stream[Throwable, Byte], WebSocketHandler]
 
     /**
       * Sends the request. Only requests for which the method & URI are specified can be sent.
@@ -27,7 +29,7 @@ package object zio {
       *         Known exceptions are converted to one of [[SttpClientException]]. Other exceptions are kept unchanged.
       */
     def send[T](request: Request[T, Stream[Throwable, Byte]]): ZIO[SttpClient, Throwable, Response[T]] =
-      ZIO.accessM(env => env.get[SttpBackend[Task, Stream[Throwable, Byte], WebSocketHandler]].send(request))
+      ZIO.accessM(env => env.get[Service].send(request))
 
     /**
       * Opens a websocket. Only requests for which the method & URI are specified can be sent.
@@ -44,10 +46,6 @@ package object zio {
     def openWebsocket[T, WS_RESULT](
         request: Request[T, Nothing]
     ): ZIO[SttpClient, Throwable, WebSocketResponse[WebSocket[Task]]] =
-      ZioWebSocketHandler().flatMap(handler =>
-        ZIO.accessM(env =>
-          env.get[SttpBackend[Task, Stream[Throwable, Byte], WebSocketHandler]].openWebsocket(request, handler)
-        )
-      )
+      ZioWebSocketHandler().flatMap(handler => ZIO.accessM(env => env.get[Service].openWebsocket(request, handler)))
   }
 }
