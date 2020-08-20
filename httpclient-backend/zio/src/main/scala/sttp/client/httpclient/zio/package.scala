@@ -14,9 +14,11 @@ package object zio {
   /**
     * ZIO-environment service definition, which is an SttpBackend.
     */
-  type SttpClient = Has[SttpBackend[BlockingTask, BlockingZioStreams with WebSockets]]
+  type SttpClient = Has[SttpClient.Service]
 
   object SttpClient {
+
+    type Service = SttpBackend[BlockingTask, BlockingZioStreams with WebSockets]
 
     /**
       * Sends the request. Only requests for which the method & URI are specified can be sent.
@@ -33,7 +35,7 @@ package object zio {
     def send[T](
         request: Request[T, BlockingZioStreams with Effect[BlockingTask] with WebSockets]
     ): RIO[SttpClient with Blocking, Response[T]] =
-      ZIO.accessM(env => env.get[SttpBackend[BlockingTask, BlockingZioStreams with WebSockets]].send(request))
+      ZIO.accessM(env => env.get[Service].send(request))
 
     /**
       * A variant of [[send]] which allows the effects that are part of the response handling specification (when
@@ -42,8 +44,6 @@ package object zio {
     def sendR[T, R](
         request: Request[T, Effect[RIO[Blocking with R, *]] with BlockingZioStreams with WebSockets]
     ): RIO[SttpClient with Blocking with R, Response[T]] =
-      ZIO.accessM(env =>
-        env.get[SttpBackend[BlockingTask, BlockingZioStreams with WebSockets]].extendEnv[R].send(request)
-      )
+      ZIO.accessM(env => env.get[SttpBackend[Service]].extendEnv[R].send(request))
   }
 }
