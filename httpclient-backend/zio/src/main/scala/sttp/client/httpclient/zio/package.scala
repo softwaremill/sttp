@@ -13,9 +13,11 @@ package object zio {
   /**
     * ZIO-environment service definition, which is an SttpBackend.
     */
-  type SttpClient = Has[SttpBackend[BlockingTask, ZStream[Blocking, Throwable, Byte], WebSocketHandler]]
+  type SttpClient = Has[SttpClient.Service]
 
   object SttpClient {
+    
+    type Service = SttpBackend[BlockingTask, ZStream[Blocking, Throwable, Byte], WebSocketHandler]
 
     /**
       * Sends the request. Only requests for which the method & URI are specified can be sent.
