@@ -29,7 +29,7 @@ trait SttpExtensions {
     *
     * File name will be set to the name of the file.
     */
-  def multipartFile(name: String, data: File): Part[BasicRequestBody] =
+  def multipartFile(name: String, data: File): Part[RequestBody[Any]] =
     multipartSttpFile(name, SttpFile.fromFile(data))
 
   /**
@@ -38,6 +38,6 @@ trait SttpExtensions {
     *
     * File name will be set to the name of the file.
     */
-  def multipartFile(name: String, data: Path): Part[BasicRequestBody] =
+  def multipartFile(name: String, data: Path): Part[RequestBody[Any]] =
     multipartSttpFile(name, SttpFile.fromPath(data))
 }

@@ -14,6 +14,7 @@ import sttp.client.{
   MultipartBody,
   NoBody,
   Request,
+  RequestBody,
   Response,
   ResponseAs,
   ResponseAsByteArray,
@@ -22,6 +23,7 @@ import sttp.client.{
   ResponseAsStream,
   ResponseAsStreamUnsafe,
   ResponseMetadata,
+  StreamBody,
   StringBody,
   SttpBackend,
   SttpClientException
@@ -39,7 +41,7 @@ import com.twitter.finagle.http.{
 import com.twitter.io.Buf
 import com.twitter.io.Buf.{ByteArray, ByteBuffer}
 import com.twitter.util
-import sttp.client.internal.FileHelpers
+import sttp.client.internal.{FileHelpers, throwNestedMultipartNotAllowed}
 import sttp.model.{Header, Method, Part, StatusCode, Uri}
 import com.twitter.util.Duration
 import sttp.capabilities.Effect
@@ -119,7 +121,7 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
     }
   }
 
-  private def getBasicBodyContent(part: Part[BasicRequestBody]): FormElement = {
+  private def getBasicBodyContent(part: Part[RequestBody[_]]): FormElement = {
 
     val content: String = part.body match {
       case StringBody(s, _, _)    => s

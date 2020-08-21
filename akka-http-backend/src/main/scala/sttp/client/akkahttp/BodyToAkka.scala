@@ -12,8 +12,8 @@ import akka.http.scaladsl.model.{
 import akka.stream.scaladsl.{Source, StreamConverters}
 import akka.util.ByteString
 import sttp.capabilities.akka.AkkaStreams
+import sttp.client.internal.throwNestedMultipartNotAllowed
 import sttp.client.{
-  BasicRequestBody,
   ByteArrayBody,
   ByteBufferBody,
   FileBody,
@@ -25,7 +25,7 @@ import sttp.client.{
   StreamBody,
   StringBody
 }
-import sttp.model.Part
+import sttp.model.{HeaderNames, Part}
 
 import scala.collection.immutable.Seq
 import scala.util.{Failure, Success, Try}
@@ -42,17 +42,24 @@ private[akkahttp] object BodyToAkka {
         .map(hc => ContentType.apply(ct.mediaType, () => hc))
         .getOrElse(ct)
 
-    def toBodyPart(mp: Part[BasicRequestBody]): Try[AkkaMultipart.FormData.BodyPart] = {
+    def contentLength = r.headers.find(_.is(HeaderNames.ContentLength)).flatMap(h => Try(h.value.toLong).toOption)
+
+    def toBodyPart(mp: Part[RequestBody[_]]): Try[AkkaMultipart.FormData.BodyPart] = {
+      def streamPartEntity(contentType: ContentType, s: AkkaStreams.BinaryStream) =
+        mp.contentLength match {
+          case None    => HttpEntity.IndefiniteLength(contentType, s)
+          case Some(l) => HttpEntity(contentType, l, s)
+        }
+
       def entity(ct: ContentType) =
         mp.body match {
-          case StringBody(b, encoding, _) =>
-            HttpEntity(ctWithCharset(ct, encoding), b.getBytes(encoding))
-          case ByteArrayBody(b, _)  => HttpEntity(ct, b)
-          case ByteBufferBody(b, _) => HttpEntity(ct, ByteString(b))
-          case isb: InputStreamBody =>
-            HttpEntity
-              .IndefiniteLength(ct, StreamConverters.fromInputStream(() => isb.b))
-          case FileBody(b, _) => HttpEntity.fromPath(ct, b.toPath)
+          case StringBody(b, encoding, _) => HttpEntity(ctWithCharset(ct, encoding), b.getBytes(encoding))
+          case ByteArrayBody(b, _)        => HttpEntity(ct, b)
+          case ByteBufferBody(b, _)       => HttpEntity(ct, ByteString(b))
+          case isb: InputStreamBody       => streamPartEntity(ct, StreamConverters.fromInputStream(() => isb.b))
+          case FileBody(b, _)             => HttpEntity.fromPath(ct, b.toPath)
+          case StreamBody(b)              => streamPartEntity(ct, b.asInstanceOf[AkkaStreams.BinaryStream])
+          case MultipartBody(_)           => throwNestedMultipartNotAllowed
         }
 
       for {
@@ -63,18 +70,22 @@ private[akkahttp] object BodyToAkka {
       }
     }
 
+    def streamEntity(contentType: ContentType, s: AkkaStreams.BinaryStream) =
+      contentLength match {
+        case None    => HttpEntity(contentType, s)
+        case Some(l) => HttpEntity(contentType, l, s)
+      }
+
     Util.parseContentTypeOrOctetStream(r).flatMap { ct =>
       body match {
-        case NoBody => Success(ar)
-        case StringBody(b, encoding, _) =>
-          Success(ar.withEntity(ctWithCharset(ct, encoding), b.getBytes(encoding)))
-        case ByteArrayBody(b, _) => Success(ar.withEntity(HttpEntity(ct, b)))
-        case ByteBufferBody(b, _) =>
-          Success(ar.withEntity(HttpEntity(ct, ByteString(b))))
+        case NoBody                     => Success(ar)
+        case StringBody(b, encoding, _) => Success(ar.withEntity(ctWithCharset(ct, encoding), b.getBytes(encoding)))
+        case ByteArrayBody(b, _)        => Success(ar.withEntity(HttpEntity(ct, b)))
+        case ByteBufferBody(b, _)       => Success(ar.withEntity(HttpEntity(ct, ByteString(b))))
         case InputStreamBody(b, _) =>
-          Success(ar.withEntity(HttpEntity(ct, StreamConverters.fromInputStream(() => b))))
+          Success(ar.withEntity(streamEntity(ct, StreamConverters.fromInputStream(() => b))))
         case FileBody(b, _) => Success(ar.withEntity(ct, b.toPath))
-        case StreamBody(s)  => Success(ar.withEntity(HttpEntity(ct, s.asInstanceOf[AkkaStreams.BinaryStream])))
+        case StreamBody(s)  => Success(ar.withEntity(streamEntity(ct, s.asInstanceOf[AkkaStreams.BinaryStream])))
         case MultipartBody(ps) =>
           Util
             .traverseTry(ps.map(toBodyPart))

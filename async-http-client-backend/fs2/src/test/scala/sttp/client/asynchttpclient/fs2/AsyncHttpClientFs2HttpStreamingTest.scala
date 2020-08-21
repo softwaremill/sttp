@@ -12,4 +12,6 @@ class AsyncHttpClientFs2HttpStreamingTest extends Fs2StreamingTest {
 
   override val backend: SttpBackend[IO, Fs2Streams[IO]] =
     AsyncHttpClientFs2Backend[IO]().unsafeRunSync()
+
+  override protected def supportsStreamingMultipartParts: Boolean = false
 }

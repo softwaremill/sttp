@@ -43,7 +43,7 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
       if (reqHeaders.nonEmpty) {
         reqHeaders.find(_.name == "Accept-Encoding").foreach(h => curl.option(AcceptEncoding, h.value))
         request.body match {
-          case _: MultipartBody =>
+          case _: MultipartBody[_] =>
             headers = transformHeaders(
               reqHeaders :+ Header.contentType(MediaType.MultipartFormData)
             )
@@ -140,7 +140,7 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
         responseMonad.unit(CurlCode.Ok)
     }
 
-  private def basicBodyToString(body: BasicRequestBody): String =
+  private def basicBodyToString(body: RequestBody[_]): String =
     body match {
       case StringBody(b, _, _)   => b
       case ByteArrayBody(b, _)   => new String(b)

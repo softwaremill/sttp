@@ -20,7 +20,7 @@ import sttp.client.{
   StreamBody,
   StringBody
 }
-import sttp.client.internal.toByteArray
+import sttp.client.internal.{throwNestedMultipartNotAllowed, toByteArray}
 import sttp.model.{HeaderNames, MediaType, Part}
 
 import scala.collection.JavaConverters._
@@ -60,7 +60,7 @@ private[asynchttpclient] trait BodyToAHC[F[_], S] {
     }
   }
 
-  private def addMultipartBody(rb: RequestBuilder, mp: Part[BasicRequestBody]): Unit = {
+  private def addMultipartBody(rb: RequestBuilder, mp: Part[RequestBody[_]]): Unit = {
     // async http client only supports setting file names on file parts. To
     // set a file name on an arbitrary part we have to use a small "work
     // around", combining the file name with the name (surrounding quotes
@@ -87,6 +87,9 @@ private[asynchttpclient] trait BodyToAHC[F[_], S] {
         new ByteArrayPart(nameWithFilename, toByteArray(b), ctOrNull)
       case FileBody(b, _) =>
         new FilePart(mp.name, b.toFile, ctOrNull, null, mp.fileName.orNull)
+      case StreamBody(_) =>
+        throw new IllegalArgumentException("Streaming multipart bodies are not supported")
+      case MultipartBody(_) => throwNestedMultipartNotAllowed
     }
 
     bodyPart.setCustomHeaders(

@@ -7,6 +7,7 @@ import java.nio.{Buffer, ByteBuffer}
 import java.util.function.Supplier
 
 import sttp.capabilities.Streams
+import sttp.client.internal.throwNestedMultipartNotAllowed
 import sttp.client.{
   BasicRequestBody,
   ByteArrayBody,
@@ -16,6 +17,7 @@ import sttp.client.{
   MultipartBody,
   NoBody,
   Request,
+  RequestBody,
   StreamBody,
   StringBody
 }
@@ -54,7 +56,7 @@ private[httpclient] trait BodyToHttpClient[F[_], S] {
 
   def streamToPublisher(stream: streams.BinaryStream): F[BodyPublisher]
 
-  private def multipartBody[T](parts: Seq[Part[BasicRequestBody]]) = {
+  private def multipartBody[T](parts: Seq[Part[RequestBody[_]]]) = {
     val multipartBuilder = new MultiPartBodyPublisher()
     parts.foreach { p =>
       val allHeaders = p.headers :+ Header(HeaderNames.ContentDisposition, p.contentDispositionHeaderValue)
@@ -62,6 +64,7 @@ private[httpclient] trait BodyToHttpClient[F[_], S] {
       def fileName = p.fileName.getOrElse("")
       def contentType = p.contentType.getOrElse(MediaType.ApplicationOctetStream.toString())
       p.body match {
+        case NoBody              => // ignore
         case FileBody(f, _)      => multipartBuilder.addPart(p.name, f.toFile.toPath, partHeaders)
         case StringBody(b, _, _) => multipartBuilder.addPart(p.name, b, partHeaders)
         case ByteArrayBody(b, _) =>
@@ -71,6 +74,8 @@ private[httpclient] trait BodyToHttpClient[F[_], S] {
             multipartBuilder.addPart(p.name, supplier(new ByteBufferBackedInputStream(b)), fileName, contentType)
           else multipartBuilder.addPart(p.name, supplier(new ByteArrayInputStream(b.array())), fileName, contentType)
         case InputStreamBody(b, _) => multipartBuilder.addPart(p.name, supplier(b), fileName, contentType)
+        case StreamBody(_)         => throw new IllegalArgumentException("Streaming multipart bodies are not supported")
+        case MultipartBody(_)      => throwNestedMultipartNotAllowed
       }
     }
     multipartBuilder

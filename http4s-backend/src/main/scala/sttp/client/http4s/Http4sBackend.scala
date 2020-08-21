@@ -16,6 +16,7 @@ import org.http4s.client.blaze.BlazeClientBuilder
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client.http4s.Http4sBackend.EncodingHandler
 import sttp.client.impl.cats.CatsMonadAsyncError
+import sttp.client.internal.throwNestedMultipartNotAllowed
 import sttp.model._
 import sttp.monad.MonadError
 import sttp.client.testing.SttpBackendStub
@@ -145,12 +146,19 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
     }
   }
 
-  private def multipartToHttp4s(mp: Part[BasicRequestBody]): http4s.multipart.Part[F] = {
+  private def multipartToHttp4s(mp: Part[RequestBody[_]]): http4s.multipart.Part[F] = {
     val contentDisposition = http4s.Header(HeaderNames.ContentDisposition, mp.contentDispositionHeaderValue)
     val otherHeaders = mp.headers.map(h => http4s.Header(h.name, h.value))
     val allHeaders = List(contentDisposition) ++ otherHeaders
 
-    http4s.multipart.Part(http4s.Headers(allHeaders), basicBodyToHttp4s(mp.body).body)
+    val body: EntityBody[F] = mp.body match {
+      case NoBody                 => Stream.empty
+      case body: BasicRequestBody => basicBodyToHttp4s(body).body
+      case StreamBody(b)          => b.asInstanceOf[EntityBody[F]]
+      case MultipartBody(_)       => throwNestedMultipartNotAllowed
+    }
+
+    http4s.multipart.Part(http4s.Headers(allHeaders), body)
   }
 
   private def onFinalizeSignal(hr: http4s.Response[F], signal: F[Unit]): http4s.Response[F] = {

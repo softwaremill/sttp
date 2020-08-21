@@ -133,7 +133,7 @@ case class RequestT[U[_], T, -R](
     * bytes in the string using the given encoding.
     */
   def body(b: String, encoding: String): RequestT[U, T, R] =
-    withBasicBody(StringBody(b, encoding))
+    withBody(StringBody(b, encoding))
       .setContentLengthIfMissing(b.getBytes(encoding).length.toLong)
 
   /**
@@ -144,7 +144,7 @@ case class RequestT[U[_], T, -R](
     * of the given array.
     */
   def body(b: Array[Byte]): RequestT[U, T, R] =
-    withBasicBody(ByteArrayBody(b))
+    withBody(ByteArrayBody(b))
       .setContentLengthIfMissing(b.length.toLong)
 
   /**
@@ -152,14 +152,14 @@ case class RequestT[U[_], T, -R](
     * `application/octet-stream`.
     */
   def body(b: ByteBuffer): RequestT[U, T, R] =
-    withBasicBody(ByteBufferBody(b))
+    withBody(ByteBufferBody(b))
 
   /**
     * If content type is not yet specified, will be set to
     * `application/octet-stream`.
     */
   def body(b: InputStream): RequestT[U, T, R] =
-    withBasicBody(InputStreamBody(b))
+    withBody(InputStreamBody(b))
 
   /**
     * If content type is not yet specified, will be set to
@@ -169,8 +169,7 @@ case class RequestT[U[_], T, -R](
     * of the given file.
     */
   private[client] def body(f: SttpFile): RequestT[U, T, R] =
-    withBasicBody(FileBody(f))
-      .setContentLengthIfMissing(f.size)
+    withBody(FileBody(f)).setContentLengthIfMissing(f.size)
 
   /**
     * Encodes the given parameters as form data using `utf-8`.
@@ -216,14 +215,14 @@ case class RequestT[U[_], T, -R](
   def body(fs: Seq[(String, String)], encoding: String): RequestT[U, T, R] =
     formDataBody(fs, encoding)
 
-  def multipartBody(ps: Seq[Part[BasicRequestBody]]): RequestT[U, T, R] =
-    this.copy(body = MultipartBody(ps))
+  def multipartBody[R2](ps: Seq[Part[RequestBody[R2]]]): RequestT[U, T, R with R2] =
+    copy(body = MultipartBody(ps))
 
-  def multipartBody(p1: Part[BasicRequestBody], ps: Part[BasicRequestBody]*): RequestT[U, T, R] =
-    this.copy(body = MultipartBody(p1 :: ps.toList))
+  def multipartBody[R2](p1: Part[RequestBody[R2]], ps: Part[RequestBody[R2]]*): RequestT[U, T, R with R2] =
+    copy(body = MultipartBody(p1 :: ps.toList))
 
   def streamBody[S](s: Streams[S])(b: s.BinaryStream): RequestT[U, T, R with S] =
-    copy[U, T, R with S](body = StreamBody(s)(b))
+    withBody(StreamBody(s)(b))
 
   def readTimeout(t: Duration): RequestT[U, T, R] =
     this.copy(options = options.copy(readTimeout = t))
@@ -328,7 +327,7 @@ case class RequestT[U[_], T, -R](
   private def setContentTypeIfMissing(mt: MediaType): RequestT[U, T, R] =
     if (hasContentType) this else contentType(mt)
 
-  private[client] def withBasicBody(body: BasicRequestBody) = {
+  private[client] def withBody[R2](body: RequestBody[R2]): RequestT[U, T, R with R2] = {
     val defaultCt = body match {
       case StringBody(_, encoding, ct) =>
         ct.copy(charset = Some(encoding))

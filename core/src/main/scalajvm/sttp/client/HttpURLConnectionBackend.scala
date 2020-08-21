@@ -100,7 +100,7 @@ class HttpURLConnectionBackend private (
         // we have an instance of nothing - everything's possible!
         None
 
-      case mp: MultipartBody =>
+      case mp: MultipartBody[Nothing] =>
         setMultipartBody(r, mp, c)
     }
   }
@@ -138,7 +138,7 @@ class HttpURLConnectionBackend private (
 
   private def setMultipartBody(
       r: Request[_, Nothing],
-      mp: MultipartBody,
+      mp: MultipartBody[Nothing],
       c: HttpURLConnection
   ): Option[OutputStream] = {
     val boundary = {
@@ -209,7 +209,12 @@ class HttpURLConnectionBackend private (
         writeMeta(headers)
         writeMeta(CrLf)
         writeMeta(CrLf)
-        writeBasicBody(p.body, os)
+        p.body match {
+          case NoBody                 => // skip
+          case body: BasicRequestBody => writeBasicBody(body, os)
+          case StreamBody(_)          => // not possible
+          case MultipartBody(_)       => throwNestedMultipartNotAllowed
+        }
         writeMeta(CrLf)
     }
 

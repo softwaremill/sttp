@@ -39,8 +39,8 @@ abstract class HttpClientBackend[F[_], S, P](
     val contentType: Option[String] = request.headers.find(_.is(HeaderNames.ContentType)).map(_.value)
     contentType.foreach { ct =>
       request.body match {
-        case _: MultipartBody => // skip, will be set later
-        case _                => builder.header(HeaderNames.ContentType, ct)
+        case _: MultipartBody[_] => // skip, will be set later
+        case _                   => builder.header(HeaderNames.ContentType, ct)
       }
     }
 

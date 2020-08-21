@@ -32,6 +32,8 @@ abstract class StreamingTest[F[_], S]
 
   def bodyConsumer(stream: streams.BinaryStream): F[String]
 
+  protected def supportsStreamingMultipartParts = true
+
   "stream request body" in {
     basicRequest
       .post(uri"$endpoint/streaming/echo")
@@ -175,6 +177,24 @@ abstract class StreamingTest[F[_], S]
 
         urlRegex.findAllIn(responseBody).length shouldBe numChunks
       }
+  }
+
+  if (supportsStreamingMultipartParts) {
+    "send a stream part in a multipart request" in {
+      basicRequest
+        .post(uri"$endpoint/multipart")
+        .response(asStringAlways)
+        .multipartBody(
+          multipart("p1", "v1"),
+          multipartStream(streams)("p2", stringBodyProducer("v2")),
+          multipart("p3", "v3")
+        )
+        .send(backend)
+        .toFuture()
+        .map { response =>
+          response.body shouldBe s"p1=v1, p2=v2, p3=v3"
+        }
+    }
   }
 
   override protected def afterAll(): Unit = {

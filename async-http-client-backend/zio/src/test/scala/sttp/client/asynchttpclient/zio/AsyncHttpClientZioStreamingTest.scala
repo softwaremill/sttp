@@ -21,4 +21,6 @@ class AsyncHttpClientZioStreamingTest extends StreamingTest[Task, ZioStreams] wi
 
   override def bodyConsumer(stream: Stream[Throwable, Byte]): Task[String] =
     stream.runCollect.map(bytes => new String(bytes.toArray, Utf8))
+
+  override protected def supportsStreamingMultipartParts: Boolean = false
 }

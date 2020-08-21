@@ -22,4 +22,6 @@ class HttpClientZioStreamingTest extends StreamingTest[BlockingTask, BlockingZio
 
   override def bodyConsumer(stream: ZStream[Blocking, Throwable, Byte]): BlockingTask[String] =
     stream.runCollect.map(bytes => new String(bytes.toArray, Utf8))
+
+  override protected def supportsStreamingMultipartParts: Boolean = false
 }

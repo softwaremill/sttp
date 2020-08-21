@@ -67,4 +67,7 @@ package object internal {
   private[client] val Utf8 = "utf-8"
   private[client] val Iso88591 = "iso-8859-1"
   private[client] val CrLf = "\r\n"
+
+  private[client] def throwNestedMultipartNotAllowed =
+    throw new IllegalArgumentException("Nested multipart bodies are not allowed")
 }

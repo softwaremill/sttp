@@ -49,7 +49,7 @@ class ToCurlConverter[R <: RequestT[Identity, _, _]] {
     }
   }
 
-  def handleMultipartBody(parts: Seq[Part[BasicRequestBody]]): String = {
+  def handleMultipartBody(parts: Seq[Part[RequestBody[_]]]): String = {
     parts
       .map { p =>
         p.body match {

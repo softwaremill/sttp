@@ -31,5 +31,5 @@ trait RequestTExtensions[U[_], T, -R] { self: RequestT[U, T, R] =>
     * `application/octet-stream`.
     */
   def body[B: BodySerializer](b: B): RequestT[U, T, R] =
-    withBasicBody(implicitly[BodySerializer[B]].apply(b))
+    withBody(implicitly[BodySerializer[B]].apply(b))
 }

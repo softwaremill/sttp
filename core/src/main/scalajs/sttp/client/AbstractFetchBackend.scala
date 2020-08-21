@@ -168,10 +168,15 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
       case StreamBody(s) =>
         handleStreamBody(s.asInstanceOf[streams.BinaryStream])
 
-      case mp: MultipartBody =>
+      case mp: MultipartBody[_] =>
         val formData = new FormData()
         mp.parts.foreach { part =>
-          val value = writeBasicBody(part.body)
+          val value = part.body match {
+            case NoBody                 => Array[Byte]().toTypedArray.asInstanceOf[BodyInit]
+            case body: BasicRequestBody => writeBasicBody(body)
+            case StreamBody(_)          => throw new IllegalArgumentException("Streaming multipart bodies are not supported")
+            case MultipartBody(_)       => throwNestedMultipartNotAllowed
+          }
           // the only way to set the content type is to use a blob
           val blob =
             value match {
@@ -260,8 +265,9 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
         handleResponseAsStream(response).map(_._1).asInstanceOf[F[T]]
 
       case ResponseAsStream(_, f) =>
-        handleResponseAsStream(response).flatMap { case (stream, cancel) =>
-          f.asInstanceOf[streams.BinaryStream => F[T]](stream).ensure(cancel())
+        handleResponseAsStream(response).flatMap {
+          case (stream, cancel) =>
+            f.asInstanceOf[streams.BinaryStream => F[T]](stream).ensure(cancel())
         }
     }
   }

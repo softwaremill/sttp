@@ -264,4 +264,15 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     */
   def multipart[B: BodySerializer](name: String, b: B): Part[BasicRequestBody] =
     Part(name, implicitly[BodySerializer[B]].apply(b), contentType = Some(MediaType.ApplicationXWwwFormUrlencoded))
+
+  /**
+    * Content type will be set to `application/octet-stream`, can be overridden
+    * later using the `contentType` method.
+    */
+  def multipartStream[S](s: Streams[S])(name: String, b: s.BinaryStream): Part[RequestBody[S]] =
+    Part(
+      name,
+      StreamBody(s)(b),
+      contentType = Some(MediaType.ApplicationOctetStream)
+    )
 }

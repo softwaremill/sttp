@@ -334,7 +334,7 @@ trait HttpTest[F[_]]
           .post(uri"$endpoint/multipart/other")
           .response(asStringAlways)
           .multipartBody(multipart("p1", "v1"))
-          .headers(Map("Content-Type" -> "multipart/mixed"))
+          .contentType("multipart/mixed")
         req.send(backend).toFuture().map { resp =>
           resp.body should include("multipart/mixed")
           resp.body should include("v1")

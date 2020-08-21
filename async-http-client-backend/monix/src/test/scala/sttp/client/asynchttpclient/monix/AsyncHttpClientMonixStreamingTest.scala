@@ -9,4 +9,6 @@ import sttp.client.impl.monix.MonixStreamingTest
 class AsyncHttpClientMonixStreamingTest extends MonixStreamingTest {
   override val backend: SttpBackend[Task, MonixStreams] =
     AsyncHttpClientMonixBackend().runSyncUnsafe()
+
+  override protected def supportsStreamingMultipartParts: Boolean = false
 }
