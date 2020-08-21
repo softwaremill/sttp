@@ -48,7 +48,8 @@ case class RequestT[U[_], T, -R](
     response: ResponseAs[T, R],
     options: RequestOptions,
     tags: Map[String, Any]
-) extends RequestTExtensions[U, T, R] {
+) extends HasHeaders
+    with RequestTExtensions[U, T, R] {
   def get(uri: Uri): Request[T, R] =
     this.copy[Identity, T, R](uri = uri, method = Method.GET)
   def head(uri: Uri): Request[T, R] =

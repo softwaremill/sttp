@@ -3,9 +3,17 @@ package sttp.client.internal
 import java.nio.file.Files
 import java.nio.file.Path
 
+import scala.io.Source
+
 trait SttpFileExtensions { self: SttpFile =>
   def toPath: Path = underlying.asInstanceOf[Path]
   def toFile: java.io.File = toPath.toFile
+
+  def readAsString: String = {
+    val s = Source.fromFile(toFile, "UTF-8");
+    try s.getLines().mkString("\n")
+    finally s.close()
+  }
 }
 
 trait SttpFileCompanionExtensions {

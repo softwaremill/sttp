@@ -103,7 +103,7 @@ case class Person(name: String, surname: String, age: Int)
 // for this example, assuming names/surnames can't contain commas
 implicit val personSerializer: BodySerializer[Person] = { p: Person =>
   val serialized = s"${p.name},${p.surname},${p.age}"
-  StringBody(serialized, "UTF-8", Some(MediaType.TextCsv))
+  StringBody(serialized, "UTF-8", MediaType.TextCsv)
 }
 
 basicRequest.body(Person("mary", "smith", 67))

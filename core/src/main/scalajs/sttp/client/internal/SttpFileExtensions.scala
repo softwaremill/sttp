@@ -7,6 +7,8 @@ import sttp.client.dom.experimental.File
 trait SttpFileExtensions { self: SttpFile =>
 
   def toDomFile: File = underlying.asInstanceOf[File]
+
+  def readAsString: String = throw new UnsupportedOperationException()
 }
 
 trait SttpFileCompanionExtensions {

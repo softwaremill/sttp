@@ -118,6 +118,14 @@ basicRequest.get(uri"http://example.org").send(testingBackend)       // code wil
 basicRequest.get(uri"http://example.org").send(testingBackend)       // code will be 200
 ```
 
+The `sttp.client.testing` package also contains a utility method to inspect the body as a string, if the body is not a stream or multipart:
+
+```scala
+val testingBackend = SttpBackendStub.synchronous
+  .whenRequestMatches(_.bodyAsString.contains("Hello, world!"))
+  .thenRespond("Hello back!")
+```
+
 If the stub is given a request, for which no behavior is stubbed, it will return a failed effect with an `IllegalArgumentException`. 
 
 ## Simulating exceptions
