@@ -330,13 +330,13 @@ case class RequestT[U[_], T, -R](
 
   private[client] def withBasicBody(body: BasicRequestBody) = {
     val defaultCt = body match {
-      case StringBody(_, encoding, Some(ct)) =>
-        Some(ct.copy(charset = Some(encoding)))
+      case StringBody(_, encoding, ct) =>
+        ct.copy(charset = Some(encoding))
       case _ =>
         body.defaultContentType
     }
 
-    defaultCt.fold(this)(setContentTypeIfMissing).copy(body = body)
+    setContentTypeIfMissing(defaultCt).copy(body = body)
   }
 
   private def hasContentLength: Boolean =

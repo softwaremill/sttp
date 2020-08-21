@@ -13,7 +13,7 @@ trait SttpPlayJsonApi {
   }
 
   implicit def playJsonBodySerializer[B: Writes]: BodySerializer[B] =
-    b => StringBody(Json.stringify(Json.toJson(b)), Utf8, Some(MediaType.ApplicationJson))
+    b => StringBody(Json.stringify(Json.toJson(b)), Utf8, MediaType.ApplicationJson)
 
   /**
     * If the response is successful (2xx), tries to deserialize the body from a string into JSON. Returns:

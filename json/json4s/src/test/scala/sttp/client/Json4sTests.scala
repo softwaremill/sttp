@@ -82,7 +82,7 @@ class Json4sTests extends AnyFlatSpec with Matchers with EitherValues {
 
   def extractBody[A[_], B, C](request: RequestT[A, B, C]): String =
     request.body match {
-      case StringBody(body, "utf-8", Some(MediaType.ApplicationJson)) =>
+      case StringBody(body, "utf-8", MediaType.ApplicationJson) =>
         body
       case wrongBody =>
         fail(s"Request body does not serialize to correct StringBody: $wrongBody")
