@@ -24,7 +24,7 @@ before_install:
   - export STTP_NATIVE=1
 before_script:
 - nvm install 10 # nodejs < 10 fails finding URL class
-- export SBT_OPTS="-Xmx4G"
+- export SBT_OPTS="-Xmx6G"
 script:
 - google-chrome --version
-- sbt compileDocs test
+- sbt -v compileDocs test
