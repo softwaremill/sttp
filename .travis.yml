@@ -3,7 +3,7 @@ addons:
   chrome: stable
 jdk:
 - openjdk11
-dist: bionic
+dist: focal
 before_cache:
   - du -h -d 1 $HOME/.ivy2/
   - du -h -d 2 $HOME/.sbt/
@@ -24,7 +24,7 @@ before_install:
   - export STTP_NATIVE=1
 before_script:
 - nvm install 10 # nodejs < 10 fails finding URL class
+- export SBT_OPTS="-Xmx4G"
 script:
 - google-chrome --version
-- sbt compileDocs
-- sbt test
+- sbt compileDocs test
