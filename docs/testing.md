@@ -278,3 +278,27 @@ backend.whenAnyRequest.thenRespond(webSocketStub)
 There is a possiblity to add error responses as well. If this is not enough, using a custom implementation of 
 the `WebSocket` trait is recommended.
 
+## Verifying, that a request was sent
+
+Using `RecordingSttpBackend` it's possible to capture all interactions in which a backend has been involved.
+
+The recording backend is a [backend wrapper](backends/wrappers/custom.md), and it can wrap any backend, but it's most
+useful when combine witht the backend stub. 
+
+Example usage:
+
+```scala mdoc:compile-only
+import scala.util.Try
+
+val testingBackend = new RecordingSttpBackend(
+  SttpBackendStub.synchronous
+    .whenRequestMatches(_.uri.path.startsWith(List("a", "b")))
+    .thenRespond("Hello there!")
+)
+
+val response1 = basicRequest.get(uri"http://example.org/a/b/c").send(testingBackend)
+// response1.body will be Right("Hello there")
+
+testingBackend.allInteractions: List[(Request[_, _], Try[Response[_]])]
+// the list will contain one element and can be verified in a test 
+```
