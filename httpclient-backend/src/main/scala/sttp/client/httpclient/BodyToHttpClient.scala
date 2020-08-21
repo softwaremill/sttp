@@ -1,9 +1,10 @@
 package sttp.client.httpclient
 
-import java.io.InputStream
+import java.io.{ByteArrayInputStream, InputStream}
 import java.net.http.HttpRequest
 import java.net.http.HttpRequest.{BodyPublisher, BodyPublishers}
 import java.nio.{Buffer, ByteBuffer}
+import java.util.function.Supplier
 
 import sttp.capabilities.Streams
 import sttp.client.{
@@ -20,7 +21,7 @@ import sttp.client.{
 }
 import sttp.monad.MonadError
 import sttp.monad.syntax._
-import sttp.model.{Header, HeaderNames, Part}
+import sttp.model.{Header, HeaderNames, MediaType, Part}
 
 import scala.collection.JavaConverters._
 
@@ -57,15 +58,28 @@ private[httpclient] trait BodyToHttpClient[F[_], S] {
     val multipartBuilder = new MultiPartBodyPublisher()
     parts.foreach { p =>
       val allHeaders = p.headers :+ Header(HeaderNames.ContentDisposition, p.contentDispositionHeaderValue)
+      val partHeaders = allHeaders.map(h => h.name -> h.value).toMap.asJava
+      def fileName = p.fileName.getOrElse("")
+      def contentType = p.contentType.getOrElse(MediaType.ApplicationOctetStream.toString())
       p.body match {
-        case FileBody(f, _) =>
-          multipartBuilder.addPart(p.name, f.toFile.toPath, allHeaders.map(h => h.name -> h.value).toMap.asJava)
-        case StringBody(b, _, _) =>
-          multipartBuilder.addPart(p.name, b, allHeaders.map(h => h.name -> h.value).toMap.asJava)
+        case FileBody(f, _)      => multipartBuilder.addPart(p.name, f.toFile.toPath, partHeaders)
+        case StringBody(b, _, _) => multipartBuilder.addPart(p.name, b, partHeaders)
+        case ByteArrayBody(b, _) =>
+          multipartBuilder.addPart(p.name, supplier(new ByteArrayInputStream(b)), fileName, contentType)
+        case ByteBufferBody(b, _) =>
+          if ((b: Buffer).isReadOnly())
+            multipartBuilder.addPart(p.name, supplier(new ByteBufferBackedInputStream(b)), fileName, contentType)
+          else multipartBuilder.addPart(p.name, supplier(new ByteArrayInputStream(b.array())), fileName, contentType)
+        case InputStreamBody(b, _) => multipartBuilder.addPart(p.name, supplier(b), fileName, contentType)
       }
     }
     multipartBuilder
   }
+
+  private def supplier[T](t: => T) =
+    new Supplier[T] {
+      override def get(): T = t
+    }
 
   // https://stackoverflow.com/a/6603018/362531
   private class ByteBufferBackedInputStream(buf: ByteBuffer) extends InputStream {

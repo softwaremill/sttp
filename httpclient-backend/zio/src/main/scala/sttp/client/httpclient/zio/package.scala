@@ -44,6 +44,6 @@ package object zio {
     def sendR[T, R](
         request: Request[T, Effect[RIO[Blocking with R, *]] with BlockingZioStreams with WebSockets]
     ): RIO[SttpClient with Blocking with R, Response[T]] =
-      ZIO.accessM(env => env.get[SttpBackend[Service]].extendEnv[R].send(request))
+      ZIO.accessM(env => env.get[Service].extendEnv[R].send(request))
   }
 }
