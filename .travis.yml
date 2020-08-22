@@ -27,4 +27,4 @@ before_script:
 script:
 - google-chrome --version
 - sbt compileDocs
-- sbt -J-Xmx3G -v test
+- sbt -v test
