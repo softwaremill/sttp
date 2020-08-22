@@ -385,7 +385,7 @@ lazy val monix = (projectMatrix in file("implementations/monix"))
   .jvmPlatform(
     scalaVersions = List(scala2_11, scala2_12, scala2_13),
     settings = commonJvmSettings ++ intellijImportOnly213 ++ List(
-      libraryDependencies ++= Seq("io.monix" %% "monix-nio" % "0.0.8")
+      libraryDependencies ++= Seq("io.monix" %% "monix-nio" % "0.0.9")
     )
   )
   .jsPlatform(
