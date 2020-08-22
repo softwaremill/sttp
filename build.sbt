@@ -185,7 +185,7 @@ val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.12"
 val akkaStreamVersion = "2.5.31"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % akkaStreamVersion
 
-val scalaTestVersion = "3.2.1"
+val scalaTestVersion = "3.2.2"
 val scalaNativeTestInterfaceVersion = "0.4.0-M2"
 val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion
 
