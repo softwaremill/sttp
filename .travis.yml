@@ -21,7 +21,7 @@ cache:
     - $HOME/.coursier
 before_install:
   - bash project/travis_setup.sh
-  - export STTP_NATIVE=1
+#  - export STTP_NATIVE=1
 before_script:
 - nvm install 10 # nodejs < 10 fails finding URL class
 script:
