@@ -26,4 +26,5 @@ before_script:
 - nvm install 10 # nodejs < 10 fails finding URL class
 script:
 - google-chrome --version
-- sbt -J-Xmx3G -v compileDocs test
+- sbt compileDocs
+- sbt -J-Xmx3G -v test
