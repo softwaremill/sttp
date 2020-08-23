@@ -5,9 +5,9 @@ jdk:
   - openjdk11
 dist: bionic
 env:
-  - IS_JVM=true
-  - IS_JS=true
-  - IS_NATIVE=true
+  - BUILD_TYPE=jvm
+  - BUILD_TYPE=js
+  - BUILD_TYPE=native
 before_cache:
   - du -h -d 1 $HOME/.ivy2/
   - du -h -d 2 $HOME/.sbt/
@@ -24,13 +24,13 @@ cache:
     - $HOME/.ivy2/cache
     - $HOME/.coursier
 before_install:
-  - $IS_NATIVE && bash project/travis_setup.sh
+  - if [ $BUILD_TYPE == "native" ]; then bash project/travis_setup.sh; fi
 before_script:
-  - $IS_JS && nvm install 10 # nodejs < 10 fails finding URL class
-  - $IS_NATIVE && export STTP_NATIVE=1
+  - if [ $BUILD_TYPE == "js" ]; then nvm install 10; fi # nodejs < 10 fails finding URL class
+  - if [ $BUILD_TYPE == "native" ]; then export STTP_NATIVE=1; fi
 script:
-  - $IS_JS && google-chrome --version
-  - $IS_JVM && sbt compileDocs
-  - $IS_JVM && sbt -v testJVM
-  - $IS_JS && sbt -v testJS
-  - $IS_NATIVE && sbt -v testNative
+  - if [ $BUILD_TYPE == "js" ]; then google-chrome --version; fi
+  - if [ $BUILD_TYPE == "jvm" ]; then sbt compileDocs; fi
+  - if [ $BUILD_TYPE == "jvm" ]; then sbt -v testJVM; fi
+  - if [ $BUILD_TYPE == "js" ]; then sbt -v testJS; fi
+  - if [ $BUILD_TYPE == "native" ]; then sbt -v testNative; fi
