@@ -2,7 +2,7 @@ language: scala
 addons:
   chrome: stable
 jdk:
-- openjdk11
+  - openjdk11
 dist: bionic
 before_cache:
   - du -h -d 1 $HOME/.ivy2/
@@ -21,10 +21,11 @@ cache:
     - $HOME/.coursier
 before_install:
   - bash project/travis_setup.sh
-#  - export STTP_NATIVE=1
 before_script:
-- nvm install 10 # nodejs < 10 fails finding URL class
+  - nvm install 10 # nodejs < 10 fails finding URL class
 script:
-- google-chrome --version
-- sbt compileDocs
-- sbt -v test
+  - google-chrome --version
+  - sbt compileDocs
+  - sbt -v test
+  - export STTP_NATIVE=1
+  - sbt -v coreNative2_11/test
