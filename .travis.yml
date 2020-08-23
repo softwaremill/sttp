@@ -5,9 +5,9 @@ jdk:
   - openjdk11
 dist: bionic
 env:
-  - IS_JVM=1
-  - IS_JS=1
-  - IS_NATIVE=1
+  - IS_JVM=true
+  - IS_JS=true
+  - IS_NATIVE=true
 before_cache:
   - du -h -d 1 $HOME/.ivy2/
   - du -h -d 2 $HOME/.sbt/
@@ -24,13 +24,13 @@ cache:
     - $HOME/.ivy2/cache
     - $HOME/.coursier
 before_install:
-  - [[ -n $IS_NATIVE ]] && bash project/travis_setup.sh
+  - $IS_NATIVE && bash project/travis_setup.sh
 before_script:
-  - [[ -n $IS_JS ]] && nvm install 10 # nodejs < 10 fails finding URL class
-  - [[ -n $IS_NATIVE ]] && export STTP_NATIVE=1
+  - $IS_JS && nvm install 10 # nodejs < 10 fails finding URL class
+  - $IS_NATIVE && export STTP_NATIVE=1
 script:
-  - [[ -n $IS_JS ]] && google-chrome --version
-  - [[ -n $IS_JVM ]] && sbt compileDocs
-  - [[ -n $IS_JVM ]] && sbt -v testJVM
-  - [[ -n $IS_JS ]] && sbt -v testJS
-  - [[ -n $IS_NATIVE ]] && sbt -v testNative
+  - $IS_JS && google-chrome --version
+  - $IS_JVM && sbt compileDocs
+  - $IS_JVM && sbt -v testJVM
+  - $IS_JS && sbt -v testJS
+  - $IS_NATIVE && sbt -v testNative
