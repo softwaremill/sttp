@@ -204,6 +204,8 @@ val braveOpentracingVersion = "0.37.2"
 val zipkinSenderOkHttpVersion = "2.15.0"
 val resilience4jVersion = "1.5.0"
 
+val compileAndTest = "compile->compile;test->test"
+
 def dependenciesFor(version: String)(deps: (Option[(Long, Long)] => ModuleID)*): Seq[ModuleID] =
   deps.map(_.apply(CrossVersion.partialVersion(version)))
 
@@ -222,8 +224,6 @@ lazy val coreProjectAggregates: Seq[ProjectReference] = if (sys.env.isDefinedAt(
     core.js(scala2_13)
   )
 }
-
-val compileAndTest = "compile->compile;test->test"
 
 lazy val allAggregates = coreProjectAggregates ++
   testCompilation.projectRefs ++
@@ -261,6 +261,7 @@ lazy val allAggregates = coreProjectAggregates ++
   examples.projectRefs ++
   docs.projectRefs
 
+// For Travis tests, defining scripts that run JVM/JS/Native tests separately
 val testJVM = taskKey[Unit]("Test JVM projects")
 val testJS = taskKey[Unit]("Test JS projects")
 val testNative = taskKey[Unit]("Test native projects")
@@ -568,7 +569,7 @@ lazy val http4sBackend = (projectMatrix in file("http4s-backend"))
     )
   )
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13), settings = intellijImportOnly213)
-  .dependsOn(cats % compileAndTest, core % compileAndTest, fs2 % "compile->compile;test->test")
+  .dependsOn(cats % compileAndTest, core % compileAndTest, fs2 % compileAndTest)
 
 //-- httpclient-java11
 lazy val httpClientBackend = (projectMatrix in file("httpclient-backend"))
