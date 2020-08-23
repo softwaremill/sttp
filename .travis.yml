@@ -24,13 +24,13 @@ cache:
     - $HOME/.ivy2/cache
     - $HOME/.coursier
 before_install:
-  - IS_NATIVE && bash project/travis_setup.sh
+  - $IS_NATIVE && bash project/travis_setup.sh
 before_script:
-  - IS_JS && nvm install 10 # nodejs < 10 fails finding URL class
-  - IS_NATIVE && export STTP_NATIVE=1
+  - $IS_JS && nvm install 10 # nodejs < 10 fails finding URL class
+  - $IS_NATIVE && export STTP_NATIVE=1
 script:
-  - IS_JS && google-chrome --version
-  - IS_JVM && sbt compileDocs
-  - IS_JVM && sbt -v testJVM
-  - IS_JS && sbt -v testJS
-  - IS_NATIVE && sbt -v testNative
+  - $IS_JS && google-chrome --version
+  - $IS_JVM && sbt compileDocs
+  - $IS_JVM && sbt -v testJVM
+  - $IS_JS && sbt -v testJS
+  - $IS_NATIVE && sbt -v testNative
