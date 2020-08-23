@@ -23,9 +23,10 @@ before_install:
   - bash project/travis_setup.sh
 before_script:
   - nvm install 10 # nodejs < 10 fails finding URL class
+  - export STTP_NATIVE=1
 script:
   - google-chrome --version
   - sbt compileDocs
-  - sbt -v test
-  - export STTP_NATIVE=1
-  - sbt -v coreNative2_11/test
+  - sbt -v testJVM
+  - sbt -v testJS
+  - sbt -v testNative

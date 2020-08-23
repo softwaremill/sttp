@@ -1,5 +1,7 @@
 import com.softwaremill.Publish.Release.updateVersionInDocs
 import sbt.Keys.publishArtifact
+import sbt.Reference
+import sbt.Reference.display
 import sbt.internal.ProjectMatrix
 import sbtrelease.ReleasePlugin.autoImport._
 import sbtrelease.ReleaseStateTransformations._
@@ -223,46 +225,59 @@ lazy val coreProjectAggregates: Seq[ProjectReference] = if (sys.env.isDefinedAt(
 
 val compileAndTest = "compile->compile;test->test"
 
+lazy val allAggregates = coreProjectAggregates ++
+  testCompilation.projectRefs ++
+  cats.projectRefs ++
+  fs2.projectRefs ++
+  monix.projectRefs ++
+  scalaz.projectRefs ++
+  zio.projectRefs ++
+  // might fail due to // https://github.com/akka/akka-http/issues/1930
+  akkaHttpBackend.projectRefs ++
+  asyncHttpClientBackend.projectRefs ++
+  asyncHttpClientFutureBackend.projectRefs ++
+  asyncHttpClientScalazBackend.projectRefs ++
+  asyncHttpClientZioBackend.projectRefs ++
+  asyncHttpClientMonixBackend.projectRefs ++
+  asyncHttpClientCatsBackend.projectRefs ++
+  asyncHttpClientFs2Backend.projectRefs ++
+  okhttpBackend.projectRefs ++
+  okhttpMonixBackend.projectRefs ++
+  http4sBackend.projectRefs ++
+  jsonCommon.projectRefs ++
+  circe.projectRefs ++
+  json4s.projectRefs ++
+  sprayJson.projectRefs ++
+  playJson.projectRefs ++
+  openTracingBackend.projectRefs ++
+  prometheusBackend.projectRefs ++
+  zioTelemetryOpenTracingBackend.projectRefs ++
+  httpClientBackend.projectRefs ++
+  httpClientMonixBackend.projectRefs ++
+  httpClientFs2Backend.projectRefs ++
+  httpClientZioBackend.projectRefs ++
+  finagleBackend.projectRefs ++
+  slf4jBackend.projectRefs ++
+  examples.projectRefs ++
+  docs.projectRefs
+
+val testJVM = taskKey[Unit]("Test JVM projects")
+val testJS = taskKey[Unit]("Test JS projects")
+val testNative = taskKey[Unit]("Test native projects")
+
+def filterProjectContains(s: String) =
+  ScopeFilter(inProjects(allAggregates.filter(pr => display(pr.project).contains(s)): _*))
+
 lazy val rootProject = (project in file("."))
   .settings(commonSettings: _*)
-  .settings(skip in publish := true, name := "sttp")
-  .aggregate(
-    coreProjectAggregates ++
-      testCompilation.projectRefs ++
-      cats.projectRefs ++
-      fs2.projectRefs ++
-      monix.projectRefs ++
-      scalaz.projectRefs ++
-      zio.projectRefs ++
-      // might fail due to // https://github.com/akka/akka-http/issues/1930
-      akkaHttpBackend.projectRefs ++
-      asyncHttpClientBackend.projectRefs ++
-      asyncHttpClientFutureBackend.projectRefs ++
-      asyncHttpClientScalazBackend.projectRefs ++
-      asyncHttpClientZioBackend.projectRefs ++
-      asyncHttpClientMonixBackend.projectRefs ++
-      asyncHttpClientCatsBackend.projectRefs ++
-      asyncHttpClientFs2Backend.projectRefs ++
-      okhttpBackend.projectRefs ++
-      okhttpMonixBackend.projectRefs ++
-      http4sBackend.projectRefs ++
-      jsonCommon.projectRefs ++
-      circe.projectRefs ++
-      json4s.projectRefs ++
-      sprayJson.projectRefs ++
-      playJson.projectRefs ++
-      openTracingBackend.projectRefs ++
-      prometheusBackend.projectRefs ++
-      zioTelemetryOpenTracingBackend.projectRefs ++
-      httpClientBackend.projectRefs ++
-      httpClientMonixBackend.projectRefs ++
-      httpClientFs2Backend.projectRefs ++
-      httpClientZioBackend.projectRefs ++
-      finagleBackend.projectRefs ++
-      slf4jBackend.projectRefs ++
-      examples.projectRefs ++
-      docs.projectRefs: _*
+  .settings(
+    skip in publish := true,
+    name := "sttp",
+    testJVM := (test in Test).all(filterProjectContains("JVM")).value,
+    testJS := (test in Test).all(filterProjectContains("JS")).value,
+    testNative := (test in Test).all(filterProjectContains("Native")).value
   )
+  .aggregate(allAggregates: _*)
 
 lazy val testServer = (projectMatrix in file("testing/server"))
   .settings(commonJvmSettings)
