@@ -266,17 +266,17 @@ val testJVM = taskKey[Unit]("Test JVM projects")
 val testJS = taskKey[Unit]("Test JS projects")
 val testNative = taskKey[Unit]("Test native projects")
 
-def filterProjectContains(s: String) =
-  ScopeFilter(inProjects(allAggregates.filter(pr => display(pr.project).contains(s)): _*))
+def filterProject(p: String => Boolean) =
+  ScopeFilter(inProjects(allAggregates.filter(pr => p(display(pr.project))): _*))
 
 lazy val rootProject = (project in file("."))
   .settings(commonSettings: _*)
   .settings(
     skip in publish := true,
     name := "sttp",
-    testJVM := (test in Test).all(filterProjectContains("JVM")).value,
-    testJS := (test in Test).all(filterProjectContains("JS")).value,
-    testNative := (test in Test).all(filterProjectContains("Native")).value
+    testJVM := (test in Test).all(filterProject(p => !p.contains("JS") && !p.contains("Native"))).value,
+    testJS := (test in Test).all(filterProject(_.contains("JS"))).value,
+    testNative := (test in Test).all(filterProject(_.contains("Native"))).value
   )
   .aggregate(allAggregates: _*)
 
