@@ -26,7 +26,7 @@ trait SttpBackend[F[_], +P] {
   def close(): F[Unit]
 
   /**
-    * A monad instance for the effect type, used when returning responses. Allows writing wrapper backends, which
+    * A monad instance for the effect type used when returning responses. Allows writing wrapper backends, which
     * map/flatMap over the return value of [[send]].
     */
   def responseMonad: MonadError[F]
