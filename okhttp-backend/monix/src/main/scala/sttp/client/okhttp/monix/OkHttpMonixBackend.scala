@@ -54,7 +54,7 @@ class OkHttpMonixBackend private (
 
   override protected val bodyFromOkHttp: BodyFromOkHttp[Task, MonixStreams] = new BodyFromOkHttp[Task, MonixStreams] {
     override val streams: MonixStreams = MonixStreams
-    override implicit def monad: MonadError[Task] = OkHttpMonixBackend.this.responseMonad
+    override implicit val monad: MonadError[Task] = OkHttpMonixBackend.this.responseMonad
 
     override def responseBodyToStream(inputStream: InputStream): Observable[ByteBuffer] =
       Observable

@@ -8,6 +8,7 @@ import sttp.client.curl.CurlInfo._
 import sttp.client.curl.CurlOption.{Header => _, _}
 import sttp.client.curl._
 import sttp.client.internal._
+import sttp.client.ws.{NotAWebSocketException, GotAWebSocketException}
 import sttp.capabilities.Effect
 import sttp.model._
 import sttp.monad.MonadError
@@ -83,7 +84,7 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
         val responseHeaders = responseHeaders_.tail
         val responseMetadata = ResponseMetadata(responseHeaders, httpCode, statusText)
 
-        val body: F[T] = readResponseBody(responseBody, request.response, responseMetadata).map(_._1)
+        val body: F[T] = bodyFromResponseAs(request.response, responseMetadata, Left(responseBody))
         responseMonad.map(body) { b =>
           Response[T](
             body = b,
@@ -175,39 +176,39 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
     Seq(array: _*)
   }
 
-  private def readResponseBody[T, _](
-      response: String,
-      responseAs: ResponseAs[T, _],
-      responseMetadata: ResponseMetadata
-  ): F[(T, ReplayableBody)] = {
-    responseAs match {
-      case MappedResponseAs(raw, g) =>
-        responseMonad.map(readResponseBody(response, raw, responseMetadata)) {
-          case (result, replayableBody) =>
-            (g(result, responseMetadata), replayableBody)
+  private lazy val bodyFromResponseAs = new BodyFromResponseAs[F, String, Nothing, Nothing] {
+    override protected def withReplayableBody(
+        response: String,
+        replayableBody: Either[Array[Byte], SttpFile]
+    ): F[String] = response.unit
+
+    override protected def regularIgnore(response: String): F[Unit] = ().unit
+
+    override protected def regularAsByteArray(response: String): F[Array[Byte]] = toByteArray(response)
+
+    override protected def regularAsFile(response: String, file: SttpFile): F[SttpFile] =
+      responseMonad
+        .map(toByteArray(response)) { a =>
+          val is = new ByteArrayInputStream(a)
+          val f = FileHelpers.saveFile(file.toFile, is)
+          SttpFile.fromFile(f)
         }
-      case raf: ResponseAsFromMetadata[T, _] => readResponseBody(response, raf(responseMetadata), responseMetadata)
-      case ResponseAsBoth(l, r) =>
-        readResponseBody(response, l, responseMetadata).flatMap {
-          case (leftResult, None) => ((leftResult, None): T, nonReplayableBody).unit
-          case (leftResult, Some(rb)) =>
-            readResponseBody(response, r, responseMetadata).map {
-              case (rightResult, _) => ((leftResult, Some(rightResult)), Some(rb))
-            }
-        }
-      case IgnoreResponse      => responseMonad.unit(((): Unit, nonReplayableBody))
-      case ResponseAsByteArray => monad.map(toByteArray(response))(b => (b, replayableBody(b)))
-      case ResponseAsFile(output) =>
-        responseMonad
-          .map(toByteArray(response)) { a =>
-            val is = new ByteArrayInputStream(a)
-            val f = FileHelpers.saveFile(output.toFile, is)
-            SttpFile.fromFile(f)
-          }
-          .map(f => (f, replayableBody(f)))
-      case ResponseAsStreamUnsafe(_) =>
-        responseMonad.error(new IllegalStateException("CurlBackend does not support streaming responses"))
-    }
+
+    override protected def regularAsStream(response: String): F[(Nothing, () => F[Unit])] =
+      throw new IllegalStateException("CurlBackend does not support streaming responses")
+
+    override protected def handleWS[T](
+        responseAs: WebSocketResponseAs[T, _],
+        meta: ResponseMetadata,
+        ws: Nothing
+    ): F[T] = ws
+
+    override protected def cleanupWhenNotAWebSocket(
+        response: String,
+        e: NotAWebSocketException
+    ): F[Unit] = ().unit
+
+    override protected def cleanupWhenGotWebSocket(response: Nothing, e: GotAWebSocketException): F[Unit] = response
   }
 
   private def transformHeaders(reqHeaders: Iterable[Header])(implicit z: Zone): CurlList = {

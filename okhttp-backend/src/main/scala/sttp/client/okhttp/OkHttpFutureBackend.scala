@@ -29,7 +29,7 @@ class OkHttpFutureBackend private (
 
   override protected val bodyFromOkHttp: BodyFromOkHttp[Future, Nothing] = new BodyFromOkHttp[Future, Nothing] {
     override val streams: NoStreams = NoStreams
-    override implicit val monad: MonadError[Future] = OkHttpFutureBackend.this.responseMonad
+    override implicit val monad: MonadError[Future] = new FutureMonad
     override def responseBodyToStream(inputStream: InputStream): Nothing =
       throw new IllegalStateException("Streaming is not supported")
     override def compileWebSocketPipe(ws: WebSocket[Future], pipe: Nothing): Future[Unit] = pipe

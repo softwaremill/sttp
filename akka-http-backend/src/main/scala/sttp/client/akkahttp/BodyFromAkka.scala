@@ -1,126 +1,95 @@
 package sttp.client.akkahttp
 
-import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
 
-import akka.{Done, NotUsed}
-import akka.http.scaladsl.model.{HttpEntity, HttpResponse, ResponseEntity}
 import akka.http.scaladsl.model.ws.{BinaryMessage, Message, TextMessage}
-import akka.stream.{Materializer, OverflowStrategy, QueueOfferResult}
+import akka.http.scaladsl.model.{HttpEntity, HttpResponse}
 import akka.stream.scaladsl.{FileIO, Flow, Sink, SinkQueueWithCancel, Source, SourceQueueWithComplete}
+import akka.stream.{Materializer, OverflowStrategy, QueueOfferResult}
 import akka.util.ByteString
+import akka.{Done, NotUsed}
 import sttp.capabilities.akka.AkkaStreams
-import sttp.client.internal.{ReplayableBody, nonReplayableBody, replayableBody}
+import sttp.client.internal.{BodyFromResponseAs, SttpFile}
 import sttp.client.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.client.{
-  IgnoreResponse,
-  MappedResponseAs,
   ResponseAs,
-  ResponseAsBoth,
-  ResponseAsByteArray,
-  ResponseAsFile,
-  ResponseAsFromMetadata,
-  ResponseAsStream,
-  ResponseAsStreamUnsafe,
   ResponseAsWebSocket,
   ResponseAsWebSocketStream,
   ResponseAsWebSocketUnsafe,
   ResponseMetadata,
   WebSocketResponseAs
 }
-import sttp.model.{Headers, StatusCode}
+import sttp.model.Headers
 import sttp.monad.{FutureMonad, MonadError}
 import sttp.ws.{WebSocket, WebSocketBufferFull, WebSocketClosed, WebSocketFrame}
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.Failure
 
-private[akkahttp] object BodyFromAkka {
+private[akkahttp] class BodyFromAkka()(implicit ec: ExecutionContext, mat: Materializer, m: MonadError[Future]) {
   def apply[T, R](
       responseAs: ResponseAs[T, R],
-      response: Either[HttpResponse, Promise[Flow[Message, Message, NotUsed]]],
-      meta: ResponseMetadata
-  )(implicit ec: ExecutionContext, mat: Materializer): Future[T] =
-    doApply(responseAs, response, meta).map(_._1)
+      meta: ResponseMetadata,
+      response: Either[HttpResponse, Promise[Flow[Message, Message, NotUsed]]]
+  ): Future[T] =
+    bodyFromResponseAs(responseAs, meta, response)
 
-  def doApply[T, R](
-      responseAs: ResponseAs[T, R],
-      response: Either[HttpResponse, Promise[Flow[Message, Message, NotUsed]]],
-      meta: ResponseMetadata
-  )(implicit ec: ExecutionContext, mat: Materializer): Future[(T, ReplayableBody)] = {
-    def asByteArray(hr: HttpResponse) =
-      hr.entity.dataBytes
-        .runFold(ByteString(""))(_ ++ _)
-        .map(_.toArray[Byte])
-
-    def saved(hr: HttpResponse, file: File) = {
-      if (!file.exists()) {
-        file.getParentFile.mkdirs()
-        file.createNewFile()
-      }
-
-      hr.entity.dataBytes.runWith(FileIO.toPath(file.toPath))
-    }
-
-    (responseAs, response) match {
-      case (MappedResponseAs(raw, g), _) =>
-        doApply(raw, response, meta).map { case (result, replayableBody) => (g(result, meta), replayableBody) }
-
-      case (rfm: ResponseAsFromMetadata[T, R], _) => doApply(rfm(meta), response, meta)
-
-      case (ResponseAsBoth(l, r), _) =>
-        doApply(l, response, meta).flatMap {
-          case (leftResult, None) => Future.successful(((leftResult, None): T, nonReplayableBody))
-          case (leftResult, Some(rb)) =>
-            val replayResponse = response.left.map { r =>
-              val replayEntity = rb match {
-                case Left(byteArray) => HttpEntity(byteArray)
-                case Right(file)     => HttpEntity.fromFile(r.entity.contentType, file.toFile)
-              }
-
-              r.copy(entity = replayEntity)
-            }
-            doApply(r, replayResponse, meta).map {
-              case (rightResult, _) => ((leftResult, Some(rightResult)), Some(rb))
-            }
+  private lazy val bodyFromResponseAs =
+    new BodyFromResponseAs[Future, HttpResponse, Promise[Flow[Message, Message, NotUsed]], AkkaStreams.BinaryStream] {
+      override protected def withReplayableBody(
+          response: HttpResponse,
+          replayableBody: Either[Array[Byte], SttpFile]
+      ): Future[HttpResponse] = {
+        val replayEntity = replayableBody match {
+          case Left(byteArray) => HttpEntity(byteArray)
+          case Right(file)     => HttpEntity.fromFile(response.entity.contentType, file.toFile)
         }
 
-      case (IgnoreResponse, Left(hr)) =>
+        Future.successful(response.copy(entity = replayEntity))
+      }
+
+      override protected def regularIgnore(response: HttpResponse): Future[Unit] = {
         // todo: Replace with HttpResponse#discardEntityBytes() once https://github.com/akka/akka-http/issues/1459 is resolved
-        hr.entity.dataBytes.runWith(Sink.ignore).map(_ => ((), nonReplayableBody))
+        response.entity.dataBytes.runWith(Sink.ignore).map(_ => ())
+      }
 
-      case (ResponseAsByteArray, Left(hr)) =>
-        asByteArray(hr).map(b => (b, replayableBody(b)))
+      override protected def regularAsByteArray(response: HttpResponse): Future[Array[Byte]] = {
+        response.entity.dataBytes
+          .runFold(ByteString(""))(_ ++ _)
+          .map(_.toArray[Byte])
+      }
 
-      case (ResponseAsStream(_, f), Left(hr)) =>
+      override protected def regularAsFile(response: HttpResponse, file: SttpFile): Future[SttpFile] = {
+        val f = file.toFile
+        if (!f.exists()) {
+          f.getParentFile.mkdirs()
+          f.createNewFile()
+        }
+
+        response.entity.dataBytes.runWith(FileIO.toPath(file.toPath)).map(_ => file)
+      }
+
+      override protected def regularAsStream(
+          response: HttpResponse
+      ): Future[(Source[ByteString, Any], () => Future[Unit])] = {
         // todo: how to ensure that the stream is closed after the future returned by f completes?
-        f.asInstanceOf[AkkaStreams.BinaryStream => Future[T]](hr.entity.dataBytes).map((_, nonReplayableBody))
+        Future.successful((response.entity.dataBytes, () => Future.successful(())))
+      }
 
-      case (ResponseAsStreamUnsafe(_), Left(hr)) =>
-        Future.successful(hr.entity.dataBytes.asInstanceOf[T]).map((_, nonReplayableBody))
+      override protected def handleWS[T](
+          responseAs: WebSocketResponseAs[T, _],
+          meta: ResponseMetadata,
+          ws: Promise[Flow[Message, Message, NotUsed]]
+      ): Future[T] = wsFromAkka(responseAs, ws, meta)
 
-      case (ResponseAsFile(file), Left(hr)) =>
-        saved(hr, file.toFile).map(_ => (file, replayableBody(file)))
+      override protected def cleanupWhenNotAWebSocket(response: HttpResponse, e: NotAWebSocketException): Future[Unit] =
+        response.entity.discardBytes().future().map(_ => ())
 
-      case (wsr: WebSocketResponseAs[_, _], Right(promise)) =>
-        wsFromAkka(wsr, promise, meta).map((_, nonReplayableBody))
-
-      case (_: WebSocketResponseAs[_, _], Left(hr)) =>
-        hr.entity
-          .discardBytes()
-          .future()
-          .flatMap(_ =>
-            Future.failed(
-              new NotAWebSocketException(StatusCode(hr.status.intValue()))
-            )
-          )
-
-      case (_, Right(promise)) =>
-        val e = new GotAWebSocketException()
-        promise.failure(e)
-        Future.failed(e)
+      override protected def cleanupWhenGotWebSocket(
+          response: Promise[Flow[Message, Message, NotUsed]],
+          e: GotAWebSocketException
+      ): Future[Unit] = Future.successful(response.failure(e))
     }
-  }
 
   private def wsFromAkka[T, R](
       rr: WebSocketResponseAs[T, R],

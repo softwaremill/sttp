@@ -79,11 +79,11 @@ class OkHttpSyncBackend private (
     readResponse(response, request.response)
   }
 
-  override def responseMonad: MonadError[Identity] = IdMonad
+  override val responseMonad: MonadError[Identity] = IdMonad
 
   override protected val bodyFromOkHttp: BodyFromOkHttp[Identity, Nothing] = new BodyFromOkHttp[Identity, Nothing] {
     override val streams: NoStreams = NoStreams
-    override implicit val monad: MonadError[Identity] = OkHttpSyncBackend.this.responseMonad
+    override implicit val monad: MonadError[Identity] = IdMonad
     override def responseBodyToStream(inputStream: InputStream): Nothing =
       throw new IllegalStateException("Streaming isn't supported")
     override def compileWebSocketPipe(ws: WebSocket[Identity], pipe: Nothing): Identity[Unit] = pipe

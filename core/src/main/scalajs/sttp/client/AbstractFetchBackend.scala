@@ -21,6 +21,7 @@ import org.scalajs.dom.raw.{Blob, BlobPropertyBag}
 import sttp.capabilities.{Effect, Streams}
 import sttp.client.dom.experimental.{AbortController, FilePropertyBag, File => DomFile}
 import sttp.client.internal.{SttpFile, _}
+import sttp.client.ws.{NotAWebSocketException, GotAWebSocketException}
 import sttp.monad.MonadError
 import sttp.monad.syntax._
 import sttp.model.{Header, StatusCode}
@@ -125,7 +126,7 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
         val headers = convertResponseHeaders(resp.headers)
         val metadata = ResponseMetadata(headers, StatusCode(resp.status), resp.statusText)
 
-        val body: F[T] = readResponseBody(resp, request.response, metadata).map(_._1)
+        val body: F[T] = bodyFromResponseAs(request.response, metadata, Left(resp))
 
         body.map { b =>
           Response[T](
@@ -233,45 +234,25 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
 
   protected def handleStreamBody(s: streams.BinaryStream): F[js.UndefOr[BodyInit]]
 
-  private def readResponseBody[T](
-      response: FetchResponse,
-      responseAs: ResponseAs[T, _],
-      meta: ResponseMetadata
-  ): F[(T, ReplayableBody)] = {
-    responseAs match {
-      case MappedResponseAs(raw, g) =>
-        readResponseBody(response, raw, meta).map {
-          case (result, replayableBody) =>
-            (g(result, meta), replayableBody)
+  private lazy val bodyFromResponseAs =
+    new BodyFromResponseAs[F, FetchResponse, Nothing, streams.BinaryStream] {
+      override protected def withReplayableBody(
+          response: FetchResponse,
+          replayableBody: Either[Array[Byte], SttpFile]
+      ): F[FetchResponse] = {
+        val bytes = replayableBody match {
+          case Left(byteArray) => byteArray
+          case Right(file)     => throw new IllegalArgumentException("Replayable file bodies are not supported")
         }
+        new FetchResponse(bytes.toTypedArray.asInstanceOf[BodyInit], response.asInstanceOf[ResponseInit]).unit
+      }
 
-      case raf: ResponseAsFromMetadata[T, _] =>
-        readResponseBody(response, raf(meta), meta)
+      override protected def regularIgnore(response: FetchResponse): F[Unit] =
+        transformPromise(response.arrayBuffer()).map(_ => ())
 
-      case ResponseAsBoth(l, r) =>
-        readResponseBody(response, l, meta).flatMap {
-          case (leftResult, None) => ((leftResult, None): T, nonReplayableBody).unit
-          case (leftResult, Some(rb)) =>
-            val bytes = rb match {
-              case Left(byteArray) => byteArray
-              case Right(file)     => throw new IllegalArgumentException("Replayable file bodies are not supported")
-            }
-            readResponseBody(
-              new FetchResponse(bytes.toTypedArray.asInstanceOf[BodyInit], response.asInstanceOf[ResponseInit]),
-              r,
-              meta
-            ).map {
-              case (rightResult, _) => ((leftResult, Some(rightResult)), Some(rb))
-            }
-        }
+      override protected def regularAsByteArray(response: FetchResponse): F[Array[Byte]] = responseToByteArray(response)
 
-      case IgnoreResponse =>
-        transformPromise(response.arrayBuffer()).map(_ => ((), nonReplayableBody))
-
-      case ResponseAsByteArray =>
-        responseToByteArray(response).map(b => (b, replayableBody(b)))
-
-      case ResponseAsFile(file) =>
+      override protected def regularAsFile(response: FetchResponse, file: SttpFile): F[SttpFile] = {
         transformPromise(response.arrayBuffer())
           .map { ab =>
             SttpFile.fromDomFile(
@@ -282,18 +263,24 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
               )
             )
           }
-          .map(f => (f, replayableBody(f)))
+      }
 
-      case _: ResponseAsStreamUnsafe[_, _] =>
-        handleResponseAsStream(response).map(s => (s._1.asInstanceOf[T], nonReplayableBody))
+      override protected def regularAsStream(response: FetchResponse): F[(streams.BinaryStream, () => F[Unit])] =
+        handleResponseAsStream(response)
 
-      case ResponseAsStream(_, f) =>
-        handleResponseAsStream(response).flatMap {
-          case (stream, cancel) =>
-            f.asInstanceOf[streams.BinaryStream => F[T]](stream).map((_, nonReplayableBody)).ensure(cancel())
-        }
+      override protected def handleWS[T](
+          responseAs: WebSocketResponseAs[T, _],
+          meta: ResponseMetadata,
+          ws: Nothing
+      ): F[T] = ws
+
+      override protected def cleanupWhenNotAWebSocket(
+          response: FetchResponse,
+          e: NotAWebSocketException
+      ): F[Unit] = ().unit
+
+      override protected def cleanupWhenGotWebSocket(response: Nothing, e: GotAWebSocketException): F[Unit] = response
     }
-  }
 
   private def responseToByteArray(response: FetchResponse) = {
     transformPromise(response.arrayBuffer()).map { ab => new Int8Array(ab).toArray }

@@ -1,36 +1,6 @@
 package sttp.client.finagle
 
 import com.twitter.finagle.Http.Client
-import com.twitter.finagle.{Http, Service, http}
-import sttp.client.{
-  BasicRequestBody,
-  ByteArrayBody,
-  ByteBufferBody,
-  FileBody,
-  FollowRedirectsBackend,
-  IgnoreResponse,
-  InputStreamBody,
-  MappedResponseAs,
-  MultipartBody,
-  NoBody,
-  Request,
-  RequestBody,
-  Response,
-  ResponseAs,
-  ResponseAsBoth,
-  ResponseAsByteArray,
-  ResponseAsFile,
-  ResponseAsFromMetadata,
-  ResponseAsStream,
-  ResponseAsStreamUnsafe,
-  ResponseMetadata,
-  StreamBody,
-  StringBody,
-  SttpBackend,
-  SttpClientException
-}
-import com.twitter.util.{Future => TFuture}
-import sttp.monad.MonadError
 import com.twitter.finagle.http.{
   FileElement,
   FormElement,
@@ -39,20 +9,35 @@ import com.twitter.finagle.http.{
   Method => FMethod,
   Response => FResponse
 }
+import com.twitter.finagle.{Http, Service, http}
 import com.twitter.io.Buf
 import com.twitter.io.Buf.{ByteArray, ByteBuffer}
 import com.twitter.util
-import sttp.client.internal.{
-  FileHelpers,
-  ReplayableBody,
-  nonReplayableBody,
-  replayableBody,
-  throwNestedMultipartNotAllowed
+import com.twitter.util.{Duration, Future => TFuture}
+import sttp.capabilities.Effect
+import sttp.client.internal.{BodyFromResponseAs, FileHelpers, SttpFile}
+import sttp.client.testing.SttpBackendStub
+import sttp.client.ws.{GotAWebSocketException, NotAWebSocketException}
+import sttp.client.{
+  ByteArrayBody,
+  ByteBufferBody,
+  FileBody,
+  FollowRedirectsBackend,
+  InputStreamBody,
+  MultipartBody,
+  NoBody,
+  Request,
+  RequestBody,
+  Response,
+  ResponseMetadata,
+  StringBody,
+  SttpBackend,
+  SttpClientException,
+  WebSocketResponseAs
 }
 import sttp.model.{Header, Method, Part, StatusCode, Uri}
-import com.twitter.util.Duration
-import sttp.capabilities.Effect
-import sttp.client.testing.SttpBackendStub
+import sttp.monad.MonadError
+import sttp.monad.syntax._
 
 import scala.io.Source
 
@@ -69,7 +54,7 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
           val headers = fResponse.headerMap.map(h => Header(h._1, h._2)).toList
           val statusText = fResponse.status.reason
           val responseMetadata = ResponseMetadata(headers, code, statusText)
-          val body = fromFinagleResponse(request.response, fResponse, responseMetadata).map(_._1)
+          val body = bodyFromResponseAs(request.response, responseMetadata, Left(fResponse))
           service.close().flatMap(_ => body.map(sttp.client.Response(_, code, statusText, headers, Nil)))
         }
         .rescue {
@@ -79,7 +64,7 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
 
   override def close(): TFuture[Unit] = TFuture.Done
 
-  override def responseMonad: MonadError[TFuture] = TFutureMonadError
+  override implicit val responseMonad: MonadError[TFuture] = TFutureMonadError
 
   private def headersToMap(headers: Seq[Header]): Map[String, String] = {
     headers.map(header => header.name -> header.value).toMap
@@ -154,56 +139,47 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
     RequestBuilder.create().url(url).addHeaders(headers).build(method, content)
   }
 
-  private def fromFinagleResponse[T](
-      rr: ResponseAs[T, Nothing],
-      response: FResponse,
-      meta: ResponseMetadata
-  ): TFuture[(T, ReplayableBody)] = {
+  private lazy val bodyFromResponseAs =
+    new BodyFromResponseAs[TFuture, FResponse, Nothing, Nothing] {
+      override protected def withReplayableBody(
+          response: FResponse,
+          replayableBody: Either[Array[Byte], SttpFile]
+      ): TFuture[FResponse] = {
+        response.content(replayableBody match {
+          case Left(byteArray) => Buf.ByteArray(byteArray: _*)
+          case Right(file)     => Buf.ByteArray(FileHelpers.readFile(file.toFile): _*)
+        })
+      }.unit
 
-    rr match {
-      case MappedResponseAs(raw, g) =>
-        fromFinagleResponse(raw, response, meta).map {
-          case (result, replayableBody) => (g(result, meta), replayableBody)
-        }
+      override protected def regularIgnore(response: FResponse): TFuture[Unit] = TFuture(response.clearContent())
 
-      case raf: ResponseAsFromMetadata[T, Nothing] => fromFinagleResponse(raf(meta), response, meta)
-
-      case ResponseAsBoth(l, r) =>
-        fromFinagleResponse(l, response, meta).flatMap {
-          case (leftResult, None) => TFuture.value(((leftResult, None): T, nonReplayableBody))
-          case (leftResult, Some(rb)) =>
-            val body = rb match {
-              case Left(byteArray) => Buf.ByteArray(byteArray: _*)
-              case Right(file)     => Buf.ByteArray(FileHelpers.readFile(file.toFile): _*)
-            }
-
-            fromFinagleResponse(r, response.content(body), meta).map {
-              case (rightResult, _) => ((leftResult, Some(rightResult)), Some(rb))
-            }
-        }
-
-      case IgnoreResponse =>
-        TFuture((response.clearContent(), nonReplayableBody))
-
-      case ResponseAsByteArray =>
+      override protected def regularAsByteArray(response: FResponse): TFuture[Array[Byte]] =
         TFuture.const(util.Try {
           val bb = ByteBuffer.Owned.extract(response.content)
           val b = new Array[Byte](bb.remaining)
           bb.get(b)
-          (b, replayableBody(b))
+          b
         })
 
-      case ResponseAsStream(_, _)    => streamingNotSupported()
-      case ResponseAsStreamUnsafe(_) => streamingNotSupported()
+      override protected def regularAsFile(response: FResponse, file: SttpFile): TFuture[SttpFile] = {
+        TFuture.const(util.Try(FileHelpers.saveFile(file.toFile, response.getInputStream()))).map(_ => file)
+      }
 
-      case ResponseAsFile(file) =>
-        val body = TFuture.const(util.Try(FileHelpers.saveFile(file.toFile, response.getInputStream())))
-        body.map(_ => (file, replayableBody(file)))
+      override protected def regularAsStream(response: FResponse): TFuture[Nothing] =
+        TFuture.exception(new IllegalStateException("Streaming isn't supported"))
+
+      override protected def handleWS[T](
+          responseAs: WebSocketResponseAs[T, _],
+          meta: ResponseMetadata,
+          ws: Nothing
+      ): TFuture[T] = ws
+
+      override protected def cleanupWhenNotAWebSocket(response: FResponse, e: NotAWebSocketException): TFuture[Unit] =
+        TFuture.Done
+
+      override protected def cleanupWhenGotWebSocket(response: Nothing, e: GotAWebSocketException): TFuture[Unit] =
+        response
     }
-  }
-
-  private def streamingNotSupported[T](): TFuture[T] =
-    TFuture.exception(new IllegalStateException("Streaming isn't supported"))
 
   private def getClient(c: Option[Client], request: Request[_, Nothing]): Service[http.Request, FResponse] = {
     val client = c.getOrElse {

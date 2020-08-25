@@ -5,26 +5,18 @@ import java.nio.ByteBuffer
 
 import org.reactivestreams.Publisher
 import sttp.capabilities.Streams
+import sttp.client.internal.{BodyFromResponseAs, FileHelpers, SttpFile, nonReplayableBody}
+import sttp.client.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.client.{
-  IgnoreResponse,
-  MappedResponseAs,
   ResponseAs,
-  ResponseAsBoth,
-  ResponseAsByteArray,
-  ResponseAsFile,
-  ResponseAsFromMetadata,
-  ResponseAsStream,
-  ResponseAsStreamUnsafe,
   ResponseAsWebSocket,
   ResponseAsWebSocketStream,
   ResponseAsWebSocketUnsafe,
   ResponseMetadata,
   WebSocketResponseAs
 }
-import sttp.client.internal.{FileHelpers, ReplayableBody, nonReplayableBody, replayableBody}
-import sttp.client.ws.{GotAWebSocketException, NotAWebSocketException}
-import sttp.monad.{Canceler, MonadAsyncError}
 import sttp.monad.syntax._
+import sttp.monad.{Canceler, MonadAsyncError}
 import sttp.ws.{WebSocket, WebSocketFrame}
 
 private[asynchttpclient] trait BodyFromAHC[F[_], S] {
@@ -59,73 +51,54 @@ private[asynchttpclient] trait BodyFromAHC[F[_], S] {
 
   //
 
+  private def bodyFromResponseAs(isSubscribed: () => Boolean) =
+    new BodyFromResponseAs[F, Publisher[ByteBuffer], WebSocket[F], streams.BinaryStream] {
+      override protected def withReplayableBody(
+          response: Publisher[ByteBuffer],
+          replayableBody: Either[Array[Byte], SttpFile]
+      ): F[Publisher[ByteBuffer]] =
+        replayableBody match {
+          case Left(byteArray) => bytesToPublisher(byteArray)
+          case Right(file)     => fileToPublisher(file.toFile)
+        }
+
+      override protected def regularIgnore(response: Publisher[ByteBuffer]): F[Unit] = {
+        // getting the body and discarding it
+        publisherToBytes(response).map(_ => ((), nonReplayableBody))
+      }
+
+      override protected def regularAsByteArray(response: Publisher[ByteBuffer]): F[Array[Byte]] =
+        publisherToBytes(response)
+
+      override protected def regularAsFile(response: Publisher[ByteBuffer], file: SttpFile): F[SttpFile] =
+        publisherToFile(response, file.toFile).map(_ => file)
+
+      override protected def regularAsStream(
+          response: Publisher[ByteBuffer]
+      ): F[(streams.BinaryStream, () => F[Unit])] =
+        (publisherToStream(response), () => ignoreIfNotSubscribed(response, isSubscribed)).unit
+
+      override protected def handleWS[T](
+          responseAs: WebSocketResponseAs[T, _],
+          meta: ResponseMetadata,
+          ws: WebSocket[F]
+      ): F[T] = bodyFromWs(responseAs, ws)
+
+      override protected def cleanupWhenNotAWebSocket(
+          response: Publisher[ByteBuffer],
+          e: NotAWebSocketException
+      ): F[Unit] = ignoreIfNotSubscribed(response, isSubscribed)
+
+      override protected def cleanupWhenGotWebSocket(response: WebSocket[F], e: GotAWebSocketException): F[Unit] =
+        response.close()
+    }
+
   def apply[TT](
       response: Either[Publisher[ByteBuffer], WebSocket[F]],
       responseAs: ResponseAs[TT, _],
       responseMetadata: ResponseMetadata,
       isSubscribed: () => Boolean
-  ): F[TT] = doApply(response, responseAs, responseMetadata, isSubscribed).map(_._1)
-
-  private def doApply[TT](
-      response: Either[Publisher[ByteBuffer], WebSocket[F]],
-      responseAs: ResponseAs[TT, _],
-      responseMetadata: ResponseMetadata,
-      isSubscribed: () => Boolean
-  ): F[(TT, ReplayableBody)] =
-    (responseAs, response) match {
-      case (MappedResponseAs(raw, g), _) =>
-        val nested = doApply(response, raw, responseMetadata, isSubscribed)
-        nested.map {
-          case (result, replayableBody) =>
-            (g(result, responseMetadata), replayableBody)
-        }
-
-      case (rfm: ResponseAsFromMetadata[TT, _], _) =>
-        doApply(response, rfm(responseMetadata), responseMetadata, isSubscribed)
-
-      case (ResponseAsBoth(l, r), _) =>
-        doApply(response, l, responseMetadata, isSubscribed).flatMap {
-          case (leftResult, None) => ((leftResult, None): TT, nonReplayableBody).unit
-          case (leftResult, Some(rb)) =>
-            (rb match {
-              case Left(byteArray) => bytesToPublisher(byteArray)
-              case Right(file)     => fileToPublisher(file.toFile)
-            }).flatMap { publisher =>
-              doApply(Left(publisher), r, responseMetadata, () => true).map {
-                case (rightResult, _) => ((leftResult, Some(rightResult)), Some(rb))
-              }
-            }
-        }
-
-      case (ResponseAsStream(_, f), Left(p)) =>
-        f.asInstanceOf[streams.BinaryStream => F[TT]](publisherToStream(p))
-          .map((_, nonReplayableBody))
-          .ensure(ignoreIfNotSubscribed(p, isSubscribed))
-
-      case (_: ResponseAsStreamUnsafe[_, _], Left(p)) =>
-        monad.unit((publisherToStream(p).asInstanceOf[TT], nonReplayableBody))
-
-      case (IgnoreResponse, Left(p)) =>
-        // getting the body and discarding it
-        publisherToBytes(p).map(_ => ((), nonReplayableBody))
-
-      case (ResponseAsByteArray, Left(p)) =>
-        publisherToBytes(p).map(b => (b, replayableBody(b))) // adjusting type because ResponseAs is covariant
-
-      case (ResponseAsFile(f), Left(p)) =>
-        publisherToFile(p, f.toFile).map(_ => (f, replayableBody(f)))
-
-      case (wsr: WebSocketResponseAs[TT, _], Right(ws)) =>
-        bodyFromWs(wsr, ws).map((_, nonReplayableBody))
-
-      case (_: WebSocketResponseAs[_, _], Left(p)) =>
-        ignoreIfNotSubscribed(p, isSubscribed).flatMap(_ =>
-          monad.error(new NotAWebSocketException(responseMetadata.code))
-        )
-
-      case (_, Right(ws)) =>
-        ws.close().flatMap(_ => monad.error(new GotAWebSocketException()))
-    }
+  ): F[TT] = bodyFromResponseAs(isSubscribed)(responseAs, responseMetadata, response)
 
   private def bodyFromWs[TT](r: WebSocketResponseAs[TT, _], ws: WebSocket[F]): F[TT] =
     r match {

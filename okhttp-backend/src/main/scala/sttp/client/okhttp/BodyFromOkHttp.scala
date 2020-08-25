@@ -3,33 +3,25 @@ package sttp.client.okhttp
 import java.io.{BufferedInputStream, ByteArrayInputStream, FileInputStream, InputStream}
 
 import sttp.capabilities.Streams
-import sttp.client.internal.{FileHelpers, ReplayableBody, nonReplayableBody, replayableBody, toByteArray}
+import sttp.client.internal.{BodyFromResponseAs, FileHelpers, SttpFile, toByteArray}
 import sttp.client.ws.{GotAWebSocketException, NotAWebSocketException}
-import sttp.monad.MonadError
-import sttp.monad.syntax._
 import sttp.client.{
-  IgnoreResponse,
-  MappedResponseAs,
   ResponseAs,
-  ResponseAsBoth,
-  ResponseAsByteArray,
-  ResponseAsFile,
-  ResponseAsFromMetadata,
-  ResponseAsStream,
-  ResponseAsStreamUnsafe,
   ResponseAsWebSocket,
   ResponseAsWebSocketStream,
   ResponseAsWebSocketUnsafe,
   ResponseMetadata,
   WebSocketResponseAs
 }
+import sttp.monad.MonadError
+import sttp.monad.syntax._
 import sttp.ws.{WebSocket, WebSocketFrame}
 
 import scala.util.Try
 
 private[okhttp] trait BodyFromOkHttp[F[_], S] {
   val streams: Streams[S]
-  implicit def monad: MonadError[F]
+  implicit val monad: MonadError[F]
 
   def responseBodyToStream(inputStream: InputStream): streams.BinaryStream
 
@@ -48,65 +40,50 @@ private[okhttp] trait BodyFromOkHttp[F[_], S] {
       responseAs: ResponseAs[T, _],
       responseMetadata: ResponseMetadata,
       ws: Option[WebSocket[F]]
-  ): F[T] = doApply(responseBody, responseAs, responseMetadata, ws).map(_._1)
+  ): F[T] = bodyFromResponseAs(responseAs, responseMetadata, ws.toRight(responseBody))
 
-  private def doApply[T](
-      responseBody: InputStream,
-      responseAs: ResponseAs[T, _],
-      responseMetadata: ResponseMetadata,
-      ws: Option[WebSocket[F]]
-  ): F[(T, ReplayableBody)] = {
-    (responseAs, ws) match {
-      case (raf: ResponseAsFromMetadata[T, _], _) => doApply(responseBody, raf(responseMetadata), responseMetadata, ws)
-      case (MappedResponseAs(raw, g), _) =>
-        doApply(responseBody, raw, responseMetadata, ws).map {
-          case (result, replayableBody) =>
-            (g(result, responseMetadata), replayableBody)
+  private lazy val bodyFromResponseAs =
+    new BodyFromResponseAs[F, InputStream, WebSocket[F], streams.BinaryStream] {
+      override protected def withReplayableBody(
+          response: InputStream,
+          replayableBody: Either[Array[Byte], SttpFile]
+      ): F[InputStream] = {
+        (replayableBody match {
+          case Left(byteArray) => new ByteArrayInputStream(byteArray)
+          case Right(file)     => new BufferedInputStream(new FileInputStream(file.toFile))
+        }).unit
+      }
+
+      override protected def regularIgnore(response: InputStream): F[Unit] = monad.eval(response.close())
+
+      override protected def regularAsByteArray(response: InputStream): F[Array[Byte]] =
+        monad.fromTry {
+          val body = Try(toByteArray(response))
+          response.close()
+          body
         }
-      case (ResponseAsBoth(l, r), _) =>
-        doApply(responseBody, l, responseMetadata, ws).flatMap {
-          case (leftResult, None) => ((leftResult, None): T, nonReplayableBody).unit
-          case (leftResult, Some(rb)) =>
-            val bodyReplayInputStream = rb match {
-              case Left(byteArray) => new ByteArrayInputStream(byteArray)
-              case Right(file)     => new BufferedInputStream(new FileInputStream(file.toFile))
-            }
-            doApply(bodyReplayInputStream, r, responseMetadata, ws).map {
-              case (rightResult, _) => ((leftResult, Some(rightResult)), Some(rb))
-            }
-        }
-      case (IgnoreResponse, None) =>
-        monad.eval((responseBody.close(), nonReplayableBody))
-      case (ResponseAsByteArray, None) =>
+
+      override protected def regularAsFile(response: InputStream, file: SttpFile): F[SttpFile] =
         monad
           .fromTry {
-            val body = Try(toByteArray(responseBody))
-            responseBody.close()
-            body
-          }
-          .map(b => (b, replayableBody(b)))
-      case (_: ResponseAsStreamUnsafe[_, _], None) =>
-        monad.eval((responseBodyToStream(responseBody).asInstanceOf[T], nonReplayableBody))
-      case (ResponseAsFile(file), None) =>
-        monad
-          .fromTry {
-            val body = Try(FileHelpers.saveFile(file.toFile, responseBody))
-            responseBody.close()
+            val body = Try(FileHelpers.saveFile(file.toFile, response))
+            response.close()
             body.map(_ => file)
           }
-          .map(f => (f, replayableBody(f)))
-      case (ras @ ResponseAsStream(_, _), None) =>
-        ras.f
-          .asInstanceOf[streams.BinaryStream => F[T]](responseBodyToStream(responseBody))
-          .map((_, nonReplayableBody))
-          .ensure(monad.eval(responseBody.close()))
-      case (wr: WebSocketResponseAs[T, _], Some(_ws)) =>
-        fromWs(wr, _ws).map((_, nonReplayableBody))
-      case (_: WebSocketResponseAs[T, _], None) =>
-        responseBody.close()
-        monad.error(new NotAWebSocketException(responseMetadata.code))
-      case (_, Some(ws)) =>
-        ws.close().flatMap(_ => monad.error(new GotAWebSocketException()))
+
+      override protected def regularAsStream(response: InputStream): F[(streams.BinaryStream, () => F[Unit])] =
+        monad.eval((responseBodyToStream(response), () => monad.eval(response.close())))
+
+      override protected def handleWS[T](
+          responseAs: WebSocketResponseAs[T, _],
+          meta: ResponseMetadata,
+          ws: WebSocket[F]
+      ): F[T] = fromWs(responseAs, ws)
+
+      override protected def cleanupWhenNotAWebSocket(response: InputStream, e: NotAWebSocketException): F[Unit] =
+        monad.eval(response.close())
+
+      override protected def cleanupWhenGotWebSocket(response: WebSocket[F], e: GotAWebSocketException): F[Unit] =
+        response.close()
     }
-  }
 }

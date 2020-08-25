@@ -9,7 +9,7 @@ import sttp.client.internal.ws.{SimpleQueue, WebSocketEvent}
 import sttp.monad.syntax._
 import sttp.client.okhttp.OkHttpBackend.EncodingHandler
 import sttp.client.{Request, Response, ignore}
-import sttp.monad.{Canceler, MonadAsyncError, MonadError}
+import sttp.monad.{Canceler, MonadAsyncError}
 
 abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](
     client: OkHttpClient,
@@ -49,7 +49,6 @@ abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](
   override protected def sendWebSocket[T, R >: PE](
       request: Request[T, R]
   ): F[Response[T]] = {
-    implicit val m = monad
     val nativeRequest = convertRequest(request)
     monad.flatten(
       createSimpleQueue[WebSocketEvent]
@@ -70,7 +69,7 @@ abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](
       queue: SimpleQueue[F, WebSocketEvent],
       cb: Either[Throwable, F[Response[T]]] => Unit,
       request: Request[T, R]
-  )(implicit m: MonadAsyncError[F]): DelegatingWebSocketListener = {
+  ): DelegatingWebSocketListener = {
     val isOpen = new AtomicBoolean(false)
     val addToQueue = new AddToQueueListener(queue, isOpen)
 
@@ -96,5 +95,5 @@ abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](
     )
   }
 
-  override def responseMonad: MonadError[F] = monad
+  override implicit val responseMonad: MonadAsyncError[F] = monad
 }

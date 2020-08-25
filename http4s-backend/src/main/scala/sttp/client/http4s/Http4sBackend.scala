@@ -17,8 +17,10 @@ import sttp.capabilities.fs2.Fs2Streams
 import sttp.client.http4s.Http4sBackend.EncodingHandler
 import sttp.client.impl.cats.CatsMonadAsyncError
 import sttp.client.internal.{
+  BodyFromResponseAs,
   IOBufferSize,
   ReplayableBody,
+  SttpFile,
   nonReplayableBody,
   replayableBody,
   throwNestedMultipartNotAllowed
@@ -26,6 +28,7 @@ import sttp.client.internal.{
 import sttp.model._
 import sttp.monad.MonadError
 import sttp.client.testing.SttpBackendStub
+import sttp.client.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.client.{
   BasicRequestBody,
   IgnoreResponse,
@@ -70,15 +73,16 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
 
               val signalBodyComplete = responseBodyCompleteVar.tryPut(()).map(_ => ())
               val body =
-                bodyFromHttp4s(
+                bodyFromResponseAs(signalBodyComplete)(
                   r.response,
-                  onFinalizeSignal(
-                    decompressResponseBodyIfNotHead(r.method, response),
-                    signalBodyComplete
-                  ),
-                  signalBodyComplete,
-                  responseMetadata
-                ).map(_._1)
+                  responseMetadata,
+                  Left(
+                    onFinalizeSignal(
+                      decompressResponseBodyIfNotHead(r.method, response),
+                      signalBodyComplete
+                    )
+                  )
+                )
 
               body
                 .map { b => Response(b, code, statusText, headers, Nil) }
@@ -197,60 +201,50 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
     case (_, contentCoding) => throw new UnsupportedEncodingException(s"Unsupported encoding: ${contentCoding.coding}")
   }
 
-  private def bodyFromHttp4s[T, R >: PE](
-      rr: ResponseAs[T, PE],
-      hr: http4s.Response[F],
-      signalBodyComplete: F[Unit],
-      meta: ResponseMetadata
-  ): F[(T, ReplayableBody)] = {
-    def saved(file: File) = {
-      if (!file.exists()) {
-        file.getParentFile.mkdirs()
-        file.createNewFile()
+  private def bodyFromResponseAs(signalBodyComplete: F[Unit]) =
+    new BodyFromResponseAs[F, http4s.Response[F], Nothing, EntityBody[F]] {
+      override protected def withReplayableBody(
+          response: http4s.Response[F],
+          replayableBody: Either[Array[Byte], SttpFile]
+      ): F[http4s.Response[F]] = {
+        val body = replayableBody match {
+          case Left(byteArray) => Stream.chunk(Chunk.bytes(byteArray))
+          case Right(file)     => fs2.io.file.readAll(file.toPath, blocker, IOBufferSize)
+        }
+
+        response.copy(body = body).pure[F]
       }
 
-      hr.body.through(fs2.io.file.writeAll(file.toPath, blocker)).compile.drain
-    }
+      override protected def regularIgnore(response: http4s.Response[F]): F[Unit] = response.body.compile.drain
 
-    rr match {
-      case MappedResponseAs(raw, g) =>
-        bodyFromHttp4s(raw, hr, signalBodyComplete, meta).map {
-          case (result, replayableBody) => (g(result, meta), replayableBody)
+      override protected def regularAsByteArray(response: http4s.Response[F]): F[Array[Byte]] = response.as[Array[Byte]]
+
+      override protected def regularAsFile(response: http4s.Response[F], file: SttpFile): F[SttpFile] = {
+        val f = file.toFile
+        if (!f.exists()) {
+          f.getParentFile.mkdirs()
+          f.createNewFile()
         }
 
-      case raf: ResponseAsFromMetadata[T, R] =>
-        bodyFromHttp4s(raf(meta), hr, signalBodyComplete, meta)
+        response.body.through(fs2.io.file.writeAll(file.toPath, blocker)).compile.drain.map(_ => file)
+      }
 
-      case ResponseAsBoth(l, r) =>
-        bodyFromHttp4s(l, hr, signalBodyComplete, meta).flatMap {
-          case (leftResult, None) => ((leftResult, None): T, nonReplayableBody).pure[F]
-          case (leftResult, Some(rb)) =>
-            val body = rb match {
-              case Left(byteArray) => Stream.chunk(Chunk.bytes(byteArray))
-              case Right(file)     => fs2.io.file.readAll(file.toPath, blocker, IOBufferSize)
-            }
+      override protected def regularAsStream(response: http4s.Response[F]): F[(EntityBody[F], () => F[Unit])] =
+        (response.body, () => signalBodyComplete).pure[F]
 
-            bodyFromHttp4s(r, hr.copy(body = body), signalBodyComplete, meta).map {
-              case (rightResult, _) => ((leftResult, Some(rightResult)), Some(rb))
-            }
-        }
+      override protected def handleWS[T](
+          responseAs: WebSocketResponseAs[T, _],
+          meta: ResponseMetadata,
+          ws: Nothing
+      ): F[T] = ws
 
-      case IgnoreResponse =>
-        hr.body.compile.drain.map(_ => ((), nonReplayableBody))
+      override protected def cleanupWhenNotAWebSocket(
+          response: http4s.Response[F],
+          e: NotAWebSocketException
+      ): F[Unit] = ().pure[F]
 
-      case ResponseAsByteArray =>
-        hr.as[Array[Byte]].map(b => (b, replayableBody(b)))
-
-      case ras: ResponseAsStream[_, _, _, _] =>
-        ras.f.asInstanceOf[Stream[F, Byte] => F[T]](hr.body).map((_, nonReplayableBody)).guarantee(signalBodyComplete)
-
-      case _: ResponseAsStreamUnsafe[_, _] =>
-        (hr.body.asInstanceOf[T], nonReplayableBody).pure[F]
-
-      case ResponseAsFile(file) =>
-        saved(file.toFile).map(_ => (file, replayableBody(file)))
+      override protected def cleanupWhenGotWebSocket(response: Nothing, e: GotAWebSocketException): F[Unit] = response
     }
-  }
 
   private def adjustExceptions[T](r: Request[_, _])(t: => F[T]): F[T] =
     SttpClientException.adjustExceptions(responseMonad)(t)(http4sExceptionToSttpClientException(r, _))
@@ -263,7 +257,7 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
       case e: Exception                           => SttpClientException.defaultExceptionToSttpClientException(request, e)
     }
 
-  override def responseMonad: MonadError[F] = new CatsMonadAsyncError
+  override implicit val responseMonad: MonadError[F] = new CatsMonadAsyncError
 
   // no-op. Client lifecycle is managed by Resource
   override def close(): F[Unit] = responseMonad.unit(())

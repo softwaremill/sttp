@@ -11,6 +11,7 @@ import akka.http.scaladsl.model.ws.{InvalidUpgradeResponse, Message, ValidUpgrad
 import akka.http.scaladsl.model.{StatusCode => _, _}
 import akka.http.scaladsl.settings.ConnectionPoolSettings
 import akka.http.scaladsl.{ClientTransport, Http, HttpsConnectionContext}
+import akka.stream.Materializer
 import akka.stream.scaladsl.Flow
 import sttp.capabilities.akka.AkkaStreams
 import sttp.capabilities.{Effect, WebSockets}
@@ -82,7 +83,7 @@ class AkkaHttpBackend private (
       }
   }
 
-  override def responseMonad: MonadError[Future] = new FutureMonad()(ec)
+  override val responseMonad: MonadError[Future] = new FutureMonad()(ec)
 
   private def connectionSettings(r: Request[_, _]): ConnectionPoolSettings = {
     val connectionPoolSettingsWithProxy = opts.proxy match {
@@ -102,6 +103,8 @@ class AkkaHttpBackend private (
       .withUpdatedConnectionSettings(_.withIdleTimeout(r.options.readTimeout))
   }
 
+  private lazy val bodyFromAkka = new BodyFromAkka()(ec, implicitly[Materializer], responseMonad)
+
   private def responseFromAkka[T](
       r: Request[T, PE],
       hr: HttpResponse,
@@ -113,7 +116,7 @@ class AkkaHttpBackend private (
     val headers = FromAkka.headers(hr)
 
     val responseMetadata = client.ResponseMetadata(headers, code, statusText)
-    val body = BodyFromAkka(r.response, wsFlow.map(Right(_)).getOrElse(Left(decodeAkkaResponse(hr))), responseMetadata)
+    val body = bodyFromAkka(r.response, responseMetadata, wsFlow.map(Right(_)).getOrElse(Left(decodeAkkaResponse(hr))))
 
     body.map(client.Response(_, code, statusText, headers, Nil))
   }
