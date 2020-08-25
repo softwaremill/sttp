@@ -234,6 +234,15 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
       .body shouldBe "Internal server error"
   }
 
+  it should "return both responses when requested to do so" in {
+    val backend = SttpBackendStub.synchronous.whenAnyRequest.thenRespond("1234")
+    basicRequest
+      .get(uri"http://example.org")
+      .response(asBoth(asString.mapRight(_.toInt), asStringAlways))
+      .send(backend)
+      .body shouldBe ((Right(1234), "1234"))
+  }
+
   it should "return a web socket, given a stub, for an unsafe websocket-always request" in {
     val backend: SttpBackend[Identity, WebSockets] = SttpBackendStub.synchronous.whenAnyRequest
       .thenRespond(WebSocketStub.initialReceive(List(WebSocketFrame.text("hello"))))
