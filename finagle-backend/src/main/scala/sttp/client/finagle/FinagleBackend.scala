@@ -17,6 +17,7 @@ import sttp.client.{
   RequestBody,
   Response,
   ResponseAs,
+  ResponseAsBoth,
   ResponseAsByteArray,
   ResponseAsFile,
   ResponseAsFromMetadata,
@@ -41,7 +42,13 @@ import com.twitter.finagle.http.{
 import com.twitter.io.Buf
 import com.twitter.io.Buf.{ByteArray, ByteBuffer}
 import com.twitter.util
-import sttp.client.internal.{FileHelpers, throwNestedMultipartNotAllowed}
+import sttp.client.internal.{
+  FileHelpers,
+  ReplayableBody,
+  nonReplayableBody,
+  replayableBody,
+  throwNestedMultipartNotAllowed
+}
 import sttp.model.{Header, Method, Part, StatusCode, Uri}
 import com.twitter.util.Duration
 import sttp.capabilities.Effect
@@ -62,7 +69,7 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
           val headers = fResponse.headerMap.map(h => Header(h._1, h._2)).toList
           val statusText = fResponse.status.reason
           val responseMetadata = ResponseMetadata(headers, code, statusText)
-          val body = fromFinagleResponse(request.response, fResponse, responseMetadata)
+          val body = fromFinagleResponse(request.response, fResponse, responseMetadata).map(_._1)
           service.close().flatMap(_ => body.map(sttp.client.Response(_, code, statusText, headers, Nil)))
         }
         .rescue {
@@ -147,31 +154,51 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
     RequestBuilder.create().url(url).addHeaders(headers).build(method, content)
   }
 
-  private def fromFinagleResponse[T](rr: ResponseAs[T, Nothing], r: FResponse, meta: ResponseMetadata): TFuture[T] = {
+  private def fromFinagleResponse[T](
+      rr: ResponseAs[T, Nothing],
+      response: FResponse,
+      meta: ResponseMetadata
+  ): TFuture[(T, ReplayableBody)] = {
 
     rr match {
       case MappedResponseAs(raw, g) =>
-        fromFinagleResponse(raw, r, meta).map(h => g(h, meta))
+        fromFinagleResponse(raw, response, meta).map {
+          case (result, replayableBody) => (g(result, meta), replayableBody)
+        }
 
-      case raf: ResponseAsFromMetadata[T, Nothing] => fromFinagleResponse(raf(meta), r, meta)
+      case raf: ResponseAsFromMetadata[T, Nothing] => fromFinagleResponse(raf(meta), response, meta)
+
+      case ResponseAsBoth(l, r) =>
+        fromFinagleResponse(l, response, meta).flatMap {
+          case (leftResult, None) => TFuture.value(((leftResult, None): T, nonReplayableBody))
+          case (leftResult, Some(rb)) =>
+            val body = rb match {
+              case Left(byteArray) => Buf.ByteArray(byteArray: _*)
+              case Right(file)     => Buf.ByteArray(FileHelpers.readFile(file.toFile): _*)
+            }
+
+            fromFinagleResponse(r, response.content(body), meta).map {
+              case (rightResult, _) => ((leftResult, Some(rightResult)), Some(rb))
+            }
+        }
 
       case IgnoreResponse =>
-        TFuture(r.clearContent())
+        TFuture((response.clearContent(), nonReplayableBody))
 
       case ResponseAsByteArray =>
         TFuture.const(util.Try {
-          val bb = ByteBuffer.Owned.extract(r.content)
+          val bb = ByteBuffer.Owned.extract(response.content)
           val b = new Array[Byte](bb.remaining)
           bb.get(b)
-          b
+          (b, replayableBody(b))
         })
 
       case ResponseAsStream(_, _)    => streamingNotSupported()
       case ResponseAsStreamUnsafe(_) => streamingNotSupported()
 
       case ResponseAsFile(file) =>
-        val body = TFuture.const(util.Try(FileHelpers.saveFile(file.toFile, r.getInputStream())))
-        body.map(_ => file)
+        val body = TFuture.const(util.Try(FileHelpers.saveFile(file.toFile, response.getInputStream())))
+        body.map(_ => (file, replayableBody(file)))
     }
   }
 

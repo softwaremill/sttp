@@ -133,6 +133,17 @@ trait HttpTest[F[_]]
         .toFuture()
         .map { response => response.body should be(Right(testBody)) }
     }
+
+    "as both string and mapped string" in {
+      postEcho
+        .body(testBody)
+        .response(asBoth(asStringAlways, asByteArray.mapRight(_.length)))
+        .send(backend)
+        .toFuture()
+        .map { response =>
+          response.body shouldBe ((expectedPostEchoResponse, Right(expectedPostEchoResponse.getBytes.length)))
+        }
+    }
   }
 
   "parameters" - {

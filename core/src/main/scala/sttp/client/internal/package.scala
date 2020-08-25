@@ -16,7 +16,7 @@ package object internal {
 
   private[client] def transfer(is: InputStream, os: OutputStream): Unit = {
     var read = 0
-    val buf = new Array[Byte](1024)
+    val buf = new Array[Byte](IOBufferSize)
 
     @tailrec
     def transfer(): Unit = {
@@ -70,4 +70,11 @@ package object internal {
 
   private[client] def throwNestedMultipartNotAllowed =
     throw new IllegalArgumentException("Nested multipart bodies are not allowed")
+
+  private[client] type ReplayableBody = Option[Either[Array[Byte], SttpFile]]
+  private[client] def replayableBody(a: Array[Byte]): ReplayableBody = Some(Left(a))
+  private[client] def replayableBody(f: SttpFile): ReplayableBody = Some(Right(f))
+  private[client] val nonReplayableBody: ReplayableBody = None
+
+  private[client] val IOBufferSize = 1024
 }

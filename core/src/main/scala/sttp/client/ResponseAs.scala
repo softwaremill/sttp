@@ -66,6 +66,8 @@ case class MappedResponseAs[T, T2, R](raw: ResponseAs[T, R], g: (T, ResponseMeta
     MappedResponseAs[T, T3, R](raw, (t, h) => f(g(t, h), h))
 }
 
+case class ResponseAsBoth[A, B, R](l: ResponseAs[A, R], r: ResponseAs[B, Any]) extends ResponseAs[(A, Option[B]), R]
+
 object ResponseAs {
   implicit class RichResponseAsEither[A, B, R](ra: ResponseAs[Either[A, B], R]) {
     def mapLeft[L2](f: A => L2): ResponseAs[Either[L2, B], R] = ra.map(_.left.map(f))

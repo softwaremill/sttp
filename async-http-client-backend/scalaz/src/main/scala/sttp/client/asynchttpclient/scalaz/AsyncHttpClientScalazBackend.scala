@@ -1,5 +1,6 @@
 package sttp.client.asynchttpclient.scalaz
 
+import java.io.File
 import java.nio.ByteBuffer
 
 import io.netty.buffer.ByteBuf

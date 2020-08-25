@@ -77,6 +77,46 @@ trait SyncHttpTest
         .send(backend)
       response.body.right.map(_.toList) should be(Right(params))
     }
+
+    "as string with response via metadata" in {
+      val expectedStatus = StatusCode.BadRequest
+      val response = basicRequest
+        .post(uri"$endpoint/echo/custom_status/${expectedStatus.code}")
+        .body(testBody)
+        .response(asStringAlways.mapWithMetadata((r, m) => if (m.code == expectedStatus) Right(r) else Left(r)))
+        .send(backend)
+
+      response.body should be(Right(s"POST /echo/custom_status/${expectedStatus.code} $testBody"))
+    }
+
+    "as error string with response via metadata" in {
+      val unexpectedStatus = StatusCode.Ok
+      val response = basicRequest
+        .post(uri"$endpoint/echo/custom_status/${unexpectedStatus.code}")
+        .body(testBody)
+        .response(asStringAlways.mapWithMetadata((r, m) => if (m.code == unexpectedStatus) Left(r) else Right(r)))
+        .send(backend)
+
+      response.body should be(Left(s"POST /echo/custom_status/${unexpectedStatus.code} $testBody"))
+    }
+
+    "as string, when the content type encoding is in quotes" in {
+      val response = basicRequest
+        .post(uri"$endpoint/set_content_type_header_with_encoding_in_quotes")
+        .body(testBody)
+        .send(backend)
+
+      response.body should be(Right(testBody))
+    }
+
+    "as both string and mapped string" in {
+      val response = postEcho
+        .body(testBody)
+        .response(asBoth(asStringAlways, asByteArray.mapRight(_.length)))
+        .send(backend)
+
+      response.body shouldBe ((expectedPostEchoResponse, Right(expectedPostEchoResponse.getBytes.length)))
+    }
   }
 
   "parameters" - {

@@ -9,6 +9,7 @@ import sttp.client.{
   IgnoreResponse,
   MappedResponseAs,
   ResponseAs,
+  ResponseAsBoth,
   ResponseAsByteArray,
   ResponseAsFile,
   ResponseAsFromMetadata,
@@ -20,7 +21,7 @@ import sttp.client.{
   ResponseMetadata,
   WebSocketResponseAs
 }
-import sttp.client.internal.FileHelpers
+import sttp.client.internal.{FileHelpers, ReplayableBody, nonReplayableBody, replayableBody}
 import sttp.client.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.monad.{Canceler, MonadAsyncError}
 import sttp.monad.syntax._
@@ -48,6 +49,12 @@ private[asynchttpclient] trait BodyFromAHC[F[_], S] {
     publisherToBytes(p).map(bytes => FileHelpers.saveFile(f, new ByteArrayInputStream(bytes)))
   }
 
+  def bytesToPublisher(b: Array[Byte]): F[Publisher[ByteBuffer]] =
+    (new SingleElementPublisher(ByteBuffer.wrap(b)): Publisher[ByteBuffer]).unit
+
+  def fileToPublisher(f: File): F[Publisher[ByteBuffer]] =
+    (new SingleElementPublisher[ByteBuffer](ByteBuffer.wrap(FileHelpers.readFile(f))): Publisher[ByteBuffer]).unit
+
   def compileWebSocketPipe(ws: WebSocket[F], pipe: streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]): F[Unit]
 
   //
@@ -57,33 +64,59 @@ private[asynchttpclient] trait BodyFromAHC[F[_], S] {
       responseAs: ResponseAs[TT, _],
       responseMetadata: ResponseMetadata,
       isSubscribed: () => Boolean
-  ): F[TT] =
+  ): F[TT] = doApply(response, responseAs, responseMetadata, isSubscribed).map(_._1)
+
+  private def doApply[TT](
+      response: Either[Publisher[ByteBuffer], WebSocket[F]],
+      responseAs: ResponseAs[TT, _],
+      responseMetadata: ResponseMetadata,
+      isSubscribed: () => Boolean
+  ): F[(TT, ReplayableBody)] =
     (responseAs, response) match {
       case (MappedResponseAs(raw, g), _) =>
-        val nested = apply(response, raw, responseMetadata, isSubscribed)
-        nested.map(g(_, responseMetadata))
+        val nested = doApply(response, raw, responseMetadata, isSubscribed)
+        nested.map {
+          case (result, replayableBody) =>
+            (g(result, responseMetadata), replayableBody)
+        }
 
       case (rfm: ResponseAsFromMetadata[TT, _], _) =>
-        apply(response, rfm(responseMetadata), responseMetadata, isSubscribed)
+        doApply(response, rfm(responseMetadata), responseMetadata, isSubscribed)
+
+      case (ResponseAsBoth(l, r), _) =>
+        doApply(response, l, responseMetadata, isSubscribed).flatMap {
+          case (leftResult, None) => ((leftResult, None): TT, nonReplayableBody).unit
+          case (leftResult, Some(rb)) =>
+            (rb match {
+              case Left(byteArray) => bytesToPublisher(byteArray)
+              case Right(file)     => fileToPublisher(file.toFile)
+            }).flatMap { publisher =>
+              doApply(Left(publisher), r, responseMetadata, () => true).map {
+                case (rightResult, _) => ((leftResult, Some(rightResult)), Some(rb))
+              }
+            }
+        }
 
       case (ResponseAsStream(_, f), Left(p)) =>
         f.asInstanceOf[streams.BinaryStream => F[TT]](publisherToStream(p))
+          .map((_, nonReplayableBody))
           .ensure(ignoreIfNotSubscribed(p, isSubscribed))
 
-      case (_: ResponseAsStreamUnsafe[_, _], Left(p)) => monad.unit(publisherToStream(p).asInstanceOf[TT])
+      case (_: ResponseAsStreamUnsafe[_, _], Left(p)) =>
+        monad.unit((publisherToStream(p).asInstanceOf[TT], nonReplayableBody))
 
       case (IgnoreResponse, Left(p)) =>
         // getting the body and discarding it
-        publisherToBytes(p).map(_ => ())
+        publisherToBytes(p).map(_ => ((), nonReplayableBody))
 
       case (ResponseAsByteArray, Left(p)) =>
-        publisherToBytes(p).map(b => b) // adjusting type because ResponseAs is covariant
+        publisherToBytes(p).map(b => (b, replayableBody(b))) // adjusting type because ResponseAs is covariant
 
       case (ResponseAsFile(f), Left(p)) =>
-        publisherToFile(p, f.toFile).map(_ => f)
+        publisherToFile(p, f.toFile).map(_ => (f, replayableBody(f)))
 
       case (wsr: WebSocketResponseAs[TT, _], Right(ws)) =>
-        bodyFromWs(wsr, ws)
+        bodyFromWs(wsr, ws).map((_, nonReplayableBody))
 
       case (_: WebSocketResponseAs[_, _], Left(p)) =>
         ignoreIfNotSubscribed(p, isSubscribed).flatMap(_ =>

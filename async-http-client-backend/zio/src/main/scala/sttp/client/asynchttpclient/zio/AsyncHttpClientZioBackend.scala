@@ -1,6 +1,6 @@
 package sttp.client.asynchttpclient.zio
 
-import java.io.{File, FileOutputStream}
+import java.io.{BufferedInputStream, File, FileInputStream, FileOutputStream}
 import java.nio.ByteBuffer
 
 import _root_.zio._
@@ -66,6 +66,16 @@ class AsyncHttpClientZioBackend private (
           .unit
           .provideLayer(Blocking.live)
       }
+
+      override def bytesToPublisher(b: Array[Byte]): Task[Publisher[ByteBuffer]] =
+        Stream.apply(ByteBuffer.wrap(b)).toPublisher
+
+      override def fileToPublisher(f: File): Task[Publisher[ByteBuffer]] =
+        ZStream
+          .fromInputStream(new BufferedInputStream(new FileInputStream(f)))
+          .mapChunks(ch => Chunk(ByteBuffer.wrap(ch.toArray)))
+          .toPublisher
+          .provideLayer(Blocking.live)
 
       override def compileWebSocketPipe(
           ws: WebSocket[Task],

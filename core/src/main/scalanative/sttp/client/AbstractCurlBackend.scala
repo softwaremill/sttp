@@ -11,6 +11,7 @@ import sttp.client.internal._
 import sttp.capabilities.Effect
 import sttp.model._
 import sttp.monad.MonadError
+import sttp.monad.syntax._
 import sttp.model.{Header, Method, StatusCode}
 
 import scala.collection.immutable.Seq
@@ -21,7 +22,7 @@ import scala.scalanative.libc.string._
 import scala.scalanative.unsafe.{CSize, Ptr, _}
 
 abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean) extends SttpBackend[F, Any] {
-  override val responseMonad: MonadError[F] = monad
+  override implicit val responseMonad: MonadError[F] = monad
 
   override def close(): F[Unit] = monad.unit(())
 
@@ -82,7 +83,7 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
         val responseHeaders = responseHeaders_.tail
         val responseMetadata = ResponseMetadata(responseHeaders, httpCode, statusText)
 
-        val body: F[T] = readResponseBody(responseBody, request.response, responseMetadata)
+        val body: F[T] = readResponseBody(responseBody, request.response, responseMetadata).map(_._1)
         responseMonad.map(body) { b =>
           Response[T](
             body = b,
@@ -174,23 +175,36 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
     Seq(array: _*)
   }
 
-  private def readResponseBody[T, R >: PE](
+  private def readResponseBody[T, _](
       response: String,
-      responseAs: ResponseAs[T, R],
+      responseAs: ResponseAs[T, _],
       responseMetadata: ResponseMetadata
-  ): F[T] = {
+  ): F[(T, ReplayableBody)] = {
     responseAs match {
       case MappedResponseAs(raw, g) =>
-        responseMonad.map(readResponseBody(response, raw, responseMetadata))(g(_, responseMetadata))
-      case raf: ResponseAsFromMetadata[T, R] => readResponseBody(response, raf(responseMetadata), responseMetadata)
-      case IgnoreResponse                    => responseMonad.unit((): Unit)
-      case ResponseAsByteArray               => monad.map(toByteArray(response))(b => b)
-      case ResponseAsFile(output) =>
-        responseMonad.map(toByteArray(response)) { a =>
-          val is = new ByteArrayInputStream(a)
-          val f = FileHelpers.saveFile(output.toFile, is)
-          SttpFile.fromFile(f)
+        responseMonad.map(readResponseBody(response, raw, responseMetadata)) {
+          case (result, replayableBody) =>
+            (g(result, responseMetadata), replayableBody)
         }
+      case raf: ResponseAsFromMetadata[T, _] => readResponseBody(response, raf(responseMetadata), responseMetadata)
+      case ResponseAsBoth(l, r) =>
+        readResponseBody(response, l, responseMetadata).flatMap {
+          case (leftResult, None) => ((leftResult, None): T, nonReplayableBody).unit
+          case (leftResult, Some(rb)) =>
+            readResponseBody(response, r, responseMetadata).map {
+              case (rightResult, _) => ((leftResult, Some(rightResult)), Some(rb))
+            }
+        }
+      case IgnoreResponse      => responseMonad.unit(((): Unit, nonReplayableBody))
+      case ResponseAsByteArray => monad.map(toByteArray(response))(b => (b, replayableBody(b)))
+      case ResponseAsFile(output) =>
+        responseMonad
+          .map(toByteArray(response)) { a =>
+            val is = new ByteArrayInputStream(a)
+            val f = FileHelpers.saveFile(output.toFile, is)
+            SttpFile.fromFile(f)
+          }
+          .map(f => (f, replayableBody(f)))
       case ResponseAsStreamUnsafe(_) =>
         responseMonad.error(new IllegalStateException("CurlBackend does not support streaming responses"))
     }

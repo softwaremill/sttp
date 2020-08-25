@@ -103,3 +103,17 @@ private[asynchttpclient] class IgnoreSubscriber(success: () => Unit, error: Thro
     success()
   }
 }
+
+private[asynchttpclient] class SingleElementPublisher[T](v: T) extends Publisher[T] {
+  override def subscribe(s: Subscriber[_ >: T]): Unit = {
+    s.onSubscribe(new Subscription {
+      override def request(n: Long): Unit =
+        if (n > 0) {
+          s.onNext(v)
+          s.onComplete()
+        }
+
+      override def cancel(): Unit = {}
+    })
+  }
+}

@@ -9,14 +9,20 @@ import cats.effect.{Blocker, Concurrent, ConcurrentEffect, ContextShift, Effect,
 import cats.implicits._
 import cats.effect.implicits._
 import fs2.{Chunk, Stream}
-import org.http4s.{ContentCoding, EntityBody, Request => Http4sRequest}
+import org.http4s.{ContentCoding, EntityBody, EntityDecoder, Request => Http4sRequest}
 import org.http4s
 import org.http4s.client.Client
 import org.http4s.client.blaze.BlazeClientBuilder
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client.http4s.Http4sBackend.EncodingHandler
 import sttp.client.impl.cats.CatsMonadAsyncError
-import sttp.client.internal.throwNestedMultipartNotAllowed
+import sttp.client.internal.{
+  IOBufferSize,
+  ReplayableBody,
+  nonReplayableBody,
+  replayableBody,
+  throwNestedMultipartNotAllowed
+}
 import sttp.model._
 import sttp.monad.MonadError
 import sttp.client.testing.SttpBackendStub
@@ -72,7 +78,7 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
                   ),
                   signalBodyComplete,
                   responseMetadata
-                )
+                ).map(_._1)
 
               body
                 .map { b => Response(b, code, statusText, headers, Nil) }
@@ -196,7 +202,7 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
       hr: http4s.Response[F],
       signalBodyComplete: F[Unit],
       meta: ResponseMetadata
-  ): F[T] = {
+  ): F[(T, ReplayableBody)] = {
     def saved(file: File) = {
       if (!file.exists()) {
         file.getParentFile.mkdirs()
@@ -208,25 +214,41 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
 
     rr match {
       case MappedResponseAs(raw, g) =>
-        bodyFromHttp4s(raw, hr, signalBodyComplete, meta).map(g(_, meta))
+        bodyFromHttp4s(raw, hr, signalBodyComplete, meta).map {
+          case (result, replayableBody) => (g(result, meta), replayableBody)
+        }
 
       case raf: ResponseAsFromMetadata[T, R] =>
         bodyFromHttp4s(raf(meta), hr, signalBodyComplete, meta)
 
+      case ResponseAsBoth(l, r) =>
+        bodyFromHttp4s(l, hr, signalBodyComplete, meta).flatMap {
+          case (leftResult, None) => ((leftResult, None): T, nonReplayableBody).pure[F]
+          case (leftResult, Some(rb)) =>
+            val body = rb match {
+              case Left(byteArray) => Stream.chunk(Chunk.bytes(byteArray))
+              case Right(file)     => fs2.io.file.readAll(file.toPath, blocker, IOBufferSize)
+            }
+
+            bodyFromHttp4s(r, hr.copy(body = body), signalBodyComplete, meta).map {
+              case (rightResult, _) => ((leftResult, Some(rightResult)), Some(rb))
+            }
+        }
+
       case IgnoreResponse =>
-        hr.body.compile.drain.map(_ => ()) // adjusting type because ResponseAs is covariant
+        hr.body.compile.drain.map(_ => ((), nonReplayableBody))
 
       case ResponseAsByteArray =>
-        hr.as[Array[Byte]].map(b => b) // adjusting type because ResponseAs is covariant
+        hr.as[Array[Byte]].map(b => (b, replayableBody(b)))
 
       case ras: ResponseAsStream[_, _, _, _] =>
-        ras.f.asInstanceOf[Stream[F, Byte] => F[T]](hr.body).guarantee(signalBodyComplete)
+        ras.f.asInstanceOf[Stream[F, Byte] => F[T]](hr.body).map((_, nonReplayableBody)).guarantee(signalBodyComplete)
 
       case _: ResponseAsStreamUnsafe[_, _] =>
-        hr.body.asInstanceOf[T].pure[F]
+        (hr.body.asInstanceOf[T], nonReplayableBody).pure[F]
 
       case ResponseAsFile(file) =>
-        saved(file.toFile).map(_ => file)
+        saved(file.toFile).map(_ => (file, replayableBody(file)))
     }
   }
 

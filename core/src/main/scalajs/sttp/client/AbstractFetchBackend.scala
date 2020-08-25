@@ -11,6 +11,7 @@ import org.scalajs.dom.experimental.{
   RequestInit,
   RequestMode,
   RequestRedirect,
+  ResponseInit,
   ResponseType,
   Headers => JSHeaders,
   Request => FetchRequest,
@@ -124,7 +125,7 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
         val headers = convertResponseHeaders(resp.headers)
         val metadata = ResponseMetadata(headers, StatusCode(resp.status), resp.statusText)
 
-        val body: F[T] = readResponseBody(resp, request.response, metadata)
+        val body: F[T] = readResponseBody(resp, request.response, metadata).map(_._1)
 
         body.map { b =>
           Response[T](
@@ -232,42 +233,64 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
 
   protected def handleStreamBody(s: streams.BinaryStream): F[js.UndefOr[BodyInit]]
 
-  private def readResponseBody[T, R >: PE](
+  private def readResponseBody[T](
       response: FetchResponse,
-      responseAs: ResponseAs[T, R],
+      responseAs: ResponseAs[T, _],
       meta: ResponseMetadata
-  ): F[T] = {
+  ): F[(T, ReplayableBody)] = {
     responseAs match {
       case MappedResponseAs(raw, g) =>
-        readResponseBody(response, raw, meta).map(t => g(t, meta))
-
-      case raf: ResponseAsFromMetadata[T, R] =>
-        readResponseBody(response, raf(meta), meta)
-
-      case IgnoreResponse =>
-        transformPromise(response.arrayBuffer()).map(_ => ())
-
-      case ResponseAsByteArray =>
-        responseToByteArray(response).map(b => b) // adjusting type because ResponseAs is covariant
-
-      case ResponseAsFile(file) =>
-        transformPromise(response.arrayBuffer()).map { ab =>
-          SttpFile.fromDomFile(
-            new DomFile(
-              Array(ab.asInstanceOf[js.Any]).toJSArray,
-              file.name,
-              FilePropertyBag(`type` = file.toDomFile.`type`)
-            )
-          )
+        readResponseBody(response, raw, meta).map {
+          case (result, replayableBody) =>
+            (g(result, meta), replayableBody)
         }
 
+      case raf: ResponseAsFromMetadata[T, _] =>
+        readResponseBody(response, raf(meta), meta)
+
+      case ResponseAsBoth(l, r) =>
+        readResponseBody(response, l, meta).flatMap {
+          case (leftResult, None) => ((leftResult, None): T, nonReplayableBody).unit
+          case (leftResult, Some(rb)) =>
+            val bytes = rb match {
+              case Left(byteArray) => byteArray
+              case Right(file)     => throw new IllegalArgumentException("Replayable file bodies are not supported")
+            }
+            readResponseBody(
+              new FetchResponse(bytes.toTypedArray.asInstanceOf[BodyInit], response.asInstanceOf[ResponseInit]),
+              r,
+              meta
+            ).map {
+              case (rightResult, _) => ((leftResult, Some(rightResult)), Some(rb))
+            }
+        }
+
+      case IgnoreResponse =>
+        transformPromise(response.arrayBuffer()).map(_ => ((), nonReplayableBody))
+
+      case ResponseAsByteArray =>
+        responseToByteArray(response).map(b => (b, replayableBody(b)))
+
+      case ResponseAsFile(file) =>
+        transformPromise(response.arrayBuffer())
+          .map { ab =>
+            SttpFile.fromDomFile(
+              new DomFile(
+                Array(ab.asInstanceOf[js.Any]).toJSArray,
+                file.name,
+                FilePropertyBag(`type` = file.toDomFile.`type`)
+              )
+            )
+          }
+          .map(f => (f, replayableBody(f)))
+
       case _: ResponseAsStreamUnsafe[_, _] =>
-        handleResponseAsStream(response).map(_._1).asInstanceOf[F[T]]
+        handleResponseAsStream(response).map(s => (s._1.asInstanceOf[T], nonReplayableBody))
 
       case ResponseAsStream(_, f) =>
         handleResponseAsStream(response).flatMap {
           case (stream, cancel) =>
-            f.asInstanceOf[streams.BinaryStream => F[T]](stream).ensure(cancel())
+            f.asInstanceOf[streams.BinaryStream => F[T]](stream).map((_, nonReplayableBody)).ensure(cancel())
         }
     }
   }

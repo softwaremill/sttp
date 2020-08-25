@@ -1,6 +1,6 @@
 package sttp.client.internal
 
-import java.io.{File, FileOutputStream, InputStream}
+import java.io.{BufferedInputStream, File, FileInputStream, FileOutputStream, InputStream}
 
 import scala.util.control.NonFatal
 
@@ -14,6 +14,10 @@ private[client] object FileHelpers {
     }
 
     withResources(new FileOutputStream(file))(os => transfer(is, os))
+  }
+
+  def readFile(file: File): Array[Byte] = {
+    withResources(new BufferedInputStream(new FileInputStream(file)))(toByteArray)
   }
 
   // based on https://medium.com/@dkomanov/scala-try-with-resources-735baad0fd7d

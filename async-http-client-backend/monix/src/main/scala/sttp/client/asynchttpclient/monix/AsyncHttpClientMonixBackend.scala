@@ -62,6 +62,12 @@ class AsyncHttpClientMonixBackend private (
           .map(_ => ())
       }
 
+      override def bytesToPublisher(b: Array[Byte]): Task[Publisher[ByteBuffer]] =
+        Task.now(Observable.eval(ByteBuffer.wrap(b)).toReactivePublisher)
+
+      override def fileToPublisher(f: File): Task[Publisher[ByteBuffer]] =
+        Task.now(readAsync(f.toPath, IOBufferSize).map(ByteBuffer.wrap).toReactivePublisher)
+
       override def compileWebSocketPipe(
           ws: WebSocket[Task],
           pipe: Observable[WebSocketFrame.Data[_]] => Observable[WebSocketFrame]

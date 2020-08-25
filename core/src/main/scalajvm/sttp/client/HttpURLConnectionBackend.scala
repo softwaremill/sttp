@@ -16,7 +16,6 @@ import sttp.client.testing.SttpBackendStub
 import sttp.model.{Header, HeaderNames, StatusCode, Uri}
 import sttp.monad.MonadError
 
-import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 import scala.concurrent.duration.Duration
 
@@ -25,7 +24,7 @@ class HttpURLConnectionBackend private (
     customizeConnection: HttpURLConnection => Unit,
     createURL: String => URL,
     openConnection: (URL, Option[java.net.Proxy]) => URLConnection,
-    customEncodingHandler: EncodingHandler = PartialFunction.empty
+    customEncodingHandler: EncodingHandler
 ) extends SttpBackend[Identity, Any] {
   override def send[T, R >: Any with Effect[Identity]](r: Request[T, R]): Response[T] =
     adjustExceptions(r) {
@@ -242,7 +241,7 @@ class HttpURLConnectionBackend private (
       wrapInput(contentEncoding, handleNullInput(is))
     } else handleNullInput(is)
     val responseMetadata = ResponseMetadata(headers, code, c.getResponseMessage)
-    val body = readResponseBody(wrappedIs, responseAs, responseMetadata)
+    val body = readResponseBody(wrappedIs, responseAs, responseMetadata)._1
 
     Response(body, code, c.getResponseMessage, headers, Nil)
   }
@@ -251,17 +250,29 @@ class HttpURLConnectionBackend private (
       is: InputStream,
       responseAs: ResponseAs[T, Nothing],
       meta: ResponseMetadata
-  ): T = {
+  ): (T, ReplayableBody) = {
     responseAs match {
-      case MappedResponseAs(raw, g) => g(readResponseBody(is, raw, meta), meta)
+      case MappedResponseAs(raw, g) =>
+        val (result, replayableBody) = readResponseBody(is, raw, meta)
+        (g(result, meta), replayableBody)
 
       case rfm: ResponseAsFromMetadata[T, Nothing] => readResponseBody(is, rfm(meta), meta)
 
-      case IgnoreResponse =>
-        @tailrec def consume(): Unit = if (is.read() != -1) consume()
-        consume()
+      case ResponseAsBoth(l, r) =>
+        val (leftResult, replayableBody) = readResponseBody(is, l, meta)
+        val rightResult = replayableBody.map {
+          case Left(a) => readResponseBody(new ByteArrayInputStream(a), r, meta)._1
+          case Right(f) =>
+            readResponseBody(new BufferedInputStream(new FileInputStream(f.toFile)), r, meta)._1
+        }
+        ((leftResult, rightResult), replayableBody)
 
-      case ResponseAsByteArray => toByteArray(is)
+      case IgnoreResponse =>
+        (is.close(), None)
+
+      case ResponseAsByteArray =>
+        val a = toByteArray(is)
+        (a, replayableBody(a))
 
       case ResponseAsStream(_, _) =>
         // only possible when the user requests the response as a stream of
@@ -272,7 +283,7 @@ class HttpURLConnectionBackend private (
 
       case ResponseAsFile(output) =>
         FileHelpers.saveFile(output.toFile, is)
-        output
+        (output, replayableBody(output))
     }
   }
 

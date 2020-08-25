@@ -61,13 +61,24 @@ class AsyncHttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
           .map(_.array())
       }
 
+      private def blocker = Blocker.liftExecutionContext(ExecutionContext.global)
+
       override def publisherToFile(p: Publisher[ByteBuffer], f: File): F[Unit] = {
         p.toStream[F]
           .flatMap(b => Stream.emits(b.array()))
-          .through(fs2.io.file.writeAll(f.toPath, Blocker.liftExecutionContext(ExecutionContext.global)))
+          .through(fs2.io.file.writeAll(f.toPath, blocker))
           .compile
           .drain
       }
+
+      override def bytesToPublisher(b: Array[Byte]): F[Publisher[ByteBuffer]] =
+        (Stream.apply[F, ByteBuffer](ByteBuffer.wrap(b)).toUnicastPublisher(): Publisher[ByteBuffer]).pure[F]
+
+      override def fileToPublisher(f: File): F[Publisher[ByteBuffer]] =
+        (fs2.io.file
+          .readAll(f.toPath, blocker, IOBufferSize)
+          .mapChunks(c => Chunk(ByteBuffer.wrap(c.toArray)))
+          .toUnicastPublisher(): Publisher[ByteBuffer]).pure[F]
 
       override def compileWebSocketPipe(
           ws: WebSocket[F],

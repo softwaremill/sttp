@@ -164,6 +164,24 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
       ConditionalResponseAs(_.code == StatusCode.SwitchingProtocols, onSuccess.map(Right(_)))
     )
 
+  /**
+    * Use both `l` and `r` to read the response body. Neither response specifications may use streaming or web sockets.
+    */
+  def asBoth[A, B](l: ResponseAs[A, Any], r: ResponseAs[B, Any]): ResponseAs[(A, B), Any] =
+    asBothOption(l, r).map {
+      case (a, bo) =>
+        // since l has no requirements, we know that the body will be replayable
+        (a, bo.get)
+    }
+
+  /**
+    * Use `l` to read the response body. If the raw body value which is used by `l` is replayable (a file or byte
+    * array), also use `r` to read the response body. Otherwise ignore `r` (if the raw body is a stream or
+    * a web socket).
+    */
+  def asBothOption[A, B, R](l: ResponseAs[A, R], r: ResponseAs[B, Any]): ResponseAs[(A, Option[B]), R] =
+    ResponseAsBoth(l, r)
+
   // multipart factory methods
 
   /**
