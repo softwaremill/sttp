@@ -20,7 +20,7 @@ Slf4jTimingBackend(delegateBackend)
 Slf4jCurlBackend(delegateBackend)
 ```
 
-The logging backend logs `DEBUG`-level logs when a request is started, completes successfully, and `ERROR`-level logs when it results in an exception.
+The logging backend logs `DEBUG`-level logs when a request is started, completes successfully, and `ERROR`-level logs when it results in an exception. Optionally and if possible, response and request bodies can be logged.
 
 The timing backend logs `INFO`-level logs when a request completes successfully or with an exception, together with the number of seconds and milliseconds that the request took.
 

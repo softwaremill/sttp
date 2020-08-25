@@ -48,6 +48,9 @@ def asEither[A, B, R](onError: ResponseAs[A, R],
                       onSuccess: ResponseAs[B, R]): ResponseAs[Either[A, B], R] = ???
 def fromMetadata[T, R](default: ResponseAs[T, R], 
                        conditions: ConditionalResponseAs[T, R]*): ResponseAs[T, R] = ???
+
+def asBoth[A, B](l: ResponseAs[A, Any], r: ResponseAs[B, Any]): ResponseAs[(A, B), Any] = ???
+def asBothOption[A, B, R](l: ResponseAs[A, R], r: ResponseAs[B, Any]): ResponseAs[(A, Option[B]), R] = ???
 ```
 
 Hence, to discard the response body, the request description should include the following:
