@@ -1,7 +1,7 @@
 package sttp.client.impl.zio
 
 import sttp.monad.{Canceler, MonadAsyncError}
-import zio.{RIO, UIO}
+import zio.{RIO, UIO, ZIO}
 
 class RIOMonadAsyncError[R] extends MonadAsyncError[RIO[R, *]] {
   override def unit[T](t: T): RIO[R, T] = RIO.succeed(t)
@@ -27,4 +27,6 @@ class RIOMonadAsyncError[R] extends MonadAsyncError[RIO[R, *]] {
     rt.catchSome(h)
 
   override def eval[T](t: => T): RIO[R, T] = RIO.effect(t)
+
+  override def ensure[T](f: RIO[R, T], e: => RIO[R, Unit]): RIO[R, T] = f.ensuring(e.catchAll(_ => ZIO.unit))
 }

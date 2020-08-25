@@ -8,4 +8,6 @@ class CatsMonadAsyncError[F[_]](implicit F: Concurrent[F]) extends CatsMonadErro
     F.cancelable(register.andThen(c => F.delay(c.cancel)))
 
   override def eval[T](t: => T): F[T] = F.delay(t)
+
+  override def ensure[T](f: F[T], e: => F[Unit]): F[T] = F.guarantee(f)(e)
 }
