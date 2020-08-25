@@ -122,11 +122,11 @@ basicRequest.get(uri"http://example.org").send(testingBackend)       // code wil
 basicRequest.get(uri"http://example.org").send(testingBackend)       // code will be 200
 ```
 
-The `sttp.client.testing` package also contains a utility method to inspect the body as a string, if the body is not a stream or multipart:
+The `sttp.client.testing` package also contains a utility method to force the body as a string, if the body is not a stream or multipart:
 
 ```scala mdoc:compile-only
 val testingBackend = SttpBackendStub.synchronous
-  .whenRequestMatches(_.bodyAsString.contains("Hello, world!"))
+  .whenRequestMatches(_.forceBodyAsString.contains("Hello, world!"))
   .thenRespond("Hello back!")
 ```
 
