@@ -3,6 +3,7 @@ package sttp.client.json4s
 import org.json4s.{Formats, Serialization}
 import sttp.client.{ResponseAs, _}
 import sttp.client.internal.Utf8
+import sttp.client.json._
 import sttp.model._
 
 trait SttpJson4sApi {
@@ -22,7 +23,7 @@ trait SttpJson4sApi {
       formats: Formats,
       serialization: Serialization
   ): ResponseAs[Either[ResponseException[String, Exception], B], Any] =
-    asString.mapWithMetadata(ResponseAs.deserializeRightCatchingExceptions(deserializeJson[B]))
+    asString.mapWithMetadata(ResponseAs.deserializeRightCatchingExceptions(deserializeJson[B])).showAsJson
 
   /**
     * Tries to deserialize the body from a string into JSON, regardless of the response code. Returns:
@@ -33,7 +34,7 @@ trait SttpJson4sApi {
       formats: Formats,
       serialization: Serialization
   ): ResponseAs[Either[DeserializationException[Exception], B], Any] =
-    asStringAlways.map(ResponseAs.deserializeCatchingExceptions(deserializeJson[B]))
+    asStringAlways.map(ResponseAs.deserializeCatchingExceptions(deserializeJson[B])).showAsJsonAlways
 
   /**
     * Tries to deserialize the body from a string into JSON, using different deserializers depending on the
@@ -49,7 +50,7 @@ trait SttpJson4sApi {
     asJson[B].mapLeft {
       case HttpError(e, code) =>
         ResponseAs.deserializeCatchingExceptions(deserializeJson[E])(e).fold(identity, HttpError(_, code))
-    }
+    }.showAsJsonEither
   }
 
   def deserializeJson[B: Manifest](implicit

@@ -252,7 +252,7 @@ class HttpURLConnectionBackend private (
       meta: ResponseMetadata
   ): (T, ReplayableBody) = {
     responseAs match {
-      case MappedResponseAs(raw, g) =>
+      case MappedResponseAs(raw, g, _) =>
         val (result, replayableBody) = readResponseBody(is, raw, meta)
         (g(result, meta), replayableBody)
 

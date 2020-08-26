@@ -644,6 +644,7 @@ lazy val jsonCommon = (projectMatrix in (file("json/common")))
     settings = commonJvmSettings ++ intellijImportOnly213
   )
   .jsPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = commonJsSettings ++ intellijSkipImport)
+  .dependsOn(core)
 
 lazy val circe = (projectMatrix in file("json/circe"))
   .settings(

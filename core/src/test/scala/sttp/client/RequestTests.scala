@@ -35,7 +35,7 @@ class RequestTests extends AnyFlatSpec with Matchers {
     basicRequest.options.readTimeout should be(DefaultReadTimeout)
   }
 
-  it should "compile multiple subtype response variants" in {
+  "multiple subtype response variants" should "compile" in {
     val asLeft: ResponseAs[Left[String, String], Any] = asStringAlways.map(Left(_))
     val asRight: ResponseAs[Right[String, String], Any] = asStringAlways.map(Right(_))
 
@@ -45,5 +45,22 @@ class RequestTests extends AnyFlatSpec with Matchers {
         .response {
           fromMetadata(asRight, ConditionalResponseAs(_.code == StatusCode.Ok, asLeft))
         }
+  }
+
+  "show" should "give meaningful information" in {
+    basicRequest
+      .get(uri"https://test.com")
+      .header(HeaderNames.Authorization, "secret")
+      .body("1234")
+      .response(asBoth(asParams, asStringAlways))
+      .show() shouldBe "GET https://test.com, response as: (either(as string, as params), as string), headers: Accept-Encoding: gzip, deflate, Authorization: ***, Content-Type: text/plain; charset=utf-8, Content-Length: 4, body: string: 1234"
+  }
+
+  it should "give meaningful information for a partial request" in {
+    basicRequest
+      .header(HeaderNames.Authorization, "secret")
+      .body("1234")
+      .response(asBoth(asParams, asStringAlways))
+      .show() shouldBe "response as: (either(as string, as params), as string), headers: Accept-Encoding: gzip, deflate, Authorization: ***, Content-Type: text/plain; charset=utf-8, Content-Length: 4, body: string: 1234"
   }
 }

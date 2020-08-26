@@ -70,16 +70,20 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     * Use the given charset by default, unless specified otherwise in the response headers.
     */
   def asString(charset: String): ResponseAs[Either[String, String], Any] =
-    asStringAlways(charset).mapWithMetadata { (s, m) =>
-      if (m.isSuccess) Right(s) else Left(s)
-    }
+    asStringAlways(charset)
+      .mapWithMetadata { (s, m) =>
+        if (m.isSuccess) Right(s) else Left(s)
+      }
+      .showAs("either(as string, as string)")
 
   def asStringAlways(charset: String): ResponseAs[String, Any] =
-    asByteArrayAlways.mapWithMetadata { (bytes, metadata) =>
-      val charset2 = metadata.contentType.flatMap(charsetFromContentType).getOrElse(charset)
-      val charset3 = sanitizeCharset(charset2)
-      new String(bytes, charset3)
-    }
+    asByteArrayAlways
+      .mapWithMetadata { (bytes, metadata) =>
+        val charset2 = metadata.contentType.flatMap(charsetFromContentType).getOrElse(charset)
+        val charset3 = sanitizeCharset(charset2)
+        new String(bytes, charset3)
+      }
+      .showAs("as string")
 
   def asByteArray: ResponseAs[Either[String, Array[Byte]], Any] = asEither(asStringAlways, asByteArrayAlways)
 
@@ -99,7 +103,7 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     * Use the given charset by default, unless specified otherwise in the response headers.
     */
   def asParams(charset: String): ResponseAs[Either[String, Seq[(String, String)]], Any] = {
-    asEither(asStringAlways, asParamsAlways(charset))
+    asEither(asStringAlways, asParamsAlways(charset)).showAs("either(as string, as params)")
   }
 
   /**
@@ -107,7 +111,7 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     */
   def asParamsAlways(charset: String): ResponseAs[Seq[(String, String)], Any] = {
     val charset2 = sanitizeCharset(charset)
-    asStringAlways(charset2).map(ResponseAs.parseParams(_, charset2))
+    asStringAlways(charset2).map(ResponseAs.parseParams(_, charset2)).showAs("as params")
   }
 
   def asStream[F[_], T, S](s: Streams[S])(f: s.BinaryStream => F[T]): ResponseAs[Either[String, T], Effect[F] with S] =
@@ -153,6 +157,7 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     */
   def asEither[A, B, R](onError: ResponseAs[A, R], onSuccess: ResponseAs[B, R]): ResponseAs[Either[A, B], R] =
     fromMetadata(onError.map(Left(_)), ConditionalResponseAs(_.isSuccess, onSuccess.map(Right(_))))
+      .showAs(s"either(${onError.show}, ${onSuccess.show})")
 
   /**
     * Uses the `onSuccess` response specification for 101 responses (switching protocols), and the `onError`
@@ -162,17 +167,19 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     fromMetadata(
       onError.map(Left(_)),
       ConditionalResponseAs(_.code == StatusCode.SwitchingProtocols, onSuccess.map(Right(_)))
-    )
+    ).showAs(s"either(${onError.show}, ${onSuccess.show})")
 
   /**
     * Use both `l` and `r` to read the response body. Neither response specifications may use streaming or web sockets.
     */
   def asBoth[A, B](l: ResponseAs[A, Any], r: ResponseAs[B, Any]): ResponseAs[(A, B), Any] =
-    asBothOption(l, r).map {
-      case (a, bo) =>
-        // since l has no requirements, we know that the body will be replayable
-        (a, bo.get)
-    }
+    asBothOption(l, r)
+      .map {
+        case (a, bo) =>
+          // since l has no requirements, we know that the body will be replayable
+          (a, bo.get)
+      }
+      .showAs(s"(${l.show}, ${r.show})")
 
   /**
     * Use `l` to read the response body. If the raw body value which is used by `l` is replayable (a file or byte

@@ -91,8 +91,8 @@ object MapEffect {
           ),
           apply[F, G](default, fk, gk, fm, gm).asInstanceOf[ResponseAs[Any, Any]]
         )
-      case MappedResponseAs(raw, g) =>
-        MappedResponseAs(apply[F, G](raw, fk, gk, fm, gm), g.asInstanceOf[(Any, ResponseMetadata) => Any])
+      case MappedResponseAs(raw, g, showAs) =>
+        MappedResponseAs(apply[F, G](raw, fk, gk, fm, gm), g.asInstanceOf[(Any, ResponseMetadata) => Any], showAs)
     }
   }
 
@@ -145,7 +145,7 @@ object MapEffect {
       case ResponseAsStream(_, _)      => true
       case ResponseAsFromMetadata(conditions, default) =>
         usesEffect(default) || conditions.exists(c => usesEffect(c.responseAs))
-      case MappedResponseAs(raw, _) => usesEffect(raw)
-      case _                        => false
+      case MappedResponseAs(raw, _, _) => usesEffect(raw)
+      case _                           => false
     }
 }

@@ -3,6 +3,7 @@ package sttp.client.sprayJson
 import spray.json.{DeserializationException => _, _}
 import sttp.client.internal.Utf8
 import sttp.client.{IsOption, ResponseAs, _}
+import sttp.client.json._
 import sttp.model._
 
 trait SttpSprayJsonApi {
@@ -16,7 +17,7 @@ trait SttpSprayJsonApi {
     * - `Left(DeserializationException)` if there's an error during deserialization
     */
   def asJson[B: JsonReader: IsOption]: ResponseAs[Either[ResponseException[String, Exception], B], Any] =
-    asString.mapWithMetadata(ResponseAs.deserializeRightCatchingExceptions(deserializeJson[B]))
+    asString.mapWithMetadata(ResponseAs.deserializeRightCatchingExceptions(deserializeJson[B])).showAsJson
 
   /**
     * Tries to deserialize the body from a string into JSON, regardless of the response code. Returns:
@@ -24,7 +25,7 @@ trait SttpSprayJsonApi {
     * - `Left(DeserializationException)` if there's an error during deserialization
     */
   def asJsonAlways[B: JsonReader: IsOption]: ResponseAs[Either[DeserializationException[Exception], B], Any] =
-    asStringAlways.map(ResponseAs.deserializeCatchingExceptions(deserializeJson[B]))
+    asStringAlways.map(ResponseAs.deserializeCatchingExceptions(deserializeJson[B])).showAsJsonAlways
 
   /**
     * Tries to deserialize the body from a string into JSON, using different deserializers depending on the
@@ -38,7 +39,7 @@ trait SttpSprayJsonApi {
     asJson[B].mapLeft {
       case HttpError(e, code) =>
         ResponseAs.deserializeCatchingExceptions(deserializeJson[E])(e).fold(identity, HttpError(_, code))
-    }
+    }.showAsJsonEither
   }
 
   def deserializeJson[B: JsonReader: IsOption]: String => B =

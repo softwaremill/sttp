@@ -2,6 +2,7 @@ package sttp.client.playJson
 
 import play.api.libs.json.{JsError, Json, Reads, Writes}
 import sttp.client.internal.Utf8
+import sttp.client.json._
 import sttp.client.{IsOption, JsonInput, ResponseAs, _}
 import sttp.model.MediaType
 
@@ -22,7 +23,7 @@ trait SttpPlayJsonApi {
     * - `Left(DeserializationException)` if there's an error during deserialization
     */
   def asJson[B: Reads: IsOption]: ResponseAs[Either[ResponseException[String, JsError], B], Any] =
-    asString.mapWithMetadata(ResponseAs.deserializeRightWithError(deserializeJson[B]))
+    asString.mapWithMetadata(ResponseAs.deserializeRightWithError(deserializeJson[B])).showAsJson
 
   /**
     * Tries to deserialize the body from a string into JSON, regardless of the response code. Returns:
@@ -30,7 +31,7 @@ trait SttpPlayJsonApi {
     * - `Left(DeserializationException)` if there's an error during deserialization
     */
   def asJsonAlways[B: Reads: IsOption]: ResponseAs[Either[DeserializationException[JsError], B], Any] =
-    asStringAlways.map(ResponseAs.deserializeWithError(deserializeJson[B]))
+    asStringAlways.map(ResponseAs.deserializeWithError(deserializeJson[B])).showAsJsonAlways
 
   /**
     * Tries to deserialize the body from a string into JSON, using different deserializers depending on the
@@ -44,7 +45,7 @@ trait SttpPlayJsonApi {
     asJson[B].mapLeft {
       case HttpError(e, code) =>
         deserializeJson[E].apply(e).fold(DeserializationException(e, _), HttpError(_, code))
-    }
+    }.showAsJsonEither
   }
 
   // Note: None of the play-json utilities attempt to catch invalid

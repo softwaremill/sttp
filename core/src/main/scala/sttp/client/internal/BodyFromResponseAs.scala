@@ -19,7 +19,7 @@ abstract class BodyFromResponseAs[F[_], RegularResponse, WSResponse, Stream](imp
   ): F[(T, ReplayableBody)] = {
 
     (responseAs, response) match {
-      case (MappedResponseAs(raw, g), _) =>
+      case (MappedResponseAs(raw, g, _), _) =>
         doApply(raw, meta, response).map { case (result, replayableBody) => (g(result, meta), replayableBody) }
 
       case (rfm: ResponseAsFromMetadata[T, _], _) => doApply(rfm(meta), meta, response)

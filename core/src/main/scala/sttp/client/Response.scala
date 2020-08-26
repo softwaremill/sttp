@@ -16,7 +16,13 @@ case class Response[T](
     headers: Seq[Header],
     history: List[Response[Unit]]
 ) extends ResponseMetadata {
-  override def toString: String = s"Response($body,$code,$statusText,$headers,$history)"
+  def show(includeBody: Boolean = true): String = {
+    val headers = headersToStringSafe.mkString(", ")
+    val body = if (includeBody) s", body: ${this.body}" else ""
+    s"$code $statusText, headers: $headers$body"
+  }
+
+  override def toString: String = s"Response($body,$code,$statusText,$headersToStringSafe,$history)"
 }
 
 object Response {

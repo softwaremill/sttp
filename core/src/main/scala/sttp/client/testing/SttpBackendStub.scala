@@ -246,7 +246,7 @@ object SttpBackendStub {
           case _                     => None
         }
       case ResponseAsWebSocketStream(_, _)   => None
-      case MappedResponseAs(raw, g)          => tryAdjustResponseBody(raw, b, meta).map(_.map(g(_, meta)))
+      case MappedResponseAs(raw, g, _)       => tryAdjustResponseBody(raw, b, meta).map(_.map(g(_, meta)))
       case rfm: ResponseAsFromMetadata[_, _] => tryAdjustResponseBody(rfm(meta), b, meta)
       case ResponseAsBoth(l, r) =>
         tryAdjustResponseBody(l, b, meta).map { lAdjusted =>

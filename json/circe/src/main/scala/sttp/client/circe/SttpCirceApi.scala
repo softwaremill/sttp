@@ -5,6 +5,7 @@ import io.circe.parser.decode
 import io.circe.{Decoder, Encoder, Printer}
 import sttp.client.internal.Utf8
 import sttp.model.MediaType
+import sttp.client.json._
 
 trait SttpCirceApi {
 
@@ -21,7 +22,7 @@ trait SttpCirceApi {
     * - `Left(DeserializationException)` if there's an error during deserialization
     */
   def asJson[B: Decoder: IsOption]: ResponseAs[Either[ResponseException[String, io.circe.Error], B], Any] =
-    asString.mapWithMetadata(ResponseAs.deserializeRightWithError(deserializeJson))
+    asString.mapWithMetadata(ResponseAs.deserializeRightWithError(deserializeJson)).showAsJson
 
   /**
     * Tries to deserialize the body from a string into JSON, regardless of the response code. Returns:
@@ -29,7 +30,7 @@ trait SttpCirceApi {
     * - `Left(DeserializationException)` if there's an error during deserialization
     */
   def asJsonAlways[B: Decoder: IsOption]: ResponseAs[Either[DeserializationException[io.circe.Error], B], Any] =
-    asStringAlways.map(ResponseAs.deserializeWithError(deserializeJson))
+    asStringAlways.map(ResponseAs.deserializeWithError(deserializeJson)).showAsJsonAlways
 
   /**
     * Tries to deserialize the body from a string into JSON, using different deserializers depending on the
@@ -43,7 +44,7 @@ trait SttpCirceApi {
     asJson[B].mapLeft {
       case HttpError(e, code) =>
         deserializeJson[E].apply(e).fold(DeserializationException(e, _), HttpError(_, code))
-    }
+    }.showAsJsonEither
   }
 
   def deserializeJson[B: Decoder: IsOption]: String => Either[io.circe.Error, B] =
