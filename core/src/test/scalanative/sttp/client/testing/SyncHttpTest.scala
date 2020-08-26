@@ -31,9 +31,9 @@ trait SyncHttpTest
   implicit val backend: SttpBackend[Identity, Nothing, NothingT]
 
   protected def postEcho = basicRequest.post(uri"$endpoint/echo")
-  protected val testBody = "this is the body"
+  protected val testBody = "this is the body😀"
   protected val testBodyBytes = testBody.getBytes("UTF-8")
-  protected val expectedPostEchoResponse = "POST /echo this is the body"
+  protected val expectedPostEchoResponse = "POST /echo this is the body😀"
 
   protected val sttpIgnore = sttp.client.ignore
 

@@ -213,7 +213,7 @@ abstract class AbstractCurlBackend[F[_], S](monad: MonadError[F], verbose: Boole
       }
   }
 
-  private def toByteArray(str: String): F[Array[Byte]] = responseMonad.unit(str.toCharArray.map(_.toByte))
+  private def toByteArray(str: String): F[Array[Byte]] = responseMonad.unit(str.getBytes)
 
   private def lift(code: CurlCode): F[CurlCode] = {
     code match {
