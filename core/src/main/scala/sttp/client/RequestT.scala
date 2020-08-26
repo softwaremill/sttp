@@ -38,7 +38,8 @@ import scala.concurrent.duration.Duration
   * @tparam T The target type, to which the response body should be read.
   * @tparam R The backend capabilities required by the request or response description. This might be `Any` (no
   *           requirements), [[Effect]] (the backend must support the given effect type), [[Streams]] (the ability to
-  *           send and receive streaming bodies) or [[WebSockets]] (the ability to handle websocket requests).
+  *           send and receive streaming bodies) or [[sttp.capabilities.WebSockets]] (the ability to handle websocket
+  *           requests).
   */
 case class RequestT[U[_], T, -R](
     method: U[Method],
@@ -315,6 +316,19 @@ case class RequestT[U[_], T, -R](
   ): F[Response[T]] = backend.send(asRequest.asInstanceOf[Request[T, P with Effect[F]]]) // as witnessed by pEffectFIsR
 
   def toCurl(implicit isIdInRequest: IsIdInRequest[U]): String = ToCurlConverter.requestToCurl(asRequest)
+
+  def show(includeBody: Boolean = true): String = {
+
+    val headers = this.headers.map(_.toStringSafe).mkString(", ")
+    val body = if (includeBody) s", body: ${this.body.show}" else ""
+    val methodAndUri = (this.method, this.uri) match {
+      case (m: Method, u: Uri) =>
+        val ws = if (isWebSocket) " (web socket) " else ""
+        s"$m$ws $u, "
+      case _ => ""
+    }
+    s"${methodAndUri}response as: ${response.show}, headers: $headers$body"
+  }
 
   private def asRequest(implicit isIdInRequest: IsIdInRequest[U]): RequestT[Identity, T, R] = {
     // we could avoid the asInstanceOf by creating an artificial copy
