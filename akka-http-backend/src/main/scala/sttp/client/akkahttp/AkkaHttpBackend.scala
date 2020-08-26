@@ -182,8 +182,8 @@ object AkkaHttpBackend {
 
   /**
     * @param ec The execution context for running non-network related operations,
-    *           e.g. mapping responses. Defaults to the global execution
-    *           context.
+    *           e.g. mapping responses. Defaults to the execution context backing
+    *           the given `actorSystem`.
     */
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default,
@@ -194,13 +194,13 @@ object AkkaHttpBackend {
       customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity,
       customEncodingHandler: EncodingHandler = PartialFunction.empty
   )(implicit
-      ec: ExecutionContext = ExecutionContext.global
+      ec: Option[ExecutionContext] = None
   ): SttpBackend[Future, AkkaStreams with WebSockets] = {
     val actorSystem = ActorSystem("sttp")
 
     make(
       actorSystem,
-      ec,
+      ec.getOrElse(actorSystem.dispatcher),
       terminateActorSystemOnClose = true,
       options,
       customConnectionPoolSettings,
@@ -215,8 +215,8 @@ object AkkaHttpBackend {
     * @param actorSystem The actor system which will be used for the http-client
     *                    actors.
     * @param ec The execution context for running non-network related operations,
-    *           e.g. mapping responses. Defaults to the global execution
-    *           context.
+    *           e.g. mapping responses. Defaults to the execution context backing
+    *           the given `actorSystem`.
     */
   def usingActorSystem(
       actorSystem: ActorSystem,
@@ -228,7 +228,7 @@ object AkkaHttpBackend {
       customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity,
       customEncodingHandler: EncodingHandler = PartialFunction.empty
   )(implicit
-      ec: ExecutionContext = ExecutionContext.global
+      ec: Option[ExecutionContext] = None
   ): SttpBackend[Future, AkkaStreams with WebSockets] = {
     usingClient(
       actorSystem,
@@ -245,8 +245,8 @@ object AkkaHttpBackend {
     * @param actorSystem The actor system which will be used for the http-client
     *                    actors.
     * @param ec The execution context for running non-network related operations,
-    *           e.g. mapping responses. Defaults to the global execution
-    *           context.
+    *           e.g. mapping responses. Defaults to the execution context backing
+    *           the given `actorSystem`.
     */
   def usingClient(
       actorSystem: ActorSystem,
@@ -257,11 +257,11 @@ object AkkaHttpBackend {
       customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity,
       customEncodingHandler: EncodingHandler = PartialFunction.empty
   )(implicit
-      ec: ExecutionContext = ExecutionContext.global
+      ec: Option[ExecutionContext] = None
   ): SttpBackend[Future, AkkaStreams with WebSockets] = {
     make(
       actorSystem,
-      ec,
+      ec.getOrElse(actorSystem.dispatcher),
       terminateActorSystemOnClose = false,
       options,
       customConnectionPoolSettings,
