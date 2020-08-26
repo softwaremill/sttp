@@ -318,16 +318,15 @@ case class RequestT[U[_], T, -R](
   def toCurl(implicit isIdInRequest: IsIdInRequest[U]): String = ToCurlConverter.requestToCurl(asRequest)
 
   def show(includeBody: Boolean = true): String = {
-
     val headers = this.headers.map(_.toStringSafe).mkString(", ")
-    val body = if (includeBody) s", body: ${this.body.show}" else ""
+    val body = if (includeBody) s",\nbody: ${this.body.show}" else ""
     val methodAndUri = (this.method, this.uri) match {
       case (m: Method, u: Uri) =>
         val ws = if (isWebSocket) " (web socket) " else ""
-        s"$m$ws $u, "
+        s"$m$ws $u,\n"
       case _ => ""
     }
-    s"${methodAndUri}response as: ${response.show}, headers: $headers$body"
+    s"${methodAndUri}response as: ${response.show},\nheaders: $headers$body"
   }
 
   private def asRequest(implicit isIdInRequest: IsIdInRequest[U]): RequestT[Identity, T, R] = {

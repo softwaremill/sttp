@@ -53,7 +53,11 @@ class RequestTests extends AnyFlatSpec with Matchers {
       .header(HeaderNames.Authorization, "secret")
       .body("1234")
       .response(asBoth(asParams, asStringAlways))
-      .show() shouldBe "GET https://test.com, response as: (either(as string, as params), as string), headers: Accept-Encoding: gzip, deflate, Authorization: ***, Content-Type: text/plain; charset=utf-8, Content-Length: 4, body: string: 1234"
+      .show() shouldBe
+      """GET https://test.com,
+        |response as: (either(as string, as params), as string),
+        |headers: Accept-Encoding: gzip, deflate, Authorization: ***, Content-Type: text/plain; charset=utf-8, Content-Length: 4,
+        |body: string: 1234""".stripMargin
   }
 
   it should "give meaningful information for a partial request" in {
@@ -61,6 +65,9 @@ class RequestTests extends AnyFlatSpec with Matchers {
       .header(HeaderNames.Authorization, "secret")
       .body("1234")
       .response(asBoth(asParams, asStringAlways))
-      .show() shouldBe "response as: (either(as string, as params), as string), headers: Accept-Encoding: gzip, deflate, Authorization: ***, Content-Type: text/plain; charset=utf-8, Content-Length: 4, body: string: 1234"
+      .show() shouldBe
+      """response as: (either(as string, as params), as string),
+        |headers: Accept-Encoding: gzip, deflate, Authorization: ***, Content-Type: text/plain; charset=utf-8, Content-Length: 4,
+        |body: string: 1234""".stripMargin
   }
 }
