@@ -29,8 +29,8 @@ object StreamFs2 extends App {
       .map { response => println(s"RECEIVED:\n${response.body}") }
   }
 
-  val effect = AsyncHttpClientFs2Backend[IO]().flatMap { backend =>
-    streamRequestBody(backend).flatMap(_ => streamResponseBody(backend)).guarantee(backend.close())
+  val effect = AsyncHttpClientFs2Backend.resource[IO]().use { backend =>
+    streamRequestBody(backend).flatMap(_ => streamResponseBody(backend))
   }
 
   effect.unsafeRunSync()

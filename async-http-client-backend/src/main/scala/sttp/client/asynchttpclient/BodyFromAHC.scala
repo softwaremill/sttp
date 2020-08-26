@@ -109,7 +109,7 @@ private[asynchttpclient] trait BodyFromAHC[F[_], S] {
     }
 
   private def ignoreIfNotSubscribed(p: Publisher[ByteBuffer], isSubscribed: () => Boolean): F[Unit] = {
-    if (isSubscribed()) monad.unit(()) else ignorePublisher(p)
+    monad.eval(isSubscribed()).flatMap(is => if (is) monad.unit(()) else ignorePublisher(p))
   }
 
   private def ignorePublisher(p: Publisher[ByteBuffer]): F[Unit] = {
