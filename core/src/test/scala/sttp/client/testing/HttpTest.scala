@@ -52,6 +52,12 @@ trait HttpTest[F[_]]
       }
     }
 
+    "as string with utf-8 characters" in {
+      postEcho.body("this is the body😀").send().toFuture().map { response =>
+        response.body should be(Right("POST /echo this is the body😀"))
+      }
+    }
+
     "as string with mapping using map" in {
       postEcho
         .body(testBody)
@@ -291,7 +297,8 @@ trait HttpTest[F[_]]
 
     if (supportsCustomContentEncoding) {
       "decompress using custom content encoding" in {
-        val req = basicRequest.get(uri"$endpoint/compress-custom").acceptEncoding(customEncoding).response(asStringAlways)
+        val req =
+          basicRequest.get(uri"$endpoint/compress-custom").acceptEncoding(customEncoding).response(asStringAlways)
         req.send().toFuture().map { resp => resp.body should be(customEncodedData) }
       }
     }
