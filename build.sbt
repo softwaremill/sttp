@@ -198,7 +198,7 @@ val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
 
 val jeagerClientVersion = "1.3.2"
 val braveOpentracingVersion = "0.37.2"
-val zipkinSenderOkHttpVersion = "2.15.0"
+val zipkinSenderOkHttpVersion = "2.15.1"
 val resilience4jVersion = "1.5.0"
 
 def dependenciesFor(version: String)(deps: (Option[(Long, Long)] => ModuleID)*): Seq[ModuleID] =
