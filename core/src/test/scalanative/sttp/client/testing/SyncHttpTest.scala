@@ -43,6 +43,11 @@ trait SyncHttpTest
       response.body should be(Right(expectedPostEchoResponse))
     }
 
+    "as string with utf-8 characters" in {
+      val response = postEcho.body("this is the body😀").send()
+      response.body should be(Right("POST /echo this is the body😀"))
+    }
+
     "as string with mapping using map" in {
       val response = postEcho
         .body(testBody)

@@ -51,6 +51,12 @@ trait HttpTest[F[_]]
       }
     }
 
+    "as string with utf-8 characters" in {
+      postEcho.body("this is the body😀").send().toFuture().map { response =>
+        response.body should be(Right("POST /echo this is the body😀"))
+      }
+    }
+
     "as string with mapping using map" in {
       postEcho
         .body(testBody)

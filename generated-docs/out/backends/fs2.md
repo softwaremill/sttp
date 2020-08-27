@@ -7,7 +7,7 @@ The [fs2](https://github.com/functional-streams-for-scala/fs2) backend is **asyn
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client" %% "async-http-client-backend-fs2" % "2.2.4"
+"com.softwaremill.sttp.client" %% "async-http-client-backend-fs2" % "2.2.5"
 ```
 
 And some imports:
@@ -74,7 +74,7 @@ val backend = AsyncHttpClientFs2Backend.usingClient[IO](asyncHttpClient)
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client" %% "httpclient-backend-fs2" % "2.2.4"
+"com.softwaremill.sttp.client" %% "httpclient-backend-fs2" % "2.2.5"
 ```
 
 And some imports:

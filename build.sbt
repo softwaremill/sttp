@@ -187,7 +187,7 @@ val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.12"
 val akkaStreamVersion = "2.6.8"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % akkaStreamVersion
 
-val scalaTestVersion = "3.2.1"
+val scalaTestVersion = "3.2.2"
 val scalaNativeTestInterfaceVersion = "0.4.0-M2"
 val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion
 
@@ -201,7 +201,7 @@ val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
 
 val jeagerClientVersion = "1.3.2"
 val braveOpentracingVersion = "0.37.2"
-val zipkinSenderOkHttpVersion = "2.15.0"
+val zipkinSenderOkHttpVersion = "2.15.1"
 val resilience4jVersion = "1.5.0"
 
 val compileAndTest = "compile->compile;test->test"
@@ -408,7 +408,7 @@ lazy val monix = (projectMatrix in file("implementations/monix"))
   .jvmPlatform(
     scalaVersions = List(scala2_11, scala2_12, scala2_13),
     settings = commonJvmSettings ++ intellijImportOnly213 ++ List(
-      libraryDependencies ++= Seq("io.monix" %% "monix-nio" % "0.0.8")
+      libraryDependencies ++= Seq("io.monix" %% "monix-nio" % "0.0.9")
     )
   )
   .jsPlatform(
@@ -628,7 +628,7 @@ lazy val finagleBackend = (projectMatrix in file("finagle-backend"))
   .settings(
     name := "finagle-backend",
     libraryDependencies ++= Seq(
-      "com.twitter" %% "finagle-http" % "20.8.0"
+      "com.twitter" %% "finagle-http" % "20.8.1"
     )
   )
   .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = intellijImportOnly213)
