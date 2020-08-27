@@ -44,7 +44,7 @@ trait SyncHttpTest
     }
 
     "as string with utf-8 characters" in {
-      val response = postEcho.body("this is the body😀").send()
+      val response = postEcho.body("this is the body😀").send(backend)
       response.body should be(Right("POST /echo this is the body😀"))
     }
 
