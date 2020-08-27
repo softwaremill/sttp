@@ -1,13 +1,12 @@
 package sttp.client.logging.slf4j
 
-import org.slf4j.{Logger, LoggerFactory}
 import sttp.client._
 import sttp.client.listener.{ListenerBackend, RequestListener}
 import sttp.client.logging.LogMessages
 import sttp.client.ws.WebSocketResponse
 
 object Slf4jLoggingBackend {
-  private val logger = LoggerFactory.getLogger("sttp.client.logging.slf4j.Slf4jLoggingBackend")
+  private val logger = new Logger("sttp.client.logging.slf4j.Slf4jLoggingBackend")
 
   def apply[F[_], S, WS_HANDLER[_]](delegate: SttpBackend[F, S, WS_HANDLER]): SttpBackend[F, S, WS_HANDLER] =
     ListenerBackend.lift(delegate, new Slf4jLoggingListener(logger))
