@@ -16,9 +16,9 @@ private[sttp] class Logger(private val name: String) {
     if (underlying.isInfoEnabled) underlying.info(message, t) else ()
 
   def warn(message: => String): Unit =
-    if (underlying.isWarnEnabled) underlying.error(message) else ()
+    if (underlying.isWarnEnabled) underlying.warn(message) else ()
   def warn(message: => String, t: Throwable): Unit =
-    if (underlying.isWarnEnabled) underlying.error(message, t) else ()
+    if (underlying.isWarnEnabled) underlying.warn(message, t) else ()
 
   def error(message: => String): Unit =
     if (underlying.isErrorEnabled) underlying.error(message) else ()
