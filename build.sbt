@@ -1,6 +1,5 @@
 import com.softwaremill.Publish.Release.updateVersionInDocs
 import sbt.Keys.publishArtifact
-import sbt.Reference
 import sbt.Reference.display
 import sbt.internal.ProjectMatrix
 import sbtrelease.ReleasePlugin.autoImport._
