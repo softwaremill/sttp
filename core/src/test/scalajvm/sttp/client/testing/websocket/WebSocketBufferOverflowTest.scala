@@ -34,7 +34,7 @@ trait WebSocketBufferOverflowTest[F[_]] { outer: Suite with AsyncFlatSpecLike wi
       .send(backend)
       .map(_.body)
       .handleError {
-        case _: ClosedChannelException => succeed.unit
+        case e if e.getCause.isInstanceOf[ClosedChannelException] => succeed.unit
       }
       .toFuture()
   }
