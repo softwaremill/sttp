@@ -9,7 +9,8 @@ import sttp.monad.MonadError
 import sttp.client.testing.ConvertToFuture
 import sttp.client.testing.websocket.{WebSocketStreamingTest, WebSocketTest}
 import sttp.ws.WebSocketFrame
-import zio.stream.Transducer
+import zio.blocking.Blocking
+import zio.stream._
 
 class HttpClientZioWebSocketTest
     extends WebSocketTest[BlockingTask]
@@ -22,7 +23,9 @@ class HttpClientZioWebSocketTest
   override val streams: BlockingZioStreams = BlockingZioStreams
 
   override def functionToPipe(
-      f: WebSocketFrame.Data[_] => WebSocketFrame
-  ): Transducer[Throwable, WebSocketFrame.Data[_], WebSocketFrame] =
-    Transducer.identity.map(f)
+      initial: List[WebSocketFrame.Data[_]],
+      f: WebSocketFrame.Data[_] => Option[WebSocketFrame]
+  ): ZStream[Blocking, Throwable, WebSocketFrame.Data[_]] => ZStream[Blocking, Throwable, WebSocketFrame] = { in =>
+    Stream.apply(initial: _*) ++ in.mapConcat(m => f(m).toList)
+  }
 }

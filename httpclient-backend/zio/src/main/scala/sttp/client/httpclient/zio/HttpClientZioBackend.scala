@@ -19,7 +19,7 @@ import sttp.capabilities.WebSockets
 import sttp.capabilities.zio.BlockingZioStreams
 import sttp.client.internal.ws.SimpleQueue
 import sttp.ws.{WebSocket, WebSocketFrame}
-import zio.stream.{Stream, ZStream, ZTransducer}
+import zio.stream.{Stream, ZStream}
 
 class HttpClientZioBackend private (
     client: HttpClient,
@@ -59,7 +59,7 @@ class HttpClientZioBackend private (
 
       override def compileWebSocketPipe(
           ws: WebSocket[BlockingTask],
-          pipe: ZTransducer[Blocking, Throwable, WebSocketFrame.Data[_], WebSocketFrame]
+          pipe: ZStream[Blocking, Throwable, WebSocketFrame.Data[_]] => ZStream[Blocking, Throwable, WebSocketFrame]
       ): BlockingTask[Unit] = ZioWebSockets.compilePipe(ws, pipe)
     }
 

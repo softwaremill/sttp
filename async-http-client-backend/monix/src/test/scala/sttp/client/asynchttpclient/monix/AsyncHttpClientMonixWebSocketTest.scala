@@ -23,8 +23,10 @@ class AsyncHttpClientMonixWebSocketTest extends AsyncHttpClientWebSocketTest[Tas
   override implicit val monad: MonadError[Task] = TaskMonadAsyncError
 
   override def functionToPipe(
-      f: WebSocketFrame.Data[_] => WebSocketFrame
-  ): Observable[WebSocketFrame.Data[_]] => Observable[WebSocketFrame] = _.map(f)
+      initial: List[WebSocketFrame.Data[_]],
+      f: WebSocketFrame.Data[_] => Option[WebSocketFrame]
+  ): Observable[WebSocketFrame.Data[_]] => Observable[WebSocketFrame] =
+    in => Observable.fromIterable(initial) ++ in.concatMapIterable(m => f(m).toList)
 
   override def eventually[T](interval: FiniteDuration, attempts: Int)(f: => Task[T]): Task[T] = {
     (Task.sleep(interval) >> f).onErrorRestart(attempts.toLong)

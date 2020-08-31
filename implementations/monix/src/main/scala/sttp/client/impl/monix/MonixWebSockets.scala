@@ -11,15 +11,21 @@ object MonixWebSockets {
       pipe: Observable[WebSocketFrame.Data[_]] => Observable[WebSocketFrame]
   ): Task[Unit] = {
     Task(BooleanCancelable()).flatMap { wsClosed =>
-      Observable
-        .repeatEvalF(ws.receive())
-        .flatMap {
-          case WebSocketFrame.Close(_, _)   => Observable.fromTask(Task(wsClosed.cancel()))
-          case WebSocketFrame.Ping(payload) => Observable.fromTask(ws.send(WebSocketFrame.Pong(payload)))
-          case WebSocketFrame.Pong(_)       => Observable.empty
-          case in: WebSocketFrame.Data[_]   => pipe(Observable(in)).mapEval(ws.send(_))
-        }
-        .takeWhileNotCanceled(wsClosed)
+      pipe(
+        Observable
+          .repeatEvalF(ws.receive().flatMap[Option[WebSocketFrame.Data[_]]] {
+            case WebSocketFrame.Close(_, _)   => Task(wsClosed.cancel()).map(_ => None)
+            case WebSocketFrame.Ping(payload) => ws.send(WebSocketFrame.Pong(payload)).map(_ => None)
+            case WebSocketFrame.Pong(_)       => Task.now(None)
+            case in: WebSocketFrame.Data[_]   => Task.now(Some(in))
+          })
+          .takeWhileNotCanceled(wsClosed)
+          .flatMap {
+            case None    => Observable.empty
+            case Some(f) => Observable(f)
+          }
+      )
+        .mapEval(ws.send(_))
         .completedL
         .guarantee(ws.close())
     }

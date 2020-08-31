@@ -28,7 +28,7 @@ private[okhttp] class WebSocketImpl[F[_]](
   override def receive(): F[WebSocketFrame] = {
     queue.poll.flatMap {
       case WebSocketEvent.Open() =>
-        receive
+        receive()
       case e @ WebSocketEvent.Error(t: Exception) =>
         queue.offer(e)
         monad.error(t)

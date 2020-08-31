@@ -1,6 +1,6 @@
 package sttp.client.akkahttp
 
-import akka.stream.scaladsl.Flow
+import akka.stream.scaladsl.{Flow, Source}
 import sttp.capabilities.WebSockets
 import sttp.capabilities.akka.AkkaStreams
 import sttp.client._
@@ -20,7 +20,11 @@ class AkkaHttpWebSocketTest extends WebSocketTest[Future] with WebSocketStreamin
   override implicit val monad: MonadError[Future] = new FutureMonad
 
   override def functionToPipe(
-      f: WebSocketFrame.Data[_] => WebSocketFrame
-  ): Flow[WebSocketFrame.Data[_], WebSocketFrame, Any] =
-    Flow.fromFunction(f)
+      initial: List[WebSocketFrame.Data[_]],
+      f: WebSocketFrame.Data[_] => Option[WebSocketFrame]
+  ): Flow[WebSocketFrame.Data[_], WebSocketFrame, Any] = {
+    val initialSource = Source(initial)
+    val mainFlow = Flow.fromFunction(f).mapConcat(_.toList): Flow[WebSocketFrame.Data[_], WebSocketFrame, Any]
+    mainFlow.prepend(initialSource)
+  }
 }

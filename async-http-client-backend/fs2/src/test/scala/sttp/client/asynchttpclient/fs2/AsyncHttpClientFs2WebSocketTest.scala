@@ -18,8 +18,9 @@ class AsyncHttpClientFs2WebSocketTest extends AsyncHttpClientWebSocketTest[IO, F
   override val streams: Fs2Streams[IO] = new Fs2Streams[IO] {}
 
   override def functionToPipe(
-      f: WebSocketFrame.Data[_] => WebSocketFrame
-  ): fs2.Pipe[IO, WebSocketFrame.Data[_], WebSocketFrame] = _.map(f)
+      initial: List[WebSocketFrame.Data[_]],
+      f: WebSocketFrame.Data[_] => Option[WebSocketFrame]
+  ): fs2.Pipe[IO, WebSocketFrame.Data[_], WebSocketFrame] = in => fs2.Stream.emits(initial) ++ in.mapFilter(f)
 
   override def eventually[T](interval: FiniteDuration, attempts: Int)(f: => IO[T]): IO[T] = {
     def tryWithCounter(i: Int): IO[T] = {

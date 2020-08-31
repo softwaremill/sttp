@@ -11,7 +11,7 @@ import sttp.ws.WebSocketFrame
 import zio.clock.Clock
 import zio.{Schedule, Task, ZIO}
 import zio.duration._
-import zio.stream.Transducer
+import zio.stream._
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -28,7 +28,9 @@ class AsyncHttpClientZioWebSocketTest extends AsyncHttpClientWebSocketTest[Task,
   }
 
   override def functionToPipe(
-      f: WebSocketFrame.Data[_] => WebSocketFrame
-  ): Transducer[Throwable, WebSocketFrame.Data[_], WebSocketFrame] =
-    Transducer.identity.map(f)
+      initial: List[WebSocketFrame.Data[_]],
+      f: WebSocketFrame.Data[_] => Option[WebSocketFrame]
+  ): Stream[Throwable, WebSocketFrame.Data[_]] => Stream[Throwable, WebSocketFrame] = { in =>
+    Stream.apply(initial: _*) ++ in.mapConcat(m => f(m).toList)
+  }
 }

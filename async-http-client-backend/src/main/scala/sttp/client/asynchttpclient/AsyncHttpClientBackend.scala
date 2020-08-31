@@ -165,6 +165,7 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
     override def onOpen(ahcWebSocket: AHCWebSocket): Unit = {
       ahcWebSocket.removeWebSocketListener(this)
       val webSocket = WebSocketImpl.newCoupledToAHCWebSocket(ahcWebSocket, queue)
+      queue.offer(WebSocketEvent.Open())
       val baseResponse =
         Response((), StatusCode.SwitchingProtocols, "", readHeaders(ahcWebSocket.getUpgradeHeaders), Nil)
       val bf = bodyFromAHC(Right(webSocket), responseAs, baseResponse, () => false)

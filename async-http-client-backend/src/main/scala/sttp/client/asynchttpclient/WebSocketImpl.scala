@@ -75,7 +75,7 @@ object WebSocketImpl {
       ws: AHCWebSocket,
       queue: SimpleQueue[F, WebSocketEvent]
   )(implicit monad: MonadAsyncError[F]): WebSocket[F] = {
-    val isOpen: AtomicBoolean = new AtomicBoolean(false)
+    val isOpen: AtomicBoolean = new AtomicBoolean(true)
     ws.addWebSocketListener(new AddToQueueListener(queue, isOpen))
     new WebSocketImpl(ws, queue, isOpen, monad)
   }
@@ -84,8 +84,7 @@ object WebSocketImpl {
 class AddToQueueListener[F[_]](queue: SimpleQueue[F, WebSocketEvent], isOpen: AtomicBoolean)
     extends AHCWebSocketListener {
   override def onOpen(websocket: AHCWebSocket): Unit = {
-    isOpen.set(true)
-    queue.offer(WebSocketEvent.Open())
+    throw new IllegalStateException("Should never be called!")
   }
 
   override def onClose(websocket: AHCWebSocket, code: Int, reason: String): Unit = {

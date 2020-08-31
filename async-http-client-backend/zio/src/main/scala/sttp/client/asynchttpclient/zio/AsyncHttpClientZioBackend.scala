@@ -79,7 +79,7 @@ class AsyncHttpClientZioBackend private (
 
       override def compileWebSocketPipe(
           ws: WebSocket[Task],
-          pipe: Transducer[Throwable, WebSocketFrame.Data[_], WebSocketFrame]
+          pipe: Stream[Throwable, WebSocketFrame.Data[_]] => Stream[Throwable, WebSocketFrame]
       ): Task[Unit] = ZioWebSockets.compilePipe(ws, pipe)
     }
 

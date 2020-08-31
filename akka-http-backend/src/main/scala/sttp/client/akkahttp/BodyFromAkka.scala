@@ -115,6 +115,10 @@ private[akkahttp] class BodyFromAkka()(implicit ec: ExecutionContext, mat: Mater
         val flow = Flow[Message]
           .mapAsync(1)(messageToFrame)
           .via(p.asInstanceOf[AkkaStreams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]])
+          .takeWhile {
+            case WebSocketFrame.Close(_, _) => false
+            case _                          => true
+          }
           .mapConcat {
             case incoming: WebSocketFrame.Incoming => frameToMessage(incoming).toList
             case WebSocketFrame.Close(_, _)        => throw new WebSocketClosed()
