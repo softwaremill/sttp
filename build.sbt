@@ -44,6 +44,11 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
     val scalaV = scalaVersion.value
     val current = (sources in (Compile, doc)).value
     if (scalaV == scala3) Seq() else current
+  },
+  sources in (Test, doc) := {
+    val scalaV = scalaVersion.value
+    val current = (sources in (Test, doc)).value
+    if (scalaV == scala3) Seq() else current
   }
 )
 
