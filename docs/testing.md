@@ -203,13 +203,15 @@ If you actually want a file to be written you can set up the stub like this:
 
 ```scala mdoc:compile-only
 import org.apache.commons.io.FileUtils
-import cats.effect.IO
+import cats.effect._
 import sttp.client.impl.cats.implicits._
-import sttp.monad.MonadError
+import sttp.monad.MonadAsyncError
+
+implicit val cs: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionContext.global)
 
 val sourceFile = new File("path/to/file.ext")
 val destinationFile = new File("path/to/file.ext")
-SttpBackendStub(implicitly[MonadError[IO]])
+SttpBackendStub(implicitly[MonadAsyncError[IO]])
   .whenRequestMatches(_ => true)
   .thenRespondF { _ =>
     FileUtils.copyFile(sourceFile, destinationFile)

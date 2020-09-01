@@ -17,9 +17,11 @@ import sttp.client.asynchttpclient.fs2.AsyncHttpClientFs2Backend
 import cats.effect._
 import sttp.client._
 
-// an implicit `cats.effect.ContextShift` in required to create an instance of `cats.effect.Concurrent`
-// for `cats.effect.IO`:
+// an implicit `cats.effect.ContextShift` is required to create a concurrent instance for `cats.effect.IO`,
+// as well as a `cats.effect.Blocker` instance. Note that you'll probably want to use a different thread
+// pool for blocking.
 implicit val cs: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionContext.global)
+val blocker: Blocker = Blocker.liftExecutionContext(scala.concurrent.ExecutionContext.global)
 ```
            
 This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client) and uses [Netty](http://netty.io) behind the scenes.
@@ -32,7 +34,7 @@ Next you'll need to define a backend instance as an implicit value. This can be 
 A non-comprehensive summary of how the backend can be created is as follows:
 
 ```scala mdoc:compile-only
-AsyncHttpClientFs2Backend[IO]().flatMap { backend => ??? }
+AsyncHttpClientFs2Backend[IO](blocker).flatMap { backend => ??? }
 ```
 
 or, if you'd like to use a custom configuration:
@@ -41,7 +43,7 @@ or, if you'd like to use a custom configuration:
 import org.asynchttpclient.AsyncHttpClientConfig
 
 val config: AsyncHttpClientConfig = ???
-AsyncHttpClientFs2Backend.usingConfig[IO](config).flatMap { backend => ??? }
+AsyncHttpClientFs2Backend.usingConfig[IO](blocker, config).flatMap { backend => ??? }
 ```
 
 or, if you'd like to use adjust the configuration sttp creates:
@@ -51,13 +53,13 @@ import org.asynchttpclient.DefaultAsyncHttpClientConfig
 
 val sttpOptions: SttpBackendOptions = SttpBackendOptions.Default 
 val adjustFunction: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder = ???
-AsyncHttpClientFs2Backend.usingConfigBuilder[IO](adjustFunction, sttpOptions).flatMap { backend => ??? }
+AsyncHttpClientFs2Backend.usingConfigBuilder[IO](blocker, adjustFunction, sttpOptions).flatMap { backend => ??? }
 ```
 
 or, if you'd like the backend to be wrapped in cats-effect Resource:
 
 ```scala mdoc:compile-only
-AsyncHttpClientFs2Backend.resource[IO]().use { backend => ??? }
+AsyncHttpClientFs2Backend.resource[IO](blocker).use { backend => ??? }
 ```
 
 or, if you'd like to instantiate the AsyncHttpClient yourself:
@@ -66,7 +68,7 @@ or, if you'd like to instantiate the AsyncHttpClient yourself:
 import org.asynchttpclient.AsyncHttpClient
 
 val asyncHttpClient: AsyncHttpClient = ??? 
-val backend = AsyncHttpClientFs2Backend.usingClient[IO](asyncHttpClient)
+val backend = AsyncHttpClientFs2Backend.usingClient[IO](asyncHttpClient, blocker)
 ```
 
 ## Using HttpClient (Java 11+)
@@ -126,7 +128,7 @@ import sttp.client._
 import sttp.client.asynchttpclient.fs2.AsyncHttpClientFs2Backend
 import fs2.Stream
 
-val effect = AsyncHttpClientFs2Backend[IO]().flatMap { backend =>
+val effect = AsyncHttpClientFs2Backend[IO](blocker).flatMap { backend =>
   val stream: Stream[IO, Byte] = ???
 
   basicRequest
@@ -145,7 +147,7 @@ import sttp.client.asynchttpclient.fs2.AsyncHttpClientFs2Backend
 import fs2.Stream
 import scala.concurrent.duration.Duration
 
-val effect = AsyncHttpClientFs2Backend[IO]().flatMap { backend =>
+val effect = AsyncHttpClientFs2Backend[IO](blocker).flatMap { backend =>
   val response: IO[Response[Either[String, Stream[IO, Byte]]]] =
     basicRequest
       .post(uri"...")
