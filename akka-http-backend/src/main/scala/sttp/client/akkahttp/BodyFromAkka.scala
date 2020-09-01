@@ -72,8 +72,13 @@ private[akkahttp] class BodyFromAkka()(implicit ec: ExecutionContext, mat: Mater
       override protected def regularAsStream(
           response: HttpResponse
       ): Future[(Source[ByteString, Any], () => Future[Unit])] = {
-        // todo: how to ensure that the stream is closed after the future returned by f completes?
-        Future.successful((response.entity.dataBytes, () => Future.successful(())))
+        Future.successful(
+          (
+            response.entity.dataBytes,
+            // ignoring exceptions that occur when discarding (i.e. double-materialisation exceptions)
+            () => response.discardEntityBytes().future().map(_ => ()).recover(_ => ())
+          )
+        )
       }
 
       override protected def handleWS[T](
