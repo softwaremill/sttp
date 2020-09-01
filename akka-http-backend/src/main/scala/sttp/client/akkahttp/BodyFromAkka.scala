@@ -76,7 +76,7 @@ private[akkahttp] class BodyFromAkka()(implicit ec: ExecutionContext, mat: Mater
           (
             response.entity.dataBytes,
             // ignoring exceptions that occur when discarding (i.e. double-materialisation exceptions)
-            () => response.discardEntityBytes().future().map(_ => ()).recover(_ => ())
+            () => response.discardEntityBytes().future().map(_ => ()).recover { case _ => () }
           )
         )
       }
