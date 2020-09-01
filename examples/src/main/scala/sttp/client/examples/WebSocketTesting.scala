@@ -14,13 +14,8 @@ object WebSocketTesting extends App {
   // the web socket-handling logic
   def useWebSocket(ws: WebSocket[Task]): Task[Unit] = {
     def send(i: Int) = ws.sendText(s"Hello $i!")
-    def receive = ws.receiveText().flatMap(t => Task(println(s"RECEIVED [$t]")))
-    for {
-      _ <- send(1)
-      _ <- send(2)
-      _ <- receive
-      _ <- receive
-    } yield ()
+    val receive = ws.receiveText().flatMap(t => Task(println(s"RECEIVED [$t]")))
+    send(1) *> send(2) *> receive *> receive
   }
 
   // the request description
