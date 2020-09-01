@@ -226,6 +226,7 @@ object TFutureMonadError extends MonadError[TFuture] {
       h: PartialFunction[Throwable, TFuture[T]]
   ): TFuture[T] = rt.rescue(h)
   override def eval[T](t: => T): TFuture[T] = TFuture(t)
+  override def ensure[T](f: TFuture[T], e: => TFuture[Unit]): TFuture[T] = f.ensure(e.toJavaFuture.get())
 }
 
 object FinagleBackend {

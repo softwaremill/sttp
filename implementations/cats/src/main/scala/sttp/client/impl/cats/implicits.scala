@@ -9,17 +9,12 @@ import sttp.monad.{MonadAsyncError, MonadError}
 
 object implicits extends CatsImplicits
 
-trait CatsImplicits extends LowLevelCatsImplicits {
+trait CatsImplicits {
   implicit final def sttpBackendToCatsMappableSttpBackend[R[_], P](
       sttpBackend: SttpBackend[R, P]
   ): MappableSttpBackend[R, P] = new MappableSttpBackend(sttpBackend)
 
   implicit final def asyncMonadError[F[_]: Concurrent]: MonadAsyncError[F] = new CatsMonadAsyncError[F]
-}
-
-trait LowLevelCatsImplicits {
-  implicit final def catsMonadError[F[_]](implicit E: cats.MonadError[F, Throwable]): MonadError[F] =
-    new CatsMonadError[F]
 }
 
 final class MappableSttpBackend[F[_], P] private[cats] (

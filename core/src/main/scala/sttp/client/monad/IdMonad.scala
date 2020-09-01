@@ -14,4 +14,8 @@ object IdMonad extends MonadError[Identity] {
   ): Identity[T] = rt
 
   override def eval[T](t: => T): Identity[T] = t
+
+  override def ensure[T](f: Identity[T], e: => Identity[Unit]): Identity[T] =
+    try f
+    finally e
 }

@@ -26,4 +26,6 @@ object TaskMonadAsyncError extends MonadAsyncError[Task] {
     rt.handleWith(h)
 
   override def eval[T](t: => T): Task[T] = Task(t)
+
+  override def ensure[T](f: Task[T], e: => Task[Unit]): Task[T] = f.onFinish(_ => e)
 }
