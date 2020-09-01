@@ -2,10 +2,12 @@ package sttp.client.examples
 
 import sttp.client._
 import sttp.client.asynchttpclient.fs2.AsyncHttpClientFs2Backend
-import cats.effect.{ContextShift, IO}
+import cats.effect.{Blocker, ContextShift, IO}
 import cats.instances.string._
 import fs2.{Stream, text}
 import sttp.capabilities.fs2.Fs2Streams
+
+import scala.concurrent.ExecutionContext.global
 
 object StreamFs2 extends App {
   implicit val cs: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionContext.global)
@@ -29,7 +31,7 @@ object StreamFs2 extends App {
       .map { response => println(s"RECEIVED:\n${response.body}") }
   }
 
-  val effect = AsyncHttpClientFs2Backend.resource[IO]().use { backend =>
+  val effect = AsyncHttpClientFs2Backend.resource[IO](Blocker.liftExecutionContext(global)).use { backend =>
     streamRequestBody(backend).flatMap(_ => streamResponseBody(backend))
   }
 

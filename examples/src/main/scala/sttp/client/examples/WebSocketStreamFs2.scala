@@ -1,11 +1,13 @@
 package sttp.client.examples
 
-import cats.effect.{ContextShift, IO}
+import cats.effect.{Blocker, ContextShift, IO}
 import fs2._
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client._
 import sttp.client.asynchttpclient.fs2.AsyncHttpClientFs2Backend
 import sttp.ws.WebSocketFrame
+
+import scala.concurrent.ExecutionContext.global
 
 object WebSocketStreamFs2 extends App {
   implicit val cs: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionContext.global)
@@ -23,7 +25,7 @@ object WebSocketStreamFs2 extends App {
   }
 
   AsyncHttpClientFs2Backend
-    .resource[IO]()
+    .resource[IO](Blocker.liftExecutionContext(global))
     .use { backend =>
       basicRequest
         .response(asWebSocketStream(Fs2Streams[IO])(webSocketFramePipe))

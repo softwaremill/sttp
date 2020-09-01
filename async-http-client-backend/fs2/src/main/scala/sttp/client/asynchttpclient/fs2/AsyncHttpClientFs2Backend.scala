@@ -29,6 +29,7 @@ import scala.concurrent.ExecutionContext
 class AsyncHttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
     asyncHttpClient: AsyncHttpClient,
     closeClient: Boolean,
+    blocker: Blocker,
     customizeRequest: BoundRequestBuilder => BoundRequestBuilder,
     webSocketBufferCapacity: Option[Int]
 ) extends AsyncHttpClientBackend[F, Fs2Streams[F], Fs2Streams[F] with WebSockets](
@@ -60,8 +61,6 @@ class AsyncHttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
           .fold(ByteBuffer.allocate(0))(concatByteBuffers)
           .map(_.array())
       }
-
-      private def blocker = Blocker.liftExecutionContext(ExecutionContext.global)
 
       override def publisherToFile(p: Publisher[ByteBuffer], f: File): F[Unit] = {
         p.toStream[F]
@@ -103,14 +102,16 @@ object AsyncHttpClientFs2Backend {
   private def apply[F[_]: ConcurrentEffect: ContextShift](
       asyncHttpClient: AsyncHttpClient,
       closeClient: Boolean,
+      blocker: Blocker,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder,
       webSocketBufferCapacity: Option[Int]
   ): SttpBackend[F, Fs2Streams[F] with WebSockets] =
     new FollowRedirectsBackend(
-      new AsyncHttpClientFs2Backend(asyncHttpClient, closeClient, customizeRequest, webSocketBufferCapacity)
+      new AsyncHttpClientFs2Backend(asyncHttpClient, closeClient, blocker, customizeRequest, webSocketBufferCapacity)
     )
 
   def apply[F[_]: ConcurrentEffect: ContextShift](
+      blocker: Blocker,
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
@@ -120,6 +121,7 @@ object AsyncHttpClientFs2Backend {
         apply[F](
           AsyncHttpClientBackend.defaultClient(options),
           closeClient = true,
+          blocker,
           customizeRequest,
           webSocketBufferCapacity
         )
@@ -129,19 +131,21 @@ object AsyncHttpClientFs2Backend {
     * Makes sure the backend is closed after usage.
     */
   def resource[F[_]: ConcurrentEffect: ContextShift](
+      blocker: Blocker,
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): Resource[F, SttpBackend[F, Fs2Streams[F] with WebSockets]] =
-    Resource.make(apply(options, customizeRequest, webSocketBufferCapacity))(_.close())
+    Resource.make(apply(blocker, options, customizeRequest, webSocketBufferCapacity))(_.close())
 
   def usingConfig[F[_]: ConcurrentEffect: ContextShift](
+      blocker: Blocker,
       cfg: AsyncHttpClientConfig,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): F[SttpBackend[F, Fs2Streams[F] with WebSockets]] =
     implicitly[Sync[F]].delay(
-      apply[F](new DefaultAsyncHttpClient(cfg), closeClient = true, customizeRequest, webSocketBufferCapacity)
+      apply[F](new DefaultAsyncHttpClient(cfg), closeClient = true, blocker, customizeRequest, webSocketBufferCapacity)
     )
 
   /**
@@ -149,15 +153,17 @@ object AsyncHttpClientFs2Backend {
     */
   def resourceUsingConfig[F[_]: ConcurrentEffect: ContextShift](
       cfg: AsyncHttpClientConfig,
+      blocker: Blocker,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): Resource[F, SttpBackend[F, Fs2Streams[F] with WebSockets]] =
-    Resource.make(usingConfig(cfg, customizeRequest, webSocketBufferCapacity))(_.close())
+    Resource.make(usingConfig(blocker, cfg, customizeRequest, webSocketBufferCapacity))(_.close())
 
   /**
     * @param updateConfig A function which updates the default configuration (created basing on `options`).
     */
   def usingConfigBuilder[F[_]: ConcurrentEffect: ContextShift](
+      blocker: Blocker,
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
@@ -167,6 +173,7 @@ object AsyncHttpClientFs2Backend {
       AsyncHttpClientFs2Backend[F](
         AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
         closeClient = true,
+        blocker,
         customizeRequest,
         webSocketBufferCapacity
       )
@@ -177,19 +184,23 @@ object AsyncHttpClientFs2Backend {
     * @param updateConfig A function which updates the default configuration (created basing on `options`).
     */
   def resourceUsingConfigBuilder[F[_]: ConcurrentEffect: ContextShift](
+      blocker: Blocker,
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): Resource[F, SttpBackend[F, Fs2Streams[F] with WebSockets]] =
-    Resource.make(usingConfigBuilder(updateConfig, options, customizeRequest, webSocketBufferCapacity))(_.close())
+    Resource.make(usingConfigBuilder(blocker, updateConfig, options, customizeRequest, webSocketBufferCapacity))(
+      _.close()
+    )
 
   def usingClient[F[_]: ConcurrentEffect: ContextShift](
       client: AsyncHttpClient,
+      blocker: Blocker,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): SttpBackend[F, Fs2Streams[F] with WebSockets] =
-    apply[F](client, closeClient = false, customizeRequest, webSocketBufferCapacity)
+    apply[F](client, closeClient = false, blocker, customizeRequest, webSocketBufferCapacity)
 
   /**
     * Create a stub backend for testing, which uses the `F` response wrapper, and supports `Stream[F, ByteBuffer]`
