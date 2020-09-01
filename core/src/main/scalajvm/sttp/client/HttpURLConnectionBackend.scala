@@ -13,6 +13,7 @@ import sttp.client.HttpURLConnectionBackend.EncodingHandler
 import sttp.client.internal._
 import sttp.client.monad.IdMonad
 import sttp.client.testing.SttpBackendStub
+import sttp.client.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.model.{Header, HeaderNames, StatusCode, Uri}
 import sttp.monad.MonadError
 
@@ -63,7 +64,7 @@ class HttpURLConnectionBackend private (
       }
     }
 
-  override val responseMonad: MonadError[Identity] = IdMonad
+  override implicit val responseMonad: MonadError[Identity] = IdMonad
 
   private def openConnection(uri: Uri): HttpURLConnection = {
     val url = createURL(uri.toString)
@@ -241,50 +242,36 @@ class HttpURLConnectionBackend private (
       wrapInput(contentEncoding, handleNullInput(is))
     } else handleNullInput(is)
     val responseMetadata = ResponseMetadata(headers, code, c.getResponseMessage)
-    val body = readResponseBody(wrappedIs, responseAs, responseMetadata)._1
+    val body = bodyFromResponseAs(responseAs, responseMetadata, Left(wrappedIs))
 
     Response(body, code, c.getResponseMessage, headers, Nil)
   }
 
-  private def readResponseBody[T](
-      is: InputStream,
-      responseAs: ResponseAs[T, Nothing],
-      meta: ResponseMetadata
-  ): (T, ReplayableBody) = {
-    responseAs match {
-      case MappedResponseAs(raw, g, _) =>
-        val (result, replayableBody) = readResponseBody(is, raw, meta)
-        (g(result, meta), replayableBody)
-
-      case rfm: ResponseAsFromMetadata[T, Nothing] => readResponseBody(is, rfm(meta), meta)
-
-      case ResponseAsBoth(l, r) =>
-        val (leftResult, replayableBody) = readResponseBody(is, l, meta)
-        val rightResult = replayableBody.map {
-          case Left(a) => readResponseBody(new ByteArrayInputStream(a), r, meta)._1
-          case Right(f) =>
-            readResponseBody(new BufferedInputStream(new FileInputStream(f.toFile)), r, meta)._1
-        }
-        ((leftResult, rightResult), replayableBody)
-
-      case IgnoreResponse =>
-        (is.close(), None)
-
-      case ResponseAsByteArray =>
-        val a = toByteArray(is)
-        (a, replayableBody(a))
-
-      case ResponseAsStream(_, _) =>
-        // only possible when the user requests the response as a stream of
-        // Nothing. Oh well ...
-        throw new IllegalStateException()
-
-      case ResponseAsStreamUnsafe(_) => throw new IllegalStateException()
-
-      case ResponseAsFile(output) =>
-        FileHelpers.saveFile(output.toFile, is)
-        (output, replayableBody(output))
+  private val bodyFromResponseAs = new BodyFromResponseAs[Identity, InputStream, Nothing, Nothing]() {
+    override protected def withReplayableBody(
+        response: InputStream,
+        replayableBody: Either[Array[Byte], SttpFile]
+    ): Identity[InputStream] =
+      replayableBody match {
+        case Left(bytes) => new ByteArrayInputStream(bytes)
+        case Right(file) => new BufferedInputStream(new FileInputStream(file.toFile))
+      }
+    override protected def regularIgnore(response: InputStream): Identity[Unit] = response.close()
+    override protected def regularAsByteArray(response: InputStream): Identity[Array[Byte]] = toByteArray(response)
+    override protected def regularAsFile(response: InputStream, file: SttpFile): Identity[SttpFile] = {
+      FileHelpers.saveFile(file.toFile, response)
+      file
     }
+    override protected def regularAsStream(response: InputStream): (Nothing, () => Identity[Unit]) =
+      throw new IllegalStateException()
+    override protected def handleWS[T](
+        responseAs: WebSocketResponseAs[T, _],
+        meta: ResponseMetadata,
+        ws: Nothing
+    ): Identity[T] = ws
+    override protected def cleanupWhenNotAWebSocket(response: InputStream, e: NotAWebSocketException): Identity[Unit] =
+      ()
+    override protected def cleanupWhenGotWebSocket(response: Nothing, e: GotAWebSocketException): Identity[Unit] = ()
   }
 
   private def handleNullInput(is: InputStream): InputStream =
