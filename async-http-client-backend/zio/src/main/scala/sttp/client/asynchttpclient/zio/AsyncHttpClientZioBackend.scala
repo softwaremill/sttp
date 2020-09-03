@@ -4,7 +4,13 @@ import java.io.{File, FileOutputStream}
 import java.nio.ByteBuffer
 
 import io.netty.buffer.{ByteBuf, Unpooled}
-import org.asynchttpclient.{AsyncHttpClient, AsyncHttpClientConfig, BoundRequestBuilder, DefaultAsyncHttpClient, DefaultAsyncHttpClientConfig}
+import org.asynchttpclient.{
+  AsyncHttpClient,
+  AsyncHttpClientConfig,
+  BoundRequestBuilder,
+  DefaultAsyncHttpClient,
+  DefaultAsyncHttpClientConfig
+}
 import org.reactivestreams.Publisher
 import sttp.client.asynchttpclient.{AsyncHttpClientBackend, WebSocketHandler}
 import sttp.client.impl.zio.RIOMonadAsyncError
@@ -67,16 +73,16 @@ object AsyncHttpClientZioBackend {
   ): Task[SttpBackend[Task, Stream[Throwable, Byte], WebSocketHandler]] =
     ZIO
       .runtime[Any]
-      .flatMap(runtime =>
-        Task.effect(
-          AsyncHttpClientZioBackend(
-            runtime,
-            AsyncHttpClientBackend.defaultClient(options),
-            closeClient = true,
-            customizeRequest
-          )
-        )
-      )
+      .flatMap(
+        runtime =>
+          Task.effect(
+            AsyncHttpClientZioBackend(
+              runtime,
+              AsyncHttpClientBackend.defaultClient(options),
+              closeClient = true,
+              customizeRequest
+            )
+        ))
 
   def managed(
       options: SttpBackendOptions = SttpBackendOptions.Default,
@@ -96,16 +102,16 @@ object AsyncHttpClientZioBackend {
   ): Task[SttpBackend[Task, Stream[Throwable, Byte], WebSocketHandler]] =
     ZIO
       .runtime[Any]
-      .flatMap(runtime =>
-        Task.effect(
-          AsyncHttpClientZioBackend(
-            runtime,
-            new DefaultAsyncHttpClient(cfg),
-            closeClient = true,
-            customizeRequest
-          )
-        )
-      )
+      .flatMap(
+        runtime =>
+          Task.effect(
+            AsyncHttpClientZioBackend(
+              runtime,
+              new DefaultAsyncHttpClient(cfg),
+              closeClient = true,
+              customizeRequest
+            )
+        ))
 
   def managedUsingConfig(
       cfg: AsyncHttpClientConfig,
@@ -129,16 +135,16 @@ object AsyncHttpClientZioBackend {
   ): Task[SttpBackend[Task, Stream[Throwable, Byte], WebSocketHandler]] =
     ZIO
       .runtime[Any]
-      .flatMap(runtime =>
-        Task.effect(
-          AsyncHttpClientZioBackend(
-            runtime,
-            AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
-            closeClient = true,
-            customizeRequest
-          )
-        )
-      )
+      .flatMap(
+        runtime =>
+          Task.effect(
+            AsyncHttpClientZioBackend(
+              runtime,
+              AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
+              closeClient = true,
+              customizeRequest
+            )
+        ))
 
   /**
     * @param updateConfig A function which updates the default configuration (created basing on `options`).

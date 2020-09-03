@@ -68,8 +68,21 @@ package object zio {
             WebSocketHandler]): UIO[Unit]
     }
 
-    final case class StubbingWhenRequest private (p: Request[_, _] => Boolean) {
-      def thenRespondOk(): URIO[SttpClient with SttpClientStubbing, Unit] =
+    private class StubWrapper(stub: Ref[SttpBackendStub[Task, Stream[Throwable, Byte], WebSocketHandler]])
+        extends Service {
+      override def whenRequestMatchesPartial(
+          partial: PartialFunction[Request[_, _], Response[_]]): URIO[SttpClient with SttpClientStubbing, Unit] =
+        update(_.whenRequestMatchesPartial(partial))
+
+      override private[zio] def update(
+          f: SttpBackendStub[Task, Stream[Throwable, Byte], WebSocketHandler] => SttpBackendStub[
+            Task,
+            Stream[Throwable, Byte],
+            WebSocketHandler]) = stub.update(f)
+    }
+
+    final case class StubbingWhenRequest private[zio] (p: Request[_, _] => Boolean) {
+      val thenRespondOk: URIO[SttpClient with SttpClientStubbing, Unit] =
         thenRespondWithCode(StatusCode.Ok)
 
       def thenRespondNotFound(): URIO[SttpClient with SttpClientStubbing, Unit] =
@@ -142,35 +155,25 @@ package object zio {
 
     }
 
-    val layer = ZLayer.fromEffectMany(for {
-      stub <- Ref.make(AsyncHttpClientZioBackend.stub)
-      stubber = new Service {
-        override def whenRequestMatchesPartial(
-            partial: PartialFunction[Request[_, _], Response[_]]): URIO[SttpClient with SttpClientStubbing, Unit] =
-          update(_.whenRequestMatchesPartial(partial))
+    val layer: ZLayer[Any, Nothing, SttpClientStubbing with SttpClient] =
+      ZLayer.fromEffectMany(for {
+        stub <- Ref.make(AsyncHttpClientZioBackend.stub)
+        stubber = new StubWrapper(stub)
+        proxy = new SttpClient.Service {
+          override def send[T](request: Request[T, Stream[Throwable, Byte]]): Task[Response[T]] =
+            stub.get >>= (_.send(request))
 
-        override protected[zio] def update(
-            f: SttpBackendStub[Task, Stream[Throwable, Byte], WebSocketHandler] => SttpBackendStub[
-              Task,
-              Stream[Throwable, Byte],
-              WebSocketHandler]): UIO[Unit] =
-          stub.update(f)
-      }
-      proxy = new SttpClient.Service {
-        override def send[T](request: Request[T, Stream[Throwable, Byte]]): Task[Response[T]] =
-          stub.get >>= (_.send(request))
+          override def openWebsocket[T, WS_RESULT](
+              request: Request[T, Stream[Throwable, Byte]],
+              handler: WebSocketHandler[WS_RESULT]): Task[WebSocketResponse[WS_RESULT]] =
+            stub.get >>= (_.openWebsocket(request, handler))
 
-        override def openWebsocket[T, WS_RESULT](
-            request: Request[T, Stream[Throwable, Byte]],
-            handler: WebSocketHandler[WS_RESULT]): Task[WebSocketResponse[WS_RESULT]] =
-          stub.get >>= (_.openWebsocket(request, handler))
+          override def close(): Task[Unit] =
+            stub.get >>= (_.close())
 
-        override def close(): Task[Unit] =
-          stub.get >>= (_.close())
-
-        override def responseMonad: MonadError[Task] = new RIOMonadAsyncError[Any]()
-      }
-    } yield Has.allOf[SttpClientStubbing.Service, SttpClient.Service](stubber, proxy))
+          override def responseMonad: MonadError[Task] = new RIOMonadAsyncError[Any]()
+        }
+      } yield Has.allOf[SttpClientStubbing.Service, SttpClient.Service](stubber, proxy))
   }
 
   object stubbing {
