@@ -2,14 +2,9 @@ package sttp.client.asynchttpclient.zio
 
 import java.io.{File, FileOutputStream}
 import java.nio.ByteBuffer
+
 import io.netty.buffer.{ByteBuf, Unpooled}
-import org.asynchttpclient.{
-  AsyncHttpClient,
-  AsyncHttpClientConfig,
-  BoundRequestBuilder,
-  DefaultAsyncHttpClient,
-  DefaultAsyncHttpClientConfig
-}
+import org.asynchttpclient.{AsyncHttpClient, AsyncHttpClientConfig, BoundRequestBuilder, DefaultAsyncHttpClient, DefaultAsyncHttpClientConfig}
 import org.reactivestreams.Publisher
 import sttp.client.asynchttpclient.{AsyncHttpClientBackend, WebSocketHandler}
 import sttp.client.impl.zio.RIOMonadAsyncError
@@ -188,4 +183,7 @@ object AsyncHttpClientZioBackend {
     */
   def stub: SttpBackendStub[Task, Stream[Throwable, Byte], WebSocketHandler] =
     SttpBackendStub(new RIOMonadAsyncError[Any])
+
+  val stubLayer: Layer[Throwable, SttpClient with SttpClientStubbing] =
+    SttpClientStubbing.layer
 }
