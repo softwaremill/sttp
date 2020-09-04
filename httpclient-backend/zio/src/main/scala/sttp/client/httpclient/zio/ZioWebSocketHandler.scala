@@ -5,7 +5,6 @@ import sttp.client.httpclient.internal.NativeWebSocketHandler
 import sttp.client.impl.zio.RIOMonadAsyncError
 import sttp.client.ws.{WebSocket, WebSocketEvent}
 import sttp.client.ws.internal.AsyncQueue
-import sttp.model.ws.WebSocketBufferFull
 import zio.{Queue, Runtime, Task, ZIO}
 
 object ZioWebSocketHandler {

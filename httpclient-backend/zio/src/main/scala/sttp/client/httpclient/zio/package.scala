@@ -5,6 +5,8 @@ import sttp.client.ws.{WebSocket, WebSocketResponse}
 import _root_.zio._
 import _root_.zio.blocking.Blocking
 import _root_.zio.stream.ZStream
+import sttp.client.impl.zio.SttpClientStubbingBase
+import sttp.client.httpclient.zio.SttpClientStubbing.StubbingWhenRequest
 
 package object zio {
 
@@ -14,6 +16,7 @@ package object zio {
     * ZIO-environment service definition, which is an SttpBackend.
     */
   type SttpClient = Has[SttpClient.Service]
+  type SttpClientStubbing = Has[SttpClientStubbing.Service]
 
   object SttpClient {
 
@@ -50,5 +53,24 @@ package object zio {
         request: Request[T, Nothing]
     ): ZIO[SttpClient with Blocking, Throwable, WebSocketResponse[WebSocket[BlockingTask]]] =
       ZioWebSocketHandler().flatMap(handler => ZIO.accessM(env => env.get[Service].openWebsocket(request, handler)))
+  }
+
+  object SttpClientStubbing
+      extends SttpClientStubbingBase[Blocking, ZStream[Blocking, Throwable, Byte], WebSocketHandler] {
+    override private[sttp] def serviceTag: Tag[SttpClientStubbing.Service] = implicitly
+    override private[sttp] def sttpBackendTag: Tag[SttpClient.Service] = implicitly
+  }
+
+  object stubbing {
+    def whenRequestMatches(p: Request[_, _] => Boolean): StubbingWhenRequest =
+      StubbingWhenRequest(p)
+
+    val whenAnyRequest: StubbingWhenRequest =
+      StubbingWhenRequest(_ => true)
+
+    def whenRequestMatchesPartial(
+        partial: PartialFunction[Request[_, _], Response[_]]
+    ): URIO[SttpClientStubbing, Unit] =
+      ZIO.accessM(_.get.whenRequestMatchesPartial(partial))
   }
 }
