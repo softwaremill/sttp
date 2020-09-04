@@ -59,53 +59,59 @@ package object zio {
 
     trait Service {
       def whenRequestMatchesPartial(
-          partial: PartialFunction[Request[_, _], Response[_]]): URIO[SttpClient with SttpClientStubbing, Unit]
+          partial: PartialFunction[Request[_, _], Response[_]]
+      ): URIO[SttpClientStubbing, Unit]
 
       private[zio] def update(
           stub: SttpBackendStub[Task, Stream[Throwable, Byte], WebSocketHandler] => SttpBackendStub[
             Task,
             Stream[Throwable, Byte],
-            WebSocketHandler]): UIO[Unit]
+            WebSocketHandler
+          ]
+      ): UIO[Unit]
     }
 
     private class StubWrapper(stub: Ref[SttpBackendStub[Task, Stream[Throwable, Byte], WebSocketHandler]])
         extends Service {
       override def whenRequestMatchesPartial(
-          partial: PartialFunction[Request[_, _], Response[_]]): URIO[SttpClient with SttpClientStubbing, Unit] =
+          partial: PartialFunction[Request[_, _], Response[_]]
+      ): URIO[SttpClientStubbing, Unit] =
         update(_.whenRequestMatchesPartial(partial))
 
       override private[zio] def update(
           f: SttpBackendStub[Task, Stream[Throwable, Byte], WebSocketHandler] => SttpBackendStub[
             Task,
             Stream[Throwable, Byte],
-            WebSocketHandler]) = stub.update(f)
+            WebSocketHandler
+          ]
+      ) = stub.update(f)
     }
 
     final case class StubbingWhenRequest private[zio] (p: Request[_, _] => Boolean) {
-      val thenRespondOk: URIO[SttpClient with SttpClientStubbing, Unit] =
+      val thenRespondOk: URIO[SttpClientStubbing, Unit] =
         thenRespondWithCode(StatusCode.Ok)
 
-      def thenRespondNotFound(): URIO[SttpClient with SttpClientStubbing, Unit] =
+      def thenRespondNotFound(): URIO[SttpClientStubbing, Unit] =
         thenRespondWithCode(StatusCode.NotFound, "Not found")
 
-      def thenRespondServerError(): URIO[SttpClient with SttpClientStubbing, Unit] =
+      def thenRespondServerError(): URIO[SttpClientStubbing, Unit] =
         thenRespondWithCode(StatusCode.InternalServerError, "Internal server error")
 
-      def thenRespondWithCode(status: StatusCode, msg: String = ""): URIO[SttpClient with SttpClientStubbing, Unit] = {
+      def thenRespondWithCode(status: StatusCode, msg: String = ""): URIO[SttpClientStubbing, Unit] = {
         thenRespond(Response(msg, status, msg))
       }
 
-      def thenRespond[T](body: T): URIO[SttpClient with SttpClientStubbing, Unit] =
+      def thenRespond[T](body: T): URIO[SttpClientStubbing, Unit] =
         thenRespond(Response[T](body, StatusCode.Ok, "OK"))
 
-      def thenRespond[T](resp: => Response[T]): URIO[SttpClientStubbing with SttpClient, Unit] =
+      def thenRespond[T](resp: => Response[T]): URIO[SttpClientStubbing, Unit] =
         URIO.accessM(_.get.update(_.whenRequestMatches(p).thenRespond(resp)))
 
-      def thenRespondCyclic[T](bodies: T*): URIO[SttpClientStubbing with SttpClient, Unit] = {
+      def thenRespondCyclic[T](bodies: T*): URIO[SttpClientStubbing, Unit] = {
         thenRespondCyclicResponses(bodies.map(body => Response[T](body, StatusCode.Ok, "OK")): _*)
       }
 
-      def thenRespondCyclicResponses[T](responses: Response[T]*): URIO[SttpClientStubbing with SttpClient, Unit] = {
+      def thenRespondCyclicResponses[T](responses: Response[T]*): URIO[SttpClientStubbing, Unit] = {
         for {
           q <- Queue.bounded[Response[T]](responses.length)
           _ <- q.offerAll(responses)
@@ -113,43 +119,41 @@ package object zio {
         } yield ()
       }
 
-      def thenRespondWrapped(resp: => Task[Response[_]]): URIO[SttpClientStubbing with SttpClient, Unit] = {
+      def thenRespondWrapped(resp: => Task[Response[_]]): URIO[SttpClientStubbing, Unit] = {
         val m: PartialFunction[Request[_, _], Task[Response[_]]] = {
           case r if p(r) => resp
         }
         URIO.accessM(_.get.update(_.whenRequestMatches(p).thenRespondWrapped(m)))
       }
 
-      def thenRespondWrapped(
-          resp: Request[_, _] => Task[Response[_]]): URIO[SttpClientStubbing with SttpClient, Unit] = {
+      def thenRespondWrapped(resp: Request[_, _] => Task[Response[_]]): URIO[SttpClientStubbing, Unit] = {
         val m: PartialFunction[Request[_, _], Task[Response[_]]] = {
           case r if p(r) => resp(r)
         }
         URIO.accessM(_.get.update(_.whenRequestMatches(p).thenRespondWrapped(m)))
       }
 
-      def thenRespondWebSocket[WS_RESULT](result: WS_RESULT): URIO[SttpClientStubbing with SttpClient, Unit] =
+      def thenRespondWebSocket[WS_RESULT](result: WS_RESULT): URIO[SttpClientStubbing, Unit] =
         thenRespondWebSocket(Headers(List.empty), result)
 
-      def thenRespondWebSocket[WS_RESULT](headers: Headers,
-                                          result: WS_RESULT): URIO[SttpClientStubbing with SttpClient, Unit] =
+      def thenRespondWebSocket[WS_RESULT](headers: Headers, result: WS_RESULT): URIO[SttpClientStubbing, Unit] =
         URIO.accessM(_.get.update(_.whenRequestMatches(p).thenRespondWebSocket(headers, result)))
 
-      def thenRespondWebSocket(wsStub: WebSocketStub[_]): URIO[SttpClientStubbing with SttpClient, Unit] =
+      def thenRespondWebSocket(wsStub: WebSocketStub[_]): URIO[SttpClientStubbing, Unit] =
         thenRespondWebSocket(Headers(List.empty), wsStub)
 
-      def thenRespondWebSocket(headers: Headers,
-                               wsStub: WebSocketStub[_]): URIO[SttpClientStubbing with SttpClient, Unit] =
+      def thenRespondWebSocket(headers: Headers, wsStub: WebSocketStub[_]): URIO[SttpClientStubbing, Unit] =
         URIO.accessM(_.get.update(_.whenRequestMatches(p).thenRespondWebSocket(headers, wsStub)))
 
       def thenHandleOpenWebSocket[WS_RESULT](
-          useHandler: WebSocketHandler[WS_RESULT] => WS_RESULT): URIO[SttpClientStubbing with SttpClient, Unit] =
+          useHandler: WebSocketHandler[WS_RESULT] => WS_RESULT
+      ): URIO[SttpClientStubbing, Unit] =
         thenHandleOpenWebSocket(Headers(List.empty), useHandler)
 
       def thenHandleOpenWebSocket[WS_RESULT](
           headers: Headers,
           useHandler: WebSocketHandler[WS_RESULT] => WS_RESULT
-      ): URIO[SttpClientStubbing with SttpClient, Unit] = {
+      ): URIO[SttpClientStubbing, Unit] = {
         URIO.accessM(_.get.update(_.whenRequestMatches(p).thenHandleOpenWebSocket(headers, useHandler)))
       }
 
@@ -165,7 +169,8 @@ package object zio {
 
           override def openWebsocket[T, WS_RESULT](
               request: Request[T, Stream[Throwable, Byte]],
-              handler: WebSocketHandler[WS_RESULT]): Task[WebSocketResponse[WS_RESULT]] =
+              handler: WebSocketHandler[WS_RESULT]
+          ): Task[WebSocketResponse[WS_RESULT]] =
             stub.get >>= (_.openWebsocket(request, handler))
 
           override def close(): Task[Unit] =
@@ -184,7 +189,8 @@ package object zio {
       StubbingWhenRequest(_ => true)
 
     def whenRequestMatchesPartial(
-        partial: PartialFunction[Request[_, _], Response[_]]): URIO[SttpClientStubbing with SttpClient, Unit] =
+        partial: PartialFunction[Request[_, _], Response[_]]
+    ): URIO[SttpClientStubbing, Unit] =
       ZIO.accessM(_.get.whenRequestMatchesPartial(partial))
   }
 
