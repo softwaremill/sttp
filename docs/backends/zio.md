@@ -168,3 +168,39 @@ The ZIO backend supports:
 See [websockets](../websockets.md) for details on how to use the high-level and low-level interfaces. Websockets
 opened using the `SttpClient.openWebsocket` and `SttpStreamsClient.openWebsocket` (leveraging ZIO environment) always
 use the high-level interface.
+
+## Testing
+
+The ZIO backends also support a ZIO-familiar way of configuring stubs as well. While you may get a stub normally by using
+
+```scala mdoc:compile-only
+import zio.{RIO, Task}
+import zio.stream.{ZStream, Stream}
+import sttp.client.testing._
+
+import sttp.client.asynchttpclient.WebSocketHandler
+import sttp.client.asynchttpclient.zio.AsyncHttpClientZioBackend
+
+val stub: SttpBackendStub[Task, Stream[Throwable, Byte], WebSocketHandler] = AsyncHttpClientZioBackend.stub 
+```
+
+You can also define your stubs as effects instead
+
+```scala mdoc:compile-only
+import sttp.client._
+import sttp.model._
+import sttp.client.asynchttpclient._
+import sttp.client.asynchttpclient.zio._
+import stubbing._
+
+val stubEffect = for {
+  _ <- whenRequestMatches(_.uri.toString.endsWith("c")).thenRespond("c")
+  _ <- whenRequestMatchesPartial { case r if r.method == Method.POST => Response.ok("b") }
+  _ <- whenAnyRequest.thenRespond("a")
+} yield ()
+
+val responseEffect = stubEffect *> SttpClient.send(basicRequest.get(uri"http://example.org/a")).map(_.body)
+
+responseEffect.provideLayer(AsyncHttpClientZioBackend.stubLayer) // Task[Either[String, String]]
+
+```

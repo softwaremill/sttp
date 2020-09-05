@@ -6,16 +6,15 @@ import java.net.http.{HttpClient, HttpRequest}
 import java.nio.ByteBuffer
 
 import org.reactivestreams.FlowAdapters
-import sttp.client.NothingT
 import sttp.client.httpclient.HttpClientBackend.EncodingHandler
-import sttp.client.httpclient.{HttpClientAsyncBackend, HttpClientBackend, WebSocketHandler}
+import sttp.client.httpclient.{HttpClientAsyncBackend, HttpClientBackend, WebSocketHandler, zio}
 import sttp.client.impl.zio.RIOMonadAsyncError
 import sttp.client.testing.SttpBackendStub
 import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
-import zio._
-import zio.blocking.Blocking
-import zio.interop.reactivestreams._
-import zio.stream.{Stream, ZStream}
+import _root_.zio._
+import _root_.zio.blocking.Blocking
+import _root_.zio.interop.reactivestreams._
+import _root_.zio.stream.{Stream, ZStream}
 
 import scala.util.{Success, Try}
 
@@ -151,6 +150,13 @@ object HttpClientZioBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub: SttpBackendStub[BlockingTask, ZStream[Blocking, Throwable, Byte], NothingT] =
+  def stub: SttpBackendStub[BlockingTask, ZStream[Blocking, Throwable, Byte], WebSocketHandler] =
     SttpBackendStub(new RIOMonadAsyncError[Blocking])
+
+  val stubLayer: ZLayer[Any,
+                        Nothing,
+                        Has[zio.SttpClientStubbing.Service] with Has[
+                          SttpBackend[BlockingTask, ZStream[Blocking, Throwable, Byte], WebSocketHandler]
+                        ]] =
+    SttpClientStubbing.layer
 }
