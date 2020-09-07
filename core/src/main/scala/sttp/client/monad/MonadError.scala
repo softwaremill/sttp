@@ -22,6 +22,7 @@ trait MonadError[F[_]] {
   }
 
   def eval[T](t: => T): F[T] = map(unit(()))(_ => t)
+  def suspend[T](t: => F[T]): F[T] = flatten(eval(t))
   def flatten[T](ffa: F[F[T]]): F[T] = flatMap[F[T], T](ffa)(identity)
 
   def fromTry[T](t: Try[T]): F[T] =

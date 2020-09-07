@@ -61,6 +61,10 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
               complete(FormData(params))
             }
         }
+      } ~ pathPrefix("headers") {
+        extractRequest { req =>
+          complete(req.headers.map(h => h.name() + "->" + h.value()).mkString(","))
+        }
       } ~ get {
         parameterMap { (params: Map[String, String]) =>
           complete(
@@ -237,7 +241,7 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
         complete(HttpEntity(textFile))
       }
     } ~ pathPrefix("multipart") {
-      pathPrefix("other") { 
+      pathPrefix("other") {
         extractRequest { request =>
           entity(as[akka.http.scaladsl.model.Multipart.General]) { (fd: akka.http.scaladsl.model.Multipart.General) =>
             complete {
@@ -248,25 +252,23 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
                 }
                 .runFold(Vector.empty[String])(_ :+ _)
                 .map(v => v.mkString(", "))
-                .map(v =>
-                  s"${request.entity.contentType},$v"
-                )
+                .map(v => s"${request.entity.contentType},$v")
             }
           }
         }
       } ~
-      entity(as[akka.http.scaladsl.model.Multipart.FormData]) { (fd: akka.http.scaladsl.model.Multipart.FormData) =>
-        complete {
-          fd.parts
-            .mapAsync(1) { p =>
-              val fv = p.entity.dataBytes.runFold(ByteString())(_ ++ _)
-              fv.map(_.utf8String)
-                .map(v => p.name + "=" + v + p.filename.fold("")(fn => s" ($fn)"))
-            }
-            .runFold(Vector.empty[String])(_ :+ _)
-            .map(v => v.mkString(", "))
+        entity(as[akka.http.scaladsl.model.Multipart.FormData]) { (fd: akka.http.scaladsl.model.Multipart.FormData) =>
+          complete {
+            fd.parts
+              .mapAsync(1) { p =>
+                val fv = p.entity.dataBytes.runFold(ByteString())(_ ++ _)
+                fv.map(_.utf8String)
+                  .map(v => p.name + "=" + v + p.filename.fold("")(fn => s" ($fn)"))
+              }
+              .runFold(Vector.empty[String])(_ :+ _)
+              .map(v => v.mkString(", "))
+          }
         }
-      }
     } ~ pathPrefix("redirect") {
       path("r1") {
         redirect("/redirect/r2", StatusCodes.TemporaryRedirect)
@@ -355,7 +357,10 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
         path("send_and_wait") {
           // send two messages and wait until the socket is closed
           handleWebSocketMessages(
-            Flow.fromSinkAndSourceCoupled(Sink.ignore, Source(List(TextMessage("test10"), TextMessage("test20"))) ++ Source.maybe)
+            Flow.fromSinkAndSourceCoupled(
+              Sink.ignore,
+              Source(List(TextMessage("test10"), TextMessage("test20"))) ++ Source.maybe
+            )
           )
         }
     }
