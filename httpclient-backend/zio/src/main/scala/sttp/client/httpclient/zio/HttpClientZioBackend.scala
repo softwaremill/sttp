@@ -153,10 +153,5 @@ object HttpClientZioBackend {
   def stub: SttpBackendStub[BlockingTask, ZStream[Blocking, Throwable, Byte], WebSocketHandler] =
     SttpBackendStub(new RIOMonadAsyncError[Blocking])
 
-  val stubLayer: ZLayer[Any,
-                        Nothing,
-                        Has[zio.SttpClientStubbing.Service] with Has[
-                          SttpBackend[BlockingTask, ZStream[Blocking, Throwable, Byte], WebSocketHandler]
-                        ]] =
-    SttpClientStubbing.layer
+  val stubLayer: ZLayer[Any, Nothing, SttpClientStubbing with SttpClient] = SttpClientStubbing.layer
 }
