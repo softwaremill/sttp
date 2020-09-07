@@ -35,7 +35,7 @@ trait SttpClientStubbingBase[R, S, WS_HANDLER[_]] {
     ) = stub.update(f)
   }
 
-  case class StubbingWhenRequest private[zio] (p: Request[_, _] => Boolean) {
+  case class StubbingWhenRequest private[sttp] (p: Request[_, _] => Boolean) {
     implicit val _serviceTag: Tag[Service] = serviceTag
     val thenRespondOk: URIO[SttpClientStubbing, Unit] =
       thenRespondWithCode(StatusCode.Ok)
