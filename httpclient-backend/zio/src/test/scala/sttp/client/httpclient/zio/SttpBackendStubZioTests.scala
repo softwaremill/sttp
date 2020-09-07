@@ -1,16 +1,17 @@
-package sttp.client.asynchttpclient.zio
+package sttp.client.httpclient.zio
 
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import sttp.client._
-import sttp.client.testing.SttpBackendStub
 import sttp.client.impl.zio._
 import sttp.client.monad.MonadError
+import sttp.client.testing.SttpBackendStub
 import sttp.client.ws.{WebSocket, WebSocketEvent}
 import sttp.model.{Headers, Method}
-import sttp.model.ws._
-import zio._
+import sttp.model.ws.WebSocketFrame
+import zio.blocking.Blocking
+import zio.{Queue, Task}
 import zio.stream.ZStream
 
 class SttpBackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFutures {
@@ -32,16 +33,19 @@ class SttpBackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFuture
   }
 
   it should "return given web socket response" in {
-    val rioMonad: MonadError[zio.Task] = new RIOMonadAsyncError[Any]
+    val rioMonad: MonadError[zio.RIO[Blocking, *]] = new RIOMonadAsyncError[Blocking]
     val frame1 = WebSocketFrame.text("initial frame")
     val sentFrame = WebSocketFrame.text("sent frame")
 
     def webSocket(queue: Queue[WebSocketFrame.Incoming]) =
-      new WebSocket[Task] {
+      new WebSocket[zio.RIO[Blocking, *]] {
         override def isOpen: zio.Task[Boolean] = Task.succeed(true)
-        override def monad: MonadError[zio.Task] = rioMonad
+
+        override def monad: MonadError[zio.RIO[Blocking, *]] = rioMonad
+
         override def receive: zio.Task[Either[WebSocketEvent.Close, WebSocketFrame.Incoming]] = queue.take.map(Right(_))
-        override def send(f: WebSocketFrame, isContinuation: Boolean): zio.Task[Unit] =
+
+        override def send(f: WebSocketFrame, isContinuation: Boolean): zio.RIO[Blocking, Unit] =
           f match {
             case t: WebSocketFrame.Text => queue.offer(t).unit
             case _                      => Task.unit
@@ -49,7 +53,7 @@ class SttpBackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFuture
       }
 
     def makeBackend(queue: Queue[WebSocketFrame.Incoming]) =
-      AsyncHttpClientZioBackend.stub
+      HttpClientZioBackend.stub
         .whenRequestMatches(_ => true)
         .thenRespondWebSocket(Headers(List.empty), webSocket(queue))
 
@@ -81,7 +85,7 @@ class SttpBackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFuture
       resp <- r1 <&> r2 <&> r3
     } yield resp
 
-    runtime.unsafeRun(effect.provideLayer(AsyncHttpClientZioBackend.stubLayer)) shouldBe
+    runtime.unsafeRun(effect.provideCustomLayer(HttpClientZioBackend.stubLayer)) shouldBe
       (((Right("a"), Right("b")), Right("c")))
   }
 
@@ -92,7 +96,7 @@ class SttpBackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFuture
     val effect = (for {
       _ <- whenAnyRequest.thenRespondCyclic("a", "b", "c")
       resp <- ZStream.repeatEffect(SttpClient.send(r)).take(4).runCollect
-    } yield resp).provideLayer(AsyncHttpClientZioBackend.stubLayer)
+    } yield resp).provideCustomLayer(HttpClientZioBackend.stubLayer)
 
     runtime.unsafeRun(effect).map(_.body).toList shouldBe List(Right("a"), Right("b"), Right("c"), Right("a"))
   }

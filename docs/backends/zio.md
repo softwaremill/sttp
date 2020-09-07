@@ -168,3 +168,32 @@ The ZIO backend supports:
 See [websockets](../websockets.md) for details on how to use the high-level and low-level interfaces. Websockets
 opened using the `SttpClient.openWebsocket` and `SttpStreamsClient.openWebsocket` (leveraging ZIO environment) always
 use the high-level interface.
+
+## Testing
+
+The ZIO backends also support a ZIO-familiar way of configuring [stubs](../testing.md) as well. In addition to the
+usual way of creating a stand-alone stub, you can also define your stubs as effects instead:
+
+```scala mdoc:compile-only
+import sttp.client._
+import sttp.model._
+import sttp.client.asynchttpclient._
+import sttp.client.asynchttpclient.zio._
+import sttp.client.asynchttpclient.zio.stubbing._
+
+val stubEffect = for {
+  _ <- whenRequestMatches(_.uri.toString.endsWith("c")).thenRespond("c")
+  _ <- whenRequestMatchesPartial { case r if r.method == Method.POST => Response.ok("b") }
+  _ <- whenAnyRequest.thenRespond("a")
+} yield ()
+
+val responseEffect = stubEffect *> SttpClient.send(basicRequest.get(uri"http://example.org/a")).map(_.body)
+
+responseEffect.provideLayer(AsyncHttpClientZioBackend.stubLayer) // Task[Either[String, String]]
+```
+
+The `whenRequestMatches`, `whenRequestMatchesPartial`, `whenAnyRequest` are effects which require the `SttpClientStubbing`
+dependency. They enrich the stub with the given behavior.
+
+Then, the `stubLayer` provides both an implementation of the `SttpClientStubbing` dependency, as well as a `SttpClient`
+which is backed by the stub.

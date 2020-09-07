@@ -1,9 +1,11 @@
 package sttp.client.asynchttpclient
 
-import sttp.client._
-import sttp.client.ws.{WebSocket, WebSocketResponse}
 import _root_.zio._
 import _root_.zio.stream._
+import sttp.client._
+import sttp.client.asynchttpclient.zio.SttpClientStubbing.StubbingWhenRequest
+import sttp.client.impl.zio.SttpClientStubbingBase
+import sttp.client.ws.{WebSocket, WebSocketResponse}
 
 package object zio {
 
@@ -11,6 +13,7 @@ package object zio {
     * ZIO-environment service definition, which is an SttpBackend.
     */
   type SttpClient = Has[SttpClient.Service]
+  type SttpClientStubbing = Has[SttpClientStubbing.Service]
 
   object SttpClient {
 
@@ -47,5 +50,23 @@ package object zio {
         request: Request[T, Nothing]
     ): ZIO[SttpClient, Throwable, WebSocketResponse[WebSocket[Task]]] =
       ZioWebSocketHandler().flatMap(handler => ZIO.accessM(env => env.get[Service].openWebsocket(request, handler)))
+  }
+
+  object SttpClientStubbing extends SttpClientStubbingBase[Any, Stream[Throwable, Byte], WebSocketHandler] {
+    override private[sttp] def serviceTag: Tag[SttpClientStubbing.Service] = implicitly
+    override private[sttp] def sttpBackendTag: Tag[SttpClient.Service] = implicitly
+  }
+
+  object stubbing {
+    def whenRequestMatches(p: Request[_, _] => Boolean): StubbingWhenRequest =
+      StubbingWhenRequest(p)
+
+    val whenAnyRequest: StubbingWhenRequest =
+      StubbingWhenRequest(_ => true)
+
+    def whenRequestMatchesPartial(
+        partial: PartialFunction[Request[_, _], Response[_]]
+    ): URIO[SttpClientStubbing, Unit] =
+      ZIO.accessM(_.get.whenRequestMatchesPartial(partial))
   }
 }
