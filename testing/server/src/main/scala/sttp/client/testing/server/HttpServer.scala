@@ -61,7 +61,14 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
               complete(FormData(params))
             }
         }
-      } ~ get {
+      } ~
+        pathPrefix("headers") {
+          extractRequest { request =>
+            println("kasper!!" + request.headers.mkString(","))
+            complete(HttpResponse(headers = request.headers))
+          }
+        } ~
+        get {
         parameterMap { (params: Map[String, String]) =>
           complete(
             List("GET", "/echo", paramsToString(params))
