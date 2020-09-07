@@ -176,4 +176,6 @@ object HttpClientZioBackend {
     */
   def stub: SttpBackendStub[BlockingTask, BlockingZioStreams] =
     SttpBackendStub(new RIOMonadAsyncError[Blocking])
+
+  val stubLayer: ZLayer[Any, Nothing, SttpClientStubbing with SttpClient] = SttpClientStubbing.layer
 }

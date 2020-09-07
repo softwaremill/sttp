@@ -30,28 +30,29 @@ abstract class HttpClientBackend[F[_], S, P](
   protected def bodyToHttpClient: BodyToHttpClient[F, S]
   protected def bodyFromHttpClient: BodyFromHttpClient[F, S]
 
-  private[httpclient] def convertRequest[T, R >: PE](request: Request[T, R]): F[HttpRequest] = {
-    val builder = HttpRequest
-      .newBuilder()
-      .uri(request.uri.toJavaUri)
+  private[httpclient] def convertRequest[T, R >: PE](request: Request[T, R]): F[HttpRequest] =
+    monad.suspend {
+      val builder = HttpRequest
+        .newBuilder()
+        .uri(request.uri.toJavaUri)
 
-    // Only setting the content type if it's present, and won't be set later with the mulitpart boundary added
-    val contentType: Option[String] = request.headers.find(_.is(HeaderNames.ContentType)).map(_.value)
-    contentType.foreach { ct =>
-      request.body match {
-        case _: MultipartBody[_] => // skip, will be set later
-        case _                   => builder.header(HeaderNames.ContentType, ct)
+      // Only setting the content type if it's present, and won't be set later with the mulitpart boundary added
+      val contentType: Option[String] = request.headers.find(_.is(HeaderNames.ContentType)).map(_.value)
+      contentType.foreach { ct =>
+        request.body match {
+          case _: MultipartBody[_] => // skip, will be set later
+          case _                   => builder.header(HeaderNames.ContentType, ct)
+        }
+      }
+
+      bodyToHttpClient(request, builder, contentType).map { httpBody =>
+        builder.method(request.method.method, httpBody)
+        request.headers
+          .filterNot(h => (h.name == HeaderNames.ContentLength) || h.name == HeaderNames.ContentType)
+          .foreach(h => builder.header(h.name, h.value))
+        builder.timeout(JDuration.ofMillis(request.options.readTimeout.toMillis)).build()
       }
     }
-
-    bodyToHttpClient(request, builder, contentType).map { httpBody =>
-      builder.method(request.method.method, httpBody)
-      request.headers
-        .filterNot(h => (h.name == HeaderNames.ContentLength) || h.name == HeaderNames.ContentType)
-        .foreach(h => builder.header(h.name, h.value))
-      builder.timeout(JDuration.ofMillis(request.options.readTimeout.toMillis)).build()
-    }
-  }
 
   private implicit val monad: MonadError[F] = responseMonad
 

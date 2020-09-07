@@ -15,6 +15,7 @@ package object zio {
     * ZIO-environment service definition, which is an SttpBackend.
     */
   type SttpClient = Has[SttpClient.Service]
+  type SttpClientStubbing = Has[SttpClientStubbing.Service]
 
   object SttpClient {
 
@@ -45,5 +46,24 @@ package object zio {
         request: Request[T, Effect[RIO[Blocking with R, *]] with BlockingZioStreams with WebSockets]
     ): RIO[SttpClient with Blocking with R, Response[T]] =
       ZIO.accessM(env => env.get[Service].extendEnv[R].send(request))
+  }
+
+  object SttpClientStubbing
+      extends SttpClientStubbingBase[Blocking, ZStream[Blocking, Throwable, Byte], WebSocketHandler] {
+    override private[sttp] def serviceTag: Tag[SttpClientStubbing.Service] = implicitly
+    override private[sttp] def sttpBackendTag: Tag[SttpClient.Service] = implicitly
+  }
+
+  object stubbing {
+    def whenRequestMatches(p: Request[_, _] => Boolean): StubbingWhenRequest =
+      StubbingWhenRequest(p)
+
+    val whenAnyRequest: StubbingWhenRequest =
+      StubbingWhenRequest(_ => true)
+
+    def whenRequestMatchesPartial(
+        partial: PartialFunction[Request[_, _], Response[_]]
+    ): URIO[SttpClientStubbing, Unit] =
+      ZIO.accessM(_.get.whenRequestMatchesPartial(partial))
   }
 }

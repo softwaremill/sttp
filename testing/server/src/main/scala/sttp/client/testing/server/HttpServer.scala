@@ -59,6 +59,10 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
               complete(FormData(params))
             }
         }
+      } ~ pathPrefix("headers") {
+        extractRequest { req =>
+          complete(req.headers.map(h => h.name() + "->" + h.value()).mkString(","))
+        }
       } ~ get {
         parameterMap { (params: Map[String, String]) =>
           complete(

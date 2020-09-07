@@ -9,7 +9,7 @@ import sttp.monad.MonadError
 import sttp.monad.syntax._
 
 object Slf4jLoggingBackend {
-  private val logger = LoggerFactory.getLogger("sttp.client.logging.slf4j.Slf4jLoggingBackend")
+  private val logger = new Logger("sttp.client.logging.slf4j.Slf4jLoggingBackend")
 
   def apply[F[_], S](
       delegate: SttpBackend[F, S],
