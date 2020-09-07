@@ -28,5 +28,9 @@ class RIOMonadAsyncError[R] extends MonadAsyncError[RIO[R, *]] {
 
   override def eval[T](t: => T): RIO[R, T] = RIO.effect(t)
 
+  override def suspend[T](t: => RIO[R, T]): RIO[R, T] = RIO.effectSuspend(t)
+
+  override def flatten[T](ffa: RIO[R, RIO[R, T]]): RIO[R, T] = ffa.flatten
+
   override def ensure[T](f: RIO[R, T], e: => RIO[R, Unit]): RIO[R, T] = f.ensuring(e.catchAll(_ => ZIO.unit))
 }

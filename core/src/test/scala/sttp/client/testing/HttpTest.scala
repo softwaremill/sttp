@@ -240,7 +240,7 @@ trait HttpTest[F[_]]
     // https://github.com/softwaremill/sttp/issues/676
     "include a header once when sent effect is used multiple times" in {
       val request = basicRequest.get(uri"$endpoint/echo/headers").header("x-foo", "bar").response(asStringAlways)
-      val sent = request.send()
+      val sent = request.send(backend)
       backend.responseMonad.flatMap(sent)(_ => sent).toFuture().map(_.body).map { body =>
         body should include("x-foo->bar")
         body.split(",").toList.count(_ == "x-foo->bar") shouldBe 1

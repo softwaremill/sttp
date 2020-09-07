@@ -4,7 +4,7 @@ import sttp.client._
 import _root_.zio._
 import sttp.capabilities.zio.ZioStreams
 import sttp.capabilities.{Effect, WebSockets}
-import sttp.client.impl.zio.ExtendEnv
+import sttp.client.impl.zio.{ExtendEnv, SttpClientStubbingBase}
 
 package object zio {
 
@@ -45,12 +45,14 @@ package object zio {
       ZIO.accessM(env => env.get[Service].extendEnv[R].send(request))
   }
 
-  object SttpClientStubbing extends SttpClientStubbingBase[Any, Stream[Throwable, Byte], WebSocketHandler] {
+  object SttpClientStubbing extends SttpClientStubbingBase[Any, ZioStreams with WebSockets] {
     override private[sttp] def serviceTag: Tag[SttpClientStubbing.Service] = implicitly
     override private[sttp] def sttpBackendTag: Tag[SttpClient.Service] = implicitly
   }
 
   object stubbing {
+    import SttpClientStubbing.StubbingWhenRequest
+
     def whenRequestMatches(p: Request[_, _] => Boolean): StubbingWhenRequest =
       StubbingWhenRequest(p)
 

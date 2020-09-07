@@ -2,7 +2,7 @@ package sttp.client.impl.zio
 
 import sttp.ws.{WebSocket, WebSocketFrame}
 import zio.{Ref, ZIO}
-import zio.stream.{Stream, ZStream, ZTransducer}
+import zio.stream.{Stream, ZStream}
 
 object ZioWebSockets {
   def compilePipe[R](

@@ -1,38 +1,32 @@
 package sttp.client.impl.zio
 
-import sttp.client.monad.MonadError
-import sttp.client.testing.{SttpBackendStub, WebSocketStub}
-import sttp.client.ws.WebSocketResponse
+import sttp.capabilities.Effect
+import sttp.client.testing.SttpBackendStub
 import sttp.client.{Request, Response, SttpBackend}
-import sttp.model.{Headers, StatusCode}
+import sttp.model.StatusCode
+import sttp.monad.MonadError
 import zio.{Has, Queue, RIO, Ref, Tag, UIO, URIO, ZLayer}
 
-trait SttpClientStubbingBase[R, S, WS_HANDLER[_]] {
+trait SttpClientStubbingBase[R, P] {
 
   type SttpClientStubbing = Has[Service]
   // the tag as viewed by the implementing object. Needs to be passed explicitly, otherwise Has[] breaks.
   private[sttp] def serviceTag: Tag[Service]
-  private[sttp] def sttpBackendTag: Tag[SttpBackend[RIO[R, *], S, WS_HANDLER]]
+  private[sttp] def sttpBackendTag: Tag[SttpBackend[RIO[R, *], P]]
 
   trait Service {
-    def whenRequestMatchesPartial(
-        partial: PartialFunction[Request[_, _], Response[_]]
-    ): URIO[SttpClientStubbing, Unit]
+    def whenRequestMatchesPartial(partial: PartialFunction[Request[_, _], Response[_]]): URIO[SttpClientStubbing, Unit]
 
-    private[zio] def update(
-        f: SttpBackendStub[RIO[R, *], S, WS_HANDLER] => SttpBackendStub[RIO[R, *], S, WS_HANDLER]
-    ): UIO[Unit]
+    private[zio] def update(f: SttpBackendStub[RIO[R, *], P] => SttpBackendStub[RIO[R, *], P]): UIO[Unit]
   }
 
-  private[sttp] class StubWrapper(stub: Ref[SttpBackendStub[RIO[R, *], S, WS_HANDLER]]) extends Service {
+  private[sttp] class StubWrapper(stub: Ref[SttpBackendStub[RIO[R, *], P]]) extends Service {
     override def whenRequestMatchesPartial(
         partial: PartialFunction[Request[_, _], Response[_]]
     ): URIO[SttpClientStubbing, Unit] =
       update(_.whenRequestMatchesPartial(partial))
 
-    override private[zio] def update(
-        f: SttpBackendStub[RIO[R, *], S, WS_HANDLER] => SttpBackendStub[RIO[R, *], S, WS_HANDLER]
-    ) = stub.update(f)
+    override private[zio] def update(f: SttpBackendStub[RIO[R, *], P] => SttpBackendStub[RIO[R, *], P]) = stub.update(f)
   }
 
   case class StubbingWhenRequest private[sttp] (p: Request[_, _] => Boolean) {
@@ -72,51 +66,33 @@ trait SttpClientStubbingBase[R, S, WS_HANDLER[_]] {
       val m: PartialFunction[Request[_, _], RIO[R, Response[_]]] = {
         case r if p(r) => resp
       }
-      URIO.accessM(_.get.update(_.whenRequestMatches(p).thenRespondWrapped(m)))
+      URIO.accessM(_.get.update(_.whenRequestMatches(p).thenRespondF(m)))
     }
 
     def thenRespondWrapped(resp: Request[_, _] => RIO[R, Response[_]]): URIO[SttpClientStubbing, Unit] = {
       val m: PartialFunction[Request[_, _], RIO[R, Response[_]]] = {
         case r if p(r) => resp(r)
       }
-      URIO.accessM(_.get.update(_.whenRequestMatches(p).thenRespondWrapped(m)))
+      URIO.accessM(_.get.update(_.whenRequestMatches(p).thenRespondF(m)))
     }
-
-    def thenRespondWebSocket[WS_RESULT](result: WS_RESULT): URIO[SttpClientStubbing, Unit] =
-      thenRespondWebSocket(Headers(List.empty), result)
-
-    def thenRespondWebSocket[WS_RESULT](headers: Headers, result: WS_RESULT): URIO[SttpClientStubbing, Unit] =
-      URIO.accessM(_.get.update(_.whenRequestMatches(p).thenRespondWebSocket(headers, result)))
-
-    def thenRespondWebSocket(wsStub: WebSocketStub[_]): URIO[SttpClientStubbing, Unit] =
-      thenRespondWebSocket(Headers(List.empty), wsStub)
-
-    def thenRespondWebSocket(headers: Headers, wsStub: WebSocketStub[_]): URIO[SttpClientStubbing, Unit] =
-      URIO.accessM(_.get.update(_.whenRequestMatches(p).thenRespondWebSocket(headers, wsStub)))
   }
 
-  val layer: ZLayer[Any, Nothing, Has[Service] with Has[SttpBackend[RIO[R, *], S, WS_HANDLER]]] = {
+  val layer: ZLayer[Any, Nothing, Has[Service] with Has[SttpBackend[RIO[R, *], P]]] = {
     val monad = new RIOMonadAsyncError[R]
     implicit val _serviceTag: Tag[Service] = serviceTag
-    implicit val _backendTag: Tag[SttpBackend[RIO[R, *], S, WS_HANDLER]] = sttpBackendTag
+    implicit val _backendTag: Tag[SttpBackend[RIO[R, *], P]] = sttpBackendTag
     ZLayer.fromEffectMany(for {
-      stub <- Ref.make(SttpBackendStub[RIO[R, *], S, WS_HANDLER](monad))
+      stub <- Ref.make(SttpBackendStub[RIO[R, *], P](monad))
       stubber = new StubWrapper(stub)
-      proxy = new SttpBackend[RIO[R, *], S, WS_HANDLER] {
-        override def send[T](request: Request[T, S]): RIO[R, Response[T]] =
+      proxy = new SttpBackend[RIO[R, *], P] {
+        override def send[T, RR >: P with Effect[RIO[R, *]]](request: Request[T, RR]): RIO[R, Response[T]] =
           stub.get >>= (_.send(request))
-
-        override def openWebsocket[T, WS_RESULT](
-            request: Request[T, S],
-            handler: WS_HANDLER[WS_RESULT]
-        ): RIO[R, WebSocketResponse[WS_RESULT]] =
-          stub.get >>= (_.openWebsocket(request, handler))
 
         override def close(): RIO[R, Unit] =
           stub.get >>= (_.close())
 
         override def responseMonad: MonadError[RIO[R, *]] = monad
       }
-    } yield Has.allOf[Service, SttpBackend[RIO[R, *], S, WS_HANDLER]](stubber, proxy))
+    } yield Has.allOf[Service, SttpBackend[RIO[R, *], P]](stubber, proxy))
   }
 }

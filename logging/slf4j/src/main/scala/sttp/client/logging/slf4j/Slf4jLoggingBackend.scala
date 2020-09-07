@@ -1,6 +1,5 @@
 package sttp.client.logging.slf4j
 
-import org.slf4j.{Logger, LoggerFactory}
 import sttp.capabilities.Effect
 import sttp.client._
 import sttp.client.listener.{ListenerBackend, RequestListener}

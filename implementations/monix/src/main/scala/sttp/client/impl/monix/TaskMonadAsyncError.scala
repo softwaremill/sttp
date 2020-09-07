@@ -29,5 +29,9 @@ object TaskMonadAsyncError extends MonadAsyncError[Task] {
 
   override def eval[T](t: => T): Task[T] = Task(t)
 
+  override def suspend[T](t: => Task[T]): Task[T] = Task.suspend(t)
+
+  override def flatten[T](ffa: Task[Task[T]]): Task[T] = ffa.flatten
+
   override def ensure[T](f: Task[T], e: => Task[Unit]): Task[T] = f.guarantee(e)
 }
