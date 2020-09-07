@@ -116,8 +116,8 @@ object ResponseAs {
   def deserializeRightWithError[E: ShowError, T](
       doDeserialize: String => Either[E, T]
   ): (Either[String, String], ResponseMetadata) => Either[ResponseError[E], T] = {
-    case (Left(s), meta)  => Left(HttpError(s, meta.code))
-    case (Right(s), _) => deserializeWithError(doDeserialize)(implicitly[ShowError[E]])(s)
+    case (Left(s), meta) => Left(HttpError(s, meta.code))
+    case (Right(s), _)   => deserializeWithError(doDeserialize)(implicitly[ShowError[E]])(s)
   }
 
   /**
