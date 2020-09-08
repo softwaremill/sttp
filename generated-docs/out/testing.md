@@ -72,7 +72,7 @@ val testingBackend = SttpBackendStub.asynchronousFuture
   .whenAnyRequest
   .thenRespondF(Future {
     Thread.sleep(5000)
-    Response(Right("OK"), StatusCode.Ok, "", Nil, Nil)
+    Response.ok(Right("OK"))
   })
 
 val responseFuture = basicRequest.get(uri"http://example.org").send(testingBackend)
@@ -84,7 +84,7 @@ The returned response may also depend on the request:
 val testingBackend = SttpBackendStub.synchronous
   .whenAnyRequest
   .thenRespondF(req =>
-    Response(Right(s"OK, got request sent to ${req.uri.host}"), StatusCode.Ok, "", Nil, Nil)
+    Response.ok(Right(s"OK, got request sent to ${req.uri.host}"))
   )
 
 val response = basicRequest.get(uri"http://example.org").send(testingBackend)

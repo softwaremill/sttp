@@ -1,6 +1,6 @@
 package sttp.client
 
-import sttp.model.{Header, StatusCode}
+import sttp.model.{Header, Method, StatusCode, Uri}
 
 import scala.collection.immutable.Seq
 
@@ -14,7 +14,8 @@ case class Response[T](
     code: StatusCode,
     statusText: String,
     headers: Seq[Header],
-    history: List[Response[Unit]]
+    history: List[Response[Unit]],
+    request: RequestMetadata
 ) extends ResponseMetadata {
   def show(includeBody: Boolean = true): String = {
     val headers = headersToStringSafe.mkString(", ")
@@ -32,14 +33,21 @@ object Response {
     * [[sttp.client.testing.SttpBackendStub]] and partial matchers.
     */
   def apply[T](body: T, code: StatusCode): Response[T] =
-    Response(body, code, "", Nil, Nil)
+    Response(body, code, "", Nil, Nil, RequestMetadata.ExampleGet)
 
   /**
     * Convenience method to create a Response instance, mainly useful in tests using
     * [[sttp.client.testing.SttpBackendStub]] and partial matchers.
     */
   def apply[T](body: T, code: StatusCode, statusText: String): Response[T] =
-    Response(body, code, statusText, Nil, Nil)
+    Response(body, code, statusText, Nil, Nil, RequestMetadata.ExampleGet)
+
+  /**
+    * Convenience method to create a Response instance, mainly useful in tests using
+    * [[sttp.client.testing.SttpBackendStub]] and partial matchers.
+    */
+  def apply[T](body: T, code: StatusCode, statusText: String, headers: Seq[Header]): Response[T] =
+    Response(body, code, statusText, headers, Nil, RequestMetadata.ExampleGet)
 
   /**
     * Convenience method to create a Response instance, mainly useful in tests using

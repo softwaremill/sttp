@@ -4,12 +4,9 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import sttp.client._
-import sttp.client.testing.SttpBackendStub
 import sttp.client.impl.zio._
-import sttp.client.internal.ws.WebSocketEvent
-import sttp.model.{Headers, Method}
-import sttp.monad.MonadError
-import sttp.ws.{WebSocket, WebSocketFrame}
+import sttp.client.testing.SttpBackendStub
+import sttp.model.Method
 import zio._
 import zio.stream.ZStream
 

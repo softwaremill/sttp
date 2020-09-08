@@ -19,7 +19,7 @@ import sttp.client.SttpBackendOptions.Proxy
 import sttp.client.SttpClientException.ReadException
 import sttp.client.internal.ws.SimpleQueue
 import sttp.client.okhttp.OkHttpBackend.EncodingHandler
-import sttp.client.{Response, ResponseAs, SttpBackend, SttpBackendOptions, _}
+import sttp.client.{Response, SttpBackend, SttpBackendOptions, _}
 import sttp.model._
 
 import scala.collection.JavaConverters._
@@ -78,7 +78,7 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
 
   private[okhttp] def readResponse[T, R >: PE](
       res: OkHttpResponse,
-      responseAs: ResponseAs[T, R]
+      request: Request[T, R]
   ): F[Response[T]] = {
     val headers = readHeaders(res)
     val responseMetadata = ResponseMetadata(headers, StatusCode(res.code()), res.message())
@@ -95,8 +95,8 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
       res.body().byteStream()
     }
 
-    val body = bodyFromOkHttp(byteBody, responseAs, responseMetadata, None)
-    responseMonad.map(body)(Response(_, StatusCode(res.code()), res.message(), headers, Nil))
+    val body = bodyFromOkHttp(byteBody, request.response, responseMetadata, None)
+    responseMonad.map(body)(Response(_, StatusCode(res.code()), res.message(), headers, Nil, request.onlyMetadata))
   }
 
   private def readHeaders[R >: PE, T](res: OkHttpResponse) = {

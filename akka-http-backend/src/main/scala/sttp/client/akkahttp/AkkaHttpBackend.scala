@@ -118,7 +118,7 @@ class AkkaHttpBackend private (
     val responseMetadata = client.ResponseMetadata(headers, code, statusText)
     val body = bodyFromAkka(r.response, responseMetadata, wsFlow.map(Right(_)).getOrElse(Left(decodeAkkaResponse(hr))))
 
-    body.map(client.Response(_, code, statusText, headers, Nil))
+    body.map(client.Response(_, code, statusText, headers, Nil, r.onlyMetadata))
   }
 
   // http://doc.akka.io/docs/akka-http/10.0.7/scala/http/common/de-coding.html

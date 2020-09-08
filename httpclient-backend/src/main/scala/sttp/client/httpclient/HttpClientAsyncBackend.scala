@@ -41,7 +41,7 @@ abstract class HttpClientAsyncBackend[F[_], S, P](
           .sendAsync(jRequest, BodyHandlers.ofInputStream())
           .whenComplete((t: HttpResponse[InputStream], u: Throwable) => {
             if (t != null) {
-              try success(readResponse(t, Left(t.body()), request.response))
+              try success(readResponse(t, Left(t.body()), request))
               catch {
                 case e: Exception => error(e)
               }
@@ -67,7 +67,7 @@ abstract class HttpClientAsyncBackend[F[_], S, P](
             new AddToQueueListener(queue, isOpen),
             ws => {
               val webSocket = new WebSocketImpl[F](ws, queue, isOpen, monad)
-              val baseResponse = Response((), StatusCode.SwitchingProtocols, "", Nil, Nil)
+              val baseResponse = Response((), StatusCode.SwitchingProtocols, "", Nil, Nil, request.onlyMetadata)
               val body = bodyFromHttpClient(
                 Right(webSocket),
                 request.response,
@@ -93,7 +93,7 @@ abstract class HttpClientAsyncBackend[F[_], S, P](
           readResponse(
             e.getCause.asInstanceOf[WebSocketHandshakeException].getResponse,
             Left(emptyInputStream()),
-            request.response
+            request
           )
       }
   }

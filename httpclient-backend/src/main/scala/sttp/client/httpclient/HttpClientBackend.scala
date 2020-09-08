@@ -59,7 +59,7 @@ abstract class HttpClientBackend[F[_], S, P](
   private[httpclient] def readResponse[T, R >: PE](
       res: HttpResponse[_],
       resBody: Either[InputStream, WebSocket[F]],
-      responseAs: ResponseAs[T, R]
+      request: Request[T, R]
   ): F[Response[T]] = {
     val headersMap = res.headers().map().asScala
     val headers = headersMap.keySet
@@ -81,8 +81,8 @@ abstract class HttpClientBackend[F[_], S, P](
     } else {
       resBody
     }
-    val body = bodyFromHttpClient(decodedResBody, responseAs, responseMetadata)
-    responseMonad.map(body)(Response(_, code, "", headers, Nil))
+    val body = bodyFromHttpClient(decodedResBody, request.response, responseMetadata)
+    responseMonad.map(body)(Response(_, code, "", headers, Nil, request.onlyMetadata))
   }
 
   private def standardEncoding: (InputStream, String) => InputStream = {

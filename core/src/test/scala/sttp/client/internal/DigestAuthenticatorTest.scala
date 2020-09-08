@@ -197,8 +197,7 @@ class DigestAuthenticatorTest extends AnyFreeSpec with Matchers with OptionValue
       Right(""),
       statusCode,
       "Unauthorized",
-      headers,
-      List.empty
+      headers
     )
   }
 }

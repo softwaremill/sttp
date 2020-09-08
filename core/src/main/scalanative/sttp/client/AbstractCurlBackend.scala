@@ -91,7 +91,8 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
             code = httpCode,
             statusText = statusText,
             headers = responseHeaders,
-            history = Nil
+            history = Nil,
+            request = request.onlyMetadata
           )
         }
       }

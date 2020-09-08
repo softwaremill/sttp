@@ -153,7 +153,7 @@ class PrometheusBackendTest
     val backendStub = SttpBackendStub.asynchronousFuture.whenAnyRequest.thenRespondF {
       Future {
         blocking(countDownLatch.await())
-        Response(Right(""), StatusCode.Ok, "", Nil, Nil)
+        Response.ok(Right(""))
       }
     }
     val backend = PrometheusBackend[Future, Any](backendStub)
@@ -180,7 +180,7 @@ class PrometheusBackendTest
     val backendStub = SttpBackendStub.asynchronousFuture.whenAnyRequest.thenRespondF {
       Future {
         blocking(countDownLatch.await())
-        Response(Right(""), StatusCode.Ok, "", Nil, Nil)
+        Response.ok(Right(""))
       }
     }
     val backend =
@@ -212,7 +212,7 @@ class PrometheusBackendTest
     val backendStub = SttpBackendStub.asynchronousFuture.whenAnyRequest.thenRespondF {
       Future {
         blocking(countDownLatch.await())
-        Response(Right(""), StatusCode.Ok, "", Nil, Nil)
+        Response.ok(Right(""))
       }
     }
     val backend =

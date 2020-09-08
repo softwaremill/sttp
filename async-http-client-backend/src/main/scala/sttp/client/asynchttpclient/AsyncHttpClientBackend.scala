@@ -56,7 +56,7 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
       def success(r: F[Response[T]]): Unit = cb(Right(r))
       def error(t: Throwable): Unit = cb(Left(t))
 
-      val lf = ahcRequest.execute(streamingAsyncHandler(r.response, success, error))
+      val lf = ahcRequest.execute(streamingAsyncHandler(r, success, error))
       Canceler(() => lf.abort(new InterruptedException))
     })
   }
@@ -68,7 +68,7 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
     createSimpleQueue[WebSocketEvent].flatMap { queue =>
       monad.flatten(monad.async[F[Response[T]]] { cb =>
         val initListener =
-          new WebSocketInitListener(r.response, queue, (r: F[Response[T]]) => cb(Right(r)), t => cb(Left(t)))
+          new WebSocketInitListener(r, queue, (r: F[Response[T]]) => cb(Right(r)), t => cb(Left(t)))
         val h = new WebSocketUpgradeHandler.Builder()
           .addWebSocketListener(initListener)
           .build()
@@ -87,7 +87,7 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
   protected def createSimpleQueue[T]: F[SimpleQueue[F, T]]
 
   private def streamingAsyncHandler[T, R >: PE](
-      responseAs: ResponseAs[T, R],
+      request: Request[T, R],
       success: F[Response[T]] => Unit,
       error: Throwable => Unit
   ): AsyncHandler[Unit] = {
@@ -142,9 +142,9 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
         if (!completed) {
           completed = true
 
-          val baseResponse = readResponseNoBody(builder.build())
+          val baseResponse = readResponseNoBody(request, builder.build())
           val p = publisher.getOrElse(EmptyPublisher)
-          val b = bodyFromAHC(Left(p), responseAs, baseResponse, () => subscribed)
+          val b = bodyFromAHC(Left(p), request.response, baseResponse, () => subscribed)
 
           success(b.map(t => baseResponse.copy(body = t)))
         }
@@ -157,7 +157,7 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
   }
 
   private class WebSocketInitListener[T](
-      responseAs: ResponseAs[T, _],
+      request: Request[T, _],
       queue: SimpleQueue[F, WebSocketEvent],
       success: F[Response[T]] => Unit,
       error: Throwable => Unit
@@ -167,8 +167,15 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
       val webSocket = WebSocketImpl.newCoupledToAHCWebSocket(ahcWebSocket, queue)
       queue.offer(WebSocketEvent.Open())
       val baseResponse =
-        Response((), StatusCode.SwitchingProtocols, "", readHeaders(ahcWebSocket.getUpgradeHeaders), Nil)
-      val bf = bodyFromAHC(Right(webSocket), responseAs, baseResponse, () => false)
+        Response(
+          (),
+          StatusCode.SwitchingProtocols,
+          "",
+          readHeaders(ahcWebSocket.getUpgradeHeaders),
+          Nil,
+          request.onlyMetadata
+        )
+      val bf = bodyFromAHC(Right(webSocket), request.response, baseResponse, () => false)
       success(bf.map(b => baseResponse.copy(body = b)))
     }
 
@@ -194,13 +201,14 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
     rb.build()
   }
 
-  private def readResponseNoBody(response: AsyncResponse): Response[Unit] = {
+  private def readResponseNoBody(request: Request[_, _], response: AsyncResponse): Response[Unit] = {
     client.Response(
       (),
       StatusCode.unsafeApply(response.getStatusCode),
       response.getStatusText,
       readHeaders(response.getHeaders),
-      Nil
+      Nil,
+      request.onlyMetadata
     )
   }
 

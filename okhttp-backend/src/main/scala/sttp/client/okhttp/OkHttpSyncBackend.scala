@@ -49,7 +49,7 @@ class OkHttpSyncBackend private (
       new AddToQueueListener(queue, isOpen),
       { (nativeWs, response) =>
         val webSocket = new WebSocketImpl(nativeWs, queue, isOpen, response.headers())
-        val baseResponse = readResponse(response, ignore)
+        val baseResponse = readResponse(response, request.response(ignore))
         val wsResponse =
           Future(
             blocking(
@@ -76,7 +76,7 @@ class OkHttpSyncBackend private (
       .updateClientIfCustomReadTimeout(request, client)
       .newCall(nativeRequest)
       .execute()
-    readResponse(response, request.response)
+    readResponse(response, request)
   }
 
   override val responseMonad: MonadError[Identity] = IdMonad

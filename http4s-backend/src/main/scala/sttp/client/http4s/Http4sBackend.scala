@@ -85,7 +85,7 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
                 )
 
               body
-                .map { b => Response(b, code, statusText, headers, Nil) }
+                .map { b => Response(b, code, statusText, headers, Nil, r.onlyMetadata) }
                 .flatMap(r => responseVar.put(Right(r)))
                 .flatMap(_ => responseBodyCompleteVar.take)
             }

@@ -134,7 +134,8 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
             code = StatusCode(resp.status),
             statusText = resp.statusText,
             headers = headers,
-            history = Nil
+            history = Nil,
+            request = request.onlyMetadata
           )
         }
       }

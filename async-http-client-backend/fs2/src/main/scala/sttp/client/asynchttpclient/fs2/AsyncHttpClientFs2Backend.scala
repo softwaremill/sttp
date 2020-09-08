@@ -24,8 +24,6 @@ import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions, _}
 import sttp.monad.MonadAsyncError
 import sttp.ws.{WebSocket, WebSocketFrame}
 
-import scala.concurrent.ExecutionContext
-
 class AsyncHttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
     asyncHttpClient: AsyncHttpClient,
     closeClient: Boolean,

@@ -363,6 +363,18 @@ case class RequestT[U[_], T, -R](
       .setContentLengthIfMissing(b.s.getBytes(encoding).length.toLong)
       .copy(body = b)
   }
+
+  private[client] def onlyMetadata(implicit isIdInRequest: IsIdInRequest[U]): RequestMetadata = {
+    val r = asRequest
+    val m = r.method
+    val u = r.uri
+    val h = r.headers
+    new RequestMetadata {
+      override val method: Method = m
+      override val uri: Uri = u
+      override val headers: Seq[Header] = h
+    }
+  }
 }
 
 object RequestT {
