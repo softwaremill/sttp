@@ -43,7 +43,9 @@ class FetchMonixBackend private (fetchOptions: FetchOptions, customizeRequest: F
     bytes.map(_.toTypedArray.asInstanceOf[BodyInit])
   }
 
-  override protected def handleResponseAsStream(response: FetchResponse): Task[(Observable[ByteBuffer], () => Task[Unit])] = {
+  override protected def handleResponseAsStream(
+      response: FetchResponse
+  ): Task[(Observable[ByteBuffer], () => Task[Unit])] = {
     Task
       .delay {
         lazy val reader = response.body.getReader()
