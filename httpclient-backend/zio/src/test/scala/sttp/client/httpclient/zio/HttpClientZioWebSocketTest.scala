@@ -3,8 +3,7 @@ package sttp.client.httpclient.zio
 import sttp.capabilities.WebSockets
 import sttp.capabilities.zio.BlockingZioStreams
 import sttp.client._
-import sttp.client.impl.zio.RIOMonadAsyncError
-import sttp.client.impl.zio.ZioTestBase
+import sttp.client.impl.zio.{RIOMonadAsyncError, ZioTestBase, ZioWebSockets}
 import sttp.monad.MonadError
 import sttp.client.testing.ConvertToFuture
 import sttp.client.testing.websocket.{WebSocketStreamingTest, WebSocketTest}
@@ -27,5 +26,16 @@ class HttpClientZioWebSocketTest
       f: WebSocketFrame.Data[_] => Option[WebSocketFrame]
   ): ZStream[Blocking, Throwable, WebSocketFrame.Data[_]] => ZStream[Blocking, Throwable, WebSocketFrame] = { in =>
     Stream.apply(initial: _*) ++ in.mapConcat(m => f(m).toList)
+  }
+
+  override def fromTextPipe(
+      function: String => WebSocketFrame
+  ): ZStream[Blocking, Throwable, WebSocketFrame.Data[_]] => ZStream[Blocking, Throwable, WebSocketFrame] =
+    ZioWebSockets.fromTextPipe[Blocking](function)
+
+  override def prepend(item: WebSocketFrame.Text)(
+      to: ZStream[Blocking, Throwable, WebSocketFrame.Data[_]] => ZStream[Blocking, Throwable, WebSocketFrame]
+  ): ZStream[Blocking, Throwable, WebSocketFrame.Data[_]] => ZStream[Blocking, Throwable, WebSocketFrame] = {
+    to.andThen(rest => ZStream(item) ++ rest)
   }
 }

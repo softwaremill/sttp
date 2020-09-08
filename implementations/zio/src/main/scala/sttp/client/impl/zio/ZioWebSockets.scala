@@ -1,8 +1,8 @@
 package sttp.client.impl.zio
 
 import sttp.ws.{WebSocket, WebSocketFrame}
+import zio.stream.{Stream, Transducer, ZStream}
 import zio.{Ref, ZIO}
-import zio.stream.{Stream, ZStream}
 
 object ZioWebSockets {
   def compilePipe[R](
@@ -27,4 +27,28 @@ object ZioWebSockets {
         .foreach(_ => ZIO.unit)
         .ensuring(ws.close().catchAll(_ => ZIO.unit))
     }
+
+  type PipeR[R, A, B] = ZStream[R, Throwable, A] => ZStream[R, Throwable, B]
+
+  def fromTextPipe[R]: (String => WebSocketFrame) => PipeR[R, WebSocketFrame, WebSocketFrame] =
+    f => fromTextPipeF(_.map(f))
+
+  def fromTextPipeF[R]: PipeR[R, String, WebSocketFrame] => PipeR[R, WebSocketFrame, WebSocketFrame] =
+    p => p.compose(combinedTextFrames)
+
+  def combinedTextFrames[R]: PipeR[R, WebSocketFrame, String] = { input =>
+    input
+      .collect { case tf: WebSocketFrame.Text => tf }
+      .mapConcat { tf =>
+        if (tf.finalFragment) {
+          Seq(tf.copy(finalFragment = false), tf.copy(payload = ""))
+        } else {
+          Seq(tf)
+        }
+      }
+      .aggregate(Transducer.collectAllWhile {
+        case WebSocketFrame.Text(_, finalFragment, _) => !finalFragment
+      })
+      .map(_.map(_.payload).mkString)
+  }
 }
