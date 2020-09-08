@@ -20,7 +20,7 @@ Backends, or backend wrappers can use tags e.g. for logging, passing a metric na
 
 ## Listener backend
 
-The `sttp.client.listener.ListenerBackend` can make it easier to create backend wrappers which need to be notified about request lifecycle events: when a request is started, and when it completes either successfully or with an exception. This is possible by implementing a `sttp.client.listener.RequestListener`. This is how e.g. the [slf4j backend](slf4j.md) is implemented. 
+The `sttp.client.listener.ListenerBackend` can make it easier to create backend wrappers which need to be notified about request lifecycle events: when a request is started, and when it completes either successfully or with an exception. This is possible by implementing a `sttp.client.listener.RequestListener`. This is how e.g. the [slf4j backend](logging.md) is implemented. 
 
 A request listener can associate a value with a request, which will then be passed to the request completion notification methods.
 
@@ -60,7 +60,7 @@ object MyWrapper {
 
 ## Logging backend wrapper
 
-A good example on how to implement a logging backend wrapper is the [slf4j](slf4j.md) backend wrapper implementation. It uses the `ListenerBackend` to get notified about request lifecycle events, and logs messages created using `sttp.client.logging.LogMessages`.
+A good example on how to implement a logging backend wrapper is the [logging](logging.md) backend wrapper implementation. It uses the `ListenerBackend` to get notified about request lifecycle events.
 
 To adjust the logs to your needs, or to integrate with your logging framework, simply copy the code and modify as needed. 
 

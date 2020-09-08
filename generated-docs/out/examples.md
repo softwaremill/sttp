@@ -74,6 +74,25 @@ Example code:
     :language: scala
 ```
 
+## Log requests & responses using slf4j
+
+Required dependencies:
+
+```scala
+libraryDependencies ++= List(
+  "com.softwaremill.sttp.client" %% "slf4j-backend" % "3.0.0-RC1",
+  "com.softwaremill.sttp.client" %% "circe" % "3.0.0-RC1",
+  "io.circe" %% "circe-generic" % "0.13.0"
+)
+```
+
+Example code:
+
+```eval_rst
+.. literalinclude:: ../../examples/src/main/scala/sttp/client/examples/LogRequestsSlf4j.scala
+    :language: scala
+```
+
 ## POST and serialize JSON using the Monix async-http-client backend and circe
 
 Required dependencies:

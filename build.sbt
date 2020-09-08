@@ -799,7 +799,8 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
       "JEAGER_CLIENT_VERSION" -> jeagerClientVersion,
       "BRAVE_OPENTRACING_VERSION" -> braveOpentracingVersion,
       "ZIPKIN_SENDER_OKHTTP_VERSION" -> zipkinSenderOkHttpVersion,
-      "AKKA_STREAM_VERSION" -> akkaStreamVersion
+      "AKKA_STREAM_VERSION" -> akkaStreamVersion,
+      "CIRCE_VERSION" -> circeVersion(None)
     ),
     mdocOut := file("generated-docs/out"),
     publishArtifact := false,

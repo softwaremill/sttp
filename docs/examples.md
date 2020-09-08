@@ -44,7 +44,7 @@ Required dependencies:
 libraryDependencies ++= List(
   "com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % "@VERSION@",
   "com.softwaremill.sttp.client" %% "circe" % "@VERSION@",
-  "io.circe" %% "circe-generic" % "0.13.0"
+  "io.circe" %% "circe-generic" % "@CIRCE_VERSION@"
 )
 ```
 
@@ -63,7 +63,7 @@ Required dependencies:
 libraryDependencies ++= List(
   "com.softwaremill.sttp.client" %% "async-http-client-backend-monix" % "@VERSION@",
   "com.softwaremill.sttp.client" %% "circe" % "@VERSION@",
-  "io.circe" %% "circe-generic" % "0.13.0"
+  "io.circe" %% "circe-generic" % "@CIRCE_VERSION@"
 )
 ```
 
@@ -71,6 +71,25 @@ Example code:
 
 ```eval_rst
 .. literalinclude:: ../../examples/src/main/scala/sttp/client/examples/GetAndParseJsonFailLeftMonixCirce.scala
+    :language: scala
+```
+
+## Log requests & responses using slf4j
+
+Required dependencies:
+
+```scala
+libraryDependencies ++= List(
+  "com.softwaremill.sttp.client" %% "slf4j-backend" % "@VERSION@",
+  "com.softwaremill.sttp.client" %% "circe" % "@VERSION@",
+  "io.circe" %% "circe-generic" % "@CIRCE_VERSION@"
+)
+```
+
+Example code:
+
+```eval_rst
+.. literalinclude:: ../../examples/src/main/scala/sttp/client/examples/LogRequestsSlf4j.scala
     :language: scala
 ```
 
@@ -82,7 +101,7 @@ Required dependencies:
 libraryDependencies ++= List(
   "com.softwaremill.sttp.client" %% "async-http-client-backend-monix" % "@VERSION@",
   "com.softwaremill.sttp.client" %% "circe" % "@VERSION@",
-  "io.circe" %% "circe-generic" % "0.13.0"
+  "io.circe" %% "circe-generic" % "@CIRCE_VERSION@"
 )
 ```
 
