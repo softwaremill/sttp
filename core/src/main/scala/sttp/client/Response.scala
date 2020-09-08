@@ -23,7 +23,7 @@ case class Response[T](
     s"$code $statusText,\nheaders: $headers$body"
   }
 
-  override def toString: String = s"Response($body,$code,$statusText,$headersToStringSafe,$history)"
+  override def toString: String = s"Response($body,$code,$statusText,$headersToStringSafe,$history,$request)"
 }
 
 object Response {
