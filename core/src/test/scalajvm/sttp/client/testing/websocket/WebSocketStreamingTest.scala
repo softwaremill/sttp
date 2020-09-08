@@ -24,120 +24,108 @@ trait WebSocketStreamingTest[F[_], S] extends ToFutureWrapper { outer: Suite wit
   implicit val monad: MonadError[F]
   implicit val convertToFuture: ConvertToFuture[F]
 
-  it should "use pipe to process websocket messages - server-terminated" in {
-    val received = new LinkedBlockingQueue[String]()
+  def webSocketPipeTerminatedByServerTest(
+      postfix: String
+  )(pipe: LinkedBlockingQueue[String] => streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]) = {
+    it should s"use pipe to process websocket messages - server-terminated - $postfix" in {
+      val received = new LinkedBlockingQueue[String]()
+      basicRequest
+        .get(uri"$wsEndpoint/ws/send_and_expect_echo")
+        .response(
+          asWebSocketStreamAlways(streams)(pipe(received))
+        )
+        .send(backend)
+        .map { _ =>
+          received.asScala.toList shouldBe List("test1", "test2", "test3")
+        }
+        .toFuture()
+    }
+  }
+
+  def webSocketPipeClientTerminated(
+      postfix: String
+  )(pipe: LinkedBlockingQueue[String] => streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]) = {
+    it should s"use pipe to process websocket messages - client-terminated - $postfix" in {
+      val received = new LinkedBlockingQueue[String]()
+      basicRequest
+        .get(uri"$wsEndpoint/ws/echo")
+        .response(
+          asWebSocketStreamAlways(streams)(pipe(received))
+        )
+        .send(backend)
+        .map { _ =>
+          received.asScala.toList shouldBe List("echo: 1", "echo: 2", "echo: 3", "echo: 4", "echo: 5")
+        }
+        .toFuture()
+    }
+  }
+
+  webSocketPipeTerminatedByServerTest("raw") { received =>
     val buffer = new AtomicReference[String]("")
-    basicRequest
-      .get(uri"$wsEndpoint/ws/send_and_expect_echo")
-      .response(
-        asWebSocketStreamAlways(streams)(
-          functionToPipe(
-            Nil,
-            {
-              case WebSocketFrame.Text(payload, false, _) =>
-                buffer.accumulateAndGet(
-                  payload,
-                  new BinaryOperator[String] {
-                    override def apply(t: String, u: String): String = t + u
-                  }
-                )
-                None
-              case WebSocketFrame.Text(payload, _, _) =>
-                val wholePayload = buffer.getAndSet("") + payload
-                received.add(wholePayload)
-                Some(WebSocketFrame.text(wholePayload + "-echo"))
+    functionToPipe(
+      Nil,
+      {
+        case WebSocketFrame.Text(payload, false, _) =>
+          buffer.accumulateAndGet(
+            payload,
+            new BinaryOperator[String] {
+              override def apply(t: String, u: String): String = t + u
             }
           )
-        )
-      )
-      .send(backend)
-      .map { _ =>
-        received.asScala.toList shouldBe List("test1", "test2", "test3")
+          None
+        case WebSocketFrame.Text(payload, _, _) =>
+          val wholePayload = buffer.getAndSet("") + payload
+          received.add(wholePayload)
+          Some(WebSocketFrame.text(wholePayload + "-echo"))
       }
-      .toFuture()
+    )
   }
 
-  it should "use pipe to process websocket messages - client-terminated" in {
-    val received = new LinkedBlockingQueue[String]()
-    val buffer = new AtomicReference[String]("")
-    basicRequest
-      .get(uri"$wsEndpoint/ws/echo")
-      .response(
-        asWebSocketStreamAlways(streams)(
-          functionToPipe(
-            List(WebSocketFrame.text("1")),
-            {
-              case WebSocketFrame.Text(payload, false, _) =>
-                buffer.accumulateAndGet(
-                  payload,
-                  new BinaryOperator[String] {
-                    override def apply(t: String, u: String): String = t + u
-                  }
-                )
-                None
-              case WebSocketFrame.Text(payload, _, _) =>
-                val wholePayload = buffer.getAndSet("") + payload
-                received.add(wholePayload)
+  webSocketPipeTerminatedByServerTest("fromTextPipe") { received =>
+    fromTextPipe { wholePayload =>
+      received.add(wholePayload)
+      WebSocketFrame.text(wholePayload + "-echo")
+    }
+  }
 
-                if (wholePayload == "echo: 5")
-                  Some(WebSocketFrame.close)
-                else
-                  Some(WebSocketFrame.text((wholePayload.substring(6).toInt + 1).toString))
+  webSocketPipeClientTerminated("raw") { received =>
+    val buffer = new AtomicReference[String]("")
+    functionToPipe(
+      List(WebSocketFrame.text("1")),
+      {
+        case WebSocketFrame.Text(payload, false, _) =>
+          buffer.accumulateAndGet(
+            payload,
+            new BinaryOperator[String] {
+              override def apply(t: String, u: String): String = t + u
             }
           )
-        )
-      )
-      .send(backend)
-      .map { _ =>
-        received.asScala.toList shouldBe List("echo: 1", "echo: 2", "echo: 3", "echo: 4", "echo: 5")
+          None
+        case WebSocketFrame.Text(payload, _, _) =>
+          val wholePayload = buffer.getAndSet("") + payload
+          received.add(wholePayload)
+
+          if (wholePayload == "echo: 5")
+            Some(WebSocketFrame.close)
+          else
+            Some(WebSocketFrame.text((wholePayload.substring(6).toInt + 1).toString))
       }
-      .toFuture()
+    )
   }
 
-  it should "use pipe to process websocket messages - server-terminated - fromTextPipe" in {
-    val received = new LinkedBlockingQueue[String]()
-    basicRequest
-      .get(uri"$wsEndpoint/ws/send_and_expect_echo")
-      .response(
-        asWebSocketStreamAlways(streams)(
-          fromTextPipe { wholePayload =>
-            received.add(wholePayload)
-            WebSocketFrame.text(wholePayload + "-echo")
-          }
-        )
-      )
-      .send(backend)
-      .map { _ =>
-        received.asScala.toList shouldBe List("test1", "test2", "test3")
+  webSocketPipeClientTerminated("fromTextPipe") { received =>
+    prepend(item = WebSocketFrame.text("1"))(to = fromTextPipe { wholePayload =>
+      received.add(wholePayload)
+      if (wholePayload == "echo: 5")
+        WebSocketFrame.close
+      else {
+        WebSocketFrame.text((wholePayload.substring(6).toInt + 1).toString)
       }
-      .toFuture()
-  }
-
-  it should "use pipe to process websocket messages - client-terminated - fromTextPipe" in {
-    val received = new LinkedBlockingQueue[String]()
-    basicRequest
-      .get(uri"$wsEndpoint/ws/echo")
-      .response(
-        asWebSocketStreamAlways(streams)(
-          prepend(item = WebSocketFrame.text("1"))(to = fromTextPipe { wholePayload =>
-            received.add(wholePayload)
-            if (wholePayload == "echo: 5")
-              WebSocketFrame.close
-            else {
-              WebSocketFrame.text((wholePayload.substring(6).toInt + 1).toString)
-            }
-          })
-        )
-      )
-      .send(backend)
-      .map { _ =>
-        received.asScala.toList shouldBe List("echo: 1", "echo: 2", "echo: 3", "echo: 4", "echo: 5")
-      }
-      .toFuture()
+    })
   }
 
   def prepend(item: WebSocketFrame.Text)(
-    to: streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]
+      to: streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]
   ): streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]
 
   def fromTextPipe(function: String => WebSocketFrame): streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]
