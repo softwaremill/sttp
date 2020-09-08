@@ -5,7 +5,7 @@ import sttp.client.testing.SttpBackendStub
 import sttp.client.{Request, Response, SttpBackend}
 import sttp.model.StatusCode
 import sttp.monad.MonadError
-import zio.{Has, Queue, RIO, Ref, Tag, UIO, URIO, ZLayer}
+import zio.{Has, RIO, Ref, Tag, UIO, URIO, ZLayer}
 
 trait SttpClientStubbingBase[R, P] {
 
@@ -32,49 +32,39 @@ trait SttpClientStubbingBase[R, P] {
   case class StubbingWhenRequest private[sttp] (p: Request[_, _] => Boolean) {
     implicit val _serviceTag: Tag[Service] = serviceTag
     val thenRespondOk: URIO[SttpClientStubbing, Unit] =
-      thenRespondWithCode(StatusCode.Ok)
+      whenRequest(_.thenRespondOk())
 
     def thenRespondNotFound(): URIO[SttpClientStubbing, Unit] =
-      thenRespondWithCode(StatusCode.NotFound, "Not found")
+      whenRequest(_.thenRespondNotFound())
 
     def thenRespondServerError(): URIO[SttpClientStubbing, Unit] =
-      thenRespondWithCode(StatusCode.InternalServerError, "Internal server error")
+      whenRequest(_.thenRespondServerError())
 
-    def thenRespondWithCode(status: StatusCode, msg: String = ""): URIO[SttpClientStubbing, Unit] = {
-      thenRespond(Response(msg, status, msg))
-    }
+    def thenRespondWithCode(status: StatusCode, msg: String = ""): URIO[SttpClientStubbing, Unit] =
+      whenRequest(_.thenRespondWithCode(status, msg))
 
     def thenRespond[T](body: T): URIO[SttpClientStubbing, Unit] =
-      thenRespond(Response[T](body, StatusCode.Ok, "OK"))
+      whenRequest(_.thenRespond(body))
 
     def thenRespond[T](resp: => Response[T]): URIO[SttpClientStubbing, Unit] =
-      URIO.accessM(_.get.update(_.whenRequestMatches(p).thenRespond(resp)))
+      whenRequest(_.thenRespond(resp))
 
-    def thenRespondCyclic[T](bodies: T*): URIO[SttpClientStubbing, Unit] = {
-      thenRespondCyclicResponses(bodies.map(body => Response[T](body, StatusCode.Ok, "OK")): _*)
-    }
+    def thenRespondCyclic[T](bodies: T*): URIO[SttpClientStubbing, Unit] =
+      whenRequest(_.thenRespondCyclic(bodies: _*))
 
-    def thenRespondCyclicResponses[T](responses: Response[T]*): URIO[SttpClientStubbing, Unit] = {
-      for {
-        q <- Queue.bounded[Response[T]](responses.length)
-        _ <- q.offerAll(responses)
-        _ <- thenRespondWrapped(q.take.flatMap(t => q.offer(t) as t))
-      } yield ()
-    }
+    def thenRespondCyclicResponses[T](responses: Response[T]*): URIO[SttpClientStubbing, Unit] =
+      whenRequest(_.thenRespondCyclicResponses(responses: _*))
 
-    def thenRespondWrapped(resp: => RIO[R, Response[_]]): URIO[SttpClientStubbing, Unit] = {
-      val m: PartialFunction[Request[_, _], RIO[R, Response[_]]] = {
-        case r if p(r) => resp
-      }
-      URIO.accessM(_.get.update(_.whenRequestMatches(p).thenRespondF(m)))
-    }
+    def thenRespondF(resp: => RIO[R, Response[_]]): URIO[SttpClientStubbing, Unit] =
+      whenRequest(_.thenRespondF(resp))
 
-    def thenRespondWrapped(resp: Request[_, _] => RIO[R, Response[_]]): URIO[SttpClientStubbing, Unit] = {
-      val m: PartialFunction[Request[_, _], RIO[R, Response[_]]] = {
-        case r if p(r) => resp(r)
-      }
-      URIO.accessM(_.get.update(_.whenRequestMatches(p).thenRespondF(m)))
-    }
+    def thenRespondF(resp: Request[_, _] => RIO[R, Response[_]]): URIO[SttpClientStubbing, Unit] =
+      whenRequest(_.thenRespondF(resp))
+
+    private def whenRequest(
+        f: SttpBackendStub[RIO[R, *], P]#WhenRequest => SttpBackendStub[RIO[R, *], P]
+    ): URIO[SttpClientStubbing, Unit] =
+      URIO.accessM(_.get.update(stub => f(stub.whenRequestMatches(p))))
   }
 
   val layer: ZLayer[Any, Nothing, Has[Service] with Has[SttpBackend[RIO[R, *], P]]] = {
