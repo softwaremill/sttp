@@ -31,28 +31,26 @@ object MonixWebSockets {
         .guarantee(ws.close())
     }
   }
-  def textAccumulator: (String => WebSocketFrame) => MonixStreams.Pipe[WebSocketFrame, WebSocketFrame] =
-    f => textAccumulatorF(_.map(f))
+  def fromTextPipe: (String => WebSocketFrame) => MonixStreams.Pipe[WebSocketFrame, WebSocketFrame] =
+    f => fromTextPipeF(_.map(f))
 
-  def textAccumulatorF
-      : MonixStreams.Pipe[String, WebSocketFrame] => MonixStreams.Pipe[WebSocketFrame, WebSocketFrame] = { p =>
-    p.compose { f =>
-      def bufferingStream: Observable[String] =
-        Observable
-          .fromTask(
-            f
-              .takeWhileInclusive { case WebSocketFrame.Text(_, finalFragment, _) => !finalFragment }
-              .collect { case text: WebSocketFrame.Text => text }
-              .toListL
-          )
-          .concatMap { frames =>
-            if (frames.isEmpty) {
-              Observable.empty
-            } else {
-              Observable(frames.map(_.payload).mkString) ++ bufferingStream
-            }
-          }
-      bufferingStream
-    }
+  def fromTextPipeF: MonixStreams.Pipe[String, WebSocketFrame] => MonixStreams.Pipe[WebSocketFrame, WebSocketFrame] =
+    p => p.compose(combinedTextFrames)
+
+  def combinedTextFrames: MonixStreams.Pipe[WebSocketFrame, String] = { input =>
+    Observable
+      .fromTask(
+        input
+          .takeWhileInclusive { case WebSocketFrame.Text(_, finalFragment, _) => !finalFragment }
+          .collect { case text: WebSocketFrame.Text => text }
+          .toListL
+      )
+      .concatMap { frames =>
+        if (frames.isEmpty) {
+          Observable.empty
+        } else {
+          Observable(frames.map(_.payload).mkString) ++ combinedTextFrames(input)
+        }
+      }
   }
 }

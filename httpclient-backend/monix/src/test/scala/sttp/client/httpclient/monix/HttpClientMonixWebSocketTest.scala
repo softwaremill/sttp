@@ -1,20 +1,18 @@
 package sttp.client.httpclient.monix
 
 import java.util.concurrent.LinkedBlockingQueue
-import java.util.concurrent.atomic.AtomicReference
-import java.util.function.BinaryOperator
 
 import monix.eval.Task
 import monix.execution.Scheduler.Implicits.global
-import monix.reactive.{Consumer, Observable}
+import monix.reactive.Observable
 import sttp.capabilities.WebSockets
 import sttp.capabilities.monix.MonixStreams
 import sttp.client._
 import sttp.client.impl.monix.{MonixWebSockets, TaskMonadAsyncError, convertMonixTaskToFuture}
-import sttp.monad.MonadError
 import sttp.client.testing.ConvertToFuture
 import sttp.client.testing.HttpTest.wsEndpoint
 import sttp.client.testing.websocket.{WebSocketStreamingTest, WebSocketTest}
+import sttp.monad.MonadError
 import sttp.ws.WebSocketFrame
 
 import scala.collection.JavaConverters._
@@ -38,7 +36,7 @@ class HttpClientMonixWebSocketTest extends WebSocketTest[Task] with WebSocketStr
       .get(uri"$wsEndpoint/ws/send_and_expect_echo")
       .response(
         asWebSocketStreamAlways(streams)(
-          MonixWebSockets.textAccumulator { wholePayload =>
+          MonixWebSockets.fromTextPipe { wholePayload =>
             received.add(wholePayload)
             WebSocketFrame.text(wholePayload + "-echo")
           }
@@ -58,7 +56,7 @@ class HttpClientMonixWebSocketTest extends WebSocketTest[Task] with WebSocketStr
       .response(
         asWebSocketStreamAlways(streams)(
           MonixWebSockets
-            .textAccumulator { wholePayload =>
+            .fromTextPipe { wholePayload =>
               received.add(wholePayload)
               if (wholePayload == "echo: 5")
                 WebSocketFrame.close
