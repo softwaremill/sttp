@@ -7,7 +7,7 @@ import sttp.capabilities.WebSockets
 import sttp.capabilities.monix.MonixStreams
 import sttp.client._
 import sttp.client.asynchttpclient.AsyncHttpClientWebSocketTest
-import sttp.client.impl.monix.{TaskMonadAsyncError, convertMonixTaskToFuture}
+import sttp.client.impl.monix.{MonixWebSockets, TaskMonadAsyncError, convertMonixTaskToFuture}
 import sttp.monad.MonadError
 import sttp.client.testing.ConvertToFuture
 import sttp.ws.WebSocketFrame
@@ -31,4 +31,13 @@ class AsyncHttpClientMonixWebSocketTest extends AsyncHttpClientWebSocketTest[Tas
   override def eventually[T](interval: FiniteDuration, attempts: Int)(f: => Task[T]): Task[T] = {
     (Task.sleep(interval) >> f).onErrorRestart(attempts.toLong)
   }
+
+  override def fromTextPipe(
+      function: String => WebSocketFrame
+  ): Observable[WebSocketFrame.Data[_]] => Observable[WebSocketFrame] = MonixWebSockets.fromTextPipe(function)
+
+  override def prepend(item: WebSocketFrame.Text)(
+      to: Observable[WebSocketFrame.Data[_]] => Observable[WebSocketFrame]
+  ): Observable[WebSocketFrame.Data[_]] => Observable[WebSocketFrame] =
+    to.andThen(rest => Observable.now(item) ++ rest)
 }

@@ -29,7 +29,8 @@ class HttpClientMonixWebSocketTest extends WebSocketTest[Task] with WebSocketStr
       function: String => WebSocketFrame
   ): Observable[WebSocketFrame.Data[_]] => Observable[WebSocketFrame] = MonixWebSockets.fromTextPipe(function)
 
-  override def prepend(item: WebSocketFrame.Text)(to: Observable[WebSocketFrame.Data[_]] => Observable[WebSocketFrame]): Observable[WebSocketFrame.Data[_]] => Observable[WebSocketFrame] = {
-    to.andThen(rest =>  Observable.now(WebSocketFrame.text("1")) ++ rest)
-  }
+  override def prepend(item: WebSocketFrame.Text)(
+      to: Observable[WebSocketFrame.Data[_]] => Observable[WebSocketFrame]
+  ): Observable[WebSocketFrame.Data[_]] => Observable[WebSocketFrame] =
+    to.andThen(rest => Observable.now(item) ++ rest)
 }

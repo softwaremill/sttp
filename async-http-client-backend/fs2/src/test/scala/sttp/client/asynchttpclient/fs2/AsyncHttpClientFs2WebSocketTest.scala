@@ -2,11 +2,13 @@ package sttp.client.asynchttpclient.fs2
 
 import cats.effect.{Blocker, IO}
 import cats.implicits._
+import fs2.Pipe
 import sttp.capabilities.WebSockets
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client._
 import sttp.client.asynchttpclient.AsyncHttpClientWebSocketTest
 import sttp.client.impl.cats.CatsTestBase
+import sttp.client.impl.fs2.Fs2WebSockets
 import sttp.ws.WebSocketFrame
 
 import scala.concurrent.ExecutionContext.global
@@ -31,4 +33,14 @@ class AsyncHttpClientFs2WebSocketTest extends AsyncHttpClientWebSocketTest[IO, F
     }
     tryWithCounter(0)
   }
+
+  override def fromTextPipe(
+      function: String => WebSocketFrame
+  ): Pipe[IO, WebSocketFrame.Data[_], WebSocketFrame] =
+    Fs2WebSockets.fromTextPipe[IO](function)
+
+  override def prepend(
+      item: WebSocketFrame.Text
+  )(to: Pipe[IO, WebSocketFrame.Data[_], WebSocketFrame]): Pipe[IO, WebSocketFrame.Data[_], WebSocketFrame] =
+    to.andThen(rest => fs2.Stream.eval(item.pure[IO]) ++ rest)
 }
