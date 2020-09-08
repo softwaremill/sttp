@@ -16,7 +16,7 @@ object WebSocketZio extends App {
   // create a description of a program, which requires two dependencies in the environment:
   // the SttpClient, and the Console
   val sendAndPrint: ZIO[Console with SttpClient, Throwable, Unit] = for {
-    response <- SttpClient.send(basicRequest.get(uri"wss://echo.websocket.org").response(asWebSocketAlwaysUnsafe[Task]))
+    response <- send(basicRequest.get(uri"wss://echo.websocket.org").response(asWebSocketAlwaysUnsafe[Task]))
     _ <- useWebSocket(response.body)
   } yield ()
 

@@ -33,9 +33,9 @@ class SttpBackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFuture
 
   it should "allow effectful stubbing" in {
     import stubbing._
-    val r1 = SttpClient.send(basicRequest.get(uri"http://example.org/a")).map(_.body)
-    val r2 = SttpClient.send(basicRequest.post(uri"http://example.org/a/b")).map(_.body)
-    val r3 = SttpClient.send(basicRequest.get(uri"http://example.org/a/b/c")).map(_.body)
+    val r1 = send(basicRequest.get(uri"http://example.org/a")).map(_.body)
+    val r2 = send(basicRequest.post(uri"http://example.org/a/b")).map(_.body)
+    val r3 = send(basicRequest.get(uri"http://example.org/a/b/c")).map(_.body)
 
     val effect = for {
       _ <- whenRequestMatches(_.uri.toString.endsWith("c")).thenRespond("c")
@@ -54,7 +54,7 @@ class SttpBackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFuture
 
     val effect = (for {
       _ <- whenAnyRequest.thenRespondCyclic("a", "b", "c")
-      resp <- ZStream.repeatEffect(SttpClient.send(r)).take(4).runCollect
+      resp <- ZStream.repeatEffect(send(r)).take(4).runCollect
     } yield resp).provideLayer(AsyncHttpClientZioBackend.stubLayer)
 
     runtime.unsafeRun(effect).map(_.body).toList shouldBe List(Right("a"), Right("b"), Right("c"), Right("a"))

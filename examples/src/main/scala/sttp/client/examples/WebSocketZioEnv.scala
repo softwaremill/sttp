@@ -16,7 +16,7 @@ object WebSocketZioEnv extends App {
   // create a description of a program, which requires two dependencies in the environment:
   // the SttpClient, and the Console
   val sendAndPrint: RIO[Console with SttpClient, Response[Unit]] =
-    SttpClient.sendR(basicRequest.get(uri"wss://echo.websocket.org").response(asWebSocketAlways(useWebSocket)))
+    sendR(basicRequest.get(uri"wss://echo.websocket.org").response(asWebSocketAlways(useWebSocket)))
 
   override def run(args: List[String]): ZIO[ZEnv, Nothing, ExitCode] = {
     // provide an implementation for the SttpClient dependency; other dependencies are

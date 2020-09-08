@@ -98,8 +98,8 @@ import sttp.client.asynchttpclient.zio._
 import zio._
 val request = basicRequest.get(uri"https://httpbin.org/get")
 
-val send: ZIO[SttpClient, Throwable, Response[Either[String, String]]] = 
-  SttpClient.send(request)
+val sent: ZIO[SttpClient, Throwable, Response[Either[String, String]]] = 
+  send(request)
 ```
 
 ## Streaming
@@ -113,7 +113,7 @@ Requests can be sent with a streaming body:
 ```scala
 import sttp.capabilities.zio.ZioStreams
 import sttp.client._
-import sttp.client.asynchttpclient.zio.SttpClient
+import sttp.client.asynchttpclient.zio.send
 import zio.stream._
 
 val s: Stream[Throwable, Byte] =  ???
@@ -122,7 +122,7 @@ val request = basicRequest
   .streamBody(ZioStreams)(s)
   .post(uri"...")
 
-SttpClient.send(request)
+send(request)
 ```
 
 And receive response bodies as a stream:
@@ -130,7 +130,7 @@ And receive response bodies as a stream:
 ```scala
 import sttp.capabilities.zio.ZioStreams
 import sttp.client._
-import sttp.client.asynchttpclient.zio.SttpClient
+import sttp.client.asynchttpclient.zio.{SttpClient, send}
 
 import zio._
 import zio.stream._
@@ -143,9 +143,38 @@ val request =
     .response(asStreamUnsafe(ZioStreams))
     .readTimeout(Duration.Inf)
 
-val response: ZIO[SttpClient, Throwable, Response[Either[String, Stream[Throwable, Byte]]]] = SttpClient.send(request)
+val response: ZIO[SttpClient, Throwable, Response[Either[String, Stream[Throwable, Byte]]]] = send(request)
 ```
 
 ## Websockets
 
 The ZIO backend supports both regular and streaming [websockets](../websockets.md).
+
+## Testing
+
+The ZIO backends also support a ZIO-familiar way of configuring [stubs](../testing.md) as well. In addition to the
+usual way of creating a stand-alone stub, you can also define your stubs as effects instead:
+
+```scala
+import sttp.client._
+import sttp.model._
+import sttp.client.asynchttpclient._
+import sttp.client.asynchttpclient.zio._
+import sttp.client.asynchttpclient.zio.stubbing._
+
+val stubEffect = for {
+  _ <- whenRequestMatches(_.uri.toString.endsWith("c")).thenRespond("c")
+  _ <- whenRequestMatchesPartial { case r if r.method == Method.POST => Response.ok("b") }
+  _ <- whenAnyRequest.thenRespond("a")
+} yield ()
+
+val responseEffect = stubEffect *> send(basicRequest.get(uri"http://example.org/a")).map(_.body)
+
+responseEffect.provideLayer(AsyncHttpClientZioBackend.stubLayer) // Task[Either[String, String]]
+```
+
+The `whenRequestMatches`, `whenRequestMatchesPartial`, `whenAnyRequest` are effects which require the `SttpClientStubbing`
+dependency. They enrich the stub with the given behavior.
+
+Then, the `stubLayer` provides both an implementation of the `SttpClientStubbing` dependency, as well as a `SttpClient`
+which is backed by the stub.

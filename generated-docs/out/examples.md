@@ -107,7 +107,7 @@ object GetAndParseJsonZioCirce extends zio.App {
     // create a description of a program, which requires two dependencies in the environment:
     // the SttpClient, and the Console
     val sendAndPrint: ZIO[Console with SttpClient, Throwable, Unit] = for {
-      response <- SttpClient.send(request)
+      response <- send(request)
       _ <- console.putStrLn(s"Got response code: ${response.code}")
       _ <- console.putStrLn(response.body.toString)
     } yield ()
@@ -209,13 +209,12 @@ Example code:
 import sttp.client._
 import sttp.client.asynchttpclient.zio._
 import sttp.ws.WebSocket
-import sttp.ws.WebSocketFrame
 import zio._
 import zio.console.Console
 
-object WebsocketZio extends zio.App {
-  def useWebsocket(ws: WebSocket[Task]): ZIO[Console, Throwable, Unit] = {
-    def send(i: Int) = ws.send(WebSocketFrame.text(s"Hello $i!"))
+object WebSocketZio extends zio.App {
+  def useWebSocket(ws: WebSocket[Task]): ZIO[Console, Throwable, Unit] = {
+    def send(i: Int) = ws.sendText(s"Hello $i!")
     val receive = ws.receiveText().flatMap(t => console.putStrLn(s"RECEIVED: $t"))
     send(1) *> send(2) *> receive *> receive *> ws.close()
   }
@@ -223,15 +222,16 @@ object WebsocketZio extends zio.App {
   // create a description of a program, which requires two dependencies in the environment:
   // the SttpClient, and the Console
   val sendAndPrint: ZIO[Console with SttpClient, Throwable, Unit] = for {
-    response <- SttpClient.send(basicRequest.get(uri"wss://echo.websocket.org").response(asWebSocketAlwaysUnsafe[Task]))
-    _ <- useWebsocket(response.body)
+    response <- send(basicRequest.get(uri"wss://echo.websocket.org").response(asWebSocketAlwaysUnsafe[Task]))
+    _ <- useWebSocket(response.body)
   } yield ()
 
   override def run(args: List[String]): ZIO[ZEnv, Nothing, ExitCode] = {
     // provide an implementation for the SttpClient dependency; other dependencies are
     // provided by Zio
     sendAndPrint
-      .provideCustomLayer(AsyncHttpClientZioBackend.layer()).exitCode
+      .provideCustomLayer(AsyncHttpClientZioBackend.layer())
+      .exitCode
   }
 }
 ```

@@ -20,7 +20,7 @@ object GetAndParseJsonZioCirce extends App {
     // create a description of a program, which requires two dependencies in the environment:
     // the SttpClient, and the Console
     val sendAndPrint: ZIO[Console with SttpClient, Throwable, Unit] = for {
-      response <- SttpClient.send(request)
+      response <- send(request)
       _ <- console.putStrLn(s"Got response code: ${response.code}")
       _ <- console.putStrLn(response.body.toString)
     } yield ()

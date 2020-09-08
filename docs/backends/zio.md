@@ -98,8 +98,8 @@ import sttp.client.asynchttpclient.zio._
 import zio._
 val request = basicRequest.get(uri"https://httpbin.org/get")
 
-val send: ZIO[SttpClient, Throwable, Response[Either[String, String]]] = 
-  SttpClient.send(request)
+val sent: ZIO[SttpClient, Throwable, Response[Either[String, String]]] = 
+  send(request)
 ```
 
 ## Streaming
@@ -113,7 +113,7 @@ Requests can be sent with a streaming body:
 ```scala mdoc:compile-only
 import sttp.capabilities.zio.ZioStreams
 import sttp.client._
-import sttp.client.asynchttpclient.zio.SttpClient
+import sttp.client.asynchttpclient.zio.send
 import zio.stream._
 
 val s: Stream[Throwable, Byte] =  ???
@@ -122,7 +122,7 @@ val request = basicRequest
   .streamBody(ZioStreams)(s)
   .post(uri"...")
 
-SttpClient.send(request)
+send(request)
 ```
 
 And receive response bodies as a stream:
@@ -130,7 +130,7 @@ And receive response bodies as a stream:
 ```scala mdoc:compile-only
 import sttp.capabilities.zio.ZioStreams
 import sttp.client._
-import sttp.client.asynchttpclient.zio.SttpClient
+import sttp.client.asynchttpclient.zio.{SttpClient, send}
 
 import zio._
 import zio.stream._
@@ -143,7 +143,7 @@ val request =
     .response(asStreamUnsafe(ZioStreams))
     .readTimeout(Duration.Inf)
 
-val response: ZIO[SttpClient, Throwable, Response[Either[String, Stream[Throwable, Byte]]]] = SttpClient.send(request)
+val response: ZIO[SttpClient, Throwable, Response[Either[String, Stream[Throwable, Byte]]]] = send(request)
 ```
 
 ## Websockets
@@ -168,7 +168,7 @@ val stubEffect = for {
   _ <- whenAnyRequest.thenRespond("a")
 } yield ()
 
-val responseEffect = stubEffect *> SttpClient.send(basicRequest.get(uri"http://example.org/a")).map(_.body)
+val responseEffect = stubEffect *> send(basicRequest.get(uri"http://example.org/a")).map(_.body)
 
 responseEffect.provideLayer(AsyncHttpClientZioBackend.stubLayer) // Task[Either[String, String]]
 ```
