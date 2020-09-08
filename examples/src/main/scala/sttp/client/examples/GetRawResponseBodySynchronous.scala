@@ -5,7 +5,7 @@ import io.circe.generic.auto._
 import sttp.client._
 import sttp.client.circe._
 
-object GetRawRequestBodySynchronous extends App {
+object GetRawResponseBodySynchronous extends App {
   case class HttpBinResponse(origin: String, headers: Map[String, String])
 
   val request = basicRequest
