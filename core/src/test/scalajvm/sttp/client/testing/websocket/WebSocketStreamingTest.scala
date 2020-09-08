@@ -94,6 +94,54 @@ trait WebSocketStreamingTest[F[_], S] extends ToFutureWrapper { outer: Suite wit
       .toFuture()
   }
 
+  it should "use pipe to process websocket messages - server-terminated - fromTextPipe" in {
+    val received = new LinkedBlockingQueue[String]()
+    basicRequest
+      .get(uri"$wsEndpoint/ws/send_and_expect_echo")
+      .response(
+        asWebSocketStreamAlways(streams)(
+          fromTextPipe { wholePayload =>
+            received.add(wholePayload)
+            WebSocketFrame.text(wholePayload + "-echo")
+          }
+        )
+      )
+      .send(backend)
+      .map { _ =>
+        received.asScala.toList shouldBe List("test1", "test2", "test3")
+      }
+      .toFuture()
+  }
+
+  it should "use pipe to process websocket messages - client-terminated - fromTextPipe" in {
+    val received = new LinkedBlockingQueue[String]()
+    basicRequest
+      .get(uri"$wsEndpoint/ws/echo")
+      .response(
+        asWebSocketStreamAlways(streams)(
+          prepend(item = WebSocketFrame.text("1"))(to = fromTextPipe { wholePayload =>
+            received.add(wholePayload)
+            if (wholePayload == "echo: 5")
+              WebSocketFrame.close
+            else {
+              WebSocketFrame.text((wholePayload.substring(6).toInt + 1).toString)
+            }
+          })
+        )
+      )
+      .send(backend)
+      .map { _ =>
+        received.asScala.toList shouldBe List("echo: 1", "echo: 2", "echo: 3", "echo: 4", "echo: 5")
+      }
+      .toFuture()
+  }
+
+  def prepend(item: WebSocketFrame.Text)(
+    to: streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]
+  ): streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]
+
+  def fromTextPipe(function: String => WebSocketFrame): streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]
+
   def functionToPipe(
       initial: List[WebSocketFrame.Data[_]],
       f: WebSocketFrame.Data[_] => Option[WebSocketFrame]

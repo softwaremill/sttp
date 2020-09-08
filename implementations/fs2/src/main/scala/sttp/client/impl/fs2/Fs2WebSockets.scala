@@ -44,4 +44,24 @@ object Fs2WebSockets {
       .drain
       .guarantee(ws.close())
   }
+
+  def fromTextPipe[F[_]]: (String => WebSocketFrame) => fs2.Pipe[F, WebSocketFrame, WebSocketFrame] =
+    f => fromTextPipeF(_.map(f))
+
+  def fromTextPipeF[F[_]]: fs2.Pipe[F, String, WebSocketFrame] => fs2.Pipe[F, WebSocketFrame, WebSocketFrame] =
+    p => p.compose(combinedTextFrames)
+
+  def combinedTextFrames[F[_]]: fs2.Pipe[F, WebSocketFrame, String] = { input =>
+    input
+      .collect { case tf: WebSocketFrame.Text => tf }
+      .flatMap { tf =>
+        if (tf.finalFragment) {
+          Stream(tf.copy(finalFragment = false), tf.copy(payload = ""))
+        } else {
+          Stream(tf)
+        }
+      }
+      .split(_.finalFragment)
+      .map(chunks => chunks.map(_.payload).toList.mkString)
+  }
 }
