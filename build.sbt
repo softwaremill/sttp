@@ -261,6 +261,7 @@ lazy val allAggregates = coreProjectAggregates ++
   httpClientFs2Backend.projectRefs ++
   httpClientZioBackend.projectRefs ++
   finagleBackend.projectRefs ++
+  scribeBackend.projectRefs ++
   slf4jBackend.projectRefs ++
   examples.projectRefs ++
   docs.projectRefs
@@ -746,6 +747,18 @@ lazy val zioTelemetryOpenTracingBackend = (projectMatrix in file("metrics/zio-te
   .dependsOn(zio % compileAndTest)
   .dependsOn(core)
 
+lazy val scribeBackend = (projectMatrix in file("logging/scribe"))
+  .settings(commonJvmSettings)
+  .settings(
+    name := "scribe-backend",
+    libraryDependencies ++= Seq(
+      "com.outr" %%% "scribe" % "2.7.12",
+      scalaTest % Test
+    )
+  )
+  .jvmPlatform(scalaVersions = List(scala2_12, scala2_13), settings = intellijImportOnly213)
+  .dependsOn(core)
+
 lazy val slf4jBackend = (projectMatrix in file("logging/slf4j"))
   .settings(commonJvmSettings)
   .settings(
@@ -779,6 +792,7 @@ lazy val examples = (projectMatrix in file("examples"))
     asyncHttpClientFs2Backend,
     json4s,
     circe,
+    scribeBackend,
     slf4jBackend
   )
 
