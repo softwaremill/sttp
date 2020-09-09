@@ -109,13 +109,12 @@ object ResponseAs {
       * - in case of `B`, returns the value directly
       */
     def failLeft: ResponseAs[B, R] =
-      ra.mapWithMetadata {
-        case (t, meta) =>
-          t match {
-            case Left(a: Exception) => throw a
-            case Left(a)            => throw HttpError(a, meta.code)
-            case Right(b)           => b
-          }
+      ra.mapWithMetadata { case (t, meta) =>
+        t match {
+          case Left(a: Exception) => throw a
+          case Left(a)            => throw HttpError(a, meta.code)
+          case Right(b)           => b
+        }
       }
   }
 

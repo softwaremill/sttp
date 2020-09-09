@@ -23,8 +23,8 @@ class OpenTracingBackend[F[_], P] private (delegate: SttpBackend[F, P], tracer: 
         val spanBuilderTransformer: SpanBuilderTransformer =
           request
             .tag(OpenTracingBackend.SpanBuilderTransformerRequestTag)
-            .collectFirst {
-              case f: SpanBuilderTransformer => f
+            .collectFirst { case f: SpanBuilderTransformer =>
+              f
             }
             .getOrElse(identity)
         val span = spanBuilderTransformer(
@@ -56,13 +56,12 @@ class OpenTracingBackend[F[_], P] private (delegate: SttpBackend[F, P], tracer: 
               .finish()
             response
           }
-        ) {
-          case e =>
-            span
-              .setTag(Tags.ERROR, java.lang.Boolean.TRUE)
-              .log(Map("event" -> Tags.ERROR.getKey, "error.object" -> e).asJava)
-              .finish()
-            responseMonad.error(e)
+        ) { case e =>
+          span
+            .setTag(Tags.ERROR, java.lang.Boolean.TRUE)
+            .log(Map("event" -> Tags.ERROR.getKey, "error.object" -> e).asJava)
+            .finish()
+          responseMonad.error(e)
         }
       }
 

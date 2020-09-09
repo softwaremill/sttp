@@ -69,11 +69,10 @@ class LoggingWithResponseBodyBackend[F[_], S](
         response <- request.response(asBothOption(request.response, asStringAlways)).send(delegate)
         _ <- log.response(request, response, response.body._2, elapsed(start))
       } yield response.copy(body = response.body._1))
-        .handleError {
-          case e: Exception =>
-            log
-              .requestException(request, elapsed(start), e)
-              .flatMap(_ => responseMonad.error(e))
+        .handleError { case e: Exception =>
+          log
+            .requestException(request, elapsed(start), e)
+            .flatMap(_ => responseMonad.error(e))
         }
     }
   }

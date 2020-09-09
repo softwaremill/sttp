@@ -150,8 +150,8 @@ class AkkaHttpBackend private (
 object AkkaHttpBackend {
   type EncodingHandler = PartialFunction[(HttpResponse, HttpEncoding), HttpResponse]
   object EncodingHandler {
-    def apply(f: (HttpResponse, HttpEncoding) => HttpResponse): EncodingHandler = {
-      case (body, encoding) => f(body, encoding)
+    def apply(f: (HttpResponse, HttpEncoding) => HttpResponse): EncodingHandler = { case (body, encoding) =>
+      f(body, encoding)
     }
   }
 

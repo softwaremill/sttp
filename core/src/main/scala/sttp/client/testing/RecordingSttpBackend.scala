@@ -29,10 +29,9 @@ class RecordingSttpBackend[F[_], +P](delegate: SttpBackend[F, P]) extends SttpBa
         addInteraction(request, Success(response))
         response
       }
-      .handleError {
-        case e: Exception =>
-          addInteraction(request, Failure(e))
-          responseMonad.error(e)
+      .handleError { case e: Exception =>
+        addInteraction(request, Failure(e))
+        responseMonad.error(e)
       }
   }
 

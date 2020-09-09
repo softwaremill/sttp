@@ -42,9 +42,8 @@ trait SttpPlayJsonApi {
     */
   def asJsonEither[E: Reads: IsOption, B: Reads: IsOption]
       : ResponseAs[Either[ResponseException[E, JsError], B], Any] = {
-    asJson[B].mapLeft {
-      case HttpError(e, code) =>
-        deserializeJson[E].apply(e).fold(DeserializationException(e, _), HttpError(_, code))
+    asJson[B].mapLeft { case HttpError(e, code) =>
+      deserializeJson[E].apply(e).fold(DeserializationException(e, _), HttpError(_, code))
     }.showAsJsonEither
   }
 

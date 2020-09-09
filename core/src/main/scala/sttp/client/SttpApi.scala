@@ -174,10 +174,9 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     */
   def asBoth[A, B](l: ResponseAs[A, Any], r: ResponseAs[B, Any]): ResponseAs[(A, B), Any] =
     asBothOption(l, r)
-      .map {
-        case (a, bo) =>
-          // since l has no requirements, we know that the body will be replayable
-          (a, bo.get)
+      .map { case (a, bo) =>
+        // since l has no requirements, we know that the body will be replayable
+        (a, bo.get)
       }
       .showAs(s"(${l.show}, ${r.show})")
 

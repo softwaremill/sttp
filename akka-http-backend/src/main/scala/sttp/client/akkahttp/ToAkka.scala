@@ -22,12 +22,12 @@ private[akkahttp] object ToAkka {
         .filterNot(Util.isContentType)
         .filterNot(Util.isContentLength)
         .map(h => HttpHeader.parse(h.name, h.value))
-    val errors = parsed.collect {
-      case ParsingResult.Error(e) => e
+    val errors = parsed.collect { case ParsingResult.Error(e) =>
+      e
     }
     if (errors.isEmpty) {
-      val headers = parsed.collect {
-        case ParsingResult.Ok(h, _) => h
+      val headers = parsed.collect { case ParsingResult.Ok(h, _) =>
+        h
       }
 
       Success(headers.toList)

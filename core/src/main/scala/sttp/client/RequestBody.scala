@@ -76,10 +76,9 @@ case class MultipartBody[R](parts: Seq[Part[RequestBody[R]]]) extends RequestBod
 object RequestBody {
   private[client] def paramsToStringBody(fs: Seq[(String, String)], encoding: String): StringBody = {
     val b = fs
-      .map {
-        case (key, value) =>
-          UriCompatibility.encodeQuery(key, encoding) + "=" +
-            UriCompatibility.encodeQuery(value, encoding)
+      .map { case (key, value) =>
+        UriCompatibility.encodeQuery(key, encoding) + "=" +
+          UriCompatibility.encodeQuery(value, encoding)
       }
       .mkString("&")
 

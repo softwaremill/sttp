@@ -16,9 +16,8 @@ class ListenerBackend[F[_], P, L](
   override def send[T, R >: P with Effect[F]](request: Request[T, R]): F[Response[T]] = {
     listener.beforeRequest(request).flatMap { t =>
       responseMonad
-        .handleError(delegate.send(request)) {
-          case e: Exception =>
-            listener.requestException(request, t, e).flatMap(_ => responseMonad.error(e))
+        .handleError(delegate.send(request)) { case e: Exception =>
+          listener.requestException(request, t, e).flatMap(_ => responseMonad.error(e))
         }
         .flatMap { response => listener.requestSuccessful(request, response, t).map(_ => response) }
     }

@@ -32,8 +32,8 @@ abstract class BodyFromResponseAs[F[_], RegularResponse, WSResponse, Stream](imp
               case Left(rr)  => withReplayableBody(rr, rb).map(Left(_))
               case Right(ws) => Right(ws).unit
             }).flatMap { replayableResponse =>
-              doApply(r, meta, replayableResponse).map {
-                case (rightResult, _) => ((leftResult, Some(rightResult)), Some(rb))
+              doApply(r, meta, replayableResponse).map { case (rightResult, _) =>
+                ((leftResult, Some(rightResult)), Some(rb))
               }
             }
         }
@@ -45,15 +45,13 @@ abstract class BodyFromResponseAs[F[_], RegularResponse, WSResponse, Stream](imp
         regularAsByteArray(regular).map(b => (b, replayableBody(b)))
 
       case (ResponseAsStream(_, f), Left(regular)) =>
-        regularAsStream(regular).flatMap {
-          case (stream, cancel) =>
-            f.asInstanceOf[Stream => F[T]](stream).map((_, nonReplayableBody)).ensure(cancel())
+        regularAsStream(regular).flatMap { case (stream, cancel) =>
+          f.asInstanceOf[Stream => F[T]](stream).map((_, nonReplayableBody)).ensure(cancel())
         }
 
       case (ResponseAsStreamUnsafe(_), Left(regular)) =>
-        regularAsStream(regular).map {
-          case (stream, _) =>
-            (stream.asInstanceOf[T], nonReplayableBody)
+        regularAsStream(regular).map { case (stream, _) =>
+          (stream.asInstanceOf[T], nonReplayableBody)
         }
 
       case (ResponseAsFile(file), Left(regular)) =>

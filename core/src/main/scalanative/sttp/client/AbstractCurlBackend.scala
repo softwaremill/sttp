@@ -120,21 +120,20 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
         lift(curl.option(PostFields, toCString(str)))
       case MultipartBody(parts) =>
         val mime = curl.mime
-        parts.foreach {
-          case p @ Part(name, partBody, _, headers) =>
-            val part = mime.addPart()
-            part.withName(name)
-            val str = basicBodyToString(partBody)
-            part.withData(str)
-            p.fileName.foreach(part.withFileName(_))
-            p.contentType.foreach(part.withMimeType(_))
+        parts.foreach { case p @ Part(name, partBody, _, headers) =>
+          val part = mime.addPart()
+          part.withName(name)
+          val str = basicBodyToString(partBody)
+          part.withData(str)
+          p.fileName.foreach(part.withFileName(_))
+          p.contentType.foreach(part.withMimeType(_))
 
-            val otherHeaders = headers.filterNot(_.is(HeaderNames.ContentType))
-            if (otherHeaders.nonEmpty) {
-              val curlList = transformHeaders(otherHeaders)
-              part.withHeaders(curlList.ptr)
-              multiPartHeaders = multiPartHeaders :+ curlList
-            }
+          val otherHeaders = headers.filterNot(_.is(HeaderNames.ContentType))
+          if (otherHeaders.nonEmpty) {
+            val curlList = transformHeaders(otherHeaders)
+            part.withHeaders(curlList.ptr)
+            multiPartHeaders = multiPartHeaders :+ curlList
+          }
         }
         lift(curl.option(Mimepost, mime))
       case StreamBody(_) =>
@@ -214,13 +213,11 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
 
   private def transformHeaders(reqHeaders: Iterable[Header])(implicit z: Zone): CurlList = {
     reqHeaders
-      .map {
-        case Header(headerName, headerValue) =>
-          s"$headerName: $headerValue"
+      .map { case Header(headerName, headerValue) =>
+        s"$headerName: $headerValue"
       }
-      .foldLeft(new CurlList(null)) {
-        case (acc, h) =>
-          new CurlList(acc.ptr.append(h))
+      .foldLeft(new CurlList(null)) { case (acc, h) =>
+        new CurlList(acc.ptr.append(h))
       }
   }
 

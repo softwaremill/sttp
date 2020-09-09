@@ -80,9 +80,8 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
     }
 
     val rheaders = new JSHeaders()
-    request.headers.foreach {
-      case Header(name, value) =>
-        rheaders.set(name, value)
+    request.headers.foreach { case Header(name, value) =>
+      rheaders.set(name, value)
     }
 
     val req = createBody(request.body).map { rbody =>
