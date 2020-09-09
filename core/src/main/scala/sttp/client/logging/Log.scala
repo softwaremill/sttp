@@ -41,11 +41,11 @@ class DefaultLog[F[_]](logger: Logger[F], beforeCurlInsteadOfShow: Boolean = fal
   ): F[Unit] =
     logger.debug {
       val responseAsString = response.copy(body = responseBody.getOrElse("")).show(responseBody.isDefined)
-      s"Request: ${request.showBasic()}${took(elapsed)}, response: $responseAsString"
+      s"Request: ${request.showBasic}${took(elapsed)}, response: $responseAsString"
     }
 
   override def requestException(request: Request[_, _], elapsed: Option[Duration], e: Exception): F[Unit] =
-    logger.error(s"Exception when sending request: ${request.showBasic()}${took(elapsed)}", e)
+    logger.error(s"Exception when sending request: ${request.showBasic}${took(elapsed)}", e)
 
   private def took(elapsed: Option[Duration]): String = elapsed.fold("")(e => f", took: ${e.toMillis / 1000.0}%.3fs")
 }

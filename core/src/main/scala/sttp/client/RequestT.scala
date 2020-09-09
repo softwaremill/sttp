@@ -317,7 +317,7 @@ case class RequestT[U[_], T, -R](
 
   def toCurl(implicit isIdInRequest: IsIdInRequest[U]): String = ToCurlConverter.requestToCurl(asRequest)
 
-  def showBasic(): String =
+  def showBasic: String =
     (this.method, this.uri) match {
       case (m: Method, u: Uri) =>
         val ws = if (isWebSocket) " (web socket) " else ""
