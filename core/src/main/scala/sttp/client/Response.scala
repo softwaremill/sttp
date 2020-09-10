@@ -1,6 +1,6 @@
 package sttp.client
 
-import sttp.model.{Header, StatusCode}
+import sttp.model.{Header, HeaderNames, StatusCode}
 
 import scala.collection.immutable.Seq
 
@@ -17,13 +17,13 @@ case class Response[T](
     history: List[Response[Unit]],
     request: RequestMetadata
 ) extends ResponseMetadata {
-  def show(includeBody: Boolean = true): String = {
-    val headers = headersToStringSafe.mkString(", ")
+  def show(includeBody: Boolean = true, sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders): String = {
+    val headers = headersToStringSafe(sensitiveHeaders).mkString(", ")
     val body = if (includeBody) s", body: ${this.body}" else ""
     s"$code $statusText, headers: $headers$body"
   }
 
-  override def toString: String = s"Response($body,$code,$statusText,$headersToStringSafe,$history,$request)"
+  override def toString: String = s"Response($body,$code,$statusText,${headersToStringSafe()},$history,$request)"
 }
 
 object Response {

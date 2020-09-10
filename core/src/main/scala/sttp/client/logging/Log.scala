@@ -1,6 +1,7 @@
 package sttp.client.logging
 
 import sttp.client.{Request, Response}
+import sttp.model.HeaderNames
 
 import scala.concurrent.duration.Duration
 
@@ -25,12 +26,17 @@ trait Log[F[_]] {
 /**
   * Default implementation of [[Log]] to be used by the [[LoggingBackend]].
   */
-class DefaultLog[F[_]](logger: Logger[F], beforeCurlInsteadOfShow: Boolean = false, logRequestBody: Boolean = false)
-    extends Log[F] {
+class DefaultLog[F[_]](
+    logger: Logger[F],
+    beforeCurlInsteadOfShow: Boolean = false,
+    logRequestBody: Boolean = false,
+    sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders
+) extends Log[F] {
 
   def beforeRequestSend(request: Request[_, _]): F[Unit] =
     logger.debug(
-      s"Sending request: ${if (beforeCurlInsteadOfShow) request.toCurl else request.show(includeBody = false)}"
+      s"Sending request: ${if (beforeCurlInsteadOfShow) request.toCurl
+      else request.show(includeBody = logRequestBody, sensitiveHeaders)}"
     )
 
   override def response(
@@ -40,7 +46,8 @@ class DefaultLog[F[_]](logger: Logger[F], beforeCurlInsteadOfShow: Boolean = fal
       elapsed: Option[Duration]
   ): F[Unit] =
     logger.debug {
-      val responseAsString = response.copy(body = responseBody.getOrElse("")).show(responseBody.isDefined)
+      val responseAsString =
+        response.copy(body = responseBody.getOrElse("")).show(responseBody.isDefined, sensitiveHeaders)
       s"Request: ${request.showBasic}${took(elapsed)}, response: $responseAsString"
     }
 

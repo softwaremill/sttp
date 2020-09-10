@@ -2,7 +2,7 @@
 
 The `sttp.client.logging.LoggingBackend` can log requests and responses which end successfully or with an exception. It can be created given:
 
-* a `sttp.client.logging.Logger`, which is an integration point with logging libraries. One such integration that is available with sttp-client is slf4j (see below), but custom ones can be easily added.
+* a `sttp.client.logging.Logger`, which is an integration point with logging libraries. Two such integration that are available with sttp-client is slf4j and scribe (see below), but custom ones can be easily added.
 * a `sttp.client.logging.Log`, which constructs messages and performs logging actions. A custom implementation can be provided to change default log levels or log message content.
 
 By default, the following options are exposed:
@@ -20,7 +20,7 @@ The messages are by default logged on these levels:
 
 ## Using slf4j
 
-To use the slf4j logging backend wrapper, add the following dependency to your project:
+To use the [slf4j](http://www.slf4j.org) logging backend wrapper, add the following dependency to your project:
 
 ```
 "com.softwaremill.sttp.client" %% "slf4j-backend" % "@VERSION@"
@@ -42,3 +42,11 @@ basicRequest.get(uri"https://httpbin.org/get").send(backend)
 ```
 
 To create a customised logging backend, see the section on [custom backends](custom.md).
+
+## Using scribe
+
+To use the [scribe](https://github.com/outr/scribe) logging backend wrapper, add the following dependency to your project:
+
+```
+"com.softwaremill.sttp.client" %% "scribe-backend" % "@VERSION@"
+``` 

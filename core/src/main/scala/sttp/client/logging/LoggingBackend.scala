@@ -5,6 +5,7 @@ import java.util.concurrent.TimeUnit
 import sttp.capabilities.Effect
 import sttp.client._
 import sttp.client.listener.{ListenerBackend, RequestListener}
+import sttp.model.HeaderNames
 import sttp.monad.MonadError
 import sttp.monad.syntax._
 
@@ -17,9 +18,10 @@ object LoggingBackend {
       includeTiming: Boolean = true,
       beforeCurlInsteadOfShow: Boolean = false,
       logRequestBody: Boolean = false,
-      logResponseBody: Boolean = false
+      logResponseBody: Boolean = false,
+      sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders
   ): SttpBackend[F, S] = {
-    val log = new DefaultLog(logger, beforeCurlInsteadOfShow, logRequestBody)
+    val log = new DefaultLog(logger, beforeCurlInsteadOfShow, logRequestBody, sensitiveHeaders)
     apply(delegate, log, includeTiming, logResponseBody)
   }
 

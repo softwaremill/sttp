@@ -325,8 +325,8 @@ case class RequestT[U[_], T, -R](
       case _ => "(no method & uri set)"
     }
 
-  def show(includeBody: Boolean = true): String = {
-    val headers = this.headers.map(_.toStringSafe).mkString(", ")
+  def show(includeBody: Boolean = true, sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders): String = {
+    val headers = this.headers.map(_.toStringSafe(sensitiveHeaders)).mkString(", ")
     val body = if (includeBody) s", body: ${this.body.show}" else ""
     val methodAndUri = (this.method, this.uri) match {
       case (m: Method, u: Uri) =>

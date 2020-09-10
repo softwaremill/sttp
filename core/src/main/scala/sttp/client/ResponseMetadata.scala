@@ -14,9 +14,10 @@ trait ResponseMetadata extends HasHeaders {
   def isClientError: Boolean = code.isClientError
   def isServerError: Boolean = code.isServerError
 
-  override def toString: String = s"ResponseMetadata($code,$statusText,$headersToStringSafe)"
+  override def toString: String = s"ResponseMetadata($code,$statusText,${headersToStringSafe()})"
 
-  protected def headersToStringSafe: Seq[String] = headers.map(_.toStringSafe)
+  protected def headersToStringSafe(sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders): Seq[String] =
+    headers.map(_.toStringSafe(sensitiveHeaders))
 }
 
 object ResponseMetadata {

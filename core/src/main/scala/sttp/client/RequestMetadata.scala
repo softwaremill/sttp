@@ -8,7 +8,7 @@ trait RequestMetadata extends HasHeaders {
   def method: Method
   def uri: Uri
 
-  override def toString: String = s"RequestMetadata($method,$uri,${headers.map(_.toStringSafe)})"
+  override def toString: String = s"RequestMetadata($method,$uri,${headers.map(_.toStringSafe())})"
 }
 
 object RequestMetadata {
