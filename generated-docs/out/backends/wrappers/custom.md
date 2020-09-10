@@ -285,7 +285,7 @@ object RateLimitingSttpBackend {
 Implementing a new backend is made easy as the tests are published in the `core` jar file under the `tests` classifier. Simply add the follow dependencies to your `build.sbt`:
 
 ```
-"com.softwaremill.sttp.client" %% "core" % "3.0.0-RC2" % Test classifier "tests"
+"com.softwaremill.sttp.client" %% "core" % "3.0.0-RC1" % Test classifier "tests"
 ```
 
 Implement your backend and extend the `HttpTest` class:
