@@ -52,7 +52,7 @@ val response = backend.send(request)
 ```eval_rst
 .. note::
 
-  Only requests with the request method and uri can be sent. If trying to send a request without these components specified, a compile-time error will be reported. On how this is implemented, see the documentation on the `type of request definitions <type.md>`_.
+  Only requests with the request method and uri can be sent. If trying to send a request without these components specified, a compile-time error will be reported. On how this is implemented, see the documentation on the :doc:`type of request definitions <type>`.
 ```
 
 ## Initial requests
