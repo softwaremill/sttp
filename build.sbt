@@ -205,7 +205,7 @@ val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
 
 val jeagerClientVersion = "1.4.0"
 val braveOpentracingVersion = "0.37.2"
-val zipkinSenderOkHttpVersion = "2.15.1"
+val zipkinSenderOkHttpVersion = "2.15.2"
 val resilience4jVersion = "1.5.0"
 
 val compileAndTest = "compile->compile;test->test"
@@ -740,7 +740,7 @@ lazy val zioTelemetryOpenTracingBackend = (projectMatrix in file("metrics/zio-te
     name := "zio-telemetry-opentracing-backend",
     libraryDependencies ++= Seq(
       "dev.zio" %% "zio-opentracing" % "0.7.0",
-      "org.scala-lang.modules" %% "scala-collection-compat" % "2.1.6"
+      "org.scala-lang.modules" %% "scala-collection-compat" % "2.2.0"
     )
   )
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13), settings = intellijImportOnly213)
@@ -822,7 +822,7 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     libraryDependencies ++= Seq(
       "org.json4s" %% "json4s-native" % json4sVersion,
       "io.circe" %% "circe-generic" % "0.13.0",
-      "commons-io" % "commons-io" % "2.7",
+      "commons-io" % "commons-io" % "2.8.0",
       "io.github.resilience4j" % "resilience4j-circuitbreaker" % resilience4jVersion,
       "io.github.resilience4j" % "resilience4j-ratelimiter" % resilience4jVersion,
       "io.jaegertracing" % "jaeger-client" % jeagerClientVersion,
