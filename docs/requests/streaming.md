@@ -5,7 +5,7 @@ Some backends (see [backends summary](../backends/summary.md)) support streaming
 ```eval_rst
 .. note::
 
- Here, streaming refers to (usually) non-blocking, asynchronous streams of data. To send data which is available as an ``InputStream``, or a file from local storage (which is available as a ``File`` or ``Path``), no special backend support is needed. See the documenttation on `setting the request body <body.md>`_.
+ Here, streaming refers to (usually) non-blocking, asynchronous streams of data. To send data which is available as an ``InputStream``, or a file from local storage (which is available as a ``File`` or ``Path``), no special backend support is needed. See the documenttation on :doc:`setting the request body <body>`.
 ```
 
 For example, using the [akka-http backend](../backends/akka.md), a request with a streaming body can be defined as follows:
