@@ -47,7 +47,7 @@ Using with [jaeger](https://www.jaegertracing.io/) tracing
 Add following dependency:
 
 ```
-libraryDependencies += "io.jaegertracing" % "jaeger-client" % "1.3.2"
+libraryDependencies += "io.jaegertracing" % "jaeger-client" % "1.4.0"
 ```
 
 Create an instance of tracer:
