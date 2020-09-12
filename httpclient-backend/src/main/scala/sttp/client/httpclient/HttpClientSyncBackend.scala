@@ -13,7 +13,7 @@ import sttp.client.monad.IdMonad
 import sttp.client.testing.SttpBackendStub
 import sttp.client.{FollowRedirectsBackend, Identity, Request, Response, ResponseAs, ResponseMetadata, SttpBackend, SttpBackendOptions, SttpClientException, WebSocketResponseAs}
 import sttp.monad.MonadError
-import sttp.ws.WebSocket
+import sttp.ws.{WebSocket, WebSocketFrame}
 
 class HttpClientSyncBackend private (
     client: HttpClient,
@@ -46,23 +46,15 @@ class HttpClientSyncBackend private (
     }
 
   override protected val bodyFromHttpClient: BodyFromHttpClient[Identity, Nothing, InputStream] =
-    new BodyFromHttpClient[Identity, Nothing, InputStream] {
+    new InputStreamBodyFromHttpClient[Identity, Nothing] {
+      override def inputStreamToStream(is: InputStream): Identity[(streams.BinaryStream, () => Identity[Unit])] =
+        monad.error(new IllegalStateException("Streaming is not supported"))
       override val streams: NoStreams = NoStreams
-      override implicit val monad: MonadError[Identity] = IdMonad
-      override def compileWebSocketPipe(ws: WebSocket[Identity], pipe: Nothing): Identity[Unit] =
-        pipe // nothing is everything
-      override def apply[T](response: Either[InputStream, WebSocket[Identity]], responseAs: ResponseAs[T, _], responseMetadata: ResponseMetadata): Identity[T] = {
-        new InputStreamBodyFromResponseAs[Identity, Nothing]() {
-          override protected def handleWS[T](
-                                              responseAs: WebSocketResponseAs[T, _],
-                                              meta: ResponseMetadata,
-                                              ws: WebSocket[Identity]
-                                            ): Identity[T] = bodyFromWs(responseAs, ws)
-
-          override protected def regularAsStream(response: InputStream): Identity[(Nothing, () => Identity[Unit])] =
-            monad.error(new IllegalStateException("Streaming is not supported"))
-        }.apply(responseAs, responseMetadata, response)
-      }
+      override implicit def monad: MonadError[Identity] = IdMonad
+      override def compileWebSocketPipe(
+                                         ws: WebSocket[Identity],
+                                         pipe: streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]
+                                       ): Identity[Unit] = pipe
     }
 
   override protected def standardEncoding: (InputStream, String) => InputStream = {

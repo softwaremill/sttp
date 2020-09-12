@@ -16,12 +16,19 @@ import sttp.capabilities.WebSockets
 import sttp.capabilities.monix.MonixStreams
 import sttp.client.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client.httpclient.monix.HttpClientMonixBackend.MonixEncodingHandler
-import sttp.client.httpclient.{BodyFromHttpClient, BodyToHttpClient, HttpClientAsyncBackend, HttpClientBackend, InputStreamBodyFromResponseAs, InputStreamSubscriber}
+import sttp.client.httpclient.{
+  BodyFromHttpClient,
+  BodyToHttpClient,
+  HttpClientAsyncBackend,
+  HttpClientBackend,
+  InputStreamBodyFromHttpClient,
+  InputStreamSubscriber
+}
 import sttp.client.impl.monix.{MonixSimpleQueue, MonixWebSockets, TaskMonadAsyncError}
 import sttp.client.internal._
 import sttp.client.internal.ws.SimpleQueue
 import sttp.client.testing.SttpBackendStub
-import sttp.client.{FollowRedirectsBackend, ResponseAs, ResponseMetadata, SttpBackend, SttpBackendOptions, WebSocketResponseAs}
+import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 import sttp.monad.MonadError
 import sttp.ws.{WebSocket, WebSocketFrame}
 
@@ -50,42 +57,15 @@ class HttpClientMonixBackend private (
     }
 
   override protected val bodyFromHttpClient: BodyFromHttpClient[Task, MonixStreams, InputStream] =
-    new BodyFromHttpClient[Task, MonixStreams, InputStream] {
+    new InputStreamBodyFromHttpClient[Task, MonixStreams] {
+      override def inputStreamToStream(is: InputStream): Task[(streams.BinaryStream, () => Task[Unit])] =
+        monad.error(new IllegalStateException("Streaming is not supported"))
       override val streams: MonixStreams = MonixStreams
-      override implicit def monad: MonadError[Task] = responseMonad
-
+      override implicit def monad: MonadError[Task] = TaskMonadAsyncError
       override def compileWebSocketPipe(
           ws: WebSocket[Task],
           pipe: Observable[WebSocketFrame.Data[_]] => Observable[WebSocketFrame]
       ): Task[Unit] = MonixWebSockets.compilePipe(ws, pipe)
-
-      override def apply[T](
-          response: Either[InputStream, WebSocket[Task]],
-          responseAs: ResponseAs[T, _],
-          responseMetadata: ResponseMetadata
-      ): Task[T] = {
-        new InputStreamBodyFromResponseAs[Task, Observable[ByteBuffer]]() {
-          override protected def handleWS[T](
-              responseAs: WebSocketResponseAs[T, _],
-              meta: ResponseMetadata,
-              ws: WebSocket[Task]
-          ): Task[T] = bodyFromWs(responseAs, ws)
-
-          override protected def regularAsStream(
-              response: InputStream
-          ): Task[(Observable[ByteBuffer], () => Task[Unit])] = {
-            Task.eval {
-              (
-                Observable
-                  .fromInputStream(Task.now(response))
-                  .map(ByteBuffer.wrap)
-                  .guaranteeCase(_ => Task(response.close())),
-                () => Task.eval(response.close())
-              )
-            }
-          }
-        }.apply(responseAs, responseMetadata, response)
-      }
     }
 
   override protected def createSimpleQueue[T]: Task[SimpleQueue[Task, T]] =

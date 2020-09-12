@@ -18,7 +18,7 @@ import sttp.client.httpclient.HttpClientFutureBackend.FutureEncodingHandler
 import sttp.client.internal.ws.{FutureSimpleQueue, SimpleQueue}
 import sttp.client.internal.{NoStreams, emptyInputStream}
 import sttp.client.testing.SttpBackendStub
-import sttp.client.{FollowRedirectsBackend, ResponseAs, ResponseMetadata, SttpBackend, SttpBackendOptions, WebSocketResponseAs}
+import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 import sttp.monad.{FutureMonad, MonadError}
 import sttp.ws.{WebSocket, WebSocketFrame}
 
@@ -47,29 +47,15 @@ class HttpClientFutureBackend private (
   }
 
   override protected val bodyFromHttpClient: BodyFromHttpClient[Future, Nothing, InputStream] =
-    new BodyFromHttpClient[Future, Nothing, InputStream] {
+    new InputStreamBodyFromHttpClient[Future, Nothing] {
+      override def inputStreamToStream(is: InputStream): Future[(streams.BinaryStream, () => Future[Unit])] =
+        monad.error(new IllegalStateException("Streaming is not supported"))
       override val streams: NoStreams = NoStreams
-      override implicit def monad: MonadError[Future] = new FutureMonad
+      override implicit def monad: MonadError[Future] = new FutureMonad()
       override def compileWebSocketPipe(
           ws: WebSocket[Future],
           pipe: streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]
       ): Future[Unit] = pipe
-      override def apply[T](
-          response: Either[InputStream, WebSocket[Future]],
-          responseAs: ResponseAs[T, _],
-          responseMetadata: ResponseMetadata
-      ): Future[T] = {
-        new InputStreamBodyFromResponseAs[Future, Nothing]() {
-          override protected def handleWS[T](
-              responseAs: WebSocketResponseAs[T, _],
-              meta: ResponseMetadata,
-              ws: WebSocket[Future]
-          ): Future[T] = bodyFromWs(responseAs, ws)
-
-          override protected def regularAsStream(response: InputStream): Future[(Nothing, () => Future[Unit])] =
-            monad.error(new IllegalStateException("Streaming is not supported"))
-        }.apply(responseAs, responseMetadata, response)
-      }
     }
 
   override protected def createSimpleQueue[T]: Future[SimpleQueue[Future, T]] =
