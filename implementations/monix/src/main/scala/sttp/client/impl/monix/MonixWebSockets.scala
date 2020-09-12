@@ -49,11 +49,11 @@ object MonixWebSockets {
       }
       .mapAccumulate(List[WebSocketFrame.Text]()) {
         case (acc, tf) if tf.finalFragment => (Nil, acc.reverse)
-        case (acc, tf) => (tf :: acc, Nil)
+        case (acc, tf)                     => (tf :: acc, Nil)
       }
       .concatMapIterable {
         case Nil => Nil
-        case l => List(l.map(_.payload).mkString)
+        case l   => List(l.map(_.payload).mkString)
       }
   }
 }
