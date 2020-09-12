@@ -38,19 +38,22 @@ object MonixWebSockets {
     p => p.compose(combinedTextFrames)
 
   def combinedTextFrames: MonixStreams.Pipe[WebSocketFrame, String] = { input =>
-    Observable
-      .fromTask(
-        input
-          .takeWhileInclusive { case WebSocketFrame.Text(_, finalFragment, _) => !finalFragment }
-          .collect { case text: WebSocketFrame.Text => text }
-          .toListL
-      )
-      .concatMap { frames =>
-        if (frames.isEmpty) {
-          Observable.empty
+    input
+      .collect { case tf: WebSocketFrame.Text => tf }
+      .flatMap { tf =>
+        if (tf.finalFragment) {
+          Observable(tf.copy(finalFragment = false), tf.copy(payload = ""))
         } else {
-          Observable(frames.map(_.payload).mkString) ++ combinedTextFrames(input)
+          Observable(tf)
         }
+      }
+      .mapAccumulate(List[WebSocketFrame.Text]()) {
+        case (acc, tf) if tf.finalFragment => (Nil, acc.reverse)
+        case (acc, tf) => (tf :: acc, Nil)
+      }
+      .concatMapIterable {
+        case Nil => Nil
+        case l => List(l.map(_.payload).mkString)
       }
   }
 }
