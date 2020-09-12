@@ -72,7 +72,7 @@ class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
     InspectableQueue.unbounded[F, T].map(new Fs2SimpleQueue(_, None))
 
   override protected def publisherToBody(p: Publisher[util.List[ByteBuffer]]): Stream[F, Byte] = {
-    p.toStream[F].flatMap(data => Stream.emits(data.asScala.flatMap(_.safeRead()))) //TODO take a close look
+    p.toStream[F].flatMap(data => Stream.emits(data.asScala.flatMap(_.safeRead()))) //TODO take a closer look
   }
 
   override protected def emptyBody(): Stream[F, Byte] = Stream.empty

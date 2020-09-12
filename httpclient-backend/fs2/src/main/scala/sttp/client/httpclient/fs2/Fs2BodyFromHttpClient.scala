@@ -29,7 +29,7 @@ private[fs2] class Fs2BodyFromHttpClient[F[_]: ConcurrentEffect: ContextShift]
           replayableBody: Either[Array[Byte], SttpFile]
       ): F[Stream[F, Byte]] = {
         replayableBody match {
-          case Left(value) => Stream.evalSeq[F,List,Byte](value.toList.unit).unit
+          case Left(value) => Stream.evalSeq[F, List, Byte](value.toList.unit).unit
           case Right(sttpFile) =>
             Stream
               .resource(Blocker[F])
@@ -60,7 +60,7 @@ private[fs2] class Fs2BodyFromHttpClient[F[_]: ConcurrentEffect: ContextShift]
           responseAs: WebSocketResponseAs[T, _],
           meta: ResponseMetadata,
           ws: WebSocket[F]
-      ): F[T] = bodyFromWs(responseAs,ws)
+      ): F[T] = bodyFromWs(responseAs, ws)
 
       override protected def cleanupWhenNotAWebSocket(
           response: Stream[F, Byte],
