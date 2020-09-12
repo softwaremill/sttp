@@ -23,10 +23,9 @@ class HttpClientZioWebSocketTest
   override val streams: BlockingZioStreams = BlockingZioStreams
 
   override def functionToPipe(
-      initial: List[WebSocketFrame.Data[_]],
       f: WebSocketFrame.Data[_] => Option[WebSocketFrame]
   ): BlockingZioStreams.Pipe[WebSocketFrame.Data[_], WebSocketFrame] =
-    in => Stream.apply(initial: _*) ++ in.mapConcat(m => f(m).toList)
+    in => in.mapConcat(m => f(m).toList)
 
   override def fromTextPipe(
       function: String => WebSocketFrame

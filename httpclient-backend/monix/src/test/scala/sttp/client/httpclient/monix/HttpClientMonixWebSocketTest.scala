@@ -20,10 +20,9 @@ class HttpClientMonixWebSocketTest extends WebSocketTest[Task] with WebSocketStr
   override val streams: MonixStreams = MonixStreams
 
   override def functionToPipe(
-      initial: List[WebSocketFrame.Data[_]],
       f: WebSocketFrame.Data[_] => Option[WebSocketFrame]
   ): Observable[WebSocketFrame.Data[_]] => Observable[WebSocketFrame] =
-    in => Observable.fromIterable(initial) ++ in.concatMapIterable(m => f(m).toList)
+    in => in.concatMapIterable(m => f(m).toList)
 
   override def fromTextPipe(
       function: String => WebSocketFrame

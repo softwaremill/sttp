@@ -15,9 +15,8 @@ class HttpClientFs2WebSocketTest
   override val streams: Fs2Streams[IO] = new Fs2Streams[IO] {}
 
   override def functionToPipe(
-      initial: List[WebSocketFrame.Data[_]],
       f: WebSocketFrame.Data[_] => Option[WebSocketFrame]
-  ): fs2.Pipe[IO, WebSocketFrame.Data[_], WebSocketFrame] = in => fs2.Stream.emits(initial) ++ in.mapFilter(f)
+  ): fs2.Pipe[IO, WebSocketFrame.Data[_], WebSocketFrame] = in => in.mapFilter(f)
 
   override def fromTextPipe(
                              function: String => WebSocketFrame

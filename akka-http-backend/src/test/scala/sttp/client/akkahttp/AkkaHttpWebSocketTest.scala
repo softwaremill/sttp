@@ -21,13 +21,9 @@ class AkkaHttpWebSocketTest extends WebSocketTest[Future] with WebSocketStreamin
   override implicit val monad: MonadError[Future] = new FutureMonad
 
   override def functionToPipe(
-      initial: List[WebSocketFrame.Data[_]],
       f: WebSocketFrame.Data[_] => Option[WebSocketFrame]
-  ): Flow[WebSocketFrame.Data[_], WebSocketFrame, Any] = {
-    val initialSource = Source(initial)
-    val mainFlow = Flow.fromFunction(f).mapConcat(_.toList): Flow[WebSocketFrame.Data[_], WebSocketFrame, Any]
-    mainFlow.prepend(initialSource)
-  }
+  ): Flow[WebSocketFrame.Data[_], WebSocketFrame, Any] =
+    Flow.fromFunction(f).mapConcat(_.toList): Flow[WebSocketFrame.Data[_], WebSocketFrame, Any]
 
   override def prepend(
       item: WebSocketFrame.Text

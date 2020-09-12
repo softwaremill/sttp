@@ -62,23 +62,20 @@ trait WebSocketStreamingTest[F[_], S] extends ToFutureWrapper { outer: Suite wit
 
   webSocketPipeTerminatedByServerTest("raw") { received =>
     val buffer = new AtomicReference[String]("")
-    functionToPipe(
-      Nil,
-      {
-        case WebSocketFrame.Text(payload, false, _) =>
-          buffer.accumulateAndGet(
-            payload,
-            new BinaryOperator[String] {
-              override def apply(t: String, u: String): String = t + u
-            }
-          )
-          None
-        case WebSocketFrame.Text(payload, _, _) =>
-          val wholePayload = buffer.getAndSet("") + payload
-          received.add(wholePayload)
-          Some(WebSocketFrame.text(wholePayload + "-echo"))
-      }
-    )
+    functionToPipe {
+      case WebSocketFrame.Text(payload, false, _) =>
+        buffer.accumulateAndGet(
+          payload,
+          new BinaryOperator[String] {
+            override def apply(t: String, u: String): String = t + u
+          }
+        )
+        None
+      case WebSocketFrame.Text(payload, _, _) =>
+        val wholePayload = buffer.getAndSet("") + payload
+        received.add(wholePayload)
+        Some(WebSocketFrame.text(wholePayload + "-echo"))
+    }
   }
 
   webSocketPipeTerminatedByServerTest("fromTextPipe") { received =>
@@ -90,27 +87,24 @@ trait WebSocketStreamingTest[F[_], S] extends ToFutureWrapper { outer: Suite wit
 
   webSocketPipeClientTerminated("raw") { received =>
     val buffer = new AtomicReference[String]("")
-    functionToPipe(
-      List(WebSocketFrame.text("1")),
-      {
-        case WebSocketFrame.Text(payload, false, _) =>
-          buffer.accumulateAndGet(
-            payload,
-            new BinaryOperator[String] {
-              override def apply(t: String, u: String): String = t + u
-            }
-          )
-          None
-        case WebSocketFrame.Text(payload, _, _) =>
-          val wholePayload = buffer.getAndSet("") + payload
-          received.add(wholePayload)
+    prepend(WebSocketFrame.text("1"))(functionToPipe {
+      case WebSocketFrame.Text(payload, false, _) =>
+        buffer.accumulateAndGet(
+          payload,
+          new BinaryOperator[String] {
+            override def apply(t: String, u: String): String = t + u
+          }
+        )
+        None
+      case WebSocketFrame.Text(payload, _, _) =>
+        val wholePayload = buffer.getAndSet("") + payload
+        received.add(wholePayload)
 
-          if (wholePayload == "echo: 5")
-            Some(WebSocketFrame.close)
-          else
-            Some(WebSocketFrame.text((wholePayload.substring(6).toInt + 1).toString))
-      }
-    )
+        if (wholePayload == "echo: 5")
+          Some(WebSocketFrame.close)
+        else
+          Some(WebSocketFrame.text((wholePayload.substring(6).toInt + 1).toString))
+    })
   }
 
   webSocketPipeClientTerminated("fromTextPipe") { received =>
@@ -131,7 +125,6 @@ trait WebSocketStreamingTest[F[_], S] extends ToFutureWrapper { outer: Suite wit
   def fromTextPipe(function: String => WebSocketFrame): streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]
 
   def functionToPipe(
-      initial: List[WebSocketFrame.Data[_]],
       f: WebSocketFrame.Data[_] => Option[WebSocketFrame]
   ): streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]
 }

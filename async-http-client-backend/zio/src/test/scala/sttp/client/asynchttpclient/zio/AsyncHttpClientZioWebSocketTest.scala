@@ -28,10 +28,9 @@ class AsyncHttpClientZioWebSocketTest extends AsyncHttpClientWebSocketTest[Task,
   }
 
   override def functionToPipe(
-      initial: List[WebSocketFrame.Data[_]],
       f: WebSocketFrame.Data[_] => Option[WebSocketFrame]
   ): ZioStreams.Pipe[WebSocketFrame.Data[_], WebSocketFrame] =
-    in => Stream.apply(initial: _*) ++ in.mapConcat(m => f(m).toList)
+    in => in.mapConcat(m => f(m).toList)
 
   override def fromTextPipe(
       function: String => WebSocketFrame

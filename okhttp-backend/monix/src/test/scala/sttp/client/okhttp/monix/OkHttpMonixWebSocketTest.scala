@@ -29,10 +29,9 @@ class OkHttpMonixWebSocketTest
   override def bufferCapacity: Int = OkHttpBackend.DefaultWebSocketBufferCapacity.get
 
   override def functionToPipe(
-      initial: List[WebSocketFrame.Data[_]],
       f: WebSocketFrame.Data[_] => Option[WebSocketFrame]
   ): Observable[WebSocketFrame.Data[_]] => Observable[WebSocketFrame] =
-    in => Observable.fromIterable(initial) ++ in.concatMapIterable(m => f(m).toList)
+    in => in.concatMapIterable(m => f(m).toList)
 
   override def eventually[T](interval: FiniteDuration, attempts: Int)(f: => Task[T]): Task[T] = {
     (Task.sleep(interval) >> f).onErrorRestart(attempts.toLong)
