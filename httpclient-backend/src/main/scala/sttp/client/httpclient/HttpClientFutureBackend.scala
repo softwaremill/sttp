@@ -84,7 +84,7 @@ class HttpClientFutureBackend private (
   override protected def emptyBody(): InputStream = emptyInputStream()
 
   override protected def publisherToBody(p: Publisher[util.List[ByteBuffer]]): InputStream = {
-    val subscriber = new InputStreamSubscriber(e => throw e)
+    val subscriber = new InputStreamSubscriber
     p.subscribe(subscriber)
     subscriber.inputStream
   }
@@ -132,7 +132,7 @@ object HttpClientFutureBackend {
 }
 
 // based on org.asynchttpclient.request.body.generator.ReactiveStreamsBodyGenerator.SimpleSubscriber
-private[httpclient] class InputStreamSubscriber(error: Throwable => Unit) extends Subscriber[java.util.List[ByteBuffer]] {
+private[httpclient] class InputStreamSubscriber extends Subscriber[java.util.List[ByteBuffer]] {
   // a pair of values: (is cancelled, current subscription)
   private val subscription = new AtomicReference[(Boolean, Subscription)]((false, null))
   private val chunks = new LinkedBlockingQueue[Message]()
@@ -199,7 +199,6 @@ private[httpclient] class InputStreamSubscriber(error: Throwable => Unit) extend
   override def onError(t: Throwable): Unit = {
     assert(t != null)
     chunks.add(Message.Error(t))
-    error(t) //TODO do we need this at all?
   }
 
   override def onComplete(): Unit = {

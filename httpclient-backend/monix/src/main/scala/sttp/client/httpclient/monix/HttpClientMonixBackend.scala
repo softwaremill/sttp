@@ -92,7 +92,7 @@ class HttpClientMonixBackend private (
     Task.eval(new MonixSimpleQueue[T](None))
 
   override protected def publisherToBody(p: Publisher[util.List[ByteBuffer]]): InputStream = {
-    val subscriber = new InputStreamSubscriber(e => throw e)
+    val subscriber = new InputStreamSubscriber
     p.subscribe(subscriber)
     subscriber.inputStream
   }
