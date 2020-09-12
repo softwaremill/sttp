@@ -90,11 +90,7 @@ abstract class HttpClientBackend[F[_], S, P, B](
     responseMonad.map(body)(Response(_, code, "", headers, Nil, request.onlyMetadata))
   }
 
-  protected def standardEncoding: (B, String) => B //= {
-//    case (body, "gzip")    => new GZIPInputStream(body)
-//    case (body, "deflate") => new InflaterInputStream(body)
-//    case (_, ce)           => throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
-//  }
+  protected def standardEncoding: (B, String) => B
 
   override def close(): F[Unit] = {
     if (closeClient) {

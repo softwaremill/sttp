@@ -8,6 +8,7 @@ import java.util
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import java.util.function.UnaryOperator
+import java.util.stream.{Collector, Collectors}
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
 
 import org.reactivestreams.{Publisher, Subscriber, Subscription}
@@ -17,14 +18,7 @@ import sttp.client.httpclient.HttpClientFutureBackend.FutureEncodingHandler
 import sttp.client.internal.ws.{FutureSimpleQueue, SimpleQueue}
 import sttp.client.internal.{NoStreams, emptyInputStream}
 import sttp.client.testing.SttpBackendStub
-import sttp.client.{
-  FollowRedirectsBackend,
-  ResponseAs,
-  ResponseMetadata,
-  SttpBackend,
-  SttpBackendOptions,
-  WebSocketResponseAs
-}
+import sttp.client.{FollowRedirectsBackend, ResponseAs, ResponseMetadata, SttpBackend, SttpBackendOptions, WebSocketResponseAs}
 import sttp.monad.{FutureMonad, MonadError}
 import sttp.ws.{WebSocket, WebSocketFrame}
 
@@ -90,7 +84,7 @@ class HttpClientFutureBackend private (
   override protected def emptyBody(): InputStream = emptyInputStream()
 
   override protected def publisherToBody(p: Publisher[util.List[ByteBuffer]]): InputStream = {
-    val subscriber = new SimpleSubscriber(e => throw e)
+    val subscriber = new InputStreamSubscriber(e => throw e)
     p.subscribe(subscriber)
     subscriber.inputStream
   }
@@ -138,16 +132,14 @@ object HttpClientFutureBackend {
 }
 
 // based on org.asynchttpclient.request.body.generator.ReactiveStreamsBodyGenerator.SimpleSubscriber
-private[httpclient] class SimpleSubscriber(error: Throwable => Unit) extends Subscriber[java.util.List[ByteBuffer]] {
+private[httpclient] class InputStreamSubscriber(error: Throwable => Unit) extends Subscriber[java.util.List[ByteBuffer]] {
   // a pair of values: (is cancelled, current subscription)
   private val subscription = new AtomicReference[(Boolean, Subscription)]((false, null))
-  private val chunks = new LinkedBlockingQueue[ByteBuffer]()
-  private val EndValue = ByteBuffer.wrap(Array(Integer.valueOf(-1).byteValue()))
-  private val completed = new AtomicBoolean(false)
+  private val chunks = new LinkedBlockingQueue[Message]()
 
   val inputStream: InputStream = new InputStream {
-    val exhausted = new AtomicBoolean(false)
-    val currentBuffer: AtomicReference[Option[ByteBuffer]] = new AtomicReference[Option[ByteBuffer]](None)
+    private val exhausted = new AtomicBoolean(false)
+    private val currentBuffer: AtomicReference[Option[ByteBuffer]] = new AtomicReference[Option[ByteBuffer]](None)
 
     override def read(): Int = {
       if (exhausted.get()) {
@@ -155,21 +147,20 @@ private[httpclient] class SimpleSubscriber(error: Throwable => Unit) extends Sub
       } else {
         val byteRead = currentBuffer.get() match {
           case Some(buffer) if buffer.hasRemaining =>
-            buffer.get()
+            buffer.get() & 0xff
           case _ =>
-            val buffer = chunks.take() // blocks
-            val value = buffer.get()
-            currentBuffer.set(Some(buffer))
-            value
+            chunks.take() match {
+              case Message.Normal(buffer) =>
+                currentBuffer.set(Some(buffer))
+                buffer.get() & 0xff
+              case Message.Error(ex) =>
+                throw ex
+              case Message.Completed() =>
+                exhausted.set(true)
+                -1
+            }
         }
-        if (byteRead == -1 && completed.get()) {
-          exhausted.set(true)
-        }
-        if(byteRead <= 255 && byteRead >= -1) {
-          byteRead
-        }else{
-          byteRead & 0xFF
-        }
+        byteRead
       }
     }
   }
@@ -199,20 +190,20 @@ private[httpclient] class SimpleSubscriber(error: Throwable => Unit) extends Sub
     }
   }
 
+  private val toListCollector: Collector[Message, _, util.List[Message]] = Collectors.toList()
   override def onNext(b: java.util.List[ByteBuffer]): Unit = {
     assert(b != null)
-    chunks.addAll(b)
+    chunks.addAll(b.stream().map(Message.normal(_)).collect(toListCollector))
   }
 
   override def onError(t: Throwable): Unit = {
     assert(t != null)
-    chunks.add(EndValue)
-    error(t)
+    chunks.add(Message.Error(t))
+    error(t) //TODO do we need this at all?
   }
 
   override def onComplete(): Unit = {
-    completed.set(true)
-    chunks.add(EndValue)
+    chunks.add(Message.Completed())
   }
 
   def cancel(): Unit = {
@@ -226,4 +217,14 @@ private[httpclient] class SimpleSubscriber(error: Throwable => Unit) extends Sub
       }
     })
   }
+}
+
+sealed trait Message
+object Message {
+
+  case class Normal(payload: ByteBuffer) extends Message
+  case class Error(ex: Throwable) extends Message
+  case class Completed() extends Message
+
+  def normal(payload: ByteBuffer): Message = Normal(payload)
 }

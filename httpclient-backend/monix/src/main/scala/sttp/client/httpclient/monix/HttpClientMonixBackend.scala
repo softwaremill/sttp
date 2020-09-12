@@ -1,6 +1,6 @@
 package sttp.client.httpclient.monix
 
-import java.io.{ByteArrayInputStream, InputStream, UnsupportedEncodingException}
+import java.io.{InputStream, UnsupportedEncodingException}
 import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.{HttpClient, HttpRequest}
 import java.nio.ByteBuffer
@@ -16,17 +16,14 @@ import sttp.capabilities.WebSockets
 import sttp.capabilities.monix.MonixStreams
 import sttp.client.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client.httpclient.monix.HttpClientMonixBackend.MonixEncodingHandler
-import sttp.client.httpclient.{BodyFromHttpClient, BodyToHttpClient, HttpClientAsyncBackend, HttpClientBackend, InputStreamBodyFromResponseAs, SimpleSubscriber}
+import sttp.client.httpclient.{BodyFromHttpClient, BodyToHttpClient, HttpClientAsyncBackend, HttpClientBackend, InputStreamBodyFromResponseAs, InputStreamSubscriber}
 import sttp.client.impl.monix.{MonixSimpleQueue, MonixWebSockets, TaskMonadAsyncError}
 import sttp.client.internal._
 import sttp.client.internal.ws.SimpleQueue
 import sttp.client.testing.SttpBackendStub
-import sttp.client.{FollowRedirectsBackend, ResponseAs, ResponseMetadata, SttpBackend, SttpBackendOptions, WebSocketResponseAs, internal}
+import sttp.client.{FollowRedirectsBackend, ResponseAs, ResponseMetadata, SttpBackend, SttpBackendOptions, WebSocketResponseAs}
 import sttp.monad.MonadError
 import sttp.ws.{WebSocket, WebSocketFrame}
-
-import scala.concurrent.{Await, Promise}
-import scala.concurrent.duration.Duration
 
 class HttpClientMonixBackend private (
     client: HttpClient,
@@ -95,7 +92,7 @@ class HttpClientMonixBackend private (
     Task.eval(new MonixSimpleQueue[T](None))
 
   override protected def publisherToBody(p: Publisher[util.List[ByteBuffer]]): InputStream = {
-    val subscriber = new SimpleSubscriber(e => throw e)
+    val subscriber = new InputStreamSubscriber(e => throw e)
     p.subscribe(subscriber)
     subscriber.inputStream
   }
