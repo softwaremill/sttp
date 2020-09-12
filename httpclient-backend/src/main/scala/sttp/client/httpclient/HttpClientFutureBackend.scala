@@ -15,6 +15,7 @@ import org.reactivestreams.{Publisher, Subscriber, Subscription}
 import sttp.capabilities.WebSockets
 import sttp.client.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client.httpclient.HttpClientFutureBackend.FutureEncodingHandler
+import sttp.client.httpclient.InputStreamSubscriber.{Completed, Error, Message, NextItem, nextItemMsg}
 import sttp.client.internal.ws.{FutureSimpleQueue, SimpleQueue}
 import sttp.client.internal.{NoStreams, emptyInputStream}
 import sttp.client.testing.SttpBackendStub
@@ -136,12 +137,12 @@ private[httpclient] class InputStreamSubscriber extends Subscriber[java.util.Lis
             buffer.get() & 0xff
           case _ =>
             chunks.take() match {
-              case Message.Normal(buffer) =>
+              case NextItem(buffer) =>
                 currentBuffer.set(Some(buffer))
                 buffer.get() & 0xff
-              case Message.Error(ex) =>
+              case Error(ex) =>
                 throw ex
-              case Message.Completed() =>
+              case Completed() =>
                 exhausted.set(true)
                 -1
             }
@@ -179,16 +180,16 @@ private[httpclient] class InputStreamSubscriber extends Subscriber[java.util.Lis
   private val toListCollector: Collector[Message, _, util.List[Message]] = Collectors.toList()
   override def onNext(b: java.util.List[ByteBuffer]): Unit = {
     assert(b != null)
-    chunks.addAll(b.stream().map(Message.normal(_)).collect(toListCollector))
+    chunks.addAll(b.stream().map(nextItemMsg(_)).collect(toListCollector))
   }
 
   override def onError(t: Throwable): Unit = {
     assert(t != null)
-    chunks.add(Message.Error(t))
+    chunks.add(Error(t))
   }
 
   override def onComplete(): Unit = {
-    chunks.add(Message.Completed())
+    chunks.add(Completed())
   }
 
   def cancel(): Unit = {
@@ -204,12 +205,12 @@ private[httpclient] class InputStreamSubscriber extends Subscriber[java.util.Lis
   }
 }
 
-sealed trait Message
-object Message {
+object InputStreamSubscriber {
+  sealed trait Message
 
-  case class Normal(payload: ByteBuffer) extends Message
+  case class NextItem(payload: ByteBuffer) extends Message
   case class Error(ex: Throwable) extends Message
   case class Completed() extends Message
 
-  def normal(payload: ByteBuffer): Message = Normal(payload)
+  def nextItemMsg(payload: ByteBuffer): Message = NextItem(payload)
 }
