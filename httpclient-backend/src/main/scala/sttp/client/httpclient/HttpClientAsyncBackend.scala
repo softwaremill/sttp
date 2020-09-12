@@ -38,7 +38,7 @@ abstract class HttpClientAsyncBackend[F[_], S, P, B](
         def error(t: Throwable): Unit = cb(Left(t))
 
         val cf = client
-          .sendAsync(jRequest,BodyHandlers.ofPublisher())
+          .sendAsync(jRequest, BodyHandlers.ofPublisher())
           .whenComplete((t: HttpResponse[Flow.Publisher[ju.List[ByteBuffer]]], u: Throwable) => {
             if (t != null) {
               try success(readResponse(t, Left(publisherToBody(FlowAdapters.toPublisher(t.body()))), request))
@@ -55,7 +55,7 @@ abstract class HttpClientAsyncBackend[F[_], S, P, B](
     }
   }
 
-  protected def publisherToBody (p: Publisher[java.util.List[ByteBuffer]]): B
+  protected def publisherToBody(p: Publisher[java.util.List[ByteBuffer]]): B
   protected def emptyBody(): B
 
   private def sendWebSocket[T, R >: PE](request: Request[T, R]): F[Response[T]] = {

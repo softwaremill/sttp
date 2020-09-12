@@ -11,7 +11,18 @@ import sttp.client.httpclient.HttpClientSyncBackend.SyncEncodingHandler
 import sttp.client.internal.NoStreams
 import sttp.client.monad.IdMonad
 import sttp.client.testing.SttpBackendStub
-import sttp.client.{FollowRedirectsBackend, Identity, Request, Response, ResponseAs, ResponseMetadata, SttpBackend, SttpBackendOptions, SttpClientException, WebSocketResponseAs}
+import sttp.client.{
+  FollowRedirectsBackend,
+  Identity,
+  Request,
+  Response,
+  ResponseAs,
+  ResponseMetadata,
+  SttpBackend,
+  SttpBackendOptions,
+  SttpClientException,
+  WebSocketResponseAs
+}
 import sttp.monad.MonadError
 import sttp.ws.{WebSocket, WebSocketFrame}
 
@@ -52,9 +63,9 @@ class HttpClientSyncBackend private (
       override val streams: NoStreams = NoStreams
       override implicit def monad: MonadError[Identity] = IdMonad
       override def compileWebSocketPipe(
-                                         ws: WebSocket[Identity],
-                                         pipe: streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]
-                                       ): Identity[Unit] = pipe
+          ws: WebSocket[Identity],
+          pipe: streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]
+      ): Identity[Unit] = pipe
     }
 
   override protected def standardEncoding: (InputStream, String) => InputStream = {
