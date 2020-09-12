@@ -3,8 +3,9 @@ package sttp.client.httpclient
 import java.io.{InputStream, UnsupportedEncodingException}
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 import java.net.{Authenticator, PasswordAuthentication}
+import java.nio.ByteBuffer
 import java.time.{Duration => JDuration}
-import java.util.concurrent.{Executor, ThreadPoolExecutor}
+import java.util.concurrent.{Executor, Flow, ThreadPoolExecutor}
 import java.util.function
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
 
@@ -18,17 +19,21 @@ import sttp.model._
 import sttp.ws.WebSocket
 
 import scala.collection.JavaConverters._
+import java.{util => ju}
 
-abstract class HttpClientBackend[F[_], S, P](
+import jdk.internal.net.http.ResponseSubscribers
+import org.reactivestreams.Publisher
+
+abstract class HttpClientBackend[F[_], S, P, B](
     client: HttpClient,
     closeClient: Boolean,
-    customEncodingHandler: EncodingHandler
+    customEncodingHandler: EncodingHandler[B]
 ) extends SttpBackend[F, P] {
   val streams: Streams[S]
   type PE = P with Effect[F]
 
   protected def bodyToHttpClient: BodyToHttpClient[F, S]
-  protected def bodyFromHttpClient: BodyFromHttpClient[F, S]
+  protected def bodyFromHttpClient: BodyFromHttpClient[F, S, B]
 
   private[httpclient] def convertRequest[T, R >: PE](request: Request[T, R]): F[HttpRequest] =
     monad.suspend {
@@ -58,7 +63,7 @@ abstract class HttpClientBackend[F[_], S, P](
 
   private[httpclient] def readResponse[T, R >: PE](
       res: HttpResponse[_],
-      resBody: Either[InputStream, WebSocket[F]],
+      resBody: Either[B, WebSocket[F]],
       request: Request[T, R]
   ): F[Response[T]] = {
     val headersMap = res.headers().map().asScala
@@ -85,11 +90,11 @@ abstract class HttpClientBackend[F[_], S, P](
     responseMonad.map(body)(Response(_, code, "", headers, Nil, request.onlyMetadata))
   }
 
-  private def standardEncoding: (InputStream, String) => InputStream = {
-    case (body, "gzip")    => new GZIPInputStream(body)
-    case (body, "deflate") => new InflaterInputStream(body)
-    case (_, ce)           => throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
-  }
+  protected def standardEncoding: (B, String) => B //= {
+//    case (body, "gzip")    => new GZIPInputStream(body)
+//    case (body, "deflate") => new InflaterInputStream(body)
+//    case (_, ce)           => throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
+//  }
 
   override def close(): F[Unit] = {
     if (closeClient) {
@@ -108,7 +113,7 @@ abstract class HttpClientBackend[F[_], S, P](
 
 object HttpClientBackend {
 
-  type EncodingHandler = PartialFunction[(InputStream, String), InputStream]
+  type EncodingHandler[B] = PartialFunction[(B, String), B]
   // TODO not sure if it works
   private class ProxyAuthenticator(auth: SttpBackendOptions.ProxyAuth) extends Authenticator {
     override def getPasswordAuthentication: PasswordAuthentication = {

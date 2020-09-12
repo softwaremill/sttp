@@ -1,23 +1,17 @@
 package sttp.client.httpclient
 
-import java.io.InputStream
+import java.io.{InputStream, UnsupportedEncodingException}
 import java.net.http.HttpRequest.BodyPublisher
 import java.net.http.HttpResponse.BodyHandlers
 import java.net.http.{HttpClient, HttpRequest}
+import java.util.zip.{GZIPInputStream, InflaterInputStream}
 
 import sttp.client.httpclient.HttpClientBackend.EncodingHandler
+import sttp.client.httpclient.HttpClientSyncBackend.SyncEncodingHandler
 import sttp.client.internal.NoStreams
 import sttp.client.monad.IdMonad
 import sttp.client.testing.SttpBackendStub
-import sttp.client.{
-  FollowRedirectsBackend,
-  Identity,
-  Request,
-  Response,
-  SttpBackend,
-  SttpBackendOptions,
-  SttpClientException
-}
+import sttp.client.{FollowRedirectsBackend, Identity, Request, Response, ResponseAs, ResponseMetadata, SttpBackend, SttpBackendOptions, SttpClientException, WebSocketResponseAs}
 import sttp.monad.MonadError
 import sttp.ws.WebSocket
 
@@ -25,8 +19,8 @@ class HttpClientSyncBackend private (
     client: HttpClient,
     closeClient: Boolean,
     customizeRequest: HttpRequest => HttpRequest,
-    customEncodingHandler: EncodingHandler
-) extends HttpClientBackend[Identity, Nothing, Any](client, closeClient, customEncodingHandler) {
+    customEncodingHandler: SyncEncodingHandler
+) extends HttpClientBackend[Identity, Nothing, Any, InputStream](client, closeClient, customEncodingHandler) {
 
   override val streams: NoStreams = NoStreams
 
@@ -51,23 +45,41 @@ class HttpClientSyncBackend private (
       override def streamToPublisher(stream: Nothing): Identity[BodyPublisher] = stream // nothing is everything
     }
 
-  override protected val bodyFromHttpClient: BodyFromHttpClient[Identity, Nothing] =
-    new BodyFromHttpClient[Identity, Nothing] {
+  override protected val bodyFromHttpClient: BodyFromHttpClient[Identity, Nothing, InputStream] =
+    new BodyFromHttpClient[Identity, Nothing, InputStream] {
       override val streams: NoStreams = NoStreams
       override implicit val monad: MonadError[Identity] = IdMonad
-      override def inputStreamToStream(is: InputStream): Nothing =
-        throw new IllegalStateException("Streaming is not supported")
       override def compileWebSocketPipe(ws: WebSocket[Identity], pipe: Nothing): Identity[Unit] =
         pipe // nothing is everything
+      override def apply[T](response: Either[InputStream, WebSocket[Identity]], responseAs: ResponseAs[T, _], responseMetadata: ResponseMetadata): Identity[T] = {
+        new InputStreamBodyFromResponseAs[Identity, Nothing]() {
+          override protected def handleWS[T](
+                                              responseAs: WebSocketResponseAs[T, _],
+                                              meta: ResponseMetadata,
+                                              ws: WebSocket[Identity]
+                                            ): Identity[T] = bodyFromWs(responseAs, ws)
+
+          override protected def regularAsStream(response: InputStream): Identity[(Nothing, () => Identity[Unit])] =
+            monad.error(new IllegalStateException("Streaming is not supported"))
+        }.apply(responseAs, responseMetadata, response)
+      }
     }
+
+  override protected def standardEncoding: (InputStream, String) => InputStream = {
+    case (body, "gzip")    => new GZIPInputStream(body)
+    case (body, "deflate") => new InflaterInputStream(body)
+    case (_, ce)           => throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
+  }
 }
 
 object HttpClientSyncBackend {
+  type SyncEncodingHandler = EncodingHandler[InputStream]
+
   private def apply(
       client: HttpClient,
       closeClient: Boolean,
       customizeRequest: HttpRequest => HttpRequest,
-      customEncodingHandler: EncodingHandler
+      customEncodingHandler: SyncEncodingHandler
   ): SttpBackend[Identity, Any] =
     new FollowRedirectsBackend(
       new HttpClientSyncBackend(client, closeClient, customizeRequest, customEncodingHandler)
@@ -76,7 +88,7 @@ object HttpClientSyncBackend {
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: EncodingHandler = PartialFunction.empty
+      customEncodingHandler: SyncEncodingHandler = PartialFunction.empty
   ): SttpBackend[Identity, Any] =
     HttpClientSyncBackend(
       HttpClientBackend.defaultClient(options),
@@ -88,7 +100,7 @@ object HttpClientSyncBackend {
   def usingClient(
       client: HttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: EncodingHandler = PartialFunction.empty
+      customEncodingHandler: SyncEncodingHandler = PartialFunction.empty
   ): SttpBackend[Identity, Any] =
     HttpClientSyncBackend(client, closeClient = false, customizeRequest, customEncodingHandler)
 
