@@ -1,12 +1,12 @@
 package sttp.client.httpclient
 
-import java.io.{ByteArrayInputStream, InputStream, UnsupportedEncodingException}
+import java.io.{InputStream, UnsupportedEncodingException}
 import java.net.http.HttpRequest.BodyPublisher
 import java.net.http.{HttpClient, HttpRequest}
 import java.nio.ByteBuffer
 import java.util
-import java.util.concurrent.ConcurrentLinkedQueue
-import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import java.util.function.UnaryOperator
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
 
@@ -28,9 +28,7 @@ import sttp.client.{
 import sttp.monad.{FutureMonad, MonadError}
 import sttp.ws.{WebSocket, WebSocketFrame}
 
-import scala.collection.JavaConverters._
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, Future, Promise}
+import scala.concurrent.{ExecutionContext, Future}
 
 class HttpClientFutureBackend private (
     client: HttpClient,
@@ -92,12 +90,9 @@ class HttpClientFutureBackend private (
   override protected def emptyBody(): InputStream = emptyInputStream()
 
   override protected def publisherToBody(p: Publisher[util.List[ByteBuffer]]): InputStream = {
-    // this implementation seems to be better(https://stackoverflow.com/a/51801335) but I am concerned about the threads (see caveats section)
-    // we might also consider returning F[B], but then in zio we will end up with ZIO[ZStream] which seems weird
-    val promise = Promise[Array[Byte]]
-    p.subscribe(new SimpleSubscriber(bytebuffer => promise.success(bytebuffer.array()), promise.failure))
-    val bytes = Await.result(promise.future, Duration.Inf)
-    new ByteArrayInputStream(bytes)
+    val subscriber = new SimpleSubscriber(e => throw e)
+    p.subscribe(subscriber)
+    subscriber.inputStream
   }
 }
 
@@ -143,12 +138,41 @@ object HttpClientFutureBackend {
 }
 
 // based on org.asynchttpclient.request.body.generator.ReactiveStreamsBodyGenerator.SimpleSubscriber
-private[httpclient] class SimpleSubscriber(success: ByteBuffer => Unit, error: Throwable => Unit)
-    extends Subscriber[java.util.List[ByteBuffer]] {
+private[httpclient] class SimpleSubscriber(error: Throwable => Unit) extends Subscriber[java.util.List[ByteBuffer]] {
   // a pair of values: (is cancelled, current subscription)
   private val subscription = new AtomicReference[(Boolean, Subscription)]((false, null))
-  private val chunks = new ConcurrentLinkedQueue[Array[Byte]]()
-  private var size = 0
+  private val chunks = new LinkedBlockingQueue[ByteBuffer]()
+  private val EndValue = ByteBuffer.wrap(Array(Integer.valueOf(-1).byteValue()))
+  private val completed = new AtomicBoolean(false)
+
+  val inputStream: InputStream = new InputStream {
+    val exhausted = new AtomicBoolean(false)
+    val currentBuffer: AtomicReference[Option[ByteBuffer]] = new AtomicReference[Option[ByteBuffer]](None)
+
+    override def read(): Int = {
+      if (exhausted.get()) {
+        -1
+      } else {
+        val byteRead = currentBuffer.get() match {
+          case Some(buffer) if buffer.hasRemaining =>
+            buffer.get()
+          case _ =>
+            val buffer = chunks.take() // blocks
+            val value = buffer.get()
+            currentBuffer.set(Some(buffer))
+            value
+        }
+        if (byteRead == -1 && completed.get()) {
+          exhausted.set(true)
+        }
+        if(byteRead <= 255 && byteRead >= -1) {
+          byteRead
+        }else{
+          byteRead & 0xFF
+        }
+      }
+    }
+  }
 
   override def onSubscribe(s: Subscription): Unit = {
     assert(s != null)
@@ -177,22 +201,18 @@ private[httpclient] class SimpleSubscriber(success: ByteBuffer => Unit, error: T
 
   override def onNext(b: java.util.List[ByteBuffer]): Unit = {
     assert(b != null)
-    val a = b.asScala.flatMap(_.safeRead()).toArray
-    size += a.length
-    chunks.add(a)
+    chunks.addAll(b)
   }
 
   override def onError(t: Throwable): Unit = {
     assert(t != null)
-    chunks.clear()
+    chunks.add(EndValue)
     error(t)
   }
 
   override def onComplete(): Unit = {
-    val result = ByteBuffer.allocate(size)
-    chunks.asScala.foreach(result.put)
-    chunks.clear()
-    success(result)
+    completed.set(true)
+    chunks.add(EndValue)
   }
 
   def cancel(): Unit = {

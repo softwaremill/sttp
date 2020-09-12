@@ -95,12 +95,9 @@ class HttpClientMonixBackend private (
     Task.eval(new MonixSimpleQueue[T](None))
 
   override protected def publisherToBody(p: Publisher[util.List[ByteBuffer]]): InputStream = {
-    // this implementation seems to be better(https://stackoverflow.com/a/51801335) but I am concerned about the threads (see caveats section)
-    // we might also consider returning F[B], but then in zio we will end up with ZIO[ZStream] which seems weird
-    val promise = Promise[Array[Byte]]
-    p.subscribe(new SimpleSubscriber(bytebuffer => promise.success(bytebuffer.array()), promise.failure))
-    val bytes = Await.result(promise.future, Duration.Inf)
-    new ByteArrayInputStream(bytes)
+    val subscriber = new SimpleSubscriber(e => throw e)
+    p.subscribe(subscriber)
+    subscriber.inputStream
   }
 
   override protected def emptyBody(): InputStream = emptyInputStream()
