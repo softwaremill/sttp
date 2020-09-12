@@ -2,7 +2,7 @@
 
 Resilience covers areas such as retries, circuit breaking and rate limiting.
 
-sttp client doesn't have the above built-in, as these concepts are usually best handled on a higher level. Sending a request (that is, invoking `myRequest.send(backend)` using an implicit backend that is in scope), can be viewed as a:
+sttp client doesn't have the above built-in, as these concepts are usually best handled on a higher level. Sending a request (that is, invoking `myRequest.send(backend)`), can be viewed as a:
 
 * `() => Response[T]` function for synchronous backends
 * `() => Future[Response[T]]` for `Future`-based asynchronous backends
@@ -24,7 +24,7 @@ Here's an incomplete list of libraries which can be used to manage retries in va
 sttp client contains a default implementation of a predicate, which allows deciding if a request is retriable: if the body can be sent multiple times, and if the HTTP method is idempotent.
 This predicate is available as `RetryWhen.Default` and has type `(Request[_, _], Either[Throwable, Response[_]]) => Boolean`.
 
-See also the [retrying using ZIO](examples.md#retry-a-request-using-zio) example, as well as an example of a very simple [retrying backend wrapper](backends/wrappers/custom.md#example-retrying-backend-wrapper). 
+See also the [retrying using ZIO](examples.html#retry-a-request-using-zio) example, as well as an example of a very simple [retrying backend wrapper](backends/wrappers/custom.html#example-retrying-backend-wrapper). 
 
 Note that some backends also have built-in retry mechanisms, e.g. [akka-http](https://doc.akka.io/docs/akka-http/current/scala/http/client-side/host-level.html#retrying-a-request) or [OkHttp](http://square.github.io/okhttp) (see the builder's `retryOnConnectionFailure` method).
 
