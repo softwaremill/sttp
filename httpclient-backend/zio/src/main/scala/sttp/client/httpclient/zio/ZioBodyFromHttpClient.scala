@@ -12,7 +12,7 @@ import zio.blocking.Blocking
 import zio.stream.{Stream, ZSink, ZStream}
 import zio.{Task, ZIO}
 
-class ZioBodyFromHttpClient
+private[zio] class ZioBodyFromHttpClient
     extends BodyFromHttpClient[BlockingTask, BlockingZioStreams, BlockingZioStreams.BinaryStream] {
   override val streams: BlockingZioStreams = BlockingZioStreams
 
