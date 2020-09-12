@@ -56,4 +56,14 @@ def asWebSocketStreamAlways[S](s: Streams[S])(p: s.Pipe[WebSocketFrame.Data[_], 
 Using streaming websockets requires the backend to support the given streaming capability (see also [streaming](requests/streaming.md)). Streaming capabilities are described as implementations of `Streams[S]`, and are provided by backend implementations, e.g. `AkkaStreams` or `Fs2Streams[F]`.
 
 When working with streams of websocket frames keep in mind that a text payload maybe fragmented into multiple frames.
-STTP provides two useful methods (`fromTextPipe`, `fromTextPipeF`) for each backend to aggregate these fragments back into complete messages.
+sttp provides two useful methods (`fromTextPipe`, `fromTextPipeF`) for each backend to aggregate these fragments back into complete messages.
+These methods can be found in corresponding WebSockets classes for given effect type:
+```eval_rst
+================ ==========================================
+effect type      class name
+================ ==========================================
+``monix.Task``   ``sttp.client.impl.monix.MonixWebSockets``   
+``ZIO``          ``sttp.client.impl.zio.ZioWebSockets``
+``fs2.Stream``   ``sttp.client.impl.fs2.Fs2WebSockets``
+================ ==========================================
+```
