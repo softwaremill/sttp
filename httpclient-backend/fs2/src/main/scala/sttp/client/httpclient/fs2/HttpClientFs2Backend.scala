@@ -36,7 +36,6 @@ import scala.collection.JavaConverters._
 class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
     client: HttpClient,
     blocker: Blocker,
-    chunkSize: Int,
     closeClient: Boolean,
     customizeRequest: HttpRequest => HttpRequest,
     customEncodingHandler: Fs2EncodingHandler[F]
@@ -85,25 +84,21 @@ class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
 }
 
 object HttpClientFs2Backend {
-  private val defaultChunkSize: Int = 4096
-
   type Fs2EncodingHandler[F[_]] = EncodingHandler[Stream[F, Byte]]
 
   private def apply[F[_]: ConcurrentEffect: ContextShift](
       client: HttpClient,
       blocker: Blocker,
-      chunkSize: Int,
       closeClient: Boolean,
       customizeRequest: HttpRequest => HttpRequest,
       customEncodingHandler: Fs2EncodingHandler[F]
   ): SttpBackend[F, Fs2Streams[F] with WebSockets] =
     new FollowRedirectsBackend(
-      new HttpClientFs2Backend(client, blocker, chunkSize, closeClient, customizeRequest, customEncodingHandler)
+      new HttpClientFs2Backend(client, blocker, closeClient, customizeRequest, customEncodingHandler)
     )
 
   def apply[F[_]: ConcurrentEffect: ContextShift](
       blocker: Blocker,
-      chunkSize: Int = defaultChunkSize,
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty
@@ -112,7 +107,6 @@ object HttpClientFs2Backend {
       HttpClientFs2Backend(
         HttpClientBackend.defaultClient(options),
         blocker,
-        chunkSize,
         closeClient = true,
         customizeRequest,
         customEncodingHandler
@@ -121,21 +115,19 @@ object HttpClientFs2Backend {
 
   def resource[F[_]: ConcurrentEffect: ContextShift](
       blocker: Blocker,
-      chunkSize: Int = defaultChunkSize,
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty
   ): Resource[F, SttpBackend[F, Fs2Streams[F] with WebSockets]] =
-    Resource.make(apply(blocker, chunkSize, options, customizeRequest, customEncodingHandler))(_.close())
+    Resource.make(apply(blocker, options, customizeRequest, customEncodingHandler))(_.close())
 
   def usingClient[F[_]: ConcurrentEffect: ContextShift](
       client: HttpClient,
       blocker: Blocker,
-      chunkSize: Int = defaultChunkSize,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty
   ): SttpBackend[F, Fs2Streams[F] with WebSockets] =
-    HttpClientFs2Backend(client, blocker, chunkSize, closeClient = false, customizeRequest, customEncodingHandler)
+    HttpClientFs2Backend(client, blocker, closeClient = false, customizeRequest, customEncodingHandler)
 
   /**
     * Create a stub backend for testing, which uses the [[F]] response wrapper, and supports `Stream[F, Byte]`
