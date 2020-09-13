@@ -13,7 +13,7 @@ import sttp.monad.MonadError
 import sttp.monad.syntax.{MonadErrorValueOps, _}
 import sttp.ws.{WebSocket, WebSocketFrame}
 
-private[fs2] class Fs2BodyFromHttpClient[F[_]: ConcurrentEffect: ContextShift]
+private[fs2] class Fs2BodyFromHttpClient[F[_]: ConcurrentEffect: ContextShift](blocker: Blocker)
     extends BodyFromHttpClient[F, Fs2Streams[F], Stream[F, Byte]] {
   override val streams: Fs2Streams[F] = Fs2Streams[F]
   override implicit def monad: MonadError[F] = implicits.asyncMonadError[F]
@@ -30,11 +30,7 @@ private[fs2] class Fs2BodyFromHttpClient[F[_]: ConcurrentEffect: ContextShift]
       ): F[Stream[F, Byte]] = {
         replayableBody match {
           case Left(value) => Stream.evalSeq[F, List, Byte](value.toList.unit).unit
-          case Right(sttpFile) =>
-            Stream
-              .resource(Blocker[F])
-              .flatMap { blocker => fs2.io.file.readAll(sttpFile.toPath, blocker, 32 * 1024) }
-              .unit
+          case Right(sttpFile) => fs2.io.file.readAll(sttpFile.toPath, blocker, 32 * 1024).unit
         }
       }
 
@@ -44,9 +40,7 @@ private[fs2] class Fs2BodyFromHttpClient[F[_]: ConcurrentEffect: ContextShift]
         response.compile.toList.map(_.toArray) //TODO collect directly to array
 
       override protected def regularAsFile(response: Stream[F, Byte], file: SttpFile): F[SttpFile] = {
-        Stream
-          .resource(Blocker[F])
-          .flatMap { blocker => response.through(fs2.io.file.writeAll(file.toPath, blocker)) }
+          response.through(fs2.io.file.writeAll(file.toPath, blocker))
           .compile
           .drain
           .map(_ => file)

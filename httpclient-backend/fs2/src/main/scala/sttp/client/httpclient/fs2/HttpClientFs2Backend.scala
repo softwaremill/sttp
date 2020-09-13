@@ -66,7 +66,7 @@ class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
     }
 
   override protected val bodyFromHttpClient: BodyFromHttpClient[F, Fs2Streams[F], Stream[F, Byte]] =
-    new Fs2BodyFromHttpClient[F]
+    new Fs2BodyFromHttpClient[F](blocker)
 
   override protected def createSimpleQueue[T]: F[SimpleQueue[F, T]] =
     InspectableQueue.unbounded[F, T].map(new Fs2SimpleQueue(_, None))
