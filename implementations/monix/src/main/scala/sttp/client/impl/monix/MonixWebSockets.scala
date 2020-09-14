@@ -3,6 +3,7 @@ package sttp.client.impl.monix
 import monix.eval.Task
 import monix.execution.cancelables.BooleanCancelable
 import monix.reactive.Observable
+import sttp.capabilities.monix.MonixStreams
 import sttp.ws.{WebSocket, WebSocketFrame}
 
 object MonixWebSockets {
@@ -29,5 +30,30 @@ object MonixWebSockets {
         .completedL
         .guarantee(ws.close())
     }
+  }
+  def fromTextPipe: (String => WebSocketFrame) => MonixStreams.Pipe[WebSocketFrame, WebSocketFrame] =
+    f => fromTextPipeF(_.map(f))
+
+  def fromTextPipeF: MonixStreams.Pipe[String, WebSocketFrame] => MonixStreams.Pipe[WebSocketFrame, WebSocketFrame] =
+    p => p.compose(combinedTextFrames)
+
+  def combinedTextFrames: MonixStreams.Pipe[WebSocketFrame, String] = { input =>
+    input
+      .collect { case tf: WebSocketFrame.Text => tf }
+      .flatMap { tf =>
+        if (tf.finalFragment) {
+          Observable(tf.copy(finalFragment = false), tf.copy(payload = ""))
+        } else {
+          Observable(tf)
+        }
+      }
+      .mapAccumulate(List[WebSocketFrame.Text]()) {
+        case (acc, tf) if tf.finalFragment => (Nil, acc.reverse)
+        case (acc, tf)                     => (tf :: acc, Nil)
+      }
+      .concatMapIterable {
+        case Nil => Nil
+        case l   => List(l.map(_.payload).mkString)
+      }
   }
 }
