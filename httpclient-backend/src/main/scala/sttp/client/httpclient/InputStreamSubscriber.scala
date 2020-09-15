@@ -18,25 +18,25 @@ private[httpclient] class InputStreamSubscriber extends Subscriber[java.util.Lis
   private val chunks = new LinkedBlockingQueue[Message]()
 
   val inputStream: InputStream = new InputStream {
-    private val exhausted = new AtomicBoolean(false)
-    private val currentBuffer: AtomicReference[Option[ByteBuffer]] = new AtomicReference[Option[ByteBuffer]](None)
+    private var exhausted = false
+    private var currentBuffer: Option[ByteBuffer] = None
 
     override def read(): Int = {
-      if (exhausted.get()) {
+      if (exhausted) {
         -1
       } else {
-        val byteRead = currentBuffer.get() match {
+        val byteRead = currentBuffer match {
           case Some(buffer) if buffer.hasRemaining =>
             buffer.get() & 0xff
           case _ =>
             chunks.take() match {
               case NextItem(buffer) =>
-                currentBuffer.set(Some(buffer))
+                currentBuffer = Some(buffer)
                 buffer.get() & 0xff
               case Error(ex) =>
                 throw ex
               case Completed() =>
-                exhausted.set(true)
+                exhausted = true
                 -1
             }
         }
