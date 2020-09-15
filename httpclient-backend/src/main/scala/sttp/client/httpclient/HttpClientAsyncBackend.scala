@@ -95,7 +95,7 @@ abstract class HttpClientAsyncBackend[F[_], S, P, B](
         case e: CompletionException if e.getCause.isInstanceOf[WebSocketHandshakeException] =>
           readResponse(
             e.getCause.asInstanceOf[WebSocketHandshakeException].getResponse,
-            Left(emptyBody),
+            Left(emptyBody()),
             request
           )
       }
