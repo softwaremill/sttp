@@ -16,8 +16,8 @@ import sttp.client.httpclient.{
   BodyToHttpClient,
   HttpClientAsyncBackend,
   HttpClientBackend,
-  RichByteBuffer
 }
+import sttp.client.internal._
 import sttp.client.impl.zio.{RIOMonadAsyncError, ZioSimpleQueue}
 import sttp.client.internal.ws.SimpleQueue
 import sttp.client.testing.SttpBackendStub

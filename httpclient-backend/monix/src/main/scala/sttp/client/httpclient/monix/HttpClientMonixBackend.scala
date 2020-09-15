@@ -16,14 +16,7 @@ import sttp.capabilities.WebSockets
 import sttp.capabilities.monix.MonixStreams
 import sttp.client.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client.httpclient.monix.HttpClientMonixBackend.MonixEncodingHandler
-import sttp.client.httpclient.{
-  BodyFromHttpClient,
-  BodyToHttpClient,
-  HttpClientAsyncBackend,
-  HttpClientBackend,
-  InputStreamBodyFromHttpClient,
-  InputStreamSubscriber
-}
+import sttp.client.httpclient._
 import sttp.client.impl.monix.{MonixSimpleQueue, MonixWebSockets, TaskMonadAsyncError}
 import sttp.client.internal._
 import sttp.client.internal.ws.SimpleQueue
@@ -58,8 +51,17 @@ class HttpClientMonixBackend private (
 
   override protected val bodyFromHttpClient: BodyFromHttpClient[Task, MonixStreams, InputStream] =
     new InputStreamBodyFromHttpClient[Task, MonixStreams] {
-      override def inputStreamToStream(is: InputStream): Task[(streams.BinaryStream, () => Task[Unit])] =
-        monad.error(new IllegalStateException("Streaming is not supported"))
+      override def inputStreamToStream(is: InputStream): Task[(streams.BinaryStream, () => Task[Unit])] = {
+        Task.eval {
+          (
+            Observable
+              .fromInputStream(Task.now(is))
+              .map(ByteBuffer.wrap)
+              .guaranteeCase(_ => Task(is.close())),
+            () => Task.eval(is.close())
+          )
+        }
+      }
       override val streams: MonixStreams = MonixStreams
       override implicit def monad: MonadError[Task] = TaskMonadAsyncError
       override def compileWebSocketPipe(

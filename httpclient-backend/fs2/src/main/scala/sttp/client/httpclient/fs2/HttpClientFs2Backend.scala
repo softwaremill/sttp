@@ -17,15 +17,10 @@ import sttp.capabilities.WebSockets
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client.httpclient.fs2.HttpClientFs2Backend.Fs2EncodingHandler
-import sttp.client.httpclient.{
-  BodyFromHttpClient,
-  BodyToHttpClient,
-  HttpClientAsyncBackend,
-  HttpClientBackend,
-  RichByteBuffer
-}
+import sttp.client.httpclient.{BodyFromHttpClient, BodyToHttpClient, HttpClientAsyncBackend, HttpClientBackend}
 import sttp.client.impl.cats.implicits._
 import sttp.client.impl.fs2.Fs2SimpleQueue
+import sttp.client.internal._
 import sttp.client.internal.ws.SimpleQueue
 import sttp.client.testing.SttpBackendStub
 import sttp.client.{FollowRedirectsBackend, Request, Response, SttpBackend, SttpBackendOptions}
