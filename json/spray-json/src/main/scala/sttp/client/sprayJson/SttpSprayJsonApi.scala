@@ -36,8 +36,10 @@ trait SttpSprayJsonApi {
     */
   def asJsonEither[E: JsonReader: IsOption, B: JsonReader: IsOption]
       : ResponseAs[Either[ResponseException[E, Exception], B], Any] = {
-    asJson[B].mapLeft { case HttpError(e, code) =>
-      ResponseAs.deserializeCatchingExceptions(deserializeJson[E])(e).fold(identity, HttpError(_, code))
+    asJson[B].mapLeft {
+      case HttpError(e, code) =>
+        ResponseAs.deserializeCatchingExceptions(deserializeJson[E])(e).fold(identity, HttpError(_, code))
+      case de @ DeserializationException(_, _) => de
     }.showAsJsonEither
   }
 
