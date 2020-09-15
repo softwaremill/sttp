@@ -1,27 +1,27 @@
 package sttp.client.httpclient
 
-import java.io.InputStream
 import java.net.http.HttpResponse.BodyHandlers
 import java.net.http.{HttpClient, HttpRequest, HttpResponse, WebSocketHandshakeException}
-import java.util.concurrent.CompletionException
+import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.{CompletionException, Flow}
+import java.{util => ju}
 
+import org.reactivestreams.{FlowAdapters, Publisher}
 import sttp.client.httpclient.HttpClientBackend.EncodingHandler
-import sttp.client.internal.emptyInputStream
 import sttp.client.internal.ws.{SimpleQueue, WebSocketEvent}
-import sttp.monad.syntax._
-import sttp.monad.{Canceler, MonadError}
 import sttp.client.{Request, Response, SttpClientException}
 import sttp.model.StatusCode
-import sttp.monad.MonadAsyncError
+import sttp.monad.syntax._
+import sttp.monad.{Canceler, MonadAsyncError, MonadError}
 
-abstract class HttpClientAsyncBackend[F[_], S, P](
+abstract class HttpClientAsyncBackend[F[_], S, P, B](
     client: HttpClient,
     private implicit val monad: MonadAsyncError[F],
     closeClient: Boolean,
     customizeRequest: HttpRequest => HttpRequest,
-    customEncodingHandler: EncodingHandler
-) extends HttpClientBackend[F, S, P](client, closeClient, customEncodingHandler) {
+    customEncodingHandler: EncodingHandler[B]
+) extends HttpClientBackend[F, S, P, B](client, closeClient, customEncodingHandler) {
   override def send[T, R >: PE](request: Request[T, R]): F[Response[T]] =
     adjustExceptions(request) {
       if (request.isWebSocket) sendWebSocket(request) else sendRegular(request)
@@ -38,10 +38,10 @@ abstract class HttpClientAsyncBackend[F[_], S, P](
         def error(t: Throwable): Unit = cb(Left(t))
 
         val cf = client
-          .sendAsync(jRequest, BodyHandlers.ofInputStream())
-          .whenComplete((t: HttpResponse[InputStream], u: Throwable) => {
+          .sendAsync(jRequest, BodyHandlers.ofPublisher())
+          .whenComplete((t: HttpResponse[Flow.Publisher[ju.List[ByteBuffer]]], u: Throwable) => {
             if (t != null) {
-              try success(readResponse(t, Left(t.body()), request))
+              try success(readResponse(t, Left(publisherToBody(FlowAdapters.toPublisher(t.body()))), request))
               catch {
                 case e: Exception => error(e)
               }
@@ -54,6 +54,9 @@ abstract class HttpClientAsyncBackend[F[_], S, P](
       })
     }
   }
+
+  protected def publisherToBody(p: Publisher[java.util.List[ByteBuffer]]): B
+  protected def emptyBody(): B
 
   private def sendWebSocket[T, R >: PE](request: Request[T, R]): F[Response[T]] = {
     createSimpleQueue[WebSocketEvent]
@@ -92,7 +95,7 @@ abstract class HttpClientAsyncBackend[F[_], S, P](
         case e: CompletionException if e.getCause.isInstanceOf[WebSocketHandshakeException] =>
           readResponse(
             e.getCause.asInstanceOf[WebSocketHandshakeException].getResponse,
-            Left(emptyInputStream()),
+            Left(emptyBody()),
             request
           )
       }

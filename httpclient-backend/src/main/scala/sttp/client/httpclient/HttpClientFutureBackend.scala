@@ -1,17 +1,22 @@
 package sttp.client.httpclient
 
-import java.io.InputStream
+import java.io.{InputStream, UnsupportedEncodingException}
 import java.net.http.HttpRequest.BodyPublisher
 import java.net.http.{HttpClient, HttpRequest}
+import java.nio.ByteBuffer
+import java.util
+import java.util.zip.{GZIPInputStream, InflaterInputStream}
 
+import org.reactivestreams.Publisher
 import sttp.capabilities.WebSockets
-import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 import sttp.client.httpclient.HttpClientBackend.EncodingHandler
-import sttp.client.internal.NoStreams
+import sttp.client.httpclient.HttpClientFutureBackend.InputStreamEncodingHandler
 import sttp.client.internal.ws.{FutureSimpleQueue, SimpleQueue}
+import sttp.client.internal.{NoStreams, emptyInputStream}
 import sttp.client.testing.SttpBackendStub
+import sttp.client.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 import sttp.monad.{FutureMonad, MonadError}
-import sttp.ws.WebSocket
+import sttp.ws.{WebSocket, WebSocketFrame}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -19,9 +24,9 @@ class HttpClientFutureBackend private (
     client: HttpClient,
     closeClient: Boolean,
     customizeRequest: HttpRequest => HttpRequest,
-    customEncodingHandler: EncodingHandler
+    customEncodingHandler: InputStreamEncodingHandler
 )(implicit ec: ExecutionContext)
-    extends HttpClientAsyncBackend[Future, Nothing, WebSockets](
+    extends HttpClientAsyncBackend[Future, Nothing, WebSockets, InputStream](
       client,
       new FutureMonad,
       closeClient,
@@ -37,28 +42,44 @@ class HttpClientFutureBackend private (
     override def streamToPublisher(stream: Nothing): Future[BodyPublisher] = stream // nothing is everything
   }
 
-  override protected val bodyFromHttpClient: BodyFromHttpClient[Future, Nothing] =
-    new BodyFromHttpClient[Future, Nothing] {
+  override protected val bodyFromHttpClient: BodyFromHttpClient[Future, Nothing, InputStream] =
+    new InputStreamBodyFromHttpClient[Future, Nothing] {
+      override def inputStreamToStream(is: InputStream): Future[(streams.BinaryStream, () => Future[Unit])] =
+        monad.error(new IllegalStateException("Streaming is not supported"))
       override val streams: NoStreams = NoStreams
-      override implicit val monad: MonadError[Future] = new FutureMonad
-      override def inputStreamToStream(is: InputStream): Nothing =
-        throw new IllegalStateException("Streaming is not supported")
+      override implicit def monad: MonadError[Future] = new FutureMonad()
       override def compileWebSocketPipe(
           ws: WebSocket[Future],
-          pipe: Nothing
-      ): Future[Unit] = pipe // nothing is everything
+          pipe: streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]
+      ): Future[Unit] = pipe
     }
 
   override protected def createSimpleQueue[T]: Future[SimpleQueue[Future, T]] =
     Future.successful(new FutureSimpleQueue[T](None))
+
+  override protected def standardEncoding: (InputStream, String) => InputStream = {
+    case (body, "gzip")    => new GZIPInputStream(body)
+    case (body, "deflate") => new InflaterInputStream(body)
+    case (_, ce)           => throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
+  }
+
+  override protected def emptyBody(): InputStream = emptyInputStream()
+
+  override protected def publisherToBody(p: Publisher[util.List[ByteBuffer]]): InputStream = {
+    val subscriber = new InputStreamSubscriber
+    p.subscribe(subscriber)
+    subscriber.inputStream
+  }
 }
 
 object HttpClientFutureBackend {
+  type InputStreamEncodingHandler = EncodingHandler[InputStream]
+
   private def apply(
       client: HttpClient,
       closeClient: Boolean,
       customizeRequest: HttpRequest => HttpRequest,
-      customEncodingHandler: EncodingHandler
+      customEncodingHandler: InputStreamEncodingHandler
   )(implicit ec: ExecutionContext): SttpBackend[Future, WebSockets] =
     new FollowRedirectsBackend(
       new HttpClientFutureBackend(client, closeClient, customizeRequest, customEncodingHandler)
@@ -67,7 +88,7 @@ object HttpClientFutureBackend {
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: EncodingHandler = PartialFunction.empty
+      customEncodingHandler: InputStreamEncodingHandler = PartialFunction.empty
   )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, WebSockets] =
     HttpClientFutureBackend(
       HttpClientBackend.defaultClient(options),
@@ -79,7 +100,7 @@ object HttpClientFutureBackend {
   def usingClient(
       client: HttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: EncodingHandler = PartialFunction.empty
+      customEncodingHandler: InputStreamEncodingHandler = PartialFunction.empty
   )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, WebSockets] =
     HttpClientFutureBackend(client, closeClient = false, customizeRequest, customEncodingHandler)
 

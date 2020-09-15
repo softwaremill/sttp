@@ -585,7 +585,8 @@ lazy val httpClientBackend = (projectMatrix in file("httpclient-backend"))
     scalacOptions ++= Seq("-J--add-modules", "-Jjava.net.http"),
     scalacOptions ++= {
       if (scalaVersion.value == scala3) Nil else List("-target:jvm-11")
-    }
+    },
+    libraryDependencies += "org.reactivestreams" % "reactive-streams-flow-adapters" % "1.0.2"
   )
   .jvmPlatform(scalaVersions = List(scala2_13, scala3), settings = intellijImportOnly213)
   .dependsOn(core % compileAndTest)
