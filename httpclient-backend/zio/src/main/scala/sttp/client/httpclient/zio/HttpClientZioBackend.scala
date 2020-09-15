@@ -6,17 +6,12 @@ import java.net.http.{HttpClient, HttpRequest}
 import java.nio.ByteBuffer
 import java.util
 
-import _root_.zio.interop.reactivestreams.{streamToPublisher => zioStreamToPublisher, _}
+import _root_.zio.interop.reactivestreams._
 import org.reactivestreams.{FlowAdapters, Publisher}
 import sttp.capabilities.WebSockets
 import sttp.capabilities.zio.BlockingZioStreams
 import sttp.client.httpclient.HttpClientBackend.EncodingHandler
-import sttp.client.httpclient.{
-  BodyFromHttpClient,
-  BodyToHttpClient,
-  HttpClientAsyncBackend,
-  HttpClientBackend,
-}
+import sttp.client.httpclient.{BodyFromHttpClient, BodyToHttpClient, HttpClientAsyncBackend, HttpClientBackend}
 import sttp.client.internal._
 import sttp.client.impl.zio.{RIOMonadAsyncError, ZioSimpleQueue}
 import sttp.client.internal.ws.SimpleQueue
@@ -61,6 +56,7 @@ class HttpClientZioBackend private (
       override val streams: BlockingZioStreams = BlockingZioStreams
       override implicit def monad: MonadError[BlockingTask] = responseMonad
       override def streamToPublisher(stream: ZStream[Blocking, Throwable, Byte]): BlockingTask[BodyPublisher] = {
+        import _root_.zio.interop.reactivestreams.{streamToPublisher => zioStreamToPublisher}
         val publisher = stream.mapChunks(byteChunk => Chunk(ByteBuffer.wrap(byteChunk.toArray))).toPublisher
         publisher.map { pub =>
           BodyPublishers.fromPublisher(FlowAdapters.toFlowPublisher(pub))
