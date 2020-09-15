@@ -108,7 +108,7 @@ object ResponseAs {
       *   if `A` is not yet an exception)
       * - in case of `B`, returns the value directly
       */
-    def failLeft: ResponseAs[B, R] =
+    def getRight: ResponseAs[B, R] =
       ra.mapWithMetadata { case (t, meta) =>
         t match {
           case Left(a: Exception) => throw a
@@ -127,7 +127,7 @@ object ResponseAs {
       * either throws the [[DeserializationException]], returns the deserialized body from the [[HttpError]], or
       * the deserialized successful body `B`.
       */
-    def failLeftDeserialize: ResponseAs[Either[HE, B], R] =
+    def getEither: ResponseAs[Either[HE, B], R] =
       ra.map {
         case Left(HttpError(he, _))               => Left(he)
         case Left(d: DeserializationException[_]) => throw d

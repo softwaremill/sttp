@@ -20,7 +20,7 @@ def asJsonAlways[B]: ResponseAs[Either[DeserializationException[Exception], B], 
 def asJsonEither[E, B]: ResponseAs[Either[ResponseException[E, Exception], B], Any] = ???
 ```
 
-The response specifications can be further refined using `.failLeft` and `.failLeftDeserialize`, see [response body specifications](responses/body.md).
+The response specifications can be further refined using `.getRight` and `.getEither`, see [response body specifications](responses/body.md).
 
 Following data class will be used through the next few examples:
 

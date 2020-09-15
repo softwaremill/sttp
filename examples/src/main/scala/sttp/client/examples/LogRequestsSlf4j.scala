@@ -10,7 +10,7 @@ object LogRequestsSlf4j extends App {
 
   val request = basicRequest
     .get(uri"https://httpbin.org/get")
-    .response(asJson[HttpBinResponse].failLeft)
+    .response(asJson[HttpBinResponse].getRight)
 
   val backend: SttpBackend[Identity, Any] =
     Slf4jLoggingBackend(
