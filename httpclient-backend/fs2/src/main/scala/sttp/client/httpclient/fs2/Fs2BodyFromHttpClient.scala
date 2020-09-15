@@ -4,7 +4,7 @@ import cats.effect.{Blocker, ConcurrentEffect, ContextShift}
 import fs2.{Pipe, Stream}
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client.httpclient.BodyFromHttpClient
-import sttp.client.impl.cats.implicits
+import sttp.client.impl.cats.CatsMonadAsyncError
 import sttp.client.impl.fs2.Fs2WebSockets
 import sttp.client.internal.{BodyFromResponseAs, SttpFile}
 import sttp.client.ws.{GotAWebSocketException, NotAWebSocketException}
@@ -16,7 +16,7 @@ import sttp.ws.{WebSocket, WebSocketFrame}
 private[fs2] class Fs2BodyFromHttpClient[F[_]: ConcurrentEffect: ContextShift](blocker: Blocker)
     extends BodyFromHttpClient[F, Fs2Streams[F], Stream[F, Byte]] {
   override val streams: Fs2Streams[F] = Fs2Streams[F]
-  override implicit def monad: MonadError[F] = implicits.asyncMonadError[F]
+  override implicit val monad: MonadError[F] = new CatsMonadAsyncError[F]
   override def compileWebSocketPipe(
       ws: WebSocket[F],
       pipe: Pipe[F, WebSocketFrame.Data[_], WebSocketFrame]
@@ -29,7 +29,7 @@ private[fs2] class Fs2BodyFromHttpClient[F[_]: ConcurrentEffect: ContextShift](b
           replayableBody: Either[Array[Byte], SttpFile]
       ): F[Stream[F, Byte]] = {
         replayableBody match {
-          case Left(value) => Stream.evalSeq[F, List, Byte](value.toList.unit).unit
+          case Left(value)     => Stream.evalSeq[F, List, Byte](value.toList.unit).unit
           case Right(sttpFile) => fs2.io.file.readAll(sttpFile.toPath, blocker, 32 * 1024).unit
         }
       }
@@ -37,17 +37,22 @@ private[fs2] class Fs2BodyFromHttpClient[F[_]: ConcurrentEffect: ContextShift](b
       override protected def regularIgnore(response: Stream[F, Byte]): F[Unit] = response.compile.drain
 
       override protected def regularAsByteArray(response: Stream[F, Byte]): F[Array[Byte]] =
-        response.compile.toList.map(_.toArray) //TODO collect directly to array
+        response.chunkAll.compile.last.map(_.map(_.toArray).getOrElse(Array()))
 
       override protected def regularAsFile(response: Stream[F, Byte], file: SttpFile): F[SttpFile] = {
-          response.through(fs2.io.file.writeAll(file.toPath, blocker))
+        response
+          .through(fs2.io.file.writeAll(file.toPath, blocker))
           .compile
           .drain
           .map(_ => file)
       }
 
       override protected def regularAsStream(response: Stream[F, Byte]): F[(Stream[F, Byte], () => F[Unit])] = {
-        monad.eval(response -> { () => monad.unit() }) //TODO do we have to drain stream here?
+        (
+          response,
+          // ignoring exceptions that occur when draining (i.e. the stream is already drained)
+          () => response.compile.drain.handleError { case _: Exception => ().unit }
+        ).unit
       }
 
       override protected def handleWS[T](

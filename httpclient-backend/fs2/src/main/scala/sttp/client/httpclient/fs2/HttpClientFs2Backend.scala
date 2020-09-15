@@ -9,7 +9,7 @@ import java.util
 import cats.effect._
 import cats.effect.implicits._
 import cats.implicits._
-import fs2.Stream
+import fs2.{Chunk, Stream}
 import fs2.concurrent.InspectableQueue
 import fs2.interop.reactivestreams._
 import org.reactivestreams.{FlowAdapters, Publisher}
@@ -20,7 +20,6 @@ import sttp.client.httpclient.fs2.HttpClientFs2Backend.Fs2EncodingHandler
 import sttp.client.httpclient.{BodyFromHttpClient, BodyToHttpClient, HttpClientAsyncBackend, HttpClientBackend}
 import sttp.client.impl.cats.implicits._
 import sttp.client.impl.fs2.Fs2SimpleQueue
-import sttp.client.internal._
 import sttp.client.internal.ws.SimpleQueue
 import sttp.client.testing.SttpBackendStub
 import sttp.client.{FollowRedirectsBackend, Request, Response, SttpBackend, SttpBackendOptions}
@@ -66,7 +65,7 @@ class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
     InspectableQueue.unbounded[F, T].map(new Fs2SimpleQueue(_, None))
 
   override protected def publisherToBody(p: Publisher[util.List[ByteBuffer]]): Stream[F, Byte] = {
-    p.toStream[F].flatMap(data => Stream.emits(data.asScala.flatMap(_.safeRead()))) //TODO take a closer look
+    p.toStream[F].flatMap(data => Stream.emits(data.asScala.map(Chunk.byteBuffer)).flatMap(Stream.chunk))
   }
 
   override protected def emptyBody(): Stream[F, Byte] = Stream.empty

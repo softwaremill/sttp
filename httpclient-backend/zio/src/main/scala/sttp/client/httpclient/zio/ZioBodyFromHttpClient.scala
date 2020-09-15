@@ -44,7 +44,7 @@ private[zio] class ZioBodyFromHttpClient
 
       override protected def regularAsByteArray(
           response: ZStream[Blocking, Throwable, Byte]
-      ): BlockingTask[Array[Byte]] = response.run(ZSink.collectAll[Byte]).map(_.toArray)
+      ): BlockingTask[Array[Byte]] = response.runCollect.map(_.toArray)
 
       override protected def regularAsFile(
           response: ZStream[Blocking, Throwable, Byte],
@@ -54,7 +54,7 @@ private[zio] class ZioBodyFromHttpClient
       override protected def regularAsStream(
           response: ZStream[Blocking, Throwable, Byte]
       ): Task[(ZStream[Blocking, Throwable, Byte], () => BlockingTask[Unit])] =
-        Task.effect(response -> { () => response.runDrain })
+        Task.succeed((response, () => response.runDrain.catchAll(_ => ZIO.unit)))
 
       override protected def handleWS[T](
           responseAs: WebSocketResponseAs[T, _],
