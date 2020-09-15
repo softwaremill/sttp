@@ -77,4 +77,16 @@ package object internal {
   private[client] val nonReplayableBody: ReplayableBody = None
 
   private[client] val IOBufferSize = 1024
+
+  implicit class RichByteBuffer(byteBuffer: ByteBuffer) {
+    def safeRead(): Array[Byte] = {
+      if (byteBuffer.hasArray) {
+        byteBuffer.array()
+      } else {
+        val array = new Array[Byte](byteBuffer.remaining())
+        byteBuffer.get(array)
+        array
+      }
+    }
+  }
 }
