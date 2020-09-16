@@ -7,15 +7,15 @@ The [fs2](https://github.com/functional-streams-for-scala/fs2) backend is **asyn
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client" %% "async-http-client-backend-fs2" % "3.0.0-RC3"
+"com.softwaremill.sttp.client3" %% "async-http-client-backend-fs2" % "3.0.0-RC3"
 ```
 
 And some imports:
 
 ```scala
-import sttp.client.asynchttpclient.fs2.AsyncHttpClientFs2Backend
+import sttp.client3.asynchttpclient.fs2.AsyncHttpClientFs2Backend
 import cats.effect._
-import sttp.client._
+import sttp.client3._
 
 // an implicit `cats.effect.ContextShift` is required to create a concurrent instance for `cats.effect.IO`,
 // as well as a `cats.effect.Blocker` instance. Note that you'll probably want to use a different thread
@@ -76,15 +76,15 @@ val backend = AsyncHttpClientFs2Backend.usingClient[IO](asyncHttpClient, blocker
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client" %% "httpclient-backend-fs2" % "3.0.0-RC3"
+"com.softwaremill.sttp.client3" %% "httpclient-backend-fs2" % "3.0.0-RC3"
 ```
 
 And some imports:
 
 ```scala
-import sttp.client.httpclient.fs2.HttpClientFs2Backend
+import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 import cats.effect._
-import sttp.client._
+import sttp.client3._
 
 // an implicit `cats.effect.ContextShift` is required to create a concurrent instance for `cats.effect.IO`,
 // as well as a `cats.effect.Blocker` instance. Note that you'll probably want to use a different thread
@@ -96,7 +96,7 @@ val blocker = Blocker.liftExecutionContext(scala.concurrent.ExecutionContext.glo
 Create the backend using:
 
 ```scala
-import sttp.client.httpclient.fs2.HttpClientFs2Backend
+import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 HttpClientFs2Backend[IO](blocker).flatMap { backend => ??? }
 ```
 
@@ -118,14 +118,14 @@ This backend is based on the built-in `java.net.http.HttpClient` available from 
 
 ## Streaming
 
-The fs2 backend supports streaming for any instance of the `cats.effect.Effect` typeclass, such as `cats.effect.IO`. If `IO` is used then the type of supported streams is `fs2.Stream[IO, Byte]`. The streams capability is represented as `sttp.client.fs2.Fs2Streams`.
+The fs2 backend supports streaming for any instance of the `cats.effect.Effect` typeclass, such as `cats.effect.IO`. If `IO` is used then the type of supported streams is `fs2.Stream[IO, Byte]`. The streams capability is represented as `sttp.client3.fs2.Fs2Streams`.
 
 Requests can be sent with a streaming body like this:
 
 ```scala
 import sttp.capabilities.fs2.Fs2Streams
-import sttp.client._
-import sttp.client.asynchttpclient.fs2.AsyncHttpClientFs2Backend
+import sttp.client3._
+import sttp.client3.asynchttpclient.fs2.AsyncHttpClientFs2Backend
 import fs2.Stream
 
 val effect = AsyncHttpClientFs2Backend[IO](blocker).flatMap { backend =>
@@ -142,7 +142,7 @@ Responses can also be streamed:
 
 ```scala
 import sttp.capabilities.fs2.Fs2Streams
-import sttp.client.asynchttpclient.fs2.AsyncHttpClientFs2Backend
+import sttp.client3.asynchttpclient.fs2.AsyncHttpClientFs2Backend
 import fs2.Stream
 import scala.concurrent.duration.Duration
 

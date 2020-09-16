@@ -10,7 +10,7 @@ Backend implementations include ones based on [akka-http](https://doc.akka.io/do
 Here's a very quick example of sttp client in action:
 
 ```scala
-import sttp.client._
+import sttp.client3._
 
 val query = "http language:scala"
 val sort: Option[String] = None

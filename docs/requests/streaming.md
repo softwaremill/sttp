@@ -13,7 +13,7 @@ An implementation of the `Streams[S]` capability must be passed to the `.streamB
 For example, using the [akka-http backend](../backends/akka.md), a request with a streaming body can be defined as follows:
 
 ```scala mdoc:compile-only
-import sttp.client._
+import sttp.client3._
 import sttp.capabilities.akka.AkkaStreams
 
 import akka.stream.scaladsl.Source

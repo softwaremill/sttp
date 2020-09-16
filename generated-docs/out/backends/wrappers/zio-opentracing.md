@@ -3,7 +3,7 @@
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client" %% "zio-telemetry-opentracing-backend" % "3.0.0-RC3"
+"com.softwaremill.sttp.client3" %% "zio-telemetry-opentracing-backend" % "3.0.0-RC3"
 ```
 
 This backend depends on [zio-opentracing](https://github.com/zio/zio-telemetry).
@@ -19,10 +19,10 @@ new ZioTelemetryOpenTracingBackend(zioBackend)
 Additionally you can add tags per request by supplying a `ZioTelemetryOpenTracingTracer`
 
 ```scala
-import sttp.client._
+import sttp.client3._
 import zio._
 import zio.telemetry.opentracing._
-import sttp.client.ziotelemetry.opentracing._
+import sttp.client3.ziotelemetry.opentracing._
 
 implicit val zioBackend: SttpBackend[Task, Any] = ???
 

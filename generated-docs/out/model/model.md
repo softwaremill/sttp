@@ -20,7 +20,7 @@ The model also contains aggregate/helper classes such as `Headers` and `MultiQue
 Example with objects:
 
 ```scala
-import sttp.client._
+import sttp.client3._
 import sttp.model._
 
 object Example {
@@ -36,7 +36,7 @@ object Example {
 Example with traits:
 
 ```scala
-import sttp.client._
+import sttp.client3._
 import sttp.model._
 
 object Example extends HeaderNames with MediaTypes with StatusCodes {

@@ -7,7 +7,7 @@ Cookies are currently only available on the JVM.
 Cookies can also be set using the following methods:
 
 ```scala
-import sttp.client._
+import sttp.client3._
 import sttp.model._
 
 basicRequest
@@ -22,7 +22,7 @@ basicRequest
 It is often necessary to copy cookies from a response, e.g. after a login request is sent, and a successful response with the authentication cookie received. Having an object `response: Response[_]`, cookies on a request can be copied:
 
 ```scala
-import sttp.client._
+import sttp.client3._
 
 val backend = HttpURLConnectionBackend()
 val loginRequest = basicRequest
@@ -37,7 +37,7 @@ basicRequest.cookies(response)
 Or, it's also possible to store only the `sttp.model.CookieWithMeta` objects (a sequence of which can be obtained from a response), and set the on the request:
 
 ```scala
-import sttp.client._
+import sttp.client3._
 
 val backend = HttpURLConnectionBackend()
 val loginRequest = basicRequest

@@ -20,7 +20,7 @@ Backends, or backend wrappers can use tags e.g. for logging, passing a metric na
 
 ## Listener backend
 
-The `sttp.client.listener.ListenerBackend` can make it easier to create backend wrappers which need to be notified about request lifecycle events: when a request is started, and when it completes either successfully or with an exception. This is possible by implementing a `sttp.client.listener.RequestListener`. This is how e.g. the [slf4j backend](logging.md) is implemented. 
+The `sttp.client3.listener.ListenerBackend` can make it easier to create backend wrappers which need to be notified about request lifecycle events: when a request is started, and when it completes either successfully or with an exception. This is possible by implementing a `sttp.client3.listener.RequestListener`. This is how e.g. the [slf4j backend](logging.md) is implemented. 
 
 A request listener can associate a value with a request, which will then be passed to the request completion notification methods.
 
@@ -36,7 +36,7 @@ For example:
 
 ```scala
 import sttp.capabilities.Effect
-import sttp.client._
+import sttp.client3._
 import sttp.monad.MonadError
 
 class MyWrapper[F[_], P] private (delegate: SttpBackend[F, P])
@@ -71,9 +71,9 @@ metrics for completed requests and wraps any `Future`-based backend:
 
 ```scala
 import sttp.capabilities.Effect
-import sttp.client._
+import sttp.client3._
 import sttp.monad.MonadError
-import sttp.client.akkahttp._
+import sttp.client3.akkahttp._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util._
@@ -138,7 +138,7 @@ In some cases it's possible to implement a generic retry mechanism; such a mecha
 
 ```scala
 import sttp.capabilities.Effect
-import sttp.client._
+import sttp.client3._
 import sttp.monad.MonadError
 
 class RetryingBackend[F[_], P](
@@ -185,7 +185,7 @@ Below is an example on how to implement a backend wrapper, which integrates with
 ```scala
 import io.github.resilience4j.circuitbreaker.{CallNotPermittedException, CircuitBreaker}
 import sttp.capabilities.Effect
-import sttp.client.{Request, Response, SttpBackend}
+import sttp.client3.{Request, Response, SttpBackend}
 import sttp.monad.MonadError
 import java.util.concurrent.TimeUnit
 
@@ -245,7 +245,7 @@ Below is an example on how to implement a backend wrapper, which integrates with
 import io.github.resilience4j.ratelimiter.RateLimiter
 import sttp.capabilities.Effect
 import sttp.monad.MonadError
-import sttp.client.{Request, Response, SttpBackend}
+import sttp.client3.{Request, Response, SttpBackend}
 
 class RateLimitingSttpBackend[F[_], P](
     rateLimiter: RateLimiter,
@@ -285,14 +285,14 @@ object RateLimitingSttpBackend {
 Implementing a new backend is made easy as the tests are published in the `core` jar file under the `tests` classifier. Simply add the follow dependencies to your `build.sbt`:
 
 ```
-"com.softwaremill.sttp.client" %% "core" % "3.0.0-RC3" % Test classifier "tests"
+"com.softwaremill.sttp.client3" %% "core" % "3.0.0-RC3" % Test classifier "tests"
 ```
 
 Implement your backend and extend the `HttpTest` class:
 
 ```scala
-import sttp.client._
-import sttp.client.testing.{ConvertToFuture, HttpTest}
+import sttp.client3._
+import sttp.client3.testing.{ConvertToFuture, HttpTest}
 import scala.concurrent.Future
 
 class MyCustomBackendHttpTest extends HttpTest[Future] {
@@ -308,7 +308,7 @@ You can find a more detailed example in the [sttp-vertx](https://github.com/guym
 When implementing a backend wrapper using cats, it might be useful to import:
 
 ```scala
-import sttp.client.impl.cats.implicits._
+import sttp.client3.impl.cats.implicits._
 ```
 
 from the cats integration module. The module should be available on the classpath when using the cats [async-http-client](../catseffect.md) backend. The object contains implicits to convert a cats `MonadError` into the sttp `MonadError`, as well as a way to map the effects wrapper used with the `.mapK` extension method for the backend. 

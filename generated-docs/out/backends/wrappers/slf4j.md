@@ -5,14 +5,14 @@ There are three backend wrappers available, which log request & response informa
 To use the backend wrappers, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client" %% "slf4j-backend" % "3.0.0-RC1"
+"com.softwaremill.sttp.client3" %% "slf4j-backend" % "3.0.0-RC1"
 ``` 
 
 The following backend wrappers are available:
 
 ```scala
-import sttp.client._
-import sttp.client.logging.slf4j._
+import sttp.client3._
+import sttp.client3.logging.slf4j._
 val delegateBackend: SttpBackend[Identity, Any] = ???
 
 Slf4jLoggingBackend(delegateBackend)
@@ -29,8 +29,8 @@ The curl backend logs `DEBUG`-level logs when a request completes successfully o
 Example usage:
 
 ```scala
-import sttp.client._
-import sttp.client.logging.slf4j.Slf4jTimingBackend
+import sttp.client3._
+import sttp.client3.logging.slf4j.Slf4jTimingBackend
 
 val backend = Slf4jTimingBackend(HttpURLConnectionBackend())
 basicRequest.get(uri"https://httpbin.org/get").send(backend)

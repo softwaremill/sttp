@@ -3,14 +3,14 @@
 This backend is based on [http4s](https://http4s.org) (blaze client) and is **asynchronous**. To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client" %% "http4s-backend" % "@VERSION@"
+"com.softwaremill.sttp.client3" %% "http4s-backend" % "@VERSION@"
 ```
 
 Add some imports as well:
 
 ```scala mdoc:silent
 import cats.effect._
-import sttp.client.http4s._
+import sttp.client3.http4s._
 import scala.concurrent._
 
 // an implicit `cats.effect.ContextShift` is required to create an instance of `cats.effect.Concurrent` 

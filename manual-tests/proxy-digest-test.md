@@ -64,4 +64,4 @@ The document has moved
 
 Remove the `@Ignore` annotation from `OkHttpSyncDigestAuthProxyManualTest` and run:
 
-`sbt okhttpBackend/testOnly sttp.client.okhttp.OkHttpSyncDigestAuthProxyManualTest`
+`sbt okhttpBackend/testOnly sttp.client3.okhttp.OkHttpSyncDigestAuthProxyManualTest`

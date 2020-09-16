@@ -3,7 +3,7 @@
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client" %% "opentracing-backend" % "@VERSION@"
+"com.softwaremill.sttp.client3" %% "opentracing-backend" % "@VERSION@"
 ```
 
 This backend depends on [opentracing](https://github.com/opentracing/opentracing-java), a standardized set of api for distributed tracing.
@@ -21,8 +21,8 @@ The backend obtains the current trace context using default spans's propagation 
 There is an additional method exposed to override default operation id:
 
 ```scala mdoc:compile-only
-import sttp.client._
-import sttp.client.opentracing.OpenTracingBackend._
+import sttp.client3._
+import sttp.client3.opentracing.OpenTracingBackend._
 
 basicRequest
   .get(???)
@@ -32,8 +32,8 @@ basicRequest
 There is an additional method exposed to customize generated span:
 
 ```scala mdoc:compile-only
-import sttp.client._
-import sttp.client.opentracing.OpenTracingBackend._
+import sttp.client3._
+import sttp.client3.opentracing.OpenTracingBackend._
 
 basicRequest
   .get(???)

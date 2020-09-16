@@ -14,7 +14,7 @@ lazy val testServerPort = settingKey[Int]("Port to run the http test server on")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests")
 
 val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
-  organization := "com.softwaremill.sttp.client",
+  organization := "com.softwaremill.sttp.client3",
   scmInfo := Some(ScmInfo(url("https://github.com/softwaremill/sttp"), "scm:git@github.com:softwaremill/sttp.git")),
   // needed on sbt 1.3, but (for some unknown reason) only on 2.11.x
   closeClassLoaders := !scalaVersion.value.startsWith("2.11."),
@@ -296,7 +296,7 @@ lazy val testServer = (projectMatrix in file("testing/server"))
       akkaStreams
     ),
     // the test server needs to be started before running any backend tests
-    mainClass in reStart := Some("sttp.client.testing.server.HttpServer"),
+    mainClass in reStart := Some("sttp.client3.testing.server.HttpServer"),
     reStartArgs in reStart := Seq(s"${(testServerPort in Test).value}"),
     fullClasspath in reStart := (fullClasspath in Test).value,
     testServerPort := 51823,

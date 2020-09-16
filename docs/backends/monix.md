@@ -7,7 +7,7 @@ There are several backend implementations which are `monix.eval.Task`-based. The
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client" %% "async-http-client-backend-monix" % "@VERSION@"
+"com.softwaremill.sttp.client3" %% "async-http-client-backend-monix" % "@VERSION@"
 ```
            
 This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client), uses [Netty](http://netty.io) behind the scenes and supports effect cancellation.
@@ -20,8 +20,8 @@ Next you'll need to define a backend instance as an implicit value. This can be 
 A non-comprehensive summary of how the backend can be created is as follows:
 
 ```scala mdoc:compile-only
-import sttp.client.asynchttpclient.monix.AsyncHttpClientMonixBackend
-import sttp.client._
+import sttp.client3.asynchttpclient.monix.AsyncHttpClientMonixBackend
+import sttp.client3._
 
 AsyncHttpClientMonixBackend().flatMap { backend => ??? }
 
@@ -50,13 +50,13 @@ val backend = AsyncHttpClientMonixBackend.usingClient(asyncHttpClient)
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client" %% "okhttp-backend-monix" % "@VERSION@"
+"com.softwaremill.sttp.client3" %% "okhttp-backend-monix" % "@VERSION@"
 ```
 
 Create the backend using:
 
 ```scala mdoc:compile-only
-import sttp.client.okhttp.monix.OkHttpMonixBackend
+import sttp.client3.okhttp.monix.OkHttpMonixBackend
 
 OkHttpMonixBackend().flatMap { backend => ??? }
 
@@ -76,13 +76,13 @@ This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supp
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client" %% "httpclient-backend-monix" % "@VERSION@"
+"com.softwaremill.sttp.client3" %% "httpclient-backend-monix" % "@VERSION@"
 ```
 
 Create the backend using:
 
 ```scala mdoc:compile-only
-import sttp.client.httpclient.monix.HttpClientMonixBackend
+import sttp.client3.httpclient.monix.HttpClientMonixBackend
 
 HttpClientMonixBackend().flatMap { backend => ??? }
 
@@ -99,12 +99,12 @@ This backend is based on the built-in `java.net.http.HttpClient` available from 
 
 ## Streaming
 
-The Monix backends support streaming. The streams capability is represented as `sttp.client.impl.monix.MonixStreams`. The type of supported streams in this case is `Observable[ByteBuffer]`. That is, you can set such an observable as a request body (using the async-http-client backend as an example, but any of the above backends can be used):
+The Monix backends support streaming. The streams capability is represented as `sttp.client3.impl.monix.MonixStreams`. The type of supported streams in this case is `Observable[ByteBuffer]`. That is, you can set such an observable as a request body (using the async-http-client backend as an example, but any of the above backends can be used):
 
 ```scala mdoc:compile-only
 import sttp.capabilities.monix.MonixStreams
-import sttp.client._
-import sttp.client.asynchttpclient.monix._
+import sttp.client3._
+import sttp.client3.asynchttpclient.monix._
 
 import java.nio.ByteBuffer
 import monix.reactive.Observable
@@ -123,8 +123,8 @@ And receive responses as an observable stream:
 
 ```scala mdoc:compile-only
 import sttp.capabilities.monix.MonixStreams
-import sttp.client._
-import sttp.client.asynchttpclient.monix._
+import sttp.client3._
+import sttp.client3.asynchttpclient.monix._
 
 import java.nio.ByteBuffer
 import monix.eval.Task

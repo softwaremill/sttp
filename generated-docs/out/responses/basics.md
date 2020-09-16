@@ -20,7 +20,7 @@ Individual headers can be obtained using the methods:
 
 ```scala
 import sttp.model._
-import sttp.client._
+import sttp.client3._
 val backend = HttpURLConnectionBackend()
 val request = basicRequest
     .get(uri"http://endpoint.com/example")

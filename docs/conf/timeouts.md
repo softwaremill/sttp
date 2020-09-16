@@ -8,7 +8,7 @@ sttp supports read and connection timeouts:
 How to use:
 
 ```scala mdoc:compile-only
-import sttp.client._
+import sttp.client3._
 import scala.concurrent.duration._
 
 // all backends provide a constructor that allows to specify backend options

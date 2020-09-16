@@ -20,14 +20,14 @@ Class                                 Supported stream type                     
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client" %% "async-http-client-backend-future" % "3.0.0-RC3"
+"com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % "3.0.0-RC3"
 ```
 
 And some imports:
 
 ```scala
-import sttp.client._
-import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
+import sttp.client3._
+import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
 ```
 
 This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client) and uses [Netty](http://netty.io) behind the scenes.
@@ -71,13 +71,13 @@ val backend = AsyncHttpClientFutureBackend.usingClient(asyncHttpClient)
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client" %% "okhttp-backend" % "3.0.0-RC3"
+"com.softwaremill.sttp.client3" %% "okhttp-backend" % "3.0.0-RC3"
 ```
 
 and some imports:
 
 ```scala
-import sttp.client.okhttp.OkHttpFutureBackend
+import sttp.client3.okhttp.OkHttpFutureBackend
 import scala.concurrent.ExecutionContext.Implicits.global
 ```
 
@@ -103,13 +103,13 @@ This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supp
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client" %% "httpclient-backend" % "3.0.0-RC3"
+"com.softwaremill.sttp.client3" %% "httpclient-backend" % "3.0.0-RC3"
 ```
 
 and some imports:
 
 ```scala
-import sttp.client.httpclient.HttpClientFutureBackend
+import sttp.client3.httpclient.HttpClientFutureBackend
 import scala.concurrent.ExecutionContext.Implicits.global
 ```
 

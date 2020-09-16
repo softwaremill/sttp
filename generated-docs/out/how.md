@@ -4,18 +4,18 @@
 
 This first step when using sttp client is describing the request that you'd like to send. 
 
-A request is represented as an immutable data structure of type `RequestT` (as in Request Template). The basic request is provided as the `basicRequest` value, in the `sttp.client` package. It can be refined using one of the available methods, such as `.header`, `.body`, `.get(Uri)`, `.responseAs`, etc.
+A request is represented as an immutable data structure of type `RequestT` (as in Request Template). The basic request is provided as the `basicRequest` value, in the `sttp.client3` package. It can be refined using one of the available methods, such as `.header`, `.body`, `.get(Uri)`, `.responseAs`, etc.
 
 A `RequestT` value contains both information on what to include in the request, but also how to handle the response body. 
 
 To start describing a request, import the sttp client package and customise `basicRequest`:
 
 ```scala
-import sttp.client._
+import sttp.client3._
 val myRequest: Request[_, _] = ??? // basicRequest.(...)
 ```
 
-An alternative to importing the `sttp.client._` package, is to extend the `sttp.client.SttpApi` trait. That way, multiple integrations can be grouped in one object, thus reducing the number of necessary imports.
+An alternative to importing the `sttp.client3._` package, is to extend the `sttp.client3.SttpApi` trait. That way, multiple integrations can be grouped in one object, thus reducing the number of necessary imports.
 
 ## Send the request
 
@@ -30,7 +30,7 @@ Backends manage the connection pool, thread pools for handling responses, depend
 For example, the following sends a synchronous request, using the default JVM backend:
 
 ```scala
-import sttp.client._
+import sttp.client3._
 val myRequest: Request[String, Any] = ???
 val backend = HttpURLConnectionBackend()
 val response = myRequest.send(backend)

@@ -3,7 +3,7 @@
 Arbitrary headers can be set on the request using the `.header` method:
 
 ```scala mdoc:compile-only
-import sttp.client._
+import sttp.client3._
 
 basicRequest.header("User-Agent", "myapp")
 ```
@@ -15,7 +15,7 @@ While most headers should be set only once on a request, HTTP allows setting a h
 There are also variants of this method accepting a number of headers:
 
 ```scala mdoc:compile-only
-import sttp.client._
+import sttp.client3._
 import sttp.model._
 
 basicRequest.header(Header("k1", "v1"), replaceExisting = false)
@@ -30,7 +30,7 @@ basicRequest.headers(Header("k9", "v9"), Header("k10", "v10"), Header("k11", "v1
 For some common headers, dedicated methods are provided:
 
 ```scala mdoc:compile-only
-import sttp.client._
+import sttp.client3._
 
 basicRequest.contentType("application/json")
 basicRequest.contentType("application/json", "iso-8859-1")
