@@ -27,7 +27,7 @@ import sttp.client3.SttpBackendOptions.ProxyType.{Http, Socks}
 import sttp.client3.internal.ws.{SimpleQueue, WebSocketEvent}
 import sttp.monad.syntax._
 import sttp.monad.{Canceler, MonadAsyncError, MonadError}
-import sttp.client3.{Response, ResponseAs, SttpBackend, SttpBackendOptions, _}
+import sttp.client3.{Response, SttpBackend, SttpBackendOptions, _}
 import sttp.model._
 
 import scala.collection.JavaConverters._
