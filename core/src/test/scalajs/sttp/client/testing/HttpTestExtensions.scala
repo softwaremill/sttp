@@ -1,9 +1,9 @@
 package sttp.client.testing
 
-import org.scalajs.dom.FileReader
+import org.scalajs.dom.{Blob, FileReader}
 import org.scalajs.dom.raw.{Event, UIEvent}
 import sttp.client._
-import sttp.client.dom.experimental.{FilePropertyBag, File => DomFile}
+import sttp.client.dom.experimental.{FilePropertyBag, File => DomFileWithBody}
 import sttp.client.internal.SparkMD5
 
 import scala.concurrent.{Future, Promise}
@@ -16,9 +16,9 @@ import HttpTest.endpoint
 
 trait HttpTestExtensions[F[_]] extends AsyncExecutionContext { self: HttpTest[F] =>
 
-  private def withTemporaryFile[T](content: Option[Array[Byte]])(f: DomFile => Future[T]): Future[T] = {
+  private def withTemporaryFile[T](content: Option[Array[Byte]])(f: DomFileWithBody => Future[T]): Future[T] = {
     val data = content.getOrElse(Array.empty)
-    val file = new DomFile(
+    val file = new DomFileWithBody(
       Array(data.toTypedArray.asInstanceOf[js.Any]).toJSArray,
       "temp.txt",
       FilePropertyBag(
@@ -28,9 +28,9 @@ trait HttpTestExtensions[F[_]] extends AsyncExecutionContext { self: HttpTest[F]
     f(file)
   }
 
-  private def withTemporaryNonExistentFile[T](f: DomFile => Future[T]): Future[T] = withTemporaryFile(None)(f)
+  private def withTemporaryNonExistentFile[T](f: DomFileWithBody => Future[T]): Future[T] = withTemporaryFile(None)(f)
 
-  private def md5FileHash(file: DomFile): Future[String] = {
+  private def md5Hash(blob: Blob): Future[String] = {
     val p = Promise[String]()
 
     val fileReader = new FileReader()
@@ -41,7 +41,7 @@ trait HttpTestExtensions[F[_]] extends AsyncExecutionContext { self: HttpTest[F]
     }
     fileReader.onerror = (_: Event) => p.failure(JavaScriptException("Error reading file"))
     fileReader.onabort = (_: Event) => p.failure(JavaScriptException("File read aborted"))
-    fileReader.readAsArrayBuffer(file)
+    fileReader.readAsArrayBuffer(blob)
 
     p.future
   }
@@ -61,7 +61,7 @@ trait HttpTestExtensions[F[_]] extends AsyncExecutionContext { self: HttpTest[F]
       withTemporaryNonExistentFile { file =>
         val req = basicRequest.get(uri"$endpoint/download/binary").response(asFile(file))
         req.send().toFuture().flatMap { resp =>
-          md5FileHash(resp.body.right.get).map { _ shouldBe binaryFileMD5Hash }
+          md5Hash(resp.body.right.get).map { _ shouldBe binaryFileMD5Hash }
         }
       }
     }
@@ -70,7 +70,7 @@ trait HttpTestExtensions[F[_]] extends AsyncExecutionContext { self: HttpTest[F]
       withTemporaryNonExistentFile { file =>
         val req = basicRequest.get(uri"$endpoint/download/text").response(asFile(file))
         req.send().toFuture().flatMap { resp =>
-          md5FileHash(resp.body.right.get).map { _ shouldBe textFileMD5Hash }
+          md5Hash(resp.body.right.get).map { _ shouldBe textFileMD5Hash }
         }
       }
     }
