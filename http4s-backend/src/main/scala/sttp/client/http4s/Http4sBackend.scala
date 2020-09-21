@@ -241,8 +241,8 @@ object Http4sBackend {
 
   type EncodingHandler[F[_]] = PartialFunction[(EntityBody[F], ContentCoding), EntityBody[F]]
   object EncodingHandler {
-    def apply[F[_]](f: (EntityBody[F], ContentCoding) => EntityBody[F]): EncodingHandler[F] = {
-      case (b, c) => f(b, c)
+    def apply[F[_]](f: (EntityBody[F], ContentCoding) => EntityBody[F]): EncodingHandler[F] = { case (b, c) =>
+      f(b, c)
     }
   }
 

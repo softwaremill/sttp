@@ -55,8 +55,8 @@ object SttpClientException {
   def adjustExceptions[F[_], T](
       monadError: MonadError[F]
   )(t: => F[T])(usingFn: Exception => Option[Exception]): F[T] = {
-    monadError.handleError(t) {
-      case e: Exception => monadError.error(usingFn(e).getOrElse(e))
+    monadError.handleError(t) { case e: Exception =>
+      monadError.error(usingFn(e).getOrElse(e))
     }
   }
 }
