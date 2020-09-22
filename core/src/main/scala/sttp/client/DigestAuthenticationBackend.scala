@@ -22,14 +22,13 @@ class DigestAuthenticationBackend[F[_], S, WS_HANDLER[_]](
       .flatMap { firstResponse =>
         handleResponse(request, firstResponse, ProxyDigestAuthTag, DigestAuthenticator.proxy(_, clientNonceGenerator))
       }
-      .flatMap {
-        case (secondResponse, proxyAuthHeader) =>
-          handleResponse(
-            proxyAuthHeader.map(h => request.header(h)).getOrElse(request),
-            secondResponse,
-            DigestAuthTag,
-            DigestAuthenticator.apply(_, clientNonceGenerator)
-          ).map(_._1)
+      .flatMap { case (secondResponse, proxyAuthHeader) =>
+        handleResponse(
+          proxyAuthHeader.map(h => request.header(h)).getOrElse(request),
+          secondResponse,
+          DigestAuthTag,
+          DigestAuthenticator.apply(_, clientNonceGenerator)
+        ).map(_._1)
       }
   }
 

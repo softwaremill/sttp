@@ -16,9 +16,8 @@ class ListenerBackend[F[_], S, WS_HANDLER[_], L](
   override def send[T](request: Request[T, S]): F[Response[T]] = {
     listener.beforeRequest(request).flatMap { t =>
       responseMonad
-        .handleError(delegate.send(request)) {
-          case e: Exception =>
-            listener.requestException(request, t, e).flatMap(_ => responseMonad.error(e))
+        .handleError(delegate.send(request)) { case e: Exception =>
+          listener.requestException(request, t, e).flatMap(_ => responseMonad.error(e))
         }
         .flatMap { response => listener.requestSuccessful(request, response, t).map(_ => response) }
     }
@@ -29,9 +28,8 @@ class ListenerBackend[F[_], S, WS_HANDLER[_], L](
   ): F[WebSocketResponse[WS_RESULT]] = {
     listener.beforeWebsocket(request).flatMap { t =>
       responseMonad
-        .handleError(delegate.openWebsocket(request, handler)) {
-          case e: Exception =>
-            listener.websocketException(request, t, e).flatMap(_ => responseMonad.error(e))
+        .handleError(delegate.openWebsocket(request, handler)) { case e: Exception =>
+          listener.websocketException(request, t, e).flatMap(_ => responseMonad.error(e))
         }
         .flatMap { response => listener.websocketSuccessful(request, response, t).map(_ => response) }
     }

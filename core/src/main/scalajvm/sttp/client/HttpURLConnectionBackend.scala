@@ -170,20 +170,19 @@ class HttpURLConnectionBackend private (
 
     // https://stackoverflow.com/questions/31406022/how-is-an-http-multipart-content-length-header-value-calculated
     val contentLength = partsWithHeaders
-      .map {
-        case (headers, p) =>
-          val bodyLen: Option[Long] = p.body match {
-            case StringBody(b, encoding, _) =>
-              Some(b.getBytes(encoding).length.toLong)
-            case ByteArrayBody(b, _)   => Some(b.length.toLong)
-            case ByteBufferBody(_, _)  => None
-            case InputStreamBody(_, _) => None
-            case FileBody(b, _)        => Some(b.toFile.length())
-          }
+      .map { case (headers, p) =>
+        val bodyLen: Option[Long] = p.body match {
+          case StringBody(b, encoding, _) =>
+            Some(b.getBytes(encoding).length.toLong)
+          case ByteArrayBody(b, _)   => Some(b.length.toLong)
+          case ByteBufferBody(_, _)  => None
+          case InputStreamBody(_, _) => None
+          case FileBody(b, _)        => Some(b.toFile.length())
+        }
 
-          val headersLen = headers.getBytes(Iso88591).length
+        val headersLen = headers.getBytes(Iso88591).length
 
-          bodyLen.map(bl => dashesLen + boundaryLen + crLfLen + headersLen + crLfLen + crLfLen + bl + crLfLen)
+        bodyLen.map(bl => dashesLen + boundaryLen + crLfLen + headersLen + crLfLen + crLfLen + bl + crLfLen)
       }
       .foldLeft(Option(finalBoundaryLen)) {
         case (Some(acc), Some(l)) => Some(acc + l)
@@ -206,16 +205,15 @@ class HttpURLConnectionBackend private (
       total += s.getBytes(Iso88591).length.toLong
     }
 
-    partsWithHeaders.foreach {
-      case (headers, p) =>
-        writeMeta(dashes)
-        writeMeta(boundary)
-        writeMeta(CrLf)
-        writeMeta(headers)
-        writeMeta(CrLf)
-        writeMeta(CrLf)
-        writeBasicBody(p.body, os)
-        writeMeta(CrLf)
+    partsWithHeaders.foreach { case (headers, p) =>
+      writeMeta(dashes)
+      writeMeta(boundary)
+      writeMeta(CrLf)
+      writeMeta(headers)
+      writeMeta(CrLf)
+      writeMeta(CrLf)
+      writeBasicBody(p.body, os)
+      writeMeta(CrLf)
     }
 
     // final boundary

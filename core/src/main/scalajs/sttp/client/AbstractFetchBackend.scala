@@ -4,6 +4,7 @@ import java.nio.ByteBuffer
 
 import org.scalajs.dom.FormData
 import org.scalajs.dom.experimental.{
+  AbortController,
   AbortSignal,
   BodyInit,
   Fetch,
@@ -21,7 +22,7 @@ import org.scalajs.dom.experimental.{
   Response => FetchResponse
 }
 import org.scalajs.dom.raw.{Blob, BlobPropertyBag}
-import sttp.client.dom.experimental.{AbortController, FilePropertyBag, File => DomFile}
+import sttp.client.dom.experimental.{FilePropertyBag, File => DomFile}
 import sttp.client.internal.{SttpFile, _}
 import sttp.client.monad.MonadError
 import sttp.client.monad.syntax._
@@ -77,47 +78,30 @@ abstract class AbstractFetchBackend[F[_], S](options: FetchOptions, customizeReq
     }
 
     val rheaders = new JSHeaders()
-    request.headers.foreach {
-      case Header(name, value) =>
-        rheaders.set(name, value)
+    request.headers.foreach { case Header(name, value) =>
+      rheaders.set(name, value)
     }
 
     val req = createBody(request.body).map { rbody =>
       // use manual so we can return a specific error instead of the generic "TypeError: Failed to fetch"
       val rredirect = if (request.options.followRedirects) RequestRedirect.follow else RequestRedirect.manual
+      val rsignal = signal.orUndefined
 
-      val requestInitStatic = new RequestInit() {
+      val requestInit = new RequestInit {
         var method: js.UndefOr[HttpMethod] = request.method.method.asInstanceOf[HttpMethod]
-
         var headers: js.UndefOr[HeadersInit] = rheaders
-
         var body: js.UndefOr[BodyInit] = rbody
-
         var referrer: js.UndefOr[String] = js.undefined
-
         var referrerPolicy: js.UndefOr[ReferrerPolicy] = js.undefined
-
         var mode: js.UndefOr[RequestMode] = options.mode.orUndefined
-
         var credentials: js.UndefOr[RequestCredentials] = options.credentials.orUndefined
-
         var cache: js.UndefOr[RequestCache] = js.undefined
-
         var redirect: js.UndefOr[RequestRedirect] = rredirect
-
         var integrity: js.UndefOr[String] = js.undefined
-
         var keepalive: js.UndefOr[Boolean] = js.undefined
-
-        var signal: js.UndefOr[AbortSignal] = js.undefined
-
+        var signal: js.UndefOr[AbortSignal] = rsignal
         var window: js.UndefOr[Null] = js.undefined
       }
-
-      val requestInitDynamic = requestInitStatic.asInstanceOf[js.Dynamic]
-      signal.foreach(s => requestInitDynamic.updateDynamic("signal")(s))
-      requestInitDynamic.updateDynamic("redirect")(rredirect) // named wrong in RequestInit
-      val requestInit = requestInitDynamic.asInstanceOf[RequestInit]
 
       new FetchRequest(request.uri.toString, requestInit)
     }

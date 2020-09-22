@@ -103,15 +103,14 @@ class AkkaHttpBackend private (
       Future
         .fromTry(akkaWebsocketRequest)
         .flatMap(request => http.singleWebsocketRequest(request, handler, connectionSettings(r).connectionSettings))
-        .flatMap {
-          case (wsResponse, wsResult) =>
-            responseFromAkka(r, wsResponse.response).map { r =>
-              if (r.code != StatusCode.SwitchingProtocols) {
-                throw new NotAWebsocketException(r)
-              } else {
-                client.ws.WebSocketResponse(Headers(r.headers), wsResult)
-              }
+        .flatMap { case (wsResponse, wsResult) =>
+          responseFromAkka(r, wsResponse.response).map { r =>
+            if (r.code != StatusCode.SwitchingProtocols) {
+              throw new NotAWebsocketException(r)
+            } else {
+              client.ws.WebSocketResponse(Headers(r.headers), wsResult)
             }
+          }
         }
     }
 
@@ -226,12 +225,12 @@ class AkkaHttpBackend private (
         .filterNot(isContentType)
         .filterNot(isContentLength)
         .map(h => HttpHeader.parse(h.name, h.value))
-    val errors = parsed.collect {
-      case ParsingResult.Error(e) => e
+    val errors = parsed.collect { case ParsingResult.Error(e) =>
+      e
     }
     if (errors.isEmpty) {
-      val headers = parsed.collect {
-        case ParsingResult.Ok(h, _) => h
+      val headers = parsed.collect { case ParsingResult.Ok(h, _) =>
+        h
       }
 
       Success(headers.toList)
@@ -381,8 +380,8 @@ class AkkaHttpBackend private (
 object AkkaHttpBackend {
   type EncodingHandler = PartialFunction[(HttpResponse, HttpEncoding), HttpResponse]
   object EncodingHandler {
-    def apply(f: (HttpResponse, HttpEncoding) => HttpResponse): EncodingHandler = {
-      case (body, encoding) => f(body, encoding)
+    def apply(f: (HttpResponse, HttpEncoding) => HttpResponse): EncodingHandler = { case (body, encoding) =>
+      f(body, encoding)
     }
   }
 

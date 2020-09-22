@@ -23,8 +23,8 @@ class ToCurlConverter[R <: RequestT[Identity, _, _]] {
     r.headers
       // filtering out compression headers so that the results are human-readable, if possible
       .filterNot(_.name.equalsIgnoreCase(HeaderNames.AcceptEncoding))
-      .collect {
-        case Header(k, v) => s"""-H '$k: $v'"""
+      .collect { case Header(k, v) =>
+        s"""-H '$k: $v'"""
       }
       .mkString(" ")
   }
