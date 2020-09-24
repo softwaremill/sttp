@@ -1,7 +1,6 @@
 package sttp.client3.internal
 
-import sttp.client3.dom.experimental.{File => DomFile}
-import sttp.client3.dom.experimental.File
+import org.scalajs.dom.File
 
 // wrap a DomFile
 trait SttpFileExtensions { self: SttpFile =>

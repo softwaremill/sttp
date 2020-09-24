@@ -1,6 +1,6 @@
 package sttp.client3.testing
 
-import org.scalajs.dom.FileReader
+import org.scalajs.dom.{Blob, FileReader}
 import org.scalajs.dom.raw.{Event, UIEvent}
 import sttp.client3._
 import sttp.client3.dom.experimental.{FilePropertyBag, File => DomFile}
@@ -16,9 +16,9 @@ import HttpTest.endpoint
 
 trait HttpTestExtensions[F[_]] extends AsyncExecutionContext { self: HttpTest[F] =>
 
-  private def withTemporaryFile[T](content: Option[Array[Byte]])(f: DomFile => Future[T]): Future[T] = {
+  private def withTemporaryFile[T](content: Option[Array[Byte]])(f: DomFileWithBody => Future[T]): Future[T] = {
     val data = content.getOrElse(Array.empty)
-    val file = new DomFile(
+    val file = new DomFileWithBody(
       Array(data.toTypedArray.asInstanceOf[js.Any]).toJSArray,
       "temp.txt",
       FilePropertyBag(
@@ -28,9 +28,9 @@ trait HttpTestExtensions[F[_]] extends AsyncExecutionContext { self: HttpTest[F]
     f(file)
   }
 
-  private def withTemporaryNonExistentFile[T](f: DomFile => Future[T]): Future[T] = withTemporaryFile(None)(f)
+  private def withTemporaryNonExistentFile[T](f: DomFileWithBody => Future[T]): Future[T] = withTemporaryFile(None)(f)
 
-  private def md5FileHash(file: DomFile): Future[String] = {
+  private def md5Hash(blob: Blob): Future[String] = {
     val p = Promise[String]()
 
     val fileReader = new FileReader()
@@ -41,7 +41,7 @@ trait HttpTestExtensions[F[_]] extends AsyncExecutionContext { self: HttpTest[F]
     }
     fileReader.onerror = (_: Event) => p.failure(JavaScriptException("Error reading file"))
     fileReader.onabort = (_: Event) => p.failure(JavaScriptException("File read aborted"))
-    fileReader.readAsArrayBuffer(file)
+    fileReader.readAsArrayBuffer(blob)
 
     p.future
   }

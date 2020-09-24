@@ -1,7 +1,5 @@
 package sttp.client3.dom.experimental
 
-import org.scalajs.dom.raw.Blob
-
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSGlobal
 
@@ -12,9 +10,9 @@ import scala.scalajs.js.annotation.JSGlobal
 @JSGlobal
 class File(
     parts: js.Array[js.Any] = js.native,
-    val name: String = js.native,
+    override val name: String = js.native,
     options: FilePropertyBag = js.native
-) extends Blob {
+) extends org.scalajs.dom.File {
   val lastModified: Int = js.native
 }
 

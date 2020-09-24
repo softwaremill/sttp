@@ -87,27 +87,23 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
     val req = createBody(request.body).map { rbody =>
       // use manual so we can return a specific error instead of the generic "TypeError: Failed to fetch"
       val rredirect = if (request.options.followRedirects) RequestRedirect.follow else RequestRedirect.manual
+      val rsignal = signal.orUndefined
 
-      val requestInitStatic = new RequestInit() {
-        method = request.method.method.asInstanceOf[HttpMethod]
-        headers = rheaders
-        body = rbody
-        referrer = js.undefined
-        referrerPolicy = js.undefined
-        mode = options.mode.orUndefined
-        credentials = options.credentials.orUndefined
-        cache = js.undefined
-        redirect = rredirect
-        integrity = js.undefined
-        keepalive = js.undefined
-        signal = js.undefined
-        window = js.undefined
+      val requestInit = new RequestInit {
+        var method: js.UndefOr[HttpMethod] = request.method.method.asInstanceOf[HttpMethod]
+        var headers: js.UndefOr[HeadersInit] = rheaders
+        var body: js.UndefOr[BodyInit] = rbody
+        var referrer: js.UndefOr[String] = js.undefined
+        var referrerPolicy: js.UndefOr[ReferrerPolicy] = js.undefined
+        var mode: js.UndefOr[RequestMode] = options.mode.orUndefined
+        var credentials: js.UndefOr[RequestCredentials] = options.credentials.orUndefined
+        var cache: js.UndefOr[RequestCache] = js.undefined
+        var redirect: js.UndefOr[RequestRedirect] = rredirect
+        var integrity: js.UndefOr[String] = js.undefined
+        var keepalive: js.UndefOr[Boolean] = js.undefined
+        var signal: js.UndefOr[AbortSignal] = rsignal
+        var window: js.UndefOr[Null] = js.undefined
       }
-
-      val requestInitDynamic = requestInitStatic.asInstanceOf[js.Dynamic]
-      signal.foreach(s => requestInitDynamic.updateDynamic("signal")(s))
-      requestInitDynamic.updateDynamic("redirect")(rredirect) // named wrong in RequestInit
-      val requestInit = requestInitDynamic.asInstanceOf[RequestInit]
 
       new FetchRequest(request.uri.toString, requestInit)
     }
