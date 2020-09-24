@@ -1,7 +1,7 @@
 package sttp.client3
 
 import sttp.client3.internal.SttpFile
-import sttp.client3.dom.experimental.File
+import org.scalajs.dom.File
 
 import scala.language.higherKinds
 
