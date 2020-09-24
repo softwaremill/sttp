@@ -17,7 +17,7 @@ Still, the input for a particular resilience model might involve both the result
 Here's an incomplete list of libraries which can be used to manage retries in various Scala stacks:
 
 * for `Future`: [retry](https://github.com/softwaremill/retry)
-* for ZIO: [schedules](https://zio.dev/docs/datatypes/datatypes_schedule)
+* for ZIO: [schedules](https://zio.dev/docs/datatypes/datatypes_schedule), [rezilience](https://github.com/svroonland/rezilience)
 * for Monix/cats-effect: [cats-retry](https://github.com/cb372/cats-retry)
 * for Monix: `.restart` methods
 
@@ -32,10 +32,12 @@ Note that some backends also have built-in retry mechanisms, e.g. [akka-http](ht
 
 * for Monix & cats-effect: [monix-catnap](https://monix.io/docs/3x/#monix-catnap)
 * for Akka/`Future`: [akka circuit breaker](https://doc.akka.io/docs/akka/current/common/circuitbreaker.html)
+* for ZIO: [rezilience](https://github.com/svroonland/rezilience)
 
 ## Rate limiting
 
 * for akka-streams: [throttle in akka streams](https://doc.akka.io/docs/akka/current/stream/operators/Source-or-Flow/throttle.html)
+* for ZIO: [rezilience](https://github.com/svroonland/rezilience)
 
 ## Java libraries
 
