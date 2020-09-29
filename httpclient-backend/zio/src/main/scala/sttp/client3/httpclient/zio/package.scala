@@ -1,15 +1,12 @@
 package sttp.client3.httpclient
 
-import sttp.client3._
 import _root_.zio._
-import _root_.zio.blocking.Blocking
-import sttp.capabilities.zio.BlockingZioStreams
+import sttp.capabilities.zio.ZioStreams
 import sttp.capabilities.{Effect, WebSockets}
+import sttp.client3._
 import sttp.client3.impl.zio.{ExtendEnv, SttpClientStubbingBase}
 
 package object zio {
-
-  type BlockingTask[A] = RIO[Blocking, A]
 
   /**
     * ZIO-environment service definition, which is an SttpBackend.
@@ -18,7 +15,7 @@ package object zio {
   type SttpClientStubbing = Has[SttpClientStubbing.Service]
 
   object SttpClient {
-    type Service = SttpBackend[BlockingTask, BlockingZioStreams with WebSockets]
+    type Service = SttpBackend[Task, ZioStreams with WebSockets]
   }
 
   /**
@@ -34,8 +31,8 @@ package object zio {
     *         Known exceptions are converted to one of [[SttpClientException]]. Other exceptions are kept unchanged.
     */
   def send[T](
-      request: Request[T, BlockingZioStreams with Effect[BlockingTask] with WebSockets]
-  ): RIO[SttpClient with Blocking, Response[T]] =
+      request: Request[T, ZioStreams with Effect[Task] with WebSockets]
+  ): RIO[SttpClient, Response[T]] =
     ZIO.accessM(env => env.get[SttpClient.Service].send(request))
 
   /**
@@ -43,11 +40,11 @@ package object zio {
     * using websockets or resource-safe streaming) to use an `R` environment.
     */
   def sendR[T, R](
-      request: Request[T, Effect[RIO[Blocking with R, *]] with BlockingZioStreams with WebSockets]
-  ): RIO[SttpClient with Blocking with R, Response[T]] =
+      request: Request[T, Effect[RIO[R, *]] with ZioStreams with WebSockets]
+  ): RIO[SttpClient with R, Response[T]] =
     ZIO.accessM(env => env.get[SttpClient.Service].extendEnv[R].send(request))
 
-  object SttpClientStubbing extends SttpClientStubbingBase[Blocking, BlockingZioStreams with WebSockets] {
+  object SttpClientStubbing extends SttpClientStubbingBase[Any, ZioStreams with WebSockets] {
     override private[sttp] def serviceTag: Tag[SttpClientStubbing.Service] = implicitly
     override private[sttp] def sttpBackendTag: Tag[SttpClient.Service] = implicitly
   }

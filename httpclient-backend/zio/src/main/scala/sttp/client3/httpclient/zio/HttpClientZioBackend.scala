@@ -9,18 +9,17 @@ import java.util
 import _root_.zio.interop.reactivestreams._
 import org.reactivestreams.{FlowAdapters, Publisher}
 import sttp.capabilities.WebSockets
-import sttp.capabilities.zio.BlockingZioStreams
+import sttp.capabilities.zio.ZioStreams
 import sttp.client3.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client3.httpclient.{BodyFromHttpClient, BodyToHttpClient, HttpClientAsyncBackend, HttpClientBackend}
-import sttp.client3.internal._
 import sttp.client3.impl.zio.{RIOMonadAsyncError, ZioSimpleQueue}
+import sttp.client3.internal._
 import sttp.client3.internal.ws.SimpleQueue
 import sttp.client3.testing.SttpBackendStub
 import sttp.client3.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 import sttp.monad.MonadError
 import zio.Chunk.ByteArray
 import zio._
-import zio.blocking.Blocking
 import zio.stream.{ZStream, ZTransducer}
 
 import scala.collection.JavaConverters._
@@ -29,32 +28,32 @@ class HttpClientZioBackend private (
     client: HttpClient,
     closeClient: Boolean,
     customizeRequest: HttpRequest => HttpRequest,
-    customEncodingHandler: EncodingHandler[BlockingZioStreams.BinaryStream]
+    customEncodingHandler: EncodingHandler[ZioStreams.BinaryStream]
 ) extends HttpClientAsyncBackend[
-      BlockingTask,
-      BlockingZioStreams,
-      BlockingZioStreams with WebSockets,
-      BlockingZioStreams.BinaryStream
+      Task,
+      ZioStreams,
+      ZioStreams with WebSockets,
+      ZioStreams.BinaryStream
     ](
       client,
-      new RIOMonadAsyncError[Blocking],
+      new RIOMonadAsyncError[Any],
       closeClient,
       customizeRequest,
       customEncodingHandler
     ) {
 
-  override val streams: BlockingZioStreams = BlockingZioStreams
+  override val streams: ZioStreams = ZioStreams
 
-  override protected def emptyBody(): ZStream[Blocking, Throwable, Byte] = ZStream.empty
+  override protected def emptyBody(): ZStream[Any, Throwable, Byte] = ZStream.empty
 
-  override protected def publisherToBody(p: Publisher[util.List[ByteBuffer]]): ZStream[Blocking, Throwable, Byte] =
+  override protected def publisherToBody(p: Publisher[util.List[ByteBuffer]]): ZStream[Any, Throwable, Byte] =
     p.toStream().mapConcatChunk(list => ByteArray(list.asScala.toList.flatMap(_.safeRead()).toArray))
 
-  override protected val bodyToHttpClient: BodyToHttpClient[BlockingTask, BlockingZioStreams] =
-    new BodyToHttpClient[BlockingTask, BlockingZioStreams] {
-      override val streams: BlockingZioStreams = BlockingZioStreams
-      override implicit def monad: MonadError[BlockingTask] = responseMonad
-      override def streamToPublisher(stream: ZStream[Blocking, Throwable, Byte]): BlockingTask[BodyPublisher] = {
+  override protected val bodyToHttpClient: BodyToHttpClient[Task, ZioStreams] =
+    new BodyToHttpClient[Task, ZioStreams] {
+      override val streams: ZioStreams = ZioStreams
+      override implicit def monad: MonadError[Task] = responseMonad
+      override def streamToPublisher(stream: ZStream[Any, Throwable, Byte]): Task[BodyPublisher] = {
         import _root_.zio.interop.reactivestreams.{streamToPublisher => zioStreamToPublisher}
         val publisher = stream.mapChunks(byteChunk => Chunk(ByteBuffer.wrap(byteChunk.toArray))).toPublisher
         publisher.map { pub =>
@@ -63,18 +62,16 @@ class HttpClientZioBackend private (
       }
     }
 
-  override protected val bodyFromHttpClient
-      : BodyFromHttpClient[BlockingTask, BlockingZioStreams, BlockingZioStreams.BinaryStream] =
+  override protected val bodyFromHttpClient: BodyFromHttpClient[Task, ZioStreams, ZioStreams.BinaryStream] =
     new ZioBodyFromHttpClient
 
-  override protected def createSimpleQueue[T]: BlockingTask[SimpleQueue[BlockingTask, T]] =
+  override protected def createSimpleQueue[T]: Task[SimpleQueue[Task, T]] =
     for {
       runtime <- ZIO.runtime[Any]
       queue <- Queue.unbounded[T]
     } yield new ZioSimpleQueue(queue, runtime)
 
-  override protected def standardEncoding
-      : (ZStream[Blocking, Throwable, Byte], String) => ZStream[Blocking, Throwable, Byte] = {
+  override protected def standardEncoding: (ZStream[Any, Throwable, Byte], String) => ZStream[Any, Throwable, Byte] = {
     case (body, "gzip")    => body.transduce(ZTransducer.gunzip())
     case (body, "deflate") => body.transduce(ZTransducer.inflate())
     case (_, ce)           => ZStream.fail(new UnsupportedEncodingException(s"Unsupported encoding: $ce"))
@@ -83,14 +80,14 @@ class HttpClientZioBackend private (
 
 object HttpClientZioBackend {
 
-  type ZioEncodingHandler = EncodingHandler[BlockingZioStreams.BinaryStream]
+  type ZioEncodingHandler = EncodingHandler[ZioStreams.BinaryStream]
 
   private def apply(
       client: HttpClient,
       closeClient: Boolean,
       customizeRequest: HttpRequest => HttpRequest,
       customEncodingHandler: ZioEncodingHandler
-  ): SttpBackend[BlockingTask, BlockingZioStreams with WebSockets] =
+  ): SttpBackend[Task, ZioStreams with WebSockets] =
     new FollowRedirectsBackend(
       new HttpClientZioBackend(
         client,
@@ -104,7 +101,7 @@ object HttpClientZioBackend {
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
-  ): Task[SttpBackend[BlockingTask, BlockingZioStreams with WebSockets]] =
+  ): Task[SttpBackend[Task, ZioStreams with WebSockets]] =
     Task.effect(
       HttpClientZioBackend(
         HttpClientBackend.defaultClient(options),
@@ -118,7 +115,7 @@ object HttpClientZioBackend {
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
-  ): ZManaged[Blocking, Throwable, SttpBackend[BlockingTask, BlockingZioStreams with WebSockets]] =
+  ): ZManaged[Any, Throwable, SttpBackend[Task, ZioStreams with WebSockets]] =
     ZManaged.make(apply(options, customizeRequest, customEncodingHandler))(
       _.close().ignore
     )
@@ -127,7 +124,7 @@ object HttpClientZioBackend {
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
-  ): ZLayer[Blocking, Throwable, SttpClient] = {
+  ): ZLayer[Any, Throwable, SttpClient] = {
     ZLayer.fromManaged(
       (for {
         backend <- HttpClientZioBackend(
@@ -143,7 +140,7 @@ object HttpClientZioBackend {
       client: HttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
-  ): SttpBackend[BlockingTask, BlockingZioStreams with WebSockets] =
+  ): SttpBackend[Task, ZioStreams with WebSockets] =
     HttpClientZioBackend(
       client,
       closeClient = false,
@@ -155,7 +152,7 @@ object HttpClientZioBackend {
       client: HttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
-  ): ZLayer[Blocking, Throwable, SttpClient] = {
+  ): ZLayer[Any, Throwable, SttpClient] = {
     ZLayer.fromManaged(
       ZManaged
         .makeEffect(
@@ -169,13 +166,13 @@ object HttpClientZioBackend {
   }
 
   /**
-    * Create a stub backend for testing, which uses the [[BlockingTask]] response wrapper, and supports
+    * Create a stub backend for testing, which uses the [[Task]] response wrapper, and supports
     * `Stream[Throwable, ByteBuffer]` streaming.
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub: SttpBackendStub[BlockingTask, BlockingZioStreams] =
-    SttpBackendStub(new RIOMonadAsyncError[Blocking])
+  def stub: SttpBackendStub[Task, ZioStreams] =
+    SttpBackendStub(new RIOMonadAsyncError[Any])
 
   val stubLayer: ZLayer[Any, Nothing, SttpClientStubbing with SttpClient] = SttpClientStubbing.layer
 }
