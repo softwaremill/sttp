@@ -12,9 +12,8 @@ class HttpClientZioHttpTest extends HttpTest[Task] with ZioTestBase {
 
   "compile" - {
     "SttpClient usage" in {
-      import _root_.zio.blocking._
       val request = basicRequest.post(uri"http://example.com").body("hello")
-      send(request).provideLayer(Blocking.live >+> HttpClientZioBackend.layer())
+      send(request).provideLayer(HttpClientZioBackend.layer())
       succeed
     }
   }

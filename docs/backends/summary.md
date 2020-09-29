@@ -24,7 +24,7 @@ Class                                Effect type                  Supported stre
 ==================================== ============================ ================================================= ========================== ===================
 ``HttpURLConnectionBackend``         None (``Identity``)          n/a                                               no                         no
 ``TryHttpURLConnectionBackend``      ``scala.util.Try``           n/a                                               no                         no
-``AkkaHttpBackend``                  ``scala.concurrent.Future``  ``akka.stream.scaladsl.Source[ByteString, Any]``  yes (regular & streaming)  no
+``AkkaHttpBackend``                  ``scala.concurrent.Future``  ``akka.stream.scaladsl.Source[ByteString, Any]``  yes (regular & streaming)  yes
 ``AsyncHttpClientFutureBackend``     ``scala.concurrent.Future``  n/a                                               yes (regular)              no
 ``AsyncHttpClientScalazBackend``     ``scalaz.concurrent.Task``   n/a                                               yes (regular)              no
 ``AsyncHttpClientZioBackend``        ``zio.Task``                 ``zio.stream.Stream[Throwable, Byte]``            yes (regular & streaming)  no
@@ -39,9 +39,9 @@ Class                                Effect type                  Supported stre
 ``HttpClientFutureBackend``          ``scala.concurrent.Future``  n/a                                               yes (regular)              no
 ``HttpClientMonixBackend``           ``monix.eval.Task``          ``monix.reactive.Observable[ByteBuffer]``         yes (regular & streaming)  no
 ``HttpClientFs2Backend``             ``F[_]: cats.effect.Async``  ``fs2.Stream[F, Byte]``                           yes (regular & streaming)  yes
-``HttpClientZioBackend``             ``zio.RIO[Blocking, *]``     ``zio.stream.ZStream[Blocking, Throwable, Byte]`` yes (regular & streaming)  yes
+``HttpClientZioBackend``             ``zio.Task``                 ``zio.stream.Stream[Throwable, Byte]``            yes (regular & streaming)  yes
 ``FinagleBackend``                   ``com.twitter.util.Future``  n/a                                               no                         no
-==================================== ============================ ================================================= ==========================
+==================================== ============================ ================================================= ========================== ===================
 ```
 
 The backends work with Scala 2.11, 2.12 and 2.13 (with some exceptions for 2.11). Moreover, `HttpURLConnectionBackend`, `AsyncHttpClientFutureBackend`, `AsyncHttpClientZioBackend`, `HttpClientSyncBackend`, `HttpClientFutureBackend` and `HttpClientZioBackend` are additionally built with Dotty (Scala 3).

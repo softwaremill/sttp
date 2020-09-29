@@ -85,7 +85,7 @@ type SttpClient = Has[SttpBackend[Task, ZioStreams with WebSockets]]
 // or, when using Java 11 & HttpClient
 
 package sttp.client3.httpclient.zio
-type SttpClient = Has[SttpBackend[BlockingTask, BlockingZioStreams with WebSockets]]
+type SttpClient = Has[SttpBackend[Task, ZioStreams with WebSockets]]
 ```
 
 The lifecycle of the `SttpClient` service is described by `ZLayer`s, which can be created using the `.layer`/`.layerUsingConfig`/... methods on `AsyncHttpClientZioBackend` / `HttpClientZioBackend`.

@@ -19,28 +19,29 @@ Each backend has two type parameters:
 Below is a summary of all the JVM backends; see the sections on individual backend implementations for more information:
 
 ```eval_rst
-==================================== ============================ ================================================= ==========================
-Class                                Effect type                  Supported stream type                             Supports websockets
-==================================== ============================ ================================================= ==========================
-``HttpURLConnectionBackend``         None (``Identity``)          n/a                                               no
-``TryHttpURLConnectionBackend``      ``scala.util.Try``           n/a                                               no
-``AkkaHttpBackend``                  ``scala.concurrent.Future``  ``akka.stream.scaladsl.Source[ByteString, Any]``  yes (regular & streaming)
-``AsyncHttpClientFutureBackend``     ``scala.concurrent.Future``  n/a                                               yes (regular)
-``AsyncHttpClientScalazBackend``     ``scalaz.concurrent.Task``   n/a                                               yes (regular)
-``AsyncHttpClientZioBackend``        ``zio.Task``                 ``zio.stream.Stream[Throwable, Byte]``            yes (regular & streaming)
-``AsyncHttpClientMonixBackend``      ``monix.eval.Task``          ``monix.reactive.Observable[ByteBuffer]``         yes (regular & streaming)
-``AsyncHttpClientCatsBackend``       ``F[_]: cats.effect.Async``  n/a                                               no
-``AsyncHttpClientFs2Backend``        ``F[_]: cats.effect.Async``  ``fs2.Stream[F, Byte]``                           yes (regular & streaming)
-``OkHttpSyncBackend``                None (``Identity``)          n/a                                               yes (regular)
-``OkHttpFutureBackend``              ``scala.concurrent.Future``  n/a                                               yes (regular)
-``OkHttpMonixBackend``               ``monix.eval.Task``          ``monix.reactive.Observable[ByteBuffer]``         yes (regular & streaming)
-``Http4sBackend``                    ``F[_]: cats.effect.Effect`` ``fs2.Stream[F, Byte]``                           no
-``HttpClientSyncBackend``            None (``Identity``)          n/a                                               no
-``HttpClientFutureBackend``          ``scala.concurrent.Future``  n/a                                               yes (regular)
-``HttpClientMonixBackend``           ``monix.eval.Task``          ``monix.reactive.Observable[ByteBuffer]``         yes (regular & streaming)
-``HttpClientZioBackend``             ``zio.RIO[Blocking, *]``     ``zio.stream.ZStream[Blocking, Throwable, Byte]`` yes (regular & streaming)
-``FinagleBackend``                   ``com.twitter.util.Future``  n/a                                               no
-==================================== ============================ ================================================= ==========================
+==================================== ============================ ================================================= ========================== ===================
+Class                                Effect type                  Supported stream type                             Supports websockets        Fully non-blocking
+==================================== ============================ ================================================= ========================== ===================
+``HttpURLConnectionBackend``         None (``Identity``)          n/a                                               no                         no
+``TryHttpURLConnectionBackend``      ``scala.util.Try``           n/a                                               no                         no
+``AkkaHttpBackend``                  ``scala.concurrent.Future``  ``akka.stream.scaladsl.Source[ByteString, Any]``  yes (regular & streaming)  yes
+``AsyncHttpClientFutureBackend``     ``scala.concurrent.Future``  n/a                                               yes (regular)              no
+``AsyncHttpClientScalazBackend``     ``scalaz.concurrent.Task``   n/a                                               yes (regular)              no
+``AsyncHttpClientZioBackend``        ``zio.Task``                 ``zio.stream.Stream[Throwable, Byte]``            yes (regular & streaming)  no
+``AsyncHttpClientMonixBackend``      ``monix.eval.Task``          ``monix.reactive.Observable[ByteBuffer]``         yes (regular & streaming)  no
+``AsyncHttpClientCatsBackend``       ``F[_]: cats.effect.Async``  n/a                                               no                         no
+``AsyncHttpClientFs2Backend``        ``F[_]: cats.effect.Async``  ``fs2.Stream[F, Byte]``                           yes (regular & streaming)  no
+``OkHttpSyncBackend``                None (``Identity``)          n/a                                               yes (regular)              no
+``OkHttpFutureBackend``              ``scala.concurrent.Future``  n/a                                               yes (regular)              no
+``OkHttpMonixBackend``               ``monix.eval.Task``          ``monix.reactive.Observable[ByteBuffer]``         yes (regular & streaming)  no
+``Http4sBackend``                    ``F[_]: cats.effect.Effect`` ``fs2.Stream[F, Byte]``                           no                         no
+``HttpClientSyncBackend``            None (``Identity``)          n/a                                               no                         no
+``HttpClientFutureBackend``          ``scala.concurrent.Future``  n/a                                               yes (regular)              no
+``HttpClientMonixBackend``           ``monix.eval.Task``          ``monix.reactive.Observable[ByteBuffer]``         yes (regular & streaming)  no
+``HttpClientFs2Backend``             ``F[_]: cats.effect.Async``  ``fs2.Stream[F, Byte]``                           yes (regular & streaming)  yes
+``HttpClientZioBackend``             ``zio.Task``                 ``zio.stream.Stream[Throwable, Byte]``            yes (regular & streaming)  yes
+``FinagleBackend``                   ``com.twitter.util.Future``  n/a                                               no                         no
+==================================== ============================ ================================================= ========================== ===================
 ```
 
 The backends work with Scala 2.11, 2.12 and 2.13 (with some exceptions for 2.11). Moreover, `HttpURLConnectionBackend`, `AsyncHttpClientFutureBackend`, `AsyncHttpClientZioBackend`, `HttpClientSyncBackend`, `HttpClientFutureBackend` and `HttpClientZioBackend` are additionally built with Dotty (Scala 3).

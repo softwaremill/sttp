@@ -618,7 +618,7 @@ lazy val httpClientFs2Backend =
     .dependsOn(fs2 % compileAndTest)
 
 lazy val httpClientZioBackend =
-  httpClientBackendProject("zio", includeDotty = true)
+  httpClientBackendProject("zio", includeDotty = false)
     .settings(
       libraryDependencies ++=
         Seq(
