@@ -61,7 +61,20 @@ private[zio] class ZioBodyFromHttpClient
       override protected def regularAsFile(
           response: ZStream[Blocking, Throwable, Byte],
           file: SttpFile
-      ): BlockingTask[SttpFile] = response.run(ZSink.fromFile(file.toPath)).as(file)
+      ): BlockingTask[SttpFile] = response
+        .run({
+          ZSink.managed(
+            AsynchronousFileChannel
+              .open(Path.fromJava(file.toPath), StandardOpenOption.WRITE, StandardOpenOption.CREATE)
+          ) { fileChannel =>
+            ZSink.foldChunksM(0L)(_ => true) { case (position, data) =>
+              fileChannel
+                .write(data, position)
+                .map(bytesWritten => position + bytesWritten)
+            }
+          }
+        })
+        .as(file)
 
       override protected def regularAsStream(
           response: ZStream[Blocking, Throwable, Byte]
