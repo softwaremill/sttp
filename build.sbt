@@ -198,8 +198,8 @@ val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion
 val zioVersion = "1.0.1"
 val zioInteropRsVersion = "1.0.3.5"
 
-val sttpModelVersion = "1.2.0-RC3"
-val sttpSharedVersion = "1.0.0-RC5"
+val sttpModelVersion = "1.2.0-RC4"
+val sttpSharedVersion = "1.0.0-RC6"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
 

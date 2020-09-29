@@ -29,8 +29,8 @@ private[asynchttpclient] class WebSocketImpl[F[_]](
         // putting back the error so that subsequent invocations end in an error as well, instead of hanging
         queue.offer(e)
         monad.error(t)
-      case WebSocketEvent.Error(t)                          => throw t
-      case WebSocketEvent.Frame(f: WebSocketFrame.Incoming) => monad.unit(f)
+      case WebSocketEvent.Error(t)                 => throw t
+      case WebSocketEvent.Frame(f: WebSocketFrame) => monad.unit(f)
     }
   }
 
@@ -106,7 +106,7 @@ class AddToQueueListener[F[_]](queue: SimpleQueue[F, WebSocketEvent], isOpen: At
   override def onPingFrame(payload: Array[Byte]): Unit = onFrame(WebSocketFrame.Ping(payload))
   override def onPongFrame(payload: Array[Byte]): Unit = onFrame(WebSocketFrame.Pong(payload))
 
-  private def onFrame(f: WebSocketFrame.Incoming): Unit = queue.offer(WebSocketEvent.Frame(f))
+  private def onFrame(f: WebSocketFrame): Unit = queue.offer(WebSocketEvent.Frame(f))
 
   private def rsvToOption(rsv: Int): Option[Int] = if (rsv == 0) None else Some(rsv)
 }

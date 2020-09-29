@@ -124,10 +124,7 @@ private[akkahttp] class BodyFromAkka()(implicit ec: ExecutionContext, mat: Mater
             case WebSocketFrame.Close(_, _) => false
             case _                          => true
           }
-          .mapConcat {
-            case incoming: WebSocketFrame.Incoming => frameToMessage(incoming).toList
-            case WebSocketFrame.Close(_, _)        => throw new WebSocketClosed()
-          }
+          .mapConcat(incoming => frameToMessage(incoming).toList)
           .watchTermination() { (notUsed, done) =>
             donePromise.completeWith(done)
             notUsed
@@ -181,8 +178,13 @@ private[akkahttp] class BodyFromAkka()(implicit ec: ExecutionContext, mat: Mater
 
       override def send(f: WebSocketFrame, isContinuation: Boolean): Future[Unit] =
         f match {
-          case incoming: WebSocketFrame.Incoming =>
-            frameToMessage(incoming) match {
+          case WebSocketFrame.Close(_, _) =>
+            val wasOpen = open.getAndSet(false)
+            if (wasOpen) sourceQueue.complete()
+            sourceQueue.watchCompletion().map(_ => ())
+
+          case frame: WebSocketFrame =>
+            frameToMessage(frame) match {
               case Some(m) =>
                 sourceQueue.offer(m).flatMap {
                   case QueueOfferResult.Enqueued => Future.successful(())
@@ -194,11 +196,6 @@ private[akkahttp] class BodyFromAkka()(implicit ec: ExecutionContext, mat: Mater
                 }
               case None => Future.successful(())
             }
-
-          case WebSocketFrame.Close(_, _) =>
-            val wasOpen = open.getAndSet(false)
-            if (wasOpen) sourceQueue.complete()
-            sourceQueue.watchCompletion().map(_ => ())
         }
 
       override def upgradeHeaders: Headers = Headers(meta.headers)
@@ -221,12 +218,13 @@ private[akkahttp] class BodyFromAkka()(implicit ec: ExecutionContext, mat: Mater
         msg.dataStream.runFold(ByteString.empty)(_ ++ _).map(b => WebSocketFrame.binary(b.toArray))
     }
 
-  private def frameToMessage(w: WebSocketFrame.Incoming): Option[Message] = {
+  private def frameToMessage(w: WebSocketFrame): Option[Message] = {
     w match {
       case WebSocketFrame.Text(p, _, _)   => Some(TextMessage(p))
       case WebSocketFrame.Binary(p, _, _) => Some(BinaryMessage(ByteString(p)))
       case WebSocketFrame.Ping(_)         => None
       case WebSocketFrame.Pong(_)         => None
+      case WebSocketFrame.Close(_, _)     => throw new WebSocketClosed()
     }
   }
 }

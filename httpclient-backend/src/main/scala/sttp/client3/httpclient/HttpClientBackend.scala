@@ -1,28 +1,21 @@
 package sttp.client3.httpclient
 
-import java.io.{InputStream, UnsupportedEncodingException}
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 import java.net.{Authenticator, PasswordAuthentication}
-import java.nio.ByteBuffer
 import java.time.{Duration => JDuration}
-import java.util.concurrent.{Executor, Flow, ThreadPoolExecutor}
+import java.util.concurrent.{Executor, ThreadPoolExecutor}
 import java.util.function
-import java.util.zip.{GZIPInputStream, InflaterInputStream}
 
 import sttp.capabilities.{Effect, Streams}
 import sttp.client3.SttpBackendOptions.Proxy
 import sttp.client3.httpclient.HttpClientBackend.EncodingHandler
+import sttp.client3.{MultipartBody, Request, Response, ResponseMetadata, SttpBackend, SttpBackendOptions}
+import sttp.model._
 import sttp.monad.MonadError
 import sttp.monad.syntax._
-import sttp.client3.{MultipartBody, Request, Response, ResponseAs, ResponseMetadata, SttpBackend, SttpBackendOptions}
-import sttp.model._
 import sttp.ws.WebSocket
 
 import scala.collection.JavaConverters._
-import java.{util => ju}
-
-import jdk.internal.net.http.ResponseSubscribers
-import org.reactivestreams.Publisher
 
 abstract class HttpClientBackend[F[_], S, P, B](
     client: HttpClient,

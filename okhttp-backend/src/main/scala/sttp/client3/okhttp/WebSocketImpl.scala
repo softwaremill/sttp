@@ -33,10 +33,10 @@ private[okhttp] class WebSocketImpl[F[_]](
         queue.offer(e)
         monad.error(t)
       case WebSocketEvent.Error(t) => throw t
-      case WebSocketEvent.Frame(f: WebSocketFrame.Incoming) =>
-        monad.unit(f)
       case WebSocketEvent.Frame(f: WebSocketFrame.Close) =>
         queue.offer(WebSocketEvent.Error(new WebSocketClosed))
+        monad.unit(f)
+      case WebSocketEvent.Frame(f: WebSocketFrame) =>
         monad.unit(f)
     }
   }
@@ -137,5 +137,5 @@ private[okhttp] class AddToQueueListener[F[_]](queue: SimpleQueue[F, WebSocketEv
     onFrame(WebSocketFrame.Text(text, finalFragment = true, None))
   }
 
-  private def onFrame(f: WebSocketFrame.Incoming): Unit = queue.offer(WebSocketEvent.Frame(f))
+  private def onFrame(f: WebSocketFrame): Unit = queue.offer(WebSocketEvent.Frame(f))
 }

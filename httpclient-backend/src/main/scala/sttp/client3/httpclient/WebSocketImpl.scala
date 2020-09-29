@@ -30,7 +30,7 @@ private[httpclient] class WebSocketImpl[F[_]](
         queue.offer(e)
         monad.error(t)
       case WebSocketEvent.Error(t) => throw t
-      case WebSocketEvent.Frame(f: WebSocketFrame.Incoming) =>
+      case WebSocketEvent.Frame(f: WebSocketFrame) =>
         monad.eval {
           ws.request(1)
           f
@@ -119,5 +119,5 @@ private[httpclient] class AddToQueueListener[F[_]](
     super.onError(webSocket, error)
   }
 
-  private def onFrame(f: WebSocketFrame.Incoming): Unit = queue.offer(WebSocketEvent.Frame(f))
+  private def onFrame(f: WebSocketFrame): Unit = queue.offer(WebSocketEvent.Frame(f))
 }
