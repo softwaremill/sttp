@@ -634,7 +634,7 @@ lazy val finagleBackend = (projectMatrix in file("finagle-backend"))
   .settings(
     name := "finagle-backend",
     libraryDependencies ++= Seq(
-      "com.twitter" %% "finagle-http" % "20.8.1"
+      "com.twitter" %% "finagle-http" % "20.9.0"
     )
   )
   .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = intellijImportOnly213)
@@ -669,7 +669,7 @@ lazy val circe = (projectMatrix in file("json/circe"))
   .jsPlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonJsSettings ++ intellijSkipImport)
   .dependsOn(core, jsonCommon)
 
-lazy val json4sVersion = "3.6.9"
+lazy val json4sVersion = "3.6.10"
 
 lazy val json4s = (projectMatrix in file("json/json4s"))
   .settings(commonJvmSettings)
