@@ -1,5 +1,7 @@
 package sttp.client3.httpclient.zio
 
+import java.nio.file.StandardOpenOption
+
 import sttp.capabilities.zio.BlockingZioStreams
 import sttp.client3.httpclient.BodyFromHttpClient
 import sttp.client3.impl.zio.{RIOMonadAsyncError, ZioWebSockets}
@@ -9,6 +11,8 @@ import sttp.client3.{ResponseMetadata, WebSocketResponseAs}
 import sttp.monad.MonadError
 import sttp.ws.{WebSocket, WebSocketFrame}
 import zio.blocking.Blocking
+import zio.nio.channels.AsynchronousFileChannel
+import zio.nio.core.file.Path
 import zio.stream.{Stream, ZSink, ZStream}
 import zio.{Task, ZIO}
 
@@ -35,7 +39,15 @@ private[zio] class ZioBodyFromHttpClient
       ): Task[ZStream[Blocking, Throwable, Byte]] = {
         replayableBody match {
           case Left(byteArray) => ZIO.succeed(Stream.fromIterable(byteArray))
-          case Right(file)     => ZIO.succeed(Stream.fromFile(file.toPath))
+          case Right(file) =>
+            ZIO.succeed(
+              for {
+                fileChannel <- Stream.managed(
+                  AsynchronousFileChannel.open(Path.fromJava(file.toPath), StandardOpenOption.READ)
+                )
+                bytes <- readAllBytes(fileChannel)
+              } yield bytes
+            )
         }
       }
 
@@ -72,6 +84,18 @@ private[zio] class ZioBodyFromHttpClient
           e: GotAWebSocketException
       ): BlockingTask[Unit] = response.close()
     }
+
+  private def readAllBytes(fileChannel: AsynchronousFileChannel) = {
+    val bufferSize = 4096
+    Stream.paginateChunkM(0L)(position =>
+      fileChannel
+        .read(bufferSize, position)
+        .map {
+          case data if data.isEmpty => data -> None
+          case data                 => data -> Some(position + bufferSize)
+        }
+    )
+  }
 
   override implicit def monad: MonadError[BlockingTask] = new RIOMonadAsyncError[Blocking]
 }
