@@ -1,4 +1,4 @@
-# Custom backends, logging, metrics
+# Custom backends
 
 It is also entirely possible to write custom backends (if doing so, please consider contributing!) or wrap an existing one. One can even write completely generic wrappers for any delegate backend, as each backend comes equipped with a monad for the used effect type. This brings the possibility to `map` and `flatMap` over responses.
 

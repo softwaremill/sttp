@@ -76,4 +76,4 @@ Synchronous backends don't support non-blocking [streaming](../requests/streamin
 
 ## Websockets
 
-Only the OkHttp backend support regular [websockets](../websockets.md).
+Only the OkHttp backend supports regular [websockets](../websockets.md).

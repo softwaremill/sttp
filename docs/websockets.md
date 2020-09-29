@@ -8,15 +8,17 @@ A websocket request will be sent instead of a regular one if the response specif
 
 The first possibility is using `sttp.client3.ws.WebSocket[F]`, where `F` is the backend-specific effects wrapper, such as `Future` or `IO`. It contains two basic methods, both of which use the `F` effect to return results:
  
-* `def receive: F[WebSocketFrame.Incoming]` which will complete once a message is available, and return the next incoming frame (which can be a data, ping, pong or close)
+* `def receive: F[WebSocketFrame]` which will complete once a message is available, and return the next incoming frame (which can be a data, ping, pong or close)
 * `def send(f: WebSocketFrame, isContinuation: Boolean = false): F[Unit]`, which sends a message to the websocket. The `WebSocketFrame` companion object contains methods for creating binary/text messages. When using fragmentation, the first message should be sent using `finalFragment = false`, and subsequent messages using `isContinuation = true`.
  
 The `WebSocket` trait also contains other methods for receiving only text/binary messages, as well as automatically sending `Pong` responses when a `Ping` is received.
 
 The following response specifications which use `WebSocket[F]` are available (the first type parameter of `ResponseAs` specifies the type returned as the response body, the second - the capabilities that the backend is required to support to send the request):
 
-```mdoc:compile-only
+```scala mdoc:compile-only
 import sttp.client3._
+import sttp.capabilities.{Effect, WebSockets}
+import sttp.ws.WebSocket
 
 def asWebSocket[F[_], T](f: WebSocket[F] => F[T]): 
   ResponseAs[Either[String, T], Effect[F] with WebSockets] = ???
@@ -45,7 +47,11 @@ Another possibility is to work with websockets by providing a streaming stage, w
 
 The following response specifications are available: 
 
-```mdoc:compile-only
+```scala mdoc:compile-only
+import sttp.client3._
+import sttp.capabilities.{Streams, WebSockets}
+import sttp.ws.WebSocketFrame
+
 def asWebSocketStream[S](s: Streams[S])(p: s.Pipe[WebSocketFrame.Data[_], WebSocketFrame]): 
   ResponseAs[Either[String, Unit], S with WebSockets] = ???
 
@@ -58,6 +64,7 @@ Using streaming websockets requires the backend to support the given streaming c
 When working with streams of websocket frames keep in mind that a text payload maybe fragmented into multiple frames.
 sttp provides two useful methods (`fromTextPipe`, `fromTextPipeF`) for each backend to aggregate these fragments back into complete messages.
 These methods can be found in corresponding WebSockets classes for given effect type:
+
 ```eval_rst
 ================ ==========================================
 effect type      class name

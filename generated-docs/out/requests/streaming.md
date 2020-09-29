@@ -1,6 +1,6 @@
 # Streaming
 
-Some backends (see [backends summary](../backends/summary.md)) support streaming bodies, as descirbed by the `Streams[S]` capability. If that's the case, you can set a stream of the supported type as a request body using the `streamBody` method, instead of the usual `body` method.
+Some backends (see [backends summary](../backends/summary.md)) support streaming bodies, as described by the `Streams[S]` capability. If that's the case, you can set a stream of the supported type as a request body using the `streamBody` method, instead of the usual `body` method.
 
 ```eval_rst
 .. note::

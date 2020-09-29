@@ -89,3 +89,10 @@ implicit val system: ActorSystem = ???
 
 val backend = AkkaHttpBackend.usingClient(system, http = AkkaHttpClient.stubFromRoute(route))
 ```
+
+## WebSockets
+
+Non-standard behavior:
+
+* akka always automatically responds with a `Pong` to a `Ping` message
+* `WebSocketFrame.Ping` and `WebSocketFrame.Pong` frames are ignored; instead, you can configure automatic [keep-alive pings](https://doc.akka.io/docs/akka-http/current/client-side/websocket-support.html#automatic-keep-alive-ping-support)

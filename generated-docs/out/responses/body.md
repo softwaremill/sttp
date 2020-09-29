@@ -71,8 +71,10 @@ val someFile = new File("some/path")
 basicRequest.response(asFile(someFile))
 ```
 
-```note:: As the handling of response is specified upfront, there's no need to "consume" the response body. It can be safely discarded if not needed.
+```eval_rst
+.. note::
 
+ As the handling of response is specified upfront, there's no need to "consume" the response body. It can be safely discarded if not needed.
 ```
 
 ## Failing when the response code is not 2xx
@@ -87,9 +89,13 @@ basicRequest.response(asString.getRight): PartialRequest[String, Any]
 
 The combinator works in all cases where the response body is specified to be deserialized as an `Either`. If the left is already an exception, it will be thrown unchanged. Otherwise, the left-value will be wrapped in an `HttpError`.
 
-```note:: While both ``asStringAlways`` and ``asString.getRight`` have the type ``ResponseAs[String, Any]``, they are different. The first will return the response body as a string always, regardless of the responses' status code. The second will return a failed effect / throw a ``HttpError`` exception for non-2xx status codes, and the string as body only for 2xx status codes.```
+```eval_rst
+.. note::
 
-There's also a variant of the combinator, `.failLeftDeserialize`, which can be used to extract typed errors and fail the effect if there's a deserialization error.
+ While both ``asStringAlways`` and ``asString.getRight`` have the type ``ResponseAs[String, Any]``, they are different. The first will return the response body as a string always, regardless of the responses' status code. The second will return a failed effect / throw a ``HttpError`` exception for non-2xx status codes, and the string as body only for 2xx status codes.
+```
+
+There's also a variant of the combinator, `.getEither`, which can be used to extract typed errors and fail the effect if there's a deserialization error.
 
 ## Custom body deserializers
 
@@ -128,7 +134,7 @@ basicRequest
 
 A number of JSON libraries are supported out-of-the-box, see [json support](../json.md).
 
-### Response-metadata dependent deserializers
+## Response-metadata dependent deserializers
 
 Using the `fromMetadata` combinator, it's possible to dynamically specify how the response should be deserialized, basing on the response status code and response headers. The default `asString`, `asByteArray` response descriptions use this method to return a `Left` in case of non-2xx responses, and a `Right` otherwise. 
 
