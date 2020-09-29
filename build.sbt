@@ -622,7 +622,8 @@ lazy val httpClientZioBackend =
     .settings(
       libraryDependencies ++=
         Seq(
-          "dev.zio" %% "zio-interop-reactivestreams" % zioInteropRsVersion
+          "dev.zio" %% "zio-interop-reactivestreams" % zioInteropRsVersion,
+          "dev.zio" %% "zio-nio" % "1.0.0-RC9"
         )
     )
     .dependsOn(zio % compileAndTest)
