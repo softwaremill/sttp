@@ -204,7 +204,7 @@ val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
 val jeagerClientVersion = "1.4.0"
 val braveOpentracingVersion = "0.37.2"
 val zipkinSenderOkHttpVersion = "2.15.2"
-val resilience4jVersion = "1.5.0"
+val resilience4jVersion = "1.6.0"
 
 def dependenciesFor(version: String)(deps: (Option[(Long, Long)] => ModuleID)*): Seq[ModuleID] =
   deps.map(_.apply(CrossVersion.partialVersion(version)))
