@@ -175,7 +175,7 @@ val circeVersion: Option[(Long, Long)] => String = {
 }
 val playJsonVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.7.4"
-  case _             => "2.9.0"
+  case _             => "2.9.1"
 }
 val catsEffectVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.0.0"
@@ -683,6 +683,7 @@ lazy val playJson = (projectMatrix in file("json/play-json"))
     scalaVersions = List(scala2_11, scala2_12, scala2_13),
     settings = commonJvmSettings ++ intellijImportOnly213
   )
+  .jsPlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonJsSettings ++ intellijSkipImport)
   .dependsOn(core, jsonCommon)
 
 lazy val openTracingBackend = (projectMatrix in file("metrics/open-tracing-backend"))
