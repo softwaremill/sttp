@@ -62,7 +62,7 @@ class HttpClientMonixBackend private (
   override protected def publisherToBody(p: Publisher[util.List[ByteBuffer]]): Observable[ByteBuffer] = {
     Observable
       .fromReactivePublisher(p)
-      .map(list => ByteBuffer.wrap(list.asScala.toList.flatMap(_.safeRead()).toArray))
+      .flatMapIterable(list => list.asScala.toList)
   }
 
   override protected def emptyBody(): Observable[ByteBuffer] = Observable.empty
