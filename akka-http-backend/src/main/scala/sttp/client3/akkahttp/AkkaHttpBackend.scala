@@ -277,6 +277,8 @@ object AkkaHttpBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackendStub[Future, Any] =
+  def stub(implicit
+      ec: ExecutionContext = ExecutionContext.global
+  ): SttpBackendStub[Future, AkkaStreams with WebSockets] =
     SttpBackendStub(new FutureMonad())
 }
