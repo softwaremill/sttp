@@ -93,11 +93,7 @@ We are also always looking for contributions and new ideas, so if you’d like t
 
 ### Testing the Scala.JS backend
 
-Running the tests using the JS backend has some prerequisities:
-
-* Install [Google Chrome](https://www.google.com/chrome/)
-* Download [ChromeDriver](https://sites.google.com/a/chromium.org/chromedriver/downloads) and 
-[install it](https://sites.google.com/a/chromium.org/chromedriver/getting-started)
+In order to run tests against JS backend you will need to install [Google Chrome](https://www.google.com/chrome/).
 
 Note that running the default `test` task will run the tests using both the JVM and JS backends.
 If you'd like to run the tests using *only* the JVM backend, execute: `sbt rootJVM/test`.
