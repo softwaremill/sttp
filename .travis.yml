@@ -2,8 +2,12 @@ language: scala
 addons:
   chrome: stable
 jdk:
-- openjdk11
+  - openjdk11
 dist: bionic
+env:
+  - BUILD_TYPE=jvm
+  - BUILD_TYPE=js
+  - BUILD_TYPE=native
 before_cache:
   - du -h -d 1 $HOME/.ivy2/
   - du -h -d 2 $HOME/.sbt/
@@ -20,10 +24,13 @@ cache:
     - $HOME/.ivy2/cache
     - $HOME/.coursier
 before_install:
-  - if [[ $TRAVIS_SCALA_VERSION =~ ^2.11.* ]]; then bash project/travis_setup.sh; fi
+  - if [ $BUILD_TYPE == "native" ]; then bash project/travis_setup.sh; fi
 before_script:
-- nvm install 10 # nodejs < 10 fails finding URL class
+  - if [ $BUILD_TYPE == "js" ]; then nvm install 10; fi # nodejs < 10 fails finding URL class
+  - if [ $BUILD_TYPE == "native" ]; then export STTP_NATIVE=1; fi
 script:
-- google-chrome --version
-- sbt compileDocs
-- sbt test
+  - if [ $BUILD_TYPE == "js" ]; then google-chrome --version; fi
+  - if [ $BUILD_TYPE == "jvm" ]; then sbt compileDocs; fi
+  - if [ $BUILD_TYPE == "jvm" ]; then sbt -v testJVM; fi
+  - if [ $BUILD_TYPE == "js" ]; then sbt -v testJS; fi
+  - if [ $BUILD_TYPE == "native" ]; then sbt -v testNative; fi

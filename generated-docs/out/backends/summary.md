@@ -6,42 +6,42 @@ Choosing the right backend depends on a number of factors: whether you are using
 
 Which one to choose?
 
-* for simple exploratory requests, use the [synchronous](synchronous.md) `HttpURLConnectionBackend`, or `HttpClientSyncBackend` if you are on Java11.
+* for simple exploratory requests, use the [synchronous](synchronous.md) `HttpURLConnectionBackend`, or `HttpClientSyncBackend` if you are on Java11+.
 * if you have Akka in your stack, use [Akka backend](akka.md)
-* otherwise, if you are using `Future`, use the `AsyncHttpClientFutureBackend` [Future](future.md) backend
+* otherwise, if you are using `Future`, use `AsyncHttpClientFutureBackend` [Future](future.md) backend, or `HttpClientFutureBackend` if you are on Java11+.
 * finally, if you are using a functional effect wrapper, use one of the "functional" backends, for [ZIO](zio.md), [Monix](monix.md), [Scalaz](scalaz.md), [cats-effect](catseffect.md) or [fs2](fs2.md). 
 
-Each backend has three type parameters:
+Each backend has two type parameters:
 
-* `F[_]`, the effects wrapper for responses. That is, when you invoke `send()` on a request description, do you get a `Response[_]` directly, or is it wrapped in a `Future` or a `Task`?
-* `S`, the type of supported streams. If `Nothing`, streaming is not supported. Otherwise, the given type can be used to send request bodies or receive response bodies.
-* `WS_HANDLER`, the type of supported websocket handlers. If `NothingT`, websockets are not supported. Otherwise, websocket connections can be opened, given an instance of the handler
+* `F[_]`, the effects wrapper for responses. That is, when you invoke `send(backend)` on a request description, do you get a `Response[_]` directly, or is it wrapped in a `Future` or a `Task`?
+* `P`, the capabilities supported by the backend, in addition to `Effect[F]`. If `Any`, no additional capabilities are provided. Might include `Streams` (the ability to send and receive streaming bodies) and `WebSockets` (the ability to handle websocket requests).
 
 Below is a summary of all the JVM backends; see the sections on individual backend implementations for more information:
 
 ```eval_rst
-==================================== ============================ ================================================= ==================================================
-Class                                Response wrapper             Supported stream type                             Supported websocket handlers
-==================================== ============================ ================================================= ==================================================
-``HttpURLConnectionBackend``         None (``Identity``)          n/a                                               n/a
-``TryHttpURLConnectionBackend``      ``scala.util.Try``           n/a                                               n/a
-``AkkaHttpBackend``                  ``scala.concurrent.Future``  ``akka.stream.scaladsl.Source[ByteString, Any]``  ``akka.stream.scaladsl.Flow[Message, Message, _]``
-``AsyncHttpClientFutureBackend``     ``scala.concurrent.Future``  n/a                                               ``sttp.client.asynchttpclient.WebSocketHandler``
-``AsyncHttpClientScalazBackend``     ``scalaz.concurrent.Task``   n/a                                               ``sttp.client.asynchttpclient.WebSocketHandler``
-``AsyncHttpClientZioBackend``        ``zio.Task``                 ``zio.stream.Stream[Throwable, Byte]``            ``sttp.client.asynchttpclient.WebSocketHandler``
-``AsyncHttpClientMonixBackend``      ``monix.eval.Task``          ``monix.reactive.Observable[ByteBuffer]``         ``sttp.client.asynchttpclient.WebSocketHandler``
-``AsyncHttpClientCatsBackend``       ``F[_]: cats.effect.Async``  n/a                                               ``sttp.client.asynchttpclient.WebSocketHandler``
-``AsyncHttpClientFs2Backend``        ``F[_]: cats.effect.Async``  ``fs2.Stream[F, Byte]``                           ``sttp.client.asynchttpclient.WebSocketHandler``
-``OkHttpSyncBackend``                None (``Identity``)          n/a                                               ``sttp.client.okhttp.WebSocketHandler``
-``OkHttpFutureBackend``              ``scala.concurrent.Future``  n/a                                               ``sttp.client.okhttp.WebSocketHandler``
-``OkHttpMonixBackend``               ``monix.eval.Task``          ``monix.reactive.Observable[ByteBuffer]``         ``sttp.client.okhttp.WebSocketHandler``
-``Http4sBackend``                    ``F[_]: cats.effect.Effect`` ``fs2.Stream[F, Byte]``                           n/a
-``HttpClientSyncBackend``            None (``Identity``)          n/a                                               ``sttp.client.httpclient.WebSocketHandler``
-``HttpClientFutureBackend``          ``scala.concurrent.Future``  n/a                                               ``sttp.client.httpclient.WebSocketHandler``
-``HttpClientMonixBackend``           ``monix.eval.Task``          ``monix.reactive.Observable[ByteBuffer]``         ``sttp.client.httpclient.WebSocketHandler``
-``HttpClientZioBackend``             ``zio.RIO[Blocking, *]``     ``zio.stream.ZStream[Blocking, Throwable, Byte]`` ``sttp.client.httpclient.WebSocketHandler``
-``FinagleBackend``                   ``com.twitter.util.Future``  n/a                                               n/a
-==================================== ============================ ================================================= ==================================================
+==================================== ============================ ================================================= ========================== ===================
+Class                                Effect type                  Supported stream type                             Supports websockets        Fully non-blocking
+==================================== ============================ ================================================= ========================== ===================
+``HttpURLConnectionBackend``         None (``Identity``)          n/a                                               no                         no
+``TryHttpURLConnectionBackend``      ``scala.util.Try``           n/a                                               no                         no
+``AkkaHttpBackend``                  ``scala.concurrent.Future``  ``akka.stream.scaladsl.Source[ByteString, Any]``  yes (regular & streaming)  yes
+``AsyncHttpClientFutureBackend``     ``scala.concurrent.Future``  n/a                                               yes (regular)              no
+``AsyncHttpClientScalazBackend``     ``scalaz.concurrent.Task``   n/a                                               yes (regular)              no
+``AsyncHttpClientZioBackend``        ``zio.Task``                 ``zio.stream.Stream[Throwable, Byte]``            yes (regular & streaming)  no
+``AsyncHttpClientMonixBackend``      ``monix.eval.Task``          ``monix.reactive.Observable[ByteBuffer]``         yes (regular & streaming)  no
+``AsyncHttpClientCatsBackend``       ``F[_]: cats.effect.Async``  n/a                                               no                         no
+``AsyncHttpClientFs2Backend``        ``F[_]: cats.effect.Async``  ``fs2.Stream[F, Byte]``                           yes (regular & streaming)  no
+``OkHttpSyncBackend``                None (``Identity``)          n/a                                               yes (regular)              no
+``OkHttpFutureBackend``              ``scala.concurrent.Future``  n/a                                               yes (regular)              no
+``OkHttpMonixBackend``               ``monix.eval.Task``          ``monix.reactive.Observable[ByteBuffer]``         yes (regular & streaming)  no
+``Http4sBackend``                    ``F[_]: cats.effect.Effect`` ``fs2.Stream[F, Byte]``                           no                         no
+``HttpClientSyncBackend``            None (``Identity``)          n/a                                               no                         no
+``HttpClientFutureBackend``          ``scala.concurrent.Future``  n/a                                               yes (regular)              no
+``HttpClientMonixBackend``           ``monix.eval.Task``          ``monix.reactive.Observable[ByteBuffer]``         yes (regular & streaming)  no
+``HttpClientFs2Backend``             ``F[_]: cats.effect.Async``  ``fs2.Stream[F, Byte]``                           yes (regular & streaming)  yes
+``HttpClientZioBackend``             ``zio.Task``                 ``zio.stream.Stream[Throwable, Byte]``            yes (regular & streaming)  yes
+``FinagleBackend``                   ``com.twitter.util.Future``  n/a                                               no                         no
+==================================== ============================ ================================================= ========================== ===================
 ```
 
 The backends work with Scala 2.11, 2.12 and 2.13 (with some exceptions for 2.11). Moreover, `HttpURLConnectionBackend`, `AsyncHttpClientFutureBackend`, `AsyncHttpClientZioBackend`, `HttpClientSyncBackend`, `HttpClientFutureBackend` and `HttpClientZioBackend` are additionally built with Dotty (Scala 3).
@@ -51,27 +51,27 @@ There are also backends which wrap other backends to provide additional function
 * `TryBackend`, which safely wraps any exceptions thrown by a synchronous backend in `scala.util.Try`
 * `OpenTracingBackend`, for OpenTracing-compatible distributed tracing. See the [dedicated section](wrappers/opentracing.md).
 * `PrometheusBackend`, for gathering Prometheus-format metrics. See the [dedicated section](wrappers/prometheus.md).
-* slf4j backends, for logging. See the [dedicated section](wrappers/slf4j.md).
+* extendable logging backends (with an slf4j implementation) backends. See the [dedicated section](wrappers/logging.md).
 
 In addition, there are also backends for Scala.JS:
 
 ```eval_rst
-================================ ============================ ========================================= ============================
-Class                            Response wrapper             Supported stream type                     Supported websocket handlers
-================================ ============================ ========================================= ============================
-``FetchBackend``                 ``scala.concurrent.Future``  n/a                                       n/a
-``FetchMonixBackend``            ``monix.eval.Task``          ``monix.reactive.Observable[ByteBuffer]`` n/a
-================================ ============================ ========================================= ============================
+================================ ============================ ========================================= ===================
+Class                            Effect type                  Supported stream type                     Supports websockets
+================================ ============================ ========================================= ===================
+``FetchBackend``                 ``scala.concurrent.Future``  n/a                                       no
+``FetchMonixBackend``            ``monix.eval.Task``          ``monix.reactive.Observable[ByteBuffer]`` no
+================================ ============================ ========================================= ===================
 ```
 
 And a backend for scala-native:
 
 ```eval_rst
-================================ ============================ ========================================= ============================
-Class                            Response wrapper             Supported stream type                     Supported websocket handlers
-================================ ============================ ========================================= ============================
-``CurlBackend``                  None (``Identity``)          n/a                                       n/a
-================================ ============================ ========================================= ============================
+================================ ============================ ========================================= ===================
+Class                            Effect type                  Supported stream type                     Supports websockets
+================================ ============================ ========================================= ===================
+``CurlBackend``                  None (``Identity``)          n/a                                       no
+================================ ============================ ========================================= ===================
 ```
 
 Finally, there are third-party backends:

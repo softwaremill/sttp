@@ -8,15 +8,15 @@ sttp supports read and connection timeouts:
 How to use:
 
 ```scala mdoc:compile-only
-import sttp.client._
+import sttp.client3._
 import scala.concurrent.duration._
 
 // all backends provide a constructor that allows to specify backend options
-implicit val backend = HttpURLConnectionBackend(
+val backend = HttpURLConnectionBackend(
   options = SttpBackendOptions.connectionTimeout(1.minute))
 
 basicRequest
   .get(uri"...")
   .readTimeout(5.minutes) // or Duration.Inf to turn read timeout off
-  .send()
+  .send(backend)
 ```

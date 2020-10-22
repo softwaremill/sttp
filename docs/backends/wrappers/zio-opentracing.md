@@ -3,7 +3,7 @@
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client" %% "zio-telemetry-opentracing-backend" % "@VERSION@"
+"com.softwaremill.sttp.client3" %% "zio-telemetry-opentracing-backend" % "@VERSION@"
 ```
 
 This backend depends on [zio-opentracing](https://github.com/zio/zio-telemetry).
@@ -19,12 +19,12 @@ new ZioTelemetryOpenTracingBackend(zioBackend)
 Additionally you can add tags per request by supplying a `ZioTelemetryOpenTracingTracer`
 
 ```scala mdoc:compile-only
-import sttp.client._
+import sttp.client3._
 import zio._
 import zio.telemetry.opentracing._
-import sttp.client.ziotelemetry.opentracing._
+import sttp.client3.ziotelemetry.opentracing._
 
-implicit val zioBackend: SttpBackend[Task, Nothing, NothingT] = ???
+implicit val zioBackend: SttpBackend[Task, Any] = ???
 
 def sttpTracer: ZioTelemetryOpenTracingTracer = new ZioTelemetryOpenTracingTracer {
     def before[T](request: Request[T, Nothing]): RIO[OpenTracing, Unit] =
@@ -38,7 +38,7 @@ def sttpTracer: ZioTelemetryOpenTracingTracer = new ZioTelemetryOpenTracingTrace
       OpenTracing.tag("http.status_code", response.code.code)
 }
 
-new ZioTelemetryOpenTracingBackend[NothingT](zioBackend, sttpTracer)
+ZioTelemetryOpenTracingBackend(zioBackend, sttpTracer)
 ```
 
 

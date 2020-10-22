@@ -2,12 +2,38 @@
 
 The [ZIO](https://github.com/zio/zio) backends are **asynchronous**. Sending a request is a non-blocking, lazily-evaluated operation and results in a response wrapped in a `zio.Task`. There's a transitive dependency on `zio`.
 
+## Using HttpClient (Java 11+)
+
+To use, add the following dependency to your project:
+
+```
+"com.softwaremill.sttp.client3" %% "httpclient-backend-zio" % "@VERSION@"
+```
+
+Create the backend using:
+
+```scala mdoc:compile-only
+import sttp.client3.httpclient.zio.HttpClientZioBackend
+
+HttpClientZioBackend().flatMap { backend => ??? }
+
+// or, if you'd like the backend to be wrapped in a Managed:
+HttpClientZioBackend.managed().use { backend => ??? }
+
+// or, if you'd like to instantiate the HttpClient yourself:
+import java.net.http.HttpClient
+val httpClient: HttpClient = ???
+val backend = HttpClientZioBackend.usingClient(httpClient)
+```
+
+This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards. The backend is fully non-blocking, with back-pressured websockets.
+
 ## Using async-http-client
 
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % "@VERSION@"
+"com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % "@VERSION@"
 ```
            
 This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client), uses [Netty](http://netty.io) behind the scenes and supports effect cancellation. This backend works with all Scala versions. A Dotty build is available as well.
@@ -20,129 +46,91 @@ Next you'll need to define a backend instance as an implicit value. This can be 
 A non-comprehensive summary of how the backend can be created is as follows:
 
 ```scala mdoc:compile-only
-import sttp.client._
-import sttp.client.asynchttpclient.zio.AsyncHttpClientZioBackend
+import sttp.client3._
+import sttp.client3.asynchttpclient.zio.AsyncHttpClientZioBackend
 
-AsyncHttpClientZioBackend().flatMap { implicit backend => ??? }
+AsyncHttpClientZioBackend().flatMap { backend => ??? }
 
 // or, if you'd like the backend to be wrapped in a Managed:
-AsyncHttpClientZioBackend.managed().use { implicit backend => ??? }
+AsyncHttpClientZioBackend.managed().use { backend => ??? }
 
 // or, if you'd like to use custom configuration:
 import org.asynchttpclient.AsyncHttpClientConfig
 val config: AsyncHttpClientConfig = ???
-AsyncHttpClientZioBackend.usingConfig(config).flatMap { implicit backend => ??? }
+AsyncHttpClientZioBackend.usingConfig(config).flatMap { backend => ??? }
 
 // or, if you'd like to use adjust the configuration sttp creates:
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
 val sttpOptions: SttpBackendOptions = SttpBackendOptions.Default 
 val adjustFunction: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder = ???
 
-AsyncHttpClientZioBackend.usingConfigBuilder(adjustFunction, sttpOptions).flatMap { implicit backend => ??? }
+AsyncHttpClientZioBackend.usingConfigBuilder(adjustFunction, sttpOptions).flatMap { backend => ??? }
 
 // or, if you'd like to instantiate the AsyncHttpClient yourself:
 import org.asynchttpclient.AsyncHttpClient
 import zio.Runtime
 val asyncHttpClient: AsyncHttpClient = ???
 val runtime: Runtime[Any] = ???
-implicit val backend = AsyncHttpClientZioBackend.usingClient(runtime, asyncHttpClient)
+val backend = AsyncHttpClientZioBackend.usingClient(runtime, asyncHttpClient)
 ```
-
-## Using HttpClient (Java 11+)
-
-To use, add the following dependency to your project:
-
-```
-"com.softwaremill.sttp.client" %% "httpclient-backend-zio" % "@VERSION@"
-```
-
-Create the backend using:
-
-```scala mdoc:compile-only
-import sttp.client.httpclient.zio.HttpClientZioBackend
-
-HttpClientZioBackend().flatMap { implicit backend => ??? }
-
-// or, if you'd like the backend to be wrapped in a Managed:
-HttpClientZioBackend.managed().use { implicit backend => ??? }
-
-// or, if you'd like to instantiate the HttpClient yourself:
-import java.net.http.HttpClient
-val httpClient: HttpClient = ???
-implicit val sttpBackend = HttpClientZioBackend.usingClient(httpClient)
-```
-
-This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards.
 
 ## ZIO environment
 
 As an alternative to effectfully or resourcefully creating backend instances, ZIO environment can be used. In this case, a type alias is provided for the service definition:
 
 ```scala
-package sttp.client.asynchttpclient.zio
-type SttpClient = Has[SttpBackend[Task, Stream[Throwable, Byte], WebSocketHandler]]
+package sttp.client3.httpclient.zio
+type SttpClient = Has[SttpBackend[Task, ZioStreams with WebSockets]]
 
-// or, when using Java 11 & HttpClient
+// or, when using async-http-client
 
-package sttp.client.httpclient.zio
-type SttpClient = Has[SttpBackend[BlockingTask, ZStream[Blocking, Throwable, Byte], NothingT]]
+package sttp.client3.asynchttpclient.zio
+type SttpClient = Has[SttpBackend[Task, ZioStreams with WebSockets]]
 ```
 
 The lifecycle of the `SttpClient` service is described by `ZLayer`s, which can be created using the `.layer`/`.layerUsingConfig`/... methods on `AsyncHttpClientZioBackend` / `HttpClientZioBackend`.
 
-The `SttpClient` companion object contains effect descriptions which use the `SttpClient` service from the environment to send requests or open websockets. This is different from sttp usage with other effect libraries (which use an implicit backend when `.send()`/`.openWebsocket()` is invoked on the request), but is more in line with how other ZIO services work. For example:
+The `SttpClient` companion object contains effect descriptions which use the `SttpClient` service from the environment to send requests or open websockets. This is different from sttp usage with other effect libraries (which use an implicit backend when `.send(backend)` is invoked on the request), but is more in line with how other ZIO services work. For example:
 
 ```scala mdoc:compile-only
-import sttp.client._
-import sttp.client.asynchttpclient.zio._
+import sttp.client3._
+import sttp.client3.httpclient.zio._
 import zio._
 val request = basicRequest.get(uri"https://httpbin.org/get")
 
-val send: ZIO[SttpClient, Throwable, Response[Either[String, String]]] = 
-  SttpClient.send(request)
-```
-
-Example using websockets:
-
-```scala mdoc:compile-only
-import sttp.client._
-import sttp.client.ws._
-import sttp.client.asynchttpclient.zio._
-import zio._
-val request = basicRequest.get(uri"wss://echo.websocket.org")
-
-val open: ZIO[SttpClient, Throwable, WebSocketResponse[WebSocket[Task]]] = 
-  SttpClient.openWebsocket(request)
+val sent: ZIO[SttpClient, Throwable, Response[Either[String, String]]] = 
+  send(request)
 ```
 
 ## Streaming
 
 The ZIO based backends support streaming using zio-streams. The following example is using the `AsyncHttpClientZioBackend` backend, but works similarly with `HttpClientZioBackend`.
 
-The type of supported streams is `Stream[Throwable, Byte]`. To leverage ZIO environment, use the `SttpClient` object to create request send/websocket open effects.
+The type of supported streams is `Stream[Throwable, Byte]`. The streams capability is represented as `sttp.client3.impl.zio.ZioStreams`. To leverage ZIO environment, use the `SttpClient` object to create request send effects.
 
 Requests can be sent with a streaming body:
 
 ```scala mdoc:compile-only
-import sttp.client._
-import sttp.client.asynchttpclient.zio._
-
+import sttp.capabilities.zio.ZioStreams
+import sttp.client3._
+import sttp.client3.httpclient.zio.send
 import zio.stream._
 
 val s: Stream[Throwable, Byte] =  ???
 
 val request = basicRequest
-  .streamBody(s)
+  .streamBody(ZioStreams)(s)
   .post(uri"...")
 
-SttpClient.send(request)
+send(request)
 ```
 
 And receive response bodies as a stream:
 
 ```scala mdoc:compile-only
-import sttp.client._
-import sttp.client.asynchttpclient.zio._
+import sttp.capabilities.zio.ZioStreams
+import sttp.client3._
+import sttp.client3.httpclient.zio.{SttpClient, send}
 
 import zio._
 import zio.stream._
@@ -152,22 +140,15 @@ import scala.concurrent.duration.Duration
 val request =
   basicRequest
     .post(uri"...")
-    .response(asStream[Stream[Throwable, Byte]])
+    .response(asStreamUnsafe(ZioStreams))
     .readTimeout(Duration.Inf)
 
-val response: ZIO[SttpClient, Throwable, Response[Either[String, Stream[Throwable, Byte]]]] = SttpClient.send(request)
+val response: ZIO[SttpClient, Throwable, Response[Either[String, Stream[Throwable, Byte]]]] = send(request)
 ```
 
 ## Websockets
 
-The ZIO backend supports:
-
-* high-level, "functional" websocket interface, through the `ZioWebSocketHandler` from the appropriate package
-* low-level interface by wrapping a low-level Java interface, `WebSocketHandler` from the appropriate package
-
-See [websockets](../websockets.md) for details on how to use the high-level and low-level interfaces. Websockets
-opened using the `SttpClient.openWebsocket` and `SttpStreamsClient.openWebsocket` (leveraging ZIO environment) always
-use the high-level interface.
+The ZIO backend supports both regular and streaming [websockets](../websockets.md).
 
 ## Testing
 
@@ -175,11 +156,11 @@ The ZIO backends also support a ZIO-familiar way of configuring [stubs](../testi
 usual way of creating a stand-alone stub, you can also define your stubs as effects instead:
 
 ```scala mdoc:compile-only
-import sttp.client._
+import sttp.client3._
 import sttp.model._
-import sttp.client.asynchttpclient._
-import sttp.client.asynchttpclient.zio._
-import sttp.client.asynchttpclient.zio.stubbing._
+import sttp.client3.httpclient._
+import sttp.client3.httpclient.zio._
+import sttp.client3.httpclient.zio.stubbing._
 
 val stubEffect = for {
   _ <- whenRequestMatches(_.uri.toString.endsWith("c")).thenRespond("c")
@@ -187,9 +168,9 @@ val stubEffect = for {
   _ <- whenAnyRequest.thenRespond("a")
 } yield ()
 
-val responseEffect = stubEffect *> SttpClient.send(basicRequest.get(uri"http://example.org/a")).map(_.body)
+val responseEffect = stubEffect *> send(basicRequest.get(uri"http://example.org/a")).map(_.body)
 
-responseEffect.provideLayer(AsyncHttpClientZioBackend.stubLayer) // Task[Either[String, String]]
+responseEffect.provideLayer(HttpClientZioBackend.stubLayer) // Task[Either[String, String]]
 ```
 
 The `whenRequestMatches`, `whenRequestMatchesPartial`, `whenAnyRequest` are effects which require the `SttpClientStubbing`

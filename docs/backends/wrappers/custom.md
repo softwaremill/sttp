@@ -1,6 +1,6 @@
-# Custom backends, logging, metrics
+# Custom backends
 
-It is also entirely possible to write custom backends (if doing so, please consider contributing!) or wrap an existing one. One can even write completely generic wrappers for any delegate backend, as each backend comes equipped with a monad for the response type. This brings the possibility to `map` and `flatMap` over responses.
+It is also entirely possible to write custom backends (if doing so, please consider contributing!) or wrap an existing one. One can even write completely generic wrappers for any delegate backend, as each backend comes equipped with a monad for the used effect type. This brings the possibility to `map` and `flatMap` over responses.
 
 Possible use-cases for wrapper-backend include:
 
@@ -20,7 +20,7 @@ Backends, or backend wrappers can use tags e.g. for logging, passing a metric na
 
 ## Listener backend
 
-The `sttp.client.listener.ListenerBackend` can make it easier to create backend wrappers which need to be notified about request lifecycle events: when a request is started, and when it completes either successfully or with an exception. This is possible by implementing a `sttp.client.listener.RequestListener`. This is how e.g. the [slf4j backend](slf4j.md) is implemented. 
+The `sttp.client3.listener.ListenerBackend` can make it easier to create backend wrappers which need to be notified about request lifecycle events: when a request is started, and when it completes either successfully or with an exception. This is possible by implementing a `sttp.client3.listener.RequestListener`. This is how e.g. the [slf4j backend](logging.md) is implemented. 
 
 A request listener can associate a value with a request, which will then be passed to the request completion notification methods.
 
@@ -35,18 +35,14 @@ This causes any further backend wrappers to handle a request which involves redi
 For example:
 
 ```scala mdoc:compile-only
-import sttp.client._
-import sttp.client.ws._
-import sttp.client.monad._
-class MyWrapper[F[_], S, WS_HANDLER[_]] private (delegate: SttpBackend[F, S, WS_HANDLER])
-  extends SttpBackend[F, S, WS_HANDLER] {
+import sttp.capabilities.Effect
+import sttp.client3._
+import sttp.monad.MonadError
 
-  def send[T](request: Request[T, S]): F[Response[T]] = ???
+class MyWrapper[F[_], P] private (delegate: SttpBackend[F, P])
+  extends SttpBackend[F, P] {
 
-  def openWebsocket[T, WS_RESULT](
-      request: Request[T, S],
-      handler: WS_HANDLER[WS_RESULT]
-    ): F[WebSocketResponse[WS_RESULT]] = ???
+  def send[T, R >: P with Effect[F]](request: Request[T, R]): F[Response[T]] = ???
 
   def close(): F[Unit] = ???
 
@@ -54,8 +50,8 @@ class MyWrapper[F[_], S, WS_HANDLER[_]] private (delegate: SttpBackend[F, S, WS_
 }
 
 object MyWrapper {
-  def apply[F[_], S, WS_HANDLER[_]](
-    delegate: SttpBackend[F, S, WS_HANDLER]): SttpBackend[F, S, WS_HANDLER] = {
+  def apply[F[_], P](
+    delegate: SttpBackend[F, P]): SttpBackend[F, P] = {
     // disables any other FollowRedirectsBackend-s further down the delegate chain
     new FollowRedirectsBackend(new MyWrapper(delegate))
   }
@@ -64,7 +60,7 @@ object MyWrapper {
 
 ## Logging backend wrapper
 
-A good example on how to implement a logging backend wrapper is the [slf4j](slf4j.md) backend wrapper implementation. It uses the `ListenerBackend` to get notified about request lifecycle events, and logs messages created using `sttp.client.logging.LogMessages`.
+A good example on how to implement a logging backend wrapper is the [logging](logging.md) backend wrapper implementation. It uses the `ListenerBackend` to get notified about request lifecycle events.
 
 To adjust the logs to your needs, or to integrate with your logging framework, simply copy the code and modify as needed. 
 
@@ -74,10 +70,10 @@ Below is an example on how to implement a backend wrapper, which sends
 metrics for completed requests and wraps any `Future`-based backend:
 
 ```scala mdoc:compile-only
-import sttp.client._
-import sttp.client.monad._
-import sttp.client.ws._
-import sttp.client.akkahttp._
+import sttp.capabilities.Effect
+import sttp.client3._
+import sttp.monad.MonadError
+import sttp.client3.akkahttp._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util._
@@ -91,11 +87,11 @@ class CloudMetricsServer extends MetricsServer {
 }
 
 // the backend wrapper
-class MetricWrapper[S](delegate: SttpBackend[Future, S, NothingT],
+class MetricWrapper[P](delegate: SttpBackend[Future, P],
                        metrics: MetricsServer)
-    extends SttpBackend[Future, S, NothingT] {
+    extends SttpBackend[Future, P] {
 
-  override def send[T](request: Request[T, S]): Future[Response[T]] = {
+  override def send[T, R >: P with Effect[Future]](request: Request[T, R]): Future[Response[T]] = {
     val start = System.currentTimeMillis()
 
     def report(metricSuffix: String): Unit = {
@@ -111,20 +107,13 @@ class MetricWrapper[S](delegate: SttpBackend[Future, S, NothingT],
     }
   }
 
-  override def openWebsocket[T, WS_RESULT](
-      request: Request[T, S],
-      handler: NothingT[WS_RESULT]
-    ): Future[WebSocketResponse[WS_RESULT]] = {
-    delegate.openWebsocket(request, handler) // No websocket support due to NothingT
-  }
-
   override def close(): Future[Unit] = delegate.close()
 
   override def responseMonad: MonadError[Future] = delegate.responseMonad
 }
 
 // example usage
-implicit val backend = new MetricWrapper(
+val backend = new MetricWrapper(
   AkkaHttpBackend(),
   new CloudMetricsServer()
 )
@@ -132,7 +121,7 @@ implicit val backend = new MetricWrapper(
 basicRequest
   .get(uri"http://company.com/api/service1")
   .tag("metric", "service1")
-  .send()
+  .send(backend)
 ```
 
 See also the [Prometheus](prometheus.md) backend for an example implementation.
@@ -148,22 +137,23 @@ Handling retries is a complex problem when it comes to HTTP requests. When is a 
 In some cases it's possible to implement a generic retry mechanism; such a mechanism should take into account logging, metrics, limiting the number of retries and a backoff mechanism. These mechanisms could be quite simple, or involve e.g. retry budgets (see [Finagle's](https://twitter.github.io/finagle/guide/Clients.md#retries) documentation on retries). In sttp, it's possible to recover from errors using the `responseMonad`. A starting point for a retrying backend could be:
 
 ```scala mdoc:compile-only
-import sttp.client._
-import sttp.client.monad._
-import sttp.client.ws._
+import sttp.capabilities.Effect
+import sttp.client3._
+import sttp.monad.MonadError
 
-class RetryingBackend[F[_], S](
-    delegate: SttpBackend[F, S, NothingT],
+class RetryingBackend[F[_], P](
+    delegate: SttpBackend[F, P],
     shouldRetry: RetryWhen,
     maxRetries: Int)
-    extends SttpBackend[F, S, NothingT] {
+    extends SttpBackend[F, P] {
 
-  override def send[T](request: Request[T, S]): F[Response[T]] = {
+  override def send[T, R >: P with Effect[F]](request: Request[T, R]): F[Response[T]] = {
     sendWithRetryCounter(request, 0)
   }
 
-  private def sendWithRetryCounter[T](request: Request[T, S],
-                                      retries: Int): F[Response[T]] = {
+  private def sendWithRetryCounter[T, R >: P with Effect[F]](
+    request: Request[T, R], retries: Int): F[Response[T]] = {
+
     val r = responseMonad.handleError(delegate.send(request)) {
       case t if shouldRetry(request, Left(t)) && retries < maxRetries =>
         sendWithRetryCounter(request, retries + 1)
@@ -176,13 +166,6 @@ class RetryingBackend[F[_], S](
         responseMonad.unit(resp)
       }
     }
-  }
-
-  override def openWebsocket[T, WS_RESULT](
-      request: Request[T, S],
-      handler: NothingT[WS_RESULT]
-    ): F[WebSocketResponse[WS_RESULT]] = {
-    delegate.openWebsocket(request, handler) // No websocket support due to NothingT
   }
 
   override def close(): F[Unit] = delegate.close()
@@ -201,25 +184,19 @@ Below is an example on how to implement a backend wrapper, which integrates with
 
 ```scala mdoc:compile-only
 import io.github.resilience4j.circuitbreaker.{CallNotPermittedException, CircuitBreaker}
-import sttp.client.monad.MonadError
-import sttp.client.ws.WebSocketResponse
-import sttp.client.{Request, Response, SttpBackend}
+import sttp.capabilities.Effect
+import sttp.client3.{Request, Response, SttpBackend}
+import sttp.monad.MonadError
 import java.util.concurrent.TimeUnit
 
-class CircuitSttpBackend[F[_], S, W[_]](
+class CircuitSttpBackend[F[_], P](
     circuitBreaker: CircuitBreaker,
-    delegate: SttpBackend[F, S, W]
-    )(implicit monadError: MonadError[F]) extends SttpBackend[F, S, W] {
+    delegate: SttpBackend[F, P]
+    )(implicit monadError: MonadError[F]) extends SttpBackend[F, P] {
 
-  override def send[T](request: Request[T, S]): F[Response[T]] = {
+  override def send[T, R >: P with Effect[F]](request: Request[T, R]): F[Response[T]] = {
     CircuitSttpBackend.decorateF(circuitBreaker, delegate.send(request))
   }
-
-  override def openWebsocket[T, WS_RESULT](
-      request: Request[T, S],
-      handler: W[WS_RESULT]
-  ): F[WebSocketResponse[WS_RESULT]] =
-        CircuitSttpBackend.decorateF(circuitBreaker, delegate.openWebsocket(request, handler))
 
   override def close(): F[Unit] = delegate.close()
 
@@ -266,23 +243,18 @@ Below is an example on how to implement a backend wrapper, which integrates with
 
 ```scala mdoc:compile-only
 import io.github.resilience4j.ratelimiter.RateLimiter
-import sttp.client.monad.MonadError
-import sttp.client.ws.WebSocketResponse
-import sttp.client.{Request, Response, SttpBackend}
+import sttp.capabilities.Effect
+import sttp.monad.MonadError
+import sttp.client3.{Request, Response, SttpBackend}
 
-class RateLimitingSttpBackend[F[_], S, W[_]](
+class RateLimitingSttpBackend[F[_], P](
     rateLimiter: RateLimiter,
-    delegate: SttpBackend[F, S, W]
-    )(implicit monadError: MonadError[F]) extends SttpBackend[F, S, W] {
+    delegate: SttpBackend[F, P]
+    )(implicit monadError: MonadError[F]) extends SttpBackend[F, P] {
 
-  override def send[T](request: Request[T, S]): F[Response[T]] = {
+  override def send[T, R >: P with Effect[F]](request: Request[T, R]): F[Response[T]] = {
     RateLimitingSttpBackend.decorateF(rateLimiter, delegate.send(request))
   }
-
-  override def openWebsocket[T, WS_RESULT](
-      request: Request[T, S],
-      handler: W[WS_RESULT]
-  ): F[WebSocketResponse[WS_RESULT]] = delegate.openWebsocket(request, handler)
 
   override def close(): F[Unit] = delegate.close()
 
@@ -313,19 +285,19 @@ object RateLimitingSttpBackend {
 Implementing a new backend is made easy as the tests are published in the `core` jar file under the `tests` classifier. Simply add the follow dependencies to your `build.sbt`:
 
 ```
-"com.softwaremill.sttp.client" %% "core" % "@VERSION@" % Test classifier "tests"
+"com.softwaremill.sttp.client3" %% "core" % "@VERSION@" % Test classifier "tests"
 ```
 
 Implement your backend and extend the `HttpTest` class:
 
 ```scala mdoc:compile-only
-import sttp.client._
-import sttp.client.testing.{ConvertToFuture, HttpTest}
+import sttp.client3._
+import sttp.client3.testing.{ConvertToFuture, HttpTest}
 import scala.concurrent.Future
 
 class MyCustomBackendHttpTest extends HttpTest[Future] {
   override implicit val convertToFuture: ConvertToFuture[Future] = ConvertToFuture.future
-  override implicit lazy val backend: SttpBackend[Future, Nothing, NothingT] = ??? //new MyCustomBackend()
+  override implicit lazy val backend: SttpBackend[Future, Any] = ??? //new MyCustomBackend()
 }
 ```
 
@@ -336,7 +308,7 @@ You can find a more detailed example in the [sttp-vertx](https://github.com/guym
 When implementing a backend wrapper using cats, it might be useful to import:
 
 ```scala
-import sttp.client.impl.cats.implicits._
+import sttp.client3.impl.cats.implicits._
 ```
 
 from the cats integration module. The module should be available on the classpath when using the cats [async-http-client](../catseffect.md) backend. The object contains implicits to convert a cats `MonadError` into the sttp `MonadError`, as well as a way to map the effects wrapper used with the `.mapK` extension method for the backend. 

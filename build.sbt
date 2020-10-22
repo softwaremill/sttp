@@ -1,5 +1,6 @@
 import com.softwaremill.Publish.Release.updateVersionInDocs
 import sbt.Keys.publishArtifact
+import sbt.Reference.display
 import sbt.internal.ProjectMatrix
 import sbtrelease.ReleasePlugin.autoImport._
 import sbtrelease.ReleaseStateTransformations._
@@ -13,7 +14,7 @@ lazy val testServerPort = settingKey[Int]("Port to run the http test server on")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests")
 
 val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
-  organization := "com.softwaremill.sttp.client",
+  organization := "com.softwaremill.sttp.client3",
   scmInfo := Some(ScmInfo(url("https://github.com/softwaremill/sttp"), "scm:git@github.com:softwaremill/sttp.git")),
   // needed on sbt 1.3, but (for some unknown reason) only on 2.11.x
   closeClassLoaders := !scalaVersion.value.startsWith("2.11."),
@@ -187,7 +188,7 @@ val fs2Version: Option[(Long, Long)] => String = {
 }
 
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.12"
-val akkaStreamVersion = "2.5.31"
+val akkaStreamVersion = "2.6.8"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % akkaStreamVersion
 
 val scalaTestVersion = "3.2.2"
@@ -197,14 +198,17 @@ val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion
 val zioVersion = "1.0.1"
 val zioInteropRsVersion = "1.0.3.5"
 
-val modelVersion = "1.1.4"
+val sttpModelVersion = "1.2.0-RC4"
+val sttpSharedVersion = "1.0.0-RC6"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
 
 val jeagerClientVersion = "1.4.0"
 val braveOpentracingVersion = "0.37.2"
 val zipkinSenderOkHttpVersion = "2.15.2"
-val resilience4jVersion = "1.5.0"
+val resilience4jVersion = "1.6.1"
+
+val compileAndTest = "compile->compile;test->test"
 
 def dependenciesFor(version: String)(deps: (Option[(Long, Long)] => ModuleID)*): Seq[ModuleID] =
   deps.map(_.apply(CrossVersion.partialVersion(version)))
@@ -225,48 +229,61 @@ lazy val coreProjectAggregates: Seq[ProjectReference] = if (sys.env.isDefinedAt(
   )
 }
 
-val compileAndTest = "compile->compile;test->test"
+lazy val allAggregates = coreProjectAggregates ++
+  testCompilation.projectRefs ++
+  cats.projectRefs ++
+  fs2.projectRefs ++
+  monix.projectRefs ++
+  scalaz.projectRefs ++
+  zio.projectRefs ++
+  // might fail due to // https://github.com/akka/akka-http/issues/1930
+  akkaHttpBackend.projectRefs ++
+  asyncHttpClientBackend.projectRefs ++
+  asyncHttpClientFutureBackend.projectRefs ++
+  asyncHttpClientScalazBackend.projectRefs ++
+  asyncHttpClientZioBackend.projectRefs ++
+  asyncHttpClientMonixBackend.projectRefs ++
+  asyncHttpClientCatsBackend.projectRefs ++
+  asyncHttpClientFs2Backend.projectRefs ++
+  okhttpBackend.projectRefs ++
+  okhttpMonixBackend.projectRefs ++
+  http4sBackend.projectRefs ++
+  jsonCommon.projectRefs ++
+  circe.projectRefs ++
+  json4s.projectRefs ++
+  sprayJson.projectRefs ++
+  playJson.projectRefs ++
+  openTracingBackend.projectRefs ++
+  prometheusBackend.projectRefs ++
+  zioTelemetryOpenTracingBackend.projectRefs ++
+  httpClientBackend.projectRefs ++
+  httpClientMonixBackend.projectRefs ++
+  httpClientFs2Backend.projectRefs ++
+  httpClientZioBackend.projectRefs ++
+  finagleBackend.projectRefs ++
+  scribeBackend.projectRefs ++
+  slf4jBackend.projectRefs ++
+  examples.projectRefs ++
+  docs.projectRefs
+
+// For Travis tests, defining scripts that run JVM/JS/Native tests separately
+val testJVM = taskKey[Unit]("Test JVM projects")
+val testJS = taskKey[Unit]("Test JS projects")
+val testNative = taskKey[Unit]("Test native projects")
+
+def filterProject(p: String => Boolean) =
+  ScopeFilter(inProjects(allAggregates.filter(pr => p(display(pr.project))): _*))
 
 lazy val rootProject = (project in file("."))
   .settings(commonSettings: _*)
-  .settings(skip in publish := true, name := "sttp")
-  .aggregate(
-    coreProjectAggregates ++
-      testCompilation.projectRefs ++
-      cats.projectRefs ++
-      fs2.projectRefs ++
-      monix.projectRefs ++
-      scalaz.projectRefs ++
-      zio.projectRefs ++
-      // might fail due to // https://github.com/akka/akka-http/issues/1930
-      akkaHttpBackend.projectRefs ++
-      asyncHttpClientBackend.projectRefs ++
-      asyncHttpClientFutureBackend.projectRefs ++
-      asyncHttpClientScalazBackend.projectRefs ++
-      asyncHttpClientZioBackend.projectRefs ++
-      asyncHttpClientMonixBackend.projectRefs ++
-      asyncHttpClientCatsBackend.projectRefs ++
-      asyncHttpClientFs2Backend.projectRefs ++
-      okhttpBackend.projectRefs ++
-      okhttpMonixBackend.projectRefs ++
-      http4sBackend.projectRefs ++
-      jsonCommon.projectRefs ++
-      circe.projectRefs ++
-      json4s.projectRefs ++
-      sprayJson.projectRefs ++
-      playJson.projectRefs ++
-      openTracingBackend.projectRefs ++
-      prometheusBackend.projectRefs ++
-      zioTelemetryOpenTracingBackend.projectRefs ++
-      httpClientBackend.projectRefs ++
-      httpClientMonixBackend.projectRefs ++
-      httpClientFs2Backend.projectRefs ++
-      httpClientZioBackend.projectRefs ++
-      finagleBackend.projectRefs ++
-      slf4jBackend.projectRefs ++
-      examples.projectRefs ++
-      docs.projectRefs: _*
+  .settings(
+    skip in publish := true,
+    name := "sttp",
+    testJVM := (test in Test).all(filterProject(p => !p.contains("JS") && !p.contains("Native"))).value,
+    testJS := (test in Test).all(filterProject(_.contains("JS"))).value,
+    testNative := (test in Test).all(filterProject(_.contains("Native"))).value
   )
+  .aggregate(allAggregates: _*)
 
 lazy val testServer = (projectMatrix in file("testing/server"))
   .settings(commonJvmSettings)
@@ -279,7 +296,7 @@ lazy val testServer = (projectMatrix in file("testing/server"))
       akkaStreams
     ),
     // the test server needs to be started before running any backend tests
-    mainClass in reStart := Some("sttp.client.testing.server.HttpServer"),
+    mainClass in reStart := Some("sttp.client3.testing.server.HttpServer"),
     reStartArgs in reStart := Seq(s"${(testServerPort in Test).value}"),
     fullClasspath in reStart := (fullClasspath in Test).value,
     testServerPort := 51823,
@@ -292,7 +309,12 @@ lazy val testServer2_13 = testServer.jvm(scala2_13)
 
 lazy val core = (projectMatrix in file("core"))
   .settings(
-    name := "core"
+    name := "core",
+    libraryDependencies ++= Seq(
+      "com.softwaremill.sttp.model" %%% "core" % sttpModelVersion,
+      "com.softwaremill.sttp.shared" %%% "core" % sttpSharedVersion,
+      "com.softwaremill.sttp.shared" %%% "ws" % sttpSharedVersion
+    )
   )
   .settings(testServerSettings)
   .jvmPlatform(
@@ -300,7 +322,6 @@ lazy val core = (projectMatrix in file("core"))
     settings = {
       commonJvmSettings ++ intellijImportOnly213 ++ List(
         libraryDependencies ++= Seq(
-          "com.softwaremill.sttp.model" %% "core" % modelVersion,
           scalaTest % Test
         ),
         publishArtifact in Test := true // allow implementations outside of this repo
@@ -312,7 +333,6 @@ lazy val core = (projectMatrix in file("core"))
     settings = {
       commonJsSettings ++ commonJsBackendSettings ++ browserTestSettings ++ intellijSkipImport ++ List(
         libraryDependencies ++= Seq(
-          "com.softwaremill.sttp.model" %%% "core" % modelVersion,
           "org.scalatest" %%% "scalatest" % scalaTestVersion % Test
         ),
         publishArtifact in Test := true
@@ -324,7 +344,6 @@ lazy val core = (projectMatrix in file("core"))
     settings = {
       commonNativeSettings ++ intellijSkipImport ++ List(
         libraryDependencies ++= Seq(
-          "com.softwaremill.sttp.model" %%% "core" % modelVersion,
           "org.scala-native" %%% "test-interface" % scalaNativeTestInterfaceVersion % Test,
           "org.scalatest" %%% "scalatest-shouldmatchers" % scalaTestVersion % Test,
           "org.scalatest" %%% "scalatest-flatspec" % scalaTestVersion % Test,
@@ -371,7 +390,8 @@ lazy val fs2 = (projectMatrix in file("implementations/fs2"))
     publishArtifact in Test := true,
     libraryDependencies ++= dependenciesFor(scalaVersion.value)(
       "co.fs2" %%% "fs2-core" % fs2Version(_)
-    )
+    ),
+    libraryDependencies += "com.softwaremill.sttp.shared" %% "fs2" % sttpSharedVersion
   )
   .dependsOn(core % compileAndTest, cats % compileAndTest)
   .jvmPlatform(
@@ -384,7 +404,10 @@ lazy val monix = (projectMatrix in file("implementations/monix"))
   .settings(
     name := "monix",
     publishArtifact in Test := true,
-    libraryDependencies ++= Seq("io.monix" %%% "monix" % "3.2.2")
+    libraryDependencies ++= Seq(
+      "io.monix" %%% "monix" % "3.2.2",
+      "com.softwaremill.sttp.shared" %%% "monix" % sttpSharedVersion
+    )
   )
   .dependsOn(core % compileAndTest)
   .jvmPlatform(
@@ -405,7 +428,9 @@ lazy val zio = (projectMatrix in file("implementations/zio"))
     name := "zio",
     publishArtifact in Test := true,
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio" % zioVersion
+      "dev.zio" %% "zio-streams" % zioVersion,
+      "dev.zio" %% "zio" % zioVersion,
+      "com.softwaremill.sttp.shared" %% "zio" % sttpSharedVersion
     )
   )
   .dependsOn(core % compileAndTest)
@@ -438,12 +463,13 @@ lazy val akkaHttpBackend = (projectMatrix in file("akka-http-backend"))
       akkaHttp,
       // provided as we don't want to create a transitive dependency on a specific streams version,
       // just as akka-http doesn't
-      akkaStreams % "provided"
+      akkaStreams % "provided",
+      "com.softwaremill.sttp.shared" %% "akka" % sttpSharedVersion
     )
   )
   .dependsOn(core % compileAndTest)
   .jvmPlatform(
-    scalaVersions = List(scala2_11, scala2_12, scala2_13),
+    scalaVersions = List(scala2_12, scala2_13),
     settings = intellijImportOnly213
   )
 
@@ -487,7 +513,6 @@ lazy val asyncHttpClientZioBackend =
   asyncHttpClientBackendProject("zio", includeDotty = true)
     .settings(
       libraryDependencies ++= Seq(
-        "dev.zio" %% "zio-streams" % zioVersion,
         "dev.zio" %% "zio-interop-reactivestreams" % zioInteropRsVersion
       )
     )
@@ -545,11 +570,11 @@ lazy val http4sBackend = (projectMatrix in file("http4s-backend"))
   .settings(
     name := "http4s-backend",
     libraryDependencies ++= Seq(
-      "org.http4s" %% "http4s-blaze-client" % "0.21.7"
+      "org.http4s" %% "http4s-blaze-client" % "0.21.8"
     )
   )
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13), settings = intellijImportOnly213)
-  .dependsOn(cats % compileAndTest, core % compileAndTest, fs2 % "test->test")
+  .dependsOn(cats % compileAndTest, core % compileAndTest, fs2 % compileAndTest)
 
 //-- httpclient-java11
 lazy val httpClientBackend = (projectMatrix in file("httpclient-backend"))
@@ -560,7 +585,8 @@ lazy val httpClientBackend = (projectMatrix in file("httpclient-backend"))
     scalacOptions ++= Seq("-J--add-modules", "-Jjava.net.http"),
     scalacOptions ++= {
       if (scalaVersion.value == scala3) Nil else List("-target:jvm-11")
-    }
+    },
+    libraryDependencies += "org.reactivestreams" % "reactive-streams-flow-adapters" % "1.0.2"
   )
   .jvmPlatform(scalaVersions = List(scala2_13, scala3), settings = intellijImportOnly213)
   .dependsOn(core % compileAndTest)
@@ -592,13 +618,12 @@ lazy val httpClientFs2Backend =
     .dependsOn(fs2 % compileAndTest)
 
 lazy val httpClientZioBackend =
-  httpClientBackendProject("zio", includeDotty = true)
+  httpClientBackendProject("zio", includeDotty = false)
     .settings(
       libraryDependencies ++=
         Seq(
-          "dev.zio" %% "zio" % zioVersion,
-          "dev.zio" %% "zio-streams" % zioVersion,
-          "dev.zio" %% "zio-interop-reactivestreams" % zioInteropRsVersion
+          "dev.zio" %% "zio-interop-reactivestreams" % zioInteropRsVersion,
+          "dev.zio" %% "zio-nio" % "1.0.0-RC9"
         )
     )
     .dependsOn(zio % compileAndTest)
@@ -626,6 +651,7 @@ lazy val jsonCommon = (projectMatrix in (file("json/common")))
     settings = commonJvmSettings ++ intellijImportOnly213
   )
   .jsPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = commonJsSettings ++ intellijSkipImport)
+  .dependsOn(core)
 
 lazy val circe = (projectMatrix in file("json/circe"))
   .settings(
@@ -653,7 +679,7 @@ lazy val json4s = (projectMatrix in file("json/json4s"))
     libraryDependencies ++= Seq(
       "org.json4s" %% "json4s-core" % json4sVersion,
       "org.json4s" %% "json4s-native" % json4sVersion % Test,
-      "org.scalatest" %% "scalatest" % scalaTestVersion % Test
+      scalaTest % Test
     )
   )
   .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = intellijImportOnly213)
@@ -665,7 +691,7 @@ lazy val sprayJson = (projectMatrix in file("json/spray-json"))
     name := "spray-json",
     libraryDependencies ++= Seq(
       "io.spray" %% "spray-json" % "1.3.5",
-      "org.scalatest" %% "scalatest" % scalaTestVersion % Test
+      scalaTest % Test
     )
   )
   .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = intellijImportOnly213)
@@ -723,6 +749,18 @@ lazy val zioTelemetryOpenTracingBackend = (projectMatrix in file("metrics/zio-te
   .dependsOn(zio % compileAndTest)
   .dependsOn(core)
 
+lazy val scribeBackend = (projectMatrix in file("logging/scribe"))
+  .settings(commonJvmSettings)
+  .settings(
+    name := "scribe-backend",
+    libraryDependencies ++= Seq(
+      "com.outr" %%% "scribe" % "2.7.12",
+      scalaTest % Test
+    )
+  )
+  .jvmPlatform(scalaVersions = List(scala2_12, scala2_13), settings = intellijImportOnly213)
+  .dependsOn(core)
+
 lazy val slf4jBackend = (projectMatrix in file("logging/slf4j"))
   .settings(commonJvmSettings)
   .settings(
@@ -747,7 +785,7 @@ lazy val examples = (projectMatrix in file("examples"))
       _ => logback
     )
   )
-  .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = intellijImportOnly213)
+  .jvmPlatform(scalaVersions = List(scala2_12, scala2_13), settings = intellijImportOnly213)
   .dependsOn(
     core,
     asyncHttpClientMonixBackend,
@@ -756,6 +794,7 @@ lazy val examples = (projectMatrix in file("examples"))
     asyncHttpClientFs2Backend,
     json4s,
     circe,
+    scribeBackend,
     slf4jBackend
   )
 
@@ -776,7 +815,8 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
       "JEAGER_CLIENT_VERSION" -> jeagerClientVersion,
       "BRAVE_OPENTRACING_VERSION" -> braveOpentracingVersion,
       "ZIPKIN_SENDER_OKHTTP_VERSION" -> zipkinSenderOkHttpVersion,
-      "AKKA_STREAM_VERSION" -> akkaStreamVersion
+      "AKKA_STREAM_VERSION" -> akkaStreamVersion,
+      "CIRCE_VERSION" -> circeVersion(None)
     ),
     mdocOut := file("generated-docs/out"),
     publishArtifact := false,

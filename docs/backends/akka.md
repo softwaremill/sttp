@@ -3,10 +3,10 @@
 This backend is based on [akka-http](http://doc.akka.io/docs/akka-http/current/scala/http/). To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client" %% "akka-http-backend" % "@VERSION@"
+"com.softwaremill.sttp.client3" %% "akka-http-backend" % "@VERSION@"
 ```
 
-A fully **asynchronous** backend. Sending a request returns a response wrapped in a `Future`. There are also [other `Future`-based backends](future.md), which don't depend on Akka. 
+A fully **asynchronous** backend. Uses the `Future` effect to return responses. There are also [other `Future`-based backends](future.md), which don't depend on Akka. 
 
 Note that you'll also need an explicit dependency on akka-streams, as akka-http doesn't depend on any specific akka-streams version. So you'll also need to add, for example:
 
@@ -14,27 +14,30 @@ Note that you'll also need an explicit dependency on akka-streams, as akka-http 
 "com.typesafe.akka" %% "akka-stream" % "@AKKA_STREAM_VERSION@"
 ```
 
-Next you'll need to add an implicit value:
+Next you'll need to add create the backend instance:
 
 ```scala mdoc:compile-only
-import sttp.client.akkahttp._
-implicit val sttpBackend = AkkaHttpBackend()
+import sttp.client3.akkahttp._
+val backend = AkkaHttpBackend()
 ```
+
 or, if you'd like to use an existing actor system:
+
 ```scala mdoc:compile-only
-import sttp.client.akkahttp._
+import sttp.client3.akkahttp._
 import akka.actor.ActorSystem
 
 val actorSystem: ActorSystem = ???
-implicit val sttpBackend = AkkaHttpBackend.usingActorSystem(actorSystem)
+val backend = AkkaHttpBackend.usingActorSystem(actorSystem)
 ```
 
-This backend supports sending and receiving [akka-streams](http://doc.akka.io/docs/akka/current/scala/stream/index.html) streams of type `akka.stream.scaladsl.Source[ByteString, Any]`.
+This backend supports sending and receiving [akka-streams](http://doc.akka.io/docs/akka/current/scala/stream/index.html) streams. The streams capability is represented as `sttp.client3.akkahttp.AkkaStreams`.
 
 To set the request body as a stream:
 
 ```scala mdoc:compile-only
-import sttp.client._
+import sttp.capabilities.akka.AkkaStreams
+import sttp.client3._
 
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
@@ -42,7 +45,7 @@ import akka.util.ByteString
 val source: Source[ByteString, Any] = ???
 
 basicRequest
-  .streamBody(source)
+  .streamBody(AkkaStreams)(source)
   .post(uri"...")
 ```
 
@@ -50,20 +53,23 @@ To receive the response body as a stream:
 
 ```scala mdoc:compile-only
 import scala.concurrent.Future
-import sttp.client._
-import sttp.client.akkahttp._
+import sttp.capabilities.akka.AkkaStreams
+import sttp.client3._
+import sttp.client3.akkahttp.AkkaHttpBackend
 
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 
-implicit val sttpBackend = AkkaHttpBackend()
+val backend = AkkaHttpBackend()
 
 val response: Future[Response[Either[String, Source[ByteString, Any]]]] =
   basicRequest
     .post(uri"...")
-    .response(asStream[Source[ByteString, Any]])
-    .send()           
+    .response(asStreamUnsafe(AkkaStreams))
+    .send(backend)           
 ```
+
+The akka-http backend support both regular and streaming [websockets](../websockets.md).
 
 ## Testing
 
@@ -74,35 +80,19 @@ That way, you can "mock" a server that the backend will talk to, without startin
 If your application provides a client library for its dependants to use, this is a great way to ensure that the client actually matches the routes exposed by your application:
 
 ```scala mdoc:compile-only
-import sttp.client.akkahttp._
+import sttp.client3.akkahttp._
 import akka.http.scaladsl.server.Route
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 
 val route: Route = ???
 implicit val system: ActorSystem = ???
-implicit val materializer: ActorMaterializer = ActorMaterializer()
 
 val backend = AkkaHttpBackend.usingClient(system, http = AkkaHttpClient.stubFromRoute(route))
 ```
 
-## Websockets
+## WebSockets
 
-The Akka backend supports websockets, where the websocket handler is of type `akka.stream.scaladsl.Flow[Message, Message, _]`. That is, when opening a websocket connection, you need to provide the description of a stream, which will consume incoming websocket messages, and produce outgoing websocket messages. For example:
+Non-standard behavior:
 
-```scala mdoc:compile-only
-import akka.Done
-import akka.stream.scaladsl.Flow
-import akka.http.scaladsl.model.ws.Message
-import sttp.client._
-import sttp.client.ws.WebSocketResponse
-import scala.concurrent.Future
-import sttp.client.akkahttp._
-
-implicit val backend : AkkaHttpBackend = ???
-val flow: Flow[Message, Message, Future[Done]] = ???
-val response: Future[WebSocketResponse[Future[Done]]] =
-    basicRequest.get(uri"wss://echo.websocket.org").openWebsocket(flow)
-```                    
-
-In this example, the given flow materialises to a `Future[Done]`, however this value can be arbitrary and depends on the shape and definition of the message-processing stream. The `Future[WebSocketResponse]` will complete once the websocket is established and contain the materialised value.
+* akka always automatically responds with a `Pong` to a `Ping` message
+* `WebSocketFrame.Ping` and `WebSocketFrame.Pong` frames are ignored; instead, you can configure automatic [keep-alive pings](https://doc.akka.io/docs/akka-http/current/client-side/websocket-support.html#automatic-keep-alive-ping-support)

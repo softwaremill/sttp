@@ -5,14 +5,14 @@ A Scala Native backend implemented using [Curl](https://github.com/curl/curl/blo
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client" %%% "core" % "2.2.9"
+"com.softwaremill.sttp.client3" %%% "core" % "3.0.0-RC5"
 ```
 
 and initialize one of the backends:
 
 ```scala
-implicit val sttpBackend = CurlBackend()
-implicit val sttpTryBackend = CurlTryBackend()
+val backend = CurlBackend()
+val tryBackend = CurlTryBackend()
 ```
 
 You need to have an environment with Scala Native [setup](https://scala-native.readthedocs.io/en/latest/user/setup.html)

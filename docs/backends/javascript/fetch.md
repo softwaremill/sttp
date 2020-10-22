@@ -5,13 +5,13 @@ A JavaScript backend implemented using the [Fetch API](https://developer.mozilla
 This is the default backend, available in the main jar for JS. To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client" %%% "core" % "@VERSION@"
+"com.softwaremill.sttp.client3" %%% "core" % "@VERSION@"
 ```
 
-And add an implicit value:
+And create the backend instance:
 
 ```scala
-implicit val sttpBackend = FetchBackend()
+val backend = FetchBackend()
 ```
 
 Timeouts are handled via the new [AbortController](https://developer.mozilla.org/en-US/docs/Web/API/AbortController) class. As this class only recently appeared in browsers you may need to add a [polyfill](https://www.npmjs.com/package/abortcontroller-polyfill).
@@ -48,26 +48,26 @@ Streaming support is provided via `FetchMonixBackend`. Note that streaming suppo
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client" %%% "monix" % "@VERSION@"
+"com.softwaremill.sttp.client3" %%% "monix" % "@VERSION@"
 ```
 
 An example of streaming a response:
 
 ```scala   
-import sttp.client._
-import sttp.client.impl.monix._
+import sttp.client3._
+import sttp.client3.impl.monix._
 
 import java.nio.ByteBuffer
 import monix.eval.Task
 import monix.reactive.Observable
 
-implicit val sttpBackend = FetchMonixBackend()
+val backend = FetchMonixBackend()
 
 val response: Task[Response[Observable[ByteBuffer]]] =
   sttp
     .post(uri"...")
-    .response(asStream[Observable[ByteBuffer]])
-    .send()
+    .response(asStreamUnsafe(MonixStreams))
+    .send(backend)
 ```      
 
 ```eval_rst

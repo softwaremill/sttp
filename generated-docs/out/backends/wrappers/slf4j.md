@@ -5,22 +5,22 @@ There are three backend wrappers available, which log request & response informa
 To use the backend wrappers, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client" %% "slf4j-backend" % "2.2.9"
+"com.softwaremill.sttp.client3" %% "slf4j-backend" % "3.0.0-RC1"
 ``` 
 
 The following backend wrappers are available:
 
 ```scala
-import sttp.client._
-import sttp.client.logging.slf4j._
-val delegateBackend: SttpBackend[Identity, Nothing, NothingT] = ???
+import sttp.client3._
+import sttp.client3.logging.slf4j._
+val delegateBackend: SttpBackend[Identity, Any] = ???
 
-Slf4jLoggingBackend[Identity, Nothing, NothingT](delegateBackend)
-Slf4jTimingBackend[Identity, Nothing, NothingT](delegateBackend)
-Slf4jCurlBackend[Identity, Nothing, NothingT](delegateBackend)
+Slf4jLoggingBackend(delegateBackend)
+Slf4jTimingBackend(delegateBackend)
+Slf4jCurlBackend(delegateBackend)
 ```
 
-The logging backend logs `DEBUG`-level logs when a request is started, completes successfully, and `ERROR`-level logs when it results in an exception.
+The logging backend logs `DEBUG`-level logs when a request is started, completes successfully, and `ERROR`-level logs when it results in an exception. Optionally and if possible, response and request bodies can be logged.
 
 The timing backend logs `INFO`-level logs when a request completes successfully or with an exception, together with the number of seconds and milliseconds that the request took.
 
@@ -29,11 +29,11 @@ The curl backend logs `DEBUG`-level logs when a request completes successfully o
 Example usage:
 
 ```scala
-import sttp.client._
-import sttp.client.logging.slf4j.Slf4jTimingBackend
+import sttp.client3._
+import sttp.client3.logging.slf4j.Slf4jTimingBackend
 
-implicit val backend = Slf4jTimingBackend[Identity, Nothing, NothingT](HttpURLConnectionBackend())
-basicRequest.get(uri"https://httpbin.org/get").send()
+val backend = Slf4jTimingBackend(HttpURLConnectionBackend())
+basicRequest.get(uri"https://httpbin.org/get").send(backend)
 ```
 
 To create a customised logging backend, see the section on [custom backends](custom.md).

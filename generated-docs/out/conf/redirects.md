@@ -5,7 +5,7 @@ By default, sttp follows redirects.
 If you'd like to disable following redirects, use the `followRedirects` method:
 
 ```scala
-import sttp.client._
+import sttp.client3._
 
 basicRequest.followRedirects(false)
 ```
@@ -19,7 +19,7 @@ If a `POST` or `PUT` request is redirected, by default it will be sent unchanged
 To enable this behavior, use the `redirectToGet` method:
 
 ```scala
-import sttp.client._
+import sttp.client3._
 
 basicRequest.redirectToGet(true)
 ```

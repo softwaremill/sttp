@@ -2,7 +2,7 @@
 
 [![Join the chat at https://gitter.im/softwaremill/sttp](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/softwaremill/sttp?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Build Status](https://travis-ci.org/softwaremill/sttp.svg?branch=master)](https://travis-ci.org/softwaremill/sttp)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.softwaremill.sttp.client/core_2.12/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.softwaremill.sttp.client/core_2.12)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.softwaremill.sttp.client3/core_2.12/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.softwaremill.sttp.client3/core_2.12)
 
 The Scala HTTP client that you always wanted!
 
@@ -13,10 +13,10 @@ requests and how to handle responses. Requests are sent using one of the backend
  
 Backend implementations include ones based on [akka-http](https://doc.akka.io/docs/akka-http/current/scala/http/), [async-http-client](https://github.com/AsyncHttpClient/async-http-client), [http4s](https://http4s.org), [OkHttp](http://square.github.io/okhttp/), and HTTP clients which ship with Java. They integrate with [Akka](https://akka.io), [Monix](https://monix.io), [fs2](https://github.com/functional-streams-for-scala/fs2), [cats-effect](https://github.com/typelevel/cats-effect), [scalaz](https://github.com/scalaz/scalaz) and [ZIO](https://github.com/zio/zio). 
 
-Here's a very quick example of sttp client in action:
+Here's a quick example of sttp client in action:
  
 ```scala
-import sttp.client._
+import sttp.client3._
 
 val sort: Option[String] = None
 val query = "http language:scala"
@@ -25,36 +25,34 @@ val query = "http language:scala"
 // `sort` is removed, as the value is not defined
 val request = basicRequest.get(uri"https://api.github.com/search/repositories?q=$query&sort=$sort")
   
-implicit val backend = HttpURLConnectionBackend()
-val response = request.send()
+val backend = HttpURLConnectionBackend()
+val response = request.send(backend)
 
 // response.header(...): Option[String]
 println(response.header("Content-Length")) 
 
 // response.body: by default read into an Either[String, String] to indicate failure or success 
-println(response.body)           
-
-// alternatively, if you prefer to pass the backend explicitly, instead
-// of using implicits, you can also call:
-val sameResponse = backend.send(request)                      
+println(response.body)                                 
 ```
 
 ## Documentation
 
-sttp (v2) documentation is available at [sttp.softwaremill.com](http://sttp.softwaremill.com).
+sttp (v3) documentation is available at [sttp.softwaremill.com](http://sttp.softwaremill.com).
+
+sttp (v2) documentation is available at [sttp.softwaremill.com/en/v2](http://sttp.softwaremill.com/en/v2).
 
 sttp (v1) documentation is available at [sttp.softwaremill.com/en/v1](https://sttp.softwaremill.com/en/v1).
 
-scaladoc is available at [https://www.javadoc.io](https://www.javadoc.io/doc/com.softwaremill.sttp.client/core_2.12/2.2.9)
+scaladoc is available at [https://www.javadoc.io](https://www.javadoc.io/doc/com.softwaremill.sttp.client3/core_2.12/3.0.0-RC5)
 
 ## Quickstart with Ammonite
 
 If you are an [Ammonite](http://ammonite.io) user, you can quickly start experimenting with sttp by copy-pasting the following:
 
 ```scala
-import $ivy.`com.softwaremill.sttp.client::core:2.2.9`
-import sttp.client.quick._
-quickRequest.get(uri"http://httpbin.org/ip").send()
+import $ivy.`com.softwaremill.sttp.client3::core:3.0.0-RC5`
+import sttp.client3.quick._
+quickRequest.get(uri"http://httpbin.org/ip").send(backend)
 ```
 
 This brings in the sttp API and an implicit, synchronous backend.
@@ -64,13 +62,13 @@ This brings in the sttp API and an implicit, synchronous backend.
 Add the following dependency:
 
 ```scala
-"com.softwaremill.sttp.client" %% "core" % "2.2.9"
+"com.softwaremill.sttp.client3" %% "core" % "3.0.0-RC5"
 ```
 
 Then, import:
 
 ```scala
-import sttp.client._
+import sttp.client3._
 ```
 
 Type `sttp.` and see where your IDE’s auto-complete gets you!
@@ -82,6 +80,7 @@ sttp is a family of Scala HTTP-related projects, and currently includes:
 * sttp client: this project
 * [sttp tapir](https://github.com/softwaremill/tapir): Typed API descRiptions
 * [sttp model](https://github.com/softwaremill/sttp-model): simple HTTP model classes (used by client & tapir)
+* [sttp shared](https://github.com/softwaremill/sttp-shared): shared web socket, FP abstractions, capabilities and streaming code.
 
 ## Contributing
 
@@ -93,11 +92,7 @@ We are also always looking for contributions and new ideas, so if you’d like t
 
 ### Testing the Scala.JS backend
 
-Running the tests using the JS backend has some prerequisities:
-
-* Install [Google Chrome](https://www.google.com/chrome/)
-* Download [ChromeDriver](https://sites.google.com/a/chromium.org/chromedriver/downloads) and 
-[install it](https://sites.google.com/a/chromium.org/chromedriver/getting-started)
+In order to run tests against JS backend you will need to install [Google Chrome](https://www.google.com/chrome/).
 
 Note that running the default `test` task will run the tests using both the JVM and JS backends.
 If you'd like to run the tests using *only* the JVM backend, execute: `sbt rootJVM/test`.

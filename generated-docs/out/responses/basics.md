@@ -1,8 +1,8 @@
 # Responses
 
-Responses are represented as instances of the case class `Response[T]`, where `T` is the type of the response body. When sending a request, the response will be returned in a wrapper. For example, for asynchronous backends, we can get a `Future[Response[T]]`, while for the default synchronous backend, the wrapper will be a no-op, `Id`, which is the same as no wrapper at all.
+Responses are represented as instances of the case class `Response[T]`, where `T` is the type of the response body. When sending a request, an effect containing the response will be returned. For example, for asynchronous backends, we can get a `Future[Response[T]]`, while for the default synchronous backend, the wrapper will be a no-op, `Identity`, which is the same as no wrapper at all.
 
-If sending the request fails, either due to client or connection errors, an exception will be thrown (synchronous backends), or an error will be represented in the wrapper (e.g. a failed future).
+If sending the request fails, either due to client or connection errors, an exception will be thrown (synchronous backends), or a failed effect will be returned (e.g. a failed future).
 
 ```eval_rst
 .. note:: If the request completes, but results in a non-2xx return code, the request is still considered successful, that is, a ``Response[T]`` will be returned. See :doc:`response body specifications <body>` for details on how such cases are handled.
@@ -20,11 +20,11 @@ Individual headers can be obtained using the methods:
 
 ```scala
 import sttp.model._
-import sttp.client._
-implicit val backend = HttpURLConnectionBackend()
+import sttp.client3._
+val backend = HttpURLConnectionBackend()
 val request = basicRequest
     .get(uri"http://endpoint.com/example")
-val response = request.send()
+val response = request.send(backend)
 
 val singleHeader: Option[String] = response.header(HeaderNames.Server)
 val multipleHeaders: Seq[String] = response.headers(HeaderNames.Allow)

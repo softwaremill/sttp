@@ -7,6 +7,7 @@ The basic model classes are: `Header`, `Cookie`, `CookieWithMeta`, `MediaType`, 
 Companion objects provide methods to construct model class instances, following these rules:
 
 * `.parse(serialized: String): Either[String, ModelClass]`: returns an error message or an instance of the model class
+* `.unsafeParse(serialized: String): Sth`: returns an instance of the model class or in case of an error, throws an exception.
 * `.unsafeApply(values)`: creates an instance of the model class; validates the input values and in case of an error, throws an exception. An error could be e.g. that the input values contain characters outside of the allowed range
 * `.safeApply(...): Either[String, ModelClass]`: same as above, but doesn't throw exceptions. Instead, returns an error message or the model class instance
 * `.apply(...): ModelClass`: creates the model type, without validation, and without throwing exceptions
@@ -15,20 +16,20 @@ Moreover, companion objects provide constants and/or constructor methods for wel
 
 These constants are also available as traits: `StatusCodes`, `MediaTypes` and `HeaderNames`.
 
-The model also contains aggregate/helper classes such as `Headers` and `MultiQueryParams`
+The model also contains aggregate/helper classes such as `Headers` and `MultiQueryParams`.
 
 Example with objects:
 
 ```scala mdoc:compile-only
-import sttp.client._
+import sttp.client3._
 import sttp.model._
 
 object Example {
   val request = basicRequest.header(Header.contentType(MediaType.ApplicationJson))
     .get(uri"https://httpbin.org")
 
-  implicit val backend = HttpURLConnectionBackend()
-  val response = request.send()
+  val backend = HttpURLConnectionBackend()
+  val response = request.send(backend)
   if (response.code == StatusCode.Ok) println("Ok!")
 }
 ```
@@ -36,15 +37,15 @@ object Example {
 Example with traits:
 
 ```scala mdoc:compile-only
-import sttp.client._
+import sttp.client3._
 import sttp.model._
 
 object Example extends HeaderNames with MediaTypes with StatusCodes {
   val request = basicRequest.header(ContentType, ApplicationJson.toString)
     .get(uri"https://httpbin.org")
 
-  implicit val backend = HttpURLConnectionBackend()
-  val response = request.send()
+  val backend = HttpURLConnectionBackend()
+  val response = request.send(backend)
   if (response.code == Ok) println("Ok!")
 }     
 ```

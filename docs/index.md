@@ -7,10 +7,10 @@ requests and how to handle responses. Requests are sent using one of the backend
  
 Backend implementations include ones based on [akka-http](https://doc.akka.io/docs/akka-http/current/scala/http/), [async-http-client](https://github.com/AsyncHttpClient/async-http-client), [http4s](https://http4s.org), [OkHttp](http://square.github.io/okhttp/), and HTTP clients which ship with Java. They integrate with [Akka](https://akka.io), [Monix](https://monix.io), [fs2](https://github.com/functional-streams-for-scala/fs2), [cats-effect](https://github.com/typelevel/cats-effect), [scalaz](https://github.com/scalaz/scalaz) and [ZIO](https://github.com/zio/zio). 
 
-Here's a very quick example of sttp client in action:
+Here's a quick example of sttp client in action:
 
 ```scala mdoc:compile-only
-import sttp.client._
+import sttp.client3._
 
 val query = "http language:scala"
 val sort: Option[String] = None
@@ -20,8 +20,8 @@ val sort: Option[String] = None
 val request = basicRequest.get(
   uri"https://api.github.com/search/repositories?q=$query&sort=$sort")
 
-implicit val backend = HttpURLConnectionBackend()
-val response = request.send()
+val backend = HttpURLConnectionBackend()
+val response = request.send(backend)
 
 // response.header(...): Option[String]
 println(response.header("Content-Length"))
@@ -44,6 +44,7 @@ sttp is a family of Scala HTTP-related projects, and currently includes:
 * sttp client: this project
 * [sttp tapir](https://github.com/softwaremill/tapir): Typed API descRiptions
 * [sttp model](https://github.com/softwaremill/sttp-model): simple HTTP model classes (used by client & tapir)
+* [sttp shared](https://github.com/softwaremill/sttp-shared): shared web socket, FP abstractions, capabilities and streaming code.
 
 ## Sponsors
 
@@ -135,7 +136,7 @@ Development and maintenance of sttp client is sponsored by [SoftwareMill](https:
    backends/wrappers/opentracing
    backends/wrappers/zio-opentracing
    backends/wrappers/prometheus
-   backends/wrappers/slf4j
+   backends/wrappers/logging
    backends/wrappers/custom
 
 .. toctree::

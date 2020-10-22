@@ -1,6 +1,6 @@
 # Multipart requests 
 
-To set a multipart body on a request, the `multipartBody` method should be used (instead of `body`). Each body part is represented as an instance of `Part[BasicRequestBody]`, which can be conveniently constructed using `multipart` methods coming from the `sttp.client` package.
+To set a multipart body on a request, the `multipartBody` method should be used (instead of `body`). Each body part is represented as an instance of `Part[BasicRequestBody]`, which can be conveniently constructed using `multipart` methods coming from the `sttp.client3` package.
 
 A single part of a multipart request consist of a mandatory name and a payload of type:
 
@@ -18,7 +18,7 @@ The content type of each part is by default the same as when setting simple bodi
 The parts can be specified using either a `Seq[Multipart]` or by using multiple arguments:
 
 ```scala
-import sttp.client._
+import sttp.client3._
 
 basicRequest.multipartBody(Seq(multipart("p1", "v1"), multipart("p2", "v2")))
 basicRequest.multipartBody(multipart("p1", "v1"), multipart("p2", "v2"))
@@ -27,7 +27,7 @@ basicRequest.multipartBody(multipart("p1", "v1"), multipart("p2", "v2"))
 For example:
 
 ```scala
-import sttp.client._
+import sttp.client3._
 import java.io._
 
 val someFile = new File("/sample/path")
@@ -44,7 +44,7 @@ basicRequest.multipartBody(
 For each part, an optional filename can be specified, as well as a custom content type and additional headers. For example:
 
 ```scala
-import sttp.client._
+import sttp.client3._
 import java.io._
 
 val logoFile = new File("/sample/path/logo123.jpg")

@@ -3,13 +3,14 @@
 This backend is based on [http4s](https://http4s.org) (blaze client) and is **asynchronous**. To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client" %% "http4s-backend" % "2.2.9"
+"com.softwaremill.sttp.client3" %% "http4s-backend" % "3.0.0-RC5"
 ```
 
 Add some imports as well:
+
 ```scala
 import cats.effect._
-import sttp.client.http4s._
+import sttp.client3.http4s._
 import scala.concurrent._
 
 // an implicit `cats.effect.ContextShift` is required to create an instance of `cats.effect.Concurrent` 
@@ -41,4 +42,4 @@ Instead, all custom timeout configuration should be done by creating a `org.http
 
 The backend supports streaming using fs2. For usage details, see the documentation on [streaming using fs2](fs2.md#streaming).
 
-The backend doesn't support websockets.
+The backend doesn't support [websockets](../websockets.md).

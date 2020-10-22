@@ -1,6 +1,6 @@
 # OpenAPI
 
-sttp-client [request definitions](../requests/basics.md) can be automatically generated from [openapi](https://swagger.io/specification/) `.yaml` specifications using the `scala-sttp` code generator, included in the [openapi-generator](https://github.com/OpenAPITools/openapi-generator) project.
+sttp-client [request definitions](requests/basics.md) can be automatically generated from [openapi](https://swagger.io/specification/) `.yaml` specifications using the `scala-sttp` code generator, included in the [openapi-generator](https://github.com/OpenAPITools/openapi-generator) project.
 
 For `scala-sttp`'s generator's configuration options refer to: [https://openapi-generator.tech/docs/generators/scala-sttp](https://openapi-generator.tech/docs/generators/scala-sttp).
 
@@ -36,8 +36,8 @@ lazy val petstoreApi: Project = project
     openApiGeneratorName := "scala-sttp",
     openApiOutputDir := baseDirectory.value.name,
     libraryDependencies ++= Seq(
-      "com.softwaremill.sttp.client" %% "core" % "@VERSION@",
-      "com.softwaremill.sttp.client" %% "json4s" % "@VERSION@",
+      "com.softwaremill.sttp.client3" %% "core" % "@VERSION@",
+      "com.softwaremill.sttp.client3" %% "json4s" % "@VERSION@",
       "org.json4s" %% "json4s-jackson" % "3.6.8"
     )
   )
@@ -87,8 +87,8 @@ lazy val petstoreApi: Project = project
     openApiOutputDir := baseDirectory.value.name,
     openApiIgnoreFileOverride := s"${baseDirectory.in(ThisBuild).value.getPath}/openapi-ignore-file",
     libraryDependencies ++= Seq(
-      "com.softwaremill.sttp.client" %% "core" % "@VERSION@",
-      "com.softwaremill.sttp.client" %% "json4s" % "@VERSION@",
+      "com.softwaremill.sttp.client3" %% "core" % "@VERSION@",
+      "com.softwaremill.sttp.client3" %% "json4s" % "@VERSION@",
       "org.json4s" %% "json4s-jackson" % "3.6.8"
     ),
     (compile in Compile) := ((compile in Compile) dependsOn openApiGenerate).value,
