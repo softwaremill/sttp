@@ -13,6 +13,8 @@ val scala3 = "0.26.0-RC1"
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests")
 
+excludeLintKeys in Global ++= Set(ideSkipProject, reStartArgs)
+
 val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   organization := "com.softwaremill.sttp.client3",
   scmInfo := Some(ScmInfo(url("https://github.com/softwaremill/sttp"), "scm:git@github.com:softwaremill/sttp.git")),
@@ -187,8 +189,8 @@ val fs2Version: Option[(Long, Long)] => String = {
   case _             => "2.4.2"
 }
 
-val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.2.1"
-val akkaStreamVersion = "2.6.8"
+val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.1.12"
+val akkaStreamVersion = "2.6.10"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % akkaStreamVersion
 
 val scalaTestVersion = "3.2.2"
@@ -755,7 +757,7 @@ lazy val scribeBackend = (projectMatrix in file("logging/scribe"))
   .settings(
     name := "scribe-backend",
     libraryDependencies ++= Seq(
-      "com.outr" %%% "scribe" % "2.7.12",
+      "com.outr" %%% "scribe" % "2.7.13",
       scalaTest % Test
     )
   )
