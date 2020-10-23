@@ -69,13 +69,13 @@ class AsyncHttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
       }
 
       override def bytesToPublisher(b: Array[Byte]): F[Publisher[ByteBuffer]] =
-        (Stream.apply[F, ByteBuffer](ByteBuffer.wrap(b)).toUnicastPublisher(): Publisher[ByteBuffer]).pure[F]
+        (Stream.apply[F, ByteBuffer](ByteBuffer.wrap(b)).toUnicastPublisher: Publisher[ByteBuffer]).pure[F]
 
       override def fileToPublisher(f: File): F[Publisher[ByteBuffer]] =
         (fs2.io.file
           .readAll(f.toPath, blocker, IOBufferSize)
           .mapChunks(c => Chunk(ByteBuffer.wrap(c.toArray)))
-          .toUnicastPublisher(): Publisher[ByteBuffer]).pure[F]
+          .toUnicastPublisher: Publisher[ByteBuffer]).pure[F]
 
       override def compileWebSocketPipe(
           ws: WebSocket[F],
@@ -125,8 +125,7 @@ object AsyncHttpClientFs2Backend {
         )
       )
 
-  /**
-    * Makes sure the backend is closed after usage.
+  /** Makes sure the backend is closed after usage.
     */
   def resource[F[_]: ConcurrentEffect: ContextShift](
       blocker: Blocker,
@@ -146,8 +145,7 @@ object AsyncHttpClientFs2Backend {
       apply[F](new DefaultAsyncHttpClient(cfg), closeClient = true, blocker, customizeRequest, webSocketBufferCapacity)
     )
 
-  /**
-    * Makes sure the backend is closed after usage.
+  /** Makes sure the backend is closed after usage.
     */
   def resourceUsingConfig[F[_]: ConcurrentEffect: ContextShift](
       cfg: AsyncHttpClientConfig,
@@ -157,8 +155,7 @@ object AsyncHttpClientFs2Backend {
   ): Resource[F, SttpBackend[F, Fs2Streams[F] with WebSockets]] =
     Resource.make(usingConfig(blocker, cfg, customizeRequest, webSocketBufferCapacity))(_.close())
 
-  /**
-    * @param updateConfig A function which updates the default configuration (created basing on `options`).
+  /** @param updateConfig A function which updates the default configuration (created basing on `options`).
     */
   def usingConfigBuilder[F[_]: ConcurrentEffect: ContextShift](
       blocker: Blocker,
@@ -177,8 +174,7 @@ object AsyncHttpClientFs2Backend {
       )
     )
 
-  /**
-    * Makes sure the backend is closed after usage.
+  /** Makes sure the backend is closed after usage.
     * @param updateConfig A function which updates the default configuration (created basing on `options`).
     */
   def resourceUsingConfigBuilder[F[_]: ConcurrentEffect: ContextShift](
@@ -200,8 +196,7 @@ object AsyncHttpClientFs2Backend {
   ): SttpBackend[F, Fs2Streams[F] with WebSockets] =
     apply[F](client, closeClient = false, blocker, customizeRequest, webSocketBufferCapacity)
 
-  /**
-    * Create a stub backend for testing, which uses the `F` response wrapper, and supports `Stream[F, ByteBuffer]`
+  /** Create a stub backend for testing, which uses the `F` response wrapper, and supports `Stream[F, ByteBuffer]`
     * streaming.
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.

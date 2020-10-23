@@ -13,7 +13,7 @@ import sttp.ws.{WebSocket, WebSocketFrame}
 import zio.nio.channels.AsynchronousFileChannel
 import zio.nio.core.file.Path
 import zio.stream.{Stream, ZSink, ZStream}
-import zio.{Task, ZIO}
+import zio.{Managed, Task, ZIO}
 
 private[zio] class ZioBodyFromHttpClient extends BodyFromHttpClient[Task, ZioStreams, ZioStreams.BinaryStream] {
   override val streams: ZioStreams = ZioStreams
@@ -63,11 +63,14 @@ private[zio] class ZioBodyFromHttpClient extends BodyFromHttpClient[Task, ZioStr
         .run({
           ZSink.managed(
             AsynchronousFileChannel
-              .open(Path.fromJava(file.toPath), StandardOpenOption.WRITE, StandardOpenOption.CREATE)
+              .open(Path.fromJava(file.toPath), StandardOpenOption.WRITE, StandardOpenOption.CREATE): Managed[
+              Exception,
+              AsynchronousFileChannel
+            ] // we need the upcast so that errors are properly inferred
           ) { fileChannel =>
             ZSink.foldChunksM(0L)(_ => true) { case (position, data) =>
               fileChannel
-                .write(data, position)
+                .writeChunk(data, position)
                 .map(bytesWritten => position + bytesWritten)
             }
           }
@@ -100,7 +103,7 @@ private[zio] class ZioBodyFromHttpClient extends BodyFromHttpClient[Task, ZioStr
     val bufferSize = 4096
     Stream.paginateChunkM(0L)(position =>
       fileChannel
-        .read(bufferSize, position)
+        .readChunk(bufferSize, position)
         .map {
           case data if data.isEmpty => data -> None
           case data                 => data -> Some(position + bufferSize)

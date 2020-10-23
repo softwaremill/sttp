@@ -53,7 +53,7 @@ class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
       override def streamToPublisher(stream: Stream[F, Byte]): F[HttpRequest.BodyPublisher] =
         monad.eval(
           BodyPublishers.fromPublisher(
-            FlowAdapters.toFlowPublisher(stream.chunks.map(_.toByteBuffer).toUnicastPublisher())
+            FlowAdapters.toFlowPublisher(stream.chunks.map(_.toByteBuffer).toUnicastPublisher)
           )
         )
     }
@@ -123,8 +123,7 @@ object HttpClientFs2Backend {
   ): SttpBackend[F, Fs2Streams[F] with WebSockets] =
     HttpClientFs2Backend(client, blocker, closeClient = false, customizeRequest, customEncodingHandler)
 
-  /**
-    * Create a stub backend for testing, which uses the [[F]] response wrapper, and supports `Stream[F, Byte]`
+  /** Create a stub backend for testing, which uses the [[F]] response wrapper, and supports `Stream[F, Byte]`
     * streaming.
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
