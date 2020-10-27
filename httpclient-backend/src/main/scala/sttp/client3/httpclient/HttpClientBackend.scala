@@ -73,7 +73,7 @@ abstract class HttpClientBackend[F[_], S, P, B](
       resBody.left
         .map { is =>
           encoding
-            .map(e => customEncodingHandler.orElse(PartialFunction.fromFunction(standardEncoding.tupled))(is, e))
+            .map(e => customEncodingHandler.applyOrElse((is, e), standardEncoding.tupled))
             .getOrElse(is)
         }
     } else {
@@ -90,7 +90,7 @@ abstract class HttpClientBackend[F[_], S, P, B](
       responseMonad.eval(
         client
           .executor()
-          .map(new function.Function[Executor, Unit] {
+          .map[Unit](new function.Function[Executor, Unit] {
             override def apply(t: Executor): Unit = t.asInstanceOf[ThreadPoolExecutor].shutdown()
           })
       )
