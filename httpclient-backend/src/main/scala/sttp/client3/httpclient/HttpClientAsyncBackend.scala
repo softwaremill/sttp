@@ -3,6 +3,7 @@ package sttp.client3.httpclient
 import java.net.http.HttpResponse.BodyHandlers
 import java.net.http.{HttpClient, HttpRequest, HttpResponse, WebSocketHandshakeException}
 import java.nio.ByteBuffer
+import java.time.Duration
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.{CompletionException, Flow}
 import java.{util => ju}
@@ -82,11 +83,11 @@ abstract class HttpClientAsyncBackend[F[_], S, P, B](
           )
 
           val wsBuilder = client.newWebSocketBuilder()
-          client.connectTimeout().map(wsBuilder.connectTimeout(_))
+          client.connectTimeout().map[java.net.http.WebSocket.Builder](wsBuilder.connectTimeout(_))
           request.headers.foreach(h => wsBuilder.header(h.name, h.value))
           val cf = wsBuilder
             .buildAsync(request.uri.toJavaUri, listener)
-            .thenApply(_ => ())
+            .thenApply[Unit](_ => ())
             .exceptionally(t => cb(Left(t)))
           Canceler(() => cf.cancel(true))
         })

@@ -586,11 +586,11 @@ lazy val httpClientBackend = (projectMatrix in file("httpclient-backend"))
     name := "httpclient-backend",
     scalacOptions ++= Seq("-J--add-modules", "-Jjava.net.http"),
     scalacOptions ++= {
-      if (scalaVersion.value == scala3) Nil else List("-target:jvm-11")
+      if (scalaVersion.value == scala2_13) List("-target:jvm-11") else Nil
     },
     libraryDependencies += "org.reactivestreams" % "reactive-streams-flow-adapters" % "1.0.2"
   )
-  .jvmPlatform(scalaVersions = List(scala2_13, scala3), settings = intellijImportOnly213)
+  .jvmPlatform(scalaVersions = List(scala2_12, scala2_13, scala3), settings = intellijImportOnly213)
   .dependsOn(core % compileAndTest)
 
 def httpClientBackendProject(proj: String, includeDotty: Boolean = false) = {
@@ -599,7 +599,7 @@ def httpClientBackendProject(proj: String, includeDotty: Boolean = false) = {
     .settings(testServerSettings)
     .settings(name := s"httpclient-backend-$proj")
     .jvmPlatform(
-      scalaVersions = List(scala2_13) ++ (if (includeDotty) List(scala3) else Nil),
+      scalaVersions = List(scala2_12, scala2_13) ++ (if (includeDotty) List(scala3) else Nil),
       settings = intellijImportOnly213
     )
     .dependsOn(httpClientBackend % compileAndTest)

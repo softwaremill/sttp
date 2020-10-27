@@ -73,7 +73,7 @@ private[httpclient] class InputStreamSubscriber extends Subscriber[java.util.Lis
   private val toListCollector: Collector[Message, _, util.List[Message]] = Collectors.toList()
   override def onNext(b: java.util.List[ByteBuffer]): Unit = {
     assert(b != null)
-    chunks.addAll(b.stream().map(nextItemMsg(_)).collect(toListCollector))
+    chunks.addAll(b.stream().map[Message](nextItemMsg(_)).collect(toListCollector))
   }
 
   override def onError(t: Throwable): Unit = {
