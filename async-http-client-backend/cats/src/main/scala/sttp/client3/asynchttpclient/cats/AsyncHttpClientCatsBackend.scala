@@ -3,8 +3,7 @@ package sttp.client3.asynchttpclient.cats
 import java.io.{ByteArrayInputStream, File}
 import java.nio.ByteBuffer
 
-import cats.effect.implicits._
-import cats.effect.{Concurrent, ContextShift, Resource, Sync}
+import cats.effect.{Async, Resource, Sync}
 import io.netty.buffer.ByteBuf
 import org.asynchttpclient.{
   AsyncHttpClient,
@@ -24,7 +23,7 @@ import sttp.client3.testing.SttpBackendStub
 import sttp.monad.MonadAsyncError
 import sttp.ws.WebSocket
 
-class AsyncHttpClientCatsBackend[F[_]: Concurrent: ContextShift] private (
+class AsyncHttpClientCatsBackend[F[_]: Async] private (
     asyncHttpClient: AsyncHttpClient,
     closeClient: Boolean,
     customizeRequest: BoundRequestBuilder => BoundRequestBuilder
@@ -38,7 +37,7 @@ class AsyncHttpClientCatsBackend[F[_]: Concurrent: ContextShift] private (
   override val streams: NoStreams = NoStreams
 
   override def send[T, R >: Any with sttp.capabilities.Effect[F]](r: Request[T, R]): F[Response[T]] = {
-    super.send(r).guarantee(implicitly[ContextShift[F]].shift)
+    super.send(r)
   }
 
   override protected val bodyFromAHC: BodyFromAHC[F, Nothing] = new BodyFromAHC[F, Nothing] {
@@ -50,7 +49,6 @@ class AsyncHttpClientCatsBackend[F[_]: Concurrent: ContextShift] private (
 
     override def publisherToFile(p: Publisher[ByteBuffer], f: File): F[Unit] = {
       publisherToBytes(p)
-        .guarantee(implicitly[ContextShift[F]].shift)
         .map(bytes => FileHelpers.saveFile(f, new ByteArrayInputStream(bytes)))
     }
   }
@@ -66,7 +64,7 @@ class AsyncHttpClientCatsBackend[F[_]: Concurrent: ContextShift] private (
 }
 
 object AsyncHttpClientCatsBackend {
-  private def apply[F[_]: Concurrent: ContextShift](
+  private def apply[F[_]: Async](
       asyncHttpClient: AsyncHttpClient,
       closeClient: Boolean,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder
@@ -78,7 +76,7 @@ object AsyncHttpClientCatsBackend {
   /**
     * After sending a request, always shifts to the thread pool backing the given `ContextShift[F]`.
     */
-  def apply[F[_]: Concurrent: ContextShift](
+  def apply[F[_]: Async](
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   ): F[SttpBackend[F, Any]] =
@@ -90,7 +88,7 @@ object AsyncHttpClientCatsBackend {
     * Makes sure the backend is closed after usage.
     * After sending a request, always shifts to the thread pool backing the given `ContextShift[F]`.
     */
-  def resource[F[_]: Concurrent: ContextShift](
+  def resource[F[_]: Async](
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   ): Resource[F, SttpBackend[F, Any]] =
@@ -99,7 +97,7 @@ object AsyncHttpClientCatsBackend {
   /**
     * After sending a request, always shifts to the thread pool backing the given `ContextShift[F]`.
     */
-  def usingConfig[F[_]: Concurrent: ContextShift](
+  def usingConfig[F[_]: Async](
       cfg: AsyncHttpClientConfig,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   ): F[SttpBackend[F, Any]] =
@@ -109,7 +107,7 @@ object AsyncHttpClientCatsBackend {
     * Makes sure the backend is closed after usage.
     * After sending a request, always shifts to the thread pool backing the given `ContextShift[F]`.
     */
-  def resourceUsingConfig[F[_]: Concurrent: ContextShift](
+  def resourceUsingConfig[F[_]: Async](
       cfg: AsyncHttpClientConfig,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   ): Resource[F, SttpBackend[F, Any]] =
@@ -119,7 +117,7 @@ object AsyncHttpClientCatsBackend {
     * After sending a request, always shifts to the thread pool backing the given `ContextShift[F]`.
     * @param updateConfig A function which updates the default configuration (created basing on `options`).
     */
-  def usingConfigBuilder[F[_]: Concurrent: ContextShift](
+  def usingConfigBuilder[F[_]: Async](
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
@@ -137,7 +135,7 @@ object AsyncHttpClientCatsBackend {
     * After sending a request, always shifts to the thread pool backing the given `ContextShift[F]`.
     * @param updateConfig A function which updates the default configuration (created basing on `options`).
     */
-  def resourceUsingConfigBuilder[F[_]: Concurrent: ContextShift](
+  def resourceUsingConfigBuilder[F[_]: Async](
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
@@ -147,7 +145,7 @@ object AsyncHttpClientCatsBackend {
   /**
     * After sending a request, always shifts to the thread pool backing the given `ContextShift[F]`.
     */
-  def usingClient[F[_]: Concurrent: ContextShift](
+  def usingClient[F[_]: Async](
       client: AsyncHttpClient,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   ): SttpBackend[F, Any] =
@@ -158,5 +156,5 @@ object AsyncHttpClientCatsBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub[F[_]: Concurrent]: SttpBackendStub[F, Any] = SttpBackendStub(new CatsMonadAsyncError())
+  def stub[F[_]: Async]: SttpBackendStub[F, Any] = SttpBackendStub(new CatsMonadAsyncError())
 }

@@ -180,14 +180,8 @@ val playJsonVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.7.4"
   case _             => "2.9.1"
 }
-val catsEffectVersion: Option[(Long, Long)] => String = {
-  case Some((2, 11)) => "2.0.0"
-  case _             => "2.1.4"
-}
-val fs2Version: Option[(Long, Long)] => String = {
-  case Some((2, 11)) => "2.1.0"
-  case _             => "2.4.4"
-}
+val catsEffectVersion= "3.0.0-M2"
+val fs2Version = "3.0.0-M2"
 
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.2.1"
 val akkaStreamVersion = "2.6.10"
@@ -375,13 +369,13 @@ lazy val cats = (projectMatrix in file("implementations/cats"))
   .settings(
     name := "cats",
     publishArtifact in Test := true,
-    libraryDependencies ++= dependenciesFor(scalaVersion.value)(
-      "org.typelevel" %%% "cats-effect" % catsEffectVersion(_)
+    libraryDependencies ++= Seq(
+      "org.typelevel" %%% "cats-effect" % catsEffectVersion
     )
   )
   .dependsOn(core % compileAndTest)
   .jvmPlatform(
-    scalaVersions = List(scala2_11, scala2_12, scala2_13),
+    scalaVersions = List(scala2_12, scala2_13),
     settings = commonJvmSettings ++ intellijImportOnly213
   )
   .jsPlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonJsSettings ++ intellijSkipImport)
@@ -390,14 +384,14 @@ lazy val fs2 = (projectMatrix in file("implementations/fs2"))
   .settings(
     name := "fs2",
     publishArtifact in Test := true,
-    libraryDependencies ++= dependenciesFor(scalaVersion.value)(
-      "co.fs2" %%% "fs2-core" % fs2Version(_)
-    ),
-    libraryDependencies += "com.softwaremill.sttp.shared" %% "fs2" % sttpSharedVersion
+    libraryDependencies ++= Seq(
+      "co.fs2" %%% "fs2-core" % fs2Version,
+      "com.softwaremill.sttp.shared" %% "fs2" % sttpSharedVersion
+    )
   )
   .dependsOn(core % compileAndTest, cats % compileAndTest)
   .jvmPlatform(
-    scalaVersions = List(scala2_11, scala2_12, scala2_13),
+    scalaVersions = List(scala2_12, scala2_13),
     settings = commonJvmSettings ++ intellijImportOnly213
   )
   .jsPlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonJsSettings ++ intellijSkipImport)
@@ -491,14 +485,14 @@ lazy val asyncHttpClientBackend = (projectMatrix in file("async-http-client-back
     settings = intellijImportOnly213
   )
 
-def asyncHttpClientBackendProject(proj: String, includeDotty: Boolean = false) = {
+def asyncHttpClientBackendProject(proj: String, includeScala211: Boolean = true, includeDotty: Boolean = false) = {
   ProjectMatrix(s"asyncHttpClientBackend${proj.capitalize}", file(s"async-http-client-backend/$proj"))
     .settings(commonJvmSettings)
     .settings(testServerSettings)
     .settings(name := s"async-http-client-backend-$proj")
     .dependsOn(asyncHttpClientBackend % compileAndTest)
     .jvmPlatform(
-      scalaVersions = List(scala2_11, scala2_12, scala2_13) ++ (if (includeDotty) List(scala3) else Nil),
+      scalaVersions = (if (includeScala211) List(scala2_11) else Nil) ++ List(scala2_12, scala2_13) ++ (if (includeDotty) List(scala3) else Nil),
       settings = intellijImportOnly213
     )
 }
@@ -525,15 +519,15 @@ lazy val asyncHttpClientMonixBackend =
     .dependsOn(monix % compileAndTest)
 
 lazy val asyncHttpClientCatsBackend =
-  asyncHttpClientBackendProject("cats")
+  asyncHttpClientBackendProject("cats", includeScala211 = false)
     .dependsOn(cats % compileAndTest)
 
 lazy val asyncHttpClientFs2Backend =
-  asyncHttpClientBackendProject("fs2")
+  asyncHttpClientBackendProject("fs2", includeScala211 = false)
     .settings(
-      libraryDependencies ++= dependenciesFor(scalaVersion.value)(
-        "co.fs2" %% "fs2-reactive-streams" % fs2Version(_),
-        "co.fs2" %% "fs2-io" % fs2Version(_)
+      libraryDependencies ++= Seq(
+        "co.fs2" %% "fs2-reactive-streams" % fs2Version,
+        "co.fs2" %% "fs2-io" % fs2Version
       )
     )
     .dependsOn(cats % compileAndTest)
@@ -612,9 +606,9 @@ lazy val httpClientMonixBackend =
 lazy val httpClientFs2Backend =
   httpClientBackendProject("fs2")
     .settings(
-      libraryDependencies ++= dependenciesFor(scalaVersion.value)(
-        "co.fs2" %% "fs2-reactive-streams" % fs2Version(_),
-        "co.fs2" %% "fs2-io" % fs2Version(_)
+      libraryDependencies ++= Seq(
+        "co.fs2" %% "fs2-reactive-streams" % fs2Version,
+        "co.fs2" %% "fs2-io" % fs2Version
       )
     )
     .dependsOn(fs2 % compileAndTest)

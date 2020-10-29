@@ -1,6 +1,6 @@
 package sttp.client3.impl.cats
 
-import cats.effect.Concurrent
+import cats.effect.Async
 import cats.~>
 import sttp.capabilities.Effect
 import sttp.client3.monad.{FunctionK, MapEffect}
@@ -14,7 +14,7 @@ trait CatsImplicits {
       sttpBackend: SttpBackend[R, P]
   ): MappableSttpBackend[R, P] = new MappableSttpBackend(sttpBackend)
 
-  implicit final def asyncMonadError[F[_]: Concurrent]: MonadAsyncError[F] = new CatsMonadAsyncError[F]
+  implicit final def asyncMonadError[F[_]: Async]: MonadAsyncError[F] = new CatsMonadAsyncError[F]
 }
 
 final class MappableSttpBackend[F[_], P] private[cats] (

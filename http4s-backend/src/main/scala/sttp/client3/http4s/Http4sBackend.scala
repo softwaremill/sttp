@@ -43,6 +43,7 @@ import sttp.client3.{
 
 import scala.concurrent.ExecutionContext
 
+// needs http4s using cats-effect
 class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
     client: Client[F],
     blocker: Blocker,

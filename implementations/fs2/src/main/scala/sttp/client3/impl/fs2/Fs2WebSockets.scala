@@ -1,7 +1,7 @@
 package sttp.client3.impl.fs2
 
-import cats.effect.ConcurrentEffect
-import cats.effect.concurrent.Ref
+import cats.effect.Concurrent
+import cats.effect.kernel.Ref
 import cats.effect.implicits._
 import fs2.{Pipe, Stream}
 import sttp.ws.{WebSocket, WebSocketFrame}
@@ -17,7 +17,7 @@ object Fs2WebSockets {
     * @tparam F the effect type
     * @return an Unit effect describing the full run of the websocket through the pipe
     */
-  def handleThroughPipe[F[_]: ConcurrentEffect](
+  def handleThroughPipe[F[_]: Concurrent](
       ws: WebSocket[F]
   )(pipe: Pipe[F, WebSocketFrame.Data[_], WebSocketFrame]): F[Unit] = {
     Stream

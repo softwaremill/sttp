@@ -8,6 +8,9 @@ import scala.concurrent.Future
 package object cats {
 
   val convertCatsIOToFuture: ConvertToFuture[IO] = new ConvertToFuture[IO] {
-    override def toFuture[T](value: IO[T]): Future[T] = value.unsafeToFuture()
+    override def toFuture[T](value: IO[T]): Future[T] = {
+      import _root_.cats.effect.unsafe.implicits.global
+      value.unsafeToFuture()
+    }
   }
 }

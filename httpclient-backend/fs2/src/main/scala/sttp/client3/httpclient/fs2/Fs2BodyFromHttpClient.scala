@@ -1,6 +1,7 @@
 package sttp.client3.httpclient.fs2
 
-import cats.effect.{Blocker, ConcurrentEffect, ContextShift}
+import cats.effect.Async
+import fs2.io.file.Files
 import fs2.{Pipe, Stream}
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client3.httpclient.BodyFromHttpClient
@@ -13,7 +14,7 @@ import sttp.monad.MonadError
 import sttp.monad.syntax.{MonadErrorValueOps, _}
 import sttp.ws.{WebSocket, WebSocketFrame}
 
-private[fs2] class Fs2BodyFromHttpClient[F[_]: ConcurrentEffect: ContextShift](blocker: Blocker)
+private[fs2] class Fs2BodyFromHttpClient[F[_]: Async]()
     extends BodyFromHttpClient[F, Fs2Streams[F], Stream[F, Byte]] {
   override val streams: Fs2Streams[F] = Fs2Streams[F]
   override implicit val monad: MonadError[F] = new CatsMonadAsyncError[F]
@@ -30,7 +31,7 @@ private[fs2] class Fs2BodyFromHttpClient[F[_]: ConcurrentEffect: ContextShift](b
       ): F[Stream[F, Byte]] = {
         replayableBody match {
           case Left(value)     => Stream.evalSeq[F, List, Byte](value.toList.unit).unit
-          case Right(sttpFile) => fs2.io.file.readAll(sttpFile.toPath, blocker, 32 * 1024).unit
+          case Right(sttpFile) => Files[F].readAll(sttpFile.toPath, 32 * 1024).unit
         }
       }
 
@@ -41,7 +42,7 @@ private[fs2] class Fs2BodyFromHttpClient[F[_]: ConcurrentEffect: ContextShift](b
 
       override protected def regularAsFile(response: Stream[F, Byte], file: SttpFile): F[SttpFile] = {
         response
-          .through(fs2.io.file.writeAll(file.toPath, blocker))
+          .through(Files[F].writeAll(file.toPath))
           .compile
           .drain
           .map(_ => file)
