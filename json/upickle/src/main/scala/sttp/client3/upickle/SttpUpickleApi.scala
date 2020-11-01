@@ -8,10 +8,7 @@ import sttp.client3.json._
 
 trait SttpUpickleApi {
 
-  implicit def upickleBodySerializer[B](implicit
-      encoder: Writer[B]
-      // printer: Printer = Printer.noSpaces
-  ): BodySerializer[B] =
+  implicit def upickleBodySerializer[B](implicit encoder: Writer[B]): BodySerializer[B] =
     b => StringBody(write(b), Utf8, MediaType.ApplicationJson)
 
   /** If the response is successful (2xx), tries to deserialize the body from a string into JSON. Returns:

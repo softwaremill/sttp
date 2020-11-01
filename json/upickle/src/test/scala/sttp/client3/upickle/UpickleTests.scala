@@ -49,8 +49,8 @@ class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
   it should "fail to decode from empty input" in {
     val responseAs = asJson[Inner]
 
-    runJsonResponseAs(responseAs)("").left.value should matchPattern { case _ =>
-    // case DeserializationException("", _: io.circe.ParsingFailure) =>
+    runJsonResponseAs(responseAs)("").left.value should matchPattern {
+      case DeserializationException("", ujson.IncompleteParseException("exhausted input", _)) =>
     }
   }
 
