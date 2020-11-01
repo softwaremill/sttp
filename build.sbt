@@ -194,7 +194,6 @@ val akkaStreamVersion = "2.6.10"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % akkaStreamVersion
 
 val scalaTestVersion = "3.2.2"
-val scalaNativeTestInterfaceVersion = "0.4.0-M2"
 val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion
 
 val zioVersion = "1.0.3"
@@ -255,6 +254,7 @@ lazy val allAggregates = coreProjectAggregates ++
   json4s.projectRefs ++
   sprayJson.projectRefs ++
   playJson.projectRefs ++
+  upickle.projectRefs ++
   openTracingBackend.projectRefs ++
   prometheusBackend.projectRefs ++
   zioTelemetryOpenTracingBackend.projectRefs ++
@@ -346,7 +346,7 @@ lazy val core = (projectMatrix in file("core"))
     settings = {
       commonNativeSettings ++ intellijSkipImport ++ List(
         libraryDependencies ++= Seq(
-          "org.scala-native" %%% "test-interface" % scalaNativeTestInterfaceVersion % Test,
+          "org.scala-native" %%% "test-interface" % nativeVersion % Test,
           "org.scalatest" %%% "scalatest-shouldmatchers" % scalaTestVersion % Test,
           "org.scalatest" %%% "scalatest-flatspec" % scalaTestVersion % Test,
           "org.scalatest" %%% "scalatest-freespec" % scalaTestVersion % Test,
@@ -670,6 +670,22 @@ lazy val circe = (projectMatrix in file("json/circe"))
     settings = commonJvmSettings ++ intellijImportOnly213
   )
   .jsPlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonJsSettings ++ intellijSkipImport)
+  .dependsOn(core, jsonCommon)
+
+lazy val upickle = (projectMatrix in file("json/upickle"))
+  .settings(
+    name := "upickle",
+    libraryDependencies ++= Seq(
+      "com.lihaoyi" %%% "upickle" % "1.2.3",
+      "org.scalatest" %%% "scalatest" % scalaTestVersion % Test
+    )
+  )
+  .jvmPlatform(
+    scalaVersions = List(scala2_12, scala2_13),
+    settings = commonJvmSettings ++ intellijImportOnly213
+  )
+  .jsPlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonJsSettings ++ intellijSkipImport)
+  .nativePlatform(scalaVersions = List(scala2_11), settings = commonNativeSettings ++ intellijSkipImport)
   .dependsOn(core, jsonCommon)
 
 lazy val json4sVersion = "3.6.10"
