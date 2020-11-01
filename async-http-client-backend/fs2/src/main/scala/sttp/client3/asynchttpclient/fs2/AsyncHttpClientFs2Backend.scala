@@ -114,7 +114,7 @@ object AsyncHttpClientFs2Backend {
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): F[SttpBackend[F, Fs2Streams[F] with WebSockets]] =
-    implicitly[Sync[F]]
+    Sync[F]
       .delay(
         apply[F](
           AsyncHttpClientBackend.defaultClient(options),
@@ -138,7 +138,7 @@ object AsyncHttpClientFs2Backend {
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): F[SttpBackend[F, Fs2Streams[F] with WebSockets]] =
-    implicitly[Sync[F]].delay(
+    Sync[F].delay(
       apply[F](new DefaultAsyncHttpClient(cfg), closeClient = true, customizeRequest, webSocketBufferCapacity)
     )
 
@@ -159,7 +159,7 @@ object AsyncHttpClientFs2Backend {
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): F[SttpBackend[F, Fs2Streams[F] with WebSockets]] =
-    implicitly[Sync[F]].delay(
+    Sync[F].delay(
       AsyncHttpClientFs2Backend[F](
         AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
         closeClient = true,
