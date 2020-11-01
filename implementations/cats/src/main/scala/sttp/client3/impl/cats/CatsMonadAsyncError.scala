@@ -1,6 +1,8 @@
 package sttp.client3.impl.cats
 
 import cats.effect.Async
+import cats.syntax.functor._
+import cats.syntax.option._
 import sttp.monad.{Canceler, MonadAsyncError}
 
 class CatsMonadAsyncError[F[_]](implicit F: Async[F]) extends MonadAsyncError[F] {
@@ -17,7 +19,7 @@ class CatsMonadAsyncError[F[_]](implicit F: Async[F]) extends MonadAsyncError[F]
     F.recoverWith(rt)(h)
 
   override def async[T](register: ((Either[Throwable, T]) => Unit) => Canceler): F[T] =
-    F.async_(register.andThen(c => F.delay(c.cancel)))
+    F.async(cb => F.delay(register(cb)).map(c => F.delay(c.cancel()).some))
 
   override def eval[T](t: => T): F[T] = F.delay(t)
 
