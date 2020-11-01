@@ -126,12 +126,13 @@ object AsyncHttpClientFs2Backend {
 
   /** Makes sure the backend is closed after usage.
     */
-  def resource[F[_]: Async: Dispatcher](
+  def resource[F[_]: Async](
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): Resource[F, SttpBackend[F, Fs2Streams[F] with WebSockets]] =
-    Resource.make(apply(options, customizeRequest, webSocketBufferCapacity))(_.close())
+    Dispatcher[F].flatMap(implicit dispatcher =>
+      Resource.make(apply(options, customizeRequest, webSocketBufferCapacity))(_.close()))
 
   def usingConfig[F[_]: Async: Dispatcher](
       cfg: AsyncHttpClientConfig,
@@ -144,12 +145,13 @@ object AsyncHttpClientFs2Backend {
 
   /** Makes sure the backend is closed after usage.
     */
-  def resourceUsingConfig[F[_]: Async: Dispatcher](
+  def resourceUsingConfig[F[_]: Async](
       cfg: AsyncHttpClientConfig,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): Resource[F, SttpBackend[F, Fs2Streams[F] with WebSockets]] =
-    Resource.make(usingConfig(cfg, customizeRequest, webSocketBufferCapacity))(_.close())
+    Dispatcher[F].flatMap(implicit dispatcher =>
+      Resource.make(usingConfig(cfg, customizeRequest, webSocketBufferCapacity))(_.close()))
 
   /** @param updateConfig A function which updates the default configuration (created basing on `options`).
     */
@@ -171,15 +173,16 @@ object AsyncHttpClientFs2Backend {
   /** Makes sure the backend is closed after usage.
     * @param updateConfig A function which updates the default configuration (created basing on `options`).
     */
-  def resourceUsingConfigBuilder[F[_]: Async: Dispatcher](
+  def resourceUsingConfigBuilder[F[_]: Async](
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): Resource[F, SttpBackend[F, Fs2Streams[F] with WebSockets]] =
-    Resource.make(usingConfigBuilder(updateConfig, options, customizeRequest, webSocketBufferCapacity))(
-      _.close()
-    )
+    Dispatcher[F].flatMap(implicit dispatcher =>
+      Resource.make(usingConfigBuilder(updateConfig, options, customizeRequest, webSocketBufferCapacity))(
+        _.close()
+      ))
 
   def usingClient[F[_]: Async: Dispatcher](
       client: AsyncHttpClient,
