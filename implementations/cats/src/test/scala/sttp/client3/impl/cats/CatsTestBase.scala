@@ -13,5 +13,5 @@ trait CatsTestBase {
   implicit lazy val monad: MonadError[IO] = new CatsMonadAsyncError[IO]
   implicit val ioRuntime: IORuntime = IORuntime.global
 
-  implicit val convertToFuture: ConvertToFuture[IO] = convertCatsIOToFuture
+  implicit val convertToFuture: ConvertToFuture[IO] = convertCatsIOToFuture()
 }
