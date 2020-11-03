@@ -21,7 +21,7 @@ import sttp.client3.impl.fs2.{Fs2SimpleQueue, Fs2WebSockets}
 import sttp.client3.internal._
 import sttp.client3.internal.ws.SimpleQueue
 import sttp.client3.testing.SttpBackendStub
-import sttp.client3.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions, _}
+import sttp.client3.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 import sttp.monad.MonadAsyncError
 import sttp.ws.{WebSocket, WebSocketFrame}
 
@@ -38,12 +38,6 @@ class AsyncHttpClientFs2Backend[F[_]: Async] private (
     ) {
 
   override val streams: Fs2Streams[F] = Fs2Streams[F]
-
-  override def send[T, R >: sttp.capabilities.Effect[F] with Fs2Streams[F] with WebSockets](
-      r: Request[T, R]
-  ): F[Response[T]] = {
-    super.send(r)
-  }
 
   override protected val bodyFromAHC: BodyFromAHC[F, Fs2Streams[F]] =
     new BodyFromAHC[F, Fs2Streams[F]] {
