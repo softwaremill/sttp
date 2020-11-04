@@ -260,7 +260,6 @@ lazy val allAggregates = projectsWithOptionalNative ++
   okhttpBackend.projectRefs ++
   okhttpMonixBackend.projectRefs ++
   http4sBackend.projectRefs ++
-  jsonCommon.projectRefs ++
   circe.projectRefs ++
   json4s.projectRefs ++
   sprayJson.projectRefs ++
