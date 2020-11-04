@@ -193,8 +193,8 @@ val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.2.1"
 val akkaStreamVersion = "2.6.10"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % akkaStreamVersion
 
-val scalaTest = Seq("freespec", "funsuite", "flatspec", "wordspec", "shouldmatchers").map(m =>
-  "org.scalatest" %% s"scalatest-$m" % "3.2.2" % Test
+val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", "wordspec", "shouldmatchers").map(m =>
+  "org.scalatest" %%% s"scalatest-$m" % "3.2.2" % Test
 )
 
 val zioVersion = "1.0.3"
@@ -326,7 +326,8 @@ lazy val core = (projectMatrix in file("core"))
       "com.softwaremill.sttp.model" %%% "core" % sttpModelVersion,
       "com.softwaremill.sttp.shared" %%% "core" % sttpSharedVersion,
       "com.softwaremill.sttp.shared" %%% "ws" % sttpSharedVersion
-    ) ++ scalaTest
+    ),
+    scalaTest
   )
   .settings(testServerSettings)
   .jvmPlatform(
@@ -361,7 +362,8 @@ lazy val testCompilation = (projectMatrix in file("testing/compile"))
     skip in publish := true,
     libraryDependencies ++= Seq(
       "org.scala-lang" % "scala-compiler" % scalaVersion.value % Test
-    ) ++ scalaTest
+    ),
+    scalaTest
   )
   .jvmPlatform(scalaVersions = List(scala2_13))
   .dependsOn(core % Test)
@@ -659,7 +661,8 @@ lazy val circe = (projectMatrix in file("json/circe"))
       "io.circe" %%% "circe-core" % circeVersion(_),
       "io.circe" %%% "circe-parser" % circeVersion(_),
       "io.circe" %%% "circe-generic" % circeVersion(_) % Test
-    ) ++ scalaTest
+    ),
+    scalaTest
   )
   .jvmPlatform(
     scalaVersions = List(scala2_11, scala2_12, scala2_13),
@@ -673,7 +676,8 @@ lazy val upickle = (projectMatrix in file("json/upickle"))
     name := "upickle",
     libraryDependencies ++= Seq(
       "com.lihaoyi" %%% "upickle" % "1.2.3"
-    ) ++ scalaTest
+    ),
+    scalaTest
   )
   .jvmPlatform(
     scalaVersions = List(scala2_12, scala2_13),
@@ -692,7 +696,8 @@ lazy val json4s = (projectMatrix in file("json/json4s"))
     libraryDependencies ++= Seq(
       "org.json4s" %% "json4s-core" % json4sVersion,
       "org.json4s" %% "json4s-native" % json4sVersion % Test
-    ) ++ scalaTest
+    ),
+    scalaTest
   )
   .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = intellijImportOnly213)
   .dependsOn(core, jsonCommon)
@@ -703,7 +708,8 @@ lazy val sprayJson = (projectMatrix in file("json/spray-json"))
     name := "spray-json",
     libraryDependencies ++= Seq(
       "io.spray" %% "spray-json" % "1.3.5"
-    ) ++ scalaTest
+    ),
+    scalaTest
   )
   .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = intellijImportOnly213)
   .dependsOn(core, jsonCommon)
@@ -713,7 +719,8 @@ lazy val playJson = (projectMatrix in file("json/play-json"))
     name := "play-json",
     libraryDependencies ++= dependenciesFor(scalaVersion.value)(
       "com.typesafe.play" %%% "play-json" % playJsonVersion(_)
-    ) ++ scalaTest
+    ),
+    scalaTest
   )
   .jvmPlatform(
     scalaVersions = List(scala2_11, scala2_12, scala2_13),
@@ -729,7 +736,8 @@ lazy val openTracingBackend = (projectMatrix in file("metrics/open-tracing-backe
     libraryDependencies ++= Seq(
       "io.opentracing" % "opentracing-api" % "0.33.0",
       "io.opentracing" % "opentracing-mock" % "0.33.0" % Test
-    ) ++ scalaTest
+    ),
+    scalaTest
   )
   .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = intellijImportOnly213)
   .dependsOn(core)
@@ -740,7 +748,8 @@ lazy val prometheusBackend = (projectMatrix in file("metrics/prometheus-backend"
     name := "prometheus-backend",
     libraryDependencies ++= Seq(
       "io.prometheus" % "simpleclient" % "0.9.0"
-    ) ++ scalaTest
+    ),
+    scalaTest
   )
   .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = intellijImportOnly213)
   .dependsOn(core)
@@ -764,7 +773,8 @@ lazy val scribeBackend = (projectMatrix in file("logging/scribe"))
     name := "scribe-backend",
     libraryDependencies ++= Seq(
       "com.outr" %%% "scribe" % "3.0.0"
-    ) ++ scalaTest
+    ),
+    scalaTest
   )
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13), settings = intellijImportOnly213)
   .dependsOn(core)
@@ -775,7 +785,8 @@ lazy val slf4jBackend = (projectMatrix in file("logging/slf4j"))
     name := "slf4j-backend",
     libraryDependencies ++= Seq(
       "org.slf4j" % "slf4j-api" % "1.7.30"
-    ) ++ scalaTest
+    ),
+    scalaTest
   )
   .jvmPlatform(scalaVersions = List(scala2_11, scala2_12, scala2_13), settings = intellijImportOnly213)
   .dependsOn(core)
