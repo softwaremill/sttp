@@ -198,7 +198,7 @@ val scalaNativeTestInterfaceVersion = "0.4.0-M2"
 val scalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion
 
 val zioVersion = "1.0.3"
-val zioInteropRsVersion = "1.0.3.5"
+val zioInteropRsVersion = "1.3.0.7-2"
 
 val sttpModelVersion = "1.2.0-RC5"
 val sttpSharedVersion = "1.0.0-RC7"
@@ -512,7 +512,7 @@ lazy val asyncHttpClientScalazBackend =
     .dependsOn(scalaz % compileAndTest)
 
 lazy val asyncHttpClientZioBackend =
-  asyncHttpClientBackendProject("zio", includeDotty = false)
+  asyncHttpClientBackendProject("zio", includeDotty = true)
     .settings(
       libraryDependencies ++= Seq(
         "dev.zio" %% "zio-interop-reactivestreams" % zioInteropRsVersion
@@ -620,7 +620,7 @@ lazy val httpClientFs2Backend =
     .dependsOn(fs2 % compileAndTest)
 
 lazy val httpClientZioBackend =
-  httpClientBackendProject("zio", includeDotty = false)
+  httpClientBackendProject("zio", includeDotty = true)
     .settings(
       libraryDependencies ++=
         Seq(
