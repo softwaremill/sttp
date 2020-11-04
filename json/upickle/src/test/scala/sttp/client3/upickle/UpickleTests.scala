@@ -1,9 +1,18 @@
 package sttp.client3.upickle
 
-import _root_.upickle.default._
+import upickle.default._
 import org.scalatest._
 import sttp.client3.internal._
-import sttp.client3._
+import sttp.client3.{
+  basicRequest,
+  DeserializationException,
+  MappedResponseAs,
+  RequestT,
+  ResponseAs,
+  ResponseAsByteArray,
+  ResponseMetadata,
+  StringBody
+}
 import sttp.model._
 
 import org.scalatest.flatspec.AnyFlatSpec
