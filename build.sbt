@@ -229,7 +229,7 @@ lazy val allAggregates = coreProjectAggregates ++
   testCompilation.projectRefs ++
   cats.projectRefs ++
   fs2.projectRefs ++
-  monix.projectRefs ++
+//  monix.projectRefs ++
   scalaz.projectRefs ++
   zio.projectRefs ++
   // might fail due to // https://github.com/akka/akka-http/issues/1930
@@ -238,12 +238,12 @@ lazy val allAggregates = coreProjectAggregates ++
   asyncHttpClientFutureBackend.projectRefs ++
   asyncHttpClientScalazBackend.projectRefs ++
   asyncHttpClientZioBackend.projectRefs ++
-  asyncHttpClientMonixBackend.projectRefs ++
+//  asyncHttpClientMonixBackend.projectRefs ++
   asyncHttpClientCatsBackend.projectRefs ++
   asyncHttpClientFs2Backend.projectRefs ++
   okhttpBackend.projectRefs ++
-  okhttpMonixBackend.projectRefs ++
-  http4sBackend.projectRefs ++
+//  okhttpMonixBackend.projectRefs ++
+//  http4sBackend.projectRefs ++
   jsonCommon.projectRefs ++
   circe.projectRefs ++
   json4s.projectRefs ++
@@ -253,7 +253,7 @@ lazy val allAggregates = coreProjectAggregates ++
   prometheusBackend.projectRefs ++
   zioTelemetryOpenTracingBackend.projectRefs ++
   httpClientBackend.projectRefs ++
-  httpClientMonixBackend.projectRefs ++
+//  httpClientMonixBackend.projectRefs ++
   httpClientFs2Backend.projectRefs ++
   httpClientZioBackend.projectRefs ++
   finagleBackend.projectRefs ++
@@ -378,7 +378,7 @@ lazy val cats = (projectMatrix in file("implementations/cats"))
     scalaVersions = List(scala2_12, scala2_13),
     settings = commonJvmSettings ++ intellijImportOnly213
   )
-  .jsPlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonJsSettings ++ intellijSkipImport)
+//  .jsPlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonJsSettings ++ intellijSkipImport)
 
 lazy val fs2 = (projectMatrix in file("implementations/fs2"))
   .settings(
@@ -394,7 +394,7 @@ lazy val fs2 = (projectMatrix in file("implementations/fs2"))
     scalaVersions = List(scala2_12, scala2_13),
     settings = commonJvmSettings ++ intellijImportOnly213
   )
-  .jsPlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonJsSettings ++ intellijSkipImport)
+//  .jsPlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonJsSettings ++ intellijSkipImport)
 
 lazy val monix = (projectMatrix in file("implementations/monix"))
   .settings(
@@ -560,17 +560,17 @@ lazy val okhttpMonixBackend =
     .dependsOn(monix % compileAndTest)
 
 //-- http4s
-lazy val http4sBackend = (projectMatrix in file("http4s-backend"))
-  .settings(commonJvmSettings)
-  .settings(testServerSettings)
-  .settings(
-    name := "http4s-backend",
-    libraryDependencies ++= Seq(
-      "org.http4s" %% "http4s-blaze-client" % "0.21.8"
-    )
-  )
-  .jvmPlatform(scalaVersions = List(scala2_12, scala2_13), settings = intellijImportOnly213)
-  .dependsOn(cats % compileAndTest, core % compileAndTest, fs2 % compileAndTest)
+//lazy val http4sBackend = (projectMatrix in file("http4s-backend"))
+//  .settings(commonJvmSettings)
+//  .settings(testServerSettings)
+//  .settings(
+//    name := "http4s-backend",
+//    libraryDependencies ++= Seq(
+//      "org.http4s" %% "http4s-blaze-client" % "0.21.8"
+//    )
+//  )
+//  .jvmPlatform(scalaVersions = List(scala2_12, scala2_13), settings = intellijImportOnly213)
+//  .dependsOn(cats % compileAndTest, core % compileAndTest, fs2 % compileAndTest)
 
 //-- httpclient-java11
 lazy val httpClientBackend = (projectMatrix in file("httpclient-backend"))
@@ -785,7 +785,7 @@ lazy val examples = (projectMatrix in file("examples"))
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13), settings = intellijImportOnly213)
   .dependsOn(
     core,
-    asyncHttpClientMonixBackend,
+//    asyncHttpClientMonixBackend,
     asyncHttpClientZioBackend,
     akkaHttpBackend,
     asyncHttpClientFs2Backend,
@@ -846,7 +846,7 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     okhttpMonixBackend,
     httpClientBackend,
     httpClientFs2Backend,
-    http4sBackend,
+//    http4sBackend,
     httpClientMonixBackend,
     httpClientZioBackend,
     openTracingBackend,
