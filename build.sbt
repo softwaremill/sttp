@@ -326,14 +326,13 @@ lazy val core = (projectMatrix in file("core"))
       "com.softwaremill.sttp.model" %%% "core" % sttpModelVersion,
       "com.softwaremill.sttp.shared" %%% "core" % sttpSharedVersion,
       "com.softwaremill.sttp.shared" %%% "ws" % sttpSharedVersion
-    )
+    ) ++ scalaTest
   )
   .settings(testServerSettings)
   .jvmPlatform(
     scalaVersions = List(scala2_11, scala2_12, scala2_13, scala3),
     settings = {
       commonJvmSettings ++ intellijImportOnly213 ++ List(
-        libraryDependencies ++= scalaTest,
         publishArtifact in Test := true // allow implementations outside of this repo
       )
     }
@@ -342,7 +341,6 @@ lazy val core = (projectMatrix in file("core"))
     scalaVersions = List(scala2_11, scala2_12, scala2_13),
     settings = {
       commonJsSettings ++ commonJsBackendSettings ++ browserTestSettings ++ intellijSkipImport ++ List(
-        libraryDependencies ++= scalaTest,
         publishArtifact in Test := true
       )
     }
@@ -351,7 +349,6 @@ lazy val core = (projectMatrix in file("core"))
     scalaVersions = List(scala2_11),
     settings = {
       commonNativeSettings ++ intellijSkipImport ++ List(
-        libraryDependencies ++= scalaTest,
         publishArtifact in Test := true
       )
     }
