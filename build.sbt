@@ -215,7 +215,7 @@ val compileAndTest = "compile->compile;test->test"
 def dependenciesFor(version: String)(deps: (Option[(Long, Long)] => ModuleID)*): Seq[ModuleID] =
   deps.map(_.apply(CrossVersion.partialVersion(version)))
 
-lazy val projectAggregatesWithNative: Seq[ProjectReference] = if (sys.env.isDefinedAt("STTP_NATIVE")) {
+lazy val projectsWithOptionalNative: Seq[ProjectReference] = if (sys.env.isDefinedAt("STTP_NATIVE")) {
   println("[info] STTP_NATIVE defined, including sttp-native in the aggregate projects")
   core.projectRefs ++ jsonCommon.projectRefs ++ upickle.projectRefs
 } else {
@@ -241,7 +241,7 @@ lazy val projectAggregatesWithNative: Seq[ProjectReference] = if (sys.env.isDefi
   )
 }
 
-lazy val allAggregates = projectAggregatesWithNative ++
+lazy val allAggregates = projectsWithOptionalNative ++
   testCompilation.projectRefs ++
   cats.projectRefs ++
   fs2.projectRefs ++
