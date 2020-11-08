@@ -35,7 +35,7 @@ import sttp.client3.{
   SttpClientException,
   WebSocketResponseAs
 }
-import sttp.model.{Header, Method, Part, StatusCode, Uri}
+import sttp.model.{Header, HeaderNames, Method, Part, StatusCode, Uri}
 import sttp.monad.MonadError
 import sttp.monad.syntax._
 
@@ -138,7 +138,16 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
       method: FMethod,
       content: Option[Buf]
   ): http.Request = {
-    RequestBuilder.create().url(url).addHeaders(headers).build(method, content)
+    val defaultHostHeader = RequestBuilder.create().url(url)
+    // RequestBuilder#url() will set the `Host` Header to the url's hostname. That is not necessarily correct,
+    // when the headers parameter overrides that setting, clear the default.
+    val updatedHostHeader =
+      if (headers.contains(HeaderNames.Host))
+        defaultHostHeader.setHeader(HeaderNames.Host, Seq.empty)
+      else
+        defaultHostHeader
+
+    updatedHostHeader.addHeaders(headers).build(method, content)
   }
 
   private lazy val bodyFromResponseAs =
@@ -241,8 +250,7 @@ object FinagleBackend {
     new FollowRedirectsBackend[TFuture, Any](new FinagleBackend(Some(client)))
   }
 
-  /**
-    * Create a stub backend for testing, which uses the [[TFuture]] response wrapper, and doesn't support streaming.
+  /** Create a stub backend for testing, which uses the [[TFuture]] response wrapper, and doesn't support streaming.
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
