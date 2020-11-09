@@ -43,6 +43,7 @@ trait HttpTest[F[_]]
   protected def supportsCustomMultipartContentType = true
   protected def supportsCustomContentEncoding = false
   protected def throwsExceptionOnUnsupportedEncoding = true
+  protected def supportsHostHeaderOverride = true
 
   "parse response" - {
     "as string" in {
@@ -244,6 +245,21 @@ trait HttpTest[F[_]]
       backend.responseMonad.flatMap(sent)(_ => sent).toFuture().map(_.body).map { body =>
         body should include("x-foo->bar")
         body.split(",").toList.count(_ == "x-foo->bar") shouldBe 1
+      }
+    }
+
+    if (supportsHostHeaderOverride) {
+      "should not send the URL's hostname as the host header" in {
+        basicRequest
+          .get(uri"$endpoint/echo/headers")
+          .header("Host", "test.com")
+          .response(asStringAlways)
+          .send(backend)
+          .toFuture()
+          .map { response =>
+            response.body should include("Host->test.com")
+            response.body should not include "Host->localhost"
+          }
       }
     }
   }

@@ -10,6 +10,8 @@ class HttpClientZioHttpTest extends HttpTest[Task] with ZioTestBase {
     runtime.unsafeRun(HttpClientZioBackend())
   override implicit val convertToFuture: ConvertToFuture[Task] = convertZioTaskToFuture
 
+  override def supportsHostHeaderOverride = false
+
   "compile" - {
     "SttpClient usage" in {
       val request = basicRequest.post(uri"http://example.com").body("hello")
