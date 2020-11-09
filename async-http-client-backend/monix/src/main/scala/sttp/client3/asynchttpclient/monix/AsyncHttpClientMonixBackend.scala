@@ -43,8 +43,8 @@ class AsyncHttpClientMonixBackend private (
       override val streams: MonixStreams = MonixStreams
       override implicit val monad: MonadAsyncError[Task] = TaskMonadAsyncError
 
-      override def publisherToStream(p: Publisher[ByteBuffer]): Observable[ByteBuffer] =
-        Observable.fromReactivePublisher(p)
+      override def publisherToStream(p: Publisher[ByteBuffer]): Observable[Array[Byte]] =
+        Observable.fromReactivePublisher(p).map(_.safeRead())
 
       override def publisherToBytes(p: Publisher[ByteBuffer]): Task[Array[Byte]] = {
         val bytes = Observable
@@ -77,7 +77,7 @@ class AsyncHttpClientMonixBackend private (
   override protected val bodyToAHC: BodyToAHC[Task, MonixStreams] = new BodyToAHC[Task, MonixStreams] {
     override val streams: MonixStreams = MonixStreams
 
-    override protected def streamToPublisher(s: Observable[ByteBuffer]): Publisher[ByteBuf] =
+    override protected def streamToPublisher(s: Observable[Array[Byte]]): Publisher[ByteBuf] =
       s.map(Unpooled.wrappedBuffer).toReactivePublisher
   }
 
@@ -98,8 +98,7 @@ object AsyncHttpClientMonixBackend {
       new AsyncHttpClientMonixBackend(asyncHttpClient, closeClient, customizeRequest, webSocketBufferCapacity)
     )
 
-  /**
-    * @param s The scheduler used for streaming request bodies. Defaults to the
+  /** @param s The scheduler used for streaming request bodies. Defaults to the
     *          global scheduler.
     */
   def apply(
@@ -118,8 +117,7 @@ object AsyncHttpClientMonixBackend {
       )
     )
 
-  /**
-    * Makes sure the backend is closed after usage.
+  /** Makes sure the backend is closed after usage.
     */
   def resource(
       options: SttpBackendOptions = SttpBackendOptions.Default,
@@ -130,8 +128,7 @@ object AsyncHttpClientMonixBackend {
   ): Resource[Task, SttpBackend[Task, MonixStreams with WebSockets]] =
     Resource.make(apply(options, customizeRequest, webSocketBufferCapacity))(_.close())
 
-  /**
-    * @param s The scheduler used for streaming request bodies. Defaults to the
+  /** @param s The scheduler used for streaming request bodies. Defaults to the
     *          global scheduler.
     */
   def usingConfig(
@@ -150,8 +147,7 @@ object AsyncHttpClientMonixBackend {
       )
     )
 
-  /**
-    * Makes sure the backend is closed after usage.
+  /** Makes sure the backend is closed after usage.
     */
   def resourceUsingConfig(
       cfg: AsyncHttpClientConfig,
@@ -162,8 +158,7 @@ object AsyncHttpClientMonixBackend {
   ): Resource[Task, SttpBackend[Task, MonixStreams with WebSockets]] =
     Resource.make(usingConfig(cfg, customizeRequest, webSocketBufferCapacity))(_.close())
 
-  /**
-    * @param updateConfig A function which updates the default configuration (created basing on `options`).
+  /** @param updateConfig A function which updates the default configuration (created basing on `options`).
     * @param s The scheduler used for streaming request bodies. Defaults to the
     *          global scheduler.
     */
@@ -184,8 +179,7 @@ object AsyncHttpClientMonixBackend {
       )
     )
 
-  /**
-    * Makes sure the backend is closed after usage.
+  /** Makes sure the backend is closed after usage.
     * @param updateConfig A function which updates the default configuration (created basing on `options`).
     * @param s The scheduler used for streaming request bodies. Defaults to the
     *          global scheduler.
@@ -200,8 +194,7 @@ object AsyncHttpClientMonixBackend {
   ): Resource[Task, SttpBackend[Task, MonixStreams with WebSockets]] =
     Resource.make(usingConfigBuilder(updateConfig, options, customizeRequest, webSocketBufferCapacity))(_.close())
 
-  /**
-    * @param s The scheduler used for streaming request bodies. Defaults to the
+  /** @param s The scheduler used for streaming request bodies. Defaults to the
     *          global scheduler.
     */
   def usingClient(
@@ -211,8 +204,7 @@ object AsyncHttpClientMonixBackend {
   )(implicit s: Scheduler = Scheduler.global): SttpBackend[Task, MonixStreams with WebSockets] =
     AsyncHttpClientMonixBackend(client, closeClient = false, customizeRequest, webSocketBufferCapacity)
 
-  /**
-    * Create a stub backend for testing, which uses the [[Task]] response wrapper, and supports `Observable[ByteBuffer]`
+  /** Create a stub backend for testing, which uses the [[Task]] response wrapper, and supports `Observable[ByteBuffer]`
     * streaming.
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
