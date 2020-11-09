@@ -16,8 +16,7 @@ import sttp.ws.testing.WebSocketStub
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
-/**
-  * A stub backend to use in tests.
+/** A stub backend to use in tests.
   *
   * The stub can be configured to respond with a given response if the request matches a predicate (see the
   * [[whenRequestMatches()]] method).
@@ -42,8 +41,7 @@ class SttpBackendStub[F[_], +P](
     fallback: Option[SttpBackend[F, P]]
 ) extends SttpBackend[F, P] {
 
-  /**
-    * Specify how the stub backend should respond to requests matching the
+  /** Specify how the stub backend should respond to requests matching the
     * given predicate.
     *
     * Note that the stubs are immutable, and each new
@@ -52,16 +50,14 @@ class SttpBackendStub[F[_], +P](
   def whenRequestMatches(p: Request[_, _] => Boolean): WhenRequest =
     new WhenRequest(p)
 
-  /**
-    * Specify how the stub backend should respond to any request (catch-all).
+  /** Specify how the stub backend should respond to any request (catch-all).
     *
     * Note that the stubs are immutable, and each new
     * specification that is added yields a new stub instance.
     */
   def whenAnyRequest: WhenRequest = whenRequestMatches(_ => true)
 
-  /**
-    * Specify how the stub backend should respond to requests using the
+  /** Specify how the stub backend should respond to requests using the
     * given partial function.
     *
     * Note that the stubs are immutable, and each new
@@ -116,15 +112,13 @@ class SttpBackendStub[F[_], +P](
       new SttpBackendStub[F, P](monad, matchers.orElse(m), fallback)
     }
 
-    /**
-      * Not thread-safe!
+    /** Not thread-safe!
       */
     def thenRespondCyclic[T](bodies: T*): SttpBackendStub[F, P] = {
       thenRespondCyclicResponses(bodies.map(body => Response[T](body, StatusCode.Ok, "OK")): _*)
     }
 
-    /**
-      * Not thread-safe!
+    /** Not thread-safe!
       */
     def thenRespondCyclicResponses[T](responses: Response[T]*): SttpBackendStub[F, P] = {
       val iterator = Iterator.continually(responses).flatten
@@ -147,8 +141,7 @@ class SttpBackendStub[F[_], +P](
 
 object SttpBackendStub {
 
-  /**
-    * Create a stub of a synchronous backend (which doesn't use an effect type), without streaming.
+  /** Create a stub of a synchronous backend (which doesn't use an effect type), without streaming.
     */
   def synchronous: SttpBackendStub[Identity, WebSockets] =
     new SttpBackendStub(
@@ -157,8 +150,7 @@ object SttpBackendStub {
       None
     )
 
-  /**
-    * Create a stub of an asynchronous backend (which uses the Scala's built-in [[Future]] as the effect type),
+  /** Create a stub of an asynchronous backend (which uses the Scala's built-in [[Future]] as the effect type),
     * without streaming.
     */
   def asynchronousFuture: SttpBackendStub[Future, WebSockets] = {
@@ -170,8 +162,7 @@ object SttpBackendStub {
     )
   }
 
-  /**
-    * Create a stub backend using the given response monad (which determines the effect type for responses),
+  /** Create a stub backend using the given response monad (which determines the effect type for responses),
     * and any capabilities (such as streaming or web socket support).
     */
   def apply[F[_], P](responseMonad: MonadError[F]): SttpBackendStub[F, P] =
@@ -181,8 +172,7 @@ object SttpBackendStub {
       None
     )
 
-  /**
-    * Create a stub backend which delegates send requests to the given fallback backend, if the request doesn't match
+  /** Create a stub backend which delegates send requests to the given fallback backend, if the request doesn't match
     * any of the specified predicates.
     */
   def withFallback[F[_], P0, P1 >: P0](

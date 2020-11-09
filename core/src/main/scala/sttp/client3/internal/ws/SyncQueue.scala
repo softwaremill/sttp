@@ -12,8 +12,7 @@ class SyncQueue[T](capacity: Option[Int]) extends SimpleQueue[Identity, T] {
     case None        => new LinkedBlockingQueue[T]()
   }
 
-  /**
-    * Eagerly adds the given item to the queue.
+  /** Eagerly adds the given item to the queue.
     */
   override def offer(t: T): Unit = {
     if (!queue.offer(t)) {
@@ -21,8 +20,7 @@ class SyncQueue[T](capacity: Option[Int]) extends SimpleQueue[Identity, T] {
     }
   }
 
-  /**
-    * Takes an element from the queue or suspends, until one is available. May be eager or lazy, depending on `F`.
+  /** Takes an element from the queue or suspends, until one is available. May be eager or lazy, depending on `F`.
     */
   override def poll: Identity[T] = queue.take()
 }

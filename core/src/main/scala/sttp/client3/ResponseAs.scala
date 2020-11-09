@@ -9,8 +9,7 @@ import sttp.ws.{WebSocket, WebSocketFrame}
 import scala.collection.immutable.Seq
 import scala.util.{Failure, Success, Try}
 
-/**
-  * Describes how response body should be handled.
+/** Describes how response body should be handled.
   *
   * Apart from the basic cases (ignoring, reading as a byte array or file), response body descriptions can be
   * mapped over, to support custom types. The mapping can take into account the [[ResponseMetadata]], that is the
@@ -102,8 +101,7 @@ object ResponseAs {
     def mapLeft[L2](f: A => L2): ResponseAs[Either[L2, B], R] = ra.map(_.left.map(f))
     def mapRight[R2](f: B => R2): ResponseAs[Either[A, R2], R] = ra.map(_.right.map(f))
 
-    /**
-      * If the type to which the response body should be deserialized is an `Either[A, B]`:
+    /** If the type to which the response body should be deserialized is an `Either[A, B]`:
       * - in case of `A`, throws as an exception / returns a failed effect (wrapped with an [[HttpError]]
       *   if `A` is not yet an exception)
       * - in case of `B`, returns the value directly
@@ -122,8 +120,7 @@ object ResponseAs {
       ra: ResponseAs[Either[ResponseException[HE, DE], B], R]
   ) {
 
-    /**
-      * If the type to which the response body should be deserialized is an `Either[ResponseException[HE, DE], B]`,
+    /** If the type to which the response body should be deserialized is an `Either[ResponseException[HE, DE], B]`,
       * either throws the [[DeserializationException]], returns the deserialized body from the [[HttpError]], or
       * the deserialized successful body `B`.
       */
@@ -147,8 +144,7 @@ object ResponseAs {
       )
   }
 
-  /**
-    * Returns a function, which maps `Left` values to [[HttpError]]s, and attempts to deserialize `Right` values using
+  /** Returns a function, which maps `Left` values to [[HttpError]]s, and attempts to deserialize `Right` values using
     * the given function, catching any exceptions and representing them as [[DeserializationException]]s.
     */
   def deserializeRightCatchingExceptions[T](
@@ -158,8 +154,7 @@ object ResponseAs {
     case (Right(s), _)   => deserializeCatchingExceptions(doDeserialize)(s)
   }
 
-  /**
-    * Returns a function, which attempts to deserialize `Right` values using the given function, catching any
+  /** Returns a function, which attempts to deserialize `Right` values using the given function, catching any
     * exceptions and representing them as [[DeserializationException]]s.
     */
   def deserializeCatchingExceptions[T](
@@ -173,8 +168,7 @@ object ResponseAs {
       }
     )
 
-  /**
-    * Returns a function, which maps `Left` values to [[HttpError]]s, and attempts to deserialize `Right` values using
+  /** Returns a function, which maps `Left` values to [[HttpError]]s, and attempts to deserialize `Right` values using
     * the given function.
     */
   def deserializeRightWithError[E: ShowError, T](
@@ -184,8 +178,7 @@ object ResponseAs {
     case (Right(s), _)   => deserializeWithError(doDeserialize)(implicitly[ShowError[E]])(s)
   }
 
-  /**
-    * Returns a function, which keeps `Left` unchanged, and attempts to deserialize `Right` values using
+  /** Returns a function, which keeps `Left` unchanged, and attempts to deserialize `Right` values using
     * the given function. If deserialization fails, an exception is thrown
     */
   def deserializeRightOrThrow[E: ShowError, T](
@@ -195,8 +188,7 @@ object ResponseAs {
     case Right(s) => Right(deserializeOrThrow(doDeserialize)(implicitly[ShowError[E]])(s))
   }
 
-  /**
-    * Converts a deserialization function, which returns errors of type `E`, into a function where errors are wrapped
+  /** Converts a deserialization function, which returns errors of type `E`, into a function where errors are wrapped
     * using [[DeserializationException]].
     */
   def deserializeWithError[E: ShowError, T](
@@ -208,8 +200,7 @@ object ResponseAs {
         case Right(b) => Right(b)
       }
 
-  /**
-    * Converts a deserialization function, which returns errors of type `E`, into a function where errors are thrown
+  /** Converts a deserialization function, which returns errors of type `E`, into a function where errors are thrown
     * as exceptions, and results are returned unwrapped.
     */
   def deserializeOrThrow[E: ShowError, T](doDeserialize: String => Either[E, T]): String => T =

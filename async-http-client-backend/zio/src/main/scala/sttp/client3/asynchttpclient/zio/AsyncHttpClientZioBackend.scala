@@ -178,8 +178,7 @@ object AsyncHttpClientZioBackend {
   ): Layer[Throwable, SttpClient] =
     ZLayer.fromManaged(managedUsingConfig(cfg, customizeRequest, webSocketBufferCapacity))
 
-  /**
-    * @param updateConfig A function which updates the default configuration (created basing on `options`).
+  /** @param updateConfig A function which updates the default configuration (created basing on `options`).
     */
   def usingConfigBuilder(
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
@@ -201,8 +200,7 @@ object AsyncHttpClientZioBackend {
         )
       )
 
-  /**
-    * @param updateConfig A function which updates the default configuration (created basing on `options`).
+  /** @param updateConfig A function which updates the default configuration (created basing on `options`).
     */
   def managedUsingConfigBuilder(
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
@@ -214,8 +212,7 @@ object AsyncHttpClientZioBackend {
       _.close().ignore
     )
 
-  /**
-    * @param updateConfig A function which updates the default configuration (created basing on `options`).
+  /** @param updateConfig A function which updates the default configuration (created basing on `options`).
     */
   def layerUsingConfigBuilder(
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
@@ -244,8 +241,7 @@ object AsyncHttpClientZioBackend {
       _.close().ignore
     )
 
-  /**
-    * Create a stub backend for testing, which uses the [[Task]] response wrapper, and supports
+  /** Create a stub backend for testing, which uses the [[Task]] response wrapper, and supports
     * `Stream[Throwable, ByteBuffer]` streaming.
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.

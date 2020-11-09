@@ -49,8 +49,7 @@ package object internal {
     buf
   }
 
-  /**
-    * Removes quotes surrounding the charset.
+  /** Removes quotes surrounding the charset.
     */
   private[client3] def sanitizeCharset(charset: String): String = {
     val c2 = charset.trim()

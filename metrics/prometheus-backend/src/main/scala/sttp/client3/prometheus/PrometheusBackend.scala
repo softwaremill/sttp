@@ -52,8 +52,7 @@ object PrometheusBackend {
     )
   }
 
-  /**
-    * Clear cached collectors (gauges and histograms) both from the given collector registry, and from the backend.
+  /** Clear cached collectors (gauges and histograms) both from the given collector registry, and from the backend.
     */
   def clear(collectorRegistry: CollectorRegistry): Unit = {
     collectorRegistry.clear()
@@ -189,14 +188,12 @@ trait BaseCollectorConfig {
   def labelValues: Seq[String] = labels.map(_._2)
 }
 
-/**
-  * Represents the name of a collector, together with label names and values.
+/** Represents the name of a collector, together with label names and values.
   * The same labels must be always returned, and in the same order.
   */
 case class CollectorConfig(collectorName: String, labels: List[(String, String)] = Nil) extends BaseCollectorConfig
 
-/**
-  * Represents the name of a collector with configurable histogram buckets.
+/** Represents the name of a collector with configurable histogram buckets.
   */
 case class HistogramCollectorConfig(
     collectorName: String,

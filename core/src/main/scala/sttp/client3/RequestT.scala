@@ -13,8 +13,7 @@ import sttp.model._
 import scala.collection.immutable.Seq
 import scala.concurrent.duration.Duration
 
-/**
-  * Describes a HTTP request, along with a description of how the response body should be handled.
+/** Describes a HTTP request, along with a description of how the response body should be handled.
   *
   * The request can be sent using a [[SttpBackend]], which provides a superset of the required capabilities.
   *
@@ -77,8 +76,7 @@ case class RequestT[U[_], T, -R](
   def contentLength(l: Long): RequestT[U, T, R] =
     header(HeaderNames.ContentLength, l.toString, replaceExisting = true)
 
-  /**
-    * Adds the given header to the end of the headers sequence.
+  /** Adds the given header to the end of the headers sequence.
     * @param replaceExisting If there's already a header with the same name, should it be dropped?
     */
   def header(h: Header, replaceExisting: Boolean = false): RequestT[U, T, R] = {
@@ -86,8 +84,7 @@ case class RequestT[U[_], T, -R](
     this.copy(headers = current :+ h)
   }
 
-  /**
-    * Adds the given header to the end of the headers sequence.
+  /** Adds the given header to the end of the headers sequence.
     * @param replaceExisting If there's already a header with the same name, should it be dropped?
     */
   def header(k: String, v: String, replaceExisting: Boolean): RequestT[U, T, R] =
@@ -116,8 +113,7 @@ case class RequestT[U[_], T, -R](
     )
   }
 
-  /**
-    * Uses the `utf-8` encoding.
+  /** Uses the `utf-8` encoding.
     *
     * If content type is not yet specified, will be set to `text/plain`
     * with `utf-8` encoding.
@@ -127,8 +123,7 @@ case class RequestT[U[_], T, -R](
     */
   def body(b: String): RequestT[U, T, R] = body(b, Utf8)
 
-  /**
-    * If content type is not yet specified, will be set to `text/plain`
+  /** If content type is not yet specified, will be set to `text/plain`
     * with the given encoding.
     *
     * If content length is not yet specified, will be set to the number of
@@ -138,8 +133,7 @@ case class RequestT[U[_], T, -R](
     withBody(StringBody(b, encoding))
       .setContentLengthIfMissing(b.getBytes(encoding).length.toLong)
 
-  /**
-    * If content type is not yet specified, will be set to
+  /** If content type is not yet specified, will be set to
     * `application/octet-stream`.
     *
     * If content length is not yet specified, will be set to the length
@@ -149,22 +143,19 @@ case class RequestT[U[_], T, -R](
     withBody(ByteArrayBody(b))
       .setContentLengthIfMissing(b.length.toLong)
 
-  /**
-    * If content type is not yet specified, will be set to
+  /** If content type is not yet specified, will be set to
     * `application/octet-stream`.
     */
   def body(b: ByteBuffer): RequestT[U, T, R] =
     withBody(ByteBufferBody(b))
 
-  /**
-    * If content type is not yet specified, will be set to
+  /** If content type is not yet specified, will be set to
     * `application/octet-stream`.
     */
   def body(b: InputStream): RequestT[U, T, R] =
     withBody(InputStreamBody(b))
 
-  /**
-    * If content type is not yet specified, will be set to
+  /** If content type is not yet specified, will be set to
     * `application/octet-stream`.
     *
     * If content length is not yet specified, will be set to the length
@@ -173,8 +164,7 @@ case class RequestT[U[_], T, -R](
   private[client3] def body(f: SttpFile): RequestT[U, T, R] =
     withBody(FileBody(f)).setContentLengthIfMissing(f.size)
 
-  /**
-    * Encodes the given parameters as form data using `utf-8`.
+  /** Encodes the given parameters as form data using `utf-8`.
     * If content type is not yet specified, will be set to
     * `application/x-www-form-urlencoded`.
     *
@@ -184,8 +174,7 @@ case class RequestT[U[_], T, -R](
   def body(fs: Map[String, String]): RequestT[U, T, R] =
     formDataBody(fs.toList, Utf8)
 
-  /**
-    * Encodes the given parameters as form data.
+  /** Encodes the given parameters as form data.
     * If content type is not yet specified, will be set to
     * `application/x-www-form-urlencoded`.
     *
@@ -195,8 +184,7 @@ case class RequestT[U[_], T, -R](
   def body(fs: Map[String, String], encoding: String): RequestT[U, T, R] =
     formDataBody(fs.toList, encoding)
 
-  /**
-    * Encodes the given parameters as form data using `utf-8`.
+  /** Encodes the given parameters as form data using `utf-8`.
     * If content type is not yet specified, will be set to
     * `application/x-www-form-urlencoded`.
     *
@@ -206,8 +194,7 @@ case class RequestT[U[_], T, -R](
   def body(fs: (String, String)*): RequestT[U, T, R] =
     formDataBody(fs.toList, Utf8)
 
-  /**
-    * Encodes the given parameters as form data.
+  /** Encodes the given parameters as form data.
     * If content type is not yet specified, will be set to
     * `application/x-www-form-urlencoded`.
     *
@@ -229,8 +216,7 @@ case class RequestT[U[_], T, -R](
   def readTimeout(t: Duration): RequestT[U, T, R] =
     this.copy(options = options.copy(readTimeout = t))
 
-  /**
-    * Specifies the target type to which the response body should be read.
+  /** Specifies the target type to which the response body should be read.
     * Note that this replaces any previous specifications, which also includes
     * any previous `mapResponse` invocations.
     */
@@ -256,8 +242,7 @@ case class RequestT[U[_], T, -R](
 
   def tag(k: String): Option[Any] = tags.get(k)
 
-  /**
-    * When a POST or PUT request is redirected, should the redirect be a POST/PUT as well (with the original body),
+  /** When a POST or PUT request is redirected, should the redirect be a POST/PUT as well (with the original body),
     * or should the request be converted to a GET without a body.
     *
     * Note that this only affects 301 and 302 redirects.
@@ -268,8 +253,7 @@ case class RequestT[U[_], T, -R](
   def redirectToGet(r: Boolean): RequestT[U, T, R] =
     this.copy(options = options.copy(redirectToGet = r))
 
-  /**
-    * Sends the request, using the backend from the implicit scope. Only requests for which the method & URI are
+  /** Sends the request, using the backend from the implicit scope. Only requests for which the method & URI are
     * specified can be sent.
     *
     * The required capabilities must be a subset of the capabilities provided by the backend.
@@ -295,8 +279,7 @@ case class RequestT[U[_], T, -R](
       pEffectFIsR
     ) // the order of implicits must be different so that the signatures are different
 
-  /**
-    * Sends the request, using the given backend. Only requests for which the method & URI are specified can be sent.
+  /** Sends the request, using the given backend. Only requests for which the method & URI are specified can be sent.
     *
     * The required capabilities must be a subset of the capabilities provided by the backend.
     *

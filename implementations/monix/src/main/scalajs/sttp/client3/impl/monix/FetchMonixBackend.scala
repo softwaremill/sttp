@@ -12,8 +12,7 @@ import org.scalajs.dom.experimental.{Request => FetchRequest}
 import sttp.client3.testing.SttpBackendStub
 import sttp.capabilities.monix.MonixStreams
 
-/**
-  * Uses the `ReadableStream` interface from the Streams API.
+/** Uses the `ReadableStream` interface from the Streams API.
   *
   * Streams are behind a flag on Firefox.
   *
@@ -74,8 +73,7 @@ object FetchMonixBackend {
   ): SttpBackend[Task, MonixStreams] =
     new FetchMonixBackend(fetchOptions, customizeRequest)
 
-  /**
-    * Create a stub backend for testing, which uses the [[Task]] response wrapper, and supports `Observable[ByteBuffer]`
+  /** Create a stub backend for testing, which uses the [[Task]] response wrapper, and supports `Observable[ByteBuffer]`
     * streaming.
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.

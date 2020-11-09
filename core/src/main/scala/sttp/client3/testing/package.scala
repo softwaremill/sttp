@@ -5,8 +5,7 @@ import sttp.client3.internal.toByteArray
 package object testing {
   implicit class RichTestingRequest[T](r: Request[T, _]) {
 
-    /**
-      * Force the request body into a string.
+    /** Force the request body into a string.
       * If the body is a file, the file contents will be returned.
       * If the body is an input stream, the stream will be consumed.
       * If the body is a stream / multipart, an exception will be thrown.

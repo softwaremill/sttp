@@ -23,8 +23,7 @@ trait SttpExtensions {
     ResponseAsFile(SttpFile.fromPath(path)).map(_.toPath)
   }
 
-  /**
-    * Content type will be set to `application/octet-stream`, can be overridden
+  /** Content type will be set to `application/octet-stream`, can be overridden
     * later using the `contentType` method.
     *
     * File name will be set to the name of the file.
@@ -32,8 +31,7 @@ trait SttpExtensions {
   def multipartFile(name: String, data: File): Part[RequestBody[Any]] =
     multipartSttpFile(name, SttpFile.fromFile(data))
 
-  /**
-    * Content type will be set to `application/octet-stream`, can be overridden
+  /** Content type will be set to `application/octet-stream`, can be overridden
     * later using the `contentType` method.
     *
     * File name will be set to the name of the file.

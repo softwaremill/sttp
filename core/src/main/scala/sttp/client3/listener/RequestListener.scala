@@ -3,8 +3,7 @@ package sttp.client3.listener
 import sttp.monad.MonadError
 import sttp.client3.{Identity, Request, Response}
 
-/**
-  * A listener to be used by the [[ListenerBackend]] to get notified on request lifecycle events.
+/** A listener to be used by the [[ListenerBackend]] to get notified on request lifecycle events.
   *
   * @tparam L Type of a value ("tag") that is associated with a request, and passed the response (or exception)
   *           is available. Use `Unit` if no special value should be associated with a request.

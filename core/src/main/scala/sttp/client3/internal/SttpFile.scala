@@ -1,7 +1,6 @@
 package sttp.client3.internal
 
-/**
-  * A platform agnostic file abstraction.
+/** A platform agnostic file abstraction.
   *
   * Different platforms have different file representations. Each platform
   * should provide conversions in the `FileCompanionExtensions` trait to convert

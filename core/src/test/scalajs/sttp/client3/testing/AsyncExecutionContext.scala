@@ -4,8 +4,7 @@ import org.scalatest.AsyncTestSuite
 
 import scala.concurrent.ExecutionContext
 
-/**
-  * When running JS tests, the default ScalaTest async execution context uses
+/** When running JS tests, the default ScalaTest async execution context uses
   * `scala.scalajs.concurrent.JSExecutionContext.Implicits.queue`, which causes
   * async tests to fail with:
   *   Queue is empty while future is not completed, this means you're probably

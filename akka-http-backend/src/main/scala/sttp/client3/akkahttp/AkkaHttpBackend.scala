@@ -180,8 +180,7 @@ object AkkaHttpBackend {
       )
     )
 
-  /**
-    * @param ec The execution context for running non-network related operations,
+  /** @param ec The execution context for running non-network related operations,
     *           e.g. mapping responses. Defaults to the execution context backing
     *           the given `actorSystem`.
     */
@@ -211,8 +210,7 @@ object AkkaHttpBackend {
     )
   }
 
-  /**
-    * @param actorSystem The actor system which will be used for the http-client
+  /** @param actorSystem The actor system which will be used for the http-client
     *                    actors.
     * @param ec The execution context for running non-network related operations,
     *           e.g. mapping responses. Defaults to the execution context backing
@@ -241,8 +239,7 @@ object AkkaHttpBackend {
     )
   }
 
-  /**
-    * @param actorSystem The actor system which will be used for the http-client
+  /** @param actorSystem The actor system which will be used for the http-client
     *                    actors.
     * @param ec The execution context for running non-network related operations,
     *           e.g. mapping responses. Defaults to the execution context backing
@@ -272,8 +269,7 @@ object AkkaHttpBackend {
     )
   }
 
-  /**
-    * Create a stub backend for testing, which uses the [[Future]] response wrapper, and doesn't support streaming.
+  /** Create a stub backend for testing, which uses the [[Future]] response wrapper, and doesn't support streaming.
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
