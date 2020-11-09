@@ -106,11 +106,10 @@ import sttp.capabilities.monix.MonixStreams
 import sttp.client3._
 import sttp.client3.asynchttpclient.monix._
 
-import java.nio.ByteBuffer
 import monix.reactive.Observable
 
 AsyncHttpClientMonixBackend().flatMap { backend =>
-  val obs: Observable[ByteBuffer] =  ???
+  val obs: Observable[Array[Byte]] =  ???
 
   basicRequest
     .streamBody(MonixStreams)(obs)
@@ -126,13 +125,12 @@ import sttp.capabilities.monix.MonixStreams
 import sttp.client3._
 import sttp.client3.asynchttpclient.monix._
 
-import java.nio.ByteBuffer
 import monix.eval.Task
 import monix.reactive.Observable
 import scala.concurrent.duration.Duration
 
 AsyncHttpClientMonixBackend().flatMap { backend =>
-  val response: Task[Response[Either[String, Observable[ByteBuffer]]]] =
+  val response: Task[Response[Either[String, Observable[Array[Byte]]]]] =
     basicRequest
       .post(uri"...")
       .response(asStreamUnsafe(MonixStreams))

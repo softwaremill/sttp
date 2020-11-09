@@ -37,7 +37,7 @@ Class                                Effect type                  Supported stre
 ``Http4sBackend``                    ``F[_]: cats.effect.Effect`` ``fs2.Stream[F, Byte]``                           no                         no
 ``HttpClientSyncBackend``            None (``Identity``)          n/a                                               no                         no
 ``HttpClientFutureBackend``          ``scala.concurrent.Future``  n/a                                               yes (regular)              no
-``HttpClientMonixBackend``           ``monix.eval.Task``          ``monix.reactive.Observable[ByteBuffer]``         yes (regular & streaming)  no
+``HttpClientMonixBackend``           ``monix.eval.Task``          ``monix.reactive.Observable[ByteBuffer]``         yes (regular & streaming)  yes
 ``HttpClientFs2Backend``             ``F[_]: cats.effect.Async``  ``fs2.Stream[F, Byte]``                           yes (regular & streaming)  yes
 ``HttpClientZioBackend``             ``zio.Task``                 ``zio.stream.Stream[Throwable, Byte]``            yes (regular & streaming)  yes
 ``FinagleBackend``                   ``com.twitter.util.Future``  n/a                                               no                         no
