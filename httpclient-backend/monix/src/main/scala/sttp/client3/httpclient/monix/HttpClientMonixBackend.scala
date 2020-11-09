@@ -46,8 +46,10 @@ class HttpClientMonixBackend private (
     new BodyToHttpClient[Task, MonixStreams] {
       override val streams: MonixStreams = MonixStreams
       override implicit def monad: MonadError[Task] = responseMonad
-      override def streamToPublisher(stream: Observable[ByteBuffer]): Task[HttpRequest.BodyPublisher] =
-        monad.eval(BodyPublishers.fromPublisher(FlowAdapters.toFlowPublisher(stream.toReactivePublisher)))
+      override def streamToPublisher(stream: Observable[Array[Byte]]): Task[HttpRequest.BodyPublisher] =
+        monad.eval(
+          BodyPublishers.fromPublisher(FlowAdapters.toFlowPublisher(stream.map(ByteBuffer.wrap).toReactivePublisher))
+        )
     }
 
   override protected val bodyFromHttpClient: BodyFromHttpClient[Task, MonixStreams, MonixStreams.BinaryStream] =
@@ -59,17 +61,18 @@ class HttpClientMonixBackend private (
   override protected def createSimpleQueue[T]: Task[SimpleQueue[Task, T]] =
     Task.eval(new MonixSimpleQueue[T](None))
 
-  override protected def publisherToBody(p: Publisher[util.List[ByteBuffer]]): Observable[ByteBuffer] = {
+  override protected def publisherToBody(p: Publisher[util.List[ByteBuffer]]): Observable[Array[Byte]] = {
     Observable
       .fromReactivePublisher(p)
       .flatMapIterable(_.asScala.toList)
+      .map(_.safeRead())
   }
 
-  override protected def emptyBody(): Observable[ByteBuffer] = Observable.empty
+  override protected def emptyBody(): Observable[Array[Byte]] = Observable.empty
 
-  override protected def standardEncoding: (Observable[ByteBuffer], String) => Observable[ByteBuffer] = {
-    case (body, "gzip")    => body.map(_.safeRead()).transform(gunzip()).map(ByteBuffer.wrap)
-    case (body, "deflate") => body.map(_.safeRead()).transform(inflate()).map(ByteBuffer.wrap)
+  override protected def standardEncoding: (Observable[Array[Byte]], String) => Observable[Array[Byte]] = {
+    case (body, "gzip")    => body.transform(gunzip())
+    case (body, "deflate") => body.transform(inflate())
     case (_, ce)           => throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
   }
 }
