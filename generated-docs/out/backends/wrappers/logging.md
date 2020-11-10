@@ -23,7 +23,7 @@ The messages are by default logged on these levels:
 To use the [slf4j](http://www.slf4j.org) logging backend wrapper, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "slf4j-backend" % "3.0.0-RC8"
+"com.softwaremill.sttp.client3" %% "slf4j-backend" % "3.0.0-RC9"
 ``` 
 
 There are three backend wrappers available, which log request & response information using a slf4j `Logger`. To see the logs, you'll need to use an slf4j-compatible logger implementation, e.g.  [logback](http://logback.qos.ch), or use a binding, e.g. [log4j-slf4j](https://logging.apache.org/log4j/2.0/log4j-slf4j-impl/index.html).
@@ -45,5 +45,5 @@ To create a customised logging backend, see the section on [custom backends](cus
 To use the [scribe](https://github.com/outr/scribe) logging backend wrapper, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "scribe-backend" % "3.0.0-RC8"
+"com.softwaremill.sttp.client3" %% "scribe-backend" % "3.0.0-RC9"
 ``` 
