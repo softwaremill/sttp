@@ -4,7 +4,6 @@ import org.scalatest.compatible.Assertion
 import sttp.client3.Response
 
 import scala.concurrent.Future
-import scala.language.higherKinds
 
 abstract class AbstractFetchHttpTest[F[_], +P] extends HttpTest[F] {
   override protected def expectRedirectResponse(
@@ -25,4 +24,6 @@ abstract class AbstractFetchHttpTest[F[_], +P] extends HttpTest[F] {
 
   // everything is reported as "scala.scalajs.js.JavaScriptException: TypeError: Failed to fetch"
   override protected def supportsSttpExceptions = false
+
+  override protected def supportsHostHeaderOverride = false
 }

@@ -1,7 +1,5 @@
 package sttp.client3.impl.monix
 
-import java.nio.ByteBuffer
-
 import monix.eval.Task
 import monix.reactive.Observable
 import org.scalajs.dom.experimental.{BodyInit, Response => FetchResponse}
@@ -14,8 +12,7 @@ import org.scalajs.dom.experimental.{Request => FetchRequest}
 import sttp.client3.testing.SttpBackendStub
 import sttp.capabilities.monix.MonixStreams
 
-/**
-  * Uses the `ReadableStream` interface from the Streams API.
+/** Uses the `ReadableStream` interface from the Streams API.
   *
   * Streams are behind a flag on Firefox.
   *
@@ -36,28 +33,28 @@ class FetchMonixBackend private (fetchOptions: FetchOptions, customizeRequest: F
     result.doOnCancel(doCancel).doOnFinish(_ => doCancel)
   }
 
-  override protected def handleStreamBody(s: Observable[ByteBuffer]): Task[js.UndefOr[BodyInit]] = {
+  override protected def handleStreamBody(s: Observable[Array[Byte]]): Task[js.UndefOr[BodyInit]] = {
     // as no browsers support a ReadableStream request body yet we need to create an in memory array
     // see: https://stackoverflow.com/a/41222366/4094860
-    val bytes = s.foldLeftL(Array.emptyByteArray) { case (data, item) => data ++ item.array() }
+    val bytes = s.foldLeftL(Array.emptyByteArray) { case (data, item) => data ++ item }
     bytes.map(_.toTypedArray.asInstanceOf[BodyInit])
   }
 
   override protected def handleResponseAsStream(
       response: FetchResponse
-  ): Task[(Observable[ByteBuffer], () => Task[Unit])] = {
+  ): Task[(Observable[Array[Byte]], () => Task[Unit])] = {
     Task
       .delay {
         lazy val reader = response.body.getReader()
 
         def read() = transformPromise(reader.read())
 
-        def go(): Observable[ByteBuffer] = {
+        def go(): Observable[Array[Byte]] = {
           Observable.fromTask(read()).flatMap { chunk =>
             if (chunk.done) Observable.empty
             else {
               val bytes = new Int8Array(chunk.value.buffer).toArray
-              Observable.pure(ByteBuffer.wrap(bytes)) ++ go()
+              Observable.pure(bytes) ++ go()
             }
           }
         }
@@ -76,8 +73,7 @@ object FetchMonixBackend {
   ): SttpBackend[Task, MonixStreams] =
     new FetchMonixBackend(fetchOptions, customizeRequest)
 
-  /**
-    * Create a stub backend for testing, which uses the [[Task]] response wrapper, and supports `Observable[ByteBuffer]`
+  /** Create a stub backend for testing, which uses the [[Task]] response wrapper, and supports `Observable[ByteBuffer]`
     * streaming.
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.

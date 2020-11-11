@@ -24,8 +24,7 @@ import sttp.ws.{WebSocket, WebSocketFrame}
 
 object MapEffect {
 
-  /**
-    * Change the effect type that's used by the response specification of this request, if the response specification
+  /** Change the effect type that's used by the response specification of this request, if the response specification
     * requires the `Effect[F]` capability.
     * @param fk A transformation between effects `F` and `G`
     * @tparam F The source effect type.

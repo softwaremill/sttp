@@ -81,8 +81,7 @@ private[asynchttpclient] class SimpleSubscriber(success: ByteBuffer => Unit, err
   }
 }
 
-/**
-  * A subscriber which does its best to signal that it's not interested in the data being sent.
+/** A subscriber which does its best to signal that it's not interested in the data being sent.
   */
 private[asynchttpclient] class IgnoreSubscriber(success: () => Unit, error: Throwable => Unit)
     extends Subscriber[ByteBuffer] {

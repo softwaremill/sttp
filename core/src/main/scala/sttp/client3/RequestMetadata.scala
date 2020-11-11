@@ -13,8 +13,7 @@ trait RequestMetadata extends HasHeaders {
 
 object RequestMetadata {
 
-  /**
-    * Mainly useful in tests using [[sttp.client3.testing.SttpBackendStub]], when creating stub responses.
+  /** Mainly useful in tests using [[sttp.client3.testing.SttpBackendStub]], when creating stub responses.
     */
   val ExampleGet: RequestMetadata = new RequestMetadata {
     override def method: Method = Method.GET

@@ -5,8 +5,7 @@ import sttp.client3._
 import sttp.monad.MonadError
 import sttp.monad.syntax._
 
-/**
-  * A backend wrapper which notifies the given [[RequestListener]] when a request starts and completes.
+/** A backend wrapper which notifies the given [[RequestListener]] when a request starts and completes.
   */
 class ListenerBackend[F[_], P, L](
     delegate: SttpBackend[F, P],

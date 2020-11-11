@@ -1,7 +1,6 @@
 package sttp.client3.logging
 
-/**
-  * Interfaces with a logger system.
+/** Interfaces with a logger system.
   */
 trait Logger[F[_]] {
   def debug(message: => String): F[Unit]

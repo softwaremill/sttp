@@ -5,8 +5,7 @@ import sttp.model.HeaderNames
 
 import scala.concurrent.duration.Duration
 
-/**
-  * Performs logging before requests are sent and after requests complete successfully or with an exception.
+/** Performs logging before requests are sent and after requests complete successfully or with an exception.
   */
 trait Log[F[_]] {
   def beforeRequestSend(request: Request[_, _]): F[Unit]
@@ -23,8 +22,7 @@ trait Log[F[_]] {
   ): F[Unit]
 }
 
-/**
-  * Default implementation of [[Log]] to be used by the [[LoggingBackend]].
+/** Default implementation of [[Log]] to be used by the [[LoggingBackend]].
   */
 class DefaultLog[F[_]](
     logger: Logger[F],

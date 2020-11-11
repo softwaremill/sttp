@@ -47,8 +47,7 @@ final case class FetchOptions(
     mode: Option[RequestMode]
 )
 
-/**
-  * A backend that uses the `fetch` JavaScript api.
+/** A backend that uses the `fetch` JavaScript api.
   *
   * @see https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API
   */

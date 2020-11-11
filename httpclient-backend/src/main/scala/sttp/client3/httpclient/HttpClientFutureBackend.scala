@@ -104,8 +104,7 @@ object HttpClientFutureBackend {
   )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, WebSockets] =
     HttpClientFutureBackend(client, closeClient = false, customizeRequest, customEncodingHandler)
 
-  /**
-    * Create a stub backend for testing, which uses the [[Future]] response wrapper, and doesn't support streaming.
+  /** Create a stub backend for testing, which uses the [[Future]] response wrapper, and doesn't support streaming.
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */

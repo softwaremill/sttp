@@ -300,8 +300,7 @@ object Http4sBackend {
   ): Resource[F, SttpBackend[F, Fs2Streams[F]]] =
     usingClientBuilder(BlazeClientBuilder[F](clientExecutionContext), blocker, customizeRequest, customEncodingHandler)
 
-  /**
-    * Create a stub backend for testing, which uses the `F` response wrapper, and supports `Stream[F, Byte]`
+  /** Create a stub backend for testing, which uses the `F` response wrapper, and supports `Stream[F, Byte]`
     * streaming.
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.

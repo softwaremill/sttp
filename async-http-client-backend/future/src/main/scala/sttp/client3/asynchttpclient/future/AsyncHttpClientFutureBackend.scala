@@ -65,8 +65,7 @@ object AsyncHttpClientFutureBackend {
   ): SttpBackend[Future, Any] =
     new FollowRedirectsBackend(new AsyncHttpClientFutureBackend(asyncHttpClient, closeClient, customizeRequest))
 
-  /**
-    * @param ec The execution context for running non-network related operations,
+  /** @param ec The execution context for running non-network related operations,
     *           e.g. mapping responses. Defaults to the global execution
     *           context.
     */
@@ -76,8 +75,7 @@ object AsyncHttpClientFutureBackend {
   )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, Any] =
     AsyncHttpClientFutureBackend(AsyncHttpClientBackend.defaultClient(options), closeClient = true, customizeRequest)
 
-  /**
-    * @param ec The execution context for running non-network related operations,
+  /** @param ec The execution context for running non-network related operations,
     *           e.g. mapping responses. Defaults to the global execution
     *           context.
     */
@@ -87,8 +85,7 @@ object AsyncHttpClientFutureBackend {
   )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, Any] =
     AsyncHttpClientFutureBackend(new DefaultAsyncHttpClient(cfg), closeClient = true, customizeRequest)
 
-  /**
-    * @param updateConfig A function which updates the default configuration (created basing on `options`).
+  /** @param updateConfig A function which updates the default configuration (created basing on `options`).
     * @param ec The execution context for running non-network related operations,
     *           e.g. mapping responses. Defaults to the global execution
     *           context.
@@ -104,8 +101,7 @@ object AsyncHttpClientFutureBackend {
       customizeRequest
     )
 
-  /**
-    * @param ec The execution context for running non-network related operations,
+  /** @param ec The execution context for running non-network related operations,
     *           e.g. mapping responses. Defaults to the global execution
     *           context.
     */
@@ -115,8 +111,7 @@ object AsyncHttpClientFutureBackend {
   )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, Any] =
     AsyncHttpClientFutureBackend(client, closeClient = false, customizeRequest)
 
-  /**
-    * Create a stub backend for testing, which uses the [[Future]] response wrapper, and doesn't support streaming.
+  /** Create a stub backend for testing, which uses the [[Future]] response wrapper, and doesn't support streaming.
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */

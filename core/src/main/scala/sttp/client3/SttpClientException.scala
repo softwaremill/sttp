@@ -5,8 +5,7 @@ import sttp.monad.MonadError
 
 import scala.annotation.tailrec
 
-/**
-  * Known exceptions that might occur when using a backend. Currently this covers:
+/** Known exceptions that might occur when using a backend. Currently this covers:
   * - connect exceptions: when a connection (tcp socket) can't be established to the target host
   * - read exceptions: when a connection has been established, but there's any kind of problem receiving or
   *   handling the response (e.g. a broken socket or a deserialization error)

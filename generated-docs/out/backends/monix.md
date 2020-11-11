@@ -7,7 +7,7 @@ There are several backend implementations which are `monix.eval.Task`-based. The
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "async-http-client-backend-monix" % "3.0.0-RC7"
+"com.softwaremill.sttp.client3" %% "async-http-client-backend-monix" % "3.0.0-RC9"
 ```
            
 This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client), uses [Netty](http://netty.io) behind the scenes and supports effect cancellation.
@@ -50,7 +50,7 @@ val backend = AsyncHttpClientMonixBackend.usingClient(asyncHttpClient)
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "okhttp-backend-monix" % "3.0.0-RC7"
+"com.softwaremill.sttp.client3" %% "okhttp-backend-monix" % "3.0.0-RC9"
 ```
 
 Create the backend using:
@@ -76,7 +76,7 @@ This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supp
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "httpclient-backend-monix" % "3.0.0-RC7"
+"com.softwaremill.sttp.client3" %% "httpclient-backend-monix" % "3.0.0-RC9"
 ```
 
 Create the backend using:
@@ -106,11 +106,10 @@ import sttp.capabilities.monix.MonixStreams
 import sttp.client3._
 import sttp.client3.asynchttpclient.monix._
 
-import java.nio.ByteBuffer
 import monix.reactive.Observable
 
 AsyncHttpClientMonixBackend().flatMap { backend =>
-  val obs: Observable[ByteBuffer] =  ???
+  val obs: Observable[Array[Byte]] =  ???
 
   basicRequest
     .streamBody(MonixStreams)(obs)
@@ -126,13 +125,12 @@ import sttp.capabilities.monix.MonixStreams
 import sttp.client3._
 import sttp.client3.asynchttpclient.monix._
 
-import java.nio.ByteBuffer
 import monix.eval.Task
 import monix.reactive.Observable
 import scala.concurrent.duration.Duration
 
 AsyncHttpClientMonixBackend().flatMap { backend =>
-  val response: Task[Response[Either[String, Observable[ByteBuffer]]]] =
+  val response: Task[Response[Either[String, Observable[Array[Byte]]]]] =
     basicRequest
       .post(uri"...")
       .response(asStreamUnsafe(MonixStreams))

@@ -1,7 +1,5 @@
 package sttp.client3.impl.monix
 
-import java.nio.ByteBuffer
-
 import monix.eval.Task
 import monix.reactive.Observable
 import sttp.capabilities.monix.MonixStreams
@@ -13,14 +11,10 @@ abstract class MonixStreamingTest extends StreamingTest[Task, MonixStreams] {
 
   override implicit val convertToFuture: ConvertToFuture[Task] = convertMonixTaskToFuture
 
-  override def bodyProducer(chunks: Iterable[Array[Byte]]): Observable[ByteBuffer] =
-    Observable
-      .fromIterable(chunks)
-      .map(ByteBuffer.wrap)
+  override def bodyProducer(chunks: Iterable[Array[Byte]]): Observable[Array[Byte]] =
+    Observable.fromIterable(chunks)
 
-  override def bodyConsumer(stream: Observable[ByteBuffer]): Task[String] =
-    stream
-      .flatMap(v => Observable.fromIterable(v.array()))
-      .toListL
-      .map(bs => new String(bs.toArray, "utf8"))
+  override def bodyConsumer(stream: Observable[Array[Byte]]): Task[String] =
+    stream.toListL
+      .map(bs => new String(bs.toArray.flatten, "utf8"))
 }

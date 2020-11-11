@@ -75,8 +75,7 @@ object AsyncHttpClientScalazBackend {
   ): Task[SttpBackend[Task, Any]] =
     Task.delay(AsyncHttpClientScalazBackend(new DefaultAsyncHttpClient(cfg), closeClient = true, customizeRequest))
 
-  /**
-    * @param updateConfig A function which updates the default configuration (created basing on `options`).
+  /** @param updateConfig A function which updates the default configuration (created basing on `options`).
     */
   def usingConfigBuilder(
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
@@ -97,8 +96,7 @@ object AsyncHttpClientScalazBackend {
   ): SttpBackend[Task, Any] =
     AsyncHttpClientScalazBackend(client, closeClient = false, customizeRequest)
 
-  /**
-    * Create a stub backend for testing, which uses the [[Task]] response wrapper, and doesn't support streaming.
+  /** Create a stub backend for testing, which uses the [[Task]] response wrapper, and doesn't support streaming.
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */

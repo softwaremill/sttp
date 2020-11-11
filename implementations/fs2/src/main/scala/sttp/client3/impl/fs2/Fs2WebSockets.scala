@@ -8,8 +8,7 @@ import sttp.ws.{WebSocket, WebSocketFrame}
 
 object Fs2WebSockets {
 
-  /**
-    * Handle the websocket through a [[Pipe]] which receives the incoming events and produces the messages to be sent
+  /** Handle the websocket through a [[Pipe]] which receives the incoming events and produces the messages to be sent
     * to the server. Not that by the nature of a [[Pipe]], there no need that these two streams are coupled. Just make sure
     * to consume the input as otherwise the receiving buffer might overflow (use [[Stream.drain]] if you want to discard).
     * @param ws the websocket to handle

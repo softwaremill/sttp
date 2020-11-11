@@ -21,8 +21,7 @@ private[okhttp] class WebSocketImpl[F[_]](
     val monad: MonadError[F]
 ) extends WebSocket[F] {
 
-  /**
-    * After receiving a close frame, no further interactions with the web socket should happen. Subsequent invocations
+  /** After receiving a close frame, no further interactions with the web socket should happen. Subsequent invocations
     * of `receive`, as well as `send`, will fail with the [[sttp.ws.WebSocketClosed]] exception.
     */
   override def receive(): F[WebSocketFrame] = {

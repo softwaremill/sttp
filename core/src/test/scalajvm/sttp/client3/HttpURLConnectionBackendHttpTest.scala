@@ -11,4 +11,5 @@ class HttpURLConnectionBackendHttpTest extends HttpTest[Identity] {
   override implicit val convertToFuture: ConvertToFuture[Identity] = ConvertToFuture.id
 
   override def supportsCustomContentEncoding = true
+  override def supportsHostHeaderOverride = false
 }

@@ -8,8 +8,7 @@ import sttp.client3.impl.zio.{ExtendEnv, SttpClientStubbingBase}
 
 package object zio {
 
-  /**
-    * ZIO-environment service definition, which is an SttpBackend.
+  /** ZIO-environment service definition, which is an SttpBackend.
     */
   type SttpClient = Has[SttpClient.Service]
   type SttpClientStubbing = Has[SttpClientStubbing.Service]
@@ -18,8 +17,7 @@ package object zio {
     type Service = SttpBackend[Task, ZioStreams with WebSockets]
   }
 
-  /**
-    * Sends the request. Only requests for which the method & URI are specified can be sent.
+  /** Sends the request. Only requests for which the method & URI are specified can be sent.
     *
     * @return An effect resulting in a [[Response]], containing the body, deserialized as specified by the request
     *         (see [[RequestT.response]]), if the request was successful (1xx, 2xx, 3xx response codes), or if there
@@ -35,8 +33,7 @@ package object zio {
   ): ZIO[SttpClient, Throwable, Response[T]] =
     ZIO.accessM(env => env.get[SttpClient.Service].send(request))
 
-  /**
-    * A variant of [[send]] which allows the effects that are part of the response handling specification (when
+  /** A variant of [[send]] which allows the effects that are part of the response handling specification (when
     * using websockets or resource-safe streaming) to use an `R` environment.
     */
   def sendR[T, R](

@@ -1,7 +1,6 @@
 package sttp.client3.okhttp.monix
 
 import java.io.InputStream
-import java.nio.ByteBuffer
 import java.util.concurrent.ArrayBlockingQueue
 
 import cats.effect.Resource
@@ -46,7 +45,7 @@ class OkHttpMonixBackend private (
     override def streamToRequestBody(stream: streams.BinaryStream): OkHttpRequestBody = {
       new OkHttpRequestBody() {
         override def writeTo(sink: BufferedSink): Unit =
-          toIterable(stream) map (_.array()) foreach sink.write
+          toIterable(stream).foreach(sink.write)
         override def contentType(): MediaType = null
       }
     }
@@ -56,10 +55,9 @@ class OkHttpMonixBackend private (
     override val streams: MonixStreams = MonixStreams
     override implicit val monad: MonadError[Task] = OkHttpMonixBackend.this.responseMonad
 
-    override def responseBodyToStream(inputStream: InputStream): Observable[ByteBuffer] =
+    override def responseBodyToStream(inputStream: InputStream): Observable[Array[Byte]] =
       Observable
         .fromInputStream(Task.now(inputStream))
-        .map(ByteBuffer.wrap)
         .guarantee(Task.eval(inputStream.close()))
 
     override def compileWebSocketPipe(
@@ -157,8 +155,7 @@ object OkHttpMonixBackend {
   )(implicit s: Scheduler = Scheduler.global): SttpBackend[Task, MonixStreams with WebSockets] =
     OkHttpMonixBackend(client, closeClient = false, customEncodingHandler, webSocketBufferCapacity)(s)
 
-  /**
-    * Create a stub backend for testing, which uses the [[Task]] response wrapper, and supports `Observable[ByteBuffer]`
+  /** Create a stub backend for testing, which uses the [[Task]] response wrapper, and supports `Observable[ByteBuffer]`
     * streaming.
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.

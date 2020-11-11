@@ -319,8 +319,7 @@ object HttpURLConnectionBackend {
       new HttpURLConnectionBackend(options, customizeConnection, createURL, openConnection, customEncodingHandler)
     )
 
-  /**
-    * Create a stub backend for testing, which uses the [[Identity]] response wrapper, and doesn't support streaming.
+  /** Create a stub backend for testing, which uses the [[Identity]] response wrapper, and doesn't support streaming.
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
