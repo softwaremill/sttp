@@ -4,7 +4,8 @@ import sbt.Reference.display
 import sbt.internal.ProjectMatrix
 import sbtrelease.ReleasePlugin.autoImport._
 import sbtrelease.ReleaseStateTransformations._
-import com.softwaremill.DownloadChromeDriver._
+// run JS tests inside Chrome, due to jsdom not supporting fetch
+import com.softwaremill.SbtSoftwareMillBrowserTestJS._
 
 val scala2_11 = "2.11.12"
 val scala2_12 = "2.12.12"
@@ -96,32 +97,6 @@ val commonNativeSettings = commonSettings ++ Seq(
       println("[info] Release build, skipping sttp native tests")
     } else { (test in Test).value }
   }
-)
-
-// run JS tests inside Chrome, due to jsdom not supporting fetch
-val browserTestSettings = downloadChromeDriverSettings ++ Seq(
-  jsEnv in Test := {
-    val debugging = false // set to true to help debugging
-    System.setProperty("webdriver.chrome.driver", "target/chromedriver")
-    new org.scalajs.jsenv.selenium.SeleniumJSEnv(
-      {
-        val options = new org.openqa.selenium.chrome.ChromeOptions()
-        val args = Seq(
-          "auto-open-devtools-for-tabs", // devtools needs to be open to capture network requests
-          "no-sandbox",
-          "allow-file-access-from-files" // change the origin header from 'null' to 'file'
-        ) ++ (if (debugging) Seq.empty else Seq("headless"))
-        options.addArguments(args: _*)
-        val capabilities = org.openqa.selenium.remote.DesiredCapabilities.chrome()
-        capabilities.setCapability(org.openqa.selenium.chrome.ChromeOptions.CAPABILITY, options)
-        capabilities
-      },
-      org.scalajs.jsenv.selenium.SeleniumJSEnv.Config().withKeepAlive(debugging)
-    )
-  },
-  test in Test := (test in Test)
-    .dependsOn(downloadChromeDriver)
-    .value
 )
 
 // start a test server before running tests of a backend; this is required both for JS tests run inside a
