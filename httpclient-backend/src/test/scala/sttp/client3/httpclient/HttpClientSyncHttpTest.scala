@@ -8,4 +8,7 @@ class HttpClientSyncHttpTest extends HttpTest[Identity] {
   override implicit val convertToFuture: ConvertToFuture[Identity] = ConvertToFuture.id
 
   override def supportsHostHeaderOverride = false
+  override def supportsCancellation: Boolean = false
+
+  override def timeoutToNone[T](t: Identity[T], timeoutMillis: Int): Identity[Option[T]] = Some(t)
 }

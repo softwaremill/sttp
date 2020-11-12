@@ -298,6 +298,7 @@ import scala.concurrent.Future
 class MyCustomBackendHttpTest extends HttpTest[Future] {
   override implicit val convertToFuture: ConvertToFuture[Future] = ConvertToFuture.future
   override implicit lazy val backend: SttpBackend[Future, Any] = ??? //new MyCustomBackend()
+  override def timeoutToNone[T](t: Future[T], timeoutMillis: Int): Future[Option[T]] = ???
 }
 ```
 

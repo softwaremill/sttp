@@ -19,7 +19,7 @@ import cats.effect._
 implicit val cs: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionContext.global)
 ```
            
-This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client), uses [Netty](http://netty.io) behind the scenes and supports effect cancellation. 
+This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client), uses [Netty](http://netty.io) behind the scenes. 
 
 Alternatively, the [http4s](http4s.md) backend can also be created for a type implementing the cats-effect's `Effect` typeclass, and supports streaming as in [fs2](fs2.md).
 

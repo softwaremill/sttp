@@ -9,6 +9,7 @@ import org.scalatest.matchers.should.Matchers
 import sttp.client3.testing.HttpTest.endpoint
 import sttp.client3.{Response, ResponseAs, SttpBackend, _}
 import sttp.model.StatusCode
+import sttp.monad.MonadError
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -29,6 +30,9 @@ trait HttpTest[F[_]]
   val backend: SttpBackend[F, Any]
   implicit val convertToFuture: ConvertToFuture[F]
 
+  // should only be implemented in supportsCancellation == true
+  def timeoutToNone[T](t: F[T], timeoutMillis: Int): F[Option[T]]
+
   protected def postEcho: Request[Either[String, String], Any] = basicRequest.post(uri"$endpoint/echo")
   protected val testBody = "this is the body"
   protected val testBodyBytes: Array[Byte] = testBody.getBytes("UTF-8")
@@ -44,6 +48,7 @@ trait HttpTest[F[_]]
   protected def supportsCustomContentEncoding = false
   protected def throwsExceptionOnUnsupportedEncoding = true
   protected def supportsHostHeaderOverride = true
+  protected def supportsCancellation = true
 
   "parse response" - {
     "as string" in {
@@ -520,6 +525,32 @@ trait HttpTest[F[_]]
             e shouldBe a[SttpClientException.ReadException]
           }
         }
+      }
+    }
+  }
+
+  if (supportsCancellation) {
+    "cancel" - {
+      "a request in progress" in {
+        implicit val monad: MonadError[F] = backend.responseMonad
+        import sttp.monad.syntax._
+
+        val req = basicRequest
+          .get(uri"$endpoint/timeout")
+          .response(asString)
+
+        val now = monad.eval(System.currentTimeMillis())
+
+        convertToFuture.toFuture(
+          now
+            .flatMap { start =>
+              timeoutToNone(req.send(backend), 100)
+                .map { r =>
+                  (System.currentTimeMillis() - start) should be < 2000L
+                  r shouldBe None
+                }
+            }
+        )
       }
     }
   }
