@@ -11,4 +11,6 @@ class TryHttpURLConnectionHttpTest extends HttpTest[Try] {
   override implicit val convertToFuture: ConvertToFuture[Try] = ConvertToFuture.scalaTry
 
   override def supportsHostHeaderOverride = false
+  override def supportsCancellation: Boolean = false
+  override def timeoutToNone[T](t: Try[T], timeoutMillis: Int): Try[Option[T]] = t.map(Some(_))
 }

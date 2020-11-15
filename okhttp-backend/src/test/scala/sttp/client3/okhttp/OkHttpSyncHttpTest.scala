@@ -8,4 +8,7 @@ class OkHttpSyncHttpTest extends HttpTest[Identity] {
   override val backend: SttpBackend[Identity, WebSockets] = OkHttpSyncBackend()
 
   override implicit val convertToFuture: ConvertToFuture[Identity] = ConvertToFuture.id
+
+  override def supportsCancellation: Boolean = false
+  override def timeoutToNone[T](t: Identity[T], timeoutMillis: Int): Identity[Option[T]] = Some(t)
 }
