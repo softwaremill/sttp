@@ -645,7 +645,7 @@ lazy val sprayJson = (projectMatrix in file("json/spray-json"))
   .settings(
     name := "spray-json",
     libraryDependencies ++= Seq(
-      "io.spray" %% "spray-json" % "1.3.5"
+      "io.spray" %% "spray-json" % "1.3.6"
     ),
     scalaTest
   )
