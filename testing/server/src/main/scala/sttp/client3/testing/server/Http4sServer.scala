@@ -7,7 +7,9 @@ import org.http4s._
 import org.http4s.dsl.io._
 import org.http4s.headers._
 import org.http4s.implicits._
+import org.http4s.server.AuthMiddleware
 import org.http4s.server.blaze._
+import org.http4s.server.middleware.authentication._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.DurationInt
@@ -63,11 +65,17 @@ object Http4sServer extends IOApp {
       }
   }
 
-  val headers: HttpRoutes[IO] = HttpRoutes.of[IO] { case GET -> Root / "set_headers" =>
-    val response = Response[IO](Status.Ok)
-      .withEntity("ok")
-      .withHeaders(`Cache-Control`(`max-age`(1000.seconds)), `Cache-Control`(`no-cache`()))
-    IO(response)
+  val headers: HttpRoutes[IO] = HttpRoutes.of[IO] {
+    case GET -> Root / "set_headers" =>
+      val response = Response[IO](Status.Ok)
+        .withEntity("ok")
+        .withHeaders(`Cache-Control`(`max-age`(1000.seconds)), `Cache-Control`(`no-cache`()))
+      IO(response)
+
+    case request @ _ -> Root / "set_content_type_header_with_encoding_in_quotes" =>
+      request.decode[String] { body =>
+        Ok(body).map(_.withHeaders(Header("Content-Type", "text/plain; charset=\"UTF-8\"")))
+      }
   }
 
   val cookies: HttpRoutes[IO] = HttpRoutes.of[IO] {
@@ -108,11 +116,26 @@ object Http4sServer extends IOApp {
       )
   }
 
+  val authMiddleware: AuthMiddleware[IO, String] = BasicAuth(
+    "test realm",
+    {
+      case BasicCredentials("adam", "1234") => IO(Some("adam"))
+      case _                                => IO(None)
+    }
+  )
+
+  val authedService: AuthedRoutes[String, IO] =
+    AuthedRoutes.of[String, IO] { case GET -> Root / "secure_basic" as user =>
+      Ok(s"Welcome, $user")
+    }
+
+  val authed: HttpRoutes[IO] = authMiddleware(authedService)
+
   def run(args: List[String]): IO[ExitCode] =
     BlazeServerBuilder[IO](global)
       //todo set correct port
       .bindHttp(8080, "localhost")
-      .withHttpApp((echo <+> headers <+> cookies).orNotFound)
+      .withHttpApp((echo <+> headers <+> cookies <+> authed).orNotFound)
       .serve
       .compile
       .drain
