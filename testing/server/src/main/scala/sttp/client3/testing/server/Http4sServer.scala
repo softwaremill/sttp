@@ -9,7 +9,8 @@ import org.http4s.headers._
 import org.http4s.implicits._
 import org.http4s.server.AuthMiddleware
 import org.http4s.server.blaze._
-import org.http4s.server.middleware.authentication._
+import org.http4s.server.middleware.authentication.BasicAuth
+import org.http4s.util.CaseInsensitiveString
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.DurationInt
@@ -131,11 +132,55 @@ object Http4sServer extends IOApp {
 
   val authed: HttpRoutes[IO] = authMiddleware(authedService)
 
+  val secureDigest: HttpRoutes[IO] = HttpRoutes.of[IO] { case request @ GET -> Root / "secure_digest" =>
+    request.headers.get(CaseInsensitiveString("Authorization")) match {
+      case Some(authHeader) =>
+        val correctHeader = authHeader.value.contains(
+          """Digest algorithm=MD5,
+              |cnonce=e5d93287aa8532c1f5df9e052fda4c38,
+              |nc=00000001,
+              |nonce="a2FzcGVya2FzcGVyCg==",
+              |qop=auth,
+              |realm=my-custom-realm,
+              |response=f1f784de97f8badb4acec7c5f85eb877,
+              |uri="/secure_digest",
+              |username=adam""".stripMargin.replaceAll("\n", "")
+        )
+
+        if (correctHeader) {
+          Ok()
+        } else {
+          IO(Response(Status.Unauthorized))
+        }
+      case None =>
+        IO(
+          Response(Status.Unauthorized).withHeaders(
+            `WWW-Authenticate`(
+              Challenge("Digest", "my-custom-realm", Map("qop" -> "auth", "nonce" -> "a2FzcGVya2FzcGVyCg=="))
+            )
+          )
+        )
+    }
+  }
+
+  val compression: HttpRoutes[IO] = HttpRoutes.of[IO] {
+    case _ -> Root / "compress-unsupported" =>
+      Ok("I'm compressed!").map(_.withHeaders(`Content-Encoding`(ContentCoding.unsafeFromString("secret-encoding"))))
+    case _ -> Root / "compress-custom" =>
+      Ok("I'm compressed, but who cares! Must be overwritten by client encoder").map(
+        _.withHeaders(`Content-Encoding`(ContentCoding.unsafeFromString("custom")))
+      )
+    case _ -> Root / "compress" =>
+      Ok("I'm compressed!").map(
+        _.withHeaders(`Content-Encoding`(ContentCoding.gzip))
+      )
+  }
+
   def run(args: List[String]): IO[ExitCode] =
     BlazeServerBuilder[IO](global)
       //todo set correct port
       .bindHttp(8080, "localhost")
-      .withHttpApp((echo <+> headers <+> cookies <+> authed).orNotFound)
+      .withHttpApp((echo <+> headers <+> cookies <+> authed <+> secureDigest <+> compression).orNotFound)
       .serve
       .compile
       .drain
