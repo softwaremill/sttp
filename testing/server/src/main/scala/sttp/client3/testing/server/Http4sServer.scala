@@ -1,12 +1,16 @@
 package sttp.client3.testing.server
 
 import cats.effect._
+import cats.implicits._
+import org.http4s.CacheDirective._
 import org.http4s._
 import org.http4s.dsl.io._
+import org.http4s.headers._
 import org.http4s.implicits._
 import org.http4s.server.blaze._
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.DurationInt
 
 object Http4sServer extends IOApp {
 
@@ -52,12 +56,63 @@ object Http4sServer extends IOApp {
 
         IO(Response(Status(status)).withEntity(response))
       }
+
+    case request @ POST -> Root / "streaming" / "echo" =>
+      request.decode[String] { body =>
+        Ok(body)
+      }
+  }
+
+  val headers: HttpRoutes[IO] = HttpRoutes.of[IO] { case GET -> Root / "set_headers" =>
+    val response = Response[IO](Status.Ok)
+      .withEntity("ok")
+      .withHeaders(`Cache-Control`(`max-age`(1000.seconds)), `Cache-Control`(`no-cache`()))
+    IO(response)
+  }
+
+  val cookies: HttpRoutes[IO] = HttpRoutes.of[IO] {
+    case _ -> Root / "cookies" / "set_with_expires" =>
+      Ok("ok").map(
+        _.addCookie(
+          ResponseCookie(
+            name = "c",
+            content = "v",
+            expires = Some(HttpDate.MinValue)
+          )
+        )
+      )
+    case request @ _ -> Root / "cookies" / "get_cookie2" =>
+      request.cookies.find(_.name == "cookie2") match {
+        case Some(c) => Ok(s"${c.name}=${c.content}")
+        case None    => Ok("no cookie")
+      }
+
+    case _ -> Root / "cookies" / "set" =>
+      Ok("ok").map(
+        _.addCookie(
+          ResponseCookie(
+            name = "cookie1",
+            content = "value1",
+            secure = true,
+            httpOnly = true,
+            maxAge = Some(123L)
+          )
+        ).addCookie(
+          ResponseCookie(
+            name = "cookie3",
+            content = "",
+            domain = Some("xyz"),
+            path = Some("a/b/c")
+          )
+        )
+      )
   }
 
   def run(args: List[String]): IO[ExitCode] =
     BlazeServerBuilder[IO](global)
+      //todo set correct port
       .bindHttp(8080, "localhost")
-      .withHttpApp(echo.orNotFound)
+      .withHttpApp((echo <+> headers <+> cookies).orNotFound)
       .serve
       .compile
       .drain
