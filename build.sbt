@@ -251,6 +251,8 @@ lazy val testServer = (projectMatrix in file("testing/server"))
     libraryDependencies ++= Seq(
       akkaHttp,
       "ch.megard" %% "akka-http-cors" % "0.4.2",
+      "org.http4s" %% "http4s-dsl" % "0.21.9",
+      "org.http4s" %% "http4s-blaze-server" % "0.21.9",
       akkaStreams
     ),
     // the test server needs to be started before running any backend tests
