@@ -151,8 +151,8 @@ val sttpSharedVersion = "1.0.0-RC8"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
 
-val jeagerClientVersion = "1.5.0"
-val braveOpentracingVersion = "0.37.4"
+val jeagerClientVersion = "1.4.0"
+val braveOpentracingVersion = "0.37.5"
 val zipkinSenderOkHttpVersion = "2.16.0"
 val resilience4jVersion = "1.6.1"
 
@@ -645,7 +645,7 @@ lazy val sprayJson = (projectMatrix in file("json/spray-json"))
   .settings(
     name := "spray-json",
     libraryDependencies ++= Seq(
-      "io.spray" %% "spray-json" % "1.3.5"
+      "io.spray" %% "spray-json" % "1.3.6"
     ),
     scalaTest
   )
@@ -698,7 +698,7 @@ lazy val zioTelemetryOpenTracingBackend = (projectMatrix in file("metrics/zio-te
     name := "zio-telemetry-opentracing-backend",
     libraryDependencies ++= Seq(
       "dev.zio" %% "zio-opentracing" % "0.7.0",
-      "org.scala-lang.modules" %% "scala-collection-compat" % "2.2.0"
+      "org.scala-lang.modules" %% "scala-collection-compat" % "2.3.0"
     )
   )
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13))
@@ -710,7 +710,7 @@ lazy val scribeBackend = (projectMatrix in file("logging/scribe"))
   .settings(
     name := "scribe-backend",
     libraryDependencies ++= Seq(
-      "com.outr" %%% "scribe" % "3.0.3"
+      "com.outr" %%% "scribe" % "3.0.4"
     ),
     scalaTest
   )
