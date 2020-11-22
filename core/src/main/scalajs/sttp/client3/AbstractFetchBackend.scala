@@ -25,7 +25,7 @@ import sttp.client3.internal.{SttpFile, _}
 import sttp.client3.ws.{NotAWebSocketException, GotAWebSocketException}
 import sttp.monad.MonadError
 import sttp.monad.syntax._
-import sttp.model.{Header, StatusCode}
+import sttp.model.{Header, HeaderNames, MediaType, StatusCode}
 
 import scala.collection.immutable.Seq
 import scala.concurrent.duration.FiniteDuration
@@ -80,8 +80,15 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
     }
 
     val rheaders = new JSHeaders()
-    request.headers.foreach { case Header(name, value) =>
-      rheaders.set(name, value)
+    request.headers.foreach { case header @ Header(name, value) =>
+      // for multipart/form-data requests dom.FormData is responsible for setting the Content-Type header
+      // as it will also compute and set the boundary for the different parts, so we have to leave it out here
+      if (header.is(HeaderNames.ContentType) && value.toLowerCase.startsWith("multipart/")) {
+        if (!value.toLowerCase.startsWith(MediaType.MultipartFormData.toString))
+          throw new IllegalArgumentException("Multipart bodies other than multipart/form-data are not supported")
+      } else {
+        rheaders.set(name, value)
+      }
     }
 
     val req = createBody(request.body).map { rbody =>
