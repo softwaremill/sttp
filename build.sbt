@@ -223,7 +223,7 @@ lazy val allAggregates = projectsWithOptionalNative ++
   examples.projectRefs ++
   docs.projectRefs
 
-// For Travis tests, defining scripts that run JVM/JS/Native tests separately
+// For CI tests, defining scripts that run JVM/JS/Native tests separately
 val testJVM = taskKey[Unit]("Test JVM projects")
 val testJS = taskKey[Unit]("Test JS projects")
 val testNative = taskKey[Unit]("Test native projects")
