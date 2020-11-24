@@ -32,7 +32,7 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
     // in the process
     releaseStepCommandAndRemaining("publishLocalSigned"),
     releaseStepCommandAndRemaining("clean"),
-    releaseStepCommandAndRemaining("test"),
+    releaseStepCommandAndRemaining("compile"),
     setReleaseVersion,
     releaseStepInputTask(docs.jvm(scala2_13) / mdoc),
     Release.stageChanges("generated-docs/out"),
