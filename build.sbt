@@ -223,7 +223,7 @@ lazy val allAggregates = projectsWithOptionalNative ++
   examples.projectRefs ++
   docs.projectRefs
 
-// For Travis tests, defining scripts that run JVM/JS/Native tests separately
+// For CI tests, defining scripts that run JVM/JS/Native tests separately
 val testJVM = taskKey[Unit]("Test JVM projects")
 val testJS = taskKey[Unit]("Test JS projects")
 val testNative = taskKey[Unit]("Test native projects")
@@ -509,7 +509,7 @@ lazy val http4sBackend = (projectMatrix in file("http4s-backend"))
   .settings(
     name := "http4s-backend",
     libraryDependencies ++= Seq(
-      "org.http4s" %% "http4s-blaze-client" % "0.21.11"
+      "org.http4s" %% "http4s-blaze-client" % "0.21.8"
     )
   )
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13))
