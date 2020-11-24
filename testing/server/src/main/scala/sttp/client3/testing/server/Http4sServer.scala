@@ -313,10 +313,10 @@ object Http4sServer extends IOApp {
       Ok(textWithSpecialCharacters).map(_.withHeaders(Header("Content-Type", "text/plain; charset=ISO-8859-2")))
   }
 
-  def run(args: List[String]): IO[ExitCode] =
+  def run(args: List[String]): IO[ExitCode] = {
+    val port = args.headOption.map(_.toInt).getOrElse(51823)
     BlazeServerBuilder[IO](global)
-      //todo set correct port
-      .bindHttp(8080, "localhost")
+      .bindHttp(port, "localhost")
       .withHttpApp(
         (echo <+>
           headers <+>
@@ -334,5 +334,6 @@ object Http4sServer extends IOApp {
       .compile
       .drain
       .as(ExitCode.Success)
+  }
 
 }
