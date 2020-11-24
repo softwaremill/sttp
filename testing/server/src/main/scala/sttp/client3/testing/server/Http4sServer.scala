@@ -1,17 +1,25 @@
 package sttp.client3.testing.server
 
+import java.io.{ByteArrayOutputStream, InputStream, OutputStream}
+import java.util.concurrent.Executors
+
+import akka.util.ByteString
 import cats.effect._
 import cats.implicits._
 import org.http4s.CacheDirective._
+import org.http4s.EntityEncoder._
 import org.http4s._
 import org.http4s.dsl.io._
 import org.http4s.headers._
 import org.http4s.implicits._
+import org.http4s.multipart.Multipart
 import org.http4s.server.AuthMiddleware
 import org.http4s.server.blaze._
 import org.http4s.server.middleware.authentication.BasicAuth
 import org.http4s.util.CaseInsensitiveString
 
+import scala.annotation.tailrec
+import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.DurationInt
 
@@ -22,6 +30,32 @@ object Http4sServer extends IOApp {
 
   private def paramsToString(m: Map[String, String]): String =
     m.toList.sortBy(_._1).map(p => s"${p._1}=${p._2}").mkString(" ")
+
+  private val textFile = toByteArray(getClass.getResourceAsStream("/textfile.txt"))
+  private val binaryFile = toByteArray(getClass.getResourceAsStream("/binaryfile.jpg"))
+  private val textWithSpecialCharacters = "Żółć!"
+
+  private def transfer(is: InputStream, os: OutputStream): Unit = {
+    var read = 0
+    val buf = new Array[Byte](1024)
+
+    @tailrec
+    def transfer(): Unit = {
+      read = is.read(buf, 0, buf.length)
+      if (read != -1) {
+        os.write(buf, 0, read)
+        transfer()
+      }
+    }
+
+    transfer()
+  }
+
+  private def toByteArray(is: InputStream): Array[Byte] = {
+    val os = new ByteArrayOutputStream
+    transfer(is, os)
+    os.toByteArray
+  }
 
   val echo: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case request @ _ -> Root / "echo" / "as_string" =>
@@ -176,11 +210,126 @@ object Http4sServer extends IOApp {
       )
   }
 
+  val download: HttpRoutes[IO] = HttpRoutes.of[IO] {
+    case _ -> Root / "download" / "binary" =>
+      Ok().map(_.withEntity(binaryFile))
+    case _ -> Root / "download" / "text" =>
+      Ok().map(_.withEntity(textFile))
+  }
+
+  val multipartRequest: HttpRoutes[IO] = HttpRoutes.of[IO] {
+    case request @ _ -> Root / "multipart" =>
+      request.decode[Multipart[IO]] { parts: Multipart[IO] =>
+        parts.parts
+          .map { part =>
+            part.body.compile.toList
+              .map(ByteString(_: _*).utf8String)
+              .map(v => part.name.getOrElse("") + "=" + v + part.filename.fold("")(fn => s" ($fn)"))
+          }
+          .toList
+          .sequence
+          .flatMap { parsed =>
+            Ok(parsed.mkString(", "))
+          }
+      }
+
+    case request @ _ -> Root / "multipart" / "other" =>
+      request.decode[Multipart[IO]] { parts =>
+        request.decode[Multipart[IO]] { parts: Multipart[IO] =>
+          parts.parts
+            .map { part =>
+              part.body.compile.toList
+                .map(ByteString(_: _*).utf8String)
+            }
+            .toList
+            .sequence
+            .flatMap { parsed =>
+              Ok(s"${parts.headers.get(`Content-Type`).getOrElse("")},${parsed.mkString(", ")}")
+            }
+        }
+      }
+  }
+
+  val redirect: HttpRoutes[IO] = HttpRoutes.of[IO] {
+    case _ -> Root / "redirect" / "r1" =>
+      TemporaryRedirect("/redirect/r2")
+
+    case _ -> Root / "redirect" / "r2" =>
+      PermanentRedirect("/redirect/r3")
+
+    case _ -> Root / "redirect" / "r3" =>
+      Found("/redirect/r4")
+
+    case _ -> Root / "redirect" / "r4" =>
+      Ok("819")
+
+    case _ -> Root / "redirect" / "loop" =>
+      Found("/redirect/loop")
+
+    case _ -> Root / "redirect" / "get_after_post" / "r301" =>
+      MovedPermanently("/redirect/get_after_post/result")
+
+    case _ -> Root / "redirect" / "get_after_post" / "r302" =>
+      Found("/redirect/get_after_post/result")
+
+    case _ -> Root / "redirect" / "get_after_post" / "r303" =>
+      SeeOther("/redirect/get_after_post/result")
+
+    case _ -> Root / "redirect" / "get_after_post" / "r307" =>
+      TemporaryRedirect("/redirect/get_after_post/result")
+
+    case _ -> Root / "redirect" / "get_after_post" / "r308" =>
+      PermanentRedirect("/redirect/get_after_post/result")
+
+    case GET -> Root / "redirect" / "get_after_post" / "result" =>
+      Ok("GET")
+
+    case request @ POST -> Root / "redirect" / "get_after_post" / "result" =>
+      request.decode[String] { body =>
+        Ok(s"POST$body")
+      }
+
+  }
+
+  val errors: HttpRoutes[IO] = HttpRoutes.of[IO] {
+    case _ -> Root / "error" =>
+      IO(
+        Response[IO]()
+          .withBodyStream(fs2.Stream[IO, Byte]('1').append { new RuntimeException; fs2.Stream[IO, Byte]('2') })
+          .withHeaders(Header("Content-Type", "application/octet-stream"))
+      )
+    case _ -> Root / "timeout" =>
+      val ec: ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2))
+      implicit val timer: Timer[IO] = IO.timer(ec)
+      IO.sleep(2.second).flatMap(_ => Ok("Done"))
+
+    case (POST | HEAD) -> Root / "empty_unauthorized_response" =>
+      IO(Response(Status.Unauthorized))
+
+  }
+
+  val isoText: HttpRoutes[IO] = HttpRoutes.of[IO]{
+    case GET -> Root / "respond_with_iso_8859_2" =>
+      Ok(textWithSpecialCharacters).map(_.withHeaders(Header("Content-Type", "text/plain; charset=ISO-8859-2")))
+  }
+
   def run(args: List[String]): IO[ExitCode] =
     BlazeServerBuilder[IO](global)
       //todo set correct port
       .bindHttp(8080, "localhost")
-      .withHttpApp((echo <+> headers <+> cookies <+> authed <+> secureDigest <+> compression).orNotFound)
+      .withHttpApp(
+        (echo <+>
+          headers <+>
+          cookies <+>
+          authed <+>
+          secureDigest <+>
+          compression <+>
+          download <+>
+          multipartRequest <+>
+          redirect <+>
+          errors <+>
+          isoText).orNotFound
+      )
       .serve
       .compile
       .drain
