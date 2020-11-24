@@ -3,7 +3,7 @@
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "opentracing-backend" % "3.0.0-RC9"
+"com.softwaremill.sttp.client3" %% "opentracing-backend" % "3.0.0-RC10"
 ```
 
 This backend depends on [opentracing](https://github.com/opentracing/opentracing-java), a standardized set of api for distributed tracing.
@@ -47,7 +47,7 @@ Using with [jaeger](https://www.jaegertracing.io/) tracing
 Add following dependency:
 
 ```
-libraryDependencies += "io.jaegertracing" % "jaeger-client" % "1.4.0"
+libraryDependencies += "io.jaegertracing" % "jaeger-client" % "1.5.0"
 ```
 
 Create an instance of tracer:
@@ -76,9 +76,9 @@ Using with [brave](https://github.com/openzipkin/brave) tracing
 Add following dependency:
 
 ```
-libraryDependencies += "io.opentracing.brave" % "brave-opentracing" % "0.37.4"
+libraryDependencies += "io.opentracing.brave" % "brave-opentracing" % "0.37.5"
 // and for integrationw with okHttp:
-libraryDependencies += "io.zipkin.reporter2" % "zipkin-sender-okhttp3" % "2.16.0" 
+libraryDependencies += "io.zipkin.reporter2" % "zipkin-sender-okhttp3" % "2.16.1" 
 ```
 
 Create an instance of tracer:
