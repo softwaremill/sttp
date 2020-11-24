@@ -16,7 +16,10 @@ import org.http4s.multipart.Multipart
 import org.http4s.server.AuthMiddleware
 import org.http4s.server.blaze._
 import org.http4s.server.middleware.authentication.BasicAuth
+import org.http4s.server.websocket.WebSocketBuilder
 import org.http4s.util.CaseInsensitiveString
+import org.http4s.websocket.WebSocketFrame
+import org.http4s.websocket.WebSocketFrame.Text
 
 import scala.annotation.tailrec
 import scala.concurrent.ExecutionContext
@@ -308,9 +311,27 @@ object Http4sServer extends IOApp {
 
   }
 
-  val isoText: HttpRoutes[IO] = HttpRoutes.of[IO]{
-    case GET -> Root / "respond_with_iso_8859_2" =>
-      Ok(textWithSpecialCharacters).map(_.withHeaders(Header("Content-Type", "text/plain; charset=ISO-8859-2")))
+  val isoText: HttpRoutes[IO] = HttpRoutes.of[IO] { case GET -> Root / "respond_with_iso_8859_2" =>
+    Ok(textWithSpecialCharacters).map(_.withHeaders(Header("Content-Type", "text/plain; charset=ISO-8859-2")))
+  }
+
+  val webSockets: HttpRoutes[IO] = HttpRoutes.of[IO] {
+    case _ -> Root / "ws" / "echo" =>
+      import fs2.concurrent.Queue
+      Queue.unbounded[IO, WebSocketFrame].flatMap{queue =>
+        WebSocketBuilder[IO].build(
+          queue.dequeue.collect { case Text(text) =>
+            Text(s"echo: $text")
+          },
+          queue.enqueue
+        )
+      }
+
+    case _ -> Root / "ws" / "send_and_wait" =>
+      ???
+
+    case _ -> Root / "ws" / "send_and_expect_echo" =>
+      ???
   }
 
   def run(args: List[String]): IO[ExitCode] = {
@@ -328,7 +349,8 @@ object Http4sServer extends IOApp {
           multipartRequest <+>
           redirect <+>
           errors <+>
-          isoText).orNotFound
+          isoText <+>
+          webSockets).orNotFound
       )
       .serve
       .compile
