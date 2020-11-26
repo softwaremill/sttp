@@ -8,18 +8,20 @@ import cats.effect._
 import cats.implicits._
 import org.http4s.CacheDirective._
 import org.http4s.EntityEncoder._
-import org.http4s._
 import org.http4s.dsl.io._
 import org.http4s.headers._
 import org.http4s.implicits._
 import org.http4s.multipart.Multipart
 import org.http4s.server.AuthMiddleware
 import org.http4s.server.blaze._
+import org.http4s.server.middleware.CORS.DefaultCORSConfig
+import org.http4s.server.middleware._
 import org.http4s.server.middleware.authentication.BasicAuth
 import org.http4s.server.websocket.WebSocketBuilder
 import org.http4s.util.CaseInsensitiveString
 import org.http4s.websocket.WebSocketFrame
 import org.http4s.websocket.WebSocketFrame.Text
+import org.http4s.{Http, _}
 
 import scala.annotation.tailrec
 import scala.concurrent.ExecutionContext
@@ -37,6 +39,13 @@ object Http4sServer extends IOApp {
   private val textFile = toByteArray(getClass.getResourceAsStream("/textfile.txt"))
   private val binaryFile = toByteArray(getClass.getResourceAsStream("/binaryfile.jpg"))
   private val textWithSpecialCharacters = "Żółć!"
+
+  private def corsSettings(service: Http[IO, IO]) = CORS(
+    service,
+    DefaultCORSConfig.copy(exposedHeaders =
+      Some(Set("Server", "Date", "Cache-Control", "Content-Length", "Content-Type", "WWW-Authenticate"))
+    )
+  )
 
   private def transfer(is: InputStream, os: OutputStream): Unit = {
     var read = 0
@@ -61,6 +70,8 @@ object Http4sServer extends IOApp {
   }
 
   val echo: HttpRoutes[IO] = HttpRoutes.of[IO] {
+    case _ -> Root => Ok()
+
     case request @ _ -> Root / "echo" / "as_string" =>
       request.decode[UrlForm] { params =>
         Ok(formToString(params))
@@ -73,7 +84,7 @@ object Http4sServer extends IOApp {
       }
 
     case request @ _ -> Root / "echo" / "headers" =>
-      val encoded = request.headers.iterator.map(h => h.name + "->" + h.value).mkString(",")
+      val encoded = request.headers.iterator.map(h => s"${h.name}->${h.value}").mkString(",")
       Ok(encoded)
 
     case request @ GET -> Root / "echo" =>
@@ -83,10 +94,12 @@ object Http4sServer extends IOApp {
       Ok(response)
 
     case request @ POST -> Root / "echo" =>
-      val response = List("POST", "/echo", paramsToString(request.params))
-        .filter(_.nonEmpty)
-        .mkString(" ")
-      Ok(response)
+      request.decode[String] { body =>
+        val response = List("POST", "/echo", paramsToString(request.params), body)
+          .filter(_.nonEmpty)
+          .mkString(" ")
+        Ok(response)
+      }
 
     case request @ POST -> Root / "echo" / "custom_status" / IntVar(status) =>
       request.decode[String] { body =>
@@ -123,7 +136,7 @@ object Http4sServer extends IOApp {
           ResponseCookie(
             name = "c",
             content = "v",
-            expires = Some(HttpDate.MinValue)
+            expires = Some(HttpDate.unsafeFromEpochSecond(881585352000L))
           )
         )
       )
@@ -141,16 +154,20 @@ object Http4sServer extends IOApp {
             content = "value1",
             secure = true,
             httpOnly = true,
-            maxAge = Some(123L)
-          )
-        ).addCookie(
-          ResponseCookie(
-            name = "cookie3",
-            content = "",
-            domain = Some("xyz"),
-            path = Some("a/b/c")
+            maxAge = Some(123L),
+            sameSite = SameSite.None
           )
         )
+          .addCookie(ResponseCookie(name = "cookie2", content = "value2", sameSite = SameSite.None))
+          .addCookie(
+            ResponseCookie(
+              name = "cookie3",
+              content = "",
+              domain = Some("xyz"),
+              path = Some("a/b/c"),
+              sameSite = SameSite.None
+            )
+          )
       )
   }
 
@@ -164,7 +181,7 @@ object Http4sServer extends IOApp {
 
   val authedService: AuthedRoutes[String, IO] =
     AuthedRoutes.of[String, IO] { case GET -> Root / "secure_basic" as user =>
-      Ok(s"Welcome, $user")
+      Ok(s"Hello, $user!")
     }
 
   val authed: HttpRoutes[IO] = authMiddleware(authedService)
@@ -237,52 +254,50 @@ object Http4sServer extends IOApp {
       }
 
     case request @ _ -> Root / "multipart" / "other" =>
-      request.decode[Multipart[IO]] { parts =>
-        request.decode[Multipart[IO]] { parts: Multipart[IO] =>
-          parts.parts
-            .map { part =>
-              part.body.compile.toList
-                .map(ByteString(_: _*).utf8String)
-            }
-            .toList
-            .sequence
-            .flatMap { parsed =>
-              Ok(s"${parts.headers.get(`Content-Type`).getOrElse("")},${parsed.mkString(", ")}")
-            }
-        }
+      request.decode[Multipart[IO]] { parts: Multipart[IO] =>
+        parts.parts
+          .map { part =>
+            part.body.compile.toList
+              .map(ByteString(_: _*).utf8String)
+          }
+          .toList
+          .sequence
+          .flatMap { parsed =>
+            Ok(s"${parts.headers.get(`Content-Type`).getOrElse("")},${parsed.mkString(", ")}")
+          }
       }
   }
 
   val redirect: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case _ -> Root / "redirect" / "r1" =>
-      TemporaryRedirect("/redirect/r2")
+      TemporaryRedirect().map(_.withHeaders(Location(uri"/redirect/r2")))
 
     case _ -> Root / "redirect" / "r2" =>
-      PermanentRedirect("/redirect/r3")
+      PermanentRedirect().map(_.withHeaders(Location(uri"/redirect/r3")))
 
     case _ -> Root / "redirect" / "r3" =>
-      Found("/redirect/r4")
+      Found().map(_.withHeaders(Location(uri"/redirect/r4")))
 
     case _ -> Root / "redirect" / "r4" =>
       Ok("819")
 
     case _ -> Root / "redirect" / "loop" =>
-      Found("/redirect/loop")
+      Found().map(_.withHeaders(Location(uri"/redirect/loop")))
 
     case _ -> Root / "redirect" / "get_after_post" / "r301" =>
-      MovedPermanently("/redirect/get_after_post/result")
+      MovedPermanently().map(_.withHeaders(Location(uri"/redirect/get_after_post/result")))
 
     case _ -> Root / "redirect" / "get_after_post" / "r302" =>
-      Found("/redirect/get_after_post/result")
+      Found().map(_.withHeaders(Location(uri"/redirect/get_after_post/result")))
 
     case _ -> Root / "redirect" / "get_after_post" / "r303" =>
-      SeeOther("/redirect/get_after_post/result")
+      SeeOther().map(_.withHeaders(Location(uri"/redirect/get_after_post/result")))
 
     case _ -> Root / "redirect" / "get_after_post" / "r307" =>
-      TemporaryRedirect("/redirect/get_after_post/result")
+      TemporaryRedirect("").map(_.withHeaders(Location(uri"/redirect/get_after_post/result")))
 
     case _ -> Root / "redirect" / "get_after_post" / "r308" =>
-      PermanentRedirect("/redirect/get_after_post/result")
+      PermanentRedirect("").map(_.withHeaders(Location(uri"/redirect/get_after_post/result")))
 
     case GET -> Root / "redirect" / "get_after_post" / "result" =>
       Ok("GET")
@@ -312,7 +327,10 @@ object Http4sServer extends IOApp {
   }
 
   val isoText: HttpRoutes[IO] = HttpRoutes.of[IO] { case GET -> Root / "respond_with_iso_8859_2" =>
-    Ok(textWithSpecialCharacters).map(_.withHeaders(Header("Content-Type", "text/plain; charset=ISO-8859-2")))
+    Ok().map(
+      _.withEntity(textWithSpecialCharacters.getBytes("ISO-8859-2"))
+        .withHeaders(Header("Content-Type", "text/plain; charset=ISO-8859-2"))
+    )
   }
 
   val webSockets: HttpRoutes[IO] = HttpRoutes.of[IO] {
@@ -321,7 +339,7 @@ object Http4sServer extends IOApp {
       Queue.unbounded[IO, WebSocketFrame].flatMap { queue =>
         WebSocketBuilder[IO].build(
           queue.dequeue.collect { case Text(text) =>
-            Text(s"echo: $text")
+            Text(s"echo: ${text._1}")
           },
           queue.enqueue
         )
@@ -353,18 +371,20 @@ object Http4sServer extends IOApp {
     BlazeServerBuilder[IO](global)
       .bindHttp(port, "localhost")
       .withHttpApp(
-        (echo <+>
-          headers <+>
-          cookies <+>
-          authed <+>
-          secureDigest <+>
-          compression <+>
-          download <+>
-          multipartRequest <+>
-          redirect <+>
-          errors <+>
-          isoText <+>
-          webSockets).orNotFound
+        corsSettings(
+          (echo <+>
+            headers <+>
+            cookies <+>
+            secureDigest <+>
+            compression <+>
+            download <+>
+            multipartRequest <+>
+            redirect <+>
+            errors <+>
+            isoText <+>
+            webSockets <+>
+            authed).orNotFound
+        )
       )
       .serve
       .compile
