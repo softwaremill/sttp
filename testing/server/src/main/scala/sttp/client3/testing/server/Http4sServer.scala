@@ -318,7 +318,7 @@ object Http4sServer extends IOApp {
   val webSockets: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case _ -> Root / "ws" / "echo" =>
       import fs2.concurrent.Queue
-      Queue.unbounded[IO, WebSocketFrame].flatMap{queue =>
+      Queue.unbounded[IO, WebSocketFrame].flatMap { queue =>
         WebSocketBuilder[IO].build(
           queue.dequeue.collect { case Text(text) =>
             Text(s"echo: $text")
@@ -328,7 +328,11 @@ object Http4sServer extends IOApp {
       }
 
     case _ -> Root / "ws" / "send_and_wait" =>
-      ???
+      val sendToClient: fs2.Stream[IO, WebSocketFrame] =
+        fs2.Stream[IO, WebSocketFrame](Text("test10"), Text("test20")) ++ fs2.Stream.eval[IO, WebSocketFrame](IO.never)
+      val ignore: fs2.Pipe[IO, WebSocketFrame, Unit] = s => s.map(_ => ())
+
+      WebSocketBuilder[IO].build(sendToClient, ignore)
 
     case _ -> Root / "ws" / "send_and_expect_echo" =>
       ???
