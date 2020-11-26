@@ -256,7 +256,7 @@ lazy val testServer = (projectMatrix in file("testing/server"))
       akkaStreams
     ),
     // the test server needs to be started before running any backend tests
-    mainClass in reStart := Some("sttp.client3.testing.server.HttpServer"),
+    mainClass in reStart := Some("sttp.client3.testing.server.Http4sServer"),
     reStartArgs in reStart := Seq(s"${(testServerPort in Test).value}"),
     fullClasspath in reStart := (fullClasspath in Test).value,
     testServerPort := 51823,

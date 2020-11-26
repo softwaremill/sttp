@@ -331,11 +331,21 @@ object Http4sServer extends IOApp {
       val sendToClient: fs2.Stream[IO, WebSocketFrame] =
         fs2.Stream[IO, WebSocketFrame](Text("test10"), Text("test20")) ++ fs2.Stream.eval[IO, WebSocketFrame](IO.never)
       val ignore: fs2.Pipe[IO, WebSocketFrame, Unit] = s => s.map(_ => ())
-
       WebSocketBuilder[IO].build(sendToClient, ignore)
 
     case _ -> Root / "ws" / "send_and_expect_echo" =>
-      ???
+      val sendToClient = fs2.Stream[IO, WebSocketFrame](Text("test1"), Text("test2"), Text("test3")) ++ fs2.Stream
+        .eval[IO, WebSocketFrame](IO.never)
+      val receive: fs2.Pipe[IO, WebSocketFrame, Unit] = s =>
+        s.zip(sendToClient).map { case (incoming, expected) =>
+          if (incoming != expected) {
+            throw new IllegalArgumentException(s"Wrong message, expected: $expected, but got: $incoming")
+          } else {
+            ()
+          }
+        }
+      WebSocketBuilder[IO].build(sendToClient, receive)
+
   }
 
   def run(args: List[String]): IO[ExitCode] = {
