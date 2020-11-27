@@ -59,21 +59,20 @@ private[httpclient] trait BodyToHttpClient[F[_], S] {
   private def multipartBody[T](parts: Seq[Part[RequestBody[_]]]) = {
     val multipartBuilder = new MultiPartBodyPublisher()
     parts.foreach { p =>
-      val allHeaders = p.headers :+ Header(HeaderNames.ContentDisposition, p.contentDispositionHeaderValue)
+      val allHeaders = Header(HeaderNames.ContentDisposition, p.contentDispositionHeaderValue) +: p.headers
       val partHeaders = allHeaders.map(h => h.name -> h.value).toMap.asJava
-      def fileName = p.fileName.getOrElse("")
-      def contentType = p.contentType.getOrElse(MediaType.ApplicationOctetStream.toString())
       p.body match {
         case NoBody              => // ignore
         case FileBody(f, _)      => multipartBuilder.addPart(p.name, f.toFile.toPath, partHeaders)
         case StringBody(b, _, _) => multipartBuilder.addPart(p.name, b, partHeaders)
         case ByteArrayBody(b, _) =>
-          multipartBuilder.addPart(p.name, supplier(new ByteArrayInputStream(b)), fileName, contentType)
+          multipartBuilder.addPart(p.name, supplier(new ByteArrayInputStream(b)), partHeaders)
         case ByteBufferBody(b, _) =>
           if ((b: Buffer).isReadOnly())
-            multipartBuilder.addPart(p.name, supplier(new ByteBufferBackedInputStream(b)), fileName, contentType)
-          else multipartBuilder.addPart(p.name, supplier(new ByteArrayInputStream(b.array())), fileName, contentType)
-        case InputStreamBody(b, _) => multipartBuilder.addPart(p.name, supplier(b), fileName, contentType)
+            multipartBuilder.addPart(p.name, supplier(new ByteBufferBackedInputStream(b)), partHeaders)
+          else
+            multipartBuilder.addPart(p.name, supplier(new ByteArrayInputStream(b.array())), partHeaders)
+        case InputStreamBody(b, _) => multipartBuilder.addPart(p.name, supplier(b), partHeaders)
         case StreamBody(_)         => throw new IllegalArgumentException("Streaming multipart bodies are not supported")
         case MultipartBody(_)      => throwNestedMultipartNotAllowed
       }
@@ -81,9 +80,9 @@ private[httpclient] trait BodyToHttpClient[F[_], S] {
     multipartBuilder
   }
 
-  private def supplier[T](t: => T) =
-    new Supplier[T] {
-      override def get(): T = t
+  private def supplier(t: => InputStream) =
+    new Supplier[InputStream] {
+      override def get(): InputStream = t
     }
 
   // https://stackoverflow.com/a/6603018/362531
