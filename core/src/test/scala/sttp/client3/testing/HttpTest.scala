@@ -8,7 +8,7 @@ import org.scalatest.freespec.AsyncFreeSpecLike
 import org.scalatest.matchers.should.Matchers
 import sttp.client3.testing.HttpTest.endpoint
 import sttp.client3.{Response, ResponseAs, SttpBackend, _}
-import sttp.model.StatusCode
+import sttp.model.{Header, StatusCode}
 import sttp.monad.MonadError
 
 import scala.concurrent.Future
@@ -231,13 +231,13 @@ trait HttpTest[F[_]]
   protected def cacheControlHeaders: Set[String] = Set("no-cache", "max-age=1000")
 
   "headers" - {
-    def getHeaders = basicRequest.get(uri"$endpoint/set_headers")
+    def getHeaders = basicRequest.get(uri"$endpoint/set_headers").headers(Header("Connection","close"))
 
     "read response headers" in {
       getHeaders.response(sttpIgnore).send(backend).toFuture().map { response =>
         response.headers should have length (4 + cacheControlHeaders.size).toLong
         response.headers("Cache-Control").toSet should be(cacheControlHeaders)
-        response.header("Server").exists(_.startsWith("akka-http")) should be(true)
+        response.header("connection").exists(_.startsWith("close")) should be(true)
         response.contentType should be(Some("text/plain; charset=UTF-8"))
         response.contentLength should be(Some(2L))
       }

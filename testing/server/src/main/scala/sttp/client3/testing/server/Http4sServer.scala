@@ -72,15 +72,14 @@ object Http4sServer extends IOApp {
   val echo: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case _ -> Root => Ok()
 
-    case request @ _ -> Root / "echo" / "as_string" =>
+    case request @ _ -> Root / "echo" / "form_params" / "as_string" =>
       request.decode[UrlForm] { params =>
         Ok(formToString(params))
       }
 
-    case request @ _ -> Root / "echo" / "as_params" =>
+    case request @ _ -> Root / "echo" / "form_params" / "as_params" =>
       request.decode[UrlForm] { params =>
-        //todo encode as FormData
-        Ok(formToString(params))
+        Ok(params)
       }
 
     case request @ _ -> Root / "echo" / "headers" =>
@@ -120,7 +119,12 @@ object Http4sServer extends IOApp {
     case GET -> Root / "set_headers" =>
       val response = Response[IO](Status.Ok)
         .withEntity("ok")
-        .withHeaders(`Cache-Control`(`max-age`(1000.seconds)), `Cache-Control`(`no-cache`()))
+        .withHeaders(
+          `Cache-Control`(`max-age`(1000.seconds)),
+          `Cache-Control`(`no-cache`()),
+          `Content-Type`(MediaType.text.plain, Charset.`UTF-8`),
+          Connection(CaseInsensitiveString("close"))
+        )
       IO(response)
 
     case request @ _ -> Root / "set_content_type_header_with_encoding_in_quotes" =>
@@ -136,7 +140,7 @@ object Http4sServer extends IOApp {
           ResponseCookie(
             name = "c",
             content = "v",
-            expires = Some(HttpDate.unsafeFromEpochSecond(881585352000L))
+            expires = Some(HttpDate.unsafeFromEpochSecond(32438580552000L))
           )
         )
       )
@@ -148,26 +152,11 @@ object Http4sServer extends IOApp {
 
     case _ -> Root / "cookies" / "set" =>
       Ok("ok").map(
-        _.addCookie(
-          ResponseCookie(
-            name = "cookie1",
-            content = "value1",
-            secure = true,
-            httpOnly = true,
-            maxAge = Some(123L),
-            sameSite = SameSite.None
-          )
+        _.withHeaders(
+          Header("Set-Cookie", "cookie1=value1; Max-Age=123; Secure; HttpOnly"),
+          Header("Set-Cookie", "cookie2=value2"),
+          Header("Set-Cookie", "cookie3=; Domain=xyz; Path=a/b/c")
         )
-          .addCookie(ResponseCookie(name = "cookie2", content = "value2", sameSite = SameSite.None))
-          .addCookie(
-            ResponseCookie(
-              name = "cookie3",
-              content = "",
-              domain = Some("xyz"),
-              path = Some("a/b/c"),
-              sameSite = SameSite.None
-            )
-          )
       )
   }
 
@@ -338,8 +327,8 @@ object Http4sServer extends IOApp {
       import fs2.concurrent.Queue
       Queue.unbounded[IO, WebSocketFrame].flatMap { queue =>
         WebSocketBuilder[IO].build(
-          queue.dequeue.collect { case Text(text) =>
-            Text(s"echo: ${text._1}")
+          queue.dequeue.collect { case Text(text, _) =>
+            Text(s"echo: ${text}")
           },
           queue.enqueue
         )
