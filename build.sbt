@@ -15,6 +15,8 @@ val scala3 = "0.27.0-RC1"
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests")
 
+parallelExecution in Global := false
+
 excludeLintKeys in Global ++= Set(ideSkipProject, reStartArgs)
 
 val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
