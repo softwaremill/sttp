@@ -34,7 +34,7 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
     // in the process
     releaseStepCommandAndRemaining("publishLocalSigned"),
     releaseStepCommandAndRemaining("clean"),
-    releaseStepCommandAndRemaining("test"),
+    releaseStepCommandAndRemaining("compile"),
     setReleaseVersion,
     releaseStepInputTask(docs.jvm(scala2_13) / mdoc),
     Release.stageChanges("generated-docs/out"),
@@ -153,9 +153,9 @@ val sttpSharedVersion = "1.0.0-RC8"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
 
-val jeagerClientVersion = "1.4.0"
-val braveOpentracingVersion = "0.37.4"
-val zipkinSenderOkHttpVersion = "2.16.0"
+val jeagerClientVersion = "1.5.0"
+val braveOpentracingVersion = "0.37.5"
+val zipkinSenderOkHttpVersion = "2.16.1"
 val resilience4jVersion = "1.6.1"
 
 val compileAndTest = "compile->compile;test->test"
@@ -225,7 +225,7 @@ lazy val allAggregates = projectsWithOptionalNative ++
   examples.projectRefs ++
   docs.projectRefs
 
-// For Travis tests, defining scripts that run JVM/JS/Native tests separately
+// For CI tests, defining scripts that run JVM/JS/Native tests separately
 val testJVM = taskKey[Unit]("Test JVM projects")
 val testJS = taskKey[Unit]("Test JS projects")
 val testNative = taskKey[Unit]("Test native projects")
@@ -649,7 +649,7 @@ lazy val sprayJson = (projectMatrix in file("json/spray-json"))
   .settings(
     name := "spray-json",
     libraryDependencies ++= Seq(
-      "io.spray" %% "spray-json" % "1.3.5"
+      "io.spray" %% "spray-json" % "1.3.6"
     ),
     scalaTest
   )
@@ -702,7 +702,7 @@ lazy val zioTelemetryOpenTracingBackend = (projectMatrix in file("metrics/zio-te
     name := "zio-telemetry-opentracing-backend",
     libraryDependencies ++= Seq(
       "dev.zio" %% "zio-opentracing" % "0.7.0",
-      "org.scala-lang.modules" %% "scala-collection-compat" % "2.2.0"
+      "org.scala-lang.modules" %% "scala-collection-compat" % "2.3.0"
     )
   )
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13))
@@ -714,7 +714,7 @@ lazy val scribeBackend = (projectMatrix in file("logging/scribe"))
   .settings(
     name := "scribe-backend",
     libraryDependencies ++= Seq(
-      "com.outr" %%% "scribe" % "3.0.3"
+      "com.outr" %%% "scribe" % "3.1.2"
     ),
     scalaTest
   )

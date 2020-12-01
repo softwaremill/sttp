@@ -371,6 +371,13 @@ trait HttpTest[F[_]]
       req.send(backend).toFuture().map { resp => resp.body should be(s"p1=v1$defaultFileName, p2=v2$defaultFileName") }
     }
 
+    "send a multipart message with an explicitly set content type header" in {
+      val req = mp
+        .multipartBody(multipart("p1", "v1"), multipart("p2", "v2"))
+        .contentType("multipart/form-data")
+      req.send(backend).toFuture().map { resp => resp.body should be(s"p1=v1$defaultFileName, p2=v2$defaultFileName") }
+    }
+
     "send a multipart message with filenames" in {
       val req = mp.multipartBody(multipart("p1", "v1").fileName("f1"), multipart("p2", "v2").fileName("f2"))
       req.send(backend).toFuture().map { resp => resp.body should be("p1=v1 (f1), p2=v2 (f2)") }
