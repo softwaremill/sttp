@@ -135,15 +135,8 @@ object Http4sServer extends IOApp {
 
   val cookies: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case _ -> Root / "cookies" / "set_with_expires" =>
-      Ok("ok").map(
-        _.addCookie(
-          ResponseCookie(
-            name = "c",
-            content = "v",
-            expires = Some(HttpDate.unsafeFromEpochSecond(32438580552000L))
-          )
-        )
-      )
+      Ok("ok").map(_.withHeaders(Header("Set-Cookie", "c=v; Expires=Mon, 08 Dec 1997 12:49:12 GMT")))
+
     case request @ _ -> Root / "cookies" / "get_cookie2" =>
       request.cookies.find(_.name == "cookie2") match {
         case Some(c) => Ok(s"${c.name}=${c.content}")
@@ -213,11 +206,9 @@ object Http4sServer extends IOApp {
       Ok("I'm compressed, but who cares! Must be overwritten by client encoder").map(
         _.withHeaders(`Content-Encoding`(ContentCoding.unsafeFromString("custom")))
       )
-    case _ -> Root / "compress" =>
-      Ok("I'm compressed!").map(
-        _.withHeaders(`Content-Encoding`(ContentCoding.gzip))
-      )
   }
+
+  val gzip: HttpRoutes[IO] = GZip(HttpRoutes.of[IO] { case _ -> Root / "compress" => Ok("I'm compressed!") })
 
   val download: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case _ -> Root / "download" / "binary" =>
@@ -252,7 +243,7 @@ object Http4sServer extends IOApp {
           .toList
           .sequence
           .flatMap { parsed =>
-            Ok(s"${parts.headers.get(`Content-Type`).getOrElse("")},${parsed.mkString(", ")}")
+            Ok(s"${request.headers.get(`Content-Type`).getOrElse("")},${parsed.mkString(", ")}")
           }
       }
   }
@@ -366,6 +357,7 @@ object Http4sServer extends IOApp {
             cookies <+>
             secureDigest <+>
             compression <+>
+            gzip <+>
             download <+>
             multipartRequest <+>
             redirect <+>
