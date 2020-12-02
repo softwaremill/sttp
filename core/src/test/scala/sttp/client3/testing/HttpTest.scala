@@ -294,7 +294,7 @@ trait HttpTest[F[_]]
       val req = secureBasic
       req.send(backend).toFuture().map { resp =>
         resp.code shouldBe StatusCode.Unauthorized
-        resp.header("WWW-Authenticate") should be(Some("""Basic realm="test realm",charset=UTF-8"""))
+        resp.header("WWW-Authenticate").exists(_.startsWith("""Basic realm="test realm""")) should be(true)
       }
     }
 

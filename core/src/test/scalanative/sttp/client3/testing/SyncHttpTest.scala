@@ -190,7 +190,7 @@ trait SyncHttpTest
       val response = getHeaders.response(sttpIgnore).send(backend)
       response.headers should have length (4 + cacheControlHeaders.size).toLong
       response.headers("Cache-Control").toSet should be(cacheControlHeaders)
-      response.header("connection").exists(_.startsWith("close")) should be(true)
+      response.header("connection") should be(Some("close"))
       response.contentType should be(Some("text/plain; charset=UTF-8"))
       response.contentLength should be(Some(2L))
     }
@@ -217,7 +217,7 @@ trait SyncHttpTest
       val req = secureBasic
       val resp = req.send(backend)
       resp.code shouldBe StatusCode.Unauthorized
-      resp.header("WWW-Authenticate") shouldBe Some("""Basic realm="test realm",charset=UTF-8""")
+      resp.header("WWW-Authenticate").exists(_.startsWith("""Basic realm="test realm""")) should be(true)
     }
 
     "perform basic authorization" in {

@@ -12,12 +12,12 @@ import org.http4s.dsl.io._
 import org.http4s.headers._
 import org.http4s.implicits._
 import org.http4s.multipart.Multipart
-import org.http4s.server.AuthMiddleware
 import org.http4s.server.blaze._
 import org.http4s.server.middleware.CORS.DefaultCORSConfig
 import org.http4s.server.middleware._
 import org.http4s.server.middleware.authentication.BasicAuth
 import org.http4s.server.websocket.WebSocketBuilder
+import org.http4s.server.{AuthMiddleware, Router}
 import org.http4s.util.CaseInsensitiveString
 import org.http4s.websocket.WebSocketFrame
 import org.http4s.websocket.WebSocketFrame.Text
@@ -162,7 +162,7 @@ object Http4sServer extends IOApp {
   )
 
   val authedService: AuthedRoutes[String, IO] =
-    AuthedRoutes.of[String, IO] { case GET -> Root / "secure_basic" as user =>
+    AuthedRoutes.of[String, IO] { case GET -> Root as user =>
       Ok(s"Hello, $user!")
     }
 
@@ -352,19 +352,21 @@ object Http4sServer extends IOApp {
       .bindHttp(port, "localhost")
       .withHttpApp(
         corsSettings(
-          (echo <+>
-            headers <+>
-            cookies <+>
-            secureDigest <+>
-            compression <+>
-            gzip <+>
-            download <+>
-            multipartRequest <+>
-            redirect <+>
-            errors <+>
-            isoText <+>
-            webSockets <+>
-            authed).orNotFound
+          Router(
+            "/" -> (echo <+>
+              headers <+>
+              cookies <+>
+              secureDigest <+>
+              compression <+>
+              gzip <+>
+              download <+>
+              multipartRequest <+>
+              redirect <+>
+              errors <+>
+              isoText <+>
+              webSockets),
+            "/secure_basic" -> authed
+          ).orNotFound
         )
       )
       .serve
