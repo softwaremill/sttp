@@ -190,7 +190,7 @@ trait SyncHttpTest
       val response = getHeaders.response(sttpIgnore).send(backend)
       response.headers should have length (4 + cacheControlHeaders.size).toLong
       response.headers("Cache-Control").toSet should be(cacheControlHeaders)
-      response.header("connection") should be(Some("close"))
+      response.header("connection").exists(_.startsWith("close")) should be(true)
       response.contentType should be(Some("text/plain; charset=UTF-8"))
       response.contentLength should be(Some(2L))
     }
