@@ -5,6 +5,7 @@ import cats.instances.string._
 import fs2.{Chunk, Stream}
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client3.impl.cats.CatsTestBase
+import sttp.client3.sse.ServerSentEvent
 import sttp.client3.testing.streaming.StreamingTest
 
 trait Fs2StreamingTest extends StreamingTest[IO, Fs2Streams[IO]] with CatsTestBase {
@@ -18,4 +19,6 @@ trait Fs2StreamingTest extends StreamingTest[IO, Fs2Streams[IO]] with CatsTestBa
       .through(fs2.text.utf8Decode)
       .compile
       .foldMonoid
+
+  def sseConsumer(stream: streams.BinaryStream): IO[List[ServerSentEvent]] = ???
 }

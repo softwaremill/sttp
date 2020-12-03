@@ -4,6 +4,7 @@ import sttp.capabilities.zio.ZioStreams
 import sttp.client3.SttpBackend
 import sttp.client3.impl.zio.ZioTestBase
 import sttp.client3.internal._
+import sttp.client3.sse.ServerSentEvent
 import sttp.client3.testing.ConvertToFuture
 import sttp.client3.testing.streaming.StreamingTest
 import zio._
@@ -21,6 +22,8 @@ class HttpClientZioStreamingTest extends StreamingTest[Task, ZioStreams] with Zi
 
   override def bodyConsumer(stream: ZStream[Any, Throwable, Byte]): Task[String] =
     stream.runCollect.map(bytes => new String(bytes.toArray, Utf8))
+
+  override def sseConsumer(stream: Stream[Throwable, Byte]): Task[List[ServerSentEvent]] = ???
 
   override protected def supportsStreamingMultipartParts: Boolean = false
 }
