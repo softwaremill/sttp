@@ -8,6 +8,7 @@ import akka.http.scaladsl.coding._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.CacheDirectives._
 import akka.http.scaladsl.model.headers._
+import akka.http.scaladsl.model.sse.ServerSentEvent
 import akka.http.scaladsl.model.ws.{BinaryMessage, Message, TextMessage}
 import akka.http.scaladsl.server.Directives.{entity, path, _}
 import akka.http.scaladsl.server.directives.Credentials
@@ -103,6 +104,21 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
       path("echo") {
         post {
           parameterMap { _ => entity(as[String]) { (body: String) => complete(body) } }
+        }
+      }
+    } ~ pathPrefix("sse") {
+      path("echo") {
+        import akka.http.scaladsl.marshalling.sse.EventStreamMarshalling._
+        post {
+          entity(as[String]){ body =>
+            complete {
+              Source
+                .tick(2.seconds, 2.seconds, NotUsed)
+                .map(_ => ServerSentEvent(body))
+                .keepAlive(1.second, () => ServerSentEvent.heartbeat)
+                .take(3)
+            }
+          }
         }
       }
     } ~ path("set_headers") {
