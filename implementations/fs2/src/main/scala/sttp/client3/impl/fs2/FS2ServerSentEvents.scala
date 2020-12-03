@@ -11,8 +11,22 @@ object FS2ServerSentEvents {
       .split(_.isEmpty)
       .map(_.toList)
       .map { event =>
-        //todo parse the event
-        ServerSentEvent()
+        event.foldLeft(ServerSentEvent()) { (event, line) =>
+          line.span(_ == ':') match {
+            case ("data", content)      => combineData(event, content)
+            case ("id", content)        => event.copy(id = Some(content))
+            //todo add number validation it should be positive integer
+            case ("retry", content)     => event.copy(retry = Some(content.toInt))
+            case ("eventType", content) => event.copy(eventType = Some(content))
+          }
+        }
       }
+  }
+
+  private def combineData(event: ServerSentEvent, newData: String): ServerSentEvent = {
+    event match {
+      case e @ ServerSentEvent(Some(oldData), _, _, _) => e.copy(data = Some(s"$oldData\n$newData"))
+      case e @ ServerSentEvent(None, _, _, _)          => e.copy(data = Some(newData))
+    }
   }
 }
