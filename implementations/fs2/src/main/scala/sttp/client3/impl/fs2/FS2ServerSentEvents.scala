@@ -6,7 +6,7 @@ import sttp.client3.sse.ServerSentEvent
 import scala.util.Try
 
 object FS2ServerSentEvents {
-  def decodeSSE[F[_]](response: fs2.Stream[F, Byte]): fs2.Stream[F, ServerSentEvent] = {
+  def decodeSSE[F[_]]: fs2.Pipe[F, Byte, ServerSentEvent] = { response: fs2.Stream[F, Byte] =>
     response
       .through(text.utf8Decode[F])
       .through(text.lines[F])
