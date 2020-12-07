@@ -28,5 +28,8 @@ class AkkaHttpStreamingTest extends StreamingTest[Future, AkkaStreams] {
   override def bodyConsumer(stream: Source[ByteString, Any]): Future[String] =
     stream.map(_.utf8String).runReduce(_ + _)
 
-  override def sseConsumer(stream: Source[ByteString, Any]): Future[List[ServerSentEvent]] = ???
+  override def sseConsumer(stream: Source[ByteString, Any]): Future[List[ServerSentEvent]] =
+    stream.via(AkkaHttpServerSentEvents.decodeSSE).runFold(List.empty[ServerSentEvent]) { case (list, event) =>
+      list :+ event
+    }
 }
