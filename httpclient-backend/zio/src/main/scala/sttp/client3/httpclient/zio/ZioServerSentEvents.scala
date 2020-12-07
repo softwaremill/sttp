@@ -8,7 +8,7 @@ import zio.stream.ZTransducer
 import scala.util.Try
 
 object ZioServerSentEvents {
-  def decodeSSE(): ZioStreams.Pipe[Byte, ServerSentEvent] = { stream: stream.Stream[Throwable, Byte] =>
+  def decodeSSE(): ZioStreams.Pipe[Byte, ServerSentEvent] = { stream =>
     stream
       .aggregate(ZTransducer.utf8Decode)
       .aggregate(ZTransducer.splitLines)
