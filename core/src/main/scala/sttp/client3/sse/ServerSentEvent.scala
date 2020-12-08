@@ -12,7 +12,7 @@ case class ServerSentEvent(
 object ServerSentEvent {
   def parseEvent(event: List[String]): ServerSentEvent = {
     event.foldLeft(ServerSentEvent()) { (event, line) =>
-      line.split(":") match {
+      line.split(":").toList match {
         case "data" :: content      => combineData(event, content.mkString(":"))
         case "id" :: content        => event.copy(id = Some(content.mkString(":")))
         case "retry" :: content     => event.copy(retry = Try(content.mkString(":").toInt).toOption)
