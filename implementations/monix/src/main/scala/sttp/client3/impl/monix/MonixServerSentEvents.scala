@@ -18,7 +18,7 @@ object MonixServerSentEvents {
       .map(ServerSentEvent.parseEvent)
   }
 
-  private def combineFrames(nextString: String) = {
+  private def combineFrames(nextString: String): (String, List[String]) = {
     val splited = nextString.split(Separator).toList
     if (nextString.endsWith(Separator)) {
       ("", splited.filter(_.nonEmpty))

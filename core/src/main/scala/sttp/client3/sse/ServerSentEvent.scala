@@ -9,14 +9,14 @@ case class ServerSentEvent(
     retry: Option[Int] = None
 )
 
-object ServerSentEvent{
-  def parseEvent(event:List[String]):ServerSentEvent={
+object ServerSentEvent {
+  def parseEvent(event: List[String]): ServerSentEvent = {
     event.foldLeft(ServerSentEvent()) { (event, line) =>
-      line.span(_ == ':') match {
-        case ("data", content)      => combineData(event, content)
-        case ("id", content)        => event.copy(id = Some(content))
-        case ("retry", content)     => event.copy(retry = Try(content.toInt).toOption)
-        case ("eventType", content) => event.copy(eventType = Some(content))
+      line.split(":") match {
+        case "data" :: content      => combineData(event, content.mkString(":"))
+        case "id" :: content        => event.copy(id = Some(content.mkString(":")))
+        case "retry" :: content     => event.copy(retry = Try(content.mkString(":").toInt).toOption)
+        case "eventType" :: content => event.copy(eventType = Some(content.mkString(":")))
         case _                      => event
       }
     }
