@@ -16,7 +16,7 @@ object ServerSentEvent {
         case "data" :: content      => combineData(event, content.mkString(":"))
         case "id" :: content        => event.copy(id = Some(content.mkString(":")))
         case "retry" :: content     => event.copy(retry = Try(content.mkString(":").toInt).toOption)
-        case "eventType" :: content => event.copy(eventType = Some(content.mkString(":")))
+        case "event" :: content => event.copy(eventType = Some(content.mkString(":")))
         case _                      => event
       }
     }
