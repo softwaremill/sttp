@@ -9,7 +9,8 @@ object AkkaHttpServerSentEvents {
 
   def decodeSSE: Flow[ByteString, ServerSentEvent, NotUsed] =
     //todo decide on max frame length
-    Framing.delimiter(ByteString("\n\n"), maximumFrameLength = Int.MaxValue, allowTruncation = true)
+    Framing
+      .delimiter(ByteString("\n\n"), maximumFrameLength = Int.MaxValue, allowTruncation = true)
       .map(_.utf8String)
       .map(_.split("\n").toList)
       .map(ServerSentEvent.parseEvent)

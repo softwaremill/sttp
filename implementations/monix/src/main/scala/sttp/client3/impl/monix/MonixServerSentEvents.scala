@@ -8,7 +8,7 @@ object MonixServerSentEvents {
   private val Separator = "\n\n"
   def decodeSSE: Transformer[Array[Byte], ServerSentEvent] = { observable =>
     observable
-      .bufferWhileInclusive(array => getSplitAt(array).getOrElse(0) > 0)
+      .bufferWhileInclusive(array => missingBytes(array).getOrElse(0) > 0)
       .map(seq => seq.fold(Array.empty)(_ ++ _))
       .map(array => new String(array, "UTF-8"))
       .mapAccumulate[String, List[String]]("") { case (reminder, nextString) =>
@@ -20,16 +20,16 @@ object MonixServerSentEvents {
   }
 
   //-------
-  //this part is utf8 incomplete byte detection from monix from monix.nio.text
-  //it is added to this file instead of called from library for compatibility with scalajs
+  //this part is utf8 incomplete byte detection from monix from monix.nio.text.UTF8Codec
+  //it is added to this file instead of called from library for compatibility with scalajs that does not have nio
   private def indexIncrement(b: Byte): Int = {
     if ((b & 0x80) == 0) 0 // ASCII byte
-    else if ((b & 0xE0) == 0xC0) 2 // first of a 2 byte seq
-    else if ((b & 0xF0) == 0xE0) 3 // first of a 3 byte seq
-    else if ((b & 0xF8) == 0xF0) 4 // first of a 4 byte seq
+    else if ((b & 0xe0) == 0xc0) 2 // first of a 2 byte seq
+    else if ((b & 0xf0) == 0xe0) 3 // first of a 3 byte seq
+    else if ((b & 0xf8) == 0xf0) 4 // first of a 4 byte seq
     else 0 // following char
   }
-  private def getSplitAt(bytes: Array[Byte]): Option[Int] = {
+  private def missingBytes(bytes: Array[Byte]): Option[Int] = {
     val lastThree = bytes.drop(0 max bytes.length - 3)
     val addBytesFromLast3 = lastThree.zipWithIndex.foldLeft(Option.empty[Int]) { (acc, elem) =>
       val increment = indexIncrement(elem._1)
