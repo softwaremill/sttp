@@ -9,6 +9,7 @@ object FS2ServerSentEvents {
       .through(text.utf8Decode[F])
       .through(text.lines[F])
       .split(_.isEmpty)
+      .filter(_.nonEmpty)
       .map(_.toList)
       .map(ServerSentEvent.parseEvent)
   }
