@@ -61,7 +61,7 @@ abstract class StreamingTest[F[_], S]
 
   "handle server sent events SSE" in {
     val sseData = "ala ma kota\nzbyszek ma psa"
-    val expectedEvent = ServerSentEvent(data = Some(sseData), eventType = Some("test-event"), retry = Some(42))
+    val expectedEvent = ServerSentEvent(data = Some(sseData), eventType = Some("test-event"), retry = Some(42000))
     val expectedEvents =
       Seq(expectedEvent.copy(id = Some("1")), expectedEvent.copy(id = Some("2")), expectedEvent.copy(id = Some("3")))
 

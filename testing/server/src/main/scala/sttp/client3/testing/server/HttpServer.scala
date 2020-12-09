@@ -110,11 +110,19 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
       path("echo") {
         import akka.http.scaladsl.marshalling.sse.EventStreamMarshalling._
         post {
-          entity(as[String]){ body =>
+          entity(as[String]) { body =>
             complete {
               Source
-                .tick(2.seconds, 2.seconds, NotUsed)
-                .map(_ => ServerSentEvent(body))
+                .tick(0.millis, 500.millis, NotUsed)
+                .zipWithIndex
+                .map { case (_, index) =>
+                  ServerSentEvent(
+                    data = body,
+                    eventType = Some("test-event"),
+                    id = Some(s"${index.toInt + 1}"),
+                    retry = Some(42000)
+                  )
+                }
                 .keepAlive(1.second, () => ServerSentEvent.heartbeat)
                 .take(3)
             }
