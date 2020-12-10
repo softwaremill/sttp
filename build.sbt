@@ -1,9 +1,7 @@
-import com.softwaremill.Publish.Release.updateVersionInDocs
+import com.softwaremill.UpdateVersionInDocs
 import sbt.Keys.publishArtifact
 import sbt.Reference.display
 import sbt.internal.ProjectMatrix
-import sbtrelease.ReleasePlugin.autoImport._
-import sbtrelease.ReleaseStateTransformations._
 // run JS tests inside Chrome, due to jsdom not supporting fetch
 import com.softwaremill.SbtSoftwareMillBrowserTestJS._
 
@@ -21,30 +19,15 @@ excludeLintKeys in Global ++= Set(ideSkipProject, reStartArgs)
 
 val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   organization := "com.softwaremill.sttp.client3",
-  scmInfo := Some(ScmInfo(url("https://github.com/softwaremill/sttp"), "scm:git@github.com:softwaremill/sttp.git")),
   // needed on sbt 1.3, but (for some unknown reason) only on 2.11.x
   closeClassLoaders := !scalaVersion.value.startsWith("2.11."),
-  // cross-release doesn't work when subprojects have different cross versions
-  // work-around from https://github.com/sbt/sbt-release/issues/214,
-  releaseCrossBuild := false,
-  releaseProcess := Seq(
-    checkSnapshotDependencies,
-    inquireVersions,
-    // publishing locally so that the pgp password prompt is displayed early
-    // in the process
-    releaseStepCommandAndRemaining("publishLocalSigned"),
-    releaseStepCommandAndRemaining("clean"),
-    releaseStepCommandAndRemaining("compile"),
-    setReleaseVersion,
-    releaseStepInputTask(docs.jvm(scala2_13) / mdoc),
-    Release.stageChanges("generated-docs/out"),
-    updateVersionInDocs(organization.value),
-    commitReleaseVersion,
-    tagRelease,
-    releaseStepCommandAndRemaining("publishSigned"),
-    releaseStepCommand("sonatypeBundleRelease"),
-    pushChanges
-  ),
+  updateDocs := Def.taskDyn {
+    val files1 = UpdateVersionInDocs(sLog.value, organization.value, version.value)
+    Def.task {
+      (docs.jvm(scala2_13) / mdoc).toTask("").value
+      files1 ++ Seq(file("generated-doc/out"))
+    }
+  }.value,
   ideSkipProject := (scalaVersion.value != scala2_13) || thisProjectRef.value.project.contains(
     "JS"
   ) || thisProjectRef.value.project.contains("Native"),
@@ -288,7 +271,7 @@ lazy val core = (projectMatrix in file("core"))
   .jsPlatform(
     scalaVersions = List(scala2_11, scala2_12, scala2_13),
     settings = {
-      commonJsSettings ++ commonJsBackendSettings ++ browserTestSettings ++ List(
+      commonJsSettings ++ commonJsBackendSettings ++ browserChromeTestSettings ++ List(
         publishArtifact in Test := true
       )
     }
@@ -365,7 +348,7 @@ lazy val monix = (projectMatrix in file("implementations/monix"))
   )
   .jsPlatform(
     scalaVersions = List(scala2_12, scala2_13),
-    settings = commonJsSettings ++ commonJsBackendSettings ++ browserTestSettings ++ testServerSettings
+    settings = commonJsSettings ++ commonJsBackendSettings ++ browserChromeTestSettings ++ testServerSettings
   )
 
 lazy val zio = (projectMatrix in file("implementations/zio"))
