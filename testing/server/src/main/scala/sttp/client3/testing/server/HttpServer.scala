@@ -107,7 +107,7 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
         }
       }
     } ~ pathPrefix("sse") {
-      path("echo") {
+      path("echo3") {
         import akka.http.scaladsl.marshalling.sse.EventStreamMarshalling._
         post {
           entity(as[String]) { body =>

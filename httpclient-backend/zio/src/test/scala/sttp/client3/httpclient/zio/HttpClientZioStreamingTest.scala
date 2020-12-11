@@ -2,7 +2,7 @@ package sttp.client3.httpclient.zio
 
 import sttp.capabilities.zio.ZioStreams
 import sttp.client3.SttpBackend
-import sttp.client3.impl.zio.ZioTestBase
+import sttp.client3.impl.zio.{ZioServerSentEvents, ZioTestBase}
 import sttp.client3.internal._
 import sttp.client3.sse.ServerSentEvent
 import sttp.client3.testing.ConvertToFuture
