@@ -66,7 +66,7 @@ abstract class StreamingTest[F[_], S]
       Seq(expectedEvent.copy(id = Some("1")), expectedEvent.copy(id = Some("2")), expectedEvent.copy(id = Some("3")))
 
     basicRequest
-      .post(uri"$endpoint/sse/echo")
+      .post(uri"$endpoint/sse/echo3")
       .body(sseData)
       .response(asStreamAlways(streams)(sseConsumer(_)))
       .send(backend)
