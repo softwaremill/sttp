@@ -118,7 +118,7 @@ val catsEffectVersion: Option[(Long, Long)] => String = {
 }
 val fs2Version: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.1.0"
-  case _             => "2.4.4"
+  case _             => "2.4.6"
 }
 
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.2.1"
@@ -139,7 +139,7 @@ val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
 
 val jeagerClientVersion = "1.5.0"
 val braveOpentracingVersion = "0.37.5"
-val zipkinSenderOkHttpVersion = "2.16.1"
+val zipkinSenderOkHttpVersion = "2.16.2"
 val resilience4jVersion = "1.6.1"
 
 val compileAndTest = "compile->compile;test->test"
@@ -484,7 +484,7 @@ lazy val http4sBackend = (projectMatrix in file("http4s-backend"))
   .settings(
     name := "http4s-backend",
     libraryDependencies ++= Seq(
-      "org.http4s" %% "http4s-blaze-client" % "0.21.8"
+      "org.http4s" %% "http4s-blaze-client" % "0.21.14"
     )
   )
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13))
