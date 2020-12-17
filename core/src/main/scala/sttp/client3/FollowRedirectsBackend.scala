@@ -1,7 +1,6 @@
 package sttp.client3
 
 import java.net.URI
-
 import sttp.capabilities.Effect
 import sttp.monad.MonadError
 import sttp.model.{Method, StatusCode, _}
@@ -100,7 +99,12 @@ class FollowRedirectsBackend[F[_], P](
 object FollowRedirectsBackend {
   private[client3] val MaxRedirects = 32
 
-  private[client3] def isRelative(uri: String): Boolean = uri.trim.startsWith("/")
+  private val protocol = "^[a-z]+://.*".r
+
+  private[client3] def isRelative(uri: String): Boolean = {
+    val toCheck = uri.toLowerCase().trim
+    !protocol.matches(toCheck)
+  }
 }
 
 case class TooManyRedirectsException(uri: Uri, redirects: Int) extends Exception
