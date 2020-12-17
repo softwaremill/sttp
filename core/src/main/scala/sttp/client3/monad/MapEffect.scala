@@ -72,7 +72,7 @@ object MapEffect {
       case IgnoreResponse      => IgnoreResponse
       case ResponseAsByteArray => ResponseAsByteArray
       case ResponseAsStream(s, f) =>
-        ResponseAsStream(s)(f.asInstanceOf[Any => F[Any]].andThen(fk.apply(_)))
+        ResponseAsStream(s)((s, m) => fk(f.asInstanceOf[(Any, ResponseMetadata) => F[Any]](s, m)))
       case rasu: ResponseAsStreamUnsafe[_, _] => rasu
       case ResponseAsFile(output)             => ResponseAsFile(output)
       case ResponseAsWebSocket(f) =>

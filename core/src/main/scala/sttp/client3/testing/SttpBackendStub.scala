@@ -211,7 +211,7 @@ object SttpBackendStub {
         }
       case ResponseAsStream(_, f) =>
         b match {
-          case RawStream(s) => Some(f.asInstanceOf[Any => F[T]](s))
+          case RawStream(s) => Some(f.asInstanceOf[(Any, ResponseMetadata) => F[T]](s, meta))
           case _            => None
         }
       case ResponseAsStreamUnsafe(_) =>

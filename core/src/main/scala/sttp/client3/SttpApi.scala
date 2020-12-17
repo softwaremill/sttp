@@ -107,8 +107,17 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
   def asStream[F[_], T, S](s: Streams[S])(f: s.BinaryStream => F[T]): ResponseAs[Either[String, T], Effect[F] with S] =
     asEither(asStringAlways, asStreamAlways(s)(f))
 
+  def asStreamWithMetadata[F[_], T, S](s: Streams[S])(
+      f: (s.BinaryStream, ResponseMetadata) => F[T]
+  ): ResponseAs[Either[String, T], Effect[F] with S] =
+    asEither(asStringAlways, asStreamAlwaysWithMetadata(s)(f))
+
   def asStreamAlways[F[_], T, S](s: Streams[S])(f: s.BinaryStream => F[T]): ResponseAs[T, Effect[F] with S] =
-    ResponseAsStream(s)(f)
+    asStreamAlwaysWithMetadata(s)((s, _) => f(s))
+
+  def asStreamAlwaysWithMetadata[F[_], T, S](s: Streams[S])(
+      f: (s.BinaryStream, ResponseMetadata) => F[T]
+  ): ResponseAs[T, Effect[F] with S] = ResponseAsStream(s)(f)
 
   def asStreamUnsafe[S](s: Streams[S]): ResponseAs[Either[String, s.BinaryStream], S] =
     asEither(asStringAlways, asStreamAlwaysUnsafe(s))

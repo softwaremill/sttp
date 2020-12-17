@@ -46,7 +46,7 @@ abstract class BodyFromResponseAs[F[_], RegularResponse, WSResponse, Stream](imp
 
       case (ResponseAsStream(_, f), Left(regular)) =>
         regularAsStream(regular).flatMap { case (stream, cancel) =>
-          f.asInstanceOf[Stream => F[T]](stream).map((_, nonReplayableBody)).ensure(cancel())
+          f.asInstanceOf[(Stream, ResponseMetadata) => F[T]](stream, meta).map((_, nonReplayableBody)).ensure(cancel())
         }
 
       case (ResponseAsStreamUnsafe(_), Left(regular)) =>
