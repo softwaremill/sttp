@@ -33,7 +33,9 @@ jobs:
         key: sbt-cache-${{ runner.os }}-${{ matrix.target-platform }}-${{ hashFiles('project/build.properties') }}
     - name: Install libidn11-dev
       if: matrix.target-platform == 'Native'
-      run: sudo apt-get install libidn11-dev
+      run: |
+        sudo apt-get install libidn11-dev
+        echo "STTP_NATIVE=1" >> $GITHUB_ENV
     - name: Compile
       run: sbt -v compile compileDocs
     - name: Test
@@ -51,6 +53,8 @@ jobs:
     needs: [ci]
     if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v'))
     runs-on: ubuntu-20.04
+    env:
+      STTP_NATIVE: 1
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -65,7 +69,9 @@ jobs:
             ~/.sbt
             ~/.ivy2/cache
             ~/.coursier
-          key: sbt-cache-${{ runner.os }}-${{ matrix.target-platform }}-${{ hashFiles('project/build.properties') }}
+          key: sbt-cache-release-${{ runner.os }}-${{ hashFiles('project/build.properties') }}
+      - name: Install libidn11-dev
+        run: sudo apt-get install libidn11-dev
       - name: Compile
         run: sbt compile
       - name: Publish artifacts
