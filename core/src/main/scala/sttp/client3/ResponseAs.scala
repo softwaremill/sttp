@@ -63,7 +63,7 @@ case class ResponseAsFile(output: SttpFile) extends ResponseAs[SttpFile, Any] {
 }
 
 sealed trait WebSocketResponseAs[T, -R] extends ResponseAs[T, R]
-case class ResponseAsWebSocket[F[_], T](f: WebSocket[F] => F[T])
+case class ResponseAsWebSocket[F[_], T](f: (WebSocket[F], ResponseMetadata) => F[T])
     extends WebSocketResponseAs[T, Effect[F] with WebSockets] {
   override def show: String = "as web socket"
 }

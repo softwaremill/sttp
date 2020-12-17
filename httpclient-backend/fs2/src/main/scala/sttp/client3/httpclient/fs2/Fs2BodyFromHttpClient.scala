@@ -59,7 +59,7 @@ private[fs2] class Fs2BodyFromHttpClient[F[_]: ConcurrentEffect: ContextShift](b
           responseAs: WebSocketResponseAs[T, _],
           meta: ResponseMetadata,
           ws: WebSocket[F]
-      ): F[T] = bodyFromWs(responseAs, ws)
+      ): F[T] = bodyFromWs(responseAs, ws, meta)
 
       override protected def cleanupWhenNotAWebSocket(
           response: Stream[F, Byte],

@@ -130,7 +130,17 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
   def asWebSocket[F[_], T](f: WebSocket[F] => F[T]): ResponseAs[Either[String, T], Effect[F] with WebSockets] =
     asWebSocketEither(asStringAlways, asWebSocketAlways(f))
 
+  def asWebSocketWithMetadata[F[_], T](
+      f: (WebSocket[F], ResponseMetadata) => F[T]
+  ): ResponseAs[Either[String, T], Effect[F] with WebSockets] =
+    asWebSocketEither(asStringAlways, asWebSocketAlwaysWithMetadata(f))
+
   def asWebSocketAlways[F[_], T](f: WebSocket[F] => F[T]): ResponseAs[T, Effect[F] with WebSockets] =
+    asWebSocketAlwaysWithMetadata((w, _) => f(w))
+
+  def asWebSocketAlwaysWithMetadata[F[_], T](
+      f: (WebSocket[F], ResponseMetadata) => F[T]
+  ): ResponseAs[T, Effect[F] with WebSockets] =
     ResponseAsWebSocket(f)
 
   def asWebSocketUnsafe[F[_]]: ResponseAs[Either[String, WebSocket[F]], Effect[F] with WebSockets] =

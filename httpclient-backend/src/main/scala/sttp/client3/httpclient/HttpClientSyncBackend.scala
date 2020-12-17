@@ -16,12 +16,9 @@ import sttp.client3.{
   Identity,
   Request,
   Response,
-  ResponseAs,
-  ResponseMetadata,
   SttpBackend,
   SttpBackendOptions,
-  SttpClientException,
-  WebSocketResponseAs
+  SttpClientException
 }
 import sttp.monad.MonadError
 import sttp.ws.{WebSocket, WebSocketFrame}

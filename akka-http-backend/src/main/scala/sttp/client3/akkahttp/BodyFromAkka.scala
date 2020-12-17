@@ -106,7 +106,7 @@ private[akkahttp] class BodyFromAkka()(implicit ec: ExecutionContext, mat: Mater
         val (flow, wsFuture) = webSocketAndFlow(meta)
         wsFlow.success(flow)
         wsFuture.flatMap { ws =>
-          val result = f.asInstanceOf[WebSocket[Future] => Future[T]](ws)
+          val result = f.asInstanceOf[(WebSocket[Future], ResponseMetadata) => Future[T]](ws, meta)
           result.onComplete(_ => ws.close())
           result
         }

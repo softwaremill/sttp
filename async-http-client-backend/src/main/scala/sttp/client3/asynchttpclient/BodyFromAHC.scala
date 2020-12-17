@@ -82,7 +82,7 @@ private[asynchttpclient] trait BodyFromAHC[F[_], S] {
           responseAs: WebSocketResponseAs[T, _],
           meta: ResponseMetadata,
           ws: WebSocket[F]
-      ): F[T] = bodyFromWs(responseAs, ws)
+      ): F[T] = bodyFromWs(responseAs, ws, meta)
 
       override protected def cleanupWhenNotAWebSocket(
           response: Publisher[ByteBuffer],
@@ -100,9 +100,10 @@ private[asynchttpclient] trait BodyFromAHC[F[_], S] {
       isSubscribed: () => Boolean
   ): F[TT] = bodyFromResponseAs(isSubscribed)(responseAs, responseMetadata, response)
 
-  private def bodyFromWs[TT](r: WebSocketResponseAs[TT, _], ws: WebSocket[F]): F[TT] =
+  private def bodyFromWs[TT](r: WebSocketResponseAs[TT, _], ws: WebSocket[F], meta: ResponseMetadata): F[TT] =
     r match {
-      case ResponseAsWebSocket(f)      => f.asInstanceOf[WebSocket[F] => F[TT]](ws).ensure(ws.close())
+      case ResponseAsWebSocket(f) =>
+        f.asInstanceOf[(WebSocket[F], ResponseMetadata) => F[TT]].apply(ws, meta).ensure(ws.close())
       case ResponseAsWebSocketUnsafe() => ws.unit.asInstanceOf[F[TT]]
       case ResponseAsWebSocketStream(_, p) =>
         compileWebSocketPipe(ws, p.asInstanceOf[streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]])
