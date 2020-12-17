@@ -103,7 +103,7 @@ object FollowRedirectsBackend {
 
   private[client3] def isRelative(uri: String): Boolean = {
     val toCheck = uri.toLowerCase().trim
-    !protocol.matches(toCheck)
+    !protocol.pattern.matcher(toCheck).matches()
   }
 }
 
