@@ -42,12 +42,12 @@ case object ResponseAsByteArray extends ResponseAs[Array[Byte], Any] {
 // Path-dependent types are not supported in constructor arguments or the extends clause. Thus we cannot express the
 // fact that `BinaryStream =:= s.BinaryStream`. We have to rely on correct construction via the companion object and
 // perform typecasts when the request is deconstructed.
-case class ResponseAsStream[F[_], T, Stream, S] private (s: Streams[S], f: Stream => F[T])
+case class ResponseAsStream[F[_], T, Stream, S] private (s: Streams[S], f: (Stream, ResponseMetadata) => F[T])
     extends ResponseAs[T, Effect[F] with S] {
   override def show: String = "as stream"
 }
 object ResponseAsStream {
-  def apply[F[_], T, S](s: Streams[S])(f: s.BinaryStream => F[T]): ResponseAs[T, Effect[F] with S] =
+  def apply[F[_], T, S](s: Streams[S])(f: (s.BinaryStream, ResponseMetadata) => F[T]): ResponseAs[T, Effect[F] with S] =
     new ResponseAsStream(s, f)
 }
 
@@ -63,7 +63,7 @@ case class ResponseAsFile(output: SttpFile) extends ResponseAs[SttpFile, Any] {
 }
 
 sealed trait WebSocketResponseAs[T, -R] extends ResponseAs[T, R]
-case class ResponseAsWebSocket[F[_], T](f: WebSocket[F] => F[T])
+case class ResponseAsWebSocket[F[_], T](f: (WebSocket[F], ResponseMetadata) => F[T])
     extends WebSocketResponseAs[T, Effect[F] with WebSockets] {
   override def show: String = "as web socket"
 }
