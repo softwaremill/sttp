@@ -70,6 +70,7 @@ private[asynchttpclient] trait BodyToAHC[F[_], S] {
     val ctOrNull = mp.contentType.orNull
 
     val bodyPart = mp.body match {
+      case NoBody => new StringPart(nameWithFilename, "")
       case StringBody(b, encoding, _) =>
         new StringPart(
           nameWithFilename,

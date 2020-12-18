@@ -38,11 +38,11 @@ private[asynchttpclient] class WebSocketImpl[F[_]](
     monad.flatten(monad.eval(f match {
       case WebSocketFrame.Text(payload, finalFragment, rsv) if !isContinuation =>
         fromNettyFuture(ws.sendTextFrame(payload, finalFragment, rsv.getOrElse(0)))
-      case WebSocketFrame.Text(payload, finalFragment, rsv) if isContinuation =>
+      case WebSocketFrame.Text(payload, finalFragment, rsv) /* if isContinuation */ =>
         fromNettyFuture(ws.sendContinuationFrame(payload, finalFragment, rsv.getOrElse(0)))
       case WebSocketFrame.Binary(payload, finalFragment, rsv) if !isContinuation =>
         fromNettyFuture(ws.sendBinaryFrame(payload, finalFragment, rsv.getOrElse(0)))
-      case WebSocketFrame.Binary(payload, finalFragment, rsv) if isContinuation =>
+      case WebSocketFrame.Binary(payload, finalFragment, rsv) /* if isContinuation */ =>
         fromNettyFuture(ws.sendContinuationFrame(payload, finalFragment, rsv.getOrElse(0)))
       case WebSocketFrame.Ping(payload) => fromNettyFuture(ws.sendPingFrame(payload))
       case WebSocketFrame.Pong(payload) => fromNettyFuture(ws.sendPongFrame(payload))

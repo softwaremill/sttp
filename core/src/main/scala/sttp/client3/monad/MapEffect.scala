@@ -8,6 +8,7 @@ import sttp.client3.{
   RequestBody,
   RequestT,
   ResponseAs,
+  ResponseAsBoth,
   ResponseAsByteArray,
   ResponseAsFile,
   ResponseAsFromMetadata,
@@ -94,6 +95,8 @@ object MapEffect {
         )
       case MappedResponseAs(raw, g, showAs) =>
         MappedResponseAs(apply[F, G](raw, fk, gk, fm, gm), g.asInstanceOf[(Any, ResponseMetadata) => Any], showAs)
+      case ResponseAsBoth(l, r) =>
+        ResponseAsBoth(apply(l, fk, gk, fm, gm), apply(r, fk, gk, fm, gm).asInstanceOf[ResponseAs[_, Any]])
     }
   }
 
