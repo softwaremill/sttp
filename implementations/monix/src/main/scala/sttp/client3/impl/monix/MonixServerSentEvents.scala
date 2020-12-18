@@ -6,7 +6,7 @@ import sttp.client3.sse.ServerSentEvent
 
 object MonixServerSentEvents {
   private val Separator = "\n\n"
-  def decodeSSE: Transformer[Array[Byte], ServerSentEvent] = { observable =>
+  val parse: Transformer[Array[Byte], ServerSentEvent] = { observable =>
     observable
       .bufferWhileInclusive(array => missingBytes(array).getOrElse(0) > 0)
       .map(seq => seq.fold(Array.empty)(_ ++ _))

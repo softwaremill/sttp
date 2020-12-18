@@ -21,5 +21,5 @@ trait Fs2StreamingTest extends StreamingTest[IO, Fs2Streams[IO]] with CatsTestBa
       .foldMonoid
 
   def sseConsumer(stream: streams.BinaryStream): IO[List[ServerSentEvent]] =
-    stream.through(FS2ServerSentEvents.decodeSSE).compile.toList
+    stream.through(Fs2ServerSentEvents.parse).compile.toList
 }

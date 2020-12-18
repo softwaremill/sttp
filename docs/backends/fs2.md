@@ -163,3 +163,22 @@ val effect = AsyncHttpClientFs2Backend[IO](blocker).flatMap { backend =>
 ## Websockets
 
 The fs2 backend supports both regular and streaming [websockets](../websockets.md).
+
+## Server-sent events
+
+Received data streams can be parsed to a stream of server-sent events (SSE):
+
+```scala mdoc:compile-only
+import cats.effect._
+import fs2.Stream
+
+import sttp.capabilities.fs2.Fs2Streams
+import sttp.client3.impl.fs2.Fs2ServerSentEvents
+import sttp.client3.sse.ServerSentEvent
+import sttp.client3._
+
+def processEvents(source: Stream[IO, ServerSentEvent]): IO[Unit] = ???
+
+basicRequest.response(asStream(Fs2Streams[IO])(stream => 
+  processEvents(stream.through(Fs2ServerSentEvents.parse))))
+```

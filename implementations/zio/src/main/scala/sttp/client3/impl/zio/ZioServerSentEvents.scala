@@ -5,7 +5,7 @@ import sttp.client3.sse.ServerSentEvent
 import zio.stream.ZTransducer
 
 object ZioServerSentEvents {
-  def decodeSSE(): ZioStreams.Pipe[Byte, ServerSentEvent] = { stream =>
+  val parse: ZioStreams.Pipe[Byte, ServerSentEvent] = { stream =>
     stream
       .aggregate(ZTransducer.utf8Decode)
       .aggregate(ZTransducer.splitLines)

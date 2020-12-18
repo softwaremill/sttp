@@ -6,9 +6,7 @@ import akka.util.ByteString
 import sttp.client3.sse.ServerSentEvent
 
 object AkkaHttpServerSentEvents {
-
-  def decodeSSE: Flow[ByteString, ServerSentEvent, NotUsed] =
-    //todo decide on max frame length
+  val parse: Flow[ByteString, ServerSentEvent, NotUsed] =
     Framing
       .delimiter(ByteString("\n\n"), maximumFrameLength = Int.MaxValue, allowTruncation = true)
       .map(_.utf8String)

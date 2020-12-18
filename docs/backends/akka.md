@@ -96,3 +96,23 @@ Non-standard behavior:
 
 * akka always automatically responds with a `Pong` to a `Ping` message
 * `WebSocketFrame.Ping` and `WebSocketFrame.Pong` frames are ignored; instead, you can configure automatic [keep-alive pings](https://doc.akka.io/docs/akka-http/current/client-side/websocket-support.html#automatic-keep-alive-ping-support)
+
+## Server-sent events
+
+Received data streams can be parsed to a stream of server-sent events (SSE):
+
+```scala mdoc:compile-only
+import scala.concurrent.Future
+
+import akka.stream.scaladsl.Source
+
+import sttp.capabilities.akka.AkkaStreams
+import sttp.client3.akkahttp.AkkaHttpServerSentEvents
+import sttp.client3.sse.ServerSentEvent
+import sttp.client3._
+
+def processEvents(source: Source[ServerSentEvent, Any]): Future[Unit] = ???
+
+basicRequest.response(asStream(AkkaStreams)(stream => 
+  processEvents(stream.via(AkkaHttpServerSentEvents.parse))))
+```

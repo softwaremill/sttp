@@ -20,7 +20,7 @@ abstract class MonixStreamingTest extends StreamingTest[Task, MonixStreams] {
       .map(bs => new String(bs.toArray.flatten, "utf8"))
 
   override def sseConsumer(stream: Observable[Array[Byte]]): Task[List[ServerSentEvent]] = {
-    stream.transform(MonixServerSentEvents.decodeSSE).foldLeftL(List.empty[ServerSentEvent]) { case (list, event) =>
+    stream.transform(MonixServerSentEvents.parse).foldLeftL(List.empty[ServerSentEvent]) { case (list, event) =>
       list :+ event
     }
   }
