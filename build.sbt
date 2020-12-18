@@ -62,12 +62,7 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
 )
 
 val commonJvmSettings = commonSettings ++ Seq(
-  scalacOptions ++= Seq("-target:jvm-1.8"),
-  scalacOptions := {
-    val current = scalacOptions.value
-    // https://github.com/lampepfl/dotty/pull/7775
-    if (isDotty.value) current ++ List("-language:implicitConversions", "-Ykind-projector") else current
-  }
+  scalacOptions ++= Seq("-target:jvm-1.8")
 )
 
 val commonJsSettings = commonSettings ++ Seq(
