@@ -23,7 +23,7 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   // needed on sbt 1.3, but (for some unknown reason) only on 2.11.x
   closeClassLoaders := !scalaVersion.value.startsWith("2.11."),
   updateDocs := Def.taskDyn {
-    val files1 = UpdateVersionInDocs(sLog.value, organization.value, version.value)
+    val files1 = UpdateVersionInDocs(sLog.value, organization.value, version.value, List(file("README.md")))
     Def.task {
       (docs.jvm(scala2_13) / mdoc).toTask("").value
       files1 ++ Seq(file("generated-doc/out"))
