@@ -29,6 +29,8 @@ class DefaultLog[F[_]](
     logger: Logger[F],
     beforeCurlInsteadOfShow: Boolean = false,
     logRequestBody: Boolean = false,
+    logRequestHeaders: Boolean = true,
+    logResponseHeaders: Boolean = true,
     sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders,
     beforeRequestSendLogLevel: LogLevel = LogLevel.Debug,
     responseLogLevel: LogLevel = LogLevel.Debug,
@@ -39,7 +41,7 @@ class DefaultLog[F[_]](
     logger(
       beforeRequestSendLogLevel, {
         s"Sending request: ${if (beforeCurlInsteadOfShow) request.toCurl
-        else request.show(includeBody = logRequestBody, sensitiveHeaders)}"
+        else request.show(includeBody = logRequestBody, logRequestHeaders, sensitiveHeaders)}"
       }
     )
 
@@ -52,7 +54,9 @@ class DefaultLog[F[_]](
     logger(
       responseLogLevel, {
         val responseAsString =
-          response.copy(body = responseBody.getOrElse("")).show(responseBody.isDefined, sensitiveHeaders)
+          response
+            .copy(body = responseBody.getOrElse(""))
+            .show(responseBody.isDefined, logResponseHeaders, sensitiveHeaders)
         s"Request: ${request.showBasic}${took(elapsed)}, response: $responseAsString"
       }
     )
