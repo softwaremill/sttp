@@ -55,6 +55,7 @@ jobs:
     runs-on: ubuntu-20.04
     env:
       STTP_NATIVE: 1
+      JAVA_OPTS: -Xmx4G
     steps:
       - name: Checkout
         uses: actions/checkout@v2
