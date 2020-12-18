@@ -1,7 +1,7 @@
 package sttp.client3.impl.zio
 
 import sttp.capabilities.zio.ZioStreams
-import sttp.client3.sse.ServerSentEvent
+import sttp.model.sse.ServerSentEvent
 import zio.stream.ZTransducer
 
 object ZioServerSentEvents {

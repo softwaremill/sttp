@@ -2,7 +2,7 @@ package sttp.client3.impl.monix
 
 import monix.reactive.Observable
 import monix.reactive.Observable.Transformer
-import sttp.client3.sse.ServerSentEvent
+import sttp.model.sse.ServerSentEvent
 
 object MonixServerSentEvents {
   private val Separator = "\n\n"

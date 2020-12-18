@@ -154,7 +154,7 @@ import monix.eval.Task
 
 import sttp.capabilities.monix.MonixStreams
 import sttp.client3.impl.monix.MonixServerSentEvents
-import sttp.client3.sse.ServerSentEvent
+import sttp.model.sse.ServerSentEvent
 import sttp.client3._
 
 def processEvents(source: Observable[ServerSentEvent]): Task[Unit] = ???

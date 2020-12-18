@@ -189,7 +189,7 @@ import zio.stream._
 
 import sttp.capabilities.zio.ZioStreams
 import sttp.client3.impl.zio.ZioServerSentEvents
-import sttp.client3.sse.ServerSentEvent
+import sttp.model.sse.ServerSentEvent
 import sttp.client3._
 
 def processEvents(source: Stream[Throwable, ServerSentEvent]): Task[Unit] = ???

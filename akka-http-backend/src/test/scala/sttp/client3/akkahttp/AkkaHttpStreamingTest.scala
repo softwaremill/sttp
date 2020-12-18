@@ -5,7 +5,7 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import sttp.capabilities.akka.AkkaStreams
 import sttp.client3.SttpBackend
-import sttp.client3.sse.ServerSentEvent
+import sttp.model.sse.ServerSentEvent
 import sttp.client3.testing.ConvertToFuture
 import sttp.client3.testing.streaming.StreamingTest
 

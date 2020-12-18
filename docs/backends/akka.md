@@ -108,7 +108,7 @@ import akka.stream.scaladsl.Source
 
 import sttp.capabilities.akka.AkkaStreams
 import sttp.client3.akkahttp.AkkaHttpServerSentEvents
-import sttp.client3.sse.ServerSentEvent
+import sttp.model.sse.ServerSentEvent
 import sttp.client3._
 
 def processEvents(source: Source[ServerSentEvent, Any]): Future[Unit] = ???

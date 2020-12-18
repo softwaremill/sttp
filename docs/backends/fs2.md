@@ -174,7 +174,7 @@ import fs2.Stream
 
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client3.impl.fs2.Fs2ServerSentEvents
-import sttp.client3.sse.ServerSentEvent
+import sttp.model.sse.ServerSentEvent
 import sttp.client3._
 
 def processEvents(source: Stream[IO, ServerSentEvent]): IO[Unit] = ???

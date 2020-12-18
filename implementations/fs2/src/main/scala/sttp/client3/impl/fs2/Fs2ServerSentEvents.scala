@@ -1,7 +1,7 @@
 package sttp.client3.impl.fs2
 
 import fs2.text
-import sttp.client3.sse.ServerSentEvent
+import sttp.model.sse.ServerSentEvent
 
 object Fs2ServerSentEvents {
   def parse[F[_]]: fs2.Pipe[F, Byte, ServerSentEvent] = { response =>

@@ -6,7 +6,7 @@ import org.scalatest.{BeforeAndAfterAll, SuiteMixin}
 import sttp.capabilities.{Effect, Streams}
 import sttp.client3._
 import sttp.client3.internal.Utf8
-import sttp.client3.sse.ServerSentEvent
+import sttp.model.sse.ServerSentEvent
 import sttp.client3.testing.HttpTest.endpoint
 import sttp.client3.testing.streaming.StreamingTest._
 import sttp.client3.testing.{ConvertToFuture, ToFutureWrapper}
