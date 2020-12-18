@@ -143,3 +143,22 @@ AsyncHttpClientMonixBackend().flatMap { backend =>
 ## Websockets
 
 The Monix backend supports both regular and streaming [websockets](../websockets.md).
+
+## Server-sent events
+
+Received data streams can be parsed to a stream of server-sent events (SSE):
+
+```scala
+import monix.reactive.Observable
+import monix.eval.Task
+
+import sttp.capabilities.monix.MonixStreams
+import sttp.client3.impl.monix.MonixServerSentEvents
+import sttp.model.sse.ServerSentEvent
+import sttp.client3._
+
+def processEvents(source: Observable[ServerSentEvent]): Task[Unit] = ???
+
+basicRequest.response(asStream(MonixStreams)(stream => 
+  processEvents(stream.transform(MonixServerSentEvents.parse))))
+```

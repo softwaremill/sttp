@@ -46,12 +46,7 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
 )
 
 val commonJvmSettings = commonSettings ++ Seq(
-  scalacOptions ++= Seq("-target:jvm-1.8"),
-  scalacOptions := {
-    val current = scalacOptions.value
-    // https://github.com/lampepfl/dotty/pull/7775
-    if (isDotty.value) current ++ List("-language:implicitConversions", "-Ykind-projector") else current
-  }
+  scalacOptions ++= Seq("-target:jvm-1.8")
 )
 
 val commonJsSettings = commonSettings ++ Seq(
@@ -132,7 +127,7 @@ val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", 
 val zioVersion = "1.0.3"
 val zioInteropRsVersion = "1.3.0.7-2"
 
-val sttpModelVersion = "1.2.0-RC8"
+val sttpModelVersion = "1.2.0-RC9"
 val sttpSharedVersion = "1.0.0-RC11"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"

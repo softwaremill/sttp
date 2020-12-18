@@ -46,6 +46,8 @@ Class                                Effect type                  Supported stre
 
 The backends work with Scala 2.11, 2.12 and 2.13 (with some exceptions for 2.11). Moreover, `HttpURLConnectionBackend`, `AsyncHttpClientFutureBackend`, `AsyncHttpClientZioBackend`, `HttpClientSyncBackend`, `HttpClientFutureBackend` and `HttpClientZioBackend` are additionally built with Dotty (Scala 3).
 
+All backends that support asynchronous/non-blocking streams, also support server-sent events.
+
 There are also backends which wrap other backends to provide additional functionality. These include:
 
 * `TryBackend`, which safely wraps any exceptions thrown by a synchronous backend in `scala.util.Try`

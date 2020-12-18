@@ -178,3 +178,22 @@ dependency. They enrich the stub with the given behavior.
 
 Then, the `stubLayer` provides both an implementation of the `SttpClientStubbing` dependency, as well as a `SttpClient`
 which is backed by the stub.
+
+## Server-sent events
+
+Received data streams can be parsed to a stream of server-sent events (SSE):
+
+```scala
+import zio._
+import zio.stream._
+
+import sttp.capabilities.zio.ZioStreams
+import sttp.client3.impl.zio.ZioServerSentEvents
+import sttp.model.sse.ServerSentEvent
+import sttp.client3._
+
+def processEvents(source: Stream[Throwable, ServerSentEvent]): Task[Unit] = ???
+
+basicRequest.response(asStream(ZioStreams)(stream => 
+  processEvents(stream.via(ZioServerSentEvents.parse))))
+```
