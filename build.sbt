@@ -26,7 +26,7 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
     val files1 = UpdateVersionInDocs(sLog.value, organization.value, version.value, List(file("README.md")))
     Def.task {
       (docs.jvm(scala2_13) / mdoc).toTask("").value
-      files1 ++ Seq(file("generated-doc/out"))
+      files1 ++ Seq(file("generated-docs/out"))
     }
   }.value,
   ideSkipProject := (scalaVersion.value != scala2_13) || thisProjectRef.value.project.contains(
