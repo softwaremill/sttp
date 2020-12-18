@@ -10,6 +10,6 @@ object ZioServerSentEvents {
       .aggregate(ZTransducer.utf8Decode)
       .aggregate(ZTransducer.splitLines)
       .aggregate(ZTransducer.collectAllWhile[String](_.nonEmpty))
-      .map(ServerSentEvent.parseEvent)
+      .map(ServerSentEvent.parse)
   }
 }

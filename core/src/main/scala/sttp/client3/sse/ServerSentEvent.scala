@@ -10,15 +10,17 @@ case class ServerSentEvent(
 )
 
 object ServerSentEvent {
-  def parseEvent(event: List[String]): ServerSentEvent = {
+  // https://html.spec.whatwg.org/multipage/server-sent-events.html
+  def parse(event: List[String]): ServerSentEvent = {
     event.foldLeft(ServerSentEvent()) { (event, line) =>
-      line.split(":").toList match {
-        case "data" :: content  => combineData(event, content.mkString(":"))
-        case "id" :: content    => event.copy(id = Some(content.mkString(":")))
-        case "retry" :: content => event.copy(retry = Try(content.mkString(":").toInt).toOption)
-        case "event" :: content => event.copy(eventType = Some(content.mkString(":")))
-        case _                  => event
-      }
+      if (line.startsWith("data:")) combineData(event, removeLeadingSpace(line.substring(5)))
+      else if (line.startsWith("id:")) event.copy(id = Some(removeLeadingSpace(line.substring(3))))
+      else if (line.startsWith("retry:")) event.copy(retry = Try(removeLeadingSpace(line.substring(6)).toInt).toOption)
+      else if (line.startsWith("event:")) event.copy(eventType = Some(removeLeadingSpace(line.substring(6))))
+      else if (line == "data") combineData(event, "")
+      else if (line == "id") event.copy(id = Some(""))
+      else if (line == "event") event.copy(eventType = Some(""))
+      else event
     }
   }
 
@@ -28,4 +30,6 @@ object ServerSentEvent {
       case e @ ServerSentEvent(None, _, _, _)          => e.copy(data = Some(newData))
     }
   }
+
+  private def removeLeadingSpace(s: String): String = if (s.startsWith(" ")) s.substring(1) else s
 }

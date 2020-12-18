@@ -13,5 +13,5 @@ object AkkaHttpServerSentEvents {
       .delimiter(ByteString("\n\n"), maximumFrameLength = Int.MaxValue, allowTruncation = true)
       .map(_.utf8String)
       .map(_.split("\n").toList)
-      .map(ServerSentEvent.parseEvent)
+      .map(ServerSentEvent.parse)
 }

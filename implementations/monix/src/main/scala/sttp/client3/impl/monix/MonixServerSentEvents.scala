@@ -16,7 +16,7 @@ object MonixServerSentEvents {
       }
       .flatMap(Observable.fromIterable)
       .map(_.split("\n").toList)
-      .map(ServerSentEvent.parseEvent)
+      .map(ServerSentEvent.parse)
   }
 
   //-------

@@ -11,6 +11,6 @@ object FS2ServerSentEvents {
       .split(_.isEmpty)
       .filter(_.nonEmpty)
       .map(_.toList)
-      .map(ServerSentEvent.parseEvent)
+      .map(ServerSentEvent.parse)
   }
 }
