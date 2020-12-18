@@ -51,11 +51,7 @@ val commonJvmSettings = commonSettings ++ Seq(
 
 val commonJsSettings = commonSettings ++ Seq(
   // slow down for CI
-  parallelExecution in Test := false, // TODO
-  // https://github.com/scalaz/scalaz/pull/1734#issuecomment-385627061
-  scalaJSLinkerConfig ~= {
-    _.withBatchMode(System.getenv("CONTINUOUS_INTEGRATION") == "true")
-  },
+  parallelExecution in Test := false, // TODOR
   scalacOptions in Compile ++= {
     if (isSnapshot.value) Seq.empty
     else
