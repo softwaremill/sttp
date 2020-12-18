@@ -13,7 +13,9 @@ class FollowRedirectsBackendTest extends AnyFunSuite with Matchers {
     ("https://server.com", false),
     ("  https://server2.com", false),
     ("HTTP://server.com", false),
-    ("httpS://server.com", false)
+    ("httpS://server.com", false),
+    ("xyz://server.com", false),
+    ("index.html", true)
   )
 
   for ((uri, isRelative) <- testData) {

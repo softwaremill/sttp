@@ -308,8 +308,13 @@ case class RequestT[U[_], T, -R](
       case _ => "(no method & uri set)"
     }
 
-  def show(includeBody: Boolean = true, sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders): String = {
-    val headers = this.headers.map(_.toStringSafe(sensitiveHeaders)).mkString(", ")
+  def show(
+      includeBody: Boolean = true,
+      includeHeaders: Boolean = true,
+      sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders
+  ): String = {
+    val headers =
+      if (includeHeaders) ", headers: " + this.headers.map(_.toStringSafe(sensitiveHeaders)).mkString(", ") else ""
     val body = if (includeBody) s", body: ${this.body.show}" else ""
     val methodAndUri = (this.method, this.uri) match {
       case (m: Method, u: Uri) =>
@@ -317,7 +322,7 @@ case class RequestT[U[_], T, -R](
         s"$m$ws $u, "
       case _ => ""
     }
-    s"${methodAndUri}response as: ${response.show}, headers: $headers$body"
+    s"${methodAndUri}response as: ${response.show}$headers$body"
   }
 
   private def asRequest(implicit isIdInRequest: IsIdInRequest[U]): RequestT[Identity, T, R] = {

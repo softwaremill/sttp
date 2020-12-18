@@ -57,7 +57,7 @@ trait MonixBodyFromHttpClient extends BodyFromHttpClient[Task, MonixStreams, Mon
           responseAs: WebSocketResponseAs[T, _],
           meta: ResponseMetadata,
           ws: WebSocket[Task]
-      ): Task[T] = bodyFromWs(responseAs, ws)
+      ): Task[T] = bodyFromWs(responseAs, ws, meta)
 
       override protected def cleanupWhenNotAWebSocket(
           response: Observable[Array[Byte]],

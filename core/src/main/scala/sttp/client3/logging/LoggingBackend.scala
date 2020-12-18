@@ -18,10 +18,25 @@ object LoggingBackend {
       includeTiming: Boolean = true,
       beforeCurlInsteadOfShow: Boolean = false,
       logRequestBody: Boolean = false,
+      logRequestHeaders: Boolean = true,
       logResponseBody: Boolean = false,
-      sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders
+      logResponseHeaders: Boolean = true,
+      sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders,
+      beforeRequestSendLogLevel: LogLevel = LogLevel.Debug,
+      responseLogLevel: LogLevel = LogLevel.Debug,
+      responseExceptionLogLevel: LogLevel = LogLevel.Error
   ): SttpBackend[F, S] = {
-    val log = new DefaultLog(logger, beforeCurlInsteadOfShow, logRequestBody, sensitiveHeaders)
+    val log = new DefaultLog(
+      logger,
+      beforeCurlInsteadOfShow,
+      logRequestBody,
+      logRequestHeaders,
+      logResponseHeaders,
+      sensitiveHeaders,
+      beforeRequestSendLogLevel,
+      responseLogLevel,
+      responseExceptionLogLevel
+    )
     apply(delegate, log, includeTiming, logResponseBody)
   }
 

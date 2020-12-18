@@ -1,5 +1,10 @@
 name: CI
-on: [push, pull_request]
+on:
+  pull_request:
+    branches: ['*']
+  push:
+    branches: ['*']
+    tags: [v*]
 jobs:
   ci:
     # run on external PRs, but not on internal PRs since those will be run by push to branch
@@ -26,9 +31,11 @@ jobs:
           ~/.ivy2/cache
           ~/.coursier
         key: sbt-cache-${{ runner.os }}-${{ matrix.target-platform }}-${{ hashFiles('project/build.properties') }}
-    - name: Install libidn11-dev
+    - name: Install libidn11-dev libcurl3-dev
       if: matrix.target-platform == 'Native'
-      run: sudo apt-get install libidn11-dev
+      run: |
+        sudo apt-get install libidn11-dev libcurl3-dev
+        echo "STTP_NATIVE=1" >> $GITHUB_ENV
     - name: Compile
       run: sbt -v compile compileDocs
     - name: Test
@@ -41,3 +48,59 @@ jobs:
         find $HOME/.cache/coursier/v1                -name "ivydata-*.properties" -delete || true
         find $HOME/.sbt                              -name "*.lock"               -delete || true
 
+  publish:
+    name: Publish release
+    needs: [ci]
+    if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v'))
+    runs-on: ubuntu-20.04
+    env:
+      STTP_NATIVE: 1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up JDK 11
+        uses: actions/setup-java@v1
+        with:
+          java-version: 11
+      - name: Cache sbt
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.sbt
+            ~/.ivy2/cache
+            ~/.coursier
+          key: sbt-cache-release-${{ runner.os }}-${{ hashFiles('project/build.properties') }}
+      - name: Install libidn11-dev libcurl3-dev
+        run: sudo apt-get install libidn11-dev libcurl3-dev
+      - name: Compile
+        run: sbt compile
+      - name: Publish artifacts
+        run: sbt ci-release
+        env:
+          PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
+          PGP_SECRET: ${{ secrets.PGP_SECRET }}
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+      - name: Extract version from commit message
+        run: |
+          version=${GITHUB_REF/refs\/tags\/v/}
+          echo "VERSION=$version" >> $GITHUB_ENV
+        env:
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
+      - name: Publish release notes
+        uses: release-drafter/release-drafter@v5
+        with:
+          config-name: release-drafter.yml
+          publish: true
+          name: "v${{ env.VERSION }}"
+          tag: "v${{ env.VERSION }}"
+          version: "v${{ env.VERSION }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Cleanup
+        run: |
+          rm -rf "$HOME/.ivy2/local" || true
+          find $HOME/.ivy2/cache                       -name "ivydata-*.properties" -delete || true
+          find $HOME/.ivy2/cache                       -name "*-LM-SNAPSHOT*"       -delete || true
+          find $HOME/.cache/coursier/v1                -name "ivydata-*.properties" -delete || true
+          find $HOME/.sbt                              -name "*.lock"               -delete || true

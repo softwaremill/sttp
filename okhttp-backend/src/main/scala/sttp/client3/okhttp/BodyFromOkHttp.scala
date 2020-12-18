@@ -25,9 +25,10 @@ private[okhttp] trait BodyFromOkHttp[F[_], S] {
 
   def responseBodyToStream(inputStream: InputStream): streams.BinaryStream
 
-  private def fromWs[TT](r: WebSocketResponseAs[TT, _], ws: WebSocket[F]): F[TT] =
+  private def fromWs[TT](r: WebSocketResponseAs[TT, _], ws: WebSocket[F], meta: ResponseMetadata): F[TT] =
     r match {
-      case ResponseAsWebSocket(f)      => f.asInstanceOf[WebSocket[F] => F[TT]](ws).ensure(ws.close())
+      case ResponseAsWebSocket(f) =>
+        f.asInstanceOf[(WebSocket[F], ResponseMetadata) => F[TT]](ws, meta).ensure(ws.close())
       case ResponseAsWebSocketUnsafe() => ws.unit.asInstanceOf[F[TT]]
       case ResponseAsWebSocketStream(_, p) =>
         compileWebSocketPipe(ws, p.asInstanceOf[streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]])
@@ -78,7 +79,7 @@ private[okhttp] trait BodyFromOkHttp[F[_], S] {
           responseAs: WebSocketResponseAs[T, _],
           meta: ResponseMetadata,
           ws: WebSocket[F]
-      ): F[T] = fromWs(responseAs, ws)
+      ): F[T] = fromWs(responseAs, ws, meta)
 
       override protected def cleanupWhenNotAWebSocket(response: InputStream, e: NotAWebSocketException): F[Unit] =
         monad.eval(response.close())

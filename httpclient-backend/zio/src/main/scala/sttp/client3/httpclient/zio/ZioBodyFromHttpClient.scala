@@ -86,7 +86,7 @@ private[zio] class ZioBodyFromHttpClient extends BodyFromHttpClient[Task, ZioStr
           responseAs: WebSocketResponseAs[T, _],
           meta: ResponseMetadata,
           ws: WebSocket[Task]
-      ): Task[T] = bodyFromWs(responseAs, ws)
+      ): Task[T] = bodyFromWs(responseAs, ws, meta)
 
       override protected def cleanupWhenNotAWebSocket(
           response: ZStream[Any, Throwable, Byte],

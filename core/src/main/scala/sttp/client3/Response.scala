@@ -16,10 +16,14 @@ case class Response[T](
     history: List[Response[Unit]],
     request: RequestMetadata
 ) extends ResponseMetadata {
-  def show(includeBody: Boolean = true, sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders): String = {
-    val headers = headersToStringSafe(sensitiveHeaders).mkString(", ")
+  def show(
+      includeBody: Boolean = true,
+      includeHeaders: Boolean = true,
+      sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders
+  ): String = {
+    val headers = if (includeHeaders) ", headers: " + headersToStringSafe(sensitiveHeaders).mkString(", ") else ""
     val body = if (includeBody) s", body: ${this.body}" else ""
-    s"$code $statusText, headers: $headers$body"
+    s"$code $statusText$headers$body"
   }
 
   override def toString: String = s"Response($body,$code,$statusText,${headersToStringSafe()},$history,$request)"

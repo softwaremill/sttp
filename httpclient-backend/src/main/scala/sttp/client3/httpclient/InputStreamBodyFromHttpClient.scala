@@ -45,7 +45,7 @@ trait InputStreamBodyFromHttpClient[F[_], S] extends BodyFromHttpClient[F, S, In
           responseAs: WebSocketResponseAs[T, _],
           meta: ResponseMetadata,
           ws: WebSocket[F]
-      ): F[T] = bodyFromWs(responseAs, ws)
+      ): F[T] = bodyFromWs(responseAs, ws, meta)
 
       override protected def cleanupWhenNotAWebSocket(response: InputStream, e: NotAWebSocketException): F[Unit] =
         monad.eval(response.close())

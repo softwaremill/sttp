@@ -455,6 +455,14 @@ trait HttpTest[F[_]]
       }
     }
 
+    "redirect to a relative url" in {
+      basicRequest.post(uri"$endpoint/redirect/relative").response(asStringAlways).send(backend).toFuture().map {
+        resp =>
+          resp.code shouldBe StatusCode.Ok
+          resp.body shouldBe r4response
+      }
+    }
+
     "not redirect when maxRedirects is less than or equal to 0" in {
       expectRedirectResponse(loop.maxRedirects(-1).send(backend), 302)
     }

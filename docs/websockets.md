@@ -23,8 +23,16 @@ import sttp.ws.WebSocket
 def asWebSocket[F[_], T](f: WebSocket[F] => F[T]): 
   ResponseAs[Either[String, T], Effect[F] with WebSockets] = ???
 
+def asWebSocketWithMetadata[F[_], T](
+      f: (WebSocket[F], ResponseMetadata) => F[T]
+  ): ResponseAs[Either[String, T], Effect[F] with WebSockets] = ???
+
 def asWebSocketAlways[F[_], T](f: WebSocket[F] => F[T]): 
   ResponseAs[T, Effect[F] with WebSockets] = ???
+
+def asWebSocketAlwaysWithMetadata[F[_], T](
+      f: (WebSocket[F], ResponseMetadata) => F[T]
+  ): ResponseAs[T, Effect[F] with WebSockets] = ???
 
 def asWebSocketUnsafe[F[_]]: 
   ResponseAs[Either[String, WebSocket[F]], Effect[F] with WebSockets] = ???

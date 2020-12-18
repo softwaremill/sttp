@@ -328,6 +328,8 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
           } ~ path("result") {
             extractRequest { (req: HttpRequest) => complete(s"${req.headers.mkString(",")}") }
           }
+        } ~ pathPrefix("relative") {
+          redirect("r4", StatusCodes.PermanentRedirect)
         }
     } ~ pathPrefix("error") {
       complete(
