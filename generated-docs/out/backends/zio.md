@@ -7,7 +7,7 @@ The [ZIO](https://github.com/zio/zio) backends are **asynchronous**. Sending a r
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "httpclient-backend-zio" % "3.0.0-RC11"
+"com.softwaremill.sttp.client3" %% "httpclient-backend-zio" % "3.0.0-RC12"
 ```
 
 Create the backend using:
@@ -33,10 +33,10 @@ This backend is based on the built-in `java.net.http.HttpClient` available from 
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % "3.0.0-RC11"
+"com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % "3.0.0-RC12"
 ```
            
-This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client), uses [Netty](http://netty.io) behind the scenes. This backend works with all Scala versions. A Dotty build is available as well.
+This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client), uses [Netty](http://netty.io) behind the scenes. This backend works with all Scala versions. A Scala 3 build is available as well.
 
 Next you'll need to define a backend instance as an implicit value. This can be done in two basic ways:
 
