@@ -15,7 +15,7 @@ package object zio {
         ): RIO[R0 with R1, Response[T]] =
           for {
             env <- ZIO.environment[R0 with R1]
-            mappedRequest = MapEffect[RIO[R0 with R1, *], RIO[R0, *], Identity, T, P](
+            mappedRequest = MapEffect[RIO[R0 with R1, *], RIO[R0, *], T, P](
               request,
               new FunctionK[RIO[R0 with R1, *], RIO[R0, *]] {
                 override def apply[A](fa: RIO[R0 with R1, A]): RIO[R0, A] = fa.provide(env)

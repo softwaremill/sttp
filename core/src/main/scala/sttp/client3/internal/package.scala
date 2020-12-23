@@ -57,12 +57,6 @@ package object internal {
     if (c3.endsWith("\"")) c3.substring(0, c3.length - 1) else c3
   }
 
-  @implicitNotFound(
-    "This is a partial request, the method & url are not specified. Use " +
-      ".get(...), .post(...) etc. to obtain a non-partial request."
-  )
-  private[client3] type IsIdInRequest[U[_]] = U[Unit] =:= Identity[Unit]
-
   private[client3] val Utf8 = "utf-8"
   private[client3] val Iso88591 = "iso-8859-1"
   private[client3] val CrLf = "\r\n"

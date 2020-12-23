@@ -20,10 +20,8 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     * Reads the response body as an `Either[String, String]`, where `Left` is used if the status code is non-2xx,
     * and `Right` otherwise.
     */
-  val emptyRequest: RequestT[Empty, Either[String, String], Any] =
-    RequestT[Empty, Either[String, String], Any](
-      None,
-      None,
+  val emptyRequest: PartialRequest[Either[String, String], Any] =
+    PartialRequest[Either[String, String], Any](
       NoBody,
       Vector(),
       asString,
@@ -42,12 +40,12 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     * Reads the response body as an `Either[String, String]`, where `Left` is used if the status code is non-2xx,
     * and `Right` otherwise.
     */
-  val basicRequest: RequestT[Empty, Either[String, String], Any] =
+  val basicRequest: PartialRequest[Either[String, String], Any] =
     emptyRequest.acceptEncoding("gzip, deflate")
 
   /** A starting request which always reads the response body as a string, regardless of the status code.
     */
-  val quickRequest: RequestT[Empty, String, Any] = basicRequest.response(asStringAlways)
+  val quickRequest: PartialRequest[String, Any] = basicRequest.response(asStringAlways)
 
   // response specifications
 

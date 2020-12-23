@@ -124,7 +124,7 @@ class CirceTests extends AnyFlatSpec with Matchers with EitherValues {
       implicitly[Decoder[L]].either(implicitly[Decoder[R]])
   }
 
-  def extractBody[A[_], B, C](request: RequestT[A, B, C]): String =
+  def extractBody[B, C](request: PartialRequest[B, C]): String =
     request.body match {
       case StringBody(body, "utf-8", MediaType.ApplicationJson) =>
         body

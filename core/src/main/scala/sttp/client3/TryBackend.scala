@@ -15,7 +15,7 @@ class TryBackend[P](delegate: SttpBackend[Identity, P]) extends SttpBackend[Try,
   override def send[T, R >: P with Effect[Try]](request: Request[T, R]): Try[Response[T]] =
     Try(
       delegate.send(
-        MapEffect[Try, Identity, Identity, T, P](
+        MapEffect[Try, Identity, T, P](
           request: Request[T, P with Effect[Try]],
           tryToId,
           idToTry,

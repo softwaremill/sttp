@@ -63,7 +63,7 @@ class FollowRedirectsBackend[F[_], P](
       ((stripSensitiveHeaders[T, R](_)) andThen
         (changePostPutToGet[T, R](_, response.code)) andThen
         (sendWithCounter(_, redirects + 1)))
-        .apply(request.copy[Identity, T, R](uri = uri))
+        .apply(request.copy[T, R](uri = uri))
 
     responseMonad.map(redirectResponse) { rr =>
       val responseNoBody = response.copy(body = ())
@@ -72,7 +72,7 @@ class FollowRedirectsBackend[F[_], P](
   }
 
   private def stripSensitiveHeaders[T, R](request: Request[T, R]): Request[T, R] = {
-    request.copy[Identity, T, R](
+    request.copy[T, R](
       headers = request.headers.filterNot(h => sensitiveHeaders.contains(h.name.toLowerCase()))
     )
   }

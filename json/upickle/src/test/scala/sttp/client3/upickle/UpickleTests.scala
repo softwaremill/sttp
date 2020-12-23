@@ -7,7 +7,7 @@ import sttp.client3.{
   basicRequest,
   DeserializationException,
   MappedResponseAs,
-  RequestT,
+  PartialRequest,
   ResponseAs,
   ResponseAsByteArray,
   ResponseMetadata,
@@ -111,7 +111,7 @@ class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
     implicit val readWriter: ReadWriter[Outer] = macroRW[Outer]
   }
 
-  def extractBody[A[_], B, C](request: RequestT[A, B, C]): String =
+  def extractBody[B, C](request: PartialRequest[B, C]): String =
     request.body match {
       case StringBody(body, "utf-8", MediaType.ApplicationJson) =>
         body

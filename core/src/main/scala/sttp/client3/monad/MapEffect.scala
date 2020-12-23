@@ -5,8 +5,8 @@ import sttp.client3.{
   ConditionalResponseAs,
   IgnoreResponse,
   MappedResponseAs,
+  Request,
   RequestBody,
-  RequestT,
   ResponseAs,
   ResponseAsBoth,
   ResponseAsByteArray,
@@ -32,15 +32,15 @@ object MapEffect {
     * @tparam G The target effect type.
     * @tparam R0 The requirements of this request, without the `Effect[F]` capability.
     */
-  def apply[F[_], G[_], U[_], T, R0](
-      r: RequestT[U, T, R0 with Effect[F]],
+  def apply[F[_], G[_], T, R0](
+      r: Request[T, R0 with Effect[F]],
       fk: FunctionK[F, G],
       gk: FunctionK[G, F],
       fm: MonadError[F],
       gm: MonadError[G]
-  ): RequestT[U, T, R0 with Effect[G]] = {
+  ): Request[T, R0 with Effect[G]] = {
     if (usesEffect(r.response)) {
-      RequestT(
+      Request(
         r.method,
         r.uri,
         r.body.asInstanceOf[RequestBody[R0 with Effect[G]]], // request body can't use the Effect capability
@@ -56,7 +56,7 @@ object MapEffect {
         r.tags
       )
     } else {
-      r.asInstanceOf[RequestT[U, T, R0 with Effect[G]]]
+      r.asInstanceOf[Request[T, R0 with Effect[G]]]
     }
   }
 

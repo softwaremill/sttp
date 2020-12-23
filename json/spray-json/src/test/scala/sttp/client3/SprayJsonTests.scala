@@ -77,7 +77,7 @@ class SprayJsonTests extends AnyFlatSpec with Matchers with EitherValues {
     ct shouldBe Some(MediaType.ApplicationJson.copy(charset = Some(Utf8)).toString)
   }
 
-  def extractBody[A[_], B, C](request: RequestT[A, B, C]): String =
+  def extractBody[B, C](request: PartialRequest[B, C]): String =
     request.body match {
       case StringBody(body, "utf-8", MediaType.ApplicationJson) =>
         body

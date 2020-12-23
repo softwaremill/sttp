@@ -17,7 +17,7 @@ class EitherBackend[P](delegate: SttpBackend[Identity, P]) extends SttpBackend[E
   ): Either[Throwable, Response[T]] =
     doTry(
       delegate.send(
-        MapEffect[Either[Throwable, *], Identity, Identity, T, P](
+        MapEffect[Either[Throwable, *], Identity, T, P](
           request: Request[T, P with Effect[Either[Throwable, *]]],
           eitherToId,
           idToEither,

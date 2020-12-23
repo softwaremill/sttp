@@ -78,7 +78,7 @@ abstract class StreamingTest[F[_], S]
 
   "receive a stream" in {
     // TODO: for some reason these explicit types are needed in Dotty
-    val r0: RequestT[Identity, String, Effect[F] with S] = basicRequest
+    val r0: Request[String, Effect[F] with S] = basicRequest
       .post(uri"$endpoint/streaming/echo")
       .body(Body)
       .response(asStreamAlways(streams)(bodyConsumer(_)))
@@ -91,7 +91,7 @@ abstract class StreamingTest[F[_], S]
 
   "receive a stream and ignore it (without consuming)" in {
     // TODO: for some reason these explicit types are needed in Dotty
-    val r0: RequestT[Identity, String, Effect[F] with S] = basicRequest
+    val r0: Request[String, Effect[F] with S] = basicRequest
       .post(uri"$endpoint/streaming/echo")
       .body(Body)
       // if the backend has any, mechanisms to consume an incorrectly handled (ignored) stream should kick in
@@ -105,7 +105,7 @@ abstract class StreamingTest[F[_], S]
 
   "receive a stream (unsafe)" in {
     // TODO: for some reason these explicit types are needed in Dotty
-    val r0: RequestT[Identity, streams.BinaryStream, S] = basicRequest
+    val r0: Request[streams.BinaryStream, S] = basicRequest
       .post(uri"$endpoint/streaming/echo")
       .body(Body)
       .response(asStreamAlwaysUnsafe(streams))
@@ -121,7 +121,7 @@ abstract class StreamingTest[F[_], S]
 
   "receive a large stream (unsafe)" in {
     // TODO: for some reason these explicit types are needed in Dotty
-    val r0: RequestT[Identity, streams.BinaryStream, S] = basicRequest
+    val r0: Request[streams.BinaryStream, S] = basicRequest
       .post(uri"$endpoint/streaming/echo")
       .body(LargeBody)
       .response(asStreamAlwaysUnsafe(streams))
@@ -142,7 +142,7 @@ abstract class StreamingTest[F[_], S]
 
   "receive a stream or error (unsafe)" in {
     // TODO: for some reason these explicit types are needed in Dotty
-    val r0: RequestT[Identity, Either[String, streams.BinaryStream], S] = basicRequest
+    val r0: Request[Either[String, streams.BinaryStream], S] = basicRequest
       .post(uri"$endpoint/streaming/echo")
       .body(Body)
       .response(asStreamUnsafe(streams))
@@ -158,7 +158,7 @@ abstract class StreamingTest[F[_], S]
 
   "receive a mapped stream (unsafe)" in {
     // TODO: for some reason these explicit types are needed in Dotty
-    val r0: RequestT[Identity, (streams.BinaryStream, Boolean), S] = basicRequest
+    val r0: Request[(streams.BinaryStream, Boolean), S] = basicRequest
       .post(uri"$endpoint/streaming/echo")
       .body(Body)
       .response(asStreamAlwaysUnsafe(streams).map(s => (s, true)))
@@ -179,7 +179,7 @@ abstract class StreamingTest[F[_], S]
     val url = uri"https://httpbin.org/stream/$numChunks"
 
     // TODO: for some reason these explicit types are needed in Dotty
-    val r0: RequestT[Identity, streams.BinaryStream, S] = basicRequest
+    val r0: Request[streams.BinaryStream, S] = basicRequest
       // of course, you should never rely on the internet being available
       // in tests, but that's so much easier than setting up an https
       // testing server

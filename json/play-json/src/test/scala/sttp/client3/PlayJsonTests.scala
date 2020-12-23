@@ -126,7 +126,7 @@ class PlayJsonTests extends AnyFlatSpec with Matchers with EitherValues {
       implicitly[Reads[L]].map[Either[L, R]](Left(_)).orElse(implicitly[Reads[R]].map(Right(_)))
   }
 
-  def extractBody[A[_], B, C](request: RequestT[A, B, C]): String =
+  def extractBody[B, C](request: PartialRequest[B, C]): String =
     request.body match {
       case StringBody(body, "utf-8", MediaType.ApplicationJson) =>
         body

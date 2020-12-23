@@ -30,7 +30,7 @@ private[scalaz] final class MappedKSttpBackend[F[_], +P, G[_]](
   def send[T, R >: P with Effect[G]](request: Request[T, R]): G[Response[T]] =
     f(
       wrapped.send(
-        MapEffect[G, F, Identity, T, P](
+        MapEffect[G, F, T, P](
           request: Request[T, P with Effect[G]],
           asFunctionK(g),
           asFunctionK(f),

@@ -5,8 +5,8 @@ import sttp.model._
 import sttp.client3.NoBody
 import sttp.model.MediaType
 
-class ToCurlConverter[R <: RequestT[Identity, _, _]] {
-  def apply(request: R): String = {
+class ToCurlConverter {
+  def apply(request: Request[_, _]): String = {
     val params = List(extractOptions(_), extractMethod(_), extractHeaders(_), extractBody(_))
       .map(addSpaceIfNotEmpty)
       .reduce((acc, item) => r => acc(r) + item(r))
@@ -15,11 +15,9 @@ class ToCurlConverter[R <: RequestT[Identity, _, _]] {
     s"""curl$params '${request.uri}'"""
   }
 
-  private def extractMethod(r: R): String = {
-    s"-X ${r.method.method}"
-  }
+  private def extractMethod(r: Request[_, _]): String = s"-X ${r.method.method}"
 
-  private def extractHeaders(r: R): String = {
+  private def extractHeaders(r: Request[_, _]): String = {
     r.headers
       // filtering out compression headers so that the results are human-readable, if possible
       .filterNot(_.name.equalsIgnoreCase(HeaderNames.AcceptEncoding))
@@ -29,7 +27,7 @@ class ToCurlConverter[R <: RequestT[Identity, _, _]] {
       .mkString(" ")
   }
 
-  private def extractBody(r: R): String = {
+  private def extractBody(r: Request[_, _]): String = {
     r.body match {
       case StringBody(text, _, _)
           if r.headers
@@ -61,7 +59,7 @@ class ToCurlConverter[R <: RequestT[Identity, _, _]] {
       .mkString(" ")
   }
 
-  private def extractOptions(r: R): String = {
+  private def extractOptions(r: Request[_, _]): String = {
     if (r.options.followRedirects) {
       s"-L --max-redirs ${r.options.maxRedirects}"
     } else {
@@ -69,10 +67,10 @@ class ToCurlConverter[R <: RequestT[Identity, _, _]] {
     }
   }
 
-  private def addSpaceIfNotEmpty(fInput: R => String): R => String =
+  private def addSpaceIfNotEmpty(fInput: Request[_, _] => String): Request[_, _] => String =
     t => if (fInput(t).isEmpty) "" else s" ${fInput(t)}"
 }
 
 object ToCurlConverter {
-  def requestToCurl[R <: Request[_, _]]: ToCurlConverter[R] = new ToCurlConverter[R]
+  def requestToCurl: ToCurlConverter = new ToCurlConverter
 }
