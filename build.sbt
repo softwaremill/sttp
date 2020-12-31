@@ -112,7 +112,7 @@ val fs2Version: Option[(Long, Long)] => String = {
   case _             => "2.4.6"
 }
 
-val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.2.1"
+val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.2.2"
 val akkaStreamVersion = "2.6.10"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % akkaStreamVersion
 
@@ -129,8 +129,8 @@ val sttpSharedVersion = "1.0.0-RC11"
 val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
 
 val jeagerClientVersion = "1.5.0"
-val braveOpentracingVersion = "1.0.0"
-val zipkinSenderOkHttpVersion = "2.16.2"
+val braveOpentracingVersion = "0.37.5"
+val zipkinSenderOkHttpVersion = "2.16.3"
 val resilience4jVersion = "1.6.1"
 
 val compileAndTest = "compile->compile;test->test"
@@ -539,7 +539,7 @@ lazy val finagleBackend = (projectMatrix in file("finagle-backend"))
   .settings(
     name := "finagle-backend",
     libraryDependencies ++= Seq(
-      "com.twitter" %% "finagle-http" % "20.10.0"
+      "com.twitter" %% "finagle-http" % "20.12.0"
     )
   )
   .jvmPlatform(scalaVersions = scala2)
@@ -664,7 +664,7 @@ lazy val zioTelemetryOpenTracingBackend = (projectMatrix in file("metrics/zio-te
     name := "zio-telemetry-opentracing-backend",
     libraryDependencies ++= Seq(
       "dev.zio" %% "zio-opentracing" % "0.7.0",
-      "org.scala-lang.modules" %% "scala-collection-compat" % "2.3.1"
+      "org.scala-lang.modules" %% "scala-collection-compat" % "2.3.2"
     )
   )
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13))
@@ -676,7 +676,7 @@ lazy val scribeBackend = (projectMatrix in file("logging/scribe"))
   .settings(
     name := "scribe-backend",
     libraryDependencies ++= Seq(
-      "com.outr" %%% "scribe" % "3.1.3"
+      "com.outr" %%% "scribe" % "3.1.8"
     ),
     scalaTest
   )
