@@ -191,8 +191,16 @@ import sttp.client3._
 def asStream[F[_], T, S](s: Streams[S])(f: s.BinaryStream => F[T]): 
   ResponseAs[Either[String, T], Effect[F] with S] = ???
 
+def asStreamWithMetadata[F[_], T, S](s: Streams[S])(
+      f: (s.BinaryStream, ResponseMetadata) => F[T] 
+  ): ResponseAs[Either[String, T], Effect[F] with S] = ???
+
 def asStreamAlways[F[_], T, S](s: Streams[S])(f: s.BinaryStream => F[T]): 
   ResponseAs[T, Effect[F] with S] = ???
+
+def asStreamAlwaysWithMetadata[F[_], T, S](s: Streams[S])(
+      f: (s.BinaryStream, ResponseMetadata) => F[T]
+  ): ResponseAs[T, Effect[F] with S] = ???
 
 def asStreamUnsafe[S](s: Streams[S]): 
   ResponseAs[Either[String, s.BinaryStream], S] = ???

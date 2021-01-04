@@ -60,6 +60,7 @@ private[akkahttp] object BodyToAkka {
           case FileBody(b, _)             => HttpEntity.fromPath(ct, b.toPath)
           case StreamBody(b)              => streamPartEntity(ct, b.asInstanceOf[AkkaStreams.BinaryStream])
           case MultipartBody(_)           => throwNestedMultipartNotAllowed
+          case NoBody                     => HttpEntity.Empty
         }
 
       for {

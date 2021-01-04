@@ -5,41 +5,23 @@ import java.nio.charset.Charset
 
 import cats.data.NonEmptyList
 import cats.effect.concurrent.MVar
-import cats.effect.{Blocker, Concurrent, ConcurrentEffect, ContextShift, Effect, Resource}
+import cats.effect.{Blocker, Concurrent, ConcurrentEffect, ContextShift, Resource}
 import cats.implicits._
 import cats.effect.implicits._
 import fs2.{Chunk, Stream}
-import org.http4s.{ContentCoding, EntityBody, EntityDecoder, Request => Http4sRequest}
+import org.http4s.{ContentCoding, EntityBody, Request => Http4sRequest}
 import org.http4s
 import org.http4s.client.Client
 import org.http4s.client.blaze.BlazeClientBuilder
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client3.http4s.Http4sBackend.EncodingHandler
 import sttp.client3.impl.cats.CatsMonadAsyncError
-import sttp.client3.internal.{
-  BodyFromResponseAs,
-  IOBufferSize,
-  ReplayableBody,
-  SttpFile,
-  nonReplayableBody,
-  replayableBody,
-  throwNestedMultipartNotAllowed
-}
+import sttp.client3.internal.{BodyFromResponseAs, IOBufferSize, SttpFile, throwNestedMultipartNotAllowed}
 import sttp.model._
 import sttp.monad.MonadError
 import sttp.client3.testing.SttpBackendStub
 import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
-import sttp.client3.{
-  BasicRequestBody,
-  IgnoreResponse,
-  NoBody,
-  RequestBody,
-  Response,
-  ResponseAs,
-  ResponseAsByteArray,
-  SttpBackend,
-  _
-}
+import sttp.client3.{BasicRequestBody, NoBody, RequestBody, Response, SttpBackend, _}
 
 import scala.concurrent.ExecutionContext
 

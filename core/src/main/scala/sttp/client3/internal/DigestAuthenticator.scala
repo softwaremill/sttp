@@ -177,6 +177,7 @@ private[client3] class DigestAuthenticator private (
           s"${request.method.method}:$digestUri:${byteArrayToHexString(messageDigest.digest(body))}",
           messageDigest
         )
+      case Some(q) => throw new IllegalArgumentException(s"Unknown qop: $q")
     }
   }
 

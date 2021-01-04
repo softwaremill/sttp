@@ -48,13 +48,12 @@ public class MultiPartBodyPublisher {
         return this;
     }
 
-    public MultiPartBodyPublisher addPart(String name, Supplier<InputStream> value, String filename, String contentType) {
+    public MultiPartBodyPublisher addPart(String name, Supplier<InputStream> value, Map<String, String> headers) {
         PartsSpecification newPart = new PartsSpecification();
         newPart.type = PartsSpecification.TYPE.STREAM;
         newPart.name = name;
         newPart.stream = value;
-        newPart.filename = filename;
-        newPart.contentType = contentType;
+        newPart.headers = headers;
         partsSpecificationList.add(newPart);
         return this;
     }
@@ -77,8 +76,6 @@ public class MultiPartBodyPublisher {
         String value;
         Path path;
         Supplier<InputStream> stream;
-        String filename;
-        String contentType;
         Map<String, String> headers = new HashMap<>();
     }
 

@@ -75,6 +75,7 @@ trait WebSocketStreamingTest[F[_], S] extends ToFutureWrapper { outer: Suite wit
         val wholePayload = buffer.getAndSet("") + payload
         received.add(wholePayload)
         Some(WebSocketFrame.text(wholePayload + "-echo"))
+      case _ => throw new RuntimeException()
     }
   }
 
@@ -104,6 +105,7 @@ trait WebSocketStreamingTest[F[_], S] extends ToFutureWrapper { outer: Suite wit
           Some(WebSocketFrame.close)
         else
           Some(WebSocketFrame.text((wholePayload.substring(6).toInt + 1).toString))
+      case _ => throw new RuntimeException()
     })
   }
 

@@ -87,5 +87,16 @@ trait HttpTestExtensions[F[_]] extends AsyncExecutionContext { self: HttpTest[F]
         }
       }
     }
+
+    "throw an exception when trying to send a multipart message with an unsupported content type" in {
+      val req = basicRequest
+        .post(uri"$endpoint/multipart/other")
+        .response(asStringAlways)
+        .multipartBody(multipart("p1", "v1"))
+        .contentType("multipart/mixed")
+      assertThrows[IllegalArgumentException](
+        req.send(backend).toFuture()
+      )
+    }
   }
 }

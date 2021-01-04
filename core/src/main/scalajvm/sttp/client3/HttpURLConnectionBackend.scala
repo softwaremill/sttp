@@ -173,6 +173,9 @@ class HttpURLConnectionBackend private (
           case ByteBufferBody(_, _)  => None
           case InputStreamBody(_, _) => None
           case FileBody(b, _)        => Some(b.toFile.length())
+          case NoBody                => None
+          case StreamBody(_)         => None
+          case MultipartBody(_)      => None
         }
 
         val headersLen = headers.getBytes(Iso88591).length

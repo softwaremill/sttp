@@ -30,6 +30,7 @@ import sttp.client3.{
   RequestBody,
   Response,
   ResponseMetadata,
+  StreamBody,
   StringBody,
   SttpBackend,
   SttpClientException,
@@ -123,6 +124,9 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
       case ByteBufferBody(b, _)   => Source.fromBytes(b.array()).mkString
       case InputStreamBody(is, _) => Source.fromInputStream(is).mkString
       case FileBody(f, _)         => Source.fromFile(f.toFile).mkString
+      case NoBody                 => ""
+      case StreamBody(_)          => throw new IllegalArgumentException("Streaming is not supported")
+      case MultipartBody(_)       => throw new IllegalArgumentException("Nested multipart bodies are not supported")
     }
 
     part.fileName match {

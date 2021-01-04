@@ -128,7 +128,7 @@ val client: HttpClient = ???
 val backend = HttpClientFutureBackend.usingClient(client)
 ```
 
-This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards, works with all Scala versions. A Dotty build is available as well.
+This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards, works with all Scala versions. A Scala 3 build is available as well.
 
 ## Streaming
 

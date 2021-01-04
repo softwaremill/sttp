@@ -1,14 +1,15 @@
 package sttp.client3.testing.streaming
 
-import sttp.client3._
-import sttp.client3.testing.{ConvertToFuture, ToFutureWrapper}
-import org.scalatest.{BeforeAndAfterAll, SuiteMixin}
 import org.scalatest.freespec.AsyncFreeSpecLike
-import StreamingTest._
-import sttp.client3.internal.Utf8
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.{BeforeAndAfterAll, SuiteMixin}
 import sttp.capabilities.{Effect, Streams}
+import sttp.client3._
+import sttp.client3.internal.Utf8
+import sttp.model.sse.ServerSentEvent
 import sttp.client3.testing.HttpTest.endpoint
+import sttp.client3.testing.streaming.StreamingTest._
+import sttp.client3.testing.{ConvertToFuture, ToFutureWrapper}
 
 // TODO: change to `extends AsyncFreeSpec` when https://github.com/scalatest/scalatest/issues/1802 is fixed
 abstract class StreamingTest[F[_], S]
@@ -32,6 +33,8 @@ abstract class StreamingTest[F[_], S]
 
   def bodyConsumer(stream: streams.BinaryStream): F[String]
 
+  def sseConsumer(stream: streams.BinaryStream): F[List[ServerSentEvent]]
+
   protected def supportsStreamingMultipartParts = true
 
   "stream request body" in {
@@ -53,6 +56,23 @@ abstract class StreamingTest[F[_], S]
       .toFuture()
       .map { response =>
         response.body shouldBe Right(Body)
+      }
+  }
+
+  "handle server sent events SSE" in {
+    val sseData = "ala ma kota\nzbyszek ma psa"
+    val expectedEvent = ServerSentEvent(data = Some(sseData), eventType = Some("test-event"), retry = Some(42000))
+    val expectedEvents =
+      Seq(expectedEvent.copy(id = Some("1")), expectedEvent.copy(id = Some("2")), expectedEvent.copy(id = Some("3")))
+
+    basicRequest
+      .post(uri"$endpoint/sse/echo3")
+      .body(sseData)
+      .response(asStreamAlways(streams)(sseConsumer(_)))
+      .send(backend)
+      .toFuture()
+      .map { response =>
+        response.body shouldBe expectedEvents
       }
   }
 

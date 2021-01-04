@@ -211,7 +211,7 @@ object SttpBackendStub {
         }
       case ResponseAsStream(_, f) =>
         b match {
-          case RawStream(s) => Some(f.asInstanceOf[Any => F[T]](s))
+          case RawStream(s) => Some(f.asInstanceOf[(Any, ResponseMetadata) => F[T]](s, meta))
           case _            => None
         }
       case ResponseAsStreamUnsafe(_) =>
@@ -226,9 +226,11 @@ object SttpBackendStub {
         }
       case ResponseAsWebSocket(f) =>
         b match {
-          case wss: WebSocketStub[_] => Some(f.asInstanceOf[WebSocket[F] => F[T]](wss.build[F](monad)))
-          case ws: WebSocket[_]      => Some(f.asInstanceOf[WebSocket[F] => F[T]](ws.asInstanceOf[WebSocket[F]]))
-          case _                     => None
+          case wss: WebSocketStub[_] =>
+            Some(f.asInstanceOf[(WebSocket[F], ResponseMetadata) => F[T]](wss.build[F](monad), meta))
+          case ws: WebSocket[_] =>
+            Some(f.asInstanceOf[(WebSocket[F], ResponseMetadata) => F[T]](ws.asInstanceOf[WebSocket[F]], meta))
+          case _ => None
         }
       case ResponseAsWebSocketUnsafe() =>
         b match {

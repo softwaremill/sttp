@@ -20,7 +20,7 @@ Class                                 Supported stream type                     
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % "3.0.0-RC9"
+"com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % "3.0.0-RC13"
 ```
 
 And some imports:
@@ -71,7 +71,7 @@ val backend = AsyncHttpClientFutureBackend.usingClient(asyncHttpClient)
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "okhttp-backend" % "3.0.0-RC9"
+"com.softwaremill.sttp.client3" %% "okhttp-backend" % "3.0.0-RC13"
 ```
 
 and some imports:
@@ -103,7 +103,7 @@ This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supp
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "httpclient-backend" % "3.0.0-RC9"
+"com.softwaremill.sttp.client3" %% "httpclient-backend" % "3.0.0-RC13"
 ```
 
 and some imports:
@@ -128,7 +128,7 @@ val client: HttpClient = ???
 val backend = HttpClientFutureBackend.usingClient(client)
 ```
 
-This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards, works with all Scala versions. A Dotty build is available as well.
+This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards, works with all Scala versions. A Scala 3 build is available as well.
 
 ## Streaming
 

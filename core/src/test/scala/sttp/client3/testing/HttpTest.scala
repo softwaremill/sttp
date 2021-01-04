@@ -371,9 +371,28 @@ trait HttpTest[F[_]]
       req.send(backend).toFuture().map { resp => resp.body should be(s"p1=v1$defaultFileName, p2=v2$defaultFileName") }
     }
 
+    "send a multipart message with an explicitly set content type header" in {
+      val req = mp
+        .multipartBody(multipart("p1", "v1"), multipart("p2", "v2"))
+        .contentType("multipart/form-data")
+      req.send(backend).toFuture().map { resp => resp.body should be(s"p1=v1$defaultFileName, p2=v2$defaultFileName") }
+    }
+
     "send a multipart message with filenames" in {
       val req = mp.multipartBody(multipart("p1", "v1").fileName("f1"), multipart("p2", "v2").fileName("f2"))
       req.send(backend).toFuture().map { resp => resp.body should be("p1=v1 (f1), p2=v2 (f2)") }
+    }
+
+    "send a multipart message with binary data and filename" in {
+      val binaryPart = {
+        multipart("p1", "v1".getBytes)
+          .fileName("f1")
+      }
+      val req = mp.multipartBody(binaryPart)
+      req.send(backend).toFuture().map { resp =>
+        resp.body should include("f1")
+        resp.body should include("v1")
+      }
     }
 
     if (supportsCustomMultipartContentType) {
@@ -433,6 +452,14 @@ trait HttpTest[F[_]]
       r2.response(asString).mapResponseRight(_.toInt).send(backend).toFuture().map { resp =>
         resp.code shouldBe StatusCode.Ok
         resp.body shouldBe Right(r4response.toInt)
+      }
+    }
+
+    "redirect to a relative url" in {
+      basicRequest.post(uri"$endpoint/redirect/relative").response(asStringAlways).send(backend).toFuture().map {
+        resp =>
+          resp.code shouldBe StatusCode.Ok
+          resp.body shouldBe r4response
       }
     }
 

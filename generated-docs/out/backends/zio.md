@@ -7,7 +7,7 @@ The [ZIO](https://github.com/zio/zio) backends are **asynchronous**. Sending a r
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "httpclient-backend-zio" % "3.0.0-RC9"
+"com.softwaremill.sttp.client3" %% "httpclient-backend-zio" % "3.0.0-RC13"
 ```
 
 Create the backend using:
@@ -33,10 +33,10 @@ This backend is based on the built-in `java.net.http.HttpClient` available from 
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % "3.0.0-RC9"
+"com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % "3.0.0-RC13"
 ```
            
-This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client), uses [Netty](http://netty.io) behind the scenes. This backend works with all Scala versions. A Dotty build is available as well.
+This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client), uses [Netty](http://netty.io) behind the scenes. This backend works with all Scala versions. A Scala 3 build is available as well.
 
 Next you'll need to define a backend instance as an implicit value. This can be done in two basic ways:
 
@@ -178,3 +178,22 @@ dependency. They enrich the stub with the given behavior.
 
 Then, the `stubLayer` provides both an implementation of the `SttpClientStubbing` dependency, as well as a `SttpClient`
 which is backed by the stub.
+
+## Server-sent events
+
+Received data streams can be parsed to a stream of server-sent events (SSE):
+
+```scala
+import zio._
+import zio.stream._
+
+import sttp.capabilities.zio.ZioStreams
+import sttp.client3.impl.zio.ZioServerSentEvents
+import sttp.model.sse.ServerSentEvent
+import sttp.client3._
+
+def processEvents(source: Stream[Throwable, ServerSentEvent]): Task[Unit] = ???
+
+basicRequest.response(asStream(ZioStreams)(stream => 
+  processEvents(stream.via(ZioServerSentEvents.parse))))
+```

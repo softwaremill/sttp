@@ -8,6 +8,7 @@ import sttp.client3.{
   RequestBody,
   RequestT,
   ResponseAs,
+  ResponseAsBoth,
   ResponseAsByteArray,
   ResponseAsFile,
   ResponseAsFromMetadata,
@@ -72,11 +73,13 @@ object MapEffect {
       case IgnoreResponse      => IgnoreResponse
       case ResponseAsByteArray => ResponseAsByteArray
       case ResponseAsStream(s, f) =>
-        ResponseAsStream(s)(f.asInstanceOf[Any => F[Any]].andThen(fk.apply(_)))
+        ResponseAsStream(s)((s, m) => fk(f.asInstanceOf[(Any, ResponseMetadata) => F[Any]](s, m)))
       case rasu: ResponseAsStreamUnsafe[_, _] => rasu
       case ResponseAsFile(output)             => ResponseAsFile(output)
       case ResponseAsWebSocket(f) =>
-        ResponseAsWebSocket((wg: WebSocket[G]) => fk(f.asInstanceOf[WebSocket[F] => F[Any]](apply[G, F](wg, gk, fm))))
+        ResponseAsWebSocket((wg: WebSocket[G], m: ResponseMetadata) =>
+          fk(f.asInstanceOf[(WebSocket[F], ResponseMetadata) => F[Any]](apply[G, F](wg, gk, fm), m))
+        )
       case ResponseAsWebSocketUnsafe() => ResponseAsWebSocketUnsafe()
       case ResponseAsWebSocketStream(s, p) =>
         ResponseAsWebSocketStream(s, p)
@@ -92,6 +95,8 @@ object MapEffect {
         )
       case MappedResponseAs(raw, g, showAs) =>
         MappedResponseAs(apply[F, G](raw, fk, gk, fm, gm), g.asInstanceOf[(Any, ResponseMetadata) => Any], showAs)
+      case ResponseAsBoth(l, r) =>
+        ResponseAsBoth(apply(l, fk, gk, fm, gm), apply(r, fk, gk, fm, gm).asInstanceOf[ResponseAs[_, Any]])
     }
   }
 

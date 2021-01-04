@@ -7,7 +7,7 @@ The [fs2](https://github.com/functional-streams-for-scala/fs2) backend is **asyn
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "async-http-client-backend-fs2" % "3.0.0-RC9"
+"com.softwaremill.sttp.client3" %% "async-http-client-backend-fs2" % "3.0.0-RC13"
 ```
 
 And some imports:
@@ -76,7 +76,7 @@ val backend = AsyncHttpClientFs2Backend.usingClient[IO](asyncHttpClient, blocker
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "httpclient-backend-fs2" % "3.0.0-RC9"
+"com.softwaremill.sttp.client3" %% "httpclient-backend-fs2" % "3.0.0-RC13"
 ```
 
 And some imports:
@@ -161,3 +161,22 @@ val effect = AsyncHttpClientFs2Backend[IO](blocker).flatMap { backend =>
 ## Websockets
 
 The fs2 backend supports both regular and streaming [websockets](../websockets.md).
+
+## Server-sent events
+
+Received data streams can be parsed to a stream of server-sent events (SSE):
+
+```scala
+import cats.effect._
+import fs2.Stream
+
+import sttp.capabilities.fs2.Fs2Streams
+import sttp.client3.impl.fs2.Fs2ServerSentEvents
+import sttp.model.sse.ServerSentEvent
+import sttp.client3._
+
+def processEvents(source: Stream[IO, ServerSentEvent]): IO[Unit] = ???
+
+basicRequest.response(asStream(Fs2Streams[IO])(stream => 
+  processEvents(stream.through(Fs2ServerSentEvents.parse))))
+```
