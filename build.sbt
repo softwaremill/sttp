@@ -683,6 +683,7 @@ lazy val playJson = (projectMatrix in file("json/play-json"))
     scalaVersions = List(scala2_11, scala2_12, scala2_13),
     settings = commonJvmSettings ++ intellijImportOnly213
   )
+  .jsPlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonJsSettings ++ intellijSkipImport)
   .dependsOn(core, jsonCommon)
 
 lazy val openTracingBackend = (projectMatrix in file("metrics/open-tracing-backend"))
