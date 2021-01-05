@@ -347,6 +347,10 @@ lazy val zio = (projectMatrix in file("implementations/zio"))
   .jvmPlatform(
     scalaVersions = scala2
   )
+  .jsPlatform(
+    scalaVersions = List(scala2_12, scala2_13),
+    settings = commonJsSettings ++ commonJsBackendSettings ++ browserChromeTestSettings ++ testServerSettings
+  )
 
 lazy val scalaz = (projectMatrix in file("implementations/scalaz"))
   .settings(commonJvmSettings)
