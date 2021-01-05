@@ -212,7 +212,7 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
       case Some("https") => 443
       case _             => 80
     }
-    s"${uri.host}:${uri.port.getOrElse(defaultPort)}"
+    s"${uri.host.getOrElse("localhost")}:${uri.port.getOrElse(defaultPort)}"
   }
 
   private def adjustExceptions[T](request: Request[_, _])(t: => TFuture[T]): TFuture[T] =
