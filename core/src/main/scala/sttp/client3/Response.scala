@@ -33,7 +33,6 @@ case class Response[T](
 
 object Response {
 
-  // TODO
   /** Mainly useful in tests using [[sttp.client3.testing.SttpBackendStub]], when creating stub responses.
     */
   val ExampleGet: RequestMetadata = new RequestMetadata {
