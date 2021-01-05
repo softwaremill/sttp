@@ -76,9 +76,9 @@ Using with [brave](https://github.com/openzipkin/brave) tracing
 Add following dependency:
 
 ```
-libraryDependencies += "io.opentracing.brave" % "brave-opentracing" % "0.37.5"
+libraryDependencies += "io.opentracing.brave" % "brave-opentracing" % "1.0.0"
 // and for integrationw with okHttp:
-libraryDependencies += "io.zipkin.reporter2" % "zipkin-sender-okhttp3" % "2.16.2" 
+libraryDependencies += "io.zipkin.reporter2" % "zipkin-sender-okhttp3" % "2.16.3" 
 ```
 
 Create an instance of tracer:

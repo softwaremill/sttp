@@ -187,6 +187,7 @@ If the backend used supports streaming (see [backends summary](../backends/summa
 ```scala
 import sttp.capabilities.{Effect, Streams}
 import sttp.client3._
+import sttp.model.ResponseMetadata
 
 def asStream[F[_], T, S](s: Streams[S])(f: s.BinaryStream => F[T]): 
   ResponseAs[Either[String, T], Effect[F] with S] = ???
