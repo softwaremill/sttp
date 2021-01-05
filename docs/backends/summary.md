@@ -54,6 +54,9 @@ There are also backends which wrap other backends to provide additional function
 * `OpenTracingBackend`, for OpenTracing-compatible distributed tracing. See the [dedicated section](wrappers/opentracing.md).
 * `PrometheusBackend`, for gathering Prometheus-format metrics. See the [dedicated section](wrappers/prometheus.md).
 * extendable logging backends (with an slf4j implementation) backends. See the [dedicated section](wrappers/logging.md).
+* `ResolveRelativeUrisBackend` to resolve relative URIs given a base URI, or an arbitrary effectful function
+* `ListenerBackend` to listen for backend lifecycle events. See the [dedicated section](wrappers/custom.md).
+* `FollowRedirectsBackend`, which handles redirects. All implementation backends are created wrapped with this one.
 
 In addition, there are also backends for Scala.JS:
 
