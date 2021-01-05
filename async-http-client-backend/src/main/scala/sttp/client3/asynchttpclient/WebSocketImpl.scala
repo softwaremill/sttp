@@ -88,13 +88,15 @@ class AddToQueueListener[F[_]](queue: SimpleQueue[F, WebSocketEvent], isOpen: At
   }
 
   override def onClose(websocket: AHCWebSocket, code: Int, reason: String): Unit = {
-    isOpen.set(false)
-    queue.offer(WebSocketEvent.Frame(WebSocketFrame.Close(code, reason)))
+    if (isOpen.getAndSet(false)) {
+      queue.offer(WebSocketEvent.Frame(WebSocketFrame.Close(code, reason)))
+    }
   }
 
   override def onError(t: Throwable): Unit = {
-    isOpen.set(false)
-    queue.offer(WebSocketEvent.Error(t))
+    if (isOpen.getAndSet(false)) {
+      queue.offer(WebSocketEvent.Error(t))
+    }
   }
 
   override def onBinaryFrame(payload: Array[Byte], finalFragment: Boolean, rsv: Int): Unit =
@@ -106,7 +108,11 @@ class AddToQueueListener[F[_]](queue: SimpleQueue[F, WebSocketEvent], isOpen: At
   override def onPingFrame(payload: Array[Byte]): Unit = onFrame(WebSocketFrame.Ping(payload))
   override def onPongFrame(payload: Array[Byte]): Unit = onFrame(WebSocketFrame.Pong(payload))
 
-  private def onFrame(f: WebSocketFrame): Unit = queue.offer(WebSocketEvent.Frame(f))
+  private def onFrame(f: WebSocketFrame): Unit =
+    try queue.offer(WebSocketEvent.Frame(f))
+    catch {
+      case e: Exception => onError(e)
+    }
 
   private def rsvToOption(rsv: Int): Option[Int] = if (rsv == 0) None else Some(rsv)
 }
