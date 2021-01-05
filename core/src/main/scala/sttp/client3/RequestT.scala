@@ -3,12 +3,12 @@ package sttp.client3
 import java.io.InputStream
 import java.nio.ByteBuffer
 import java.util.Base64
-
 import sttp.capabilities.{Effect, Streams}
 import sttp.client3.internal.DigestAuthenticator.DigestAuthData
 import sttp.client3.internal._
 import sttp.client3.internal.{SttpFile, ToCurlConverter}
 import sttp.model._
+import sttp.model.headers.CookieWithMeta
 
 import scala.collection.immutable.Seq
 import scala.concurrent.duration.Duration
@@ -103,7 +103,9 @@ case class RequestT[U[_], T, -R](
 
   def cookie(nv: (String, String)): RequestT[U, T, R] = cookies(nv)
   def cookie(n: String, v: String): RequestT[U, T, R] = cookies((n, v))
-  def cookies(r: Response[_]): RequestT[U, T, R] = cookies(r.cookies.map(c => (c.name, c.value)): _*)
+  def cookies(r: Response[_]): RequestT[U, T, R] = cookies(
+    r.cookies.collect { case Right(c) => c }.map(c => (c.name, c.value)): _*
+  )
   def cookies(cs: Iterable[CookieWithMeta]): RequestT[U, T, R] = cookies(cs.map(c => (c.name, c.value)).toSeq: _*)
   def cookies(nvs: (String, String)*): RequestT[U, T, R] = {
     header(

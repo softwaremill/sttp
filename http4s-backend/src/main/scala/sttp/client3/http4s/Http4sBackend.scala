@@ -51,7 +51,7 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
               val code = StatusCode.unsafeApply(response.status.code)
               val headers = response.headers.toList.map(h => Header(h.name.value, h.value))
               val statusText = response.status.reason
-              val responseMetadata = ResponseMetadata(headers, code, statusText)
+              val responseMetadata = ResponseMetadata(code, statusText, headers)
 
               val signalBodyComplete = responseBodyCompleteVar.tryPut(()).map(_ => ())
               val body =

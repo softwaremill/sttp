@@ -29,14 +29,13 @@ import sttp.client3.{
   Request,
   RequestBody,
   Response,
-  ResponseMetadata,
   StreamBody,
   StringBody,
   SttpBackend,
   SttpClientException,
   WebSocketResponseAs
 }
-import sttp.model.{Header, HeaderNames, Method, Part, StatusCode, Uri}
+import sttp.model.{Header, HeaderNames, Method, Part, ResponseMetadata, StatusCode, Uri}
 import sttp.monad.MonadError
 import sttp.monad.syntax._
 
@@ -54,7 +53,7 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
           val code = StatusCode.unsafeApply(fResponse.statusCode)
           val headers = fResponse.headerMap.map(h => Header(h._1, h._2)).toList
           val statusText = fResponse.status.reason
-          val responseMetadata = ResponseMetadata(headers, code, statusText)
+          val responseMetadata = ResponseMetadata(code, statusText, headers)
           val body = bodyFromResponseAs(request.response, responseMetadata, Left(fResponse))
           service
             .close()
@@ -199,8 +198,8 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
   private def getClient(c: Option[Client], request: Request[_, Nothing]): Service[http.Request, FResponse] = {
     val client = c.getOrElse {
       request.uri.scheme match {
-        case "https" => Http.client.withTransport.tls
-        case _       => Http.client
+        case Some("https") => Http.client.withTransport.tls
+        case _             => Http.client
       }
     }
     client
@@ -210,8 +209,8 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
 
   private def uriToFinagleDestination(uri: Uri): String = {
     val defaultPort = uri.scheme match {
-      case "https" => 443
-      case _       => 80
+      case Some("https") => 443
+      case _             => 80
     }
     s"${uri.host}:${uri.port.getOrElse(defaultPort)}"
   }

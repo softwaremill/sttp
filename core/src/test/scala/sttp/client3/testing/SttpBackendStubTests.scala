@@ -38,7 +38,7 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
     .thenRespondF(Response(Right("OK from monad"), StatusCode.Ok, "OK"))
     .whenRequestMatches(_.uri.port.exists(_ == 8081))
     .thenRespondF(r =>
-      Response(Right(s"OK from request. Request was sent to host: ${r.uri.host}"), StatusCode.Ok, "OK")
+      Response(Right(s"OK from request. Request was sent to host: ${r.uri.host.getOrElse("?")}"), StatusCode.Ok, "OK")
     )
 
   "backend stub" should "use the first rule if it matches" in {
@@ -398,7 +398,7 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
       SttpBackendStub.tryAdjustResponseBody(
         responseAs,
         body,
-        ResponseMetadata(Nil, StatusCode.Ok, "")
+        ResponseMetadata(StatusCode.Ok, "", Nil)
       )(IdMonad) should be(
         expectedResult
       )

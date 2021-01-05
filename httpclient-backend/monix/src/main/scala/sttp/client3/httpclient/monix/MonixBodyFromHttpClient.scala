@@ -1,7 +1,6 @@
 package sttp.client3.httpclient.monix
 
 import java.nio.file.StandardOpenOption
-
 import monix.eval.Task
 import monix.execution.Scheduler
 import monix.nio.file._
@@ -11,7 +10,8 @@ import sttp.client3.httpclient.BodyFromHttpClient
 import sttp.client3.impl.monix.MonixWebSockets
 import sttp.client3.internal.{BodyFromResponseAs, SttpFile}
 import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
-import sttp.client3.{ResponseMetadata, WebSocketResponseAs}
+import sttp.client3.WebSocketResponseAs
+import sttp.model.ResponseMetadata
 import sttp.ws.{WebSocket, WebSocketFrame}
 
 trait MonixBodyFromHttpClient extends BodyFromHttpClient[Task, MonixStreams, MonixStreams.BinaryStream] {

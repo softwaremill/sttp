@@ -1,7 +1,6 @@
 package sttp.client3.akkahttp
 
 import java.util.concurrent.atomic.AtomicBoolean
-
 import akka.http.scaladsl.model.ws.{BinaryMessage, Message, TextMessage}
 import akka.http.scaladsl.model.{HttpEntity, HttpResponse}
 import akka.stream.scaladsl.{FileIO, Flow, Sink, SinkQueueWithCancel, Source, SourceQueueWithComplete}
@@ -16,10 +15,9 @@ import sttp.client3.{
   ResponseAsWebSocket,
   ResponseAsWebSocketStream,
   ResponseAsWebSocketUnsafe,
-  ResponseMetadata,
   WebSocketResponseAs
 }
-import sttp.model.Headers
+import sttp.model.{Headers, ResponseMetadata}
 import sttp.monad.{FutureMonad, MonadError}
 import sttp.ws.{WebSocket, WebSocketBufferFull, WebSocketClosed, WebSocketFrame}
 

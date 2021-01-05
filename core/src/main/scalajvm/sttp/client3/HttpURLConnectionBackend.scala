@@ -7,14 +7,13 @@ import java.nio.charset.CharacterCodingException
 import java.nio.file.Files
 import java.util.concurrent.ThreadLocalRandom
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
-
 import sttp.capabilities.Effect
 import sttp.client3.HttpURLConnectionBackend.EncodingHandler
 import sttp.client3.internal._
 import sttp.client3.monad.IdMonad
 import sttp.client3.testing.SttpBackendStub
 import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
-import sttp.model.{Header, HeaderNames, StatusCode, Uri}
+import sttp.model.{Header, HeaderNames, ResponseMetadata, StatusCode, Uri}
 import sttp.monad.MonadError
 
 import scala.collection.JavaConverters._
@@ -69,7 +68,7 @@ class HttpURLConnectionBackend private (
   private def openConnection(uri: Uri): HttpURLConnection = {
     val url = createURL(uri.toString)
     val conn = opts.proxy match {
-      case Some(p) if !p.ignoreProxy(uri.host) =>
+      case Some(p) if uri.host.forall(!p.ignoreProxy(_)) =>
         p.auth.foreach { proxyAuth =>
           Authenticator.setDefault(new Authenticator() {
             override def getPasswordAuthentication: PasswordAuthentication = {
@@ -242,7 +241,7 @@ class HttpURLConnectionBackend private (
     val wrappedIs = if (c.getRequestMethod != "HEAD") {
       wrapInput(contentEncoding, handleNullInput(is))
     } else handleNullInput(is)
-    val responseMetadata = ResponseMetadata(headers, code, c.getResponseMessage)
+    val responseMetadata = ResponseMetadata(code, c.getResponseMessage, headers)
     val body = bodyFromResponseAs(request.response, responseMetadata, Left(wrappedIs))
 
     Response(body, code, c.getResponseMessage, headers, Nil, request.onlyMetadata)

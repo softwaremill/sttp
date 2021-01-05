@@ -2,6 +2,7 @@ package sttp.client3.internal
 
 import sttp.client3._
 import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
+import sttp.model.ResponseMetadata
 import sttp.monad.MonadError
 import sttp.monad.syntax._
 

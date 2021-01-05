@@ -25,7 +25,7 @@ import sttp.client3.internal.{SttpFile, _}
 import sttp.client3.ws.{NotAWebSocketException, GotAWebSocketException}
 import sttp.monad.MonadError
 import sttp.monad.syntax._
-import sttp.model.{Header, HeaderNames, MediaType, StatusCode}
+import sttp.model.{Header, HeaderNames, MediaType, ResponseMetadata, StatusCode}
 
 import scala.collection.immutable.Seq
 import scala.concurrent.duration.FiniteDuration
@@ -131,7 +131,7 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
       }
       .flatMap { resp =>
         val headers = convertResponseHeaders(resp.headers)
-        val metadata = ResponseMetadata(headers, StatusCode(resp.status), resp.statusText)
+        val metadata = ResponseMetadata(StatusCode(resp.status), resp.statusText, headers)
 
         val body: F[T] = bodyFromResponseAs(request.response, metadata, Left(resp))
 

@@ -9,7 +9,7 @@ import java.util.function
 import sttp.capabilities.{Effect, Streams}
 import sttp.client3.SttpBackendOptions.Proxy
 import sttp.client3.httpclient.HttpClientBackend.EncodingHandler
-import sttp.client3.{MultipartBody, Request, Response, ResponseMetadata, SttpBackend, SttpBackendOptions}
+import sttp.client3.{MultipartBody, Request, Response, SttpBackend, SttpBackendOptions}
 import sttp.model._
 import sttp.monad.MonadError
 import sttp.monad.syntax._
@@ -65,7 +65,7 @@ abstract class HttpClientBackend[F[_], S, P, B](
       .toList
 
     val code = StatusCode(res.statusCode())
-    val responseMetadata = ResponseMetadata(headers, code, "")
+    val responseMetadata = ResponseMetadata(code, "", headers)
 
     val encoding = headers.collectFirst { case h if h.is(HeaderNames.ContentEncoding) => h.value }
     val method = Method(res.request().method())

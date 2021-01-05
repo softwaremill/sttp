@@ -2,7 +2,6 @@ package sttp.client3.asynchttpclient
 
 import java.io.{ByteArrayInputStream, File}
 import java.nio.ByteBuffer
-
 import org.reactivestreams.Publisher
 import sttp.capabilities.Streams
 import sttp.client3.internal.{BodyFromResponseAs, FileHelpers, SttpFile, nonReplayableBody}
@@ -12,9 +11,9 @@ import sttp.client3.{
   ResponseAsWebSocket,
   ResponseAsWebSocketStream,
   ResponseAsWebSocketUnsafe,
-  ResponseMetadata,
   WebSocketResponseAs
 }
+import sttp.model.ResponseMetadata
 import sttp.monad.syntax._
 import sttp.monad.{Canceler, MonadAsyncError}
 import sttp.ws.{WebSocket, WebSocketFrame}

@@ -1,7 +1,6 @@
 package sttp.client3.akkahttp
 
 import java.io.UnsupportedEncodingException
-
 import akka.{Done, NotUsed}
 import akka.actor.{ActorSystem, CoordinatedShutdown}
 import akka.event.LoggingAdapter
@@ -19,7 +18,7 @@ import sttp.client3
 import sttp.client3.akkahttp.AkkaHttpBackend.EncodingHandler
 import sttp.client3.testing.SttpBackendStub
 import sttp.client3.{FollowRedirectsBackend, Response, SttpBackend, SttpBackendOptions, _}
-import sttp.model.StatusCode
+import sttp.model.{ResponseMetadata, StatusCode}
 import sttp.monad.{FutureMonad, MonadError}
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -87,7 +86,7 @@ class AkkaHttpBackend private (
 
   private def connectionSettings(r: Request[_, _]): ConnectionPoolSettings = {
     val connectionPoolSettingsWithProxy = opts.proxy match {
-      case Some(p) if !p.ignoreProxy(r.uri.host) =>
+      case Some(p) if r.uri.host.forall(!p.ignoreProxy(_)) =>
         val clientTransport = p.auth match {
           case Some(proxyAuth) =>
             ClientTransport.httpsProxy(
@@ -115,7 +114,7 @@ class AkkaHttpBackend private (
 
     val headers = FromAkka.headers(hr)
 
-    val responseMetadata = client3.ResponseMetadata(headers, code, statusText)
+    val responseMetadata = ResponseMetadata(code, statusText, headers)
     val body = bodyFromAkka(r.response, responseMetadata, wsFlow.map(Right(_)).getOrElse(Left(decodeAkkaResponse(hr))))
 
     body.map(client3.Response(_, code, statusText, headers, Nil, r.onlyMetadata))
