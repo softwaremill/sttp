@@ -4,7 +4,7 @@ import cats.effect.ConcurrentEffect
 import cats.effect.concurrent.Ref
 import cats.effect.implicits._
 import fs2.{Pipe, Stream}
-import sttp.ws.{WebSocket, WebSocketFrame}
+import sttp.ws.{WebSocket, WebSocketClosed, WebSocketFrame}
 
 object Fs2WebSockets {
 
@@ -33,6 +33,7 @@ object Fs2WebSockets {
               Stream.empty // ignore
             case in: WebSocketFrame.Data[_] => Stream.emit(Some(in))
           }
+          .handleErrorWith { case _: WebSocketClosed => Stream.eval(closeRef.set(None)).as(None) }
           .unNoneTerminate // terminate once we got a Close
           .through(pipe)
           // end with matching Close or user-provided Close or no Close at all
