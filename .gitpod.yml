@@ -1,0 +1,11 @@
+image:
+  file: .gitpod.Dockerfile
+tasks:
+  - command: sbt ~run
+ports:
+  - port: 8212
+    onOpen: ignore
+vscode:
+  extensions:
+    - scala-lang.scala@0.4.5:hiI5l6gvM8wAiy/xTQl38g==
+    - scalameta.metals@1.9.8:1LECSglxFUVvpg8TaqeO2g==
