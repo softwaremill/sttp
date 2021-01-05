@@ -49,7 +49,10 @@ private[asynchttpclient] class WebSocketImpl[F[_]](
       case WebSocketFrame.Close(statusCode, reasonText) =>
         val wasOpen = _isOpen.getAndSet(false)
         // making close sequentially idempotent
-        if (wasOpen) fromNettyFuture(ws.sendCloseFrame(statusCode, reasonText)) else ().unit
+        if (wasOpen) {
+          queue.offer(WebSocketEvent.Error(new WebSocketClosed))
+          fromNettyFuture(ws.sendCloseFrame(statusCode, reasonText))
+        } else ().unit
     }))
 
   override def upgradeHeaders: Headers =
