@@ -5,7 +5,7 @@ A JavaScript backend implemented using the [Fetch API](https://developer.mozilla
 This is the default backend, available in the main jar for JS. To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %%% "core" % "3.0.0-RC14"
+"com.softwaremill.sttp.client3" %%% "core" % "3.0.0-RC15"
 ```
 
 And create the backend instance:
@@ -48,7 +48,7 @@ Streaming support is provided via `FetchMonixBackend`. Note that streaming suppo
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %%% "monix" % "3.0.0-RC14"
+"com.softwaremill.sttp.client3" %%% "monix" % "3.0.0-RC15"
 ```
 
 An example of streaming a response:
