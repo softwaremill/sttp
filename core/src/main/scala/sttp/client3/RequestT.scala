@@ -89,7 +89,11 @@ case class RequestT[U[_], T, -R](
     */
   def header(k: String, v: String, replaceExisting: Boolean): RequestT[U, T, R] =
     header(Header(k, v), replaceExisting)
+
+  /** Adds the given header to the end of the headers sequence. */
   def header(k: String, v: String): RequestT[U, T, R] = header(Header(k, v))
+
+  /** Adds the given header to the end of the headers sequence, if the value is defined. Otherwise has no effect. */
   def header(k: String, ov: Option[String]): RequestT[U, T, R] = ov.fold(this)(header(k, _))
   def headers(hs: Map[String, String]): RequestT[U, T, R] =
     headers(hs.map(t => Header(t._1, t._2)).toSeq: _*)
