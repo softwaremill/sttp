@@ -132,6 +132,7 @@ val jeagerClientVersion = "1.5.0"
 val braveOpentracingVersion = "1.0.0"
 val zipkinSenderOkHttpVersion = "2.16.3"
 val resilience4jVersion = "1.6.1"
+val http4sVersion = "0.21.15"
 
 val compileAndTest = "compile->compile;test->test"
 
@@ -479,7 +480,8 @@ lazy val http4sBackend = (projectMatrix in file("http4s-backend"))
   .settings(
     name := "http4s-backend",
     libraryDependencies ++= Seq(
-      "org.http4s" %% "http4s-blaze-client" % "0.21.15"
+      "org.http4s" %% "http4s-client" % http4sVersion,
+      "org.http4s" %% "http4s-blaze-client" % http4sVersion % Optional
     )
   )
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13))

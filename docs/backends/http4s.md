@@ -1,6 +1,6 @@
 # Http4s backend
 
-This backend is based on [http4s](https://http4s.org) (blaze client) and is **asynchronous**. To use, add the following dependency to your project:
+This backend is based on [http4s](https://http4s.org) (client) and is **asynchronous**. To use, add the following dependency to your project:
 
 ```
 "com.softwaremill.sttp.client3" %% "http4s-backend" % "@VERSION@"
@@ -26,7 +26,7 @@ If a blocker instance is not available, a new one can be created, and the resour
 
 ```scala
 implicit val cs: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionContext.global) // or another instance
-Blocker[IO].flatMap(Http4sBackend.usingDefaultClientBuilder[IO](_)).use { implicit backend => ... }
+Blocker[IO].flatMap(Http4sBackend.usingDefaultBlazeClientBuilder[IO](_)).use { implicit backend => ... }
 ```
 
 Sending a request is a non-blocking, lazily-evaluated operation and results in a wrapped response. There's a transitive dependency on `http4s`. 
@@ -35,10 +35,11 @@ There are also [other cats-effect-based backends](catseffect.md), which don't de
 
 Please note that: 
 
+* the backend contains an **optional** dependency on `http4s-blaze-client`, to provide the `Http4sBackend.usingBlazeClientBuilder` and `Http4sBackend.usingDefaultBlazeClientBuilder` methods. This makes the client usable with other http4s client implementations, without the need to depend on blaze.
 * the backend does not support `SttpBackendOptions`,that is specifying proxy settings (proxies are not implemented in http4s, see [this issue](https://github.com/http4s/http4s/issues/251)), as well as configuring the connect timeout 
 * the backend does not support the `RequestT.options.readTimeout` option
 
-Instead, all custom timeout configuration should be done by creating a `org.http4s.client.Client[F]`, using `org.http4s.client.blaze.BlazeClientBuilder[F]` and passing it to the appropriate method of the `Http4sBackend` object.
+Instead, all custom timeout configuration should be done by creating a `org.http4s.client.Client[F]`, using e.g. `org.http4s.client.blaze.BlazeClientBuilder[F]` and passing it to the appropriate method of the `Http4sBackend` object.
 
 The backend supports streaming using fs2. For usage details, see the documentation on [streaming using fs2](fs2.md#streaming).
 
