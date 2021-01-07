@@ -86,6 +86,23 @@ class OpenTracingBackendTest extends AnyFlatSpec with Matchers with BeforeAndAft
     spans(0).operationName shouldBe "overridden-op"
   }
 
+  it should "make child of given span context if defined" in {
+    val activeSpan = tracer.buildSpan("active-op").start()
+    tracer.activateSpan(activeSpan)
+    val response = basicRequest
+      .post(uri"http://stub/echo")
+      .tagWithOperationId("overridden-op")
+      .setOpenTracingParentSpanContext(activeSpan.context())
+      .send(backend)
+    response.code shouldBe StatusCode.Ok
+
+    val spans = tracer.finishedSpans().asScala
+
+    spans should have size 1
+    spans(0).parentId() shouldBe activeSpan.context().spanId()
+    spans(0).operationName shouldBe "overridden-op"
+  }
+
   it should "propagate additional metadata" in {
     val span = tracer.buildSpan("my-custom-ops-id").start()
     span.setBaggageItem("baggage1", "hello")
