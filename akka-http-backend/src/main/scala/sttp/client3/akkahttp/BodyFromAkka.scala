@@ -163,7 +163,7 @@ private[akkahttp] class BodyFromAkka()(implicit ec: ExecutionContext, mat: Mater
             open.set(false)
             val c = closeReceived.getAndSet(true)
             if (!c) Future.successful(WebSocketFrame.close)
-            else Future.failed(new WebSocketClosed())
+            else Future.failed(WebSocketClosed(Some(WebSocketFrame.close)))
         }
 
         result.onComplete {
@@ -190,7 +190,7 @@ private[akkahttp] class BodyFromAkka()(implicit ec: ExecutionContext, mat: Mater
                     Future.failed(throw new IllegalStateException(new WebSocketBufferFull(1)))
                   case QueueOfferResult.Failure(cause) => Future.failed(cause)
                   case QueueOfferResult.QueueClosed =>
-                    Future.failed(throw new IllegalStateException(new WebSocketClosed()))
+                    Future.failed(throw new IllegalStateException(WebSocketClosed(None)))
                 }
               case None => Future.successful(())
             }
@@ -222,7 +222,7 @@ private[akkahttp] class BodyFromAkka()(implicit ec: ExecutionContext, mat: Mater
       case WebSocketFrame.Binary(p, _, _) => Some(BinaryMessage(ByteString(p)))
       case WebSocketFrame.Ping(_)         => None
       case WebSocketFrame.Pong(_)         => None
-      case WebSocketFrame.Close(_, _)     => throw new WebSocketClosed()
+      case WebSocketFrame.Close(_, _)     => throw WebSocketClosed(None)
     }
   }
 }

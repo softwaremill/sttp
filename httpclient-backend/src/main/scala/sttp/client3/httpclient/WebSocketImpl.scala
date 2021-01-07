@@ -23,7 +23,7 @@ private[httpclient] class WebSocketImpl[F[_]](
     queue.poll.flatMap {
       case WebSocketEvent.Open() => receive()
       case WebSocketEvent.Frame(c: WebSocketFrame.Close) =>
-        queue.offer(WebSocketEvent.Error(new WebSocketClosed))
+        queue.offer(WebSocketEvent.Error(WebSocketClosed(Some(c))))
         monad.unit(c)
       case e @ WebSocketEvent.Error(t: Exception) =>
         // putting back the error so that subsequent invocations end in an error as well, instead of hanging

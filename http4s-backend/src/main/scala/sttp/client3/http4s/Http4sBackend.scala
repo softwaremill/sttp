@@ -1,6 +1,6 @@
 package sttp.client3.http4s
 
-import java.io.{File, InputStream, UnsupportedEncodingException}
+import java.io.{InputStream, UnsupportedEncodingException}
 import java.nio.charset.Charset
 
 import cats.data.NonEmptyList

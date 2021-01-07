@@ -1,6 +1,5 @@
 package sttp.client3.akkahttp
 
-import akka.NotUsed
 import akka.stream.scaladsl.{Flow, Source}
 import sttp.capabilities.WebSockets
 import sttp.capabilities.akka.AkkaStreams
