@@ -32,6 +32,7 @@ class AkkaHttpBackend private (
     http: AkkaHttpClient,
     customizeRequest: HttpRequest => HttpRequest,
     customizeWebsocketRequest: WebSocketRequest => WebSocketRequest,
+    customizeResponse: (HttpRequest, HttpResponse) => HttpResponse,
     customEncodingHandler: EncodingHandler
 ) extends SttpBackend[Future, AkkaStreams with WebSockets] {
   type PE = AkkaStreams with Effect[Future] with WebSockets
@@ -52,7 +53,9 @@ class AkkaHttpBackend private (
     Future
       .fromTry(ToAkka.request(r).flatMap(BodyToAkka(r, r.body, _)))
       .map(customizeRequest)
-      .flatMap(request => http.singleRequest(request, connectionSettings(r)))
+      .flatMap(request =>
+        http.singleRequest(request, connectionSettings(r)).map(response => customizeResponse(request, response))
+      )
       .flatMap(responseFromAkka(r, _, None))
   }
 
@@ -163,6 +166,7 @@ object AkkaHttpBackend {
       http: AkkaHttpClient,
       customizeRequest: HttpRequest => HttpRequest,
       customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity,
+      customizeResponse: (HttpRequest, HttpResponse) => HttpResponse = (_, r) => r,
       customEncodingHandler: EncodingHandler = PartialFunction.empty
   ): SttpBackend[Future, AkkaStreams with WebSockets] =
     new FollowRedirectsBackend(
@@ -175,6 +179,7 @@ object AkkaHttpBackend {
         http,
         customizeRequest,
         customizeWebsocketRequest,
+        customizeResponse,
         customEncodingHandler
       )
     )
@@ -190,6 +195,7 @@ object AkkaHttpBackend {
       customLog: Option[LoggingAdapter] = None,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity,
+      customizeResponse: (HttpRequest, HttpResponse) => HttpResponse = (_, r) => r,
       customEncodingHandler: EncodingHandler = PartialFunction.empty
   )(implicit
       ec: Option[ExecutionContext] = None
@@ -205,6 +211,7 @@ object AkkaHttpBackend {
       AkkaHttpClient.default(actorSystem, customHttpsContext, customLog),
       customizeRequest,
       customizeWebsocketRequest,
+      customizeResponse,
       customEncodingHandler
     )
   }
@@ -223,6 +230,7 @@ object AkkaHttpBackend {
       customLog: Option[LoggingAdapter] = None,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity,
+      customizeResponse: (HttpRequest, HttpResponse) => HttpResponse = (_, r) => r,
       customEncodingHandler: EncodingHandler = PartialFunction.empty
   )(implicit
       ec: Option[ExecutionContext] = None
@@ -234,6 +242,7 @@ object AkkaHttpBackend {
       AkkaHttpClient.default(actorSystem, customHttpsContext, customLog),
       customizeRequest,
       customizeWebsocketRequest,
+      customizeResponse,
       customEncodingHandler
     )
   }
@@ -251,6 +260,7 @@ object AkkaHttpBackend {
       http: AkkaHttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity,
+      customizeResponse: (HttpRequest, HttpResponse) => HttpResponse = (_, r) => r,
       customEncodingHandler: EncodingHandler = PartialFunction.empty
   )(implicit
       ec: Option[ExecutionContext] = None
@@ -264,6 +274,7 @@ object AkkaHttpBackend {
       http,
       customizeRequest,
       customizeWebsocketRequest,
+      customizeResponse,
       customEncodingHandler
     )
   }
