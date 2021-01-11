@@ -11,7 +11,7 @@ class Fs2SimpleQueue[F[_], A](queue: InspectableQueue[F, A], capacity: Option[In
     F.toIO(queue.offer1(t))
       .flatMap {
         case true  => IO.unit
-        case false => IO.raiseError(new WebSocketBufferFull(capacity.getOrElse(Int.MaxValue)))
+        case false => IO.raiseError(WebSocketBufferFull(capacity.getOrElse(Int.MaxValue)))
       }
       .unsafeRunSync()
   }

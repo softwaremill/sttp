@@ -187,7 +187,7 @@ private[akkahttp] class BodyFromAkka()(implicit ec: ExecutionContext, mat: Mater
                 sourceQueue.offer(m).flatMap {
                   case QueueOfferResult.Enqueued => Future.successful(())
                   case QueueOfferResult.Dropped =>
-                    Future.failed(throw new IllegalStateException(new WebSocketBufferFull(1)))
+                    Future.failed(throw new IllegalStateException(WebSocketBufferFull(1)))
                   case QueueOfferResult.Failure(cause) => Future.failed(cause)
                   case QueueOfferResult.QueueClosed =>
                     Future.failed(throw new IllegalStateException(WebSocketClosed(None)))

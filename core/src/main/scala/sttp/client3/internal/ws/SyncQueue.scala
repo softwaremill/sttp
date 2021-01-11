@@ -16,7 +16,7 @@ class SyncQueue[T](capacity: Option[Int]) extends SimpleQueue[Identity, T] {
     */
   override def offer(t: T): Unit = {
     if (!queue.offer(t)) {
-      throw new WebSocketBufferFull(capacity.getOrElse(Int.MaxValue))
+      throw WebSocketBufferFull(capacity.getOrElse(Int.MaxValue))
     }
   }
 
