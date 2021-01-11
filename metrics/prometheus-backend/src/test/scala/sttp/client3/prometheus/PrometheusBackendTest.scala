@@ -8,7 +8,6 @@ import io.prometheus.client.CollectorRegistry
 import org.scalatest.concurrent.{Eventually, IntegrationPatience}
 import org.scalatest.{BeforeAndAfter, OptionValues}
 import sttp.client3.testing.SttpBackendStub
-import sttp.model.StatusCode
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
