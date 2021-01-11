@@ -77,7 +77,7 @@ class LoggingWithResponseBodyBackend[F[_], S](
     delegate: SttpBackend[F, S],
     log: Log[F],
     includeTiming: Boolean
-) extends SttpBackend[F, S] {
+) extends DelegateSttpBackend[F, S](delegate) {
   private def now(): Long = System.currentTimeMillis()
   private def elapsed(from: Option[Long]): Option[Duration] = from.map(f => Duration(now() - f, TimeUnit.MILLISECONDS))
 
@@ -95,7 +95,4 @@ class LoggingWithResponseBodyBackend[F[_], S](
         }
     }
   }
-
-  override def close(): F[Unit] = delegate.close()
-  override implicit def responseMonad: MonadError[F] = delegate.responseMonad
 }

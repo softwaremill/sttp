@@ -2,7 +2,7 @@
 
 [sttp model](https://github.com/softwaremill/sttp-model) is a stand-alone project which provides a basic HTTP model, along with constants for common HTTP header names, media types, and status codes.
 
-The basic model classes are: `Header`, `Cookie`, `CookieWithMeta`, `MediaType`, `Method`, `StatusCode` and `Uri`. The `.toString` methods of these classes returns a representation as in a HTTP request/response. See the ScalaDoc for more information.
+The basic model classes are: `Header`, `Cookie`, `CookieWithMeta`, `MediaType`, `Method`, `StatusCode`, `CacheDirective`, `ETag` and `Uri`. The `.toString` methods of these classes returns a representation as in a HTTP request/response. See the ScalaDoc for more information.
 
 Companion objects provide methods to construct model class instances, following these rules:
 
@@ -16,7 +16,7 @@ Moreover, companion objects provide constants and/or constructor methods for wel
 
 These constants are also available as traits: `StatusCodes`, `MediaTypes` and `HeaderNames`.
 
-The model also contains aggregate/helper classes such as `Headers` and `MultiQueryParams`.
+The model also contains aggregate/helper classes such as `Headers` and `QueryParams`.
 
 Example with objects:
 

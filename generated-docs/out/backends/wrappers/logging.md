@@ -10,12 +10,15 @@ By default, the following options are exposed:
 * `includeTiming` - should the duration of the request be included in the log message
 * `beforeCurlInsteadOfShow` - before sending a request, instead of a summary of the request to be sent, log the curl command which corresponds to the request
 * `logRequestBody` - should the request body be logged before sending the request (if the request body can be logged)
+* `logRequestHeaders` - should the non-sensitive request headers be logged before sending the request 
 * `logResponseBody` - should the response body be logged after receiving a response to the request (if the response body can be replayed)  
+* `logResponseHeaders` - should the non-sensitive response headers be logged  
 
 The messages are by default logged on these levels:
 
 * `DEBUG` before the request is sent
-* `DEBUG` when a request completes successfully
+* `DEBUG` when a request completes successfully (with a 1xx/2xx status code)
+* `WARN` when a request completes successfully (with a 4xx/5xx status code)
 * `ERROR` when there's an exception when sending a request
 
 Log levels can be configured when creating the `LoggingBackend`, or specified independently in a custom implementation of `Log`.

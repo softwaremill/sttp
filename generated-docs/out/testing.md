@@ -118,8 +118,6 @@ basicRequest.get(uri"http://example.org").send(testingBackend)       // code wil
 basicRequest.get(uri"http://example.org").send(testingBackend)       // code will be 200
 ```
 
-## Matching on the request body
-
 The `sttp.client3.testing` package also contains a utility method to force the body as a string, if the body is not a stream or multipart:
 
 ```scala

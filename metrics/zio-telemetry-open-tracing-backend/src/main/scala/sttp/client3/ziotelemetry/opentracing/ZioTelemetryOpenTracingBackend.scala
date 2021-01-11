@@ -2,33 +2,28 @@ package sttp.client3.ziotelemetry.opentracing
 
 import io.opentracing.propagation.{Format, TextMapAdapter}
 import sttp.capabilities.Effect
-
-import scala.jdk.CollectionConverters._
 import sttp.client3._
-import sttp.client3.impl.zio.{ExtendEnv, RIOMonadAsyncError}
-import sttp.monad.MonadError
+import sttp.client3.impl.zio.ExtendEnv
 import zio._
 import zio.telemetry.opentracing._
 
+import scala.jdk.CollectionConverters._
+
 class ZioTelemetryOpenTracingBackend[+P] private (
-    other: SttpBackend[RIO[OpenTracing, *], P],
+    delegate: SttpBackend[RIO[OpenTracing, *], P],
     tracer: ZioTelemetryOpenTracingTracer
-) extends SttpBackend[RIO[OpenTracing, *], P] {
+) extends DelegateSttpBackend[RIO[OpenTracing, *], P](delegate) {
   def send[T, R >: P with Effect[RIO[OpenTracing, *]]](request: Request[T, R]): RIO[OpenTracing, Response[T]] = {
     val headers = scala.collection.mutable.Map.empty[String, String]
     val buffer = new TextMapAdapter(headers.asJava)
     OpenTracing.inject(Format.Builtin.HTTP_HEADERS, buffer).flatMap { _ =>
       (for {
         _ <- tracer.before(request)
-        resp <- other.send(request.headers(headers.toMap))
+        resp <- delegate.send(request.headers(headers.toMap))
         _ <- tracer.after(resp)
       } yield resp).span(s"${request.method.method} ${request.uri.path.mkString("/")}")
     }
   }
-
-  def close(): RIO[OpenTracing, Unit] = other.close()
-
-  val responseMonad: MonadError[RIO[OpenTracing, *]] = new RIOMonadAsyncError[OpenTracing]
 }
 
 object ZioTelemetryOpenTracingBackend {
