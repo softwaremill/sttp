@@ -7,7 +7,7 @@ Choosing the right backend depends on a number of factors: whether you are using
 Which one to choose?
 
 * for simple exploratory requests, use the [synchronous](synchronous.md) `HttpURLConnectionBackend`, or `HttpClientSyncBackend` if you are on Java11+.
-* if you have Akka in your stack, use [Akka backend](akka.md)
+* if you have Akka in your stack, use the [Akka backend](akka.md)
 * otherwise, if you are using `Future`, use `AsyncHttpClientFutureBackend` [Future](future.md) backend, or `HttpClientFutureBackend` if you are on Java11+.
 * finally, if you are using a functional effect wrapper, use one of the "functional" backends, for [ZIO](zio.md), [Monix](monix.md), [Scalaz](scalaz.md), [cats-effect](catseffect.md) or [fs2](fs2.md). 
 
