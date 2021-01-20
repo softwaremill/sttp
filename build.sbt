@@ -358,7 +358,7 @@ lazy val scalaz = (projectMatrix in file("implementations/scalaz"))
   .settings(
     name := "scalaz",
     publishArtifact in Test := true,
-    libraryDependencies ++= Seq("org.scalaz" %% "scalaz-concurrent" % "7.2.30")
+    libraryDependencies ++= Seq("org.scalaz" %% "scalaz-concurrent" % "7.2.31")
   )
   .dependsOn(core % compileAndTest)
   .jvmPlatform(
