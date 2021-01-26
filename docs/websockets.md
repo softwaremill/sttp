@@ -18,6 +18,7 @@ The following response specifications which use `WebSocket[F]` are available (th
 ```scala mdoc:compile-only
 import sttp.client3._
 import sttp.capabilities.{Effect, WebSockets}
+import sttp.model.ResponseMetadata
 import sttp.ws.WebSocket
 
 def asWebSocket[F[_], T](f: WebSocket[F] => F[T]): 

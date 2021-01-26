@@ -1,9 +1,9 @@
 name: CI
 on:
   pull_request:
-    branches: ['*']
+    branches: ['**']
   push:
-    branches: ['*']
+    branches: ['**']
     tags: [v*]
 jobs:
   ci:

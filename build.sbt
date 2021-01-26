@@ -9,7 +9,7 @@ val scala2_11 = "2.11.12"
 val scala2_12 = "2.12.12"
 val scala2_13 = "2.13.4"
 val scala2 = List(scala2_11, scala2_12, scala2_13)
-val scala3 = List("3.0.0-M1", "3.0.0-M2")
+val scala3 = List("3.0.0-M2", "3.0.0-M3")
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests")
@@ -101,31 +101,32 @@ val circeVersion: Option[(Long, Long)] => String = {
 }
 val playJsonVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.7.4"
-  case _             => "2.9.1"
+  case _             => "2.9.2"
 }
 val catsEffectVersion= "3.0.0-M3"
 val fs2Version = "3.0.0-M3"
 
-val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.2.2"
-val akkaStreamVersion = "2.6.10"
+val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.2.3"
+val akkaStreamVersion = "2.6.11"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % akkaStreamVersion
 
 val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", "wordspec", "shouldmatchers").map(m =>
   "org.scalatest" %%% s"scalatest-$m" % "3.2.3" % Test
 )
 
-val zioVersion = "1.0.3"
+val zioVersion = "1.0.4"
 val zioInteropRsVersion = "1.3.0.7-2"
 
-val sttpModelVersion = "1.2.0-RC9"
-val sttpSharedVersion = "1.0.0-RC11"
+val sttpModelVersion = "1.2.1"
+val sttpSharedVersion = "1.0.0"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
 
 val jeagerClientVersion = "1.5.0"
 val braveOpentracingVersion = "1.0.0"
 val zipkinSenderOkHttpVersion = "2.16.3"
-val resilience4jVersion = "1.6.1"
+val resilience4jVersion = "1.7.0"
+val http4sVersion = "0.21.16"
 
 val compileAndTest = "compile->compile;test->test"
 
@@ -341,6 +342,10 @@ lazy val zio = (projectMatrix in file("implementations/zio"))
   .jvmPlatform(
     scalaVersions = scala2
   )
+  .jsPlatform(
+    scalaVersions = List(scala2_12, scala2_13),
+    settings = commonJsSettings ++ commonJsBackendSettings ++ browserChromeTestSettings ++ testServerSettings
+  )
 
 lazy val scalaz = (projectMatrix in file("implementations/scalaz"))
   .settings(commonJvmSettings)
@@ -381,7 +386,7 @@ lazy val asyncHttpClientBackend = (projectMatrix in file("async-http-client-back
   .settings(
     name := "async-http-client-backend",
     libraryDependencies ++= Seq(
-      "org.asynchttpclient" % "async-http-client" % "2.12.1"
+      "org.asynchttpclient" % "async-http-client" % "2.12.2"
     )
   )
   .dependsOn(core % compileAndTest)
@@ -533,7 +538,7 @@ lazy val finagleBackend = (projectMatrix in file("finagle-backend"))
   .settings(
     name := "finagle-backend",
     libraryDependencies ++= Seq(
-      "com.twitter" %% "finagle-http" % "20.12.0"
+      "com.twitter" %% "finagle-http" % "21.1.0"
     )
   )
   .jvmPlatform(scalaVersions = scala2)
@@ -657,7 +662,7 @@ lazy val zioTelemetryOpenTracingBackend = (projectMatrix in file("metrics/zio-te
   .settings(
     name := "zio-telemetry-opentracing-backend",
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-opentracing" % "0.7.0",
+      "dev.zio" %% "zio-opentracing" % "0.7.1",
       "org.scala-lang.modules" %% "scala-collection-compat" % "2.3.2"
     )
   )
@@ -670,7 +675,7 @@ lazy val scribeBackend = (projectMatrix in file("logging/scribe"))
   .settings(
     name := "scribe-backend",
     libraryDependencies ++= Seq(
-      "com.outr" %%% "scribe" % "3.1.8"
+      "com.outr" %%% "scribe" % "3.2.4"
     ),
     scalaTest
   )

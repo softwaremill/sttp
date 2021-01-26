@@ -16,10 +16,9 @@ import sttp.client3.{
   ResponseAsStreamUnsafe,
   ResponseAsWebSocket,
   ResponseAsWebSocketStream,
-  ResponseAsWebSocketUnsafe,
-  ResponseMetadata
+  ResponseAsWebSocketUnsafe
 }
-import sttp.model.Headers
+import sttp.model.{Headers, ResponseMetadata}
 import sttp.monad.MonadError
 import sttp.ws.{WebSocket, WebSocketFrame}
 

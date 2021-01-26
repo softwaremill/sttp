@@ -1,6 +1,6 @@
 package sttp.client3.impl.zio
 
-import sttp.ws.{WebSocket, WebSocketFrame}
+import sttp.ws.{WebSocket, WebSocketClosed, WebSocketFrame}
 import zio.stream.{Stream, Transducer, ZStream}
 import zio.{Ref, ZIO}
 
@@ -10,17 +10,18 @@ object ZioWebSockets {
       pipe: ZStream[R, Throwable, WebSocketFrame.Data[_]] => ZStream[R, Throwable, WebSocketFrame]
   ): ZIO[R, Throwable, Unit] =
     Ref.make(true).flatMap { open =>
+      val onClose = Stream.fromEffect(open.set(false).map(_ => None: Option[WebSocketFrame.Data[_]]))
       pipe(
         Stream
           .repeatEffect(ws.receive())
           .flatMap {
-            case WebSocketFrame.Close(_, _) =>
-              Stream.fromEffect(open.set(false).map(_ => None: Option[WebSocketFrame.Data[_]]))
+            case WebSocketFrame.Close(_, _) => onClose
             case WebSocketFrame.Ping(payload) =>
               Stream.fromEffect(ws.send(WebSocketFrame.Pong(payload))).flatMap(_ => Stream.empty)
             case WebSocketFrame.Pong(_)     => Stream.empty
             case in: WebSocketFrame.Data[_] => Stream(Some(in))
           }
+          .catchSome { case _: WebSocketClosed => onClose }
           .collectWhileSome
       )
         .mapM(ws.send(_))

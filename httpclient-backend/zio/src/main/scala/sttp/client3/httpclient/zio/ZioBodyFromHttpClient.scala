@@ -1,13 +1,13 @@
 package sttp.client3.httpclient.zio
 
 import java.nio.file.StandardOpenOption
-
 import sttp.capabilities.zio.ZioStreams
 import sttp.client3.httpclient.BodyFromHttpClient
 import sttp.client3.impl.zio.{RIOMonadAsyncError, ZioWebSockets}
 import sttp.client3.internal.{BodyFromResponseAs, SttpFile}
 import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
-import sttp.client3.{ResponseMetadata, WebSocketResponseAs}
+import sttp.client3.WebSocketResponseAs
+import sttp.model.ResponseMetadata
 import sttp.monad.MonadError
 import sttp.ws.{WebSocket, WebSocketFrame}
 import zio.nio.channels.AsynchronousFileChannel

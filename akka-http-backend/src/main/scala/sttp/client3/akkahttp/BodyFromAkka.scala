@@ -1,7 +1,6 @@
 package sttp.client3.akkahttp
 
 import java.util.concurrent.atomic.AtomicBoolean
-
 import akka.http.scaladsl.model.ws.{BinaryMessage, Message, TextMessage}
 import akka.http.scaladsl.model.{HttpEntity, HttpResponse}
 import akka.stream.scaladsl.{FileIO, Flow, Sink, SinkQueueWithCancel, Source, SourceQueueWithComplete}
@@ -16,10 +15,9 @@ import sttp.client3.{
   ResponseAsWebSocket,
   ResponseAsWebSocketStream,
   ResponseAsWebSocketUnsafe,
-  ResponseMetadata,
   WebSocketResponseAs
 }
-import sttp.model.Headers
+import sttp.model.{Headers, ResponseMetadata}
 import sttp.monad.{FutureMonad, MonadError}
 import sttp.ws.{WebSocket, WebSocketBufferFull, WebSocketClosed, WebSocketFrame}
 
@@ -165,7 +163,7 @@ private[akkahttp] class BodyFromAkka()(implicit ec: ExecutionContext, mat: Mater
             open.set(false)
             val c = closeReceived.getAndSet(true)
             if (!c) Future.successful(WebSocketFrame.close)
-            else Future.failed(new WebSocketClosed())
+            else Future.failed(WebSocketClosed(Some(WebSocketFrame.close)))
         }
 
         result.onComplete {
@@ -189,10 +187,10 @@ private[akkahttp] class BodyFromAkka()(implicit ec: ExecutionContext, mat: Mater
                 sourceQueue.offer(m).flatMap {
                   case QueueOfferResult.Enqueued => Future.successful(())
                   case QueueOfferResult.Dropped =>
-                    Future.failed(throw new IllegalStateException(new WebSocketBufferFull(1)))
+                    Future.failed(throw new IllegalStateException(WebSocketBufferFull(1)))
                   case QueueOfferResult.Failure(cause) => Future.failed(cause)
                   case QueueOfferResult.QueueClosed =>
-                    Future.failed(throw new IllegalStateException(new WebSocketClosed()))
+                    Future.failed(throw new IllegalStateException(WebSocketClosed(None)))
                 }
               case None => Future.successful(())
             }
@@ -224,7 +222,7 @@ private[akkahttp] class BodyFromAkka()(implicit ec: ExecutionContext, mat: Mater
       case WebSocketFrame.Binary(p, _, _) => Some(BinaryMessage(ByteString(p)))
       case WebSocketFrame.Ping(_)         => None
       case WebSocketFrame.Pong(_)         => None
-      case WebSocketFrame.Close(_, _)     => throw new WebSocketClosed()
+      case WebSocketFrame.Close(_, _)     => throw WebSocketClosed(None)
     }
   }
 }

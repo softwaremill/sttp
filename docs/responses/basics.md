@@ -40,9 +40,9 @@ val contentLength: Option[Long] = response.contentLength
 Finally, it's possible to parse the response cookies into a sequence of the `CookieWithMeta` case class:
 
 ```scala mdoc:compile-only
-import sttp.model._
+import sttp.model.headers.CookieWithMeta
 
-val cookies: Seq[CookieWithMeta] = response.cookies
+val cookies: Seq[CookieWithMeta] = response.unsafeCookies
 ```        
 
 If the cookies from a response should be set without changes on the request, this can be done directly; see the [cookies](../requests/cookies.md) section in the request definition documentation.

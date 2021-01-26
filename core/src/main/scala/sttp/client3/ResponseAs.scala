@@ -2,7 +2,7 @@ package sttp.client3
 
 import sttp.capabilities.{Effect, Streams, WebSockets}
 import sttp.client3.internal._
-import sttp.model.StatusCode
+import sttp.model.{ResponseMetadata, StatusCode}
 import sttp.model.internal.Rfc3986
 import sttp.ws.{WebSocket, WebSocketFrame}
 

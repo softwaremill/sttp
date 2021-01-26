@@ -4,12 +4,12 @@ import java.io.File
 import java.nio.file.Files
 import java.security.MessageDigest
 import java.time.{ZoneId, ZonedDateTime}
-
 import sttp.client3._
-import sttp.model.{CookieWithMeta, Header, HeaderNames, StatusCode}
+import sttp.model.{Header, HeaderNames, StatusCode}
 
 import scala.concurrent.Future
 import HttpTest.endpoint
+import sttp.model.headers.CookieWithMeta
 
 trait HttpTestExtensions[F[_]] { self: HttpTest[F] =>
   "cookies" - {
@@ -20,8 +20,8 @@ trait HttpTestExtensions[F[_]] { self: HttpTest[F] =>
         .send(backend)
         .toFuture()
         .map { response =>
-          response.cookies should have length (3)
-          response.cookies.toSet should be(
+          response.unsafeCookies should have length (3)
+          response.unsafeCookies.toSet should be(
             Set(
               CookieWithMeta.unsafeApply("cookie1", "value1", secure = true, httpOnly = true, maxAge = Some(123L)),
               CookieWithMeta.unsafeApply("cookie2", "value2"),
@@ -38,8 +38,8 @@ trait HttpTestExtensions[F[_]] { self: HttpTest[F] =>
         .send(backend)
         .toFuture()
         .map { response =>
-          response.cookies should have length (1)
-          val c = response.cookies(0)
+          response.unsafeCookies should have length (1)
+          val c = response.unsafeCookies(0)
 
           c.name should be("c")
           c.value should be("v")

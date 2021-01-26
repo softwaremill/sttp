@@ -1,7 +1,7 @@
 package sttp.client3.opentracing
 
 import io.opentracing.tag.Tags
-import io.opentracing.{Span, Tracer}
+import io.opentracing.{Span, SpanContext, Tracer}
 import io.opentracing.propagation.Format
 import io.opentracing.Tracer.SpanBuilder
 import sttp.capabilities.Effect
@@ -91,6 +91,10 @@ object OpenTracingBackend {
     /** Sets parent Span for OpenTracing Span of this request execution. */
     def setOpenTracingParentSpan(parent: Span): Request[T, S] =
       tagWithTransformSpanBuilder(_.asChildOf(parent))
+
+    /** Sets parent SpanContext for OpenTracing Span of this request execution. */
+    def setOpenTracingParentSpanContext(parentSpanContext: SpanContext): Request[T, S] =
+      tagWithTransformSpanBuilder(_.asChildOf(parentSpanContext))
   }
 
   def apply[F[_], P](delegate: SttpBackend[F, P], tracer: Tracer): SttpBackend[F, P] = {

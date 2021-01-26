@@ -1,13 +1,12 @@
 package sttp.client3.testing
 
 import java.io.InputStream
-
 import sttp.capabilities.{Effect, WebSockets}
 import sttp.client3.internal.{SttpFile, _}
 import sttp.client3.monad.IdMonad
 import sttp.client3.testing.SttpBackendStub._
 import sttp.client3.{IgnoreResponse, ResponseAs, ResponseAsByteArray, SttpBackend, _}
-import sttp.model.StatusCode
+import sttp.model.{ResponseMetadata, StatusCode}
 import sttp.monad.{FutureMonad, MonadError}
 import sttp.monad.syntax._
 import sttp.ws.WebSocket

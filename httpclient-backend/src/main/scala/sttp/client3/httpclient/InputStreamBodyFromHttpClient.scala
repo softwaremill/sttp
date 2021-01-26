@@ -1,10 +1,10 @@
 package sttp.client3.httpclient
 
 import java.io.{BufferedInputStream, ByteArrayInputStream, FileInputStream, InputStream}
-
 import sttp.client3.internal.{BodyFromResponseAs, FileHelpers, SttpFile}
 import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
-import sttp.client3.{ResponseMetadata, WebSocketResponseAs}
+import sttp.client3.WebSocketResponseAs
+import sttp.model.ResponseMetadata
 import sttp.monad.syntax.MonadErrorValueOps
 import sttp.ws.WebSocket
 

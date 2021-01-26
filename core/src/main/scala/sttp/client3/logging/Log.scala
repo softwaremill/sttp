@@ -1,7 +1,7 @@
 package sttp.client3.logging
 
 import sttp.client3.{Request, Response}
-import sttp.model.HeaderNames
+import sttp.model.{HeaderNames, StatusCode}
 
 import scala.concurrent.duration.Duration
 
@@ -33,7 +33,7 @@ class DefaultLog[F[_]](
     logResponseHeaders: Boolean = true,
     sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders,
     beforeRequestSendLogLevel: LogLevel = LogLevel.Debug,
-    responseLogLevel: LogLevel = LogLevel.Debug,
+    responseLogLevel: StatusCode => LogLevel = DefaultLog.defaultResponseLogLevel,
     responseExceptionLogLevel: LogLevel = LogLevel.Error
 ) extends Log[F] {
 
@@ -52,7 +52,7 @@ class DefaultLog[F[_]](
       elapsed: Option[Duration]
   ): F[Unit] =
     logger(
-      responseLogLevel, {
+      responseLogLevel(response.code), {
         val responseAsString =
           response
             .copy(body = responseBody.getOrElse(""))
@@ -65,4 +65,9 @@ class DefaultLog[F[_]](
     logger(responseExceptionLogLevel, s"Exception when sending request: ${request.showBasic}${took(elapsed)}", e)
 
   private def took(elapsed: Option[Duration]): String = elapsed.fold("")(e => f", took: ${e.toMillis / 1000.0}%.3fs")
+}
+
+object DefaultLog {
+  def defaultResponseLogLevel(c: StatusCode): LogLevel =
+    if (c.isClientError || c.isServerError) LogLevel.Warn else LogLevel.Debug
 }

@@ -3,12 +3,12 @@ package sttp.client3
 import java.io.InputStream
 import java.nio.ByteBuffer
 import java.util.Base64
-
 import sttp.capabilities.{Effect, Streams}
 import sttp.client3.internal.DigestAuthenticator.DigestAuthData
 import sttp.client3.internal._
 import sttp.client3.internal.{SttpFile, ToCurlConverter}
 import sttp.model._
+import sttp.model.headers.CookieWithMeta
 
 import scala.collection.immutable.Seq
 import scala.concurrent.duration.Duration
@@ -89,7 +89,11 @@ case class RequestT[U[_], T, -R](
     */
   def header(k: String, v: String, replaceExisting: Boolean): RequestT[U, T, R] =
     header(Header(k, v), replaceExisting)
+
+  /** Adds the given header to the end of the headers sequence. */
   def header(k: String, v: String): RequestT[U, T, R] = header(Header(k, v))
+
+  /** Adds the given header to the end of the headers sequence, if the value is defined. Otherwise has no effect. */
   def header(k: String, ov: Option[String]): RequestT[U, T, R] = ov.fold(this)(header(k, _))
   def headers(hs: Map[String, String]): RequestT[U, T, R] =
     headers(hs.map(t => Header(t._1, t._2)).toSeq: _*)
@@ -103,7 +107,9 @@ case class RequestT[U[_], T, -R](
 
   def cookie(nv: (String, String)): RequestT[U, T, R] = cookies(nv)
   def cookie(n: String, v: String): RequestT[U, T, R] = cookies((n, v))
-  def cookies(r: Response[_]): RequestT[U, T, R] = cookies(r.cookies.map(c => (c.name, c.value)): _*)
+  def cookies(r: Response[_]): RequestT[U, T, R] = cookies(
+    r.cookies.collect { case Right(c) => c }.map(c => (c.name, c.value)): _*
+  )
   def cookies(cs: Iterable[CookieWithMeta]): RequestT[U, T, R] = cookies(cs.map(c => (c.name, c.value)).toSeq: _*)
   def cookies(nvs: (String, String)*): RequestT[U, T, R] = {
     header(
@@ -376,13 +382,13 @@ case class RequestT[U[_], T, -R](
 object RequestT {
   implicit class RichRequestTEither[U[_], A, B, R](r: RequestT[U, Either[A, B], R]) {
     def mapResponseRight[B2](f: B => B2): RequestT[U, Either[A, B2], R] = r.copy(response = r.response.mapRight(f))
-    def getResponseRight: RequestT[U, B, R] = r.copy(response = r.response.getRight)
+    def responseGetRight: RequestT[U, B, R] = r.copy(response = r.response.getRight)
   }
 
   implicit class RichRequestTEitherResponseException[U[_], HE, DE, B, R](
       r: RequestT[U, Either[ResponseException[HE, DE], B], R]
   ) {
-    def getResponseEither: RequestT[U, Either[HE, B], R] = r.copy(response = r.response.getEither)
+    def responseGetEither: RequestT[U, Either[HE, B], R] = r.copy(response = r.response.getEither)
   }
 }
 

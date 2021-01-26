@@ -2,14 +2,13 @@ package sttp.client3
 
 import java.net.URI
 import sttp.capabilities.Effect
-import sttp.monad.MonadError
 import sttp.model.{Method, StatusCode, _}
 
 class FollowRedirectsBackend[F[_], P](
     delegate: SttpBackend[F, P],
     contentHeaders: Set[String] = HeaderNames.ContentHeaders,
     sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders
-) extends SttpBackend[F, P] {
+) extends DelegateSttpBackend[F, P](delegate) {
   type PE = P with Effect[F]
 
   override def send[T, R >: PE](request: Request[T, R]): F[Response[T]] = {
@@ -90,10 +89,6 @@ class FollowRedirectsBackend[F[_], P](
         )
     } else r
   }
-
-  override def close(): F[Unit] = delegate.close()
-
-  override def responseMonad: MonadError[F] = delegate.responseMonad
 }
 
 object FollowRedirectsBackend {

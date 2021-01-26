@@ -81,7 +81,7 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
       request: Request[T, R]
   ): F[Response[T]] = {
     val headers = readHeaders(res)
-    val responseMetadata = ResponseMetadata(headers, StatusCode(res.code()), res.message())
+    val responseMetadata = ResponseMetadata(StatusCode(res.code()), res.message(), headers)
     val encoding = headers.collectFirst { case h if h.is(HeaderNames.ContentEncoding) => h.value }
     val method = Method(res.request().method())
     val byteBody = if (method != Method.HEAD) {

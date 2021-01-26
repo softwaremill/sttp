@@ -1,11 +1,10 @@
 package sttp.client3.logging
 
 import java.util.concurrent.TimeUnit
-
 import sttp.capabilities.Effect
 import sttp.client3._
 import sttp.client3.listener.{ListenerBackend, RequestListener}
-import sttp.model.HeaderNames
+import sttp.model.{HeaderNames, StatusCode}
 import sttp.monad.MonadError
 import sttp.monad.syntax._
 
@@ -23,7 +22,7 @@ object LoggingBackend {
       logResponseHeaders: Boolean = true,
       sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders,
       beforeRequestSendLogLevel: LogLevel = LogLevel.Debug,
-      responseLogLevel: LogLevel = LogLevel.Debug,
+      responseLogLevel: StatusCode => LogLevel = DefaultLog.defaultResponseLogLevel,
       responseExceptionLogLevel: LogLevel = LogLevel.Error
   ): SttpBackend[F, S] = {
     val log = new DefaultLog(
@@ -39,6 +38,9 @@ object LoggingBackend {
     )
     apply(delegate, log, includeTiming, logResponseBody)
   }
+
+  def apply[F[_], S](delegate: SttpBackend[F, S], log: Log[F]): SttpBackend[F, S] =
+    apply(delegate, log, includeTiming = true, logResponseBody = false)
 
   def apply[F[_], S](
       delegate: SttpBackend[F, S],
@@ -75,7 +77,7 @@ class LoggingWithResponseBodyBackend[F[_], S](
     delegate: SttpBackend[F, S],
     log: Log[F],
     includeTiming: Boolean
-) extends SttpBackend[F, S] {
+) extends DelegateSttpBackend[F, S](delegate) {
   private def now(): Long = System.currentTimeMillis()
   private def elapsed(from: Option[Long]): Option[Duration] = from.map(f => Duration(now() - f, TimeUnit.MILLISECONDS))
 
@@ -93,7 +95,4 @@ class LoggingWithResponseBodyBackend[F[_], S](
         }
     }
   }
-
-  override def close(): F[Unit] = delegate.close()
-  override implicit def responseMonad: MonadError[F] = delegate.responseMonad
 }

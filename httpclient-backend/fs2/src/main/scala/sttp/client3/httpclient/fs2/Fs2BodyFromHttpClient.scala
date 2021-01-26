@@ -9,7 +9,8 @@ import sttp.client3.impl.cats.CatsMonadAsyncError
 import sttp.client3.impl.fs2.Fs2WebSockets
 import sttp.client3.internal.{BodyFromResponseAs, SttpFile}
 import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
-import sttp.client3.{ResponseMetadata, WebSocketResponseAs}
+import sttp.client3.WebSocketResponseAs
+import sttp.model.ResponseMetadata
 import sttp.monad.MonadError
 import sttp.monad.syntax.{MonadErrorValueOps, _}
 import sttp.ws.{WebSocket, WebSocketFrame}

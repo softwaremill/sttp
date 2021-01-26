@@ -2,15 +2,13 @@ package sttp.client3.testing
 
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.UnaryOperator
-
 import sttp.capabilities.Effect
-import sttp.client3.{Request, Response, SttpBackend}
-import sttp.monad.MonadError
+import sttp.client3.{DelegateSttpBackend, Request, Response, SttpBackend}
 import sttp.monad.syntax._
 
 import scala.util.{Failure, Success, Try}
 
-class RecordingSttpBackend[F[_], +P](delegate: SttpBackend[F, P]) extends SttpBackend[F, P] {
+class RecordingSttpBackend[F[_], +P](delegate: SttpBackend[F, P]) extends DelegateSttpBackend[F, P](delegate) {
   type RequestAndResponse = (Request[_, _], Try[Response[_]])
 
   private val _allInteractions = new AtomicReference[Vector[RequestAndResponse]](Vector())
@@ -22,7 +20,6 @@ class RecordingSttpBackend[F[_], +P](delegate: SttpBackend[F, P]) extends SttpBa
   }
 
   override def send[T, R >: P with Effect[F]](request: Request[T, R]): F[Response[T]] = {
-    implicit val m: MonadError[F] = responseMonad
     delegate
       .send(request)
       .map { response =>
@@ -34,9 +31,6 @@ class RecordingSttpBackend[F[_], +P](delegate: SttpBackend[F, P]) extends SttpBa
         responseMonad.error(e)
       }
   }
-
-  override def close(): F[Unit] = delegate.close()
-  override def responseMonad: MonadError[F] = delegate.responseMonad
 
   def allInteractions: List[RequestAndResponse] = _allInteractions.get().toList
 }

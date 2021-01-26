@@ -13,7 +13,7 @@ import sttp.capabilities.Effect
 import sttp.model._
 import sttp.monad.MonadError
 import sttp.monad.syntax._
-import sttp.model.{Header, Method, StatusCode}
+import sttp.model.{Header, Method, ResponseMetadata, StatusCode}
 
 import scala.collection.immutable.Seq
 import scala.io.Source
@@ -82,7 +82,7 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
 
         val statusText = responseHeaders_.head.name.split(" ").last
         val responseHeaders = responseHeaders_.tail
-        val responseMetadata = ResponseMetadata(responseHeaders, httpCode, statusText)
+        val responseMetadata = ResponseMetadata(httpCode, statusText, responseHeaders)
 
         val body: F[T] = bodyFromResponseAs(request.response, responseMetadata, Left(responseBody))
         responseMonad.map(body) { b =>

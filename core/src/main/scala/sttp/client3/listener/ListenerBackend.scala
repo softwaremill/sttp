@@ -10,7 +10,7 @@ import sttp.monad.syntax._
 class ListenerBackend[F[_], P, L](
     delegate: SttpBackend[F, P],
     listener: RequestListener[F, L]
-) extends SttpBackend[F, P] {
+) extends DelegateSttpBackend[F, P](delegate) {
 
   override def send[T, R >: P with Effect[F]](request: Request[T, R]): F[Response[T]] = {
     listener.beforeRequest(request).flatMap { t =>
@@ -21,9 +21,6 @@ class ListenerBackend[F[_], P, L](
         .flatMap { response => listener.requestSuccessful(request, response, t).map(_ => response) }
     }
   }
-
-  override def close(): F[Unit] = delegate.close()
-  override implicit def responseMonad: MonadError[F] = delegate.responseMonad
 }
 
 object ListenerBackend {

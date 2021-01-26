@@ -7,7 +7,7 @@ Choosing the right backend depends on a number of factors: whether you are using
 Which one to choose?
 
 * for simple exploratory requests, use the [synchronous](synchronous.md) `HttpURLConnectionBackend`, or `HttpClientSyncBackend` if you are on Java11+.
-* if you have Akka in your stack, use [Akka backend](akka.md)
+* if you have Akka in your stack, use the [Akka backend](akka.md)
 * otherwise, if you are using `Future`, use `AsyncHttpClientFutureBackend` [Future](future.md) backend, or `HttpClientFutureBackend` if you are on Java11+.
 * finally, if you are using a functional effect wrapper, use one of the "functional" backends, for [ZIO](zio.md), [Monix](monix.md), [Scalaz](scalaz.md), [cats-effect](catseffect.md) or [fs2](fs2.md). 
 
@@ -54,6 +54,9 @@ There are also backends which wrap other backends to provide additional function
 * `OpenTracingBackend`, for OpenTracing-compatible distributed tracing. See the [dedicated section](wrappers/opentracing.md).
 * `PrometheusBackend`, for gathering Prometheus-format metrics. See the [dedicated section](wrappers/prometheus.md).
 * extendable logging backends (with an slf4j implementation) backends. See the [dedicated section](wrappers/logging.md).
+* `ResolveRelativeUrisBackend` to resolve relative URIs given a base URI, or an arbitrary effectful function
+* `ListenerBackend` to listen for backend lifecycle events. See the [dedicated section](wrappers/custom.md).
+* `FollowRedirectsBackend`, which handles redirects. All implementation backends are created wrapped with this one.
 
 In addition, there are also backends for Scala.JS:
 

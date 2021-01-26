@@ -33,7 +33,7 @@ The URI can be created programmatically (by calling methods on the `Uri` class),
 
 A request definition can be created without knowing how it will be sent. But to send a request, a backend is needed. A default, synchronous backend based on Java's `HttpURLConnection` is provided in the `core` jar.
 
-To invoke the `send(backend)` method on a request description, you'll an instance of `SttpBackend`:
+To invoke the `send(backend)` method on a request description, you'll need an instance of `SttpBackend`:
 
 ```scala mdoc:compile-only
 val backend = HttpURLConnectionBackend()

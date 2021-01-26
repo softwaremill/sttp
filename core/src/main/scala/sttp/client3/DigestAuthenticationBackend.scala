@@ -4,16 +4,13 @@ import sttp.capabilities.Effect
 import sttp.client3.DigestAuthenticationBackend._
 import sttp.client3.internal.DigestAuthenticator
 import sttp.client3.internal.DigestAuthenticator.DigestAuthData
-import sttp.monad.MonadError
 import sttp.monad.syntax._
 import sttp.model.Header
 
 class DigestAuthenticationBackend[F[_], P](
     delegate: SttpBackend[F, P],
     clientNonceGenerator: () => String = DigestAuthenticator.defaultClientNonceGenerator
-) extends SttpBackend[F, P] {
-  private implicit val m: MonadError[F] = responseMonad
-
+) extends DelegateSttpBackend[F, P](delegate) {
   override def send[T, R >: P with Effect[F]](request: Request[T, R]): F[Response[T]] = {
     delegate
       .send(request)
@@ -45,9 +42,6 @@ class DigestAuthenticationBackend[F[_], P](
       }
       .getOrElse((response -> Option.empty[Header]).unit)
   }
-
-  override def close(): F[Unit] = delegate.close()
-  override def responseMonad: MonadError[F] = delegate.responseMonad
 }
 
 object DigestAuthenticationBackend {

@@ -3,7 +3,7 @@
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "prometheus-backend" % "3.0.0-RC13"
+"com.softwaremill.sttp.client3" %% "prometheus-backend" % "3.0.0"
 ```
 
 and some imports:
@@ -25,7 +25,10 @@ It gathers request execution times in `Histogram`. It uses by default `sttp_requ
 
 ```scala
 import sttp.client3.akkahttp._
-val backend = PrometheusBackend(AkkaHttpBackend(), requestToHistogramNameMapper = request => Some(HistogramCollectorConfig(request.uri.host)))
+val backend = PrometheusBackend(
+  AkkaHttpBackend(), 
+  requestToHistogramNameMapper = request => Some(HistogramCollectorConfig(request.uri.host.getOrElse("example.com")))
+)
 ```
 
 You can disable request histograms by passing `None` returning function:
@@ -39,7 +42,10 @@ This backend also offers `Gauge` with currently in-progress requests number. It 
 
 ```scala
 import sttp.client3.akkahttp._
-val backend = PrometheusBackend(AkkaHttpBackend(), requestToInProgressGaugeNameMapper = request => Some(CollectorConfig(request.uri.host)))
+val backend = PrometheusBackend(
+  AkkaHttpBackend(), 
+  requestToInProgressGaugeNameMapper = request => Some(CollectorConfig(request.uri.host.getOrElse("example.com")))
+)
 ```
 
 You can disable request in-progress gauges by passing `None` returning function:

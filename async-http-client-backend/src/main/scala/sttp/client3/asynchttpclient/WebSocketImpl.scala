@@ -23,7 +23,7 @@ private[asynchttpclient] class WebSocketImpl[F[_]](
     queue.poll.flatMap {
       case WebSocketEvent.Open() => receive()
       case WebSocketEvent.Frame(c: WebSocketFrame.Close) =>
-        queue.offer(WebSocketEvent.Error(new WebSocketClosed))
+        queue.offer(WebSocketEvent.Error(WebSocketClosed(Some(c))))
         monad.unit(c)
       case e @ WebSocketEvent.Error(t: Exception) =>
         // putting back the error so that subsequent invocations end in an error as well, instead of hanging
@@ -49,7 +49,10 @@ private[asynchttpclient] class WebSocketImpl[F[_]](
       case WebSocketFrame.Close(statusCode, reasonText) =>
         val wasOpen = _isOpen.getAndSet(false)
         // making close sequentially idempotent
-        if (wasOpen) fromNettyFuture(ws.sendCloseFrame(statusCode, reasonText)) else ().unit
+        if (wasOpen) {
+          queue.offer(WebSocketEvent.Error(WebSocketClosed(None)))
+          fromNettyFuture(ws.sendCloseFrame(statusCode, reasonText))
+        } else ().unit
     }))
 
   override def upgradeHeaders: Headers =
@@ -88,13 +91,15 @@ class AddToQueueListener[F[_]](queue: SimpleQueue[F, WebSocketEvent], isOpen: At
   }
 
   override def onClose(websocket: AHCWebSocket, code: Int, reason: String): Unit = {
-    isOpen.set(false)
-    queue.offer(WebSocketEvent.Frame(WebSocketFrame.Close(code, reason)))
+    if (isOpen.getAndSet(false)) {
+      queue.offer(WebSocketEvent.Frame(WebSocketFrame.Close(code, reason)))
+    }
   }
 
   override def onError(t: Throwable): Unit = {
-    isOpen.set(false)
-    queue.offer(WebSocketEvent.Error(t))
+    if (isOpen.getAndSet(false)) {
+      queue.offer(WebSocketEvent.Error(t))
+    }
   }
 
   override def onBinaryFrame(payload: Array[Byte], finalFragment: Boolean, rsv: Int): Unit =
@@ -106,7 +111,11 @@ class AddToQueueListener[F[_]](queue: SimpleQueue[F, WebSocketEvent], isOpen: At
   override def onPingFrame(payload: Array[Byte]): Unit = onFrame(WebSocketFrame.Ping(payload))
   override def onPongFrame(payload: Array[Byte]): Unit = onFrame(WebSocketFrame.Pong(payload))
 
-  private def onFrame(f: WebSocketFrame): Unit = queue.offer(WebSocketEvent.Frame(f))
+  private def onFrame(f: WebSocketFrame): Unit =
+    try queue.offer(WebSocketEvent.Frame(f))
+    catch {
+      case e: Exception => onError(e)
+    }
 
   private def rsvToOption(rsv: Int): Option[Int] = if (rsv == 0) None else Some(rsv)
 }

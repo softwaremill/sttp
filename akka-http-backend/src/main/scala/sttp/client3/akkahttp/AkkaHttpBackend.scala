@@ -1,7 +1,6 @@
 package sttp.client3.akkahttp
 
 import java.io.UnsupportedEncodingException
-
 import akka.{Done, NotUsed}
 import akka.actor.{ActorSystem, CoordinatedShutdown}
 import akka.event.LoggingAdapter
@@ -19,7 +18,7 @@ import sttp.client3
 import sttp.client3.akkahttp.AkkaHttpBackend.EncodingHandler
 import sttp.client3.testing.SttpBackendStub
 import sttp.client3.{FollowRedirectsBackend, Response, SttpBackend, SttpBackendOptions, _}
-import sttp.model.StatusCode
+import sttp.model.{ResponseMetadata, StatusCode}
 import sttp.monad.{FutureMonad, MonadError}
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -33,6 +32,7 @@ class AkkaHttpBackend private (
     http: AkkaHttpClient,
     customizeRequest: HttpRequest => HttpRequest,
     customizeWebsocketRequest: WebSocketRequest => WebSocketRequest,
+    customizeResponse: (HttpRequest, HttpResponse) => HttpResponse,
     customEncodingHandler: EncodingHandler
 ) extends SttpBackend[Future, AkkaStreams with WebSockets] {
   type PE = AkkaStreams with Effect[Future] with WebSockets
@@ -53,7 +53,9 @@ class AkkaHttpBackend private (
     Future
       .fromTry(ToAkka.request(r).flatMap(BodyToAkka(r, r.body, _)))
       .map(customizeRequest)
-      .flatMap(request => http.singleRequest(request, connectionSettings(r)))
+      .flatMap(request =>
+        http.singleRequest(request, connectionSettings(r)).map(response => customizeResponse(request, response))
+      )
       .flatMap(responseFromAkka(r, _, None))
   }
 
@@ -87,7 +89,7 @@ class AkkaHttpBackend private (
 
   private def connectionSettings(r: Request[_, _]): ConnectionPoolSettings = {
     val connectionPoolSettingsWithProxy = opts.proxy match {
-      case Some(p) if !p.ignoreProxy(r.uri.host) =>
+      case Some(p) if r.uri.host.forall(!p.ignoreProxy(_)) =>
         val clientTransport = p.auth match {
           case Some(proxyAuth) =>
             ClientTransport.httpsProxy(
@@ -115,7 +117,7 @@ class AkkaHttpBackend private (
 
     val headers = FromAkka.headers(hr)
 
-    val responseMetadata = client3.ResponseMetadata(headers, code, statusText)
+    val responseMetadata = ResponseMetadata(code, statusText, headers)
     val body = bodyFromAkka(r.response, responseMetadata, wsFlow.map(Right(_)).getOrElse(Left(decodeAkkaResponse(hr))))
 
     body.map(client3.Response(_, code, statusText, headers, Nil, r.onlyMetadata))
@@ -164,6 +166,7 @@ object AkkaHttpBackend {
       http: AkkaHttpClient,
       customizeRequest: HttpRequest => HttpRequest,
       customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity,
+      customizeResponse: (HttpRequest, HttpResponse) => HttpResponse = (_, r) => r,
       customEncodingHandler: EncodingHandler = PartialFunction.empty
   ): SttpBackend[Future, AkkaStreams with WebSockets] =
     new FollowRedirectsBackend(
@@ -176,6 +179,7 @@ object AkkaHttpBackend {
         http,
         customizeRequest,
         customizeWebsocketRequest,
+        customizeResponse,
         customEncodingHandler
       )
     )
@@ -191,6 +195,7 @@ object AkkaHttpBackend {
       customLog: Option[LoggingAdapter] = None,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity,
+      customizeResponse: (HttpRequest, HttpResponse) => HttpResponse = (_, r) => r,
       customEncodingHandler: EncodingHandler = PartialFunction.empty
   )(implicit
       ec: Option[ExecutionContext] = None
@@ -206,6 +211,7 @@ object AkkaHttpBackend {
       AkkaHttpClient.default(actorSystem, customHttpsContext, customLog),
       customizeRequest,
       customizeWebsocketRequest,
+      customizeResponse,
       customEncodingHandler
     )
   }
@@ -224,6 +230,7 @@ object AkkaHttpBackend {
       customLog: Option[LoggingAdapter] = None,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity,
+      customizeResponse: (HttpRequest, HttpResponse) => HttpResponse = (_, r) => r,
       customEncodingHandler: EncodingHandler = PartialFunction.empty
   )(implicit
       ec: Option[ExecutionContext] = None
@@ -235,6 +242,7 @@ object AkkaHttpBackend {
       AkkaHttpClient.default(actorSystem, customHttpsContext, customLog),
       customizeRequest,
       customizeWebsocketRequest,
+      customizeResponse,
       customEncodingHandler
     )
   }
@@ -252,6 +260,7 @@ object AkkaHttpBackend {
       http: AkkaHttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity,
+      customizeResponse: (HttpRequest, HttpResponse) => HttpResponse = (_, r) => r,
       customEncodingHandler: EncodingHandler = PartialFunction.empty
   )(implicit
       ec: Option[ExecutionContext] = None
@@ -265,6 +274,7 @@ object AkkaHttpBackend {
       http,
       customizeRequest,
       customizeWebsocketRequest,
+      customizeResponse,
       customEncodingHandler
     )
   }

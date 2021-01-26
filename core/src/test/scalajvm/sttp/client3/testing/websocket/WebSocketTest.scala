@@ -131,7 +131,7 @@ abstract class WebSocketTest[F[_]]
   }
 
   def receiveEcho(ws: WebSocket[F], count: Int): F[Assertion] = {
-    val fs = (1 to count).map(i => () => ws.receiveText().map(_ shouldBe Right(s"echo: test$i")))
+    val fs = (1 to count).map(i => () => ws.receiveText().map(_ shouldBe s"echo: test$i"))
     fs.foldLeft(succeed.unit)((f1, lazy_f2) => f1.flatMap(_ => lazy_f2()))
   }
 

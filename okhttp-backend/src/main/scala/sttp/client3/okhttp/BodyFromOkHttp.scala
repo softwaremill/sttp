@@ -1,7 +1,6 @@
 package sttp.client3.okhttp
 
 import java.io.{BufferedInputStream, ByteArrayInputStream, FileInputStream, InputStream}
-
 import sttp.capabilities.Streams
 import sttp.client3.internal.{BodyFromResponseAs, FileHelpers, SttpFile, toByteArray}
 import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
@@ -10,9 +9,9 @@ import sttp.client3.{
   ResponseAsWebSocket,
   ResponseAsWebSocketStream,
   ResponseAsWebSocketUnsafe,
-  ResponseMetadata,
   WebSocketResponseAs
 }
+import sttp.model.ResponseMetadata
 import sttp.monad.MonadError
 import sttp.monad.syntax._
 import sttp.ws.{WebSocket, WebSocketFrame}

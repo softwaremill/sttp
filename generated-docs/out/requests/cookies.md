@@ -8,7 +8,7 @@ Cookies can also be set using the following methods:
 
 ```scala
 import sttp.client3._
-import sttp.model._
+import sttp.model.headers.CookieWithMeta
 
 basicRequest
   .cookie("k1", "v1")
@@ -45,7 +45,7 @@ val loginRequest = basicRequest
     .body("This is a test")
     .post(uri"http://endpoint.com")
 val response = loginRequest.send(backend)
-val cookiesFromResponse = response.cookies
+val cookiesFromResponse = response.unsafeCookies
 
 basicRequest.cookies(cookiesFromResponse)
 ```
