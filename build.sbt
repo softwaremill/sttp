@@ -126,7 +126,7 @@ val jeagerClientVersion = "1.5.0"
 val braveOpentracingVersion = "1.0.0"
 val zipkinSenderOkHttpVersion = "2.16.3"
 val resilience4jVersion = "1.7.0"
-val http4sVersion = "0.21.16"
+val http4sVersion = "1.0.0-M13"
 
 val compileAndTest = "compile->compile;test->test"
 
@@ -166,7 +166,7 @@ lazy val allAggregates = projectsWithOptionalNative ++
   asyncHttpClientFs2Backend.projectRefs ++
   okhttpBackend.projectRefs ++
 //  okhttpMonixBackend.projectRefs ++
-//  http4sBackend.projectRefs ++
+  http4sBackend.projectRefs ++
   circe.projectRefs ++
   json4s.projectRefs ++
   sprayJson.projectRefs ++
@@ -468,17 +468,18 @@ lazy val okhttpMonixBackend =
     .dependsOn(monix % compileAndTest)
 
 //-- http4s
-//lazy val http4sBackend = (projectMatrix in file("http4s-backend"))
-//  .settings(commonJvmSettings)
-//  .settings(testServerSettings)
-//  .settings(
-//    name := "http4s-backend",
-//    libraryDependencies ++= Seq(
-//      "org.http4s" %% "http4s-blaze-client" % "0.21.8"
-//    )
-//  )
-//  .jvmPlatform(scalaVersions = List(scala2_12, scala2_13))
-//  .dependsOn(cats % compileAndTest, core % compileAndTest, fs2 % compileAndTest)
+lazy val http4sBackend = (projectMatrix in file("http4s-backend"))
+  .settings(commonJvmSettings)
+  .settings(testServerSettings)
+  .settings(
+    name := "http4s-backend",
+    libraryDependencies ++= Seq(
+      "org.http4s" %% "http4s-client" % http4sVersion,
+      "org.http4s" %% "http4s-blaze-client" % http4sVersion % Optional
+    )
+  )
+  .jvmPlatform(scalaVersions = List(scala2_12, scala2_13))
+  .dependsOn(cats % compileAndTest, core % compileAndTest, fs2 % compileAndTest)
 
 //-- httpclient-java11
 lazy val httpClientBackend = (projectMatrix in file("httpclient-backend"))
