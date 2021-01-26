@@ -103,8 +103,8 @@ val playJsonVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.7.4"
   case _             => "2.9.2"
 }
-val catsEffectVersion= "3.0.0-M3"
-val fs2Version = "3.0.0-M3"
+val catsEffectVersion= "3.0.0-M5"
+val fs2Version = "3.0.0-M7"
 
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.2.3"
 val akkaStreamVersion = "2.6.11"
