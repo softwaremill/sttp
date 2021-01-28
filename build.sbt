@@ -294,7 +294,10 @@ lazy val cats = (projectMatrix in file("effects/cats"))
     scalaVersions = scala2,
     settings = commonJvmSettings
   )
-  .jsPlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonJsSettings)
+  .jsPlatform(
+    scalaVersions = List(scala2_12, scala2_13),
+    settings = commonJsSettings ++ commonJsBackendSettings ++ browserChromeTestSettings ++ testServerSettings
+  )
 
 lazy val fs2 = (projectMatrix in file("effects/fs2"))
   .settings(
