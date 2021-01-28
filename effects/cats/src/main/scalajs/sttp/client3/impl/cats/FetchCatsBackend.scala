@@ -12,8 +12,10 @@ import org.scalajs.dom.experimental.{Request => FetchRequest}
 import sttp.client3.testing.SttpBackendStub
 import sttp.client3.internal.NoStreams
 
-class FetchCatsBackend[F[_]: Concurrent: ContextShift] private(fetchOptions: FetchOptions, customizeRequest: FetchRequest => FetchRequest)
-    extends AbstractFetchBackend[F, Nothing, Any](fetchOptions, customizeRequest)(
+class FetchCatsBackend[F[_]: Concurrent: ContextShift] private (
+    fetchOptions: FetchOptions,
+    customizeRequest: FetchRequest => FetchRequest
+) extends AbstractFetchBackend[F, Nothing, Any](fetchOptions, customizeRequest)(
       new CatsMonadAsyncError
     ) {
 
@@ -30,7 +32,8 @@ class FetchCatsBackend[F[_]: Concurrent: ContextShift] private(fetchOptions: Fet
     throw new IllegalStateException("Future FetchBackend does not support streaming responses")
   }
 
-  override protected def transformPromise[T](promise: => Promise[T]): F[T] = Async.fromFuture(Sync[F].delay(promise.toFuture))
+  override protected def transformPromise[T](promise: => Promise[T]): F[T] =
+    Async.fromFuture(Sync[F].delay(promise.toFuture))
 }
 
 object FetchCatsBackend {
