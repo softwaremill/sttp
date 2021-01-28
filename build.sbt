@@ -280,8 +280,8 @@ lazy val testCompilation = (projectMatrix in file("testing/compile"))
   .jvmPlatform(scalaVersions = List(scala2_13))
   .dependsOn(core % Test)
 
-//----- implementations
-lazy val cats = (projectMatrix in file("implementations/cats"))
+//----- effects
+lazy val cats = (projectMatrix in file("effects/cats"))
   .settings(
     name := "cats",
     publishArtifact in Test := true,
@@ -296,7 +296,7 @@ lazy val cats = (projectMatrix in file("implementations/cats"))
   )
   .jsPlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonJsSettings)
 
-lazy val fs2 = (projectMatrix in file("implementations/fs2"))
+lazy val fs2 = (projectMatrix in file("effects/fs2"))
   .settings(
     name := "fs2",
     publishArtifact in Test := true,
@@ -312,7 +312,7 @@ lazy val fs2 = (projectMatrix in file("implementations/fs2"))
   )
   .jsPlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonJsSettings)
 
-lazy val monix = (projectMatrix in file("implementations/monix"))
+lazy val monix = (projectMatrix in file("effects/monix"))
   .settings(
     name := "monix",
     publishArtifact in Test := true,
@@ -333,7 +333,7 @@ lazy val monix = (projectMatrix in file("implementations/monix"))
     settings = commonJsSettings ++ commonJsBackendSettings ++ browserChromeTestSettings ++ testServerSettings
   )
 
-lazy val zio = (projectMatrix in file("implementations/zio"))
+lazy val zio = (projectMatrix in file("effects/zio"))
   .settings(commonJvmSettings)
   .settings(
     name := "zio",
@@ -353,7 +353,7 @@ lazy val zio = (projectMatrix in file("implementations/zio"))
     settings = commonJsSettings ++ commonJsBackendSettings ++ browserChromeTestSettings ++ testServerSettings
   )
 
-lazy val scalaz = (projectMatrix in file("implementations/scalaz"))
+lazy val scalaz = (projectMatrix in file("effects/scalaz"))
   .settings(commonJvmSettings)
   .settings(
     name := "scalaz",
