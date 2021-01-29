@@ -1,11 +1,13 @@
 # JavaScript (Fetch) backend
 
-A JavaScript backend implemented using the [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) and backed via `Future`.
+A JavaScript backend implemented using the [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API).
+
+## `Future`-based 
 
 This is the default backend, available in the main jar for JS. To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %%% "core" % "3.0.0"
+"com.softwaremill.sttp.client3" %%% "core" % "3.1.0"
 ```
 
 And create the backend instance:
@@ -19,6 +21,35 @@ Timeouts are handled via the new [AbortController](https://developer.mozilla.org
 As browsers do not allow access to redirect responses, if a request sets `followRedirects` to false then a redirect will cause the response to return an error.
 
 Note that `Fetch` does not pass cookies by default. If your request needs cookies then you will need to pass a `FetchOptions` instance with `credentials` set to either `RequestCredentials.same-origin` or `RequestCredentials.include` depending on your requirements.
+
+## Monix-based
+
+To use, add the following dependency to your project:
+
+```
+"com.softwaremill.sttp.client3" %%% "monix" % "3.1.0"
+```
+
+And create the backend instance:
+
+```scala
+val backend = FetchMonixBackend()
+```
+
+## cats-effect-based
+
+Any effect implementing the cats-effect `Concurrent` typeclass can be used. To use, add the following dependency to 
+your project:
+
+```
+"com.softwaremill.sttp.client3" %%% "cats" % "3.1.0"
+```
+
+And create the backend instance:
+
+```scala
+val backend = FetchCatsBackend[IO]()
+```
 
 ## Node.js
 
@@ -48,7 +79,7 @@ Streaming support is provided via `FetchMonixBackend`. Note that streaming suppo
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %%% "monix" % "3.0.0"
+"com.softwaremill.sttp.client3" %%% "monix" % "3.1.0"
 ```
 
 An example of streaming a response:

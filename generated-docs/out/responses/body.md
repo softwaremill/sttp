@@ -234,3 +234,6 @@ val response: Future[Response[Either[String, Source[ByteString, Any]]]] =
     .response(asStreamUnsafe(AkkaStreams))
     .send(backend)
 ```
+
+It's also possible to parse the received stream as server-sent events (SSE), using an implementation-specific mapping
+function. Refer to the documentation for particular backends for more details.
