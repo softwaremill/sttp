@@ -151,8 +151,8 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
       case ByteBufferBody(b, _)  => new String(b.array)
       case InputStreamBody(b, _) => Source.fromInputStream(b).mkString
       case FileBody(f, _)        => Source.fromFile(f.toFile).mkString
-      case NoBody => new String("")
-      case _ => throw new IllegalArgumentException(s"Unsupported body: $body")
+      case NoBody                => new String("")
+      case _                     => throw new IllegalArgumentException(s"Unsupported body: $body")
     }
 
   private def responseSpace: CurlSpaces = {
@@ -237,7 +237,7 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
 
 object AbstractCurlBackend {
   val wdFunc: CFuncPtr4[Ptr[Byte], CSize, CSize, Ptr[CurlFetch], CSize] = {
-  (ptr: Ptr[CChar], size: CSize, nmemb: CSize, data: Ptr[CurlFetch]) =>
+    (ptr: Ptr[CChar], size: CSize, nmemb: CSize, data: Ptr[CurlFetch]) =>
       val index: CSize = (!data)._2
       val increment: CSize = size * nmemb
       (!data)._2 = (!data)._2 + increment
@@ -245,5 +245,5 @@ object AbstractCurlBackend {
       memcpy((!data)._1 + index, ptr, increment)
       !(!data)._1.+((!data)._2) = 0.toByte
       size * nmemb
-    }
   }
+}
