@@ -134,7 +134,7 @@ abstract class HttpClientBackend[F[_], S](
     val method = Method(res.request().method())
     val byteBody = if (method != Method.HEAD) {
       encoding
-        .map(e => customEncodingHandler.orElse(PartialFunction.fromFunction(standardEncoding.tupled))(res.body() -> e))
+        .map(e => customEncodingHandler.applyOrElse((res.body(), e), standardEncoding.tupled))
         .getOrElse(res.body())
     } else {
       res.body()
@@ -192,7 +192,7 @@ abstract class HttpClientBackend[F[_], S](
       responseMonad.eval(
         client
           .executor()
-          .map(new function.Function[Executor, Unit] {
+          .map[Unit](new function.Function[Executor, Unit] {
             override def apply(t: Executor): Unit = t.asInstanceOf[ThreadPoolExecutor].shutdown()
           })
       )

@@ -45,7 +45,7 @@ class HttpClientSyncBackend private (
       val listener = new DelegatingWebSocketListener(
         handler.listener,
         webSocket => {
-          val wsResponse = sttp.client.ws.WebSocketResponse(Headers.apply(Seq.empty), handler.createResult(webSocket))
+          val wsResponse = sttp.client.ws.WebSocketResponse(Headers.apply(Nil), handler.createResult(webSocket))
           fillCell(wsResponse)
         },
         fillCellError
@@ -90,8 +90,7 @@ object HttpClientSyncBackend {
   ): SttpBackend[Identity, Nothing, WebSocketHandler] =
     HttpClientSyncBackend(client, closeClient = false, customizeRequest, customEncodingHandler)
 
-  /**
-    * Create a stub backend for testing, which uses the [[Identity]] response wrapper, and doesn't support streaming.
+  /** Create a stub backend for testing, which uses the [[Identity]] response wrapper, and doesn't support streaming.
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */

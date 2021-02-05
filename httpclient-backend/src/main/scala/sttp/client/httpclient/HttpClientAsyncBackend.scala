@@ -61,18 +61,18 @@ abstract class HttpClientAsyncBackend[F[_], S](
           handler.listener,
           webSocket => {
             val wsResponse =
-              monad.unit(sttp.client.ws.WebSocketResponse(Headers.apply(Seq.empty), handler.createResult(webSocket)))
+              monad.unit(sttp.client.ws.WebSocketResponse(Headers.apply(Nil), handler.createResult(webSocket)))
             success(wsResponse)
           },
           error
         )
 
         val wsBuilder = client.newWebSocketBuilder()
-        client.connectTimeout().map(wsBuilder.connectTimeout(_))
+        client.connectTimeout().map[java.net.http.WebSocket.Builder](wsBuilder.connectTimeout(_))
         request.headers.foreach(h => wsBuilder.header(h.name, h.value))
         val cf = wsBuilder
           .buildAsync(request.uri.toJavaUri, listener)
-          .thenApply(_ => ())
+          .thenApply[Unit](_ => ())
           .exceptionally(t => cb(Left(t)))
         Canceler(() => cf.cancel(true))
       })
@@ -132,8 +132,7 @@ object HttpClientFutureBackend {
   ): SttpBackend[Future, Nothing, WebSocketHandler] =
     HttpClientFutureBackend(client, closeClient = false, customizeRequest, customEncodingHandler)
 
-  /**
-    * Create a stub backend for testing, which uses the [[Future]] response wrapper, and doesn't support streaming.
+  /** Create a stub backend for testing, which uses the [[Future]] response wrapper, and doesn't support streaming.
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
