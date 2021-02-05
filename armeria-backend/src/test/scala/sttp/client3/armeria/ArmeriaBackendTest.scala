@@ -12,6 +12,7 @@ class ArmeriaBackendTest extends HttpTest[Future] {
 
   override def supportsHostHeaderOverride = false
   override def supportsMultipart = false
+  override def supportsCancellation = false
 
   override def timeoutToNone[T](t: Future[T], timeoutMillis: Int): Future[Option[T]] = t.map(Some(_))
 }

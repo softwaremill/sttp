@@ -1,10 +1,18 @@
 package sttp.client3.armeria
 
-import com.linecorp.armeria.client.WebClient
+import com.linecorp.armeria.client.{ResponseTimeoutException, WebClient}
 import com.linecorp.armeria.common.MediaType.{OCTET_STREAM, PLAIN_TEXT}
-import com.linecorp.armeria.common.{HttpMethod, HttpRequest, RequestHeaders, ResponseHeaders}
+import com.linecorp.armeria.common.{
+  AggregatedHttpResponse,
+  ClosedSessionException,
+  HttpMethod,
+  HttpRequest,
+  RequestHeaders,
+  ResponseHeaders
+}
 import io.netty.util.AsciiString
 import sttp.capabilities
+import sttp.client3.SttpClientException.ReadException
 import sttp.client3.armeria.ArmeriaBackend.{
   MultipartNotSupportedException,
   PseudoHeaderPrefix,
@@ -33,6 +41,7 @@ import sttp.monad.{FutureMonad, MonadError}
 
 import java.io._
 import java.nio.charset.StandardCharsets.UTF_8
+import java.time.Duration
 import java.util
 import java.util.Map.Entry
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
@@ -42,40 +51,31 @@ import scala.io.Source
 import scala.jdk.FutureConverters._
 import scala.util.Try
 
-class ArmeriaBackend(implicit ec: ExecutionContext) extends SttpBackend[Future, Any] {
+class ArmeriaBackend(implicit ec: ExecutionContext = ExecutionContext.global) extends SttpBackend[Future, Any] {
   type PE = Any with capabilities.Effect[Future]
 
   override def send[T, R >: PE](request: Request[T, R]): Future[Response[T]] =
     adjustExceptions(request)(execute(request))
 
-  private def execute[T, R >: PE](request: Request[T, R]): Future[Response[T]] = {
-    val aRequest = requestBodyToArmeria(request)
+  private def execute[T, R >: PE](request: Request[T, R]): Future[Response[T]] =
     WebClient
-      .of()
-      .execute(aRequest)
+      .builder()
+      .responseTimeout(Duration.ofMillis(request.options.readTimeout.toMillis))
+      .build()
+      .execute(requestToArmeria(request))
       .aggregate()
       .asScala
-      .flatMap { aResponse =>
-        val code = StatusCode.unsafeApply(aResponse.status().code())
-        val headers = headersFromArmeria(aResponse.headers())
-        val statusText = aResponse.status().reasonPhrase()
-        val responseMetadata = ResponseMetadata(code, statusText, headers)
-        val encoding = headers.find(_.is(HeaderNames.ContentEncoding)).map(_.value)
-        val byteBody = encoding match {
-          case Some(enc) if request.method != Method.HEAD => encode(aResponse.content().toInputStream, enc)
-          case _                                          => aResponse.content().toInputStream
-        }
-        val body = bodyFromResponseAs(request.response, responseMetadata, Left(byteBody))
-        body.map(Response(_, code, statusText, headers, Nil, request.onlyMetadata))
-      }(ec)
-  }
+      .flatMap(responseFromArmeria(request, _))
 
-  private def adjustExceptions[T](request: Request[_, _])(t: => Future[T]): Future[T] =
-    SttpClientException.adjustExceptions(responseMonad)(t)(
-      SttpClientException.defaultExceptionToSttpClientException(request, _)
-    )
+  private def adjustExceptions[T](request: Request[_, _])(execute: => Future[T]): Future[T] =
+    SttpClientException.adjustExceptions(responseMonad)(execute) {
+      case ex @ (_: ClosedSessionException | _: ResponseTimeoutException) =>
+        Some(new ReadException(request, ex))
+      case ex =>
+        SttpClientException.defaultExceptionToSttpClientException(request, ex)
+    }
 
-  private def requestBodyToArmeria(request: Request[_, Nothing]): HttpRequest = {
+  private def requestToArmeria(request: Request[_, Nothing]): HttpRequest = {
     val method = methodToArmeria(request.method)
     val path = request.uri.toString()
     val headers = headersToArmeria(request.headers, method, path)
@@ -92,8 +92,8 @@ class ArmeriaBackend(implicit ec: ExecutionContext) extends SttpBackend[Future, 
     }).withHeaders(headers)
   }
 
-  private def methodToArmeria(m: Method): HttpMethod =
-    m match {
+  private def methodToArmeria(method: Method): HttpMethod =
+    method match {
       case Method.GET     => HttpMethod.GET
       case Method.HEAD    => HttpMethod.HEAD
       case Method.POST    => HttpMethod.POST
@@ -112,24 +112,41 @@ class ArmeriaBackend(implicit ec: ExecutionContext) extends SttpBackend[Future, 
     builder.build()
   }
 
+  private def responseFromArmeria[T, R](
+      request: Request[T, R],
+      response: AggregatedHttpResponse
+  ): Future[Response[T]] = {
+    val code = StatusCode.unsafeApply(response.status().code())
+    val headers = headersFromArmeria(response.headers())
+    val statusText = response.status().reasonPhrase()
+    val responseMetadata = ResponseMetadata(code, statusText, headers)
+    val encoding = headers.find(_.is(HeaderNames.ContentEncoding)).map(_.value)
+    val byteBody = encoding match {
+      case Some(enc) if request.method != Method.HEAD => encode(response.content().toInputStream, enc)
+      case _                                          => response.content().toInputStream
+    }
+    val body = bodyFromResponseAs(request.response, responseMetadata, Left(byteBody))
+    body.map(Response(_, code, statusText, headers, Nil, request.onlyMetadata))
+  }
+
   private def headersFromArmeria(headers: ResponseHeaders): Seq[Header] = {
     @tailrec
-    def accumulateHeaders(i: util.Iterator[Entry[AsciiString, String]], acc: Seq[Header] = Nil): Seq[Header] =
+    def accumulate(i: util.Iterator[Entry[AsciiString, String]], acc: Seq[Header] = Nil): Seq[Header] =
       if (i.hasNext) {
         val header = i.next()
         val accNext = if (isPseudoHeader(header)) acc else acc :+ Header(header.getKey.toString, header.getValue)
-        accumulateHeaders(i, accNext)
+        accumulate(i, accNext)
       } else acc
 
-    accumulateHeaders(headers.iterator())
+    accumulate(headers.iterator())
   }
 
   private def isPseudoHeader(header: Entry[AsciiString, String]) = header.getKey.startsWith(PseudoHeaderPrefix)
 
   private def encode: (InputStream, String) => InputStream = {
-    case (b, "gzip")    => new GZIPInputStream(b)
-    case (b, "deflate") => new InflaterInputStream(b)
-    case (_, enc)       => throw new UnsupportedEncodingException(s"Unsupported encoding: $enc")
+    case (is, "gzip")    => new GZIPInputStream(is)
+    case (is, "deflate") => new InflaterInputStream(is)
+    case (_, enc)        => throw new UnsupportedEncodingException(s"Unsupported encoding: $enc")
   }
 
   private lazy val bodyFromResponseAs = new BodyFromResponseAs[Future, InputStream, Nothing, Nothing] {
@@ -172,7 +189,7 @@ class ArmeriaBackend(implicit ec: ExecutionContext) extends SttpBackend[Future, 
 }
 
 object ArmeriaBackend {
-  def apply()(implicit ec: ExecutionContext): SttpBackend[Future, Any] =
+  def apply()(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, Any] =
     new FollowRedirectsBackend[Future, Any](new ArmeriaBackend()(ec))
 
   private val PseudoHeaderPrefix = ":"
