@@ -37,7 +37,7 @@ jobs:
         sudo apt-get install libidn11-dev libcurl3-dev
         echo "STTP_NATIVE=1" >> $GITHUB_ENV
     - name: Compile
-      run: sbt -v compile compileDocs
+      run: sbt -v compile #compileDocs
     - name: Test
       run: sbt -v test${{ matrix.target-platform }}
     - name: Cleanup
