@@ -13,11 +13,7 @@ import com.linecorp.armeria.common.{
 import io.netty.util.AsciiString
 import sttp.capabilities
 import sttp.client3.SttpClientException.ReadException
-import sttp.client3.armeria.ArmeriaBackend.{
-  MultipartNotSupportedException,
-  PseudoHeaderPrefix,
-  StreamingNotSupportedException
-}
+import sttp.client3.armeria.ArmeriaBackend.PseudoHeaderPrefix
 import sttp.client3.internal.{BodyFromResponseAs, FileHelpers, SttpFile}
 import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.client3.{
@@ -51,21 +47,27 @@ import scala.io.Source
 import scala.jdk.FutureConverters._
 import scala.util.Try
 
-class ArmeriaBackend(implicit ec: ExecutionContext = ExecutionContext.global) extends SttpBackend[Future, Any] {
+class ArmeriaBackend(client: Option[WebClient] = None)(implicit ec: ExecutionContext = ExecutionContext.global)
+    extends SttpBackend[Future, Any] {
   type PE = Any with capabilities.Effect[Future]
 
   override def send[T, R >: PE](request: Request[T, R]): Future[Response[T]] =
     adjustExceptions(request)(execute(request))
 
   private def execute[T, R >: PE](request: Request[T, R]): Future[Response[T]] =
-    WebClient
-      .builder()
-      .responseTimeout(Duration.ofMillis(request.options.readTimeout.toMillis))
-      .build()
+    getClient(request)
       .execute(requestToArmeria(request))
       .aggregate()
       .asScala
       .flatMap(responseFromArmeria(request, _))
+
+  private def getClient(request: Request[_, _]): WebClient =
+    client.getOrElse(
+      WebClient
+        .builder()
+        .writeTimeout(Duration.ofMillis(request.options.readTimeout.toMillis))
+        .build()
+    )
 
   private def adjustExceptions[T](request: Request[_, _])(execute: => Future[T]): Future[T] =
     SttpClientException.adjustExceptions(responseMonad)(execute) {
@@ -87,8 +89,8 @@ class ArmeriaBackend(implicit ec: ExecutionContext = ExecutionContext.global) ex
       case ByteArrayBody(b, _)    => HttpRequest.of(method, path, OCTET_STREAM, Source.fromBytes(b).mkString)
       case InputStreamBody(is, _) => HttpRequest.of(method, path, OCTET_STREAM, Source.fromInputStream(is).mkString)
       case ByteBufferBody(b, _)   => HttpRequest.of(method, path, OCTET_STREAM, UTF_8.decode(b).toString)
-      case MultipartBody(_)       => throw MultipartNotSupportedException
-      case StreamBody(_)          => throw StreamingNotSupportedException
+      case MultipartBody(_)       => throw new IllegalArgumentException("Multipart body is not supported")
+      case StreamBody(_)          => throw new IllegalStateException("Streaming is not supported")
     }).withHeaders(headers)
   }
 
@@ -160,15 +162,14 @@ class ArmeriaBackend(implicit ec: ExecutionContext = ExecutionContext.global) ex
 
     override protected def regularIgnore(response: InputStream): Future[Unit] = Future.unit
 
-    override protected def regularAsByteArray(response: InputStream): Future[Array[Byte]] = Future(
-      response.readAllBytes()
-    )
+    override protected def regularAsByteArray(response: InputStream): Future[Array[Byte]] =
+      Future(response.readAllBytes())
 
     override protected def regularAsFile(response: InputStream, file: SttpFile): Future[SttpFile] =
       Future(Try(FileHelpers.saveFile(file.toFile, response))).map(_ => file)
 
     override protected def regularAsStream(response: InputStream): Future[(Nothing, () => Future[Unit])] =
-      Future.failed(StreamingNotSupportedException)
+      Future.failed(new IllegalStateException("Streaming is not supported"))
 
     override protected def handleWS[T](
         responseAs: WebSocketResponseAs[T, _],
@@ -192,7 +193,10 @@ object ArmeriaBackend {
   def apply()(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, Any] =
     new FollowRedirectsBackend[Future, Any](new ArmeriaBackend()(ec))
 
+  def usingClient(client: WebClient)(implicit
+      ec: ExecutionContext = ExecutionContext.global
+  ): SttpBackend[Future, Any] =
+    new FollowRedirectsBackend[Future, Any](new ArmeriaBackend(Some(client))(ec))
+
   private val PseudoHeaderPrefix = ":"
-  private val MultipartNotSupportedException = new IllegalArgumentException("Multipart body is not supported")
-  private val StreamingNotSupportedException = new IllegalStateException("Streaming is not supported")
 }

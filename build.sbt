@@ -185,6 +185,7 @@ lazy val allAggregates = projectsWithOptionalNative ++
   httpClientFs2Backend.projectRefs ++
   httpClientZioBackend.projectRefs ++
   finagleBackend.projectRefs ++
+  armeriaBackend.projectRefs ++
   scribeBackend.projectRefs ++
   slf4jBackend.projectRefs ++
   examples.projectRefs ++
@@ -562,7 +563,7 @@ lazy val armeriaBackend = (projectMatrix in file("armeria-backend"))
     name := "armeria-backend",
     libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.4.0"
   )
-  .jvmPlatform(scalaVersions = List(scala2_13))
+  .jvmPlatform(scalaVersions = List(scala2_13) ++ scala3)
   .dependsOn(core % compileAndTest)
 
 //----- json
