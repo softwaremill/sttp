@@ -6,6 +6,7 @@ import sttp.client3.curl.CurlOption.CurlOption
 
 import scala.scalanative.runtime.Boxes
 import scala.scalanative.unsafe.{Ptr, _}
+import scala.scalanative.unsigned._
 
 private[client3] object CurlApi {
   type CurlHandle = Ptr[Curl]
@@ -46,7 +47,7 @@ private[client3] object CurlApi {
     }
 
     def option[FuncPtr <: CFuncPtr](option: CurlOption, parameter: FuncPtr)(implicit z: Zone): CurlCode = {
-      setopt(handle, option, Boxes.boxToPtr[Byte](Boxes.unboxToCFuncRawPtr(parameter)))
+      setopt(handle, option, Boxes.boxToPtr[Byte](Boxes.unboxToCFuncPtr0(parameter)))
     }
 
     def info(curlInfo: CurlInfo, parameter: Long)(implicit z: Zone): CurlCode = {
@@ -92,7 +93,7 @@ private[client3] object CurlApi {
     def withEncoding(encoding: String)(implicit zone: Zone): CurlCode = CCurl.mimeEncoder(handle, toCString(encoding))
 
     def withData(data: String, datasize: Long = CurlZeroTerminated)(implicit zone: Zone): CurlCode =
-      CCurl.mimeData(handle, toCString(data), datasize: CSize)
+      CCurl.mimeData(handle, toCString(data), datasize.toULong)
 
     def withFileData(filename: String)(implicit zone: Zone): CurlCode = CCurl.mimeFiledata(handle, toCString(filename))
 

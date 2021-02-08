@@ -242,8 +242,8 @@ class PrometheusBackendTest
     (0 until 5).foreach(_ => backend2.send(basicRequest.get(uri"http://127.0.0.1/foo")))
 
     // then
-    getMetricValue(PrometheusBackend.DefaultSuccessCounterName).value shouldBe 10
-    getMetricValue(PrometheusBackend.DefaultErrorCounterName).value shouldBe 5
+    getMetricValue(PrometheusBackend.DefaultSuccessCounterName + "_total").value shouldBe 10
+    getMetricValue(PrometheusBackend.DefaultErrorCounterName + "_total").value shouldBe 5
   }
 
   private[this] def getMetricValue(name: String): Option[lang.Double] =

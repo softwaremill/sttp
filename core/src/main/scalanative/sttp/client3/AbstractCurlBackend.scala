@@ -20,6 +20,7 @@ import scala.io.Source
 import scala.scalanative.unsafe
 import scala.scalanative.libc.stdlib._
 import scala.scalanative.libc.string._
+import scala.scalanative.unsigned._
 import scala.scalanative.unsafe.{CSize, Ptr, _}
 
 abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean) extends SttpBackend[F, Any] {
@@ -109,6 +110,7 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
       case Method.PATCH   => handle.option(CustomRequest, "PATCH")
       case Method.CONNECT => handle.option(ConnectOnly, true)
       case Method.TRACE   => handle.option(CustomRequest, "TRACE")
+      case Method(m)      => handle.option(CustomRequest, m)
     }
     lift(m)
   }
@@ -149,15 +151,17 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
       case ByteBufferBody(b, _)  => new String(b.array)
       case InputStreamBody(b, _) => Source.fromInputStream(b).mkString
       case FileBody(f, _)        => Source.fromFile(f.toFile).mkString
+      case NoBody                => new String("")
+      case _                     => throw new IllegalArgumentException(s"Unsupported body: $body")
     }
 
   private def responseSpace: CurlSpaces = {
     val bodyResp = malloc(sizeof[CurlFetch]).asInstanceOf[Ptr[CurlFetch]]
-    (!bodyResp)._1 = calloc(4096, sizeof[CChar])
-    (!bodyResp)._2 = 0
+    (!bodyResp)._1 = calloc(4096.toUInt, sizeof[CChar])
+    (!bodyResp)._2 = 0.toUInt
     val headersResp = malloc(sizeof[CurlFetch]).asInstanceOf[Ptr[CurlFetch]]
-    (!headersResp)._1 = calloc(4096, sizeof[CChar])
-    (!headersResp)._2 = 0
+    (!headersResp)._1 = calloc(4096.toUInt, sizeof[CChar])
+    (!headersResp)._2 = 0.toUInt
     val httpCode = malloc(sizeof[Long]).asInstanceOf[Ptr[Long]]
     new CurlSpaces(bodyResp, headersResp, httpCode)
   }
@@ -232,15 +236,14 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
 }
 
 object AbstractCurlBackend {
-  val wdFunc = new CFuncPtr4[Ptr[Byte], CSize, CSize, Ptr[CurlFetch], CSize] {
-    override def apply(ptr: Ptr[CChar], size: CSize, nmemb: CSize, data: Ptr[CurlFetch]): CSize = {
+  val wdFunc: CFuncPtr4[Ptr[Byte], CSize, CSize, Ptr[CurlFetch], CSize] = {
+    (ptr: Ptr[CChar], size: CSize, nmemb: CSize, data: Ptr[CurlFetch]) =>
       val index: CSize = (!data)._2
       val increment: CSize = size * nmemb
       (!data)._2 = (!data)._2 + increment
-      (!data)._1 = realloc((!data)._1, (!data)._2 + 1)
+      (!data)._1 = realloc((!data)._1, (!data)._2 + 1.toUInt)
       memcpy((!data)._1 + index, ptr, increment)
       !(!data)._1.+((!data)._2) = 0.toByte
       size * nmemb
-    }
   }
 }
