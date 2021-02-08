@@ -2,42 +2,19 @@ package sttp.client3.armeria
 
 import com.linecorp.armeria.client.{ResponseTimeoutException, WebClient}
 import com.linecorp.armeria.common.MediaType.{OCTET_STREAM, PLAIN_TEXT}
-import com.linecorp.armeria.common.{
-  AggregatedHttpResponse,
-  ClosedSessionException,
-  HttpMethod,
-  HttpRequest,
-  RequestHeaders,
-  ResponseHeaders
-}
+import com.linecorp.armeria.common.{AggregatedHttpResponse, ClosedSessionException, HttpMethod, HttpRequest, RequestHeaders, ResponseHeaders}
 import io.netty.util.AsciiString
 import sttp.capabilities
 import sttp.client3.SttpClientException.ReadException
 import sttp.client3.armeria.ArmeriaBackend.PseudoHeaderPrefix
 import sttp.client3.internal.{BodyFromResponseAs, FileHelpers, SttpFile}
 import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
-import sttp.client3.{
-  ByteArrayBody,
-  ByteBufferBody,
-  FileBody,
-  FollowRedirectsBackend,
-  InputStreamBody,
-  MultipartBody,
-  NoBody,
-  Request,
-  Response,
-  StreamBody,
-  StringBody,
-  SttpBackend,
-  SttpClientException,
-  WebSocketResponseAs
-}
+import sttp.client3.{ByteArrayBody, ByteBufferBody, FileBody, FollowRedirectsBackend, InputStreamBody, MultipartBody, NoBody, Request, Response, StreamBody, StringBody, SttpBackend, SttpClientException, WebSocketResponseAs}
 import sttp.model._
 import sttp.monad.{FutureMonad, MonadError}
 
 import java.io._
 import java.nio.charset.StandardCharsets.UTF_8
-import java.time.Duration
 import java.util
 import java.util.Map.Entry
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
@@ -48,7 +25,7 @@ import scala.jdk.FutureConverters._
 import scala.util.Try
 
 class ArmeriaBackend(client: Option[WebClient] = None)(implicit ec: ExecutionContext = ExecutionContext.global)
-    extends SttpBackend[Future, Any] {
+  extends SttpBackend[Future, Any] {
   type PE = Any with capabilities.Effect[Future]
 
   override def send[T, R >: PE](request: Request[T, R]): Future[Response[T]] =
@@ -65,13 +42,13 @@ class ArmeriaBackend(client: Option[WebClient] = None)(implicit ec: ExecutionCon
     client.getOrElse(
       WebClient
         .builder()
-        .writeTimeout(Duration.ofMillis(request.options.readTimeout.toMillis))
+        .responseTimeoutMillis(request.options.readTimeout.toMillis)
         .build()
     )
 
   private def adjustExceptions[T](request: Request[_, _])(execute: => Future[T]): Future[T] =
     SttpClientException.adjustExceptions(responseMonad)(execute) {
-      case ex @ (_: ClosedSessionException | _: ResponseTimeoutException) =>
+      case ex@(_: ClosedSessionException | _: ResponseTimeoutException) =>
         Some(new ReadException(request, ex))
       case ex =>
         SttpClientException.defaultExceptionToSttpClientException(request, ex)
@@ -83,29 +60,29 @@ class ArmeriaBackend(client: Option[WebClient] = None)(implicit ec: ExecutionCon
     val headers = headersToArmeria(request.headers, method, path)
 
     (request.body match {
-      case NoBody                 => HttpRequest.of(method, path)
-      case StringBody(s, _, _)    => HttpRequest.of(method, path, PLAIN_TEXT, s)
-      case FileBody(f, _)         => HttpRequest.of(method, path, OCTET_STREAM, Source.fromFile(f.toFile).mkString)
-      case ByteArrayBody(b, _)    => HttpRequest.of(method, path, OCTET_STREAM, Source.fromBytes(b).mkString)
+      case NoBody => HttpRequest.of(method, path)
+      case StringBody(s, _, _) => HttpRequest.of(method, path, PLAIN_TEXT, s)
+      case FileBody(f, _) => HttpRequest.of(method, path, OCTET_STREAM, Source.fromFile(f.toFile).mkString)
+      case ByteArrayBody(b, _) => HttpRequest.of(method, path, OCTET_STREAM, Source.fromBytes(b).mkString)
       case InputStreamBody(is, _) => HttpRequest.of(method, path, OCTET_STREAM, Source.fromInputStream(is).mkString)
-      case ByteBufferBody(b, _)   => HttpRequest.of(method, path, OCTET_STREAM, UTF_8.decode(b).toString)
-      case MultipartBody(_)       => throw new IllegalArgumentException("Multipart body is not supported")
-      case StreamBody(_)          => throw new IllegalStateException("Streaming is not supported")
+      case ByteBufferBody(b, _) => HttpRequest.of(method, path, OCTET_STREAM, UTF_8.decode(b).toString)
+      case MultipartBody(_) => throw new IllegalArgumentException("Multipart body is not supported")
+      case StreamBody(_) => throw new IllegalStateException("Streaming is not supported")
     }).withHeaders(headers)
   }
 
   private def methodToArmeria(method: Method): HttpMethod =
     method match {
-      case Method.GET     => HttpMethod.GET
-      case Method.HEAD    => HttpMethod.HEAD
-      case Method.POST    => HttpMethod.POST
-      case Method.PUT     => HttpMethod.PUT
-      case Method.DELETE  => HttpMethod.DELETE
+      case Method.GET => HttpMethod.GET
+      case Method.HEAD => HttpMethod.HEAD
+      case Method.POST => HttpMethod.POST
+      case Method.PUT => HttpMethod.PUT
+      case Method.DELETE => HttpMethod.DELETE
       case Method.OPTIONS => HttpMethod.OPTIONS
-      case Method.PATCH   => HttpMethod.PATCH
+      case Method.PATCH => HttpMethod.PATCH
       case Method.CONNECT => HttpMethod.CONNECT
-      case Method.TRACE   => HttpMethod.TRACE
-      case _              => HttpMethod.UNKNOWN
+      case Method.TRACE => HttpMethod.TRACE
+      case _ => HttpMethod.UNKNOWN
     }
 
   private def headersToArmeria(headers: Seq[Header], method: HttpMethod, path: String): RequestHeaders = {
@@ -115,9 +92,9 @@ class ArmeriaBackend(client: Option[WebClient] = None)(implicit ec: ExecutionCon
   }
 
   private def responseFromArmeria[T, R](
-      request: Request[T, R],
-      response: AggregatedHttpResponse
-  ): Future[Response[T]] = {
+                                         request: Request[T, R],
+                                         response: AggregatedHttpResponse
+                                       ): Future[Response[T]] = {
     val code = StatusCode.unsafeApply(response.status().code())
     val headers = headersFromArmeria(response.headers())
     val statusText = response.status().reasonPhrase()
@@ -125,7 +102,7 @@ class ArmeriaBackend(client: Option[WebClient] = None)(implicit ec: ExecutionCon
     val encoding = headers.find(_.is(HeaderNames.ContentEncoding)).map(_.value)
     val byteBody = encoding match {
       case Some(enc) if request.method != Method.HEAD => encode(response.content().toInputStream, enc)
-      case _                                          => response.content().toInputStream
+      case _ => response.content().toInputStream
     }
     val body = bodyFromResponseAs(request.response, responseMetadata, Left(byteBody))
     body.map(Response(_, code, statusText, headers, Nil, request.onlyMetadata))
@@ -146,16 +123,16 @@ class ArmeriaBackend(client: Option[WebClient] = None)(implicit ec: ExecutionCon
   private def isPseudoHeader(header: Entry[AsciiString, String]) = header.getKey.startsWith(PseudoHeaderPrefix)
 
   private def encode: (InputStream, String) => InputStream = {
-    case (is, "gzip")    => new GZIPInputStream(is)
+    case (is, "gzip") => new GZIPInputStream(is)
     case (is, "deflate") => new InflaterInputStream(is)
-    case (_, enc)        => throw new UnsupportedEncodingException(s"Unsupported encoding: $enc")
+    case (_, enc) => throw new UnsupportedEncodingException(s"Unsupported encoding: $enc")
   }
 
   private lazy val bodyFromResponseAs = new BodyFromResponseAs[Future, InputStream, Nothing, Nothing] {
     override protected def withReplayableBody(
-        response: InputStream,
-        replayableBody: Either[Array[Byte], SttpFile]
-    ): Future[InputStream] = Future(replayableBody match {
+                                               response: InputStream,
+                                               replayableBody: Either[Array[Byte], SttpFile]
+                                             ): Future[InputStream] = Future(replayableBody match {
       case Left(bytes) => new ByteArrayInputStream(bytes)
       case Right(file) => new BufferedInputStream(new FileInputStream(file.toFile))
     })
@@ -172,10 +149,10 @@ class ArmeriaBackend(client: Option[WebClient] = None)(implicit ec: ExecutionCon
       Future.failed(new IllegalStateException("Streaming is not supported"))
 
     override protected def handleWS[T](
-        responseAs: WebSocketResponseAs[T, _],
-        meta: ResponseMetadata,
-        ws: Nothing
-    ): Future[T] = ws
+                                        responseAs: WebSocketResponseAs[T, _],
+                                        meta: ResponseMetadata,
+                                        ws: Nothing
+                                      ): Future[T] = ws
 
     override protected def cleanupWhenNotAWebSocket(response: InputStream, e: NotAWebSocketException): Future[Unit] =
       Future(response.close())
@@ -194,7 +171,7 @@ object ArmeriaBackend {
     new FollowRedirectsBackend[Future, Any](new ArmeriaBackend()(ec))
 
   def usingClient(client: WebClient)(implicit
-      ec: ExecutionContext = ExecutionContext.global
+                                     ec: ExecutionContext = ExecutionContext.global
   ): SttpBackend[Future, Any] =
     new FollowRedirectsBackend[Future, Any](new ArmeriaBackend(Some(client))(ec))
 
