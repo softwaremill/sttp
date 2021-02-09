@@ -130,6 +130,7 @@ Development and maintenance of sttp client is sponsored by [SoftwareMill](https:
    backends/zio
    backends/http4s
    backends/finagle
+   backends/armeria
    backends/javascript/fetch
    backends/native/curl
 
