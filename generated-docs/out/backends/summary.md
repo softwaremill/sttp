@@ -41,10 +41,11 @@ Class                                Effect type                      Supported 
 ``HttpClientFs2Backend``             ``F[_]: cats.effect.Concurrent`` ``fs2.Stream[F, Byte]``                           yes (regular & streaming)  yes
 ``HttpClientZioBackend``             ``zio.Task``                     ``zio.stream.Stream[Throwable, Byte]``            yes (regular & streaming)  yes
 ``FinagleBackend``                   ``com.twitter.util.Future``      n/a                                               no                         no
+``ArmeriaBackend``                   ``scala.concurrent.Future``      n/a                                               no                         no
 ==================================== ================================ ================================================= ========================== ===================
 ```
 
-The backends work with Scala 2.11, 2.12 and 2.13 (with some exceptions for 2.11). Moreover, `HttpURLConnectionBackend`, `AsyncHttpClientFutureBackend`, `AsyncHttpClientZioBackend`, `HttpClientSyncBackend`, `HttpClientFutureBackend` and `HttpClientZioBackend` are additionally built with Scala 3.
+The backends work with Scala 2.11, 2.12 and 2.13 (with some exceptions for 2.11 and 2.12). Moreover, `HttpURLConnectionBackend`, `AsyncHttpClientFutureBackend`, `AsyncHttpClientZioBackend`, `HttpClientSyncBackend`, `HttpClientFutureBackend`, `HttpClientZioBackend` and `ArmeriaBackend` are additionally built with Scala 3.
 
 All backends that support asynchronous/non-blocking streams, also support server-sent events.
 

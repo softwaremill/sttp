@@ -185,6 +185,7 @@ lazy val allAggregates = projectsWithOptionalNative ++
   httpClientFs2Backend.projectRefs ++
   httpClientZioBackend.projectRefs ++
   finagleBackend.projectRefs ++
+  armeriaBackend.projectRefs ++
   scribeBackend.projectRefs ++
   slf4jBackend.projectRefs ++
   examples.projectRefs ++
@@ -555,6 +556,16 @@ lazy val finagleBackend = (projectMatrix in file("finagle-backend"))
   .jvmPlatform(scalaVersions = scala2)
   .dependsOn(core % compileAndTest)
 
+lazy val armeriaBackend = (projectMatrix in file("armeria-backend"))
+  .settings(commonJvmSettings)
+  .settings(testServerSettings)
+  .settings(
+    name := "armeria-backend",
+    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.4.0"
+  )
+  .jvmPlatform(scalaVersions = List(scala2_13) ++ scala3)
+  .dependsOn(core % compileAndTest)
+
 //----- json
 lazy val jsonCommon = (projectMatrix in (file("json/common")))
   .settings(
@@ -787,6 +798,7 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     openTracingBackend,
     prometheusBackend,
     slf4jBackend,
-    zioTelemetryOpenTracingBackend
+    zioTelemetryOpenTracingBackend,
+    armeriaBackend
   )
   .jvmPlatform(scalaVersions = List(scala2_13))
