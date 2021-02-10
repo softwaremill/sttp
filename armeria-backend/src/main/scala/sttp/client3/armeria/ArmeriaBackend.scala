@@ -14,7 +14,7 @@ import io.netty.util.AsciiString
 import sttp.capabilities
 import sttp.client3.SttpClientException.ReadException
 import sttp.client3.armeria.ArmeriaBackend.PseudoHeaderPrefix
-import sttp.client3.internal.{BodyFromResponseAs, FileHelpers, SttpFile}
+import sttp.client3.internal.{BodyFromResponseAs, FileHelpers, RichByteBuffer, SttpFile}
 import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.client3.{
   ByteArrayBody,
@@ -36,7 +36,6 @@ import sttp.model._
 import sttp.monad.{FutureMonad, MonadError}
 
 import java.io._
-import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.Files
 import java.util
 import java.util.Map.Entry
@@ -87,7 +86,7 @@ class ArmeriaBackend(client: Option[WebClient] = None)(implicit ec: ExecutionCon
       case FileBody(f, _)         => HttpRequest.of(method, path, OCTET_STREAM, Files.readAllBytes(f.toPath))
       case ByteArrayBody(b, _)    => HttpRequest.of(method, path, OCTET_STREAM, b)
       case InputStreamBody(is, _) => HttpRequest.of(method, path, OCTET_STREAM, is.readAllBytes())
-      case ByteBufferBody(b, _)   => HttpRequest.of(method, path, OCTET_STREAM, UTF_8.decode(b).toString)
+      case ByteBufferBody(b, _)   => HttpRequest.of(method, path, OCTET_STREAM, b.safeRead())
       case MultipartBody(_)       => throw new IllegalArgumentException("Multipart body is not supported")
       case StreamBody(_)          => throw new IllegalStateException("Streaming is not supported")
     }).withHeaders(headers)
