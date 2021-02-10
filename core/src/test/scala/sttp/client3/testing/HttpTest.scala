@@ -37,6 +37,7 @@ trait HttpTest[F[_]]
   protected def postEchoExact = basicRequest.post(uri"$endpoint/echo/exact")
   protected val testBody = "this is the body"
   protected val testBodyBytes: Array[Byte] = testBody.getBytes("UTF-8")
+  protected val testBodySignedBytes: Array[Byte] = Array[Byte](-1)
   protected val expectedPostEchoResponse = "POST /echo this is the body"
   protected val customEncoding = "custom"
   protected val customEncodedData = "custom-data"
@@ -103,8 +104,8 @@ trait HttpTest[F[_]]
     }
 
     "as a byte array exact" in {
-      postEchoExact.body(testBodyBytes).response(asByteArrayAlways).send(backend).toFuture().map { response =>
-        response.body should be(testBodyBytes)
+      postEchoExact.body(testBodySignedBytes).response(asByteArrayAlways).send(backend).toFuture().map { response =>
+        response.body should be(testBodySignedBytes)
       }
     }
 

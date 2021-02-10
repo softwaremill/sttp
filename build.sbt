@@ -798,6 +798,7 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     openTracingBackend,
     prometheusBackend,
     slf4jBackend,
-    zioTelemetryOpenTracingBackend
+    zioTelemetryOpenTracingBackend,
+    armeriaBackend
   )
   .jvmPlatform(scalaVersions = List(scala2_13))

@@ -141,8 +141,8 @@ To use, add the following dependency to your project:
 
 add imports:
 
-```scala mdoc:compile-only
-import sttp.client.armeria.ArmeriaBackend
+```scala mdoc:reset:silent
+import sttp.client3.armeria.ArmeriaBackend
 import scala.concurrent.ExecutionContext.Implicits.global
 ```
 
@@ -155,6 +155,8 @@ val backend = ArmeriaBackend()
 or, if you'd like to instantiate the WebClient yourself::
 
 ```scala mdoc:compile-only
+import com.linecorp.armeria.client.WebClient
+
 val client: WebClient = ???
 val backend = ArmeriaBackend.usingClient(client)
 ```
