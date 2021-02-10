@@ -34,7 +34,7 @@ trait HttpTest[F[_]]
   def timeoutToNone[T](t: F[T], timeoutMillis: Int): F[Option[T]]
 
   protected def postEcho: Request[Either[String, String], Any] = basicRequest.post(uri"$endpoint/echo")
-  protected def postEchoExact = basicRequest.post(uri"$endpoint/echo/exact")
+  protected def postEchoExact: Request[Either[String, String], Any] = basicRequest.post(uri"$endpoint/echo/exact")
   protected val testBody = "this is the body"
   protected val testBodyBytes: Array[Byte] = testBody.getBytes("UTF-8")
   protected val testBodySignedBytes: Array[Byte] = Array[Byte](-1)
