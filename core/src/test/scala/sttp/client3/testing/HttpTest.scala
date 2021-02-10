@@ -34,6 +34,7 @@ trait HttpTest[F[_]]
   def timeoutToNone[T](t: F[T], timeoutMillis: Int): F[Option[T]]
 
   protected def postEcho: Request[Either[String, String], Any] = basicRequest.post(uri"$endpoint/echo")
+  protected def postEchoExact = basicRequest.post(uri"$endpoint/echo/exact")
   protected val testBody = "this is the body"
   protected val testBodyBytes: Array[Byte] = testBody.getBytes("UTF-8")
   protected val expectedPostEchoResponse = "POST /echo this is the body"
@@ -98,6 +99,12 @@ trait HttpTest[F[_]]
       postEcho.body(testBody).response(asByteArray).send(backend).toFuture().map { response =>
         val fc = new String(response.body.right.get, "UTF-8")
         fc should be(expectedPostEchoResponse)
+      }
+    }
+
+    "as a byte array exact" in {
+      postEchoExact.body(testBodyBytes).response(asByteArrayAlways).send(backend).toFuture().map { response =>
+        response.body should be(testBodyBytes)
       }
     }
 

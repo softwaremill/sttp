@@ -37,12 +37,12 @@ import sttp.monad.{FutureMonad, MonadError}
 
 import java.io._
 import java.nio.charset.StandardCharsets.UTF_8
+import java.nio.file.Files
 import java.util
 import java.util.Map.Entry
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
 import scala.annotation.tailrec
 import scala.concurrent.{ExecutionContext, Future}
-import scala.io.Source
 import scala.jdk.FutureConverters._
 import scala.util.Try
 
@@ -84,9 +84,9 @@ class ArmeriaBackend(client: Option[WebClient] = None)(implicit ec: ExecutionCon
     (request.body match {
       case NoBody                 => HttpRequest.of(method, path)
       case StringBody(s, _, _)    => HttpRequest.of(method, path, PLAIN_TEXT, s)
-      case FileBody(f, _)         => HttpRequest.of(method, path, OCTET_STREAM, Source.fromFile(f.toFile).mkString)
-      case ByteArrayBody(b, _)    => HttpRequest.of(method, path, OCTET_STREAM, Source.fromBytes(b).mkString)
-      case InputStreamBody(is, _) => HttpRequest.of(method, path, OCTET_STREAM, Source.fromInputStream(is).mkString)
+      case FileBody(f, _)         => HttpRequest.of(method, path, OCTET_STREAM, Files.readAllBytes(f.toPath))
+      case ByteArrayBody(b, _)    => HttpRequest.of(method, path, OCTET_STREAM, b)
+      case InputStreamBody(is, _) => HttpRequest.of(method, path, OCTET_STREAM, is.readAllBytes())
       case ByteBufferBody(b, _)   => HttpRequest.of(method, path, OCTET_STREAM, UTF_8.decode(b).toString)
       case MultipartBody(_)       => throw new IllegalArgumentException("Multipart body is not supported")
       case StreamBody(_)          => throw new IllegalStateException("Streaming is not supported")

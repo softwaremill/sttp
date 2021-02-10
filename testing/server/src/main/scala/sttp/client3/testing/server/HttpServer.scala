@@ -1,7 +1,5 @@
 package sttp.client3.testing.server
 
-import java.io.{ByteArrayOutputStream, InputStream, OutputStream}
-
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.coding._
@@ -20,6 +18,7 @@ import akka.{Done, NotUsed}
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives
 import ch.megard.akka.http.cors.scaladsl.settings.CorsSettings
 
+import java.io.{ByteArrayOutputStream, InputStream, OutputStream}
 import scala.annotation.tailrec
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future, Promise}
@@ -88,8 +87,11 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
               }
             }
           }
-        } ~
-        post {
+        } ~ path("exact") {
+          post {
+            entity(as[Array[Byte]]) { (body: Array[Byte]) => complete(body) }
+          }
+        } ~ post {
           parameterMap { params =>
             entity(as[String]) { (body: String) =>
               complete(
