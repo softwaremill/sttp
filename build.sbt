@@ -550,7 +550,7 @@ lazy val finagleBackend = (projectMatrix in file("finagle-backend"))
   .settings(
     name := "finagle-backend",
     libraryDependencies ++= Seq(
-      "com.twitter" %% "finagle-http" % "21.1.0"
+      "com.twitter" %% "finagle-http" % "21.2.0"
     )
   )
   .jvmPlatform(scalaVersions = scala2)
