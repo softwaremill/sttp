@@ -40,8 +40,7 @@ private final class ArmeriaZioBackend(runtime: Runtime[Any], client: WebClient, 
 
 object ArmeriaZioBackend {
 
-  /** Creates a new `SttpBackend`.
-    */
+  /** Creates a new `SttpBackend`. */
   def apply(): Task[SttpBackend[Task, ZioStreams]] =
     ZIO
       .runtime[Any]

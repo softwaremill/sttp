@@ -42,9 +42,7 @@ object ArmeriaFutureBackend {
   def apply(options: SttpBackendOptions): SttpBackend[Future, Any] =
     apply(newClient(options), closeFactory = true)
 
-  /** Creates a new `SttpBackend` with
-    * the specified `WebClient`.
-    */
+  /** Creates a new `SttpBackend` with the specified `WebClient`. */
   def usingClient(client: WebClient): SttpBackend[Future, Any] =
     apply(client, closeFactory = false)
 

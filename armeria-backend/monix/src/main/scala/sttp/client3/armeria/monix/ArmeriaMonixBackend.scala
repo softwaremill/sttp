@@ -45,9 +45,7 @@ object ArmeriaMonixBackend {
   def apply(options: SttpBackendOptions)(implicit scheduler: Scheduler): SttpBackend[Task, MonixStreams] =
     apply(newClient(options), closeFactory = true)
 
-  /** Creates a new `SttpBackend` with
-    * the specified `WebClient`.
-    */
+  /** Creates a new `SttpBackend` with the specified `WebClient`. */
   def usingClient(client: WebClient)(implicit scheduler: Scheduler): SttpBackend[Task, MonixStreams] =
     apply(client, closeFactory = false)
 
