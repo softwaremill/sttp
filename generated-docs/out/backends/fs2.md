@@ -116,6 +116,39 @@ val backend = HttpClientFs2Backend.usingClient[IO](httpClient, blocker)
 
 This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards.
 
+## Using Armeria backend
+
+To use, add the following dependency to your project:
+
+```
+"com.softwaremill.sttp.client3" %% "armeria-fs2-backend" % "3.1.1"
+```
+
+add imports:
+
+```scala
+import sttp.client3.armeria.fs2.ArmeriaFs2Backend
+import cats.effect.{ContextShift, IO}
+```
+
+create client:
+
+```scala
+implicit val cs: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionContext.global)
+val backend = ArmeriaFs2Backend[IO]()
+```
+
+or, if you'd like to instantiate the `WebClient` yourself:
+
+```scala
+import com.linecorp.armeria.client.WebClient
+
+val client: WebClient = ???
+val backend = ArmeriaFs2Backend.usingClient(client)
+```
+
+This backend is build on top of [Armeria](https://armeria.dev/docs/client-http).
+
 ## Streaming
 
 The fs2 backend supports streaming for any instance of the `cats.effect.Effect` typeclass, such as `cats.effect.IO`. If `IO` is used then the type of supported streams is `fs2.Stream[IO, Byte]`. The streams capability is represented as `sttp.client3.fs2.Fs2Streams`.

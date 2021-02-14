@@ -34,17 +34,17 @@ import sttp.client3.{
 }
 import sttp.model._
 import sttp.monad.{FutureMonad, MonadError}
-
 import java.io._
 import java.nio.file.Files
 import java.util
 import java.util.Map.Entry
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
 import scala.annotation.tailrec
-import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.FutureConverters._
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.Try
+import scala.collection.immutable.Seq
 
+@deprecated("Use ArmeriaFutureBackend instead")
 class ArmeriaBackend(client: Option[WebClient] = None)(implicit ec: ExecutionContext = ExecutionContext.global)
     extends SttpBackend[Future, Any] {
   type PE = Any with capabilities.Effect[Future]
@@ -52,12 +52,21 @@ class ArmeriaBackend(client: Option[WebClient] = None)(implicit ec: ExecutionCon
   override def send[T, R >: PE](request: Request[T, R]): Future[Response[T]] =
     adjustExceptions(request)(execute(request))
 
-  private def execute[T, R >: PE](request: Request[T, R]): Future[Response[T]] =
+  private def execute[T, R >: PE](request: Request[T, R]): Future[Response[T]] = {
+    val promise = Promise[AggregatedHttpResponse]()
     getClient(request)
       .execute(requestToArmeria(request))
       .aggregate()
-      .asScala
-      .flatMap(responseFromArmeria(request, _))
+      .handle((res: AggregatedHttpResponse, cause: Throwable) => {
+        if (cause != null) {
+          promise.failure(cause)
+        } else {
+          promise.success(res)
+        }
+        null
+      })
+    promise.future.flatMap(responseFromArmeria(request, _))
+  }
 
   private def getClient(request: Request[_, _]): WebClient =
     client.getOrElse(
@@ -187,6 +196,7 @@ class ArmeriaBackend(client: Option[WebClient] = None)(implicit ec: ExecutionCon
   override implicit def responseMonad: MonadError[Future] = new FutureMonad()(ec)
 }
 
+@deprecated("Use ArmeriaFutureBackend instead")
 object ArmeriaBackend {
   def apply()(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, Any] =
     new FollowRedirectsBackend[Future, Any](new ArmeriaBackend()(ec))

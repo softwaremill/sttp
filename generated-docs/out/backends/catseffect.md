@@ -2,6 +2,8 @@
 
 The [Cats Effect](https://github.com/typelevel/cats-effect) backend is **asynchronous**. It can be created for any type implementing the `cats.effect.Concurrent` typeclass, such as `cats.effect.IO`. Sending a request is a non-blocking, lazily-evaluated operation and results in a wrapped response. There's a transitive dependency on `cats-effect`. 
 
+## Using async-http-client
+
 To use, add the following dependency to your project:
 
 ```scala
@@ -68,6 +70,39 @@ import org.asynchttpclient.AsyncHttpClient
 val asyncHttpClient: AsyncHttpClient = ???  
 val backend = AsyncHttpClientCatsBackend.usingClient[IO](asyncHttpClient)
 ```
+
+## Using Armeria backend
+
+To use, add the following dependency to your project:
+
+```
+"com.softwaremill.sttp.client3" %% "armeria-cats-backend" % "3.1.1"
+```
+
+add imports:
+
+```scala
+import sttp.client3.armeria.cats.ArmeriaCatsBackend
+import cats.effect.{ContextShift, IO}
+```
+
+create client:
+
+```scala
+implicit val cs: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionContext.global)
+val backend = ArmeriaCatsBackend[IO]()
+```
+
+or, if you'd like to instantiate the `WebClient` yourself:
+
+```scala
+import com.linecorp.armeria.client.WebClient
+
+val client: WebClient = ???
+val backend = ArmeriaCatsBackend.usingClient(client)
+```
+
+This backend is build on top of [Armeria](https://armeria.dev/docs/client-http).
 
 ## Streaming
 
