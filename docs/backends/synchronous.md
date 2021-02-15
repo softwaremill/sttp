@@ -48,8 +48,6 @@ val backend = OkHttpSyncBackend.usingClient(okHttpClient)
 
 This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supports HTTP/2.
 
-This backend supports host header override.
-
 ## Using HttpClient (Java 11+)
 
 To use, add the following dependency to your project:
@@ -76,6 +74,11 @@ val backend = HttpClientSyncBackend.usingClient(httpClient)
 ```
 
 This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards, works with all Scala versions. A Scala 3 build is available as well.
+
+Host header override is supported in environments running Java 12 onwards, but it has to be enabled by system property:
+```
+jdk.httpclient.allowRestrictedHeaders=host
+```
 
 ## Streaming
 

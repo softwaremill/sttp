@@ -71,8 +71,6 @@ val response: Future[Response[Either[String, Source[ByteString, Any]]]] =
 
 The akka-http backend support both regular and streaming [websockets](../websockets.md).
 
-This backend supports host header override.
-
 ## Testing
 
 Apart from testing using [the stub](../testing.md), you can create a backend using any `HttpRequest => Future[HttpResponse]` function, or an akka-http `Route`.

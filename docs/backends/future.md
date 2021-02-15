@@ -67,6 +67,8 @@ val asyncHttpClient: AsyncHttpClient = ???
 val backend = AsyncHttpClientFutureBackend.usingClient(asyncHttpClient)
 ```
 
+This backend doesn't support host header override.
+
 ## Using OkHttp
 
 To use, add the following dependency to your project:
@@ -98,8 +100,6 @@ val backend = OkHttpFutureBackend.usingClient(asyncHttpClient)
 ```
 
 This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supports HTTP/2.
-
-This backend supports host header override.
 
 ## Using HttpClient (Java 11+)
 
@@ -168,7 +168,7 @@ val client: WebClient = ???
 val backend = ArmeriaBackend.usingClient(client)
 ```
 
-This backend is build on top of [Armeria](https://armeria.dev/docs/client-http).
+This backend is build on top of [Armeria](https://armeria.dev/docs/client-http) and doesn't support host header override.
 
 ## Streaming
 

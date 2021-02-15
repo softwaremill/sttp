@@ -15,8 +15,6 @@ val backend = FinagleBackend()
 
 This backend depends on [finagle](https://twitter.github.io/finagle/), and offers an asynchronous backend, which wraps results in Twitter's `Future`.
 
-This backend supports host header override.
-
 Please note that: 
 
 * the backend does not support `SttpBackendOptions`, that is specifying proxy settings (proxies are not implemented in http4s, see [this issue](https://github.com/http4s/http4s/issues/251)), as well as configuring the connect timeout 

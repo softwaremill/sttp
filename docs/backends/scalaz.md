@@ -10,8 +10,6 @@ To use, add the following dependency to your project:
            
 This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client) and uses [Netty](http://netty.io) behind the scenes.
 
-This backend supports host header override.
-
 Next you'll need to add an implicit value:
 
 ```scala mdoc:compile-only
