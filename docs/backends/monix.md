@@ -17,6 +17,8 @@ Next you'll need to define a backend instance as an implicit value. This can be 
 * by creating a `Task`, which describes how the backend is created, or instantiating the backend directly. In this case, you'll need to close the backend manually
 * by creating a `Resource`, which will instantiate the backend and close it after it has been used
 
+This backend support host header overrides.
+
 A non-comprehensive summary of how the backend can be created is as follows:
 
 ```scala mdoc:compile-only
@@ -70,6 +72,8 @@ val backend = OkHttpMonixBackend.usingClient(okHttpClient)
 ```
 
 This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supports HTTP/2.
+
+This backend supports host header override.
 
 ## Using HttpClient (Java 11+)
 

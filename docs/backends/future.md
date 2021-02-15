@@ -99,6 +99,8 @@ val backend = OkHttpFutureBackend.usingClient(asyncHttpClient)
 
 This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supports HTTP/2.
 
+This backend supports host header override.
+
 ## Using HttpClient (Java 11+)
 
 To use, add the following dependency to your project:

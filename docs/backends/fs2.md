@@ -31,6 +31,8 @@ Next you'll need to define a backend instance as an implicit value. This can be 
 * by creating an effect, which describes how a backend is created, or instantiating the backend directly. In this case, you'll need to close the backend manually
 * by creating a `Resource`, which will instantiate the backend and close it after it has been used
 
+This backend supports host header override.
+
 A non-comprehensive summary of how the backend can be created is as follows:
 
 ```scala mdoc:compile-only
