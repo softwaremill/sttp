@@ -79,8 +79,6 @@ val runtime: Runtime[Any] = ???
 val backend = AsyncHttpClientZioBackend.usingClient(runtime, asyncHttpClient)
 ```
 
-This backend doesn't support host header override.
-
 ## ZIO environment
 
 As an alternative to effectfully or resourcefully creating backend instances, ZIO environment can be used. In this case, a type alias is provided for the service definition:
