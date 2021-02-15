@@ -67,8 +67,6 @@ val asyncHttpClient: AsyncHttpClient = ???
 val backend = AsyncHttpClientFutureBackend.usingClient(asyncHttpClient)
 ```
 
-This backend doesn't support host header override.
-
 ## Using OkHttp
 
 To use, add the following dependency to your project:
