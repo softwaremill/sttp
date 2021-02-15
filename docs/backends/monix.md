@@ -101,6 +101,11 @@ val backend = HttpClientMonixBackend.usingClient(httpClient)
 
 This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards.
 
+Host header override is supported in environments running Java 12 onwards, but it has to be enabled by system property:
+```
+jdk.httpclient.allowRestrictedHeaders=host
+```
+
 ## Streaming
 
 The Monix backends support streaming. The streams capability is represented as `sttp.client3.impl.monix.MonixStreams`. The type of supported streams in this case is `Observable[ByteBuffer]`. That is, you can set such an observable as a request body (using the async-http-client backend as an example, but any of the above backends can be used):

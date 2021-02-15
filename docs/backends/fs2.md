@@ -118,6 +118,11 @@ val backend = HttpClientFs2Backend.usingClient[IO](httpClient, blocker)
 
 This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards.
 
+Host header override is supported in environments running Java 12 onwards, but it has to be enabled by system property:
+```
+jdk.httpclient.allowRestrictedHeaders=host
+```
+
 ## Streaming
 
 The fs2 backend supports streaming for any instance of the `cats.effect.Effect` typeclass, such as `cats.effect.IO`. If `IO` is used then the type of supported streams is `fs2.Stream[IO, Byte]`. The streams capability is represented as `sttp.client3.fs2.Fs2Streams`.

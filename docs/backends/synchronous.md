@@ -15,9 +15,9 @@ val backend = HttpURLConnectionBackend()
 
 This backend works with all Scala versions. A Scala 3 build is available as well.
 
-This backend supports host header override, but `sun.net.http.allowRestrictedHeaders` system property has to be enabled:
-```scala mdoc:compile-only
-System.setProperty("sun.net.http.allowRestrictedHeaders", "true")
+This backend supports host header override, but it has to be enabled by system property:
+```
+sun.net.http.allowRestrictedHeaders=true
 ```
 
 ## Using OkHttp
