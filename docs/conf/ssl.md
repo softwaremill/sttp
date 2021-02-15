@@ -51,7 +51,7 @@ sslContext.init(
 val sslSocketFactory = sslContext.getSocketFactory     
 ```
 
-Finally, define a function to customize connection using `sslSocketFactory` from previous step. 
+Finally, define a function to customize connection using `sslSocketFactory` from previous step.
 You also need to implement `HostnameVerifier`, the simplest one is used here.
 ```scala mdoc:compile-only
 val useSSL = (conn: HttpURLConnection) => {
@@ -66,8 +66,8 @@ val useSSL = (conn: HttpURLConnection) => {
 val backend = HttpURLConnectionBackend(customizeConnection = useSSL)
 ```
 
-Please note, that this in only one of several possible ways to configure SSL with `HttpUrlConnectionBackend`. 
-Other options include setting system properties pointing to key/trust stores (see [docs](https://docs.oracle.com/cd/E29585_01/PlatformServices.61x/security/src/csec_ssl_jsp_start_server.html)) 
+Please note, that this in only one of several possible ways to configure SSL with `HttpUrlConnectionBackend`.
+Other options include setting system properties pointing to key/trust stores (see [docs](https://docs.oracle.com/cd/E29585_01/PlatformServices.61x/security/src/csec_ssl_jsp_start_server.html))
 or setting default `SSLContext` using `SSLContext.setDefault(...)`.
 
 * akka-http: when creating the backend, specify the `customHttpsContext: Option[HttpsConnectionContext]` parameter. See [akka-http docs](http://doc.akka.io/docs/akka-http/current/scala/http/server-side/server-https-support.html)
