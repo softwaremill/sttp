@@ -92,6 +92,14 @@ Or, if you encounter a bug, something is unclear in the code or documentation, d
 
 We are also always looking for contributions and new ideas, so if you’d like to get into the project, check out the [open issues](https://github.com/softwaremill/sttp/issues), or post your own suggestions!
 
+### Modifying documentation
+
+The documentation is typechecked using [mdoc](https://scalameta.org/mdoc/). The sources for the documentation exist in `docs`. Don't modify the generated documentation in `generated-docs`, as these files will get overwritten!
+
+When generating documentation, it's best to set the version to the current one, so that the generated doc files don't include modifications with the current snapshot version. 
+
+That is, in sbt run: `set version := "3.1.1"`, before running `mdoc` in `docs`.
+
 ### Testing the Scala.JS backend
 
 In order to run tests against JS backend you will need to install [Google Chrome](https://www.google.com/chrome/).
