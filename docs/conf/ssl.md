@@ -28,26 +28,26 @@ import javax.net.ssl._
 
 Initialize `KeyManagerFactory`:
 ```scala
-val keyStore = KeyStore.getInstance(KeyStore.getDefaultType)
-keyStore.load(new FileInputStream("/path/to/your_cert.p12"), "pass".toCharArray)
+val ks: KeyStore = KeyStore.getInstance(KeyStore.getDefaultType)
+ks.load(new FileInputStream("/path/to/your_cert.p12"), "pass".toCharArray)
 
-val keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm)
-keyManagerFactory.init(keyStore, "pass".toCharArray)
+val kmf: KeyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm)
+kmf.init(ks, "pass".toCharArray)
 ```
 
 If you're using mutual SSL initialize `TrustManagerFactory`:
 ```scala
-keyStore.load(new FileInputStream("/path/to/server_trust"), "pass".toCharArray)
+ks.load(new FileInputStream("/path/to/server_trust"), "pass".toCharArray)
 
-val trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm)
-trustManagerFactory.init(keyStore)
+val tmf: TrustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm)
+tmf.init(ks)
 ```
 
 Otherwise, if you are only authenticating client side create "trust all" manager:
 ```scala
 import java.security.cert.X509Certificate
 
-val TrustAll = new X509TrustManager() {
+val TrustAll: X509TrustManager = new X509TrustManager() {
   def getAcceptedIssuers: Array[X509Certificate] = Array[X509Certificate]()
   override def checkServerTrusted(x509Certificates: Array[X509Certificate], s: String): Unit = ()
   override def checkClientTrusted(x509Certificates: Array[X509Certificate], s: String): Unit = ()
@@ -56,23 +56,20 @@ val TrustAll = new X509TrustManager() {
 
 Next, create `SSLSocketFactory`:
 ```scala
-val sslContext = SSLContext.getInstance("TLS")
-sslContext.init(
-  keyManagerFactory.getKeyManagers, 
-  trustManagerFactory.getTrustManagers, // or TrustAll.getTrustManagers 
-  new SecureRandom())
-    
-val sslSocketFactory = sslContext.getSocketFactory     
+val ssl: SSLContext = SSLContext.getInstance("TLS")
+ssl.init(kmf.getKeyManagers, tmf.getTrustManagers, new SecureRandom) // or TrustAll.getTrustManagers    
 ```
 
-Finally, define a function to customize connection using `sslSocketFactory` from previous step.
+Finally, define a function to customize connection using `SSLContext` from previous step.
 You also need to implement `HostnameVerifier`, the simplest one is used here, accepting all hosts.
 ```scala
+val hostnameVerifier: HostnameVerifier = (_: String, _: SSLSession) => true
+
 val useSSL = (conn: HttpURLConnection) =>
   conn match {
     case https: HttpsURLConnection =>
-      https.setSSLSocketFactory(sslSocketFactory)
-      https.setHostnameVerifier((_: String, _: SSLSession) => true)
+      https.setSSLSocketFactory(ssl.getSocketFactory)
+      https.setHostnameVerifier(hostnameVerifier)
     case _ => ()
   }
 
