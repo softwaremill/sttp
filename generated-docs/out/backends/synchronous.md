@@ -20,7 +20,7 @@ This backend works with all Scala versions. A Scala 3 build is available as well
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "okhttp-backend" % "3.1.1"
+"com.softwaremill.sttp.client3" %% "okhttp-backend" % "3.1.2"
 ```
 
 Create the backend using:
@@ -48,7 +48,7 @@ This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supp
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "httpclient-backend" % "3.1.1"
+"com.softwaremill.sttp.client3" %% "httpclient-backend" % "3.1.2"
 ```
 
 Create the backend using:

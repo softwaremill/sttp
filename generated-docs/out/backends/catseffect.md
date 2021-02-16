@@ -5,7 +5,7 @@ The [Cats Effect](https://github.com/typelevel/cats-effect) backend is **asynchr
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "async-http-client-backend-cats" % "3.1.1"
+"com.softwaremill.sttp.client3" %% "async-http-client-backend-cats" % "3.1.2"
 ```
 
 You'll need the following imports and implicits to create the backend:
