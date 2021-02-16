@@ -44,7 +44,6 @@ Created `ssl` instance will be used in examples below.
 
 Using `SSLContext` from [first section](#ssl-context) define a function to customize connection.
 
-Implement `HostnameVerifier`. Accepting all hosts instance is only for demonstration purposes.
 ```scala
 import sttp.client3._
 import java.net.HttpURLConnection
