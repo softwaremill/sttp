@@ -179,6 +179,7 @@ lazy val allAggregates = projectsWithOptionalNative ++
   httpClientFs2Backend.projectRefs ++
   httpClientZioBackend.projectRefs ++
   finagleBackend.projectRefs ++
+  armeriaBackend.projectRefs ++
   scribeBackend.projectRefs ++
   slf4jBackend.projectRefs ++
   examples.projectRefs ++
@@ -543,10 +544,20 @@ lazy val finagleBackend = (projectMatrix in file("finagle-backend"))
   .settings(
     name := "finagle-backend",
     libraryDependencies ++= Seq(
-      "com.twitter" %% "finagle-http" % "21.1.0"
+      "com.twitter" %% "finagle-http" % "21.2.0"
     )
   )
   .jvmPlatform(scalaVersions = scala2)
+  .dependsOn(core % compileAndTest)
+
+lazy val armeriaBackend = (projectMatrix in file("armeria-backend"))
+  .settings(commonJvmSettings)
+  .settings(testServerSettings)
+  .settings(
+    name := "armeria-backend",
+    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.5.0"
+  )
+  .jvmPlatform(scalaVersions = List(scala2_13) ++ scala3)
   .dependsOn(core % compileAndTest)
 
 //----- json
@@ -668,7 +679,7 @@ lazy val zioTelemetryOpenTracingBackend = (projectMatrix in file("metrics/zio-te
     name := "zio-telemetry-opentracing-backend",
     libraryDependencies ++= Seq(
       "dev.zio" %% "zio-opentracing" % "0.7.2",
-      "org.scala-lang.modules" %% "scala-collection-compat" % "2.4.1"
+      "org.scala-lang.modules" %% "scala-collection-compat" % "2.4.2"
     )
   )
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13))
@@ -680,7 +691,7 @@ lazy val scribeBackend = (projectMatrix in file("logging/scribe"))
   .settings(
     name := "scribe-backend",
     libraryDependencies ++= Seq(
-      "com.outr" %%% "scribe" % "3.3.2"
+      "com.outr" %%% "scribe" % "3.3.3"
     ),
     scalaTest
   )
@@ -781,6 +792,7 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     openTracingBackend,
     prometheusBackend,
     slf4jBackend,
-    zioTelemetryOpenTracingBackend
+    zioTelemetryOpenTracingBackend,
+    armeriaBackend
   )
   .jvmPlatform(scalaVersions = List(scala2_13))

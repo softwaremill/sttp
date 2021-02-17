@@ -240,22 +240,24 @@ trait HttpTestExtensions[F[_]] { self: HttpTest[F] =>
     }
   }
 
-  "multipart" - {
-    def mp = basicRequest.post(uri"$endpoint/multipart")
+  if (supportsMultipart) {
+    "multipart" - {
+      def mp = basicRequest.post(uri"$endpoint/multipart")
 
-    "send a multipart message with a file" in {
-      withTemporaryFile(Some(testBodyBytes)) { f =>
-        val req = mp.multipartBody(multipartFile("p1", f), multipart("p2", "v2"))
-        req.send(backend).toFuture().map { resp =>
-          resp.body should be(Right(s"p1=$testBody (${f.getName}), p2=v2$defaultFileName"))
+      "send a multipart message with a file" in {
+        withTemporaryFile(Some(testBodyBytes)) { f =>
+          val req = mp.multipartBody(multipartFile("p1", f), multipart("p2", "v2"))
+          req.send(backend).toFuture().map { resp =>
+            resp.body should be(Right(s"p1=$testBody (${f.getName}), p2=v2$defaultFileName"))
+          }
         }
       }
-    }
 
-    "send a multipart message with custom file name" in {
-      withTemporaryFile(Some(testBodyBytes)) { f =>
-        val req = mp.multipartBody(multipartFile("p1", f).fileName("test.txt"))
-        req.send(backend).toFuture().map { resp => resp.body should be(Right(s"p1=$testBody (test.txt)")) }
+      "send a multipart message with custom file name" in {
+        withTemporaryFile(Some(testBodyBytes)) { f =>
+          val req = mp.multipartBody(multipartFile("p1", f).fileName("test.txt"))
+          req.send(backend).toFuture().map { resp => resp.body should be(Right(s"p1=$testBody (test.txt)")) }
+        }
       }
     }
   }

@@ -34,8 +34,10 @@ trait HttpTest[F[_]]
   def timeoutToNone[T](t: F[T], timeoutMillis: Int): F[Option[T]]
 
   protected def postEcho: Request[Either[String, String], Any] = basicRequest.post(uri"$endpoint/echo")
+  protected def postEchoExact: Request[Either[String, String], Any] = basicRequest.post(uri"$endpoint/echo/exact")
   protected val testBody = "this is the body"
   protected val testBodyBytes: Array[Byte] = testBody.getBytes("UTF-8")
+  protected val testBodySignedBytes: Array[Byte] = Array[Byte](-1)
   protected val expectedPostEchoResponse = "POST /echo this is the body"
   protected val customEncoding = "custom"
   protected val customEncodedData = "custom-data"
@@ -44,6 +46,7 @@ trait HttpTest[F[_]]
 
   protected def supportsRequestTimeout = true
   protected def supportsSttpExceptions = true
+  protected def supportsMultipart = true
   protected def supportsCustomMultipartContentType = true
   protected def supportsCustomContentEncoding = false
   protected def throwsExceptionOnUnsupportedEncoding = true
@@ -97,6 +100,12 @@ trait HttpTest[F[_]]
       postEcho.body(testBody).response(asByteArray).send(backend).toFuture().map { response =>
         val fc = new String(response.body.right.get, "UTF-8")
         fc should be(expectedPostEchoResponse)
+      }
+    }
+
+    "as a byte array exact" in {
+      postEchoExact.body(testBodySignedBytes).response(asByteArrayAlways).send(backend).toFuture().map { response =>
+        response.body should be(testBodySignedBytes)
       }
     }
 
@@ -363,48 +372,54 @@ trait HttpTest[F[_]]
       case Some(name) => s" ($name)"
     }
 
-  "multipart" - {
-    def mp = basicRequest.post(uri"$endpoint/multipart").response(asStringAlways)
+  if (supportsMultipart) {
+    "multipart" - {
+      def mp = basicRequest.post(uri"$endpoint/multipart").response(asStringAlways)
 
-    "send a multipart message" in {
-      val req = mp.multipartBody(multipart("p1", "v1"), multipart("p2", "v2"))
-      req.send(backend).toFuture().map { resp => resp.body should be(s"p1=v1$defaultFileName, p2=v2$defaultFileName") }
-    }
-
-    "send a multipart message with an explicitly set content type header" in {
-      val req = mp
-        .multipartBody(multipart("p1", "v1"), multipart("p2", "v2"))
-        .contentType("multipart/form-data")
-      req.send(backend).toFuture().map { resp => resp.body should be(s"p1=v1$defaultFileName, p2=v2$defaultFileName") }
-    }
-
-    "send a multipart message with filenames" in {
-      val req = mp.multipartBody(multipart("p1", "v1").fileName("f1"), multipart("p2", "v2").fileName("f2"))
-      req.send(backend).toFuture().map { resp => resp.body should be("p1=v1 (f1), p2=v2 (f2)") }
-    }
-
-    "send a multipart message with binary data and filename" in {
-      val binaryPart = {
-        multipart("p1", "v1".getBytes)
-          .fileName("f1")
-      }
-      val req = mp.multipartBody(binaryPart)
-      req.send(backend).toFuture().map { resp =>
-        resp.body should include("f1")
-        resp.body should include("v1")
-      }
-    }
-
-    if (supportsCustomMultipartContentType) {
-      "send a multipart message with custom content type" in {
-        val req = basicRequest
-          .post(uri"$endpoint/multipart/other")
-          .response(asStringAlways)
-          .multipartBody(multipart("p1", "v1"))
-          .contentType("multipart/mixed")
+      "send a multipart message" in {
+        val req = mp.multipartBody(multipart("p1", "v1"), multipart("p2", "v2"))
         req.send(backend).toFuture().map { resp =>
-          resp.body should include("multipart/mixed")
+          resp.body should be(s"p1=v1$defaultFileName, p2=v2$defaultFileName")
+        }
+      }
+
+      "send a multipart message with an explicitly set content type header" in {
+        val req = mp
+          .multipartBody(multipart("p1", "v1"), multipart("p2", "v2"))
+          .contentType("multipart/form-data")
+        req.send(backend).toFuture().map { resp =>
+          resp.body should be(s"p1=v1$defaultFileName, p2=v2$defaultFileName")
+        }
+      }
+
+      "send a multipart message with filenames" in {
+        val req = mp.multipartBody(multipart("p1", "v1").fileName("f1"), multipart("p2", "v2").fileName("f2"))
+        req.send(backend).toFuture().map { resp => resp.body should be("p1=v1 (f1), p2=v2 (f2)") }
+      }
+
+      "send a multipart message with binary data and filename" in {
+        val binaryPart = {
+          multipart("p1", "v1".getBytes)
+            .fileName("f1")
+        }
+        val req = mp.multipartBody(binaryPart)
+        req.send(backend).toFuture().map { resp =>
+          resp.body should include("f1")
           resp.body should include("v1")
+        }
+      }
+
+      if (supportsCustomMultipartContentType) {
+        "send a multipart message with custom content type" in {
+          val req = basicRequest
+            .post(uri"$endpoint/multipart/other")
+            .response(asStringAlways)
+            .multipartBody(multipart("p1", "v1"))
+            .contentType("multipart/mixed")
+          req.send(backend).toFuture().map { resp =>
+            resp.body should include("multipart/mixed")
+            resp.body should include("v1")
+          }
         }
       }
     }

@@ -12,6 +12,7 @@ Class                                 Supported stream type                     
 ``AsyncHttpClientFutureBackend``      n/a                                              no
 ``OkHttpFutureBackend``               n/a                                              yes (regular)
 ``HttpClientFutureBackend`` (Java11+) n/a                                              yes (regular)
+``ArmeriaBackend``                    n/a                                              n/a
 ===================================== ================================================ ==========================
 ```
 
@@ -129,6 +130,43 @@ val backend = HttpClientFutureBackend.usingClient(client)
 ```
 
 This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards, works with all Scala versions. A Scala 3 build is available as well.
+
+Host header override is supported in environments running Java 12 onwards, but it has to be enabled by system property:
+```
+jdk.httpclient.allowRestrictedHeaders=host
+```
+
+## Using Armeria backend
+
+To use, add the following dependency to your project:
+
+```
+"com.softwaremill.sttp.client3" %% "armeria-backend" % "@VERSION@"
+```
+
+add imports:
+
+```scala mdoc:reset:silent
+import sttp.client3.armeria.ArmeriaBackend
+import scala.concurrent.ExecutionContext.Implicits.global
+```
+
+create client:
+
+```scala mdoc:compile-only
+val backend = ArmeriaBackend()
+```
+
+or, if you'd like to instantiate the WebClient yourself::
+
+```scala mdoc:compile-only
+import com.linecorp.armeria.client.WebClient
+
+val client: WebClient = ???
+val backend = ArmeriaBackend.usingClient(client)
+```
+
+This backend is build on top of [Armeria](https://armeria.dev/docs/client-http) and doesn't support host header override.
 
 ## Streaming
 
