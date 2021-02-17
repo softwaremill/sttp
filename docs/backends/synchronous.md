@@ -15,6 +15,11 @@ val backend = HttpURLConnectionBackend()
 
 This backend works with all Scala versions. A Scala 3 build is available as well.
 
+This backend supports host header override, but it has to be enabled by system property:
+```
+sun.net.http.allowRestrictedHeaders=true
+```
+
 ## Using OkHttp
 
 To use, add the following dependency to your project:
@@ -69,6 +74,11 @@ val backend = HttpClientSyncBackend.usingClient(httpClient)
 ```
 
 This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards, works with all Scala versions. A Scala 3 build is available as well.
+
+Host header override is supported in environments running Java 12 onwards, but it has to be enabled by system property:
+```
+jdk.httpclient.allowRestrictedHeaders=host
+```
 
 ## Streaming
 
