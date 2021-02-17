@@ -11,7 +11,9 @@ import org.reactivestreams.Subscriber
 import sttp.client3.armeria.HttpDecodingClient.decoderFactories
 
 /** An HttpClient that decodes a compressed `HttpData` */
-private[armeria] final class HttpDecodingClient(delegate: HttpClient) extends SimpleDecoratingHttpClient(delegate) {
+final class HttpDecodingClient(delegate: HttpClient) extends SimpleDecoratingHttpClient(delegate) {
+
+  // TODO(ikhoon): Remove this decorator once https://github.com/line/armeria/issues/3348 is fixed.
 
   override def execute(ctx: ClientRequestContext, req: HttpRequest): HttpResponse = {
     val acceptEncoding = req.headers().get(HttpHeaderNames.ACCEPT_ENCODING)
