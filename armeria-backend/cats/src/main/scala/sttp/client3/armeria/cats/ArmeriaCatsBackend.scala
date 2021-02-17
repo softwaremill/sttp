@@ -47,9 +47,7 @@ object ArmeriaCatsBackend {
     Resource.make(Sync[F].delay(apply(newClient(options), closeFactory = true)))(_.close())
   }
 
-  /** Creates a new `SttpBackend` with
-    * the specified `WebClient`.
-    */
+  /** Creates a new `SttpBackend` with the specified `WebClient`. */
   def usingClient[F[_]: Concurrent](client: WebClient): SttpBackend[F, Any] =
     apply(client, closeFactory = false)
 

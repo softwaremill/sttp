@@ -11,8 +11,7 @@ package object zio {
   // Forked from async-http-client-backend/zio
   // - Removed WebSocket support
 
-  /** ZIO-environment service definition, which is an SttpBackend.
-    */
+  /** ZIO-environment service definition, which is an SttpBackend. */
   type SttpClient = Has[SttpClient.Service]
   type SttpClientStubbing = Has[SttpClientStubbing.Service]
 

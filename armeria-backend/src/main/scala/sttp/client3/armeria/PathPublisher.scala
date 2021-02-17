@@ -89,7 +89,7 @@ final class PathSubscription(
 
   override def completed(result: Integer, byteBuf: ByteBuf): Unit = {
     if (cancelled.get()) {
-      ReferenceCountUtil.release(byteBuf)
+      byteBuf.release()
       maybeCloseFileChannel()
     } else if (result > -1) {
       position.getAndAdd(result.longValue())
@@ -98,6 +98,7 @@ final class PathSubscription(
       reading.set(false)
       read()
     } else {
+      byteBuf.release()
       maybeCloseFileChannel()
       if (cancelled.compareAndSet(false, true)) {
         downstream.onComplete()
@@ -106,7 +107,7 @@ final class PathSubscription(
   }
 
   override def failed(ex: Throwable, byteBuf: ByteBuf): Unit = {
-    ReferenceCountUtil.release(byteBuf)
+    byteBuf.release()
     maybeCloseFileChannel()
     if (cancelled.compareAndSet(false, true)) {
       downstream.onError(ex)

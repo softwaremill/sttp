@@ -12,7 +12,7 @@ Class                                 Supported stream type                     
 ``AsyncHttpClientFutureBackend``      n/a                                              no
 ``OkHttpFutureBackend``               n/a                                              yes (regular)
 ``HttpClientFutureBackend`` (Java11+) n/a                                              yes (regular)
-``ArmeriaBackend``                    n/a                                              n/a
+``ArmeriaFutureBackend``              n/a                                              n/a
 ===================================== ================================================ ==========================
 ```
 
@@ -136,29 +136,28 @@ This backend is based on the built-in `java.net.http.HttpClient` available from 
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "armeria-backend" % "@VERSION@"
+"com.softwaremill.sttp.client3" %% "armeria-backend-future" % "@VERSION@"
 ```
 
 add imports:
 
-```scala mdoc:reset:silent
-import sttp.client3.armeria.ArmeriaBackend
-import scala.concurrent.ExecutionContext.Implicits.global
+```scala
+import sttp.client3.armeria.future.ArmeriaFutureBackend
 ```
 
 create client:
 
-```scala mdoc:compile-only
-val backend = ArmeriaBackend()
+```scala
+val backend = ArmeriaFutureBackend()
 ```
 
-or, if you'd like to instantiate the WebClient yourself::
+or, if you'd like to instantiate the `WebClient` yourself::
 
-```scala mdoc:compile-only
+```scala
 import com.linecorp.armeria.client.WebClient
 
 val client: WebClient = ???
-val backend = ArmeriaBackend.usingClient(client)
+val backend = ArmeriaFutureBackend.usingClient(client)
 ```
 
 This backend is build on top of [Armeria](https://armeria.dev/docs/client-http).

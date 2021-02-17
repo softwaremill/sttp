@@ -2,6 +2,8 @@
 
 The [Scalaz](https://github.com/scalaz/scalaz) backend is **asynchronous**. Sending a request is a non-blocking, lazily-evaluated operation and results in a response wrapped in a `scalaz.concurrent.Task`. There's a transitive dependency on `scalaz-concurrent`.
 
+## Using async-http-client
+
 To use, add the following dependency to your project:
 
 ```scala
@@ -36,6 +38,35 @@ import org.asynchttpclient.AsyncHttpClient
 val asyncHttpClient: AsyncHttpClient = ???
 
 val backend = AsyncHttpClientScalazBackend.usingClient(asyncHttpClient)
+```
+
+## Using Armeria backend
+
+To use, add the following dependency to your project:
+
+```
+"com.softwaremill.sttp.client3" %% "armeria-backend-scalaz" % "@VERSION@"
+```
+
+add imports:
+
+```scala
+import sttp.client3.armeria.scalaz.ArmeriaScalazBackend
+```
+
+create client:
+
+```scala
+val backend = ArmeriaScalazBackend()
+```
+
+or, if you'd like to instantiate the `WebClient` yourself:
+
+```scala
+import com.linecorp.armeria.client.WebClient
+
+val client: WebClient = ???
+val backend = ArmeriaScalazBackend.usingClient(client)
 ```
 
 ## Streaming

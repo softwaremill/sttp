@@ -34,8 +34,7 @@ private final class ArmeriaFutureBackend(client: WebClient, closeFactory: Boolea
 
 object ArmeriaFutureBackend {
 
-  /** Creates a new `SttpBackend`.
-    */
+  /** Creates a new `SttpBackend`. */
   def apply(): SttpBackend[Future, Any] = apply(newClient(), closeFactory = false)
 
   /** Creates a new `SttpBackend` with the specified `SttpBackendOptions`. */

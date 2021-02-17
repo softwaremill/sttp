@@ -97,38 +97,6 @@ val backend = HttpClientMonixBackend.usingClient(httpClient)
 
 This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards.
 
-## Using Armeria backend
-
-To use, add the following dependency to your project:
-
-```
-"com.softwaremill.sttp.client3" %% "armeria-monix-backend" % "3.1.1"
-```
-
-add imports:
-
-```scala
-import sttp.client3.armeria.monix.ArmeriaMonixBackend
-```
-
-create client:
-
-```scala
-import monix.execution.Scheduler.Implicits.global
-val backend = ArmeriaMonixBackend()
-```
-
-or, if you'd like to instantiate the `WebClient` yourself:
-
-```scala
-import com.linecorp.armeria.client.WebClient
-
-val client: WebClient = ???
-val backend = ArmeriaMonixBackend.usingClient(client)
-```
-
-This backend is build on top of [Armeria](https://armeria.dev/docs/client-http).
-
 ## Streaming
 
 The Monix backends support streaming. The streams capability is represented as `sttp.client3.impl.monix.MonixStreams`. The type of supported streams in this case is `Observable[ByteBuffer]`. That is, you can set such an observable as a request body (using the async-http-client backend as an example, but any of the above backends can be used):

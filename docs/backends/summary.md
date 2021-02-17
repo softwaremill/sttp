@@ -31,6 +31,12 @@ Class                                Effect type                      Supported 
 ``AsyncHttpClientMonixBackend``      ``monix.eval.Task``              ``monix.reactive.Observable[ByteBuffer]``         yes (regular & streaming)  no
 ``AsyncHttpClientCatsBackend``       ``F[_]: cats.effect.Concurrent`` n/a                                               no                         no
 ``AsyncHttpClientFs2Backend``        ``F[_]: cats.effect.Concurrent`` ``fs2.Stream[F, Byte]``                           yes (regular & streaming)  no
+``ArmeiraFutureBackend``             ``scala.concurrent.Future``      n/a                                               no                         yes
+``ArmeiraScalazBackend``             ``scalaz.concurrent.Task``       n/a                                               no                         yes
+``ArmeiraZioBackend``                ``zio.Task``                     ``zio.stream.Stream[Throwable, Byte]``            no                         yes
+``ArmeiraMonixBackend``              ``monix.eval.Task``              ``monix.reactive.Observable[HttpData]``           no                         yes
+``ArmeiraCatsBackend``               ``F[_]: cats.effect.Concurrent`` n/a                                               no                         yes
+``ArmeiraFs2Backend``                ``F[_]: cats.effect.Concurrent`` ``fs2.Stream[F, Byte]``                           no                         yes
 ``OkHttpSyncBackend``                None (``Identity``)              n/a                                               yes (regular)              no
 ``OkHttpFutureBackend``              ``scala.concurrent.Future``      n/a                                               yes (regular)              no
 ``OkHttpMonixBackend``               ``monix.eval.Task``              ``monix.reactive.Observable[ByteBuffer]``         yes (regular & streaming)  no
