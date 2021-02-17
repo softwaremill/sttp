@@ -103,8 +103,8 @@ val playJsonVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.7.4"
   case _             => "2.9.2"
 }
-val catsEffectVersion= "3.0.0-M5"
-val fs2Version = "3.0.0-M7"
+val catsEffectVersion= "3.0.0-RC2"
+val fs2Version = "3.0.0-M9"
 
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.2.3"
 val akkaStreamVersion = "2.6.12"
@@ -126,7 +126,7 @@ val jeagerClientVersion = "1.5.0"
 val braveOpentracingVersion = "1.0.0"
 val zipkinSenderOkHttpVersion = "2.16.3"
 val resilience4jVersion = "1.7.0"
-val http4sVersion = "1.0.0-M13"
+val http4sVersion = "1.0.0-M18"
 
 val compileAndTest = "compile->compile;test->test"
 
