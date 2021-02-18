@@ -15,7 +15,7 @@ Example assumes that you have your client key store in `.p12` format. If you hav
 `openssl pkcs12 -export -inkey your_key.pem -in your_cert.pem -out your_cert.p12`
 
 Sample code might look like this:
-```scala
+```scala mdoc:compile-only
 import java.io.FileInputStream
 import java.security.{KeyStore, SecureRandom}
 import java.security.cert.X509Certificate
@@ -46,6 +46,8 @@ It can be imported to trust store with:
 
 Next, based on [one way SSL example](#one-way-ssl), add `TrustManagerFactory` to your code:
 ```scala
+ks.load(new FileInputStream("/path/to/server_trust"), "pass".toCharArray)
+
 val tmf: TrustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm) 
 tmf.init(ks)
 
