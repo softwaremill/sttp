@@ -7,7 +7,7 @@ The [fs2](https://github.com/functional-streams-for-scala/fs2) backend is **asyn
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "async-http-client-backend-fs2" % "3.1.2"
+"com.softwaremill.sttp.client3" %% "async-http-client-backend-fs2" % "3.1.3"
 ```
 
 And some imports:
@@ -76,7 +76,7 @@ val backend = AsyncHttpClientFs2Backend.usingClient[IO](asyncHttpClient, blocker
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "httpclient-backend-fs2" % "3.1.2"
+"com.softwaremill.sttp.client3" %% "httpclient-backend-fs2" % "3.1.3"
 ```
 
 And some imports:
@@ -115,6 +115,11 @@ val backend = HttpClientFs2Backend.usingClient[IO](httpClient, blocker)
 ```
 
 This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards.
+
+Host header override is supported in environments running Java 12 onwards, but it has to be enabled by system property:
+```
+jdk.httpclient.allowRestrictedHeaders=host
+```
 
 ## Streaming
 

@@ -34,7 +34,7 @@ case class ResponsePayload(data: String)
 JSON encoding of bodies and decoding of responses can be handled using [Circe](https://circe.github.io/circe/) by the `circe` module. To use add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "circe" % "3.1.2"
+"com.softwaremill.sttp.client3" %% "circe" % "3.1.3"
 ```
 
 This module adds a body serialized, so that json payloads can be sent as request bodies. To send a payload of type `T` as json, a `io.circe.Encoder[T]` implicit value must be available in scope.
@@ -66,7 +66,7 @@ Arbitrary JSON structures can be traversed by parsing the result as `io.circe.Js
 To encode and decode json using json4s, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "json4s" % "3.1.2"
+"com.softwaremill.sttp.client3" %% "json4s" % "3.1.3"
 "org.json4s" %% "json4s-native" % "3.6.0"
 ```
 
@@ -100,7 +100,7 @@ val response: Identity[Response[Either[ResponseException[String, Exception], Res
 To encode and decode JSON using [spray-json](https://github.com/spray/spray-json), add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "spray-json" % "3.1.2"
+"com.softwaremill.sttp.client3" %% "spray-json" % "3.1.3"
 ```
 
 Using this module it is possible to set request bodies and read response bodies as your custom types, using the implicitly available instances of `spray.json.JsonWriter` / `spray.json.JsonReader` or `spray.json.JsonFormat`.
@@ -132,7 +132,7 @@ val response: Identity[Response[Either[ResponseException[String, Exception], Res
 To encode and decode JSON using [play-json](https://www.playframework.com), add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "play-json" % "3.1.2"
+"com.softwaremill.sttp.client3" %% "play-json" % "3.1.3"
 ```
 
 To use, add an import: `import sttp.client3.playJson._`.

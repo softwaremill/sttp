@@ -7,7 +7,7 @@ The [ZIO](https://github.com/zio/zio) backends are **asynchronous**. Sending a r
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "httpclient-backend-zio" % "3.1.2"
+"com.softwaremill.sttp.client3" %% "httpclient-backend-zio" % "3.1.3"
 ```
 
 Create the backend using:
@@ -28,12 +28,17 @@ val backend = HttpClientZioBackend.usingClient(httpClient)
 
 This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards. The backend is fully non-blocking, with back-pressured websockets.
 
+Host header override is supported in environments running Java 12 onwards, but it has to be enabled by system property:
+```
+jdk.httpclient.allowRestrictedHeaders=host
+```
+
 ## Using async-http-client
 
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % "3.1.2"
+"com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % "3.1.3"
 ```
            
 This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client), uses [Netty](http://netty.io) behind the scenes. This backend works with all Scala versions. A Scala 3 build is available as well.

@@ -21,7 +21,7 @@ Class                                 Supported stream type                     
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % "3.1.2"
+"com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % "3.1.3"
 ```
 
 And some imports:
@@ -72,7 +72,7 @@ val backend = AsyncHttpClientFutureBackend.usingClient(asyncHttpClient)
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "okhttp-backend" % "3.1.2"
+"com.softwaremill.sttp.client3" %% "okhttp-backend" % "3.1.3"
 ```
 
 and some imports:
@@ -104,7 +104,7 @@ This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supp
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "httpclient-backend" % "3.1.2"
+"com.softwaremill.sttp.client3" %% "httpclient-backend" % "3.1.3"
 ```
 
 and some imports:
@@ -131,12 +131,17 @@ val backend = HttpClientFutureBackend.usingClient(client)
 
 This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards, works with all Scala versions. A Scala 3 build is available as well.
 
+Host header override is supported in environments running Java 12 onwards, but it has to be enabled by system property:
+```
+jdk.httpclient.allowRestrictedHeaders=host
+```
+
 ## Using Armeria backend
 
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "armeria-backend" % "3.1.2"
+"com.softwaremill.sttp.client3" %% "armeria-backend" % "3.1.3"
 ```
 
 add imports:
@@ -161,7 +166,7 @@ val client: WebClient = ???
 val backend = ArmeriaBackend.usingClient(client)
 ```
 
-This backend is build on top of [Armeria](https://armeria.dev/docs/client-http).
+This backend is build on top of [Armeria](https://armeria.dev/docs/client-http) and doesn't support host header override.
 
 ## Streaming
 
