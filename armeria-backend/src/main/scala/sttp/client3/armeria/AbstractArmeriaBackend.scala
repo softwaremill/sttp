@@ -153,6 +153,8 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
     val readTimeout = request.options.readTimeout
     // If a readTimeout is not configured, respects Armeria's responseTimeout
     if (readTimeout ne DefaultReadTimeout) {
+      // TODO(ikhoon): Use HttpRequestBuilder.responseTimeout()
+      //               once https://github.com/line/armeria/pull/3357 is merged
       Clients.withContextCustomizer((ctx: ClientRequestContext) => {
         ctx.setResponseTimeoutMillis(readTimeout.toMillis)
       })
