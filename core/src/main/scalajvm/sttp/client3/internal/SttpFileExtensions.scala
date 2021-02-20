@@ -16,6 +16,8 @@ trait SttpFileExtensions { self: SttpFile =>
     try s.getLines().mkString("\n")
     finally s.close()
   }
+
+  def readAsByteArray: Array[Byte] = Files.readAllBytes(toPath)
 }
 
 trait SttpFileCompanionExtensions {

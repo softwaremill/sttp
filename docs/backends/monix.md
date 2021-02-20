@@ -97,6 +97,11 @@ val backend = HttpClientMonixBackend.usingClient(httpClient)
 
 This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards.
 
+Host header override is supported in environments running Java 12 onwards, but it has to be enabled by system property:
+```
+jdk.httpclient.allowRestrictedHeaders=host
+```
+
 ## Using Armeria backend
 
 To use, add the following dependency to your project:
@@ -133,6 +138,10 @@ val client = WebClient.builder("https://my-service.com")
              .build()
              
 val backend = ArmeriaMonixBackend.usingClient(client)
+```
+
+```eval_rst
+.. note:: A WebClient could fail to follow redirects if the WebClient is created with a base URI and a redirect location is a different URI.
 ```
 
 This backend is build on top of [Armeria](https://armeria.dev/docs/client-http).

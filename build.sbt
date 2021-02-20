@@ -9,7 +9,7 @@ val scala2_11 = "2.11.12"
 val scala2_12 = "2.12.13"
 val scala2_13 = "2.13.4"
 val scala2 = List(scala2_11, scala2_12, scala2_13)
-val scala3 = List("3.0.0-M3")
+val scala3 = List("3.0.0-RC1")
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests")
@@ -31,18 +31,7 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   }.value,
   ideSkipProject := (scalaVersion.value != scala2_13) || thisProjectRef.value.project.contains(
     "JS"
-  ) || thisProjectRef.value.project.contains("Native"),
-  // doc generation is broken in dotty
-  sources in (Compile, doc) := {
-    val scalaV = scalaVersion.value
-    val current = (sources in (Compile, doc)).value
-    if (scala3.contains(scalaV)) Seq() else current
-  },
-  sources in (Test, doc) := {
-    val scalaV = scalaVersion.value
-    val current = (sources in (Test, doc)).value
-    if (scala3.contains(scalaV)) Seq() else current
-  }
+  ) || thisProjectRef.value.project.contains("Native")
 )
 
 val commonJvmSettings = commonSettings ++ Seq(
@@ -96,6 +85,7 @@ val testServerSettings = Seq(
 )
 
 val circeVersion: Option[(Long, Long)] => String = {
+  //case Some((3, _))  => "0.14.0-M3"
   case Some((2, 11)) => "0.11.2"
   case _             => "0.13.0"
 }
@@ -105,11 +95,11 @@ val playJsonVersion: Option[(Long, Long)] => String = {
 }
 val catsEffectVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.0.0"
-  case _             => "2.3.1"
+  case _             => "2.3.3"
 }
 val fs2Version: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.1.0"
-  case _             => "2.5.0"
+  case _             => "2.5.2"
 }
 
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.2.3"
@@ -117,7 +107,7 @@ val akkaStreamVersion = "2.6.12"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % akkaStreamVersion
 
 val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", "wordspec", "shouldmatchers").map(m =>
-  "org.scalatest" %%% s"scalatest-$m" % "3.2.4-M1" % Test
+  "org.scalatest" %%% s"scalatest-$m" % "3.2.4" % Test
 )
 
 val zioVersion = "1.0.4-2"
@@ -132,7 +122,7 @@ val jeagerClientVersion = "1.5.0"
 val braveOpentracingVersion = "1.0.0"
 val zipkinSenderOkHttpVersion = "2.16.3"
 val resilience4jVersion = "1.7.0"
-val http4sVersion = "0.21.18"
+val http4sVersion = "0.21.19"
 
 val compileAndTest = "compile->compile;test->test"
 
@@ -357,7 +347,7 @@ lazy val zio = (projectMatrix in file("effects/zio"))
   )
   .dependsOn(core % compileAndTest)
   .jvmPlatform(
-    scalaVersions = scala2 ++ scala3
+    scalaVersions = scala2 //++ scala3
   )
   .jsPlatform(
     scalaVersions = List(scala2_12, scala2_13),
@@ -556,7 +546,7 @@ lazy val finagleBackend = (projectMatrix in file("finagle-backend"))
   .settings(
     name := "finagle-backend",
     libraryDependencies ++= Seq(
-      "com.twitter" %% "finagle-http" % "21.1.0"
+      "com.twitter" %% "finagle-http" % "21.2.0"
     )
   )
   .jvmPlatform(scalaVersions = scala2)
@@ -620,7 +610,7 @@ lazy val jsonCommon = (projectMatrix in (file("json/common")))
     name := "json-common"
   )
   .jvmPlatform(
-    scalaVersions = scala2,
+    scalaVersions = scala2 ++ scala3,
     settings = commonJvmSettings
   )
   .jsPlatform(scalaVersions = scala2, settings = commonJsSettings)
@@ -638,7 +628,7 @@ lazy val circe = (projectMatrix in file("json/circe"))
     scalaTest
   )
   .jvmPlatform(
-    scalaVersions = scala2,
+    scalaVersions = scala2, // ++ scala3,
     settings = commonJvmSettings
   )
   .jsPlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonJsSettings)
@@ -733,7 +723,7 @@ lazy val zioTelemetryOpenTracingBackend = (projectMatrix in file("metrics/zio-te
     name := "zio-telemetry-opentracing-backend",
     libraryDependencies ++= Seq(
       "dev.zio" %% "zio-opentracing" % "0.7.2",
-      "org.scala-lang.modules" %% "scala-collection-compat" % "2.4.1"
+      "org.scala-lang.modules" %% "scala-collection-compat" % "2.4.2"
     )
   )
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13))

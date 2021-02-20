@@ -7,7 +7,7 @@ A JavaScript backend implemented using the [Fetch API](https://developer.mozilla
 This is the default backend, available in the main jar for JS. To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %%% "core" % "3.1.1"
+"com.softwaremill.sttp.client3" %%% "core" % "3.1.3"
 ```
 
 And create the backend instance:
@@ -27,7 +27,7 @@ Note that `Fetch` does not pass cookies by default. If your request needs cookie
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %%% "monix" % "3.1.1"
+"com.softwaremill.sttp.client3" %%% "monix" % "3.1.3"
 ```
 
 And create the backend instance:
@@ -42,7 +42,7 @@ Any effect implementing the cats-effect `Concurrent` typeclass can be used. To u
 your project:
 
 ```
-"com.softwaremill.sttp.client3" %%% "cats" % "3.1.1"
+"com.softwaremill.sttp.client3" %%% "cats" % "3.1.3"
 ```
 
 And create the backend instance:
@@ -53,22 +53,22 @@ val backend = FetchCatsBackend[IO]()
 
 ## Node.js
 
-Running sttp in a node.js will require downloading modules that implement the various classes and functions used by sttp, usually available in browser. At minima, you will need replacement for `fetch`, `AbortController` and `Headers`. To achieve this, you can either use `npm` directly, or the `scalajs-bundler` sbt plugin if you use sbt :
+Using `FetchBackend` is possible with [node-fetch](https://www.npmjs.com/package/node-fetch) module.
 
 ```
 npm install --save node-fetch
-npm install --save abortcontroller-polyfill
-npm install --save fetch-headers
-``` 
+```
 
-You then need to load the modules into your runtime. This can be done in
-your main method as such :
+It has to be loaded into your runtime. This can be done in your main method as such:
 
 ```scala
 val g = scalajs.js.Dynamic.global.globalThis
-g.fetch = g.require("node-fetch")
-g.require("abortcontroller-polyfill/dist/polyfill-patch-fetch")
-g.Headers = g.require("fetch-headers")
+
+val nodeFetch = g.require("node-fetch")
+
+g.fetch = nodeFetch
+g.Headers = nodeFetch.Headers
+g.Request = nodeFetch.Request
 ```
 
 ## Streaming
@@ -79,7 +79,7 @@ Streaming support is provided via `FetchMonixBackend`. Note that streaming suppo
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %%% "monix" % "3.1.1"
+"com.softwaremill.sttp.client3" %%% "monix" % "3.1.3"
 ```
 
 An example of streaming a response:

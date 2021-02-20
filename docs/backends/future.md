@@ -131,6 +131,11 @@ val backend = HttpClientFutureBackend.usingClient(client)
 
 This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards, works with all Scala versions. A Scala 3 build is available as well.
 
+Host header override is supported in environments running Java 12 onwards, but it has to be enabled by system property:
+```
+jdk.httpclient.allowRestrictedHeaders=host
+```
+
 ## Using Armeria backend
 
 To use, add the following dependency to your project:
@@ -168,7 +173,11 @@ val client = WebClient.builder("https://my-service.com")
 val backend = ArmeriaFutureBackend.usingClient(client)
 ```
 
-This backend is build on top of [Armeria](https://armeria.dev/docs/client-http).
+```eval_rst
+.. note:: A WebClient could fail to follow redirects if the WebClient is created with a base URI and a redirect location is a different URI.
+```
+
+This backend is build on top of [Armeria](https://armeria.dev/docs/client-http) and doesn't support host header override.
 
 ## Streaming
 

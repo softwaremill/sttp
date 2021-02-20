@@ -28,6 +28,11 @@ val backend = HttpClientZioBackend.usingClient(httpClient)
 
 This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards. The backend is fully non-blocking, with back-pressured websockets.
 
+Host header override is supported in environments running Java 12 onwards, but it has to be enabled by system property:
+```
+jdk.httpclient.allowRestrictedHeaders=host
+```
+
 ## Using async-http-client
 
 To use, add the following dependency to your project:
@@ -117,6 +122,10 @@ val client = WebClient.builder("https://my-service.com")
              .build()
 
 ArmeriaZioBackend.usingClient(client).flatMap { backend => ??? }
+```
+
+```eval_rst
+.. note:: A WebClient could fail to follow redirects if the WebClient is created with a base URI and a redirect location is a different URI.
 ```
 
 This backend is build on top of [Armeria](https://armeria.dev/docs/client-http).
