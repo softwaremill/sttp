@@ -7,9 +7,6 @@ import zio.Task
 
 class ArmeriaZioHttpTest extends HttpTest[Task] with ZioTestBase {
 
-  // FIXME(ikhoon): A request failed with `ResponseTimeoutException`.
-  //                However, "read exceptions - timeout" test never ends.
-
   override val backend: SttpBackend[Task, Any] = runtime.unsafeRun(ArmeriaZioBackend())
   override implicit val convertToFuture: ConvertToFuture[Task] = convertZioTaskToFuture
 

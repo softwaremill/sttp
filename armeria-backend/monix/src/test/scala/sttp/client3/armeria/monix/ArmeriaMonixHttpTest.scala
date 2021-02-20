@@ -21,5 +21,4 @@ class ArmeriaMonixHttpTest extends HttpTest[Task] {
 
   override def supportsHostHeaderOverride = false
   override def supportsMultipart = false
-  override def supportsCancellation = false
 }

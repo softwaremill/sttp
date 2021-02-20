@@ -93,12 +93,20 @@ implicit val cs: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionCo
 val backend = ArmeriaCatsBackend[IO]()
 ```
 
-or, if you'd like to instantiate the `WebClient` yourself:
+or, if you'd like to instantiate the [WebClient](https://armeria.dev/docs/client-http) yourself:
 
 ```scala
+import com.linecorp.armeria.client.circuitbreaker._
 import com.linecorp.armeria.client.WebClient
 
-val client: WebClient = ???
+// Fluently build Armeria WebClient with built-in decorators
+val client = WebClient.builder("https://my-service.com")
+             // Open circuit on 5xx server error status
+             .decorator(CircuitBreakerClient.newDecorator(CircuitBreaker.ofDefaultName(),
+               CircuitBreakerRule.onServerErrorStatus()))
+             ...
+             .build()
+
 val backend = ArmeriaCatsBackend.usingClient(client)
 ```
 

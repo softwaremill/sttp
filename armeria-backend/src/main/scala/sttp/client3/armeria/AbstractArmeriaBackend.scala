@@ -225,8 +225,8 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
   }
 
   override def close(): F[Unit] = {
-    monad.async(cb => {
-      if (closeFactory) {
+    if (closeFactory) {
+      monad.async(cb => {
         client
           .options()
           .factory()
@@ -240,9 +240,11 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
             }
             null
           })
-      }
-      noopCanceler
-    })
+        noopCanceler
+      })
+    } else {
+      monad.unit(())
+    }
   }
 }
 
