@@ -6,9 +6,7 @@ import sttp.client3.testing.{ConvertToFuture, HttpTest}
 
 class ArmeriaFutureHttpTest extends HttpTest[Future] {
 
-  override val backend: SttpBackend[Future, Any] = {
-    ArmeriaFutureBackend()
-  }
+  override val backend: SttpBackend[Future, Any] = ArmeriaFutureBackend()
   override implicit val convertToFuture: ConvertToFuture[Future] = ConvertToFuture.future
 
   override def supportsHostHeaderOverride = false
