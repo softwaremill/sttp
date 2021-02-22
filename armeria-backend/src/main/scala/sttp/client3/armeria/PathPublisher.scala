@@ -3,7 +3,6 @@ package sttp.client3.armeria
 import com.linecorp.armeria.common.HttpData
 import com.linecorp.armeria.internal.common.stream.NoopSubscription
 import io.netty.buffer.{ByteBuf, ByteBufAllocator}
-import io.netty.util.ReferenceCountUtil
 import java.io.IOException
 import java.nio.channels.{AsynchronousFileChannel, CompletionHandler}
 import java.nio.file.{Path, StandardOpenOption}

@@ -176,7 +176,6 @@ lazy val allAggregates = projectsWithOptionalNative ++
   httpClientZioBackend.projectRefs ++
   finagleBackend.projectRefs ++
   armeriaBackend.projectRefs ++
-  armeriaFutureBackend.projectRefs ++
   armeriaScalazBackend.projectRefs ++
   armeriaZioBackend.projectRefs ++
   armeriaMonixBackend.projectRefs ++
@@ -572,9 +571,6 @@ def armeriaBackendProject(proj: String, includeDotty: Boolean = false) = {
       scalaVersions = List(scala2_12, scala2_13) ++ (if (includeDotty) scala3 else Nil)
     )
 }
-
-lazy val armeriaFutureBackend =
-  armeriaBackendProject("future", includeDotty = true)
 
 lazy val armeriaMonixBackend =
   armeriaBackendProject("monix")

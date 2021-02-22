@@ -1,8 +1,9 @@
 package sttp.client3.armeria.future
 
-import scala.concurrent.Future
 import sttp.client3.SttpBackend
 import sttp.client3.testing.{ConvertToFuture, HttpTest}
+
+import scala.concurrent.Future
 
 class ArmeriaFutureHttpTest extends HttpTest[Future] {
 
