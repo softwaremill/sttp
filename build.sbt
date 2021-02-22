@@ -176,6 +176,12 @@ lazy val allAggregates = projectsWithOptionalNative ++
   httpClientZioBackend.projectRefs ++
   finagleBackend.projectRefs ++
   armeriaBackend.projectRefs ++
+  armeriaFutureBackend.projectRefs ++
+  armeriaScalazBackend.projectRefs ++
+  armeriaZioBackend.projectRefs ++
+  armeriaMonixBackend.projectRefs ++
+  armeriaCatsBackend.projectRefs ++
+  armeriaFs2Backend.projectRefs ++
   scribeBackend.projectRefs ++
   slf4jBackend.projectRefs ++
   examples.projectRefs ++
@@ -553,8 +559,50 @@ lazy val armeriaBackend = (projectMatrix in file("armeria-backend"))
     name := "armeria-backend",
     libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.5.0"
   )
-  .jvmPlatform(scalaVersions = List(scala2_13) ++ scala3)
+  .jvmPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3)
   .dependsOn(core % compileAndTest)
+
+def armeriaBackendProject(proj: String, includeDotty: Boolean = false) = {
+  ProjectMatrix(s"armeriaBackend${proj.capitalize}", file(s"armeria-backend/$proj"))
+    .settings(commonJvmSettings)
+    .settings(testServerSettings)
+    .settings(name := s"armeria-backend-$proj")
+    .dependsOn(armeriaBackend % compileAndTest)
+    .jvmPlatform(
+      scalaVersions = List(scala2_12, scala2_13) ++ (if (includeDotty) scala3 else Nil)
+    )
+}
+
+lazy val armeriaFutureBackend =
+  armeriaBackendProject("future", includeDotty = true)
+
+lazy val armeriaMonixBackend =
+  armeriaBackendProject("monix")
+    .dependsOn(monix % compileAndTest)
+
+lazy val armeriaFs2Backend =
+  armeriaBackendProject("fs2")
+    .settings(
+      libraryDependencies ++= dependenciesFor(scalaVersion.value)(
+        "co.fs2" %% "fs2-reactive-streams" % fs2Version(_)
+      )
+    )
+    .dependsOn(fs2 % compileAndTest)
+
+lazy val armeriaCatsBackend =
+  armeriaBackendProject("cats")
+    .dependsOn(cats % compileAndTest)
+
+lazy val armeriaScalazBackend =
+  armeriaBackendProject("scalaz")
+    .dependsOn(scalaz % compileAndTest)
+
+lazy val armeriaZioBackend =
+  armeriaBackendProject("zio")
+    .settings(
+      libraryDependencies ++= Seq("dev.zio" %% "zio-interop-reactivestreams" % zioInteropRsVersion)
+    )
+    .dependsOn(zio % compileAndTest)
 
 //----- json
 lazy val jsonCommon = (projectMatrix in (file("json/common")))

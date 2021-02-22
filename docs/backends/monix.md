@@ -102,6 +102,50 @@ Host header override is supported in environments running Java 12 onwards, but i
 jdk.httpclient.allowRestrictedHeaders=host
 ```
 
+## Using Armeria backend
+
+To use, add the following dependency to your project:
+
+```
+"com.softwaremill.sttp.client3" %% "armeria-backend-monix" % "@VERSION@"
+```
+
+add imports:
+
+```scala
+import sttp.client3.armeria.monix.ArmeriaMonixBackend
+```
+
+create client:
+
+```scala
+import monix.execution.Scheduler.Implicits.global
+val backend = ArmeriaMonixBackend()
+```
+
+or, if you'd like to instantiate the [WebClient](https://armeria.dev/docs/client-http) yourself:
+
+```scala
+import com.linecorp.armeria.client.circuitbreaker._
+import com.linecorp.armeria.client.WebClient
+
+// Fluently build Armeria WebClient with built-in decorators
+val client = WebClient.builder("https://my-service.com")
+             // Open circuit on 5xx server error status
+             .decorator(CircuitBreakerClient.newDecorator(CircuitBreaker.ofDefaultName(),
+               CircuitBreakerRule.onServerErrorStatus()))
+             ...
+             .build()
+             
+val backend = ArmeriaMonixBackend.usingClient(client)
+```
+
+```eval_rst
+.. note:: A WebClient could fail to follow redirects if the WebClient is created with a base URI and a redirect location is a different URI.
+```
+
+This backend is build on top of [Armeria](https://armeria.dev/docs/client-http).
+
 ## Streaming
 
 The Monix backends support streaming. The streams capability is represented as `sttp.client3.impl.monix.MonixStreams`. The type of supported streams in this case is `Observable[ByteBuffer]`. That is, you can set such an observable as a request body (using the async-http-client backend as an example, but any of the above backends can be used):

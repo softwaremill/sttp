@@ -121,6 +121,51 @@ Host header override is supported in environments running Java 12 onwards, but i
 jdk.httpclient.allowRestrictedHeaders=host
 ```
 
+## Using Armeria backend
+
+To use, add the following dependency to your project:
+
+```
+"com.softwaremill.sttp.client3" %% "armeria-backend-fs2" % "@VERSION@"
+```
+
+add imports:
+
+```scala
+import sttp.client3.armeria.fs2.ArmeriaFs2Backend
+import cats.effect.{ContextShift, IO}
+```
+
+create client:
+
+```scala
+implicit val cs: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionContext.global)
+val backend = ArmeriaFs2Backend[IO]()
+```
+
+or, if you'd like to instantiate the [WebClient](https://armeria.dev/docs/client-http) yourself:
+
+```scala
+import com.linecorp.armeria.client.circuitbreaker._
+import com.linecorp.armeria.client.WebClient
+
+// Fluently build Armeria WebClient with built-in decorators
+val client = WebClient.builder("https://my-service.com")
+             // Open circuit on 5xx server error status
+             .decorator(CircuitBreakerClient.newDecorator(CircuitBreaker.ofDefaultName(),
+               CircuitBreakerRule.onServerErrorStatus()))
+             ...
+             .build()
+             
+val backend = ArmeriaFs2Backend.usingClient(client)
+```
+
+```eval_rst
+.. note:: A WebClient could fail to follow redirects if the WebClient is created with a base URI and a redirect location is a different URI.
+```
+
+This backend is build on top of [Armeria](https://armeria.dev/docs/client-http).
+
 ## Streaming
 
 The fs2 backend supports streaming for any instance of the `cats.effect.Effect` typeclass, such as `cats.effect.IO`. If `IO` is used then the type of supported streams is `fs2.Stream[IO, Byte]`. The streams capability is represented as `sttp.client3.fs2.Fs2Streams`.
