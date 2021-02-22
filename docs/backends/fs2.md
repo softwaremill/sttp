@@ -121,7 +121,7 @@ Host header override is supported in environments running Java 12 onwards, but i
 jdk.httpclient.allowRestrictedHeaders=host
 ```
 
-## Using Armeria backend
+## Using Armeria
 
 To use, add the following dependency to your project:
 
@@ -131,21 +131,21 @@ To use, add the following dependency to your project:
 
 add imports:
 
-```scala
+```scala mdoc:silent
 import sttp.client3.armeria.fs2.ArmeriaFs2Backend
 import cats.effect.{ContextShift, IO}
 ```
 
 create client:
 
-```scala
+```scala mdoc:compile-only
 implicit val cs: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionContext.global)
 val backend = ArmeriaFs2Backend[IO]()
 ```
 
 or, if you'd like to instantiate the [WebClient](https://armeria.dev/docs/client-http) yourself:
 
-```scala
+```scala mdoc:compile-only
 import com.linecorp.armeria.client.circuitbreaker._
 import com.linecorp.armeria.client.WebClient
 
@@ -154,10 +154,9 @@ val client = WebClient.builder("https://my-service.com")
              // Open circuit on 5xx server error status
              .decorator(CircuitBreakerClient.newDecorator(CircuitBreaker.ofDefaultName(),
                CircuitBreakerRule.onServerErrorStatus()))
-             ...
              .build()
              
-val backend = ArmeriaFs2Backend.usingClient(client)
+val backend = ArmeriaFs2Backend.usingClient[IO](client)
 ```
 
 ```eval_rst

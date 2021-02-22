@@ -40,7 +40,7 @@ val asyncHttpClient: AsyncHttpClient = ???
 val backend = AsyncHttpClientScalazBackend.usingClient(asyncHttpClient)
 ```
 
-## Using Armeria backend
+## Using Armeria
 
 To use, add the following dependency to your project:
 
@@ -50,19 +50,19 @@ To use, add the following dependency to your project:
 
 add imports:
 
-```scala
+```scala mdoc:silent
 import sttp.client3.armeria.scalaz.ArmeriaScalazBackend
 ```
 
 create client:
 
-```scala
+```scala mdoc:compile-only
 val backend = ArmeriaScalazBackend()
 ```
 
 or, if you'd like to instantiate the [WebClient](https://armeria.dev/docs/client-http) yourself:
 
-```scala
+```scala mdoc:compile-only
 import com.linecorp.armeria.client.circuitbreaker._
 import com.linecorp.armeria.client.WebClient
 
@@ -71,7 +71,6 @@ val client = WebClient.builder("https://my-service.com")
              // Open circuit on 5xx server error status
              .decorator(CircuitBreakerClient.newDecorator(CircuitBreaker.ofDefaultName(),
                CircuitBreakerRule.onServerErrorStatus()))
-             ...
              .build()
 
 val backend = ArmeriaScalazBackend.usingClient(client)

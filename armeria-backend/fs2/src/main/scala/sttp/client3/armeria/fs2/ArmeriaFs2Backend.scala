@@ -41,20 +41,15 @@ private final class ArmeriaFs2Backend[F[_]: ConcurrentEffect](client: WebClient,
 
 object ArmeriaFs2Backend {
 
-  /** Creates a new `SttpBackend`. */
-  def apply[F[_]: ConcurrentEffect](): SttpBackend[F, Fs2Streams[F]] =
-    apply(newClient(), closeFactory = false)
-
-  /** Creates a new `SttpBackend` with the specified `SttpBackendOptions`. */
-  def apply[F[_]: ConcurrentEffect](options: SttpBackendOptions): SttpBackend[F, Fs2Streams[F]] =
+  def apply[F[_]: ConcurrentEffect](
+      options: SttpBackendOptions = SttpBackendOptions.Default
+  ): SttpBackend[F, Fs2Streams[F]] =
     apply(newClient(options), closeFactory = true)
 
-  /** Creates a new `SttpBackend` with the specified `SttpBackendOptions`. */
-  def resource[F[_]: ConcurrentEffect](options: SttpBackendOptions): Resource[F, SttpBackend[F, Fs2Streams[F]]] = {
+  def resource[F[_]: ConcurrentEffect](options: SttpBackendOptions = SttpBackendOptions.Default): Resource[F, SttpBackend[F, Fs2Streams[F]]] = {
     Resource.make(Sync[F].delay(apply(newClient(options), closeFactory = true)))(_.close())
   }
 
-  /** Creates a new `SttpBackend` with the specified `WebClient`. */
   def usingClient[F[_]: ConcurrentEffect](client: WebClient): SttpBackend[F, Fs2Streams[F]] =
     apply(client, closeFactory = false)
 

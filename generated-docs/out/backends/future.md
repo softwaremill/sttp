@@ -12,7 +12,7 @@ Class                                 Supported stream type                     
 ``AsyncHttpClientFutureBackend``      n/a                                              no
 ``OkHttpFutureBackend``               n/a                                              yes (regular)
 ``HttpClientFutureBackend`` (Java11+) n/a                                              yes (regular)
-``ArmeriaBackend``                    n/a                                              n/a
+``ArmeriaFutureBackend``              n/a                                              n/a
 ===================================== ================================================ ==========================
 ```
 
@@ -136,34 +136,44 @@ Host header override is supported in environments running Java 12 onwards, but i
 jdk.httpclient.allowRestrictedHeaders=host
 ```
 
-## Using Armeria backend
+## Using Armeria
 
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "armeria-backend" % "3.1.3"
+"com.softwaremill.sttp.client3" %% "armeria-backend-future" % "3.1.3"
 ```
 
 add imports:
 
 ```scala
-import sttp.client3.armeria.ArmeriaBackend
-import scala.concurrent.ExecutionContext.Implicits.global
+import sttp.client3.armeria.future.ArmeriaFutureBackend
 ```
 
 create client:
 
 ```scala
-val backend = ArmeriaBackend()
+val backend = ArmeriaFutureBackend()
 ```
 
-or, if you'd like to instantiate the WebClient yourself::
+or, if you'd like to instantiate the [WebClient](https://armeria.dev/docs/client-http) yourself::
 
 ```scala
+import com.linecorp.armeria.client.circuitbreaker._
 import com.linecorp.armeria.client.WebClient
 
-val client: WebClient = ???
-val backend = ArmeriaBackend.usingClient(client)
+// Fluently build Armeria WebClient with built-in decorators
+val client = WebClient.builder("https://my-service.com")
+             // Open circuit on 5xx server error status
+             .decorator(CircuitBreakerClient.newDecorator(CircuitBreaker.ofDefaultName(),
+               CircuitBreakerRule.onServerErrorStatus()))
+             .build()
+             
+val backend = ArmeriaFutureBackend.usingClient(client)
+```
+
+```eval_rst
+.. note:: A WebClient could fail to follow redirects if the WebClient is created with a base URI and a redirect location is a different URI.
 ```
 
 This backend is build on top of [Armeria](https://armeria.dev/docs/client-http) and doesn't support host header override.

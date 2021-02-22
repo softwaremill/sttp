@@ -136,7 +136,7 @@ Host header override is supported in environments running Java 12 onwards, but i
 jdk.httpclient.allowRestrictedHeaders=host
 ```
 
-## Using Armeria backend
+## Using Armeria
 
 To use, add the following dependency to your project:
 
@@ -146,19 +146,19 @@ To use, add the following dependency to your project:
 
 add imports:
 
-```scala
+```scala mdoc:silent
 import sttp.client3.armeria.future.ArmeriaFutureBackend
 ```
 
 create client:
 
-```scala
+```scala mdoc:compile-only
 val backend = ArmeriaFutureBackend()
 ```
 
 or, if you'd like to instantiate the [WebClient](https://armeria.dev/docs/client-http) yourself::
 
-```scala
+```scala mdoc:compile-only
 import com.linecorp.armeria.client.circuitbreaker._
 import com.linecorp.armeria.client.WebClient
 
@@ -167,7 +167,6 @@ val client = WebClient.builder("https://my-service.com")
              // Open circuit on 5xx server error status
              .decorator(CircuitBreakerClient.newDecorator(CircuitBreaker.ofDefaultName(),
                CircuitBreakerRule.onServerErrorStatus()))
-             ...
              .build()
              
 val backend = ArmeriaFutureBackend.usingClient(client)

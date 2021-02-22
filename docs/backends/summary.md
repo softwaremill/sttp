@@ -8,7 +8,7 @@ Which one to choose?
 
 * for simple exploratory requests, use the [synchronous](synchronous.md) `HttpURLConnectionBackend`, or `HttpClientSyncBackend` if you are on Java11+.
 * if you have Akka in your stack, use the [Akka backend](akka.md)
-* otherwise, if you are using `Future`, use `AsyncHttpClientFutureBackend` [Future](future.md) backend, or `HttpClientFutureBackend` if you are on Java11+.
+* if you are using `Future` without Akka, use the `HttpClientFutureBackend` if you are on Java11+, or `AsyncHttpClientFutureBackend` [Future](future.md) otherwise
 * finally, if you are using a functional effect wrapper, use one of the "functional" backends, for [ZIO](zio.md), [Monix](monix.md), [Scalaz](scalaz.md), [cats-effect](catseffect.md) or [fs2](fs2.md). 
 
 Each backend has two type parameters:
@@ -31,12 +31,12 @@ Class                                Effect type                      Supported 
 ``AsyncHttpClientMonixBackend``      ``monix.eval.Task``              ``monix.reactive.Observable[ByteBuffer]``         yes (regular & streaming)  no
 ``AsyncHttpClientCatsBackend``       ``F[_]: cats.effect.Concurrent`` n/a                                               no                         no
 ``AsyncHttpClientFs2Backend``        ``F[_]: cats.effect.Concurrent`` ``fs2.Stream[F, Byte]``                           yes (regular & streaming)  no
-``ArmeiraFutureBackend``             ``scala.concurrent.Future``      n/a                                               no                         yes
-``ArmeiraScalazBackend``             ``scalaz.concurrent.Task``       n/a                                               no                         yes
-``ArmeiraZioBackend``                ``zio.Task``                     ``zio.stream.Stream[Throwable, Byte]``            no                         yes
-``ArmeiraMonixBackend``              ``monix.eval.Task``              ``monix.reactive.Observable[HttpData]``           no                         yes
-``ArmeiraCatsBackend``               ``F[_]: cats.effect.Concurrent`` n/a                                               no                         yes
-``ArmeiraFs2Backend``                ``F[_]: cats.effect.Concurrent`` ``fs2.Stream[F, Byte]``                           no                         yes
+``ArmeriaFutureBackend``             ``scala.concurrent.Future``      n/a                                               no                         yes
+``ArmeriaScalazBackend``             ``scalaz.concurrent.Task``       n/a                                               no                         yes
+``ArmeriaZioBackend``                ``zio.Task``                     ``zio.stream.Stream[Throwable, Byte]``            no                         yes
+``ArmeriaMonixBackend``              ``monix.eval.Task``              ``monix.reactive.Observable[HttpData]``           no                         yes
+``ArmeriaCatsBackend``               ``F[_]: cats.effect.Concurrent`` n/a                                               no                         yes
+``ArmeriaFs2Backend``                ``F[_]: cats.effect.Concurrent`` ``fs2.Stream[F, Byte]``                           no                         yes
 ``OkHttpSyncBackend``                None (``Identity``)              n/a                                               yes (regular)              no
 ``OkHttpFutureBackend``              ``scala.concurrent.Future``      n/a                                               yes (regular)              no
 ``OkHttpMonixBackend``               ``monix.eval.Task``              ``monix.reactive.Observable[ByteBuffer]``         yes (regular & streaming)  no

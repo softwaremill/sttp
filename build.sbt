@@ -822,6 +822,11 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     asyncHttpClientCatsBackend,
     asyncHttpClientFutureBackend,
     asyncHttpClientScalazBackend,
+    armeriaZioBackend,
+    armeriaMonixBackend,
+    armeriaFs2Backend,
+    armeriaCatsBackend,
+    armeriaScalazBackend,
     okhttpBackend,
     okhttpMonixBackend,
     httpClientBackend,
@@ -832,7 +837,6 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     openTracingBackend,
     prometheusBackend,
     slf4jBackend,
-    zioTelemetryOpenTracingBackend,
-    armeriaBackend
+    zioTelemetryOpenTracingBackend
   )
   .jvmPlatform(scalaVersions = List(scala2_13))

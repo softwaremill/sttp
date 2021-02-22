@@ -34,20 +34,13 @@ private final class ArmeriaCatsBackend[F[_]: Concurrent](client: WebClient, clos
 
 object ArmeriaCatsBackend {
 
-  /** Creates a new `SttpBackend`. */
-  def apply[F[_]: Concurrent](): SttpBackend[F, Any] =
-    apply(newClient(), closeFactory = false)
-
-  /** Creates a new `SttpBackend` with the specified `SttpBackendOptions`. */
-  def apply[F[_]: Concurrent](options: SttpBackendOptions): SttpBackend[F, Any] =
+  def apply[F[_]: Concurrent](options: SttpBackendOptions = SttpBackendOptions.Default): SttpBackend[F, Any] =
     apply(newClient(options), closeFactory = true)
 
-  /** Creates a new `SttpBackend` with the specified `SttpBackendOptions`. */
-  def resource[F[_]: Concurrent](options: SttpBackendOptions): Resource[F, SttpBackend[F, Any]] = {
+  def resource[F[_]: Concurrent](options: SttpBackendOptions = SttpBackendOptions.Default): Resource[F, SttpBackend[F, Any]] = {
     Resource.make(Sync[F].delay(apply(newClient(options), closeFactory = true)))(_.close())
   }
 
-  /** Creates a new `SttpBackend` with the specified `WebClient`. */
   def usingClient[F[_]: Concurrent](client: WebClient): SttpBackend[F, Any] =
     apply(client, closeFactory = false)
 

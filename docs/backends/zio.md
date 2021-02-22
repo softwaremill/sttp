@@ -79,7 +79,7 @@ val runtime: Runtime[Any] = ???
 val backend = AsyncHttpClientZioBackend.usingClient(runtime, asyncHttpClient)
 ```
 
-## Using Armeria backend
+## Using Armeria
 
 To use, add the following dependency to your project:
 
@@ -89,18 +89,17 @@ To use, add the following dependency to your project:
 
 add imports:
 
-```scala
+```scala mdoc:silent
 import sttp.client3.armeria.zio.ArmeriaZioBackend
 ```
 
 create client:
 
-```scala
+```scala mdoc:compile-only
 ArmeriaZioBackend().flatMap { backend => ??? }
 
 // or, if you'd like the backend to be wrapped in a Managed:
-val options = SttpBackendOptions(...)
-ArmeriaZioBackend.managed(options).use { backend => ??? }
+ArmeriaZioBackend.managed().use { backend => ??? }
 ```
 
 ```eval_rst
@@ -109,7 +108,7 @@ ArmeriaZioBackend.managed(options).use { backend => ??? }
 
 or, if you'd like to instantiate the [WebClient](https://armeria.dev/docs/client-http) yourself:
 
-```scala
+```scala mdoc:compile-only
 import com.linecorp.armeria.client.circuitbreaker._
 import com.linecorp.armeria.client.WebClient
 
@@ -118,7 +117,6 @@ val client = WebClient.builder("https://my-service.com")
              // Open circuit on 5xx server error status
              .decorator(CircuitBreakerClient.newDecorator(CircuitBreaker.ofDefaultName(),
                CircuitBreakerRule.onServerErrorStatus()))
-             ...
              .build()
 
 ArmeriaZioBackend.usingClient(client).flatMap { backend => ??? }

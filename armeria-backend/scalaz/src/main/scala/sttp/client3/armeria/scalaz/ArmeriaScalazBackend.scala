@@ -33,18 +33,10 @@ private final class ArmeriaScalazBackend(client: WebClient, closeFactory: Boolea
 }
 
 object ArmeriaScalazBackend {
-
-  /** Creates a new `SttpBackend`. */
-  def apply(): SttpBackend[Task, Any] =
-    apply(newClient(), closeFactory = false)
-
-  /** Creates a new `SttpBackend` with the specified `SttpBackendOptions`. */
-  def apply(options: SttpBackendOptions): SttpBackend[Task, Any] =
+  def apply(options: SttpBackendOptions = SttpBackendOptions.Default): SttpBackend[Task, Any] =
     apply(newClient(options), closeFactory = true)
 
-  /** Creates a new `SttpBackend` with the specified `WebClient`. */
-  def usingClient(client: WebClient): SttpBackend[Task, Any] =
-    apply(client, closeFactory = false)
+  def usingClient(client: WebClient): SttpBackend[Task, Any] = apply(client, closeFactory = false)
 
   private def apply(
       client: WebClient,

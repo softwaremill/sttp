@@ -40,33 +40,22 @@ private final class ArmeriaZioBackend(runtime: Runtime[Any], client: WebClient, 
 
 object ArmeriaZioBackend {
 
-  /** Creates a new `SttpBackend`. */
-  def apply(): Task[SttpBackend[Task, ZioStreams]] =
-    ZIO
-      .runtime[Any]
-      .map(runtime => apply(runtime, newClient(), closeFactory = false))
-
-  /** Creates a new `SttpBackend` with the specified `SttpBackendOptions`. */
-  def apply(options: SttpBackendOptions): Task[SttpBackend[Task, ZioStreams]] =
+  def apply(options: SttpBackendOptions = SttpBackendOptions.Default): Task[SttpBackend[Task, ZioStreams]] =
     ZIO
       .runtime[Any]
       .map(runtime => apply(runtime, newClient(options), closeFactory = true))
 
-  /** Creates a new managed `SttpBackend` with the specified `SttpBackendOptions`. */
-  def managed(options: SttpBackendOptions): TaskManaged[SttpBackend[Task, ZioStreams]] =
+  def managed(options: SttpBackendOptions = SttpBackendOptions.Default): TaskManaged[SttpBackend[Task, ZioStreams]] =
     ZManaged.make(apply(options))(_.close().ignore)
 
-  /** Creates a new managed `SttpBackend` with the specified `SttpBackendOptions`. */
-  def layered(options: SttpBackendOptions): Layer[Throwable, SttpClient] =
+  def layered(options: SttpBackendOptions = SttpBackendOptions.Default): Layer[Throwable, SttpClient] =
     ZLayer.fromManaged(managed(options))
 
-  /** Creates a new `SttpBackend` with the specified `WebClient`. */
   def usingClient(client: WebClient): Task[SttpBackend[Task, ZioStreams]] =
     ZIO
       .runtime[Any]
       .map(runtime => apply(runtime, client, closeFactory = false))
 
-  /** Creates a new `SttpBackend` with the specified `Runtime` and `WebClient`. */
   def usingClient[R](runtime: Runtime[R], client: WebClient): SttpBackend[Task, ZioStreams] =
     apply(runtime, client, closeFactory = false)
 
