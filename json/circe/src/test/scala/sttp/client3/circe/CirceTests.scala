@@ -10,6 +10,10 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class CirceTests extends AnyFlatSpec with Matchers with EitherValues {
+  // Needed for the implicit to work in Scala3. Normally this is imported explicitly, only in tests we are in the same package
+  import sttp.client3.circe.circeBodySerializer
+  import EitherDecoders._
+
   "The circe module" should "encode arbitrary bodies given an encoder" in {
     val body = Outer(Inner(42, true, "horses"), "cats")
     val expected = """{"foo":{"a":42,"b":true,"c":"horses"},"bar":"cats"}"""
