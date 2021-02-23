@@ -99,7 +99,7 @@ val catsEffectVersion: Option[(Long, Long)] => String = {
 }
 val fs2Version: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.1.0"
-  case _             => "2.5.2"
+  case _             => "2.5.3"
 }
 
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.2.3"
@@ -288,7 +288,7 @@ lazy val cats = (projectMatrix in file("effects/cats"))
   )
   .dependsOn(core % compileAndTest)
   .jvmPlatform(
-    scalaVersions = scala2,
+    scalaVersions = scala2 ++ scala3,
     settings = commonJvmSettings
   )
   .jsPlatform(
@@ -307,7 +307,7 @@ lazy val fs2 = (projectMatrix in file("effects/fs2"))
   )
   .dependsOn(core % compileAndTest, cats % compileAndTest)
   .jvmPlatform(
-    scalaVersions = scala2,
+    scalaVersions = scala2 ++ scala3,
     settings = commonJvmSettings
   )
   .jsPlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonJsSettings)
@@ -433,11 +433,11 @@ lazy val asyncHttpClientMonixBackend =
     .dependsOn(monix % compileAndTest)
 
 lazy val asyncHttpClientCatsBackend =
-  asyncHttpClientBackendProject("cats")
+  asyncHttpClientBackendProject("cats", includeDotty = true)
     .dependsOn(cats % compileAndTest)
 
 lazy val asyncHttpClientFs2Backend =
-  asyncHttpClientBackendProject("fs2")
+  asyncHttpClientBackendProject("fs2", includeDotty = true)
     .settings(
       libraryDependencies ++= dependenciesFor(scalaVersion.value)(
         "co.fs2" %% "fs2-reactive-streams" % fs2Version(_),
@@ -518,7 +518,7 @@ lazy val httpClientMonixBackend =
     .dependsOn(monix % compileAndTest)
 
 lazy val httpClientFs2Backend =
-  httpClientBackendProject("fs2")
+  httpClientBackendProject("fs2", includeDotty = true)
     .settings(
       libraryDependencies ++= dependenciesFor(scalaVersion.value)(
         "co.fs2" %% "fs2-reactive-streams" % fs2Version(_),
@@ -577,7 +577,7 @@ lazy val armeriaMonixBackend =
     .dependsOn(monix % compileAndTest)
 
 lazy val armeriaFs2Backend =
-  armeriaBackendProject("fs2")
+  armeriaBackendProject("fs2", includeDotty = true)
     .settings(
       libraryDependencies ++= dependenciesFor(scalaVersion.value)(
         "co.fs2" %% "fs2-reactive-streams" % fs2Version(_)
@@ -586,7 +586,7 @@ lazy val armeriaFs2Backend =
     .dependsOn(fs2 % compileAndTest)
 
 lazy val armeriaCatsBackend =
-  armeriaBackendProject("cats")
+  armeriaBackendProject("cats", includeDotty = true)
     .dependsOn(cats % compileAndTest)
 
 lazy val armeriaScalazBackend =

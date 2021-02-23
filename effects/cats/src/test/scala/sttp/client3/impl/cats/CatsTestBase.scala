@@ -13,9 +13,9 @@ import scala.concurrent.duration.DurationInt
 trait CatsTestBase {
   implicit def executionContext: ExecutionContext
 
-  implicit lazy val monad: MonadError[IO] = new CatsMonadAsyncError[IO]
+  implicit val monad: MonadError[IO] = new CatsMonadAsyncError[IO]
   implicit val contextShift: ContextShift[IO] = IO.contextShift(implicitly)
-  implicit lazy val timer: Timer[IO] = IO.timer(scala.concurrent.ExecutionContext.global)
+  implicit val timer: Timer[IO] = IO.timer(scala.concurrent.ExecutionContext.global)
   lazy val blocker: Blocker = Blocker.liftExecutionContext(implicitly)
 
   implicit val convertToFuture: ConvertToFuture[IO] = convertCatsIOToFuture
