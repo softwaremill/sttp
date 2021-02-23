@@ -39,7 +39,9 @@ private final class ArmeriaZioBackend(runtime: Runtime[Any], client: WebClient, 
 }
 
 object ArmeriaZioBackend {
-
+  /** Creates a new Armeria backend, using the given or default `SttpBackendOptions`. Due to these customisations,
+    * the client will manage its own connection pool. If you'd like to reuse the default Armeria `ClientFactory`,
+    * use `.usingDefaultClient`. */
   def apply(options: SttpBackendOptions = SttpBackendOptions.Default): Task[SttpBackend[Task, ZioStreams]] =
     ZIO
       .runtime[Any]
@@ -58,6 +60,11 @@ object ArmeriaZioBackend {
 
   def usingClient[R](runtime: Runtime[R], client: WebClient): SttpBackend[Task, ZioStreams] =
     apply(runtime, client, closeFactory = false)
+
+  def usingDefaultClient(): Task[SttpBackend[Task, ZioStreams]] =
+    ZIO
+      .runtime[Any]
+      .map(runtime => apply(runtime, newClient(), closeFactory = false))
 
   private def apply[R](runtime: Runtime[R], client: WebClient, closeFactory: Boolean): SttpBackend[Task, ZioStreams] =
     new FollowRedirectsBackend(new ArmeriaZioBackend(runtime, client, closeFactory))

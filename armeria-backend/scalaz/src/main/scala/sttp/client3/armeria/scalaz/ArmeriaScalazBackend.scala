@@ -33,10 +33,15 @@ private final class ArmeriaScalazBackend(client: WebClient, closeFactory: Boolea
 }
 
 object ArmeriaScalazBackend {
+  /** Creates a new Armeria backend, using the given or default `SttpBackendOptions`. Due to these customisations,
+    * the client will manage its own connection pool. If you'd like to reuse the default Armeria `ClientFactory`,
+    * use `.usingDefaultClient`. */
   def apply(options: SttpBackendOptions = SttpBackendOptions.Default): SttpBackend[Task, Any] =
     apply(newClient(options), closeFactory = true)
 
   def usingClient(client: WebClient): SttpBackend[Task, Any] = apply(client, closeFactory = false)
+
+  def usingDefaultClient(): SttpBackend[Task, Any] = apply(newClient(), closeFactory = false)
 
   private def apply(
       client: WebClient,

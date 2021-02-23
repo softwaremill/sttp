@@ -36,7 +36,11 @@ private final class ArmeriaMonixBackend(client: WebClient, closeFactory: Boolean
 
 object ArmeriaMonixBackend {
 
-  /** @param scheduler The scheduler used for streaming request bodies. Defaults to the global scheduler. */
+  /** Creates a new Armeria backend, using the given or default `SttpBackendOptions`. Due to these customisations,
+    * the client will manage its own connection pool. If you'd like to reuse the default Armeria `ClientFactory`,
+    * use `.usingDefaultClient`.
+    * @param scheduler The scheduler used for streaming request bodies. Defaults to the global scheduler.
+    */
   def apply(options: SttpBackendOptions = SttpBackendOptions.Default)(implicit
       scheduler: Scheduler = Scheduler.global
   ): SttpBackend[Task, MonixStreams] =
@@ -47,6 +51,12 @@ object ArmeriaMonixBackend {
       scheduler: Scheduler = Scheduler.global
   ): SttpBackend[Task, MonixStreams] =
     apply(client, closeFactory = false)
+
+  /** @param scheduler The scheduler used for streaming request bodies. Defaults to the global scheduler. */
+  def usingDefaultClient()(implicit
+      scheduler: Scheduler = Scheduler.global
+  ): SttpBackend[Task, MonixStreams] =
+    apply(newClient(), closeFactory = false)
 
   private def apply(client: WebClient, closeFactory: Boolean)(implicit
       scheduler: Scheduler
