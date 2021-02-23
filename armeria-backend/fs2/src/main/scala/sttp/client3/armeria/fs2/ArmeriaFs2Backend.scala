@@ -43,13 +43,16 @@ object ArmeriaFs2Backend {
 
   /** Creates a new Armeria backend, using the given or default `SttpBackendOptions`. Due to these customisations,
     * the client will manage its own connection pool. If you'd like to reuse the default Armeria `ClientFactory`,
-    * use `.usingDefaultClient`. */
+    * use `.usingDefaultClient`.
+    */
   def apply[F[_]: ConcurrentEffect](
       options: SttpBackendOptions = SttpBackendOptions.Default
   ): SttpBackend[F, Fs2Streams[F]] =
     apply(newClient(options), closeFactory = true)
 
-  def resource[F[_]: ConcurrentEffect](options: SttpBackendOptions = SttpBackendOptions.Default): Resource[F, SttpBackend[F, Fs2Streams[F]]] = {
+  def resource[F[_]: ConcurrentEffect](
+      options: SttpBackendOptions = SttpBackendOptions.Default
+  ): Resource[F, SttpBackend[F, Fs2Streams[F]]] = {
     Resource.make(Sync[F].delay(apply(newClient(options), closeFactory = true)))(_.close())
   }
 
