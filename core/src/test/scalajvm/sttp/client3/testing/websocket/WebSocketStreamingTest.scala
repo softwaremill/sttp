@@ -21,7 +21,7 @@ import scala.collection.JavaConverters._
 trait WebSocketStreamingTest[F[_], S] extends ToFutureWrapper { outer: Suite with AsyncFlatSpecLike with Matchers =>
   val streams: Streams[S]
   val backend: SttpBackend[F, S with WebSockets]
-  implicit val monad: MonadError[F]
+  implicit def monad: MonadError[F]
   implicit val convertToFuture: ConvertToFuture[F]
 
   def webSocketPipeTerminatedByServerTest(

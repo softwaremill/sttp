@@ -17,7 +17,7 @@ import sttp.ws.WebSocket
 
 trait WebSocketBufferOverflowTest[F[_]] { outer: Suite with AsyncFlatSpecLike with WebSocketTest[F] =>
   val backend: SttpBackend[F, WebSockets]
-  implicit val monad: MonadError[F]
+  implicit def monad: MonadError[F]
   implicit val convertToFuture: ConvertToFuture[F]
   def bufferCapacity: Int
 

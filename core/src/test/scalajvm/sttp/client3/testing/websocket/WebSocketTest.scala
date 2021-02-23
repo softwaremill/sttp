@@ -24,7 +24,7 @@ abstract class WebSocketTest[F[_]]
 
   val backend: SttpBackend[F, WebSockets]
   implicit val convertToFuture: ConvertToFuture[F]
-  implicit val monad: MonadError[F]
+  implicit def monad: MonadError[F]
 
   def throwsWhenNotAWebSocket: Boolean = false
 
