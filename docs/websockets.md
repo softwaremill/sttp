@@ -4,8 +4,6 @@ One of the optional capabilities (represented as `WebSockets`) that a backend ca
 
 A websocket request will be sent instead of a regular one if the response specification includes handling the response as a websocket. A number of `asWebSocket(...)` methods are available, giving a couple of variants of working with websockets.
 
-For those who plan to use a lot of websocket traffic, You should use consider websocket compression. As Of 2020-Feb-23, Only async-client-backend and okhttp backend support websocket compression. 
-
 ## Using `WebSocket`
 
 The first possibility is using `sttp.client3.ws.WebSocket[F]`, where `F` is the backend-specific effects wrapper, such as `Future` or `IO`. It contains two basic methods, both of which use the `F` effect to return results:
@@ -85,3 +83,7 @@ effect type      class name
 ``fs2.Stream``   ``sttp.client3.impl.fs2.Fs2WebSockets``
 ================ ==========================================
 ```
+
+## Compression
+
+For those who plan to use a lot of websocket traffic, you could consider websocket compression. Only [async-client-backend](https://github.com/AsyncHttpClient/async-http-client/issues/1394) and [OkHttp](https://github.com/square/okhttp/issues/1733) backends support this feature. To track Akka developments in this area, see [this issue](https://github.com/akka/akka-http/issues/659).  
