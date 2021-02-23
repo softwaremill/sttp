@@ -45,10 +45,12 @@ It can be imported to trust store with:
 `keytool -import -alias server_alias -file server.cer -keystore server_trust`
 
 Next, based on [one way SSL example](#one-way-ssl), add `TrustManagerFactory` to your code:
+
+
 ```scala
 ks.load(new FileInputStream("/path/to/server_trust"), "pass".toCharArray)
 
-val tmf: TrustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm) 
+val tmf: TrustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm)  
 tmf.init(ks)
 
 val ssl: SSLContext = SSLContext.getInstance("TLS")
@@ -97,6 +99,7 @@ For more information refer to [akka docs](https://doc.akka.io/docs/akka-http/cur
 Using `kmf: KeyManagerFactory` and `tmf: TrustManagerFactory` from [first section](#ssl-context) create a `AsyncHttpClientConfig`.
 
 Backends using `AsyncHttpClient` provides factory methods accepting custom config.
+
 
 ```scala
 import io.netty.handler.ssl.SslContextBuilder

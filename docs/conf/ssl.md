@@ -45,7 +45,17 @@ It can be imported to trust store with:
 `keytool -import -alias server_alias -file server.cer -keystore server_trust`
 
 Next, based on [one way SSL example](#one-way-ssl), add `TrustManagerFactory` to your code:
-```scala
+
+```scala mdoc:invisible
+import java.security.{KeyStore, SecureRandom}
+import javax.net.ssl._
+import java.io.FileInputStream
+def ks: KeyStore = ???
+def ssl: SSLContext = ???
+def kmf: KeyManagerFactory = ???
+```
+
+```scala mdoc:compile-only
 ks.load(new FileInputStream("/path/to/server_trust"), "pass".toCharArray)
 
 val tmf: TrustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm) 
@@ -59,7 +69,7 @@ ssl.init(kmf.getKeyManagers, tmf.getTrustManagers, new SecureRandom)
 
 Using `SSLContext` from [first section](#ssl-context) define a function to customize connection.
 
-```scala
+```scala mdoc:compile-only
 import sttp.client3._
 import java.net.HttpURLConnection
 import javax.net.ssl.HttpsURLConnection
@@ -79,7 +89,7 @@ It is also possible to set default `SSLContext` using `SSLContext.setDefault(ssl
 
 Using `SSLContext` from [first section](#ssl-context) create a `HttpsConnectionContext`.
 
-```scala
+```scala mdoc:compile-only
 import akka.actor.ActorSystem
 import akka.http.scaladsl.{ConnectionContext, HttpsConnectionContext}
 import sttp.client3.akkahttp._
@@ -98,7 +108,11 @@ Using `kmf: KeyManagerFactory` and `tmf: TrustManagerFactory` from [first sectio
 
 Backends using `AsyncHttpClient` provides factory methods accepting custom config.
 
-```scala
+```scala mdoc:invisible
+def tmf: TrustManagerFactory = ???
+```
+
+```scala mdoc:compile-only
 import io.netty.handler.ssl.SslContextBuilder
 import org.asynchttpclient.{AsyncHttpClientConfig, DefaultAsyncHttpClientConfig}
 import sttp.client3.asynchttpclient.future._
@@ -120,7 +134,7 @@ Using `SSLContext` from [first section](#ssl-context) create a `OkHttpClient`.
 Specifying `X509TrustManager` explicitly is required for OkHttp. 
 You can instantiate one your self, or extract one from `tmf: TrustManagerFactory` from [first section](#ssl-context).
 
-```scala
+```scala mdoc:compile-only
 import okhttp3.OkHttpClient
 import sttp.client3.okhttp.OkHttpFutureBackend
 import javax.net.ssl.X509TrustManager
