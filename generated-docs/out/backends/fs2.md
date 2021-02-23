@@ -7,7 +7,7 @@ The [fs2](https://github.com/functional-streams-for-scala/fs2) backend is **asyn
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "async-http-client-backend-fs2" % "3.1.4"
+"com.softwaremill.sttp.client3" %% "async-http-client-backend-fs2" % "3.1.5"
 ```
 
 And some imports:
@@ -76,7 +76,7 @@ val backend = AsyncHttpClientFs2Backend.usingClient[IO](asyncHttpClient, blocker
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "httpclient-backend-fs2" % "3.1.4"
+"com.softwaremill.sttp.client3" %% "httpclient-backend-fs2" % "3.1.5"
 ```
 
 And some imports:
@@ -126,7 +126,7 @@ jdk.httpclient.allowRestrictedHeaders=host
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "armeria-backend-fs2" % "3.1.4"
+"com.softwaremill.sttp.client3" %% "armeria-backend-fs2" % "3.1.5"
 ```
 
 add imports:
