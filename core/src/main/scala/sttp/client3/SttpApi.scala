@@ -1,14 +1,12 @@
 package sttp.client3
 
-import java.io.InputStream
-import java.nio.ByteBuffer
-
 import sttp.capabilities.{Effect, Streams, WebSockets}
-import sttp.client3.internal._
+import sttp.client3.internal.{SttpFile, _}
 import sttp.model._
-import sttp.client3.internal.SttpFile
 import sttp.ws.{WebSocket, WebSocketFrame}
 
+import java.io.InputStream
+import java.nio.ByteBuffer
 import scala.collection.immutable.Seq
 import scala.concurrent.duration._
 
@@ -201,11 +199,12 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
   def multipart(name: String, data: String): Part[BasicRequestBody] =
     Part(name, StringBody(data, Utf8), contentType = Some(MediaType.TextPlainUtf8))
 
-  /** Content type will be set to `text/plain` with `utf-8` encoding, can be
+  /** Content type will be set to `text/plain` with given encoding, can be
     * overridden later using the `contentType` method.
     */
-  def multipart(name: String, data: String, encoding: String): Part[BasicRequestBody] =
-    Part(name, StringBody(data, encoding), contentType = Some(MediaType.TextPlainUtf8))
+  def multipart(name: String, data: String, encoding: String): Part[BasicRequestBody] = {
+    Part(name, StringBody(data, encoding), contentType = Some(MediaType.TextPlain.charset(encoding)))
+  }
 
   /** Content type will be set to `application/octet-stream`, can be overridden
     * later using the `contentType` method.
