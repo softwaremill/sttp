@@ -36,11 +36,14 @@ object ArmeriaCatsBackend {
 
   /** Creates a new Armeria backend, using the given or default `SttpBackendOptions`. Due to these customisations,
     * the client will manage its own connection pool. If you'd like to reuse the default Armeria `ClientFactory`,
-    * use `.usingDefaultClient`. */
+    * use `.usingDefaultClient`.
+    */
   def apply[F[_]: Concurrent](options: SttpBackendOptions = SttpBackendOptions.Default): SttpBackend[F, Any] =
     apply(newClient(options), closeFactory = true)
 
-  def resource[F[_]: Concurrent](options: SttpBackendOptions = SttpBackendOptions.Default): Resource[F, SttpBackend[F, Any]] = {
+  def resource[F[_]: Concurrent](
+      options: SttpBackendOptions = SttpBackendOptions.Default
+  ): Resource[F, SttpBackend[F, Any]] = {
     Resource.make(Sync[F].delay(apply(newClient(options), closeFactory = true)))(_.close())
   }
 
