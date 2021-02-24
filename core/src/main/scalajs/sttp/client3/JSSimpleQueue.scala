@@ -3,6 +3,7 @@ package sttp.client3
 import org.scalajs.dom.window
 import sttp.client3.internal.ws.SimpleQueue
 import sttp.client3.ws.WebSocketTimeoutException
+import sttp.ws.WebSocketBufferFull
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.concurrent.duration.{FiniteDuration, _}
@@ -13,10 +14,9 @@ private[client3] class JSSimpleQueue[T](timeout: FiniteDuration = 1.second) exte
   private val queue = new ConcurrentLinkedQueue[T]()
 
   override def offer(t: T): Unit =
-    if (!queue.offer(t)) throw new RuntimeException("Ups")
+    if (!queue.offer(t)) throw WebSocketBufferFull(queue.size)
 
   override def poll: Future[T] = {
-    println("polling...")
     val p = Promise[T]()
     val tick = 10.millis
 
