@@ -1,4 +1,4 @@
-package client3.impl.monix
+package sttp.client3.impl.monix
 
 import monix.eval.Task
 import sttp.monad.{Canceler, MonadAsyncError}

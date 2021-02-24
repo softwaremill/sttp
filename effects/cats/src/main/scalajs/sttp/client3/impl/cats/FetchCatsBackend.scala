@@ -3,6 +3,7 @@ package sttp.client3.impl.cats
 import cats.effect.syntax.all._
 import cats.effect.{Async, Concurrent, ContextShift, Sync}
 import org.scalajs.dom.experimental.{BodyInit, Request => FetchRequest, Response => FetchResponse}
+import sttp.capabilities.WebSockets
 import sttp.client3.internal.NoStreams
 import sttp.client3.testing.SttpBackendStub
 import sttp.client3.{AbstractFetchBackend, ConvertFromFuture, FetchOptions, SttpBackend}
@@ -14,7 +15,7 @@ class FetchCatsBackend[F[_]: Concurrent: ContextShift] private (
     fetchOptions: FetchOptions,
     customizeRequest: FetchRequest => FetchRequest,
     convertFromFuture: ConvertFromFuture[F]
-) extends AbstractFetchBackend[F, Nothing, Any](fetchOptions, customizeRequest, convertFromFuture)(
+) extends AbstractFetchBackend[F, Nothing, WebSockets](fetchOptions, customizeRequest, convertFromFuture)(
       new CatsMonadAsyncError
     ) {
 
@@ -40,7 +41,7 @@ object FetchCatsBackend {
       fetchOptions: FetchOptions = FetchOptions.Default,
       customizeRequest: FetchRequest => FetchRequest = identity,
       convertFromFuture: ConvertFromFuture[F]
-  ): SttpBackend[F, Any] =
+  ): SttpBackend[F, WebSockets] =
     new FetchCatsBackend(fetchOptions, customizeRequest, convertFromFuture)
 
   /** Create a stub backend for testing, which uses the given [[F]] response wrapper.

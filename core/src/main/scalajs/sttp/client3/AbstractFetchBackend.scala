@@ -58,7 +58,7 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
     convertFromFuture: ConvertFromFuture[F]
 )(
     monad: MonadError[F]
-) extends SttpBackend[F, P with WebSockets] {
+) extends SttpBackend[F, P] {
   override implicit def responseMonad: MonadError[F] = monad
 
   val streams: Streams[S]

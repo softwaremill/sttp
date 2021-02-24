@@ -1,8 +1,9 @@
-package client3.impl.monix
+package sttp.client3.impl.monix
 
 import monix.eval.Task
 import monix.reactive.Observable
 import org.scalajs.dom.experimental.{BodyInit, Request => FetchRequest, Response => FetchResponse}
+import sttp.capabilities.WebSockets
 import sttp.capabilities.monix.MonixStreams
 import sttp.client3.testing.SttpBackendStub
 import sttp.client3.{AbstractFetchBackend, ConvertFromFuture, FetchOptions, SttpBackend}
@@ -22,7 +23,7 @@ import scala.scalajs.js.typedarray.{Int8Array, _}
   * @see https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream
   */
 class FetchMonixBackend private (fetchOptions: FetchOptions, customizeRequest: FetchRequest => FetchRequest)
-    extends AbstractFetchBackend[Task, MonixStreams, MonixStreams](
+    extends AbstractFetchBackend[Task, MonixStreams, MonixStreams with WebSockets](
       fetchOptions,
       customizeRequest,
       FetchMonixBackend.convertFromFuture
@@ -74,7 +75,7 @@ object FetchMonixBackend {
   def apply(
       fetchOptions: FetchOptions = FetchOptions.Default,
       customizeRequest: FetchRequest => FetchRequest = identity
-  ): SttpBackend[Task, MonixStreams] =
+  ): SttpBackend[Task, MonixStreams with WebSockets] =
     new FetchMonixBackend(fetchOptions, customizeRequest)
 
   private lazy val convertFromFuture = new ConvertFromFuture[Task] {
