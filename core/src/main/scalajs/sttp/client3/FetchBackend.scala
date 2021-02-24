@@ -12,7 +12,9 @@ import scala.scalajs.js.Promise
 
 class FetchBackend private (fetchOptions: FetchOptions, customizeRequest: FetchRequest => FetchRequest)(implicit
     ec: ExecutionContext
-) extends AbstractFetchBackend[Future, Nothing, WebSockets](fetchOptions, customizeRequest)(new FutureMonad()) {
+) extends AbstractFetchBackend[Future, Nothing, WebSockets](fetchOptions, customizeRequest, ConvertFromFuture.future)(
+      new FutureMonad()
+    ) {
 
   override val streams: NoStreams = NoStreams
 
@@ -33,10 +35,6 @@ class FetchBackend private (fetchOptions: FetchOptions, customizeRequest: FetchR
   }
 
   override protected def transformPromise[T](promise: => Promise[T]): Future[T] = promise.toFuture
-
-  override def fromFuture: FromFuture[Future] = new FromFuture[Future] {
-    override def apply[T](f: Future[T]): Future[T] = f
-  }
 }
 
 object FetchBackend {

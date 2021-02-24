@@ -15,13 +15,13 @@ import org.scalajs.dom.experimental.{
   Request => FetchRequest,
   Response => FetchResponse
 }
-import org.scalajs.dom.raw.{Blob, BlobPropertyBag, CloseEvent, Event, MessageEvent}
+import org.scalajs.dom.raw._
 import org.scalajs.dom.{FormData, WebSocket => JSWebSocket}
 import sttp.capabilities.{Effect, Streams, WebSockets}
 import sttp.client3.dom.experimental.{FilePropertyBag, File => DomFile}
 import sttp.client3.internal.ws.WebSocketEvent
 import sttp.client3.internal.{SttpFile, _}
-import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
+import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException, WebSocketErrorException}
 import sttp.model._
 import sttp.monad.MonadError
 import sttp.monad.syntax._
@@ -54,7 +54,8 @@ final case class FetchOptions(
   */
 abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
     options: FetchOptions,
-    customizeRequest: FetchRequest => FetchRequest
+    customizeRequest: FetchRequest => FetchRequest,
+    convertFromFuture: ConvertFromFuture[F]
 )(
     monad: MonadError[F]
 ) extends SttpBackend[F, P with WebSockets] {
@@ -251,17 +252,15 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
 
     ws.onopen = (_: Event) => queue.offer(WebSocketEvent.Open())
     ws.onmessage = (event: MessageEvent) => queue.offer(toWebSocketEvent(event))
-    ws.onerror = (_: Event) => queue.offer(WebSocketEvent.Error(new RuntimeException))
+    ws.onerror = (_: Event) => queue.offer(WebSocketEvent.Error(new WebSocketErrorException))
     ws.onclose = (event: CloseEvent) => queue.offer(toWebSocketEvent(event))
 
-    val webSocket = WebSocketImpl.newJSCoupledWebSocket(ws, queue, webSocketTimeout)(fromFuture, monad)
+    val webSocket = WebSocketImpl.newJSCoupledWebSocket(ws, queue, webSocketTimeout, convertFromFuture)
 
     bodyFromResponseAs
       .apply(request.response, ResponseMetadata(StatusCode.Ok, "", request.headers), Right(webSocket))
       .map(Response.ok)
   }
-
-  def fromFuture: FromFuture[F]
 
   def webSocketTimeout: FiniteDuration = 1.second
 

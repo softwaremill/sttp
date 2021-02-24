@@ -1,5 +1,6 @@
 package sttp.client3.impl.monix
 
+import client3.impl.monix.{FetchMonixBackend, convertMonixTaskToFuture}
 import monix.eval.Task
 import sttp.client3.SttpBackend
 import sttp.client3.testing.{AbstractFetchHttpTest, ConvertToFuture}

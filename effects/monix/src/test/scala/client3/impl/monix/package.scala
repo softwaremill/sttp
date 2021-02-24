@@ -1,4 +1,4 @@
-package sttp.client3.impl
+package client3.impl
 
 import scala.concurrent.Future
 

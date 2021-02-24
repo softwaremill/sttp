@@ -1,21 +1,20 @@
 package sttp.client3.impl.cats
 
-import cats.effect.{Async, Concurrent, ContextShift, Sync}
 import cats.effect.syntax.all._
-
-import org.scalajs.dom.experimental.{BodyInit, Response => FetchResponse}
-import sttp.client3.{AbstractFetchBackend, FetchOptions, SttpBackend}
+import cats.effect.{Async, Concurrent, ContextShift, Sync}
+import org.scalajs.dom.experimental.{BodyInit, Request => FetchRequest, Response => FetchResponse}
+import sttp.client3.internal.NoStreams
+import sttp.client3.testing.SttpBackendStub
+import sttp.client3.{AbstractFetchBackend, ConvertFromFuture, FetchOptions, SttpBackend}
 
 import scala.scalajs.js
 import scala.scalajs.js.Promise
-import org.scalajs.dom.experimental.{Request => FetchRequest}
-import sttp.client3.testing.SttpBackendStub
-import sttp.client3.internal.NoStreams
 
 class FetchCatsBackend[F[_]: Concurrent: ContextShift] private (
     fetchOptions: FetchOptions,
-    customizeRequest: FetchRequest => FetchRequest
-) extends AbstractFetchBackend[F, Nothing, Any](fetchOptions, customizeRequest)(
+    customizeRequest: FetchRequest => FetchRequest,
+    convertFromFuture: ConvertFromFuture[F]
+) extends AbstractFetchBackend[F, Nothing, Any](fetchOptions, customizeRequest, convertFromFuture)(
       new CatsMonadAsyncError
     ) {
 
@@ -39,9 +38,10 @@ class FetchCatsBackend[F[_]: Concurrent: ContextShift] private (
 object FetchCatsBackend {
   def apply[F[_]: Concurrent: ContextShift](
       fetchOptions: FetchOptions = FetchOptions.Default,
-      customizeRequest: FetchRequest => FetchRequest = identity
+      customizeRequest: FetchRequest => FetchRequest = identity,
+      convertFromFuture: ConvertFromFuture[F]
   ): SttpBackend[F, Any] =
-    new FetchCatsBackend(fetchOptions, customizeRequest)
+    new FetchCatsBackend(fetchOptions, customizeRequest, convertFromFuture)
 
   /** Create a stub backend for testing, which uses the given [[F]] response wrapper.
     *

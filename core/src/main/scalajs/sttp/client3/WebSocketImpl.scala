@@ -14,15 +14,15 @@ import scala.concurrent.{Future, Promise}
 import scala.scalajs.js.typedarray.{ArrayBuffer, DataView}
 import scala.util.{Failure, Success, Try}
 
-private[client3] class WebSocketImpl[F[_]](
+private[client3] class WebSocketImpl[F[_]] private (
     ws: JSWebSocket,
     queue: JSSimpleQueue[WebSocketEvent],
     timeout: FiniteDuration,
-    fromFuture: FromFuture[F],
+    convertFromFuture: ConvertFromFuture[F],
     implicit val monad: MonadError[F]
 ) extends WebSocket[F] {
 
-  override def receive(): F[WebSocketFrame] = fromFuture.apply {
+  override def receive(): F[WebSocketFrame] = fromFuture {
 
     def _receive(e: WebSocketEvent): Future[WebSocketFrame] = e match {
       case WebSocketEvent.Open() => queue.poll.flatMap(_receive)
@@ -36,15 +36,10 @@ private[client3] class WebSocketImpl[F[_]](
       case WebSocketEvent.Frame(f: WebSocketFrame) => Future.successful[WebSocketFrame](f)
     }
 
-    val x = queue.poll.flatMap(_receive)
-
-    x.flatMap(f => {
-      println(s"polled f... $f")
-      Future.successful(f)
-    })
+    queue.poll.flatMap(_receive)
   }
 
-  override def send(f: WebSocketFrame, isContinuation: Boolean): F[Unit] = fromFuture.apply {
+  override def send(f: WebSocketFrame, isContinuation: Boolean): F[Unit] = fromFuture {
     val p = Promise[Unit]()
     val tick = 10.millis
 
@@ -65,40 +60,37 @@ private[client3] class WebSocketImpl[F[_]](
   private def send(f: WebSocketFrame): Try[Unit] =
     Try {
       f match {
-        case WebSocketFrame.Text(payload, _, _) =>
-          println("sending text...")
-          ws.send(payload)
-          println("send text...")
+        case WebSocketFrame.Text(payload, _, _) => ws.send(payload)
         case WebSocketFrame.Binary(payload, _, _) =>
           val ab: ArrayBuffer = new ArrayBuffer(payload.length)
           val dv = new DataView(ab)
           (0 to payload.length) foreach { i => dv.setInt8(i, payload(i)) }
-          println("sending bytes...")
           ws.send(ab)
-          println("send bytes...")
-        case WebSocketFrame.Close(statusCode, reasonText) =>
-          println("sending close...")
-          ws.close(statusCode, reasonText)
-          println("closed...")
-        case _: WebSocketFrame.Ping => throw new UnsupportedOperationException("Ping is not supported in browsers")
-        case _: WebSocketFrame.Pong => throw new UnsupportedOperationException("Pong is not supported in browsers")
+        case WebSocketFrame.Close(statusCode, reasonText) => ws.close(statusCode, reasonText)
+        case _: WebSocketFrame.Ping                       => throw new UnsupportedOperationException("Ping is not supported in browsers")
+        case _: WebSocketFrame.Pong                       => throw new UnsupportedOperationException("Pong is not supported in browsers")
       }
     }
 
   override def isOpen(): F[Boolean] = monad.eval(isInOpenState)
 
+  override lazy val upgradeHeaders: Headers = Headers(Nil)
+
   private def isInOpenState = ws.readyState == OpenState
 
-  override lazy val upgradeHeaders: Headers = Headers(Nil)
+  private def fromFuture[T](f: Future[T]): F[T] = convertFromFuture.fromFuture(f)
 }
 
 object WebSocketImpl {
-  def newJSCoupledWebSocket[F[_]](ws: JSWebSocket, queue: JSSimpleQueue[WebSocketEvent], timeout: FiniteDuration)(
-      implicit
-      fromFuture: FromFuture[F],
+  def newJSCoupledWebSocket[F[_]](
+      ws: JSWebSocket,
+      queue: JSSimpleQueue[WebSocketEvent],
+      timeout: FiniteDuration,
+      convertFromFuture: ConvertFromFuture[F]
+  )(implicit
       monad: MonadError[F]
   ): sttp.ws.WebSocket[F] =
-    new WebSocketImpl[F](ws, queue, timeout, fromFuture, monad)
+    new WebSocketImpl[F](ws, queue, timeout, convertFromFuture, monad)
 
   val OpenState = 1
   val BinaryType = "arraybuffer"

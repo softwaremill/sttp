@@ -1,16 +1,16 @@
-package sttp.client3.impl.monix
+package client3.impl.monix
 
 import monix.eval.Task
 import monix.reactive.Observable
-import org.scalajs.dom.experimental.{BodyInit, Response => FetchResponse}
-import sttp.client3.{AbstractFetchBackend, FetchOptions, SttpBackend}
+import org.scalajs.dom.experimental.{BodyInit, Request => FetchRequest, Response => FetchResponse}
+import sttp.capabilities.monix.MonixStreams
+import sttp.client3.testing.SttpBackendStub
+import sttp.client3.{AbstractFetchBackend, ConvertFromFuture, FetchOptions, SttpBackend}
 
+import scala.concurrent.Future
 import scala.scalajs.js
 import scala.scalajs.js.Promise
 import scala.scalajs.js.typedarray.{Int8Array, _}
-import org.scalajs.dom.experimental.{Request => FetchRequest}
-import sttp.client3.testing.SttpBackendStub
-import sttp.capabilities.monix.MonixStreams
 
 /** Uses the `ReadableStream` interface from the Streams API.
   *
@@ -22,7 +22,11 @@ import sttp.capabilities.monix.MonixStreams
   * @see https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream
   */
 class FetchMonixBackend private (fetchOptions: FetchOptions, customizeRequest: FetchRequest => FetchRequest)
-    extends AbstractFetchBackend[Task, MonixStreams, MonixStreams](fetchOptions, customizeRequest)(
+    extends AbstractFetchBackend[Task, MonixStreams, MonixStreams](
+      fetchOptions,
+      customizeRequest,
+      FetchMonixBackend.convertFromFuture
+    )(
       TaskMonadAsyncError
     ) {
 
@@ -72,6 +76,10 @@ object FetchMonixBackend {
       customizeRequest: FetchRequest => FetchRequest = identity
   ): SttpBackend[Task, MonixStreams] =
     new FetchMonixBackend(fetchOptions, customizeRequest)
+
+  private lazy val convertFromFuture = new ConvertFromFuture[Task] {
+    override def fromFuture[T](f: Future[T]): Task[T] = Task.fromFuture(f)
+  }
 
   /** Create a stub backend for testing, which uses the [[Task]] response wrapper, and supports `Observable[ByteBuffer]`
     * streaming.
