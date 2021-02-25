@@ -8,13 +8,10 @@ import sttp.monad.FutureMonad
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.scalajs.js
-import scala.scalajs.js.Promise
 
 class FetchBackend private (fetchOptions: FetchOptions, customizeRequest: FetchRequest => FetchRequest)(implicit
     ec: ExecutionContext
-) extends AbstractFetchBackend[Future, Nothing, WebSockets](fetchOptions, customizeRequest, new FutureMonad())(
-      ConvertFromFuture.future
-    ) {
+) extends AbstractFetchBackend[Future, Nothing, WebSockets](fetchOptions, customizeRequest, new FutureMonad()) {
 
   override val streams: NoStreams = NoStreams
 
@@ -34,7 +31,7 @@ class FetchBackend private (fetchOptions: FetchOptions, customizeRequest: FetchR
     throw new IllegalStateException("Future FetchBackend does not support streaming responses")
   }
 
-  override protected def transformPromise[T](promise: => Promise[T]): Future[T] = promise.toFuture
+  override def fromFuture: ConvertFromFuture[Future] = ConvertFromFuture.future
 }
 
 object FetchBackend {

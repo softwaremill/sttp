@@ -8,16 +8,13 @@ import sttp.client3.internal.NoStreams
 import sttp.client3.testing.SttpBackendStub
 import sttp.client3.{AbstractFetchBackend, ConvertFromFuture, FetchOptions, SttpBackend}
 
+import scala.concurrent.Future
 import scala.scalajs.js
-import scala.scalajs.js.Promise
 
 class FetchCatsBackend[F[_]: Concurrent: ContextShift] private (
     fetchOptions: FetchOptions,
-    customizeRequest: FetchRequest => FetchRequest,
-    convertFromFuture: ConvertFromFuture[F]
-) extends AbstractFetchBackend[F, Nothing, WebSockets](fetchOptions, customizeRequest, new CatsMonadAsyncError)(
-      convertFromFuture
-    ) {
+    customizeRequest: FetchRequest => FetchRequest
+) extends AbstractFetchBackend[F, Nothing, WebSockets](fetchOptions, customizeRequest, new CatsMonadAsyncError) {
 
   override val streams: NoStreams = NoStreams
 
@@ -32,17 +29,17 @@ class FetchCatsBackend[F[_]: Concurrent: ContextShift] private (
     throw new IllegalStateException("Future FetchBackend does not support streaming responses")
   }
 
-  override protected def transformPromise[T](promise: => Promise[T]): F[T] =
-    Async.fromFuture(Sync[F].delay(promise.toFuture))
+  override def fromFuture: ConvertFromFuture[F] = new ConvertFromFuture[F] {
+    override def apply[T](f: Future[T]): F[T] = Async.fromFuture(Sync[F].delay(f))
+  }
 }
 
 object FetchCatsBackend {
   def apply[F[_]: Concurrent: ContextShift](
       fetchOptions: FetchOptions = FetchOptions.Default,
-      customizeRequest: FetchRequest => FetchRequest = identity,
-      convertFromFuture: ConvertFromFuture[F]
+      customizeRequest: FetchRequest => FetchRequest = identity
   ): SttpBackend[F, WebSockets] =
-    new FetchCatsBackend(fetchOptions, customizeRequest, convertFromFuture)
+    new FetchCatsBackend(fetchOptions, customizeRequest)
 
   /** Create a stub backend for testing, which uses the given [[F]] response wrapper.
     *

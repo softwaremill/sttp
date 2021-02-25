@@ -8,8 +8,9 @@ import sttp.ws.WebSocketBufferFull
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.concurrent.duration.{FiniteDuration, _}
 
-private[client3] class JSSimpleQueue[F[_], T](timeout: FiniteDuration = 1.second)(implicit c: ConvertFromFuture[F])
-    extends SimpleQueue[F, T] {
+private[client3] class JSSimpleQueue[F[_], T](timeout: FiniteDuration = 1.second)(implicit
+    fromFuture: ConvertFromFuture[F]
+) extends SimpleQueue[F, T] {
 
   private val queue = new ConcurrentLinkedQueue[T]()
 
@@ -17,7 +18,7 @@ private[client3] class JSSimpleQueue[F[_], T](timeout: FiniteDuration = 1.second
     if (!queue.offer(t)) throw WebSocketBufferFull(queue.size)
 
   override def poll: F[T] =
-    c.fromFuture {
+    fromFuture {
       JSTimeout[T] {
         val t = queue.poll()
         Either.cond(t != null, t, new WebSocketTimeoutException)

@@ -11,6 +11,7 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 class FetchBackendWebSocketTest extends WebSocketTest[Future] {
 
   implicit override def executionContext: ExecutionContext = queue
+  override def throwsWhenNotAWebSocket: Boolean = true
 
   override val backend: SttpBackend[Future, capabilities.WebSockets] = FetchBackend()
   override implicit val convertToFuture: ConvertToFuture[Future] = ConvertToFuture.future

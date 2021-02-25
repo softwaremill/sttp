@@ -10,7 +10,7 @@ import scala.scalajs.concurrent.JSExecutionContext.queue
 
 class FetchCatsWebSocketTest extends WebSocketTest[IO] with CatsTestBase {
   implicit override def executionContext: ExecutionContext = queue
+  override def throwsWhenNotAWebSocket: Boolean = true
 
-  override val backend: SttpBackend[IO, capabilities.WebSockets] =
-    FetchCatsBackend(convertFromFuture = convertFromFuture)
+  override val backend: SttpBackend[IO, capabilities.WebSockets] = FetchCatsBackend()
 }

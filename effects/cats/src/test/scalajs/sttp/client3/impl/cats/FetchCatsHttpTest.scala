@@ -10,7 +10,7 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 class FetchCatsHttpTest extends AbstractFetchHttpTest[IO, Any] with CatsTestBase {
   implicit override def executionContext: ExecutionContext = queue
 
-  override val backend: SttpBackend[IO, Any] = FetchCatsBackend(convertFromFuture = convertFromFuture)
+  override val backend: SttpBackend[IO, Any] = FetchCatsBackend()
 
   override protected def supportsCustomMultipartContentType = false
 

@@ -5,13 +5,11 @@ import monix.reactive.Observable
 import org.scalajs.dom.experimental.{BodyInit, Request => FetchRequest, Response => FetchResponse}
 import sttp.capabilities.WebSockets
 import sttp.capabilities.monix.MonixStreams
-import sttp.client3.impl.monix.FetchMonixBackend.convertFromFuture
 import sttp.client3.testing.SttpBackendStub
 import sttp.client3.{AbstractFetchBackend, ConvertFromFuture, FetchOptions, SttpBackend}
 
 import scala.concurrent.Future
 import scala.scalajs.js
-import scala.scalajs.js.Promise
 import scala.scalajs.js.typedarray.{Int8Array, _}
 
 /** Uses the `ReadableStream` interface from the Streams API.
@@ -28,7 +26,7 @@ class FetchMonixBackend private (fetchOptions: FetchOptions, customizeRequest: F
       fetchOptions,
       customizeRequest,
       TaskMonadAsyncError
-    )(convertFromFuture) {
+    ) {
 
   override val streams: MonixStreams = MonixStreams
 
@@ -51,7 +49,7 @@ class FetchMonixBackend private (fetchOptions: FetchOptions, customizeRequest: F
       .delay {
         lazy val reader = response.body.getReader()
 
-        def read() = transformPromise(reader.read())
+        def read() = fromFuture(reader.read().toFuture)
 
         def go(): Observable[Array[Byte]] = {
           Observable.fromTask(read()).flatMap { chunk =>
@@ -67,7 +65,9 @@ class FetchMonixBackend private (fetchOptions: FetchOptions, customizeRequest: F
       }
   }
 
-  override protected def transformPromise[T](promise: => Promise[T]): Task[T] = Task.fromFuture(promise.toFuture)
+  override def fromFuture: ConvertFromFuture[Task] = new ConvertFromFuture[Task] {
+    override def apply[T](f: Future[T]): Task[T] = Task.fromFuture(f)
+  }
 }
 
 object FetchMonixBackend {
@@ -76,10 +76,6 @@ object FetchMonixBackend {
       customizeRequest: FetchRequest => FetchRequest = identity
   ): SttpBackend[Task, MonixStreams with WebSockets] =
     new FetchMonixBackend(fetchOptions, customizeRequest)
-
-  private lazy val convertFromFuture = new ConvertFromFuture[Task] {
-    override def fromFuture[T](f: Future[T]): Task[T] = Task.fromFuture(f)
-  }
 
   /** Create a stub backend for testing, which uses the [[Task]] response wrapper, and supports `Observable[ByteBuffer]`
     * streaming.
