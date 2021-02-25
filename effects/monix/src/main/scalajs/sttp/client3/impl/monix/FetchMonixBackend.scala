@@ -65,7 +65,7 @@ class FetchMonixBackend private (fetchOptions: FetchOptions, customizeRequest: F
       }
   }
 
-  override def fromFuture: ConvertFromFuture[Task] = new ConvertFromFuture[Task] {
+  override implicit def fromFuture: ConvertFromFuture[Task] = new ConvertFromFuture[Task] {
     override def apply[T](f: Future[T]): Task[T] = Task.fromFuture(f)
   }
 }

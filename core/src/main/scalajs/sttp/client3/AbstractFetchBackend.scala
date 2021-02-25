@@ -41,7 +41,6 @@ import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
 import scala.scalajs.js.timers._
 import scala.scalajs.js.typedarray._
-import scala.scalajs.js.{Promise => JSPromise}
 
 object FetchOptions {
   val Default = FetchOptions(
@@ -63,8 +62,7 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
     options: FetchOptions,
     customizeRequest: FetchRequest => FetchRequest,
     monad: MonadError[F]
-)(implicit convertFromFuture: ConvertFromFuture[F])
-    extends SttpBackend[F, P] {
+) extends SttpBackend[F, P] {
   override implicit def responseMonad: MonadError[F] = monad
 
   val streams: Streams[S]
@@ -132,7 +130,7 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
     }
 
     val result = req
-      .flatMap { r => transformPromise(Fetch.fetch(customizeRequest(r))) }
+      .flatMap { r => fromFuture(Fetch.fetch(customizeRequest(r)).toFuture) }
       .flatMap { resp =>
         if (resp.`type` == ResponseType.opaqueredirect) {
           responseMonad.error[FetchResponse](new RuntimeException("Unexpected redirect"))
@@ -267,7 +265,7 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
       Either.cond(ws.readyState == OpenState, (), new ReadException(request, new WebSocketTimeoutException))
     }(webSocketTimeout)
 
-    convertFromFuture.fromFuture(isOpen).flatMap { _ =>
+    fromFuture(isOpen).flatMap { _ =>
       bodyFromResponseAs
         .apply(request.response, ResponseMetadata(StatusCode.Ok, "", request.headers), Right(webSocket))
         .map(Response.ok)
@@ -306,13 +304,13 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
     }
 
     override protected def regularIgnore(response: FetchResponse): F[Unit] =
-      transformPromise(response.arrayBuffer()).map(_ => ())
+      fromFuture(response.arrayBuffer().toFuture).map(_ => ())
 
     override protected def regularAsByteArray(response: FetchResponse): F[Array[Byte]] =
-      transformPromise(response.arrayBuffer()).map { ab => new Int8Array(ab).toArray }
+      fromFuture(response.arrayBuffer().toFuture).map { ab => new Int8Array(ab).toArray }
 
     override protected def regularAsFile(response: FetchResponse, file: SttpFile): F[SttpFile] =
-      transformPromise(response.arrayBuffer())
+      fromFuture(response.arrayBuffer().toFuture)
         .map { ab =>
           SttpFile.fromDomFile(
             new DomFile(
@@ -350,5 +348,5 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
 
   override def close(): F[Unit] = monad.unit(())
 
-  protected def transformPromise[T](promise: => JSPromise[T]): F[T]
+  implicit def fromFuture: ConvertFromFuture[F]
 }
