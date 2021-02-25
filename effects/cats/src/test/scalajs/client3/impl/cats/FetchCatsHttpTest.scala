@@ -10,5 +10,7 @@ class FetchCatsHttpTest extends AbstractFetchHttpTest[IO, Any] with CatsTestBase
 
   override protected def supportsCustomMultipartContentType = false
 
+  override protected def supportsCustomMultipartEncoding = false
+
   override def timeoutToNone[T](t: IO[T], timeoutMillis: Int): IO[Option[T]] = super[CatsTestBase].timeoutToNone(t, timeoutMillis)
 }
