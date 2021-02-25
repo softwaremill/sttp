@@ -18,10 +18,17 @@ import org.scalajs.dom.experimental.{
 import org.scalajs.dom.raw._
 import org.scalajs.dom.{FormData, WebSocket => JSWebSocket}
 import sttp.capabilities.{Effect, Streams, WebSockets}
+import sttp.client3.SttpClientException.ReadException
+import sttp.client3.WebSocketImpl.{BinaryType, OpenState}
 import sttp.client3.dom.experimental.{FilePropertyBag, File => DomFile}
 import sttp.client3.internal.ws.WebSocketEvent
 import sttp.client3.internal.{SttpFile, _}
-import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException, WebSocketErrorException}
+import sttp.client3.ws.{
+  GotAWebSocketException,
+  NotAWebSocketException,
+  WebSocketErrorException,
+  WebSocketTimeoutException
+}
 import sttp.model._
 import sttp.monad.MonadError
 import sttp.monad.syntax._
@@ -32,9 +39,9 @@ import scala.collection.immutable.Seq
 import scala.concurrent.duration.{FiniteDuration, _}
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
-import scala.scalajs.js.Promise
 import scala.scalajs.js.timers._
 import scala.scalajs.js.typedarray._
+import scala.scalajs.js.{Promise => JSPromise}
 
 object FetchOptions {
   val Default = FetchOptions(
@@ -55,10 +62,9 @@ final case class FetchOptions(
 abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
     options: FetchOptions,
     customizeRequest: FetchRequest => FetchRequest,
-    convertFromFuture: ConvertFromFuture[F]
-)(
     monad: MonadError[F]
-) extends SttpBackend[F, P] {
+)(implicit convertFromFuture: ConvertFromFuture[F])
+    extends SttpBackend[F, P] {
   override implicit def responseMonad: MonadError[F] = monad
 
   val streams: Streams[S]
@@ -246,20 +252,26 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
   }
 
   private def sendWebSocket[T, R >: PE](request: Request[T, R]): F[Response[T]] = {
-    val queue = new JSSimpleQueue[WebSocketEvent](webSocketTimeout)
+    val queue = new JSSimpleQueue[F, WebSocketEvent](webSocketTimeout)
     val ws = new JSWebSocket(request.uri.toString)
-    ws.binaryType = WebSocketImpl.BinaryType
+    ws.binaryType = BinaryType
 
     ws.onopen = (_: Event) => queue.offer(WebSocketEvent.Open())
     ws.onmessage = (event: MessageEvent) => queue.offer(toWebSocketEvent(event))
     ws.onerror = (_: Event) => queue.offer(WebSocketEvent.Error(new WebSocketErrorException))
     ws.onclose = (event: CloseEvent) => queue.offer(toWebSocketEvent(event))
 
-    val webSocket = WebSocketImpl.newJSCoupledWebSocket(ws, queue, webSocketTimeout, convertFromFuture)
+    val webSocket = WebSocketImpl.newJSCoupledWebSocket(ws, queue)
 
-    bodyFromResponseAs
-      .apply(request.response, ResponseMetadata(StatusCode.Ok, "", request.headers), Right(webSocket))
-      .map(Response.ok)
+    val isOpen = JSTimeout[Unit] {
+      Either.cond(ws.readyState == OpenState, (), new ReadException(request, new WebSocketTimeoutException))
+    }(webSocketTimeout)
+
+    convertFromFuture.fromFuture(isOpen).flatMap { _ =>
+      bodyFromResponseAs
+        .apply(request.response, ResponseMetadata(StatusCode.Ok, "", request.headers), Right(webSocket))
+        .map(Response.ok)
+    }
   }
 
   def webSocketTimeout: FiniteDuration = 1.second
@@ -338,5 +350,5 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
 
   override def close(): F[Unit] = monad.unit(())
 
-  protected def transformPromise[T](promise: => Promise[T]): F[T]
+  protected def transformPromise[T](promise: => JSPromise[T]): F[T]
 }

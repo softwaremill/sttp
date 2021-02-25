@@ -12,8 +12,8 @@ import scala.scalajs.js.Promise
 
 class FetchBackend private (fetchOptions: FetchOptions, customizeRequest: FetchRequest => FetchRequest)(implicit
     ec: ExecutionContext
-) extends AbstractFetchBackend[Future, Nothing, WebSockets](fetchOptions, customizeRequest, ConvertFromFuture.future)(
-      new FutureMonad()
+) extends AbstractFetchBackend[Future, Nothing, WebSockets](fetchOptions, customizeRequest, new FutureMonad())(
+      ConvertFromFuture.future
     ) {
 
   override val streams: NoStreams = NoStreams

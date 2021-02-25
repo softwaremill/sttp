@@ -29,7 +29,7 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
       files1 ++ Seq(file("generated-docs/out"))
     }
   }.value,
-  ideSkipProject := (scalaVersion.value != scala2_13) || thisProjectRef.value.project.contains(
+  ideSkipProject := (scalaVersion.value != scala2_13) || !thisProjectRef.value.project.contains(
     "JS"
   ) || thisProjectRef.value.project.contains("Native")
 )

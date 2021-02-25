@@ -1,96 +1,63 @@
 package sttp.client3
 
-import org.scalajs.dom.{window, WebSocket => JSWebSocket}
+import org.scalajs.dom.{WebSocket => JSWebSocket}
 import sttp.client3.WebSocketImpl.OpenState
 import sttp.client3.internal.ws.WebSocketEvent
-import sttp.client3.ws.WebSocketTimeoutException
 import sttp.model.Headers
 import sttp.monad.MonadError
+import sttp.monad.syntax._
 import sttp.ws.{WebSocket, WebSocketClosed, WebSocketFrame}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.{FiniteDuration, _}
-import scala.concurrent.{Future, Promise}
 import scala.scalajs.js.typedarray.{ArrayBuffer, DataView}
-import scala.util.{Failure, Success, Try}
 
 private[client3] class WebSocketImpl[F[_]] private (
     ws: JSWebSocket,
-    queue: JSSimpleQueue[WebSocketEvent],
-    timeout: FiniteDuration,
-    convertFromFuture: ConvertFromFuture[F],
+    queue: JSSimpleQueue[F, WebSocketEvent],
     implicit val monad: MonadError[F]
 ) extends WebSocket[F] {
 
-  override def receive(): F[WebSocketFrame] = fromFuture {
+  override def receive(): F[WebSocketFrame] = {
 
-    def _receive(e: WebSocketEvent): Future[WebSocketFrame] = e match {
+    def _receive(e: WebSocketEvent): F[WebSocketFrame] = e match {
       case WebSocketEvent.Open() => queue.poll.flatMap(_receive)
       case WebSocketEvent.Frame(c: WebSocketFrame.Close) =>
         queue.offer(WebSocketEvent.Error(WebSocketClosed(Some(c))))
-        Future.successful[WebSocketFrame](c)
+        monad.unit(c)
       case e @ WebSocketEvent.Error(t: Exception) =>
         queue.offer(e)
-        Future.failed[WebSocketFrame](t)
-      case WebSocketEvent.Error(t)                 => throw t
-      case WebSocketEvent.Frame(f: WebSocketFrame) => Future.successful[WebSocketFrame](f)
+        monad.error(t)
+      case WebSocketEvent.Error(t)                 => monad.error(t)
+      case WebSocketEvent.Frame(f: WebSocketFrame) => monad.unit(f)
     }
 
     queue.poll.flatMap(_receive)
   }
 
-  override def send(f: WebSocketFrame, isContinuation: Boolean): F[Unit] = fromFuture {
-    val p = Promise[Unit]()
-    val tick = 10.millis
-
-    def _send(time: FiniteDuration = 0.millis): Unit = {
-      if (time >= timeout) p.failure(new WebSocketTimeoutException)
-      else if (isInOpenState) {
-        send(f) match {
-          case Success(_)  => p.success(())
-          case Failure(ex) => p.failure(ex)
-        }
-      } else window.setTimeout(() => _send(time + tick), tick.toMillis.toDouble)
+  override def send(f: WebSocketFrame, isContinuation: Boolean): F[Unit] =
+    f match {
+      case WebSocketFrame.Text(payload, _, _) => monad.unit(ws.send(payload))
+      case WebSocketFrame.Binary(payload, _, _) =>
+        val ab: ArrayBuffer = new ArrayBuffer(payload.length)
+        val dv = new DataView(ab)
+        (0 to payload.length) foreach { i => dv.setInt8(i, payload(i)) }
+        monad.unit(ws.send(ab))
+      case WebSocketFrame.Close(statusCode, reasonText) =>
+        monad.unit(ws.close(statusCode, reasonText))
+      case _: WebSocketFrame.Ping => monad.error(new UnsupportedOperationException("Ping is not supported in browsers"))
+      case _: WebSocketFrame.Pong => monad.error(new UnsupportedOperationException("Pong is not supported in browsers"))
     }
 
-    _send()
-    p.future
-  }
-
-  private def send(f: WebSocketFrame): Try[Unit] =
-    Try {
-      f match {
-        case WebSocketFrame.Text(payload, _, _) => ws.send(payload)
-        case WebSocketFrame.Binary(payload, _, _) =>
-          val ab: ArrayBuffer = new ArrayBuffer(payload.length)
-          val dv = new DataView(ab)
-          (0 to payload.length) foreach { i => dv.setInt8(i, payload(i)) }
-          ws.send(ab)
-        case WebSocketFrame.Close(statusCode, reasonText) => ws.close(statusCode, reasonText)
-        case _: WebSocketFrame.Ping                       => throw new UnsupportedOperationException("Ping is not supported in browsers")
-        case _: WebSocketFrame.Pong                       => throw new UnsupportedOperationException("Pong is not supported in browsers")
-      }
-    }
-
-  override def isOpen(): F[Boolean] = monad.eval(isInOpenState)
+  override def isOpen(): F[Boolean] = monad.eval(ws.readyState == OpenState)
 
   override lazy val upgradeHeaders: Headers = Headers(Nil)
-
-  private def isInOpenState = ws.readyState == OpenState
-
-  private def fromFuture[T](f: Future[T]): F[T] = convertFromFuture.fromFuture(f)
 }
 
 object WebSocketImpl {
   def newJSCoupledWebSocket[F[_]](
       ws: JSWebSocket,
-      queue: JSSimpleQueue[WebSocketEvent],
-      timeout: FiniteDuration,
-      convertFromFuture: ConvertFromFuture[F]
-  )(implicit
-      monad: MonadError[F]
-  ): sttp.ws.WebSocket[F] =
-    new WebSocketImpl[F](ws, queue, timeout, convertFromFuture, monad)
+      queue: JSSimpleQueue[F, WebSocketEvent]
+  )(implicit monad: MonadError[F]): sttp.ws.WebSocket[F] =
+    new WebSocketImpl[F](ws, queue, monad)
 
   val OpenState = 1
   val BinaryType = "arraybuffer"

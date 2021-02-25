@@ -15,8 +15,8 @@ class FetchCatsBackend[F[_]: Concurrent: ContextShift] private (
     fetchOptions: FetchOptions,
     customizeRequest: FetchRequest => FetchRequest,
     convertFromFuture: ConvertFromFuture[F]
-) extends AbstractFetchBackend[F, Nothing, WebSockets](fetchOptions, customizeRequest, convertFromFuture)(
-      new CatsMonadAsyncError
+) extends AbstractFetchBackend[F, Nothing, WebSockets](fetchOptions, customizeRequest, new CatsMonadAsyncError)(
+      convertFromFuture
     ) {
 
   override val streams: NoStreams = NoStreams

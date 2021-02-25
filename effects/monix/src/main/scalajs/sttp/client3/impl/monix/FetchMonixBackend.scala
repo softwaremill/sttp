@@ -5,6 +5,7 @@ import monix.reactive.Observable
 import org.scalajs.dom.experimental.{BodyInit, Request => FetchRequest, Response => FetchResponse}
 import sttp.capabilities.WebSockets
 import sttp.capabilities.monix.MonixStreams
+import sttp.client3.impl.monix.FetchMonixBackend.convertFromFuture
 import sttp.client3.testing.SttpBackendStub
 import sttp.client3.{AbstractFetchBackend, ConvertFromFuture, FetchOptions, SttpBackend}
 
@@ -26,10 +27,8 @@ class FetchMonixBackend private (fetchOptions: FetchOptions, customizeRequest: F
     extends AbstractFetchBackend[Task, MonixStreams, MonixStreams with WebSockets](
       fetchOptions,
       customizeRequest,
-      FetchMonixBackend.convertFromFuture
-    )(
       TaskMonadAsyncError
-    ) {
+    )(convertFromFuture) {
 
   override val streams: MonixStreams = MonixStreams
 
