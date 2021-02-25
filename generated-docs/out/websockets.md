@@ -83,3 +83,7 @@ effect type      class name
 ``fs2.Stream``   ``sttp.client3.impl.fs2.Fs2WebSockets``
 ================ ==========================================
 ```
+
+## Compression
+
+For those who plan to use a lot of websocket traffic, you could consider websocket compression. Only [async-client-backend](https://github.com/AsyncHttpClient/async-http-client/issues/1394) and [OkHttp](https://github.com/square/okhttp/issues/1733) backends support this feature. To track Akka developments in this area, see [this issue](https://github.com/akka/akka-http/issues/659).  
