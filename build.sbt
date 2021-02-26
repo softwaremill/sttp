@@ -14,14 +14,13 @@ val scala3 = List("3.0.0-RC1")
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests")
 
+// slow down for CI
 parallelExecution in Global := false
 
 excludeLintKeys in Global ++= Set(ideSkipProject, reStartArgs)
 
 val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   organization := "com.softwaremill.sttp.client3",
-  // needed on sbt 1.3, but (for some unknown reason) only on 2.11.x
-  closeClassLoaders := !scalaVersion.value.startsWith("2.11."),
   updateDocs := Def.taskDyn {
     val files1 = UpdateVersionInDocs(sLog.value, organization.value, version.value, List(file("README.md")))
     Def.task {
@@ -39,8 +38,6 @@ val commonJvmSettings = commonSettings ++ Seq(
 )
 
 val commonJsSettings = commonSettings ++ Seq(
-  // slow down for CI
-  parallelExecution in Test := false, // TODOR
   scalacOptions in Compile ++= {
     if (isSnapshot.value) Seq.empty
     else
@@ -151,7 +148,6 @@ lazy val allAggregates = projectsWithOptionalNative ++
   monix.projectRefs ++
   scalaz.projectRefs ++
   zio.projectRefs ++
-  // might fail due to // https://github.com/akka/akka-http/issues/1930
   akkaHttpBackend.projectRefs ++
   asyncHttpClientBackend.projectRefs ++
   asyncHttpClientFutureBackend.projectRefs ++
