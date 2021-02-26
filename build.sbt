@@ -86,6 +86,7 @@ val circeVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "0.11.2"
   case _             => "0.13.0"
 }
+val zioJsonVersion: Option[(Long, Long)] => String = _ => "0.1"
 val playJsonVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.7.4"
   case _             => "2.9.2"
@@ -160,6 +161,7 @@ lazy val allAggregates = projectsWithOptionalNative ++
   okhttpMonixBackend.projectRefs ++
   http4sBackend.projectRefs ++
   circe.projectRefs ++
+  zioJson.projectRefs ++
   json4s.projectRefs ++
   sprayJson.projectRefs ++
   playJson.projectRefs ++
@@ -616,6 +618,21 @@ lazy val circe = (projectMatrix in file("json/circe"))
       "io.circe" %%% "circe-core" % circeVersion(_),
       "io.circe" %%% "circe-parser" % circeVersion(_),
       "io.circe" %%% "circe-generic" % circeVersion(_) % Test
+    ),
+    scalaTest
+  )
+  .jvmPlatform(
+    scalaVersions = scala2 ++ scala3,
+    settings = commonJvmSettings
+  )
+  .jsPlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonJsSettings)
+  .dependsOn(core, jsonCommon)
+
+lazy val zioJson = (projectMatrix in file("json/zio-json"))
+  .settings(
+    name := "zio-json",
+    libraryDependencies ++= dependenciesFor(scalaVersion.value)(
+      "dev.zio" %% "zio-json" % zioJsonVersion(_)
     ),
     scalaTest
   )
