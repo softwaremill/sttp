@@ -14,6 +14,9 @@ val scala3 = List("3.0.0-RC1")
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests")
 
+// slow down for CI
+parallelExecution in Global := false
+
 excludeLintKeys in Global ++= Set(ideSkipProject, reStartArgs)
 
 val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
@@ -35,8 +38,6 @@ val commonJvmSettings = commonSettings ++ Seq(
 )
 
 val commonJsSettings = commonSettings ++ Seq(
-  // slow down for CI
-  parallelExecution in Test := false,
   scalacOptions in Compile ++= {
     if (isSnapshot.value) Seq.empty
     else
