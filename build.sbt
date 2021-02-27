@@ -637,7 +637,7 @@ lazy val zioJson = (projectMatrix in file("json/zio-json"))
     scalaTest
   )
   .jvmPlatform(
-    scalaVersions = scala2 ++ scala3,
+    scalaVersions = Seq(scala2_12, scala2_13),
     settings = commonJvmSettings
   )
   .jsPlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonJsSettings)
