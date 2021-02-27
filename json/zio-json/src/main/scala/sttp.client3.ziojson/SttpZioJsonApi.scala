@@ -19,7 +19,7 @@ trait SttpZioJsonApi {
   private val Utf8 = "utf-8"
   private implicit val stringShowError: ShowError[String] = t => t
 
-  implicit def circeBodySerializer[B: JsonEncoder]: BodySerializer[B] =
+  implicit def zioJsonBodySerializer[B: JsonEncoder]: BodySerializer[B] =
     b => StringBody(b.toJson, Utf8, MediaType.ApplicationJson)
 
   /** If the response is successful (2xx), tries to deserialize the body from a string into JSON. Returns:
