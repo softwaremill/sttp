@@ -633,7 +633,7 @@ lazy val zioJson = (projectMatrix in file("json/zio-json"))
     name := "zio-json",
     libraryDependencies ++= dependenciesFor(scalaVersion.value)(
       "dev.zio" %% "zio-json" % zioJsonVersion(_)
-    ),
+    ) ++ Seq("com.softwaremill.sttp.shared" %% "zio" % sttpSharedVersion),
     scalaTest
   )
   .jvmPlatform(
