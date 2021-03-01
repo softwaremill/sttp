@@ -8,5 +8,3 @@ class NotAWebSocketException(statusCode: StatusCode)
 class GotAWebSocketException() extends Exception("Got a web socket, but expected normal content")
 
 class WebSocketTimeoutException() extends Exception("Timeout while waiting for web socket")
-
-class WebSocketErrorException() extends Exception("Error received from web socket")

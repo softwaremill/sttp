@@ -2,7 +2,7 @@ package sttp.client3
 
 import org.scalajs.dom.experimental.{BodyInit, Request => FetchRequest, Response => FetchResponse}
 import sttp.capabilities.WebSockets
-import sttp.client3.internal.NoStreams
+import sttp.client3.internal.{ConvertFromFuture, NoStreams}
 import sttp.client3.testing.SttpBackendStub
 import sttp.monad.FutureMonad
 

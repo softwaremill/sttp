@@ -5,8 +5,9 @@ import monix.reactive.Observable
 import org.scalajs.dom.experimental.{BodyInit, Request => FetchRequest, Response => FetchResponse}
 import sttp.capabilities.WebSockets
 import sttp.capabilities.monix.MonixStreams
+import sttp.client3.internal.ConvertFromFuture
 import sttp.client3.testing.SttpBackendStub
-import sttp.client3.{AbstractFetchBackend, ConvertFromFuture, FetchOptions, SttpBackend}
+import sttp.client3.{AbstractFetchBackend, FetchOptions, SttpBackend}
 
 import scala.concurrent.Future
 import scala.scalajs.js

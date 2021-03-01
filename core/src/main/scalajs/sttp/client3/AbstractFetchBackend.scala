@@ -24,12 +24,7 @@ import sttp.client3.WebSocketImpl.{BinaryType, OpenState}
 import sttp.client3.dom.experimental.{FilePropertyBag, File => DomFile}
 import sttp.client3.internal.ws.WebSocketEvent
 import sttp.client3.internal.{SttpFile, _}
-import sttp.client3.ws.{
-  GotAWebSocketException,
-  NotAWebSocketException,
-  WebSocketErrorException,
-  WebSocketTimeoutException
-}
+import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException, WebSocketTimeoutException}
 import sttp.model._
 import sttp.monad.MonadError
 import sttp.monad.syntax._
@@ -251,13 +246,13 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
   }
 
   private def sendWebSocket[T, R >: PE](request: Request[T, R]): F[Response[T]] = {
-    val queue = new JSSimpleQueue[F, WebSocketEvent](webSocketTimeout)
+    val queue = new JSSimpleQueue[F, WebSocketEvent]
     val ws = new JSWebSocket(request.uri.toString)
     ws.binaryType = BinaryType
 
     ws.onopen = (_: Event) => queue.offer(WebSocketEvent.Open())
     ws.onmessage = (event: MessageEvent) => queue.offer(toWebSocketEvent(event))
-    ws.onerror = (_: Event) => queue.offer(WebSocketEvent.Error(new WebSocketErrorException))
+    ws.onerror = (_: Event) => queue.offer(WebSocketEvent.Error(new RuntimeException("Error received from web socket")))
     ws.onclose = (event: CloseEvent) => queue.offer(toWebSocketEvent(event))
 
     val webSocket = WebSocketImpl.newJSCoupledWebSocket(ws, queue)
