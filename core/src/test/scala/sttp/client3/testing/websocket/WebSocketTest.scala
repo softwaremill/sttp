@@ -14,6 +14,8 @@ import sttp.monad.MonadError
 import sttp.monad.syntax._
 import sttp.ws.{WebSocket, WebSocketFrame}
 
+import scala.concurrent.duration._
+
 abstract class WebSocketTest[F[_]]
     extends SuiteMixin
     with AsyncFlatSpecLike
@@ -112,6 +114,7 @@ abstract class WebSocketTest[F[_]]
     implicit val signaler: Signaler = ThreadSignaler
     failAfter(Span(15, Seconds)) {
       basicRequest
+        .readTimeout(15.second)
         .get(uri"$wsEndpoint/ws/404")
         .response(asWebSocketAlwaysUnsafe[F])
         .send(backend)
@@ -127,6 +130,7 @@ abstract class WebSocketTest[F[_]]
     implicit val signaler: Signaler = ThreadSignaler
     failAfter(Span(15, Seconds)) {
       basicRequest
+        .readTimeout(15.second)
         .get(uri"$wsEndpoint/ws/404")
         .response(asWebSocketUnsafe[F])
         .send(backend)
