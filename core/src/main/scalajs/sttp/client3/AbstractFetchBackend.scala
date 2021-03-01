@@ -16,6 +16,7 @@ import org.scalajs.dom.experimental.{
   Response => FetchResponse
 }
 import org.scalajs.dom.raw._
+
 import scala.scalajs.js.typedarray._
 import org.scalajs.dom.{FormData, WebSocket => JSWebSocket}
 import sttp.capabilities.{Effect, Streams, WebSockets}
@@ -32,6 +33,7 @@ import sttp.ws.{WebSocket, WebSocketFrame}
 
 import java.nio.ByteBuffer
 import scala.collection.immutable.Seq
+import scala.concurrent.Promise
 import scala.concurrent.duration.{FiniteDuration, _}
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
@@ -250,25 +252,28 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
     val ws = new JSWebSocket(request.uri.toString)
     ws.binaryType = BinaryType
 
-    ws.onopen = (_: Event) => queue.offer(WebSocketEvent.Open())
+    val isOpen = Promise[Unit]()
+
+    ws.onopen = (_: Event) => {
+      isOpen.success(())
+      queue.offer(WebSocketEvent.Open())
+    }
     ws.onmessage = (event: MessageEvent) => queue.offer(toWebSocketEvent(event))
     ws.onerror = (_: Event) => queue.offer(WebSocketEvent.Error(new RuntimeException("Error received from web socket")))
     ws.onclose = (event: CloseEvent) => queue.offer(toWebSocketEvent(event))
 
     val webSocket = WebSocketImpl.newJSCoupledWebSocket(ws, queue)
 
-    val isOpen = JSTimeout[Unit] {
-      Either.cond(ws.readyState == OpenState, (), new ReadException(request, new WebSocketTimeoutException))
-    }(webSocketTimeout)
+    js.timers.setTimeout(request.options.readTimeout.toMillis) {
+      if (!isOpen.isCompleted) isOpen.failure(new ReadException(request, new WebSocketTimeoutException))
+    }
 
-    convertFromFuture(isOpen).flatMap { _ =>
+    convertFromFuture(isOpen.future).flatMap { _ =>
       bodyFromResponseAs
         .apply(request.response, ResponseMetadata(StatusCode.Ok, "", request.headers), Right(webSocket))
         .map(Response.ok)
     }
   }
-
-  def webSocketTimeout: FiniteDuration = 1.second
 
   private def toWebSocketEvent(msg: MessageEvent): WebSocketEvent =
     msg.data match {
