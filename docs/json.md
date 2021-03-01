@@ -136,3 +136,13 @@ To encode and decode JSON using [play-json](https://www.playframework.com), add 
 ```
 
 To use, add an import: `import sttp.client3.playJson._`.
+
+## zio-json
+
+To encode and decode JSON using [zio-json](https://zio.github.io/zio-json/), add the following dependency to your project:
+
+```scala
+"com.softwaremill.sttp.client3" %% "zio-json" % "@VERSION@"
+```
+
+TODO example of decoding and encoding etc here
