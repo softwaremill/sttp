@@ -16,6 +16,7 @@ import org.scalajs.dom.experimental.{
   Response => FetchResponse
 }
 import org.scalajs.dom.raw._
+import scala.scalajs.js.typedarray._
 import org.scalajs.dom.{FormData, WebSocket => JSWebSocket}
 import sttp.capabilities.{Effect, Streams, WebSockets}
 import sttp.client3.SttpClientException.ReadException
@@ -130,7 +131,7 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
     }
 
     val result = req
-      .flatMap { r => fromFuture(Fetch.fetch(customizeRequest(r)).toFuture) }
+      .flatMap { r => convertFromFuture(Fetch.fetch(customizeRequest(r)).toFuture) }
       .flatMap { resp =>
         if (resp.`type` == ResponseType.opaqueredirect) {
           responseMonad.error[FetchResponse](new RuntimeException("Unexpected redirect"))
@@ -265,7 +266,7 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
       Either.cond(ws.readyState == OpenState, (), new ReadException(request, new WebSocketTimeoutException))
     }(webSocketTimeout)
 
-    fromFuture(isOpen).flatMap { _ =>
+    convertFromFuture(isOpen).flatMap { _ =>
       bodyFromResponseAs
         .apply(request.response, ResponseMetadata(StatusCode.Ok, "", request.headers), Right(webSocket))
         .map(Response.ok)
@@ -279,7 +280,7 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
       case payload: ArrayBuffer =>
         val dv = new DataView(payload)
         val bytes = new Array[Byte](dv.byteLength)
-        (0 to dv.byteLength) foreach { i => bytes(i) = dv.getInt8(i) }
+        0 until dv.byteLength foreach { i => bytes(i) = dv.getInt8(i) }
         WebSocketEvent.Frame(WebSocketFrame.binary(bytes))
       case payload: String => WebSocketEvent.Frame(WebSocketFrame.text(payload))
       case _               => throw new RuntimeException(s"Unknown format of event.data ${msg.data}")
@@ -304,13 +305,13 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
     }
 
     override protected def regularIgnore(response: FetchResponse): F[Unit] =
-      fromFuture(response.arrayBuffer().toFuture).map(_ => ())
+      convertFromFuture(response.arrayBuffer().toFuture).map(_ => ())
 
     override protected def regularAsByteArray(response: FetchResponse): F[Array[Byte]] =
-      fromFuture(response.arrayBuffer().toFuture).map { ab => new Int8Array(ab).toArray }
+      convertFromFuture(response.arrayBuffer().toFuture).map { ab => new Int8Array(ab).toArray }
 
     override protected def regularAsFile(response: FetchResponse, file: SttpFile): F[SttpFile] =
-      fromFuture(response.arrayBuffer().toFuture)
+      convertFromFuture(response.arrayBuffer().toFuture)
         .map { ab =>
           SttpFile.fromDomFile(
             new DomFile(
@@ -348,5 +349,5 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
 
   override def close(): F[Unit] = monad.unit(())
 
-  implicit def fromFuture: ConvertFromFuture[F]
+  implicit def convertFromFuture: ConvertFromFuture[F]
 }

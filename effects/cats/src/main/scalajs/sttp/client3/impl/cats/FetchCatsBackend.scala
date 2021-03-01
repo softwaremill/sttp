@@ -29,8 +29,8 @@ class FetchCatsBackend[F[_]: Concurrent: ContextShift] private (
     throw new IllegalStateException("Future FetchBackend does not support streaming responses")
   }
 
-  override def fromFuture: ConvertFromFuture[F] = new ConvertFromFuture[F] {
-    override def apply[T](f: Future[T]): F[T] = Async.fromFuture(Sync[F].delay(f))
+  override def convertFromFuture: ConvertFromFuture[F] = new ConvertFromFuture[F] {
+    override def apply[T](f: Future[T]): F[T] = Async.fromFuture(responseMonad.unit(f))
   }
 }
 

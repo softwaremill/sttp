@@ -8,7 +8,7 @@ import sttp.monad.MonadError
 import sttp.monad.syntax._
 import sttp.ws.{WebSocket, WebSocketClosed, WebSocketFrame}
 
-import scala.scalajs.js.typedarray.{ArrayBuffer, DataView}
+import scala.scalajs.js.typedarray.{ArrayBuffer, _}
 
 private[client3] class WebSocketImpl[F[_]] private (
     ws: JSWebSocket,
@@ -37,9 +37,7 @@ private[client3] class WebSocketImpl[F[_]] private (
     f match {
       case WebSocketFrame.Text(payload, _, _) => monad.unit(ws.send(payload))
       case WebSocketFrame.Binary(payload, _, _) =>
-        val ab: ArrayBuffer = new ArrayBuffer(payload.length)
-        val dv = new DataView(ab)
-        (0 to payload.length) foreach { i => dv.setInt8(i, payload(i)) }
+        val ab: ArrayBuffer = payload.toTypedArray.buffer
         monad.unit(ws.send(ab))
       case WebSocketFrame.Close(statusCode, reasonText) =>
         monad.unit(ws.close(statusCode, reasonText))

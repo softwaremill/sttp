@@ -49,7 +49,7 @@ class FetchMonixBackend private (fetchOptions: FetchOptions, customizeRequest: F
       .delay {
         lazy val reader = response.body.getReader()
 
-        def read() = fromFuture(reader.read().toFuture)
+        def read() = convertFromFuture(reader.read().toFuture)
 
         def go(): Observable[Array[Byte]] = {
           Observable.fromTask(read()).flatMap { chunk =>
@@ -65,7 +65,7 @@ class FetchMonixBackend private (fetchOptions: FetchOptions, customizeRequest: F
       }
   }
 
-  override implicit def fromFuture: ConvertFromFuture[Task] = new ConvertFromFuture[Task] {
+  override implicit def convertFromFuture: ConvertFromFuture[Task] = new ConvertFromFuture[Task] {
     override def apply[T](f: Future[T]): Task[T] = Task.fromFuture(f)
   }
 }

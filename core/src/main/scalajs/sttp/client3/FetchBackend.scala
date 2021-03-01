@@ -31,7 +31,7 @@ class FetchBackend private (fetchOptions: FetchOptions, customizeRequest: FetchR
     throw new IllegalStateException("Future FetchBackend does not support streaming responses")
   }
 
-  override def fromFuture: ConvertFromFuture[Future] = ConvertFromFuture.future
+  override def convertFromFuture: ConvertFromFuture[Future] = ConvertFromFuture.future
 }
 
 object FetchBackend {
