@@ -16,12 +16,10 @@ import org.scalajs.dom.experimental.{
   Response => FetchResponse
 }
 import org.scalajs.dom.raw._
-
-import scala.scalajs.js.typedarray._
 import org.scalajs.dom.{FormData, WebSocket => JSWebSocket}
 import sttp.capabilities.{Effect, Streams, WebSockets}
 import sttp.client3.SttpClientException.ReadException
-import sttp.client3.WebSocketImpl.{BinaryType, OpenState}
+import sttp.client3.WebSocketImpl.BinaryType
 import sttp.client3.dom.experimental.{FilePropertyBag, File => DomFile}
 import sttp.client3.internal.ws.WebSocketEvent
 import sttp.client3.internal.{SttpFile, _}
@@ -34,7 +32,7 @@ import sttp.ws.{WebSocket, WebSocketFrame}
 import java.nio.ByteBuffer
 import scala.collection.immutable.Seq
 import scala.concurrent.Promise
-import scala.concurrent.duration.{FiniteDuration, _}
+import scala.concurrent.duration.FiniteDuration
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
 import scala.scalajs.js.timers._
@@ -259,14 +257,13 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
       queue.offer(WebSocketEvent.Open())
     }
     ws.onmessage = (event: MessageEvent) => queue.offer(toWebSocketEvent(event))
-    ws.onerror = (_: Event) => queue.offer(WebSocketEvent.Error(new RuntimeException("Error received from web socket")))
+    ws.onerror = (_: Event) => {
+      if (!isOpen.isCompleted) isOpen.failure(new ReadException(request, new WebSocketTimeoutException))
+      else queue.offer(WebSocketEvent.Error(new RuntimeException("Error received from web socket")))
+    }
     ws.onclose = (event: CloseEvent) => queue.offer(toWebSocketEvent(event))
 
     val webSocket = WebSocketImpl.newJSCoupledWebSocket(ws, queue)
-
-    js.timers.setTimeout(request.options.readTimeout.toMillis) {
-      if (!isOpen.isCompleted) isOpen.failure(new ReadException(request, new WebSocketTimeoutException))
-    }
 
     convertFromFuture(isOpen.future).flatMap { _ =>
       bodyFromResponseAs
