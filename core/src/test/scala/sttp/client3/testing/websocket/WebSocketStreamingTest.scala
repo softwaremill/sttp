@@ -59,21 +59,16 @@ trait WebSocketStreamingTest[F[_], S] extends ToFutureWrapper { outer: Suite wit
 
   webSocketPipeTerminatedByServerTest("raw") { received =>
     val buffer = new AtomicReference[String]("")
-    functionToPipe { d =>
-      println("running functionToPipe")
-      d match {
-        case WebSocketFrame.Text(payload, false, _) =>
-          val s = buffer.get()
-          buffer.set(s + payload)
-          None
-        case WebSocketFrame.Text(payload, _, _) =>
-          val wholePayload = buffer.getAndSet("") + payload
-          received.add(wholePayload)
-          Some(WebSocketFrame.text(wholePayload + "-echo"))
-        case _ =>
-          println("throwing")
-          throw new RuntimeException()
-      }
+    functionToPipe {
+      case WebSocketFrame.Text(payload, false, _) =>
+        val s = buffer.get()
+        buffer.set(s + payload)
+        None
+      case WebSocketFrame.Text(payload, _, _) =>
+        val wholePayload = buffer.getAndSet("") + payload
+        received.add(wholePayload)
+        Some(WebSocketFrame.text(wholePayload + "-echo"))
+      case _ => throw new RuntimeException()
     }
   }
 

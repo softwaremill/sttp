@@ -37,6 +37,7 @@ import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
 import scala.scalajs.js.timers._
 import scala.scalajs.js.typedarray._
+import scala.util.Try
 
 object FetchOptions {
   val Default = FetchOptions(
@@ -257,9 +258,10 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
       queue.offer(WebSocketEvent.Open())
     }
     ws.onmessage = (event: MessageEvent) => queue.offer(toWebSocketEvent(event))
-    ws.onerror = (_: Event) => {
-      if (!isOpen.isCompleted) isOpen.failure(new ReadException(request, new WebSocketTimeoutException))
-      else queue.offer(WebSocketEvent.Error(new RuntimeException("Error received from web socket")))
+    ws.onerror = (e: Event) => {
+      val msg: String = ???
+      if (!isOpen.isCompleted) isOpen.failure(new ReadException(request, new RuntimeException(msg)))
+      else queue.offer(WebSocketEvent.Error(new RuntimeException(msg)))
     }
     ws.onclose = (event: CloseEvent) => queue.offer(toWebSocketEvent(event))
 
@@ -331,7 +333,8 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
         case ResponseAsWebSocket(f) =>
           f.asInstanceOf[(WebSocket[F], ResponseMetadata) => F[T]].apply(ws, meta)
         case ResponseAsWebSocketUnsafe() => ws.unit.asInstanceOf[F[T]]
-        case ResponseAsWebSocketStream(_, pipe) => compileWebSocketPipe(ws, pipe.asInstanceOf[streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]])
+        case ResponseAsWebSocketStream(_, pipe) =>
+          compileWebSocketPipe(ws, pipe.asInstanceOf[streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]])
       }
 
     override protected def cleanupWhenNotAWebSocket(response: FetchResponse, e: NotAWebSocketException): F[Unit] =
@@ -343,7 +346,10 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
 
   protected def handleResponseAsStream(response: FetchResponse): F[(streams.BinaryStream, () => F[Unit])]
 
-  protected def compileWebSocketPipe(ws: WebSocket[F], pipe: streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]): F[Unit]
+  protected def compileWebSocketPipe(
+      ws: WebSocket[F],
+      pipe: streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]
+  ): F[Unit]
 
   override def close(): F[Unit] = monad.unit(())
 
