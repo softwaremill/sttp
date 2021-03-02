@@ -7,6 +7,7 @@ import sttp.capabilities.WebSockets
 import sttp.client3.internal.{ConvertFromFuture, NoStreams}
 import sttp.client3.testing.SttpBackendStub
 import sttp.client3.{AbstractFetchBackend, FetchOptions, SttpBackend}
+import sttp.ws.WebSocket
 
 import scala.concurrent.Future
 import scala.scalajs.js
@@ -25,9 +26,11 @@ class FetchCatsBackend[F[_]: Concurrent: ContextShift] private (
 
   override protected def handleStreamBody(s: Nothing): F[js.UndefOr[BodyInit]] = s
 
-  override protected def handleResponseAsStream(response: FetchResponse): F[(Nothing, () => F[Unit])] = {
-    throw new IllegalStateException("Future FetchBackend does not support streaming responses")
-  }
+  override protected def handleResponseAsStream(response: FetchResponse): F[(Nothing, () => F[Unit])] =
+    throw new IllegalStateException("FetchCatsBackend does not support streaming responses")
+
+  override protected def compileWebSocketPipe(ws: WebSocket[F], pipe: Nothing): F[Unit] =
+    throw new IllegalStateException("FetchCatsBackend does not support streaming responses")
 
   override def convertFromFuture: ConvertFromFuture[F] = new ConvertFromFuture[F] {
     override def apply[T](f: Future[T]): F[T] = Async.fromFuture(responseMonad.unit(f))

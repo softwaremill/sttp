@@ -1,5 +1,6 @@
 package sttp.client3.impl.monix
 
+import cats.effect.ExitCase.{Completed, Error}
 import monix.eval.Task
 import monix.execution.cancelables.BooleanCancelable
 import monix.reactive.Observable
@@ -30,7 +31,10 @@ object MonixWebSockets {
       )
         .mapEval(ws.send(_))
         .completedL
-        .guarantee(ws.close())
+        .guaranteeCase {
+          case _ @(Completed | Error(_)) => ws.close()
+          case _                         => Task.unit
+        }
     }
   }
   def fromTextPipe: (String => WebSocketFrame) => MonixStreams.Pipe[WebSocketFrame, WebSocketFrame] =

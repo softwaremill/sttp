@@ -8,6 +8,7 @@ import sttp.capabilities.monix.MonixStreams
 import sttp.client3.internal.ConvertFromFuture
 import sttp.client3.testing.SttpBackendStub
 import sttp.client3.{AbstractFetchBackend, FetchOptions, SttpBackend}
+import sttp.ws.{WebSocket, WebSocketFrame}
 
 import scala.concurrent.Future
 import scala.scalajs.js
@@ -65,6 +66,12 @@ class FetchMonixBackend private (fetchOptions: FetchOptions, customizeRequest: F
         (go().doOnSubscriptionCancel(cancel), () => cancel)
       }
   }
+
+  override protected def compileWebSocketPipe(
+      ws: WebSocket[Task],
+      pipe: Observable[WebSocketFrame.Data[_]] => Observable[WebSocketFrame]
+  ): Task[Unit] =
+    MonixWebSockets.compilePipe(ws, pipe)
 
   override implicit def convertFromFuture: ConvertFromFuture[Task] = new ConvertFromFuture[Task] {
     override def apply[T](f: Future[T]): Task[T] = Task.fromFuture(f)

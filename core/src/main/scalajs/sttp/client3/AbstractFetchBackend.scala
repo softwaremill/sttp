@@ -331,8 +331,7 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
         case ResponseAsWebSocket(f) =>
           f.asInstanceOf[(WebSocket[F], ResponseMetadata) => F[T]].apply(ws, meta)
         case ResponseAsWebSocketUnsafe() => ws.unit.asInstanceOf[F[T]]
-        case ResponseAsWebSocketStream(_, _) =>
-          throw new UnsupportedOperationException("Streaming Websockets is not supported")
+        case ResponseAsWebSocketStream(_, pipe) => compileWebSocketPipe(ws, pipe.asInstanceOf[streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]])
       }
 
     override protected def cleanupWhenNotAWebSocket(response: FetchResponse, e: NotAWebSocketException): F[Unit] =
@@ -343,6 +342,8 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
   }
 
   protected def handleResponseAsStream(response: FetchResponse): F[(streams.BinaryStream, () => F[Unit])]
+
+  protected def compileWebSocketPipe(ws: WebSocket[F], pipe: streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]): F[Unit]
 
   override def close(): F[Unit] = monad.unit(())
 
