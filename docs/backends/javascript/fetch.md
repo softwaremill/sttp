@@ -15,6 +15,7 @@ And create the backend instance:
 ```scala
 val backend = FetchBackend()
 ```
+Timeouts are handled via the new [AbortController](https://developer.mozilla.org/en-US/docs/Web/API/AbortController) class. As this class only recently appeared in browsers you may need to add a [polyfill](https://www.npmjs.com/package/abortcontroller-polyfill).
 
 As browsers do not allow access to redirect responses, if a request sets `followRedirects` to false then a redirect will cause the response to return an error.
 
@@ -55,8 +56,7 @@ Using `FetchBackend` is possible with [node-fetch](https://www.npmjs.com/package
 and [ws with isomorphic-ws](https://www.npmjs.com/package/ws) module for web sockets.
 
 ```
-npm install --save node-fetch
-npm install --save isomorphic-ws ws
+npm install --save node-fetch isomorphic-ws ws
 ```
 
 It has to be loaded into your runtime. This can be done in your main method as such:
