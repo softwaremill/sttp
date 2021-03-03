@@ -7,21 +7,20 @@ import com.softwaremill.SbtSoftwareMillBrowserTestJS._
 
 val scala2_11 = "2.11.12"
 val scala2_12 = "2.12.13"
-val scala2_13 = "2.13.4"
+val scala2_13 = "2.13.5"
 val scala2 = List(scala2_11, scala2_12, scala2_13)
 val scala3 = List("3.0.0-RC1")
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests")
 
+// slow down for CI
 parallelExecution in Global := false
 
 excludeLintKeys in Global ++= Set(ideSkipProject, reStartArgs)
 
 val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   organization := "com.softwaremill.sttp.client3",
-  // needed on sbt 1.3, but (for some unknown reason) only on 2.11.x
-  closeClassLoaders := !scalaVersion.value.startsWith("2.11."),
   updateDocs := Def.taskDyn {
     val files1 = UpdateVersionInDocs(sLog.value, organization.value, version.value, List(file("README.md")))
     Def.task {
@@ -39,8 +38,6 @@ val commonJvmSettings = commonSettings ++ Seq(
 )
 
 val commonJsSettings = commonSettings ++ Seq(
-  // slow down for CI
-  parallelExecution in Test := false, // TODOR
   scalacOptions in Compile ++= {
     if (isSnapshot.value) Seq.empty
     else
@@ -102,8 +99,8 @@ val fs2Version: Option[(Long, Long)] => String = {
   case _             => "2.5.3"
 }
 
-val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.2.3"
-val akkaStreamVersion = "2.6.12"
+val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.2.4"
+val akkaStreamVersion = "2.6.13"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % akkaStreamVersion
 
 val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", "wordspec", "shouldmatchers").map(m =>
@@ -122,7 +119,7 @@ val jeagerClientVersion = "1.5.0"
 val braveOpentracingVersion = "1.0.0"
 val zipkinSenderOkHttpVersion = "2.16.3"
 val resilience4jVersion = "1.7.0"
-val http4sVersion = "0.21.19"
+val http4sVersion = "0.21.20"
 
 val compileAndTest = "compile->compile;test->test"
 
@@ -151,7 +148,6 @@ lazy val allAggregates = projectsWithOptionalNative ++
   monix.projectRefs ++
   scalaz.projectRefs ++
   zio.projectRefs ++
-  // might fail due to // https://github.com/akka/akka-http/issues/1930
   akkaHttpBackend.projectRefs ++
   asyncHttpClientBackend.projectRefs ++
   asyncHttpClientFutureBackend.projectRefs ++
@@ -646,7 +642,7 @@ lazy val upickle = (projectMatrix in file("json/upickle"))
   .nativePlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonNativeSettings)
   .dependsOn(core, jsonCommon)
 
-lazy val json4sVersion = "3.6.10"
+lazy val json4sVersion = "3.6.11"
 
 lazy val json4s = (projectMatrix in file("json/json4s"))
   .settings(commonJvmSettings)
@@ -731,7 +727,7 @@ lazy val scribeBackend = (projectMatrix in file("logging/scribe"))
   .settings(
     name := "scribe-backend",
     libraryDependencies ++= Seq(
-      "com.outr" %%% "scribe" % "3.3.3"
+      "com.outr" %%% "scribe" % "3.4.0"
     ),
     scalaTest
   )

@@ -281,6 +281,26 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
           }
         }
       } ~
+        pathPrefix("content_type") {
+          extractRequest { request =>
+            entity(as[akka.http.scaladsl.model.Multipart.FormData]) {
+              (fd: akka.http.scaladsl.model.Multipart.FormData) =>
+                complete {
+                  fd.parts
+                    .mapAsync(1) { p =>
+                      val fv = p.entity.dataBytes.runFold(ByteString())(_ ++ _)
+                      fv.map(_.utf8String)
+                        .map(v =>
+                          p.name + "=" + v + p.filename
+                            .fold("")(fn => s" ($fn)") + s" content-type: ${p.getEntity().getContentType}"
+                        )
+                    }
+                    .runFold(Vector.empty[String])(_ :+ _)
+                    .map(v => v.mkString(", "))
+                }
+            }
+          }
+        } ~
         entity(as[akka.http.scaladsl.model.Multipart.FormData]) { (fd: akka.http.scaladsl.model.Multipart.FormData) =>
           complete {
             fd.parts

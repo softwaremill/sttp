@@ -20,11 +20,10 @@ import scala.collection.immutable.Seq
 import scala.util.{Failure, Success, Try}
 import sttp.capabilities.{Effect, Streams}
 import sttp.client3.SttpClientException.{ConnectException, ReadException}
-import sttp.client3.armeria.AbstractArmeriaBackend.{DefaultFileBufferSize, RightUnit, noopAutoCloseable, noopCanceler}
+import sttp.client3.armeria.AbstractArmeriaBackend.{DefaultFileBufferSize, RightUnit, noopCanceler}
 import sttp.client3.{
   ByteArrayBody,
   ByteBufferBody,
-  DefaultReadTimeout,
   FileBody,
   InputStreamBody,
   MultipartBody,
@@ -92,9 +91,7 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
     } finally {
       if (success) {
         captor.close()
-        if (releaseToken ne noopAutoCloseable) {
-          releaseToken.close()
-        }
+        releaseToken.close()
       }
     }
   }
@@ -150,17 +147,11 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
   }
 
   private def customizeOptions[T, R >: SE](request: Request[T, R]): AutoCloseable = {
-    val readTimeout = request.options.readTimeout
-    // If a readTimeout is not configured, respects Armeria's responseTimeout
-    if (readTimeout ne DefaultReadTimeout) {
-      // TODO(ikhoon): Use HttpRequestBuilder.responseTimeout()
-      //               once https://github.com/line/armeria/pull/3357 is merged
-      Clients.withContextCustomizer((ctx: ClientRequestContext) => {
-        ctx.setResponseTimeoutMillis(readTimeout.toMillis)
-      })
-    } else {
-      noopAutoCloseable
-    }
+    // TODO(ikhoon): Use HttpRequestBuilder.responseTimeout()
+    //               once https://github.com/line/armeria/pull/3357 is merged
+    Clients.withContextCustomizer((ctx: ClientRequestContext) => {
+      ctx.setResponseTimeoutMillis(request.options.readTimeout.toMillis)
+    })
   }
 
   private def adjustExceptions[T](request: Request[_, _])(execute: => F[T]): F[T] =
@@ -253,7 +244,6 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
 private[armeria] object AbstractArmeriaBackend {
   val DefaultFileBufferSize: Int = 4096
   val RightUnit: Either[Nothing, Unit] = Right(())
-  val noopAutoCloseable: AutoCloseable = () => {}
   val noopCanceler: Canceler = Canceler(() => ())
 
   private def newClientFactory(options: SttpBackendOptions): ClientFactory = {
