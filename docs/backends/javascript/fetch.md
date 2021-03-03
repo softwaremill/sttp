@@ -1,6 +1,6 @@
 # JavaScript (Fetch) backend
 
-A JavaScript backend implemented using the [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API).
+A JavaScript backend with web socket support. Implemented using the [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API).
 
 ## `Future`-based 
 
@@ -15,8 +15,6 @@ And create the backend instance:
 ```scala
 val backend = FetchBackend()
 ```
-
-Timeouts are handled via the new [AbortController](https://developer.mozilla.org/en-US/docs/Web/API/AbortController) class. As this class only recently appeared in browsers you may need to add a [polyfill](https://www.npmjs.com/package/abortcontroller-polyfill).
 
 As browsers do not allow access to redirect responses, if a request sets `followRedirects` to false then a redirect will cause the response to return an error.
 
@@ -53,10 +51,12 @@ val backend = FetchCatsBackend[IO]()
 
 ## Node.js
 
-Using `FetchBackend` is possible with [node-fetch](https://www.npmjs.com/package/node-fetch) module.
+Using `FetchBackend` is possible with [node-fetch](https://www.npmjs.com/package/node-fetch) module
+and [ws with isomorphic-ws](https://www.npmjs.com/package/ws) module for web sockets.
 
 ```
 npm install --save node-fetch
+npm install --save isomorphic-ws ws
 ```
 
 It has to be loaded into your runtime. This can be done in your main method as such:
@@ -69,6 +69,7 @@ val nodeFetch = g.require("node-fetch")
 g.fetch = nodeFetch
 g.Headers = nodeFetch.Headers
 g.Request = nodeFetch.Request
+g.WebSocket = g.require("isomorphic-ws")
 ```
 
 ## Streaming

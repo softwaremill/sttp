@@ -23,7 +23,7 @@ import sttp.client3.WebSocketImpl.BinaryType
 import sttp.client3.dom.experimental.{FilePropertyBag, File => DomFile}
 import sttp.client3.internal.ws.WebSocketEvent
 import sttp.client3.internal.{SttpFile, _}
-import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException, WebSocketTimeoutException}
+import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.model._
 import sttp.monad.MonadError
 import sttp.monad.syntax._
@@ -37,7 +37,6 @@ import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
 import scala.scalajs.js.timers._
 import scala.scalajs.js.typedarray._
-import scala.util.Try
 
 object FetchOptions {
   val Default = FetchOptions(
@@ -258,16 +257,16 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
       queue.offer(WebSocketEvent.Open())
     }
     ws.onmessage = (event: MessageEvent) => queue.offer(toWebSocketEvent(event))
-    ws.onerror = (e: Event) => {
-      val msg: String = ???
+    ws.onerror = (_: Event) => {
+      // it seems unable to extract msg from Event object
+      val msg = "Something went wrong in web socket or it could not be opened"
       if (!isOpen.isCompleted) isOpen.failure(new ReadException(request, new RuntimeException(msg)))
       else queue.offer(WebSocketEvent.Error(new RuntimeException(msg)))
     }
     ws.onclose = (event: CloseEvent) => queue.offer(toWebSocketEvent(event))
 
-    val webSocket = WebSocketImpl.newJSCoupledWebSocket(ws, queue)
-
     convertFromFuture(isOpen.future).flatMap { _ =>
+      val webSocket = WebSocketImpl.newJSCoupledWebSocket(ws, queue)
       bodyFromResponseAs
         .apply(request.response, ResponseMetadata(StatusCode.Ok, "", request.headers), Right(webSocket))
         .map(Response.ok)
