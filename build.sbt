@@ -389,14 +389,14 @@ lazy val asyncHttpClientBackend = (projectMatrix in file("async-http-client-back
     scalaVersions = scala2 ++ scala3
   )
 
-def asyncHttpClientBackendProject(proj: String, includeScala211: Boolean = true, includeDotty: Boolean = false) = {
+def asyncHttpClientBackendProject(proj: String, includeDotty: Boolean = false) = {
   ProjectMatrix(s"asyncHttpClientBackend${proj.capitalize}", file(s"async-http-client-backend/$proj"))
     .settings(commonJvmSettings)
     .settings(testServerSettings)
     .settings(name := s"async-http-client-backend-$proj")
     .dependsOn(asyncHttpClientBackend % compileAndTest)
     .jvmPlatform(
-      scalaVersions = (if (includeScala211) scala2 else List(scala2_12, scala2_13)) ++ (if (includeDotty) scala3 else Nil)
+      scalaVersions = scala2 ++ (if (includeDotty) scala3 else Nil)
     )
 }
 
@@ -422,11 +422,11 @@ lazy val asyncHttpClientMonixBackend =
     .dependsOn(monix % compileAndTest)
 
 lazy val asyncHttpClientCatsBackend =
-  asyncHttpClientBackendProject("cats", includeScala211 = false, includeDotty = true)
+  asyncHttpClientBackendProject("cats", includeDotty = true)
     .dependsOn(cats % compileAndTest)
 
 lazy val asyncHttpClientFs2Backend =
-  asyncHttpClientBackendProject("fs2", includeScala211 = false, includeDotty = true)
+  asyncHttpClientBackendProject("fs2", includeDotty = true)
     .settings(
       libraryDependencies ++= Seq(
         "co.fs2" %% "fs2-reactive-streams" % fs2Version,
