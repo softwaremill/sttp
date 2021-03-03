@@ -23,7 +23,7 @@ class OkHttpSyncWebSocketTest extends WebSocketTest[Identity] {
     basicRequest
       .get(uri"$wsEndpoint/ws/echo")
       .response(asWebSocket[Identity, Assertion] { ws =>
-        send(ws, OkHttpBackend.DefaultWebSocketBufferCapacity.get + 1).flatMap(_ =>
+        sendText(ws, OkHttpBackend.DefaultWebSocketBufferCapacity.get + 1).flatMap(_ =>
           eventually(10.millis, 400)(() => ws.isOpen().map(_ shouldBe false))
         )
       })

@@ -11,6 +11,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.DurationInt
 
 trait CatsTestBase {
+
   implicit def executionContext: ExecutionContext
 
   implicit lazy val monad: MonadError[IO] = new CatsMonadAsyncError[IO]

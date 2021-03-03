@@ -394,10 +394,7 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
         handleWebSocketMessages(Flow[Message].mapConcat {
           case tm: TextMessage =>
             TextMessage(Source.single("echo: ") ++ tm.textStream) :: Nil
-          case bm: BinaryMessage =>
-            info("Ignoring a binary message")
-            bm.dataStream.runWith(Sink.ignore)
-            Nil
+          case bm: BinaryMessage => bm :: Nil
         })
       } ~
         path("send_and_wait") {
