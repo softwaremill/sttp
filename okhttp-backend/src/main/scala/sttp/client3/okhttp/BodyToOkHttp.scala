@@ -8,8 +8,8 @@ import okhttp3.{
 }
 import okio.{BufferedSink, ByteString, Okio}
 import sttp.capabilities.Streams
+import sttp.client3.internal.Utf8
 import sttp.client3.{
-  BasicRequestBody,
   ByteArrayBody,
   ByteBufferBody,
   FileBody,
@@ -32,9 +32,9 @@ private[okhttp] trait BodyToOkHttp[F[_], S] {
   def apply[R](body: RequestBody[R], ct: Option[String]): Option[OkHttpRequestBody] = {
     val mediaType = ct.flatMap(c => Try(MediaType.parse(c)).toOption).orNull
     body match {
-      case NoBody => None
-      case StringBody(b, _, _) =>
-        Some(OkHttpRequestBody.create(b, mediaType))
+      case NoBody                                          => None
+      case StringBody(b, e, _) if e.equalsIgnoreCase(Utf8) => Some(OkHttpRequestBody.create(b, mediaType))
+      case StringBody(b, e, _)                             => Some(OkHttpRequestBody.create(b.getBytes(e), mediaType))
       case ByteArrayBody(b, _) =>
         Some(OkHttpRequestBody.create(b, mediaType))
       case ByteBufferBody(b, _) =>

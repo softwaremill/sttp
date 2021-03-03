@@ -15,7 +15,7 @@ import com.twitter.io.Buf.{ByteArray, ByteBuffer}
 import com.twitter.util
 import com.twitter.util.{Duration, Future => TFuture}
 import sttp.capabilities.Effect
-import sttp.client3.internal.{BodyFromResponseAs, FileHelpers, SttpFile}
+import sttp.client3.internal.{BodyFromResponseAs, FileHelpers, SttpFile, Utf8}
 import sttp.client3.testing.SttpBackendStub
 import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.client3.{
@@ -35,7 +35,7 @@ import sttp.client3.{
   SttpClientException,
   WebSocketResponseAs
 }
-import sttp.model.{Header, HeaderNames, Method, Part, ResponseMetadata, StatusCode, Uri}
+import sttp.model._
 import sttp.monad.MonadError
 import sttp.monad.syntax._
 
@@ -118,21 +118,23 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
   private def getBasicBodyContent(part: Part[RequestBody[_]]): FormElement = {
 
     val content: String = part.body match {
-      case StringBody(s, _, _)    => s
-      case ByteArrayBody(b, _)    => Source.fromBytes(b).mkString
-      case ByteBufferBody(b, _)   => Source.fromBytes(b.array()).mkString
-      case InputStreamBody(is, _) => Source.fromInputStream(is).mkString
-      case FileBody(f, _)         => Source.fromFile(f.toFile).mkString
-      case NoBody                 => ""
-      case StreamBody(_)          => throw new IllegalArgumentException("Streaming is not supported")
-      case MultipartBody(_)       => throw new IllegalArgumentException("Nested multipart bodies are not supported")
+      case StringBody(s, e, _) if e.equalsIgnoreCase(Utf8) => s
+      case StringBody(s, e, _)                             => Source.fromBytes(s.getBytes(e)).mkString
+      case ByteArrayBody(b, _)                             => Source.fromBytes(b).mkString
+      case ByteBufferBody(b, _)                            => Source.fromBytes(b.array()).mkString
+      case InputStreamBody(is, _)                          => Source.fromInputStream(is).mkString
+      case FileBody(f, _)                                  => Source.fromFile(f.toFile).mkString
+      case NoBody                                          => ""
+      case StreamBody(_)                                   => throw new IllegalArgumentException("Streaming is not supported")
+      case MultipartBody(_)                                => throw new IllegalArgumentException("Nested multipart bodies are not supported")
     }
 
     part.fileName match {
       case Some(_) => FileElement(part.name, ByteArray(content.getBytes: _*), part.contentType, part.fileName)
-      case None    => SimpleElement(part.name, content)
+      case None if part.contentType.exists(_.equalsIgnoreCase(MediaType.TextPlainUtf8.toString())) =>
+        SimpleElement(part.name, content)
+      case None => FileElement(part.name, ByteArray(content.getBytes: _*), part.contentType)
     }
-
   }
 
   private def buildRequest(

@@ -98,9 +98,7 @@ object AsyncHttpClientMonixBackend {
       new AsyncHttpClientMonixBackend(asyncHttpClient, closeClient, customizeRequest, webSocketBufferCapacity)
     )
 
-  /** @param s The scheduler used for streaming request bodies. Defaults to the
-    *          global scheduler.
-    */
+  /** @param s The scheduler used for streaming request bodies. Defaults to the global scheduler. */
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
@@ -118,6 +116,7 @@ object AsyncHttpClientMonixBackend {
     )
 
   /** Makes sure the backend is closed after usage.
+    * @param s The scheduler used for streaming request bodies. Defaults to the global scheduler.
     */
   def resource(
       options: SttpBackendOptions = SttpBackendOptions.Default,
@@ -128,9 +127,7 @@ object AsyncHttpClientMonixBackend {
   ): Resource[Task, SttpBackend[Task, MonixStreams with WebSockets]] =
     Resource.make(apply(options, customizeRequest, webSocketBufferCapacity))(_.close())
 
-  /** @param s The scheduler used for streaming request bodies. Defaults to the
-    *          global scheduler.
-    */
+  /** @param s The scheduler used for streaming request bodies. Defaults to the global scheduler. */
   def usingConfig(
       cfg: AsyncHttpClientConfig,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
@@ -148,6 +145,7 @@ object AsyncHttpClientMonixBackend {
     )
 
   /** Makes sure the backend is closed after usage.
+    * @param s The scheduler used for streaming request bodies. Defaults to the global scheduler.
     */
   def resourceUsingConfig(
       cfg: AsyncHttpClientConfig,
@@ -159,8 +157,7 @@ object AsyncHttpClientMonixBackend {
     Resource.make(usingConfig(cfg, customizeRequest, webSocketBufferCapacity))(_.close())
 
   /** @param updateConfig A function which updates the default configuration (created basing on `options`).
-    * @param s The scheduler used for streaming request bodies. Defaults to the
-    *          global scheduler.
+    * @param s The scheduler used for streaming request bodies. Defaults to the global scheduler.
     */
   def usingConfigBuilder(
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
@@ -181,8 +178,7 @@ object AsyncHttpClientMonixBackend {
 
   /** Makes sure the backend is closed after usage.
     * @param updateConfig A function which updates the default configuration (created basing on `options`).
-    * @param s The scheduler used for streaming request bodies. Defaults to the
-    *          global scheduler.
+    * @param s The scheduler used for streaming request bodies. Defaults to the global scheduler.
     */
   def resourceUsingConfigBuilder(
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
@@ -194,9 +190,7 @@ object AsyncHttpClientMonixBackend {
   ): Resource[Task, SttpBackend[Task, MonixStreams with WebSockets]] =
     Resource.make(usingConfigBuilder(updateConfig, options, customizeRequest, webSocketBufferCapacity))(_.close())
 
-  /** @param s The scheduler used for streaming request bodies. Defaults to the
-    *          global scheduler.
-    */
+  /** @param s The scheduler used for streaming request bodies. Defaults to the global scheduler. */
   def usingClient(
       client: AsyncHttpClient,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,

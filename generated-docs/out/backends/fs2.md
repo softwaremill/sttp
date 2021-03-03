@@ -7,7 +7,7 @@ The [fs2](https://github.com/functional-streams-for-scala/fs2) backend is **asyn
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "async-http-client-backend-fs2" % "3.1.2"
+"com.softwaremill.sttp.client3" %% "async-http-client-backend-fs2" % "3.1.6"
 ```
 
 And some imports:
@@ -76,7 +76,7 @@ val backend = AsyncHttpClientFs2Backend.usingClient[IO](asyncHttpClient, blocker
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "httpclient-backend-fs2" % "3.1.2"
+"com.softwaremill.sttp.client3" %% "httpclient-backend-fs2" % "3.1.6"
 ```
 
 And some imports:
@@ -115,6 +115,55 @@ val backend = HttpClientFs2Backend.usingClient[IO](httpClient, blocker)
 ```
 
 This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards.
+
+Host header override is supported in environments running Java 12 onwards, but it has to be enabled by system property:
+```
+jdk.httpclient.allowRestrictedHeaders=host
+```
+
+## Using Armeria
+
+To use, add the following dependency to your project:
+
+```
+"com.softwaremill.sttp.client3" %% "armeria-backend-fs2" % "3.1.6"
+```
+
+add imports:
+
+```scala
+import sttp.client3.armeria.fs2.ArmeriaFs2Backend
+import cats.effect.{ContextShift, IO}
+```
+
+create client:
+
+```scala
+implicit val cs: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionContext.global)
+val backend = ArmeriaFs2Backend[IO]()
+```
+
+or, if you'd like to instantiate the [WebClient](https://armeria.dev/docs/client-http) yourself:
+
+```scala
+import com.linecorp.armeria.client.circuitbreaker._
+import com.linecorp.armeria.client.WebClient
+
+// Fluently build Armeria WebClient with built-in decorators
+val client = WebClient.builder("https://my-service.com")
+             // Open circuit on 5xx server error status
+             .decorator(CircuitBreakerClient.newDecorator(CircuitBreaker.ofDefaultName(),
+               CircuitBreakerRule.onServerErrorStatus()))
+             .build()
+             
+val backend = ArmeriaFs2Backend.usingClient[IO](client)
+```
+
+```eval_rst
+.. note:: A WebClient could fail to follow redirects if the WebClient is created with a base URI and a redirect location is a different URI.
+```
+
+This backend is build on top of [Armeria](https://armeria.dev/docs/client-http).
 
 ## Streaming
 

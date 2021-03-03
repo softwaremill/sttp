@@ -1,13 +1,13 @@
-package sttp.client3.armeria
+package sttp.client3.armeria.future
 
 import sttp.client3.SttpBackend
 import sttp.client3.testing.{ConvertToFuture, HttpTest}
 
 import scala.concurrent.Future
 
-class ArmeriaBackendTest extends HttpTest[Future] {
+class ArmeriaFutureHttpTest extends HttpTest[Future] {
 
-  override val backend: SttpBackend[Future, Any] = ArmeriaBackend()
+  override val backend: SttpBackend[Future, Any] = ArmeriaFutureBackend()
   override implicit val convertToFuture: ConvertToFuture[Future] = ConvertToFuture.future
 
   override def supportsHostHeaderOverride = false

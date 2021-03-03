@@ -7,7 +7,7 @@ The [ZIO](https://github.com/zio/zio) backends are **asynchronous**. Sending a r
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "httpclient-backend-zio" % "3.1.2"
+"com.softwaremill.sttp.client3" %% "httpclient-backend-zio" % "3.1.6"
 ```
 
 Create the backend using:
@@ -28,12 +28,17 @@ val backend = HttpClientZioBackend.usingClient(httpClient)
 
 This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards. The backend is fully non-blocking, with back-pressured websockets.
 
+Host header override is supported in environments running Java 12 onwards, but it has to be enabled by system property:
+```
+jdk.httpclient.allowRestrictedHeaders=host
+```
+
 ## Using async-http-client
 
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % "3.1.2"
+"com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % "3.1.6"
 ```
            
 This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client), uses [Netty](http://netty.io) behind the scenes. This backend works with all Scala versions. A Scala 3 build is available as well.
@@ -74,6 +79,55 @@ val runtime: Runtime[Any] = ???
 val backend = AsyncHttpClientZioBackend.usingClient(runtime, asyncHttpClient)
 ```
 
+## Using Armeria
+
+To use, add the following dependency to your project:
+
+```
+"com.softwaremill.sttp.client3" %% "armeria-backend-zio" % "3.1.6"
+```
+
+add imports:
+
+```scala
+import sttp.client3.armeria.zio.ArmeriaZioBackend
+```
+
+create client:
+
+```scala
+ArmeriaZioBackend().flatMap { backend => ??? }
+
+// or, if you'd like the backend to be wrapped in a Managed:
+ArmeriaZioBackend.managed().use { backend => ??? }
+```
+
+```eval_rst
+.. note:: The default client factory is reused to create `ArmeriaZioBackend` if a `SttpBackendOptions` is unspecified. So you only need to manage a resource when `SttpBackendOptions` is used.
+```
+
+or, if you'd like to instantiate the [WebClient](https://armeria.dev/docs/client-http) yourself:
+
+```scala
+import com.linecorp.armeria.client.circuitbreaker._
+import com.linecorp.armeria.client.WebClient
+
+// Fluently build Armeria WebClient with built-in decorators
+val client = WebClient.builder("https://my-service.com")
+             // Open circuit on 5xx server error status
+             .decorator(CircuitBreakerClient.newDecorator(CircuitBreaker.ofDefaultName(),
+               CircuitBreakerRule.onServerErrorStatus()))
+             .build()
+
+ArmeriaZioBackend.usingClient(client).flatMap { backend => ??? }
+```
+
+```eval_rst
+.. note:: A WebClient could fail to follow redirects if the WebClient is created with a base URI and a redirect location is a different URI.
+```
+
+This backend is build on top of [Armeria](https://armeria.dev/docs/client-http).
+
 ## ZIO environment
 
 As an alternative to effectfully or resourcefully creating backend instances, ZIO environment can be used. In this case, a type alias is provided for the service definition:
@@ -86,9 +140,14 @@ type SttpClient = Has[SttpBackend[Task, ZioStreams with WebSockets]]
 
 package sttp.client3.asynchttpclient.zio
 type SttpClient = Has[SttpBackend[Task, ZioStreams with WebSockets]]
+
+// or, when using Armeria
+
+package sttp.client3.armeria.zio
+type SttpClient = Has[SttpBackend[Task, ZioStreams]]
 ```
 
-The lifecycle of the `SttpClient` service is described by `ZLayer`s, which can be created using the `.layer`/`.layerUsingConfig`/... methods on `AsyncHttpClientZioBackend` / `HttpClientZioBackend`.
+The lifecycle of the `SttpClient` service is described by `ZLayer`s, which can be created using the `.layer`/`.layerUsingConfig`/... methods on `AsyncHttpClientZioBackend` / `HttpClientZioBackend` / `ArmeriaZioBackend`.
 
 The `SttpClient` companion object contains effect descriptions which use the `SttpClient` service from the environment to send requests or open websockets. This is different from sttp usage with other effect libraries (which use an implicit backend when `.send(backend)` is invoked on the request), but is more in line with how other ZIO services work. For example:
 

@@ -7,7 +7,7 @@ There are several backend implementations which are `monix.eval.Task`-based. The
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "async-http-client-backend-monix" % "3.1.2"
+"com.softwaremill.sttp.client3" %% "async-http-client-backend-monix" % "3.1.6"
 ```
            
 This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client), uses [Netty](http://netty.io) behind the scenes.
@@ -50,7 +50,7 @@ val backend = AsyncHttpClientMonixBackend.usingClient(asyncHttpClient)
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "okhttp-backend-monix" % "3.1.2"
+"com.softwaremill.sttp.client3" %% "okhttp-backend-monix" % "3.1.6"
 ```
 
 Create the backend using:
@@ -76,7 +76,7 @@ This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supp
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "httpclient-backend-monix" % "3.1.2"
+"com.softwaremill.sttp.client3" %% "httpclient-backend-monix" % "3.1.6"
 ```
 
 Create the backend using:
@@ -96,6 +96,54 @@ val backend = HttpClientMonixBackend.usingClient(httpClient)
 ```
 
 This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards.
+
+Host header override is supported in environments running Java 12 onwards, but it has to be enabled by system property:
+```
+jdk.httpclient.allowRestrictedHeaders=host
+```
+
+## Using Armeria
+
+To use, add the following dependency to your project:
+
+```
+"com.softwaremill.sttp.client3" %% "armeria-backend-monix" % "3.1.6"
+```
+
+add imports:
+
+```scala
+import sttp.client3.armeria.monix.ArmeriaMonixBackend
+```
+
+create client:
+
+```scala
+import monix.execution.Scheduler.Implicits.global
+val backend = ArmeriaMonixBackend()
+```
+
+or, if you'd like to instantiate the [WebClient](https://armeria.dev/docs/client-http) yourself:
+
+```scala
+import com.linecorp.armeria.client.circuitbreaker._
+import com.linecorp.armeria.client.WebClient
+
+// Fluently build Armeria WebClient with built-in decorators
+val client = WebClient.builder("https://my-service.com")
+             // Open circuit on 5xx server error status
+             .decorator(CircuitBreakerClient.newDecorator(CircuitBreaker.ofDefaultName(),
+               CircuitBreakerRule.onServerErrorStatus()))
+             .build()
+             
+val backend = ArmeriaMonixBackend.usingClient(client)
+```
+
+```eval_rst
+.. note:: A WebClient could fail to follow redirects if the WebClient is created with a base URI and a redirect location is a different URI.
+```
+
+This backend is build on top of [Armeria](https://armeria.dev/docs/client-http).
 
 ## Streaming
 

@@ -2,6 +2,8 @@
 
 The [Cats Effect](https://github.com/typelevel/cats-effect) backend is **asynchronous**. It can be created for any type implementing the `cats.effect.Concurrent` typeclass, such as `cats.effect.IO`. Sending a request is a non-blocking, lazily-evaluated operation and results in a wrapped response. There's a transitive dependency on `cats-effect`. 
 
+## Using async-http-client
+
 To use, add the following dependency to your project:
 
 ```scala
@@ -68,6 +70,50 @@ import org.asynchttpclient.AsyncHttpClient
 val asyncHttpClient: AsyncHttpClient = ??? 
 val backend = AsyncHttpClientCatsBackend.usingClient[IO](asyncHttpClient)
 ```
+
+## Using Armeria
+
+To use, add the following dependency to your project:
+
+```
+"com.softwaremill.sttp.client3" %% "armeria-backend-cats" % "@VERSION@"
+```
+
+add imports:
+
+```scala mdoc:silent
+import sttp.client3.armeria.cats.ArmeriaCatsBackend
+import cats.effect.{ContextShift, IO}
+```
+
+create client:
+
+```scala mdoc:compile-only
+implicit val cs: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionContext.global)
+val backend = ArmeriaCatsBackend[IO]()
+```
+
+or, if you'd like to instantiate the [WebClient](https://armeria.dev/docs/client-http) yourself:
+
+```scala mdoc:compile-only
+import com.linecorp.armeria.client.circuitbreaker._
+import com.linecorp.armeria.client.WebClient
+
+// Fluently build Armeria WebClient with built-in decorators
+val client = WebClient.builder("https://my-service.com")
+             // Open circuit on 5xx server error status
+             .decorator(CircuitBreakerClient.newDecorator(CircuitBreaker.ofDefaultName(),
+               CircuitBreakerRule.onServerErrorStatus()))
+             .build()
+
+val backend = ArmeriaCatsBackend.usingClient[IO](client)
+```
+
+```eval_rst
+.. note:: A WebClient could fail to follow redirects if the WebClient is created with a base URI and a redirect location is a different URI.
+```
+
+This backend is build on top of [Armeria](https://armeria.dev/docs/client-http).
 
 ## Streaming
 

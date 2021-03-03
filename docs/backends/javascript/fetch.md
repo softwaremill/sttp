@@ -53,22 +53,22 @@ val backend = FetchCatsBackend[IO]()
 
 ## Node.js
 
-Running sttp in a node.js will require downloading modules that implement the various classes and functions used by sttp, usually available in browser. At minima, you will need replacement for `fetch`, `AbortController` and `Headers`. To achieve this, you can either use `npm` directly, or the `scalajs-bundler` sbt plugin if you use sbt :
+Using `FetchBackend` is possible with [node-fetch](https://www.npmjs.com/package/node-fetch) module.
 
 ```
 npm install --save node-fetch
-npm install --save abortcontroller-polyfill
-npm install --save fetch-headers
-``` 
+```
 
-You then need to load the modules into your runtime. This can be done in
-your main method as such :
+It has to be loaded into your runtime. This can be done in your main method as such:
 
 ```scala
 val g = scalajs.js.Dynamic.global.globalThis
-g.fetch = g.require("node-fetch")
-g.require("abortcontroller-polyfill/dist/polyfill-patch-fetch")
-g.Headers = g.require("fetch-headers")
+
+val nodeFetch = g.require("node-fetch")
+
+g.fetch = nodeFetch
+g.Headers = nodeFetch.Headers
+g.Request = nodeFetch.Request
 ```
 
 ## Streaming
