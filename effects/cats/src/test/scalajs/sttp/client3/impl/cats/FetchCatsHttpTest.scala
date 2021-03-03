@@ -2,11 +2,13 @@ package sttp.client3.impl.cats
 
 import cats.effect.IO
 import sttp.client3.SttpBackend
+import sttp.client3.testing.AbstractFetchHttpTest
 
 import scala.concurrent.ExecutionContext
+import scala.scalajs.concurrent.JSExecutionContext.Implicits
 
 class FetchCatsHttpTest extends AbstractFetchHttpTest[IO, Any] with CatsTestBase {
-  implicit override def executionContext: ExecutionContext = queue
+  implicit override def executionContext: ExecutionContext = Implicits.queue
 
   override val backend: SttpBackend[IO, Any] = FetchCatsBackend()
 

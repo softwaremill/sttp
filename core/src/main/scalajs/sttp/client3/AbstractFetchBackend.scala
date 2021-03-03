@@ -258,7 +258,6 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
     }
     ws.onmessage = (event: MessageEvent) => queue.offer(toWebSocketEvent(event))
     ws.onerror = (_: Event) => {
-      // it seems unable to extract msg from Event object
       val msg = "Something went wrong in web socket or it could not be opened"
       if (!isOpen.isCompleted) isOpen.failure(new ReadException(request, new RuntimeException(msg)))
       else queue.offer(WebSocketEvent.Error(new RuntimeException(msg)))
