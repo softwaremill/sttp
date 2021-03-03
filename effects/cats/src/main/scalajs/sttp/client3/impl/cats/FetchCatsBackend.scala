@@ -1,23 +1,21 @@
 package sttp.client3.impl.cats
 
-import cats.effect.{Async, Concurrent, ContextShift, Sync}
 import cats.effect.syntax.all._
-
-import org.scalajs.dom.experimental.{BodyInit, Response => FetchResponse}
-import sttp.client3.{AbstractFetchBackend, FetchOptions, SttpBackend}
-
-import scala.scalajs.js
-import scala.scalajs.js.Promise
-import org.scalajs.dom.experimental.{Request => FetchRequest}
+import cats.effect.{Async, Concurrent, ContextShift, Sync}
+import org.scalajs.dom.experimental.{BodyInit, Request => FetchRequest, Response => FetchResponse}
+import sttp.capabilities.WebSockets
+import sttp.client3.internal.{ConvertFromFuture, NoStreams}
 import sttp.client3.testing.SttpBackendStub
-import sttp.client3.internal.NoStreams
+import sttp.client3.{AbstractFetchBackend, FetchOptions, SttpBackend}
+import sttp.ws.WebSocket
+
+import scala.concurrent.Future
+import scala.scalajs.js
 
 class FetchCatsBackend[F[_]: Concurrent: ContextShift] private (
     fetchOptions: FetchOptions,
     customizeRequest: FetchRequest => FetchRequest
-) extends AbstractFetchBackend[F, Nothing, Any](fetchOptions, customizeRequest)(
-      new CatsMonadAsyncError
-    ) {
+) extends AbstractFetchBackend[F, Nothing, WebSockets](fetchOptions, customizeRequest, new CatsMonadAsyncError) {
 
   override val streams: NoStreams = NoStreams
 
@@ -28,19 +26,22 @@ class FetchCatsBackend[F[_]: Concurrent: ContextShift] private (
 
   override protected def handleStreamBody(s: Nothing): F[js.UndefOr[BodyInit]] = s
 
-  override protected def handleResponseAsStream(response: FetchResponse): F[(Nothing, () => F[Unit])] = {
-    throw new IllegalStateException("Future FetchBackend does not support streaming responses")
-  }
+  override protected def handleResponseAsStream(response: FetchResponse): F[(Nothing, () => F[Unit])] =
+    throw new IllegalStateException("FetchCatsBackend does not support streaming responses")
 
-  override protected def transformPromise[T](promise: => Promise[T]): F[T] =
-    Async.fromFuture(Sync[F].delay(promise.toFuture))
+  override protected def compileWebSocketPipe(ws: WebSocket[F], pipe: Nothing): F[Unit] =
+    throw new IllegalStateException("FetchCatsBackend does not support streaming responses")
+
+  override def convertFromFuture: ConvertFromFuture[F] = new ConvertFromFuture[F] {
+    override def apply[T](f: Future[T]): F[T] = Async.fromFuture(responseMonad.unit(f))
+  }
 }
 
 object FetchCatsBackend {
   def apply[F[_]: Concurrent: ContextShift](
       fetchOptions: FetchOptions = FetchOptions.Default,
       customizeRequest: FetchRequest => FetchRequest = identity
-  ): SttpBackend[F, Any] =
+  ): SttpBackend[F, WebSockets] =
     new FetchCatsBackend(fetchOptions, customizeRequest)
 
   /** Create a stub backend for testing, which uses the given [[F]] response wrapper.

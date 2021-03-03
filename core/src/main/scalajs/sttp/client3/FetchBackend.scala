@@ -1,18 +1,18 @@
 package sttp.client3
 
-import org.scalajs.dom.experimental.{BodyInit, Response => FetchResponse}
+import org.scalajs.dom.experimental.{BodyInit, Request => FetchRequest, Response => FetchResponse}
+import sttp.capabilities.WebSockets
+import sttp.client3.internal.{ConvertFromFuture, NoStreams}
+import sttp.client3.testing.SttpBackendStub
 import sttp.monad.FutureMonad
+import sttp.ws.WebSocket
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.scalajs.js
-import scala.scalajs.js.Promise
-import org.scalajs.dom.experimental.{Request => FetchRequest}
-import sttp.client3.testing.SttpBackendStub
-import sttp.client3.internal.NoStreams
 
 class FetchBackend private (fetchOptions: FetchOptions, customizeRequest: FetchRequest => FetchRequest)(implicit
     ec: ExecutionContext
-) extends AbstractFetchBackend[Future, Nothing, Any](fetchOptions, customizeRequest)(new FutureMonad()) {
+) extends AbstractFetchBackend[Future, Nothing, WebSockets](fetchOptions, customizeRequest, new FutureMonad()) {
 
   override val streams: NoStreams = NoStreams
 
@@ -28,18 +28,20 @@ class FetchBackend private (fetchOptions: FetchOptions, customizeRequest: FetchR
 
   override protected def handleResponseAsStream(
       response: FetchResponse
-  ): Future[Nothing] = {
+  ): Future[Nothing] =
     throw new IllegalStateException("Future FetchBackend does not support streaming responses")
-  }
 
-  override protected def transformPromise[T](promise: => Promise[T]): Future[T] = promise.toFuture
+  override protected def compileWebSocketPipe(ws: WebSocket[Future], pipe: Nothing): Future[Unit] =
+    throw new IllegalStateException("Future FetchBackend does not support streaming responses")
+
+  override def convertFromFuture: ConvertFromFuture[Future] = ConvertFromFuture.future
 }
 
 object FetchBackend {
   def apply(
       fetchOptions: FetchOptions = FetchOptions.Default,
       customizeRequest: FetchRequest => FetchRequest = identity
-  )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, Any] =
+  )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, WebSockets] =
     new FetchBackend(fetchOptions, customizeRequest)
 
   /** Create a stub backend for testing, which uses the [[Future]] response wrapper, and doesn't support streaming.

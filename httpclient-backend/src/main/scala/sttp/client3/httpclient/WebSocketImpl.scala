@@ -1,17 +1,18 @@
 package sttp.client3.httpclient
 
-import java.net.http.WebSocket.Listener
-import java.nio.ByteBuffer
-import java.util.concurrent.{CompletableFuture, CompletionStage}
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.function.BiConsumer
-import java.net.http.{WebSocket => JWebSocket}
-
+import sttp.client3.internal._
 import sttp.client3.internal.ws.{SimpleQueue, WebSocketEvent}
 import sttp.model.Headers
-import sttp.monad.{Canceler, MonadAsyncError, MonadError}
 import sttp.monad.syntax._
+import sttp.monad.{Canceler, MonadAsyncError, MonadError}
 import sttp.ws.{WebSocket, WebSocketClosed, WebSocketFrame}
+
+import java.net.http.WebSocket.Listener
+import java.net.http.{WebSocket => JWebSocket}
+import java.nio.ByteBuffer
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.{CompletableFuture, CompletionStage}
+import java.util.function.BiConsumer
 
 private[httpclient] class WebSocketImpl[F[_]](
     ws: JWebSocket,
@@ -93,7 +94,7 @@ private[httpclient] class AddToQueueListener[F[_]](
   }
 
   override def onBinary(webSocket: JWebSocket, data: ByteBuffer, last: Boolean): CompletionStage[_] = {
-    onFrame(WebSocketFrame.Binary(data.array(), last, None))
+    onFrame(WebSocketFrame.Binary(data.safeRead(), last, None))
     null
   }
 
