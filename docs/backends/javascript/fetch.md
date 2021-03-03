@@ -105,3 +105,26 @@ val response: Task[Response[Observable[ByteBuffer]]] =
 ```eval_rst
 .. note:: Currently no browsers support passing a stream as the request body. As such, using the ``Fetch`` backend with a streaming request will result in it being converted into an in-memory array before being sent. Response bodies are returned as a "proper" stream.
 ```
+
+## Websockets
+
+The backend supports both regular and streaming [websockets](../websockets.md).
+
+## Server-sent events
+
+Received data streams can be parsed to a stream of server-sent events (SSE), when using the Monix variant:
+
+```scala mdoc:compile-only
+import monix.reactive.Observable
+import monix.eval.Task
+
+import sttp.capabilities.monix.MonixStreams
+import sttp.client3.impl.monix.MonixServerSentEvents
+import sttp.model.sse.ServerSentEvent
+import sttp.client3._
+
+def processEvents(source: Observable[ServerSentEvent]): Task[Unit] = ???
+
+basicRequest.response(asStream(MonixStreams)(stream => 
+  processEvents(stream.transform(MonixServerSentEvents.parse))))
+```
