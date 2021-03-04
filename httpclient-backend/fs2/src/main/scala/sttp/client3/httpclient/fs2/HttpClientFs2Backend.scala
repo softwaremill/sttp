@@ -32,8 +32,8 @@ class HttpClientFs2Backend[F[_]: Async] private (
     client: HttpClient,
     closeClient: Boolean,
     customizeRequest: HttpRequest => HttpRequest,
-    customEncodingHandler: Fs2EncodingHandler[F])(
-    implicit dispatcher: Dispatcher[F]
+    customEncodingHandler: Fs2EncodingHandler[F],
+    dispatcher: Dispatcher[F]
 ) extends HttpClientAsyncBackend[F, Fs2Streams[F], Fs2Streams[F] with WebSockets, Stream[F, Byte]](
       client,
       implicitly,
@@ -63,7 +63,7 @@ class HttpClientFs2Backend[F[_]: Async] private (
     new Fs2BodyFromHttpClient[F]()
 
   override protected def createSimpleQueue[T]: F[SimpleQueue[F, T]] =
-    InspectableQueue.unbounded[F, T].map(new Fs2SimpleQueue(_, None))
+    InspectableQueue.unbounded[F, T].map(new Fs2SimpleQueue(_, None, dispatcher))
 
   override protected def publisherToBody(p: Publisher[util.List[ByteBuffer]]): Stream[F, Byte] = {
     p.toStream[F].flatMap(data => Stream.emits(data.asScala.map(Chunk.byteBuffer)).flatMap(Stream.chunk))
@@ -81,43 +81,48 @@ class HttpClientFs2Backend[F[_]: Async] private (
 object HttpClientFs2Backend {
   type Fs2EncodingHandler[F[_]] = EncodingHandler[Stream[F, Byte]]
 
-  private def apply[F[_]: Async: Dispatcher](
+  private def apply[F[_]: Async](
       client: HttpClient,
       closeClient: Boolean,
       customizeRequest: HttpRequest => HttpRequest,
-      customEncodingHandler: Fs2EncodingHandler[F]
+      customEncodingHandler: Fs2EncodingHandler[F],
+      dispatcher: Dispatcher[F]
   ): SttpBackend[F, Fs2Streams[F] with WebSockets] =
     new FollowRedirectsBackend(
-      new HttpClientFs2Backend(client, closeClient, customizeRequest, customEncodingHandler)
+      new HttpClientFs2Backend(client, closeClient, customizeRequest, customEncodingHandler, dispatcher)
     )
 
-  def apply[F[_]: Async: Dispatcher](
+  def apply[F[_]: Async](
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty
+      customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty,
+      dispatcher: Dispatcher[F]
   ): F[SttpBackend[F, Fs2Streams[F] with WebSockets]] =
     Sync[F].delay(
       HttpClientFs2Backend(
         HttpClientBackend.defaultClient(options),
         closeClient = true,
         customizeRequest,
-        customEncodingHandler
+        customEncodingHandler,
+        dispatcher
       )
     )
 
-  def resource[F[_]: Async: Dispatcher](
+  def resource[F[_]: Async](
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty
   ): Resource[F, SttpBackend[F, Fs2Streams[F] with WebSockets]] =
-    Resource.make(apply(options, customizeRequest, customEncodingHandler))(_.close())
+    Dispatcher[F].flatMap(dispatcher =>
+      Resource.make(apply(options, customizeRequest, customEncodingHandler, dispatcher))(_.close()))
 
-  def usingClient[F[_]: Async: Dispatcher](
+  def usingClient[F[_]: Async](
       client: HttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty
+      customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty,
+      dispatcher: Dispatcher[F]
   ): SttpBackend[F, Fs2Streams[F] with WebSockets] =
-    HttpClientFs2Backend(client, closeClient = false, customizeRequest, customEncodingHandler)
+    HttpClientFs2Backend(client, closeClient = false, customizeRequest, customEncodingHandler, dispatcher)
 
   /** Create a stub backend for testing, which uses the [[F]] response wrapper, and supports `Stream[F, Byte]`
     * streaming.

@@ -7,10 +7,10 @@ import fs2.concurrent.InspectableQueue
 import sttp.client3.internal.ws.SimpleQueue
 import sttp.ws.WebSocketBufferFull
 
-class Fs2SimpleQueue[F[_], A](queue: InspectableQueue[F, A], capacity: Option[Int])(implicit F: MonadError[F, Throwable], D: Dispatcher[F])
+class Fs2SimpleQueue[F[_], A](queue: InspectableQueue[F, A], capacity: Option[Int], dispatcher: Dispatcher[F])(implicit F: MonadError[F, Throwable])
     extends SimpleQueue[F, A] {
   override def offer(t: A): Unit = {
-    D.unsafeRunSync(
+    dispatcher.unsafeRunSync(
       queue.offer1(t)
         .flatMap[Unit] {
           case true => F.unit

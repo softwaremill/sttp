@@ -19,7 +19,7 @@ class AsyncHttpClientFs2WebSocketTest
     with CatsTestBase {
 
   implicit val backend: SttpBackend[IO, Fs2Streams[IO] with WebSockets] =
-    AsyncHttpClientFs2Backend[IO]().unsafeRunSync()
+    AsyncHttpClientFs2Backend[IO](dispatcher = dispatcher).unsafeRunSync()
 
   override val streams: Fs2Streams[IO] = new Fs2Streams[IO] {}
 

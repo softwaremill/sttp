@@ -9,7 +9,7 @@ trait DispatcherIOMixin extends BeforeAndAfterAll {
   this: Suite =>
 
   // use a var to avoid initialization error `scala.UninitializedFieldError`
-  protected implicit var dispatcher: Dispatcher[IO] = _
+  protected var dispatcher: Dispatcher[IO] = _
 
   private val (d, shutdownDispatcher) = Dispatcher[IO].allocated.unsafeRunSync()
   dispatcher = d

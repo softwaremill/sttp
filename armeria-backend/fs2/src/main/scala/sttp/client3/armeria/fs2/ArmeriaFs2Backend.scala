@@ -15,7 +15,7 @@ import sttp.client3.impl.cats.CatsMonadAsyncError
 import sttp.client3.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 import sttp.monad.MonadAsyncError
 
-private final class ArmeriaFs2Backend[F[_]: Async](client: WebClient, closeFactory: Boolean)(implicit dispatcher: Dispatcher[F])
+private final class ArmeriaFs2Backend[F[_]: Async](client: WebClient, closeFactory: Boolean, dispatcher: Dispatcher[F])
     extends AbstractArmeriaBackend[F, Fs2Streams[F]](client, closeFactory, new CatsMonadAsyncError) {
 
   override val streams: Fs2Streams[F] = Fs2Streams[F]
@@ -45,26 +45,28 @@ object ArmeriaFs2Backend {
     * the client will manage its own connection pool. If you'd like to reuse the default Armeria `ClientFactory`,
     * use `.usingDefaultClient`.
     */
-  def apply[F[_]: Async: Dispatcher](
-      options: SttpBackendOptions = SttpBackendOptions.Default
+  def apply[F[_]: Async](
+      options: SttpBackendOptions = SttpBackendOptions.Default,
+      dispatcher: Dispatcher[F]
   ): SttpBackend[F, Fs2Streams[F]] =
-    apply(newClient(options), closeFactory = true)
+    apply(newClient(options), closeFactory = true, dispatcher)
 
   def resource[F[_]: Async](
       options: SttpBackendOptions = SttpBackendOptions.Default
   ): Resource[F, SttpBackend[F, Fs2Streams[F]]] =
-    Dispatcher[F].flatMap(implicit dispatcher =>
-      Resource.make(Sync[F].delay(apply(newClient(options), closeFactory = true)))(_.close()))
+    Dispatcher[F].flatMap(dispatcher =>
+      Resource.make(Sync[F].delay(apply(newClient(options), closeFactory = true, dispatcher)))(_.close()))
 
-  def usingClient[F[_]: Async: Dispatcher](client: WebClient): SttpBackend[F, Fs2Streams[F]] =
-    apply(client, closeFactory = false)
+  def usingClient[F[_]: Async](client: WebClient, dispatcher: Dispatcher[F]): SttpBackend[F, Fs2Streams[F]] =
+    apply(client, closeFactory = false, dispatcher)
 
-  def usingDefaultClient[F[_]: Async: Dispatcher](): SttpBackend[F, Fs2Streams[F]] =
-    apply(newClient(), closeFactory = false)
+  def usingDefaultClient[F[_]: Async](dispatcher: Dispatcher[F]): SttpBackend[F, Fs2Streams[F]] =
+    apply(newClient(), closeFactory = false, dispatcher)
 
-  private def apply[F[_]: Async: Dispatcher](
+  private def apply[F[_]: Async](
       client: WebClient,
-      closeFactory: Boolean
+      closeFactory: Boolean,
+      dispatcher: Dispatcher[F]
   ): SttpBackend[F, Fs2Streams[F]] =
-    new FollowRedirectsBackend(new ArmeriaFs2Backend(client, closeFactory))
+    new FollowRedirectsBackend(new ArmeriaFs2Backend(client, closeFactory, dispatcher))
 }

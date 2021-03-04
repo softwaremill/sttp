@@ -11,5 +11,5 @@ trait HttpClientFs2TestBase extends CatsTestBase with DispatcherIOMixin {
   this: Suite =>
 
   implicit val backend: SttpBackend[IO, Fs2Streams[IO] with WebSockets] =
-    HttpClientFs2Backend[IO]().unsafeRunSync()
+    HttpClientFs2Backend[IO](dispatcher = dispatcher).unsafeRunSync()
 }
