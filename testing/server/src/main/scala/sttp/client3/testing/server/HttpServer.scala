@@ -22,6 +22,7 @@ import java.io.{ByteArrayOutputStream, InputStream, OutputStream}
 import scala.annotation.tailrec
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future, Promise}
+import scala.util.control.NoStackTrace
 
 object HttpServer {
   def main(args: Array[String]): Unit = {
@@ -360,7 +361,7 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
           headers = Nil,
           entity = HttpEntity(
             MediaTypes.`application/octet-stream`,
-            Source.single(ByteString(1)).concat(Source.failed(new RuntimeException)): Source[ByteString, Any]
+            Source.single(ByteString(1)).concat(Source.failed(new RuntimeException("expected error") with NoStackTrace)): Source[ByteString, Any]
           ),
           protocol = HttpProtocols.`HTTP/1.1`
         )
