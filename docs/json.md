@@ -161,8 +161,8 @@ import zio.json._
 
 val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
 
-implicit val payloadJsonCodec: JsonCodec[RequestPayload] = DeriveJsonCodec[RequestPayload]
-implicit val myResponseJsonCodec: JsonCodec[ResponsePayload] = DeriveJsonCodec[ResponsePayload]
+implicit val payloadJsonEncoder: JsonEncoder[RequestPayload] = DeriveJsonEncoder.gen[RequestPayload]
+implicit val myResponseJsonDecoder: JsonDecoder[ResponsePayload] = DeriveJsonDecoder.gen[ResponsePayload]
 
 val requestPayload = RequestPayload("some data")
 

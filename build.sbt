@@ -829,6 +829,7 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     json4s,
     circe,
     sprayJson,
+    zioJson,
     asyncHttpClientZioBackend,
     asyncHttpClientMonixBackend,
     asyncHttpClientFs2Backend,
