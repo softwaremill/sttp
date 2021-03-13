@@ -16,7 +16,6 @@ import sttp.client3.{
   asStringAlways
 }
 import sttp.model.MediaType
-import zio.stream.ZTransducer
 
 trait SttpZioJsonApi {
   import zio.json._
@@ -52,9 +51,6 @@ trait SttpZioJsonApi {
       case HttpError(e, code)                  => deserializeJson[E].apply(e).fold(DeserializationException(e, _), HttpError(_, code))
       case de @ DeserializationException(_, _) => de
     }.showAsJsonEither
-
-  private val utf8CharDecode =
-    ZTransducer.utf8Decode.mapChunks(_.flatMap(_.toCharArray))
 
   def deserializeJson[B: JsonDecoder: IsOption]: String => Either[String, B] =
     JsonInput.sanitize[B].andThen(_.fromJson[B])
