@@ -1,15 +1,22 @@
 package sttp.client3.ziojson
 
-import sttp.capabilities
-import sttp.capabilities.zio.ZioStreams
-import sttp.client3.json.RichResponseAs
-import sttp.client3.{BodySerializer, DeserializationException, HttpError, IsOption, ResponseAs, ResponseException, ShowError, StringBody, asStream, asString, asStringAlways}
-import sttp.model.MediaType
 import sttp.client3.internal.Utf8
-import zio.blocking.Blocking
-import zio.{RIO, ZIO}
+import sttp.client3.json.RichResponseAs
+import sttp.client3.{
+  BodySerializer,
+  DeserializationException,
+  HttpError,
+  IsOption,
+  JsonInput,
+  ResponseAs,
+  ResponseException,
+  ShowError,
+  StringBody,
+  asString,
+  asStringAlways
+}
+import sttp.model.MediaType
 import zio.stream.ZTransducer
-import sttp.client3.JsonInput
 
 trait SttpZioJsonApi {
   import zio.json._
@@ -39,7 +46,8 @@ trait SttpZioJsonApi {
     * - `Left(HttpError(E))` if the response was other than 2xx and parsing was successful
     * - `Left(DeserializationException)` if there's an error during deserialization
     */
-  def asJsonEither[E: JsonDecoder: IsOption, B: JsonDecoder: IsOption]: ResponseAs[Either[ResponseException[E, String], B], Any] =
+  def asJsonEither[E: JsonDecoder: IsOption, B: JsonDecoder: IsOption]
+      : ResponseAs[Either[ResponseException[E, String], B], Any] =
     asJson[B].mapLeft {
       case HttpError(e, code)                  => deserializeJson[E].apply(e).fold(DeserializationException(e, _), HttpError(_, code))
       case de @ DeserializationException(_, _) => de
@@ -47,19 +55,6 @@ trait SttpZioJsonApi {
 
   private val utf8CharDecode =
     ZTransducer.utf8Decode.mapChunks(_.flatMap(_.toCharArray))
-
-  def asJsonStream[B: JsonDecoder: IsOption]
-  : ResponseAs[Either[ResponseException[String, String], B], capabilities.Effect[RIO[Blocking, *]] with ZioStreams] =
-    asStream(ZioStreams)(
-      s =>
-        JsonDecoder[B]
-          .decodeJsonStream(s >>> utf8CharDecode)
-          .map(Right(_))
-          .catchSome { case e => ZIO.left(DeserializationException("", e.getMessage)) }
-    ).mapWithMetadata {
-      case (Left(s), meta) => Left(HttpError(s, meta.code))
-      case (Right(s), _)   => s
-    }
 
   def deserializeJson[B: JsonDecoder: IsOption]: String => Either[String, B] =
     JsonInput.sanitize[B].andThen(_.fromJson[B])
