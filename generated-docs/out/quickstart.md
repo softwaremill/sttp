@@ -9,7 +9,7 @@ To integrate with other parts of your application, you'll often need to use an a
 The basic dependency which provides the API and the default synchronous backend is:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "core" % "3.1.6"
+"com.softwaremill.sttp.client3" %% "core" % "3.1.7"
 ```
 
 `sttp client` is available for Scala 2.11, 2.12 and 2.13, and requires Java 8, as well as for Scala 3.
@@ -21,7 +21,7 @@ The basic dependency which provides the API and the default synchronous backend 
 If you are an [Ammonite](https://ammonite.io) user, you can quickly start experimenting with sttp by copy-pasting the following:
 
 ```scala
-import $ivy.`com.softwaremill.sttp.client3::core:3.1.6`
+import $ivy.`com.softwaremill.sttp.client3::core:3.1.7`
 import sttp.client3.quick._
 quickRequest.get(uri"http://httpbin.org/ip").send(backend)
 ```
@@ -31,7 +31,7 @@ Importing the `quick` object has the same effect as importing `sttp.client3._`, 
 If the default `HttpURLConnectionBackend` for some reason is insufficient, you can also use one based on OkHttp or HttpClient:
 
 ```scala
-import $ivy.`com.softwaremill.sttp.client3::okhttp-backend:3.1.6`
+import $ivy.`com.softwaremill.sttp.client3::okhttp-backend:3.1.7`
 import sttp.client3.okhttp.quick._
 quickRequest.get(uri"http://httpbin.org/ip").send(backend)
 ```

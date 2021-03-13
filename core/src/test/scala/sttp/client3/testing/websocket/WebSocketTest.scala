@@ -1,17 +1,17 @@
 package sttp.client3.testing.websocket
 
-import org.scalatest.{Assertion, BeforeAndAfterAll, SuiteMixin}
 import org.scalatest.concurrent.{Signaler, ThreadSignaler, TimeLimits}
 import org.scalatest.flatspec.AsyncFlatSpecLike
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.{Seconds, Span}
+import org.scalatest.{Assertion, BeforeAndAfterAll, SuiteMixin}
 import sttp.capabilities.WebSockets
-import sttp.client3._
 import sttp.client3.SttpClientException.ReadException
+import sttp.client3._
+import sttp.client3.testing.HttpTest.wsEndpoint
+import sttp.client3.testing.{ConvertToFuture, ToFutureWrapper}
 import sttp.monad.MonadError
 import sttp.monad.syntax._
-import sttp.client3.testing.{ConvertToFuture, ToFutureWrapper}
-import sttp.client3.testing.HttpTest.wsEndpoint
 import sttp.ws.{WebSocket, WebSocketFrame}
 
 abstract class WebSocketTest[F[_]]
@@ -33,8 +33,23 @@ abstract class WebSocketTest[F[_]]
       .get(uri"$wsEndpoint/ws/echo")
       .response(asWebSocketAlways { (ws: WebSocket[F]) =>
         for {
-          _ <- send(ws, 3)
-          _ <- receiveEcho(ws, 3)
+          _ <- sendText(ws, 3)
+          _ <- receiveEchoText(ws, 3)
+          _ <- ws.close()
+        } yield succeed
+      })
+      .send(backend)
+      .map(_ => succeed)
+      .toFuture()
+  }
+
+  it should "send and receive binary messages" in {
+    basicRequest
+      .get(uri"$wsEndpoint/ws/echo")
+      .response(asWebSocketAlways { (ws: WebSocket[F]) =>
+        for {
+          _ <- sendBinary(ws, 3)
+          _ <- receiveEchoBinary(ws, 3)
           _ <- ws.close()
         } yield succeed
       })
@@ -52,8 +67,8 @@ abstract class WebSocketTest[F[_]]
         val ws = response.body
 
         for {
-          _ <- send(ws, 2)
-          _ <- receiveEcho(ws, 2)
+          _ <- sendText(ws, 2)
+          _ <- receiveEchoText(ws, 2)
           _ <- ws.close()
         } yield succeed
       }
@@ -69,8 +84,8 @@ abstract class WebSocketTest[F[_]]
         val ws = response.body
 
         for {
-          _ <- send(ws, 1000)
-          _ <- receiveEcho(ws, 1000)
+          _ <- sendText(ws, 1000)
+          _ <- receiveEchoText(ws, 1000)
           _ <- ws.close()
         } yield succeed
       }
@@ -125,13 +140,25 @@ abstract class WebSocketTest[F[_]]
     }
   }
 
-  def send(ws: WebSocket[F], count: Int): F[Unit] = {
-    val fs = (1 to count).map(i => () => ws.send(WebSocketFrame.text(s"test$i")))
+  def sendText(ws: WebSocket[F], count: Int): F[Unit] =
+    send(ws, count, (i: Int) => WebSocketFrame.text(s"test$i"))
+
+  def sendBinary(ws: WebSocket[F], count: Int): F[Unit] =
+    send(ws, count, (i: Int) => WebSocketFrame.binary(Array(i.toByte)))
+
+  def receiveEchoText(ws: WebSocket[F], count: Int): F[Assertion] =
+    receiveEcho(count, (i: Int) => ws.receiveText().map(_ shouldBe s"echo: test$i"))
+
+  def receiveEchoBinary(ws: WebSocket[F], count: Int): F[Assertion] =
+    receiveEcho(count, (i: Int) => ws.receiveBinary(false).map(_ shouldBe Array(i.toByte)))
+
+  private def send(ws: WebSocket[F], count: Int, frame: Int => WebSocketFrame): F[Unit] = {
+    val fs = (1 to count).map(i => () => ws.send(frame(i)))
     fs.foldLeft(().unit)((f1, lazy_f2) => f1.flatMap(_ => lazy_f2()))
   }
 
-  def receiveEcho(ws: WebSocket[F], count: Int): F[Assertion] = {
-    val fs = (1 to count).map(i => () => ws.receiveText().map(_ shouldBe s"echo: test$i"))
+  private def receiveEcho(count: Int, assert: Int => F[Assertion]): F[Assertion] = {
+    val fs = (1 to count).map(i => () => assert(i))
     fs.foldLeft(succeed.unit)((f1, lazy_f2) => f1.flatMap(_ => lazy_f2()))
   }
 

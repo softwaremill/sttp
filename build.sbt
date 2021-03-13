@@ -7,7 +7,7 @@ import com.softwaremill.SbtSoftwareMillBrowserTestJS._
 
 val scala2_11 = "2.11.12"
 val scala2_12 = "2.12.13"
-val scala2_13 = "2.13.4"
+val scala2_13 = "2.13.5"
 val scala2 = List(scala2_11, scala2_12, scala2_13)
 val scala3 = List("3.0.0-RC1")
 
@@ -120,7 +120,7 @@ val jeagerClientVersion = "1.5.0"
 val braveOpentracingVersion = "1.0.0"
 val zipkinSenderOkHttpVersion = "2.16.3"
 val resilience4jVersion = "1.7.0"
-val http4sVersion = "0.21.19"
+val http4sVersion = "0.21.20"
 
 val compileAndTest = "compile->compile;test->test"
 
@@ -659,7 +659,7 @@ lazy val upickle = (projectMatrix in file("json/upickle"))
   .nativePlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonNativeSettings)
   .dependsOn(core, jsonCommon)
 
-lazy val json4sVersion = "3.6.10"
+lazy val json4sVersion = "3.6.11"
 
 lazy val json4s = (projectMatrix in file("json/json4s"))
   .settings(commonJvmSettings)

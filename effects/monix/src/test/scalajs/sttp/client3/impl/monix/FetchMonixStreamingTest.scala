@@ -1,8 +1,8 @@
 package sttp.client3.impl.monix
 
 import monix.eval.Task
-import sttp.client3.SttpBackend
 import sttp.capabilities.monix.MonixStreams
+import sttp.client3.SttpBackend
 
 class FetchMonixStreamingTest extends MonixStreamingTest {
   override val backend: SttpBackend[Task, MonixStreams] = FetchMonixBackend()

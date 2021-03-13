@@ -1,21 +1,18 @@
 package sttp.client3.testing.websocket
 
-import java.util.concurrent.LinkedBlockingQueue
-import java.util.concurrent.atomic.AtomicReference
-import java.util.function.BinaryOperator
-
 import org.scalatest.Suite
 import org.scalatest.flatspec.AsyncFlatSpecLike
 import org.scalatest.matchers.should.Matchers
 import sttp.capabilities.{Streams, WebSockets}
-import sttp.monad.MonadError
 import sttp.client3.testing.HttpTest.wsEndpoint
 import sttp.client3.testing.{ConvertToFuture, ToFutureWrapper}
-import sttp.client3.{SttpBackend, asWebSocketStreamAlways, basicRequest}
-import sttp.client3._
+import sttp.client3.{SttpBackend, asWebSocketStreamAlways, basicRequest, _}
+import sttp.monad.MonadError
 import sttp.monad.syntax._
 import sttp.ws.WebSocketFrame
 
+import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicReference
 import scala.collection.JavaConverters._
 
 trait WebSocketStreamingTest[F[_], S] extends ToFutureWrapper { outer: Suite with AsyncFlatSpecLike with Matchers =>
@@ -26,9 +23,9 @@ trait WebSocketStreamingTest[F[_], S] extends ToFutureWrapper { outer: Suite wit
 
   def webSocketPipeTerminatedByServerTest(
       postfix: String
-  )(pipe: LinkedBlockingQueue[String] => streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]) = {
+  )(pipe: ConcurrentLinkedQueue[String] => streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]) = {
     it should s"use pipe to process websocket messages - server-terminated - $postfix" in {
-      val received = new LinkedBlockingQueue[String]()
+      val received = new ConcurrentLinkedQueue[String]()
       basicRequest
         .get(uri"$wsEndpoint/ws/send_and_expect_echo")
         .response(
@@ -44,9 +41,9 @@ trait WebSocketStreamingTest[F[_], S] extends ToFutureWrapper { outer: Suite wit
 
   def webSocketPipeClientTerminated(
       postfix: String
-  )(pipe: LinkedBlockingQueue[String] => streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]) = {
+  )(pipe: ConcurrentLinkedQueue[String] => streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]) = {
     it should s"use pipe to process websocket messages - client-terminated - $postfix" in {
-      val received = new LinkedBlockingQueue[String]()
+      val received = new ConcurrentLinkedQueue[String]()
       basicRequest
         .get(uri"$wsEndpoint/ws/echo")
         .response(
@@ -64,12 +61,8 @@ trait WebSocketStreamingTest[F[_], S] extends ToFutureWrapper { outer: Suite wit
     val buffer = new AtomicReference[String]("")
     functionToPipe {
       case WebSocketFrame.Text(payload, false, _) =>
-        buffer.accumulateAndGet(
-          payload,
-          new BinaryOperator[String] {
-            override def apply(t: String, u: String): String = t + u
-          }
-        )
+        val s = buffer.get()
+        buffer.set(s + payload)
         None
       case WebSocketFrame.Text(payload, _, _) =>
         val wholePayload = buffer.getAndSet("") + payload
@@ -90,17 +83,12 @@ trait WebSocketStreamingTest[F[_], S] extends ToFutureWrapper { outer: Suite wit
     val buffer = new AtomicReference[String]("")
     prepend(WebSocketFrame.text("1"))(functionToPipe {
       case WebSocketFrame.Text(payload, false, _) =>
-        buffer.accumulateAndGet(
-          payload,
-          new BinaryOperator[String] {
-            override def apply(t: String, u: String): String = t + u
-          }
-        )
+        val s = buffer.get()
+        buffer.set(s + payload)
         None
       case WebSocketFrame.Text(payload, _, _) =>
         val wholePayload = buffer.getAndSet("") + payload
         received.add(wholePayload)
-
         if (wholePayload == "echo: 5")
           Some(WebSocketFrame.close)
         else
