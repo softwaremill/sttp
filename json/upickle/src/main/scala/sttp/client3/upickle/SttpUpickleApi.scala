@@ -45,10 +45,11 @@ trait SttpUpickleApi {
       Right(read[B](JsonInput.sanitize[B].apply(s)))
     } catch {
       case e: Exception => Left(e)
-      case t: Throwable => // in ScalaJS, exceptions are wrapped in org.scalajs.linker.runtime.UndefinedBehaviorError
+      case t: Throwable =>
+        // in ScalaJS, ArrayIndexOutOfBoundsException exceptions are wrapped in org.scalajs.linker.runtime.UndefinedBehaviorError
         t.getCause match {
-          case e: Exception => Left(e)
-          case _            => throw t
+          case e: ArrayIndexOutOfBoundsException => Left(e)
+          case _                                 => throw t
         }
     }
   }
