@@ -17,9 +17,9 @@ import sttp.client3.{
 }
 import sttp.model.MediaType
 
-trait SttpZioJsonApi {
+trait SttpZioJsonApi extends SttpZioJsonApiExtensions {
   import zio.json._
-  private implicit val stringShowError: ShowError[String] = t => t
+  private[ziojson] implicit val stringShowError: ShowError[String] = t => t
 
   implicit def zioJsonBodySerializer[B: JsonEncoder]: BodySerializer[B] =
     b => StringBody(b.toJson, Utf8, MediaType.ApplicationJson)
