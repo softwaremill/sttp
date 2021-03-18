@@ -34,7 +34,7 @@ case class ResponsePayload(data: String)
 JSON encoding of bodies and decoding of responses can be handled using [Circe](https://circe.github.io/circe/) by the `circe` module. To use add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "circe" % "3.1.7"
+"com.softwaremill.sttp.client3" %% "circe" % "3.1.8"
 ```
 
 This module adds a body serialized, so that json payloads can be sent as request bodies. To send a payload of type `T` as json, a `io.circe.Encoder[T]` implicit value must be available in scope.
@@ -66,7 +66,7 @@ Arbitrary JSON structures can be traversed by parsing the result as `io.circe.Js
 To encode and decode json using json4s, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "json4s" % "3.1.7"
+"com.softwaremill.sttp.client3" %% "json4s" % "3.1.8"
 "org.json4s" %% "json4s-native" % "3.6.0"
 ```
 
@@ -100,7 +100,7 @@ val response: Identity[Response[Either[ResponseException[String, Exception], Res
 To encode and decode JSON using [spray-json](https://github.com/spray/spray-json), add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "spray-json" % "3.1.7"
+"com.softwaremill.sttp.client3" %% "spray-json" % "3.1.8"
 ```
 
 Using this module it is possible to set request bodies and read response bodies as your custom types, using the implicitly available instances of `spray.json.JsonWriter` / `spray.json.JsonReader` or `spray.json.JsonFormat`.
@@ -132,7 +132,43 @@ val response: Identity[Response[Either[ResponseException[String, Exception], Res
 To encode and decode JSON using [play-json](https://www.playframework.com), add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "play-json" % "3.1.7"
+"com.softwaremill.sttp.client3" %% "play-json" % "3.1.8"
 ```
 
 To use, add an import: `import sttp.client3.playJson._`.
+
+## zio-json
+
+To encode and decode JSON using the high-performance [zio-json](https://zio.github.io/zio-json/) library, one add the following dependency to your project.
+
+```scala
+"com.softwaremill.sttp.client3" %% "zio-json" % "3.1.8"
+```
+or for ScalaJS (cross build) projects:
+```scala
+"com.softwaremill.sttp.client3" %%% "zio-json" % "3.1.8"
+```
+
+To use, add an import: `import sttp.client3.ziojson._` (or extend `SttpZioJsonApi`), define an implicit `JsonCodec`, or `JsonDecoder`/`JsonEncoder` for your datatype.
+
+Usage example:
+
+```scala
+import sttp.client3._
+import sttp.client3.ziojson._
+import zio.json._
+
+val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
+
+implicit val payloadJsonEncoder: JsonEncoder[RequestPayload] = DeriveJsonEncoder.gen[RequestPayload]
+implicit val myResponseJsonDecoder: JsonDecoder[ResponsePayload] = DeriveJsonDecoder.gen[ResponsePayload]
+
+val requestPayload = RequestPayload("some data")
+
+val response: Identity[Response[Either[ResponseException[String, String], ResponsePayload]]] =
+basicRequest
+  .post(uri"...")
+  .body(requestPayload)
+  .response(asJson[ResponsePayload])
+  .send(backend)
+```
