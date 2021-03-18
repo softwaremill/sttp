@@ -149,7 +149,7 @@ or for ScalaJS (cross build) projects:
 "com.softwaremill.sttp.client3" %%% "zio-json" % "@VERSION@"
 ```
 
-To use, add an import: `import sttp.client3.ziojson._`, define an implicit `JsonCodec`, `JsonDecoder` or `JsonEncoder` for your datatype to encode and or decode.
+To use, add an import: `import sttp.client3.ziojson._` (or extend `SttpZioJsonApi`), define an implicit `JsonCodec`, or `JsonDecoder`/`JsonEncoder` for your datatype.
 
 Usage example:
 
