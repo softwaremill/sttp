@@ -12,6 +12,11 @@ All of these are lazily evaluated, and can be repeated. Such a representation al
 
 Still, the input for a particular resilience model might involve both the result (either an exception, or a response) and the original description of the request being sent. E.g. retries can depend on the request method; circuit-breaking can depend on the host, to which the request is sent; same for rate limiting.
 
+## Except that sometimes sttp does retry
+
+Note: Yes, sttp does retry if a [channel is closed](https://github.com/AsyncHttpClient/async-http-client/blob/12f4b2a5654ec7427a10c049d06e3f05dac41f1e/client/src/main/java/org/asynchttpclient/netty/request/NettyRequestSender.java#L265).
+This documentation does not offer advice for working around this feature.
+
 ## Retries
 
 Here's an incomplete list of libraries which can be used to manage retries in various Scala stacks:
