@@ -5,7 +5,7 @@ A Scala Native backend implemented using [Curl](https://github.com/curl/curl/blo
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %%% "core" % "3.1.9"
+"com.softwaremill.sttp.client3" %%% "core" % "3.2.0"
 ```
 
 and initialize one of the backends:
