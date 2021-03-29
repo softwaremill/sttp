@@ -5,9 +5,10 @@ import sbt.internal.ProjectMatrix
 // run JS tests inside Chrome, due to jsdom not supporting fetch
 import com.softwaremill.SbtSoftwareMillBrowserTestJS._
 
+val scala2_11 = "2.11.12"
 val scala2_12 = "2.12.13"
 val scala2_13 = "2.13.5"
-val scala2 = List(scala2_12, scala2_13)
+val scala2 = List(scala2_11, scala2_12, scala2_13)
 val scala3 = List("3.0.0-RC1")
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on")
@@ -89,7 +90,7 @@ val playJsonVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.7.4"
   case _             => "2.9.2"
 }
-val catsEffectVersion= "3.0.0-RC2"
+val catsEffectVersion = "3.0.0"
 val fs2Version = "3.0.0-M9"
 
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.2.4"
@@ -112,7 +113,7 @@ val jeagerClientVersion = "1.5.0"
 val braveOpentracingVersion = "1.0.0"
 val zipkinSenderOkHttpVersion = "2.16.3"
 val resilience4jVersion = "1.7.0"
-val http4sVersion = "1.0.0-M18"
+val http4sVersion = "1.0.0-M19"
 
 val compileAndTest = "compile->compile;test->test"
 
@@ -138,7 +139,7 @@ lazy val allAggregates = projectsWithOptionalNative ++
   testCompilation.projectRefs ++
   cats.projectRefs ++
   fs2.projectRefs ++
-//  monix.projectRefs ++
+  monix.projectRefs ++
   scalaz.projectRefs ++
   zio.projectRefs ++
   akkaHttpBackend.projectRefs ++
@@ -146,11 +147,11 @@ lazy val allAggregates = projectsWithOptionalNative ++
   asyncHttpClientFutureBackend.projectRefs ++
   asyncHttpClientScalazBackend.projectRefs ++
   asyncHttpClientZioBackend.projectRefs ++
-//  asyncHttpClientMonixBackend.projectRefs ++
+  asyncHttpClientMonixBackend.projectRefs ++
   asyncHttpClientCatsBackend.projectRefs ++
   asyncHttpClientFs2Backend.projectRefs ++
   okhttpBackend.projectRefs ++
-//  okhttpMonixBackend.projectRefs ++
+  okhttpMonixBackend.projectRefs ++
   http4sBackend.projectRefs ++
   circe.projectRefs ++
   json4s.projectRefs ++
@@ -160,7 +161,7 @@ lazy val allAggregates = projectsWithOptionalNative ++
   prometheusBackend.projectRefs ++
   zioTelemetryOpenTracingBackend.projectRefs ++
   httpClientBackend.projectRefs ++
-//  httpClientMonixBackend.projectRefs ++
+  httpClientMonixBackend.projectRefs ++
   httpClientFs2Backend.projectRefs ++
   httpClientZioBackend.projectRefs ++
   finagleBackend.projectRefs ++
@@ -277,13 +278,13 @@ lazy val cats = (projectMatrix in file("effects/cats"))
   )
   .dependsOn(core % compileAndTest)
   .jvmPlatform(
-    scalaVersions = scala2 ++ scala3,
+    scalaVersions = List(scala2_12, scala2_13) ++ scala3,
     settings = commonJvmSettings
   )
-//  .jsPlatform(
-//    scalaVersions = List(scala2_12, scala2_13),
-//    settings = commonJsSettings ++ commonJsBackendSettings ++ browserChromeTestSettings ++ testServerSettings
-//  )
+  .jsPlatform(
+    scalaVersions = List(scala2_12, scala2_13),
+    settings = commonJsSettings ++ commonJsBackendSettings ++ browserChromeTestSettings ++ testServerSettings
+  )
 
 lazy val fs2 = (projectMatrix in file("effects/fs2"))
   .settings(
@@ -296,10 +297,10 @@ lazy val fs2 = (projectMatrix in file("effects/fs2"))
   )
   .dependsOn(core % compileAndTest, cats % compileAndTest)
   .jvmPlatform(
-    scalaVersions = scala2 ++ scala3,
+    scalaVersions = List(scala2_12, scala2_13) ++ scala3,
     settings = commonJvmSettings
   )
-//  .jsPlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonJsSettings)
+  .jsPlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonJsSettings)
 
 lazy val monix = (projectMatrix in file("effects/monix"))
   .settings(
@@ -389,14 +390,15 @@ lazy val asyncHttpClientBackend = (projectMatrix in file("async-http-client-back
     scalaVersions = scala2 ++ scala3
   )
 
-def asyncHttpClientBackendProject(proj: String, includeDotty: Boolean = false) = {
+def asyncHttpClientBackendProject(proj: String, includeDotty: Boolean = false, include2_11: Boolean = true) = {
   ProjectMatrix(s"asyncHttpClientBackend${proj.capitalize}", file(s"async-http-client-backend/$proj"))
     .settings(commonJvmSettings)
     .settings(testServerSettings)
     .settings(name := s"async-http-client-backend-$proj")
     .dependsOn(asyncHttpClientBackend % compileAndTest)
     .jvmPlatform(
-      scalaVersions = scala2 ++ (if (includeDotty) scala3 else Nil)
+      scalaVersions =
+        (if (include2_11) List(scala2_11) else Nil) ++ List(scala2_12, scala2_13) ++ (if (includeDotty) scala3 else Nil)
     )
 }
 
@@ -422,11 +424,11 @@ lazy val asyncHttpClientMonixBackend =
     .dependsOn(monix % compileAndTest)
 
 lazy val asyncHttpClientCatsBackend =
-  asyncHttpClientBackendProject("cats", includeDotty = true)
+  asyncHttpClientBackendProject("cats", includeDotty = true, include2_11 = false)
     .dependsOn(cats % compileAndTest)
 
 lazy val asyncHttpClientFs2Backend =
-  asyncHttpClientBackendProject("fs2", includeDotty = true)
+  asyncHttpClientBackendProject("fs2", includeDotty = true, include2_11 = false)
     .settings(
       libraryDependencies ++= Seq(
         "co.fs2" %% "fs2-reactive-streams" % fs2Version,
@@ -754,7 +756,7 @@ lazy val examples = (projectMatrix in file("examples"))
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13))
   .dependsOn(
     core,
-//    asyncHttpClientMonixBackend,
+    asyncHttpClientMonixBackend,
     asyncHttpClientZioBackend,
     akkaHttpBackend,
     asyncHttpClientFs2Backend,
@@ -820,7 +822,7 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     okhttpMonixBackend,
     httpClientBackend,
     httpClientFs2Backend,
-//    http4sBackend,
+    http4sBackend,
     httpClientMonixBackend,
     httpClientZioBackend,
     openTracingBackend,
