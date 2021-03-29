@@ -17,7 +17,7 @@ class CatsMonadAsyncError[F[_]](implicit F: Concurrent[F]) extends MonadAsyncErr
     F.recoverWith(rt)(h)
 
   override def async[T](register: ((Either[Throwable, T]) => Unit) => Canceler): F[T] =
-    F.cancelable(register.andThen(c => F.delay(c.cancel)))
+    F.cancelable(register.andThen(c => F.delay(c.cancel())))
 
   override def eval[T](t: => T): F[T] = F.delay(t)
 
