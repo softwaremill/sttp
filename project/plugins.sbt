@@ -10,6 +10,6 @@ addSbtPlugin("com.softwaremill.sbt-softwaremill" % "sbt-softwaremill-publish" % 
 addSbtPlugin("com.softwaremill.sbt-softwaremill" % "sbt-softwaremill-browser-test-js" % sbtSoftwareMillVersion)
 
 addSbtPlugin("ch.epfl.lamp" % "sbt-dotty" % "0.5.3")
-addSbtPlugin("org.scalameta" % "sbt-mdoc" % "2.2.18")
+addSbtPlugin("org.scalameta" % "sbt-mdoc" % "2.2.19")
 
 addSbtPlugin("org.jetbrains" % "sbt-ide-settings" % "1.1.0")
