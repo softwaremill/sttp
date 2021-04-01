@@ -86,4 +86,25 @@ effect type      class name
 
 ## Compression
 
-For those who plan to use a lot of websocket traffic, you could consider websocket compression. Only [async-client-backend](https://github.com/AsyncHttpClient/async-http-client/issues/1394) and [OkHttp](https://github.com/square/okhttp/issues/1733) backends support this feature. To track Akka developments in this area, see [this issue](https://github.com/akka/akka-http/issues/659).  
+For those who plan to use a lot of websocket traffic, you could consider websocket compression. See the information on
+configuring individual backends for more information.
+
+## Implementation-specific configuration
+
+### async-http-client-based backends
+
+Web socket settings can be adjusted by providing a custom `AsyncHttpClientConfig`, which can be created using 
+`new DefaultAsyncHttpClientConfig.Builder()`. 
+
+Some available settings:
+
+* maximum web socket frame size. Default: 10240, can be changed using `.setWebSocketMaxFrameSize`. 
+* compression. Default: false, can be changed using: `.setEnablewebSocketCompression`.
+
+### OkHttp
+
+* supports compression (default: not enabled)
+
+### akka-http
+
+Compression is not yet available, to track Akka developments in this area, see [this issue](https://github.com/akka/akka-http/issues/659).  
