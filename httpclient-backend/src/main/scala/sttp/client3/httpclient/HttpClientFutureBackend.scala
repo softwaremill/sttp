@@ -57,6 +57,8 @@ class HttpClientFutureBackend private (
   override protected def createSimpleQueue[T]: Future[SimpleQueue[Future, T]] =
     Future.successful(new FutureSimpleQueue[T](None))
 
+  override protected def createSequencer: Future[Sequencer[Future]] = Future.successful(new FutureSequencer)
+
   override protected def standardEncoding: (InputStream, String) => InputStream = {
     case (body, "gzip")    => new GZIPInputStream(body)
     case (body, "deflate") => new InflaterInputStream(body)

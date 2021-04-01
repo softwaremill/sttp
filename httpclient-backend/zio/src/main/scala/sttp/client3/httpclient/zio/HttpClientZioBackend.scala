@@ -5,13 +5,18 @@ import java.net.http.HttpRequest.{BodyPublisher, BodyPublishers}
 import java.net.http.{HttpClient, HttpRequest}
 import java.nio.ByteBuffer
 import java.util
-
 import _root_.zio.interop.reactivestreams._
 import org.reactivestreams.{FlowAdapters, Publisher}
 import sttp.capabilities.WebSockets
 import sttp.capabilities.zio.ZioStreams
 import sttp.client3.httpclient.HttpClientBackend.EncodingHandler
-import sttp.client3.httpclient.{BodyFromHttpClient, BodyToHttpClient, HttpClientAsyncBackend, HttpClientBackend}
+import sttp.client3.httpclient.{
+  BodyFromHttpClient,
+  BodyToHttpClient,
+  HttpClientAsyncBackend,
+  HttpClientBackend,
+  Sequencer
+}
 import sttp.client3.impl.zio.{RIOMonadAsyncError, ZioSimpleQueue}
 import sttp.client3.internal._
 import sttp.client3.internal.ws.SimpleQueue
@@ -70,6 +75,8 @@ class HttpClientZioBackend private (
       runtime <- ZIO.runtime[Any]
       queue <- Queue.unbounded[T]
     } yield new ZioSimpleQueue(queue, runtime)
+
+  override protected def createSequencer: Task[Sequencer[Task]] = ZioSequencer.create
 
   override protected def standardEncoding: (ZStream[Any, Throwable, Byte], String) => ZStream[Any, Throwable, Byte] = {
     case (body, "gzip")    => body.transduce(ZTransducer.gunzip())
