@@ -20,15 +20,11 @@ trait WebSocketConcurrentTest[F[_]] { outer: Suite with AsyncFlatSpecLike with W
       .get(uri"$wsEndpoint/ws/echo")
       .response(asWebSocketAlways { (ws: WebSocket[F]) =>
         val n = 32
-        val tasks = List.fill(n)(() =>
-          for {
-            _ <- ws.sendText("test")
-            t <- ws.receiveText()
-          } yield t
-        )
+        val tasks = List.fill(n)(() => ws.sendText("test"))
 
         for {
-          r <- concurrently(tasks)
+          _ <- concurrently(tasks)
+          r <- sequence(List.fill(n)(() => ws.receiveText()))
           _ <- ws.close()
         } yield {
           r shouldBe List.fill(n)("echo: test")
@@ -40,4 +36,8 @@ trait WebSocketConcurrentTest[F[_]] { outer: Suite with AsyncFlatSpecLike with W
   }
 
   def concurrently[T](fs: List[() => F[T]]): F[List[T]]
+  def sequence[T](fs: List[() => F[T]]): F[List[T]] = fs match {
+    case Nil          => (Nil: List[T]).unit
+    case head :: tail => head().flatMap(h => sequence(tail).map(h :: _))
+  }
 }
