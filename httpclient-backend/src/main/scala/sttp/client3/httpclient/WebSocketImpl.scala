@@ -18,7 +18,8 @@ private[httpclient] class WebSocketImpl[F[_]](
     ws: JWebSocket,
     queue: SimpleQueue[F, WebSocketEvent],
     _isOpen: AtomicBoolean,
-    _monad: MonadAsyncError[F]
+    _monad: MonadAsyncError[F],
+    sequencer: Sequencer[F]
 ) extends WebSocket[F] {
   override def receive(): F[WebSocketFrame] = {
     queue.poll.flatMap {
@@ -39,19 +40,24 @@ private[httpclient] class WebSocketImpl[F[_]](
     }
   }
 
-  override def send(f: WebSocketFrame, isContinuation: Boolean = false): F[Unit] =
-    monad.flatten(monad.eval(f match {
-      case WebSocketFrame.Text(payload, finalFragment, _) =>
-        fromCompletableFuture(ws.sendText(payload, finalFragment))
-      case WebSocketFrame.Binary(payload, finalFragment, _) =>
-        fromCompletableFuture(ws.sendBinary(ByteBuffer.wrap(payload), finalFragment))
-      case WebSocketFrame.Ping(payload) => fromCompletableFuture(ws.sendPing(ByteBuffer.wrap(payload)))
-      case WebSocketFrame.Pong(payload) => fromCompletableFuture(ws.sendPong(ByteBuffer.wrap(payload)))
-      case WebSocketFrame.Close(statusCode, reasonText) =>
-        val wasOpen = _isOpen.getAndSet(false)
-        // making close sequentially idempotent
-        if (wasOpen) fromCompletableFuture(ws.sendClose(statusCode, reasonText)) else ().unit
+  override def send(f: WebSocketFrame, isContinuation: Boolean = false): F[Unit] = {
+    // ws.send* is not thread-safe - at least one can run at a time. Hence, adding a sequencer to ensure that
+    // even if called concurrently, these will be run in sequence.
+    sequencer(monad.flatten(monad.eval {
+      f match {
+        case WebSocketFrame.Text(payload, finalFragment, _) =>
+          fromCompletableFuture(ws.sendText(payload, finalFragment))
+        case WebSocketFrame.Binary(payload, finalFragment, _) =>
+          fromCompletableFuture(ws.sendBinary(ByteBuffer.wrap(payload), finalFragment))
+        case WebSocketFrame.Ping(payload) => fromCompletableFuture(ws.sendPing(ByteBuffer.wrap(payload)))
+        case WebSocketFrame.Pong(payload) => fromCompletableFuture(ws.sendPong(ByteBuffer.wrap(payload)))
+        case WebSocketFrame.Close(statusCode, reasonText) =>
+          val wasOpen = _isOpen.getAndSet(false)
+          // making close sequentially idempotent
+          if (wasOpen) fromCompletableFuture(ws.sendClose(statusCode, reasonText)) else ().unit
+      }
     }))
+  }
 
   override lazy val upgradeHeaders: Headers = Headers(Nil)
 

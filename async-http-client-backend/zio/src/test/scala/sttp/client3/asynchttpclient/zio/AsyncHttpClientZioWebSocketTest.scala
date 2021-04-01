@@ -41,4 +41,6 @@ class AsyncHttpClientZioWebSocketTest extends AsyncHttpClientWebSocketTest[Task,
       to: ZioStreams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]
   ): ZioStreams.Pipe[WebSocketFrame.Data[_], WebSocketFrame] =
     to.andThen(rest => ZStream(item) ++ rest)
+
+  override def concurrently[T](fs: List[() => Task[T]]): Task[List[T]] = Task.collectAllPar(fs.map(_()))
 }

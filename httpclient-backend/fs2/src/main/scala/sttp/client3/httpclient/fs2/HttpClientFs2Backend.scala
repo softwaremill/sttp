@@ -5,7 +5,6 @@ import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.{HttpClient, HttpRequest}
 import java.nio.ByteBuffer
 import java.util
-
 import cats.effect._
 import cats.effect.implicits._
 import cats.implicits._
@@ -17,7 +16,13 @@ import sttp.capabilities.WebSockets
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client3.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client3.httpclient.fs2.HttpClientFs2Backend.Fs2EncodingHandler
-import sttp.client3.httpclient.{BodyFromHttpClient, BodyToHttpClient, HttpClientAsyncBackend, HttpClientBackend}
+import sttp.client3.httpclient.{
+  BodyFromHttpClient,
+  BodyToHttpClient,
+  HttpClientAsyncBackend,
+  HttpClientBackend,
+  Sequencer
+}
 import sttp.client3.impl.cats.implicits._
 import sttp.client3.impl.fs2.Fs2SimpleQueue
 import sttp.client3.internal.ws.SimpleQueue
@@ -63,6 +68,8 @@ class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
 
   override protected def createSimpleQueue[T]: F[SimpleQueue[F, T]] =
     InspectableQueue.unbounded[F, T].map(new Fs2SimpleQueue(_, None))
+
+  override protected def createSequencer: F[Sequencer[F]] = Fs2Sequencer.create
 
   override protected def publisherToBody(p: Publisher[util.List[ByteBuffer]]): Stream[F, Byte] = {
     p.toStream[F].flatMap(data => Stream.emits(data.asScala.map(Chunk.byteBuffer)).flatMap(Stream.chunk))

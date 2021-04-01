@@ -8,11 +8,14 @@ import sttp.capabilities.monix.MonixStreams
 import sttp.client3._
 import sttp.client3.impl.monix.{MonixWebSockets, TaskMonadAsyncError, convertMonixTaskToFuture}
 import sttp.client3.testing.ConvertToFuture
-import sttp.client3.testing.websocket.{WebSocketStreamingTest, WebSocketTest}
+import sttp.client3.testing.websocket.{WebSocketConcurrentTest, WebSocketStreamingTest, WebSocketTest}
 import sttp.monad.MonadError
 import sttp.ws.WebSocketFrame
 
-class HttpClientMonixWebSocketTest extends WebSocketTest[Task] with WebSocketStreamingTest[Task, MonixStreams] {
+class HttpClientMonixWebSocketTest
+    extends WebSocketTest[Task]
+    with WebSocketStreamingTest[Task, MonixStreams]
+    with WebSocketConcurrentTest[Task] {
   implicit val backend: SttpBackend[Task, MonixStreams with WebSockets] =
     HttpClientMonixBackend().runSyncUnsafe()
   implicit val convertToFuture: ConvertToFuture[Task] = convertMonixTaskToFuture
@@ -32,4 +35,6 @@ class HttpClientMonixWebSocketTest extends WebSocketTest[Task] with WebSocketStr
       to: Observable[WebSocketFrame.Data[_]] => Observable[WebSocketFrame]
   ): Observable[WebSocketFrame.Data[_]] => Observable[WebSocketFrame] =
     to.andThen(rest => Observable.now(item) ++ rest)
+
+  override def concurrently[T](fs: List[() => Task[T]]): Task[List[T]] = Task.parSequence(fs.map(_()))
 }
