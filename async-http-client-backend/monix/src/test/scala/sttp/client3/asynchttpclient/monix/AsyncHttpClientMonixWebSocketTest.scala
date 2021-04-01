@@ -39,4 +39,6 @@ class AsyncHttpClientMonixWebSocketTest extends AsyncHttpClientWebSocketTest[Tas
       to: Observable[WebSocketFrame.Data[_]] => Observable[WebSocketFrame]
   ): Observable[WebSocketFrame.Data[_]] => Observable[WebSocketFrame] =
     to.andThen(rest => Observable.now(item) ++ rest)
+
+  override def concurrently[T](fs: List[() => Task[T]]): Task[List[T]] = Task.parSequence(fs.map(_()))
 }

@@ -5,12 +5,13 @@ import cats.implicits._
 import fs2.Pipe
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client3.impl.fs2.Fs2WebSockets
-import sttp.client3.testing.websocket.{WebSocketStreamingTest, WebSocketTest}
+import sttp.client3.testing.websocket.{WebSocketConcurrentTest, WebSocketStreamingTest, WebSocketTest}
 import sttp.ws.WebSocketFrame
 
 class HttpClientFs2WebSocketTest
     extends WebSocketTest[IO]
     with WebSocketStreamingTest[IO, Fs2Streams[IO]]
+    with WebSocketConcurrentTest[IO]
     with HttpClientFs2TestBase {
   override val streams: Fs2Streams[IO] = new Fs2Streams[IO] {}
 
@@ -28,4 +29,6 @@ class HttpClientFs2WebSocketTest
   )(to: Pipe[IO, WebSocketFrame.Data[_], WebSocketFrame]): Pipe[IO, WebSocketFrame.Data[_], WebSocketFrame] = {
     to.andThen(rest => fs2.Stream.eval(item.pure[IO]) ++ rest)
   }
+
+  override def concurrently[T](fs: List[() => IO[T]]): IO[List[T]] = fs.map(_()).parSequence
 }

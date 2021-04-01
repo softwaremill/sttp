@@ -5,13 +5,16 @@ import sttp.capabilities.WebSockets
 import sttp.capabilities.akka.AkkaStreams
 import sttp.client3._
 import sttp.client3.testing.ConvertToFuture
-import sttp.client3.testing.websocket.{WebSocketStreamingTest, WebSocketTest}
+import sttp.client3.testing.websocket.{WebSocketConcurrentTest, WebSocketStreamingTest, WebSocketTest}
 import sttp.monad.{FutureMonad, MonadError}
 import sttp.ws.WebSocketFrame
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class AkkaHttpWebSocketTest extends WebSocketTest[Future] with WebSocketStreamingTest[Future, AkkaStreams] {
+class AkkaHttpWebSocketTest
+    extends WebSocketTest[Future]
+    with WebSocketStreamingTest[Future, AkkaStreams]
+    with WebSocketConcurrentTest[Future] {
   override val streams: AkkaStreams = AkkaStreams
   implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.global
 
@@ -32,4 +35,6 @@ class AkkaHttpWebSocketTest extends WebSocketTest[Future] with WebSocketStreamin
   override def fromTextPipe(function: String => WebSocketFrame): Flow[WebSocketFrame.Data[_], WebSocketFrame, Any] = {
     Flow[WebSocketFrame.Data[_]].collect { case tf: WebSocketFrame.Text => function(tf.payload) }
   }
+
+  override def concurrently[T](fs: List[() => Future[T]]): Future[List[T]] = Future.sequence(fs.map(_()))
 }
