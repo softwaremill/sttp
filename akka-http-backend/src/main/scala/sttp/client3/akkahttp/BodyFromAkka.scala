@@ -140,7 +140,7 @@ private[akkahttp] class BodyFromAkka()(implicit ec: ExecutionContext, mat: Mater
   ): (Flow[Message, Message, NotUsed], Future[WebSocket[Future]]) = {
     val sinkQueuePromise = Promise[SinkQueueWithCancel[Message]]()
     val sink = Sink
-      .queue[Message](Int.MaxValue)
+      .queue[Message]()
       .mapMaterializedValue(sinkQueuePromise.success)
 
     val sourceQueuePromise = Promise[SourceQueueWithComplete[Message]]()
