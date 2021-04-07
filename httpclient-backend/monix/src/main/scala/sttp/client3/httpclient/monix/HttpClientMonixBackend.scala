@@ -61,6 +61,8 @@ class HttpClientMonixBackend private (
   override protected def createSimpleQueue[T]: Task[SimpleQueue[Task, T]] =
     Task.eval(new MonixSimpleQueue[T](None))
 
+  override protected def createSequencer: Task[Sequencer[Task]] = MonixSequencer.create
+
   override protected def publisherToBody(p: Publisher[util.List[ByteBuffer]]): Observable[Array[Byte]] = {
     Observable
       .fromReactivePublisher(p)

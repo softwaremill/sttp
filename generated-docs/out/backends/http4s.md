@@ -3,7 +3,7 @@
 This backend is based on [http4s](https://http4s.org) (client) and is **asynchronous**. To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "http4s-backend" % "3.1.7"
+"com.softwaremill.sttp.client3" %% "http4s-backend" % "3.2.3"
 ```
 
 Add some imports as well:

@@ -136,3 +136,40 @@ To encode and decode JSON using [play-json](https://www.playframework.com), add 
 ```
 
 To use, add an import: `import sttp.client3.playJson._`.
+
+## zio-json
+
+To encode and decode JSON using the high-performance [zio-json](https://zio.github.io/zio-json/) library, one add the following dependency to your project.
+
+```scala
+"com.softwaremill.sttp.client3" %% "zio-json" % "@VERSION@"
+```
+or for ScalaJS (cross build) projects:
+```scala
+"com.softwaremill.sttp.client3" %%% "zio-json" % "@VERSION@"
+```
+
+To use, add an import: `import sttp.client3.ziojson._` (or extend `SttpZioJsonApi`), define an implicit `JsonCodec`, or `JsonDecoder`/`JsonEncoder` for your datatype.
+
+Usage example:
+
+```scala mdoc:compile-only
+
+import sttp.client3._
+import sttp.client3.ziojson._
+import zio.json._
+
+val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
+
+implicit val payloadJsonEncoder: JsonEncoder[RequestPayload] = DeriveJsonEncoder.gen[RequestPayload]
+implicit val myResponseJsonDecoder: JsonDecoder[ResponsePayload] = DeriveJsonDecoder.gen[ResponsePayload]
+
+val requestPayload = RequestPayload("some data")
+
+val response: Identity[Response[Either[ResponseException[String, String], ResponsePayload]]] =
+basicRequest
+  .post(uri"...")
+  .body(requestPayload)
+  .response(asJson[ResponsePayload])
+  .send(backend)
+```

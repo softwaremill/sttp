@@ -86,6 +86,7 @@ val circeVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "0.11.2"
   case _             => "0.13.0"
 }
+val zioJsonVersion: Option[(Long, Long)] => String = _ => "0.1.3"
 val playJsonVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.7.4"
   case _             => "2.9.2"
@@ -110,7 +111,7 @@ val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", 
   "org.scalatest" %%% s"scalatest-$m" % "3.2.7" % Test
 )
 
-val zioVersion = "1.0.4-2"
+val zioVersion = "1.0.5"
 val zioInteropRsVersion = "1.3.0.7-2"
 
 val sttpModelVersion = "1.4.1"
@@ -169,6 +170,7 @@ lazy val allAggregates = projectsWithOptionalNative ++
   http4sCe2Backend.projectRefs ++
   http4sBackend.projectRefs ++
   circe.projectRefs ++
+  zioJson.projectRefs ++
   json4s.projectRefs ++
   sprayJson.projectRefs ++
   playJson.projectRefs ++
@@ -435,7 +437,7 @@ lazy val asyncHttpClientBackend = (projectMatrix in file("async-http-client-back
   .settings(
     name := "async-http-client-backend",
     libraryDependencies ++= Seq(
-      "org.asynchttpclient" % "async-http-client" % "2.12.2"
+      "org.asynchttpclient" % "async-http-client" % "2.12.3"
     )
   )
   .dependsOn(core % compileAndTest)
@@ -726,11 +728,26 @@ lazy val circe = (projectMatrix in file("json/circe"))
   .jsPlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonJsSettings)
   .dependsOn(core, jsonCommon)
 
+lazy val zioJson = (projectMatrix in file("json/zio-json"))
+  .settings(
+    name := "zio-json",
+    libraryDependencies ++= dependenciesFor(scalaVersion.value)(
+      "dev.zio" %%% "zio-json" % zioJsonVersion(_)
+    ) ++ Seq("com.softwaremill.sttp.shared" %%% "zio" % sttpSharedVersion),
+    scalaTest
+  )
+  .jvmPlatform(
+    scalaVersions = Seq(scala2_12, scala2_13),
+    settings = commonJvmSettings
+  )
+  .jsPlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonJsSettings)
+  .dependsOn(core, jsonCommon)
+
 lazy val upickle = (projectMatrix in file("json/upickle"))
   .settings(
     name := "upickle",
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %%% "upickle" % "1.2.3"
+      "com.lihaoyi" %%% "upickle" % "1.3.11"
     ),
     scalaTest
   )
@@ -814,8 +831,8 @@ lazy val zioTelemetryOpenTracingBackend = (projectMatrix in file("metrics/zio-te
   .settings(
     name := "zio-telemetry-opentracing-backend",
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-opentracing" % "0.7.2",
-      "org.scala-lang.modules" %% "scala-collection-compat" % "2.4.2"
+      "dev.zio" %% "zio-opentracing" % "0.8.0",
+      "org.scala-lang.modules" %% "scala-collection-compat" % "2.4.3"
     )
   )
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13))
@@ -827,7 +844,7 @@ lazy val scribeBackend = (projectMatrix in file("logging/scribe"))
   .settings(
     name := "scribe-backend",
     libraryDependencies ++= Seq(
-      "com.outr" %%% "scribe" % "3.4.0"
+      "com.outr" %%% "scribe" % "3.5.1"
     ),
     scalaTest
   )
@@ -923,6 +940,7 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     json4s,
     circe,
     sprayJson,
+    zioJson,
     asyncHttpClientZioBackend,
     //asyncHttpClientMonixBackend, // monix backends are commented out because they depend on cats-effect2
     asyncHttpClientFs2Backend,

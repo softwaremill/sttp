@@ -34,6 +34,7 @@ jobs:
     - name: Install libidn11-dev libcurl3-dev
       if: matrix.target-platform == 'Native'
       run: |
+        sudo apt-get update
         sudo apt-get install libidn11-dev libcurl3-dev
         echo "STTP_NATIVE=1" >> $GITHUB_ENV
     - name: Compile
@@ -72,7 +73,9 @@ jobs:
             ~/.coursier
           key: sbt-cache-release-${{ runner.os }}-${{ hashFiles('project/build.properties') }}
       - name: Install libidn11-dev libcurl3-dev
-        run: sudo apt-get install libidn11-dev libcurl3-dev
+        run: |
+          sudo apt-get update
+          sudo apt-get install libidn11-dev libcurl3-dev
       - name: Compile
         run: sbt compile
       - name: Publish artifacts
