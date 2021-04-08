@@ -70,7 +70,7 @@ libraryDependencies ++= List(
 Example code:
 
 ```eval_rst
-.. literalinclude:: ../../examples/src/main/scala/sttp/client3/examples-ce2/GetAndParseJsonGetRightMonixCirce.scala
+.. literalinclude:: ../../examples-ce2/src/main/scala/sttp/client3/examples/GetAndParseJsonGetRightMonixCirce.scala
     :language: scala
 ```
 
@@ -108,7 +108,7 @@ libraryDependencies ++= List(
 Example code:
 
 ```eval_rst
-.. literalinclude:: ../../examples/src/main/scala/sttp/client3/examples-ce2/PostSerializeJsonMonixAsyncHttpClientCirce.scala
+.. literalinclude:: ../../examples-ce2/src/main/scala/sttp/client3/examples/PostSerializeJsonMonixAsyncHttpClientCirce.scala
     :language: scala
 ```
 
@@ -162,13 +162,13 @@ Example code:
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "async-http-client-backend-monix % "3.3.0-RC1")
+libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "async-http-client-backend-monix" % "3.3.0-RC1")
 ```
 
 Example code:
 
 ```eval_rst
-.. literalinclude:: ../../examples/src/main/scala/sttp/client3/examples-ce2/WebSocketTesting.scala
+.. literalinclude:: ../../examples-ce2/src/main/scala/sttp/client3/examples/WebSocketTesting.scala
     :language: scala
 ```
 
@@ -198,7 +198,7 @@ libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "async-http-clie
 Example code:
 
 ```eval_rst
-.. literalinclude:: ../../examples/src/main/scala/sttp/client3/examples-ce2/WebSocketMonix.scala
+.. literalinclude:: ../../examples-ce2/src/main/scala/sttp/client3/examples/WebSocketMonix.scala
     :language: scala
 ```
 
