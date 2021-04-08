@@ -23,9 +23,9 @@ Next you'll need to define a backend instance. This can be done in two basic way
 
 A non-comprehensive summary of how the backend can be created is as follows:
 
-```scala mdoc:silent
-import sttp.client3.asynchttpclient.cats.AsyncHttpClientCatsBackend
+```scala mdoc:compile-only
 import cats.effect.IO
+import sttp.client3.asynchttpclient.cats.AsyncHttpClientCatsBackend
 
 // the type class instance needs to be provided explicitly (e.g. `cats.effect.IO`). 
 // the effect type must implement the Async typeclass
@@ -35,7 +35,10 @@ AsyncHttpClientCatsBackend[IO]().flatMap { backend => ??? }
 or, if you'd like to use a custom configuration:
 
 ```scala mdoc:compile-only
+import cats.effect.IO
 import org.asynchttpclient.AsyncHttpClientConfig
+import sttp.client3.asynchttpclient.cats.AsyncHttpClientCatsBackend
+
 val config: AsyncHttpClientConfig = ???
 AsyncHttpClientCatsBackend.usingConfig[IO](config).flatMap { backend => ??? }
 ```
@@ -43,8 +46,10 @@ AsyncHttpClientCatsBackend.usingConfig[IO](config).flatMap { backend => ??? }
 or, if you'd like to use adjust the configuration sttp creates:
 
 ```scala mdoc:compile-only
-import sttp.client3.SttpBackendOptions
+import cats.effect.IO
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
+import sttp.client3.SttpBackendOptions
+import sttp.client3.asynchttpclient.cats.AsyncHttpClientCatsBackend
 
 val sttpOptions: SttpBackendOptions = SttpBackendOptions.Default 
 val adjustFunction: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder = ???
@@ -54,13 +59,18 @@ AsyncHttpClientCatsBackend.usingConfigBuilder[IO](adjustFunction, sttpOptions).f
 or, if you'd like the backend to be wrapped in cats-effect `Resource`:
 
 ```scala mdoc:compile-only
+import cats.effect.IO
+import sttp.client3.asynchttpclient.cats.AsyncHttpClientCatsBackend
+
 AsyncHttpClientCatsBackend.resource[IO]().use { backend => ??? }
 ```
 
 or, if you'd like to instantiate the `AsyncHttpClient` yourself:
 
 ```scala mdoc:compile-only
+import cats.effect.IO
 import org.asynchttpclient.AsyncHttpClient
+import sttp.client3.asynchttpclient.cats.AsyncHttpClientCatsBackend
 
 val asyncHttpClient: AsyncHttpClient = ??? 
 val backend = AsyncHttpClientCatsBackend.usingClient[IO](asyncHttpClient)
@@ -79,8 +89,8 @@ To use, add the following dependency to your project:
 create client:
 
 ```scala mdoc:silent
-import sttp.client3.armeria.cats.ArmeriaCatsBackend
 import cats.effect.IO
+import sttp.client3.armeria.cats.ArmeriaCatsBackend
 
 val backend = ArmeriaCatsBackend[IO]()
 ```
@@ -88,8 +98,10 @@ val backend = ArmeriaCatsBackend[IO]()
 or, if you'd like to instantiate the [WebClient](https://armeria.dev/docs/client-http) yourself:
 
 ```scala mdoc:compile-only
-import com.linecorp.armeria.client.circuitbreaker._
+import cats.effect.IO
 import com.linecorp.armeria.client.WebClient
+import com.linecorp.armeria.client.circuitbreaker._
+import sttp.client3.armeria.cats.ArmeriaCatsBackend
 
 // Fluently build Armeria WebClient with built-in decorators
 val client = WebClient.builder("https://my-service.com")

@@ -21,9 +21,9 @@ Next you'll need to define a backend instance as an implicit value. This can be 
 
 Below you can find a non-comprehensive summary of how the backend can be created. The easiest form is to use a cats-effect `Resource`:
 
-```scala mdoc:silent
-import sttp.client3.asynchttpclient.fs2.AsyncHttpClientFs2Backend
+```scala mdoc:compile-only
 import cats.effect.IO
+import sttp.client3.asynchttpclient.fs2.AsyncHttpClientFs2Backend
 
 AsyncHttpClientFs2Backend.resource[IO]().use { backend => ??? }
 ```
@@ -31,7 +31,9 @@ AsyncHttpClientFs2Backend.resource[IO]().use { backend => ??? }
 or, by providing a custom dispatcher:
 
 ```scala mdoc:compile-only
+import cats.effect.IO
 import cats.effect.std.Dispatcher
+import sttp.client3.asynchttpclient.fs2.AsyncHttpClientFs2Backend
 
 val dispatcher: Dispatcher[IO] = ???
 
@@ -41,8 +43,10 @@ AsyncHttpClientFs2Backend[IO](dispatcher).flatMap { backend => ??? }
 or, if you'd like to use a custom configuration:
 
 ```scala mdoc:compile-only
-import org.asynchttpclient.AsyncHttpClientConfig
+import cats.effect.IO
 import cats.effect.std.Dispatcher
+import org.asynchttpclient.AsyncHttpClientConfig
+import sttp.client3.asynchttpclient.fs2.AsyncHttpClientFs2Backend
 
 val dispatcher: Dispatcher[IO] = ???
 
@@ -53,9 +57,11 @@ AsyncHttpClientFs2Backend.usingConfig[IO](config, dispatcher).flatMap { backend 
 or, if you'd like to use adjust the configuration sttp creates:
 
 ```scala mdoc:compile-only
-import sttp.client3.SttpBackendOptions
-import org.asynchttpclient.DefaultAsyncHttpClientConfig
+import cats.effect.IO
 import cats.effect.std.Dispatcher
+import org.asynchttpclient.DefaultAsyncHttpClientConfig
+import sttp.client3.SttpBackendOptions
+import sttp.client3.asynchttpclient.fs2.AsyncHttpClientFs2Backend
 
 val sttpOptions: SttpBackendOptions = SttpBackendOptions.Default 
 val adjustFunction: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder = ???
@@ -67,8 +73,10 @@ AsyncHttpClientFs2Backend.usingConfigBuilder[IO](dispatcher, adjustFunction, stt
 or, if you'd like to instantiate the AsyncHttpClient yourself:
 
 ```scala mdoc:compile-only
-import org.asynchttpclient.AsyncHttpClient
+import cats.effect.IO
 import cats.effect.std.Dispatcher
+import org.asynchttpclient.AsyncHttpClient
+import sttp.client3.asynchttpclient.fs2.AsyncHttpClientFs2Backend
 
 val dispatcher: Dispatcher[IO] = ???
 val asyncHttpClient: AsyncHttpClient = ??? 
@@ -87,9 +95,9 @@ To use, add the following dependency to your project:
 
 Create the backend using a cats-effect `Resource`:
 
-```scala mdoc:silent
-import sttp.client3.httpclient.fs2.HttpClientFs2Backend
+```scala mdoc:compile-only
 import cats.effect.IO
+import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 
 HttpClientFs2Backend.resource[IO]().use { backend => ??? }
 ```
@@ -97,7 +105,9 @@ HttpClientFs2Backend.resource[IO]().use { backend => ??? }
 or, if by providing a custom `Dispatcher`:
 
 ```scala mdoc:compile-only
+import cats.effect.IO
 import cats.effect.std.Dispatcher
+import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 
 val dispatcher: Dispatcher[IO] = ???
 
@@ -107,8 +117,10 @@ HttpClientFs2Backend[IO](dispatcher).flatMap { backend => ??? }
 or, if you'd like to instantiate the `HttpClient` yourself:
 
 ```scala mdoc:compile-only
-import java.net.http.HttpClient
+import cats.effect.IO
 import cats.effect.std.Dispatcher
+import java.net.http.HttpClient
+import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 
 val httpClient: HttpClient = ???
 val dispatcher: Dispatcher[IO] = ???
@@ -135,9 +147,9 @@ To use, add the following dependency to your project:
 
 create client:
 
-```scala mdoc:silent
-import sttp.client3.armeria.fs2.ArmeriaFs2Backend
+```scala mdoc:compile-only
 import cats.effect.IO
+import sttp.client3.armeria.fs2.ArmeriaFs2Backend
 
 ArmeriaFs2Backend.resource[IO]().use { backend => ??? }
 ```
@@ -145,9 +157,11 @@ ArmeriaFs2Backend.resource[IO]().use { backend => ??? }
 or, if you'd like to instantiate the [WebClient](https://armeria.dev/docs/client-http) yourself:
 
 ```scala mdoc:compile-only
-import com.linecorp.armeria.client.circuitbreaker._
-import com.linecorp.armeria.client.WebClient
+import cats.effect.IO
 import cats.effect.std.Dispatcher
+import com.linecorp.armeria.client.WebClient
+import com.linecorp.armeria.client.circuitbreaker._
+import sttp.client3.armeria.fs2.ArmeriaFs2Backend
 
 val dispatcher: Dispatcher[IO] = ???
 
@@ -174,10 +188,12 @@ The fs2 backend supports streaming for any instance of the `cats.effect.Effect` 
 Requests can be sent with a streaming body like this:
 
 ```scala mdoc:compile-only
+import cats.effect.IO
+import fs2.Stream
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client3._
+import sttp.client3.armeria.fs2.ArmeriaFs2Backend
 import sttp.client3.asynchttpclient.fs2.AsyncHttpClientFs2Backend
-import fs2.Stream
 
 val effect = AsyncHttpClientFs2Backend.resource[IO]().use { backend =>
   val stream: Stream[IO, Byte] = ???
@@ -193,10 +209,11 @@ val effect = AsyncHttpClientFs2Backend.resource[IO]().use { backend =>
 Responses can also be streamed:
 
 ```scala mdoc:compile-only
+import cats.effect.IO
+import fs2.Stream
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client3._
 import sttp.client3.asynchttpclient.fs2.AsyncHttpClientFs2Backend
-import fs2.Stream
 import scala.concurrent.duration.Duration
 
 val effect = AsyncHttpClientFs2Backend.resource[IO]().use { backend =>
@@ -223,11 +240,10 @@ Received data streams can be parsed to a stream of server-sent events (SSE):
 ```scala mdoc:compile-only
 import cats.effect._
 import fs2.Stream
-
+import sttp.client3._
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client3.impl.fs2.Fs2ServerSentEvents
 import sttp.model.sse.ServerSentEvent
-import sttp.client3._
 
 def processEvents(source: Stream[IO, ServerSentEvent]): IO[Unit] = ???
 
