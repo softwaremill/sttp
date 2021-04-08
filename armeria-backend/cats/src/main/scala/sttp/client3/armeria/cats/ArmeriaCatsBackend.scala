@@ -1,6 +1,6 @@
 package sttp.client3.armeria.cats
 
-import cats.effect.{Concurrent, Resource, Sync}
+import cats.effect.{Async, Resource, Sync}
 import com.linecorp.armeria.client.WebClient
 import com.linecorp.armeria.common.HttpData
 import com.linecorp.armeria.common.stream.StreamMessage
@@ -12,7 +12,7 @@ import sttp.client3.internal.NoStreams
 import sttp.client3.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 import sttp.monad.MonadAsyncError
 
-private final class ArmeriaCatsBackend[F[_]: Concurrent](client: WebClient, closeFactory: Boolean)
+private final class ArmeriaCatsBackend[F[_]: Async](client: WebClient, closeFactory: Boolean)
     extends AbstractArmeriaBackend[F, Nothing](client, closeFactory, new CatsMonadAsyncError) {
 
   override val streams: NoStreams = NoStreams
@@ -38,22 +38,22 @@ object ArmeriaCatsBackend {
     * the client will manage its own connection pool. If you'd like to reuse the default Armeria `ClientFactory`,
     * use `.usingDefaultClient`.
     */
-  def apply[F[_]: Concurrent](options: SttpBackendOptions = SttpBackendOptions.Default): SttpBackend[F, Any] =
+  def apply[F[_]: Async](options: SttpBackendOptions = SttpBackendOptions.Default): SttpBackend[F, Any] =
     apply(newClient(options), closeFactory = true)
 
-  def resource[F[_]: Concurrent](
+  def resource[F[_]: Async](
       options: SttpBackendOptions = SttpBackendOptions.Default
   ): Resource[F, SttpBackend[F, Any]] = {
     Resource.make(Sync[F].delay(apply(newClient(options), closeFactory = true)))(_.close())
   }
 
-  def usingDefaultClient[F[_]: Concurrent](): SttpBackend[F, Any] =
+  def usingDefaultClient[F[_]: Async](): SttpBackend[F, Any] =
     apply(newClient(), closeFactory = false)
 
-  def usingClient[F[_]: Concurrent](client: WebClient): SttpBackend[F, Any] =
+  def usingClient[F[_]: Async](client: WebClient): SttpBackend[F, Any] =
     apply(client, closeFactory = false)
 
-  private def apply[F[_]: Concurrent](
+  private def apply[F[_]: Async](
       client: WebClient,
       closeFactory: Boolean
   ): SttpBackend[F, Any] =

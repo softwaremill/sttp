@@ -1,16 +1,15 @@
 package sttp.client3.examples
 
-import cats.effect.{Blocker, ContextShift, IO}
+import cats.effect.IO
+import cats.effect.unsafe.IORuntime
 import fs2._
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client3._
 import sttp.client3.asynchttpclient.fs2.AsyncHttpClientFs2Backend
 import sttp.ws.WebSocketFrame
 
-import scala.concurrent.ExecutionContext.global
-
 object WebSocketStreamFs2 extends App {
-  implicit val cs: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionContext.global)
+  implicit val runtime: IORuntime = cats.effect.unsafe.implicits.global
 
   def webSocketFramePipe: Pipe[IO, WebSocketFrame.Data[_], WebSocketFrame] = { input =>
     Stream.emit(WebSocketFrame.text("1")) ++ input.flatMap {
@@ -25,7 +24,7 @@ object WebSocketStreamFs2 extends App {
   }
 
   AsyncHttpClientFs2Backend
-    .resource[IO](Blocker.liftExecutionContext(global))
+    .resource[IO]()
     .use { backend =>
       basicRequest
         .response(asWebSocketStream(Fs2Streams[IO])(webSocketFramePipe))

@@ -114,7 +114,7 @@ The backend supports both regular and streaming [websockets](../websockets.md).
 
 Received data streams can be parsed to a stream of server-sent events (SSE), when using the Monix variant:
 
-```scala mdoc:compile-only
+```scala
 import monix.reactive.Observable
 import monix.eval.Task
 

@@ -12,7 +12,9 @@ trait Fs2StreamingTest extends StreamingTest[IO, Fs2Streams[IO]] with CatsTestBa
   override val streams: Fs2Streams[IO] = new Fs2Streams[IO] {}
 
   override def bodyProducer(chunks: Iterable[Array[Byte]]): Stream[IO, Byte] =
-    Stream.fromIterator[IO](chunks.iterator).flatMap(arr => Stream.chunk(Chunk.array(arr)))
+    Stream.fromIterator[IO](chunks.iterator, chunks.size)
+      .map(Chunk.array(_))
+      .flatMap(Stream.chunk)
 
   override def bodyConsumer(stream: fs2.Stream[IO, Byte]): IO[String] =
     stream

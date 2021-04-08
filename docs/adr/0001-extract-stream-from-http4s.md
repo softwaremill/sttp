@@ -20,7 +20,7 @@ This way of consuming streams is less safe, but that's a design decision of sttp
 to adjust the way http4s works and "extract" the stream from http4s, releasing the connection only when the
 stream is fully read (or completes with an error).
 
-To do that, in `Http4sBackend`, we create two `MVar`s: one to signal that the request body has been fully
+To do that, in `Http4sBackend`, we create two `Deferred`s: one to signal that the request body has been fully
 consumed (`responseBodyCompleteVar`), and another, `responseVar`, to extract the response.
 
 When the request is read, first the stream body is adjusted, so that the completion var is filled in the stream's
