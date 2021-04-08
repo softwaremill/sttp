@@ -15,8 +15,7 @@ import sttp.monad.MonadError
 import sttp.monad.syntax.{MonadErrorValueOps, _}
 import sttp.ws.{WebSocket, WebSocketFrame}
 
-private[fs2] class Fs2BodyFromHttpClient[F[_]: Async]()
-    extends BodyFromHttpClient[F, Fs2Streams[F], Stream[F, Byte]] {
+private[fs2] class Fs2BodyFromHttpClient[F[_]: Async]() extends BodyFromHttpClient[F, Fs2Streams[F], Stream[F, Byte]] {
   override val streams: Fs2Streams[F] = Fs2Streams[F]
   override implicit val monad: MonadError[F] = new CatsMonadAsyncError[F]
   override def compileWebSocketPipe(
