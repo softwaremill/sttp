@@ -219,6 +219,9 @@ case class RequestT[U[_], T, -R](
   def streamBody[S](s: Streams[S])(b: s.BinaryStream): RequestT[U, T, R with S] =
     withBody(StreamBody(s)(b))
 
+  /** When the request is sent, if reading the response times out (there's no activity for the given period of time),
+    * a failed effect will be returned, or an exception will be thrown
+    */
   def readTimeout(t: Duration): RequestT[U, T, R] =
     this.copy(options = options.copy(readTimeout = t))
 
