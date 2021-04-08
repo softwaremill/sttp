@@ -7,23 +7,14 @@ The [Cats Effect](https://github.com/typelevel/cats-effect) backend is **asynchr
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "async-http-client-backend-cats" % "@VERSION@"
-```
-
-You'll need the following imports and implicits to create the backend:
-
-```scala mdoc:silent
-import sttp.client3._
-import sttp.client3.asynchttpclient.cats.AsyncHttpClientCatsBackend
-import cats.effect._
-
-// an implicit `cats.effect.ContextShift` in required to create the backend; here, for `cats.effect.IO`:
-implicit val cs: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionContext.global)
+"com.softwaremill.sttp.client3" %% "async-http-client-backend-cats" % "@VERSION@" // for cats-effect 3.x
+// or
+"com.softwaremill.sttp.client3" %% "async-http-client-backend-cats-ce2" % "@VERSION@" // for cats-effect 2.x
 ```
            
 This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client), uses [Netty](http://netty.io) behind the scenes. 
 
-Alternatively, the [http4s](http4s.md) backend can also be created for a type implementing the cats-effect's `Effect` typeclass, and supports streaming as in [fs2](fs2.md).
+Alternatively, the [http4s](http4s.md) backend can also be created for a type implementing the cats-effect's `Async` typeclass, and supports streaming as in [fs2](fs2.md).
 
 Next you'll need to define a backend instance. This can be done in two basic ways:
 
@@ -32,9 +23,12 @@ Next you'll need to define a backend instance. This can be done in two basic way
 
 A non-comprehensive summary of how the backend can be created is as follows:
 
-```scala mdoc:compile-only
+```scala mdoc:silent
+import sttp.client3.asynchttpclient.cats.AsyncHttpClientCatsBackend
+import cats.effect.IO
+
 // the type class instance needs to be provided explicitly (e.g. `cats.effect.IO`). 
-// the effect type must implement the Concurrent typeclass
+// the effect type must implement the Async typeclass
 AsyncHttpClientCatsBackend[IO]().flatMap { backend => ??? }
 ```
 
@@ -49,6 +43,7 @@ AsyncHttpClientCatsBackend.usingConfig[IO](config).flatMap { backend => ??? }
 or, if you'd like to use adjust the configuration sttp creates:
 
 ```scala mdoc:compile-only
+import sttp.client3.SttpBackendOptions
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
 
 val sttpOptions: SttpBackendOptions = SttpBackendOptions.Default 
@@ -56,13 +51,13 @@ val adjustFunction: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClie
 AsyncHttpClientCatsBackend.usingConfigBuilder[IO](adjustFunction, sttpOptions).flatMap { backend => ??? }
 ```
 
-or, if you'd like the backend to be wrapped in cats-effect Resource:
+or, if you'd like the backend to be wrapped in cats-effect `Resource`:
 
 ```scala mdoc:compile-only
 AsyncHttpClientCatsBackend.resource[IO]().use { backend => ??? }
 ```
 
-or, if you'd like to instantiate the AsyncHttpClient yourself:
+or, if you'd like to instantiate the `AsyncHttpClient` yourself:
 
 ```scala mdoc:compile-only
 import org.asynchttpclient.AsyncHttpClient
@@ -75,21 +70,18 @@ val backend = AsyncHttpClientCatsBackend.usingClient[IO](asyncHttpClient)
 
 To use, add the following dependency to your project:
 
-```
-"com.softwaremill.sttp.client3" %% "armeria-backend-cats" % "@VERSION@"
-```
-
-add imports:
-
-```scala mdoc:silent
-import sttp.client3.armeria.cats.ArmeriaCatsBackend
-import cats.effect.{ContextShift, IO}
+```scala
+"com.softwaremill.sttp.client3" %% "armeria-backend-cats" % "@VERSION@" // for cats-effect 3.x
+// or
+"com.softwaremill.sttp.client3" %% "armeria-backend-cats-ce2" % "@VERSION@" // for cats-effect 2.x
 ```
 
 create client:
 
-```scala mdoc:compile-only
-implicit val cs: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionContext.global)
+```scala mdoc:silent
+import sttp.client3.armeria.cats.ArmeriaCatsBackend
+import cats.effect.IO
+
 val backend = ArmeriaCatsBackend[IO]()
 ```
 

@@ -19,7 +19,7 @@ Next you'll need to define a backend instance as an implicit value. This can be 
 
 A non-comprehensive summary of how the backend can be created is as follows:
 
-```scala mdoc:compile-only
+```scala
 import sttp.client3.asynchttpclient.monix.AsyncHttpClientMonixBackend
 import sttp.client3._
 
@@ -55,7 +55,7 @@ To use, add the following dependency to your project:
 
 Create the backend using:
 
-```scala mdoc:compile-only
+```scala
 import sttp.client3.okhttp.monix.OkHttpMonixBackend
 
 OkHttpMonixBackend().flatMap { backend => ??? }
@@ -81,7 +81,7 @@ To use, add the following dependency to your project:
 
 Create the backend using:
 
-```scala mdoc:compile-only
+```scala
 import sttp.client3.httpclient.monix.HttpClientMonixBackend
 
 HttpClientMonixBackend().flatMap { backend => ??? }
@@ -112,20 +112,20 @@ To use, add the following dependency to your project:
 
 add imports:
 
-```scala mdoc:silent
+```scala
 import sttp.client3.armeria.monix.ArmeriaMonixBackend
 ```
 
 create client:
 
-```scala mdoc:compile-only
+```scala
 import monix.execution.Scheduler.Implicits.global
 val backend = ArmeriaMonixBackend()
 ```
 
 or, if you'd like to instantiate the [WebClient](https://armeria.dev/docs/client-http) yourself:
 
-```scala mdoc:compile-only
+```scala
 import com.linecorp.armeria.client.circuitbreaker._
 import com.linecorp.armeria.client.WebClient
 
@@ -149,7 +149,7 @@ This backend is build on top of [Armeria](https://armeria.dev/docs/client-http).
 
 The Monix backends support streaming. The streams capability is represented as `sttp.client3.impl.monix.MonixStreams`. The type of supported streams in this case is `Observable[ByteBuffer]`. That is, you can set such an observable as a request body (using the async-http-client backend as an example, but any of the above backends can be used):
 
-```scala mdoc:compile-only
+```scala
 import sttp.capabilities.monix.MonixStreams
 import sttp.client3._
 import sttp.client3.asynchttpclient.monix._
@@ -168,7 +168,7 @@ AsyncHttpClientMonixBackend().flatMap { backend =>
 
 And receive responses as an observable stream:
 
-```scala mdoc:compile-only
+```scala
 import sttp.capabilities.monix.MonixStreams
 import sttp.client3._
 import sttp.client3.asynchttpclient.monix._
@@ -196,7 +196,7 @@ The Monix backend supports both regular and streaming [websockets](../websockets
 
 Received data streams can be parsed to a stream of server-sent events (SSE):
 
-```scala mdoc:compile-only
+```scala
 import monix.reactive.Observable
 import monix.eval.Task
 

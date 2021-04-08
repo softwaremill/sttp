@@ -101,10 +101,10 @@ object HttpClientFs2Backend {
     )
 
   def apply[F[_]: Async](
+      dispatcher: Dispatcher[F],
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty,
-      dispatcher: Dispatcher[F]
+      customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty
   ): F[SttpBackend[F, Fs2Streams[F] with WebSockets]] =
     Sync[F].delay(
       HttpClientFs2Backend(
@@ -122,14 +122,14 @@ object HttpClientFs2Backend {
       customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty
   ): Resource[F, SttpBackend[F, Fs2Streams[F] with WebSockets]] =
     Dispatcher[F].flatMap(dispatcher =>
-      Resource.make(apply(options, customizeRequest, customEncodingHandler, dispatcher))(_.close())
+      Resource.make(apply(dispatcher, options, customizeRequest, customEncodingHandler))(_.close())
     )
 
   def usingClient[F[_]: Async](
       client: HttpClient,
+      dispatcher: Dispatcher[F],
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty,
-      dispatcher: Dispatcher[F]
+      customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty
   ): SttpBackend[F, Fs2Streams[F] with WebSockets] =
     HttpClientFs2Backend(client, closeClient = false, customizeRequest, customEncodingHandler, dispatcher)
 

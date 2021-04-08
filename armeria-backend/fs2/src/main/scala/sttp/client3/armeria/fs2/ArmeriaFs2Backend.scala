@@ -32,11 +32,14 @@ private final class ArmeriaFs2Backend[F[_]: Async](client: WebClient, closeFacto
     }
 
   override protected def streamToPublisher(stream: Stream[F, Byte]): Publisher[HttpData] =
-    StreamUnicastPublisher(stream.chunks
-      .map { chunk =>
-        val bytes = chunk.compact
-        HttpData.wrap(bytes.values, bytes.offset, bytes.length)
-      }, dispatcher)
+    StreamUnicastPublisher(
+      stream.chunks
+        .map { chunk =>
+          val bytes = chunk.compact
+          HttpData.wrap(bytes.values, bytes.offset, bytes.length)
+        },
+      dispatcher
+    )
 }
 
 object ArmeriaFs2Backend {
@@ -46,8 +49,8 @@ object ArmeriaFs2Backend {
     * use `.usingDefaultClient`.
     */
   def apply[F[_]: Async](
-      options: SttpBackendOptions = SttpBackendOptions.Default,
-      dispatcher: Dispatcher[F]
+      dispatcher: Dispatcher[F],
+      options: SttpBackendOptions = SttpBackendOptions.Default
   ): SttpBackend[F, Fs2Streams[F]] =
     apply(newClient(options), closeFactory = true, dispatcher)
 
@@ -55,7 +58,8 @@ object ArmeriaFs2Backend {
       options: SttpBackendOptions = SttpBackendOptions.Default
   ): Resource[F, SttpBackend[F, Fs2Streams[F]]] =
     Dispatcher[F].flatMap(dispatcher =>
-      Resource.make(Sync[F].delay(apply(newClient(options), closeFactory = true, dispatcher)))(_.close()))
+      Resource.make(Sync[F].delay(apply(newClient(options), closeFactory = true, dispatcher)))(_.close())
+    )
 
   def usingClient[F[_]: Async](client: WebClient, dispatcher: Dispatcher[F]): SttpBackend[F, Fs2Streams[F]] =
     apply(client, closeFactory = false, dispatcher)

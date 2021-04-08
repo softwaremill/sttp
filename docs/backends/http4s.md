@@ -3,30 +3,20 @@
 This backend is based on [http4s](https://http4s.org) (client) and is **asynchronous**. To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "http4s-backend" % "@VERSION@"
+"com.softwaremill.sttp.client3" %% "http4s-backend" % "@VERSION@" // for cats-effect 3.x & http4s 1.0.0-Mx
+// or
+"com.softwaremill.sttp.client3" %% "http4s-backend-ce2" % "@VERSION@" // for cats-effect 2.x & http4s 0.21.x
 ```
 
-Add some imports as well:
+The backend can be created in a couple of ways, e.g.:
 
-```scala mdoc:silent
+```scala mdoc:compile-only
 import cats.effect._
 import sttp.client3.http4s._
-import scala.concurrent._
+import sttp.client3._
+import sttp.capabilities.fs2.Fs2Streams
 
-// an implicit `cats.effect.ContextShift` is required to create an instance of `cats.effect.Concurrent` 
-// for `cats.effect.IO`,  as well as a `cats.effect.Blocker` instance. 
-// Note that you'll probably want to use a different thread pool for blocking.
-implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
-val blocker: cats.effect.Blocker = Blocker.liftExecutionContext(ExecutionContext.global)
-```
-
-The backend can be created for any type implementing the `cats.effect.ConcurrentEffect` typeclass, such as `cats.effect.IO`. Moreover, an implicit `ContextShift` will have to be in scope as well.
-
-If a blocker instance is not available, a new one can be created, and the resource definition can be chained, e.g. as follows:
-
-```scala
-implicit val cs: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionContext.global) // or another instance
-Blocker[IO].flatMap(Http4sBackend.usingDefaultBlazeClientBuilder[IO](_)).use { implicit backend => ... }
+Http4sBackend.usingDefaultBlazeClientBuilder[IO](): Resource[IO, SttpBackend[IO, Fs2Streams[IO]]]
 ```
 
 Sending a request is a non-blocking, lazily-evaluated operation and results in a wrapped response. There's a transitive dependency on `http4s`. 

@@ -105,10 +105,10 @@ object AsyncHttpClientFs2Backend {
     )
 
   def apply[F[_]: Async](
+      dispatcher: Dispatcher[F],
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
-      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity,
-      dispatcher: Dispatcher[F]
+      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): F[SttpBackend[F, Fs2Streams[F] with WebSockets]] =
     Sync[F]
       .delay(
@@ -121,22 +121,21 @@ object AsyncHttpClientFs2Backend {
         )
       )
 
-  /** Makes sure the backend is closed after usage.
-    */
+  /** Makes sure the backend is closed after usage. */
   def resource[F[_]: Async](
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): Resource[F, SttpBackend[F, Fs2Streams[F] with WebSockets]] =
     Dispatcher[F].flatMap(dispatcher =>
-      Resource.make(apply(options, customizeRequest, webSocketBufferCapacity, dispatcher))(_.close())
+      Resource.make(apply(dispatcher, options, customizeRequest, webSocketBufferCapacity))(_.close())
     )
 
   def usingConfig[F[_]: Async](
       cfg: AsyncHttpClientConfig,
+      dispatcher: Dispatcher[F],
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
-      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity,
-      dispatcher: Dispatcher[F]
+      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): F[SttpBackend[F, Fs2Streams[F] with WebSockets]] =
     Sync[F].delay(
       apply[F](
@@ -148,25 +147,23 @@ object AsyncHttpClientFs2Backend {
       )
     )
 
-  /** Makes sure the backend is closed after usage.
-    */
+  /** Makes sure the backend is closed after usage. */
   def resourceUsingConfig[F[_]: Async](
       cfg: AsyncHttpClientConfig,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): Resource[F, SttpBackend[F, Fs2Streams[F] with WebSockets]] =
     Dispatcher[F].flatMap(dispatcher =>
-      Resource.make(usingConfig(cfg, customizeRequest, webSocketBufferCapacity, dispatcher))(_.close())
+      Resource.make(usingConfig(cfg, dispatcher, customizeRequest, webSocketBufferCapacity))(_.close())
     )
 
-  /** @param updateConfig A function which updates the default configuration (created basing on `options`).
-    */
+  /** @param updateConfig A function which updates the default configuration (created basing on `options`). */
   def usingConfigBuilder[F[_]: Async](
+      dispatcher: Dispatcher[F],
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
-      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity,
-      dispatcher: Dispatcher[F]
+      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): F[SttpBackend[F, Fs2Streams[F] with WebSockets]] =
     Sync[F].delay(
       AsyncHttpClientFs2Backend[F](
@@ -188,7 +185,7 @@ object AsyncHttpClientFs2Backend {
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): Resource[F, SttpBackend[F, Fs2Streams[F] with WebSockets]] =
     Dispatcher[F].flatMap(dispatcher =>
-      Resource.make(usingConfigBuilder(updateConfig, options, customizeRequest, webSocketBufferCapacity, dispatcher))(
+      Resource.make(usingConfigBuilder(dispatcher, updateConfig, options, customizeRequest, webSocketBufferCapacity))(
         _.close()
       )
     )

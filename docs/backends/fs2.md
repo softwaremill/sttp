@@ -7,111 +7,113 @@ The [fs2](https://github.com/functional-streams-for-scala/fs2) backend is **asyn
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "async-http-client-backend-fs2" % "@VERSION@"
+"com.softwaremill.sttp.client3" %% "async-http-client-backend-fs2" % "@VERSION@" // for cats-effect 3.x & fs2 3.x
+// or
+"com.softwaremill.sttp.client3" %% "async-http-client-backend-fs2-ce2" % "@VERSION@" // for cats-effect 2.x & fs2 2.x
 ```
-
-And some imports:
-
-```scala mdoc:silent
-import sttp.client3.asynchttpclient.fs2.AsyncHttpClientFs2Backend
-import cats.effect._
-import sttp.client3._
-
-// an implicit `cats.effect.ContextShift` is required to create a concurrent instance for `cats.effect.IO`,
-// as well as a `cats.effect.Blocker` instance. Note that you'll probably want to use a different thread
-// pool for blocking.
-implicit val cs: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionContext.global)
-val blocker: Blocker = Blocker.liftExecutionContext(scala.concurrent.ExecutionContext.global)
-```
-           
+ 
 This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client) and uses [Netty](http://netty.io) behind the scenes.
 
 Next you'll need to define a backend instance as an implicit value. This can be done in two basic ways:
 
-* by creating an effect, which describes how a backend is created, or instantiating the backend directly. In this case, you'll need to close the backend manually
-* by creating a `Resource`, which will instantiate the backend and close it after it has been used
+* by creating a `Resource`, which will instantiate the backend (along with a `Dispatcher`) and close it after it has been used
+* by creating an effect, which describes how a backend is created, or instantiating the backend directly. In this case, you'll need to close the backend manually, as well as provide a `Dispatcher` instance
 
-A non-comprehensive summary of how the backend can be created is as follows:
+Below you can find a non-comprehensive summary of how the backend can be created. The easiest form is to use a cats-effect `Resource`:
+
+```scala mdoc:silent
+import sttp.client3.asynchttpclient.fs2.AsyncHttpClientFs2Backend
+import cats.effect.IO
+
+AsyncHttpClientFs2Backend.resource[IO]().use { backend => ??? }
+```
+
+or, by providing a custom dispatcher:
 
 ```scala mdoc:compile-only
-AsyncHttpClientFs2Backend[IO](blocker).flatMap { backend => ??? }
+import cats.effect.std.Dispatcher
+
+val dispatcher: Dispatcher[IO] = ???
+
+AsyncHttpClientFs2Backend[IO](dispatcher).flatMap { backend => ??? }
 ```
 
 or, if you'd like to use a custom configuration:
 
 ```scala mdoc:compile-only
 import org.asynchttpclient.AsyncHttpClientConfig
+import cats.effect.std.Dispatcher
+
+val dispatcher: Dispatcher[IO] = ???
 
 val config: AsyncHttpClientConfig = ???
-AsyncHttpClientFs2Backend.usingConfig[IO](blocker, config).flatMap { backend => ??? }
+AsyncHttpClientFs2Backend.usingConfig[IO](config, dispatcher).flatMap { backend => ??? }
 ```
 
 or, if you'd like to use adjust the configuration sttp creates:
 
 ```scala mdoc:compile-only
+import sttp.client3.SttpBackendOptions
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
+import cats.effect.std.Dispatcher
 
 val sttpOptions: SttpBackendOptions = SttpBackendOptions.Default 
 val adjustFunction: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder = ???
-AsyncHttpClientFs2Backend.usingConfigBuilder[IO](blocker, adjustFunction, sttpOptions).flatMap { backend => ??? }
-```
+val dispatcher: Dispatcher[IO] = ???
 
-or, if you'd like the backend to be wrapped in cats-effect Resource:
-
-```scala mdoc:compile-only
-AsyncHttpClientFs2Backend.resource[IO](blocker).use { backend => ??? }
+AsyncHttpClientFs2Backend.usingConfigBuilder[IO](dispatcher, adjustFunction, sttpOptions).flatMap { backend => ??? }
 ```
 
 or, if you'd like to instantiate the AsyncHttpClient yourself:
 
 ```scala mdoc:compile-only
 import org.asynchttpclient.AsyncHttpClient
+import cats.effect.std.Dispatcher
 
+val dispatcher: Dispatcher[IO] = ???
 val asyncHttpClient: AsyncHttpClient = ??? 
-val backend = AsyncHttpClientFs2Backend.usingClient[IO](asyncHttpClient, blocker)
+val backend = AsyncHttpClientFs2Backend.usingClient[IO](asyncHttpClient, dispatcher)
 ```
 
 ## Using HttpClient (Java 11+)
 
 To use, add the following dependency to your project:
 
-```
-"com.softwaremill.sttp.client3" %% "httpclient-backend-fs2" % "@VERSION@"
+```scala
+"com.softwaremill.sttp.client3" %% "httpclient-backend-fs2" % "@VERSION@" // for cats-effect 3.x & fs2 3.x
+// or 
+"com.softwaremill.sttp.client3" %% "httpclient-backend-fs2-ce2" % "@VERSION@" // for cats-effect 2.x & fs2 2.x
 ```
 
-And some imports:
+Create the backend using a cats-effect `Resource`:
 
-```scala mdoc:reset:silent
+```scala mdoc:silent
 import sttp.client3.httpclient.fs2.HttpClientFs2Backend
-import cats.effect._
-import sttp.client3._
+import cats.effect.IO
 
-// an implicit `cats.effect.ContextShift` is required to create a concurrent instance for `cats.effect.IO`,
-// as well as a `cats.effect.Blocker` instance. Note that you'll probably want to use a different thread
-// pool for blocking.
-implicit val cs: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionContext.global)
-val blocker = Blocker.liftExecutionContext(scala.concurrent.ExecutionContext.global)
+HttpClientFs2Backend.resource[IO]().use { backend => ??? }
 ```
 
-Create the backend using:
+or, if by providing a custom `Dispatcher`:
 
 ```scala mdoc:compile-only
-import sttp.client3.httpclient.fs2.HttpClientFs2Backend
-HttpClientFs2Backend[IO](blocker).flatMap { backend => ??? }
+import cats.effect.std.Dispatcher
+
+val dispatcher: Dispatcher[IO] = ???
+
+HttpClientFs2Backend[IO](dispatcher).flatMap { backend => ??? }
 ```
 
-or, if you'd like the backend to be wrapped in cats-effect Resource:
-
-```scala mdoc:compile-only
-HttpClientFs2Backend.resource[IO](blocker).use { backend => ??? }
-```
-
-or, if you'd like to instantiate the HttpClient yourself:
+or, if you'd like to instantiate the `HttpClient` yourself:
 
 ```scala mdoc:compile-only
 import java.net.http.HttpClient
+import cats.effect.std.Dispatcher
+
 val httpClient: HttpClient = ???
-val backend = HttpClientFs2Backend.usingClient[IO](httpClient, blocker)
+val dispatcher: Dispatcher[IO] = ???
+
+val backend = HttpClientFs2Backend.usingClient[IO](httpClient, dispatcher)
 ```
 
 This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards.
@@ -125,22 +127,19 @@ jdk.httpclient.allowRestrictedHeaders=host
 
 To use, add the following dependency to your project:
 
-```
-"com.softwaremill.sttp.client3" %% "armeria-backend-fs2" % "@VERSION@"
-```
-
-add imports:
-
-```scala mdoc:silent
-import sttp.client3.armeria.fs2.ArmeriaFs2Backend
-import cats.effect.{ContextShift, IO}
+```scala
+"com.softwaremill.sttp.client3" %% "armeria-backend-fs2" % "@VERSION@" // for cats-effect 3.x & fs2 3.x
+// or
+"com.softwaremill.sttp.client3" %% "armeria-backend-fs2" % "@VERSION@" // for cats-effect 2.x & fs2 2.x
 ```
 
 create client:
 
-```scala mdoc:compile-only
-implicit val cs: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionContext.global)
-val backend = ArmeriaFs2Backend[IO]()
+```scala mdoc:silent
+import sttp.client3.armeria.fs2.ArmeriaFs2Backend
+import cats.effect.IO
+
+ArmeriaFs2Backend.resource[IO]().use { backend => ??? }
 ```
 
 or, if you'd like to instantiate the [WebClient](https://armeria.dev/docs/client-http) yourself:
@@ -148,6 +147,9 @@ or, if you'd like to instantiate the [WebClient](https://armeria.dev/docs/client
 ```scala mdoc:compile-only
 import com.linecorp.armeria.client.circuitbreaker._
 import com.linecorp.armeria.client.WebClient
+import cats.effect.std.Dispatcher
+
+val dispatcher: Dispatcher[IO] = ???
 
 // Fluently build Armeria WebClient with built-in decorators
 val client = WebClient.builder("https://my-service.com")
@@ -156,14 +158,14 @@ val client = WebClient.builder("https://my-service.com")
                CircuitBreakerRule.onServerErrorStatus()))
              .build()
              
-val backend = ArmeriaFs2Backend.usingClient[IO](client)
+val backend = ArmeriaFs2Backend.usingClient[IO](client, dispatcher)
 ```
 
 ```eval_rst
 .. note:: A WebClient could fail to follow redirects if the WebClient is created with a base URI and a redirect location is a different URI.
 ```
 
-This backend is build on top of [Armeria](https://armeria.dev/docs/client-http).
+This backend is built on top of [Armeria](https://armeria.dev/docs/client-http).
 
 ## Streaming
 
@@ -177,7 +179,7 @@ import sttp.client3._
 import sttp.client3.asynchttpclient.fs2.AsyncHttpClientFs2Backend
 import fs2.Stream
 
-val effect = AsyncHttpClientFs2Backend[IO](blocker).flatMap { backend =>
+val effect = AsyncHttpClientFs2Backend.resource[IO]().use { backend =>
   val stream: Stream[IO, Byte] = ???
 
   basicRequest
@@ -192,11 +194,12 @@ Responses can also be streamed:
 
 ```scala mdoc:compile-only
 import sttp.capabilities.fs2.Fs2Streams
+import sttp.client3._
 import sttp.client3.asynchttpclient.fs2.AsyncHttpClientFs2Backend
 import fs2.Stream
 import scala.concurrent.duration.Duration
 
-val effect = AsyncHttpClientFs2Backend[IO](blocker).flatMap { backend =>
+val effect = AsyncHttpClientFs2Backend.resource[IO]().use { backend =>
   val response: IO[Response[Either[String, Stream[IO, Byte]]]] =
     basicRequest
       .post(uri"...")
