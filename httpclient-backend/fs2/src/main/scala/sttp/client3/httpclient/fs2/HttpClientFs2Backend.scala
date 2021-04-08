@@ -6,11 +6,10 @@ import java.net.http.{HttpClient, HttpRequest}
 import java.nio.ByteBuffer
 import java.util
 import cats.effect._
-import cats.effect.std.Dispatcher
+import cats.effect.std.{Dispatcher, Queue}
 import cats.implicits._
 import fs2.compression.InflateParams
 import fs2.{Chunk, Stream}
-import fs2.concurrent.InspectableQueue
 import fs2.interop.reactivestreams._
 import org.reactivestreams.{FlowAdapters, Publisher}
 import sttp.capabilities.WebSockets
@@ -59,7 +58,9 @@ class HttpClientFs2Backend[F[_]: Async] private (
       override def streamToPublisher(stream: Stream[F, Byte]): F[HttpRequest.BodyPublisher] =
         monad.eval(
           BodyPublishers.fromPublisher(
-            FlowAdapters.toFlowPublisher(StreamUnicastPublisher(stream.chunks.map(_.toByteBuffer), dispatcher): Publisher[ByteBuffer])
+            FlowAdapters.toFlowPublisher(
+              StreamUnicastPublisher(stream.chunks.map(_.toByteBuffer), dispatcher): Publisher[ByteBuffer]
+            )
           )
         )
     }
@@ -68,7 +69,7 @@ class HttpClientFs2Backend[F[_]: Async] private (
     new Fs2BodyFromHttpClient[F]()
 
   override protected def createSimpleQueue[T]: F[SimpleQueue[F, T]] =
-    InspectableQueue.unbounded[F, T].map(new Fs2SimpleQueue(_, None, dispatcher))
+    Queue.unbounded[F, T].map(new Fs2SimpleQueue(_, None, dispatcher))
 
   override protected def createSequencer: F[Sequencer[F]] = Fs2Sequencer.create
 
@@ -79,8 +80,8 @@ class HttpClientFs2Backend[F[_]: Async] private (
   override protected def emptyBody(): Stream[F, Byte] = Stream.empty
 
   override protected def standardEncoding: (Stream[F, Byte], String) => Stream[F, Byte] = {
-    case (body, "gzip")    => body.through(fs2.compression.gunzip()).flatMap(_.content)
-    case (body, "deflate") => body.through(fs2.compression.inflate(InflateParams.DEFAULT))
+    case (body, "gzip")    => body.through(fs2.compression.Compression[F].gunzip()).flatMap(_.content)
+    case (body, "deflate") => body.through(fs2.compression.Compression[F].inflate(InflateParams.DEFAULT))
     case (_, ce)           => Stream.raiseError[F](new UnsupportedEncodingException(s"Unsupported encoding: $ce"))
   }
 }
@@ -121,7 +122,8 @@ object HttpClientFs2Backend {
       customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty
   ): Resource[F, SttpBackend[F, Fs2Streams[F] with WebSockets]] =
     Dispatcher[F].flatMap(dispatcher =>
-      Resource.make(apply(options, customizeRequest, customEncodingHandler, dispatcher))(_.close()))
+      Resource.make(apply(options, customizeRequest, customEncodingHandler, dispatcher))(_.close())
+    )
 
   def usingClient[F[_]: Async](
       client: HttpClient,

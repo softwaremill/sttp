@@ -2,11 +2,9 @@ package sttp.client3.asynchttpclient.fs2
 
 import java.io.File
 import java.nio.ByteBuffer
-
 import cats.effect._
-import cats.effect.std.Dispatcher
+import cats.effect.std.{Dispatcher, Queue}
 import cats.implicits._
-import fs2.concurrent.InspectableQueue
 import fs2.{Chunk, Pipe, Stream}
 import fs2.interop.reactivestreams._
 import fs2.io.file.Files
@@ -64,7 +62,8 @@ class AsyncHttpClientFs2Backend[F[_]: Async] private (
       }
 
       override def bytesToPublisher(b: Array[Byte]): F[Publisher[ByteBuffer]] =
-        (StreamUnicastPublisher(Stream.apply[F, ByteBuffer](ByteBuffer.wrap(b)), dispatcher): Publisher[ByteBuffer]).pure[F]
+        (StreamUnicastPublisher(Stream.apply[F, ByteBuffer](ByteBuffer.wrap(b)), dispatcher): Publisher[ByteBuffer])
+          .pure[F]
 
       override def fileToPublisher(f: File): F[Publisher[ByteBuffer]] = {
         val stream =
@@ -89,7 +88,7 @@ class AsyncHttpClientFs2Backend[F[_]: Async] private (
 
   override protected def createSimpleQueue[T]: F[SimpleQueue[F, T]] =
     webSocketBufferCapacity
-      .fold(InspectableQueue.unbounded[F, T])(InspectableQueue.bounded)
+      .fold(Queue.unbounded[F, T])(Queue.bounded)
       .map(new Fs2SimpleQueue(_, webSocketBufferCapacity, dispatcher))
 }
 
@@ -130,7 +129,8 @@ object AsyncHttpClientFs2Backend {
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): Resource[F, SttpBackend[F, Fs2Streams[F] with WebSockets]] =
     Dispatcher[F].flatMap(dispatcher =>
-      Resource.make(apply(options, customizeRequest, webSocketBufferCapacity, dispatcher))(_.close()))
+      Resource.make(apply(options, customizeRequest, webSocketBufferCapacity, dispatcher))(_.close())
+    )
 
   def usingConfig[F[_]: Async](
       cfg: AsyncHttpClientConfig,
@@ -139,7 +139,13 @@ object AsyncHttpClientFs2Backend {
       dispatcher: Dispatcher[F]
   ): F[SttpBackend[F, Fs2Streams[F] with WebSockets]] =
     Sync[F].delay(
-      apply[F](new DefaultAsyncHttpClient(cfg), closeClient = true, customizeRequest, webSocketBufferCapacity, dispatcher)
+      apply[F](
+        new DefaultAsyncHttpClient(cfg),
+        closeClient = true,
+        customizeRequest,
+        webSocketBufferCapacity,
+        dispatcher
+      )
     )
 
   /** Makes sure the backend is closed after usage.
@@ -150,7 +156,8 @@ object AsyncHttpClientFs2Backend {
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): Resource[F, SttpBackend[F, Fs2Streams[F] with WebSockets]] =
     Dispatcher[F].flatMap(dispatcher =>
-      Resource.make(usingConfig(cfg, customizeRequest, webSocketBufferCapacity, dispatcher))(_.close()))
+      Resource.make(usingConfig(cfg, customizeRequest, webSocketBufferCapacity, dispatcher))(_.close())
+    )
 
   /** @param updateConfig A function which updates the default configuration (created basing on `options`).
     */
@@ -183,13 +190,14 @@ object AsyncHttpClientFs2Backend {
     Dispatcher[F].flatMap(dispatcher =>
       Resource.make(usingConfigBuilder(updateConfig, options, customizeRequest, webSocketBufferCapacity, dispatcher))(
         _.close()
-      ))
+      )
+    )
 
   def usingClient[F[_]: Async](
       client: AsyncHttpClient,
       dispatcher: Dispatcher[F],
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
-      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity,
+      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): SttpBackend[F, Fs2Streams[F] with WebSockets] =
     apply[F](client, closeClient = false, customizeRequest, webSocketBufferCapacity, dispatcher)
 

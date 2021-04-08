@@ -7,7 +7,7 @@ import sttp.capabilities.WebSockets
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client3._
 import sttp.client3.asynchttpclient.AsyncHttpClientWebSocketTest
-import sttp.client3.impl.cats.{CatsTestBase, DispatcherIOMixin}
+import sttp.client3.impl.cats.{CatsTestBase, TestIODispatcher}
 import sttp.client3.impl.fs2.Fs2WebSockets
 import sttp.ws.WebSocketFrame
 
@@ -15,7 +15,7 @@ import scala.concurrent.duration._
 
 class AsyncHttpClientFs2WebSocketTest
     extends AsyncHttpClientWebSocketTest[IO, Fs2Streams[IO]]
-    with DispatcherIOMixin
+    with TestIODispatcher
     with CatsTestBase {
 
   implicit val backend: SttpBackend[IO, Fs2Streams[IO] with WebSockets] =

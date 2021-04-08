@@ -719,7 +719,18 @@ lazy val circe = (projectMatrix in file("json/circe"))
       "io.circe" %%% "circe-parser" % circeVersion(_),
       "io.circe" %%% "circe-generic" % circeVersion(_) % Test
     ),
-    scalaTest
+    scalaTest,
+    Compile / unmanagedSourceDirectories := {
+      val current = (Compile / unmanagedSourceDirectories).value
+      val sv = (Compile / scalaVersion).value
+      val baseDirectory = (Compile / scalaSource).value
+      val suffixes = CrossVersion.partialVersion(sv) match {
+        case Some((2, 11)) => List("2.11")
+        case _             => List("2.12+")
+      }
+      val versionSpecificSources = suffixes.map(s => new File(baseDirectory.getAbsolutePath + "-" + s))
+      versionSpecificSources ++ current
+    }
   )
   .jvmPlatform(
     scalaVersions = scala2 ++ scala3,
@@ -867,10 +878,14 @@ lazy val examplesCe2 = (projectMatrix in file("examples-ce2"))
   .settings(commonJvmSettings)
   .settings(
     name := "examples-ce2",
-    publish / skip := true
+    publish / skip := true,
+    libraryDependencies ++= dependenciesFor(scalaVersion.value)(
+      "io.circe" %% "circe-generic" % circeVersion(_)
+    )
   )
   .jvmPlatform(scalaVersions = List(scala2_13))
   .dependsOn(
+    circe,
     asyncHttpClientMonixBackend
   )
 

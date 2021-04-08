@@ -5,8 +5,7 @@ import cats.effect.std.Dispatcher
 import cats.effect.unsafe.implicits.global
 import org.scalatest.{BeforeAndAfterAll, Suite}
 
-trait DispatcherIOMixin extends BeforeAndAfterAll {
-  this: Suite =>
+trait TestIODispatcher extends BeforeAndAfterAll { this: Suite =>
 
   // use a var to avoid initialization error `scala.UninitializedFieldError`
   protected var dispatcher: Dispatcher[IO] = _

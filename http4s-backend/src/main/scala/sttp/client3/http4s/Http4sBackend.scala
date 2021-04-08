@@ -13,6 +13,7 @@ import org.http4s.{ContentCoding, EntityBody, Request => Http4sRequest}
 import org.http4s
 import org.http4s.client.Client
 import org.http4s.client.blaze.BlazeClientBuilder
+import org.typelevel.ci.CIString
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client3.http4s.Http4sBackend.EncodingHandler
 import sttp.client3.impl.cats.CatsMonadAsyncError
@@ -38,7 +39,8 @@ class Http4sBackend[F[_]: Async](
       val request = Http4sRequest(
         method = methodToHttp4s(r.method),
         uri = http4s.Uri.unsafeFromString(r.uri.toString),
-        headers = http4s.Headers(r.headers.map(h => http4s.Header(h.name, h.value)).toList) ++ extraHeaders,
+        headers =
+          http4s.Headers(r.headers.map(h => http4s.Header.Raw(CIString(h.name), h.value)).toList) ++ extraHeaders,
         body = entity.body
       )
 
@@ -49,7 +51,7 @@ class Http4sBackend[F[_]: Async](
             .run(customizeRequest(request))
             .use { response =>
               val code = StatusCode.unsafeApply(response.status.code)
-              val headers = response.headers.toList.map(h => Header(h.name.toString, h.value))
+              val headers = response.headers.headers.map(h => Header(h.name.toString, h.value))
               val statusText = response.status.reason
               val responseMetadata = ResponseMetadata(code, statusText, headers)
 
@@ -139,8 +141,9 @@ class Http4sBackend[F[_]: Async](
   }
 
   private def multipartToHttp4s(mp: Part[RequestBody[_]]): http4s.multipart.Part[F] = {
-    val contentDisposition = http4s.Header(HeaderNames.ContentDisposition, mp.contentDispositionHeaderValue)
-    val otherHeaders = mp.headers.map(h => http4s.Header(h.name, h.value))
+    val contentDisposition =
+      http4s.Header.Raw(CIString(HeaderNames.ContentDisposition), mp.contentDispositionHeaderValue)
+    val otherHeaders = mp.headers.map(h => http4s.Header.Raw(CIString(h.name), h.value))
     val allHeaders = List(contentDisposition) ++ otherHeaders
 
     val body: EntityBody[F] = mp.body match {
@@ -163,7 +166,7 @@ class Http4sBackend[F[_]: Async](
 
   private def decompressResponseBody(hr: http4s.Response[F]): http4s.Response[F] = {
     val body = hr.headers
-      .get(http4s.headers.`Content-Encoding`)
+      .get[http4s.headers.`Content-Encoding`]
       .map(e => customEncodingHandler.orElse(EncodingHandler(standardEncodingHandler))(hr.body -> e.contentCoding))
       .getOrElse(hr.body)
     hr.copy(body = body)
@@ -174,12 +177,12 @@ class Http4sBackend[F[_]: Async](
         if http4s.headers
           .`Accept-Encoding`(NonEmptyList.of(http4s.ContentCoding.deflate))
           .satisfiedBy(contentCoding) =>
-      body.through(fs2.compression.inflate(InflateParams.DEFAULT))
+      body.through(fs2.compression.Compression[F].inflate(InflateParams.DEFAULT))
     case (body, contentCoding)
         if http4s.headers
           .`Accept-Encoding`(NonEmptyList.of(http4s.ContentCoding.gzip, http4s.ContentCoding.`x-gzip`))
           .satisfiedBy(contentCoding) =>
-      body.through(fs2.compression.gunzip(4096)).flatMap(_.content)
+      body.through(fs2.compression.Compression[F].gunzip(4096)).flatMap(_.content)
     case (_, contentCoding) => throw new UnsupportedEncodingException(s"Unsupported encoding: ${contentCoding.coding}")
   }
 
