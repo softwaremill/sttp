@@ -86,7 +86,7 @@ val circeVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "0.11.2"
   case _             => "0.13.0"
 }
-val zioJsonVersion: Option[(Long, Long)] => String = _ => "0.1.3"
+val zioJsonVersion: Option[(Long, Long)] => String = _ => "0.1.4"
 val playJsonVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.7.4"
   case _             => "2.9.2"
@@ -104,7 +104,7 @@ val fs2_2_version: Option[(Long, Long)] => String = {
 }
 
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.2.4"
-val akkaStreamVersion = "2.6.13"
+val akkaStreamVersion = "2.6.14"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % akkaStreamVersion
 
 val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", "wordspec", "shouldmatchers").map(m =>
@@ -119,7 +119,7 @@ val sttpSharedVersion = "1.2.0"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
 
-val jeagerClientVersion = "1.5.0"
+val jeagerClientVersion = "1.6.0"
 val braveOpentracingVersion = "1.0.0"
 val zipkinSenderOkHttpVersion = "2.16.3"
 val resilience4jVersion = "1.7.0"
@@ -641,7 +641,7 @@ lazy val armeriaBackend = (projectMatrix in file("armeria-backend"))
   .settings(testServerSettings)
   .settings(
     name := "armeria-backend",
-    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.5.0"
+    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.6.0"
   )
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3)
   .dependsOn(core % compileAndTest)
