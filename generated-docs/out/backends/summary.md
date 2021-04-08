@@ -1,8 +1,8 @@
 # Supported backends
 
-sttp supports a number of synchronous and asynchronous backends. It's the backends that take care of managing connections, sending requests and receiving responses: sttp defines only the API to describe the requests to be send and handle the response data. Backends do all the heavy-lifting.
+sttp supports a number of synchronous and asynchronous backends. It's the backends that take care of managing connections, sending requests and receiving responses: sttp defines only the API to describe the requests to be sent and handle the response data. Backends do all the heavy-lifting. Typically, a single backend instance is created for the lifetime of the application.
 
-Choosing the right backend depends on a number of factors: whether you are using sttp to explore some data, or is it a production system; are you using a synchronous, blocking architecture or an asynchronous one; do you work mostly with Scala's `Future`, or maybe you use some form of a `Task` abstraction; finally, if you want to stream requests/responses, or not.
+Choosing the right backend depends on a number of factors: whether you are using sttp to explore some data, or is it a production system; are you using a synchronous, blocking architecture, or an asynchronous one; do you work mostly with Scala's `Future`, or maybe you use some form of a `Task` abstraction; finally, if you want to stream requests/responses, or not.
 
 Which one to choose?
 
@@ -50,7 +50,9 @@ Class                                Effect type                      Supported 
 ==================================== ================================ ================================================= ========================== ===================
 ```
 
-The backends work with Scala 2.11, 2.12 and 2.13 (with some exceptions for 2.11). Moreover, `HttpURLConnectionBackend`, `AsyncHttpClientFutureBackend`, `AsyncHttpClientZioBackend`, `HttpClientSyncBackend`, `HttpClientFutureBackend` and `HttpClientZioBackend` are additionally built with Scala 3.
+The backends work with Scala 2.11, 2.12, 2.13 and 3 (with some exceptions for 2.11 and 3).
+
+Backends supporting cats-effect are available in versions for cats-effect 2.x (dependency artifacts have the `-ce2` suffix) and 3.x.
 
 All backends that support asynchronous/non-blocking streams, also support server-sent events.
 

@@ -3,7 +3,7 @@
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "opentracing-backend" % "3.2.3"
+"com.softwaremill.sttp.client3" %% "opentracing-backend" % "3.3.0-RC1"
 ```
 
 This backend depends on [opentracing](https://github.com/opentracing/opentracing-java), a standardized set of api for distributed tracing.
@@ -47,7 +47,7 @@ Using with [jaeger](https://www.jaegertracing.io/) tracing
 Add following dependency:
 
 ```
-libraryDependencies += "io.jaegertracing" % "jaeger-client" % "1.5.0"
+libraryDependencies += "io.jaegertracing" % "jaeger-client" % "1.6.0"
 ```
 
 Create an instance of tracer:

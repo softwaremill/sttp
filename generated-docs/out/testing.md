@@ -203,8 +203,6 @@ import cats.effect._
 import sttp.client3.impl.cats.implicits._
 import sttp.monad.MonadAsyncError
 
-implicit val cs: ContextShift[IO] = IO.contextShift(scala.concurrent.ExecutionContext.global)
-
 val sourceFile = new File("path/to/file.ext")
 val destinationFile = new File("path/to/file.ext")
 SttpBackendStub(implicitly[MonadAsyncError[IO]])
