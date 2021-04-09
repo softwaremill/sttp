@@ -1,7 +1,7 @@
 package sttp.client3.armeria.fs2
 
 import cats.effect.std.Dispatcher
-import cats.effect.{Async, Resource, Sync}
+import cats.effect.kernel.{Async, Resource, Sync}
 import com.linecorp.armeria.client.WebClient
 import com.linecorp.armeria.common.HttpData
 import com.linecorp.armeria.common.stream.StreamMessage

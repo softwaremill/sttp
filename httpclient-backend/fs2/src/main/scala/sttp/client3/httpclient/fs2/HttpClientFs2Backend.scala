@@ -5,7 +5,7 @@ import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.{HttpClient, HttpRequest}
 import java.nio.ByteBuffer
 import java.util
-import cats.effect._
+import cats.effect.kernel._
 import cats.effect.std.{Dispatcher, Queue}
 import cats.implicits._
 import fs2.compression.InflateParams

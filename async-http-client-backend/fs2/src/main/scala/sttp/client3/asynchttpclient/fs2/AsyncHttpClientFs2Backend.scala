@@ -2,7 +2,7 @@ package sttp.client3.asynchttpclient.fs2
 
 import java.io.File
 import java.nio.ByteBuffer
-import cats.effect._
+import cats.effect.kernel._
 import cats.effect.std.{Dispatcher, Queue}
 import cats.implicits._
 import fs2.{Chunk, Pipe, Stream}
