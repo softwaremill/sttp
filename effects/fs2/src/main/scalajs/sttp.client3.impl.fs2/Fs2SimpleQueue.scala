@@ -1,9 +1,8 @@
 package sttp.client3.impl.fs2
 
 import cats.MonadError
-import cats.effect.std.Dispatcher
+import cats.effect.std.{Dispatcher, Queue}
 import cats.syntax.flatMap._
-import cats.effect.std.Queue
 import sttp.client3.internal.ws.SimpleQueue
 import sttp.ws.WebSocketBufferFull
 

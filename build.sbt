@@ -312,7 +312,8 @@ lazy val cats = (projectMatrix in file("effects/cats"))
     name := "cats",
     Test / publishArtifact := true,
     libraryDependencies ++= Seq(
-      "org.typelevel" %%% "cats-effect" % catsEffect_3_version
+      "org.typelevel" %%% "cats-effect-kernel" % catsEffect_3_version,
+      "org.typelevel" %%% "cats-effect" % catsEffect_3_version % Test
     )
   )
   .dependsOn(core % compileAndTest)

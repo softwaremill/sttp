@@ -1,6 +1,6 @@
 package sttp.client3.impl.cats
 
-import cats.effect.Async
+import cats.effect.kernel.Async
 import cats.syntax.functor._
 import cats.syntax.option._
 import sttp.monad.{Canceler, MonadAsyncError}

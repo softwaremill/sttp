@@ -1,7 +1,7 @@
 package sttp.client3.impl.cats
 
-import cats.effect.syntax.all._
-import cats.effect.Async
+import cats.effect.kernel.syntax.monadCancel._
+import cats.effect.kernel.Async
 import org.scalajs.dom.experimental.{BodyInit, Request => FetchRequest, Response => FetchResponse}
 import sttp.capabilities.WebSockets
 import sttp.client3.internal.{ConvertFromFuture, NoStreams}

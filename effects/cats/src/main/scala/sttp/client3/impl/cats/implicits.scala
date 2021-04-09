@@ -1,6 +1,6 @@
 package sttp.client3.impl.cats
 
-import cats.effect.Async
+import cats.effect.kernel.Async
 import cats.~>
 import sttp.capabilities.Effect
 import sttp.client3.monad.{FunctionK, MapEffect}
