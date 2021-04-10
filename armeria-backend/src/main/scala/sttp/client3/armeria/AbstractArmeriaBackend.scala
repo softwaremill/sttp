@@ -1,11 +1,9 @@
 package sttp.client3.armeria
 
-import com.linecorp.armeria.client.encoding.DecodingClient
 import com.linecorp.armeria.client.{
   ClientFactory,
   ClientRequestContext,
   Clients,
-  HttpClient,
   ResponseTimeoutException,
   UnprocessedRequestException,
   WebClient,
@@ -32,27 +30,13 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicReference
 import org.reactivestreams.Publisher
 import scala.collection.immutable.Seq
+import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 import sttp.capabilities.{Effect, Streams}
 import sttp.client3.SttpClientException.{ConnectException, ReadException}
 import sttp.client3.armeria.AbstractArmeriaBackend.{RightUnit, noopCanceler, toStreamMessage}
 import sttp.client3.internal.{throwNestedMultipartNotAllowed, toByteArray}
-import sttp.client3.{
-  ByteArrayBody,
-  ByteBufferBody,
-  FileBody,
-  InputStreamBody,
-  MultipartBody,
-  NoBody,
-  Request,
-  RequestBody,
-  Response,
-  StreamBody,
-  StringBody,
-  SttpBackend,
-  SttpBackendOptions,
-  SttpClientException
-}
+import sttp.client3._
 import sttp.model._
 import sttp.monad.syntax._
 import sttp.monad.{Canceler, MonadAsyncError, MonadError}
@@ -78,7 +62,6 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
 
   private def execute[T, R >: SE](request: Request[T, R]): F[Response[T]] = {
     val captor = Clients.newContextCaptor()
-    var success = false
     try {
       val armeriaRes = requestToArmeria(request).execute()
       Try(captor.get()) match {
@@ -86,9 +69,10 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
           // Failed to start a request
           monad.async[Response[T]] { cb =>
             armeriaRes
-              .whenComplete()
+              .aggregate()
               .asInstanceOf[CompletableFuture[Void]]
               .handle((_: Void, cause: Throwable) => {
+                // Get an actual error from a response
                 if (cause != null) {
                   cb(Left(cause))
                 } else {
@@ -99,14 +83,12 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
             noopCanceler
           }
         case Success(ctx) =>
-          val response = fromArmeriaResponse(request, armeriaRes, ctx)
-          success = true
-          response
+          fromArmeriaResponse(request, armeriaRes, ctx)
       }
+    } catch {
+      case NonFatal(ex) => monad.error(ex)
     } finally {
-      if (success) {
-        captor.close()
-      }
+      captor.close()
     }
   }
 
@@ -321,24 +303,16 @@ private[armeria] object AbstractArmeriaBackend {
   def newClient(): WebClient = {
     WebClient
       .builder()
-      .decorator(newDecodingClient(_))
+      .decorator(delegate => new HttpDecodingClient(delegate))
       .build()
   }
 
   def newClient(options: SttpBackendOptions): WebClient = {
     WebClient
       .builder()
-      .decorator(newDecodingClient(_))
+      .decorator(delegate => new HttpDecodingClient(delegate))
       .factory(newClientFactory(options))
       .build()
-  }
-
-  private def newDecodingClient(delegate: HttpClient) = {
-    DecodingClient
-      .builder()
-      .autoFillAcceptEncoding(false)
-      .strictContentEncoding(true)
-      .build(delegate)
   }
 
   def toStreamMessage(path: Path): StreamMessage[HttpData] =

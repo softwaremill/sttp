@@ -1,15 +1,14 @@
 package sttp.client3.armeria
 
-import com.linecorp.armeria.common.{CommonPools, HttpData}
+import com.linecorp.armeria.common.HttpData
 import com.linecorp.armeria.common.stream.StreamMessage
-import io.netty.buffer.ByteBufAllocator
 import io.netty.util.concurrent.EventExecutor
 import java.io.File
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicReference
 import sttp.capabilities.Streams
 import sttp.client3.WebSocketResponseAs
-import sttp.client3.armeria.AbstractArmeriaBackend.{DefaultFileBufferSize, RightUnit, noopCanceler, toStreamMessage}
+import sttp.client3.armeria.AbstractArmeriaBackend.{RightUnit, noopCanceler, toStreamMessage}
 import sttp.client3.internal.{BodyFromResponseAs, SttpFile}
 import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.model.ResponseMetadata
