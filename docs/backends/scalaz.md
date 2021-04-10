@@ -58,6 +58,9 @@ create client:
 
 ```scala mdoc:compile-only
 val backend = ArmeriaScalazBackend()
+
+// You can use the default client which reuses the connection pool of ClientFactory.ofDefault()
+ArmeriaScalazBackend.usingDefaultClient()
 ```
 
 or, if you'd like to instantiate the [WebClient](https://armeria.dev/docs/client-http) yourself:
@@ -81,6 +84,8 @@ val backend = ArmeriaScalazBackend.usingClient(client)
 ```
 
 This backend is build on top of [Armeria](https://armeria.dev/docs/client-http).
+Armeria's [ClientFactory](https://armeria.dev/docs/client-factory) manages connections and protocol-specific properties.
+Please visit [the official documentation](https://armeria.dev/docs/client-factory) to learn how to configure it.
 
 ## Streaming
 

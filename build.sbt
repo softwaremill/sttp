@@ -17,6 +17,8 @@ lazy val startTestServer = taskKey[Unit]("Start a http server used by tests")
 // slow down for CI
 parallelExecution in Global := false
 
+logBuffered in Global := false
+
 excludeLintKeys in Global ++= Set(ideSkipProject, reStartArgs)
 
 val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(

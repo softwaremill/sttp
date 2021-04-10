@@ -41,8 +41,8 @@ private final class ArmeriaZioBackend(runtime: Runtime[Any], client: WebClient, 
 object ArmeriaZioBackend {
 
   /** Creates a new Armeria backend, using the given or default `SttpBackendOptions`. Due to these customisations,
-    * the client will manage its own connection pool. If you'd like to reuse the default Armeria `ClientFactory`,
-    * use `.usingDefaultClient`.
+    * the client will manage its own connection pool. If you'd like to reuse
+    * the default Armeria [[https://armeria.dev/docs/client-factory ClientFactory]] use `.usingDefaultClient`.
     */
   def apply(options: SttpBackendOptions = SttpBackendOptions.Default): Task[SttpBackend[Task, ZioStreams]] =
     ZIO

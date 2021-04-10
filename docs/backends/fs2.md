@@ -149,9 +149,14 @@ create client:
 
 ```scala mdoc:compile-only
 import cats.effect.IO
+import cats.effect.std.Dispatcher
 import sttp.client3.armeria.fs2.ArmeriaFs2Backend
 
 ArmeriaFs2Backend.resource[IO]().use { backend => ??? }
+
+val dispatcher: Dispatcher[IO] = ???
+// You can use the default client which reuses the connection pool of ClientFactory.ofDefault()
+ArmeriaFs2Backend.usingDefaultClient[IO](dispatcher)
 ```
 
 or, if you'd like to instantiate the [WebClient](https://armeria.dev/docs/client-http) yourself:
@@ -180,6 +185,8 @@ val backend = ArmeriaFs2Backend.usingClient[IO](client, dispatcher)
 ```
 
 This backend is built on top of [Armeria](https://armeria.dev/docs/client-http).
+Armeria's [ClientFactory](https://armeria.dev/docs/client-factory) manages connections and protocol-specific properties.
+Please visit [the official documentation](https://armeria.dev/docs/client-factory) to learn how to configure it.
 
 ## Streaming
 

@@ -11,6 +11,5 @@ class ArmeriaZioHttpTest extends HttpTest[Task] with ZioTestBase {
   override implicit val convertToFuture: ConvertToFuture[Task] = convertZioTaskToFuture
 
   override def supportsHostHeaderOverride = false
-  override def supportsMultipart = false
   override def supportsCancellation = false
 }

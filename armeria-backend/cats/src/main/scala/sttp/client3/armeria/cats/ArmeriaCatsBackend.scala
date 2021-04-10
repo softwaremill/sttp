@@ -35,8 +35,8 @@ private final class ArmeriaCatsBackend[F[_]: Async](client: WebClient, closeFact
 object ArmeriaCatsBackend {
 
   /** Creates a new Armeria backend, using the given or default `SttpBackendOptions`. Due to these customisations,
-    * the client will manage its own connection pool. If you'd like to reuse the default Armeria `ClientFactory`,
-    * use `.usingDefaultClient`.
+    * the client will manage its own connection pool. If you'd like to reuse
+    * the default Armeria [[https://armeria.dev/docs/client-factory ClientFactory]] use `.usingDefaultClient`.
     */
   def apply[F[_]: Async](options: SttpBackendOptions = SttpBackendOptions.Default): SttpBackend[F, Any] =
     apply(newClient(options), closeFactory = true)

@@ -1,18 +1,33 @@
 package sttp.client3.armeria
 
+import com.linecorp.armeria.client.encoding.DecodingClient
 import com.linecorp.armeria.client.{
   ClientFactory,
   ClientRequestContext,
   Clients,
+  HttpClient,
   ResponseTimeoutException,
   UnprocessedRequestException,
-  WebClient
+  WebClient,
+  WebClientRequestPreparation
 }
-import com.linecorp.armeria.common.{HttpData, HttpMethod, HttpRequest, HttpResponse, RequestHeaders, ResponseHeaders}
-import com.linecorp.armeria.common.stream.ClosedStreamException
-import io.netty.buffer.Unpooled
+import com.linecorp.armeria.common.multipart.{BodyPart, Multipart}
+import com.linecorp.armeria.common.stream.{ClosedStreamException, StreamMessage}
+import com.linecorp.armeria.common.{
+  CommonPools,
+  ContentDisposition,
+  HttpData,
+  HttpHeaders,
+  HttpMethod,
+  HttpResponse,
+  HttpStatus,
+  ResponseHeaders,
+  MediaType => ArmeriaMediaType
+}
+import io.netty.buffer.{ByteBufAllocator, Unpooled}
 import io.netty.util.AsciiString
 import java.nio.charset.{Charset, StandardCharsets}
+import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicReference
 import org.reactivestreams.Publisher
@@ -20,7 +35,8 @@ import scala.collection.immutable.Seq
 import scala.util.{Failure, Success, Try}
 import sttp.capabilities.{Effect, Streams}
 import sttp.client3.SttpClientException.{ConnectException, ReadException}
-import sttp.client3.armeria.AbstractArmeriaBackend.{DefaultFileBufferSize, RightUnit, noopCanceler}
+import sttp.client3.armeria.AbstractArmeriaBackend.{RightUnit, noopCanceler, toStreamMessage}
+import sttp.client3.internal.{throwNestedMultipartNotAllowed, toByteArray}
 import sttp.client3.{
   ByteArrayBody,
   ByteBufferBody,
@@ -29,6 +45,7 @@ import sttp.client3.{
   MultipartBody,
   NoBody,
   Request,
+  RequestBody,
   Response,
   StreamBody,
   StringBody,
@@ -60,17 +77,15 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
     adjustExceptions(request)(execute(request))
 
   private def execute[T, R >: SE](request: Request[T, R]): F[Response[T]] = {
-    val releaseToken = customizeOptions(request)
     val captor = Clients.newContextCaptor()
     var success = false
     try {
-      val armeriaReq = requestToArmeria(request)
-      val armeriaRes = client.execute(armeriaReq)
+      val armeriaRes = requestToArmeria(request).execute()
       Try(captor.get()) match {
         case Failure(ex) =>
           // Failed to start a request
           monad.async[Response[T]] { cb =>
-            armeriaReq
+            armeriaRes
               .whenComplete()
               .asInstanceOf[CompletableFuture[Void]]
               .handle((_: Void, cause: Throwable) => {
@@ -91,19 +106,32 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
     } finally {
       if (success) {
         captor.close()
-        releaseToken.close()
       }
     }
   }
 
-  private def requestToArmeria(request: Request[_, Nothing]): HttpRequest = {
-    val method = methodToArmeria(request.method)
-    val path = request.uri.toString()
+  private def requestToArmeria(request: Request[_, Nothing]): WebClientRequestPreparation = {
+    val requestPreparation = client
+      .prepare()
+      .disablePathParams()
+      .method(methodToArmeria(request.method))
+      .path(request.uri.toString())
+      .responseTimeoutMillis(request.options.readTimeout.toMillis)
 
-    val headers = headersToArmeria(request.headers, method, path)
+    var customContentType: Option[ArmeriaMediaType] = None
+    request.headers.foreach(header => {
+      if (header.name.equalsIgnoreCase(HeaderNames.ContentType)) {
+        // A Content-Type will be set with the body content
+        customContentType = Some(ArmeriaMediaType.parse(header.value))
+      } else {
+        requestPreparation.header(header.name, header.value)
+      }
+    })
+
+    val contentType = customContentType.getOrElse(ArmeriaMediaType.parse(request.body.defaultContentType.toString()))
 
     request.body match {
-      case NoBody => HttpRequest.of(headers)
+      case NoBody => requestPreparation
       case StringBody(s, encoding, _) =>
         val charset =
           if (encoding == "utf-8" || encoding == "UTF-8") {
@@ -111,16 +139,23 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
           } else {
             Charset.forName(encoding)
           }
-        HttpRequest.of(headers, HttpData.of(charset, s))
+        requestPreparation.content(contentType, HttpData.of(charset, s))
       case FileBody(f, _) =>
-        HttpRequest.of(headers, new PathPublisher(f.toPath, DefaultFileBufferSize))
-      case ByteArrayBody(b, _) => HttpRequest.of(headers, HttpData.wrap(b))
+        requestPreparation.content(contentType, toStreamMessage(f.toPath))
+      case ByteArrayBody(b, _) =>
+        requestPreparation.content(contentType, HttpData.wrap(b))
       case InputStreamBody(is, _) =>
-        HttpRequest.of(headers, HttpData.wrap(is.readAllBytes()))
+        requestPreparation.content(contentType, HttpData.wrap(toByteArray(is)))
       case ByteBufferBody(b, _) =>
-        HttpRequest.of(headers, HttpData.wrap(Unpooled.wrappedBuffer(b)))
-      case MultipartBody(_) => throw new IllegalArgumentException("Multipart body is not supported")
-      case StreamBody(s)    => HttpRequest.of(headers, streamToPublisher(s.asInstanceOf[streams.BinaryStream]))
+        requestPreparation.content(contentType, HttpData.wrap(Unpooled.wrappedBuffer(b)))
+      case multipart @ MultipartBody(_) =>
+        val armeriaMultipart = Multipart.of(multipart.parts.map(toArmeriaBodyPart): _*)
+        requestPreparation.content(
+          contentType.withParameter("boundary", armeriaMultipart.boundary()),
+          armeriaMultipart.toStreamMessage
+        )
+      case StreamBody(s) =>
+        requestPreparation.content(contentType, streamToPublisher(s.asInstanceOf[streams.BinaryStream]))
     }
   }
 
@@ -138,20 +173,39 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
       case _              => HttpMethod.UNKNOWN
     }
 
-  private def headersToArmeria(headers: Seq[Header], method: HttpMethod, path: String): RequestHeaders = {
-    val builder = RequestHeaders.builder(method, path)
-    headers.foreach(h => {
-      builder.add(h.name, h.value)
-    })
-    builder.build()
-  }
+  private def toArmeriaBodyPart(bodyPart: Part[RequestBody[_]]): BodyPart = {
+    val dispositionBuilder = ContentDisposition.builder("form-data")
+    dispositionBuilder.name(bodyPart.name)
+    bodyPart.fileName.foreach(dispositionBuilder.filename)
 
-  private def customizeOptions[T, R >: SE](request: Request[T, R]): AutoCloseable = {
-    // TODO(ikhoon): Use HttpRequestBuilder.responseTimeout()
-    //               once https://github.com/line/armeria/pull/3357 is merged
-    Clients.withContextCustomizer((ctx: ClientRequestContext) => {
-      ctx.setResponseTimeoutMillis(request.options.readTimeout.toMillis)
+    val headersBuilder = HttpHeaders
+      .builder()
+      .contentDisposition(dispositionBuilder.build())
+
+    bodyPart.headers.foreach(header => {
+      headersBuilder.add(header.name, header.value)
     })
+
+    val bodyPartBuilder = BodyPart
+      .builder()
+      .headers(headersBuilder.build())
+
+    (bodyPart.body match {
+      case StringBody(b, encoding, _) =>
+        bodyPartBuilder.content(HttpData.wrap(b.getBytes(encoding)))
+      case ByteArrayBody(b, _) =>
+        bodyPartBuilder.content(HttpData.wrap(b))
+      case ByteBufferBody(b, _) =>
+        bodyPartBuilder.content(HttpData.wrap(Unpooled.wrappedBuffer(b)))
+      case InputStreamBody(is, _) =>
+        bodyPartBuilder.content(HttpData.wrap(toByteArray(is)))
+      case FileBody(f, _) =>
+        bodyPartBuilder.content(toStreamMessage(f.toPath))
+      case StreamBody(s) =>
+        bodyPartBuilder.content(streamToPublisher(s.asInstanceOf[streams.BinaryStream]))
+      case MultipartBody(_) => throwNestedMultipartNotAllowed
+      case NoBody           => bodyPartBuilder.content(HttpData.empty())
+    }).build()
   }
 
   private def adjustExceptions[T](request: Request[_, _])(execute: => F[T]): F[T] =
@@ -213,8 +267,15 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
         builder += new Header(key.toString(), value)
       }
     })
+
     val status = responseHeaders.status()
-    ResponseMetadata(StatusCode.unsafeApply(status.code()), status.codeAsText(), builder.result())
+    val code = if (status == HttpStatus.UNKNOWN) {
+      // sttp disallows UNKNOWN(0) status, fallback to HttpStatus.InternalServerError
+      HttpStatus.INTERNAL_SERVER_ERROR.code()
+    } else {
+      status.code()
+    }
+    ResponseMetadata(StatusCode.unsafeApply(code), status.codeAsText(), builder.result())
   }
 
   override def close(): F[Unit] = {
@@ -242,7 +303,7 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
 }
 
 private[armeria] object AbstractArmeriaBackend {
-  val DefaultFileBufferSize: Int = 4096
+  val DefaultFileBufferSize: Int = 8192
   val RightUnit: Either[Nothing, Unit] = Right(())
   val noopCanceler: Canceler = Canceler(() => ())
 
@@ -260,15 +321,26 @@ private[armeria] object AbstractArmeriaBackend {
   def newClient(): WebClient = {
     WebClient
       .builder()
-      .decorator(delegate => new HttpDecodingClient(delegate))
+      .decorator(newDecodingClient(_))
       .build()
   }
 
   def newClient(options: SttpBackendOptions): WebClient = {
     WebClient
       .builder()
-      .decorator(delegate => new HttpDecodingClient(delegate))
+      .decorator(newDecodingClient(_))
       .factory(newClientFactory(options))
       .build()
   }
+
+  private def newDecodingClient(delegate: HttpClient) = {
+    DecodingClient
+      .builder()
+      .autoFillAcceptEncoding(false)
+      .strictContentEncoding(true)
+      .build(delegate)
+  }
+
+  def toStreamMessage(path: Path): StreamMessage[HttpData] =
+    StreamMessage.of(path, CommonPools.blockingTaskExecutor(), ByteBufAllocator.DEFAULT, DefaultFileBufferSize)
 }
