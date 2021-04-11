@@ -101,14 +101,14 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
       .responseTimeoutMillis(request.options.readTimeout.toMillis)
 
     var customContentType: Option[ArmeriaMediaType] = None
-    request.headers.foreach(header => {
+    request.headers.foreach { header =>
       if (header.name.equalsIgnoreCase(HeaderNames.ContentType)) {
         // A Content-Type will be set with the body content
         customContentType = Some(ArmeriaMediaType.parse(header.value))
       } else {
         requestPreparation.header(header.name, header.value)
       }
-    })
+    }
 
     val contentType = customContentType.getOrElse(ArmeriaMediaType.parse(request.body.defaultContentType.toString()))
 
@@ -164,9 +164,9 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
       .builder()
       .contentDisposition(dispositionBuilder.build())
 
-    bodyPart.headers.foreach(header => {
+    bodyPart.headers.foreach { header =>
       headersBuilder.add(header.name, header.value)
-    })
+    }
 
     val bodyPartBuilder = BodyPart
       .builder()
@@ -201,15 +201,15 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
         SttpClientException.defaultExceptionToSttpClientException(request, ex)
     }
 
-  def fromArmeriaResponse[T, R >: SE](
+  private def fromArmeriaResponse[T, R >: SE](
       request: Request[T, R],
       response: HttpResponse,
       ctx: ClientRequestContext
   ): F[Response[T]] = {
     val splitHttpResponse = response.split()
     val aggregatorRef = new AtomicReference[StreamMessageAggregator]()
-    monad
-      .async[ResponseHeaders](cb => {
+    for {
+      headers <- monad.async[ResponseHeaders] { cb =>
         splitHttpResponse
           .headers()
           .handle((headers: ResponseHeaders, cause: Throwable) => {
@@ -221,43 +221,41 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
             null
           })
         Canceler(() => response.abort())
-      })
-      .flatMap { headers =>
-        {
-          val meta = headersToResponseMeta(headers)
-          bodyFromStreamMessage(ctx.eventLoop(), aggregatorRef)(request.response, meta, Left(splitHttpResponse.body()))
-            .map(body => {
-              Response(
-                body,
-                StatusCode.unsafeApply(headers.status().code()),
-                headers.status.codeAsText(),
-                meta.headers,
-                Nil,
-                request.onlyMetadata
-              )
-            })
-        }
       }
+      meta <- headersToResponseMeta(headers, ctx)
+      body <- bodyFromStreamMessage(ctx.eventLoop(), aggregatorRef)(
+        request.response,
+        meta,
+        Left(splitHttpResponse.body())
+      )
+    } yield Response(
+      body,
+      meta.code,
+      meta.statusText,
+      meta.headers,
+      Nil,
+      request.onlyMetadata
+    )
   }
 
-  private def headersToResponseMeta(responseHeaders: ResponseHeaders): ResponseMetadata = {
-    val builder = Seq.newBuilder[Header]
-    builder.sizeHint(responseHeaders.size())
-    responseHeaders.forEach((key: AsciiString, value) => {
-      // Skip pseudo header
-      if (key.charAt(0) != ':') {
-        builder += new Header(key.toString(), value)
-      }
-    })
-
+  private def headersToResponseMeta(
+      responseHeaders: ResponseHeaders,
+      ctx: ClientRequestContext
+  ): F[ResponseMetadata] = {
     val status = responseHeaders.status()
-    val code = if (status == HttpStatus.UNKNOWN) {
-      // sttp disallows UNKNOWN(0) status, fallback to HttpStatus.InternalServerError
-      HttpStatus.INTERNAL_SERVER_ERROR.code()
+    if (status == HttpStatus.UNKNOWN) {
+      monad.error(new UnknownStatusException(s"Unknown status. ctx: $ctx"))
     } else {
-      status.code()
+      val builder = Seq.newBuilder[Header]
+      builder.sizeHint(responseHeaders.size())
+      responseHeaders.forEach((key: AsciiString, value) => {
+        // Skip pseudo header
+        if (key.charAt(0) != ':') {
+          builder += new Header(key.toString(), value)
+        }
+      })
+      monad.unit(ResponseMetadata(StatusCode.unsafeApply(status.code()), status.codeAsText(), builder.result()))
     }
-    ResponseMetadata(StatusCode.unsafeApply(code), status.codeAsText(), builder.result())
   }
 
   override def close(): F[Unit] = {
