@@ -1,8 +1,7 @@
 package sttp.client3.impl.fs2
 
-import cats.effect.Concurrent
-import cats.effect.kernel.Ref
-import cats.effect.implicits._
+import cats.effect.kernel.{Concurrent, Ref}
+import cats.effect.kernel.syntax.monadCancel._
 import fs2.{Pipe, Stream}
 import sttp.ws.{WebSocket, WebSocketClosed, WebSocketFrame}
 

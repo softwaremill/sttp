@@ -1,6 +1,6 @@
 package sttp.client3.httpclient.fs2
 
-import cats.effect.Async
+import cats.effect.kernel.Async
 import fs2.io.file.Files
 import fs2.{Pipe, Stream}
 import sttp.capabilities.fs2.Fs2Streams

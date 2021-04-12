@@ -3,7 +3,7 @@ package sttp.client3.asynchttpclient.cats
 import java.io.{ByteArrayInputStream, File}
 import java.nio.ByteBuffer
 
-import cats.effect.{Async, Resource, Sync}
+import cats.effect.kernel.{Async, Resource, Sync}
 import io.netty.buffer.ByteBuf
 import org.asynchttpclient.{
   AsyncHttpClient,
