@@ -22,13 +22,15 @@ final class HttpDecodingClient(delegate: HttpClient) extends SimpleDecoratingHtt
       delegate.execute(ctx, req)
     } else {
       val encodings = acceptEncoding.split(",")
-      val availableFactories = encodings.flatMap(encoding => decoderFactories.get(encoding))
+      val availableFactories = encodings
+        .flatMap(encoding => decoderFactories.get(encoding).map(factory => (factory.encodingHeaderValue(), factory)))
+        .toMap
 
       if (availableFactories.isEmpty) {
         delegate.execute(ctx, req)
       } else {
         val res = delegate.execute(ctx, req)
-        new HttpDecodedResponse(res, decoderFactories, ctx.alloc)
+        new HttpDecodedResponse(res, availableFactories, ctx.alloc)
       }
     }
   }

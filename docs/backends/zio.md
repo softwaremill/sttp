@@ -100,6 +100,9 @@ ArmeriaZioBackend().flatMap { backend => ??? }
 
 // or, if you'd like the backend to be wrapped in a Managed:
 ArmeriaZioBackend.managed().use { backend => ??? }
+
+// You can use the default client which reuses the connection pool of ClientFactory.ofDefault()
+ArmeriaZioBackend.usingDefaultClient().flatMap { backend => ??? }
 ```
 
 ```eval_rst
@@ -127,6 +130,8 @@ ArmeriaZioBackend.usingClient(client).flatMap { backend => ??? }
 ```
 
 This backend is build on top of [Armeria](https://armeria.dev/docs/client-http).
+Armeria's [ClientFactory](https://armeria.dev/docs/client-factory) manages connections and protocol-specific properties.
+Please visit [the official documentation](https://armeria.dev/docs/client-factory) to learn how to configure it.
 
 ## ZIO environment
 

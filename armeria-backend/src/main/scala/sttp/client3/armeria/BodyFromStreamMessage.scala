@@ -8,7 +8,7 @@ import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicReference
 import sttp.capabilities.Streams
 import sttp.client3.WebSocketResponseAs
-import sttp.client3.armeria.AbstractArmeriaBackend.{DefaultFileBufferSize, RightUnit, noopCanceler}
+import sttp.client3.armeria.AbstractArmeriaBackend.{RightUnit, noopCanceler, toStreamMessage}
 import sttp.client3.internal.{BodyFromResponseAs, SttpFile}
 import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.model.ResponseMetadata
@@ -75,7 +75,7 @@ private[armeria] trait BodyFromStreamMessage[F[_], S] {
   }
 
   def pathToPublisher(f: Path): F[StreamMessage[HttpData]] = {
-    StreamMessage.of(new PathPublisher(f, DefaultFileBufferSize)).unit
+    toStreamMessage(f).unit
   }
 
   def apply(
@@ -92,17 +92,14 @@ private[armeria] trait BodyFromStreamMessage[F[_], S] {
           case Right(file)     => pathToPublisher(file.toPath)
         }
 
-      override protected def regularIgnore(response: StreamMessage[HttpData]): F[Unit] = monad.eval(
-        response
-          .abort()
-      )
+      override protected def regularIgnore(response: StreamMessage[HttpData]): F[Unit] =
+        monad.eval(response.abort())
 
       override protected def regularAsByteArray(response: StreamMessage[HttpData]): F[Array[Byte]] =
         publisherToBytes(response, executor, aggregatorRef)
 
-      override protected def regularAsFile(response: StreamMessage[HttpData], file: SttpFile): F[SttpFile] = {
+      override protected def regularAsFile(response: StreamMessage[HttpData], file: SttpFile): F[SttpFile] =
         publisherToFile(response, file.toFile, executor).map(_ => file)
-      }
 
       override protected def regularAsStream(
           response: StreamMessage[HttpData]

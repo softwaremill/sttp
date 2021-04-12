@@ -2,7 +2,7 @@ package sttp.client3.testing.server
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.coding._
+import akka.http.scaladsl.coding.Coders._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.CacheDirectives._
 import akka.http.scaladsl.model.headers._
@@ -17,7 +17,6 @@ import akka.util.ByteString
 import akka.{Done, NotUsed}
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives
 import ch.megard.akka.http.cors.scaladsl.settings.CorsSettings
-
 import java.io.{ByteArrayOutputStream, InputStream, OutputStream}
 import scala.annotation.tailrec
 import scala.concurrent.duration._
@@ -256,7 +255,7 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
         complete("I'm compressed, but who cares! Must be overwritten by client encoder")
       }
     } ~ path("compress") {
-      encodeResponseWith(Gzip, Deflate, NoCoding) {
+      encodeResponseWith(NoCoding, Gzip, Deflate) {
         complete("I'm compressed!")
       }
     } ~ pathPrefix("download") {
@@ -361,7 +360,9 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
           headers = Nil,
           entity = HttpEntity(
             MediaTypes.`application/octet-stream`,
-            Source.single(ByteString(1)).concat(Source.failed(new RuntimeException("expected error") with NoStackTrace)): Source[ByteString, Any]
+            Source
+              .single(ByteString(1))
+              .concat(Source.failed(new RuntimeException("expected error") with NoStackTrace)): Source[ByteString, Any]
           ),
           protocol = HttpProtocols.`HTTP/1.1`
         )

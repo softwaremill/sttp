@@ -9,6 +9,5 @@ class ArmeriaFs2HttpTest extends HttpTest[IO] with CatsTestBase with TestIODispa
   override val backend: SttpBackend[IO, Any] = ArmeriaFs2Backend(dispatcher = dispatcher)
 
   override def supportsHostHeaderOverride = false
-  override def supportsMultipart = false
   override def supportsCancellation = false
 }

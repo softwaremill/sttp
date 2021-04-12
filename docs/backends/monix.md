@@ -121,6 +121,9 @@ create client:
 ```scala
 import monix.execution.Scheduler.Implicits.global
 val backend = ArmeriaMonixBackend()
+
+// You can use the default client which reuses the connection pool of ClientFactory.ofDefault()
+ArmeriaMonixBackend.usingDefaultClient()
 ```
 
 or, if you'd like to instantiate the [WebClient](https://armeria.dev/docs/client-http) yourself:
@@ -144,6 +147,8 @@ val backend = ArmeriaMonixBackend.usingClient(client)
 ```
 
 This backend is build on top of [Armeria](https://armeria.dev/docs/client-http).
+Armeria's [ClientFactory](https://armeria.dev/docs/client-factory) manages connections and protocol-specific properties.
+Please visit [the official documentation](https://armeria.dev/docs/client-factory) to learn how to configure it.
 
 ## Streaming
 
