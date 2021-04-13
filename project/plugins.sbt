@@ -11,4 +11,4 @@ addSbtPlugin("com.softwaremill.sbt-softwaremill" % "sbt-softwaremill-browser-tes
 
 addSbtPlugin("org.scalameta" % "sbt-mdoc" % "2.2.19")
 
-addSbtPlugin("org.jetbrains" % "sbt-ide-settings" % "1.1.1")
+addSbtPlugin("org.jetbrains.scala" % "sbt-ide-settings" % "1.1.1")
