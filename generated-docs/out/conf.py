@@ -182,7 +182,7 @@ html_context = {
     'github_user': 'softwaremill', # Username
     'github_repo': 'sttp', # Repo name
     'github_version': 'master', # Version
-    'conf_py_path': '/doc/', # Path in the checkout to the docs root
+    'conf_py_path': '/docs/', # Path in the checkout to the docs root
 }
 
 # app setup hook
