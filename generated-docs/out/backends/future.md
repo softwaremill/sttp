@@ -21,7 +21,7 @@ Class                                 Supported stream type                     
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % "3.3.0-RC1"
+"com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % "3.3.0-RC2"
 ```
 
 And some imports:
@@ -72,7 +72,7 @@ val backend = AsyncHttpClientFutureBackend.usingClient(asyncHttpClient)
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "okhttp-backend" % "3.3.0-RC1"
+"com.softwaremill.sttp.client3" %% "okhttp-backend" % "3.3.0-RC2"
 ```
 
 and some imports:
@@ -104,7 +104,7 @@ This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supp
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "httpclient-backend" % "3.3.0-RC1"
+"com.softwaremill.sttp.client3" %% "httpclient-backend" % "3.3.0-RC2"
 ```
 
 and some imports:
@@ -141,7 +141,7 @@ jdk.httpclient.allowRestrictedHeaders=host
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "armeria-backend-future" % "3.3.0-RC1"
+"com.softwaremill.sttp.client3" %% "armeria-backend-future" % "3.3.0-RC2"
 ```
 
 add imports:
@@ -154,6 +154,9 @@ create client:
 
 ```scala
 val backend = ArmeriaFutureBackend()
+
+// You can use the default client which reuses the connection pool of ClientFactory.ofDefault()
+ArmeriaFutureBackend.usingDefaultClient()
 ```
 
 or, if you'd like to instantiate the [WebClient](https://armeria.dev/docs/client-http) yourself::
@@ -177,6 +180,8 @@ val backend = ArmeriaFutureBackend.usingClient(client)
 ```
 
 This backend is build on top of [Armeria](https://armeria.dev/docs/client-http) and doesn't support host header override.
+Armeria's [ClientFactory](https://armeria.dev/docs/client-factory) manages connections and protocol-specific properties.
+Please visit [the official documentation](https://armeria.dev/docs/client-factory) to learn how to configure it.
 
 ## Streaming
 

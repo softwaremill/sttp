@@ -7,9 +7,9 @@ The [Cats Effect](https://github.com/typelevel/cats-effect) backend is **asynchr
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "async-http-client-backend-cats" % "3.3.0-RC1" // for cats-effect 3.x
+"com.softwaremill.sttp.client3" %% "async-http-client-backend-cats" % "3.3.0-RC2" // for cats-effect 3.x
 // or
-"com.softwaremill.sttp.client3" %% "async-http-client-backend-cats-ce2" % "3.3.0-RC1" // for cats-effect 2.x
+"com.softwaremill.sttp.client3" %% "async-http-client-backend-cats-ce2" % "3.3.0-RC2" // for cats-effect 2.x
 ```
            
 This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client), uses [Netty](http://netty.io) behind the scenes. 
@@ -81,9 +81,9 @@ val backend = AsyncHttpClientCatsBackend.usingClient[IO](asyncHttpClient)
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "armeria-backend-cats" % "3.3.0-RC1" // for cats-effect 3.x
+"com.softwaremill.sttp.client3" %% "armeria-backend-cats" % "3.3.0-RC2" // for cats-effect 3.x
 // or
-"com.softwaremill.sttp.client3" %% "armeria-backend-cats-ce2" % "3.3.0-RC1" // for cats-effect 2.x
+"com.softwaremill.sttp.client3" %% "armeria-backend-cats-ce2" % "3.3.0-RC2" // for cats-effect 2.x
 ```
 
 create client:
@@ -93,6 +93,9 @@ import cats.effect.IO
 import sttp.client3.armeria.cats.ArmeriaCatsBackend
 
 val backend = ArmeriaCatsBackend[IO]()
+
+// You can use the default client which reuses the connection pool of ClientFactory.ofDefault()
+ArmeriaCatsBackend.usingDefaultClient[IO]()
 ```
 
 or, if you'd like to instantiate the [WebClient](https://armeria.dev/docs/client-http) yourself:
@@ -118,6 +121,8 @@ val backend = ArmeriaCatsBackend.usingClient[IO](client)
 ```
 
 This backend is build on top of [Armeria](https://armeria.dev/docs/client-http).
+Armeria's [ClientFactory](https://armeria.dev/docs/client-factory) manages connections and protocol-specific properties.
+Please visit [the official documentation](https://armeria.dev/docs/client-factory) to learn how to configure it.
 
 ## Streaming
 

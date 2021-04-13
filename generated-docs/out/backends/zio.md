@@ -7,7 +7,7 @@ The [ZIO](https://github.com/zio/zio) backends are **asynchronous**. Sending a r
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "httpclient-backend-zio" % "3.3.0-RC1"
+"com.softwaremill.sttp.client3" %% "httpclient-backend-zio" % "3.3.0-RC2"
 ```
 
 Create the backend using:
@@ -38,7 +38,7 @@ jdk.httpclient.allowRestrictedHeaders=host
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % "3.3.0-RC1"
+"com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % "3.3.0-RC2"
 ```
            
 This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client), uses [Netty](http://netty.io) behind the scenes. This backend works with all Scala versions. A Scala 3 build is available as well.
@@ -84,7 +84,7 @@ val backend = AsyncHttpClientZioBackend.usingClient(runtime, asyncHttpClient)
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "armeria-backend-zio" % "3.3.0-RC1"
+"com.softwaremill.sttp.client3" %% "armeria-backend-zio" % "3.3.0-RC2"
 ```
 
 add imports:
@@ -100,6 +100,9 @@ ArmeriaZioBackend().flatMap { backend => ??? }
 
 // or, if you'd like the backend to be wrapped in a Managed:
 ArmeriaZioBackend.managed().use { backend => ??? }
+
+// You can use the default client which reuses the connection pool of ClientFactory.ofDefault()
+ArmeriaZioBackend.usingDefaultClient().flatMap { backend => ??? }
 ```
 
 ```eval_rst
@@ -127,6 +130,8 @@ ArmeriaZioBackend.usingClient(client).flatMap { backend => ??? }
 ```
 
 This backend is build on top of [Armeria](https://armeria.dev/docs/client-http).
+Armeria's [ClientFactory](https://armeria.dev/docs/client-factory) manages connections and protocol-specific properties.
+Please visit [the official documentation](https://armeria.dev/docs/client-factory) to learn how to configure it.
 
 ## ZIO environment
 

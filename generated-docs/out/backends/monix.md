@@ -7,7 +7,7 @@ There are several backend implementations which are `monix.eval.Task`-based. The
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "async-http-client-backend-monix" % "3.3.0-RC1"
+"com.softwaremill.sttp.client3" %% "async-http-client-backend-monix" % "3.3.0-RC2"
 ```
            
 This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client), uses [Netty](http://netty.io) behind the scenes.
@@ -50,7 +50,7 @@ val backend = AsyncHttpClientMonixBackend.usingClient(asyncHttpClient)
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "okhttp-backend-monix" % "3.3.0-RC1"
+"com.softwaremill.sttp.client3" %% "okhttp-backend-monix" % "3.3.0-RC2"
 ```
 
 Create the backend using:
@@ -76,7 +76,7 @@ This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supp
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "httpclient-backend-monix" % "3.3.0-RC1"
+"com.softwaremill.sttp.client3" %% "httpclient-backend-monix" % "3.3.0-RC2"
 ```
 
 Create the backend using:
@@ -107,7 +107,7 @@ jdk.httpclient.allowRestrictedHeaders=host
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "armeria-backend-monix" % "3.3.0-RC1"
+"com.softwaremill.sttp.client3" %% "armeria-backend-monix" % "3.3.0-RC2"
 ```
 
 add imports:
@@ -121,6 +121,9 @@ create client:
 ```scala
 import monix.execution.Scheduler.Implicits.global
 val backend = ArmeriaMonixBackend()
+
+// You can use the default client which reuses the connection pool of ClientFactory.ofDefault()
+ArmeriaMonixBackend.usingDefaultClient()
 ```
 
 or, if you'd like to instantiate the [WebClient](https://armeria.dev/docs/client-http) yourself:
@@ -144,6 +147,8 @@ val backend = ArmeriaMonixBackend.usingClient(client)
 ```
 
 This backend is build on top of [Armeria](https://armeria.dev/docs/client-http).
+Armeria's [ClientFactory](https://armeria.dev/docs/client-factory) manages connections and protocol-specific properties.
+Please visit [the official documentation](https://armeria.dev/docs/client-factory) to learn how to configure it.
 
 ## Streaming
 
