@@ -6,12 +6,11 @@ import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.{CompletionException, Flow}
 import java.{util => ju}
-
 import org.reactivestreams.{FlowAdapters, Publisher}
 import sttp.client3.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client3.internal.ws.{SimpleQueue, WebSocketEvent}
 import sttp.client3.{Request, Response, SttpClientException}
-import sttp.model.StatusCode
+import sttp.model.{HeaderNames, StatusCode}
 import sttp.monad.syntax._
 import sttp.monad.{Canceler, MonadAsyncError, MonadError}
 
@@ -99,15 +98,32 @@ abstract class HttpClientAsyncBackend[F[_], S, P, B](
         error
       )
 
-      val wsBuilder = client.newWebSocketBuilder()
+      val wsSubProtocols = request.headers
+        .find(_.name == HeaderNames.SecWebSocketProtocol)
+        .map(_.value)
+        .toSeq
+        .flatMap(_.split(","))
+        .map(_.trim)
+      val wsBuilder = wsSubProtocols match {
+        case Nil          => client.newWebSocketBuilder()
+        case head :: Nil  => client.newWebSocketBuilder().subprotocols(head)
+        case head :: tail => client.newWebSocketBuilder().subprotocols(head, tail: _*)
+      }
       client.connectTimeout().map[java.net.http.WebSocket.Builder](wsBuilder.connectTimeout(_))
-      request.headers.foreach(h => wsBuilder.header(h.name, h.value))
+      filterIllegalHeader(request).headers.foreach(h => wsBuilder.header(h.name, h.value))
       val cf = wsBuilder
         .buildAsync(request.uri.toJavaUri, listener)
         .thenApply[Unit](_ => ())
         .exceptionally(t => cb(Left(t)))
       Canceler(() => cf.cancel(true))
     })
+  }
+
+  private def filterIllegalHeader(request: Request[_, _]) = {
+    import HeaderNames._
+    val illegalHeaders =
+      List(SecWebSocketAccept, SecWebSocketExtensions, SecWebSocketKey, SecWebSocketVersion, SecWebSocketProtocol)
+    request.copy(headers = request.headers.filter(h => !illegalHeaders.contains(h.name)))
   }
 
   private def adjustExceptions[T](request: Request[_, _])(t: => F[T]): F[T] =
