@@ -960,6 +960,7 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
       "io.jaegertracing" % "jaeger-client" % jeagerClientVersion,
       "io.opentracing.brave" % "brave-opentracing" % braveOpentracingVersion,
       "io.zipkin.reporter2" % "zipkin-sender-okhttp3" % zipkinSenderOkHttpVersion,
+      "io.opentelemetry" % "opentelemetry-semconv" % "1.1.0-alpha",
       akkaStreams
     ),
     evictionErrorLevel := Level.Info
