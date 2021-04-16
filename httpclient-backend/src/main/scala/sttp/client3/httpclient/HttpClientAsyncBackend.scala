@@ -99,7 +99,7 @@ abstract class HttpClientAsyncBackend[F[_], S, P, B](
       )
 
       val wsSubProtocols = request.headers
-        .find(_.name == HeaderNames.SecWebSocketProtocol)
+        .find(_.is(HeaderNames.SecWebSocketProtocol))
         .map(_.value)
         .toSeq
         .flatMap(_.split(","))
@@ -110,7 +110,7 @@ abstract class HttpClientAsyncBackend[F[_], S, P, B](
         case head :: tail => client.newWebSocketBuilder().subprotocols(head, tail: _*)
       }
       client.connectTimeout().map[java.net.http.WebSocket.Builder](wsBuilder.connectTimeout(_))
-      filterIllegalHeader(request).headers.foreach(h => wsBuilder.header(h.name, h.value))
+      filterIllegalWsHeaders(request).headers.foreach(h => wsBuilder.header(h.name, h.value))
       val cf = wsBuilder
         .buildAsync(request.uri.toJavaUri, listener)
         .thenApply[Unit](_ => ())
@@ -119,11 +119,8 @@ abstract class HttpClientAsyncBackend[F[_], S, P, B](
     })
   }
 
-  private def filterIllegalHeader(request: Request[_, _]) = {
-    import HeaderNames._
-    val illegalHeaders =
-      List(SecWebSocketAccept, SecWebSocketExtensions, SecWebSocketKey, SecWebSocketVersion, SecWebSocketProtocol)
-    request.copy(headers = request.headers.filter(h => !illegalHeaders.contains(h.name)))
+  private def filterIllegalWsHeaders(request: Request[_, _]) = {
+    request.copy(headers = request.headers.filter(h => !wsIllegalHeaders.contains(h.name.toLowerCase)))
   }
 
   private def adjustExceptions[T](request: Request[_, _])(t: => F[T]): F[T] =
@@ -132,4 +129,13 @@ abstract class HttpClientAsyncBackend[F[_], S, P, B](
     )
 
   override def responseMonad: MonadError[F] = monad
+
+  // these headers can't be sent using HttpClient; the SecWebSocketProtocol is supported through a builder method,
+  // the resit is ignored
+  private val wsIllegalHeaders: Set[String] = {
+    import HeaderNames._
+    Set(SecWebSocketAccept, SecWebSocketExtensions, SecWebSocketKey, SecWebSocketVersion, SecWebSocketProtocol).map(
+      _.toLowerCase
+    )
+  }
 }
