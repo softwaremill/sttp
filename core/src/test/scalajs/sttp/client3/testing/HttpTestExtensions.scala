@@ -17,7 +17,7 @@ import HttpTest.endpoint
 trait HttpTestExtensions[F[_]] extends AsyncExecutionContext { self: HttpTest[F] =>
 
   private def withTemporaryFile[T](content: Option[Array[Byte]])(f: DomFileWithBody => Future[T]): Future[T] = {
-    val data = content.getOrElse(Array.empty)
+    val data = content.getOrElse(Array.empty[Byte])
     val file = new DomFileWithBody(
       Array(data.toTypedArray.asInstanceOf[js.Any]).toJSArray,
       "temp.txt",
