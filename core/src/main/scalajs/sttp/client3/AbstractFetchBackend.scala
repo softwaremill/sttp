@@ -102,19 +102,19 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
       val rsignal = signal.orUndefined
 
       val requestInitStatic = new RequestInit() {
-        method = request.method.method.asInstanceOf[HttpMethod]
-        headers = rheaders
-        body = rbody
-        referrer = js.undefined
-        referrerPolicy = js.undefined
-        mode = options.mode.orUndefined
-        credentials = options.credentials.orUndefined
-        cache = js.undefined
-        redirect = rredirect
-        integrity = js.undefined
-        keepalive = js.undefined
-        signal = rsignal
-        window = js.undefined
+        this.method = request.method.method.asInstanceOf[HttpMethod]
+        this.headers = rheaders
+        this.body = rbody
+        this.referrer = js.undefined
+        this.referrerPolicy = js.undefined
+        this.mode = options.mode.orUndefined
+        this.credentials = options.credentials.orUndefined
+        this.cache = js.undefined
+        this.redirect = rredirect
+        this.integrity = js.undefined
+        this.keepalive = js.undefined
+        this.signal = rsignal
+        this.window = js.undefined
       }
 
       val requestInitDynamic = requestInitStatic.asInstanceOf[js.Dynamic]

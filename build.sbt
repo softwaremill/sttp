@@ -42,9 +42,13 @@ val commonJsSettings = commonSettings ++ Seq(
     if (isSnapshot.value) Seq.empty
     else
       Seq {
+        val mapSourcePrefix = if (ScalaArtifacts.isScala3(scalaVersion.value))
+          "-scalajs-mapSourceURI"
+        else
+          "-P:scalajs:mapSourceURI"
         val dir = project.base.toURI.toString.replaceFirst("[^/]+/?$", "")
         val url = "https://raw.githubusercontent.com/softwaremill/sttp"
-        s"-P:scalajs:mapSourceURI:$dir->$url/v${version.value}/"
+        s"$mapSourcePrefix:$dir->$url/v${version.value}/"
       }
   }
 )
@@ -114,8 +118,8 @@ val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", 
 val zioVersion = "1.0.6"
 val zioInteropRsVersion = "1.3.2"
 
-val sttpModelVersion = "1.4.2"
-val sttpSharedVersion = "1.2.0"
+val sttpModelVersion = "1.4.3"
+val sttpSharedVersion = "1.2.1"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
 
@@ -137,7 +141,7 @@ lazy val projectsWithOptionalNative: Seq[ProjectReference] = if (sys.env.isDefin
 } else {
   println("[info] STTP_NATIVE *not* defined, *not* including sttp-native in the aggregate projects")
   scala2.flatMap(v => List[ProjectReference](core.jvm(v), core.js(v), jsonCommon.jvm(v), jsonCommon.js(v))) ++
-    scala3.flatMap(v => List[ProjectReference](core.jvm(v))) ++
+    scala3.flatMap(v => List[ProjectReference](core.jvm(v), core.js(v))) ++
     List[ProjectReference](
       upickle.jvm(scala2_12),
       upickle.jvm(scala2_13),
@@ -259,7 +263,7 @@ lazy val core = (projectMatrix in file("core"))
     }
   )
   .jsPlatform(
-    scalaVersions = scala2,
+    scalaVersions = scala2 ++ scala3,
     settings = {
       commonJsSettings ++ commonJsBackendSettings ++ browserChromeTestSettings ++ List(
         Test / publishArtifact := true
@@ -322,7 +326,7 @@ lazy val cats = (projectMatrix in file("effects/cats"))
     settings = commonJvmSettings
   )
   .jsPlatform(
-    scalaVersions = List(scala2_12, scala2_13),
+    scalaVersions = List(scala2_12, scala2_13) ++ scala3,
     settings = commonJsSettings ++ commonJsBackendSettings ++ browserChromeTestSettings ++ testServerSettings
   )
 
@@ -356,7 +360,7 @@ lazy val fs2 = (projectMatrix in file("effects/fs2"))
     scalaVersions = List(scala2_12, scala2_13) ++ scala3,
     settings = commonJvmSettings
   )
-  .jsPlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonJsSettings)
+  .jsPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3, settings = commonJsSettings)
 
 lazy val monix = (projectMatrix in file("effects/monix"))
   .settings(
@@ -708,7 +712,7 @@ lazy val jsonCommon = (projectMatrix in (file("json/common")))
     scalaVersions = scala2 ++ scala3,
     settings = commonJvmSettings
   )
-  .jsPlatform(scalaVersions = scala2, settings = commonJsSettings)
+  .jsPlatform(scalaVersions = scala2 ++ scala3, settings = commonJsSettings)
   .nativePlatform(scalaVersions = scala2, settings = commonNativeSettings)
   .dependsOn(core)
 
@@ -737,7 +741,7 @@ lazy val circe = (projectMatrix in file("json/circe"))
     scalaVersions = scala2 ++ scala3,
     settings = commonJvmSettings
   )
-  .jsPlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonJsSettings)
+  .jsPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3, settings = commonJsSettings)
   .dependsOn(core, jsonCommon)
 
 lazy val zioJson = (projectMatrix in file("json/zio-json"))
