@@ -42,10 +42,11 @@ val commonJsSettings = commonSettings ++ Seq(
     if (isSnapshot.value) Seq.empty
     else
       Seq {
-        val mapSourcePrefix = if (ScalaArtifacts.isScala3(scalaVersion.value))
-          "-scalajs-mapSourceURI"
-        else
-          "-P:scalajs:mapSourceURI"
+        val mapSourcePrefix =
+          if (ScalaArtifacts.isScala3(scalaVersion.value))
+            "-scalajs-mapSourceURI"
+          else
+            "-P:scalajs:mapSourceURI"
         val dir = project.base.toURI.toString.replaceFirst("[^/]+/?$", "")
         val url = "https://raw.githubusercontent.com/softwaremill/sttp"
         s"$mapSourcePrefix:$dir->$url/v${version.value}/"
@@ -116,10 +117,10 @@ val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", 
 )
 
 val zioVersion = "1.0.6"
-val zioInteropRsVersion = "1.3.2"
+val zioInteropRsVersion = "1.3.3"
 
 val sttpModelVersion = "1.4.3"
-val sttpSharedVersion = "1.2.1"
+val sttpSharedVersion = "1.2.2"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
 
@@ -396,7 +397,7 @@ lazy val zio = (projectMatrix in file("effects/zio"))
   )
   .dependsOn(core % compileAndTest)
   .jvmPlatform(
-    scalaVersions = scala2 //++ scala3
+    scalaVersions = scala2 ++ scala3
   )
   .jsPlatform(
     scalaVersions = List(scala2_12, scala2_13),
@@ -471,7 +472,7 @@ lazy val asyncHttpClientScalazBackend =
     .dependsOn(scalaz % compileAndTest)
 
 lazy val asyncHttpClientZioBackend =
-  asyncHttpClientBackendProject("zio", includeDotty = false)
+  asyncHttpClientBackendProject("zio", includeDotty = true)
     .settings(
       libraryDependencies ++= Seq(
         "dev.zio" %% "zio-interop-reactivestreams" % zioInteropRsVersion
@@ -697,7 +698,7 @@ lazy val armeriaScalazBackend =
     .dependsOn(scalaz % compileAndTest)
 
 lazy val armeriaZioBackend =
-  armeriaBackendProject("zio")
+  armeriaBackendProject("zio", includeDotty = true)
     .settings(
       libraryDependencies ++= Seq("dev.zio" %% "zio-interop-reactivestreams" % zioInteropRsVersion)
     )
