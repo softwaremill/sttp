@@ -3,7 +3,7 @@ package sttp.client3.testing.streaming
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
-import sttp.capabilities.{Effect, Streams}
+import sttp.capabilities.Streams
 import sttp.client3._
 import sttp.client3.internal.Utf8
 import sttp.client3.testing.HttpTest.endpoint
@@ -75,12 +75,11 @@ abstract class StreamingTest[F[_], S]
   }
 
   "receive a stream" in {
-    // TODO: for some reason these explicit types are needed in Dotty
-    val r0: RequestT[Identity, String, Effect[F] with S] = basicRequest
+    basicRequest
       .post(uri"$endpoint/streaming/echo")
       .body(Body)
       .response(asStreamAlways(streams)(bodyConsumer(_)))
-    r0.send(backend)
+      .send(backend)
       .toFuture()
       .map { response =>
         response.body shouldBe Body
@@ -88,13 +87,12 @@ abstract class StreamingTest[F[_], S]
   }
 
   "receive a stream and ignore it (without consuming)" in {
-    // TODO: for some reason these explicit types are needed in Dotty
-    val r0: RequestT[Identity, String, Effect[F] with S] = basicRequest
+    basicRequest
       .post(uri"$endpoint/streaming/echo")
       .body(Body)
       // if the backend has any, mechanisms to consume an incorrectly handled (ignored) stream should kick in
       .response(asStreamAlways(streams)(_ => bodyConsumer(stringBodyProducer("ignore"))))
-    r0.send(backend)
+      .send(backend)
       .toFuture()
       .map { response =>
         response.body shouldBe "ignore"
