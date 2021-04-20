@@ -22,6 +22,16 @@ trait HttpTest[F[_]]
     with OptionValues
     with HttpTestExtensions[F] {
 
+  // TODO: on GH Actions some tests sometimes timeout. For lack of a better solution, retrying them, but this needs
+  // proper fixing one day.
+  override def withFixture(test: NoArgAsyncTest): FutureOutcome =
+    new FutureOutcome(super.withFixture(test).toFuture.flatMap {
+      case Failed(e) =>
+        info(s"Test ${test.name} failed with ${e.getMessage}, retrying.")
+        super.withFixture(test).toFuture
+      case o => Future.successful(o)
+    })
+
   protected val binaryFileMD5Hash = "565370873a38d91f34a3091082e63933"
   protected val textFileMD5Hash = "b048a88ece8e4ec5eb386b8fc5006d13"
 
