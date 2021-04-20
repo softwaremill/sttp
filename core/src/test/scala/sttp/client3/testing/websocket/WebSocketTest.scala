@@ -1,10 +1,10 @@
 package sttp.client3.testing.websocket
 
 import org.scalatest.concurrent.{Signaler, ThreadSignaler, TimeLimits}
-import org.scalatest.flatspec.AsyncFlatSpecLike
+import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.{Seconds, Span}
-import org.scalatest.{Assertion, BeforeAndAfterAll, SuiteMixin}
+import org.scalatest.{Assertion, BeforeAndAfterAll}
 import sttp.capabilities.WebSockets
 import sttp.client3.SttpClientException.ReadException
 import sttp.client3._
@@ -15,8 +15,7 @@ import sttp.monad.syntax._
 import sttp.ws.{WebSocket, WebSocketFrame}
 
 abstract class WebSocketTest[F[_]]
-    extends SuiteMixin
-    with AsyncFlatSpecLike
+    extends AsyncFlatSpec
     with BeforeAndAfterAll
     with Matchers
     with ToFutureWrapper

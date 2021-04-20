@@ -1,7 +1,7 @@
 package sttp.client3.testing
 
 import org.scalatest._
-import org.scalatest.freespec.AsyncFreeSpecLike
+import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
 import sttp.client3.internal.{Iso88591, Utf8}
 import sttp.client3.testing.HttpTest.endpoint
@@ -14,10 +14,8 @@ import java.nio.ByteBuffer
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-// TODO: change to `extends AsyncFreeSpec` when https://github.com/scalatest/scalatest/issues/1802 is fixed
 trait HttpTest[F[_]]
-    extends SuiteMixin
-    with AsyncFreeSpecLike
+    extends AsyncFreeSpec
     with BeforeAndAfterAll
     with Matchers
     with ToFutureWrapper
