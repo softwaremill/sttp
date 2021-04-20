@@ -181,6 +181,7 @@ lazy val allAggregates = projectsWithOptionalNative ++
   playJson.projectRefs ++
   openTracingBackend.projectRefs ++
   prometheusBackend.projectRefs ++
+  zioTelemetryOpenTelemetryBackend.projectRefs ++
   zioTelemetryOpenTracingBackend.projectRefs ++
   httpClientBackend.projectRefs ++
   httpClientMonixBackend.projectRefs ++
@@ -843,6 +844,19 @@ lazy val prometheusBackend = (projectMatrix in file("metrics/prometheus-backend"
   .jvmPlatform(scalaVersions = scala2)
   .dependsOn(core)
 
+lazy val zioTelemetryOpenTelemetryBackend = (projectMatrix in file("metrics/zio-telemetry-open-telemetry-backend"))
+  .settings(commonJvmSettings)
+  .settings(
+    name := "zio-telemetry-opentelemetry-backend",
+    libraryDependencies ++= Seq(
+      "dev.zio" %% "zio-opentelemetry" % "0.8.0",
+      "org.scala-lang.modules" %% "scala-collection-compat" % "2.4.3"
+    )
+  )
+  .jvmPlatform(scalaVersions = List(scala2_12, scala2_13))
+  .dependsOn(zio % compileAndTest)
+  .dependsOn(core)
+
 lazy val zioTelemetryOpenTracingBackend = (projectMatrix in file("metrics/zio-telemetry-open-tracing-backend"))
   .settings(commonJvmSettings)
   .settings(
@@ -951,6 +965,7 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
       "io.jaegertracing" % "jaeger-client" % jeagerClientVersion,
       "io.opentracing.brave" % "brave-opentracing" % braveOpentracingVersion,
       "io.zipkin.reporter2" % "zipkin-sender-okhttp3" % zipkinSenderOkHttpVersion,
+      "io.opentelemetry" % "opentelemetry-semconv" % "1.1.0-alpha",
       akkaStreams
     ),
     evictionErrorLevel := Level.Info
@@ -983,6 +998,7 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     openTracingBackend,
     prometheusBackend,
     slf4jBackend,
+    zioTelemetryOpenTelemetryBackend,
     zioTelemetryOpenTracingBackend
   )
   .jvmPlatform(scalaVersions = List(scala2_13))
