@@ -1,8 +1,5 @@
 package sttp.client3.asynchttpclient.monix
 
-import java.io.File
-import java.nio.ByteBuffer
-
 import cats.effect.Resource
 import io.netty.buffer.{ByteBuf, Unpooled}
 import monix.eval.Task
@@ -21,6 +18,10 @@ import sttp.client3.testing.SttpBackendStub
 import sttp.client3.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 import sttp.monad.MonadAsyncError
 import sttp.ws.{WebSocket, WebSocketFrame}
+
+import java.io.File
+import java.nio.ByteBuffer
+import java.util.concurrent.ConcurrentLinkedQueue
 
 class AsyncHttpClientMonixBackend private (
     asyncHttpClient: AsyncHttpClient,
@@ -47,11 +48,10 @@ class AsyncHttpClientMonixBackend private (
         Observable.fromReactivePublisher(p).map(_.safeRead())
 
       override def publisherToBytes(p: Publisher[ByteBuffer]): Task[Array[Byte]] = {
-        val bytes = Observable
+        Observable
           .fromReactivePublisher(p)
-          .foldLeftL(ByteBuffer.allocate(0))(concatByteBuffers)
-
-        bytes.map(_.array())
+          .foldLeftL(new ConcurrentLinkedQueue[Array[Byte]]())(enqueueBytes)
+          .map(concatBytes)
       }
 
       override def publisherToFile(p: Publisher[ByteBuffer], f: File): Task[Unit] = {
