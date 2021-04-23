@@ -1,9 +1,9 @@
 package sttp.client3
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, InputStream, OutputStream}
-import java.nio.{Buffer, ByteBuffer}
-
+import java.nio.ByteBuffer
 import scala.annotation.{implicitNotFound, tailrec}
+import scala.collection.immutable.Queue
 
 package object internal {
   private[client3] def contentTypeWithCharset(ct: String, charset: String): String =
@@ -38,15 +38,16 @@ package object internal {
 
   private[client3] def emptyInputStream(): InputStream = new ByteArrayInputStream(Array[Byte]())
 
-  private[client3] def concatByteBuffers(bb1: ByteBuffer, bb2: ByteBuffer): ByteBuffer = {
-    val buf = ByteBuffer
-      .allocate(bb1.array().length + bb2.array().length)
-      .put(bb1)
-      .put(bb2)
-    // rewind() returns Buffer in Java8, and ByteBuffer in Java11
-    // calling the method from the base class to avoid NoSuchMethodError
-    (buf: Buffer).rewind()
-    buf
+  private[client3] def enqueueBytes(
+      queue: Queue[Array[Byte]],
+      bytes: ByteBuffer
+  ): Queue[Array[Byte]] = queue.enqueue(bytes.array())
+
+  private[client3] def concatBytes(queue: Queue[Array[Byte]]): Array[Byte] = {
+    val size = queue.map(_.length).sum
+    val bytes = ByteBuffer.allocate(size)
+    queue.foreach(bytes.put)
+    bytes.array()
   }
 
   /** Removes quotes surrounding the charset.

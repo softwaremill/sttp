@@ -1,14 +1,11 @@
 package sttp.client3.asynchttpclient.fs2
 
-import java.io.File
-import java.nio.ByteBuffer
-
 import cats.effect._
 import cats.effect.implicits._
 import cats.implicits._
 import fs2.concurrent.InspectableQueue
-import fs2.{Chunk, Pipe, Stream}
 import fs2.interop.reactivestreams._
+import fs2.{Chunk, Pipe, Stream}
 import io.netty.buffer.{ByteBuf, Unpooled}
 import org.asynchttpclient.{Request => _, Response => _, _}
 import org.reactivestreams.Publisher
@@ -23,6 +20,12 @@ import sttp.client3.testing.SttpBackendStub
 import sttp.client3.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions, _}
 import sttp.monad.MonadAsyncError
 import sttp.ws.{WebSocket, WebSocketFrame}
+
+import java.io.File
+import java.nio.ByteBuffer
+import java.util.concurrent.ConcurrentLinkedQueue
+import scala.collection.immutable
+import scala.collection.immutable.Queue
 
 class AsyncHttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
     asyncHttpClient: AsyncHttpClient,
@@ -56,8 +59,8 @@ class AsyncHttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
       override def publisherToBytes(p: Publisher[ByteBuffer]): F[Array[Byte]] = {
         p.toStream[F]
           .compile
-          .fold(ByteBuffer.allocate(0))(concatByteBuffers)
-          .map(_.array())
+          .fold(Queue.empty[Array[Byte]])(enqueueBytes)
+          .map(concatBytes)
       }
 
       override def publisherToFile(p: Publisher[ByteBuffer], f: File): F[Unit] = {

@@ -1,8 +1,5 @@
 package sttp.client3.asynchttpclient.zio
 
-import java.io.{BufferedInputStream, File, FileInputStream, FileOutputStream}
-import java.nio.ByteBuffer
-
 import _root_.zio._
 import _root_.zio.blocking.Blocking
 import _root_.zio.interop.reactivestreams.{
@@ -11,13 +8,7 @@ import _root_.zio.interop.reactivestreams.{
 }
 import _root_.zio.stream._
 import io.netty.buffer.{ByteBuf, Unpooled}
-import org.asynchttpclient.{
-  AsyncHttpClient,
-  AsyncHttpClientConfig,
-  BoundRequestBuilder,
-  DefaultAsyncHttpClient,
-  DefaultAsyncHttpClientConfig
-}
+import org.asynchttpclient._
 import org.reactivestreams.Publisher
 import sttp.capabilities.WebSockets
 import sttp.capabilities.zio.ZioStreams
@@ -29,6 +20,10 @@ import sttp.client3.testing.SttpBackendStub
 import sttp.client3.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 import sttp.monad.MonadAsyncError
 import sttp.ws.{WebSocket, WebSocketFrame}
+
+import java.io.{BufferedInputStream, File, FileInputStream, FileOutputStream}
+import java.nio.ByteBuffer
+import scala.collection.immutable
 
 class AsyncHttpClientZioBackend private (
     runtime: Runtime[Any],
@@ -56,7 +51,9 @@ class AsyncHttpClientZioBackend private (
         p.toStream(bufferSize).mapConcatChunk(Chunk.fromByteBuffer(_))
 
       override def publisherToBytes(p: Publisher[ByteBuffer]): Task[Array[Byte]] =
-        p.toStream(bufferSize).fold(ByteBuffer.allocate(0))(concatByteBuffers).map(_.array())
+        p.toStream(bufferSize)
+          .fold(immutable.Queue.empty[Array[Byte]])(enqueueBytes)
+          .map(concatBytes)
 
       override def publisherToFile(p: Publisher[ByteBuffer], f: File): Task[Unit] = {
         p.toStream(bufferSize)
