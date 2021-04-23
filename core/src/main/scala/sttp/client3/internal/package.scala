@@ -2,9 +2,8 @@ package sttp.client3
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, InputStream, OutputStream}
 import java.nio.ByteBuffer
-import java.util.concurrent.ConcurrentLinkedQueue
 import scala.annotation.{implicitNotFound, tailrec}
-import scala.collection.JavaConverters._
+import scala.collection.immutable.Queue
 
 package object internal {
   private[client3] def contentTypeWithCharset(ct: String, charset: String): String =
@@ -40,18 +39,14 @@ package object internal {
   private[client3] def emptyInputStream(): InputStream = new ByteArrayInputStream(Array[Byte]())
 
   private[client3] def enqueueBytes(
-      queue: ConcurrentLinkedQueue[Array[Byte]],
+      queue: Queue[Array[Byte]],
       bytes: ByteBuffer
-  ): ConcurrentLinkedQueue[Array[Byte]] = {
-    queue.offer(bytes.array())
-    queue
-  }
+  ): Queue[Array[Byte]] = queue.enqueue(bytes.array())
 
-  private[client3] def concatBytes(queue: ConcurrentLinkedQueue[Array[Byte]]): Array[Byte] = {
-    val size = queue.asScala.map(_.length).sum
+  private[client3] def concatBytes(queue: Queue[Array[Byte]]): Array[Byte] = {
+    val size = queue.map(_.length).sum
     val bytes = ByteBuffer.allocate(size)
-    queue.asScala.foreach(bytes.put)
-    queue.clear()
+    queue.foreach(bytes.put)
     bytes.array()
   }
 

@@ -21,7 +21,8 @@ import sttp.ws.{WebSocket, WebSocketFrame}
 
 import java.io.File
 import java.nio.ByteBuffer
-import java.util.concurrent.ConcurrentLinkedQueue
+import scala.collection.immutable
+import scala.collection.immutable.Queue
 
 class AsyncHttpClientMonixBackend private (
     asyncHttpClient: AsyncHttpClient,
@@ -50,7 +51,7 @@ class AsyncHttpClientMonixBackend private (
       override def publisherToBytes(p: Publisher[ByteBuffer]): Task[Array[Byte]] = {
         Observable
           .fromReactivePublisher(p)
-          .foldLeftL(new ConcurrentLinkedQueue[Array[Byte]]())(enqueueBytes)
+          .foldLeftL(Queue.empty[Array[Byte]])(enqueueBytes)
           .map(concatBytes)
       }
 

@@ -23,7 +23,7 @@ import sttp.ws.{WebSocket, WebSocketFrame}
 
 import java.io.{BufferedInputStream, File, FileInputStream, FileOutputStream}
 import java.nio.ByteBuffer
-import java.util.concurrent.ConcurrentLinkedQueue
+import scala.collection.immutable
 
 class AsyncHttpClientZioBackend private (
     runtime: Runtime[Any],
@@ -52,7 +52,7 @@ class AsyncHttpClientZioBackend private (
 
       override def publisherToBytes(p: Publisher[ByteBuffer]): Task[Array[Byte]] =
         p.toStream(bufferSize)
-          .fold(new ConcurrentLinkedQueue[Array[Byte]]())(enqueueBytes)
+          .fold(immutable.Queue.empty[Array[Byte]])(enqueueBytes)
           .map(concatBytes)
 
       override def publisherToFile(p: Publisher[ByteBuffer], f: File): Task[Unit] = {
