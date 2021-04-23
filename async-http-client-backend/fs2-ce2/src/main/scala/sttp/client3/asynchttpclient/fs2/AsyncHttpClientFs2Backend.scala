@@ -23,8 +23,6 @@ import sttp.ws.{WebSocket, WebSocketFrame}
 
 import java.io.File
 import java.nio.ByteBuffer
-import java.util.concurrent.ConcurrentLinkedQueue
-import scala.collection.immutable
 import scala.collection.immutable.Queue
 
 class AsyncHttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (

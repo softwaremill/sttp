@@ -105,7 +105,7 @@ val catsEffect_2_version: Option[(Long, Long)] => String = {
 }
 val fs2_2_version: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.1.0"
-  case _             => "2.5.3"
+  case _             => "2.5.4"
 }
 
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.2.4"

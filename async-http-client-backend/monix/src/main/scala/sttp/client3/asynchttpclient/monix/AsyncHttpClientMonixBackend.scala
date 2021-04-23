@@ -21,7 +21,6 @@ import sttp.ws.{WebSocket, WebSocketFrame}
 
 import java.io.File
 import java.nio.ByteBuffer
-import scala.collection.immutable
 import scala.collection.immutable.Queue
 
 class AsyncHttpClientMonixBackend private (

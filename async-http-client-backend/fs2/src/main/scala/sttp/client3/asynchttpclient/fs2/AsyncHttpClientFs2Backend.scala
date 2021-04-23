@@ -23,8 +23,6 @@ import sttp.ws.{WebSocket, WebSocketFrame}
 
 import java.io.File
 import java.nio.ByteBuffer
-import java.util.concurrent.ConcurrentLinkedQueue
-import scala.collection.{immutable, mutable}
 
 class AsyncHttpClientFs2Backend[F[_]: Async] private (
     asyncHttpClient: AsyncHttpClient,
@@ -52,7 +50,7 @@ class AsyncHttpClientFs2Backend[F[_]: Async] private (
       override def publisherToBytes(p: Publisher[ByteBuffer]): F[Array[Byte]] = {
         p.toStream[F]
           .compile
-          .fold(immutable.Queue.empty[Array[Byte]])(enqueueBytes)
+          .fold(scala.collection.immutable.Queue.empty[Array[Byte]])(enqueueBytes)
           .map(concatBytes)
       }
 
