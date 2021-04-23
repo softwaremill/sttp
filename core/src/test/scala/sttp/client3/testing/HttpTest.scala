@@ -561,10 +561,11 @@ trait HttpTest[F[_]]
 
       "connection exceptions - connection refused" in {
         val req = basicRequest
-          .get(uri"http://localhost:1234")
+          .get(uri"http://localhost:7918")
           .response(asString)
 
         Future(req.send(backend)).flatMap(_.toFuture()).failed.map { e =>
+          info("Sending request failed", Some(e))
           e shouldBe a[SttpClientException.ConnectException]
         }
       }
