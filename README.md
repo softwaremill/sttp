@@ -73,7 +73,7 @@ Then, import:
 import sttp.client3._
 ```
 
-Type `sttp.` and see where your IDE’s auto-complete gets you!
+Type `basicRequest.` and see where your IDE’s auto-complete gets you!
 
 ## Other sttp projects
 
