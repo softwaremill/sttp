@@ -63,7 +63,11 @@ val response1 = basicRequest.get(uri"http://example.org/partial10").send(testing
 val response2 = basicRequest.post(uri"http://example.org/partialAda").send(testingBackend)
 ```
 
-This approach to testing has one caveat: the responses are not type-safe. That is, the stub backend cannot match on or verify that the type of the response body matches the response body type requested.
+```eval_rst
+.. note::
+
+  This approach to testing has one caveat: the responses are not type-safe. That is, the stub backend cannot match on or verify that the type of the response body matches the response body type, as it was requested. However, when a "raw" response is provided (a ``String``, ``Array[Byte]``, ``InputStream``, or a non-blocking stream wrapped in ``RawStream``), it will be handled as specified by the response specification - see below for details.
+```
 
 Another way to specify the behaviour is passing response wrapped in the effect to the stub. It is useful if you need to test a scenario with a slow server, when the response should be not returned immediately, but after some time. Example with Futures:
 
@@ -141,7 +145,7 @@ val testingBackend = SttpBackendStub.synchronous
 
 ## Adjusting the response body type
 
-If the type of the response body returned by the stub's rules (as specified using the `.whenXxx` methods) doesn't match what was specified in the request, the stub will attempt to convert the body to the desired type. This might be useful when:
+The stub will attempt to convert the body returned by the stub (as specified using the `.whenXxx` methods) to the desired type. If the given body isn't in one of the supported "raw" types, no conversions are done and the value is returned as-is. This might be useful when:
 
 * testing code which maps a basic response body to a custom type, e.g. mapping a raw json string using a decoder to a domain type
 * reading a classpath resource (which results in an `InputStream`) and requesting a response of e.g. type `String`
@@ -177,14 +181,14 @@ In the example above, the stub's rules specify that a response with a `String`-b
 
 ## Example: returning a file
 
-If you want to return a file and have a response handler set up like this:
+If you want to save the response to a file and have the response handler set up like this:
 
 ```scala
 val destination = new File("path/to/file.ext")
 basicRequest.get(uri"http://example.com").response(asFile(destination))
 ```
 
-Then set up the stub like this:
+With the stub created as follows:
 
 ```scala
 val fileResponseHandle = new File("path/to/file.ext")
