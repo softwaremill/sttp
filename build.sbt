@@ -9,7 +9,7 @@ val scala2_11 = "2.11.12"
 val scala2_12 = "2.12.13"
 val scala2_13 = "2.13.5"
 val scala2 = List(scala2_11, scala2_12, scala2_13)
-val scala3 = List("3.0.0-RC2")
+val scala3 = List("3.0.0-RC3")
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests")
@@ -87,7 +87,7 @@ val testServerSettings = Seq(
 )
 
 val circeVersion: Option[(Long, Long)] => String = {
-  case Some((3, _))  => "0.14.0-M5"
+  case Some((3, _))  => "0.14.0-M6"
   case Some((2, 11)) => "0.11.2"
   case _             => "0.13.0"
 }
@@ -105,7 +105,7 @@ val catsEffect_2_version: Option[(Long, Long)] => String = {
 }
 val fs2_2_version: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.1.0"
-  case _             => "2.5.4"
+  case _             => "2.5.5"
 }
 
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.2.4"
@@ -113,14 +113,14 @@ val akkaStreamVersion = "2.6.14"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % akkaStreamVersion
 
 val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", "wordspec", "shouldmatchers").map(m =>
-  "org.scalatest" %%% s"scalatest-$m" % "3.2.7" % Test
+  "org.scalatest" %%% s"scalatest-$m" % "3.2.8" % Test
 )
 
-val zioVersion = "1.0.6"
-val zioInteropRsVersion = "1.3.3"
+val zioVersion = "1.0.7"
+val zioInteropRsVersion = "1.3.4"
 
-val sttpModelVersion = "1.4.3"
-val sttpSharedVersion = "1.2.2"
+val sttpModelVersion = "1.4.4"
+val sttpSharedVersion = "1.2.3"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
 
