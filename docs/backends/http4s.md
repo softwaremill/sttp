@@ -5,7 +5,7 @@ This backend is based on [http4s](https://http4s.org) (client) and is **asynchro
 ```scala
 "com.softwaremill.sttp.client3" %% "http4s-backend" % "@VERSION@" // for cats-effect 3.x & http4s 1.0.0-Mx
 // or
-"com.softwaremill.sttp.client3" %% "http4s-backend-ce2" % "@VERSION@" // for cats-effect 2.x & http4s 0.21.x
+"com.softwaremill.sttp.client3" %% "http4s-ce2-backend" % "@VERSION@" // for cats-effect 2.x & http4s 0.21.x
 ```
 
 The backend can be created in a couple of ways, e.g.:
