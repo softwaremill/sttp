@@ -7,7 +7,7 @@ The [ZIO](https://github.com/zio/zio) backends are **asynchronous**. Sending a r
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "httpclient-backend-zio" % "3.3.0"
+"com.softwaremill.sttp.client3" %% "httpclient-backend-zio" % "3.3.1"
 ```
 
 Create the backend using:
@@ -38,7 +38,7 @@ jdk.httpclient.allowRestrictedHeaders=host
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % "3.3.0"
+"com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % "3.3.1"
 ```
            
 This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client), uses [Netty](http://netty.io) behind the scenes. This backend works with all Scala versions. A Scala 3 build is available as well.
@@ -84,7 +84,7 @@ val backend = AsyncHttpClientZioBackend.usingClient(runtime, asyncHttpClient)
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "armeria-backend-zio" % "3.3.0"
+"com.softwaremill.sttp.client3" %% "armeria-backend-zio" % "3.3.1"
 ```
 
 add imports:
