@@ -35,19 +35,14 @@ SttpBackendOptions.httpProxy("some.host", 8080, "username", "password")
 
 There are two additional settings that can be provided to via `SttpBackendOptions`:
 
-* `nonProxyHosts`
-
-Used to define hosts for which request SHOULD NOT be proxied
-
-* `hostsToProxy`
-
-Used to define hosts for which request SHOULD be proxied
+* `nonProxyHosts`: used to define hosts for which request SHOULD NOT be proxied
+* `onlyProxyHosts`: used to define hosts for which request SHOULD be proxied
 
 If only `nonProxyHosts` is provided, then some hosts will be skipped when proxying.
-If only `hostsToProxy` is provided, then requests will be proxied only if host matches provided list. 
-If both `nonProxyHosts` and `hostsToProxy` are provided, then `nonProxyHosts` takes precedence. 
+If only `onlyProxyHosts` is provided, then requests will be proxied only if host matches provided list. 
+If both `nonProxyHosts` and `onlyProxyHosts` are provided, then `nonProxyHosts` takes precedence. 
 Both of these options are `Nil` by default.
 
 ### Wildcards
 
-It is possible to use wildcard, but only as either prefix or suffix. E.g. `hostsToProxy = List("localhost", "*.local", "127.*")`
+It is possible to use wildcard, but only as either prefix or suffix. E.g. `onlyProxyHosts = List("localhost", "*.local", "127.*")`

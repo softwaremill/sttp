@@ -37,7 +37,7 @@ object SttpBackendOptions {
       proxyType: ProxyType,
       nonProxyHosts: List[String] = Nil,
       auth: Option[ProxyAuth] = None,
-      hostsToProxy: List[String] = Nil
+      onlyProxyHosts: List[String] = Nil
   ) {
     //only matches prefix or suffix wild card(*)
     private def isWildCardMatch(targetHost: String, nonProxyHost: String): Boolean = {
@@ -67,7 +67,7 @@ object SttpBackendOptions {
       nonProxyHosts.exists(isWildCardMatch(host, _))
 
     private def doesNotMatchAnyHostToProxy(host: String) =
-      hostsToProxy != Nil && !hostsToProxy.exists(isWildCardMatch(host, _))
+      onlyProxyHosts != Nil && !onlyProxyHosts.exists(isWildCardMatch(host, _))
 
     def asJavaProxySelector: net.ProxySelector =
       new net.ProxySelector {
