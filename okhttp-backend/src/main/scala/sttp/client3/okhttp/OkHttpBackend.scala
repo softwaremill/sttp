@@ -147,7 +147,7 @@ object OkHttpBackend {
 
     clientBuilder = options.proxy match {
       case None => clientBuilder
-      case Some(p @ Proxy(_, _, _, _, Some(auth))) =>
+      case Some(p @ Proxy(_, _, _, _, Some(auth), _)) =>
         clientBuilder.proxySelector(p.asJavaProxySelector).proxyAuthenticator(new ProxyAuthenticator(auth))
       case Some(p) => clientBuilder.proxySelector(p.asJavaProxySelector)
     }

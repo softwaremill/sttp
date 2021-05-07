@@ -52,4 +52,80 @@ class SttpBackendOptionsProxyTest extends AnyFlatSpec with Matchers {
     proxySetting.ignoreProxy("sttp.local.com") should be(false)
     proxySetting.ignoreProxy("10.127.0.1") should be(false)
   }
+
+  it should "return false for exact hostsToProxy match" in {
+    val proxySetting = SttpBackendOptions.Proxy(
+      "fakeproxyserverhost",
+      8080,
+      SttpBackendOptions.ProxyType.Http,
+      nonProxyHosts = Nil,
+      hostsToProxy = List("a.nonproxy.host", "localhost", "127.*")
+    )
+
+    proxySetting.ignoreProxy("a.nonproxy.host") should be(false)
+    proxySetting.ignoreProxy("localhost") should be(false)
+  }
+
+  it should "return false for hostsToProxy suffix match" in {
+    val proxySetting = SttpBackendOptions.Proxy(
+      "fakeproxyserverhost",
+      8080,
+      SttpBackendOptions.ProxyType.Http,
+      nonProxyHosts = Nil,
+      hostsToProxy = List("localhost", "127.*")
+    )
+
+    proxySetting.ignoreProxy("127.0.0.1") should be(false)
+    proxySetting.ignoreProxy("127.1.0.1") should be(false)
+  }
+
+  it should "return false for hostsToProxy prefix match" in {
+    val proxySetting = SttpBackendOptions.Proxy(
+      "fakeproxyserverhost",
+      8080,
+      SttpBackendOptions.ProxyType.Http,
+      nonProxyHosts = Nil,
+      hostsToProxy = List("localhost", "*.local")
+    )
+
+    proxySetting.ignoreProxy("sttp.local") should be(false)
+    proxySetting.ignoreProxy("www.sttp.local") should be(false)
+  }
+
+  it should "return true for if host does not match any host from hostsToProxy" in {
+    val proxySetting = SttpBackendOptions.Proxy(
+      "fakeproxyserverhost",
+      8080,
+      SttpBackendOptions.ProxyType.Http,
+      nonProxyHosts = Nil,
+      hostsToProxy = List("localhost", "*.local", "127.*")
+    )
+
+    proxySetting.ignoreProxy("dorime") should be(true)
+    proxySetting.ignoreProxy("interimo.adaptare") should be(true)
+  }
+
+  it should "return true if host matches nonProxyHost despite matching hostsToProxy" in {
+    val proxySetting = SttpBackendOptions.Proxy(
+      "fakeproxyserverhost",
+      8080,
+      SttpBackendOptions.ProxyType.Http,
+      nonProxyHosts = List("localhost"),
+      hostsToProxy = List("localhost")
+    )
+
+    proxySetting.ignoreProxy("localhost") should be(true)
+  }
+
+  it should "return false if both nonProxyHost and hostsToProxy is Nil" in {
+    val proxySetting = SttpBackendOptions.Proxy(
+      "fakeproxyserverhost",
+      8080,
+      SttpBackendOptions.ProxyType.Http,
+      nonProxyHosts = Nil,
+      hostsToProxy = Nil
+    )
+
+    proxySetting.ignoreProxy("localhost") should be(false)
+  }
 }
