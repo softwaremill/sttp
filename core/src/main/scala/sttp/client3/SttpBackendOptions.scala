@@ -67,7 +67,7 @@ object SttpBackendOptions {
       nonProxyHosts.exists(isWildCardMatch(host, _))
 
     private def doesNotMatchAnyHostToProxy(host: String) =
-      hostsToProxy != Nil && hostsToProxy.forall(!isWildCardMatch(host, _))
+      hostsToProxy != Nil && !hostsToProxy.exists(isWildCardMatch(host, _))
 
     def asJavaProxySelector: net.ProxySelector =
       new net.ProxySelector {
