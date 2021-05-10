@@ -1,5 +1,6 @@
 package sttp.client3.armeria
 
+import com.linecorp.armeria.client.encoding.DecodingClient
 import com.linecorp.armeria.client.{
   ClientFactory,
   ClientRequestContext,
@@ -34,9 +35,9 @@ import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 import sttp.capabilities.{Effect, Streams}
 import sttp.client3.SttpClientException.{ConnectException, ReadException}
-import sttp.client3.armeria.AbstractArmeriaBackend.{RightUnit, noopCanceler, toStreamMessage}
-import sttp.client3.internal.{throwNestedMultipartNotAllowed, toByteArray}
 import sttp.client3._
+import sttp.client3.armeria.AbstractArmeriaBackend.{RightUnit, noopCanceler}
+import sttp.client3.internal.{throwNestedMultipartNotAllowed, toByteArray}
 import sttp.model._
 import sttp.monad.syntax._
 import sttp.monad.{Canceler, MonadAsyncError, MonadError}
@@ -123,7 +124,7 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
           }
         requestPreparation.content(contentType, HttpData.of(charset, s))
       case FileBody(f, _) =>
-        requestPreparation.content(contentType, toStreamMessage(f.toPath))
+        requestPreparation.content(contentType, StreamMessage.of(f.toPath))
       case ByteArrayBody(b, _) =>
         requestPreparation.content(contentType, HttpData.wrap(b))
       case InputStreamBody(is, _) =>
@@ -182,7 +183,7 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
       case InputStreamBody(is, _) =>
         bodyPartBuilder.content(HttpData.wrap(toByteArray(is)))
       case FileBody(f, _) =>
-        bodyPartBuilder.content(toStreamMessage(f.toPath))
+        bodyPartBuilder.content(StreamMessage.of(f.toPath))
       case StreamBody(s) =>
         bodyPartBuilder.content(streamToPublisher(s.asInstanceOf[streams.BinaryStream]))
       case MultipartBody(_) => throwNestedMultipartNotAllowed
@@ -301,18 +302,27 @@ private[armeria] object AbstractArmeriaBackend {
   def newClient(): WebClient = {
     WebClient
       .builder()
-      .decorator(delegate => new HttpDecodingClient(delegate))
+      .decorator(
+        DecodingClient
+          .builder()
+          .autoFillAcceptEncoding(false)
+          .strictContentEncoding(true)
+          .newDecorator()
+      )
       .build()
   }
 
   def newClient(options: SttpBackendOptions): WebClient = {
     WebClient
       .builder()
-      .decorator(delegate => new HttpDecodingClient(delegate))
+      .decorator(
+        DecodingClient
+          .builder()
+          .autoFillAcceptEncoding(false)
+          .strictContentEncoding(true)
+          .newDecorator()
+      )
       .factory(newClientFactory(options))
       .build()
   }
-
-  def toStreamMessage(path: Path): StreamMessage[HttpData] =
-    StreamMessage.of(path, CommonPools.blockingTaskExecutor(), ByteBufAllocator.DEFAULT, DefaultFileBufferSize)
 }
