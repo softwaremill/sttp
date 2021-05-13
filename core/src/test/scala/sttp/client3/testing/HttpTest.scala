@@ -206,6 +206,21 @@ trait HttpTest[F[_]]
         .map { response => response.body should be(Right(expectedPostEchoResponse)) }
     }
 
+    "post a byte buffer with a capacity higher than the limit" in {
+      val b = ByteBuffer.allocate(100)
+      b.put(testBodyBytes)
+      b.flip()
+
+      postEcho
+        .body(b)
+        .response(asByteArrayAlways)
+        .send(backend)
+        .toFuture()
+        .map { response =>
+          response.body shouldBe expectedPostEchoResponse.getBytes("UTF-8")
+        }
+    }
+
     "post a readonly byte buffer" in {
       postEcho
         .body(ByteBuffer.wrap(testBodyBytes).asReadOnlyBuffer())

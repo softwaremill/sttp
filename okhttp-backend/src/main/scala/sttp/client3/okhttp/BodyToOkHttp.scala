@@ -38,8 +38,7 @@ private[okhttp] trait BodyToOkHttp[F[_], S] {
       case ByteArrayBody(b, _) =>
         Some(OkHttpRequestBody.create(b, mediaType))
       case ByteBufferBody(b, _) =>
-        if (b.isReadOnly) Some(OkHttpRequestBody.create(ByteString.of(b), mediaType))
-        else Some(OkHttpRequestBody.create(b.array(), mediaType))
+        Some(OkHttpRequestBody.create(ByteString.of(b), mediaType))
       case InputStreamBody(b, _) =>
         Some(new OkHttpRequestBody() {
           override def writeTo(sink: BufferedSink): Unit =
