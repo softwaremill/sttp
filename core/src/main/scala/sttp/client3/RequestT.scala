@@ -5,8 +5,7 @@ import java.nio.ByteBuffer
 import java.util.Base64
 import sttp.capabilities.{Effect, Streams}
 import sttp.client3.internal.DigestAuthenticator.DigestAuthData
-import sttp.client3.internal._
-import sttp.client3.internal.{SttpFile, ToCurlConverter}
+import sttp.client3.internal.{SttpFile, ToCurlConverter, ToRfc2616Converter, _}
 import sttp.model._
 import sttp.model.headers.CookieWithMeta
 
@@ -308,6 +307,8 @@ case class RequestT[U[_], T, -R](
   ): F[Response[T]] = backend.send(asRequest.asInstanceOf[Request[T, P with Effect[F]]]) // as witnessed by pEffectFIsR
 
   def toCurl(implicit isIdInRequest: IsIdInRequest[U]): String = ToCurlConverter.requestToCurl(asRequest)
+
+  def toRfc2616Format(implicit isIdInRequest: IsIdInRequest[U]): String = ToRfc2616Converter.requestToRfc2616(asRequest)
 
   def showBasic: String =
     (this.method, this.uri) match {
