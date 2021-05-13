@@ -7,16 +7,20 @@ import sttp.model.MediaType
 
 class ToCurlConverter[R <: RequestT[Identity, _, _]] {
   def apply(request: R): String = {
-    val params = List(extractOptions(_), extractMethod(_), extractHeaders(_), extractBody(_))
+    val params = List(extractMethod(_), extractUrl(_), extractHeaders(_), extractBody(_), extractOptions(_))
       .map(addSpaceIfNotEmpty)
       .reduce((acc, item) => r => acc(r) + item(r))
       .apply(request)
 
-    s"""curl$params '${request.uri}'"""
+    s"""curl$params"""
   }
 
   private def extractMethod(r: R): String = {
-    s"-X ${r.method.method}"
+    s"--request ${r.method.method}"
+  }
+
+  private def extractUrl(r: R): String = {
+    s"--url '${r.uri}'"
   }
 
   private def extractHeaders(r: R): String = {
@@ -24,9 +28,9 @@ class ToCurlConverter[R <: RequestT[Identity, _, _]] {
       // filtering out compression headers so that the results are human-readable, if possible
       .filterNot(_.name.equalsIgnoreCase(HeaderNames.AcceptEncoding))
       .collect { case Header(k, v) =>
-        s"""-H '$k: $v'"""
+        s"""--header '$k: $v'"""
       }
-      .mkString(" ")
+      .mkString(newline)
   }
 
   private def extractBody(r: R): String = {
@@ -37,7 +41,7 @@ class ToCurlConverter[R <: RequestT[Identity, _, _]] {
             .toMap
             .get(HeaderNames.ContentType)
             .forall(_ == MediaType.ApplicationXWwwFormUrlencoded.toString) =>
-        s"""-F '${text.replace("'", "\\'")}'"""
+        s"""--form '${text.replace("'", "\\'")}'"""
       case StringBody(text, _, _) => s"""--data '${text.replace("'", "\\'")}'"""
       case ByteArrayBody(_, _)    => s"--data-binary <PLACEHOLDER>"
       case ByteBufferBody(_, _)   => s"--data-binary <PLACEHOLDER>"
@@ -58,19 +62,21 @@ class ToCurlConverter[R <: RequestT[Identity, _, _]] {
           case _                   => s"--data-binary <PLACEHOLDER>"
         }
       }
-      .mkString(" ")
+      .mkString(newline)
   }
 
   private def extractOptions(r: R): String = {
     if (r.options.followRedirects) {
-      s"-L --max-redirs ${r.options.maxRedirects}"
+      s"--location${newline}--max-redirs ${r.options.maxRedirects}"
     } else {
       ""
     }
   }
 
   private def addSpaceIfNotEmpty(fInput: R => String): R => String =
-    t => if (fInput(t).isEmpty) "" else s" ${fInput(t)}"
+    t => if (fInput(t).isEmpty) "" else s"${newline}${fInput(t)}"
+
+  private def newline: String = " \\\n  "
 }
 
 object ToCurlConverter {
