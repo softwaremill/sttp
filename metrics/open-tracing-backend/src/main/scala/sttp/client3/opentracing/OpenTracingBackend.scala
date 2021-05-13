@@ -7,7 +7,7 @@ import io.opentracing.Tracer.SpanBuilder
 import sttp.capabilities.Effect
 import sttp.monad.MonadError
 import sttp.monad.syntax._
-import sttp.client3.{FollowRedirectsBackend, Request, Response, SttpBackend}
+import sttp.client3.{FollowRedirectsBackend, Request, RequestT, Response, SttpBackend}
 import sttp.client3.opentracing.OpenTracingBackend._
 
 import scala.collection.JavaConverters._
@@ -77,23 +77,23 @@ object OpenTracingBackend {
   type SpanBuilderTransformer = SpanBuilder => SpanBuilder
   type SpanTransformer = Span => Span
 
-  implicit class RichRequest[T, S](request: Request[T, S]) {
-    def tagWithOperationId(operationId: String): Request[T, S] =
+  implicit class RichRequest[U[_], T, R](request: RequestT[U, T, R]) {
+    def tagWithOperationId(operationId: String): RequestT[U, T, R] =
       request.tag(OperationIdRequestTag, operationId)
 
-    def tagWithTransformSpan(transformSpan: SpanTransformer): Request[T, S] =
+    def tagWithTransformSpan(transformSpan: SpanTransformer): RequestT[U, T, R] =
       request.tag(SpanTransformerRequestTag, transformSpan)
 
     /** Sets transformation of SpanBuilder used by OpenTracing backend to create Span this request execution. */
-    def tagWithTransformSpanBuilder(transformSpan: SpanBuilderTransformer): Request[T, S] =
+    def tagWithTransformSpanBuilder(transformSpan: SpanBuilderTransformer): RequestT[U, T, R] =
       request.tag(SpanBuilderTransformerRequestTag, transformSpan)
 
     /** Sets parent Span for OpenTracing Span of this request execution. */
-    def setOpenTracingParentSpan(parent: Span): Request[T, S] =
+    def setOpenTracingParentSpan(parent: Span): RequestT[U, T, R] =
       tagWithTransformSpanBuilder(_.asChildOf(parent))
 
     /** Sets parent SpanContext for OpenTracing Span of this request execution. */
-    def setOpenTracingParentSpanContext(parentSpanContext: SpanContext): Request[T, S] =
+    def setOpenTracingParentSpanContext(parentSpanContext: SpanContext): RequestT[U, T, R] =
       tagWithTransformSpanBuilder(_.asChildOf(parentSpanContext))
   }
 
