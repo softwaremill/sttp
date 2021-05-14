@@ -196,7 +196,7 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
       .setUrl(r.uri.toString)
       .setReadTimeout(if (readTimeout.isFinite) readTimeout.toMillis.toInt else -1)
       .setRequestTimeout(if (readTimeout.isFinite) readTimeout.toMillis.toInt else -1)
-    r.headers.foreach { case Header(k, v) => rb.setHeader(k, v) }
+    r.headers.foreach { header => rb.setHeader(header.name, header.value) }
     bodyToAHC(r, r.body, rb)
     rb.build()
   }

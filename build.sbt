@@ -767,7 +767,9 @@ lazy val upickle = (projectMatrix in file("json/upickle"))
     libraryDependencies ++= Seq(
       "com.lihaoyi" %%% "upickle" % "1.3.12"
     ),
-    scalaTest
+    scalaTest,
+    // using macroRW causes a "match may not be exhaustive" error
+    Test / scalacOptions --= Seq("-Wconf:cat=other-match-analysis:error")
   )
   .jvmPlatform(
     scalaVersions = List(scala2_12, scala2_13),

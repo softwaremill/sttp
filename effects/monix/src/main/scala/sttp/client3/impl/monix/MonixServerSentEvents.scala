@@ -9,7 +9,7 @@ object MonixServerSentEvents {
   val parse: Transformer[Array[Byte], ServerSentEvent] = { observable =>
     observable
       .bufferWhileInclusive(array => missingBytes(array).getOrElse(0) > 0)
-      .map(seq => seq.fold(Array.empty)(_ ++ _))
+      .map(seq => seq.fold(Array.empty[Byte])(_ ++ _))
       .map(array => new String(array, "UTF-8"))
       .mapAccumulate[String, List[String]]("") { case (reminder, nextString) =>
         combineFrames(reminder + nextString)

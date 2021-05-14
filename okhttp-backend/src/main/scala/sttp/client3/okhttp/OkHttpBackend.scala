@@ -65,10 +65,7 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
       }
     )
 
-    request.headers
-      .foreach { case Header(name, value) =>
-        builder.addHeader(name, value)
-      }
+    request.headers.foreach { header => builder.addHeader(header.name, header.value) }
 
     builder.build()
   }

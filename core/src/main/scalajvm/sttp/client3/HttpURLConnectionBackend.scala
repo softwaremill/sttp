@@ -30,7 +30,7 @@ class HttpURLConnectionBackend private (
     adjustExceptions(r) {
       val c = openConnection(r.uri)
       c.setRequestMethod(r.method.method)
-      r.headers.foreach { case Header(k, v) => c.setRequestProperty(k, v) }
+      r.headers.foreach { h => c.setRequestProperty(h.name, h.value) }
       c.setDoInput(true)
       c.setReadTimeout(timeout(r.options.readTimeout))
       c.setConnectTimeout(timeout(opts.connectionTimeout))

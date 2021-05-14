@@ -104,6 +104,7 @@ abstract class HttpClientAsyncBackend[F[_], S, P, B](
         .toSeq
         .flatMap(_.split(","))
         .map(_.trim)
+        .toList
       val wsBuilder = wsSubProtocols match {
         case Nil          => client.newWebSocketBuilder()
         case head :: Nil  => client.newWebSocketBuilder().subprotocols(head)

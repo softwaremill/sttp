@@ -12,9 +12,10 @@ import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
 import scala.scalajs.js.JavaScriptException
 import scala.scalajs.js.typedarray.AB2TA
+import org.scalatest.freespec.AsyncFreeSpecLike
 import HttpTest.endpoint
 
-trait HttpTestExtensions[F[_]] extends AsyncExecutionContext { self: HttpTest[F] =>
+trait HttpTestExtensions[F[_]] extends AsyncFreeSpecLike with AsyncExecutionContext { self: HttpTest[F] =>
 
   private def withTemporaryFile[T](content: Option[Array[Byte]])(f: DomFileWithBody => Future[T]): Future[T] = {
     val data = content.getOrElse(Array.empty[Byte])

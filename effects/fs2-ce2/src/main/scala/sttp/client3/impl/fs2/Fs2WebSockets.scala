@@ -33,7 +33,10 @@ object Fs2WebSockets {
               Stream.empty // ignore
             case in: WebSocketFrame.Data[_] => Stream.emit(Some(in))
           }
-          .handleErrorWith { case _: WebSocketClosed => Stream.eval(closeRef.set(None)).as(None) }
+          .handleErrorWith {
+            case _: WebSocketClosed => Stream.eval(closeRef.set(None)).as(None)
+            case e                  => Stream.eval(ConcurrentEffect[F].raiseError(e))
+          }
           .unNoneTerminate // terminate once we got a Close
           .through(pipe)
           // end with matching Close or user-provided Close or no Close at all

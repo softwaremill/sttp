@@ -85,14 +85,14 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
     }
 
     val rheaders = new JSHeaders()
-    request.headers.foreach { case header @ Header(name, value) =>
+    request.headers.foreach { header =>
       // for multipart/form-data requests dom.FormData is responsible for setting the Content-Type header
       // as it will also compute and set the boundary for the different parts, so we have to leave it out here
-      if (header.is(HeaderNames.ContentType) && value.toLowerCase.startsWith("multipart/")) {
-        if (!value.toLowerCase.startsWith(MediaType.MultipartFormData.toString))
+      if (header.is(HeaderNames.ContentType) && header.value.toLowerCase.startsWith("multipart/")) {
+        if (!header.value.toLowerCase.startsWith(MediaType.MultipartFormData.toString))
           throw new IllegalArgumentException("Multipart bodies other than multipart/form-data are not supported")
       } else {
-        rheaders.set(name, value)
+        rheaders.set(header.name, header.value)
       }
     }
 

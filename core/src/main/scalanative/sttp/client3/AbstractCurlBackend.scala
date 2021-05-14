@@ -217,9 +217,7 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
 
   private def transformHeaders(reqHeaders: Iterable[Header])(implicit z: Zone): CurlList = {
     reqHeaders
-      .map { case Header(headerName, headerValue) =>
-        s"$headerName: $headerValue"
-      }
+      .map { header => s"${header.name}: ${header.value}" }
       .foldLeft(new CurlList(null)) { case (acc, h) =>
         new CurlList(acc.ptr.append(h))
       }
