@@ -78,6 +78,42 @@ class ToRfc2616ConverterTest extends AnyFlatSpec with Matchers {
         |    <time>Wed, 21 Oct 2015 18:27:50 GMT</time>
         |</request>""".stripMargin
     )
+    val jsonBody = """{
+                     |    "name": "sample",
+                     |    "time": "Wed, 21 Oct 2015 18:27:50 GMT"
+                     |}""".stripMargin
+    basicRequest
+      .header("Authorization", "token")
+      .contentType("application/json")
+      .body(jsonBody)
+      .post(localhost).toRfc2616Format should include(
+      """Authorization: token
+        |Content-Type: application/json
+        |Content-Length: 69
+        |
+        |{
+        |    "name": "sample",
+        |    "time": "Wed, 21 Oct 2015 18:27:50 GMT"
+        |}""".stripMargin
+    )
+  }
+
+  it should "render multipart form data if content is a plain string" in {
+    basicRequest
+      .header("Content-Type", "multipart/form-data;boundary=<PLACEHOLDER>")
+      .multipartBody(multipart("k1", "v1"), multipart("k2", "v2"))
+      .post(localhost).toRfc2616Format should include(
+      """
+        |--<PLACEHOLDER>
+        |Content-Disposition: form-data; name="k1"
+        |
+        |v1
+        |--<PLACEHOLDER>
+        |Content-Disposition: form-data; name="k2"
+        |
+        |v2
+        |--<PLACEHOLDER>--""".stripMargin
+    )
   }
 
 }

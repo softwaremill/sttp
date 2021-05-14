@@ -17,14 +17,34 @@ class ToRfc2616Converter[R <: RequestT[Identity, _, _]] {
   private def extractBody(r: R): String = {
     r.body match {
       case StringBody(text, _, _) => s"$text"
-      case ByteArrayBody(_, _)    => "" //TODO
-      case ByteBufferBody(_, _)   => "" //TODO
-      case InputStreamBody(_, _)  => "" //TODO
-      case StreamBody(_)          => "" //TODO
-      case MultipartBody(_)   => "" //TODO
+      case ByteArrayBody(_, _)    => "<PLACEHOLDER>"
+      case ByteBufferBody(_, _)   => "<PLACEHOLDER>"
+      case InputStreamBody(_, _)  => "<PLACEHOLDER>"
+      case StreamBody(_)          => "<PLACEHOLDER>"
+      case MultipartBody(parts)   => handleMultipartBody(parts) + "--<PLACEHOLDER>--"
       case FileBody(file, _)      => s"<${file.name}"
       case NoBody                 => ""
     }
+  }
+
+  def handleMultipartBody(parts: Seq[Part[RequestBody[_]]]): String = {
+    parts
+      .map { p =>
+        p.body match {
+          case StringBody(s, _, _) =>
+            s"""--<PLACEHOLDER>
+               |Content-Disposition: form-data; name="${p.name}"
+               |
+               |$s\n""".stripMargin
+          case FileBody(f, _)      =>
+            s"""--<PLACEHOLDER>
+               |Content-Disposition: form-data; name="${p.name}"
+               |
+               |< ${f.name}\n""".stripMargin
+          case _                   => s"-<PLACEHOLDER>"
+        }
+      }
+      .mkString("")
   }
 
   private def extractHeaders(r: R): String = {
