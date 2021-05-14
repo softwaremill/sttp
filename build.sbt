@@ -765,7 +765,7 @@ lazy val upickle = (projectMatrix in file("json/upickle"))
   .settings(
     name := "upickle",
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %%% "upickle" % "1.3.12"
+      "com.lihaoyi" %%% "upickle" % "1.3.13"
     ),
     scalaTest
   )
