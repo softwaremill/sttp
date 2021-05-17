@@ -87,7 +87,7 @@ val testServerSettings = Seq(
 )
 
 val circeVersion: Option[(Long, Long)] => String = {
-  case Some((3, _))  => "0.14.0-M6"
+  case Some((3, _))  => "0.14.0-M7"
   case Some((2, 11)) => "0.11.2"
   case _             => "0.13.0"
 }
@@ -740,7 +740,7 @@ lazy val circe = (projectMatrix in file("json/circe"))
     }
   )
   .jvmPlatform(
-    scalaVersions = scala2,
+    scalaVersions = scala2 ++ scala3,
     settings = commonJvmSettings
   )
   .jsPlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonJsSettings)
