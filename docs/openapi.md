@@ -1,10 +1,19 @@
 # OpenAPI
 
-sttp-client [request definitions](requests/basics.md) can be automatically generated from [openapi](https://swagger.io/specification/) `.yaml` specifications using the `scala-sttp` code generator, included in the [openapi-generator](https://github.com/OpenAPITools/openapi-generator) project.
+sttp-client [request definitions](requests/basics.md) can be automatically generated from [openapi](https://swagger.io/specification/) `.yaml` specifications using:
+
+1. the [sttp-openapi-generator](https://github.com/ghostbuster91/sttp-openapi-generator)
+2. the `scala-sttp` code generator, included in the [openapi-generator](https://github.com/OpenAPITools/openapi-generator) project
+
+## Using sttp-openapi-generator
+
+See the project's [docs](https://github.com/ghostbuster91/sttp-openapi-generator).
+
+## Using the openapi-generator
 
 For `scala-sttp`'s generator's configuration options refer to: [https://openapi-generator.tech/docs/generators/scala-sttp](https://openapi-generator.tech/docs/generators/scala-sttp).
 
-## Standalone setup
+### Standalone setup
 
 This is the simplest setup which relies on calling openapi-generator manually and generating a complete sbt project from it.
 
@@ -21,7 +30,7 @@ openapi-generator-cli generate \
   -o samples/client/petstore/
 ```
 
-## Sbt managed
+### Sbt managed
 
 In this setup openapi-generator is plugged into sbt project through the [sbt-openapi-generator](https://github.com/OpenAPITools/sbt-openapi-generator/) plugin.
 Sttp requests and models are automatically generated upon compilation.
@@ -98,7 +107,7 @@ lazy val petstoreApi: Project = project
 
 Full demo project is available on [github](https://github.com/softwaremill/sttp-openapi-example).
 
-### Additional notes
+#### Additional notes
 
 Although recent versions of the IntelliJ IDEA IDE come with "OpenApi Specification" plugin bundled into it, this plugin doesn't seem to support 
 latest versions of generator and so, it is impossible to generate sttp bindings from it. 
