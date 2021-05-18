@@ -117,7 +117,7 @@ val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", 
 )
 
 val zioVersion = "1.0.8"
-val zioInteropRsVersion = "1.3.4"
+val zioInteropRsVersion = "1.3.5"
 
 val sttpModelVersion = "1.4.7"
 val sttpSharedVersion = "1.2.5"
@@ -473,7 +473,7 @@ lazy val asyncHttpClientScalazBackend =
     .dependsOn(scalaz % compileAndTest)
 
 lazy val asyncHttpClientZioBackend =
-  asyncHttpClientBackendProject("zio")
+  asyncHttpClientBackendProject("zio", includeDotty = true)
     .settings(
       libraryDependencies ++= Seq(
         "dev.zio" %% "zio-interop-reactivestreams" % zioInteropRsVersion
@@ -620,7 +620,7 @@ lazy val httpClientFs2Backend =
     .dependsOn(fs2 % compileAndTest)
 
 lazy val httpClientZioBackend =
-  httpClientBackendProject("zio")
+  httpClientBackendProject("zio", includeDotty = false)
     .settings(
       libraryDependencies ++=
         Seq(
@@ -699,7 +699,7 @@ lazy val armeriaScalazBackend =
     .dependsOn(scalaz % compileAndTest)
 
 lazy val armeriaZioBackend =
-  armeriaBackendProject("zio")
+  armeriaBackendProject("zio", includeDotty = true)
     .settings(
       libraryDependencies ++= Seq("dev.zio" %% "zio-interop-reactivestreams" % zioInteropRsVersion)
     )
