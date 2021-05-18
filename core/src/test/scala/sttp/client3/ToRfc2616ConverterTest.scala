@@ -103,17 +103,14 @@ class ToRfc2616ConverterTest extends AnyFlatSpec with Matchers {
       .header("Content-Type", "multipart/form-data;boundary=<PLACEHOLDER>")
       .multipartBody(multipart("k1", "v1"), multipart("k2", "v2"))
       .post(localhost).toRfc2616Format should include(
-      """
-        |--<PLACEHOLDER>
-        |Content-Disposition: form-data; name="k1"
+      """|Content-Disposition: form-data; name="k1"
         |
-        |v1
-        |--<PLACEHOLDER>
-        |Content-Disposition: form-data; name="k2"
-        |
-        |v2
-        |--<PLACEHOLDER>--""".stripMargin
-    )
+        |v1""".stripMargin
+    ).and(include(
+      """|Content-Disposition: form-data; name="k2"
+         |
+         |v2""".stripMargin
+    )).and(endWith("--"))
   }
 
 }

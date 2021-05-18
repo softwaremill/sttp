@@ -3,7 +3,13 @@ package sttp.client3.internal
 import sttp.client3._
 import sttp.model._
 
+import java.util.concurrent.ThreadLocalRandom
+
 class ToRfc2616Converter[R <: RequestT[Identity, _, _]] {
+
+  private val BoundaryChars =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".toCharArray
+
   def apply(request: R): String = {
     val extractMethod = request.method.method
     val extractUri = request.uri
@@ -21,30 +27,31 @@ class ToRfc2616Converter[R <: RequestT[Identity, _, _]] {
       case ByteBufferBody(_, _)   => "<PLACEHOLDER>"
       case InputStreamBody(_, _)  => "<PLACEHOLDER>"
       case StreamBody(_)          => "<PLACEHOLDER>"
-      case MultipartBody(parts)   => handleMultipartBody(parts) + "--<PLACEHOLDER>--"
+      case MultipartBody(parts)   => handleMultipartBody(parts)
       case FileBody(file, _)      => s"<${file.name}"
       case NoBody                 => ""
     }
   }
 
   def handleMultipartBody(parts: Seq[Part[RequestBody[_]]]): String = {
+    val boundary = generateBoundary()
     parts
       .map { p =>
         p.body match {
           case StringBody(s, _, _) =>
-            s"""--<PLACEHOLDER>
+            s"""--$boundary
                |Content-Disposition: form-data; name="${p.name}"
                |
                |$s\n""".stripMargin
           case FileBody(f, _)      =>
-            s"""--<PLACEHOLDER>
+            s"""--$boundary
                |Content-Disposition: form-data; name="${p.name}"
                |
                |< ${f.name}\n""".stripMargin
-          case _                   => s"-<PLACEHOLDER>"
+          case _                   => s"--$boundary"
         }
       }
-      .mkString("")
+      .mkString("") + s"--$boundary--"
   }
 
   private def extractHeaders(r: R): String = {
@@ -55,6 +62,14 @@ class ToRfc2616Converter[R <: RequestT[Identity, _, _]] {
         s"""$k: $v"""
       }
       .mkString("\n")
+  }
+
+  private def generateBoundary(): String = {
+    val tlr = ThreadLocalRandom.current()
+    List
+      .fill(32)(BoundaryChars(tlr.nextInt(BoundaryChars.length)))
+      .mkString
+
   }
 }
 
