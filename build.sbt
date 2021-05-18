@@ -120,7 +120,7 @@ val zioVersion = "1.0.8"
 val zioInteropRsVersion = "1.3.4"
 
 val sttpModelVersion = "1.4.7"
-val sttpSharedVersion = "1.2.4"
+val sttpSharedVersion = "1.2.5"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
 
@@ -398,10 +398,10 @@ lazy val zio = (projectMatrix in file("effects/zio"))
   )
   .dependsOn(core % compileAndTest)
   .jvmPlatform(
-    scalaVersions = scala2
+    scalaVersions = scala2 ++ scala3
   )
   .jsPlatform(
-    scalaVersions = List(scala2_12, scala2_13),
+    scalaVersions = List(scala2_12, scala2_13) ++ scala3,
     settings = commonJsSettings ++ commonJsBackendSettings ++ browserChromeTestSettings ++ testServerSettings
   )
 
