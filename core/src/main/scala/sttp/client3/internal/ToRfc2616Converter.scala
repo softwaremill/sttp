@@ -3,7 +3,7 @@ package sttp.client3.internal
 import sttp.client3._
 import sttp.model._
 
-import java.util.concurrent.ThreadLocalRandom
+import scala.util.Random
 
 class ToRfc2616Converter[R <: RequestT[Identity, _, _]] {
 
@@ -65,9 +65,9 @@ class ToRfc2616Converter[R <: RequestT[Identity, _, _]] {
   }
 
   private def generateBoundary(): String = {
-    val tlr = ThreadLocalRandom.current()
+    val random = Random
     List
-      .fill(32)(BoundaryChars(tlr.nextInt(BoundaryChars.length)))
+      .fill(32)(BoundaryChars(random.nextInt(BoundaryChars.length)))
       .mkString
 
   }
