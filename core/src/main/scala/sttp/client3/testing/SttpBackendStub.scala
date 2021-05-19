@@ -83,9 +83,6 @@ class SttpBackendStub[F[_], +P](
     }
   }
 
-  private def wrapResponse[T](r: Response[_]): F[Response[T]] =
-    monad.unit(r.asInstanceOf[Response[T]])
-
   override def close(): F[Unit] = monad.unit(())
 
   override def responseMonad: MonadError[F] = monad
