@@ -49,6 +49,7 @@ sttp is a family of Scala HTTP-related projects, and currently includes:
 Third party projects:
 
 * [sttp-oauth2](https://github.com/ocadotechnology/sttp-oauth2): OAuth2 client library for Scala
+* [sttp-openapi-generator](https://github.com/ghostbuster91/sttp-openapi-generator): Generate sttp client from openapi specification with ease!
 
 ## Sponsors
 

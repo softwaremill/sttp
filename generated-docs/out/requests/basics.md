@@ -65,7 +65,11 @@ For example:
 
 ```scala
 basicRequest.get(uri"http://httpbin.org/ip").toCurl
-// res1: String = "curl -L --max-redirs 32 -X GET 'http://httpbin.org/ip'"
+// res1: String = """curl \
+//   --request GET \
+//   --url 'http://httpbin.org/ip' \
+//   --location \
+//   --max-redirs 32"""
 ```
 
 Note that the `Accept-Encoding` header, which is added by default to all requests (`Accept-Encoding: gzip, deflate`) is filtered out from the generated command, so that when running a request from the command line, the result has higher chance of being human-readable, and not compressed.
