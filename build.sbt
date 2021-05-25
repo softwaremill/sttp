@@ -129,7 +129,7 @@ val braveOpentracingVersion = "1.0.0"
 val zipkinSenderOkHttpVersion = "2.16.3"
 val resilience4jVersion = "1.7.0"
 val http4s_ce2_version = "0.21.23"
-val http4s_ce3_version = "1.0.0-M22"
+val http4s_ce3_version = "0.23.0-M1"
 
 val compileAndTest = "compile->compile;test->test"
 
@@ -620,7 +620,7 @@ lazy val httpClientFs2Backend =
     .dependsOn(fs2 % compileAndTest)
 
 lazy val httpClientZioBackend =
-  httpClientBackendProject("zio", includeDotty = false)
+  httpClientBackendProject("zio", includeDotty = true)
     .settings(
       libraryDependencies ++=
         Seq(
