@@ -101,7 +101,7 @@ val fs2_3_version = "3.0.4"
 
 val catsEffect_2_version: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.0.0"
-  case _             => "2.3.3"
+  case _             => "2.5.1"
 }
 val fs2_2_version: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.1.0"
@@ -305,11 +305,11 @@ lazy val catsCe2 = (projectMatrix in file("effects/cats-ce2"))
   )
   .dependsOn(core % compileAndTest)
   .jvmPlatform(
-    scalaVersions = scala2,
+    scalaVersions = scala2 ++ scala3,
     settings = commonJvmSettings
   )
   .jsPlatform(
-    scalaVersions = List(scala2_12, scala2_13),
+    scalaVersions = List(scala2_12, scala2_13) ++ scala3,
     settings = commonJsSettings ++ commonJsBackendSettings ++ browserChromeTestSettings ++ testServerSettings
   )
 
@@ -343,10 +343,10 @@ lazy val fs2Ce2 = (projectMatrix in file("effects/fs2-ce2"))
   )
   .dependsOn(core % compileAndTest, catsCe2 % compileAndTest)
   .jvmPlatform(
-    scalaVersions = scala2,
+    scalaVersions = scala2 ++ scala3,
     settings = commonJvmSettings
   )
-  .jsPlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonJsSettings)
+  .jsPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3, settings = commonJsSettings)
 
 lazy val fs2 = (projectMatrix in file("effects/fs2"))
   .settings(
@@ -486,7 +486,7 @@ lazy val asyncHttpClientMonixBackend =
     .dependsOn(monix % compileAndTest)
 
 lazy val asyncHttpClientCatsCe2Backend =
-  asyncHttpClientBackendProject("cats-ce2")
+  asyncHttpClientBackendProject("cats-ce2", includeDotty = true)
     .dependsOn(catsCe2 % compileAndTest)
 
 lazy val asyncHttpClientCatsBackend =
@@ -494,7 +494,7 @@ lazy val asyncHttpClientCatsBackend =
     .dependsOn(cats % compileAndTest)
 
 lazy val asyncHttpClientFs2Ce2Backend =
-  asyncHttpClientBackendProject("fs2-ce2")
+  asyncHttpClientBackendProject("fs2-ce2", includeDotty = true)
     .settings(
       libraryDependencies ++= dependenciesFor(scalaVersion.value)(
         "co.fs2" %% "fs2-reactive-streams" % fs2_2_version(_),
@@ -600,7 +600,7 @@ lazy val httpClientMonixBackend =
     .dependsOn(monix % compileAndTest)
 
 lazy val httpClientFs2Ce2Backend =
-  httpClientBackendProject("fs2-ce2")
+  httpClientBackendProject("fs2-ce2", includeDotty = true)
     .settings(
       libraryDependencies ++= dependenciesFor(scalaVersion.value)(
         "co.fs2" %% "fs2-reactive-streams" % fs2_2_version(_),
@@ -610,7 +610,7 @@ lazy val httpClientFs2Ce2Backend =
     .dependsOn(fs2Ce2 % compileAndTest)
 
 lazy val httpClientFs2Backend =
-  httpClientBackendProject("fs2")
+  httpClientBackendProject("fs2", includeDotty = true)
     .settings(
       libraryDependencies ++= Seq(
         "co.fs2" %% "fs2-reactive-streams" % fs2_3_version,
