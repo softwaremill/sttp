@@ -72,9 +72,9 @@ In addition, there are also backends for Scala.JS:
 ================================ ================================ ========================================= ===================
 Class                            Effect type                      Supported stream type                     Supports websockets
 ================================ ================================ ========================================= ===================
-``FetchBackend``                 ``scala.concurrent.Future``      n/a                                       no
-``FetchMonixBackend``            ``monix.eval.Task``              ``monix.reactive.Observable[ByteBuffer]`` no
-``FetchCatsBackend``             ``F[_]: cats.effect.Concurrent`` n/a                                       no
+``FetchBackend``                 ``scala.concurrent.Future``      n/a                                       yes (regular)
+``FetchMonixBackend``            ``monix.eval.Task``              ``monix.reactive.Observable[ByteBuffer]`` yes (regular & streaming)
+``FetchCatsBackend``             ``F[_]: cats.effect.Concurrent`` n/a                                       yes (regular)
 ================================ ================================ ========================================= ===================
 ```
 
