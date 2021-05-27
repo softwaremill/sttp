@@ -128,7 +128,7 @@ val jeagerClientVersion = "1.6.0"
 val braveOpentracingVersion = "1.0.0"
 val zipkinSenderOkHttpVersion = "2.16.3"
 val resilience4jVersion = "1.7.0"
-val http4s_ce2_version = "0.21.23"
+val http4s_ce2_version = "0.21.24"
 val http4s_ce3_version = "0.23.0-RC1"
 
 val compileAndTest = "compile->compile;test->test"
@@ -779,7 +779,7 @@ lazy val upickle = (projectMatrix in file("json/upickle"))
   .nativePlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonNativeSettings)
   .dependsOn(core, jsonCommon)
 
-lazy val json4sVersion = "3.6.11"
+lazy val json4sVersion = "4.0.0"
 
 lazy val json4s = (projectMatrix in file("json/json4s"))
   .settings(commonJvmSettings)
@@ -960,8 +960,8 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     name := "docs",
     libraryDependencies ++= Seq(
       "org.json4s" %% "json4s-native" % json4sVersion,
-      "io.circe" %% "circe-generic" % "0.13.0",
-      "commons-io" % "commons-io" % "2.8.0",
+      "io.circe" %% "circe-generic" % "0.14.1",
+      "commons-io" % "commons-io" % "2.9.0",
       "io.github.resilience4j" % "resilience4j-circuitbreaker" % resilience4jVersion,
       "io.github.resilience4j" % "resilience4j-ratelimiter" % resilience4jVersion,
       "io.jaegertracing" % "jaeger-client" % jeagerClientVersion,
