@@ -961,7 +961,7 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     libraryDependencies ++= Seq(
       "org.json4s" %% "json4s-native" % json4sVersion,
       "io.circe" %% "circe-generic" % "0.13.0",
-      "commons-io" % "commons-io" % "2.8.0",
+      "commons-io" % "commons-io" % "2.9.0",
       "io.github.resilience4j" % "resilience4j-circuitbreaker" % resilience4jVersion,
       "io.github.resilience4j" % "resilience4j-ratelimiter" % resilience4jVersion,
       "io.jaegertracing" % "jaeger-client" % jeagerClientVersion,
