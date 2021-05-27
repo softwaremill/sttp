@@ -960,7 +960,7 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     name := "docs",
     libraryDependencies ++= Seq(
       "org.json4s" %% "json4s-native" % json4sVersion,
-      "io.circe" %% "circe-generic" % "0.13.0",
+      "io.circe" %% "circe-generic" % "0.14.1",
       "commons-io" % "commons-io" % "2.9.0",
       "io.github.resilience4j" % "resilience4j-circuitbreaker" % resilience4jVersion,
       "io.github.resilience4j" % "resilience4j-ratelimiter" % resilience4jVersion,
