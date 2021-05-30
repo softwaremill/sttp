@@ -55,6 +55,12 @@ trait SttpClientStubbingBase[R, P] {
     def thenRespondCyclicResponses[T](responses: Response[T]*): URIO[SttpClientStubbing, Unit] =
       whenRequest(_.thenRespondCyclicResponses(responses: _*))
 
+    def thenRespondCyclicAtomically[T](body1: T, bodies: T*): URIO[SttpClientStubbing, Unit] =
+      whenRequest(_.thenRespondCyclicAtomically(body1, bodies: _*))
+
+    def thenRespondCyclicResponsesAtomically[T](response1: Response[T], responses: Response[T]*): URIO[SttpClientStubbing, Unit] =
+      whenRequest(_.thenRespondCyclicResponsesAtomically(response1, responses: _*))
+
     def thenRespondF(resp: => RIO[R, Response[_]]): URIO[SttpClientStubbing, Unit] =
       whenRequest(_.thenRespondF(resp))
 

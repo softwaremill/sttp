@@ -118,8 +118,27 @@ class SttpBackendStub[F[_], +P](
       */
     def thenRespondCyclicResponses[T](responses: Response[T]*): SttpBackendStub[F, P] = {
       val iterator = Iterator.continually(responses).flatten
-      thenRespond(iterator.next)
+      thenRespond(iterator.next())
     }
+
+    /** Thread-safe version of `thenRespondCyclic`
+      */
+    def thenRespondCyclicAtomically[T](body1: T, bodies: T*): SttpBackendStub[F, P] = {
+      def responseFrom(body: T) =
+        Response(body, StatusCode.Ok, statusText = "OK")
+
+      thenRespondCyclicResponsesAtomically(
+        responseFrom(body1),
+        bodies.map(responseFrom): _*
+      )
+    }
+    /** Thread-safe version of `thenRespondCyclicResponses`
+      */
+    def thenRespondCyclicResponsesAtomically[T](response1: Response[T], responses: Response[T]*): SttpBackendStub[F, P] = {
+      val iterator = AtomicCyclicIterator.of(response1, responses)
+      thenRespond(iterator.next())
+    }
+
     def thenRespondF(resp: => F[Response[_]]): SttpBackendStub[F, P] = {
       val m: PartialFunction[Request[_, _], F[Response[_]]] = {
         case r if p(r) => resp
