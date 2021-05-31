@@ -110,7 +110,7 @@ class SttpBackendStub[F[_], +P](
 
     def thenRespondCyclic[T](body1: T, bodies: T*): SttpBackendStub[F, P] = {
       def responseFrom(body: T) =
-        Response(body, StatusCode.Ok, statusText = "OK")
+        Response[T](body, StatusCode.Ok, statusText = "OK")
 
       thenRespondCyclicResponses(
         responseFrom(body1),
@@ -119,7 +119,7 @@ class SttpBackendStub[F[_], +P](
     }
 
     def thenRespondCyclicResponses[T](response1: Response[T], responses: Response[T]*): SttpBackendStub[F, P] = {
-      val iterator = AtomicCyclicIterator.of(response1, responses)
+      val iterator = AtomicCyclicIterator(response1, responses)
       thenRespond(iterator.next())
     }
 

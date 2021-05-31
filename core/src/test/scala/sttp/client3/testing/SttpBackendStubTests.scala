@@ -205,10 +205,13 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
     val backend: SttpBackend[Identity, Any] = SttpBackendStub(IdMonad).whenAnyRequest
       .thenRespondCyclic("first", "second", "third")
 
-    basicRequest.get(uri"http://example.org").send(backend).body should be(Right("first"))
-    basicRequest.get(uri"http://example.org").send(backend).body should be(Right("second"))
-    basicRequest.get(uri"http://example.org").send(backend).body should be(Right("third"))
-    basicRequest.get(uri"http://example.org").send(backend).body should be(Right("first"))
+    val testResults = Seq
+      .fill(4)(
+        basicRequest.get(uri"http://example.org").send(backend)
+      )
+      .map(_.body)
+
+    testResults shouldBe Seq("first", "second", "third", "first").map(Right(_))
   }
 
   it should "serve consecutive responses" in {
@@ -218,9 +221,11 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
         Response("error", StatusCode.InternalServerError, "Something went wrong")
       )
 
-    basicRequest.get(uri"http://example.org").send(backend).is200 should be(true)
-    basicRequest.get(uri"http://example.org").send(backend).isServerError should be(true)
-    basicRequest.get(uri"http://example.org").send(backend).is200 should be(true)
+    def testResult = basicRequest.get(uri"http://example.org").send(backend)
+
+    testResult.is200 should be(true)
+    testResult.isServerError should be(true)
+    testResult.is200 should be(true)
   }
 
   it should "always return a string when requested to do so" in {
