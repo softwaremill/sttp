@@ -22,10 +22,11 @@ class SttpBackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFuture
     val r = basicRequest.get(uri"http://example.org/a/b/c").send(backend)
 
     // then
-    runtime.unsafeRun(r).body shouldBe Right("a")
-    runtime.unsafeRun(r).body shouldBe Right("b")
-    runtime.unsafeRun(r).body shouldBe Right("c")
-    runtime.unsafeRun(r).body shouldBe Right("a")
+    val effect = ZIO
+      .collectAllPar(Seq.fill(4)(r))
+      .map(_.map(_.body))
+
+    runtime.unsafeRun(effect) should contain theSameElementsAs Seq("a", "b", "c", "a").map(Right(_))
   }
 
   it should "allow effectful stubbing" in {

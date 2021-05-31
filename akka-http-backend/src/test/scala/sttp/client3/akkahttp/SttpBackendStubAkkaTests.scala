@@ -7,7 +7,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import sttp.client3._
 
-import scala.concurrent.Await
+import scala.concurrent.{Await, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
@@ -26,12 +26,15 @@ class SttpBackendStubAkkaTests extends AnyFlatSpec with Matchers with ScalaFutur
       .thenRespondCyclic("a", "b", "c")
 
     // when
-    def r = basicRequest.get(uri"http://example.org/a/b/c").send(backend).futureValue
+    def r = basicRequest.get(uri"http://example.org/a/b/c").send(backend)
 
+    val runningFutures = Seq.fill(4)(r)
     // then
-    r.body shouldBe Right("a")
-    r.body shouldBe Right("b")
-    r.body shouldBe Right("c")
-    r.body shouldBe Right("a")
+    val result = Future
+      .sequence(runningFutures)
+      .futureValue
+      .map(_.body)
+
+    result should contain theSameElementsAs Seq("a", "b", "c", "a").map(Right(_))
   }
 }

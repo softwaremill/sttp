@@ -49,17 +49,11 @@ trait SttpClientStubbingBase[R, P] {
     def thenRespond[T](resp: => Response[T]): URIO[SttpClientStubbing, Unit] =
       whenRequest(_.thenRespond(resp))
 
-    def thenRespondCyclic[T](bodies: T*): URIO[SttpClientStubbing, Unit] =
-      whenRequest(_.thenRespondCyclic(bodies: _*))
+    def thenRespondCyclic[T](body1: T, bodies: T*): URIO[SttpClientStubbing, Unit] =
+      whenRequest(_.thenRespondCyclic(body1, bodies: _*))
 
-    def thenRespondCyclicResponses[T](responses: Response[T]*): URIO[SttpClientStubbing, Unit] =
-      whenRequest(_.thenRespondCyclicResponses(responses: _*))
-
-    def thenRespondCyclicAtomically[T](body1: T, bodies: T*): URIO[SttpClientStubbing, Unit] =
-      whenRequest(_.thenRespondCyclicAtomically(body1, bodies: _*))
-
-    def thenRespondCyclicResponsesAtomically[T](response1: Response[T], responses: Response[T]*): URIO[SttpClientStubbing, Unit] =
-      whenRequest(_.thenRespondCyclicResponsesAtomically(response1, responses: _*))
+    def thenRespondCyclicResponses[T](response1: Response[T], responses: Response[T]*): URIO[SttpClientStubbing, Unit] =
+      whenRequest(_.thenRespondCyclicResponses(response1, responses: _*))
 
     def thenRespondF(resp: => RIO[R, Response[_]]): URIO[SttpClientStubbing, Unit] =
       whenRequest(_.thenRespondF(resp))
@@ -70,14 +64,15 @@ trait SttpClientStubbingBase[R, P] {
     private def whenRequest(
         f: SttpBackendStub[RIO[R, *], P]#WhenRequest => SttpBackendStub[RIO[R, *], P]
     ): URIO[SttpClientStubbing, Unit] =
-      URIO.accessM(_.get.update(stub => f(stub.whenRequestMatches(p))))
+      URIO.serviceWith(_.update(stub => f(stub.whenRequestMatches(p))))
   }
 
   val layer: ZLayer[Any, Nothing, Has[Service] with Has[SttpBackend[RIO[R, *], P]]] = {
     val monad = new RIOMonadAsyncError[R]
     implicit val _serviceTag: Tag[Service] = serviceTag
     implicit val _backendTag: Tag[SttpBackend[RIO[R, *], P]] = sttpBackendTag
-    ZLayer.fromEffectMany(for {
+
+    val composed = for {
       stub <- Ref.make(SttpBackendStub[RIO[R, *], P](monad))
       stubber = new StubWrapper(stub)
       proxy = new SttpBackend[RIO[R, *], P] {
@@ -89,6 +84,8 @@ trait SttpClientStubbingBase[R, P] {
 
         override def responseMonad: MonadError[RIO[R, *]] = monad
       }
-    } yield Has.allOf[Service, SttpBackend[RIO[R, *], P]](stubber, proxy))
+    } yield Has.allOf[Service, SttpBackend[RIO[R, *], P]](stubber, proxy)
+
+    composed.toLayerMany
   }
 }

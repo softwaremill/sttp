@@ -31,7 +31,7 @@ object AtomicCyclicIterator {
 
   def unsafeFrom[A](elements: Seq[A]): AtomicCyclicIterator[A] = tryFrom(elements).get
 
-  def apply[A](element1: A, rest: Seq[A]): AtomicCyclicIterator[A] = unsafeFrom(element1 +: rest)
+  def apply[A](head: A, tail: Seq[A]): AtomicCyclicIterator[A] = unsafeFrom(head +: tail)
 
-  def of[A](element1: A, rest: A*): AtomicCyclicIterator[A] = apply(element1, rest)
+  def of[A](head: A, tail: A*): AtomicCyclicIterator[A] = apply(head, tail)
 }

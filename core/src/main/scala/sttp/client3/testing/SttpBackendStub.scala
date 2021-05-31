@@ -108,33 +108,17 @@ class SttpBackendStub[F[_], +P](
       new SttpBackendStub[F, P](monad, matchers.orElse(m), fallback)
     }
 
-    /** Not thread-safe!
-      */
-    def thenRespondCyclic[T](bodies: T*): SttpBackendStub[F, P] = {
-      thenRespondCyclicResponses(bodies.map(body => Response[T](body, StatusCode.Ok, "OK")): _*)
-    }
-
-    /** Not thread-safe!
-      */
-    def thenRespondCyclicResponses[T](responses: Response[T]*): SttpBackendStub[F, P] = {
-      val iterator = Iterator.continually(responses).flatten
-      thenRespond(iterator.next())
-    }
-
-    /** Thread-safe version of `thenRespondCyclic`
-      */
-    def thenRespondCyclicAtomically[T](body1: T, bodies: T*): SttpBackendStub[F, P] = {
+    def thenRespondCyclic[T](body1: T, bodies: T*): SttpBackendStub[F, P] = {
       def responseFrom(body: T) =
         Response(body, StatusCode.Ok, statusText = "OK")
 
-      thenRespondCyclicResponsesAtomically(
+      thenRespondCyclicResponses(
         responseFrom(body1),
         bodies.map(responseFrom): _*
       )
     }
-    /** Thread-safe version of `thenRespondCyclicResponses`
-      */
-    def thenRespondCyclicResponsesAtomically[T](response1: Response[T], responses: Response[T]*): SttpBackendStub[F, P] = {
+
+    def thenRespondCyclicResponses[T](response1: Response[T], responses: Response[T]*): SttpBackendStub[F, P] = {
       val iterator = AtomicCyclicIterator.of(response1, responses)
       thenRespond(iterator.next())
     }
