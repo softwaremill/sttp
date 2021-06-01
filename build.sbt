@@ -831,7 +831,7 @@ lazy val openTracingBackend = (projectMatrix in file("metrics/open-tracing-backe
     ),
     scalaTest
   )
-  .jvmPlatform(scalaVersions = scala2)
+  .jvmPlatform(scalaVersions = scala2 ++ scala3)
   .dependsOn(core)
 
 lazy val prometheusBackend = (projectMatrix in file("metrics/prometheus-backend"))
@@ -843,7 +843,7 @@ lazy val prometheusBackend = (projectMatrix in file("metrics/prometheus-backend"
     ),
     scalaTest
   )
-  .jvmPlatform(scalaVersions = scala2)
+  .jvmPlatform(scalaVersions = scala2 ++ scala3)
   .dependsOn(core)
 
 lazy val zioTelemetryOpenTelemetryBackend = (projectMatrix in file("metrics/zio-telemetry-open-telemetry-backend"))
@@ -893,7 +893,7 @@ lazy val slf4jBackend = (projectMatrix in file("logging/slf4j"))
     ),
     scalaTest
   )
-  .jvmPlatform(scalaVersions = scala2)
+  .jvmPlatform(scalaVersions = scala2 ++ scala3)
   .dependsOn(core)
 
 lazy val examplesCe2 = (projectMatrix in file("examples-ce2"))
