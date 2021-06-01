@@ -205,13 +205,10 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
     val backend: SttpBackend[Identity, Any] = SttpBackendStub(IdMonad).whenAnyRequest
       .thenRespondCyclic("first", "second", "third")
 
-    val testResults = Seq
-      .fill(4)(
-        basicRequest.get(uri"http://example.org").send(backend)
-      )
-      .map(_.body)
-
-    testResults shouldBe Seq("first", "second", "third", "first").map(Right(_))
+    basicRequest.get(uri"http://example.org").send(backend).body should be(Right("first"))
+    basicRequest.get(uri"http://example.org").send(backend).body should be(Right("second"))
+    basicRequest.get(uri"http://example.org").send(backend).body should be(Right("third"))
+    basicRequest.get(uri"http://example.org").send(backend).body should be(Right("first"))
   }
 
   it should "serve consecutive responses" in {
