@@ -218,9 +218,11 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
         Response("error", StatusCode.InternalServerError, "Something went wrong")
       )
 
-    basicRequest.get(uri"http://example.org").send(backend).is200 should be(true)
-    basicRequest.get(uri"http://example.org").send(backend).isServerError should be(true)
-    basicRequest.get(uri"http://example.org").send(backend).is200 should be(true)
+    def testResult = basicRequest.get(uri"http://example.org").send(backend)
+
+    testResult.is200 should be(true)
+    testResult.isServerError should be(true)
+    testResult.is200 should be(true)
   }
 
   it should "always return a string when requested to do so" in {

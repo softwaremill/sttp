@@ -64,14 +64,15 @@ trait SttpClientStubbingBase[R, P] {
     private def whenRequest(
         f: SttpBackendStub[RIO[R, *], P]#WhenRequest => SttpBackendStub[RIO[R, *], P]
     ): URIO[SttpClientStubbing, Unit] =
-      URIO.accessM(_.get.update(stub => f(stub.whenRequestMatches(p))))
+      URIO.serviceWith(_.update(stub => f(stub.whenRequestMatches(p))))
   }
 
   val layer: ZLayer[Any, Nothing, Has[Service] with Has[SttpBackend[RIO[R, *], P]]] = {
     val monad = new RIOMonadAsyncError[R]
     implicit val _serviceTag: Tag[Service] = serviceTag
     implicit val _backendTag: Tag[SttpBackend[RIO[R, *], P]] = sttpBackendTag
-    ZLayer.fromEffectMany(for {
+
+    val composed = for {
       stub <- Ref.make(SttpBackendStub[RIO[R, *], P](monad))
       stubber = new StubWrapper(stub)
       proxy = new SttpBackend[RIO[R, *], P] {
@@ -83,6 +84,8 @@ trait SttpClientStubbingBase[R, P] {
 
         override def responseMonad: MonadError[RIO[R, *]] = monad
       }
-    } yield Has.allOf[Service, SttpBackend[RIO[R, *], P]](stubber, proxy))
+    } yield Has.allOf[Service, SttpBackend[RIO[R, *], P]](stubber, proxy)
+
+    composed.toLayerMany
   }
 }

@@ -17,7 +17,6 @@ class SttpBackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFuture
     val backend: SttpBackendStub[Task, Any] = SttpBackendStub(new RIOMonadAsyncError[Any])
       .whenRequestMatches(_ => true)
       .thenRespondCyclic("a", "b", "c")
-
     // when
     val r = basicRequest.get(uri"http://example.org/a/b/c").send(backend)
 
@@ -26,6 +25,24 @@ class SttpBackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFuture
     runtime.unsafeRun(r).body shouldBe Right("b")
     runtime.unsafeRun(r).body shouldBe Right("c")
     runtime.unsafeRun(r).body shouldBe Right("a")
+  }
+
+  it should "cycle through responses when called concurrently" in {
+    // given
+    val backend: SttpBackendStub[Task, Any] = SttpBackendStub(new RIOMonadAsyncError[Any])
+      .whenRequestMatches(_ => true)
+      .thenRespondCyclic("a", "b", "c")
+
+    // when
+    val r = basicRequest.get(uri"http://example.org/a/b/c").send(backend)
+
+    // then
+    val effect = ZIO
+      .collectAllPar(Seq.fill(100)(r))
+      .map(_.map(_.body))
+
+    runtime.unsafeRun(effect) should contain theSameElementsAs ((1 to 33).flatMap(_ => Seq("a", "b", "c")) ++ Seq("a"))
+      .map(Right(_))
   }
 
   it should "allow effectful stubbing" in {
