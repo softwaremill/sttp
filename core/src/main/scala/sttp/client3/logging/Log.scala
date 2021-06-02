@@ -34,7 +34,7 @@ class DefaultLog[F[_]](
     sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders,
     beforeRequestSendLogLevel: LogLevel = LogLevel.Debug,
     responseLogLevel: StatusCode => LogLevel = DefaultLog.defaultResponseLogLevel,
-    responseExceptionLogLevel: Option[StatusCode] => LogLevel = DefaultLog.defaultResponseExceptionLogLevel
+    responseExceptionLogLevel: LogLevel = LogLevel.Error
 ) extends Log[F] {
 
   def beforeRequestSend(request: Request[_, _]): F[Unit] =
@@ -64,9 +64,9 @@ class DefaultLog[F[_]](
   override def requestException(request: Request[_, _], elapsed: Option[Duration], e: Exception): F[Unit] = {
     val logLevel = e match {
       case HttpError(_, statusCode) =>
-        responseExceptionLogLevel(Some(statusCode))
+        responseLogLevel(statusCode)
       case _ =>
-        responseExceptionLogLevel(None)
+        responseExceptionLogLevel
     }
     logger(logLevel, s"Exception when sending request: ${request.showBasic}${took(elapsed)}", e)
   }
@@ -77,8 +77,4 @@ class DefaultLog[F[_]](
 object DefaultLog {
   def defaultResponseLogLevel(c: StatusCode): LogLevel =
     if (c.isClientError || c.isServerError) LogLevel.Warn else LogLevel.Debug
-
-  def defaultResponseExceptionLogLevel(c: Option[StatusCode]): LogLevel =
-    LogLevel.Error
-
 }
