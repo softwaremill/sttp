@@ -437,6 +437,31 @@ lazy val akkaHttpBackend = (projectMatrix in file("akka-http-backend"))
     scalaVersions = List(scala2_12, scala2_13)
   )
 
+def akkaHttpBackendProject(proj: String, includeDotty: Boolean = false, include2_11: Boolean = false) = {
+  ProjectMatrix(s"akkaHttpBackend${proj.capitalize}", file(s"akka-http-backend/$proj"))
+    .settings(commonJvmSettings)
+    .settings(testServerSettings)
+    .settings(name := s"akka-http-backend-$proj")
+    .dependsOn(akkaHttpBackend % compileAndTest)
+    .jvmPlatform(
+      scalaVersions =
+        (if (include2_11) List(scala2_11) else Nil) ++ List(scala2_12, scala2_13) ++ (if (includeDotty) scala3 else Nil)
+    )
+}
+
+
+lazy val akkaHttpZioBackend =
+  akkaHttpBackendProject("zio", includeDotty = true)
+    .settings(
+      libraryDependencies ++= Seq(
+        "dev.zio" %% "zio-interop-reactivestreams" % zioInteropRsVersion,
+        akkaStreams % "provided",
+        "com.softwaremill.sttp.shared" %% "akka" % sttpSharedVersion
+      )
+    )
+    .dependsOn(zio % compileAndTest)
+
+
 //-- async http client
 lazy val asyncHttpClientBackend = (projectMatrix in file("async-http-client-backend"))
   .settings(commonJvmSettings)
