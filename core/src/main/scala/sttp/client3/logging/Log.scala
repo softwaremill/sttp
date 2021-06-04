@@ -1,6 +1,6 @@
 package sttp.client3.logging
 
-import sttp.client3.{Request, Response}
+import sttp.client3.{HttpError, Request, Response}
 import sttp.model.{HeaderNames, StatusCode}
 
 import scala.concurrent.duration.Duration
@@ -61,8 +61,15 @@ class DefaultLog[F[_]](
       }
     )
 
-  override def requestException(request: Request[_, _], elapsed: Option[Duration], e: Exception): F[Unit] =
-    logger(responseExceptionLogLevel, s"Exception when sending request: ${request.showBasic}${took(elapsed)}", e)
+  override def requestException(request: Request[_, _], elapsed: Option[Duration], e: Exception): F[Unit] = {
+    val logLevel = e match {
+      case HttpError(_, statusCode) =>
+        responseLogLevel(statusCode)
+      case _ =>
+        responseExceptionLogLevel
+    }
+    logger(logLevel, s"Exception when sending request: ${request.showBasic}${took(elapsed)}", e)
+  }
 
   private def took(elapsed: Option[Duration]): String = elapsed.fold("")(e => f", took: ${e.toMillis / 1000.0}%.3fs")
 }
