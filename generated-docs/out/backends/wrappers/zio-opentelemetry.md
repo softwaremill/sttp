@@ -3,20 +3,26 @@
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "zio-telemetry-opentelemetry-backend" % "3.3.6"
+"com.softwaremill.sttp.client3" %% "zio-telemetry-opentelemetry-backend" % "3.3.7"
 ```
 
 This backend depends on [zio-opentelemetry](https://github.com/zio/zio-telemetry).
 
-The opentelemetry backend wraps a `Task` based ZIO backend and yields a backend of type `SttpBackend[RIO[Tracing, *], Nothing, WS_HANDLER]`. The yielded effects are of type `RIO[Tracing, *]` which mean they can be a child of a other span created in your ZIO program.
+The opentelemetry backend wraps a `Task` based ZIO backend.
+In order to do that, you need to provide the wrapper with a `Tracing.Service` from zio-telemetry.
 
 Here's how you construct `ZioTelemetryOpenTelemetryBackend`. I would recommend wrapping this is in `ZLayer`
 
 ```scala
-new ZioTelemetryOpenTelemetryBackend(zioBackend)
+ZioTelemetryOpenTelemetryBackend(
+  sttpBackend,
+  tracing
+)
 ```
 
 Additionally you can add tags per request by supplying a `ZioTelemetryOpenTelemetryTracer`
+(by default, all that happens is that the span for the request is named after using the HTTP method
+and path).
 
 ```scala
 import io.opentelemetry.semconv.trace.attributes.SemanticAttributes
@@ -25,7 +31,8 @@ import zio._
 import zio.telemetry.opentelemetry._
 import sttp.client3.ziotelemetry.opentelemetry._
 
-implicit val zioBackend: SttpBackend[Task, Any] = ???
+val zioBackend: SttpBackend[Task, Any] = ???
+val tracing: Tracing.Service = ???
 
 def sttpTracer: ZioTelemetryOpenTelemetryTracer = new ZioTelemetryOpenTelemetryTracer {
     def before[T](request: Request[T, Nothing]): RIO[Tracing, Unit] =
@@ -38,7 +45,7 @@ def sttpTracer: ZioTelemetryOpenTelemetryTracer = new ZioTelemetryOpenTelemetryT
       ZIO.unit
 }
 
-ZioTelemetryOpenTelemetryBackend(zioBackend, sttpTracer)
+ZioTelemetryOpenTelemetryBackend(zioBackend, tracing, sttpTracer)
 ```
 
 
