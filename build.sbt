@@ -87,9 +87,8 @@ val testServerSettings = Seq(
 )
 
 val circeVersion: Option[(Long, Long)] => String = {
-  case Some((3, _))  => "0.14.1"
   case Some((2, 11)) => "0.11.2"
-  case _             => "0.13.0"
+  case _             => "0.14.1"
 }
 val zioJsonVersion: Option[(Long, Long)] => String = _ => "0.1.5"
 val playJsonVersion: Option[(Long, Long)] => String = {
