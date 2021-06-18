@@ -15,7 +15,7 @@ jobs:
       matrix:
         target-platform: [ "JVM", "JS", "Native" ]
     env:
-      JAVA_OPTS: -Xmx6G
+      JAVA_OPTS: -Xmx3G
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -56,7 +56,7 @@ jobs:
     runs-on: ubuntu-20.04
     env:
       STTP_NATIVE: 1
-      JAVA_OPTS: -Xmx6G
+      JAVA_OPTS: -Xmx3G
     steps:
       - name: Checkout
         uses: actions/checkout@v2
