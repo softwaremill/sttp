@@ -10,11 +10,11 @@ import sttp.client3.impl.zio.{RIOMonadAsyncError, ZioTestBase}
 import sttp.client3.testing.SttpBackendStub
 import sttp.client3.{Request, Response, SttpBackend, UriContext, basicRequest}
 import sttp.model.StatusCode
-import zio.{Managed, Task}
+import zio.Task
 import zio.telemetry.opentelemetry.Tracing
+import scala.collection.JavaConverters._
 
 import scala.collection.mutable
-import scala.jdk.CollectionConverters.ListHasAsScala
 
 class ZioTelemetryOpenTelemetryBackendTest extends AnyFlatSpec with Matchers with BeforeAndAfter with ZioTestBase {
 
@@ -29,11 +29,11 @@ class ZioTelemetryOpenTelemetryBackendTest extends AnyFlatSpec with Matchers wit
   private val backend: SttpBackend[Task, Any] =
     ZioTelemetryOpenTelemetryBackend(
       SttpBackendStub(new RIOMonadAsyncError[Any]).whenRequestMatchesPartial {
-      case r if r.uri.toString.contains("echo") =>
-        recordedRequests += r
-        Response.ok("")
-      case r if r.uri.toString.contains("error") =>
-        throw new RuntimeException("something went wrong")
+        case r if r.uri.toString.contains("echo") =>
+          recordedRequests += r
+          Response.ok("")
+        case r if r.uri.toString.contains("error") =>
+          throw new RuntimeException("something went wrong")
       },
       mockTracing
     )
