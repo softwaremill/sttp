@@ -38,7 +38,7 @@ class OpenTracingBackend[F[_], P] private (delegate: SttpBackend[F, P], tracer: 
         ).withTag(Tags.SPAN_KIND, Tags.SPAN_KIND_CLIENT)
           .withTag(Tags.HTTP_METHOD, request.method.method)
           .withTag(Tags.HTTP_URL, request.uri.toString)
-          .withTag(Tags.COMPONENT, "sttp2-client")
+          .withTag(Tags.COMPONENT, "sttp3-client")
           .start()
 
         request
