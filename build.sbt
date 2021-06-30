@@ -565,7 +565,7 @@ lazy val http4sBackend = (projectMatrix in file("http4s-backend"))
     ),
     evictionErrorLevel := Level.Info
   )
-  .jvmPlatform(scalaVersions = List(scala2_12, scala2_13))
+  .jvmPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3)
   .dependsOn(cats % compileAndTest, core % compileAndTest, fs2 % compileAndTest)
 
 //-- httpclient-java11
