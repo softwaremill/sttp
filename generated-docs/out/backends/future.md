@@ -21,7 +21,7 @@ Class                                 Supported stream type                     
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % "3.3.8"
+"com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % "3.3.9"
 ```
 
 And some imports:
@@ -72,7 +72,7 @@ val backend = AsyncHttpClientFutureBackend.usingClient(asyncHttpClient)
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "okhttp-backend" % "3.3.8"
+"com.softwaremill.sttp.client3" %% "okhttp-backend" % "3.3.9"
 ```
 
 and some imports:
@@ -104,7 +104,7 @@ This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supp
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "httpclient-backend" % "3.3.8"
+"com.softwaremill.sttp.client3" %% "httpclient-backend" % "3.3.9"
 ```
 
 and some imports:
@@ -141,7 +141,7 @@ jdk.httpclient.allowRestrictedHeaders=host
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "armeria-backend-future" % "3.3.8"
+"com.softwaremill.sttp.client3" %% "armeria-backend-future" % "3.3.9"
 ```
 
 add imports:
