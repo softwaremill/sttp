@@ -13,6 +13,7 @@ import java.io.{ByteArrayInputStream, UnsupportedEncodingException}
 import java.nio.ByteBuffer
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.util.Random
 
 trait HttpTest[F[_]]
     extends AsyncFreeSpec
@@ -575,13 +576,16 @@ trait HttpTest[F[_]]
       }
 
       "connection exceptions - connection refused" in {
-        val req = basicRequest
-          .get(uri"http://localhost:7918")
-          .response(asString)
+        retry(10) {
+          val portToTry = Random.nextInt(2048) + 49152
+          val req = basicRequest
+            .get(uri"http://localhost:$portToTry")
+            .response(asString)
 
-        Future(req.send(backend)).flatMap(_.toFuture()).failed.map { e =>
-          info("Sending request failed", Some(e))
-          e shouldBe a[SttpClientException.ConnectException]
+          Future(req.send(backend)).flatMap(_.toFuture()).failed.map { e =>
+            info(s"Sending request using port $portToTry failed", Some(e))
+            e shouldBe a[SttpClientException.ConnectException]
+          }
         }
       }
 
