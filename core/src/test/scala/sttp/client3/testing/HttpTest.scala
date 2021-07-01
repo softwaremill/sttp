@@ -13,7 +13,7 @@ import java.io.{ByteArrayInputStream, UnsupportedEncodingException}
 import java.nio.ByteBuffer
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.util.Random
+import scala.util.{Failure, Random, Success, Try}
 
 trait HttpTest[F[_]]
     extends AsyncFreeSpec
@@ -643,6 +643,18 @@ trait HttpTest[F[_]]
   override protected def afterAll(): Unit = {
     backend.close().toFuture()
     super.afterAll()
+  }
+
+  private def retry[T](n: Int)(f: => Future[T]): Future[T] = {
+    Try(f) match {
+      case Failure(exception) => if (n == 0) Future.failed(exception) else retry(n - 1)(f)
+      case Success(value) =>
+        value.recoverWith {
+          case e if n > 0 =>
+            info(s"Failed with: ${e.getMessage}, retrying ($n).", Some(e))
+            retry(n - 1)(f)
+        }
+    }
   }
 }
 

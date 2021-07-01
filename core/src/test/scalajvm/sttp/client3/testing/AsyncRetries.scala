@@ -4,7 +4,6 @@ import org.scalatest.freespec.AsyncFreeSpecLike
 import org.scalatest.{Failed, FutureOutcome}
 
 import scala.concurrent.Future
-import scala.util.{Failure, Success, Try}
 
 // this needs to be added here, as it doesn't compile on native
 trait AsyncRetries extends AsyncFreeSpecLike {
@@ -16,16 +15,4 @@ trait AsyncRetries extends AsyncFreeSpecLike {
         super.withFixture(test).toFuture
       case o => Future.successful(o)
     })
-
-  def retry[T](n: Int)(f: => Future[T]): Future[T] = {
-    Try(f) match {
-      case Failure(exception) => if (n == 0) Future.failed(exception) else retry(n - 1)(f)
-      case Success(value) =>
-        value.recoverWith {
-          case e if n > 0 =>
-            info(s"Failed with: ${e.getMessage}, retrying ($n).", Some(e))
-            retry(n - 1)(f)
-        }
-    }
-  }
 }
