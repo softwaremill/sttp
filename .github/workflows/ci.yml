@@ -99,6 +99,7 @@ jobs:
           name: "v${{ env.VERSION }}"
           tag: "v${{ env.VERSION }}"
           version: "v${{ env.VERSION }}"
+          disable-autolabeler: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Cleanup
