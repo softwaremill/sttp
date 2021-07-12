@@ -1,7 +1,12 @@
 package sttp.client3
 
+import org.scalatest.Assertions.assertThrows
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+
+import java.io.IOException
+import java.net
+import java.net.SocketAddress
 
 class SttpBackendOptionsProxyTest extends AnyFlatSpec with Matchers {
 
@@ -127,5 +132,24 @@ class SttpBackendOptionsProxyTest extends AnyFlatSpec with Matchers {
     )
 
     proxySetting.ignoreProxy("localhost") should be(false)
+  }
+
+  it should "throw UnsupportedOperationException with reason" in {
+    val proxySetting = SttpBackendOptions.Proxy(
+      "fakeproxyserverhost",
+      8080,
+      SttpBackendOptions.ProxyType.Http,
+      nonProxyHosts = Nil,
+      onlyProxyHosts = Nil
+    )
+    val uri = new net.URI("foo")
+    val localAddress = new net.InetSocketAddress(8888)
+    val ioe = new IOException("bar")
+
+    val proxySelector = proxySetting.asJavaProxySelector
+    val ex = intercept[UnsupportedOperationException] {
+      proxySelector.connectFailed(uri, localAddress, ioe)
+    }
+    ex.getMessage should be("Couldn't connect to the proxy server, uri: foo, socket: 0.0.0.0/0.0.0.0:8888, ioe: bar")
   }
 }
