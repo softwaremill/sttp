@@ -31,12 +31,12 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   }.value,
   ideSkipProject := (scalaVersion.value != scala2_13) || thisProjectRef.value.project.contains(
     "JS"
-  ) || thisProjectRef.value.project.contains("Native"),
-  Test / fork := true
+  ) || thisProjectRef.value.project.contains("Native")
 )
 
 val commonJvmSettings = commonSettings ++ Seq(
-  scalacOptions ++= Seq("-target:jvm-1.8")
+  scalacOptions ++= Seq("-target:jvm-1.8"),
+  Test / fork := true // tests in js and native cannot be forked
 )
 
 val commonJsSettings = commonSettings ++ Seq(
