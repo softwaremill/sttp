@@ -1,7 +1,7 @@
 package sttp.client3.http4s
 
 import cats.effect.IO
-import org.http4s.client.blaze.BlazeClientBuilder
+import org.http4s.blaze.client.BlazeClientBuilder
 import sttp.client3.SttpBackend
 import sttp.client3.impl.cats.CatsTestBase
 import sttp.client3.testing.HttpTest

@@ -2,7 +2,6 @@ package sttp.client3.http4s
 
 import java.io.{InputStream, UnsupportedEncodingException}
 import java.nio.charset.Charset
-
 import cats.data.NonEmptyList
 import cats.effect.concurrent.MVar
 import cats.effect.{Blocker, Concurrent, ConcurrentEffect, ContextShift, Resource}
@@ -12,7 +11,8 @@ import fs2.{Chunk, Stream}
 import org.http4s.{ContentCoding, EntityBody, Request => Http4sRequest}
 import org.http4s
 import org.http4s.client.Client
-import org.http4s.client.blaze.BlazeClientBuilder
+import org.http4s.blaze.client.BlazeClientBuilder
+import org.typelevel.ci.CIString
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client3.http4s.Http4sBackend.EncodingHandler
 import sttp.client3.impl.cats.CatsMonadAsyncError
@@ -38,7 +38,8 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
       val request = Http4sRequest(
         method = methodToHttp4s(r.method),
         uri = http4s.Uri.unsafeFromString(r.uri.toString),
-        headers = http4s.Headers(r.headers.map(h => http4s.Header(h.name, h.value)).toList) ++ extraHeaders,
+        headers =
+          http4s.Headers(r.headers.map(h => http4s.Header.Raw(CIString(h.name), h.value)).toList) ++ extraHeaders,
         body = entity.body
       )
 
@@ -49,7 +50,7 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
             .run(customizeRequest(request))
             .use { response =>
               val code = StatusCode.unsafeApply(response.status.code)
-              val headers = response.headers.toList.map(h => Header(h.name.value, h.value))
+              val headers = response.headers.headers.map(h => Header(h.name.toString, h.value))
               val statusText = response.status.reason
               val responseMetadata = ResponseMetadata(code, statusText, headers)
 
@@ -139,8 +140,9 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
   }
 
   private def multipartToHttp4s(mp: Part[RequestBody[_]]): http4s.multipart.Part[F] = {
-    val contentDisposition = http4s.Header(HeaderNames.ContentDisposition, mp.contentDispositionHeaderValue)
-    val otherHeaders = mp.headers.map(h => http4s.Header(h.name, h.value))
+    val contentDisposition =
+      http4s.Header.Raw(CIString(HeaderNames.ContentDisposition), mp.contentDispositionHeaderValue)
+    val otherHeaders = mp.headers.map(h => http4s.Header.Raw(CIString(h.name), h.value))
     val allHeaders = List(contentDisposition) ++ otherHeaders
 
     val body: EntityBody[F] = mp.body match {
@@ -163,7 +165,7 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
 
   private def decompressResponseBody(hr: http4s.Response[F]): http4s.Response[F] = {
     val body = hr.headers
-      .get(http4s.headers.`Content-Encoding`)
+      .get[http4s.headers.`Content-Encoding`]
       .map(e => customEncodingHandler.orElse(EncodingHandler(standardEncodingHandler))(hr.body -> e.contentCoding))
       .getOrElse(hr.body)
     hr.copy(body = body)
