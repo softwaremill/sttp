@@ -387,7 +387,6 @@ lazy val monix = (projectMatrix in file("effects/monix"))
   )
 
 lazy val zio = (projectMatrix in file("effects/zio"))
-  .settings(commonJvmSettings)
   .settings(
     name := "zio",
     Test / publishArtifact := true,
@@ -399,7 +398,8 @@ lazy val zio = (projectMatrix in file("effects/zio"))
   )
   .dependsOn(core % compileAndTest)
   .jvmPlatform(
-    scalaVersions = scala2 ++ scala3
+    scalaVersions = scala2 ++ scala3,
+    settings = commonJvmSettings
   )
   .jsPlatform(
     scalaVersions = List(scala2_12, scala2_13) ++ scala3,
