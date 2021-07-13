@@ -576,7 +576,7 @@ trait HttpTest[F[_]]
       }
 
       "connection exceptions - connection refused" in {
-        retry(10) {
+        retry(10) { // the test sometimes fails for some of the async-http-backend implementations
           val portToTry = Random.nextInt(2048) + 49152
           val req = basicRequest
             .get(uri"http://localhost:$portToTry")
@@ -584,7 +584,7 @@ trait HttpTest[F[_]]
 
           Future(req.send(backend)).flatMap(_.toFuture()).failed.map { e =>
             info(s"Sending request using port $portToTry failed", Some(e))
-            e shouldBe a[SttpClientException.ConnectException]
+            if (e.isInstanceOf[SttpClientException.ConnectException]) succeed else fail(e)
           }
         }
       }
