@@ -9,7 +9,7 @@ val scala2_11 = "2.11.12"
 val scala2_12 = "2.12.14"
 val scala2_13 = "2.13.6"
 val scala2 = List(scala2_11, scala2_12, scala2_13)
-val scala3 = List("3.0.0")
+val scala3 = List("3.0.1")
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests")
@@ -409,7 +409,7 @@ lazy val scalaz = (projectMatrix in file("effects/scalaz"))
   .settings(
     name := "scalaz",
     Test / publishArtifact := true,
-    libraryDependencies ++= Seq("org.scalaz" %% "scalaz-concurrent" % "7.2.32")
+    libraryDependencies ++= Seq("org.scalaz" %% "scalaz-concurrent" % "7.2.33")
   )
   .dependsOn(core % compileAndTest)
   .jvmPlatform(
@@ -851,7 +851,7 @@ lazy val zioTelemetryOpenTelemetryBackend = (projectMatrix in file("metrics/zio-
     name := "zio-telemetry-opentelemetry-backend",
     libraryDependencies ++= Seq(
       "dev.zio" %% "zio-opentelemetry" % "0.8.1",
-      "org.scala-lang.modules" %% "scala-collection-compat" % "2.4.4",
+      "org.scala-lang.modules" %% "scala-collection-compat" % "2.5.0",
       "io.opentelemetry" % "opentelemetry-sdk-testing" % "1.4.0" % Test
     ),
     scalaTest
@@ -866,7 +866,7 @@ lazy val zioTelemetryOpenTracingBackend = (projectMatrix in file("metrics/zio-te
     name := "zio-telemetry-opentracing-backend",
     libraryDependencies ++= Seq(
       "dev.zio" %% "zio-opentracing" % "0.8.1",
-      "org.scala-lang.modules" %% "scala-collection-compat" % "2.4.4"
+      "org.scala-lang.modules" %% "scala-collection-compat" % "2.5.0"
     )
   )
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13))
