@@ -84,8 +84,8 @@ object SttpBackendOptions {
 
         override def connectFailed(uri: net.URI, sa: SocketAddress, ioe: IOException): Unit = {
           throw new UnsupportedOperationException(
-            s"Couldn't connect to the proxy server, uri: ${uri}, " +
-              s"socket: ${sa}, ioe: ${ioe.getMessage}"
+            s"Couldn't connect to the proxy server, uri: $uri, socket: $sa",
+            ioe
           )
         }
       }
