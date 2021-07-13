@@ -16,6 +16,7 @@ lazy val startTestServer = taskKey[Unit]("Start a http server used by tests")
 
 // slow down for CI
 parallelExecution in Global := false
+concurrentRestrictions in Global += Tags.limit(Tags.Test, 1)
 
 excludeLintKeys in Global ++= Set(ideSkipProject, reStartArgs)
 
@@ -30,7 +31,8 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   }.value,
   ideSkipProject := (scalaVersion.value != scala2_13) || thisProjectRef.value.project.contains(
     "JS"
-  ) || thisProjectRef.value.project.contains("Native")
+  ) || thisProjectRef.value.project.contains("Native"),
+  Test / fork := true
 )
 
 val commonJvmSettings = commonSettings ++ Seq(
