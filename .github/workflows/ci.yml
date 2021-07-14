@@ -41,6 +41,13 @@ jobs:
       run: sbt -v compile compileDocs
     - name: Test
       run: sbt -v test${{ matrix.target-platform }}
+    - name: Prepare release notes
+      uses: release-drafter/release-drafter@v5
+      with:
+        config-name: release-drafter.yml
+        disable-autolabeler: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Cleanup
       run: |
         rm -rf "$HOME/.ivy2/local" || true
@@ -99,7 +106,6 @@ jobs:
           name: "v${{ env.VERSION }}"
           tag: "v${{ env.VERSION }}"
           version: "v${{ env.VERSION }}"
-          disable-autolabeler: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Cleanup
