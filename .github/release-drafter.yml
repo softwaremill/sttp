@@ -1,7 +1,3 @@
-autolabeler:
-  - label: 'dependency'
-    title:
-      - '/^Update/'
 categories:
   - title: 'Dependency updates'
     labels:

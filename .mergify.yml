@@ -57,3 +57,10 @@ pull_request_rules:
     actions:
       merge:
         method: merge
+  - name: add label to scala steward PRs
+    conditions:
+      - author=scala-steward
+    actions:
+      label:
+        add:
+          - dependency
