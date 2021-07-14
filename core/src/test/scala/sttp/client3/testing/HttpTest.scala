@@ -584,6 +584,8 @@ trait HttpTest[F[_]]
 
           Future(req.send(backend)).flatMap(_.toFuture()).failed.map { e =>
             info(s"Sending request using port $portToTry failed", Some(e))
+            println("Exception when trying to connect: ")
+            e.printStackTrace()
             if (e.isInstanceOf[SttpClientException.ConnectException]) succeed else fail(e)
           }
         }
