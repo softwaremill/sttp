@@ -46,6 +46,7 @@ trait HttpTest[F[_]]
 
   protected def supportsRequestTimeout = true
   protected def supportsSttpExceptions = true
+  protected def supportsConnectionRefusedTest = true
   protected def supportsMultipart = true
   protected def supportsCustomMultipartContentType = true
   protected def supportsCustomMultipartEncoding = true
@@ -575,18 +576,21 @@ trait HttpTest[F[_]]
         }
       }
 
-      "connection exceptions - connection refused" in {
-        retry(10) { // the test sometimes fails for some of the async-http-backend implementations
-          val portToTry = Random.nextInt(2048) + 49152
+      if (supportsConnectionRefusedTest) {
+        "connection exceptions - connection refused" in {
           val req = basicRequest
-            .get(uri"http://localhost:$portToTry")
+            .get(uri"http://localhost:7918")
             .response(asString)
 
           Future(req.send(backend)).flatMap(_.toFuture()).failed.map { e =>
-            info(s"Sending request using port $portToTry failed", Some(e))
-            println("Exception when trying to connect: ")
-            e.printStackTrace()
-            if (e.isInstanceOf[SttpClientException.ConnectException]) succeed else fail(e)
+            info("Sending request failed", Some(e))
+            try e shouldBe a[SttpClientException.ConnectException]
+            catch {
+              case t: Throwable =>
+                info("Not a connect exception, printing stack trace")
+                e.printStackTrace()
+                throw t
+            }
           }
         }
       }
@@ -645,18 +649,6 @@ trait HttpTest[F[_]]
   override protected def afterAll(): Unit = {
     backend.close().toFuture()
     super.afterAll()
-  }
-
-  private def retry[T](n: Int)(f: => Future[T]): Future[T] = {
-    Try(f) match {
-      case Failure(exception) => if (n == 0) Future.failed(exception) else retry(n - 1)(f)
-      case Success(value) =>
-        value.recoverWith {
-          case e if n > 0 =>
-            info(s"Failed with: ${e.getMessage}, retrying ($n).", Some(e))
-            retry(n - 1)(f)
-        }
-    }
   }
 }
 

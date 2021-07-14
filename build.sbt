@@ -35,8 +35,7 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
 )
 
 val commonJvmSettings = commonSettings ++ Seq(
-  scalacOptions ++= Seq("-target:jvm-1.8"),
-  Test / fork := true // tests in js and native cannot be forked
+  scalacOptions ++= Seq("-target:jvm-1.8")
 )
 
 val commonJsSettings = commonSettings ++ Seq(
