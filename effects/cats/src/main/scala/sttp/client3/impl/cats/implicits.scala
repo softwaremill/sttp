@@ -1,6 +1,6 @@
 package sttp.client3.impl.cats
 
-import cats.effect.kernel.Async
+import cats.effect.kernel.{Sync, Async}
 import cats.~>
 import sttp.capabilities.Effect
 import sttp.client3.monad.{FunctionK, MapEffect}
@@ -9,12 +9,16 @@ import sttp.monad.{MonadAsyncError, MonadError}
 
 object implicits extends CatsImplicits
 
-trait CatsImplicits {
+trait CatsImplicits extends LowerLevelCatsImplicits {
   implicit final def sttpBackendToCatsMappableSttpBackend[R[_], P](
       sttpBackend: SttpBackend[R, P]
   ): MappableSttpBackend[R, P] = new MappableSttpBackend(sttpBackend)
 
   implicit final def asyncMonadError[F[_]: Async]: MonadAsyncError[F] = new CatsMonadAsyncError[F]
+}
+
+trait LowerLevelCatsImplicits {
+  implicit final def monadError[F[_]: Sync]: MonadError[F] = new CatsMonadError[F]
 }
 
 final class MappableSttpBackend[F[_], P] private[cats] (
