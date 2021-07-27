@@ -117,7 +117,7 @@ val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", 
   "org.scalatest" %%% s"scalatest-$m" % "3.2.9" % Test
 )
 
-val zioVersion = "1.0.9"
+val zioVersion = "1.0.10"
 val zioInteropRsVersion = "1.3.5"
 
 val sttpModelVersion = "1.4.9"
