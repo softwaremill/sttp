@@ -3,7 +3,7 @@
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "finagle-backend" % "3.3.11"
+"com.softwaremill.sttp.client3" %% "finagle-backend" % "3.3.12"
 ```
 
 Next you'll need to add an implicit value:
