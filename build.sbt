@@ -1,4 +1,6 @@
 import com.softwaremill.UpdateVersionInDocs
+import com.softwaremill.Publish.{updateDocs, ossPublishSettings}
+import com.softwaremill.SbtSoftwareMillCommon.commonSmlBuildSettings
 import sbt.Keys.publishArtifact
 import sbt.Reference.display
 import sbt.internal.ProjectMatrix
@@ -106,7 +108,7 @@ val catsEffect_2_version: Option[(Long, Long)] => String = {
 }
 val fs2_2_version: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.1.0"
-  case _             => "2.5.6"
+  case _             => "2.5.9"
 }
 
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.2.5"
@@ -964,7 +966,7 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     libraryDependencies ++= Seq(
       "org.json4s" %% "json4s-native" % json4sVersion,
       "io.circe" %% "circe-generic" % "0.14.1",
-      "commons-io" % "commons-io" % "2.10.0",
+      "commons-io" % "commons-io" % "2.11.0",
       "io.github.resilience4j" % "resilience4j-circuitbreaker" % resilience4jVersion,
       "io.github.resilience4j" % "resilience4j-ratelimiter" % resilience4jVersion,
       "io.jaegertracing" % "jaeger-client" % jeagerClientVersion,
