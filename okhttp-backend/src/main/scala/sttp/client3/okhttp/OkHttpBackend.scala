@@ -153,12 +153,13 @@ object OkHttpBackend {
   }
 
   private[okhttp] def updateClientIfCustomReadTimeout[T, S](r: Request[T, S], client: OkHttpClient): OkHttpClient = {
-    val readTimeout = r.options.readTimeout
-    if (readTimeout == DefaultReadTimeout) client
+    val readTimeoutMillis = if (r.options.readTimeout.isFinite) r.options.readTimeout.toMillis else 0
+    val reuseClient = readTimeoutMillis == client.readTimeoutMillis()
+    if (reuseClient) client
     else
       client
         .newBuilder()
-        .readTimeout(if (readTimeout.isFinite) readTimeout.toMillis else 0, TimeUnit.MILLISECONDS)
+        .readTimeout(readTimeoutMillis, TimeUnit.MILLISECONDS)
         .build()
   }
 
