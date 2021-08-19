@@ -112,7 +112,8 @@ object AsyncHttpClientCatsBackend {
     )
 
   /** Makes sure the backend is closed after usage.
-    * @param updateConfig A function which updates the default configuration (created basing on `options`).
+    * @param updateConfig
+    *   A function which updates the default configuration (created basing on `options`).
     */
   def resourceUsingConfigBuilder[F[_]: Async](
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,

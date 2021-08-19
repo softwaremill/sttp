@@ -172,6 +172,6 @@ object OkHttpBackend {
       // if the websocket protocol upgrade fails, OkHttp throws a ProtocolException - however the whole request has
       // been already sent, so this is not a TCP-level connect exception
       case e: java.net.ProtocolException if isWebsocket => Some(new ReadException(request, e))
-      case e                                            => SttpClientException.defaultExceptionToSttpClientException(request, e)
+      case e => SttpClientException.defaultExceptionToSttpClientException(request, e)
     }
 }

@@ -169,7 +169,7 @@ private[client3] class DigestAuthenticator private (
               case ByteArrayBody(b, _)   => b
               case ByteBufferBody(b, _)  => b.array()
               case InputStreamBody(b, _) => toByteArray(b)
-              case _: FileBody           => throw new IllegalStateException("Qop auth-int cannot be used with a file body")
+              case _: FileBody => throw new IllegalStateException("Qop auth-int cannot be used with a file body")
             }
           case _ => throw new IllegalStateException("Qop auth-int cannot be used with a non-basic body")
         }

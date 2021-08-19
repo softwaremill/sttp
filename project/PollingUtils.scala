@@ -33,12 +33,13 @@ object PollingUtils {
 
   def urlConnectionAvailable(url: URL): Boolean = {
     try {
-      url.openConnection()
+      url
+        .openConnection()
         .getInputStream
         .close()
       true
     } catch {
-      case _: ConnectException => false
+      case _: ConnectException      => false
       case _: FileNotFoundException => true // on 404
     }
   }

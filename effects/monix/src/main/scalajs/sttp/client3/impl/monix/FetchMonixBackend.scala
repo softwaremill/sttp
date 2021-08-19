@@ -18,10 +18,10 @@ import scala.scalajs.js.typedarray.{Int8Array, _}
   *
   * Streams are behind a flag on Firefox.
   *
-  * Note that no browsers support a stream request body so it is converted
-  * into an in memory array first.
+  * Note that no browsers support a stream request body so it is converted into an in memory array first.
   *
-  * @see https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream
+  * @see
+  *   https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream
   */
 class FetchMonixBackend private (fetchOptions: FetchOptions, customizeRequest: FetchRequest => FetchRequest)
     extends AbstractFetchBackend[Task, MonixStreams, MonixStreams with WebSockets](

@@ -17,25 +17,25 @@ trait SttpPlayJsonApi {
     b => StringBody(Json.stringify(Json.toJson(b)), Utf8, MediaType.ApplicationJson)
 
   /** If the response is successful (2xx), tries to deserialize the body from a string into JSON. Returns:
-    * - `Right(b)` if the parsing was successful
-    * - `Left(HttpError(String))` if the response code was other than 2xx (deserialization is not attempted)
-    * - `Left(DeserializationException)` if there's an error during deserialization
+    *   - `Right(b)` if the parsing was successful
+    *   - `Left(HttpError(String))` if the response code was other than 2xx (deserialization is not attempted)
+    *   - `Left(DeserializationException)` if there's an error during deserialization
     */
   def asJson[B: Reads: IsOption]: ResponseAs[Either[ResponseException[String, JsError], B], Any] =
     asString.mapWithMetadata(ResponseAs.deserializeRightWithError(deserializeJson[B])).showAsJson
 
   /** Tries to deserialize the body from a string into JSON, regardless of the response code. Returns:
-    * - `Right(b)` if the parsing was successful
-    * - `Left(DeserializationException)` if there's an error during deserialization
+    *   - `Right(b)` if the parsing was successful
+    *   - `Left(DeserializationException)` if there's an error during deserialization
     */
   def asJsonAlways[B: Reads: IsOption]: ResponseAs[Either[DeserializationException[JsError], B], Any] =
     asStringAlways.map(ResponseAs.deserializeWithError(deserializeJson[B])).showAsJsonAlways
 
-  /** Tries to deserialize the body from a string into JSON, using different deserializers depending on the
-    * status code. Returns:
-    * - `Right(B)` if the response was 2xx and parsing was successful
-    * - `Left(HttpError(E))` if the response was other than 2xx and parsing was successful
-    * - `Left(DeserializationException)` if there's an error during deserialization
+  /** Tries to deserialize the body from a string into JSON, using different deserializers depending on the status code.
+    * Returns:
+    *   - `Right(B)` if the response was 2xx and parsing was successful
+    *   - `Left(HttpError(E))` if the response was other than 2xx and parsing was successful
+    *   - `Left(DeserializationException)` if there's an error during deserialization
     */
   def asJsonEither[E: Reads: IsOption, B: Reads: IsOption]
       : ResponseAs[Either[ResponseException[E, JsError], B], Any] = {

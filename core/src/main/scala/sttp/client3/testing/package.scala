@@ -5,10 +5,8 @@ import sttp.client3.internal.toByteArray
 package object testing {
   implicit class RichTestingRequest[T](r: Request[T, _]) {
 
-    /** Force the request body into a string.
-      * If the body is a file, the file contents will be returned.
-      * If the body is an input stream, the stream will be consumed.
-      * If the body is a stream / multipart, an exception will be thrown.
+    /** Force the request body into a string. If the body is a file, the file contents will be returned. If the body is
+      * an input stream, the stream will be consumed. If the body is a stream / multipart, an exception will be thrown.
       */
     def forceBodyAsString: String =
       r.body match {
@@ -24,10 +22,8 @@ package object testing {
           throw new IllegalArgumentException("The body of this request is multipart, cannot convert to String")
       }
 
-    /** Force the request body into a string.
-      * If the body is a file, the file contents will be returned.
-      * If the body is an input stream, the stream will be consumed.
-      * If the body is a stream / multipart, an exception will be thrown.
+    /** Force the request body into a string. If the body is a file, the file contents will be returned. If the body is
+      * an input stream, the stream will be consumed. If the body is a stream / multipart, an exception will be thrown.
       */
     def forceBodyAsByteArray: Array[Byte] =
       r.body match {

@@ -172,8 +172,8 @@ object HttpClientZioBackend {
     )
   }
 
-  /** Create a stub backend for testing, which uses the [[Task]] response wrapper, and supports
-    * `Stream[Throwable, ByteBuffer]` streaming.
+  /** Create a stub backend for testing, which uses the [[Task]] response wrapper, and supports `Stream[Throwable,
+    * ByteBuffer]` streaming.
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */

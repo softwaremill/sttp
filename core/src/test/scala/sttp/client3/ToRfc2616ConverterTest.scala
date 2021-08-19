@@ -29,7 +29,8 @@ class ToRfc2616ConverterTest extends AnyFlatSpec with Matchers {
     basicRequest
       .header("User-Agent", "myapp")
       .header("Content-Type", "application/json")
-      .get(localhost).toRfc2616Format should include(
+      .get(localhost)
+      .toRfc2616Format should include(
       """User-Agent: myapp
         |Content-Type: application/json""".stripMargin
     )
@@ -68,7 +69,8 @@ class ToRfc2616ConverterTest extends AnyFlatSpec with Matchers {
       .header("Authorization", "token")
       .contentType("application/xml")
       .body(xmlBody)
-      .post(localhost).toRfc2616Format should include(
+      .post(localhost)
+      .toRfc2616Format should include(
       """Authorization: token
         |Content-Type: application/xml
         |Content-Length: 91
@@ -86,7 +88,8 @@ class ToRfc2616ConverterTest extends AnyFlatSpec with Matchers {
       .header("Authorization", "token")
       .contentType("application/json")
       .body(jsonBody)
-      .post(localhost).toRfc2616Format should include(
+      .post(localhost)
+      .toRfc2616Format should include(
       """Authorization: token
         |Content-Type: application/json
         |Content-Length: 69
@@ -102,15 +105,18 @@ class ToRfc2616ConverterTest extends AnyFlatSpec with Matchers {
     basicRequest
       .header("Content-Type", "multipart/form-data;boundary=<PLACEHOLDER>")
       .multipartBody(multipart("k1", "v1"), multipart("k2", "v2"))
-      .post(localhost).toRfc2616Format should include(
+      .post(localhost)
+      .toRfc2616Format should include(
       """|Content-Disposition: form-data; name="k1"
         |
         |v1""".stripMargin
-    ).and(include(
-      """|Content-Disposition: form-data; name="k2"
+    ).and(
+      include(
+        """|Content-Disposition: form-data; name="k2"
          |
          |v2""".stripMargin
-    )).and(endWith("--"))
+      )
+    ).and(endWith("--"))
   }
 
 }

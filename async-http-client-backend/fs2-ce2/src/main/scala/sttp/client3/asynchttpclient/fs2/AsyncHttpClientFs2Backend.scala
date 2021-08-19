@@ -156,7 +156,8 @@ object AsyncHttpClientFs2Backend {
   ): Resource[F, SttpBackend[F, Fs2Streams[F] with WebSockets]] =
     Resource.make(usingConfig(blocker, cfg, customizeRequest, webSocketBufferCapacity))(_.close())
 
-  /** @param updateConfig A function which updates the default configuration (created basing on `options`).
+  /** @param updateConfig
+    *   A function which updates the default configuration (created basing on `options`).
     */
   def usingConfigBuilder[F[_]: ConcurrentEffect: ContextShift](
       blocker: Blocker,
@@ -176,7 +177,8 @@ object AsyncHttpClientFs2Backend {
     )
 
   /** Makes sure the backend is closed after usage.
-    * @param updateConfig A function which updates the default configuration (created basing on `options`).
+    * @param updateConfig
+    *   A function which updates the default configuration (created basing on `options`).
     */
   def resourceUsingConfigBuilder[F[_]: ConcurrentEffect: ContextShift](
       blocker: Blocker,
