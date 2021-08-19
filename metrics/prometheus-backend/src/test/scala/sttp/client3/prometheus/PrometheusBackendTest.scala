@@ -8,6 +8,7 @@ import io.prometheus.client.CollectorRegistry
 import org.scalatest.concurrent.{Eventually, IntegrationPatience}
 import org.scalatest.{BeforeAndAfter, OptionValues}
 import sttp.client3.testing.SttpBackendStub
+import sttp.model.{Header, StatusCode}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -244,6 +245,20 @@ class PrometheusBackendTest
     // then
     getMetricValue(PrometheusBackend.DefaultSuccessCounterName + "_total").value shouldBe 10
     getMetricValue(PrometheusBackend.DefaultErrorCounterName + "_total").value shouldBe 5
+  }
+
+  it should "use default summary name" in {
+    // given
+    val response = Response("Ok", StatusCode.Ok, "Ok", Seq(Header.contentLength(10)))
+    val backendStub = SttpBackendStub.synchronous.whenAnyRequest.thenRespond(response)
+    val backend = PrometheusBackend[Identity, Any](backendStub)
+
+    // when
+    (0 until 5).foreach(_ => backend.send(basicRequest.get(uri"http://127.0.0.1/foo")))
+
+    // then
+    getMetricValue(PrometheusBackend.DefaultResponseSizeName + "_count").value shouldBe 5
+    getMetricValue(PrometheusBackend.DefaultResponseSizeName + "_sum").value shouldBe 50
   }
 
   private[this] def getMetricValue(name: String): Option[lang.Double] =
