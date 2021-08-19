@@ -16,28 +16,23 @@ import scala.concurrent.duration.Duration
   *
   * The request can be sent using a [[SttpBackend]], which provides a superset of the required capabilities.
   *
-  * @param response Description of how the response body should be handled.
-  *                 Needs to be specified upfront so that the response
-  *                 is always consumed and hence there are no requirements on
-  *                 client code to consume it. An exception to this are
-  *                 unsafe streaming and websocket responses, which need to
-  *                 be consumed/closed by the client.
-  * @param tags Request-specific tags which can be used by backends for
-  *             logging, metrics, etc. Not used by default.
-  * @tparam U Specifies if the method & uri are specified. By default can be
-  *           either:
-  *           * [[Empty]], which is a type constructor which always resolves to
-  *           [[None]]. This type of request is aliased to [[PartialRequest]]:
-  *           there's no method and uri specified, and the request cannot be
-  *           sent.
-  *           * [[Identity]], which is an identity type constructor. This type of
-  *           request is aliased to [[Request]]: the method and uri are
-  *           specified, and the request can be sent.
-  * @tparam T The target type, to which the response body should be read.
-  * @tparam R The backend capabilities required by the request or response description. This might be `Any` (no
-  *           requirements), [[Effect]] (the backend must support the given effect type), [[Streams]] (the ability to
-  *           send and receive streaming bodies) or [[sttp.capabilities.WebSockets]] (the ability to handle websocket
-  *           requests).
+  * @param response
+  *   Description of how the response body should be handled. Needs to be specified upfront so that the response is
+  *   always consumed and hence there are no requirements on client code to consume it. An exception to this are unsafe
+  *   streaming and websocket responses, which need to be consumed/closed by the client.
+  * @param tags
+  *   Request-specific tags which can be used by backends for logging, metrics, etc. Not used by default.
+  * @tparam U
+  *   Specifies if the method & uri are specified. By default can be either: * [[Empty]], which is a type constructor
+  *   which always resolves to [[None]]. This type of request is aliased to [[PartialRequest]]: there's no method and
+  *   uri specified, and the request cannot be sent. * [[Identity]], which is an identity type constructor. This type of
+  *   request is aliased to [[Request]]: the method and uri are specified, and the request can be sent.
+  * @tparam T
+  *   The target type, to which the response body should be read.
+  * @tparam R
+  *   The backend capabilities required by the request or response description. This might be `Any` (no requirements),
+  *   [[Effect]] (the backend must support the given effect type), [[Streams]] (the ability to send and receive
+  *   streaming bodies) or [[sttp.capabilities.WebSockets]] (the ability to handle websocket requests).
   */
 case class RequestT[U[_], T, -R](
     method: U[Method],
@@ -76,7 +71,8 @@ case class RequestT[U[_], T, -R](
     header(HeaderNames.ContentLength, l.toString, replaceExisting = true)
 
   /** Adds the given header to the end of the headers sequence.
-    * @param replaceExisting If there's already a header with the same name, should it be dropped?
+    * @param replaceExisting
+    *   If there's already a header with the same name, should it be dropped?
     */
   def header(h: Header, replaceExisting: Boolean = false): RequestT[U, T, R] = {
     val current = if (replaceExisting) headers.filterNot(_.is(h.name)) else headers
@@ -84,7 +80,8 @@ case class RequestT[U[_], T, -R](
   }
 
   /** Adds the given header to the end of the headers sequence.
-    * @param replaceExisting If there's already a header with the same name, should it be dropped?
+    * @param replaceExisting
+    *   If there's already a header with the same name, should it be dropped?
     */
   def header(k: String, v: String, replaceExisting: Boolean): RequestT[U, T, R] =
     header(Header(k, v), replaceExisting)
@@ -120,91 +117,78 @@ case class RequestT[U[_], T, -R](
 
   /** Uses the `utf-8` encoding.
     *
-    * If content type is not yet specified, will be set to `text/plain`
-    * with `utf-8` encoding.
+    * If content type is not yet specified, will be set to `text/plain` with `utf-8` encoding.
     *
-    * If content length is not yet specified, will be set to the number of
-    * bytes in the string using the `utf-8` encoding.
+    * If content length is not yet specified, will be set to the number of bytes in the string using the `utf-8`
+    * encoding.
     */
   def body(b: String): RequestT[U, T, R] = body(b, Utf8)
 
-  /** If content type is not yet specified, will be set to `text/plain`
-    * with the given encoding.
+  /** If content type is not yet specified, will be set to `text/plain` with the given encoding.
     *
-    * If content length is not yet specified, will be set to the number of
-    * bytes in the string using the given encoding.
+    * If content length is not yet specified, will be set to the number of bytes in the string using the given encoding.
     */
   def body(b: String, encoding: String): RequestT[U, T, R] =
     withBody(StringBody(b, encoding))
       .setContentLengthIfMissing(b.getBytes(encoding).length.toLong)
 
-  /** If content type is not yet specified, will be set to
-    * `application/octet-stream`.
+  /** If content type is not yet specified, will be set to `application/octet-stream`.
     *
-    * If content length is not yet specified, will be set to the length
-    * of the given array.
+    * If content length is not yet specified, will be set to the length of the given array.
     */
   def body(b: Array[Byte]): RequestT[U, T, R] =
     withBody(ByteArrayBody(b))
       .setContentLengthIfMissing(b.length.toLong)
 
-  /** If content type is not yet specified, will be set to
-    * `application/octet-stream`.
+  /** If content type is not yet specified, will be set to `application/octet-stream`.
     */
   def body(b: ByteBuffer): RequestT[U, T, R] =
     withBody(ByteBufferBody(b))
 
-  /** If content type is not yet specified, will be set to
-    * `application/octet-stream`.
+  /** If content type is not yet specified, will be set to `application/octet-stream`.
     */
   def body(b: InputStream): RequestT[U, T, R] =
     withBody(InputStreamBody(b))
 
-  /** If content type is not yet specified, will be set to
-    * `application/octet-stream`.
+  /** If content type is not yet specified, will be set to `application/octet-stream`.
     *
-    * If content length is not yet specified, will be set to the length
-    * of the given file.
+    * If content length is not yet specified, will be set to the length of the given file.
     */
   private[client3] def body(f: SttpFile): RequestT[U, T, R] =
     withBody(FileBody(f)).setContentLengthIfMissing(f.size)
 
-  /** Encodes the given parameters as form data using `utf-8`.
-    * If content type is not yet specified, will be set to
+  /** Encodes the given parameters as form data using `utf-8`. If content type is not yet specified, will be set to
     * `application/x-www-form-urlencoded`.
     *
-    * If content length is not yet specified, will be set to the length
-    * of the number of bytes in the url-encoded parameter string.
+    * If content length is not yet specified, will be set to the length of the number of bytes in the url-encoded
+    * parameter string.
     */
   def body(fs: Map[String, String]): RequestT[U, T, R] =
     formDataBody(fs.toList, Utf8)
 
-  /** Encodes the given parameters as form data.
-    * If content type is not yet specified, will be set to
+  /** Encodes the given parameters as form data. If content type is not yet specified, will be set to
     * `application/x-www-form-urlencoded`.
     *
-    * If content length is not yet specified, will be set to the length
-    * of the number of bytes in the url-encoded parameter string.
+    * If content length is not yet specified, will be set to the length of the number of bytes in the url-encoded
+    * parameter string.
     */
   def body(fs: Map[String, String], encoding: String): RequestT[U, T, R] =
     formDataBody(fs.toList, encoding)
 
-  /** Encodes the given parameters as form data using `utf-8`.
-    * If content type is not yet specified, will be set to
+  /** Encodes the given parameters as form data using `utf-8`. If content type is not yet specified, will be set to
     * `application/x-www-form-urlencoded`.
     *
-    * If content length is not yet specified, will be set to the length
-    * of the number of bytes in the url-encoded parameter string.
+    * If content length is not yet specified, will be set to the length of the number of bytes in the url-encoded
+    * parameter string.
     */
   def body(fs: (String, String)*): RequestT[U, T, R] =
     formDataBody(fs.toList, Utf8)
 
-  /** Encodes the given parameters as form data.
-    * If content type is not yet specified, will be set to
+  /** Encodes the given parameters as form data. If content type is not yet specified, will be set to
     * `application/x-www-form-urlencoded`.
     *
-    * If content length is not yet specified, will be set to the length
-    * of the number of bytes in the url-encoded parameter string.
+    * If content length is not yet specified, will be set to the length of the number of bytes in the url-encoded
+    * parameter string.
     */
   def body(fs: Seq[(String, String)], encoding: String): RequestT[U, T, R] =
     formDataBody(fs, encoding)
@@ -218,15 +202,14 @@ case class RequestT[U[_], T, -R](
   def streamBody[S](s: Streams[S])(b: s.BinaryStream): RequestT[U, T, R with S] =
     withBody(StreamBody(s)(b))
 
-  /** When the request is sent, if reading the response times out (there's no activity for the given period of time),
-    * a failed effect will be returned, or an exception will be thrown
+  /** When the request is sent, if reading the response times out (there's no activity for the given period of time), a
+    * failed effect will be returned, or an exception will be thrown
     */
   def readTimeout(t: Duration): RequestT[U, T, R] =
     this.copy(options = options.copy(readTimeout = t))
 
-  /** Specifies the target type to which the response body should be read.
-    * Note that this replaces any previous specifications, which also includes
-    * any previous `mapResponse` invocations.
+  /** Specifies the target type to which the response body should be read. Note that this replaces any previous
+    * specifications, which also includes any previous `mapResponse` invocations.
     */
   def response[T2, R2](ra: ResponseAs[T2, R2]): RequestT[U, T2, R with R2] =
     this.copy(response = ra)
@@ -250,11 +233,11 @@ case class RequestT[U[_], T, -R](
 
   def tag(k: String): Option[Any] = tags.get(k)
 
-  /** When a POST or PUT request is redirected, should the redirect be a POST/PUT as well (with the original body),
-    * or should the request be converted to a GET without a body.
+  /** When a POST or PUT request is redirected, should the redirect be a POST/PUT as well (with the original body), or
+    * should the request be converted to a GET without a body.
     *
-    * Note that this only affects 301 and 302 redirects.
-    * 303 redirects are always converted, while 307 and 308 redirects always keep the same method.
+    * Note that this only affects 301 and 302 redirects. 303 redirects are always converted, while 307 and 308 redirects
+    * always keep the same method.
     *
     * See https://developer.mozilla.org/en-US/docs/Web/HTTP/Redirections for details.
     */
@@ -266,15 +249,16 @@ case class RequestT[U[_], T, -R](
     *
     * The required capabilities must be a subset of the capabilities provided by the backend.
     *
-    * @return For synchronous backends (when the effect type is [[Identity]]), [[Response]] is returned directly
-    *         and exceptions are thrown.
-    *         For asynchronous backends (when the effect type is e.g. [[scala.concurrent.Future]]), an effect containing
-    *         the [[Response]] is returned. Exceptions are represented as failed effects (e.g. failed futures).
+    * @return
+    *   For synchronous backends (when the effect type is [[Identity]]), [[Response]] is returned directly and
+    *   exceptions are thrown. For asynchronous backends (when the effect type is e.g. [[scala.concurrent.Future]]), an
+    *   effect containing the [[Response]] is returned. Exceptions are represented as failed effects (e.g. failed
+    *   futures).
     *
-    *         The response body is deserialized as specified by this request (see [[RequestT.response]]).
+    * The response body is deserialized as specified by this request (see [[RequestT.response]]).
     *
-    *         Known exceptions are converted by backends to one of [[SttpClientException]]. Other exceptions are thrown
-    *         unchanged.
+    * Known exceptions are converted by backends to one of [[SttpClientException]]. Other exceptions are thrown
+    * unchanged.
     */
   @deprecated(message = "use request.send(backend), providing the backend explicitly", since = "3.0.0")
   def send[F[_], P]()(implicit
@@ -291,15 +275,16 @@ case class RequestT[U[_], T, -R](
     *
     * The required capabilities must be a subset of the capabilities provided by the backend.
     *
-    * @return For synchronous backends (when the effect type is [[Identity]]), [[Response]] is returned directly
-    *         and exceptions are thrown.
-    *         For asynchronous backends (when the effect type is e.g. [[scala.concurrent.Future]]), an effect containing
-    *         the [[Response]] is returned. Exceptions are represented as failed effects (e.g. failed futures).
+    * @return
+    *   For synchronous backends (when the effect type is [[Identity]]), [[Response]] is returned directly and
+    *   exceptions are thrown. For asynchronous backends (when the effect type is e.g. [[scala.concurrent.Future]]), an
+    *   effect containing the [[Response]] is returned. Exceptions are represented as failed effects (e.g. failed
+    *   futures).
     *
-    *         The response body is deserialized as specified by this request (see [[RequestT.response]]).
+    * The response body is deserialized as specified by this request (see [[RequestT.response]]).
     *
-    *         Known exceptions are converted by backends to one of [[SttpClientException]]. Other exceptions are thrown
-    *         unchanged.
+    * Known exceptions are converted by backends to one of [[SttpClientException]]. Other exceptions are thrown
+    * unchanged.
     */
   def send[F[_], P](backend: SttpBackend[F, P])(implicit
       isIdInRequest: IsIdInRequest[U],

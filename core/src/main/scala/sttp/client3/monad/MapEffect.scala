@@ -26,10 +26,14 @@ object MapEffect {
 
   /** Change the effect type that's used by the response specification of this request, if the response specification
     * requires the `Effect[F]` capability.
-    * @param fk A transformation between effects `F` and `G`
-    * @tparam F The source effect type.
-    * @tparam G The target effect type.
-    * @tparam R0 The requirements of this request, without the `Effect[F]` capability.
+    * @param fk
+    *   A transformation between effects `F` and `G`
+    * @tparam F
+    *   The source effect type.
+    * @tparam G
+    *   The target effect type.
+    * @tparam R0
+    *   The requirements of this request, without the `Effect[F]` capability.
     */
   def apply[F[_], G[_], U[_], T, R0](
       r: RequestT[U, T, R0 with Effect[F]],

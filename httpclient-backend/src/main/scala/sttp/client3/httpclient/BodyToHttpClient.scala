@@ -60,8 +60,8 @@ private[httpclient] trait BodyToHttpClient[F[_], S] {
       val allHeaders = Header(HeaderNames.ContentDisposition, p.contentDispositionHeaderValue) +: p.headers
       val partHeaders = allHeaders.map(h => h.name -> h.value).toMap.asJava
       p.body match {
-        case NoBody                                          => // ignore
-        case FileBody(f, _)                                  => multipartBuilder.addPart(p.name, f.toFile.toPath, partHeaders)
+        case NoBody         => // ignore
+        case FileBody(f, _) => multipartBuilder.addPart(p.name, f.toFile.toPath, partHeaders)
         case StringBody(b, e, _) if e.equalsIgnoreCase(Utf8) => multipartBuilder.addPart(p.name, b, partHeaders)
         case StringBody(b, e, _) =>
           multipartBuilder.addPart(p.name, supplier(new ByteArrayInputStream(b.getBytes(e))), partHeaders)

@@ -239,7 +239,7 @@ class Http4sBackend[F[_]: Async](
       case e: org.http4s.client.ConnectionFailure => Some(new SttpClientException.ConnectException(request, e))
       case e: org.http4s.InvalidBodyException     => Some(new SttpClientException.ReadException(request, e))
       case e: org.http4s.InvalidResponseException => Some(new SttpClientException.ReadException(request, e))
-      case e: Exception                           => SttpClientException.defaultExceptionToSttpClientException(request, e)
+      case e: Exception => SttpClientException.defaultExceptionToSttpClientException(request, e)
     }
 
   override implicit val responseMonad: MonadError[F] = new CatsMonadAsyncError
@@ -285,8 +285,7 @@ object Http4sBackend {
       customEncodingHandler
     )
 
-  /** Create a stub backend for testing, which uses the `F` response wrapper, and supports `Stream[F, Byte]`
-    * streaming.
+  /** Create a stub backend for testing, which uses the `F` response wrapper, and supports `Stream[F, Byte]` streaming.
     *
     * See [[sttp.client3.testing.SttpBackendStub]] for details on how to configure stub responses.
     */

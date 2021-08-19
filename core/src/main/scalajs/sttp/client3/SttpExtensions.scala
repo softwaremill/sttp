@@ -13,8 +13,7 @@ trait SttpExtensions {
     ResponseAsFile(SttpFile.fromDomFile(file)).map(_.toDomFile)
   }
 
-  /** Content type will be set to `application/octet-stream`, can be overridden
-    * later using the `contentType` method.
+  /** Content type will be set to `application/octet-stream`, can be overridden later using the `contentType` method.
     *
     * File name will be set to the name of the file.
     */

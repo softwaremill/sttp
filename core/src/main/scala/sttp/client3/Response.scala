@@ -4,9 +4,9 @@ import sttp.model.{Header, HeaderNames, Headers, Method, RequestMetadata, Respon
 
 import scala.collection.immutable.Seq
 
-/** @param history If redirects are followed, and there were redirects,
-  *                contains responses for the intermediate requests.
-  *                The first response (oldest) comes first.
+/** @param history
+  *   If redirects are followed, and there were redirects, contains responses for the intermediate requests. The first
+  *   response (oldest) comes first.
   */
 case class Response[T](
     body: T,

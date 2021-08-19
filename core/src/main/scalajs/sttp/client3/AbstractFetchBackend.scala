@@ -52,7 +52,8 @@ final case class FetchOptions(
 
 /** A backend that uses the `fetch` JavaScript api.
   *
-  * @see https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API
+  * @see
+  *   https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API
   */
 abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
     options: FetchOptions,
@@ -189,8 +190,8 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
           val value = part.body match {
             case NoBody                 => Array[Byte]().toTypedArray.asInstanceOf[BodyInit]
             case body: BasicRequestBody => writeBasicBody(body)
-            case StreamBody(_)          => throw new IllegalArgumentException("Streaming multipart bodies are not supported")
-            case MultipartBody(_)       => throwNestedMultipartNotAllowed
+            case StreamBody(_)    => throw new IllegalArgumentException("Streaming multipart bodies are not supported")
+            case MultipartBody(_) => throwNestedMultipartNotAllowed
           }
           // the only way to set the content type is to use a blob
           val blob =

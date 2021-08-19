@@ -14,8 +14,8 @@ case class SttpBackendOptions(
     proxy: Option[Proxy]
 ) {
 
-  /** When the request is sent, if the connection can't be established during the given period of time,
-    * a failed effect will be returned, or an exception will be thrown
+  /** When the request is sent, if the connection can't be established during the given period of time, a failed effect
+    * will be returned, or an exception will be thrown
     */
   def connectionTimeout(ct: FiniteDuration): SttpBackendOptions =
     this.copy(connectionTimeout = ct)

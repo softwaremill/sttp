@@ -20,13 +20,13 @@ import scala.util.{Failure, Success, Try}
   * The stub can be configured to respond with a given response if the request matches a predicate (see the
   * [[whenRequestMatches()]] method).
   *
-  * Note however, that this is not type-safe with respect to the type of the response body - the stub doesn't have a
-  * way to check if the type of the body in the configured response is the same as the one specified by the
-  * request. Some conversions will be attempted (e.g. from a `String` to a custom mapped type, as specified in the
-  * request, see the documentation for more details).
+  * Note however, that this is not type-safe with respect to the type of the response body - the stub doesn't have a way
+  * to check if the type of the body in the configured response is the same as the one specified by the request. Some
+  * conversions will be attempted (e.g. from a `String` to a custom mapped type, as specified in the request, see the
+  * documentation for more details).
   *
-  * For web socket requests, the stub can be configured to returned both custom [[WebSocket]] implementations,
-  * as well as [[WebSocketStub]] instances.
+  * For web socket requests, the stub can be configured to returned both custom [[WebSocket]] implementations, as well
+  * as [[WebSocketStub]] instances.
   *
   * For requests which return the response as a stream, if the stub should return a raw stream value (which should then
   * be passed to the stream-consuming function, or mapped to another value), it should be wrapped with [[RawStream]].
@@ -40,27 +40,22 @@ class SttpBackendStub[F[_], +P](
     fallback: Option[SttpBackend[F, P]]
 ) extends SttpBackend[F, P] {
 
-  /** Specify how the stub backend should respond to requests matching the
-    * given predicate.
+  /** Specify how the stub backend should respond to requests matching the given predicate.
     *
-    * Note that the stubs are immutable, and each new
-    * specification that is added yields a new stub instance.
+    * Note that the stubs are immutable, and each new specification that is added yields a new stub instance.
     */
   def whenRequestMatches(p: Request[_, _] => Boolean): WhenRequest =
     new WhenRequest(p)
 
   /** Specify how the stub backend should respond to any request (catch-all).
     *
-    * Note that the stubs are immutable, and each new
-    * specification that is added yields a new stub instance.
+    * Note that the stubs are immutable, and each new specification that is added yields a new stub instance.
     */
   def whenAnyRequest: WhenRequest = whenRequestMatches(_ => true)
 
-  /** Specify how the stub backend should respond to requests using the
-    * given partial function.
+  /** Specify how the stub backend should respond to requests using the given partial function.
     *
-    * Note that the stubs are immutable, and each new
-    * specification that is added yields a new stub instance.
+    * Note that the stubs are immutable, and each new specification that is added yields a new stub instance.
     */
   def whenRequestMatchesPartial(
       partial: PartialFunction[Request[_, _], Response[_]]
@@ -143,8 +138,8 @@ object SttpBackendStub {
       None
     )
 
-  /** Create a stub of an asynchronous backend (which uses the Scala's built-in [[Future]] as the effect type),
-    * without streaming.
+  /** Create a stub of an asynchronous backend (which uses the Scala's built-in [[Future]] as the effect type), without
+    * streaming.
     */
   def asynchronousFuture: SttpBackendStub[Future, WebSockets] = {
     import scala.concurrent.ExecutionContext.Implicits.global
@@ -155,8 +150,8 @@ object SttpBackendStub {
     )
   }
 
-  /** Create a stub backend using the given response monad (which determines the effect type for responses),
-    * and any capabilities (such as streaming or web socket support).
+  /** Create a stub backend using the given response monad (which determines the effect type for responses), and any
+    * capabilities (such as streaming or web socket support).
     */
   def apply[F[_], P](responseMonad: MonadError[F]): SttpBackendStub[F, P] =
     new SttpBackendStub[F, P](

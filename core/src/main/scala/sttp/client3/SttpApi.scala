@@ -15,8 +15,8 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
 
   /** An empty request with no headers.
     *
-    * Reads the response body as an `Either[String, String]`, where `Left` is used if the status code is non-2xx,
-    * and `Right` otherwise.
+    * Reads the response body as an `Either[String, String]`, where `Left` is used if the status code is non-2xx, and
+    * `Right` otherwise.
     */
   val emptyRequest: RequestT[Empty, Either[String, String], Any] =
     RequestT[Empty, Either[String, String], Any](
@@ -37,8 +37,8 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
   /** A starting request, with the following modification comparing to `emptyRequest`: `Accept-Encoding` is set to
     * `gzip, deflate` (compression/decompression is handled automatically by the library).
     *
-    * Reads the response body as an `Either[String, String]`, where `Left` is used if the status code is non-2xx,
-    * and `Right` otherwise.
+    * Reads the response body as an `Either[String, String]`, where `Left` is used if the status code is non-2xx, and
+    * `Right` otherwise.
     */
   val basicRequest: RequestT[Empty, Either[String, String], Any] =
     emptyRequest.acceptEncoding("gzip, deflate")
@@ -158,8 +158,8 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
   def fromMetadata[T, R](default: ResponseAs[T, R], conditions: ConditionalResponseAs[T, R]*): ResponseAs[T, R] =
     ResponseAsFromMetadata(conditions.toList, default)
 
-  /** Uses the `onSuccess` response specification for successful responses (2xx), and the `onError`
-    * specification otherwise.
+  /** Uses the `onSuccess` response specification for successful responses (2xx), and the `onError` specification
+    * otherwise.
     */
   def asEither[A, B, R](onError: ResponseAs[A, R], onSuccess: ResponseAs[B, R]): ResponseAs[Either[A, B], R] =
     fromMetadata(onError.map(Left(_)), ConditionalResponseAs(_.isSuccess, onSuccess.map(Right(_))))
@@ -185,47 +185,43 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
       .showAs(s"(${l.show}, ${r.show})")
 
   /** Use `l` to read the response body. If the raw body value which is used by `l` is replayable (a file or byte
-    * array), also use `r` to read the response body. Otherwise ignore `r` (if the raw body is a stream or
-    * a web socket).
+    * array), also use `r` to read the response body. Otherwise ignore `r` (if the raw body is a stream or a web
+    * socket).
     */
   def asBothOption[A, B, R](l: ResponseAs[A, R], r: ResponseAs[B, Any]): ResponseAs[(A, Option[B]), R] =
     ResponseAsBoth(l, r)
 
   // multipart factory methods
 
-  /** Content type will be set to `text/plain` with `utf-8` encoding, can be
-    * overridden later using the `contentType` method.
+  /** Content type will be set to `text/plain` with `utf-8` encoding, can be overridden later using the `contentType`
+    * method.
     */
   def multipart(name: String, data: String): Part[BasicRequestBody] =
     Part(name, StringBody(data, Utf8), contentType = Some(MediaType.TextPlainUtf8))
 
-  /** Content type will be set to `text/plain` with given encoding, can be
-    * overridden later using the `contentType` method.
+  /** Content type will be set to `text/plain` with given encoding, can be overridden later using the `contentType`
+    * method.
     */
   def multipart(name: String, data: String, encoding: String): Part[BasicRequestBody] = {
     Part(name, StringBody(data, encoding), contentType = Some(MediaType.TextPlain.charset(encoding)))
   }
 
-  /** Content type will be set to `application/octet-stream`, can be overridden
-    * later using the `contentType` method.
+  /** Content type will be set to `application/octet-stream`, can be overridden later using the `contentType` method.
     */
   def multipart(name: String, data: Array[Byte]): Part[BasicRequestBody] =
     Part(name, ByteArrayBody(data), contentType = Some(MediaType.ApplicationOctetStream))
 
-  /** Content type will be set to `application/octet-stream`, can be overridden
-    * later using the `contentType` method.
+  /** Content type will be set to `application/octet-stream`, can be overridden later using the `contentType` method.
     */
   def multipart(name: String, data: ByteBuffer): Part[BasicRequestBody] =
     Part(name, ByteBufferBody(data), contentType = Some(MediaType.ApplicationOctetStream))
 
-  /** Content type will be set to `application/octet-stream`, can be overridden
-    * later using the `contentType` method.
+  /** Content type will be set to `application/octet-stream`, can be overridden later using the `contentType` method.
     */
   def multipart(name: String, data: InputStream): Part[BasicRequestBody] =
     Part(name, InputStreamBody(data), contentType = Some(MediaType.ApplicationOctetStream))
 
-  /** Content type will be set to `application/octet-stream`, can be overridden
-    * later using the `contentType` method.
+  /** Content type will be set to `application/octet-stream`, can be overridden later using the `contentType` method.
     *
     * File name will be set to the name of the file.
     */
@@ -234,8 +230,8 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
 
   /** Encodes the given parameters as form data using `utf-8`.
     *
-    * Content type will be set to `application/x-www-form-urlencoded`, can be
-    * overridden later using the `contentType` method.
+    * Content type will be set to `application/x-www-form-urlencoded`, can be overridden later using the `contentType`
+    * method.
     */
   def multipart(name: String, fs: Map[String, String]): Part[BasicRequestBody] =
     Part(
@@ -246,8 +242,8 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
 
   /** Encodes the given parameters as form data.
     *
-    * Content type will be set to `application/x-www-form-urlencoded`, can be
-    * overridden later using the `contentType` method.
+    * Content type will be set to `application/x-www-form-urlencoded`, can be overridden later using the `contentType`
+    * method.
     */
   def multipart(name: String, fs: Map[String, String], encoding: String): Part[BasicRequestBody] =
     Part(
@@ -258,16 +254,16 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
 
   /** Encodes the given parameters as form data using `utf-8`.
     *
-    * Content type will be set to `application/x-www-form-urlencoded`, can be
-    * overridden later using the `contentType` method.
+    * Content type will be set to `application/x-www-form-urlencoded`, can be overridden later using the `contentType`
+    * method.
     */
   def multipart(name: String, fs: Seq[(String, String)]): Part[BasicRequestBody] =
     Part(name, RequestBody.paramsToStringBody(fs, Utf8), contentType = Some(MediaType.ApplicationXWwwFormUrlencoded))
 
   /** Encodes the given parameters as form data.
     *
-    * Content type will be set to `application/x-www-form-urlencoded`, can be
-    * overridden later using the `contentType` method.
+    * Content type will be set to `application/x-www-form-urlencoded`, can be overridden later using the `contentType`
+    * method.
     */
   def multipart(name: String, fs: Seq[(String, String)], encoding: String): Part[BasicRequestBody] =
     Part(
@@ -276,14 +272,12 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
       contentType = Some(MediaType.ApplicationXWwwFormUrlencoded)
     )
 
-  /** Content type will be set to `application/octet-stream`, can be
-    * overridden later using the `contentType` method.
+  /** Content type will be set to `application/octet-stream`, can be overridden later using the `contentType` method.
     */
   def multipart[B: BodySerializer](name: String, b: B): Part[BasicRequestBody] =
     Part(name, implicitly[BodySerializer[B]].apply(b), contentType = Some(MediaType.ApplicationXWwwFormUrlencoded))
 
-  /** Content type will be set to `application/octet-stream`, can be overridden
-    * later using the `contentType` method.
+  /** Content type will be set to `application/octet-stream`, can be overridden later using the `contentType` method.
     */
   def multipartStream[S](s: Streams[S])(name: String, b: s.BinaryStream): Part[RequestBody[S]] =
     Part(

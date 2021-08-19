@@ -43,12 +43,12 @@ class ToRfc2616Converter[R <: RequestT[Identity, _, _]] {
                |Content-Disposition: form-data; name="${p.name}"
                |
                |$s\n""".stripMargin
-          case FileBody(f, _)      =>
+          case FileBody(f, _) =>
             s"""--$boundary
                |Content-Disposition: form-data; name="${p.name}"
                |
                |< ${f.name}\n""".stripMargin
-          case _                   => s"--$boundary"
+          case _ => s"--$boundary"
         }
       }
       .mkString("") + s"--$boundary--"

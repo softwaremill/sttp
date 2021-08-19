@@ -65,9 +65,9 @@ object AsyncHttpClientFutureBackend {
   ): SttpBackend[Future, Any] =
     new FollowRedirectsBackend(new AsyncHttpClientFutureBackend(asyncHttpClient, closeClient, customizeRequest))
 
-  /** @param ec The execution context for running non-network related operations,
-    *           e.g. mapping responses. Defaults to the global execution
-    *           context.
+  /** @param ec
+    *   The execution context for running non-network related operations, e.g. mapping responses. Defaults to the global
+    *   execution context.
     */
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default,
@@ -75,9 +75,9 @@ object AsyncHttpClientFutureBackend {
   )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, Any] =
     AsyncHttpClientFutureBackend(AsyncHttpClientBackend.defaultClient(options), closeClient = true, customizeRequest)
 
-  /** @param ec The execution context for running non-network related operations,
-    *           e.g. mapping responses. Defaults to the global execution
-    *           context.
+  /** @param ec
+    *   The execution context for running non-network related operations, e.g. mapping responses. Defaults to the global
+    *   execution context.
     */
   def usingConfig(
       cfg: AsyncHttpClientConfig,
@@ -85,10 +85,11 @@ object AsyncHttpClientFutureBackend {
   )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, Any] =
     AsyncHttpClientFutureBackend(new DefaultAsyncHttpClient(cfg), closeClient = true, customizeRequest)
 
-  /** @param updateConfig A function which updates the default configuration (created basing on `options`).
-    * @param ec The execution context for running non-network related operations,
-    *           e.g. mapping responses. Defaults to the global execution
-    *           context.
+  /** @param updateConfig
+    *   A function which updates the default configuration (created basing on `options`).
+    * @param ec
+    *   The execution context for running non-network related operations, e.g. mapping responses. Defaults to the global
+    *   execution context.
     */
   def usingConfigBuilder(
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
@@ -101,9 +102,9 @@ object AsyncHttpClientFutureBackend {
       customizeRequest
     )
 
-  /** @param ec The execution context for running non-network related operations,
-    *           e.g. mapping responses. Defaults to the global execution
-    *           context.
+  /** @param ec
+    *   The execution context for running non-network related operations, e.g. mapping responses. Defaults to the global
+    *   execution context.
     */
   def usingClient(
       client: AsyncHttpClient,

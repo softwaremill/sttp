@@ -8,8 +8,10 @@ import scala.util.control.NonFatal
 
 /** A synchronous backend that safely wraps [[SttpBackend]] exceptions in `Either[Throwable, *]`'s
   *
-  * @param delegate A synchronous `SttpBackend` which to which this backend forwards all requests
-  * @tparam P TODO
+  * @param delegate
+  *   A synchronous `SttpBackend` which to which this backend forwards all requests
+  * @tparam P
+  *   TODO
   */
 class EitherBackend[P](delegate: SttpBackend[Identity, P]) extends SttpBackend[Either[Throwable, *], P] {
   override def send[T, R >: P with Effect[Either[Throwable, *]]](

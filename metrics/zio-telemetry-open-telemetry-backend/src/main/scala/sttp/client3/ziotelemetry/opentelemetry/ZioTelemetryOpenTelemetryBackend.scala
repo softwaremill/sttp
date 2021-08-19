@@ -11,7 +11,7 @@ import zio.telemetry.opentelemetry._
 
 import scala.collection.mutable
 
-private class ZioTelemetryOpenTelemetryBackend[+P] (
+private class ZioTelemetryOpenTelemetryBackend[+P](
     delegate: SttpBackend[Task, P],
     tracer: ZioTelemetryOpenTelemetryTracer,
     tracing: Tracing

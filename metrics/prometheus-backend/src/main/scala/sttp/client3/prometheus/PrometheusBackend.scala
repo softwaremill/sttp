@@ -188,8 +188,8 @@ trait BaseCollectorConfig {
   def labelValues: Seq[String] = labels.map(_._2)
 }
 
-/** Represents the name of a collector, together with label names and values.
-  * The same labels must be always returned, and in the same order.
+/** Represents the name of a collector, together with label names and values. The same labels must be always returned,
+  * and in the same order.
   */
 case class CollectorConfig(collectorName: String, labels: List[(String, String)] = Nil) extends BaseCollectorConfig
 

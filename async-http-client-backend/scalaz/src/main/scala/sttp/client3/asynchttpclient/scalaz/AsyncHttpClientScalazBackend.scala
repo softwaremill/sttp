@@ -74,7 +74,8 @@ object AsyncHttpClientScalazBackend {
   ): Task[SttpBackend[Task, Any]] =
     Task.delay(AsyncHttpClientScalazBackend(new DefaultAsyncHttpClient(cfg), closeClient = true, customizeRequest))
 
-  /** @param updateConfig A function which updates the default configuration (created basing on `options`).
+  /** @param updateConfig
+    *   A function which updates the default configuration (created basing on `options`).
     */
   def usingConfigBuilder(
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,

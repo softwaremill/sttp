@@ -85,8 +85,8 @@ object AsyncHttpClientCatsBackend {
       AsyncHttpClientCatsBackend(AsyncHttpClientBackend.defaultClient(options), closeClient = true, customizeRequest)
     )
 
-  /** Makes sure the backend is closed after usage.
-    * After sending a request, always shifts to the thread pool backing the given `ContextShift[F]`.
+  /** Makes sure the backend is closed after usage. After sending a request, always shifts to the thread pool backing
+    * the given `ContextShift[F]`.
     */
   def resource[F[_]: Concurrent: ContextShift](
       options: SttpBackendOptions = SttpBackendOptions.Default,
@@ -102,8 +102,8 @@ object AsyncHttpClientCatsBackend {
   ): F[SttpBackend[F, Any]] =
     Sync[F].delay(AsyncHttpClientCatsBackend(new DefaultAsyncHttpClient(cfg), closeClient = true, customizeRequest))
 
-  /** Makes sure the backend is closed after usage.
-    * After sending a request, always shifts to the thread pool backing the given `ContextShift[F]`.
+  /** Makes sure the backend is closed after usage. After sending a request, always shifts to the thread pool backing
+    * the given `ContextShift[F]`.
     */
   def resourceUsingConfig[F[_]: Concurrent: ContextShift](
       cfg: AsyncHttpClientConfig,
@@ -112,7 +112,8 @@ object AsyncHttpClientCatsBackend {
     Resource.make(usingConfig(cfg, customizeRequest))(_.close())
 
   /** After sending a request, always shifts to the thread pool backing the given `ContextShift[F]`.
-    * @param updateConfig A function which updates the default configuration (created basing on `options`).
+    * @param updateConfig
+    *   A function which updates the default configuration (created basing on `options`).
     */
   def usingConfigBuilder[F[_]: Concurrent: ContextShift](
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
@@ -127,9 +128,10 @@ object AsyncHttpClientCatsBackend {
       )
     )
 
-  /** Makes sure the backend is closed after usage.
-    * After sending a request, always shifts to the thread pool backing the given `ContextShift[F]`.
-    * @param updateConfig A function which updates the default configuration (created basing on `options`).
+  /** Makes sure the backend is closed after usage. After sending a request, always shifts to the thread pool backing
+    * the given `ContextShift[F]`.
+    * @param updateConfig
+    *   A function which updates the default configuration (created basing on `options`).
     */
   def resourceUsingConfigBuilder[F[_]: Concurrent: ContextShift](
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,

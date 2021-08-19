@@ -184,9 +184,9 @@ object AkkaHttpBackend {
       )
     )
 
-  /** @param ec The execution context for running non-network related operations,
-    *           e.g. mapping responses. Defaults to the execution context backing
-    *           the given `actorSystem`.
+  /** @param ec
+    *   The execution context for running non-network related operations, e.g. mapping responses. Defaults to the
+    *   execution context backing the given `actorSystem`.
     */
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default,
@@ -216,11 +216,11 @@ object AkkaHttpBackend {
     )
   }
 
-  /** @param actorSystem The actor system which will be used for the http-client
-    *                    actors.
-    * @param ec The execution context for running non-network related operations,
-    *           e.g. mapping responses. Defaults to the execution context backing
-    *           the given `actorSystem`.
+  /** @param actorSystem
+    *   The actor system which will be used for the http-client actors.
+    * @param ec
+    *   The execution context for running non-network related operations, e.g. mapping responses. Defaults to the
+    *   execution context backing the given `actorSystem`.
     */
   def usingActorSystem(
       actorSystem: ActorSystem,
@@ -247,11 +247,11 @@ object AkkaHttpBackend {
     )
   }
 
-  /** @param actorSystem The actor system which will be used for the http-client
-    *                    actors.
-    * @param ec The execution context for running non-network related operations,
-    *           e.g. mapping responses. Defaults to the execution context backing
-    *           the given `actorSystem`.
+  /** @param actorSystem
+    *   The actor system which will be used for the http-client actors.
+    * @param ec
+    *   The execution context for running non-network related operations, e.g. mapping responses. Defaults to the
+    *   execution context backing the given `actorSystem`.
     */
   def usingClient(
       actorSystem: ActorSystem,
