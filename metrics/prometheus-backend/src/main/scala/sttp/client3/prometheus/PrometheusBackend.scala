@@ -100,7 +100,7 @@ class PrometheusListener(
     histogramsCache: ConcurrentHashMap[String, Histogram],
     gaugesCache: ConcurrentHashMap[String, Gauge],
     countersCache: ConcurrentHashMap[String, Counter],
-    summaryCache: ConcurrentHashMap[String, Summary]
+    summariesCache: ConcurrentHashMap[String, Summary]
 ) extends RequestListener[Identity, RequestCollectors] {
 
   override def beforeRequest(request: Request[_, _]): RequestCollectors = {
@@ -158,7 +158,7 @@ class PrometheusListener(
   ): Unit =
     mapper(response).foreach { data =>
       response.contentLength.map(_.toDouble).foreach { size =>
-        getOrCreateMetric(summaryCache, data, createNewSummary).labels(data.labelValues: _*).observe(size)
+        getOrCreateMetric(summariesCache, data, createNewSummary).labels(data.labelValues: _*).observe(size)
       }
     }
 
