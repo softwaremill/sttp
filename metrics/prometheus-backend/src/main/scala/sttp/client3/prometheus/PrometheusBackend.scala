@@ -3,7 +3,7 @@ package sttp.client3.prometheus
 import java.util.concurrent.ConcurrentHashMap
 
 import sttp.client3.{FollowRedirectsBackend, Identity, Request, Response, SttpBackend}
-import io.prometheus.client.{CollectorRegistry, Counter, Gauge, Histogram}
+import io.prometheus.client.{CollectorRegistry, Counter, Gauge, Histogram, Summary}
 import sttp.client3.listener.{ListenerBackend, RequestListener}
 import sttp.client3.prometheus.PrometheusBackend.RequestCollectors
 
@@ -15,6 +15,7 @@ object PrometheusBackend {
   val DefaultSuccessCounterName = "sttp_requests_success_count"
   val DefaultErrorCounterName = "sttp_requests_error_count"
   val DefaultFailureCounterName = "sttp_requests_failure_count"
+  val DefaultResponseSizeName = "sttp_response_size_bytes"
 
   def apply[F[_], P](
       delegate: SttpBackend[F, P],
@@ -28,6 +29,8 @@ object PrometheusBackend {
         Some(CollectorConfig(DefaultErrorCounterName)),
       requestToFailureCounterMapper: Request[_, _] => Option[CollectorConfig] = (_: Request[_, _]) =>
         Some(CollectorConfig(DefaultFailureCounterName)),
+      responseToSizeSummaryMapper: Response[_] => Option[CollectorConfig] = (_: Response[_]) =>
+        Some(CollectorConfig(DefaultResponseSizeName)),
       collectorRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry
   ): SttpBackend[F, P] = {
     // redirects should be handled before prometheus
@@ -41,10 +44,12 @@ object PrometheusBackend {
             requestToSuccessCounterMapper,
             requestToErrorCounterMapper,
             requestToFailureCounterMapper,
+            responseToSizeSummaryMapper,
             collectorRegistry,
             cacheFor(histograms, collectorRegistry),
             cacheFor(gauges, collectorRegistry),
-            cacheFor(counters, collectorRegistry)
+            cacheFor(counters, collectorRegistry),
+            cacheFor(summaries, collectorRegistry)
           ),
           delegate.responseMonad
         )
@@ -59,6 +64,7 @@ object PrometheusBackend {
     histograms.remove(collectorRegistry)
     gauges.remove(collectorRegistry)
     counters.remove(collectorRegistry)
+    summaries.remove(collectorRegistry)
   }
 
   /*
@@ -70,6 +76,7 @@ object PrometheusBackend {
   private val histograms = new mutable.WeakHashMap[CollectorRegistry, ConcurrentHashMap[String, Histogram]]
   private val gauges = new mutable.WeakHashMap[CollectorRegistry, ConcurrentHashMap[String, Gauge]]
   private val counters = new mutable.WeakHashMap[CollectorRegistry, ConcurrentHashMap[String, Counter]]
+  private val summaries = new mutable.WeakHashMap[CollectorRegistry, ConcurrentHashMap[String, Summary]]
 
   private def cacheFor[T](
       cache: mutable.WeakHashMap[CollectorRegistry, ConcurrentHashMap[String, T]],
@@ -88,10 +95,12 @@ class PrometheusListener(
     requestToSuccessCounterMapper: Request[_, _] => Option[CollectorConfig],
     requestToErrorCounterMapper: Request[_, _] => Option[CollectorConfig],
     requestToFailureCounterMapper: Request[_, _] => Option[CollectorConfig],
+    responseToSizeSummaryMapper: Response[_] => Option[CollectorConfig],
     collectorRegistry: CollectorRegistry,
     histogramsCache: ConcurrentHashMap[String, Histogram],
     gaugesCache: ConcurrentHashMap[String, Gauge],
-    countersCache: ConcurrentHashMap[String, Counter]
+    countersCache: ConcurrentHashMap[String, Counter],
+    summariesCache: ConcurrentHashMap[String, Summary]
 ) extends RequestListener[Identity, RequestCollectors] {
 
   override def beforeRequest(request: Request[_, _]): RequestCollectors = {
@@ -126,6 +135,7 @@ class PrometheusListener(
   ): Unit = {
     requestCollectors._1.foreach(_.observeDuration())
     requestCollectors._2.foreach(_.dec())
+    observeSummaryIfMapped(response, responseToSizeSummaryMapper)
 
     if (response.isSuccess) {
       incCounterIfMapped(request, requestToSuccessCounterMapper)
@@ -140,6 +150,16 @@ class PrometheusListener(
   ): Unit =
     mapper(request).foreach { data =>
       getOrCreateMetric(countersCache, data, createNewCounter).labels(data.labelValues: _*).inc()
+    }
+
+  private def observeSummaryIfMapped[T](
+      response: Response[_],
+      mapper: Response[_] => Option[BaseCollectorConfig]
+  ): Unit =
+    mapper(response).foreach { data =>
+      response.contentLength.map(_.toDouble).foreach { size =>
+        getOrCreateMetric(summariesCache, data, createNewSummary).labels(data.labelValues: _*).observe(size)
+      }
     }
 
   private def getOrCreateMetric[T, C <: BaseCollectorConfig](
@@ -173,6 +193,14 @@ class PrometheusListener(
 
   private def createNewCounter(data: BaseCollectorConfig): Counter =
     Counter
+      .build()
+      .name(data.collectorName)
+      .labelNames(data.labelNames: _*)
+      .help(data.collectorName)
+      .register(collectorRegistry)
+
+  private def createNewSummary(data: BaseCollectorConfig): Summary =
+    Summary
       .build()
       .name(data.collectorName)
       .labelNames(data.labelNames: _*)
