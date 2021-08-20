@@ -16,6 +16,8 @@ import scala.concurrent.blocking
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
+import scala.collection.immutable.Seq
+
 class PrometheusBackendTest
     extends AnyFlatSpec
     with Matchers
