@@ -62,7 +62,7 @@ Development and maintenance of sttp client is sponsored by [SoftwareMill](https:
 ```eval_rst
 .. raw:: html
 
-   <iframe height="800px" frameborder="0" style="width: 100%" src="https://embed.scalafiddle.io/embed?sfid=4WexTtF/3&layout=v50"></iframe>
+   <script src="https://scastie.scala-lang.org/adamw/aOf32MZsTPesobwfWG5nDQ/1.js"></script>
 ```
 
 # Table of contents
