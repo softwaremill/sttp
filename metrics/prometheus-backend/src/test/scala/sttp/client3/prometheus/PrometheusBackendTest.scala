@@ -256,9 +256,17 @@ class PrometheusBackendTest
     val backend = PrometheusBackend[Identity, Any](backendStub)
 
     // when
-    (0 until 5).foreach(_ => backend.send(basicRequest.get(uri"http://127.0.0.1/foo")))
+    (0 until 5).foreach(_ =>
+      backend.send(
+        basicRequest
+          .get(uri"http://127.0.0.1/foo")
+          .header(Header.contentLength(5))
+      )
+    )
 
     // then
+    getMetricValue(PrometheusBackend.DefaultRequestSizeName + "_count").value shouldBe 5
+    getMetricValue(PrometheusBackend.DefaultRequestSizeName + "_sum").value shouldBe 25
     getMetricValue(PrometheusBackend.DefaultResponseSizeName + "_count").value shouldBe 5
     getMetricValue(PrometheusBackend.DefaultResponseSizeName + "_sum").value shouldBe 50
   }
