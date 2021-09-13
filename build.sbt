@@ -33,7 +33,8 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   }.value,
   ideSkipProject := (scalaVersion.value != scala2_13) || thisProjectRef.value.project.contains(
     "JS"
-  ) || thisProjectRef.value.project.contains("Native")
+  ) || thisProjectRef.value.project.contains("Native"),
+  mimaPreviousArtifacts := Set.empty // we only use MiMa for `core` for now, using versioningSchemeSettings
 )
 
 val commonJvmSettings = commonSettings ++ Seq(
@@ -72,6 +73,17 @@ val commonNativeSettings = commonSettings ++ Seq(
       println("[info] Release build, skipping sttp native tests")
     } else { (Test / test).value }
   }
+)
+
+val versioningSchemeSettings = Seq(
+  mimaPreviousArtifacts := {
+    val isRcOrMilestone = version.value.contains("M") || version.value.contains("RC")
+    if (!isRcOrMilestone)
+      previousStableVersion.value.map(organization.value %% moduleName.value % _).toSet
+    else
+      Set.empty
+  },
+  versionScheme := Some("early-semver")
 )
 
 // start a test server before running tests of a backend; this is required both for JS tests run inside a
@@ -262,7 +274,7 @@ lazy val core = (projectMatrix in file("core"))
   .jvmPlatform(
     scalaVersions = scala2 ++ scala3,
     settings = {
-      commonJvmSettings ++ List(
+      commonJvmSettings ++ versioningSchemeSettings ++ List(
         Test / publishArtifact := true // allow implementations outside of this repo
       )
     }
@@ -270,7 +282,7 @@ lazy val core = (projectMatrix in file("core"))
   .jsPlatform(
     scalaVersions = scala2 ++ scala3,
     settings = {
-      commonJsSettings ++ commonJsBackendSettings ++ browserChromeTestSettings ++ List(
+      commonJsSettings ++ commonJsBackendSettings ++ browserChromeTestSettings ++ versioningSchemeSettings ++ List(
         Test / publishArtifact := true
       )
     }
@@ -278,7 +290,7 @@ lazy val core = (projectMatrix in file("core"))
   .nativePlatform(
     scalaVersions = scala2,
     settings = {
-      commonNativeSettings ++ List(
+      commonNativeSettings ++ versioningSchemeSettings ++ List(
         Test / publishArtifact := true
       )
     }
