@@ -35,7 +35,7 @@ trait HttpTestExtensions[F[_]] extends AsyncFreeSpecLike with AsyncExecutionCont
     val p = Promise[String]()
 
     val fileReader = new FileReader()
-    fileReader.onload = (_: UIEvent) => {
+    fileReader.onload = (_: org.scalajs.dom.raw.ProgressEvent) => {
       val arrayBuffer = fileReader.result.asInstanceOf[scala.scalajs.js.typedarray.ArrayBuffer]
       val hash = SparkMD5.ArrayBuffer.hash(arrayBuffer)
       p.success(hash)
