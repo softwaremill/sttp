@@ -21,32 +21,7 @@ basicRequest.auth.bearer(token)
 
 ### Important Note on the `Authorization` Header and Redirects
 
-Most modern http clients will, by default, strip the `Authorization` header when encountering a redirect, STTP is no different.
-
-You can disable the stripping of ALL sensitive headers using the following code:
-
-```scala
-import sttp.client3._
-
-val myBackend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
-val backend: SttpBackend[Identity, Any]  = new FollowRedirectsBackend(
-      delegate = myBackend, 
-      sensitiveHeaders = Set.empty
-)
-```
-
-If you just want to disable stripping of the `Authorization` header, you can do the following:
-
-```scala
-import sttp.client3._
-import sttp.model._
-
-val myBackend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
-val backend: SttpBackend[Identity, Any] = new FollowRedirectsBackend(
-      delegate = myBackend, 
-      sensitiveHeaders = HeaderNames.SensitiveHeaders.filterNot(_ == HeaderNames.Authorization.toLowerCase)
-)
-```
+The `Authorization` header is by default removed during redirects. See [redirects](../conf/redirects.md) for more details.
 
 ## Digest authentication
 

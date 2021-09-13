@@ -138,3 +138,24 @@ val backend = OkHttpFutureBackend.usingClient(client)
 ```
 
 For more information refer to [okhttp docs](https://square.github.io/okhttp/https/).
+
+## Using HttpClient
+
+Backends using `HttpClient` provides factory methods accepting `HttpClient`.
+In this example we are using `IO` and `HttpClientFs2Backend`.
+
+Using `SSLContext` from [first section](#ssl-context):
+
+```scala
+import cats.effect.IO
+import cats.effect.kernel.Resource
+import cats.effect.std.Dispatcher
+import java.net.http.HttpClient
+import sttp.capabilities.WebSockets
+import sttp.capabilities.fs2.Fs2Streams
+import sttp.client3.SttpBackend
+import sttp.client3.httpclient.fs2.HttpClientFs2Backend
+
+val httpClient: HttpClient = HttpClient.newBuilder().sslContext(ssl).build()
+val backend: Resource[IO, SttpBackend[IO, Fs2Streams[IO] with WebSockets]] = Dispatcher[IO].map(HttpClientFs2Backend.usingClient[IO](httpClient, _))
+```
