@@ -334,12 +334,17 @@ trait HttpTest[F[_]]
   }
 
   "compression" - {
-    def compress = basicRequest.get(uri"$endpoint/compress").response(asStringAlways)
+    def compress: RequestT[Identity, String, Any] = basicRequest.get(uri"$endpoint/compress").response(asStringAlways)
+    def compressEmpty: RequestT[Identity, String, Any] = basicRequest.get(uri"$endpoint/compress-empty").response(asStringAlways).acceptEncoding("gzip")
     val decompressedBody = "I'm compressed!"
 
     "decompress using the default accept encoding header" in {
       val req = compress
       req.send(backend).toFuture().map { resp => resp.body should be(decompressedBody) }
+    }
+
+    "decompress empty body using gzip" in {
+      compressEmpty.send(backend).toFuture().map { resp => resp.body should be() }
     }
 
     "decompress using gzip" in {

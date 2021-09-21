@@ -258,6 +258,12 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
       encodeResponseWith(NoCoding, Gzip, Deflate) {
         complete("I'm compressed!")
       }
+    } ~ path("compress-empty") {
+      encodeResponseWith(NoCoding, Gzip, Deflate) {
+        respondWithHeader(RawHeader("Content-Encoding", "gzip")) {
+          complete(204, HttpEntity.Empty)
+        }
+      }
     } ~ pathPrefix("download") {
       path("binary") {
         complete(HttpEntity(binaryFile))
