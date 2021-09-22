@@ -238,8 +238,8 @@ class HttpURLConnectionBackend private (
     val contentEncoding = Option(c.getHeaderField(HeaderNames.ContentEncoding))
 
     val code = StatusCode(c.getResponseCode)
-    val wrappedIs = if (c.getRequestMethod != "HEAD") {
-      wrapInput(contentEncoding, handleNullInput(is), headers.contains(Header("Transfer-Encoding", "chunked")))
+    val wrappedIs = if (c.getRequestMethod != "HEAD" && !code.equals(StatusCode.NoContent)) {
+      wrapInput(contentEncoding, handleNullInput(is))
     } else handleNullInput(is)
     val responseMetadata = ResponseMetadata(code, c.getResponseMessage, headers)
     val body = bodyFromResponseAs(request.response, responseMetadata, Left(wrappedIs))
@@ -280,14 +280,11 @@ class HttpURLConnectionBackend private (
     else
       is
 
-  private def wrapInput(contentEncoding: Option[String], is: InputStream, isChunked: Boolean): InputStream =
-    contentEncoding
-      .map(_.toLowerCase)
-      .filter(e => !(!isChunked && (e.equals("gzip") || e.equals("deflate"))))
-    match {
-      case None => is
-      case Some("gzip") => new GZIPInputStream(is)
-      case Some("deflate") => new InflaterInputStream(is)
+  private def wrapInput(contentEncoding: Option[String], is: InputStream): InputStream =
+    contentEncoding.map(_.toLowerCase) match {
+      case None                                                    => is
+      case Some("gzip")                                            => new GZIPInputStream(is)
+      case Some("deflate")                                         => new InflaterInputStream(is)
       case Some(ce) if customEncodingHandler.isDefinedAt((is, ce)) => customEncodingHandler(is -> ce)
       case Some(ce) =>
         throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")

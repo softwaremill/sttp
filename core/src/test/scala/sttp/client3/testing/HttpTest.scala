@@ -334,7 +334,7 @@ trait HttpTest[F[_]]
   }
 
   "compression" - {
-    def compress: RequestT[Identity, String, Any] = basicRequest.get(uri"$endpoint/compress").response(asStringAlways)
+    def compress = basicRequest.get(uri"$endpoint/compress").response(asStringAlways)
     val decompressedBody = "I'm compressed!"
 
     "decompress using the default accept encoding header" in {

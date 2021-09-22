@@ -74,7 +74,7 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
     val method = Method(res.request().method())
     val byteBody = if (method != Method.HEAD) {
       encoding
-        .filter(e => !(!headers.contains(Header("Transfer-Encoding", "chunked")) && (e.equals("gzip") || e.equals("deflate"))))
+        .filterNot(_ => res.code().equals(204))
         .map(e =>
           customEncodingHandler //There is no PartialFunction.fromFunction in scala 2.12
             .orElse(EncodingHandler(standardEncoding))(res.body().byteStream() -> e)
