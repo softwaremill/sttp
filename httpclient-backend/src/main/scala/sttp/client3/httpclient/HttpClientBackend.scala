@@ -73,7 +73,7 @@ abstract class HttpClientBackend[F[_], S, P, B](
       resBody.left
         .map { is =>
           encoding
-            .filter(e => !(!headers.contains(Header("Transfer-Encoding", "chunked")) && e.equals("gzip")))
+            .filter(e => !(!headers.contains(Header("Transfer-Encoding", "chunked")) && (e.equals("gzip") || e.equals("deflate"))))
             .map(e => customEncodingHandler.applyOrElse((is, e), standardEncoding.tupled))
             .getOrElse(is)
         }

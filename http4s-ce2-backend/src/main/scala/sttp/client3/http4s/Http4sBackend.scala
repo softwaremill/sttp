@@ -12,6 +12,7 @@ import org.http4s.{ContentCoding, EntityBody, Request => Http4sRequest}
 import org.http4s
 import org.http4s.client.Client
 import org.http4s.blaze.client.BlazeClientBuilder
+import org.http4s.headers.`Content-Encoding`
 import org.typelevel.ci.CIString
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client3.http4s.Http4sBackend.EncodingHandler
@@ -165,7 +166,8 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
 
   private def decompressResponseBody(hr: http4s.Response[F]): http4s.Response[F] = {
     val body = hr.headers
-      .get[http4s.headers.`Content-Encoding`]
+      .get[`Content-Encoding`]
+      .filter(e => !(!hr.isChunked && e.contentCoding.equals(ContentCoding.gzip)))
       .map(e => customEncodingHandler.orElse(EncodingHandler(standardEncodingHandler))(hr.body -> e.contentCoding))
       .getOrElse(hr.body)
     hr.copy(body = body)

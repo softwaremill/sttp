@@ -3,17 +3,8 @@ package sttp.client3.okhttp
 import java.io.{InputStream, UnsupportedEncodingException}
 import java.util.concurrent.TimeUnit
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
-
 import okhttp3.internal.http.HttpMethod
-import okhttp3.{
-  Authenticator,
-  Credentials,
-  OkHttpClient,
-  Route,
-  Request => OkHttpRequest,
-  RequestBody => OkHttpRequestBody,
-  Response => OkHttpResponse
-}
+import okhttp3.{Authenticator, Credentials, OkHttpClient, Route, Request => OkHttpRequest, RequestBody => OkHttpRequestBody, Response => OkHttpResponse}
 import sttp.capabilities.{Effect, Streams}
 import sttp.client3.SttpBackendOptions.Proxy
 import sttp.client3.SttpClientException.ReadException
@@ -83,6 +74,7 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
     val method = Method(res.request().method())
     val byteBody = if (method != Method.HEAD) {
       encoding
+        .filter(e => !(!headers.contains(Header("Transfer-Encoding", "chunked")) && (e.equals("gzip") || e.equals("deflate"))))
         .map(e =>
           customEncodingHandler //There is no PartialFunction.fromFunction in scala 2.12
             .orElse(EncodingHandler(standardEncoding))(res.body().byteStream() -> e)
