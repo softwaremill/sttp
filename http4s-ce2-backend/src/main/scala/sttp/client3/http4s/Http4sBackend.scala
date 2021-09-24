@@ -8,10 +8,11 @@ import cats.effect.{Blocker, Concurrent, ConcurrentEffect, ContextShift, Resourc
 import cats.implicits._
 import cats.effect.implicits._
 import fs2.{Chunk, Stream}
-import org.http4s.{ContentCoding, EntityBody, Request => Http4sRequest}
+import org.http4s.{ContentCoding, EntityBody, Status, Request => Http4sRequest}
 import org.http4s
 import org.http4s.client.Client
 import org.http4s.blaze.client.BlazeClientBuilder
+import org.http4s.headers.`Content-Encoding`
 import org.typelevel.ci.CIString
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client3.http4s.Http4sBackend.EncodingHandler
@@ -165,7 +166,8 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
 
   private def decompressResponseBody(hr: http4s.Response[F]): http4s.Response[F] = {
     val body = hr.headers
-      .get[http4s.headers.`Content-Encoding`]
+      .get[`Content-Encoding`]
+      .filterNot(_ => hr.status.equals(Status.NoContent))
       .map(e => customEncodingHandler.orElse(EncodingHandler(standardEncodingHandler))(hr.body -> e.contentCoding))
       .getOrElse(hr.body)
     hr.copy(body = body)

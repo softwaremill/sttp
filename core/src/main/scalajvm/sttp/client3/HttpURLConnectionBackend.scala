@@ -238,7 +238,7 @@ class HttpURLConnectionBackend private (
     val contentEncoding = Option(c.getHeaderField(HeaderNames.ContentEncoding))
 
     val code = StatusCode(c.getResponseCode)
-    val wrappedIs = if (c.getRequestMethod != "HEAD") {
+    val wrappedIs = if (c.getRequestMethod != "HEAD" && !code.equals(StatusCode.NoContent)) {
       wrapInput(contentEncoding, handleNullInput(is))
     } else handleNullInput(is)
     val responseMetadata = ResponseMetadata(code, c.getResponseMessage, headers)

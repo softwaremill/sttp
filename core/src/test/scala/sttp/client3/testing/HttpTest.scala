@@ -342,6 +342,16 @@ trait HttpTest[F[_]]
       req.send(backend).toFuture().map { resp => resp.body should be(decompressedBody) }
     }
 
+    "decompress empty body using gzip" in {
+      val req =  basicRequest.get(uri"$endpoint/compress-empty-gzip").response(asStringAlways).acceptEncoding("gzip")
+      req.send(backend).toFuture().map { resp => resp.body should be("") }
+    }
+
+    "decompress empty body using deflate" in {
+      val req =  basicRequest.get(uri"$endpoint/compress-empty-deflate").response(asStringAlways).acceptEncoding("deflate")
+      req.send(backend).toFuture().map { resp => resp.body should be("") }
+    }
+
     "decompress using gzip" in {
       val req = compress.acceptEncoding("gzip")
       req.send(backend).toFuture().map { resp => resp.body should be(decompressedBody) }

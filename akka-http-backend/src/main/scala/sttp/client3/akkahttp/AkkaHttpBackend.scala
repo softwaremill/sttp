@@ -4,7 +4,7 @@ import java.io.UnsupportedEncodingException
 import akka.{Done, NotUsed}
 import akka.actor.{ActorSystem, CoordinatedShutdown}
 import akka.event.LoggingAdapter
-import akka.http.scaladsl.coding.{Deflate, Gzip, NoCoding}
+import akka.http.scaladsl.coding.{Coders, Deflate, Gzip, NoCoding}
 import akka.http.scaladsl.model.headers.{BasicHttpCredentials, HttpEncoding, HttpEncodings}
 import akka.http.scaladsl.model.ws.{InvalidUpgradeResponse, Message, ValidUpgrade, WebSocketRequest}
 import akka.http.scaladsl.model.{StatusCode => _, _}
@@ -125,13 +125,14 @@ class AkkaHttpBackend private (
 
   // http://doc.akka.io/docs/akka-http/10.0.7/scala/http/common/de-coding.html
   private def decodeAkkaResponse(response: HttpResponse): HttpResponse = {
-    customEncodingHandler.orElse(EncodingHandler(standardEncoding)).apply(response -> response.encoding)
+    if (response.status.equals(StatusCodes.NoContent)) response
+    else customEncodingHandler.orElse(EncodingHandler(standardEncoding)).apply(response -> response.encoding)
   }
 
   private def standardEncoding: (HttpResponse, HttpEncoding) => HttpResponse = {
-    case (body, HttpEncodings.gzip)     => Gzip.decodeMessage(body)
-    case (body, HttpEncodings.deflate)  => Deflate.decodeMessage(body)
-    case (body, HttpEncodings.identity) => NoCoding.decodeMessage(body)
+    case (body, HttpEncodings.gzip)     => Coders.Gzip.decodeMessage(body)
+    case (body, HttpEncodings.deflate)  => Coders.Deflate.decodeMessage(body)
+    case (body, HttpEncodings.identity) => Coders.NoCoding.decodeMessage(body)
     case (_, ce)                        => throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
   }
 
