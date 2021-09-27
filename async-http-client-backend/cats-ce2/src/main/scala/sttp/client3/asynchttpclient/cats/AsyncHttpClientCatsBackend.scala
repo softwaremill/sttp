@@ -19,6 +19,7 @@ import sttp.client3.impl.cats.CatsMonadAsyncError
 import sttp.client3.internal.{FileHelpers, NoStreams}
 import sttp.client3.{FollowRedirectsBackend, Request, Response, SttpBackend, SttpBackendOptions}
 import cats.implicits._
+import sttp.client3.FollowRedirectsBackend.UriEncoder
 import sttp.client3.internal.ws.SimpleQueue
 import sttp.client3.testing.SttpBackendStub
 import sttp.monad.MonadAsyncError
@@ -69,20 +70,28 @@ object AsyncHttpClientCatsBackend {
   private def apply[F[_]: Concurrent: ContextShift](
       asyncHttpClient: AsyncHttpClient,
       closeClient: Boolean,
-      customizeRequest: BoundRequestBuilder => BoundRequestBuilder
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder,
+      uriEncoder: UriEncoder
   ): SttpBackend[F, Any] =
     new FollowRedirectsBackend[F, Any](
-      new AsyncHttpClientCatsBackend(asyncHttpClient, closeClient, customizeRequest)
+      new AsyncHttpClientCatsBackend(asyncHttpClient, closeClient, customizeRequest),
+      uriEncoder = uriEncoder
     )
 
   /** After sending a request, always shifts to the thread pool backing the given `ContextShift[F]`.
     */
   def apply[F[_]: Concurrent: ContextShift](
       options: SttpBackendOptions = SttpBackendOptions.Default,
-      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
+      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
   ): F[SttpBackend[F, Any]] =
     Sync[F].delay(
-      AsyncHttpClientCatsBackend(AsyncHttpClientBackend.defaultClient(options), closeClient = true, customizeRequest)
+      AsyncHttpClientCatsBackend(
+        AsyncHttpClientBackend.defaultClient(options),
+        closeClient = true,
+        customizeRequest,
+        uriEncoder
+      )
     )
 
   /** Makes sure the backend is closed after usage. After sending a request, always shifts to the thread pool backing
@@ -90,26 +99,31 @@ object AsyncHttpClientCatsBackend {
     */
   def resource[F[_]: Concurrent: ContextShift](
       options: SttpBackendOptions = SttpBackendOptions.Default,
-      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
+      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
   ): Resource[F, SttpBackend[F, Any]] =
-    Resource.make(apply(options, customizeRequest))(_.close())
+    Resource.make(apply(options, customizeRequest, uriEncoder))(_.close())
 
   /** After sending a request, always shifts to the thread pool backing the given `ContextShift[F]`.
     */
   def usingConfig[F[_]: Concurrent: ContextShift](
       cfg: AsyncHttpClientConfig,
-      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
+      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
   ): F[SttpBackend[F, Any]] =
-    Sync[F].delay(AsyncHttpClientCatsBackend(new DefaultAsyncHttpClient(cfg), closeClient = true, customizeRequest))
+    Sync[F].delay(
+      AsyncHttpClientCatsBackend(new DefaultAsyncHttpClient(cfg), closeClient = true, customizeRequest, uriEncoder)
+    )
 
   /** Makes sure the backend is closed after usage. After sending a request, always shifts to the thread pool backing
     * the given `ContextShift[F]`.
     */
   def resourceUsingConfig[F[_]: Concurrent: ContextShift](
       cfg: AsyncHttpClientConfig,
-      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
+      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
   ): Resource[F, SttpBackend[F, Any]] =
-    Resource.make(usingConfig(cfg, customizeRequest))(_.close())
+    Resource.make(usingConfig(cfg, customizeRequest, uriEncoder))(_.close())
 
   /** After sending a request, always shifts to the thread pool backing the given `ContextShift[F]`.
     * @param updateConfig
@@ -118,13 +132,15 @@ object AsyncHttpClientCatsBackend {
   def usingConfigBuilder[F[_]: Concurrent: ContextShift](
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default,
-      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
+      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
   ): F[SttpBackend[F, Any]] =
     Sync[F].delay(
       AsyncHttpClientCatsBackend(
         AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
         closeClient = true,
-        customizeRequest
+        customizeRequest,
+        uriEncoder
       )
     )
 
@@ -136,17 +152,19 @@ object AsyncHttpClientCatsBackend {
   def resourceUsingConfigBuilder[F[_]: Concurrent: ContextShift](
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default,
-      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
+      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
   ): Resource[F, SttpBackend[F, Any]] =
-    Resource.make(usingConfigBuilder(updateConfig, options, customizeRequest))(_.close())
+    Resource.make(usingConfigBuilder(updateConfig, options, customizeRequest, uriEncoder))(_.close())
 
   /** After sending a request, always shifts to the thread pool backing the given `ContextShift[F]`.
     */
   def usingClient[F[_]: Concurrent: ContextShift](
       client: AsyncHttpClient,
-      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
+      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
   ): SttpBackend[F, Any] =
-    AsyncHttpClientCatsBackend(client, closeClient = false, customizeRequest)
+    AsyncHttpClientCatsBackend(client, closeClient = false, customizeRequest, uriEncoder)
 
   /** Create a stub backend for testing, which uses the `F` response wrapper, and doesn't support streaming.
     *

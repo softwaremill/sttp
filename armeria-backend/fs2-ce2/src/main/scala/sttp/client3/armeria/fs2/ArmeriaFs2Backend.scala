@@ -8,6 +8,7 @@ import fs2.interop.reactivestreams._
 import fs2.{Chunk, Stream}
 import org.reactivestreams.Publisher
 import sttp.capabilities.fs2.Fs2Streams
+import sttp.client3.FollowRedirectsBackend.UriEncoder
 import sttp.client3.armeria.AbstractArmeriaBackend.newClient
 import sttp.client3.armeria.{AbstractArmeriaBackend, BodyFromStreamMessage}
 import sttp.client3.impl.cats.CatsMonadAsyncError
@@ -46,25 +47,33 @@ object ArmeriaFs2Backend {
     * [[https://armeria.dev/docs/client-factory ClientFactory]] use `.usingDefaultClient`.
     */
   def apply[F[_]: ConcurrentEffect](
-      options: SttpBackendOptions = SttpBackendOptions.Default
+      options: SttpBackendOptions = SttpBackendOptions.Default,
+      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
   ): SttpBackend[F, Fs2Streams[F]] =
-    apply(newClient(options), closeFactory = true)
+    apply(newClient(options), closeFactory = true, uriEncoder)
 
   def resource[F[_]: ConcurrentEffect](
-      options: SttpBackendOptions = SttpBackendOptions.Default
+      options: SttpBackendOptions = SttpBackendOptions.Default,
+      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
   ): Resource[F, SttpBackend[F, Fs2Streams[F]]] = {
-    Resource.make(Sync[F].delay(apply(newClient(options), closeFactory = true)))(_.close())
+    Resource.make(Sync[F].delay(apply(newClient(options), closeFactory = true, uriEncoder)))(_.close())
   }
 
-  def usingClient[F[_]: ConcurrentEffect](client: WebClient): SttpBackend[F, Fs2Streams[F]] =
-    apply(client, closeFactory = false)
+  def usingClient[F[_]: ConcurrentEffect](
+      client: WebClient,
+      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
+  ): SttpBackend[F, Fs2Streams[F]] =
+    apply(client, closeFactory = false, uriEncoder)
 
-  def usingDefaultClient[F[_]: ConcurrentEffect](): SttpBackend[F, Fs2Streams[F]] =
-    apply(newClient(), closeFactory = false)
+  def usingDefaultClient[F[_]: ConcurrentEffect](
+      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
+  ): SttpBackend[F, Fs2Streams[F]] =
+    apply(newClient(), closeFactory = false, uriEncoder)
 
   private def apply[F[_]: ConcurrentEffect](
       client: WebClient,
-      closeFactory: Boolean
+      closeFactory: Boolean,
+      uriEncoder: UriEncoder
   ): SttpBackend[F, Fs2Streams[F]] =
-    new FollowRedirectsBackend(new ArmeriaFs2Backend(client, closeFactory))
+    new FollowRedirectsBackend(new ArmeriaFs2Backend(client, closeFactory), uriEncoder = uriEncoder)
 }

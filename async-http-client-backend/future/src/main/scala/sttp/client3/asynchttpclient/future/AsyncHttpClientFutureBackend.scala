@@ -18,8 +18,9 @@ import sttp.client3.testing.SttpBackendStub
 import sttp.client3.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 import sttp.monad.{FutureMonad, MonadAsyncError}
 import sttp.ws.WebSocket
-
 import scala.concurrent.{ExecutionContext, Future}
+
+import sttp.client3.FollowRedirectsBackend.UriEncoder
 
 class AsyncHttpClientFutureBackend private (
     asyncHttpClient: AsyncHttpClient,
@@ -59,11 +60,15 @@ object AsyncHttpClientFutureBackend {
   private def apply(
       asyncHttpClient: AsyncHttpClient,
       closeClient: Boolean,
-      customizeRequest: BoundRequestBuilder => BoundRequestBuilder
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder,
+      uriEncoder: UriEncoder
   )(implicit
       ec: ExecutionContext
   ): SttpBackend[Future, Any] =
-    new FollowRedirectsBackend(new AsyncHttpClientFutureBackend(asyncHttpClient, closeClient, customizeRequest))
+    new FollowRedirectsBackend(
+      new AsyncHttpClientFutureBackend(asyncHttpClient, closeClient, customizeRequest),
+      uriEncoder = uriEncoder
+    )
 
   /** @param ec
     *   The execution context for running non-network related operations, e.g. mapping responses. Defaults to the global
@@ -71,9 +76,15 @@ object AsyncHttpClientFutureBackend {
     */
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default,
-      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
+      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
   )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, Any] =
-    AsyncHttpClientFutureBackend(AsyncHttpClientBackend.defaultClient(options), closeClient = true, customizeRequest)
+    AsyncHttpClientFutureBackend(
+      AsyncHttpClientBackend.defaultClient(options),
+      closeClient = true,
+      customizeRequest,
+      uriEncoder
+    )
 
   /** @param ec
     *   The execution context for running non-network related operations, e.g. mapping responses. Defaults to the global
@@ -81,9 +92,10 @@ object AsyncHttpClientFutureBackend {
     */
   def usingConfig(
       cfg: AsyncHttpClientConfig,
-      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
+      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
   )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, Any] =
-    AsyncHttpClientFutureBackend(new DefaultAsyncHttpClient(cfg), closeClient = true, customizeRequest)
+    AsyncHttpClientFutureBackend(new DefaultAsyncHttpClient(cfg), closeClient = true, customizeRequest, uriEncoder)
 
   /** @param updateConfig
     *   A function which updates the default configuration (created basing on `options`).
@@ -94,12 +106,14 @@ object AsyncHttpClientFutureBackend {
   def usingConfigBuilder(
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default,
-      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
+      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
   )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, Any] =
     AsyncHttpClientFutureBackend(
       AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
       closeClient = true,
-      customizeRequest
+      customizeRequest,
+      uriEncoder
     )
 
   /** @param ec
@@ -108,9 +122,10 @@ object AsyncHttpClientFutureBackend {
     */
   def usingClient(
       client: AsyncHttpClient,
-      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
+      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
   )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, Any] =
-    AsyncHttpClientFutureBackend(client, closeClient = false, customizeRequest)
+    AsyncHttpClientFutureBackend(client, closeClient = false, customizeRequest, uriEncoder)
 
   /** Create a stub backend for testing, which uses the [[Future]] response wrapper, and doesn't support streaming.
     *

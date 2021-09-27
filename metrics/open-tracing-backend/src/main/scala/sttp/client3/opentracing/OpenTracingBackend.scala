@@ -9,8 +9,9 @@ import sttp.monad.MonadError
 import sttp.monad.syntax._
 import sttp.client3.{FollowRedirectsBackend, Request, RequestT, Response, SttpBackend}
 import sttp.client3.opentracing.OpenTracingBackend._
-
 import scala.collection.JavaConverters._
+
+import sttp.client3.FollowRedirectsBackend.UriEncoder
 
 class OpenTracingBackend[F[_], P] private (delegate: SttpBackend[F, P], tracer: Tracer) extends SttpBackend[F, P] {
 
@@ -97,7 +98,11 @@ object OpenTracingBackend {
       tagWithTransformSpanBuilder(_.asChildOf(parentSpanContext))
   }
 
-  def apply[F[_], P](delegate: SttpBackend[F, P], tracer: Tracer): SttpBackend[F, P] = {
-    new FollowRedirectsBackend[F, P](new OpenTracingBackend(delegate, tracer))
+  def apply[F[_], P](
+      delegate: SttpBackend[F, P],
+      tracer: Tracer,
+      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
+  ): SttpBackend[F, P] = {
+    new FollowRedirectsBackend[F, P](new OpenTracingBackend(delegate, tracer), uriEncoder = uriEncoder)
   }
 }

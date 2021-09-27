@@ -1,13 +1,16 @@
 package sttp.client3
 
 import java.net.URI
+
 import sttp.capabilities.Effect
+import sttp.client3.FollowRedirectsBackend.{UriEncoder}
 import sttp.model.{Method, StatusCode, _}
 
 class FollowRedirectsBackend[F[_], P](
     delegate: SttpBackend[F, P],
     contentHeaders: Set[String] = HeaderNames.ContentHeaders,
-    sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders
+    sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders,
+    uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
 ) extends DelegateSttpBackend[F, P](delegate) {
   type PE = P with Effect[F]
 
@@ -53,9 +56,9 @@ class FollowRedirectsBackend[F[_], P](
   ): F[Response[T]] = {
     val uri = if (FollowRedirectsBackend.isRelative(loc)) {
       // using java's URI to resolve a relative URI
-      uri"${new URI(request.uri.toString).resolve(loc).toString}"
+      uriEncoder.encode(uri"${new URI(request.uri.toString).resolve(loc).toString}")
     } else {
-      uri"$loc"
+      uriEncoder.encode(uri"$loc")
     }
 
     val redirectResponse =
@@ -100,6 +103,31 @@ object FollowRedirectsBackend {
     val toCheck = uri.toLowerCase().trim
     !protocol.pattern.matcher(toCheck).matches()
   }
+
+  /** Defines an [[Uri]] encoding strategy when converting the uri from the location header to a request. This enables
+    * extending the [[FollowRedirectsBackend]] with a custom [[UriEncoder]] that allows relaxed/stricter uri creation.
+    */
+  trait UriEncoder {
+
+    /** Convert an uri from one representation to another
+      * @param original
+      *   The original uri to convert
+      * @return
+      *   Converted uri
+      */
+    def encode(original: Uri): Uri
+
+  }
+
+  object UriEncoder {
+
+    /** By default, the conversion is a no-op
+      */
+    val DefaultEncoder = new UriEncoder {
+      override def encode(original: Uri): Uri = identity(original)
+    }
+  }
+
 }
 
 case class TooManyRedirectsException(uri: Uri, redirects: Int) extends Exception

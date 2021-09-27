@@ -6,6 +6,7 @@ import java.net.http.HttpResponse.BodyHandlers
 import java.net.http.{HttpClient, HttpRequest}
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
 
+import sttp.client3.FollowRedirectsBackend.UriEncoder
 import sttp.client3.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client3.httpclient.HttpClientSyncBackend.SyncEncodingHandler
 import sttp.client3.internal.NoStreams
@@ -79,30 +80,35 @@ object HttpClientSyncBackend {
       client: HttpClient,
       closeClient: Boolean,
       customizeRequest: HttpRequest => HttpRequest,
-      customEncodingHandler: SyncEncodingHandler
+      customEncodingHandler: SyncEncodingHandler,
+      uriEncoder: UriEncoder
   ): SttpBackend[Identity, Any] =
     new FollowRedirectsBackend(
-      new HttpClientSyncBackend(client, closeClient, customizeRequest, customEncodingHandler)
+      new HttpClientSyncBackend(client, closeClient, customizeRequest, customEncodingHandler),
+      uriEncoder = uriEncoder
     )
 
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: SyncEncodingHandler = PartialFunction.empty
+      customEncodingHandler: SyncEncodingHandler = PartialFunction.empty,
+      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
   ): SttpBackend[Identity, Any] =
     HttpClientSyncBackend(
       HttpClientBackend.defaultClient(options),
       closeClient = true,
       customizeRequest,
-      customEncodingHandler
+      customEncodingHandler,
+      uriEncoder
     )
 
   def usingClient(
       client: HttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: SyncEncodingHandler = PartialFunction.empty
+      customEncodingHandler: SyncEncodingHandler = PartialFunction.empty,
+      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
   ): SttpBackend[Identity, Any] =
-    HttpClientSyncBackend(client, closeClient = false, customizeRequest, customEncodingHandler)
+    HttpClientSyncBackend(client, closeClient = false, customizeRequest, customEncodingHandler, uriEncoder)
 
   /** Create a stub backend for testing, which uses the [[Identity]] response wrapper, and doesn't support streaming.
     *

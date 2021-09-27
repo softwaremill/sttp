@@ -13,7 +13,6 @@ import java.io.{ByteArrayInputStream, UnsupportedEncodingException}
 import java.nio.ByteBuffer
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.util.{Failure, Random, Success, Try}
 
 trait HttpTest[F[_]]
     extends AsyncFreeSpec
@@ -343,12 +342,13 @@ trait HttpTest[F[_]]
     }
 
     "decompress empty body using gzip" in {
-      val req =  basicRequest.get(uri"$endpoint/compress-empty-gzip").response(asStringAlways).acceptEncoding("gzip")
+      val req = basicRequest.get(uri"$endpoint/compress-empty-gzip").response(asStringAlways).acceptEncoding("gzip")
       req.send(backend).toFuture().map { resp => resp.body should be("") }
     }
 
     "decompress empty body using deflate" in {
-      val req =  basicRequest.get(uri"$endpoint/compress-empty-deflate").response(asStringAlways).acceptEncoding("deflate")
+      val req =
+        basicRequest.get(uri"$endpoint/compress-empty-deflate").response(asStringAlways).acceptEncoding("deflate")
       req.send(backend).toFuture().map { resp => resp.body should be("") }
     }
 

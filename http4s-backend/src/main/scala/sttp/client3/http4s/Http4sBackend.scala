@@ -2,6 +2,7 @@ package sttp.client3.http4s
 
 import java.io.{InputStream, UnsupportedEncodingException}
 import java.nio.charset.Charset
+
 import cats.data.NonEmptyList
 import cats.effect.{Async, Deferred, Resource}
 import cats.implicits._
@@ -23,8 +24,9 @@ import sttp.monad.MonadError
 import sttp.client3.testing.SttpBackendStub
 import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.client3.{BasicRequestBody, NoBody, RequestBody, Response, SttpBackend, _}
-
 import scala.concurrent.ExecutionContext
+
+import sttp.client3.FollowRedirectsBackend.UriEncoder
 
 // needs http4s using cats-effect
 class Http4sBackend[F[_]: Async](
@@ -261,29 +263,34 @@ object Http4sBackend {
   def usingClient[F[_]: Async](
       client: Client[F],
       customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _,
-      customEncodingHandler: EncodingHandler[F] = PartialFunction.empty
+      customEncodingHandler: EncodingHandler[F] = PartialFunction.empty,
+      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
   ): SttpBackend[F, Fs2Streams[F]] =
     new FollowRedirectsBackend[F, Fs2Streams[F]](
-      new Http4sBackend[F](client, customizeRequest, customEncodingHandler)
+      new Http4sBackend[F](client, customizeRequest, customEncodingHandler),
+      uriEncoder = uriEncoder
     )
 
   def usingBlazeClientBuilder[F[_]: Async](
       blazeClientBuilder: BlazeClientBuilder[F],
       customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _,
-      customEncodingHandler: EncodingHandler[F] = PartialFunction.empty
+      customEncodingHandler: EncodingHandler[F] = PartialFunction.empty,
+      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
   ): Resource[F, SttpBackend[F, Fs2Streams[F]]] = {
-    blazeClientBuilder.resource.map(c => usingClient(c, customizeRequest, customEncodingHandler))
+    blazeClientBuilder.resource.map(c => usingClient(c, customizeRequest, customEncodingHandler, uriEncoder))
   }
 
   def usingDefaultBlazeClientBuilder[F[_]: Async](
       clientExecutionContext: ExecutionContext = ExecutionContext.global,
       customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _,
-      customEncodingHandler: EncodingHandler[F] = PartialFunction.empty
+      customEncodingHandler: EncodingHandler[F] = PartialFunction.empty,
+      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
   ): Resource[F, SttpBackend[F, Fs2Streams[F]]] =
     usingBlazeClientBuilder(
       BlazeClientBuilder[F](clientExecutionContext),
       customizeRequest,
-      customEncodingHandler
+      customEncodingHandler,
+      uriEncoder
     )
 
   /** Create a stub backend for testing, which uses the `F` response wrapper, and supports `Stream[F, Byte]` streaming.

@@ -20,8 +20,9 @@ import sttp.client3.testing.SttpBackendStub
 import sttp.client3.{FollowRedirectsBackend, Response, SttpBackend, SttpBackendOptions, _}
 import sttp.model.{ResponseMetadata, StatusCode}
 import sttp.monad.{FutureMonad, MonadError}
-
 import scala.concurrent.{ExecutionContext, Future, Promise}
+
+import sttp.client3.FollowRedirectsBackend.UriEncoder
 
 class AkkaHttpBackend private (
     actorSystem: ActorSystem,
@@ -168,7 +169,8 @@ object AkkaHttpBackend {
       customizeRequest: HttpRequest => HttpRequest,
       customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity,
       customizeResponse: (HttpRequest, HttpResponse) => HttpResponse = (_, r) => r,
-      customEncodingHandler: EncodingHandler = PartialFunction.empty
+      customEncodingHandler: EncodingHandler = PartialFunction.empty,
+      uriEncoder: UriEncoder
   ): SttpBackend[Future, AkkaStreams with WebSockets] =
     new FollowRedirectsBackend(
       new AkkaHttpBackend(
@@ -182,7 +184,8 @@ object AkkaHttpBackend {
         customizeWebsocketRequest,
         customizeResponse,
         customEncodingHandler
-      )
+      ),
+      uriEncoder = uriEncoder
     )
 
   /** @param ec
@@ -197,7 +200,8 @@ object AkkaHttpBackend {
       customizeRequest: HttpRequest => HttpRequest = identity,
       customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity,
       customizeResponse: (HttpRequest, HttpResponse) => HttpResponse = (_, r) => r,
-      customEncodingHandler: EncodingHandler = PartialFunction.empty
+      customEncodingHandler: EncodingHandler = PartialFunction.empty,
+      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
   )(implicit
       ec: Option[ExecutionContext] = None
   ): SttpBackend[Future, AkkaStreams with WebSockets] = {
@@ -213,7 +217,8 @@ object AkkaHttpBackend {
       customizeRequest,
       customizeWebsocketRequest,
       customizeResponse,
-      customEncodingHandler
+      customEncodingHandler,
+      uriEncoder
     )
   }
 
@@ -232,7 +237,8 @@ object AkkaHttpBackend {
       customizeRequest: HttpRequest => HttpRequest = identity,
       customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity,
       customizeResponse: (HttpRequest, HttpResponse) => HttpResponse = (_, r) => r,
-      customEncodingHandler: EncodingHandler = PartialFunction.empty
+      customEncodingHandler: EncodingHandler = PartialFunction.empty,
+      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
   )(implicit
       ec: Option[ExecutionContext] = None
   ): SttpBackend[Future, AkkaStreams with WebSockets] = {
@@ -244,7 +250,8 @@ object AkkaHttpBackend {
       customizeRequest,
       customizeWebsocketRequest,
       customizeResponse,
-      customEncodingHandler
+      customEncodingHandler,
+      uriEncoder
     )
   }
 
@@ -262,7 +269,8 @@ object AkkaHttpBackend {
       customizeRequest: HttpRequest => HttpRequest = identity,
       customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity,
       customizeResponse: (HttpRequest, HttpResponse) => HttpResponse = (_, r) => r,
-      customEncodingHandler: EncodingHandler = PartialFunction.empty
+      customEncodingHandler: EncodingHandler = PartialFunction.empty,
+      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
   )(implicit
       ec: Option[ExecutionContext] = None
   ): SttpBackend[Future, AkkaStreams with WebSockets] = {
@@ -276,7 +284,8 @@ object AkkaHttpBackend {
       customizeRequest,
       customizeWebsocketRequest,
       customizeResponse,
-      customEncodingHandler
+      customEncodingHandler,
+      uriEncoder
     )
   }
 

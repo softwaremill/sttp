@@ -9,6 +9,7 @@ import fs2.interop.reactivestreams._
 import fs2.{Chunk, Stream}
 import org.reactivestreams.Publisher
 import sttp.capabilities.fs2.Fs2Streams
+import sttp.client3.FollowRedirectsBackend.UriEncoder
 import sttp.client3.armeria.AbstractArmeriaBackend.newClient
 import sttp.client3.armeria.{AbstractArmeriaBackend, BodyFromStreamMessage}
 import sttp.client3.impl.cats.CatsMonadAsyncError
@@ -50,27 +51,37 @@ object ArmeriaFs2Backend {
     */
   def apply[F[_]: Async](
       dispatcher: Dispatcher[F],
-      options: SttpBackendOptions = SttpBackendOptions.Default
+      options: SttpBackendOptions = SttpBackendOptions.Default,
+      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
   ): SttpBackend[F, Fs2Streams[F]] =
-    apply(newClient(options), closeFactory = true, dispatcher)
+    apply(newClient(options), closeFactory = true, dispatcher, uriEncoder)
 
   def resource[F[_]: Async](
-      options: SttpBackendOptions = SttpBackendOptions.Default
+      options: SttpBackendOptions = SttpBackendOptions.Default,
+      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
   ): Resource[F, SttpBackend[F, Fs2Streams[F]]] =
     Dispatcher[F].flatMap(dispatcher =>
-      Resource.make(Sync[F].delay(apply(newClient(options), closeFactory = true, dispatcher)))(_.close())
+      Resource.make(Sync[F].delay(apply(newClient(options), closeFactory = true, dispatcher, uriEncoder)))(_.close())
     )
 
-  def usingClient[F[_]: Async](client: WebClient, dispatcher: Dispatcher[F]): SttpBackend[F, Fs2Streams[F]] =
-    apply(client, closeFactory = false, dispatcher)
+  def usingClient[F[_]: Async](
+      client: WebClient,
+      dispatcher: Dispatcher[F],
+      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
+  ): SttpBackend[F, Fs2Streams[F]] =
+    apply(client, closeFactory = false, dispatcher, uriEncoder)
 
-  def usingDefaultClient[F[_]: Async](dispatcher: Dispatcher[F]): SttpBackend[F, Fs2Streams[F]] =
-    apply(newClient(), closeFactory = false, dispatcher)
+  def usingDefaultClient[F[_]: Async](
+      dispatcher: Dispatcher[F],
+      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
+  ): SttpBackend[F, Fs2Streams[F]] =
+    apply(newClient(), closeFactory = false, dispatcher, uriEncoder)
 
   private def apply[F[_]: Async](
       client: WebClient,
       closeFactory: Boolean,
-      dispatcher: Dispatcher[F]
+      dispatcher: Dispatcher[F],
+      uriEncoder: UriEncoder
   ): SttpBackend[F, Fs2Streams[F]] =
-    new FollowRedirectsBackend(new ArmeriaFs2Backend(client, closeFactory, dispatcher))
+    new FollowRedirectsBackend(new ArmeriaFs2Backend(client, closeFactory, dispatcher), uriEncoder = uriEncoder)
 }

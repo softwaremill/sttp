@@ -17,8 +17,9 @@ import sttp.client3.testing.SttpBackendStub
 import sttp.client3.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 import sttp.monad.{FutureMonad, MonadError}
 import sttp.ws.{WebSocket, WebSocketFrame}
-
 import scala.concurrent.{ExecutionContext, Future}
+
+import sttp.client3.FollowRedirectsBackend.UriEncoder
 
 class HttpClientFutureBackend private (
     client: HttpClient,
@@ -81,30 +82,35 @@ object HttpClientFutureBackend {
       client: HttpClient,
       closeClient: Boolean,
       customizeRequest: HttpRequest => HttpRequest,
-      customEncodingHandler: InputStreamEncodingHandler
+      customEncodingHandler: InputStreamEncodingHandler,
+      uriEncoder: UriEncoder
   )(implicit ec: ExecutionContext): SttpBackend[Future, WebSockets] =
     new FollowRedirectsBackend(
-      new HttpClientFutureBackend(client, closeClient, customizeRequest, customEncodingHandler)
+      new HttpClientFutureBackend(client, closeClient, customizeRequest, customEncodingHandler),
+      uriEncoder = uriEncoder
     )
 
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: InputStreamEncodingHandler = PartialFunction.empty
+      customEncodingHandler: InputStreamEncodingHandler = PartialFunction.empty,
+      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
   )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, WebSockets] =
     HttpClientFutureBackend(
       HttpClientBackend.defaultClient(options),
       closeClient = true,
       customizeRequest,
-      customEncodingHandler
+      customEncodingHandler,
+      uriEncoder
     )
 
   def usingClient(
       client: HttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: InputStreamEncodingHandler = PartialFunction.empty
+      customEncodingHandler: InputStreamEncodingHandler = PartialFunction.empty,
+      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
   )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, WebSockets] =
-    HttpClientFutureBackend(client, closeClient = false, customizeRequest, customEncodingHandler)
+    HttpClientFutureBackend(client, closeClient = false, customizeRequest, customEncodingHandler, uriEncoder)
 
   /** Create a stub backend for testing, which uses the [[Future]] response wrapper, and doesn't support streaming.
     *

@@ -5,6 +5,7 @@ import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.{HttpClient, HttpRequest}
 import java.nio.ByteBuffer
 import java.util
+
 import cats.effect.kernel._
 import cats.effect.std.{Dispatcher, Queue}
 import cats.implicits._
@@ -29,8 +30,9 @@ import sttp.client3.internal.ws.SimpleQueue
 import sttp.client3.testing.SttpBackendStub
 import sttp.client3.{FollowRedirectsBackend, Request, Response, SttpBackend, SttpBackendOptions}
 import sttp.monad.MonadError
-
 import scala.collection.JavaConverters._
+
+import sttp.client3.FollowRedirectsBackend.UriEncoder
 
 class HttpClientFs2Backend[F[_]: Async] private (
     client: HttpClient,
@@ -94,17 +96,20 @@ object HttpClientFs2Backend {
       closeClient: Boolean,
       customizeRequest: HttpRequest => HttpRequest,
       customEncodingHandler: Fs2EncodingHandler[F],
-      dispatcher: Dispatcher[F]
+      dispatcher: Dispatcher[F],
+      uriEncoder: UriEncoder
   ): SttpBackend[F, Fs2Streams[F] with WebSockets] =
     new FollowRedirectsBackend(
-      new HttpClientFs2Backend(client, closeClient, customizeRequest, customEncodingHandler, dispatcher)
+      new HttpClientFs2Backend(client, closeClient, customizeRequest, customEncodingHandler, dispatcher),
+      uriEncoder = uriEncoder
     )
 
   def apply[F[_]: Async](
       dispatcher: Dispatcher[F],
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty
+      customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty,
+      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
   ): F[SttpBackend[F, Fs2Streams[F] with WebSockets]] =
     Sync[F].delay(
       HttpClientFs2Backend(
@@ -112,26 +117,29 @@ object HttpClientFs2Backend {
         closeClient = true,
         customizeRequest,
         customEncodingHandler,
-        dispatcher
+        dispatcher,
+        uriEncoder
       )
     )
 
   def resource[F[_]: Async](
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty
+      customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty,
+      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
   ): Resource[F, SttpBackend[F, Fs2Streams[F] with WebSockets]] =
     Dispatcher[F].flatMap(dispatcher =>
-      Resource.make(apply(dispatcher, options, customizeRequest, customEncodingHandler))(_.close())
+      Resource.make(apply(dispatcher, options, customizeRequest, customEncodingHandler, uriEncoder))(_.close())
     )
 
   def usingClient[F[_]: Async](
       client: HttpClient,
       dispatcher: Dispatcher[F],
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty
+      customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty,
+      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
   ): SttpBackend[F, Fs2Streams[F] with WebSockets] =
-    HttpClientFs2Backend(client, closeClient = false, customizeRequest, customEncodingHandler, dispatcher)
+    HttpClientFs2Backend(client, closeClient = false, customizeRequest, customEncodingHandler, dispatcher, uriEncoder)
 
   /** Create a stub backend for testing, which uses the [[F]] response wrapper, and supports `Stream[F, Byte]`
     * streaming.

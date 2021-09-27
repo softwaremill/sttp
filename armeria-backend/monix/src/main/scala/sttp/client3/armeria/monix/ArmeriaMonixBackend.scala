@@ -8,6 +8,7 @@ import monix.execution.Scheduler
 import monix.reactive.Observable
 import org.reactivestreams.Publisher
 import sttp.capabilities.monix.MonixStreams
+import sttp.client3.FollowRedirectsBackend.UriEncoder
 import sttp.client3.armeria.AbstractArmeriaBackend.newClient
 import sttp.client3.armeria.{AbstractArmeriaBackend, BodyFromStreamMessage}
 import sttp.client3.impl.monix.TaskMonadAsyncError
@@ -42,25 +43,34 @@ object ArmeriaMonixBackend {
     * @param scheduler
     *   The scheduler used for streaming request bodies. Defaults to the global scheduler.
     */
-  def apply(options: SttpBackendOptions = SttpBackendOptions.Default)(implicit
+  def apply(
+      options: SttpBackendOptions = SttpBackendOptions.Default,
+      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
+  )(implicit
       scheduler: Scheduler = Scheduler.global
   ): SttpBackend[Task, MonixStreams] =
-    apply(newClient(options), closeFactory = true)
+    apply(newClient(options), closeFactory = true, uriEncoder)
 
   /** @param scheduler The scheduler used for streaming request bodies. Defaults to the global scheduler. */
   def usingClient(client: WebClient)(implicit
-      scheduler: Scheduler = Scheduler.global
+      scheduler: Scheduler = Scheduler.global,
+      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
   ): SttpBackend[Task, MonixStreams] =
-    apply(client, closeFactory = false)
+    apply(client, closeFactory = false, uriEncoder)
 
   /** @param scheduler The scheduler used for streaming request bodies. Defaults to the global scheduler. */
   def usingDefaultClient()(implicit
-      scheduler: Scheduler = Scheduler.global
+      scheduler: Scheduler = Scheduler.global,
+      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
   ): SttpBackend[Task, MonixStreams] =
-    apply(newClient(), closeFactory = false)
+    apply(newClient(), closeFactory = false, uriEncoder)
 
-  private def apply(client: WebClient, closeFactory: Boolean)(implicit
+  private def apply(
+      client: WebClient,
+      closeFactory: Boolean,
+      uriEncoder: UriEncoder
+  )(implicit
       scheduler: Scheduler
   ): SttpBackend[Task, MonixStreams] =
-    new FollowRedirectsBackend(new ArmeriaMonixBackend(client, closeFactory))
+    new FollowRedirectsBackend(new ArmeriaMonixBackend(client, closeFactory), uriEncoder = uriEncoder)
 }
