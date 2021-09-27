@@ -3,6 +3,8 @@ package sttp.client3
 import org.scalatest.EitherValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import sttp.client3.FollowRedirectsBackend.UriEncoder
+import sttp.client3.testing.SttpBackendStub
 import sttp.model.internal.Rfc3986
 import sttp.model.{Header, StatusCode, Uri}
 
@@ -33,23 +35,27 @@ class FollowRedirectsBackendTest extends AnyFunSuite with Matchers with EitherVa
     val url0 = uri"https://server.com/download"
     val url1Source = "https://elsewhere.com/A%2C%20File%20With%20Spaces%20.txt"
 
-    val stub0 = HttpURLConnectionBackend.stub
-      .whenRequestMatches(_.uri == url0)
-      .thenRespond(Response[String]("", StatusCode.Found, "", Seq(Header.location(url1Source))))
-      .whenRequestMatches(_.uri.toString() == url1Source)
-      .thenRespond(Response.ok("All good!"))
+    val response0 = Response("", StatusCode.Found, "", Vector(Header.location(url1Source)))
+    val response1 = Response.ok("All good!")
 
+    val stub0 = SttpBackendStub.synchronous
+      .whenRequestMatches(_.uri == url0)
+      .thenRespond(response0)
+      .whenRequestMatches(_.uri.toString() == url1Source)
+      .thenRespond(response1)
+
+    val encoder: UriEncoder = new UriEncoder {
+
+      override def encode(original: Uri): Uri = original.copy(pathSegments =
+        Uri.AbsolutePath(original.pathSegments.segments.map(_.copy(encoding = pathEncoder)).toList)
+      )
+    }
     val redirectsBackend = new FollowRedirectsBackend(
       stub0,
-      uriEncoder = (original: Uri) => {
-        original.copy(pathSegments =
-          Uri.AbsolutePath(original.pathSegments.segments.map(_.copy(encoding = pathEncoder)).toList)
-        )
-      }
+      uriEncoder = encoder
     )
 
-    val request = basicRequest.get(url0)
-    val result = redirectsBackend.send(request)
+    val result = redirectsBackend.send(basicRequest.get(url0))
     result.body.value shouldBe "All good!"
   }
 
