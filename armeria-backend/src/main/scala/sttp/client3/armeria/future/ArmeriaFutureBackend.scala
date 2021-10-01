@@ -9,10 +9,9 @@ import sttp.client3.armeria.{AbstractArmeriaBackend, BodyFromStreamMessage}
 import sttp.client3.internal.NoStreams
 import sttp.client3.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 import sttp.monad.{FutureMonad, MonadAsyncError}
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-
-import sttp.client3.FollowRedirectsBackend.UriEncoder
 
 private final class ArmeriaFutureBackend(client: WebClient, closeFactory: Boolean)
     extends AbstractArmeriaBackend[Future, Nothing](client, closeFactory, new FutureMonad()) {
@@ -40,27 +39,15 @@ object ArmeriaFutureBackend {
     * client will manage its own connection pool. If you'd like to reuse the default Armeria
     * [[https://armeria.dev/docs/client-factory ClientFactory]] use `.usingDefaultClient`.
     */
-  def apply(
-      options: SttpBackendOptions = SttpBackendOptions.Default,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
-  ): SttpBackend[Future, Any] =
-    apply(newClient(options), closeFactory = true, uriEncoder)
+  def apply(options: SttpBackendOptions = SttpBackendOptions.Default): SttpBackend[Future, Any] =
+    apply(newClient(options), closeFactory = true)
 
-  def usingClient(
-      client: WebClient,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
-  ): SttpBackend[Future, Any] =
-    apply(client, closeFactory = false, uriEncoder)
+  def usingClient(client: WebClient): SttpBackend[Future, Any] =
+    apply(client, closeFactory = false)
 
-  def usingDefaultClient(
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
-  ): SttpBackend[Future, Any] =
-    apply(newClient(), closeFactory = false, uriEncoder)
+  def usingDefaultClient(): SttpBackend[Future, Any] =
+    apply(newClient(), closeFactory = false)
 
-  private def apply(
-      client: WebClient,
-      closeFactory: Boolean,
-      uriEncoder: UriEncoder
-  ): SttpBackend[Future, Any] =
-    new FollowRedirectsBackend(new ArmeriaFutureBackend(client, closeFactory), uriEncoder = uriEncoder)
+  private def apply(client: WebClient, closeFactory: Boolean): SttpBackend[Future, Any] =
+    new FollowRedirectsBackend(new ArmeriaFutureBackend(client, closeFactory))
 }

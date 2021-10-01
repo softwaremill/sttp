@@ -5,7 +5,6 @@ import com.linecorp.armeria.client.WebClient
 import com.linecorp.armeria.common.HttpData
 import com.linecorp.armeria.common.stream.StreamMessage
 import org.reactivestreams.Publisher
-import sttp.client3.FollowRedirectsBackend.UriEncoder
 import sttp.client3.armeria.AbstractArmeriaBackend.newClient
 import sttp.client3.armeria.{AbstractArmeriaBackend, BodyFromStreamMessage}
 import sttp.client3.impl.cats.CatsMonadAsyncError
@@ -39,34 +38,24 @@ object ArmeriaCatsBackend {
     * client will manage its own connection pool. If you'd like to reuse the default Armeria
     * [[https://armeria.dev/docs/client-factory ClientFactory]] use `.usingDefaultClient`.
     */
-  def apply[F[_]: Async](
-      options: SttpBackendOptions = SttpBackendOptions.Default,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
-  ): SttpBackend[F, Any] =
-    apply(newClient(options), closeFactory = true, uriEncoder)
+  def apply[F[_]: Async](options: SttpBackendOptions = SttpBackendOptions.Default): SttpBackend[F, Any] =
+    apply(newClient(options), closeFactory = true)
 
   def resource[F[_]: Async](
-      options: SttpBackendOptions = SttpBackendOptions.Default,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
+      options: SttpBackendOptions = SttpBackendOptions.Default
   ): Resource[F, SttpBackend[F, Any]] = {
-    Resource.make(Sync[F].delay(apply(newClient(options), closeFactory = true, uriEncoder)))(_.close())
+    Resource.make(Sync[F].delay(apply(newClient(options), closeFactory = true)))(_.close())
   }
 
-  def usingDefaultClient[F[_]: Async](
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
-  ): SttpBackend[F, Any] =
-    apply(newClient(), closeFactory = false, uriEncoder)
+  def usingDefaultClient[F[_]: Async](): SttpBackend[F, Any] =
+    apply(newClient(), closeFactory = false)
 
-  def usingClient[F[_]: Async](
-      client: WebClient,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
-  ): SttpBackend[F, Any] =
-    apply(client, closeFactory = false, uriEncoder)
+  def usingClient[F[_]: Async](client: WebClient): SttpBackend[F, Any] =
+    apply(client, closeFactory = false)
 
   private def apply[F[_]: Async](
       client: WebClient,
-      closeFactory: Boolean,
-      uriEncoder: UriEncoder
+      closeFactory: Boolean
   ): SttpBackend[F, Any] =
-    new FollowRedirectsBackend(new ArmeriaCatsBackend(client, closeFactory), uriEncoder = uriEncoder)
+    new FollowRedirectsBackend(new ArmeriaCatsBackend(client, closeFactory))
 }

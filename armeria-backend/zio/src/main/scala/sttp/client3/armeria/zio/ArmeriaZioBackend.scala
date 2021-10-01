@@ -17,7 +17,6 @@ import _root_.zio.interop.reactivestreams.{
   publisherToStream => publisherToZioStream,
   streamToPublisher => zioStreamToPublisher
 }
-import sttp.client3.FollowRedirectsBackend.UriEncoder
 
 private final class ArmeriaZioBackend(runtime: Runtime[Any], client: WebClient, closeFactory: Boolean)
     extends AbstractArmeriaBackend[Task, ZioStreams](client, closeFactory, new RIOMonadAsyncError[Any]) {
@@ -45,53 +44,30 @@ object ArmeriaZioBackend {
     * client will manage its own connection pool. If you'd like to reuse the default Armeria
     * [[https://armeria.dev/docs/client-factory ClientFactory]] use `.usingDefaultClient`.
     */
-  def apply(
-      options: SttpBackendOptions = SttpBackendOptions.Default,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
-  ): Task[SttpBackend[Task, ZioStreams]] =
+  def apply(options: SttpBackendOptions = SttpBackendOptions.Default): Task[SttpBackend[Task, ZioStreams]] =
     ZIO
       .runtime[Any]
-      .map(runtime => apply(runtime, newClient(options), closeFactory = true, uriEncoder))
+      .map(runtime => apply(runtime, newClient(options), closeFactory = true))
 
-  def managed(
-      options: SttpBackendOptions = SttpBackendOptions.Default,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
-  ): TaskManaged[SttpBackend[Task, ZioStreams]] =
-    ZManaged.make(apply(options, uriEncoder))(_.close().ignore)
+  def managed(options: SttpBackendOptions = SttpBackendOptions.Default): TaskManaged[SttpBackend[Task, ZioStreams]] =
+    ZManaged.make(apply(options))(_.close().ignore)
 
-  def layered(
-      options: SttpBackendOptions = SttpBackendOptions.Default,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
-  ): Layer[Throwable, SttpClient] =
-    ZLayer.fromManaged(managed(options, uriEncoder))
+  def layered(options: SttpBackendOptions = SttpBackendOptions.Default): Layer[Throwable, SttpClient] =
+    ZLayer.fromManaged(managed(options))
 
-  def usingClient(
-      client: WebClient,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
-  ): Task[SttpBackend[Task, ZioStreams]] =
+  def usingClient(client: WebClient): Task[SttpBackend[Task, ZioStreams]] =
     ZIO
       .runtime[Any]
-      .map(runtime => apply(runtime, client, closeFactory = false, uriEncoder))
+      .map(runtime => apply(runtime, client, closeFactory = false))
 
-  def usingClientAndRuntime[R](
-      runtime: Runtime[R],
-      client: WebClient,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
-  ): SttpBackend[Task, ZioStreams] =
-    apply(runtime, client, closeFactory = false, uriEncoder)
+  def usingClient[R](runtime: Runtime[R], client: WebClient): SttpBackend[Task, ZioStreams] =
+    apply(runtime, client, closeFactory = false)
 
-  def usingDefaultClient(
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
-  ): Task[SttpBackend[Task, ZioStreams]] =
+  def usingDefaultClient(): Task[SttpBackend[Task, ZioStreams]] =
     ZIO
       .runtime[Any]
-      .map(runtime => apply(runtime, newClient(), closeFactory = false, uriEncoder))
+      .map(runtime => apply(runtime, newClient(), closeFactory = false))
 
-  private def apply[R](
-      runtime: Runtime[R],
-      client: WebClient,
-      closeFactory: Boolean,
-      uriEncoder: UriEncoder
-  ): SttpBackend[Task, ZioStreams] =
-    new FollowRedirectsBackend(new ArmeriaZioBackend(runtime, client, closeFactory), uriEncoder = uriEncoder)
+  private def apply[R](runtime: Runtime[R], client: WebClient, closeFactory: Boolean): SttpBackend[Task, ZioStreams] =
+    new FollowRedirectsBackend(new ArmeriaZioBackend(runtime, client, closeFactory))
 }

@@ -38,9 +38,8 @@ import sttp.client3.{
 import sttp.model._
 import sttp.monad.MonadError
 import sttp.monad.syntax._
-import scala.io.Source
 
-import sttp.client3.FollowRedirectsBackend.UriEncoder
+import scala.io.Source
 
 class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture, Any] {
   type PE = Any with Effect[TFuture]
@@ -248,17 +247,12 @@ object TFutureMonadError extends MonadError[TFuture] {
 
 object FinagleBackend {
 
-  def apply(
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
-  ): SttpBackend[TFuture, Any] = {
-    new FollowRedirectsBackend[TFuture, Any](new FinagleBackend(), uriEncoder = uriEncoder)
+  def apply(): SttpBackend[TFuture, Any] = {
+    new FollowRedirectsBackend[TFuture, Any](new FinagleBackend())
   }
 
-  def usingClient(
-      client: Client,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
-  ): SttpBackend[TFuture, Any] = {
-    new FollowRedirectsBackend[TFuture, Any](new FinagleBackend(Some(client)), uriEncoder = uriEncoder)
+  def usingClient(client: Client): SttpBackend[TFuture, Any] = {
+    new FollowRedirectsBackend[TFuture, Any](new FinagleBackend(Some(client)))
   }
 
   /** Create a stub backend for testing, which uses the [[TFuture]] response wrapper, and doesn't support streaming.

@@ -1,9 +1,8 @@
 package sttp.client3
 
 import java.net.URI
-
 import sttp.capabilities.Effect
-import sttp.client3.FollowRedirectsBackend.{UriEncoder}
+import sttp.client3.FollowRedirectsBackend.UriEncoder
 import sttp.model.{Method, StatusCode, _}
 
 class FollowRedirectsBackend[F[_], P](

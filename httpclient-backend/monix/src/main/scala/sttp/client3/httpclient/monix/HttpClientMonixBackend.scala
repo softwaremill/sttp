@@ -23,9 +23,8 @@ import sttp.client3.internal.ws.SimpleQueue
 import sttp.client3.testing.SttpBackendStub
 import sttp.client3.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 import sttp.monad.MonadError
-import scala.collection.JavaConverters._
 
-import sttp.client3.FollowRedirectsBackend.UriEncoder
+import scala.collection.JavaConverters._
 
 class HttpClientMonixBackend private (
     client: HttpClient,
@@ -87,21 +86,18 @@ object HttpClientMonixBackend {
       client: HttpClient,
       closeClient: Boolean,
       customizeRequest: HttpRequest => HttpRequest,
-      customEncodingHandler: MonixEncodingHandler,
-      uriEncoder: UriEncoder
+      customEncodingHandler: MonixEncodingHandler
   )(implicit
       s: Scheduler
   ): SttpBackend[Task, MonixStreams with WebSockets] =
     new FollowRedirectsBackend(
-      new HttpClientMonixBackend(client, closeClient, customizeRequest, customEncodingHandler)(s),
-      uriEncoder = uriEncoder
+      new HttpClientMonixBackend(client, closeClient, customizeRequest, customEncodingHandler)(s)
     )
 
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: MonixEncodingHandler = PartialFunction.empty,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
+      customEncodingHandler: MonixEncodingHandler = PartialFunction.empty
   )(implicit
       s: Scheduler = Scheduler.global
   ): Task[SttpBackend[Task, MonixStreams with WebSockets]] =
@@ -110,28 +106,25 @@ object HttpClientMonixBackend {
         HttpClientBackend.defaultClient(options),
         closeClient = true,
         customizeRequest,
-        customEncodingHandler,
-        uriEncoder
+        customEncodingHandler
       )(s)
     )
 
   def resource(
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: MonixEncodingHandler = PartialFunction.empty,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
+      customEncodingHandler: MonixEncodingHandler = PartialFunction.empty
   )(implicit
       s: Scheduler = Scheduler.global
   ): Resource[Task, SttpBackend[Task, MonixStreams with WebSockets]] =
-    Resource.make(apply(options, customizeRequest, customEncodingHandler, uriEncoder))(_.close())
+    Resource.make(apply(options, customizeRequest, customEncodingHandler))(_.close())
 
   def usingClient(
       client: HttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: MonixEncodingHandler = PartialFunction.empty,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
+      customEncodingHandler: MonixEncodingHandler = PartialFunction.empty
   )(implicit s: Scheduler = Scheduler.global): SttpBackend[Task, MonixStreams with WebSockets] =
-    HttpClientMonixBackend(client, closeClient = false, customizeRequest, customEncodingHandler, uriEncoder)(s)
+    HttpClientMonixBackend(client, closeClient = false, customizeRequest, customEncodingHandler)(s)
 
   /** Create a stub backend for testing, which uses the [[Task]] response wrapper, and supports `Observable[ByteBuffer]`
     * streaming.

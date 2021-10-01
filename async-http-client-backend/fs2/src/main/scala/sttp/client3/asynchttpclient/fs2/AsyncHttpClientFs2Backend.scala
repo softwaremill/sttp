@@ -20,10 +20,9 @@ import sttp.client3.testing.SttpBackendStub
 import sttp.client3.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 import sttp.monad.MonadAsyncError
 import sttp.ws.{WebSocket, WebSocketFrame}
+
 import java.io.File
 import java.nio.ByteBuffer
-
-import sttp.client3.FollowRedirectsBackend.UriEncoder
 
 class AsyncHttpClientFs2Backend[F[_]: Async] private (
     asyncHttpClient: AsyncHttpClient,
@@ -100,26 +99,17 @@ object AsyncHttpClientFs2Backend {
       closeClient: Boolean,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder,
       webSocketBufferCapacity: Option[Int],
-      dispatcher: Dispatcher[F],
-      uriEncoder: UriEncoder
+      dispatcher: Dispatcher[F]
   ): SttpBackend[F, Fs2Streams[F] with WebSockets] =
     new FollowRedirectsBackend(
-      new AsyncHttpClientFs2Backend(
-        asyncHttpClient,
-        closeClient,
-        customizeRequest,
-        webSocketBufferCapacity,
-        dispatcher
-      ),
-      uriEncoder = uriEncoder
+      new AsyncHttpClientFs2Backend(asyncHttpClient, closeClient, customizeRequest, webSocketBufferCapacity, dispatcher)
     )
 
   def apply[F[_]: Async](
       dispatcher: Dispatcher[F],
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
-      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
+      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): F[SttpBackend[F, Fs2Streams[F] with WebSockets]] =
     Sync[F]
       .delay(
@@ -128,8 +118,7 @@ object AsyncHttpClientFs2Backend {
           closeClient = true,
           customizeRequest,
           webSocketBufferCapacity,
-          dispatcher,
-          uriEncoder
+          dispatcher
         )
       )
 
@@ -137,19 +126,17 @@ object AsyncHttpClientFs2Backend {
   def resource[F[_]: Async](
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
-      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
+      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): Resource[F, SttpBackend[F, Fs2Streams[F] with WebSockets]] =
     Dispatcher[F].flatMap(dispatcher =>
-      Resource.make(apply(dispatcher, options, customizeRequest, webSocketBufferCapacity, uriEncoder))(_.close())
+      Resource.make(apply(dispatcher, options, customizeRequest, webSocketBufferCapacity))(_.close())
     )
 
   def usingConfig[F[_]: Async](
       cfg: AsyncHttpClientConfig,
       dispatcher: Dispatcher[F],
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
-      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
+      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): F[SttpBackend[F, Fs2Streams[F] with WebSockets]] =
     Sync[F].delay(
       apply[F](
@@ -157,8 +144,7 @@ object AsyncHttpClientFs2Backend {
         closeClient = true,
         customizeRequest,
         webSocketBufferCapacity,
-        dispatcher,
-        uriEncoder
+        dispatcher
       )
     )
 
@@ -166,11 +152,10 @@ object AsyncHttpClientFs2Backend {
   def resourceUsingConfig[F[_]: Async](
       cfg: AsyncHttpClientConfig,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
-      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
+      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): Resource[F, SttpBackend[F, Fs2Streams[F] with WebSockets]] =
     Dispatcher[F].flatMap(dispatcher =>
-      Resource.make(usingConfig(cfg, dispatcher, customizeRequest, webSocketBufferCapacity, uriEncoder))(_.close())
+      Resource.make(usingConfig(cfg, dispatcher, customizeRequest, webSocketBufferCapacity))(_.close())
     )
 
   /** @param updateConfig A function which updates the default configuration (created basing on `options`). */
@@ -179,8 +164,7 @@ object AsyncHttpClientFs2Backend {
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
-      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
+      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): F[SttpBackend[F, Fs2Streams[F] with WebSockets]] =
     Sync[F].delay(
       AsyncHttpClientFs2Backend[F](
@@ -188,8 +172,7 @@ object AsyncHttpClientFs2Backend {
         closeClient = true,
         customizeRequest,
         webSocketBufferCapacity,
-        dispatcher,
-        uriEncoder
+        dispatcher
       )
     )
 
@@ -201,20 +184,10 @@ object AsyncHttpClientFs2Backend {
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
-      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
+      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): Resource[F, SttpBackend[F, Fs2Streams[F] with WebSockets]] =
     Dispatcher[F].flatMap(dispatcher =>
-      Resource.make(
-        usingConfigBuilder(
-          dispatcher,
-          updateConfig,
-          options,
-          customizeRequest,
-          webSocketBufferCapacity,
-          uriEncoder
-        )
-      )(
+      Resource.make(usingConfigBuilder(dispatcher, updateConfig, options, customizeRequest, webSocketBufferCapacity))(
         _.close()
       )
     )
@@ -223,10 +196,9 @@ object AsyncHttpClientFs2Backend {
       client: AsyncHttpClient,
       dispatcher: Dispatcher[F],
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
-      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
+      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): SttpBackend[F, Fs2Streams[F] with WebSockets] =
-    apply[F](client, closeClient = false, customizeRequest, webSocketBufferCapacity, dispatcher, uriEncoder)
+    apply[F](client, closeClient = false, customizeRequest, webSocketBufferCapacity, dispatcher)
 
   /** Create a stub backend for testing, which uses the `F` response wrapper, and supports `Stream[F, ByteBuffer]`
     * streaming.

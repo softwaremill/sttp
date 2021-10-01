@@ -11,9 +11,8 @@ import sttp.client3.testing.SttpBackendStub
 import sttp.client3.{DefaultReadTimeout, FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 import sttp.monad.{FutureMonad, MonadError}
 import sttp.ws.WebSocket
-import scala.concurrent.{ExecutionContext, Future}
 
-import sttp.client3.FollowRedirectsBackend.UriEncoder
+import scala.concurrent.{ExecutionContext, Future}
 
 class OkHttpFutureBackend private (
     client: OkHttpClient,
@@ -47,37 +46,32 @@ object OkHttpFutureBackend {
       client: OkHttpClient,
       closeClient: Boolean,
       customEncodingHandler: EncodingHandler,
-      webSocketBufferCapacity: Option[Int],
-      uriEncoder: UriEncoder
+      webSocketBufferCapacity: Option[Int]
   )(implicit
       ec: ExecutionContext
   ): SttpBackend[Future, WebSockets] =
     new FollowRedirectsBackend(
-      new OkHttpFutureBackend(client, closeClient, customEncodingHandler, webSocketBufferCapacity),
-      uriEncoder = uriEncoder
+      new OkHttpFutureBackend(client, closeClient, customEncodingHandler, webSocketBufferCapacity)
     )
 
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customEncodingHandler: EncodingHandler = PartialFunction.empty,
-      webSocketBufferCapacity: Option[Int] = OkHttpBackend.DefaultWebSocketBufferCapacity,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
+      webSocketBufferCapacity: Option[Int] = OkHttpBackend.DefaultWebSocketBufferCapacity
   )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, WebSockets] =
     OkHttpFutureBackend(
       OkHttpBackend.defaultClient(DefaultReadTimeout.toMillis, options),
       closeClient = true,
       customEncodingHandler,
-      webSocketBufferCapacity,
-      uriEncoder
+      webSocketBufferCapacity
     )
 
   def usingClient(
       client: OkHttpClient,
       customEncodingHandler: EncodingHandler = PartialFunction.empty,
-      webSocketBufferCapacity: Option[Int] = OkHttpBackend.DefaultWebSocketBufferCapacity,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
+      webSocketBufferCapacity: Option[Int] = OkHttpBackend.DefaultWebSocketBufferCapacity
   )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, WebSockets] =
-    OkHttpFutureBackend(client, closeClient = false, customEncodingHandler, webSocketBufferCapacity, uriEncoder)
+    OkHttpFutureBackend(client, closeClient = false, customEncodingHandler, webSocketBufferCapacity)
 
   /** Create a stub backend for testing, which uses the [[Future]] response wrapper, and doesn't support streaming.
     *

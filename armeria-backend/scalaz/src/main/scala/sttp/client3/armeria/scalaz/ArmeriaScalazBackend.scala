@@ -5,7 +5,6 @@ import com.linecorp.armeria.common.HttpData
 import com.linecorp.armeria.common.stream.StreamMessage
 import org.reactivestreams.Publisher
 import scalaz.concurrent.Task
-import sttp.client3.FollowRedirectsBackend.UriEncoder
 import sttp.client3.armeria.AbstractArmeriaBackend.newClient
 import sttp.client3.armeria.{AbstractArmeriaBackend, BodyFromStreamMessage}
 import sttp.client3.impl.scalaz.TaskMonadAsyncError
@@ -39,25 +38,16 @@ object ArmeriaScalazBackend {
     * client will manage its own connection pool. If you'd like to reuse the default Armeria
     * [[https://armeria.dev/docs/client-factory ClientFactory]] use `.usingDefaultClient`.
     */
-  def apply(
-      options: SttpBackendOptions = SttpBackendOptions.Default,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
-  ): SttpBackend[Task, Any] =
-    apply(newClient(options), closeFactory = true, uriEncoder)
+  def apply(options: SttpBackendOptions = SttpBackendOptions.Default): SttpBackend[Task, Any] =
+    apply(newClient(options), closeFactory = true)
 
-  def usingClient(
-      client: WebClient,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
-  ): SttpBackend[Task, Any] = apply(client, closeFactory = false, uriEncoder)
+  def usingClient(client: WebClient): SttpBackend[Task, Any] = apply(client, closeFactory = false)
 
-  def usingDefaultClient(
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
-  ): SttpBackend[Task, Any] = apply(newClient(), closeFactory = false, uriEncoder)
+  def usingDefaultClient(): SttpBackend[Task, Any] = apply(newClient(), closeFactory = false)
 
   private def apply(
       client: WebClient,
-      closeFactory: Boolean,
-      uriEncoder: UriEncoder
+      closeFactory: Boolean
   ): SttpBackend[Task, Any] =
-    new FollowRedirectsBackend(new ArmeriaScalazBackend(client, closeFactory), uriEncoder = uriEncoder)
+    new FollowRedirectsBackend(new ArmeriaScalazBackend(client, closeFactory))
 }

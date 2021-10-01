@@ -23,10 +23,9 @@ import sttp.client3.{
 }
 import sttp.monad.MonadError
 import sttp.ws.WebSocket
+
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future, blocking}
-
-import sttp.client3.FollowRedirectsBackend.UriEncoder
 
 class OkHttpSyncBackend private (
     client: OkHttpClient,
@@ -104,35 +103,30 @@ object OkHttpSyncBackend {
       client: OkHttpClient,
       closeClient: Boolean,
       customEncodingHandler: EncodingHandler,
-      webSocketBufferCapacity: Option[Int],
-      uriEncoder: UriEncoder
+      webSocketBufferCapacity: Option[Int]
   ): SttpBackend[Identity, WebSockets] =
     new FollowRedirectsBackend(
-      new OkHttpSyncBackend(client, closeClient, customEncodingHandler, webSocketBufferCapacity),
-      uriEncoder = uriEncoder
+      new OkHttpSyncBackend(client, closeClient, customEncodingHandler, webSocketBufferCapacity)
     )
 
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customEncodingHandler: EncodingHandler = PartialFunction.empty,
-      webSocketBufferCapacity: Option[Int] = OkHttpBackend.DefaultWebSocketBufferCapacity,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
+      webSocketBufferCapacity: Option[Int] = OkHttpBackend.DefaultWebSocketBufferCapacity
   ): SttpBackend[Identity, WebSockets] =
     OkHttpSyncBackend(
       OkHttpBackend.defaultClient(DefaultReadTimeout.toMillis, options),
       closeClient = true,
       customEncodingHandler,
-      webSocketBufferCapacity,
-      uriEncoder
+      webSocketBufferCapacity
     )
 
   def usingClient(
       client: OkHttpClient,
       customEncodingHandler: EncodingHandler = PartialFunction.empty,
-      webSocketBufferCapacity: Option[Int] = OkHttpBackend.DefaultWebSocketBufferCapacity,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
+      webSocketBufferCapacity: Option[Int] = OkHttpBackend.DefaultWebSocketBufferCapacity
   ): SttpBackend[Identity, WebSockets] =
-    OkHttpSyncBackend(client, closeClient = false, customEncodingHandler, webSocketBufferCapacity, uriEncoder)
+    OkHttpSyncBackend(client, closeClient = false, customEncodingHandler, webSocketBufferCapacity)
 
   /** Create a stub backend for testing, which uses the [[Identity]] response wrapper, and doesn't support streaming.
     *

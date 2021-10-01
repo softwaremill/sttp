@@ -12,7 +12,6 @@ import org.asynchttpclient.{
 }
 import org.reactivestreams.Publisher
 import scalaz.concurrent.Task
-import sttp.client3.FollowRedirectsBackend.UriEncoder
 import sttp.client3.asynchttpclient.{AsyncHttpClientBackend, BodyFromAHC, BodyToAHC}
 import sttp.client3.impl.scalaz.TaskMonadAsyncError
 import sttp.client3.internal.NoStreams
@@ -57,36 +56,23 @@ object AsyncHttpClientScalazBackend {
   private def apply(
       asyncHttpClient: AsyncHttpClient,
       closeClient: Boolean,
-      customizeRequest: BoundRequestBuilder => BoundRequestBuilder,
-      uriEncoder: UriEncoder
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder
   ): SttpBackend[Task, Any] =
-    new FollowRedirectsBackend(
-      new AsyncHttpClientScalazBackend(asyncHttpClient, closeClient, customizeRequest),
-      uriEncoder = uriEncoder
-    )
+    new FollowRedirectsBackend(new AsyncHttpClientScalazBackend(asyncHttpClient, closeClient, customizeRequest))
 
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default,
-      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   ): Task[SttpBackend[Task, Any]] =
     Task.delay(
-      AsyncHttpClientScalazBackend(
-        AsyncHttpClientBackend.defaultClient(options),
-        closeClient = true,
-        customizeRequest,
-        uriEncoder
-      )
+      AsyncHttpClientScalazBackend(AsyncHttpClientBackend.defaultClient(options), closeClient = true, customizeRequest)
     )
 
   def usingConfig(
       cfg: AsyncHttpClientConfig,
-      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   ): Task[SttpBackend[Task, Any]] =
-    Task.delay(
-      AsyncHttpClientScalazBackend(new DefaultAsyncHttpClient(cfg), closeClient = true, customizeRequest, uriEncoder)
-    )
+    Task.delay(AsyncHttpClientScalazBackend(new DefaultAsyncHttpClient(cfg), closeClient = true, customizeRequest))
 
   /** @param updateConfig
     *   A function which updates the default configuration (created basing on `options`).
@@ -94,24 +80,21 @@ object AsyncHttpClientScalazBackend {
   def usingConfigBuilder(
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default,
-      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   ): Task[SttpBackend[Task, Any]] =
     Task.delay(
       AsyncHttpClientScalazBackend(
         AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
         closeClient = true,
-        customizeRequest,
-        uriEncoder
+        customizeRequest
       )
     )
 
   def usingClient(
       client: AsyncHttpClient,
-      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   ): SttpBackend[Task, Any] =
-    AsyncHttpClientScalazBackend(client, closeClient = false, customizeRequest, uriEncoder)
+    AsyncHttpClientScalazBackend(client, closeClient = false, customizeRequest)
 
   /** Create a stub backend for testing, which uses the [[Task]] response wrapper, and doesn't support streaming.
     *

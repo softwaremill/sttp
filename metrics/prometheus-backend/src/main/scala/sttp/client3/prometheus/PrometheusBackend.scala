@@ -6,9 +6,8 @@ import sttp.client3.{FollowRedirectsBackend, Identity, Request, Response, SttpBa
 import io.prometheus.client.{CollectorRegistry, Counter, Gauge, Histogram, Summary}
 import sttp.client3.listener.{ListenerBackend, RequestListener}
 import sttp.client3.prometheus.PrometheusBackend.RequestCollectors
-import scala.collection.mutable
 
-import sttp.client3.FollowRedirectsBackend.UriEncoder
+import scala.collection.mutable
 
 object PrometheusBackend {
   val DefaultHistogramName = "sttp_request_latency"
@@ -35,8 +34,7 @@ object PrometheusBackend {
         Some(CollectorConfig(DefaultRequestSizeName)),
       responseToSizeSummaryMapper: Response[_] => Option[CollectorConfig] = (_: Response[_]) =>
         Some(CollectorConfig(DefaultResponseSizeName)),
-      collectorRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
+      collectorRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry
   ): SttpBackend[F, P] = {
     // redirects should be handled before prometheus
     new FollowRedirectsBackend[F, P](
@@ -59,8 +57,7 @@ object PrometheusBackend {
           ),
           delegate.responseMonad
         )
-      ),
-      uriEncoder = uriEncoder
+      )
     )
   }
 

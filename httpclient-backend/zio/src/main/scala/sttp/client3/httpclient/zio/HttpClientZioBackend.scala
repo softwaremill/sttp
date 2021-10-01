@@ -5,7 +5,6 @@ import java.net.http.HttpRequest.{BodyPublisher, BodyPublishers}
 import java.net.http.{HttpClient, HttpRequest}
 import java.nio.ByteBuffer
 import java.util
-
 import _root_.zio.interop.reactivestreams._
 import org.reactivestreams.{FlowAdapters, Publisher}
 import sttp.capabilities.WebSockets
@@ -27,9 +26,8 @@ import sttp.monad.MonadError
 import zio.Chunk.ByteArray
 import zio._
 import zio.stream.{ZStream, ZTransducer}
-import scala.collection.JavaConverters._
 
-import sttp.client3.FollowRedirectsBackend.UriEncoder
+import scala.collection.JavaConverters._
 
 class HttpClientZioBackend private (
     client: HttpClient,
@@ -95,8 +93,7 @@ object HttpClientZioBackend {
       client: HttpClient,
       closeClient: Boolean,
       customizeRequest: HttpRequest => HttpRequest,
-      customEncodingHandler: ZioEncodingHandler,
-      uriEncoder: UriEncoder
+      customEncodingHandler: ZioEncodingHandler
   ): SttpBackend[Task, ZioStreams with WebSockets] =
     new FollowRedirectsBackend(
       new HttpClientZioBackend(
@@ -104,49 +101,43 @@ object HttpClientZioBackend {
         closeClient,
         customizeRequest,
         customEncodingHandler
-      ),
-      uriEncoder = uriEncoder
+      )
     )
 
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: ZioEncodingHandler = PartialFunction.empty,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
+      customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
   ): Task[SttpBackend[Task, ZioStreams with WebSockets]] =
     Task.effect(
       HttpClientZioBackend(
         HttpClientBackend.defaultClient(options),
         closeClient = true,
         customizeRequest,
-        customEncodingHandler,
-        uriEncoder
+        customEncodingHandler
       )
     )
 
   def managed(
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: ZioEncodingHandler = PartialFunction.empty,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
+      customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
   ): ZManaged[Any, Throwable, SttpBackend[Task, ZioStreams with WebSockets]] =
-    ZManaged.make(apply(options, customizeRequest, customEncodingHandler, uriEncoder))(
+    ZManaged.make(apply(options, customizeRequest, customEncodingHandler))(
       _.close().ignore
     )
 
   def layer(
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: ZioEncodingHandler = PartialFunction.empty,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
+      customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
   ): ZLayer[Any, Throwable, SttpClient] = {
     ZLayer.fromManaged(
       (for {
         backend <- HttpClientZioBackend(
           options,
           customizeRequest,
-          customEncodingHandler,
-          uriEncoder
+          customEncodingHandler
         )
       } yield backend).toManaged(_.close().ignore)
     )
@@ -155,22 +146,19 @@ object HttpClientZioBackend {
   def usingClient(
       client: HttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: ZioEncodingHandler = PartialFunction.empty,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
+      customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
   ): SttpBackend[Task, ZioStreams with WebSockets] =
     HttpClientZioBackend(
       client,
       closeClient = false,
       customizeRequest,
-      customEncodingHandler,
-      uriEncoder
+      customEncodingHandler
     )
 
   def layerUsingClient(
       client: HttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: ZioEncodingHandler = PartialFunction.empty,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
+      customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
   ): ZLayer[Any, Throwable, SttpClient] = {
     ZLayer.fromManaged(
       ZManaged
@@ -178,8 +166,7 @@ object HttpClientZioBackend {
           usingClient(
             client,
             customizeRequest,
-            customEncodingHandler,
-            uriEncoder
+            customEncodingHandler
           )
         )(_.close().ignore)
     )

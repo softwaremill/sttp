@@ -7,7 +7,6 @@ import java.nio.charset.CharacterCodingException
 import java.nio.file.Files
 import java.util.concurrent.ThreadLocalRandom
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
-
 import sttp.capabilities.Effect
 import sttp.client3.HttpURLConnectionBackend.EncodingHandler
 import sttp.client3.internal._
@@ -16,10 +15,9 @@ import sttp.client3.testing.SttpBackendStub
 import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.model.{Header, HeaderNames, ResponseMetadata, StatusCode, Uri}
 import sttp.monad.MonadError
+
 import scala.collection.JavaConverters._
 import scala.concurrent.duration.Duration
-
-import sttp.client3.FollowRedirectsBackend.UriEncoder
 
 class HttpURLConnectionBackend private (
     opts: SttpBackendOptions,
@@ -317,12 +315,10 @@ object HttpURLConnectionBackend {
         case (url, None)        => url.openConnection()
         case (url, Some(proxy)) => url.openConnection(proxy)
       },
-      customEncodingHandler: EncodingHandler = PartialFunction.empty,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
+      customEncodingHandler: EncodingHandler = PartialFunction.empty
   ): SttpBackend[Identity, Any] =
     new FollowRedirectsBackend[Identity, Any](
-      new HttpURLConnectionBackend(options, customizeConnection, createURL, openConnection, customEncodingHandler),
-      uriEncoder = uriEncoder
+      new HttpURLConnectionBackend(options, customizeConnection, createURL, openConnection, customEncodingHandler)
     )
 
   /** Create a stub backend for testing, which uses the [[Identity]] response wrapper, and doesn't support streaming.

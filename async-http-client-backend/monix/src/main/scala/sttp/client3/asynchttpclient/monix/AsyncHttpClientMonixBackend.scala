@@ -18,12 +18,10 @@ import sttp.client3.testing.SttpBackendStub
 import sttp.client3.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 import sttp.monad.MonadAsyncError
 import sttp.ws.{WebSocket, WebSocketFrame}
+
 import java.io.File
 import java.nio.ByteBuffer
-
 import scala.collection.immutable.Queue
-
-import sttp.client3.FollowRedirectsBackend.UriEncoder
 
 class AsyncHttpClientMonixBackend private (
     asyncHttpClient: AsyncHttpClient,
@@ -92,22 +90,19 @@ object AsyncHttpClientMonixBackend {
       asyncHttpClient: AsyncHttpClient,
       closeClient: Boolean,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder,
-      webSocketBufferCapacity: Option[Int],
-      uriEncoder: UriEncoder
+      webSocketBufferCapacity: Option[Int]
   )(implicit
       scheduler: Scheduler
   ): SttpBackend[Task, MonixStreams with WebSockets] =
     new FollowRedirectsBackend(
-      new AsyncHttpClientMonixBackend(asyncHttpClient, closeClient, customizeRequest, webSocketBufferCapacity),
-      uriEncoder = uriEncoder
+      new AsyncHttpClientMonixBackend(asyncHttpClient, closeClient, customizeRequest, webSocketBufferCapacity)
     )
 
   /** @param s The scheduler used for streaming request bodies. Defaults to the global scheduler. */
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
-      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
+      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   )(implicit
       s: Scheduler = Scheduler.global
   ): Task[SttpBackend[Task, MonixStreams with WebSockets]] =
@@ -116,8 +111,7 @@ object AsyncHttpClientMonixBackend {
         AsyncHttpClientBackend.defaultClient(options),
         closeClient = true,
         customizeRequest,
-        webSocketBufferCapacity,
-        uriEncoder
+        webSocketBufferCapacity
       )
     )
 
@@ -128,19 +122,17 @@ object AsyncHttpClientMonixBackend {
   def resource(
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
-      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
+      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   )(implicit
       s: Scheduler = Scheduler.global
   ): Resource[Task, SttpBackend[Task, MonixStreams with WebSockets]] =
-    Resource.make(apply(options, customizeRequest, webSocketBufferCapacity, uriEncoder))(_.close())
+    Resource.make(apply(options, customizeRequest, webSocketBufferCapacity))(_.close())
 
   /** @param s The scheduler used for streaming request bodies. Defaults to the global scheduler. */
   def usingConfig(
       cfg: AsyncHttpClientConfig,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
-      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
+      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   )(implicit
       s: Scheduler = Scheduler.global
   ): Task[SttpBackend[Task, MonixStreams with WebSockets]] =
@@ -149,8 +141,7 @@ object AsyncHttpClientMonixBackend {
         new DefaultAsyncHttpClient(cfg),
         closeClient = true,
         customizeRequest,
-        webSocketBufferCapacity,
-        uriEncoder
+        webSocketBufferCapacity
       )
     )
 
@@ -161,12 +152,11 @@ object AsyncHttpClientMonixBackend {
   def resourceUsingConfig(
       cfg: AsyncHttpClientConfig,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
-      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
+      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   )(implicit
       s: Scheduler = Scheduler.global
   ): Resource[Task, SttpBackend[Task, MonixStreams with WebSockets]] =
-    Resource.make(usingConfig(cfg, customizeRequest, webSocketBufferCapacity, uriEncoder))(_.close())
+    Resource.make(usingConfig(cfg, customizeRequest, webSocketBufferCapacity))(_.close())
 
   /** @param updateConfig
     *   A function which updates the default configuration (created basing on `options`).
@@ -177,8 +167,7 @@ object AsyncHttpClientMonixBackend {
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
-      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
+      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   )(implicit
       s: Scheduler = Scheduler.global
   ): Task[SttpBackend[Task, MonixStreams with WebSockets]] =
@@ -187,8 +176,7 @@ object AsyncHttpClientMonixBackend {
         AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
         closeClient = true,
         customizeRequest,
-        webSocketBufferCapacity,
-        uriEncoder
+        webSocketBufferCapacity
       )
     )
 
@@ -202,23 +190,19 @@ object AsyncHttpClientMonixBackend {
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
-      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
+      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   )(implicit
       s: Scheduler = Scheduler.global
   ): Resource[Task, SttpBackend[Task, MonixStreams with WebSockets]] =
-    Resource.make(
-      usingConfigBuilder(updateConfig, options, customizeRequest, webSocketBufferCapacity, uriEncoder)
-    )(_.close())
+    Resource.make(usingConfigBuilder(updateConfig, options, customizeRequest, webSocketBufferCapacity))(_.close())
 
   /** @param s The scheduler used for streaming request bodies. Defaults to the global scheduler. */
   def usingClient(
       client: AsyncHttpClient,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
-      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
+      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   )(implicit s: Scheduler = Scheduler.global): SttpBackend[Task, MonixStreams with WebSockets] =
-    AsyncHttpClientMonixBackend(client, closeClient = false, customizeRequest, webSocketBufferCapacity, uriEncoder)
+    AsyncHttpClientMonixBackend(client, closeClient = false, customizeRequest, webSocketBufferCapacity)
 
   /** Create a stub backend for testing, which uses the [[Task]] response wrapper, and supports `Observable[ByteBuffer]`
     * streaming.

@@ -58,6 +58,10 @@ object MyWrapper {
 }
 ```
 
+### Custom URI encoding
+
+Whenever a redirect request is about to be created, the `FollowRedirectsBackend` uses the value provided in the location header. In its simplest form, a call to `uri"$location"` is being made in order to construct these `Uri`s. The `FollowRedirectsBackend` allows modification of such `Uri` by providing a custom `UriEncoder`, if, for example, some parts of the `Uri` had been initially encoded in a more strict or lenient way.
+
 ## Logging backend wrapper
 
 A good example on how to implement a logging backend wrapper is the [logging](logging.md) backend wrapper implementation. It uses the `ListenerBackend` to get notified about request lifecycle events.

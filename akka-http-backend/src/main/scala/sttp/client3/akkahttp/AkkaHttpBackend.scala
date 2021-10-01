@@ -4,7 +4,7 @@ import java.io.UnsupportedEncodingException
 import akka.{Done, NotUsed}
 import akka.actor.{ActorSystem, CoordinatedShutdown}
 import akka.event.LoggingAdapter
-import akka.http.scaladsl.coding.{Coders, Deflate, Gzip, NoCoding}
+import akka.http.scaladsl.coding.Coders
 import akka.http.scaladsl.model.headers.{BasicHttpCredentials, HttpEncoding, HttpEncodings}
 import akka.http.scaladsl.model.ws.{InvalidUpgradeResponse, Message, ValidUpgrade, WebSocketRequest}
 import akka.http.scaladsl.model.{StatusCode => _, _}
@@ -20,9 +20,8 @@ import sttp.client3.testing.SttpBackendStub
 import sttp.client3.{FollowRedirectsBackend, Response, SttpBackend, SttpBackendOptions, _}
 import sttp.model.{ResponseMetadata, StatusCode}
 import sttp.monad.{FutureMonad, MonadError}
-import scala.concurrent.{ExecutionContext, Future, Promise}
 
-import sttp.client3.FollowRedirectsBackend.UriEncoder
+import scala.concurrent.{ExecutionContext, Future, Promise}
 
 class AkkaHttpBackend private (
     actorSystem: ActorSystem,
@@ -169,8 +168,7 @@ object AkkaHttpBackend {
       customizeRequest: HttpRequest => HttpRequest,
       customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity,
       customizeResponse: (HttpRequest, HttpResponse) => HttpResponse = (_, r) => r,
-      customEncodingHandler: EncodingHandler = PartialFunction.empty,
-      uriEncoder: UriEncoder
+      customEncodingHandler: EncodingHandler = PartialFunction.empty
   ): SttpBackend[Future, AkkaStreams with WebSockets] =
     new FollowRedirectsBackend(
       new AkkaHttpBackend(
@@ -184,8 +182,7 @@ object AkkaHttpBackend {
         customizeWebsocketRequest,
         customizeResponse,
         customEncodingHandler
-      ),
-      uriEncoder = uriEncoder
+      )
     )
 
   /** @param ec
@@ -200,8 +197,7 @@ object AkkaHttpBackend {
       customizeRequest: HttpRequest => HttpRequest = identity,
       customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity,
       customizeResponse: (HttpRequest, HttpResponse) => HttpResponse = (_, r) => r,
-      customEncodingHandler: EncodingHandler = PartialFunction.empty,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
+      customEncodingHandler: EncodingHandler = PartialFunction.empty
   )(implicit
       ec: Option[ExecutionContext] = None
   ): SttpBackend[Future, AkkaStreams with WebSockets] = {
@@ -217,8 +213,7 @@ object AkkaHttpBackend {
       customizeRequest,
       customizeWebsocketRequest,
       customizeResponse,
-      customEncodingHandler,
-      uriEncoder
+      customEncodingHandler
     )
   }
 
@@ -237,8 +232,7 @@ object AkkaHttpBackend {
       customizeRequest: HttpRequest => HttpRequest = identity,
       customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity,
       customizeResponse: (HttpRequest, HttpResponse) => HttpResponse = (_, r) => r,
-      customEncodingHandler: EncodingHandler = PartialFunction.empty,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
+      customEncodingHandler: EncodingHandler = PartialFunction.empty
   )(implicit
       ec: Option[ExecutionContext] = None
   ): SttpBackend[Future, AkkaStreams with WebSockets] = {
@@ -250,8 +244,7 @@ object AkkaHttpBackend {
       customizeRequest,
       customizeWebsocketRequest,
       customizeResponse,
-      customEncodingHandler,
-      uriEncoder
+      customEncodingHandler
     )
   }
 
@@ -269,8 +262,7 @@ object AkkaHttpBackend {
       customizeRequest: HttpRequest => HttpRequest = identity,
       customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity,
       customizeResponse: (HttpRequest, HttpResponse) => HttpResponse = (_, r) => r,
-      customEncodingHandler: EncodingHandler = PartialFunction.empty,
-      uriEncoder: UriEncoder = UriEncoder.DefaultEncoder
+      customEncodingHandler: EncodingHandler = PartialFunction.empty
   )(implicit
       ec: Option[ExecutionContext] = None
   ): SttpBackend[Future, AkkaStreams with WebSockets] = {
@@ -284,8 +276,7 @@ object AkkaHttpBackend {
       customizeRequest,
       customizeWebsocketRequest,
       customizeResponse,
-      customEncodingHandler,
-      uriEncoder
+      customEncodingHandler
     )
   }
 
