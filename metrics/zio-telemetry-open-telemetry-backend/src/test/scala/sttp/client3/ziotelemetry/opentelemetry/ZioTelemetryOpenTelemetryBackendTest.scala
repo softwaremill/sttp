@@ -64,4 +64,13 @@ class ZioTelemetryOpenTelemetryBackendTest extends AnyFlatSpec with Matchers wit
     recordedRequests(0).header("traceparent") shouldBe Some(s"00-${traceId}-${spanId}-01")
   }
 
+  it should "set span status in case of error" in {
+    runtime.unsafeRunSync(basicRequest.post(uri"http://stub/error").send(backend))
+
+    val spans = spanExporter.getFinishedSpanItems.asScala
+    spans should have size 1
+
+    spans.head.getStatus.getStatusCode shouldBe io.opentelemetry.api.trace.StatusCode.ERROR
+  }
+
 }

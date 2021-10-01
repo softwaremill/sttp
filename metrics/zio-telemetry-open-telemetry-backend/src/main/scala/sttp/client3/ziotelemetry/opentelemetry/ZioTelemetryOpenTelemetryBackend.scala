@@ -1,6 +1,6 @@
 package sttp.client3.ziotelemetry.opentelemetry
 
-import io.opentelemetry.api.trace.SpanKind
+import io.opentelemetry.api.trace.{SpanKind, StatusCode}
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.context.propagation.{TextMapPropagator, TextMapSetter}
 import sttp.capabilities.Effect
@@ -27,7 +27,7 @@ private class ZioTelemetryOpenTelemetryBackend[+P](
       resp <- delegate.send(request.headers(carrier.toMap))
       _ <- tracer.after(resp)
     } yield resp)
-      .span(tracer.spanName(request), SpanKind.CLIENT)
+      .span(tracer.spanName(request), SpanKind.CLIENT, { case _ => StatusCode.ERROR })
       .provide(tracing)
   }
 }
