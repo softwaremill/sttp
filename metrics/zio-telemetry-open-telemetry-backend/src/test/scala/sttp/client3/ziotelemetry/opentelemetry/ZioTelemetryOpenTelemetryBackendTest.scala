@@ -49,7 +49,7 @@ class ZioTelemetryOpenTelemetryBackendTest extends AnyFlatSpec with Matchers wit
 
     val spans = spanExporter.getFinishedSpanItems.asScala
     spans should have size 1
-    spans.head.getName shouldBe "POST echo"
+    spans.head.getName shouldBe "HTTP POST"
   }
 
   it should "propagate span" in {

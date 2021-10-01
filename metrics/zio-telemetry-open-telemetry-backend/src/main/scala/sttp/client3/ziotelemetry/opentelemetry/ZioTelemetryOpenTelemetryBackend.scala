@@ -27,7 +27,7 @@ private class ZioTelemetryOpenTelemetryBackend[+P](
       resp <- delegate.send(request.headers(carrier.toMap))
       _ <- tracer.after(resp)
     } yield resp)
-      .span(s"${request.method.method} ${request.uri.path.mkString("/")}", SpanKind.CLIENT)
+      .span(tracer.spanName(request), SpanKind.CLIENT)
       .provide(tracing)
   }
 }
@@ -43,6 +43,7 @@ object ZioTelemetryOpenTelemetryBackend {
 }
 
 trait ZioTelemetryOpenTelemetryTracer {
+  def spanName[T](request: Request[T, Nothing]): String = s"HTTP ${request.method.method}"
   def before[T](request: Request[T, Nothing]): RIO[Tracing, Unit]
   def after[T](response: Response[T]): RIO[Tracing, Unit]
 }
