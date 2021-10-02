@@ -4,7 +4,7 @@ import java.io.InputStream
 import java.nio.ByteBuffer
 import java.util
 import java.util.concurrent.LinkedBlockingQueue
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
+import java.util.concurrent.atomic.AtomicReference
 import java.util.function.UnaryOperator
 import java.util.stream.{Collector, Collectors}
 

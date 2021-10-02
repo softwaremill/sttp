@@ -8,7 +8,6 @@ import org.asynchttpclient.request.body.multipart.{ByteArrayPart, FilePart, Stri
 import org.reactivestreams.Publisher
 import sttp.capabilities.Streams
 import sttp.client3.{
-  BasicRequestBody,
   ByteArrayBody,
   ByteBufferBody,
   FileBody,

@@ -13,7 +13,6 @@ import java.io.{ByteArrayInputStream, UnsupportedEncodingException}
 import java.nio.ByteBuffer
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.util.{Failure, Random, Success, Try}
 
 trait HttpTest[F[_]]
     extends AsyncFreeSpec

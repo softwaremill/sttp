@@ -4,10 +4,15 @@ import java.net.URI
 import sttp.capabilities.Effect
 import sttp.model.{Method, StatusCode, _}
 
+/** @param transformUri
+  *   Defines if and how [[Uri]] s from the `Location` header should be transformed. For example, this enables changing
+  *   the encoding of host, path, query and fragment segments to be more strict or relaxed.
+  */
 class FollowRedirectsBackend[F[_], P](
     delegate: SttpBackend[F, P],
     contentHeaders: Set[String] = HeaderNames.ContentHeaders,
-    sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders
+    sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders,
+    transformUri: Uri => Uri = FollowRedirectsBackend.DefaultUriTransform
 ) extends DelegateSttpBackend[F, P](delegate) {
   type PE = P with Effect[F]
 
@@ -53,9 +58,9 @@ class FollowRedirectsBackend[F[_], P](
   ): F[Response[T]] = {
     val uri = if (FollowRedirectsBackend.isRelative(loc)) {
       // using java's URI to resolve a relative URI
-      uri"${new URI(request.uri.toString).resolve(loc).toString}"
+      transformUri(uri"${new URI(request.uri.toString).resolve(loc).toString}")
     } else {
-      uri"$loc"
+      transformUri(uri"$loc")
     }
 
     val redirectResponse =
@@ -100,6 +105,9 @@ object FollowRedirectsBackend {
     val toCheck = uri.toLowerCase().trim
     !protocol.pattern.matcher(toCheck).matches()
   }
+
+  /** By default, the conversion is a no-op */
+  val DefaultUriTransform: Uri => Uri = (uri: Uri) => uri
 }
 
 case class TooManyRedirectsException(uri: Uri, redirects: Int) extends Exception

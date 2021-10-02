@@ -13,7 +13,6 @@ import com.linecorp.armeria.client.{
 import com.linecorp.armeria.common.multipart.{BodyPart, Multipart}
 import com.linecorp.armeria.common.stream.{ClosedStreamException, StreamMessage}
 import com.linecorp.armeria.common.{
-  CommonPools,
   ContentDisposition,
   HttpData,
   HttpHeaders,
@@ -23,10 +22,9 @@ import com.linecorp.armeria.common.{
   ResponseHeaders,
   MediaType => ArmeriaMediaType
 }
-import io.netty.buffer.{ByteBufAllocator, Unpooled}
+import io.netty.buffer.Unpooled
 import io.netty.util.AsciiString
 import java.nio.charset.{Charset, StandardCharsets}
-import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicReference
 import org.reactivestreams.Publisher

@@ -4,7 +4,7 @@ import java.io.UnsupportedEncodingException
 import akka.{Done, NotUsed}
 import akka.actor.{ActorSystem, CoordinatedShutdown}
 import akka.event.LoggingAdapter
-import akka.http.scaladsl.coding.{Coders, Deflate, Gzip, NoCoding}
+import akka.http.scaladsl.coding.Coders
 import akka.http.scaladsl.model.headers.{BasicHttpCredentials, HttpEncoding, HttpEncodings}
 import akka.http.scaladsl.model.ws.{InvalidUpgradeResponse, Message, ValidUpgrade, WebSocketRequest}
 import akka.http.scaladsl.model.{StatusCode => _, _}
