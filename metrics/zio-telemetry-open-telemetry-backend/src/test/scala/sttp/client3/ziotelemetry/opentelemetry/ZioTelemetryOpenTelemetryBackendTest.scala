@@ -49,7 +49,7 @@ class ZioTelemetryOpenTelemetryBackendTest extends AnyFlatSpec with Matchers wit
 
     val spans = spanExporter.getFinishedSpanItems.asScala
     spans should have size 1
-    spans.head.getName shouldBe "POST echo"
+    spans.head.getName shouldBe "HTTP POST"
   }
 
   it should "propagate span" in {
@@ -62,6 +62,15 @@ class ZioTelemetryOpenTelemetryBackendTest extends AnyFlatSpec with Matchers wit
     val spanId = spans.head.getSpanId
     val traceId = spans.head.getTraceId
     recordedRequests(0).header("traceparent") shouldBe Some(s"00-${traceId}-${spanId}-01")
+  }
+
+  it should "set span status in case of error" in {
+    runtime.unsafeRunSync(basicRequest.post(uri"http://stub/error").send(backend))
+
+    val spans = spanExporter.getFinishedSpanItems.asScala
+    spans should have size 1
+
+    spans.head.getStatus.getStatusCode shouldBe io.opentelemetry.api.trace.StatusCode.ERROR
   }
 
 }

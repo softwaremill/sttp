@@ -20,9 +20,8 @@ ZioTelemetryOpenTelemetryBackend(
 )
 ```
 
-Additionally you can add tags per request by supplying a `ZioTelemetryOpenTelemetryTracer`
-(by default, all that happens is that the span for the request is named after using the HTTP method
-and path).
+By default, the span is named after the HTTP method (e.g "HTTP POST") as [recommended by OpenTelemetry](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/http.md#name) for HTTP clients.
+You can override the default span name or add additional tags per request by supplying a `ZioTelemetryOpenTelemetryTracer`.
 
 ```scala mdoc:compile-only
 import io.opentelemetry.semconv.trace.attributes.SemanticAttributes
@@ -35,6 +34,8 @@ val zioBackend: SttpBackend[Task, Any] = ???
 val tracing: Tracing.Service = ???
 
 def sttpTracer: ZioTelemetryOpenTelemetryTracer = new ZioTelemetryOpenTelemetryTracer {
+    override def spanName[T](request: Request[T, Nothing]): String = ???
+
     def before[T](request: Request[T, Nothing]): RIO[Tracing, Unit] =
       Tracing.setAttribute(SemanticAttributes.HTTP_METHOD.getKey, request.method.method) *>
       Tracing.setAttribute(SemanticAttributes.HTTP_URL.getKey, request.uri.toString()) *>
