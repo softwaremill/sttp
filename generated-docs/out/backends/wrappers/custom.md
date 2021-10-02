@@ -28,35 +28,7 @@ A side-effecting request listener, of type `RequestListener[Identity, L]`, can b
 
 ## Backend wrappers and redirects
 
-By default redirects are handled at a low level, using a wrapper around the main, concrete backend: each of the backend factory methods, e.g. `HttpURLConnectionBackend()` returns a backend wrapped in `FollowRedirectsBackend`.
-
-This causes any further backend wrappers to handle a request which involves redirects as one whole, without the intermediate requests. However, wrappers which collects metrics, implements tracing or handles request retries might want to handle every request in the redirect chain. This can be achieved by layering another `FollowRedirectsBackend` on top of the wrapper. Only the top-level follow redirects backend will handle redirects, other follow redirect wrappers (at lower levels) will be disabled.
-
-For example:
-
-```scala
-import sttp.capabilities.Effect
-import sttp.client3._
-import sttp.monad.MonadError
-
-class MyWrapper[F[_], P] private (delegate: SttpBackend[F, P])
-  extends SttpBackend[F, P] {
-
-  def send[T, R >: P with Effect[F]](request: Request[T, R]): F[Response[T]] = ???
-
-  def close(): F[Unit] = ???
-
-  def responseMonad: MonadError[F] = ???
-}
-
-object MyWrapper {
-  def apply[F[_], P](
-    delegate: SttpBackend[F, P]): SttpBackend[F, P] = {
-    // disables any other FollowRedirectsBackend-s further down the delegate chain
-    new FollowRedirectsBackend(new MyWrapper(delegate))
-  }
-}
-```
+See the appropriate section in docs on [redirects](../../conf/redirects.md).
 
 ## Logging backend wrapper
 
@@ -266,7 +238,7 @@ object RateLimitingSttpBackend {
 Implementing a new backend is made easy as the tests are published in the `core` jar file under the `tests` classifier. Simply add the follow dependencies to your `build.sbt`:
 
 ```
-"com.softwaremill.sttp.client3" %% "core" % "3.3.14" % Test classifier "tests"
+"com.softwaremill.sttp.client3" %% "core" % "3.3.15" % Test classifier "tests"
 ```
 
 Implement your backend and extend the `HttpTest` class:
