@@ -128,7 +128,7 @@ val akkaStreamVersion = "2.6.15"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % akkaStreamVersion
 
 val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", "wordspec", "shouldmatchers").map(m =>
-  "org.scalatest" %%% s"scalatest-$m" % "3.2.9" % Test
+  "org.scalatest" %%% s"scalatest-$m" % "3.2.10" % Test
 )
 
 val zioVersion = "1.0.12"
