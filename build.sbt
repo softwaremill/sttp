@@ -872,7 +872,7 @@ lazy val zioTelemetryOpenTelemetryBackend = (projectMatrix in file("metrics/zio-
     ),
     scalaTest
   )
-  .jvmPlatform(scalaVersions = List(scala2_12, scala2_13))
+  .jvmPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3)
   .dependsOn(zio % compileAndTest)
   .dependsOn(core)
 
@@ -885,7 +885,7 @@ lazy val zioTelemetryOpenTracingBackend = (projectMatrix in file("metrics/zio-te
       "org.scala-lang.modules" %% "scala-collection-compat" % "2.5.0"
     )
   )
-  .jvmPlatform(scalaVersions = List(scala2_12, scala2_13))
+  .jvmPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3)
   .dependsOn(zio % compileAndTest)
   .dependsOn(core)
 
