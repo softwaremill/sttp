@@ -392,7 +392,7 @@ lazy val monix = (projectMatrix in file("effects/monix"))
   .jvmPlatform(
     scalaVersions = List(scala2_12, scala2_13),
     settings = commonJvmSettings ++ List(
-      libraryDependencies ++= Seq("io.monix" %% "monix-nio" % "0.0.9")
+      libraryDependencies ++= Seq("io.monix" %% "monix-nio" % "0.1.0")
     )
   )
   .jsPlatform(
