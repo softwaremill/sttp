@@ -28,7 +28,7 @@ class OkHttpSyncWebSocketTest extends WebSocketTest[Identity] {
         )
       })
       .send(backend)
-      .map(_.body) match {
+      .body match {
       case Left(value) => throw new RuntimeException(value)
       case Right(_)    => succeed
     }

@@ -390,7 +390,7 @@ lazy val monix = (projectMatrix in file("effects/monix"))
   )
   .dependsOn(core % compileAndTest)
   .jvmPlatform(
-    scalaVersions = List(scala2_12, scala2_13),
+    scalaVersions = List(scala2_12, scala2_13) ++ scala3,
     settings = commonJvmSettings ++ List(
       libraryDependencies ++= Seq("io.monix" %% "monix-nio" % "0.1.0")
     )
@@ -497,7 +497,7 @@ lazy val asyncHttpClientZioBackend =
     .dependsOn(zio % compileAndTest)
 
 lazy val asyncHttpClientMonixBackend =
-  asyncHttpClientBackendProject("monix", includeDotty = false, include2_11 = false)
+  asyncHttpClientBackendProject("monix", includeDotty = true, include2_11 = false)
     .dependsOn(monix % compileAndTest)
 
 lazy val asyncHttpClientCatsCe2Backend =
@@ -540,7 +540,7 @@ lazy val okhttpBackend = (projectMatrix in file("okhttp-backend"))
       "com.squareup.okhttp3" % "okhttp" % "4.9.2"
     )
   )
-  .jvmPlatform(scalaVersions = scala2)
+  .jvmPlatform(scalaVersions = scala2 ++ scala3)
   .dependsOn(core % compileAndTest)
 
 def okhttpBackendProject(proj: String, includeDotty: Boolean) = {
@@ -553,7 +553,7 @@ def okhttpBackendProject(proj: String, includeDotty: Boolean) = {
 }
 
 lazy val okhttpMonixBackend =
-  okhttpBackendProject("monix", includeDotty = false)
+  okhttpBackendProject("monix", includeDotty = true)
     .dependsOn(monix % compileAndTest)
 
 //-- http4s
@@ -611,7 +611,7 @@ def httpClientBackendProject(proj: String, includeDotty: Boolean = false) = {
 }
 
 lazy val httpClientMonixBackend =
-  httpClientBackendProject("monix", includeDotty = false)
+  httpClientBackendProject("monix", includeDotty = true)
     .dependsOn(monix % compileAndTest)
 
 lazy val httpClientFs2Ce2Backend =
@@ -680,7 +680,7 @@ def armeriaBackendProject(proj: String, includeDotty: Boolean = false) = {
 }
 
 lazy val armeriaMonixBackend =
-  armeriaBackendProject("monix")
+  armeriaBackendProject("monix", includeDotty = true)
     .dependsOn(monix % compileAndTest)
 
 lazy val armeriaFs2Ce2Backend =
