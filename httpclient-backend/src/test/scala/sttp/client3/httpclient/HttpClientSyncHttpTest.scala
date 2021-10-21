@@ -4,7 +4,7 @@ import sttp.client3.testing.{ConvertToFuture, HttpTest}
 import sttp.client3.{Identity, SttpBackend}
 
 class HttpClientSyncHttpTest extends HttpTest[Identity] {
-  override val backend: SttpBackend[Identity, Any] = HttpClientSyncBackend()
+  override val backend: SttpBackend[Identity, Any] = HttpClientSyncBackend(disableAutoDecompression = true)
   override implicit val convertToFuture: ConvertToFuture[Identity] = ConvertToFuture.id
 
   override def supportsHostHeaderOverride = false

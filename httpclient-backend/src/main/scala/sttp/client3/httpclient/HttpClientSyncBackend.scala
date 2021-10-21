@@ -27,8 +27,14 @@ class HttpClientSyncBackend private (
     client: HttpClient,
     closeClient: Boolean,
     customizeRequest: HttpRequest => HttpRequest,
-    customEncodingHandler: SyncEncodingHandler
-) extends HttpClientBackend[Identity, Nothing, Any, InputStream](client, closeClient, customEncodingHandler) {
+    customEncodingHandler: SyncEncodingHandler,
+    disableAutoDecompression: Boolean
+) extends HttpClientBackend[Identity, Nothing, Any, InputStream](
+      client,
+      closeClient,
+      customEncodingHandler,
+      disableAutoDecompression
+    ) {
 
   override val streams: NoStreams = NoStreams
 
@@ -79,30 +85,40 @@ object HttpClientSyncBackend {
       client: HttpClient,
       closeClient: Boolean,
       customizeRequest: HttpRequest => HttpRequest,
-      customEncodingHandler: SyncEncodingHandler
+      customEncodingHandler: SyncEncodingHandler,
+      disableAutoDecompression: Boolean
   ): SttpBackend[Identity, Any] =
     new FollowRedirectsBackend(
-      new HttpClientSyncBackend(client, closeClient, customizeRequest, customEncodingHandler)
+      new HttpClientSyncBackend(client, closeClient, customizeRequest, customEncodingHandler, disableAutoDecompression)
     )
 
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: SyncEncodingHandler = PartialFunction.empty
+      customEncodingHandler: SyncEncodingHandler = PartialFunction.empty,
+      disableAutoDecompression: Boolean
   ): SttpBackend[Identity, Any] =
     HttpClientSyncBackend(
       HttpClientBackend.defaultClient(options),
       closeClient = true,
       customizeRequest,
-      customEncodingHandler
+      customEncodingHandler,
+      disableAutoDecompression
     )
 
   def usingClient(
       client: HttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: SyncEncodingHandler = PartialFunction.empty
+      customEncodingHandler: SyncEncodingHandler = PartialFunction.empty,
+      disableAutoDecompression: Boolean
   ): SttpBackend[Identity, Any] =
-    HttpClientSyncBackend(client, closeClient = false, customizeRequest, customEncodingHandler)
+    HttpClientSyncBackend(
+      client,
+      closeClient = false,
+      customizeRequest,
+      customEncodingHandler,
+      disableAutoDecompression
+    )
 
   /** Create a stub backend for testing, which uses the [[Identity]] response wrapper, and doesn't support streaming.
     *
