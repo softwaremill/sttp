@@ -20,8 +20,7 @@ import scala.collection.JavaConverters._
 abstract class HttpClientBackend[F[_], S, P, B](
     client: HttpClient,
     closeClient: Boolean,
-    customEncodingHandler: EncodingHandler[B],
-    disableAutoDecompression: Boolean
+    customEncodingHandler: EncodingHandler[B]
 ) extends SttpBackend[F, P] {
   val streams: Streams[S]
   type PE = P with Effect[F]
@@ -74,7 +73,7 @@ abstract class HttpClientBackend[F[_], S, P, B](
       resBody.left
         .map { is =>
           encoding
-            .filterNot(_ => code.equals(StatusCode.NoContent) || disableAutoDecompression)
+            .filterNot(_ => code.equals(StatusCode.NoContent))
             .map(e => customEncodingHandler.applyOrElse((is, e), standardEncoding.tupled))
             .getOrElse(is)
         }

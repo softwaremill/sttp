@@ -19,9 +19,8 @@ abstract class HttpClientAsyncBackend[F[_], S, P, B](
     private implicit val monad: MonadAsyncError[F],
     closeClient: Boolean,
     customizeRequest: HttpRequest => HttpRequest,
-    customEncodingHandler: EncodingHandler[B],
-    disableAutoDecompression: Boolean
-) extends HttpClientBackend[F, S, P, B](client, closeClient, customEncodingHandler, disableAutoDecompression) {
+    customEncodingHandler: EncodingHandler[B]
+) extends HttpClientBackend[F, S, P, B](client, closeClient, customEncodingHandler) {
   override def send[T, R >: PE](request: Request[T, R]): F[Response[T]] =
     adjustExceptions(request) {
       if (request.isWebSocket) sendWebSocket(request) else sendRegular(request)

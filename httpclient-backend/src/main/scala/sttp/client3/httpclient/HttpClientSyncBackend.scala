@@ -27,13 +27,11 @@ class HttpClientSyncBackend private (
     client: HttpClient,
     closeClient: Boolean,
     customizeRequest: HttpRequest => HttpRequest,
-    customEncodingHandler: SyncEncodingHandler,
-    disableAutoDecompression: Boolean
+    customEncodingHandler: SyncEncodingHandler
 ) extends HttpClientBackend[Identity, Nothing, Any, InputStream](
       client,
       closeClient,
-      customEncodingHandler,
-      disableAutoDecompression
+      customEncodingHandler
     ) {
 
   override val streams: NoStreams = NoStreams
@@ -85,39 +83,34 @@ object HttpClientSyncBackend {
       client: HttpClient,
       closeClient: Boolean,
       customizeRequest: HttpRequest => HttpRequest,
-      customEncodingHandler: SyncEncodingHandler,
-      disableAutoDecompression: Boolean
+      customEncodingHandler: SyncEncodingHandler
   ): SttpBackend[Identity, Any] =
     new FollowRedirectsBackend(
-      new HttpClientSyncBackend(client, closeClient, customizeRequest, customEncodingHandler, disableAutoDecompression)
+      new HttpClientSyncBackend(client, closeClient, customizeRequest, customEncodingHandler)
     )
 
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: SyncEncodingHandler = PartialFunction.empty,
-      disableAutoDecompression: Boolean
+      customEncodingHandler: SyncEncodingHandler = PartialFunction.empty
   ): SttpBackend[Identity, Any] =
     HttpClientSyncBackend(
       HttpClientBackend.defaultClient(options),
       closeClient = true,
       customizeRequest,
-      customEncodingHandler,
-      disableAutoDecompression
+      customEncodingHandler
     )
 
   def usingClient(
       client: HttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: SyncEncodingHandler = PartialFunction.empty,
-      disableAutoDecompression: Boolean
+      customEncodingHandler: SyncEncodingHandler = PartialFunction.empty
   ): SttpBackend[Identity, Any] =
     HttpClientSyncBackend(
       client,
       closeClient = false,
       customizeRequest,
-      customEncodingHandler,
-      disableAutoDecompression
+      customEncodingHandler
     )
 
   /** Create a stub backend for testing, which uses the [[Identity]] response wrapper, and doesn't support streaming.

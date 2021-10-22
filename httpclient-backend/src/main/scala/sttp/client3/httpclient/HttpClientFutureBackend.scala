@@ -24,16 +24,14 @@ class HttpClientFutureBackend private (
     client: HttpClient,
     closeClient: Boolean,
     customizeRequest: HttpRequest => HttpRequest,
-    customEncodingHandler: InputStreamEncodingHandler,
-    disableAutoDecompression: Boolean
+    customEncodingHandler: InputStreamEncodingHandler
 )(implicit ec: ExecutionContext)
     extends HttpClientAsyncBackend[Future, Nothing, WebSockets, InputStream](
       client,
       new FutureMonad,
       closeClient,
       customizeRequest,
-      customEncodingHandler,
-      disableAutoDecompression
+      customEncodingHandler
     ) {
 
   override val streams: NoStreams = NoStreams
@@ -83,45 +81,39 @@ object HttpClientFutureBackend {
       client: HttpClient,
       closeClient: Boolean,
       customizeRequest: HttpRequest => HttpRequest,
-      customEncodingHandler: InputStreamEncodingHandler,
-      disableAutoDecompression: Boolean
+      customEncodingHandler: InputStreamEncodingHandler
   )(implicit ec: ExecutionContext): SttpBackend[Future, WebSockets] =
     new FollowRedirectsBackend(
       new HttpClientFutureBackend(
         client,
         closeClient,
         customizeRequest,
-        customEncodingHandler,
-        disableAutoDecompression
+        customEncodingHandler
       )
     )
 
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: InputStreamEncodingHandler = PartialFunction.empty,
-      disableAutoDecompression: Boolean
+      customEncodingHandler: InputStreamEncodingHandler = PartialFunction.empty
   )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, WebSockets] =
     HttpClientFutureBackend(
       HttpClientBackend.defaultClient(options),
       closeClient = true,
       customizeRequest,
-      customEncodingHandler,
-      disableAutoDecompression
+      customEncodingHandler
     )
 
   def usingClient(
       client: HttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: InputStreamEncodingHandler = PartialFunction.empty,
-      disableAutoDecompression: Boolean
+      customEncodingHandler: InputStreamEncodingHandler = PartialFunction.empty
   )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, WebSockets] =
     HttpClientFutureBackend(
       client,
       closeClient = false,
       customizeRequest,
-      customEncodingHandler,
-      disableAutoDecompression
+      customEncodingHandler
     )
 
   /** Create a stub backend for testing, which uses the [[Future]] response wrapper, and doesn't support streaming.
