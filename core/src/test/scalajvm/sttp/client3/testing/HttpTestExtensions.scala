@@ -243,9 +243,20 @@ trait HttpTestExtensions[F[_]] extends AsyncFreeSpecLike { self: HttpTest[F] =>
 
     "should return uncompressed data" in {
       withTemporaryNonExistentFile { file =>
-        val req = basicRequest.get(uri"$endpoint/raw-gzip-file").response(asFile(file)).acceptEncoding("gzip")
+        val options = RequestOptions(
+          followRedirects = true,
+          DefaultReadTimeout,
+          FollowRedirectsBackend.MaxRedirects,
+          redirectToGet = false,
+          disableAutoDecompression = true
+        )
+        val req = emptyRequest
+          .copy(options = options)
+          .get(uri"$endpoint/raw-gzip-file")
+          .response(asFile(file))
+          .acceptEncoding("gzip")
         req.send(backend).toFuture().flatMap { resp =>
-            md5FileHash(resp.body.right.get).map { _ should be(gzipFileMD5hash) }
+          md5FileHash(resp.body.right.get).map { _ should be(gzipFileMD5hash) }
         }
       }
     }

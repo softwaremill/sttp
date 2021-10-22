@@ -402,5 +402,6 @@ case class RequestOptions(
     followRedirects: Boolean,
     readTimeout: Duration,
     maxRedirects: Int,
-    redirectToGet: Boolean
+    redirectToGet: Boolean,
+    disableAutoDecompression: Boolean
 )
