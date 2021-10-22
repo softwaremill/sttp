@@ -118,14 +118,18 @@ class AkkaHttpBackend private (
     val headers = FromAkka.headers(hr)
 
     val responseMetadata = ResponseMetadata(code, statusText, headers)
-    val body = bodyFromAkka(r.response, responseMetadata, wsFlow.map(Right(_)).getOrElse(Left(decodeAkkaResponse(hr))))
+    val body = bodyFromAkka(
+      r.response,
+      responseMetadata,
+      wsFlow.map(Right(_)).getOrElse(Left(decodeAkkaResponse(hr, r.options.disableAutoDecompression)))
+    )
 
     body.map(client3.Response(_, code, statusText, headers, Nil, r.onlyMetadata))
   }
 
   // http://doc.akka.io/docs/akka-http/10.0.7/scala/http/common/de-coding.html
-  private def decodeAkkaResponse(response: HttpResponse): HttpResponse = {
-    if (response.status.equals(StatusCodes.NoContent)) response
+  private def decodeAkkaResponse(response: HttpResponse, disableAutoDecompression: Boolean): HttpResponse = {
+    if (response.status.equals(StatusCodes.NoContent) || disableAutoDecompression) response
     else customEncodingHandler.orElse(EncodingHandler(standardEncoding)).apply(response -> response.encoding)
   }
 

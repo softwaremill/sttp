@@ -62,7 +62,7 @@ class Http4sBackend[F[_]: Async](
                   responseMetadata,
                   Left(
                     onFinalizeSignal(
-                      decompressResponseBodyIfNotHead(r.method, response),
+                      decompressResponseBodyIfNotHead(r.method, response, r.options.disableAutoDecompression),
                       signalBodyComplete
                     )
                   )
@@ -160,8 +160,12 @@ class Http4sBackend[F[_]: Async](
     hr.copy(body = hr.body.onFinalize(signal))
   }
 
-  private def decompressResponseBodyIfNotHead[T](m: Method, hr: http4s.Response[F]): http4s.Response[F] = {
-    if (m == Method.HEAD) hr else decompressResponseBody(hr)
+  private def decompressResponseBodyIfNotHead[T](
+      m: Method,
+      hr: http4s.Response[F],
+      disableAutoDecompression: Boolean
+  ): http4s.Response[F] = {
+    if (m == Method.HEAD || disableAutoDecompression) hr else decompressResponseBody(hr)
   }
 
   private def decompressResponseBody(hr: http4s.Response[F]): http4s.Response[F] = {
