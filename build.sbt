@@ -8,7 +8,7 @@ import sbt.internal.ProjectMatrix
 import com.softwaremill.SbtSoftwareMillBrowserTestJS._
 
 val scala2_11 = "2.11.12"
-val scala2_12 = "2.12.14"
+val scala2_12 = "2.12.15"
 val scala2_13 = "2.13.6"
 val scala2 = List(scala2_11, scala2_12, scala2_13)
 val scala3 = List("3.1.0")
@@ -134,8 +134,8 @@ val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", 
 val zioVersion = "1.0.12"
 val zioInteropRsVersion = "1.3.8"
 
-val sttpModelVersion = "1.4.15"
-val sttpSharedVersion = "1.2.6"
+val sttpModelVersion = "1.4.16"
+val sttpSharedVersion = "1.2.7"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.2.6"
 
