@@ -147,7 +147,7 @@ Example code:
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "async-http-client-backend-fs2 % "@VERSION@")
+libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "async-http-client-backend-fs2" % "@VERSION@")
 ```
 
 Example code:
