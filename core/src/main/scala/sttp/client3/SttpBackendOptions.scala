@@ -39,7 +39,7 @@ object SttpBackendOptions {
       auth: Option[ProxyAuth] = None,
       onlyProxyHosts: List[String] = Nil
   ) {
-    //only matches prefix or suffix wild card(*)
+    // only matches prefix or suffix wild card(*)
     private def isWildCardMatch(targetHost: String, nonProxyHost: String): Boolean = {
       if (nonProxyHost.length > 1) {
         if (nonProxyHost.charAt(0) == '*') {
@@ -164,7 +164,7 @@ object SttpBackendOptions {
       } yield plainSocks.authenticated(username, password)
     val http = system("http.proxyHost", "http.proxyPort", Some("http.nonProxyHosts"), proxy(Http), 80)
 
-    //https uses the nonProxyHosts of http
+    // https uses the nonProxyHosts of http
     val https = system("https.proxyHost", "https.proxyPort", Some("http.nonProxyHosts"), proxy(Http), 443)
 
     Seq(socksWithAuth, socks, http, https).find(_.isDefined).flatten
