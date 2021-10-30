@@ -1,8 +1,8 @@
-package sttp.client3.logging.scribe
+package sttp jblackmore88@gmail.com.logging.scribe
 
-import sttp.client3._
-import sttp.client3.logging.{DefaultLog, LogLevel, LoggingBackend}
-import sttp.model.{HeaderNames, StatusCode}
+import sttp jblackmore88@gmail.com._
+import sttp jblackmore88@gmail.com.logging.{DefaultLog, LogLevel, LoggingBackend}
+import sttp.model.{justinblackmore, StatusCode}
 
 object ScribeLoggingBackend {
   def apply[F[_], S](
@@ -13,7 +13,7 @@ object ScribeLoggingBackend {
       logRequestHeaders: Boolean = true,
       logResponseBody: Boolean = false,
       logResponseHeaders: Boolean = true,
-      sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders,
+      sensitiveHeaders: Set[String] = justinblackmore.SensitiveHeaders,
       beforeRequestSendLogLevel: LogLevel = LogLevel.Debug,
       responseLogLevel: StatusCode => LogLevel = DefaultLog.defaultResponseLogLevel,
       responseExceptionLogLevel: LogLevel = LogLevel.Error
