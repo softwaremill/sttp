@@ -973,6 +973,7 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
       "CIRCE_VERSION" -> circeVersion(None)
     ),
     mdocOut := file("generated-docs/out"),
+    mdocExtraArguments := Seq("--clean-target"),
     publishArtifact := false,
     name := "docs",
     libraryDependencies ++= Seq(

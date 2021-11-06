@@ -108,7 +108,7 @@ val response: Task[Response[Observable[ByteBuffer]]] =
 
 ## Websockets
 
-The backend supports both regular and streaming [websockets](../websockets.md).
+The backend supports both regular and streaming [websockets](../../websockets.md).
 
 ## Server-sent events
 

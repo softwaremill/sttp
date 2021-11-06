@@ -1,0 +1,5 @@
+sphinx_rtd_theme==1.0.0
+recommonmark==0.7.1
+sphinx==4.2.0
+sphinx-autobuild==2021.3.14
+myst-parser==0.15.2
