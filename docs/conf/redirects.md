@@ -90,3 +90,17 @@ object MyWrapper {
 ### Custom URI encoding
 
 Whenever a redirect request is about to be created, the `FollowRedirectsBackend` uses the value provided in the `Location` header. In its simplest form, a call to `uri"$location"` is being made in order to construct these `Uri`s. The `FollowRedirectsBackend` allows modification of such `Uri` by providing a custom `transformUri: Uri => Uri` function. This might be useful if, for example, some parts of the `Uri` had been initially encoded in a more strict or lenient way.
+
+For example:
+
+```scala mdoc:compile-only
+import sttp.client3._
+import sttp.model.Uri.QuerySegmentEncoding
+
+val myBackend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
+val backend: SttpBackend[Identity, Any]  = new FollowRedirectsBackend(
+  delegate = myBackend,
+  // encodes all special characters in the query segment, including the allowed ones
+  transformUri = _.querySegmentsEncoding(QuerySegmentEncoding.All)
+)
+```
