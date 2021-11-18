@@ -110,7 +110,7 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
         val requestBuilder = RequestBuilder.create().url(url).addHeaders(headers)
         val elements = parts.map { part => getBasicBodyContent(part) }
         requestBuilder.add(elements).buildFormPost(true)
-      //requestBuilder.addFormElement(elements: _*).buildFormPost(true)
+      // requestBuilder.addFormElement(elements: _*).buildFormPost(true)
       case _ => buildRequest(url, headers, finagleMethod, None)
     }
   }

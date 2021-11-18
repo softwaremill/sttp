@@ -439,8 +439,8 @@ trait HttpTest[F[_]]
       if (supportsCustomMultipartEncoding) {
         "send a multipart message containing body parts with explicitly set encodings" in {
 
-          val utf8Char = "\u00f6" //ö
-          val replacementChar = "\ufffd" //�
+          val utf8Char = "\u00f6" // ö
+          val replacementChar = "\ufffd" // �
 
           val req = basicRequest
             .post(uri"$endpoint/multipart/content_type")
@@ -452,7 +452,7 @@ trait HttpTest[F[_]]
 
           req.send(backend).toFuture().map { resp =>
             resp.body should be(
-              //replacementChar should be used in place of utf8Char for the part with Iso88591 encoding
+              // replacementChar should be used in place of utf8Char for the part with Iso88591 encoding
               s"p1=$utf8Char$defaultFileName content-type: text/plain; charset=UTF-8, p2=$replacementChar$defaultFileName content-type: text/plain; charset=ISO-8859-1"
             )
           }
