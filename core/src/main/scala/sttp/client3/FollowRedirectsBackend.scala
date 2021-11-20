@@ -57,8 +57,7 @@ class FollowRedirectsBackend[F[_], P](
       loc: String
   ): F[Response[T]] = {
     val uri = if (FollowRedirectsBackend.isRelative(loc)) {
-      // using java's URI to resolve a relative URI
-      transformUri(uri"${new URI(request.uri.toString).resolve(loc).toString}")
+      transformUri(request.uri.resolve(uri"$loc"))
     } else {
       transformUri(uri"$loc")
     }
