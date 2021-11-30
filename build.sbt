@@ -34,7 +34,7 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   ideSkipProject := (scalaVersion.value != scala2_13) || thisProjectRef.value.project.contains(
     "JS"
   ) || thisProjectRef.value.project.contains("Native"),
-  mimaPreviousArtifacts := Set.empty // we only use MiMa for `core` for now, using versioningSchemeSettings
+  mimaPreviousArtifacts := Set.empty // we only use MiMa for `core` for now, using enableMimaSettings
 )
 
 val commonJvmSettings = commonSettings ++ Seq(
@@ -75,15 +75,21 @@ val commonNativeSettings = commonSettings ++ Seq(
   }
 )
 
-val versioningSchemeSettings = Seq(
+val versioningSchemeSettings = Seq(versionScheme := Some("early-semver"))
+
+val enableMimaSettings = Seq(
   mimaPreviousArtifacts := {
-    val isRcOrMilestone = version.value.contains("M") || version.value.contains("RC")
-    if (!isRcOrMilestone)
+    val current = version.value
+    val isRcOrMilestone = current.contains("M") || current.contains("RC")
+    if (!isRcOrMilestone) {
+      val previous = previousStableVersion.value
+      println(s"[info] Not a M or RC version, using previous version for MiMa check: $previous")
       previousStableVersion.value.map(organization.value %% moduleName.value % _).toSet
-    else
+    } else {
+      println(s"[info] $current is an M or RC version, no previous version to check with MiMa")
       Set.empty
-  },
-  versionScheme := Some("early-semver")
+    }
+  }
 )
 
 // start a test server before running tests of a backend; this is required both for JS tests run inside a
@@ -274,7 +280,7 @@ lazy val core = (projectMatrix in file("core"))
   .jvmPlatform(
     scalaVersions = scala2 ++ scala3,
     settings = {
-      commonJvmSettings ++ versioningSchemeSettings ++ List(
+      commonJvmSettings ++ versioningSchemeSettings ++ enableMimaSettings ++ List(
         Test / publishArtifact := true // allow implementations outside of this repo
       )
     }
