@@ -9,9 +9,9 @@ Note that all [fs2](fs2.md) backends also support any cats-effect effect, additi
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "async-http-client-backend-cats" % "3.3.17" // for cats-effect 3.x
+"com.softwaremill.sttp.client3" %% "async-http-client-backend-cats" % "3.3.18" // for cats-effect 3.x
 // or
-"com.softwaremill.sttp.client3" %% "async-http-client-backend-cats-ce2" % "3.3.17" // for cats-effect 2.x
+"com.softwaremill.sttp.client3" %% "async-http-client-backend-cats-ce2" % "3.3.18" // for cats-effect 2.x
 ```
            
 This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client), uses [Netty](http://netty.io) behind the scenes. 
@@ -83,9 +83,9 @@ val backend = AsyncHttpClientCatsBackend.usingClient[IO](asyncHttpClient)
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "armeria-backend-cats" % "3.3.17" // for cats-effect 3.x
+"com.softwaremill.sttp.client3" %% "armeria-backend-cats" % "3.3.18" // for cats-effect 3.x
 // or
-"com.softwaremill.sttp.client3" %% "armeria-backend-cats-ce2" % "3.3.17" // for cats-effect 2.x
+"com.softwaremill.sttp.client3" %% "armeria-backend-cats-ce2" % "3.3.18" // for cats-effect 2.x
 ```
 
 create client:
