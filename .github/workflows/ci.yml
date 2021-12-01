@@ -15,7 +15,7 @@ jobs:
       matrix:
         target-platform: [ "JVM", "JS", "Native" ]
     env:
-      JAVA_OPTS: "-Xmx3500M -Dsbt.task.timings=true" # -Xlog:gc -XX:+PrintGCDetails -Xlog:gc*::time
+      JAVA_OPTS: "-Xmx4500M -Dsbt.task.timings=true" # -Xlog:gc -XX:+PrintGCDetails -Xlog:gc*::time
     steps:
     - name: Checkout
       uses: actions/checkout@v2
