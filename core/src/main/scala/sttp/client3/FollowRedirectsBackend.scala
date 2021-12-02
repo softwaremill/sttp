@@ -1,6 +1,5 @@
 package sttp.client3
 
-import java.net.URI
 import sttp.capabilities.Effect
 import sttp.model.{Method, StatusCode, _}
 
@@ -14,6 +13,11 @@ class FollowRedirectsBackend[F[_], P](
     sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders,
     transformUri: Uri => Uri = FollowRedirectsBackend.DefaultUriTransform
 ) extends DelegateSttpBackend[F, P](delegate) {
+
+  // this is needed to maintain binary compatibility with 3.3.14 and earlier
+  def this(delegate: SttpBackend[F, P], contentHeaders: Set[String], sensitiveHeaders: Set[String]) =
+    this(delegate, contentHeaders, sensitiveHeaders, FollowRedirectsBackend.DefaultUriTransform)
+
   type PE = P with Effect[F]
 
   override def send[T, R >: PE](request: Request[T, R]): F[Response[T]] = {
@@ -57,8 +61,7 @@ class FollowRedirectsBackend[F[_], P](
       loc: String
   ): F[Response[T]] = {
     val uri = if (FollowRedirectsBackend.isRelative(loc)) {
-      // using java's URI to resolve a relative URI
-      transformUri(uri"${new URI(request.uri.toString).resolve(loc).toString}")
+      transformUri(request.uri.resolve(uri"$loc"))
     } else {
       transformUri(uri"$loc")
     }

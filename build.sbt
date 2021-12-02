@@ -8,7 +8,7 @@ import sbt.internal.ProjectMatrix
 import com.softwaremill.SbtSoftwareMillBrowserTestJS._
 
 val scala2_11 = "2.11.12"
-val scala2_12 = "2.12.14"
+val scala2_12 = "2.12.15"
 val scala2_13 = "2.13.6"
 val scala2 = List(scala2_11, scala2_12, scala2_13)
 val scala3 = List("3.1.0")
@@ -34,7 +34,7 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   ideSkipProject := (scalaVersion.value != scala2_13) || thisProjectRef.value.project.contains(
     "JS"
   ) || thisProjectRef.value.project.contains("Native"),
-  mimaPreviousArtifacts := Set.empty // we only use MiMa for `core` for now, using versioningSchemeSettings
+  mimaPreviousArtifacts := Set.empty // we only use MiMa for `core` for now, using enableMimaSettings
 )
 
 val commonJvmSettings = commonSettings ++ Seq(
@@ -75,15 +75,21 @@ val commonNativeSettings = commonSettings ++ Seq(
   }
 )
 
-val versioningSchemeSettings = Seq(
+val versioningSchemeSettings = Seq(versionScheme := Some("early-semver"))
+
+val enableMimaSettings = Seq(
   mimaPreviousArtifacts := {
-    val isRcOrMilestone = version.value.contains("M") || version.value.contains("RC")
-    if (!isRcOrMilestone)
+    val current = version.value
+    val isRcOrMilestone = current.contains("M") || current.contains("RC")
+    if (!isRcOrMilestone) {
+      val previous = previousStableVersion.value
+      println(s"[info] Not a M or RC version, using previous version for MiMa check: $previous")
       previousStableVersion.value.map(organization.value %% moduleName.value % _).toSet
-    else
+    } else {
+      println(s"[info] $current is an M or RC version, no previous version to check with MiMa")
       Set.empty
-  },
-  versionScheme := Some("early-semver")
+    }
+  }
 )
 
 // start a test server before running tests of a backend; this is required both for JS tests run inside a
@@ -112,7 +118,7 @@ val playJsonVersion: Option[(Long, Long)] => String = {
   case _             => "2.9.2"
 }
 val catsEffect_3_version = "3.2.9"
-val fs2_3_version = "3.1.6"
+val fs2_3_version = "3.2.2"
 
 val catsEffect_2_version: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.0.0"
@@ -123,7 +129,7 @@ val fs2_2_version: Option[(Long, Long)] => String = {
   case _             => "2.5.9"
 }
 
-val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.2.6"
+val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.2.7"
 val akkaStreamVersion = "2.6.17"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % akkaStreamVersion
 
@@ -134,10 +140,10 @@ val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", 
 val zioVersion = "1.0.12"
 val zioInteropRsVersion = "1.3.8"
 
-val sttpModelVersion = "1.4.15"
-val sttpSharedVersion = "1.2.6"
+val sttpModelVersion = "1.4.18"
+val sttpSharedVersion = "1.2.7"
 
-val logback = "ch.qos.logback" % "logback-classic" % "1.2.6"
+val logback = "ch.qos.logback" % "logback-classic" % "1.2.7"
 
 val jeagerClientVersion = "1.6.0"
 val braveOpentracingVersion = "1.0.0"
@@ -274,7 +280,7 @@ lazy val core = (projectMatrix in file("core"))
   .jvmPlatform(
     scalaVersions = scala2 ++ scala3,
     settings = {
-      commonJvmSettings ++ versioningSchemeSettings ++ List(
+      commonJvmSettings ++ versioningSchemeSettings ++ enableMimaSettings ++ List(
         Test / publishArtifact := true // allow implementations outside of this repo
       )
     }
@@ -537,7 +543,7 @@ lazy val okhttpBackend = (projectMatrix in file("okhttp-backend"))
   .settings(
     name := "okhttp-backend",
     libraryDependencies ++= Seq(
-      "com.squareup.okhttp3" % "okhttp" % "4.9.2"
+      "com.squareup.okhttp3" % "okhttp" % "4.9.3"
     )
   )
   .jvmPlatform(scalaVersions = scala2 ++ scala3)
@@ -652,7 +658,7 @@ lazy val finagleBackend = (projectMatrix in file("finagle-backend"))
   .settings(
     name := "finagle-backend",
     libraryDependencies ++= Seq(
-      "com.twitter" %% "finagle-http" % "21.9.0"
+      "com.twitter" %% "finagle-http" % "21.11.0"
     )
   )
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13))
@@ -663,7 +669,7 @@ lazy val armeriaBackend = (projectMatrix in file("armeria-backend"))
   .settings(testServerSettings)
   .settings(
     name := "armeria-backend",
-    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.13.1"
+    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.13.2"
   )
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3)
   .dependsOn(core % compileAndTest)
@@ -866,9 +872,9 @@ lazy val zioTelemetryOpenTelemetryBackend = (projectMatrix in file("metrics/zio-
   .settings(
     name := "zio-telemetry-opentelemetry-backend",
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-opentelemetry" % "0.8.2",
-      "org.scala-lang.modules" %% "scala-collection-compat" % "2.5.0",
-      "io.opentelemetry" % "opentelemetry-sdk-testing" % "1.7.0" % Test
+      "dev.zio" %% "zio-opentelemetry" % "0.8.3",
+      "org.scala-lang.modules" %% "scala-collection-compat" % "2.6.0",
+      "io.opentelemetry" % "opentelemetry-sdk-testing" % "1.9.0" % Test
     ),
     scalaTest
   )
@@ -881,8 +887,8 @@ lazy val zioTelemetryOpenTracingBackend = (projectMatrix in file("metrics/zio-te
   .settings(
     name := "zio-telemetry-opentracing-backend",
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-opentracing" % "0.8.2",
-      "org.scala-lang.modules" %% "scala-collection-compat" % "2.5.0"
+      "dev.zio" %% "zio-opentracing" % "0.8.3",
+      "org.scala-lang.modules" %% "scala-collection-compat" % "2.6.0"
     )
   )
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3)
@@ -894,7 +900,7 @@ lazy val scribeBackend = (projectMatrix in file("logging/scribe"))
   .settings(
     name := "scribe-backend",
     libraryDependencies ++= Seq(
-      "com.outr" %%% "scribe" % "3.6.1"
+      "com.outr" %%% "scribe" % "3.6.3"
     ),
     scalaTest
   )
@@ -973,6 +979,7 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
       "CIRCE_VERSION" -> circeVersion(None)
     ),
     mdocOut := file("generated-docs/out"),
+    mdocExtraArguments := Seq("--clean-target"),
     publishArtifact := false,
     name := "docs",
     libraryDependencies ++= Seq(
@@ -997,22 +1004,22 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     sprayJson,
     zioJson,
     asyncHttpClientZioBackend,
-    //asyncHttpClientMonixBackend, // monix backends are commented out because they depend on cats-effect2
+    // asyncHttpClientMonixBackend, // monix backends are commented out because they depend on cats-effect2
     asyncHttpClientFs2Backend,
     asyncHttpClientCatsBackend,
     asyncHttpClientFutureBackend,
     asyncHttpClientScalazBackend,
     armeriaZioBackend,
-    //armeriaMonixBackend,
+    // armeriaMonixBackend,
     armeriaFs2Backend,
     armeriaCatsBackend,
     armeriaScalazBackend,
     okhttpBackend,
-    //okhttpMonixBackend,
+    // okhttpMonixBackend,
     httpClientBackend,
     httpClientFs2Backend,
     http4sBackend,
-    //httpClientMonixBackend,
+    // httpClientMonixBackend,
     httpClientZioBackend,
     openTracingBackend,
     prometheusBackend,

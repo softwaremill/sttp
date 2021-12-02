@@ -2,14 +2,16 @@
 
 The [Cats Effect](https://github.com/typelevel/cats-effect) backend is **asynchronous**. It can be created for any type implementing the `cats.effect.Concurrent` typeclass, such as `cats.effect.IO`. Sending a request is a non-blocking, lazily-evaluated operation and results in a wrapped response. There's a transitive dependency on `cats-effect`. 
 
+Note that all [fs2](fs2.md) backends also support any cats-effect effect, additionally supporting request & response streaming.
+
 ## Using async-http-client
 
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "async-http-client-backend-cats" % "3.3.15" // for cats-effect 3.x
+"com.softwaremill.sttp.client3" %% "async-http-client-backend-cats" % "3.3.18" // for cats-effect 3.x
 // or
-"com.softwaremill.sttp.client3" %% "async-http-client-backend-cats-ce2" % "3.3.15" // for cats-effect 2.x
+"com.softwaremill.sttp.client3" %% "async-http-client-backend-cats-ce2" % "3.3.18" // for cats-effect 2.x
 ```
            
 This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client), uses [Netty](http://netty.io) behind the scenes. 
@@ -81,9 +83,9 @@ val backend = AsyncHttpClientCatsBackend.usingClient[IO](asyncHttpClient)
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "armeria-backend-cats" % "3.3.15" // for cats-effect 3.x
+"com.softwaremill.sttp.client3" %% "armeria-backend-cats" % "3.3.18" // for cats-effect 3.x
 // or
-"com.softwaremill.sttp.client3" %% "armeria-backend-cats-ce2" % "3.3.15" // for cats-effect 2.x
+"com.softwaremill.sttp.client3" %% "armeria-backend-cats-ce2" % "3.3.18" // for cats-effect 2.x
 ```
 
 create client:

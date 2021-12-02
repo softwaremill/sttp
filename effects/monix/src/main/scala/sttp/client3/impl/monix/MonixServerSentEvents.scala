@@ -19,9 +19,9 @@ object MonixServerSentEvents {
       .map(ServerSentEvent.parse)
   }
 
-  //-------
-  //this part is utf8 incomplete byte detection from monix from monix.nio.text.UTF8Codec
-  //it is added to this file instead of called from library for compatibility with scalajs that does not have nio
+  // -------
+  // this part is utf8 incomplete byte detection from monix from monix.nio.text.UTF8Codec
+  // it is added to this file instead of called from library for compatibility with scalajs that does not have nio
   private def indexIncrement(b: Byte): Int = {
     if ((b & 0x80) == 0) 0 // ASCII byte
     else if ((b & 0xe0) == 0xc0) 2 // first of a 2 byte seq
@@ -42,7 +42,7 @@ object MonixServerSentEvents {
     }
     addBytesFromLast3 map (bytes.length + _ - lastThree.length)
   }
-  //-------
+  // -------
 
   private def combineFrames(nextString: String): (String, List[String]) = {
     val splited = nextString.split(Separator).toList
