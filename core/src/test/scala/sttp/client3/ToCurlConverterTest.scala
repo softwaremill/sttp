@@ -31,6 +31,12 @@ class ToCurlConverterTest extends AnyFlatSpec with Matchers with ToCurlConverter
     )
   }
 
+  it should "convert request with sensitive header" in {
+    basicRequest.header("Authorization", "xyzabc").get(localhost).toCurl should include(
+      """--header 'Authorization: ***'"""
+    )
+  }
+
   it should "convert request with body" in {
     basicRequest.body(Map("name" -> "john", "org" -> "sml")).post(localhost).toCurl should include(
       "--header 'Content-Type: application/x-www-form-urlencoded' \\\n  --header 'Content-Length: 17' \\\n  --form 'name=john&org=sml'"
