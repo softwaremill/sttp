@@ -9,7 +9,7 @@ class ToCurlConverter[R <: RequestT[Identity, _, _]] {
   def apply(request: R): String = {
     val params = List(extractMethod(_), extractUrl(_), extractHeaders(_), extractBody(_), extractOptions(_))
       .map(addSpaceIfNotEmpty)
-      .reduce((acc, item) => r => acc(r) + item(r))
+      .reduce((acc, item) => (r: R) => acc(r) + item(r))
       .apply(request)
 
     s"""curl$params"""
@@ -27,9 +27,7 @@ class ToCurlConverter[R <: RequestT[Identity, _, _]] {
     r.headers
       // filtering out compression headers so that the results are human-readable, if possible
       .filterNot(_.name.equalsIgnoreCase(HeaderNames.AcceptEncoding))
-      .collect { case Header(k, v) =>
-        s"""--header '$k: $v'"""
-      }
+      .map(h => s"--header '${h.toStringSafe()}'")
       .mkString(newline)
   }
 
