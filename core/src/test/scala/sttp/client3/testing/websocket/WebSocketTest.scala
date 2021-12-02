@@ -8,11 +8,14 @@ import org.scalatest.{Assertion, BeforeAndAfterAll}
 import sttp.capabilities.WebSockets
 import sttp.client3.SttpClientException.ReadException
 import sttp.client3._
+import sttp.client3.logging.{LogLevel, Logger, LoggingBackend}
 import sttp.client3.testing.HttpTest.wsEndpoint
 import sttp.client3.testing.{ConvertToFuture, ToFutureWrapper}
 import sttp.monad.MonadError
 import sttp.monad.syntax._
 import sttp.ws.{WebSocket, WebSocketFrame}
+
+import java.util.concurrent.atomic.AtomicInteger
 
 abstract class WebSocketTest[F[_]]
     extends AsyncFlatSpec
@@ -137,6 +140,55 @@ abstract class WebSocketTest[F[_]]
         }
         .toFuture()
     }
+  }
+
+  class TestLogger extends Logger[F] {
+    val msgCounter = new AtomicInteger()
+    val errCounter = new AtomicInteger()
+    override def apply(level: LogLevel, message: => String): F[Unit] =
+      monad.unit(println(message)).map(_ => msgCounter.incrementAndGet())
+    override def apply(level: LogLevel, message: => String, t: Throwable): F[Unit] =
+      monad.unit(println(message + t.toString)).map(_ => errCounter.incrementAndGet())
+  }
+
+  it should "work with LoggingBackend" in {
+    val logger = new TestLogger()
+    val loggingBackend = LoggingBackend(backend, logger)
+    basicRequest
+      .get(uri"$wsEndpoint/ws/echo")
+      .response(asWebSocketAlways { (ws: WebSocket[F]) =>
+        for {
+          _ <- sendText(ws, 3)
+          _ <- receiveEchoText(ws, 3)
+          _ <- ws.close()
+        } yield succeed
+      })
+      .send(loggingBackend)
+      .map { _ =>
+        logger.msgCounter.get() shouldBe 2
+        logger.errCounter.get() shouldBe 0
+      }
+      .toFuture()
+  }
+
+  it should "work with LoggingBackend with logResponseBody" in {
+    val logger = new TestLogger()
+    val loggingBackend = LoggingBackend(backend, logger, logResponseBody = true)
+    basicRequest
+      .get(uri"$wsEndpoint/ws/echo")
+      .response(asWebSocketAlways { (ws: WebSocket[F]) =>
+        for {
+          _ <- sendText(ws, 3)
+          _ <- receiveEchoText(ws, 3)
+          _ <- ws.close()
+        } yield succeed
+      })
+      .send(loggingBackend)
+      .map { _ =>
+        logger.msgCounter.get() shouldBe 2
+        logger.errCounter.get() shouldBe 0
+      }
+      .toFuture()
   }
 
   def sendText(ws: WebSocket[F], count: Int): F[Unit] =
