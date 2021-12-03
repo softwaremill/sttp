@@ -38,7 +38,7 @@ class ToCurlConverterTest extends AnyFlatSpec with Matchers with ToCurlConverter
   }
 
   it should "convert request with custom sensitive header" in {
-    basicRequest.header("X-Auth", "xyzabc").get(localhost).toCurlWithSensitiveHeaders(Set("X-Auth")) should include(
+    basicRequest.header("X-Auth", "xyzabc").get(localhost).toCurl(Set("X-Auth")) should include(
       """--header 'X-Auth: ***'"""
     )
   }
