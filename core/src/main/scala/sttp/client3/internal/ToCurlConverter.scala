@@ -8,10 +8,11 @@ import sttp.model.MediaType
 class ToCurlConverter[R <: RequestT[Identity, _, _]] {
 
   def apply(request: R): String = {
-    val params = List(extractMethod(_), extractUrl(_), extractHeaders(None, _), extractBody(_), extractOptions(_))
-      .map(addSpaceIfNotEmpty)
-      .reduce((acc, item) => (r: R) => acc(r) + item(r))
-      .apply(request)
+    val params =
+      List(extractMethod(_), extractUrl(_), (r: R) => extractHeaders(None, r), extractBody(_), extractOptions(_))
+        .map(addSpaceIfNotEmpty)
+        .reduce((acc, item) => (r: R) => acc(r) + item(r))
+        .apply(request)
 
     s"""curl$params"""
   }
@@ -20,7 +21,7 @@ class ToCurlConverter[R <: RequestT[Identity, _, _]] {
     val params = List(
       extractMethod(_),
       extractUrl(_),
-      extractHeaders(Some(sensitiveHeaders), _),
+      (r: R) => extractHeaders(Some(sensitiveHeaders), r),
       extractBody(_),
       extractOptions(_)
     )
