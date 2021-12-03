@@ -7,10 +7,23 @@ import sttp.model.MediaType
 
 class ToCurlConverter[R <: RequestT[Identity, _, _]] {
 
-  def sensitiveHeaders: Option[Set[String]] = None
-
   def apply(request: R): String = {
-    val params = List(extractMethod(_), extractUrl(_), extractHeaders(_), extractBody(_), extractOptions(_))
+    val params = List(extractMethod(_), extractUrl(_), extractHeaders(None, _), extractBody(_), extractOptions(_))
+      .map(addSpaceIfNotEmpty)
+      .reduce((acc, item) => (r: R) => acc(r) + item(r))
+      .apply(request)
+
+    s"""curl$params"""
+  }
+
+  def apply(request: R, sensitiveHeaders: Set[String]): String = {
+    val params = List(
+      extractMethod(_),
+      extractUrl(_),
+      extractHeaders(Some(sensitiveHeaders), _),
+      extractBody(_),
+      extractOptions(_)
+    )
       .map(addSpaceIfNotEmpty)
       .reduce((acc, item) => (r: R) => acc(r) + item(r))
       .apply(request)
@@ -26,7 +39,7 @@ class ToCurlConverter[R <: RequestT[Identity, _, _]] {
     s"--url '${r.uri}'"
   }
 
-  private def extractHeaders(r: R): String = {
+  private def extractHeaders(sensitiveHeaders: Option[Set[String]], r: R): String = {
     r.headers
       // filtering out compression headers so that the results are human-readable, if possible
       .filterNot(_.name.equalsIgnoreCase(HeaderNames.AcceptEncoding))
@@ -85,13 +98,6 @@ class ToCurlConverter[R <: RequestT[Identity, _, _]] {
   private def newline: String = " \\\n  "
 }
 
-class ToCurlConverterWithSensitiveHeaders[R <: RequestT[Identity, _, _]](sensitiveHeaders: Set[String])
-    extends ToCurlConverter[R] {
-  override def sensitiveHeaders: Option[Set[String]] = Some(sensitiveHeaders)
-}
-
 object ToCurlConverter {
   def requestToCurl[R <: Request[_, _]]: ToCurlConverter[R] = new ToCurlConverter[R]
-  def requestToCurlWithSensitiveHeaders[R <: Request[_, _]](sensitiveHeaders: Set[String]): ToCurlConverter[R] =
-    new ToCurlConverterWithSensitiveHeaders[R](sensitiveHeaders)
 }
