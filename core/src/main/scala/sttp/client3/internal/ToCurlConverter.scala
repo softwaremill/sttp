@@ -6,6 +6,9 @@ import sttp.client3.NoBody
 import sttp.model.MediaType
 
 class ToCurlConverter[R <: RequestT[Identity, _, _]] {
+
+  def sensitiveHeaders: Option[Set[String]] = None
+
   def apply(request: R): String = {
     val params = List(extractMethod(_), extractUrl(_), extractHeaders(_), extractBody(_), extractOptions(_))
       .map(addSpaceIfNotEmpty)
@@ -27,7 +30,12 @@ class ToCurlConverter[R <: RequestT[Identity, _, _]] {
     r.headers
       // filtering out compression headers so that the results are human-readable, if possible
       .filterNot(_.name.equalsIgnoreCase(HeaderNames.AcceptEncoding))
-      .map(h => s"--header '${h.toStringSafe()}'")
+      .map { h =>
+        sensitiveHeaders match {
+          case Some(headers) => s"--header '${h.toStringSafe(headers)}'"
+          case None          => s"--header '${h.toStringSafe()}'"
+        }
+      }
       .mkString(newline)
   }
 
@@ -77,6 +85,13 @@ class ToCurlConverter[R <: RequestT[Identity, _, _]] {
   private def newline: String = " \\\n  "
 }
 
+class ToCurlConverterWithSensitiveHeaders[R <: RequestT[Identity, _, _]](sensitiveHeaders: Set[String])
+    extends ToCurlConverter[R] {
+  override def sensitiveHeaders: Option[Set[String]] = Some(sensitiveHeaders)
+}
+
 object ToCurlConverter {
   def requestToCurl[R <: Request[_, _]]: ToCurlConverter[R] = new ToCurlConverter[R]
+  def requestToCurlWithSensitiveHeaders[R <: Request[_, _]](sensitiveHeaders: Set[String]): ToCurlConverter[R] =
+    new ToCurlConverterWithSensitiveHeaders[R](sensitiveHeaders)
 }

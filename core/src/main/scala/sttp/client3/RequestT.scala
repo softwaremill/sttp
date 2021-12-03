@@ -292,6 +292,8 @@ case class RequestT[U[_], T, -R](
   ): F[Response[T]] = backend.send(asRequest.asInstanceOf[Request[T, P with Effect[F]]]) // as witnessed by pEffectFIsR
 
   def toCurl(implicit isIdInRequest: IsIdInRequest[U]): String = ToCurlConverter.requestToCurl(asRequest)
+  def toCurlWithSensitiveHeaders(sensitiveHeaders: Set[String])(implicit isIdInRequest: IsIdInRequest[U]): String =
+    ToCurlConverter.requestToCurlWithSensitiveHeaders(sensitiveHeaders)(asRequest)
 
   def toRfc2616Format(implicit isIdInRequest: IsIdInRequest[U]): String = ToRfc2616Converter.requestToRfc2616(asRequest)
 
