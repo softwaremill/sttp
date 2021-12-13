@@ -71,7 +71,7 @@ class ToRfc2616ConverterTest extends AnyFlatSpec with Matchers {
       .body(xmlBody)
       .post(localhost)
       .toRfc2616Format should include(
-      """Authorization: token
+      """Authorization: ***
         |Content-Type: application/xml
         |Content-Length: 91
         |
@@ -90,7 +90,7 @@ class ToRfc2616ConverterTest extends AnyFlatSpec with Matchers {
       .body(jsonBody)
       .post(localhost)
       .toRfc2616Format should include(
-      """Authorization: token
+      """Authorization: ***
         |Content-Type: application/json
         |Content-Length: 69
         |

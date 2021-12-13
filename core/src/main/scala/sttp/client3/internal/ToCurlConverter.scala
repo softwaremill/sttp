@@ -7,21 +7,14 @@ import sttp.model.MediaType
 
 class ToCurlConverter[R <: RequestT[Identity, _, _]] {
 
-  def apply(request: R): String = {
-    val params =
-      List(extractMethod(_), extractUrl(_), (r: R) => extractHeaders(None, r), extractBody(_), extractOptions(_))
-        .map(addSpaceIfNotEmpty)
-        .reduce((acc, item) => (r: R) => acc(r) + item(r))
-        .apply(request)
+  def apply(request: R): String = create(request, sensitiveHeaders = None)
+  def apply(request: R, sensitiveHeaders: Set[String]): String = create(request, Some(sensitiveHeaders))
 
-    s"""curl$params"""
-  }
-
-  def apply(request: R, sensitiveHeaders: Set[String]): String = {
+  private def create(request: R, sensitiveHeaders: Option[Set[String]]): String = {
     val params = List(
       extractMethod(_),
       extractUrl(_),
-      (r: R) => extractHeaders(Some(sensitiveHeaders), r),
+      (r: R) => extractHeaders(r, sensitiveHeaders),
       extractBody(_),
       extractOptions(_)
     )
@@ -40,7 +33,7 @@ class ToCurlConverter[R <: RequestT[Identity, _, _]] {
     s"--url '${r.uri}'"
   }
 
-  private def extractHeaders(sensitiveHeaders: Option[Set[String]], r: R): String = {
+  private def extractHeaders(r: R, sensitiveHeaders: Option[Set[String]]): String = {
     r.headers
       // filtering out compression headers so that the results are human-readable, if possible
       .filterNot(_.name.equalsIgnoreCase(HeaderNames.AcceptEncoding))
