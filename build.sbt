@@ -860,7 +860,7 @@ lazy val prometheusBackend = (projectMatrix in file("metrics/prometheus-backend"
   .settings(
     name := "prometheus-backend",
     libraryDependencies ++= Seq(
-      "io.prometheus" % "simpleclient" % "0.12.0"
+      "io.prometheus" % "simpleclient" % "0.13.0"
     ),
     scalaTest
   )
