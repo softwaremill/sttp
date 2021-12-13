@@ -10,9 +10,10 @@ class ToRfc2616ConverterTest extends AnyFlatSpec with Matchers {
   private val localhost = uri"http://localhost"
 
   it should "convert base request" in {
-    basicRequest
+    val req = basicRequest
       .get(uri"$localhost")
-      .toRfc2616Format shouldBe "GET http://localhost"
+      .toRfc2616Format
+    req shouldBe "GET http://localhost"
   }
 
   it should "convert request with method to curl" in {
