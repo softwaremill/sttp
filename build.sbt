@@ -137,8 +137,10 @@ val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", 
   "org.scalatest" %%% s"scalatest-$m" % "3.2.10" % Test
 )
 
-val zioVersion = "1.0.13"
-val zioInteropRsVersion = "1.3.8"
+val zio1Version = "1.0.13"
+val zio2Version = "2.0.0-RC1"
+val zio1InteropRsVersion = "1.3.8"
+val zio2InteropRsVersion = "1.3.8" // TODO
 
 val sttpModelVersion = "1.4.18"
 val sttpSharedVersion = "1.2.7+36-0ecd0ff2+20211215-1305-SNAPSHOT"
@@ -411,8 +413,8 @@ lazy val zio1 = (projectMatrix in file("effects/zio1"))
     name := "zio1",
     Test / publishArtifact := true,
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-streams" % zioVersion,
-      "dev.zio" %% "zio" % zioVersion,
+      "dev.zio" %% "zio-streams" % zio1Version,
+      "dev.zio" %% "zio" % zio1Version,
       "com.softwaremill.sttp.shared" %% "zio1" % sttpSharedVersion
     )
   )
@@ -431,9 +433,9 @@ lazy val zio = (projectMatrix in file("effects/zio"))
     name := "zio",
     Test / publishArtifact := true,
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-streams" % zioVersion,
-      "dev.zio" %% "zio" % zioVersion,
-      "com.softwaremill.sttp.shared" %% "zio1" % sttpSharedVersion
+      "dev.zio" %% "zio-streams" % zio2Version,
+      "dev.zio" %% "zio" % zio2Version,
+      "com.softwaremill.sttp.shared" %% "zio" % sttpSharedVersion
     )
   )
   .dependsOn(core % compileAndTest)
@@ -517,7 +519,7 @@ lazy val asyncHttpClientZio1Backend =
   asyncHttpClientBackendProject("zio1", includeDotty = true)
     .settings(
       libraryDependencies ++= Seq(
-        "dev.zio" %% "zio-interop-reactivestreams" % zioInteropRsVersion
+        "dev.zio" %% "zio-interop-reactivestreams" % zio1InteropRsVersion
       )
     )
     .dependsOn(zio1 % compileAndTest)
@@ -526,7 +528,7 @@ lazy val asyncHttpClientZioBackend =
   asyncHttpClientBackendProject("zio", includeDotty = true)
     .settings(
       libraryDependencies ++= Seq(
-        "dev.zio" %% "zio-interop-reactivestreams" % zioInteropRsVersion
+        "dev.zio" %% "zio-interop-reactivestreams" % zio2InteropRsVersion
       )
     )
     .dependsOn(zio % compileAndTest)
@@ -674,7 +676,7 @@ lazy val httpClientZio1Backend =
     .settings(
       libraryDependencies ++=
         Seq(
-          "dev.zio" %% "zio-interop-reactivestreams" % zioInteropRsVersion,
+          "dev.zio" %% "zio-interop-reactivestreams" % zio1InteropRsVersion,
           "dev.zio" %% "zio-nio" % "1.0.0-RC11"
         )
     )
@@ -685,8 +687,8 @@ lazy val httpClientZioBackend =
     .settings(
       libraryDependencies ++=
         Seq(
-          "dev.zio" %% "zio-interop-reactivestreams" % zioInteropRsVersion,
-          "dev.zio" %% "zio-nio" % "1.0.0-RC11"
+          "dev.zio" %% "zio-interop-reactivestreams" % zio2InteropRsVersion,
+          "dev.zio" %% "zio-nio" % "1.0.0-RC11" // TODO
         )
     )
     .dependsOn(zio % compileAndTest)
@@ -762,14 +764,14 @@ lazy val armeriaScalazBackend =
 lazy val armeriaZio1Backend =
   armeriaBackendProject("zio1", includeDotty = true)
     .settings(
-      libraryDependencies ++= Seq("dev.zio" %% "zio-interop-reactivestreams" % zioInteropRsVersion)
+      libraryDependencies ++= Seq("dev.zio" %% "zio-interop-reactivestreams" % zio1InteropRsVersion)
     )
     .dependsOn(zio1 % compileAndTest)
 
 lazy val armeriaZioBackend =
   armeriaBackendProject("zio", includeDotty = true)
     .settings(
-      libraryDependencies ++= Seq("dev.zio" %% "zio-interop-reactivestreams" % zioInteropRsVersion)
+      libraryDependencies ++= Seq("dev.zio" %% "zio-interop-reactivestreams" % zio2InteropRsVersion)
     )
     .dependsOn(zio % compileAndTest)
 
