@@ -1,14 +1,14 @@
 package sttp.client3
 
-import java.io.InputStream
-import java.nio.ByteBuffer
-import java.util.Base64
 import sttp.capabilities.{Effect, Streams}
 import sttp.client3.internal.DigestAuthenticator.DigestAuthData
 import sttp.client3.internal.{SttpFile, ToCurlConverter, ToRfc2616Converter, _}
 import sttp.model._
 import sttp.model.headers.CookieWithMeta
 
+import java.io.InputStream
+import java.nio.ByteBuffer
+import java.util.Base64
 import scala.collection.immutable.Seq
 import scala.concurrent.duration.Duration
 
@@ -289,7 +289,13 @@ case class RequestT[U[_], T, -R](
   def send[F[_], P](backend: SttpBackend[F, P])(implicit
       isIdInRequest: IsIdInRequest[U],
       pEffectFIsR: P with Effect[F] <:< R
-  ): F[Response[T]] = backend.send(asRequest.asInstanceOf[Request[T, P with Effect[F]]]) // as witnessed by pEffectFIsR
+  ): F[Response[T]] = {
+    // FIXME: remove during writing sttp4
+    val tmpOptions = this.options
+    val requestWithoutOptions = asRequest.asInstanceOf[Request[T, P with Effect[F]]]
+    val requestWithFixedOptions = requestWithoutOptions.copy(options = tmpOptions)
+    backend.send(requestWithFixedOptions)
+  } // as witnessed by pEffectFIsR
 
   def toCurl(implicit isIdInRequest: IsIdInRequest[U]): String = ToCurlConverter.requestToCurl(asRequest)
 
@@ -399,9 +405,28 @@ class SpecifyAuthScheme[U[_], T, -R](hn: String, rt: RequestT[U, T, R], digestTa
 }
 
 case class RequestOptions(
-    followRedirects: Boolean,
-    readTimeout: Duration,
-    maxRedirects: Int,
-    redirectToGet: Boolean,
-    disableAutoDecompression: Boolean
-)
+                           followRedirects: Boolean,
+                           readTimeout: Duration,
+                           maxRedirects: Int,
+                           redirectToGet: Boolean
+                         ) {
+
+  // FIXME: workaround for binary compatibility replace with simple field during writing sttp4
+  def isAutoCompressionDisabled: Boolean = false
+
+  def disableAutoDecompression(): RequestOptions =
+    new RequestOptions(followRedirects, readTimeout, maxRedirects, redirectToGet) {
+      override def isAutoCompressionDisabled: Boolean = true
+    }
+
+  def copy(followRedirects: Boolean = this.followRedirects,
+           readTimeout: Duration = this.readTimeout,
+           maxRedirects: Int = this.maxRedirects,
+           redirectToGet: Boolean = this.redirectToGet): RequestOptions = {
+    if (this.isAutoCompressionDisabled) {
+      new RequestOptions(followRedirects, readTimeout, maxRedirects, redirectToGet) {
+        override def isAutoCompressionDisabled: Boolean = true
+      }
+    } else RequestOptions(followRedirects, readTimeout, maxRedirects, redirectToGet)
+  }
+}
