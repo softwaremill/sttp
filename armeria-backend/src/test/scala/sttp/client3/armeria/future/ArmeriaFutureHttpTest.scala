@@ -11,7 +11,6 @@ class ArmeriaFutureHttpTest extends HttpTest[Future] {
   override implicit val convertToFuture: ConvertToFuture[Future] = ConvertToFuture.future
 
   override def supportsHostHeaderOverride = false
-  override def supportAutoDecompressionDisabling = false
   override def supportsCancellation = false
 
   override def timeoutToNone[T](t: Future[T], timeoutMillis: Int): Future[Option[T]] = t.map(Some(_))

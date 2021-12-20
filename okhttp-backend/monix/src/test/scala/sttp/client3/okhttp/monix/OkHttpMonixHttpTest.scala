@@ -22,4 +22,5 @@ class OkHttpMonixHttpTest extends HttpTest[Task] {
       .onErrorRecover { case _: TimeoutException =>
         None
       }
+  override def supportAutoDecompressionDisabling = true
 }

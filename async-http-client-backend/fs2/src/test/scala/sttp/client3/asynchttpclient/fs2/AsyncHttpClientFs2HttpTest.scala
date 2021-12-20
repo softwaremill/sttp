@@ -12,5 +12,4 @@ class AsyncHttpClientFs2HttpTest extends HttpTest[IO] with TestIODispatcher with
   override def throwsExceptionOnUnsupportedEncoding = false
   // for some unknown reason this single test fails using the fs2 implementation
   override def supportsConnectionRefusedTest = false
-  override def supportAutoDecompressionDisabling = false
 }

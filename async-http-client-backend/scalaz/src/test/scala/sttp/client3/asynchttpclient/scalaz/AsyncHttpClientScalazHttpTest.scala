@@ -11,7 +11,6 @@ class AsyncHttpClientScalazHttpTest extends HttpTest[Task] {
   override implicit val convertToFuture: ConvertToFuture[Task] = convertScalazTaskToFuture
 
   override def throwsExceptionOnUnsupportedEncoding = false
-  override def supportAutoDecompressionDisabling = false
 
   override def supportsCancellation: Boolean = false
   override def timeoutToNone[T](t: Task[T], timeoutMillis: Int): Task[Option[T]] = t.map(Some(_))

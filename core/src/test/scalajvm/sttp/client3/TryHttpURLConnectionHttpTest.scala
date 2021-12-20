@@ -11,6 +11,7 @@ class TryHttpURLConnectionHttpTest extends HttpTest[Try] {
 
   override def supportsCancellation = false
   override def supportsHostHeaderOverride = false
+  override def supportAutoDecompressionDisabling = true
 
   override def timeoutToNone[T](t: Try[T], timeoutMillis: Int): Try[Option[T]] = t.map(Some(_))
 }

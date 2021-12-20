@@ -11,7 +11,6 @@ class ArmeriaScalazHttpTest extends HttpTest[Task] {
   override implicit val convertToFuture: ConvertToFuture[Task] = convertScalazTaskToFuture
 
   override def supportsHostHeaderOverride = false
-  override def supportAutoDecompressionDisabling = false
   override def supportsCancellation = false
 
   override def timeoutToNone[T](t: Task[T], timeoutMillis: Int): Task[Option[T]] = t.map(Some(_))

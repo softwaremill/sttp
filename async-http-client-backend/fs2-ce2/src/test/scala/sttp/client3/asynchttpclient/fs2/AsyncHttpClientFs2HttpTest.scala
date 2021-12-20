@@ -12,5 +12,4 @@ class AsyncHttpClientFs2HttpTest extends HttpTest[IO] with CatsTestBase {
     AsyncHttpClientFs2Backend[IO](Blocker.liftExecutionContext(global)).unsafeRunSync()
 
   override def throwsExceptionOnUnsupportedEncoding = false
-  override def supportAutoDecompressionDisabling = false
 }

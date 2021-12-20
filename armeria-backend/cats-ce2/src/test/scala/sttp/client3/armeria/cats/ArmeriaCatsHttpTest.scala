@@ -18,5 +18,4 @@ class ArmeriaCatsHttpTest extends HttpTest[IO] with CatsTestBase {
 
   override def supportsHostHeaderOverride = false
   override def supportsCancellation = false
-  override def supportAutoDecompressionDisabling = false
 }
