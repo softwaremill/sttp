@@ -140,8 +140,8 @@ val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", 
 val zioVersion = "1.0.13"
 val zioInteropRsVersion = "1.3.8"
 
-val sttpModelVersion = "1.4.18"
-val sttpSharedVersion = "1.3.0"
+val sttpModelVersion = "1.4.19"
+val sttpSharedVersion = "1.2.7"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.2.9"
 
@@ -860,7 +860,7 @@ lazy val prometheusBackend = (projectMatrix in file("metrics/prometheus-backend"
   .settings(
     name := "prometheus-backend",
     libraryDependencies ++= Seq(
-      "io.prometheus" % "simpleclient" % "0.12.0"
+      "io.prometheus" % "simpleclient" % "0.14.1"
     ),
     scalaTest
   )
