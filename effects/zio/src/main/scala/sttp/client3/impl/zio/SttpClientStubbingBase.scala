@@ -5,22 +5,21 @@ import sttp.client3.testing.SttpBackendStub
 import sttp.client3.{Request, Response, SttpBackend}
 import sttp.model.StatusCode
 import sttp.monad.MonadError
-import zio.{Has, RIO, Ref, Tag, UIO, URIO, ZLayer}
+import zio.{RIO, Ref, Tag, UIO, URIO, ZEnvironment, ZLayer}
 
 trait SttpClientStubbingBase[R, P] {
 
-  type SttpClientStubbing = Has[Service]
-  // the tag as viewed by the implementing object. Needs to be passed explicitly, otherwise Has[] breaks.
-  private[sttp] def serviceTag: Tag[Service]
+  // the tag as viewed by the implementing object. Needs to be passed explicitly, otherwise env lookup breaks.
+  private[sttp] def serviceTag: Tag[SttpClientStubbing]
   private[sttp] def sttpBackendTag: Tag[SttpBackend[RIO[R, *], P]]
 
-  trait Service {
+  trait SttpClientStubbing {
     def whenRequestMatchesPartial(partial: PartialFunction[Request[_, _], Response[_]]): URIO[SttpClientStubbing, Unit]
 
     private[zio] def update(f: SttpBackendStub[RIO[R, *], P] => SttpBackendStub[RIO[R, *], P]): UIO[Unit]
   }
 
-  private[sttp] class StubWrapper(stub: Ref[SttpBackendStub[RIO[R, *], P]]) extends Service {
+  private[sttp] class StubWrapper(stub: Ref[SttpBackendStub[RIO[R, *], P]]) extends SttpClientStubbing {
     override def whenRequestMatchesPartial(
         partial: PartialFunction[Request[_, _], Response[_]]
     ): URIO[SttpClientStubbing, Unit] =
@@ -30,7 +29,8 @@ trait SttpClientStubbingBase[R, P] {
   }
 
   case class StubbingWhenRequest private[sttp] (p: Request[_, _] => Boolean) {
-    implicit val _serviceTag: Tag[Service] = serviceTag
+    implicit val _serviceTag: Tag[SttpClientStubbing] = serviceTag
+
     val thenRespondOk: URIO[SttpClientStubbing, Unit] =
       whenRequest(_.thenRespondOk())
 
@@ -67,14 +67,14 @@ trait SttpClientStubbingBase[R, P] {
       URIO.serviceWith(_.update(stub => f(stub.whenRequestMatches(p))))
   }
 
-  val layer: ZLayer[Any, Nothing, Has[Service] with Has[SttpBackend[RIO[R, *], P]]] = {
+  val layer: ZLayer[Any, Nothing, SttpClientStubbing with SttpBackend[RIO[R, *], P]] = {
     val monad = new RIOMonadAsyncError[R]
-    implicit val _serviceTag: Tag[Service] = serviceTag
+    implicit val _serviceTag: Tag[SttpClientStubbing] = serviceTag
     implicit val _backendTag: Tag[SttpBackend[RIO[R, *], P]] = sttpBackendTag
 
     val composed = for {
       stub <- Ref.make(SttpBackendStub[RIO[R, *], P](monad))
-      stubber = new StubWrapper(stub)
+      stubber = new StubWrapper(stub): SttpClientStubbing
       proxy = new SttpBackend[RIO[R, *], P] {
         override def send[T, RR >: P with Effect[RIO[R, *]]](request: Request[T, RR]): RIO[R, Response[T]] =
           stub.get >>= (_.send(request))
@@ -83,9 +83,9 @@ trait SttpClientStubbingBase[R, P] {
           stub.get >>= (_.close())
 
         override def responseMonad: MonadError[RIO[R, *]] = monad
-      }
-    } yield Has.allOf[Service, SttpBackend[RIO[R, *], P]](stubber, proxy)
+      }: SttpBackend[RIO[R, *], P]
+    } yield ZEnvironment(stubber, proxy)
 
-    composed.toLayerMany
+    ZLayer.fromZIOEnvironment(composed)
   }
 }

@@ -2,14 +2,14 @@ package sttp.client3.impl.zio
 
 import sttp.capabilities.zio.ZioStreams
 import sttp.model.sse.ServerSentEvent
-import zio.stream.ZTransducer
+import zio.stream.ZPipeline
 
 object ZioServerSentEvents {
   val parse: ZioStreams.Pipe[Byte, ServerSentEvent] = { stream =>
     stream
-      .aggregate(ZTransducer.utf8Decode)
-      .aggregate(ZTransducer.splitLines)
-      .aggregate(ZTransducer.collectAllWhile[String](_.nonEmpty))
-      .map(ServerSentEvent.parse)
+      .via(ZPipeline.utf8Decode)
+      .via(ZPipeline.splitLines)
+      .split(_.isEmpty)
+      .map(c => ServerSentEvent.parse(c.toList))
   }
 }
