@@ -31,7 +31,6 @@ private[asynchttpclient] trait BodyToAHC[F[_], S] {
   def apply[R](r: Request[_, R], body: RequestBody[R], rb: RequestBuilder): Unit = {
     body match {
       case NoBody => // skip
-
       case StringBody(b, encoding, _) =>
         rb.setBody(b.getBytes(encoding))
 
