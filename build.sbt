@@ -145,7 +145,7 @@ val sttpSharedVersion = "1.2.7"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.2.9"
 
-val jeagerClientVersion = "1.6.0"
+val jeagerClientVersion = "1.7.0"
 val braveOpentracingVersion = "1.0.0"
 val zipkinSenderOkHttpVersion = "2.16.3"
 val resilience4jVersion = "1.7.1"
