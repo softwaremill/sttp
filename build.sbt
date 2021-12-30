@@ -413,7 +413,7 @@ lazy val zio = (projectMatrix in file("effects/zio"))
     libraryDependencies ++= Seq(
       "dev.zio" %% "zio-streams" % zioVersion,
       "dev.zio" %% "zio" % zioVersion,
-      "com.softwaremill.sttp.shared" %% "zio" % sttpSharedVersion
+      "com.softwaremill.sttp.shared" %% "zio1" % sttpSharedVersion
     )
   )
   .dependsOn(core % compileAndTest)
