@@ -121,7 +121,7 @@ class AkkaHttpBackend private (
     val body = bodyFromAkka(
       r.response,
       responseMetadata,
-      wsFlow.map(Right(_)).getOrElse(Left(decodeAkkaResponse(hr, r.options.isAutoCompressionDisabled)))
+      wsFlow.map(Right(_)).getOrElse(Left(decodeAkkaResponse(hr, r.options.disableAutoDecompression)))
     )
 
     body.map(client3.Response(_, code, statusText, headers, Nil, r.onlyMetadata))

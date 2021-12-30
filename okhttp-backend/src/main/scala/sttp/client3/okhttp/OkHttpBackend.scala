@@ -84,7 +84,7 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
       if (
         method != Method.HEAD && !res
           .code()
-          .equals(StatusCode.NoContent.code) && !request.options.isAutoCompressionDisabled
+          .equals(StatusCode.NoContent.code) && !request.options.disableAutoDecompression
       ) {
         encoding
           .map(e =>

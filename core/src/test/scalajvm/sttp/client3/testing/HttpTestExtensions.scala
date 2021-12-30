@@ -248,9 +248,9 @@ trait HttpTestExtensions[F[_]] extends AsyncFreeSpecLike { self: HttpTest[F] =>
             followRedirects = true,
             DefaultReadTimeout,
             FollowRedirectsBackend.MaxRedirects,
-            redirectToGet = false
+            redirectToGet = false,
+            disableAutoDecompression = true
           )
-            .disableAutoDecompression()
           val req = emptyRequest
             .copy(options = options)
             .get(uri"$endpoint/raw-gzip-file")

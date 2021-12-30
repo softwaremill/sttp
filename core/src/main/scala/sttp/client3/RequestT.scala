@@ -289,13 +289,7 @@ case class RequestT[U[_], T, -R](
   def send[F[_], P](backend: SttpBackend[F, P])(implicit
       isIdInRequest: IsIdInRequest[U],
       pEffectFIsR: P with Effect[F] <:< R
-  ): F[Response[T]] = {
-    // FIXME: remove during writing sttp4
-    val tmpOptions = this.options
-    val requestWithoutOptions = asRequest.asInstanceOf[Request[T, P with Effect[F]]]
-    val requestWithFixedOptions = requestWithoutOptions.copy(options = tmpOptions)
-    backend.send(requestWithFixedOptions)
-  } // as witnessed by pEffectFIsR
+  ): F[Response[T]] = backend.send(asRequest.asInstanceOf[Request[T, P with Effect[F]]]) // as witnessed by pEffectFIsR
 
   def toCurl(implicit isIdInRequest: IsIdInRequest[U]): String = ToCurlConverter.requestToCurl(asRequest)
 
@@ -408,25 +402,6 @@ case class RequestOptions(
                            followRedirects: Boolean,
                            readTimeout: Duration,
                            maxRedirects: Int,
-                           redirectToGet: Boolean
-                         ) {
-
-  // FIXME: workaround for binary compatibility replace with simple field during writing sttp4
-  def isAutoCompressionDisabled: Boolean = false
-
-  def disableAutoDecompression(): RequestOptions =
-    new RequestOptions(followRedirects, readTimeout, maxRedirects, redirectToGet) {
-      override def isAutoCompressionDisabled: Boolean = true
-    }
-
-  def copy(followRedirects: Boolean = this.followRedirects,
-           readTimeout: Duration = this.readTimeout,
-           maxRedirects: Int = this.maxRedirects,
-           redirectToGet: Boolean = this.redirectToGet): RequestOptions = {
-    if (this.isAutoCompressionDisabled) {
-      new RequestOptions(followRedirects, readTimeout, maxRedirects, redirectToGet) {
-        override def isAutoCompressionDisabled: Boolean = true
-      }
-    } else RequestOptions(followRedirects, readTimeout, maxRedirects, redirectToGet)
-  }
-}
+                           redirectToGet: Boolean,
+                           disableAutoDecompression: Boolean
+                         )
