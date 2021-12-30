@@ -156,7 +156,7 @@ private[akkahttp] class BodyFromAkka()(implicit ec: ExecutionContext, mat: Mater
       private val open = new AtomicBoolean(true)
       private val closeReceived = new AtomicBoolean(false)
 
-      override def receive: Future[WebSocketFrame] = {
+      override def receive(): Future[WebSocketFrame] = {
         val result = sinkQueue.pull().flatMap {
           case Some(m) => messageToFrame(m)
           case None =>
@@ -198,7 +198,7 @@ private[akkahttp] class BodyFromAkka()(implicit ec: ExecutionContext, mat: Mater
 
       override def upgradeHeaders: Headers = Headers(meta.headers)
 
-      override def isOpen: Future[Boolean] = Future.successful(open.get())
+      override def isOpen(): Future[Boolean] = Future.successful(open.get())
 
       override implicit def monad: MonadError[Future] = new FutureMonad()(ec)
     }

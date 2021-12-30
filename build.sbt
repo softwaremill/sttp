@@ -130,7 +130,7 @@ val fs2_2_version: Option[(Long, Long)] => String = {
 }
 
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.2.7"
-val akkaStreamVersion = "2.6.17"
+val akkaStreamVersion = "2.6.18"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % akkaStreamVersion
 
 val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", "wordspec", "shouldmatchers").map(m =>
@@ -141,7 +141,7 @@ val zioVersion = "1.0.13"
 val zioInteropRsVersion = "1.3.8"
 
 val sttpModelVersion = "1.4.19"
-val sttpSharedVersion = "1.2.7"
+val sttpSharedVersion = "1.3.1"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.2.9"
 
@@ -446,7 +446,7 @@ lazy val akkaHttpBackend = (projectMatrix in file("akka-http-backend"))
   .settings(
     name := "akka-http-backend",
     libraryDependencies ++= Seq(
-      akkaHttp,
+      akkaHttp.cross(CrossVersion.for3Use2_13),
       // provided as we don't want to create a transitive dependency on a specific streams version,
       // just as akka-http doesn't
       akkaStreams % "provided",
@@ -455,7 +455,7 @@ lazy val akkaHttpBackend = (projectMatrix in file("akka-http-backend"))
   )
   .dependsOn(core % compileAndTest)
   .jvmPlatform(
-    scalaVersions = List(scala2_12, scala2_13)
+    scalaVersions = List(scala2_12, scala2_13) ++ scala3
   )
 
 //-- async http client
