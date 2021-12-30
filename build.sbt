@@ -112,7 +112,11 @@ val circeVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "0.11.2"
   case _             => "0.14.1"
 }
-val zioJsonVersion: Option[(Long, Long)] => String = _ => "0.1.5"
+val zioJsonVersion: Option[(Long, Long)] => String = {
+  case Some((3, _)) => "0.2.0-M3"
+  case _ => "0.1.5"
+}
+
 val playJsonVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.7.4"
   case _             => "2.9.2"
@@ -776,10 +780,10 @@ lazy val zioJson = (projectMatrix in file("json/zio-json"))
     scalaTest
   )
   .jvmPlatform(
-    scalaVersions = Seq(scala2_12, scala2_13),
+    scalaVersions = Seq(scala2_12, scala2_13) ++ scala3,
     settings = commonJvmSettings
   )
-  .jsPlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonJsSettings)
+  .jsPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3, settings = commonJsSettings)
   .dependsOn(core, jsonCommon)
 
 lazy val upickle = (projectMatrix in file("json/upickle"))
