@@ -137,19 +137,19 @@ val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", 
   "org.scalatest" %%% s"scalatest-$m" % "3.2.10" % Test
 )
 
-val zioVersion = "1.0.12"
-val zioInteropRsVersion = "1.3.8"
+val zioVersion = "1.0.13"
+val zioInteropRsVersion = "1.3.9"
 
-val sttpModelVersion = "1.4.18"
+val sttpModelVersion = "1.4.19"
 val sttpSharedVersion = "1.2.7"
 
-val logback = "ch.qos.logback" % "logback-classic" % "1.2.7"
+val logback = "ch.qos.logback" % "logback-classic" % "1.2.9"
 
-val jeagerClientVersion = "1.6.0"
+val jeagerClientVersion = "1.7.0"
 val braveOpentracingVersion = "1.0.0"
 val zipkinSenderOkHttpVersion = "2.16.3"
 val resilience4jVersion = "1.7.1"
-val http4s_ce2_version = "0.22.7"
+val http4s_ce2_version = "0.22.8"
 val http4s_ce3_version = "0.23.6"
 
 val compileAndTest = "compile->compile;test->test"
@@ -669,7 +669,7 @@ lazy val armeriaBackend = (projectMatrix in file("armeria-backend"))
   .settings(testServerSettings)
   .settings(
     name := "armeria-backend",
-    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.13.2"
+    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.13.4"
   )
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3)
   .dependsOn(core % compileAndTest)
@@ -786,7 +786,7 @@ lazy val upickle = (projectMatrix in file("json/upickle"))
   .settings(
     name := "upickle",
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %%% "upickle" % "1.4.2"
+      "com.lihaoyi" %%% "upickle" % "1.4.3"
     ),
     scalaTest,
     // using macroRW causes a "match may not be exhaustive" error
@@ -860,7 +860,7 @@ lazy val prometheusBackend = (projectMatrix in file("metrics/prometheus-backend"
   .settings(
     name := "prometheus-backend",
     libraryDependencies ++= Seq(
-      "io.prometheus" % "simpleclient" % "0.12.0"
+      "io.prometheus" % "simpleclient" % "0.14.1"
     ),
     scalaTest
   )
@@ -872,7 +872,7 @@ lazy val zioTelemetryOpenTelemetryBackend = (projectMatrix in file("metrics/zio-
   .settings(
     name := "zio-telemetry-opentelemetry-backend",
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-opentelemetry" % "0.8.3",
+      "dev.zio" %% "zio-opentelemetry" % "0.9.0",
       "org.scala-lang.modules" %% "scala-collection-compat" % "2.6.0",
       "io.opentelemetry" % "opentelemetry-sdk-testing" % "1.9.0" % Test
     ),
@@ -887,7 +887,7 @@ lazy val zioTelemetryOpenTracingBackend = (projectMatrix in file("metrics/zio-te
   .settings(
     name := "zio-telemetry-opentracing-backend",
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-opentracing" % "0.8.3",
+      "dev.zio" %% "zio-opentracing" % "0.9.0",
       "org.scala-lang.modules" %% "scala-collection-compat" % "2.6.0"
     )
   )
