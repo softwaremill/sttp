@@ -7,10 +7,7 @@ import sttp.model.MediaType
 
 class ToCurlConverter[R <: RequestT[Identity, _, _]] {
 
-  def apply(request: R): String = create(request, sensitiveHeaders = None)
-  def apply(request: R, sensitiveHeaders: Set[String]): String = create(request, Some(sensitiveHeaders))
-
-  private def create(request: R, sensitiveHeaders: Option[Set[String]]): String = {
+  def apply(request: R, sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders): String = {
     val params = List(
       extractMethod(_),
       extractUrl(_),
@@ -33,16 +30,11 @@ class ToCurlConverter[R <: RequestT[Identity, _, _]] {
     s"--url '${r.uri}'"
   }
 
-  private def extractHeaders(r: R, sensitiveHeaders: Option[Set[String]]): String = {
+  private def extractHeaders(r: R, sensitiveHeaders: Set[String]): String = {
     r.headers
       // filtering out compression headers so that the results are human-readable, if possible
       .filterNot(_.name.equalsIgnoreCase(HeaderNames.AcceptEncoding))
-      .map { h =>
-        sensitiveHeaders match {
-          case Some(headers) => s"--header '${h.toStringSafe(headers)}'"
-          case None          => s"--header '${h.toStringSafe()}'"
-        }
-      }
+      .map(h => s"--header '${h.toStringSafe(sensitiveHeaders)}'")
       .mkString(newline)
   }
 

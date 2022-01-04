@@ -10,10 +10,7 @@ class ToRfc2616Converter[R <: RequestT[Identity, _, _]] {
   private val BoundaryChars =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".toCharArray
 
-  def apply(request: R): String = convert(request, sensitiveHeaders = None)
-  def apply(request: R, sensitiveHeaders: Set[String]): String = convert(request, Some(sensitiveHeaders))
-
-  private def convert(request: R, sensitiveHeaders: Option[Set[String]]): String = {
+  def apply(request: R, sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders): String = {
     val extractMethod = request.method.method
     val extractUri = request.uri
     val result = s"$extractMethod $extractUri"
@@ -57,16 +54,11 @@ class ToRfc2616Converter[R <: RequestT[Identity, _, _]] {
       .mkString("") + s"--$boundary--"
   }
 
-  private def extractHeaders(r: R, sensitiveHeaders: Option[Set[String]]): String = {
+  private def extractHeaders(r: R, sensitiveHeaders: Set[String]): String = {
     r.headers
       // filtering out compression headers so that the results are human-readable, if possible
       .filterNot(_.name.equalsIgnoreCase(HeaderNames.AcceptEncoding))
-      .map { h =>
-        sensitiveHeaders match {
-          case Some(headers) => h.toStringSafe(headers)
-          case None          => h.toStringSafe()
-        }
-      }
+      .map(h => h.toStringSafe(sensitiveHeaders))
       .mkString("\n")
   }
 
