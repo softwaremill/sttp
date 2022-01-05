@@ -7,7 +7,9 @@ import sttp.model.MediaType
 
 class ToCurlConverter[R <: RequestT[Identity, _, _]] {
 
-  def apply(request: R, sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders): String = {
+  def apply(request: R): String = apply(request, HeaderNames.SensitiveHeaders)
+
+  def apply(request: R, sensitiveHeaders: Set[String]): String = {
     val params = List(
       extractMethod(_),
       extractUrl(_),

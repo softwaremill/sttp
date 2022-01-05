@@ -10,7 +10,9 @@ class ToRfc2616Converter[R <: RequestT[Identity, _, _]] {
   private val BoundaryChars =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".toCharArray
 
-  def apply(request: R, sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders): String = {
+  def apply(request: R): String = apply(request, HeaderNames.SensitiveHeaders)
+
+  def apply(request: R, sensitiveHeaders: Set[String]): String = {
     val extractMethod = request.method.method
     val extractUri = request.uri
     val result = s"$extractMethod $extractUri"
