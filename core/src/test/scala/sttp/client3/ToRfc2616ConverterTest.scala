@@ -10,9 +10,10 @@ class ToRfc2616ConverterTest extends AnyFlatSpec with Matchers {
   private val localhost = uri"http://localhost"
 
   it should "convert base request" in {
-    basicRequest
+    val req = basicRequest
       .get(uri"$localhost")
-      .toRfc2616Format shouldBe "GET http://localhost"
+      .toRfc2616Format
+    req shouldBe "GET http://localhost"
   }
 
   it should "convert request with method to curl" in {
@@ -71,7 +72,7 @@ class ToRfc2616ConverterTest extends AnyFlatSpec with Matchers {
       .body(xmlBody)
       .post(localhost)
       .toRfc2616Format should include(
-      """Authorization: token
+      """Authorization: ***
         |Content-Type: application/xml
         |Content-Length: 91
         |
@@ -90,7 +91,7 @@ class ToRfc2616ConverterTest extends AnyFlatSpec with Matchers {
       .body(jsonBody)
       .post(localhost)
       .toRfc2616Format should include(
-      """Authorization: token
+      """Authorization: ***
         |Content-Type: application/json
         |Content-Length: 69
         |
