@@ -73,13 +73,13 @@ jobs:
           ~/.sbt
           ~/.ivy2/cache
           ~/.coursier
-        key: sbt-cache-${{ runner.os }}-${{ js }}-${{ hashFiles('project/build.properties') }}
+        key: sbt-cache-${{ runner.os }}-js-${{ hashFiles('project/build.properties') }}
     - name: Compile
       run: sbt -v compile compileDocs
       env:
         JAVA_OPTS: "-Xmx1500M -Dsbt.task.timings=true" # -Xlog:gc -XX:+PrintGCDetails -Xlog:gc*::time
     - name: Test
-      run: sbt -v test${{ js }}
+      run: sbt -v test-js
       env:
         JAVA_OPTS: "-Xmx3500M -Dsbt.task.timings=true" # -Xlog:gc -XX:+PrintGCDetails -Xlog:gc*::time
     - name: Prepare release notes
