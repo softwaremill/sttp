@@ -79,7 +79,7 @@ jobs:
       env:
         JAVA_OPTS: "-Xmx1500M -Dsbt.task.timings=true" # -Xlog:gc -XX:+PrintGCDetails -Xlog:gc*::time
     - name: Test
-      run: sbt -v test-js
+      run: sbt -v testJS
       env:
         JAVA_OPTS: "-Xmx3500M -Dsbt.task.timings=true" # -Xlog:gc -XX:+PrintGCDetails -Xlog:gc*::time
     - name: Prepare release notes
