@@ -112,6 +112,7 @@ val circeVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "0.11.2"
   case _             => "0.14.1"
 }
+
 val zioJsonVersion: Option[(Long, Long)] => String = _ => "0.1.5"
 val playJsonVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.7.4"
@@ -762,6 +763,23 @@ lazy val circe = (projectMatrix in file("json/circe"))
   )
   .jvmPlatform(
     scalaVersions = scala2 ++ scala3,
+    settings = commonJvmSettings
+  )
+  .jsPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3, settings = commonJsSettings)
+  .dependsOn(core, jsonCommon)
+
+lazy val jsoniter = (projectMatrix in file("json/jsoniter"))
+  .settings(
+    name := "jsoniter",
+    libraryDependencies ++= Seq(
+      "com.github.plokhotnyuk.jsoniter-scala" %% "jsoniter-scala-core" % "2.12.0",
+      "com.github.plokhotnyuk.jsoniter-scala" %% "jsoniter-scala-macros" % "2.12.0" % "compile-internal, test-internal"
+    ),
+    scalacOptions ++= Seq("-Xmacro-settings:print-codecs"),
+    scalaTest
+  )
+  .jvmPlatform(
+    scalaVersions = scala2,
     settings = commonJvmSettings
   )
   .jsPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3, settings = commonJsSettings)
