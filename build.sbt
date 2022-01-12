@@ -117,7 +117,7 @@ val circeVersion: Option[(Long, Long)] => String = {
 }
 val zioJsonVersion: Option[(Long, Long)] => String = {
   case Some((3, _)) => "0.2.0-M3"
-  case _ => "0.1.5"
+  case _            => "0.1.5"
 }
 
 val playJsonVersion: Option[(Long, Long)] => String = {
@@ -148,7 +148,7 @@ val zioVersion = "1.0.13"
 val zioInteropRsVersion = "1.3.9"
 
 val sttpModelVersion = "1.4.20"
-val sttpSharedVersion = "1.2.7"
+val sttpSharedVersion = "1.3.1"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.2.9"
 
