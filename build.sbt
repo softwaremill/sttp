@@ -117,7 +117,7 @@ val circeVersion: Option[(Long, Long)] => String = {
 }
 val zioJsonVersion: Option[(Long, Long)] => String = {
   case Some((3, _)) => "0.2.0-M3"
-  case _ => "0.1.5"
+  case _            => "0.1.5"
 }
 
 val playJsonVersion: Option[(Long, Long)] => String = {
@@ -881,7 +881,7 @@ lazy val zioTelemetryOpenTelemetryBackend = (projectMatrix in file("metrics/zio-
     libraryDependencies ++= Seq(
       "dev.zio" %% "zio-opentelemetry" % "0.9.0",
       "org.scala-lang.modules" %% "scala-collection-compat" % "2.6.0",
-      "io.opentelemetry" % "opentelemetry-sdk-testing" % "1.9.1" % Test
+      "io.opentelemetry" % "opentelemetry-sdk-testing" % "1.10.0" % Test
     ),
     scalaTest
   )
