@@ -43,6 +43,9 @@ val commonJvmSettings = commonSettings ++ Seq(
 )
 
 val commonJsSettings = commonSettings ++ Seq(
+  scalaJSLinkerConfig ~= {
+    _.withBatchMode(true).withParallel(false)
+  },
   Compile / scalacOptions ++= {
     if (isSnapshot.value) Seq.empty
     else
