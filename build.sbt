@@ -124,8 +124,8 @@ val playJsonVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.7.4"
   case _             => "2.9.2"
 }
-val catsEffect_3_version = "3.2.9"
-val fs2_3_version = "3.2.4"
+val catsEffect_3_version = "3.3.4"
+val fs2_3_version = "3.2.2"
 
 val catsEffect_2_version: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.0.0"
@@ -137,7 +137,7 @@ val fs2_2_version: Option[(Long, Long)] => String = {
 }
 
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.2.7"
-val akkaStreamVersion = "2.6.17"
+val akkaStreamVersion = "2.6.18"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % akkaStreamVersion
 
 val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", "wordspec", "shouldmatchers").map(m =>
@@ -147,7 +147,7 @@ val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", 
 val zioVersion = "1.0.13"
 val zioInteropRsVersion = "1.3.9"
 
-val sttpModelVersion = "1.4.19"
+val sttpModelVersion = "1.4.20"
 val sttpSharedVersion = "1.2.7"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.2.9"
@@ -157,7 +157,7 @@ val braveOpentracingVersion = "1.0.0"
 val zipkinSenderOkHttpVersion = "2.16.3"
 val resilience4jVersion = "1.7.1"
 val http4s_ce2_version = "0.22.8"
-val http4s_ce3_version = "0.23.6"
+val http4s_ce3_version = "0.23.7"
 
 val compileAndTest = "compile->compile;test->test"
 
@@ -665,7 +665,7 @@ lazy val finagleBackend = (projectMatrix in file("finagle-backend"))
   .settings(
     name := "finagle-backend",
     libraryDependencies ++= Seq(
-      "com.twitter" %% "finagle-http" % "21.11.0"
+      "com.twitter" %% "finagle-http" % "21.12.0"
     )
   )
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13))
@@ -793,7 +793,7 @@ lazy val upickle = (projectMatrix in file("json/upickle"))
   .settings(
     name := "upickle",
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %%% "upickle" % "1.4.3"
+      "com.lihaoyi" %%% "upickle" % "1.4.4"
     ),
     scalaTest,
     // using macroRW causes a "match may not be exhaustive" error
@@ -881,7 +881,7 @@ lazy val zioTelemetryOpenTelemetryBackend = (projectMatrix in file("metrics/zio-
     libraryDependencies ++= Seq(
       "dev.zio" %% "zio-opentelemetry" % "0.9.0",
       "org.scala-lang.modules" %% "scala-collection-compat" % "2.6.0",
-      "io.opentelemetry" % "opentelemetry-sdk-testing" % "1.9.0" % Test
+      "io.opentelemetry" % "opentelemetry-sdk-testing" % "1.9.1" % Test
     ),
     scalaTest
   )
