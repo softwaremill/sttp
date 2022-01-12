@@ -3,14 +3,26 @@ package sttp.client3.jsoniter
 import com.github.plokhotnyuk.jsoniter_scala.core.JsonReaderException
 import sttp.client3.internal.Utf8
 import sttp.client3.json.RichResponseAs
-import sttp.client3.{BodySerializer, DeserializationException, HttpError, IsOption, JsonInput, ResponseAs, ResponseException, ShowError, StringBody, asString, asStringAlways}
+import sttp.client3.{
+  BodySerializer,
+  DeserializationException,
+  HttpError,
+  IsOption,
+  JsonInput,
+  ResponseAs,
+  ResponseException,
+  ShowError,
+  StringBody,
+  asString,
+  asStringAlways
+}
 import sttp.model.MediaType
 
+import scala.util.Try
 
 trait SttpJsoniterJsonApi {
   import com.github.plokhotnyuk.jsoniter_scala.core._
   import ShowError.showErrorMessageFromException
-
   implicit def jsoniterBodySerializer[B](implicit encoder: JsonValueCodec[B]): BodySerializer[B] =
     b => StringBody(writeToString(b), Utf8, MediaType.ApplicationJson)
 
@@ -44,11 +56,32 @@ trait SttpJsoniterJsonApi {
   }
 
   def deserializeJson[B: JsonValueCodec: IsOption]: String => Either[Exception, B] = { s: String =>
-    try {
-      Right(readFromString[B](JsonInput.sanitize[B].apply(s)))
-    } catch {
-      case de: JsonReaderException => Left(DeserializationException[JsonReaderException](s, de))
-      case e: Exception => Left(e)
+    Try {
+      readFromString[B](JsonInput.sanitize[B].apply(s))
+    }.toEither.left.map {
+      case de: JsonReaderException => DeserializationException[JsonReaderException](s, de)
+      case e: Exception            => e
     }
+  }
+
+  implicit def optionDecoder[T: JsonValueCodec]: JsonValueCodec[Option[T]] = new JsonValueCodec[Option[T]] {
+    val codec = implicitly[JsonValueCodec[T]]
+    override def decodeValue(in: JsonReader, default: Option[T]): Option[T] = {
+      if (
+        in.isNextToken('n'.toByte)
+        && in.isNextToken('u'.toByte)
+        && in.isNextToken('l'.toByte)
+        && in.isNextToken('l'.toByte)
+      ) {
+        None
+      } else {
+        in.rollbackToken()
+        Some(codec.decodeValue(in, codec.nullValue))
+      }
+    }
+
+    override def encodeValue(x: Option[T], out: JsonWriter): Unit = x.foreach(codec.encodeValue(_, out))
+
+    override def nullValue: Option[T] = null
   }
 }

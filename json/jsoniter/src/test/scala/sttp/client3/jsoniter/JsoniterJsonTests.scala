@@ -58,7 +58,8 @@ class JsoniterJsonTests extends AnyFlatSpec with Matchers with EitherValues {
 
   it should "fail to decode from empty input" in {
     val responseAs = asJson[Inner]
-    runJsonResponseAs(responseAs)("").left.value should matchPattern { case DeserializationException("", _: Exception) =>
+    runJsonResponseAs(responseAs)("").left.value should matchPattern {
+      case DeserializationException("", _: Exception) =>
     }
   }
 
@@ -110,7 +111,8 @@ class JsoniterJsonTests extends AnyFlatSpec with Matchers with EitherValues {
     }
 
   object Decoders {
-    implicit def eitherOptionDecoder[L:JsonValueCodec: IsOption, R:JsonValueCodec: IsOption] : JsonValueCodec[Either[L, R]] = new JsonValueCodec[Either[L, R]] {
+    implicit def eitherOptionDecoder[L: JsonValueCodec: IsOption, R: JsonValueCodec: IsOption]
+        : JsonValueCodec[Either[L, R]] = new JsonValueCodec[Either[L, R]] {
 
       val rightOption = implicitly[IsOption[R]].isOption
       val leftOption = implicitly[IsOption[L]].isOption
@@ -119,12 +121,13 @@ class JsoniterJsonTests extends AnyFlatSpec with Matchers with EitherValues {
       val rightEnc = implicitly[JsonValueCodec[R]]
 
       val decoder = JsonCodecMaker.make[Either[L, R]]
+
       override def decodeValue(in: JsonReader, default: Either[L, R]): Either[L, R] = {
         try {
           in.setMark()
           if (rightOption || !leftOption) {
             Right(rightEnc.decodeValue(in, rightEnc.nullValue))
-          } else  {
+          } else {
             Left(leftEnc.decodeValue(in, leftEnc.nullValue))
           }
         } catch {
@@ -140,33 +143,11 @@ class JsoniterJsonTests extends AnyFlatSpec with Matchers with EitherValues {
       }
 
       override def encodeValue(x: Either[L, R], out: JsonWriter): Unit = x match {
-        case Left(value) => leftEnc.encodeValue(value, out)
-        case Right(value) =>  rightEnc.encodeValue(value, out)
+        case Left(value)  => leftEnc.encodeValue(value, out)
+        case Right(value) => rightEnc.encodeValue(value, out)
       }
 
       override def nullValue: Either[L, R] = null
-    }
-
-    implicit def optionDecoder[T:JsonValueCodec] : JsonValueCodec[Option[T]]= new JsonValueCodec[Option[T]] {
-      val codec = implicitly[JsonValueCodec[T]]
-      override def decodeValue(in: JsonReader, default: Option[T]): Option[T] = {
-        if (
-          in.isNextToken('n'.toByte)
-            && in.isNextToken('u'.toByte)
-            && in.isNextToken('l'.toByte)
-            && in.isNextToken('l'.toByte)
-        ) {
-          None
-        }
-        else {
-          in.rollbackToken()
-          Some(codec.decodeValue(in, codec.nullValue))
-        }
-      }
-
-      override def encodeValue(x: Option[T], out: JsonWriter): Unit = x.foreach(codec.encodeValue(_,out))
-
-      override def nullValue: Option[T] = null
     }
   }
 }

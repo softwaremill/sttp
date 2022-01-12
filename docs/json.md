@@ -173,3 +173,42 @@ basicRequest
   .response(asJson[ResponsePayload])
   .send(backend)
 ```
+
+## Jsoniter-scala
+
+To encode and decode JSON using the [high(est)-performant](https://plokhotnyuk.github.io/jsoniter-scala/) [jsoniter-scala](https://github.com/plokhotnyuk/jsoniter-scala) library, one add the following dependency to your project.
+
+```scala
+"com.softwaremill.sttp.client3" %% "jsoniter-json" % "@VERSION@"
+```
+or for ScalaJS (cross build) projects:
+```scala
+"com.softwaremill.sttp.client3" %%% "jsoniter-json" % "@VERSION@"
+```
+
+To use, add an import: `import sttp.client3.jsoniter._` (or extend `SttpJsonIterJsonApi`), define an implicit `JsonCodec`, or `JsonDecoder`/`JsonEncoder` for your datatype.
+Note that jsoniter does not support implicits defs so every Either instance has to be generated separately.
+An implicit def has been made for Option however and is shipped in the `SttpJsonIterJsonApi` class.
+Usage example:
+
+```scala mdoc:compile-only
+
+import sttp.client3._
+import sttp.client3.ziojson._
+import com.github.plokhotnyuk.jsoniter_scala.core._
+import com.github.plokhotnyuk.jsoniter_scala.macros._
+
+val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
+
+implicit val payloadJsonCodec: JsonValueCodec[RequestPayload] = JsonCodecMaker.make
+//note that the jsoniter doesn't support 'implicit defs' and so either has to be generated seperatly
+implicit val jsonEitherDecoder: JsonValueCodec[Either[ResponseException[String, String], ResponsePayload]] =  JsonCodecMaker.make
+val requestPayload = RequestPayload("some data")
+
+val response: Identity[Response[Either[ResponseException[String, String], ResponsePayload]]] =
+basicRequest
+  .post(uri"...")
+  .body(requestPayload)
+  .response(asJson[ResponsePayload])
+  .send(backend)
+```

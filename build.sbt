@@ -199,6 +199,7 @@ lazy val allAggregates = projectsWithOptionalNative ++
   circe.projectRefs ++
   zioJson.projectRefs ++
   json4s.projectRefs ++
+  jsoniter.projectRefs ++
   sprayJson.projectRefs ++
   playJson.projectRefs ++
   openTracingBackend.projectRefs ++
