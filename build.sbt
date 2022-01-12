@@ -117,7 +117,7 @@ val circeVersion: Option[(Long, Long)] => String = {
 }
 val zioJsonVersion: Option[(Long, Long)] => String = {
   case Some((3, _)) => "0.2.0-M3"
-  case _ => "0.1.5"
+  case _            => "0.1.5"
 }
 
 val playJsonVersion: Option[(Long, Long)] => String = {
@@ -125,7 +125,7 @@ val playJsonVersion: Option[(Long, Long)] => String = {
   case _             => "2.9.2"
 }
 val catsEffect_3_version = "3.3.4"
-val fs2_3_version = "3.2.2"
+val fs2_3_version = "3.2.4"
 
 val catsEffect_2_version: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.0.0"
