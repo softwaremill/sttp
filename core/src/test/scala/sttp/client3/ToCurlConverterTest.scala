@@ -10,9 +10,11 @@ class ToCurlConverterTest extends AnyFlatSpec with Matchers with ToCurlConverter
   private val localhost = uri"http://localhost"
 
   it should "convert base request" in {
-    basicRequest
+    val req = basicRequest
       .get(uri"$localhost")
-      .toCurl shouldBe "curl \\\n  --request GET \\\n  --url 'http://localhost' \\\n  --location \\\n  --max-redirs 32"
+      .toCurl
+
+    req shouldBe "curl \\\n  --request GET \\\n  --url 'http://localhost' \\\n  --location \\\n  --max-redirs 32"
   }
 
   it should "convert request with method to curl" in {
@@ -28,6 +30,18 @@ class ToCurlConverterTest extends AnyFlatSpec with Matchers with ToCurlConverter
   it should "convert request with header" in {
     basicRequest.header("User-Agent", "myapp").get(localhost).toCurl should include(
       """--header 'User-Agent: myapp'"""
+    )
+  }
+
+  it should "convert request with sensitive header" in {
+    basicRequest.header("Authorization", "xyzabc").get(localhost).toCurl should include(
+      """--header 'Authorization: ***'"""
+    )
+  }
+
+  it should "convert request with custom sensitive header" in {
+    basicRequest.header("X-Auth", "xyzabc").get(localhost).toCurl(Set("X-Auth")) should include(
+      """--header 'X-Auth: ***'"""
     )
   }
 
