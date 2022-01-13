@@ -172,11 +172,11 @@ def intellijSkipImport = ideSkipProject := true
 
 val circeVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "0.11.2"
-  case _             => "0.13.0"
+  case _             => "0.14.1"
 }
 val playJsonVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.7.4"
-  case _             => "2.9.0"
+  case _             => "2.9.2"
 }
 val catsEffectVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.0.0"
@@ -665,7 +665,7 @@ lazy val sprayJson = (projectMatrix in file("json/spray-json"))
   .settings(
     name := "spray-json",
     libraryDependencies ++= Seq(
-      "io.spray" %% "spray-json" % "1.3.5",
+      "io.spray" %% "spray-json" % "1.3.6",
       "org.scalatest" %% "scalatest" % scalaTestVersion % Test
     )
   )
