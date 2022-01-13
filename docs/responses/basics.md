@@ -23,7 +23,7 @@ import sttp.model._
 import sttp.client._
 implicit val backend = HttpURLConnectionBackend()
 val request = basicRequest
-    .get(uri"http://endpoint.com/example")
+    .get(uri"https://httpbin.org/get")
 val response = request.send()
 
 val singleHeader: Option[String] = response.header(HeaderNames.Server)
