@@ -636,7 +636,18 @@ lazy val circe = (projectMatrix in file("json/circe"))
       "io.circe" %%% "circe-parser" % circeVersion(_),
       "io.circe" %%% "circe-generic" % circeVersion(_) % Test,
       _ => "org.scalatest" %%% "scalatest" % scalaTestVersion % Test
-    )
+    ),
+    Compile / unmanagedSourceDirectories := {
+      val current = (Compile / unmanagedSourceDirectories).value
+      val sv = (Compile / scalaVersion).value
+      val baseDirectory = (Compile / scalaSource).value
+      val suffixes = CrossVersion.partialVersion(sv) match {
+        case Some((2, 11)) => List("2.11")
+        case _             => List("2.12+")
+      }
+      val versionSpecificSources = suffixes.map(s => new File(baseDirectory.getAbsolutePath + "-" + s))
+      versionSpecificSources ++ current
+    }
   )
   .jvmPlatform(
     scalaVersions = List(scala2_11, scala2_12, scala2_13),
