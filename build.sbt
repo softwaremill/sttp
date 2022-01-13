@@ -38,6 +38,7 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
     pushChanges
   ),
   sonatypeCredentialHost := "s01.oss.sonatype.org",
+  sonatypeRepository := "https://s01.oss.sonatype.org/service/local",
   // doc generation is broken in dotty
   sources in (Compile, doc) := {
     val scalaV = scalaVersion.value
