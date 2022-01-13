@@ -13,3 +13,5 @@ addSbtPlugin("ch.epfl.lamp" % "sbt-dotty" % "0.4.4")
 addSbtPlugin("org.scalameta" % "sbt-mdoc" % "2.2.10")
 
 addSbtPlugin("org.jetbrains" % "sbt-ide-settings" % "1.0.0")
+
+addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "3.9.10")
