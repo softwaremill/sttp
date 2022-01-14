@@ -147,10 +147,10 @@ val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", 
 val zioVersion = "1.0.13"
 val zioInteropRsVersion = "1.3.9"
 
-val sttpModelVersion = "1.4.21"
-val sttpSharedVersion = "1.3.1"
+val sttpModelVersion = "1.4.22"
+val sttpSharedVersion = "1.2.7"
 
-val logback = "ch.qos.logback" % "logback-classic" % "1.2.9"
+val logback = "ch.qos.logback" % "logback-classic" % "1.2.10"
 
 val jeagerClientVersion = "1.7.0"
 val braveOpentracingVersion = "1.0.0"
@@ -907,7 +907,7 @@ lazy val scribeBackend = (projectMatrix in file("logging/scribe"))
   .settings(
     name := "scribe-backend",
     libraryDependencies ++= Seq(
-      "com.outr" %%% "scribe" % "3.6.8"
+      "com.outr" %%% "scribe" % "3.6.9"
     ),
     scalaTest
   )
@@ -919,7 +919,7 @@ lazy val slf4jBackend = (projectMatrix in file("logging/slf4j"))
   .settings(
     name := "slf4j-backend",
     libraryDependencies ++= Seq(
-      "org.slf4j" % "slf4j-api" % "1.7.32"
+      "org.slf4j" % "slf4j-api" % "1.7.33"
     ),
     scalaTest
   )
