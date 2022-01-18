@@ -29,22 +29,13 @@ class JsoniterJsonTests extends AnyFlatSpec with Matchers with EitherValues {
   }
 
   it should "decode None from empty body" in {
-    import Decoders._
     val responseAs = asJson[Option[Inner]]
     runJsonResponseAs(responseAs)("").value shouldBe None
   }
 
-  it should "decode Left(None) from empty body" in {
-    import Decoders._
-    val responseAs = asJson[Either[Option[Inner], Outer]]
-    runJsonResponseAs(responseAs)("").value shouldBe Left(None)
-  }
-
   it should "decode Right(None) from empty body" in {
-    import Decoders._
-    val responseAs = asJson[Either[Outer, Option[Inner]]]
-
-    runJsonResponseAs(responseAs)("").value shouldBe Right(None)
+    val responseAs = asJsonEither[Inner, Option[Outer]]
+    runJsonResponseAs(responseAs)("").value shouldBe None
   }
 
   it should "fail to decode invalid json" in {
@@ -109,47 +100,6 @@ class JsoniterJsonTests extends AnyFlatSpec with Matchers with EitherValues {
         }
       case _ => fail("ResponseAs is not a MappedResponseAs")
     }
-
-  object Decoders {
-    implicit def eitherOptionDecoder[L: JsonValueCodec: IsOption, R: JsonValueCodec: IsOption]
-        : JsonValueCodec[Either[L, R]] = new JsonValueCodec[Either[L, R]] {
-
-      val rightOption = implicitly[IsOption[R]].isOption
-      val leftOption = implicitly[IsOption[L]].isOption
-
-      val leftEnc = implicitly[JsonValueCodec[L]]
-      val rightEnc = implicitly[JsonValueCodec[R]]
-
-      val decoder = JsonCodecMaker.make[Either[L, R]]
-
-      override def decodeValue(in: JsonReader, default: Either[L, R]): Either[L, R] = {
-        try {
-          in.setMark()
-          if (rightOption || !leftOption) {
-            Right(rightEnc.decodeValue(in, rightEnc.nullValue))
-          } else {
-            Left(leftEnc.decodeValue(in, leftEnc.nullValue))
-          }
-        } catch {
-          case e: JsonReaderException =>
-            in.rollbackToMark()
-            try {
-              Right(rightEnc.decodeValue(in, rightEnc.nullValue))
-            } catch {
-              case e: JsonReaderException => Left(leftEnc.decodeValue(in, leftEnc.nullValue))
-            }
-        }
-
-      }
-
-      override def encodeValue(x: Either[L, R], out: JsonWriter): Unit = x match {
-        case Left(value)  => leftEnc.encodeValue(value, out)
-        case Right(value) => rightEnc.encodeValue(value, out)
-      }
-
-      override def nullValue: Either[L, R] = null
-    }
-  }
 }
 
 case class Inner(a: Int, b: Boolean, c: String)
