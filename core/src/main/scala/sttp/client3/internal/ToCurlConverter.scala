@@ -6,10 +6,19 @@ import sttp.client3.NoBody
 import sttp.model.MediaType
 
 class ToCurlConverter[R <: RequestT[Identity, _, _]] {
-  def apply(request: R): String = {
-    val params = List(extractMethod(_), extractUrl(_), extractHeaders(_), extractBody(_), extractOptions(_))
+
+  def apply(request: R): String = apply(request, HeaderNames.SensitiveHeaders)
+
+  def apply(request: R, sensitiveHeaders: Set[String]): String = {
+    val params = List(
+      extractMethod(_),
+      extractUrl(_),
+      (r: R) => extractHeaders(r, sensitiveHeaders),
+      extractBody(_),
+      extractOptions(_)
+    )
       .map(addSpaceIfNotEmpty)
-      .reduce((acc, item) => r => acc(r) + item(r))
+      .reduce((acc, item) => (r: R) => acc(r) + item(r))
       .apply(request)
 
     s"""curl$params"""
@@ -23,13 +32,11 @@ class ToCurlConverter[R <: RequestT[Identity, _, _]] {
     s"--url '${r.uri}'"
   }
 
-  private def extractHeaders(r: R): String = {
+  private def extractHeaders(r: R, sensitiveHeaders: Set[String]): String = {
     r.headers
       // filtering out compression headers so that the results are human-readable, if possible
       .filterNot(_.name.equalsIgnoreCase(HeaderNames.AcceptEncoding))
-      .collect { case Header(k, v) =>
-        s"""--header '$k: $v'"""
-      }
+      .map(h => s"--header '${h.toStringSafe(sensitiveHeaders)}'")
       .mkString(newline)
   }
 

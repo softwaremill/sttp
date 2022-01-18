@@ -43,6 +43,9 @@ val commonJvmSettings = commonSettings ++ Seq(
 )
 
 val commonJsSettings = commonSettings ++ Seq(
+  scalaJSLinkerConfig ~= {
+    _.withBatchMode(true).withParallel(false)
+  },
   Compile / scalacOptions ++= {
     if (isSnapshot.value) Seq.empty
     else
@@ -112,12 +115,16 @@ val circeVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "0.11.2"
   case _             => "0.14.1"
 }
+val zioJsonVersion: Option[(Long, Long)] => String = {
+  case Some((3, _)) => "0.2.0-M3"
+  case _            => "0.1.5"
+}
 val playJsonVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.7.4"
   case _             => "2.9.2"
 }
-val catsEffect_3_version = "3.2.9"
-val fs2_3_version = "3.2.2"
+val catsEffect_3_version = "3.3.4"
+val fs2_3_version = "3.2.4"
 
 val catsEffect_2_version: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.0.0"
@@ -129,7 +136,7 @@ val fs2_2_version: Option[(Long, Long)] => String = {
 }
 
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.2.7"
-val akkaStreamVersion = "2.6.17"
+val akkaStreamVersion = "2.6.18"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % akkaStreamVersion
 
 val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", "wordspec", "shouldmatchers").map(m =>
@@ -138,20 +145,20 @@ val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", 
 
 val zio1Version = "1.0.13"
 val zio2Version = "2.0.0-RC1"
-val zio1InteropRsVersion = "1.3.8"
+val zio1InteropRsVersion = "1.3.9"
 val zio2InteropRsVersion = "2.0.0-M3"
 
-val sttpModelVersion = "1.4.18"
+val sttpModelVersion = "1.4.22"
 val sttpSharedVersion = "1.3.0"
 
-val logback = "ch.qos.logback" % "logback-classic" % "1.2.8"
+val logback = "ch.qos.logback" % "logback-classic" % "1.2.10"
 
-val jeagerClientVersion = "1.6.0"
+val jeagerClientVersion = "1.8.0"
 val braveOpentracingVersion = "1.0.0"
 val zipkinSenderOkHttpVersion = "2.16.3"
 val resilience4jVersion = "1.7.1"
 val http4s_ce2_version = "0.22.8"
-val http4s_ce3_version = "0.23.6"
+val http4s_ce3_version = "0.23.7"
 
 val compileAndTest = "compile->compile;test->test"
 
@@ -699,7 +706,7 @@ lazy val finagleBackend = (projectMatrix in file("finagle-backend"))
   .settings(
     name := "finagle-backend",
     libraryDependencies ++= Seq(
-      "com.twitter" %% "finagle-http" % "21.11.0"
+      "com.twitter" %% "finagle-http" % "22.1.0"
     )
   )
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13))
@@ -825,17 +832,17 @@ lazy val zioJson = (projectMatrix in file("json/zio-json"))
     scalaTest
   )
   .jvmPlatform(
-    scalaVersions = Seq(scala2_12, scala2_13),
+    scalaVersions = Seq(scala2_12, scala2_13) ++ scala3,
     settings = commonJvmSettings
   )
-  .jsPlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonJsSettings)
+  .jsPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3, settings = commonJsSettings)
   .dependsOn(core, jsonCommon)
 
 lazy val upickle = (projectMatrix in file("json/upickle"))
   .settings(
     name := "upickle",
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %%% "upickle" % "1.4.3"
+      "com.lihaoyi" %%% "upickle" % "1.4.4"
     ),
     scalaTest,
     // using macroRW causes a "match may not be exhaustive" error
@@ -909,7 +916,7 @@ lazy val prometheusBackend = (projectMatrix in file("metrics/prometheus-backend"
   .settings(
     name := "prometheus-backend",
     libraryDependencies ++= Seq(
-      "io.prometheus" % "simpleclient" % "0.12.0"
+      "io.prometheus" % "simpleclient" % "0.14.1"
     ),
     scalaTest
   )
@@ -921,9 +928,9 @@ lazy val zioTelemetryOpenTelemetryBackend = (projectMatrix in file("metrics/zio-
   .settings(
     name := "zio-telemetry-opentelemetry-backend",
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-opentelemetry" % "0.8.3",
+      "dev.zio" %% "zio-opentelemetry" % "0.9.0",
       "org.scala-lang.modules" %% "scala-collection-compat" % "2.6.0",
-      "io.opentelemetry" % "opentelemetry-sdk-testing" % "1.9.0" % Test
+      "io.opentelemetry" % "opentelemetry-sdk-testing" % "1.10.0" % Test
     ),
     scalaTest
   )
@@ -936,7 +943,7 @@ lazy val zioTelemetryOpenTracingBackend = (projectMatrix in file("metrics/zio-te
   .settings(
     name := "zio-telemetry-opentracing-backend",
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-opentracing" % "0.8.3",
+      "dev.zio" %% "zio-opentracing" % "0.9.0",
       "org.scala-lang.modules" %% "scala-collection-compat" % "2.6.0"
     )
   )
@@ -949,7 +956,7 @@ lazy val scribeBackend = (projectMatrix in file("logging/scribe"))
   .settings(
     name := "scribe-backend",
     libraryDependencies ++= Seq(
-      "com.outr" %%% "scribe" % "3.6.3"
+      "com.outr" %%% "scribe" % "3.6.9"
     ),
     scalaTest
   )
@@ -961,7 +968,7 @@ lazy val slf4jBackend = (projectMatrix in file("logging/slf4j"))
   .settings(
     name := "slf4j-backend",
     libraryDependencies ++= Seq(
-      "org.slf4j" % "slf4j-api" % "1.7.32"
+      "org.slf4j" % "slf4j-api" % "1.7.33"
     ),
     scalaTest
   )
