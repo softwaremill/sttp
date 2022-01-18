@@ -2,12 +2,10 @@ package sttp.client3.examples
 
 import sttp.client3._
 import sttp.client3.asynchttpclient.zio.AsyncHttpClientZioBackend
-import zio.{ExitCode, Schedule, ZIO}
-import zio.clock.Clock
-import zio.duration._
+import zio.{Clock, ExitCode, Schedule, ZIO, ZIOAppDefault, durationInt}
 
-object RetryZio extends zio.App {
-  override def run(args: List[String]): ZIO[zio.ZEnv, Nothing, ExitCode] = {
+object RetryZio extends ZIOAppDefault {
+  override def run: ZIO[zio.ZEnv, Nothing, ExitCode] = {
     AsyncHttpClientZioBackend().flatMap { backend =>
       val localhostRequest = basicRequest
         .get(uri"http://localhost/test")
