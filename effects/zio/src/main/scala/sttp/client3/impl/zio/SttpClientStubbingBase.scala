@@ -64,7 +64,7 @@ trait SttpClientStubbingBase[R, P] {
     private def whenRequest(
         f: SttpBackendStub[RIO[R, *], P]#WhenRequest => SttpBackendStub[RIO[R, *], P]
     ): URIO[SttpClientStubbing, Unit] =
-      URIO.serviceWith(_.update(stub => f(stub.whenRequestMatches(p))))
+      URIO.serviceWithZIO((_: SttpClientStubbing).update(stub => f(stub.whenRequestMatches(p))))
   }
 
   val layer: ZLayer[Any, Nothing, SttpClientStubbing with SttpBackend[RIO[R, *], P]] = {
