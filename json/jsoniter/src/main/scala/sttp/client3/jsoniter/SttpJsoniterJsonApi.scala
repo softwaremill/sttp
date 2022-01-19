@@ -50,8 +50,7 @@ trait SttpJsoniterJsonApi {
       readFromString[B](JsonInput.sanitize[B].apply(s))
     }.toEither.left.map {
       case de: JsonReaderException => DeserializationException[JsonReaderException](s, de)
-      case NonFatal(e) => new RuntimeException(e)
-      case fatal => throw fatal
+      case e: Exception => e
     }
   }
 

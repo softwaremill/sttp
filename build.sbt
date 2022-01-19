@@ -783,7 +783,7 @@ lazy val jsoniter = (projectMatrix in file("json/jsoniter"))
     scalaVersions = scala2,
     settings = commonJvmSettings
   )
-  .jsPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3, settings = commonJsSettings)
+  .jsPlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonJsSettings)
   .dependsOn(core, jsonCommon)
 
 lazy val zioJson = (projectMatrix in file("json/zio-json"))
