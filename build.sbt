@@ -1079,8 +1079,8 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     httpClientZioBackend,
     openTracingBackend,
     prometheusBackend,
-    slf4jBackend,
-    zioTelemetryOpenTelemetryBackend,
-    zioTelemetryOpenTracingBackend
+    slf4jBackend
+    // zioTelemetryOpenTelemetryBackend, // TODO: re-enable once these projects are migrated to zio2
+    // zioTelemetryOpenTracingBackend
   )
   .jvmPlatform(scalaVersions = List(scala2_13))
