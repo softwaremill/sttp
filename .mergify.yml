@@ -9,6 +9,7 @@ pull_request_rules:
       - check-success=ci (JVM)
       - check-success=ci (JS)
       - check-success=ci (Native)
+      - check-success=mima
       - "#files=1"
       - files=build.sbt
     actions:
@@ -20,6 +21,7 @@ pull_request_rules:
       - check-success=ci (JVM)
       - check-success=ci (JS)
       - check-success=ci (Native)
+      - check-success=mima
       - "#files=1"
       - files=project/plugins.sbt
     actions:
@@ -31,6 +33,7 @@ pull_request_rules:
       - check-success=ci (JVM)
       - check-success=ci (JS)
       - check-success=ci (Native)
+      - check-success=mima
       - "#approved-reviews-by>=1"
     actions:
       merge:
@@ -41,6 +44,7 @@ pull_request_rules:
       - check-success=ci (JVM)
       - check-success=ci (JS)
       - check-success=ci (Native)
+      - check-success=mima
       - "#files=1"
       - files=project/build.properties
     actions:
@@ -52,6 +56,7 @@ pull_request_rules:
       - check-success=ci (JVM)
       - check-success=ci (JS)
       - check-success=ci (Native)
+      - check-success=mima
       - "#files=1"
       - files=.scalafmt.conf
     actions:

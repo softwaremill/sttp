@@ -18,7 +18,7 @@ new ZioTelemetryOpenTracingBackend(zioBackend)
 
 Additionally you can add tags per request by supplying a `ZioTelemetryOpenTracingTracer`
 
-```scala mdoc:compile-only
+```scala
 import sttp.client3._
 import zio._
 import zio.telemetry.opentracing._

@@ -25,7 +25,7 @@ import sttp.client3.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 import sttp.monad.MonadError
 import zio.Chunk.ByteArray
 import zio._
-import zio.stream.{ZStream, ZTransducer}
+import zio.stream.{ZPipeline, ZStream}
 
 import scala.collection.JavaConverters._
 
@@ -52,7 +52,10 @@ class HttpClientZioBackend private (
   override protected def emptyBody(): ZStream[Any, Throwable, Byte] = ZStream.empty
 
   override protected def publisherToBody(p: Publisher[util.List[ByteBuffer]]): ZStream[Any, Throwable, Byte] =
-    p.toStream().mapConcatChunk(list => ByteArray(list.asScala.toList.flatMap(_.safeRead()).toArray))
+    p.toStream().mapConcatChunk { list =>
+      val a = list.asScala.toList.flatMap(_.safeRead()).toArray
+      ByteArray(a, 0, a.length)
+    }
 
   override protected val bodyToHttpClient: BodyToHttpClient[Task, ZioStreams] =
     new BodyToHttpClient[Task, ZioStreams] {
@@ -79,8 +82,8 @@ class HttpClientZioBackend private (
   override protected def createSequencer: Task[Sequencer[Task]] = ZioSequencer.create
 
   override protected def standardEncoding: (ZStream[Any, Throwable, Byte], String) => ZStream[Any, Throwable, Byte] = {
-    case (body, "gzip")    => body.transduce(ZTransducer.gunzip())
-    case (body, "deflate") => body.transduce(ZTransducer.inflate())
+    case (body, "gzip")    => body.via(ZPipeline.gunzip())
+    case (body, "deflate") => body.via(ZPipeline.inflate())
     case (_, ce)           => ZStream.fail(new UnsupportedEncodingException(s"Unsupported encoding: $ce"))
   }
 }
@@ -109,7 +112,7 @@ object HttpClientZioBackend {
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
   ): Task[SttpBackend[Task, ZioStreams with WebSockets]] =
-    Task.effect(
+    Task.attempt(
       HttpClientZioBackend(
         HttpClientBackend.defaultClient(options),
         closeClient = true,
@@ -123,7 +126,7 @@ object HttpClientZioBackend {
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
   ): ZManaged[Any, Throwable, SttpBackend[Task, ZioStreams with WebSockets]] =
-    ZManaged.make(apply(options, customizeRequest, customEncodingHandler))(
+    ZManaged.acquireReleaseWith(apply(options, customizeRequest, customEncodingHandler))(
       _.close().ignore
     )
 
@@ -139,7 +142,7 @@ object HttpClientZioBackend {
           customizeRequest,
           customEncodingHandler
         )
-      } yield backend).toManaged(_.close().ignore)
+      } yield backend).toManagedWith(_.close().ignore)
     )
   }
 
@@ -162,7 +165,7 @@ object HttpClientZioBackend {
   ): ZLayer[Any, Throwable, SttpClient] = {
     ZLayer.fromManaged(
       ZManaged
-        .makeEffect(
+        .acquireReleaseAttemptWith(
           usingClient(
             client,
             customizeRequest,
