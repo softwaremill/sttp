@@ -1,7 +1,6 @@
 package sttp.client3.asynchttpclient.zio
 
 import _root_.zio._
-import _root_.zio.blocking.Blocking
 import _root_.zio.interop.reactivestreams.{
   publisherToStream => publisherToZioStream,
   streamToPublisher => zioStreamToPublisher
@@ -52,7 +51,7 @@ class AsyncHttpClientZioBackend private (
 
       override def publisherToBytes(p: Publisher[ByteBuffer]): Task[Array[Byte]] =
         p.toStream(bufferSize)
-          .fold(immutable.Queue.empty[Array[Byte]])(enqueueBytes)
+          .runFold(immutable.Queue.empty[Array[Byte]])(enqueueBytes)
           .map(concatBytes)
 
       override def publisherToFile(p: Publisher[ByteBuffer], f: File): Task[Unit] = {
@@ -61,7 +60,6 @@ class AsyncHttpClientZioBackend private (
           .flattenChunks
           .run(ZSink.fromOutputStream(new FileOutputStream(f)))
           .unit
-          .provideLayer(Blocking.live)
       }
 
       override def bytesToPublisher(b: Array[Byte]): Task[Publisher[ByteBuffer]] =
@@ -72,7 +70,6 @@ class AsyncHttpClientZioBackend private (
           .fromInputStream(new BufferedInputStream(new FileInputStream(f)))
           .mapChunks(ch => Chunk(ByteBuffer.wrap(ch.toArray)))
           .toPublisher
-          .provideLayer(Blocking.live)
 
       override def compileWebSocketPipe(
           ws: WebSocket[Task],
@@ -117,7 +114,7 @@ object AsyncHttpClientZioBackend {
     ZIO
       .runtime[Any]
       .flatMap(runtime =>
-        Task.effect(
+        Task.attempt(
           AsyncHttpClientZioBackend(
             runtime,
             AsyncHttpClientBackend.defaultClient(options),
@@ -133,7 +130,7 @@ object AsyncHttpClientZioBackend {
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): TaskManaged[SttpBackend[Task, ZioStreams with WebSockets]] =
-    ZManaged.make(apply(options, customizeRequest, webSocketBufferCapacity))(_.close().ignore)
+    ZManaged.acquireReleaseWith(apply(options, customizeRequest, webSocketBufferCapacity))(_.close().ignore)
 
   def layer(
       options: SttpBackendOptions = SttpBackendOptions.Default,
@@ -150,7 +147,7 @@ object AsyncHttpClientZioBackend {
     ZIO
       .runtime[Any]
       .flatMap(runtime =>
-        Task.effect(
+        Task.attempt(
           AsyncHttpClientZioBackend(
             runtime,
             new DefaultAsyncHttpClient(cfg),
@@ -166,7 +163,7 @@ object AsyncHttpClientZioBackend {
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): TaskManaged[SttpBackend[Task, ZioStreams with WebSockets]] =
-    ZManaged.make(usingConfig(cfg, customizeRequest, webSocketBufferCapacity))(_.close().ignore)
+    ZManaged.acquireReleaseWith(usingConfig(cfg, customizeRequest, webSocketBufferCapacity))(_.close().ignore)
 
   def layerUsingConfig(
       cfg: AsyncHttpClientConfig,
@@ -187,7 +184,7 @@ object AsyncHttpClientZioBackend {
     ZIO
       .runtime[Any]
       .flatMap(runtime =>
-        Task.effect(
+        Task.attempt(
           AsyncHttpClientZioBackend(
             runtime,
             AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
@@ -207,7 +204,7 @@ object AsyncHttpClientZioBackend {
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): TaskManaged[SttpBackend[Task, ZioStreams with WebSockets]] =
-    ZManaged.make(usingConfigBuilder(updateConfig, options, customizeRequest, webSocketBufferCapacity))(
+    ZManaged.acquireReleaseWith(usingConfigBuilder(updateConfig, options, customizeRequest, webSocketBufferCapacity))(
       _.close().ignore
     )
 
@@ -241,8 +238,8 @@ object AsyncHttpClientZioBackend {
       _.close().ignore
     )
 
-  /** Create a stub backend for testing, which uses the [[Task]] response wrapper, and supports `Stream[Throwable,
-    * ByteBuffer]` streaming.
+  /** Create a stub backend for testing, which uses the [[Task]] response wrapper, and supports
+    * [[Stream[Throwable, ByteBuffer]]] streaming.
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */

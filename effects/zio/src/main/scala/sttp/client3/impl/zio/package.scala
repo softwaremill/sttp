@@ -18,7 +18,7 @@ package object zio {
             mappedRequest = MapEffect[RIO[R0 with R1, *], RIO[R0, *], Identity, T, P](
               request,
               new FunctionK[RIO[R0 with R1, *], RIO[R0, *]] {
-                override def apply[A](fa: RIO[R0 with R1, A]): RIO[R0, A] = fa.provide(env)
+                override def apply[A](fa: RIO[R0 with R1, A]): RIO[R0, A] = fa.provideEnvironment(env)
               },
               new FunctionK[RIO[R0, *], RIO[R0 with R1, *]] {
                 override def apply[A](fa: RIO[R0, A]): RIO[R0 with R1, A] = fa

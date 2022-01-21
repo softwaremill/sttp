@@ -11,9 +11,11 @@ import sttp.model.ResponseMetadata
 import sttp.monad.MonadError
 import sttp.ws.{WebSocket, WebSocketFrame}
 import zio.nio.channels.AsynchronousFileChannel
-import zio.nio.core.file.Path
+import zio.nio.file.Path
 import zio.stream.{Stream, ZSink, ZStream}
-import zio.{Managed, Task, ZIO}
+import zio.{Task, ZIO}
+
+import java.io.IOException
 
 private[zio] class ZioBodyFromHttpClient extends BodyFromHttpClient[Task, ZioStreams, ZioStreams.BinaryStream] {
   override val streams: ZioStreams = ZioStreams
@@ -61,19 +63,17 @@ private[zio] class ZioBodyFromHttpClient extends BodyFromHttpClient[Task, ZioStr
           file: SttpFile
       ): Task[SttpFile] = response
         .run({
-          ZSink.managed(
+          ZSink.unwrapManaged(
             AsynchronousFileChannel
-              .open(Path.fromJava(file.toPath), StandardOpenOption.WRITE, StandardOpenOption.CREATE): Managed[
-              Exception,
-              AsynchronousFileChannel
-            ] // we need the upcast so that errors are properly inferred
-          ) { fileChannel =>
-            ZSink.foldChunksM(0L)(_ => true) { case (position, data) =>
-              fileChannel
-                .writeChunk(data, position)
-                .map(bytesWritten => position + bytesWritten)
-            }
-          }
+              .open(Path.fromJava(file.toPath), StandardOpenOption.WRITE, StandardOpenOption.CREATE)
+              .map { fileChannel =>
+                ZSink.foldChunksZIO[Any, IOException, Byte, Long](0L)(_ => true) { case (position, data) =>
+                  fileChannel
+                    .writeChunk(data, position)
+                    .map(_ => position + data.size)
+                }
+              }
+          )
         })
         .as(file)
 
@@ -101,7 +101,7 @@ private[zio] class ZioBodyFromHttpClient extends BodyFromHttpClient[Task, ZioStr
 
   private def readAllBytes(fileChannel: AsynchronousFileChannel) = {
     val bufferSize = 4096
-    Stream.paginateChunkM(0L)(position =>
+    Stream.paginateChunkZIO(0L)(position =>
       fileChannel
         .readChunk(bufferSize, position)
         .map {
