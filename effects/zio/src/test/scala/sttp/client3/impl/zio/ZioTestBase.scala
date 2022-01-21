@@ -1,9 +1,7 @@
 package sttp.client3.impl.zio
 
 import sttp.client3.testing.ConvertToFuture
-import zio.clock.Clock
-import zio.duration.durationInt
-import zio.{Exit, Runtime, Task, ZEnv}
+import zio.{Clock, Exit, Runtime, Task, ZEnv, durationInt}
 
 import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success}

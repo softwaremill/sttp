@@ -23,7 +23,7 @@ ZioTelemetryOpenTelemetryBackend(
 By default, the span is named after the HTTP method (e.g "HTTP POST") as [recommended by OpenTelemetry](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/http.md#name) for HTTP clients.
 You can override the default span name or add additional tags per request by supplying a `ZioTelemetryOpenTelemetryTracer`.
 
-```scala mdoc:compile-only
+```scala
 import io.opentelemetry.semconv.trace.attributes.SemanticAttributes
 import sttp.client3._
 import zio._

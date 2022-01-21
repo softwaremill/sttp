@@ -59,7 +59,7 @@ class SttpBackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFuture
     } yield resp
 
     runtime.unsafeRun(effect.provideCustomLayer(HttpClientZioBackend.stubLayer)) shouldBe
-      (((Right("a"), Right("b")), Right("c")))
+      ((Right("a"), Right("b"), Right("c")))
   }
 
   it should "allow effectful cyclical stubbing" in {
@@ -68,7 +68,7 @@ class SttpBackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFuture
 
     val effect = (for {
       _ <- whenAnyRequest.thenRespondCyclic("a", "b", "c")
-      resp <- ZStream.repeatEffect(send(r)).take(4).runCollect
+      resp <- ZStream.repeatZIO(send(r)).take(4).runCollect
     } yield resp).provideCustomLayer(HttpClientZioBackend.stubLayer)
 
     runtime.unsafeRun(effect).map(_.body).toList shouldBe List(Right("a"), Right("b"), Right("c"), Right("a"))

@@ -119,7 +119,6 @@ val zioJsonVersion: Option[(Long, Long)] => String = {
   case Some((3, _)) => "0.2.0-M3"
   case _            => "0.1.5"
 }
-
 val playJsonVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.7.4"
   case _             => "2.9.2"
@@ -144,11 +143,13 @@ val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", 
   "org.scalatest" %%% s"scalatest-$m" % "3.2.10" % Test
 )
 
-val zioVersion = "1.0.13"
-val zioInteropRsVersion = "1.3.9"
+val zio1Version = "1.0.13"
+val zio2Version = "2.0.0-RC1"
+val zio1InteropRsVersion = "1.3.9"
+val zio2InteropRsVersion = "2.0.0-M3"
 
 val sttpModelVersion = "1.4.22"
-val sttpSharedVersion = "1.2.7"
+val sttpSharedVersion = "1.3.0"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.2.10"
 
@@ -164,19 +165,15 @@ val compileAndTest = "compile->compile;test->test"
 def dependenciesFor(version: String)(deps: (Option[(Long, Long)] => ModuleID)*): Seq[ModuleID] =
   deps.map(_.apply(CrossVersion.partialVersion(version)))
 
-lazy val projectsWithOptionalNative: Seq[ProjectReference] = if (sys.env.isDefinedAt("STTP_NATIVE")) {
-  println("[info] STTP_NATIVE defined, including sttp-native in the aggregate projects")
-  core.projectRefs ++ jsonCommon.projectRefs ++ upickle.projectRefs
-} else {
-  println("[info] STTP_NATIVE *not* defined, *not* including sttp-native in the aggregate projects")
-  scala2.flatMap(v => List[ProjectReference](core.jvm(v), core.js(v), jsonCommon.jvm(v), jsonCommon.js(v))) ++
-    scala3.flatMap(v => List[ProjectReference](core.jvm(v), core.js(v))) ++
-    List[ProjectReference](
-      upickle.jvm(scala2_12),
-      upickle.jvm(scala2_13),
-      upickle.js(scala2_12),
-      upickle.js(scala2_13)
-    )
+lazy val projectsWithOptionalNative: Seq[ProjectReference] = {
+  val base = core.projectRefs ++ jsonCommon.projectRefs ++ upickle.projectRefs
+  if (sys.env.isDefinedAt("STTP_NATIVE")) {
+    println("[info] STTP_NATIVE defined, including sttp-native in the aggregate projects")
+    base
+  } else {
+    println("[info] STTP_NATIVE *not* defined, *not* including sttp-native in the aggregate projects")
+    base.filterNot(_.toString.contains("Native"))
+  }
 }
 
 lazy val allAggregates = projectsWithOptionalNative ++
@@ -187,11 +184,13 @@ lazy val allAggregates = projectsWithOptionalNative ++
   fs2.projectRefs ++
   monix.projectRefs ++
   scalaz.projectRefs ++
+  zio1.projectRefs ++
   zio.projectRefs ++
   akkaHttpBackend.projectRefs ++
   asyncHttpClientBackend.projectRefs ++
   asyncHttpClientFutureBackend.projectRefs ++
   asyncHttpClientScalazBackend.projectRefs ++
+  asyncHttpClientZio1Backend.projectRefs ++
   asyncHttpClientZioBackend.projectRefs ++
   asyncHttpClientMonixBackend.projectRefs ++
   asyncHttpClientCatsCe2Backend.projectRefs ++
@@ -215,10 +214,12 @@ lazy val allAggregates = projectsWithOptionalNative ++
   httpClientMonixBackend.projectRefs ++
   httpClientFs2Ce2Backend.projectRefs ++
   httpClientFs2Backend.projectRefs ++
+  httpClientZio1Backend.projectRefs ++
   httpClientZioBackend.projectRefs ++
   finagleBackend.projectRefs ++
   armeriaBackend.projectRefs ++
   armeriaScalazBackend.projectRefs ++
+  armeriaZio1Backend.projectRefs ++
   armeriaZioBackend.projectRefs ++
   armeriaMonixBackend.projectRefs ++
   armeriaCatsCe2Backend.projectRefs ++
@@ -413,13 +414,33 @@ lazy val monix = (projectMatrix in file("effects/monix"))
     settings = commonJsSettings ++ commonJsBackendSettings ++ browserChromeTestSettings ++ testServerSettings
   )
 
+lazy val zio1 = (projectMatrix in file("effects/zio1"))
+  .settings(
+    name := "zio1",
+    Test / publishArtifact := true,
+    libraryDependencies ++= Seq(
+      "dev.zio" %% "zio-streams" % zio1Version,
+      "dev.zio" %% "zio" % zio1Version,
+      "com.softwaremill.sttp.shared" %% "zio1" % sttpSharedVersion
+    )
+  )
+  .dependsOn(core % compileAndTest)
+  .jvmPlatform(
+    scalaVersions = scala2 ++ scala3,
+    settings = commonJvmSettings
+  )
+  .jsPlatform(
+    scalaVersions = List(scala2_12, scala2_13) ++ scala3,
+    settings = commonJsSettings ++ commonJsBackendSettings ++ browserChromeTestSettings ++ testServerSettings
+  )
+
 lazy val zio = (projectMatrix in file("effects/zio"))
   .settings(
     name := "zio",
     Test / publishArtifact := true,
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-streams" % zioVersion,
-      "dev.zio" %% "zio" % zioVersion,
+      "dev.zio" %% "zio-streams" % zio2Version,
+      "dev.zio" %% "zio" % zio2Version,
       "com.softwaremill.sttp.shared" %% "zio" % sttpSharedVersion
     )
   )
@@ -500,11 +521,20 @@ lazy val asyncHttpClientScalazBackend =
   asyncHttpClientBackendProject("scalaz")
     .dependsOn(scalaz % compileAndTest)
 
+lazy val asyncHttpClientZio1Backend =
+  asyncHttpClientBackendProject("zio1", includeDotty = true)
+    .settings(
+      libraryDependencies ++= Seq(
+        "dev.zio" %% "zio-interop-reactivestreams" % zio1InteropRsVersion
+      )
+    )
+    .dependsOn(zio1 % compileAndTest)
+
 lazy val asyncHttpClientZioBackend =
   asyncHttpClientBackendProject("zio", includeDotty = true)
     .settings(
       libraryDependencies ++= Seq(
-        "dev.zio" %% "zio-interop-reactivestreams" % zioInteropRsVersion
+        "dev.zio" %% "zio-interop-reactivestreams" % zio2InteropRsVersion
       )
     )
     .dependsOn(zio % compileAndTest)
@@ -647,13 +677,24 @@ lazy val httpClientFs2Backend =
     )
     .dependsOn(fs2 % compileAndTest)
 
+lazy val httpClientZio1Backend =
+  httpClientBackendProject("zio1", includeDotty = true)
+    .settings(
+      libraryDependencies ++=
+        Seq(
+          "dev.zio" %% "zio-interop-reactivestreams" % zio1InteropRsVersion,
+          "dev.zio" %% "zio-nio" % "1.0.0-RC11"
+        )
+    )
+    .dependsOn(zio1 % compileAndTest)
+
 lazy val httpClientZioBackend =
   httpClientBackendProject("zio", includeDotty = true)
     .settings(
       libraryDependencies ++=
         Seq(
-          "dev.zio" %% "zio-interop-reactivestreams" % zioInteropRsVersion,
-          "dev.zio" %% "zio-nio" % "1.0.0-RC11"
+          "dev.zio" %% "zio-interop-reactivestreams" % zio2InteropRsVersion,
+          "dev.zio" %% "zio-nio" % "2.0.0-RC1"
         )
     )
     .dependsOn(zio % compileAndTest)
@@ -726,10 +767,17 @@ lazy val armeriaScalazBackend =
   armeriaBackendProject("scalaz")
     .dependsOn(scalaz % compileAndTest)
 
+lazy val armeriaZio1Backend =
+  armeriaBackendProject("zio1", includeDotty = true)
+    .settings(
+      libraryDependencies ++= Seq("dev.zio" %% "zio-interop-reactivestreams" % zio1InteropRsVersion)
+    )
+    .dependsOn(zio1 % compileAndTest)
+
 lazy val armeriaZioBackend =
   armeriaBackendProject("zio", includeDotty = true)
     .settings(
-      libraryDependencies ++= Seq("dev.zio" %% "zio-interop-reactivestreams" % zioInteropRsVersion)
+      libraryDependencies ++= Seq("dev.zio" %% "zio-interop-reactivestreams" % zio2InteropRsVersion)
     )
     .dependsOn(zio % compileAndTest)
 
@@ -777,9 +825,10 @@ lazy val circe = (projectMatrix in file("json/circe"))
 lazy val zioJson = (projectMatrix in file("json/zio-json"))
   .settings(
     name := "zio-json",
-    libraryDependencies ++= dependenciesFor(scalaVersion.value)(
-      "dev.zio" %%% "zio-json" % zioJsonVersion(_)
-    ) ++ Seq("com.softwaremill.sttp.shared" %%% "zio" % sttpSharedVersion),
+    libraryDependencies ++= Seq(
+      "dev.zio" %%% "zio-json" % "0.3.0-RC1-1",
+      "com.softwaremill.sttp.shared" %%% "zio1" % sttpSharedVersion
+    ),
     scalaTest
   )
   .jvmPlatform(
@@ -886,7 +935,7 @@ lazy val zioTelemetryOpenTelemetryBackend = (projectMatrix in file("metrics/zio-
     scalaTest
   )
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3)
-  .dependsOn(zio % compileAndTest)
+  .dependsOn(zio1 % compileAndTest)
   .dependsOn(core)
 
 lazy val zioTelemetryOpenTracingBackend = (projectMatrix in file("metrics/zio-telemetry-open-tracing-backend"))
@@ -899,7 +948,7 @@ lazy val zioTelemetryOpenTracingBackend = (projectMatrix in file("metrics/zio-te
     )
   )
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3)
-  .dependsOn(zio % compileAndTest)
+  .dependsOn(zio1 % compileAndTest)
   .dependsOn(core)
 
 lazy val scribeBackend = (projectMatrix in file("logging/scribe"))
@@ -1030,8 +1079,8 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     httpClientZioBackend,
     openTracingBackend,
     prometheusBackend,
-    slf4jBackend,
-    zioTelemetryOpenTelemetryBackend,
-    zioTelemetryOpenTracingBackend
+    slf4jBackend
+    // zioTelemetryOpenTelemetryBackend, // TODO: re-enable once these projects are migrated to zio2
+    // zioTelemetryOpenTracingBackend
   )
   .jvmPlatform(scalaVersions = List(scala2_13))
