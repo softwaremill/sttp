@@ -1,13 +1,16 @@
 # ZIO backends
 
-The [ZIO](https://github.com/zio/zio) backends are **asynchronous**. Sending a request is a non-blocking, lazily-evaluated operation and results in a response wrapped in a `zio.Task`. There's a transitive dependency on `zio`.
+The [ZIO](https://github.com/zio/zio) backends are **asynchronous**. Sending a request is a non-blocking, lazily-evaluated operation and results in a response wrapped in a `zio.Task`. There's a transitive dependency on the `zio` or `zio1` modules.
+
+The `*-zio` modules depend on ZIO 2.x. For ZIO 1.x support, use modules with the `*-zio1` suffix.
 
 ## Using HttpClient (Java 11+)
 
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "httpclient-backend-zio" % "@VERSION@"
+"com.softwaremill.sttp.client3" %% "httpclient-backend-zio" % "@VERSION@"  // for ZIO 2.x
+"com.softwaremill.sttp.client3" %% "httpclient-backend-zio1" % "@VERSION@" // for ZIO 1.x
 ```
 
 Create the backend using:
@@ -38,7 +41,8 @@ jdk.httpclient.allowRestrictedHeaders=host
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % "@VERSION@"
+"com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % "@VERSION@"  // for ZIO 2.x
+"com.softwaremill.sttp.client3" %% "async-http-client-backend-zio1" % "@VERSION@" // for ZIO 1.x
 ```
            
 This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client), uses [Netty](http://netty.io) behind the scenes. This backend works with all Scala versions. A Scala 3 build is available as well.
@@ -84,7 +88,8 @@ val backend = AsyncHttpClientZioBackend.usingClient(runtime, asyncHttpClient)
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "armeria-backend-zio" % "@VERSION@"
+"com.softwaremill.sttp.client3" %% "armeria-backend-zio" % "@VERSION@"  // for ZIO 2.x
+"com.softwaremill.sttp.client3" %% "armeria-backend-zio1" % "@VERSION@" // for ZIO 1.x
 ```
 
 add imports:
