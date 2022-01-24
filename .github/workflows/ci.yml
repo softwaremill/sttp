@@ -76,17 +76,11 @@ jobs:
             ~/.sbt
             ~/.ivy2/cache
             ~/.coursier
-          key: sbt-cache-${{ runner.os }}-${{ matrix.target-platform }}-${{ hashFiles('project/build.properties') }}
-      - name: Install libidn11-dev libcurl3-dev
-        if: matrix.target-platform == 'Native'
-        run: |
-          sudo apt-get update
-          sudo apt-get install libidn11-dev libcurl3-dev
-          echo "STTP_NATIVE=1" >> $GITHUB_ENV
+          key: sbt-cache-${{ runner.os }}-JS-${{ hashFiles('project/build.properties') }}
       - name: Compile
         run: sbt -v compile compileDocs
       - name: Test
-        run: sbt -v test${{ matrix.target-platform }}
+        run: sbt -v testJS
       - name: Prepare release notes
         uses: release-drafter/release-drafter@v5
         with:
