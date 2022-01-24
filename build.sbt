@@ -43,6 +43,9 @@ val commonJvmSettings = commonSettings ++ Seq(
 )
 
 val commonJsSettings = commonSettings ++ Seq(
+  scalaJSLinkerConfig ~= {
+    _.withBatchMode(true).withParallel(false)
+  },
   Compile / scalacOptions ++= {
     if (isSnapshot.value) Seq.empty
     else
@@ -250,10 +253,7 @@ lazy val rootProject = (project in file("."))
     testJS := (Test / test).all(filterProject(_.contains("JS"))).value,
     testNative := (Test / test).all(filterProject(_.contains("Native"))).value,
     ideSkipProject := false,
-    scalaVersion := scala2_13,
-    scalaJSLinkerConfig ~= {
-      _.withBatchMode(true).withParallel(false)
-    }
+    scalaVersion := scala2_13
   )
   .aggregate(allAggregates: _*)
 
