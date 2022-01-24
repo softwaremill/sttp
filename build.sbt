@@ -115,6 +115,9 @@ val circeVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "0.11.2"
   case _             => "0.14.1"
 }
+
+val jsoniterVersion = "2.12.1"
+
 val zioJsonVersion: Option[(Long, Long)] => String = {
   case Some((3, _)) => "0.2.0-M3"
   case _            => "0.1.5"
@@ -204,6 +207,7 @@ lazy val allAggregates = projectsWithOptionalNative ++
   circe.projectRefs ++
   zioJson.projectRefs ++
   json4s.projectRefs ++
+  jsoniter.projectRefs ++
   sprayJson.projectRefs ++
   playJson.projectRefs ++
   openTracingBackend.projectRefs ++
@@ -822,6 +826,22 @@ lazy val circe = (projectMatrix in file("json/circe"))
   .jsPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3, settings = commonJsSettings)
   .dependsOn(core, jsonCommon)
 
+lazy val jsoniter = (projectMatrix in file("json/jsoniter"))
+  .settings(
+    name := "jsoniter",
+    libraryDependencies ++= Seq(
+      "com.github.plokhotnyuk.jsoniter-scala" %%% "jsoniter-scala-core" % jsoniterVersion,
+      "com.github.plokhotnyuk.jsoniter-scala" %%% "jsoniter-scala-macros" % jsoniterVersion % Test
+    ),
+    scalaTest
+  )
+  .jvmPlatform(
+    scalaVersions = scala2 ++ scala3,
+    settings = commonJvmSettings
+  )
+  .jsPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3, settings = commonJsSettings)
+  .dependsOn(core, jsonCommon)
+
 lazy val zioJson = (projectMatrix in file("json/zio-json"))
   .settings(
     name := "zio-json",
@@ -1040,7 +1060,8 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     name := "docs",
     libraryDependencies ++= Seq(
       "org.json4s" %% "json4s-native" % json4sVersion,
-      "io.circe" %% "circe-generic" % "0.14.1",
+      "io.circe" %% "circe-generic" % circeVersion(None),
+      "com.github.plokhotnyuk.jsoniter-scala" %% "jsoniter-scala-macros" % jsoniterVersion,
       "commons-io" % "commons-io" % "2.11.0",
       "io.github.resilience4j" % "resilience4j-circuitbreaker" % resilience4jVersion,
       "io.github.resilience4j" % "resilience4j-ratelimiter" % resilience4jVersion,
@@ -1059,6 +1080,7 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     circe,
     sprayJson,
     zioJson,
+    jsoniter,
     asyncHttpClientZioBackend,
     // asyncHttpClientMonixBackend, // monix backends are commented out because they depend on cats-effect2
     asyncHttpClientFs2Backend,
