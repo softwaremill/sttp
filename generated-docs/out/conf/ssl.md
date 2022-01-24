@@ -28,10 +28,10 @@ val TrustAllCerts: X509TrustManager = new X509TrustManager() {
 }
 
 val ks: KeyStore = KeyStore.getInstance(KeyStore.getDefaultType)
-ks.load(new FileInputStream("/path/to/your_cert.p12"), "pass".toCharArray)
+ks.load(new FileInputStream("/path/to/your_cert.p12"), "password".toCharArray)
 
 val kmf: KeyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm)
-kmf.init(ks, "pass".toCharArray)
+kmf.init(ks, "password".toCharArray)
 
 val ssl: SSLContext = SSLContext.getInstance("TLS")
 ssl.init(kmf.getKeyManagers, Array(TrustAllCerts), new SecureRandom)
@@ -48,7 +48,7 @@ Next, based on [one way SSL example](#one-way-ssl), add `TrustManagerFactory` to
 
 
 ```scala
-ks.load(new FileInputStream("/path/to/server_trust"), "pass".toCharArray)
+ks.load(new FileInputStream("/path/to/server_trust"), "password".toCharArray)
 
 val tmf: TrustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm)  
 tmf.init(ks)

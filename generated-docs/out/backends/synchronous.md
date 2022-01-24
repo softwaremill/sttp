@@ -25,7 +25,7 @@ sun.net.http.allowRestrictedHeaders=true
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "okhttp-backend" % "3.4.0"
+"com.softwaremill.sttp.client3" %% "okhttp-backend" % "3.4.1"
 ```
 
 Create the backend using:
@@ -53,7 +53,7 @@ This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supp
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "httpclient-backend" % "3.4.0"
+"com.softwaremill.sttp.client3" %% "httpclient-backend" % "3.4.1"
 ```
 
 Create the backend using:
