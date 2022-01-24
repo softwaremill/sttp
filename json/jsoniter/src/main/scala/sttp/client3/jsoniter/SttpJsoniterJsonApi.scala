@@ -2,11 +2,20 @@ package sttp.client3.jsoniter
 
 import sttp.client3.internal.Utf8
 import sttp.client3.json.RichResponseAs
-import sttp.client3.{BodySerializer, DeserializationException, HttpError, IsOption, JsonInput, ResponseAs, ResponseException, ShowError, StringBody, asString, asStringAlways}
+import sttp.client3.{
+  BodySerializer,
+  DeserializationException,
+  HttpError,
+  IsOption,
+  JsonInput,
+  ResponseAs,
+  ResponseException,
+  ShowError,
+  StringBody,
+  asString,
+  asStringAlways
+}
 import sttp.model.MediaType
-
-import scala.util.Try
-import scala.util.control.NonFatal
 
 trait SttpJsoniterJsonApi {
   import com.github.plokhotnyuk.jsoniter_scala.core._
@@ -38,19 +47,17 @@ trait SttpJsoniterJsonApi {
   def asJsonEither[
       E: JsonValueCodec: IsOption,
       B: JsonValueCodec: IsOption
-    ]: ResponseAs[Either[ResponseException[E, Exception], B], Any] = {
+  ]: ResponseAs[Either[ResponseException[E, Exception], B], Any] = {
     asJson[B].mapLeft {
       case de @ DeserializationException(_, _) => de
       case HttpError(e, code) => deserializeJson[E].apply(e).fold(DeserializationException(e, _), HttpError(_, code))
     }.showAsJsonEither
   }
 
-  def deserializeJson[B: JsonValueCodec: IsOption]: String => Either[Exception, B] = { s: String =>
-    Try {
-      readFromString[B](JsonInput.sanitize[B].apply(s))
-    }.toEither.left.map {
-      case de: JsonReaderException => DeserializationException[JsonReaderException](s, de)
-      case e: Exception => e
+  def deserializeJson[B: JsonValueCodec: IsOption]: String => Either[Exception, B] = { (s: String) =>
+    try Right(readFromString[B](JsonInput.sanitize[B].apply(s)))
+    catch {
+      case de: JsonReaderException => Left(DeserializationException[JsonReaderException](s, de))
     }
   }
 
