@@ -7,7 +7,9 @@ on:
     tags: [v*]
 jobs:
   ci:
-    # run on external PRs, but not on internal PRs since those will be run by push to branch
+    # Run on external PRs, but not on internal PRs since those will be run by push to branch
+    # For JVM 3 GB is the lowest value we can set without causing failures in tests
+    # For Native we probably can lower the value further
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-20.04
     strategy:
@@ -57,7 +59,9 @@ jobs:
 
 
   ci-js:
-    # run on external PRs, but not on internal PRs since those will be run by push to branch
+    # Run on external PRs, but not on internal PRs since those will be run by push to branch
+    # Separated because running JS tests require lot more memory outside JVM than other tests
+    # For JS tests 2.5 GB is the lowest value we can set without causing failures in tests
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-20.04
     env:
