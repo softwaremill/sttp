@@ -161,7 +161,7 @@ val braveOpentracingVersion = "1.0.0"
 val zipkinSenderOkHttpVersion = "2.16.3"
 val resilience4jVersion = "1.7.1"
 val http4s_ce2_version = "0.22.9"
-val http4s_ce3_version = "0.23.7"
+val http4s_ce3_version = "0.23.8"
 
 val compileAndTest = "compile->compile;test->test"
 
