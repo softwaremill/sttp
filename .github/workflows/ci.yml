@@ -60,7 +60,6 @@ jobs:
     # run on external PRs, but not on internal PRs since those will be run by push to branch
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-20.04
-    name: ci (JS)
     env:
       JAVA_OPTS: "-Xmx2500M -Dsbt.task.timings=true" # -Xlog:gc -XX:+PrintGCDetails -Xlog:gc*::time
     steps:

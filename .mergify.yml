@@ -7,7 +7,7 @@ pull_request_rules:
     conditions:
       - author=scala-steward
       - check-success=ci (JVM)
-      - check-success=ci (JS)
+      - check-success=
       - check-success=ci (Native)
       - check-success=mima
       - "#files=1"
@@ -19,7 +19,7 @@ pull_request_rules:
     conditions:
       - author=scala-steward
       - check-success=ci (JVM)
-      - check-success=ci (JS)
+      - check-success=ci-js
       - check-success=ci (Native)
       - check-success=mima
       - "#files=1"
@@ -31,7 +31,7 @@ pull_request_rules:
     conditions:
       - author=scala-steward
       - check-success=ci (JVM)
-      - check-success=ci (JS)
+      - check-success=ci-js
       - check-success=ci (Native)
       - check-success=mima
       - "#approved-reviews-by>=1"
@@ -42,7 +42,7 @@ pull_request_rules:
     conditions:
       - author=scala-steward
       - check-success=ci (JVM)
-      - check-success=ci (JS)
+      - check-success=ci-js
       - check-success=ci (Native)
       - check-success=mima
       - "#files=1"
@@ -54,7 +54,7 @@ pull_request_rules:
     conditions:
       - author=scala-steward
       - check-success=ci (JVM)
-      - check-success=ci (JS)
+      - check-success=ci-js
       - check-success=ci (Native)
       - check-success=mima
       - "#files=1"
