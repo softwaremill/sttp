@@ -22,14 +22,20 @@ jobs:
       if: matrix.target-platform == 'JS'
       env:
         JAVA_OPTS: "-Xmx2500M -Dsbt.task.timings=true" # -Xlog:gc -XX:+PrintGCDetails -Xlog:gc*::time
+      run: |
+        echo ${{env.JAVA_OPTS}}
     - name: Set Java Opts for JVM
       if: matrix.target-platform == 'JVM'
       env:
         JAVA_OPTS: "-Xmx3000M -Dsbt.task.timings=true" # -Xlog:gc -XX:+PrintGCDetails -Xlog:gc*::time
+      run: |
+        echo ${{env.JAVA_OPTS}}
     - name: Set Java Opts for Native
       if: matrix.target-platform == 'Native'
       env:
         JAVA_OPTS: "-Xmx2500M -Dsbt.task.timings=true" # -Xlog:gc -XX:+PrintGCDetails -Xlog:gc*::time
+      run: |
+        echo ${{env.JAVA_OPTS}}
     - name: Checkout
       uses: actions/checkout@v2
     - name: Set up JDK 11
