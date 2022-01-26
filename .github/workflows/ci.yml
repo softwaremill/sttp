@@ -20,21 +20,18 @@ jobs:
     steps:
     - name: Set Java Opts for JS
       if: matrix.target-platform == 'JS'
-      env:
-        JAVA_OPTS: "-Xmx2500M -Dsbt.task.timings=true" # -Xlog:gc -XX:+PrintGCDetails -Xlog:gc*::time
       run: |
+        echo "JAVA_OPTS=-Xmx2500M -Dsbt.task.timings=true"
         echo ${{env.JAVA_OPTS}}
     - name: Set Java Opts for JVM
       if: matrix.target-platform == 'JVM'
-      env:
-        JAVA_OPTS: "-Xmx3000M -Dsbt.task.timings=true" # -Xlog:gc -XX:+PrintGCDetails -Xlog:gc*::time
       run: |
+        echo "JAVA_OPTS=-Xmx3000M -Dsbt.task.timings=true"
         echo ${{env.JAVA_OPTS}}
     - name: Set Java Opts for Native
       if: matrix.target-platform == 'Native'
-      env:
-        JAVA_OPTS: "-Xmx2500M -Dsbt.task.timings=true" # -Xlog:gc -XX:+PrintGCDetails -Xlog:gc*::time
       run: |
+        echo "JAVA_OPTS=-Xmx2500M -Dsbt.task.timings=true" >> $GITHUB_ENV
         echo ${{env.JAVA_OPTS}}
     - name: Checkout
       uses: actions/checkout@v2
@@ -59,12 +56,10 @@ jobs:
     - name: Compile
       run: |
         echo ${{env.JAVA_OPTS}}
-        set JAVA_OPTS=${{env.JAVA_OPTS}}
         sbt -v compile compileDocs
     - name: Test
       run: |
         echo ${{env.JAVA_OPTS}}
-        set JAVA_OPTS=${{env.JAVA_OPTS}}
         sbt -v test${{ matrix.target-platform }}
     - name: Prepare release notes
       uses: release-drafter/release-drafter@v5
