@@ -10,8 +10,9 @@ import sttp.client3.WebSocketResponseAs
 import sttp.model.ResponseMetadata
 import sttp.monad.MonadError
 import sttp.ws.{WebSocket, WebSocketFrame}
+import zio.nio.Buffer
 import zio.nio.channels.AsynchronousFileChannel
-import zio.nio.core.file.Path
+import zio.nio.file.Path
 import zio.stream.{Stream, ZSink, ZStream}
 import zio.{Managed, Task, ZIO}
 
@@ -69,9 +70,11 @@ private[zio] class ZioBodyFromHttpClient extends BodyFromHttpClient[Task, ZioStr
             ] // we need the upcast so that errors are properly inferred
           ) { fileChannel =>
             ZSink.foldChunksM(0L)(_ => true) { case (position, data) =>
-              fileChannel
-                .writeChunk(data, position)
-                .map(bytesWritten => position + bytesWritten)
+              Buffer.byte(data).flatMap(buffer =>
+                fileChannel
+                  .write(buffer, position)
+                  .map(bytesWritten => position + bytesWritten)
+              )
             }
           }
         })
