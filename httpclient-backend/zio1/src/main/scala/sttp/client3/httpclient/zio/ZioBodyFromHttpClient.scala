@@ -16,8 +16,6 @@ import zio.nio.file.Path
 import zio.stream.{Stream, ZSink, ZStream}
 import zio.{Managed, Task, ZIO}
 
-import java.nio.ByteBuffer
-
 private[zio] class ZioBodyFromHttpClient extends BodyFromHttpClient[Task, ZioStreams, ZioStreams.BinaryStream] {
   override val streams: ZioStreams = ZioStreams
 
