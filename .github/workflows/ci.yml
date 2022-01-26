@@ -20,15 +20,15 @@ jobs:
     steps:
     - name: Set Java Opts for JS
       if: matrix.target-platform == 'JS'
-      run: |
+      env:
         JAVA_OPTS: "-Xmx2500M -Dsbt.task.timings=true" # -Xlog:gc -XX:+PrintGCDetails -Xlog:gc*::time
     - name: Set Java Opts for JVM
       if: matrix.target-platform == 'JVM'
-      run: |
+      env:
         JAVA_OPTS: "-Xmx3000M -Dsbt.task.timings=true" # -Xlog:gc -XX:+PrintGCDetails -Xlog:gc*::time
     - name: Set Java Opts for Native
       if: matrix.target-platform == 'Native'
-      run: |
+      env:
         JAVA_OPTS: "-Xmx2500M -Dsbt.task.timings=true" # -Xlog:gc -XX:+PrintGCDetails -Xlog:gc*::time
     - name: Checkout
       uses: actions/checkout@v2
