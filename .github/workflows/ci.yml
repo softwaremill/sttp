@@ -9,16 +9,27 @@ jobs:
   ci:
     # Run on external PRs, but not on internal PRs since those will be run by push to branch
     # For JVM 3 GB is the lowest value we can set without causing failures in tests
+    # For JS tests 2.5 GB is the lowest value we can set without causing failures in tests
     # For Native we probably can lower the value further
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
       matrix:
-        target-platform: [ "JVM", "Native" ]
-    env:
-      JAVA_OPTS: "-Xmx3000M -Dsbt.task.timings=true" # -Xlog:gc -XX:+PrintGCDetails -Xlog:gc*::time
+        target-platform: [ "JVM", "JS", "Native" ]
     steps:
+    - name: Set Java Opts for JS
+      if: matrix.target-platform == 'JS'
+      run: |
+        JAVA_OPTS: "-Xmx2500M -Dsbt.task.timings=true" # -Xlog:gc -XX:+PrintGCDetails -Xlog:gc*::time
+    - name: Set Java Opts for JVM
+      if: matrix.target-platform == 'JVM'
+      run: |
+        JAVA_OPTS: "-Xmx3000M -Dsbt.task.timings=true" # -Xlog:gc -XX:+PrintGCDetails -Xlog:gc*::time
+    - name: Set Java Opts for Native
+      if: matrix.target-platform == 'Native'
+      run: |
+        JAVA_OPTS: "-Xmx2500M -Dsbt.task.timings=true" # -Xlog:gc -XX:+PrintGCDetails -Xlog:gc*::time
     - name: Checkout
       uses: actions/checkout@v2
     - name: Set up JDK 11
@@ -56,48 +67,6 @@ jobs:
         find $HOME/.ivy2/cache                       -name "*-LM-SNAPSHOT*"       -delete || true
         find $HOME/.cache/coursier/v1                -name "ivydata-*.properties" -delete || true
         find $HOME/.sbt                              -name "*.lock"               -delete || true
-
-
-  ci-js:
-    # Run on external PRs, but not on internal PRs since those will be run by push to branch
-    # Separated because running JS tests require lot more memory outside JVM than other tests
-    # For JS tests 2.5 GB is the lowest value we can set without causing failures in tests
-    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
-    runs-on: ubuntu-20.04
-    env:
-      JAVA_OPTS: "-Xmx2500M -Dsbt.task.timings=true" # -Xlog:gc -XX:+PrintGCDetails -Xlog:gc*::time
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Set up JDK 11
-        uses: actions/setup-java@v1
-        with:
-          java-version: 11
-      - name: Cache sbt
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.sbt
-            ~/.ivy2/cache
-            ~/.coursier
-          key: sbt-cache-${{ runner.os }}-JS-${{ hashFiles('project/build.properties') }}
-      - name: Compile
-        run: sbt -v compile compileDocs
-      - name: Test
-        run: sbt -v testJS
-      - name: Prepare release notes
-        uses: release-drafter/release-drafter@v5
-        with:
-          config-name: release-drafter.yml
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Cleanup
-        run: |
-          rm -rf "$HOME/.ivy2/local" || true
-          find $HOME/.ivy2/cache                       -name "ivydata-*.properties" -delete || true
-          find $HOME/.ivy2/cache                       -name "*-LM-SNAPSHOT*"       -delete || true
-          find $HOME/.cache/coursier/v1                -name "ivydata-*.properties" -delete || true
-          find $HOME/.sbt                              -name "*.lock"               -delete || true
 
   mima:
     # run on external PRs, but not on internal PRs since those will be run by push to branch
