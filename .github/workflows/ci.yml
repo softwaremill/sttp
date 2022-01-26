@@ -33,7 +33,7 @@ jobs:
     - name: Set Java Opts for Native
       if: matrix.target-platform == 'Native'
       env:
-        JAVA_OPTS: "-Xmx3500M -Dsbt.task.timings=true" # -Xlog:gc -XX:+PrintGCDetails -Xlog:gc*::time
+        JAVA_OPTS: "-Xmx2500M -Dsbt.task.timings=true" # -Xlog:gc -XX:+PrintGCDetails -Xlog:gc*::time
       run: |
         echo ${{env.JAVA_OPTS}}
     - name: Checkout
@@ -57,8 +57,12 @@ jobs:
         sudo apt-get install libidn11-dev libcurl3-dev
         echo "STTP_NATIVE=1" >> $GITHUB_ENV
     - name: Compile
+      with:
+        JAVA_OPTS: ${{env.JAVA_OPTS}}
       run: sbt -v compile compileDocs
     - name: Test
+      with:
+        JAVA_OPTS: ${{env.JAVA_OPTS}}
       run: sbt -v test${{ matrix.target-platform }}
     - name: Prepare release notes
       uses: release-drafter/release-drafter@v5
