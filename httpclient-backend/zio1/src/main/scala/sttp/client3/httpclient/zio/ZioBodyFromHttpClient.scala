@@ -70,11 +70,13 @@ private[zio] class ZioBodyFromHttpClient extends BodyFromHttpClient[Task, ZioStr
             ] // we need the upcast so that errors are properly inferred
           ) { fileChannel =>
             ZSink.foldChunksM(0L)(_ => true) { case (position, data) =>
-              Buffer.byte(data).flatMap(buffer =>
-                fileChannel
-                  .write(buffer, position)
-                  .map(bytesWritten => position + bytesWritten)
-              )
+              Buffer
+                .byte(data)
+                .flatMap(buffer =>
+                  fileChannel
+                    .write(buffer, position)
+                    .map(bytesWritten => position + bytesWritten)
+                )
             }
           }
         })
