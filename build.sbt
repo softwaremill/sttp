@@ -152,7 +152,7 @@ val zio1InteropRsVersion = "1.3.9"
 val zio2InteropRsVersion = "2.0.0-RC2"
 
 val sttpModelVersion = "1.4.22"
-val sttpSharedVersion = "1.3.1"
+val sttpSharedVersion = "1.3.2"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.2.10"
 
