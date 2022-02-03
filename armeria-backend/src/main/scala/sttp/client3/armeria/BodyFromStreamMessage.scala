@@ -1,6 +1,6 @@
 package sttp.client3.armeria
 
-import com.linecorp.armeria.common.HttpData
+import com.linecorp.armeria.common.{CommonPools, HttpData}
 import com.linecorp.armeria.common.stream.{StreamMessage, StreamMessages}
 import io.netty.util.concurrent.EventExecutor
 import java.io.File
@@ -56,7 +56,7 @@ private[armeria] trait BodyFromStreamMessage[F[_], S] {
   ): F[Unit] = {
     monad.async[Unit](cb => {
       StreamMessages
-        .writeTo(p, f.toPath, executor, null)
+        .writeTo(p, f.toPath, executor, CommonPools.blockingTaskExecutor())
         .handle((_: Void, cause: Throwable) => {
           if (cause != null) {
             cb(Left(cause))
