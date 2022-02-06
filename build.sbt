@@ -116,7 +116,7 @@ val circeVersion: Option[(Long, Long)] => String = {
   case _             => "0.14.1"
 }
 
-val jsoniterVersion = "2.12.3"
+val jsoniterVersion = "2.12.4"
 
 val zioJsonVersion: Option[(Long, Long)] => String = {
   case Some((3, _)) => "0.2.0-M3"
@@ -147,9 +147,9 @@ val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", 
 )
 
 val zio1Version = "1.0.13"
-val zio2Version = "2.0.0-RC1"
+val zio2Version = "2.0.0-RC2"
 val zio1InteropRsVersion = "1.3.9"
-val zio2InteropRsVersion = "2.0.0-RC1"
+val zio2InteropRsVersion = "2.0.0-RC2"
 
 val sttpModelVersion = "1.4.22"
 val sttpSharedVersion = "1.3.1"
@@ -161,7 +161,7 @@ val braveOpentracingVersion = "1.0.0"
 val zipkinSenderOkHttpVersion = "2.16.3"
 val resilience4jVersion = "1.7.1"
 val http4s_ce2_version = "0.22.11"
-val http4s_ce3_version = "0.23.9"
+val http4s_ce3_version = "0.23.10"
 
 val compileAndTest = "compile->compile;test->test"
 
@@ -936,7 +936,7 @@ lazy val prometheusBackend = (projectMatrix in file("metrics/prometheus-backend"
   .settings(
     name := "prometheus-backend",
     libraryDependencies ++= Seq(
-      "io.prometheus" % "simpleclient" % "0.14.1"
+      "io.prometheus" % "simpleclient" % "0.15.0"
     ),
     scalaTest
   )
@@ -950,7 +950,7 @@ lazy val zioTelemetryOpenTelemetryBackend = (projectMatrix in file("metrics/zio-
     libraryDependencies ++= Seq(
       "dev.zio" %% "zio-opentelemetry" % "0.9.0",
       "org.scala-lang.modules" %% "scala-collection-compat" % "2.6.0",
-      "io.opentelemetry" % "opentelemetry-sdk-testing" % "1.10.1" % Test
+      "io.opentelemetry" % "opentelemetry-sdk-testing" % "1.11.0" % Test
     ),
     scalaTest
   )
