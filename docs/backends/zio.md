@@ -263,7 +263,6 @@ import sttp.client3._
 
 def processEvents(source: Stream[Throwable, ServerSentEvent]): Task[Unit] = ???
 
-// TODO: consider if viaFucntion is what we want 
 basicRequest.response(asStream(ZioStreams)(stream => 
   processEvents(stream.viaFunction(ZioServerSentEvents.parse))))
 ```
