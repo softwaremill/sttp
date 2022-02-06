@@ -12,7 +12,7 @@ trait SttpZioJsonApiExtensions { this: SttpZioJsonApi =>
       : ResponseAs[Either[ResponseException[String, String], B], Effect[Task] with ZioStreams] =
     asStream(ZioStreams)(s =>
       JsonDecoder[B]
-        .decodeJsonStream(ZPipeline.utf8Decode(s).mapChunks(_.flatMap(_.toCharArray)))
+        .decodeJsonStream(ZPipeline.utf8Decode.apply(s).mapChunks(_.flatMap(_.toCharArray)))
         .map(Right(_))
         .catchSome { case e => ZIO.left(DeserializationException("", e.getMessage)) }
     ).mapWithMetadata {
