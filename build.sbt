@@ -641,7 +641,7 @@ lazy val httpClientBackend = (projectMatrix in file("httpclient-backend"))
     scalacOptions ++= {
       if (scalaVersion.value == scala2_13) List("-target:jvm-11") else Nil
     },
-    libraryDependencies += "org.reactivestreams" % "reactive-streams-flow-adapters" % "1.0.2"
+    libraryDependencies += "org.reactivestreams" % "reactive-streams" % "1.0.3"
   )
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3)
   .dependsOn(core % compileAndTest)
