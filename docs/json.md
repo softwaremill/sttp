@@ -140,13 +140,16 @@ To use, add an import: `import sttp.client3.playJson._`.
 ## zio-json
 
 To encode and decode JSON using the high-performance [zio-json](https://zio.github.io/zio-json/) library, one add the following dependency to your project.
+The json-zio modules depend on ZIO 2.x. For ZIO 1.x support, use zio1-json.
 
 ```scala
-"com.softwaremill.sttp.client3" %% "zio-json" % "@VERSION@"
+"com.softwaremill.sttp.client3" %% "zio-json" % "@VERSION@"  // for ZIO 2.x
+"com.softwaremill.sttp.client3" %% "zio1-json" % "@VERSION@" // for ZIO 1.x
 ```
 or for ScalaJS (cross build) projects:
 ```scala
-"com.softwaremill.sttp.client3" %%% "zio-json" % "@VERSION@"
+"com.softwaremill.sttp.client3" %%% "zio-json" % "@VERSION@"  // for ZIO 2.x
+"com.softwaremill.sttp.client3" %%% "zio1-json" % "@VERSION@" // for ZIO 1.x
 ```
 
 To use, add an import: `import sttp.client3.ziojson._` (or extend `SttpZioJsonApi`), define an implicit `JsonCodec`, or `JsonDecoder`/`JsonEncoder` for your datatype.
