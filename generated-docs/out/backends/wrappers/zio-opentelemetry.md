@@ -1,9 +1,10 @@
 # zio-telemetry opentelemetry backend 
 
-To use, add the following dependency to your project:
+To use, add the following dependency to your project (the `zio-*` modules depend on ZIO 2.x; for ZIO 1.x support, use `zio1-*`):
 
 ```
-"com.softwaremill.sttp.client3" %% "zio-telemetry-opentelemetry-backend" % "3.4.1"
+"com.softwaremill.sttp.client3" %% "zio-telemetry-opentelemetry-backend" % "3.4.2"  // for ZIO 2.x
+"com.softwaremill.sttp.client3" %% "zio1-telemetry-opentelemetry-backend" % "3.4.2" // for ZIO 1.x
 ```
 
 This backend depends on [zio-opentelemetry](https://github.com/zio/zio-telemetry).
@@ -36,12 +37,12 @@ val tracing: Tracing.Service = ???
 def sttpTracer: ZioTelemetryOpenTelemetryTracer = new ZioTelemetryOpenTelemetryTracer {
     override def spanName[T](request: Request[T, Nothing]): String = ???
 
-    def before[T](request: Request[T, Nothing]): RIO[Tracing, Unit] =
+    def before[T](request: Request[T, Nothing]): RIO[Tracing.Service, Unit] =
       Tracing.setAttribute(SemanticAttributes.HTTP_METHOD.getKey, request.method.method) *>
       Tracing.setAttribute(SemanticAttributes.HTTP_URL.getKey, request.uri.toString()) *>
       ZIO.unit
     
-    def after[T](response: Response[T]): RIO[Tracing, Unit] =
+    def after[T](response: Response[T]): RIO[Tracing.Service, Unit] =
       Tracing.setAttribute(SemanticAttributes.HTTP_STATUS_CODE.getKey, response.code.code) *>
       ZIO.unit
 }
