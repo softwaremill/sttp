@@ -118,10 +118,6 @@ val circeVersion: Option[(Long, Long)] => String = {
 
 val jsoniterVersion = "2.13.2"
 
-val zioJsonVersion: Option[(Long, Long)] => String = {
-  case Some((3, _)) => "0.2.0-M3"
-  case _            => "0.1.5"
-}
 val playJsonVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.7.4"
   case _             => "2.9.2"
@@ -205,6 +201,7 @@ lazy val allAggregates = projectsWithOptionalNative ++
   http4sCe2Backend.projectRefs ++
   http4sBackend.projectRefs ++
   circe.projectRefs ++
+  zio1Json.projectRefs ++
   zioJson.projectRefs ++
   json4s.projectRefs ++
   jsoniter.projectRefs ++
@@ -847,6 +844,22 @@ lazy val zioJson = (projectMatrix in file("json/zio-json"))
     name := "zio-json",
     libraryDependencies ++= Seq(
       "dev.zio" %%% "zio-json" % "0.3.0-RC3",
+      "com.softwaremill.sttp.shared" %%% "zio" % sttpSharedVersion
+    ),
+    scalaTest
+  )
+  .jvmPlatform(
+    scalaVersions = Seq(scala2_12, scala2_13) ++ scala3,
+    settings = commonJvmSettings
+  )
+  .jsPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3, settings = commonJsSettings)
+  .dependsOn(core, jsonCommon)
+
+lazy val zio1Json = (projectMatrix in file("json/zio1-json"))
+  .settings(
+    name := "zio1-json",
+    libraryDependencies ++= Seq(
+      "dev.zio" %%% "zio-json" % "0.2.0-M3",
       "com.softwaremill.sttp.shared" %%% "zio1" % sttpSharedVersion
     ),
     scalaTest
