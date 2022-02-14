@@ -209,6 +209,8 @@ lazy val allAggregates = projectsWithOptionalNative ++
   playJson.projectRefs ++
   openTracingBackend.projectRefs ++
   prometheusBackend.projectRefs ++
+  zio1TelemetryOpenTelemetryBackend.projectRefs ++
+  zio1TelemetryOpenTracingBackend.projectRefs ++
   zioTelemetryOpenTelemetryBackend.projectRefs ++
   zioTelemetryOpenTracingBackend.projectRefs ++
   httpClientBackend.projectRefs ++
@@ -956,10 +958,10 @@ lazy val prometheusBackend = (projectMatrix in file("metrics/prometheus-backend"
   .jvmPlatform(scalaVersions = scala2 ++ scala3)
   .dependsOn(core)
 
-lazy val zioTelemetryOpenTelemetryBackend = (projectMatrix in file("metrics/zio-telemetry-open-telemetry-backend"))
+lazy val zio1TelemetryOpenTelemetryBackend = (projectMatrix in file("metrics/zio1-telemetry-open-telemetry-backend"))
   .settings(commonJvmSettings)
   .settings(
-    name := "zio-telemetry-opentelemetry-backend",
+    name := "zio1-telemetry-opentelemetry-backend",
     libraryDependencies ++= Seq(
       "dev.zio" %% "zio-opentelemetry" % "1.0.0",
       "org.scala-lang.modules" %% "scala-collection-compat" % "2.6.0",
@@ -971,10 +973,10 @@ lazy val zioTelemetryOpenTelemetryBackend = (projectMatrix in file("metrics/zio-
   .dependsOn(zio1 % compileAndTest)
   .dependsOn(core)
 
-lazy val zioTelemetryOpenTracingBackend = (projectMatrix in file("metrics/zio-telemetry-open-tracing-backend"))
+lazy val zio1TelemetryOpenTracingBackend = (projectMatrix in file("metrics/zio1-telemetry-open-tracing-backend"))
   .settings(commonJvmSettings)
   .settings(
-    name := "zio-telemetry-opentracing-backend",
+    name := "zio1-telemetry-opentracing-backend",
     libraryDependencies ++= Seq(
       "dev.zio" %% "zio-opentracing" % "1.0.0",
       "org.scala-lang.modules" %% "scala-collection-compat" % "2.6.0"
@@ -982,6 +984,33 @@ lazy val zioTelemetryOpenTracingBackend = (projectMatrix in file("metrics/zio-te
   )
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3)
   .dependsOn(zio1 % compileAndTest)
+  .dependsOn(core)
+
+lazy val zioTelemetryOpenTelemetryBackend = (projectMatrix in file("metrics/zio-telemetry-open-telemetry-backend"))
+  .settings(commonJvmSettings)
+  .settings(
+    name := "zio-telemetry-opentelemetry-backend",
+    libraryDependencies ++= Seq(
+      "dev.zio" %% "zio-opentelemetry" % "2.0.0-RC1",
+      "io.opentelemetry" % "opentelemetry-sdk-testing" % "1.11.0" % Test
+    ),
+    scalaTest
+  )
+  .jvmPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3)
+  .dependsOn(zio % compileAndTest)
+  .dependsOn(core)
+
+lazy val zioTelemetryOpenTracingBackend = (projectMatrix in file("metrics/zio-telemetry-open-tracing-backend"))
+  .settings(commonJvmSettings)
+  .settings(
+    name := "zio-telemetry-opentracing-backend",
+    libraryDependencies ++= Seq(
+      "dev.zio" %% "zio-opentracing" % "2.0.0-RC1",
+      "org.scala-lang.modules" %% "scala-collection-compat" % "2.6.0"
+    )
+  )
+  .jvmPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3)
+  .dependsOn(zio % compileAndTest)
   .dependsOn(core)
 
 lazy val scribeBackend = (projectMatrix in file("logging/scribe"))
@@ -1114,8 +1143,8 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     httpClientZioBackend,
     openTracingBackend,
     prometheusBackend,
-    slf4jBackend
-    // zioTelemetryOpenTelemetryBackend, // TODO: re-enable once these projects are migrated to zio2
-    // zioTelemetryOpenTracingBackend
+    slf4jBackend,
+    zioTelemetryOpenTelemetryBackend,
+    zioTelemetryOpenTracingBackend
   )
   .jvmPlatform(scalaVersions = List(scala2_13))
