@@ -41,8 +41,10 @@ class DefaultLog[F[_]](
   def beforeRequestSend(request: Request[_, _]): F[Unit] =
     logger(
       beforeRequestSendLogLevel, {
-        s"Sending request: ${if (beforeCurlInsteadOfShow) request.toCurl
-          else request.show(includeBody = logRequestBody, logRequestHeaders, sensitiveHeaders)}"
+        s"Sending request: ${
+            if (beforeCurlInsteadOfShow) request.toCurl
+            else request.show(includeBody = logRequestBody, logRequestHeaders, sensitiveHeaders)
+          }"
       }
     )
 
