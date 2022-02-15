@@ -3,8 +3,8 @@
 To use, add the following dependency to your project (the `zio-*` modules depend on ZIO 2.x; for ZIO 1.x support, use `zio1-*`):
 
 ```
-"com.softwaremill.sttp.client3" %% "zio-telemetry-opentelemetry-backend" % "3.4.2"  // for ZIO 2.x
-"com.softwaremill.sttp.client3" %% "zio1-telemetry-opentelemetry-backend" % "3.4.2" // for ZIO 1.x
+"com.softwaremill.sttp.client3" %% "zio-telemetry-opentelemetry-backend" % "3.5.0"  // for ZIO 2.x
+"com.softwaremill.sttp.client3" %% "zio1-telemetry-opentelemetry-backend" % "3.5.0" // for ZIO 1.x
 ```
 
 This backend depends on [zio-opentelemetry](https://github.com/zio/zio-telemetry).
