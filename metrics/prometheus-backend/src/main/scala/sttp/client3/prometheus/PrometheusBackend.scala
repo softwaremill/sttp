@@ -1,7 +1,6 @@
 package sttp.client3.prometheus
 
 import java.util.concurrent.ConcurrentHashMap
-
 import sttp.client3.{FollowRedirectsBackend, Identity, Request, Response, SttpBackend}
 import io.prometheus.client.{CollectorRegistry, Counter, Gauge, Histogram, Summary}
 import sttp.client3.listener.{ListenerBackend, RequestListener}
@@ -24,12 +23,12 @@ object PrometheusBackend {
         Some(HistogramCollectorConfig(DefaultHistogramName)),
       requestToInProgressGaugeNameMapper: Request[_, _] => Option[CollectorConfig] = (_: Request[_, _]) =>
         Some(CollectorConfig(DefaultRequestsInProgressGaugeName)),
-      requestToSuccessCounterMapper: Request[_, _] => Option[CollectorConfig] = (_: Request[_, _]) =>
+      responseToSuccessCounterMapper: Response[_] => Option[CollectorConfig] = (_: Response[_]) =>
         Some(CollectorConfig(DefaultSuccessCounterName)),
-      requestToErrorCounterMapper: Request[_, _] => Option[CollectorConfig] = (_: Request[_, _]) =>
+      responseToErrorCounterMapper: (Response[_]) => Option[CollectorConfig] = (_: Response[_]) =>
         Some(CollectorConfig(DefaultErrorCounterName)),
-      requestToFailureCounterMapper: Request[_, _] => Option[CollectorConfig] = (_: Request[_, _]) =>
-        Some(CollectorConfig(DefaultFailureCounterName)),
+      requestToFailureCounterMapper: (Request[_, _], Throwable) => Option[CollectorConfig] =
+        (_: Request[_, _], _: Throwable) => Some(CollectorConfig(DefaultFailureCounterName)),
       requestToSizeSummaryMapper: Request[_, _] => Option[CollectorConfig] = (_: Request[_, _]) =>
         Some(CollectorConfig(DefaultRequestSizeName)),
       responseToSizeSummaryMapper: Response[_] => Option[CollectorConfig] = (_: Response[_]) =>
@@ -44,9 +43,9 @@ object PrometheusBackend {
           new PrometheusListener(
             requestToHistogramNameMapper,
             requestToInProgressGaugeNameMapper,
-            requestToSuccessCounterMapper,
-            requestToErrorCounterMapper,
-            requestToFailureCounterMapper,
+            responseToSuccessCounterMapper,
+            responseToErrorCounterMapper,
+            (r: (Request[_, _], Throwable)) => requestToFailureCounterMapper(r._1, r._2),
             requestToSizeSummaryMapper,
             responseToSizeSummaryMapper,
             collectorRegistry,
@@ -96,9 +95,9 @@ object PrometheusBackend {
 class PrometheusListener(
     requestToHistogramNameMapper: Request[_, _] => Option[HistogramCollectorConfig],
     requestToInProgressGaugeNameMapper: Request[_, _] => Option[CollectorConfig],
-    requestToSuccessCounterMapper: Request[_, _] => Option[CollectorConfig],
-    requestToErrorCounterMapper: Request[_, _] => Option[CollectorConfig],
-    requestToFailureCounterMapper: Request[_, _] => Option[CollectorConfig],
+    requestToSuccessCounterMapper: Response[_] => Option[CollectorConfig],
+    requestToErrorCounterMapper: Response[_] => Option[CollectorConfig],
+    requestToFailureCounterMapper: ((Request[_, _], Exception)) => Option[CollectorConfig],
     requestToSizeSummaryMapper: Request[_, _] => Option[CollectorConfig],
     responseToSizeSummaryMapper: Response[_] => Option[CollectorConfig],
     collectorRegistry: CollectorRegistry,
@@ -132,7 +131,7 @@ class PrometheusListener(
   ): Unit = {
     requestCollectors._1.foreach(_.observeDuration())
     requestCollectors._2.foreach(_.dec())
-    incCounterIfMapped(request, requestToFailureCounterMapper)
+    incCounterIfMapped((request, e), requestToFailureCounterMapper)
   }
 
   override def requestSuccessful(
@@ -145,15 +144,15 @@ class PrometheusListener(
     observeSummaryIfMapped(response, responseToSizeSummaryMapper)
 
     if (response.isSuccess) {
-      incCounterIfMapped(request, requestToSuccessCounterMapper)
+      incCounterIfMapped(response, requestToSuccessCounterMapper)
     } else {
-      incCounterIfMapped(request, requestToErrorCounterMapper)
+      incCounterIfMapped(response, requestToErrorCounterMapper)
     }
   }
 
   private def incCounterIfMapped[T](
-      request: Request[_, _],
-      mapper: Request[_, _] => Option[BaseCollectorConfig]
+      request: T,
+      mapper: T => Option[BaseCollectorConfig]
   ): Unit =
     mapper(request).foreach { data =>
       getOrCreateMetric(countersCache, data, createNewCounter).labels(data.labelValues: _*).inc()
