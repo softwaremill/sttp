@@ -830,7 +830,7 @@ lazy val jsoniter = (projectMatrix in file("json/jsoniter"))
     name := "jsoniter",
     libraryDependencies ++= Seq(
       "com.github.plokhotnyuk.jsoniter-scala" %%% "jsoniter-scala-core" % jsoniterVersion,
-      "com.github.plokhotnyuk.jsoniter-scala" %%% "jsoniter-scala-macros" % jsoniterVersion % Test
+      "com.github.plokhotnyuk.jsoniter-scala" %%% "jsoniter-scala-macros" % jsoniterVersion % "provided"
     ),
     scalaTest
   )
