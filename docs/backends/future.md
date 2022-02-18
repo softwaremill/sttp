@@ -141,7 +141,7 @@ jdk.httpclient.allowRestrictedHeaders=host
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "armeria-backend-future" % "@VERSION@"
+"com.softwaremill.sttp.client3" %% "armeria-backend" % "@VERSION@"
 ```
 
 add imports:
