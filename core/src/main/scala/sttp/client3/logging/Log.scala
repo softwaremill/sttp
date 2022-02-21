@@ -1,6 +1,6 @@
 package sttp.client3.logging
 
-import sttp.client3.{HttpError, LoggingOptions, Request, Response}
+import sttp.client3.{HttpError, Request, Response}
 import sttp.model.{HeaderNames, StatusCode}
 
 import scala.annotation.tailrec
@@ -40,25 +40,20 @@ class DefaultLog[F[_]](
 
   def beforeRequestSend(request: Request[_, _]): F[Unit] =
     request.loggingOptions match {
-      case Some(options) =>
-        logger(
-          beforeRequestSendLogLevel, {
-            s"Sending request: ${
-                if (beforeCurlInsteadOfShow && options.logRequestBody && options.logRequestHeaders) request.toCurl
-                else request.show(includeBody = options.logRequestBody, options.logRequestHeaders, sensitiveHeaders)
-              }"
-          }
-        )
-      case None =>
-        logger(
-          beforeRequestSendLogLevel, {
-            s"Sending request: ${
-                if (beforeCurlInsteadOfShow) request.toCurl
-                else request.show(includeBody = logRequestBody, logRequestHeaders, sensitiveHeaders)
-              }"
-          }
-        )
+      case Some(options) => before(request, options.logRequestBody, options.logRequestHeaders)
+      case None          => before(request, logRequestBody, logRequestHeaders)
     }
+
+  private def before(request: Request[_, _], _logRequestBody: Boolean, _logRequestHeaders: Boolean): F[Unit] = {
+    logger(
+      beforeRequestSendLogLevel, {
+        s"Sending request: ${
+            if (beforeCurlInsteadOfShow && _logRequestBody && _logRequestHeaders) request.toCurl
+            else request.show(includeBody = _logRequestBody, _logRequestHeaders, sensitiveHeaders)
+          }"
+      }
+    )
+  }
 
   override def response(
       request: Request[_, _],
@@ -67,25 +62,35 @@ class DefaultLog[F[_]](
       elapsed: Option[Duration]
   ): F[Unit] = request.loggingOptions match {
     case Some(options) =>
-      logger(
-        responseLogLevel(response.code), {
-          val responseAsString =
-            response
-              .copy(body = responseBody.getOrElse(""))
-              .show(options.logResponseBody, options.logResponseHeaders, sensitiveHeaders)
-          s"Request: ${request.showBasic}${took(elapsed)}, response: $responseAsString"
-        }
+      toResponse(
+        request.showBasic,
+        response,
+        responseBody,
+        options.logResponseBody,
+        options.logResponseHeaders,
+        elapsed
       )
     case None =>
-      logger(
-        responseLogLevel(response.code), {
-          val responseAsString =
-            response
-              .copy(body = responseBody.getOrElse(""))
-              .show(responseBody.isDefined, logResponseHeaders, sensitiveHeaders)
-          s"Request: ${request.showBasic}${took(elapsed)}, response: $responseAsString"
-        }
-      )
+      toResponse(request.showBasic, response, responseBody, responseBody.isDefined, logResponseHeaders, elapsed)
+  }
+
+  private def toResponse(
+      showBasic: String,
+      response: Response[_],
+      responseBody: Option[String],
+      logResponseBody: Boolean,
+      _logResponseHeaders: Boolean,
+      elapsed: Option[Duration]
+  ): F[Unit] = {
+    logger(
+      responseLogLevel(response.code), {
+        val responseAsString =
+          response
+            .copy(body = responseBody.getOrElse(""))
+            .show(logResponseBody, _logResponseHeaders, sensitiveHeaders)
+        s"Request: $showBasic${took(elapsed)}, response: $responseAsString"
+      }
+    )
   }
 
   override def requestException(request: Request[_, _], elapsed: Option[Duration], e: Exception): F[Unit] = {
