@@ -129,7 +129,7 @@ abstract class StreamingTest[F[_], S]
       .map { responseBody =>
         if (responseBody.length != LargeBody.length) {
           fail(s"Response body had length ${responseBody.length}, instead of ${LargeBody.length}, starts with: ${responseBody
-            .take(512)}")
+              .take(512)}")
         } else {
           succeed
         }

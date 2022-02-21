@@ -9,8 +9,8 @@ import java.{util => ju}
 import org.reactivestreams.{FlowAdapters, Publisher}
 import sttp.client3.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client3.internal.ws.{SimpleQueue, WebSocketEvent}
-import sttp.client3.{Request, Response, SttpClientException}
-import sttp.model.{HeaderNames, StatusCode}
+import sttp.client3.{Identity, Request, RequestT, Response, SttpClientException}
+import sttp.model.{Header, HeaderNames, StatusCode}
 import sttp.monad.syntax._
 import sttp.monad.{Canceler, MonadAsyncError, MonadError}
 
@@ -120,7 +120,7 @@ abstract class HttpClientAsyncBackend[F[_], S, P, B](
     })
   }
 
-  private def filterIllegalWsHeaders(request: Request[_, _]) = {
+  private def filterIllegalWsHeaders[T, R](request: Request[T, R]): RequestT[Identity, T, R] = {
     request.copy(headers = request.headers.filter(h => !wsIllegalHeaders.contains(h.name.toLowerCase)))
   }
 

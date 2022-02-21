@@ -23,8 +23,9 @@ class ArmeriaZioStreamingTest extends StreamingTest[Task, ZioStreams] with ZioTe
   override def bodyConsumer(stream: Stream[Throwable, Byte]): Task[String] =
     stream.runCollect.map(bytes => new String(bytes.toArray, Utf8))
 
+  // TODO: consider if viaFunction is what we want
   override def sseConsumer(stream: Stream[Throwable, Byte]): Task[List[ServerSentEvent]] =
-    stream.via(ZioServerSentEvents.parse).runCollect.map(_.toList)
+    stream.viaFunction(ZioServerSentEvents.parse).runCollect.map(_.toList)
 
   override protected def supportsStreamingMultipartParts: Boolean = false
 }

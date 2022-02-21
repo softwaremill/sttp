@@ -38,6 +38,16 @@ class DefaultLog[F[_]](
     responseExceptionLogLevel: LogLevel = LogLevel.Error
 ) extends Log[F] {
 
+  def beforeRequestSend(request: Request[_, _]): F[Unit] =
+    logger(
+      beforeRequestSendLogLevel, {
+        s"Sending request: ${
+            if (beforeCurlInsteadOfShow) request.toCurl
+            else request.show(includeBody = logRequestBody, logRequestHeaders, sensitiveHeaders)
+          }"
+      }
+    )
+
   def beforeRequestSend(request: Request[_, _]): F[Unit] = request.options.loggingOptions match {
     case Some(options) =>
       logger(
@@ -54,6 +64,7 @@ class DefaultLog[F[_]](
         }
       )
   }
+
 
   override def response(
       request: Request[_, _],

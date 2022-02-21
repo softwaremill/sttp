@@ -9,8 +9,8 @@ The `*-zio` modules depend on ZIO 2.x. For ZIO 1.x support, use modules with the
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "httpclient-backend-zio" % "3.4.0"  // for ZIO 2.x
-"com.softwaremill.sttp.client3" %% "httpclient-backend-zio1" % "3.4.0" // for ZIO 1.x
+"com.softwaremill.sttp.client3" %% "httpclient-backend-zio" % "3.5.0"  // for ZIO 2.x
+"com.softwaremill.sttp.client3" %% "httpclient-backend-zio1" % "3.5.0" // for ZIO 1.x
 ```
 
 Create the backend using:
@@ -41,8 +41,8 @@ jdk.httpclient.allowRestrictedHeaders=host
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % "3.4.0"  // for ZIO 2.x
-"com.softwaremill.sttp.client3" %% "async-http-client-backend-zio1" % "3.4.0" // for ZIO 1.x
+"com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % "3.5.0"  // for ZIO 2.x
+"com.softwaremill.sttp.client3" %% "async-http-client-backend-zio1" % "3.5.0" // for ZIO 1.x
 ```
            
 This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client), uses [Netty](http://netty.io) behind the scenes. This backend works with all Scala versions. A Scala 3 build is available as well.
@@ -88,8 +88,8 @@ val backend = AsyncHttpClientZioBackend.usingClient(runtime, asyncHttpClient)
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "armeria-backend-zio" % "3.4.0"  // for ZIO 2.x
-"com.softwaremill.sttp.client3" %% "armeria-backend-zio1" % "3.4.0" // for ZIO 1.x
+"com.softwaremill.sttp.client3" %% "armeria-backend-zio" % "3.5.0"  // for ZIO 2.x
+"com.softwaremill.sttp.client3" %% "armeria-backend-zio1" % "3.5.0" // for ZIO 1.x
 ```
 
 add imports:
@@ -264,5 +264,5 @@ import sttp.client3._
 def processEvents(source: Stream[Throwable, ServerSentEvent]): Task[Unit] = ???
 
 basicRequest.response(asStream(ZioStreams)(stream => 
-  processEvents(stream.via(ZioServerSentEvents.parse))))
+  processEvents(stream.viaFunction(ZioServerSentEvents.parse))))
 ```

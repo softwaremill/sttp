@@ -24,7 +24,7 @@ class HttpClientZioStreamingTest extends StreamingTest[Task, ZioStreams] with Zi
     stream.runCollect.map(bytes => new String(bytes.toArray, Utf8))
 
   override def sseConsumer(stream: Stream[Throwable, Byte]): Task[List[ServerSentEvent]] =
-    stream.via(ZioServerSentEvents.parse).runCollect.map(_.toList)
+    stream.viaFunction(ZioServerSentEvents.parse).runCollect.map(_.toList)
 
   override protected def supportsStreamingMultipartParts: Boolean = false
 }

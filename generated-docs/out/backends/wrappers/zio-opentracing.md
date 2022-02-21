@@ -1,9 +1,10 @@
 # zio-telemetry opentracing backend 
 
-To use, add the following dependency to your project:
+To use, add the following dependency to your project (the `zio-*` modules depend on ZIO 2.x; for ZIO 1.x support, use `zio1-*`):
 
 ```
-"com.softwaremill.sttp.client3" %% "zio-telemetry-opentracing-backend" % "3.4.0"
+"com.softwaremill.sttp.client3" %% "zio-telemetry-opentracing-backend" % "3.5.0"  // for ZIO 2.x
+"com.softwaremill.sttp.client3" %% "zio1-telemetry-opentracing-backend" % "3.5.0" // for ZIO 1.x
 ```
 
 This backend depends on [zio-opentracing](https://github.com/zio/zio-telemetry).
@@ -27,14 +28,14 @@ import sttp.client3.ziotelemetry.opentracing._
 implicit val zioBackend: SttpBackend[Task, Any] = ???
 
 def sttpTracer: ZioTelemetryOpenTracingTracer = new ZioTelemetryOpenTracingTracer {
-    def before[T](request: Request[T, Nothing]): RIO[OpenTracing, Unit] =
+    def before[T](request: Request[T, Nothing]): RIO[OpenTracing.Service, Unit] =
       OpenTracing.tag("span.kind", "client") *>
       OpenTracing.tag("http.method", request.method.method) *>
       OpenTracing.tag("http.url", request.uri.toString()) *>
       OpenTracing.tag("type", "ext") *>
       OpenTracing.tag("subtype", "http")
     
-    def after[T](response: Response[T]): RIO[OpenTracing, Unit] =
+    def after[T](response: Response[T]): RIO[OpenTracing.Service, Unit] =
       OpenTracing.tag("http.status_code", response.code.code)
 }
 

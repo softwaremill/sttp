@@ -14,7 +14,7 @@ import scala.collection.mutable
 private class ZioTelemetryOpenTelemetryBackend[+P](
     delegate: SttpBackend[Task, P],
     tracer: ZioTelemetryOpenTelemetryTracer,
-    tracing: Tracing
+    tracing: Tracing.Service
 ) extends DelegateSttpBackend[Task, P](delegate) {
   def send[T, R >: P with Effect[Task]](request: Request[T, R]): Task[Response[T]] = {
     val carrier: mutable.Map[String, String] = mutable.Map().empty
@@ -28,7 +28,7 @@ private class ZioTelemetryOpenTelemetryBackend[+P](
       _ <- tracer.after(resp)
     } yield resp)
       .span(tracer.spanName(request), SpanKind.CLIENT, { case _ => StatusCode.ERROR })
-      .provide(tracing)
+      .provideService(tracing)
   }
 }
 
@@ -38,19 +38,19 @@ object ZioTelemetryOpenTelemetryBackend {
       tracing: Tracing.Service,
       tracer: ZioTelemetryOpenTelemetryTracer = ZioTelemetryOpenTelemetryTracer.empty
   ): SttpBackend[Task, P] =
-    new ZioTelemetryOpenTelemetryBackend[P](other, tracer, Has(tracing))
+    new ZioTelemetryOpenTelemetryBackend[P](other, tracer, tracing)
 
 }
 
 trait ZioTelemetryOpenTelemetryTracer {
   def spanName[T](request: Request[T, Nothing]): String = s"HTTP ${request.method.method}"
-  def before[T](request: Request[T, Nothing]): RIO[Tracing, Unit]
-  def after[T](response: Response[T]): RIO[Tracing, Unit]
+  def before[T](request: Request[T, Nothing]): RIO[Tracing.Service, Unit]
+  def after[T](response: Response[T]): RIO[Tracing.Service, Unit]
 }
 
 object ZioTelemetryOpenTelemetryTracer {
   val empty: ZioTelemetryOpenTelemetryTracer = new ZioTelemetryOpenTelemetryTracer {
-    def before[T](request: Request[T, Nothing]): RIO[Tracing, Unit] = ZIO.unit
-    def after[T](response: Response[T]): RIO[Tracing, Unit] = ZIO.unit
+    def before[T](request: Request[T, Nothing]): RIO[Tracing.Service, Unit] = ZIO.unit
+    def after[T](response: Response[T]): RIO[Tracing.Service, Unit] = ZIO.unit
   }
 }

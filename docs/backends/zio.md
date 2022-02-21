@@ -264,5 +264,5 @@ import sttp.client3._
 def processEvents(source: Stream[Throwable, ServerSentEvent]): Task[Unit] = ???
 
 basicRequest.response(asStream(ZioStreams)(stream => 
-  processEvents(stream.via(ZioServerSentEvents.parse))))
+  processEvents(stream.viaFunction(ZioServerSentEvents.parse))))
 ```
