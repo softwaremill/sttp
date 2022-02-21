@@ -1,6 +1,6 @@
 package sttp.client3.logging
 
-import sttp.client3.{HttpError, Request, Response}
+import sttp.client3.{HttpError, LoggingOptions, Request, Response}
 import sttp.model.{HeaderNames, StatusCode}
 
 import scala.annotation.tailrec
@@ -39,39 +39,33 @@ class DefaultLog[F[_]](
 ) extends Log[F] {
 
   def beforeRequestSend(request: Request[_, _]): F[Unit] =
-    logger(
-      beforeRequestSendLogLevel, {
-        s"Sending request: ${
-            if (beforeCurlInsteadOfShow) request.toCurl
-            else request.show(includeBody = logRequestBody, logRequestHeaders, sensitiveHeaders)
-          }"
-      }
-    )
-
-  def beforeRequestSend(request: Request[_, _]): F[Unit] = request.options.loggingOptions match {
-    case Some(options) =>
-      logger(
-        beforeRequestSendLogLevel, {
-          s"Sending request: ${if (beforeCurlInsteadOfShow && options.logRequestBody && options.logRequestHeaders) request.toCurl
-          else request.show(includeBody = options.logRequestBody, options.logRequestHeaders, sensitiveHeaders)}"
-        }
-      )
-    case None =>
-      logger(
-        beforeRequestSendLogLevel, {
-          s"Sending request: ${if (beforeCurlInsteadOfShow) request.toCurl
-          else request.show(includeBody = logRequestBody, logRequestHeaders, sensitiveHeaders)}"
-        }
-      )
-  }
-
+    request.loggingOptions match {
+      case Some(options) =>
+        logger(
+          beforeRequestSendLogLevel, {
+            s"Sending request: ${
+                if (beforeCurlInsteadOfShow && options.logRequestBody && options.logRequestHeaders) request.toCurl
+                else request.show(includeBody = options.logRequestBody, options.logRequestHeaders, sensitiveHeaders)
+              }"
+          }
+        )
+      case None =>
+        logger(
+          beforeRequestSendLogLevel, {
+            s"Sending request: ${
+                if (beforeCurlInsteadOfShow) request.toCurl
+                else request.show(includeBody = logRequestBody, logRequestHeaders, sensitiveHeaders)
+              }"
+          }
+        )
+    }
 
   override def response(
       request: Request[_, _],
       response: Response[_],
       responseBody: Option[String],
       elapsed: Option[Duration]
-  ): F[Unit] = request.options.loggingOptions match {
+  ): F[Unit] = request.loggingOptions match {
     case Some(options) =>
       logger(
         responseLogLevel(response.code), {

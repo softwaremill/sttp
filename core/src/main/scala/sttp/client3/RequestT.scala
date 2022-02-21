@@ -233,24 +233,25 @@ case class RequestT[U[_], T, -R](
 
   def tag(k: String): Option[Any] = tags.get(k)
 
+  private val loggingOptionsTagKey = "loggingOptions"
+
   /** Can only be applied when you use `LoggingBackend` */
   def withLogSettings(
       logRequestBody: Boolean,
       logResponseBody: Boolean,
       logRequestHeaders: Boolean,
       logResponseHeaders: Boolean
-  ): RequestT[U, T, R] = this.copy(options =
-    options.copy(loggingOptions =
-      Some(
-        LoggingOptions(
-          logRequestBody = logRequestBody,
-          logResponseBody = logResponseBody,
-          logRequestHeaders = logRequestHeaders,
-          logResponseHeaders = logResponseHeaders
-        )
-      )
+  ): RequestT[U, T, R] = {
+    val loggingOptions = LoggingOptions(
+      logRequestBody = logRequestBody,
+      logResponseBody = logResponseBody,
+      logRequestHeaders = logRequestHeaders,
+      logResponseHeaders = logResponseHeaders
     )
-  )
+    this.tag(loggingOptionsTagKey, loggingOptions)
+  }
+
+  def loggingOptions: Option[LoggingOptions] = tag(loggingOptionsTagKey).map(_.asInstanceOf[LoggingOptions])
 
   /** When a POST or PUT request is redirected, should the redirect be a POST/PUT as well (with the original body), or
     * should the request be converted to a GET without a body.
@@ -425,8 +426,7 @@ case class RequestOptions(
     followRedirects: Boolean,
     readTimeout: Duration,
     maxRedirects: Int,
-    redirectToGet: Boolean,
-    loggingOptions: Option[LoggingOptions] = None
+    redirectToGet: Boolean
 )
 
 case class LoggingOptions(
