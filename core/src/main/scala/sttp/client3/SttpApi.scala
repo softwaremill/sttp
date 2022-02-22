@@ -29,8 +29,7 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
         followRedirects = true,
         DefaultReadTimeout,
         FollowRedirectsBackend.MaxRedirects,
-        redirectToGet = false,
-        disableAutoDecompression = false
+        redirectToGet = false
       ),
       Map()
     )

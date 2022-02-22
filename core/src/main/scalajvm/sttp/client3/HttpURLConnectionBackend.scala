@@ -240,7 +240,7 @@ class HttpURLConnectionBackend private (
     val code = StatusCode(c.getResponseCode)
     val wrappedIs =
       if (
-        c.getRequestMethod != "HEAD" && !code.equals(StatusCode.NoContent) && !request.options.disableAutoDecompression
+        c.getRequestMethod != "HEAD" && !code.equals(StatusCode.NoContent) && !request.autoDecompressionDisabled
       ) {
         wrapInput(contentEncoding, handleNullInput(is))
       } else handleNullInput(is)

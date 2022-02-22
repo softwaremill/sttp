@@ -62,7 +62,7 @@ class Http4sBackend[F[_]: Async](
                   responseMetadata,
                   Left(
                     onFinalizeSignal(
-                      decompressResponseBodyIfNotHead(r.method, response, r.options.disableAutoDecompression),
+                      decompressResponseBodyIfNotHead(r.method, response, r.autoDecompressionDisabled),
                       signalBodyComplete
                     )
                   )

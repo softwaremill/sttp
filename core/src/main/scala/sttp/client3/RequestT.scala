@@ -233,6 +233,12 @@ case class RequestT[U[_], T, -R](
 
   def tag(k: String): Option[Any] = tags.get(k)
 
+  private val disableAutoDecompressionKey = "disableAutoDecompression"
+
+  def disableAutoDecompression: RequestT[U, T, R] = tag(disableAutoDecompressionKey, true)
+
+  def autoDecompressionDisabled: Boolean = tags.getOrElse(disableAutoDecompressionKey, false).asInstanceOf[Boolean]
+
   /** When a POST or PUT request is redirected, should the redirect be a POST/PUT as well (with the original body), or
     * should the request be converted to a GET without a body.
     *
@@ -402,6 +408,5 @@ case class RequestOptions(
                            followRedirects: Boolean,
                            readTimeout: Duration,
                            maxRedirects: Int,
-                           redirectToGet: Boolean,
-                           disableAutoDecompression: Boolean
+                           redirectToGet: Boolean
                          )
