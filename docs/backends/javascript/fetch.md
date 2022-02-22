@@ -44,6 +44,12 @@ your project:
 "com.softwaremill.sttp.client3" %%% "cats" % "@VERSION@"
 ```
 
+If you are on Cats Effect 2 (CE2) you will need to add the CE2 specific dependency instead:
+
+```
+"com.softwaremill.sttp.client3" %%% "catsce2 % "@VERSION@"
+```
+
 And create the backend instance:
 
 ```scala
