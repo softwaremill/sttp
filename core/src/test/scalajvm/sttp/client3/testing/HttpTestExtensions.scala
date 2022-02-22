@@ -248,14 +248,14 @@ trait HttpTestExtensions[F[_]] extends AsyncFreeSpecLike { self: HttpTest[F] =>
             followRedirects = true,
             DefaultReadTimeout,
             FollowRedirectsBackend.MaxRedirects,
-            redirectToGet = false,
-            disableAutoDecompression = true
+            redirectToGet = false
           )
           val req = emptyRequest
             .copy(options = options)
             .get(uri"$endpoint/raw-gzip-file")
             .response(asFile(file))
             .acceptEncoding("gzip")
+            .disableAutoDecompression
           req.send(backend).toFuture().flatMap { resp =>
             md5FileHash(resp.body.right.get).map {
               _ should be(gzipFileMD5hash)
