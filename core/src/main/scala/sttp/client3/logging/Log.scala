@@ -40,8 +40,13 @@ class DefaultLog[F[_]](
 
   def beforeRequestSend(request: Request[_, _]): F[Unit] =
     request.loggingOptions match {
-      case Some(options) => before(request, options.logRequestBody, options.logRequestHeaders)
-      case None          => before(request, logRequestBody, logRequestHeaders)
+      case Some(options) =>
+        before(
+          request,
+          options.logRequestBody.getOrElse(logRequestBody),
+          options.logRequestHeaders.getOrElse(logRequestHeaders)
+        )
+      case None => before(request, logRequestBody, logRequestHeaders)
     }
 
   private def before(request: Request[_, _], _logRequestBody: Boolean, _logRequestHeaders: Boolean): F[Unit] = {
@@ -66,8 +71,8 @@ class DefaultLog[F[_]](
         request.showBasic,
         response,
         responseBody,
-        options.logResponseBody,
-        options.logResponseHeaders,
+        options.logResponseBody.getOrElse(responseBody.isDefined),
+        options.logResponseHeaders.getOrElse(logResponseHeaders),
         elapsed
       )
     case None =>

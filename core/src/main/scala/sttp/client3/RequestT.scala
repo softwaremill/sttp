@@ -237,10 +237,10 @@ case class RequestT[U[_], T, -R](
 
   /** Will work only when you use `LoggingBackend` */
   def logSettings(
-      logRequestBody: Boolean,
-      logResponseBody: Boolean,
-      logRequestHeaders: Boolean,
-      logResponseHeaders: Boolean
+      logRequestBody: Option[Boolean] = None,
+      logResponseBody: Option[Boolean] = None,
+      logRequestHeaders: Option[Boolean] = None,
+      logResponseHeaders: Option[Boolean] = None
   ): RequestT[U, T, R] = {
     val loggingOptions = LoggingOptions(
       logRequestBody = logRequestBody,
@@ -430,8 +430,8 @@ case class RequestOptions(
 )
 
 case class LoggingOptions(
-    logRequestBody: Boolean,
-    logResponseBody: Boolean,
-    logRequestHeaders: Boolean,
-    logResponseHeaders: Boolean
+    logRequestBody: Option[Boolean] = None,
+    logResponseBody: Option[Boolean] = None,
+    logRequestHeaders: Option[Boolean] = None,
+    logResponseHeaders: Option[Boolean] = None
 )
