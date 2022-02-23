@@ -235,6 +235,8 @@ case class RequestT[U[_], T, -R](
 
   private val disableAutoDecompressionKey = "disableAutoDecompression"
 
+  // Used as a workaround to keep binary compatibility
+  // TODO: replace with additional parameter in RequestOptions when writing sttp4
   def disableAutoDecompression: RequestT[U, T, R] = tag(disableAutoDecompressionKey, true)
 
   def autoDecompressionDisabled: Boolean = tags.getOrElse(disableAutoDecompressionKey, false).asInstanceOf[Boolean]
@@ -405,8 +407,8 @@ class SpecifyAuthScheme[U[_], T, -R](hn: String, rt: RequestT[U, T, R], digestTa
 }
 
 case class RequestOptions(
-                           followRedirects: Boolean,
-                           readTimeout: Duration,
-                           maxRedirects: Int,
-                           redirectToGet: Boolean
-                         )
+    followRedirects: Boolean,
+    readTimeout: Duration,
+    maxRedirects: Int,
+    redirectToGet: Boolean
+)

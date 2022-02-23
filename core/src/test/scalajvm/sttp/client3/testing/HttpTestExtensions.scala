@@ -241,7 +241,7 @@ trait HttpTestExtensions[F[_]] extends AsyncFreeSpecLike { self: HttpTest[F] =>
       }
     }
 
-    if (self.supportAutoDecompressionDisabling) {
+    if (self.supportsAutoDecompressionDisabling) {
       "should return compressed data" in {
         withTemporaryNonExistentFile { file =>
           val options = RequestOptions(

@@ -9,7 +9,7 @@ class HttpClientSyncHttpTest extends HttpTest[Identity] {
 
   override def supportsHostHeaderOverride = false
   override def supportsCancellation: Boolean = false
-  override def supportAutoDecompressionDisabling = true
+  override def supportsAutoDecompressionDisabling = true
 
   override def timeoutToNone[T](t: Identity[T], timeoutMillis: Int): Identity[Option[T]] = Some(t)
 }

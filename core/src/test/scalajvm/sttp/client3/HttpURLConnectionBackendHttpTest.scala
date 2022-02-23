@@ -13,7 +13,7 @@ class HttpURLConnectionBackendHttpTest extends HttpTest[Identity] {
   override def supportsCustomContentEncoding = true
   override def supportsHostHeaderOverride = false
   override def supportsCancellation = false
-  override def supportAutoDecompressionDisabling = true
+  override def supportsAutoDecompressionDisabling = true
 
   override def timeoutToNone[T](t: Identity[T], timeoutMillis: Int): Identity[Option[T]] = Some(t)
 }

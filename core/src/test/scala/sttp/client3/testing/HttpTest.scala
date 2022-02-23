@@ -54,7 +54,7 @@ trait HttpTest[F[_]]
   protected def throwsExceptionOnUnsupportedEncoding = true
   protected def supportsHostHeaderOverride = true
   protected def supportsCancellation = true
-  protected def supportAutoDecompressionDisabling = false
+  protected def supportsAutoDecompressionDisabling = false
 
   "parse response" - {
     "as string" in {
