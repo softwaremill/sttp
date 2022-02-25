@@ -13,5 +13,4 @@ class OkHttpFutureHttpTest extends HttpTest[Future] {
 
   override def supportsCancellation: Boolean = false
   override def timeoutToNone[T](t: Future[T], timeoutMillis: Int): Future[Option[T]] = t.map(Some(_))
-  override def supportsAutoDecompressionDisabling = true
 }

@@ -16,5 +16,4 @@ class Http4sHttpTest extends HttpTest[IO] with CatsTestBase {
 
   override protected def supportsRequestTimeout = false
   override protected def supportsCustomMultipartContentType = false
-  override def supportsAutoDecompressionDisabling = true
 }

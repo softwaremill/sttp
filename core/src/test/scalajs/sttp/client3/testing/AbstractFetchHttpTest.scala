@@ -29,7 +29,5 @@ abstract class AbstractFetchHttpTest[F[_], +P] extends HttpTest[F] {
 
   override def supportsCancellation: Boolean = false
 
-  override def supportsAutoDecompressionDisabling = true
-
   override def timeoutToNone[T](t: F[T], timeoutMillis: Int): F[Option[T]] = ???
 }
