@@ -10,4 +10,5 @@ class ArmeriaFs2HttpTest extends HttpTest[IO] with CatsTestBase with TestIODispa
 
   override def supportsHostHeaderOverride = false
   override def supportsCancellation = false
+  override def supportsAutoDecompressionDisabling = false
 }
