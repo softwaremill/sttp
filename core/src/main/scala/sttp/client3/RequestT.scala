@@ -235,7 +235,7 @@ case class RequestT[U[_], T, -R](
 
   private val loggingOptionsTagKey = "loggingOptions"
 
-  /** Will work only when you use `LoggingBackend` */
+  /** Will only has effect when using the `LoggingBackend` */
   def logSettings(
       logRequestBody: Option[Boolean] = None,
       logResponseBody: Option[Boolean] = None,
