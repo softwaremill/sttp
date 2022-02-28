@@ -13,6 +13,7 @@ An empty backend stub can be created using the following ways:
 * by explicitly specifying the effect and supported capabilities:
   * for Monix `SttpBackendStub[Task, MonixStreams with WebSockets](TaskMonad)`
   * for cats `SttpBackendStub[IO, WebSockets](implicitly[MonadAsyncError[IO]])`
+  * for zio `SttpBackendStub[Task, WebSockets](new RIOMonadAsyncError[Any])`
 * by specifying a fallback/delegate backend, see below
 
 Some code which will be reused among following examples:
