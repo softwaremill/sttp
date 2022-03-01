@@ -84,7 +84,12 @@ object HttpClientFutureBackend {
       customEncodingHandler: InputStreamEncodingHandler
   )(implicit ec: ExecutionContext): SttpBackend[Future, WebSockets] =
     new FollowRedirectsBackend(
-      new HttpClientFutureBackend(client, closeClient, customizeRequest, customEncodingHandler)
+      new HttpClientFutureBackend(
+        client,
+        closeClient,
+        customizeRequest,
+        customEncodingHandler
+      )
     )
 
   def apply(
@@ -104,7 +109,12 @@ object HttpClientFutureBackend {
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: InputStreamEncodingHandler = PartialFunction.empty
   )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, WebSockets] =
-    HttpClientFutureBackend(client, closeClient = false, customizeRequest, customEncodingHandler)
+    HttpClientFutureBackend(
+      client,
+      closeClient = false,
+      customizeRequest,
+      customEncodingHandler
+    )
 
   /** Create a stub backend for testing, which uses the [[Future]] response wrapper, and doesn't support streaming.
     *

@@ -28,7 +28,11 @@ class HttpClientSyncBackend private (
     closeClient: Boolean,
     customizeRequest: HttpRequest => HttpRequest,
     customEncodingHandler: SyncEncodingHandler
-) extends HttpClientBackend[Identity, Nothing, Any, InputStream](client, closeClient, customEncodingHandler) {
+) extends HttpClientBackend[Identity, Nothing, Any, InputStream](
+      client,
+      closeClient,
+      customEncodingHandler
+    ) {
 
   override val streams: NoStreams = NoStreams
 
@@ -102,7 +106,12 @@ object HttpClientSyncBackend {
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: SyncEncodingHandler = PartialFunction.empty
   ): SttpBackend[Identity, Any] =
-    HttpClientSyncBackend(client, closeClient = false, customizeRequest, customEncodingHandler)
+    HttpClientSyncBackend(
+      client,
+      closeClient = false,
+      customizeRequest,
+      customEncodingHandler
+    )
 
   /** Create a stub backend for testing, which uses the [[Identity]] response wrapper, and doesn't support streaming.
     *

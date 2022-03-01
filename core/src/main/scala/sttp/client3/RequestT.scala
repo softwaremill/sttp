@@ -1,14 +1,14 @@
 package sttp.client3
 
-import java.io.InputStream
-import java.nio.ByteBuffer
-import java.util.Base64
 import sttp.capabilities.{Effect, Streams}
 import sttp.client3.internal.DigestAuthenticator.DigestAuthData
 import sttp.client3.internal.{SttpFile, ToCurlConverter, ToRfc2616Converter, _}
 import sttp.model._
 import sttp.model.headers.CookieWithMeta
 
+import java.io.InputStream
+import java.nio.ByteBuffer
+import java.util.Base64
 import scala.collection.immutable.Seq
 import scala.concurrent.duration.Duration
 
@@ -232,6 +232,14 @@ case class RequestT[U[_], T, -R](
     this.copy(tags = tags + (k -> v))
 
   def tag(k: String): Option[Any] = tags.get(k)
+
+  private val disableAutoDecompressionKey = "disableAutoDecompression"
+
+  // Used as a workaround to keep binary compatibility
+  // TODO: replace with additional parameter in RequestOptions when writing sttp4
+  def disableAutoDecompression: RequestT[U, T, R] = tag(disableAutoDecompressionKey, true)
+
+  def autoDecompressionDisabled: Boolean = tags.getOrElse(disableAutoDecompressionKey, false).asInstanceOf[Boolean]
 
   /** When a POST or PUT request is redirected, should the redirect be a POST/PUT as well (with the original body), or
     * should the request be converted to a GET without a body.

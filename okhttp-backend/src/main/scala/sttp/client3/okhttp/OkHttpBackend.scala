@@ -80,17 +80,21 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
     val responseMetadata = ResponseMetadata(StatusCode(res.code()), res.message(), headers)
     val encoding = headers.collectFirst { case h if h.is(HeaderNames.ContentEncoding) => h.value }
     val method = Method(res.request().method())
-    val byteBody = if (method != Method.HEAD) {
-      encoding
-        .filterNot(_ => res.code().equals(204))
-        .map(e =>
-          customEncodingHandler // There is no PartialFunction.fromFunction in scala 2.12
-            .orElse(EncodingHandler(standardEncoding))(res.body().byteStream() -> e)
-        )
-        .getOrElse(res.body().byteStream())
-    } else {
-      res.body().byteStream()
-    }
+    val byteBody =
+      if (
+        method != Method.HEAD && !res
+          .code()
+          .equals(StatusCode.NoContent.code) && !request.autoDecompressionDisabled
+      ) {
+        encoding
+          .map(e =>
+            customEncodingHandler //There is no PartialFunction.fromFunction in scala 2.12
+              .orElse(EncodingHandler(standardEncoding))(res.body().byteStream() -> e)
+          )
+          .getOrElse(res.body().byteStream())
+      } else {
+        res.body().byteStream()
+      }
 
     val body = bodyFromOkHttp(byteBody, request.response, responseMetadata, None)
     responseMonad.map(body)(Response(_, StatusCode(res.code()), res.message(), headers, Nil, request.onlyMetadata))
