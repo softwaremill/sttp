@@ -46,6 +46,7 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
 
   private val textFile = toByteArray(getClass.getResourceAsStream("/textfile.txt"))
   private val binaryFile = toByteArray(getClass.getResourceAsStream("/binaryfile.jpg"))
+  private val compressedFile = toByteArray(getClass.getResourceAsStream("/r3.gz"))
   private val textWithSpecialCharacters = "Żółć!"
 
   private val serverRoutes: Route =
@@ -268,6 +269,12 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
       encodeResponseWith(Deflate) {
         respondWithHeader(RawHeader("Content-Encoding", "deflate")) {
           complete(204, HttpEntity.Empty)
+        }
+      }
+     } ~ path("raw-gzip-file") {
+      encodeResponseWith(Gzip) {
+        respondWithHeader(RawHeader("Content-Encoding", "gzip")) {
+          complete(HttpEntity(compressedFile))
         }
       }
     } ~ pathPrefix("download") {

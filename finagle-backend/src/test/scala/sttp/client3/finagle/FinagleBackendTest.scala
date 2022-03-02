@@ -21,6 +21,7 @@ class FinagleBackendTest extends HttpTest[TFuture] {
   }
   override def throwsExceptionOnUnsupportedEncoding = false
   override def supportsCustomMultipartContentType = false
+  override def supportsAutoDecompressionDisabling = false
 
   override def supportsCancellation: Boolean = false
   override def timeoutToNone[T](t: TFuture[T], timeoutMillis: Int): TFuture[Option[T]] = t.map(Some(_))

@@ -10,7 +10,10 @@ An empty backend stub can be created using the following ways:
 
 * by calling `.stub` on the "real" base backend's companion object, e.g. `AsyncHttpClientZioBackend.stub` or `HttpClientMonixBackend.stub`
 * by using one of the factory methods `SttpBackendStub.synchronous` or `SttpBackendStub.asynchronousFuture`, which return stubs which use the `Identity` or standard Scala's `Future` effects without streaming support
-* by explicitly specifying the effect and supported capabilities, e.g. `SttpBackendStub[Task, MonixStreams with WebSockets](TaskMonad)`
+* by explicitly specifying the effect and supported capabilities:
+  * for Monix `SttpBackendStub[Task, MonixStreams with WebSockets](TaskMonad)`
+  * for cats `SttpBackendStub[IO, WebSockets](implicitly[MonadAsyncError[IO]])`
+  * for zio `SttpBackendStub[Task, WebSockets](new RIOMonadAsyncError[Any])`
 * by specifying a fallback/delegate backend, see below
 
 Some code which will be reused among following examples:
