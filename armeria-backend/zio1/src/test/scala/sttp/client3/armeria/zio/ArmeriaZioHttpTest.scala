@@ -12,4 +12,5 @@ class ArmeriaZioHttpTest extends HttpTest[Task] with ZioTestBase {
 
   override def supportsHostHeaderOverride = false
   override def supportsCancellation = false
+  override def supportsAutoDecompressionDisabling = false
 }

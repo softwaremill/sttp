@@ -12,5 +12,6 @@ class AsyncHttpClientZioHttpTest extends HttpTest[Task] with ZioTestBase {
   override implicit val convertToFuture: ConvertToFuture[Task] = convertZioTaskToFuture
 
   override def throwsExceptionOnUnsupportedEncoding = false
+  override def supportsAutoDecompressionDisabling = false
 
 }
