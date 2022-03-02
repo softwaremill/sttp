@@ -1,11 +1,9 @@
 package sttp.client3
 
-import java.io.InputStream
-import java.nio.ByteBuffer
-import java.util.Base64
 import sttp.capabilities.{Effect, Streams}
 import sttp.client3.internal.DigestAuthenticator.DigestAuthData
 import sttp.client3.internal.{SttpFile, ToCurlConverter, ToRfc2616Converter, _}
+import sttp.client3.logging.LoggingOptions
 import sttp.model._
 import sttp.model.headers.CookieWithMeta
 
@@ -246,7 +244,7 @@ case class RequestT[U[_], T, -R](
 
   private val loggingOptionsTagKey = "loggingOptions"
 
-  /** Will only has effect when using the `LoggingBackend` */
+  /** Will only have effect when using the `LoggingBackend` */
   def logSettings(
       logRequestBody: Option[Boolean] = None,
       logResponseBody: Option[Boolean] = None,
@@ -438,11 +436,4 @@ case class RequestOptions(
     readTimeout: Duration,
     maxRedirects: Int,
     redirectToGet: Boolean
-)
-
-case class LoggingOptions(
-    logRequestBody: Option[Boolean] = None,
-    logResponseBody: Option[Boolean] = None,
-    logRequestHeaders: Option[Boolean] = None,
-    logResponseHeaders: Option[Boolean] = None
 )

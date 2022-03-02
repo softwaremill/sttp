@@ -67,7 +67,7 @@ class DefaultLog[F[_]](
       elapsed: Option[Duration]
   ): F[Unit] = request.loggingOptions match {
     case Some(options) =>
-      toResponse(
+      handleResponse(
         request.showBasic,
         response,
         responseBody,
@@ -76,10 +76,10 @@ class DefaultLog[F[_]](
         elapsed
       )
     case None =>
-      toResponse(request.showBasic, response, responseBody, responseBody.isDefined, logResponseHeaders, elapsed)
+      handleResponse(request.showBasic, response, responseBody, responseBody.isDefined, logResponseHeaders, elapsed)
   }
 
-  private def toResponse(
+  private def handleResponse(
       showBasic: String,
       response: Response[_],
       responseBody: Option[String],
