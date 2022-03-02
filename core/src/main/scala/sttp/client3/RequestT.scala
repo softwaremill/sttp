@@ -3,6 +3,7 @@ package sttp.client3
 import sttp.capabilities.{Effect, Streams}
 import sttp.client3.internal.DigestAuthenticator.DigestAuthData
 import sttp.client3.internal.{SttpFile, ToCurlConverter, ToRfc2616Converter, _}
+import sttp.client3.logging.LoggingOptions
 import sttp.model._
 import sttp.model.headers.CookieWithMeta
 
@@ -240,6 +241,26 @@ case class RequestT[U[_], T, -R](
   def disableAutoDecompression: RequestT[U, T, R] = tag(disableAutoDecompressionKey, true)
 
   def autoDecompressionDisabled: Boolean = tags.getOrElse(disableAutoDecompressionKey, false).asInstanceOf[Boolean]
+
+  private val loggingOptionsTagKey = "loggingOptions"
+
+  /** Will only have effect when using the `LoggingBackend` */
+  def logSettings(
+      logRequestBody: Option[Boolean] = None,
+      logResponseBody: Option[Boolean] = None,
+      logRequestHeaders: Option[Boolean] = None,
+      logResponseHeaders: Option[Boolean] = None
+  ): RequestT[U, T, R] = {
+    val loggingOptions = LoggingOptions(
+      logRequestBody = logRequestBody,
+      logResponseBody = logResponseBody,
+      logRequestHeaders = logRequestHeaders,
+      logResponseHeaders = logResponseHeaders
+    )
+    this.tag(loggingOptionsTagKey, loggingOptions)
+  }
+
+  def loggingOptions: Option[LoggingOptions] = tag(loggingOptionsTagKey).asInstanceOf[Option[LoggingOptions]]
 
   /** When a POST or PUT request is redirected, should the redirect be a POST/PUT as well (with the original body), or
     * should the request be converted to a GET without a body.

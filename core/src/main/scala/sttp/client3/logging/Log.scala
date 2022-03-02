@@ -39,30 +39,64 @@ class DefaultLog[F[_]](
 ) extends Log[F] {
 
   def beforeRequestSend(request: Request[_, _]): F[Unit] =
+    request.loggingOptions match {
+      case Some(options) =>
+        before(
+          request,
+          options.logRequestBody.getOrElse(logRequestBody),
+          options.logRequestHeaders.getOrElse(logRequestHeaders)
+        )
+      case None => before(request, logRequestBody, logRequestHeaders)
+    }
+
+  private def before(request: Request[_, _], _logRequestBody: Boolean, _logRequestHeaders: Boolean): F[Unit] = {
     logger(
       beforeRequestSendLogLevel, {
         s"Sending request: ${
-            if (beforeCurlInsteadOfShow) request.toCurl
-            else request.show(includeBody = logRequestBody, logRequestHeaders, sensitiveHeaders)
+            if (beforeCurlInsteadOfShow && _logRequestBody && _logRequestHeaders) request.toCurl
+            else request.show(includeBody = _logRequestBody, _logRequestHeaders, sensitiveHeaders)
           }"
       }
     )
+  }
 
   override def response(
       request: Request[_, _],
       response: Response[_],
       responseBody: Option[String],
       elapsed: Option[Duration]
-  ): F[Unit] =
+  ): F[Unit] = request.loggingOptions match {
+    case Some(options) =>
+      handleResponse(
+        request.showBasic,
+        response,
+        responseBody,
+        options.logResponseBody.getOrElse(responseBody.isDefined),
+        options.logResponseHeaders.getOrElse(logResponseHeaders),
+        elapsed
+      )
+    case None =>
+      handleResponse(request.showBasic, response, responseBody, responseBody.isDefined, logResponseHeaders, elapsed)
+  }
+
+  private def handleResponse(
+      showBasic: String,
+      response: Response[_],
+      responseBody: Option[String],
+      logResponseBody: Boolean,
+      _logResponseHeaders: Boolean,
+      elapsed: Option[Duration]
+  ): F[Unit] = {
     logger(
       responseLogLevel(response.code), {
         val responseAsString =
           response
             .copy(body = responseBody.getOrElse(""))
-            .show(responseBody.isDefined, logResponseHeaders, sensitiveHeaders)
-        s"Request: ${request.showBasic}${took(elapsed)}, response: $responseAsString"
+            .show(logResponseBody, _logResponseHeaders, sensitiveHeaders)
+        s"Request: $showBasic${took(elapsed)}, response: $responseAsString"
       }
     )
+  }
 
   override def requestException(request: Request[_, _], elapsed: Option[Duration], e: Exception): F[Unit] = {
     @tailrec def findHttpError(exception: Throwable): Option[HttpError[_]] =
