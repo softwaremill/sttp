@@ -42,14 +42,7 @@ class ToCurlConverter[R <: RequestT[Identity, _, _]] {
 
   private def extractBody(r: R): String = {
     r.body match {
-      case StringBody(text, _, _)
-          if r.headers
-            .map(h => (h.name, h.value))
-            .toMap
-            .get(HeaderNames.ContentType)
-            .forall(_ == MediaType.ApplicationXWwwFormUrlencoded.toString) =>
-        s"""--form '${text.replace("'", "\\'")}'"""
-      case StringBody(text, _, _) => s"""--data '${text.replace("'", "\\'")}'"""
+      case StringBody(text, _, _) => s"""--data-raw '${text.replace("'", "\\'")}'"""
       case ByteArrayBody(_, _)    => s"--data-binary <PLACEHOLDER>"
       case ByteBufferBody(_, _)   => s"--data-binary <PLACEHOLDER>"
       case InputStreamBody(_, _)  => s"--data-binary <PLACEHOLDER>"

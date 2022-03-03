@@ -47,19 +47,19 @@ class ToCurlConverterTest extends AnyFlatSpec with Matchers with ToCurlConverter
 
   it should "convert request with body" in {
     basicRequest.body(Map("name" -> "john", "org" -> "sml")).post(localhost).toCurl should include(
-      "--header 'Content-Type: application/x-www-form-urlencoded' \\\n  --header 'Content-Length: 17' \\\n  --form 'name=john&org=sml'"
+      "--header 'Content-Type: application/x-www-form-urlencoded' \\\n  --header 'Content-Length: 17' \\\n  --data-raw 'name=john&org=sml'"
     )
     basicRequest.body("name=john").post(localhost).toCurl should include(
-      "--header 'Content-Type: text/plain; charset=utf-8' \\\n  --header 'Content-Length: 9' \\\n  --data 'name=john'"
+      "--header 'Content-Type: text/plain; charset=utf-8' \\\n  --header 'Content-Length: 9' \\\n  --data-raw 'name=john'"
     )
     basicRequest.body("name=john", StandardCharsets.ISO_8859_1.name()).post(localhost).toCurl should include(
-      "--header 'Content-Type: text/plain; charset=ISO-8859-1' \\\n  --header 'Content-Length: 9' \\\n  --data 'name=john'"
+      "--header 'Content-Type: text/plain; charset=ISO-8859-1' \\\n  --header 'Content-Length: 9' \\\n  --data-raw 'name=john'"
     )
     basicRequest.body("name='john'").post(localhost).toCurl should include(
-      "--header 'Content-Type: text/plain; charset=utf-8' \\\n  --header 'Content-Length: 11' \\\n  --data 'name=\\'john\\''"
+      "--header 'Content-Type: text/plain; charset=utf-8' \\\n  --header 'Content-Length: 11' \\\n  --data-raw 'name=\\'john\\''"
     )
     basicRequest.body("name=\"john\"").post(localhost).toCurl should include(
-      "--header 'Content-Type: text/plain; charset=utf-8' \\\n  --header 'Content-Length: 11' \\\n  --data 'name=\"john\"'"
+      "--header 'Content-Type: text/plain; charset=utf-8' \\\n  --header 'Content-Length: 11' \\\n  --data-raw 'name=\"john\"'"
     )
   }
 
