@@ -1,11 +1,11 @@
 image:
   file: .gitpod.Dockerfile
 tasks:
-  - command: sbt
+  - command: sbt ~run
 ports:
   - port: 8212
     onOpen: ignore
 vscode:
   extensions:
-    - scala-lang.scala@0.5.5
+    - scala-lang.scala@5.5.0
     - scalameta.metals@1.12.0
