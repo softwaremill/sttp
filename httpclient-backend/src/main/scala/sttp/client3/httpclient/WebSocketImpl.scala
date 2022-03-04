@@ -105,12 +105,12 @@ private[httpclient] class AddToQueueListener[F[_]](
   }
 
   override def onPing(webSocket: JWebSocket, message: ByteBuffer): CompletionStage[_] = {
-    onFrame(WebSocketFrame.Ping(message.array()))
+    onFrame(WebSocketFrame.Ping(message.safeRead()))
     null
   }
 
   override def onPong(webSocket: JWebSocket, message: ByteBuffer): CompletionStage[_] = {
-    onFrame(WebSocketFrame.Pong(message.array()))
+    onFrame(WebSocketFrame.Pong(message.safeRead()))
     null
   }
 
