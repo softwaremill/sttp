@@ -82,12 +82,24 @@ trait SyncHttpTestExtensions {
 
   "download file" - {
 
-    "download a binary file using asFile" in {
-      withTemporaryNonExistentFile { file =>
-        val req = basicRequest.get(uri"$endpoint/download/binary").response(asFile(file))
-        val resp = req.send(backend)
-        md5FileHash(resp.body.right.get).map { _ shouldBe binaryFileMD5Hash }
-      }
+    // TODO this test do not verify actual downloaded file
+//    "download a binary file using asFile" in {
+//      withTemporaryNonExistentFile { file =>
+//        val req = basicRequest.get(uri"$endpoint/download/binary").response(asFile(file))
+//        val resp = req.send(backend)
+//        md5FileHash(resp.body.right.get).map { _ shouldBe binaryFileMD5Hash }
+//      }
+//    }
+
+    "download and save binary file using asFile" in {
+      // TODO: document
+      val path = Files.createTempFile("sttp", ".png")
+      val req = basicRequest
+        .copy(options = basicRequest.options.copy(binaryFile = Some(path.toString)))
+        .get(uri"$endpoint/download/binary")
+        .response(asString)
+      Files.deleteIfExists(path)
+      req.send(backend).body shouldBe "File saved successfully"
     }
 
     "download a text file using asFile" in {

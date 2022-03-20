@@ -1,14 +1,13 @@
 package sttp.client3
 
 import java.io.ByteArrayInputStream
-
 import sttp.client3.curl.CurlApi._
 import sttp.client3.curl.CurlCode.CurlCode
 import sttp.client3.curl.CurlInfo._
 import sttp.client3.curl.CurlOption.{Header => _, _}
 import sttp.client3.curl._
 import sttp.client3.internal._
-import sttp.client3.ws.{NotAWebSocketException, GotAWebSocketException}
+import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.capabilities.Effect
 import sttp.model._
 import sttp.monad.MonadError
@@ -17,6 +16,7 @@ import sttp.model.{Header, Method, ResponseMetadata, StatusCode}
 
 import scala.collection.immutable.Seq
 import scala.io.Source
+import scala.scalanative.libc.stdio.{FILE, fclose, fopen}
 import scala.scalanative.unsafe
 import scala.scalanative.libc.stdlib._
 import scala.scalanative.libc.string._
@@ -57,45 +57,68 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
       }
 
       val spaces = responseSpace
-      curl.option(WriteFunction, AbstractCurlBackend.wdFunc)
-      curl.option(WriteData, spaces.bodyResp)
-      curl.option(HeaderData, spaces.headersResp)
-      curl.option(Url, request.uri.toString)
-      curl.option(TimeoutMs, request.options.readTimeout.toMillis)
-      setMethod(curl, request.method)
+      // TODO: Refactor
+      request.options.binaryFile match {
+        case Some(path) =>
+          val outputFilePtr: Ptr[FILE] = fopen(toCString(path), toCString("wb"))
+          curl.option(WriteData, outputFilePtr)
+          curl.option(Url, request.uri.toString)
+          setMethod(curl, request.method)
+          setRequestBody(curl, request.body)
+          responseMonad.flatMap(lift(curl.perform)) { _ =>
+            curl.info(ResponseCode, spaces.httpCode)
+            val httpCode = StatusCode((!spaces.httpCode).toInt)
+            if (headers.ptr != null) headers.ptr.free()
+            multiPartHeaders.foreach(_.ptr.free())
+            free(spaces.httpCode.asInstanceOf[Ptr[CSignedChar]])
+            fclose(outputFilePtr)
+            curl.cleanup()
+            responseMonad.unit(
+              Response[T](
+                code = httpCode,
+                body = "File saved successfully".asInstanceOf[T]
+              )
+            )
+          }
+        case None =>
+          curl.option(WriteFunction, AbstractCurlBackend.wdFunc)
+          curl.option(WriteData, spaces.bodyResp)
+          curl.option(TimeoutMs, request.options.readTimeout.toMillis)
+          curl.option(HeaderData, spaces.headersResp)
+          curl.option(Url, request.uri.toString)
+          setMethod(curl, request.method)
+          setRequestBody(curl, request.body)
+          responseMonad.flatMap(lift(curl.perform)) { _ =>
+            curl.info(ResponseCode, spaces.httpCode)
+            val responseBody = fromCString((!spaces.bodyResp)._1)
+            val responseHeaders_ = parseHeaders(fromCString((!spaces.headersResp)._1))
+            val httpCode = StatusCode((!spaces.httpCode).toInt)
 
-      setRequestBody(curl, request.body)
+            if (headers.ptr != null) headers.ptr.free()
+            multiPartHeaders.foreach(_.ptr.free())
+            free((!spaces.bodyResp)._1)
+            free((!spaces.headersResp)._1)
+            free(spaces.bodyResp.asInstanceOf[Ptr[CSignedChar]])
+            free(spaces.headersResp.asInstanceOf[Ptr[CSignedChar]])
+            free(spaces.httpCode.asInstanceOf[Ptr[CSignedChar]])
+            curl.cleanup()
 
-      responseMonad.flatMap(lift(curl.perform)) { _ =>
-        curl.info(ResponseCode, spaces.httpCode)
-        val responseBody = fromCString((!spaces.bodyResp)._1)
-        val responseHeaders_ = parseHeaders(fromCString((!spaces.headersResp)._1))
-        val httpCode = StatusCode((!spaces.httpCode).toInt)
+            val statusText = responseHeaders_.head.name.split(" ").last
+            val responseHeaders = responseHeaders_.tail
+            val responseMetadata = ResponseMetadata(httpCode, statusText, responseHeaders)
 
-        if (headers.ptr != null) headers.ptr.free()
-        multiPartHeaders.foreach(_.ptr.free())
-        free((!spaces.bodyResp)._1)
-        free((!spaces.headersResp)._1)
-        free(spaces.bodyResp.asInstanceOf[Ptr[CSignedChar]])
-        free(spaces.headersResp.asInstanceOf[Ptr[CSignedChar]])
-        free(spaces.httpCode.asInstanceOf[Ptr[CSignedChar]])
-        curl.cleanup()
-
-        val statusText = responseHeaders_.head.name.split(" ").last
-        val responseHeaders = responseHeaders_.tail
-        val responseMetadata = ResponseMetadata(httpCode, statusText, responseHeaders)
-
-        val body: F[T] = bodyFromResponseAs(request.response, responseMetadata, Left(responseBody))
-        responseMonad.map(body) { b =>
-          Response[T](
-            body = b,
-            code = httpCode,
-            statusText = statusText,
-            headers = responseHeaders,
-            history = Nil,
-            request = request.onlyMetadata
-          )
-        }
+            val body: F[T] = bodyFromResponseAs(request.response, responseMetadata, Left(responseBody))
+            responseMonad.map(body) { b =>
+              Response[T](
+                body = b,
+                code = httpCode,
+                statusText = statusText,
+                headers = responseHeaders,
+                history = Nil,
+                request = request.onlyMetadata
+              )
+            }
+          }
       }
     }
 
