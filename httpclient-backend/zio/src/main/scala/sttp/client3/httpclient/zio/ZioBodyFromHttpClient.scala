@@ -42,7 +42,7 @@ private[zio] class ZioBodyFromHttpClient extends BodyFromHttpClient[Task, ZioStr
           case Right(file) =>
             ZIO.succeed(
               for {
-                fileChannel <- Stream.managed(
+                fileChannel <- Stream.scoped(
                   AsynchronousFileChannel.open(Path.fromJava(file.toPath), StandardOpenOption.READ)
                 )
                 bytes <- readAllBytes(fileChannel)
@@ -63,7 +63,7 @@ private[zio] class ZioBodyFromHttpClient extends BodyFromHttpClient[Task, ZioStr
           file: SttpFile
       ): Task[SttpFile] = response
         .run({
-          ZSink.unwrapManaged(
+          ZSink.unwrapScoped(
             AsynchronousFileChannel
               .open(Path.fromJava(file.toPath), StandardOpenOption.WRITE, StandardOpenOption.CREATE)
               .map { fileChannel =>
