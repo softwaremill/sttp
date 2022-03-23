@@ -437,5 +437,5 @@ case class RequestOptions(
     readTimeout: Duration,
     maxRedirects: Int,
     redirectToGet: Boolean,
-    binaryFile: Option[String] = None
+    binaryFile: Boolean = false
 )

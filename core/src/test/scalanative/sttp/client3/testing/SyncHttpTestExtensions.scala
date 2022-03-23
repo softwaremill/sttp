@@ -1,11 +1,11 @@
 package sttp.client3.testing
 
+import sttp.client3._
+import sttp.model.{Header, StatusCode}
+
 import java.io.File
 import java.nio.file.Files
 import java.security.MessageDigest
-
-import sttp.client3._
-import sttp.model.StatusCode
 
 trait SyncHttpTestExtensions {
   self: SyncHttpTest =>
@@ -92,14 +92,17 @@ trait SyncHttpTestExtensions {
 //    }
 
     "download and save binary file using asFile" in {
-      // TODO: document
       val path = Files.createTempFile("sttp", ".png")
       val req = basicRequest
-        .copy(options = basicRequest.options.copy(binaryFile = Some(path.toString)))
+        .copy(options = basicRequest.options.copy(binaryFile = true))
         .get(uri"$endpoint/download/binary")
-        .response(asString)
-      Files.deleteIfExists(path)
-      req.send(backend).body shouldBe "File saved successfully"
+        .response(asFile(new File(path.toString)))
+      val wasDeleted = Files.deleteIfExists(path)
+      val response = req.send(backend)
+      val body: File = response.body.right.get
+      wasDeleted shouldBe true
+      response.headers should contain only Header.contentLength(body.length())
+      body.toPath shouldBe path
     }
 
     "download a text file using asFile" in {

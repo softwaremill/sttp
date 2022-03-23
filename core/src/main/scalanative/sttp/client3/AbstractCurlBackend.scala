@@ -1,6 +1,6 @@
 package sttp.client3
 
-import java.io.ByteArrayInputStream
+import sttp.capabilities.Effect
 import sttp.client3.curl.CurlApi._
 import sttp.client3.curl.CurlCode.CurlCode
 import sttp.client3.curl.CurlInfo._
@@ -8,20 +8,19 @@ import sttp.client3.curl.CurlOption.{Header => _, _}
 import sttp.client3.curl._
 import sttp.client3.internal._
 import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
-import sttp.capabilities.Effect
 import sttp.model._
 import sttp.monad.MonadError
 import sttp.monad.syntax._
-import sttp.model.{Header, Method, ResponseMetadata, StatusCode}
 
+import java.io.ByteArrayInputStream
 import scala.collection.immutable.Seq
 import scala.io.Source
 import scala.scalanative.libc.stdio.{FILE, fclose, fopen}
-import scala.scalanative.unsafe
 import scala.scalanative.libc.stdlib._
 import scala.scalanative.libc.string._
-import scala.scalanative.unsigned._
+import scala.scalanative.unsafe
 import scala.scalanative.unsafe.{CSize, Ptr, _}
+import scala.scalanative.unsigned._
 
 abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean) extends SttpBackend[F, Any] {
   override implicit val responseMonad: MonadError[F] = monad
@@ -57,10 +56,10 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
       }
 
       val spaces = responseSpace
-      // TODO: Refactor
-      request.options.binaryFile match {
-        case Some(path) =>
-          val outputFilePtr: Ptr[FILE] = fopen(toCString(path), toCString("wb"))
+      BinaryFileHelper.getFilePath(request.response, request.options.binaryFile) match {
+        case Some(file) =>
+          val outputPath = file.toPath.toString
+          val outputFilePtr: Ptr[FILE] = fopen(toCString(outputPath), toCString("wb"))
           curl.option(WriteData, outputFilePtr)
           curl.option(Url, request.uri.toString)
           setMethod(curl, request.method)
@@ -73,12 +72,18 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
             free(spaces.httpCode.asInstanceOf[Ptr[CSignedChar]])
             fclose(outputFilePtr)
             curl.cleanup()
-            responseMonad.unit(
+            val responseMetadata = ResponseMetadata(httpCode, "", List.empty)
+            val body: F[T] = bodyForBinaryFile(request.response, responseMetadata, Left(outputPath))
+            responseMonad.map(body) { b =>
               Response[T](
+                body = b,
                 code = httpCode,
-                body = "File saved successfully".asInstanceOf[T]
+                statusText = "",
+                headers = List(Header.contentLength(file.size)),
+                history = Nil,
+                request = request.onlyMetadata
               )
-            )
+            }
           }
         case None =>
           curl.option(WriteFunction, AbstractCurlBackend.wdFunc)
@@ -93,7 +98,6 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
             val responseBody = fromCString((!spaces.bodyResp)._1)
             val responseHeaders_ = parseHeaders(fromCString((!spaces.headersResp)._1))
             val httpCode = StatusCode((!spaces.httpCode).toInt)
-
             if (headers.ptr != null) headers.ptr.free()
             multiPartHeaders.foreach(_.ptr.free())
             free((!spaces.bodyResp)._1)
@@ -236,6 +240,25 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
     ): F[Unit] = ().unit
 
     override protected def cleanupWhenGotWebSocket(response: Nothing, e: GotAWebSocketException): F[Unit] = response
+  }
+
+  private lazy val bodyForBinaryFile = new BodyFromResponseAs[F, String, Nothing, Nothing] {
+    override protected def withReplayableBody(
+        response: String,
+        replayableBody: Either[Array[CChar], SttpFile]
+    ): F[String] = ???
+    override protected def regularIgnore(response: String): F[Unit] = ???
+    override protected def regularAsByteArray(response: String): F[Array[CChar]] = ???
+    override protected def regularAsFile(response: String, file: SttpFile): F[SttpFile] =
+      responseMonad.unit(file)
+    override protected def regularAsStream(response: String): F[(Nothing, () => F[Unit])] = ???
+    override protected def handleWS[T](
+        responseAs: WebSocketResponseAs[T, _],
+        meta: ResponseMetadata,
+        ws: Nothing
+    ): F[T] = ???
+    override protected def cleanupWhenNotAWebSocket(response: String, e: NotAWebSocketException): F[Unit] = ???
+    override protected def cleanupWhenGotWebSocket(response: Nothing, e: GotAWebSocketException): F[Unit] = ???
   }
 
   private def transformHeaders(reqHeaders: Iterable[Header])(implicit z: Zone): CurlList = {
