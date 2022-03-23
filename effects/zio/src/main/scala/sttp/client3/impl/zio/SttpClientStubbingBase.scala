@@ -77,10 +77,10 @@ trait SttpClientStubbingBase[R, P] {
       stubber = new StubWrapper(stub): SttpClientStubbing
       proxy = new SttpBackend[RIO[R, *], P] {
         override def send[T, RR >: P with Effect[RIO[R, *]]](request: Request[T, RR]): RIO[R, Response[T]] =
-          stub.get >>= (_.send(request))
+          stub.get.flatMap(_.send(request))
 
         override def close(): RIO[R, Unit] =
-          stub.get >>= (_.close())
+          stub.get.flatMap(_.close())
 
         override def responseMonad: MonadError[RIO[R, *]] = monad
       }: SttpBackend[RIO[R, *], P]
