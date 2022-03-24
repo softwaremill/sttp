@@ -94,7 +94,6 @@ trait SyncHttpTestExtensions {
     "download and save binary file using asFile" in {
       val path = Files.createTempFile("sttp", ".png")
       val req: RequestT[Identity, Either[String, File], Any] = basicRequest
-        .copy(options = basicRequest.options.copy(binaryFile = true))
         .get(uri"$endpoint/download/binary")
         .response(asFile(new File(path.toString)))
       val wasDeleted = Files.deleteIfExists(path)

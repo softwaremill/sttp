@@ -431,11 +431,9 @@ class SpecifyAuthScheme[U[_], T, -R](hn: String, rt: RequestT[U, T, R], digestTa
   }
 }
 
-// TODO replace with tag
 case class RequestOptions(
     followRedirects: Boolean,
     readTimeout: Duration,
     maxRedirects: Int,
-    redirectToGet: Boolean,
-    binaryFile: Boolean = false
+    redirectToGet: Boolean
 )

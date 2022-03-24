@@ -12,7 +12,6 @@ import sttp.model._
 import sttp.monad.MonadError
 import sttp.monad.syntax._
 
-import java.io.ByteArrayInputStream
 import scala.collection.immutable.Seq
 import scala.io.Source
 import scala.scalanative.libc.stdio.{FILE, fclose, fopen}
@@ -56,7 +55,7 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
       }
 
       val spaces = responseSpace
-      BinaryFileHelper.getFilePath(request.response, request.options.binaryFile) match {
+      BinaryFileHelper.getFilePath(request.response) match {
         case Some(file) =>
           val outputPath = file.toPath.toString
           val outputFilePtr: Ptr[FILE] = fopen(toCString(outputPath), toCString("wb"))
@@ -73,7 +72,7 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
             fclose(outputFilePtr)
             curl.cleanup()
             val responseMetadata = ResponseMetadata(httpCode, "", List.empty)
-            val body: F[T] = bodyForBinaryFile(request.response, responseMetadata, Left(outputPath))
+            val body: F[T] = bodyFromResponseAs(request.response, responseMetadata, Left(outputPath))
             responseMonad.map(body) { b =>
               Response[T](
                 body = b,
@@ -218,12 +217,7 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
     override protected def regularAsByteArray(response: String): F[Array[Byte]] = toByteArray(response)
 
     override protected def regularAsFile(response: String, file: SttpFile): F[SttpFile] =
-      responseMonad
-        .map(toByteArray(response)) { a =>
-          val is = new ByteArrayInputStream(a)
-          val f = FileHelpers.saveFile(file.toFile, is)
-          SttpFile.fromFile(f)
-        }
+      responseMonad.unit(file)
 
     override protected def regularAsStream(response: String): F[(Nothing, () => F[Unit])] =
       throw new IllegalStateException("CurlBackend does not support streaming responses")
@@ -240,25 +234,6 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
     ): F[Unit] = ().unit
 
     override protected def cleanupWhenGotWebSocket(response: Nothing, e: GotAWebSocketException): F[Unit] = response
-  }
-
-  private lazy val bodyForBinaryFile = new BodyFromResponseAs[F, String, Nothing, Nothing] {
-    override protected def withReplayableBody(
-        response: String,
-        replayableBody: Either[Array[CChar], SttpFile]
-    ): F[String] = ???
-    override protected def regularIgnore(response: String): F[Unit] = ???
-    override protected def regularAsByteArray(response: String): F[Array[CChar]] = ???
-    override protected def regularAsFile(response: String, file: SttpFile): F[SttpFile] =
-      responseMonad.unit(file)
-    override protected def regularAsStream(response: String): F[(Nothing, () => F[Unit])] = ???
-    override protected def handleWS[T](
-        responseAs: WebSocketResponseAs[T, _],
-        meta: ResponseMetadata,
-        ws: Nothing
-    ): F[T] = ???
-    override protected def cleanupWhenNotAWebSocket(response: String, e: NotAWebSocketException): F[Unit] = ???
-    override protected def cleanupWhenGotWebSocket(response: Nothing, e: GotAWebSocketException): F[Unit] = ???
   }
 
   private def transformHeaders(reqHeaders: Iterable[Header])(implicit z: Zone): CurlList = {
