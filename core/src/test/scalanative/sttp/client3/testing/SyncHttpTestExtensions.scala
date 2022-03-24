@@ -82,33 +82,21 @@ trait SyncHttpTestExtensions {
 
   "download file" - {
 
-    // TODO this test do not verify actual downloaded file
-//    "download a binary file using asFile" in {
-//      withTemporaryNonExistentFile { file =>
-//        val req = basicRequest.get(uri"$endpoint/download/binary").response(asFile(file))
-//        val resp = req.send(backend)
-//        md5FileHash(resp.body.right.get).map { _ shouldBe binaryFileMD5Hash }
-//      }
-//    }
-
-    "download and save binary file using asFile" in {
-      val path = Files.createTempFile("sttp", ".png")
-      val req: RequestT[Identity, Either[String, File], Any] = basicRequest
-        .get(uri"$endpoint/download/binary")
-        .response(asFile(new File(path.toString)))
-      val wasDeleted = Files.deleteIfExists(path)
-      val response: Identity[Response[Either[String, File]]] = req.send(backend)
-      val body: File = response.body.right.get
-      wasDeleted shouldBe true
-      response.headers should contain only Header.contentLength(body.length())
-      body.toPath shouldBe path
+    "download a binary file using asFile" in {
+      withTemporaryNonExistentFile { file =>
+        val req = basicRequest.get(uri"$endpoint/download/binary").response(asFile(file))
+        val resp = req.send(backend)
+        val actualHash = md5FileHash(resp.body.right.get)
+        actualHash shouldBe binaryFileMD5Hash
+      }
     }
 
     "download a text file using asFile" in {
       withTemporaryNonExistentFile { file =>
         val req = basicRequest.get(uri"$endpoint/download/text").response(asFile(file))
         val resp = req.send(backend)
-        md5FileHash(resp.body.right.get).map { _ shouldBe textFileMD5Hash }
+        val actualHash = md5FileHash(resp.body.right.get)
+        actualHash shouldBe textFileMD5Hash
       }
     }
   }
