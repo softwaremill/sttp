@@ -60,6 +60,7 @@ trait SyncHttpTestExtensions {
     result
   }
 
+  // TODO: there can be a problem here - investigate
   private def md5Hash(bytes: Array[Byte]): String = {
     val md = MessageDigest.getInstance("MD5")
     md.update(bytes, 0, bytes.length)
