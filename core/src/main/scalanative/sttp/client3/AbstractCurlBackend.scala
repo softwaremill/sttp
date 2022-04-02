@@ -57,11 +57,13 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
       val spaces = responseSpace
       FileHelpers.getFilePath(request.response) match {
         case Some(file) => handleFile(request, curl, file, spaces)
-        case None => handleBase(request, curl, spaces)
+        case None       => handleBase(request, curl, spaces)
       }
     }
 
-  private def handleBase[R >: PE, T](request: Request[T, R], curl: CurlHandle, spaces: CurlSpaces)(implicit z: unsafe.Zone) = {
+  private def handleBase[R >: PE, T](request: Request[T, R], curl: CurlHandle, spaces: CurlSpaces)(implicit
+      z: unsafe.Zone
+  ) = {
     curl.option(WriteFunction, AbstractCurlBackend.wdFunc)
     curl.option(WriteData, spaces.bodyResp)
     curl.option(TimeoutMs, request.options.readTimeout.toMillis)
@@ -101,7 +103,9 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
     }
   }
 
-  private def handleFile[R >: PE, T](request: Request[T, R], curl: CurlHandle, file: SttpFile, spaces: CurlSpaces)(implicit z: unsafe.Zone) = {
+  private def handleFile[R >: PE, T](request: Request[T, R], curl: CurlHandle, file: SttpFile, spaces: CurlSpaces)(
+      implicit z: unsafe.Zone
+  ) = {
     val outputPath = file.toPath.toString
     val outputFilePtr: Ptr[FILE] = fopen(toCString(outputPath), toCString("wb"))
     curl.option(WriteData, outputFilePtr)

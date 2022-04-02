@@ -85,7 +85,8 @@ trait SyncHttpTestExtensions {
 
     "download a binary file using asFile" in {
       withTemporaryNonExistentFile { file =>
-        val req: RequestT[Identity, Either[String, File], Any] = basicRequest.get(uri"$endpoint/download/binary").response(asFile(file))
+        val req: RequestT[Identity, Either[String, File], Any] =
+          basicRequest.get(uri"$endpoint/download/binary").response(asFile(file))
         val resp: Identity[Response[Either[String, File]]] = req.send(backend)
         val body = resp.body.right.get
         resp.headers should contain only Header.contentLength(body.length())
@@ -95,7 +96,8 @@ trait SyncHttpTestExtensions {
 
     "download a text file using asFile" in {
       withTemporaryNonExistentFile { file =>
-        val req: RequestT[Identity, Either[String, File], Any] = basicRequest.get(uri"$endpoint/download/text").response(asFile(file))
+        val req: RequestT[Identity, Either[String, File], Any] =
+          basicRequest.get(uri"$endpoint/download/text").response(asFile(file))
         val resp: Identity[Response[Either[String, File]]] = req.send(backend)
         val body = resp.body.right.get
         resp.headers should contain only Header.contentLength(body.length())
