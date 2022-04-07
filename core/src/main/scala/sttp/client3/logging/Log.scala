@@ -53,7 +53,7 @@ class DefaultLog[F[_]](
     logger(
       beforeRequestSendLogLevel, {
         s"Sending request: ${
-            if (beforeCurlInsteadOfShow && _logRequestBody && _logRequestHeaders) request.toCurl
+            if (beforeCurlInsteadOfShow && _logRequestBody && _logRequestHeaders) request.toCurl(sensitiveHeaders)
             else request.show(includeBody = _logRequestBody, _logRequestHeaders, sensitiveHeaders)
           }"
       }
