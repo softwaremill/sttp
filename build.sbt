@@ -991,7 +991,7 @@ lazy val zioTelemetryOpenTelemetryBackend = (projectMatrix in file("metrics/zio-
   .settings(
     name := "zio-telemetry-opentelemetry-backend",
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-opentelemetry" % "2.0.0-RC1",
+      "dev.zio" %% "zio-opentelemetry" % "2.0.0-RC2",
       "io.opentelemetry" % "opentelemetry-sdk-testing" % "1.12.0" % Test
     ),
     scalaTest
@@ -1005,7 +1005,7 @@ lazy val zioTelemetryOpenTracingBackend = (projectMatrix in file("metrics/zio-te
   .settings(
     name := "zio-telemetry-opentracing-backend",
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-opentracing" % "2.0.0-RC1",
+      "dev.zio" %% "zio-opentracing" % "2.0.0-RC2",
       "org.scala-lang.modules" %% "scala-collection-compat" % "2.7.0"
     )
   )
