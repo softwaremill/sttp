@@ -29,3 +29,6 @@ project/metals.sbt
 
 # scala-native
 lowered.hnir
+
+# VSCode
+.vscode/

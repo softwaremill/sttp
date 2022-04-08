@@ -14,6 +14,7 @@ import com.twitter.io.Buf
 import com.twitter.io.Buf.{ByteArray, ByteBuffer}
 import com.twitter.util
 import com.twitter.util.{Duration, Future => TFuture}
+import java.util.concurrent.ConcurrentHashMap
 import sttp.capabilities.Effect
 import sttp.client3.internal.{BodyFromResponseAs, FileHelpers, SttpFile, Utf8}
 import sttp.client3.testing.SttpBackendStub
@@ -38,11 +39,12 @@ import sttp.client3.{
 import sttp.model._
 import sttp.monad.MonadError
 import sttp.monad.syntax._
-
 import scala.io.Source
+import scala.jdk.CollectionConverters._
 
 class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture, Any] {
   type PE = Any with Effect[TFuture]
+  private[this] val clientCache = new ConcurrentHashMap[String, Service[http.Request, FResponse]].asScala
   override def send[T, R >: PE](request: Request[T, R]): TFuture[Response[T]] =
     adjustExceptions(request) {
       val service = getClient(client, request)
@@ -204,9 +206,13 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
         case _             => Http.client
       }
     }
-    client
-      .withRequestTimeout(Duration.fromMilliseconds(request.options.readTimeout.toMillis))
-      .newService(uriToFinagleDestination(request.uri))
+    val finagleDest = uriToFinagleDestination(request.uri)
+    clientCache.getOrElseUpdate(
+      finagleDest,
+      client
+        .withRequestTimeout(Duration.fromMilliseconds(request.options.readTimeout.toMillis))
+        .newService(finagleDest)
+    )
   }
 
   private def uriToFinagleDestination(uri: Uri): String = {
