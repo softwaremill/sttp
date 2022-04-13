@@ -58,7 +58,7 @@ class SttpBackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFuture
       resp <- r1 <&> r2 <&> r3
     } yield resp
 
-    runtime.unsafeRun(effect.provideCustomLayer(HttpClientZioBackend.stubLayer)) shouldBe
+    runtime.unsafeRun(effect.provide(HttpClientZioBackend.stubLayer)) shouldBe
       ((Right("a"), Right("b"), Right("c")))
   }
 
@@ -69,7 +69,7 @@ class SttpBackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFuture
     val effect = (for {
       _ <- whenAnyRequest.thenRespondCyclic("a", "b", "c")
       resp <- ZStream.repeatZIO(send(r)).take(4).runCollect
-    } yield resp).provideCustomLayer(HttpClientZioBackend.stubLayer)
+    } yield resp).provide(HttpClientZioBackend.stubLayer)
 
     runtime.unsafeRun(effect).map(_.body).toList shouldBe List(Right("a"), Right("b"), Right("c"), Right("a"))
   }

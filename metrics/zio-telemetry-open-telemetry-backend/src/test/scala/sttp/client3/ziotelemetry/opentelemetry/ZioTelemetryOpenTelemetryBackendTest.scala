@@ -10,7 +10,7 @@ import sttp.client3.impl.zio.{RIOMonadAsyncError, ZioTestBase}
 import sttp.client3.testing.SttpBackendStub
 import sttp.client3.{Request, Response, SttpBackend, UriContext, basicRequest}
 import sttp.model.StatusCode
-import zio.Task
+import zio.{Task, ZIO}
 import zio.telemetry.opentelemetry.Tracing
 import scala.collection.JavaConverters._
 
@@ -24,7 +24,7 @@ class ZioTelemetryOpenTelemetryBackendTest extends AnyFlatSpec with Matchers wit
 
   private val mockTracer =
     SdkTracerProvider.builder().addSpanProcessor(SimpleSpanProcessor.create(spanExporter)).build().get(getClass.getName)
-  private val mockTracing = runtime.unsafeRun(Tracing.managed(mockTracer).useNow)
+  private val mockTracing = runtime.unsafeRun(ZIO.scoped(Tracing.scoped(mockTracer)))
 
   private val backend: SttpBackend[Task, Any] =
     ZioTelemetryOpenTelemetryBackend(

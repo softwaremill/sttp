@@ -9,7 +9,7 @@ import zio.Console
 
 object GetAndParseJsonZioCirce extends ZIOAppDefault {
 
-  override def run: ZIO[ZEnv, Nothing, ExitCode] = {
+  override def run: ZIO[Any, Throwable, Unit] = {
 
     case class HttpBinResponse(origin: String, headers: Map[String, String])
 
@@ -25,10 +25,9 @@ object GetAndParseJsonZioCirce extends ZIOAppDefault {
       _ <- Console.printLine(response.body.toString)
     } yield ()
 
-    // provide an implementation for the SttpClient dependency; other dependencies are
-    // provided by Zio
+    // provide an implementation for the SttpClient and Console dependencies
     sendAndPrint
-      .provideCustomLayer(AsyncHttpClientZioBackend.layer())
-      .exitCode
+      .provide(AsyncHttpClientZioBackend.layer(), Console.live)
+
   }
 }

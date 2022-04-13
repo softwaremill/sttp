@@ -143,12 +143,12 @@ val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", 
 )
 
 val zio1Version = "1.0.13"
-val zio2Version = "2.0.0-RC3"
+val zio2Version = "2.0.0-RC5"
 val zio1InteropRsVersion = "1.3.9"
-val zio2InteropRsVersion = "2.0.0-RC4"
+val zio2InteropRsVersion = "2.0.0-RC6"
 
 val sttpModelVersion = "1.4.25"
-val sttpSharedVersion = "1.3.2"
+val sttpSharedVersion = "1.3.4"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.2.11"
 
@@ -697,7 +697,7 @@ lazy val httpClientZioBackend =
       libraryDependencies ++=
         Seq(
           "dev.zio" %% "zio-interop-reactivestreams" % zio2InteropRsVersion,
-          "dev.zio" %% "zio-nio" % "2.0.0-RC3-1"
+          "dev.zio" %% "zio-nio" % "2.0.0-RC6"
         )
     )
     .dependsOn(zio % compileAndTest)
@@ -845,7 +845,7 @@ lazy val zioJson = (projectMatrix in file("json/zio-json"))
   .settings(
     name := "zio-json",
     libraryDependencies ++= Seq(
-      "dev.zio" %%% "zio-json" % "0.3.0-RC4",
+      "dev.zio" %%% "zio-json" % "0.3.0-RC7",
       "com.softwaremill.sttp.shared" %%% "zio" % sttpSharedVersion
     ),
     scalaTest
@@ -991,7 +991,7 @@ lazy val zioTelemetryOpenTelemetryBackend = (projectMatrix in file("metrics/zio-
   .settings(
     name := "zio-telemetry-opentelemetry-backend",
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-opentelemetry" % "2.0.0-RC1",
+      "dev.zio" %% "zio-opentelemetry" % "2.0.0-RC2",
       "io.opentelemetry" % "opentelemetry-sdk-testing" % "1.12.0" % Test
     ),
     scalaTest
@@ -1005,7 +1005,7 @@ lazy val zioTelemetryOpenTracingBackend = (projectMatrix in file("metrics/zio-te
   .settings(
     name := "zio-telemetry-opentracing-backend",
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-opentracing" % "2.0.0-RC1",
+      "dev.zio" %% "zio-opentracing" % "2.0.0-RC2",
       "org.scala-lang.modules" %% "scala-collection-compat" % "2.7.0"
     )
   )
