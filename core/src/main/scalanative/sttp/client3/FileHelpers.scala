@@ -1,9 +1,9 @@
 package sttp.client3
 
+import sttp.client3.internal._
+
 import java.io.{File, FileOutputStream, IOException, InputStream}
 import java.nio.file.AccessDeniedException
-
-import sttp.client3.internal._
 
 object FileHelpers {
   private[client3] def saveFile(file: File, is: InputStream): File = {
@@ -22,5 +22,17 @@ object FileHelpers {
 
     transfer(is, os)
     file
+  }
+
+  private[client3] def getFilePath[T, R](response: ResponseAs[T, R]): Option[SttpFile] = {
+    response match {
+      case MappedResponseAs(raw, g, _) => getFilePath(raw)
+      case rfm: ResponseAsFromMetadata[T, _] =>
+        rfm.conditions
+          .flatMap(c => getFilePath(c.responseAs))
+          .headOption
+      case ResponseAsFile(file) => Some(file)
+      case _                    => None
+    }
   }
 }

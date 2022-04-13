@@ -90,6 +90,6 @@ Class                            Effect type                  Supported stream t
 
 Finally, there are third-party backends:
 
-* [sttp-play-ws](https://github.com/ragb/sttp-play-ws) for "standard" play-ws (not standalone).
+* [sttp-play-ws](https://github.com/scalamania/sttp-play-ws) for "standard" play-ws (not standalone).
 * [akkaMonixSttpBackend](https://github.com/fullfacing/akkaMonixSttpBackend), an Akka-based backend, but using Monix's `Task` & `Observable`.
 * [be-kind-rewind](https://github.com/reibitto/be-kind-rewind), a VCR testing library for Scala

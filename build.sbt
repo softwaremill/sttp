@@ -11,7 +11,7 @@ val scala2_11 = "2.11.12"
 val scala2_12 = "2.12.15"
 val scala2_13 = "2.13.8"
 val scala2 = List(scala2_11, scala2_12, scala2_13)
-val scala3 = List("3.1.1")
+val scala3 = List("3.1.2")
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests")
@@ -122,8 +122,8 @@ val playJsonVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.7.4"
   case _             => "2.9.2"
 }
-val catsEffect_3_version = "3.3.8"
-val fs2_3_version = "3.2.5"
+val catsEffect_3_version = "3.3.11"
+val fs2_3_version = "3.2.7"
 
 val catsEffect_2_version: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.0.0"
@@ -142,7 +142,7 @@ val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", 
   "org.scalatest" %%% s"scalatest-$m" % "3.2.11" % Test
 )
 
-val zio1Version = "1.0.13"
+val zio1Version = "1.0.14"
 val zio2Version = "2.0.0-RC5"
 val zio1InteropRsVersion = "1.3.9"
 val zio2InteropRsVersion = "2.0.0-RC6"
@@ -709,7 +709,7 @@ lazy val finagleBackend = (projectMatrix in file("finagle-backend"))
   .settings(
     name := "finagle-backend",
     libraryDependencies ++= Seq(
-      "com.twitter" %% "finagle-http" % "22.2.0"
+      "com.twitter" %% "finagle-http" % "22.3.0"
     )
   )
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13))
@@ -720,7 +720,7 @@ lazy val armeriaBackend = (projectMatrix in file("armeria-backend"))
   .settings(testServerSettings)
   .settings(
     name := "armeria-backend",
-    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.14.1"
+    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.15.0"
   )
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3)
   .dependsOn(core % compileAndTest)
@@ -861,7 +861,7 @@ lazy val zio1Json = (projectMatrix in file("json/zio1-json"))
   .settings(
     name := "zio1-json",
     libraryDependencies ++= Seq(
-      "dev.zio" %%% "zio-json" % "0.2.0-M3",
+      "dev.zio" %%% "zio-json" % "0.2.0-M4",
       "com.softwaremill.sttp.shared" %%% "zio1" % sttpSharedVersion
     ),
     scalaTest
@@ -877,7 +877,7 @@ lazy val upickle = (projectMatrix in file("json/upickle"))
   .settings(
     name := "upickle",
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %%% "upickle" % "1.5.0"
+      "com.lihaoyi" %%% "upickle" % "1.6.0"
     ),
     scalaTest,
     // using macroRW causes a "match may not be exhaustive" error
@@ -891,7 +891,7 @@ lazy val upickle = (projectMatrix in file("json/upickle"))
   .nativePlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonNativeSettings)
   .dependsOn(core, jsonCommon)
 
-lazy val json4sVersion = "4.0.4"
+lazy val json4sVersion = "4.0.5"
 
 lazy val json4s = (projectMatrix in file("json/json4s"))
   .settings(commonJvmSettings)
@@ -965,7 +965,7 @@ lazy val zio1TelemetryOpenTelemetryBackend = (projectMatrix in file("metrics/zio
     libraryDependencies ++= Seq(
       "dev.zio" %% "zio-opentelemetry" % "1.0.0",
       "org.scala-lang.modules" %% "scala-collection-compat" % "2.7.0",
-      "io.opentelemetry" % "opentelemetry-sdk-testing" % "1.12.0" % Test
+      "io.opentelemetry" % "opentelemetry-sdk-testing" % "1.13.0" % Test
     ),
     scalaTest
   )
@@ -992,7 +992,7 @@ lazy val zioTelemetryOpenTelemetryBackend = (projectMatrix in file("metrics/zio-
     name := "zio-telemetry-opentelemetry-backend",
     libraryDependencies ++= Seq(
       "dev.zio" %% "zio-opentelemetry" % "2.0.0-RC2",
-      "io.opentelemetry" % "opentelemetry-sdk-testing" % "1.12.0" % Test
+      "io.opentelemetry" % "opentelemetry-sdk-testing" % "1.13.0" % Test
     ),
     scalaTest
   )
