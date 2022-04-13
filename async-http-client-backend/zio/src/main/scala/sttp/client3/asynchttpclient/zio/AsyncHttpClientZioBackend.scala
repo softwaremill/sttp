@@ -231,13 +231,15 @@ object AsyncHttpClientZioBackend {
       client: AsyncHttpClient,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
-  ): Layer[Nothing, SttpClient] =
-    ZLayer.fromAcquireRelease(
-      UIO.runtime.map((runtime: Runtime[Any]) =>
-        usingClient(runtime, client, customizeRequest, webSocketBufferCapacity)
+  ): ZLayer[Scope, Nothing, SttpClient] =
+    ZLayer.fromZIO(
+      ZIO.acquireRelease(
+        UIO.runtime.map((runtime: Runtime[Any]) =>
+          usingClient(runtime, client, customizeRequest, webSocketBufferCapacity)
+        )
+      )(
+        _.close().ignore
       )
-    )(
-      _.close().ignore
     )
 
   /** Create a stub backend for testing, which uses the [[Task]] response wrapper, and supports

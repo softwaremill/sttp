@@ -16,7 +16,8 @@ trait SttpZioJsonApiExtensions { this: SttpZioJsonApi =>
         .map(Right(_))
         .catchSome { case e => ZIO.left(DeserializationException("", e.getMessage)) }
     ).mapWithMetadata {
-      case (Left(s), meta) => Left(HttpError(s, meta.code))
-      case (Right(s), _)   => s
+      case (Left(s), meta)           => Left(HttpError(s, meta.code))
+      case (Right(Left(deserEx)), _) => Left(deserEx)
+      case (Right(Right(s)), _)      => Right(s)
     }
 }

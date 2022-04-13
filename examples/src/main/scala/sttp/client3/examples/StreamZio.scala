@@ -8,7 +8,7 @@ import zio.Console._
 import zio.stream._
 
 object StreamZio extends ZIOAppDefault {
-  def streamRequestBody: RIO[Console with SttpClient, Unit] = {
+  def streamRequestBody: RIO[SttpClient, Unit] = {
     val stream: Stream[Throwable, Byte] = Stream("Hello, world".getBytes: _*)
 
     send(
@@ -18,7 +18,7 @@ object StreamZio extends ZIOAppDefault {
     ).flatMap { response => printLine(s"RECEIVED:\n${response.body}") }
   }
 
-  def streamResponseBody: RIO[Console with SttpClient, Unit] = {
+  def streamResponseBody: RIO[SttpClient, Unit] = {
     send(
       basicRequest
         .body("I want a stream!")
@@ -27,9 +27,9 @@ object StreamZio extends ZIOAppDefault {
     ).flatMap { response => printLine(s"RECEIVED:\n${response.body}") }
   }
 
-  override def run: ZIO[ZEnv, Nothing, ExitCode] = {
+  override def run: ZIO[Any, Nothing, ExitCode] = {
     (streamRequestBody *> streamResponseBody)
-      .provideCustomLayer(AsyncHttpClientZioBackend.layer())
+      .provide(AsyncHttpClientZioBackend.layer())
       .exitCode
   }
 }

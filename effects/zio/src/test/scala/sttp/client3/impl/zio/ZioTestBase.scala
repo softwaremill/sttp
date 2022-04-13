@@ -1,13 +1,13 @@
 package sttp.client3.impl.zio
 
 import sttp.client3.testing.ConvertToFuture
-import zio.{Clock, Exit, Runtime, Task, ZEnv, durationInt}
+import zio.{Clock, Exit, Runtime, Task, durationInt}
 
 import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success}
 
 trait ZioTestBase {
-  val runtime: Runtime[ZEnv] = Runtime.default
+  val runtime: Runtime[Any] = Runtime.default
 
   val convertZioTaskToFuture: ConvertToFuture[Task] = new ConvertToFuture[Task] {
     override def toFuture[T](value: Task[T]): Future[T] = {

@@ -7,22 +7,22 @@ import zio._
 import zio.Console
 
 object WebSocketZio extends ZIOAppDefault {
-  def useWebSocket(ws: WebSocket[RIO[Console, *]]): RIO[Console, Unit] = {
+  def useWebSocket(ws: WebSocket[Task]): Task[Unit] = {
     def send(i: Int) = ws.sendText(s"Hello $i!")
-    val receive = ws.receiveText().flatMap(t => Console.printLine(s"RECEIVED: $t"))
+    val receive = ws.receiveText().flatMap(t => Console.printLine(s"RECEIVED: $t")).orDie
     send(1) *> send(2) *> receive *> receive
   }
 
-  // create a description of a program, which requires two dependencies in the environment:
-  // the SttpClient, and the Console
-  val sendAndPrint: RIO[Console with SttpClient, Response[Unit]] =
-    sendR(basicRequest.get(uri"wss://echo.websocket.org").response(asWebSocketAlways(useWebSocket)))
+  // create a description of a program, which requires one dependency in the environment:
+  // the SttpClient
+  val sendAndPrint: RIO[SttpClient, Response[Unit]] =
+    send(basicRequest.get(uri"wss://echo.websocket.org").response(asWebSocketAlways(useWebSocket)))
 
-  override def run: ZIO[ZEnv, Nothing, ExitCode] = {
+  override def run = {
     // provide an implementation for the SttpClient dependency; other dependencies are
     // provided by Zio
     sendAndPrint
-      .provideCustomLayer(AsyncHttpClientZioBackend.layer())
+      .provide(AsyncHttpClientZioBackend.layer())
       .exitCode
   }
 }
