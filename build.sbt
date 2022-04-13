@@ -11,7 +11,7 @@ val scala2_11 = "2.11.12"
 val scala2_12 = "2.12.15"
 val scala2_13 = "2.13.8"
 val scala2 = List(scala2_11, scala2_12, scala2_13)
-val scala3 = List("3.1.1")
+val scala3 = List("3.1.2")
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests")
@@ -142,7 +142,7 @@ val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", 
   "org.scalatest" %%% s"scalatest-$m" % "3.2.11" % Test
 )
 
-val zio1Version = "1.0.13"
+val zio1Version = "1.0.14"
 val zio2Version = "2.0.0-RC2"
 val zio1InteropRsVersion = "1.3.9"
 val zio2InteropRsVersion = "2.0.0-RC3"
@@ -861,7 +861,7 @@ lazy val zio1Json = (projectMatrix in file("json/zio1-json"))
   .settings(
     name := "zio1-json",
     libraryDependencies ++= Seq(
-      "dev.zio" %%% "zio-json" % "0.2.0-M3",
+      "dev.zio" %%% "zio-json" % "0.2.0-M4",
       "com.softwaremill.sttp.shared" %%% "zio1" % sttpSharedVersion
     ),
     scalaTest
@@ -877,7 +877,7 @@ lazy val upickle = (projectMatrix in file("json/upickle"))
   .settings(
     name := "upickle",
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %%% "upickle" % "1.5.0"
+      "com.lihaoyi" %%% "upickle" % "1.6.0"
     ),
     scalaTest,
     // using macroRW causes a "match may not be exhaustive" error
