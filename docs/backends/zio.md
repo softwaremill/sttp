@@ -21,7 +21,7 @@ import sttp.client3.httpclient.zio.HttpClientZioBackend
 HttpClientZioBackend().flatMap { backend => ??? }
 
 // or, if you'd like the backend to be wrapped in a Managed:
-HttpClientZioBackend.managed().use { backend => ??? }
+HttpClientZioBackend.managed().flatMap { backend => ??? }
 
 // or, if you'd like to instantiate the HttpClient yourself:
 import java.net.http.HttpClient
@@ -61,7 +61,7 @@ import sttp.client3.asynchttpclient.zio.AsyncHttpClientZioBackend
 AsyncHttpClientZioBackend().flatMap { backend => ??? }
 
 // or, if you'd like the backend to be wrapped in a Managed:
-AsyncHttpClientZioBackend.managed().use { backend => ??? }
+AsyncHttpClientZioBackend.managed().flatMap { backend => ??? }
 
 // or, if you'd like to use custom configuration:
 import org.asynchttpclient.AsyncHttpClientConfig
@@ -104,7 +104,7 @@ create client:
 ArmeriaZioBackend().flatMap { backend => ??? }
 
 // or, if you'd like the backend to be wrapped in a Managed:
-ArmeriaZioBackend.managed().use { backend => ??? }
+ArmeriaZioBackend.managed().flatMap { backend => ??? }
 
 // You can use the default client which reuses the connection pool of ClientFactory.ofDefault()
 ArmeriaZioBackend.usingDefaultClient().flatMap { backend => ??? }
