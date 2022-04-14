@@ -275,6 +275,12 @@ lazy val testServer = (projectMatrix in file("testing/server"))
 
 lazy val testServer2_13 = testServer.jvm(scala2_13)
 
+val etestversion: Option[(Long, Long)] => String = {
+  case Some((2, 11)) => "0.8.0"
+  case Some((2, 12)) => "0.8.0"
+  case _             => "1.0.2"
+}
+
 lazy val core = (projectMatrix in file("core"))
   .settings(
     name := "core",
@@ -296,8 +302,10 @@ lazy val core = (projectMatrix in file("core"))
           if (scalaVersion.value == scala2_13) List("-target:jvm-11") else Nil
         },
         libraryDependencies ++= Seq(
-          "org.reactivestreams" % "reactive-streams" % "1.0.3",
-          "org.scala-lang.modules" %% "scala-java8-compat" % "1.0.2"
+          "org.reactivestreams" % "reactive-streams" % "1.0.3"
+        ),
+        libraryDependencies ++= dependenciesFor(scalaVersion.value)(
+          "org.scala-lang.modules" %% "scala-java8-compat" % etestversion(_)
         )
       )
     }
