@@ -9,11 +9,13 @@ import sttp.monad.syntax._
 import sttp.monad.{Canceler, MonadAsyncError, MonadError}
 
 import java.net.http.HttpResponse.BodyHandlers
-import java.net.http.{HttpClient, HttpRequest, HttpResponse, WebSocketHandshakeException}
+import java.net.http.{HttpClient, HttpRequest, HttpResponse, WebSocket, WebSocketHandshakeException}
 import java.nio.ByteBuffer
+import java.time.Duration
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.{CompletionException, Flow}
 import java.{util => ju}
+import scala.compat.java8.FunctionConverters.{enrichAsJavaBiConsumer, enrichAsJavaFunction}
 
 abstract class HttpClientAsyncBackend[F[_], S, P, B](
     client: HttpClient,
@@ -40,17 +42,24 @@ abstract class HttpClientAsyncBackend[F[_], S, P, B](
 
         val cf = client
           .sendAsync(jRequest, BodyHandlers.ofPublisher())
-          .whenComplete((t: HttpResponse[Flow.Publisher[ju.List[ByteBuffer]]], u: Throwable) => {
-            if (t != null) {
-              try success(readResponse(t, Left(publisherToBody(FlowAdapters.toPublisher(t.body()))), request))
-              catch {
-                case e: Exception => error(e)
-              }
-            }
-            if (u != null) {
-              error(u)
-            }
-          })
+          .whenComplete(
+            (
+                (
+                    t: HttpResponse[Flow.Publisher[ju.List[ByteBuffer]]],
+                    u: Throwable
+                ) => {
+                  if (t != null) {
+                    try success(readResponse(t, Left(publisherToBody(FlowAdapters.toPublisher(t.body()))), request))
+                    catch {
+                      case e: Exception => error(e)
+                    }
+                  }
+                  if (u != null) {
+                    error(u)
+                  }
+                }
+            ).asJava
+          )
         Canceler(() => cf.cancel(true))
       })
     }
@@ -111,12 +120,14 @@ abstract class HttpClientAsyncBackend[F[_], S, P, B](
         case head :: Nil  => client.newWebSocketBuilder().subprotocols(head)
         case head :: tail => client.newWebSocketBuilder().subprotocols(head, tail: _*)
       }
-      client.connectTimeout().map[java.net.http.WebSocket.Builder](wsBuilder.connectTimeout(_))
+      client
+        .connectTimeout()
+        .map[java.net.http.WebSocket.Builder](((d: Duration) => wsBuilder.connectTimeout(d)).asJava)
       filterIllegalWsHeaders(request).headers.foreach(h => wsBuilder.header(h.name, h.value))
       val cf = wsBuilder
         .buildAsync(request.uri.toJavaUri, listener)
-        .thenApply[Unit](_ => ())
-        .exceptionally(t => cb(Left(t)))
+        .thenApply[Unit](((_: WebSocket) => ()).asJava)
+        .exceptionally(((t: Throwable) => cb(Left(t))).asJava)
       Canceler(() => cf.cancel(true))
     })
   }

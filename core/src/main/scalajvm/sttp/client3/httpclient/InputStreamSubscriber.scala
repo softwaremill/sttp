@@ -2,6 +2,7 @@ package sttp.client3.httpclient
 
 import org.reactivestreams.{Subscriber, Subscription}
 import sttp.client3.httpclient.InputStreamSubscriber._
+import scala.compat.java8.FunctionConverters._
 
 import java.io.InputStream
 import java.nio.ByteBuffer
@@ -73,7 +74,7 @@ private[httpclient] class InputStreamSubscriber extends Subscriber[java.util.Lis
   private val toListCollector: Collector[Message, _, util.List[Message]] = Collectors.toList()
   override def onNext(b: java.util.List[ByteBuffer]): Unit = {
     assert(b != null)
-    chunks.addAll(b.stream().map[Message](nextItemMsg(_)).collect(toListCollector))
+    chunks.addAll(b.stream().map[Message]((d => nextItemMsg(d)).asJava).collect(toListCollector))
   }
 
   override def onError(t: Throwable): Unit = {
