@@ -213,7 +213,6 @@ lazy val allAggregates = projectsWithOptionalNative ++
   zio1TelemetryOpenTracingBackend.projectRefs ++
   zioTelemetryOpenTelemetryBackend.projectRefs ++
   zioTelemetryOpenTracingBackend.projectRefs ++
-  httpClientBackend.projectRefs ++
   httpClientMonixBackend.projectRefs ++
   httpClientFs2Ce2Backend.projectRefs ++
   httpClientFs2Backend.projectRefs ++
@@ -636,20 +635,6 @@ lazy val http4sBackend = (projectMatrix in file("http4s-backend"))
   .dependsOn(cats % compileAndTest, core % compileAndTest, fs2 % compileAndTest)
 
 //-- httpclient-java11
-lazy val httpClientBackend = (projectMatrix in file("httpclient-backend"))
-  .settings(commonJvmSettings)
-  .settings(testServerSettings)
-  .settings(
-    name := "httpclient-backend",
-    scalacOptions ++= Seq("-J--add-modules", "-Jjava.net.http"),
-    scalacOptions ++= {
-      if (scalaVersion.value == scala2_13) List("-target:jvm-11") else Nil
-    },
-    libraryDependencies += "org.reactivestreams" % "reactive-streams" % "1.0.3"
-  )
-  .jvmPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3)
-  .dependsOn(core % compileAndTest)
-
 def httpClientBackendProject(proj: String, includeDotty: Boolean = false) = {
   ProjectMatrix(s"httpClientBackend${proj.capitalize}", file(s"httpclient-backend/$proj"))
     .settings(commonJvmSettings)
@@ -658,7 +643,7 @@ def httpClientBackendProject(proj: String, includeDotty: Boolean = false) = {
     .jvmPlatform(
       scalaVersions = List(scala2_12, scala2_13) ++ (if (includeDotty) scala3 else Nil)
     )
-    .dependsOn(httpClientBackend % compileAndTest)
+    .dependsOn(core % compileAndTest)
 }
 
 lazy val httpClientMonixBackend =
@@ -1141,7 +1126,6 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     armeriaScalazBackend,
     okhttpBackend,
     // okhttpMonixBackend,
-    httpClientBackend,
     httpClientFs2Backend,
     http4sBackend,
     // httpClientMonixBackend,
