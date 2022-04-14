@@ -271,7 +271,7 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
           complete(204, HttpEntity.Empty)
         }
       }
-     } ~ path("raw-gzip-file") {
+    } ~ path("raw-gzip-file") {
       encodeResponseWith(Gzip) {
         respondWithHeader(RawHeader("Content-Encoding", "gzip")) {
           complete(HttpEntity(compressedFile))

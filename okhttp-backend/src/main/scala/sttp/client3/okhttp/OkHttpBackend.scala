@@ -88,7 +88,7 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
       ) {
         encoding
           .map(e =>
-            customEncodingHandler //There is no PartialFunction.fromFunction in scala 2.12
+            customEncodingHandler // There is no PartialFunction.fromFunction in scala 2.12
               .orElse(EncodingHandler(standardEncoding))(res.body().byteStream() -> e)
           )
           .getOrElse(res.body().byteStream())
