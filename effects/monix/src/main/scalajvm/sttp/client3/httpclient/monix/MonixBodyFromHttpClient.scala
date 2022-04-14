@@ -1,18 +1,19 @@
 package sttp.client3.httpclient.monix
 
-import java.nio.file.StandardOpenOption
 import monix.eval.Task
 import monix.execution.Scheduler
 import monix.nio.file._
 import monix.reactive.{Consumer, Observable}
 import sttp.capabilities.monix.MonixStreams
+import sttp.client3.WebSocketResponseAs
 import sttp.client3.httpclient.BodyFromHttpClient
 import sttp.client3.impl.monix.MonixWebSockets
 import sttp.client3.internal.{BodyFromResponseAs, SttpFile}
 import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
-import sttp.client3.WebSocketResponseAs
 import sttp.model.ResponseMetadata
 import sttp.ws.{WebSocket, WebSocketFrame}
+
+import java.nio.file.StandardOpenOption
 
 trait MonixBodyFromHttpClient extends BodyFromHttpClient[Task, MonixStreams, MonixStreams.BinaryStream] {
   override val streams: MonixStreams = MonixStreams

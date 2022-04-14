@@ -213,7 +213,6 @@ lazy val allAggregates = projectsWithOptionalNative ++
   zio1TelemetryOpenTracingBackend.projectRefs ++
   zioTelemetryOpenTelemetryBackend.projectRefs ++
   zioTelemetryOpenTracingBackend.projectRefs ++
-  httpClientMonixBackend.projectRefs ++
   httpClientFs2Ce2Backend.projectRefs ++
   httpClientFs2Backend.projectRefs ++
   httpClientZio1Backend.projectRefs ++
@@ -409,6 +408,7 @@ lazy val monix = (projectMatrix in file("effects/monix"))
       "com.softwaremill.sttp.shared" %%% "monix" % sttpSharedVersion
     )
   )
+  .settings(testServerSettings)
   .dependsOn(core % compileAndTest)
   .jvmPlatform(
     scalaVersions = List(scala2_12, scala2_13) ++ scala3,
@@ -645,10 +645,6 @@ def httpClientBackendProject(proj: String, includeDotty: Boolean = false) = {
     )
     .dependsOn(core % compileAndTest)
 }
-
-lazy val httpClientMonixBackend =
-  httpClientBackendProject("monix", includeDotty = true)
-    .dependsOn(monix % compileAndTest)
 
 lazy val httpClientFs2Ce2Backend =
   httpClientBackendProject("fs2-ce2", includeDotty = true)
@@ -1128,7 +1124,6 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     // okhttpMonixBackend,
     httpClientFs2Backend,
     http4sBackend,
-    // httpClientMonixBackend,
     httpClientZioBackend,
     openTracingBackend,
     prometheusBackend,

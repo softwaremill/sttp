@@ -1,11 +1,5 @@
 package sttp.client3.httpclient.monix
 
-import java.io.UnsupportedEncodingException
-import java.net.http.HttpRequest.BodyPublishers
-import java.net.http.{HttpClient, HttpRequest}
-import java.nio.ByteBuffer
-import java.util
-
 import cats.effect.Resource
 import monix.eval.Task
 import monix.execution.Scheduler
@@ -24,6 +18,11 @@ import sttp.client3.testing.SttpBackendStub
 import sttp.client3.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 import sttp.monad.MonadError
 
+import java.io.UnsupportedEncodingException
+import java.net.http.HttpRequest.BodyPublishers
+import java.net.http.{HttpClient, HttpRequest}
+import java.nio.ByteBuffer
+import java.util
 import scala.collection.JavaConverters._
 
 class HttpClientMonixBackend private (
