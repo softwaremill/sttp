@@ -49,11 +49,13 @@ object ArmeriaZioBackend {
       .runtime[Any]
       .map(runtime => apply(runtime, newClient(options), closeFactory = true))
 
-  def managed(options: SttpBackendOptions = SttpBackendOptions.Default): TaskManaged[SttpBackend[Task, ZioStreams]] =
-    ZManaged.acquireReleaseWith(apply(options))(_.close().ignore)
+  def managed(
+      options: SttpBackendOptions = SttpBackendOptions.Default
+  ): ZIO[Any with Scope, Throwable, SttpBackend[Task, ZioStreams]] =
+    ZIO.acquireRelease(apply(options))(_.close().ignore)
 
-  def layered(options: SttpBackendOptions = SttpBackendOptions.Default): Layer[Throwable, SttpClient] =
-    ZLayer.fromManaged(managed(options))
+  def layered(options: SttpBackendOptions = SttpBackendOptions.Default): ZLayer[Any with Scope, Throwable, SttpClient] =
+    ZLayer(managed(options))
 
   def usingClient(client: WebClient): Task[SttpBackend[Task, ZioStreams]] =
     ZIO

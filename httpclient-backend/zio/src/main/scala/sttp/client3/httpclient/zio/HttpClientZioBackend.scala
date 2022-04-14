@@ -125,8 +125,8 @@ object HttpClientZioBackend {
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
-  ): ZManaged[Any, Throwable, SttpBackend[Task, ZioStreams with WebSockets]] =
-    ZManaged.acquireReleaseWith(apply(options, customizeRequest, customEncodingHandler))(
+  ): ZIO[Any with Scope, Throwable, SttpBackend[Task, ZioStreams with WebSockets]] =
+    ZIO.acquireRelease(apply(options, customizeRequest, customEncodingHandler))(
       _.close().ignore
     )
 
@@ -134,15 +134,9 @@ object HttpClientZioBackend {
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
-  ): ZLayer[Any, Throwable, SttpClient] = {
-    ZLayer.fromManaged(
-      (for {
-        backend <- HttpClientZioBackend(
-          options,
-          customizeRequest,
-          customEncodingHandler
-        )
-      } yield backend).toManagedWith(_.close().ignore)
+  ): ZLayer[Any with Scope, Throwable, SttpClient] = {
+    ZLayer(
+      ZIO.acquireRelease(HttpClientZioBackend(options, customizeRequest, customEncodingHandler))(_.close().ignore)
     )
   }
 
@@ -162,16 +156,10 @@ object HttpClientZioBackend {
       client: HttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
-  ): ZLayer[Any, Throwable, SttpClient] = {
-    ZLayer.fromManaged(
-      ZManaged
-        .acquireReleaseAttemptWith(
-          usingClient(
-            client,
-            customizeRequest,
-            customEncodingHandler
-          )
-        )(_.close().ignore)
+  ): ZLayer[Any with Scope, Throwable, SttpClient] = {
+    val acquireIO = ZIO.attempt(usingClient(client, customizeRequest, customEncodingHandler))
+    ZLayer(
+      ZIO.acquireRelease(acquireIO)(_.close().ignore)
     )
   }
 

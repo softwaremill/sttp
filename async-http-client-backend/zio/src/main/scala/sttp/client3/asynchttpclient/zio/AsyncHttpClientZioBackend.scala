@@ -129,15 +129,14 @@ object AsyncHttpClientZioBackend {
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
-  ): TaskManaged[SttpBackend[Task, ZioStreams with WebSockets]] =
-    ZManaged.acquireReleaseWith(apply(options, customizeRequest, webSocketBufferCapacity))(_.close().ignore)
+  ) = ZIO.scoped(apply(options, customizeRequest, webSocketBufferCapacity))
 
   def layer(
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
-  ): Layer[Throwable, SttpClient] =
-    ZLayer.fromManaged(managed(options, customizeRequest, webSocketBufferCapacity))
+  ): ZLayer[Any, Throwable, SttpClient] =
+    ZLayer(managed(options, customizeRequest, webSocketBufferCapacity))
 
   def usingConfig(
       cfg: AsyncHttpClientConfig,
@@ -162,15 +161,15 @@ object AsyncHttpClientZioBackend {
       cfg: AsyncHttpClientConfig,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
-  ): TaskManaged[SttpBackend[Task, ZioStreams with WebSockets]] =
-    ZManaged.acquireReleaseWith(usingConfig(cfg, customizeRequest, webSocketBufferCapacity))(_.close().ignore)
+  ): ZIO[Any with Scope, Throwable, SttpBackend[Task, ZioStreams with WebSockets]] =
+    ZIO.acquireRelease(usingConfig(cfg, customizeRequest, webSocketBufferCapacity))(_.close().ignore)
 
   def layerUsingConfig(
       cfg: AsyncHttpClientConfig,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
-  ): Layer[Throwable, SttpClient] =
-    ZLayer.fromManaged(managedUsingConfig(cfg, customizeRequest, webSocketBufferCapacity))
+  ): ZLayer[Any with Scope, Throwable, SttpClient] =
+    ZLayer(managedUsingConfig(cfg, customizeRequest, webSocketBufferCapacity))
 
   /** @param updateConfig
     *   A function which updates the default configuration (created basing on `options`).
@@ -203,8 +202,8 @@ object AsyncHttpClientZioBackend {
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
-  ): TaskManaged[SttpBackend[Task, ZioStreams with WebSockets]] =
-    ZManaged.acquireReleaseWith(usingConfigBuilder(updateConfig, options, customizeRequest, webSocketBufferCapacity))(
+  ) =
+    ZIO.acquireRelease(usingConfigBuilder(updateConfig, options, customizeRequest, webSocketBufferCapacity))(
       _.close().ignore
     )
 
@@ -216,8 +215,8 @@ object AsyncHttpClientZioBackend {
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
-  ): Layer[Throwable, SttpClient] =
-    ZLayer.fromManaged(managedUsingConfigBuilder(updateConfig, options, customizeRequest, webSocketBufferCapacity))
+  ): ZLayer[Any with Scope, Throwable, SttpClient] =
+    ZLayer(managedUsingConfigBuilder(updateConfig, options, customizeRequest, webSocketBufferCapacity))
 
   def usingClient[R](
       runtime: Runtime[R],
@@ -231,11 +230,13 @@ object AsyncHttpClientZioBackend {
       client: AsyncHttpClient,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
-  ): Layer[Nothing, SttpClient] =
-    ZLayer.fromAcquireRelease(
-      UIO.runtime.map(runtime => usingClient(runtime, client, customizeRequest, webSocketBufferCapacity))
-    )(
-      _.close().ignore
+  ): ZLayer[Any with Scope, Nothing, SttpClient] =
+    ZLayer(
+      ZIO.acquireRelease(
+        UIO.runtime[Any].map(runtime => usingClient(runtime, client, customizeRequest, webSocketBufferCapacity))
+      )(
+        _.close().ignore
+      )
     )
 
   /** Create a stub backend for testing, which uses the [[Task]] response wrapper, and supports

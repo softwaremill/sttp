@@ -36,18 +36,13 @@ private[zio] class ZioBodyFromHttpClient extends BodyFromHttpClient[Task, ZioStr
       override protected def withReplayableBody(
           response: ZStream[Any, Throwable, Byte],
           replayableBody: Either[Array[Byte], SttpFile]
-      ): Task[ZStream[Any, Throwable, Byte]] = {
+      ): ZIO[Any, IOException, ZStream[Any, IOException, Byte]] = {
         replayableBody match {
           case Left(byteArray) => ZIO.succeed(Stream.fromIterable(byteArray))
           case Right(file) =>
-            ZIO.succeed(
-              for {
-                fileChannel <- Stream.managed(
-                  AsynchronousFileChannel.open(Path.fromJava(file.toPath), StandardOpenOption.READ)
-                )
-                bytes <- readAllBytes(fileChannel)
-              } yield bytes
-            )
+            val fcIO = AsynchronousFileChannel.open(Path.fromJava(file.toPath), StandardOpenOption.READ)
+            val streamIO = ZStream.scoped(fcIO).flatMap(readAllBytes)
+            Task.succeed(streamIO)
         }
       }
 
@@ -63,7 +58,7 @@ private[zio] class ZioBodyFromHttpClient extends BodyFromHttpClient[Task, ZioStr
           file: SttpFile
       ): Task[SttpFile] = response
         .run({
-          ZSink.unwrapManaged(
+          ZSink.unwrapScoped(
             AsynchronousFileChannel
               .open(Path.fromJava(file.toPath), StandardOpenOption.WRITE, StandardOpenOption.CREATE)
               .map { fileChannel =>
