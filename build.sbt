@@ -292,7 +292,12 @@ lazy val core = (projectMatrix in file("core"))
     scalaVersions = scala2 ++ scala3,
     settings = {
       commonJvmSettings ++ versioningSchemeSettings ++ enableMimaSettings ++ List(
-        Test / publishArtifact := true // allow implementations outside of this repo
+        Test / publishArtifact := true, // allow implementations outside of this repo
+        scalacOptions ++= Seq("-J--add-modules", "-Jjava.net.http"),
+        scalacOptions ++= {
+          if (scalaVersion.value == scala2_13) List("-target:jvm-11") else Nil
+        },
+        libraryDependencies += "org.reactivestreams" % "reactive-streams" % "1.0.3"
       )
     }
   )
