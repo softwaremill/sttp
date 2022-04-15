@@ -7,7 +7,7 @@ A JavaScript backend with web socket support. Implemented using the [Fetch API](
 This is the default backend, available in the main jar for JS. To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %%% "core" % "3.5.1"
+"com.softwaremill.sttp.client3" %%% "core" % "3.5.2"
 ```
 
 And create the backend instance:
@@ -26,7 +26,7 @@ Note that `Fetch` does not pass cookies by default. If your request needs cookie
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %%% "monix" % "3.5.1"
+"com.softwaremill.sttp.client3" %%% "monix" % "3.5.2"
 ```
 
 And create the backend instance:
@@ -41,13 +41,13 @@ Any effect implementing the cats-effect `Concurrent` typeclass can be used. To u
 your project:
 
 ```
-"com.softwaremill.sttp.client3" %%% "cats" % "3.5.1"
+"com.softwaremill.sttp.client3" %%% "cats" % "3.5.2"
 ```
 
 If you are on Cats Effect 2 (CE2) you will need to add the CE2 specific dependency instead:
 
 ```
-"com.softwaremill.sttp.client3" %%% "catsce2 % "3.5.1"
+"com.softwaremill.sttp.client3" %%% "catsce2 % "3.5.2"
 ```
 
 And create the backend instance:
@@ -86,7 +86,7 @@ Streaming support is provided via `FetchMonixBackend`. Note that streaming suppo
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %%% "monix" % "3.5.1"
+"com.softwaremill.sttp.client3" %%% "monix" % "3.5.2"
 ```
 
 An example of streaming a response:
