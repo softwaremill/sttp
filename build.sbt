@@ -884,7 +884,7 @@ lazy val upickle = (projectMatrix in file("json/upickle"))
     Test / scalacOptions --= Seq("-Wconf:cat=other-match-analysis:error")
   )
   .jvmPlatform(
-    scalaVersions = List(scala2_12, scala2_13)  ++ scala3,
+    scalaVersions = List(scala2_12, scala2_13) ++ scala3,
     settings = commonJvmSettings
   )
   .jsPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3, settings = commonJsSettings)
