@@ -213,6 +213,7 @@ lazy val allAggregates = projectsWithOptionalNative ++
   zio1TelemetryOpenTelemetryBackend.projectRefs ++
   zio1TelemetryOpenTracingBackend.projectRefs ++
   zioTelemetryOpenTelemetryBackend.projectRefs ++
+  openTelemetryBackend.projectRefs ++
   zioTelemetryOpenTracingBackend.projectRefs ++
   httpClientBackend.projectRefs ++
   httpClientMonixBackend.projectRefs ++
@@ -985,6 +986,19 @@ lazy val zio1TelemetryOpenTracingBackend = (projectMatrix in file("metrics/zio1-
   )
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3)
   .dependsOn(zio1 % compileAndTest)
+  .dependsOn(core)
+
+lazy val openTelemetryBackend = (projectMatrix in file("metrics/open-telemetry-backend"))
+  .settings(commonJvmSettings)
+  .settings(
+    name := "opentelemetry-backend",
+    libraryDependencies ++= Seq(
+      "io.opentelemetry" % "opentelemetry-api" % "1.13.0",
+      "io.opentelemetry" % "opentelemetry-sdk-testing" % "1.13.0" % Test
+    ),
+    scalaTest
+  )
+  .jvmPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3)
   .dependsOn(core)
 
 lazy val zioTelemetryOpenTelemetryBackend = (projectMatrix in file("metrics/zio-telemetry-open-telemetry-backend"))
