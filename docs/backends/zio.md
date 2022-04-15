@@ -47,12 +47,7 @@ To use, add the following dependency to your project:
            
 This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client), uses [Netty](http://netty.io) behind the scenes. This backend works with all Scala versions. A Scala 3 build is available as well.
 
-Next you'll need to define a backend instance as an implicit value. This can be done in two basic ways:
-
-* by creating a `Task` which describes how the backend is created, or instantiating the backend directly. In this case, you'll need to close the backend manually
-* by creating a `TaskManaged`, which will instantiate the backend and close it after it has been used
-
-A non-comprehensive summary of how the backend can be created is as follows:
+Next you'll need to define a backend instance.  A non-comprehensive summary of how this can be done is as follows:
 
 ```scala mdoc:compile-only
 import sttp.client3._
@@ -144,17 +139,17 @@ As an alternative to effectfully or resourcefully creating backend instances, ZI
 
 ```scala
 package sttp.client3.httpclient.zio
-type SttpClient = Has[SttpBackend[Task, ZioStreams with WebSockets]]
+type SttpClient = SttpBackend[Task, ZioStreams with WebSockets]
 
 // or, when using async-http-client
 
 package sttp.client3.asynchttpclient.zio
-type SttpClient = Has[SttpBackend[Task, ZioStreams with WebSockets]]
+type SttpClient = SttpBackend[Task, ZioStreams with WebSockets]
 
 // or, when using Armeria
 
 package sttp.client3.armeria.zio
-type SttpClient = Has[SttpBackend[Task, ZioStreams]]
+type SttpClient = SttpBackend[Task, ZioStreams]
 ```
 
 The lifecycle of the `SttpClient` service is described by `ZLayer`s, which can be created using the `.layer`/`.layerUsingConfig`/... methods on `AsyncHttpClientZioBackend` / `HttpClientZioBackend` / `ArmeriaZioBackend`.
