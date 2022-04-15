@@ -210,11 +210,7 @@ lazy val allAggregates = projectsWithOptionalNative ++
   playJson.projectRefs ++
   openTracingBackend.projectRefs ++
   prometheusBackend.projectRefs ++
-  zio1TelemetryOpenTelemetryBackend.projectRefs ++
-  zio1TelemetryOpenTracingBackend.projectRefs ++
-  zioTelemetryOpenTelemetryBackend.projectRefs ++
   openTelemetryBackend.projectRefs ++
-  zioTelemetryOpenTracingBackend.projectRefs ++
   httpClientBackend.projectRefs ++
   httpClientMonixBackend.projectRefs ++
   httpClientFs2Ce2Backend.projectRefs ++
@@ -1103,8 +1099,6 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     httpClientZioBackend,
     openTracingBackend,
     prometheusBackend,
-    slf4jBackend,
-    zioTelemetryOpenTelemetryBackend,
-    zioTelemetryOpenTracingBackend
+    slf4jBackend
   )
   .jvmPlatform(scalaVersions = List(scala2_13))
