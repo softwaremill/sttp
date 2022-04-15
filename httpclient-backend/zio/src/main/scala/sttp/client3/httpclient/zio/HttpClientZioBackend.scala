@@ -121,12 +121,12 @@ object HttpClientZioBackend {
       )
     )
 
-  def managed(
+  def scoped(
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
-  ): ZManaged[Any, Throwable, SttpBackend[Task, ZioStreams with WebSockets]] =
-    ZManaged.acquireReleaseWith(apply(options, customizeRequest, customEncodingHandler))(
+  ): ZIO[Scope, Throwable, SttpBackend[Task, ZioStreams with WebSockets]] =
+    ZIO.acquireRelease(apply(options, customizeRequest, customEncodingHandler))(
       _.close().ignore
     )
 
@@ -135,14 +135,14 @@ object HttpClientZioBackend {
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
   ): ZLayer[Any, Throwable, SttpClient] = {
-    ZLayer.fromManaged(
+    ZLayer.scoped(
       (for {
         backend <- HttpClientZioBackend(
           options,
           customizeRequest,
           customEncodingHandler
         )
-      } yield backend).toManagedWith(_.close().ignore)
+      } yield backend).tap(client => ZIO.addFinalizer(client.close().ignore))
     )
   }
 
@@ -163,13 +163,15 @@ object HttpClientZioBackend {
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
   ): ZLayer[Any, Throwable, SttpClient] = {
-    ZLayer.fromManaged(
-      ZManaged
-        .acquireReleaseAttemptWith(
-          usingClient(
-            client,
-            customizeRequest,
-            customEncodingHandler
+    ZLayer.scoped(
+      ZIO
+        .acquireRelease(
+          ZIO.attempt(
+            usingClient(
+              client,
+              customizeRequest,
+              customEncodingHandler
+            )
           )
         )(_.close().ignore)
     )

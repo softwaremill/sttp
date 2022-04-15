@@ -18,11 +18,11 @@ object WebSocketZio extends ZIOAppDefault {
   val sendAndPrint: RIO[Console with SttpClient, Response[Unit]] =
     sendR(basicRequest.get(uri"wss://echo.websocket.org").response(asWebSocketAlways(useWebSocket)))
 
-  override def run: ZIO[ZEnv, Nothing, ExitCode] = {
+  override def run = {
     // provide an implementation for the SttpClient dependency; other dependencies are
     // provided by Zio
     sendAndPrint
-      .provideCustomLayer(AsyncHttpClientZioBackend.layer())
-      .exitCode
+      .provide(AsyncHttpClientZioBackend.layer(), Console.live)
+
   }
 }

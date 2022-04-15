@@ -27,9 +27,9 @@ object StreamZio extends ZIOAppDefault {
     ).flatMap { response => printLine(s"RECEIVED:\n${response.body}") }
   }
 
-  override def run: ZIO[ZEnv, Nothing, ExitCode] = {
+  override def run = {
     (streamRequestBody *> streamResponseBody)
-      .provideCustomLayer(AsyncHttpClientZioBackend.layer())
-      .exitCode
+      .provide(AsyncHttpClientZioBackend.layer(), Console.live)
+
   }
 }
