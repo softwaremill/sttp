@@ -40,7 +40,7 @@ trait SttpUpickleApi {
     }.showAsJsonEither
   }
 
-  def deserializeJson[B: Reader: IsOption]: String => Either[Exception, B] = { s: String =>
+  def deserializeJson[B: Reader: IsOption]: String => Either[Exception, B] = { (s: String) =>
     try {
       Right(read[B](JsonInput.sanitize[B].apply(s)))
     } catch {
