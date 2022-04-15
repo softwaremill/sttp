@@ -52,7 +52,7 @@ object ArmeriaZioBackend {
   def managed(options: SttpBackendOptions = SttpBackendOptions.Default): TaskManaged[SttpBackend[Task, ZioStreams]] =
     ZManaged.make(apply(options))(_.close().ignore)
 
-  def layered(options: SttpBackendOptions = SttpBackendOptions.Default): Layer[Throwable, SttpClient] =
+  def layer(options: SttpBackendOptions = SttpBackendOptions.Default): Layer[Throwable, SttpClient] =
     ZLayer.fromManaged(managed(options))
 
   def usingClient(client: WebClient): Task[SttpBackend[Task, ZioStreams]] =
