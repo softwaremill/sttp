@@ -1,7 +1,7 @@
-package sttp.client3.httpclient
+package sttp.client3.internal.httpclient
 
 import org.reactivestreams.{Subscriber, Subscription}
-import sttp.client3.httpclient.InputStreamSubscriber._
+import InputStreamSubscriber._
 import scala.compat.java8.FunctionConverters._
 
 import java.io.InputStream
@@ -13,7 +13,7 @@ import java.util.function.UnaryOperator
 import java.util.stream.{Collector, Collectors}
 
 // based on org.asynchttpclient.request.body.generator.ReactiveStreamsBodyGenerator.SimpleSubscriber
-private[httpclient] class InputStreamSubscriber extends Subscriber[java.util.List[ByteBuffer]] {
+private[client3] class InputStreamSubscriber extends Subscriber[java.util.List[ByteBuffer]] {
   // a pair of values: (is cancelled, current subscription)
   private val subscription = new AtomicReference[(Boolean, Subscription)]((false, null))
   private val chunks = new LinkedBlockingQueue[Message]()

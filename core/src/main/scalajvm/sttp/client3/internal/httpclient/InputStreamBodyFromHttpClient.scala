@@ -1,4 +1,4 @@
-package sttp.client3.httpclient
+package sttp.client3.internal.httpclient
 
 import sttp.client3.WebSocketResponseAs
 import sttp.client3.internal.{BodyFromResponseAs, FileHelpers, SttpFile}

@@ -1,4 +1,4 @@
-package sttp.client3.httpclient
+package sttp.client3.internal.httpclient
 
 import sttp.capabilities.Streams
 import sttp.client3.internal.BodyFromResponseAs
@@ -14,7 +14,7 @@ import sttp.monad.MonadError
 import sttp.monad.syntax._
 import sttp.ws.{WebSocket, WebSocketFrame}
 
-private[httpclient] trait BodyFromHttpClient[F[_], S, B] {
+private[client3] trait BodyFromHttpClient[F[_], S, B] {
   val streams: Streams[S]
   implicit def monad: MonadError[F]
   def compileWebSocketPipe(ws: WebSocket[F], pipe: streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]): F[Unit]

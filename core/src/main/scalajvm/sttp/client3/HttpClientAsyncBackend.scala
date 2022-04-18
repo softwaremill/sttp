@@ -1,15 +1,15 @@
-package sttp.client3.httpclient
+package sttp.client3
 
 import org.reactivestreams.{FlowAdapters, Publisher}
-import sttp.client3.httpclient.HttpClientBackend.EncodingHandler
+import sttp.client3.HttpClientBackend.EncodingHandler
+import sttp.client3.internal.httpclient.{AddToQueueListener, DelegatingWebSocketListener, Sequencer, WebSocketImpl}
 import sttp.client3.internal.ws.{SimpleQueue, WebSocketEvent}
-import sttp.client3.{Identity, Request, RequestT, Response, SttpClientException}
 import sttp.model.{HeaderNames, StatusCode}
 import sttp.monad.syntax._
 import sttp.monad.{Canceler, MonadAsyncError, MonadError}
 
 import java.net.http.HttpResponse.BodyHandlers
-import java.net.http.{HttpClient, HttpRequest, HttpResponse, WebSocket, WebSocketHandshakeException}
+import java.net.http._
 import java.nio.ByteBuffer
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicBoolean

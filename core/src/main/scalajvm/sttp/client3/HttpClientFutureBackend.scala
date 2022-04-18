@@ -1,13 +1,20 @@
-package sttp.client3.httpclient
+package sttp.client3
 
 import org.reactivestreams.Publisher
 import sttp.capabilities.WebSockets
-import sttp.client3.httpclient.HttpClientBackend.EncodingHandler
-import sttp.client3.httpclient.HttpClientFutureBackend.InputStreamEncodingHandler
+import sttp.client3.HttpClientBackend.EncodingHandler
+import sttp.client3.HttpClientFutureBackend.InputStreamEncodingHandler
+import sttp.client3.internal.httpclient.{
+  BodyFromHttpClient,
+  BodyToHttpClient,
+  FutureSequencer,
+  InputStreamBodyFromHttpClient,
+  InputStreamSubscriber,
+  Sequencer
+}
 import sttp.client3.internal.ws.{FutureSimpleQueue, SimpleQueue}
 import sttp.client3.internal.{NoStreams, emptyInputStream}
 import sttp.client3.testing.SttpBackendStub
-import sttp.client3.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 import sttp.monad.{FutureMonad, MonadError}
 import sttp.ws.{WebSocket, WebSocketFrame}
 

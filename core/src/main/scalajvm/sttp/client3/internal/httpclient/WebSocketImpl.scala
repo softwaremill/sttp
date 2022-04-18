@@ -1,4 +1,4 @@
-package sttp.client3.httpclient
+package sttp.client3.internal.httpclient
 
 import sttp.client3.internal._
 import sttp.client3.internal.ws.{SimpleQueue, WebSocketEvent}
@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.{CompletableFuture, CompletionStage}
 import java.util.function.BiConsumer
 
-private[httpclient] class WebSocketImpl[F[_]](
+private[client3] class WebSocketImpl[F[_]](
     ws: JWebSocket,
     queue: SimpleQueue[F, WebSocketEvent],
     _isOpen: AtomicBoolean,
@@ -84,7 +84,7 @@ private[httpclient] class WebSocketImpl[F[_]](
   }
 }
 
-private[httpclient] class AddToQueueListener[F[_]](
+private[client3] class AddToQueueListener[F[_]](
     queue: SimpleQueue[F, WebSocketEvent],
     isOpen: AtomicBoolean
 ) extends Listener {

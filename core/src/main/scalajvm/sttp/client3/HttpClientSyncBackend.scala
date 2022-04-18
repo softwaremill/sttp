@@ -1,19 +1,11 @@
-package sttp.client3.httpclient
+package sttp.client3
 
-import sttp.client3.httpclient.HttpClientBackend.EncodingHandler
-import sttp.client3.httpclient.HttpClientSyncBackend.SyncEncodingHandler
+import sttp.client3.HttpClientBackend.EncodingHandler
+import sttp.client3.HttpClientSyncBackend.SyncEncodingHandler
 import sttp.client3.internal.NoStreams
+import sttp.client3.internal.httpclient.{BodyFromHttpClient, BodyToHttpClient, InputStreamBodyFromHttpClient}
 import sttp.client3.monad.IdMonad
 import sttp.client3.testing.SttpBackendStub
-import sttp.client3.{
-  FollowRedirectsBackend,
-  Identity,
-  Request,
-  Response,
-  SttpBackend,
-  SttpBackendOptions,
-  SttpClientException
-}
 import sttp.monad.MonadError
 import sttp.ws.{WebSocket, WebSocketFrame}
 

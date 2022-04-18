@@ -1,4 +1,4 @@
-package sttp.client3.httpclient
+package sttp.client3.internal.httpclient
 
 import sttp.capabilities.Streams
 import scala.compat.java8.FunctionConverters._
@@ -26,7 +26,7 @@ import java.nio.{Buffer, ByteBuffer}
 import java.util.function.Supplier
 import scala.collection.JavaConverters._
 
-private[httpclient] trait BodyToHttpClient[F[_], S] {
+private[client3] trait BodyToHttpClient[F[_], S] {
   val streams: Streams[S]
   implicit def monad: MonadError[F]
 
