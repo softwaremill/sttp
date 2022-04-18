@@ -1,6 +1,6 @@
 package sttp.client3.httpclient
 
-import sttp.client3.SttpBackend
+import sttp.client3.{HttpClientFutureBackend, SttpBackend}
 import sttp.client3.testing.{ConvertToFuture, HttpTest}
 
 import scala.concurrent.Future

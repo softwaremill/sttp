@@ -1,7 +1,7 @@
 package sttp.client3.httpclient
 
 import sttp.client3.testing.{ConvertToFuture, HttpTest}
-import sttp.client3.{Identity, SttpBackend}
+import sttp.client3.{HttpClientSyncBackend, Identity, SttpBackend}
 
 class HttpClientSyncHttpTest extends HttpTest[Identity] {
   override val backend: SttpBackend[Identity, Any] = HttpClientSyncBackend()

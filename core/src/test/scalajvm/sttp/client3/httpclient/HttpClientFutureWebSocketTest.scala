@@ -1,7 +1,7 @@
 package sttp.client3.httpclient
 
 import sttp.capabilities.WebSockets
-import sttp.client3.SttpBackend
+import sttp.client3.{HttpClientFutureBackend, SttpBackend}
 import sttp.client3.testing.ConvertToFuture
 import sttp.client3.testing.websocket.{WebSocketConcurrentTest, WebSocketTest}
 import sttp.monad.{FutureMonad, MonadError}

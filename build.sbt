@@ -213,8 +213,6 @@ lazy val allAggregates = projectsWithOptionalNative ++
   zio1TelemetryOpenTracingBackend.projectRefs ++
   zioTelemetryOpenTelemetryBackend.projectRefs ++
   zioTelemetryOpenTracingBackend.projectRefs ++
-  httpClientFs2Ce2Backend.projectRefs ++
-  httpClientFs2Backend.projectRefs ++
   httpClientZio1Backend.projectRefs ++
   httpClientZioBackend.projectRefs ++
   finagleBackend.projectRefs ++
@@ -383,10 +381,13 @@ lazy val fs2Ce2 = (projectMatrix in file("effects/fs2-ce2"))
     name := "fs2Ce2",
     Test / publishArtifact := true,
     libraryDependencies ++= dependenciesFor(scalaVersion.value)(
-      "co.fs2" %%% "fs2-core" % fs2_2_version(_)
+      "co.fs2" %%% "fs2-core" % fs2_2_version(_),
+      "co.fs2" %% "fs2-reactive-streams" % fs2_2_version(_),
+      "co.fs2" %% "fs2-io" % fs2_2_version(_)
     ),
     libraryDependencies += "com.softwaremill.sttp.shared" %% "fs2-ce2" % sttpSharedVersion
   )
+  .settings(testServerSettings)
   .dependsOn(core % compileAndTest, catsCe2 % compileAndTest)
   .jvmPlatform(
     scalaVersions = scala2 ++ scala3,
@@ -400,9 +401,12 @@ lazy val fs2 = (projectMatrix in file("effects/fs2"))
     Test / publishArtifact := true,
     libraryDependencies ++= Seq(
       "co.fs2" %%% "fs2-core" % fs2_3_version,
+      "co.fs2" %% "fs2-reactive-streams" % fs2_3_version,
+      "co.fs2" %% "fs2-io" % fs2_3_version,
       "com.softwaremill.sttp.shared" %% "fs2" % sttpSharedVersion
     )
   )
+  .settings(testServerSettings)
   .dependsOn(core % compileAndTest, cats % compileAndTest)
   .jvmPlatform(
     scalaVersions = List(scala2_12, scala2_13) ++ scala3,
@@ -656,26 +660,6 @@ def httpClientBackendProject(proj: String, includeDotty: Boolean = false) = {
     )
     .dependsOn(core % compileAndTest)
 }
-
-lazy val httpClientFs2Ce2Backend =
-  httpClientBackendProject("fs2-ce2", includeDotty = true)
-    .settings(
-      libraryDependencies ++= dependenciesFor(scalaVersion.value)(
-        "co.fs2" %% "fs2-reactive-streams" % fs2_2_version(_),
-        "co.fs2" %% "fs2-io" % fs2_2_version(_)
-      )
-    )
-    .dependsOn(fs2Ce2 % compileAndTest)
-
-lazy val httpClientFs2Backend =
-  httpClientBackendProject("fs2", includeDotty = true)
-    .settings(
-      libraryDependencies ++= Seq(
-        "co.fs2" %% "fs2-reactive-streams" % fs2_3_version,
-        "co.fs2" %% "fs2-io" % fs2_3_version
-      )
-    )
-    .dependsOn(fs2 % compileAndTest)
 
 lazy val httpClientZio1Backend =
   httpClientBackendProject("zio1", includeDotty = true)
@@ -1133,7 +1117,6 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     armeriaScalazBackend,
     okhttpBackend,
     // okhttpMonixBackend,
-    httpClientFs2Backend,
     http4sBackend,
     httpClientZioBackend,
     openTracingBackend,
