@@ -264,7 +264,7 @@ lazy val testServer = (project in file("testing/server"))
     name := "testing-server",
     libraryDependencies ++= Seq(
       akkaHttp,
-      "ch.megard" %% "akka-http-cors" % "0.4.2",
+      "ch.megard" %% "akka-http-cors" % "1.1.3",
       akkaStreams
     ),
     // the test server needs to be started before running any backend tests
