@@ -234,7 +234,8 @@ lazy val allAggregates = projectsWithOptionalNative ++
   slf4jBackend.projectRefs ++
   examplesCe2.projectRefs ++
   examples.projectRefs ++
-  docs.projectRefs
+  docs.projectRefs ++
+  testServer.projectRefs
 
 // For CI tests, defining scripts that run JVM/JS/Native tests separately
 val testJVM = taskKey[Unit]("Test JVM projects")
@@ -261,7 +262,6 @@ lazy val testServer = (projectMatrix in file("testing/server"))
   .settings(commonJvmSettings)
   .settings(
     name := "testing-server",
-    publish / skip := true,
     libraryDependencies ++= Seq(
       akkaHttp,
       "ch.megard" %% "akka-http-cors" % "0.4.2",
