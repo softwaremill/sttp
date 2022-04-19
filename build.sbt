@@ -101,13 +101,13 @@ val enableMimaSettings = Seq(
 // things, we always start the test server.
 val testServerSettings = Seq(
   Test / test := (Test / test)
-    .dependsOn(testServer2_13 / startTestServer)
+    .dependsOn(testServer / startTestServer)
     .value,
   Test / testOnly := (Test / testOnly)
-    .dependsOn(testServer2_13 / startTestServer)
+    .dependsOn(testServer / startTestServer)
     .evaluated,
   Test / testOptions += Tests.Setup(() => {
-    val port = (testServer2_13 / testServerPort).value
+    val port = (testServer / testServerPort).value
     PollingUtils.waitUntilServerAvailable(new URL(s"http://localhost:$port"))
   })
 )
@@ -235,7 +235,7 @@ lazy val allAggregates = projectsWithOptionalNative ++
   examplesCe2.projectRefs ++
   examples.projectRefs ++
   docs.projectRefs ++
-  testServer.projectRefs
+  Seq(testServer.project)
 
 // For CI tests, defining scripts that run JVM/JS/Native tests separately
 val testJVM = taskKey[Unit]("Test JVM projects")
@@ -258,7 +258,7 @@ lazy val rootProject = (project in file("."))
   )
   .aggregate(allAggregates: _*)
 
-lazy val testServer = (projectMatrix in file("testing/server"))
+lazy val testServer = (project in file("testing/server"))
   .settings(commonJvmSettings)
   .settings(
     name := "testing-server",
@@ -272,11 +272,9 @@ lazy val testServer = (projectMatrix in file("testing/server"))
     reStart / reStartArgs := Seq(s"${(Test / testServerPort).value}"),
     reStart / fullClasspath := (Test / fullClasspath).value,
     testServerPort := 51823,
-    startTestServer := reStart.toTask("").value
+    startTestServer := reStart.toTask("").value,
+    scalaVersion := scala2_13
   )
-  .jvmPlatform(scalaVersions = List(scala2_13))
-
-lazy val testServer2_13 = testServer.jvm(scala2_13)
 
 lazy val core = (projectMatrix in file("core"))
   .settings(
