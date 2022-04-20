@@ -31,7 +31,7 @@ private class OpenTelemetryBackend[F[_], P](
           .spanBuilder(s"HTTP ${request.method.method}")
           .setSpanKind(SpanKind.CLIENT)
           .startSpan
-        val ignored = span.makeCurrent()
+        val scope = span.makeCurrent()
         propagator.inject(Context.current(), carrier, setter)
         val attributes = Attributes.of(
           AttributeKey.stringKey("http.method"),
@@ -42,23 +42,24 @@ private class OpenTelemetryBackend[F[_], P](
           "sttp3-client"
         )
         Span.current.addEvent("Starting the work.", attributes)
-        (span, ignored)
+        (span, scope)
       }
-      .flatMap { span =>
+      .flatMap { spanAndScope =>
+        val (span, scope) = spanAndScope
         responseMonad.handleError(
           delegate.send(request.headers(carrier.toMap)).map { response =>
             val attributes = Attributes.of(AttributeKey.stringKey("http.status_code"), response.code.code.toString)
             Span.current.addEvent("Finished working.", attributes)
-            span._1.end()
-            span._2.close()
+            span.end()
+            scope.close()
             response
           }
         ) { case e =>
-          span._1
+          span
             .recordException(e)
             .setStatus(StatusCode.ERROR)
             .end()
-          span._2.close()
+          scope.close()
           responseMonad.error(e)
         }
       }
