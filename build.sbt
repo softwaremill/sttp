@@ -234,7 +234,8 @@ lazy val allAggregates = projectsWithOptionalNative ++
   slf4jBackend.projectRefs ++
   examplesCe2.projectRefs ++
   examples.projectRefs ++
-  docs.projectRefs
+  docs.projectRefs ++
+  testServer.projectRefs
 
 // For CI tests, defining scripts that run JVM/JS/Native tests separately
 val testJVM = taskKey[Unit]("Test JVM projects")
@@ -261,10 +262,9 @@ lazy val testServer = (projectMatrix in file("testing/server"))
   .settings(commonJvmSettings)
   .settings(
     name := "testing-server",
-    publish / skip := true,
     libraryDependencies ++= Seq(
       akkaHttp,
-      "ch.megard" %% "akka-http-cors" % "0.4.2",
+      "ch.megard" %% "akka-http-cors" % "1.1.3",
       akkaStreams
     ),
     // the test server needs to be started before running any backend tests
@@ -274,7 +274,7 @@ lazy val testServer = (projectMatrix in file("testing/server"))
     testServerPort := 51823,
     startTestServer := reStart.toTask("").value
   )
-  .jvmPlatform(scalaVersions = List(scala2_13))
+  .jvmPlatform(scalaVersions = List(scala2_12, scala2_13))
 
 lazy val testServer2_13 = testServer.jvm(scala2_13)
 
