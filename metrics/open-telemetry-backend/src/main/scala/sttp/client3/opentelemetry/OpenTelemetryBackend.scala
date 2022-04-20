@@ -38,14 +38,10 @@ private class OpenTelemetryBackend[F[_], P](
         propagator.inject(Context.current(), carrier, setter)
         (span, scope)
       }
-      .flatMap { spanAndScope =>
-        val (span, scope) = spanAndScope
-        val label = requestLabel(request)
-        Span.current.addEvent(s"Start handling request: $label")
+      .flatMap { case (span, scope) =>
         responseMonad.handleError(
           delegate.send(request.headers(carrier.toMap)).map { response =>
             span.setAttribute(AttributeKey.stringKey("http.status_code"), response.code.code.toString)
-            Span.current.addEvent(s"Request $label handle with ${response.code.code}")
             span.end()
             scope.close()
             response
@@ -66,14 +62,8 @@ private class OpenTelemetryBackend[F[_], P](
       AttributeKey.stringKey("http.method"),
       request.method.method,
       AttributeKey.stringKey("http.url"),
-      request.uri.toString(),
-      AttributeKey.stringKey("component"),
-      "sttp3-client"
+      request.uri.toString()
     )
-  }
-
-  private def requestLabel[R >: PE, T](request: Request[T, R]): String = {
-    s"${request.method.method} ${request.uri.path.mkString("/")}"
   }
 
   override def close(): F[Unit] = delegate.close()
