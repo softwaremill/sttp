@@ -707,7 +707,7 @@ lazy val finagleBackend = (projectMatrix in file("finagle-backend"))
   .settings(
     name := "finagle-backend",
     libraryDependencies ++= Seq(
-      "com.twitter" %% "finagle-http" % "22.3.0"
+      "com.twitter" %% "finagle-http" % "22.4.0"
     )
   )
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13))
@@ -718,7 +718,7 @@ lazy val armeriaBackend = (projectMatrix in file("armeria-backend"))
   .settings(testServerSettings)
   .settings(
     name := "armeria-backend",
-    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.15.0"
+    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.16.0"
   )
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3)
   .dependsOn(core % compileAndTest)
@@ -882,10 +882,10 @@ lazy val upickle = (projectMatrix in file("json/upickle"))
     Test / scalacOptions --= Seq("-Wconf:cat=other-match-analysis:error")
   )
   .jvmPlatform(
-    scalaVersions = List(scala2_12, scala2_13),
+    scalaVersions = List(scala2_12, scala2_13) ++ scala3,
     settings = commonJvmSettings
   )
-  .jsPlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonJsSettings)
+  .jsPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3, settings = commonJsSettings)
   .nativePlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonNativeSettings)
   .dependsOn(core, jsonCommon)
 
@@ -1099,6 +1099,7 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     httpClientZioBackend,
     openTracingBackend,
     prometheusBackend,
+    openTelemetryBackend,
     slf4jBackend
   )
   .jvmPlatform(scalaVersions = List(scala2_13))
