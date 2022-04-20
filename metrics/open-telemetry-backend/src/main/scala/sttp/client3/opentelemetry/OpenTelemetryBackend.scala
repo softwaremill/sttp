@@ -15,7 +15,7 @@ import scala.collection.mutable
 private class OpenTelemetryBackend[F[_], P](
     delegate: SttpBackend[F, P],
     openTelemetry: OpenTelemetry,
-    spanName: Option[String]
+    spanName: Request[_, _] => String
 ) extends SttpBackend[F, P] {
 
   private val tracer = openTelemetry.getTracer("sttp3-client", "1.0.0")
@@ -30,7 +30,7 @@ private class OpenTelemetryBackend[F[_], P](
       .eval {
         val attributes = prepareBaseAttributes(request)
         val span: Span = tracer
-          .spanBuilder(spanName.getOrElse(s"HTTP ${request.method.method}"))
+          .spanBuilder(spanName(request))
           .setSpanKind(SpanKind.CLIENT)
           .setAllAttributes(attributes)
           .startSpan
@@ -85,14 +85,8 @@ private class OpenTelemetryBackend[F[_], P](
 object OpenTelemetryBackend {
   def apply[F[_], P](
       delegate: SttpBackend[F, P],
-      openTelemetry: OpenTelemetry
-  ): SttpBackend[F, P] =
-    new OpenTelemetryBackend[F, P](delegate, openTelemetry, None)
-
-  def apply[F[_], P](
-      delegate: SttpBackend[F, P],
       openTelemetry: OpenTelemetry,
-      spanName: String
+      spanName: Request[_, _] => String = request => s"HTTP ${request.method.method}"
   ): SttpBackend[F, P] =
-    new OpenTelemetryBackend[F, P](delegate, openTelemetry, Some(spanName))
+    new OpenTelemetryBackend[F, P](delegate, openTelemetry, spanName)
 }
