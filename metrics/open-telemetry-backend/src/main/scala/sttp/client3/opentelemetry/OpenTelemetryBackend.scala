@@ -2,7 +2,7 @@ package sttp.client3.opentelemetry
 
 import io.opentelemetry.api.OpenTelemetry
 import io.opentelemetry.api.common.{AttributeKey, Attributes}
-import io.opentelemetry.api.trace.{Span, SpanKind, StatusCode, Tracer}
+import io.opentelemetry.api.trace.{Span, SpanKind, StatusCode}
 import io.opentelemetry.context.Context
 import io.opentelemetry.context.propagation.{TextMapPropagator, TextMapSetter}
 import sttp.capabilities.Effect
@@ -27,29 +27,24 @@ private class OpenTelemetryBackend[F[_], P](
     val setter: TextMapSetter[mutable.Map[String, String]] = (carrier, key, value) => carrier.update(key, value)
     responseMonad
       .eval {
+        val attributes = prepareBaseAttributes(request)
         val span: Span = tracer
           .spanBuilder(s"HTTP ${request.method.method}")
           .setSpanKind(SpanKind.CLIENT)
+          .setAllAttributes(attributes)
           .startSpan
         val scope = span.makeCurrent()
         propagator.inject(Context.current(), carrier, setter)
-        val attributes = Attributes.of(
-          AttributeKey.stringKey("http.method"),
-          request.method.method,
-          AttributeKey.stringKey("http.url"),
-          request.uri.toString(),
-          AttributeKey.stringKey("component"),
-          "sttp3-client"
-        )
-        Span.current.addEvent("Starting the work.", attributes)
         (span, scope)
       }
       .flatMap { spanAndScope =>
         val (span, scope) = spanAndScope
+        val label = requestLabel(request)
+        Span.current.addEvent(s"Start handling request: $label")
         responseMonad.handleError(
           delegate.send(request.headers(carrier.toMap)).map { response =>
-            val attributes = Attributes.of(AttributeKey.stringKey("http.status_code"), response.code.code.toString)
-            Span.current.addEvent("Finished working.", attributes)
+            span.setAttribute(AttributeKey.stringKey("http.status_code"), response.code.code.toString)
+            Span.current.addEvent(s"Request $label handle with ${response.code.code}")
             span.end()
             scope.close()
             response
@@ -63,6 +58,21 @@ private class OpenTelemetryBackend[F[_], P](
           responseMonad.error(e)
         }
       }
+  }
+
+  private def prepareBaseAttributes[R >: PE, T](request: Request[T, R]) = {
+    Attributes.of(
+      AttributeKey.stringKey("http.method"),
+      request.method.method,
+      AttributeKey.stringKey("http.url"),
+      request.uri.toString(),
+      AttributeKey.stringKey("component"),
+      "sttp3-client"
+    )
+  }
+
+  private def requestLabel[R >: PE, T](request: Request[T, R]): String = {
+    s"${request.method.method}-${request.uri.path}"
   }
 
   override def close(): F[Unit] = delegate.close()
