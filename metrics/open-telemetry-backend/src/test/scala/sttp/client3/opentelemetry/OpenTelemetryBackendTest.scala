@@ -1,6 +1,8 @@
 package sttp.client3.opentelemetry
 
-import io.opentelemetry.api.trace.Tracer
+import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
+import io.opentelemetry.context.propagation.ContextPropagators
+import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.sdk.testing.exporter.InMemorySpanExporter
 import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
@@ -22,8 +24,14 @@ class OpenTelemetryBackendTest extends AnyFlatSpec with Matchers with BeforeAndA
 
   private val spanExporter = InMemorySpanExporter.create()
 
-  private val mockTracer: Tracer =
-    SdkTracerProvider.builder().addSpanProcessor(SimpleSpanProcessor.create(spanExporter)).build().get(getClass.getName)
+  private val mockTracer: SdkTracerProvider =
+    SdkTracerProvider.builder().addSpanProcessor(SimpleSpanProcessor.create(spanExporter)).build()
+
+  private val mockOpenTelemetry = OpenTelemetrySdk
+    .builder()
+    .setTracerProvider(mockTracer)
+    .setPropagators(ContextPropagators.create(W3CTraceContextPropagator.getInstance()))
+    .buildAndRegisterGlobal()
 
   private val backend: SttpBackend[Identity, Any] =
     OpenTelemetryBackend(
@@ -34,7 +42,7 @@ class OpenTelemetryBackendTest extends AnyFlatSpec with Matchers with BeforeAndA
         case r if r.uri.toString.contains("error") =>
           throw new RuntimeException("something went wrong")
       },
-      mockTracer
+      mockOpenTelemetry
     )
 
   before {
