@@ -18,4 +18,12 @@ OpenTelemetryBackend(
 )
 ```
 
-By default, the span is named after the HTTP method (e.g "HTTP POST") as [recommended by OpenTelemetry](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/http.md#name) for HTTP clients.
+By default, the span is named after the HTTP method (e.g "HTTP POST") as [recommended by OpenTelemetry](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/http.md#name) for HTTP clients. 
+It can be customized by usage of separate three argument constructor: 
+```scala
+OpenTelemetryBackend(
+  sttpBackend,
+  openTelemetry,
+  "custom-span-name"
+)
+```

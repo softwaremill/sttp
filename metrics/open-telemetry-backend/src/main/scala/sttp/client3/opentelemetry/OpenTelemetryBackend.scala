@@ -14,7 +14,8 @@ import scala.collection.mutable
 
 private class OpenTelemetryBackend[F[_], P](
     delegate: SttpBackend[F, P],
-    openTelemetry: OpenTelemetry
+    openTelemetry: OpenTelemetry,
+    spanName: Option[String]
 ) extends SttpBackend[F, P] {
 
   private val tracer = openTelemetry.getTracer("sttp3-client", "1.0.0")
@@ -29,7 +30,7 @@ private class OpenTelemetryBackend[F[_], P](
       .eval {
         val attributes = prepareBaseAttributes(request)
         val span: Span = tracer
-          .spanBuilder(s"HTTP ${request.method.method}")
+          .spanBuilder(spanName.getOrElse(s"HTTP ${request.method.method}"))
           .setSpanKind(SpanKind.CLIENT)
           .setAllAttributes(attributes)
           .startSpan
@@ -72,7 +73,7 @@ private class OpenTelemetryBackend[F[_], P](
   }
 
   private def requestLabel[R >: PE, T](request: Request[T, R]): String = {
-    s"${request.method.method}-${request.uri.path}"
+    s"${request.method.method} ${request.uri.path.mkString("/")}"
   }
 
   override def close(): F[Unit] = delegate.close()
@@ -86,6 +87,12 @@ object OpenTelemetryBackend {
       delegate: SttpBackend[F, P],
       openTelemetry: OpenTelemetry
   ): SttpBackend[F, P] =
-    new OpenTelemetryBackend[F, P](delegate, openTelemetry)
+    new OpenTelemetryBackend[F, P](delegate, openTelemetry, None)
 
+  def apply[F[_], P](
+      delegate: SttpBackend[F, P],
+      openTelemetry: OpenTelemetry,
+      spanName: String
+  ): SttpBackend[F, P] =
+    new OpenTelemetryBackend[F, P](delegate, openTelemetry, Some(spanName))
 }
