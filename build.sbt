@@ -46,6 +46,7 @@ val commonJsSettings = commonSettings ++ Seq(
   scalaJSLinkerConfig ~= {
     _.withBatchMode(true).withParallel(false)
   },
+  libraryDependencies += ("org.scala-js" %%% "scalajs-java-securerandom" % "1.0.0").cross(CrossVersion.for3Use2_13),
   Compile / scalacOptions ++= {
     if (isSnapshot.value) Seq.empty
     else
@@ -143,12 +144,12 @@ val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", 
 )
 
 val zio1Version = "1.0.14"
-val zio2Version = "2.0.0-RC2"
-val zio1InteropRsVersion = "1.3.9"
-val zio2InteropRsVersion = "2.0.0-RC3"
+val zio2Version = "2.0.0-RC5"
+val zio1InteropRsVersion = "1.3.10"
+val zio2InteropRsVersion = "2.0.0-RC6"
 
 val sttpModelVersion = "1.4.25"
-val sttpSharedVersion = "1.3.2"
+val sttpSharedVersion = "1.3.4"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.2.11"
 
@@ -209,10 +210,7 @@ lazy val allAggregates = projectsWithOptionalNative ++
   playJson.projectRefs ++
   openTracingBackend.projectRefs ++
   prometheusBackend.projectRefs ++
-  zio1TelemetryOpenTelemetryBackend.projectRefs ++
-  zio1TelemetryOpenTracingBackend.projectRefs ++
-  zioTelemetryOpenTelemetryBackend.projectRefs ++
-  zioTelemetryOpenTracingBackend.projectRefs ++
+  openTelemetryBackend.projectRefs ++
   finagleBackend.projectRefs ++
   armeriaBackend.projectRefs ++
   armeriaScalazBackend.projectRefs ++
@@ -227,7 +225,8 @@ lazy val allAggregates = projectsWithOptionalNative ++
   slf4jBackend.projectRefs ++
   examplesCe2.projectRefs ++
   examples.projectRefs ++
-  docs.projectRefs
+  docs.projectRefs ++
+  testServer.projectRefs
 
 // For CI tests, defining scripts that run JVM/JS/Native tests separately
 val testJVM = taskKey[Unit]("Test JVM projects")
@@ -254,10 +253,9 @@ lazy val testServer = (projectMatrix in file("testing/server"))
   .settings(commonJvmSettings)
   .settings(
     name := "testing-server",
-    publish / skip := true,
     libraryDependencies ++= Seq(
       akkaHttp,
-      "ch.megard" %% "akka-http-cors" % "0.4.2",
+      "ch.megard" %% "akka-http-cors" % "1.1.3",
       akkaStreams
     ),
     // the test server needs to be started before running any backend tests
@@ -267,7 +265,7 @@ lazy val testServer = (projectMatrix in file("testing/server"))
     testServerPort := 51823,
     startTestServer := reStart.toTask("").value
   )
-  .jvmPlatform(scalaVersions = List(scala2_13))
+  .jvmPlatform(scalaVersions = List(scala2_12, scala2_13))
 
 lazy val testServer2_13 = testServer.jvm(scala2_13)
 
@@ -660,7 +658,7 @@ lazy val finagleBackend = (projectMatrix in file("finagle-backend"))
   .settings(
     name := "finagle-backend",
     libraryDependencies ++= Seq(
-      "com.twitter" %% "finagle-http" % "22.3.0"
+      "com.twitter" %% "finagle-http" % "22.4.0"
     )
   )
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13))
@@ -671,7 +669,7 @@ lazy val armeriaBackend = (projectMatrix in file("armeria-backend"))
   .settings(testServerSettings)
   .settings(
     name := "armeria-backend",
-    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.15.0"
+    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.16.0"
   )
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3)
   .dependsOn(core % compileAndTest)
@@ -796,7 +794,7 @@ lazy val zioJson = (projectMatrix in file("json/zio-json"))
   .settings(
     name := "zio-json",
     libraryDependencies ++= Seq(
-      "dev.zio" %%% "zio-json" % "0.3.0-RC3",
+      "dev.zio" %%% "zio-json" % "0.3.0-RC7",
       "com.softwaremill.sttp.shared" %%% "zio" % sttpSharedVersion
     ),
     scalaTest
@@ -835,10 +833,10 @@ lazy val upickle = (projectMatrix in file("json/upickle"))
     Test / scalacOptions --= Seq("-Wconf:cat=other-match-analysis:error")
   )
   .jvmPlatform(
-    scalaVersions = List(scala2_12, scala2_13),
+    scalaVersions = List(scala2_12, scala2_13) ++ scala3,
     settings = commonJvmSettings
   )
-  .jsPlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonJsSettings)
+  .jsPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3, settings = commonJsSettings)
   .nativePlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonNativeSettings)
   .dependsOn(core, jsonCommon)
 
@@ -884,6 +882,18 @@ lazy val playJson = (projectMatrix in file("json/play-json"))
   .jsPlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonJsSettings)
   .dependsOn(core, jsonCommon)
 
+lazy val prometheusBackend = (projectMatrix in file("metrics/prometheus-backend"))
+  .settings(commonJvmSettings)
+  .settings(
+    name := "prometheus-backend",
+    libraryDependencies ++= Seq(
+      "io.prometheus" % "simpleclient" % "0.15.0"
+    ),
+    scalaTest
+  )
+  .jvmPlatform(scalaVersions = scala2 ++ scala3)
+  .dependsOn(core)
+
 lazy val openTracingBackend = (projectMatrix in file("metrics/open-tracing-backend"))
   .settings(commonJvmSettings)
   .settings(
@@ -897,71 +907,17 @@ lazy val openTracingBackend = (projectMatrix in file("metrics/open-tracing-backe
   .jvmPlatform(scalaVersions = scala2 ++ scala3)
   .dependsOn(core)
 
-lazy val prometheusBackend = (projectMatrix in file("metrics/prometheus-backend"))
+lazy val openTelemetryBackend = (projectMatrix in file("metrics/open-telemetry-backend"))
   .settings(commonJvmSettings)
   .settings(
-    name := "prometheus-backend",
+    name := "opentelemetry-backend",
     libraryDependencies ++= Seq(
-      "io.prometheus" % "simpleclient" % "0.15.0"
-    ),
-    scalaTest
-  )
-  .jvmPlatform(scalaVersions = scala2 ++ scala3)
-  .dependsOn(core)
-
-lazy val zio1TelemetryOpenTelemetryBackend = (projectMatrix in file("metrics/zio1-telemetry-open-telemetry-backend"))
-  .settings(commonJvmSettings)
-  .settings(
-    name := "zio1-telemetry-opentelemetry-backend",
-    libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-opentelemetry" % "1.0.0",
-      "org.scala-lang.modules" %% "scala-collection-compat" % "2.7.0",
+      "io.opentelemetry" % "opentelemetry-api" % "1.13.0",
       "io.opentelemetry" % "opentelemetry-sdk-testing" % "1.13.0" % Test
     ),
     scalaTest
   )
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3)
-  .dependsOn(zio1 % compileAndTest)
-  .dependsOn(core)
-
-lazy val zio1TelemetryOpenTracingBackend = (projectMatrix in file("metrics/zio1-telemetry-open-tracing-backend"))
-  .settings(commonJvmSettings)
-  .settings(
-    name := "zio1-telemetry-opentracing-backend",
-    libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-opentracing" % "1.0.0",
-      "org.scala-lang.modules" %% "scala-collection-compat" % "2.7.0"
-    )
-  )
-  .jvmPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3)
-  .dependsOn(zio1 % compileAndTest)
-  .dependsOn(core)
-
-lazy val zioTelemetryOpenTelemetryBackend = (projectMatrix in file("metrics/zio-telemetry-open-telemetry-backend"))
-  .settings(commonJvmSettings)
-  .settings(
-    name := "zio-telemetry-opentelemetry-backend",
-    libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-opentelemetry" % "2.0.0-RC1",
-      "io.opentelemetry" % "opentelemetry-sdk-testing" % "1.13.0" % Test
-    ),
-    scalaTest
-  )
-  .jvmPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3)
-  .dependsOn(zio % compileAndTest)
-  .dependsOn(core)
-
-lazy val zioTelemetryOpenTracingBackend = (projectMatrix in file("metrics/zio-telemetry-open-tracing-backend"))
-  .settings(commonJvmSettings)
-  .settings(
-    name := "zio-telemetry-opentracing-backend",
-    libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-opentracing" % "2.0.0-RC1",
-      "org.scala-lang.modules" %% "scala-collection-compat" % "2.7.0"
-    )
-  )
-  .jvmPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3)
-  .dependsOn(zio % compileAndTest)
   .dependsOn(core)
 
 lazy val scribeBackend = (projectMatrix in file("logging/scribe"))
@@ -1090,8 +1046,7 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     http4sBackend,
     openTracingBackend,
     prometheusBackend,
-    slf4jBackend,
-    zioTelemetryOpenTelemetryBackend,
-    zioTelemetryOpenTracingBackend
+    openTelemetryBackend,
+    slf4jBackend
   )
   .jvmPlatform(scalaVersions = List(scala2_13))

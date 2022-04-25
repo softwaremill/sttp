@@ -1,7 +1,7 @@
 ![sttp](https://github.com/softwaremill/sttp/raw/master/banner.png)
 
 [![Join the chat at https://gitter.im/softwaremill/sttp](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/softwaremill/sttp?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-[![CI](https://github.com/softwaremill/sttp/workflows/CI/badge.svg)](https://github.com/softwaremill/sttp/actions?query=workflow%3A%22CI%22)
+[![CI](https://github.com/softwaremill/sttp/workflows/CI/badge.svg)](https://github.com/softwaremill/sttp/actions?query=workflow%3ACI+branch%3Amaster)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.softwaremill.sttp.client3/core_2.12/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.softwaremill.sttp.client3/core_2.12)
 
 [![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/softwaremill/sttp)
@@ -45,14 +45,14 @@ sttp (v2) documentation is available at [sttp.softwaremill.com/en/v2](http://stt
 
 sttp (v1) documentation is available at [sttp.softwaremill.com/en/v1](https://sttp.softwaremill.com/en/v1).
 
-scaladoc is available at [https://www.javadoc.io](https://www.javadoc.io/doc/com.softwaremill.sttp.client3/core_2.12/3.5.1)
+scaladoc is available at [https://www.javadoc.io](https://www.javadoc.io/doc/com.softwaremill.sttp.client3/core_2.12/3.5.2)
 
 ## Quickstart with Ammonite
 
 If you are an [Ammonite](http://ammonite.io) user, you can quickly start experimenting with sttp by copy-pasting the following:
 
 ```scala
-import $ivy.`com.softwaremill.sttp.client3::core:3.5.1`
+import $ivy.`com.softwaremill.sttp.client3::core:3.5.2`
 import sttp.client3.quick._
 quickRequest.get(uri"http://httpbin.org/ip").send(backend)
 ```
@@ -64,7 +64,7 @@ This brings in the sttp API and a synchronous backend instance.
 Add the following dependency:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "core" % "3.5.1"
+"com.softwaremill.sttp.client3" %% "core" % "3.5.2"
 ```
 
 Then, import:
@@ -98,7 +98,7 @@ The documentation is typechecked using [mdoc](https://scalameta.org/mdoc/). The 
 
 When generating documentation, it's best to set the version to the current one, so that the generated doc files don't include modifications with the current snapshot version. 
 
-That is, in sbt run: `set version := "3.5.1"`, before running `mdoc` in `docs`.
+That is, in sbt run: `set version := "3.5.2"`, before running `mdoc` in `docs`.
 
 ### Testing the Scala.JS backend
 
