@@ -1,41 +1,48 @@
-package sttp.client3.ziotelemetry.opentelemetry
+package sttp.client3.opentelemetry
 
+import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
+import io.opentelemetry.context.propagation.ContextPropagators
+import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.sdk.testing.exporter.InMemorySpanExporter
 import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
 import org.scalatest.BeforeAndAfter
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import sttp.client3.impl.zio.{RIOMonadAsyncError, ZioTestBase}
+import sttp.client3.monad.IdMonad
 import sttp.client3.testing.SttpBackendStub
-import sttp.client3.{Request, Response, SttpBackend, UriContext, basicRequest}
+import sttp.client3.{Identity, Request, Response, SttpBackend, UriContext, basicRequest}
 import sttp.model.StatusCode
-import zio.{Task, ZIO}
-import zio.telemetry.opentelemetry.Tracing
+
 import scala.collection.JavaConverters._
-
 import scala.collection.mutable
+import scala.util.Try
 
-class ZioTelemetryOpenTelemetryBackendTest extends AnyFlatSpec with Matchers with BeforeAndAfter with ZioTestBase {
+class OpenTelemetryBackendTest extends AnyFlatSpec with Matchers with BeforeAndAfter {
 
   private val recordedRequests = mutable.ListBuffer[Request[_, _]]()
 
   private val spanExporter = InMemorySpanExporter.create()
 
-  private val mockTracer =
-    SdkTracerProvider.builder().addSpanProcessor(SimpleSpanProcessor.create(spanExporter)).build().get(getClass.getName)
-  private val mockTracing = runtime.unsafeRun(ZIO.scoped(Tracing.scoped(mockTracer)))
+  private val mockTracer: SdkTracerProvider =
+    SdkTracerProvider.builder().addSpanProcessor(SimpleSpanProcessor.create(spanExporter)).build()
 
-  private val backend: SttpBackend[Task, Any] =
-    ZioTelemetryOpenTelemetryBackend(
-      SttpBackendStub(new RIOMonadAsyncError[Any]).whenRequestMatchesPartial {
+  private val mockOpenTelemetry = OpenTelemetrySdk
+    .builder()
+    .setTracerProvider(mockTracer)
+    .setPropagators(ContextPropagators.create(W3CTraceContextPropagator.getInstance()))
+    .buildAndRegisterGlobal()
+
+  private val backend: SttpBackend[Identity, Any] =
+    OpenTelemetryBackend(
+      SttpBackendStub.apply(IdMonad).whenRequestMatchesPartial {
         case r if r.uri.toString.contains("echo") =>
           recordedRequests += r
           Response.ok("")
         case r if r.uri.toString.contains("error") =>
           throw new RuntimeException("something went wrong")
       },
-      mockTracing
+      mockOpenTelemetry
     )
 
   before {
@@ -44,7 +51,7 @@ class ZioTelemetryOpenTelemetryBackendTest extends AnyFlatSpec with Matchers wit
   }
 
   "ZioTelemetryOpenTelemetryBackend" should "record spans for requests" in {
-    val response = runtime.unsafeRun(basicRequest.post(uri"http://stub/echo").send(backend))
+    val response = basicRequest.post(uri"http://stub/echo").send(backend)
     response.code shouldBe StatusCode.Ok
 
     val spans = spanExporter.getFinishedSpanItems.asScala
@@ -53,7 +60,7 @@ class ZioTelemetryOpenTelemetryBackendTest extends AnyFlatSpec with Matchers wit
   }
 
   it should "propagate span" in {
-    val response = runtime.unsafeRun(basicRequest.post(uri"http://stub/echo").send(backend))
+    val response = basicRequest.post(uri"http://stub/echo").send(backend)
     response.code shouldBe StatusCode.Ok
 
     val spans = spanExporter.getFinishedSpanItems.asScala
@@ -65,7 +72,7 @@ class ZioTelemetryOpenTelemetryBackendTest extends AnyFlatSpec with Matchers wit
   }
 
   it should "set span status in case of error" in {
-    runtime.unsafeRunSync(basicRequest.post(uri"http://stub/error").send(backend))
+    Try(basicRequest.post(uri"http://stub/error").send(backend))
 
     val spans = spanExporter.getFinishedSpanItems.asScala
     spans should have size 1
