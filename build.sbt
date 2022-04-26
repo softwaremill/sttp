@@ -470,7 +470,7 @@ lazy val zio = (projectMatrix in file("effects/zio"))
   .settings(testServerSettings)
   .dependsOn(core % compileAndTest)
   .jvmPlatform(
-    scalaVersions = scala2 ++ scala3,
+    scalaVersions = List(scala2_12, scala2_13) ++ scala3,
     settings = commonJvmSettings
   )
   .jsPlatform(
@@ -546,7 +546,7 @@ lazy val asyncHttpClientScalazBackend =
     .dependsOn(scalaz % compileAndTest)
 
 lazy val asyncHttpClientZio1Backend =
-  asyncHttpClientBackendProject("zio1", includeDotty = true)
+  asyncHttpClientBackendProject("zio1", includeDotty = true, include2_11 = false)
     .settings(
       libraryDependencies ++= Seq(
         "dev.zio" %% "zio-interop-reactivestreams" % zio1InteropRsVersion
