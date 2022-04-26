@@ -6,9 +6,9 @@ Choosing the right backend depends on a number of factors: whether you are using
 
 Which one to choose?
 
-* for simple exploratory requests, use the [synchronous](synchronous.md) `HttpURLConnectionBackend`, or `HttpClientSyncBackend` if you are on Java11+.
+* for simple exploratory requests, use the [synchronous](synchronous.md) `HttpClientSyncBackend`.
 * if you have Akka in your stack, use the [Akka backend](akka.md)
-* if you are using `Future` without Akka, use the `HttpClientFutureBackend` if you are on Java11+, or `AsyncHttpClientFutureBackend` [Future](future.md) otherwise
+* if you are using `Future` without Akka, use the `HttpClientFutureBackend`
 * finally, if you are using a functional effect wrapper, use one of the "functional" backends, for [ZIO](zio.md), [Monix](monix.md), [Scalaz](scalaz.md), [cats-effect](catseffect.md) or [fs2](fs2.md). 
 
 Each backend has two type parameters:
@@ -22,6 +22,11 @@ Below is a summary of all the JVM backends; see the sections on individual backe
 ==================================== ================================ ================================================= ========================== ===================
 Class                                Effect type                      Supported stream type                             Supports websockets        Fully non-blocking
 ==================================== ================================ ================================================= ========================== ===================
+``HttpClientSyncBackend``            None (``Identity``)              n/a                                               no                         no
+``HttpClientFutureBackend``          ``scala.concurrent.Future``      n/a                                               yes (regular)              no
+``HttpClientMonixBackend``           ``monix.eval.Task``              ``monix.reactive.Observable[ByteBuffer]``         yes (regular & streaming)  yes
+``HttpClientFs2Backend``             ``F[_]: cats.effect.Concurrent`` ``fs2.Stream[F, Byte]``                           yes (regular & streaming)  yes
+``HttpClientZioBackend``             ``zio.Task``                     ``zio.stream.Stream[Throwable, Byte]``            yes (regular & streaming)  yes
 ``HttpURLConnectionBackend``         None (``Identity``)              n/a                                               no                         no
 ``TryHttpURLConnectionBackend``      ``scala.util.Try``               n/a                                               no                         no
 ``AkkaHttpBackend``                  ``scala.concurrent.Future``      ``akka.stream.scaladsl.Source[ByteString, Any]``  yes (regular & streaming)  yes
@@ -41,11 +46,6 @@ Class                                Effect type                      Supported 
 ``OkHttpFutureBackend``              ``scala.concurrent.Future``      n/a                                               yes (regular)              no
 ``OkHttpMonixBackend``               ``monix.eval.Task``              ``monix.reactive.Observable[ByteBuffer]``         yes (regular & streaming)  no
 ``Http4sBackend``                    ``F[_]: cats.effect.Effect``     ``fs2.Stream[F, Byte]``                           no                         no
-``HttpClientSyncBackend``            None (``Identity``)              n/a                                               no                         no
-``HttpClientFutureBackend``          ``scala.concurrent.Future``      n/a                                               yes (regular)              no
-``HttpClientMonixBackend``           ``monix.eval.Task``              ``monix.reactive.Observable[ByteBuffer]``         yes (regular & streaming)  yes
-``HttpClientFs2Backend``             ``F[_]: cats.effect.Concurrent`` ``fs2.Stream[F, Byte]``                           yes (regular & streaming)  yes
-``HttpClientZioBackend``             ``zio.Task``                     ``zio.stream.Stream[Throwable, Byte]``            yes (regular & streaming)  yes
 ``FinagleBackend``                   ``com.twitter.util.Future``      n/a                                               no                         no
 ==================================== ================================ ================================================= ========================== ===================
 ```

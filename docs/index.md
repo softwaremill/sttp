@@ -20,7 +20,7 @@ val sort: Option[String] = None
 val request = basicRequest.get(
   uri"https://api.github.com/search/repositories?q=$query&sort=$sort")
 
-val backend = HttpURLConnectionBackend()
+val backend = HttpClientSyncBackend()
 val response = request.send(backend)
 
 // response.header(...): Option[String]

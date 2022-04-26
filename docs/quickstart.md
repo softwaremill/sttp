@@ -1,9 +1,6 @@
 # Quickstart
 
-The core sttp client API comes in a single jar, with a transitive dependency on [sttp model](https://github.com/softwaremill/sttp-model). This also includes a default, [synchronous](backends/synchronous.md) backend, which is based on Java's `HttpURLConnection`. 
-
-Additionally, core sttp client jar contains HttpClient based backend - `HttpClientBackend`
-Which is a modern, asynchronous and websocket-capable backend.
+The core sttp client API comes in a single jar, with a transitive dependency on [sttp model](https://github.com/softwaremill/sttp-model). This also includes a default, [synchronous](backends/synchronous.md) backend, which is based on Java's `HttpClient`.
 
 To integrate with other parts of your application, you'll often need to use an alternate backend (but what's important is that the API remains the same!). See the section on [backends](backends/summary.md) for a short guide on which backend to choose, and a list of all implementations.
 
@@ -29,7 +26,7 @@ import sttp.client3.quick._
 quickRequest.get(uri"http://httpbin.org/ip").send(backend)
 ```
 
-Importing the `quick` object has the same effect as importing `sttp.client3._`, plus defining a synchronous backend (`implict val backend = HttpURLConnectionBackend()`), so that sttp can be used right away.
+Importing the `quick` object has the same effect as importing `sttp.client3._`, plus defining a synchronous backend (`val backend = HttpClientSyncBackend()`), so that sttp can be used right away.
 
 If the default `HttpURLConnectionBackend` for some reason is insufficient, you can also use one based on OkHttp or HttpClient:
 
@@ -54,7 +51,7 @@ And that's all you need to start using sttp client! To create and send your firs
 ```scala
 import sttp.client3._
 
-val backend = HttpURLConnectionBackend()
+val backend = HttpClientSyncBackend()
 val response = basicRequest
   .body("Hello, world!")  
   .post(uri"https://httpbin.org/post?hello=world").send(backend)

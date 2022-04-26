@@ -14,7 +14,7 @@ object LogRequestsSlf4j extends App {
 
   val backend: SttpBackend[Identity, Any] =
     Slf4jLoggingBackend(
-      HttpURLConnectionBackend(),
+      HttpClientSyncBackend(),
       includeTiming = true,
       logRequestBody = false,
       logResponseBody = false
