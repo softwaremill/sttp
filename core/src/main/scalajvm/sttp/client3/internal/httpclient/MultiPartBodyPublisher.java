@@ -12,7 +12,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 // https://stackoverflow.com/questions/46392160/java-9-httpclient-send-a-multipart-form-data-request/54675316#54675316
-public class MultiPartBodyPublisher {
+class MultiPartBodyPublisher {
     private List<PartsSpecification> partsSpecificationList = new ArrayList<>();
     private String boundary = UUID.randomUUID().toString();
 

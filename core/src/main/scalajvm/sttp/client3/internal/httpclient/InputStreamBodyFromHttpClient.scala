@@ -9,7 +9,7 @@ import sttp.ws.WebSocket
 
 import java.io.{BufferedInputStream, ByteArrayInputStream, FileInputStream, InputStream}
 
-trait InputStreamBodyFromHttpClient[F[_], S] extends BodyFromHttpClient[F, S, InputStream] {
+private[client3] trait InputStreamBodyFromHttpClient[F[_], S] extends BodyFromHttpClient[F, S, InputStream] {
 
   override protected lazy val bodyFromResponseAs =
     new BodyFromResponseAs[F, InputStream, WebSocket[F], streams.BinaryStream]() {
