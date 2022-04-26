@@ -15,7 +15,7 @@ import sttp.ws.{WebSocket, WebSocketFrame}
 
 import java.nio.file.StandardOpenOption
 
-trait MonixBodyFromHttpClient extends BodyFromHttpClient[Task, MonixStreams, MonixStreams.BinaryStream] {
+private[monix] trait MonixBodyFromHttpClient extends BodyFromHttpClient[Task, MonixStreams, MonixStreams.BinaryStream] {
   override val streams: MonixStreams = MonixStreams
   implicit def scheduler: Scheduler
 
