@@ -104,13 +104,13 @@ This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supp
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "httpclient-backend" % "@VERSION@"
+"com.softwaremill.sttp.client3" %% "core" % "@VERSION@"
 ```
 
 and some imports:
 
 ```scala mdoc:reset:silent
-import sttp.client3.httpclient.HttpClientFutureBackend
+import sttp.client3.HttpClientFutureBackend
 import scala.concurrent.ExecutionContext.Implicits.global
 ```
 

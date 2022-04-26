@@ -9,8 +9,8 @@ The `*-zio` modules depend on ZIO 2.x. For ZIO 1.x support, use modules with the
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "httpclient-backend-zio" % "@VERSION@"  // for ZIO 2.x
-"com.softwaremill.sttp.client3" %% "httpclient-backend-zio1" % "@VERSION@" // for ZIO 1.x
+"com.softwaremill.sttp.client3" %% "zio" % "@VERSION@"  // for ZIO 2.x
+"com.softwaremill.sttp.client3" %% "zio1" % "@VERSION@" // for ZIO 1.x
 ```
 
 Create the backend using:

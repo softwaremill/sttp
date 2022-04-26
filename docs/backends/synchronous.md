@@ -53,13 +53,13 @@ This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supp
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "httpclient-backend" % "@VERSION@"
+"com.softwaremill.sttp.client3" %% "core" % "@VERSION@"
 ```
 
 Create the backend using:
 
 ```scala mdoc:compile-only
-import sttp.client3.httpclient.HttpClientSyncBackend
+import sttp.client3.HttpClientSyncBackend
 
 val backend = HttpClientSyncBackend()
 ```
@@ -67,7 +67,7 @@ val backend = HttpClientSyncBackend()
 or, if you'd like to instantiate the HttpClient yourself:
 
 ```scala mdoc:compile-only
-import sttp.client3.httpclient.HttpClientSyncBackend
+import sttp.client3.HttpClientSyncBackend
 import java.net.http.HttpClient
 val httpClient: HttpClient = ???
 val backend = HttpClientSyncBackend.usingClient(httpClient)

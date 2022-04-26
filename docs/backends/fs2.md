@@ -88,9 +88,9 @@ val backend = AsyncHttpClientFs2Backend.usingClient[IO](asyncHttpClient, dispatc
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "httpclient-backend-fs2" % "@VERSION@" // for cats-effect 3.x & fs2 3.x
+"com.softwaremill.sttp.client3" %% "fs2" % "@VERSION@" // for cats-effect 3.x & fs2 3.x
 // or 
-"com.softwaremill.sttp.client3" %% "httpclient-backend-fs2-ce2" % "@VERSION@" // for cats-effect 2.x & fs2 2.x
+"com.softwaremill.sttp.client3" %% "fs2-ce2" % "@VERSION@" // for cats-effect 2.x & fs2 2.x
 ```
 
 Create the backend using a cats-effect `Resource`:

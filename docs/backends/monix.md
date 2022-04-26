@@ -76,7 +76,7 @@ This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supp
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "httpclient-backend-monix" % "@VERSION@"
+"com.softwaremill.sttp.client3" %% "monix" % "@VERSION@"
 ```
 
 Create the backend using:
