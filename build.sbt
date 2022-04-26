@@ -447,7 +447,7 @@ lazy val zio1 = (projectMatrix in file("effects/zio1"))
   .settings(testServerSettings)
   .dependsOn(core % compileAndTest)
   .jvmPlatform(
-    scalaVersions = scala2 ++ scala3,
+    scalaVersions = List(scala2_12, scala2_13) ++ scala3,
     settings = commonJvmSettings
   )
   .jsPlatform(
@@ -470,7 +470,7 @@ lazy val zio = (projectMatrix in file("effects/zio"))
   .settings(testServerSettings)
   .dependsOn(core % compileAndTest)
   .jvmPlatform(
-    scalaVersions = List(scala2_12, scala2_13) ++ scala3,
+    scalaVersions = scala2 ++ scala3,
     settings = commonJvmSettings
   )
   .jsPlatform(
