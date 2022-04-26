@@ -386,7 +386,7 @@ lazy val fs2Ce2 = (projectMatrix in file("effects/fs2-ce2"))
   .settings(testServerSettings)
   .dependsOn(core % compileAndTest, catsCe2 % compileAndTest)
   .jvmPlatform(
-    scalaVersions = scala2 ++ scala3,
+    scalaVersions = List(scala2_12, scala2_13) ++ scala3,
     settings = commonJvmSettings
   )
   .jsPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3, settings = commonJsSettings)
@@ -576,7 +576,7 @@ lazy val asyncHttpClientCatsBackend =
     .dependsOn(cats % compileAndTest)
 
 lazy val asyncHttpClientFs2Ce2Backend =
-  asyncHttpClientBackendProject("fs2-ce2", includeDotty = true)
+  asyncHttpClientBackendProject("fs2-ce2", includeDotty = true, include2_11 = false)
     .settings(
       libraryDependencies ++= dependenciesFor(scalaVersion.value)(
         "co.fs2" %% "fs2-reactive-streams" % fs2_2_version(_),
