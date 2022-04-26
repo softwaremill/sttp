@@ -6,8 +6,8 @@ import monix.nio.file._
 import monix.reactive.{Consumer, Observable}
 import sttp.capabilities.monix.MonixStreams
 import sttp.client3.WebSocketResponseAs
-import sttp.client3.httpclient.BodyFromHttpClient
 import sttp.client3.impl.monix.MonixWebSockets
+import sttp.client3.internal.httpclient.BodyFromHttpClient
 import sttp.client3.internal.{BodyFromResponseAs, SttpFile}
 import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.model.ResponseMetadata

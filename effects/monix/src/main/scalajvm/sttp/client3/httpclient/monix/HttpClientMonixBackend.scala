@@ -8,14 +8,14 @@ import monix.reactive.compression._
 import org.reactivestreams.{FlowAdapters, Publisher}
 import sttp.capabilities.WebSockets
 import sttp.capabilities.monix.MonixStreams
-import sttp.client3.httpclient.HttpClientBackend.EncodingHandler
-import sttp.client3.httpclient._
+import sttp.client3.HttpClientBackend.EncodingHandler
 import sttp.client3.httpclient.monix.HttpClientMonixBackend.MonixEncodingHandler
 import sttp.client3.impl.monix.{MonixSimpleQueue, TaskMonadAsyncError}
 import sttp.client3.internal._
+import sttp.client3.internal.httpclient.{BodyFromHttpClient, BodyToHttpClient, Sequencer}
 import sttp.client3.internal.ws.SimpleQueue
 import sttp.client3.testing.SttpBackendStub
-import sttp.client3.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
+import sttp.client3.{FollowRedirectsBackend, HttpClientAsyncBackend, HttpClientBackend, SttpBackend, SttpBackendOptions}
 import sttp.monad.MonadError
 
 import java.io.UnsupportedEncodingException
