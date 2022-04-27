@@ -11,7 +11,7 @@ import cats.implicits._
 import fs2.compression.InflateParams
 import fs2.interop.reactivestreams.{PublisherOps, StreamUnicastPublisher}
 import fs2.{Chunk, Stream}
-import org.reactivestreams.{FlowAdapters, Publisher}
+import org.reactivestreams.FlowAdapters
 import sttp.capabilities.WebSockets
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client3.HttpClientBackend.EncodingHandler
@@ -32,6 +32,7 @@ import sttp.client3.{
 }
 import sttp.monad.MonadError
 
+import java.util.concurrent.Flow.Publisher
 import scala.collection.JavaConverters._
 
 class HttpClientFs2Backend[F[_]: Async] private (
@@ -61,7 +62,9 @@ class HttpClientFs2Backend[F[_]: Async] private (
         monad.eval(
           BodyPublishers.fromPublisher(
             FlowAdapters.toFlowPublisher(
-              StreamUnicastPublisher(stream.chunks.map(_.toByteBuffer), dispatcher): Publisher[ByteBuffer]
+              StreamUnicastPublisher(stream.chunks.map(_.toByteBuffer), dispatcher): org.reactivestreams.Publisher[
+                ByteBuffer
+              ]
             )
           )
         )
@@ -76,7 +79,10 @@ class HttpClientFs2Backend[F[_]: Async] private (
   override protected def createSequencer: F[Sequencer[F]] = Fs2Sequencer.create
 
   override protected def publisherToBody(p: Publisher[util.List[ByteBuffer]]): Stream[F, Byte] = {
-    p.toStream[F].flatMap(data => Stream.emits(data.asScala.map(Chunk.byteBuffer)).flatMap(Stream.chunk))
+    FlowAdapters
+      .toPublisher(p)
+      .toStream[F]
+      .flatMap(data => Stream.emits(data.asScala.map(Chunk.byteBuffer)).flatMap(Stream.chunk))
   }
 
   override protected def emptyBody(): Stream[F, Byte] = Stream.empty

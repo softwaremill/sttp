@@ -1,6 +1,5 @@
 package sttp.client3
 
-import org.reactivestreams.Publisher
 import sttp.capabilities.WebSockets
 import sttp.client3.HttpClientBackend.EncodingHandler
 import sttp.client3.HttpClientFutureBackend.InputStreamEncodingHandler
@@ -23,6 +22,7 @@ import java.net.http.HttpRequest.BodyPublisher
 import java.net.http.{HttpClient, HttpRequest}
 import java.nio.ByteBuffer
 import java.util
+import java.util.concurrent.Flow.Publisher
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
 import scala.concurrent.{ExecutionContext, Future}
 

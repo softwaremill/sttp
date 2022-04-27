@@ -5,7 +5,7 @@ import monix.eval.Task
 import monix.execution.Scheduler
 import monix.reactive.Observable
 import monix.reactive.compression._
-import org.reactivestreams.{FlowAdapters, Publisher}
+import org.reactivestreams.FlowAdapters
 import sttp.capabilities.WebSockets
 import sttp.capabilities.monix.MonixStreams
 import sttp.client3.HttpClientBackend.EncodingHandler
@@ -23,6 +23,7 @@ import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.{HttpClient, HttpRequest}
 import java.nio.ByteBuffer
 import java.util
+import java.util.concurrent.Flow.Publisher
 import scala.collection.JavaConverters._
 
 class HttpClientMonixBackend private (
@@ -64,7 +65,7 @@ class HttpClientMonixBackend private (
 
   override protected def publisherToBody(p: Publisher[util.List[ByteBuffer]]): Observable[Array[Byte]] = {
     Observable
-      .fromReactivePublisher(p)
+      .fromReactivePublisher(FlowAdapters.toPublisher(p))
       .flatMapIterable(_.asScala.toList)
       .map(_.safeRead())
   }

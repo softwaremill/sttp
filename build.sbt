@@ -295,9 +295,6 @@ lazy val core = (projectMatrix in file("core"))
         scalacOptions ++= {
           if (scalaVersion.value == scala2_13) List("-target:jvm-11") else Nil
         },
-        libraryDependencies ++= Seq(
-          "org.reactivestreams" % "reactive-streams" % "1.0.3"
-        ),
         libraryDependencies ++= dependenciesFor(scalaVersion.value)(
           "org.scala-lang.modules" %% "scala-java8-compat" % scalajava8compatVersion(_)
         )

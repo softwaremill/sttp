@@ -1,12 +1,12 @@
 package sttp.client3.internal.httpclient
 
-import org.reactivestreams.{Subscriber, Subscription}
 import InputStreamSubscriber._
-import scala.compat.java8.FunctionConverters._
 
+import scala.compat.java8.FunctionConverters._
 import java.io.InputStream
 import java.nio.ByteBuffer
 import java.util
+import java.util.concurrent.Flow.{Subscriber, Subscription}
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.UnaryOperator

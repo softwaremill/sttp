@@ -1,6 +1,5 @@
 package sttp.client3
 
-import org.reactivestreams.{FlowAdapters, Publisher}
 import sttp.client3.HttpClientBackend.EncodingHandler
 import sttp.client3.internal.httpclient.{AddToQueueListener, DelegatingWebSocketListener, Sequencer, WebSocketImpl}
 import sttp.client3.internal.ws.{SimpleQueue, WebSocketEvent}
@@ -12,6 +11,7 @@ import java.net.http.HttpResponse.BodyHandlers
 import java.net.http._
 import java.nio.ByteBuffer
 import java.time.Duration
+import java.util.concurrent.Flow.Publisher
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.{CompletionException, Flow}
 import java.{util => ju}
@@ -49,7 +49,7 @@ abstract class HttpClientAsyncBackend[F[_], S, P, B](
                     u: Throwable
                 ) => {
                   if (t != null) {
-                    try success(readResponse(t, Left(publisherToBody(FlowAdapters.toPublisher(t.body()))), request))
+                    try success(readResponse(t, Left(publisherToBody(t.body())), request))
                     catch {
                       case e: Exception => error(e)
                     }

@@ -1,7 +1,7 @@
 package sttp.client3.httpclient.zio
 
 import _root_.zio.interop.reactivestreams._
-import org.reactivestreams.{FlowAdapters, Publisher}
+import org.reactivestreams.FlowAdapters
 import sttp.capabilities.WebSockets
 import sttp.capabilities.zio.ZioStreams
 import sttp.client3.HttpClientBackend.EncodingHandler
@@ -21,6 +21,7 @@ import java.net.http.HttpRequest.{BodyPublisher, BodyPublishers}
 import java.net.http.{HttpClient, HttpRequest}
 import java.nio.ByteBuffer
 import java.util
+import java.util.concurrent.Flow.Publisher
 import scala.collection.JavaConverters._
 
 class HttpClientZioBackend private (
@@ -46,7 +47,7 @@ class HttpClientZioBackend private (
   override protected def emptyBody(): ZStream[Any, Throwable, Byte] = ZStream.empty
 
   override protected def publisherToBody(p: Publisher[util.List[ByteBuffer]]): ZStream[Any, Throwable, Byte] =
-    p.toStream().mapConcatChunk { list =>
+    FlowAdapters.toPublisher(p).toStream().mapConcatChunk { list =>
       val a = list.asScala.toList.flatMap(_.safeRead()).toArray
       ByteArray(a, 0, a.length)
     }
