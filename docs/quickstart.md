@@ -6,7 +6,7 @@ To integrate with other parts of your application, you'll often need to use an a
 
 ## Using sbt
 
-The basic dependency which provides the API and the default synchronous backend is:
+The basic dependency which provides the API, together with a synchronous and `Future`-based backends, is:
 
 ```scala
 "com.softwaremill.sttp.client3" %% "core" % "@VERSION@"
