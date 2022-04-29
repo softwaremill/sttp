@@ -1,6 +1,59 @@
 # fs2 backend
 
-The [fs2](https://github.com/functional-streams-for-scala/fs2) backend is **asynchronous**. It can be created for any type implementing the `cats.effect.Async` typeclass, such as `cats.effect.IO`. Sending a request is a non-blocking, lazily-evaluated operation and results in a wrapped response. There's a transitive dependency on `cats-effect`. 
+The [fs2](https://github.com/functional-streams-for-scala/fs2) backends are **asynchronous**. They can be created for any type implementing the `cats.effect.Async` typeclass, such as `cats.effect.IO`. Sending a request is a non-blocking, lazily-evaluated operation and results in a wrapped response. There's a transitive dependency on `cats-effect`. 
+
+## Using HttpClient
+
+To use, add the following dependency to your project:
+
+```scala
+"com.softwaremill.sttp.client3" %% "fs2" % "@VERSION@" // for cats-effect 3.x & fs2 3.x
+// or 
+"com.softwaremill.sttp.client3" %% "fs2-ce2" % "@VERSION@" // for cats-effect 2.x & fs2 2.x
+```
+
+Obtain a cats-effect `Resource` which creates the backend, and closes the thread pool after the resource is no longer used:
+
+```scala mdoc:compile-only
+import cats.effect.IO
+import sttp.client3.httpclient.fs2.HttpClientFs2Backend
+
+HttpClientFs2Backend.resource[IO]().use { backend => ??? }
+```
+
+or, by providing a custom `Dispatcher`:
+
+```scala mdoc:compile-only
+import cats.effect.IO
+import cats.effect.std.Dispatcher
+import sttp.client3.httpclient.fs2.HttpClientFs2Backend
+
+val dispatcher: Dispatcher[IO] = ???
+
+HttpClientFs2Backend[IO](dispatcher).flatMap { backend => ??? }
+```
+
+or, if you'd like to instantiate the `HttpClient` yourself:
+
+```scala mdoc:compile-only
+import cats.effect.IO
+import cats.effect.std.Dispatcher
+import java.net.http.HttpClient
+import sttp.client3.httpclient.fs2.HttpClientFs2Backend
+
+val httpClient: HttpClient = ???
+val dispatcher: Dispatcher[IO] = ???
+
+val backend = HttpClientFs2Backend.usingClient[IO](httpClient, dispatcher)
+```
+
+This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards.
+
+Host header override is supported in environments running Java 12 onwards, but it has to be enabled by system property:
+
+```
+-Djdk.httpclient.allowRestrictedHeaders=host
+```
 
 ## Using async-http-client
 
@@ -83,58 +136,6 @@ val asyncHttpClient: AsyncHttpClient = ???
 val backend = AsyncHttpClientFs2Backend.usingClient[IO](asyncHttpClient, dispatcher)
 ```
 
-## Using HttpClient (Java 11+)
-
-To use, add the following dependency to your project:
-
-```scala
-"com.softwaremill.sttp.client3" %% "httpclient-backend-fs2" % "@VERSION@" // for cats-effect 3.x & fs2 3.x
-// or 
-"com.softwaremill.sttp.client3" %% "httpclient-backend-fs2-ce2" % "@VERSION@" // for cats-effect 2.x & fs2 2.x
-```
-
-Create the backend using a cats-effect `Resource`:
-
-```scala mdoc:compile-only
-import cats.effect.IO
-import sttp.client3.httpclient.fs2.HttpClientFs2Backend
-
-HttpClientFs2Backend.resource[IO]().use { backend => ??? }
-```
-
-or, if by providing a custom `Dispatcher`:
-
-```scala mdoc:compile-only
-import cats.effect.IO
-import cats.effect.std.Dispatcher
-import sttp.client3.httpclient.fs2.HttpClientFs2Backend
-
-val dispatcher: Dispatcher[IO] = ???
-
-HttpClientFs2Backend[IO](dispatcher).flatMap { backend => ??? }
-```
-
-or, if you'd like to instantiate the `HttpClient` yourself:
-
-```scala mdoc:compile-only
-import cats.effect.IO
-import cats.effect.std.Dispatcher
-import java.net.http.HttpClient
-import sttp.client3.httpclient.fs2.HttpClientFs2Backend
-
-val httpClient: HttpClient = ???
-val dispatcher: Dispatcher[IO] = ???
-
-val backend = HttpClientFs2Backend.usingClient[IO](httpClient, dispatcher)
-```
-
-This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards.
-
-Host header override is supported in environments running Java 12 onwards, but it has to be enabled by system property:
-```
-jdk.httpclient.allowRestrictedHeaders=host
-```
-
 ## Using Armeria
 
 To use, add the following dependency to your project:
@@ -190,7 +191,7 @@ Please visit [the official documentation](https://armeria.dev/docs/client-factor
 
 ## Streaming
 
-The fs2 backend supports streaming for any instance of the `cats.effect.Effect` typeclass, such as `cats.effect.IO`. If `IO` is used then the type of supported streams is `fs2.Stream[IO, Byte]`. The streams capability is represented as `sttp.client3.fs2.Fs2Streams`.
+The fs2 backends support streaming for any instance of the `cats.effect.Effect` typeclass, such as `cats.effect.IO`. If `IO` is used then the type of supported streams is `fs2.Stream[IO, Byte]`. The streams capability is represented as `sttp.client3.fs2.Fs2Streams`.
 
 Requests can be sent with a streaming body like this:
 
@@ -238,7 +239,7 @@ val effect = AsyncHttpClientFs2Backend.resource[IO]().use { backend =>
 
 ## Websockets
 
-The fs2 backend supports both regular and streaming [websockets](../websockets.md).
+The fs2 backends support both regular and streaming [websockets](../websockets.md).
 
 ## Server-sent events
 

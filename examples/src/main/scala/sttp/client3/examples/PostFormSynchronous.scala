@@ -11,7 +11,7 @@ object PostFormSynchronous extends App {
     // use an optional parameter in the URI
     .post(uri"https://httpbin.org/post?signup=$signup")
 
-  val backend = HttpURLConnectionBackend()
+  val backend = HttpClientSyncBackend()
   val response = request.send(backend)
 
   println(response.body)

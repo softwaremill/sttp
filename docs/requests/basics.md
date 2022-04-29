@@ -36,7 +36,7 @@ A request definition can be created without knowing how it will be sent. But to 
 To invoke the `send(backend)` method on a request description, you'll need an instance of `SttpBackend`:
 
 ```scala mdoc:compile-only
-val backend = HttpURLConnectionBackend()
+val backend = HttpClientSyncBackend()
 val response: Identity[Response[Either[String, String]]] = request.send(backend)
 ```        
 

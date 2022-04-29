@@ -28,7 +28,7 @@ object Example {
   val request = basicRequest.header(Header.contentType(MediaType.ApplicationJson))
     .get(uri"https://httpbin.org")
 
-  val backend = HttpURLConnectionBackend()
+  val backend = HttpClientSyncBackend()
   val response = request.send(backend)
   if (response.code == StatusCode.Ok) println("Ok!")
 }
@@ -44,7 +44,7 @@ object Example extends HeaderNames with MediaTypes with StatusCodes {
   val request = basicRequest.header(ContentType, ApplicationJson.toString)
     .get(uri"https://httpbin.org")
 
-  val backend = HttpURLConnectionBackend()
+  val backend = HttpClientSyncBackend()
   val response = request.send(backend)
   if (response.code == Ok) println("Ok!")
 }     

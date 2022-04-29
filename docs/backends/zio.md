@@ -4,13 +4,13 @@ The [ZIO](https://github.com/zio/zio) backends are **asynchronous**. Sending a r
 
 The `*-zio` modules depend on ZIO 2.x. For ZIO 1.x support, use modules with the `*-zio1` suffix.
 
-## Using HttpClient (Java 11+)
+## Using HttpClient
 
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "httpclient-backend-zio" % "@VERSION@"  // for ZIO 2.x
-"com.softwaremill.sttp.client3" %% "httpclient-backend-zio1" % "@VERSION@" // for ZIO 1.x
+"com.softwaremill.sttp.client3" %% "zio" % "@VERSION@"  // for ZIO 2.x
+"com.softwaremill.sttp.client3" %% "zio1" % "@VERSION@" // for ZIO 1.x
 ```
 
 Create the backend using:
@@ -20,7 +20,7 @@ import sttp.client3.httpclient.zio.HttpClientZioBackend
 
 HttpClientZioBackend().flatMap { backend => ??? }
 
-// or, if you'd like the backend to be wrapped in a Scope:
+// or, if you'd like the backend to be created in a Scope:
 HttpClientZioBackend.scoped().flatMap { backend => ??? }
 
 // or, if you'd like to instantiate the HttpClient yourself:
@@ -32,8 +32,9 @@ val backend = HttpClientZioBackend.usingClient(httpClient)
 This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards. The backend is fully non-blocking, with back-pressured websockets.
 
 Host header override is supported in environments running Java 12 onwards, but it has to be enabled by system property:
+
 ```
-jdk.httpclient.allowRestrictedHeaders=host
+-Djdk.httpclient.allowRestrictedHeaders=host
 ```
 
 ## Using async-http-client
