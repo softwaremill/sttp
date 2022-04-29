@@ -46,7 +46,7 @@ Response can be parsed into json using `asJson[T]`, provided there's an implicit
 import sttp.client3._
 import sttp.client3.circe._
 
-val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
+val backend: SttpBackend[Identity, Any] = HttpClientSyncBackend()
 
 import io.circe.generic.auto._
 val requestPayload = RequestPayload("some data")
@@ -80,7 +80,7 @@ Usage example:
 import sttp.client3._
 import sttp.client3.json4s._
 
-val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
+val backend: SttpBackend[Identity, Any] = HttpClientSyncBackend()
 
 val requestPayload = RequestPayload("some data")
 
@@ -112,7 +112,7 @@ import sttp.client3._
 import sttp.client3.sprayJson._
 import spray.json._
 
-val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
+val backend: SttpBackend[Identity, Any] = HttpClientSyncBackend()
 
 implicit val payloadJsonFormat: RootJsonFormat[RequestPayload] = ???
 implicit val myResponseJsonFormat: RootJsonFormat[ResponsePayload] = ???
@@ -163,7 +163,7 @@ import sttp.client3._
 import sttp.client3.ziojson._
 import zio.json._
 
-val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
+val backend: SttpBackend[Identity, Any] = HttpClientSyncBackend()
 
 implicit val payloadJsonEncoder: JsonEncoder[RequestPayload] = DeriveJsonEncoder.gen[RequestPayload]
 implicit val myResponseJsonDecoder: JsonDecoder[ResponsePayload] = DeriveJsonDecoder.gen[ResponsePayload]
@@ -203,7 +203,7 @@ import sttp.client3.jsoniter._
 import com.github.plokhotnyuk.jsoniter_scala.core._
 import com.github.plokhotnyuk.jsoniter_scala.macros._
 
-val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
+val backend: SttpBackend[Identity, Any] = HttpClientSyncBackend()
 
 implicit val payloadJsonCodec: JsonValueCodec[RequestPayload] = JsonCodecMaker.make
 //note that the jsoniter doesn't support 'implicit defs' and so either has to be generated seperatly

@@ -28,7 +28,7 @@ quickRequest.get(uri"http://httpbin.org/ip").send(backend)
 
 Importing the `quick` object has the same effect as importing `sttp.client3._`, plus defining a synchronous backend (`implict val backend = HttpURLConnectionBackend()`), so that sttp can be used right away.
 
-If the default `HttpURLConnectionBackend` for some reason is insufficient, you can also use one based on OkHttp or HttpClient:
+If the default `HttpClientSyncBackend` for some reason is insufficient, you can also use one based on OkHttp:
 
 ```scala
 import $ivy.`com.softwaremill.sttp.client3::okhttp-backend:3.5.2`

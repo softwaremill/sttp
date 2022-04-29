@@ -39,7 +39,7 @@ Example usage:
 import sttp.client3._
 import sttp.client3.logging.slf4j.Slf4jLoggingBackend
 
-val backend = Slf4jLoggingBackend(HttpURLConnectionBackend())
+val backend = Slf4jLoggingBackend(HttpClientSyncBackend())
 basicRequest.get(uri"https://httpbin.org/get").send(backend)
 
 // Logs:

@@ -230,7 +230,7 @@ It is also possible to create a stub backend which delegates calls to another (p
 
 ```scala mdoc:compile-only
 val testingBackend =
-  SttpBackendStub.withFallback(HttpURLConnectionBackend())
+  SttpBackendStub.withFallback(HttpClientSyncBackend())
     .whenRequestMatches(_.uri.path.startsWith(List("a")))
     .thenRespond("I'm a STUB!")
 
