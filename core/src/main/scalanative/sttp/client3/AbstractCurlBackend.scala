@@ -206,6 +206,7 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
     val array = str
       .split("\n")
       .filter(_.trim.length > 0)
+    Seq(array: _*)
       .map { line =>
         val split = line.split(":", 2)
         if (split.size == 2)
@@ -213,7 +214,6 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
         else
           Header(split(0).trim, "")
       }
-    Seq(array: _*)
   }
 
   private lazy val bodyFromResponseAs = new BodyFromResponseAs[F, String, Nothing, Nothing] {
