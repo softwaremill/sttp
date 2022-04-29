@@ -102,6 +102,16 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
               )
             }
           }
+        } ~ put {
+          parameterMap { params =>
+            entity(as[String]) { (body: String) =>
+              complete(
+                List("PUT", "/echo", paramsToString(params), body)
+                  .filter(_.nonEmpty)
+                  .mkString(" ")
+              )
+            }
+          }
         }
     } ~ pathPrefix("streaming") {
       path("echo") {
