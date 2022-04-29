@@ -31,9 +31,11 @@ trait SyncHttpTest
   val backend: SttpBackend[Identity, Any]
 
   protected def postEcho = basicRequest.post(uri"$endpoint/echo")
+  protected def putEcho = basicRequest.put(uri"$endpoint/echo")
   protected val testBody = "this is the body"
   protected val testBodyBytes = testBody.getBytes("UTF-8")
   protected val expectedPostEchoResponse = "POST /echo this is the body"
+  protected val expectedPutEchoResponse = "PUT /echo this is the body"
 
   protected val sttpIgnore = sttp.client3.ignore
 
@@ -179,6 +181,53 @@ trait SyncHttpTest
     "post without a body" in {
       val response = postEcho.send(backend)
       response.body should be(Right("POST /echo"))
+    }
+
+    "put a string" in {
+      val response = putEcho
+        .body(testBody)
+        .send(backend)
+      response.body should be(Right(expectedPutEchoResponse))
+    }
+
+    "put a byte array" in {
+      val response = putEcho.body(testBodyBytes).send(backend)
+      response.body should be(Right(expectedPutEchoResponse))
+    }
+
+    "put an input stream" in {
+      val response = putEcho
+        .body(new ByteArrayInputStream(testBodyBytes))
+        .send(backend)
+      response.body should be(Right(expectedPutEchoResponse))
+    }
+
+    "put a byte buffer" in {
+      val response = putEcho
+        .body(ByteBuffer.wrap(testBodyBytes))
+        .send(backend)
+      response.body should be(Right(expectedPutEchoResponse))
+    }
+
+    "put form data" in {
+      val response = basicRequest
+        .put(uri"$endpoint/echo/form_params/as_string")
+        .body("a" -> "b", "c" -> "d")
+        .send(backend)
+      response.body should be(Right("a=b c=d"))
+    }
+
+    "put form data with special characters" in {
+      val response = basicRequest
+        .put(uri"$endpoint/echo/form_params/as_string")
+        .body("a=" -> "/b", "c:" -> "/d")
+        .send(backend)
+      response.body should be(Right("a==/b c:=/d"))
+    }
+
+    "put without a body" in {
+      val response = putEcho.send(backend)
+      response.body should be(Right("PUT /echo"))
     }
   }
 
