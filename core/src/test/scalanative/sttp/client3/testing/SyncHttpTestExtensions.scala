@@ -1,5 +1,6 @@
 package sttp.client3.testing
 
+import org.scalatest.freespec.AnyFreeSpecLike
 import sttp.client3._
 import sttp.model.{Header, StatusCode}
 
@@ -7,7 +8,7 @@ import java.io.File
 import java.nio.file.Files
 import java.security.MessageDigest
 
-trait SyncHttpTestExtensions {
+trait SyncHttpTestExtensions extends AnyFreeSpecLike {
   self: SyncHttpTest =>
 
   // browsers do not allow access to redirect responses

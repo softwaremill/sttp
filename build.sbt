@@ -310,7 +310,7 @@ lazy val core = (projectMatrix in file("core"))
     }
   )
   .nativePlatform(
-    scalaVersions = scala2,
+    scalaVersions = scala2 ++ scala3,
     settings = {
       commonNativeSettings ++ versioningSchemeSettings ++ List(
         Test / publishArtifact := true
