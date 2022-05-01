@@ -891,19 +891,6 @@ lazy val prometheusBackend = (projectMatrix in file("metrics/prometheus-backend"
   .jvmPlatform(scalaVersions = scala2 ++ scala3)
   .dependsOn(core)
 
-lazy val openTracingBackend = (projectMatrix in file("metrics/open-tracing-backend"))
-  .settings(commonJvmSettings)
-  .settings(
-    name := "opentracing-backend",
-    libraryDependencies ++= Seq(
-      "io.opentracing" % "opentracing-api" % "0.33.0",
-      "io.opentracing" % "opentracing-mock" % "0.33.0" % Test
-    ),
-    scalaTest
-  )
-  .jvmPlatform(scalaVersions = scala2 ++ scala3)
-  .dependsOn(core)
-
 lazy val openTelemetryTracingBackend = (projectMatrix in file("metrics/open-telemetry-tracing-backend"))
   .settings(commonJvmSettings)
   .settings(
