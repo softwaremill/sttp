@@ -1,4 +1,4 @@
-package sttp.client3.opentelemetry
+package sttp.client3.opentelemetry.tracing
 
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.context.propagation.ContextPropagators
@@ -18,7 +18,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.util.Try
 
-class OpenTelemetryBackendTest extends AnyFlatSpec with Matchers with BeforeAndAfter {
+class OpenTelemetryTracingBackendTest extends AnyFlatSpec with Matchers with BeforeAndAfter {
 
   private val recordedRequests = mutable.ListBuffer[Request[_, _]]()
 

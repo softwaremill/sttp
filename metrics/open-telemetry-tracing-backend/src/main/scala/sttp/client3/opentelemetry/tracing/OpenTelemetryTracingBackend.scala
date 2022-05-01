@@ -1,4 +1,4 @@
-package sttp.client3.opentelemetry
+package sttp.client3.opentelemetry.tracing
 
 import io.opentelemetry.api.OpenTelemetry
 import io.opentelemetry.api.common.{AttributeKey, Attributes}
@@ -12,7 +12,7 @@ import sttp.monad.syntax._
 
 import scala.collection.mutable
 
-private class OpenTelemetryBackend[F[_], P](
+private class OpenTelemetryTracingBackend[F[_], P](
     delegate: SttpBackend[F, P],
     openTelemetry: OpenTelemetry,
     spanName: Request[_, _] => String
@@ -72,11 +72,11 @@ private class OpenTelemetryBackend[F[_], P](
 
 }
 
-object OpenTelemetryBackend {
+object OpenTelemetryTracingBackend {
   def apply[F[_], P](
       delegate: SttpBackend[F, P],
       openTelemetry: OpenTelemetry,
       spanName: Request[_, _] => String = request => s"HTTP ${request.method.method}"
   ): SttpBackend[F, P] =
-    new OpenTelemetryBackend[F, P](delegate, openTelemetry, spanName)
+    new OpenTelemetryTracingBackend[F, P](delegate, openTelemetry, spanName)
 }
