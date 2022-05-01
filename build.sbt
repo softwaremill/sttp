@@ -917,6 +917,19 @@ lazy val openTelemetryTracingBackend = (projectMatrix in file("metrics/open-tele
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3)
   .dependsOn(core)
 
+lazy val openTelemetryMetricsBackend = (projectMatrix in file("metrics/open-telemetry-metrics-backend"))
+  .settings(commonJvmSettings)
+  .settings(
+    name := "opentelemetry-metrics-backend",
+    libraryDependencies ++= Seq(
+      "io.opentelemetry" % "opentelemetry-api" % "1.13.0",
+      "io.opentelemetry" % "opentelemetry-sdk-testing" % "1.13.0" % Test
+    ),
+    scalaTest
+  )
+  .jvmPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3)
+  .dependsOn(core)
+
 lazy val scribeBackend = (projectMatrix in file("logging/scribe"))
   .settings(commonJvmSettings)
   .settings(

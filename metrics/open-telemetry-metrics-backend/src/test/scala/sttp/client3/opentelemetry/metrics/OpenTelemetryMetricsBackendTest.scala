@@ -1,4 +1,4 @@
-package sttp.client3.opentelemetry.tracing
+package sttp.client3.opentelemetry.metrics
 
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.context.propagation.ContextPropagators
@@ -18,7 +18,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.util.Try
 
-class OpenTelemetryTracingBackendTest extends AnyFlatSpec with Matchers with BeforeAndAfter {
+class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with BeforeAndAfter {
 
   private val recordedRequests = mutable.ListBuffer[Request[_, _]]()
 
@@ -34,7 +34,7 @@ class OpenTelemetryTracingBackendTest extends AnyFlatSpec with Matchers with Bef
     .buildAndRegisterGlobal()
 
   private val backend: SttpBackend[Identity, Any] =
-    OpenTelemetryTracingBackend(
+    OpenTelemetryMetricsBackend(
       SttpBackendStub.apply(IdMonad).whenRequestMatchesPartial {
         case r if r.uri.toString.contains("echo") =>
           recordedRequests += r
