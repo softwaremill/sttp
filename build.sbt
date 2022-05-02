@@ -740,7 +740,7 @@ lazy val jsonCommon = (projectMatrix in (file("json/common")))
     settings = commonJvmSettings
   )
   .jsPlatform(scalaVersions = scala2 ++ scala3, settings = commonJsSettings)
-  .nativePlatform(scalaVersions = scala2, settings = commonNativeSettings)
+  .nativePlatform(scalaVersions = scala2 ++ scala3, settings = commonNativeSettings)
   .dependsOn(core)
 
 lazy val circe = (projectMatrix in file("json/circe"))
@@ -834,7 +834,7 @@ lazy val upickle = (projectMatrix in file("json/upickle"))
     settings = commonJvmSettings
   )
   .jsPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3, settings = commonJsSettings)
-  .nativePlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonNativeSettings)
+  .nativePlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3, settings = commonNativeSettings)
   .dependsOn(core, jsonCommon)
 
 lazy val json4sVersion = "4.0.5"
@@ -926,7 +926,9 @@ lazy val scribeBackend = (projectMatrix in file("logging/scribe"))
     ),
     scalaTest
   )
-  .jvmPlatform(scalaVersions = List(scala2_12, scala2_13))
+  .jvmPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3, settings = commonJvmSettings)
+  .jsPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3, settings = commonJsSettings)
+  .nativePlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3, settings = commonNativeSettings)
   .dependsOn(core)
 
 lazy val slf4jBackend = (projectMatrix in file("logging/slf4j"))
