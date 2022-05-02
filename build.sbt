@@ -208,7 +208,6 @@ lazy val allAggregates = projectsWithOptionalNative ++
   jsoniter.projectRefs ++
   sprayJson.projectRefs ++
   playJson.projectRefs ++
-  openTracingBackend.projectRefs ++
   prometheusBackend.projectRefs ++
   openTelemetryTracingBackend.projectRefs ++
   finagleBackend.projectRefs ++
@@ -1041,7 +1040,6 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     okhttpBackend,
     // okhttpMonixBackend,
     http4sBackend,
-    openTracingBackend,
     prometheusBackend,
     openTelemetryTracingBackend,
     slf4jBackend
