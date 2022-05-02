@@ -26,3 +26,12 @@ OpenTelemetryMetricsBackend(
   responseToSuccessCounterMapper = _ => Some(CollectorConfig("my_custom_counter_name"))
 )
 ```
+
+There is also the possibility to customize meter name and version by using constructor parameter:
+```scala
+OpenTelemetryMetricsBackend(
+  sttpBackend,
+  openTelemetry,
+  meterConfig = Some(MeterConfig("my_custom_meter_name", "1.0.0"))
+)
+```

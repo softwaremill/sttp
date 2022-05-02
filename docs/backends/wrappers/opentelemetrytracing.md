@@ -27,3 +27,12 @@ OpenTelemetryTracingBackend(
   request => s"HTTP ${request.method.method}"
 )
 ```
+
+There is also the possibility to customize tracer name and version by using constructor parameter:
+```scala
+OpenTelemetryTracingBackend(
+  sttpBackend,
+  openTelemetry,
+  tracerConfig = Some(TracerConfig("my_custom_tracer_name", "1.0.0"))
+)
+```
