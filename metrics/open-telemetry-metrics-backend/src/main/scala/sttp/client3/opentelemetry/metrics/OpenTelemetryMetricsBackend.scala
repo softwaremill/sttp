@@ -10,30 +10,25 @@ import sttp.monad.syntax.MonadErrorOps
 import java.util.concurrent.ConcurrentHashMap
 
 private class OpenTelemetryMetricsBackend[F[_], P](
+    delegate: SttpBackend[F, P],
+    openTelemetry: OpenTelemetry,
+    meterConfig: Option[MeterConfig],
     requestToInProgressCounterNameMapper: Request[_, _] => Option[CollectorConfig],
     requestToSuccessCounterMapper: Response[_] => Option[CollectorConfig],
     requestToErrorCounterMapper: Response[_] => Option[CollectorConfig],
     requestToFailureCounterMapper: (Request[_, _], Throwable) => Option[CollectorConfig],
     requestToSizeHistogramMapper: Request[_, _] => Option[CollectorConfig],
-    responseToSizeHistogramMapper: Response[_] => Option[CollectorConfig],
-    memUsageGaugeName: Option[CollectorConfig],
-    delegate: SttpBackend[F, P],
-    openTelemetry: OpenTelemetry
+    responseToSizeHistogramMapper: Response[_] => Option[CollectorConfig]
 ) extends SttpBackend[F, P] {
 
-  private val meter: Meter = openTelemetry
-    .meterBuilder("sttp3-client")
-    .setInstrumentationVersion("1.0.0")
+  private val meter: Meter = meterConfig
+    .map(config =>
+      openTelemetry
+        .meterBuilder(config.name)
+        .setInstrumentationVersion(config.version)
+    )
+    .getOrElse(openTelemetry.meterBuilder("sttp3-client"))
     .build()
-
-  memUsageGaugeName
-    .foreach(config => {
-      meter
-        .gaugeBuilder(config.name)
-        .setDescription("Memory Usage")
-        .setUnit("byte")
-        .buildWithCallback(_.record(Runtime.getRuntime.totalMemory()))
-    })
 
   private val counters: ConcurrentHashMap[String, LongCounter] = new ConcurrentHashMap[String, LongCounter]
   private val histograms = new ConcurrentHashMap[String, DoubleHistogram]()
@@ -131,6 +126,7 @@ private class OpenTelemetryMetricsBackend[F[_], P](
 }
 
 case class CollectorConfig(name: String, description: String = "", unit: String = "")
+case class MeterConfig(name: String, version: String)
 
 object OpenTelemetryMetricsBackend {
 
@@ -140,11 +136,11 @@ object OpenTelemetryMetricsBackend {
   val DefaultFailureCounterName = "requests_failure_count"
   val DefaultRequestHistogramName = "request_size_bytes"
   val DefaultResponseHistogramName = "response_size_bytes"
-  val DefaultMemUsageGaugeName = "memory_total"
 
   def apply[F[_], P](
       delegate: SttpBackend[F, P],
       openTelemetry: OpenTelemetry,
+      meterConfig: Option[MeterConfig] = None,
       requestToInProgressGaugeNameMapper: Request[_, _] => Option[CollectorConfig] = (_: Request[_, _]) =>
         Some(CollectorConfig(DefaultRequestsInProgressCounterName)),
       responseToSuccessCounterMapper: Response[_] => Option[CollectorConfig] = (_: Response[_]) =>
@@ -156,18 +152,17 @@ object OpenTelemetryMetricsBackend {
       requestToSizeSummaryMapper: Request[_, _] => Option[CollectorConfig] = (_: Request[_, _]) =>
         Some(CollectorConfig(DefaultRequestHistogramName)),
       responseToSizeSummaryMapper: Response[_] => Option[CollectorConfig] = (_: Response[_]) =>
-        Some(CollectorConfig(DefaultResponseHistogramName)),
-      memUsageGaugeName: Option[CollectorConfig] = Some(CollectorConfig(DefaultMemUsageGaugeName))
+        Some(CollectorConfig(DefaultResponseHistogramName))
   ): SttpBackend[F, P] =
     new OpenTelemetryMetricsBackend[F, P](
+      delegate,
+      openTelemetry,
+      meterConfig,
       requestToInProgressGaugeNameMapper,
       responseToSuccessCounterMapper,
       responseToErrorCounterMapper,
       requestToFailureCounterMapper,
       requestToSizeSummaryMapper,
-      responseToSizeSummaryMapper,
-      memUsageGaugeName,
-      delegate,
-      openTelemetry
+      responseToSizeSummaryMapper
     )
 }

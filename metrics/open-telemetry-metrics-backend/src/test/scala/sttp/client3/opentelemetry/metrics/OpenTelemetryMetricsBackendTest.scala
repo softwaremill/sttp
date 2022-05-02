@@ -52,25 +52,6 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
     getMetricValue(reader, OpenTelemetryMetricsBackend.DefaultRequestsInProgressCounterName) should not be empty
   }
 
-  "OpenTelemetryMetricsBackend" should "read jvm memory" in {
-    // given
-    val reader = InMemoryMetricReader.create()
-    val backend = OpenTelemetryMetricsBackend[Identity, Any](stubAlwaysOk, spawnNewOpenTelemetry(reader))
-
-    // when
-    backend.send(basicRequest.get(uri"http://127.0.0.1/echo"))
-
-    // then
-    val maybeData = reader
-      .collectAllMetrics()
-      .asScala
-      .find(_.getName.equals(OpenTelemetryMetricsBackend.DefaultMemUsageGaugeName))
-      .map(_.getDoubleGaugeData)
-    maybeData
-      .map(_.getPoints.asScala.head)
-    getGaugeValue(reader, OpenTelemetryMetricsBackend.DefaultMemUsageGaugeName)
-  }
-
   it should "allow creating two backends" in {
     // given
     val reader = InMemoryMetricReader.create()
