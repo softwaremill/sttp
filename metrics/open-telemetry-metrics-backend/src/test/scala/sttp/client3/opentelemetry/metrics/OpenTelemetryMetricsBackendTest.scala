@@ -1,83 +1,222 @@
 package sttp.client3.opentelemetry.metrics
 
-import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
-import io.opentelemetry.context.propagation.ContextPropagators
 import io.opentelemetry.sdk.OpenTelemetrySdk
-import io.opentelemetry.sdk.testing.exporter.InMemorySpanExporter
-import io.opentelemetry.sdk.trace.SdkTracerProvider
-import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
-import org.scalatest.BeforeAndAfter
+import io.opentelemetry.sdk.metrics.SdkMeterProvider
+import io.opentelemetry.sdk.metrics.data.{DoublePointData, HistogramPointData, MetricData}
+import io.opentelemetry.sdk.testing.exporter.InMemoryMetricReader
+import org.scalatest.OptionValues
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import sttp.client3.monad.IdMonad
 import sttp.client3.testing.SttpBackendStub
-import sttp.client3.{Identity, Request, Response, SttpBackend, UriContext, basicRequest}
-import sttp.model.StatusCode
+import sttp.client3.{Identity, Response, UriContext, basicRequest}
+import sttp.model.{Header, StatusCode}
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable
-import scala.util.Try
 
-class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with BeforeAndAfter {
+class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with OptionValues {
 
-  private val recordedRequests = mutable.ListBuffer[Request[_, _]]()
+  private def spawnNewOpenTelemetry(reader: InMemoryMetricReader) = {
+    val mockMeter: SdkMeterProvider =
+      SdkMeterProvider.builder().registerMetricReader(reader).build()
 
-  private val spanExporter = InMemorySpanExporter.create()
+    OpenTelemetrySdk
+      .builder()
+      .setMeterProvider(mockMeter)
+      .build()
+  }
 
-  private val mockTracer: SdkTracerProvider =
-    SdkTracerProvider.builder().addSpanProcessor(SimpleSpanProcessor.create(spanExporter)).build()
+  val stubAlwaysOk = SttpBackendStub.synchronous.whenAnyRequest.thenRespondOk()
 
-  private val mockOpenTelemetry = OpenTelemetrySdk
-    .builder()
-    .setTracerProvider(mockTracer)
-    .setPropagators(ContextPropagators.create(W3CTraceContextPropagator.getInstance()))
-    .buildAndRegisterGlobal()
+  "OpenTelemetryMetricsBackend" should "use default names" in {
+    // given
+    val requestsNumber = 10
+    val reader = InMemoryMetricReader.create()
+    val backend = OpenTelemetryMetricsBackend[Identity, Any](stubAlwaysOk, spawnNewOpenTelemetry(reader))
 
-  private val backend: SttpBackend[Identity, Any] =
-    OpenTelemetryMetricsBackend(
-      SttpBackendStub.apply(IdMonad).whenRequestMatchesPartial {
-        case r if r.uri.toString.contains("echo") =>
-          recordedRequests += r
-          Response.ok("")
-        case r if r.uri.toString.contains("error") =>
-          throw new RuntimeException("something went wrong")
-      },
-      mockOpenTelemetry
+    // when
+    (0 until requestsNumber).foreach(_ => backend.send(basicRequest.get(uri"http://127.0.0.1/echo")))
+
+    // then
+    getMetricValue(reader, OpenTelemetryMetricsBackend.DefaultSuccessCounterName).value shouldBe requestsNumber
+  }
+
+  "Number of in-progress requests" should "be zero" in {
+    // given
+    val reader = InMemoryMetricReader.create()
+    val backend = OpenTelemetryMetricsBackend[Identity, Any](stubAlwaysOk, spawnNewOpenTelemetry(reader))
+
+    // when
+    (0 until 10).foreach(_ => backend.send(basicRequest.get(uri"http://127.0.0.1/echo")))
+
+    // then
+    getMetricValue(reader, OpenTelemetryMetricsBackend.DefaultRequestsInProgressCounterName) should not be empty
+  }
+
+  "OpenTelemetryMetricsBackend" should "read jvm memory" in {
+    // given
+    val reader = InMemoryMetricReader.create()
+    val backend = OpenTelemetryMetricsBackend[Identity, Any](stubAlwaysOk, spawnNewOpenTelemetry(reader))
+
+    // when
+    backend.send(basicRequest.get(uri"http://127.0.0.1/echo"))
+
+    // then
+    val maybeData = reader
+      .collectAllMetrics()
+      .asScala
+      .find(_.getName.equals(OpenTelemetryMetricsBackend.DefaultMemUsageGaugeName))
+      .map(_.getDoubleGaugeData)
+    maybeData
+      .map(_.getPoints.asScala.head)
+    getGaugeValue(reader, OpenTelemetryMetricsBackend.DefaultMemUsageGaugeName)
+  }
+
+  it should "allow creating two backends" in {
+    // given
+    val reader = InMemoryMetricReader.create()
+    val sdk = spawnNewOpenTelemetry(reader)
+    val backend1 = OpenTelemetryMetricsBackend[Identity, Any](stubAlwaysOk, sdk)
+    val backend2 = OpenTelemetryMetricsBackend[Identity, Any](stubAlwaysOk, sdk)
+
+    // when
+    backend1.send(basicRequest.get(uri"http://127.0.0.1/echo"))
+    backend2.send(basicRequest.get(uri"http://127.0.0.1/echo"))
+
+    // then
+    getMetricValue(reader, OpenTelemetryMetricsBackend.DefaultSuccessCounterName).value shouldBe 2
+  }
+
+  it should "use mapped request to histogram name" in {
+    // given
+    val customSuccessCounterName = "my_custom_counter_name"
+    val reader = InMemoryMetricReader.create()
+    val backend = OpenTelemetryMetricsBackend[Identity, Any](
+      stubAlwaysOk,
+      spawnNewOpenTelemetry(reader),
+      responseToSuccessCounterMapper = _ => Some(CollectorConfig(customSuccessCounterName))
+    )
+    val requestsNumber = 5
+
+    // when
+    (0 until requestsNumber).foreach(_ => backend.send(basicRequest.get(uri"http://127.0.0.1/foo")))
+
+    // then
+    getMetricValue(reader, OpenTelemetryMetricsBackend.DefaultSuccessCounterName) shouldBe empty
+    getMetricValue(reader, customSuccessCounterName).value shouldBe 5
+
+  }
+
+  it should "use mapped request to change collector config" in {
+    // given
+    val customSuccessCounterName = "my_custom_counter_name"
+    val description = "test"
+    val unit = "number"
+    val reader = InMemoryMetricReader.create()
+    val backend = OpenTelemetryMetricsBackend[Identity, Any](
+      stubAlwaysOk,
+      spawnNewOpenTelemetry(reader),
+      responseToSuccessCounterMapper = _ => Some(CollectorConfig(customSuccessCounterName, description, unit))
+    )
+    val requestsNumber1 = 5
+
+    // when
+    (0 until requestsNumber1).foreach(_ => backend.send(basicRequest.get(uri"http://127.0.0.1/foo")))
+
+    getMetricValue(reader, OpenTelemetryMetricsBackend.DefaultSuccessCounterName) shouldBe empty
+    getMetricValue(reader, customSuccessCounterName).value shouldBe 5
+    val resource = getMetricResource(reader, customSuccessCounterName)
+    resource.getDescription shouldBe description
+    resource.getUnit shouldBe unit
+  }
+
+  it should "disable counter" in {
+    // given
+    val reader = InMemoryMetricReader.create()
+    val backend = OpenTelemetryMetricsBackend[Identity, Any](
+      stubAlwaysOk,
+      spawnNewOpenTelemetry(reader),
+      responseToSuccessCounterMapper = _ => None
+    )
+    val requestsNumber = 6
+
+    // when
+    (0 until requestsNumber).foreach(_ => backend.send(basicRequest.get(uri"http://127.0.0.1/foo")))
+
+    // then
+    getMetricValue(reader, OpenTelemetryMetricsBackend.DefaultSuccessCounterName) shouldBe empty
+  }
+
+  it should "use default counter name" in {
+    // given
+    val backendStub1 = SttpBackendStub.synchronous.whenAnyRequest.thenRespondOk()
+    val backendStub2 = SttpBackendStub.synchronous.whenAnyRequest.thenRespondNotFound()
+    val reader = InMemoryMetricReader.create()
+    val sdk = spawnNewOpenTelemetry(reader)
+    val backend1 = OpenTelemetryMetricsBackend[Identity, Any](backendStub1, sdk)
+    val backend2 = OpenTelemetryMetricsBackend[Identity, Any](backendStub2, sdk)
+
+    // when
+    (0 until 10).foreach(_ => backend1.send(basicRequest.get(uri"http://127.0.0.1/foo")))
+    (0 until 5).foreach(_ => backend2.send(basicRequest.get(uri"http://127.0.0.1/foo")))
+
+    // then
+    getMetricValue(reader, OpenTelemetryMetricsBackend.DefaultSuccessCounterName).value shouldBe 10
+    getMetricValue(reader, OpenTelemetryMetricsBackend.DefaultErrorCounterName).value shouldBe 5
+  }
+
+  it should "use histogram for request and response sizes" in {
+    // given
+    val response = Response("Ok", StatusCode.Ok, "Ok", Seq(Header.contentLength(10)))
+    val backendStub = SttpBackendStub.synchronous.whenAnyRequest.thenRespond(response)
+    val reader = InMemoryMetricReader.create()
+    val backend = OpenTelemetryMetricsBackend[Identity, Any](backendStub, spawnNewOpenTelemetry(reader))
+
+    // when
+    (0 until 5).foreach(_ =>
+      backend.send(
+        basicRequest
+          .get(uri"http://127.0.0.1/foo")
+          .header(Header.contentLength(5))
+      )
     )
 
-  before {
-    recordedRequests.clear()
-    spanExporter.reset()
+    // then
+    getHistogramValue(reader, OpenTelemetryMetricsBackend.DefaultRequestHistogramName).value.getSum shouldBe 25
+    getHistogramValue(reader, OpenTelemetryMetricsBackend.DefaultResponseHistogramName).value.getSum shouldBe 50
   }
 
-  "ZioTelemetryOpenTelemetryBackend" should "record spans for requests" in {
-    val response = basicRequest.post(uri"http://stub/echo").send(backend)
-    response.code shouldBe StatusCode.Ok
-
-    val spans = spanExporter.getFinishedSpanItems.asScala
-    spans should have size 1
-    spans.head.getName shouldBe "HTTP POST"
+  private[this] def getMetricValue(reader: InMemoryMetricReader, name: String): Option[Long] = {
+    reader
+      .collectAllMetrics()
+      .asScala
+      .find(_.getName.equals(name))
+      .map(_.getLongSumData)
+      .map(_.getPoints.asScala.head.getValue)
   }
 
-  it should "propagate span" in {
-    val response = basicRequest.post(uri"http://stub/echo").send(backend)
-    response.code shouldBe StatusCode.Ok
-
-    val spans = spanExporter.getFinishedSpanItems.asScala
-    spans should have size 1
-
-    val spanId = spans.head.getSpanId
-    val traceId = spans.head.getTraceId
-    recordedRequests(0).header("traceparent") shouldBe Some(s"00-${traceId}-${spanId}-01")
+  private[this] def getHistogramValue(reader: InMemoryMetricReader, name: String): Option[HistogramPointData] = {
+    reader
+      .collectAllMetrics()
+      .asScala
+      .find(_.getName.equals(name))
+      .map(_.getHistogramData)
+      .map(_.getPoints.asScala.head)
+  }
+  private[this] def getGaugeValue(reader: InMemoryMetricReader, name: String): Option[DoublePointData] = {
+    reader
+      .collectAllMetrics()
+      .asScala
+      .find(_.getName.equals(name))
+      .map(_.getDoubleGaugeData)
+      .map(_.getPoints.asScala.head)
   }
 
-  it should "set span status in case of error" in {
-    Try(basicRequest.post(uri"http://stub/error").send(backend))
-
-    val spans = spanExporter.getFinishedSpanItems.asScala
-    spans should have size 1
-
-    spans.head.getStatus.getStatusCode shouldBe io.opentelemetry.api.trace.StatusCode.ERROR
+  private[this] def getMetricResource(reader: InMemoryMetricReader, name: String): MetricData = {
+    reader
+      .collectAllMetrics()
+      .asScala
+      .find(_.getName.equals(name))
+      .head
   }
 
 }

@@ -50,7 +50,7 @@ class OpenTelemetryTracingBackendTest extends AnyFlatSpec with Matchers with Bef
     spanExporter.reset()
   }
 
-  "ZioTelemetryOpenTelemetryBackend" should "record spans for requests" in {
+  "OpenTelemetryTracingBackend" should "record spans for requests" in {
     val response = basicRequest.post(uri"http://stub/echo").send(backend)
     response.code shouldBe StatusCode.Ok
 
