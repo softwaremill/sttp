@@ -9,8 +9,8 @@ import sttp.client3.testing.ConvertToFuture
 import sttp.client3.testing.websocket.{WebSocketConcurrentTest, WebSocketStreamingTest, WebSocketTest}
 import sttp.monad.MonadError
 import sttp.ws.WebSocketFrame
-import zio.Task
 import zio.stream._
+import zio.{Task, ZIO}
 
 class HttpClientZioWebSocketTest
     extends WebSocketTest[Task]
@@ -37,5 +37,5 @@ class HttpClientZioWebSocketTest
   ): ZioStreams.Pipe[WebSocketFrame.Data[_], WebSocketFrame] =
     to.andThen(rest => ZStream(item) ++ rest)
 
-  override def concurrently[T](fs: List[() => Task[T]]): Task[List[T]] = Task.collectAllPar(fs.map(_()))
+  override def concurrently[T](fs: List[() => Task[T]]): Task[List[T]] = ZIO.collectAllPar(fs.map(_()))
 }
