@@ -11,7 +11,7 @@ import sttp.monad.MonadError
 import sttp.ws.{WebSocket, WebSocketFrame}
 import zio.nio.channels.AsynchronousFileChannel
 import zio.nio.file.Path
-import zio.stream.{Stream, ZSink, ZStream}
+import zio.stream.{ZSink, ZStream}
 import zio.{Task, ZIO}
 
 import java.io.IOException
@@ -38,11 +38,11 @@ private[zio] class ZioBodyFromHttpClient extends BodyFromHttpClient[Task, ZioStr
           replayableBody: Either[Array[Byte], SttpFile]
       ): Task[ZStream[Any, Throwable, Byte]] = {
         replayableBody match {
-          case Left(byteArray) => ZIO.succeed(Stream.fromIterable(byteArray))
+          case Left(byteArray) => ZIO.succeed(ZStream.fromIterable(byteArray))
           case Right(file) =>
             ZIO.succeed(
               for {
-                fileChannel <- Stream.scoped(
+                fileChannel <- ZStream.scoped(
                   AsynchronousFileChannel.open(Path.fromJava(file.toPath), StandardOpenOption.READ)
                 )
                 bytes <- readAllBytes(fileChannel)
@@ -80,7 +80,7 @@ private[zio] class ZioBodyFromHttpClient extends BodyFromHttpClient[Task, ZioStr
       override protected def regularAsStream(
           response: ZStream[Any, Throwable, Byte]
       ): Task[(ZStream[Any, Throwable, Byte], () => Task[Unit])] =
-        Task.succeed((response, () => response.runDrain.catchAll(_ => ZIO.unit)))
+        ZIO.succeed((response, () => response.runDrain.catchAll(_ => ZIO.unit)))
 
       override protected def handleWS[T](
           responseAs: WebSocketResponseAs[T, _],
@@ -101,7 +101,7 @@ private[zio] class ZioBodyFromHttpClient extends BodyFromHttpClient[Task, ZioStr
 
   private def readAllBytes(fileChannel: AsynchronousFileChannel) = {
     val bufferSize = 4096
-    Stream.paginateChunkZIO(0L)(position =>
+    ZStream.paginateChunkZIO(0L)(position =>
       fileChannel
         .readChunk(bufferSize, position)
         .map {

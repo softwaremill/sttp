@@ -23,7 +23,7 @@ object StreamFs2 extends App {
     basicRequest
       .body("I want a stream!")
       .post(uri"https://httpbin.org/post")
-      .response(asStreamAlways(Fs2Streams[IO])(_.chunks.through(text.utf8DecodeC).compile.foldMonoid))
+      .response(asStreamAlways(Fs2Streams[IO])(_.chunks.through(text.utf8.decodeC).compile.foldMonoid))
       .send(backend)
       .map { response => println(s"RECEIVED:\n${response.body}") }
   }
