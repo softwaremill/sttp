@@ -209,7 +209,7 @@ lazy val allAggregates = projectsWithOptionalNative ++
   sprayJson.projectRefs ++
   playJson.projectRefs ++
   prometheusBackend.projectRefs ++
-  openTelemetryTracingBackend.projectRefs ++
+  openTelemetry.projectRefs ++
   finagleBackend.projectRefs ++
   armeriaBackend.projectRefs ++
   armeriaScalazBackend.projectRefs ++
@@ -890,23 +890,10 @@ lazy val prometheusBackend = (projectMatrix in file("metrics/prometheus-backend"
   .jvmPlatform(scalaVersions = scala2 ++ scala3)
   .dependsOn(core)
 
-lazy val openTelemetryTracingBackend = (projectMatrix in file("metrics/open-telemetry-tracing-backend"))
+lazy val openTelemetry = (projectMatrix in file("metrics/open-telemetry"))
   .settings(commonJvmSettings)
   .settings(
-    name := "opentelemetry-tracing-backend",
-    libraryDependencies ++= Seq(
-      "io.opentelemetry" % "opentelemetry-api" % "1.13.0",
-      "io.opentelemetry" % "opentelemetry-sdk-testing" % "1.13.0" % Test
-    ),
-    scalaTest
-  )
-  .jvmPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3)
-  .dependsOn(core)
-
-lazy val openTelemetryMetricsBackend = (projectMatrix in file("metrics/open-telemetry-metrics-backend"))
-  .settings(commonJvmSettings)
-  .settings(
-    name := "opentelemetry-metrics-backend",
+    name := "opentelemetry",
     libraryDependencies ++= Seq(
       "io.opentelemetry" % "opentelemetry-api" % "1.13.0",
       "io.opentelemetry" % "opentelemetry-sdk-testing" % "1.13.0" % Test,
@@ -1042,7 +1029,7 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     // okhttpMonixBackend,
     http4sBackend,
     prometheusBackend,
-    openTelemetryTracingBackend,
+    openTelemetry,
     slf4jBackend
   )
   .jvmPlatform(scalaVersions = List(scala2_13))

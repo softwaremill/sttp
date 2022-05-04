@@ -1,4 +1,4 @@
-package sttp.client3.opentelemetry.tracing
+package sttp.client3.opentelemetry
 
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.context.propagation.ContextPropagators

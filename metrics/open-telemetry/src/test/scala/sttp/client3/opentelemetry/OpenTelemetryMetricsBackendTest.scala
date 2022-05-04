@@ -1,8 +1,8 @@
-package sttp.client3.opentelemetry.metrics
+package sttp.client3.opentelemetry
 
 import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.sdk.metrics.SdkMeterProvider
-import io.opentelemetry.sdk.metrics.data.{DoublePointData, HistogramPointData, MetricData}
+import io.opentelemetry.sdk.metrics.data.{HistogramPointData, MetricData}
 import io.opentelemetry.sdk.testing.exporter.InMemoryMetricReader
 import org.scalatest.OptionValues
 import org.scalatest.flatspec.AnyFlatSpec
@@ -40,7 +40,7 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
     getMetricValue(reader, OpenTelemetryMetricsBackend.DefaultSuccessCounterName).value shouldBe requestsNumber
   }
 
-  "Number of in-progress requests" should "be zero" in {
+  it should "zero the number of in-progress requests" in {
     // given
     val reader = InMemoryMetricReader.create()
     val backend = OpenTelemetryMetricsBackend[Identity, Any](stubAlwaysOk, spawnNewOpenTelemetry(reader))
@@ -175,29 +175,19 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
       .map(_.getPoints.asScala.head.getValue)
   }
 
-  private[this] def getHistogramValue(reader: InMemoryMetricReader, name: String): Option[HistogramPointData] = {
+  private[this] def getHistogramValue(reader: InMemoryMetricReader, name: String): Option[HistogramPointData] =
     reader
       .collectAllMetrics()
       .asScala
       .find(_.getName.equals(name))
       .map(_.getHistogramData)
       .map(_.getPoints.asScala.head)
-  }
-  private[this] def getGaugeValue(reader: InMemoryMetricReader, name: String): Option[DoublePointData] = {
-    reader
-      .collectAllMetrics()
-      .asScala
-      .find(_.getName.equals(name))
-      .map(_.getDoubleGaugeData)
-      .map(_.getPoints.asScala.head)
-  }
 
-  private[this] def getMetricResource(reader: InMemoryMetricReader, name: String): MetricData = {
+  private[this] def getMetricResource(reader: InMemoryMetricReader, name: String): MetricData =
     reader
       .collectAllMetrics()
       .asScala
       .find(_.getName.equals(name))
       .head
-  }
 
 }

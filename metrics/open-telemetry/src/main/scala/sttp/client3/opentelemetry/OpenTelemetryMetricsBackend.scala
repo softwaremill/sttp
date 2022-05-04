@@ -1,4 +1,4 @@
-package sttp.client3.opentelemetry.metrics
+package sttp.client3.opentelemetry
 
 import io.opentelemetry.api.OpenTelemetry
 import io.opentelemetry.api.metrics.{DoubleHistogram, LongCounter, LongUpDownCounter, Meter}

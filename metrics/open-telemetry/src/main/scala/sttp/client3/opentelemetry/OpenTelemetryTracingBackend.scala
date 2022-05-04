@@ -1,4 +1,4 @@
-package sttp.client3.opentelemetry.tracing
+package sttp.client3.opentelemetry
 
 import io.opentelemetry.api.OpenTelemetry
 import io.opentelemetry.api.common.{AttributeKey, Attributes}
