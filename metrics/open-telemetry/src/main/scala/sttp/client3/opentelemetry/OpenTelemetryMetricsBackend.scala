@@ -14,7 +14,7 @@ private class OpenTelemetryMetricsBackend[F[_], P](
     openTelemetry: OpenTelemetry,
     meterConfig: Option[MeterConfig],
     requestToInProgressCounterNameMapper: Request[_, _] => Option[CollectorConfig],
-    requestToSuccessCounterMapper: Response[_] => Option[CollectorConfig],
+    responseToSuccessCounterMapper: Response[_] => Option[CollectorConfig],
     requestToErrorCounterMapper: Response[_] => Option[CollectorConfig],
     requestToFailureCounterMapper: (Request[_, _], Throwable) => Option[CollectorConfig],
     requestToSizeHistogramMapper: Request[_, _] => Option[CollectorConfig],
@@ -44,7 +44,7 @@ private class OpenTelemetryMetricsBackend[F[_], P](
         responseMonad.handleError(
           delegate.send(request).map { response =>
             if (response.isSuccess) {
-              incrementCounter(requestToSuccessCounterMapper(response))
+              incrementCounter(responseToSuccessCounterMapper(response))
             } else {
               incrementCounter(requestToErrorCounterMapper(response))
             }
@@ -130,18 +130,18 @@ case class MeterConfig(name: String, version: String)
 
 object OpenTelemetryMetricsBackend {
 
-  val DefaultRequestsInProgressCounterName = "requests_in_progress"
-  val DefaultSuccessCounterName = "requests_success_count"
-  val DefaultErrorCounterName = "requests_error_count"
-  val DefaultFailureCounterName = "requests_failure_count"
-  val DefaultRequestHistogramName = "request_size_bytes"
-  val DefaultResponseHistogramName = "response_size_bytes"
+  val DefaultRequestsInProgressCounterName = "sttp3_requests_in_progress"
+  val DefaultSuccessCounterName = "sttp3_requests_success_count"
+  val DefaultErrorCounterName = "sttp3_requests_error_count"
+  val DefaultFailureCounterName = "sttp3_requests_failure_count"
+  val DefaultRequestHistogramName = "sttp3_request_size_bytes"
+  val DefaultResponseHistogramName = "sttp3_response_size_bytes"
 
   def apply[F[_], P](
       delegate: SttpBackend[F, P],
       openTelemetry: OpenTelemetry,
       meterConfig: Option[MeterConfig] = None,
-      requestToInProgressGaugeNameMapper: Request[_, _] => Option[CollectorConfig] = (_: Request[_, _]) =>
+      requestToInProgressCounterNameMapper: Request[_, _] => Option[CollectorConfig] = (_: Request[_, _]) =>
         Some(CollectorConfig(DefaultRequestsInProgressCounterName)),
       responseToSuccessCounterMapper: Response[_] => Option[CollectorConfig] = (_: Response[_]) =>
         Some(CollectorConfig(DefaultSuccessCounterName)),
@@ -158,11 +158,11 @@ object OpenTelemetryMetricsBackend {
       delegate,
       openTelemetry,
       meterConfig,
-      requestToInProgressGaugeNameMapper,
-      responseToSuccessCounterMapper,
-      responseToErrorCounterMapper,
-      requestToFailureCounterMapper,
-      requestToSizeSummaryMapper,
-      responseToSizeSummaryMapper
+      requestToInProgressCounterNameMapper = requestToInProgressCounterNameMapper,
+      responseToSuccessCounterMapper = responseToSuccessCounterMapper,
+      requestToErrorCounterMapper = responseToErrorCounterMapper,
+      requestToFailureCounterMapper = requestToFailureCounterMapper,
+      requestToSizeHistogramMapper = requestToSizeSummaryMapper,
+      responseToSizeHistogramMapper = responseToSizeSummaryMapper
     )
 }

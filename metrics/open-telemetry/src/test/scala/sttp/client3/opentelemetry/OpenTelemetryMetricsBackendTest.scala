@@ -12,6 +12,7 @@ import sttp.client3.{Identity, Response, UriContext, basicRequest}
 import sttp.model.{Header, StatusCode}
 
 import scala.collection.JavaConverters._
+import scala.collection.immutable._
 
 class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with OptionValues {
 
