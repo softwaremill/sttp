@@ -9,7 +9,7 @@ import zio.stream._
 
 object StreamZio extends ZIOAppDefault {
   def streamRequestBody: RIO[Console with SttpClient, Unit] = {
-    val stream: Stream[Throwable, Byte] = Stream("Hello, world".getBytes: _*)
+    val stream: Stream[Throwable, Byte] = ZStream("Hello, world".getBytes: _*)
 
     send(
       basicRequest

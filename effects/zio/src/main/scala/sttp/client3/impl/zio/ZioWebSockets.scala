@@ -1,7 +1,7 @@
 package sttp.client3.impl.zio
 
 import sttp.ws.{WebSocket, WebSocketClosed, WebSocketFrame}
-import zio.stream.{Stream, ZStream}
+import zio.stream.ZStream
 import zio.{Ref, ZIO}
 
 object ZioWebSockets {
@@ -10,16 +10,16 @@ object ZioWebSockets {
       pipe: ZStream[R, Throwable, WebSocketFrame.Data[_]] => ZStream[R, Throwable, WebSocketFrame]
   ): ZIO[R, Throwable, Unit] =
     Ref.make(true).flatMap { open =>
-      val onClose = Stream.fromZIO(open.set(false).map(_ => None: Option[WebSocketFrame.Data[_]]))
+      val onClose = ZStream.fromZIO(open.set(false).map(_ => None: Option[WebSocketFrame.Data[_]]))
       pipe(
-        Stream
+        ZStream
           .repeatZIO(ws.receive())
           .flatMap {
             case WebSocketFrame.Close(_, _) => onClose
             case WebSocketFrame.Ping(payload) =>
-              Stream.fromZIO(ws.send(WebSocketFrame.Pong(payload))).flatMap(_ => Stream.empty)
-            case WebSocketFrame.Pong(_)     => Stream.empty
-            case in: WebSocketFrame.Data[_] => Stream(Some(in))
+              ZStream.fromZIO(ws.send(WebSocketFrame.Pong(payload))).flatMap(_ => ZStream.empty)
+            case WebSocketFrame.Pong(_)     => ZStream.empty
+            case in: WebSocketFrame.Data[_] => ZStream(Some(in))
           }
           .catchSome { case _: WebSocketClosed => onClose }
           .collectWhileSome

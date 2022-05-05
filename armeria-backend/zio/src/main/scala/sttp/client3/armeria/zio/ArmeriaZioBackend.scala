@@ -1,5 +1,9 @@
 package sttp.client3.armeria.zio
 
+import _root_.zio.interop.reactivestreams.{
+  publisherToStream => publisherToZioStream,
+  streamToPublisher => zioStreamToPublisher
+}
 import com.linecorp.armeria.client.WebClient
 import com.linecorp.armeria.common.HttpData
 import com.linecorp.armeria.common.stream.StreamMessage
@@ -10,13 +14,8 @@ import sttp.client3.armeria.{AbstractArmeriaBackend, BodyFromStreamMessage}
 import sttp.client3.impl.zio.RIOMonadAsyncError
 import sttp.client3.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 import sttp.monad.MonadAsyncError
-import zio.{Chunk, Task}
 import zio.stream.Stream
-import _root_.zio._
-import _root_.zio.interop.reactivestreams.{
-  publisherToStream => publisherToZioStream,
-  streamToPublisher => zioStreamToPublisher
-}
+import _root_.zio.{Chunk, Task, _}
 
 private final class ArmeriaZioBackend(runtime: Runtime[Any], client: WebClient, closeFactory: Boolean)
     extends AbstractArmeriaBackend[Task, ZioStreams](client, closeFactory, new RIOMonadAsyncError[Any]) {
@@ -31,7 +30,7 @@ private final class ArmeriaZioBackend(runtime: Runtime[Any], client: WebClient, 
       override implicit def monad: MonadAsyncError[Task] = new RIOMonadAsyncError[Any]
 
       override def publisherToStream(streamMessage: StreamMessage[HttpData]): Stream[Throwable, Byte] =
-        streamMessage.toStream().mapConcatChunk(httpData => Chunk.fromArray(httpData.array()))
+        streamMessage.toZIOStream().mapConcatChunk(httpData => Chunk.fromArray(httpData.array()))
     }
 
   override protected def streamToPublisher(stream: Stream[Throwable, Byte]): Publisher[HttpData] =
