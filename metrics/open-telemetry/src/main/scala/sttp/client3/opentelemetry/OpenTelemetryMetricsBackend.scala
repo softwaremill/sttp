@@ -1,6 +1,7 @@
 package sttp.client3.opentelemetry
 
 import io.opentelemetry.api.OpenTelemetry
+import io.opentelemetry.api.common.Attributes
 import io.opentelemetry.api.metrics.{DoubleHistogram, LongCounter, LongUpDownCounter, Meter}
 import sttp.capabilities.Effect
 import sttp.client3._
@@ -50,8 +51,10 @@ private class OpenTelemetryMetricsBackend[F[_], P](
             }
             decrementUpDownCounter(request)
             responseToSizeHistogramMapper(response)
-              .map(config => getOrCreateMetric(histograms, config, createNewHistogram))
-              .foreach(histogram => response.contentLength.map(_.toDouble).foreach(histogram.record))
+              .foreach(config =>
+                getOrCreateMetric(histograms, config, createNewHistogram)
+                  .record((response.contentLength: Option[Long]).map(_.toDouble).getOrElse(0), config.attributes)
+              )
             response
           }
         ) { case e =>
@@ -63,11 +66,12 @@ private class OpenTelemetryMetricsBackend[F[_], P](
 
   private def before[R >: PE, T](request: Request[T, R]): Unit = {
     requestToInProgressCounterNameMapper(request)
-      .map(config => getOrCreateMetric(upAndDownCounter, config, createNewUpDownCounter))
-      .foreach(_.add(1))
+      .foreach(config => getOrCreateMetric(upAndDownCounter, config, createNewUpDownCounter).add(1, config.attributes))
     requestToSizeHistogramMapper(request)
-      .map(config => getOrCreateMetric(histograms, config, createNewHistogram))
-      .foreach(histogram => (request.contentLength: Option[Long]).map(_.toDouble).foreach(histogram.record))
+      .foreach(config =>
+        getOrCreateMetric(histograms, config, createNewHistogram)
+          .record((request.contentLength: Option[Long]).map(_.toDouble).getOrElse(0), config.attributes)
+      )
   }
 
   private def after[R >: PE, T](request: Request[T, R], e: Throwable): Unit = {
@@ -77,14 +81,12 @@ private class OpenTelemetryMetricsBackend[F[_], P](
 
   private def decrementUpDownCounter[R >: PE, T](request: Request[T, R]): Unit = {
     requestToInProgressCounterNameMapper(request)
-      .map(config => getOrCreateMetric(upAndDownCounter, config, createNewUpDownCounter))
-      .foreach(_.add(-1))
+      .foreach(config => getOrCreateMetric(upAndDownCounter, config, createNewUpDownCounter).add(-1, config.attributes))
   }
 
   private def incrementCounter(collectorConfig: Option[CollectorConfig]): Unit = {
     collectorConfig
-      .map(config => getOrCreateMetric(counters, config, createNewCounter))
-      .foreach(_.add(1))
+      .foreach(config => getOrCreateMetric(counters, config, createNewCounter).add(1, config.attributes))
   }
 
   override def close(): F[Unit] = delegate.close()
@@ -125,7 +127,12 @@ private class OpenTelemetryMetricsBackend[F[_], P](
       .build()
 }
 
-case class CollectorConfig(name: String, description: String = "", unit: String = "")
+case class CollectorConfig(
+    name: String,
+    description: String = "",
+    unit: String = "",
+    attributes: Attributes = Attributes.empty()
+)
 case class MeterConfig(name: String, version: String)
 
 object OpenTelemetryMetricsBackend {
