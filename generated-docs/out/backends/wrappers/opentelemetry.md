@@ -6,7 +6,7 @@ The opentelemetry are type of wrapper backends, so they wrap any other backend. 
 To use, any of below backends, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "opentelemetry" % "3.6.0"
+"com.softwaremill.sttp.client3" %% "opentelemetry" % "3.6.1"
 ```
 
 ### Opentelemetry tracing backend

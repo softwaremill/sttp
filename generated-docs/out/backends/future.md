@@ -21,7 +21,7 @@ Class                                 Supported stream type                     
 To use, you don't need any extra dependencies, `core` is enough:
 
 ```
-"com.softwaremill.sttp.client3" %% "core" % "3.6.0"
+"com.softwaremill.sttp.client3" %% "core" % "3.6.1"
 ```
 
 You'll need the following imports:
@@ -59,7 +59,7 @@ Host header override is supported in environments running Java 12 onwards, but i
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % "3.6.0"
+"com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % "3.6.1"
 ```
 
 And some imports:
@@ -110,7 +110,7 @@ val backend = AsyncHttpClientFutureBackend.usingClient(asyncHttpClient)
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "okhttp-backend" % "3.6.0"
+"com.softwaremill.sttp.client3" %% "okhttp-backend" % "3.6.1"
 ```
 
 and some imports:
@@ -142,7 +142,7 @@ This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supp
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "armeria-backend" % "3.6.0"
+"com.softwaremill.sttp.client3" %% "armeria-backend" % "3.6.1"
 ```
 
 add imports:
