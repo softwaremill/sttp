@@ -35,7 +35,7 @@ You can disable the stripping of all sensitive headers using the following code:
 ```scala
 import sttp.client3._
 
-val myBackend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
+val myBackend: SttpBackend[Identity, Any] = HttpClientSyncBackend()
 val backend: SttpBackend[Identity, Any]  = new FollowRedirectsBackend(
   delegate = myBackend, 
   sensitiveHeaders = Set.empty
@@ -48,7 +48,7 @@ If you just want to disable stripping of the `Authorization` header, you can do 
 import sttp.client3._
 import sttp.model._
 
-val myBackend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
+val myBackend: SttpBackend[Identity, Any] = HttpClientSyncBackend()
 val backend: SttpBackend[Identity, Any] = new FollowRedirectsBackend(
   delegate = myBackend, 
   sensitiveHeaders = HeaderNames.SensitiveHeaders.filterNot(_ == HeaderNames.Authorization.toLowerCase)
@@ -57,7 +57,7 @@ val backend: SttpBackend[Identity, Any] = new FollowRedirectsBackend(
 
 ## Backend wrappers and redirects
 
-By default redirects are handled at a low level, using a wrapper around the main, concrete backend: each of the backend factory methods, e.g. `HttpURLConnectionBackend()` returns a backend wrapped in `FollowRedirectsBackend`.
+By default redirects are handled at a low level, using a wrapper around the main, concrete backend: each of the backend factory methods, e.g. `HttpClientSyncBackend()` returns a backend wrapped in `FollowRedirectsBackend`.
 
 This causes any further backend wrappers to handle a request which involves redirects as one whole, without the intermediate requests. However, wrappers which collects metrics, implements tracing or handles request retries might want to handle every request in the redirect chain. This can be achieved by layering another `FollowRedirectsBackend` on top of the wrapper. Only the top-level follow redirects backend will handle redirects, other follow redirect wrappers (at lower levels) will be disabled.
 
@@ -97,7 +97,7 @@ For example:
 import sttp.client3._
 import sttp.model.Uri.QuerySegmentEncoding
 
-val myBackend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
+val myBackend: SttpBackend[Identity, Any] = HttpClientSyncBackend()
 val backend: SttpBackend[Identity, Any]  = new FollowRedirectsBackend(
   delegate = myBackend,
   // encodes all special characters in the query segment, including the allowed ones

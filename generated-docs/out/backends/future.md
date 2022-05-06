@@ -8,12 +8,50 @@ Apart from the ones described below, also the [Akka](akka.md) backend is `Future
 ===================================== ================================================ ==========================
 Class                                 Supported stream type                            Websocket support
 ===================================== ================================================ ==========================
+``HttpClientFutureBackend``           n/a                                              yes (regular)
 ``AkkaHttpBackend``                   ``akka.stream.scaladsl.Source[ByteString, Any]`` yes (regular & streaming)
 ``AsyncHttpClientFutureBackend``      n/a                                              no
 ``OkHttpFutureBackend``               n/a                                              yes (regular)
-``HttpClientFutureBackend`` (Java11+) n/a                                              yes (regular)
 ``ArmeriaFutureBackend``              n/a                                              n/a
 ===================================== ================================================ ==========================
+```
+
+## Using HttpClient
+
+To use, you don't need any extra dependencies, `core` is enough:
+
+```
+"com.softwaremill.sttp.client3" %% "core" % "3.6.0"
+```
+
+You'll need the following imports:
+
+```scala
+import sttp.client3.HttpClientFutureBackend
+import scala.concurrent.ExecutionContext.Implicits.global
+```
+
+Create the backend using:
+
+```scala
+val backend = HttpClientFutureBackend()
+```
+
+or, if you'd like to instantiate the HttpClient yourself:
+
+```scala
+import java.net.http.HttpClient
+
+val client: HttpClient = ???  
+val backend = HttpClientFutureBackend.usingClient(client)
+```
+
+This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards. 
+
+Host header override is supported in environments running Java 12 onwards, but it has to be enabled by system property:
+
+```
+-Djdk.httpclient.allowRestrictedHeaders=host
 ```
 
 ## Using async-http-client
@@ -21,7 +59,7 @@ Class                                 Supported stream type                     
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % "3.5.2"
+"com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % "3.6.0"
 ```
 
 And some imports:
@@ -72,7 +110,7 @@ val backend = AsyncHttpClientFutureBackend.usingClient(asyncHttpClient)
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "okhttp-backend" % "3.5.2"
+"com.softwaremill.sttp.client3" %% "okhttp-backend" % "3.6.0"
 ```
 
 and some imports:
@@ -99,49 +137,12 @@ val backend = OkHttpFutureBackend.usingClient(asyncHttpClient)
 
 This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supports HTTP/2.
 
-## Using HttpClient (Java 11+)
-
-To use, add the following dependency to your project:
-
-```
-"com.softwaremill.sttp.client3" %% "httpclient-backend" % "3.5.2"
-```
-
-and some imports:
-
-```scala
-import sttp.client3.httpclient.HttpClientFutureBackend
-import scala.concurrent.ExecutionContext.Implicits.global
-```
-
-Create the backend using:
-
-```scala
-val backend = HttpClientFutureBackend()
-```
-
-or, if you'd like to instantiate the HttpClient yourself:
-
-```scala
-import java.net.http.HttpClient
-
-val client: HttpClient = ???  
-val backend = HttpClientFutureBackend.usingClient(client)
-```
-
-This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards, works with all Scala versions. A Scala 3 build is available as well.
-
-Host header override is supported in environments running Java 12 onwards, but it has to be enabled by system property:
-```
-jdk.httpclient.allowRestrictedHeaders=host
-```
-
 ## Using Armeria
 
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "armeria-backend" % "3.5.2"
+"com.softwaremill.sttp.client3" %% "armeria-backend" % "3.6.0"
 ```
 
 add imports:

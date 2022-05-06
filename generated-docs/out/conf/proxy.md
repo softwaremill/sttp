@@ -15,7 +15,7 @@ Otherwise, proxy values can be specified manually when creating a backend:
 ```scala
 import sttp.client3._
 
-val backend = HttpURLConnectionBackend(
+val backend = HttpClientSyncBackend(
   options = SttpBackendOptions.httpProxy("some.host", 8080))
 
 basicRequest

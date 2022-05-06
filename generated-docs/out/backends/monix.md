@@ -2,12 +2,44 @@
 
 There are several backend implementations which are `monix.eval.Task`-based. These backends are **asynchronous**. Sending a request is a non-blocking, lazily-evaluated operation and results in a response wrapped in a `Task`. 
 
+## Using HttpClient
+
+To use, add the following dependency to your project:
+
+```
+"com.softwaremill.sttp.client3" %% "monix" % "3.6.0"
+```
+
+Create the backend using:
+
+```scala
+import sttp.client3.httpclient.monix.HttpClientMonixBackend
+
+HttpClientMonixBackend().flatMap { backend => ??? }
+
+// or, if you'd like the backend to be wrapped in cats-effect Resource:
+HttpClientMonixBackend.resource().use { backend => ??? }
+
+// or, if you'd like to instantiate the HttpClient yourself:
+import java.net.http.HttpClient
+val httpClient: HttpClient = ???
+val backend = HttpClientMonixBackend.usingClient(httpClient)
+```
+
+This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards.
+
+Host header override is supported in environments running Java 12 onwards, but it has to be enabled by system property:
+
+```
+-Djdk.httpclient.allowRestrictedHeaders=host
+```
+
 ## Using async-http-client
 
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "async-http-client-backend-monix" % "3.5.2"
+"com.softwaremill.sttp.client3" %% "async-http-client-backend-monix" % "3.6.0"
 ```
            
 This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client), uses [Netty](http://netty.io) behind the scenes.
@@ -50,7 +82,7 @@ val backend = AsyncHttpClientMonixBackend.usingClient(asyncHttpClient)
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "okhttp-backend-monix" % "3.5.2"
+"com.softwaremill.sttp.client3" %% "okhttp-backend-monix" % "3.6.0"
 ```
 
 Create the backend using:
@@ -71,43 +103,12 @@ val backend = OkHttpMonixBackend.usingClient(okHttpClient)
 
 This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supports HTTP/2.
 
-## Using HttpClient (Java 11+)
-
-To use, add the following dependency to your project:
-
-```
-"com.softwaremill.sttp.client3" %% "httpclient-backend-monix" % "3.5.2"
-```
-
-Create the backend using:
-
-```scala
-import sttp.client3.httpclient.monix.HttpClientMonixBackend
-
-HttpClientMonixBackend().flatMap { backend => ??? }
-
-// or, if you'd like the backend to be wrapped in cats-effect Resource:
-HttpClientMonixBackend.resource().use { backend => ??? }
-
-// or, if you'd like to instantiate the HttpClient yourself:
-import java.net.http.HttpClient
-val httpClient: HttpClient = ???
-val backend = HttpClientMonixBackend.usingClient(httpClient)
-```
-
-This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards.
-
-Host header override is supported in environments running Java 12 onwards, but it has to be enabled by system property:
-```
-jdk.httpclient.allowRestrictedHeaders=host
-```
-
 ## Using Armeria
 
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "armeria-backend-monix" % "3.5.2"
+"com.softwaremill.sttp.client3" %% "armeria-backend-monix" % "3.6.0"
 ```
 
 add imports:
