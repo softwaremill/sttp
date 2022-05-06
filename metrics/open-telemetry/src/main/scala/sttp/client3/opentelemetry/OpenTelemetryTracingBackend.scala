@@ -12,13 +12,17 @@ import sttp.monad.syntax._
 
 import scala.collection.mutable
 
-private class OpenTelemetryBackend[F[_], P](
+private class OpenTelemetryTracingBackend[F[_], P](
     delegate: SttpBackend[F, P],
     openTelemetry: OpenTelemetry,
-    spanName: Request[_, _] => String
+    spanName: Request[_, _] => String,
+    tracerConfig: Option[TracerConfig]
 ) extends SttpBackend[F, P] {
 
-  private val tracer = openTelemetry.getTracer("sttp3-client", "1.0.0")
+  private val tracer = tracerConfig
+    .map(config => openTelemetry.getTracer(config.name, config.version))
+    .getOrElse(openTelemetry.getTracer("sttp3-client", "1.0.0"))
+
   private implicit val _monad: MonadError[F] = responseMonad
   type PE = P with Effect[F]
 
@@ -72,11 +76,14 @@ private class OpenTelemetryBackend[F[_], P](
 
 }
 
-object OpenTelemetryBackend {
+case class TracerConfig(name: String, version: String)
+
+object OpenTelemetryTracingBackend {
   def apply[F[_], P](
       delegate: SttpBackend[F, P],
       openTelemetry: OpenTelemetry,
-      spanName: Request[_, _] => String = request => s"HTTP ${request.method.method}"
+      spanName: Request[_, _] => String = request => s"HTTP ${request.method.method}",
+      tracerConfig: Option[TracerConfig] = None
   ): SttpBackend[F, P] =
-    new OpenTelemetryBackend[F, P](delegate, openTelemetry, spanName)
+    new OpenTelemetryTracingBackend[F, P](delegate, openTelemetry, spanName, tracerConfig)
 }

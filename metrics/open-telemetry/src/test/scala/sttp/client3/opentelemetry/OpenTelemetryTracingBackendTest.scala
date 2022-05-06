@@ -18,7 +18,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.util.Try
 
-class OpenTelemetryBackendTest extends AnyFlatSpec with Matchers with BeforeAndAfter {
+class OpenTelemetryTracingBackendTest extends AnyFlatSpec with Matchers with BeforeAndAfter {
 
   private val recordedRequests = mutable.ListBuffer[Request[_, _]]()
 
@@ -34,7 +34,7 @@ class OpenTelemetryBackendTest extends AnyFlatSpec with Matchers with BeforeAndA
     .buildAndRegisterGlobal()
 
   private val backend: SttpBackend[Identity, Any] =
-    OpenTelemetryBackend(
+    OpenTelemetryTracingBackend(
       SttpBackendStub.apply(IdMonad).whenRequestMatchesPartial {
         case r if r.uri.toString.contains("echo") =>
           recordedRequests += r
@@ -50,7 +50,7 @@ class OpenTelemetryBackendTest extends AnyFlatSpec with Matchers with BeforeAndA
     spanExporter.reset()
   }
 
-  "ZioTelemetryOpenTelemetryBackend" should "record spans for requests" in {
+  "OpenTelemetryTracingBackend" should "record spans for requests" in {
     val response = basicRequest.post(uri"http://stub/echo").send(backend)
     response.code shouldBe StatusCode.Ok
 
