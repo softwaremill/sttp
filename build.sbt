@@ -411,7 +411,7 @@ lazy val monix = (projectMatrix in file("effects/monix"))
     name := "monix",
     Test / publishArtifact := true,
     libraryDependencies ++= Seq(
-      "io.monix" %%% "monix" % "3.4.0",
+      "io.monix" %%% "monix" % "3.4.1",
       "com.softwaremill.sttp.shared" %%% "monix" % sttpSharedVersion
     )
   )
