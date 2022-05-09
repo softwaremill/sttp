@@ -895,8 +895,8 @@ lazy val openTelemetry = (projectMatrix in file("metrics/open-telemetry"))
   .settings(
     name := "opentelemetry",
     libraryDependencies ++= Seq(
-      "io.opentelemetry" % "opentelemetry-api" % "1.13.0",
-      "io.opentelemetry" % "opentelemetry-sdk-testing" % "1.13.0" % Test,
+      "io.opentelemetry" % "opentelemetry-api" % "1.14.0",
+      "io.opentelemetry" % "opentelemetry-sdk-testing" % "1.14.0" % Test,
       "io.opentelemetry" % "opentelemetry-sdk-metrics-testing" % "1.13.0-alpha" % Test
     ),
     scalaTest
