@@ -145,7 +145,7 @@ val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", 
 
 val zio1Version = "1.0.14"
 val zio2Version = "2.0.0-RC6"
-val zio1InteropRsVersion = "1.3.10"
+val zio1InteropRsVersion = "1.3.12"
 val zio2InteropRsVersion = "2.0.0-RC7"
 
 val sttpModelVersion = "1.4.26"
