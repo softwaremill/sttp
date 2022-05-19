@@ -28,7 +28,7 @@ private class OpenTelemetryMetricsBackend[F[_], P](
         .meterBuilder(config.name)
         .setInstrumentationVersion(config.version)
     )
-    .getOrElse(openTelemetry.meterBuilder("sttp3-client"))
+    .getOrElse(openTelemetry.meterBuilder("sttp-3client").setInstrumentationVersion("1.0.0"))
     .build()
 
   private val counters: ConcurrentHashMap[String, LongCounter] = new ConcurrentHashMap[String, LongCounter]
@@ -137,12 +137,12 @@ case class MeterConfig(name: String, version: String)
 
 object OpenTelemetryMetricsBackend {
 
-  val DefaultRequestsInProgressCounterName = "sttp3_requests_in_progress"
-  val DefaultSuccessCounterName = "sttp3_requests_success_count"
-  val DefaultErrorCounterName = "sttp3_requests_error_count"
-  val DefaultFailureCounterName = "sttp3_requests_failure_count"
-  val DefaultRequestHistogramName = "sttp3_request_size_bytes"
-  val DefaultResponseHistogramName = "sttp3_response_size_bytes"
+  val DefaultRequestsInProgressCounterName = "sttp_requests_in_progress"
+  val DefaultSuccessCounterName = "sttp_requests_success_count"
+  val DefaultErrorCounterName = "sttp_requests_error_count"
+  val DefaultFailureCounterName = "sttp_requests_failure_count"
+  val DefaultRequestHistogramName = "sttp_request_size_bytes"
+  val DefaultResponseHistogramName = "sttp_response_size_bytes"
 
   def apply[F[_], P](
       delegate: SttpBackend[F, P],

@@ -21,7 +21,7 @@ private class OpenTelemetryTracingBackend[F[_], P](
 
   private val tracer = tracerConfig
     .map(config => openTelemetry.getTracer(config.name, config.version))
-    .getOrElse(openTelemetry.getTracer("sttp3-client", "1.0.0"))
+    .getOrElse(openTelemetry.getTracer("sttp-client3", "1.0.0"))
 
   private implicit val _monad: MonadError[F] = responseMonad
   type PE = P with Effect[F]
