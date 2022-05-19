@@ -1,27 +1,25 @@
 # Opentelemetry
 
-Both backends from below depend only on [opentelemetry](https://github.com/open-telemetry/opentelemetry-java).
-The opentelemetry are type of wrapper backends, so they wrap any other backend. They require an instance of opentelemetry.
+Both backends from below depend only on [opentelemetry-api](https://github.com/open-telemetry/opentelemetry-java).
+The OpenTelemetry are type of wrapper backends, so they wrap any other backend. They require an instance of OpenTelemetry.
 
-To use, any of below backends, add the following dependency to your project:
+To use add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "opentelemetry" % "@VERSION@"
+"com.softwaremill.sttp.client3" %% "opentelemetry-backend" % "@VERSION@"
 ```
 
-### Opentelemetry tracing backend
+### OpenTelemetry tracing backend
 
-To obtain instance of OpenTelemetryTracingBackend:
+To obtain instance of `OpenTelemetryTracingBackend`:
 
 ```scala
-OpenTelemetryTracingBackend(
-  sttpBackend,
-  openTelemetry
-)
+OpenTelemetryTracingBackend(sttpBackend, openTelemetry)
 ```
 
 By default, the span is named after the HTTP method (e.g "HTTP POST") as [recommended by OpenTelemetry](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/http.md#name) for HTTP clients. 
 It can be customized by setting the third argument in constructor: 
+
 ```scala
 OpenTelemetryTracingBackend(
   sttpBackend,
@@ -31,6 +29,7 @@ OpenTelemetryTracingBackend(
 ```
 
 There is also the possibility to customize tracer name and version by using constructor parameter:
+
 ```scala
 OpenTelemetryTracingBackend(
   sttpBackend,
@@ -39,15 +38,12 @@ OpenTelemetryTracingBackend(
 )
 ```
 
-### Opentelemetry metrics backend
+### OpenTelemetry metrics backend
 
-To obtain instance of OpenTelemetryMetricsBackend:
+To obtain instance of `OpenTelemetryMetricsBackend`:
 
 ```scala
-OpenTelemetryMetricsBackend(
-  sttpBackend,
-  openTelemetry
-)
+OpenTelemetryMetricsBackend(sttpBackend, openTelemetry)
 ```
 
 All counters have provided default names, but the names can be customized by setting correct parameters in constructor:

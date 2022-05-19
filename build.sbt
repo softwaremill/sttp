@@ -160,6 +160,8 @@ val resilience4jVersion = "1.7.1"
 val http4s_ce2_version = "0.22.12"
 val http4s_ce3_version = "0.23.11"
 
+val openTelemetryVersion = "0.14.0"
+
 val compileAndTest = "compile->compile;test->test"
 
 def dependenciesFor(version: String)(deps: (Option[(Long, Long)] => ModuleID)*): Seq[ModuleID] =
@@ -209,7 +211,7 @@ lazy val allAggregates = projectsWithOptionalNative ++
   sprayJson.projectRefs ++
   playJson.projectRefs ++
   prometheusBackend.projectRefs ++
-  openTelemetry.projectRefs ++
+  openTelemetryBackend.projectRefs ++
   finagleBackend.projectRefs ++
   armeriaBackend.projectRefs ++
   armeriaScalazBackend.projectRefs ++
@@ -878,7 +880,7 @@ lazy val playJson = (projectMatrix in file("json/play-json"))
   .jsPlatform(scalaVersions = List(scala2_12, scala2_13), settings = commonJsSettings)
   .dependsOn(core, jsonCommon)
 
-lazy val prometheusBackend = (projectMatrix in file("metrics/prometheus-backend"))
+lazy val prometheusBackend = (projectMatrix in file("observability/prometheus-backend"))
   .settings(commonJvmSettings)
   .settings(
     name := "prometheus-backend",
@@ -890,14 +892,13 @@ lazy val prometheusBackend = (projectMatrix in file("metrics/prometheus-backend"
   .jvmPlatform(scalaVersions = scala2 ++ scala3)
   .dependsOn(core)
 
-lazy val openTelemetry = (projectMatrix in file("metrics/open-telemetry"))
+lazy val openTelemetryBackend = (projectMatrix in file("observability/opentelemetry-backend"))
   .settings(commonJvmSettings)
   .settings(
-    name := "opentelemetry",
+    name := "opentelemetry-backend",
     libraryDependencies ++= Seq(
-      "io.opentelemetry" % "opentelemetry-api" % "1.14.0",
-      "io.opentelemetry" % "opentelemetry-sdk-testing" % "1.14.0" % Test,
-      "io.opentelemetry" % "opentelemetry-sdk-metrics-testing" % "1.13.0-alpha" % Test
+      "io.opentelemetry" % "opentelemetry-api" % openTelemetryVersion,
+      "io.opentelemetry" % "opentelemetry-sdk-testing" % openTelemetryVersion % Test
     ),
     scalaTest
   )
@@ -1031,7 +1032,7 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     // okhttpMonixBackend,
     http4sBackend,
     prometheusBackend,
-    openTelemetry,
+    openTelemetryBackend,
     slf4jBackend
   )
   .jvmPlatform(scalaVersions = List(scala2_13))
