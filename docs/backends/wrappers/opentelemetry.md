@@ -34,6 +34,14 @@ OpenTelemetryMetricsBackend(sttpBackend, openTelemetry)
 All counters have provided default names, but the names can be customized by setting correct parameters in constructor:
 
 ```scala mdoc:compile-only
+import scala.concurrent.Future
+import sttp.client3._
+import sttp.client3.opentelemetry._
+import io.opentelemetry.api.OpenTelemetry
+
+val sttpBackend: SttpBackend[Future, Any] = ??? 
+val openTelemetry: OpenTelemetry = ???
+
 OpenTelemetryMetricsBackend(
   sttpBackend,
   openTelemetry,
@@ -61,18 +69,22 @@ Here's how you construct `ZioTelemetryOpenTelemetryBackend`. I would recommend w
 import sttp.client3._
 import zio._
 import zio.telemetry.opentelemetry._
-import sttp.client3.ziotelemetry.opentelemetry._
+import sttp.client3.opentelemetry.zio._
 
 val zioBackend: SttpBackend[Task, Any] = ???
 val tracing: Tracing.Service = ???
 
-ZioTelemetryOpenTelemetryBackend(sttpBackend, tracing)
+OpenTelemetryTracingZioBackend(zioBackend, tracing)
 ```
 
 By default, the span is named after the HTTP method (e.g "HTTP POST") as [recommended by OpenTelemetry](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/http.md#name) for HTTP clients.
 You can override the default span name or add additional tags per request by supplying a `ZioTelemetryOpenTelemetryTracer`.
 
 ```scala mdoc:compile-only
+import sttp.client3._
+import zio._
+import zio.telemetry.opentelemetry._
+import sttp.client3.opentelemetry.zio._
 import io.opentelemetry.semconv.trace.attributes.SemanticAttributes
 
 val zioBackend: SttpBackend[Task, Any] = ???
@@ -91,5 +103,5 @@ def sttpTracer: ZioTelemetryOpenTelemetryTracer = new ZioTelemetryOpenTelemetryT
       ZIO.unit
 }
 
-ZioTelemetryOpenTelemetryBackend(zioBackend, tracing, sttpTracer)
+OpenTelemetryTracingZioBackend(zioBackend, tracing, sttpTracer)
 ```
