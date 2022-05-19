@@ -28,7 +28,7 @@ private class OpenTelemetryMetricsBackend[F[_], P](
         .meterBuilder(config.name)
         .setInstrumentationVersion(config.version)
     )
-    .getOrElse(openTelemetry.meterBuilder("sttp-3client").setInstrumentationVersion("1.0.0"))
+    .getOrElse(openTelemetry.meterBuilder("sttp-client3").setInstrumentationVersion("1.0.0"))
     .build()
 
   private val counters: ConcurrentHashMap[String, LongCounter] = new ConcurrentHashMap[String, LongCounter]
