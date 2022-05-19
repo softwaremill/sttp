@@ -23,9 +23,9 @@ object OpenTelemetryMetricsBackend {
       openTelemetry: OpenTelemetry,
       meterConfig: MeterConfig = MeterConfig.Default,
       clock: Clock = Clock.systemUTC(),
-      requestToLatencyHistogramNameMapper: Request[_, _] => Option[CollectorConfig] = (_: Request[_, _]) =>
+      requestToLatencyHistogramMapper: Request[_, _] => Option[CollectorConfig] = (_: Request[_, _]) =>
         Some(CollectorConfig(DefaultLatencyHistogramName, unit = Some(CollectorConfig.Milliseconds))),
-      requestToInProgressCounterNameMapper: Request[_, _] => Option[CollectorConfig] = (_: Request[_, _]) =>
+      requestToInProgressCounterMapper: Request[_, _] => Option[CollectorConfig] = (_: Request[_, _]) =>
         Some(CollectorConfig(DefaultRequestsInProgressCounterName)),
       responseToSuccessCounterMapper: Response[_] => Option[CollectorConfig] = (_: Response[_]) =>
         Some(CollectorConfig(DefaultSuccessCounterName)),
@@ -33,30 +33,30 @@ object OpenTelemetryMetricsBackend {
         Some(CollectorConfig(DefaultErrorCounterName)),
       requestToFailureCounterMapper: (Request[_, _], Throwable) => Option[CollectorConfig] =
         (_: Request[_, _], _: Throwable) => Some(CollectorConfig(DefaultFailureCounterName)),
-      requestToSizeSummaryMapper: Request[_, _] => Option[CollectorConfig] = (_: Request[_, _]) =>
+      requestToSizeHistogramMapper: Request[_, _] => Option[CollectorConfig] = (_: Request[_, _]) =>
         Some(CollectorConfig(DefaultRequestSizeHistogramName, unit = Some(CollectorConfig.Bytes))),
-      responseToSizeSummaryMapper: Response[_] => Option[CollectorConfig] = (_: Response[_]) =>
+      responseToSizeHistogramMapper: Response[_] => Option[CollectorConfig] = (_: Response[_]) =>
         Some(CollectorConfig(DefaultResponseSizeHistogramName, unit = Some(CollectorConfig.Bytes)))
   ): SttpBackend[F, P] = usingMeter(
     delegate,
     openTelemetry.meterBuilder(meterConfig.name).setInstrumentationVersion(meterConfig.version).build(),
     clock,
-    requestToLatencyHistogramNameMapper = requestToLatencyHistogramNameMapper,
-    requestToInProgressCounterNameMapper = requestToInProgressCounterNameMapper,
+    requestToLatencyHistogramMapper = requestToLatencyHistogramMapper,
+    requestToInProgressCounterMapper = requestToInProgressCounterMapper,
     responseToSuccessCounterMapper = responseToSuccessCounterMapper,
     responseToErrorCounterMapper = responseToErrorCounterMapper,
     requestToFailureCounterMapper = requestToFailureCounterMapper,
-    requestToSizeSummaryMapper = requestToSizeSummaryMapper,
-    responseToSizeSummaryMapper = responseToSizeSummaryMapper
+    requestToSizeHistogramMapper = requestToSizeHistogramMapper,
+    responseToSizeHistogramMapper = responseToSizeHistogramMapper
   )
 
   def usingMeter[F[_], P](
       delegate: SttpBackend[F, P],
       meter: Meter,
       clock: Clock = Clock.systemUTC(),
-      requestToLatencyHistogramNameMapper: Request[_, _] => Option[CollectorConfig] = (_: Request[_, _]) =>
+      requestToLatencyHistogramMapper: Request[_, _] => Option[CollectorConfig] = (_: Request[_, _]) =>
         Some(CollectorConfig(DefaultLatencyHistogramName, unit = Some(CollectorConfig.Milliseconds))),
-      requestToInProgressCounterNameMapper: Request[_, _] => Option[CollectorConfig] = (_: Request[_, _]) =>
+      requestToInProgressCounterMapper: Request[_, _] => Option[CollectorConfig] = (_: Request[_, _]) =>
         Some(CollectorConfig(DefaultRequestsInProgressCounterName)),
       responseToSuccessCounterMapper: Response[_] => Option[CollectorConfig] = (_: Response[_]) =>
         Some(CollectorConfig(DefaultSuccessCounterName)),
@@ -64,9 +64,9 @@ object OpenTelemetryMetricsBackend {
         Some(CollectorConfig(DefaultErrorCounterName)),
       requestToFailureCounterMapper: (Request[_, _], Throwable) => Option[CollectorConfig] =
         (_: Request[_, _], _: Throwable) => Some(CollectorConfig(DefaultFailureCounterName)),
-      requestToSizeSummaryMapper: Request[_, _] => Option[CollectorConfig] = (_: Request[_, _]) =>
+      requestToSizeHistogramMapper: Request[_, _] => Option[CollectorConfig] = (_: Request[_, _]) =>
         Some(CollectorConfig(DefaultRequestSizeHistogramName, unit = Some(CollectorConfig.Bytes))),
-      responseToSizeSummaryMapper: Response[_] => Option[CollectorConfig] = (_: Response[_]) =>
+      responseToSizeHistogramMapper: Response[_] => Option[CollectorConfig] = (_: Response[_]) =>
         Some(CollectorConfig(DefaultResponseSizeHistogramName, unit = Some(CollectorConfig.Bytes)))
   ): SttpBackend[F, P] = {
     // redirects should be handled before metrics
@@ -77,13 +77,13 @@ object OpenTelemetryMetricsBackend {
           new OpenTelemetryMetricsListener(
             meter,
             clock,
-            requestToLatencyHistogramNameMapper,
-            requestToInProgressCounterNameMapper,
+            requestToLatencyHistogramMapper,
+            requestToInProgressCounterMapper,
             responseToSuccessCounterMapper,
             responseToErrorCounterMapper,
             requestToFailureCounterMapper,
-            requestToSizeSummaryMapper,
-            responseToSizeSummaryMapper
+            requestToSizeHistogramMapper,
+            responseToSizeHistogramMapper
           ),
           delegate.responseMonad
         )
@@ -95,8 +95,8 @@ object OpenTelemetryMetricsBackend {
 private class OpenTelemetryMetricsListener(
     meter: Meter,
     clock: Clock,
-    requestToLatencyHistogramNameMapper: Request[_, _] => Option[CollectorConfig],
-    requestToInProgressCounterNameMapper: Request[_, _] => Option[CollectorConfig],
+    requestToLatencyHistogramMapper: Request[_, _] => Option[CollectorConfig],
+    requestToInProgressCounterMapper: Request[_, _] => Option[CollectorConfig],
     responseToSuccessCounterMapper: Response[_] => Option[CollectorConfig],
     requestToErrorCounterMapper: Response[_] => Option[CollectorConfig],
     requestToFailureCounterMapper: (Request[_, _], Throwable) => Option[CollectorConfig],
@@ -111,7 +111,7 @@ private class OpenTelemetryMetricsListener(
   override def beforeRequest(request: Request[_, _]): Option[Long] = {
     updateInProgressCounter(request, 1)
     recordHistogram(requestToSizeHistogramMapper(request), request.contentLength)
-    requestToLatencyHistogramNameMapper(request).map(_ => clock.millis())
+    requestToLatencyHistogramMapper(request).map(_ => clock.millis())
   }
 
   override def requestSuccessful(request: Request[_, _], response: Response[_], tag: Option[Long]): Unit = {
@@ -121,18 +121,18 @@ private class OpenTelemetryMetricsListener(
       incrementCounter(requestToErrorCounterMapper(response))
     }
     recordHistogram(responseToSizeHistogramMapper(response), response.contentLength)
-    recordHistogram(requestToLatencyHistogramNameMapper(request), tag.map(clock.millis() - _))
+    recordHistogram(requestToLatencyHistogramMapper(request), tag.map(clock.millis() - _))
     updateInProgressCounter(request, -1)
   }
 
   override def requestException(request: Request[_, _], tag: Option[Long], e: Exception): Unit = {
     incrementCounter(requestToFailureCounterMapper(request, e))
-    recordHistogram(requestToLatencyHistogramNameMapper(request), tag.map(clock.millis() - _))
+    recordHistogram(requestToLatencyHistogramMapper(request), tag.map(clock.millis() - _))
     updateInProgressCounter(request, -1)
   }
 
   private def updateInProgressCounter[R, T](request: Request[T, R], delta: Long): Unit = {
-    requestToInProgressCounterNameMapper(request)
+    requestToInProgressCounterMapper(request)
       .foreach(config =>
         getOrCreateMetric(upAndDownCounter, config, createNewUpDownCounter).add(delta, config.attributes)
       )
