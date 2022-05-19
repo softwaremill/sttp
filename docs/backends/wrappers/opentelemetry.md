@@ -19,6 +19,8 @@ To use add the following dependency to your project:
 Then an instance can be obtained as follows:
 
 ```scala mdoc:compile-only
+import scala.concurrent.Future
+import sttp.client3._
 import sttp.client3.opentelemetry._
 import io.opentelemetry.api.OpenTelemetry
 
