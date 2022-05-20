@@ -4,13 +4,12 @@ Currently the following OpenTelemetry features are supported:
 
 * metrics using `OpenTelemetryMetricsBackend`, wrapping any other backend
 * tracing using `OpenTelemetryTracingZioBackend`, wrapping any ZIO1/ZIO2 backend
-
-Both backends from below depend only on [opentelemetry-api](https://github.com/open-telemetry/opentelemetry-java).
-The OpenTelemetry are type of wrapper backends, so they wrap any other backend. They require an instance of OpenTelemetry.
+* tracing using [trace4cats](https://github.com/trace4cats/trace4cats), wrapping a cats-effect backend
 
 ### Metrics
 
-To use add the following dependency to your project:
+The backend depends only on [opentelemetry-api](https://github.com/open-telemetry/opentelemetry-java). To use add the 
+following dependency to your project:
 
 ```
 "com.softwaremill.sttp.client3" %% "opentelemetry-metrics-backend" % "@VERSION@"
