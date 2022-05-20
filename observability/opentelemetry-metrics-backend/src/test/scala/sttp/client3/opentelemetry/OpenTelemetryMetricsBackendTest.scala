@@ -50,7 +50,7 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
     (0 until 10).foreach(_ => backend.send(basicRequest.get(uri"http://127.0.0.1/echo")))
 
     // then
-    getMetricValue(reader, OpenTelemetryMetricsBackend.DefaultRequestsInProgressCounterName) should not be empty
+    getMetricValue(reader, OpenTelemetryMetricsBackend.DefaultRequestsInProgressCounterName).value shouldBe 0
   }
 
   it should "allow creating two backends" in {
@@ -97,7 +97,8 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
     val backend = OpenTelemetryMetricsBackend[Identity, Any](
       stubAlwaysOk,
       spawnNewOpenTelemetry(reader),
-      responseToSuccessCounterMapper = _ => Some(CollectorConfig(customSuccessCounterName, description, unit))
+      responseToSuccessCounterMapper =
+        _ => Some(CollectorConfig(customSuccessCounterName, Some(description), Some(unit)))
     )
     val requestsNumber1 = 5
 
@@ -163,8 +164,22 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
     )
 
     // then
-    getHistogramValue(reader, OpenTelemetryMetricsBackend.DefaultRequestHistogramName).value.getSum shouldBe 25
-    getHistogramValue(reader, OpenTelemetryMetricsBackend.DefaultResponseHistogramName).value.getSum shouldBe 50
+    getHistogramValue(reader, OpenTelemetryMetricsBackend.DefaultRequestSizeHistogramName).value.getSum shouldBe 25
+    getHistogramValue(reader, OpenTelemetryMetricsBackend.DefaultResponseSizeHistogramName).value.getSum shouldBe 50
+  }
+
+  it should "use histogram for request latencies" in {
+    // given
+    val response = Response("Ok", StatusCode.Ok, "Ok", Seq(Header.contentLength(10)))
+    val backendStub = SttpBackendStub.synchronous.whenAnyRequest.thenRespond(response)
+    val reader = InMemoryMetricReader.create()
+    val backend = OpenTelemetryMetricsBackend[Identity, Any](backendStub, spawnNewOpenTelemetry(reader))
+
+    // when
+    (0 until 5).foreach(_ => backend.send(basicRequest.get(uri"http://127.0.0.1/foo")))
+
+    // then
+    getHistogramValue(reader, OpenTelemetryMetricsBackend.DefaultLatencyHistogramName).map(_.getSum) should not be empty
   }
 
   private[this] def getMetricValue(reader: InMemoryMetricReader, name: String): Option[Long] = {
