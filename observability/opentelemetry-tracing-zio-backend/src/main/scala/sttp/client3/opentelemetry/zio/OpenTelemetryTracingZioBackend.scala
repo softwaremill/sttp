@@ -13,7 +13,7 @@ import scala.collection.mutable
 
 private class OpenTelemetryTracingZioBackend[+P](
     delegate: SttpBackend[Task, P],
-    tracer: ZioTelemetryOpenTelemetryTracer,
+    tracer: OpenTelemetryZioTracer,
     tracing: Tracing.Service
 ) extends DelegateSttpBackend[Task, P](delegate) {
   def send[T, R >: P with Effect[Task]](request: Request[T, R]): Task[Response[T]] = {
@@ -36,21 +36,27 @@ object OpenTelemetryTracingZioBackend {
   def apply[P](
       other: SttpBackend[Task, P],
       tracing: Tracing.Service,
-      tracer: ZioTelemetryOpenTelemetryTracer = ZioTelemetryOpenTelemetryTracer.empty
+      tracer: OpenTelemetryZioTracer = OpenTelemetryZioTracer.Default
   ): SttpBackend[Task, P] =
     new OpenTelemetryTracingZioBackend[P](other, tracer, tracing)
 
 }
 
-trait ZioTelemetryOpenTelemetryTracer {
-  def spanName[T](request: Request[T, Nothing]): String = s"HTTP ${request.method.method}"
+trait OpenTelemetryZioTracer {
+  def spanName[T](request: Request[T, Nothing]): String
   def before[T](request: Request[T, Nothing]): RIO[Tracing.Service, Unit]
   def after[T](response: Response[T]): RIO[Tracing.Service, Unit]
 }
 
-object ZioTelemetryOpenTelemetryTracer {
-  val empty: ZioTelemetryOpenTelemetryTracer = new ZioTelemetryOpenTelemetryTracer {
-    def before[T](request: Request[T, Nothing]): RIO[Tracing.Service, Unit] = ZIO.unit
-    def after[T](response: Response[T]): RIO[Tracing.Service, Unit] = ZIO.unit
+object OpenTelemetryZioTracer {
+  val Default: OpenTelemetryZioTracer = new OpenTelemetryZioTracer {
+    override def spanName[T](request: Request[T, Nothing]): String = s"HTTP ${request.method.method}"
+    override def before[T](request: Request[T, Nothing]): RIO[Tracing.Service, Unit] =
+      Tracing.setAttribute("http.method", request.method.method) *>
+        Tracing.setAttribute("http.url", request.uri.toString()) *>
+        ZIO.unit
+    override def after[T](response: Response[T]): RIO[Tracing.Service, Unit] =
+      Tracing.setAttribute("http.status_code", response.code.code.toLong) *>
+        ZIO.unit
   }
 }

@@ -36,21 +36,27 @@ object OpenTelemetryTracingZioBackend {
   def apply[P](
       other: SttpBackend[Task, P],
       tracing: Tracing.Service,
-      tracer: OpenTelemetryZioTracer = OpenTelemetryZioTracer.empty
+      tracer: OpenTelemetryZioTracer = OpenTelemetryZioTracer.Default
   ): SttpBackend[Task, P] =
     new OpenTelemetryTracingZioBackend[P](other, tracer, Has(tracing))
 
 }
 
 trait OpenTelemetryZioTracer {
-  def spanName[T](request: Request[T, Nothing]): String = s"HTTP ${request.method.method}"
+  def spanName[T](request: Request[T, Nothing]): String
   def before[T](request: Request[T, Nothing]): RIO[Tracing, Unit]
   def after[T](response: Response[T]): RIO[Tracing, Unit]
 }
 
 object OpenTelemetryZioTracer {
-  val empty: OpenTelemetryZioTracer = new OpenTelemetryZioTracer {
-    def before[T](request: Request[T, Nothing]): RIO[Tracing, Unit] = ZIO.unit
-    def after[T](response: Response[T]): RIO[Tracing, Unit] = ZIO.unit
+  val Default: OpenTelemetryZioTracer = new OpenTelemetryZioTracer {
+    override def spanName[T](request: Request[T, Nothing]): String = s"HTTP ${request.method.method}"
+    override def before[T](request: Request[T, Nothing]): RIO[Tracing, Unit] =
+      Tracing.setAttribute("http.method", request.method.method) *>
+        Tracing.setAttribute("http.url", request.uri.toString()) *>
+        ZIO.unit
+    override def after[T](response: Response[T]): RIO[Tracing, Unit] =
+      Tracing.setAttribute("http.status_code", response.code.code.toLong) *>
+        ZIO.unit
   }
 }
