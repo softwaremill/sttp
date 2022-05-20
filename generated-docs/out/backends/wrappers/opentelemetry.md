@@ -1,57 +1,46 @@
-# Opentelemetry
+# OpenTelemetry
 
-Both backends from below depend only on [opentelemetry](https://github.com/open-telemetry/opentelemetry-java).
-The opentelemetry are type of wrapper backends, so they wrap any other backend. They require an instance of opentelemetry.
+Currently the following OpenTelemetry features are supported:
 
-To use, any of below backends, add the following dependency to your project:
+* metrics using `OpenTelemetryMetricsBackend`, wrapping any other backend
+* tracing using `OpenTelemetryTracingZioBackend`, wrapping any ZIO1/ZIO2 backend
+* tracing using [trace4cats](https://github.com/trace4cats/trace4cats), wrapping a cats-effect backend
+
+### Metrics
+
+The backend depends only on [opentelemetry-api](https://github.com/open-telemetry/opentelemetry-java). To use add the 
+following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "opentelemetry" % "3.6.1"
+"com.softwaremill.sttp.client3" %% "opentelemetry-metrics-backend" % "3.6.2"
 ```
 
-### Opentelemetry tracing backend
-
-To obtain instance of OpenTelemetryTracingBackend:
+Then an instance can be obtained as follows:
 
 ```scala
-OpenTelemetryTracingBackend(
-  sttpBackend,
-  openTelemetry
-)
-```
+import scala.concurrent.Future
+import sttp.client3._
+import sttp.client3.opentelemetry._
+import io.opentelemetry.api.OpenTelemetry
 
-By default, the span is named after the HTTP method (e.g "HTTP POST") as [recommended by OpenTelemetry](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/http.md#name) for HTTP clients. 
-It can be customized by setting the third argument in constructor: 
-```scala
-OpenTelemetryTracingBackend(
-  sttpBackend,
-  openTelemetry,
-  request => s"HTTP ${request.method.method}"
-)
-```
+// any effect and capabilities are supported
+val sttpBackend: SttpBackend[Future, Any] = ???  
+val openTelemetry: OpenTelemetry = ???
 
-There is also the possibility to customize tracer name and version by using constructor parameter:
-```scala
-OpenTelemetryTracingBackend(
-  sttpBackend,
-  openTelemetry,
-  tracerConfig = Some(TracerConfig("my_custom_tracer_name", "1.0.0"))
-)
-```
-
-### Opentelemetry metrics backend
-
-To obtain instance of OpenTelemetryMetricsBackend:
-
-```scala
-OpenTelemetryMetricsBackend(
-  sttpBackend,
-  openTelemetry
-)
+OpenTelemetryMetricsBackend(sttpBackend, openTelemetry)
 ```
 
 All counters have provided default names, but the names can be customized by setting correct parameters in constructor:
+
 ```scala
+import scala.concurrent.Future
+import sttp.client3._
+import sttp.client3.opentelemetry._
+import io.opentelemetry.api.OpenTelemetry
+
+val sttpBackend: SttpBackend[Future, Any] = ???  
+val openTelemetry: OpenTelemetry = ???
+
 OpenTelemetryMetricsBackend(
   sttpBackend,
   openTelemetry,
@@ -59,11 +48,38 @@ OpenTelemetryMetricsBackend(
 )
 ```
 
-There is also the possibility to customize meter name and version by using constructor parameter:
-```scala
-OpenTelemetryMetricsBackend(
-  sttpBackend,
-  openTelemetry,
-  meterConfig = Some(MeterConfig("my_custom_meter_name", "1.0.0"))
-)
+### Tracing (ZIO)
+
+To use, add the following dependency to your project (the `zio-*` modules depend on ZIO 2.x; for ZIO 1.x support, use `zio1-*`):
+
 ```
+"com.softwaremill.sttp.client3" %% "opentelemetry-tracing-zio-backend" % "3.6.2"  // for ZIO 2.x
+"com.softwaremill.sttp.client3" %% "opentelemetry-tracing-zio1-backend" % "3.6.2" // for ZIO 1.x
+```
+
+This backend depends on [zio-opentelemetry](https://github.com/zio/zio-telemetry).
+
+The OpenTelemetry backend wraps a `Task` based ZIO backend.
+In order to do that, you need to provide the wrapper with a `Tracing.Service` from zio-telemetry.
+
+Here's how you construct `ZioTelemetryOpenTelemetryBackend`. I would recommend wrapping this is in `ZLayer`
+
+```scala
+import sttp.client3._
+import zio._
+import zio.telemetry.opentelemetry._
+import sttp.client3.opentelemetry.zio._
+
+val zioBackend: SttpBackend[Task, Any] = ???
+val tracing: Tracing.Service = ???
+
+OpenTelemetryTracingZioBackend(zioBackend, tracing)
+```
+
+By default, the span is named after the HTTP method (e.g "HTTP POST") as [recommended by OpenTelemetry](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/http.md#name) for HTTP clients,
+and the http method, url and response status codes are set as span attributes.
+You can override these defaults by supplying a custom `OpenTelemetryZioTracer`.
+
+### Tracing (cats-effect)
+
+The [trace4cats](https://github.com/trace4cats/trace4cats) project includes sttp-client integration.
