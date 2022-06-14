@@ -26,6 +26,7 @@ core/native/local.sbt
 .bloop/
 project/metals.sbt
 .bsp/
+.java-version
 
 # scala-native
 lowered.hnir

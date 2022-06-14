@@ -16,8 +16,6 @@ import scala.concurrent.blocking
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-import scala.collection.immutable.Seq
-
 class PrometheusBackendTest
     extends AnyFlatSpec
     with Matchers
@@ -277,4 +275,24 @@ class PrometheusBackendTest
   private[this] def getMetricValue(name: String, labels: List[(String, String)]): Option[lang.Double] =
     Option(CollectorRegistry.defaultRegistry.getSampleValue(name, labels.map(_._1).toArray, labels.map(_._2).toArray))
 
+
+  it should "use map http error" in {
+    // given
+    val backendStub = SttpBackendStub.synchronous.whenAnyRequest.thenRespondF(_ => throw HttpError("Not Found", StatusCode.NotFound))
+    val errorBackend = new TryBackend(backendStub)
+    val backend = PrometheusBackend(errorBackend)
+
+    // when
+    backend.send(
+      basicRequest
+        .get(uri"http://127.0.0.1/foo")
+        .header(Header.contentLength(5))
+    )
+
+    // then
+    getMetricValue(PrometheusBackend.DefaultRequestSizeName + "_count").value shouldBe 1
+    getMetricValue(PrometheusBackend.DefaultRequestSizeName + "_sum").value shouldBe 5
+    getMetricValue(PrometheusBackend.DefaultResponseSizeName + "_count").value shouldBe 1
+    getMetricValue(PrometheusBackend.DefaultResponseSizeName + "_sum").value shouldBe 10
+  }
 }
