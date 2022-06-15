@@ -13,6 +13,7 @@ import sttp.model.{Header, StatusCode}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.blocking
+import scala.collection.immutable.Seq
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -307,7 +308,7 @@ class PrometheusBackendTest
     getMetricValue(PrometheusBackend.DefaultErrorCounterName + "_total") shouldBe None
   }
 
-  it should "use success counter when success" in {
+  it should "use success counter on success response" in {
     // given
     val backendStub = SttpBackendStub.synchronous.whenAnyRequest.thenRespondOk()
     val backend = PrometheusBackend(backendStub)

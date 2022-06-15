@@ -892,7 +892,7 @@ lazy val prometheusBackend = (projectMatrix in file("observability/prometheus-ba
     scalaTest
   )
   .jvmPlatform(scalaVersions = scala2 ++ scala3)
-  .dependsOn(core, core % Test)
+  .dependsOn(core)
 
 lazy val openTelemetryMetricsBackend = (projectMatrix in file("observability/opentelemetry-metrics-backend"))
   .settings(commonJvmSettings)

@@ -222,7 +222,7 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
     getMetricValue(reader, OpenTelemetryMetricsBackend.DefaultErrorCounterName) shouldBe None
   }
 
-  it should "use success counter when success" in {
+  it should "use success counter on success response" in {
     // given
     val backendStub = SttpBackendStub.synchronous.whenAnyRequest.thenRespondOk()
     val reader = InMemoryMetricReader.create()
