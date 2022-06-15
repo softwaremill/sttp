@@ -130,13 +130,12 @@ class PrometheusListener(
       requestCollectors: RequestCollectors,
       e: Exception
   ): Unit = {
-    requestCollectors._1.foreach(_.observeDuration())
-    requestCollectors._2.foreach(_.dec())
-
     HttpError.find(e) match {
       case Some(HttpError(body, statusCode)) =>
         requestSuccessful(request, Response(body, statusCode), requestCollectors)
       case _ =>
+        requestCollectors._1.foreach(_.observeDuration())
+        requestCollectors._2.foreach(_.dec())
         incCounterIfMapped((request, e), requestToFailureCounterMapper)
     }
   }
