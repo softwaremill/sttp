@@ -8,7 +8,7 @@ import org.scalatest.OptionValues
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import sttp.client3.testing.SttpBackendStub
-import sttp.client3.{DeserializationException, HttpError, Identity, Response, TryBackend, UriContext, basicRequest}
+import sttp.client3.{DeserializationException, EitherBackend, HttpError, Identity, Response, TryBackend, UriContext, asString, basicRequest}
 import sttp.model.{Header, StatusCode}
 
 import scala.collection.JavaConverters._
@@ -182,18 +182,18 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
     getHistogramValue(reader, OpenTelemetryMetricsBackend.DefaultLatencyHistogramName).map(_.getSum) should not be empty
   }
 
-  it should "use error counter when http error is wrapped in a try" in {
+  it should "use error counter when http error is thrown" in {
     // given
-    val backendStub = SttpBackendStub.synchronous.whenAnyRequest.thenRespondF(_ =>
-      throw HttpError("Not Found", StatusCode.NotFound))
-    val errorBackend = new TryBackend(backendStub)
+    val backendStub = SttpBackendStub.synchronous.whenAnyRequest.thenRespondServerError()
+    val eitherBackend = new EitherBackend(backendStub)
     val reader = InMemoryMetricReader.create()
-    val backend = OpenTelemetryMetricsBackend(errorBackend, spawnNewOpenTelemetry(reader))
+    val backend = OpenTelemetryMetricsBackend(eitherBackend, spawnNewOpenTelemetry(reader))
 
     // when
     backend.send(
       basicRequest
         .get(uri"http://127.0.0.1/foo")
+        .response(asString.getRight)
     )
 
     // then
@@ -202,18 +202,18 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
     getMetricValue(reader, OpenTelemetryMetricsBackend.DefaultErrorCounterName) shouldBe Some(1)
   }
 
-  it should "use failure counter when other exception is wrapped in a try" in {
+  it should "use failure counter when other exception is thrown" in {
     // given
-    val backendStub = SttpBackendStub.synchronous.whenAnyRequest.thenRespondF(_ =>
-      throw DeserializationException("Some gibberish", new Exception("Unable to parse")))
-    val errorBackend = new TryBackend(backendStub)
+    val backendStub = SttpBackendStub.synchronous.whenAnyRequest.thenRespondOk()
+    val eitherBackend = new EitherBackend(backendStub)
     val reader = InMemoryMetricReader.create()
-    val backend = OpenTelemetryMetricsBackend(errorBackend, spawnNewOpenTelemetry(reader))
+    val backend = OpenTelemetryMetricsBackend(eitherBackend, spawnNewOpenTelemetry(reader))
 
     // when
     backend.send(
       basicRequest
         .get(uri"http://127.0.0.1/foo")
+        .response(asString.map(_ => throw DeserializationException("Unknown body", new Exception("Unable to parse"))))
     )
 
     // then
@@ -232,6 +232,7 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
     backend.send(
       basicRequest
         .get(uri"http://127.0.0.1/foo")
+        .response(asString.getRight)
     )
 
     // then

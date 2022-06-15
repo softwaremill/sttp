@@ -2,7 +2,6 @@ package sttp.client3.prometheus
 
 import java.lang
 import java.util.concurrent.CountDownLatch
-
 import sttp.client3._
 import io.prometheus.client.CollectorRegistry
 import org.scalatest.concurrent.{Eventually, IntegrationPatience}
@@ -270,17 +269,17 @@ class PrometheusBackendTest
     getMetricValue(PrometheusBackend.DefaultResponseSizeName + "_sum").value shouldBe 50
   }
 
-  it should "use error counter when http error is wrapped in a try" in {
+  it should "use error counter when http error is thrown" in {
     // given
-    val backendStub = SttpBackendStub.synchronous.whenAnyRequest.thenRespondF(_ =>
-      throw HttpError("Not Found", StatusCode.NotFound))
-    val errorBackend = new TryBackend(backendStub)
-    val backend = PrometheusBackend(errorBackend)
+    val backendStub = SttpBackendStub.synchronous.whenAnyRequest.thenRespondServerError()
+    val eitherBackend = new EitherBackend(backendStub)
+    val backend = PrometheusBackend(eitherBackend)
 
     // when
     backend.send(
       basicRequest
         .get(uri"http://127.0.0.1/foo")
+        .response(asString.getRight)
     )
 
     // then
@@ -289,17 +288,17 @@ class PrometheusBackendTest
     getMetricValue(PrometheusBackend.DefaultErrorCounterName + "_total") shouldBe Some(1)
   }
 
-  it should "use failure counter when other exception is wrapped in a try" in {
+  it should "use failure counter when other exception is thrown" in {
     // given
-    val backendStub = SttpBackendStub.synchronous.whenAnyRequest.thenRespondF(_ =>
-      throw DeserializationException("Some gibberish", new Exception("Unable to parse")))
-    val errorBackend = new TryBackend(backendStub)
-    val backend = PrometheusBackend(errorBackend)
+    val backendStub = SttpBackendStub.synchronous.whenAnyRequest.thenRespondOk()
+    val eitherBackend = new EitherBackend(backendStub)
+    val backend = PrometheusBackend(eitherBackend)
 
     // when
     backend.send(
       basicRequest
         .get(uri"http://127.0.0.1/foo")
+        .response(asString.map(_ => throw DeserializationException("Unknown body", new Exception("Unable to parse"))))
     )
 
     // then
@@ -317,6 +316,7 @@ class PrometheusBackendTest
     backend.send(
       basicRequest
         .get(uri"http://127.0.0.1/foo")
+        .response(asString.getRight)
     )
 
     // then
