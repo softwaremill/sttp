@@ -272,15 +272,16 @@ class PrometheusBackendTest
   it should "use error counter when http error is thrown" in {
     // given
     val backendStub = SttpBackendStub.synchronous.whenAnyRequest.thenRespondServerError()
-    val eitherBackend = new EitherBackend(backendStub)
-    val backend = PrometheusBackend(eitherBackend)
+    val backend = PrometheusBackend(backendStub)
 
     // when
-    backend.send(
-      basicRequest
-        .get(uri"http://127.0.0.1/foo")
-        .response(asString.getRight)
-    )
+    assertThrows[HttpError[String]] {
+      backend.send(
+        basicRequest
+          .get(uri"http://127.0.0.1/foo")
+          .response(asString.getRight)
+      )
+    }
 
     // then
     getMetricValue(PrometheusBackend.DefaultSuccessCounterName + "_total") shouldBe None
@@ -291,15 +292,16 @@ class PrometheusBackendTest
   it should "use failure counter when other exception is thrown" in {
     // given
     val backendStub = SttpBackendStub.synchronous.whenAnyRequest.thenRespondOk()
-    val eitherBackend = new EitherBackend(backendStub)
-    val backend = PrometheusBackend(eitherBackend)
+    val backend = PrometheusBackend(backendStub)
 
     // when
-    backend.send(
-      basicRequest
-        .get(uri"http://127.0.0.1/foo")
-        .response(asString.map(_ => throw DeserializationException("Unknown body", new Exception("Unable to parse"))))
-    )
+    assertThrows[DeserializationException[String]] {
+      backend.send(
+        basicRequest
+          .get(uri"http://127.0.0.1/foo")
+          .response(asString.map(_ => throw DeserializationException("Unknown body", new Exception("Unable to parse"))))
+      )
+    }
 
     // then
     getMetricValue(PrometheusBackend.DefaultSuccessCounterName + "_total") shouldBe None

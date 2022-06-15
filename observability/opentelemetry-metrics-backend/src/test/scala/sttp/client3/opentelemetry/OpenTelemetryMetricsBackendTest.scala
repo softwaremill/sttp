@@ -8,7 +8,7 @@ import org.scalatest.OptionValues
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import sttp.client3.testing.SttpBackendStub
-import sttp.client3.{DeserializationException, EitherBackend, Identity, Response, UriContext, asString, basicRequest}
+import sttp.client3.{DeserializationException, HttpError, Identity, Response, UriContext, asString, basicRequest}
 import sttp.model.{Header, StatusCode}
 
 import scala.collection.JavaConverters._
@@ -185,16 +185,17 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
   it should "use error counter when http error is thrown" in {
     // given
     val backendStub = SttpBackendStub.synchronous.whenAnyRequest.thenRespondServerError()
-    val eitherBackend = new EitherBackend(backendStub)
     val reader = InMemoryMetricReader.create()
-    val backend = OpenTelemetryMetricsBackend(eitherBackend, spawnNewOpenTelemetry(reader))
+    val backend = OpenTelemetryMetricsBackend(backendStub, spawnNewOpenTelemetry(reader))
 
     // when
-    backend.send(
-      basicRequest
-        .get(uri"http://127.0.0.1/foo")
-        .response(asString.getRight)
-    )
+    assertThrows[HttpError[String]] {
+      backend.send(
+        basicRequest
+          .get(uri"http://127.0.0.1/foo")
+          .response(asString.getRight)
+      )
+    }
 
     // then
     getMetricValue(reader, OpenTelemetryMetricsBackend.DefaultSuccessCounterName) shouldBe None
@@ -205,16 +206,17 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
   it should "use failure counter when other exception is thrown" in {
     // given
     val backendStub = SttpBackendStub.synchronous.whenAnyRequest.thenRespondOk()
-    val eitherBackend = new EitherBackend(backendStub)
     val reader = InMemoryMetricReader.create()
-    val backend = OpenTelemetryMetricsBackend(eitherBackend, spawnNewOpenTelemetry(reader))
+    val backend = OpenTelemetryMetricsBackend(backendStub, spawnNewOpenTelemetry(reader))
 
     // when
-    backend.send(
-      basicRequest
-        .get(uri"http://127.0.0.1/foo")
-        .response(asString.map(_ => throw DeserializationException("Unknown body", new Exception("Unable to parse"))))
-    )
+    assertThrows[DeserializationException[String]] {
+      backend.send(
+        basicRequest
+          .get(uri"http://127.0.0.1/foo")
+          .response(asString.map(_ => throw DeserializationException("Unknown body", new Exception("Unable to parse"))))
+      )
+    }
 
     // then
     getMetricValue(reader, OpenTelemetryMetricsBackend.DefaultSuccessCounterName) shouldBe None
