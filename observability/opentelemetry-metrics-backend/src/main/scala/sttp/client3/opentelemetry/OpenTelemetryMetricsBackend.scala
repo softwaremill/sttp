@@ -126,9 +126,14 @@ private class OpenTelemetryMetricsListener(
   }
 
   override def requestException(request: Request[_, _], tag: Option[Long], e: Exception): Unit = {
-    incrementCounter(requestToFailureCounterMapper(request, e))
-    recordHistogram(requestToLatencyHistogramMapper(request), tag.map(clock.millis() - _))
-    updateInProgressCounter(request, -1)
+    HttpError.find(e) match {
+      case Some(HttpError(body, statusCode)) =>
+        requestSuccessful(request, Response(body, statusCode), tag)
+      case _ =>
+        incrementCounter(requestToFailureCounterMapper(request, e))
+        recordHistogram(requestToLatencyHistogramMapper(request), tag.map(clock.millis() - _))
+        updateInProgressCounter(request, -1)
+    }
   }
 
   private def updateInProgressCounter[R, T](request: Request[T, R], delta: Long): Unit = {
