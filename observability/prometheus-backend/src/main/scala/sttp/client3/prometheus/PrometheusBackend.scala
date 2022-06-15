@@ -1,11 +1,12 @@
 package sttp.client3.prometheus
 
 import java.util.concurrent.ConcurrentHashMap
-import sttp.client3.{FollowRedirectsBackend, Identity, Request, Response, SttpBackend}
+import sttp.client3.{FollowRedirectsBackend, HttpError, Identity, Request, Response, SttpBackend}
 import io.prometheus.client.{CollectorRegistry, Counter, Gauge, Histogram, Summary}
 import sttp.client3.listener.{ListenerBackend, RequestListener}
 import sttp.client3.prometheus.PrometheusBackend.RequestCollectors
 
+import scala.annotation.tailrec
 import scala.collection.mutable
 
 object PrometheusBackend {
@@ -129,9 +130,14 @@ class PrometheusListener(
       requestCollectors: RequestCollectors,
       e: Exception
   ): Unit = {
-    requestCollectors._1.foreach(_.observeDuration())
-    requestCollectors._2.foreach(_.dec())
-    incCounterIfMapped((request, e), requestToFailureCounterMapper)
+    HttpError.find(e) match {
+      case Some(HttpError(body, statusCode)) =>
+        requestSuccessful(request, Response(body, statusCode), requestCollectors)
+      case _ =>
+        requestCollectors._1.foreach(_.observeDuration())
+        requestCollectors._2.foreach(_.dec())
+        incCounterIfMapped((request, e), requestToFailureCounterMapper)
+    }
   }
 
   override def requestSuccessful(

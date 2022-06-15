@@ -2,7 +2,6 @@ package sttp.client3.prometheus
 
 import java.lang
 import java.util.concurrent.CountDownLatch
-
 import sttp.client3._
 import io.prometheus.client.CollectorRegistry
 import org.scalatest.concurrent.{Eventually, IntegrationPatience}
@@ -13,10 +12,9 @@ import sttp.model.{Header, StatusCode}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.blocking
+import scala.collection.immutable.Seq
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-
-import scala.collection.immutable.Seq
 
 class PrometheusBackendTest
     extends AnyFlatSpec
@@ -271,10 +269,67 @@ class PrometheusBackendTest
     getMetricValue(PrometheusBackend.DefaultResponseSizeName + "_sum").value shouldBe 50
   }
 
+  it should "use error counter when http error is thrown" in {
+    // given
+    val backendStub = SttpBackendStub.synchronous.whenAnyRequest.thenRespondServerError()
+    val backend = PrometheusBackend(backendStub)
+
+    // when
+    assertThrows[HttpError[String]] {
+      backend.send(
+        basicRequest
+          .get(uri"http://127.0.0.1/foo")
+          .response(asString.getRight)
+      )
+    }
+
+    // then
+    getMetricValue(PrometheusBackend.DefaultSuccessCounterName + "_total") shouldBe None
+    getMetricValue(PrometheusBackend.DefaultFailureCounterName + "_total") shouldBe None
+    getMetricValue(PrometheusBackend.DefaultErrorCounterName + "_total") shouldBe Some(1)
+  }
+
+  it should "use failure counter when other exception is thrown" in {
+    // given
+    val backendStub = SttpBackendStub.synchronous.whenAnyRequest.thenRespondOk()
+    val backend = PrometheusBackend(backendStub)
+
+    // when
+    assertThrows[DeserializationException[String]] {
+      backend.send(
+        basicRequest
+          .get(uri"http://127.0.0.1/foo")
+          .response(asString.map(_ => throw DeserializationException("Unknown body", new Exception("Unable to parse"))))
+      )
+    }
+
+    // then
+    getMetricValue(PrometheusBackend.DefaultSuccessCounterName + "_total") shouldBe None
+    getMetricValue(PrometheusBackend.DefaultFailureCounterName + "_total") shouldBe Some(1)
+    getMetricValue(PrometheusBackend.DefaultErrorCounterName + "_total") shouldBe None
+  }
+
+  it should "use success counter on success response" in {
+    // given
+    val backendStub = SttpBackendStub.synchronous.whenAnyRequest.thenRespondOk()
+    val backend = PrometheusBackend(backendStub)
+
+    // when
+    backend.send(
+      basicRequest
+        .get(uri"http://127.0.0.1/foo")
+        .response(asString.getRight)
+    )
+
+    // then
+    getMetricValue(PrometheusBackend.DefaultSuccessCounterName + "_total") shouldBe Some(1)
+    getMetricValue(PrometheusBackend.DefaultFailureCounterName + "_total") shouldBe None
+    getMetricValue(PrometheusBackend.DefaultErrorCounterName + "_total") shouldBe None
+  }
+
   private[this] def getMetricValue(name: String): Option[lang.Double] =
     Option(CollectorRegistry.defaultRegistry.getSampleValue(name))
 
   private[this] def getMetricValue(name: String, labels: List[(String, String)]): Option[lang.Double] =
     Option(CollectorRegistry.defaultRegistry.getSampleValue(name, labels.map(_._1).toArray, labels.map(_._2).toArray))
-
 }

@@ -6,6 +6,7 @@ import sttp.model.{ResponseMetadata, StatusCode}
 import sttp.model.internal.Rfc3986
 import sttp.ws.{WebSocket, WebSocketFrame}
 
+import scala.annotation.tailrec
 import scala.collection.immutable.Seq
 import scala.util.{Failure, Success, Try}
 
@@ -228,6 +229,15 @@ case class HttpError[HE](body: HE, statusCode: StatusCode)
     extends ResponseException[HE, Nothing](s"statusCode: $statusCode, response: $body")
 case class DeserializationException[DE: ShowError](body: String, error: DE)
     extends ResponseException[Nothing, DE](implicitly[ShowError[DE]].show(error))
+
+object HttpError {
+  @tailrec def find(exception: Throwable): Option[HttpError[_]] =
+    Option(exception) match {
+      case Some(error: HttpError[_]) => Some(error)
+      case Some(_)                   => find(exception.getCause)
+      case None                      => Option.empty
+    }
+}
 
 trait ShowError[-T] {
   def show(t: T): String
