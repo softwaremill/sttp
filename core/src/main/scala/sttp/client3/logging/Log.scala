@@ -99,14 +99,7 @@ class DefaultLog[F[_]](
   }
 
   override def requestException(request: Request[_, _], elapsed: Option[Duration], e: Exception): F[Unit] = {
-    @tailrec def findHttpError(exception: Throwable): Option[HttpError[_]] =
-      Option(exception) match {
-        case Some(error: HttpError[_]) => Some(error)
-        case Some(_)                   => findHttpError(exception.getCause)
-        case None                      => Option.empty
-      }
-
-    val logLevel = findHttpError(e) match {
+    val logLevel = HttpError.find(e) match {
       case Some(HttpError(_, statusCode)) =>
         responseLogLevel(statusCode)
       case _ =>

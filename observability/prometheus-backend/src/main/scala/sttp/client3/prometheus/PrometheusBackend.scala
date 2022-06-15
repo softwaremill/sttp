@@ -130,21 +130,12 @@ class PrometheusListener(
       requestCollectors: RequestCollectors,
       e: Exception
   ): Unit = {
-    @tailrec def findHttpError(exception: Throwable): Option[HttpError[_]] =
-      Option(exception) match {
-        case Some(error: HttpError[_]) => Some(error)
-        case Some(_)                   => findHttpError(exception.getCause)
-        case None                      => Option.empty
-      }
-
     requestCollectors._1.foreach(_.observeDuration())
     requestCollectors._2.foreach(_.dec())
 
-    findHttpError(e) match {
+    HttpError.find(e) match {
       case Some(HttpError(body, statusCode)) =>
-        val response = Response(body, statusCode)
-        observeSummaryIfMapped(response, responseToSizeSummaryMapper)
-        incCounterIfMapped(response, requestToErrorCounterMapper)
+        requestSuccessful(request, Response(body, statusCode), requestCollectors)
       case _ =>
         incCounterIfMapped((request, e), requestToFailureCounterMapper)
     }

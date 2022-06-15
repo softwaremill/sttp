@@ -269,16 +269,10 @@ class PrometheusBackendTest
     getMetricValue(PrometheusBackend.DefaultResponseSizeName + "_sum").value shouldBe 50
   }
 
-  private[this] def getMetricValue(name: String): Option[lang.Double] =
-    Option(CollectorRegistry.defaultRegistry.getSampleValue(name))
-
-  private[this] def getMetricValue(name: String, labels: List[(String, String)]): Option[lang.Double] =
-    Option(CollectorRegistry.defaultRegistry.getSampleValue(name, labels.map(_._1).toArray, labels.map(_._2).toArray))
-
-
-  it should "use map http error" in {
+  it should "use error counter when http error is wrapped in a try" in {
     // given
-    val backendStub = SttpBackendStub.synchronous.whenAnyRequest.thenRespondF(_ => throw HttpError("Not Found", StatusCode.NotFound))
+    val backendStub = SttpBackendStub.synchronous.whenAnyRequest.thenRespondF(_ =>
+      throw HttpError("Not Found", StatusCode.NotFound))
     val errorBackend = new TryBackend(backendStub)
     val backend = PrometheusBackend(errorBackend)
 
@@ -286,13 +280,53 @@ class PrometheusBackendTest
     backend.send(
       basicRequest
         .get(uri"http://127.0.0.1/foo")
-        .header(Header.contentLength(5))
     )
 
     // then
-    getMetricValue(PrometheusBackend.DefaultRequestSizeName + "_count").value shouldBe 1
-    getMetricValue(PrometheusBackend.DefaultRequestSizeName + "_sum").value shouldBe 5
-    getMetricValue(PrometheusBackend.DefaultResponseSizeName + "_count").value shouldBe 1
-    getMetricValue(PrometheusBackend.DefaultResponseSizeName + "_sum").value shouldBe 10
+    getMetricValue(PrometheusBackend.DefaultSuccessCounterName + "_total") shouldBe None
+    getMetricValue(PrometheusBackend.DefaultFailureCounterName + "_total") shouldBe None
+    getMetricValue(PrometheusBackend.DefaultErrorCounterName + "_total") shouldBe Some(1)
   }
+
+  it should "use failure counter when other exception is wrapped in a try" in {
+    // given
+    val backendStub = SttpBackendStub.synchronous.whenAnyRequest.thenRespondF(_ =>
+      throw DeserializationException("Some gibberish", new Exception("Unable to parse")))
+    val errorBackend = new TryBackend(backendStub)
+    val backend = PrometheusBackend(errorBackend)
+
+    // when
+    backend.send(
+      basicRequest
+        .get(uri"http://127.0.0.1/foo")
+    )
+
+    // then
+    getMetricValue(PrometheusBackend.DefaultSuccessCounterName + "_total") shouldBe None
+    getMetricValue(PrometheusBackend.DefaultFailureCounterName + "_total") shouldBe Some(1)
+    getMetricValue(PrometheusBackend.DefaultErrorCounterName + "_total") shouldBe None
+  }
+
+  it should "use success counter when success" in {
+    // given
+    val backendStub = SttpBackendStub.synchronous.whenAnyRequest.thenRespondOk()
+    val backend = PrometheusBackend(backendStub)
+
+    // when
+    backend.send(
+      basicRequest
+        .get(uri"http://127.0.0.1/foo")
+    )
+
+    // then
+    getMetricValue(PrometheusBackend.DefaultSuccessCounterName + "_total") shouldBe Some(1)
+    getMetricValue(PrometheusBackend.DefaultFailureCounterName + "_total") shouldBe None
+    getMetricValue(PrometheusBackend.DefaultErrorCounterName + "_total") shouldBe None
+  }
+
+  private[this] def getMetricValue(name: String): Option[lang.Double] =
+    Option(CollectorRegistry.defaultRegistry.getSampleValue(name))
+
+  private[this] def getMetricValue(name: String, labels: List[(String, String)]): Option[lang.Double] =
+    Option(CollectorRegistry.defaultRegistry.getSampleValue(name, labels.map(_._1).toArray, labels.map(_._2).toArray))
 }
