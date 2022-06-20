@@ -9,6 +9,8 @@ on:
 jobs:
   scala-steward:
     runs-on: ubuntu-20.04
+    env:
+      JAVA_OPTS: "-Xmx3500M"
     steps:
       - name: Checkout
         uses: actions/checkout@v2
