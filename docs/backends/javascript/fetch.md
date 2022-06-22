@@ -58,11 +58,14 @@ val backend = FetchCatsBackend[IO]()
 
 ## Node.js
 
+### CommonJS module
+
 Using `FetchBackend` is possible with [node-fetch](https://www.npmjs.com/package/node-fetch) module
 and [ws with isomorphic-ws](https://www.npmjs.com/package/ws) module for web sockets.
+The latest version of node fetch (3) is not available as a CommonJS module and you must hence use the version 2.
 
 ```
-npm install --save node-fetch isomorphic-ws ws
+npm install --save node-fetch@2 isomorphic-ws ws
 ```
 
 It has to be loaded into your runtime. This can be done in your main method as such:
@@ -76,6 +79,32 @@ g.fetch = nodeFetch
 g.Headers = nodeFetch.Headers
 g.Request = nodeFetch.Request
 g.WebSocket = g.require("isomorphic-ws")
+```
+
+### ESModule
+
+If your Scala.js application is bundled inside an [ESModule](https://www.scala-js.org/doc/project/module.html)
+```
+npm install --save node-fetch isomorphic-ws ws
+```
+
+It has to be loaded into your runtime as well. This can be done using the following code:
+```scala
+@js.native @JSImport("node-fetch", JSImport.Namespace)
+val nodeFetch: js.Dynamic = js.native
+
+val g = scalajs.js.Dynamic.global.globalThis
+g.fetch = nodeFetch.default
+g.Headers = nodeFetch.Headers
+g.Request = nodeFetch.Request
+```
+
+And for the web sockets:
+```scala
+@js.native @JSImport("isomorphic-ws", JSImport.Namespace)
+val ws: js.Dynamic = js.native
+
+g.WebSocket = ws.default
 ```
 
 ## Streaming
