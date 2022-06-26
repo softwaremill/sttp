@@ -81,7 +81,11 @@ class AsyncHttpClientZioBackend private (
     override val streams: ZioStreams = ZioStreams
 
     override protected def streamToPublisher(s: Stream[Throwable, Byte]): Publisher[ByteBuf] =
-      runtime.unsafeRun(s.mapChunks(c => Chunk.single(Unpooled.wrappedBuffer(c.toArray))).toPublisher)
+      Unsafe.unsafeCompat { implicit u =>
+        Runtime.default.unsafe
+          .run(s.mapChunks(c => Chunk.single(Unpooled.wrappedBuffer(c.toArray))).toPublisher)
+          .getOrThrowFiberFailure()
+      }
   }
 
   override protected def createSimpleQueue[T]: Task[SimpleQueue[Task, T]] =

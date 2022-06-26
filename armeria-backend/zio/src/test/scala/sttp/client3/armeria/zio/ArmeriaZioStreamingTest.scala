@@ -14,7 +14,7 @@ class ArmeriaZioStreamingTest extends StreamingTest[Task, ZioStreams] with ZioTe
   override val streams: ZioStreams = ZioStreams
 
   override val backend: SttpBackend[Task, ZioStreams] =
-    runtime.unsafeRun(ArmeriaZioBackend())
+    unsafeRun(ArmeriaZioBackend())
   override implicit val convertToFuture: ConvertToFuture[Task] = convertZioTaskToFuture
 
   override def bodyProducer(arrays: Iterable[Array[Byte]]): Stream[Throwable, Byte] =

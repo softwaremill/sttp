@@ -1,19 +1,20 @@
 package sttp.client3.impl.zio
 
 import sttp.client3.testing.ConvertToFuture
-import zio.{Clock, Exit, Runtime, Task, durationInt}
+import zio.Clock.ClockLive
+import zio.internal.stacktracer.Tracer
+import zio.{Clock, Exit, Runtime, Tag, Task, Unsafe, ZLayer, durationInt}
 
 import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success}
 
 trait ZioTestBase {
-  val runtime: Runtime[Any] = Runtime.default
 
   val convertZioTaskToFuture: ConvertToFuture[Task] = new ConvertToFuture[Task] {
     override def toFuture[T](value: Task[T]): Future[T] = {
       val p = Promise[T]()
 
-      runtime.unsafeRunSync(value) match {
+      unsafeRunSync(value) match {
         case Exit.Failure(c) =>
           p.complete(
             Failure(
@@ -28,5 +29,17 @@ trait ZioTestBase {
   }
 
   def timeoutToNone[T](t: Task[T], timeoutMillis: Int): Task[Option[T]] =
-    t.timeout(timeoutMillis.milliseconds).provideLayer(Clock.live)
+    t.timeout(timeoutMillis.milliseconds).provideLayer(ZLayer.succeed[Clock](ClockLive)(Tag[Clock], Tracer.newTrace))
+
+  def unsafeRunSync[T](task: Task[T]): Exit[Throwable, T] = {
+    Unsafe.unsafeCompat { implicit u =>
+      Runtime.default.unsafe.run(task)
+    }
+  }
+
+  def unsafeRun[T](task: Task[T]): T = {
+    Unsafe.unsafeCompat { implicit u =>
+      Runtime.default.unsafe.run(task).getOrThrowFiberFailure()
+    }
+  }
 }

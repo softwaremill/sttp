@@ -4,8 +4,11 @@ import sttp.client3._
 import sttp.client3.circe._
 import sttp.client3.asynchttpclient.zio._
 import io.circe.generic.auto._
+import zio.Clock.ClockLive
 import zio._
 import zio.Console
+import zio.Console.ConsoleLive
+import zio.internal.stacktracer.Tracer
 
 object GetAndParseJsonZioCirce extends ZIOAppDefault {
 
@@ -27,7 +30,7 @@ object GetAndParseJsonZioCirce extends ZIOAppDefault {
 
     // provide an implementation for the SttpClient and Console dependencies
     sendAndPrint
-      .provide(AsyncHttpClientZioBackend.layer(), Console.live)
+      .provide(AsyncHttpClientZioBackend.layer(), ZLayer.succeed[Console](ConsoleLive)(Tag[Console], Tracer.newTrace))
 
   }
 }

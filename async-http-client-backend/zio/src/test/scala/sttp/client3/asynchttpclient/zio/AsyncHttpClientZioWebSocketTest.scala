@@ -17,7 +17,7 @@ class AsyncHttpClientZioWebSocketTest extends AsyncHttpClientWebSocketTest[Task,
   override val streams: ZioStreams = ZioStreams
 
   override val backend: SttpBackend[Task, WebSockets with ZioStreams] =
-    runtime.unsafeRun(AsyncHttpClientZioBackend())
+    unsafeRun(AsyncHttpClientZioBackend())
   override implicit val convertToFuture: ConvertToFuture[Task] = convertZioTaskToFuture
   override implicit val monad: MonadError[Task] = new RIOMonadAsyncError
 

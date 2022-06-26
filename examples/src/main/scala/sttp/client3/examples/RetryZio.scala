@@ -2,7 +2,9 @@ package sttp.client3.examples
 
 import sttp.client3._
 import sttp.client3.asynchttpclient.zio.AsyncHttpClientZioBackend
-import zio.{Clock, Schedule, ZIO, ZIOAppDefault, durationInt}
+import zio.Clock.ClockLive
+import zio.internal.stacktracer.Tracer
+import zio.{Clock, Schedule, Tag, ZIO, ZIOAppDefault, ZLayer, durationInt}
 
 object RetryZio extends ZIOAppDefault {
   override def run = {
@@ -24,6 +26,6 @@ object RetryZio extends ZIOAppDefault {
 
         sendWithRetries.ensuring(backend.close().ignore)
       }
-      .provide(Clock.live)
+      .provide(ZLayer.succeed[Clock](ClockLive)(Tag[Clock], Tracer.newTrace))
   }
 }

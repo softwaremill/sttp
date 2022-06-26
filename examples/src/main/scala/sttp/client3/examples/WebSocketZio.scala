@@ -3,8 +3,11 @@ package sttp.client3.examples
 import sttp.client3._
 import sttp.client3.asynchttpclient.zio._
 import sttp.ws.WebSocket
+import zio.Clock.ClockLive
 import zio._
 import zio.Console
+import zio.Console.ConsoleLive
+import zio.internal.stacktracer.Tracer
 
 object WebSocketZio extends ZIOAppDefault {
   def useWebSocket(ws: WebSocket[RIO[Console, *]]): RIO[Console, Unit] = {
@@ -22,7 +25,7 @@ object WebSocketZio extends ZIOAppDefault {
     // provide an implementation for the SttpClient dependency; other dependencies are
     // provided by Zio
     sendAndPrint
-      .provide(AsyncHttpClientZioBackend.layer(), Console.live)
+      .provide(AsyncHttpClientZioBackend.layer(), ZLayer.succeed[Console](ConsoleLive)(Tag[Console], Tracer.newTrace))
 
   }
 }
