@@ -1,7 +1,7 @@
 package sttp.client3.internal.httpclient
 
 import sttp.capabilities.Streams
-import scala.compat.java8.FunctionConverters._
+import sttp.client3.internal.SttpToJavaConverters.toJavaSupplier
 import sttp.client3.internal.{Utf8, throwNestedMultipartNotAllowed}
 import sttp.client3.{
   ByteArrayBody,
@@ -42,7 +42,7 @@ private[client3] trait BodyToHttpClient[F[_], S] {
       case ByteBufferBody(b, _) =>
         if (b.hasArray) BodyPublishers.ofByteArray(b.array(), 0, b.limit()).unit
         else { val a = new Array[Byte](b.remaining()); b.get(a); BodyPublishers.ofByteArray(a).unit }
-      case InputStreamBody(b, _) => BodyPublishers.ofInputStream((() => b).asJava).unit
+      case InputStreamBody(b, _) => BodyPublishers.ofInputStream(toJavaSupplier(() => b)).unit
       case FileBody(f, _)        => BodyPublishers.ofFile(f.toFile.toPath).unit
       case StreamBody(s)         => streamToPublisher(s.asInstanceOf[streams.BinaryStream])
       case MultipartBody(parts) =>
