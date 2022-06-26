@@ -464,7 +464,7 @@ lazy val zio = (projectMatrix in file("effects/zio"))
       "dev.zio" %% "zio" % zio2Version,
       "com.softwaremill.sttp.shared" %% "zio" % sttpSharedVersion,
       "dev.zio" %% "zio-interop-reactivestreams" % zio2InteropRsVersion,
-      "dev.zio" %% "zio-nio" % "2.0.0-RC7"
+      "dev.zio" %% "zio-nio" % "2.0.0"
     )
   )
   .settings(testServerSettings)
