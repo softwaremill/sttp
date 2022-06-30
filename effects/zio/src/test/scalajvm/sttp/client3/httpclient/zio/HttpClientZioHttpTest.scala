@@ -1,7 +1,7 @@
 package sttp.client3.httpclient.zio
 
 import sttp.client3._
-import sttp.client3.impl.zio.ZioTestBase
+import sttp.client3.impl.zio.{ZioTestBase, sendWebSockets}
 import sttp.client3.testing.{ConvertToFuture, HttpTest}
 import zio.Task
 
@@ -15,7 +15,7 @@ class HttpClientZioHttpTest extends HttpTest[Task] with ZioTestBase {
   "compile" - {
     "SttpClient usage" in {
       val request = basicRequest.post(uri"http://example.com").body("hello")
-      send(request).provideLayer(HttpClientZioBackend.layer())
+      sendWebSockets(request).provideLayer(HttpClientZioBackend.layer())
       succeed
     }
   }

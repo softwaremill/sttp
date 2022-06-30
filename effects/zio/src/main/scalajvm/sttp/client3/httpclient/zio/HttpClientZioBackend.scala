@@ -5,7 +5,7 @@ import org.reactivestreams.FlowAdapters
 import sttp.capabilities.WebSockets
 import sttp.capabilities.zio.ZioStreams
 import sttp.client3.HttpClientBackend.EncodingHandler
-import sttp.client3.impl.zio.{RIOMonadAsyncError, ZioSimpleQueue}
+import sttp.client3.impl.zio.{RIOMonadAsyncError, SttpClientStubbingWebSockets, SttpClientWebSockets, ZioSimpleQueue}
 import sttp.client3.internal._
 import sttp.client3.internal.httpclient.{BodyFromHttpClient, BodyToHttpClient, Sequencer}
 import sttp.client3.internal.ws.SimpleQueue
@@ -129,7 +129,7 @@ object HttpClientZioBackend {
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
-  ): ZLayer[Any, Throwable, SttpClient] = {
+  ): ZLayer[Any, Throwable, SttpClientWebSockets] = {
     ZLayer.scoped(
       (for {
         backend <- HttpClientZioBackend(
@@ -157,7 +157,7 @@ object HttpClientZioBackend {
       client: HttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
-  ): ZLayer[Any, Throwable, SttpClient] = {
+  ): ZLayer[Any, Throwable, SttpClientWebSockets] = {
     ZLayer.scoped(
       ZIO
         .acquireRelease(
@@ -180,5 +180,6 @@ object HttpClientZioBackend {
   def stub: SttpBackendStub[Task, ZioStreams] =
     SttpBackendStub(new RIOMonadAsyncError[Any])
 
-  val stubLayer: ZLayer[Any, Nothing, SttpClientStubbing with SttpClient] = SttpClientStubbing.layer
+  val stubLayer: ZLayer[Any, Nothing, SttpClientWebSockets with SttpClientStubbingWebSockets] =
+    SttpClientStubbingWebSockets.layer
 }
