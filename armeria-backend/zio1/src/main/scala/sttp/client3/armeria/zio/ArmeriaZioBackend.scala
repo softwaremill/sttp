@@ -7,7 +7,7 @@ import org.reactivestreams.Publisher
 import sttp.capabilities.zio.ZioStreams
 import sttp.client3.armeria.AbstractArmeriaBackend.newClient
 import sttp.client3.armeria.{AbstractArmeriaBackend, BodyFromStreamMessage}
-import sttp.client3.impl.zio.RIOMonadAsyncError
+import sttp.client3.impl.zio.{RIOMonadAsyncError, SttpClient}
 import sttp.client3.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 import sttp.monad.MonadAsyncError
 import zio.{Chunk, Task}

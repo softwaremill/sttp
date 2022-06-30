@@ -39,6 +39,7 @@ package object zio {
   /** ZIO-environment service definition, which is an SttpBackend. */
   type SttpClientWebSockets = SttpBackend[Task, ZioStreams with WebSockets]
   type SttpClientStubbingWebSockets = SttpClientStubbingWebSockets.SttpClientStubbing
+
   type SttpClient = SttpBackend[Task, ZioStreams]
   type SttpClientStubbing = SttpClientStubbing.SttpClientStubbing
 

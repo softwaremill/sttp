@@ -46,10 +46,10 @@ class SttpBackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFuture
   }
 
   it should "allow effectful stubbing" in {
-    import stubbing._
-    val r1 = send(basicRequest.get(uri"http://example.org/a")).map(_.body)
-    val r2 = send(basicRequest.post(uri"http://example.org/a/b")).map(_.body)
-    val r3 = send(basicRequest.get(uri"http://example.org/a/b/c")).map(_.body)
+    import stubbingWebSockets._
+    val r1 = sendWebSockets(basicRequest.get(uri"http://example.org/a")).map(_.body)
+    val r2 = sendWebSockets(basicRequest.post(uri"http://example.org/a/b")).map(_.body)
+    val r3 = sendWebSockets(basicRequest.get(uri"http://example.org/a/b/c")).map(_.body)
 
     val effect = for {
       _ <- whenRequestMatches(_.uri.toString.endsWith("c")).thenRespond("c")
@@ -63,12 +63,12 @@ class SttpBackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFuture
   }
 
   it should "allow effectful cyclical stubbing" in {
-    import stubbing._
+    import stubbingWebSockets._
     val r = basicRequest.get(uri"http://example.org/a/b/c")
 
     val effect = (for {
       _ <- whenAnyRequest.thenRespondCyclic("a", "b", "c")
-      resp <- ZStream.repeatEffect(send(r)).take(4).runCollect
+      resp <- ZStream.repeatEffect(sendWebSockets(r)).take(4).runCollect
     } yield resp).provideCustomLayer(HttpClientZioBackend.stubLayer)
 
     runtime.unsafeRun(effect).map(_.body).toList shouldBe List(Right("a"), Right("b"), Right("c"), Right("a"))
