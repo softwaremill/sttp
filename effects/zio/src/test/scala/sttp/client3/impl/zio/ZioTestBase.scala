@@ -1,9 +1,7 @@
 package sttp.client3.impl.zio
 
 import sttp.client3.testing.ConvertToFuture
-import zio.Clock.ClockLive
-import zio.internal.stacktracer.Tracer
-import zio.{Clock, Exit, Runtime, Tag, Task, Unsafe, ZLayer, durationInt}
+import zio.{Exit, Runtime, Task, Unsafe, durationInt}
 
 import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success}
@@ -29,7 +27,7 @@ trait ZioTestBase {
   }
 
   def timeoutToNone[T](t: Task[T], timeoutMillis: Int): Task[Option[T]] =
-    t.timeout(timeoutMillis.milliseconds).provideLayer(ZLayer.succeed[Clock](ClockLive)(Tag[Clock], Tracer.newTrace))
+    t.timeout(timeoutMillis.milliseconds)
 
   def unsafeRunSync[T](task: Task[T]): Exit[Throwable, T] = {
     Unsafe.unsafeCompat { implicit u =>

@@ -7,7 +7,7 @@ import zio.internal.stacktracer.Tracer
 import zio.{Clock, Schedule, Tag, ZIO, ZIOAppDefault, ZLayer, durationInt}
 
 object RetryZio extends ZIOAppDefault {
-  override def run = {
+  override def run: ZIO[Any, Throwable, Response[String]] = {
     AsyncHttpClientZioBackend()
       .flatMap { backend =>
         val localhostRequest = basicRequest

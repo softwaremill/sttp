@@ -9,9 +9,8 @@ import sttp.client3.testing.ConvertToFuture
 import sttp.monad.MonadError
 import sttp.ws.WebSocketFrame
 import zio.Clock.ClockLive
-import zio.internal.stacktracer.Tracer
 import zio.stream._
-import zio.{Clock, Schedule, Tag, Task, ZIO, ZLayer, durationLong}
+import zio.{Schedule, Task, ZIO, durationLong}
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -24,11 +23,10 @@ class AsyncHttpClientZioWebSocketTest extends AsyncHttpClientWebSocketTest[Task,
   override implicit val monad: MonadError[Task] = new RIOMonadAsyncError
 
   override def eventually[T](interval: FiniteDuration, attempts: Int)(f: => Task[T]): Task[T] = {
-    ZIO
+    ClockLive
       .sleep(interval.toMillis.millis)
       .flatMap(_ => f)
       .retry(Schedule.recurs(attempts))
-      .provideLayer(ZLayer.succeed[Clock](ClockLive)(Tag[Clock], Tracer.newTrace))
   }
 
   override def functionToPipe(

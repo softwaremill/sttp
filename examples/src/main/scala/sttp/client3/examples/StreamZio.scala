@@ -3,14 +3,12 @@ package sttp.client3.examples
 import sttp.capabilities.zio.ZioStreams
 import sttp.client3._
 import sttp.client3.asynchttpclient.zio.{AsyncHttpClientZioBackend, SttpClient, send}
-import zio.Clock.ClockLive
 import zio.Console._
 import zio._
-import zio.internal.stacktracer.Tracer
 import zio.stream._
 
 object StreamZio extends ZIOAppDefault {
-  def streamRequestBody: RIO[Console with SttpClient, Unit] = {
+  def streamRequestBody: RIO[SttpClient, Unit] = {
     val stream: Stream[Throwable, Byte] = ZStream("Hello, world".getBytes: _*)
 
     send(
@@ -20,7 +18,7 @@ object StreamZio extends ZIOAppDefault {
     ).flatMap { response => printLine(s"RECEIVED:\n${response.body}") }
   }
 
-  def streamResponseBody: RIO[Console with SttpClient, Unit] = {
+  def streamResponseBody: RIO[SttpClient, Unit] = {
     send(
       basicRequest
         .body("I want a stream!")
@@ -31,6 +29,6 @@ object StreamZio extends ZIOAppDefault {
 
   override def run = {
     (streamRequestBody *> streamResponseBody)
-      .provide(AsyncHttpClientZioBackend.layer(), ZLayer.succeed[Console](ConsoleLive)(Tag[Console], Tracer.newTrace))
+      .provide(AsyncHttpClientZioBackend.layer())
   }
 }
