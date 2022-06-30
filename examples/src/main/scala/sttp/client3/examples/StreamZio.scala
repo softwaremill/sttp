@@ -2,7 +2,8 @@ package sttp.client3.examples
 
 import sttp.capabilities.zio.ZioStreams
 import sttp.client3._
-import sttp.client3.asynchttpclient.zio.{AsyncHttpClientZioBackend, SttpClient, send}
+import sttp.client3.asynchttpclient.zio.AsyncHttpClientZioBackend
+import sttp.client3.impl.zio.{SttpClient, send}
 import zio.Console._
 import zio._
 import zio.stream._

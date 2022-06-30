@@ -4,6 +4,7 @@ import io.circe.generic.auto._
 import sttp.client3._
 import sttp.client3.asynchttpclient.zio._
 import sttp.client3.circe._
+import sttp.client3.impl.zio.{SttpClientWebSockets, sendWebSockets}
 import zio.{Console, _}
 
 object GetAndParseJsonZioCirce extends ZIOAppDefault {
@@ -17,8 +18,8 @@ object GetAndParseJsonZioCirce extends ZIOAppDefault {
       .response(asJson[HttpBinResponse])
 
     // create a description of a program, which requires SttpClient dependency in the environment
-    val sendAndPrint: ZIO[SttpClient, Throwable, Unit] = for {
-      response <- send(request)
+    val sendAndPrint: ZIO[SttpClientWebSockets, Throwable, Unit] = for {
+      response <- sendWebSockets(request)
       _ <- Console.printLine(s"Got response code: ${response.code}")
       _ <- Console.printLine(response.body.toString)
     } yield ()
