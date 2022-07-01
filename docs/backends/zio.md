@@ -1,3 +1,4 @@
+
 # ZIO backends
 
 The [ZIO](https://github.com/zio/zio) backends are **asynchronous**. Sending a request is a non-blocking, lazily-evaluated operation and results in a response wrapped in a `zio.Task`. There's a transitive dependency on the `zio` or `zio1` modules.
@@ -136,22 +137,17 @@ Please visit [the official documentation](https://armeria.dev/docs/client-factor
 
 ## ZIO environment
 
-As an alternative to effectfully or resourcefully creating backend instances, ZIO environment can be used. In this case, a type alias is provided for the service definition:
+As an alternative to effectfully or resourcefully creating backend instances, ZIO environment can be used. In this case, a type aliases are provided for the service definition:
 
 ```scala
-package sttp.client3.httpclient.zio
-type SttpClient = SttpBackend[Task, ZioStreams with WebSockets]
+type SttpClient = SttpBackend[Task, ZioStreams]  // as base definition 
 
-// or, when using async-http-client
+// or, for backends that does supports WebSockets
+type SttpClientWebSockets = SttpBackend[Task, ZioStreams with WebSockets]
 
-package sttp.client3.asynchttpclient.zio
-type SttpClient = SttpBackend[Task, ZioStreams with WebSockets]
-
-// or, when using Armeria
-
-package sttp.client3.armeria.zio
-type SttpClient = SttpBackend[Task, ZioStreams]
 ```
+
+`SttpClientWebSockets` is just an extension of `SttpClient` which adds WebSockets capabilities to underlying backend
 
 The lifecycle of the `SttpClient` service is described by `ZLayer`s, which can be created using the `.layer`/`.layerUsingConfig`/... methods on `AsyncHttpClientZioBackend` / `HttpClientZioBackend` / `ArmeriaZioBackend`.
 
@@ -159,12 +155,12 @@ The `SttpClient` companion object contains effect descriptions which use the `St
 
 ```scala mdoc:compile-only
 import sttp.client3._
-import sttp.client3.httpclient.zio._
+import sttp.client3.impl.zio.{SttpClientWebSockets, sendWebSockets}
 import zio._
 val request = basicRequest.get(uri"https://httpbin.org/get")
 
-val sent: ZIO[SttpClient, Throwable, Response[Either[String, String]]] = 
-  send(request)
+val sent: ZIO[SttpClientWebSockets, Throwable, Response[Either[String, String]]] = 
+  sendWebSockets(request)
 ```
 
 ## Streaming
@@ -178,7 +174,7 @@ Requests can be sent with a streaming body:
 ```scala mdoc:compile-only
 import sttp.capabilities.zio.ZioStreams
 import sttp.client3._
-import sttp.client3.httpclient.zio.send
+import sttp.client3.impl.zio.sendWebSockets
 import zio.stream._
 
 val s: Stream[Throwable, Byte] =  ???
@@ -187,7 +183,7 @@ val request = basicRequest
   .streamBody(ZioStreams)(s)
   .post(uri"...")
 
-send(request)
+sendWebSockets(request)
 ```
 
 And receive response bodies as a stream:
@@ -195,7 +191,7 @@ And receive response bodies as a stream:
 ```scala mdoc:compile-only
 import sttp.capabilities.zio.ZioStreams
 import sttp.client3._
-import sttp.client3.httpclient.zio.{SttpClient, send}
+import sttp.client3.impl.zio.{SttpClientWebSockets, sendWebSockets}
 
 import zio._
 import zio.stream._
@@ -208,7 +204,7 @@ val request =
     .response(asStreamUnsafe(ZioStreams))
     .readTimeout(Duration.Inf)
 
-val response: ZIO[SttpClient, Throwable, Response[Either[String, Stream[Throwable, Byte]]]] = send(request)
+val response: ZIO[SttpClientWebSockets, Throwable, Response[Either[String, Stream[Throwable, Byte]]]] = sendWebSockets(request)
 ```
 
 ## Websockets
@@ -225,7 +221,8 @@ import sttp.client3._
 import sttp.model._
 import sttp.client3.httpclient._
 import sttp.client3.httpclient.zio._
-import sttp.client3.httpclient.zio.stubbing._
+import sttp.client3.impl.zio.sendWebSockets
+import sttp.client3.impl.zio.stubbingWebSockets._
 
 val stubEffect = for {
   _ <- whenRequestMatches(_.uri.toString.endsWith("c")).thenRespond("c")
@@ -233,15 +230,15 @@ val stubEffect = for {
   _ <- whenAnyRequest.thenRespond("a")
 } yield ()
 
-val responseEffect = stubEffect *> send(basicRequest.get(uri"http://example.org/a")).map(_.body)
+val responseEffect = stubEffect *> sendWebSockets(basicRequest.get(uri"http://example.org/a")).map(_.body)
 
 responseEffect.provideLayer(HttpClientZioBackend.stubLayer) // Task[Either[String, String]]
 ```
 
-The `whenRequestMatches`, `whenRequestMatchesPartial`, `whenAnyRequest` are effects which require the `SttpClientStubbing`
+The `whenRequestMatches`, `whenRequestMatchesPartial`, `whenAnyRequest` are effects which require the `SttpClientStubbingWebSockets`
 dependency. They enrich the stub with the given behavior.
 
-Then, the `stubLayer` provides both an implementation of the `SttpClientStubbing` dependency, as well as a `SttpClient`
+Then, the `stubLayer` provides both an implementation of the `SttpClientStubbingWebSockets` dependency, as well as a `SttpClientWebSockets`
 which is backed by the stub.
 
 ## Server-sent events
