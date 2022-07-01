@@ -4,7 +4,7 @@ import io.circe.generic.auto._
 import sttp.client3._
 import sttp.client3.asynchttpclient.zio._
 import sttp.client3.circe._
-import zio.{Console, _}
+import zio._
 
 object GetAndParseJsonZioCirce extends ZIOAppDefault {
 
