@@ -82,7 +82,7 @@ class AsyncHttpClientZioBackend private (
 
     override protected def streamToPublisher(s: Stream[Throwable, Byte]): Publisher[ByteBuf] =
       Unsafe.unsafeCompat { implicit u =>
-        Runtime.default.unsafe
+        runtime.unsafe
           .run(s.mapChunks(c => Chunk.single(Unpooled.wrappedBuffer(c.toArray))).toPublisher)
           .getOrThrowFiberFailure()
       }

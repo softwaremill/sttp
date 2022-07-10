@@ -35,7 +35,7 @@ private final class ArmeriaZioBackend(runtime: Runtime[Any], client: WebClient, 
 
   override protected def streamToPublisher(stream: Stream[Throwable, Byte]): Publisher[HttpData] =
     Unsafe.unsafeCompat { implicit u =>
-      Runtime.default.unsafe
+      runtime.unsafe
         .run(stream.mapChunks(c => Chunk.single(HttpData.wrap(c.toArray))).toPublisher)
         .getOrThrowFiberFailure()
     }

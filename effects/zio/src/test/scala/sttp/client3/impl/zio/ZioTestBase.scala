@@ -7,6 +7,7 @@ import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success}
 
 trait ZioTestBase {
+  private val runtime: Runtime[Any] = Runtime.default
 
   val convertZioTaskToFuture: ConvertToFuture[Task] = new ConvertToFuture[Task] {
     override def toFuture[T](value: Task[T]): Future[T] = {
@@ -31,13 +32,13 @@ trait ZioTestBase {
 
   def unsafeRunSync[T](task: Task[T]): Exit[Throwable, T] = {
     Unsafe.unsafeCompat { implicit u =>
-      Runtime.default.unsafe.run(task)
+      runtime.unsafe.run(task)
     }
   }
 
   def unsafeRun[T](task: Task[T]): T = {
     Unsafe.unsafeCompat { implicit u =>
-      Runtime.default.unsafe.run(task).getOrThrowFiberFailure()
+      runtime.unsafe.run(task).getOrThrowFiberFailure()
     }
   }
 }
