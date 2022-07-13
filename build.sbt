@@ -38,7 +38,6 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
 )
 
 val commonJvmSettings = commonSettings ++ Seq(
-  scalacOptions ++= Seq("-target:jvm-1.8"),
   Test / testOptions += Tests.Argument("-oD") // add test timings; js build specify other options which conflict
 )
 
