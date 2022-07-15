@@ -1,6 +1,6 @@
-import com.softwaremill.UpdateVersionInDocs
-import com.softwaremill.Publish.{updateDocs, ossPublishSettings}
+import com.softwaremill.Publish.{ossPublishSettings, updateDocs}
 import com.softwaremill.SbtSoftwareMillCommon.commonSmlBuildSettings
+import com.softwaremill.UpdateVersionInDocs
 import sbt.Keys.publishArtifact
 import sbt.Reference.display
 import sbt.internal.ProjectMatrix
@@ -272,12 +272,6 @@ lazy val testServer = (projectMatrix in file("testing/server"))
 
 lazy val testServer2_13 = testServer.jvm(scala2_13)
 
-val scalajava8compatVersion: Option[(Long, Long)] => String = {
-  case Some((2, 11)) => "0.8.0"
-  case Some((2, 12)) => "0.8.0"
-  case _             => "1.0.2"
-}
-
 lazy val core = (projectMatrix in file("core"))
   .settings(
     name := "core",
@@ -297,10 +291,7 @@ lazy val core = (projectMatrix in file("core"))
         scalacOptions ++= Seq("-J--add-modules", "-Jjava.net.http"),
         scalacOptions ++= {
           if (scalaVersion.value == scala2_13) List("-target:jvm-11") else Nil
-        },
-        libraryDependencies ++= dependenciesFor(scalaVersion.value)(
-          "org.scala-lang.modules" %% "scala-java8-compat" % scalajava8compatVersion(_)
-        )
+        }
       )
     }
   )
