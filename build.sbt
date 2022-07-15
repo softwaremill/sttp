@@ -644,7 +644,7 @@ lazy val http4sBackend = (projectMatrix in file("http4s-backend"))
     name := "http4s-backend",
     libraryDependencies ++= Seq(
       "org.http4s" %% "http4s-client" % http4s_ce3_version,
-      "org.http4s" %% "http4s-blaze-client" % http4s_ce3_version % Optional
+      "org.http4s" %% "http4s-blaze-client" % "0.23.12" % Optional
     ),
     evictionErrorLevel := Level.Info
   )
