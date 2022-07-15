@@ -170,10 +170,10 @@ Requests can be sent with a streaming body:
 ```scala mdoc:compile-only
 import sttp.capabilities.zio.ZioStreams
 import sttp.client3._
-import sttp.client3.httpclient.zio.send
 import zio.stream._
+import zio.Task
 
-val sttpBackend: SttpBackend[Task, Any] = ???
+val sttpBackend: SttpBackend[Task, ZioStreams] = ???
 val s: Stream[Throwable, Byte] =  ???
 
 val request = basicRequest
@@ -188,12 +188,13 @@ And receive response bodies as a stream:
 ```scala mdoc:compile-only
 import sttp.capabilities.zio.ZioStreams
 import sttp.client3._
-import sttp.client3.httpclient.zio.{SttpClient, send}
 
 import zio._
 import zio.stream._
 
 import scala.concurrent.duration.Duration
+
+val sttpBackend: SttpBackend[Task, ZioStreams] = ???
 
 val request =
   basicRequest
@@ -201,7 +202,7 @@ val request =
     .response(asStreamUnsafe(ZioStreams))
     .readTimeout(Duration.Inf)
 
-val response: ZIO[SttpClient, Throwable, Response[Either[String, Stream[Throwable, Byte]]]] = sttpBackend.send(request)
+val response: ZIO[Any, Throwable, Response[Either[String, Stream[Throwable, Byte]]]] = sttpBackend.send(request)
 ```
 
 ## Websockets
