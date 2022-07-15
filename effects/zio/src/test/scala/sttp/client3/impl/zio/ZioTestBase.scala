@@ -36,7 +36,7 @@ trait ZioTestBase {
     }
   }
 
-  def unsafeRun[T](task: Task[T]): T = {
+  def unsafeRunSyncOrThrow[T](task: Task[T]): T = {
     Unsafe.unsafeCompat { implicit u =>
       runtime.unsafe.run(task).getOrThrowFiberFailure()
     }

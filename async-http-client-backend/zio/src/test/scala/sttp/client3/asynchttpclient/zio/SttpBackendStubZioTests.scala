@@ -21,10 +21,10 @@ class SttpBackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFuture
     val r = basicRequest.get(uri"http://example.org/a/b/c").send(backend)
 
     // then
-    unsafeRun(r).body shouldBe Right("a")
-    unsafeRun(r).body shouldBe Right("b")
-    unsafeRun(r).body shouldBe Right("c")
-    unsafeRun(r).body shouldBe Right("a")
+    unsafeRunSyncOrThrow(r).body shouldBe Right("a")
+    unsafeRunSyncOrThrow(r).body shouldBe Right("b")
+    unsafeRunSyncOrThrow(r).body shouldBe Right("c")
+    unsafeRunSyncOrThrow(r).body shouldBe Right("a")
   }
 
   it should "cycle through responses when called concurrently" in {
@@ -41,7 +41,9 @@ class SttpBackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFuture
       .collectAllPar(Seq.fill(100)(r))
       .map(_.map(_.body))
 
-    unsafeRun(effect) should contain theSameElementsAs ((1 to 33).flatMap(_ => Seq("a", "b", "c")) ++ Seq("a"))
+    unsafeRunSyncOrThrow(effect) should contain theSameElementsAs ((1 to 33).flatMap(_ => Seq("a", "b", "c")) ++ Seq(
+      "a"
+    ))
       .map(Right(_))
   }
 
@@ -58,7 +60,7 @@ class SttpBackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFuture
       resp <- r1 <&> r2 <&> r3
     } yield resp
 
-    unsafeRun(effect.provideLayer(AsyncHttpClientZioBackend.stubLayer)) shouldBe (
+    unsafeRunSyncOrThrow(effect.provideLayer(AsyncHttpClientZioBackend.stubLayer)) shouldBe (
       (
         Right("a"),
         Right("b"),
@@ -76,6 +78,6 @@ class SttpBackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFuture
       resp <- ZStream.repeatZIO(send(r)).take(4).runCollect
     } yield resp).provideLayer(AsyncHttpClientZioBackend.stubLayer)
 
-    unsafeRun(effect).map(_.body).toList shouldBe List(Right("a"), Right("b"), Right("c"), Right("a"))
+    unsafeRunSyncOrThrow(effect).map(_.body).toList shouldBe List(Right("a"), Right("b"), Right("c"), Right("a"))
   }
 }

@@ -14,7 +14,7 @@ class HttpClientZioStreamingTest extends StreamingTest[Task, ZioStreams] with Zi
   override val streams: ZioStreams = ZioStreams
 
   override val backend: SttpBackend[Task, ZioStreams] =
-    unsafeRun(HttpClientZioBackend())
+    unsafeRunSyncOrThrow(HttpClientZioBackend())
   override implicit val convertToFuture: ConvertToFuture[Task] = convertZioTaskToFuture
 
   override def bodyProducer(chunks: Iterable[Array[Byte]]): ZStream[Any, Throwable, Byte] =
