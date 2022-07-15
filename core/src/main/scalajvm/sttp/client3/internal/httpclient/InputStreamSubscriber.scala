@@ -1,8 +1,8 @@
 package sttp.client3.internal.httpclient
 
-import InputStreamSubscriber._
+import sttp.client3.internal.SttpToJavaConverters.toJavaFunction
+import sttp.client3.internal.httpclient.InputStreamSubscriber._
 
-import scala.compat.java8.FunctionConverters._
 import java.io.InputStream
 import java.nio.ByteBuffer
 import java.util
@@ -74,7 +74,9 @@ private[client3] class InputStreamSubscriber extends Subscriber[java.util.List[B
   private val toListCollector: Collector[Message, _, util.List[Message]] = Collectors.toList()
   override def onNext(b: java.util.List[ByteBuffer]): Unit = {
     assert(b != null)
-    chunks.addAll(b.stream().map[Message]((d => nextItemMsg(d)).asJava).collect(toListCollector))
+    chunks.addAll(
+      b.stream().map[Message](toJavaFunction(d => nextItemMsg(d))).collect(toListCollector)
+    )
   }
 
   override def onError(t: Throwable): Unit = {

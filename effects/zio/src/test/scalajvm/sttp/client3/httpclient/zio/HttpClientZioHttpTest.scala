@@ -7,7 +7,7 @@ import zio.Task
 
 class HttpClientZioHttpTest extends HttpTest[Task] with ZioTestBase {
   override val backend: SttpBackend[Task, Any] =
-    runtime.unsafeRun(HttpClientZioBackend())
+    unsafeRunSyncOrThrow(HttpClientZioBackend())
   override implicit val convertToFuture: ConvertToFuture[Task] = convertZioTaskToFuture
 
   override def supportsHostHeaderOverride = false
