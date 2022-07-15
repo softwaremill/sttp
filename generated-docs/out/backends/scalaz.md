@@ -7,7 +7,7 @@ The [Scalaz](https://github.com/scalaz/scalaz) backend is **asynchronous**. Send
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "async-http-client-backend-scalaz" % "3.6.2"
+"com.softwaremill.sttp.client3" %% "async-http-client-backend-scalaz" % "3.7.0"
 ```
            
 This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client) and uses [Netty](http://netty.io) behind the scenes.
@@ -45,7 +45,7 @@ val backend = AsyncHttpClientScalazBackend.usingClient(asyncHttpClient)
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "armeria-backend-scalaz" % "3.6.2"
+"com.softwaremill.sttp.client3" %% "armeria-backend-scalaz" % "3.7.0"
 ```
 
 add imports:

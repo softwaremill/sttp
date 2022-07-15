@@ -7,7 +7,7 @@ There are several synchronous backend implementations. Sending a request using t
 The default **synchronous** backend. To use, you don't need any extra dependencies, `core` is enough:
 
 ```
-"com.softwaremill.sttp.client3" %% "core" % "3.6.2"
+"com.softwaremill.sttp.client3" %% "core" % "3.7.0"
 ```
 
 Create the backend using:
@@ -40,7 +40,7 @@ Host header override is supported in environments running Java 12 onwards, but i
 To use, you don't need any extra dependencies, `core` is enough: 
 
 ```
-"com.softwaremill.sttp.client3" %% "core" % "3.6.2"
+"com.softwaremill.sttp.client3" %% "core" % "3.7.0"
 ```
 
 Create the backend using:
@@ -62,7 +62,7 @@ This backend supports host header override, but it has to be enabled by system p
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "okhttp-backend" % "3.6.2"
+"com.softwaremill.sttp.client3" %% "okhttp-backend" % "3.7.0"
 ```
 
 Create the backend using:
