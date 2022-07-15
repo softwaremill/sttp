@@ -22,7 +22,6 @@ import java.net.http.{HttpClient, HttpRequest}
 import java.nio.ByteBuffer
 import java.util
 import java.util.concurrent.Flow.Publisher
-import scala.jdk.CollectionConverters._
 
 class HttpClientZioBackend private (
     client: HttpClient,
@@ -48,7 +47,7 @@ class HttpClientZioBackend private (
 
   override protected def publisherToBody(p: Publisher[util.List[ByteBuffer]]): ZStream[Any, Throwable, Byte] =
     FlowAdapters.toPublisher(p).toZIOStream().mapConcatChunk { list =>
-      val a = list.asScala.toList.flatMap(_.safeRead()).toArray
+      val a = Chunk.fromJavaIterable(list).flatMap(_.safeRead()).toArray
       ByteArray(a, 0, a.length)
     }
 

@@ -9,12 +9,10 @@ import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.model.ResponseMetadata
 import sttp.monad.MonadError
 import sttp.ws.{WebSocket, WebSocketFrame}
-import zio.nio.channels.AsynchronousFileChannel
-import zio.nio.file.Path
 import zio.stream.{ZSink, ZStream}
 import zio.{Task, ZIO}
 
-import java.io.IOException
+import java.nio.file.OpenOption
 import java.nio.file.StandardOpenOption
 
 private[zio] class ZioBodyFromHttpClient extends BodyFromHttpClient[Task, ZioStreams, ZioStreams.BinaryStream] {
@@ -39,15 +37,7 @@ private[zio] class ZioBodyFromHttpClient extends BodyFromHttpClient[Task, ZioStr
       ): Task[ZStream[Any, Throwable, Byte]] = {
         replayableBody match {
           case Left(byteArray) => ZIO.succeed(ZStream.fromIterable(byteArray))
-          case Right(file) =>
-            ZIO.succeed(
-              for {
-                fileChannel <- ZStream.scoped(
-                  AsynchronousFileChannel.open(Path.fromJava(file.toPath), StandardOpenOption.READ)
-                )
-                bytes <- readAllBytes(fileChannel)
-              } yield bytes
-            )
+          case Right(file)     => ZIO.succeed(ZStream.fromPath(file.toPath))
         }
       }
 
@@ -63,17 +53,8 @@ private[zio] class ZioBodyFromHttpClient extends BodyFromHttpClient[Task, ZioStr
           file: SttpFile
       ): Task[SttpFile] = response
         .run({
-          ZSink.unwrapScoped(
-            AsynchronousFileChannel
-              .open(Path.fromJava(file.toPath), StandardOpenOption.WRITE, StandardOpenOption.CREATE)
-              .map { fileChannel =>
-                ZSink.foldChunksZIO[Any, IOException, Byte, Long](0L)(_ => true) { case (position, data) =>
-                  fileChannel
-                    .writeChunk(data, position)
-                    .map(_ => position + data.size)
-                }
-              }
-          )
+          val options = Set[OpenOption](StandardOpenOption.WRITE, StandardOpenOption.CREATE)
+          ZSink.fromPath(file.toPath, options = options)
         })
         .as(file)
 
@@ -98,18 +79,6 @@ private[zio] class ZioBodyFromHttpClient extends BodyFromHttpClient[Task, ZioStr
           e: GotAWebSocketException
       ): Task[Unit] = response.close()
     }
-
-  private def readAllBytes(fileChannel: AsynchronousFileChannel) = {
-    val bufferSize = 4096
-    ZStream.paginateChunkZIO(0L)(position =>
-      fileChannel
-        .readChunk(bufferSize, position)
-        .map {
-          case data if data.isEmpty => data -> None
-          case data                 => data -> Some(position + bufferSize)
-        }
-    )
-  }
 
   override implicit def monad: MonadError[Task] = new RIOMonadAsyncError[Any]
 }
