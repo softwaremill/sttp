@@ -74,7 +74,7 @@ private[armeria] trait BodyFromStreamMessage[F[_], S] {
   }
 
   def pathToPublisher(f: Path): F[StreamMessage[HttpData]] = {
-    StreamMessage.of(f).unit
+    (StreamMessage.of(f): StreamMessage[HttpData]).unit
   }
 
   def apply(
