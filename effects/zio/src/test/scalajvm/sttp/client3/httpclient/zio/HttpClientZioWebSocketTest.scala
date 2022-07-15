@@ -17,7 +17,7 @@ class HttpClientZioWebSocketTest
     with WebSocketStreamingTest[Task, ZioStreams]
     with WebSocketConcurrentTest[Task]
     with ZioTestBase {
-  implicit val backend: SttpBackend[Task, ZioStreams with WebSockets] = runtime.unsafeRun(HttpClientZioBackend())
+  implicit val backend: SttpBackend[Task, ZioStreams with WebSockets] = unsafeRunSyncOrThrow(HttpClientZioBackend())
   implicit val convertToFuture: ConvertToFuture[Task] = convertZioTaskToFuture
   implicit val monad: MonadError[Task] = new RIOMonadAsyncError
   override val streams: ZioStreams = ZioStreams

@@ -17,12 +17,15 @@ class AsyncHttpClientZioWebSocketTest extends AsyncHttpClientWebSocketTest[Task,
   override val streams: ZioStreams = ZioStreams
 
   override val backend: SttpBackend[Task, WebSockets with ZioStreams] =
-    runtime.unsafeRun(AsyncHttpClientZioBackend())
+    unsafeRunSyncOrThrow(AsyncHttpClientZioBackend())
   override implicit val convertToFuture: ConvertToFuture[Task] = convertZioTaskToFuture
   override implicit val monad: MonadError[Task] = new RIOMonadAsyncError
 
   override def eventually[T](interval: FiniteDuration, attempts: Int)(f: => Task[T]): Task[T] = {
-    ZIO.sleep(interval.toMillis.millis).flatMap(_ => f).retry(Schedule.recurs(attempts)).provideLayer(Clock.live)
+    Clock
+      .sleep(interval.toMillis.millis)
+      .flatMap(_ => f)
+      .retry(Schedule.recurs(attempts))
   }
 
   override def functionToPipe(

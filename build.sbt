@@ -144,12 +144,12 @@ val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", 
 )
 
 val zio1Version = "1.0.15"
-val zio2Version = "2.0.0-RC6"
+val zio2Version = "2.0.0"
 val zio1InteropRsVersion = "1.3.12"
-val zio2InteropRsVersion = "2.0.0-RC7"
+val zio2InteropRsVersion = "2.0.0"
 
 val sttpModelVersion = "1.4.27"
-val sttpSharedVersion = "1.3.6"
+val sttpSharedVersion = "1.3.7"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.2.11"
 
@@ -464,7 +464,7 @@ lazy val zio = (projectMatrix in file("effects/zio"))
       "dev.zio" %% "zio" % zio2Version,
       "com.softwaremill.sttp.shared" %% "zio" % sttpSharedVersion,
       "dev.zio" %% "zio-interop-reactivestreams" % zio2InteropRsVersion,
-      "dev.zio" %% "zio-nio" % "2.0.0-RC7"
+      "dev.zio" %% "zio-nio" % "2.0.0"
     )
   )
   .settings(testServerSettings)
