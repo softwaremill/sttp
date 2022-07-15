@@ -134,37 +134,29 @@ This backend is build on top of [Armeria](https://armeria.dev/docs/client-http).
 Armeria's [ClientFactory](https://armeria.dev/docs/client-factory) manages connections and protocol-specific properties.
 Please visit [the official documentation](https://armeria.dev/docs/client-factory) to learn how to configure it.
 
-## ZIO environment
+## ZIO layers
 
-As an alternative to effectfully or resourcefully creating backend instances, ZIO environment can be used. In this case, a type alias is provided for the service definition:
+As an alternative to effectfully or resourcefully creating backend instances, ZIO layers can be used. In this scenario, the lifecycle of a `SttpBackend` service is described by `ZLayer`s, which can be created using the `.layer`/`.layerUsingConfig`/... methods on `HttpClientZioBackend` / `AsyncHttpClientZioBackend` / `ArmeriaZioBackend`.
 
-```scala
-package sttp.client3.httpclient.zio
-type SttpClient = SttpBackend[Task, ZioStreams with WebSockets]
-
-// or, when using async-http-client
-
-package sttp.client3.asynchttpclient.zio
-type SttpClient = SttpBackend[Task, ZioStreams with WebSockets]
-
-// or, when using Armeria
-
-package sttp.client3.armeria.zio
-type SttpClient = SttpBackend[Task, ZioStreams]
-```
-
-The lifecycle of the `SttpClient` service is described by `ZLayer`s, which can be created using the `.layer`/`.layerUsingConfig`/... methods on `AsyncHttpClientZioBackend` / `HttpClientZioBackend` / `ArmeriaZioBackend`.
-
-The `SttpClient` companion object contains effect descriptions which use the `SttpClient` service from the environment to send requests or open websockets. This is different from sttp usage with other effect libraries (which use an implicit backend when `.send(backend)` is invoked on the request), but is more in line with how other ZIO services work. For example:
+The layers can be used to provide an implementation of the `SttpBackend` dependency when creating services. For example:
 
 ```scala mdoc:compile-only
 import sttp.client3._
 import sttp.client3.httpclient.zio._
 import zio._
-val request = basicRequest.get(uri"https://httpbin.org/get")
 
-val sent: ZIO[SttpClient, Throwable, Response[Either[String, String]]] = 
-  send(request)
+class MyService(sttpBackend: SttpBackend[Task, Any]) {
+  def runLogic(): Task[Response[String]] = {
+    val request = basicRequest.response(asStringAlways).get(uri"https://httpbin.org/get")
+    sttpBackend.send(request)
+  }
+}
+
+object MyService {
+  val live: ZLayer[SttpBackend[Task, Any], Any, MyService] = ZLayer.fromFunction(new MyService(_))
+}
+
+ZLayer.make[MyService](MyService.live, HttpClientZioBackend.layer())
 ```
 
 ## Streaming
@@ -181,13 +173,14 @@ import sttp.client3._
 import sttp.client3.httpclient.zio.send
 import zio.stream._
 
+val sttpBackend: SttpBackend[Task, Any] = ???
 val s: Stream[Throwable, Byte] =  ???
 
 val request = basicRequest
   .streamBody(ZioStreams)(s)
   .post(uri"...")
 
-send(request)
+sttpBackend.send(request)
 ```
 
 And receive response bodies as a stream:
@@ -208,41 +201,19 @@ val request =
     .response(asStreamUnsafe(ZioStreams))
     .readTimeout(Duration.Inf)
 
-val response: ZIO[SttpClient, Throwable, Response[Either[String, Stream[Throwable, Byte]]]] = send(request)
+val response: ZIO[SttpClient, Throwable, Response[Either[String, Stream[Throwable, Byte]]]] = sttpBackend.send(request)
 ```
 
 ## Websockets
 
-The ZIO backend supports both regular and streaming [websockets](../websockets.md).
+The `HttpClient` and `async-http-client` ZIO backends support both regular and streaming [websockets](../websockets.md).
 
 ## Testing
 
-The ZIO backends also support a ZIO-familiar way of configuring [stubs](../testing.md) as well. In addition to the
-usual way of creating a stand-alone stub, you can also define your stubs as effects instead:
+A stub backend can be created through the `.stub` method on the companion object, and configured as described in the
+[testing](../testing.md) section. 
 
-```scala mdoc:compile-only
-import sttp.client3._
-import sttp.model._
-import sttp.client3.httpclient._
-import sttp.client3.httpclient.zio._
-import sttp.client3.httpclient.zio.stubbing._
-
-val stubEffect = for {
-  _ <- whenRequestMatches(_.uri.toString.endsWith("c")).thenRespond("c")
-  _ <- whenRequestMatchesPartial { case r if r.method == Method.POST => Response.ok("b") }
-  _ <- whenAnyRequest.thenRespond("a")
-} yield ()
-
-val responseEffect = stubEffect *> send(basicRequest.get(uri"http://example.org/a")).map(_.body)
-
-responseEffect.provideLayer(HttpClientZioBackend.stubLayer) // Task[Either[String, String]]
-```
-
-The `whenRequestMatches`, `whenRequestMatchesPartial`, `whenAnyRequest` are effects which require the `SttpClientStubbing`
-dependency. They enrich the stub with the given behavior.
-
-Then, the `stubLayer` provides both an implementation of the `SttpClientStubbing` dependency, as well as a `SttpClient`
-which is backed by the stub.
+A layer with the stub `SttpBackend` can be then created by simply calling `ZLayer.succeed(sttpBackendStub)`. 
 
 ## Server-sent events
 

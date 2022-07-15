@@ -140,7 +140,7 @@ object AsyncHttpClientZioBackend {
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
-  ): Layer[Throwable, SttpClient] =
+  ): Layer[Throwable, SttpBackend[Task, ZioStreams with WebSockets]] =
     ZLayer.scoped(scoped(options, customizeRequest, webSocketBufferCapacity))
 
   def usingConfig(
@@ -173,7 +173,7 @@ object AsyncHttpClientZioBackend {
       cfg: AsyncHttpClientConfig,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
-  ): Layer[Throwable, SttpClient] =
+  ): Layer[Throwable, SttpBackend[Task, ZioStreams with WebSockets]] =
     ZLayer.scoped(scopedUsingConfig(cfg, customizeRequest, webSocketBufferCapacity))
 
   /** @param updateConfig
@@ -220,7 +220,7 @@ object AsyncHttpClientZioBackend {
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
-  ): Layer[Throwable, SttpClient] =
+  ): Layer[Throwable, SttpBackend[Task, ZioStreams with WebSockets]] =
     ZLayer.scoped(scopedUsingConfigBuilder(updateConfig, options, customizeRequest, webSocketBufferCapacity))
 
   def usingClient[R](
@@ -235,7 +235,7 @@ object AsyncHttpClientZioBackend {
       client: AsyncHttpClient,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
-  ): Layer[Nothing, SttpClient] =
+  ): Layer[Nothing, SttpBackend[Task, ZioStreams with WebSockets]] =
     ZLayer.scoped(
       ZIO.acquireRelease(
         ZIO.runtime.map((runtime: Runtime[Any]) =>
@@ -253,7 +253,4 @@ object AsyncHttpClientZioBackend {
     */
   def stub: SttpBackendStub[Task, ZioStreams with WebSockets] =
     SttpBackendStub(new RIOMonadAsyncError[Any])
-
-  val stubLayer: Layer[Throwable, SttpClient with SttpClientStubbing] =
-    SttpClientStubbing.layer
 }

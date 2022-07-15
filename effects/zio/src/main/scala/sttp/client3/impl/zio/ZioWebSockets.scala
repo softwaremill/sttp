@@ -4,7 +4,7 @@ import sttp.ws.{WebSocket, WebSocketClosed, WebSocketFrame}
 import zio.stream.ZStream
 import zio.{Ref, ZIO}
 
-object ZioWebSockets {
+private[client3] object ZioWebSockets {
   def compilePipe[R](
       ws: WebSocket[ZIO[R, Throwable, *]],
       pipe: ZStream[R, Throwable, WebSocketFrame.Data[_]] => ZStream[R, Throwable, WebSocketFrame]
