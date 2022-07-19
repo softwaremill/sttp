@@ -31,11 +31,15 @@ private final class ArmeriaZioBackend(runtime: Runtime[Any], client: WebClient, 
       override implicit def monad: MonadAsyncError[Task] = new RIOMonadAsyncError[Any]
 
       override def publisherToStream(streamMessage: StreamMessage[HttpData]): Stream[Throwable, Byte] =
-        streamMessage.toStream().mapConcatChunk(httpData => Chunk.fromArray(httpData.array()))
+        streamMessage.toZIOStream().mapConcatChunk(httpData => Chunk.fromArray(httpData.array()))
     }
 
   override protected def streamToPublisher(stream: Stream[Throwable, Byte]): Publisher[HttpData] =
-    runtime.unsafeRun(stream.mapChunks(c => Chunk.single(HttpData.wrap(c.toArray))).toPublisher)
+    Unsafe.unsafeCompat { implicit u =>
+      runtime.unsafe
+        .run(stream.mapChunks(c => Chunk.single(HttpData.wrap(c.toArray))).toPublisher)
+        .getOrThrowFiberFailure()
+    }
 }
 
 object ArmeriaZioBackend {

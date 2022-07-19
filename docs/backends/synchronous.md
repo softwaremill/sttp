@@ -48,38 +48,6 @@ val backend = OkHttpSyncBackend.usingClient(okHttpClient)
 
 This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supports HTTP/2.
 
-## Using HttpClient (Java 11+)
-
-To use, add the following dependency to your project:
-
-```
-"com.softwaremill.sttp.client3" %% "httpclient-backend" % "@VERSION@"
-```
-
-Create the backend using:
-
-```scala mdoc:compile-only
-import sttp.client3.httpclient.HttpClientSyncBackend
-
-val backend = HttpClientSyncBackend()
-```
-
-or, if you'd like to instantiate the HttpClient yourself:
-
-```scala mdoc:compile-only
-import sttp.client3.httpclient.HttpClientSyncBackend
-import java.net.http.HttpClient
-val httpClient: HttpClient = ???
-val backend = HttpClientSyncBackend.usingClient(httpClient)
-```
-
-This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards, works with all Scala versions. A Scala 3 build is available as well.
-
-Host header override is supported in environments running Java 12 onwards, but it has to be enabled by system property:
-```
-jdk.httpclient.allowRestrictedHeaders=host
-```
-
 ## Streaming
 
 Synchronous backends don't support non-blocking [streaming](../requests/streaming.md).

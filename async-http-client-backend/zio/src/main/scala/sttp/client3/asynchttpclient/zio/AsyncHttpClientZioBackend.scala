@@ -47,15 +47,15 @@ class AsyncHttpClientZioBackend private (
       override implicit val monad: MonadAsyncError[Task] = new RIOMonadAsyncError[Any]
 
       override def publisherToStream(p: Publisher[ByteBuffer]): Stream[Throwable, Byte] =
-        p.toStream(bufferSize).mapConcatChunk(Chunk.fromByteBuffer(_))
+        p.toZIOStream(bufferSize).mapConcatChunk(Chunk.fromByteBuffer(_))
 
       override def publisherToBytes(p: Publisher[ByteBuffer]): Task[Array[Byte]] =
-        p.toStream(bufferSize)
+        p.toZIOStream(bufferSize)
           .runFold(immutable.Queue.empty[Array[Byte]])(enqueueBytes)
           .map(concatBytes)
 
       override def publisherToFile(p: Publisher[ByteBuffer], f: File): Task[Unit] = {
-        p.toStream(bufferSize)
+        p.toZIOStream(bufferSize)
           .map(Chunk.fromByteBuffer)
           .flattenChunks
           .run(ZSink.fromOutputStream(new FileOutputStream(f)))
@@ -63,7 +63,7 @@ class AsyncHttpClientZioBackend private (
       }
 
       override def bytesToPublisher(b: Array[Byte]): Task[Publisher[ByteBuffer]] =
-        Stream.apply(ByteBuffer.wrap(b)).toPublisher
+        ZStream.apply(ByteBuffer.wrap(b)).toPublisher
 
       override def fileToPublisher(f: File): Task[Publisher[ByteBuffer]] =
         ZStream
@@ -81,7 +81,11 @@ class AsyncHttpClientZioBackend private (
     override val streams: ZioStreams = ZioStreams
 
     override protected def streamToPublisher(s: Stream[Throwable, Byte]): Publisher[ByteBuf] =
-      runtime.unsafeRun(s.mapChunks(c => Chunk.single(Unpooled.wrappedBuffer(c.toArray))).toPublisher)
+      Unsafe.unsafeCompat { implicit u =>
+        runtime.unsafe
+          .run(s.mapChunks(c => Chunk.single(Unpooled.wrappedBuffer(c.toArray))).toPublisher)
+          .getOrThrowFiberFailure()
+      }
   }
 
   override protected def createSimpleQueue[T]: Task[SimpleQueue[Task, T]] =
@@ -114,7 +118,7 @@ object AsyncHttpClientZioBackend {
     ZIO
       .runtime[Any]
       .flatMap(runtime =>
-        Task.attempt(
+        ZIO.attempt(
           AsyncHttpClientZioBackend(
             runtime,
             AsyncHttpClientBackend.defaultClient(options),
@@ -147,7 +151,7 @@ object AsyncHttpClientZioBackend {
     ZIO
       .runtime[Any]
       .flatMap(runtime =>
-        Task.attempt(
+        ZIO.attempt(
           AsyncHttpClientZioBackend(
             runtime,
             new DefaultAsyncHttpClient(cfg),
@@ -184,7 +188,7 @@ object AsyncHttpClientZioBackend {
     ZIO
       .runtime[Any]
       .flatMap(runtime =>
-        Task.attempt(
+        ZIO.attempt(
           AsyncHttpClientZioBackend(
             runtime,
             AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
@@ -234,7 +238,7 @@ object AsyncHttpClientZioBackend {
   ): Layer[Nothing, SttpClient] =
     ZLayer.scoped(
       ZIO.acquireRelease(
-        UIO.runtime.map((runtime: Runtime[Any]) =>
+        ZIO.runtime.map((runtime: Runtime[Any]) =>
           usingClient(runtime, client, customizeRequest, webSocketBufferCapacity)
         )
       )(

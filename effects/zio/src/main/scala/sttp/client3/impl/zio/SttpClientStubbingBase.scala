@@ -5,7 +5,7 @@ import sttp.client3.testing.SttpBackendStub
 import sttp.client3.{Request, Response, SttpBackend}
 import sttp.model.StatusCode
 import sttp.monad.MonadError
-import zio.{RIO, Ref, Tag, UIO, URIO, ZEnvironment, ZLayer}
+import zio.{RIO, Ref, Tag, UIO, URIO, ZEnvironment, ZIO, ZLayer}
 
 trait SttpClientStubbingBase[R, P] {
 
@@ -64,7 +64,7 @@ trait SttpClientStubbingBase[R, P] {
     private def whenRequest(
         f: SttpBackendStub[RIO[R, *], P]#WhenRequest => SttpBackendStub[RIO[R, *], P]
     ): URIO[SttpClientStubbing, Unit] =
-      URIO.serviceWithZIO((_: SttpClientStubbing).update(stub => f(stub.whenRequestMatches(p))))
+      ZIO.serviceWithZIO((_: SttpClientStubbing).update(stub => f(stub.whenRequestMatches(p))))
   }
 
   val layer: ZLayer[Any, Nothing, SttpClientStubbing with SttpBackend[RIO[R, *], P]] = {

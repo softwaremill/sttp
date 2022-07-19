@@ -4,38 +4,6 @@ The [ZIO](https://github.com/zio/zio) backends are **asynchronous**. Sending a r
 
 The `*-zio` modules depend on ZIO 2.x. For ZIO 1.x support, use modules with the `*-zio1` suffix.
 
-## Using HttpClient (Java 11+)
-
-To use, add the following dependency to your project:
-
-```
-"com.softwaremill.sttp.client3" %% "httpclient-backend-zio" % "@VERSION@"  // for ZIO 2.x
-"com.softwaremill.sttp.client3" %% "httpclient-backend-zio1" % "@VERSION@" // for ZIO 1.x
-```
-
-Create the backend using:
-
-```scala mdoc:compile-only
-import sttp.client3.httpclient.zio.HttpClientZioBackend
-
-HttpClientZioBackend().flatMap { backend => ??? }
-
-// or, if you'd like the backend to be wrapped in a Scope:
-HttpClientZioBackend.scoped().flatMap { backend => ??? }
-
-// or, if you'd like to instantiate the HttpClient yourself:
-import java.net.http.HttpClient
-val httpClient: HttpClient = ???
-val backend = HttpClientZioBackend.usingClient(httpClient)
-```
-
-This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards. The backend is fully non-blocking, with back-pressured websockets.
-
-Host header override is supported in environments running Java 12 onwards, but it has to be enabled by system property:
-```
-jdk.httpclient.allowRestrictedHeaders=host
-```
-
 ## Using async-http-client
 
 To use, add the following dependency to your project:
@@ -138,7 +106,7 @@ Please visit [the official documentation](https://armeria.dev/docs/client-factor
 As an alternative to effectfully or resourcefully creating backend instances, ZIO environment can be used. In this case, a type alias is provided for the service definition:
 
 ```scala
-package sttp.client3.httpclient.zio
+package sttp.client3.asynchttpclient.zio
 type SttpClient = SttpBackend[Task, ZioStreams with WebSockets]
 
 // or, when using async-http-client
@@ -158,7 +126,7 @@ The `SttpClient` companion object contains effect descriptions which use the `St
 
 ```scala mdoc:compile-only
 import sttp.client3._
-import sttp.client3.httpclient.zio._
+import sttp.client3.asynchttpclient.zio._
 import zio._
 val request = basicRequest.get(uri"https://httpbin.org/get")
 
@@ -177,7 +145,7 @@ Requests can be sent with a streaming body:
 ```scala mdoc:compile-only
 import sttp.capabilities.zio.ZioStreams
 import sttp.client3._
-import sttp.client3.httpclient.zio.send
+import sttp.client3.asynchttpclient.zio.send
 import zio.stream._
 
 val s: Stream[Throwable, Byte] =  ???
@@ -194,7 +162,7 @@ And receive response bodies as a stream:
 ```scala mdoc:compile-only
 import sttp.capabilities.zio.ZioStreams
 import sttp.client3._
-import sttp.client3.httpclient.zio.{SttpClient, send}
+import sttp.client3.asynchttpclient.zio.{SttpClient, send}
 
 import zio._
 import zio.stream._
@@ -222,9 +190,9 @@ usual way of creating a stand-alone stub, you can also define your stubs as effe
 ```scala mdoc:compile-only
 import sttp.client3._
 import sttp.model._
-import sttp.client3.httpclient._
-import sttp.client3.httpclient.zio._
-import sttp.client3.httpclient.zio.stubbing._
+import sttp.client3.asynchttpclient._
+import sttp.client3.asynchttpclient.zio._
+import sttp.client3.asynchttpclient.zio.stubbing._
 
 val stubEffect = for {
   _ <- whenRequestMatches(_.uri.toString.endsWith("c")).thenRespond("c")

@@ -99,43 +99,6 @@ val backend = OkHttpFutureBackend.usingClient(asyncHttpClient)
 
 This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supports HTTP/2.
 
-## Using HttpClient (Java 11+)
-
-To use, add the following dependency to your project:
-
-```
-"com.softwaremill.sttp.client3" %% "httpclient-backend" % "@VERSION@"
-```
-
-and some imports:
-
-```scala mdoc:reset:silent
-import sttp.client3.httpclient.HttpClientFutureBackend
-import scala.concurrent.ExecutionContext.Implicits.global
-```
-
-Create the backend using:
-
-```scala mdoc:compile-only
-val backend = HttpClientFutureBackend()
-```
-
-or, if you'd like to instantiate the HttpClient yourself:
-
-```scala mdoc:compile-only
-import java.net.http.HttpClient
-
-val client: HttpClient = ??? 
-val backend = HttpClientFutureBackend.usingClient(client)
-```
-
-This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards, works with all Scala versions. A Scala 3 build is available as well.
-
-Host header override is supported in environments running Java 12 onwards, but it has to be enabled by system property:
-```
-jdk.httpclient.allowRestrictedHeaders=host
-```
-
 ## Using Armeria
 
 To use, add the following dependency to your project:

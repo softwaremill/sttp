@@ -71,37 +71,6 @@ val backend = OkHttpMonixBackend.usingClient(okHttpClient)
 
 This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supports HTTP/2.
 
-## Using HttpClient (Java 11+)
-
-To use, add the following dependency to your project:
-
-```
-"com.softwaremill.sttp.client3" %% "httpclient-backend-monix" % "@VERSION@"
-```
-
-Create the backend using:
-
-```scala
-import sttp.client3.httpclient.monix.HttpClientMonixBackend
-
-HttpClientMonixBackend().flatMap { backend => ??? }
-
-// or, if you'd like the backend to be wrapped in cats-effect Resource:
-HttpClientMonixBackend.resource().use { backend => ??? }
-
-// or, if you'd like to instantiate the HttpClient yourself:
-import java.net.http.HttpClient
-val httpClient: HttpClient = ???
-val backend = HttpClientMonixBackend.usingClient(httpClient)
-```
-
-This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards.
-
-Host header override is supported in environments running Java 12 onwards, but it has to be enabled by system property:
-```
-jdk.httpclient.allowRestrictedHeaders=host
-```
-
 ## Using Armeria
 
 To use, add the following dependency to your project:

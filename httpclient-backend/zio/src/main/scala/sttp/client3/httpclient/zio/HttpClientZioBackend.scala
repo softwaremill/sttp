@@ -52,7 +52,7 @@ class HttpClientZioBackend private (
   override protected def emptyBody(): ZStream[Any, Throwable, Byte] = ZStream.empty
 
   override protected def publisherToBody(p: Publisher[util.List[ByteBuffer]]): ZStream[Any, Throwable, Byte] =
-    p.toStream().mapConcatChunk { list =>
+    p.toZIOStream().mapConcatChunk { list =>
       val a = list.asScala.toList.flatMap(_.safeRead()).toArray
       ByteArray(a, 0, a.length)
     }
@@ -112,7 +112,7 @@ object HttpClientZioBackend {
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
   ): Task[SttpBackend[Task, ZioStreams with WebSockets]] =
-    Task.attempt(
+    ZIO.attempt(
       HttpClientZioBackend(
         HttpClientBackend.defaultClient(options),
         closeClient = true,

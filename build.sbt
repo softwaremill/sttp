@@ -144,9 +144,9 @@ val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", 
 )
 
 val zio1Version = "1.0.14"
-val zio2Version = "2.0.0-RC5"
+val zio2Version = "2.0.0"
 val zio1InteropRsVersion = "1.3.9"
-val zio2InteropRsVersion = "2.0.0-RC6"
+val zio2InteropRsVersion = "2.0.0"
 
 val sttpModelVersion = "1.4.25"
 val sttpSharedVersion = "1.3.4"
@@ -210,16 +210,6 @@ lazy val allAggregates = projectsWithOptionalNative ++
   playJson.projectRefs ++
   openTracingBackend.projectRefs ++
   prometheusBackend.projectRefs ++
-  zio1TelemetryOpenTelemetryBackend.projectRefs ++
-  zio1TelemetryOpenTracingBackend.projectRefs ++
-  zioTelemetryOpenTelemetryBackend.projectRefs ++
-  zioTelemetryOpenTracingBackend.projectRefs ++
-  httpClientBackend.projectRefs ++
-  httpClientMonixBackend.projectRefs ++
-  httpClientFs2Ce2Backend.projectRefs ++
-  httpClientFs2Backend.projectRefs ++
-  httpClientZio1Backend.projectRefs ++
-  httpClientZioBackend.projectRefs ++
   finagleBackend.projectRefs ++
   armeriaBackend.projectRefs ++
   armeriaScalazBackend.projectRefs ++
@@ -631,78 +621,6 @@ lazy val http4sBackend = (projectMatrix in file("http4s-backend"))
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3)
   .dependsOn(cats % compileAndTest, core % compileAndTest, fs2 % compileAndTest)
 
-//-- httpclient-java11
-lazy val httpClientBackend = (projectMatrix in file("httpclient-backend"))
-  .settings(commonJvmSettings)
-  .settings(testServerSettings)
-  .settings(
-    name := "httpclient-backend",
-    scalacOptions ++= Seq("-J--add-modules", "-Jjava.net.http"),
-    scalacOptions ++= {
-      if (scalaVersion.value == scala2_13) List("-target:jvm-11") else Nil
-    },
-    libraryDependencies += "org.reactivestreams" % "reactive-streams" % "1.0.3"
-  )
-  .jvmPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3)
-  .dependsOn(core % compileAndTest)
-
-def httpClientBackendProject(proj: String, includeDotty: Boolean = false) = {
-  ProjectMatrix(s"httpClientBackend${proj.capitalize}", file(s"httpclient-backend/$proj"))
-    .settings(commonJvmSettings)
-    .settings(testServerSettings)
-    .settings(name := s"httpclient-backend-$proj")
-    .jvmPlatform(
-      scalaVersions = List(scala2_12, scala2_13) ++ (if (includeDotty) scala3 else Nil)
-    )
-    .dependsOn(httpClientBackend % compileAndTest)
-}
-
-lazy val httpClientMonixBackend =
-  httpClientBackendProject("monix", includeDotty = true)
-    .dependsOn(monix % compileAndTest)
-
-lazy val httpClientFs2Ce2Backend =
-  httpClientBackendProject("fs2-ce2", includeDotty = true)
-    .settings(
-      libraryDependencies ++= dependenciesFor(scalaVersion.value)(
-        "co.fs2" %% "fs2-reactive-streams" % fs2_2_version(_),
-        "co.fs2" %% "fs2-io" % fs2_2_version(_)
-      )
-    )
-    .dependsOn(fs2Ce2 % compileAndTest)
-
-lazy val httpClientFs2Backend =
-  httpClientBackendProject("fs2", includeDotty = true)
-    .settings(
-      libraryDependencies ++= Seq(
-        "co.fs2" %% "fs2-reactive-streams" % fs2_3_version,
-        "co.fs2" %% "fs2-io" % fs2_3_version
-      )
-    )
-    .dependsOn(fs2 % compileAndTest)
-
-lazy val httpClientZio1Backend =
-  httpClientBackendProject("zio1", includeDotty = true)
-    .settings(
-      libraryDependencies ++=
-        Seq(
-          "dev.zio" %% "zio-interop-reactivestreams" % zio1InteropRsVersion,
-          "dev.zio" %% "zio-nio" % "1.0.0-RC12"
-        )
-    )
-    .dependsOn(zio1 % compileAndTest)
-
-lazy val httpClientZioBackend =
-  httpClientBackendProject("zio", includeDotty = true)
-    .settings(
-      libraryDependencies ++=
-        Seq(
-          "dev.zio" %% "zio-interop-reactivestreams" % zio2InteropRsVersion,
-          "dev.zio" %% "zio-nio" % "2.0.0-RC6"
-        )
-    )
-    .dependsOn(zio % compileAndTest)
-
 //-- finagle backend
 lazy val finagleBackend = (projectMatrix in file("finagle-backend"))
   .settings(commonJvmSettings)
@@ -992,23 +910,10 @@ lazy val zioTelemetryOpenTelemetryBackend = (projectMatrix in file("metrics/zio-
   .settings(
     name := "zio-telemetry-opentelemetry-backend",
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-opentelemetry" % "2.0.0-RC2",
+      "dev.zio" %% "zio-opentelemetry" % "2.0.0-RC3",
       "io.opentelemetry" % "opentelemetry-sdk-testing" % "1.13.0" % Test
     ),
     scalaTest
-  )
-  .jvmPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3)
-  .dependsOn(zio % compileAndTest)
-  .dependsOn(core)
-
-lazy val zioTelemetryOpenTracingBackend = (projectMatrix in file("metrics/zio-telemetry-open-tracing-backend"))
-  .settings(commonJvmSettings)
-  .settings(
-    name := "zio-telemetry-opentracing-backend",
-    libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-opentracing" % "2.0.0-RC2",
-      "org.scala-lang.modules" %% "scala-collection-compat" % "2.7.0"
-    )
   )
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3)
   .dependsOn(zio % compileAndTest)
@@ -1137,15 +1042,12 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     armeriaScalazBackend,
     okhttpBackend,
     // okhttpMonixBackend,
-    httpClientBackend,
-    httpClientFs2Backend,
     http4sBackend,
     // httpClientMonixBackend,
-    httpClientZioBackend,
     openTracingBackend,
     prometheusBackend,
-    slf4jBackend,
-    zioTelemetryOpenTelemetryBackend,
-    zioTelemetryOpenTracingBackend
+    slf4jBackend//,
+    // zioTelemetryOpenTelemetryBackend ,
+    // zioTelemetryOpenTracingBackend
   )
   .jvmPlatform(scalaVersions = List(scala2_13))

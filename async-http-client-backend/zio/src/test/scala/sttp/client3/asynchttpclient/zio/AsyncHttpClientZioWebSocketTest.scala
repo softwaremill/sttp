@@ -9,7 +9,7 @@ import sttp.client3.testing.ConvertToFuture
 import sttp.monad.MonadError
 import sttp.ws.WebSocketFrame
 import zio.stream._
-import zio.{Clock, Schedule, Task, ZIO, durationLong}
+import zio.{Schedule, Task, ZIO, durationLong}
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -17,12 +17,12 @@ class AsyncHttpClientZioWebSocketTest extends AsyncHttpClientWebSocketTest[Task,
   override val streams: ZioStreams = ZioStreams
 
   override val backend: SttpBackend[Task, WebSockets with ZioStreams] =
-    runtime.unsafeRun(AsyncHttpClientZioBackend())
+    unsafeRunSyncOrThrow(AsyncHttpClientZioBackend())
   override implicit val convertToFuture: ConvertToFuture[Task] = convertZioTaskToFuture
   override implicit val monad: MonadError[Task] = new RIOMonadAsyncError
 
   override def eventually[T](interval: FiniteDuration, attempts: Int)(f: => Task[T]): Task[T] = {
-    ZIO.sleep(interval.toMillis.millis).flatMap(_ => f).retry(Schedule.recurs(attempts)).provideLayer(Clock.live)
+    ZIO.sleep(interval.toMillis.millis).flatMap(_ => f).retry(Schedule.recurs(attempts))
   }
 
   override def functionToPipe(
@@ -40,5 +40,5 @@ class AsyncHttpClientZioWebSocketTest extends AsyncHttpClientWebSocketTest[Task,
   ): ZioStreams.Pipe[WebSocketFrame.Data[_], WebSocketFrame] =
     to.andThen(rest => ZStream(item) ++ rest)
 
-  override def concurrently[T](fs: List[() => Task[T]]): Task[List[T]] = Task.collectAllPar(fs.map(_()))
+  override def concurrently[T](fs: List[() => Task[T]]): Task[List[T]] = ZIO.collectAllPar(fs.map(_()))
 }

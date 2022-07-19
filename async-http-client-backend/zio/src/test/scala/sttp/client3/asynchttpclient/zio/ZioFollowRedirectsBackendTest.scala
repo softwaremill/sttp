@@ -7,13 +7,13 @@ import sttp.client3.impl.zio.{RIOMonadAsyncError, ZioTestBase}
 import sttp.client3._
 import sttp.model.{Header, StatusCode}
 import sttp.monad.MonadError
-import zio.Task
+import zio.{Task, ZIO}
 
 class ZioFollowRedirectsBackendTest extends AsyncFlatSpec with Matchers with ZioTestBase {
   it should "properly handle invalid redirect URIs" in {
     val stubBackend: SttpBackend[Task, Any] = new SttpBackend[Task, Any] {
       override def send[T, R >: capabilities.Effect[Task]](request: Request[T, R]): Task[Response[T]] = {
-        Task.succeed(
+        ZIO.succeed(
           if (request.uri.toString.contains("redirect"))
             Response.ok("ok".asInstanceOf[T])
           else
@@ -26,7 +26,7 @@ class ZioFollowRedirectsBackendTest extends AsyncFlatSpec with Matchers with Zio
         )
       }
 
-      override def close(): Task[Unit] = Task.succeed(())
+      override def close(): Task[Unit] = ZIO.succeed(())
       override def responseMonad: MonadError[Task] = new RIOMonadAsyncError[Any]
     }
 

@@ -8,7 +8,7 @@ import zio.Task
 class AsyncHttpClientZioHttpTest extends HttpTest[Task] with ZioTestBase {
 
   override val backend: SttpBackend[Task, Any] =
-    runtime.unsafeRun(AsyncHttpClientZioBackend())
+    unsafeRunSyncOrThrow(AsyncHttpClientZioBackend())
   override implicit val convertToFuture: ConvertToFuture[Task] = convertZioTaskToFuture
 
   override def throwsExceptionOnUnsupportedEncoding = false

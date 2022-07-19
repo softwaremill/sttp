@@ -1,6 +1,6 @@
 package sttp.client3.httpclient.zio
 
-import java.nio.file.StandardOpenOption
+import java.nio.file.{OpenOption, StandardOpenOption}
 import sttp.capabilities.zio.ZioStreams
 import sttp.client3.httpclient.BodyFromHttpClient
 import sttp.client3.impl.zio.{RIOMonadAsyncError, ZioWebSockets}
@@ -34,20 +34,12 @@ private[zio] class ZioBodyFromHttpClient extends BodyFromHttpClient[Task, ZioStr
       Task
     ], ZioStreams.BinaryStream] {
       override protected def withReplayableBody(
-          response: ZStream[Any, Throwable, Byte],
-          replayableBody: Either[Array[Byte], SttpFile]
-      ): Task[ZStream[Any, Throwable, Byte]] = {
+                                                 response: ZStream[Any, Throwable, Byte],
+                                                 replayableBody: Either[Array[Byte], SttpFile]
+                                               ): Task[ZStream[Any, Throwable, Byte]] = {
         replayableBody match {
-          case Left(byteArray) => ZIO.succeed(Stream.fromIterable(byteArray))
-          case Right(file) =>
-            ZIO.succeed(
-              for {
-                fileChannel <- Stream.scoped(
-                  AsynchronousFileChannel.open(Path.fromJava(file.toPath), StandardOpenOption.READ)
-                )
-                bytes <- readAllBytes(fileChannel)
-              } yield bytes
-            )
+          case Left(byteArray) => ZIO.succeed(ZStream.fromIterable(byteArray))
+          case Right(file)     => ZIO.succeed(ZStream.fromPath(file.toPath))
         }
       }
 
@@ -59,28 +51,19 @@ private[zio] class ZioBodyFromHttpClient extends BodyFromHttpClient[Task, ZioStr
       ): Task[Array[Byte]] = response.runCollect.map(_.toArray)
 
       override protected def regularAsFile(
-          response: ZStream[Any, Throwable, Byte],
-          file: SttpFile
-      ): Task[SttpFile] = response
+                                            response: ZStream[Any, Throwable, Byte],
+                                            file: SttpFile
+                                          ): Task[SttpFile] = response
         .run({
-          ZSink.unwrapScoped(
-            AsynchronousFileChannel
-              .open(Path.fromJava(file.toPath), StandardOpenOption.WRITE, StandardOpenOption.CREATE)
-              .map { fileChannel =>
-                ZSink.foldChunksZIO[Any, IOException, Byte, Long](0L)(_ => true) { case (position, data) =>
-                  fileChannel
-                    .writeChunk(data, position)
-                    .map(_ => position + data.size)
-                }
-              }
-          )
+          val options = Set[OpenOption](StandardOpenOption.WRITE, StandardOpenOption.CREATE)
+          ZSink.fromPath(file.toPath, options = options)
         })
         .as(file)
 
       override protected def regularAsStream(
           response: ZStream[Any, Throwable, Byte]
       ): Task[(ZStream[Any, Throwable, Byte], () => Task[Unit])] =
-        Task.succeed((response, () => response.runDrain.catchAll(_ => ZIO.unit)))
+        ZIO.succeed((response, () => response.runDrain.catchAll(_ => ZIO.unit)))
 
       override protected def handleWS[T](
           responseAs: WebSocketResponseAs[T, _],
@@ -98,18 +81,6 @@ private[zio] class ZioBodyFromHttpClient extends BodyFromHttpClient[Task, ZioStr
           e: GotAWebSocketException
       ): Task[Unit] = response.close()
     }
-
-  private def readAllBytes(fileChannel: AsynchronousFileChannel) = {
-    val bufferSize = 4096
-    Stream.paginateChunkZIO(0L)(position =>
-      fileChannel
-        .readChunk(bufferSize, position)
-        .map {
-          case data if data.isEmpty => data -> None
-          case data                 => data -> Some(position + bufferSize)
-        }
-    )
-  }
 
   override implicit def monad: MonadError[Task] = new RIOMonadAsyncError[Any]
 }

@@ -83,58 +83,6 @@ val asyncHttpClient: AsyncHttpClient = ???
 val backend = AsyncHttpClientFs2Backend.usingClient[IO](asyncHttpClient, dispatcher)
 ```
 
-## Using HttpClient (Java 11+)
-
-To use, add the following dependency to your project:
-
-```scala
-"com.softwaremill.sttp.client3" %% "httpclient-backend-fs2" % "@VERSION@" // for cats-effect 3.x & fs2 3.x
-// or 
-"com.softwaremill.sttp.client3" %% "httpclient-backend-fs2-ce2" % "@VERSION@" // for cats-effect 2.x & fs2 2.x
-```
-
-Create the backend using a cats-effect `Resource`:
-
-```scala mdoc:compile-only
-import cats.effect.IO
-import sttp.client3.httpclient.fs2.HttpClientFs2Backend
-
-HttpClientFs2Backend.resource[IO]().use { backend => ??? }
-```
-
-or, if by providing a custom `Dispatcher`:
-
-```scala mdoc:compile-only
-import cats.effect.IO
-import cats.effect.std.Dispatcher
-import sttp.client3.httpclient.fs2.HttpClientFs2Backend
-
-val dispatcher: Dispatcher[IO] = ???
-
-HttpClientFs2Backend[IO](dispatcher).flatMap { backend => ??? }
-```
-
-or, if you'd like to instantiate the `HttpClient` yourself:
-
-```scala mdoc:compile-only
-import cats.effect.IO
-import cats.effect.std.Dispatcher
-import java.net.http.HttpClient
-import sttp.client3.httpclient.fs2.HttpClientFs2Backend
-
-val httpClient: HttpClient = ???
-val dispatcher: Dispatcher[IO] = ???
-
-val backend = HttpClientFs2Backend.usingClient[IO](httpClient, dispatcher)
-```
-
-This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards.
-
-Host header override is supported in environments running Java 12 onwards, but it has to be enabled by system property:
-```
-jdk.httpclient.allowRestrictedHeaders=host
-```
-
 ## Using Armeria
 
 To use, add the following dependency to your project:
