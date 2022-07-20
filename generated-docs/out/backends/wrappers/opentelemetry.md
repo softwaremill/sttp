@@ -12,7 +12,7 @@ The backend depends only on [opentelemetry-api](https://github.com/open-telemetr
 following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "opentelemetry-metrics-backend" % "3.7.0"
+"com.softwaremill.sttp.client3" %% "opentelemetry-metrics-backend" % "3.7.1"
 ```
 
 Then an instance can be obtained as follows:
@@ -53,14 +53,14 @@ OpenTelemetryMetricsBackend(
 To use, add the following dependency to your project (the `zio-*` modules depend on ZIO 2.x; for ZIO 1.x support, use `zio1-*`):
 
 ```
-"com.softwaremill.sttp.client3" %% "opentelemetry-tracing-zio-backend" % "3.7.0"  // for ZIO 2.x
-"com.softwaremill.sttp.client3" %% "opentelemetry-tracing-zio1-backend" % "3.7.0" // for ZIO 1.x
+"com.softwaremill.sttp.client3" %% "opentelemetry-tracing-zio-backend" % "3.7.1"  // for ZIO 2.x
+"com.softwaremill.sttp.client3" %% "opentelemetry-tracing-zio1-backend" % "3.7.1" // for ZIO 1.x
 ```
 
 This backend depends on [zio-opentelemetry](https://github.com/zio/zio-telemetry).
 
 The OpenTelemetry backend wraps a `Task` based ZIO backend.
-In order to do that, you need to provide the wrapper with a `Tracing.Service` from zio-telemetry.
+In order to do that, you need to provide the wrapper with a `Tracing` from zio-telemetry.
 
 Here's how you construct `ZioTelemetryOpenTelemetryBackend`. I would recommend wrapping this is in `ZLayer`
 
@@ -71,7 +71,7 @@ import zio.telemetry.opentelemetry._
 import sttp.client3.opentelemetry.zio._
 
 val zioBackend: SttpBackend[Task, Any] = ???
-val tracing: Tracing.Service = ???
+val tracing: Tracing = ???
 
 OpenTelemetryTracingZioBackend(zioBackend, tracing)
 ```
