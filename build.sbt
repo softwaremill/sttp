@@ -213,7 +213,7 @@ lazy val allAggregates = projectsWithOptionalNative ++
   prometheusBackend.projectRefs ++
   openTelemetryMetricsBackend.projectRefs ++
   openTelemetryTracingZio1Backend.projectRefs ++
-  // openTelemetryTracingZioBackend.projectRefs ++ TODO: enable when a ZIO2-compatible version is released
+  openTelemetryTracingZioBackend.projectRefs ++
   finagleBackend.projectRefs ++
   armeriaBackend.projectRefs ++
   armeriaScalazBackend.projectRefs ++
@@ -917,7 +917,7 @@ lazy val openTelemetryTracingZioBackend = (projectMatrix in file("observability/
   .settings(
     name := "opentelemetry-tracing-zio-backend",
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-opentelemetry" % "2.0.0-RC3",
+      "dev.zio" %% "zio-opentelemetry" % "2.0.0",
       "io.opentelemetry" % "opentelemetry-sdk-testing" % openTelemetryVersion % Test
     )
   )

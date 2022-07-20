@@ -60,7 +60,7 @@ To use, add the following dependency to your project (the `zio-*` modules depend
 This backend depends on [zio-opentelemetry](https://github.com/zio/zio-telemetry).
 
 The OpenTelemetry backend wraps a `Task` based ZIO backend.
-In order to do that, you need to provide the wrapper with a `Tracing.Service` from zio-telemetry.
+In order to do that, you need to provide the wrapper with a `Tracing` from zio-telemetry.
 
 Here's how you construct `ZioTelemetryOpenTelemetryBackend`. I would recommend wrapping this is in `ZLayer`
 
@@ -71,7 +71,7 @@ import zio.telemetry.opentelemetry._
 import sttp.client3.opentelemetry.zio._
 
 val zioBackend: SttpBackend[Task, Any] = ???
-val tracing: Tracing.Service = ???
+val tracing: Tracing = ???
 
 OpenTelemetryTracingZioBackend(zioBackend, tracing)
 ```

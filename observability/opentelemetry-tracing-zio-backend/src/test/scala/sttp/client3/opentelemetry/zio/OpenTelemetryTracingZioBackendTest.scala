@@ -10,10 +10,10 @@ import sttp.client3.impl.zio.{RIOMonadAsyncError, ZioTestBase}
 import sttp.client3.testing.SttpBackendStub
 import sttp.client3.{Request, Response, SttpBackend, UriContext, basicRequest}
 import sttp.model.StatusCode
-import zio.{Task, ZIO}
+import zio.{Runtime, Task, Unsafe, ZIO}
 import zio.telemetry.opentelemetry.Tracing
-import scala.collection.JavaConverters._
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 class OpenTelemetryTracingZioBackendTest extends AnyFlatSpec with Matchers with BeforeAndAfter with ZioTestBase {
@@ -24,7 +24,9 @@ class OpenTelemetryTracingZioBackendTest extends AnyFlatSpec with Matchers with 
 
   private val mockTracer =
     SdkTracerProvider.builder().addSpanProcessor(SimpleSpanProcessor.create(spanExporter)).build().get(getClass.getName)
-  private val mockTracing = runtime.unsafeRun(ZIO.scoped(Tracing.scoped(mockTracer)))
+  private val mockTracing = Unsafe.unsafeCompat { implicit u =>
+    Runtime.default.unsafe.run(ZIO.scoped(Tracing.scoped(mockTracer))).getOrThrow()
+  }
 
   private val backend: SttpBackend[Task, Any] =
     OpenTelemetryTracingZioBackend(
@@ -44,7 +46,9 @@ class OpenTelemetryTracingZioBackendTest extends AnyFlatSpec with Matchers with 
   }
 
   "ZioTelemetryOpenTelemetryBackend" should "record spans for requests" in {
-    val response = runtime.unsafeRun(basicRequest.post(uri"http://stub/echo").send(backend))
+    val response = Unsafe.unsafeCompat { implicit u =>
+      Runtime.default.unsafe.run(basicRequest.post(uri"http://stub/echo").send(backend)).getOrThrow()
+    }
     response.code shouldBe StatusCode.Ok
 
     val spans = spanExporter.getFinishedSpanItems.asScala
@@ -53,7 +57,9 @@ class OpenTelemetryTracingZioBackendTest extends AnyFlatSpec with Matchers with 
   }
 
   it should "propagate span" in {
-    val response = runtime.unsafeRun(basicRequest.post(uri"http://stub/echo").send(backend))
+    val response = Unsafe.unsafeCompat { implicit u =>
+      Runtime.default.unsafe.run(basicRequest.post(uri"http://stub/echo").send(backend)).getOrThrow()
+    }
     response.code shouldBe StatusCode.Ok
 
     val spans = spanExporter.getFinishedSpanItems.asScala
@@ -65,7 +71,9 @@ class OpenTelemetryTracingZioBackendTest extends AnyFlatSpec with Matchers with 
   }
 
   it should "set span status in case of error" in {
-    runtime.unsafeRunSync(basicRequest.post(uri"http://stub/error").send(backend))
+    Unsafe.unsafeCompat { implicit u =>
+      Runtime.default.unsafe.run(basicRequest.post(uri"http://stub/error").send(backend))
+    }
 
     val spans = spanExporter.getFinishedSpanItems.asScala
     spans should have size 1
