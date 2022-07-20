@@ -202,7 +202,7 @@ val stubEffect = for {
 
 val responseEffect = stubEffect *> send(basicRequest.get(uri"http://example.org/a")).map(_.body)
 
-responseEffect.provideLayer(HttpClientZioBackend.stubLayer) // Task[Either[String, String]]
+responseEffect.provideLayer(AsyncHttpClientZioBackend.stubLayer) // Task[Either[String, String]]
 ```
 
 The `whenRequestMatches`, `whenRequestMatchesPartial`, `whenAnyRequest` are effects which require the `SttpClientStubbing`
