@@ -388,7 +388,8 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
     (new ByteArrayInputStream(s.getBytes(Utf8)), asString(Utf8), Some(Right(s))),
     (10, asString(Utf8), None),
     ("10", asString(Utf8).mapRight(_.toInt), Some(Right(10))),
-    (11, asString(Utf8).mapRight(_.toInt), None)
+    (11, asString(Utf8).mapRight(_.toInt), None),
+    ((), asString(Utf8), Some(Right("")))
   )
 
   behavior of "tryAdjustResponseBody"
