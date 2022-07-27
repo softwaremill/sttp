@@ -195,6 +195,7 @@ object SttpBackendStub {
           case s: String       => Some(s.getBytes(Utf8).unit.asInstanceOf[F[T]])
           case a: Array[Byte]  => Some(a.unit.asInstanceOf[F[T]])
           case is: InputStream => Some(toByteArray(is).unit.asInstanceOf[F[T]])
+          case ()              => Some(Array[Byte]().unit.asInstanceOf[F[T]])
           case _               => None
         }
       case ResponseAsStream(_, f) =>
