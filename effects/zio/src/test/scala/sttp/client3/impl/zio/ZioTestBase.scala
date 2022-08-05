@@ -13,7 +13,7 @@ trait ZioTestBase {
   val convertZioTaskToFuture: ConvertToFuture[Task] = new ConvertToFuture[Task] {
     override def toFuture[T](value: Task[T]): Future[T] = {
       Unsafe.unsafeCompat { implicit u =>
-        _root_.zio.Runtime.default.unsafe.runToFuture(value.tapError { e =>
+        Runtime.default.unsafe.runToFuture(value.tapError { e =>
           e.printStackTrace(); ZIO.unit
         })
       }

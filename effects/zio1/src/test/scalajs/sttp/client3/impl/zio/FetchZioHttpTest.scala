@@ -14,6 +14,5 @@ class FetchZioHttpTest extends AbstractFetchHttpTest[Task, ZioStreams] with ZioT
 
   override protected def supportsCustomMultipartEncoding = false
 
-  
   override def timeoutToNone[T](t: Task[T], timeoutMillis: Int): Task[Option[T]] = super.timeoutToNone(t, timeoutMillis)
 }
