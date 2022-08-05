@@ -2,7 +2,7 @@ package sttp.client3.impl.zio
 
 import scala.concurrent.Future
 
-import zio.{Exit, Runtime, Task, Unsafe, ZIO}
+import zio._
 
 import sttp.client3.testing.ConvertToFuture
 
@@ -12,11 +12,11 @@ trait ZioRuntimeUtils {
 
   val convertZioTaskToFuture: ConvertToFuture[Task] = new ConvertToFuture[Task] {
     override def toFuture[T](value: Task[T]): Future[T] = {
-      Unsafe.unsafe(implicit u =>
+      Unsafe.unsafeCompat { implicit u =>
         _root_.zio.Runtime.default.unsafe.runToFuture(value.tapError { e =>
           e.printStackTrace(); ZIO.unit
         })
-      )
+      }
     }
   }
 
