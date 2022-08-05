@@ -428,9 +428,9 @@ lazy val zio1 = (projectMatrix in file("effects/zio1"))
     name := "zio1",
     Test / publishArtifact := true,
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-streams" % zio1Version,
-      "dev.zio" %% "zio" % zio1Version,
-      "com.softwaremill.sttp.shared" %% "zio1" % sttpSharedVersion,
+      "dev.zio" %%% "zio-streams" % zio1Version,
+      "dev.zio" %%% "zio" % zio1Version,
+      "com.softwaremill.sttp.shared" %%% "zio1" % sttpSharedVersion,
       "dev.zio" %% "zio-interop-reactivestreams" % zio1InteropRsVersion,
       "dev.zio" %% "zio-nio" % "1.0.0-RC12"
     )
@@ -451,9 +451,9 @@ lazy val zio = (projectMatrix in file("effects/zio"))
     name := "zio",
     Test / publishArtifact := true,
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-streams" % zio2Version,
-      "dev.zio" %% "zio" % zio2Version,
-      "com.softwaremill.sttp.shared" %% "zio" % sttpSharedVersion,
+      "dev.zio" %%% "zio-streams" % zio2Version,
+      "dev.zio" %%% "zio" % zio2Version,
+      "com.softwaremill.sttp.shared" %%% "zio" % sttpSharedVersion,
       "dev.zio" %% "zio-interop-reactivestreams" % zio2InteropRsVersion
     )
   )
