@@ -7,7 +7,7 @@ A JavaScript backend with web socket support. Implemented using the [Fetch API](
 This is the default backend, available in the main jar for JS. To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %%% "core" % "3.7.2"
+"com.softwaremill.sttp.client3" %%% "core" % "3.7.3"
 ```
 
 And create the backend instance:
@@ -26,7 +26,7 @@ Note that `Fetch` does not pass cookies by default. If your request needs cookie
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %%% "monix" % "3.7.2"
+"com.softwaremill.sttp.client3" %%% "monix" % "3.7.3"
 ```
 
 And create the backend instance:
@@ -35,19 +35,33 @@ And create the backend instance:
 val backend = FetchMonixBackend()
 ```
 
+## ZIO-based
+
+To use, add the following dependency to your project:
+
+```
+"com.softwaremill.sttp.client3" %%% "zio" % "3.7.3"
+```
+
+And create the backend instance:
+
+```scala
+val backend = FetchZioBackend()
+```
+
 ## cats-effect-based
 
 Any effect implementing the cats-effect `Concurrent` typeclass can be used. To use, add the following dependency to 
 your project:
 
 ```
-"com.softwaremill.sttp.client3" %%% "cats" % "3.7.2"
+"com.softwaremill.sttp.client3" %%% "cats" % "3.7.3"
 ```
 
 If you are on Cats Effect 2 (CE2) you will need to add the CE2 specific dependency instead:
 
 ```
-"com.softwaremill.sttp.client3" %%% "catsce2 % "3.7.2"
+"com.softwaremill.sttp.client3" %%% "catsce2 % "3.7.3"
 ```
 
 And create the backend instance:
@@ -115,7 +129,7 @@ Streaming support is provided via `FetchMonixBackend`. Note that streaming suppo
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %%% "monix" % "3.7.2"
+"com.softwaremill.sttp.client3" %%% "monix" % "3.7.3"
 ```
 
 An example of streaming a response:

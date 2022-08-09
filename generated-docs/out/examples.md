@@ -7,7 +7,7 @@ All of the examples are available [in the sources](https://github.com/softwaremi
 Required dependencies:
 
 ```scala            
-libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "core" % "3.7.2")
+libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "core" % "3.7.3")
 ```
 
 Example code:
@@ -23,8 +23,8 @@ Required dependencies:
 
 ```scala
 libraryDependencies ++= List(
-  "com.softwaremill.sttp.client3" %% "akka-http-backend" % "3.7.2",
-  "com.softwaremill.sttp.client3" %% "json4s" % "3.7.2",
+  "com.softwaremill.sttp.client3" %% "akka-http-backend" % "3.7.3",
+  "com.softwaremill.sttp.client3" %% "json4s" % "3.7.3",
   "org.json4s" %% "json4s-native" % "3.6.0"
 )
 ```
@@ -42,8 +42,8 @@ Required dependencies:
 
 ```scala
 libraryDependencies ++= List(
-  "com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % "3.7.2",
-  "com.softwaremill.sttp.client3" %% "circe" % "3.7.2",
+  "com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % "3.7.3",
+  "com.softwaremill.sttp.client3" %% "circe" % "3.7.3",
   "io.circe" %% "circe-generic" % "0.14.1"
 )
 ```
@@ -61,8 +61,8 @@ Required dependencies:
 
 ```scala
 libraryDependencies ++= List(
-  "com.softwaremill.sttp.client3" %% "async-http-client-backend-monix" % "3.7.2",
-  "com.softwaremill.sttp.client3" %% "circe" % "3.7.2",
+  "com.softwaremill.sttp.client3" %% "async-http-client-backend-monix" % "3.7.3",
+  "com.softwaremill.sttp.client3" %% "circe" % "3.7.3",
   "io.circe" %% "circe-generic" % "0.14.1"
 )
 ```
@@ -80,8 +80,8 @@ Required dependencies:
 
 ```scala
 libraryDependencies ++= List(
-  "com.softwaremill.sttp.client3" %% "slf4j-backend" % "3.7.2",
-  "com.softwaremill.sttp.client3" %% "circe" % "3.7.2",
+  "com.softwaremill.sttp.client3" %% "slf4j-backend" % "3.7.3",
+  "com.softwaremill.sttp.client3" %% "circe" % "3.7.3",
   "io.circe" %% "circe-generic" % "0.14.1"
 )
 ```
@@ -99,8 +99,8 @@ Required dependencies:
 
 ```scala
 libraryDependencies ++= List(
-  "com.softwaremill.sttp.client3" %% "async-http-client-backend-monix" % "3.7.2",
-  "com.softwaremill.sttp.client3" %% "circe" % "3.7.2",
+  "com.softwaremill.sttp.client3" %% "async-http-client-backend-monix" % "3.7.3",
+  "com.softwaremill.sttp.client3" %% "circe" % "3.7.3",
   "io.circe" %% "circe-generic" % "0.14.1"
 )
 ```
@@ -117,7 +117,7 @@ Example code:
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "core" % "3.7.2")
+libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "core" % "3.7.3")
 ```
 
 Example code:
@@ -132,7 +132,7 @@ Example code:
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % "3.7.2")
+libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % "3.7.3")
 ```
 
 Example code:
@@ -147,7 +147,7 @@ Example code:
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "async-http-client-backend-fs2" % "3.7.2")
+libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "async-http-client-backend-fs2" % "3.7.3")
 ```
 
 Example code:
@@ -162,7 +162,7 @@ Example code:
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "async-http-client-backend-monix" % "3.7.2")
+libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "async-http-client-backend-monix" % "3.7.3")
 ```
 
 Example code:
@@ -177,7 +177,7 @@ Example code:
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "akka-http-backend" % "3.7.2")
+libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "akka-http-backend" % "3.7.3")
 ```
 
 Example code:
@@ -192,7 +192,7 @@ Example code:
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "async-http-client-backend-monix" % "3.7.2")
+libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "async-http-client-backend-monix" % "3.7.3")
 ```
 
 Example code:
@@ -207,7 +207,7 @@ Example code:
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "async-http-client-backend-fs2" % "3.7.2")
+libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "async-http-client-backend-fs2" % "3.7.3")
 ```
 
 Example code:
@@ -222,7 +222,7 @@ Example code:
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % "3.7.2")
+libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % "3.7.3")
 ```
 
 Example code:
@@ -237,7 +237,7 @@ Example code:
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % "3.7.2")
+libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % "3.7.3")
 ```
 
 Example code:
@@ -252,7 +252,7 @@ Example code:
 Required dependencies:
 
 ```scala            
-libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "core" % "3.7.2")
+libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "core" % "3.7.3")
 ```
 
 Example code:
