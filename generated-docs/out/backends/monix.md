@@ -7,7 +7,7 @@ There are several backend implementations which are `monix.eval.Task`-based. The
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "monix" % "3.7.3"
+"com.softwaremill.sttp.client3" %% "monix" % "3.7.4"
 ```
 
 Create the backend using:
@@ -39,7 +39,7 @@ Host header override is supported in environments running Java 12 onwards, but i
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "async-http-client-backend-monix" % "3.7.3"
+"com.softwaremill.sttp.client3" %% "async-http-client-backend-monix" % "3.7.4"
 ```
            
 This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client), uses [Netty](http://netty.io) behind the scenes.
@@ -82,7 +82,7 @@ val backend = AsyncHttpClientMonixBackend.usingClient(asyncHttpClient)
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "okhttp-backend-monix" % "3.7.3"
+"com.softwaremill.sttp.client3" %% "okhttp-backend-monix" % "3.7.4"
 ```
 
 Create the backend using:
@@ -108,7 +108,7 @@ This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supp
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "armeria-backend-monix" % "3.7.3"
+"com.softwaremill.sttp.client3" %% "armeria-backend-monix" % "3.7.4"
 ```
 
 add imports:
