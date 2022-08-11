@@ -233,7 +233,8 @@ lazy val allAggregates = projectsWithOptionalNative ++
 
 // For CI tests, defining scripts that run JVM/JS/Native tests separately
 val testJVM = taskKey[Unit]("Test JVM projects")
-val testJS = taskKey[Unit]("Test JS projects")
+val testJS1 = taskKey[Unit]("Test JS 2.11 and 2.12 projects")
+val testJS2 = taskKey[Unit]("Test JS 2.13 and 3 projects")
 val testNative = taskKey[Unit]("Test native projects")
 
 def filterProject(p: String => Boolean) =
@@ -245,7 +246,12 @@ lazy val rootProject = (project in file("."))
     publish / skip := true,
     name := "sttp",
     testJVM := (Test / test).all(filterProject(p => !p.contains("JS") && !p.contains("Native"))).value,
-    testJS := (Test / test).all(filterProject(_.contains("JS"))).value,
+    testJS1 := (Test / test)
+      .all(filterProject(p => p.contains("JS") && (p.contains("2_11") || p.contains("2_12"))))
+      .value,
+    testJS2 := (Test / test)
+      .all(filterProject(p => p.contains("JS") && !p.contains("2_11") && !p.contains("2_12")))
+      .value,
     testNative := (Test / test).all(filterProject(_.contains("Native"))).value,
     ideSkipProject := false,
     scalaVersion := scala2_13
