@@ -950,7 +950,7 @@ lazy val slf4jBackend = (projectMatrix in file("logging/slf4j"))
   .settings(
     name := "slf4j-backend",
     libraryDependencies ++= Seq(
-      "org.slf4j" % "slf4j-api" % "1.7.36"
+      "org.slf4j" % "slf4j-api" % "2.0.0"
     ),
     scalaTest
   )
