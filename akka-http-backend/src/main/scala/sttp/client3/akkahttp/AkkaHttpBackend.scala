@@ -129,7 +129,7 @@ class AkkaHttpBackend private (
 
   // http://doc.akka.io/docs/akka-http/10.0.7/scala/http/common/de-coding.html
   private def decodeAkkaResponse(response: HttpResponse, disableAutoDecompression: Boolean): HttpResponse = {
-    if (response.status.equals(StatusCodes.NoContent) || disableAutoDecompression) response
+    if (!response.status.allowsEntity() || disableAutoDecompression) response
     else customEncodingHandler.orElse(EncodingHandler(standardEncoding)).apply(response -> response.encoding)
   }
 
