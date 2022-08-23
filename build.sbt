@@ -936,7 +936,7 @@ lazy val scribeBackend = (projectMatrix in file("logging/scribe"))
   .settings(
     name := "scribe-backend",
     libraryDependencies ++= Seq(
-      "com.outr" %%% "scribe" % "3.10.2"
+      "com.outr" %%% "scribe" % "3.10.3"
     ),
     scalaTest
   )
