@@ -120,3 +120,40 @@ val jumpTo = Some("section2")
 ```scala mdoc
 println(uri"$scheme://$subdomains.example.com?x=$vx&$paramMap#$jumpTo")
 ```
+
+## FAQ: encoding & decoding URI components
+
+A common question about sttp's `Uri` is why certain characters in various components (path segment, query parameters) 
+are **not** encoded, even if they are given as encoded when creating the URI.
+
+The first thing to keep in mind is that internally the URI class stores all components in a **decoded** form. Hence
+if you have an URI which in an encoded form has some special characters, such as `/a%20b`, the `Uri` data structure,
+which is an ordinary `case class`, will contain a path segment with `a b`.
+
+When parsing, that includes creating URIs from constant strings e.g. `uri"http://example.com/a%20b"`, all of the 
+components are decoded and stored in this form. This means that `Uri` might **not** exactly preserve the original
+form, in which path segments or query parameters have been writte down (this might change in a future major release,
+though).
+
+When serialising the `Uri` back to a `String`, the code follows the escaping rules defined in 
+[RFC 3986](https://www.rfc-editor.org/rfc/rfc3986), which specifies the syntax of URIs.
+
+There, you may find that for example `&` don't have to be escaped in path components, or that `/` don't have to be
+escaped in query parameters. Refer to the `Rfc3986` class or the specification for a set of characters, which are 
+allowed in each context.
+
+This is often surprising to users, as other libraries and frameworks often escape everything, even if it's not 
+necessary, regardless of context.
+
+If for some reason you do require changing the way certain components are encoded, this can be done individually 
+for every segment (by manually changing the `Uri` case class), or with the `[component]SegmentsEncoding` methods.
+
+For example, to always encode every non-standard character in query segments:
+
+```scala mdoc
+import sttp.model._
+println(uri"http://example.com?a=b/?c%26d".querySegmentsEncoding(Uri.QuerySegmentEncoding.All))
+
+// compare to:
+println(uri"http://example.com?a=b/?c%26d")
+```
