@@ -295,7 +295,9 @@ lazy val core = (projectMatrix in file("core"))
         Test / publishArtifact := true, // allow implementations outside of this repo
         scalacOptions ++= Seq("-J--add-modules", "-Jjava.net.http"),
         scalacOptions ++= {
-          if (scalaVersion.value == scala2_13) List("-target:jvm-11") else Nil
+          if (scalaVersion.value == scala2_13) List("-target:jvm-11")
+          else if (scalaVersion.value == scala2_11) List("-target:jvm-1.8")
+          else Nil
         }
       )
     }
