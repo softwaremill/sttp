@@ -89,16 +89,17 @@ class LoggingWithResponseBodyBackend[F[_], S](
           response <- request.send(delegate)
           _ <- log.response(request, response, None, elapsed(start))
         } yield response
-      } else {
-        for {
-          response <- request.response(asBothOption(request.response, asStringAlways)).send(delegate)
-          _ <- log.response(request, response, response.body._2, elapsed(start))
-        } yield response.copy(body = response.body._1)
-      }.handleError { case e: Exception =>
-        log
-          .requestException(request, elapsed(start), e)
-          .flatMap(_ => responseMonad.error(e))
-      }
+      } else
+        {
+          for {
+            response <- request.response(asBothOption(request.response, asStringAlways)).send(delegate)
+            _ <- log.response(request, response, response.body._2, elapsed(start))
+          } yield response.copy(body = response.body._1)
+        }.handleError { case e: Exception =>
+          log
+            .requestException(request, elapsed(start), e)
+            .flatMap(_ => responseMonad.error(e))
+        }
     }
   }
 }

@@ -4,6 +4,7 @@ import _root_.zio.interop.reactivestreams.{
   publisherToStream => publisherToZioStream,
   streamToPublisher => zioStreamToPublisher
 }
+import _root_.zio.{Chunk, Task, _}
 import com.linecorp.armeria.client.WebClient
 import com.linecorp.armeria.common.HttpData
 import com.linecorp.armeria.common.stream.StreamMessage
@@ -15,7 +16,6 @@ import sttp.client3.impl.zio.RIOMonadAsyncError
 import sttp.client3.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 import sttp.monad.MonadAsyncError
 import zio.stream.Stream
-import _root_.zio.{Chunk, Task, _}
 
 private final class ArmeriaZioBackend(runtime: Runtime[Any], client: WebClient, closeFactory: Boolean)
     extends AbstractArmeriaBackend[Task, ZioStreams](client, closeFactory, new RIOMonadAsyncError[Any]) {
@@ -34,7 +34,11 @@ private final class ArmeriaZioBackend(runtime: Runtime[Any], client: WebClient, 
     }
 
   override protected def streamToPublisher(stream: Stream[Throwable, Byte]): Publisher[HttpData] =
-    runtime.unsafeRun(stream.mapChunks(c => Chunk.single(HttpData.wrap(c.toArray))).toPublisher)
+    Unsafe.unsafeCompat { implicit u =>
+      runtime.unsafe
+        .run(stream.mapChunks(c => Chunk.single(HttpData.wrap(c.toArray))).toPublisher)
+        .getOrThrowFiberFailure()
+    }
 }
 
 object ArmeriaZioBackend {
@@ -53,7 +57,7 @@ object ArmeriaZioBackend {
   ): ZIO[Scope, Throwable, SttpBackend[Task, ZioStreams]] =
     ZIO.acquireRelease(apply(options))(_.close().ignore)
 
-  def layer(options: SttpBackendOptions = SttpBackendOptions.Default): Layer[Throwable, SttpClient] =
+  def layer(options: SttpBackendOptions = SttpBackendOptions.Default): Layer[Throwable, SttpBackend[Task, ZioStreams]] =
     ZLayer.scoped(scoped(options))
 
   def usingClient(client: WebClient): Task[SttpBackend[Task, ZioStreams]] =

@@ -1,6 +1,6 @@
-import com.softwaremill.UpdateVersionInDocs
-import com.softwaremill.Publish.{updateDocs, ossPublishSettings}
+import com.softwaremill.Publish.{ossPublishSettings, updateDocs}
 import com.softwaremill.SbtSoftwareMillCommon.commonSmlBuildSettings
+import com.softwaremill.UpdateVersionInDocs
 import sbt.Keys.publishArtifact
 import sbt.Reference.display
 import sbt.internal.ProjectMatrix
@@ -123,7 +123,7 @@ val playJsonVersion: Option[(Long, Long)] => String = {
   case _             => "2.9.2"
 }
 val catsEffect_3_version = "3.3.14"
-val fs2_3_version = "3.2.10"
+val fs2_3_version = "3.2.12"
 
 val catsEffect_2_version: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.0.0"
@@ -139,27 +139,27 @@ val akkaStreamVersion = "2.6.19"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % akkaStreamVersion
 
 val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", "wordspec", "shouldmatchers").map(m =>
-  "org.scalatest" %%% s"scalatest-$m" % "3.2.12" % Test
+  "org.scalatest" %%% s"scalatest-$m" % "3.2.13" % Test
 )
 
-val zio1Version = "1.0.15"
-val zio2Version = "2.0.0-RC6"
+val zio1Version = "1.0.16"
+val zio2Version = "2.0.1"
 val zio1InteropRsVersion = "1.3.12"
-val zio2InteropRsVersion = "2.0.0-RC7"
+val zio2InteropRsVersion = "2.0.0"
 
-val sttpModelVersion = "1.4.27"
-val sttpSharedVersion = "1.3.6"
+val sttpModelVersion = "1.5.0"
+val sttpSharedVersion = "1.3.7"
 
-val logback = "ch.qos.logback" % "logback-classic" % "1.2.11"
+val logback = "ch.qos.logback" % "logback-classic" % "1.4.0"
 
 val jeagerClientVersion = "1.8.1"
 val braveOpentracingVersion = "1.0.0"
 val zipkinSenderOkHttpVersion = "2.16.3"
 val resilience4jVersion = "1.7.1"
 val http4s_ce2_version = "0.22.14"
-val http4s_ce3_version = "0.23.12"
+val http4s_ce3_version = "0.23.15"
 
-val openTelemetryVersion = "1.15.0"
+val openTelemetryVersion = "1.17.0"
 
 val compileAndTest = "compile->compile;test->test"
 
@@ -212,7 +212,7 @@ lazy val allAggregates = projectsWithOptionalNative ++
   prometheusBackend.projectRefs ++
   openTelemetryMetricsBackend.projectRefs ++
   openTelemetryTracingZio1Backend.projectRefs ++
-  // openTelemetryTracingZioBackend.projectRefs ++ TODO: enable when a ZIO2-compatible version is released
+  openTelemetryTracingZioBackend.projectRefs ++
   finagleBackend.projectRefs ++
   armeriaBackend.projectRefs ++
   armeriaScalazBackend.projectRefs ++
@@ -232,7 +232,8 @@ lazy val allAggregates = projectsWithOptionalNative ++
 
 // For CI tests, defining scripts that run JVM/JS/Native tests separately
 val testJVM = taskKey[Unit]("Test JVM projects")
-val testJS = taskKey[Unit]("Test JS projects")
+val testJS1 = taskKey[Unit]("Test JS 2.11 and 2.12 projects")
+val testJS2 = taskKey[Unit]("Test JS 2.13 and 3 projects")
 val testNative = taskKey[Unit]("Test native projects")
 
 def filterProject(p: String => Boolean) =
@@ -244,7 +245,12 @@ lazy val rootProject = (project in file("."))
     publish / skip := true,
     name := "sttp",
     testJVM := (Test / test).all(filterProject(p => !p.contains("JS") && !p.contains("Native"))).value,
-    testJS := (Test / test).all(filterProject(_.contains("JS"))).value,
+    testJS1 := (Test / test)
+      .all(filterProject(p => p.contains("JS") && (p.contains("2_11") || p.contains("2_12"))))
+      .value,
+    testJS2 := (Test / test)
+      .all(filterProject(p => p.contains("JS") && !p.contains("2_11") && !p.contains("2_12")))
+      .value,
     testNative := (Test / test).all(filterProject(_.contains("Native"))).value,
     ideSkipProject := false,
     scalaVersion := scala2_13
@@ -271,12 +277,6 @@ lazy val testServer = (projectMatrix in file("testing/server"))
 
 lazy val testServer2_13 = testServer.jvm(scala2_13)
 
-val scalajava8compatVersion: Option[(Long, Long)] => String = {
-  case Some((2, 11)) => "0.8.0"
-  case Some((2, 12)) => "0.8.0"
-  case _             => "1.0.2"
-}
-
 lazy val core = (projectMatrix in file("core"))
   .settings(
     name := "core",
@@ -296,10 +296,7 @@ lazy val core = (projectMatrix in file("core"))
         scalacOptions ++= Seq("-J--add-modules", "-Jjava.net.http"),
         scalacOptions ++= {
           if (scalaVersion.value == scala2_13) List("-target:jvm-11") else Nil
-        },
-        libraryDependencies ++= dependenciesFor(scalaVersion.value)(
-          "org.scala-lang.modules" %% "scala-java8-compat" % scalajava8compatVersion(_)
-        )
+        }
       )
     }
   )
@@ -436,9 +433,9 @@ lazy val zio1 = (projectMatrix in file("effects/zio1"))
     name := "zio1",
     Test / publishArtifact := true,
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-streams" % zio1Version,
-      "dev.zio" %% "zio" % zio1Version,
-      "com.softwaremill.sttp.shared" %% "zio1" % sttpSharedVersion,
+      "dev.zio" %%% "zio-streams" % zio1Version,
+      "dev.zio" %%% "zio" % zio1Version,
+      "com.softwaremill.sttp.shared" %%% "zio1" % sttpSharedVersion,
       "dev.zio" %% "zio-interop-reactivestreams" % zio1InteropRsVersion,
       "dev.zio" %% "zio-nio" % "1.0.0-RC12"
     )
@@ -459,11 +456,10 @@ lazy val zio = (projectMatrix in file("effects/zio"))
     name := "zio",
     Test / publishArtifact := true,
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-streams" % zio2Version,
-      "dev.zio" %% "zio" % zio2Version,
-      "com.softwaremill.sttp.shared" %% "zio" % sttpSharedVersion,
-      "dev.zio" %% "zio-interop-reactivestreams" % zio2InteropRsVersion,
-      "dev.zio" %% "zio-nio" % "2.0.0-RC7"
+      "dev.zio" %%% "zio-streams" % zio2Version,
+      "dev.zio" %%% "zio" % zio2Version,
+      "com.softwaremill.sttp.shared" %%% "zio" % sttpSharedVersion,
+      "dev.zio" %% "zio-interop-reactivestreams" % zio2InteropRsVersion
     )
   )
   .settings(testServerSettings)
@@ -643,7 +639,7 @@ lazy val http4sBackend = (projectMatrix in file("http4s-backend"))
     name := "http4s-backend",
     libraryDependencies ++= Seq(
       "org.http4s" %% "http4s-client" % http4s_ce3_version,
-      "org.http4s" %% "http4s-blaze-client" % http4s_ce3_version % Optional
+      "org.http4s" %% "http4s-blaze-client" % "0.23.12" % Optional
     ),
     evictionErrorLevel := Level.Info
   )
@@ -657,7 +653,7 @@ lazy val finagleBackend = (projectMatrix in file("finagle-backend"))
   .settings(
     name := "finagle-backend",
     libraryDependencies ++= Seq(
-      "com.twitter" %% "finagle-http" % "22.4.0"
+      "com.twitter" %% "finagle-http" % "22.7.0"
     )
   )
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13))
@@ -668,7 +664,7 @@ lazy val armeriaBackend = (projectMatrix in file("armeria-backend"))
   .settings(testServerSettings)
   .settings(
     name := "armeria-backend",
-    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.16.0"
+    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.18.0"
   )
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3)
   .dependsOn(core % compileAndTest)
@@ -793,7 +789,7 @@ lazy val zioJson = (projectMatrix in file("json/zio-json"))
   .settings(
     name := "zio-json",
     libraryDependencies ++= Seq(
-      "dev.zio" %%% "zio-json" % "0.3.0-RC10",
+      "dev.zio" %%% "zio-json" % "0.3.0-RC11",
       "com.softwaremill.sttp.shared" %%% "zio" % sttpSharedVersion
     ),
     scalaTest
@@ -912,7 +908,7 @@ lazy val openTelemetryTracingZio1Backend = (projectMatrix in file("observability
     name := "opentelemetry-tracing-zio1-backend",
     libraryDependencies ++= Seq(
       "dev.zio" %% "zio-opentelemetry" % "1.0.0",
-      "org.scala-lang.modules" %% "scala-collection-compat" % "2.8.0",
+      "org.scala-lang.modules" %% "scala-collection-compat" % "2.8.1",
       "io.opentelemetry" % "opentelemetry-sdk-testing" % openTelemetryVersion % Test
     ),
     scalaTest
@@ -926,7 +922,7 @@ lazy val openTelemetryTracingZioBackend = (projectMatrix in file("observability/
   .settings(
     name := "opentelemetry-tracing-zio-backend",
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-opentelemetry" % "2.0.0-RC3",
+      "dev.zio" %% "zio-opentelemetry" % "2.0.1",
       "io.opentelemetry" % "opentelemetry-sdk-testing" % openTelemetryVersion % Test
     )
   )
@@ -939,7 +935,7 @@ lazy val scribeBackend = (projectMatrix in file("logging/scribe"))
   .settings(
     name := "scribe-backend",
     libraryDependencies ++= Seq(
-      "com.outr" %%% "scribe" % "3.10.1"
+      "com.outr" %%% "scribe" % "3.10.3"
     ),
     scalaTest
   )

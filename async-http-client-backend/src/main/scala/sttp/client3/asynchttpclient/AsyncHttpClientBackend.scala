@@ -57,7 +57,7 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
       def error(t: Throwable): Unit = cb(Left(t))
 
       val lf = ahcRequest.execute(streamingAsyncHandler(r, success, error))
-      Canceler(() => lf.abort(new InterruptedException))
+      Canceler(() => lf.cancel(true))
     })
   }
 
@@ -75,7 +75,7 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
 
         val lf = ahcRequest.execute(h)
 
-        Canceler(() => lf.abort(new InterruptedException))
+        Canceler(() => lf.cancel(true))
       })
     }
 

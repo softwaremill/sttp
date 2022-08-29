@@ -2,17 +2,17 @@ package sttp.client3.examples
 
 import sttp.client3._
 import sttp.client3.asynchttpclient.zio.AsyncHttpClientZioBackend
-import zio.{Clock, Schedule, ZIO, ZIOAppDefault, durationInt}
+import zio.{Schedule, Task, ZIO, ZIOAppDefault, durationInt}
 
 object RetryZio extends ZIOAppDefault {
-  override def run = {
+  override def run: ZIO[Any, Throwable, Response[String]] = {
     AsyncHttpClientZioBackend()
       .flatMap { backend =>
         val localhostRequest = basicRequest
           .get(uri"http://localhost/test")
           .response(asStringAlways)
 
-        val sendWithRetries: ZIO[Clock, Throwable, Response[String]] = localhostRequest
+        val sendWithRetries: Task[Response[String]] = localhostRequest
           .send(backend)
           .either
           .repeat(
@@ -24,6 +24,5 @@ object RetryZio extends ZIOAppDefault {
 
         sendWithRetries.ensuring(backend.close().ignore)
       }
-      .provide(Clock.live)
   }
 }

@@ -22,7 +22,6 @@ import java.net.http.{HttpClient, HttpRequest}
 import java.nio.ByteBuffer
 import java.util
 import java.util.concurrent.Flow.Publisher
-import scala.jdk.CollectionConverters._
 
 class HttpClientZioBackend private (
     client: HttpClient,
@@ -48,7 +47,7 @@ class HttpClientZioBackend private (
 
   override protected def publisherToBody(p: Publisher[util.List[ByteBuffer]]): ZStream[Any, Throwable, Byte] =
     FlowAdapters.toPublisher(p).toZIOStream().mapConcatChunk { list =>
-      val a = list.asScala.toList.flatMap(_.safeRead()).toArray
+      val a = Chunk.fromJavaIterable(list).flatMap(_.safeRead()).toArray
       ByteArray(a, 0, a.length)
     }
 
@@ -129,7 +128,7 @@ object HttpClientZioBackend {
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
-  ): ZLayer[Any, Throwable, SttpClient] = {
+  ): ZLayer[Any, Throwable, SttpBackend[Task, ZioStreams with WebSockets]] = {
     ZLayer.scoped(
       (for {
         backend <- HttpClientZioBackend(
@@ -157,7 +156,7 @@ object HttpClientZioBackend {
       client: HttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
-  ): ZLayer[Any, Throwable, SttpClient] = {
+  ): ZLayer[Any, Throwable, SttpBackend[Task, ZioStreams with WebSockets]] = {
     ZLayer.scoped(
       ZIO
         .acquireRelease(
@@ -177,8 +176,5 @@ object HttpClientZioBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub: SttpBackendStub[Task, ZioStreams] =
-    SttpBackendStub(new RIOMonadAsyncError[Any])
-
-  val stubLayer: ZLayer[Any, Nothing, SttpClientStubbing with SttpClient] = SttpClientStubbing.layer
+  def stub: SttpBackendStub[Task, ZioStreams with WebSockets] = SttpBackendStub(new RIOMonadAsyncError[Any])
 }

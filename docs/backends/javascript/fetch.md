@@ -35,6 +35,20 @@ And create the backend instance:
 val backend = FetchMonixBackend()
 ```
 
+## ZIO-based
+
+To use, add the following dependency to your project:
+
+```
+"com.softwaremill.sttp.client3" %%% "zio" % "@VERSION@"
+```
+
+And create the backend instance:
+
+```scala
+val backend = FetchZioBackend()
+```
+
 ## cats-effect-based
 
 Any effect implementing the cats-effect `Concurrent` typeclass can be used. To use, add the following dependency to 

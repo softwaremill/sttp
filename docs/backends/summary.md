@@ -75,6 +75,7 @@ Class                            Effect type                      Supported stre
 ================================ ================================ ========================================= ===================
 ``FetchBackend``                 ``scala.concurrent.Future``      n/a                                       yes (regular)
 ``FetchMonixBackend``            ``monix.eval.Task``              ``monix.reactive.Observable[ByteBuffer]`` yes (regular & streaming)
+``FetchZioBackend``              ``zio.Task``                     ``zio.stream.Stream[Throwable, Byte]``    yes (regular & streaming)
 ``FetchCatsBackend``             ``F[_]: cats.effect.Concurrent`` n/a                                       yes (regular)
 ================================ ================================ ========================================= ===================
 ```
