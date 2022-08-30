@@ -12,6 +12,7 @@ val scala2_12 = "2.12.16"
 val scala2_13 = "2.13.8"
 val scala2 = List(scala2_11, scala2_12, scala2_13)
 val scala3 = List("3.1.3")
+val compileOnJava11 = List(scala2_12, scala2_13) ++ scala3
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests")
@@ -295,7 +296,7 @@ lazy val core = (projectMatrix in file("core"))
         Test / publishArtifact := true, // allow implementations outside of this repo
         scalacOptions ++= Seq("-J--add-modules", "-Jjava.net.http"),
         scalacOptions ++= {
-          if (scalaVersion.value == scala2_13) List("-target:jvm-11")
+          if (compileOnJava11.contains(scalaVersion.value)) List("-target:jvm-11")
           else if (scalaVersion.value == scala2_11) List("-target:jvm-1.8")
           else Nil
         }
