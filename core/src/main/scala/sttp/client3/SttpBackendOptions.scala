@@ -153,20 +153,28 @@ object SttpBackendOptions {
 
     def proxy(t: ProxyType)(host: String, port: Int, nonProxyHosts: List[String]) = Proxy(host, port, t, nonProxyHosts)
 
+    def addAuth(proxy: Option[Proxy], usernameProp: String, passwordProp: String): Option[Proxy] =
+      for {
+        plainProxy <- proxy
+        username <- Option(System.getProperty(usernameProp))
+        password <- Option(System.getProperty(passwordProp))
+      } yield plainProxy.authenticated(username, password)
+
     import ProxyType._
+
     val socks = system("socksProxyHost", "socksProxyPort", None, proxy(Socks), 1080)
     // socks has system properties for specifying authentication
-    val socksWithAuth =
-      for {
-        plainSocks <- socks
-        username <- Option(System.getProperty("java.net.socks.username"))
-        password <- Option(System.getProperty("java.net.socks.password"))
-      } yield plainSocks.authenticated(username, password)
+    val socksWithAuth = addAuth(socks, "java.net.socks.username", "java.net.socks.password")
+
     val http = system("http.proxyHost", "http.proxyPort", Some("http.nonProxyHosts"), proxy(Http), 80)
+
+    val httpWithAuth = addAuth(http, "http.proxyUsername", "http.proxyPassword")
 
     // https uses the nonProxyHosts of http
     val https = system("https.proxyHost", "https.proxyPort", Some("http.nonProxyHosts"), proxy(Http), 443)
 
-    Seq(socksWithAuth, socks, http, https).find(_.isDefined).flatten
+    val httpsWithAuth = addAuth(https, "https.proxyUsername", "https.proxyPassword")
+
+    Seq(socksWithAuth, socks, httpWithAuth, http, httpsWithAuth, https).find(_.isDefined).flatten
   }
 }
