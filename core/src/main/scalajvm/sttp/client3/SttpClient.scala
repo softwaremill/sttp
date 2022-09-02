@@ -6,7 +6,8 @@ package sttp.client3
   * import sttp.client3.{SttpClient, UriContext, basicRequest}
   *
   * val client = SttpClient()
-  * val response = basicRequest.get(uri"https://httpbin.org/get").send(client)
+  * val request = basicRequest.get(uri"https://httpbin.org/get")
+  * val response = client.send(request)
   * println(response.body)
   * }}}
   *
@@ -16,6 +17,9 @@ package sttp.client3
   * be closed using [[close]].
   */
 case class SttpClient(backend: SttpBackend[Identity, Any]) {
+
+  def send[T](request: Request[T, Any]): Response[T] = backend.send(request)
+
   def withBackend(newBackend: SttpBackend[Identity, Any]): SttpClient = copy(backend = newBackend)
   def wrapBackend(f: SttpBackend[Identity, Any] => SttpBackend[Identity, Any]): SttpClient = copy(backend = f(backend))
 

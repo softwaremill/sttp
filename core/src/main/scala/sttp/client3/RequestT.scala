@@ -15,8 +15,11 @@ import scala.concurrent.duration.Duration
 
 /** Describes a HTTP request, along with a description of how the response body should be handled.
   *
-  * The request can be sent given a [[SttpClient]] (synchronous), or a [[SttpBackend]] (any effect) using [[send]]. The
-  * backend must provide a superset of the capabilities required by the request.
+  * The request can be sent:
+  *
+  *   - synchronously, using [[SttpClient.send()]]
+  *   - using the [[send(SttpBackend)]] methods, which supports any effect. The backend must provide a superset of the
+  *     capabilities required by the request.
   *
   * @param response
   *   Description of how the response body should be handled. Needs to be specified upfront so that the response is
@@ -301,7 +304,25 @@ case class RequestT[U[_], T, -R](
       pEffectFIsR
     ) // the order of implicits must be different so that the signatures are different
 
-  // more send variants in platform-specific RequestTExtensions
+  /** Sends the request, using the given backend. Only requests for which the method & URI are specified can be sent.
+    *
+    * The required capabilities must be a subset of the capabilities provided by the backend.
+    *
+    * @return
+    *   For synchronous backends (when the effect type is [[Identity]]), [[Response]] is returned directly and
+    *   exceptions are thrown. For asynchronous backends (when the effect type is e.g. [[scala.concurrent.Future]]), an
+    *   effect containing the [[Response]] is returned. Exceptions are represented as failed effects (e.g. failed
+    *   futures).
+    *
+    * The response body is deserialized as specified by this request (see [[RequestT.response]]).
+    *
+    * Known exceptions are converted by backends to one of [[SttpClientException]]. Other exceptions are thrown
+    * unchanged.
+    */
+  def send[F[_], P](backend: SttpBackend[F, P])(implicit
+      isIdInRequest: IsIdInRequest[U],
+      pEffectFIsR: P with Effect[F] <:< R
+  ): F[Response[T]] = backend.send(asRequest.asInstanceOf[Request[T, P with Effect[F]]]) // as witnessed by pEffectFIsR
 
   def toCurl(implicit isIdInRequest: IsIdInRequest[U]): String = ToCurlConverter.requestToCurl(asRequest)
   def toCurl(sensitiveHeaders: Set[String])(implicit isIdInRequest: IsIdInRequest[U]): String =
