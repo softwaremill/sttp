@@ -1,8 +1,13 @@
 # Quickstart
 
-The core sttp client API comes in a single jar, with a transitive dependency on [sttp model](https://github.com/softwaremill/sttp-model). This also includes a default, [synchronous](backends/synchronous.md) backend, which is based on Java's `HttpClient`.
+The core sttp client API comes in a single jar, with a transitive dependency on [sttp model](https://github.com/softwaremill/sttp-model). This also includes a default [synchronous simple client](simple_sync.md) and a [synchronous](backends/synchronous.md) backend, based on Java's `HttpClient`.
 
-To integrate with other parts of your application, you'll often need to use an alternate backend (but what's important is that the API remains the same!). See the section on [backends](backends/summary.md) for a short guide on which backend to choose, and a list of all implementations.
+To integrate with other parts of your application and various effect systems, you'll often need to use an alternate backend (but what's important is that the API remains the same!). See the section on [backends](backends/summary.md) for a short guide on which backend to choose, and a list of all implementations.
+
+`sttp client` is available for Scala 2.11, 2.12 and 2.13, as well as for Scala 3 and requires Java 11 or higher.
+
+`sttp client` is also available for Scala.js 1.0 and Scala Native. Note that not all modules are compatible with these
+platforms, and that each has its own dedicated set of backends.
 
 ## Using sbt
 
@@ -12,9 +17,9 @@ The basic dependency which provides the API, together with a synchronous and `Fu
 "com.softwaremill.sttp.client3" %% "core" % "@VERSION@"
 ```
 
-`sttp client` is available for Scala 2.11, 2.12 and 2.13, as well as for Scala 3 and requires Java 11.
+## Simple synchronous client
 
-`sttp client` is also available for Scala.js 1.0. Note that not all modules are compatible and there are no backends that can be used on both. The last version compatible with Scala.js 0.6 was 2.2.1. Scala Native is supported as well.
+If you'd like to send some requests synchronously, take a look at the [simple synchronous client](simple_sync.md).
 
 ## Using Ammonite
 
@@ -23,12 +28,12 @@ If you are an [Ammonite](https://ammonite.io) user, you can quickly start experi
 ```scala
 import $ivy.`com.softwaremill.sttp.client3::core:@VERSION@`
 import sttp.client3.quick._
-quickRequest.get(uri"http://httpbin.org/ip").send(backend)
+sttpClient.send(quickRequest.get(uri"http://httpbin.org/ip"))
 ```
 
 Importing the `quick` object has the same effect as importing `sttp.client3._`, plus defining a synchronous backend (`val backend = HttpClientSyncBackend()`), so that sttp can be used right away.
 
-If the default `HttpURLConnectionBackend` for some reason is insufficient, you can also use one based on OkHttp or HttpClient:
+If the default backend is for some reason insufficient, you can also use one based on OkHttp:
 
 ```scala
 import $ivy.`com.softwaremill.sttp.client3::okhttp-backend:@VERSION@`
@@ -59,4 +64,4 @@ val response = basicRequest
 println(response.body)            
 ```
 
-Next, read on about the [how sttp client works](how.md) or see some [examples](examples.md).
+Next, read on [how sttp client works](how.md) or see some [examples](examples.md).

@@ -2,6 +2,21 @@
 
 All of the examples are available [in the sources](https://github.com/softwaremill/sttp/blob/master/examples/src/main/scala/sttp/client3/examples) in runnable form.
 
+## Use the simple synchronous client
+
+Required dependencies:
+
+```scala            
+libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "core" % "@VERSION@")
+```
+
+Example code:
+
+```eval_rst
+.. literalinclude:: ../../examples/src/main/scala/sttp/client3/examples/SimpleClientGetAndPost.scala
+    :language: scala
+```
+
 ## POST a form using the synchronous backend
 
 Required dependencies:

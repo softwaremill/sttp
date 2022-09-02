@@ -1,0 +1,51 @@
+# Simple synchronous client
+
+The core module of sttp client includes a simple, synchronous client, which can be used to send requests without
+the need to choose or explicitly create a backend.
+
+A simple request can be sent as follows:
+
+```scala mdoc:compile-only
+import sttp.client3.{SttpClient, UriContext, basicRequest}
+
+val client = SttpClient()
+val response = client.send(basicRequest.get(uri"https://httpbin.org/get"))
+println(response.body)
+```
+
+Creating a client allocates resources (such as selector threads / connection pools), so when it's no longer needed, it 
+should be closed using `.close()`. Typically, you should have one client instance for your entire application.
+
+## Adding logging
+
+Logging can be added using the [logging backend wrapper](backends/wrappers/logging.md). For example, if you'd like to
+use slf4j, you'll need the following dependency:
+
+```
+"com.softwaremill.sttp.client3" %% "slf4j-backend" % "@VERSION@"
+```
+
+Then, you'll need to configure your client:
+
+```scala mdoc:compile-only
+import sttp.client3.{SttpClient, UriContext, basicRequest}
+import sttp.client3.logging.slf4j.Slf4jLoggingBackend
+
+val client = SttpClient().wrapBackend(Slf4jLoggingBackend(_))
+```
+
+## Serialising and parsing JSON
+
+TODO
+
+## Relationship with backends
+
+The `SttpClient` serves as a simple starting point for sending requests in a synchronous way. For more advanced 
+use-cases, you should use an [sttp backend](backends/summary.md) directly. For example, if you'd like to send requests 
+asynchronously, getting a `Future` as the result. Or, if you manage side effects using an `IO` or `Task`.
+
+In fact, an instance of `SttpClient` is a think wrapper on top of a backend.
+
+## Next steps
+
+Read on [how sttp client works](how.md) or see some more [examples](examples.md).

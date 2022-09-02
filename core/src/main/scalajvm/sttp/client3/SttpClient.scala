@@ -13,8 +13,7 @@ package sttp.client3
   *
   * Wraps a [[SttpBackend]], which can be substituted or modified using [[wrapBackend]], adding e.g. logging.
   *
-  * Creating a client allocates resources (a pool of HTTP connections), hence when no longer needed, the client should
-  * be closed using [[close]].
+  * Creating a client allocates resources, hence when no longer needed, the client should be closed using [[close]].
   */
 case class SttpClient(backend: SttpBackend[Identity, Any]) {
 
