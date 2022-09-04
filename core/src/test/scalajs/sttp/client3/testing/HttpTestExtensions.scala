@@ -2,8 +2,11 @@ package sttp.client3.testing
 
 import org.scalajs.dom.{Blob, FileReader}
 import org.scalajs.dom.raw.{Event, UIEvent}
+import org.scalajs.dom.BlobPart
+import org.scalajs.dom.File
+import org.scalajs.dom.BlobPropertyBag
+import org.scalajs.dom.FilePropertyBag
 import sttp.client3._
-import sttp.client3.dom.experimental.{FilePropertyBag, File => DomFileWithBody}
 import sttp.client3.internal.SparkMD5
 
 import scala.concurrent.{Future, Promise}
@@ -17,19 +20,17 @@ import HttpTest.endpoint
 
 trait HttpTestExtensions[F[_]] extends AsyncFreeSpecLike with AsyncExecutionContext { self: HttpTest[F] =>
 
-  private def withTemporaryFile[T](content: Option[Array[Byte]])(f: DomFileWithBody => Future[T]): Future[T] = {
+  private def withTemporaryFile[T](content: Option[Array[Byte]])(f: File => Future[T]): Future[T] = {
     val data = content.getOrElse(Array.empty[Byte])
-    val file = new DomFileWithBody(
-      Array(data.toTypedArray.asInstanceOf[js.Any]).toJSArray,
+    val file = new File(
+      Iterable(data.toTypedArray.asInstanceOf[BlobPart]).toJSIterable,
       "temp.txt",
-      FilePropertyBag(
-        `type` = "text/plain"
-      )
+      BlobPropertyBag(`type` = "text/plain").asInstanceOf[FilePropertyBag]
     )
     f(file)
   }
 
-  private def withTemporaryNonExistentFile[T](f: DomFileWithBody => Future[T]): Future[T] = withTemporaryFile(None)(f)
+  private def withTemporaryNonExistentFile[T](f: File => Future[T]): Future[T] = withTemporaryFile(None)(f)
 
   private def md5Hash(blob: Blob): Future[String] = {
     val p = Promise[String]()
