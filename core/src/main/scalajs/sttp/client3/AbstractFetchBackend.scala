@@ -17,10 +17,13 @@ import org.scalajs.dom.experimental.{
 }
 import org.scalajs.dom.raw._
 import org.scalajs.dom.{FormData, WebSocket => JSWebSocket}
+import org.scalajs.dom.BlobPart
+import org.scalajs.dom.File
+import org.scalajs.dom.BlobPropertyBag
+import org.scalajs.dom.FilePropertyBag
 import sttp.capabilities.{Effect, Streams, WebSockets}
 import sttp.client3.SttpClientException.ReadException
 import sttp.client3.WebSocketImpl.BinaryType
-import sttp.client3.dom.experimental.{FilePropertyBag, File => DomFile}
 import sttp.client3.internal.ws.WebSocketEvent
 import sttp.client3.internal.{SttpFile, _}
 import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
@@ -198,7 +201,10 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
             value match {
               case b: Blob => b
               case v =>
-                new Blob(Array(v.asInstanceOf[js.Any]).toJSArray, BlobPropertyBag(part.contentType.orUndefined))
+                new Blob(
+                  Iterable(v.asInstanceOf[BlobPart]).toJSIterable,
+                  BlobPropertyBag(part.contentType.orUndefined)
+                )
             }
           part.fileName match {
             case None           => formData.append(part.name, blob)
@@ -302,10 +308,10 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
       convertFromFuture(response.arrayBuffer().toFuture)
         .map { ab =>
           SttpFile.fromDomFile(
-            new DomFile(
-              Array(ab.asInstanceOf[js.Any]).toJSArray,
+            new File(
+              Iterable(ab.asInstanceOf[BlobPart]).toJSIterable,
               file.name,
-              FilePropertyBag(`type` = file.toDomFile.`type`)
+              BlobPropertyBag(`type` = file.toDomFile.`type`).asInstanceOf[FilePropertyBag]
             )
           )
         }
