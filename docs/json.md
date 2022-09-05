@@ -217,3 +217,40 @@ basicRequest
   .response(asJson[ResponsePayload])
   .send(backend)
 ```
+
+## uPickle
+
+To encode and decode JSON using the [uPickle](https://github.com/com-lihaoyi/upickle) library, one add the following dependency to your project.
+
+```scala
+"com.softwaremill.sttp.client3" %% "upickle" % "@VERSION@"
+```
+
+or for ScalaJS (cross build) projects:
+
+```scala
+"com.softwaremill.sttp.client3" %%% "upickle" % "@VERSION@"
+```
+
+To use, add an import: `import sttp.client3.upicklejson._` (or extend `SttpUpickleApi`) and define an implicit `ReadWriter` (or separately `Reader` and `Writer`) for your datatype.
+Usage example:
+
+```scala mdoc:compile-only
+import sttp.client3._
+import sttp.client3.upicklejson._
+import upickle.default._
+
+val backend: SttpBackend[Identity, Any] = HttpClientSyncBackend()
+
+implicit val requestPayloadRW: ReadWriter[RequestPayload] = macroRW[RequestPayload]
+implicit val responsePayloadRW: ReadWriter[ResponsePayload] = macroRW[ResponsePayload]
+
+val requestPayload = RequestPayload("some data")
+
+val response: Identity[Response[Either[ResponseException[String, Exception], ResponsePayload]]] =
+basicRequest
+  .post(uri"...")
+  .body(requestPayload)
+  .response(asJson[ResponsePayload])
+  .send(backend)
+```

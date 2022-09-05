@@ -1043,6 +1043,7 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     sprayJson,
     zioJson,
     jsoniter,
+    upickle,
     asyncHttpClientZioBackend,
     // asyncHttpClientMonixBackend, // monix backends are commented out because they depend on cats-effect2
     asyncHttpClientFs2Backend,

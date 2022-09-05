@@ -16,6 +16,11 @@ println(response.body)
 Creating a client allocates resources (such as selector threads / connection pools), so when it's no longer needed, it 
 should be closed using `.close()`. Typically, you should have one client instance for your entire application.
 
+## Serialising and parsing JSON
+
+To serialize a custom type to a JSON body, or to deserialize the response body that is in the JSON format, you'll need
+to add an integration with a JSON library. See [json](json.md) for a list of available libraries.
+
 ## Adding logging
 
 Logging can be added using the [logging backend wrapper](backends/wrappers/logging.md). For example, if you'd like to
@@ -33,10 +38,6 @@ import sttp.client3.logging.slf4j.Slf4jLoggingBackend
 
 val client = SimpleHttpClient().wrapBackend(Slf4jLoggingBackend(_))
 ```
-
-## Serialising and parsing JSON
-
-TODO
 
 ## Relationship with backends
 
