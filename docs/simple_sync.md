@@ -21,6 +21,41 @@ should be closed using `.close()`. Typically, you should have one client instanc
 To serialize a custom type to a JSON body, or to deserialize the response body that is in the JSON format, you'll need
 to add an integration with a JSON library. See [json](json.md) for a list of available libraries.
 
+As an example, to integrate with the [uPickle](https://github.com/com-lihaoyi/upickle) library, add the following
+dependency:
+
+```scala
+"com.softwaremill.sttp.client3" %% "upickle" % "@VERSION@"
+```
+
+Your code might then look as follows:
+
+```scala mdoc:compile-only
+import sttp.client3.{SimpleHttpClient, UriContext, basicRequest}
+import sttp.client3.upicklejson._
+import upickle.default._
+
+val client = SimpleHttpClient()
+
+case class MyRequest(field1: String, field2: Int)
+// selected fields from the JSON that is being returned by httpbin
+case class HttpBinResponse(origin: String, headers: Map[String, String])
+
+implicit val myRequestRW: ReadWriter[MyRequest] = macroRW[MyRequest]
+implicit val responseRW: ReadWriter[HttpBinResponse] = macroRW[HttpBinResponse]
+
+val request = basicRequest
+  .post(uri"https://httpbin.org/post")
+  .body(MyRequest("test", 42))
+  .response(asJson[HttpBinResponse])
+val response = client.send(request)
+
+response.body match {
+  case Left(e)  => println(s"Got response exception:\n$e")
+  case Right(r) => println(s"Origin's ip: ${r.origin}, header count: ${r.headers.size}")
+}
+```
+
 ## Adding logging
 
 Logging can be added using the [logging backend wrapper](backends/wrappers/logging.md). For example, if you'd like to
@@ -45,7 +80,7 @@ The `SimpleHttpClient` serves as a simple starting point for sending requests in
 use-cases, you should use an [sttp backend](backends/summary.md) directly. For example, if you'd like to send requests 
 asynchronously, getting a `Future` as the result. Or, if you manage side effects using an `IO` or `Task`.
 
-In fact, an instance of `SimpleHttpClient` is a think wrapper on top of a backend.
+In fact, an instance of `SimpleHttpClient` is a thin wrapper on top of a backend.
 
 ## Next steps
 

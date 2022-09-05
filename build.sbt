@@ -992,6 +992,7 @@ lazy val examples = (projectMatrix in file("examples"))
     asyncHttpClientFs2Backend,
     json4s,
     circe,
+    upickle,
     scribeBackend,
     slf4jBackend
   )
