@@ -6,9 +6,9 @@ the need to choose or explicitly create a backend.
 A simple request can be sent as follows:
 
 ```scala mdoc:compile-only
-import sttp.client3.{SttpClient, UriContext, basicRequest}
+import sttp.client3.{SimpleHttpClient, UriContext, basicRequest}
 
-val client = SttpClient()
+val client = SimpleHttpClient()
 val response = client.send(basicRequest.get(uri"https://httpbin.org/get"))
 println(response.body)
 ```
@@ -28,10 +28,10 @@ use slf4j, you'll need the following dependency:
 Then, you'll need to configure your client:
 
 ```scala mdoc:compile-only
-import sttp.client3.{SttpClient, UriContext, basicRequest}
+import sttp.client3.{SimpleHttpClient, UriContext, basicRequest}
 import sttp.client3.logging.slf4j.Slf4jLoggingBackend
 
-val client = SttpClient().wrapBackend(Slf4jLoggingBackend(_))
+val client = SimpleHttpClient().wrapBackend(Slf4jLoggingBackend(_))
 ```
 
 ## Serialising and parsing JSON
@@ -40,11 +40,11 @@ TODO
 
 ## Relationship with backends
 
-The `SttpClient` serves as a simple starting point for sending requests in a synchronous way. For more advanced 
+The `SimpleHttpClient` serves as a simple starting point for sending requests in a synchronous way. For more advanced 
 use-cases, you should use an [sttp backend](backends/summary.md) directly. For example, if you'd like to send requests 
 asynchronously, getting a `Future` as the result. Or, if you manage side effects using an `IO` or `Task`.
 
-In fact, an instance of `SttpClient` is a think wrapper on top of a backend.
+In fact, an instance of `SimpleHttpClient` is a think wrapper on top of a backend.
 
 ## Next steps
 

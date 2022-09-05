@@ -1,11 +1,11 @@
 package sttp.client3.examples
 
-import sttp.client3.{Request, Response, SttpClient, UriContext, asStringAlways, basicRequest}
+import sttp.client3.{Request, Response, SimplHttpClient, UriContext, asStringAlways, basicRequest}
 
 import java.util.UUID
 
 object SimpleClientGetAndPost extends App {
-  val client = SttpClient()
+  val client = SimplHttpClient()
 
   try {
     val response: Response[Either[String, String]] = client.send(basicRequest.get(uri"https://httpbin.org/get"))

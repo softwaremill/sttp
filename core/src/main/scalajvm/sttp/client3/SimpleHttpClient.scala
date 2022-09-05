@@ -15,24 +15,24 @@ package sttp.client3
   *
   * Creating a client allocates resources, hence when no longer needed, the client should be closed using [[close]].
   */
-case class SttpClient(backend: SttpBackend[Identity, Any]) {
+case class SimplHttpClient(backend: SttpBackend[Identity, Any]) {
 
   def send[T](request: Request[T, Any]): Response[T] = backend.send(request)
 
-  def withBackend(newBackend: SttpBackend[Identity, Any]): SttpClient = copy(backend = newBackend)
-  def wrapBackend(f: SttpBackend[Identity, Any] => SttpBackend[Identity, Any]): SttpClient = copy(backend = f(backend))
+  def withBackend(newBackend: SttpBackend[Identity, Any]): SimplHttpClient = copy(backend = newBackend)
+  def wrapBackend(f: SttpBackend[Identity, Any] => SttpBackend[Identity, Any]): SimplHttpClient = copy(backend = f(backend))
 
   def close(): Unit = backend.close()
 }
 
-object SttpClient {
-  def apply(): SttpClient = SttpClient(HttpClientSyncBackend())
+object SimplHttpClient {
+  def apply(): SimplHttpClient = SimplHttpClient(HttpClientSyncBackend())
 
-  /** Runs the given function `f` with a new, default instance of [[SttpClient]] and closes the client after the
+  /** Runs the given function `f` with a new, default instance of [[SimplHttpClient]] and closes the client after the
     * function compeltes, cleaning up any resources.
     */
-  def apply[T](f: SttpClient => T): Unit = {
-    val client = SttpClient()
+  def apply[T](f: SimplHttpClient => T): Unit = {
+    val client = SimplHttpClient()
     try f(client)
     finally client.close()
   }

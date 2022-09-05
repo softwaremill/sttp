@@ -17,7 +17,7 @@ import scala.concurrent.duration.Duration
   *
   * The request can be sent:
   *
-  *   - synchronously, using [[SttpClient.send()]]
+  *   - synchronously, using [[SimplHttpClient.send()]]
   *   - using the [[send(SttpBackend)]] methods, which supports any effect. The backend must provide a superset of the
   *     capabilities required by the request.
   *
