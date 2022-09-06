@@ -36,6 +36,11 @@ object SimpleHttpClient {
     */
   def apply[T](f: SimpleHttpClient => Future[T])(implicit ec: ExecutionContext): Future[T] = {
     val client = SimpleHttpClient()
-    f(client).transformWith(r => client.close().transform(_ => r))
+    f(client)
+      .map(r => client.close().map(_ => r))
+      .recover { case t: Throwable =>
+        client.close().map(_ => Future.failed[T](t)).recover { case _ => Future.failed[T](t) }.flatMap(identity)
+      }
+      .flatMap(identity)
   }
 }
