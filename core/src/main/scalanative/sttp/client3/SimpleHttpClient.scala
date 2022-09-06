@@ -27,7 +27,7 @@ case class SimpleHttpClient(backend: SttpBackend[Identity, Any]) {
 }
 
 object SimpleHttpClient {
-  def apply(): SimpleHttpClient = SimpleHttpClient(HttpClientSyncBackend())
+  def apply(): SimpleHttpClient = SimpleHttpClient(CurlBackend())
 
   /** Runs the given function `f` with a new, default instance of [[SimpleHttpClient]] and closes the client after the
     * function completes, cleaning up any resources.
