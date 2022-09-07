@@ -135,7 +135,7 @@ val fs2_2_version: Option[(Long, Long)] => String = {
 }
 
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.2.10"
-val akkaStreamVersion = "2.6.19"
+val akkaStreamVersion = "2.6.20"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % akkaStreamVersion
 
 val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", "wordspec", "shouldmatchers").map(m =>
