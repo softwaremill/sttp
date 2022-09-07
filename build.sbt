@@ -134,7 +134,7 @@ val fs2_2_version: Option[(Long, Long)] => String = {
   case _             => "2.5.9"
 }
 
-val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.2.9"
+val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.2.10"
 val akkaStreamVersion = "2.6.19"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % akkaStreamVersion
 
