@@ -21,7 +21,7 @@ import scala.annotation.tailrec
   * @param cause
   *   The original exception.
   */
-abstract class SttpClientException(request: Request[_, _], cause: Exception)
+abstract class SttpClientException(val request: Request[_, _], val cause: Exception)
     extends Exception(s"Exception when sending request: ${request.method} ${request.uri}", cause)
 
 object SttpClientException {
