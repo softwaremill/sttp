@@ -10,6 +10,8 @@ import sttp.client3.testing.HttpTest.endpoint
 import sttp.client3.testing.streaming.StreamingTest._
 import sttp.client3.testing.{ConvertToFuture, ToFutureWrapper}
 import sttp.model.sse.ServerSentEvent
+import sttp.monad.MonadError
+import sttp.monad.syntax._
 
 abstract class StreamingTest[F[_], S]
     extends AsyncFreeSpec
@@ -193,6 +195,24 @@ abstract class StreamingTest[F[_], S]
 
         urlRegex.findAllIn(responseBody).length shouldBe numChunks
       }
+  }
+
+  "lift errors due to mapping with impure functions into the reponse monad" in {
+    implicit val monadError: MonadError[F] = backend.responseMonad
+
+    val error = new IllegalStateException("boom")
+
+    basicRequest
+      .post(uri"$endpoint/streaming/echo")
+      .body(Body)
+      .response(asStreamAlways[F, Int, S](streams)(_ => throw error))
+      .send(backend)
+      .map(_.body)
+      .handleError {
+        case `error` => monadError.unit(1)
+      }
+      .toFuture()
+      .map(_ shouldBe 1)
   }
 
   if (supportsStreamingMultipartParts) {

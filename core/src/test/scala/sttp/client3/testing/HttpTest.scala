@@ -8,6 +8,7 @@ import sttp.client3.testing.HttpTest.endpoint
 import sttp.client3.{Response, ResponseAs, SttpBackend, _}
 import sttp.model.StatusCode
 import sttp.monad.MonadError
+import sttp.monad.syntax._
 
 import java.io.{ByteArrayInputStream, UnsupportedEncodingException}
 import java.nio.ByteBuffer
@@ -167,6 +168,23 @@ trait HttpTest[F[_]]
         .map { response =>
           response.body shouldBe ((expectedPostEchoResponse, Right(expectedPostEchoResponse.getBytes.length)))
         }
+    }
+
+    "lift errors due to mapping with impure functions into the reponse monad" in {
+      implicit val monadError: MonadError[F] = backend.responseMonad
+
+      val error = new IllegalStateException("boom")
+
+      postEcho
+        .body(testBody)
+        .response(asStringAlways.map[Int](_ => throw error))
+        .send(backend)
+        .map(_.body)
+        .handleError {
+          case `error` => monadError.unit(1)
+        }
+        .toFuture()
+        .map(_ shouldBe 1)
     }
   }
 
