@@ -11,7 +11,7 @@ import akka.http.scaladsl.model.{StatusCode => _, _}
 import akka.http.scaladsl.settings.ConnectionPoolSettings
 import akka.http.scaladsl.{ClientTransport, Http, HttpsConnectionContext}
 import akka.stream.Materializer
-import akka.stream.scaladsl.Flow
+import akka.stream.scaladsl.{Flow, Sink}
 import sttp.capabilities.akka.AkkaStreams
 import sttp.capabilities.{Effect, WebSockets}
 import sttp.client3
@@ -22,6 +22,7 @@ import sttp.model.{ResponseMetadata, StatusCode}
 import sttp.monad.{FutureMonad, MonadError}
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.util.Success
 
 class AkkaHttpBackend private (
     actorSystem: ActorSystem,
@@ -54,9 +55,13 @@ class AkkaHttpBackend private (
       .fromTry(ToAkka.request(r).flatMap(BodyToAkka(r, r.body, _)))
       .map(customizeRequest)
       .flatMap(request =>
-        http.singleRequest(request, connectionSettings(r)).map(response => customizeResponse(request, response))
+        http
+          .singleRequest(request, connectionSettings(r))
+          .flatMap(response =>
+            Future.apply(customizeResponse(request, response)).recoverWith(consumeResponseOnFailure(response, _))
+          )
       )
-      .flatMap(responseFromAkka(r, _, None))
+      .flatMap(response => responseFromAkka(r, response, None).recoverWith(consumeResponseOnFailure(response, _)))
   }
 
   private def sendWebSocket[T, R >: PE](r: Request[T, R]): Future[Response[T]] = {
@@ -83,6 +88,14 @@ class AkkaHttpBackend private (
           flowPromise.failure(new InterruptedException)
           responseFromAkka(r, response, None)
       }
+  }
+
+  private def consumeResponseOnFailure[T](response: HttpResponse, t: Throwable): Future[T] = {
+    response.entity.dataBytes
+      .runWith(Sink.ignore)
+      .map(_ => ())
+      .flatMap(_ => Future.failed(t))
+      .recoverWith(_ => Future.failed(t))
   }
 
   override val responseMonad: MonadError[Future] = new FutureMonad()(ec)
