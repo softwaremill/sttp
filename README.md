@@ -93,6 +93,9 @@ Or, if you encounter a bug, something is unclear in the code or documentation, d
 
 We are also always looking for contributions and new ideas, so if you’d like to get into the project, check out the [open issues](https://github.com/softwaremill/sttp/issues), or post your own suggestions!
 
+Note that running the default `test` task will run the tests using both the JVM and JS backends, and is likely to run out of memory.
+If you'd like to run the tests using *only* the JVM backend, execute: `sbt rootJVM/test`.
+
 ### Modifying documentation
 
 The documentation is typechecked using [mdoc](https://scalameta.org/mdoc/). The sources for the documentation exist in `docs`. Don't modify the generated documentation in `generated-docs`, as these files will get overwritten!
@@ -104,9 +107,6 @@ That is, in sbt run: `set version := "3.7.6"`, before running `mdoc` in `docs`.
 ### Testing the Scala.JS backend
 
 In order to run tests against JS backend you will need to install [Google Chrome](https://www.google.com/chrome/).
-
-Note that running the default `test` task will run the tests using both the JVM and JS backends.
-If you'd like to run the tests using *only* the JVM backend, execute: `sbt rootJVM/test`.
 
 ### Building & testing the scala-native backend
 
