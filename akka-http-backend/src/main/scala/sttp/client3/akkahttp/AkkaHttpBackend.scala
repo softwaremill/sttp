@@ -11,7 +11,7 @@ import akka.http.scaladsl.model.{StatusCode => _, _}
 import akka.http.scaladsl.settings.ConnectionPoolSettings
 import akka.http.scaladsl.{ClientTransport, Http, HttpsConnectionContext}
 import akka.stream.Materializer
-import akka.stream.scaladsl.Flow
+import akka.stream.scaladsl.{Flow, Sink}
 import sttp.capabilities.akka.AkkaStreams
 import sttp.capabilities.{Effect, WebSockets}
 import sttp.client3
@@ -54,9 +54,13 @@ class AkkaHttpBackend private (
       .fromTry(ToAkka.request(r).flatMap(BodyToAkka(r, r.body, _)))
       .map(customizeRequest)
       .flatMap(request =>
-        http.singleRequest(request, connectionSettings(r)).map(response => customizeResponse(request, response))
+        http
+          .singleRequest(request, connectionSettings(r))
+          .flatMap(response =>
+            Future(customizeResponse(request, response))
+              .flatMap(response => responseFromAkka(r, response, None).recoverWith(consumeResponseOnFailure(response)))
+          )
       )
-      .flatMap(responseFromAkka(r, _, None))
   }
 
   private def sendWebSocket[T, R >: PE](r: Request[T, R]): Future[Response[T]] = {
@@ -78,11 +82,19 @@ class AkkaHttpBackend private (
       )
       .flatMap {
         case (ValidUpgrade(response, _), _) =>
-          responseFromAkka(r, response, Some(flowPromise))
+          responseFromAkka(r, response, Some(flowPromise)).recoverWith(consumeResponseOnFailure(response))
         case (InvalidUpgradeResponse(response, _), _) =>
           flowPromise.failure(new InterruptedException)
-          responseFromAkka(r, response, None)
+          responseFromAkka(r, response, None).recoverWith(consumeResponseOnFailure(response))
       }
+  }
+
+  private def consumeResponseOnFailure[T](response: HttpResponse): PartialFunction[Throwable, Future[T]] = {
+    case t: Throwable =>
+      response.entity.dataBytes
+        .runWith(Sink.ignore)
+        .flatMap(_ => Future.failed(t))
+        .recoverWith { case _ => Future.failed(t) }
   }
 
   override val responseMonad: MonadError[Future] = new FutureMonad()(ec)
