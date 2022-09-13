@@ -15,7 +15,11 @@ import scala.concurrent.duration.Duration
 
 /** Describes a HTTP request, along with a description of how the response body should be handled.
   *
-  * The request can be sent using a [[SttpBackend]], which provides a superset of the required capabilities.
+  * The request can be sent:
+  *
+  *   - synchronously, using [[SimpleHttpClient.send()]]
+  *   - using the [[send(SttpBackend)]] methods, which support any effect. The backend must provide a superset of the
+  *     capabilities required by the request.
   *
   * @param response
   *   Description of how the response body should be handled. Needs to be specified upfront so that the response is

@@ -993,6 +993,7 @@ lazy val examples = (projectMatrix in file("examples"))
     asyncHttpClientFs2Backend,
     json4s,
     circe,
+    upickle,
     scribeBackend,
     slf4jBackend
   )
@@ -1044,6 +1045,7 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     sprayJson,
     zioJson,
     jsoniter,
+    upickle,
     asyncHttpClientZioBackend,
     // asyncHttpClientMonixBackend, // monix backends are commented out because they depend on cats-effect2
     asyncHttpClientFs2Backend,
