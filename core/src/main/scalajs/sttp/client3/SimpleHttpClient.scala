@@ -5,15 +5,15 @@ import scala.concurrent.{ExecutionContext, Future}
 /** A simple, synchronous http client. Usage example:
   *
   * {{{
-  * import sttp.client3.{SttpClient, UriContext, basicRequest}
+  * import sttp.client3.{SimpleHttpClient, UriContext, basicRequest}
   *
-  * val client = SttpClient()
+  * val client = SimpleHttpClient()
   * val request = basicRequest.get(uri"https://httpbin.org/get")
   * val response = client.send(request)
   * response.map(r => println(r.body))
   * }}}
   *
-  * Wraps a [[SttpBackend]], which can be substituted or modified using [[wrapBackend]], adding e.g. logging.
+  * Wraps an [[SttpBackend]], which can be substituted or modified using [[wrapBackend]], adding e.g. logging.
   *
   * Creating a client allocates resources, hence when no longer needed, the client should be closed using [[close]].
   */
