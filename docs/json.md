@@ -220,7 +220,7 @@ basicRequest
 
 ## uPickle
 
-To encode and decode JSON using the [uPickle](https://github.com/com-lihaoyi/upickle) library, one add the following dependency to your project.
+To encode and decode JSON using the [uPickle](https://github.com/com-lihaoyi/upickle) library, add the following dependency to your project:
 
 ```scala
 "com.softwaremill.sttp.client3" %% "upickle" % "@VERSION@"

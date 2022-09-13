@@ -1,6 +1,6 @@
 # Quickstart
 
-The core sttp client API comes in a single jar, with a transitive dependency on [sttp model](https://github.com/softwaremill/sttp-model). This also includes a default [synchronous simple client](simple_sync.md) and a [synchronous](backends/synchronous.md) backend, based on Java's `HttpClient`.
+The core sttp client API comes in a single jar, with a transitive dependency on [sttp model](https://github.com/softwaremill/sttp-model). This also includes a default [synchronous simple client](simple_sync.md) and [synchronous](backends/synchronous.md) and [`Future`-based] backends, based on Java's `HttpClient`.
 
 To integrate with other parts of your application and various effect systems, you'll often need to use an alternate backend (but what's important is that the API remains the same!). See the section on [backends](backends/summary.md) for a short guide on which backend to choose, and a list of all implementations.
 
@@ -28,7 +28,7 @@ If you are an [Ammonite](https://ammonite.io) user, you can quickly start experi
 ```scala
 import $ivy.`com.softwaremill.sttp.client3::core:@VERSION@`
 import sttp.client3.quick._
-sttpClient.send(quickRequest.get(uri"http://httpbin.org/ip"))
+simpleSttpClient.send(quickRequest.get(uri"http://httpbin.org/ip"))
 ```
 
 Importing the `quick` object has the same effect as importing `sttp.client3._`, plus defining a synchronous backend (`val backend = HttpClientSyncBackend()`), so that sttp can be used right away.
