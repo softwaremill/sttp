@@ -14,6 +14,7 @@ See also the blog posts:
 * [sttp2: an overview of proposed changes](https://blog.softwaremill.com/sttp2-an-overview-of-proposed-changes-8de23c94684f)
 * [Migrating to sttp client 2.x and tapir 0.12.x](https://blog.softwaremill.com/migrating-to-sttp-client-2-x-and-tapir-0-12-x-7956e6c79c52)
 * [What’s coming up in sttp client 3?](https://blog.softwaremill.com/whats-coming-up-in-sttp-client-3-30d01ab42d1b)
+* [sttp client 3 is here!](https://blog.softwaremill.com/sttp-client-3-is-here-bb9ebe925931)
 
 ## Non-goals of the project
 
