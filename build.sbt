@@ -147,7 +147,7 @@ val zio2Version = "2.0.2"
 val zio1InteropRsVersion = "1.3.12"
 val zio2InteropRsVersion = "2.0.0"
 
-val sttpModelVersion = "1.5.1"
+val sttpModelVersion = "1.5.2"
 val sttpSharedVersion = "1.3.8"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.4.0"
@@ -159,7 +159,7 @@ val resilience4jVersion = "1.7.1"
 val http4s_ce2_version = "0.22.14"
 val http4s_ce3_version = "0.23.15"
 
-val openTelemetryVersion = "1.17.0"
+val openTelemetryVersion = "1.18.0"
 
 val compileAndTest = "compile->compile;test->test"
 
@@ -666,7 +666,7 @@ lazy val armeriaBackend = (projectMatrix in file("armeria-backend"))
   .settings(testServerSettings)
   .settings(
     name := "armeria-backend",
-    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.18.0"
+    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.19.0"
   )
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3)
   .dependsOn(core % compileAndTest)
@@ -993,6 +993,7 @@ lazy val examples = (projectMatrix in file("examples"))
     asyncHttpClientFs2Backend,
     json4s,
     circe,
+    upickle,
     scribeBackend,
     slf4jBackend
   )
@@ -1044,6 +1045,7 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     sprayJson,
     zioJson,
     jsoniter,
+    upickle,
     asyncHttpClientZioBackend,
     // asyncHttpClientMonixBackend, // monix backends are commented out because they depend on cats-effect2
     asyncHttpClientFs2Backend,

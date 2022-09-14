@@ -1,4 +1,4 @@
-package sttp.client3.upickle
+package sttp.client3.upicklejson
 
 import upickle.default.{Reader, Writer, read, write}
 import sttp.client3._

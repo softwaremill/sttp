@@ -70,6 +70,7 @@ Development and maintenance of sttp client is sponsored by [SoftwareMill](https:
    :caption: Getting started
 
    quickstart
+   simple_sync
    how
    goals
    community
