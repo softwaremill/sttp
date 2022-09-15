@@ -64,7 +64,7 @@ object Response {
     */
   def ok[T](body: T): Response[T] = apply(body, StatusCode.Ok)
 
-  def resolveStatusText(statusCode: StatusCode, provided: String = ""): String =
+  private def resolveStatusText(statusCode: StatusCode, provided: String = ""): String =
     if (provided.isEmpty) StatusText.default(statusCode).getOrElse(provided)
     else provided
 }
