@@ -8,7 +8,7 @@ import sbt.internal.ProjectMatrix
 import com.softwaremill.SbtSoftwareMillBrowserTestJS._
 
 val scala2_11 = "2.11.12"
-val scala2_12 = "2.12.16"
+val scala2_12 = "2.12.17"
 val scala2_13 = "2.13.8"
 val scala2 = List(scala2_11, scala2_12, scala2_13)
 val scala3 = List("3.2.0")
