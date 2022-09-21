@@ -21,7 +21,9 @@ abstract class BodyFromResponseAs[F[_], RegularResponse, WSResponse, Stream](imp
 
     (responseAs, response) match {
       case (MappedResponseAs(raw, g, _), _) =>
-        doApply(raw, meta, response).map { case (result, replayableBody) => (g(result, meta), replayableBody) }
+        doApply(raw, meta, response).flatMap { case (result, replayableBody) =>
+          m.eval(g(result, meta)).map((_, replayableBody))
+        }
 
       case (rfm: ResponseAsFromMetadata[T, _], _) => doApply(rfm(meta), meta, response)
 
@@ -47,7 +49,9 @@ abstract class BodyFromResponseAs[F[_], RegularResponse, WSResponse, Stream](imp
 
       case (ResponseAsStream(_, f), Left(regular)) =>
         regularAsStream(regular).flatMap { case (stream, cancel) =>
-          f.asInstanceOf[(Stream, ResponseMetadata) => F[T]](stream, meta).map((_, nonReplayableBody)).ensure(cancel())
+          m.suspend(f.asInstanceOf[(Stream, ResponseMetadata) => F[T]](stream, meta))
+            .map((_, nonReplayableBody))
+            .ensure(cancel())
         }
 
       case (ResponseAsStreamUnsafe(_), Left(regular)) =>
