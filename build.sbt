@@ -376,8 +376,8 @@ lazy val fs2Ce2 = (projectMatrix in file("effects/fs2-ce2"))
     Test / publishArtifact := true,
     libraryDependencies ++= dependenciesFor(scalaVersion.value)(
       "co.fs2" %%% "fs2-core" % fs2_2_version(_),
-      "co.fs2" %% "fs2-reactive-streams" % fs2_2_version(_),
-      "co.fs2" %% "fs2-io" % fs2_2_version(_)
+      "co.fs2" %%% "fs2-reactive-streams" % fs2_2_version(_),
+      "co.fs2" %%% "fs2-io" % fs2_2_version(_)
     ),
     libraryDependencies += "com.softwaremill.sttp.shared" %% "fs2-ce2" % sttpSharedVersion
   )
@@ -395,9 +395,9 @@ lazy val fs2 = (projectMatrix in file("effects/fs2"))
     Test / publishArtifact := true,
     libraryDependencies ++= Seq(
       "co.fs2" %%% "fs2-core" % fs2_3_version,
-      "co.fs2" %% "fs2-reactive-streams" % fs2_3_version,
-      "co.fs2" %% "fs2-io" % fs2_3_version,
-      "com.softwaremill.sttp.shared" %% "fs2" % sttpSharedVersion
+      "co.fs2" %%% "fs2-reactive-streams" % fs2_3_version,
+      "co.fs2" %%% "fs2-io" % fs2_3_version,
+      "com.softwaremill.sttp.shared" %%% "fs2" % sttpSharedVersion
     )
   )
   .settings(testServerSettings)
@@ -438,8 +438,8 @@ lazy val zio1 = (projectMatrix in file("effects/zio1"))
       "dev.zio" %%% "zio-streams" % zio1Version,
       "dev.zio" %%% "zio" % zio1Version,
       "com.softwaremill.sttp.shared" %%% "zio1" % sttpSharedVersion,
-      "dev.zio" %% "zio-interop-reactivestreams" % zio1InteropRsVersion,
-      "dev.zio" %% "zio-nio" % "1.0.0-RC12"
+      "dev.zio" %%% "zio-interop-reactivestreams" % zio1InteropRsVersion,
+      "dev.zio" %%% "zio-nio" % "1.0.0-RC12"
     )
   )
   .settings(testServerSettings)
@@ -461,7 +461,7 @@ lazy val zio = (projectMatrix in file("effects/zio"))
       "dev.zio" %%% "zio-streams" % zio2Version,
       "dev.zio" %%% "zio" % zio2Version,
       "com.softwaremill.sttp.shared" %%% "zio" % sttpSharedVersion,
-      "dev.zio" %% "zio-interop-reactivestreams" % zio2InteropRsVersion
+      "dev.zio" %%% "zio-interop-reactivestreams" % zio2InteropRsVersion
     )
   )
   .settings(testServerSettings)
