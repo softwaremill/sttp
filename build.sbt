@@ -406,9 +406,9 @@ lazy val fs2 = (projectMatrix in file("effects/fs2"))
   .jvmPlatform(
     scalaVersions = List(scala2_12, scala2_13) ++ scala3,
     settings = commonJvmSettings ++ Seq(
-      libraryDependencies ++= dependenciesFor(scalaVersion.value)(
-        "co.fs2" %%% "fs2-reactive-streams" % fs2_2_version(_),
-        "co.fs2" %%% "fs2-io" % fs2_2_version(_)
+      libraryDependencies ++= Seq(
+        "co.fs2" %%% "fs2-reactive-streams" % fs2_3_version,
+        "co.fs2" %%% "fs2-io" % fs2_3_version
       )
     )
   )
