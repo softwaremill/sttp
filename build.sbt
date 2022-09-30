@@ -375,9 +375,7 @@ lazy val fs2Ce2 = (projectMatrix in file("effects/fs2-ce2"))
     name := "fs2Ce2",
     Test / publishArtifact := true,
     libraryDependencies ++= dependenciesFor(scalaVersion.value)(
-      "co.fs2" %%% "fs2-core" % fs2_2_version(_),
-      "co.fs2" %% "fs2-reactive-streams" % fs2_2_version(_),
-      "co.fs2" %% "fs2-io" % fs2_2_version(_)
+      "co.fs2" %%% "fs2-core" % fs2_2_version(_)
     ),
     libraryDependencies += "com.softwaremill.sttp.shared" %% "fs2-ce2" % sttpSharedVersion
   )
@@ -385,7 +383,12 @@ lazy val fs2Ce2 = (projectMatrix in file("effects/fs2-ce2"))
   .dependsOn(core % compileAndTest, catsCe2 % compileAndTest)
   .jvmPlatform(
     scalaVersions = List(scala2_12, scala2_13) ++ scala3,
-    settings = commonJvmSettings
+    settings = commonJvmSettings ++ Seq(
+      libraryDependencies ++= dependenciesFor(scalaVersion.value)(
+        "co.fs2" %%% "fs2-reactive-streams" % fs2_2_version(_),
+        "co.fs2" %%% "fs2-io" % fs2_2_version(_)
+      )
+    )
   )
   .jsPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3, settings = commonJsSettings)
 
@@ -395,16 +398,19 @@ lazy val fs2 = (projectMatrix in file("effects/fs2"))
     Test / publishArtifact := true,
     libraryDependencies ++= Seq(
       "co.fs2" %%% "fs2-core" % fs2_3_version,
-      "co.fs2" %% "fs2-reactive-streams" % fs2_3_version,
-      "co.fs2" %% "fs2-io" % fs2_3_version,
-      "com.softwaremill.sttp.shared" %% "fs2" % sttpSharedVersion
+      "com.softwaremill.sttp.shared" %%% "fs2" % sttpSharedVersion
     )
   )
   .settings(testServerSettings)
   .dependsOn(core % compileAndTest, cats % compileAndTest)
   .jvmPlatform(
     scalaVersions = List(scala2_12, scala2_13) ++ scala3,
-    settings = commonJvmSettings
+    settings = commonJvmSettings ++ Seq(
+      libraryDependencies ++= Seq(
+        "co.fs2" %%% "fs2-reactive-streams" % fs2_3_version,
+        "co.fs2" %%% "fs2-io" % fs2_3_version
+      )
+    )
   )
   .jsPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3, settings = commonJsSettings)
 
@@ -437,16 +443,19 @@ lazy val zio1 = (projectMatrix in file("effects/zio1"))
     libraryDependencies ++= Seq(
       "dev.zio" %%% "zio-streams" % zio1Version,
       "dev.zio" %%% "zio" % zio1Version,
-      "com.softwaremill.sttp.shared" %%% "zio1" % sttpSharedVersion,
-      "dev.zio" %% "zio-interop-reactivestreams" % zio1InteropRsVersion,
-      "dev.zio" %% "zio-nio" % "1.0.0-RC12"
+      "com.softwaremill.sttp.shared" %%% "zio1" % sttpSharedVersion
     )
   )
   .settings(testServerSettings)
   .dependsOn(core % compileAndTest)
   .jvmPlatform(
     scalaVersions = List(scala2_12, scala2_13) ++ scala3,
-    settings = commonJvmSettings
+    settings = commonJvmSettings ++ Seq(
+      libraryDependencies ++= Seq(
+        "dev.zio" %% "zio-interop-reactivestreams" % zio1InteropRsVersion,
+        "dev.zio" %% "zio-nio" % "1.0.0-RC12"
+      )
+    )
   )
   .jsPlatform(
     scalaVersions = List(scala2_12, scala2_13) ++ scala3,
@@ -460,15 +469,18 @@ lazy val zio = (projectMatrix in file("effects/zio"))
     libraryDependencies ++= Seq(
       "dev.zio" %%% "zio-streams" % zio2Version,
       "dev.zio" %%% "zio" % zio2Version,
-      "com.softwaremill.sttp.shared" %%% "zio" % sttpSharedVersion,
-      "dev.zio" %% "zio-interop-reactivestreams" % zio2InteropRsVersion
+      "com.softwaremill.sttp.shared" %%% "zio" % sttpSharedVersion
     )
   )
   .settings(testServerSettings)
   .dependsOn(core % compileAndTest)
   .jvmPlatform(
     scalaVersions = scala2 ++ scala3,
-    settings = commonJvmSettings
+    settings = commonJvmSettings ++ Seq(
+      libraryDependencies ++= Seq(
+        "dev.zio" %% "zio-interop-reactivestreams" % zio2InteropRsVersion
+      )
+    )
   )
   .jsPlatform(
     scalaVersions = List(scala2_12, scala2_13) ++ scala3,
