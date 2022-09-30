@@ -837,7 +837,7 @@ lazy val upickle = (projectMatrix in file("json/upickle"))
   .nativePlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3, settings = commonNativeSettings)
   .dependsOn(core, jsonCommon)
 
-lazy val json4sVersion = "4.0.5"
+lazy val json4sVersion = "4.0.6"
 
 lazy val json4s = (projectMatrix in file("json/json4s"))
   .settings(commonJvmSettings)
