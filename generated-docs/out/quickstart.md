@@ -14,7 +14,7 @@ platforms, and that each has its own dedicated set of backends.
 The basic dependency which provides the API, together with a synchronous and `Future`-based backends, is:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "core" % "3.8.0"
+"com.softwaremill.sttp.client3" %% "core" % "3.8.1"
 ```
 
 ## Simple synchronous client
@@ -26,7 +26,7 @@ If you'd like to send some requests synchronously, take a look at the [simple sy
 If you are an [Ammonite](https://ammonite.io) user, you can quickly start experimenting with sttp by copy-pasting the following:
 
 ```scala
-import $ivy.`com.softwaremill.sttp.client3::core:3.8.0`
+import $ivy.`com.softwaremill.sttp.client3::core:3.8.1`
 import sttp.client3.quick._
 simpleSttpClient.send(quickRequest.get(uri"http://httpbin.org/ip"))
 ```
@@ -36,7 +36,7 @@ Importing the `quick` object has the same effect as importing `sttp.client3._`, 
 If the default backend is for some reason insufficient, you can also use one based on OkHttp:
 
 ```scala
-import $ivy.`com.softwaremill.sttp.client3::okhttp-backend:3.8.0`
+import $ivy.`com.softwaremill.sttp.client3::okhttp-backend:3.8.1`
 import sttp.client3.okhttp.quick._
 quickRequest.get(uri"http://httpbin.org/ip").send(backend)
 ```

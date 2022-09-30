@@ -12,7 +12,7 @@ The backend depends only on [opentelemetry-api](https://github.com/open-telemetr
 following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "opentelemetry-metrics-backend" % "3.8.0"
+"com.softwaremill.sttp.client3" %% "opentelemetry-metrics-backend" % "3.8.1"
 ```
 
 Then an instance can be obtained as follows:
@@ -53,8 +53,8 @@ OpenTelemetryMetricsBackend(
 To use, add the following dependency to your project (the `zio-*` modules depend on ZIO 2.x; for ZIO 1.x support, use `zio1-*`):
 
 ```
-"com.softwaremill.sttp.client3" %% "opentelemetry-tracing-zio-backend" % "3.8.0"  // for ZIO 2.x
-"com.softwaremill.sttp.client3" %% "opentelemetry-tracing-zio1-backend" % "3.8.0" // for ZIO 1.x
+"com.softwaremill.sttp.client3" %% "opentelemetry-tracing-zio-backend" % "3.8.1"  // for ZIO 2.x
+"com.softwaremill.sttp.client3" %% "opentelemetry-tracing-zio1-backend" % "3.8.1" // for ZIO 1.x
 ```
 
 This backend depends on [zio-opentelemetry](https://github.com/zio/zio-telemetry).

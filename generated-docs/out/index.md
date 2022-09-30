@@ -110,6 +110,7 @@ Development and maintenance of sttp client is sponsored by [SoftwareMill](https:
 
    websockets
    json
+   xml
    resilience
    openapi
 
