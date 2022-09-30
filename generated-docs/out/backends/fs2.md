@@ -7,9 +7,9 @@ The [fs2](https://github.com/functional-streams-for-scala/fs2) backends are **as
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "fs2" % "3.8.1" // for cats-effect 3.x & fs2 3.x
+"com.softwaremill.sttp.client3" %% "fs2" % "3.8.2" // for cats-effect 3.x & fs2 3.x
 // or 
-"com.softwaremill.sttp.client3" %% "fs2-ce2" % "3.8.1" // for cats-effect 2.x & fs2 2.x
+"com.softwaremill.sttp.client3" %% "fs2-ce2" % "3.8.2" // for cats-effect 2.x & fs2 2.x
 ```
 
 Obtain a cats-effect `Resource` which creates the backend, and closes the thread pool after the resource is no longer used:
@@ -60,9 +60,9 @@ Host header override is supported in environments running Java 12 onwards, but i
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "async-http-client-backend-fs2" % "3.8.1" // for cats-effect 3.x & fs2 3.x
+"com.softwaremill.sttp.client3" %% "async-http-client-backend-fs2" % "3.8.2" // for cats-effect 3.x & fs2 3.x
 // or
-"com.softwaremill.sttp.client3" %% "async-http-client-backend-fs2-ce2" % "3.8.1" // for cats-effect 2.x & fs2 2.x
+"com.softwaremill.sttp.client3" %% "async-http-client-backend-fs2-ce2" % "3.8.2" // for cats-effect 2.x & fs2 2.x
 ```
  
 This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client) and uses [Netty](http://netty.io) behind the scenes.
@@ -141,9 +141,9 @@ val backend = AsyncHttpClientFs2Backend.usingClient[IO](asyncHttpClient, dispatc
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "armeria-backend-fs2" % "3.8.1" // for cats-effect 3.x & fs2 3.x
+"com.softwaremill.sttp.client3" %% "armeria-backend-fs2" % "3.8.2" // for cats-effect 3.x & fs2 3.x
 // or
-"com.softwaremill.sttp.client3" %% "armeria-backend-fs2" % "3.8.1" // for cats-effect 2.x & fs2 2.x
+"com.softwaremill.sttp.client3" %% "armeria-backend-fs2" % "3.8.2" // for cats-effect 2.x & fs2 2.x
 ```
 
 create client:
