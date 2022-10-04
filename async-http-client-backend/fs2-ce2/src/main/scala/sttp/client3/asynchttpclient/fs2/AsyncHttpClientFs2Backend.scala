@@ -25,6 +25,7 @@ import java.io.File
 import java.nio.ByteBuffer
 import scala.collection.immutable.Queue
 
+@deprecated(message = "AsyncHttpClient no longer maintained")
 class AsyncHttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
     asyncHttpClient: AsyncHttpClient,
     closeClient: Boolean,

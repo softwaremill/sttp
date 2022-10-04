@@ -24,6 +24,7 @@ import sttp.ws.{WebSocket, WebSocketFrame}
 import java.io.File
 import java.nio.ByteBuffer
 
+@deprecated(message = "AsyncHttpClient no longer maintained")
 class AsyncHttpClientFs2Backend[F[_]: Async] private (
     asyncHttpClient: AsyncHttpClient,
     closeClient: Boolean,

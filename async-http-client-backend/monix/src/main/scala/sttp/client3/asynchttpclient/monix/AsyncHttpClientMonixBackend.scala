@@ -23,6 +23,7 @@ import java.io.File
 import java.nio.ByteBuffer
 import scala.collection.immutable.Queue
 
+@deprecated(message = "AsyncHttpClient no longer maintained")
 class AsyncHttpClientMonixBackend private (
     asyncHttpClient: AsyncHttpClient,
     closeClient: Boolean,

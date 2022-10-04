@@ -21,6 +21,7 @@ import sttp.ws.WebSocket
 
 import scala.concurrent.{ExecutionContext, Future}
 
+@deprecated(message = "AsyncHttpClient no longer maintained")
 class AsyncHttpClientFutureBackend private (
     asyncHttpClient: AsyncHttpClient,
     closeClient: Boolean,

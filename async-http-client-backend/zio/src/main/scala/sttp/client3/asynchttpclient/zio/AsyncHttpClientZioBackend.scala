@@ -24,6 +24,7 @@ import java.io.{BufferedInputStream, File, FileInputStream, FileOutputStream}
 import java.nio.ByteBuffer
 import scala.collection.immutable
 
+@deprecated(message = "AsyncHttpClient no longer maintained")
 class AsyncHttpClientZioBackend private (
     runtime: Runtime[Any],
     asyncHttpClient: AsyncHttpClient,

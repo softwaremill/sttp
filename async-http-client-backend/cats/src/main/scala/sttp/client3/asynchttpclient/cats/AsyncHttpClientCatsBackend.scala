@@ -23,6 +23,7 @@ import sttp.client3.testing.SttpBackendStub
 import sttp.monad.MonadAsyncError
 import sttp.ws.WebSocket
 
+@deprecated(message = "AsyncHttpClient no longer maintained")
 class AsyncHttpClientCatsBackend[F[_]: Async] private (
     asyncHttpClient: AsyncHttpClient,
     closeClient: Boolean,
