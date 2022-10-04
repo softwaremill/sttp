@@ -256,3 +256,22 @@ class MyCustomBackendHttpTest extends HttpTest[Future] {
 ```
 
 You can find a more detailed example in the [sttp-vertx](https://github.com/guymers/sttp-vertx) repository.
+
+## Custom backend wrapper using cats
+
+When implementing a backend wrapper using cats, it might be useful to import:
+
+```scala
+import sttp.client3.impl.cats.implicits._
+```
+
+from the cats integration module. The module should be available on the classpath after adding following dependency:
+
+```scala
+"com.softwaremill.sttp.client3" %% "cats" % "@VERSION@" // for cats-effect 3.x
+// or
+"com.softwaremill.sttp.client3" %% "catsce2" % "@VERSION@" // for cats-effect 2.x
+```
+
+The object contains implicits to convert a cats `MonadError` into the sttp `MonadError`, 
+as well as a way to map the effects wrapper used with the `.mapK` extension method for the backend. 

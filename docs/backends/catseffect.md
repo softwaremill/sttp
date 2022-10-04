@@ -1,8 +1,13 @@
 # cats-effect backend
 
-The [Cats Effect](https://github.com/typelevel/cats-effect) backend is **asynchronous**. It can be created for any type implementing the `cats.effect.Concurrent` typeclass, such as `cats.effect.IO`. Sending a request is a non-blocking, lazily-evaluated operation and results in a wrapped response. There's a transitive dependency on `cats-effect`. 
+The [Cats Effect](https://github.com/typelevel/cats-effect) backend is **asynchronous**. 
+It can be created for any type implementing the `cats.effect.Concurrent` typeclass, such as `cats.effect.IO`. 
+Sending a request is a non-blocking, lazily-evaluated operation and results in a wrapped response. 
+There's a transitive dependency on `cats-effect`. 
 
 Note that all [fs2](fs2.md) backends also support any cats-effect effect, additionally supporting request & response streaming.
+
+Also note that the [http4s](http4s.md) backend can also be created for a type implementing the cats-effect’s `Async` typeclass, and supports streaming as in [fs2](fs2.md).
 
 
 ## Using Armeria

@@ -10,7 +10,6 @@ Class                                 Supported stream type                     
 ===================================== ================================================ ==========================
 ``HttpClientFutureBackend``           n/a                                              yes (regular)
 ``AkkaHttpBackend``                   ``akka.stream.scaladsl.Source[ByteString, Any]`` yes (regular & streaming)
-``AsyncHttpClientFutureBackend``      n/a                                              no
 ``OkHttpFutureBackend``               n/a                                              yes (regular)
 ``ArmeriaFutureBackend``              n/a                                              n/a
 ===================================== ================================================ ==========================
@@ -81,8 +80,8 @@ or, if you'd like to instantiate the OkHttpClient yourself:
 ```scala mdoc:compile-only
 import okhttp3.OkHttpClient
 
-val asyncHttpClient: OkHttpClient = ??? 
-val backend = OkHttpFutureBackend.usingClient(asyncHttpClient)
+val okHttpClient: OkHttpClient = ??? 
+val backend = OkHttpFutureBackend.usingClient(okHttpClient)
 ```
 
 This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supports HTTP/2.
