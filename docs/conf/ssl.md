@@ -102,31 +102,6 @@ val backend = AkkaHttpBackend.usingActorSystem(actorSystem, customHttpsContext =
 
 For more information refer to [akka docs](https://doc.akka.io/docs/akka-http/current/client-side/client-https-support.html).
 
-## Using Async-http-client
-
-Using `kmf: KeyManagerFactory` and `tmf: TrustManagerFactory` from [first section](#ssl-context) create a `AsyncHttpClientConfig`.
-
-Backends using `AsyncHttpClient` provides factory methods accepting custom config.
-
-```scala mdoc:invisible
-def tmf: TrustManagerFactory = ???
-```
-
-```scala mdoc:compile-only
-import io.netty.handler.ssl.SslContextBuilder
-import org.asynchttpclient.{AsyncHttpClientConfig, DefaultAsyncHttpClientConfig}
-import sttp.client3.asynchttpclient.future._
-
-val sslContext = SslContextBuilder.forClient()
-  .keyManager(kmf)
-  .trustManager(tmf)
-  .build()
-
-val config: AsyncHttpClientConfig = new DefaultAsyncHttpClientConfig.Builder().setSslContext(sslContext).build()
-
-val backend = AsyncHttpClientFutureBackend.usingConfig(config)
-```
-
 ## Using OkHttp
 
 Using `SSLContext` from [first section](#ssl-context) create a `OkHttpClient`. 

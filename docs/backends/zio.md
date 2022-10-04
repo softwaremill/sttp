@@ -37,47 +37,6 @@ Host header override is supported in environments running Java 12 onwards, but i
 -Djdk.httpclient.allowRestrictedHeaders=host
 ```
 
-## Using async-http-client
-
-To use, add the following dependency to your project:
-
-```scala
-"com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % "@VERSION@"  // for ZIO 2.x
-"com.softwaremill.sttp.client3" %% "async-http-client-backend-zio1" % "@VERSION@" // for ZIO 1.x
-```
-           
-This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client), uses [Netty](http://netty.io) behind the scenes. This backend works with all Scala versions. A Scala 3 build is available as well.
-
-Next you'll need to define a backend instance.  A non-comprehensive summary of how this can be done is as follows:
-
-```scala mdoc:compile-only
-import sttp.client3._
-import sttp.client3.asynchttpclient.zio.AsyncHttpClientZioBackend
-
-AsyncHttpClientZioBackend().flatMap { backend => ??? }
-
-// or, if you'd like the backend to be wrapped in a Scope:
-AsyncHttpClientZioBackend.scoped().flatMap { backend => ??? }
-
-// or, if you'd like to use custom configuration:
-import org.asynchttpclient.AsyncHttpClientConfig
-val config: AsyncHttpClientConfig = ???
-AsyncHttpClientZioBackend.usingConfig(config).flatMap { backend => ??? }
-
-// or, if you'd like to use adjust the configuration sttp creates:
-import org.asynchttpclient.DefaultAsyncHttpClientConfig
-val sttpOptions: SttpBackendOptions = SttpBackendOptions.Default 
-val adjustFunction: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder = ???
-
-AsyncHttpClientZioBackend.usingConfigBuilder(adjustFunction, sttpOptions).flatMap { backend => ??? }
-
-// or, if you'd like to instantiate the AsyncHttpClient yourself:
-import org.asynchttpclient.AsyncHttpClient
-import zio.Runtime
-val asyncHttpClient: AsyncHttpClient = ???
-val runtime: Runtime[Any] = ???
-val backend = AsyncHttpClientZioBackend.usingClient(runtime, asyncHttpClient)
-```
 
 ## Using Armeria
 
@@ -207,7 +166,7 @@ val response: ZIO[Any, Throwable, Response[Either[String, Stream[Throwable, Byte
 
 ## Websockets
 
-The `HttpClient` and `async-http-client` ZIO backends support both regular and streaming [websockets](../websockets.md).
+The `HttpClient` ZIO backends supports both regular and streaming [websockets](../websockets.md).
 
 ## Testing
 

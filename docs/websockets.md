@@ -91,16 +91,6 @@ configuring individual backends for more information.
 
 ## Implementation-specific configuration
 
-### async-http-client based backends
-
-Web socket settings can be adjusted by providing a custom `AsyncHttpClientConfig`, which can be created using 
-`new DefaultAsyncHttpClientConfig.Builder()`. 
-
-Some available settings:
-
-* maximum web socket frame size. Default: 10240, can be changed using `.setWebSocketMaxFrameSize`. 
-* compression. Default: false, can be changed using: `.setEnablewebSocketCompression`.
-
 ### OkHttp based backends
 
 * supports compression (default: not enabled)
