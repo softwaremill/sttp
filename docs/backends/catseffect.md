@@ -12,7 +12,12 @@ Also note that the [http4s](http4s.md) backend can also be created for a type im
 
 ## Using Armeria
 
-To use, add the following dependency to your project:
+Creation of the backend can be done in two basic ways:
+
+* by creating an effect, which describes how the backend is created, or instantiating the backend directly. In this case, you'll need to close the backend manually
+* by creating a `Resource`, which will instantiate the backend and close it after it has been used.
+
+Firstly, add the following dependency to your project:
 
 ```scala
 "com.softwaremill.sttp.client3" %% "armeria-backend-cats" % "@VERSION@" // for cats-effect 3.x
@@ -30,6 +35,15 @@ val backend = ArmeriaCatsBackend[IO]()
 
 // You can use the default client which reuses the connection pool of ClientFactory.ofDefault()
 ArmeriaCatsBackend.usingDefaultClient[IO]()
+```
+
+or, if you'd like the backend to be wrapped in cats-effect `Resource`:
+
+```scala mdoc:compile-only
+import cats.effect.IO
+import sttp.client3.armeria.cats.ArmeriaCatsBackend
+
+ArmeriaCatsBackend.resource[IO]().use { backend => ??? }
 ```
 
 or, if you'd like to instantiate the [WebClient](https://armeria.dev/docs/client-http) yourself:

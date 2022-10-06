@@ -23,7 +23,6 @@ import sttp.client3.testing.SttpBackendStub
 import sttp.monad.MonadAsyncError
 import sttp.ws.WebSocket
 
-@deprecated(message = "AsyncHttpClient no longer maintained")
 class AsyncHttpClientCatsBackend[F[_]: Async] private (
     asyncHttpClient: AsyncHttpClient,
     closeClient: Boolean,
@@ -60,6 +59,7 @@ class AsyncHttpClientCatsBackend[F[_]: Async] private (
     throw new IllegalStateException("Web sockets are not supported!")
 }
 
+@deprecated(message = "The async-http-client project is no longer maintained")
 object AsyncHttpClientCatsBackend {
   private def apply[F[_]: Async](
       asyncHttpClient: AsyncHttpClient,

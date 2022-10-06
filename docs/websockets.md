@@ -97,4 +97,18 @@ configuring individual backends for more information.
 
 ### akka-http backend
 
-Compression is not yet available, to track Akka developments in this area, see [this issue](https://github.com/akka/akka-http/issues/659).  
+Compression is not yet available, to track Akka developments in this area, see [this issue](https://github.com/akka/akka-http/issues/659).
+
+### async-http-client based backends (deprecated)
+
+```eval_rst
+.. note:: Note that the async-http-client is no longer maintained, thus backends based on it should not be used in the new projects.
+```
+
+Web socket settings can be adjusted by providing a custom `AsyncHttpClientConfig`, which can be created using
+`new DefaultAsyncHttpClientConfig.Builder()`.
+
+Some available settings:
+
+* maximum web socket frame size. Default: 10240, can be changed using `.setWebSocketMaxFrameSize`.
+* compression. Default: false, can be changed using: `.setEnablewebSocketCompression`.

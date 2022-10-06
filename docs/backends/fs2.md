@@ -4,7 +4,12 @@ The [fs2](https://github.com/functional-streams-for-scala/fs2) backends are **as
 
 ## Using HttpClient
 
-To use, add the following dependency to your project:
+Creation of the backend can be done in two basic ways:
+
+* by creating a `Resource`, which will instantiate the backend and close it after it has been used.
+* by creating an effect, which describes how a backend is created, or instantiating the backend directly. In this case, you'll need to close the backend manually, as well as provide a `Dispatcher` instance
+
+Firstly, add the following dependency to your project:
 
 ```scala
 "com.softwaremill.sttp.client3" %% "fs2" % "@VERSION@" // for cats-effect 3.x & fs2 3.x

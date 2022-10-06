@@ -21,7 +21,6 @@ import sttp.client3.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
 import sttp.monad.MonadAsyncError
 import sttp.ws.WebSocket
 
-@deprecated(message = "AsyncHttpClient no longer maintained")
 class AsyncHttpClientScalazBackend private (
     asyncHttpClient: AsyncHttpClient,
     closeClient: Boolean,
@@ -53,6 +52,7 @@ class AsyncHttpClientScalazBackend private (
     throw new IllegalStateException("Web sockets are not supported!")
 }
 
+@deprecated(message = "The async-http-client project is no longer maintained")
 object AsyncHttpClientScalazBackend {
   private def apply(
       asyncHttpClient: AsyncHttpClient,

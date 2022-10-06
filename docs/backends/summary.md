@@ -44,6 +44,20 @@ Class                                Effect type                      Supported 
 ==================================== ================================ ================================================= ========================== ===================
 ```
 
+Also, async-http-client based backends are available, although they should not be used in new projects as they are deprecated as api-http-client is no longer maintained.
+```eval_rst
+==================================== ================================ ================================================= ========================== ===================
+Class                                Effect type                      Supported stream type                             Supports websockets        Fully non-blocking
+==================================== ================================ ================================================= ========================== ===================
+``AsyncHttpClientFutureBackend``     ``scala.concurrent.Future``      n/a                                               yes (regular)              no
+``AsyncHttpClientScalazBackend``     ``scalaz.concurrent.Task``       n/a                                               yes (regular)              no
+``AsyncHttpClientZioBackend``        ``zio.Task``                     ``zio.stream.Stream[Throwable, Byte]``            yes (regular & streaming)  no
+``AsyncHttpClientMonixBackend``      ``monix.eval.Task``              ``monix.reactive.Observable[ByteBuffer]``         yes (regular & streaming)  no
+``AsyncHttpClientCatsBackend``       ``F[_]: cats.effect.Concurrent`` n/a                                               no                         no
+``AsyncHttpClientFs2Backend``        ``F[_]: cats.effect.Concurrent`` ``fs2.Stream[F, Byte]``                           yes (regular & streaming)  no
+==================================== ================================ ================================================= ========================== ===================
+```
+
 The backends work with Scala 2.11, 2.12, 2.13 and 3 (with some exceptions for 2.11 and 3).
 
 Backends supporting cats-effect are available in versions for cats-effect 2.x (dependency artifacts have the `-ce2` suffix) and 3.x.

@@ -4,13 +4,18 @@ There are several backend implementations which are `monix.eval.Task`-based. The
 
 ## Using HttpClient
 
-To use, add the following dependency to your project:
+Creation of the backend can be done in two basic ways:
+
+* by creating a `Task`, which describes how the backend is created, or instantiating the backend directly. In this case, you'll need to close the backend manually.
+* by creating a `Resource`, which will instantiate the backend and close it after it has been used.
+
+Firstly, add the following dependency to your project:
 
 ```
 "com.softwaremill.sttp.client3" %% "monix" % "@VERSION@"
 ```
 
-Create the backend using:
+and create the backend using:
 
 ```scala
 import sttp.client3.httpclient.monix.HttpClientMonixBackend

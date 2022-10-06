@@ -23,7 +23,6 @@ import java.io.File
 import java.nio.ByteBuffer
 import scala.collection.immutable.Queue
 
-@deprecated(message = "AsyncHttpClient no longer maintained")
 class AsyncHttpClientMonixBackend private (
     asyncHttpClient: AsyncHttpClient,
     closeClient: Boolean,
@@ -86,6 +85,7 @@ class AsyncHttpClientMonixBackend private (
     Task.eval(new MonixSimpleQueue[T](webSocketBufferCapacity))
 }
 
+@deprecated(message = "The async-http-client project is no longer maintained")
 object AsyncHttpClientMonixBackend {
   private def apply(
       asyncHttpClient: AsyncHttpClient,
