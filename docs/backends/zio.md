@@ -95,7 +95,7 @@ Please visit [the official documentation](https://armeria.dev/docs/client-factor
 
 ## ZIO layers
 
-As an alternative to effectfully or resourcefully creating backend instances, ZIO layers can be used. In this scenario, the lifecycle of a `SttpBackend` service is described by `ZLayer`s, which can be created using the `.layer`/`.layerUsingConfig`/... methods on `HttpClientZioBackend` / `AsyncHttpClientZioBackend` / `ArmeriaZioBackend`.
+As an alternative to effectfully or resourcefully creating backend instances, ZIO layers can be used. In this scenario, the lifecycle of a `SttpBackend` service is described by `ZLayer`s, which can be created using the `.layer`/`.layerUsingConfig`/... methods on `HttpClientZioBackend` / `ArmeriaZioBackend`.
 
 The layers can be used to provide an implementation of the `SttpBackend` dependency when creating services. For example:
 
@@ -120,7 +120,7 @@ ZLayer.make[MyService](MyService.live, HttpClientZioBackend.layer())
 
 ## Streaming
 
-The ZIO based backends support streaming using zio-streams. The following example is using the `AsyncHttpClientZioBackend` backend, but works similarly with `HttpClientZioBackend`.
+The ZIO based backends support streaming using zio-streams. The following example is using the `HttpClientZioBackend`.
 
 The type of supported streams is `Stream[Throwable, Byte]`. The streams capability is represented as `sttp.client3.impl.zio.ZioStreams`. To leverage ZIO environment, use the `SttpClient` object to create request send effects.
 
@@ -166,7 +166,7 @@ val response: ZIO[Any, Throwable, Response[Either[String, Stream[Throwable, Byte
 
 ## Websockets
 
-The `HttpClient` ZIO backends supports both regular and streaming [websockets](../websockets.md).
+The `HttpClient` ZIO backend supports both regular and streaming [websockets](../websockets.md).
 
 ## Testing
 

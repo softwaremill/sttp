@@ -8,7 +8,7 @@ You can also create a stub backend using [akka-http routes](backends/akka.md).
 
 An empty backend stub can be created using the following ways:
 
-* by calling `.stub` on the "real" base backend's companion object, e.g. `AsyncHttpClientZioBackend.stub` or `HttpClientMonixBackend.stub`
+* by calling `.stub` on the "real" base backend's companion object, e.g. `HttpClientZioBackend.stub` or `HttpClientMonixBackend.stub`
 * by using one of the factory methods `SttpBackendStub.synchronous` or `SttpBackendStub.asynchronousFuture`, which return stubs which use the `Identity` or standard Scala's `Future` effects without streaming support
 * by explicitly specifying the effect and supported capabilities:
   * for Monix `SttpBackendStub[Task, MonixStreams with WebSockets](TaskMonad)`

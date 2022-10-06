@@ -111,17 +111,16 @@ Please visit [the official documentation](https://armeria.dev/docs/client-factor
 
 ## Streaming
 
-The Monix backends support streaming. The streams capability is represented as `sttp.client3.impl.monix.MonixStreams`. The type of supported streams in this case is `Observable[ByteBuffer]`. That is, you can set such an observable as a request body (using the async-http-client backend as an example, but any of the above backends can be used):
-// TODO use another backend given example
+The Monix backends support streaming. The streams capability is represented as `sttp.client3.impl.monix.MonixStreams`. The type of supported streams in this case is `Observable[ByteBuffer]`. That is, you can set such an observable as a request body (using the http-client backend as an example, but any of the above backends can be used):
 
 ```scala
 import sttp.capabilities.monix.MonixStreams
 import sttp.client3._
-import sttp.client3.asynchttpclient.monix._
+import sttp.client3.httpclient.monix.HttpClientMonixBackend
 
 import monix.reactive.Observable
 
-AsyncHttpClientMonixBackend().flatMap { backend =>
+HttpClientMonixBackend().flatMap { backend =>
   val obs: Observable[Array[Byte]] =  ???
 
   basicRequest
@@ -136,13 +135,13 @@ And receive responses as an observable stream:
 ```scala
 import sttp.capabilities.monix.MonixStreams
 import sttp.client3._
-import sttp.client3.asynchttpclient.monix._
+import sttp.client3.httpclient.monix.HttpClientMonixBackend
 
 import monix.eval.Task
 import monix.reactive.Observable
 import scala.concurrent.duration.Duration
 
-AsyncHttpClientMonixBackend().flatMap { backend =>
+HttpClientMonixBackend().flatMap { backend =>
   val response: Task[Response[Either[String, Observable[Array[Byte]]]]] =
     basicRequest
       .post(uri"...")

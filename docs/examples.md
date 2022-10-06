@@ -123,7 +123,7 @@ libraryDependencies ++= List(
 Example code:
 
 ```eval_rst
-.. literalinclude:: ../../examples-ce2/src/main/scala/sttp/client3/examples/PostSerializeJsonMonixAsyncHttpClientCirce.scala
+.. literalinclude:: ../../examples-ce2/src/main/scala/sttp/client3/examples/PostSerializeJsonMonixHttpClientCirce.scala
     :language: scala
 ```
 

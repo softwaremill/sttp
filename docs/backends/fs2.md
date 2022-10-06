@@ -120,10 +120,9 @@ import cats.effect.IO
 import fs2.Stream
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client3._
-import sttp.client3.armeria.fs2.ArmeriaFs2Backend
-import sttp.client3.asynchttpclient.fs2.AsyncHttpClientFs2Backend
+import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 
-val effect = AsyncHttpClientFs2Backend.resource[IO]().use { backend =>
+val effect = HttpClientFs2Backend.resource[IO]().use { backend =>
   val stream: Stream[IO, Byte] = ???
 
   basicRequest
@@ -141,10 +140,10 @@ import cats.effect.IO
 import fs2.Stream
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client3._
-import sttp.client3.asynchttpclient.fs2.AsyncHttpClientFs2Backend
+import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 import scala.concurrent.duration.Duration
 
-val effect = AsyncHttpClientFs2Backend.resource[IO]().use { backend =>
+val effect = HttpClientFs2Backend.resource[IO]().use { backend =>
   val response: IO[Response[Either[String, Stream[IO, Byte]]]] =
     basicRequest
       .post(uri"...")

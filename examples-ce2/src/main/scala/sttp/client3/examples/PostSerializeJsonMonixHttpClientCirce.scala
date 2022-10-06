@@ -1,6 +1,6 @@
 package sttp.client3.examples
 
-object PostSerializeJsonMonixAsyncHttpClientCirce extends App {
+object PostSerializeJsonMonixHttpClientCirce extends App {
   import sttp.client3._
   import sttp.client3.circe._
   import sttp.client3.httpclient.monix.HttpClientMonixBackend
