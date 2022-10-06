@@ -85,6 +85,7 @@ class AsyncHttpClientMonixBackend private (
     Task.eval(new MonixSimpleQueue[T](webSocketBufferCapacity))
 }
 
+@deprecated(message = "The async-http-client project is no longer maintained")
 object AsyncHttpClientMonixBackend {
   private def apply(
       asyncHttpClient: AsyncHttpClient,

@@ -51,13 +51,13 @@ Example code:
     :language: scala
 ```
 
-## GET and parse JSON using the ZIO async-http-client backend and circe
+## GET and parse JSON using the ZIO http-client backend and circe
 
 Required dependencies:
 
 ```scala
 libraryDependencies ++= List(
-  "com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % "@VERSION@",
+  "com.softwaremill.sttp.client3" %% "zio" % "@VERSION@",
   "com.softwaremill.sttp.client3" %% "circe" % "@VERSION@",
   "io.circe" %% "circe-generic" % "@CIRCE_VERSION@"
 )
@@ -70,13 +70,13 @@ Example code:
     :language: scala
 ```
 
-## GET and parse JSON using the async-http-client Monix backend and circe, treating deserialization errors as failed effects
+## GET and parse JSON using the http-client Monix backend and circe, treating deserialization errors as failed effects
 
 Required dependencies:
 
 ```scala
 libraryDependencies ++= List(
-  "com.softwaremill.sttp.client3" %% "async-http-client-backend-monix" % "@VERSION@",
+  "com.softwaremill.sttp.client3" %% "monix" % "@VERSION@",
   "com.softwaremill.sttp.client3" %% "circe" % "@VERSION@",
   "io.circe" %% "circe-generic" % "@CIRCE_VERSION@"
 )
@@ -108,13 +108,13 @@ Example code:
     :language: scala
 ```
 
-## POST and serialize JSON using the Monix async-http-client backend and circe
+## POST and serialize JSON using the Monix http-client backend and circe
 
 Required dependencies:
 
 ```scala
 libraryDependencies ++= List(
-  "com.softwaremill.sttp.client3" %% "async-http-client-backend-monix" % "@VERSION@",
+  "com.softwaremill.sttp.client3" %% "monix" % "@VERSION@",
   "com.softwaremill.sttp.client3" %% "circe" % "@VERSION@",
   "io.circe" %% "circe-generic" % "@CIRCE_VERSION@"
 )
@@ -123,7 +123,7 @@ libraryDependencies ++= List(
 Example code:
 
 ```eval_rst
-.. literalinclude:: ../../examples-ce2/src/main/scala/sttp/client3/examples/PostSerializeJsonMonixAsyncHttpClientCirce.scala
+.. literalinclude:: ../../examples-ce2/src/main/scala/sttp/client3/examples/PostSerializeJsonMonixHttpClientCirce.scala
     :language: scala
 ```
 
@@ -141,13 +141,12 @@ Example code:
 .. literalinclude:: ../../examples/src/main/scala/sttp/client3/examples/TestEndpointMultipleQueryParameters.scala
     :language: scala
 ```
-
 ## Open a websocket using ZIO
 
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % "@VERSION@")
+libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "zio" % "@VERSION@")
 ```
 
 Example code:
@@ -162,7 +161,7 @@ Example code:
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "async-http-client-backend-fs2" % "@VERSION@")
+libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "fs2" % "@VERSION@")
 ```
 
 Example code:
@@ -177,7 +176,7 @@ Example code:
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "async-http-client-backend-monix" % "@VERSION@")
+libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "monix" % "@VERSION@")
 ```
 
 Example code:
@@ -207,7 +206,7 @@ Example code:
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "async-http-client-backend-monix" % "@VERSION@")
+libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "monix" % "@VERSION@")
 ```
 
 Example code:
@@ -222,7 +221,7 @@ Example code:
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "async-http-client-backend-fs2" % "@VERSION@")
+libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "fs2" % "@VERSION@")
 ```
 
 Example code:
@@ -237,7 +236,7 @@ Example code:
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % "@VERSION@")
+libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "zio" % "@VERSION@")
 ```
 
 Example code:
@@ -252,7 +251,7 @@ Example code:
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % "@VERSION@")
+libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "zio" % "@VERSION@")
 ```
 
 Example code:

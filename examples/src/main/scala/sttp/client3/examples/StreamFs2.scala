@@ -1,7 +1,7 @@
 package sttp.client3.examples
 
 import sttp.client3._
-import sttp.client3.asynchttpclient.fs2.AsyncHttpClientFs2Backend
+import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 import cats.effect.IO
 import cats.instances.string._
 import fs2.{Stream, text}
@@ -28,7 +28,7 @@ object StreamFs2 extends App {
       .map { response => println(s"RECEIVED:\n${response.body}") }
   }
 
-  val effect = AsyncHttpClientFs2Backend.resource[IO]().use { backend =>
+  val effect = HttpClientFs2Backend.resource[IO]().use { backend =>
     streamRequestBody(backend).flatMap(_ => streamResponseBody(backend))
   }
 

@@ -4,7 +4,7 @@ import monix.eval.Task
 import sttp.capabilities.WebSockets
 import sttp.capabilities.monix.MonixStreams
 import sttp.client3._
-import sttp.client3.asynchttpclient.monix.AsyncHttpClientMonixBackend
+import sttp.client3.httpclient.monix.HttpClientMonixBackend
 import sttp.client3.testing.SttpBackendStub
 import sttp.model.StatusCode
 import sttp.ws.{WebSocket, WebSocketFrame}
@@ -29,7 +29,7 @@ object WebSocketTesting extends App {
 
   // the backend stub which we'll use instead of a "real" backend
   val stubBackend: SttpBackendStub[Task, MonixStreams with WebSockets] =
-    AsyncHttpClientMonixBackend.stub
+    HttpClientMonixBackend.stub
       .whenRequestMatches(_.uri.toString().contains("echo.websocket.org"))
       .thenRespond(
         WebSocketStub.noInitialReceive.thenRespond {

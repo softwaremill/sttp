@@ -7,7 +7,7 @@ import sttp.ws.WebSocket
 import zio.{Console, _}
 
 object WebSocketZio extends ZIOAppDefault {
-  def useWebSocket(ws: WebSocket[Task[*]]): Task[Unit] = {
+  def useWebSocket(ws: WebSocket[Task]): Task[Unit] = {
     def send(i: Int) = ws.sendText(s"Hello $i!")
     val receive = ws.receiveText().flatMap(t => Console.printLine(s"RECEIVED: $t"))
     send(1) *> send(2) *> receive *> receive
@@ -15,7 +15,7 @@ object WebSocketZio extends ZIOAppDefault {
 
   // create a description of a program, which requires SttpClient dependency in the environment
   def sendAndPrint(backend: SttpBackend[Task, WebSockets]): Task[Response[Unit]] =
-    backend.send(basicRequest.get(uri"wss://echo.websocket.org").response(asWebSocketAlways(useWebSocket)))
+    backend.send(basicRequest.get(uri"wss://ws.postman-echo.com/raw").response(asWebSocketAlways(useWebSocket)))
 
   override def run = {
     // provide an implementation for the SttpClient dependency

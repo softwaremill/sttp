@@ -2,7 +2,7 @@ package sttp.client3.examples
 
 import monix.eval.Task
 import sttp.client3._
-import sttp.client3.asynchttpclient.monix.AsyncHttpClientMonixBackend
+import sttp.client3.httpclient.monix.HttpClientMonixBackend
 import sttp.ws.WebSocket
 
 object WebSocketMonix extends App {
@@ -14,12 +14,12 @@ object WebSocketMonix extends App {
     send(1) *> send(2) *> receive *> receive
   }
 
-  AsyncHttpClientMonixBackend
+  HttpClientMonixBackend
     .resource()
     .use { backend =>
       basicRequest
         .response(asWebSocket(useWebSocket))
-        .get(uri"wss://echo.websocket.org")
+        .get(uri"wss://ws.postman-echo.com/raw")
         .send(backend)
         .void
     }

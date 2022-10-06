@@ -4,7 +4,12 @@ The [fs2](https://github.com/functional-streams-for-scala/fs2) backends are **as
 
 ## Using HttpClient
 
-To use, add the following dependency to your project:
+Creation of the backend can be done in two basic ways:
+
+* by creating a `Resource`, which will instantiate the backend and close it after it has been used.
+* by creating an effect, which describes how a backend is created, or instantiating the backend directly. In this case, you'll need to close the backend manually, as well as provide a `Dispatcher` instance
+
+Firstly, add the following dependency to your project:
 
 ```scala
 "com.softwaremill.sttp.client3" %% "fs2" % "@VERSION@" // for cats-effect 3.x & fs2 3.x
@@ -55,86 +60,6 @@ Host header override is supported in environments running Java 12 onwards, but i
 -Djdk.httpclient.allowRestrictedHeaders=host
 ```
 
-## Using async-http-client
-
-To use, add the following dependency to your project:
-
-```scala
-"com.softwaremill.sttp.client3" %% "async-http-client-backend-fs2" % "@VERSION@" // for cats-effect 3.x & fs2 3.x
-// or
-"com.softwaremill.sttp.client3" %% "async-http-client-backend-fs2-ce2" % "@VERSION@" // for cats-effect 2.x & fs2 2.x
-```
- 
-This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client) and uses [Netty](http://netty.io) behind the scenes.
-
-Next you'll need to define a backend instance as an implicit value. This can be done in two basic ways:
-
-* by creating a `Resource`, which will instantiate the backend (along with a `Dispatcher`) and close it after it has been used
-* by creating an effect, which describes how a backend is created, or instantiating the backend directly. In this case, you'll need to close the backend manually, as well as provide a `Dispatcher` instance
-
-Below you can find a non-comprehensive summary of how the backend can be created. The easiest form is to use a cats-effect `Resource`:
-
-```scala mdoc:compile-only
-import cats.effect.IO
-import sttp.client3.asynchttpclient.fs2.AsyncHttpClientFs2Backend
-
-AsyncHttpClientFs2Backend.resource[IO]().use { backend => ??? }
-```
-
-or, by providing a custom dispatcher:
-
-```scala mdoc:compile-only
-import cats.effect.IO
-import cats.effect.std.Dispatcher
-import sttp.client3.asynchttpclient.fs2.AsyncHttpClientFs2Backend
-
-val dispatcher: Dispatcher[IO] = ???
-
-AsyncHttpClientFs2Backend[IO](dispatcher).flatMap { backend => ??? }
-```
-
-or, if you'd like to use a custom configuration:
-
-```scala mdoc:compile-only
-import cats.effect.IO
-import cats.effect.std.Dispatcher
-import org.asynchttpclient.AsyncHttpClientConfig
-import sttp.client3.asynchttpclient.fs2.AsyncHttpClientFs2Backend
-
-val dispatcher: Dispatcher[IO] = ???
-
-val config: AsyncHttpClientConfig = ???
-AsyncHttpClientFs2Backend.usingConfig[IO](config, dispatcher).flatMap { backend => ??? }
-```
-
-or, if you'd like to use adjust the configuration sttp creates:
-
-```scala mdoc:compile-only
-import cats.effect.IO
-import cats.effect.std.Dispatcher
-import org.asynchttpclient.DefaultAsyncHttpClientConfig
-import sttp.client3.SttpBackendOptions
-import sttp.client3.asynchttpclient.fs2.AsyncHttpClientFs2Backend
-
-val sttpOptions: SttpBackendOptions = SttpBackendOptions.Default 
-val adjustFunction: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder = ???
-val dispatcher: Dispatcher[IO] = ???
-
-AsyncHttpClientFs2Backend.usingConfigBuilder[IO](dispatcher, adjustFunction, sttpOptions).flatMap { backend => ??? }
-```
-
-or, if you'd like to instantiate the AsyncHttpClient yourself:
-
-```scala mdoc:compile-only
-import cats.effect.IO
-import cats.effect.std.Dispatcher
-import org.asynchttpclient.AsyncHttpClient
-import sttp.client3.asynchttpclient.fs2.AsyncHttpClientFs2Backend
-
-val dispatcher: Dispatcher[IO] = ???
-val asyncHttpClient: AsyncHttpClient = ??? 
-val backend = AsyncHttpClientFs2Backend.usingClient[IO](asyncHttpClient, dispatcher)
-```
 
 ## Using Armeria
 
@@ -200,10 +125,9 @@ import cats.effect.IO
 import fs2.Stream
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client3._
-import sttp.client3.armeria.fs2.ArmeriaFs2Backend
-import sttp.client3.asynchttpclient.fs2.AsyncHttpClientFs2Backend
+import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 
-val effect = AsyncHttpClientFs2Backend.resource[IO]().use { backend =>
+val effect = HttpClientFs2Backend.resource[IO]().use { backend =>
   val stream: Stream[IO, Byte] = ???
 
   basicRequest
@@ -221,10 +145,10 @@ import cats.effect.IO
 import fs2.Stream
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client3._
-import sttp.client3.asynchttpclient.fs2.AsyncHttpClientFs2Backend
+import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 import scala.concurrent.duration.Duration
 
-val effect = AsyncHttpClientFs2Backend.resource[IO]().use { backend =>
+val effect = HttpClientFs2Backend.resource[IO]().use { backend =>
   val response: IO[Response[Either[String, Stream[IO, Byte]]]] =
     basicRequest
       .post(uri"...")

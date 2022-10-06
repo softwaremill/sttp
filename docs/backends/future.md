@@ -10,7 +10,6 @@ Class                                 Supported stream type                     
 ===================================== ================================================ ==========================
 ``HttpClientFutureBackend``           n/a                                              yes (regular)
 ``AkkaHttpBackend``                   ``akka.stream.scaladsl.Source[ByteString, Any]`` yes (regular & streaming)
-``AsyncHttpClientFutureBackend``      n/a                                              no
 ``OkHttpFutureBackend``               n/a                                              yes (regular)
 ``ArmeriaFutureBackend``              n/a                                              n/a
 ===================================== ================================================ ==========================
@@ -54,56 +53,6 @@ Host header override is supported in environments running Java 12 onwards, but i
 -Djdk.httpclient.allowRestrictedHeaders=host
 ```
 
-## Using async-http-client
-
-To use, add the following dependency to your project:
-
-```scala
-"com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % "@VERSION@"
-```
-
-And some imports:
-
-```scala mdoc
-import sttp.client3._
-import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
-```
-
-This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client) and uses [Netty](http://netty.io) behind the scenes.
-
-Next you'll need to create the backend instance:
-
-```scala mdoc:compile-only
-val backend = AsyncHttpClientFutureBackend()
-```
-
-or, if you'd like to use custom configuration:
-
-```scala mdoc:compile-only
-import org.asynchttpclient.AsyncHttpClientConfig
-
-val config: AsyncHttpClientConfig = ???
-val backend = AsyncHttpClientFutureBackend.usingConfig(config)
-```
-
-or, if you'd like to use adjust the configuration sttp creates:
-
-```scala mdoc:compile-only
-import org.asynchttpclient.DefaultAsyncHttpClientConfig
-
-val sttpOptions: SttpBackendOptions = SttpBackendOptions.Default 
-val adjustFunction: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder = ???
-val backend = AsyncHttpClientFutureBackend.usingConfigBuilder(adjustFunction, sttpOptions)
-```
-
-or, if you'd like to instantiate the AsyncHttpClient yourself:
-
-```scala mdoc:compile-only
-import org.asynchttpclient.AsyncHttpClient
-
-val asyncHttpClient: AsyncHttpClient = ??? 
-val backend = AsyncHttpClientFutureBackend.usingClient(asyncHttpClient)
-```
 
 ## Using OkHttp
 
@@ -131,8 +80,8 @@ or, if you'd like to instantiate the OkHttpClient yourself:
 ```scala mdoc:compile-only
 import okhttp3.OkHttpClient
 
-val asyncHttpClient: OkHttpClient = ??? 
-val backend = OkHttpFutureBackend.usingClient(asyncHttpClient)
+val okHttpClient: OkHttpClient = ??? 
+val backend = OkHttpFutureBackend.usingClient(okHttpClient)
 ```
 
 This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supports HTTP/2.

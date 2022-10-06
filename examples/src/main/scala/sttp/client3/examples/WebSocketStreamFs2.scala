@@ -5,7 +5,7 @@ import cats.effect.unsafe.IORuntime
 import fs2._
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client3._
-import sttp.client3.asynchttpclient.fs2.AsyncHttpClientFs2Backend
+import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 import sttp.ws.WebSocketFrame
 
 object WebSocketStreamFs2 extends App {
@@ -23,12 +23,12 @@ object WebSocketStreamFs2 extends App {
     }
   }
 
-  AsyncHttpClientFs2Backend
+  HttpClientFs2Backend
     .resource[IO]()
     .use { backend =>
       basicRequest
         .response(asWebSocketStream(Fs2Streams[IO])(webSocketFramePipe))
-        .get(uri"wss://echo.websocket.org")
+        .get(uri"wss://ws.postman-echo.com/raw")
         .send(backend)
         .void
     }

@@ -93,6 +93,7 @@ class AsyncHttpClientFs2Backend[F[_]: Async] private (
       .map(new Fs2SimpleQueue(_, webSocketBufferCapacity, dispatcher))
 }
 
+@deprecated(message = "The async-http-client project is no longer maintained")
 object AsyncHttpClientFs2Backend {
   private def apply[F[_]: Async](
       asyncHttpClient: AsyncHttpClient,

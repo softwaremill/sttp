@@ -30,12 +30,6 @@ Class                                Effect type                      Supported 
 ``HttpURLConnectionBackend``         None (``Identity``)              n/a                                               no                         no
 ``TryHttpURLConnectionBackend``      ``scala.util.Try``               n/a                                               no                         no
 ``AkkaHttpBackend``                  ``scala.concurrent.Future``      ``akka.stream.scaladsl.Source[ByteString, Any]``  yes (regular & streaming)  yes
-``AsyncHttpClientFutureBackend``     ``scala.concurrent.Future``      n/a                                               yes (regular)              no
-``AsyncHttpClientScalazBackend``     ``scalaz.concurrent.Task``       n/a                                               yes (regular)              no
-``AsyncHttpClientZioBackend``        ``zio.Task``                     ``zio.stream.Stream[Throwable, Byte]``            yes (regular & streaming)  no
-``AsyncHttpClientMonixBackend``      ``monix.eval.Task``              ``monix.reactive.Observable[ByteBuffer]``         yes (regular & streaming)  no
-``AsyncHttpClientCatsBackend``       ``F[_]: cats.effect.Concurrent`` n/a                                               no                         no
-``AsyncHttpClientFs2Backend``        ``F[_]: cats.effect.Concurrent`` ``fs2.Stream[F, Byte]``                           yes (regular & streaming)  no
 ``ArmeriaFutureBackend``             ``scala.concurrent.Future``      n/a                                               no                         yes
 ``ArmeriaScalazBackend``             ``scalaz.concurrent.Task``       n/a                                               no                         yes
 ``ArmeriaZioBackend``                ``zio.Task``                     ``zio.stream.Stream[Throwable, Byte]``            no                         yes
@@ -47,6 +41,20 @@ Class                                Effect type                      Supported 
 ``OkHttpMonixBackend``               ``monix.eval.Task``              ``monix.reactive.Observable[ByteBuffer]``         yes (regular & streaming)  no
 ``Http4sBackend``                    ``F[_]: cats.effect.Effect``     ``fs2.Stream[F, Byte]``                           no                         no
 ``FinagleBackend``                   ``com.twitter.util.Future``      n/a                                               no                         no
+==================================== ================================ ================================================= ========================== ===================
+```
+
+Also, async-http-client based backends are available, although they should not be used in new projects as they are deprecated as api-http-client is no longer maintained.
+```eval_rst
+==================================== ================================ ================================================= ========================== ===================
+Class                                Effect type                      Supported stream type                             Supports websockets        Fully non-blocking
+==================================== ================================ ================================================= ========================== ===================
+``AsyncHttpClientFutureBackend``     ``scala.concurrent.Future``      n/a                                               yes (regular)              no
+``AsyncHttpClientScalazBackend``     ``scalaz.concurrent.Task``       n/a                                               yes (regular)              no
+``AsyncHttpClientZioBackend``        ``zio.Task``                     ``zio.stream.Stream[Throwable, Byte]``            yes (regular & streaming)  no
+``AsyncHttpClientMonixBackend``      ``monix.eval.Task``              ``monix.reactive.Observable[ByteBuffer]``         yes (regular & streaming)  no
+``AsyncHttpClientCatsBackend``       ``F[_]: cats.effect.Concurrent`` n/a                                               no                         no
+``AsyncHttpClientFs2Backend``        ``F[_]: cats.effect.Concurrent`` ``fs2.Stream[F, Byte]``                           yes (regular & streaming)  no
 ==================================== ================================ ================================================= ========================== ===================
 ```
 

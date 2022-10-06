@@ -97,6 +97,7 @@ class AsyncHttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
       .map(new Fs2SimpleQueue(_, webSocketBufferCapacity))
 }
 
+@deprecated(message = "The async-http-client project is no longer maintained")
 object AsyncHttpClientFs2Backend {
   private def apply[F[_]: ConcurrentEffect: ContextShift](
       asyncHttpClient: AsyncHttpClient,

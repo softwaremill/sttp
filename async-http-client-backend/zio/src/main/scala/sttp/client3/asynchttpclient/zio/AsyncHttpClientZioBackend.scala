@@ -98,6 +98,7 @@ class AsyncHttpClientZioBackend private (
     } yield new ZioSimpleQueue(queue, runtime)
 }
 
+@deprecated(message = "The async-http-client project is no longer maintained")
 object AsyncHttpClientZioBackend {
   private def apply[R](
       runtime: Runtime[R],

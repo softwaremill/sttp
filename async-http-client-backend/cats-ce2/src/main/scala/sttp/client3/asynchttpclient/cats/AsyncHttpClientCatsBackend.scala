@@ -65,6 +65,7 @@ class AsyncHttpClientCatsBackend[F[_]: Concurrent: ContextShift] private (
     throw new IllegalStateException("Web sockets are not supported!")
 }
 
+@deprecated(message = "The async-http-client project is no longer maintained")
 object AsyncHttpClientCatsBackend {
   private def apply[F[_]: Concurrent: ContextShift](
       asyncHttpClient: AsyncHttpClient,

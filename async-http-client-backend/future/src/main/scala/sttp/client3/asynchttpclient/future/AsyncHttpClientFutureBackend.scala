@@ -55,6 +55,7 @@ class AsyncHttpClientFutureBackend private (
     throw new IllegalStateException("Web sockets are not supported!")
 }
 
+@deprecated(message = "The async-http-client project is no longer maintained")
 object AsyncHttpClientFutureBackend {
   private def apply(
       asyncHttpClient: AsyncHttpClient,

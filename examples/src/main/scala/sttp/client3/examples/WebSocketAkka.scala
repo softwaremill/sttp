@@ -23,7 +23,7 @@ object WebSocketAkka extends App {
 
   basicRequest
     .response(asWebSocket(useWebSocket))
-    .get(uri"wss://echo.websocket.org")
+    .get(uri"wss://ws.postman-echo.com/raw")
     .send(backend)
     .onComplete(_ => backend.close())
 }

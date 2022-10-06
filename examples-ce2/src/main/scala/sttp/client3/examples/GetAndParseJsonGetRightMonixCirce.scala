@@ -2,7 +2,7 @@ package sttp.client3.examples
 
 import io.circe.generic.auto._
 import sttp.client3._
-import sttp.client3.asynchttpclient.monix.AsyncHttpClientMonixBackend
+import sttp.client3.httpclient.monix.HttpClientMonixBackend
 import sttp.client3.circe._
 
 object GetAndParseJsonGetRightMonixCirce extends App {
@@ -14,7 +14,7 @@ object GetAndParseJsonGetRightMonixCirce extends App {
     .get(uri"https://httpbin.org/get")
     .response(asJson[HttpBinResponse].getRight)
 
-  AsyncHttpClientMonixBackend
+  HttpClientMonixBackend
     .resource()
     .use { backend =>
       request.send(backend).map { response: Response[HttpBinResponse] =>

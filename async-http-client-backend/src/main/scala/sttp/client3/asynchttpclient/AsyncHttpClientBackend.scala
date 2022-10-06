@@ -34,6 +34,7 @@ import scala.collection.JavaConverters._
 import scala.collection.immutable.Seq
 import scala.util.Try
 
+@deprecated(message = "The async-http-client project is no longer maintained")
 abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
     asyncHttpClient: AsyncHttpClient,
     private implicit val monad: MonadAsyncError[F],

@@ -1,15 +1,15 @@
 package sttp.client3.examples
 
-object PostSerializeJsonMonixAsyncHttpClientCirce extends App {
+object PostSerializeJsonMonixHttpClientCirce extends App {
   import sttp.client3._
   import sttp.client3.circe._
-  import sttp.client3.asynchttpclient.monix._
+  import sttp.client3.httpclient.monix.HttpClientMonixBackend
   import io.circe.generic.auto._
   import monix.eval.Task
 
   case class Info(x: Int, y: String)
 
-  val postTask = AsyncHttpClientMonixBackend().flatMap { backend =>
+  val postTask = HttpClientMonixBackend().flatMap { backend =>
     val r = basicRequest
       .body(Info(91, "abc"))
       .post(uri"https://httpbin.org/post")
