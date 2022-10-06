@@ -44,7 +44,8 @@ Class                                Effect type                      Supported 
 ==================================== ================================ ================================================= ========================== ===================
 ```
 
-Also, async-http-client based backends are available, although they should not be used in new projects as they are deprecated as api-http-client is no longer maintained.
+Moreover, the following backends are deprecated, as they depend on async-http-client, which is no longer maintained:
+
 ```eval_rst
 ==================================== ================================ ================================================= ========================== ===================
 Class                                Effect type                      Supported stream type                             Supports websockets        Fully non-blocking
