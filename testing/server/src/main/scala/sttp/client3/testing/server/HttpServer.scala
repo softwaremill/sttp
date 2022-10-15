@@ -3,6 +3,7 @@ package sttp.client3.testing.server
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.coding.Coders._
+import akka.http.scaladsl.coding.DeflateNoWrap
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.CacheDirectives._
 import akka.http.scaladsl.model.headers._
@@ -267,6 +268,10 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
       }
     } ~ path("compress") {
       encodeResponseWith(NoCoding, Gzip, Deflate) {
+        complete("I'm compressed!")
+      }
+    } ~ path("compress-deflate-nowrap") {
+      encodeResponseWith(DeflateNoWrap) {
         complete("I'm compressed!")
       }
     } ~ path("compress-empty-gzip") {

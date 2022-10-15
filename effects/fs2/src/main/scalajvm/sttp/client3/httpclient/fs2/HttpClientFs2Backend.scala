@@ -8,7 +8,6 @@ import java.util
 import cats.effect.kernel._
 import cats.effect.std.{Dispatcher, Queue}
 import cats.implicits._
-import fs2.compression.InflateParams
 import fs2.interop.reactivestreams.{PublisherOps, StreamUnicastPublisher}
 import fs2.{Chunk, Stream}
 import org.reactivestreams.FlowAdapters
@@ -89,7 +88,7 @@ class HttpClientFs2Backend[F[_]: Async] private (
 
   override protected def standardEncoding: (Stream[F, Byte], String) => Stream[F, Byte] = {
     case (body, "gzip")    => body.through(fs2.compression.Compression[F].gunzip()).flatMap(_.content)
-    case (body, "deflate") => body.through(fs2.compression.Compression[F].inflate(InflateParams.DEFAULT))
+    case (body, "deflate") => body.through(Fs2Compression.inflateCheckHeader[F])
     case (_, ce)           => Stream.raiseError[F](new UnsupportedEncodingException(s"Unsupported encoding: $ce"))
   }
 }
