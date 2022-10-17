@@ -18,7 +18,7 @@ import sttp.client3.HttpClientBackend.EncodingHandler
 import sttp.client3.httpclient.fs2.HttpClientFs2Backend.Fs2EncodingHandler
 import sttp.client3.internal.httpclient.{BodyFromHttpClient, BodyToHttpClient, Sequencer}
 import sttp.client3.impl.cats.implicits._
-import sttp.client3.impl.fs2.Fs2SimpleQueue
+import sttp.client3.impl.fs2.{Fs2Compression, Fs2SimpleQueue}
 import sttp.client3.internal.ws.SimpleQueue
 import sttp.client3.testing.SttpBackendStub
 import sttp.client3.{
@@ -85,7 +85,7 @@ class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
 
   override protected def standardEncoding: (Stream[F, Byte], String) => Stream[F, Byte] = {
     case (body, "gzip")    => body.through(fs2.compression.gunzip()).flatMap(_.content)
-    case (body, "deflate") => body.through(fs2.compression.inflate())
+    case (body, "deflate") => body.through(Fs2Compression.inflateCheckHeader)
     case (_, ce)           => Stream.raiseError[F](new UnsupportedEncodingException(s"Unsupported encoding: $ce"))
   }
 }

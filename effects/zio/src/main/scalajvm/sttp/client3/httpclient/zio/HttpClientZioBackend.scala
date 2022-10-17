@@ -14,7 +14,7 @@ import sttp.client3.{FollowRedirectsBackend, HttpClientAsyncBackend, HttpClientB
 import sttp.monad.MonadError
 import zio.Chunk.ByteArray
 import zio._
-import zio.stream.{ZPipeline, ZStream}
+import zio.stream.{ZPipeline, ZSink, ZStream}
 
 import java.io.UnsupportedEncodingException
 import java.net.http.HttpRequest.{BodyPublisher, BodyPublishers}
@@ -76,9 +76,13 @@ class HttpClientZioBackend private (
   override protected def createSequencer: Task[Sequencer[Task]] = ZioSequencer.create
 
   override protected def standardEncoding: (ZStream[Any, Throwable, Byte], String) => ZStream[Any, Throwable, Byte] = {
-    case (body, "gzip")    => body.via(ZPipeline.gunzip())
-    case (body, "deflate") => body.via(ZPipeline.inflate())
-    case (_, ce)           => ZStream.fail(new UnsupportedEncodingException(s"Unsupported encoding: $ce"))
+    case (body, "gzip") => body.via(ZPipeline.gunzip())
+    case (body, "deflate") =>
+      ZStream.scoped(body.peel(ZSink.take[Byte](1))).flatMap { case (chunk, stream) =>
+        val wrapped = chunk.headOption.exists(byte => (byte & 0x0f) == 0x08)
+        (ZStream.fromChunk(chunk) ++ stream).via(ZPipeline.inflate(noWrap = !wrapped))
+      }
+    case (_, ce) => ZStream.fail(new UnsupportedEncodingException(s"Unsupported encoding: $ce"))
   }
 }
 

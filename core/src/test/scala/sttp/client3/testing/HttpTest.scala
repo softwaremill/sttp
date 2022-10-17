@@ -56,6 +56,7 @@ trait HttpTest[F[_]]
   protected def supportsHostHeaderOverride = true
   protected def supportsCancellation = true
   protected def supportsAutoDecompressionDisabling = true
+  protected def supportsDeflateWrapperChecking = true
 
   "parse response" - {
     "as string" in {
@@ -180,8 +181,8 @@ trait HttpTest[F[_]]
         .response(asStringAlways.map[Int](_ => throw error))
         .send(backend)
         .map(_.body)
-        .handleError {
-          case `error` => monadError.unit(1)
+        .handleError { case `error` =>
+          monadError.unit(1)
         }
         .toFuture()
         .map(_ shouldBe 1)
@@ -380,6 +381,14 @@ trait HttpTest[F[_]]
     "decompress using deflate" in {
       val req = compress.acceptEncoding("deflate")
       req.send(backend).toFuture().map { resp => resp.body should be(decompressedBody) }
+    }
+
+    if (supportsDeflateWrapperChecking) {
+      "decompress using deflate nowrap" in {
+        val req =
+          basicRequest.get(uri"$endpoint/compress-deflate-nowrap").response(asStringAlways).acceptEncoding("deflate")
+        req.send(backend).toFuture().map { resp => resp.body should be(decompressedBody) }
+      }
     }
 
     "work despite providing an unsupported encoding" in {

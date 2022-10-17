@@ -13,6 +13,7 @@ class ArmeriaFutureHttpTest extends HttpTest[Future] {
   override def supportsHostHeaderOverride = false
   override def supportsCancellation = false
   override def supportsAutoDecompressionDisabling = false
+  override def supportsDeflateWrapperChecking = false // armeria hangs
 
   override def timeoutToNone[T](t: Future[T], timeoutMillis: Int): Future[Option[T]] = t.map(Some(_))
 }

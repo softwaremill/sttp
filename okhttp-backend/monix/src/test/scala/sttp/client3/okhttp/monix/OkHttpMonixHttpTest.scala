@@ -16,6 +16,8 @@ class OkHttpMonixHttpTest extends HttpTest[Task] {
   override val backend: SttpBackend[Task, MonixStreams] = OkHttpMonixBackend().runSyncUnsafe()
   override implicit val convertToFuture: ConvertToFuture[Task] = convertMonixTaskToFuture
 
+  override def supportsDeflateWrapperChecking = false
+
   override def timeoutToNone[T](t: Task[T], timeoutMillis: Int): Task[Option[T]] =
     t.map(Some(_))
       .timeout(timeoutMillis.milliseconds)

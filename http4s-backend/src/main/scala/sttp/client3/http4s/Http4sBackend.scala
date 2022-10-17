@@ -6,7 +6,6 @@ import cats.data.NonEmptyList
 import cats.effect.{Async, Deferred, Resource}
 import cats.implicits._
 import cats.effect.implicits._
-import fs2.compression.InflateParams
 import fs2.io.file.Files
 import fs2.{Chunk, Stream}
 import org.http4s.{ContentCoding, EntityBody, Status, Request => Http4sRequest}
@@ -16,6 +15,7 @@ import org.http4s.blaze.client.BlazeClientBuilder
 import org.typelevel.ci.CIString
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client3.http4s.Http4sBackend.EncodingHandler
+import sttp.client3.httpclient.fs2.Fs2Compression
 import sttp.client3.impl.cats.CatsMonadAsyncError
 import sttp.client3.internal.{BodyFromResponseAs, IOBufferSize, SttpFile, throwNestedMultipartNotAllowed}
 import sttp.model._
@@ -182,7 +182,7 @@ class Http4sBackend[F[_]: Async](
         if http4s.headers
           .`Accept-Encoding`(NonEmptyList.of(http4s.ContentCoding.deflate))
           .satisfiedBy(contentCoding) =>
-      body.through(fs2.compression.Compression[F].inflate(InflateParams.DEFAULT))
+      body.through(Fs2Compression.inflateCheckHeader[F])
     case (body, contentCoding)
         if http4s.headers
           .`Accept-Encoding`(NonEmptyList.of(http4s.ContentCoding.gzip, http4s.ContentCoding.`x-gzip`))

@@ -14,6 +14,7 @@ class HttpClientMonixHttpTest extends HttpTest[Task] {
   override implicit val convertToFuture: ConvertToFuture[Task] = convertMonixTaskToFuture
 
   override def supportsHostHeaderOverride = false
+  override def supportsDeflateWrapperChecking = false
 
   override def timeoutToNone[T](t: Task[T], timeoutMillis: Int): Task[Option[T]] =
     t.map(Some(_))

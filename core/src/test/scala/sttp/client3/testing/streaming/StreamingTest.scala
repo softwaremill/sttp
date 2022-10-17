@@ -208,8 +208,8 @@ abstract class StreamingTest[F[_], S]
       .response(asStreamAlways[F, Int, S](streams)(_ => throw error))
       .send(backend)
       .map(_.body)
-      .handleError {
-        case `error` => monadError.unit(1)
+      .handleError { case `error` =>
+        monadError.unit(1)
       }
       .toFuture()
       .map(_ shouldBe 1)

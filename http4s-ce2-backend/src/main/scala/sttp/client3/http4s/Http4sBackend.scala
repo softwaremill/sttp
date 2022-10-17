@@ -17,6 +17,7 @@ import org.typelevel.ci.CIString
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client3.http4s.Http4sBackend.EncodingHandler
 import sttp.client3.impl.cats.CatsMonadAsyncError
+import sttp.client3.impl.fs2.Fs2Compression
 import sttp.client3.internal.{BodyFromResponseAs, IOBufferSize, SttpFile, throwNestedMultipartNotAllowed}
 import sttp.model._
 import sttp.monad.MonadError
@@ -182,7 +183,7 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
         if http4s.headers
           .`Accept-Encoding`(NonEmptyList.of(http4s.ContentCoding.deflate))
           .satisfiedBy(contentCoding) =>
-      body.through(fs2.compression.inflate())
+      body.through(Fs2Compression.inflateCheckHeader[F])
     case (body, contentCoding)
         if http4s.headers
           .`Accept-Encoding`(NonEmptyList.of(http4s.ContentCoding.gzip, http4s.ContentCoding.`x-gzip`))
