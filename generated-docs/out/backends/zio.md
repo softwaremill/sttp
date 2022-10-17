@@ -9,8 +9,8 @@ The `*-zio` modules depend on ZIO 2.x. For ZIO 1.x support, use modules with the
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "zio" % "3.8.2"  // for ZIO 2.x
-"com.softwaremill.sttp.client3" %% "zio1" % "3.8.2" // for ZIO 1.x
+"com.softwaremill.sttp.client3" %% "zio" % "3.8.3"  // for ZIO 2.x
+"com.softwaremill.sttp.client3" %% "zio1" % "3.8.3" // for ZIO 1.x
 ```
 
 Create the backend using:
@@ -37,55 +37,14 @@ Host header override is supported in environments running Java 12 onwards, but i
 -Djdk.httpclient.allowRestrictedHeaders=host
 ```
 
-## Using async-http-client
-
-To use, add the following dependency to your project:
-
-```scala
-"com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % "3.8.2"  // for ZIO 2.x
-"com.softwaremill.sttp.client3" %% "async-http-client-backend-zio1" % "3.8.2" // for ZIO 1.x
-```
-           
-This backend depends on [async-http-client](https://github.com/AsyncHttpClient/async-http-client), uses [Netty](http://netty.io) behind the scenes. This backend works with all Scala versions. A Scala 3 build is available as well.
-
-Next you'll need to define a backend instance.  A non-comprehensive summary of how this can be done is as follows:
-
-```scala
-import sttp.client3._
-import sttp.client3.asynchttpclient.zio.AsyncHttpClientZioBackend
-
-AsyncHttpClientZioBackend().flatMap { backend => ??? }
-
-// or, if you'd like the backend to be wrapped in a Scope:
-AsyncHttpClientZioBackend.scoped().flatMap { backend => ??? }
-
-// or, if you'd like to use custom configuration:
-import org.asynchttpclient.AsyncHttpClientConfig
-val config: AsyncHttpClientConfig = ???
-AsyncHttpClientZioBackend.usingConfig(config).flatMap { backend => ??? }
-
-// or, if you'd like to use adjust the configuration sttp creates:
-import org.asynchttpclient.DefaultAsyncHttpClientConfig
-val sttpOptions: SttpBackendOptions = SttpBackendOptions.Default  
-val adjustFunction: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder = ???
-
-AsyncHttpClientZioBackend.usingConfigBuilder(adjustFunction, sttpOptions).flatMap { backend => ??? }
-
-// or, if you'd like to instantiate the AsyncHttpClient yourself:
-import org.asynchttpclient.AsyncHttpClient
-import zio.Runtime
-val asyncHttpClient: AsyncHttpClient = ???
-val runtime: Runtime[Any] = ???
-val backend = AsyncHttpClientZioBackend.usingClient(runtime, asyncHttpClient)
-```
 
 ## Using Armeria
 
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "armeria-backend-zio" % "3.8.2"  // for ZIO 2.x
-"com.softwaremill.sttp.client3" %% "armeria-backend-zio1" % "3.8.2" // for ZIO 1.x
+"com.softwaremill.sttp.client3" %% "armeria-backend-zio" % "3.8.3"  // for ZIO 2.x
+"com.softwaremill.sttp.client3" %% "armeria-backend-zio1" % "3.8.3" // for ZIO 1.x
 ```
 
 add imports:
@@ -136,7 +95,7 @@ Please visit [the official documentation](https://armeria.dev/docs/client-factor
 
 ## ZIO layers
 
-As an alternative to effectfully or resourcefully creating backend instances, ZIO layers can be used. In this scenario, the lifecycle of a `SttpBackend` service is described by `ZLayer`s, which can be created using the `.layer`/`.layerUsingConfig`/... methods on `HttpClientZioBackend` / `AsyncHttpClientZioBackend` / `ArmeriaZioBackend`.
+As an alternative to effectfully or resourcefully creating backend instances, ZIO layers can be used. In this scenario, the lifecycle of a `SttpBackend` service is described by `ZLayer`s, which can be created using the `.layer`/`.layerUsingConfig`/... methods on `HttpClientZioBackend` / `ArmeriaZioBackend`.
 
 The layers can be used to provide an implementation of the `SttpBackend` dependency when creating services. For example:
 
@@ -161,7 +120,7 @@ ZLayer.make[MyService](MyService.live, HttpClientZioBackend.layer())
 
 ## Streaming
 
-The ZIO based backends support streaming using zio-streams. The following example is using the `AsyncHttpClientZioBackend` backend, but works similarly with `HttpClientZioBackend`.
+The ZIO based backends support streaming using zio-streams. The following example is using the `HttpClientZioBackend`.
 
 The type of supported streams is `Stream[Throwable, Byte]`. The streams capability is represented as `sttp.client3.impl.zio.ZioStreams`. To leverage ZIO environment, use the `SttpClient` object to create request send effects.
 
@@ -207,7 +166,7 @@ val response: ZIO[Any, Throwable, Response[Either[String, Stream[Throwable, Byte
 
 ## Websockets
 
-The `HttpClient` and `async-http-client` ZIO backends support both regular and streaming [websockets](../websockets.md).
+The `HttpClient` ZIO backend supports both regular and streaming [websockets](../websockets.md).
 
 ## Testing
 
