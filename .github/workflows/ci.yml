@@ -45,11 +45,11 @@ jobs:
           ~/.ivy2/cache
           ~/.coursier
         key: sbt-cache-${{ runner.os }}-${{ matrix.target-platform }}-${{ hashFiles('project/build.properties') }}
-    - name: Install libidn2-dev libcurl4-dev
+    - name: Install libidn2-dev libcurl4-openssl-dev
       if: matrix.target-platform == 'Native'
       run: |
         sudo apt-get update
-        sudo apt-get install libidn2-dev libcurl4-dev
+        sudo apt-get install libidn2-dev libcurl4-openssl-dev
         echo "STTP_NATIVE=1" >> $GITHUB_ENV
     - name: Compile
       run: |
@@ -129,10 +129,10 @@ jobs:
             ~/.ivy2/cache
             ~/.coursier
           key: sbt-cache-release-${{ runner.os }}-${{ hashFiles('project/build.properties') }}
-      - name: Install libidn2-dev libcurl4-dev
+      - name: Install libidn2-dev libcurl4-openssl-dev
         run: |
           sudo apt-get update
-          sudo apt-get install libidn2-dev libcurl4-dev
+          sudo apt-get install libidn2-dev libcurl4-openssl-dev
       - name: Compile
         run: sbt compile
       - name: Publish artifacts
