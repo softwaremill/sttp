@@ -148,7 +148,7 @@ val zio1InteropRsVersion = "1.3.12"
 val zio2InteropRsVersion = "2.0.0"
 
 val sttpModelVersion = "1.5.2"
-val sttpSharedVersion = "1.3.10"
+val sttpSharedVersion = "1.3.11"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.4.4"
 
@@ -466,11 +466,6 @@ lazy val zio = (projectMatrix in file("effects/zio"))
   .settings(
     name := "zio",
     Test / publishArtifact := true,
-    libraryDependencies ++= Seq(
-      "dev.zio" %%% "zio-streams" % zio2Version,
-      "dev.zio" %%% "zio" % zio2Version,
-      "com.softwaremill.sttp.shared" %%% "zio" % sttpSharedVersion
-    )
   )
   .settings(testServerSettings)
   .dependsOn(core % compileAndTest)
@@ -478,13 +473,22 @@ lazy val zio = (projectMatrix in file("effects/zio"))
     scalaVersions = scala2 ++ scala3,
     settings = commonJvmSettings ++ Seq(
       libraryDependencies ++= Seq(
+        "dev.zio" %%% "zio-streams" % zio2Version,
+        "dev.zio" %%% "zio" % zio2Version,
+        "com.softwaremill.sttp.shared" %%% "zio" % sttpSharedVersion,
         "dev.zio" %% "zio-interop-reactivestreams" % zio2InteropRsVersion
       )
     )
   )
   .jsPlatform(
     scalaVersions = List(scala2_12, scala2_13) ++ scala3,
-    settings = commonJsSettings ++ commonJsBackendSettings ++ browserChromeTestSettings ++ testServerSettings
+    settings = commonJsSettings ++ commonJsBackendSettings ++ browserChromeTestSettings ++ testServerSettings ++ Seq(
+      libraryDependencies ++= Seq(
+        "dev.zio" %%% "zio-streams" % zio2Version,
+        "dev.zio" %%% "zio" % zio2Version,
+        "com.softwaremill.sttp.shared" %%% "zio" % sttpSharedVersion
+      )
+    )
   )
 
 lazy val scalaz = (projectMatrix in file("effects/scalaz"))
