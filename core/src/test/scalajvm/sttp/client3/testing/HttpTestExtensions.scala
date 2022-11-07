@@ -298,4 +298,21 @@ trait HttpTestExtensions[F[_]] extends AsyncFreeSpecLike { self: HttpTest[F] =>
       }
     }
   }
+
+  if (self.supportsHttpVersionSetting) {
+    "http versions" - {
+      "send with HTTP version 1.1" in {
+        val req = basicRequest.get(uri"$endpoint/version-1.1").httpVersion_1_1
+        req.send(backend).toFuture().map { resp =>
+          resp.code shouldBe StatusCode.Ok
+        }
+      }
+      "send with HTTP version 2.0" in {
+        val req = basicRequest.get(uri"$endpoint/version-2.0").httpVersion_2
+        req.send(backend).toFuture().map { resp =>
+          resp.code shouldBe StatusCode.BadRequest
+        }
+      }
+    }
+  }
 }

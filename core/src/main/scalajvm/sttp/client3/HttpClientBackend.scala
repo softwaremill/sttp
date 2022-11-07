@@ -34,6 +34,12 @@ abstract class HttpClientBackend[F[_], S, P, B](
         .newBuilder()
         .uri(request.uri.toJavaUri)
 
+      request.getHttpVersion match {
+        case HTTP_1_1 => builder.version(HttpClient.Version.HTTP_1_1)
+        case HTTP_2 => builder.version(HttpClient.Version.HTTP_2)
+        case _ => // skip, client default version remains active
+      }
+
       // Only setting the content type if it's present, and won't be set later with the mulitpart boundary added
       val contentType: Option[String] = request.headers.find(_.is(HeaderNames.ContentType)).map(_.value)
       contentType.foreach { ct =>

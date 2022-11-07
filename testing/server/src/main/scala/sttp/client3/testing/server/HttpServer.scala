@@ -465,6 +465,28 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
             )
           }
         }
+    } ~ path("version-1.1") {
+      extractRequest { (reg: HttpRequest) =>
+        {
+          // FIXME: tests nothing as akka uses http 1.1 by default and using http 2 seems not to be easy
+          reg.protocol match {
+            case HttpProtocols.`HTTP/1.1` =>
+              complete(HttpResponse(status = StatusCodes.OK, protocol = HttpProtocols.`HTTP/1.1`))
+            case _ => complete(HttpResponse(status = StatusCodes.BadRequest))
+          }
+        }
+      }
+    } ~ path("version-2.0") {
+      extractRequest { (reg: HttpRequest) =>
+        {
+          reg.protocol match {
+            case HttpProtocols.`HTTP/2.0` =>
+              complete(HttpResponse(status = StatusCodes.OK, protocol = HttpProtocols.`HTTP/2.0`))
+            case _ =>
+              complete(HttpResponse(status = StatusCodes.BadRequest))
+          }
+        }
+      }
     }
 
   val corsServerRoutes: Route = {

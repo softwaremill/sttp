@@ -57,6 +57,7 @@ trait HttpTest[F[_]]
   protected def supportsCancellation = true
   protected def supportsAutoDecompressionDisabling = true
   protected def supportsDeflateWrapperChecking = true
+  protected def supportsHttpVersionSetting = true
 
   "parse response" - {
     "as string" in {

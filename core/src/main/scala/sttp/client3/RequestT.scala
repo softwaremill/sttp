@@ -246,6 +246,18 @@ case class RequestT[U[_], T, -R](
 
   def autoDecompressionDisabled: Boolean = tags.getOrElse(disableAutoDecompressionKey, false).asInstanceOf[Boolean]
 
+  private val httpVersionKey = "HTTPVersion"
+
+  // Used as a workaround to keep binary compatibility
+  // TODO: replace with additional parameter in RequestOptions when writing sttp4
+  def httpVersion_1: RequestT[U, T, R] = tag(httpVersionKey, HTTP_1)
+
+  def httpVersion_1_1: RequestT[U, T, R] = tag(httpVersionKey, HTTP_1_1)
+
+  def httpVersion_2: RequestT[U, T, R] = tag(httpVersionKey, HTTP_2)
+
+  def getHttpVersion: HttpVersion = tags.getOrElse(httpVersionKey, Empty).asInstanceOf[HttpVersion]
+
   private val loggingOptionsTagKey = "loggingOptions"
 
   /** Will only have effect when using the `LoggingBackend` */
