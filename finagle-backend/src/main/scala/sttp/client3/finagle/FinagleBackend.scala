@@ -23,6 +23,7 @@ import sttp.client3.{
   ByteBufferBody,
   FileBody,
   FollowRedirectsBackend,
+  HttpVersion,
   InputStreamBody,
   MultipartBody,
   NoBody,
@@ -94,24 +95,27 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
     r.body match {
       case FileBody(f, _) =>
         val content: String = Source.fromFile(f.toFile).mkString
-        buildRequest(url, headers, finagleMethod, Some(ByteArray(content.getBytes: _*)))
-      case NoBody               => buildRequest(url, headers, finagleMethod, None)
-      case StringBody(s, e, _)  => buildRequest(url, headers, finagleMethod, Some(ByteArray(s.getBytes(e): _*)))
-      case ByteArrayBody(b, _)  => buildRequest(url, headers, finagleMethod, Some(ByteArray(b: _*)))
-      case ByteBufferBody(b, _) => buildRequest(url, headers, finagleMethod, Some(ByteBuffer.Owned(b)))
+        buildRequest(url, headers, finagleMethod, Some(ByteArray(content.getBytes: _*)), r.getHttpVersion)
+      case NoBody => buildRequest(url, headers, finagleMethod, None, r.getHttpVersion)
+      case StringBody(s, e, _) =>
+        buildRequest(url, headers, finagleMethod, Some(ByteArray(s.getBytes(e): _*)), r.getHttpVersion)
+      case ByteArrayBody(b, _) => buildRequest(url, headers, finagleMethod, Some(ByteArray(b: _*)), r.getHttpVersion)
+      case ByteBufferBody(b, _) =>
+        buildRequest(url, headers, finagleMethod, Some(ByteBuffer.Owned(b)), r.getHttpVersion)
       case InputStreamBody(is, _) =>
         buildRequest(
           url,
           headers,
           finagleMethod,
-          Some(ByteArray(Stream.continually(is.read).takeWhile(_ != -1).map(_.toByte).toArray: _*))
+          Some(ByteArray(Stream.continually(is.read).takeWhile(_ != -1).map(_.toByte).toArray: _*)),
+          r.getHttpVersion
         )
       case MultipartBody(parts) =>
         val requestBuilder = RequestBuilder.create().url(url).addHeaders(headers)
         val elements = parts.map { part => getBasicBodyContent(part) }
         requestBuilder.add(elements).buildFormPost(true)
       // requestBuilder.addFormElement(elements: _*).buildFormPost(true)
-      case _ => buildRequest(url, headers, finagleMethod, None)
+      case _ => buildRequest(url, headers, finagleMethod, None, r.getHttpVersion)
     }
   }
 
@@ -141,9 +145,13 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
       url: String,
       headers: Map[String, String],
       method: FMethod,
-      content: Option[Buf]
+      content: Option[Buf],
+      httpVersion: HttpVersion
   ): http.Request = {
     val defaultHostHeader = RequestBuilder.create().url(url)
+    if (httpVersion.equals(HttpVersion.HTTP_1)) {
+      defaultHostHeader.http10()
+    }
     // RequestBuilder#url() will set the `Host` Header to the url's hostname. That is not necessarily correct,
     // when the headers parameter overrides that setting, clear the default.
     val updatedHostHeader =
