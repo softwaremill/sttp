@@ -1,6 +1,7 @@
 package sttp.client3
 
 import sttp.capabilities.{Effect, Streams}
+import sttp.client3.HttpVersion.Default
 import sttp.client3.internal.DigestAuthenticator.DigestAuthData
 import sttp.client3.internal.{SttpFile, ToCurlConverter, ToRfc2616Converter, _}
 import sttp.client3.logging.LoggingOptions
@@ -250,13 +251,9 @@ case class RequestT[U[_], T, -R](
 
   // Used as a workaround to keep binary compatibility
   // TODO: replace with additional parameter in RequestOptions when writing sttp4
-  def httpVersion_1: RequestT[U, T, R] = tag(httpVersionKey, HTTP_1)
+  def httpVersion(version: HttpVersion): RequestT[U, T, R] = tag(httpVersionKey, version)
 
-  def httpVersion_1_1: RequestT[U, T, R] = tag(httpVersionKey, HTTP_1_1)
-
-  def httpVersion_2: RequestT[U, T, R] = tag(httpVersionKey, HTTP_2)
-
-  def getHttpVersion: HttpVersion = tags.getOrElse(httpVersionKey, Empty).asInstanceOf[HttpVersion]
+  def httpVersion: HttpVersion = tags.getOrElse(httpVersionKey, Default).asInstanceOf[HttpVersion]
 
   private val loggingOptionsTagKey = "loggingOptions"
 

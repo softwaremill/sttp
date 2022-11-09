@@ -34,7 +34,7 @@ abstract class HttpClientBackend[F[_], S, P, B](
         .newBuilder()
         .uri(request.uri.toJavaUri)
 
-      request.getHttpVersion match {
+      request.httpVersion match {
         case HTTP_1_1 => builder.version(HttpClient.Version.HTTP_1_1)
         case HTTP_2 => builder.version(HttpClient.Version.HTTP_2)
         case _ => // skip, client default version remains active

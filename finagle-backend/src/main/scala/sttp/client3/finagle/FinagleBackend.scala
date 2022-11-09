@@ -1,41 +1,18 @@
 package sttp.client3.finagle
 
 import com.twitter.finagle.Http.Client
-import com.twitter.finagle.http.{
-  FileElement,
-  FormElement,
-  RequestBuilder,
-  SimpleElement,
-  Method => FMethod,
-  Response => FResponse
-}
+import com.twitter.finagle.http.{FileElement, FormElement, RequestBuilder, SimpleElement, Method => FMethod, Response => FResponse}
 import com.twitter.finagle.{Http, Service, http}
 import com.twitter.io.Buf
 import com.twitter.io.Buf.{ByteArray, ByteBuffer}
 import com.twitter.util
 import com.twitter.util.{Duration, Future => TFuture}
 import sttp.capabilities.Effect
+import sttp.client3.HttpVersion.HTTP_1
 import sttp.client3.internal.{BodyFromResponseAs, FileHelpers, SttpFile, Utf8}
 import sttp.client3.testing.SttpBackendStub
 import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
-import sttp.client3.{
-  ByteArrayBody,
-  ByteBufferBody,
-  FileBody,
-  FollowRedirectsBackend,
-  HttpVersion,
-  InputStreamBody,
-  MultipartBody,
-  NoBody,
-  Request,
-  RequestBody,
-  Response,
-  StreamBody,
-  StringBody,
-  SttpBackend,
-  SttpClientException,
-  WebSocketResponseAs
-}
+import sttp.client3.{ByteArrayBody, ByteBufferBody, FileBody, FollowRedirectsBackend, HttpVersion, InputStreamBody, MultipartBody, NoBody, Request, RequestBody, Response, StreamBody, StringBody, SttpBackend, SttpClientException, WebSocketResponseAs}
 import sttp.model._
 import sttp.monad.MonadError
 import sttp.monad.syntax._
@@ -95,27 +72,27 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
     r.body match {
       case FileBody(f, _) =>
         val content: String = Source.fromFile(f.toFile).mkString
-        buildRequest(url, headers, finagleMethod, Some(ByteArray(content.getBytes: _*)), r.getHttpVersion)
-      case NoBody => buildRequest(url, headers, finagleMethod, None, r.getHttpVersion)
+        buildRequest(url, headers, finagleMethod, Some(ByteArray(content.getBytes: _*)), r.httpVersion)
+      case NoBody => buildRequest(url, headers, finagleMethod, None, r.httpVersion)
       case StringBody(s, e, _) =>
-        buildRequest(url, headers, finagleMethod, Some(ByteArray(s.getBytes(e): _*)), r.getHttpVersion)
-      case ByteArrayBody(b, _) => buildRequest(url, headers, finagleMethod, Some(ByteArray(b: _*)), r.getHttpVersion)
+        buildRequest(url, headers, finagleMethod, Some(ByteArray(s.getBytes(e): _*)), r.httpVersion)
+      case ByteArrayBody(b, _) => buildRequest(url, headers, finagleMethod, Some(ByteArray(b: _*)), r.httpVersion)
       case ByteBufferBody(b, _) =>
-        buildRequest(url, headers, finagleMethod, Some(ByteBuffer.Owned(b)), r.getHttpVersion)
+        buildRequest(url, headers, finagleMethod, Some(ByteBuffer.Owned(b)), r.httpVersion)
       case InputStreamBody(is, _) =>
         buildRequest(
           url,
           headers,
           finagleMethod,
           Some(ByteArray(Stream.continually(is.read).takeWhile(_ != -1).map(_.toByte).toArray: _*)),
-          r.getHttpVersion
+          r.httpVersion
         )
       case MultipartBody(parts) =>
         val requestBuilder = RequestBuilder.create().url(url).addHeaders(headers)
         val elements = parts.map { part => getBasicBodyContent(part) }
         requestBuilder.add(elements).buildFormPost(true)
       // requestBuilder.addFormElement(elements: _*).buildFormPost(true)
-      case _ => buildRequest(url, headers, finagleMethod, None, r.getHttpVersion)
+      case _ => buildRequest(url, headers, finagleMethod, None, r.httpVersion)
     }
   }
 
@@ -149,7 +126,7 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
       httpVersion: HttpVersion
   ): http.Request = {
     val defaultHostHeader = RequestBuilder.create().url(url)
-    if (httpVersion.equals(HttpVersion.HTTP_1)) {
+    if (httpVersion.equals(HTTP_1)) {
       defaultHostHeader.http10()
     }
     // RequestBuilder#url() will set the `Host` Header to the url's hostname. That is not necessarily correct,
