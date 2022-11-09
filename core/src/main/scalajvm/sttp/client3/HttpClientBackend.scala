@@ -2,9 +2,9 @@ package sttp.client3
 
 import sttp.capabilities.{Effect, Streams}
 import sttp.client3.HttpClientBackend.EncodingHandler
+import sttp.client3.HttpVersion.{HTTP_1_1, HTTP_2}
 import sttp.client3.SttpBackendOptions.Proxy
 import sttp.client3.internal.httpclient.{BodyFromHttpClient, BodyToHttpClient}
-import sttp.client3.{MultipartBody, Request, Response, SttpBackend, SttpBackendOptions}
 import sttp.model._
 import sttp.monad.MonadError
 import sttp.monad.syntax._

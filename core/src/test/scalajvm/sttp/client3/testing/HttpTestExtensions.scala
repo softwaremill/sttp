@@ -10,6 +10,7 @@ import sttp.model.{Header, HeaderNames, StatusCode}
 import scala.concurrent.Future
 import HttpTest.endpoint
 import org.scalatest.freespec.AsyncFreeSpecLike
+import sttp.client3.HttpVersion.{HTTP_1_1, HTTP_2}
 import sttp.model.headers.CookieWithMeta
 
 trait HttpTestExtensions[F[_]] extends AsyncFreeSpecLike { self: HttpTest[F] =>
@@ -302,13 +303,13 @@ trait HttpTestExtensions[F[_]] extends AsyncFreeSpecLike { self: HttpTest[F] =>
   if (self.supportsHttpVersionSetting) {
     "http versions" - {
       "send with HTTP version 1.1" in {
-        val req = basicRequest.get(uri"$endpoint/version-1.1").httpVersion_1_1
+        val req = basicRequest.get(uri"$endpoint/version-1.1").httpVersion(HTTP_1_1)
         req.send(backend).toFuture().map { resp =>
           resp.code shouldBe StatusCode.Ok
         }
       }
       "send with HTTP version 2.0" in {
-        val req = basicRequest.get(uri"$endpoint/version-2.0").httpVersion_2
+        val req = basicRequest.get(uri"$endpoint/version-2.0").httpVersion(HTTP_2)
         req.send(backend).toFuture().map { resp =>
           resp.code shouldBe StatusCode.BadRequest
         }
