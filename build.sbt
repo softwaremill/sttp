@@ -357,9 +357,11 @@ lazy val cats = (projectMatrix in file("effects/cats"))
     Test / publishArtifact := true,
     libraryDependencies ++= Seq(
       "org.typelevel" %%% "cats-effect-kernel" % catsEffect_3_version,
+      "org.typelevel" %%% "cats-effect-std" % catsEffect_3_version,
       "org.typelevel" %%% "cats-effect" % catsEffect_3_version % Test
     )
   )
+  .settings(testServerSettings)
   .dependsOn(core % compileAndTest)
   .jvmPlatform(
     scalaVersions = List(scala2_12, scala2_13) ++ scala3,
