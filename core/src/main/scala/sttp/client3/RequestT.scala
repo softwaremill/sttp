@@ -10,6 +10,7 @@ import sttp.model.headers.CookieWithMeta
 import java.io.InputStream
 import java.nio.ByteBuffer
 import java.util.Base64
+import scala.collection.immutable.Seq
 import scala.concurrent.duration.Duration
 
 /** Describes a HTTP request, along with a description of how the response body should be handled.
