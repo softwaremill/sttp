@@ -119,6 +119,17 @@ object HttpClientMonixBackend {
   ): Resource[Task, SttpBackend[Task, MonixStreams with WebSockets]] =
     Resource.make(apply(options, customizeRequest, customEncodingHandler))(_.close())
 
+  def resourceUsingClient(
+      client: HttpClient,
+      customizeRequest: HttpRequest => HttpRequest = identity,
+      customEncodingHandler: MonixEncodingHandler = PartialFunction.empty
+  )(implicit
+      s: Scheduler = Scheduler.global
+  ): Resource[Task, SttpBackend[Task, MonixStreams with WebSockets]] =
+    Resource.make(
+      Task.eval(HttpClientMonixBackend(client, closeClient = true, customizeRequest, customEncodingHandler)(s))
+    )(_.close())
+
   def usingClient(
       client: HttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,
