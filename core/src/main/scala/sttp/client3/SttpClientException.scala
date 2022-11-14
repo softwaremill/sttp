@@ -29,6 +29,8 @@ object SttpClientException {
 
   class ReadException(request: Request[_, _], cause: Exception) extends SttpClientException(request, cause)
 
+  class TimeoutException(request: Request[_, _], cause: Exception) extends ReadException(request, cause)
+
   @tailrec
   def defaultExceptionToSttpClientException(request: Request[_, _], e: Exception): Option[Exception] =
     e match {
