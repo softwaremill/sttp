@@ -6,7 +6,7 @@ import java.util.concurrent.TimeoutException
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import sttp.capabilities.{Streams, WebSockets}
+import sttp.capabilities.WebSockets
 import sttp.client3._
 import sttp.client3.internal._
 import sttp.client3.monad.IdMonad
@@ -315,12 +315,6 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
 
     frame shouldBe Success(Right(WebSocketFrame.text("hello")))
   }
-
-  trait TestStreams extends Streams[TestStreams] {
-    override type BinaryStream = List[Byte]
-    override type Pipe[A, B] = A => B
-  }
-  object TestStreams extends TestStreams
 
   it should "return a stream, given a stream, for a unsafe stream request" in {
     val backend: SttpBackend[Identity, TestStreams] = SttpBackendStub[Identity, TestStreams](IdMonad).whenAnyRequest
