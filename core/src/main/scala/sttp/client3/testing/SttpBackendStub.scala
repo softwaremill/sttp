@@ -200,7 +200,7 @@ object SttpBackendStub {
         }
       case ResponseAsStream(_, f) =>
         b match {
-          case RawStream(s) => Some(f.asInstanceOf[(Any, ResponseMetadata) => F[T]](s, meta))
+          case RawStream(s) => Some(monad.suspend(f.asInstanceOf[(Any, ResponseMetadata) => F[T]](s, meta)))
           case _            => None
         }
       case ResponseAsStreamUnsafe(_) =>
@@ -226,8 +226,9 @@ object SttpBackendStub {
           case wss: WebSocketStub[_] => Some(wss.build[F](monad).unit.asInstanceOf[F[T]])
           case _                     => None
         }
-      case ResponseAsWebSocketStream(_, _)   => None
-      case MappedResponseAs(raw, g, _)       => tryAdjustResponseBody(raw, b, meta).map(_.map(g(_, meta)))
+      case ResponseAsWebSocketStream(_, _) => None
+      case MappedResponseAs(raw, g, _) =>
+        tryAdjustResponseBody(raw, b, meta).map(_.flatMap(result => monad.eval(g(result, meta))))
       case rfm: ResponseAsFromMetadata[_, _] => tryAdjustResponseBody(rfm(meta), b, meta)
       case ResponseAsBoth(l, r) =>
         tryAdjustResponseBody(l, b, meta).map { lAdjusted =>
