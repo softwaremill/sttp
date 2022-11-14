@@ -101,9 +101,10 @@ class Http4sBackend[F[_]: Async](
 
   private def versionToHttp4s(version: HttpVersion): http4s.HttpVersion = {
     version match {
-      case HttpVersion.HTTP_1 => http4s.HttpVersion.`HTTP/1.0`
+      case HttpVersion.HTTP_1   => http4s.HttpVersion.`HTTP/1.0`
       case HttpVersion.HTTP_1_1 => http4s.HttpVersion.`HTTP/1.1`
-      case HttpVersion.HTTP_2 => http4s.HttpVersion.`HTTP/2`
+      case HttpVersion.HTTP_2   => http4s.HttpVersion.`HTTP/2`
+      case HttpVersion.HTTP_3   => http4s.HttpVersion.`HTTP/3`
     }
   }
 

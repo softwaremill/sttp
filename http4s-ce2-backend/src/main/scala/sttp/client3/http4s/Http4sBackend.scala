@@ -105,6 +105,7 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
       case HttpVersion.HTTP_1   => http4s.HttpVersion.`HTTP/1.0`
       case HttpVersion.HTTP_1_1 => http4s.HttpVersion.`HTTP/1.1`
       case HttpVersion.HTTP_2   => http4s.HttpVersion.`HTTP/2`
+      case HttpVersion.HTTP_3   => http4s.HttpVersion.`HTTP/3`
     }
   }
   private def charsetToHttp4s(encoding: String) = http4s.Charset.fromNioCharset(Charset.forName(encoding))
