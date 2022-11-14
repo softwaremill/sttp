@@ -273,7 +273,7 @@ lazy val rootProject = (project in file("."))
       .all(filterProject(p => p.contains("JS") && p.contains("2_11")))
       .value,
     testJS2_12 := (Test / test)
-      .all(filterProject(p => p.contains("JS") && p.contains("2_12"))
+      .all(filterProject(p => p.contains("JS") && p.contains("2_12")))
       .value,
     testJS2_13 := (Test / test)
       .all(filterProject(p => p.contains("JS") && p.contains("2_13")))
