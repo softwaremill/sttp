@@ -17,20 +17,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target-platform: [ "JVM", "JS1", "JS2", "Native" ]
+        scala-version: [ "2.11", "2.12", "2.13", "3" ]
+        target-platform: [ "JVM", "JS", "Native" ]
     steps:
-    - name: Set Java Opts for JS
-      if: startsWith(matrix.target-platform, 'JS')
-      run: |
-        echo "JAVA_OPTS=-Xmx2500M -Dsbt.task.timings=true" >> $GITHUB_ENV
-    - name: Set Java Opts for JVM
-      if: matrix.target-platform == 'JVM'
-      run: |
-        echo "JAVA_OPTS=-Xmx3000M -Dsbt.task.timings=true" >> $GITHUB_ENV
-    - name: Set Java Opts for Native
-      if: matrix.target-platform == 'Native'
-      run: |
-        echo "JAVA_OPTS=-Xmx2500M -Dsbt.task.timings=true" >> $GITHUB_ENV
     - name: Checkout
       uses: actions/checkout@v2
     - name: Set up JDK 11
@@ -52,13 +41,27 @@ jobs:
         sudo apt-get install libidn2-dev libcurl3-dev
         echo "STTP_NATIVE=1" >> $GITHUB_ENV
     - name: Compile
-      run: |
-        echo ${{env.JAVA_OPTS}}
-        sbt -v compile compileDocs
+      run: sbt -v "compileScoped ${{ matrix.scala-version }} ${{ matrix.target-platform }}"
+    - name: Compile documentation
+      if: matrix.target-platform == 'JVM'
+      run: sbt -v compileDocumentation
     - name: Test
-      run: |
-        echo ${{env.JAVA_OPTS}}
-        sbt -v test${{ matrix.target-platform }}
+      if: matrix.target-platform != 'JS'
+      run: sbt -v "testScoped ${{ matrix.scala-version }} ${{ matrix.target-platform }}"
+      # Temporarily call JS tests for each subproject explicitly as a workaround until
+      # https://github.com/scala-js/scala-js/issues/4317 has a solution
+    - name: Test
+      if: matrix.target-platform == 'JS' && matrix.scala-version == '2.11'
+      run: sbt testJS2_11
+    - name: Test
+      if: matrix.target-platform == 'JS' && matrix.scala-version == '2.12'
+      run: sbt testJS2_12
+    - name: Test
+      if: matrix.target-platform == 'JS' && matrix.scala-version == '2.13'
+      run: sbt testJS2_13
+    - name: Test
+      if: matrix.target-platform == 'JS' && matrix.scala-version == '3'
+      run: sbt testJS3
     - name: Prepare release notes
       uses: release-drafter/release-drafter@v5
       with:
@@ -77,8 +80,6 @@ jobs:
     # run on external PRs, but not on internal PRs since those will be run by push to branch
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-20.04
-    env:
-      JAVA_OPTS: "-Xmx3500M"
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -113,7 +114,6 @@ jobs:
     runs-on: ubuntu-20.04
     env:
       STTP_NATIVE: 1
-      JAVA_OPTS: "-Xmx3500M -Dsbt.task.timings=true"
     steps:
       - name: Checkout
         uses: actions/checkout@v2

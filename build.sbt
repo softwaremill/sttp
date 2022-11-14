@@ -4,6 +4,7 @@ import com.softwaremill.UpdateVersionInDocs
 import sbt.Keys.publishArtifact
 import sbt.Reference.display
 import sbt.internal.ProjectMatrix
+import complete.DefaultParsers._
 // run JS tests inside Chrome, due to jsdom not supporting fetch
 import com.softwaremill.SbtSoftwareMillBrowserTestJS._
 
@@ -21,6 +22,13 @@ parallelExecution in Global := false
 concurrentRestrictions in Global += Tags.limit(Tags.Test, 1)
 
 excludeLintKeys in Global ++= Set(ideSkipProject, reStartArgs)
+val scopesDescription = "Scala version can be: 2:11, 2.12, 2.13, 3; platform: JVM, JS, Native"
+val compileScoped =
+  inputKey[Unit](
+    s"Compiles sources in the given scope. Usage: compileScoped [scala version] [platform]. $scopesDescription"
+  )
+val testScoped =
+  inputKey[Unit](s"Run tests in the given scope. Usage: testScoped [scala version] [platform]. $scopesDescription")
 
 val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   organization := "com.softwaremill.sttp.client3",
@@ -232,12 +240,28 @@ lazy val allAggregates = projectsWithOptionalNative ++
 
 // For CI tests, defining scripts that run JVM/JS/Native tests separately
 val testJVM = taskKey[Unit]("Test JVM projects")
-val testJS1 = taskKey[Unit]("Test JS 2.11 and 2.12 projects")
-val testJS2 = taskKey[Unit]("Test JS 2.13 and 3 projects")
+val testJS2_11 = taskKey[Unit]("Test JS 2.11 projects")
+val testJS2_12 = taskKey[Unit]("Test JS 2.12 projects")
+val testJS2_13 = taskKey[Unit]("Test JS 2.13 projects")
+val testJS3 = taskKey[Unit]("Test JS 3 projects")
 val testNative = taskKey[Unit]("Test native projects")
 
 def filterProject(p: String => Boolean) =
   ScopeFilter(inProjects(allAggregates.filter(pr => p(display(pr.project))): _*))
+
+def filterByVersionAndPlatform(scalaVersionFilter: String, platformFilter: String) = filterProject { projectName =>
+  val byPlatform =
+    if (platformFilter == "JVM") !projectName.contains("JS") && !projectName.contains("Native")
+    else projectName.contains(platformFilter)
+  val byVersion = scalaVersionFilter match {
+    case "3"    => projectName.contains("3")
+    case "2.13" => projectName.contains("2_13")
+    case "2.12" => projectName.contains("2_12")
+    case "2.11" => projectName.contains("2_11")
+  }
+
+  byPlatform && byVersion
+}
 
 lazy val rootProject = (project in file("."))
   .settings(commonSettings: _*)
@@ -245,13 +269,27 @@ lazy val rootProject = (project in file("."))
     publish / skip := true,
     name := "sttp",
     testJVM := (Test / test).all(filterProject(p => !p.contains("JS") && !p.contains("Native"))).value,
-    testJS1 := (Test / test)
-      .all(filterProject(p => p.contains("JS") && (p.contains("2_11") || p.contains("2_12"))))
+    testJS2_11 := (Test / test)
+      .all(filterProject(p => p.contains("JS") && p.contains("2_11")))
       .value,
-    testJS2 := (Test / test)
-      .all(filterProject(p => p.contains("JS") && !p.contains("2_11") && !p.contains("2_12")))
+    testJS2_12 := (Test / test)
+      .all(filterProject(p => p.contains("JS") && p.contains("2_12"))
+      .value,
+    testJS2_13 := (Test / test)
+      .all(filterProject(p => p.contains("JS") && p.contains("2_13")))
+      .value,
+    testJS3 := (Test / test)
+      .all(filterProject(p => p.contains("JS") && p.contains("3")))
       .value,
     testNative := (Test / test).all(filterProject(_.contains("Native"))).value,
+    compileScoped := Def.inputTaskDyn {
+      val args = spaceDelimited("<arg>").parsed
+      Def.taskDyn((Compile / compile).all(filterByVersionAndPlatform(args.head, args(1))))
+    }.evaluated,
+    testScoped := Def.inputTaskDyn {
+      val args = spaceDelimited("<arg>").parsed
+      Def.taskDyn((Test / test).all(filterByVersionAndPlatform(args.head, args(1))))
+    }.evaluated,
     ideSkipProject := false,
     scalaVersion := scala2_13
   )
