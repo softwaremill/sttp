@@ -1,7 +1,6 @@
 package sttp.client3
 
 import sttp.capabilities.{Effect, Streams}
-import sttp.client3.HttpVersion.Default
 import sttp.client3.internal.DigestAuthenticator.DigestAuthData
 import sttp.client3.internal.{SttpFile, ToCurlConverter, ToRfc2616Converter, _}
 import sttp.client3.logging.LoggingOptions
@@ -11,7 +10,6 @@ import sttp.model.headers.CookieWithMeta
 import java.io.InputStream
 import java.nio.ByteBuffer
 import java.util.Base64
-import scala.collection.immutable.Seq
 import scala.concurrent.duration.Duration
 
 /** Describes a HTTP request, along with a description of how the response body should be handled.
@@ -247,13 +245,13 @@ case class RequestT[U[_], T, -R](
 
   def autoDecompressionDisabled: Boolean = tags.getOrElse(disableAutoDecompressionKey, false).asInstanceOf[Boolean]
 
-  private val httpVersionKey = "HTTPVersion"
+  private val httpVersionKey = "httpVersion"
 
   // Used as a workaround to keep binary compatibility
   // TODO: replace with additional parameter in RequestOptions when writing sttp4
   def httpVersion(version: HttpVersion): RequestT[U, T, R] = tag(httpVersionKey, version)
 
-  def httpVersion: HttpVersion = tags.getOrElse(httpVersionKey, Default).asInstanceOf[HttpVersion]
+  def httpVersion: Option[HttpVersion] = tags.get(httpVersionKey).map(_.asInstanceOf[HttpVersion])
 
   private val loggingOptionsTagKey = "loggingOptions"
 

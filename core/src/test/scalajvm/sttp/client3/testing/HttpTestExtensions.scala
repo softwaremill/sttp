@@ -10,7 +10,6 @@ import sttp.model.{Header, HeaderNames, StatusCode}
 import scala.concurrent.Future
 import HttpTest.endpoint
 import org.scalatest.freespec.AsyncFreeSpecLike
-import sttp.client3.HttpVersion.{HTTP_1_1, HTTP_2}
 import sttp.model.headers.CookieWithMeta
 
 trait HttpTestExtensions[F[_]] extends AsyncFreeSpecLike { self: HttpTest[F] =>

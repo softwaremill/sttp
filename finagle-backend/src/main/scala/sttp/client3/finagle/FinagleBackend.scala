@@ -8,11 +8,11 @@ import com.twitter.io.Buf.{ByteArray, ByteBuffer}
 import com.twitter.util
 import com.twitter.util.{Duration, Future => TFuture}
 import sttp.capabilities.Effect
-import sttp.client3.HttpVersion.HTTP_1
 import sttp.client3.internal.{BodyFromResponseAs, FileHelpers, SttpFile, Utf8}
 import sttp.client3.testing.SttpBackendStub
 import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
-import sttp.client3.{ByteArrayBody, ByteBufferBody, FileBody, FollowRedirectsBackend, HttpVersion, InputStreamBody, MultipartBody, NoBody, Request, RequestBody, Response, StreamBody, StringBody, SttpBackend, SttpClientException, WebSocketResponseAs}
+import sttp.client3.{ByteArrayBody, ByteBufferBody, FileBody, FollowRedirectsBackend, InputStreamBody, MultipartBody, NoBody, Request, RequestBody, Response, StreamBody, StringBody, SttpBackend, SttpClientException, WebSocketResponseAs}
+import sttp.model.HttpVersion.HTTP_1
 import sttp.model._
 import sttp.monad.MonadError
 import sttp.monad.syntax._
@@ -123,10 +123,10 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
       headers: Map[String, String],
       method: FMethod,
       content: Option[Buf],
-      httpVersion: HttpVersion
+      httpVersion: Option[HttpVersion]
   ): http.Request = {
     val defaultHostHeader = RequestBuilder.create().url(url)
-    if (httpVersion.equals(HTTP_1)) {
+    if (httpVersion.exists(_.equals(HTTP_1))) {
       defaultHostHeader.http10()
     }
     // RequestBuilder#url() will set the `Host` Header to the url's hostname. That is not necessarily correct,
