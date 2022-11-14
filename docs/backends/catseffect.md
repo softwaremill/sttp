@@ -9,6 +9,50 @@ Note that all [fs2](fs2.md) backends also support any cats-effect effect, additi
 
 Also note that the [http4s](http4s.md) backend can also be created for a type implementing the cats-effect’s `Async` typeclass, and supports streaming as in [fs2](fs2.md).
 
+## Using HttpClient
+
+Obtain a cats-effect `Resource` which creates the backend, and closes the thread pool after the resource is no longer used:
+
+```scala mdoc:compile-only
+import cats.effect.IO
+import sttp.client3.httpclient.cats.HttpClientCatsBackend
+
+HttpClientCatsBackend.resource[IO]().use { backend => ??? }
+```
+
+or, by providing a custom `Dispatcher`:
+
+```scala mdoc:compile-only
+import cats.effect.IO
+import cats.effect.std.Dispatcher
+import sttp.client3.httpclient.cats.HttpClientCatsBackend
+
+val dispatcher: Dispatcher[IO] = ???
+
+HttpClientCatsBackend[IO](dispatcher).flatMap { backend => ??? }
+```
+
+or, if you'd like to instantiate the `HttpClient` yourself:
+
+```scala mdoc:compile-only
+import cats.effect.IO
+import cats.effect.std.Dispatcher
+import java.net.http.HttpClient
+import sttp.client3.httpclient.cats.HttpClientCatsBackend
+
+val httpClient: HttpClient = ???
+val dispatcher: Dispatcher[IO] = ???
+
+val backend = HttpClientCatsBackend.usingClient[IO](httpClient, dispatcher)
+```
+
+This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards.
+
+Host header override is supported in environments running Java 12 onwards, but it has to be enabled by system property:
+
+```
+-Djdk.httpclient.allowRestrictedHeaders=host
+```
 
 ## Using Armeria
 

@@ -1,4 +1,4 @@
-package sttp.client3.impl.cats
+package sttp.client3.httpclient.cats
 
 import cats.effect.IO
 import sttp.client3.testing.HttpTest

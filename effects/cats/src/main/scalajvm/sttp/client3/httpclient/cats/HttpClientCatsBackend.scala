@@ -1,10 +1,11 @@
-package sttp.client3.impl.cats
+package sttp.client3.httpclient.cats
 
 import cats.effect.kernel.{Async, Resource, Sync}
 import cats.effect.std.{Dispatcher, Queue}
 import cats.implicits.toFunctorOps
 import sttp.capabilities.WebSockets
 import sttp.client3.HttpClientBackend.EncodingHandler
+import sttp.client3.impl.cats.CatsMonadAsyncError
 import sttp.client3.internal.httpclient._
 import sttp.client3.internal.ws.SimpleQueue
 import sttp.client3.internal.{NoStreams, emptyInputStream}

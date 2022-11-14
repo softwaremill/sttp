@@ -1,8 +1,8 @@
-package sttp.client3.impl.cats
+package sttp.client3.httpclient.cats
 
 import cats.effect.kernel.{Async, MonadCancel}
-import cats.syntax.all._
 import cats.effect.std.Semaphore
+import cats.syntax.all._
 import sttp.client3.internal.httpclient.Sequencer
 
 private[cats] class CatsSequencer[F[_]](s: Semaphore[F])(implicit m: MonadCancel[F, Throwable]) extends Sequencer[F] {
