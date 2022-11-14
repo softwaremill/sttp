@@ -6,7 +6,6 @@ import io.prometheus.client.{CollectorRegistry, Counter, Gauge, Histogram, Summa
 import sttp.client3.listener.{ListenerBackend, RequestListener}
 import sttp.client3.prometheus.PrometheusBackend.RequestCollectors
 
-import scala.annotation.tailrec
 import scala.collection.mutable
 
 object PrometheusBackend {
@@ -24,16 +23,16 @@ object PrometheusBackend {
         Some(HistogramCollectorConfig(DefaultHistogramName)),
       requestToInProgressGaugeNameMapper: Request[_, _] => Option[CollectorConfig] = (_: Request[_, _]) =>
         Some(CollectorConfig(DefaultRequestsInProgressGaugeName)),
-      responseToSuccessCounterMapper: Response[_] => Option[CollectorConfig] = (_: Response[_]) =>
-        Some(CollectorConfig(DefaultSuccessCounterName)),
-      responseToErrorCounterMapper: (Response[_]) => Option[CollectorConfig] = (_: Response[_]) =>
-        Some(CollectorConfig(DefaultErrorCounterName)),
+      responseToSuccessCounterMapper: (Request[_, _], Response[_]) => Option[CollectorConfig] =
+        (_: Request[_, _], _: Response[_]) => Some(CollectorConfig(DefaultSuccessCounterName)),
+      responseToErrorCounterMapper: (Request[_, _], Response[_]) => Option[CollectorConfig] =
+        (_: Request[_, _], _: Response[_]) => Some(CollectorConfig(DefaultErrorCounterName)),
       requestToFailureCounterMapper: (Request[_, _], Throwable) => Option[CollectorConfig] =
         (_: Request[_, _], _: Throwable) => Some(CollectorConfig(DefaultFailureCounterName)),
       requestToSizeSummaryMapper: Request[_, _] => Option[CollectorConfig] = (_: Request[_, _]) =>
         Some(CollectorConfig(DefaultRequestSizeName)),
-      responseToSizeSummaryMapper: Response[_] => Option[CollectorConfig] = (_: Response[_]) =>
-        Some(CollectorConfig(DefaultResponseSizeName)),
+      responseToSizeSummaryMapper: (Request[_, _], Response[_]) => Option[CollectorConfig] =
+        (_: Request[_, _], _: Response[_]) => Some(CollectorConfig(DefaultResponseSizeName)),
       collectorRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry
   ): SttpBackend[F, P] = {
     // redirects should be handled before prometheus
@@ -44,11 +43,11 @@ object PrometheusBackend {
           new PrometheusListener(
             requestToHistogramNameMapper,
             requestToInProgressGaugeNameMapper,
-            responseToSuccessCounterMapper,
-            responseToErrorCounterMapper,
+            (rr: (Request[_, _], Response[_])) => responseToSuccessCounterMapper(rr._1, rr._2),
+            (rr: (Request[_, _], Response[_])) => responseToErrorCounterMapper(rr._1, rr._2),
             (r: (Request[_, _], Throwable)) => requestToFailureCounterMapper(r._1, r._2),
             requestToSizeSummaryMapper,
-            responseToSizeSummaryMapper,
+            (rr: (Request[_, _], Response[_])) => responseToSizeSummaryMapper(rr._1, rr._2),
             collectorRegistry,
             cacheFor(histograms, collectorRegistry),
             cacheFor(gauges, collectorRegistry),
@@ -69,6 +68,7 @@ object PrometheusBackend {
     gauges.remove(collectorRegistry)
     counters.remove(collectorRegistry)
     summaries.remove(collectorRegistry)
+    ()
   }
 
   /*
@@ -96,11 +96,11 @@ object PrometheusBackend {
 class PrometheusListener(
     requestToHistogramNameMapper: Request[_, _] => Option[HistogramCollectorConfig],
     requestToInProgressGaugeNameMapper: Request[_, _] => Option[CollectorConfig],
-    requestToSuccessCounterMapper: Response[_] => Option[CollectorConfig],
-    requestToErrorCounterMapper: Response[_] => Option[CollectorConfig],
+    requestToSuccessCounterMapper: ((Request[_, _], Response[_])) => Option[CollectorConfig],
+    requestToErrorCounterMapper: ((Request[_, _], Response[_])) => Option[CollectorConfig],
     requestToFailureCounterMapper: ((Request[_, _], Exception)) => Option[CollectorConfig],
     requestToSizeSummaryMapper: Request[_, _] => Option[CollectorConfig],
-    responseToSizeSummaryMapper: Response[_] => Option[CollectorConfig],
+    responseToSizeSummaryMapper: ((Request[_, _], Response[_])) => Option[CollectorConfig],
     collectorRegistry: CollectorRegistry,
     histogramsCache: ConcurrentHashMap[String, Histogram],
     gaugesCache: ConcurrentHashMap[String, Gauge],
@@ -118,7 +118,7 @@ class PrometheusListener(
       gaugeData <- requestToInProgressGaugeNameMapper(request)
     } yield getOrCreateMetric(gaugesCache, gaugeData, createNewGauge).labels(gaugeData.labelValues: _*)
 
-    observeSummaryIfMapped(request, requestToSizeSummaryMapper)
+    observeRequestContentLengthSummaryIfMapped(request, requestToSizeSummaryMapper)
 
     gauge.foreach(_.inc())
 
@@ -147,12 +147,12 @@ class PrometheusListener(
   ): Unit = {
     requestCollectors._1.foreach(_.observeDuration())
     requestCollectors._2.foreach(_.dec())
-    observeSummaryIfMapped(response, responseToSizeSummaryMapper)
+    observeResponseContentLengthSummaryIfMapped(request, response, responseToSizeSummaryMapper)
 
     if (response.isSuccess) {
-      incCounterIfMapped(response, requestToSuccessCounterMapper)
+      incCounterIfMapped((request, response), requestToSuccessCounterMapper)
     } else {
-      incCounterIfMapped(response, requestToErrorCounterMapper)
+      incCounterIfMapped((request, response), requestToErrorCounterMapper)
     }
   }
 
@@ -164,17 +164,18 @@ class PrometheusListener(
       getOrCreateMetric(countersCache, data, createNewCounter).labels(data.labelValues: _*).inc()
     }
 
-  private def observeSummaryIfMapped[T](
+  private def observeResponseContentLengthSummaryIfMapped(
+      request: Request[_, _],
       response: Response[_],
-      mapper: Response[_] => Option[BaseCollectorConfig]
+      mapper: ((Request[_, _], Response[_])) => Option[BaseCollectorConfig]
   ): Unit =
-    mapper(response).foreach { data =>
+    mapper((request, response)).foreach { data =>
       response.contentLength.map(_.toDouble).foreach { size =>
         getOrCreateMetric(summariesCache, data, createNewSummary).labels(data.labelValues: _*).observe(size)
       }
     }
 
-  private def observeSummaryIfMapped[T](
+  private def observeRequestContentLengthSummaryIfMapped(
       request: Request[_, _],
       mapper: Request[_, _] => Option[BaseCollectorConfig]
   ): Unit =
