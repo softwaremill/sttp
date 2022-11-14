@@ -228,7 +228,7 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
         Some(new SttpClientException.ConnectException(request, e))
       case e: com.twitter.finagle.ChannelClosedException => Some(new SttpClientException.ReadException(request, e))
       case e: com.twitter.finagle.IndividualRequestTimeoutException =>
-        Some(new SttpClientException.ReadException(request, e))
+        Some(new SttpClientException.TimeoutException(request, e))
       case e: Exception => SttpClientException.defaultExceptionToSttpClientException(request, e)
     }
 }

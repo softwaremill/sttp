@@ -44,7 +44,7 @@ object SttpClientException {
       case e: java.net.SocketTimeoutException       => Some(new ReadException(request, e))
       case e: java.net.UnknownServiceException      => Some(new ReadException(request, e))
       case e: java.net.SocketException              => Some(new ReadException(request, e))
-      case e: java.util.concurrent.TimeoutException => Some(new ReadException(request, e))
+      case e: java.util.concurrent.TimeoutException => Some(new TimeoutException(request, e))
       case e: java.io.IOException                   => Some(new ReadException(request, e))
       case e: NotAWebSocketException                => Some(new ReadException(request, e))
       case e: GotAWebSocketException                => Some(new ReadException(request, e))

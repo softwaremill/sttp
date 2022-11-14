@@ -24,7 +24,7 @@ private[akkahttp] object FromAkka {
             exception(request, ee).orElse(Some(new SttpClientException.ReadException(request, e)))
           case _ => Some(new SttpClientException.ReadException(request, e))
         }
-      case e: akka.stream.scaladsl.TcpIdleTimeoutException => Some(new SttpClientException.ReadException(request, e))
+      case e: akka.stream.scaladsl.TcpIdleTimeoutException => Some(new SttpClientException.TimeoutException(request, e))
       case e: Exception => SttpClientException.defaultExceptionToSttpClientException(request, e)
     }
 }
