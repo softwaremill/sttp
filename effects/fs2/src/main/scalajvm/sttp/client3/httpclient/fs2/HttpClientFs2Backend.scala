@@ -132,6 +132,17 @@ object HttpClientFs2Backend {
       Resource.make(apply(dispatcher, options, customizeRequest, customEncodingHandler))(_.close())
     )
 
+  def resourceUsingClient[F[_]: Async](
+      client: HttpClient,
+      customizeRequest: HttpRequest => HttpRequest = identity,
+      customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty
+  ): Resource[F, SttpBackend[F, Fs2Streams[F] with WebSockets]] =
+    Dispatcher[F].flatMap(dispatcher =>
+      Resource.make(
+        Sync[F].delay(apply(client, closeClient = true, customizeRequest, customEncodingHandler, dispatcher))
+      )(_.close())
+    )
+
   def usingClient[F[_]: Async](
       client: HttpClient,
       dispatcher: Dispatcher[F],
