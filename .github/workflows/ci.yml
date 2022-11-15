@@ -44,7 +44,7 @@ jobs:
       run: sbt -v "compileScoped ${{ matrix.scala-version }} ${{ matrix.target-platform }}"
     - name: Compile documentation
       if: matrix.target-platform == 'JVM'
-      run: sbt -v compileDocumentation
+      run: sbt -v compileDocs
     - name: Test
       if: matrix.target-platform != 'JS'
       run: sbt -v "testScoped ${{ matrix.scala-version }} ${{ matrix.target-platform }}"
