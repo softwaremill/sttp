@@ -11,7 +11,7 @@ val scala2_11 = "2.11.12"
 val scala2_12 = "2.12.17"
 val scala2_13 = "2.13.10"
 val scala2 = List(scala2_11, scala2_12, scala2_13)
-val scala3 = List("3.2.0")
+val scala3 = List("3.2.1")
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests")
@@ -122,7 +122,7 @@ val playJsonVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.7.4"
   case _             => "2.9.2"
 }
-val catsEffect_3_version = "3.3.14"
+val catsEffect_3_version = "3.4.0"
 val fs2_3_version = "3.3.0"
 
 val catsEffect_2_version: Option[(Long, Long)] => String = {
@@ -147,7 +147,7 @@ val zio2Version = "2.0.2"
 val zio1InteropRsVersion = "1.3.12"
 val zio2InteropRsVersion = "2.0.0"
 
-val sttpModelVersion = "1.5.2"
+val sttpModelVersion = "1.5.3"
 val sttpSharedVersion = "1.3.10"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.4.4"
@@ -159,7 +159,7 @@ val resilience4jVersion = "1.7.1"
 val http4s_ce2_version = "0.22.14"
 val http4s_ce3_version = "0.23.16"
 
-val openTelemetryVersion = "1.19.0"
+val openTelemetryVersion = "1.20.0"
 
 val compileAndTest = "compile->compile;test->test"
 
@@ -369,6 +369,10 @@ lazy val cats = (projectMatrix in file("effects/cats"))
     scalaVersions = List(scala2_12, scala2_13) ++ scala3,
     settings = commonJsSettings ++ commonJsBackendSettings ++ browserChromeTestSettings ++ testServerSettings
   )
+  .nativePlatform(
+    scalaVersions = List(scala2_12, scala2_13) ++ scala3,
+    settings = commonNativeSettings
+  )
 
 lazy val fs2Ce2 = (projectMatrix in file("effects/fs2-ce2"))
   .settings(
@@ -413,6 +417,7 @@ lazy val fs2 = (projectMatrix in file("effects/fs2"))
     )
   )
   .jsPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3, settings = commonJsSettings)
+  .nativePlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3, settings = commonNativeSettings)
 
 lazy val monix = (projectMatrix in file("effects/monix"))
   .settings(
@@ -678,7 +683,7 @@ lazy val armeriaBackend = (projectMatrix in file("armeria-backend"))
   .settings(testServerSettings)
   .settings(
     name := "armeria-backend",
-    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.20.1"
+    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.20.3"
   )
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3)
   .dependsOn(core % compileAndTest)
