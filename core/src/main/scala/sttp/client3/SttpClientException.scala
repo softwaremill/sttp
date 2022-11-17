@@ -29,6 +29,8 @@ object SttpClientException {
 
   class ReadException(request: Request[_, _], cause: Exception) extends SttpClientException(request, cause)
 
+  class TimeoutException(request: Request[_, _], cause: Exception) extends ReadException(request, cause)
+
   @tailrec
   def defaultExceptionToSttpClientException(request: Request[_, _], e: Exception): Option[Exception] =
     e match {
@@ -39,10 +41,11 @@ object SttpClientException {
       case e: java.net.PortUnreachableException     => Some(new ConnectException(request, e))
       case e: java.net.ProtocolException            => Some(new ConnectException(request, e))
       case e: java.net.URISyntaxException           => Some(new ConnectException(request, e))
-      case e: java.net.SocketTimeoutException       => Some(new ReadException(request, e))
+      case e: java.util.concurrent.TimeoutException => Some(new TimeoutException(request, e))
+      case e: java.net.http.HttpTimeoutException    => Some(new TimeoutException(request, e))
+      case e: java.net.SocketTimeoutException       => Some(new TimeoutException(request, e))
       case e: java.net.UnknownServiceException      => Some(new ReadException(request, e))
       case e: java.net.SocketException              => Some(new ReadException(request, e))
-      case e: java.util.concurrent.TimeoutException => Some(new ReadException(request, e))
       case e: java.io.IOException                   => Some(new ReadException(request, e))
       case e: NotAWebSocketException                => Some(new ReadException(request, e))
       case e: GotAWebSocketException                => Some(new ReadException(request, e))

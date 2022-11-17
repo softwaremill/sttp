@@ -645,14 +645,14 @@ trait HttpTest[F[_]]
       }
 
       if (supportsRequestTimeout) {
-        "read exceptions - timeout" in {
+        "timeout exceptions - timeout" in {
           val req = basicRequest
             .get(uri"$endpoint/timeout")
             .readTimeout(10.milliseconds)
             .response(asString)
 
           Future(req.send(backend)).flatMap(_.toFuture()).failed.map { e =>
-            e shouldBe a[SttpClientException.ReadException]
+            e shouldBe a[SttpClientException.TimeoutException]
           }
         }
       }

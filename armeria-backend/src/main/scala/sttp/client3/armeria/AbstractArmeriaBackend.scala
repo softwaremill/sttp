@@ -24,15 +24,17 @@ import com.linecorp.armeria.common.{
 }
 import io.netty.buffer.Unpooled
 import io.netty.util.AsciiString
+
 import java.nio.charset.{Charset, StandardCharsets}
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicReference
 import org.reactivestreams.Publisher
+
 import scala.collection.immutable.Seq
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 import sttp.capabilities.{Effect, Streams}
-import sttp.client3.SttpClientException.{ConnectException, ReadException}
+import sttp.client3.SttpClientException.{ConnectException, ReadException, TimeoutException}
 import sttp.client3._
 import sttp.client3.armeria.AbstractArmeriaBackend.{RightUnit, noopCanceler}
 import sttp.client3.internal.{throwNestedMultipartNotAllowed, toByteArray}
@@ -194,7 +196,9 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
       case ex: UnprocessedRequestException =>
         // The cause of an UnprocessedRequestException is always not null
         Some(new ConnectException(request, ex.getCause.asInstanceOf[Exception]))
-      case ex @ (_: ClosedStreamException | _: ResponseTimeoutException) =>
+      case ex: ResponseTimeoutException =>
+        Some(new TimeoutException(request, ex))
+      case ex: ClosedStreamException =>
         Some(new ReadException(request, ex))
       case ex =>
         SttpClientException.defaultExceptionToSttpClientException(request, ex)
