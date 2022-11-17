@@ -128,6 +128,16 @@ object HttpClientFs2Backend {
   ): Resource[F, SttpBackend[F, Fs2Streams[F] with WebSockets]] =
     Resource.make(apply(blocker, options, customizeRequest, customEncodingHandler))(_.close())
 
+  def resourceUsingClient[F[_]: ConcurrentEffect: ContextShift](
+      client: HttpClient,
+      blocker: Blocker,
+      customizeRequest: HttpRequest => HttpRequest = identity,
+      customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty
+  ): Resource[F, SttpBackend[F, Fs2Streams[F] with WebSockets]] =
+    Resource.make(
+      Sync[F].delay(HttpClientFs2Backend(client, blocker, closeClient = true, customizeRequest, customEncodingHandler))
+    )(_.close())
+
   def usingClient[F[_]: ConcurrentEffect: ContextShift](
       client: HttpClient,
       blocker: Blocker,

@@ -128,6 +128,15 @@ object HttpClientZioBackend {
       _.close().ignore
     )
 
+  def scopedUsingClient(
+      client: HttpClient,
+      customizeRequest: HttpRequest => HttpRequest = identity,
+      customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
+  ): ZIO[Scope, Throwable, SttpBackend[Task, ZioStreams with WebSockets]] =
+    ZIO.acquireRelease(
+      ZIO.attempt(HttpClientZioBackend(client, closeClient = true, customizeRequest, customEncodingHandler))
+    )(_.close().ignore)
+
   def layer(
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,

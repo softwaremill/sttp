@@ -159,7 +159,7 @@ val resilience4jVersion = "1.7.1"
 val http4s_ce2_version = "0.22.14"
 val http4s_ce3_version = "0.23.16"
 
-val openTelemetryVersion = "1.20.0"
+val openTelemetryVersion = "1.20.1"
 
 val compileAndTest = "compile->compile;test->test"
 
@@ -357,9 +357,11 @@ lazy val cats = (projectMatrix in file("effects/cats"))
     Test / publishArtifact := true,
     libraryDependencies ++= Seq(
       "org.typelevel" %%% "cats-effect-kernel" % catsEffect_3_version,
+      "org.typelevel" %%% "cats-effect-std" % catsEffect_3_version,
       "org.typelevel" %%% "cats-effect" % catsEffect_3_version % Test
     )
   )
+  .settings(testServerSettings)
   .dependsOn(core % compileAndTest)
   .jvmPlatform(
     scalaVersions = List(scala2_12, scala2_13) ++ scala3,

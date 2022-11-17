@@ -197,7 +197,7 @@ abstract class StreamingTest[F[_], S]
       }
   }
 
-  "lift errors due to mapping with impure functions into the reponse monad" in {
+  "lift errors due to mapping with impure functions into the response monad" in {
     implicit val monadError: MonadError[F] = backend.responseMonad
 
     val error = new IllegalStateException("boom")
