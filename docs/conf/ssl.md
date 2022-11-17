@@ -143,7 +143,7 @@ import sttp.client3.SttpBackend
 import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 
 val httpClient: HttpClient = HttpClient.newBuilder().sslContext(ssl).build()
-val backend: Resource[IO, SttpBackend[IO, Fs2Streams[IO] with WebSockets]] = Dispatcher[IO].map(HttpClientFs2Backend.usingClient[IO](httpClient, _))
+val backend: Resource[IO, SttpBackend[IO, Fs2Streams[IO] with WebSockets]] = Dispatcher.parallel[IO].map(HttpClientFs2Backend.usingClient[IO](httpClient, _))
 ```
 
 ## Using Async-http-client (deprecated)
