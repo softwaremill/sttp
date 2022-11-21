@@ -122,6 +122,21 @@ object HttpClientCatsBackend {
       Resource.make(apply(dispatcher, options, customizeRequest, customEncodingHandler))(_.close())
     )
 
+  def resourceUsingClient[F[_]: Async](
+      client: HttpClient,
+      customizeRequest: HttpRequest => HttpRequest = identity,
+      customEncodingHandler: EncodingHandler[InputStream] = PartialFunction.empty
+  ): Resource[F, SttpBackend[F, WebSockets]] =
+    Dispatcher
+      .parallel[F]
+      .flatMap(dispatcher =>
+        Resource.make(
+          Sync[F].delay(
+            HttpClientCatsBackend(client, closeClient = true, customizeRequest, customEncodingHandler, dispatcher)
+          )
+        )(_.close())
+      )
+
   def usingClient[F[_]: Async](
       client: HttpClient,
       dispatcher: Dispatcher[F],

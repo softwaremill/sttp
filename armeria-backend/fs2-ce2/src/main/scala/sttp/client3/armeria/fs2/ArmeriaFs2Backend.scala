@@ -56,6 +56,10 @@ object ArmeriaFs2Backend {
     Resource.make(Sync[F].delay(apply(newClient(options), closeFactory = true)))(_.close())
   }
 
+  def resourceUsingClient[F[_]: ConcurrentEffect](client: WebClient): Resource[F, SttpBackend[F, Fs2Streams[F]]] = {
+    Resource.make(Sync[F].delay(apply(client, closeFactory = true)))(_.close())
+  }
+
   def usingClient[F[_]: ConcurrentEffect](client: WebClient): SttpBackend[F, Fs2Streams[F]] =
     apply(client, closeFactory = false)
 
