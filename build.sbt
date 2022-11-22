@@ -155,7 +155,7 @@ val logback = "ch.qos.logback" % "logback-classic" % "1.4.5"
 val jeagerClientVersion = "1.8.1"
 val braveOpentracingVersion = "1.0.0"
 val zipkinSenderOkHttpVersion = "2.16.3"
-val resilience4jVersion = "1.7.1"
+val resilience4jVersion = "2.0.0"
 val http4s_ce2_version = "0.22.14"
 val http4s_ce3_version = "0.23.16"
 
