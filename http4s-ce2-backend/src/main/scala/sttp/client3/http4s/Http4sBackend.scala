@@ -37,15 +37,25 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
   override def send[T, R >: PE](r: Request[T, R]): F[Response[T]] =
     adjustExceptions(r) {
       val (entity, extraHeaders) = bodyToHttp4s(r, r.body)
-      val version = r.httpVersion.map(versionToHttp4s).getOrElse(http4s.HttpVersion.`HTTP/1.1`)
-      val request = Http4sRequest(
-        method = methodToHttp4s(r.method),
-        uri = http4s.Uri.unsafeFromString(r.uri.toString),
-        headers =
-          http4s.Headers(r.headers.map(h => http4s.Header.Raw(CIString(h.name), h.value)).toList) ++ extraHeaders,
-        body = entity.body,
-        httpVersion = version
-      )
+      val request = r.httpVersion match {
+        case Some(version) =>
+          Http4sRequest(
+            method = methodToHttp4s(r.method),
+            uri = http4s.Uri.unsafeFromString(r.uri.toString),
+            headers =
+              http4s.Headers(r.headers.map(h => http4s.Header.Raw(CIString(h.name), h.value)).toList) ++ extraHeaders,
+            body = entity.body,
+            httpVersion = versionToHttp4s(version)
+          )
+        case None =>
+          Http4sRequest(
+            method = methodToHttp4s(r.method),
+            uri = http4s.Uri.unsafeFromString(r.uri.toString),
+            headers =
+              http4s.Headers(r.headers.map(h => http4s.Header.Raw(CIString(h.name), h.value)).toList) ++ extraHeaders,
+            body = entity.body
+          )
+      }
 
       // see adr0001
       MVar.empty[F, Unit].flatMap { responseBodyCompleteVar =>
