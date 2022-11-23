@@ -239,12 +239,10 @@ lazy val allAggregates = projectsWithOptionalNative ++
   testServer.projectRefs
 
 // For CI tests, defining scripts that run JVM/JS/Native tests separately
-val testJVM = taskKey[Unit]("Test JVM projects")
 val testJS2_11 = taskKey[Unit]("Test JS 2.11 projects")
 val testJS2_12 = taskKey[Unit]("Test JS 2.12 projects")
 val testJS2_13 = taskKey[Unit]("Test JS 2.13 projects")
 val testJS3 = taskKey[Unit]("Test JS 3 projects")
-val testNative = taskKey[Unit]("Test native projects")
 
 def filterProject(p: String => Boolean) =
   ScopeFilter(inProjects(allAggregates.filter(pr => p(display(pr.project))): _*))
@@ -268,7 +266,6 @@ lazy val rootProject = (project in file("."))
   .settings(
     publish / skip := true,
     name := "sttp",
-    testJVM := (Test / test).all(filterProject(p => !p.contains("JS") && !p.contains("Native"))).value,
     testJS2_11 := (Test / test)
       .all(filterProject(p => p.contains("JS") && p.contains("2_11")))
       .value,
@@ -281,7 +278,6 @@ lazy val rootProject = (project in file("."))
     testJS3 := (Test / test)
       .all(filterProject(p => p.contains("JS") && p.contains("3")))
       .value,
-    testNative := (Test / test).all(filterProject(_.contains("Native"))).value,
     compileScoped := Def.inputTaskDyn {
       val args = spaceDelimited("<arg>").parsed
       Def.taskDyn((Compile / compile).all(filterByVersionAndPlatform(args.head, args(1))))
