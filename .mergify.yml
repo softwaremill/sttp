@@ -6,12 +6,15 @@ pull_request_rules:
   - name: automatic merge for softwaremill-ci pull requests affecting build.sbt
     conditions:
       - author=softwaremill-ci
+      - check-success=ci (2.11, JVM)
       - check-success=ci (2.12, JVM)
       - check-success=ci (2.13, JVM)
       - check-success=ci (3, JVM)
+      - check-success=ci (2.11, JS)
       - check-success=ci (2.12, JS)
       - check-success=ci (2.13, JS)
       - check-success=ci (3, JS)
+      - check-success=ci (2.11, Native)
       - check-success=ci (2.12, Native)
       - check-success=ci (2.13, Native)
       - check-success=ci (3, Native)
@@ -24,12 +27,15 @@ pull_request_rules:
   - name: automatic merge for softwaremill-ci pull requests affecting project plugins.sbt
     conditions:
       - author=softwaremill-ci
+      - check-success=ci (2.11, JVM)
       - check-success=ci (2.12, JVM)
       - check-success=ci (2.13, JVM)
       - check-success=ci (3, JVM)
+      - check-success=ci (2.11, JS)
       - check-success=ci (2.12, JS)
       - check-success=ci (2.13, JS)
       - check-success=ci (3, JS)
+      - check-success=ci (2.11, Native)
       - check-success=ci (2.12, Native)
       - check-success=ci (2.13, Native)
       - check-success=ci (3, Native)
@@ -42,12 +48,15 @@ pull_request_rules:
   - name: semi-automatic merge for softwaremill-ci pull requests
     conditions:
       - author=softwaremill-ci
+      - check-success=ci (2.11, JVM)
       - check-success=ci (2.12, JVM)
       - check-success=ci (2.13, JVM)
       - check-success=ci (3, JVM)
+      - check-success=ci (2.11, JS)
       - check-success=ci (2.12, JS)
       - check-success=ci (2.13, JS)
       - check-success=ci (3, JS)
+      - check-success=ci (2.11, Native)
       - check-success=ci (2.12, Native)
       - check-success=ci (2.13, Native)
       - check-success=ci (3, Native)
@@ -59,12 +68,15 @@ pull_request_rules:
   - name: automatic merge for softwaremill-ci pull requests affecting project build.properties
     conditions:
       - author=softwaremill-ci
+      - check-success=ci (2.11, JVM)
       - check-success=ci (2.12, JVM)
       - check-success=ci (2.13, JVM)
       - check-success=ci (3, JVM)
+      - check-success=ci (2.11, JS)
       - check-success=ci (2.12, JS)
       - check-success=ci (2.13, JS)
       - check-success=ci (3, JS)
+      - check-success=ci (2.11, Native)
       - check-success=ci (2.12, Native)
       - check-success=ci (2.13, Native)
       - check-success=ci (3, Native)
@@ -77,12 +89,15 @@ pull_request_rules:
   - name: automatic merge for softwaremill-ci pull requests affecting .scalafmt.conf
     conditions:
       - author=softwaremill-ci
+      - check-success=ci (2.11, JVM)
       - check-success=ci (2.12, JVM)
       - check-success=ci (2.13, JVM)
       - check-success=ci (3, JVM)
+      - check-success=ci (2.11, JS)
       - check-success=ci (2.12, JS)
       - check-success=ci (2.13, JS)
       - check-success=ci (3, JS)
+      - check-success=ci (2.11, Native)
       - check-success=ci (2.12, Native)
       - check-success=ci (2.13, Native)
       - check-success=ci (3, Native)
