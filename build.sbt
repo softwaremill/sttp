@@ -123,7 +123,7 @@ val playJsonVersion: Option[(Long, Long)] => String = {
   case _             => "2.9.2"
 }
 val catsEffect_3_version = "3.4.1"
-val fs2_3_version = "3.3.0"
+val fs2_3_version = "3.4.0"
 
 val catsEffect_2_version: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.0.0"
@@ -150,12 +150,12 @@ val zio2InteropRsVersion = "2.0.0"
 val sttpModelVersion = "1.5.3"
 val sttpSharedVersion = "1.3.10"
 
-val logback = "ch.qos.logback" % "logback-classic" % "1.4.4"
+val logback = "ch.qos.logback" % "logback-classic" % "1.4.5"
 
 val jeagerClientVersion = "1.8.1"
 val braveOpentracingVersion = "1.0.0"
 val zipkinSenderOkHttpVersion = "2.16.3"
-val resilience4jVersion = "1.7.1"
+val resilience4jVersion = "2.0.0"
 val http4s_ce2_version = "0.22.14"
 val http4s_ce3_version = "0.23.16"
 
@@ -956,7 +956,7 @@ lazy val scribeBackend = (projectMatrix in file("logging/scribe"))
   .settings(
     name := "scribe-backend",
     libraryDependencies ++= Seq(
-      "com.outr" %%% "scribe" % "3.10.4"
+      "com.outr" %%% "scribe" % "3.10.5"
     ),
     scalaTest
   )
