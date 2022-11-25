@@ -90,7 +90,7 @@ object PrometheusBackend {
       cache.getOrElseUpdate(collectorRegistry, new ConcurrentHashMap[String, T]())
     }
 
-  type RequestCollectors = (Option[Histogram.Timer], Option[Gauge.Child])
+  final class RequestCollectors(val maybeTimer: Option[Histogram.Timer], val maybeGauge: Option[Gauge.Child])
 }
 
 class PrometheusListener(
@@ -122,7 +122,7 @@ class PrometheusListener(
 
     gauge.foreach(_.inc())
 
-    (requestTimer, gauge)
+    new RequestCollectors(requestTimer, gauge)
   }
 
   override def requestException(
@@ -134,8 +134,8 @@ class PrometheusListener(
       case Some(HttpError(body, statusCode)) =>
         requestSuccessful(request, Response(body, statusCode), requestCollectors)
       case _ =>
-        requestCollectors._1.foreach(_.observeDuration())
-        requestCollectors._2.foreach(_.dec())
+        requestCollectors.maybeTimer.foreach(_.observeDuration())
+        requestCollectors.maybeGauge.foreach(_.dec())
         incCounterIfMapped((request, e), requestToFailureCounterMapper)
     }
   }
@@ -145,8 +145,8 @@ class PrometheusListener(
       response: Response[_],
       requestCollectors: RequestCollectors
   ): Unit = {
-    requestCollectors._1.foreach(_.observeDuration())
-    requestCollectors._2.foreach(_.dec())
+    requestCollectors.maybeTimer.foreach(_.observeDuration())
+    requestCollectors.maybeGauge.foreach(_.dec())
     observeResponseContentLengthSummaryIfMapped(request, response, responseToSizeSummaryMapper)
 
     if (response.isSuccess) {
