@@ -37,13 +37,25 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
   override def send[T, R >: PE](r: Request[T, R]): F[Response[T]] =
     adjustExceptions(r) {
       val (entity, extraHeaders) = bodyToHttp4s(r, r.body)
-      val request = Http4sRequest(
-        method = methodToHttp4s(r.method),
-        uri = http4s.Uri.unsafeFromString(r.uri.toString),
-        headers =
-          http4s.Headers(r.headers.map(h => http4s.Header.Raw(CIString(h.name), h.value)).toList) ++ extraHeaders,
-        body = entity.body
-      )
+      val request = r.httpVersion match {
+        case Some(version) =>
+          Http4sRequest(
+            method = methodToHttp4s(r.method),
+            uri = http4s.Uri.unsafeFromString(r.uri.toString),
+            headers =
+              http4s.Headers(r.headers.map(h => http4s.Header.Raw(CIString(h.name), h.value)).toList) ++ extraHeaders,
+            body = entity.body,
+            httpVersion = versionToHttp4s(version)
+          )
+        case None =>
+          Http4sRequest(
+            method = methodToHttp4s(r.method),
+            uri = http4s.Uri.unsafeFromString(r.uri.toString),
+            headers =
+              http4s.Headers(r.headers.map(h => http4s.Header.Raw(CIString(h.name), h.value)).toList) ++ extraHeaders,
+            body = entity.body
+          )
+      }
 
       // see adr0001
       MVar.empty[F, Unit].flatMap { responseBodyCompleteVar =>
@@ -98,6 +110,14 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
       case _              => http4s.Method.fromString(m.method).right.get
     }
 
+  private def versionToHttp4s(version: HttpVersion): http4s.HttpVersion = {
+    version match {
+      case HttpVersion.HTTP_1   => http4s.HttpVersion.`HTTP/1.0`
+      case HttpVersion.HTTP_1_1 => http4s.HttpVersion.`HTTP/1.1`
+      case HttpVersion.HTTP_2   => http4s.HttpVersion.`HTTP/2`
+      case HttpVersion.HTTP_3   => http4s.HttpVersion.`HTTP/3`
+    }
+  }
   private def charsetToHttp4s(encoding: String) = http4s.Charset.fromNioCharset(Charset.forName(encoding))
 
   private def basicBodyToHttp4s(body: BasicRequestBody): http4s.Entity[F] = {

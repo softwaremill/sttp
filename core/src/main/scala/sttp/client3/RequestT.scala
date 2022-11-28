@@ -242,9 +242,32 @@ case class RequestT[U[_], T, -R](
 
   // Used as a workaround to keep binary compatibility
   // TODO: replace with additional parameter in RequestOptions when writing sttp4
+
   def disableAutoDecompression: RequestT[U, T, R] = tag(disableAutoDecompressionKey, true)
 
   def autoDecompressionDisabled: Boolean = tags.getOrElse(disableAutoDecompressionKey, false).asInstanceOf[Boolean]
+
+  private val httpVersionKey = "httpVersion"
+
+  // Used as a workaround to keep binary compatibility
+  // TODO: replace with additional parameter in RequestOptions when writing sttp4
+  // TODO: add similar functionality to Response
+
+  /** Allows setting HTTP version per request. Supported only is a few backends
+    *
+    * @param version:
+    *   one of values from [[HttpVersion]] enum.
+    * @return
+    *   request with version tag
+    */
+  def httpVersion(version: HttpVersion): RequestT[U, T, R] = tag(httpVersionKey, version)
+
+  /** Get[[HttpVersion]] from tags in request. Supported only is a few backends
+    *
+    * @return
+    *   one of values form [[HttpVersion]] enum or [[None]]
+    */
+  def httpVersion: Option[HttpVersion] = tags.get(httpVersionKey).map(_.asInstanceOf[HttpVersion])
 
   private val loggingOptionsTagKey = "loggingOptions"
 

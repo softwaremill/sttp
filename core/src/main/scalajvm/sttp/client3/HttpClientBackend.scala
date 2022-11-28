@@ -4,7 +4,7 @@ import sttp.capabilities.{Effect, Streams}
 import sttp.client3.HttpClientBackend.EncodingHandler
 import sttp.client3.SttpBackendOptions.Proxy
 import sttp.client3.internal.httpclient.{BodyFromHttpClient, BodyToHttpClient}
-import sttp.client3.{MultipartBody, Request, Response, SttpBackend, SttpBackendOptions}
+import sttp.model.HttpVersion.{HTTP_1_1, HTTP_2}
 import sttp.model._
 import sttp.monad.MonadError
 import sttp.monad.syntax._
@@ -33,6 +33,12 @@ abstract class HttpClientBackend[F[_], S, P, B](
       val builder = HttpRequest
         .newBuilder()
         .uri(request.uri.toJavaUri)
+
+      request.httpVersion.foreach {
+        case HTTP_1_1 => builder.version(HttpClient.Version.HTTP_1_1)
+        case HTTP_2   => builder.version(HttpClient.Version.HTTP_2)
+        case _        => // skip, client default version remains active
+      }
 
       // Only setting the content type if it's present, and won't be set later with the mulitpart boundary added
       val contentType: Option[String] = request.headers.find(_.is(HeaderNames.ContentType)).map(_.value)
