@@ -6,10 +6,18 @@ pull_request_rules:
   - name: automatic merge for softwaremill-ci pull requests affecting build.sbt
     conditions:
       - author=softwaremill-ci
-      - check-success=ci (JVM)
-      - check-success=ci (JS1)
-      - check-success=ci (JS2)
-      - check-success=ci (Native)
+      - check-success=ci (2.11, JVM)
+      - check-success=ci (2.12, JVM)
+      - check-success=ci (2.13, JVM)
+      - check-success=ci (3, JVM)
+      - check-success=ci (2.11, JS)
+      - check-success=ci (2.12, JS)
+      - check-success=ci (2.13, JS)
+      - check-success=ci (3, JS)
+      - check-success=ci (2.11, Native)
+      - check-success=ci (2.12, Native)
+      - check-success=ci (2.13, Native)
+      - check-success=ci (3, Native)
       - check-success=mima
       - "#files=1"
       - files=build.sbt
@@ -19,10 +27,18 @@ pull_request_rules:
   - name: automatic merge for softwaremill-ci pull requests affecting project plugins.sbt
     conditions:
       - author=softwaremill-ci
-      - check-success=ci (JVM)
-      - check-success=ci (JS1)
-      - check-success=ci (JS2)
-      - check-success=ci (Native)
+      - check-success=ci (2.11, JVM)
+      - check-success=ci (2.12, JVM)
+      - check-success=ci (2.13, JVM)
+      - check-success=ci (3, JVM)
+      - check-success=ci (2.11, JS)
+      - check-success=ci (2.12, JS)
+      - check-success=ci (2.13, JS)
+      - check-success=ci (3, JS)
+      - check-success=ci (2.11, Native)
+      - check-success=ci (2.12, Native)
+      - check-success=ci (2.13, Native)
+      - check-success=ci (3, Native)
       - check-success=mima
       - "#files=1"
       - files=project/plugins.sbt
@@ -32,10 +48,18 @@ pull_request_rules:
   - name: semi-automatic merge for softwaremill-ci pull requests
     conditions:
       - author=softwaremill-ci
-      - check-success=ci (JVM)
-      - check-success=ci (JS1)
-      - check-success=ci (JS2)
-      - check-success=ci (Native)
+      - check-success=ci (2.11, JVM)
+      - check-success=ci (2.12, JVM)
+      - check-success=ci (2.13, JVM)
+      - check-success=ci (3, JVM)
+      - check-success=ci (2.11, JS)
+      - check-success=ci (2.12, JS)
+      - check-success=ci (2.13, JS)
+      - check-success=ci (3, JS)
+      - check-success=ci (2.11, Native)
+      - check-success=ci (2.12, Native)
+      - check-success=ci (2.13, Native)
+      - check-success=ci (3, Native)
       - check-success=mima
       - "#approved-reviews-by>=1"
     actions:
@@ -44,10 +68,18 @@ pull_request_rules:
   - name: automatic merge for softwaremill-ci pull requests affecting project build.properties
     conditions:
       - author=softwaremill-ci
-      - check-success=ci (JVM)
-      - check-success=ci (JS1)
-      - check-success=ci (JS2)
-      - check-success=ci (Native)
+      - check-success=ci (2.11, JVM)
+      - check-success=ci (2.12, JVM)
+      - check-success=ci (2.13, JVM)
+      - check-success=ci (3, JVM)
+      - check-success=ci (2.11, JS)
+      - check-success=ci (2.12, JS)
+      - check-success=ci (2.13, JS)
+      - check-success=ci (3, JS)
+      - check-success=ci (2.11, Native)
+      - check-success=ci (2.12, Native)
+      - check-success=ci (2.13, Native)
+      - check-success=ci (3, Native)
       - check-success=mima
       - "#files=1"
       - files=project/build.properties
@@ -57,10 +89,18 @@ pull_request_rules:
   - name: automatic merge for softwaremill-ci pull requests affecting .scalafmt.conf
     conditions:
       - author=softwaremill-ci
-      - check-success=ci (JVM)
-      - check-success=ci (JS1)
-      - check-success=ci (JS2)
-      - check-success=ci (Native)
+      - check-success=ci (2.11, JVM)
+      - check-success=ci (2.12, JVM)
+      - check-success=ci (2.13, JVM)
+      - check-success=ci (3, JVM)
+      - check-success=ci (2.11, JS)
+      - check-success=ci (2.12, JS)
+      - check-success=ci (2.13, JS)
+      - check-success=ci (3, JS)
+      - check-success=ci (2.11, Native)
+      - check-success=ci (2.12, Native)
+      - check-success=ci (2.13, Native)
+      - check-success=ci (3, Native)
       - check-success=mima
       - "#files=1"
       - files=.scalafmt.conf
