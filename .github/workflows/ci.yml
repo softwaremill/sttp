@@ -46,22 +46,7 @@ jobs:
       if: matrix.target-platform == 'JVM'
       run: sbt -v compileDocs
     - name: Test
-      if: matrix.target-platform != 'JS'
       run: sbt -v "testScoped ${{ matrix.scala-version }} ${{ matrix.target-platform }}"
-      # Temporarily call JS tests for each subproject explicitly as a workaround until
-      # https://github.com/scala-js/scala-js/issues/4317 has a solution
-    - name: Test
-      if: matrix.target-platform == 'JS' && matrix.scala-version == '2.11'
-      run: sbt testJS2_11
-    - name: Test
-      if: matrix.target-platform == 'JS' && matrix.scala-version == '2.12'
-      run: sbt testJS2_12
-    - name: Test
-      if: matrix.target-platform == 'JS' && matrix.scala-version == '2.13'
-      run: sbt testJS2_13
-    - name: Test
-      if: matrix.target-platform == 'JS' && matrix.scala-version == '3'
-      run: sbt testJS3
     - name: Prepare release notes
       uses: release-drafter/release-drafter@v5
       with:
