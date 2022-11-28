@@ -22,7 +22,7 @@ parallelExecution in Global := false
 concurrentRestrictions in Global += Tags.limit(Tags.Test, 1)
 
 excludeLintKeys in Global ++= Set(ideSkipProject, reStartArgs)
-val scopesDescription = "Scala version can be: 2:11, 2.12, 2.13, 3; platform: JVM, JS, Native"
+val scopesDescription = "Scala version can be: 2.11, 2.12, 2.13, 3; platform: JVM, JS, Native"
 val compileScoped =
   inputKey[Unit](
     s"Compiles sources in the given scope. Usage: compileScoped [scala version] [platform]. $scopesDescription"
@@ -39,9 +39,8 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
       files1 ++ Seq(file("generated-docs/out"))
     }
   }.value,
-  ideSkipProject := (scalaVersion.value != scala2_13) || thisProjectRef.value.project.contains(
-    "JS"
-  ) || thisProjectRef.value.project.contains("Native"),
+  ideSkipProject := (scalaVersion.value != scala2_13)
+    || thisProjectRef.value.project.contains("JS") || thisProjectRef.value.project.contains("Native"),
   mimaPreviousArtifacts := Set.empty // we only use MiMa for `core` for now, using enableMimaSettings
 )
 
@@ -238,12 +237,6 @@ lazy val allAggregates = projectsWithOptionalNative ++
   docs.projectRefs ++
   testServer.projectRefs
 
-// For CI tests, defining scripts that run JVM/JS/Native tests separately
-val testJS2_11 = taskKey[Unit]("Test JS 2.11 projects")
-val testJS2_12 = taskKey[Unit]("Test JS 2.12 projects")
-val testJS2_13 = taskKey[Unit]("Test JS 2.13 projects")
-val testJS3 = taskKey[Unit]("Test JS 3 projects")
-
 def filterProject(p: String => Boolean) =
   ScopeFilter(inProjects(allAggregates.filter(pr => p(display(pr.project))): _*))
 
@@ -253,7 +246,7 @@ def filterByVersionAndPlatform(scalaVersionFilter: String, platformFilter: Strin
     else projectName.contains(platformFilter)
   val byVersion = scalaVersionFilter match {
     case "3"    => projectName.contains("3")
-    case "2.13" => projectName.contains("2_13")
+    case "2.13" => !projectName.contains("2_11") && !projectName.contains("2_12") && !projectName.contains("3")
     case "2.12" => projectName.contains("2_12")
     case "2.11" => projectName.contains("2_11")
   }
@@ -266,18 +259,6 @@ lazy val rootProject = (project in file("."))
   .settings(
     publish / skip := true,
     name := "sttp",
-    testJS2_11 := (Test / test)
-      .all(filterProject(p => p.contains("JS") && p.contains("2_11")))
-      .value,
-    testJS2_12 := (Test / test)
-      .all(filterProject(p => p.contains("JS") && p.contains("2_12")))
-      .value,
-    testJS2_13 := (Test / test)
-      .all(filterProject(p => p.contains("JS") && p.contains("2_13")))
-      .value,
-    testJS3 := (Test / test)
-      .all(filterProject(p => p.contains("JS") && p.contains("3")))
-      .value,
     compileScoped := Def.inputTaskDyn {
       val args = spaceDelimited("<arg>").parsed
       Def.taskDyn((Compile / compile).all(filterByVersionAndPlatform(args.head, args(1))))

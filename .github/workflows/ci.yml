@@ -8,10 +8,6 @@ on:
 jobs:
   ci:
     # Run on external PRs, but not on internal PRs since those will be run by push to branch
-    # For JVM 3 GB is the lowest value we can set without causing failures in tests
-    # For JS tests 2.5 GB is the lowest value we can set without causing failures in tests,
-    # however they are split into tests for 2.11+2.12 and 2.13+3 so that there are no timeouts.
-    # For Native we probably can lower the value further
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-20.04
     strategy:
