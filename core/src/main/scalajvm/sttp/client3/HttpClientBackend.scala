@@ -16,8 +16,6 @@ import java.time.{Duration => JDuration}
 import java.util.concurrent.{Executor, ThreadPoolExecutor}
 import java.util.function
 import scala.collection.JavaConverters._
-import scala.concurrent.duration.Duration
-import scala.util.Try
 
 abstract class HttpClientBackend[F[_], S, P, B](
     client: HttpClient,
@@ -57,12 +55,12 @@ abstract class HttpClientBackend[F[_], S, P, B](
           .filterNot(h => (h.name == HeaderNames.ContentLength) || h.name == HeaderNames.ContentType)
           .foreach(h => builder.header(h.name, h.value))
         val timeout = request.options.readTimeout
-        if (timeout.equals(Duration.Inf)) {
+        if (timeout.isFinite) {
+          builder.timeout(JDuration.ofMillis(timeout.toMillis)).build()
+        } else {
           //  The effect of not setting a timeout is the same as setting an infinite Duration,
           //  i.e. block forever.
           builder.build()
-        } else {
-          builder.timeout(JDuration.ofMillis(timeout.toMillis)).build()
         }
       }
     }

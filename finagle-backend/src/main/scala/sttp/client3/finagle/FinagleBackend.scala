@@ -16,7 +16,6 @@ import sttp.model.HttpVersion.HTTP_1
 import sttp.model._
 import sttp.monad.MonadError
 import sttp.monad.syntax._
-import scala.concurrent.duration.{Duration => SDuration}
 
 import scala.io.Source
 
@@ -191,13 +190,13 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
       }
     }
     val timeout = request.options.readTimeout
-    if (timeout.equals(SDuration.Inf)) {
+    if (timeout.isFinite) {
       client
-        .withRequestTimeout(Duration.Top) // Finagle counterpart of Duration.Inf as far as I understand
+        .withRequestTimeout(Duration.fromMilliseconds(timeout.toMillis))
         .newService(uriToFinagleDestination(request.uri))
     } else {
       client
-        .withRequestTimeout(Duration.fromMilliseconds(request.options.readTimeout.toMillis))
+        .withRequestTimeout(Duration.Top) // Finagle counterpart of Duration.Inf as far as I understand
         .newService(uriToFinagleDestination(request.uri))
     }
   }

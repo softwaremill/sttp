@@ -99,7 +99,15 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
       .disablePathParams()
       .method(methodToArmeria(request.method))
       .path(request.uri.toString())
-      .responseTimeoutMillis(request.options.readTimeout.toMillis)
+
+    val timeout = request.options.readTimeout
+    if (timeout.isFinite) {
+        requestPreparation.responseTimeoutMillis(timeout.toMillis)
+      } else {
+        // Armenia does not support Inf timeouts
+        requestPreparation.responseTimeoutMillis(Long.MaxValue)
+      }
+
 
     var customContentType: Option[ArmeriaMediaType] = None
     request.headers.foreach { header =>
