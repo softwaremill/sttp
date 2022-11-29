@@ -460,7 +460,7 @@ class SpecifyAuthScheme[U[_], T, -R](hn: String, rt: RequestT[U, T, R], digestTa
 
 case class RequestOptions(
     followRedirects: Boolean,
-    readTimeout: Duration,
+    readTimeout: Duration, // TODO: Use FiniteDuration while migrating to sttp-4
     maxRedirects: Int,
     redirectToGet: Boolean
 )
