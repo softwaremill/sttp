@@ -54,7 +54,14 @@ abstract class HttpClientBackend[F[_], S, P, B](
         request.headers
           .filterNot(h => (h.name == HeaderNames.ContentLength) || h.name == HeaderNames.ContentType)
           .foreach(h => builder.header(h.name, h.value))
-        builder.timeout(JDuration.ofMillis(request.options.readTimeout.toMillis)).build()
+        val timeout = request.options.readTimeout
+        if (timeout.isFinite) {
+          builder.timeout(JDuration.ofMillis(timeout.toMillis)).build()
+        } else {
+          //  The effect of not setting a timeout is the same as setting an infinite Duration,
+          //  i.e. block forever.
+          builder.build()
+        }
       }
     }
 

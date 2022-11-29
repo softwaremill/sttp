@@ -189,10 +189,18 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
         case _             => Http.client
       }
     }
-    client
-      .withRequestTimeout(Duration.fromMilliseconds(request.options.readTimeout.toMillis))
-      .newService(uriToFinagleDestination(request.uri))
+    val timeout = request.options.readTimeout
+    if (timeout.isFinite) {
+      client
+        .withRequestTimeout(Duration.fromMilliseconds(timeout.toMillis))
+        .newService(uriToFinagleDestination(request.uri))
+    } else {
+      client
+        .withRequestTimeout(Duration.Top) // Finagle counterpart of Duration.Inf as far as I understand
+        .newService(uriToFinagleDestination(request.uri))
+    }
   }
+
 
   private def uriToFinagleDestination(uri: Uri): String = {
     val defaultPort = uri.scheme match {

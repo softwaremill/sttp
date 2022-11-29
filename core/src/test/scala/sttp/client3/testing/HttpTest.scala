@@ -58,6 +58,14 @@ trait HttpTest[F[_]]
   protected def supportsAutoDecompressionDisabling = true
   protected def supportsDeflateWrapperChecking = true
 
+  "request parsing" - {
+    "Inf timeout should not throw exception" in {
+      postEcho.readTimeout(Duration.Inf).body(testBody).send(backend).toFuture().map { response =>
+        response.body should be(Right(expectedPostEchoResponse))
+      }
+    }
+  }
+
   "parse response" - {
     "as string" in {
       postEcho.body(testBody).send(backend).toFuture().map { response =>
