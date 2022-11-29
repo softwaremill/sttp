@@ -129,7 +129,7 @@ object AsyncHttpClientFs2Backend {
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): Resource[F, SttpBackend[F, Fs2Streams[F] with WebSockets]] =
-    Dispatcher[F].flatMap(dispatcher =>
+    Dispatcher.parallel[F].flatMap(dispatcher =>
       Resource.make(apply(dispatcher, options, customizeRequest, webSocketBufferCapacity))(_.close())
     )
 
@@ -155,7 +155,7 @@ object AsyncHttpClientFs2Backend {
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): Resource[F, SttpBackend[F, Fs2Streams[F] with WebSockets]] =
-    Dispatcher[F].flatMap(dispatcher =>
+    Dispatcher.parallel[F].flatMap(dispatcher =>
       Resource.make(usingConfig(cfg, dispatcher, customizeRequest, webSocketBufferCapacity))(_.close())
     )
 
@@ -187,7 +187,7 @@ object AsyncHttpClientFs2Backend {
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): Resource[F, SttpBackend[F, Fs2Streams[F] with WebSockets]] =
-    Dispatcher[F].flatMap(dispatcher =>
+    Dispatcher.parallel[F].flatMap(dispatcher =>
       Resource.make(usingConfigBuilder(dispatcher, updateConfig, options, customizeRequest, webSocketBufferCapacity))(
         _.close()
       )

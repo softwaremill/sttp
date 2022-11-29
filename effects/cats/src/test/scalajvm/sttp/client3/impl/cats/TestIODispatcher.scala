@@ -10,7 +10,7 @@ trait TestIODispatcher extends BeforeAndAfterAll { this: Suite =>
   // use a var to avoid initialization error `scala.UninitializedFieldError`
   protected var dispatcher: Dispatcher[IO] = _
 
-  private val (d, shutdownDispatcher) = Dispatcher[IO].allocated.unsafeRunSync()
+  private val (d, shutdownDispatcher) = Dispatcher.parallel[IO].allocated.unsafeRunSync()
   dispatcher = d
 
   override protected def afterAll(): Unit = {

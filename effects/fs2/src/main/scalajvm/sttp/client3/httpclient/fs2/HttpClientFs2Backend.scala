@@ -128,7 +128,7 @@ object HttpClientFs2Backend {
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty
   ): Resource[F, SttpBackend[F, Fs2Streams[F] with WebSockets]] =
-    Dispatcher[F].flatMap(dispatcher =>
+    Dispatcher.parallel[F].flatMap(dispatcher =>
       Resource.make(apply(dispatcher, options, customizeRequest, customEncodingHandler))(_.close())
     )
 
@@ -137,7 +137,7 @@ object HttpClientFs2Backend {
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty
   ): Resource[F, SttpBackend[F, Fs2Streams[F] with WebSockets]] =
-    Dispatcher[F].flatMap(dispatcher =>
+    Dispatcher.parallel[F].flatMap(dispatcher =>
       Resource.make(
         Sync[F].delay(apply(client, closeClient = true, customizeRequest, customEncodingHandler, dispatcher))
       )(_.close())
