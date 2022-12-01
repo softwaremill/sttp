@@ -1,14 +1,7 @@
 package sttp.client3.finagle
 
 import com.twitter.finagle.Http.Client
-import com.twitter.finagle.http.{
-  FileElement,
-  FormElement,
-  RequestBuilder,
-  SimpleElement,
-  Method => FMethod,
-  Response => FResponse
-}
+import com.twitter.finagle.http.{FileElement, FormElement, RequestBuilder, SimpleElement, Method => FMethod, Response => FResponse}
 import com.twitter.finagle.{Http, Service, http}
 import com.twitter.io.Buf
 import com.twitter.io.Buf.{ByteArray, ByteBuffer}
@@ -18,23 +11,8 @@ import sttp.capabilities.Effect
 import sttp.client3.internal.{BodyFromResponseAs, FileHelpers, SttpFile, Utf8}
 import sttp.client3.testing.SttpBackendStub
 import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
-import sttp.client3.{
-  ByteArrayBody,
-  ByteBufferBody,
-  FileBody,
-  FollowRedirectsBackend,
-  InputStreamBody,
-  MultipartBody,
-  NoBody,
-  Request,
-  RequestBody,
-  Response,
-  StreamBody,
-  StringBody,
-  SttpBackend,
-  SttpClientException,
-  WebSocketResponseAs
-}
+import sttp.client3.{ByteArrayBody, ByteBufferBody, FileBody, FollowRedirectsBackend, InputStreamBody, MultipartBody, NoBody, Request, RequestBody, Response, StreamBody, StringBody, SttpBackend, SttpClientException, WebSocketResponseAs}
+import sttp.model.HttpVersion.HTTP_1
 import sttp.model._
 import sttp.monad.MonadError
 import sttp.monad.syntax._
@@ -94,24 +72,27 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
     r.body match {
       case FileBody(f, _) =>
         val content: String = Source.fromFile(f.toFile).mkString
-        buildRequest(url, headers, finagleMethod, Some(ByteArray(content.getBytes: _*)))
-      case NoBody               => buildRequest(url, headers, finagleMethod, None)
-      case StringBody(s, e, _)  => buildRequest(url, headers, finagleMethod, Some(ByteArray(s.getBytes(e): _*)))
-      case ByteArrayBody(b, _)  => buildRequest(url, headers, finagleMethod, Some(ByteArray(b: _*)))
-      case ByteBufferBody(b, _) => buildRequest(url, headers, finagleMethod, Some(ByteBuffer.Owned(b)))
+        buildRequest(url, headers, finagleMethod, Some(ByteArray(content.getBytes: _*)), r.httpVersion)
+      case NoBody => buildRequest(url, headers, finagleMethod, None, r.httpVersion)
+      case StringBody(s, e, _) =>
+        buildRequest(url, headers, finagleMethod, Some(ByteArray(s.getBytes(e): _*)), r.httpVersion)
+      case ByteArrayBody(b, _) => buildRequest(url, headers, finagleMethod, Some(ByteArray(b: _*)), r.httpVersion)
+      case ByteBufferBody(b, _) =>
+        buildRequest(url, headers, finagleMethod, Some(ByteBuffer.Owned(b)), r.httpVersion)
       case InputStreamBody(is, _) =>
         buildRequest(
           url,
           headers,
           finagleMethod,
-          Some(ByteArray(Stream.continually(is.read).takeWhile(_ != -1).map(_.toByte).toArray: _*))
+          Some(ByteArray(Stream.continually(is.read).takeWhile(_ != -1).map(_.toByte).toArray: _*)),
+          r.httpVersion
         )
       case MultipartBody(parts) =>
         val requestBuilder = RequestBuilder.create().url(url).addHeaders(headers)
         val elements = parts.map { part => getBasicBodyContent(part) }
         requestBuilder.add(elements).buildFormPost(true)
       // requestBuilder.addFormElement(elements: _*).buildFormPost(true)
-      case _ => buildRequest(url, headers, finagleMethod, None)
+      case _ => buildRequest(url, headers, finagleMethod, None, r.httpVersion)
     }
   }
 
@@ -141,9 +122,13 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
       url: String,
       headers: Map[String, String],
       method: FMethod,
-      content: Option[Buf]
+      content: Option[Buf],
+      httpVersion: Option[HttpVersion]
   ): http.Request = {
     val defaultHostHeader = RequestBuilder.create().url(url)
+    if (httpVersion.exists(_.equals(HTTP_1))) {
+      defaultHostHeader.http10()
+    }
     // RequestBuilder#url() will set the `Host` Header to the url's hostname. That is not necessarily correct,
     // when the headers parameter overrides that setting, clear the default.
     val updatedHostHeader =
@@ -204,10 +189,18 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
         case _             => Http.client
       }
     }
-    client
-      .withRequestTimeout(Duration.fromMilliseconds(request.options.readTimeout.toMillis))
-      .newService(uriToFinagleDestination(request.uri))
+    val timeout = request.options.readTimeout
+    if (timeout.isFinite) {
+      client
+        .withRequestTimeout(Duration.fromMilliseconds(timeout.toMillis))
+        .newService(uriToFinagleDestination(request.uri))
+    } else {
+      client
+        .withRequestTimeout(Duration.Top) // Finagle counterpart of Duration.Inf as far as I understand
+        .newService(uriToFinagleDestination(request.uri))
+    }
   }
+
 
   private def uriToFinagleDestination(uri: Uri): String = {
     val defaultPort = uri.scheme match {

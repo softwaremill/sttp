@@ -57,7 +57,7 @@ object ArmeriaFs2Backend {
   def resource[F[_]: Async](
       options: SttpBackendOptions = SttpBackendOptions.Default
   ): Resource[F, SttpBackend[F, Fs2Streams[F]]] =
-    Dispatcher[F].flatMap(dispatcher =>
+    Dispatcher.parallel[F].flatMap(dispatcher =>
       Resource.make(Sync[F].delay(apply(newClient(options), closeFactory = true, dispatcher)))(_.close())
     )
 

@@ -4,6 +4,7 @@ import com.softwaremill.UpdateVersionInDocs
 import sbt.Keys.publishArtifact
 import sbt.Reference.display
 import sbt.internal.ProjectMatrix
+import complete.DefaultParsers._
 // run JS tests inside Chrome, due to jsdom not supporting fetch
 import com.softwaremill.SbtSoftwareMillBrowserTestJS._
 
@@ -21,6 +22,13 @@ parallelExecution in Global := false
 concurrentRestrictions in Global += Tags.limit(Tags.Test, 1)
 
 excludeLintKeys in Global ++= Set(ideSkipProject, reStartArgs)
+val scopesDescription = "Scala version can be: 2.11, 2.12, 2.13, 3; platform: JVM, JS, Native"
+val compileScoped =
+  inputKey[Unit](
+    s"Compiles sources in the given scope. Usage: compileScoped [scala version] [platform]. $scopesDescription"
+  )
+val testScoped =
+  inputKey[Unit](s"Run tests in the given scope. Usage: testScoped [scala version] [platform]. $scopesDescription")
 
 val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   organization := "com.softwaremill.sttp.client3",
@@ -31,9 +39,8 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
       files1 ++ Seq(file("generated-docs/out"))
     }
   }.value,
-  ideSkipProject := (scalaVersion.value != scala2_13) || thisProjectRef.value.project.contains(
-    "JS"
-  ) || thisProjectRef.value.project.contains("Native"),
+  ideSkipProject := (scalaVersion.value != scala2_13)
+    || thisProjectRef.value.project.contains("JS") || thisProjectRef.value.project.contains("Native"),
   mimaPreviousArtifacts := Set.empty // we only use MiMa for `core` for now, using enableMimaSettings
 )
 
@@ -122,7 +129,7 @@ val playJsonVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.7.4"
   case _             => "2.9.2"
 }
-val catsEffect_3_version = "3.4.1"
+val catsEffect_3_version = "3.4.2"
 val fs2_3_version = "3.4.0"
 
 val catsEffect_2_version: Option[(Long, Long)] => String = {
@@ -155,7 +162,7 @@ val logback = "ch.qos.logback" % "logback-classic" % "1.4.5"
 val jeagerClientVersion = "1.8.1"
 val braveOpentracingVersion = "1.0.0"
 val zipkinSenderOkHttpVersion = "2.16.3"
-val resilience4jVersion = "1.7.1"
+val resilience4jVersion = "2.0.0"
 val http4s_ce2_version = "0.22.14"
 val http4s_ce3_version = "0.23.16"
 
@@ -230,28 +237,36 @@ lazy val allAggregates = projectsWithOptionalNative ++
   docs.projectRefs ++
   testServer.projectRefs
 
-// For CI tests, defining scripts that run JVM/JS/Native tests separately
-val testJVM = taskKey[Unit]("Test JVM projects")
-val testJS1 = taskKey[Unit]("Test JS 2.11 and 2.12 projects")
-val testJS2 = taskKey[Unit]("Test JS 2.13 and 3 projects")
-val testNative = taskKey[Unit]("Test native projects")
-
 def filterProject(p: String => Boolean) =
   ScopeFilter(inProjects(allAggregates.filter(pr => p(display(pr.project))): _*))
+
+def filterByVersionAndPlatform(scalaVersionFilter: String, platformFilter: String) = filterProject { projectName =>
+  val byPlatform =
+    if (platformFilter == "JVM") !projectName.contains("JS") && !projectName.contains("Native")
+    else projectName.contains(platformFilter)
+  val byVersion = scalaVersionFilter match {
+    case "3"    => projectName.contains("3")
+    case "2.13" => !projectName.contains("2_11") && !projectName.contains("2_12") && !projectName.contains("3")
+    case "2.12" => projectName.contains("2_12")
+    case "2.11" => projectName.contains("2_11")
+  }
+
+  byPlatform && byVersion
+}
 
 lazy val rootProject = (project in file("."))
   .settings(commonSettings: _*)
   .settings(
     publish / skip := true,
     name := "sttp",
-    testJVM := (Test / test).all(filterProject(p => !p.contains("JS") && !p.contains("Native"))).value,
-    testJS1 := (Test / test)
-      .all(filterProject(p => p.contains("JS") && (p.contains("2_11") || p.contains("2_12"))))
-      .value,
-    testJS2 := (Test / test)
-      .all(filterProject(p => p.contains("JS") && !p.contains("2_11") && !p.contains("2_12")))
-      .value,
-    testNative := (Test / test).all(filterProject(_.contains("Native"))).value,
+    compileScoped := Def.inputTaskDyn {
+      val args = spaceDelimited("<arg>").parsed
+      Def.taskDyn((Compile / compile).all(filterByVersionAndPlatform(args.head, args(1))))
+    }.evaluated,
+    testScoped := Def.inputTaskDyn {
+      val args = spaceDelimited("<arg>").parsed
+      Def.taskDyn((Test / test).all(filterByVersionAndPlatform(args.head, args(1))))
+    }.evaluated,
     ideSkipProject := false,
     scalaVersion := scala2_13
   )
@@ -499,7 +514,7 @@ lazy val scalaz = (projectMatrix in file("effects/scalaz"))
   .settings(
     name := "scalaz",
     Test / publishArtifact := true,
-    libraryDependencies ++= Seq("org.scalaz" %% "scalaz-concurrent" % "7.2.34")
+    libraryDependencies ++= Seq("org.scalaz" %% "scalaz-concurrent" % "7.2.35")
   )
   .dependsOn(core % compileAndTest)
   .jvmPlatform(
@@ -929,7 +944,7 @@ lazy val openTelemetryTracingZio1Backend = (projectMatrix in file("observability
     name := "opentelemetry-tracing-zio1-backend",
     libraryDependencies ++= Seq(
       "dev.zio" %% "zio-opentelemetry" % "1.0.0",
-      "org.scala-lang.modules" %% "scala-collection-compat" % "2.8.1",
+      "org.scala-lang.modules" %% "scala-collection-compat" % "2.9.0",
       "io.opentelemetry" % "opentelemetry-sdk-testing" % openTelemetryVersion % Test
     ),
     scalaTest

@@ -118,7 +118,7 @@ object HttpClientCatsBackend {
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: EncodingHandler[InputStream] = PartialFunction.empty
   ): Resource[F, SttpBackend[F, WebSockets]] =
-    Dispatcher[F].flatMap(dispatcher =>
+    Dispatcher.parallel[F].flatMap(dispatcher =>
       Resource.make(apply(dispatcher, options, customizeRequest, customEncodingHandler))(_.close())
     )
 
