@@ -29,9 +29,7 @@ val httpClient: HttpClient = ???
 val backend = HttpClientZioBackend.usingClient(httpClient)
 
 // or, obtain a Scope with a custom instance of the HttpClient:
-import java.net.http.HttpClient
-val httpClient: HttpClient = ???
-HttpClientZioBackend.scoped(httpClient).flatMap { backend => ??? }
+HttpClientZioBackend.scopedUsingClient(httpClient).flatMap { backend => ??? }
 ```
 
 This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards. The backend is fully non-blocking, with back-pressured websockets.
