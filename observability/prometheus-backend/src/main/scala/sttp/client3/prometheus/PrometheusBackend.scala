@@ -232,8 +232,12 @@ class PrometheusListener(
 }
 
 trait BaseCollectorConfig {
+
+  type T <: BaseCollectorConfig
   def collectorName: String
   def labels: List[(String, String)]
+
+  def withAddedLabels(lbs: List[(String, String)]): T
 
   def labelNames: Seq[String] = labels.map(_._1)
   def labelValues: Seq[String] = labels.map(_._2)
@@ -242,7 +246,12 @@ trait BaseCollectorConfig {
 /** Represents the name of a collector, together with label names and values. The same labels must be always returned,
   * and in the same order.
   */
-case class CollectorConfig(collectorName: String, labels: List[(String, String)] = Nil) extends BaseCollectorConfig
+case class CollectorConfig(collectorName: String, labels: List[(String, String)] = Nil) extends BaseCollectorConfig {
+  self =>
+
+  override type T = CollectorConfig
+  override def withAddedLabels(lbs: List[(String, String)]): CollectorConfig = self.copy(labels = self.labels ++ lbs)
+}
 
 /** Represents the name of a collector with configurable histogram buckets.
   */
@@ -250,8 +259,12 @@ case class HistogramCollectorConfig(
     collectorName: String,
     labels: List[(String, String)] = Nil,
     buckets: List[Double] = HistogramCollectorConfig.DefaultBuckets
-) extends BaseCollectorConfig
+) extends BaseCollectorConfig { self =>
 
+  override type T = HistogramCollectorConfig
+  override def withAddedLabels(lbs: List[(String, String)]): HistogramCollectorConfig =
+    self.copy(labels = self.labels ++ lbs)
+}
 object HistogramCollectorConfig {
   val DefaultBuckets = List(.005, .01, .025, .05, .075, .1, .25, .5, .75, 1, 2.5, 5, 7.5, 10)
 }
