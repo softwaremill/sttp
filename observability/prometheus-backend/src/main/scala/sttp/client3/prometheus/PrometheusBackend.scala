@@ -65,6 +65,18 @@ object PrometheusBackend {
     )
   }
 
+  /** Add, if not present, label pairs for "method" and "status" (if Response is non-empty). In other words, if the user
+    * already supplied those labels, leave them as-is.
+    * @param config
+    *   user-supplied PrometheusBackend base collector
+    * @param req
+    *   Request
+    * @param maybeResp
+    *   Optional response
+    * @return
+    *   BaseCollectorConfig sub-type. Note that PrometheusBackend#apply and PrometheusListener's constructor reference
+    *   the sub-types of BaseCollectorConfig.
+    */
   def addLabelPairs(config: BaseCollectorConfig, req: Request[_, _], maybeResp: Option[Response[_]]): config.T = {
     val methodLabel: Option[(String, String)] = {
       if (config.labels.map(_._1).contains("method")) {
