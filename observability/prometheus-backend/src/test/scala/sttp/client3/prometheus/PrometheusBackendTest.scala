@@ -39,7 +39,10 @@ class PrometheusBackendTest
     (0 until requestsNumber).foreach(_ => backend.send(basicRequest.get(uri"http://127.0.0.1/foo")))
 
     // then
-    getMetricValue(s"${PrometheusBackend.DefaultHistogramName}_count").value shouldBe requestsNumber
+    getMetricValue(
+      s"${PrometheusBackend.DefaultHistogramName}_count",
+      List("method" -> "GET")
+    ).value shouldBe requestsNumber
   }
 
   it should "allow creating two prometheus backends" in {
@@ -61,7 +64,7 @@ class PrometheusBackendTest
     backend2.send(basicRequest.get(uri"http://127.0.0.1/foo"))
 
     // then
-    getMetricValue(s"${histogramName}_count").value shouldBe 2
+    getMetricValue(s"${histogramName}_count", List("method" -> "GET")).value shouldBe 2
   }
 
   it should "use mapped request to histogram name" in {
@@ -78,8 +81,8 @@ class PrometheusBackendTest
     (0 until requestsNumber).foreach(_ => backend.send(basicRequest.get(uri"http://127.0.0.1/foo")))
 
     // then
-    getMetricValue(s"${PrometheusBackend.DefaultHistogramName}_count") shouldBe empty
-    getMetricValue(s"${customHistogramName}_count").value shouldBe requestsNumber
+    getMetricValue(s"${PrometheusBackend.DefaultHistogramName}_count", List("method" -> "GET")) shouldBe empty
+    getMetricValue(s"${customHistogramName}_count", List("method" -> "GET")).value shouldBe requestsNumber
   }
 
   it should "use mapped request to histogram name with labels and buckets" in {
@@ -105,7 +108,8 @@ class PrometheusBackendTest
     (0 until requestsNumber2).foreach(_ => backend.send(basicRequest.post(uri"http://127.0.0.1/foo")))
 
     // then
-    getMetricValue(s"${PrometheusBackend.DefaultHistogramName}_count") shouldBe empty
+    getMetricValue(s"${PrometheusBackend.DefaultHistogramName}_count", List("method" -> "GET")) shouldBe empty
+    getMetricValue(s"${PrometheusBackend.DefaultHistogramName}_count", List("method" -> "POST")) shouldBe empty
     getMetricValue(s"${customHistogramName}_count", List("method" -> "GET")).value shouldBe requestsNumber1
     getMetricValue(s"${customHistogramName}_count", List("method" -> "POST")).value shouldBe requestsNumber2
   }
@@ -127,7 +131,14 @@ class PrometheusBackendTest
     (0 until requestsNumber2).foreach(_ => backend.send(basicRequest.post(uri"http://127.0.0.1/foo")))
 
     // then
-    getMetricValue(s"${PrometheusBackend.DefaultRequestsInProgressGaugeName}_count") shouldBe empty
+    getMetricValue(
+      s"${PrometheusBackend.DefaultRequestsInProgressGaugeName}_count",
+      List("method" -> "GET")
+    ) shouldBe empty
+    getMetricValue(
+      s"${PrometheusBackend.DefaultRequestsInProgressGaugeName}_count",
+      List("method" -> "POST")
+    ) shouldBe empty
     // the gauges should be created, but set to 0
     getMetricValue(s"$customGaugeName", List("method" -> "GET")).value shouldBe 0.0
     getMetricValue(s"$customGaugeName", List("method" -> "POST")).value shouldBe 0.0
@@ -143,7 +154,7 @@ class PrometheusBackendTest
     (0 until requestsNumber).foreach(_ => backend.send(basicRequest.get(uri"http://127.0.0.1/foo")))
 
     // then
-    getMetricValue(s"${PrometheusBackend.DefaultHistogramName}_count") shouldBe empty
+    getMetricValue(s"${PrometheusBackend.DefaultHistogramName}_count", List("method" -> "GET")) shouldBe empty
   }
 
   it should "use default gauge name" in {
@@ -163,12 +174,15 @@ class PrometheusBackendTest
 
     // then
     eventually {
-      getMetricValue(PrometheusBackend.DefaultRequestsInProgressGaugeName).value shouldBe requestsNumber
+      getMetricValue(
+        PrometheusBackend.DefaultRequestsInProgressGaugeName,
+        List("method" -> "GET")
+      ).value shouldBe requestsNumber
     }
 
     countDownLatch.countDown()
     eventually {
-      getMetricValue(PrometheusBackend.DefaultRequestsInProgressGaugeName).value shouldBe 0
+      getMetricValue(PrometheusBackend.DefaultRequestsInProgressGaugeName, List("method" -> "GET")).value shouldBe 0
     }
   }
 
@@ -194,14 +208,14 @@ class PrometheusBackendTest
 
     // then
     eventually {
-      getMetricValue(PrometheusBackend.DefaultRequestsInProgressGaugeName) shouldBe empty
-      getMetricValue(customGaugeName).value shouldBe requestsNumber
+      getMetricValue(PrometheusBackend.DefaultRequestsInProgressGaugeName, List("method" -> "GET")) shouldBe empty
+      getMetricValue(customGaugeName, List("method" -> "GET")).value shouldBe requestsNumber
     }
 
     countDownLatch.countDown()
     eventually {
-      getMetricValue(PrometheusBackend.DefaultRequestsInProgressGaugeName) shouldBe empty
-      getMetricValue(customGaugeName).value shouldBe 0
+      getMetricValue(PrometheusBackend.DefaultRequestsInProgressGaugeName, List("method" -> "GET")) shouldBe empty
+      getMetricValue(customGaugeName, List("method" -> "GET")).value shouldBe 0
     }
   }
 
@@ -222,12 +236,15 @@ class PrometheusBackendTest
     (0 until requestsNumber).foreach(_ => backend.send(basicRequest.get(uri"http://127.0.0.1/foo")))
 
     // then
-    getMetricValue(PrometheusBackend.DefaultRequestsInProgressGaugeName) shouldBe empty
+    getMetricValue(PrometheusBackend.DefaultRequestsInProgressGaugeName, List("method" -> "GET")) shouldBe empty
 
     countDownLatch.countDown()
     eventually {
-      getMetricValue(s"${PrometheusBackend.DefaultHistogramName}_count").value shouldBe requestsNumber
-      getMetricValue(PrometheusBackend.DefaultRequestsInProgressGaugeName) shouldBe empty
+      getMetricValue(
+        s"${PrometheusBackend.DefaultHistogramName}_count",
+        List("method" -> "GET")
+      ).value shouldBe requestsNumber
+      getMetricValue(PrometheusBackend.DefaultRequestsInProgressGaugeName, List("method" -> "GET")) shouldBe empty
     }
   }
 
@@ -243,8 +260,14 @@ class PrometheusBackendTest
     (0 until 5).foreach(_ => backend2.send(basicRequest.get(uri"http://127.0.0.1/foo")))
 
     // then
-    getMetricValue(PrometheusBackend.DefaultSuccessCounterName + "_total").value shouldBe 10
-    getMetricValue(PrometheusBackend.DefaultErrorCounterName + "_total").value shouldBe 5
+    getMetricValue(
+      PrometheusBackend.DefaultSuccessCounterName + "_total",
+      List("method" -> "GET", "status" -> "2xx")
+    ).value shouldBe 10
+    getMetricValue(
+      PrometheusBackend.DefaultErrorCounterName + "_total",
+      List("method" -> "GET", "status" -> "4xx")
+    ).value shouldBe 5
   }
 
   it should "use default summary name" in {
@@ -263,10 +286,16 @@ class PrometheusBackendTest
     )
 
     // then
-    getMetricValue(PrometheusBackend.DefaultRequestSizeName + "_count").value shouldBe 5
-    getMetricValue(PrometheusBackend.DefaultRequestSizeName + "_sum").value shouldBe 25
-    getMetricValue(PrometheusBackend.DefaultResponseSizeName + "_count").value shouldBe 5
-    getMetricValue(PrometheusBackend.DefaultResponseSizeName + "_sum").value shouldBe 50
+    getMetricValue(PrometheusBackend.DefaultRequestSizeName + "_count", List("method" -> "GET")).value shouldBe 5
+    getMetricValue(PrometheusBackend.DefaultRequestSizeName + "_sum", List("method" -> "GET")).value shouldBe 25
+    getMetricValue(
+      PrometheusBackend.DefaultResponseSizeName + "_count",
+      List("method" -> "GET", "status" -> "2xx")
+    ).value shouldBe 5
+    getMetricValue(
+      PrometheusBackend.DefaultResponseSizeName + "_sum",
+      List("method" -> "GET", "status" -> "2xx")
+    ).value shouldBe 50
   }
 
   it should "use error counter when http error is thrown" in {
@@ -284,9 +313,15 @@ class PrometheusBackendTest
     }
 
     // then
-    getMetricValue(PrometheusBackend.DefaultSuccessCounterName + "_total") shouldBe None
-    getMetricValue(PrometheusBackend.DefaultFailureCounterName + "_total") shouldBe None
-    getMetricValue(PrometheusBackend.DefaultErrorCounterName + "_total") shouldBe Some(1)
+    getMetricValue(
+      PrometheusBackend.DefaultSuccessCounterName + "_total",
+      List("method" -> "GET", "status" -> "2xx")
+    ) shouldBe None
+    getMetricValue(PrometheusBackend.DefaultFailureCounterName + "_total", List("method" -> "GET")) shouldBe None
+    getMetricValue(
+      PrometheusBackend.DefaultErrorCounterName + "_total",
+      List("method" -> "GET", "status" -> "5xx")
+    ) shouldBe Some(1)
   }
 
   it should "use failure counter when other exception is thrown" in {
@@ -304,9 +339,15 @@ class PrometheusBackendTest
     }
 
     // then
-    getMetricValue(PrometheusBackend.DefaultSuccessCounterName + "_total") shouldBe None
-    getMetricValue(PrometheusBackend.DefaultFailureCounterName + "_total") shouldBe Some(1)
-    getMetricValue(PrometheusBackend.DefaultErrorCounterName + "_total") shouldBe None
+    getMetricValue(
+      PrometheusBackend.DefaultSuccessCounterName + "_total",
+      List("method" -> "GET", "status" -> "2xx")
+    ) shouldBe None
+    getMetricValue(PrometheusBackend.DefaultFailureCounterName + "_total", List("method" -> "GET")) shouldBe Some(1)
+    getMetricValue(
+      PrometheusBackend.DefaultErrorCounterName + "_total",
+      List("method" -> "GET", "status" -> "5xx")
+    ) shouldBe None
   }
 
   it should "use success counter on success response" in {
@@ -322,13 +363,16 @@ class PrometheusBackendTest
     )
 
     // then
-    getMetricValue(PrometheusBackend.DefaultSuccessCounterName + "_total") shouldBe Some(1)
-    getMetricValue(PrometheusBackend.DefaultFailureCounterName + "_total") shouldBe None
-    getMetricValue(PrometheusBackend.DefaultErrorCounterName + "_total") shouldBe None
+    getMetricValue(
+      PrometheusBackend.DefaultSuccessCounterName + "_total",
+      List("method" -> "GET", "status" -> "2xx")
+    ) shouldBe Some(1)
+    getMetricValue(PrometheusBackend.DefaultFailureCounterName + "_total", List("method" -> "GET")) shouldBe None
+    getMetricValue(
+      PrometheusBackend.DefaultErrorCounterName + "_total",
+      List("method" -> "GET", "status" -> "5xx")
+    ) shouldBe None
   }
-
-  private[this] def getMetricValue(name: String): Option[lang.Double] =
-    Option(CollectorRegistry.defaultRegistry.getSampleValue(name))
 
   private[this] def getMetricValue(name: String, labels: List[(String, String)]): Option[lang.Double] =
     Option(CollectorRegistry.defaultRegistry.getSampleValue(name, labels.map(_._1).toArray, labels.map(_._2).toArray))
