@@ -5,6 +5,7 @@ import sttp.client3.{FollowRedirectsBackend, HttpError, Identity, Request, Respo
 import io.prometheus.client.{CollectorRegistry, Counter, Gauge, Histogram, Summary}
 import sttp.client3.listener.{ListenerBackend, RequestListener}
 import sttp.client3.prometheus.PrometheusBackend.RequestCollectors
+import sttp.model.StatusCode
 
 import scala.collection.mutable
 
@@ -41,13 +42,17 @@ object PrometheusBackend {
         delegate,
         RequestListener.lift(
           new PrometheusListener(
-            requestToHistogramNameMapper,
-            requestToInProgressGaugeNameMapper,
-            (rr: (Request[_, _], Response[_])) => responseToSuccessCounterMapper(rr._1, rr._2),
-            (rr: (Request[_, _], Response[_])) => responseToErrorCounterMapper(rr._1, rr._2),
-            (r: (Request[_, _], Throwable)) => requestToFailureCounterMapper(r._1, r._2),
-            requestToSizeSummaryMapper,
-            (rr: (Request[_, _], Response[_])) => responseToSizeSummaryMapper(rr._1, rr._2),
+            (req: Request[_, _]) => requestToHistogramNameMapper(req).map(addLabelPairs(_, req, None)),
+            (req: Request[_, _]) => requestToInProgressGaugeNameMapper(req).map(addLabelPairs(_, req, None)),
+            (rr: (Request[_, _], Response[_])) =>
+              responseToSuccessCounterMapper(rr._1, rr._2).map(addLabelPairs(_, rr._1, Some(rr._2))),
+            (rr: (Request[_, _], Response[_])) =>
+              responseToErrorCounterMapper(rr._1, rr._2).map(addLabelPairs(_, rr._1, Some(rr._2))),
+            (r: (Request[_, _], Throwable)) =>
+              requestToFailureCounterMapper(r._1, r._2).map(addLabelPairs(_, r._1, None)),
+            (req: Request[_, _]) => requestToSizeSummaryMapper(req).map(addLabelPairs(_, req, None)),
+            (rr: (Request[_, _], Response[_])) =>
+              responseToSizeSummaryMapper(rr._1, rr._2).map(addLabelPairs(_, rr._1, Some(rr._2))),
             collectorRegistry,
             cacheFor(histograms, collectorRegistry),
             cacheFor(gauges, collectorRegistry),
@@ -59,6 +64,42 @@ object PrometheusBackend {
       )
     )
   }
+
+  def addLabelPairs(config: BaseCollectorConfig, req: Request[_, _], maybeResp: Option[Response[_]]): config.T = {
+    val methodLabel: Option[(String, String)] = {
+      if (config.labels.map(_._1).contains("method")) {
+        None
+      } else {
+        Some {
+          ("method", req.method.method.toUpperCase)
+        }
+      }
+    }
+
+    val statusLabel: Option[(String, String)] = {
+      if (config.labels.map(_._1).contains("status")) {
+        None
+      } else {
+        maybeResp.map { r => ("status", mapStatusToLabelValue(r.code)) }
+      }
+    }
+
+    val extraLabels: List[(String, String)] =
+      methodLabel.toList ++ statusLabel.toList
+
+    config.withAddedLabels(extraLabels)
+  }
+
+  // Copied from https://github.com/http4s/http4s-prometheus-metrics/blob/series/0.24/prometheus-metrics/src/main/scala/org/http4s/metrics/prometheus/Prometheus.scala#L210
+  // with Apache License
+  private def mapStatusToLabelValue(s: StatusCode): String =
+    s.code match {
+      case hundreds if hundreds < 200           => "1xx"
+      case twohundreds if twohundreds < 300     => "2xx"
+      case threehundreds if threehundreds < 400 => "3xx"
+      case fourhundreds if fourhundreds < 500   => "4xx"
+      case _                                    => "5xx"
+    }
 
   /** Clear cached collectors (gauges and histograms) both from the given collector registry, and from the backend.
     */
