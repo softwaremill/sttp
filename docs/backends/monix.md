@@ -29,6 +29,11 @@ HttpClientMonixBackend.resource().use { backend => ??? }
 import java.net.http.HttpClient
 val httpClient: HttpClient = ???
 val backend = HttpClientMonixBackend.usingClient(httpClient)
+
+// or, obtain a cats-effect Resource with a custom instance of the HttpClient:
+import java.net.http.HttpClient
+val httpClient: HttpClient = ???
+HttpClientMonixBackend.resourceUsingClient(httpClient).use { backend => ??? }
 ```
 
 This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards.

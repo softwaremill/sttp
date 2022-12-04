@@ -46,6 +46,18 @@ val dispatcher: Dispatcher[IO] = ???
 val backend = HttpClientCatsBackend.usingClient[IO](httpClient, dispatcher)
 ```
 
+or, obtain a cats-effect `Resource` with a custom instance of the `HttpClient`:
+
+```scala mdoc:compile-only
+import cats.effect.IO
+import java.net.http.HttpClient
+import sttp.client3.httpclient.cats.HttpClientCatsBackend
+
+val httpClient: HttpClient = ???
+
+HttpClientCatsBackend.resourceUsingClient[IO](httpClient).use { backend => ??? }
+```
+
 This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards.
 
 Host header override is supported in environments running Java 12 onwards, but it has to be enabled by system property:
