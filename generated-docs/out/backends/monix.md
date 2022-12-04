@@ -12,7 +12,7 @@ Creation of the backend can be done in two basic ways:
 Firstly, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "monix" % "3.8.3"
+"com.softwaremill.sttp.client3" %% "monix" % "3.8.4"
 ```
 
 and create the backend using:
@@ -29,6 +29,11 @@ HttpClientMonixBackend.resource().use { backend => ??? }
 import java.net.http.HttpClient
 val httpClient: HttpClient = ???
 val backend = HttpClientMonixBackend.usingClient(httpClient)
+
+// or, obtain a cats-effect Resource with a custom instance of the HttpClient:
+import java.net.http.HttpClient
+val httpClient: HttpClient = ???
+HttpClientMonixBackend.resourceUsingClient(httpClient).use { backend => ??? }
 ```
 
 This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards.
@@ -45,7 +50,7 @@ Host header override is supported in environments running Java 12 onwards, but i
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "okhttp-backend-monix" % "3.8.3"
+"com.softwaremill.sttp.client3" %% "okhttp-backend-monix" % "3.8.4"
 ```
 
 Create the backend using:
@@ -71,7 +76,7 @@ This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supp
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "armeria-backend-monix" % "3.8.3"
+"com.softwaremill.sttp.client3" %% "armeria-backend-monix" % "3.8.4"
 ```
 
 add imports:

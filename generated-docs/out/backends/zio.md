@@ -9,8 +9,8 @@ The `*-zio` modules depend on ZIO 2.x. For ZIO 1.x support, use modules with the
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "zio" % "3.8.3"  // for ZIO 2.x
-"com.softwaremill.sttp.client3" %% "zio1" % "3.8.3" // for ZIO 1.x
+"com.softwaremill.sttp.client3" %% "zio" % "3.8.4"  // for ZIO 2.x
+"com.softwaremill.sttp.client3" %% "zio1" % "3.8.4" // for ZIO 1.x
 ```
 
 Create the backend using:
@@ -27,6 +27,9 @@ HttpClientZioBackend.scoped().flatMap { backend => ??? }
 import java.net.http.HttpClient
 val httpClient: HttpClient = ???
 val backend = HttpClientZioBackend.usingClient(httpClient)
+
+// or, obtain a Scope with a custom instance of the HttpClient:
+HttpClientZioBackend.scopedUsingClient(httpClient).flatMap { backend => ??? }
 ```
 
 This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards. The backend is fully non-blocking, with back-pressured websockets.
@@ -43,8 +46,8 @@ Host header override is supported in environments running Java 12 onwards, but i
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "armeria-backend-zio" % "3.8.3"  // for ZIO 2.x
-"com.softwaremill.sttp.client3" %% "armeria-backend-zio1" % "3.8.3" // for ZIO 1.x
+"com.softwaremill.sttp.client3" %% "armeria-backend-zio" % "3.8.4"  // for ZIO 2.x
+"com.softwaremill.sttp.client3" %% "armeria-backend-zio1" % "3.8.4" // for ZIO 1.x
 ```
 
 add imports:

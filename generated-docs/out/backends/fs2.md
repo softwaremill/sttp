@@ -12,9 +12,9 @@ Creation of the backend can be done in two basic ways:
 Firstly, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "fs2" % "3.8.3" // for cats-effect 3.x & fs2 3.x
+"com.softwaremill.sttp.client3" %% "fs2" % "3.8.4" // for cats-effect 3.x & fs2 3.x
 // or 
-"com.softwaremill.sttp.client3" %% "fs2-ce2" % "3.8.3" // for cats-effect 2.x & fs2 2.x
+"com.softwaremill.sttp.client3" %% "fs2-ce2" % "3.8.4" // for cats-effect 2.x & fs2 2.x
 ```
 
 Obtain a cats-effect `Resource` which creates the backend, and closes the thread pool after the resource is no longer used:
@@ -52,6 +52,18 @@ val dispatcher: Dispatcher[IO] = ???
 val backend = HttpClientFs2Backend.usingClient[IO](httpClient, dispatcher)
 ```
 
+or, obtain a cats-effect `Resource` with a custom instance of the `HttpClient`:
+
+```scala
+import cats.effect.IO
+import java.net.http.HttpClient
+import sttp.client3.httpclient.fs2.HttpClientFs2Backend
+
+val httpClient: HttpClient = ???
+
+HttpClientFs2Backend.resourceUsingClient[IO](httpClient).use { backend => ??? }
+```
+
 This backend is based on the built-in `java.net.http.HttpClient` available from Java 11 onwards.
 
 Host header override is supported in environments running Java 12 onwards, but it has to be enabled by system property:
@@ -66,9 +78,9 @@ Host header override is supported in environments running Java 12 onwards, but i
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "armeria-backend-fs2" % "3.8.3" // for cats-effect 3.x & fs2 3.x
+"com.softwaremill.sttp.client3" %% "armeria-backend-fs2" % "3.8.4" // for cats-effect 3.x & fs2 3.x
 // or
-"com.softwaremill.sttp.client3" %% "armeria-backend-fs2" % "3.8.3" // for cats-effect 2.x & fs2 2.x
+"com.softwaremill.sttp.client3" %% "armeria-backend-fs2" % "3.8.4" // for cats-effect 2.x & fs2 2.x
 ```
 
 create client:
