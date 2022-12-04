@@ -270,6 +270,25 @@ class PrometheusBackendTest
     ).value shouldBe 5
   }
 
+  it should "not override user-supplied 'method' and 'status' labels" in {
+    // given
+    val backendStub = SttpBackendStub.synchronous.whenAnyRequest.thenRespondOk()
+    val backend = PrometheusBackend[Identity, Any](
+      backendStub,
+      responseToSuccessCounterMapper = (_, _) =>
+        Some(CollectorConfig(PrometheusBackend.DefaultSuccessCounterName, List(("method", "foo"), ("status", "bar"))))
+    )
+
+    // when
+    (0 until 10).foreach(_ => backend.send(basicRequest.get(uri"http://127.0.0.1/foo")))
+
+    // then
+    getMetricValue(
+      PrometheusBackend.DefaultSuccessCounterName + "_total",
+      List("method" -> "foo", "status" -> "bar")
+    ).value shouldBe 10
+  }
+
   it should "use default summary name" in {
     // given
     val response = Response("Ok", StatusCode.Ok, "Ok", Seq(Header.contentLength(10)))
