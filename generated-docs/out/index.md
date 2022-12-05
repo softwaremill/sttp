@@ -48,19 +48,19 @@ Third party projects:
 * [sttp-oauth2](https://github.com/ocadotechnology/sttp-oauth2): OAuth2 client library for Scala
 * [sttp-openapi-generator](https://github.com/ghostbuster91/sttp-openapi-generator): Generate sttp client from openapi specification with ease!
 
+## Try sttp client in your browser!
+
+[Check out & play with a simple example on Scastie!](https://scastie.scala-lang.org/adamw/aOf32MZsTPesobwfWG5nDQ)
+
 ## Sponsors
 
 Development and maintenance of sttp client is sponsored by [SoftwareMill](https://softwaremill.com), a software development and consulting company. We help clients scale their business through software. Our areas of expertise include backends, distributed systems, blockchain, machine learning and data analytics.
 
 [![](https://files.softwaremill.com/logo/logo.png "SoftwareMill")](https://softwaremill.com)
 
-# Try sttp client in your browser!
+## Commercial Support
 
-```eval_rst
-.. raw:: html
-
-   <script src="https://scastie.scala-lang.org/adamw/aOf32MZsTPesobwfWG5nDQ/1.js"></script>
-```
+We offer commercial support for sttp and related technologies, as well as development services. [Contact us](https://softwaremill.com/contact/) to learn more about our offer!
 
 # Table of contents
 
