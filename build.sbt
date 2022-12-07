@@ -712,7 +712,11 @@ def armeriaBackendProject(proj: String, includeDotty: Boolean = false) = {
     .settings(name := s"armeria-backend-$proj")
     .dependsOn(armeriaBackend % compileAndTest)
     .jvmPlatform(
-      scalaVersions = List(scala2_12, scala2_13) ++ (if (includeDotty) scala3 else Nil)
+      scalaVersions = List(scala2_12, scala2_13) ++ (if (includeDotty) scala3 else Nil),
+      settings = libraryDependencies ++= Seq(
+        "org.mock-server" % "mockserver-netty-no-dependencies" % "5.14.0" % Test,
+        "org.typelevel" %% "cats-effect-testing-scalatest" % "1.4.0" % Test
+      )
     )
 }
 
