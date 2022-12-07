@@ -705,20 +705,15 @@ lazy val armeriaBackend = (projectMatrix in file("armeria-backend"))
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3)
   .dependsOn(core % compileAndTest)
 
-def armeriaBackendProject(proj: String, includeDotty: Boolean = false) = {
+def armeriaBackendProject(proj: String, includeDotty: Boolean = false) =
   ProjectMatrix(s"armeriaBackend${proj.capitalize}", file(s"armeria-backend/$proj"))
     .settings(commonJvmSettings)
     .settings(testServerSettings)
     .settings(name := s"armeria-backend-$proj")
     .dependsOn(armeriaBackend % compileAndTest)
     .jvmPlatform(
-      scalaVersions = List(scala2_12, scala2_13) ++ (if (includeDotty) scala3 else Nil),
-      settings = libraryDependencies ++= Seq(
-        "org.mock-server" % "mockserver-netty-no-dependencies" % "5.14.0" % Test,
-        "org.typelevel" %% "cats-effect-testing-scalatest" % "1.4.0" % Test
-      )
+      scalaVersions = List(scala2_12, scala2_13) ++ (if (includeDotty) scala3 else Nil)
     )
-}
 
 lazy val armeriaMonixBackend =
   armeriaBackendProject("monix", includeDotty = true)
@@ -748,6 +743,9 @@ lazy val armeriaCatsCe2Backend =
 
 lazy val armeriaCatsBackend =
   armeriaBackendProject("cats", includeDotty = true)
+    .settings(
+      libraryDependencies += "org.mock-server" % "mockserver-netty-no-dependencies" % "5.14.0" % Test
+    )
     .dependsOn(cats % compileAndTest)
 
 lazy val armeriaScalazBackend =
