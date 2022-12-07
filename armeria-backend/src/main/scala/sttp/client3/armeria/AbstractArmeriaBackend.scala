@@ -59,7 +59,7 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
   override def responseMonad: MonadError[F] = monad
 
   override def send[T, R >: SE](request: Request[T, R]): F[Response[T]] =
-    adjustExceptions(request)(execute(request))
+    monad.unit(request).flatMap(r => adjustExceptions(request)(execute(r)))
 
   private def execute[T, R >: SE](request: Request[T, R]): F[Response[T]] = {
     val captor = Clients.newContextCaptor()
