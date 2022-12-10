@@ -166,7 +166,7 @@ val resilience4jVersion = "2.0.1"
 val http4s_ce2_version = "0.22.14"
 val http4s_ce3_version = "0.23.16"
 
-val openTelemetryVersion = "1.20.1"
+val openTelemetryVersion = "1.21.0"
 
 val compileAndTest = "compile->compile;test->test"
 
