@@ -1,6 +1,6 @@
 ![sttp](https://github.com/softwaremill/sttp/raw/master/banner.png)
 
-[![Join the chat at https://gitter.im/softwaremill/sttp](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/softwaremill/sttp?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Ideas, suggestions, problems, questions](https://img.shields.io/badge/Discourse-ask%20question-blue)](https://softwaremill.community/c/sttp-client)
 [![CI](https://github.com/softwaremill/sttp/workflows/CI/badge.svg)](https://github.com/softwaremill/sttp/actions?query=workflow%3ACI+branch%3Amaster)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.softwaremill.sttp.client3/core_2.12/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.softwaremill.sttp.client3/core_2.12)
 
@@ -87,7 +87,7 @@ sttp is a family of Scala HTTP-related projects, and currently includes:
 
 ## Contributing
 
-If you have a question, or hit a problem, feel free to ask on our [gitter channel](https://gitter.im/softwaremill/sttp)!
+If you have a question, suggestion, or hit a problem, feel free to ask on our [discourse forum](https://softwaremill.community/c/sttp-client)!
 
 Or, if you encounter a bug, something is unclear in the code or documentation, don’t hesitate and open an issue on GitHub.
 
