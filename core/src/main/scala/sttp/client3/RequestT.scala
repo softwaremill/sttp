@@ -115,7 +115,7 @@ case class RequestT[U[_], T, -R](
   def cookies(nvs: (String, String)*): RequestT[U, T, R] = {
     header(
       HeaderNames.Cookie,
-      (headers.find(_.name == HeaderNames.Cookie).map(_.value).toSeq ++ nvs.map(p => p._1 + "=" + p._2)).mkString("; "),
+      (headers.find(_.is(HeaderNames.Cookie)).map(_.value).toSeq ++ nvs.map(p => p._1 + "=" + p._2)).mkString("; "),
       replaceExisting = true
     )
   }
@@ -403,8 +403,7 @@ case class RequestT[U[_], T, -R](
     setContentTypeIfMissing(defaultCt).copy(body = body)
   }
 
-  private def hasContentLength: Boolean =
-    headers.exists(_.name.equalsIgnoreCase(HeaderNames.ContentLength))
+  private def hasContentLength: Boolean = headers.exists(_.is(HeaderNames.ContentLength))
   private def setContentLengthIfMissing(l: => Long): RequestT[U, T, R] =
     if (hasContentLength) this else contentLength(l)
 
