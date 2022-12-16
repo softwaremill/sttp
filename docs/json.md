@@ -183,13 +183,13 @@ basicRequest
 To encode and decode JSON using the [high(est)-performant](https://plokhotnyuk.github.io/jsoniter-scala/) [jsoniter-scala](https://github.com/plokhotnyuk/jsoniter-scala) library, one add the following dependency to your project.
 
 ```scala
-"com.softwaremill.sttp.client3" %% "jsoniter-json" % "@VERSION@"
+"com.softwaremill.sttp.client3" %% "jsoniter" % "@VERSION@"
 ```
 
 or for ScalaJS (cross build) projects:
 
 ```scala
-"com.softwaremill.sttp.client3" %%% "jsoniter-json" % "@VERSION@"
+"com.softwaremill.sttp.client3" %%% "jsoniter" % "@VERSION@"
 ```
 
 To use, add an import: `import sttp.client3.jsoniter._` (or extend `SttpJsonIterJsonApi`), define an implicit `JsonCodec`, or `JsonDecoder`/`JsonEncoder` for your datatype.
