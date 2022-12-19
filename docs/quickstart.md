@@ -28,7 +28,7 @@ If you are an [Ammonite](https://ammonite.io) user, you can quickly start experi
 ```scala
 import $ivy.`com.softwaremill.sttp.client3::core:@VERSION@`
 import sttp.client3.quick._
-simpleSttpClient.send(quickRequest.get(uri"http://httpbin.org/ip"))
+simpleHttpClient.send(quickRequest.get(uri"http://httpbin.org/ip"))
 ```
 
 Importing the `quick` object has the same effect as importing `sttp.client3._`, plus defining a synchronous backend (`val backend = HttpClientSyncBackend()`), so that sttp can be used right away.
