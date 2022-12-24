@@ -112,36 +112,43 @@ object HttpClientFs2Backend {
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty
-  ): F[SttpBackend[F, Fs2Streams[F] with WebSockets]] =
-    Sync[F].delay(
-      HttpClientFs2Backend(
-        HttpClientBackend.defaultClient(options),
-        closeClient = true,
-        customizeRequest,
-        customEncodingHandler,
-        dispatcher
+  ): F[SttpBackend[F, Fs2Streams[F] with WebSockets]] = {
+    Async[F].executor.flatMap(executor =>
+      Sync[F].delay(
+        HttpClientFs2Backend(
+          HttpClientBackend.defaultClient(options, Some(executor)),
+          closeClient = true,
+          customizeRequest,
+          customEncodingHandler,
+          dispatcher
+        )
       )
     )
+  }
 
   def resource[F[_]: Async](
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty
   ): Resource[F, SttpBackend[F, Fs2Streams[F] with WebSockets]] =
-    Dispatcher.parallel[F].flatMap(dispatcher =>
-      Resource.make(apply(dispatcher, options, customizeRequest, customEncodingHandler))(_.close())
-    )
+    Dispatcher
+      .parallel[F]
+      .flatMap(dispatcher =>
+        Resource.make(apply(dispatcher, options, customizeRequest, customEncodingHandler))(_.close())
+      )
 
   def resourceUsingClient[F[_]: Async](
       client: HttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty
   ): Resource[F, SttpBackend[F, Fs2Streams[F] with WebSockets]] =
-    Dispatcher.parallel[F].flatMap(dispatcher =>
-      Resource.make(
-        Sync[F].delay(apply(client, closeClient = true, customizeRequest, customEncodingHandler, dispatcher))
-      )(_.close())
-    )
+    Dispatcher
+      .parallel[F]
+      .flatMap(dispatcher =>
+        Resource.make(
+          Sync[F].delay(apply(client, closeClient = true, customizeRequest, customEncodingHandler, dispatcher))
+        )(_.close())
+      )
 
   def usingClient[F[_]: Async](
       client: HttpClient,

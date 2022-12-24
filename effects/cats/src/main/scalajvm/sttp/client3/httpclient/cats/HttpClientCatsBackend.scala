@@ -2,7 +2,7 @@ package sttp.client3.httpclient.cats
 
 import cats.effect.kernel.{Async, Resource, Sync}
 import cats.effect.std.{Dispatcher, Queue}
-import cats.implicits.toFunctorOps
+import cats.implicits.{toFunctorOps, toFlatMapOps}
 import sttp.capabilities.WebSockets
 import sttp.client3.HttpClientBackend.EncodingHandler
 import sttp.client3.impl.cats.CatsMonadAsyncError
@@ -102,25 +102,30 @@ object HttpClientCatsBackend {
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: EncodingHandler[InputStream] = PartialFunction.empty
-  ): F[SttpBackend[F, WebSockets]] =
-    Sync[F].delay(
-      HttpClientCatsBackend(
-        HttpClientBackend.defaultClient(options),
-        closeClient = true,
-        customizeRequest,
-        customEncodingHandler,
-        dispatcher
+  ): F[SttpBackend[F, WebSockets]] = {
+    Async[F].executor.flatMap(executor =>
+      Sync[F].delay(
+        HttpClientCatsBackend(
+          HttpClientBackend.defaultClient(options, Some(executor)),
+          closeClient = true,
+          customizeRequest,
+          customEncodingHandler,
+          dispatcher
+        )
       )
     )
+  }
 
   def resource[F[_]: Async](
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: EncodingHandler[InputStream] = PartialFunction.empty
   ): Resource[F, SttpBackend[F, WebSockets]] =
-    Dispatcher.parallel[F].flatMap(dispatcher =>
-      Resource.make(apply(dispatcher, options, customizeRequest, customEncodingHandler))(_.close())
-    )
+    Dispatcher
+      .parallel[F]
+      .flatMap(dispatcher =>
+        Resource.make(apply(dispatcher, options, customizeRequest, customEncodingHandler))(_.close())
+      )
 
   def resourceUsingClient[F[_]: Async](
       client: HttpClient,

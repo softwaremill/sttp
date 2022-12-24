@@ -109,15 +109,18 @@ object HttpClientZioBackend {
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
-  ): Task[SttpBackend[Task, ZioStreams with WebSockets]] =
-    ZIO.attempt(
-      HttpClientZioBackend(
-        HttpClientBackend.defaultClient(options),
-        closeClient = true,
-        customizeRequest,
-        customEncodingHandler
+  ): Task[SttpBackend[Task, ZioStreams with WebSockets]] = {
+    ZIO.executor.flatMap(executor =>
+      ZIO.attempt(
+        HttpClientZioBackend(
+          HttpClientBackend.defaultClient(options, Some(executor.asJava)),
+          closeClient = true,
+          customizeRequest,
+          customEncodingHandler
+        )
       )
     )
+  }
 
   def scoped(
       options: SttpBackendOptions = SttpBackendOptions.Default,

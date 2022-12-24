@@ -112,7 +112,7 @@ object HttpClientFs2Backend {
   ): F[SttpBackend[F, Fs2Streams[F] with WebSockets]] =
     Sync[F].delay(
       HttpClientFs2Backend(
-        HttpClientBackend.defaultClient(options),
+        HttpClientBackend.defaultClient(options, None),
         blocker,
         closeClient = true,
         customizeRequest,

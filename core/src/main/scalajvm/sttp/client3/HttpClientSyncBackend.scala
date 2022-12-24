@@ -87,7 +87,7 @@ object HttpClientSyncBackend {
       customEncodingHandler: SyncEncodingHandler = PartialFunction.empty
   ): SttpBackend[Identity, Any] =
     HttpClientSyncBackend(
-      HttpClientBackend.defaultClient(options),
+      HttpClientBackend.defaultClient(options, None),
       closeClient = true,
       customizeRequest,
       customEncodingHandler

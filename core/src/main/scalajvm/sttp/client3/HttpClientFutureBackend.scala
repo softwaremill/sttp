@@ -22,9 +22,10 @@ import java.net.http.HttpRequest.BodyPublisher
 import java.net.http.{HttpClient, HttpRequest}
 import java.nio.ByteBuffer
 import java.util
+import java.util.concurrent.Executor
 import java.util.concurrent.Flow.Publisher
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
 class HttpClientFutureBackend private (
     client: HttpClient,
@@ -102,13 +103,15 @@ object HttpClientFutureBackend {
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: InputStreamEncodingHandler = PartialFunction.empty
-  )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, WebSockets] =
+  )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, WebSockets] = {
+    val executor = Some(ec).collect { case executor: Executor => executor }
     HttpClientFutureBackend(
-      HttpClientBackend.defaultClient(options),
+      HttpClientBackend.defaultClient(options, executor),
       closeClient = true,
       customizeRequest,
       customEncodingHandler
     )
+  }
 
   def usingClient(
       client: HttpClient,
