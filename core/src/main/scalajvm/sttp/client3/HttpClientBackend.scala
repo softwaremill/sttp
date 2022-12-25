@@ -124,6 +124,10 @@ object HttpClientBackend {
     }
   }
 
+  // Left here for bincompat
+  private[client3] def defaultClient(options: SttpBackendOptions): HttpClient =
+    defaultClient(options, None)
+
   private[client3] def defaultClient(options: SttpBackendOptions, executor: Option[Executor]): HttpClient = {
     var clientBuilder = HttpClient
       .newBuilder()
