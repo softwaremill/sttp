@@ -13,7 +13,7 @@ Exceptions might be thrown directly (`Identity` synchronous backends), or return
 * `ReadException`: when a connection has been established, but there's any kind of problem receiving the response (e.g. a broken socket)
 * `TimeoutException`: a discriminated subtype of `ReadException` for timeout fails
 
-In general, it's safe to assume that the request hasn't been sent in case of connect exceptions. With read exceptions, the target host might or might have not received and processed the request.
+In general, it's safe to assume that the request hasn't been sent in case of connect exceptions. With read exceptions, the target host might or might not have received and processed the request.
 
 Unknown exceptions aren't categorised and are re-thrown unchanged.
 
