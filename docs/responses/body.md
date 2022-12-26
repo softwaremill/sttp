@@ -210,9 +210,9 @@ def asStreamUnsafeAlways[S](s: Streams[S]):
   ResponseAs[s.BinaryStream, S] = ???
 ```
 
-All of these specifications require the streaming capability to be passes as a parameter, an implementation of `Streams[S]`. This is used to determine the type of binary streams that are supported, and to require that the backend used to send the request supports the given type of streams. These implementations are provided by the backend implementations, e.g. `AkkaStreams` or `Fs2Streams[F]`. 
+All of these specifications require the streaming capability to be passed as a parameter, an implementation of `Streams[S]`. This is used to determine the type of binary streams that are supported, and to require that the backend used to send the request supports the given type of streams. These implementations are provided by the backend implementations, e.g. `AkkaStreams` or `Fs2Streams[F]`. 
 
-The first two "safe" variants passes the response stream to the user-provided function, which should consume the stream entirely. Once the effect returned by the function is complete, the backend will try to close the stream (if the streaming implementation allows it).
+The first two "safe" variants pass the response stream to the user-provided function, which should consume the stream entirely. Once the effect returned by the function is complete, the backend will try to close the stream (if the streaming implementation allows it).
 
 The "unsafe" variants return the stream directly to the user, and then it's up to the user of the code to consume and close the stream, releasing any resources held by the HTTP connection.
 
