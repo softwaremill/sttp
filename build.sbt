@@ -129,7 +129,7 @@ val playJsonVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.7.4"
   case _             => "2.9.2"
 }
-val catsEffect_3_version = "3.4.3"
+val catsEffect_3_version = "3.4.4"
 val fs2_3_version = "3.4.0"
 
 val catsEffect_2_version: Option[(Long, Long)] => String = {
