@@ -96,8 +96,15 @@ case class RequestT[U[_], T, -R](
 
   /** Adds the given header to the end of the headers sequence, if the value is defined. Otherwise has no effect. */
   def header(k: String, ov: Option[String]): RequestT[U, T, R] = ov.fold(this)(header(k, _))
-  def headers(hs: Map[String, String]): RequestT[U, T, R] =
-    headers(hs.map(t => Header(t._1, t._2)).toSeq: _*)
+
+  /** Adds headers to current headers sequence in the request
+    * @param replaceExisting
+    *   If there's already a header with the same name, it will be replaced
+    */
+  def headers(hs: Map[String, String], replaceExisting: Boolean = false): RequestT[U, T, R] = hs.foldLeft(this) {
+    (s, h) => s.header(h._1, h._2, replaceExisting)
+  }
+
   def headers(hs: Header*): RequestT[U, T, R] = this.copy(headers = headers ++ hs)
   def auth: SpecifyAuthScheme[U, T, R] =
     new SpecifyAuthScheme[U, T, R](HeaderNames.Authorization, this, DigestAuthenticationBackend.DigestAuthTag)
