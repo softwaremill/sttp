@@ -129,9 +129,11 @@ object AsyncHttpClientFs2Backend {
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): Resource[F, SttpBackend[F, Fs2Streams[F] with WebSockets]] =
-    Dispatcher.parallel[F].flatMap(dispatcher =>
-      Resource.make(apply(dispatcher, options, customizeRequest, webSocketBufferCapacity))(_.close())
-    )
+    Dispatcher
+      .parallel[F]
+      .flatMap(dispatcher =>
+        Resource.make(apply(dispatcher, options, customizeRequest, webSocketBufferCapacity))(_.close())
+      )
 
   def usingConfig[F[_]: Async](
       cfg: AsyncHttpClientConfig,
@@ -155,9 +157,11 @@ object AsyncHttpClientFs2Backend {
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): Resource[F, SttpBackend[F, Fs2Streams[F] with WebSockets]] =
-    Dispatcher.parallel[F].flatMap(dispatcher =>
-      Resource.make(usingConfig(cfg, dispatcher, customizeRequest, webSocketBufferCapacity))(_.close())
-    )
+    Dispatcher
+      .parallel[F]
+      .flatMap(dispatcher =>
+        Resource.make(usingConfig(cfg, dispatcher, customizeRequest, webSocketBufferCapacity))(_.close())
+      )
 
   /** @param updateConfig A function which updates the default configuration (created basing on `options`). */
   def usingConfigBuilder[F[_]: Async](
@@ -187,11 +191,13 @@ object AsyncHttpClientFs2Backend {
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): Resource[F, SttpBackend[F, Fs2Streams[F] with WebSockets]] =
-    Dispatcher.parallel[F].flatMap(dispatcher =>
-      Resource.make(usingConfigBuilder(dispatcher, updateConfig, options, customizeRequest, webSocketBufferCapacity))(
-        _.close()
+    Dispatcher
+      .parallel[F]
+      .flatMap(dispatcher =>
+        Resource.make(usingConfigBuilder(dispatcher, updateConfig, options, customizeRequest, webSocketBufferCapacity))(
+          _.close()
+        )
       )
-    )
 
   def usingClient[F[_]: Async](
       client: AsyncHttpClient,

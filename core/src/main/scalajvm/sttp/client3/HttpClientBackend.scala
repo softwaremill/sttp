@@ -124,11 +124,17 @@ object HttpClientBackend {
     }
   }
 
-  private[client3] def defaultClient(options: SttpBackendOptions): HttpClient = {
+  // Left here for bincompat
+  private[client3] def defaultClient(options: SttpBackendOptions): HttpClient =
+    defaultClient(options, None)
+
+  private[client3] def defaultClient(options: SttpBackendOptions, executor: Option[Executor]): HttpClient = {
     var clientBuilder = HttpClient
       .newBuilder()
       .followRedirects(HttpClient.Redirect.NEVER)
       .connectTimeout(JDuration.ofMillis(options.connectionTimeout.toMillis))
+
+    clientBuilder = executor.fold(clientBuilder)(clientBuilder.executor)
 
     clientBuilder = options.proxy match {
       case None => clientBuilder

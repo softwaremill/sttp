@@ -103,7 +103,7 @@ object HttpClientMonixBackend {
   ): Task[SttpBackend[Task, MonixStreams with WebSockets]] =
     Task.eval(
       HttpClientMonixBackend(
-        HttpClientBackend.defaultClient(options),
+        HttpClientBackend.defaultClient(options, Some(s)),
         closeClient = true,
         customizeRequest,
         customEncodingHandler
