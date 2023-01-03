@@ -30,10 +30,25 @@ abstract class WebSocketTest[F[_]]
 
   def throwsWhenNotAWebSocket: Boolean = false
 
-  it should "send and receive three messages" in {
+  it should "send and receive three messages using asWebSocketAlways" in {
     basicRequest
       .get(uri"$wsEndpoint/ws/echo")
       .response(asWebSocketAlways { (ws: WebSocket[F]) =>
+        for {
+          _ <- sendText(ws, 3)
+          _ <- receiveEchoText(ws, 3)
+          _ <- ws.close()
+        } yield succeed
+      })
+      .send(backend)
+      .map(_ => succeed)
+      .toFuture()
+  }
+
+  it should "send and receive three messages using asWebSocket" in {
+    basicRequest
+      .get(uri"$wsEndpoint/ws/echo")
+      .response(asWebSocket { (ws: WebSocket[F]) =>
         for {
           _ <- sendText(ws, 3)
           _ <- receiveEchoText(ws, 3)
