@@ -4,7 +4,7 @@ import java.io.File
 import java.nio.file.Path
 
 import sttp.client3.internal.SttpFile
-import sttp.model.Part
+import sttp.model.{Part, StatusCode}
 
 trait SttpExtensions {
   def asFile(file: File): ResponseAs[Either[String, File], Any] = {
@@ -36,4 +36,19 @@ trait SttpExtensions {
     */
   def multipartFile(name: String, data: Path): Part[RequestBody[Any]] =
     multipartSttpFile(name, SttpFile.fromPath(data))
+}
+
+object SttpExtensions {
+
+  /** This needs to be platform-specific due to #1682, as on JS we don't get access to the 101 status code.
+    * asWebSocketEither delegates to this method, as the method itself cannot be moved, due to binary compatibility.
+    */
+  private[client3] def asWebSocketEitherPlatform[A, B, R](
+      onError: ResponseAs[A, R],
+      onSuccess: ResponseAs[B, R]
+  ): ResponseAs[Either[A, B], R] =
+    fromMetadata(
+      onError.map(Left(_)),
+      ConditionalResponseAs(_.code == StatusCode.SwitchingProtocols, onSuccess.map(Right(_)))
+    ).showAs(s"either(${onError.show}, ${onSuccess.show})")
 }

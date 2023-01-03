@@ -96,6 +96,23 @@ We are also always looking for contributions and new ideas, so if you’d like t
 Note that running the default `test` task will run the tests using both the JVM and JS backends, and is likely to run out of memory.
 If you'd like to run the tests using *only* the JVM backend, execute: `sbt rootJVM/test`.
 
+### Importing into IntelliJ
+
+By default, when importing to IntelliJ, only the Scala 2.13/JVM subprojects will be imported. This is controlled by the `ideSkipProject` setting in `build.sbt` (inside `commonSettings`).
+
+If you'd like to work on a different platform or Scala version, simply change this setting temporarily so that the correct subprojects are imported. For example:
+
+```
+// import only Scala 2.13, JS projects
+ideSkipProject := (scalaVersion.value != scala2_13) || !thisProjectRef.value.project.contains("JS")
+
+// import only Scala 3, JVM projects
+ideSkipProject := (scalaVersion.value != scala3) || thisProjectRef.value.project.contains("JS") || thisProjectRef.value.project.contains("Native"),
+
+// import only Scala 2.13, Native projects
+ideSkipProject := (scalaVersion.value != scala2_13) || !thisProjectRef.value.project.contains("Native")
+```
+
 ### Modifying documentation
 
 The documentation is typechecked using [mdoc](https://scalameta.org/mdoc/). The sources for the documentation exist in `docs`. Don't modify the generated documentation in `generated-docs`, as these files will get overwritten!

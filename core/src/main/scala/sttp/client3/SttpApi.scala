@@ -165,14 +165,11 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     fromMetadata(onError.map(Left(_)), ConditionalResponseAs(_.isSuccess, onSuccess.map(Right(_))))
       .showAs(s"either(${onError.show}, ${onSuccess.show})")
 
-  /** Uses the `onSuccess` response specification for 101 responses (switching protocols), and the `onError`
-    * specification otherwise.
+  /** Uses the `onSuccess` response specification for 101 responses (switching protocols) on JVM/Native, 200 responses
+    * on JS. Otherwise, use the `onError` specification.
     */
   def asWebSocketEither[A, B, R](onError: ResponseAs[A, R], onSuccess: ResponseAs[B, R]): ResponseAs[Either[A, B], R] =
-    fromMetadata(
-      onError.map(Left(_)),
-      ConditionalResponseAs(_.code == StatusCode.SwitchingProtocols, onSuccess.map(Right(_)))
-    ).showAs(s"either(${onError.show}, ${onSuccess.show})")
+    SttpExtensions.asWebSocketEitherPlatform(onError, onSuccess)
 
   /** Use both `l` and `r` to read the response body. Neither response specifications may use streaming or web sockets.
     */
