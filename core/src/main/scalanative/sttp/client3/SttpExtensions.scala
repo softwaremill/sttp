@@ -36,6 +36,9 @@ trait SttpExtensions {
     */
   def multipartFile(name: String, data: Path): Part[BasicRequestBody] =
     multipartSttpFile(name, SttpFile.fromPath(data))
+}
+
+object SttpExtensions {
 
   /** This needs to be platform-specific due to #1682, as on JS we don't get access to the 101 status code.
     * asWebSocketEither delegates to this method, as the method itself cannot be moved, due to binary compatibility.

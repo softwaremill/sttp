@@ -169,7 +169,7 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     * on JS. Otherwise, use the `onError` specification.
     */
   def asWebSocketEither[A, B, R](onError: ResponseAs[A, R], onSuccess: ResponseAs[B, R]): ResponseAs[Either[A, B], R] =
-    asWebSocketEitherPlatform(onError, onSuccess)
+    SttpExtensions.asWebSocketEitherPlatform(onError, onSuccess)
 
   /** Use both `l` and `r` to read the response body. Neither response specifications may use streaming or web sockets.
     */
