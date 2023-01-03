@@ -288,7 +288,7 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
     val backend: SttpBackend[Identity, WebSockets] = SttpBackendStub.synchronous.whenAnyRequest
       .thenRespond(
         WebSocketStub.initialReceive(List(WebSocketFrame.text("hello"))).build(IdMonad),
-        StatusCode.SwitchingProtocols
+        if (TestPlatform.Current == TestPlatform.JS) StatusCode.Ok else StatusCode.SwitchingProtocols
       )
 
     val frame = basicRequest
@@ -304,7 +304,7 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
     val backend: SttpBackend[Try, WebSockets] = SttpBackendStub[Try, WebSockets](TryMonad).whenAnyRequest
       .thenRespond(
         WebSocketStub.initialReceive(List(WebSocketFrame.text("hello"))).build(TryMonad),
-        StatusCode.SwitchingProtocols
+        if (TestPlatform.Current == TestPlatform.JS) StatusCode.Ok else StatusCode.SwitchingProtocols
       )
 
     val frame = basicRequest
