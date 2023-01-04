@@ -114,7 +114,7 @@ object HttpClientZioBackend {
       ZIO.attempt(
         HttpClientZioBackend(
           HttpClientBackend.defaultClient(options, Some(executor.asJava)),
-          closeClient = true,
+          closeClient = false, // we don't want to close ZIO's executor
           customizeRequest,
           customEncodingHandler
         )

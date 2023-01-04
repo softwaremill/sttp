@@ -117,7 +117,7 @@ object HttpClientFs2Backend {
       Sync[F].delay(
         HttpClientFs2Backend(
           HttpClientBackend.defaultClient(options, Some(executor)),
-          closeClient = true,
+          closeClient = false, // we don't want to close the underlying executor
           customizeRequest,
           customEncodingHandler,
           dispatcher
