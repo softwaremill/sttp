@@ -52,7 +52,6 @@ class AsyncHttpClientScalazBackend private (
     throw new IllegalStateException("Web sockets are not supported!")
 }
 
-@deprecated(message = "The async-http-client project is no longer maintained")
 object AsyncHttpClientScalazBackend {
   private def apply(
       asyncHttpClient: AsyncHttpClient,
