@@ -1,6 +1,6 @@
 package sttp.client3
 
-import sttp.model.{HeaderNames, StatusCode}
+import sttp.model.{Header, HeaderNames, StatusCode}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -64,5 +64,38 @@ class RequestTests extends AnyFlatSpec with Matchers {
       .response(asBoth(asParams, asStringAlways))
       .show() shouldBe
       "response as: (either(as string, as params), as string), headers: Accept-Encoding: gzip, deflate, Authorization: ***, Content-Type: text/plain; charset=utf-8, Content-Length: 4, body: string: 1234"
+  }
+
+  it should "properly replace headers" in {
+    emptyRequest.header("H1", "V1").header("H1", "V2").headers shouldBe List(Header("H1", "V1"), Header("H1", "V2"))
+    emptyRequest.header("H1", "V1").header("H1", "V2", replaceExisting = true).headers shouldBe List(Header("H1", "V2"))
+
+    emptyRequest.header(Header("H1", "V1")).header(Header("H1", "V2")).headers shouldBe List(
+      Header("H1", "V1"),
+      Header("H1", "V2")
+    )
+    emptyRequest.header(Header("H1", "V1")).header(Header("H1", "V2"), replaceExisting = true).headers shouldBe List(
+      Header("H1", "V2")
+    )
+
+    emptyRequest
+      .headers(Map("H1" -> "V1", "H2" -> "V2"))
+      .headers(Map("H1" -> "V11", "H3" -> "V3"))
+      .headers
+      .toSet shouldBe Set(Header("H1", "V1"), Header("H2", "V2"), Header("H1", "V11"), Header("H3", "V3"))
+    emptyRequest
+      .headers(Map("H1" -> "V1", "H2" -> "V2"))
+      .headers(Map("H1" -> "V11", "H3" -> "V3"), replaceExisting = true)
+      .headers
+      .toSet shouldBe Set(Header("H2", "V2"), Header("H1", "V11"), Header("H3", "V3"))
+
+    emptyRequest
+      .headers(Header("H1", "V1"), Header("H2", "V2"))
+      .headers(Header("H1", "V11"), Header("H3", "V3"))
+      .headers shouldBe List(Header("H1", "V1"), Header("H2", "V2"), Header("H1", "V11"), Header("H3", "V3"))
+    emptyRequest
+      .headers(Header("H1", "V1"), Header("H2", "V2"))
+      .headers(List(Header("H1", "V11"), Header("H3", "V3")), replaceExisting = true)
+      .headers shouldBe List(Header("H2", "V2"), Header("H1", "V11"), Header("H3", "V3"))
   }
 }
