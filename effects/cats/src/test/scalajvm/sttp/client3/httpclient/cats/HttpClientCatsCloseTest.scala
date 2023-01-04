@@ -11,7 +11,7 @@ class HttpClientCatsCloseTest extends AsyncFreeSpec with Matchers {
       HttpClientCatsBackend
         .resource[IO]()
         .use(_ => IO.unit)
-        .flatMap(_ => IO(succeed).start.flatMap(_.joinWith(IO(fail)))) // the cats executor should still be open
+        .flatMap(_ => IO(succeed).start.flatMap(_.joinWith(IO(fail())))) // the cats executor should still be open
         .unsafeToFuture()
     }
   }
