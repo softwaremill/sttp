@@ -17,6 +17,9 @@ import java.util.concurrent.{Executor, ThreadPoolExecutor}
 import java.util.function
 import scala.collection.JavaConverters._
 
+/** @param closeClient
+  *   If the executor underlying the client is a [[ThreadPoolExecutor]], should it be shutdown on [[close]].
+  */
 abstract class HttpClientBackend[F[_], S, P, B](
     client: HttpClient,
     closeClient: Boolean,
@@ -105,7 +108,10 @@ abstract class HttpClientBackend[F[_], S, P, B](
         client
           .executor()
           .map[Unit](new function.Function[Executor, Unit] {
-            override def apply(t: Executor): Unit = t.asInstanceOf[ThreadPoolExecutor].shutdown()
+            override def apply(t: Executor): Unit = t match {
+              case tpe: ThreadPoolExecutor => tpe.shutdown()
+              case _ => ()
+            }
           })
       )
     } else {

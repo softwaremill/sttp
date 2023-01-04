@@ -107,7 +107,7 @@ object HttpClientFutureBackend {
     val executor = Some(ec).collect { case executor: Executor => executor }
     HttpClientFutureBackend(
       HttpClientBackend.defaultClient(options, executor),
-      closeClient = true,
+      closeClient = executor.isEmpty,
       customizeRequest,
       customEncodingHandler
     )

@@ -104,7 +104,7 @@ object HttpClientMonixBackend {
     Task.eval(
       HttpClientMonixBackend(
         HttpClientBackend.defaultClient(options, Some(s)),
-        closeClient = true,
+        closeClient = false, // we don't want to close Monix's scheduler
         customizeRequest,
         customEncodingHandler
       )(s)
