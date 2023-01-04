@@ -28,5 +28,7 @@ project/metals.sbt
 .bsp/
 .java-version
 
+.vscode
+
 # scala-native
 lowered.hnir
