@@ -41,15 +41,6 @@ Class                                Effect type                      Supported 
 ``OkHttpMonixBackend``               ``monix.eval.Task``              ``monix.reactive.Observable[ByteBuffer]``         yes (regular & streaming)  no
 ``Http4sBackend``                    ``F[_]: cats.effect.Effect``     ``fs2.Stream[F, Byte]``                           no                         no
 ``FinagleBackend``                   ``com.twitter.util.Future``      n/a                                               no                         no
-==================================== ================================ ================================================= ========================== ===================
-```
-
-Moreover, the following backends are deprecated, as they depend on async-http-client, which is no longer maintained:
-
-```eval_rst
-==================================== ================================ ================================================= ========================== ===================
-Class                                Effect type                      Supported stream type                             Supports websockets        Fully non-blocking
-==================================== ================================ ================================================= ========================== ===================
 ``AsyncHttpClientFutureBackend``     ``scala.concurrent.Future``      n/a                                               yes (regular)              no
 ``AsyncHttpClientScalazBackend``     ``scalaz.concurrent.Task``       n/a                                               yes (regular)              no
 ``AsyncHttpClientZioBackend``        ``zio.Task``                     ``zio.stream.Stream[Throwable, Byte]``            yes (regular & streaming)  no
