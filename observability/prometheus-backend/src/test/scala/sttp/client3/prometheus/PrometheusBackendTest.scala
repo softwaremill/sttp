@@ -64,7 +64,7 @@ class PrometheusBackendTest
     backend2.send(basicRequest.get(uri"http://127.0.0.1/foo"))
 
     // then
-    getMetricValue(s"${histogramName}_count", List("method" -> "GET")).value shouldBe 2
+    getMetricValue(s"${histogramName}_count").value shouldBe 2
   }
 
   it should "use mapped request to histogram name" in {
@@ -81,8 +81,8 @@ class PrometheusBackendTest
     (0 until requestsNumber).foreach(_ => backend.send(basicRequest.get(uri"http://127.0.0.1/foo")))
 
     // then
-    getMetricValue(s"${PrometheusBackend.DefaultHistogramName}_count", List("method" -> "GET")) shouldBe empty
-    getMetricValue(s"${customHistogramName}_count", List("method" -> "GET")).value shouldBe requestsNumber
+    getMetricValue(s"${PrometheusBackend.DefaultHistogramName}_count") shouldBe empty
+    getMetricValue(s"${customHistogramName}_count").value shouldBe requestsNumber
   }
 
   it should "use mapped request to histogram name with labels and buckets" in {
@@ -392,6 +392,9 @@ class PrometheusBackendTest
       List("method" -> "GET", "status" -> "5xx")
     ) shouldBe None
   }
+
+  private[this] def getMetricValue(name: String): Option[lang.Double] =
+    Option(CollectorRegistry.defaultRegistry.getSampleValue(name))
 
   private[this] def getMetricValue(name: String, labels: List[(String, String)]): Option[lang.Double] =
     Option(CollectorRegistry.defaultRegistry.getSampleValue(name, labels.map(_._1).toArray, labels.map(_._2).toArray))

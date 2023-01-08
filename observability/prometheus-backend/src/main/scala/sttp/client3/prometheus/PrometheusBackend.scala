@@ -21,19 +21,19 @@ object PrometheusBackend {
   def apply[F[_], P](
       delegate: SttpBackend[F, P],
       requestToHistogramNameMapper: Request[_, _] => Option[HistogramCollectorConfig] = (req: Request[_, _]) =>
-        Some(addLabelPairs(HistogramCollectorConfig(DefaultHistogramName), req, None)),
+        Some(addMethodStatusLabels(HistogramCollectorConfig(DefaultHistogramName), req, None)),
       requestToInProgressGaugeNameMapper: Request[_, _] => Option[CollectorConfig] = (req: Request[_, _]) =>
-        Some(addLabelPairs(CollectorConfig(DefaultRequestsInProgressGaugeName), req, None)),
+        Some(addMethodStatusLabels(CollectorConfig(DefaultRequestsInProgressGaugeName), req, None)),
       responseToSuccessCounterMapper: (Request[_, _], Response[_]) => Option[CollectorConfig] =
-        (req: Request[_, _], resp: Response[_]) => Some(addLabelPairs(CollectorConfig(DefaultSuccessCounterName), req, Some(resp))),
+        (req: Request[_, _], resp: Response[_]) => Some(addMethodStatusLabels(CollectorConfig(DefaultSuccessCounterName), req, Some(resp))),
       responseToErrorCounterMapper: (Request[_, _], Response[_]) => Option[CollectorConfig] =
-        (req: Request[_, _], resp: Response[_]) => Some(addLabelPairs(CollectorConfig(DefaultErrorCounterName), req, Some(resp))),
+        (req: Request[_, _], resp: Response[_]) => Some(addMethodStatusLabels(CollectorConfig(DefaultErrorCounterName), req, Some(resp))),
       requestToFailureCounterMapper: (Request[_, _], Throwable) => Option[CollectorConfig] =
-        (req: Request[_, _], _: Throwable) => Some(addLabelPairs(CollectorConfig(DefaultFailureCounterName), req, None)),
+        (req: Request[_, _], _: Throwable) => Some(addMethodStatusLabels(CollectorConfig(DefaultFailureCounterName), req, None)),
       requestToSizeSummaryMapper: Request[_, _] => Option[CollectorConfig] = (req: Request[_, _]) =>
-        Some(addLabelPairs(CollectorConfig(DefaultRequestSizeName), req, None)),
+        Some(addMethodStatusLabels(CollectorConfig(DefaultRequestSizeName), req, None)),
       responseToSizeSummaryMapper: (Request[_, _], Response[_]) => Option[CollectorConfig] =
-        (req: Request[_, _], resp: Response[_]) => Some(addLabelPairs(CollectorConfig(DefaultResponseSizeName), req, Some(resp))),
+        (req: Request[_, _], resp: Response[_]) => Some(addMethodStatusLabels(CollectorConfig(DefaultResponseSizeName), req, Some(resp))),
       collectorRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry
   ): SttpBackend[F, P] = {
     // redirects should be handled before prometheus
@@ -77,7 +77,7 @@ object PrometheusBackend {
     *   BaseCollectorConfig sub-type. Note that PrometheusBackend#apply and PrometheusListener's constructor reference
     *   the sub-types of BaseCollectorConfig.
     */
-  def addLabelPairs(config: BaseCollectorConfig, req: Request[_, _], maybeResp: Option[Response[_]]): config.T = {
+  def addMethodStatusLabels(config: BaseCollectorConfig, req: Request[_, _], maybeResp: Option[Response[_]]): config.T = {
     val methodLabel: Option[(String, String)] = {
       if (config.labels.map(_._1.toLowerCase).contains("method")) {
         None
