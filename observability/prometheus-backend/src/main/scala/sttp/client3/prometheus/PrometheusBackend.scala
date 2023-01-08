@@ -143,7 +143,7 @@ object PrometheusBackend {
       cache.getOrElseUpdate(collectorRegistry, new ConcurrentHashMap[String, T]())
     }
 
-  final class RequestCollectors(val maybeTimer: Option[Histogram.Timer], val maybeGauge: Option[Gauge.Child])
+  final case class RequestCollectors(maybeTimer: Option[Histogram.Timer], maybeGauge: Option[Gauge.Child])
 }
 
 class PrometheusListener(
