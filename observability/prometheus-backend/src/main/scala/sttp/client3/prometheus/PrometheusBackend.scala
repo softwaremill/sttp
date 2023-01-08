@@ -77,7 +77,7 @@ object PrometheusBackend {
     *   BaseCollectorConfig sub-type. Note that PrometheusBackend#apply and PrometheusListener's constructor reference
     *   the sub-types of BaseCollectorConfig.
     */
-  def addMethodStatusLabels(config: BaseCollectorConfig, req: Request[_, _], maybeResp: Option[Response[_]]): config.T = {
+  def addMethodStatusLabels[T <: BaseCollectorConfig](config: T, req: Request[_, _], maybeResp: Option[Response[_]]): T#T = {
     val methodLabel: Option[(String, String)] = {
       if (config.labels.map(_._1.toLowerCase).contains("method")) {
         None
