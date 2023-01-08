@@ -39,7 +39,7 @@ class PrometheusBackendTest
     (0 until requestsNumber).foreach(_ => backend.send(basicRequest.get(uri"http://127.0.0.1/foo")))
 
     // then
-    getMetricValue(s"${PrometheusBackend.DefaultHistogramName}_count").value shouldBe requestsNumber
+    getMetricValue(s"${PrometheusBackend.DefaultHistogramName}_count", List("method" -> "GET")).value shouldBe requestsNumber
   }
 
   it should "allow creating two prometheus backends" in {
@@ -163,12 +163,12 @@ class PrometheusBackendTest
 
     // then
     eventually {
-      getMetricValue(PrometheusBackend.DefaultRequestsInProgressGaugeName).value shouldBe requestsNumber
+      getMetricValue(PrometheusBackend.DefaultRequestsInProgressGaugeName, List("method" -> "GET")).value shouldBe requestsNumber
     }
 
     countDownLatch.countDown()
     eventually {
-      getMetricValue(PrometheusBackend.DefaultRequestsInProgressGaugeName).value shouldBe 0
+      getMetricValue(PrometheusBackend.DefaultRequestsInProgressGaugeName, List("method" -> "GET")).value shouldBe 0
     }
   }
 
@@ -226,7 +226,7 @@ class PrometheusBackendTest
 
     countDownLatch.countDown()
     eventually {
-      getMetricValue(s"${PrometheusBackend.DefaultHistogramName}_count").value shouldBe requestsNumber
+      getMetricValue(s"${PrometheusBackend.DefaultHistogramName}_count", List("method" -> "GET")).value shouldBe requestsNumber
       getMetricValue(PrometheusBackend.DefaultRequestsInProgressGaugeName) shouldBe empty
     }
   }
@@ -243,8 +243,8 @@ class PrometheusBackendTest
     (0 until 5).foreach(_ => backend2.send(basicRequest.get(uri"http://127.0.0.1/foo")))
 
     // then
-    getMetricValue(PrometheusBackend.DefaultSuccessCounterName + "_total").value shouldBe 10
-    getMetricValue(PrometheusBackend.DefaultErrorCounterName + "_total").value shouldBe 5
+    getMetricValue(PrometheusBackend.DefaultSuccessCounterName + "_total", List("method" -> "GET", "status" -> "2xx")).value shouldBe 10
+    getMetricValue(PrometheusBackend.DefaultErrorCounterName + "_total", List("method" -> "GET", "status" -> "4xx")).value shouldBe 5
   }
 
   it should "not override user-supplied 'method' and 'status' labels" in {
@@ -282,10 +282,10 @@ class PrometheusBackendTest
     )
 
     // then
-    getMetricValue(PrometheusBackend.DefaultRequestSizeName + "_count").value shouldBe 5
-    getMetricValue(PrometheusBackend.DefaultRequestSizeName + "_sum").value shouldBe 25
-    getMetricValue(PrometheusBackend.DefaultResponseSizeName + "_count").value shouldBe 5
-    getMetricValue(PrometheusBackend.DefaultResponseSizeName + "_sum").value shouldBe 50
+    getMetricValue(PrometheusBackend.DefaultRequestSizeName + "_count", List("method" -> "GET")).value shouldBe 5
+    getMetricValue(PrometheusBackend.DefaultRequestSizeName + "_sum", List("method" -> "GET")).value shouldBe 25
+    getMetricValue(PrometheusBackend.DefaultResponseSizeName + "_count", List("method" -> "GET", "status" -> "2xx")).value shouldBe 5
+    getMetricValue(PrometheusBackend.DefaultResponseSizeName + "_sum", List("method" -> "GET", "status" -> "2xx")).value shouldBe 50
   }
 
   it should "use error counter when http error is thrown" in {
@@ -303,9 +303,9 @@ class PrometheusBackendTest
     }
 
     // then
-    getMetricValue(PrometheusBackend.DefaultSuccessCounterName + "_total") shouldBe None
-    getMetricValue(PrometheusBackend.DefaultFailureCounterName + "_total") shouldBe None
-    getMetricValue(PrometheusBackend.DefaultErrorCounterName + "_total") shouldBe Some(1)
+    getMetricValue(PrometheusBackend.DefaultSuccessCounterName + "_total", List("method" -> "GET", "status" -> "2xx")) shouldBe None
+    getMetricValue(PrometheusBackend.DefaultFailureCounterName + "_total", List("method" -> "GET")) shouldBe None
+    getMetricValue(PrometheusBackend.DefaultErrorCounterName + "_total", List("method" -> "GET", "status" -> "5xx")) shouldBe Some(1)
   }
 
   it should "use failure counter when other exception is thrown" in {
@@ -323,9 +323,9 @@ class PrometheusBackendTest
     }
 
     // then
-    getMetricValue(PrometheusBackend.DefaultSuccessCounterName + "_total") shouldBe None
-    getMetricValue(PrometheusBackend.DefaultFailureCounterName + "_total") shouldBe Some(1)
-    getMetricValue(PrometheusBackend.DefaultErrorCounterName + "_total") shouldBe None
+    getMetricValue(PrometheusBackend.DefaultSuccessCounterName + "_total", List("method" -> "GET", "status" -> "2xx")) shouldBe None
+    getMetricValue(PrometheusBackend.DefaultFailureCounterName + "_total", List("method" -> "GET")) shouldBe Some(1)
+    getMetricValue(PrometheusBackend.DefaultErrorCounterName + "_total", List("method" -> "GET", "status" -> "5xx")) shouldBe None
   }
 
   it should "use success counter on success response" in {
@@ -341,9 +341,9 @@ class PrometheusBackendTest
     )
 
     // then
-    getMetricValue(PrometheusBackend.DefaultSuccessCounterName + "_total") shouldBe Some(1)
-    getMetricValue(PrometheusBackend.DefaultFailureCounterName + "_total") shouldBe None
-    getMetricValue(PrometheusBackend.DefaultErrorCounterName + "_total") shouldBe None
+    getMetricValue(PrometheusBackend.DefaultSuccessCounterName + "_total", List("method" -> "GET", "status" -> "2xx")) shouldBe Some(1)
+    getMetricValue(PrometheusBackend.DefaultFailureCounterName + "_total", List("method" -> "GET")) shouldBe None
+    getMetricValue(PrometheusBackend.DefaultErrorCounterName + "_total",  List("method" -> "GET", "status" -> "5xx")) shouldBe None
   }
 
   private[this] def getMetricValue(name: String): Option[lang.Double] =
