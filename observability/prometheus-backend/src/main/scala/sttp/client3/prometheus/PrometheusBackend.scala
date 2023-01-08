@@ -20,20 +20,20 @@ object PrometheusBackend {
 
   def apply[F[_], P](
       delegate: SttpBackend[F, P],
-      requestToHistogramNameMapper: Request[_, _] => Option[HistogramCollectorConfig] = (_: Request[_, _]) =>
-        Some(HistogramCollectorConfig(DefaultHistogramName)),
-      requestToInProgressGaugeNameMapper: Request[_, _] => Option[CollectorConfig] = (_: Request[_, _]) =>
-        Some(CollectorConfig(DefaultRequestsInProgressGaugeName)),
+      requestToHistogramNameMapper: Request[_, _] => Option[HistogramCollectorConfig] = (req: Request[_, _]) =>
+        Some(addLabelPairs(HistogramCollectorConfig(DefaultHistogramName), req, None)),
+      requestToInProgressGaugeNameMapper: Request[_, _] => Option[CollectorConfig] = (req: Request[_, _]) =>
+        Some(addLabelPairs(CollectorConfig(DefaultRequestsInProgressGaugeName), req, None)),
       responseToSuccessCounterMapper: (Request[_, _], Response[_]) => Option[CollectorConfig] =
-        (_: Request[_, _], _: Response[_]) => Some(CollectorConfig(DefaultSuccessCounterName)),
+        (req: Request[_, _], resp: Response[_]) => Some(addLabelPairs(CollectorConfig(DefaultSuccessCounterName), req, Some(resp))),
       responseToErrorCounterMapper: (Request[_, _], Response[_]) => Option[CollectorConfig] =
-        (_: Request[_, _], _: Response[_]) => Some(CollectorConfig(DefaultErrorCounterName)),
+        (req: Request[_, _], resp: Response[_]) => Some(addLabelPairs(CollectorConfig(DefaultErrorCounterName), req, Some(resp))),
       requestToFailureCounterMapper: (Request[_, _], Throwable) => Option[CollectorConfig] =
-        (_: Request[_, _], _: Throwable) => Some(CollectorConfig(DefaultFailureCounterName)),
-      requestToSizeSummaryMapper: Request[_, _] => Option[CollectorConfig] = (_: Request[_, _]) =>
-        Some(CollectorConfig(DefaultRequestSizeName)),
+        (req: Request[_, _], _: Throwable) => Some(addLabelPairs(CollectorConfig(DefaultFailureCounterName), req, None)),
+      requestToSizeSummaryMapper: Request[_, _] => Option[CollectorConfig] = (req: Request[_, _]) =>
+        Some(addLabelPairs(CollectorConfig(DefaultRequestSizeName), req, None)),
       responseToSizeSummaryMapper: (Request[_, _], Response[_]) => Option[CollectorConfig] =
-        (_: Request[_, _], _: Response[_]) => Some(CollectorConfig(DefaultResponseSizeName)),
+        (req: Request[_, _], resp: Response[_]) => Some(addLabelPairs(CollectorConfig(DefaultResponseSizeName), req, Some(resp))),
       collectorRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry
   ): SttpBackend[F, P] = {
     // redirects should be handled before prometheus
@@ -42,17 +42,17 @@ object PrometheusBackend {
         delegate,
         RequestListener.lift(
           new PrometheusListener(
-            (req: Request[_, _]) => requestToHistogramNameMapper(req).map(addLabelPairs(_, req, None)),
-            (req: Request[_, _]) => requestToInProgressGaugeNameMapper(req).map(addLabelPairs(_, req, None)),
+            (req: Request[_, _]) => requestToHistogramNameMapper(req),
+            (req: Request[_, _]) => requestToInProgressGaugeNameMapper(req),
             (rr: (Request[_, _], Response[_])) =>
-              responseToSuccessCounterMapper(rr._1, rr._2).map(addLabelPairs(_, rr._1, Some(rr._2))),
+              responseToSuccessCounterMapper(rr._1, rr._2),
             (rr: (Request[_, _], Response[_])) =>
-              responseToErrorCounterMapper(rr._1, rr._2).map(addLabelPairs(_, rr._1, Some(rr._2))),
+              responseToErrorCounterMapper(rr._1, rr._2),
             (r: (Request[_, _], Throwable)) =>
-              requestToFailureCounterMapper(r._1, r._2).map(addLabelPairs(_, r._1, None)),
-            (req: Request[_, _]) => requestToSizeSummaryMapper(req).map(addLabelPairs(_, req, None)),
+              requestToFailureCounterMapper(r._1, r._2),
+            (req: Request[_, _]) => requestToSizeSummaryMapper(req),
             (rr: (Request[_, _], Response[_])) =>
-              responseToSizeSummaryMapper(rr._1, rr._2).map(addLabelPairs(_, rr._1, Some(rr._2))),
+              responseToSizeSummaryMapper(rr._1, rr._2),
             collectorRegistry,
             cacheFor(histograms, collectorRegistry),
             cacheFor(gauges, collectorRegistry),
