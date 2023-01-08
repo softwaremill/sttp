@@ -79,7 +79,7 @@ object PrometheusBackend {
     */
   def addLabelPairs(config: BaseCollectorConfig, req: Request[_, _], maybeResp: Option[Response[_]]): config.T = {
     val methodLabel: Option[(String, String)] = {
-      if (config.labels.map(_._1).contains("method")) {
+      if (config.labels.map(_._1.toLowerCase).contains("method")) {
         None
       } else {
         Some {
@@ -89,7 +89,7 @@ object PrometheusBackend {
     }
 
     val statusLabel: Option[(String, String)] = {
-      if (config.labels.map(_._1).contains("status")) {
+      if (config.labels.map(_._1.toLowerCase).contains("status")) {
         None
       } else {
         maybeResp.map { r => ("status", mapStatusToLabelValue(r.code)) }
