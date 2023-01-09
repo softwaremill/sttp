@@ -5,6 +5,7 @@ import sttp.client3.{FollowRedirectsBackend, HttpError, Identity, Request, Respo
 import io.prometheus.client.{CollectorRegistry, Counter, Gauge, Histogram, Summary}
 import sttp.client3.listener.{ListenerBackend, RequestListener}
 import sttp.client3.prometheus.PrometheusBackend.RequestCollectors
+import sttp.model.StatusCode
 
 import scala.collection.mutable
 
@@ -17,22 +18,28 @@ object PrometheusBackend {
   val DefaultRequestSizeName = "sttp_request_size_bytes"
   val DefaultResponseSizeName = "sttp_response_size_bytes"
 
+  val DefaultMethodLabel = "method"
+  val DefaultStatusLabel = "status"
+
   def apply[F[_], P](
       delegate: SttpBackend[F, P],
-      requestToHistogramNameMapper: Request[_, _] => Option[HistogramCollectorConfig] = (_: Request[_, _]) =>
-        Some(HistogramCollectorConfig(DefaultHistogramName)),
-      requestToInProgressGaugeNameMapper: Request[_, _] => Option[CollectorConfig] = (_: Request[_, _]) =>
-        Some(CollectorConfig(DefaultRequestsInProgressGaugeName)),
+      requestToHistogramNameMapper: Request[_, _] => Option[HistogramCollectorConfig] = (req: Request[_, _]) =>
+        Some(addMethodLabel(HistogramCollectorConfig(DefaultHistogramName), req)),
+      requestToInProgressGaugeNameMapper: Request[_, _] => Option[CollectorConfig] = (req: Request[_, _]) =>
+        Some(addMethodLabel(CollectorConfig(DefaultRequestsInProgressGaugeName), req)),
       responseToSuccessCounterMapper: (Request[_, _], Response[_]) => Option[CollectorConfig] =
-        (_: Request[_, _], _: Response[_]) => Some(CollectorConfig(DefaultSuccessCounterName)),
+        (req: Request[_, _], resp: Response[_]) =>
+          Some(addStatusLabel(addMethodLabel(CollectorConfig(DefaultSuccessCounterName), req), resp)),
       responseToErrorCounterMapper: (Request[_, _], Response[_]) => Option[CollectorConfig] =
-        (_: Request[_, _], _: Response[_]) => Some(CollectorConfig(DefaultErrorCounterName)),
+        (req: Request[_, _], resp: Response[_]) =>
+          Some(addStatusLabel(addMethodLabel(CollectorConfig(DefaultErrorCounterName), req), resp)),
       requestToFailureCounterMapper: (Request[_, _], Throwable) => Option[CollectorConfig] =
-        (_: Request[_, _], _: Throwable) => Some(CollectorConfig(DefaultFailureCounterName)),
-      requestToSizeSummaryMapper: Request[_, _] => Option[CollectorConfig] = (_: Request[_, _]) =>
-        Some(CollectorConfig(DefaultRequestSizeName)),
+        (req: Request[_, _], _: Throwable) => Some(addMethodLabel(CollectorConfig(DefaultFailureCounterName), req)),
+      requestToSizeSummaryMapper: Request[_, _] => Option[CollectorConfig] = (req: Request[_, _]) =>
+        Some(addMethodLabel(CollectorConfig(DefaultRequestSizeName), req)),
       responseToSizeSummaryMapper: (Request[_, _], Response[_]) => Option[CollectorConfig] =
-        (_: Request[_, _], _: Response[_]) => Some(CollectorConfig(DefaultResponseSizeName)),
+        (req: Request[_, _], resp: Response[_]) =>
+          Some(addStatusLabel(addMethodLabel(CollectorConfig(DefaultResponseSizeName), req), resp)),
       collectorRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry
   ): SttpBackend[F, P] = {
     // redirects should be handled before prometheus
@@ -41,12 +48,12 @@ object PrometheusBackend {
         delegate,
         RequestListener.lift(
           new PrometheusListener(
-            requestToHistogramNameMapper,
-            requestToInProgressGaugeNameMapper,
+            (req: Request[_, _]) => requestToHistogramNameMapper(req),
+            (req: Request[_, _]) => requestToInProgressGaugeNameMapper(req),
             (rr: (Request[_, _], Response[_])) => responseToSuccessCounterMapper(rr._1, rr._2),
             (rr: (Request[_, _], Response[_])) => responseToErrorCounterMapper(rr._1, rr._2),
             (r: (Request[_, _], Throwable)) => requestToFailureCounterMapper(r._1, r._2),
-            requestToSizeSummaryMapper,
+            (req: Request[_, _]) => requestToSizeSummaryMapper(req),
             (rr: (Request[_, _], Response[_])) => responseToSizeSummaryMapper(rr._1, rr._2),
             collectorRegistry,
             cacheFor(histograms, collectorRegistry),
@@ -59,6 +66,52 @@ object PrometheusBackend {
       )
     )
   }
+
+  /** Add, if not present, a "method" label. That is, if the user already supplied such a label, it is left as-is.
+    *
+    * @param config
+    *   The collector config to which the label should be added.
+    * @return
+    *   The modified collector config. The config can be used when configuring the backend using [[apply]].
+    */
+  def addMethodLabel[T <: BaseCollectorConfig](config: T, req: Request[_, _]): config.T = {
+    val methodLabel: Option[(String, String)] = {
+      if (config.labels.map(_._1.toLowerCase).contains(DefaultMethodLabel)) {
+        None
+      } else {
+        Some((DefaultMethodLabel, req.method.method.toUpperCase))
+      }
+    }
+
+    config.addLabels(methodLabel.toList)
+  }
+
+  /** Add, if not present, a "status" label. That is, if the user already supplied such a label, it is left as-is.
+    *
+    * @param config
+    *   The collector config to which the label should be added.
+    * @return
+    *   The modified collector config. The config can be used when configuring the backend using [[apply]].
+    */
+  def addStatusLabel[T <: BaseCollectorConfig](config: T, resp: Response[_]): config.T = {
+    val statusLabel: Option[(String, String)] = {
+      if (config.labels.map(_._1.toLowerCase).contains(DefaultStatusLabel)) {
+        None
+      } else {
+        Some((DefaultStatusLabel, mapStatusToLabelValue(resp.code)))
+      }
+    }
+
+    config.addLabels(statusLabel.toList)
+  }
+
+  private def mapStatusToLabelValue(s: StatusCode): String =
+    if (s.isInformational) "1xx"
+    else if (s.isSuccess) "2xx"
+    else if (s.isRedirect) "3xx"
+    else if (s.isClientError) "4xx"
+    else if (s.isServerError) "5xx"
+    else s.code.toString
 
   /** Clear cached collectors (gauges and histograms) both from the given collector registry, and from the backend.
     */
@@ -90,7 +143,7 @@ object PrometheusBackend {
       cache.getOrElseUpdate(collectorRegistry, new ConcurrentHashMap[String, T]())
     }
 
-  type RequestCollectors = (Option[Histogram.Timer], Option[Gauge.Child])
+  final case class RequestCollectors(maybeTimer: Option[Histogram.Timer], maybeGauge: Option[Gauge.Child])
 }
 
 class PrometheusListener(
@@ -122,7 +175,7 @@ class PrometheusListener(
 
     gauge.foreach(_.inc())
 
-    (requestTimer, gauge)
+    RequestCollectors(requestTimer, gauge)
   }
 
   override def requestException(
@@ -134,8 +187,8 @@ class PrometheusListener(
       case Some(HttpError(body, statusCode)) =>
         requestSuccessful(request, Response(body, statusCode), requestCollectors)
       case _ =>
-        requestCollectors._1.foreach(_.observeDuration())
-        requestCollectors._2.foreach(_.dec())
+        requestCollectors.maybeTimer.foreach(_.observeDuration())
+        requestCollectors.maybeGauge.foreach(_.dec())
         incCounterIfMapped((request, e), requestToFailureCounterMapper)
     }
   }
@@ -145,8 +198,8 @@ class PrometheusListener(
       response: Response[_],
       requestCollectors: RequestCollectors
   ): Unit = {
-    requestCollectors._1.foreach(_.observeDuration())
-    requestCollectors._2.foreach(_.dec())
+    requestCollectors.maybeTimer.foreach(_.observeDuration())
+    requestCollectors.maybeGauge.foreach(_.dec())
     observeResponseContentLengthSummaryIfMapped(request, response, responseToSizeSummaryMapper)
 
     if (response.isSuccess) {
@@ -232,8 +285,12 @@ class PrometheusListener(
 }
 
 trait BaseCollectorConfig {
+  type T <: BaseCollectorConfig
+
   def collectorName: String
   def labels: List[(String, String)]
+
+  def addLabels(lbs: List[(String, String)]): T
 
   def labelNames: Seq[String] = labels.map(_._1)
   def labelValues: Seq[String] = labels.map(_._2)
@@ -242,16 +299,21 @@ trait BaseCollectorConfig {
 /** Represents the name of a collector, together with label names and values. The same labels must be always returned,
   * and in the same order.
   */
-case class CollectorConfig(collectorName: String, labels: List[(String, String)] = Nil) extends BaseCollectorConfig
+case class CollectorConfig(collectorName: String, labels: List[(String, String)] = Nil) extends BaseCollectorConfig {
+  override type T = CollectorConfig
+  override def addLabels(lbs: List[(String, String)]): CollectorConfig = copy(labels = labels ++ lbs)
+}
 
-/** Represents the name of a collector with configurable histogram buckets.
-  */
+/** Represents the name of a collector with configurable histogram buckets. */
 case class HistogramCollectorConfig(
     collectorName: String,
     labels: List[(String, String)] = Nil,
     buckets: List[Double] = HistogramCollectorConfig.DefaultBuckets
-) extends BaseCollectorConfig
+) extends BaseCollectorConfig {
+  override type T = HistogramCollectorConfig
+  override def addLabels(lbs: List[(String, String)]): HistogramCollectorConfig = copy(labels = labels ++ lbs)
+}
 
 object HistogramCollectorConfig {
-  val DefaultBuckets = List(.005, .01, .025, .05, .075, .1, .25, .5, .75, 1, 2.5, 5, 7.5, 10)
+  val DefaultBuckets: List[Double] = List(.005, .01, .025, .05, .075, .1, .25, .5, .75, 1, 2.5, 5, 7.5, 10)
 }
