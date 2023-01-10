@@ -743,9 +743,6 @@ lazy val armeriaCatsCe2Backend =
 
 lazy val armeriaCatsBackend =
   armeriaBackendProject("cats", includeDotty = true)
-    .settings(
-      libraryDependencies += "org.mock-server" % "mockserver-netty-no-dependencies" % "5.14.0" % Test
-    )
     .dependsOn(cats % compileAndTest)
 
 lazy val armeriaScalazBackend =
