@@ -119,7 +119,16 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
         post {
           parameterMap { _ => entity(as[String]) { (body: String) => complete(body) } }
         }
-      }
+      } ~
+        path("is_chunked") {
+          post {
+            extractRequest { req =>
+              val isChunked = req.entity.isChunked().toString
+              req.entity.discardBytes()
+              complete(isChunked)
+            }
+          }
+        }
     } ~ pathPrefix("sse") {
       path("echo3") {
         import akka.http.scaladsl.marshalling.sse.EventStreamMarshalling._

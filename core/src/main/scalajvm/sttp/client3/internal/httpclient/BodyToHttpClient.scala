@@ -23,6 +23,7 @@ import java.io.{ByteArrayInputStream, InputStream}
 import java.net.http.HttpRequest
 import java.net.http.HttpRequest.{BodyPublisher, BodyPublishers}
 import java.nio.{Buffer, ByteBuffer}
+import java.util.concurrent.Flow
 import java.util.function.Supplier
 import scala.collection.JavaConverters._
 
@@ -35,7 +36,7 @@ private[client3] trait BodyToHttpClient[F[_], S] {
       builder: HttpRequest.Builder,
       contentType: Option[String]
   ): F[BodyPublisher] = {
-    request.body match {
+    val body = request.body match {
       case NoBody              => BodyPublishers.noBody().unit
       case StringBody(b, _, _) => BodyPublishers.ofString(b).unit
       case ByteArrayBody(b, _) => BodyPublishers.ofByteArray(b).unit
@@ -50,6 +51,11 @@ private[client3] trait BodyToHttpClient[F[_], S] {
         val baseContentType = contentType.getOrElse("multipart/form-data")
         builder.header(HeaderNames.ContentType, s"$baseContentType; boundary=${multipartBodyPublisher.getBoundary}")
         multipartBodyPublisher.build().unit
+    }
+
+    (request.contentLength: Option[Long]) match {
+      case None     => body
+      case Some(cl) => body.map(b => withKnownContentLength(b, cl))
     }
   }
 
@@ -85,6 +91,13 @@ private[client3] trait BodyToHttpClient[F[_], S] {
     new Supplier[InputStream] {
       override def get(): InputStream = t
     }
+
+  private def withKnownContentLength(delegate: HttpRequest.BodyPublisher, cl: Long): HttpRequest.BodyPublisher = {
+    new HttpRequest.BodyPublisher {
+      override def contentLength(): Long = cl
+      override def subscribe(subscriber: Flow.Subscriber[_ >: ByteBuffer]): Unit = delegate.subscribe(subscriber)
+    }
+  }
 
   // https://stackoverflow.com/a/6603018/362531
   private class ByteBufferBackedInputStream(buf: ByteBuffer) extends InputStream {

@@ -27,9 +27,9 @@ import scala.util.Try
 
 private[okhttp] trait BodyToOkHttp[F[_], S] {
   val streams: Streams[S]
-  def streamToRequestBody(stream: streams.BinaryStream): OkHttpRequestBody
+  def streamToRequestBody(stream: streams.BinaryStream, mt: MediaType, cl: Option[Long]): OkHttpRequestBody
 
-  def apply[R](body: RequestBody[R], ct: Option[String]): Option[OkHttpRequestBody] = {
+  def apply[R](body: RequestBody[R], ct: Option[String], cl: Option[Long]): Option[OkHttpRequestBody] = {
     val mediaType = ct.flatMap(c => Try(MediaType.parse(c)).toOption).orNull
     body match {
       case NoBody                                          => None
@@ -48,7 +48,7 @@ private[okhttp] trait BodyToOkHttp[F[_], S] {
       case FileBody(b, _) =>
         Some(OkHttpRequestBody.create(b.toFile, mediaType))
       case StreamBody(s) =>
-        Some(streamToRequestBody(s.asInstanceOf[streams.BinaryStream]))
+        Some(streamToRequestBody(s.asInstanceOf[streams.BinaryStream], mediaType, cl))
       case MultipartBody(ps) =>
         val b = new OkHttpMultipartBody.Builder().setType(Option(mediaType).getOrElse(OkHttpMultipartBody.FORM))
         ps.foreach(addMultipart(b, _))
@@ -61,6 +61,6 @@ private[okhttp] trait BodyToOkHttp[F[_], S] {
     val headers =
       OkHttpHeaders.of(allHeaders.filterNot(_.is(HeaderNames.ContentType)).map(h => (h.name, h.value)).toMap.asJava)
 
-    apply(mp.body, mp.contentType).foreach(builder.addPart(headers, _))
+    apply(mp.body, mp.contentType, mp.contentLength).foreach(builder.addPart(headers, _))
   }
 }

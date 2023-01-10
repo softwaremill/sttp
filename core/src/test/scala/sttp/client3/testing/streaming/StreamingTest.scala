@@ -59,6 +59,19 @@ abstract class StreamingTest[F[_], S]
       }
   }
 
+  "stream request body with known length" in {
+    basicRequest
+      .post(uri"$endpoint/streaming/is_chunked")
+      .streamBody(streams)(stringBodyProducer(Body))
+      .contentLength(Body.length)
+      .send(backend)
+      .toFuture()
+      .map { response =>
+        // we've explicitly set the length, so the request shouldn't be sent as chunked
+        response.body shouldBe Right("false")
+      }
+  }
+
   "handle server sent events SSE" in {
     val sseData = "ala ma kota\nzbyszek ma psa"
     val expectedEvent = ServerSentEvent(data = Some(sseData), eventType = Some("test-event"), retry = Some(42000))
