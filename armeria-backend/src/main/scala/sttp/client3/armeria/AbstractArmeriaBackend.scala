@@ -59,7 +59,7 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
   override def responseMonad: MonadError[F] = monad
 
   override def send[T, R >: SE](request: Request[T, R]): F[Response[T]] =
-    monad.unit(request).flatMap(r => adjustExceptions(request)(execute(r)))
+    monad.suspend(adjustExceptions(request)(execute(request)))
 
   private def execute[T, R >: SE](request: Request[T, R]): F[Response[T]] = {
     val captor = Clients.newContextCaptor()
@@ -102,12 +102,11 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
 
     val timeout = request.options.readTimeout
     if (timeout.isFinite) {
-        requestPreparation.responseTimeoutMillis(timeout.toMillis)
-      } else {
-        // Armenia does not support Inf timeouts
-        requestPreparation.responseTimeoutMillis(Long.MaxValue)
-      }
-
+      requestPreparation.responseTimeoutMillis(timeout.toMillis)
+    } else {
+      // Armenia does not support Inf timeouts
+      requestPreparation.responseTimeoutMillis(Long.MaxValue)
+    }
 
     var customContentType: Option[ArmeriaMediaType] = None
     request.headers.foreach { header =>
