@@ -705,7 +705,7 @@ lazy val armeriaBackend = (projectMatrix in file("armeria-backend"))
   .jvmPlatform(scalaVersions = List(scala2_12, scala2_13) ++ scala3)
   .dependsOn(core % compileAndTest)
 
-def armeriaBackendProject(proj: String, includeDotty: Boolean = false) = {
+def armeriaBackendProject(proj: String, includeDotty: Boolean = false) =
   ProjectMatrix(s"armeriaBackend${proj.capitalize}", file(s"armeria-backend/$proj"))
     .settings(commonJvmSettings)
     .settings(testServerSettings)
@@ -714,7 +714,6 @@ def armeriaBackendProject(proj: String, includeDotty: Boolean = false) = {
     .jvmPlatform(
       scalaVersions = List(scala2_12, scala2_13) ++ (if (includeDotty) scala3 else Nil)
     )
-}
 
 lazy val armeriaMonixBackend =
   armeriaBackendProject("monix", includeDotty = true)

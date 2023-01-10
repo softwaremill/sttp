@@ -18,7 +18,9 @@ import akka.util.ByteString
 import akka.{Done, NotUsed}
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives
 import ch.megard.akka.http.cors.scaladsl.settings.CorsSettings
+
 import java.io.{ByteArrayOutputStream, InputStream, OutputStream}
+import java.util.concurrent.ConcurrentHashMap
 import scala.annotation.tailrec
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future, Promise}
@@ -49,6 +51,7 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
   private val binaryFile = toByteArray(getClass.getResourceAsStream("/binaryfile.jpg"))
   private val compressedFile = toByteArray(getClass.getResourceAsStream("/r3.gz"))
   private val textWithSpecialCharacters = "Żółć!"
+  private val retryTestCache = new ConcurrentHashMap[String, Int]()
 
   private val serverRoutes: Route =
     pathPrefix("echo") {
@@ -410,6 +413,18 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
           protocol = HttpProtocols.`HTTP/1.1`
         )
       )
+    } ~ pathPrefix("retry") { // #1616: calling the endpoint with the same tag will give status codes 401, 401, 400, 200, ...
+      parameter("tag") { tag =>
+        val current = Option(retryTestCache.get(tag)).getOrElse(0)
+        retryTestCache.put(tag, current + 1)
+
+        current match {
+          case 0 => complete(StatusCodes.Unauthorized, "")
+          case 1 => complete(StatusCodes.Unauthorized, "")
+          case 2 => complete(StatusCodes.BadRequest, "")
+          case _ => complete(StatusCodes.OK, "")
+        }
+      }
     } ~ pathPrefix("timeout") {
       complete {
         akka.pattern.after(2.seconds, using = actorSystem.scheduler)(
