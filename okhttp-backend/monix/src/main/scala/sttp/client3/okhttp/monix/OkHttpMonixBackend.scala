@@ -42,11 +42,15 @@ class OkHttpMonixBackend private (
   override protected val bodyToOkHttp: BodyToOkHttp[Task, MonixStreams] = new BodyToOkHttp[Task, MonixStreams] {
     override val streams: MonixStreams = MonixStreams
 
-    override def streamToRequestBody(stream: streams.BinaryStream): OkHttpRequestBody = {
+    override def streamToRequestBody(
+        stream: streams.BinaryStream,
+        mt: MediaType,
+        cl: Option[Long]
+    ): OkHttpRequestBody = {
       new OkHttpRequestBody() {
-        override def writeTo(sink: BufferedSink): Unit =
-          toIterable(stream).foreach(sink.write)
-        override def contentType(): MediaType = null
+        override def writeTo(sink: BufferedSink): Unit = toIterable(stream).foreach(sink.write)
+        override def contentType(): MediaType = mt
+        override def contentLength(): Long = cl.getOrElse(super.contentLength())
       }
     }
   }

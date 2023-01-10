@@ -54,7 +54,7 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
     val builder = new OkHttpRequest.Builder()
       .url(request.uri.toString)
 
-    val body = bodyToOkHttp(request.body, request.headers.find(_.is(HeaderNames.ContentType)).map(_.value))
+    val body = bodyToOkHttp(request.body, request.contentType, request.contentLength)
     builder.method(
       request.method.method,
       body.getOrElse {

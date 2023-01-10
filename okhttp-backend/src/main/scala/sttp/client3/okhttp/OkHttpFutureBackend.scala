@@ -1,8 +1,7 @@
 package sttp.client3.okhttp
 
 import java.io.InputStream
-
-import okhttp3.{OkHttpClient, RequestBody => OkHttpRequestBody}
+import okhttp3.{MediaType, OkHttpClient, RequestBody => OkHttpRequestBody}
 import sttp.capabilities.{Streams, WebSockets}
 import sttp.client3.internal.NoStreams
 import sttp.client3.internal.ws.{FutureSimpleQueue, SimpleQueue}
@@ -37,7 +36,7 @@ class OkHttpFutureBackend private (
 
   override protected val bodyToOkHttp: BodyToOkHttp[Future, Nothing] = new BodyToOkHttp[Future, Nothing] {
     override val streams: NoStreams = NoStreams
-    override def streamToRequestBody(stream: Nothing): OkHttpRequestBody = stream
+    override def streamToRequestBody(stream: Nothing, mt: MediaType, cl: Option[Long]): OkHttpRequestBody = stream
   }
 }
 
