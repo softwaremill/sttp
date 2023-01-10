@@ -1,16 +1,16 @@
 package sttp.client3.impl.cats
 
 import cats.effect.IO
+import org.scalatest.freespec.AsyncFreeSpecLike
 import sttp.client3._
 import sttp.client3.testing.HttpTest
-
 import sttp.client3.testing.HttpTest.endpoint
 import sttp.model.StatusCode
 
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.util.Random
 
-trait CatsRetryTest { this: HttpTest[IO] =>
+trait CatsRetryTest extends AsyncFreeSpecLike { this: HttpTest[IO] =>
   private def retry[A](task: IO[A], delay: FiniteDuration, retries: Int): IO[A] =
     task
       .onError(e => IO.delay(println(s"Received error: $e, retries left = $retries")))
