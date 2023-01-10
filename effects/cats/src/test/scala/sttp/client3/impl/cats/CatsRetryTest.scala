@@ -11,7 +11,7 @@ import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.util.Random
 
 trait CatsRetryTest { this: HttpTest[IO] =>
-  def retry[A](task: IO[A], delay: FiniteDuration, retries: Int): IO[A] =
+  private def retry[A](task: IO[A], delay: FiniteDuration, retries: Int): IO[A] =
     task
       .onError(e => IO.delay(println(s"Received error: $e, retries left = $retries")))
       .handleErrorWith { error =>
