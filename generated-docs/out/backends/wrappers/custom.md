@@ -238,7 +238,7 @@ object RateLimitingSttpBackend {
 Implementing a new backend is made easy as the tests are published in the `core` jar file under the `tests` classifier. Simply add the follow dependencies to your `build.sbt`:
 
 ```
-"com.softwaremill.sttp.client3" %% "core" % "3.8.7" % Test classifier "tests"
+"com.softwaremill.sttp.client3" %% "core" % "3.8.8" % Test classifier "tests"
 ```
 
 Implement your backend and extend the `HttpTest` class:
@@ -268,9 +268,9 @@ import sttp.client3.impl.cats.implicits._
 from the cats integration module. The module should be available on the classpath after adding following dependency:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "cats" % "3.8.7" // for cats-effect 3.x
+"com.softwaremill.sttp.client3" %% "cats" % "3.8.8" // for cats-effect 3.x
 // or
-"com.softwaremill.sttp.client3" %% "catsce2" % "3.8.7" // for cats-effect 2.x
+"com.softwaremill.sttp.client3" %% "catsce2" % "3.8.8" // for cats-effect 2.x
 ```
 
 The object contains implicits to convert a cats `MonadError` into the sttp `MonadError`, 

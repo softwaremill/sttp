@@ -76,9 +76,9 @@ Creation of the backend can be done in two basic ways:
 Firstly, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "armeria-backend-cats" % "3.8.7" // for cats-effect 3.x
+"com.softwaremill.sttp.client3" %% "armeria-backend-cats" % "3.8.8" // for cats-effect 3.x
 // or
-"com.softwaremill.sttp.client3" %% "armeria-backend-cats-ce2" % "3.8.7" // for cats-effect 2.x
+"com.softwaremill.sttp.client3" %% "armeria-backend-cats-ce2" % "3.8.8" // for cats-effect 2.x
 ```
 
 create client:
