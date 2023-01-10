@@ -11,28 +11,24 @@ import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.util.Random
 
 trait CatsRetryTest { this: HttpTest[IO] =>
-  def retry[A](
-      task: IO[A],
-      delay: FiniteDuration = 100.millis,
-      retriesLeft: Int = 5
-  ): IO[A] =
+  def retry[A](task: IO[A], delay: FiniteDuration, retries: Int): IO[A] =
     task
-      .onError(e => IO.delay(println(s"Received error: $e, retries left = $retriesLeft")))
+      .onError(e => IO.delay(println(s"Received error: $e, retries left = $retries")))
       .handleErrorWith { error =>
-        if (retriesLeft > 0)
-          IO.sleep(delay) *> retry(task, delay, retriesLeft - 1)
+        if (retries > 0)
+          IO.sleep(delay) *> retry(task, delay, retries - 1)
         else
           IO.raiseError[A](error)
       }
 
-  "retry test" - {
-    "should call the HTTP server twice" in {
+  "retry" - {
+    "should call the HTTP server up to 5 times" in {
       val tag = Random.nextString(10)
       val check = backend.send(basicRequest.get(uri"$endpoint/retry?tag=$tag")).map { response =>
         response.code shouldBe StatusCode.Ok
       }
 
-      retry(check).toFuture()
+      retry(check, delay = 100.millis, retries = 5).toFuture()
     }
   }
 }
