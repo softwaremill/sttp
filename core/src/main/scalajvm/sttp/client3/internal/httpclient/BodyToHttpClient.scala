@@ -53,7 +53,7 @@ private[client3] trait BodyToHttpClient[F[_], S] {
         multipartBodyPublisher.build().unit
     }
 
-    request.contentLength match {
+    (request.contentLength: Option[Long]) match {
       case None     => body
       case Some(cl) => body.map(b => withKnownContentLength(b, cl))
     }
