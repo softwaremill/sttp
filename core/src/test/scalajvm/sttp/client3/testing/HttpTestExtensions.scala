@@ -290,8 +290,8 @@ trait HttpTestExtensions[F[_]] extends AsyncFreeSpecLike { self: HttpTest[F] =>
 
   "auth" - {
     "perform digest authorization" in {
-      implicit val digestBackend: SttpBackend[F, Any] =
-        new DigestAuthenticationBackend[F, Any](backend, () => "e5d93287aa8532c1f5df9e052fda4c38")
+      implicit val digestBackend: Backend[F] =
+        DigestAuthenticationBackend(backend, () => "e5d93287aa8532c1f5df9e052fda4c38")
       val req = basicRequest.get(uri"$endpoint/secure_digest").response(asStringAlways).auth.digest("adam", "1234")
       digestBackend.send(req).toFuture().map { resp =>
         resp.code shouldBe StatusCode.Ok

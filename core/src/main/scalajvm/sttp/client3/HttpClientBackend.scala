@@ -24,14 +24,16 @@ abstract class HttpClientBackend[F[_], S, P, B](
     client: HttpClient,
     closeClient: Boolean,
     customEncodingHandler: EncodingHandler[B]
-) extends SttpBackend[F, P] {
+) extends AbstractBackend[F, P]
+    with Backend[F] {
   val streams: Streams[S]
-  type PE = P with Effect[F]
+
+  type R = P with Effect[F]
 
   protected def bodyToHttpClient: BodyToHttpClient[F, S]
   protected def bodyFromHttpClient: BodyFromHttpClient[F, S, B]
 
-  private[client3] def convertRequest[T, R >: PE](request: AbstractRequest[T, R]): F[HttpRequest] =
+  private[client3] def convertRequest[T](request: AbstractRequest[T, R]): F[HttpRequest] =
     monad.suspend {
       val builder = HttpRequest
         .newBuilder()
@@ -70,7 +72,7 @@ abstract class HttpClientBackend[F[_], S, P, B](
 
   private implicit val monad: MonadError[F] = responseMonad
 
-  private[client3] def readResponse[T, R >: PE](
+  private[client3] def readResponse[T](
       res: HttpResponse[_],
       resBody: Either[B, WebSocket[F]],
       request: AbstractRequest[T, R]

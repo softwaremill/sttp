@@ -13,5 +13,5 @@ import sttp.client3.internal.InternalResponseAs
   */
 trait AbstractResponseAs[+T, -R] {
   private[client3] def internal: InternalResponseAs[T, R]
-  def show: String
+  def show: String = internal.show
 }

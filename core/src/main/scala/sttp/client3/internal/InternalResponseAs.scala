@@ -40,13 +40,13 @@ case object ResponseAsByteArray extends InternalResponseAs[Array[Byte], Any] {
 // fact that `BinaryStream =:= s.BinaryStream`. We have to rely on correct construction via the companion object and
 // perform typecasts when the request is deconstructed.
 case class ResponseAsStream[F[_], T, Stream, S] private (s: Streams[S], f: (Stream, ResponseMetadata) => F[T])
-    extends InternalResponseAs[T, Effect[F] with S] {
+    extends InternalResponseAs[T, S with Effect[F]] {
   override def show: String = "as stream"
 }
 object ResponseAsStream {
   def apply[F[_], T, S](s: Streams[S])(
       f: (s.BinaryStream, ResponseMetadata) => F[T]
-  ): InternalResponseAs[T, Effect[F] with S] =
+  ): InternalResponseAs[T, S with Effect[F]] =
     new ResponseAsStream(s, f)
 }
 
@@ -63,11 +63,11 @@ case class ResponseAsFile(output: SttpFile) extends InternalResponseAs[SttpFile,
 
 sealed trait InternalWebSocketResponseAs[T, -R] extends InternalResponseAs[T, R]
 case class ResponseAsWebSocket[F[_], T](f: (WebSocket[F], ResponseMetadata) => F[T])
-    extends InternalWebSocketResponseAs[T, Effect[F] with WebSockets] {
+    extends InternalWebSocketResponseAs[T, WebSockets with Effect[F]] {
   override def show: String = "as web socket"
 }
 case class ResponseAsWebSocketUnsafe[F[_]]()
-    extends InternalWebSocketResponseAs[WebSocket[F], Effect[F] with WebSockets] {
+    extends InternalWebSocketResponseAs[WebSocket[F], WebSockets with Effect[F]] {
   override def show: String = "as web socket unsafe"
 }
 case class ResponseAsWebSocketStream[S, Pipe[_, _]](s: Streams[S], p: Pipe[WebSocketFrame.Data[_], WebSocketFrame])

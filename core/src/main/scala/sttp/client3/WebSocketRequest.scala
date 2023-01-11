@@ -29,7 +29,7 @@ final case class WebSocketRequest[F[_], T](
     response: WebSocketResponseAs[F, T],
     options: RequestOptions,
     tags: Map[String, Any]
-) extends AbstractRequest[T, Effect[F] with WebSockets]
+) extends AbstractRequest[T, WebSockets with Effect[F]]
     with RequestBuilder[WebSocketRequest[F, T]] {
 
   override def showBasic: String = s"$method(web socket) $uri"
@@ -43,6 +43,6 @@ final case class WebSocketRequest[F[_], T](
   def mapResponse[T2](f: T => T2): WebSocketRequest[F, T2] =
     copy(response = response.map(f))
 
-  def send(backend: SttpBackend[F, WebSockets]): F[Response[T]] =
+  def send(backend: WebSocketBackend[F]): F[Response[T]] =
     backend.send(this)
 }

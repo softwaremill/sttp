@@ -16,9 +16,8 @@ class IllTypedTests extends AnyFlatSpec with Matchers {
         """)
     }
 
-    thrown.getMessage should include(
-      "Cannot prove that Any with sttp.capabilities.Effect[[+X]sttp.client3.Identity[X]] <:< sttp.capabilities.Effect[[+X]sttp.client3.Identity[X]] with sttp.capabilities.WebSockets."
-    )
+    thrown.getMessage should include("found   : sttp.client3.SyncBackend")
+    thrown.getMessage should include("required: sttp.client3.WebSocketBackend[[+X]sttp.client3.Identity[X]]")
   }
 
   "compilation" should "fail when trying to send a request without giving an URL" in {
@@ -30,6 +29,8 @@ class IllTypedTests extends AnyFlatSpec with Matchers {
         """)
     }
 
-    thrown.getMessage should include("value send is not a member of sttp.client3.PartialRequest[Either[String,String]]")
+    thrown.getMessage should include(
+      "value send is not a member of sttp.client3.PartialRequest[Either[String,String]]"
+    )
   }
 }

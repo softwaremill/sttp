@@ -5,7 +5,7 @@ import sttp.client3.testing.{ConvertToFuture, HttpTest}
 import scala.concurrent.Future
 
 class HttpClientFutureHttpTest extends HttpTest[Future] {
-  override val backend: SttpBackend[Future, Any] = HttpClientFutureBackend()
+  override val backend: Backend[Future] = HttpClientFutureBackend()
   override implicit val convertToFuture: ConvertToFuture[Future] = ConvertToFuture.future
 
   override def supportsHostHeaderOverride = false

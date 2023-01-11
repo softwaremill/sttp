@@ -86,7 +86,19 @@ case class Request[T](
     * Known exceptions are converted by backends to one of [[SttpClientException]]. Other exceptions are thrown
     * unchanged.
     */
-  def send[F[_]](backend: SttpBackend[F, Any]): F[Response[T]] = backend.send(this)
+  def send[F[_]](backend: Backend[F]): F[Response[T]] = backend.send(this)
+
+  /** Sends the request synchronously, using the given backend.
+    *
+    * @return
+    *   [[Response]] is returned directly and exceptions are thrown.
+    *
+    * The response body is deserialized as specified by this request (see [[Request.response]]).
+    *
+    * Known exceptions are converted by backends to one of [[SttpClientException]]. Other exceptions are thrown
+    * unchanged.
+    */
+  def send(backend: SyncBackend): Response[T] = backend.send(this)
 }
 
 object Request {

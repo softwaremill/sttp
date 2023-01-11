@@ -1,32 +1,25 @@
 package sttp.client3
 
 import sttp.capabilities.Effect
-import sttp.model.{Method, StatusCode, _}
+import sttp.model._
 
 /** @param transformUri
   *   Defines if and how [[Uri]] s from the `Location` header should be transformed. For example, this enables changing
   *   the encoding of host, path, query and fragment segments to be more strict or relaxed.
   */
-class FollowRedirectsBackend[F[_], P](
-    delegate: SttpBackend[F, P],
-    contentHeaders: Set[String] = HeaderNames.ContentHeaders,
-    sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders,
-    transformUri: Uri => Uri = FollowRedirectsBackend.DefaultUriTransform
-) extends DelegateSttpBackend[F, P](delegate) {
+abstract class FollowRedirectsBackend[F[_], P] private (
+    delegate: AbstractBackend[F, P],
+    config: FollowRedirectsConfig
+) extends DelegateSttpBackend(delegate) {
 
-  // this is needed to maintain binary compatibility with 3.3.14 and earlier
-  def this(delegate: SttpBackend[F, P], contentHeaders: Set[String], sensitiveHeaders: Set[String]) =
-    this(delegate, contentHeaders, sensitiveHeaders, FollowRedirectsBackend.DefaultUriTransform)
+  type R = P with Effect[F]
 
-  type PE = P with Effect[F]
-
-  override def send[T, R >: PE](request: AbstractRequest[T, R]): F[Response[T]] = {
+  override def internalSend[T](request: AbstractRequest[T, R]): F[Response[T]] =
     sendWithCounter(request, 0)
-  }
 
-  private def sendWithCounter[T, R >: PE](request: AbstractRequest[T, R], redirects: Int): F[Response[T]] = {
+  protected def sendWithCounter[T](request: AbstractRequest[T, R], redirects: Int): F[Response[T]] = {
     // if there are nested follow redirect backends, disabling them and handling redirects here
-    val resp = delegate.send(request.followRedirects(false))
+    val resp = delegate.internalSend(request.followRedirects(false))
     if (request.options.followRedirects) {
       responseMonad.flatMap(resp) { (response: Response[T]) =>
         if (response.isRedirect) {
@@ -40,7 +33,7 @@ class FollowRedirectsBackend[F[_], P](
     }
   }
 
-  private def followRedirect[T, R >: PE](
+  private def followRedirect[T](
       request: AbstractRequest[T, R],
       response: Response[T],
       redirects: Int
@@ -54,23 +47,21 @@ class FollowRedirectsBackend[F[_], P](
     }
   }
 
-  private def followRedirect[T, R >: PE](
+  private def followRedirect[T](
       request: AbstractRequest[T, R],
       response: Response[T],
       redirects: Int,
       loc: String
   ): F[Response[T]] = {
-    val uri = if (FollowRedirectsBackend.isRelative(loc)) {
-      transformUri(request.uri.resolve(uri"$loc"))
-    } else {
-      transformUri(uri"$loc")
-    }
+    val uri =
+      if (FollowRedirectsBackend.isRelative(loc)) config.transformUri(request.uri.resolve(uri"$loc"))
+      else config.transformUri(uri"$loc")
 
     val redirectResponse =
-      ((stripSensitiveHeaders[T, R](_)) andThen
-        (changePostPutToGet[T, R](_, response.code)) andThen
+      ((stripSensitiveHeaders[T](_)) andThen
+        (changePostPutToGet[T](_, response.code)) andThen
         (sendWithCounter(_, redirects + 1)))
-        .apply(request.method(method = request.method, uri = uri))
+        .apply(request.method(request.method, uri = uri))
 
     responseMonad.map(redirectResponse) { rr =>
       val responseNoBody = response.copy(body = ())
@@ -78,13 +69,13 @@ class FollowRedirectsBackend[F[_], P](
     }
   }
 
-  private def stripSensitiveHeaders[T, R](request: AbstractRequest[T, R]): AbstractRequest[T, R] = {
+  private def stripSensitiveHeaders[T](request: AbstractRequest[T, R]): AbstractRequest[T, R] = {
     request.withHeaders(
-      request.headers.filterNot(h => sensitiveHeaders.contains(h.name.toLowerCase()))
+      request.headers.filterNot(h => config.sensitiveHeaders.contains(h.name.toLowerCase()))
     )
   }
 
-  private def changePostPutToGet[T, R](r: AbstractRequest[T, R], statusCode: StatusCode): AbstractRequest[T, R] = {
+  private def changePostPutToGet[T](r: AbstractRequest[T, R], statusCode: StatusCode): AbstractRequest[T, R] = {
     val applicable = r.method == Method.POST || r.method == Method.PUT
     val alwaysChanged = statusCode == StatusCode.SeeOther
     val neverChanged = statusCode == StatusCode.TemporaryRedirect || statusCode == StatusCode.PermanentRedirect
@@ -92,12 +83,45 @@ class FollowRedirectsBackend[F[_], P](
       // when transforming POST or PUT into a get, content is dropped, also filter out content-related request headers
       r.method(Method.GET, r.uri)
         .withBody(NoBody)
-        .withHeaders(r.headers.filterNot(header => contentHeaders.contains(header.name.toLowerCase())))
+        .withHeaders(r.headers.filterNot(header => config.contentHeaders.contains(header.name.toLowerCase())))
     } else r
   }
 }
 
 object FollowRedirectsBackend {
+  def apply(delegate: SyncBackend): SyncBackend =
+    apply(delegate, FollowRedirectsConfig.Default)
+
+  def apply[F[_]](delegate: Backend[F]): Backend[F] =
+    apply(delegate, FollowRedirectsConfig.Default)
+
+  def apply[F[_]](delegate: WebSocketBackend[F]): WebSocketBackend[F] =
+    apply(delegate, FollowRedirectsConfig.Default)
+
+  def apply[F[_], S](delegate: StreamBackend[F, S]): StreamBackend[F, S] =
+    apply(delegate, FollowRedirectsConfig.Default)
+
+  def apply[F[_], S](delegate: WebSocketStreamBackend[F, S]): WebSocketStreamBackend[F, S] =
+    apply(delegate, FollowRedirectsConfig.Default)
+
+  def apply(delegate: SyncBackend, config: FollowRedirectsConfig): SyncBackend =
+    new FollowRedirectsBackend(delegate, config) with SyncBackend {}
+
+  def apply[F[_]](delegate: Backend[F], config: FollowRedirectsConfig): Backend[F] =
+    new FollowRedirectsBackend(delegate, config) with Backend[F] {}
+
+  def apply[F[_]](delegate: WebSocketBackend[F], config: FollowRedirectsConfig): WebSocketBackend[F] =
+    new FollowRedirectsBackend(delegate, config) with WebSocketBackend[F] {}
+
+  def apply[F[_], S](delegate: StreamBackend[F, S], config: FollowRedirectsConfig): StreamBackend[F, S] =
+    new FollowRedirectsBackend(delegate, config) with StreamBackend[F, S] {}
+
+  def apply[F[_], S](
+      delegate: WebSocketStreamBackend[F, S],
+      config: FollowRedirectsConfig
+  ): WebSocketStreamBackend[F, S] =
+    new FollowRedirectsBackend(delegate, config) with WebSocketStreamBackend[F, S] {}
+
   private[client3] val MaxRedirects = 32
 
   private val protocol = "^[a-z]+://.*".r
@@ -112,3 +136,13 @@ object FollowRedirectsBackend {
 }
 
 case class TooManyRedirectsException(uri: Uri, redirects: Int) extends Exception
+
+case class FollowRedirectsConfig(
+    contentHeaders: Set[String] = HeaderNames.ContentHeaders,
+    sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders,
+    transformUri: Uri => Uri = FollowRedirectsBackend.DefaultUriTransform
+)
+
+object FollowRedirectsConfig {
+  val Default = FollowRedirectsConfig()
+}

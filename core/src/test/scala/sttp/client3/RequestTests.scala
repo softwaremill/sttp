@@ -39,12 +39,11 @@ class RequestTests extends AnyFlatSpec with Matchers {
     val asLeft: ResponseAs[Left[String, String]] = asStringAlways.map(Left(_))
     val asRight: ResponseAs[Right[String, String]] = asStringAlways.map(Right(_))
 
-    def myRequest: Request[Either[String, String]] =
-      basicRequest
-        .get(uri"https://test.com")
-        .response {
-          fromMetadata(asRight, ConditionalResponseAs(_.code == StatusCode.Ok, asLeft))
-        }
+    basicRequest
+      .get(uri"https://test.com")
+      .response {
+        fromMetadata(asRight, ConditionalResponseAs(_.code == StatusCode.Ok, asLeft))
+      }
   }
 
   "show" should "give meaningful information" in {

@@ -1,10 +1,13 @@
 package sttp.client3
 
-import sttp.capabilities._
 import sttp.monad.MonadError
+import sttp.capabilities.Effect
 
-/** A backend is used to send HTTP requests described by [[RequestT]]. Backends might wrap Java or Scala HTTP clients,
-  * or other backends.
+/** The common ancestor of all sttp backends.
+  *
+  * An [[AbstractBackend]] cannot be used directly as it does not contain any public method to send a request. You
+  * should use an instance of [[SyncBackend]], [[Backend]], [[WebSocketBackend]], [[StreamBackend]] or
+  * [[WebSocketStreamBackend]] instead.
   *
   * @note
   *   Backends should try to classify exceptions into one of the categories specified by [[SttpClientException]]. Other
@@ -17,13 +20,9 @@ import sttp.monad.MonadError
   *   [[Streams]] (the ability to send and receive streaming bodies) or [[WebSockets]] (the ability to handle websocket
   *   requests).
   */
-trait SttpBackend[F[_], +P] {
+trait AbstractBackend[F[_], +P] {
 
-  /** @tparam R
-    *   The capabilities required by the request. This must be a subset of the the capabilities supported by the backend
-    *   (which always includes `Effect[F]`).
-    */
-  def send[T, R >: P with Effect[F]](request: AbstractRequest[T, R]): F[Response[T]]
+  def internalSend[T](request: AbstractRequest[T, P with Effect[F]]): F[Response[T]]
 
   def close(): F[Unit]
 

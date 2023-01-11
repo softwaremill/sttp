@@ -6,7 +6,6 @@ import java.util.concurrent.TimeoutException
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import sttp.capabilities.WebSockets
 import sttp.client3._
 import sttp.client3.internal._
 import sttp.client3.monad.IdMonad
@@ -20,8 +19,8 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
 
-class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
-  private val testingStub = SttpBackendStub[Identity, Any](IdMonad)
+class BackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
+  private val testingStub = SyncBackendStub
     .whenRequestMatches(_.uri.path.startsWith(List("a", "b")))
     .thenRespondOk()
     .whenRequestMatches(_.uri.paramsMap.get("p").contains("v"))
@@ -86,7 +85,7 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
   }
 
   it should "wrap exceptions in the desired monad" in {
-    val backend = SttpBackendStub[Try, Any](TryMonad)
+    val backend: Backend[Try] = BackendStub(TryMonad)
     val r = basicRequest.post(uri"http://example.org").send(backend)
     r match {
       case Failure(_: IllegalArgumentException) => succeed
@@ -106,7 +105,7 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
   }
 
   it should "handle exceptions thrown instead of a response (synchronous)" in {
-    val backend = SttpBackendStub[Identity, Any](IdMonad)
+    val backend = SyncBackendStub
       .whenRequestMatches(_ => true)
       .thenRespond(throw new TimeoutException())
 
@@ -116,7 +115,7 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
   }
 
   it should "handle exceptions thrown instead of a response (asynchronous)" in {
-    val backend: SttpBackendStub[Future, Any] = SttpBackendStub(new FutureMonad())
+    val backend: Backend[Future] = BackendStub(new FutureMonad())
       .whenRequestMatches(_ => true)
       .thenRespond(throw new TimeoutException())
 
@@ -125,7 +124,7 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
   }
 
   it should "try to convert a basic response to a mapped one" in {
-    val backend = SttpBackendStub[Identity, Any](IdMonad)
+    val backend = SyncBackendStub
       .whenRequestMatches(_ => true)
       .thenRespond("10")
 
@@ -139,7 +138,7 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
   }
 
   it should "handle a 201 as a success" in {
-    val backend = SttpBackendStub[Identity, Any](IdMonad).whenAnyRequest
+    val backend = SyncBackendStub.whenAnyRequest
       .thenRespondWithCode(StatusCode.Created)
 
     val result = basicRequest
@@ -150,7 +149,7 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
   }
 
   it should "handle a 300 as a failure" in {
-    val backend = SttpBackendStub[Identity, Any](IdMonad).whenAnyRequest
+    val backend = SyncBackendStub.whenAnyRequest
       .thenRespondWithCode(StatusCode.MultipleChoices)
 
     val result = basicRequest
@@ -161,7 +160,7 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
   }
 
   it should "handle a 400 as a failure" in {
-    val backend = SttpBackendStub[Identity, Any](IdMonad).whenAnyRequest
+    val backend = SyncBackendStub.whenAnyRequest
       .thenRespondWithCode(StatusCode.BadRequest)
 
     val result = basicRequest
@@ -172,7 +171,7 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
   }
 
   it should "handle a 500 as a failure" in {
-    val backend = SttpBackendStub[Identity, Any](IdMonad).whenAnyRequest
+    val backend = SyncBackendStub.whenAnyRequest
       .thenRespondWithCode(StatusCode.InternalServerError)
 
     val result = basicRequest
@@ -187,7 +186,7 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
     val LongTimeMillis = LongTime.toMillis
     val before = System.currentTimeMillis()
 
-    val backend: SttpBackendStub[Future, Any] = SttpBackendStub(new FutureMonad()).whenAnyRequest
+    val backend = BackendStub(new FutureMonad()).whenAnyRequest
       .thenRespondF(Platform.delayedFuture(LongTime) {
         Response(Right("OK"), StatusCode.Ok, "")
       })
@@ -202,7 +201,7 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
   }
 
   it should "serve consecutive raw responses" in {
-    val backend: SttpBackend[Identity, Any] = SttpBackendStub(IdMonad).whenAnyRequest
+    val backend = SyncBackendStub.whenAnyRequest
       .thenRespondCyclic("first", "second", "third")
 
     basicRequest.get(uri"http://example.org").send(backend).body should be(Right("first"))
@@ -212,7 +211,7 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
   }
 
   it should "serve consecutive responses" in {
-    val backend: SttpBackend[Identity, Any] = SttpBackendStub(IdMonad).whenAnyRequest
+    val backend = SyncBackendStub.whenAnyRequest
       .thenRespondCyclicResponses(
         Response.ok[String]("first"),
         Response("error", StatusCode.InternalServerError, "Something went wrong")
@@ -226,7 +225,7 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
   }
 
   it should "always return a string when requested to do so" in {
-    val backend: SttpBackend[Identity, Any] = SttpBackendStub.synchronous.whenAnyRequest
+    val backend: SyncBackend = BackendStub.synchronous.whenAnyRequest
       .thenRespondServerError()
 
     basicRequest
@@ -237,7 +236,7 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
   }
 
   it should "return both responses when requested to do so" in {
-    val backend = SttpBackendStub.synchronous.whenAnyRequest.thenRespond("1234")
+    val backend = BackendStub.synchronous.whenAnyRequest.thenRespond("1234")
     basicRequest
       .get(uri"http://example.org")
       .response(asBoth(asString.mapRight(_.toInt), asStringAlways))
@@ -246,7 +245,7 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
   }
 
   it should "return a web socket, given a stub, for an unsafe websocket-always request" in {
-    val backend: SttpBackend[Identity, WebSockets] = SttpBackendStub.synchronous.whenAnyRequest
+    val backend = WebSocketBackendStub.synchronous.whenAnyRequest
       .thenRespond(WebSocketStub.initialReceive(List(WebSocketFrame.text("hello"))))
 
     val ws = basicRequest
@@ -259,7 +258,7 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
   }
 
   it should "return a web socket, given a stub, for a safe websocket-always request" in {
-    val backend: SttpBackend[Identity, WebSockets] = SttpBackendStub.synchronous.whenAnyRequest
+    val backend: WebSocketBackend[Identity] = WebSocketBackendStub.synchronous.whenAnyRequest
       .thenRespond(WebSocketStub.initialReceive(List(WebSocketFrame.text("hello"))))
 
     val frame = basicRequest
@@ -272,7 +271,7 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
   }
 
   it should "return a web socket, given a web socket, for a safe websocket-always request" in {
-    val backend: SttpBackend[Identity, WebSockets] = SttpBackendStub.synchronous.whenAnyRequest
+    val backend: WebSocketBackend[Identity] = WebSocketBackendStub.synchronous.whenAnyRequest
       .thenRespond(WebSocketStub.initialReceive(List(WebSocketFrame.text("hello"))).build(IdMonad))
 
     val frame = basicRequest
@@ -285,7 +284,7 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
   }
 
   it should "return a web socket, given a web socket, for a safe websocket request" in {
-    val backend: SttpBackend[Identity, WebSockets] = SttpBackendStub.synchronous.whenAnyRequest
+    val backend: WebSocketBackend[Identity] = WebSocketBackendStub.synchronous.whenAnyRequest
       .thenRespond(
         WebSocketStub.initialReceive(List(WebSocketFrame.text("hello"))).build(IdMonad),
         if (TestPlatform.Current == TestPlatform.JS) StatusCode.Ok else StatusCode.SwitchingProtocols
@@ -301,7 +300,7 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
   }
 
   it should "return a web socket, given a web socket, for a safe websocket request using the Try monad" in {
-    val backend: SttpBackend[Try, WebSockets] = SttpBackendStub[Try, WebSockets](TryMonad).whenAnyRequest
+    val backend: WebSocketBackend[Try] = WebSocketBackendStub(TryMonad).whenAnyRequest
       .thenRespond(
         WebSocketStub.initialReceive(List(WebSocketFrame.text("hello"))).build(TryMonad),
         if (TestPlatform.Current == TestPlatform.JS) StatusCode.Ok else StatusCode.SwitchingProtocols
@@ -317,8 +316,8 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
   }
 
   it should "return a stream, given a stream, for a unsafe stream request" in {
-    val backend: SttpBackend[Identity, TestStreams] = SttpBackendStub[Identity, TestStreams](IdMonad).whenAnyRequest
-      .thenRespond(SttpBackendStub.RawStream(List(1: Byte)))
+    val backend: StreamBackend[Identity, TestStreams] =
+      StreamBackendStub.synchronous[TestStreams].whenAnyRequest.thenRespond(RawStream(List(1: Byte)))
 
     val result = basicRequest
       .get(uri"http://example.org")
@@ -330,8 +329,8 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
   }
 
   it should "return a stream, given a stream, for a safe stream request" in {
-    val backend: SttpBackend[Identity, TestStreams] = SttpBackendStub[Identity, TestStreams](IdMonad).whenAnyRequest
-      .thenRespond(SttpBackendStub.RawStream(List(1: Byte)))
+    val backend: StreamBackend[Identity, TestStreams] =
+      StreamBackendStub.synchronous[TestStreams].whenAnyRequest.thenRespond(RawStream(List(1: Byte)))
 
     val result = basicRequest
       .get(uri"http://example.org")
@@ -343,8 +342,8 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
   }
 
   it should "return a stream, given a stream, for a safe stream request using the Try monad" in {
-    val backend: SttpBackend[Try, TestStreams] = SttpBackendStub[Try, TestStreams](TryMonad).whenAnyRequest
-      .thenRespond(SttpBackendStub.RawStream(List(1: Byte)))
+    val backend: StreamBackend[Try, TestStreams] =
+      StreamBackendStub[Try, TestStreams](TryMonad).whenAnyRequest.thenRespond(RawStream(List(1: Byte)))
 
     val result = basicRequest
       .get(uri"http://example.org")
@@ -355,8 +354,8 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
     result shouldBe Success(Right(1: Byte))
   }
 
-  private val testingStubWithFallback = SttpBackendStub
-    .withFallback[Identity, Any, Any](testingStub)
+  private val testingStubWithFallback = SyncBackendStub
+    .withFallback(testingStub)
     .whenRequestMatches(_.uri.path.startsWith(List("c")))
     .thenRespond("ok")
 
@@ -392,7 +391,7 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
     (body, responseAs, expectedResult) <- adjustTestData
   } {
     it should s"adjust $body to $expectedResult when specified as $responseAs" in {
-      SttpBackendStub.tryAdjustResponseBody(
+      AbstractBackendStub.tryAdjustResponseBody(
         responseAs.internal,
         body,
         ResponseMetadata(StatusCode.Ok, "", Nil)

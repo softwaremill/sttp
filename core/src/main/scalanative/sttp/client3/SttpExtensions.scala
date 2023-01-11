@@ -21,15 +21,13 @@ trait SttpExtensions {
     *
     * File name will be set to the name of the file.
     */
-  def multipartFile(name: String, data: File): Part[BasicBodyPart] =
-    multipartSttpFile(name, SttpFile.fromFile(data))
+  def multipartFile(name: String, data: File): Part[BasicBodyPart] = multipartSttpFile(name, SttpFile.fromFile(data))
 
   /** Content type will be set to `application/octet-stream`, can be overridden later using the `contentType` method.
     *
     * File name will be set to the name of the file.
     */
-  def multipartFile(name: String, data: Path): Part[BasicBodyPart] =
-    multipartSttpFile(name, SttpFile.fromPath(data))
+  def multipartFile(name: String, data: Path): Part[BasicBodyPart] = multipartSttpFile(name, SttpFile.fromPath(data))
 }
 
 object SttpExtensions {

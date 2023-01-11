@@ -23,6 +23,5 @@ class StreamResponseAs[+T, S](private[client3] val internal: InternalResponseAs[
   def mapWithMetadata[T2](f: (T, ResponseMetadata) => T2): StreamResponseAs[T2, S] =
     new StreamResponseAs(internal.mapWithMetadata(f))
 
-  def show: String = internal.show
   def showAs(s: String): StreamResponseAs[T, S] = new StreamResponseAs(internal.showAs(s))
 }

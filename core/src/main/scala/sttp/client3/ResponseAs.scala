@@ -20,7 +20,6 @@ class ResponseAs[+T](private[client3] val internal: InternalResponseAs[T, Any]) 
   def map[T2](f: T => T2): ResponseAs[T2] = new ResponseAs(internal.mapWithMetadata { case (t, _) => f(t) })
   def mapWithMetadata[T2](f: (T, ResponseMetadata) => T2): ResponseAs[T2] = new ResponseAs(internal.mapWithMetadata(f))
 
-  def show: String = internal.show
   def showAs(s: String): ResponseAs[T] = new ResponseAs(internal.showAs(s))
 }
 

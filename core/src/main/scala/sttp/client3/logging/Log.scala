@@ -1,7 +1,7 @@
 package sttp.client3.logging
 
 import sttp.client3.{AbstractRequest, HttpError, Response}
-import sttp.model.{HeaderNames, StatusCode}
+import sttp.model.StatusCode
 
 import scala.concurrent.duration.Duration
 
@@ -22,19 +22,36 @@ trait Log[F[_]] {
   ): F[Unit]
 }
 
+object Log {
+  def default[F[_]](
+      logger: Logger[F],
+      config: LogConfig
+  ): Log[F] = new DefaultLog(
+    logger,
+    config.beforeCurlInsteadOfShow,
+    config.logRequestBody,
+    config.logRequestHeaders,
+    config.logResponseHeaders,
+    config.sensitiveHeaders,
+    config.beforeRequestSendLogLevel,
+    config.responseLogLevel,
+    config.responseExceptionLogLevel
+  )
+}
+
 /** Default implementation of [[Log]] to be used by the [[LoggingBackend]]. Creates default log messages and delegates
   * them to the given [[Logger]].
   */
 class DefaultLog[F[_]](
     logger: Logger[F],
-    beforeCurlInsteadOfShow: Boolean = false,
-    logRequestBody: Boolean = false,
-    logRequestHeaders: Boolean = true,
-    logResponseHeaders: Boolean = true,
-    sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders,
-    beforeRequestSendLogLevel: LogLevel = LogLevel.Debug,
-    responseLogLevel: StatusCode => LogLevel = DefaultLog.defaultResponseLogLevel,
-    responseExceptionLogLevel: LogLevel = LogLevel.Error
+    beforeCurlInsteadOfShow: Boolean,
+    logRequestBody: Boolean,
+    logRequestHeaders: Boolean,
+    logResponseHeaders: Boolean,
+    sensitiveHeaders: Set[String],
+    beforeRequestSendLogLevel: LogLevel,
+    responseLogLevel: StatusCode => LogLevel,
+    responseExceptionLogLevel: LogLevel
 ) extends Log[F] {
 
   def beforeRequestSend(request: AbstractRequest[_, _]): F[Unit] =

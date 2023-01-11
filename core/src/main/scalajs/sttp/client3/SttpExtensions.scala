@@ -6,8 +6,7 @@ import sttp.client3.internal.ResponseAsFile
 import sttp.model.{Part, StatusCode}
 
 trait SttpExtensions {
-  def asFile(file: File): ResponseAs[Either[String, File]] =
-    asEither(asStringAlways, asFileAlways(file))
+  def asFile(file: File): ResponseAs[Either[String, File]] = asEither(asStringAlways, asFileAlways(file))
 
   def asFileAlways(file: File): ResponseAs[File] =
     new ResponseAs(ResponseAsFile(SttpFile.fromDomFile(file)).map(_.toDomFile))

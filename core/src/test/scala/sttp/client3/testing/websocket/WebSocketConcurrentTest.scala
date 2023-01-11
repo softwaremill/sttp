@@ -2,7 +2,6 @@ package sttp.client3.testing.websocket
 
 import org.scalatest.Suite
 import org.scalatest.flatspec.AsyncFlatSpecLike
-import sttp.capabilities.WebSockets
 import sttp.client3._
 import sttp.client3.testing.ConvertToFuture
 import sttp.client3.testing.HttpTest.wsEndpoint
@@ -11,7 +10,6 @@ import sttp.monad.syntax._
 import sttp.ws.WebSocket
 
 trait WebSocketConcurrentTest[F[_]] { outer: Suite with AsyncFlatSpecLike with WebSocketTest[F] =>
-  val backend: SttpBackend[F, WebSockets]
   implicit def monad: MonadError[F]
   implicit val convertToFuture: ConvertToFuture[F]
 

@@ -23,6 +23,5 @@ class WebSocketResponseAs[F[_], +T](private[client3] val internal: InternalRespo
   def mapWithMetadata[T2](f: (T, ResponseMetadata) => T2): WebSocketResponseAs[F, T2] =
     new WebSocketResponseAs(internal.mapWithMetadata(f))
 
-  def show: String = internal.show
   def showAs(s: String): WebSocketResponseAs[F, T] = new WebSocketResponseAs(internal.showAs(s))
 }

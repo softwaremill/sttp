@@ -6,7 +6,7 @@ import scala.util.Try
 
 class TryHttpURLConnectionHttpTest extends HttpTest[Try] {
 
-  override val backend: SttpBackend[Try, Any] = TryHttpURLConnectionBackend()
+  override val backend: Backend[Try] = TryHttpURLConnectionBackend()
   override implicit val convertToFuture: ConvertToFuture[Try] = ConvertToFuture.scalaTry
 
   override def supportsCancellation = false

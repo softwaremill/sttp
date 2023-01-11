@@ -5,10 +5,9 @@ import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.{Seconds, Span}
 import org.scalatest.{Assertion, BeforeAndAfterAll}
-import sttp.capabilities.WebSockets
 import sttp.client3.SttpClientException.ReadException
 import sttp.client3._
-import sttp.client3.logging.{LogLevel, Logger, LoggingBackend}
+import sttp.client3.logging.{LogConfig, LogLevel, Logger, LoggingBackend}
 import sttp.client3.testing.HttpTest.wsEndpoint
 import sttp.client3.testing.{ConvertToFuture, ToFutureWrapper}
 import sttp.monad.MonadError
@@ -24,7 +23,7 @@ abstract class WebSocketTest[F[_]]
     with ToFutureWrapper
     with TimeLimits {
 
-  val backend: SttpBackend[F, WebSockets]
+  val backend: WebSocketBackend[F]
   implicit val convertToFuture: ConvertToFuture[F]
   implicit def monad: MonadError[F]
 
@@ -188,7 +187,7 @@ abstract class WebSocketTest[F[_]]
 
   it should "work with LoggingBackend with logResponseBody" in {
     val logger = new TestLogger()
-    val loggingBackend = LoggingBackend(backend, logger, logResponseBody = true)
+    val loggingBackend = LoggingBackend(backend, logger, LogConfig(logResponseBody = true))
     basicRequest
       .get(uri"$wsEndpoint/ws/echo")
       .response(asWebSocketAlways { (ws: WebSocket[F]) =>

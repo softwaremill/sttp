@@ -58,20 +58,22 @@ final case class FetchOptions(
   * @see
   *   https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API
   */
-abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
+abstract class AbstractFetchBackend[F[_], S <: Streams[S]](
     options: FetchOptions,
     customizeRequest: FetchRequest => FetchRequest,
     monad: MonadError[F]
-) extends SttpBackend[F, P] {
+) extends AbstractBackend[F, S with WebSockets]
+    with WebSocketBackend[F] {
   override implicit def responseMonad: MonadError[F] = monad
 
   val streams: Streams[S]
-  type PE = P with Effect[F] with WebSockets
 
-  override def send[T, R >: PE](request: AbstractRequest[T, R]): F[Response[T]] =
+  type R = S with WebSockets with Effect[F]
+
+  override def internalSend[T](request: AbstractRequest[T, R]): F[Response[T]] =
     if (request.isWebSocket) sendWebSocket(request) else sendRegular(request)
 
-  private def sendRegular[T, R >: PE](request: AbstractRequest[T, R]): F[Response[T]] = {
+  private def sendRegular[T](request: AbstractRequest[T, R]): F[Response[T]] = {
     // https://stackoverflow.com/q/31061838/4094860
     val readTimeout = request.options.readTimeout
     val (signal, cancelTimeout) = readTimeout match {
@@ -176,7 +178,7 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
       .toList
   }
 
-  private def createBody[R >: PE](body: AbstractBody[R]): F[js.UndefOr[BodyInit]] = {
+  private def createBody(body: AbstractBody[R]): F[js.UndefOr[BodyInit]] = {
     body match {
       case NoBody =>
         responseMonad.unit(js.undefined) // skip
@@ -240,7 +242,7 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
     b
   }
 
-  private def sendWebSocket[T, R >: PE](request: AbstractRequest[T, R]): F[Response[T]] = {
+  private def sendWebSocket[T](request: AbstractRequest[T, R]): F[Response[T]] = {
     val queue = new JSSimpleQueue[F, WebSocketEvent]
     val ws = new JSWebSocket(request.uri.toString)
     ws.binaryType = BinaryType

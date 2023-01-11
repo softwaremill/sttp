@@ -7,17 +7,17 @@ import java.nio.charset.CharacterCodingException
 import java.nio.file.Files
 import java.util.concurrent.ThreadLocalRandom
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
-import sttp.capabilities.Effect
 import sttp.client3.HttpURLConnectionBackend.EncodingHandler
 import sttp.client3.internal._
 import sttp.client3.monad.IdMonad
-import sttp.client3.testing.SttpBackendStub
+import sttp.client3.testing.SyncBackendStub
 import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.model.{Header, HeaderNames, ResponseMetadata, StatusCode, Uri}
 import sttp.monad.MonadError
 
 import scala.collection.JavaConverters._
 import scala.concurrent.duration.Duration
+import sttp.capabilities.Effect
 
 class HttpURLConnectionBackend private (
     opts: SttpBackendOptions,
@@ -25,8 +25,10 @@ class HttpURLConnectionBackend private (
     createURL: String => URL,
     openConnection: (URL, Option[java.net.Proxy]) => URLConnection,
     customEncodingHandler: EncodingHandler
-) extends SttpBackend[Identity, Any] {
-  override def send[T, R >: Any with Effect[Identity]](r: AbstractRequest[T, R]): Response[T] =
+) extends SyncBackend {
+  type R = Any with Effect[Identity]
+
+  override def internalSend[T](r: AbstractRequest[T, R]): Response[T] =
     adjustExceptions(r) {
       val c = openConnection(r.uri)
       c.setRequestMethod(r.method.method)
@@ -84,7 +86,7 @@ class HttpURLConnectionBackend private (
     conn.asInstanceOf[HttpURLConnection]
   }
 
-  private def writeBody(r: AbstractRequest[_, Nothing], c: HttpURLConnection): Option[OutputStream] = {
+  private def writeBody(r: AbstractRequest[_, R], c: HttpURLConnection): Option[OutputStream] = {
     r.body match {
       case NoBody =>
         // skip
@@ -95,11 +97,11 @@ class HttpURLConnectionBackend private (
         writeBasicBody(b, os)
         Some(os)
 
-      case StreamBody(_) =>
+      case StreamBody(_) | MultipartStreamBody(_) =>
         // we have an instance of nothing - everything's possible!
         None
 
-      case mp: MultipartBody[Nothing] =>
+      case mp: BasicMultipartBody =>
         setMultipartBody(r, mp, c)
     }
   }
@@ -136,8 +138,8 @@ class HttpURLConnectionBackend private (
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".toCharArray
 
   private def setMultipartBody(
-      r: AbstractRequest[_, Nothing],
-      mp: MultipartBody[Nothing],
+      r: AbstractRequest[_, R],
+      mp: BasicMultipartBody,
       c: HttpURLConnection
   ): Option[OutputStream] = {
     val boundary = {
@@ -172,7 +174,6 @@ class HttpURLConnectionBackend private (
           case ByteBufferBody(_, _)  => None
           case InputStreamBody(_, _) => None
           case FileBody(b, _)        => Some(b.toFile.length())
-          case StreamBody(_)         => None
         }
 
         val headersLen = headers.getBytes(Iso88591).length
@@ -207,10 +208,7 @@ class HttpURLConnectionBackend private (
       writeMeta(headers)
       writeMeta(CrLf)
       writeMeta(CrLf)
-      p.body match {
-        case body: BasicBodyPart => writeBasicBody(body, os)
-        case StreamBody(_)       => // not possible
-      }
+      writeBasicBody(p.body, os)
       writeMeta(CrLf)
     }
 
@@ -226,7 +224,7 @@ class HttpURLConnectionBackend private (
   private def readResponse[T](
       c: HttpURLConnection,
       is: InputStream,
-      request: AbstractRequest[T, Nothing]
+      request: AbstractRequest[T, R]
   ): Response[T] = {
     val headers = c.getHeaderFields.asScala.toVector
       .filter(_._1 != null)
@@ -287,7 +285,7 @@ class HttpURLConnectionBackend private (
         throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
     }
 
-  private def adjustExceptions[T](request: AbstractRequest[_, _])(t: => T): T =
+  private def adjustExceptions[T](request: AbstractRequest[_, R])(t: => T): T =
     SttpClientException.adjustExceptions(responseMonad)(t)(
       SttpClientException.defaultExceptionToSttpClientException(request, _)
     )
@@ -313,14 +311,12 @@ object HttpURLConnectionBackend {
         case (url, Some(proxy)) => url.openConnection(proxy)
       },
       customEncodingHandler: EncodingHandler = PartialFunction.empty
-  ): SttpBackend[Identity, Any] =
-    new FollowRedirectsBackend[Identity, Any](
+  ): SyncBackend =
+    FollowRedirectsBackend(
       new HttpURLConnectionBackend(options, customizeConnection, createURL, openConnection, customEncodingHandler)
     )
 
-  /** Create a stub backend for testing, which uses the [[Identity]] response wrapper, and doesn't support streaming.
-    *
-    * See [[SttpBackendStub]] for details on how to configure stub responses.
+  /** Create a stub backend for testing. See [[SyncBackendStub]] for details on how to configure stub responses.
     */
-  def stub: SttpBackendStub[Identity, Any] = SttpBackendStub.synchronous
+  def stub: SyncBackendStub = SyncBackendStub
 }

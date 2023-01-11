@@ -218,22 +218,22 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
 
   // stream response specifications
 
-  def asStream[F[+_], T, S](s: Streams[S])(
+  def asStream[F[_], T, S](s: Streams[S])(
       f: s.BinaryStream => F[T]
-  ): StreamResponseAs[Either[String, T], Effect[F] with S] =
+  ): StreamResponseAs[Either[String, T], S with Effect[F]] =
     asEither(asStringAlways, asStreamAlways(s)(f))
 
-  def asStreamWithMetadata[F[+_], T, S](s: Streams[S])(
+  def asStreamWithMetadata[F[_], T, S](s: Streams[S])(
       f: (s.BinaryStream, ResponseMetadata) => F[T]
-  ): StreamResponseAs[Either[String, T], Effect[F] with S] =
+  ): StreamResponseAs[Either[String, T], S with Effect[F]] =
     asEither(asStringAlways, asStreamAlwaysWithMetadata(s)(f))
 
-  def asStreamAlways[F[+_], T, S](s: Streams[S])(f: s.BinaryStream => F[T]): StreamResponseAs[T, Effect[F] with S] =
+  def asStreamAlways[F[_], T, S](s: Streams[S])(f: s.BinaryStream => F[T]): StreamResponseAs[T, S with Effect[F]] =
     asStreamAlwaysWithMetadata(s)((s, _) => f(s))
 
-  def asStreamAlwaysWithMetadata[F[+_], T, S](s: Streams[S])(
+  def asStreamAlwaysWithMetadata[F[_], T, S](s: Streams[S])(
       f: (s.BinaryStream, ResponseMetadata) => F[T]
-  ): StreamResponseAs[T, Effect[F] with S] = new StreamResponseAs(ResponseAsStream(s)(f))
+  ): StreamResponseAs[T, S with Effect[F]] = new StreamResponseAs(ResponseAsStream(s)(f))
 
   def asStreamUnsafe[S](s: Streams[S]): StreamResponseAs[Either[String, s.BinaryStream], S] =
     asEither(asStringAlways, asStreamAlwaysUnsafe(s))

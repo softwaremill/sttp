@@ -5,7 +5,7 @@ import sttp.client3.HttpClientSyncBackend.SyncEncodingHandler
 import sttp.client3.internal.NoStreams
 import sttp.client3.internal.httpclient.{BodyFromHttpClient, BodyToHttpClient, InputStreamBodyFromHttpClient}
 import sttp.client3.monad.IdMonad
-import sttp.client3.testing.SttpBackendStub
+import sttp.client3.testing.SyncBackendStub
 import sttp.monad.MonadError
 import sttp.ws.{WebSocket, WebSocketFrame}
 
@@ -24,11 +24,12 @@ class HttpClientSyncBackend private (
       client,
       closeClient,
       customEncodingHandler
-    ) {
+    )
+    with SyncBackend {
 
   override val streams: NoStreams = NoStreams
 
-  override def send[T, R >: PE](request: AbstractRequest[T, R]): Identity[Response[T]] =
+  override def internalSend[T](request: AbstractRequest[T, R]): Response[T] =
     adjustExceptions(request) {
       val jRequest = customizeRequest(convertRequest(request))
       val response = client.send(jRequest, BodyHandlers.ofInputStream())
@@ -37,7 +38,7 @@ class HttpClientSyncBackend private (
 
   override def responseMonad: MonadError[Identity] = IdMonad
 
-  private def adjustExceptions[T](request: AbstractRequest[_, _])(t: => T): T =
+  private def adjustExceptions[T](request: AbstractRequest[_, R])(t: => T): T =
     SttpClientException.adjustExceptions(responseMonad)(t)(
       SttpClientException.defaultExceptionToSttpClientException(request, _)
     )
@@ -76,16 +77,14 @@ object HttpClientSyncBackend {
       closeClient: Boolean,
       customizeRequest: HttpRequest => HttpRequest,
       customEncodingHandler: SyncEncodingHandler
-  ): SttpBackend[Identity, Any] =
-    new FollowRedirectsBackend(
-      new HttpClientSyncBackend(client, closeClient, customizeRequest, customEncodingHandler)
-    )
+  ): SyncBackend =
+    FollowRedirectsBackend(new HttpClientSyncBackend(client, closeClient, customizeRequest, customEncodingHandler))
 
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: SyncEncodingHandler = PartialFunction.empty
-  ): SttpBackend[Identity, Any] =
+  ): SyncBackend =
     HttpClientSyncBackend(
       HttpClientBackend.defaultClient(options, None),
       closeClient = true,
@@ -97,7 +96,7 @@ object HttpClientSyncBackend {
       client: HttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: SyncEncodingHandler = PartialFunction.empty
-  ): SttpBackend[Identity, Any] =
+  ): SyncBackend =
     HttpClientSyncBackend(
       client,
       closeClient = false,
@@ -105,9 +104,6 @@ object HttpClientSyncBackend {
       customEncodingHandler
     )
 
-  /** Create a stub backend for testing, which uses the [[Identity]] response wrapper, and doesn't support streaming.
-    *
-    * See [[SttpBackendStub]] for details on how to configure stub responses.
-    */
-  def stub: SttpBackendStub[Identity, Any] = SttpBackendStub.synchronous
+  /** Create a stub backend for testing. See [[SyncBackendStub]] for details on how to configure stub responses. */
+  def stub: SyncBackendStub = SyncBackendStub
 }

@@ -28,7 +28,7 @@ trait HttpTest[F[_]]
   protected val textFileMD5Hash = "b048a88ece8e4ec5eb386b8fc5006d13"
   protected val gzipFileMD5hash = "19dfb5e5c761d3a2c9b36cfcdafe24de"
 
-  val backend: SttpBackend[F, Any]
+  val backend: Backend[F]
   implicit val convertToFuture: ConvertToFuture[F]
 
   // should only be implemented in supportsCancellation == true

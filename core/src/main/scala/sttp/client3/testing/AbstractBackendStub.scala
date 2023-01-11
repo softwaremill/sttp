@@ -1,44 +1,29 @@
 package sttp.client3.testing
 
 import java.io.InputStream
-import sttp.capabilities.{Effect, WebSockets}
+import sttp.capabilities.Effect
 import sttp.client3.internal.{SttpFile, _}
-import sttp.client3.monad.IdMonad
-import sttp.client3.testing.SttpBackendStub._
+import sttp.client3.testing.AbstractBackendStub._
 import sttp.client3._
 import sttp.model.{ResponseMetadata, StatusCode}
-import sttp.monad.{FutureMonad, MonadError}
+import sttp.monad.MonadError
 import sttp.monad.syntax._
 import sttp.ws.WebSocket
 import sttp.ws.testing.WebSocketStub
 
-import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
-/** A stub backend to use in tests.
-  *
-  * The stub can be configured to respond with a given response if the request matches a predicate (see the
-  * [[whenRequestMatches()]] method).
-  *
-  * Note however, that this is not type-safe with respect to the type of the response body - the stub doesn't have a way
-  * to check if the type of the body in the configured response is the same as the one specified by the request. Some
-  * conversions will be attempted (e.g. from a `String` to a custom mapped type, as specified in the request, see the
-  * documentation for more details).
-  *
-  * For web socket requests, the stub can be configured to returned both custom [[WebSocket]] implementations, as well
-  * as [[WebSocketStub]] instances.
-  *
-  * For requests which return the response as a stream, if the stub should return a raw stream value (which should then
-  * be passed to the stream-consuming function, or mapped to another value), it should be wrapped with [[RawStream]].
-  *
-  * Predicates can match requests basing on the URI or headers. A [[ClassCastException]] might occur if for a given
-  * request, a response is specified with the incorrect or inconvertible body type.
-  */
-class SttpBackendStub[F[_], +P](
+abstract class AbstractBackendStub[F[_], P](
     monad: MonadError[F],
     matchers: PartialFunction[AbstractRequest[_, _], F[Response[_]]],
-    fallback: Option[SttpBackend[F, P]]
-) extends SttpBackend[F, P] {
+    fallback: Option[AbstractBackend[F, P]]
+) extends AbstractBackend[F, P] {
+
+  type Self
+
+  protected def withMatchers(matchers: PartialFunction[AbstractRequest[_, _], F[Response[_]]]): Self
+
+  override def responseMonad: MonadError[F] = monad
 
   /** Specify how the stub backend should respond to requests matching the given predicate.
     *
@@ -57,22 +42,20 @@ class SttpBackendStub[F[_], +P](
     *
     * Note that the stubs are immutable, and each new specification that is added yields a new stub instance.
     */
-  def whenRequestMatchesPartial(
-      partial: PartialFunction[AbstractRequest[_, _], Response[_]]
-  ): SttpBackendStub[F, P] = {
+  def whenRequestMatchesPartial(partial: PartialFunction[AbstractRequest[_, _], Response[_]]): Self = {
     val wrappedPartial: PartialFunction[AbstractRequest[_, _], F[Response[_]]] =
       partial.andThen((r: Response[_]) => monad.unit(r))
-    new SttpBackendStub[F, P](monad, matchers.orElse(wrappedPartial), fallback)
+    withMatchers(matchers.orElse(wrappedPartial))
   }
 
-  override def send[T, R >: P with Effect[F]](request: AbstractRequest[T, R]): F[Response[T]] = {
+  override def internalSend[T](request: AbstractRequest[T, P with Effect[F]]): F[Response[T]] = {
     Try(matchers.lift(request)) match {
       case Success(Some(response)) =>
         tryAdjustResponseType(request.response, response.asInstanceOf[F[Response[T]]])(monad)
       case Success(None) =>
         fallback match {
           case None     => monad.error(new IllegalArgumentException(s"No behavior stubbed for request: $request"))
-          case Some(fb) => fb.send(request)
+          case Some(fb) => fb.internalSend(request)
         }
       case Failure(e) => monad.error(e)
     }
@@ -80,97 +63,44 @@ class SttpBackendStub[F[_], +P](
 
   override def close(): F[Unit] = monad.unit(())
 
-  override def responseMonad: MonadError[F] = monad
-
   class WhenRequest(p: AbstractRequest[_, _] => Boolean) {
-    def thenRespondOk(): SttpBackendStub[F, P] =
-      thenRespondWithCode(StatusCode.Ok, "OK")
-    def thenRespondNotFound(): SttpBackendStub[F, P] =
-      thenRespondWithCode(StatusCode.NotFound, "Not found")
-    def thenRespondServerError(): SttpBackendStub[F, P] =
-      thenRespondWithCode(StatusCode.InternalServerError, "Internal server error")
-    def thenRespondWithCode(status: StatusCode, msg: String = ""): SttpBackendStub[F, P] = {
-      thenRespond(Response(msg, status, msg))
-    }
-    def thenRespond[T](body: T): SttpBackendStub[F, P] =
-      thenRespond(Response[T](body, StatusCode.Ok, "OK"))
-    def thenRespond[T](body: T, statusCode: StatusCode): SttpBackendStub[F, P] =
-      thenRespond(Response[T](body, statusCode))
-    def thenRespond[T](resp: => Response[T]): SttpBackendStub[F, P] = {
+    def thenRespondOk(): Self = thenRespondWithCode(StatusCode.Ok, "OK")
+    def thenRespondNotFound(): Self = thenRespondWithCode(StatusCode.NotFound, "Not found")
+    def thenRespondServerError(): Self = thenRespondWithCode(StatusCode.InternalServerError, "Internal server error")
+    def thenRespondWithCode(status: StatusCode, msg: String = ""): Self = thenRespond(Response(msg, status, msg))
+    def thenRespond[T](body: T): Self = thenRespond(Response[T](body, StatusCode.Ok, "OK"))
+    def thenRespond[T](body: T, statusCode: StatusCode): Self = thenRespond(Response[T](body, statusCode))
+    def thenRespond[T](resp: => Response[T]): Self = {
       val m: PartialFunction[AbstractRequest[_, _], F[Response[_]]] = {
         case r if p(r) => monad.eval(resp)
       }
-      new SttpBackendStub[F, P](monad, matchers.orElse(m), fallback)
+      withMatchers(matchers.orElse(m))
     }
 
-    def thenRespondCyclic[T](bodies: T*): SttpBackendStub[F, P] = {
+    def thenRespondCyclic[T](bodies: T*): Self =
       thenRespondCyclicResponses(bodies.map(body => Response[T](body, StatusCode.Ok, "OK")): _*)
-    }
 
-    def thenRespondCyclicResponses[T](responses: Response[T]*): SttpBackendStub[F, P] = {
+    def thenRespondCyclicResponses[T](responses: Response[T]*): Self = {
       val iterator = AtomicCyclicIterator.unsafeFrom(responses)
       thenRespond(iterator.next())
     }
 
-    def thenRespondF(resp: => F[Response[_]]): SttpBackendStub[F, P] = {
+    def thenRespondF(resp: => F[Response[_]]): Self = {
       val m: PartialFunction[AbstractRequest[_, _], F[Response[_]]] = {
         case r if p(r) => resp
       }
-      new SttpBackendStub[F, P](monad, matchers.orElse(m), fallback)
+      withMatchers(matchers.orElse(m))
     }
-    def thenRespondF(resp: AbstractRequest[_, _] => F[Response[_]]): SttpBackendStub[F, P] = {
+    def thenRespondF(resp: AbstractRequest[_, _] => F[Response[_]]): Self = {
       val m: PartialFunction[AbstractRequest[_, _], F[Response[_]]] = {
         case r if p(r) => resp(r)
       }
-      new SttpBackendStub[F, P](monad, matchers.orElse(m), fallback)
+      withMatchers(matchers.orElse(m))
     }
   }
 }
 
-object SttpBackendStub {
-
-  /** Create a stub of a synchronous backend (which doesn't use an effect type), without streaming.
-    */
-  def synchronous: SttpBackendStub[Identity, WebSockets] =
-    new SttpBackendStub(
-      IdMonad,
-      PartialFunction.empty,
-      None
-    )
-
-  /** Create a stub of an asynchronous backend (which uses the Scala's built-in [[Future]] as the effect type), without
-    * streaming.
-    */
-  def asynchronousFuture: SttpBackendStub[Future, WebSockets] = {
-    import scala.concurrent.ExecutionContext.Implicits.global
-    new SttpBackendStub(
-      new FutureMonad(),
-      PartialFunction.empty,
-      None
-    )
-  }
-
-  /** Create a stub backend using the given response monad (which determines the effect type for responses), and any
-    * capabilities (such as streaming or web socket support).
-    */
-  def apply[F[_], P](responseMonad: MonadError[F]): SttpBackendStub[F, P] =
-    new SttpBackendStub[F, P](
-      responseMonad,
-      PartialFunction.empty,
-      None
-    )
-
-  /** Create a stub backend which delegates send requests to the given fallback backend, if the request doesn't match
-    * any of the specified predicates.
-    */
-  def withFallback[F[_], P0, P1 >: P0](
-      fallback: SttpBackend[F, P0]
-  ): SttpBackendStub[F, P1] =
-    new SttpBackendStub[F, P1](
-      fallback.responseMonad,
-      PartialFunction.empty,
-      Some(fallback)
-    )
+object AbstractBackendStub {
 
   private[client3] def tryAdjustResponseType[DesiredRType, RType, F[_]](
       ra: AbstractResponseAs[DesiredRType, _],
@@ -239,6 +169,4 @@ object SttpBackendStub {
         }
     }
   }
-
-  case class RawStream[T](s: T)
 }

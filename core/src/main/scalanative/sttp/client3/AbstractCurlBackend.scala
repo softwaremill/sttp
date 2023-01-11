@@ -21,17 +21,17 @@ import scala.scalanative.unsafe
 import scala.scalanative.unsafe.{CSize, Ptr, _}
 import scala.scalanative.unsigned._
 
-abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean) extends SttpBackend[F, Any] {
-  override implicit val responseMonad: MonadError[F] = monad
+abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean) extends AbstractBackend[F, Any] {
+  override implicit def responseMonad: MonadError[F] = monad
+
+  type R = Any with Effect[F]
 
   override def close(): F[Unit] = monad.unit(())
 
   private var headers: CurlList = _
   private var multiPartHeaders: Seq[CurlList] = Seq()
 
-  type PE = Any with Effect[F]
-
-  override def send[T, R >: PE](request: AbstractRequest[T, R]): F[Response[T]] =
+  override def internalSend[T](request: AbstractRequest[T, R]): F[Response[T]] =
     unsafe.Zone { implicit z =>
       val curl = CurlApi.init
       if (verbose) {
@@ -61,7 +61,7 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
       }
     }
 
-  private def handleBase[R >: PE, T](request: AbstractRequest[T, R], curl: CurlHandle, spaces: CurlSpaces)(implicit
+  private def handleBase[T](request: AbstractRequest[T, R], curl: CurlHandle, spaces: CurlSpaces)(implicit
       z: unsafe.Zone
   ) = {
     curl.option(WriteFunction, AbstractCurlBackend.wdFunc)
@@ -103,12 +103,9 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
     }
   }
 
-  private def handleFile[R >: PE, T](
-      request: AbstractRequest[T, R],
-      curl: CurlHandle,
-      file: SttpFile,
-      spaces: CurlSpaces
-  )(implicit z: unsafe.Zone) = {
+  private def handleFile[T](request: AbstractRequest[T, R], curl: CurlHandle, file: SttpFile, spaces: CurlSpaces)(
+      implicit z: unsafe.Zone
+  ) = {
     val outputPath = file.toPath.toString
     val outputFilePtr: Ptr[FILE] = fopen(toCString(outputPath), toCString("wb"))
     curl.option(WriteData, outputFilePtr)
@@ -154,12 +151,12 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
     lift(m)
   }
 
-  private def setRequestBody(curl: CurlHandle, body: AbstractBody[PE])(implicit zone: Zone): F[CurlCode] =
+  private def setRequestBody(curl: CurlHandle, body: AbstractBody[R])(implicit zone: Zone): F[CurlCode] =
     body match { // todo: assign to responseMonad object
       case b: BasicBodyPart =>
         val str = basicBodyToString(b)
         lift(curl.option(PostFields, toCString(str)))
-      case m: MultipartBody[PE] =>
+      case m: MultipartBody[R] =>
         val mime = curl.mime
         m.parts.foreach { case p @ Part(name, partBody, _, headers) =>
           val part = mime.addPart()
@@ -183,7 +180,7 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
         responseMonad.unit(CurlCode.Ok)
     }
 
-  private def basicBodyToString(body: BodyPart[PE]): String =
+  private def basicBodyToString(body: BodyPart[_]): String =
     body match {
       case StringBody(b, _, _)   => b
       case ByteArrayBody(b, _)   => new String(b)

@@ -13,7 +13,7 @@ import sttp.model.sse.ServerSentEvent
 import sttp.monad.MonadError
 import sttp.monad.syntax._
 
-abstract class StreamingTest[F[+_], S]
+abstract class StreamingTest[F[_], S]
     extends AsyncFreeSpec
     with Matchers
     with ToFutureWrapper
@@ -22,7 +22,7 @@ abstract class StreamingTest[F[+_], S]
 
   val streams: Streams[S]
 
-  def backend: SttpBackend[F, S]
+  def backend: StreamBackend[F, S]
 
   implicit def convertToFuture: ConvertToFuture[F]
 

@@ -1,5 +1,6 @@
 package sttp.client3
 
+import sttp.capabilities.WebSockets
 import sttp.client3.HttpClientBackend.EncodingHandler
 import sttp.client3.internal.SttpToJavaConverters.{toJavaBiConsumer, toJavaFunction}
 import sttp.client3.internal.httpclient.{AddToQueueListener, DelegatingWebSocketListener, Sequencer, WebSocketImpl}
@@ -17,14 +18,16 @@ import java.util.concurrent.Flow.Publisher
 import java.util.concurrent.atomic.AtomicBoolean
 import java.{util => ju}
 
-abstract class HttpClientAsyncBackend[F[_], S, P, B](
+abstract class HttpClientAsyncBackend[F[_], S, B](
     client: HttpClient,
     private implicit val monad: MonadAsyncError[F],
     closeClient: Boolean,
     customizeRequest: HttpRequest => HttpRequest,
     customEncodingHandler: EncodingHandler[B]
-) extends HttpClientBackend[F, S, P, B](client, closeClient, customEncodingHandler) {
-  override def send[T, R >: PE](request: AbstractRequest[T, R]): F[Response[T]] =
+) extends HttpClientBackend[F, S, S with WebSockets, B](client, closeClient, customEncodingHandler)
+    with WebSocketBackend[F] {
+
+  override def internalSend[T](request: AbstractRequest[T, R]): F[Response[T]] =
     adjustExceptions(request) {
       if (request.isWebSocket) sendWebSocket(request) else sendRegular(request)
     }
@@ -32,7 +35,7 @@ abstract class HttpClientAsyncBackend[F[_], S, P, B](
   protected def createSimpleQueue[T]: F[SimpleQueue[F, T]]
   protected def createSequencer: F[Sequencer[F]]
 
-  private def sendRegular[T, R >: PE](request: AbstractRequest[T, R]): F[Response[T]] = {
+  private def sendRegular[T](request: AbstractRequest[T, R]): F[Response[T]] = {
     monad.flatMap(convertRequest(request)) { convertedRequest =>
       val jRequest = customizeRequest(convertedRequest)
 
@@ -67,7 +70,7 @@ abstract class HttpClientAsyncBackend[F[_], S, P, B](
   protected def publisherToBody(p: Publisher[java.util.List[ByteBuffer]]): B
   protected def emptyBody(): B
 
-  private def sendWebSocket[T, R >: PE](request: AbstractRequest[T, R]): F[Response[T]] = {
+  private def sendWebSocket[T](request: AbstractRequest[T, R]): F[Response[T]] = {
     (for {
       queue <- createSimpleQueue[WebSocketEvent]
       sequencer <- createSequencer
@@ -82,7 +85,7 @@ abstract class HttpClientAsyncBackend[F[_], S, P, B](
     }
   }
 
-  private def sendWebSocket[T, R >: PE](
+  private def sendWebSocket[T](
       request: AbstractRequest[T, R],
       queue: SimpleQueue[F, WebSocketEvent],
       sequencer: Sequencer[F]
@@ -127,7 +130,7 @@ abstract class HttpClientAsyncBackend[F[_], S, P, B](
     })
   }
 
-  private def filterIllegalWsHeaders[T, R](request: AbstractRequest[T, R]): AbstractRequest[T, R] = {
+  private def filterIllegalWsHeaders[T](request: AbstractRequest[T, R]): AbstractRequest[T, R] = {
     request.withHeaders(request.headers.filter(h => !wsIllegalHeaders.contains(h.name.toLowerCase)))
   }
 

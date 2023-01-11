@@ -7,7 +7,6 @@ import sttp.model.Method
 import sttp.model.RequestMetadata
 import sttp.model.Uri
 import scala.collection.immutable.Seq
-import sttp.capabilities.Effect
 
 /** Abstract representation of an HTTP request.
   *
@@ -52,22 +51,4 @@ trait AbstractRequest[+T, -R] extends RequestBuilder[AbstractRequest[T, R]] {
     case _: WebSocketStreamRequest[_, _] => true
     case _                               => false
   }
-
-  /** Sends the request, using the given backend. Only requests for which the method & URI are specified can be sent.
-    *
-    * The required capabilities must be a subset of the capabilities provided by the backend.
-    *
-    * @return
-    *   For synchronous backends (when the effect type is [[Identity]]), [[Response]] is returned directly and
-    *   exceptions are thrown. For asynchronous backends (when the effect type is e.g. [[scala.concurrent.Future]]), an
-    *   effect containing the [[Response]] is returned. Exceptions are represented as failed effects (e.g. failed
-    *   futures).
-    *
-    * The response body is deserialized as specified by this request (see [[RequestT.response]]).
-    *
-    * Known exceptions are converted by backends to one of [[SttpClientException]]. Other exceptions are thrown
-    * unchanged.
-    */
-  def send[F[+_], P](backend: SttpBackend[F, P])(implicit pEffectFIsR: P with Effect[F] <:< R): F[Response[T]] =
-    backend.send(this.asInstanceOf[AbstractRequest[T, P with Effect[F]]]) // as witnessed by pEffectFIsR
 }
