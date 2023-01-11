@@ -11,7 +11,7 @@ class DigestAuthenticationBackend[F[_], P](
     delegate: SttpBackend[F, P],
     clientNonceGenerator: () => String = DigestAuthenticator.defaultClientNonceGenerator
 ) extends DelegateSttpBackend[F, P](delegate) {
-  override def send[T, R >: P with Effect[F]](request: Request[T, R]): F[Response[T]] = {
+  override def send[T, R >: P with Effect[F]](request: AbstractRequest[T, R]): F[Response[T]] = {
     delegate
       .send(request)
       .flatMap { firstResponse =>
@@ -28,7 +28,7 @@ class DigestAuthenticationBackend[F[_], P](
   }
 
   private def handleResponse[T, R >: P with Effect[F]](
-      request: Request[T, R],
+      request: AbstractRequest[T, R],
       response: Response[T],
       digestTag: String,
       digestAuthenticator: DigestAuthData => DigestAuthenticator

@@ -1,7 +1,7 @@
 package sttp.client3.listener
 
 import sttp.monad.MonadError
-import sttp.client3.{Identity, Request, Response}
+import sttp.client3.{AbstractRequest, Identity, Response}
 
 /** A listener to be used by the [[ListenerBackend]] to get notified on request lifecycle events.
   *
@@ -10,18 +10,19 @@ import sttp.client3.{Identity, Request, Response}
   *   Use `Unit` if no special value should be associated with a request.
   */
 trait RequestListener[F[_], L] {
-  def beforeRequest(request: Request[_, _]): F[L]
-  def requestException(request: Request[_, _], tag: L, e: Exception): F[Unit]
-  def requestSuccessful(request: Request[_, _], response: Response[_], tag: L): F[Unit]
+  def beforeRequest(request: AbstractRequest[_, _]): F[L]
+  def requestException(request: AbstractRequest[_, _], tag: L, e: Exception): F[Unit]
+  def requestSuccessful(request: AbstractRequest[_, _], response: Response[_], tag: L): F[Unit]
 }
 
 object RequestListener {
   def lift[F[_], L](delegate: RequestListener[Identity, L], monadError: MonadError[F]): RequestListener[F, L] =
     new RequestListener[F, L] {
-      override def beforeRequest(request: Request[_, _]): F[L] = monadError.eval(delegate.beforeRequest(request))
-      override def requestException(request: Request[_, _], tag: L, e: Exception): F[Unit] =
+      override def beforeRequest(request: AbstractRequest[_, _]): F[L] =
+        monadError.eval(delegate.beforeRequest(request))
+      override def requestException(request: AbstractRequest[_, _], tag: L, e: Exception): F[Unit] =
         monadError.eval(delegate.requestException(request, tag, e))
-      override def requestSuccessful(request: Request[_, _], response: Response[_], tag: L): F[Unit] =
+      override def requestSuccessful(request: AbstractRequest[_, _], response: Response[_], tag: L): F[Unit] =
         monadError.eval(delegate.requestSuccessful(request, response, tag))
     }
 }

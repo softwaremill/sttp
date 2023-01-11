@@ -1,6 +1,6 @@
 package sttp.client3.internal
 
-import sttp.client3._
+import sttp.client3.AbstractResponseAs
 import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.model.ResponseMetadata
 import sttp.monad.MonadError
@@ -8,13 +8,13 @@ import sttp.monad.syntax._
 
 abstract class BodyFromResponseAs[F[_], RegularResponse, WSResponse, Stream](implicit m: MonadError[F]) {
   def apply[T](
-      responseAs: ResponseAs[T, _],
+      responseAs: AbstractResponseAs[T, _],
       meta: ResponseMetadata,
       response: Either[RegularResponse, WSResponse]
-  ): F[T] = doApply(responseAs, meta, response).map(_._1)
+  ): F[T] = doApply(responseAs.internal, meta, response).map(_._1)
 
   private def doApply[T](
-      responseAs: ResponseAs[T, _],
+      responseAs: InternalResponseAs[T, _],
       meta: ResponseMetadata,
       response: Either[RegularResponse, WSResponse]
   ): F[(T, ReplayableBody)] = {
@@ -62,10 +62,11 @@ abstract class BodyFromResponseAs[F[_], RegularResponse, WSResponse, Stream](imp
       case (ResponseAsFile(file), Left(regular)) =>
         regularAsFile(regular, file).map(f => (f, replayableBody(f)))
 
-      case (wsr: WebSocketResponseAs[_, _], Right(ws)) =>
-        handleWS(wsr, meta, ws).asInstanceOf[F[T]].map(w => (w, nonReplayableBody))
+      case (wsr: InternalWebSocketResponseAs[_, _], Right(ws)) =>
+        handleWS(wsr.asInstanceOf[InternalWebSocketResponseAs[T, _]], meta, ws)
+          .map(w => (w, nonReplayableBody))
 
-      case (_: WebSocketResponseAs[_, _], Left(regular)) =>
+      case (_: InternalWebSocketResponseAs[_, _], Left(regular)) =>
         val e = new NotAWebSocketException(meta.code)
         cleanupWhenNotAWebSocket(regular, e).flatMap(_ => m.error(e))
 
@@ -83,7 +84,7 @@ abstract class BodyFromResponseAs[F[_], RegularResponse, WSResponse, Stream](imp
   protected def regularAsByteArray(response: RegularResponse): F[Array[Byte]]
   protected def regularAsFile(response: RegularResponse, file: SttpFile): F[SttpFile]
   protected def regularAsStream(response: RegularResponse): F[(Stream, () => F[Unit])]
-  protected def handleWS[T](responseAs: WebSocketResponseAs[T, _], meta: ResponseMetadata, ws: WSResponse): F[T]
+  protected def handleWS[T](responseAs: InternalWebSocketResponseAs[T, _], meta: ResponseMetadata, ws: WSResponse): F[T]
   protected def cleanupWhenNotAWebSocket(response: RegularResponse, e: NotAWebSocketException): F[Unit]
   protected def cleanupWhenGotWebSocket(response: WSResponse, e: GotAWebSocketException): F[Unit]
 }

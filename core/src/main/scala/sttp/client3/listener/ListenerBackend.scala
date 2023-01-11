@@ -11,7 +11,7 @@ class ListenerBackend[F[_], P, L](
     listener: RequestListener[F, L]
 ) extends DelegateSttpBackend[F, P](delegate) {
 
-  override def send[T, R >: P with Effect[F]](request: Request[T, R]): F[Response[T]] = {
+  override def send[T, R >: P with Effect[F]](request: AbstractRequest[T, R]): F[Response[T]] = {
     listener.beforeRequest(request).flatMap { t =>
       responseMonad
         .handleError(delegate.send(request)) { case e: Exception =>

@@ -3,18 +3,7 @@ package sttp.client3.internal.httpclient
 import sttp.capabilities.Streams
 import sttp.client3.internal.SttpToJavaConverters.toJavaSupplier
 import sttp.client3.internal.{Utf8, throwNestedMultipartNotAllowed}
-import sttp.client3.{
-  ByteArrayBody,
-  ByteBufferBody,
-  FileBody,
-  InputStreamBody,
-  MultipartBody,
-  NoBody,
-  Request,
-  RequestBody,
-  StreamBody,
-  StringBody
-}
+import sttp.client3._
 import sttp.model.{Header, HeaderNames, Part}
 import sttp.monad.MonadError
 import sttp.monad.syntax._
@@ -31,8 +20,8 @@ private[client3] trait BodyToHttpClient[F[_], S] {
   val streams: Streams[S]
   implicit def monad: MonadError[F]
 
-  def apply[T, R](
-      request: Request[T, R],
+  def apply[T](
+      request: AbstractRequest[T, _],
       builder: HttpRequest.Builder,
       contentType: Option[String]
   ): F[BodyPublisher] = {
@@ -46,8 +35,8 @@ private[client3] trait BodyToHttpClient[F[_], S] {
       case InputStreamBody(b, _) => BodyPublishers.ofInputStream(toJavaSupplier(() => b)).unit
       case FileBody(f, _)        => BodyPublishers.ofFile(f.toFile.toPath).unit
       case StreamBody(s)         => streamToPublisher(s.asInstanceOf[streams.BinaryStream])
-      case MultipartBody(parts) =>
-        val multipartBodyPublisher = multipartBody(parts)
+      case m: MultipartBody[_] =>
+        val multipartBodyPublisher = multipartBody(m.parts)
         val baseContentType = contentType.getOrElse("multipart/form-data")
         builder.header(HeaderNames.ContentType, s"$baseContentType; boundary=${multipartBodyPublisher.getBoundary}")
         multipartBodyPublisher.build().unit
@@ -61,7 +50,7 @@ private[client3] trait BodyToHttpClient[F[_], S] {
 
   def streamToPublisher(stream: streams.BinaryStream): F[BodyPublisher]
 
-  private def multipartBody[T](parts: Seq[Part[RequestBody[_]]]) = {
+  private def multipartBody[T](parts: Seq[Part[AbstractBody[_]]]) = {
     val multipartBuilder = new MultiPartBodyPublisher()
     parts.foreach { p =>
       val allHeaders = Header(HeaderNames.ContentDisposition, p.contentDispositionHeaderValue) +: p.headers
@@ -81,7 +70,7 @@ private[client3] trait BodyToHttpClient[F[_], S] {
             multipartBuilder.addPart(p.name, supplier(new ByteArrayInputStream(b.array())), partHeaders)
         case InputStreamBody(b, _) => multipartBuilder.addPart(p.name, supplier(b), partHeaders)
         case StreamBody(_)         => throw new IllegalArgumentException("Streaming multipart bodies are not supported")
-        case MultipartBody(_)      => throwNestedMultipartNotAllowed
+        case m: MultipartBody[_]   => throwNestedMultipartNotAllowed
       }
     }
     multipartBuilder

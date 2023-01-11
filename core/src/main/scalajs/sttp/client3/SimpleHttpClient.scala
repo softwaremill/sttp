@@ -19,7 +19,7 @@ import scala.concurrent.{ExecutionContext, Future}
   */
 case class SimpleHttpClient(backend: SttpBackend[Future, Any]) {
 
-  def send[T](request: Request[T, Any]): Future[Response[T]] = backend.send(request)
+  def send[T](request: Request[T]): Future[Response[T]] = backend.send(request)
 
   def withBackend(newBackend: SttpBackend[Future, Any]): SimpleHttpClient = copy(backend = newBackend)
   def wrapBackend(f: SttpBackend[Future, Any] => SttpBackend[Future, Any]): SimpleHttpClient =

@@ -60,15 +60,15 @@ class LoggingListener[F[_]](log: Log[F], includeTiming: Boolean)(implicit m: Mon
   private def now(): Long = System.currentTimeMillis()
   private def elapsed(from: Option[Long]): Option[Duration] = from.map(f => Duration(now() - f, TimeUnit.MILLISECONDS))
 
-  override def beforeRequest(request: Request[_, _]): F[Option[Long]] = {
+  override def beforeRequest(request: AbstractRequest[_, _]): F[Option[Long]] = {
     log.beforeRequestSend(request).map(_ => if (includeTiming) Some(now()) else None)
   }
 
-  override def requestException(request: Request[_, _], tag: Option[Long], e: Exception): F[Unit] = {
+  override def requestException(request: AbstractRequest[_, _], tag: Option[Long], e: Exception): F[Unit] = {
     log.requestException(request, elapsed(tag), e)
   }
 
-  override def requestSuccessful(request: Request[_, _], response: Response[_], tag: Option[Long]): F[Unit] = {
+  override def requestSuccessful(request: AbstractRequest[_, _], response: Response[_], tag: Option[Long]): F[Unit] = {
     log.response(request, response, None, elapsed(tag))
   }
 }
@@ -81,25 +81,31 @@ class LoggingWithResponseBodyBackend[F[_], S](
   private def now(): Long = System.currentTimeMillis()
   private def elapsed(from: Option[Long]): Option[Duration] = from.map(f => Duration(now() - f, TimeUnit.MILLISECONDS))
 
-  override def send[T, R >: S with Effect[F]](request: Request[T, R]): F[Response[T]] = {
+  override def send[T, R >: S with Effect[F]](request: AbstractRequest[T, R]): F[Response[T]] = {
     log.beforeRequestSend(request).flatMap { _ =>
       val start = if (includeTiming) Some(now()) else None
-      if (request.isWebSocket) {
+      def sendAndLog(request: AbstractRequest[(T, Option[String]), S]): F[Response[T]] = {
         for {
-          response <- request.send(delegate)
-          _ <- log.response(request, response, None, elapsed(start))
-        } yield response
-      } else
-        {
+          r <- delegate.send(request)
+          _ <- log.response(request, r, r.body._2, elapsed(start))
+        } yield r.copy(body = r.body._1)
+      }
+      val response = request match {
+        case request: Request[T] =>
+          sendAndLog(request.response(asBothOption(request.response, asStringAlways)))
+        case request: StreamRequest[T, S] =>
+          sendAndLog(request.response(asBothOption(request.response, asStringAlways)))
+        case request =>
           for {
-            response <- request.response(asBothOption(request.response, asStringAlways)).send(delegate)
-            _ <- log.response(request, response, response.body._2, elapsed(start))
-          } yield response.copy(body = response.body._1)
-        }.handleError { case e: Exception =>
-          log
-            .requestException(request, elapsed(start), e)
-            .flatMap(_ => responseMonad.error(e))
-        }
+            r <- delegate.send(request)
+            _ <- log.response(request, r, None, elapsed(start))
+          } yield r
+      }
+      response.handleError { case e: Exception =>
+        log
+          .requestException(request, elapsed(start), e)
+          .flatMap(_ => responseMonad.error(e))
+      }
     }
   }
 }

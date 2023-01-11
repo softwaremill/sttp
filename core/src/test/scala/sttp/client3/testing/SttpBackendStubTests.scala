@@ -375,8 +375,8 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
   }
 
   private val s = "Hello, world!"
-  private val adjustTestData = List[(Any, ResponseAs[_, _], Any)](
-    (s, IgnoreResponse, Some(())),
+  private val adjustTestData = List[(Any, ResponseAs[_], Any)](
+    (s, sttp.client3.ignore, Some(())),
     (s, asString(Utf8), Some(Right(s))),
     (s.getBytes(Utf8), asString(Utf8), Some(Right(s))),
     (new ByteArrayInputStream(s.getBytes(Utf8)), asString(Utf8), Some(Right(s))),
@@ -393,7 +393,7 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
   } {
     it should s"adjust $body to $expectedResult when specified as $responseAs" in {
       SttpBackendStub.tryAdjustResponseBody(
-        responseAs,
+        responseAs.internal,
         body,
         ResponseMetadata(StatusCode.Ok, "", Nil)
       )(IdMonad) should be(

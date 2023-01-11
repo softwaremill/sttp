@@ -2,37 +2,35 @@ package sttp.client3.internal
 
 import sttp.client3._
 import sttp.model._
-import sttp.client3.NoBody
-import sttp.model.MediaType
 
-class ToCurlConverter[R <: RequestT[Identity, _, _]] {
+object ToCurlConverter {
 
-  def apply(request: R): String = apply(request, HeaderNames.SensitiveHeaders)
+  def apply(request: AbstractRequest[_, _]): String = apply(request, HeaderNames.SensitiveHeaders)
 
-  def apply(request: R, sensitiveHeaders: Set[String]): String = {
+  def apply(request: AbstractRequest[_, _], sensitiveHeaders: Set[String]): String = {
     val params = List(
       extractMethod(_),
       extractUrl(_),
-      (r: R) => extractHeaders(r, sensitiveHeaders),
+      (r: AbstractRequest[_, _]) => extractHeaders(r, sensitiveHeaders),
       extractBody(_),
       extractOptions(_)
     )
       .map(addSpaceIfNotEmpty)
-      .reduce((acc, item) => (r: R) => acc(r) + item(r))
+      .reduce((acc, item) => (r: AbstractRequest[_, _]) => acc(r) + item(r))
       .apply(request)
 
     s"""curl$params"""
   }
 
-  private def extractMethod(r: R): String = {
+  private def extractMethod(r: AbstractRequest[_, _]): String = {
     s"--request ${r.method.method}"
   }
 
-  private def extractUrl(r: R): String = {
+  private def extractUrl(r: AbstractRequest[_, _]): String = {
     s"--url '${r.uri}'"
   }
 
-  private def extractHeaders(r: R, sensitiveHeaders: Set[String]): String = {
+  private def extractHeaders(r: AbstractRequest[_, _], sensitiveHeaders: Set[String]): String = {
     r.headers
       // filtering out compression headers so that the results are human-readable, if possible
       .filterNot(_.name.equalsIgnoreCase(HeaderNames.AcceptEncoding))
@@ -40,20 +38,20 @@ class ToCurlConverter[R <: RequestT[Identity, _, _]] {
       .mkString(newline)
   }
 
-  private def extractBody(r: R): String = {
+  private def extractBody(r: AbstractRequest[_, _]): String = {
     r.body match {
       case StringBody(text, _, _) => s"""--data-raw '${text.replace("'", "\\'")}'"""
       case ByteArrayBody(_, _)    => s"--data-binary <PLACEHOLDER>"
       case ByteBufferBody(_, _)   => s"--data-binary <PLACEHOLDER>"
       case InputStreamBody(_, _)  => s"--data-binary <PLACEHOLDER>"
       case StreamBody(_)          => s"--data-binary <PLACEHOLDER>"
-      case MultipartBody(parts)   => handleMultipartBody(parts)
+      case m: MultipartBody[_]    => handleMultipartBody(m.parts)
       case FileBody(file, _)      => s"""--data-binary @${file.name}"""
       case NoBody                 => ""
     }
   }
 
-  def handleMultipartBody(parts: Seq[Part[RequestBody[_]]]): String = {
+  def handleMultipartBody(parts: Seq[Part[AbstractBody[_]]]): String = {
     parts
       .map { p =>
         p.body match {
@@ -65,7 +63,7 @@ class ToCurlConverter[R <: RequestT[Identity, _, _]] {
       .mkString(newline)
   }
 
-  private def extractOptions(r: R): String = {
+  private def extractOptions(r: AbstractRequest[_, _]): String = {
     if (r.options.followRedirects) {
       s"--location${newline}--max-redirs ${r.options.maxRedirects}"
     } else {
@@ -73,12 +71,8 @@ class ToCurlConverter[R <: RequestT[Identity, _, _]] {
     }
   }
 
-  private def addSpaceIfNotEmpty(fInput: R => String): R => String =
+  private def addSpaceIfNotEmpty(fInput: AbstractRequest[_, _] => String): AbstractRequest[_, _] => String =
     t => if (fInput(t).isEmpty) "" else s"${newline}${fInput(t)}"
 
   private def newline: String = " \\\n  "
-}
-
-object ToCurlConverter {
-  def requestToCurl[R <: Request[_, _]]: ToCurlConverter[R] = new ToCurlConverter[R]
 }

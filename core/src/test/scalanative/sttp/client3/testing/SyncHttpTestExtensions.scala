@@ -86,9 +86,9 @@ trait SyncHttpTestExtensions extends AnyFreeSpecLike {
 
     "download a binary file using asFile" in {
       withTemporaryNonExistentFile { file =>
-        val req: RequestT[Identity, Either[String, File], Any] =
+        val req: Request[Either[String, File]] =
           basicRequest.get(uri"$endpoint/download/binary").response(asFile(file))
-        val resp: Identity[Response[Either[String, File]]] = req.send(backend)
+        val resp: Response[Either[String, File]] = req.send(backend)
         val body = resp.body.right.get
         resp.headers should contain only Header.contentLength(body.length())
         body.toPath shouldBe file.toPath
@@ -97,9 +97,9 @@ trait SyncHttpTestExtensions extends AnyFreeSpecLike {
 
     "download a text file using asFile" in {
       withTemporaryNonExistentFile { file =>
-        val req: RequestT[Identity, Either[String, File], Any] =
+        val req: Request[Either[String, File]] =
           basicRequest.get(uri"$endpoint/download/text").response(asFile(file))
-        val resp: Identity[Response[Either[String, File]]] = req.send(backend)
+        val resp: Response[Either[String, File]] = req.send(backend)
         val body = resp.body.right.get
         resp.headers should contain only Header.contentLength(body.length())
         body.toPath shouldBe file.toPath

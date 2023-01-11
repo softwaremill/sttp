@@ -5,7 +5,7 @@ import sttp.capabilities.{Effect, WebSockets}
 import sttp.client3.internal.{SttpFile, _}
 import sttp.client3.monad.IdMonad
 import sttp.client3.testing.SttpBackendStub._
-import sttp.client3.{IgnoreResponse, ResponseAs, ResponseAsByteArray, SttpBackend, _}
+import sttp.client3._
 import sttp.model.{ResponseMetadata, StatusCode}
 import sttp.monad.{FutureMonad, MonadError}
 import sttp.monad.syntax._
@@ -36,7 +36,7 @@ import scala.util.{Failure, Success, Try}
   */
 class SttpBackendStub[F[_], +P](
     monad: MonadError[F],
-    matchers: PartialFunction[Request[_, _], F[Response[_]]],
+    matchers: PartialFunction[AbstractRequest[_, _], F[Response[_]]],
     fallback: Option[SttpBackend[F, P]]
 ) extends SttpBackend[F, P] {
 
@@ -44,7 +44,7 @@ class SttpBackendStub[F[_], +P](
     *
     * Note that the stubs are immutable, and each new specification that is added yields a new stub instance.
     */
-  def whenRequestMatches(p: Request[_, _] => Boolean): WhenRequest =
+  def whenRequestMatches(p: AbstractRequest[_, _] => Boolean): WhenRequest =
     new WhenRequest(p)
 
   /** Specify how the stub backend should respond to any request (catch-all).
@@ -58,14 +58,14 @@ class SttpBackendStub[F[_], +P](
     * Note that the stubs are immutable, and each new specification that is added yields a new stub instance.
     */
   def whenRequestMatchesPartial(
-      partial: PartialFunction[Request[_, _], Response[_]]
+      partial: PartialFunction[AbstractRequest[_, _], Response[_]]
   ): SttpBackendStub[F, P] = {
-    val wrappedPartial: PartialFunction[Request[_, _], F[Response[_]]] =
+    val wrappedPartial: PartialFunction[AbstractRequest[_, _], F[Response[_]]] =
       partial.andThen((r: Response[_]) => monad.unit(r))
     new SttpBackendStub[F, P](monad, matchers.orElse(wrappedPartial), fallback)
   }
 
-  override def send[T, R >: P with Effect[F]](request: Request[T, R]): F[Response[T]] = {
+  override def send[T, R >: P with Effect[F]](request: AbstractRequest[T, R]): F[Response[T]] = {
     Try(matchers.lift(request)) match {
       case Success(Some(response)) =>
         tryAdjustResponseType(request.response, response.asInstanceOf[F[Response[T]]])(monad)
@@ -82,7 +82,7 @@ class SttpBackendStub[F[_], +P](
 
   override def responseMonad: MonadError[F] = monad
 
-  class WhenRequest(p: Request[_, _] => Boolean) {
+  class WhenRequest(p: AbstractRequest[_, _] => Boolean) {
     def thenRespondOk(): SttpBackendStub[F, P] =
       thenRespondWithCode(StatusCode.Ok, "OK")
     def thenRespondNotFound(): SttpBackendStub[F, P] =
@@ -97,7 +97,7 @@ class SttpBackendStub[F[_], +P](
     def thenRespond[T](body: T, statusCode: StatusCode): SttpBackendStub[F, P] =
       thenRespond(Response[T](body, statusCode))
     def thenRespond[T](resp: => Response[T]): SttpBackendStub[F, P] = {
-      val m: PartialFunction[Request[_, _], F[Response[_]]] = {
+      val m: PartialFunction[AbstractRequest[_, _], F[Response[_]]] = {
         case r if p(r) => monad.eval(resp)
       }
       new SttpBackendStub[F, P](monad, matchers.orElse(m), fallback)
@@ -113,13 +113,13 @@ class SttpBackendStub[F[_], +P](
     }
 
     def thenRespondF(resp: => F[Response[_]]): SttpBackendStub[F, P] = {
-      val m: PartialFunction[Request[_, _], F[Response[_]]] = {
+      val m: PartialFunction[AbstractRequest[_, _], F[Response[_]]] = {
         case r if p(r) => resp
       }
       new SttpBackendStub[F, P](monad, matchers.orElse(m), fallback)
     }
-    def thenRespondF(resp: Request[_, _] => F[Response[_]]): SttpBackendStub[F, P] = {
-      val m: PartialFunction[Request[_, _], F[Response[_]]] = {
+    def thenRespondF(resp: AbstractRequest[_, _] => F[Response[_]]): SttpBackendStub[F, P] = {
+      val m: PartialFunction[AbstractRequest[_, _], F[Response[_]]] = {
         case r if p(r) => resp(r)
       }
       new SttpBackendStub[F, P](monad, matchers.orElse(m), fallback)
@@ -173,18 +173,18 @@ object SttpBackendStub {
     )
 
   private[client3] def tryAdjustResponseType[DesiredRType, RType, F[_]](
-      ra: ResponseAs[DesiredRType, _],
+      ra: AbstractResponseAs[DesiredRType, _],
       m: F[Response[RType]]
   )(implicit monad: MonadError[F]): F[Response[DesiredRType]] = {
     monad.flatMap[Response[RType], Response[DesiredRType]](m) { r =>
-      tryAdjustResponseBody(ra, r.body, r).getOrElse(monad.unit(r.body)).map { nb =>
+      tryAdjustResponseBody(ra.internal, r.body, r).getOrElse(monad.unit(r.body)).map { nb =>
         r.copy(body = nb.asInstanceOf[DesiredRType])
       }
     }
   }
 
   private[client3] def tryAdjustResponseBody[F[_], T, U](
-      ra: ResponseAs[T, _],
+      ra: InternalResponseAs[T, _],
       b: U,
       meta: ResponseMetadata
   )(implicit monad: MonadError[F]): Option[F[T]] = {

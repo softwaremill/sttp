@@ -4,63 +4,61 @@ import java.io.InputStream
 import java.nio.ByteBuffer
 
 import sttp.capabilities.Streams
-import sttp.model._
 import sttp.client3.internal.SttpFile
+import sttp.model._
 import sttp.model.internal.UriCompatibility
 
 import scala.collection.immutable.Seq
 
-sealed trait RequestBody[-R] {
+sealed trait AbstractBody[-R] {
   def defaultContentType: MediaType
   def show: String
 }
-case object NoBody extends RequestBody[Any] {
+
+sealed trait BasicBody extends AbstractBody[Any]
+
+case object NoBody extends BasicBody {
   override def defaultContentType: MediaType = MediaType.ApplicationOctetStream
   def show: String = "empty"
 }
 
-sealed trait BasicRequestBody extends RequestBody[Any]
+sealed trait BodyPart[-S] extends AbstractBody[S]
+
+sealed trait BasicBodyPart extends BasicBody with BodyPart[Any]
 
 case class StringBody(
     s: String,
     encoding: String,
     defaultContentType: MediaType = MediaType.TextPlain
-) extends BasicRequestBody {
+) extends BasicBodyPart {
   override def show: String = s"string: $s"
 }
 
 case class ByteArrayBody(
     b: Array[Byte],
     defaultContentType: MediaType = MediaType.ApplicationOctetStream
-) extends BasicRequestBody {
+) extends BasicBodyPart {
   override def show: String = "byte array"
 }
 
 case class ByteBufferBody(
     b: ByteBuffer,
     defaultContentType: MediaType = MediaType.ApplicationOctetStream
-) extends BasicRequestBody {
+) extends BasicBodyPart {
   override def show: String = "byte buffer"
 }
 
 case class InputStreamBody(
     b: InputStream,
     defaultContentType: MediaType = MediaType.ApplicationOctetStream
-) extends BasicRequestBody {
+) extends BasicBodyPart {
   override def show: String = "input stream"
-}
-
-case class FileBody(
-    f: SttpFile,
-    defaultContentType: MediaType = MediaType.ApplicationOctetStream
-) extends BasicRequestBody {
-  override def show: String = s"file: ${f.name}"
 }
 
 // Path-dependent types are not supported in constructor arguments or the extends clause. Thus we cannot express the
 // fact that `BinaryStream =:= s.BinaryStream`. We have to rely on correct construction via the companion object and
 // perform typecasts when the request is deconstructed.
-case class StreamBody[BinaryStream, S] private (b: BinaryStream) extends RequestBody[S] {
+case class StreamBody[BinaryStream, S] private (b: BinaryStream) extends BodyPart[S] {
   override def defaultContentType: MediaType = MediaType.ApplicationOctetStream
   override def show: String = "stream"
 }
@@ -68,12 +66,24 @@ object StreamBody {
   def apply[S](s: Streams[S])(b: s.BinaryStream): StreamBody[s.BinaryStream, S] = new StreamBody(b)
 }
 
-case class MultipartBody[R](parts: Seq[Part[RequestBody[R]]]) extends RequestBody[R] {
-  override def defaultContentType: MediaType = MediaType.MultipartFormData
-  override def show: String = s"multipart: ${parts.map(p => p.name).mkString(",")}"
+case class FileBody(
+    f: SttpFile,
+    defaultContentType: MediaType = MediaType.ApplicationOctetStream
+) extends BasicBodyPart {
+  override def show: String = s"file: ${f.name}"
 }
 
-object RequestBody {
+sealed trait MultipartBody[S] extends AbstractBody[S] {
+  override def defaultContentType: MediaType = MediaType.MultipartFormData
+  override def show: String = s"multipart: ${parts.map(p => p.name).mkString(",")}"
+  def parts: Seq[Part[BodyPart[S]]]
+}
+
+case class MultipartStreamBody[S](parts: Seq[Part[BodyPart[S]]]) extends MultipartBody[S]
+
+case class BasicMultipartBody(parts: Seq[Part[BasicBodyPart]]) extends MultipartBody[Any] with BasicBody
+
+object BasicBody {
   private[client3] def paramsToStringBody(fs: Seq[(String, String)], encoding: String): StringBody = {
     val b = fs
       .map { case (key, value) =>

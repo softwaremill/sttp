@@ -15,12 +15,12 @@ import scala.util.control.NonFatal
   */
 class EitherBackend[P](delegate: SttpBackend[Identity, P]) extends SttpBackend[Either[Throwable, *], P] {
   override def send[T, R >: P with Effect[Either[Throwable, *]]](
-      request: Request[T, R]
+      request: AbstractRequest[T, R]
   ): Either[Throwable, Response[T]] =
     doTry(
       delegate.send(
-        MapEffect[Either[Throwable, *], Identity, Identity, T, P](
-          request: Request[T, P with Effect[Either[Throwable, *]]],
+        MapEffect[Either[Throwable, *], Identity, T, P](
+          request: AbstractRequest[T, P with Effect[Either[Throwable, *]]],
           eitherToId,
           idToEither,
           responseMonad,

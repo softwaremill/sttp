@@ -7,10 +7,10 @@ import sttp.monad.syntax._
 class ResolveRelativeUrisBackend[F[_], +P](delegate: SttpBackend[F, P], resolve: Uri => F[Uri])
     extends DelegateSttpBackend[F, P](delegate) {
 
-  override def send[T, R >: P with Effect[F]](request: Request[T, R]): F[Response[T]] = {
+  override def send[T, R >: P with Effect[F]](request: AbstractRequest[T, R]): F[Response[T]] = {
     val request2 = if (request.uri.isRelative) {
       resolve(request.uri).map { uri2 =>
-        request.copy[Identity, T, R](uri = uri2)
+        request.method(method = request.method, uri = uri2)
       }
     } else request.unit
 

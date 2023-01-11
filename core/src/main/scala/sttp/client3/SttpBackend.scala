@@ -23,7 +23,7 @@ trait SttpBackend[F[_], +P] {
     *   The capabilities required by the request. This must be a subset of the the capabilities supported by the backend
     *   (which always includes `Effect[F]`).
     */
-  def send[T, R >: P with Effect[F]](request: Request[T, R]): F[Response[T]]
+  def send[T, R >: P with Effect[F]](request: AbstractRequest[T, R]): F[Response[T]]
 
   def close(): F[Unit]
 

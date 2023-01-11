@@ -17,7 +17,7 @@ package sttp.client3
   */
 case class SimpleHttpClient(backend: SttpBackend[Identity, Any]) {
 
-  def send[T](request: Request[T, Any]): Response[T] = backend.send(request)
+  def send[T](request: Request[T]): Response[T] = backend.send(request)
 
   def withBackend(newBackend: SttpBackend[Identity, Any]): SimpleHttpClient = copy(backend = newBackend)
   def wrapBackend(f: SttpBackend[Identity, Any] => SttpBackend[Identity, Any]): SimpleHttpClient =

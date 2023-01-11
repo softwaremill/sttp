@@ -36,10 +36,10 @@ class RequestTests extends AnyFlatSpec with Matchers {
   }
 
   "multiple subtype response variants" should "compile" in {
-    val asLeft: ResponseAs[Left[String, String], Any] = asStringAlways.map(Left(_))
-    val asRight: ResponseAs[Right[String, String], Any] = asStringAlways.map(Right(_))
+    val asLeft: ResponseAs[Left[String, String]] = asStringAlways.map(Left(_))
+    val asRight: ResponseAs[Right[String, String]] = asStringAlways.map(Right(_))
 
-    def myRequest: Request[Either[String, String], Any] =
+    def myRequest: Request[Either[String, String]] =
       basicRequest
         .get(uri"https://test.com")
         .response {
@@ -63,7 +63,7 @@ class RequestTests extends AnyFlatSpec with Matchers {
       .body("1234")
       .response(asBoth(asParams, asStringAlways))
       .show() shouldBe
-      "response as: (either(as string, as params), as string), headers: Accept-Encoding: gzip, deflate, Authorization: ***, Content-Type: text/plain; charset=utf-8, Content-Length: 4, body: string: 1234"
+      "(no method & uri set), response as: (either(as string, as params), as string), headers: Accept-Encoding: gzip, deflate, Authorization: ***, Content-Type: text/plain; charset=utf-8, Content-Length: 4, body: string: 1234"
   }
 
   it should "properly replace headers" in {

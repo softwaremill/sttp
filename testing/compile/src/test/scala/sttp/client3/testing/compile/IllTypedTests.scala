@@ -17,7 +17,7 @@ class IllTypedTests extends AnyFlatSpec with Matchers {
     }
 
     thrown.getMessage should include(
-      "Cannot prove that Any with sttp.capabilities.Effect[[X]sttp.client3.Identity[X]] <:< Any with sttp.capabilities.Effect[sttp.client3.Identity] with sttp.capabilities.WebSockets."
+      "Cannot prove that Any with sttp.capabilities.Effect[[+X]sttp.client3.Identity[X]] <:< sttp.capabilities.Effect[[+X]sttp.client3.Identity[X]] with sttp.capabilities.WebSockets."
     )
   }
 
@@ -30,6 +30,6 @@ class IllTypedTests extends AnyFlatSpec with Matchers {
         """)
     }
 
-    thrown.getMessage should include("This is a partial request, the method & url are not specified")
+    thrown.getMessage should include("value send is not a member of sttp.client3.PartialRequest[Either[String,String]]")
   }
 }

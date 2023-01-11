@@ -14,11 +14,11 @@ import scala.util.Try
   *   TODO
   */
 class TryBackend[P](delegate: SttpBackend[Identity, P]) extends SttpBackend[Try, P] {
-  override def send[T, R >: P with Effect[Try]](request: Request[T, R]): Try[Response[T]] =
+  override def send[T, R >: P with Effect[Try]](request: AbstractRequest[T, R]): Try[Response[T]] =
     Try(
       delegate.send(
-        MapEffect[Try, Identity, Identity, T, P](
-          request: Request[T, P with Effect[Try]],
+        MapEffect[Try, Identity, T, P](
+          request: AbstractRequest[T, P with Effect[Try]],
           tryToId,
           idToTry,
           responseMonad,

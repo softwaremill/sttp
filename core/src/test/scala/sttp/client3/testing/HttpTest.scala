@@ -5,7 +5,7 @@ import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
 import sttp.client3.internal.{Iso88591, Utf8}
 import sttp.client3.testing.HttpTest.endpoint
-import sttp.client3.{Response, ResponseAs, SttpBackend, _}
+import sttp.client3._
 import sttp.model.StatusCode
 import sttp.monad.MonadError
 import sttp.monad.syntax._
@@ -34,8 +34,8 @@ trait HttpTest[F[_]]
   // should only be implemented in supportsCancellation == true
   def timeoutToNone[T](t: F[T], timeoutMillis: Int): F[Option[T]]
 
-  protected def postEcho: Request[Either[String, String], Any] = basicRequest.post(uri"$endpoint/echo")
-  protected def postEchoExact: Request[Either[String, String], Any] = basicRequest.post(uri"$endpoint/echo/exact")
+  protected def postEcho: Request[Either[String, String]] = basicRequest.post(uri"$endpoint/echo")
+  protected def postEchoExact: Request[Either[String, String]] = basicRequest.post(uri"$endpoint/echo/exact")
   protected val testBody = "this is the body"
   protected val testBodyBytes: Array[Byte] = testBody.getBytes("UTF-8")
   protected val testBodySignedBytes: Array[Byte] = Array[Byte](-1)
@@ -43,7 +43,7 @@ trait HttpTest[F[_]]
   protected val customEncoding = "custom"
   protected val customEncodedData = "custom-data"
 
-  protected val sttpIgnore: ResponseAs[Unit, Any] = sttp.client3.ignore
+  protected val sttpIgnore: ResponseAs[Unit] = sttp.client3.ignore
 
   protected def supportsRequestTimeout = true
   protected def supportsSttpExceptions = true

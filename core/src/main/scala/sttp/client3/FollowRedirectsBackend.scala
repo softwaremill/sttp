@@ -20,11 +20,11 @@ class FollowRedirectsBackend[F[_], P](
 
   type PE = P with Effect[F]
 
-  override def send[T, R >: PE](request: Request[T, R]): F[Response[T]] = {
+  override def send[T, R >: PE](request: AbstractRequest[T, R]): F[Response[T]] = {
     sendWithCounter(request, 0)
   }
 
-  private def sendWithCounter[T, R >: PE](request: Request[T, R], redirects: Int): F[Response[T]] = {
+  private def sendWithCounter[T, R >: PE](request: AbstractRequest[T, R], redirects: Int): F[Response[T]] = {
     // if there are nested follow redirect backends, disabling them and handling redirects here
     val resp = delegate.send(request.followRedirects(false))
     if (request.options.followRedirects) {
@@ -41,7 +41,7 @@ class FollowRedirectsBackend[F[_], P](
   }
 
   private def followRedirect[T, R >: PE](
-      request: Request[T, R],
+      request: AbstractRequest[T, R],
       response: Response[T],
       redirects: Int
   ): F[Response[T]] = {
@@ -55,7 +55,7 @@ class FollowRedirectsBackend[F[_], P](
   }
 
   private def followRedirect[T, R >: PE](
-      request: Request[T, R],
+      request: AbstractRequest[T, R],
       response: Response[T],
       redirects: Int,
       loc: String
@@ -70,7 +70,7 @@ class FollowRedirectsBackend[F[_], P](
       ((stripSensitiveHeaders[T, R](_)) andThen
         (changePostPutToGet[T, R](_, response.code)) andThen
         (sendWithCounter(_, redirects + 1)))
-        .apply(request.copy[Identity, T, R](uri = uri))
+        .apply(request.method(method = request.method, uri = uri))
 
     responseMonad.map(redirectResponse) { rr =>
       val responseNoBody = response.copy(body = ())
@@ -78,23 +78,21 @@ class FollowRedirectsBackend[F[_], P](
     }
   }
 
-  private def stripSensitiveHeaders[T, R](request: Request[T, R]): Request[T, R] = {
-    request.copy[Identity, T, R](
-      headers = request.headers.filterNot(h => sensitiveHeaders.contains(h.name.toLowerCase()))
+  private def stripSensitiveHeaders[T, R](request: AbstractRequest[T, R]): AbstractRequest[T, R] = {
+    request.withHeaders(
+      request.headers.filterNot(h => sensitiveHeaders.contains(h.name.toLowerCase()))
     )
   }
 
-  private def changePostPutToGet[T, R](r: Request[T, R], statusCode: StatusCode): Request[T, R] = {
+  private def changePostPutToGet[T, R](r: AbstractRequest[T, R], statusCode: StatusCode): AbstractRequest[T, R] = {
     val applicable = r.method == Method.POST || r.method == Method.PUT
     val alwaysChanged = statusCode == StatusCode.SeeOther
     val neverChanged = statusCode == StatusCode.TemporaryRedirect || statusCode == StatusCode.PermanentRedirect
     if (applicable && (r.options.redirectToGet || alwaysChanged) && !neverChanged) {
       // when transforming POST or PUT into a get, content is dropped, also filter out content-related request headers
       r.method(Method.GET, r.uri)
-        .copy(
-          body = NoBody,
-          headers = r.headers.filterNot(header => contentHeaders.contains(header.name.toLowerCase()))
-        )
+        .withBody(NoBody)
+        .withHeaders(r.headers.filterNot(header => contentHeaders.contains(header.name.toLowerCase())))
     } else r
   }
 }
