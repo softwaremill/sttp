@@ -3,7 +3,7 @@ package sttp.client3.akkahttp
 import akka.http.scaladsl.model.ContentType
 import akka.http.scaladsl.model.ContentTypes.`application/octet-stream`
 import akka.http.scaladsl.model.headers.{`Content-Length`, `Content-Type`}
-import sttp.client3.Request
+import sttp.client3.AbstractRequest
 import sttp.model.Header
 
 import scala.collection.immutable.Seq
@@ -19,7 +19,7 @@ private[akkahttp] object Util {
     else Failure[Seq[T]](fs.head.exception)
   }
 
-  def parseContentTypeOrOctetStream(r: Request[_, _]): Try[ContentType] = {
+  def parseContentTypeOrOctetStream(r: AbstractRequest[_, _]): Try[ContentType] = {
     parseContentTypeOrOctetStream(
       r.headers
         .find(isContentType)

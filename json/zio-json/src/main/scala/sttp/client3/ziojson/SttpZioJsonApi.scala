@@ -29,14 +29,14 @@ trait SttpZioJsonApi extends SttpZioJsonApiExtensions {
     *   - `Left(HttpError(String))` if the response code was other than 2xx (deserialization is not attempted)
     *   - `Left(DeserializationException)` if there's an error during deserialization
     */
-  def asJson[B: JsonDecoder: IsOption]: ResponseAs[Either[ResponseException[String, String], B], Any] =
+  def asJson[B: JsonDecoder: IsOption]: ResponseAs[Either[ResponseException[String, String], B]] =
     asString.mapWithMetadata(ResponseAs.deserializeRightWithError(deserializeJson)).showAsJson
 
   /** Tries to deserialize the body from a string into JSON, regardless of the response code. Returns:
     *   - `Right(b)` if the parsing was successful
     *   - `Left(DeserializationException)` if there's an error during deserialization
     */
-  def asJsonAlways[B: JsonDecoder: IsOption]: ResponseAs[Either[DeserializationException[String], B], Any] =
+  def asJsonAlways[B: JsonDecoder: IsOption]: ResponseAs[Either[DeserializationException[String], B]] =
     asStringAlways.map(ResponseAs.deserializeWithError(deserializeJson)).showAsJsonAlways
 
   /** Tries to deserialize the body from a string into JSON, using different deserializers depending on the status code.
@@ -46,7 +46,7 @@ trait SttpZioJsonApi extends SttpZioJsonApiExtensions {
     *   - `Left(DeserializationException)` if there's an error during deserialization
     */
   def asJsonEither[E: JsonDecoder: IsOption, B: JsonDecoder: IsOption]
-      : ResponseAs[Either[ResponseException[E, String], B], Any] =
+      : ResponseAs[Either[ResponseException[E, String], B]] =
     asJson[B].mapLeft {
       case HttpError(e, code) => deserializeJson[E].apply(e).fold(DeserializationException(e, _), HttpError(_, code))
       case de @ DeserializationException(_, _) => de

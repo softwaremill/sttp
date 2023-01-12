@@ -12,7 +12,7 @@ import zio.Task
 class ZioFollowRedirectsBackendTest extends AsyncFlatSpec with Matchers with ZioTestBase {
   it should "properly handle invalid redirect URIs" in {
     val stubBackend: SttpBackend[Task, Any] = new SttpBackend[Task, Any] {
-      override def send[T, R >: capabilities.Effect[Task]](request: Request[T, R]): Task[Response[T]] = {
+      override def send[T, R >: capabilities.Effect[Task]](request: AbstractRequest[T, R]): Task[Response[T]] = {
         Task.succeed(
           if (request.uri.toString.contains("redirect"))
             Response.ok("ok".asInstanceOf[T])

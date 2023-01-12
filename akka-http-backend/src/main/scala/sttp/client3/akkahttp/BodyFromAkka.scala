@@ -8,15 +8,9 @@ import akka.stream.{Materializer, OverflowStrategy, QueueOfferResult}
 import akka.util.ByteString
 import akka.{Done, NotUsed}
 import sttp.capabilities.akka.AkkaStreams
-import sttp.client3.internal.{BodyFromResponseAs, SttpFile}
+import sttp.client3.AbstractResponseAs
+import sttp.client3.internal._
 import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
-import sttp.client3.{
-  ResponseAs,
-  ResponseAsWebSocket,
-  ResponseAsWebSocketStream,
-  ResponseAsWebSocketUnsafe,
-  WebSocketResponseAs
-}
 import sttp.model.{Headers, ResponseMetadata}
 import sttp.monad.{FutureMonad, MonadError}
 import sttp.ws.{WebSocket, WebSocketBufferFull, WebSocketClosed, WebSocketFrame}
@@ -26,7 +20,7 @@ import scala.util.Failure
 
 private[akkahttp] class BodyFromAkka()(implicit ec: ExecutionContext, mat: Materializer, m: MonadError[Future]) {
   def apply[T, R](
-      responseAs: ResponseAs[T, R],
+      responseAs: AbstractResponseAs[T, R],
       meta: ResponseMetadata,
       response: Either[HttpResponse, Promise[Flow[Message, Message, NotUsed]]]
   ): Future[T] =
@@ -80,7 +74,7 @@ private[akkahttp] class BodyFromAkka()(implicit ec: ExecutionContext, mat: Mater
       }
 
       override protected def handleWS[T](
-          responseAs: WebSocketResponseAs[T, _],
+          responseAs: InternalWebSocketResponseAs[T, _],
           meta: ResponseMetadata,
           ws: Promise[Flow[Message, Message, NotUsed]]
       ): Future[T] = wsFromAkka(responseAs, ws, meta)
@@ -95,7 +89,7 @@ private[akkahttp] class BodyFromAkka()(implicit ec: ExecutionContext, mat: Mater
     }
 
   private def wsFromAkka[T, R](
-      rr: WebSocketResponseAs[T, R],
+      rr: InternalWebSocketResponseAs[T, R],
       wsFlow: Promise[Flow[Message, Message, NotUsed]],
       meta: ResponseMetadata
   )(implicit ec: ExecutionContext, mat: Materializer): Future[T] = {

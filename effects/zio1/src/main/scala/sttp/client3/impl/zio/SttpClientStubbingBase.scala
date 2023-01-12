@@ -2,7 +2,7 @@ package sttp.client3.impl.zio
 
 import sttp.capabilities.Effect
 import sttp.client3.testing.SttpBackendStub
-import sttp.client3.{Request, Response, SttpBackend}
+import sttp.client3.{AbstractRequest, Response, SttpBackend}
 import sttp.model.StatusCode
 import sttp.monad.MonadError
 import zio.{Has, RIO, Ref, Tag, UIO, URIO, ZLayer}
@@ -15,21 +15,23 @@ trait SttpClientStubbingBase[R, P] {
   private[sttp] def sttpBackendTag: Tag[SttpBackend[RIO[R, *], P]]
 
   trait Service {
-    def whenRequestMatchesPartial(partial: PartialFunction[Request[_, _], Response[_]]): URIO[SttpClientStubbing, Unit]
+    def whenRequestMatchesPartial(
+        partial: PartialFunction[AbstractRequest[_, _], Response[_]]
+    ): URIO[SttpClientStubbing, Unit]
 
     private[zio] def update(f: SttpBackendStub[RIO[R, *], P] => SttpBackendStub[RIO[R, *], P]): UIO[Unit]
   }
 
   private[sttp] class StubWrapper(stub: Ref[SttpBackendStub[RIO[R, *], P]]) extends Service {
     override def whenRequestMatchesPartial(
-        partial: PartialFunction[Request[_, _], Response[_]]
+        partial: PartialFunction[AbstractRequest[_, _], Response[_]]
     ): URIO[SttpClientStubbing, Unit] =
       update(_.whenRequestMatchesPartial(partial))
 
     override private[zio] def update(f: SttpBackendStub[RIO[R, *], P] => SttpBackendStub[RIO[R, *], P]) = stub.update(f)
   }
 
-  case class StubbingWhenRequest private[sttp] (p: Request[_, _] => Boolean) {
+  case class StubbingWhenRequest private[sttp] (p: AbstractRequest[_, _] => Boolean) {
     implicit val _serviceTag: Tag[Service] = serviceTag
     val thenRespondOk: URIO[SttpClientStubbing, Unit] =
       whenRequest(_.thenRespondOk())
@@ -58,7 +60,7 @@ trait SttpClientStubbingBase[R, P] {
     def thenRespondF(resp: => RIO[R, Response[_]]): URIO[SttpClientStubbing, Unit] =
       whenRequest(_.thenRespondF(resp))
 
-    def thenRespondF(resp: Request[_, _] => RIO[R, Response[_]]): URIO[SttpClientStubbing, Unit] =
+    def thenRespondF(resp: AbstractRequest[_, _] => RIO[R, Response[_]]): URIO[SttpClientStubbing, Unit] =
       whenRequest(_.thenRespondF(resp))
 
     private def whenRequest(
@@ -76,7 +78,7 @@ trait SttpClientStubbingBase[R, P] {
       stub <- Ref.make(SttpBackendStub[RIO[R, *], P](monad))
       stubber = new StubWrapper(stub)
       proxy = new SttpBackend[RIO[R, *], P] {
-        override def send[T, RR >: P with Effect[RIO[R, *]]](request: Request[T, RR]): RIO[R, Response[T]] =
+        override def send[T, RR >: P with Effect[RIO[R, *]]](request: AbstractRequest[T, RR]): RIO[R, Response[T]] =
           stub.get >>= (_.send(request))
 
         override def close(): RIO[R, Unit] =

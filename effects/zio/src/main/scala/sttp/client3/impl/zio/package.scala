@@ -2,7 +2,7 @@ package sttp.client3.impl
 
 import sttp.capabilities.Effect
 import sttp.client3.monad.{FunctionK, MapEffect}
-import sttp.client3.{Identity, Request, Response, SttpBackend}
+import sttp.client3.{Identity, AbstractRequest, Response, SttpBackend}
 import sttp.monad.MonadError
 import _root_.zio.{RIO, ZIO}
 
@@ -11,11 +11,11 @@ package object zio {
     def extendEnv[R1]: SttpBackend[RIO[R0 with R1, *], P] =
       new SttpBackend[RIO[R0 with R1, *], P] {
         override def send[T, R >: P with Effect[RIO[R0 with R1, *]]](
-            request: Request[T, R]
+            request: AbstractRequest[T, R]
         ): RIO[R0 with R1, Response[T]] =
           for {
             env <- ZIO.environment[R0 with R1]
-            mappedRequest = MapEffect[RIO[R0 with R1, *], RIO[R0, *], Identity, T, P](
+            mappedRequest = MapEffect[RIO[R0 with R1, *], RIO[R0, *], T, P](
               request,
               new FunctionK[RIO[R0 with R1, *], RIO[R0, *]] {
                 override def apply[A](fa: RIO[R0 with R1, A]): RIO[R0, A] = fa.provideEnvironment(env)

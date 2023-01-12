@@ -4,11 +4,10 @@ import cats.effect.kernel.Async
 import fs2.io.file.Files
 import fs2.{Pipe, Stream}
 import sttp.capabilities.fs2.Fs2Streams
-import sttp.client3.WebSocketResponseAs
 import sttp.client3.impl.cats.CatsMonadAsyncError
 import sttp.client3.impl.fs2.Fs2WebSockets
 import sttp.client3.internal.httpclient.BodyFromHttpClient
-import sttp.client3.internal.{BodyFromResponseAs, SttpFile}
+import sttp.client3.internal.{BodyFromResponseAs, InternalWebSocketResponseAs, SttpFile}
 import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.model.ResponseMetadata
 import sttp.monad.MonadError
@@ -57,7 +56,7 @@ private[fs2] class Fs2BodyFromHttpClient[F[_]: Async]() extends BodyFromHttpClie
       }
 
       override protected def handleWS[T](
-          responseAs: WebSocketResponseAs[T, _],
+          responseAs: InternalWebSocketResponseAs[T, _],
           meta: ResponseMetadata,
           ws: WebSocket[F]
       ): F[T] = bodyFromWs(responseAs, ws, meta)

@@ -7,9 +7,8 @@ import java.io.File
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicReference
 import sttp.capabilities.Streams
-import sttp.client3.WebSocketResponseAs
 import sttp.client3.armeria.AbstractArmeriaBackend.{RightUnit, noopCanceler}
-import sttp.client3.internal.{BodyFromResponseAs, SttpFile}
+import sttp.client3.internal.{BodyFromResponseAs, InternalWebSocketResponseAs, SttpFile}
 import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.model.ResponseMetadata
 import sttp.monad.syntax._
@@ -107,7 +106,7 @@ private[armeria] trait BodyFromStreamMessage[F[_], S] {
       }
 
       override protected def handleWS[T](
-          responseAs: WebSocketResponseAs[T, _],
+          responseAs: InternalWebSocketResponseAs[T, _],
           meta: ResponseMetadata,
           ws: Nothing
       ): F[T] = ws

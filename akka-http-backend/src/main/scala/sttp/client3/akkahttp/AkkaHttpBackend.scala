@@ -44,12 +44,12 @@ class AkkaHttpBackend private (
     .getOrElse(ConnectionPoolSettings(actorSystem))
     .withUpdatedConnectionSettings(_.withConnectingTimeout(opts.connectionTimeout))
 
-  override def send[T, R >: PE](r: Request[T, R]): Future[Response[T]] =
+  override def send[T, R >: PE](r: AbstractRequest[T, R]): Future[Response[T]] =
     adjustExceptions(r) {
       if (r.isWebSocket) sendWebSocket(r) else sendRegular(r)
     }
 
-  private def sendRegular[T, R >: PE](r: Request[T, R]): Future[Response[T]] = {
+  private def sendRegular[T, R >: PE](r: AbstractRequest[T, R]): Future[Response[T]] = {
     Future
       .fromTry(ToAkka.request(r).flatMap(BodyToAkka(r, r.body, _)))
       .map(customizeRequest)
@@ -63,7 +63,7 @@ class AkkaHttpBackend private (
       )
   }
 
-  private def sendWebSocket[T, R >: PE](r: Request[T, R]): Future[Response[T]] = {
+  private def sendWebSocket[T, R >: PE](r: AbstractRequest[T, R]): Future[Response[T]] = {
     val akkaWebsocketRequest = ToAkka
       .headers(r.headers)
       .map(h => WebSocketRequest(uri = r.uri.toString, extraHeaders = h))
@@ -99,7 +99,7 @@ class AkkaHttpBackend private (
 
   override val responseMonad: MonadError[Future] = new FutureMonad()(ec)
 
-  private def connectionSettings(r: Request[_, _]): ConnectionPoolSettings = {
+  private def connectionSettings(r: AbstractRequest[_, _]): ConnectionPoolSettings = {
     val connectionPoolSettingsWithProxy = opts.proxy match {
       case Some(p) if r.uri.host.forall(!p.ignoreProxy(_)) =>
         val clientTransport = p.auth match {
@@ -120,7 +120,7 @@ class AkkaHttpBackend private (
   private lazy val bodyFromAkka = new BodyFromAkka()(ec, implicitly[Materializer], responseMonad)
 
   private def responseFromAkka[T](
-      r: Request[T, PE],
+      r: AbstractRequest[T, PE],
       hr: HttpResponse,
       wsFlow: Option[Promise[Flow[Message, Message, NotUsed]]]
   ): Future[Response[T]] = {
@@ -152,7 +152,7 @@ class AkkaHttpBackend private (
     case (_, ce)                        => throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
   }
 
-  private def adjustExceptions[T](request: Request[_, _])(t: => Future[T]): Future[T] =
+  private def adjustExceptions[T](request: AbstractRequest[_, _])(t: => Future[T]): Future[T] =
     SttpClientException.adjustExceptions(responseMonad)(t)(FromAkka.exception(request, _))
 
   override def close(): Future[Unit] = {

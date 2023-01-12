@@ -10,7 +10,7 @@ object GetAndParseJsonGetRightMonixCirce extends App {
 
   case class HttpBinResponse(origin: String, headers: Map[String, String])
 
-  val request: Request[HttpBinResponse, Any] = basicRequest
+  val request: AbstractRequest[HttpBinResponse, Any] = basicRequest
     .get(uri"https://httpbin.org/get")
     .response(asJson[HttpBinResponse].getRight)
 

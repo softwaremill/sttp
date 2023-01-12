@@ -16,7 +16,7 @@ private class OpenTelemetryTracingZioBackend[+P](
     tracer: OpenTelemetryZioTracer,
     tracing: Tracing
 ) extends DelegateSttpBackend[Task, P](delegate) {
-  def send[T, R >: P with Effect[Task]](request: Request[T, R]): Task[Response[T]] = {
+  def send[T, R >: P with Effect[Task]](request: AbstractRequest[T, R]): Task[Response[T]] = {
     val carrier: mutable.Map[String, String] = mutable.Map().empty
     val propagator: TextMapPropagator = W3CTraceContextPropagator.getInstance()
     val setter: TextMapSetter[mutable.Map[String, String]] = (carrier, key, value) => carrier.update(key, value)
@@ -43,15 +43,15 @@ object OpenTelemetryTracingZioBackend {
 }
 
 trait OpenTelemetryZioTracer {
-  def spanName[T](request: Request[T, Nothing]): String
-  def before[T](request: Request[T, Nothing]): RIO[Tracing, Unit]
+  def spanName[T](request: AbstractRequest[T, Nothing]): String
+  def before[T](request: AbstractRequest[T, Nothing]): RIO[Tracing, Unit]
   def after[T](response: Response[T]): RIO[Tracing, Unit]
 }
 
 object OpenTelemetryZioTracer {
   val Default: OpenTelemetryZioTracer = new OpenTelemetryZioTracer {
-    override def spanName[T](request: Request[T, Nothing]): String = s"HTTP ${request.method.method}"
-    override def before[T](request: Request[T, Nothing]): RIO[Tracing, Unit] =
+    override def spanName[T](request: AbstractRequest[T, Nothing]): String = s"HTTP ${request.method.method}"
+    override def before[T](request: AbstractRequest[T, Nothing]): RIO[Tracing, Unit] =
       Tracing.setAttribute("http.method", request.method.method) *>
         Tracing.setAttribute("http.url", request.uri.toString()) *>
         ZIO.unit

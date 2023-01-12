@@ -21,8 +21,8 @@ object WebSocketTesting extends App {
   // the request description
   def openWebSocket(backend: SttpBackend[Task, WebSockets]): Task[Unit] = {
     basicRequest
-      .response(asWebSocket(useWebSocket))
       .get(uri"wss://echo.websocket.org")
+      .response(asWebSocket(useWebSocket))
       .send(backend)
       .void
   }

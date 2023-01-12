@@ -3,7 +3,7 @@ package sttp.client3.impl.scalaz
 import scalaz.~>
 import sttp.capabilities.Effect
 import sttp.client3.monad.{FunctionK, MapEffect}
-import sttp.client3.{Identity, Request, Response, SttpBackend}
+import sttp.client3.{Identity, AbstractRequest, Response, SttpBackend}
 import sttp.monad.MonadError
 
 object implicits extends ScalazImplicits
@@ -27,16 +27,10 @@ private[scalaz] final class MappedKSttpBackend[F[_], +P, G[_]](
     g: G ~> F,
     val responseMonad: MonadError[G]
 ) extends SttpBackend[G, P] {
-  def send[T, R >: P with Effect[G]](request: Request[T, R]): G[Response[T]] =
+  def send[T, R >: P with Effect[G]](request: AbstractRequest[T, R]): G[Response[T]] =
     f(
       wrapped.send(
-        MapEffect[G, F, Identity, T, P](
-          request: Request[T, P with Effect[G]],
-          asFunctionK(g),
-          asFunctionK(f),
-          responseMonad,
-          wrapped.responseMonad
-        )
+        MapEffect[G, F, T, P](request, asFunctionK(g), asFunctionK(f), responseMonad, wrapped.responseMonad)
       )
     )
 

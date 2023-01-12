@@ -2,15 +2,9 @@ package sttp.client3.okhttp
 
 import java.io.{BufferedInputStream, ByteArrayInputStream, FileInputStream, InputStream}
 import sttp.capabilities.Streams
-import sttp.client3.internal.{BodyFromResponseAs, FileHelpers, SttpFile, toByteArray}
+import sttp.client3.AbstractResponseAs
+import sttp.client3.internal._
 import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
-import sttp.client3.{
-  ResponseAs,
-  ResponseAsWebSocket,
-  ResponseAsWebSocketStream,
-  ResponseAsWebSocketUnsafe,
-  WebSocketResponseAs
-}
 import sttp.model.ResponseMetadata
 import sttp.monad.MonadError
 import sttp.monad.syntax._
@@ -24,7 +18,7 @@ private[okhttp] trait BodyFromOkHttp[F[_], S] {
 
   def responseBodyToStream(inputStream: InputStream): streams.BinaryStream
 
-  private def fromWs[TT](r: WebSocketResponseAs[TT, _], ws: WebSocket[F], meta: ResponseMetadata): F[TT] =
+  private def fromWs[TT](r: InternalWebSocketResponseAs[TT, _], ws: WebSocket[F], meta: ResponseMetadata): F[TT] =
     r match {
       case ResponseAsWebSocket(f) =>
         f.asInstanceOf[(WebSocket[F], ResponseMetadata) => F[TT]](ws, meta).ensure(ws.close())
@@ -37,7 +31,7 @@ private[okhttp] trait BodyFromOkHttp[F[_], S] {
 
   def apply[T](
       responseBody: InputStream,
-      responseAs: ResponseAs[T, _],
+      responseAs: AbstractResponseAs[T, _],
       responseMetadata: ResponseMetadata,
       ws: Option[WebSocket[F]]
   ): F[T] = bodyFromResponseAs(responseAs, responseMetadata, ws.toRight(responseBody))
@@ -75,7 +69,7 @@ private[okhttp] trait BodyFromOkHttp[F[_], S] {
         monad.eval((responseBodyToStream(response), () => monad.eval(response.close())))
 
       override protected def handleWS[T](
-          responseAs: WebSocketResponseAs[T, _],
+          responseAs: InternalWebSocketResponseAs[T, _],
           meta: ResponseMetadata,
           ws: WebSocket[F]
       ): F[T] = fromWs(responseAs, ws, meta)

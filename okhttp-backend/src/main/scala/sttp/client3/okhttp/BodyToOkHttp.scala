@@ -9,17 +9,7 @@ import okhttp3.{
 import okio.{BufferedSink, ByteString, Okio}
 import sttp.capabilities.Streams
 import sttp.client3.internal.Utf8
-import sttp.client3.{
-  ByteArrayBody,
-  ByteBufferBody,
-  FileBody,
-  InputStreamBody,
-  MultipartBody,
-  NoBody,
-  RequestBody,
-  StreamBody,
-  StringBody
-}
+import sttp.client3._
 import sttp.model.{Header, HeaderNames, Part}
 
 import scala.collection.JavaConverters._
@@ -29,7 +19,7 @@ private[okhttp] trait BodyToOkHttp[F[_], S] {
   val streams: Streams[S]
   def streamToRequestBody(stream: streams.BinaryStream, mt: MediaType, cl: Option[Long]): OkHttpRequestBody
 
-  def apply[R](body: RequestBody[R], ct: Option[String], cl: Option[Long]): Option[OkHttpRequestBody] = {
+  def apply[R](body: AbstractBody[R], ct: Option[String], cl: Option[Long]): Option[OkHttpRequestBody] = {
     val mediaType = ct.flatMap(c => Try(MediaType.parse(c)).toOption).orNull
     body match {
       case NoBody                                          => None
@@ -49,14 +39,14 @@ private[okhttp] trait BodyToOkHttp[F[_], S] {
         Some(OkHttpRequestBody.create(b.toFile, mediaType))
       case StreamBody(s) =>
         Some(streamToRequestBody(s.asInstanceOf[streams.BinaryStream], mediaType, cl))
-      case MultipartBody(ps) =>
+      case m: MultipartBody[_] =>
         val b = new OkHttpMultipartBody.Builder().setType(Option(mediaType).getOrElse(OkHttpMultipartBody.FORM))
-        ps.foreach(addMultipart(b, _))
+        m.parts.foreach(addMultipart(b, _))
         Some(b.build())
     }
   }
 
-  private def addMultipart(builder: OkHttpMultipartBody.Builder, mp: Part[RequestBody[_]]): Unit = {
+  private def addMultipart(builder: OkHttpMultipartBody.Builder, mp: Part[AbstractBody[_]]): Unit = {
     val allHeaders = mp.headers :+ Header(HeaderNames.ContentDisposition, mp.contentDispositionHeaderValue)
     val headers =
       OkHttpHeaders.of(allHeaders.filterNot(_.is(HeaderNames.ContentType)).map(h => (h.name, h.value)).toMap.asJava)

@@ -13,8 +13,8 @@ object StreamFs2 extends App {
     val stream: Stream[IO, Byte] = Stream.emits("Hello, world".getBytes)
 
     basicRequest
-      .streamBody(Fs2Streams[IO])(stream)
       .post(uri"https://httpbin.org/post")
+      .streamBody(Fs2Streams[IO])(stream)
       .send(backend)
       .map { response => println(s"RECEIVED:\n${response.body}") }
   }

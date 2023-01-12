@@ -21,7 +21,7 @@ trait SttpJson4sApi {
   def asJson[B: Manifest](implicit
       formats: Formats,
       serialization: Serialization
-  ): ResponseAs[Either[ResponseException[String, Exception], B], Any] =
+  ): ResponseAs[Either[ResponseException[String, Exception], B]] =
     asString.mapWithMetadata(ResponseAs.deserializeRightCatchingExceptions(deserializeJson[B])).showAsJson
 
   /** Tries to deserialize the body from a string into JSON, regardless of the response code. Returns:
@@ -31,7 +31,7 @@ trait SttpJson4sApi {
   def asJsonAlways[B: Manifest](implicit
       formats: Formats,
       serialization: Serialization
-  ): ResponseAs[Either[DeserializationException[Exception], B], Any] =
+  ): ResponseAs[Either[DeserializationException[Exception], B]] =
     asStringAlways.map(ResponseAs.deserializeCatchingExceptions(deserializeJson[B])).showAsJsonAlways
 
   /** Tries to deserialize the body from a string into JSON, using different deserializers depending on the status code.
@@ -43,7 +43,7 @@ trait SttpJson4sApi {
   def asJsonEither[E: Manifest, B: Manifest](implicit
       formats: Formats,
       serialization: Serialization
-  ): ResponseAs[Either[ResponseException[E, Exception], B], Any] = {
+  ): ResponseAs[Either[ResponseException[E, Exception], B]] = {
     asJson[B].mapLeft {
       case HttpError(e, code) =>
         ResponseAs.deserializeCatchingExceptions(deserializeJson[E])(e).fold(identity, HttpError(_, code))

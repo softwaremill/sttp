@@ -18,8 +18,8 @@ object WebSocketMonix extends App {
     .resource()
     .use { backend =>
       basicRequest
-        .response(asWebSocket(useWebSocket))
         .get(uri"wss://ws.postman-echo.com/raw")
+        .response(asWebSocket(useWebSocket))
         .send(backend)
         .void
     }

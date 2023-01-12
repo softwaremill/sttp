@@ -41,7 +41,7 @@ class AsyncHttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
   override val streams: Fs2Streams[F] = Fs2Streams[F]
 
   override def send[T, R >: sttp.capabilities.Effect[F] with Fs2Streams[F] with WebSockets](
-      r: Request[T, R]
+      r: AbstractRequest[T, R]
   ): F[Response[T]] = {
     super.send(r).guarantee(implicitly[ContextShift[F]].shift)
   }

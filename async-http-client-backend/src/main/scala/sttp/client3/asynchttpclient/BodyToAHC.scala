@@ -7,18 +7,7 @@ import org.asynchttpclient.{Param, RequestBuilder}
 import org.asynchttpclient.request.body.multipart.{ByteArrayPart, FilePart, StringPart}
 import org.reactivestreams.Publisher
 import sttp.capabilities.Streams
-import sttp.client3.{
-  ByteArrayBody,
-  ByteBufferBody,
-  FileBody,
-  InputStreamBody,
-  MultipartBody,
-  NoBody,
-  Request,
-  RequestBody,
-  StreamBody,
-  StringBody
-}
+import sttp.client3._
 import sttp.client3.internal.{throwNestedMultipartNotAllowed, toByteArray}
 import sttp.model.{HeaderNames, MediaType, Part}
 
@@ -28,7 +17,7 @@ private[asynchttpclient] trait BodyToAHC[F[_], S] {
   val streams: Streams[S]
   protected def streamToPublisher(s: streams.BinaryStream): Publisher[ByteBuf]
 
-  def apply[R](r: Request[_, R], body: RequestBody[R], rb: RequestBuilder): Unit = {
+  def apply[R](r: AbstractRequest[_, R], body: AbstractBody[R], rb: RequestBuilder): Unit = {
     body match {
       case NoBody => // skip
       case StringBody(b, encoding, _) =>
@@ -53,12 +42,12 @@ private[asynchttpclient] trait BodyToAHC[F[_], S] {
           .getOrElse(-1L)
         rb.setBody(streamToPublisher(s.asInstanceOf[streams.BinaryStream]), cl)
 
-      case MultipartBody(ps) =>
-        ps.foreach(addMultipartBody(rb, _))
+      case m: MultipartBody[_] =>
+        m.parts.foreach(addMultipartBody(rb, _))
     }
   }
 
-  private def addMultipartBody(rb: RequestBuilder, mp: Part[RequestBody[_]]): Unit = {
+  private def addMultipartBody(rb: RequestBuilder, mp: Part[BodyPart[_]]): Unit = {
     // async http client only supports setting file names on file parts. To
     // set a file name on an arbitrary part we have to use a small "work
     // around", combining the file name with the name (surrounding quotes
@@ -68,7 +57,6 @@ private[asynchttpclient] trait BodyToAHC[F[_], S] {
     val ctOrNull = mp.contentType.orNull
 
     val bodyPart = mp.body match {
-      case NoBody => new StringPart(nameWithFilename, "")
       case StringBody(b, encoding, _) =>
         new StringPart(
           nameWithFilename,
@@ -88,7 +76,6 @@ private[asynchttpclient] trait BodyToAHC[F[_], S] {
         new FilePart(mp.name, b.toFile, ctOrNull, null, mp.fileName.orNull)
       case StreamBody(_) =>
         throw new IllegalArgumentException("Streaming multipart bodies are not supported")
-      case MultipartBody(_) => throwNestedMultipartNotAllowed
     }
 
     bodyPart.setCustomHeaders(

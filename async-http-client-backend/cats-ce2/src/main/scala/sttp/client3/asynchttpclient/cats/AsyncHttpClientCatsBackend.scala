@@ -17,7 +17,7 @@ import org.reactivestreams.Publisher
 import sttp.client3.asynchttpclient.{AsyncHttpClientBackend, BodyFromAHC, BodyToAHC}
 import sttp.client3.impl.cats.CatsMonadAsyncError
 import sttp.client3.internal.{FileHelpers, NoStreams}
-import sttp.client3.{FollowRedirectsBackend, Request, Response, SttpBackend, SttpBackendOptions}
+import sttp.client3.{FollowRedirectsBackend, AbstractRequest, Response, SttpBackend, SttpBackendOptions}
 import cats.implicits._
 import sttp.client3.internal.ws.SimpleQueue
 import sttp.client3.testing.SttpBackendStub
@@ -37,7 +37,7 @@ class AsyncHttpClientCatsBackend[F[_]: Concurrent: ContextShift] private (
 
   override val streams: NoStreams = NoStreams
 
-  override def send[T, R >: Any with sttp.capabilities.Effect[F]](r: Request[T, R]): F[Response[T]] = {
+  override def send[T, R >: Any with sttp.capabilities.Effect[F]](r: AbstractRequest[T, R]): F[Response[T]] = {
     super.send(r).guarantee(implicitly[ContextShift[F]].shift)
   }
 

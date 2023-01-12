@@ -4,15 +4,9 @@ import java.io.{ByteArrayInputStream, File}
 import java.nio.ByteBuffer
 import org.reactivestreams.Publisher
 import sttp.capabilities.Streams
-import sttp.client3.internal.{BodyFromResponseAs, FileHelpers, SttpFile, nonReplayableBody}
+import sttp.client3.AbstractResponseAs
+import sttp.client3.internal._
 import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
-import sttp.client3.{
-  ResponseAs,
-  ResponseAsWebSocket,
-  ResponseAsWebSocketStream,
-  ResponseAsWebSocketUnsafe,
-  WebSocketResponseAs
-}
 import sttp.model.ResponseMetadata
 import sttp.monad.syntax._
 import sttp.monad.{Canceler, MonadAsyncError}
@@ -78,7 +72,7 @@ private[asynchttpclient] trait BodyFromAHC[F[_], S] {
         (publisherToStream(response), () => ignoreIfNotSubscribed(response, isSubscribed)).unit
 
       override protected def handleWS[T](
-          responseAs: WebSocketResponseAs[T, _],
+          responseAs: InternalWebSocketResponseAs[T, _],
           meta: ResponseMetadata,
           ws: WebSocket[F]
       ): F[T] = bodyFromWs(responseAs, ws, meta)
@@ -94,12 +88,12 @@ private[asynchttpclient] trait BodyFromAHC[F[_], S] {
 
   def apply[TT](
       response: Either[Publisher[ByteBuffer], WebSocket[F]],
-      responseAs: ResponseAs[TT, _],
+      responseAs: AbstractResponseAs[TT, _],
       responseMetadata: ResponseMetadata,
       isSubscribed: () => Boolean
   ): F[TT] = bodyFromResponseAs(isSubscribed)(responseAs, responseMetadata, response)
 
-  private def bodyFromWs[TT](r: WebSocketResponseAs[TT, _], ws: WebSocket[F], meta: ResponseMetadata): F[TT] =
+  private def bodyFromWs[TT](r: InternalWebSocketResponseAs[TT, _], ws: WebSocket[F], meta: ResponseMetadata): F[TT] =
     r match {
       case ResponseAsWebSocket(f) =>
         f.asInstanceOf[(WebSocket[F], ResponseMetadata) => F[TT]].apply(ws, meta).ensure(ws.close())

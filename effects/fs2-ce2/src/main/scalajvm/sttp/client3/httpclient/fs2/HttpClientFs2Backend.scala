@@ -25,7 +25,7 @@ import sttp.client3.{
   FollowRedirectsBackend,
   HttpClientAsyncBackend,
   HttpClientBackend,
-  Request,
+  AbstractRequest,
   Response,
   SttpBackend,
   SttpBackendOptions
@@ -51,7 +51,7 @@ class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
 
   override val streams: Fs2Streams[F] = Fs2Streams[F]
 
-  override def send[T, R >: PE](request: Request[T, R]): F[Response[T]] =
+  override def send[T, R >: PE](request: AbstractRequest[T, R]): F[Response[T]] =
     super.send(request).guarantee(ContextShift[F].shift)
 
   override protected val bodyToHttpClient: BodyToHttpClient[F, Fs2Streams[F]] =

@@ -10,7 +10,16 @@ import sttp.client3.internal.ws.{SimpleQueue, SyncQueue, WebSocketEvent}
 import sttp.client3.monad.IdMonad
 import sttp.client3.okhttp.OkHttpBackend.EncodingHandler
 import sttp.client3.testing.SttpBackendStub
-import sttp.client3.{DefaultReadTimeout, FollowRedirectsBackend, Identity, Request, Response, SttpBackend, SttpBackendOptions, ignore}
+import sttp.client3.{
+  DefaultReadTimeout,
+  FollowRedirectsBackend,
+  Identity,
+  AbstractRequest,
+  Response,
+  SttpBackend,
+  SttpBackendOptions,
+  ignore
+}
 import sttp.monad.MonadError
 import sttp.ws.WebSocket
 
@@ -26,7 +35,7 @@ class OkHttpSyncBackend private (
   private implicit val ec: ExecutionContext = ExecutionContext.global
   override val streams: Streams[Nothing] = NoStreams
 
-  override protected def sendWebSocket[T, R >: PE](request: Request[T, R]): Identity[Response[T]] = {
+  override protected def sendWebSocket[T, R >: PE](request: AbstractRequest[T, R]): Identity[Response[T]] = {
     val nativeRequest = convertRequest(request)
     val responseCell = new ArrayBlockingQueue[Either[Throwable, Future[Response[T]]]](5)
     def fillCellError(t: Throwable): Unit = responseCell.add(Left(t))
@@ -39,7 +48,7 @@ class OkHttpSyncBackend private (
       new AddToQueueListener(queue, isOpen),
       { (nativeWs, response) =>
         val webSocket = new WebSocketImpl(nativeWs, queue, isOpen, response.headers())
-        val baseResponse = readResponse(response, request.response(ignore))
+        val baseResponse = readResponse(response, request, ignore)
         val wsResponse =
           Future(
             blocking(
@@ -60,13 +69,13 @@ class OkHttpSyncBackend private (
     Await.result(response, Duration.Inf)
   }
 
-  override protected def sendRegular[T, R >: PE](request: Request[T, R]): Identity[Response[T]] = {
+  override protected def sendRegular[T, R >: PE](request: AbstractRequest[T, R]): Identity[Response[T]] = {
     val nativeRequest = convertRequest(request)
     val response = OkHttpBackend
       .updateClientIfCustomReadTimeout(request, client)
       .newCall(nativeRequest)
       .execute()
-    readResponse(response, request)
+    readResponse(response, request, request.response)
   }
 
   override val responseMonad: MonadError[Identity] = IdMonad

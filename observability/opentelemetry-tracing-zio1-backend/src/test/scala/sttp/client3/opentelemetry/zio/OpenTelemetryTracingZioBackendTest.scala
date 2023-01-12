@@ -8,7 +8,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import sttp.client3.impl.zio.{RIOMonadAsyncError, ZioTestBase}
 import sttp.client3.testing.SttpBackendStub
-import sttp.client3.{Request, Response, SttpBackend, UriContext, basicRequest}
+import sttp.client3.{AbstractRequest, Response, SttpBackend, UriContext, basicRequest}
 import sttp.model.StatusCode
 import zio.Task
 import zio.telemetry.opentelemetry.Tracing
@@ -18,7 +18,7 @@ import scala.collection.mutable
 
 class OpenTelemetryTracingZioBackendTest extends AnyFlatSpec with Matchers with BeforeAndAfter with ZioTestBase {
 
-  private val recordedRequests = mutable.ListBuffer[Request[_, _]]()
+  private val recordedRequests = mutable.ListBuffer[AbstractRequest[_, _]]()
 
   private val spanExporter = InMemorySpanExporter.create()
 

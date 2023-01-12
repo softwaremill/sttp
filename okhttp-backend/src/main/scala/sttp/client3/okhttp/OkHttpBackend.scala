@@ -18,7 +18,7 @@ import sttp.client3.SttpBackendOptions.Proxy
 import sttp.client3.SttpClientException.ReadException
 import sttp.client3.internal.ws.SimpleQueue
 import sttp.client3.okhttp.OkHttpBackend.EncodingHandler
-import sttp.client3.{Response, SttpBackend, SttpBackendOptions, _}
+import sttp.client3.{AbstractResponseAs, Response, SttpBackend, SttpBackendOptions, _}
 import sttp.model._
 
 import scala.collection.JavaConverters._
@@ -32,7 +32,7 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
   val streams: Streams[S]
   type PE = P with Effect[F]
 
-  override def send[T, R >: PE](request: Request[T, R]): F[Response[T]] = {
+  override def send[T, R >: PE](request: AbstractRequest[T, R]): F[Response[T]] = {
     adjustExceptions(request.isWebSocket, request) {
       if (request.isWebSocket) {
         sendWebSocket(request)
@@ -42,15 +42,15 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
     }
   }
 
-  protected def sendRegular[T, R >: PE](request: Request[T, R]): F[Response[T]]
-  protected def sendWebSocket[T, R >: PE](request: Request[T, R]): F[Response[T]]
+  protected def sendRegular[T, R >: PE](request: AbstractRequest[T, R]): F[Response[T]]
+  protected def sendWebSocket[T, R >: PE](request: AbstractRequest[T, R]): F[Response[T]]
 
-  private def adjustExceptions[T](isWebsocket: Boolean, request: Request[_, _])(t: => F[T]): F[T] =
+  private def adjustExceptions[T](isWebsocket: Boolean, request: AbstractRequest[_, _])(t: => F[T]): F[T] =
     SttpClientException.adjustExceptions(responseMonad)(t)(
       OkHttpBackend.exceptionToSttpClientException(isWebsocket, request, _)
     )
 
-  private[okhttp] def convertRequest[T, R >: PE](request: Request[T, R]): OkHttpRequest = {
+  private[okhttp] def convertRequest[T, R >: PE](request: AbstractRequest[T, R]): OkHttpRequest = {
     val builder = new OkHttpRequest.Builder()
       .url(request.uri.toString)
 
@@ -74,7 +74,8 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
 
   private[okhttp] def readResponse[T, R >: PE](
       res: OkHttpResponse,
-      request: Request[T, R]
+      request: AbstractRequest[_, R],
+      responseAs: AbstractResponseAs[T, R]
   ): F[Response[T]] = {
     val headers = readHeaders(res)
     val responseMetadata = ResponseMetadata(StatusCode(res.code()), res.message(), headers)
@@ -96,7 +97,7 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
         res.body().byteStream()
       }
 
-    val body = bodyFromOkHttp(byteBody, request.response, responseMetadata, None)
+    val body = bodyFromOkHttp(byteBody, responseAs, responseMetadata, None)
     responseMonad.map(body)(Response(_, StatusCode(res.code()), res.message(), headers, Nil, request.onlyMetadata))
   }
 
@@ -156,7 +157,10 @@ object OkHttpBackend {
     clientBuilder.build()
   }
 
-  private[okhttp] def updateClientIfCustomReadTimeout[T, S](r: Request[T, S], client: OkHttpClient): OkHttpClient = {
+  private[okhttp] def updateClientIfCustomReadTimeout[T, S](
+      r: AbstractRequest[T, S],
+      client: OkHttpClient
+  ): OkHttpClient = {
     val readTimeoutMillis = if (r.options.readTimeout.isFinite) r.options.readTimeout.toMillis else 0
     val reuseClient = readTimeoutMillis == client.readTimeoutMillis()
     if (reuseClient) client
@@ -169,7 +173,7 @@ object OkHttpBackend {
 
   private[okhttp] def exceptionToSttpClientException(
       isWebsocket: Boolean,
-      request: Request[_, _],
+      request: AbstractRequest[_, _],
       e: Exception
   ): Option[Exception] =
     e match {

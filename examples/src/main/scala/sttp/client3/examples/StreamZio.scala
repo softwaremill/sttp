@@ -14,8 +14,8 @@ object StreamZio extends ZIOAppDefault {
     backend
       .send(
         basicRequest
-          .streamBody(ZioStreams)(stream)
           .post(uri"https://httpbin.org/post")
+          .streamBody(ZioStreams)(stream)
       )
       .flatMap { response => printLine(s"RECEIVED:\n${response.body}") }
   }
