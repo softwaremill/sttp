@@ -41,6 +41,7 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   }.value,
   ideSkipProject := (scalaVersion.value != scala2_13)
     || thisProjectRef.value.project.contains("JS") || thisProjectRef.value.project.contains("Native"),
+  bspEnabled := !ideSkipProject.value,
   mimaPreviousArtifacts := Set.empty // we only use MiMa for `core` for now, using enableMimaSettings
 )
 
