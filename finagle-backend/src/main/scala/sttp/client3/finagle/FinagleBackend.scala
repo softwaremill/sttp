@@ -16,7 +16,7 @@ import com.twitter.util
 import com.twitter.util.{Duration, Future => TFuture}
 import sttp.capabilities.Effect
 import sttp.client3.internal.{BodyFromResponseAs, FileHelpers, InternalWebSocketResponseAs, SttpFile, Utf8}
-import sttp.client3.testing.SttpBackendStub
+import sttp.client3.testing.BackendStub
 import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.client3._
 import sttp.model.HttpVersion.HTTP_1
@@ -26,9 +26,9 @@ import sttp.monad.syntax._
 
 import scala.io.Source
 
-class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture, Any] {
-  type PE = Any with Effect[TFuture]
-  override def send[T, R >: PE](request: AbstractRequest[T, R]): TFuture[Response[T]] =
+class FinagleBackend(client: Option[Client] = None) extends Backend[TFuture] {
+  type R = Any with Effect[TFuture]
+  override def internalSend[T](request: AbstractRequest[T, R]): TFuture[Response[T]] =
     adjustExceptions(request) {
       val service = getClient(client, request)
       val finagleRequest = requestBodyToFinagle(request)
@@ -247,17 +247,15 @@ object TFutureMonadError extends MonadError[TFuture] {
 
 object FinagleBackend {
 
-  def apply(): SttpBackend[TFuture, Any] = {
-    new FollowRedirectsBackend[TFuture, Any](new FinagleBackend())
-  }
+  def apply(): Backend[TFuture] =
+    FollowRedirectsBackend(new FinagleBackend())
 
-  def usingClient(client: Client): SttpBackend[TFuture, Any] = {
-    new FollowRedirectsBackend[TFuture, Any](new FinagleBackend(Some(client)))
-  }
+  def usingClient(client: Client): Backend[TFuture] =
+    FollowRedirectsBackend(new FinagleBackend(Some(client)))
 
   /** Create a stub backend for testing, which uses the [[TFuture]] response wrapper, and doesn't support streaming.
     *
-    * See [[SttpBackendStub]] for details on how to configure stub responses.
+    * See [[BackendStub]] for details on how to configure stub responses.
     */
-  def stub: SttpBackendStub[TFuture, Any] = SttpBackendStub(TFutureMonadError)
+  def stub: BackendStub[TFuture] = BackendStub(TFutureMonadError)
 }

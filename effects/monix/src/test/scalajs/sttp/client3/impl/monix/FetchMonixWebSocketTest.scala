@@ -2,9 +2,8 @@ package sttp.client3.impl.monix
 
 import monix.eval.Task
 import monix.reactive.Observable
-import sttp.capabilities.WebSockets
 import sttp.capabilities.monix.MonixStreams
-import sttp.client3.SttpBackend
+import sttp.client3.WebSocketStreamBackend
 import sttp.client3.testing.ConvertToFuture
 import sttp.client3.testing.websocket.{WebSocketStreamingTest, WebSocketTest}
 import sttp.monad.MonadError
@@ -17,7 +16,7 @@ class FetchMonixWebSocketTest extends WebSocketTest[Task] with WebSocketStreamin
   implicit override def executionContext: ExecutionContext = queue
   override def throwsWhenNotAWebSocket: Boolean = true
 
-  override val backend: SttpBackend[Task, MonixStreams with WebSockets] = FetchMonixBackend()
+  override val backend: WebSocketStreamBackend[Task, MonixStreams] = FetchMonixBackend()
   override implicit val convertToFuture: ConvertToFuture[Task] = convertMonixTaskToFuture
 
   override implicit def monad: MonadError[Task] = TaskMonadAsyncError

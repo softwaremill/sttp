@@ -1,43 +1,49 @@
 package sttp.client3.impl.scalaz
 
 import scalaz.~>
-import sttp.capabilities.Effect
-import sttp.client3.monad.{FunctionK, MapEffect}
-import sttp.client3.{Identity, AbstractRequest, Response, SttpBackend}
+import sttp.client3.monad.FunctionK
+import sttp.client3._
 import sttp.monad.MonadError
 
 object implicits extends ScalazImplicits
 
 trait ScalazImplicits {
-  implicit final def sttpBackendToScalazMappableSttpBackend[F[_], P](
-      sttpBackend: SttpBackend[F, P]
-  ): MappableSttpBackend[F, P] = new MappableSttpBackend(sttpBackend)
+  implicit final def backendToScalazMappable[F[_]](backend: Backend[F]): MappableBackend[F] =
+    new MappableBackend(backend)
+
+  implicit final def webSocketBackendToScalazMappable[F[_]](backend: WebSocketBackend[F]): MappableWebSocketBackend[F] =
+    new MappableWebSocketBackend(backend)
+
+  implicit final def streambackendToScalazMappable[F[_], S](backend: StreamBackend[F, S]): MappableStreamBackend[F, S] =
+    new MappableStreamBackend(backend)
+
+  implicit final def webSocketStreamBackendToScalazMappable[F[_], S](
+      backend: WebSocketStreamBackend[F, S]
+  ): MappableWebSocketStreamBackend[F, S] =
+    new MappableWebSocketStreamBackend(backend)
 }
 
-final class MappableSttpBackend[F[_], P] private[scalaz] (
-    private val sttpBackend: SttpBackend[F, P]
-) extends AnyVal {
-  def mapK[G[_]: MonadError](f: F ~> G, g: G ~> F): SttpBackend[G, P] =
-    new MappedKSttpBackend(sttpBackend, f, g, implicitly)
+final class MappableBackend[F[_]] private[scalaz] (private val backend: Backend[F]) extends AnyVal {
+  def mapK[G[_]: MonadError](f: F ~> G, g: G ~> F): Backend[G] =
+    MappedEffectBackend(backend, new AsFunctionK(f), new AsFunctionK(g), implicitly[MonadError[G]])
 }
 
-private[scalaz] final class MappedKSttpBackend[F[_], +P, G[_]](
-    wrapped: SttpBackend[F, P],
-    f: F ~> G,
-    g: G ~> F,
-    val responseMonad: MonadError[G]
-) extends SttpBackend[G, P] {
-  def send[T, R >: P with Effect[G]](request: AbstractRequest[T, R]): G[Response[T]] =
-    f(
-      wrapped.send(
-        MapEffect[G, F, T, P](request, asFunctionK(g), asFunctionK(f), responseMonad, wrapped.responseMonad)
-      )
-    )
+final class MappableWebSocketBackend[F[_]] private[scalaz] (private val backend: WebSocketBackend[F]) extends AnyVal {
+  def mapK[G[_]: MonadError](f: F ~> G, g: G ~> F): WebSocketBackend[G] =
+    MappedEffectBackend(backend, new AsFunctionK(f), new AsFunctionK(g), implicitly[MonadError[G]])
+}
 
-  def close(): G[Unit] = f(wrapped.close())
+final class MappableStreamBackend[F[_], S] private[scalaz] (private val backend: StreamBackend[F, S]) extends AnyVal {
+  def mapK[G[_]: MonadError](f: F ~> G, g: G ~> F): StreamBackend[G, S] =
+    MappedEffectBackend(backend, new AsFunctionK(f), new AsFunctionK(g), implicitly[MonadError[G]])
+}
 
-  private def asFunctionK[A[_], B[_]](ab: A ~> B) =
-    new FunctionK[A, B] {
-      override def apply[X](x: A[X]): B[X] = ab(x)
-    }
+final class MappableWebSocketStreamBackend[F[_], S] private[scalaz] (private val backend: WebSocketStreamBackend[F, S])
+    extends AnyVal {
+  def mapK[G[_]: MonadError](f: F ~> G, g: G ~> F): WebSocketStreamBackend[G, S] =
+    MappedEffectBackend(backend, new AsFunctionK(f), new AsFunctionK(g), implicitly[MonadError[G]])
+}
+
+private[scalaz] class AsFunctionK[F[_], G[_]](ab: F ~> G) extends FunctionK[F, G] {
+  override def apply[X](x: F[X]): G[X] = ab(x)
 }

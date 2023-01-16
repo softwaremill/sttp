@@ -1,8 +1,7 @@
 package sttp.client3.impl.cats
 
 import cats.effect.IO
-import sttp.capabilities
-import sttp.client3.SttpBackend
+import sttp.client3.WebSocketBackend
 import sttp.client3.testing.websocket.WebSocketTest
 
 import scala.concurrent.ExecutionContext
@@ -12,5 +11,5 @@ class FetchCatsWebSocketTest extends WebSocketTest[IO] with CatsTestBase {
   implicit override def executionContext: ExecutionContext = queue
   override def throwsWhenNotAWebSocket: Boolean = true
 
-  override val backend: SttpBackend[IO, capabilities.WebSockets] = FetchCatsBackend()
+  override val backend: WebSocketBackend[IO] = FetchCatsBackend()
 }

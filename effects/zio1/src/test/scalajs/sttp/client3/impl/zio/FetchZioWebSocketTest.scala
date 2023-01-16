@@ -2,9 +2,8 @@ package sttp.client3.impl.zio
 
 import zio.Task
 import zio.stream.ZStream
-import sttp.capabilities.WebSockets
 import sttp.capabilities.zio.ZioStreams
-import sttp.client3.SttpBackend
+import sttp.client3.WebSocketStreamBackend
 import sttp.client3.testing.ConvertToFuture
 import sttp.client3.testing.websocket.{WebSocketStreamingTest, WebSocketTest}
 import sttp.monad.MonadError
@@ -17,7 +16,7 @@ class FetchZioWebSocketTest extends WebSocketTest[Task] with WebSocketStreamingT
   implicit override def executionContext: ExecutionContext = queue
   override def throwsWhenNotAWebSocket: Boolean = true
 
-  override val backend: SttpBackend[Task, ZioStreams with WebSockets] = FetchZioBackend()
+  override val backend: WebSocketStreamBackend[Task, ZioStreams] = FetchZioBackend()
   override implicit val convertToFuture: ConvertToFuture[Task] = convertZioTaskToFuture
 
   override implicit def monad: MonadError[Task] = new RIOMonadAsyncError[Any]

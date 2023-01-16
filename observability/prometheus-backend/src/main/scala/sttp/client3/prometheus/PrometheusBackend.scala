@@ -1,7 +1,7 @@
 package sttp.client3.prometheus
 
 import java.util.concurrent.ConcurrentHashMap
-import sttp.client3.{FollowRedirectsBackend, HttpError, Identity, AbstractRequest, Response, SttpBackend}
+import sttp.client3._
 import io.prometheus.client.{CollectorRegistry, Counter, Gauge, Histogram, Summary}
 import sttp.client3.listener.{ListenerBackend, RequestListener}
 import sttp.client3.prometheus.PrometheusBackend.RequestCollectors
@@ -21,52 +21,52 @@ object PrometheusBackend {
   val DefaultMethodLabel = "method"
   val DefaultStatusLabel = "status"
 
-  def apply[F[_], P](
-      delegate: SttpBackend[F, P],
-      requestToHistogramNameMapper: AbstractRequest[_, _] => Option[HistogramCollectorConfig] =
-        (req: AbstractRequest[_, _]) => Some(addMethodLabel(HistogramCollectorConfig(DefaultHistogramName), req)),
-      requestToInProgressGaugeNameMapper: AbstractRequest[_, _] => Option[CollectorConfig] =
-        (req: AbstractRequest[_, _]) => Some(addMethodLabel(CollectorConfig(DefaultRequestsInProgressGaugeName), req)),
-      responseToSuccessCounterMapper: (AbstractRequest[_, _], Response[_]) => Option[CollectorConfig] =
-        (req: AbstractRequest[_, _], resp: Response[_]) =>
-          Some(addStatusLabel(addMethodLabel(CollectorConfig(DefaultSuccessCounterName), req), resp)),
-      responseToErrorCounterMapper: (AbstractRequest[_, _], Response[_]) => Option[CollectorConfig] =
-        (req: AbstractRequest[_, _], resp: Response[_]) =>
-          Some(addStatusLabel(addMethodLabel(CollectorConfig(DefaultErrorCounterName), req), resp)),
-      requestToFailureCounterMapper: (AbstractRequest[_, _], Throwable) => Option[CollectorConfig] =
-        (req: AbstractRequest[_, _], _: Throwable) =>
-          Some(addMethodLabel(CollectorConfig(DefaultFailureCounterName), req)),
-      requestToSizeSummaryMapper: AbstractRequest[_, _] => Option[CollectorConfig] = (req: AbstractRequest[_, _]) =>
-        Some(addMethodLabel(CollectorConfig(DefaultRequestSizeName), req)),
-      responseToSizeSummaryMapper: (AbstractRequest[_, _], Response[_]) => Option[CollectorConfig] =
-        (req: AbstractRequest[_, _], resp: Response[_]) =>
-          Some(addStatusLabel(addMethodLabel(CollectorConfig(DefaultResponseSizeName), req), resp)),
-      collectorRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry
-  ): SttpBackend[F, P] = {
+  def apply(delegate: SyncBackend): SyncBackend =
+    apply(delegate, PrometheusConfig.Default)
+
+  def apply[F[_]](delegate: Backend[F]): Backend[F] =
+    apply(delegate, PrometheusConfig.Default)
+
+  def apply[F[_]](delegate: WebSocketBackend[F]): WebSocketBackend[F] =
+    apply(delegate, PrometheusConfig.Default)
+
+  def apply[F[_], S](delegate: StreamBackend[F, S]): StreamBackend[F, S] =
+    apply(delegate, PrometheusConfig.Default)
+
+  def apply[F[_], S](delegate: WebSocketStreamBackend[F, S]): WebSocketStreamBackend[F, S] =
+    apply(delegate, PrometheusConfig.Default)
+
+  def apply(delegate: SyncBackend, config: PrometheusConfig): SyncBackend =
     // redirects should be handled before prometheus
-    new FollowRedirectsBackend[F, P](
-      new ListenerBackend[F, P, RequestCollectors](
-        delegate,
-        RequestListener.lift(
-          new PrometheusListener(
-            (req: AbstractRequest[_, _]) => requestToHistogramNameMapper(req),
-            (req: AbstractRequest[_, _]) => requestToInProgressGaugeNameMapper(req),
-            (rr: (AbstractRequest[_, _], Response[_])) => responseToSuccessCounterMapper(rr._1, rr._2),
-            (rr: (AbstractRequest[_, _], Response[_])) => responseToErrorCounterMapper(rr._1, rr._2),
-            (r: (AbstractRequest[_, _], Throwable)) => requestToFailureCounterMapper(r._1, r._2),
-            (req: AbstractRequest[_, _]) => requestToSizeSummaryMapper(req),
-            (rr: (AbstractRequest[_, _], Response[_])) => responseToSizeSummaryMapper(rr._1, rr._2),
-            collectorRegistry,
-            cacheFor(histograms, collectorRegistry),
-            cacheFor(gauges, collectorRegistry),
-            cacheFor(counters, collectorRegistry),
-            cacheFor(summaries, collectorRegistry)
-          ),
-          delegate.responseMonad
-        )
-      )
+    FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener(config), delegate.responseMonad)))
+
+  def apply[F[_]](delegate: Backend[F], config: PrometheusConfig): Backend[F] =
+    FollowRedirectsBackend[F](ListenerBackend(delegate, RequestListener.lift(listener(config), delegate.responseMonad)))
+
+  def apply[F[_]](delegate: WebSocketBackend[F], config: PrometheusConfig): WebSocketBackend[F] =
+    FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener(config), delegate.responseMonad)))
+
+  def apply[F[_], S](delegate: StreamBackend[F, S], config: PrometheusConfig): StreamBackend[F, S] =
+    FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener(config), delegate.responseMonad)))
+
+  def apply[F[_], S](delegate: WebSocketStreamBackend[F, S], config: PrometheusConfig): WebSocketStreamBackend[F, S] =
+    FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener(config), delegate.responseMonad)))
+
+  private def listener(config: PrometheusConfig): PrometheusListener =
+    new PrometheusListener(
+      (req: AbstractRequest[_, _]) => config.requestToHistogramNameMapper(req),
+      (req: AbstractRequest[_, _]) => config.requestToInProgressGaugeNameMapper(req),
+      (rr: (AbstractRequest[_, _], Response[_])) => config.responseToSuccessCounterMapper(rr._1, rr._2),
+      (rr: (AbstractRequest[_, _], Response[_])) => config.responseToErrorCounterMapper(rr._1, rr._2),
+      (r: (AbstractRequest[_, _], Throwable)) => config.requestToFailureCounterMapper(r._1, r._2),
+      (req: AbstractRequest[_, _]) => config.requestToSizeSummaryMapper(req),
+      (rr: (AbstractRequest[_, _], Response[_])) => config.responseToSizeSummaryMapper(rr._1, rr._2),
+      config.collectorRegistry,
+      cacheFor(histograms, config.collectorRegistry),
+      cacheFor(gauges, config.collectorRegistry),
+      cacheFor(counters, config.collectorRegistry),
+      cacheFor(summaries, config.collectorRegistry)
     )
-  }
 
   /** Add, if not present, a "method" label. That is, if the user already supplied such a label, it is left as-is.
     *
@@ -143,7 +143,6 @@ object PrometheusBackend {
     cache.synchronized {
       cache.getOrElseUpdate(collectorRegistry, new ConcurrentHashMap[String, T]())
     }
-
   final case class RequestCollectors(maybeTimer: Option[Histogram.Timer], maybeGauge: Option[Gauge.Child])
 }
 

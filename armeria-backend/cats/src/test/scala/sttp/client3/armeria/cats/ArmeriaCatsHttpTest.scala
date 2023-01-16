@@ -6,7 +6,7 @@ import sttp.client3.impl.cats.{CatsRetryTest, CatsTestBase}
 import sttp.client3.testing.HttpTest
 
 class ArmeriaCatsHttpTest extends HttpTest[IO] with CatsRetryTest with CatsTestBase {
-  override val backend: SttpBackend[IO, Any] = ArmeriaCatsBackend[IO]()
+  override val backend: Backend[IO] = ArmeriaCatsBackend[IO]()
 
   "illegal url exceptions" - {
     "should be wrapped in the effect wrapper" in {

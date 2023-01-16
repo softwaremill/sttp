@@ -4,7 +4,7 @@ import sttp.client3._
 import _root_.zio._
 import sttp.capabilities.zio.ZioStreams
 import sttp.capabilities.{Effect, WebSockets}
-import sttp.client3.impl.zio.{ExtendEnv, SttpClientStubbingBase}
+import sttp.client3.impl.zio.{WebSocketStreamBackendExtendEnv, WebSocketStreamClientStubbing}
 
 package object zio {
 
@@ -14,7 +14,7 @@ package object zio {
   type SttpClientStubbing = Has[SttpClientStubbing.Service]
 
   object SttpClient {
-    type Service = SttpBackend[Task, ZioStreams with WebSockets]
+    type Service = WebSocketStreamBackend[Task, ZioStreams]
   }
 
   /** Sends the request. Only requests for which the method & URI are specified can be sent.
@@ -32,7 +32,7 @@ package object zio {
   def send[T](
       request: AbstractRequest[T, Effect[Task] with ZioStreams with WebSockets]
   ): ZIO[SttpClient, Throwable, Response[T]] =
-    ZIO.accessM(env => env.get[SttpClient.Service].send(request))
+    ZIO.accessM(env => env.get[SttpClient.Service].internalSend(request))
 
   /** A variant of [[send]] which allows the effects that are part of the response handling specification (when using
     * websockets or resource-safe streaming) to use an `R` environment.
@@ -40,9 +40,9 @@ package object zio {
   def sendR[T, R](
       request: AbstractRequest[T, Effect[RIO[R, *]] with ZioStreams with WebSockets]
   ): ZIO[SttpClient with R, Throwable, Response[T]] =
-    ZIO.accessM(env => env.get[SttpClient.Service].extendEnv[R].send(request))
+    ZIO.accessM(env => env.get[SttpClient.Service].extendEnv[R].internalSend(request))
 
-  object SttpClientStubbing extends SttpClientStubbingBase[Any, ZioStreams with WebSockets] {
+  object SttpClientStubbing extends WebSocketStreamClientStubbing[Any, ZioStreams] {
     override private[sttp] def serviceTag: Tag[SttpClientStubbing.Service] = implicitly
     override private[sttp] def sttpBackendTag: Tag[SttpClient.Service] = implicitly
   }

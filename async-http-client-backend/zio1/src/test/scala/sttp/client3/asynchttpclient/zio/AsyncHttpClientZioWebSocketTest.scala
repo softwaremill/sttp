@@ -1,6 +1,5 @@
 package sttp.client3.asynchttpclient.zio
 
-import sttp.capabilities.WebSockets
 import sttp.capabilities.zio.ZioStreams
 import sttp.client3._
 import sttp.client3.asynchttpclient.AsyncHttpClientWebSocketTest
@@ -18,8 +17,7 @@ import scala.concurrent.duration.FiniteDuration
 class AsyncHttpClientZioWebSocketTest extends AsyncHttpClientWebSocketTest[Task, ZioStreams] with ZioTestBase {
   override val streams: ZioStreams = ZioStreams
 
-  override val backend: SttpBackend[Task, WebSockets with ZioStreams] =
-    runtime.unsafeRun(AsyncHttpClientZioBackend())
+  override val backend: WebSocketStreamBackend[Task, ZioStreams] = runtime.unsafeRun(AsyncHttpClientZioBackend())
   override implicit val convertToFuture: ConvertToFuture[Task] = convertZioTaskToFuture
   override implicit val monad: MonadError[Task] = new RIOMonadAsyncError
 

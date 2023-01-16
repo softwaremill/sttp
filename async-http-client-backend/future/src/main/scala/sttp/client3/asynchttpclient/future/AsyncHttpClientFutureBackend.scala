@@ -14,8 +14,8 @@ import org.reactivestreams.Publisher
 import sttp.client3.asynchttpclient.{AsyncHttpClientBackend, BodyFromAHC, BodyToAHC}
 import sttp.client3.internal.NoStreams
 import sttp.client3.internal.ws.SimpleQueue
-import sttp.client3.testing.SttpBackendStub
-import sttp.client3.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
+import sttp.client3.testing.BackendStub
+import sttp.client3.{Backend, FollowRedirectsBackend, SttpBackendOptions}
 import sttp.monad.{FutureMonad, MonadAsyncError}
 import sttp.ws.WebSocket
 
@@ -62,8 +62,8 @@ object AsyncHttpClientFutureBackend {
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder
   )(implicit
       ec: ExecutionContext
-  ): SttpBackend[Future, Any] =
-    new FollowRedirectsBackend(new AsyncHttpClientFutureBackend(asyncHttpClient, closeClient, customizeRequest))
+  ): Backend[Future] =
+    FollowRedirectsBackend(new AsyncHttpClientFutureBackend(asyncHttpClient, closeClient, customizeRequest))
 
   /** @param ec
     *   The execution context for running non-network related operations, e.g. mapping responses. Defaults to the global
@@ -72,7 +72,7 @@ object AsyncHttpClientFutureBackend {
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, Any] =
+  )(implicit ec: ExecutionContext = ExecutionContext.global): Backend[Future] =
     AsyncHttpClientFutureBackend(AsyncHttpClientBackend.defaultClient(options), closeClient = true, customizeRequest)
 
   /** @param ec
@@ -82,7 +82,7 @@ object AsyncHttpClientFutureBackend {
   def usingConfig(
       cfg: AsyncHttpClientConfig,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, Any] =
+  )(implicit ec: ExecutionContext = ExecutionContext.global): Backend[Future] =
     AsyncHttpClientFutureBackend(new DefaultAsyncHttpClient(cfg), closeClient = true, customizeRequest)
 
   /** @param updateConfig
@@ -95,7 +95,7 @@ object AsyncHttpClientFutureBackend {
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, Any] =
+  )(implicit ec: ExecutionContext = ExecutionContext.global): Backend[Future] =
     AsyncHttpClientFutureBackend(
       AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
       closeClient = true,
@@ -109,15 +109,13 @@ object AsyncHttpClientFutureBackend {
   def usingClient(
       client: AsyncHttpClient,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, Any] =
+  )(implicit ec: ExecutionContext = ExecutionContext.global): Backend[Future] =
     AsyncHttpClientFutureBackend(client, closeClient = false, customizeRequest)
 
   /** Create a stub backend for testing, which uses the [[Future]] response wrapper, and doesn't support streaming.
     *
-    * See [[SttpBackendStub]] for details on how to configure stub responses.
+    * See [[BackendStub]] for details on how to configure stub responses.
     */
-  def stub(implicit
-      ec: ExecutionContext = ExecutionContext.global
-  ): SttpBackendStub[Future, Any] =
-    SttpBackendStub(new FutureMonad())
+  def stub(implicit ec: ExecutionContext = ExecutionContext.global): BackendStub[Future] =
+    BackendStub(new FutureMonad())
 }

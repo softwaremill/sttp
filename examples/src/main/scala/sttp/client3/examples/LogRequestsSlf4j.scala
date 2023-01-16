@@ -4,6 +4,7 @@ import io.circe.generic.auto._
 import sttp.client3._
 import sttp.client3.circe._
 import sttp.client3.logging.slf4j.Slf4jLoggingBackend
+import sttp.client3.logging.LogConfig
 
 object LogRequestsSlf4j extends App {
   case class HttpBinResponse(origin: String, headers: Map[String, String])
@@ -12,12 +13,14 @@ object LogRequestsSlf4j extends App {
     .get(uri"https://httpbin.org/get")
     .response(asJson[HttpBinResponse].getRight)
 
-  val backend: SttpBackend[Identity, Any] =
+  val backend: SyncBackend =
     Slf4jLoggingBackend(
       HttpClientSyncBackend(),
-      includeTiming = true,
-      logRequestBody = false,
-      logResponseBody = false
+      LogConfig(
+        includeTiming = true,
+        logRequestBody = false,
+        logResponseBody = false
+      )
     )
 
   try {

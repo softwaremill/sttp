@@ -9,7 +9,7 @@ import sttp.capabilities.fs2.Fs2Streams
 
 object StreamFs2 extends App {
 
-  def streamRequestBody(backend: SttpBackend[IO, Fs2Streams[IO]]): IO[Unit] = {
+  def streamRequestBody(backend: StreamBackend[IO, Fs2Streams[IO]]): IO[Unit] = {
     val stream: Stream[IO, Byte] = Stream.emits("Hello, world".getBytes)
 
     basicRequest
@@ -19,7 +19,7 @@ object StreamFs2 extends App {
       .map { response => println(s"RECEIVED:\n${response.body}") }
   }
 
-  def streamResponseBody(backend: SttpBackend[IO, Fs2Streams[IO]]): IO[Unit] = {
+  def streamResponseBody(backend: StreamBackend[IO, Fs2Streams[IO]]): IO[Unit] = {
     basicRequest
       .body("I want a stream!")
       .post(uri"https://httpbin.org/post")

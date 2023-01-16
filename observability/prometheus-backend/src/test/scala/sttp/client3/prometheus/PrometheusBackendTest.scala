@@ -6,7 +6,7 @@ import sttp.client3._
 import io.prometheus.client.CollectorRegistry
 import org.scalatest.concurrent.{Eventually, IntegrationPatience}
 import org.scalatest.{BeforeAndAfter, OptionValues}
-import sttp.client3.testing.SttpBackendStub
+import sttp.client3.testing.{SyncBackendStub, BackendStub}
 import sttp.model.{Header, StatusCode}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -28,11 +28,11 @@ class PrometheusBackendTest
     PrometheusBackend.clear(CollectorRegistry.defaultRegistry)
   }
 
-  val stubAlwaysOk = SttpBackendStub.synchronous.whenAnyRequest.thenRespondOk()
+  val stubAlwaysOk = SyncBackendStub.whenAnyRequest.thenRespondOk()
 
   "prometheus" should "use default histogram name" in {
     // given
-    val backend = PrometheusBackend[Identity, Any](stubAlwaysOk)
+    val backend = PrometheusBackend(stubAlwaysOk)
     val requestsNumber = 10
 
     // when
@@ -49,14 +49,18 @@ class PrometheusBackendTest
     // given
     val histogramName = "test_two_backends"
     val backend1 =
-      PrometheusBackend[Identity, Any](
+      PrometheusBackend(
         stubAlwaysOk,
-        requestToHistogramNameMapper = _ => Some(HistogramCollectorConfig(histogramName))
+        PrometheusConfig(
+          requestToHistogramNameMapper = _ => Some(HistogramCollectorConfig(histogramName))
+        )
       )
     val backend2 =
-      PrometheusBackend[Identity, Any](
+      PrometheusBackend(
         stubAlwaysOk,
-        requestToHistogramNameMapper = _ => Some(HistogramCollectorConfig(histogramName))
+        PrometheusConfig(
+          requestToHistogramNameMapper = _ => Some(HistogramCollectorConfig(histogramName))
+        )
       )
 
     // when
@@ -71,9 +75,9 @@ class PrometheusBackendTest
     // given
     val customHistogramName = "my_custom_histogram"
     val backend =
-      PrometheusBackend[Identity, Any](
+      PrometheusBackend(
         stubAlwaysOk,
-        _ => Some(HistogramCollectorConfig(customHistogramName))
+        PrometheusConfig(_ => Some(HistogramCollectorConfig(customHistogramName)))
       )
     val requestsNumber = 5
 
@@ -89,9 +93,9 @@ class PrometheusBackendTest
     // given
     val customHistogramName = "my_custom_histogram"
     val backend =
-      PrometheusBackend[Identity, Any](
+      PrometheusBackend(
         stubAlwaysOk,
-        r =>
+        PrometheusConfig(r =>
           Some(
             HistogramCollectorConfig(
               customHistogramName,
@@ -99,6 +103,7 @@ class PrometheusBackendTest
               (1 until 10).map(i => i.toDouble).toList
             )
           )
+        )
       )
     val requestsNumber1 = 5
     val requestsNumber2 = 10
@@ -117,10 +122,12 @@ class PrometheusBackendTest
     // given
     val customGaugeName = "my_custom_gauge"
     val backend =
-      PrometheusBackend[Identity, Any](
+      PrometheusBackend(
         stubAlwaysOk,
-        requestToInProgressGaugeNameMapper =
-          r => Some(CollectorConfig(customGaugeName, List("method" -> r.method.method)))
+        PrometheusConfig(
+          requestToInProgressGaugeNameMapper =
+            r => Some(CollectorConfig(customGaugeName, List("method" -> r.method.method)))
+        )
       )
     val requestsNumber1 = 5
     val requestsNumber2 = 10
@@ -138,8 +145,7 @@ class PrometheusBackendTest
 
   it should "disable histograms" in {
     // given
-    val backend =
-      PrometheusBackend[Identity, Any](stubAlwaysOk, _ => None)
+    val backend = PrometheusBackend(stubAlwaysOk, PrometheusConfig(_ => None))
     val requestsNumber = 6
 
     // when
@@ -153,13 +159,13 @@ class PrometheusBackendTest
     // given
     val requestsNumber = 10
     val countDownLatch = new CountDownLatch(1)
-    val backendStub = SttpBackendStub.asynchronousFuture.whenAnyRequest.thenRespondF {
+    val backendStub = BackendStub.asynchronousFuture.whenAnyRequest.thenRespondF {
       Future {
         blocking(countDownLatch.await())
         Response.ok(Right(""))
       }
     }
-    val backend = PrometheusBackend[Future, Any](backendStub)
+    val backend = PrometheusBackend(backendStub)
 
     // when
     (0 until requestsNumber).foreach(_ => backend.send(basicRequest.get(uri"http://127.0.0.1/foo")))
@@ -183,16 +189,18 @@ class PrometheusBackendTest
     val customGaugeName = "my_custom_gauge"
     val requestsNumber = 10
     val countDownLatch = new CountDownLatch(1)
-    val backendStub = SttpBackendStub.asynchronousFuture.whenAnyRequest.thenRespondF {
+    val backendStub = BackendStub.asynchronousFuture.whenAnyRequest.thenRespondF {
       Future {
         blocking(countDownLatch.await())
         Response.ok(Right(""))
       }
     }
     val backend =
-      PrometheusBackend[Future, Any](
+      PrometheusBackend(
         backendStub,
-        requestToInProgressGaugeNameMapper = _ => Some(CollectorConfig(customGaugeName))
+        PrometheusConfig(
+          requestToInProgressGaugeNameMapper = _ => Some(CollectorConfig(customGaugeName))
+        )
       )
 
     // when
@@ -215,14 +223,14 @@ class PrometheusBackendTest
     // given
     val requestsNumber = 10
     val countDownLatch = new CountDownLatch(1)
-    val backendStub = SttpBackendStub.asynchronousFuture.whenAnyRequest.thenRespondF {
+    val backendStub = BackendStub.asynchronousFuture.whenAnyRequest.thenRespondF {
       Future {
         blocking(countDownLatch.await())
         Response.ok(Right(""))
       }
     }
     val backend =
-      PrometheusBackend[Future, Any](backendStub, requestToInProgressGaugeNameMapper = _ => None)
+      PrometheusBackend(backendStub, PrometheusConfig(requestToInProgressGaugeNameMapper = _ => None))
 
     // when
     (0 until requestsNumber).foreach(_ => backend.send(basicRequest.get(uri"http://127.0.0.1/foo")))
@@ -242,10 +250,10 @@ class PrometheusBackendTest
 
   it should "use default counter name" in {
     // given
-    val backendStub1 = SttpBackendStub.synchronous.whenAnyRequest.thenRespondOk()
-    val backendStub2 = SttpBackendStub.synchronous.whenAnyRequest.thenRespondNotFound()
-    val backend1 = PrometheusBackend[Identity, Any](backendStub1)
-    val backend2 = PrometheusBackend[Identity, Any](backendStub2)
+    val backendStub1 = SyncBackendStub.whenAnyRequest.thenRespondOk()
+    val backendStub2 = SyncBackendStub.whenAnyRequest.thenRespondNotFound()
+    val backend1 = PrometheusBackend(backendStub1)
+    val backend2 = PrometheusBackend(backendStub2)
 
     // when
     (0 until 10).foreach(_ => backend1.send(basicRequest.get(uri"http://127.0.0.1/foo")))
@@ -264,11 +272,13 @@ class PrometheusBackendTest
 
   it should "not override user-supplied 'method' and 'status' labels" in {
     // given
-    val backendStub = SttpBackendStub.synchronous.whenAnyRequest.thenRespondOk()
-    val backend = PrometheusBackend[Identity, Any](
+    val backendStub = SyncBackendStub.whenAnyRequest.thenRespondOk()
+    val backend = PrometheusBackend(
       backendStub,
-      responseToSuccessCounterMapper = (_, _) =>
-        Some(CollectorConfig(PrometheusBackend.DefaultSuccessCounterName, List(("method", "foo"), ("status", "bar"))))
+      PrometheusConfig(
+        responseToSuccessCounterMapper = (_, _) =>
+          Some(CollectorConfig(PrometheusBackend.DefaultSuccessCounterName, List(("method", "foo"), ("status", "bar"))))
+      )
     )
 
     // when
@@ -284,8 +294,8 @@ class PrometheusBackendTest
   it should "use default summary name" in {
     // given
     val response = Response("Ok", StatusCode.Ok, "Ok", Seq(Header.contentLength(10)))
-    val backendStub = SttpBackendStub.synchronous.whenAnyRequest.thenRespond(response)
-    val backend = PrometheusBackend[Identity, Any](backendStub)
+    val backendStub = SyncBackendStub.whenAnyRequest.thenRespond(response)
+    val backend = PrometheusBackend(backendStub)
 
     // when
     (0 until 5).foreach(_ =>
@@ -311,7 +321,7 @@ class PrometheusBackendTest
 
   it should "use error counter when http error is thrown" in {
     // given
-    val backendStub = SttpBackendStub.synchronous.whenAnyRequest.thenRespondServerError()
+    val backendStub = SyncBackendStub.whenAnyRequest.thenRespondServerError()
     val backend = PrometheusBackend(backendStub)
 
     // when
@@ -337,7 +347,7 @@ class PrometheusBackendTest
 
   it should "use failure counter when other exception is thrown" in {
     // given
-    val backendStub = SttpBackendStub.synchronous.whenAnyRequest.thenRespondOk()
+    val backendStub = SyncBackendStub.whenAnyRequest.thenRespondOk()
     val backend = PrometheusBackend(backendStub)
 
     // when
@@ -363,7 +373,7 @@ class PrometheusBackendTest
 
   it should "use success counter on success response" in {
     // given
-    val backendStub = SttpBackendStub.synchronous.whenAnyRequest.thenRespondOk()
+    val backendStub = SyncBackendStub.whenAnyRequest.thenRespondOk()
     val backend = PrometheusBackend(backendStub)
 
     // when

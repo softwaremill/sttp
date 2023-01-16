@@ -11,7 +11,6 @@ import cats.implicits._
 import fs2.interop.reactivestreams.{PublisherOps, StreamUnicastPublisher}
 import fs2.{Chunk, Stream}
 import org.reactivestreams.FlowAdapters
-import sttp.capabilities.WebSockets
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client3.HttpClientBackend.EncodingHandler
 import sttp.client3.httpclient.fs2.HttpClientFs2Backend.Fs2EncodingHandler
@@ -19,16 +18,8 @@ import sttp.client3.internal.httpclient.{BodyFromHttpClient, BodyToHttpClient, S
 import sttp.client3.impl.cats.implicits._
 import sttp.client3.impl.fs2.Fs2SimpleQueue
 import sttp.client3.internal.ws.SimpleQueue
-import sttp.client3.testing.SttpBackendStub
-import sttp.client3.{
-  FollowRedirectsBackend,
-  HttpClientAsyncBackend,
-  HttpClientBackend,
-  AbstractRequest,
-  Response,
-  SttpBackend,
-  SttpBackendOptions
-}
+import sttp.client3.testing.WebSocketStreamBackendStub
+import sttp.client3._
 import sttp.monad.MonadError
 
 import java.util.concurrent.Flow.Publisher
@@ -40,18 +31,16 @@ class HttpClientFs2Backend[F[_]: Async] private (
     customizeRequest: HttpRequest => HttpRequest,
     customEncodingHandler: Fs2EncodingHandler[F],
     dispatcher: Dispatcher[F]
-) extends HttpClientAsyncBackend[F, Fs2Streams[F], Fs2Streams[F] with WebSockets, Stream[F, Byte]](
+) extends HttpClientAsyncBackend[F, Fs2Streams[F], Stream[F, Byte]](
       client,
       implicitly,
       closeClient,
       customizeRequest,
       customEncodingHandler
-    ) {
+    )
+    with WebSocketStreamBackend[F, Fs2Streams[F]] {
 
   override val streams: Fs2Streams[F] = Fs2Streams[F]
-
-  override def send[T, R >: PE](request: AbstractRequest[T, R]): F[Response[T]] =
-    super.send(request)
 
   override protected val bodyToHttpClient: BodyToHttpClient[F, Fs2Streams[F]] =
     new BodyToHttpClient[F, Fs2Streams[F]] {
@@ -102,8 +91,8 @@ object HttpClientFs2Backend {
       customizeRequest: HttpRequest => HttpRequest,
       customEncodingHandler: Fs2EncodingHandler[F],
       dispatcher: Dispatcher[F]
-  ): SttpBackend[F, Fs2Streams[F] with WebSockets] =
-    new FollowRedirectsBackend(
+  ): WebSocketStreamBackend[F, Fs2Streams[F]] =
+    FollowRedirectsBackend(
       new HttpClientFs2Backend(client, closeClient, customizeRequest, customEncodingHandler, dispatcher)
     )
 
@@ -112,7 +101,7 @@ object HttpClientFs2Backend {
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty
-  ): F[SttpBackend[F, Fs2Streams[F] with WebSockets]] = {
+  ): F[WebSocketStreamBackend[F, Fs2Streams[F]]] = {
     Async[F].executor.flatMap(executor =>
       Sync[F].delay(
         HttpClientFs2Backend(
@@ -130,7 +119,7 @@ object HttpClientFs2Backend {
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty
-  ): Resource[F, SttpBackend[F, Fs2Streams[F] with WebSockets]] =
+  ): Resource[F, WebSocketStreamBackend[F, Fs2Streams[F]]] =
     Dispatcher
       .parallel[F]
       .flatMap(dispatcher =>
@@ -141,7 +130,7 @@ object HttpClientFs2Backend {
       client: HttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty
-  ): Resource[F, SttpBackend[F, Fs2Streams[F] with WebSockets]] =
+  ): Resource[F, WebSocketStreamBackend[F, Fs2Streams[F]]] =
     Dispatcher
       .parallel[F]
       .flatMap(dispatcher =>
@@ -155,7 +144,7 @@ object HttpClientFs2Backend {
       dispatcher: Dispatcher[F],
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty
-  ): SttpBackend[F, Fs2Streams[F] with WebSockets] =
+  ): WebSocketStreamBackend[F, Fs2Streams[F]] =
     HttpClientFs2Backend(client, closeClient = false, customizeRequest, customEncodingHandler, dispatcher)
 
   /** Create a stub backend for testing, which uses the [[F]] response wrapper, and supports `Stream[F, Byte]`
@@ -163,5 +152,5 @@ object HttpClientFs2Backend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub[F[_]: Async]: SttpBackendStub[F, Fs2Streams[F] with WebSockets] = SttpBackendStub(implicitly)
+  def stub[F[_]: Async]: WebSocketStreamBackendStub[F, Fs2Streams[F]] = WebSocketStreamBackendStub(implicitly)
 }

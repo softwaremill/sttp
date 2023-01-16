@@ -1,7 +1,7 @@
 package sttp.client3.armeria.zio
 
 import sttp.capabilities.zio.ZioStreams
-import sttp.client3.SttpBackend
+import sttp.client3.StreamBackend
 import sttp.client3.impl.zio.{ZioServerSentEvents, ZioTestBase}
 import sttp.client3.internal._
 import sttp.client3.testing.ConvertToFuture
@@ -13,7 +13,7 @@ import zio.{Chunk, Task}
 class ArmeriaZioStreamingTest extends StreamingTest[Task, ZioStreams] with ZioTestBase {
   override val streams: ZioStreams = ZioStreams
 
-  override val backend: SttpBackend[Task, ZioStreams] =
+  override val backend: StreamBackend[Task, ZioStreams] =
     runtime.unsafeRun(ArmeriaZioBackend())
   override implicit val convertToFuture: ConvertToFuture[Task] = convertZioTaskToFuture
 

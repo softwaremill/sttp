@@ -18,7 +18,7 @@ import sttp.client3.SttpBackendOptions.Proxy
 import sttp.client3.SttpClientException.ReadException
 import sttp.client3.internal.ws.SimpleQueue
 import sttp.client3.okhttp.OkHttpBackend.EncodingHandler
-import sttp.client3.{AbstractResponseAs, Response, SttpBackend, SttpBackendOptions, _}
+import sttp.client3._
 import sttp.model._
 
 import scala.collection.JavaConverters._
@@ -27,12 +27,13 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
     client: OkHttpClient,
     closeClient: Boolean,
     customEncodingHandler: EncodingHandler
-) extends SttpBackend[F, P] {
+) extends AbstractBackend[F, P]
+    with Backend[F] {
 
   val streams: Streams[S]
-  type PE = P with Effect[F]
+  type R = P with Effect[F]
 
-  override def send[T, R >: PE](request: AbstractRequest[T, R]): F[Response[T]] = {
+  override def internalSend[T](request: AbstractRequest[T, R]): F[Response[T]] = {
     adjustExceptions(request.isWebSocket, request) {
       if (request.isWebSocket) {
         sendWebSocket(request)
@@ -42,15 +43,15 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
     }
   }
 
-  protected def sendRegular[T, R >: PE](request: AbstractRequest[T, R]): F[Response[T]]
-  protected def sendWebSocket[T, R >: PE](request: AbstractRequest[T, R]): F[Response[T]]
+  protected def sendRegular[T](request: AbstractRequest[T, R]): F[Response[T]]
+  protected def sendWebSocket[T](request: AbstractRequest[T, R]): F[Response[T]]
 
   private def adjustExceptions[T](isWebsocket: Boolean, request: AbstractRequest[_, _])(t: => F[T]): F[T] =
     SttpClientException.adjustExceptions(responseMonad)(t)(
       OkHttpBackend.exceptionToSttpClientException(isWebsocket, request, _)
     )
 
-  private[okhttp] def convertRequest[T, R >: PE](request: AbstractRequest[T, R]): OkHttpRequest = {
+  private[okhttp] def convertRequest[T](request: AbstractRequest[T, R]): OkHttpRequest = {
     val builder = new OkHttpRequest.Builder()
       .url(request.uri.toString)
 
@@ -72,7 +73,7 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
   protected val bodyToOkHttp: BodyToOkHttp[F, S]
   protected val bodyFromOkHttp: BodyFromOkHttp[F, S]
 
-  private[okhttp] def readResponse[T, R >: PE](
+  private[okhttp] def readResponse[T](
       res: OkHttpResponse,
       request: AbstractRequest[_, R],
       responseAs: AbstractResponseAs[T, R]
@@ -101,7 +102,7 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
     responseMonad.map(body)(Response(_, StatusCode(res.code()), res.message(), headers, Nil, request.onlyMetadata))
   }
 
-  private def readHeaders[R >: PE, T](res: OkHttpResponse) = {
+  private def readHeaders(res: OkHttpResponse): List[Header] = {
     res
       .headers()
       .names()

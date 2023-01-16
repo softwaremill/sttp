@@ -1,6 +1,5 @@
 package sttp.client3.httpclient.zio
 
-import sttp.capabilities.WebSockets
 import sttp.capabilities.zio.ZioStreams
 import sttp.client3._
 import sttp.client3.impl.zio.ZioWebSockets.PipeR
@@ -17,7 +16,7 @@ class HttpClientZioWebSocketTest
     with WebSocketStreamingTest[Task, ZioStreams]
     with WebSocketConcurrentTest[Task]
     with ZioTestBase {
-  implicit val backend: SttpBackend[Task, ZioStreams with WebSockets] = unsafeRunSyncOrThrow(HttpClientZioBackend())
+  implicit val backend: WebSocketStreamBackend[Task, ZioStreams] = unsafeRunSyncOrThrow(HttpClientZioBackend())
   implicit val convertToFuture: ConvertToFuture[Task] = convertZioTaskToFuture
   implicit val monad: MonadError[Task] = new RIOMonadAsyncError
   override val streams: ZioStreams = ZioStreams

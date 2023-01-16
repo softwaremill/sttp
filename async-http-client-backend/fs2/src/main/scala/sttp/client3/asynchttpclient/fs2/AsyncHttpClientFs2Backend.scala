@@ -16,8 +16,8 @@ import sttp.client3.impl.cats.CatsMonadAsyncError
 import sttp.client3.impl.fs2.{Fs2SimpleQueue, Fs2WebSockets}
 import sttp.client3.internal._
 import sttp.client3.internal.ws.SimpleQueue
-import sttp.client3.testing.SttpBackendStub
-import sttp.client3.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
+import sttp.client3.testing.WebSocketStreamBackendStub
+import sttp.client3.{FollowRedirectsBackend, SttpBackendOptions, WebSocketStreamBackend}
 import sttp.monad.MonadAsyncError
 import sttp.ws.{WebSocket, WebSocketFrame}
 
@@ -35,7 +35,8 @@ class AsyncHttpClientFs2Backend[F[_]: Async] private (
       new CatsMonadAsyncError,
       closeClient,
       customizeRequest
-    ) {
+    )
+    with WebSocketStreamBackend[F, Fs2Streams[F]] {
 
   override val streams: Fs2Streams[F] = Fs2Streams[F]
 
@@ -100,8 +101,8 @@ object AsyncHttpClientFs2Backend {
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder,
       webSocketBufferCapacity: Option[Int],
       dispatcher: Dispatcher[F]
-  ): SttpBackend[F, Fs2Streams[F] with WebSockets] =
-    new FollowRedirectsBackend(
+  ): WebSocketStreamBackend[F, Fs2Streams[F]] =
+    FollowRedirectsBackend(
       new AsyncHttpClientFs2Backend(asyncHttpClient, closeClient, customizeRequest, webSocketBufferCapacity, dispatcher)
     )
 
@@ -110,7 +111,7 @@ object AsyncHttpClientFs2Backend {
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
-  ): F[SttpBackend[F, Fs2Streams[F] with WebSockets]] =
+  ): F[WebSocketStreamBackend[F, Fs2Streams[F]]] =
     Sync[F]
       .delay(
         apply[F](
@@ -127,7 +128,7 @@ object AsyncHttpClientFs2Backend {
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
-  ): Resource[F, SttpBackend[F, Fs2Streams[F] with WebSockets]] =
+  ): Resource[F, WebSocketStreamBackend[F, Fs2Streams[F]]] =
     Dispatcher
       .parallel[F]
       .flatMap(dispatcher =>
@@ -139,7 +140,7 @@ object AsyncHttpClientFs2Backend {
       dispatcher: Dispatcher[F],
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
-  ): F[SttpBackend[F, Fs2Streams[F] with WebSockets]] =
+  ): F[WebSocketStreamBackend[F, Fs2Streams[F]]] =
     Sync[F].delay(
       apply[F](
         new DefaultAsyncHttpClient(cfg),
@@ -155,7 +156,7 @@ object AsyncHttpClientFs2Backend {
       cfg: AsyncHttpClientConfig,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
-  ): Resource[F, SttpBackend[F, Fs2Streams[F] with WebSockets]] =
+  ): Resource[F, WebSocketStreamBackend[F, Fs2Streams[F]]] =
     Dispatcher
       .parallel[F]
       .flatMap(dispatcher =>
@@ -169,7 +170,7 @@ object AsyncHttpClientFs2Backend {
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
-  ): F[SttpBackend[F, Fs2Streams[F] with WebSockets]] =
+  ): F[WebSocketStreamBackend[F, Fs2Streams[F]]] =
     Sync[F].delay(
       AsyncHttpClientFs2Backend[F](
         AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
@@ -189,7 +190,7 @@ object AsyncHttpClientFs2Backend {
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
-  ): Resource[F, SttpBackend[F, Fs2Streams[F] with WebSockets]] =
+  ): Resource[F, WebSocketStreamBackend[F, Fs2Streams[F]]] =
     Dispatcher
       .parallel[F]
       .flatMap(dispatcher =>
@@ -203,14 +204,14 @@ object AsyncHttpClientFs2Backend {
       dispatcher: Dispatcher[F],
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
       webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
-  ): SttpBackend[F, Fs2Streams[F] with WebSockets] =
+  ): WebSocketStreamBackend[F, Fs2Streams[F]] =
     apply[F](client, closeClient = false, customizeRequest, webSocketBufferCapacity, dispatcher)
 
   /** Create a stub backend for testing, which uses the `F` response wrapper, and supports `Stream[F, ByteBuffer]`
     * streaming.
     *
-    * See [[SttpBackendStub]] for details on how to configure stub responses.
+    * See [[WebSocketStreamBackendStub]] for details on how to configure stub responses.
     */
-  def stub[F[_]: Async]: SttpBackendStub[F, Fs2Streams[F] with WebSockets] =
-    SttpBackendStub(new CatsMonadAsyncError())
+  def stub[F[_]: Async]: WebSocketStreamBackendStub[F, Fs2Streams[F]] =
+    WebSocketStreamBackendStub(new CatsMonadAsyncError())
 }

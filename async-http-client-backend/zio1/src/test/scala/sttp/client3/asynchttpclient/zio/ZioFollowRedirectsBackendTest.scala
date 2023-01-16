@@ -2,7 +2,7 @@ package sttp.client3.asynchttpclient.zio
 
 import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
-import sttp.capabilities
+import sttp.capabilities.Effect
 import sttp.client3.impl.zio.{RIOMonadAsyncError, ZioTestBase}
 import sttp.client3._
 import sttp.model.{Header, StatusCode}
@@ -11,8 +11,8 @@ import zio.Task
 
 class ZioFollowRedirectsBackendTest extends AsyncFlatSpec with Matchers with ZioTestBase {
   it should "properly handle invalid redirect URIs" in {
-    val stubBackend: SttpBackend[Task, Any] = new SttpBackend[Task, Any] {
-      override def send[T, R >: capabilities.Effect[Task]](request: AbstractRequest[T, R]): Task[Response[T]] = {
+    val stubBackend: Backend[Task] = new Backend[Task] {
+      override def internalSend[T](request: AbstractRequest[T, Any with Effect[Task]]): Task[Response[T]] = {
         Task.succeed(
           if (request.uri.toString.contains("redirect"))
             Response.ok("ok".asInstanceOf[T])
@@ -33,7 +33,7 @@ class ZioFollowRedirectsBackendTest extends AsyncFlatSpec with Matchers with Zio
     val result: Task[Response[_]] = basicRequest
       .response(asStringAlways)
       .get(uri"http://localhost")
-      .send(new FollowRedirectsBackend(stubBackend))
+      .send(FollowRedirectsBackend(stubBackend))
 
     convertZioTaskToFuture.toFuture(result).map { r =>
       r.body shouldBe "ok"

@@ -18,7 +18,7 @@ abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](
     customEncodingHandler: EncodingHandler
 ) extends OkHttpBackend[F, S, P](client, closeClient, customEncodingHandler) {
 
-  override protected def sendRegular[T, R >: PE](request: AbstractRequest[T, R]): F[Response[T]] = {
+  override protected def sendRegular[T](request: AbstractRequest[T, R]): F[Response[T]] = {
     val nativeRequest = convertRequest(request)
     monad.flatten(monad.async[F[Response[T]]] { cb =>
       def success(r: F[Response[T]]): Unit = cb(Right(r))
@@ -46,7 +46,7 @@ abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](
     })
   }
 
-  override protected def sendWebSocket[T, R >: PE](
+  override protected def sendWebSocket[T](
       request: AbstractRequest[T, R]
   ): F[Response[T]] = {
     val nativeRequest = convertRequest(request)
@@ -65,7 +65,7 @@ abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](
     )
   }
 
-  private def createListener[R >: PE, T](
+  private def createListener[T](
       queue: SimpleQueue[F, WebSocketEvent],
       cb: Either[Throwable, F[Response[T]]] => Unit,
       request: AbstractRequest[T, R]

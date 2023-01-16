@@ -1,8 +1,8 @@
 package sttp.client3.opentelemetry
 
-import io.opentelemetry.api.OpenTelemetry
 import io.opentelemetry.api.common.Attributes
 import io.opentelemetry.api.metrics.{DoubleHistogram, LongCounter, LongUpDownCounter, Meter}
+import io.opentelemetry.api.OpenTelemetry
 import sttp.client3._
 import sttp.client3.listener.{ListenerBackend, RequestListener}
 
@@ -18,78 +18,70 @@ object OpenTelemetryMetricsBackend {
   val DefaultRequestSizeHistogramName = "sttp_request_size_bytes"
   val DefaultResponseSizeHistogramName = "sttp_response_size_bytes"
 
-  def apply[F[_], P](
-      delegate: SttpBackend[F, P],
-      openTelemetry: OpenTelemetry,
-      meterConfig: MeterConfig = MeterConfig.Default,
-      clock: Clock = Clock.systemUTC(),
-      requestToLatencyHistogramMapper: AbstractRequest[_, _] => Option[CollectorConfig] = (_: AbstractRequest[_, _]) =>
-        Some(CollectorConfig(DefaultLatencyHistogramName, unit = Some(CollectorConfig.Milliseconds))),
-      requestToInProgressCounterMapper: AbstractRequest[_, _] => Option[CollectorConfig] = (_: AbstractRequest[_, _]) =>
-        Some(CollectorConfig(DefaultRequestsInProgressCounterName)),
-      responseToSuccessCounterMapper: Response[_] => Option[CollectorConfig] = (_: Response[_]) =>
-        Some(CollectorConfig(DefaultSuccessCounterName)),
-      responseToErrorCounterMapper: Response[_] => Option[CollectorConfig] = (_: Response[_]) =>
-        Some(CollectorConfig(DefaultErrorCounterName)),
-      requestToFailureCounterMapper: (AbstractRequest[_, _], Throwable) => Option[CollectorConfig] =
-        (_: AbstractRequest[_, _], _: Throwable) => Some(CollectorConfig(DefaultFailureCounterName)),
-      requestToSizeHistogramMapper: AbstractRequest[_, _] => Option[CollectorConfig] = (_: AbstractRequest[_, _]) =>
-        Some(CollectorConfig(DefaultRequestSizeHistogramName, unit = Some(CollectorConfig.Bytes))),
-      responseToSizeHistogramMapper: Response[_] => Option[CollectorConfig] = (_: Response[_]) =>
-        Some(CollectorConfig(DefaultResponseSizeHistogramName, unit = Some(CollectorConfig.Bytes)))
-  ): SttpBackend[F, P] = usingMeter(
-    delegate,
-    openTelemetry.meterBuilder(meterConfig.name).setInstrumentationVersion(meterConfig.version).build(),
-    clock,
-    requestToLatencyHistogramMapper = requestToLatencyHistogramMapper,
-    requestToInProgressCounterMapper = requestToInProgressCounterMapper,
-    responseToSuccessCounterMapper = responseToSuccessCounterMapper,
-    responseToErrorCounterMapper = responseToErrorCounterMapper,
-    requestToFailureCounterMapper = requestToFailureCounterMapper,
-    requestToSizeHistogramMapper = requestToSizeHistogramMapper,
-    responseToSizeHistogramMapper = responseToSizeHistogramMapper
-  )
+  def apply(delegate: SyncBackend, openTelemetry: OpenTelemetry): SyncBackend =
+    apply(delegate, OpenTelemetryMetricsConfig(openTelemetry))
 
-  def usingMeter[F[_], P](
-      delegate: SttpBackend[F, P],
-      meter: Meter,
-      clock: Clock = Clock.systemUTC(),
-      requestToLatencyHistogramMapper: AbstractRequest[_, _] => Option[CollectorConfig] = (_: AbstractRequest[_, _]) =>
-        Some(CollectorConfig(DefaultLatencyHistogramName, unit = Some(CollectorConfig.Milliseconds))),
-      requestToInProgressCounterMapper: AbstractRequest[_, _] => Option[CollectorConfig] = (_: AbstractRequest[_, _]) =>
-        Some(CollectorConfig(DefaultRequestsInProgressCounterName)),
-      responseToSuccessCounterMapper: Response[_] => Option[CollectorConfig] = (_: Response[_]) =>
-        Some(CollectorConfig(DefaultSuccessCounterName)),
-      responseToErrorCounterMapper: Response[_] => Option[CollectorConfig] = (_: Response[_]) =>
-        Some(CollectorConfig(DefaultErrorCounterName)),
-      requestToFailureCounterMapper: (AbstractRequest[_, _], Throwable) => Option[CollectorConfig] =
-        (_: AbstractRequest[_, _], _: Throwable) => Some(CollectorConfig(DefaultFailureCounterName)),
-      requestToSizeHistogramMapper: AbstractRequest[_, _] => Option[CollectorConfig] = (_: AbstractRequest[_, _]) =>
-        Some(CollectorConfig(DefaultRequestSizeHistogramName, unit = Some(CollectorConfig.Bytes))),
-      responseToSizeHistogramMapper: Response[_] => Option[CollectorConfig] = (_: Response[_]) =>
-        Some(CollectorConfig(DefaultResponseSizeHistogramName, unit = Some(CollectorConfig.Bytes)))
-  ): SttpBackend[F, P] = {
+  def apply[F[_]](delegate: Backend[F], openTelemetry: OpenTelemetry): Backend[F] =
+    apply(delegate, OpenTelemetryMetricsConfig(openTelemetry))
+
+  def apply[F[_]](delegate: WebSocketBackend[F], openTelemetry: OpenTelemetry): WebSocketBackend[F] =
+    apply(delegate, OpenTelemetryMetricsConfig(openTelemetry))
+
+  def apply[F[_], S](delegate: StreamBackend[F, S], openTelemetry: OpenTelemetry): StreamBackend[F, S] =
+    apply(delegate, OpenTelemetryMetricsConfig(openTelemetry))
+
+  def apply[F[_], S](
+      delegate: WebSocketStreamBackend[F, S],
+      openTelemetry: OpenTelemetry
+  ): WebSocketStreamBackend[F, S] =
+    apply(delegate, OpenTelemetryMetricsConfig(openTelemetry))
+
+  def apply(delegate: SyncBackend, config: OpenTelemetryMetricsConfig): SyncBackend = {
+    val listener = OpenTelemetryMetricsListener(config)
     // redirects should be handled before metrics
-    new FollowRedirectsBackend[F, P](
-      new ListenerBackend[F, P, Option[Long]](
-        delegate,
-        RequestListener.lift(
-          new OpenTelemetryMetricsListener(
-            meter,
-            clock,
-            requestToLatencyHistogramMapper,
-            requestToInProgressCounterMapper,
-            responseToSuccessCounterMapper,
-            responseToErrorCounterMapper,
-            requestToFailureCounterMapper,
-            requestToSizeHistogramMapper,
-            responseToSizeHistogramMapper
-          ),
-          delegate.responseMonad
-        )
-      )
+    FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener, delegate.responseMonad)))
+  }
+
+  def apply[F[_]](delegate: Backend[F], config: OpenTelemetryMetricsConfig): Backend[F] = {
+    val listener = OpenTelemetryMetricsListener(config)
+    // redirects should be handled before metrics
+    FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener, delegate.responseMonad)))
+  }
+
+  def apply[F[_]](delegate: WebSocketBackend[F], config: OpenTelemetryMetricsConfig): WebSocketBackend[F] = {
+    val listener = OpenTelemetryMetricsListener(config)
+    FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener, delegate.responseMonad)))
+  }
+
+  def apply[F[_], S](delegate: StreamBackend[F, S], config: OpenTelemetryMetricsConfig): StreamBackend[F, S] = {
+    val listener = OpenTelemetryMetricsListener(config)
+    FollowRedirectsBackend(
+      ListenerBackend(delegate, RequestListener.lift(listener, delegate.responseMonad))
     )
   }
+
+  def apply[F[_], S](
+      delegate: WebSocketStreamBackend[F, S],
+      config: OpenTelemetryMetricsConfig
+  ): WebSocketStreamBackend[F, S] = {
+    val listener = OpenTelemetryMetricsListener(config)
+    FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener, delegate.responseMonad)))
+  }
+}
+
+private object OpenTelemetryMetricsListener {
+  def apply(config: OpenTelemetryMetricsConfig): OpenTelemetryMetricsListener =
+    new OpenTelemetryMetricsListener(
+      config.meter,
+      config.clock,
+      config.requestToLatencyHistogramMapper,
+      config.requestToInProgressCounterMapper,
+      config.responseToSuccessCounterMapper,
+      config.requestToErrorCounterMapper,
+      config.requestToFailureCounterMapper,
+      config.requestToSizeHistogramMapper,
+      config.responseToSizeHistogramMapper
+    )
 }
 
 private class OpenTelemetryMetricsListener(

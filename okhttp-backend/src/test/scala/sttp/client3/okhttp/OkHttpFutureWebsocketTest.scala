@@ -1,6 +1,5 @@
 package sttp.client3.okhttp
 
-import sttp.capabilities.WebSockets
 import sttp.client3._
 import sttp.client3.testing.ConvertToFuture
 import sttp.client3.testing.websocket.{WebSocketBufferOverflowTest, WebSocketConcurrentTest, WebSocketTest}
@@ -13,7 +12,7 @@ class OkHttpFutureWebsocketTest
     extends WebSocketTest[Future]
     with WebSocketBufferOverflowTest[Future]
     with WebSocketConcurrentTest[Future] {
-  override val backend: SttpBackend[Future, WebSockets] = OkHttpFutureBackend()
+  override val backend: WebSocketBackend[Future] = OkHttpFutureBackend()
   override implicit val convertToFuture: ConvertToFuture[Future] = ConvertToFuture.future
   override implicit val monad: MonadError[Future] = new FutureMonad()
 

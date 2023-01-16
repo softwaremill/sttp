@@ -11,7 +11,7 @@ import sttp.capabilities.fs2.Fs2Streams
 import sttp.client3.armeria.AbstractArmeriaBackend.newClient
 import sttp.client3.armeria.{AbstractArmeriaBackend, BodyFromStreamMessage}
 import sttp.client3.impl.cats.CatsMonadAsyncError
-import sttp.client3.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
+import sttp.client3.{FollowRedirectsBackend, StreamBackend, SttpBackendOptions}
 import sttp.monad.MonadAsyncError
 
 private final class ArmeriaFs2Backend[F[_]: ConcurrentEffect](client: WebClient, closeFactory: Boolean)
@@ -47,28 +47,28 @@ object ArmeriaFs2Backend {
     */
   def apply[F[_]: ConcurrentEffect](
       options: SttpBackendOptions = SttpBackendOptions.Default
-  ): SttpBackend[F, Fs2Streams[F]] =
+  ): StreamBackend[F, Fs2Streams[F]] =
     apply(newClient(options), closeFactory = true)
 
   def resource[F[_]: ConcurrentEffect](
       options: SttpBackendOptions = SttpBackendOptions.Default
-  ): Resource[F, SttpBackend[F, Fs2Streams[F]]] = {
+  ): Resource[F, StreamBackend[F, Fs2Streams[F]]] = {
     Resource.make(Sync[F].delay(apply(newClient(options), closeFactory = true)))(_.close())
   }
 
-  def resourceUsingClient[F[_]: ConcurrentEffect](client: WebClient): Resource[F, SttpBackend[F, Fs2Streams[F]]] = {
+  def resourceUsingClient[F[_]: ConcurrentEffect](client: WebClient): Resource[F, StreamBackend[F, Fs2Streams[F]]] = {
     Resource.make(Sync[F].delay(apply(client, closeFactory = true)))(_.close())
   }
 
-  def usingClient[F[_]: ConcurrentEffect](client: WebClient): SttpBackend[F, Fs2Streams[F]] =
+  def usingClient[F[_]: ConcurrentEffect](client: WebClient): StreamBackend[F, Fs2Streams[F]] =
     apply(client, closeFactory = false)
 
-  def usingDefaultClient[F[_]: ConcurrentEffect](): SttpBackend[F, Fs2Streams[F]] =
+  def usingDefaultClient[F[_]: ConcurrentEffect](): StreamBackend[F, Fs2Streams[F]] =
     apply(newClient(), closeFactory = false)
 
   private def apply[F[_]: ConcurrentEffect](
       client: WebClient,
       closeFactory: Boolean
-  ): SttpBackend[F, Fs2Streams[F]] =
-    new FollowRedirectsBackend(new ArmeriaFs2Backend(client, closeFactory))
+  ): StreamBackend[F, Fs2Streams[F]] =
+    FollowRedirectsBackend(new ArmeriaFs2Backend(client, closeFactory))
 }

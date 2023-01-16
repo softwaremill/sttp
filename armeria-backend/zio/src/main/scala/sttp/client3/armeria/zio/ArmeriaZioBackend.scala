@@ -13,7 +13,7 @@ import sttp.capabilities.zio.ZioStreams
 import sttp.client3.armeria.AbstractArmeriaBackend.newClient
 import sttp.client3.armeria.{AbstractArmeriaBackend, BodyFromStreamMessage}
 import sttp.client3.impl.zio.RIOMonadAsyncError
-import sttp.client3.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
+import sttp.client3.{FollowRedirectsBackend, StreamBackend, SttpBackendOptions}
 import sttp.monad.MonadAsyncError
 import zio.stream.Stream
 
@@ -47,39 +47,41 @@ object ArmeriaZioBackend {
     * client will manage its own connection pool. If you'd like to reuse the default Armeria
     * [[https://armeria.dev/docs/client-factory ClientFactory]] use `.usingDefaultClient`.
     */
-  def apply(options: SttpBackendOptions = SttpBackendOptions.Default): Task[SttpBackend[Task, ZioStreams]] =
+  def apply(options: SttpBackendOptions = SttpBackendOptions.Default): Task[StreamBackend[Task, ZioStreams]] =
     ZIO
       .runtime[Any]
       .map(runtime => apply(runtime, newClient(options), closeFactory = true))
 
   def scoped(
       options: SttpBackendOptions = SttpBackendOptions.Default
-  ): ZIO[Scope, Throwable, SttpBackend[Task, ZioStreams]] =
+  ): ZIO[Scope, Throwable, StreamBackend[Task, ZioStreams]] =
     ZIO.acquireRelease(apply(options))(_.close().ignore)
 
-  def scopedUsingClient(client: WebClient): ZIO[Scope, Throwable, SttpBackend[Task, ZioStreams]] =
+  def scopedUsingClient(client: WebClient): ZIO[Scope, Throwable, StreamBackend[Task, ZioStreams]] =
     ZIO.acquireRelease(
       ZIO
         .runtime[Any]
         .map(runtime => apply(runtime, client, closeFactory = true))
     )(_.close().ignore)
 
-  def layer(options: SttpBackendOptions = SttpBackendOptions.Default): Layer[Throwable, SttpBackend[Task, ZioStreams]] =
+  def layer(
+      options: SttpBackendOptions = SttpBackendOptions.Default
+  ): Layer[Throwable, StreamBackend[Task, ZioStreams]] =
     ZLayer.scoped(scoped(options))
 
-  def usingClient(client: WebClient): Task[SttpBackend[Task, ZioStreams]] =
+  def usingClient(client: WebClient): Task[StreamBackend[Task, ZioStreams]] =
     ZIO
       .runtime[Any]
       .map(runtime => apply(runtime, client, closeFactory = false))
 
-  def usingClient[R](runtime: Runtime[R], client: WebClient): SttpBackend[Task, ZioStreams] =
+  def usingClient[R](runtime: Runtime[R], client: WebClient): StreamBackend[Task, ZioStreams] =
     apply(runtime, client, closeFactory = false)
 
-  def usingDefaultClient(): Task[SttpBackend[Task, ZioStreams]] =
+  def usingDefaultClient(): Task[StreamBackend[Task, ZioStreams]] =
     ZIO
       .runtime[Any]
       .map(runtime => apply(runtime, newClient(), closeFactory = false))
 
-  private def apply[R](runtime: Runtime[R], client: WebClient, closeFactory: Boolean): SttpBackend[Task, ZioStreams] =
-    new FollowRedirectsBackend(new ArmeriaZioBackend(runtime, client, closeFactory))
+  private def apply[R](runtime: Runtime[R], client: WebClient, closeFactory: Boolean): StreamBackend[Task, ZioStreams] =
+    FollowRedirectsBackend(new ArmeriaZioBackend(runtime, client, closeFactory))
 }

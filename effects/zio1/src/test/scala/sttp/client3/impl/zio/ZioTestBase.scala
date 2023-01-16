@@ -1,14 +1,11 @@
 package sttp.client3.impl.zio
 
-import scala.concurrent.Future
-
 import sttp.client3.testing.ConvertToFuture
 import zio._
 import zio.clock.Clock
 import zio.duration.durationInt
 
-import scala.concurrent.{Future, Promise}
-import scala.util.{Failure, Success}
+import scala.concurrent.Future
 
 trait ZioTestBase {
 

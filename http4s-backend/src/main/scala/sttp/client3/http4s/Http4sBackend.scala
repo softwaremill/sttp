@@ -26,7 +26,7 @@ import sttp.client3.internal.{
 }
 import sttp.model._
 import sttp.monad.MonadError
-import sttp.client3.testing.SttpBackendStub
+import sttp.client3.testing.StreamBackendStub
 import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.client3._
 
@@ -37,9 +37,9 @@ class Http4sBackend[F[_]: Async](
     client: Client[F],
     customizeRequest: Http4sRequest[F] => Http4sRequest[F],
     customEncodingHandler: EncodingHandler[F]
-) extends SttpBackend[F, Fs2Streams[F]] {
-  type PE = Fs2Streams[F] with sttp.capabilities.Effect[F]
-  override def send[T, R >: PE](r: AbstractRequest[T, R]): F[Response[T]] =
+) extends StreamBackend[F, Fs2Streams[F]] {
+  type R = Fs2Streams[F] with sttp.capabilities.Effect[F]
+  override def internalSend[T](r: AbstractRequest[T, R]): F[Response[T]] =
     adjustExceptions(r) {
       val (entity, extraHeaders) = bodyToHttp4s(r, r.body)
       val request = r.httpVersion match {
@@ -145,10 +145,7 @@ class Http4sBackend[F[_]: Async](
     }
   }
 
-  private def bodyToHttp4s[R >: PE](
-      r: AbstractRequest[_, R],
-      body: AbstractBody[R]
-  ): (http4s.Entity[F], http4s.Headers) = {
+  private def bodyToHttp4s[R](r: AbstractRequest[_, R], body: AbstractBody[R]): (http4s.Entity[F], http4s.Headers) = {
     body match {
       case NoBody => (http4s.Entity(http4s.EmptyBody: http4s.EntityBody[F]), http4s.Headers.empty)
 
@@ -292,16 +289,14 @@ object Http4sBackend {
       client: Client[F],
       customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _,
       customEncodingHandler: EncodingHandler[F] = PartialFunction.empty
-  ): SttpBackend[F, Fs2Streams[F]] =
-    new FollowRedirectsBackend[F, Fs2Streams[F]](
-      new Http4sBackend[F](client, customizeRequest, customEncodingHandler)
-    )
+  ): StreamBackend[F, Fs2Streams[F]] =
+    FollowRedirectsBackend(new Http4sBackend[F](client, customizeRequest, customEncodingHandler))
 
   def usingBlazeClientBuilder[F[_]: Async](
       blazeClientBuilder: BlazeClientBuilder[F],
       customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _,
       customEncodingHandler: EncodingHandler[F] = PartialFunction.empty
-  ): Resource[F, SttpBackend[F, Fs2Streams[F]]] = {
+  ): Resource[F, StreamBackend[F, Fs2Streams[F]]] = {
     blazeClientBuilder.resource.map(c => usingClient(c, customizeRequest, customEncodingHandler))
   }
 
@@ -309,7 +304,7 @@ object Http4sBackend {
       clientExecutionContext: ExecutionContext = ExecutionContext.global,
       customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _,
       customEncodingHandler: EncodingHandler[F] = PartialFunction.empty
-  ): Resource[F, SttpBackend[F, Fs2Streams[F]]] =
+  ): Resource[F, StreamBackend[F, Fs2Streams[F]]] =
     usingBlazeClientBuilder(
       BlazeClientBuilder[F](clientExecutionContext),
       customizeRequest,
@@ -318,7 +313,7 @@ object Http4sBackend {
 
   /** Create a stub backend for testing, which uses the `F` response wrapper, and supports `Stream[F, Byte]` streaming.
     *
-    * See [[sttp.client3.testing.SttpBackendStub]] for details on how to configure stub responses.
+    * See [[StreamBackendStub]] for details on how to configure stub responses.
     */
-  def stub[F[_]: Async]: SttpBackendStub[F, Fs2Streams[F]] = SttpBackendStub(new CatsMonadAsyncError)
+  def stub[F[_]: Async]: StreamBackendStub[F, Fs2Streams[F]] = StreamBackendStub(new CatsMonadAsyncError)
 }

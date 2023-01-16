@@ -27,7 +27,7 @@ import sttp.client3.SttpBackendOptions.ProxyType.{Http, Socks}
 import sttp.client3.internal.ws.{SimpleQueue, WebSocketEvent}
 import sttp.monad.syntax._
 import sttp.monad.{Canceler, MonadAsyncError, MonadError}
-import sttp.client3.{Response, SttpBackend, SttpBackendOptions, _}
+import sttp.client3.{AbstractBackend, Response, SttpBackendOptions, _}
 import sttp.model._
 
 import scala.collection.JavaConverters._
@@ -39,19 +39,20 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
     private implicit val monad: MonadAsyncError[F],
     closeClient: Boolean,
     customizeRequest: BoundRequestBuilder => BoundRequestBuilder
-) extends SttpBackend[F, P] {
+) extends AbstractBackend[F, P]
+    with Backend[F] {
 
   val streams: Streams[S]
-  type PE = P with Effect[F]
+  type R = P with Effect[F]
 
-  override def send[T, R >: PE](r: AbstractRequest[T, R]): F[Response[T]] =
+  override def internalSend[T](r: AbstractRequest[T, R]): F[Response[T]] =
     adjustExceptions(r) {
       preparedRequest(r).flatMap { ahcRequest =>
         if (r.isWebSocket) sendWebSocket(r, ahcRequest) else sendRegular(r, ahcRequest)
       }
     }
 
-  private def sendRegular[T, R >: PE](r: AbstractRequest[T, R], ahcRequest: BoundRequestBuilder): F[Response[T]] = {
+  private def sendRegular[T](r: AbstractRequest[T, R], ahcRequest: BoundRequestBuilder): F[Response[T]] = {
     monad.flatten(monad.async[F[Response[T]]] { cb =>
       def success(r: F[Response[T]]): Unit = cb(Right(r))
       def error(t: Throwable): Unit = cb(Left(t))
@@ -61,10 +62,7 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
     })
   }
 
-  private def sendWebSocket[T, R >: PE](
-      r: AbstractRequest[T, R],
-      ahcRequest: BoundRequestBuilder
-  ): F[Response[T]] =
+  private def sendWebSocket[T, R](r: AbstractRequest[T, R], ahcRequest: BoundRequestBuilder): F[Response[T]] =
     createSimpleQueue[WebSocketEvent].flatMap { queue =>
       monad.flatten(monad.async[F[Response[T]]] { cb =>
         val initListener =
@@ -86,7 +84,7 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
 
   protected def createSimpleQueue[T]: F[SimpleQueue[F, T]]
 
-  private def streamingAsyncHandler[T, R >: PE](
+  private def streamingAsyncHandler[T, R](
       request: AbstractRequest[T, R],
       success: F[Response[T]] => Unit,
       error: Throwable => Unit
@@ -186,11 +184,11 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
     override def onError(t: Throwable): Unit = error(t)
   }
 
-  private def preparedRequest[R >: PE](r: AbstractRequest[_, R]): F[BoundRequestBuilder] = {
+  private def preparedRequest[R](r: AbstractRequest[_, R]): F[BoundRequestBuilder] = {
     monad.fromTry(Try(asyncHttpClient.prepareRequest(requestToAsync(r)))).map(customizeRequest)
   }
 
-  private def requestToAsync[R >: PE](r: AbstractRequest[_, R]): AsyncRequest = {
+  private def requestToAsync[R](r: AbstractRequest[_, R]): AsyncRequest = {
     val readTimeout = r.options.readTimeout
     val rb = new RequestBuilder(r.method.method)
       .setUrl(r.uri.toString)

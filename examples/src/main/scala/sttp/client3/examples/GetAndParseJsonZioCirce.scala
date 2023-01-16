@@ -17,7 +17,7 @@ object GetAndParseJsonZioCirce extends ZIOAppDefault {
       .response(asJson[HttpBinResponse])
 
     // create a description of a program, which requires SttpClient dependency in the environment
-    def sendAndPrint(backend: SttpBackend[Task, Any]): Task[Unit] = for {
+    def sendAndPrint(backend: Backend[Task]): Task[Unit] = for {
       response <- backend.send(request)
       _ <- Console.printLine(s"Got response code: ${response.code}")
       _ <- Console.printLine(response.body.toString)

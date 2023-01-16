@@ -9,15 +9,15 @@ import sttp.client3.internal.NoStreams
 import sttp.client3.internal.ws.{SimpleQueue, SyncQueue, WebSocketEvent}
 import sttp.client3.monad.IdMonad
 import sttp.client3.okhttp.OkHttpBackend.EncodingHandler
-import sttp.client3.testing.SttpBackendStub
+import sttp.client3.testing.WebSocketBackendStub
 import sttp.client3.{
   DefaultReadTimeout,
   FollowRedirectsBackend,
   Identity,
   AbstractRequest,
   Response,
-  SttpBackend,
   SttpBackendOptions,
+  WebSocketBackend,
   ignore
 }
 import sttp.monad.MonadError
@@ -31,11 +31,12 @@ class OkHttpSyncBackend private (
     closeClient: Boolean,
     customEncodingHandler: EncodingHandler,
     webSocketBufferCapacity: Option[Int]
-) extends OkHttpBackend[Identity, Nothing, WebSockets](client, closeClient, customEncodingHandler) {
+) extends OkHttpBackend[Identity, Nothing, WebSockets](client, closeClient, customEncodingHandler)
+    with WebSocketBackend[Identity] {
   private implicit val ec: ExecutionContext = ExecutionContext.global
   override val streams: Streams[Nothing] = NoStreams
 
-  override protected def sendWebSocket[T, R >: PE](request: AbstractRequest[T, R]): Identity[Response[T]] = {
+  override protected def sendWebSocket[T](request: AbstractRequest[T, R]): Identity[Response[T]] = {
     val nativeRequest = convertRequest(request)
     val responseCell = new ArrayBlockingQueue[Either[Throwable, Future[Response[T]]]](5)
     def fillCellError(t: Throwable): Unit = responseCell.add(Left(t))
@@ -69,7 +70,7 @@ class OkHttpSyncBackend private (
     Await.result(response, Duration.Inf)
   }
 
-  override protected def sendRegular[T, R >: PE](request: AbstractRequest[T, R]): Identity[Response[T]] = {
+  override protected def sendRegular[T](request: AbstractRequest[T, R]): Identity[Response[T]] = {
     val nativeRequest = convertRequest(request)
     val response = OkHttpBackend
       .updateClientIfCustomReadTimeout(request, client)
@@ -103,16 +104,14 @@ object OkHttpSyncBackend {
       closeClient: Boolean,
       customEncodingHandler: EncodingHandler,
       webSocketBufferCapacity: Option[Int]
-  ): SttpBackend[Identity, WebSockets] =
-    new FollowRedirectsBackend(
-      new OkHttpSyncBackend(client, closeClient, customEncodingHandler, webSocketBufferCapacity)
-    )
+  ): WebSocketBackend[Identity] =
+    FollowRedirectsBackend(new OkHttpSyncBackend(client, closeClient, customEncodingHandler, webSocketBufferCapacity))
 
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customEncodingHandler: EncodingHandler = PartialFunction.empty,
       webSocketBufferCapacity: Option[Int] = OkHttpBackend.DefaultWebSocketBufferCapacity
-  ): SttpBackend[Identity, WebSockets] =
+  ): WebSocketBackend[Identity] =
     OkHttpSyncBackend(
       OkHttpBackend.defaultClient(DefaultReadTimeout.toMillis, options),
       closeClient = true,
@@ -124,12 +123,12 @@ object OkHttpSyncBackend {
       client: OkHttpClient,
       customEncodingHandler: EncodingHandler = PartialFunction.empty,
       webSocketBufferCapacity: Option[Int] = OkHttpBackend.DefaultWebSocketBufferCapacity
-  ): SttpBackend[Identity, WebSockets] =
+  ): WebSocketBackend[Identity] =
     OkHttpSyncBackend(client, closeClient = false, customEncodingHandler, webSocketBufferCapacity)
 
   /** Create a stub backend for testing, which uses the [[Identity]] response wrapper, and doesn't support streaming.
     *
-    * See [[SttpBackendStub]] for details on how to configure stub responses.
+    * See [[WebSocketBackendStub]] for details on how to configure stub responses.
     */
-  def stub: SttpBackendStub[Identity, WebSockets] = SttpBackendStub.synchronous
+  def stub: WebSocketBackendStub[Identity] = WebSocketBackendStub.synchronous
 }

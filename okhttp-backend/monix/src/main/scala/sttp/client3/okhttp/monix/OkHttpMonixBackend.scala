@@ -18,8 +18,8 @@ import sttp.client3.internal.ws.SimpleQueue
 import sttp.monad.MonadError
 import sttp.client3.okhttp.OkHttpBackend.EncodingHandler
 import sttp.client3.okhttp.{BodyFromOkHttp, BodyToOkHttp, OkHttpAsyncBackend, OkHttpBackend}
-import sttp.client3.testing.SttpBackendStub
-import sttp.client3.{SttpBackend, _}
+import sttp.client3.testing.WebSocketStreamBackendStub
+import sttp.client3._
 import sttp.ws.{WebSocket, WebSocketFrame}
 
 import scala.concurrent.Future
@@ -36,7 +36,8 @@ class OkHttpMonixBackend private (
       TaskMonadAsyncError,
       closeClient,
       customEncodingHandler
-    ) {
+    )
+    with WebSocketStreamBackend[Task, MonixStreams] {
   override val streams: MonixStreams = MonixStreams
 
   override protected val bodyToOkHttp: BodyToOkHttp[Task, MonixStreams] = new BodyToOkHttp[Task, MonixStreams] {
@@ -122,8 +123,8 @@ object OkHttpMonixBackend {
       webSocketBufferCapacity: Option[Int]
   )(implicit
       s: Scheduler
-  ): SttpBackend[Task, MonixStreams with WebSockets] =
-    new FollowRedirectsBackend(
+  ): WebSocketStreamBackend[Task, MonixStreams] =
+    FollowRedirectsBackend(
       new OkHttpMonixBackend(client, closeClient, customEncodingHandler, webSocketBufferCapacity)(s)
     )
 
@@ -133,7 +134,7 @@ object OkHttpMonixBackend {
       webSocketBufferCapacity: Option[Int] = OkHttpBackend.DefaultWebSocketBufferCapacity
   )(implicit
       s: Scheduler = Scheduler.global
-  ): Task[SttpBackend[Task, MonixStreams with WebSockets]] =
+  ): Task[WebSocketStreamBackend[Task, MonixStreams]] =
     Task.eval(
       OkHttpMonixBackend(
         OkHttpBackend.defaultClient(DefaultReadTimeout.toMillis, options),
@@ -149,20 +150,20 @@ object OkHttpMonixBackend {
       webSocketBufferCapacity: Option[Int] = OkHttpBackend.DefaultWebSocketBufferCapacity
   )(implicit
       s: Scheduler = Scheduler.global
-  ): Resource[Task, SttpBackend[Task, MonixStreams with WebSockets]] =
+  ): Resource[Task, WebSocketStreamBackend[Task, MonixStreams]] =
     Resource.make(apply(options, customEncodingHandler, webSocketBufferCapacity))(_.close())
 
   def usingClient(
       client: OkHttpClient,
       customEncodingHandler: EncodingHandler = PartialFunction.empty,
       webSocketBufferCapacity: Option[Int] = OkHttpBackend.DefaultWebSocketBufferCapacity
-  )(implicit s: Scheduler = Scheduler.global): SttpBackend[Task, MonixStreams with WebSockets] =
+  )(implicit s: Scheduler = Scheduler.global): WebSocketStreamBackend[Task, MonixStreams] =
     OkHttpMonixBackend(client, closeClient = false, customEncodingHandler, webSocketBufferCapacity)(s)
 
   /** Create a stub backend for testing, which uses the [[Task]] response wrapper, and supports `Observable[ByteBuffer]`
     * streaming.
     *
-    * See [[SttpBackendStub]] for details on how to configure stub responses.
+    * See [[WebSocketStreamBackendStub]] for details on how to configure stub responses.
     */
-  def stub: SttpBackendStub[Task, MonixStreams with WebSockets] = SttpBackendStub(TaskMonadAsyncError)
+  def stub: WebSocketStreamBackendStub[Task, MonixStreams] = WebSocketStreamBackendStub(TaskMonadAsyncError)
 }

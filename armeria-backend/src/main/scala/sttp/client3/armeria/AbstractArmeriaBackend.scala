@@ -37,7 +37,7 @@ import sttp.capabilities.{Effect, Streams}
 import sttp.client3.SttpClientException.{ConnectException, ReadException, TimeoutException}
 import sttp.client3._
 import sttp.client3.armeria.AbstractArmeriaBackend.{RightUnit, noopCanceler}
-import sttp.client3.internal.{throwNestedMultipartNotAllowed, toByteArray}
+import sttp.client3.internal.toByteArray
 import sttp.model._
 import sttp.monad.syntax._
 import sttp.monad.{Canceler, MonadAsyncError, MonadError}
@@ -46,11 +46,11 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
     client: WebClient = WebClient.of(),
     closeFactory: Boolean,
     private implicit val monad: MonadAsyncError[F]
-) extends SttpBackend[F, S] {
+) extends StreamBackend[F, S] {
 
   val streams: Streams[S]
 
-  type SE = S with Effect[F]
+  type R = S with Effect[F]
 
   protected def bodyFromStreamMessage: BodyFromStreamMessage[F, S]
 
@@ -58,10 +58,10 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
 
   override def responseMonad: MonadError[F] = monad
 
-  override def send[T, R >: SE](request: AbstractRequest[T, R]): F[Response[T]] =
+  override def internalSend[T](request: AbstractRequest[T, R]): F[Response[T]] =
     monad.suspend(adjustExceptions(request)(execute(request)))
 
-  private def execute[T, R >: SE](request: AbstractRequest[T, R]): F[Response[T]] = {
+  private def execute[T](request: AbstractRequest[T, R]): F[Response[T]] = {
     val captor = Clients.newContextCaptor()
     try {
       val armeriaRes = requestToArmeria(request).execute()
@@ -209,7 +209,7 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
         SttpClientException.defaultExceptionToSttpClientException(request, ex)
     }
 
-  private def fromArmeriaResponse[T, R >: SE](
+  private def fromArmeriaResponse[T](
       request: AbstractRequest[T, R],
       response: HttpResponse,
       ctx: ClientRequestContext

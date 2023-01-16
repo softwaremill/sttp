@@ -3,7 +3,7 @@ package sttp.client3.akkahttp
 import akka.actor.ActorSystem
 import akka.http.scaladsl.server.Route
 import org.scalatest.BeforeAndAfterAll
-import sttp.client3.SttpBackend
+import sttp.client3.Backend
 import sttp.model.StatusCode
 
 import scala.concurrent.duration._
@@ -19,7 +19,7 @@ class AkkaHttpRouteBackendTest extends AsyncWordSpec with Matchers with BeforeAn
     Await.result(system.terminate(), 5.seconds)
   }
 
-  val backend: SttpBackend[Future, Any] =
+  val backend: Backend[Future] =
     AkkaHttpBackend.usingClient(system, http = AkkaHttpClient.stubFromRoute(Routes.route))
 
   import sttp.client3._

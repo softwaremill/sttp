@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import sttp.capabilities.akka.AkkaStreams
-import sttp.client3.SttpBackend
+import sttp.client3.StreamBackend
 import sttp.model.sse.ServerSentEvent
 import sttp.client3.testing.ConvertToFuture
 import sttp.client3.testing.streaming.StreamingTest
@@ -16,7 +16,7 @@ class AkkaHttpStreamingTest extends StreamingTest[Future, AkkaStreams] {
 
   private implicit val actorSystem: ActorSystem = ActorSystem("sttp-test")
 
-  override val backend: SttpBackend[Future, AkkaStreams] =
+  override val backend: StreamBackend[Future, AkkaStreams] =
     AkkaHttpBackend.usingActorSystem(actorSystem)
 
   override implicit val convertToFuture: ConvertToFuture[Future] =

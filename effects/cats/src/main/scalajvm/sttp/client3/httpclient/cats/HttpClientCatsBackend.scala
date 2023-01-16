@@ -3,14 +3,19 @@ package sttp.client3.httpclient.cats
 import cats.effect.kernel.{Async, Resource, Sync}
 import cats.effect.std.{Dispatcher, Queue}
 import cats.implicits.{toFunctorOps, toFlatMapOps}
-import sttp.capabilities.WebSockets
 import sttp.client3.HttpClientBackend.EncodingHandler
 import sttp.client3.impl.cats.CatsMonadAsyncError
 import sttp.client3.internal.httpclient._
 import sttp.client3.internal.ws.SimpleQueue
 import sttp.client3.internal.{NoStreams, emptyInputStream}
-import sttp.client3.testing.SttpBackendStub
-import sttp.client3.{FollowRedirectsBackend, HttpClientAsyncBackend, HttpClientBackend, SttpBackend, SttpBackendOptions}
+import sttp.client3.testing.WebSocketBackendStub
+import sttp.client3.{
+  FollowRedirectsBackend,
+  HttpClientAsyncBackend,
+  HttpClientBackend,
+  SttpBackendOptions,
+  WebSocketBackend
+}
 import sttp.monad.MonadError
 import sttp.ws.{WebSocket, WebSocketFrame}
 
@@ -28,12 +33,7 @@ class HttpClientCatsBackend[F[_]: Async] private (
     customizeRequest: HttpRequest => HttpRequest,
     customEncodingHandler: EncodingHandler[InputStream],
     dispatcher: Dispatcher[F]
-) extends HttpClientAsyncBackend[
-      F,
-      Nothing,
-      WebSockets,
-      InputStream
-    ](
+) extends HttpClientAsyncBackend[F, Nothing, InputStream](
       client,
       new CatsMonadAsyncError[F],
       closeClient,
@@ -92,8 +92,8 @@ object HttpClientCatsBackend {
       customizeRequest: HttpRequest => HttpRequest,
       customEncodingHandler: EncodingHandler[InputStream],
       dispatcher: Dispatcher[F]
-  ): SttpBackend[F, WebSockets] =
-    new FollowRedirectsBackend(
+  ): WebSocketBackend[F] =
+    FollowRedirectsBackend(
       new HttpClientCatsBackend(client, closeClient, customizeRequest, customEncodingHandler, dispatcher)
     )
 
@@ -102,7 +102,7 @@ object HttpClientCatsBackend {
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: EncodingHandler[InputStream] = PartialFunction.empty
-  ): F[SttpBackend[F, WebSockets]] = {
+  ): F[WebSocketBackend[F]] = {
     Async[F].executor.flatMap(executor =>
       Sync[F].delay(
         HttpClientCatsBackend(
@@ -120,7 +120,7 @@ object HttpClientCatsBackend {
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: EncodingHandler[InputStream] = PartialFunction.empty
-  ): Resource[F, SttpBackend[F, WebSockets]] =
+  ): Resource[F, WebSocketBackend[F]] =
     Dispatcher
       .parallel[F]
       .flatMap(dispatcher =>
@@ -131,7 +131,7 @@ object HttpClientCatsBackend {
       client: HttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: EncodingHandler[InputStream] = PartialFunction.empty
-  ): Resource[F, SttpBackend[F, WebSockets]] =
+  ): Resource[F, WebSocketBackend[F]] =
     Dispatcher
       .parallel[F]
       .flatMap(dispatcher =>
@@ -147,12 +147,12 @@ object HttpClientCatsBackend {
       dispatcher: Dispatcher[F],
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: EncodingHandler[InputStream] = PartialFunction.empty
-  ): SttpBackend[F, WebSockets] =
+  ): WebSocketBackend[F] =
     HttpClientCatsBackend(client, closeClient = false, customizeRequest, customEncodingHandler, dispatcher)
 
   /** Create a stub backend for testing, which uses the [[F]] response wrapper.
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub[F[_]: Async]: SttpBackendStub[F, NoStreams] = SttpBackendStub(new CatsMonadAsyncError[F])
+  def stub[F[_]: Async]: WebSocketBackendStub[F] = WebSocketBackendStub(new CatsMonadAsyncError[F])
 }

@@ -16,8 +16,8 @@ import sttp.client3.asynchttpclient.{AsyncHttpClientBackend, BodyFromAHC, BodyTo
 import sttp.client3.impl.scalaz.TaskMonadAsyncError
 import sttp.client3.internal.NoStreams
 import sttp.client3.internal.ws.SimpleQueue
-import sttp.client3.testing.SttpBackendStub
-import sttp.client3.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
+import sttp.client3.testing.BackendStub
+import sttp.client3.{FollowRedirectsBackend, Backend, SttpBackendOptions}
 import sttp.monad.MonadAsyncError
 import sttp.ws.WebSocket
 
@@ -57,13 +57,13 @@ object AsyncHttpClientScalazBackend {
       asyncHttpClient: AsyncHttpClient,
       closeClient: Boolean,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder
-  ): SttpBackend[Task, Any] =
-    new FollowRedirectsBackend(new AsyncHttpClientScalazBackend(asyncHttpClient, closeClient, customizeRequest))
+  ): Backend[Task] =
+    FollowRedirectsBackend(new AsyncHttpClientScalazBackend(asyncHttpClient, closeClient, customizeRequest))
 
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): Task[SttpBackend[Task, Any]] =
+  ): Task[Backend[Task]] =
     Task.delay(
       AsyncHttpClientScalazBackend(AsyncHttpClientBackend.defaultClient(options), closeClient = true, customizeRequest)
     )
@@ -71,7 +71,7 @@ object AsyncHttpClientScalazBackend {
   def usingConfig(
       cfg: AsyncHttpClientConfig,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): Task[SttpBackend[Task, Any]] =
+  ): Task[Backend[Task]] =
     Task.delay(AsyncHttpClientScalazBackend(new DefaultAsyncHttpClient(cfg), closeClient = true, customizeRequest))
 
   /** @param updateConfig
@@ -81,7 +81,7 @@ object AsyncHttpClientScalazBackend {
       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): Task[SttpBackend[Task, Any]] =
+  ): Task[Backend[Task]] =
     Task.delay(
       AsyncHttpClientScalazBackend(
         AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),
@@ -93,12 +93,12 @@ object AsyncHttpClientScalazBackend {
   def usingClient(
       client: AsyncHttpClient,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
-  ): SttpBackend[Task, Any] =
+  ): Backend[Task] =
     AsyncHttpClientScalazBackend(client, closeClient = false, customizeRequest)
 
   /** Create a stub backend for testing, which uses the [[Task]] response wrapper, and doesn't support streaming.
     *
-    * See [[SttpBackendStub]] for details on how to configure stub responses.
+    * See [[BackendStub]] for details on how to configure stub responses.
     */
-  def stub: SttpBackendStub[Task, Any] = SttpBackendStub(TaskMonadAsyncError)
+  def stub: BackendStub[Task] = BackendStub(TaskMonadAsyncError)
 }
