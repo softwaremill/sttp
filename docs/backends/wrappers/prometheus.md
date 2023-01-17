@@ -26,8 +26,10 @@ It gathers request execution times in `Histogram`. It uses by default `sttp_requ
 ```scala mdoc:compile-only
 import sttp.client3.akkahttp._
 val backend = PrometheusBackend(
-  AkkaHttpBackend(), 
-  requestToHistogramNameMapper = request => Some(HistogramCollectorConfig(request.uri.host.getOrElse("example.com")))
+  AkkaHttpBackend(),
+  PrometheusConfig(
+    requestToHistogramNameMapper = request => Some(HistogramCollectorConfig(request.uri.host.getOrElse("example.com")))
+  )
 )
 ```
 
@@ -35,7 +37,7 @@ You can disable request histograms by passing `None` returning function:
 
 ```scala mdoc:compile-only
 import sttp.client3.akkahttp._
-val backend = PrometheusBackend(AkkaHttpBackend(), requestToHistogramNameMapper = _ => None)
+val backend = PrometheusBackend(AkkaHttpBackend(), PrometheusConfig(requestToHistogramNameMapper = _ => None))
 ```
 
 This backend also offers `Gauge` with currently in-progress requests number. It uses by default `sttp_requests_in_progress` name, defined in `PrometheusBackend.DefaultRequestsInProgressGaugeName`. It is possible to define custom gauge name by passing function mapping request to gauge name:
@@ -43,8 +45,10 @@ This backend also offers `Gauge` with currently in-progress requests number. It 
 ```scala mdoc:compile-only
 import sttp.client3.akkahttp._
 val backend = PrometheusBackend(
-  AkkaHttpBackend(), 
-  requestToInProgressGaugeNameMapper = request => Some(CollectorConfig(request.uri.host.getOrElse("example.com")))
+  AkkaHttpBackend(),
+  PrometheusConfig(
+    requestToInProgressGaugeNameMapper = request => Some(CollectorConfig(request.uri.host.getOrElse("example.com")))
+  )
 )
 ```
 
@@ -52,5 +56,5 @@ You can disable request in-progress gauges by passing `None` returning function:
 
 ```scala mdoc:compile-only
 import sttp.client3.akkahttp._
-val backend = PrometheusBackend(AkkaHttpBackend(), requestToInProgressGaugeNameMapper = _ => None)
+val backend = PrometheusBackend(AkkaHttpBackend(), PrometheusConfig(requestToInProgressGaugeNameMapper = _ => None))
 ```

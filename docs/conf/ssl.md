@@ -137,13 +137,12 @@ import cats.effect.IO
 import cats.effect.kernel.Resource
 import cats.effect.std.Dispatcher
 import java.net.http.HttpClient
-import sttp.capabilities.WebSockets
 import sttp.capabilities.fs2.Fs2Streams
-import sttp.client3.SttpBackend
+import sttp.client3.WebSocketStreamBackend
 import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 
 val httpClient: HttpClient = HttpClient.newBuilder().sslContext(ssl).build()
-val backend: Resource[IO, SttpBackend[IO, Fs2Streams[IO] with WebSockets]] = HttpClientFs2Backend.resourceUsingClient[IO](httpClient)
+val backend: Resource[IO, WebSocketStreamBackend[IO, Fs2Streams[IO]]] = HttpClientFs2Backend.resourceUsingClient[IO](httpClient)
 ```
 
 ## Using Async-http-client (deprecated)

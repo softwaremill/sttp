@@ -12,7 +12,7 @@ To start describing a request, import the sttp client package and customise `bas
 
 ```scala mdoc:compile-only
 import sttp.client3._
-val myRequest: Request[_, _] = ??? // basicRequest.(...)
+val myRequest: Request[_] = ??? // basicRequest.(...)
 ```
 
 An alternative to importing the `sttp.client3._` package, is to extend the `sttp.client3.SttpApi` trait. That way, multiple integrations can be grouped in one object, thus reducing the number of necessary imports.
@@ -31,7 +31,7 @@ For example, the following sends a synchronous request, using the default JVM ba
 
 ```scala mdoc:compile-only
 import sttp.client3._
-val myRequest: Request[String, Any] = ???
+val myRequest: Request[String] = ???
 val backend = HttpClientSyncBackend()
 val response = myRequest.send(backend)
 ```

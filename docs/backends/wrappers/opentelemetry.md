@@ -24,7 +24,7 @@ import sttp.client3.opentelemetry._
 import io.opentelemetry.api.OpenTelemetry
 
 // any effect and capabilities are supported
-val sttpBackend: SttpBackend[Future, Any] = ??? 
+val sttpBackend: Backend[Future] = ??? 
 val openTelemetry: OpenTelemetry = ???
 
 OpenTelemetryMetricsBackend(sttpBackend, openTelemetry)
@@ -38,13 +38,15 @@ import sttp.client3._
 import sttp.client3.opentelemetry._
 import io.opentelemetry.api.OpenTelemetry
 
-val sttpBackend: SttpBackend[Future, Any] = ??? 
+val sttpBackend: Backend[Future] = ??? 
 val openTelemetry: OpenTelemetry = ???
 
 OpenTelemetryMetricsBackend(
   sttpBackend,
-  openTelemetry,
-  responseToSuccessCounterMapper = _ => Some(CollectorConfig("my_custom_counter_name"))
+  OpenTelemetryMetricsConfig(
+    openTelemetry,
+    responseToSuccessCounterMapper = _ => Some(CollectorConfig("my_custom_counter_name"))
+  )
 )
 ```
 
@@ -70,7 +72,7 @@ import zio._
 import zio.telemetry.opentelemetry._
 import sttp.client3.opentelemetry.zio._
 
-val zioBackend: SttpBackend[Task, Any] = ???
+val zioBackend: Backend[Task] = ???
 val tracing: Tracing = ???
 
 OpenTelemetryTracingZioBackend(zioBackend, tracing)

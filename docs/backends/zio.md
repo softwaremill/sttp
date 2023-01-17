@@ -107,7 +107,7 @@ import sttp.client3._
 import sttp.client3.httpclient.zio._
 import zio._
 
-class MyService(sttpBackend: SttpBackend[Task, Any]) {
+class MyService(sttpBackend: Backend[Task]) {
   def runLogic(): Task[Response[String]] = {
     val request = basicRequest.response(asStringAlways).get(uri"https://httpbin.org/get")
     sttpBackend.send(request)
@@ -115,7 +115,7 @@ class MyService(sttpBackend: SttpBackend[Task, Any]) {
 }
 
 object MyService {
-  val live: ZLayer[SttpBackend[Task, Any], Any, MyService] = ZLayer.fromFunction(new MyService(_))
+  val live: ZLayer[Backend[Task], Any, MyService] = ZLayer.fromFunction(new MyService(_))
 }
 
 ZLayer.make[MyService](MyService.live, HttpClientZioBackend.layer())
@@ -135,12 +135,12 @@ import sttp.client3._
 import zio.stream._
 import zio.Task
 
-val sttpBackend: SttpBackend[Task, ZioStreams] = ???
+val sttpBackend: StreamBackend[Task, ZioStreams] = ???
 val s: Stream[Throwable, Byte] =  ???
 
 val request = basicRequest
-  .streamBody(ZioStreams)(s)
   .post(uri"...")
+  .streamBody(ZioStreams)(s)
 
 sttpBackend.send(request)
 ```
@@ -156,7 +156,7 @@ import zio.stream._
 
 import scala.concurrent.duration.Duration
 
-val sttpBackend: SttpBackend[Task, ZioStreams] = ???
+val sttpBackend: StreamBackend[Task, ZioStreams] = ???
 
 val request =
   basicRequest
@@ -193,6 +193,7 @@ import sttp.client3._
 
 def processEvents(source: Stream[Throwable, ServerSentEvent]): Task[Unit] = ???
 
-basicRequest.response(asStream(ZioStreams)(stream => 
-  processEvents(stream.viaFunction(ZioServerSentEvents.parse))))
+basicRequest
+  .get(uri"...")
+  .response(asStream(ZioStreams)(stream => processEvents(stream.viaFunction(ZioServerSentEvents.parse))))
 ```

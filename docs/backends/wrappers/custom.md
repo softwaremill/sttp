@@ -58,11 +58,11 @@ class CloudMetricsServer extends MetricsServer {
 }
 
 // the backend wrapper
-class MetricWrapper[P](delegate: SttpBackend[Future, P],
+abstract class MetricWrapper[P](delegate: AbstractBackend[Future, P],
                        metrics: MetricsServer)
-    extends DelegateSttpBackend[Future, P](delegate) {
+    extends DelegateSttpBackend(delegate) {
 
-  override def send[T, R >: P with Effect[Future]](request: Request[T, R]): Future[Response[T]] = {
+  override def internalSend[T](request: AbstractRequest[T, P with Effect[Future]]): Future[Response[T]] = {
     val start = System.currentTimeMillis()
 
     def report(metricSuffix: String): Unit = {
@@ -71,7 +71,7 @@ class MetricWrapper[P](delegate: SttpBackend[Future, P],
       metrics.reportDuration(metricPrefix + "-" + metricSuffix, end - start)
     }
 
-    delegate.send(request).andThen {
+    delegate.internalSend(request).andThen {
       case Success(response) if response.is200 => report("ok")
       case Success(response)                   => report("notok")
       case Failure(t)                          => report("exception")
@@ -79,11 +79,16 @@ class MetricWrapper[P](delegate: SttpBackend[Future, P],
   }
 }
 
+object MetricWrapper {
+  def apply[S](
+    backend: WebSocketStreamBackend[Future, S],
+    metrics: MetricsServer
+  ): WebSocketStreamBackend[Future, S] =
+    new MetricWrapper(backend, metrics) with WebSocketStreamBackend[Future, S] {}
+}
+
 // example usage
-val backend = new MetricWrapper(
-  AkkaHttpBackend(),
-  new CloudMetricsServer()
-)
+val backend = MetricWrapper(AkkaHttpBackend(), new CloudMetricsServer())
 
 basicRequest
   .get(uri"http://company.com/api/service1")
@@ -108,19 +113,19 @@ import sttp.capabilities.Effect
 import sttp.client3._
 
 class RetryingBackend[F[_], P](
-    delegate: SttpBackend[F, P],
+    delegate: AbstractBackend[F, P],
     shouldRetry: RetryWhen,
     maxRetries: Int)
-    extends DelegateSttpBackend[F, P](delegate) {
+    extends DelegateSttpBackend(delegate) {
 
-  override def send[T, R >: P with Effect[F]](request: Request[T, R]): F[Response[T]] = {
+  override def internalSend[T](request: AbstractRequest[T, P with Effect[F]]): F[Response[T]] = {
     sendWithRetryCounter(request, 0)
   }
 
-  private def sendWithRetryCounter[T, R >: P with Effect[F]](
-    request: Request[T, R], retries: Int): F[Response[T]] = {
+  private def sendWithRetryCounter[T](
+    request: AbstractRequest[T, P with Effect[F]], retries: Int): F[Response[T]] = {
 
-    val r = responseMonad.handleError(delegate.send(request)) {
+    val r = responseMonad.handleError(delegate.internalSend(request)) {
       case t if shouldRetry(request, Left(t)) && retries < maxRetries =>
         sendWithRetryCounter(request, retries + 1)
     }
@@ -133,6 +138,11 @@ class RetryingBackend[F[_], P](
       }
     }
   }
+}
+
+object RetryingBackend {
+  def apply[F[_]](backend: WebSocketBackend[F], shouldRetry: RetryWhen, maxRetries: Int): WebSocketBackend[F] =
+    new RetryingBackend(backend, shouldRetry, maxRetries) with WebSocketBackend[F] {}
 }
 ```                    
 
@@ -147,20 +157,23 @@ Below is an example on how to implement a backend wrapper, which integrates with
 ```scala mdoc:compile-only
 import io.github.resilience4j.circuitbreaker.{CallNotPermittedException, CircuitBreaker}
 import sttp.capabilities.Effect
-import sttp.client3.{Request, Response, SttpBackend, DelegateSttpBackend}
+import sttp.client3.{AbstractBackend, AbstractRequest, Backend, Response, DelegateSttpBackend}
 import sttp.monad.MonadError
 import java.util.concurrent.TimeUnit
 
 class CircuitSttpBackend[F[_], P](
     circuitBreaker: CircuitBreaker,
-    delegate: SttpBackend[F, P]) extends DelegateSttpBackend[F, P](delegate) {
+    delegate: AbstractBackend[F, P]) extends DelegateSttpBackend(delegate) {
 
-  override def send[T, R >: P with Effect[F]](request: Request[T, R]): F[Response[T]] = {
-    CircuitSttpBackend.decorateF(circuitBreaker, delegate.send(request))
+  override def internalSend[T](request: AbstractRequest[T, P with Effect[F]]): F[Response[T]] = {
+    CircuitSttpBackend.decorateF(circuitBreaker, delegate.internalSend(request))
   }
 }
 
 object CircuitSttpBackend {
+
+  def apply[F[_]](circuitBreaker: CircuitBreaker, backend: Backend[F]): Backend[F] =
+    new CircuitSttpBackend(circuitBreaker, backend) with Backend[F] {}
 
   def decorateF[F[_], T](
       circuitBreaker: CircuitBreaker,
@@ -202,19 +215,24 @@ Below is an example on how to implement a backend wrapper, which integrates with
 import io.github.resilience4j.ratelimiter.RateLimiter
 import sttp.capabilities.Effect
 import sttp.monad.MonadError
-import sttp.client3.{Request, Response, SttpBackend, DelegateSttpBackend}
+import sttp.client3.{AbstractBackend, AbstractRequest, Response, StreamBackend, DelegateSttpBackend}
 
 class RateLimitingSttpBackend[F[_], P](
     rateLimiter: RateLimiter,
-    delegate: SttpBackend[F, P]
-    )(implicit monadError: MonadError[F]) extends DelegateSttpBackend[F, P](delegate) {
+    delegate: AbstractBackend[F, P]
+    )(implicit monadError: MonadError[F]) extends DelegateSttpBackend(delegate) {
 
-  override def send[T, R >: P with Effect[F]](request: Request[T, R]): F[Response[T]] = {
-    RateLimitingSttpBackend.decorateF(rateLimiter, delegate.send(request))
+  override def internalSend[T](request: AbstractRequest[T, P with Effect[F]]): F[Response[T]] = {
+    RateLimitingSttpBackend.decorateF(rateLimiter, delegate.internalSend(request))
   }
 }
 
 object RateLimitingSttpBackend {
+  def apply[F[_], S](
+    rateLimiter: RateLimiter,
+    backend: StreamBackend[F, S]
+  )(implicit monadError: MonadError[F]): StreamBackend[F, S] =
+    new RateLimitingSttpBackend(rateLimiter, backend) with StreamBackend[F, S] {}
 
   def decorateF[F[_], T](
       rateLimiter: RateLimiter,
@@ -250,7 +268,7 @@ import scala.concurrent.Future
 
 class MyCustomBackendHttpTest extends HttpTest[Future] {
   override implicit val convertToFuture: ConvertToFuture[Future] = ConvertToFuture.future
-  override lazy val backend: SttpBackend[Future, Any] = ??? //new MyCustomBackend()
+  override lazy val backend: Backend[Future] = ??? //new MyCustomBackend()
   override def timeoutToNone[T](t: Future[T], timeoutMillis: Int): Future[Option[T]] = ???
 }
 ```
