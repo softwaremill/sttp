@@ -10,7 +10,16 @@ import sttp.client3.internal.ws.{SimpleQueue, SyncQueue, WebSocketEvent}
 import sttp.client3.monad.IdMonad
 import sttp.client3.okhttp.OkHttpBackend.EncodingHandler
 import sttp.client3.testing.SttpBackendStub
-import sttp.client3.{DefaultReadTimeout, FollowRedirectsBackend, Identity, Request, Response, SttpBackend, SttpBackendOptions, ignore}
+import sttp.client3.{
+  DefaultReadTimeout,
+  FollowRedirectsBackend,
+  Identity,
+  Request,
+  Response,
+  SttpBackend,
+  SttpBackendOptions,
+  ignore
+}
 import sttp.monad.MonadError
 import sttp.ws.WebSocket
 
