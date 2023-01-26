@@ -12,7 +12,7 @@ Creation of the backend can be done in two basic ways:
 Firstly, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "monix" % "3.8.8"
+"com.softwaremill.sttp.client3" %% "monix" % "3.8.9"
 ```
 
 and create the backend using:
@@ -50,7 +50,7 @@ Host header override is supported in environments running Java 12 onwards, but i
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "okhttp-backend-monix" % "3.8.8"
+"com.softwaremill.sttp.client3" %% "okhttp-backend-monix" % "3.8.9"
 ```
 
 Create the backend using:
@@ -76,7 +76,7 @@ This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supp
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "armeria-backend-monix" % "3.8.8"
+"com.softwaremill.sttp.client3" %% "armeria-backend-monix" % "3.8.9"
 ```
 
 add imports:
