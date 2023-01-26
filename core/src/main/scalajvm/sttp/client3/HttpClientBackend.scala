@@ -110,7 +110,7 @@ abstract class HttpClientBackend[F[_], S, P, B](
           .map[Unit](new function.Function[Executor, Unit] {
             override def apply(t: Executor): Unit = t match {
               case tpe: ThreadPoolExecutor => tpe.shutdown()
-              case _ => ()
+              case _                       => ()
             }
           })
       )

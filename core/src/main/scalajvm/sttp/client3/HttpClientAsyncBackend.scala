@@ -8,16 +8,24 @@ import sttp.model.{HeaderNames, StatusCode}
 import sttp.monad.syntax._
 import sttp.monad.{Canceler, MonadAsyncError, MonadError}
 
-import java.net.http.HttpResponse.BodyHandlers
 import java.net.http._
-import java.nio.ByteBuffer
 import java.time.Duration
 import java.util.concurrent.CompletionException
-import java.util.concurrent.Flow.Publisher
 import java.util.concurrent.atomic.AtomicBoolean
-import java.{util => ju}
 
-abstract class HttpClientAsyncBackend[F[_], S, P, B](
+/** @tparam F
+  *   The effect type
+  * @tparam S
+  *   Type of supported byte streams, `Nothing` if none
+  * @tparam P
+  *   Capabilities supported by the backend. See [[SttpBackend]].
+  * @tparam BH
+  *   The low-level type of the body, read using a [[HttpResponse.BodyHandler]] read by [[HttpClient]].
+  * @tparam B
+  *   The higher-level body to which `BH` is transformed (e.g. a backend-native stream representation), which then is
+  *   used to read the body as described by `responseAs`.
+  */
+abstract class HttpClientAsyncBackend[F[_], S, P, BH, B](
     client: HttpClient,
     private implicit val monad: MonadAsyncError[F],
     closeClient: Boolean,
@@ -29,8 +37,11 @@ abstract class HttpClientAsyncBackend[F[_], S, P, B](
       if (request.isWebSocket) sendWebSocket(request) else sendRegular(request)
     }
 
+  protected def createBodyHandler: HttpResponse.BodyHandler[BH]
   protected def createSimpleQueue[T]: F[SimpleQueue[F, T]]
   protected def createSequencer: F[Sequencer[F]]
+  protected def bodyHandlerBodyToBody(p: BH): B
+  protected def emptyBody(): B
 
   private def sendRegular[T, R >: PE](request: Request[T, R]): F[Response[T]] = {
     monad.flatMap(convertRequest(request)) { convertedRequest =>
@@ -39,33 +50,29 @@ abstract class HttpClientAsyncBackend[F[_], S, P, B](
       monad.flatten(monad.async[F[Response[T]]] { cb =>
         def success(r: F[Response[T]]): Unit = cb(Right(r))
         def error(t: Throwable): Unit = cb(Left(t))
-        val cf = client
-          .sendAsync(jRequest, BodyHandlers.ofPublisher())
-          .whenComplete(
-            toJavaBiConsumer(
-              (
-                  t: HttpResponse[Publisher[ju.List[ByteBuffer]]],
-                  u: Throwable
-              ) => {
-                if (t != null) {
-                  try success(readResponse(t, Left(publisherToBody(t.body())), request))
-                  catch {
-                    case e: Exception => error(e)
-                  }
-                }
-                if (u != null) {
-                  error(u)
-                }
-              }
-            )
-          )
+        var cf = client.sendAsync(jRequest, createBodyHandler)
+
+        val consumer = toJavaBiConsumer((t: HttpResponse[BH], u: Throwable) => {
+          if (t != null) {
+            try success(readResponse(t, Left(bodyHandlerBodyToBody(t.body())), request))
+            catch {
+              case e: Exception => error(e)
+            }
+          }
+          if (u != null) {
+            error(u)
+          }
+        })
+
+        cf = client.executor().orElse(null) match {
+          case null => cf.whenComplete(consumer)
+          case e    => cf.whenCompleteAsync(consumer, e) // using the provided executor to further process the body
+        }
+
         Canceler(() => cf.cancel(true))
       })
     }
   }
-
-  protected def publisherToBody(p: Publisher[java.util.List[ByteBuffer]]): B
-  protected def emptyBody(): B
 
   private def sendWebSocket[T, R >: PE](request: Request[T, R]): F[Response[T]] = {
     (for {

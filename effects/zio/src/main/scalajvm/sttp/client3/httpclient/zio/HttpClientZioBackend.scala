@@ -18,10 +18,12 @@ import zio.stream.{ZPipeline, ZSink, ZStream}
 
 import java.io.UnsupportedEncodingException
 import java.net.http.HttpRequest.{BodyPublisher, BodyPublishers}
-import java.net.http.{HttpClient, HttpRequest}
+import java.net.http.HttpResponse.BodyHandlers
+import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 import java.nio.ByteBuffer
 import java.util
 import java.util.concurrent.Flow.Publisher
+import java.{util => ju}
 
 class HttpClientZioBackend private (
     client: HttpClient,
@@ -32,6 +34,7 @@ class HttpClientZioBackend private (
       Task,
       ZioStreams,
       ZioStreams with WebSockets,
+      Publisher[ju.List[ByteBuffer]],
       ZioStreams.BinaryStream
     ](
       client,
@@ -43,9 +46,12 @@ class HttpClientZioBackend private (
 
   override val streams: ZioStreams = ZioStreams
 
+  override protected def createBodyHandler: HttpResponse.BodyHandler[Publisher[util.List[ByteBuffer]]] =
+    BodyHandlers.ofPublisher()
+
   override protected def emptyBody(): ZStream[Any, Throwable, Byte] = ZStream.empty
 
-  override protected def publisherToBody(p: Publisher[util.List[ByteBuffer]]): ZStream[Any, Throwable, Byte] =
+  override protected def bodyHandlerBodyToBody(p: Publisher[util.List[ByteBuffer]]): ZStream[Any, Throwable, Byte] =
     FlowAdapters.toPublisher(p).toZIOStream().mapConcatChunk { list =>
       val a = Chunk.fromJavaIterable(list).flatMap(_.safeRead()).toArray
       ByteArray(a, 0, a.length)

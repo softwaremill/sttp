@@ -1,7 +1,14 @@
 package sttp.client3.finagle
 
 import com.twitter.finagle.Http.Client
-import com.twitter.finagle.http.{FileElement, FormElement, RequestBuilder, SimpleElement, Method => FMethod, Response => FResponse}
+import com.twitter.finagle.http.{
+  FileElement,
+  FormElement,
+  RequestBuilder,
+  SimpleElement,
+  Method => FMethod,
+  Response => FResponse
+}
 import com.twitter.finagle.{Http, Service, http}
 import com.twitter.io.Buf
 import com.twitter.io.Buf.{ByteArray, ByteBuffer}
@@ -11,7 +18,23 @@ import sttp.capabilities.Effect
 import sttp.client3.internal.{BodyFromResponseAs, FileHelpers, SttpFile, Utf8}
 import sttp.client3.testing.SttpBackendStub
 import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
-import sttp.client3.{ByteArrayBody, ByteBufferBody, FileBody, FollowRedirectsBackend, InputStreamBody, MultipartBody, NoBody, Request, RequestBody, Response, StreamBody, StringBody, SttpBackend, SttpClientException, WebSocketResponseAs}
+import sttp.client3.{
+  ByteArrayBody,
+  ByteBufferBody,
+  FileBody,
+  FollowRedirectsBackend,
+  InputStreamBody,
+  MultipartBody,
+  NoBody,
+  Request,
+  RequestBody,
+  Response,
+  StreamBody,
+  StringBody,
+  SttpBackend,
+  SttpClientException,
+  WebSocketResponseAs
+}
 import sttp.model.HttpVersion.HTTP_1
 import sttp.model._
 import sttp.monad.MonadError
@@ -200,7 +223,6 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
         .newService(uriToFinagleDestination(request.uri))
     }
   }
-
 
   private def uriToFinagleDestination(uri: Uri): String = {
     val defaultPort = uri.scheme match {
