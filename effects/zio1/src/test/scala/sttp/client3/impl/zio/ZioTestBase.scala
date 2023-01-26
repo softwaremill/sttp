@@ -7,9 +7,6 @@ import zio._
 import zio.clock.Clock
 import zio.duration.durationInt
 
-import scala.concurrent.{Future, Promise}
-import scala.util.{Failure, Success}
-
 trait ZioTestBase {
 
   val runtime: Runtime[ZEnv] = Runtime.default

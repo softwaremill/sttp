@@ -2,7 +2,7 @@ package sttp.client3.httpclient.fs2
 
 import java.io.UnsupportedEncodingException
 import java.net.http.HttpRequest.BodyPublishers
-import java.net.http.{HttpClient, HttpRequest}
+import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 import java.nio.ByteBuffer
 import java.util
 import cats.effect.kernel._
@@ -31,7 +31,9 @@ import sttp.client3.{
 }
 import sttp.monad.MonadError
 
+import java.net.http.HttpResponse.BodyHandlers
 import java.util.concurrent.Flow.Publisher
+import java.{util => ju}
 import scala.collection.JavaConverters._
 
 class HttpClientFs2Backend[F[_]: Async] private (
@@ -40,7 +42,9 @@ class HttpClientFs2Backend[F[_]: Async] private (
     customizeRequest: HttpRequest => HttpRequest,
     customEncodingHandler: Fs2EncodingHandler[F],
     dispatcher: Dispatcher[F]
-) extends HttpClientAsyncBackend[F, Fs2Streams[F], Fs2Streams[F] with WebSockets, Stream[F, Byte]](
+) extends HttpClientAsyncBackend[F, Fs2Streams[F], Fs2Streams[F] with WebSockets, Publisher[
+      ju.List[ByteBuffer]
+    ], Stream[F, Byte]](
       client,
       implicitly,
       closeClient,
@@ -69,6 +73,9 @@ class HttpClientFs2Backend[F[_]: Async] private (
         )
     }
 
+  override protected def createBodyHandler: HttpResponse.BodyHandler[Publisher[util.List[ByteBuffer]]] =
+    BodyHandlers.ofPublisher()
+
   override protected val bodyFromHttpClient: BodyFromHttpClient[F, Fs2Streams[F], Stream[F, Byte]] =
     new Fs2BodyFromHttpClient[F]()
 
@@ -77,7 +84,7 @@ class HttpClientFs2Backend[F[_]: Async] private (
 
   override protected def createSequencer: F[Sequencer[F]] = Fs2Sequencer.create
 
-  override protected def publisherToBody(p: Publisher[util.List[ByteBuffer]]): Stream[F, Byte] = {
+  override protected def bodyHandlerBodyToBody(p: Publisher[util.List[ByteBuffer]]): Stream[F, Byte] = {
     FlowAdapters
       .toPublisher(p)
       .toStream[F]

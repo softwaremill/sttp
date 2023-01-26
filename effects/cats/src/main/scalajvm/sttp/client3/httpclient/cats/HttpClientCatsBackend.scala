@@ -2,13 +2,13 @@ package sttp.client3.httpclient.cats
 
 import cats.effect.kernel.{Async, Resource, Sync}
 import cats.effect.std.{Dispatcher, Queue}
-import cats.implicits.{toFunctorOps, toFlatMapOps}
+import cats.implicits.{toFlatMapOps, toFunctorOps}
 import sttp.capabilities.WebSockets
 import sttp.client3.HttpClientBackend.EncodingHandler
 import sttp.client3.impl.cats.CatsMonadAsyncError
+import sttp.client3.internal.{NoStreams, emptyInputStream}
 import sttp.client3.internal.httpclient._
 import sttp.client3.internal.ws.SimpleQueue
-import sttp.client3.internal.{NoStreams, emptyInputStream}
 import sttp.client3.testing.SttpBackendStub
 import sttp.client3.{FollowRedirectsBackend, HttpClientAsyncBackend, HttpClientBackend, SttpBackend, SttpBackendOptions}
 import sttp.monad.MonadError
@@ -16,10 +16,8 @@ import sttp.ws.{WebSocket, WebSocketFrame}
 
 import java.io.{InputStream, UnsupportedEncodingException}
 import java.net.http.HttpRequest.BodyPublisher
-import java.net.http.{HttpClient, HttpRequest}
-import java.nio.ByteBuffer
-import java.util
-import java.util.concurrent.Flow.Publisher
+import java.net.http.HttpResponse.BodyHandlers
+import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
 
 class HttpClientCatsBackend[F[_]: Async] private (
@@ -28,12 +26,7 @@ class HttpClientCatsBackend[F[_]: Async] private (
     customizeRequest: HttpRequest => HttpRequest,
     customEncodingHandler: EncodingHandler[InputStream],
     dispatcher: Dispatcher[F]
-) extends HttpClientAsyncBackend[
-      F,
-      Nothing,
-      WebSockets,
-      InputStream
-    ](
+) extends HttpClientAsyncBackend[F, Nothing, WebSockets, InputStream, InputStream](
       client,
       new CatsMonadAsyncError[F],
       closeClient,
@@ -73,15 +66,13 @@ class HttpClientCatsBackend[F[_]: Async] private (
     case (_, ce)           => throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
   }
 
-  override protected def emptyBody(): InputStream = emptyInputStream()
-
-  override protected def publisherToBody(p: Publisher[util.List[ByteBuffer]]): InputStream = {
-    val subscriber = new InputStreamSubscriber
-    p.subscribe(subscriber)
-    subscriber.inputStream
-  }
-
   override val streams: NoStreams = NoStreams
+
+  override protected def createBodyHandler: HttpResponse.BodyHandler[InputStream] = BodyHandlers.ofInputStream()
+
+  override protected def bodyHandlerBodyToBody(p: InputStream): InputStream = p
+
+  override protected def emptyBody(): InputStream = emptyInputStream()
 }
 
 object HttpClientCatsBackend {
