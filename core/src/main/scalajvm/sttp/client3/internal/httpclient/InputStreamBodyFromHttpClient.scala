@@ -23,7 +23,7 @@ private[client3] trait InputStreamBodyFromHttpClient[F[_], S] extends BodyFromHt
         }).unit
       }
 
-      override protected def regularIgnore(response: InputStream): F[Unit] = monad.eval(response.close())
+      override protected def regularIgnore(response: InputStream): F[Unit] = monad.blocking(response.close())
 
       override protected def regularAsByteArray(response: InputStream): F[Array[Byte]] =
         monad.blocking {
