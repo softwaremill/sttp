@@ -32,7 +32,7 @@ package object zio {
     * Known exceptions are converted to one of `SttpClientException`. Other exceptions are kept unchanged.
     */
   def send[T](
-    request: Request[T, Effect[Task] with ZioStreams]
+      request: Request[T, Effect[Task] with ZioStreams]
   ): ZIO[SttpClient, Throwable, Response[T]] =
     ZIO.serviceWithZIO[SttpClient.Service](_.send(request))
 
@@ -40,7 +40,7 @@ package object zio {
     * websockets or resource-safe streaming) to use an `R` environment.
     */
   def sendR[T, R](
-    request: Request[T, Effect[RIO[R, *]] with ZioStreams]
+      request: Request[T, Effect[RIO[R, *]] with ZioStreams]
   ): ZIO[SttpClient with R, Throwable, Response[T]] =
     ZIO.serviceWithZIO[SttpClient.Service](_.extendEnv[R].send(request))
 
@@ -59,7 +59,7 @@ package object zio {
       StubbingWhenRequest(_ => true)
 
     def whenRequestMatchesPartial(
-      partial: PartialFunction[Request[_, _], Response[_]]
+        partial: PartialFunction[Request[_, _], Response[_]]
     ): URIO[SttpClientStubbing, Unit] =
       ZIO.serviceWithZIO(_.whenRequestMatchesPartial(partial))
   }
