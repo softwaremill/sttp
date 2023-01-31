@@ -266,6 +266,7 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
       bodyFromResponseAs
         .apply(request.response, ResponseMetadata(StatusCode.Ok, "", request.headers), Right(webSocket))
         .map(Response.ok)
+        .map(_.copy(request = request.onlyMetadata))
     }
   }
 
