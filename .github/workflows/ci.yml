@@ -15,11 +15,11 @@ jobs:
       matrix:
         scala-version: [ "2.11", "2.12", "2.13", "3" ]
         target-platform: [ "JVM", "JS", "Native" ]
-      exclude:
-        - scala-version: "2.11"
-          target-platform: "JS"
-        - scala-version: "2.11"
-          target-platform: "Native"
+        exclude:
+          - scala-version: "2.11"
+            target-platform: "JS"
+          - scala-version: "2.11"
+            target-platform: "Native"
     steps:
     - name: Checkout
       uses: actions/checkout@v2
