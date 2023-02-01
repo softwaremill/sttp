@@ -476,7 +476,7 @@ lazy val zio1 = (projectMatrix in file("effects/zio1"))
     settings = commonJvmSettings ++ Seq(
       libraryDependencies ++= Seq(
         "dev.zio" %% "zio-interop-reactivestreams" % zio1InteropRsVersion,
-        "dev.zio" %% "zio-nio" % "1.0.0-RC12"
+        "dev.zio" %% "zio-nio" % "2.0.1"
       )
     )
   )
@@ -564,8 +564,7 @@ def asyncHttpClientBackendProject(proj: String, includeDotty: Boolean = false, i
     .settings(name := s"async-http-client-backend-$proj")
     .dependsOn(asyncHttpClientBackend % compileAndTest)
     .jvmPlatform(
-      scalaVersions =
-        (if (include2_11) List(scala2_11) else Nil) ++ scala2alive ++ (if (includeDotty) scala3 else Nil)
+      scalaVersions = (if (include2_11) List(scala2_11) else Nil) ++ scala2alive ++ (if (includeDotty) scala3 else Nil)
     )
 }
 
