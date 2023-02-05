@@ -130,7 +130,7 @@ val playJsonVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.7.4"
   case _             => "2.9.2"
 }
-val catsEffect_3_version = "3.4.5"
+val catsEffect_3_version = "3.4.6"
 val fs2_3_version = "3.5.0"
 
 val catsEffect_2_version: Option[(Long, Long)] => String = {
@@ -564,8 +564,7 @@ def asyncHttpClientBackendProject(proj: String, includeDotty: Boolean = false, i
     .settings(name := s"async-http-client-backend-$proj")
     .dependsOn(asyncHttpClientBackend % compileAndTest)
     .jvmPlatform(
-      scalaVersions =
-        (if (include2_11) List(scala2_11) else Nil) ++ scala2alive ++ (if (includeDotty) scala3 else Nil)
+      scalaVersions = (if (include2_11) List(scala2_11) else Nil) ++ scala2alive ++ (if (includeDotty) scala3 else Nil)
     )
 }
 
