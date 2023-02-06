@@ -1,4 +1,4 @@
-package sttp.client3.armeria
+package sttp.client3.asynchttpclient
 
 import _root_.zio._
 import sttp.capabilities.Effect

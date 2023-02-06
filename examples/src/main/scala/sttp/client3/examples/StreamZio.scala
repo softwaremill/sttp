@@ -2,37 +2,38 @@ package sttp.client3.examples
 
 import sttp.capabilities.zio.ZioStreams
 import sttp.client3._
-import sttp.client3.httpclient.zio.HttpClientZioBackend
 import zio.Console._
 import zio._
 import zio.stream._
+import sttp.client3.httpclient.zio.{HttpClientZioBackend, send}
 
 object StreamZio extends ZIOAppDefault {
-  def streamRequestBody(backend: SttpBackend[Task, ZioStreams]): Task[Unit] = {
+  def streamRequestBody(implicit layer: ZLayer[Any, Throwable, SttpBackend[Task, ZioStreams]]): Task[Unit] = {
     val stream: Stream[Throwable, Byte] = ZStream("Hello, world".getBytes: _*)
-
-    backend
-      .send(
-        basicRequest
-          .streamBody(ZioStreams)(stream)
-          .post(uri"https://httpbin.org/post")
-      )
+    send(
+      basicRequest
+        .streamBody(ZioStreams)(stream)
+        .post(uri"https://httpbin.org/post")
+    )
+      .provideLayer(layer)
       .flatMap { response => printLine(s"RECEIVED:\n${response.body}") }
   }
 
-  def streamResponseBody(backend: SttpBackend[Task, ZioStreams]): Task[Unit] = {
-    backend
-      .send(
-        basicRequest
-          .body("I want a stream!")
-          .post(uri"https://httpbin.org/post")
-          .response(asStreamAlways(ZioStreams)(_.via(ZPipeline.utf8Decode).runFold("")(_ + _)))
-      )
+  def streamResponseBody(implicit layer: ZLayer[Any, Throwable, SttpBackend[Task, ZioStreams]]): Task[Unit] = {
+    send(
+      basicRequest
+        .body("I want a stream!")
+        .post(uri"https://httpbin.org/post")
+        .response(asStreamAlways(ZioStreams)(_.via(ZPipeline.utf8Decode).runFold("")(_ + _)))
+    )
+      .provideLayer(layer)
       .flatMap { response => printLine(s"RECEIVED:\n${response.body}") }
   }
 
-  override def run =
-    HttpClientZioBackend.scoped().flatMap { backend =>
-      streamRequestBody(backend) *> streamResponseBody(backend)
-    }
+  override def run = {
+    implicit val layer = HttpClientZioBackend.layer()
+    for {
+      _ <- streamRequestBody *> streamResponseBody
+    } yield ()
+  }
 }
