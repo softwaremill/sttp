@@ -96,9 +96,8 @@ trait HttpTestExtensions[F[_]] extends AsyncFreeSpecLike with AsyncExecutionCont
         .response(asStringAlways)
         .multipartBody(multipart("p1", "v1"))
         .contentType("multipart/mixed")
-      assertThrows[IllegalArgumentException](
-        req.send(backend).toFuture()
-      )
+
+      req.send(backend).toFuture().failed.map(e => e shouldBe a[IllegalArgumentException])
     }
   }
 }
