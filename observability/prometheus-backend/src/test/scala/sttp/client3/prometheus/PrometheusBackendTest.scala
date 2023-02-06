@@ -315,7 +315,7 @@ class PrometheusBackendTest
     val backend = PrometheusBackend(backendStub)
 
     // when
-    assertThrows[HttpError[String]] {
+    assertThrows[SttpClientException] {
       backend.send(
         basicRequest
           .get(uri"http://127.0.0.1/foo")
@@ -341,7 +341,7 @@ class PrometheusBackendTest
     val backend = PrometheusBackend(backendStub)
 
     // when
-    assertThrows[DeserializationException[String]] {
+    assertThrows[SttpClientException] {
       backend.send(
         basicRequest
           .get(uri"http://127.0.0.1/foo")
@@ -409,7 +409,7 @@ class PrometheusBackendTest
     )
 
     // when
-    assertThrows[HttpError[String]] { backend.send(basicRequest.get(uri"http://127.0.0.1/foo")) }
+    assertThrows[SttpClientException] { backend.send(basicRequest.get(uri"http://127.0.0.1/foo")) }
 
     // then
     getMetricValue(

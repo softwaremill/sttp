@@ -8,7 +8,7 @@ import org.scalatest.OptionValues
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import sttp.client3.testing.SttpBackendStub
-import sttp.client3.{DeserializationException, HttpError, Identity, Response, UriContext, asString, basicRequest}
+import sttp.client3.{DeserializationException, HttpError, Identity, Response, SttpClientException, UriContext, asString, basicRequest}
 import sttp.model.{Header, StatusCode}
 
 import scala.collection.JavaConverters._
@@ -189,7 +189,7 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
     val backend = OpenTelemetryMetricsBackend(backendStub, spawnNewOpenTelemetry(reader))
 
     // when
-    assertThrows[HttpError[String]] {
+    assertThrows[SttpClientException] {
       backend.send(
         basicRequest
           .get(uri"http://127.0.0.1/foo")
@@ -210,7 +210,7 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
     val backend = OpenTelemetryMetricsBackend(backendStub, spawnNewOpenTelemetry(reader))
 
     // when
-    assertThrows[DeserializationException[String]] {
+    assertThrows[SttpClientException] {
       backend.send(
         basicRequest
           .get(uri"http://127.0.0.1/foo")
