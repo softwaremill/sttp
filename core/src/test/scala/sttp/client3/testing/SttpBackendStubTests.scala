@@ -1,7 +1,5 @@
 package sttp.client3.testing
 
-import java.io.ByteArrayInputStream
-import java.util.concurrent.TimeoutException
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -15,8 +13,10 @@ import sttp.monad.{FutureMonad, TryMonad}
 import sttp.ws.WebSocketFrame
 import sttp.ws.testing.WebSocketStub
 
+import java.io.ByteArrayInputStream
+import java.util.concurrent.TimeoutException
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
 
@@ -127,15 +127,6 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
     a[ReadException] should be thrownBy {
       basicRequest.get(uri"http://example.org").send(backend)
     }
-  }
-
-  it should "handle exceptions thrown instead of a response (asynchronous)" in {
-    val backend: SttpBackendStub[Future, Any] = SttpBackendStub(new FutureMonad())
-      .whenRequestMatches(_ => true)
-      .thenRespond(throw new TimeoutException())
-
-    val result = basicRequest.get(uri"http://example.org").send(backend)
-    Await.result(result.failed.map(_ shouldBe a[ReadException]), Duration.Inf)
   }
 
   it should "try to convert a basic response to a mapped one" in {

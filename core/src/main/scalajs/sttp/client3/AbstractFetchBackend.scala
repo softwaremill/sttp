@@ -69,7 +69,14 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
   type PE = P with Effect[F] with WebSockets
 
   override def send[T, R >: PE](request: Request[T, R]): F[Response[T]] =
-    if (request.isWebSocket) sendWebSocket(request) else sendRegular(request)
+    adjustExceptions(request) {
+      if (request.isWebSocket) sendWebSocket(request) else sendRegular(request)
+    }
+
+  private def adjustExceptions[T](request: Request[_, _])(t: => F[T]): F[T] =
+    SttpClientException.adjustExceptions(responseMonad)(t)(
+      SttpClientException.defaultExceptionToSttpClientException(request, _)
+    )
 
   private def sendRegular[T, R >: PE](request: Request[T, R]): F[Response[T]] = {
     // https://stackoverflow.com/q/31061838/4094860

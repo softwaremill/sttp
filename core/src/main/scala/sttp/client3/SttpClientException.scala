@@ -24,36 +24,12 @@ import scala.annotation.tailrec
 abstract class SttpClientException(val request: Request[_, _], val cause: Exception)
     extends Exception(s"Exception when sending request: ${request.method} ${request.uri}", cause)
 
-object SttpClientException {
+object SttpClientException extends SttpClientExceptionExtensions {
   class ConnectException(request: Request[_, _], cause: Exception) extends SttpClientException(request, cause)
 
   class ReadException(request: Request[_, _], cause: Exception) extends SttpClientException(request, cause)
 
   class TimeoutException(request: Request[_, _], cause: Exception) extends ReadException(request, cause)
-
-  @tailrec
-  def defaultExceptionToSttpClientException(request: Request[_, _], e: Exception): Option[Exception] =
-    e match {
-      case e: java.net.ConnectException             => Some(new ConnectException(request, e))
-      case e: java.net.UnknownHostException         => Some(new ConnectException(request, e))
-      case e: java.net.MalformedURLException        => Some(new ConnectException(request, e))
-      case e: java.net.NoRouteToHostException       => Some(new ConnectException(request, e))
-      case e: java.net.PortUnreachableException     => Some(new ConnectException(request, e))
-      case e: java.net.ProtocolException            => Some(new ConnectException(request, e))
-      case e: java.net.URISyntaxException           => Some(new ConnectException(request, e))
-      case e: java.util.concurrent.TimeoutException => Some(new TimeoutException(request, e))
-      case e: java.net.http.HttpTimeoutException    => Some(new TimeoutException(request, e))
-      case e: java.net.SocketTimeoutException       => Some(new TimeoutException(request, e))
-      case e: java.net.UnknownServiceException      => Some(new ReadException(request, e))
-      case e: java.net.SocketException              => Some(new ReadException(request, e))
-      case e: java.io.IOException                   => Some(new ReadException(request, e))
-      case e: NotAWebSocketException                => Some(new ReadException(request, e))
-      case e: GotAWebSocketException                => Some(new ReadException(request, e))
-      case e: ResponseException[_, _]               => Some(new ReadException(request, e))
-      case e if e.getCause != null && e.getCause.isInstanceOf[Exception] =>
-        defaultExceptionToSttpClientException(request, e.getCause.asInstanceOf[Exception])
-      case _ => None
-    }
 
   def adjustExceptions[F[_], T](
       monadError: MonadError[F]
