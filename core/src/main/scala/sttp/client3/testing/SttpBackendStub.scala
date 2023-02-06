@@ -68,15 +68,20 @@ class SttpBackendStub[F[_], +P](
   override def send[T, R >: P with Effect[F]](request: Request[T, R]): F[Response[T]] = {
     Try(matchers.lift(request)) match {
       case Success(Some(response)) =>
-        tryAdjustResponseType(request.response, response.asInstanceOf[F[Response[T]]])(monad)
+        adjustExceptions(request)(tryAdjustResponseType(request.response, response.asInstanceOf[F[Response[T]]])(monad))
       case Success(None) =>
         fallback match {
           case None     => monad.error(new IllegalArgumentException(s"No behavior stubbed for request: $request"))
           case Some(fb) => fb.send(request)
         }
-      case Failure(e) => monad.error(e)
+      case Failure(e) => adjustExceptions(request)(monad.error(e))
     }
   }
+
+  private def adjustExceptions[T](request: Request[_, _])(t: => F[T]): F[T] =
+    SttpClientException.adjustExceptions(responseMonad)(t)(
+      SttpClientException.defaultExceptionToSttpClientException(request, _)
+    )
 
   override def close(): F[Unit] = monad.unit(())
 
