@@ -1,9 +1,6 @@
 package sttp.client3
 
-import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.monad.MonadError
-
-import scala.annotation.tailrec
 
 /** Known exceptions that might occur when using a backend. Currently this covers:
   *   - connect exceptions: when a connection (tcp socket) can't be established to the target host

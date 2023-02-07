@@ -127,9 +127,7 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
           post {
             extractRequest { req =>
               val isChunked = req.entity.isChunked().toString
-              onComplete(req.entity.discardBytes().future()) { _ =>
-                complete(isChunked)
-              }
+              discardEntity(complete(isChunked))
             }
           }
         }
@@ -362,43 +360,43 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
         }
     } ~ pathPrefix("redirect") {
       path("r1") {
-        redirect("/redirect/r2", StatusCodes.TemporaryRedirect)
+        discardEntity(redirect("/redirect/r2", StatusCodes.TemporaryRedirect))
       } ~
         path("r2") {
-          redirect("/redirect/r3", StatusCodes.PermanentRedirect)
+          discardEntity(redirect("/redirect/r3", StatusCodes.PermanentRedirect))
         } ~
         path("r3") {
-          redirect("/redirect/r4", StatusCodes.Found)
+          discardEntity(redirect("/redirect/r4", StatusCodes.Found))
         } ~
         path("r4") {
           complete("819")
         } ~
         path("loop") {
-          redirect("/redirect/loop", StatusCodes.Found)
+          discardEntity(redirect("/redirect/loop", StatusCodes.Found))
         } ~
         pathPrefix("get_after_post") {
           path("r301") {
-            redirect("/redirect/get_after_post/result", StatusCodes.MovedPermanently)
+            discardEntity(redirect("/redirect/get_after_post/result", StatusCodes.MovedPermanently))
           } ~ path("r302") {
-            redirect("/redirect/get_after_post/result", StatusCodes.Found)
+            discardEntity(redirect("/redirect/get_after_post/result", StatusCodes.Found))
           } ~ path("r303") {
-            redirect("/redirect/get_after_post/result", StatusCodes.SeeOther)
+            discardEntity(redirect("/redirect/get_after_post/result", StatusCodes.SeeOther))
           } ~ path("r307") {
-            redirect("/redirect/get_after_post/result", StatusCodes.TemporaryRedirect)
+            discardEntity(redirect("/redirect/get_after_post/result", StatusCodes.TemporaryRedirect))
           } ~ path("r308") {
-            redirect("/redirect/get_after_post/result", StatusCodes.PermanentRedirect)
+            discardEntity(redirect("/redirect/get_after_post/result", StatusCodes.PermanentRedirect))
           } ~ path("result") {
             get(complete(s"GET")) ~
               entity(as[String]) { (body: String) => post(complete(s"POST$body")) }
           }
         } ~ pathPrefix("strip_sensitive_headers") {
           path("r1") {
-            redirect("/redirect/strip_sensitive_headers/result", StatusCodes.PermanentRedirect)
+            discardEntity(redirect("/redirect/strip_sensitive_headers/result", StatusCodes.PermanentRedirect))
           } ~ path("result") {
             extractRequest { (req: HttpRequest) => complete(s"${req.headers.mkString(",")}") }
           }
         } ~ pathPrefix("relative") {
-          redirect("r4", StatusCodes.PermanentRedirect)
+          discardEntity(redirect("r4", StatusCodes.PermanentRedirect))
         }
     } ~ pathPrefix("error") {
       complete(
@@ -491,6 +489,14 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
           }
         }
     }
+
+  def discardEntity(inner: Route): Route = {
+    extractRequest { request =>
+      onComplete(request.entity.discardBytes().future()) { _ =>
+        inner
+      }
+    }
+  }
 
   val corsServerRoutes: Route = {
     handleRejections(CorsDirectives.corsRejectionHandler) {
