@@ -127,8 +127,9 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
           post {
             extractRequest { req =>
               val isChunked = req.entity.isChunked().toString
-              req.entity.discardBytes()
-              complete(isChunked)
+              onComplete(req.entity.discardBytes().future()) { _ =>
+                complete(isChunked)
+              }
             }
           }
         }
