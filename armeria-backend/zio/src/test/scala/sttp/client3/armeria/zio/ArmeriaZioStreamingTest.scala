@@ -36,4 +36,7 @@ class ArmeriaZioStreamingTest extends StreamingTest[Task, ZioStreams] with ZioTe
     stream.viaFunction(ZioServerSentEvents.parse).runCollect.map(_.toList)
 
   override protected def supportsStreamingMultipartParts: Boolean = false
+
+  // SSE tests often fail with a ClosedSessionException, see https://github.com/line/armeria/issues/1754
+  override protected def supportsSSE: Boolean = false
 }

@@ -18,4 +18,7 @@ class ArmeriaFs2StreamingTest extends Fs2StreamingTest with TestIODispatcher {
     )
 
   override protected def supportsStreamingMultipartParts: Boolean = false
+
+  // SSE tests often fail with a ClosedSessionException, see https://github.com/line/armeria/issues/1754
+  override protected def supportsSSE: Boolean = false
 }

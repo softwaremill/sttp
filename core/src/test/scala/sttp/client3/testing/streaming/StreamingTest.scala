@@ -36,6 +36,7 @@ abstract class StreamingTest[F[_], S]
   def sseConsumer(stream: streams.BinaryStream): F[List[ServerSentEvent]]
 
   protected def supportsStreamingMultipartParts = true
+  protected def supportsSSE = true
 
   "stream request body" in {
     basicRequest
@@ -72,21 +73,23 @@ abstract class StreamingTest[F[_], S]
       }
   }
 
-  "handle server sent events SSE" in {
-    val sseData = "ala ma kota\nzbyszek ma psa"
-    val expectedEvent = ServerSentEvent(data = Some(sseData), eventType = Some("test-event"), retry = Some(42000))
-    val expectedEvents =
-      Seq(expectedEvent.copy(id = Some("1")), expectedEvent.copy(id = Some("2")), expectedEvent.copy(id = Some("3")))
+  if (supportsSSE) {
+    "handle server sent events SSE" in {
+      val sseData = "ala ma kota\nzbyszek ma psa"
+      val expectedEvent = ServerSentEvent(data = Some(sseData), eventType = Some("test-event"), retry = Some(42000))
+      val expectedEvents =
+        Seq(expectedEvent.copy(id = Some("1")), expectedEvent.copy(id = Some("2")), expectedEvent.copy(id = Some("3")))
 
-    basicRequest
-      .post(uri"$endpoint/sse/echo3")
-      .body(sseData)
-      .response(asStreamAlways(streams)(sseConsumer(_)))
-      .send(backend)
-      .toFuture()
-      .map { response =>
-        response.body shouldBe expectedEvents
-      }
+      basicRequest
+        .post(uri"$endpoint/sse/echo3")
+        .body(sseData)
+        .response(asStreamAlways(streams)(sseConsumer(_)))
+        .send(backend)
+        .toFuture()
+        .map { response =>
+          response.body shouldBe expectedEvents
+        }
+    }
   }
 
   "receive a stream" in {
