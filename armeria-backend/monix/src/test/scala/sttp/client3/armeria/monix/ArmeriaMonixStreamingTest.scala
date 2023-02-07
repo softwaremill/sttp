@@ -6,10 +6,12 @@ import sttp.client3.{SttpBackend, SttpBackendOptions}
 import sttp.client3.impl.monix.MonixStreamingTest
 import monix.execution.Scheduler.Implicits.global
 import sttp.client3.armeria.ArmeriaWebClient
+import sttp.client3.testing.RetryTests
 
 import java.time.Duration
 
-class ArmeriaMonixStreamingTest extends MonixStreamingTest {
+// streaming tests often fail with a ClosedSessionException, see https://github.com/line/armeria/issues/1754
+class ArmeriaMonixStreamingTest extends MonixStreamingTest with RetryTests {
   override val backend: SttpBackend[Task, MonixStreams] =
     ArmeriaMonixBackend.usingClient(
       // the default caused timeouts in SSE tests

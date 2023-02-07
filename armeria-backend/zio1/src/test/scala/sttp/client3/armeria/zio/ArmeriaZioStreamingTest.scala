@@ -5,7 +5,7 @@ import sttp.client3.armeria.ArmeriaWebClient
 import sttp.client3.{SttpBackend, SttpBackendOptions}
 import sttp.client3.impl.zio.{ZioServerSentEvents, ZioTestBase}
 import sttp.client3.internal._
-import sttp.client3.testing.ConvertToFuture
+import sttp.client3.testing.{ConvertToFuture, RetryTests}
 import sttp.client3.testing.streaming.StreamingTest
 import sttp.model.sse.ServerSentEvent
 import zio.stream.Stream
@@ -13,7 +13,8 @@ import zio.{Chunk, Task}
 
 import java.time.Duration
 
-class ArmeriaZioStreamingTest extends StreamingTest[Task, ZioStreams] with ZioTestBase {
+// streaming tests often fail with a ClosedSessionException, see https://github.com/line/armeria/issues/1754
+class ArmeriaZioStreamingTest extends StreamingTest[Task, ZioStreams] with ZioTestBase with RetryTests {
   override val streams: ZioStreams = ZioStreams
 
   override val backend: SttpBackend[Task, ZioStreams] =
