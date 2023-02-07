@@ -150,7 +150,7 @@ val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", 
   "org.scalatest" %%% s"scalatest-$m" % "3.2.15" % Test
 )
 
-val zio1Version = "1.0.17"
+val zio1Version = "1.0.18"
 val zio2Version = "2.0.6"
 val zio1InteropRsVersion = "1.3.12"
 val zio2InteropRsVersion = "2.0.0"
@@ -564,8 +564,7 @@ def asyncHttpClientBackendProject(proj: String, includeDotty: Boolean = false, i
     .settings(name := s"async-http-client-backend-$proj")
     .dependsOn(asyncHttpClientBackend % compileAndTest)
     .jvmPlatform(
-      scalaVersions =
-        (if (include2_11) List(scala2_11) else Nil) ++ scala2alive ++ (if (includeDotty) scala3 else Nil)
+      scalaVersions = (if (include2_11) List(scala2_11) else Nil) ++ scala2alive ++ (if (includeDotty) scala3 else Nil)
     )
 }
 
