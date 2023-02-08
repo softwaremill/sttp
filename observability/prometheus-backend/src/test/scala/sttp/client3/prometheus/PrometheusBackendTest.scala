@@ -325,7 +325,7 @@ class PrometheusBackendTest
     val backend = PrometheusBackend(backendStub)
 
     // when
-    assertThrows[HttpError[String]] {
+    assertThrows[SttpClientException] {
       backend.send(
         basicRequest
           .get(uri"http://127.0.0.1/foo")
@@ -351,7 +351,7 @@ class PrometheusBackendTest
     val backend = PrometheusBackend(backendStub)
 
     // when
-    assertThrows[DeserializationException[String]] {
+    assertThrows[SttpClientException] {
       backend.send(
         basicRequest
           .get(uri"http://127.0.0.1/foo")
@@ -393,6 +393,41 @@ class PrometheusBackendTest
       PrometheusBackend.DefaultErrorCounterName + "_total",
       List("method" -> "GET", "status" -> "5xx")
     ) shouldBe None
+  }
+
+  it should "report correct host when it is extracted from the response" in {
+    // given
+    val backendStub =
+      SyncBackendStub.whenAnyRequest.thenRespondF(_ => throw new HttpError("boom", StatusCode.BadRequest))
+
+    import sttp.client3.prometheus.PrometheusBackend.{DefaultFailureCounterName, addMethodLabel}
+
+    val HostLabel = "Host"
+    def addHostLabel[T <: BaseCollectorConfig](config: T, resp: Response[_]): config.T = {
+      val hostLabel: Option[(String, String)] = {
+        if (config.labels.map(_._1.toLowerCase).contains(HostLabel)) None
+        else Some((HostLabel, resp.request.uri.host.getOrElse("-")))
+      }
+
+      config.addLabels(hostLabel.toList)
+    }
+
+    val backend = PrometheusBackend(
+      backendStub,
+      PrometheusConfig.Default.copy(
+        responseToErrorCounterMapper = (req: AbstractRequest[_, _], resp: Response[_]) =>
+          Some(addHostLabel(addMethodLabel(CollectorConfig(DefaultFailureCounterName), req), resp))
+      )
+    )
+
+    // when
+    assertThrows[SttpClientException] { backend.send(basicRequest.get(uri"http://127.0.0.1/foo")) }
+
+    // then
+    getMetricValue(
+      PrometheusBackend.DefaultFailureCounterName + "_total",
+      List("method" -> "GET", HostLabel -> "127.0.0.1")
+    ) shouldBe Some(1)
   }
 
   private[this] def getMetricValue(name: String): Option[lang.Double] =

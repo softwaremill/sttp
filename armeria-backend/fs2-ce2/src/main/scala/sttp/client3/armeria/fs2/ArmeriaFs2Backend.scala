@@ -8,7 +8,7 @@ import fs2.interop.reactivestreams._
 import fs2.{Chunk, Stream}
 import org.reactivestreams.Publisher
 import sttp.capabilities.fs2.Fs2Streams
-import sttp.client3.armeria.AbstractArmeriaBackend.newClient
+import sttp.client3.armeria.ArmeriaWebClient.newClient
 import sttp.client3.armeria.{AbstractArmeriaBackend, BodyFromStreamMessage}
 import sttp.client3.impl.cats.CatsMonadAsyncError
 import sttp.client3.{FollowRedirectsBackend, StreamBackend, SttpBackendOptions}

@@ -5,7 +5,7 @@ import com.linecorp.armeria.common.HttpData
 import com.linecorp.armeria.common.stream.StreamMessage
 import org.reactivestreams.Publisher
 import scalaz.concurrent.Task
-import sttp.client3.armeria.AbstractArmeriaBackend.newClient
+import sttp.client3.armeria.ArmeriaWebClient.newClient
 import sttp.client3.armeria.{AbstractArmeriaBackend, BodyFromStreamMessage}
 import sttp.client3.impl.scalaz.TaskMonadAsyncError
 import sttp.client3.internal.NoStreams

@@ -1,8 +1,6 @@
 package sttp.client3.armeria
 
-import com.linecorp.armeria.client.encoding.DecodingClient
 import com.linecorp.armeria.client.{
-  ClientFactory,
   ClientRequestContext,
   Clients,
   ResponseTimeoutException,
@@ -291,45 +289,6 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
 }
 
 private[armeria] object AbstractArmeriaBackend {
-  val DefaultFileBufferSize: Int = 8192
   val RightUnit: Either[Nothing, Unit] = Right(())
   val noopCanceler: Canceler = Canceler(() => ())
-
-  private def newClientFactory(options: SttpBackendOptions): ClientFactory = {
-    val builder = ClientFactory
-      .builder()
-      .connectTimeoutMillis(options.connectionTimeout.toMillis)
-    options.proxy.fold(builder.build()) { proxy =>
-      builder
-        .proxyConfig(proxy.asJavaProxySelector)
-        .build()
-    }
-  }
-
-  def newClient(): WebClient = {
-    WebClient
-      .builder()
-      .decorator(
-        DecodingClient
-          .builder()
-          .autoFillAcceptEncoding(false)
-          .strictContentEncoding(true)
-          .newDecorator()
-      )
-      .build()
-  }
-
-  def newClient(options: SttpBackendOptions): WebClient = {
-    WebClient
-      .builder()
-      .decorator(
-        DecodingClient
-          .builder()
-          .autoFillAcceptEncoding(false)
-          .strictContentEncoding(true)
-          .newDecorator()
-      )
-      .factory(newClientFactory(options))
-      .build()
-  }
 }

@@ -22,16 +22,16 @@ private[client3] trait InputStreamBodyFromHttpClient[F[_], S] extends BodyFromHt
         }).unit
       }
 
-      override protected def regularIgnore(response: InputStream): F[Unit] = monad.eval(response.close())
+      override protected def regularIgnore(response: InputStream): F[Unit] = monad.blocking(response.close())
 
       override protected def regularAsByteArray(response: InputStream): F[Array[Byte]] =
-        monad.eval {
+        monad.blocking {
           try response.readAllBytes()
           finally response.close()
         }
 
       override protected def regularAsFile(response: InputStream, file: SttpFile): F[SttpFile] =
-        monad.eval {
+        monad.blocking {
           try {
             FileHelpers.saveFile(file.toFile, response)
             file
@@ -48,7 +48,7 @@ private[client3] trait InputStreamBodyFromHttpClient[F[_], S] extends BodyFromHt
       ): F[T] = bodyFromWs(responseAs, ws, meta)
 
       override protected def cleanupWhenNotAWebSocket(response: InputStream, e: NotAWebSocketException): F[Unit] =
-        monad.eval(response.close())
+        monad.blocking(response.close())
 
       override protected def cleanupWhenGotWebSocket(response: WebSocket[F], e: GotAWebSocketException): F[Unit] =
         response.close()

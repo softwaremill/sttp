@@ -32,34 +32,41 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
   private var multiPartHeaders: Seq[CurlList] = Seq()
 
   override def internalSend[T](request: AbstractRequest[T, R]): F[Response[T]] =
-    unsafe.Zone { implicit z =>
-      val curl = CurlApi.init
-      if (verbose) {
-        curl.option(Verbose, parameter = true)
-      }
-      if (request.tags.nonEmpty) {
-        responseMonad.error(new UnsupportedOperationException("Tags are not supported"))
-      }
-      val reqHeaders = request.headers
-      if (reqHeaders.nonEmpty) {
-        reqHeaders.find(_.name == "Accept-Encoding").foreach(h => curl.option(AcceptEncoding, h.value))
-        request.body match {
-          case _: MultipartBody[_] =>
-            headers = transformHeaders(
-              reqHeaders :+ Header.contentType(MediaType.MultipartFormData)
-            )
-          case _ =>
-            headers = transformHeaders(reqHeaders)
+    adjustExceptions(request) {
+      unsafe.Zone { implicit z =>
+        val curl = CurlApi.init
+        if (verbose) {
+          curl.option(Verbose, parameter = true)
         }
-        curl.option(HttpHeader, headers.ptr)
-      }
+        if (request.tags.nonEmpty) {
+          responseMonad.error(new UnsupportedOperationException("Tags are not supported"))
+        }
+        val reqHeaders = request.headers
+        if (reqHeaders.nonEmpty) {
+          reqHeaders.find(_.name == "Accept-Encoding").foreach(h => curl.option(AcceptEncoding, h.value))
+          request.body match {
+            case _: MultipartBody[_] =>
+              headers = transformHeaders(
+                reqHeaders :+ Header.contentType(MediaType.MultipartFormData)
+              )
+            case _ =>
+              headers = transformHeaders(reqHeaders)
+          }
+          curl.option(HttpHeader, headers.ptr)
+        }
 
-      val spaces = responseSpace
-      FileHelpers.getFilePath(request.response.internal) match {
-        case Some(file) => handleFile(request, curl, file, spaces)
-        case None       => handleBase(request, curl, spaces)
+        val spaces = responseSpace
+        FileHelpers.getFilePath(request.response.internal) match {
+          case Some(file) => handleFile(request, curl, file, spaces)
+          case None       => handleBase(request, curl, spaces)
+        }
       }
     }
+
+  private def adjustExceptions[T](request: AbstractRequest[_, _])(t: => F[T]): F[T] =
+    SttpClientException.adjustExceptions(responseMonad)(t)(
+      SttpClientException.defaultExceptionToSttpClientException(request, _)
+    )
 
   private def handleBase[T](request: AbstractRequest[T, R], curl: CurlHandle, spaces: CurlSpaces)(implicit
       z: unsafe.Zone

@@ -1,11 +1,9 @@
 package sttp.client3.testing
 
-import java.io.ByteArrayInputStream
-import java.util.concurrent.TimeoutException
-
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import sttp.client3.SttpClientException.ReadException
 import sttp.client3._
 import sttp.client3.internal._
 import sttp.client3.monad.IdMonad
@@ -14,6 +12,8 @@ import sttp.monad.{FutureMonad, TryMonad}
 import sttp.ws.WebSocketFrame
 import sttp.ws.testing.WebSocketStub
 
+import java.io.ByteArrayInputStream
+import java.util.concurrent.TimeoutException
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -93,6 +93,20 @@ class BackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
     }
   }
 
+  it should "adjust exceptions so they are wrapped with SttpClientException" in {
+    val testingBackend = SyncBackendStub.whenAnyRequest
+      .thenRespond("{}", StatusCode(200))
+
+    val request = () =>
+      basicRequest
+        .get(uri"./test")
+        .response(asString.map(_ => throw DeserializationException("", new RuntimeException("test"))))
+        .send(testingBackend)
+
+    val readException = the[sttp.client3.SttpClientException.ReadException] thrownBy request()
+    readException.cause shouldBe a[sttp.client3.DeserializationException[_]]
+  }
+
   it should "use rules in partial function" in {
     val backend = testingStub
     val r = basicRequest.post(uri"http://example.org/partial10").send(backend)
@@ -109,18 +123,9 @@ class BackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
       .whenRequestMatches(_ => true)
       .thenRespond(throw new TimeoutException())
 
-    a[TimeoutException] should be thrownBy {
+    a[ReadException] should be thrownBy {
       basicRequest.get(uri"http://example.org").send(backend)
     }
-  }
-
-  it should "handle exceptions thrown instead of a response (asynchronous)" in {
-    val backend: Backend[Future] = BackendStub(new FutureMonad())
-      .whenRequestMatches(_ => true)
-      .thenRespond(throw new TimeoutException())
-
-    val result = basicRequest.get(uri"http://example.org").send(backend)
-    result.failed.map(_ shouldBe a[TimeoutException])
   }
 
   it should "try to convert a basic response to a mapped one" in {

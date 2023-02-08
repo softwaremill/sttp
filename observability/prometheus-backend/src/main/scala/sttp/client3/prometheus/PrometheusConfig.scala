@@ -28,5 +28,5 @@ final case class PrometheusConfig(
 )
 
 object PrometheusConfig {
-  val Default = PrometheusConfig()
+  val Default: PrometheusConfig = PrometheusConfig()
 }

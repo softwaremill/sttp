@@ -51,15 +51,20 @@ abstract class AbstractBackendStub[F[_], P](
   override def internalSend[T](request: AbstractRequest[T, P with Effect[F]]): F[Response[T]] = {
     Try(matchers.lift(request)) match {
       case Success(Some(response)) =>
-        tryAdjustResponseType(request.response, response.asInstanceOf[F[Response[T]]])(monad)
+        adjustExceptions(request)(tryAdjustResponseType(request.response, response.asInstanceOf[F[Response[T]]])(monad))
       case Success(None) =>
         fallback match {
           case None     => monad.error(new IllegalArgumentException(s"No behavior stubbed for request: $request"))
           case Some(fb) => fb.internalSend(request)
         }
-      case Failure(e) => monad.error(e)
+      case Failure(e) => adjustExceptions(request)(monad.error(e))
     }
   }
+
+  private def adjustExceptions[T](request: AbstractRequest[_, _])(t: => F[T]): F[T] =
+    SttpClientException.adjustExceptions(responseMonad)(t)(
+      SttpClientException.defaultExceptionToSttpClientException(request, _)
+    )
 
   override def close(): F[Unit] = monad.unit(())
 

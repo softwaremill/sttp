@@ -2,29 +2,20 @@ package sttp.client3
 
 import sttp.client3.HttpClientBackend.EncodingHandler
 import sttp.client3.HttpClientFutureBackend.InputStreamEncodingHandler
-import sttp.client3.internal.httpclient.{
-  BodyFromHttpClient,
-  BodyToHttpClient,
-  FutureSequencer,
-  InputStreamBodyFromHttpClient,
-  InputStreamSubscriber,
-  Sequencer
-}
-import sttp.client3.internal.ws.{FutureSimpleQueue, SimpleQueue}
 import sttp.client3.internal.{NoStreams, emptyInputStream}
+import sttp.client3.internal.httpclient._
+import sttp.client3.internal.ws.{FutureSimpleQueue, SimpleQueue}
 import sttp.client3.testing.WebSocketBackendStub
 import sttp.monad.{FutureMonad, MonadError}
 import sttp.ws.{WebSocket, WebSocketFrame}
 
 import java.io.{InputStream, UnsupportedEncodingException}
 import java.net.http.HttpRequest.BodyPublisher
-import java.net.http.{HttpClient, HttpRequest}
-import java.nio.ByteBuffer
-import java.util
+import java.net.http.HttpResponse.BodyHandlers
+import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 import java.util.concurrent.Executor
-import java.util.concurrent.Flow.Publisher
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
+import scala.concurrent.{ExecutionContext, Future}
 
 class HttpClientFutureBackend private (
     client: HttpClient,
@@ -32,7 +23,7 @@ class HttpClientFutureBackend private (
     customizeRequest: HttpRequest => HttpRequest,
     customEncodingHandler: InputStreamEncodingHandler
 )(implicit ec: ExecutionContext)
-    extends HttpClientAsyncBackend[Future, Nothing, InputStream](
+    extends HttpClientAsyncBackend[Future, Nothing, InputStream, InputStream](
       client,
       new FutureMonad,
       closeClient,
@@ -71,13 +62,11 @@ class HttpClientFutureBackend private (
     case (_, ce)           => throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
   }
 
-  override protected def emptyBody(): InputStream = emptyInputStream()
+  override protected def createBodyHandler: HttpResponse.BodyHandler[InputStream] = BodyHandlers.ofInputStream()
 
-  override protected def publisherToBody(p: Publisher[util.List[ByteBuffer]]): InputStream = {
-    val subscriber = new InputStreamSubscriber
-    p.subscribe(subscriber)
-    subscriber.inputStream
-  }
+  override protected def bodyHandlerBodyToBody(p: InputStream): InputStream = p
+
+  override protected def emptyBody(): InputStream = emptyInputStream()
 }
 
 object HttpClientFutureBackend {

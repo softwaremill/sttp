@@ -120,7 +120,7 @@ private class OpenTelemetryMetricsListener(
   override def requestException(request: AbstractRequest[_, _], tag: Option[Long], e: Exception): Unit = {
     HttpError.find(e) match {
       case Some(HttpError(body, statusCode)) =>
-        requestSuccessful(request, Response(body, statusCode), tag)
+        requestSuccessful(request, Response(body, statusCode).copy(request = request.onlyMetadata), tag)
       case _ =>
         incrementCounter(requestToFailureCounterMapper(request, e))
         recordHistogram(requestToLatencyHistogramMapper(request), tag.map(clock.millis() - _))

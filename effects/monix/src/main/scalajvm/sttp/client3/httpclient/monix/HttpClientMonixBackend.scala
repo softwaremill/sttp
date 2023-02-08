@@ -25,10 +25,11 @@ import sttp.monad.MonadError
 
 import java.io.UnsupportedEncodingException
 import java.net.http.HttpRequest.BodyPublishers
-import java.net.http.{HttpClient, HttpRequest}
+import java.net.http.HttpResponse.BodyHandlers
+import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 import java.nio.ByteBuffer
-import java.util
 import java.util.concurrent.Flow.Publisher
+import java.{util => ju}
 import scala.collection.JavaConverters._
 
 class HttpClientMonixBackend private (
@@ -37,7 +38,7 @@ class HttpClientMonixBackend private (
     customizeRequest: HttpRequest => HttpRequest,
     customEncodingHandler: MonixEncodingHandler
 )(implicit s: Scheduler)
-    extends HttpClientAsyncBackend[Task, MonixStreams, MonixStreams.BinaryStream](
+    extends HttpClientAsyncBackend[Task, MonixStreams, Publisher[ju.List[ByteBuffer]], MonixStreams.BinaryStream](
       client,
       TaskMonadAsyncError,
       closeClient,
@@ -69,7 +70,10 @@ class HttpClientMonixBackend private (
 
   override protected def createSequencer: Task[Sequencer[Task]] = MonixSequencer.create
 
-  override protected def publisherToBody(p: Publisher[util.List[ByteBuffer]]): Observable[Array[Byte]] = {
+  override protected def createBodyHandler: HttpResponse.BodyHandler[Publisher[ju.List[ByteBuffer]]] =
+    BodyHandlers.ofPublisher()
+
+  override protected def bodyHandlerBodyToBody(p: Publisher[ju.List[ByteBuffer]]): Observable[Array[Byte]] = {
     Observable
       .fromReactivePublisher(FlowAdapters.toPublisher(p))
       .flatMapIterable(_.asScala.toList)

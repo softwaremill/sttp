@@ -8,7 +8,7 @@ import monix.execution.Scheduler
 import monix.reactive.Observable
 import org.reactivestreams.Publisher
 import sttp.capabilities.monix.MonixStreams
-import sttp.client3.armeria.AbstractArmeriaBackend.newClient
+import sttp.client3.armeria.ArmeriaWebClient.newClient
 import sttp.client3.armeria.{AbstractArmeriaBackend, BodyFromStreamMessage}
 import sttp.client3.impl.monix.TaskMonadAsyncError
 import sttp.client3.{FollowRedirectsBackend, StreamBackend, SttpBackendOptions}
