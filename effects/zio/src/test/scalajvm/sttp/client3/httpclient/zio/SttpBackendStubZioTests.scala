@@ -64,7 +64,7 @@ class SttpBackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFuture
   }
 
   it should "lift errors due to mapping stream with impure functions into the response monad" in {
-    val backend = HttpClientZioBackend.stub[TestStreams].whenAnyRequest
+    val backend = SttpBackendStub[Task, TestStreams](new RIOMonadAsyncError[Any]).whenAnyRequest
       .thenRespond(SttpBackendStub.RawStream(List(1: Byte)))
 
     val error = new IllegalStateException("boom")

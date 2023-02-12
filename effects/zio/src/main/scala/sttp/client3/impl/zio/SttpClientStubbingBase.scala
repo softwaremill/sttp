@@ -7,20 +7,21 @@ import sttp.model.StatusCode
 import sttp.monad.MonadError
 import zio.{RIO, Ref, Tag, UIO, URIO, ZIO, ZLayer}
 
+trait SttpClientStubbingService[R, P] {
+  def whenRequestMatchesPartial(
+      partial: PartialFunction[Request[_, _], Response[_]]
+  ): URIO[SttpClientStubbingService[R, P], Unit]
+
+  private[zio] def update(f: SttpBackendStub[RIO[R, *], P] => SttpBackendStub[RIO[R, *], P]): UIO[Unit]
+}
 trait SttpClientStubbingBase[R, P] {
 
-  type SttpClientStubbing = Service
+  type SttpClientStubbing = SttpClientStubbingService[R, P]
   // the tag as viewed by the implementing object. Needs to be passed explicitly, otherwise Has[] breaks.
-  private[sttp] def serviceTag: Tag[Service]
+  private[sttp] def serviceTag: Tag[SttpClientStubbing]
   private[sttp] def sttpBackendTag: Tag[SttpBackend[RIO[R, *], P]]
 
-  trait Service {
-    def whenRequestMatchesPartial(partial: PartialFunction[Request[_, _], Response[_]]): URIO[SttpClientStubbing, Unit]
-
-    private[zio] def update(f: SttpBackendStub[RIO[R, *], P] => SttpBackendStub[RIO[R, *], P]): UIO[Unit]
-  }
-
-  private[sttp] class StubWrapper(stub: Ref[SttpBackendStub[RIO[R, *], P]]) extends Service {
+  private[sttp] class StubWrapper(stub: Ref[SttpBackendStub[RIO[R, *], P]]) extends SttpClientStubbing {
     override def whenRequestMatchesPartial(
         partial: PartialFunction[Request[_, _], Response[_]]
     ): URIO[SttpClientStubbing, Unit] =
@@ -30,7 +31,7 @@ trait SttpClientStubbingBase[R, P] {
   }
 
   case class StubbingWhenRequest private[sttp] (p: Request[_, _] => Boolean) {
-    implicit val _serviceTag: Tag[Service] = serviceTag
+    implicit val _serviceTag: Tag[SttpClientStubbing] = serviceTag
     val thenRespondOk: URIO[SttpClientStubbing, Unit] =
       whenRequest(_.thenRespondOk())
 
@@ -66,9 +67,9 @@ trait SttpClientStubbingBase[R, P] {
     ): URIO[SttpClientStubbing, Unit] = ZIO.serviceWith(_.update(stub => f(stub.whenRequestMatches(p))))
   }
 
-  val layer: ZLayer[Any, Nothing, Service with SttpBackend[RIO[R, *], P]] = {
+  val layer: ZLayer[Any, Nothing, SttpClientStubbing with SttpBackend[RIO[R, *], P]] = {
     val monad = new RIOMonadAsyncError[R]
-    implicit val _serviceTag: Tag[Service] = serviceTag
+    implicit val _serviceTag: Tag[SttpClientStubbing] = serviceTag
     implicit val _backendTag: Tag[SttpBackend[RIO[R, *], P]] = sttpBackendTag
 
     val services = for {

@@ -4,16 +4,12 @@ import _root_.zio._
 import sttp.capabilities.Effect
 import sttp.capabilities.zio.ZioStreams
 import sttp.client3._
-import sttp.client3.impl.zio.{ExtendEnv, SttpClientStubbingBase}
+import sttp.client3.impl.zio.{ExtendEnv, SttpClientStubbingBase, SttpClientStubbingService}
 
 package object zio {
 
-  // Forked from async-http-client-backend/zio
-  // - Removed WebSocket support
-
   /** ZIO-environment service definition, which is an SttpBackend. */
   type SttpClient = SttpBackend[Task, ZioStreams]
-  type SttpClientStubbing = SttpClientStubbing.Service
 
   /** Sends the request. Only requests for which the method & URI are specified can be sent.
     *
@@ -41,7 +37,7 @@ package object zio {
     ZIO.serviceWithZIO[SttpClient](_.extendEnv[R].send(request))
 
   object SttpClientStubbing extends SttpClientStubbingBase[Any, ZioStreams] {
-    override private[sttp] def serviceTag: Tag[SttpClientStubbing.Service] = implicitly
+    override private[sttp] def serviceTag: Tag[SttpClientStubbingService[Any, ZioStreams]] = implicitly
     override private[sttp] def sttpBackendTag: Tag[SttpClient] = implicitly
   }
 
@@ -56,7 +52,7 @@ package object zio {
 
     def whenRequestMatchesPartial(
         partial: PartialFunction[Request[_, _], Response[_]]
-    ): URIO[SttpClientStubbing, Unit] =
+    ): URIO[SttpClientStubbingService[Any, ZioStreams], Unit] =
       ZIO.serviceWithZIO(_.whenRequestMatchesPartial(partial))
   }
 }

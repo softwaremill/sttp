@@ -32,8 +32,6 @@ object StreamZio extends ZIOAppDefault {
 
   override def run = {
     implicit val layer = HttpClientZioBackend.layer()
-    for {
-      _ <- streamRequestBody *> streamResponseBody
-    } yield ()
+    (streamRequestBody *> streamResponseBody).provide(HttpClientZioBackend.layer())
   }
 }
