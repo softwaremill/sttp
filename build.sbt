@@ -131,8 +131,8 @@ val playJsonVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.7.4"
   case _             => "2.9.2"
 }
-val catsEffect_3_version = "3.4.6"
-val fs2_3_version = "3.5.0"
+val catsEffect_3_version = "3.4.8"
+val fs2_3_version = "3.6.1"
 
 val catsEffect_2_version: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.0.0"
@@ -152,9 +152,9 @@ val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", 
 )
 
 val zio1Version = "1.0.17"
-val zio2Version = "2.0.6"
+val zio2Version = "2.0.9"
 val zio1InteropRsVersion = "1.3.12"
-val zio2InteropRsVersion = "2.0.0"
+val zio2InteropRsVersion = "2.0.1"
 
 val sttpModelVersion = "1.5.5"
 val sttpSharedVersion = "1.3.13"
@@ -168,7 +168,7 @@ val resilience4jVersion = "2.0.2"
 val http4s_ce2_version = "0.22.15"
 val http4s_ce3_version = "0.23.18"
 
-val openTelemetryVersion = "1.22.0"
+val openTelemetryVersion = "1.23.1"
 
 val compileAndTest = "compile->compile;test->test"
 
@@ -701,7 +701,7 @@ lazy val armeriaBackend = (projectMatrix in file("armeria-backend"))
   .settings(testServerSettings)
   .settings(
     name := "armeria-backend",
-    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.21.0"
+    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.22.1"
   )
   .jvmPlatform(scalaVersions = scala2alive ++ scala3)
   .dependsOn(core % compileAndTest)
@@ -971,7 +971,7 @@ lazy val scribeBackend = (projectMatrix in file("logging/scribe"))
   .settings(
     name := "scribe-backend",
     libraryDependencies ++= Seq(
-      "com.outr" %%% "scribe" % "3.10.7"
+      "com.outr" %%% "scribe" % "3.11.0"
     ),
     scalaTest
   )
