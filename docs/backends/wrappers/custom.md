@@ -60,7 +60,7 @@ class CloudMetricsServer extends MetricsServer {
 // the backend wrapper
 abstract class MetricWrapper[P](delegate: GenericBackend[Future, P],
                        metrics: MetricsServer)
-    extends DelegateSttpBackend(delegate) {
+    extends DelegateBackend(delegate) {
 
   override def send[T](request: AbstractRequest[T, P with Effect[Future]]): Future[Response[T]] = {
     val start = System.currentTimeMillis()
@@ -116,7 +116,7 @@ class RetryingBackend[F[_], P](
     delegate: GenericBackend[F, P],
     shouldRetry: RetryWhen,
     maxRetries: Int)
-    extends DelegateSttpBackend(delegate) {
+    extends DelegateBackend(delegate) {
 
   override def send[T](request: AbstractRequest[T, P with Effect[F]]): F[Response[T]] = {
     sendWithRetryCounter(request, 0)
@@ -157,13 +157,13 @@ Below is an example on how to implement a backend wrapper, which integrates with
 ```scala mdoc:compile-only
 import io.github.resilience4j.circuitbreaker.{CallNotPermittedException, CircuitBreaker}
 import sttp.capabilities.Effect
-import sttp.client3.{GenericBackend, AbstractRequest, Backend, Response, DelegateSttpBackend}
+import sttp.client3.{GenericBackend, AbstractRequest, Backend, Response, DelegateBackend}
 import sttp.monad.MonadError
 import java.util.concurrent.TimeUnit
 
 class CircuitSttpBackend[F[_], P](
     circuitBreaker: CircuitBreaker,
-    delegate: GenericBackend[F, P]) extends DelegateSttpBackend(delegate) {
+    delegate: GenericBackend[F, P]) extends DelegateBackend(delegate) {
 
   override def send[T](request: AbstractRequest[T, P with Effect[F]]): F[Response[T]] = {
     CircuitSttpBackend.decorateF(circuitBreaker, delegate.send(request))
@@ -215,12 +215,12 @@ Below is an example on how to implement a backend wrapper, which integrates with
 import io.github.resilience4j.ratelimiter.RateLimiter
 import sttp.capabilities.Effect
 import sttp.monad.MonadError
-import sttp.client3.{GenericBackend, AbstractRequest, Response, StreamBackend, DelegateSttpBackend}
+import sttp.client3.{GenericBackend, AbstractRequest, Response, StreamBackend, DelegateBackend}
 
 class RateLimitingSttpBackend[F[_], P](
     rateLimiter: RateLimiter,
     delegate: GenericBackend[F, P]
-    )(implicit monadError: MonadError[F]) extends DelegateSttpBackend(delegate) {
+    )(implicit monadError: MonadError[F]) extends DelegateBackend(delegate) {
 
   override def send[T](request: AbstractRequest[T, P with Effect[F]]): F[Response[T]] = {
     RateLimitingSttpBackend.decorateF(rateLimiter, delegate.send(request))

@@ -16,7 +16,7 @@ Otherwise, proxy values can be specified manually when creating a backend:
 import sttp.client3._
 
 val backend = HttpClientSyncBackend(
-  options = SttpBackendOptions.httpProxy("some.host", 8080))
+  options = BackendOptions.httpProxy("some.host", 8080))
 
 basicRequest
   .get(uri"...")
@@ -28,12 +28,12 @@ Or in case your proxy requires authentication (supported by the JVM backends):
 ```scala mdoc:compile-only
 import sttp.client3._
 
-SttpBackendOptions.httpProxy("some.host", 8080, "username", "password")
+BackendOptions.httpProxy("some.host", 8080, "username", "password")
 ```
 
 ## Ignoring and allowing specific hosts
 
-There are two additional settings that can be provided to via `SttpBackendOptions`:
+There are two additional settings that can be provided to via `BackendOptions`:
 
 * `nonProxyHosts`: used to define hosts for which request SHOULD NOT be proxied
 * `onlyProxyHosts`: used to define hosts for which request SHOULD be proxied
