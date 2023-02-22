@@ -16,8 +16,8 @@ import scala.util.{Failure, Success, Try}
 abstract class AbstractBackendStub[F[_], P](
     monad: MonadError[F],
     matchers: PartialFunction[AbstractRequest[_, _], F[Response[_]]],
-    fallback: Option[AbstractBackend[F, P]]
-) extends AbstractBackend[F, P] {
+    fallback: Option[GenericBackend[F, P]]
+) extends GenericBackend[F, P] {
 
   type Self
 
@@ -48,14 +48,14 @@ abstract class AbstractBackendStub[F[_], P](
     withMatchers(matchers.orElse(wrappedPartial))
   }
 
-  override def internalSend[T](request: AbstractRequest[T, P with Effect[F]]): F[Response[T]] = {
+  override def send[T](request: AbstractRequest[T, P with Effect[F]]): F[Response[T]] = {
     Try(matchers.lift(request)) match {
       case Success(Some(response)) =>
         adjustExceptions(request)(tryAdjustResponseType(request.response, response.asInstanceOf[F[Response[T]]])(monad))
       case Success(None) =>
         fallback match {
           case None     => monad.error(new IllegalArgumentException(s"No behavior stubbed for request: $request"))
-          case Some(fb) => fb.internalSend(request)
+          case Some(fb) => fb.send(request)
         }
       case Failure(e) => adjustExceptions(request)(monad.error(e))
     }

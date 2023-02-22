@@ -40,7 +40,7 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
     customEncodingHandler: EncodingHandler[F]
 ) extends StreamBackend[F, Fs2Streams[F]] {
   type R = Fs2Streams[F] with sttp.capabilities.Effect[F]
-  override def internalSend[T](r: AbstractRequest[T, R]): F[Response[T]] =
+  override def send[T](r: AbstractRequest[T, R]): F[Response[T]] =
     adjustExceptions(r) {
       val (entity, extraHeaders) = bodyToHttp4s(r, r.body)
       val request = r.httpVersion match {

@@ -34,7 +34,7 @@ package object zio {
   def send[T](
       request: AbstractRequest[T, Effect[Task] with ZioStreams]
   ): ZIO[SttpClient, Throwable, Response[T]] =
-    ZIO.accessM(env => env.get[SttpClient.Service].internalSend(request))
+    ZIO.accessM(env => env.get[SttpClient.Service].send(request))
 
   /** A variant of `send` which allows the effects that are part of the response handling specification (when using
     * websockets or resource-safe streaming) to use an `R` environment.
@@ -42,7 +42,7 @@ package object zio {
   def sendR[T, R](
       request: AbstractRequest[T, Effect[RIO[R, *]] with ZioStreams]
   ): ZIO[SttpClient with R, Throwable, Response[T]] =
-    ZIO.accessM(env => env.get[SttpClient.Service].extendEnv[R].internalSend(request))
+    ZIO.accessM(env => env.get[SttpClient.Service].extendEnv[R].send(request))
 
   object SttpClientStubbing extends StreamClientStubbing[Any, ZioStreams] {
     override private[sttp] def serviceTag: Tag[SttpClientStubbing.Service] = implicitly

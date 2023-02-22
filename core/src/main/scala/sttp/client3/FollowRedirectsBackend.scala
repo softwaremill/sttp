@@ -8,18 +8,18 @@ import sttp.model._
   *   the encoding of host, path, query and fragment segments to be more strict or relaxed.
   */
 abstract class FollowRedirectsBackend[F[_], P] private (
-    delegate: AbstractBackend[F, P],
-    config: FollowRedirectsConfig
+                                                         delegate: GenericBackend[F, P],
+                                                         config: FollowRedirectsConfig
 ) extends DelegateSttpBackend(delegate) {
 
   type R = P with Effect[F]
 
-  override def internalSend[T](request: AbstractRequest[T, R]): F[Response[T]] =
+  override def send[T](request: AbstractRequest[T, R]): F[Response[T]] =
     sendWithCounter(request, 0)
 
   protected def sendWithCounter[T](request: AbstractRequest[T, R], redirects: Int): F[Response[T]] = {
     // if there are nested follow redirect backends, disabling them and handling redirects here
-    val resp = delegate.internalSend(request.followRedirects(false))
+    val resp = delegate.send(request.followRedirects(false))
     if (request.options.followRedirects) {
       responseMonad.flatMap(resp) { (response: Response[T]) =>
         if (response.isRedirect) {

@@ -10,7 +10,7 @@ import scala.collection.immutable.Seq
 
 /** Abstract representation of an HTTP request.
   *
-  * The request can be sent using a [[AbstractBackend]] wich provides a superset of the required capabilities.
+  * The request can be sent using a [[GenericBackend]] wich provides a superset of the required capabilities.
   *
   * @tparam T
   *   The target type, to which the response body should be read.

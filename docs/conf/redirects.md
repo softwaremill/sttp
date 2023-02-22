@@ -72,10 +72,10 @@ import sttp.capabilities.Effect
 import sttp.client3._
 import sttp.monad.MonadError
 
-abstract class MyWrapper[F[_], P] private (delegate: AbstractBackend[F, P])
-  extends AbstractBackend[F, P] {
+abstract class MyWrapper[F[_], P] private (delegate: GenericBackend[F, P])
+  extends GenericBackend[F, P] {
 
-  def internalSend[T](request: AbstractRequest[T, P with Effect[F]]): F[Response[T]] = ???
+  def send[T](request: AbstractRequest[T, P with Effect[F]]): F[Response[T]] = ???
 
   def close(): F[Unit] = ???
 

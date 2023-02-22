@@ -56,7 +56,7 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
 
   override def responseMonad: MonadError[F] = monad
 
-  override def internalSend[T](request: AbstractRequest[T, R]): F[Response[T]] =
+  override def send[T](request: AbstractRequest[T, R]): F[Response[T]] =
     monad.suspend(adjustExceptions(request)(execute(request)))
 
   private def execute[T](request: AbstractRequest[T, R]): F[Response[T]] = {

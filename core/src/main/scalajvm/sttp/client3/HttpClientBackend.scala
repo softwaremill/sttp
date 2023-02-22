@@ -24,7 +24,7 @@ abstract class HttpClientBackend[F[_], S, P, B](
     client: HttpClient,
     closeClient: Boolean,
     customEncodingHandler: EncodingHandler[B]
-) extends AbstractBackend[F, P]
+) extends GenericBackend[F, P]
     with Backend[F] {
   val streams: Streams[S]
 

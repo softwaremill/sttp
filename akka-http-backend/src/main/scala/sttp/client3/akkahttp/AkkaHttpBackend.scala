@@ -44,7 +44,7 @@ class AkkaHttpBackend private (
     .getOrElse(ConnectionPoolSettings(actorSystem))
     .withUpdatedConnectionSettings(_.withConnectingTimeout(opts.connectionTimeout))
 
-  override def internalSend[T](r: AbstractRequest[T, R]): Future[Response[T]] =
+  override def send[T](r: AbstractRequest[T, R]): Future[Response[T]] =
     adjustExceptions(r) {
       if (r.isWebSocket) sendWebSocket(r) else sendRegular(r)
     }

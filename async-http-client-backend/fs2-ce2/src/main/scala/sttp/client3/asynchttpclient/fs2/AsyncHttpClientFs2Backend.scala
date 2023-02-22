@@ -41,8 +41,8 @@ class AsyncHttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
 
   override val streams: Fs2Streams[F] = Fs2Streams[F]
 
-  override def internalSend[T](r: AbstractRequest[T, R]): F[Response[T]] =
-    super.internalSend(r).guarantee(implicitly[ContextShift[F]].shift)
+  override def send[T](r: AbstractRequest[T, R]): F[Response[T]] =
+    super.send(r).guarantee(implicitly[ContextShift[F]].shift)
 
   override protected val bodyFromAHC: BodyFromAHC[F, Fs2Streams[F]] =
     new BodyFromAHC[F, Fs2Streams[F]] {

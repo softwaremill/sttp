@@ -8,13 +8,13 @@ import sttp.monad.syntax._
 import sttp.model.Header
 
 abstract class DigestAuthenticationBackend[F[_], P] private (
-    delegate: AbstractBackend[F, P],
-    clientNonceGenerator: () => String
+                                                              delegate: GenericBackend[F, P],
+                                                              clientNonceGenerator: () => String
 ) extends DelegateSttpBackend(delegate) {
 
-  override def internalSend[T](request: AbstractRequest[T, P with Effect[F]]): F[Response[T]] =
+  override def send[T](request: AbstractRequest[T, P with Effect[F]]): F[Response[T]] =
     delegate
-      .internalSend(request)
+      .send(request)
       .flatMap { firstResponse =>
         handleResponse(request, firstResponse, ProxyDigestAuthTag, DigestAuthenticator.proxy(_, clientNonceGenerator))
       }
@@ -38,7 +38,7 @@ abstract class DigestAuthenticationBackend[F[_], P] private (
       .map(_.asInstanceOf[DigestAuthData])
       .flatMap { digestAuthData =>
         val header = digestAuthenticator(digestAuthData).authenticate(request, response)
-        header.map(h => delegate.internalSend(request.header(h)).map(_ -> Option(h)))
+        header.map(h => delegate.send(request.header(h)).map(_ -> Option(h)))
       }
       .getOrElse((response -> Option.empty[Header]).unit)
   }

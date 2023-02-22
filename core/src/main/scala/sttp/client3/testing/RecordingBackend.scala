@@ -13,7 +13,7 @@ trait RecordingBackend {
   def allInteractions: List[RequestAndResponse]
 }
 
-abstract class AbstractRecordingBackend[F[_], P](delegate: AbstractBackend[F, P])
+abstract class AbstractRecordingBackend[F[_], P](delegate: GenericBackend[F, P])
     extends DelegateSttpBackend[F, P](delegate)
     with RecordingBackend {
 
@@ -25,9 +25,9 @@ abstract class AbstractRecordingBackend[F[_], P](delegate: AbstractBackend[F, P]
     })
   }
 
-  override def internalSend[T](request: AbstractRequest[T, P with Effect[F]]): F[Response[T]] = {
+  override def send[T](request: AbstractRequest[T, P with Effect[F]]): F[Response[T]] = {
     delegate
-      .internalSend(request)
+      .send(request)
       .map { response =>
         addInteraction(request, Success(response))
         response

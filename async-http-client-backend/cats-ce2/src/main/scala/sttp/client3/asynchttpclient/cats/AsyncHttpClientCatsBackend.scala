@@ -37,8 +37,8 @@ class AsyncHttpClientCatsBackend[F[_]: Concurrent: ContextShift] private (
 
   override val streams: NoStreams = NoStreams
 
-  override def internalSend[T](r: AbstractRequest[T, R]): F[Response[T]] =
-    super.internalSend(r).guarantee(implicitly[ContextShift[F]].shift)
+  override def send[T](r: AbstractRequest[T, R]): F[Response[T]] =
+    super.send(r).guarantee(implicitly[ContextShift[F]].shift)
 
   override protected val bodyFromAHC: BodyFromAHC[F, Nothing] = new BodyFromAHC[F, Nothing] {
     override val streams: NoStreams = NoStreams

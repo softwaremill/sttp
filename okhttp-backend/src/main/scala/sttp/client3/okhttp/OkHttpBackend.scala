@@ -27,13 +27,13 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
     client: OkHttpClient,
     closeClient: Boolean,
     customEncodingHandler: EncodingHandler
-) extends AbstractBackend[F, P]
+) extends GenericBackend[F, P]
     with Backend[F] {
 
   val streams: Streams[S]
   type R = P with Effect[F]
 
-  override def internalSend[T](request: AbstractRequest[T, R]): F[Response[T]] = {
+  override def send[T](request: AbstractRequest[T, R]): F[Response[T]] = {
     adjustExceptions(request.isWebSocket, request) {
       if (request.isWebSocket) {
         sendWebSocket(request)

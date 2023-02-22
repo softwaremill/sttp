@@ -7,13 +7,13 @@ import sttp.capabilities.Effect
 /** A backend wrapper which notifies the given [[RequestListener]] when a request starts and completes.
   */
 abstract class ListenerBackend[F[_], P, L](
-    delegate: AbstractBackend[F, P],
-    listener: RequestListener[F, L]
+                                            delegate: GenericBackend[F, P],
+                                            listener: RequestListener[F, L]
 ) extends DelegateSttpBackend(delegate) {
-  override def internalSend[T](request: AbstractRequest[T, P with Effect[F]]): F[Response[T]] = {
+  override def send[T](request: AbstractRequest[T, P with Effect[F]]): F[Response[T]] = {
     listener.beforeRequest(request).flatMap { t =>
       responseMonad
-        .handleError(delegate.internalSend(request)) { case e: Exception =>
+        .handleError(delegate.send(request)) { case e: Exception =>
           listener.requestException(request, t, e).flatMap(_ => responseMonad.error(e))
         }
         .flatMap { response => listener.requestSuccessful(request, response, t).map(_ => response) }

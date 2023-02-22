@@ -4,17 +4,17 @@ import sttp.capabilities.Effect
 import sttp.model.Uri
 import sttp.monad.syntax._
 
-abstract class ResolveRelativeUrisBackend[F[_], P](delegate: AbstractBackend[F, P], resolve: Uri => F[Uri])
+abstract class ResolveRelativeUrisBackend[F[_], P](delegate: GenericBackend[F, P], resolve: Uri => F[Uri])
     extends DelegateSttpBackend(delegate) {
 
-  override def internalSend[T](request: AbstractRequest[T, P with Effect[F]]): F[Response[T]] = {
+  override def send[T](request: AbstractRequest[T, P with Effect[F]]): F[Response[T]] = {
     val request2 = if (request.uri.isRelative) {
       resolve(request.uri).map { uri2 =>
         request.method(method = request.method, uri = uri2)
       }
     } else request.unit
 
-    request2.flatMap(delegate.internalSend)
+    request2.flatMap(delegate.send)
   }
 }
 

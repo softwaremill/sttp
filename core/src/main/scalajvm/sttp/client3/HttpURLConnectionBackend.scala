@@ -28,7 +28,7 @@ class HttpURLConnectionBackend private (
 ) extends SyncBackend {
   type R = Any with Effect[Identity]
 
-  override def internalSend[T](r: AbstractRequest[T, R]): Response[T] =
+  override def send[T](r: AbstractRequest[T, R]): Response[T] =
     adjustExceptions(r) {
       val c = openConnection(r.uri)
       c.setRequestMethod(r.method.method)

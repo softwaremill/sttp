@@ -29,7 +29,7 @@ class HttpClientSyncBackend private (
 
   override val streams: NoStreams = NoStreams
 
-  override def internalSend[T](request: AbstractRequest[T, R]): Response[T] =
+  override def send[T](request: AbstractRequest[T, R]): Response[T] =
     adjustExceptions(request) {
       val jRequest = customizeRequest(convertRequest(request))
       val response = client.send(jRequest, BodyHandlers.ofInputStream())

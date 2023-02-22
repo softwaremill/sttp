@@ -27,7 +27,7 @@ import sttp.client3.SttpBackendOptions.ProxyType.{Http, Socks}
 import sttp.client3.internal.ws.{SimpleQueue, WebSocketEvent}
 import sttp.monad.syntax._
 import sttp.monad.{Canceler, MonadAsyncError, MonadError}
-import sttp.client3.{AbstractBackend, Response, SttpBackendOptions, _}
+import sttp.client3.{GenericBackend, Response, SttpBackendOptions, _}
 import sttp.model._
 
 import scala.collection.JavaConverters._
@@ -39,13 +39,13 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
     private implicit val monad: MonadAsyncError[F],
     closeClient: Boolean,
     customizeRequest: BoundRequestBuilder => BoundRequestBuilder
-) extends AbstractBackend[F, P]
+) extends GenericBackend[F, P]
     with Backend[F] {
 
   val streams: Streams[S]
   type R = P with Effect[F]
 
-  override def internalSend[T](r: AbstractRequest[T, R]): F[Response[T]] =
+  override def send[T](r: AbstractRequest[T, R]): F[Response[T]] =
     adjustExceptions(r) {
       preparedRequest(r).flatMap { ahcRequest =>
         if (r.isWebSocket) sendWebSocket(r, ahcRequest) else sendRegular(r, ahcRequest)

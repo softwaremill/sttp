@@ -58,11 +58,11 @@ class CloudMetricsServer extends MetricsServer {
 }
 
 // the backend wrapper
-abstract class MetricWrapper[P](delegate: AbstractBackend[Future, P],
+abstract class MetricWrapper[P](delegate: GenericBackend[Future, P],
                        metrics: MetricsServer)
     extends DelegateSttpBackend(delegate) {
 
-  override def internalSend[T](request: AbstractRequest[T, P with Effect[Future]]): Future[Response[T]] = {
+  override def send[T](request: AbstractRequest[T, P with Effect[Future]]): Future[Response[T]] = {
     val start = System.currentTimeMillis()
 
     def report(metricSuffix: String): Unit = {
@@ -71,7 +71,7 @@ abstract class MetricWrapper[P](delegate: AbstractBackend[Future, P],
       metrics.reportDuration(metricPrefix + "-" + metricSuffix, end - start)
     }
 
-    delegate.internalSend(request).andThen {
+    delegate.send(request).andThen {
       case Success(response) if response.is200 => report("ok")
       case Success(response)                   => report("notok")
       case Failure(t)                          => report("exception")
@@ -113,19 +113,19 @@ import sttp.capabilities.Effect
 import sttp.client3._
 
 class RetryingBackend[F[_], P](
-    delegate: AbstractBackend[F, P],
+    delegate: GenericBackend[F, P],
     shouldRetry: RetryWhen,
     maxRetries: Int)
     extends DelegateSttpBackend(delegate) {
 
-  override def internalSend[T](request: AbstractRequest[T, P with Effect[F]]): F[Response[T]] = {
+  override def send[T](request: AbstractRequest[T, P with Effect[F]]): F[Response[T]] = {
     sendWithRetryCounter(request, 0)
   }
 
   private def sendWithRetryCounter[T](
     request: AbstractRequest[T, P with Effect[F]], retries: Int): F[Response[T]] = {
 
-    val r = responseMonad.handleError(delegate.internalSend(request)) {
+    val r = responseMonad.handleError(delegate.send(request)) {
       case t if shouldRetry(request, Left(t)) && retries < maxRetries =>
         sendWithRetryCounter(request, retries + 1)
     }
@@ -157,16 +157,16 @@ Below is an example on how to implement a backend wrapper, which integrates with
 ```scala mdoc:compile-only
 import io.github.resilience4j.circuitbreaker.{CallNotPermittedException, CircuitBreaker}
 import sttp.capabilities.Effect
-import sttp.client3.{AbstractBackend, AbstractRequest, Backend, Response, DelegateSttpBackend}
+import sttp.client3.{GenericBackend, AbstractRequest, Backend, Response, DelegateSttpBackend}
 import sttp.monad.MonadError
 import java.util.concurrent.TimeUnit
 
 class CircuitSttpBackend[F[_], P](
     circuitBreaker: CircuitBreaker,
-    delegate: AbstractBackend[F, P]) extends DelegateSttpBackend(delegate) {
+    delegate: GenericBackend[F, P]) extends DelegateSttpBackend(delegate) {
 
-  override def internalSend[T](request: AbstractRequest[T, P with Effect[F]]): F[Response[T]] = {
-    CircuitSttpBackend.decorateF(circuitBreaker, delegate.internalSend(request))
+  override def send[T](request: AbstractRequest[T, P with Effect[F]]): F[Response[T]] = {
+    CircuitSttpBackend.decorateF(circuitBreaker, delegate.send(request))
   }
 }
 
@@ -215,15 +215,15 @@ Below is an example on how to implement a backend wrapper, which integrates with
 import io.github.resilience4j.ratelimiter.RateLimiter
 import sttp.capabilities.Effect
 import sttp.monad.MonadError
-import sttp.client3.{AbstractBackend, AbstractRequest, Response, StreamBackend, DelegateSttpBackend}
+import sttp.client3.{GenericBackend, AbstractRequest, Response, StreamBackend, DelegateSttpBackend}
 
 class RateLimitingSttpBackend[F[_], P](
     rateLimiter: RateLimiter,
-    delegate: AbstractBackend[F, P]
+    delegate: GenericBackend[F, P]
     )(implicit monadError: MonadError[F]) extends DelegateSttpBackend(delegate) {
 
-  override def internalSend[T](request: AbstractRequest[T, P with Effect[F]]): F[Response[T]] = {
-    RateLimitingSttpBackend.decorateF(rateLimiter, delegate.internalSend(request))
+  override def send[T](request: AbstractRequest[T, P with Effect[F]]): F[Response[T]] = {
+    RateLimitingSttpBackend.decorateF(rateLimiter, delegate.send(request))
   }
 }
 

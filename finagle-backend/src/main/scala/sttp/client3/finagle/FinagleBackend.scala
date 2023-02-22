@@ -28,7 +28,7 @@ import scala.io.Source
 
 class FinagleBackend(client: Option[Client] = None) extends Backend[TFuture] {
   type R = Any with Effect[TFuture]
-  override def internalSend[T](request: AbstractRequest[T, R]): TFuture[Response[T]] =
+  override def send[T](request: AbstractRequest[T, R]): TFuture[Response[T]] =
     adjustExceptions(request) {
       val service = getClient(client, request)
       val finagleRequest = requestBodyToFinagle(request)

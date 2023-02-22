@@ -21,7 +21,7 @@ import scala.scalanative.unsafe
 import scala.scalanative.unsafe.{CSize, Ptr, _}
 import scala.scalanative.unsigned._
 
-abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean) extends AbstractBackend[F, Any] {
+abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean) extends GenericBackend[F, Any] {
   override implicit def responseMonad: MonadError[F] = monad
 
   type R = Any with Effect[F]
@@ -31,7 +31,7 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
   private var headers: CurlList = _
   private var multiPartHeaders: Seq[CurlList] = Seq()
 
-  override def internalSend[T](request: AbstractRequest[T, R]): F[Response[T]] =
+  override def send[T](request: AbstractRequest[T, R]): F[Response[T]] =
     adjustExceptions(request) {
       unsafe.Zone { implicit z =>
         val curl = CurlApi.init

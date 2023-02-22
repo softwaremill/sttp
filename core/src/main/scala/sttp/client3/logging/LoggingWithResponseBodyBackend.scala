@@ -8,20 +8,20 @@ import scala.concurrent.duration.Duration
 import sttp.capabilities.Effect
 
 abstract class LoggingWithResponseBodyBackend[F[_], P](
-    delegate: AbstractBackend[F, P],
-    log: Log[F],
-    includeTiming: Boolean
+                                                        delegate: GenericBackend[F, P],
+                                                        log: Log[F],
+                                                        includeTiming: Boolean
 ) extends DelegateSttpBackend[F, P](delegate) {
 
   private def now(): Long = System.currentTimeMillis()
   private def elapsed(from: Option[Long]): Option[Duration] = from.map(f => Duration(now() - f, TimeUnit.MILLISECONDS))
 
-  override def internalSend[T](request: AbstractRequest[T, P with Effect[F]]): F[Response[T]] = {
+  override def send[T](request: AbstractRequest[T, P with Effect[F]]): F[Response[T]] = {
     log.beforeRequestSend(request).flatMap { _ =>
       val start = if (includeTiming) Some(now()) else None
       def sendAndLog(request: AbstractRequest[(T, Option[String]), P with Effect[F]]): F[Response[T]] = {
         for {
-          r <- delegate.internalSend(request)
+          r <- delegate.send(request)
           _ <- log.response(request, r, r.body._2, elapsed(start))
         } yield r.copy(body = r.body._1)
       }
@@ -32,7 +32,7 @@ abstract class LoggingWithResponseBodyBackend[F[_], P](
           sendAndLog(request.response(asBothOption(request.response, asStringAlways)))
         case request =>
           for {
-            r <- delegate.internalSend(request)
+            r <- delegate.send(request)
             _ <- log.response(request, r, None, elapsed(start))
           } yield r
       }
