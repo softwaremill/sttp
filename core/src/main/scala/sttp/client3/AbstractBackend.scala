@@ -1,7 +1,8 @@
 package sttp.client3
 
 import sttp.monad.MonadError
-import sttp.capabilities.Effect
+import sttp.capabilities.{Effect, WebSockets}
+import sttp.client3.monad.IdMonad
 
 /** The common ancestor of all sttp backends.
   *
@@ -31,3 +32,18 @@ trait AbstractBackend[F[_], +P] {
     */
   def responseMonad: MonadError[F]
 }
+
+trait Backend[F[_]] extends AbstractBackend[F, Any]
+
+trait SyncBackend extends Backend[Identity] {
+  override def responseMonad: MonadError[Identity] = IdMonad
+}
+
+trait StreamBackend[F[_], +S] extends Backend[F] with AbstractBackend[F, S]
+
+trait WebSocketBackend[F[_]] extends Backend[F] with AbstractBackend[F, WebSockets]
+
+trait WebSocketStreamBackend[F[_], S]
+    extends WebSocketBackend[F]
+    with StreamBackend[F, S]
+    with AbstractBackend[F, S with WebSockets]
