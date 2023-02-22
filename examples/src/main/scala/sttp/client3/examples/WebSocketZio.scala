@@ -14,7 +14,7 @@ object WebSocketZio extends ZIOAppDefault {
 
   // create a description of a program, which requires SttpClient dependency in the environment
   def sendAndPrint(backend: WebSocketBackend[Task]): Task[Response[Unit]] =
-    backend.send(basicRequest.get(uri"wss://ws.postman-echo.com/raw").response(asWebSocketAlways(useWebSocket)))
+    basicRequest.get(uri"wss://ws.postman-echo.com/raw").response(asWebSocketAlways(useWebSocket)).send(backend)
 
   override def run = {
     // provide an implementation for the SttpClient dependency

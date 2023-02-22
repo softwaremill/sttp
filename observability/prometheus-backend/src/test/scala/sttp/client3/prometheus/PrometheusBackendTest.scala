@@ -36,7 +36,7 @@ class PrometheusBackendTest
     val requestsNumber = 10
 
     // when
-    (0 until requestsNumber).foreach(_ => backend.send(basicRequest.get(uri"http://127.0.0.1/foo")))
+    (0 until requestsNumber).foreach(_ => basicRequest.get(uri"http://127.0.0.1/foo").send(backend))
 
     // then
     getMetricValue(
@@ -64,8 +64,8 @@ class PrometheusBackendTest
       )
 
     // when
-    backend1.send(basicRequest.get(uri"http://127.0.0.1/foo"))
-    backend2.send(basicRequest.get(uri"http://127.0.0.1/foo"))
+    basicRequest.get(uri"http://127.0.0.1/foo").send(backend1)
+    basicRequest.get(uri"http://127.0.0.1/foo").send(backend1)
 
     // then
     getMetricValue(s"${histogramName}_count").value shouldBe 2
@@ -82,7 +82,7 @@ class PrometheusBackendTest
     val requestsNumber = 5
 
     // when
-    (0 until requestsNumber).foreach(_ => backend.send(basicRequest.get(uri"http://127.0.0.1/foo")))
+    (0 until requestsNumber).foreach(_ => basicRequest.get(uri"http://127.0.0.1/foo").send(backend))
 
     // then
     getMetricValue(s"${PrometheusBackend.DefaultHistogramName}_count") shouldBe empty
@@ -109,8 +109,8 @@ class PrometheusBackendTest
     val requestsNumber2 = 10
 
     // when
-    (0 until requestsNumber1).foreach(_ => backend.send(basicRequest.get(uri"http://127.0.0.1/foo")))
-    (0 until requestsNumber2).foreach(_ => backend.send(basicRequest.post(uri"http://127.0.0.1/foo")))
+    (0 until requestsNumber1).foreach(_ => basicRequest.get(uri"http://127.0.0.1/foo").send(backend))
+    (0 until requestsNumber2).foreach(_ => basicRequest.post(uri"http://127.0.0.1/foo").send(backend))
 
     // then
     getMetricValue(s"${PrometheusBackend.DefaultHistogramName}_count") shouldBe empty
@@ -133,8 +133,8 @@ class PrometheusBackendTest
     val requestsNumber2 = 10
 
     // when
-    (0 until requestsNumber1).foreach(_ => backend.send(basicRequest.get(uri"http://127.0.0.1/foo")))
-    (0 until requestsNumber2).foreach(_ => backend.send(basicRequest.post(uri"http://127.0.0.1/foo")))
+    (0 until requestsNumber1).foreach(_ => basicRequest.get(uri"http://127.0.0.1/foo").send(backend))
+    (0 until requestsNumber2).foreach(_ => basicRequest.post(uri"http://127.0.0.1/foo").send(backend))
 
     // then
     getMetricValue(s"${PrometheusBackend.DefaultRequestsInProgressGaugeName}_count") shouldBe empty
@@ -149,7 +149,7 @@ class PrometheusBackendTest
     val requestsNumber = 6
 
     // when
-    (0 until requestsNumber).foreach(_ => backend.send(basicRequest.get(uri"http://127.0.0.1/foo")))
+    (0 until requestsNumber).foreach(_ => basicRequest.get(uri"http://127.0.0.1/foo").send(backend))
 
     // then
     getMetricValue(s"${PrometheusBackend.DefaultHistogramName}_count") shouldBe empty
@@ -168,7 +168,7 @@ class PrometheusBackendTest
     val backend = PrometheusBackend(backendStub)
 
     // when
-    (0 until requestsNumber).foreach(_ => backend.send(basicRequest.get(uri"http://127.0.0.1/foo")))
+    (0 until requestsNumber).foreach(_ => basicRequest.get(uri"http://127.0.0.1/foo").send(backend))
 
     // then
     eventually {
@@ -204,7 +204,7 @@ class PrometheusBackendTest
       )
 
     // when
-    (0 until requestsNumber).foreach(_ => backend.send(basicRequest.get(uri"http://127.0.0.1/foo")))
+    (0 until requestsNumber).foreach(_ => basicRequest.get(uri"http://127.0.0.1/foo").send(backend))
 
     // then
     eventually {
@@ -233,7 +233,7 @@ class PrometheusBackendTest
       PrometheusBackend(backendStub, PrometheusConfig(requestToInProgressGaugeNameMapper = _ => None))
 
     // when
-    (0 until requestsNumber).foreach(_ => backend.send(basicRequest.get(uri"http://127.0.0.1/foo")))
+    (0 until requestsNumber).foreach(_ => basicRequest.get(uri"http://127.0.0.1/foo").send(backend))
 
     // then
     getMetricValue(PrometheusBackend.DefaultRequestsInProgressGaugeName) shouldBe empty
@@ -256,8 +256,8 @@ class PrometheusBackendTest
     val backend2 = PrometheusBackend(backendStub2)
 
     // when
-    (0 until 10).foreach(_ => backend1.send(basicRequest.get(uri"http://127.0.0.1/foo")))
-    (0 until 5).foreach(_ => backend2.send(basicRequest.get(uri"http://127.0.0.1/foo")))
+    (0 until 10).foreach(_ => basicRequest.get(uri"http://127.0.0.1/foo").send(backend1))
+    (0 until 5).foreach(_ => basicRequest.get(uri"http://127.0.0.1/foo").send(backend2))
 
     // then
     getMetricValue(
@@ -282,7 +282,7 @@ class PrometheusBackendTest
     )
 
     // when
-    (0 until 10).foreach(_ => backend.send(basicRequest.get(uri"http://127.0.0.1/foo")))
+    (0 until 10).foreach(_ => basicRequest.get(uri"http://127.0.0.1/foo").send(backend))
 
     // then
     getMetricValue(
@@ -299,11 +299,10 @@ class PrometheusBackendTest
 
     // when
     (0 until 5).foreach(_ =>
-      backend.send(
-        basicRequest
-          .get(uri"http://127.0.0.1/foo")
-          .header(Header.contentLength(5))
-      )
+      basicRequest
+        .get(uri"http://127.0.0.1/foo")
+        .header(Header.contentLength(5))
+        .send(backend)
     )
 
     // then
@@ -326,11 +325,10 @@ class PrometheusBackendTest
 
     // when
     assertThrows[SttpClientException] {
-      backend.send(
-        basicRequest
-          .get(uri"http://127.0.0.1/foo")
-          .response(asString.getRight)
-      )
+      basicRequest
+        .get(uri"http://127.0.0.1/foo")
+        .response(asString.getRight)
+        .send(backend)
     }
 
     // then
@@ -352,11 +350,10 @@ class PrometheusBackendTest
 
     // when
     assertThrows[SttpClientException] {
-      backend.send(
-        basicRequest
-          .get(uri"http://127.0.0.1/foo")
-          .response(asString.map(_ => throw DeserializationException("Unknown body", new Exception("Unable to parse"))))
-      )
+      basicRequest
+        .get(uri"http://127.0.0.1/foo")
+        .response(asString.map(_ => throw DeserializationException("Unknown body", new Exception("Unable to parse"))))
+        .send(backend)
     }
 
     // then
@@ -377,11 +374,10 @@ class PrometheusBackendTest
     val backend = PrometheusBackend(backendStub)
 
     // when
-    backend.send(
-      basicRequest
-        .get(uri"http://127.0.0.1/foo")
-        .response(asString.getRight)
-    )
+    basicRequest
+      .get(uri"http://127.0.0.1/foo")
+      .response(asString.getRight)
+      .send(backend)
 
     // then
     getMetricValue(
@@ -421,7 +417,7 @@ class PrometheusBackendTest
     )
 
     // when
-    assertThrows[SttpClientException] { backend.send(basicRequest.get(uri"http://127.0.0.1/foo")) }
+    assertThrows[SttpClientException] { basicRequest.get(uri"http://127.0.0.1/foo").send(backend) }
 
     // then
     getMetricValue(

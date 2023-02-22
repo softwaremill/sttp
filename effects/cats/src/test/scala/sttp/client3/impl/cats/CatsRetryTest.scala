@@ -24,7 +24,7 @@ trait CatsRetryTest extends AsyncFreeSpecLike { this: HttpTest[IO] =>
   "retry" - {
     "should call the HTTP server up to 5 times" in {
       val tag = Random.nextString(10)
-      val check = backend.send(basicRequest.get(uri"$endpoint/retry?tag=$tag")).map { response =>
+      val check = basicRequest.get(uri"$endpoint/retry?tag=$tag").send(backend).map { response =>
         response.code shouldBe StatusCode.Ok
       }
 

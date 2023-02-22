@@ -110,7 +110,7 @@ import zio._
 class MyService(sttpBackend: Backend[Task]) {
   def runLogic(): Task[Response[String]] = {
     val request = basicRequest.response(asStringAlways).get(uri"https://httpbin.org/get")
-    sttpBackend.send(request)
+    request.send(sttpBackend)
   }
 }
 
@@ -142,7 +142,7 @@ val request = basicRequest
   .post(uri"...")
   .streamBody(ZioStreams)(s)
 
-sttpBackend.send(request)
+request.send(sttpBackend)
 ```
 
 And receive response bodies as a stream:
@@ -164,7 +164,7 @@ val request =
     .response(asStreamUnsafe(ZioStreams))
     .readTimeout(Duration.Inf)
 
-val response: ZIO[Any, Throwable, Response[Either[String, Stream[Throwable, Byte]]]] = sttpBackend.send(request)
+val response: ZIO[Any, Throwable, Response[Either[String, Stream[Throwable, Byte]]]] = request.send(sttpBackend)
 ```
 
 ## Websockets

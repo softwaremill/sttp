@@ -27,5 +27,5 @@ final case class WebSocketStreamRequest[T, S](
 
   def mapResponse[T2](f: T => T2): WebSocketStreamRequest[T2, S] = copy(response = response.map(f))
 
-  def send[F[_]](backend: WebSocketStreamBackend[F, S]): F[Response[T]] = backend.send(this)
+  def send[F[_]](backend: WebSocketStreamBackend[F, S]): F[Response[T]] = backend.internalSend(this)
 }

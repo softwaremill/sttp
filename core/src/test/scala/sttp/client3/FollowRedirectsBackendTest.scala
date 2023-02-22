@@ -49,7 +49,7 @@ class FollowRedirectsBackendTest extends AnyFunSuite with Matchers with EitherVa
       )
     val redirectsBackend = FollowRedirectsBackend(stub0, FollowRedirectsConfig(transformUri = transformUri))
 
-    val result = redirectsBackend.send(basicRequest.get(url0))
+    val result = basicRequest.get(url0).send(redirectsBackend)
     result.body.value shouldBe "All good!"
   }
 

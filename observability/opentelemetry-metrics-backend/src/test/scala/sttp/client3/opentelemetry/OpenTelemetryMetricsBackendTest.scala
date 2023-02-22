@@ -35,7 +35,7 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
     val backend = OpenTelemetryMetricsBackend(stubAlwaysOk, spawnNewOpenTelemetry(reader))
 
     // when
-    (0 until requestsNumber).foreach(_ => backend.send(basicRequest.get(uri"http://127.0.0.1/echo")))
+    (0 until requestsNumber).foreach(_ => basicRequest.get(uri"http://127.0.0.1/echo").send(backend))
 
     // then
     getMetricValue(reader, OpenTelemetryMetricsBackend.DefaultSuccessCounterName).value shouldBe requestsNumber
@@ -47,7 +47,7 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
     val backend = OpenTelemetryMetricsBackend(stubAlwaysOk, spawnNewOpenTelemetry(reader))
 
     // when
-    (0 until 10).foreach(_ => backend.send(basicRequest.get(uri"http://127.0.0.1/echo")))
+    (0 until 10).foreach(_ => basicRequest.get(uri"http://127.0.0.1/echo").send(backend))
 
     // then
     getMetricValue(reader, OpenTelemetryMetricsBackend.DefaultRequestsInProgressCounterName).value shouldBe 0
@@ -61,8 +61,8 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
     val backend2 = OpenTelemetryMetricsBackend(stubAlwaysOk, sdk)
 
     // when
-    backend1.send(basicRequest.get(uri"http://127.0.0.1/echo"))
-    backend2.send(basicRequest.get(uri"http://127.0.0.1/echo"))
+    basicRequest.get(uri"http://127.0.0.1/echo").send(backend1)
+    basicRequest.get(uri"http://127.0.0.1/echo").send(backend2)
 
     // then
     getMetricValue(reader, OpenTelemetryMetricsBackend.DefaultSuccessCounterName).value shouldBe 2
@@ -80,7 +80,7 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
     val requestsNumber = 5
 
     // when
-    (0 until requestsNumber).foreach(_ => backend.send(basicRequest.get(uri"http://127.0.0.1/foo")))
+    (0 until requestsNumber).foreach(_ => basicRequest.get(uri"http://127.0.0.1/foo").send(backend))
 
     // then
     getMetricValue(reader, OpenTelemetryMetricsBackend.DefaultSuccessCounterName) shouldBe empty
@@ -103,7 +103,7 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
     val requestsNumber1 = 5
 
     // when
-    (0 until requestsNumber1).foreach(_ => backend.send(basicRequest.get(uri"http://127.0.0.1/foo")))
+    (0 until requestsNumber1).foreach(_ => basicRequest.get(uri"http://127.0.0.1/foo").send(backend))
 
     getMetricValue(reader, OpenTelemetryMetricsBackend.DefaultSuccessCounterName) shouldBe empty
     getMetricValue(reader, customSuccessCounterName).value shouldBe 5
@@ -123,7 +123,7 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
     val requestsNumber = 6
 
     // when
-    (0 until requestsNumber).foreach(_ => backend.send(basicRequest.get(uri"http://127.0.0.1/foo")))
+    (0 until requestsNumber).foreach(_ => basicRequest.get(uri"http://127.0.0.1/foo").send(backend))
 
     // then
     getMetricValue(reader, OpenTelemetryMetricsBackend.DefaultSuccessCounterName) shouldBe empty
@@ -139,8 +139,8 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
     val backend2 = OpenTelemetryMetricsBackend(backendStub2, sdk)
 
     // when
-    (0 until 10).foreach(_ => backend1.send(basicRequest.get(uri"http://127.0.0.1/foo")))
-    (0 until 5).foreach(_ => backend2.send(basicRequest.get(uri"http://127.0.0.1/foo")))
+    (0 until 10).foreach(_ => basicRequest.get(uri"http://127.0.0.1/foo").send(backend1))
+    (0 until 5).foreach(_ => basicRequest.get(uri"http://127.0.0.1/foo").send(backend2))
 
     // then
     getMetricValue(reader, OpenTelemetryMetricsBackend.DefaultSuccessCounterName).value shouldBe 10
@@ -156,11 +156,10 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
 
     // when
     (0 until 5).foreach(_ =>
-      backend.send(
-        basicRequest
-          .get(uri"http://127.0.0.1/foo")
-          .header(Header.contentLength(5))
-      )
+      basicRequest
+        .get(uri"http://127.0.0.1/foo")
+        .header(Header.contentLength(5))
+        .send(backend)
     )
 
     // then
@@ -176,7 +175,7 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
     val backend = OpenTelemetryMetricsBackend(backendStub, spawnNewOpenTelemetry(reader))
 
     // when
-    (0 until 5).foreach(_ => backend.send(basicRequest.get(uri"http://127.0.0.1/foo")))
+    (0 until 5).foreach(_ => basicRequest.get(uri"http://127.0.0.1/foo").send(backend))
 
     // then
     getHistogramValue(reader, OpenTelemetryMetricsBackend.DefaultLatencyHistogramName).map(_.getSum) should not be empty
@@ -190,11 +189,10 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
 
     // when
     assertThrows[SttpClientException] {
-      backend.send(
-        basicRequest
-          .get(uri"http://127.0.0.1/foo")
-          .response(asString.getRight)
-      )
+      basicRequest
+        .get(uri"http://127.0.0.1/foo")
+        .response(asString.getRight)
+        .send(backend)
     }
 
     // then
@@ -211,11 +209,10 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
 
     // when
     assertThrows[SttpClientException] {
-      backend.send(
-        basicRequest
-          .get(uri"http://127.0.0.1/foo")
-          .response(asString.map(_ => throw DeserializationException("Unknown body", new Exception("Unable to parse"))))
-      )
+      basicRequest
+        .get(uri"http://127.0.0.1/foo")
+        .response(asString.map(_ => throw DeserializationException("Unknown body", new Exception("Unable to parse"))))
+        .send(backend)
     }
 
     // then
@@ -231,11 +228,10 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
     val backend = OpenTelemetryMetricsBackend(backendStub, spawnNewOpenTelemetry(reader))
 
     // when
-    backend.send(
-      basicRequest
-        .get(uri"http://127.0.0.1/foo")
-        .response(asString.getRight)
-    )
+    basicRequest
+      .get(uri"http://127.0.0.1/foo")
+      .response(asString.getRight)
+      .send(backend)
 
     // then
     getMetricValue(reader, OpenTelemetryMetricsBackend.DefaultSuccessCounterName) shouldBe Some(1)

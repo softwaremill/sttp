@@ -55,5 +55,5 @@ final case class StreamRequest[T, R](
     response(response.map(f))
 
   def send[F[_], P](backend: StreamBackend[F, P])(implicit ev: P with Effect[F] <:< R): F[Response[T]] =
-    backend.send(this.asInstanceOf[StreamRequest[T, P with Effect[F]]]) // as witnessed by ev
+    backend.internalSend(this.asInstanceOf[StreamRequest[T, P with Effect[F]]]) // as witnessed by ev
 }
