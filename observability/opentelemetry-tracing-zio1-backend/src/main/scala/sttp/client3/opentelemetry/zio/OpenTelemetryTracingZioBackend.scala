@@ -15,7 +15,7 @@ private class OpenTelemetryTracingZioBackend[+P](
                                                   delegate: GenericBackend[Task, P],
                                                   tracer: OpenTelemetryZioTracer,
                                                   tracing: Tracing
-) extends DelegateSttpBackend[Task, P](delegate)
+) extends DelegateBackend[Task, P](delegate)
     with Backend[Task] {
   def send[T](request: AbstractRequest[T, P with Effect[Task]]): Task[Response[T]] = {
     val carrier: mutable.Map[String, String] = mutable.Map().empty

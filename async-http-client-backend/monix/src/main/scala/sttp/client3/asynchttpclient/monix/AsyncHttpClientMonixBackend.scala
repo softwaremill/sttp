@@ -15,7 +15,7 @@ import sttp.client3.impl.monix.{MonixSimpleQueue, MonixWebSockets, TaskMonadAsyn
 import sttp.client3.internal._
 import sttp.client3.internal.ws.SimpleQueue
 import sttp.client3.testing.WebSocketStreamBackendStub
-import sttp.client3.{FollowRedirectsBackend, SttpBackendOptions, WebSocketStreamBackend}
+import sttp.client3.{FollowRedirectsBackend, BackendOptions, WebSocketStreamBackend}
 import sttp.monad.MonadAsyncError
 import sttp.ws.{WebSocket, WebSocketFrame}
 
@@ -101,9 +101,9 @@ object AsyncHttpClientMonixBackend {
 
   /** @param s The scheduler used for streaming request bodies. Defaults to the global scheduler. */
   def apply(
-      options: SttpBackendOptions = SttpBackendOptions.Default,
-      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
-      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
+             options: BackendOptions = BackendOptions.Default,
+             customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
+             webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   )(implicit
       s: Scheduler = Scheduler.global
   ): Task[WebSocketStreamBackend[Task, MonixStreams]] =
@@ -121,9 +121,9 @@ object AsyncHttpClientMonixBackend {
     *   The scheduler used for streaming request bodies. Defaults to the global scheduler.
     */
   def resource(
-      options: SttpBackendOptions = SttpBackendOptions.Default,
-      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
-      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
+                options: BackendOptions = BackendOptions.Default,
+                customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
+                webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   )(implicit
       s: Scheduler = Scheduler.global
   ): Resource[Task, WebSocketStreamBackend[Task, MonixStreams]] =
@@ -165,10 +165,10 @@ object AsyncHttpClientMonixBackend {
     *   The scheduler used for streaming request bodies. Defaults to the global scheduler.
     */
   def usingConfigBuilder(
-      updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
-      options: SttpBackendOptions = SttpBackendOptions.Default,
-      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
-      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
+                          updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
+                          options: BackendOptions = BackendOptions.Default,
+                          customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
+                          webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   )(implicit
       s: Scheduler = Scheduler.global
   ): Task[WebSocketStreamBackend[Task, MonixStreams]] =
@@ -188,10 +188,10 @@ object AsyncHttpClientMonixBackend {
     *   The scheduler used for streaming request bodies. Defaults to the global scheduler.
     */
   def resourceUsingConfigBuilder(
-      updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
-      options: SttpBackendOptions = SttpBackendOptions.Default,
-      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
-      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
+                                  updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
+                                  options: BackendOptions = BackendOptions.Default,
+                                  customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
+                                  webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   )(implicit
       s: Scheduler = Scheduler.global
   ): Resource[Task, WebSocketStreamBackend[Task, MonixStreams]] =

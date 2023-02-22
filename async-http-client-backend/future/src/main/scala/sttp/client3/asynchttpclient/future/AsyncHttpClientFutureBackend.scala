@@ -15,7 +15,7 @@ import sttp.client3.asynchttpclient.{AsyncHttpClientBackend, BodyFromAHC, BodyTo
 import sttp.client3.internal.NoStreams
 import sttp.client3.internal.ws.SimpleQueue
 import sttp.client3.testing.BackendStub
-import sttp.client3.{Backend, FollowRedirectsBackend, SttpBackendOptions}
+import sttp.client3.{Backend, FollowRedirectsBackend, BackendOptions}
 import sttp.monad.{FutureMonad, MonadAsyncError}
 import sttp.ws.WebSocket
 
@@ -70,8 +70,8 @@ object AsyncHttpClientFutureBackend {
     *   execution context.
     */
   def apply(
-      options: SttpBackendOptions = SttpBackendOptions.Default,
-      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+             options: BackendOptions = BackendOptions.Default,
+             customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   )(implicit ec: ExecutionContext = ExecutionContext.global): Backend[Future] =
     AsyncHttpClientFutureBackend(AsyncHttpClientBackend.defaultClient(options), closeClient = true, customizeRequest)
 
@@ -92,9 +92,9 @@ object AsyncHttpClientFutureBackend {
     *   execution context.
     */
   def usingConfigBuilder(
-      updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
-      options: SttpBackendOptions = SttpBackendOptions.Default,
-      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+                          updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
+                          options: BackendOptions = BackendOptions.Default,
+                          customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   )(implicit ec: ExecutionContext = ExecutionContext.global): Backend[Future] =
     AsyncHttpClientFutureBackend(
       AsyncHttpClientBackend.clientWithModifiedOptions(options, updateConfig),

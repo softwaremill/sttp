@@ -2,7 +2,7 @@ package sttp.client3.armeria.zio
 
 import sttp.capabilities.zio.ZioStreams
 import sttp.client3.armeria.ArmeriaWebClient
-import sttp.client3.{StreamBackend, SttpBackendOptions}
+import sttp.client3.{StreamBackend, BackendOptions}
 import sttp.client3.impl.zio.{ZioServerSentEvents, ZioTestBase}
 import sttp.client3.internal._
 import sttp.client3.testing.{ConvertToFuture, RetryTests}
@@ -21,7 +21,7 @@ class ArmeriaZioStreamingTest extends StreamingTest[Task, ZioStreams] with ZioTe
     unsafeRunSyncOrThrow(
       ArmeriaZioBackend.usingClient(
         // the default caused timeouts in SSE tests
-        ArmeriaWebClient.newClient(SttpBackendOptions.Default, _.writeTimeout(Duration.ofMillis(0)))
+        ArmeriaWebClient.newClient(BackendOptions.Default, _.writeTimeout(Duration.ofMillis(0)))
       )
     )
   override implicit val convertToFuture: ConvertToFuture[Task] = convertZioTaskToFuture

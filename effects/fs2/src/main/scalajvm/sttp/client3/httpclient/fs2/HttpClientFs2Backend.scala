@@ -102,10 +102,10 @@ object HttpClientFs2Backend {
     )
 
   def apply[F[_]: Async](
-      dispatcher: Dispatcher[F],
-      options: SttpBackendOptions = SttpBackendOptions.Default,
-      customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty
+                          dispatcher: Dispatcher[F],
+                          options: BackendOptions = BackendOptions.Default,
+                          customizeRequest: HttpRequest => HttpRequest = identity,
+                          customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty
   ): F[WebSocketStreamBackend[F, Fs2Streams[F]]] = {
     Async[F].executor.flatMap(executor =>
       Sync[F].delay(
@@ -121,9 +121,9 @@ object HttpClientFs2Backend {
   }
 
   def resource[F[_]: Async](
-      options: SttpBackendOptions = SttpBackendOptions.Default,
-      customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty
+                             options: BackendOptions = BackendOptions.Default,
+                             customizeRequest: HttpRequest => HttpRequest = identity,
+                             customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty
   ): Resource[F, WebSocketStreamBackend[F, Fs2Streams[F]]] =
     Dispatcher
       .parallel[F]

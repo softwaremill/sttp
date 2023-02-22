@@ -7,7 +7,7 @@ import org.reactivestreams.Publisher
 import sttp.client3.armeria.ArmeriaWebClient.newClient
 import sttp.client3.armeria.{AbstractArmeriaBackend, BodyFromStreamMessage}
 import sttp.client3.internal.NoStreams
-import sttp.client3.{Backend, FollowRedirectsBackend, SttpBackendOptions}
+import sttp.client3.{Backend, FollowRedirectsBackend, BackendOptions}
 import sttp.monad.{FutureMonad, MonadAsyncError}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -39,7 +39,7 @@ object ArmeriaFutureBackend {
     * client will manage its own connection pool. If you'd like to reuse the default Armeria
     * [[https://armeria.dev/docs/client-factory ClientFactory]] use `.usingDefaultClient`.
     */
-  def apply(options: SttpBackendOptions = SttpBackendOptions.Default): Backend[Future] =
+  def apply(options: BackendOptions = BackendOptions.Default): Backend[Future] =
     apply(newClient(options), closeFactory = true)
 
   def usingClient(client: WebClient): Backend[Future] =

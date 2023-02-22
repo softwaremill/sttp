@@ -17,7 +17,7 @@ import sttp.client3.impl.scalaz.TaskMonadAsyncError
 import sttp.client3.internal.NoStreams
 import sttp.client3.internal.ws.SimpleQueue
 import sttp.client3.testing.BackendStub
-import sttp.client3.{FollowRedirectsBackend, Backend, SttpBackendOptions}
+import sttp.client3.{FollowRedirectsBackend, Backend, BackendOptions}
 import sttp.monad.MonadAsyncError
 import sttp.ws.WebSocket
 
@@ -61,8 +61,8 @@ object AsyncHttpClientScalazBackend {
     FollowRedirectsBackend(new AsyncHttpClientScalazBackend(asyncHttpClient, closeClient, customizeRequest))
 
   def apply(
-      options: SttpBackendOptions = SttpBackendOptions.Default,
-      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+             options: BackendOptions = BackendOptions.Default,
+             customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   ): Task[Backend[Task]] =
     Task.delay(
       AsyncHttpClientScalazBackend(AsyncHttpClientBackend.defaultClient(options), closeClient = true, customizeRequest)
@@ -78,9 +78,9 @@ object AsyncHttpClientScalazBackend {
     *   A function which updates the default configuration (created basing on `options`).
     */
   def usingConfigBuilder(
-      updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
-      options: SttpBackendOptions = SttpBackendOptions.Default,
-      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+                          updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
+                          options: BackendOptions = BackendOptions.Default,
+                          customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   ): Task[Backend[Task]] =
     Task.delay(
       AsyncHttpClientScalazBackend(

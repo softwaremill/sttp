@@ -81,9 +81,9 @@ object HttpClientFutureBackend {
     FollowRedirectsBackend(new HttpClientFutureBackend(client, closeClient, customizeRequest, customEncodingHandler))
 
   def apply(
-      options: SttpBackendOptions = SttpBackendOptions.Default,
-      customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: InputStreamEncodingHandler = PartialFunction.empty
+             options: BackendOptions = BackendOptions.Default,
+             customizeRequest: HttpRequest => HttpRequest = identity,
+             customEncodingHandler: InputStreamEncodingHandler = PartialFunction.empty
   )(implicit ec: ExecutionContext = ExecutionContext.global): WebSocketBackend[Future] = {
     val executor = Some(ec).collect { case executor: Executor => executor }
     HttpClientFutureBackend(

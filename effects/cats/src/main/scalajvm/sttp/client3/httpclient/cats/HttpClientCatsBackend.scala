@@ -9,7 +9,7 @@ import sttp.client3.internal.httpclient._
 import sttp.client3.internal.ws.SimpleQueue
 import sttp.client3.internal.{NoStreams, emptyInputStream}
 import sttp.client3.testing.WebSocketBackendStub
-import sttp.client3.{FollowRedirectsBackend, HttpClientAsyncBackend, HttpClientBackend, SttpBackendOptions, WebSocketBackend}
+import sttp.client3.{FollowRedirectsBackend, HttpClientAsyncBackend, HttpClientBackend, BackendOptions, WebSocketBackend}
 import sttp.monad.MonadError
 import sttp.ws.{WebSocket, WebSocketFrame}
 
@@ -88,10 +88,10 @@ object HttpClientCatsBackend {
     )
 
   def apply[F[_]: Async](
-      dispatcher: Dispatcher[F],
-      options: SttpBackendOptions = SttpBackendOptions.Default,
-      customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: EncodingHandler[InputStream] = PartialFunction.empty
+                          dispatcher: Dispatcher[F],
+                          options: BackendOptions = BackendOptions.Default,
+                          customizeRequest: HttpRequest => HttpRequest = identity,
+                          customEncodingHandler: EncodingHandler[InputStream] = PartialFunction.empty
   ): F[WebSocketBackend[F]] = {
     Async[F].executor.flatMap(executor =>
       Sync[F].delay(
@@ -107,9 +107,9 @@ object HttpClientCatsBackend {
   }
 
   def resource[F[_]: Async](
-      options: SttpBackendOptions = SttpBackendOptions.Default,
-      customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: EncodingHandler[InputStream] = PartialFunction.empty
+                             options: BackendOptions = BackendOptions.Default,
+                             customizeRequest: HttpRequest => HttpRequest = identity,
+                             customEncodingHandler: EncodingHandler[InputStream] = PartialFunction.empty
   ): Resource[F, WebSocketBackend[F]] =
     Dispatcher
       .parallel[F]

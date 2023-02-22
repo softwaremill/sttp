@@ -18,7 +18,7 @@ import sttp.client3.{
   FollowRedirectsBackend,
   HttpClientAsyncBackend,
   HttpClientBackend,
-  SttpBackendOptions,
+  BackendOptions,
   WebSocketStreamBackend
 }
 import sttp.monad.MonadError
@@ -105,9 +105,9 @@ object HttpClientMonixBackend {
     )
 
   def apply(
-      options: SttpBackendOptions = SttpBackendOptions.Default,
-      customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: MonixEncodingHandler = PartialFunction.empty
+             options: BackendOptions = BackendOptions.Default,
+             customizeRequest: HttpRequest => HttpRequest = identity,
+             customEncodingHandler: MonixEncodingHandler = PartialFunction.empty
   )(implicit
       s: Scheduler = Scheduler.global
   ): Task[WebSocketStreamBackend[Task, MonixStreams]] =
@@ -121,9 +121,9 @@ object HttpClientMonixBackend {
     )
 
   def resource(
-      options: SttpBackendOptions = SttpBackendOptions.Default,
-      customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: MonixEncodingHandler = PartialFunction.empty
+                options: BackendOptions = BackendOptions.Default,
+                customizeRequest: HttpRequest => HttpRequest = identity,
+                customEncodingHandler: MonixEncodingHandler = PartialFunction.empty
   )(implicit
       s: Scheduler = Scheduler.global
   ): Resource[Task, WebSocketStreamBackend[Task, MonixStreams]] =

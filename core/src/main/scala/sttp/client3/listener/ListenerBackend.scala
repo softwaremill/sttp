@@ -9,7 +9,7 @@ import sttp.capabilities.Effect
 abstract class ListenerBackend[F[_], P, L](
                                             delegate: GenericBackend[F, P],
                                             listener: RequestListener[F, L]
-) extends DelegateSttpBackend(delegate) {
+) extends DelegateBackend(delegate) {
   override def send[T](request: AbstractRequest[T, P with Effect[F]]): F[Response[T]] = {
     listener.beforeRequest(request).flatMap { t =>
       responseMonad

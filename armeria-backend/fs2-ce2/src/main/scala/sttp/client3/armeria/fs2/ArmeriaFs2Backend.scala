@@ -11,7 +11,7 @@ import sttp.capabilities.fs2.Fs2Streams
 import sttp.client3.armeria.ArmeriaWebClient.newClient
 import sttp.client3.armeria.{AbstractArmeriaBackend, BodyFromStreamMessage}
 import sttp.client3.impl.cats.CatsMonadAsyncError
-import sttp.client3.{FollowRedirectsBackend, StreamBackend, SttpBackendOptions}
+import sttp.client3.{FollowRedirectsBackend, StreamBackend, BackendOptions}
 import sttp.monad.MonadAsyncError
 
 private final class ArmeriaFs2Backend[F[_]: ConcurrentEffect](client: WebClient, closeFactory: Boolean)
@@ -46,12 +46,12 @@ object ArmeriaFs2Backend {
     * [[https://armeria.dev/docs/client-factory ClientFactory]] use `.usingDefaultClient`.
     */
   def apply[F[_]: ConcurrentEffect](
-      options: SttpBackendOptions = SttpBackendOptions.Default
+      options: BackendOptions = BackendOptions.Default
   ): StreamBackend[F, Fs2Streams[F]] =
     apply(newClient(options), closeFactory = true)
 
   def resource[F[_]: ConcurrentEffect](
-      options: SttpBackendOptions = SttpBackendOptions.Default
+      options: BackendOptions = BackendOptions.Default
   ): Resource[F, StreamBackend[F, Fs2Streams[F]]] = {
     Resource.make(Sync[F].delay(apply(newClient(options), closeFactory = true)))(_.close())
   }

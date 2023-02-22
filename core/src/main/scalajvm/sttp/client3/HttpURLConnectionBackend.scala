@@ -20,11 +20,11 @@ import scala.concurrent.duration.Duration
 import sttp.capabilities.Effect
 
 class HttpURLConnectionBackend private (
-    opts: SttpBackendOptions,
-    customizeConnection: HttpURLConnection => Unit,
-    createURL: String => URL,
-    openConnection: (URL, Option[java.net.Proxy]) => URLConnection,
-    customEncodingHandler: EncodingHandler
+                                         opts: BackendOptions,
+                                         customizeConnection: HttpURLConnection => Unit,
+                                         createURL: String => URL,
+                                         openConnection: (URL, Option[java.net.Proxy]) => URLConnection,
+                                         customEncodingHandler: EncodingHandler
 ) extends SyncBackend {
   type R = Any with Effect[Identity]
 
@@ -303,14 +303,14 @@ object HttpURLConnectionBackend {
   }
 
   def apply(
-      options: SttpBackendOptions = SttpBackendOptions.Default,
-      customizeConnection: HttpURLConnection => Unit = _ => (),
-      createURL: String => URL = new URL(_),
-      openConnection: (URL, Option[java.net.Proxy]) => URLConnection = {
+             options: BackendOptions = BackendOptions.Default,
+             customizeConnection: HttpURLConnection => Unit = _ => (),
+             createURL: String => URL = new URL(_),
+             openConnection: (URL, Option[java.net.Proxy]) => URLConnection = {
         case (url, None)        => url.openConnection()
         case (url, Some(proxy)) => url.openConnection(proxy)
       },
-      customEncodingHandler: EncodingHandler = PartialFunction.empty
+             customEncodingHandler: EncodingHandler = PartialFunction.empty
   ): SyncBackend =
     FollowRedirectsBackend(
       new HttpURLConnectionBackend(options, customizeConnection, createURL, openConnection, customEncodingHandler)

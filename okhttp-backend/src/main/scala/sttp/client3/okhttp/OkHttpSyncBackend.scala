@@ -16,7 +16,7 @@ import sttp.client3.{
   Identity,
   AbstractRequest,
   Response,
-  SttpBackendOptions,
+  BackendOptions,
   WebSocketBackend,
   ignore
 }
@@ -108,9 +108,9 @@ object OkHttpSyncBackend {
     FollowRedirectsBackend(new OkHttpSyncBackend(client, closeClient, customEncodingHandler, webSocketBufferCapacity))
 
   def apply(
-      options: SttpBackendOptions = SttpBackendOptions.Default,
-      customEncodingHandler: EncodingHandler = PartialFunction.empty,
-      webSocketBufferCapacity: Option[Int] = OkHttpBackend.DefaultWebSocketBufferCapacity
+             options: BackendOptions = BackendOptions.Default,
+             customEncodingHandler: EncodingHandler = PartialFunction.empty,
+             webSocketBufferCapacity: Option[Int] = OkHttpBackend.DefaultWebSocketBufferCapacity
   ): WebSocketBackend[Identity] =
     OkHttpSyncBackend(
       OkHttpBackend.defaultClient(DefaultReadTimeout.toMillis, options),

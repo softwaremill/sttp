@@ -14,7 +14,7 @@ trait RecordingBackend {
 }
 
 abstract class AbstractRecordingBackend[F[_], P](delegate: GenericBackend[F, P])
-    extends DelegateSttpBackend[F, P](delegate)
+    extends DelegateBackend[F, P](delegate)
     with RecordingBackend {
 
   private val _allInteractions = new AtomicReference[Vector[RequestAndResponse]](Vector())

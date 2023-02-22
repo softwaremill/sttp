@@ -23,11 +23,11 @@ import org.asynchttpclient.{
 import org.reactivestreams.{Publisher, Subscriber, Subscription}
 import sttp.capabilities.{Effect, Streams}
 import sttp.client3
-import sttp.client3.SttpBackendOptions.ProxyType.{Http, Socks}
+import sttp.client3.BackendOptions.ProxyType.{Http, Socks}
 import sttp.client3.internal.ws.{SimpleQueue, WebSocketEvent}
 import sttp.monad.syntax._
 import sttp.monad.{Canceler, MonadAsyncError, MonadError}
-import sttp.client3.{GenericBackend, Response, SttpBackendOptions, _}
+import sttp.client3.{GenericBackend, Response, BackendOptions, _}
 import sttp.model._
 
 import scala.collection.JavaConverters._
@@ -230,7 +230,7 @@ object AsyncHttpClientBackend {
   val DefaultWebSocketBufferCapacity: Option[Int] = Some(1024)
 
   private[asynchttpclient] def defaultConfigBuilder(
-      options: SttpBackendOptions
+      options: BackendOptions
   ): DefaultAsyncHttpClientConfig.Builder = {
     val configBuilder = new DefaultAsyncHttpClientConfig.Builder()
       .setConnectTimeout(options.connectionTimeout.toMillis.toInt)
@@ -261,13 +261,13 @@ object AsyncHttpClientBackend {
     }
   }
 
-  private[asynchttpclient] def defaultClient(options: SttpBackendOptions): AsyncHttpClient = {
+  private[asynchttpclient] def defaultClient(options: BackendOptions): AsyncHttpClient = {
     new DefaultAsyncHttpClient(defaultConfigBuilder(options).build())
   }
 
   private[asynchttpclient] def clientWithModifiedOptions(
-      options: SttpBackendOptions,
-      updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder
+                                                          options: BackendOptions,
+                                                          updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder
   ): AsyncHttpClient = {
     new DefaultAsyncHttpClient(updateConfig(defaultConfigBuilder(options)).build())
   }

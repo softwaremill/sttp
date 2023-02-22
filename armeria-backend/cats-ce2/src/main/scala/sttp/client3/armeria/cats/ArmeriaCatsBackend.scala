@@ -9,7 +9,7 @@ import sttp.client3.armeria.ArmeriaWebClient.newClient
 import sttp.client3.armeria.{AbstractArmeriaBackend, BodyFromStreamMessage}
 import sttp.client3.impl.cats.CatsMonadAsyncError
 import sttp.client3.internal.NoStreams
-import sttp.client3.{Backend, FollowRedirectsBackend, SttpBackendOptions}
+import sttp.client3.{Backend, FollowRedirectsBackend, BackendOptions}
 import sttp.monad.MonadAsyncError
 
 private final class ArmeriaCatsBackend[F[_]: Concurrent](client: WebClient, closeFactory: Boolean)
@@ -38,11 +38,11 @@ object ArmeriaCatsBackend {
     * client will manage its own connection pool. If you'd like to reuse the default Armeria
     * [[https://armeria.dev/docs/client-factory ClientFactory]] use `.usingDefaultClient`.
     */
-  def apply[F[_]: Concurrent](options: SttpBackendOptions = SttpBackendOptions.Default): Backend[F] =
+  def apply[F[_]: Concurrent](options: BackendOptions = BackendOptions.Default): Backend[F] =
     apply(newClient(options), closeFactory = true)
 
   def resource[F[_]: Concurrent](
-      options: SttpBackendOptions = SttpBackendOptions.Default
+      options: BackendOptions = BackendOptions.Default
   ): Resource[F, Backend[F]] = {
     Resource.make(Sync[F].delay(apply(newClient(options), closeFactory = true)))(_.close())
   }

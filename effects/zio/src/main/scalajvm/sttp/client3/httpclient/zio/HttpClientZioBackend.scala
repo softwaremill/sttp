@@ -13,7 +13,7 @@ import sttp.client3.{
   FollowRedirectsBackend,
   HttpClientAsyncBackend,
   HttpClientBackend,
-  SttpBackendOptions,
+  BackendOptions,
   WebSocketStreamBackend
 }
 import sttp.monad.MonadError
@@ -112,9 +112,9 @@ object HttpClientZioBackend {
     )
 
   def apply(
-      options: SttpBackendOptions = SttpBackendOptions.Default,
-      customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
+             options: BackendOptions = BackendOptions.Default,
+             customizeRequest: HttpRequest => HttpRequest = identity,
+             customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
   ): Task[WebSocketStreamBackend[Task, ZioStreams]] = {
     ZIO.executor.flatMap(executor =>
       ZIO.attempt(
@@ -129,9 +129,9 @@ object HttpClientZioBackend {
   }
 
   def scoped(
-      options: SttpBackendOptions = SttpBackendOptions.Default,
-      customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
+              options: BackendOptions = BackendOptions.Default,
+              customizeRequest: HttpRequest => HttpRequest = identity,
+              customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
   ): ZIO[Scope, Throwable, WebSocketStreamBackend[Task, ZioStreams]] =
     ZIO.acquireRelease(apply(options, customizeRequest, customEncodingHandler))(
       _.close().ignore
@@ -147,9 +147,9 @@ object HttpClientZioBackend {
     )(_.close().ignore)
 
   def layer(
-      options: SttpBackendOptions = SttpBackendOptions.Default,
-      customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
+             options: BackendOptions = BackendOptions.Default,
+             customizeRequest: HttpRequest => HttpRequest = identity,
+             customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
   ): ZLayer[Any, Throwable, WebSocketStreamBackend[Task, ZioStreams]] = {
     ZLayer.scoped(
       (for {

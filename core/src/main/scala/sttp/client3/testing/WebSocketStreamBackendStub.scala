@@ -18,8 +18,8 @@ import sttp.capabilities.WebSockets
   * conversions will be attempted (e.g. from a `String` to a custom mapped type, as specified in the request, see the
   * documentation for more details).
   *
-  * For web socket requests, the stub can be configured to returned both custom [[WebSocket]] implementations, as well
-  * as [[WebSocketStub]] instances.
+  * For web socket requests, the stub can be configured to returned both custom [[sttp.ws.WebSocket]] implementations, as well
+  * as [[sttp.ws.testing.WebSocketStub]] instances.
   *
   * For requests which return the response as a stream, if the stub should return a raw stream value (which should then
   * be passed to the stream-consuming function, or mapped to another value), it should be wrapped with [[RawStream]].

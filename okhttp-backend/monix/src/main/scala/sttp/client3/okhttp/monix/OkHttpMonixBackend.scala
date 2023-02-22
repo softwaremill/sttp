@@ -129,9 +129,9 @@ object OkHttpMonixBackend {
     )
 
   def apply(
-      options: SttpBackendOptions = SttpBackendOptions.Default,
-      customEncodingHandler: EncodingHandler = PartialFunction.empty,
-      webSocketBufferCapacity: Option[Int] = OkHttpBackend.DefaultWebSocketBufferCapacity
+             options: BackendOptions = BackendOptions.Default,
+             customEncodingHandler: EncodingHandler = PartialFunction.empty,
+             webSocketBufferCapacity: Option[Int] = OkHttpBackend.DefaultWebSocketBufferCapacity
   )(implicit
       s: Scheduler = Scheduler.global
   ): Task[WebSocketStreamBackend[Task, MonixStreams]] =
@@ -145,9 +145,9 @@ object OkHttpMonixBackend {
     )
 
   def resource(
-      options: SttpBackendOptions = SttpBackendOptions.Default,
-      customEncodingHandler: EncodingHandler = PartialFunction.empty,
-      webSocketBufferCapacity: Option[Int] = OkHttpBackend.DefaultWebSocketBufferCapacity
+                options: BackendOptions = BackendOptions.Default,
+                customEncodingHandler: EncodingHandler = PartialFunction.empty,
+                webSocketBufferCapacity: Option[Int] = OkHttpBackend.DefaultWebSocketBufferCapacity
   )(implicit
       s: Scheduler = Scheduler.global
   ): Resource[Task, WebSocketStreamBackend[Task, MonixStreams]] =

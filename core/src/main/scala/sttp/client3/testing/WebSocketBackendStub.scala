@@ -18,8 +18,8 @@ import sttp.capabilities.WebSockets
   * conversions will be attempted (e.g. from a `String` to a custom mapped type, as specified in the request, see the
   * documentation for more details).
   *
-  * For web socket requests, the stub can be configured to returned both custom [[WebSocket]] implementations, as well
-  * as [[WebSocketStub]] instances.
+  * For web socket requests, the stub can be configured to returned both custom [[sttp.ws.WebSocket]] implementations,
+  * as well as [[sttp.ws.testing.WebSocketStub]] instances.
   *
   * Predicates can match requests basing on the URI or headers. A [[ClassCastException]] might occur if for a given
   * request, a response is specified with the incorrect or inconvertible body type.

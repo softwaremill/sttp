@@ -81,9 +81,9 @@ object HttpClientSyncBackend {
     FollowRedirectsBackend(new HttpClientSyncBackend(client, closeClient, customizeRequest, customEncodingHandler))
 
   def apply(
-      options: SttpBackendOptions = SttpBackendOptions.Default,
-      customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: SyncEncodingHandler = PartialFunction.empty
+             options: BackendOptions = BackendOptions.Default,
+             customizeRequest: HttpRequest => HttpRequest = identity,
+             customEncodingHandler: SyncEncodingHandler = PartialFunction.empty
   ): SyncBackend =
     HttpClientSyncBackend(
       HttpClientBackend.defaultClient(options, None),

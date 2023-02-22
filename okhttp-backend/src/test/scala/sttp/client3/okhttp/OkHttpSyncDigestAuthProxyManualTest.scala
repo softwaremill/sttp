@@ -9,7 +9,7 @@ import org.scalatest.matchers.should.Matchers
 @Ignore
 class OkHttpSyncDigestAuthProxyManualTest extends AsyncFreeSpec with Matchers with ToFutureWrapper {
   val backend: WebSocketBackend[Identity] =
-    DigestAuthenticationBackend(OkHttpSyncBackend(options = SttpBackendOptions.httpProxy("localhost", 3128)))
+    DigestAuthenticationBackend(OkHttpSyncBackend(options = BackendOptions.httpProxy("localhost", 3128)))
 
   implicit val convertToFuture: ConvertToFuture[Identity] = ConvertToFuture.id
 

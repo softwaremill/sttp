@@ -11,7 +11,7 @@ abstract class LoggingWithResponseBodyBackend[F[_], P](
                                                         delegate: GenericBackend[F, P],
                                                         log: Log[F],
                                                         includeTiming: Boolean
-) extends DelegateSttpBackend[F, P](delegate) {
+) extends DelegateBackend[F, P](delegate) {
 
   private def now(): Long = System.currentTimeMillis()
   private def elapsed(from: Option[Long]): Option[Duration] = from.map(f => Duration(now() - f, TimeUnit.MILLISECONDS))

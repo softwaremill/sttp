@@ -48,6 +48,7 @@ import sttp.client3.akkahttp._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util._
+
 // the metrics infrastructure
 trait MetricsServer {
   def reportDuration(name: String, duration: Long): Unit
@@ -60,7 +61,7 @@ class CloudMetricsServer extends MetricsServer {
 // the backend wrapper
 class MetricWrapper[P](delegate: SttpBackend[Future, P],
                        metrics: MetricsServer)
-    extends DelegateSttpBackend[Future, P](delegate) {
+  extends DelegateBackend[Future, P](delegate) {
 
   override def send[T, R >: P with Effect[Future]](request: Request[T, R]): Future[Response[T]] = {
     val start = System.currentTimeMillis()
@@ -73,8 +74,8 @@ class MetricWrapper[P](delegate: SttpBackend[Future, P],
 
     delegate.send(request).andThen {
       case Success(response) if response.is200 => report("ok")
-      case Success(response)                   => report("notok")
-      case Failure(t)                          => report("exception")
+      case Success(response) => report("notok")
+      case Failure(t) => report("exception")
     }
   }
 }
@@ -108,17 +109,17 @@ import sttp.capabilities.Effect
 import sttp.client3._
 
 class RetryingBackend[F[_], P](
-    delegate: SttpBackend[F, P],
-    shouldRetry: RetryWhen,
-    maxRetries: Int)
-    extends DelegateSttpBackend[F, P](delegate) {
+                                delegate: SttpBackend[F, P],
+                                shouldRetry: RetryWhen,
+                                maxRetries: Int)
+  extends DelegateBackend[F, P](delegate) {
 
   override def send[T, R >: P with Effect[F]](request: Request[T, R]): F[Response[T]] = {
     sendWithRetryCounter(request, 0)
   }
 
   private def sendWithRetryCounter[T, R >: P with Effect[F]](
-    request: Request[T, R], retries: Int): F[Response[T]] = {
+                                                              request: Request[T, R], retries: Int): F[Response[T]] = {
 
     val r = responseMonad.handleError(delegate.send(request)) {
       case t if shouldRetry(request, Left(t)) && retries < maxRetries =>
@@ -147,13 +148,13 @@ Below is an example on how to implement a backend wrapper, which integrates with
 ```scala
 import io.github.resilience4j.circuitbreaker.{CallNotPermittedException, CircuitBreaker}
 import sttp.capabilities.Effect
-import sttp.client3.{Request, Response, SttpBackend, DelegateSttpBackend}
+import sttp.client3.{Request, Response, SttpBackend, DelegateBackend}
 import sttp.monad.MonadError
 import java.util.concurrent.TimeUnit
 
 class CircuitSttpBackend[F[_], P](
-    circuitBreaker: CircuitBreaker,
-    delegate: SttpBackend[F, P]) extends DelegateSttpBackend[F, P](delegate) {
+                                   circuitBreaker: CircuitBreaker,
+                                   delegate: SttpBackend[F, P]) extends DelegateBackend[F, P](delegate) {
 
   override def send[T, R >: P with Effect[F]](request: Request[T, R]): F[Response[T]] = {
     CircuitSttpBackend.decorateF(circuitBreaker, delegate.send(request))
@@ -163,13 +164,13 @@ class CircuitSttpBackend[F[_], P](
 object CircuitSttpBackend {
 
   def decorateF[F[_], T](
-      circuitBreaker: CircuitBreaker,
-      service: => F[T]
-  )(implicit monadError: MonadError[F]): F[T] = {
+                          circuitBreaker: CircuitBreaker,
+                          service: => F[T]
+                        )(implicit monadError: MonadError[F]): F[T] = {
     monadError.suspend {
       if (!circuitBreaker.tryAcquirePermission()) {
         monadError.error(CallNotPermittedException
-                              .createCallNotPermittedException(circuitBreaker))
+          .createCallNotPermittedException(circuitBreaker))
       } else {
         val start = System.nanoTime()
         try {
@@ -202,12 +203,12 @@ Below is an example on how to implement a backend wrapper, which integrates with
 import io.github.resilience4j.ratelimiter.RateLimiter
 import sttp.capabilities.Effect
 import sttp.monad.MonadError
-import sttp.client3.{Request, Response, SttpBackend, DelegateSttpBackend}
+import sttp.client3.{Request, Response, SttpBackend, DelegateBackend}
 
 class RateLimitingSttpBackend[F[_], P](
-    rateLimiter: RateLimiter,
-    delegate: SttpBackend[F, P]
-    )(implicit monadError: MonadError[F]) extends DelegateSttpBackend[F, P](delegate) {
+                                        rateLimiter: RateLimiter,
+                                        delegate: SttpBackend[F, P]
+                                      )(implicit monadError: MonadError[F]) extends DelegateBackend[F, P](delegate) {
 
   override def send[T, R >: P with Effect[F]](request: Request[T, R]): F[Response[T]] = {
     RateLimitingSttpBackend.decorateF(rateLimiter, delegate.send(request))
@@ -217,10 +218,10 @@ class RateLimitingSttpBackend[F[_], P](
 object RateLimitingSttpBackend {
 
   def decorateF[F[_], T](
-      rateLimiter: RateLimiter,
-      service: => F[T]
-  )(implicit monadError: MonadError[F]): F[T] = {
-    monadError.suspend { 
+                          rateLimiter: RateLimiter,
+                          service: => F[T]
+                        )(implicit monadError: MonadError[F]): F[T] = {
+    monadError.suspend {
       try {
         RateLimiter.waitForPermission(rateLimiter)
         service

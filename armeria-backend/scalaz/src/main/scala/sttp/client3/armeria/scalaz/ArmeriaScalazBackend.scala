@@ -9,7 +9,7 @@ import sttp.client3.armeria.ArmeriaWebClient.newClient
 import sttp.client3.armeria.{AbstractArmeriaBackend, BodyFromStreamMessage}
 import sttp.client3.impl.scalaz.TaskMonadAsyncError
 import sttp.client3.internal.NoStreams
-import sttp.client3.{Backend, FollowRedirectsBackend, SttpBackendOptions}
+import sttp.client3.{Backend, FollowRedirectsBackend, BackendOptions}
 import sttp.monad.MonadAsyncError
 
 private final class ArmeriaScalazBackend(client: WebClient, closeFactory: Boolean)
@@ -38,7 +38,7 @@ object ArmeriaScalazBackend {
     * client will manage its own connection pool. If you'd like to reuse the default Armeria
     * [[https://armeria.dev/docs/client-factory ClientFactory]] use `.usingDefaultClient`.
     */
-  def apply(options: SttpBackendOptions = SttpBackendOptions.Default): Backend[Task] =
+  def apply(options: BackendOptions = BackendOptions.Default): Backend[Task] =
     apply(newClient(options), closeFactory = true)
 
   def usingClient(client: WebClient): Backend[Task] = apply(client, closeFactory = false)

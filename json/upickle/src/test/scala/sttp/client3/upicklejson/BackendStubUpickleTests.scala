@@ -13,7 +13,7 @@ object Person {
   implicit val personRW: ReadWriter[Person] = macroRW[Person]
 }
 
-class SttpBackendStubUpickleTests extends AnyFlatSpec with Matchers with ScalaFutures {
+class BackendStubUpickleTests extends AnyFlatSpec with Matchers with ScalaFutures {
 
   it should "deserialize to json using a string stub" in {
     val backend = SyncBackendStub.whenAnyRequest.thenRespond("""{"name": "John"}""")

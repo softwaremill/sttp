@@ -9,13 +9,10 @@ import scala.util.Try
 object TryBackend {
   def apply(backend: SyncBackend): Backend[Try] =
     MappedEffectBackend(backend, idToTry, tryToId, TryMonad)
-
   def apply(backend: WebSocketBackend[Identity]): WebSocketBackend[Try] =
     MappedEffectBackend(backend, idToTry, tryToId, TryMonad)
-
   def apply[S](backend: StreamBackend[Identity, S]): StreamBackend[Try, S] =
     MappedEffectBackend(backend, idToTry, tryToId, TryMonad)
-
   def apply[S](backend: WebSocketStreamBackend[Identity, S]): WebSocketStreamBackend[Try, S] =
     MappedEffectBackend(backend, idToTry, tryToId, TryMonad)
 

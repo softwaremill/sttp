@@ -12,7 +12,7 @@ import sttp.capabilities.fs2.Fs2Streams
 import sttp.client3.armeria.ArmeriaWebClient.newClient
 import sttp.client3.armeria.{AbstractArmeriaBackend, BodyFromStreamMessage}
 import sttp.client3.impl.cats.CatsMonadAsyncError
-import sttp.client3.{FollowRedirectsBackend, StreamBackend, SttpBackendOptions}
+import sttp.client3.{FollowRedirectsBackend, StreamBackend, BackendOptions}
 import sttp.monad.MonadAsyncError
 
 private final class ArmeriaFs2Backend[F[_]: Async](client: WebClient, closeFactory: Boolean, dispatcher: Dispatcher[F])
@@ -50,12 +50,12 @@ object ArmeriaFs2Backend {
     */
   def apply[F[_]: Async](
       dispatcher: Dispatcher[F],
-      options: SttpBackendOptions = SttpBackendOptions.Default
+      options: BackendOptions = BackendOptions.Default
   ): StreamBackend[F, Fs2Streams[F]] =
     apply(newClient(options), closeFactory = true, dispatcher)
 
   def resource[F[_]: Async](
-      options: SttpBackendOptions = SttpBackendOptions.Default
+      options: BackendOptions = BackendOptions.Default
   ): Resource[F, StreamBackend[F, Fs2Streams[F]]] =
     Dispatcher
       .parallel[F]

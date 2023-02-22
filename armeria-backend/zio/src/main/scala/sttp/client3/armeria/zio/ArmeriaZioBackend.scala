@@ -10,7 +10,7 @@ import sttp.capabilities.zio.ZioStreams
 import sttp.client3.armeria.ArmeriaWebClient.newClient
 import sttp.client3.armeria.{AbstractArmeriaBackend, BodyFromStreamMessage}
 import sttp.client3.impl.zio.RIOMonadAsyncError
-import sttp.client3.{FollowRedirectsBackend, StreamBackend, SttpBackendOptions}
+import sttp.client3.{FollowRedirectsBackend, StreamBackend, BackendOptions}
 import sttp.monad.MonadAsyncError
 import zio.stream.Stream
 
@@ -44,13 +44,13 @@ object ArmeriaZioBackend {
     * client will manage its own connection pool. If you'd like to reuse the default Armeria
     * [[https://armeria.dev/docs/client-factory ClientFactory]] use `.usingDefaultClient`.
     */
-  def apply(options: SttpBackendOptions = SttpBackendOptions.Default): Task[StreamBackend[Task, ZioStreams]] =
+  def apply(options: BackendOptions = BackendOptions.Default): Task[StreamBackend[Task, ZioStreams]] =
     ZIO
       .runtime[Any]
       .map(runtime => apply(runtime, newClient(options), closeFactory = true))
 
   def scoped(
-      options: SttpBackendOptions = SttpBackendOptions.Default
+      options: BackendOptions = BackendOptions.Default
   ): ZIO[Scope, Throwable, StreamBackend[Task, ZioStreams]] =
     ZIO.acquireRelease(apply(options))(_.close().ignore)
 
@@ -62,7 +62,7 @@ object ArmeriaZioBackend {
     )(_.close().ignore)
 
   def layer(
-      options: SttpBackendOptions = SttpBackendOptions.Default
+      options: BackendOptions = BackendOptions.Default
   ): Layer[Throwable, StreamBackend[Task, ZioStreams]] =
     ZLayer.scoped(scoped(options))
 

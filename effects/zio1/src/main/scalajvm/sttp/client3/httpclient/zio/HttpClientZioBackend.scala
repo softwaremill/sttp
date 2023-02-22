@@ -13,7 +13,7 @@ import sttp.client3.{
   FollowRedirectsBackend,
   HttpClientAsyncBackend,
   HttpClientBackend,
-  SttpBackendOptions,
+  BackendOptions,
   WebSocketStreamBackend
 }
 import sttp.monad.MonadError
@@ -113,9 +113,9 @@ object HttpClientZioBackend {
     )
 
   def apply(
-      options: SttpBackendOptions = SttpBackendOptions.Default,
-      customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
+             options: BackendOptions = BackendOptions.Default,
+             customizeRequest: HttpRequest => HttpRequest = identity,
+             customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
   ): Task[WebSocketStreamBackend[Task, ZioStreams]] = {
     UIO.executor.flatMap(executor =>
       Task.effect(
@@ -130,18 +130,18 @@ object HttpClientZioBackend {
   }
 
   def managed(
-      options: SttpBackendOptions = SttpBackendOptions.Default,
-      customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
+               options: BackendOptions = BackendOptions.Default,
+               customizeRequest: HttpRequest => HttpRequest = identity,
+               customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
   ): ZManaged[Any, Throwable, WebSocketStreamBackend[Task, ZioStreams]] =
     ZManaged.make(apply(options, customizeRequest, customEncodingHandler))(
       _.close().ignore
     )
 
   def layer(
-      options: SttpBackendOptions = SttpBackendOptions.Default,
-      customizeRequest: HttpRequest => HttpRequest = identity,
-      customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
+             options: BackendOptions = BackendOptions.Default,
+             customizeRequest: HttpRequest => HttpRequest = identity,
+             customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
   ): ZLayer[Any, Throwable, SttpClient] = {
     ZLayer.fromManaged(
       (for {

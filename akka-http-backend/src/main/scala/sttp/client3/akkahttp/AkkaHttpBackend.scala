@@ -27,7 +27,7 @@ class AkkaHttpBackend private (
     actorSystem: ActorSystem,
     ec: ExecutionContext,
     terminateActorSystemOnClose: Boolean,
-    opts: SttpBackendOptions,
+    opts: BackendOptions,
     customConnectionPoolSettings: Option[ConnectionPoolSettings],
     http: AkkaHttpClient,
     customizeRequest: HttpRequest => HttpRequest,
@@ -178,7 +178,7 @@ object AkkaHttpBackend {
       actorSystem: ActorSystem,
       ec: ExecutionContext,
       terminateActorSystemOnClose: Boolean,
-      options: SttpBackendOptions,
+      options: BackendOptions,
       customConnectionPoolSettings: Option[ConnectionPoolSettings],
       http: AkkaHttpClient,
       customizeRequest: HttpRequest => HttpRequest,
@@ -206,7 +206,7 @@ object AkkaHttpBackend {
     *   execution context backing the given `actorSystem`.
     */
   def apply(
-      options: SttpBackendOptions = SttpBackendOptions.Default,
+      options: BackendOptions = BackendOptions.Default,
       customHttpsContext: Option[HttpsConnectionContext] = None,
       customConnectionPoolSettings: Option[ConnectionPoolSettings] = None,
       customLog: Option[LoggingAdapter] = None,
@@ -241,7 +241,7 @@ object AkkaHttpBackend {
     */
   def usingActorSystem(
       actorSystem: ActorSystem,
-      options: SttpBackendOptions = SttpBackendOptions.Default,
+      options: BackendOptions = BackendOptions.Default,
       customHttpsContext: Option[HttpsConnectionContext] = None,
       customConnectionPoolSettings: Option[ConnectionPoolSettings] = None,
       customLog: Option[LoggingAdapter] = None,
@@ -272,7 +272,7 @@ object AkkaHttpBackend {
     */
   def usingClient(
       actorSystem: ActorSystem,
-      options: SttpBackendOptions = SttpBackendOptions.Default,
+      options: BackendOptions = BackendOptions.Default,
       customConnectionPoolSettings: Option[ConnectionPoolSettings] = None,
       http: AkkaHttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,

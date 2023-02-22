@@ -7,7 +7,7 @@ import io.circe.generic.auto._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-class SttpBackendStubCirceTests extends AnyFlatSpec with Matchers with ScalaFutures {
+class BackendStubCirceTests extends AnyFlatSpec with Matchers with ScalaFutures {
   it should "deserialize to json using a string stub" in {
     val backend = SyncBackendStub.whenAnyRequest.thenRespond("""{"name": "John"}""")
     val r = basicRequest.get(uri"http://example.org").response(asJson[Person]).send(backend)

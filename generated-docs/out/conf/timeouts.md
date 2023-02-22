@@ -13,7 +13,7 @@ import scala.concurrent.duration._
 
 // all backends provide a constructor that allows to specify backend options
 val backend = HttpURLConnectionBackend(
-  options = SttpBackendOptions.connectionTimeout(1.minute))
+  options = BackendOptions.connectionTimeout(1.minute))
 
 basicRequest
   .get(uri"...")

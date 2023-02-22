@@ -14,7 +14,7 @@ import okhttp3.{
   Response => OkHttpResponse
 }
 import sttp.capabilities.{Effect, Streams}
-import sttp.client3.SttpBackendOptions.Proxy
+import sttp.client3.BackendOptions.Proxy
 import sttp.client3.SttpClientException.ReadException
 import sttp.client3.internal.ws.SimpleQueue
 import sttp.client3.okhttp.OkHttpBackend.EncodingHandler
@@ -134,14 +134,14 @@ object OkHttpBackend {
     def apply(f: (InputStream, String) => InputStream): EncodingHandler = { case (i, s) => f(i, s) }
   }
 
-  private class ProxyAuthenticator(auth: SttpBackendOptions.ProxyAuth) extends Authenticator {
+  private class ProxyAuthenticator(auth: BackendOptions.ProxyAuth) extends Authenticator {
     override def authenticate(route: Route, response: OkHttpResponse): OkHttpRequest = {
       val credential = Credentials.basic(auth.username, auth.password)
       response.request.newBuilder.header("Proxy-Authorization", credential).build
     }
   }
 
-  private[okhttp] def defaultClient(readTimeout: Long, options: SttpBackendOptions): OkHttpClient = {
+  private[okhttp] def defaultClient(readTimeout: Long, options: BackendOptions): OkHttpClient = {
     var clientBuilder = new OkHttpClient.Builder()
       .followRedirects(false)
       .followSslRedirects(false)

@@ -2,7 +2,7 @@ package sttp.client3
 
 import sttp.capabilities.{Effect, Streams}
 import sttp.client3.HttpClientBackend.EncodingHandler
-import sttp.client3.SttpBackendOptions.Proxy
+import sttp.client3.BackendOptions.Proxy
 import sttp.client3.internal.httpclient.{BodyFromHttpClient, BodyToHttpClient}
 import sttp.model.HttpVersion.{HTTP_1_1, HTTP_2}
 import sttp.model._
@@ -126,17 +126,17 @@ object HttpClientBackend {
 
   type EncodingHandler[B] = PartialFunction[(B, String), B]
   // TODO not sure if it works
-  private class ProxyAuthenticator(auth: SttpBackendOptions.ProxyAuth) extends Authenticator {
+  private class ProxyAuthenticator(auth: BackendOptions.ProxyAuth) extends Authenticator {
     override def getPasswordAuthentication: PasswordAuthentication = {
       new PasswordAuthentication(auth.username, auth.password.toCharArray)
     }
   }
 
   // Left here for bincompat
-  private[client3] def defaultClient(options: SttpBackendOptions): HttpClient =
+  private[client3] def defaultClient(options: BackendOptions): HttpClient =
     defaultClient(options, None)
 
-  private[client3] def defaultClient(options: SttpBackendOptions, executor: Option[Executor]): HttpClient = {
+  private[client3] def defaultClient(options: BackendOptions, executor: Option[Executor]): HttpClient = {
     var clientBuilder = HttpClient
       .newBuilder()
       .followRedirects(HttpClient.Redirect.NEVER)
