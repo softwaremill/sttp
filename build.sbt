@@ -308,7 +308,7 @@ lazy val core = (projectMatrix in file("core"))
   .jvmPlatform(
     scalaVersions = scala2 ++ scala3,
     settings = {
-      commonJvmSettings ++ versioningSchemeSettings ++ enableMimaSettings ++ List(
+      commonJvmSettings ++ versioningSchemeSettings ++ /*enableMimaSettings ++*/ List(
         Test / publishArtifact := true, // allow implementations outside of this repo
         scalacOptions ++= Seq("-J--add-modules", "-Jjava.net.http"),
         scalacOptions ++= {
