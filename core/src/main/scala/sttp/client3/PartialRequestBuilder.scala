@@ -28,7 +28,7 @@ import scala.collection.immutable.Seq
   */
 trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
     extends HasHeaders
-    with PartialRequestExtension[PR] {
+    with PartialRequestExtensions[PR] {
   self: PR =>
 
   def showBasic: String
