@@ -36,9 +36,9 @@ final case class WebSocketRequest[F[_], T](
 
   override def method(method: Method, uri: Uri): WebSocketRequest[F, T] = copy(method = method, uri = uri)
   override def withHeaders(headers: Seq[Header]): WebSocketRequest[F, T] = copy(headers = headers)
-  override protected def withOptions(options: RequestOptions): WebSocketRequest[F, T] = copy(options = options)
+  override def withOptions(options: RequestOptions): WebSocketRequest[F, T] = copy(options = options)
+  override def withTags(tags: Map[String, Any]): WebSocketRequest[F, T] = copy(tags = tags)
   override protected def copyWithBody(body: BasicBody): WebSocketRequest[F, T] = copy(body = body)
-  override protected def withTags(tags: Map[String, Any]): WebSocketRequest[F, T] = copy(tags = tags)
 
   def mapResponse[T2](f: T => T2): WebSocketRequest[F, T2] =
     copy(response = response.map(f))

@@ -19,12 +19,12 @@ import java.nio.ByteBuffer
 import scala.concurrent.duration.Duration
 import scala.collection.immutable.Seq
 
-/** The builder methods of a partial request of type PR, to build a request of type R.
+/** The builder methods of requests or partial requests of type `PR`.
   *
   * @tparam PR
-  *   The type of the partial request. The method and uri may not be specified yet.
+  *   The type of the request or partial request. The method and uri may not be specified yet.
   * @tparam R
-  *   The type of request after the method and uri are specified.
+  *   The type of request when the method and uri are specified.
   */
 trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
     extends HasHeaders
@@ -39,11 +39,19 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
   def options: RequestOptions
   def tags: Map[String, Any]
 
+  /** Set the method & uri to the given ones. */
   def method(method: Method, uri: Uri): R
+
+  /** Replace all headers with the given ones. */
   def withHeaders(headers: Seq[Header]): PR
+
+  /** Replace all options with the given ones. */
+  def withOptions(options: RequestOptions): PR
+
+  /** Replace all tags with the given ones. */
+  def withTags(tags: Map[String, Any]): PR
+
   protected def copyWithBody(body: BasicBody): PR
-  protected def withOptions(options: RequestOptions): PR
-  protected def withTags(tags: Map[String, Any]): PR
 
   def get(uri: Uri): R = method(Method.GET, uri)
   def head(uri: Uri): R = method(Method.HEAD, uri)
@@ -112,9 +120,7 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
 
   def cookie(nv: (String, String)): PR = cookies(nv)
   def cookie(n: String, v: String): PR = cookies((n, v))
-  def cookies(r: Response[_]): PR = cookies(
-    r.cookies.collect { case Right(c) => c }.map(c => (c.name, c.value)): _*
-  )
+  def cookies(r: Response[_]): PR = cookies(r.cookies.collect { case Right(c) => c }.map(c => (c.name, c.value)): _*)
   def cookies(cs: Iterable[CookieWithMeta]): PR = cookies(cs.map(c => (c.name, c.value)).toSeq: _*)
   def cookies(nvs: (String, String)*): PR = {
     header(
@@ -147,33 +153,26 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
     * If content length is not yet specified, will be set to the number of bytes in the string using the given encoding.
     */
   def body(b: String, encoding: String): PR =
-    withBody(StringBody(b, encoding))
-      .setContentLengthIfMissing(b.getBytes(encoding).length.toLong)
+    withBody(StringBody(b, encoding)).setContentLengthIfMissing(b.getBytes(encoding).length.toLong)
 
   /** If content type is not yet specified, will be set to `application/octet-stream`.
     *
     * If content length is not yet specified, will be set to the length of the given array.
     */
-  def body(b: Array[Byte]): PR =
-    withBody(ByteArrayBody(b))
-      .setContentLengthIfMissing(b.length.toLong)
+  def body(b: Array[Byte]): PR = withBody(ByteArrayBody(b)).setContentLengthIfMissing(b.length.toLong)
+
+  /** If content type is not yet specified, will be set to `application/octet-stream`. */
+  def body(b: ByteBuffer): PR = withBody(ByteBufferBody(b))
 
   /** If content type is not yet specified, will be set to `application/octet-stream`.
     */
-  def body(b: ByteBuffer): PR =
-    withBody(ByteBufferBody(b))
-
-  /** If content type is not yet specified, will be set to `application/octet-stream`.
-    */
-  def body(b: InputStream): PR =
-    withBody(InputStreamBody(b))
+  def body(b: InputStream): PR = withBody(InputStreamBody(b))
 
   /** If content type is not yet specified, will be set to `application/octet-stream`.
     *
     * If content length is not yet specified, will be set to the length of the given file.
     */
-  private[client3] def body(f: SttpFile): PR =
-    withBody(FileBody(f)).setContentLengthIfMissing(f.size)
+  private[client3] def body(f: SttpFile): PR = withBody(FileBody(f)).setContentLengthIfMissing(f.size)
 
   /** Encodes the given parameters as form data using `utf-8`. If content type is not yet specified, will be set to
     * `application/x-www-form-urlencoded`.
@@ -181,8 +180,7 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
     * If content length is not yet specified, will be set to the length of the number of bytes in the url-encoded
     * parameter string.
     */
-  def body(fs: Map[String, String]): PR =
-    formDataBody(fs.toList, Utf8)
+  def body(fs: Map[String, String]): PR = formDataBody(fs.toList, Utf8)
 
   /** Encodes the given parameters as form data. If content type is not yet specified, will be set to
     * `application/x-www-form-urlencoded`.
@@ -190,8 +188,7 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
     * If content length is not yet specified, will be set to the length of the number of bytes in the url-encoded
     * parameter string.
     */
-  def body(fs: Map[String, String], encoding: String): PR =
-    formDataBody(fs.toList, encoding)
+  def body(fs: Map[String, String], encoding: String): PR = formDataBody(fs.toList, encoding)
 
   /** Encodes the given parameters as form data using `utf-8`. If content type is not yet specified, will be set to
     * `application/x-www-form-urlencoded`.
@@ -199,8 +196,7 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
     * If content length is not yet specified, will be set to the length of the number of bytes in the url-encoded
     * parameter string.
     */
-  def body(fs: (String, String)*): PR =
-    formDataBody(fs.toList, Utf8)
+  def body(fs: (String, String)*): PR = formDataBody(fs.toList, Utf8)
 
   /** Encodes the given parameters as form data. If content type is not yet specified, will be set to
     * `application/x-www-form-urlencoded`.
@@ -208,14 +204,13 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
     * If content length is not yet specified, will be set to the length of the number of bytes in the url-encoded
     * parameter string.
     */
-  def body(fs: Seq[(String, String)], encoding: String): PR =
-    formDataBody(fs, encoding)
+  def body(fs: Seq[(String, String)], encoding: String): PR = formDataBody(fs, encoding)
 
-  def multipartBody(ps: Seq[Part[BasicBodyPart]]): PR =
-    copyWithBody(BasicMultipartBody(ps))
+  def multipartBody(ps: Seq[Part[BasicBodyPart]]): PR = copyWithBody(BasicMultipartBody(ps))
 
-  def multipartBody(p1: Part[BasicBodyPart], ps: Part[BasicBodyPart]*): PR =
-    copyWithBody(BasicMultipartBody(p1 :: ps.toList))
+  def multipartBody(p1: Part[BasicBodyPart], ps: Part[BasicBodyPart]*): PR = copyWithBody(
+    BasicMultipartBody(p1 :: ps.toList)
+  )
 
   private def formDataBody(fs: Seq[(String, String)], encoding: String): PR = {
     val b = BasicBody.paramsToStringBody(fs, encoding)
@@ -224,7 +219,7 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
       .setContentLengthIfMissing(b.s.getBytes(encoding).length.toLong)
   }
 
-  private[client3] def withBody(body: BasicBody): PR = {
+  def withBody(body: BasicBody): PR = {
     val defaultCt = body match {
       case StringBody(_, encoding, ct) =>
         ct.copy(charset = Some(encoding))
@@ -238,11 +233,9 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
   /** When the request is sent, if reading the response times out (there's no activity for the given period of time), a
     * failed effect will be returned, or an exception will be thrown
     */
-  def readTimeout(t: Duration): PR =
-    withOptions(options.copy(readTimeout = t))
+  def readTimeout(t: Duration): PR = withOptions(options.copy(readTimeout = t))
 
-  def followRedirects(fr: Boolean): PR =
-    withOptions(options.copy(followRedirects = fr))
+  def followRedirects(fr: Boolean): PR = withOptions(options.copy(followRedirects = fr))
 
   def maxRedirects(n: Int): PR =
     if (n <= 0) withOptions(options.copy(followRedirects = false))
@@ -256,8 +249,7 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
       *
       * See https://developer.mozilla.org/en-US/docs/Web/HTTP/Redirections for details.
       */
-  def redirectToGet(r: Boolean): PR =
-    withOptions(options.copy(redirectToGet = r))
+  def redirectToGet(r: Boolean): PR = withOptions(options.copy(redirectToGet = r))
 
   def tag(k: String, v: Any): PR = withTags(tags + (k -> v))
 

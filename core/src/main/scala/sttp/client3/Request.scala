@@ -32,12 +32,11 @@ case class Request[T](
 
   override def showBasic: String = s"$method $uri"
 
-  override def method(method: Method, uri: Uri): Request[T] =
-    copy(uri = uri, method = method)
+  override def method(method: Method, uri: Uri): Request[T] = copy(uri = uri, method = method)
   override def withHeaders(headers: Seq[Header]): Request[T] = copy(headers = headers)
+  override def withOptions(options: RequestOptions): Request[T] = copy(options = options)
+  override def withTags(tags: Map[String, Any]): Request[T] = copy(tags = tags)
   override protected def copyWithBody(body: BasicBody): Request[T] = copy(body = body)
-  override protected def withOptions(options: RequestOptions): Request[T] = copy(options = options)
-  override protected def withTags(tags: Map[String, Any]): Request[T] = copy(tags = tags)
 
   def multipartStreamBody[S](ps: Seq[Part[BodyPart[S]]]): StreamRequest[T, S] =
     StreamRequest(method, uri, MultipartStreamBody(ps), headers, new StreamResponseAs(response.internal), options, tags)

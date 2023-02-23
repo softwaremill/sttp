@@ -35,9 +35,9 @@ final case class StreamRequest[T, R](
 
   override def method(method: Method, uri: Uri): StreamRequest[T, R] = copy(method = method, uri = uri)
   override def withHeaders(headers: Seq[Header]): StreamRequest[T, R] = copy(headers = headers)
-  override protected def withOptions(options: RequestOptions): StreamRequest[T, R] = copy(options = options)
+  override def withOptions(options: RequestOptions): StreamRequest[T, R] = copy(options = options)
+  override def withTags(tags: Map[String, Any]): StreamRequest[T, R] = copy(tags = tags)
   override protected def copyWithBody(body: BasicBody): StreamRequest[T, R] = copy(body = body)
-  override protected def withTags(tags: Map[String, Any]): StreamRequest[T, R] = copy(tags = tags)
 
   def response[T2](ra: ResponseAs[T2]): StreamRequest[T2, R] =
     copy(response = new StreamResponseAs(ra.internal))
