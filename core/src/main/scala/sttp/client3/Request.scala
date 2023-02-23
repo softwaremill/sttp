@@ -63,12 +63,19 @@ case class Request[T](
 
   def mapResponse[T2](f: T => T2): Request[T2] = response(response.map(f))
 
+  /** Specifies that this is a WebSocket request. A [[WebSocketBackend]] will be required to send this request. */
   def response[F[_], T2](ra: WebSocketResponseAs[F, T2]): WebSocketRequest[F, T2] =
     WebSocketRequest(method, uri, body, headers, ra, options, tags)
 
+  /** Specifies that the response body should be processed using a non-blocking, asynchronous stream, as witnessed by
+    * the `S` capability. A [[StreamBackend]] will be required to send this request.
+    */
   def response[T2, S](ra: StreamResponseAs[T2, S]): StreamRequest[T2, S] =
     StreamRequest(method, uri, body, headers, ra, options, tags)
 
+  /** Specifies that this is a WebSocket request, and the WebSocket will be processed using a non-blocking, asynchronous
+    * stream, as witnessed by the `S` capability. A [[WebSocketStreamBackend]] will be required to send this request.
+    */
   def response[T2, S](ra: WebSocketStreamResponseAs[T2, S]): WebSocketStreamRequest[T2, S] =
     WebSocketStreamRequest(method, uri, body, headers, ra, options, tags)
 
@@ -150,20 +157,18 @@ final case class StreamRequest[T, R](
   override def withTags(tags: Map[String, Any]): StreamRequest[T, R] = copy(tags = tags)
   override protected def copyWithBody(body: BasicBody): StreamRequest[T, R] = copy(body = body)
 
-  def response[T2](ra: ResponseAs[T2]): StreamRequest[T2, R] =
-    copy(response = new StreamResponseAs(ra.internal))
-
   /** Specifies the target type to which the response body should be read. Note that this replaces any previous
     * specifications, which also includes any previous `mapResponse` invocations.
     */
-  def response[T2, R2 <: R](ra: StreamResponseAs[T2, R2]): StreamRequest[T2, R2] =
-    copy(response = ra)
+  def response[T2](ra: ResponseAs[T2]): StreamRequest[T2, R] = copy(response = new StreamResponseAs(ra.internal))
 
-  def response[T2, R2 <: R](ra: WebSocketStreamResponseAs[T2, R2]): WebSocketStreamRequest[T2, R2] =
-    WebSocketStreamRequest(method, uri, body, headers, ra, options, tags)
+  /** Specifies that the response body should be processed using a non-blocking, asynchronous stream, as witnessed by
+    * the `R2` capability. This capability must be a subset of any capabilities required by previously (`R`). A
+    * [[StreamBackend]] will be required to send this request.
+    */
+  def response[T2, R2 <: R](ra: StreamResponseAs[T2, R2]): StreamRequest[T2, R2] = copy(response = ra)
 
-  def mapResponse[T2](f: T => T2): StreamRequest[T2, R] =
-    response(response.map(f))
+  def mapResponse[T2](f: T => T2): StreamRequest[T2, R] = copy(response = response.map(f))
 
   /** Sends the request, using the given backend.
     *
@@ -222,8 +227,7 @@ final case class WebSocketRequest[F[_], T](
   override def withTags(tags: Map[String, Any]): WebSocketRequest[F, T] = copy(tags = tags)
   override protected def copyWithBody(body: BasicBody): WebSocketRequest[F, T] = copy(body = body)
 
-  def mapResponse[T2](f: T => T2): WebSocketRequest[F, T2] =
-    copy(response = response.map(f))
+  def mapResponse[T2](f: T => T2): WebSocketRequest[F, T2] = copy(response = response.map(f))
 
   /** Sends the WebSocket request, using the given backend.
     *
@@ -258,7 +262,7 @@ final case class WebSocketRequest[F[_], T](
   *   by the response description, this might be `Unit`. Otherwise, this can be an `S` stream of frames or mapped
   *   WebSocket messages.
   * @tparam S
-  *   The stream type required to send this request, a subtype of [[Streams]].
+  *   The stream capability required to send this request, a subtype of [[Streams]].
   */
 final case class WebSocketStreamRequest[T, S](
     method: Method,
@@ -283,7 +287,7 @@ final case class WebSocketStreamRequest[T, S](
 
   /** Sends the WebSocket request, using the given backend.
     *
-    * The required streams type `S` must match the streams supported by the backend.
+    * The required streams capability `S` must match the streams supported by the backend.
     *
     * @return
     *   An `F`-effect, containing a [[Response]], with the body handled as specified by this request (see
