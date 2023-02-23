@@ -86,7 +86,7 @@ class JsoniterJsonTests extends AnyFlatSpec with Matchers with EitherValues {
       case StringBody(body, "utf-8", MediaType.ApplicationJson) =>
         body
       case wrongBody =>
-        fail(s"AbstractRequest body does not serialize to correct StringBody: $wrongBody")
+        fail(s"Request body does not serialize to correct StringBody: $wrongBody")
     }
 
   def runJsonResponseAs[A](responseAs: ResponseAs[A]): String => A =

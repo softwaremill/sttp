@@ -62,7 +62,7 @@ abstract class MetricWrapper[P](delegate: GenericBackend[Future, P],
                        metrics: MetricsServer)
     extends DelegateBackend(delegate) {
 
-  override def send[T](request: AbstractRequest[T, P with Effect[Future]]): Future[Response[T]] = {
+  override def send[T](request: GenericRequest[T, P with Effect[Future]]): Future[Response[T]] = {
     val start = System.currentTimeMillis()
 
     def report(metricSuffix: String): Unit = {
@@ -118,12 +118,12 @@ class RetryingBackend[F[_], P](
     maxRetries: Int)
     extends DelegateBackend(delegate) {
 
-  override def send[T](request: AbstractRequest[T, P with Effect[F]]): F[Response[T]] = {
+  override def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] = {
     sendWithRetryCounter(request, 0)
   }
 
   private def sendWithRetryCounter[T](
-    request: AbstractRequest[T, P with Effect[F]], retries: Int): F[Response[T]] = {
+    request: GenericRequest[T, P with Effect[F]], retries: Int): F[Response[T]] = {
 
     val r = responseMonad.handleError(delegate.send(request)) {
       case t if shouldRetry(request, Left(t)) && retries < maxRetries =>
@@ -157,7 +157,7 @@ Below is an example on how to implement a backend wrapper, which integrates with
 ```scala mdoc:compile-only
 import io.github.resilience4j.circuitbreaker.{CallNotPermittedException, CircuitBreaker}
 import sttp.capabilities.Effect
-import sttp.client3.{GenericBackend, AbstractRequest, Backend, Response, DelegateBackend}
+import sttp.client3.{GenericBackend, GenericRequest, Backend, Response, DelegateBackend}
 import sttp.monad.MonadError
 import java.util.concurrent.TimeUnit
 
@@ -165,7 +165,7 @@ class CircuitSttpBackend[F[_], P](
     circuitBreaker: CircuitBreaker,
     delegate: GenericBackend[F, P]) extends DelegateBackend(delegate) {
 
-  override def send[T](request: AbstractRequest[T, P with Effect[F]]): F[Response[T]] = {
+  override def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] = {
     CircuitSttpBackend.decorateF(circuitBreaker, delegate.send(request))
   }
 }
@@ -215,14 +215,14 @@ Below is an example on how to implement a backend wrapper, which integrates with
 import io.github.resilience4j.ratelimiter.RateLimiter
 import sttp.capabilities.Effect
 import sttp.monad.MonadError
-import sttp.client3.{GenericBackend, AbstractRequest, Response, StreamBackend, DelegateBackend}
+import sttp.client3.{GenericBackend, GenericRequest, Response, StreamBackend, DelegateBackend}
 
 class RateLimitingSttpBackend[F[_], P](
     rateLimiter: RateLimiter,
     delegate: GenericBackend[F, P]
     )(implicit monadError: MonadError[F]) extends DelegateBackend(delegate) {
 
-  override def send[T](request: AbstractRequest[T, P with Effect[F]]): F[Response[T]] = {
+  override def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] = {
     RateLimitingSttpBackend.decorateF(rateLimiter, delegate.send(request))
   }
 }

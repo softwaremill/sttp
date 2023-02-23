@@ -306,6 +306,6 @@ val testingBackend = RecordingBackend(
 val response1 = basicRequest.get(uri"http://example.org/a/b/c").send(testingBackend)
 // response1.body will be Right("Hello there")
 
-testingBackend.allInteractions: List[(AbstractRequest[_, _], Try[Response[_]])]
+testingBackend.allInteractions: List[(GenericRequest[_, _], Try[Response[_]])]
 // the list will contain one element and can be verified in a test 
 ```
