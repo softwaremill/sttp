@@ -33,7 +33,7 @@ abstract class HttpClientAsyncBackend[F[_], S, BH, B](
 ) extends HttpClientBackend[F, S, S with WebSockets, B](client, closeClient, customEncodingHandler)
     with WebSocketBackend[F] {
 
-  override def send[T](request: AbstractRequest[T, R]): F[Response[T]] =
+  override def send[T](request: GenericRequest[T, R]): F[Response[T]] =
     adjustExceptions(request) {
       if (request.isWebSocket) sendWebSocket(request) else sendRegular(request)
     }
@@ -44,7 +44,7 @@ abstract class HttpClientAsyncBackend[F[_], S, BH, B](
   protected def bodyHandlerBodyToBody(p: BH): B
   protected def emptyBody(): B
 
-  private def sendRegular[T](request: AbstractRequest[T, R]): F[Response[T]] = {
+  private def sendRegular[T](request: GenericRequest[T, R]): F[Response[T]] = {
     monad.flatMap(convertRequest(request)) { convertedRequest =>
       val jRequest = customizeRequest(convertedRequest)
 
@@ -75,7 +75,7 @@ abstract class HttpClientAsyncBackend[F[_], S, BH, B](
     }
   }
 
-  private def sendWebSocket[T](request: AbstractRequest[T, R]): F[Response[T]] = {
+  private def sendWebSocket[T](request: GenericRequest[T, R]): F[Response[T]] = {
     (for {
       queue <- createSimpleQueue[WebSocketEvent]
       sequencer <- createSequencer
@@ -91,9 +91,9 @@ abstract class HttpClientAsyncBackend[F[_], S, BH, B](
   }
 
   private def sendWebSocket[T](
-      request: AbstractRequest[T, R],
-      queue: SimpleQueue[F, WebSocketEvent],
-      sequencer: Sequencer[F]
+                                request: GenericRequest[T, R],
+                                queue: SimpleQueue[F, WebSocketEvent],
+                                sequencer: Sequencer[F]
   ): F[Response[T]] = {
     val isOpen: AtomicBoolean = new AtomicBoolean(false)
     monad.flatten(monad.async[F[Response[T]]] { cb =>
@@ -135,11 +135,11 @@ abstract class HttpClientAsyncBackend[F[_], S, BH, B](
     })
   }
 
-  private def filterIllegalWsHeaders[T](request: AbstractRequest[T, R]): AbstractRequest[T, R] = {
+  private def filterIllegalWsHeaders[T](request: GenericRequest[T, R]): GenericRequest[T, R] = {
     request.withHeaders(request.headers.filter(h => !wsIllegalHeaders.contains(h.name.toLowerCase)))
   }
 
-  private def adjustExceptions[T](request: AbstractRequest[_, _])(t: => F[T]): F[T] =
+  private def adjustExceptions[T](request: GenericRequest[_, _])(t: => F[T]): F[T] =
     SttpClientException.adjustExceptions(responseMonad)(t)(
       SttpClientException.defaultExceptionToSttpClientException(request, _)
     )

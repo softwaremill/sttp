@@ -21,12 +21,12 @@ object MapEffect {
     *   The requirements of this request, without the `Effect[F]` capability.
     */
   def apply[F[_], G[_], T, R0](
-      r: AbstractRequest[T, R0 with Effect[F]],
-      fk: FunctionK[F, G],
-      gk: FunctionK[G, F],
-      fm: MonadError[F],
-      gm: MonadError[G]
-  ): AbstractRequest[T, R0 with Effect[G]] = {
+                                r: GenericRequest[T, R0 with Effect[F]],
+                                fk: FunctionK[F, G],
+                                gk: FunctionK[G, F],
+                                fm: MonadError[F],
+                                gm: MonadError[G]
+  ): GenericRequest[T, R0 with Effect[G]] = {
     def internalResponse[R] = apply[F, G](r.response.internal, fk, gk, fm, gm)
       .asInstanceOf[InternalResponseAs[T, R with Effect[G]]]
 
@@ -41,7 +41,7 @@ object MapEffect {
         wr.copy[G, T](response = new WebSocketResponseAs[G, T](internalResponse[WebSockets]))
       case _ => r
     }
-    newRequest.asInstanceOf[AbstractRequest[T, R0 with Effect[G]]]
+    newRequest.asInstanceOf[GenericRequest[T, R0 with Effect[G]]]
   }
 
   // TODO: an even more dumbed-down version of the slightly more type-safe version below, which is needed due to a

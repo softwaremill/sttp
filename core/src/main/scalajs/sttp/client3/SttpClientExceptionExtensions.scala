@@ -7,7 +7,7 @@ import scala.annotation.tailrec
 
 trait SttpClientExceptionExtensions {
   @tailrec
-  final def defaultExceptionToSttpClientException(request: AbstractRequest[_, _], e: Exception): Option[Exception] =
+  final def defaultExceptionToSttpClientException(request: GenericRequest[_, _], e: Exception): Option[Exception] =
     e match {
       case e: java.net.MalformedURLException        => Some(new ConnectException(request, e))
       case e: java.net.URISyntaxException           => Some(new ConnectException(request, e))

@@ -45,14 +45,14 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
   val streams: Streams[S]
   type R = P with Effect[F]
 
-  override def send[T](r: AbstractRequest[T, R]): F[Response[T]] =
+  override def send[T](r: GenericRequest[T, R]): F[Response[T]] =
     adjustExceptions(r) {
       preparedRequest(r).flatMap { ahcRequest =>
         if (r.isWebSocket) sendWebSocket(r, ahcRequest) else sendRegular(r, ahcRequest)
       }
     }
 
-  private def sendRegular[T](r: AbstractRequest[T, R], ahcRequest: BoundRequestBuilder): F[Response[T]] = {
+  private def sendRegular[T](r: GenericRequest[T, R], ahcRequest: BoundRequestBuilder): F[Response[T]] = {
     monad.flatten(monad.async[F[Response[T]]] { cb =>
       def success(r: F[Response[T]]): Unit = cb(Right(r))
       def error(t: Throwable): Unit = cb(Left(t))
@@ -62,7 +62,7 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
     })
   }
 
-  private def sendWebSocket[T, R](r: AbstractRequest[T, R], ahcRequest: BoundRequestBuilder): F[Response[T]] =
+  private def sendWebSocket[T, R](r: GenericRequest[T, R], ahcRequest: BoundRequestBuilder): F[Response[T]] =
     createSimpleQueue[WebSocketEvent].flatMap { queue =>
       monad.flatten(monad.async[F[Response[T]]] { cb =>
         val initListener =
@@ -85,9 +85,9 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
   protected def createSimpleQueue[T]: F[SimpleQueue[F, T]]
 
   private def streamingAsyncHandler[T, R](
-      request: AbstractRequest[T, R],
-      success: F[Response[T]] => Unit,
-      error: Throwable => Unit
+                                           request: GenericRequest[T, R],
+                                           success: F[Response[T]] => Unit,
+                                           error: Throwable => Unit
   ): AsyncHandler[Unit] = {
     new StreamedAsyncHandler[Unit] {
       private val builder = new AsyncResponse.ResponseBuilder()
@@ -155,10 +155,10 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
   }
 
   private class WebSocketInitListener[T](
-      request: AbstractRequest[T, _],
-      queue: SimpleQueue[F, WebSocketEvent],
-      success: F[Response[T]] => Unit,
-      error: Throwable => Unit
+                                          request: GenericRequest[T, _],
+                                          queue: SimpleQueue[F, WebSocketEvent],
+                                          success: F[Response[T]] => Unit,
+                                          error: Throwable => Unit
   ) extends WebSocketListener {
     override def onOpen(ahcWebSocket: AHCWebSocket): Unit = {
       ahcWebSocket.removeWebSocketListener(this)
@@ -184,11 +184,11 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
     override def onError(t: Throwable): Unit = error(t)
   }
 
-  private def preparedRequest[R](r: AbstractRequest[_, R]): F[BoundRequestBuilder] = {
+  private def preparedRequest[R](r: GenericRequest[_, R]): F[BoundRequestBuilder] = {
     monad.fromTry(Try(asyncHttpClient.prepareRequest(requestToAsync(r)))).map(customizeRequest)
   }
 
-  private def requestToAsync[R](r: AbstractRequest[_, R]): AsyncRequest = {
+  private def requestToAsync[R](r: GenericRequest[_, R]): AsyncRequest = {
     val readTimeout = r.options.readTimeout
     val rb = new RequestBuilder(r.method.method)
       .setUrl(r.uri.toString)
@@ -199,7 +199,7 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
     rb.build()
   }
 
-  private def readResponseNoBody(request: AbstractRequest[_, _], response: AsyncResponse): Response[Unit] = {
+  private def readResponseNoBody(request: GenericRequest[_, _], response: AsyncResponse): Response[Unit] = {
     client3.Response(
       (),
       StatusCode.unsafeApply(response.getStatusCode),
@@ -220,7 +220,7 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
     if (closeClient) monad.eval(asyncHttpClient.close()) else monad.unit(())
   }
 
-  private def adjustExceptions[T](request: AbstractRequest[_, _])(t: => F[T]): F[T] =
+  private def adjustExceptions[T](request: GenericRequest[_, _])(t: => F[T]): F[T] =
     SttpClientException.adjustExceptions(responseMonad)(t)(
       SttpClientException.defaultExceptionToSttpClientException(request, _)
     )

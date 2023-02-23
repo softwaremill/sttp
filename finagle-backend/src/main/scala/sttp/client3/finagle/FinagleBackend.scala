@@ -28,7 +28,7 @@ import scala.io.Source
 
 class FinagleBackend(client: Option[Client] = None) extends Backend[TFuture] {
   type R = Any with Effect[TFuture]
-  override def send[T](request: AbstractRequest[T, R]): TFuture[Response[T]] =
+  override def send[T](request: GenericRequest[T, R]): TFuture[Response[T]] =
     adjustExceptions(request) {
       val service = getClient(client, request)
       val finagleRequest = requestBodyToFinagle(request)
@@ -71,7 +71,7 @@ class FinagleBackend(client: Option[Client] = None) extends Backend[TFuture] {
       case _              => FMethod(m.method)
     }
 
-  private def requestBodyToFinagle(r: AbstractRequest[_, Nothing]): http.Request = {
+  private def requestBodyToFinagle(r: GenericRequest[_, Nothing]): http.Request = {
     val finagleMethod = methodToFinagle(r.method)
     val url = r.uri.toString
     val headers = headersToMap(r.headers)
@@ -189,7 +189,7 @@ class FinagleBackend(client: Option[Client] = None) extends Backend[TFuture] {
 
   private def getClient(
       c: Option[Client],
-      request: AbstractRequest[_, Nothing]
+      request: GenericRequest[_, Nothing]
   ): Service[http.Request, FResponse] = {
     val client = c.getOrElse {
       request.uri.scheme match {
@@ -217,10 +217,10 @@ class FinagleBackend(client: Option[Client] = None) extends Backend[TFuture] {
     s"${uri.host.getOrElse("localhost")}:${uri.port.getOrElse(defaultPort)}"
   }
 
-  private def adjustExceptions[T](request: AbstractRequest[_, _])(t: => TFuture[T]): TFuture[T] =
+  private def adjustExceptions[T](request: GenericRequest[_, _])(t: => TFuture[T]): TFuture[T] =
     SttpClientException.adjustExceptions(responseMonad)(t)(exceptionToSttpClientException(request, _))
 
-  private def exceptionToSttpClientException(request: AbstractRequest[_, _], e: Exception): Option[Exception] =
+  private def exceptionToSttpClientException(request: GenericRequest[_, _], e: Exception): Option[Exception] =
     e match {
       case e: com.twitter.finagle.NoBrokersAvailableException =>
         Some(new SttpClientException.ConnectException(request, e))

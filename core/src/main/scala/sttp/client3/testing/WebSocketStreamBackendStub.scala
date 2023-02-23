@@ -28,14 +28,14 @@ import sttp.capabilities.WebSockets
   * request, a response is specified with the incorrect or inconvertible body type.
   */
 class WebSocketStreamBackendStub[F[_], S](
-    monad: MonadError[F],
-    matchers: PartialFunction[AbstractRequest[_, _], F[Response[_]]],
-    fallback: Option[WebSocketStreamBackend[F, S]]
+                                           monad: MonadError[F],
+                                           matchers: PartialFunction[GenericRequest[_, _], F[Response[_]]],
+                                           fallback: Option[WebSocketStreamBackend[F, S]]
 ) extends AbstractBackendStub[F, S with WebSockets](monad, matchers, fallback)
     with WebSocketStreamBackend[F, S] {
   type Self = WebSocketStreamBackendStub[F, S]
   override protected def withMatchers(
-      matchers: PartialFunction[AbstractRequest[_, _], F[Response[_]]]
+      matchers: PartialFunction[GenericRequest[_, _], F[Response[_]]]
   ): WebSocketStreamBackendStub[F, S] =
     new WebSocketStreamBackendStub(monad, matchers, fallback)
 }

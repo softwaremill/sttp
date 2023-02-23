@@ -32,7 +32,7 @@ package object zio {
     * Known exceptions are converted to one of `SttpClientException`. Other exceptions are kept unchanged.
     */
   def send[T](
-      request: AbstractRequest[T, Effect[Task] with ZioStreams]
+      request: GenericRequest[T, Effect[Task] with ZioStreams]
   ): ZIO[SttpClient, Throwable, Response[T]] =
     ZIO.accessM(env => env.get[SttpClient.Service].send(request))
 
@@ -40,7 +40,7 @@ package object zio {
     * websockets or resource-safe streaming) to use an `R` environment.
     */
   def sendR[T, R](
-      request: AbstractRequest[T, Effect[RIO[R, *]] with ZioStreams]
+      request: GenericRequest[T, Effect[RIO[R, *]] with ZioStreams]
   ): ZIO[SttpClient with R, Throwable, Response[T]] =
     ZIO.accessM(env => env.get[SttpClient.Service].extendEnv[R].send(request))
 
@@ -52,14 +52,14 @@ package object zio {
   object stubbing {
     import SttpClientStubbing.StubbingWhenRequest
 
-    def whenRequestMatches(p: AbstractRequest[_, _] => Boolean): StubbingWhenRequest =
+    def whenRequestMatches(p: GenericRequest[_, _] => Boolean): StubbingWhenRequest =
       StubbingWhenRequest(p)
 
     val whenAnyRequest: StubbingWhenRequest =
       StubbingWhenRequest(_ => true)
 
     def whenRequestMatchesPartial(
-        partial: PartialFunction[AbstractRequest[_, _], Response[_]]
+        partial: PartialFunction[GenericRequest[_, _], Response[_]]
     ): URIO[SttpClientStubbing, Unit] =
       ZIO.accessM(_.get.whenRequestMatchesPartial(partial))
   }

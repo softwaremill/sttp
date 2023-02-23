@@ -17,7 +17,7 @@ private[asynchttpclient] trait BodyToAHC[F[_], S] {
   val streams: Streams[S]
   protected def streamToPublisher(s: streams.BinaryStream): Publisher[ByteBuf]
 
-  def apply[R](r: AbstractRequest[_, R], body: AbstractBody[R], rb: RequestBuilder): Unit = {
+  def apply[R](r: GenericRequest[_, R], body: AbstractBody[R], rb: RequestBuilder): Unit = {
     body match {
       case NoBody => // skip
       case StringBody(b, encoding, _) =>

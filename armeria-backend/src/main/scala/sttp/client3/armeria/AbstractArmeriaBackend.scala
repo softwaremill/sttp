@@ -56,10 +56,10 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
 
   override def responseMonad: MonadError[F] = monad
 
-  override def send[T](request: AbstractRequest[T, R]): F[Response[T]] =
+  override def send[T](request: GenericRequest[T, R]): F[Response[T]] =
     monad.suspend(adjustExceptions(request)(execute(request)))
 
-  private def execute[T](request: AbstractRequest[T, R]): F[Response[T]] = {
+  private def execute[T](request: GenericRequest[T, R]): F[Response[T]] = {
     val captor = Clients.newContextCaptor()
     try {
       val armeriaRes = requestToArmeria(request).execute()
@@ -91,7 +91,7 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
     }
   }
 
-  private def requestToArmeria(request: AbstractRequest[_, Nothing]): WebClientRequestPreparation = {
+  private def requestToArmeria(request: GenericRequest[_, Nothing]): WebClientRequestPreparation = {
     val requestPreparation = client
       .prepare()
       .disablePathParams()
@@ -194,7 +194,7 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
     }).build()
   }
 
-  private def adjustExceptions[T](request: AbstractRequest[_, _])(execute: => F[T]): F[T] =
+  private def adjustExceptions[T](request: GenericRequest[_, _])(execute: => F[T]): F[T] =
     SttpClientException.adjustExceptions(responseMonad)(execute) {
       case ex: UnprocessedRequestException =>
         // The cause of an UnprocessedRequestException is always not null
@@ -208,9 +208,9 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
     }
 
   private def fromArmeriaResponse[T](
-      request: AbstractRequest[T, R],
-      response: HttpResponse,
-      ctx: ClientRequestContext
+                                      request: GenericRequest[T, R],
+                                      response: HttpResponse,
+                                      ctx: ClientRequestContext
   ): F[Response[T]] = {
     val splitHttpResponse = response.split()
     val aggregatorRef = new AtomicReference[StreamMessageAggregator]()

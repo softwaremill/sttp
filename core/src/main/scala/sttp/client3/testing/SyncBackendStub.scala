@@ -17,13 +17,13 @@ import sttp.client3.monad.IdMonad
   * request, a response is specified with the incorrect or inconvertible body type.
   */
 class SyncBackendStub(
-    matchers: PartialFunction[AbstractRequest[_, _], Response[_]],
-    fallback: Option[SyncBackend]
+                       matchers: PartialFunction[GenericRequest[_, _], Response[_]],
+                       fallback: Option[SyncBackend]
 ) extends AbstractBackendStub[Identity, Any](IdMonad, matchers, fallback)
     with SyncBackend {
 
   type Self = SyncBackendStub
-  override protected def withMatchers(matchers: PartialFunction[AbstractRequest[_, _], Response[_]]) =
+  override protected def withMatchers(matchers: PartialFunction[GenericRequest[_, _], Response[_]]) =
     new SyncBackendStub(matchers, fallback)
 }
 

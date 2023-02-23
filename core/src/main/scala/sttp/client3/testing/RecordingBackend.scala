@@ -9,7 +9,7 @@ import scala.util.{Failure, Success, Try}
 import sttp.capabilities.Effect
 
 trait RecordingBackend {
-  type RequestAndResponse = (AbstractRequest[_, _], Try[Response[_]])
+  type RequestAndResponse = (GenericRequest[_, _], Try[Response[_]])
   def allInteractions: List[RequestAndResponse]
 }
 
@@ -19,13 +19,13 @@ abstract class AbstractRecordingBackend[F[_], P](delegate: GenericBackend[F, P])
 
   private val _allInteractions = new AtomicReference[Vector[RequestAndResponse]](Vector())
 
-  private def addInteraction(request: AbstractRequest[_, _], response: Try[Response[_]]): Unit = {
+  private def addInteraction(request: GenericRequest[_, _], response: Try[Response[_]]): Unit = {
     _allInteractions.updateAndGet(new UnaryOperator[Vector[RequestAndResponse]] {
       override def apply(t: Vector[RequestAndResponse]): Vector[RequestAndResponse] = t.:+((request, response))
     })
   }
 
-  override def send[T](request: AbstractRequest[T, P with Effect[F]]): F[Response[T]] = {
+  override def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] = {
     delegate
       .send(request)
       .map { response =>

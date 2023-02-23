@@ -21,9 +21,9 @@ import scala.util.{Failure, Success, Try}
 
 private[akkahttp] object BodyToAkka {
   def apply[R](
-      r: AbstractRequest[_, R],
-      body: AbstractBody[R],
-      ar: HttpRequest
+                r: GenericRequest[_, R],
+                body: AbstractBody[R],
+                ar: HttpRequest
   ): Try[HttpRequest] = {
     def ctWithCharset(ct: ContentType, charset: String) =
       HttpCharsets
@@ -83,8 +83,8 @@ private[akkahttp] object BodyToAkka {
   }
 
   private def multipartEntity(
-      r: AbstractRequest[_, _],
-      bodyParts: Seq[AkkaMultipart.FormData.BodyPart]
+                               r: GenericRequest[_, _],
+                               bodyParts: Seq[AkkaMultipart.FormData.BodyPart]
   ): Try[RequestEntity] = {
     r.headers.find(Util.isContentType) match {
       case None => Success(AkkaMultipart.FormData(bodyParts: _*).toEntity())

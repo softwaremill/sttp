@@ -8,7 +8,7 @@ import sttp.capabilities.Streams
 import sttp.client3.internal.ws.{SimpleQueue, WebSocketEvent}
 import sttp.monad.syntax._
 import sttp.client3.okhttp.OkHttpBackend.EncodingHandler
-import sttp.client3.{AbstractRequest, Response, ignore}
+import sttp.client3.{GenericRequest, Response, ignore}
 import sttp.monad.{Canceler, MonadAsyncError}
 
 abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](
@@ -18,7 +18,7 @@ abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](
     customEncodingHandler: EncodingHandler
 ) extends OkHttpBackend[F, S, P](client, closeClient, customEncodingHandler) {
 
-  override protected def sendRegular[T](request: AbstractRequest[T, R]): F[Response[T]] = {
+  override protected def sendRegular[T](request: GenericRequest[T, R]): F[Response[T]] = {
     val nativeRequest = convertRequest(request)
     monad.flatten(monad.async[F[Response[T]]] { cb =>
       def success(r: F[Response[T]]): Unit = cb(Right(r))
@@ -47,7 +47,7 @@ abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](
   }
 
   override protected def sendWebSocket[T](
-      request: AbstractRequest[T, R]
+      request: GenericRequest[T, R]
   ): F[Response[T]] = {
     val nativeRequest = convertRequest(request)
     monad.flatten(
@@ -68,7 +68,7 @@ abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](
   private def createListener[T](
       queue: SimpleQueue[F, WebSocketEvent],
       cb: Either[Throwable, F[Response[T]]] => Unit,
-      request: AbstractRequest[T, R]
+      request: GenericRequest[T, R]
   ): DelegatingWebSocketListener = {
     val isOpen = new AtomicBoolean(false)
     val addToQueue = new AddToQueueListener(queue, isOpen)

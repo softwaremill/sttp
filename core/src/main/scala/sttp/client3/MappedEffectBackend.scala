@@ -11,7 +11,7 @@ abstract class MappedEffectBackend[F[_], G[_], P](
     g: FunctionK[G, F],
     m: MonadError[G]
 ) extends GenericBackend[G, P] {
-  override def send[T](request: AbstractRequest[T, P with Effect[G]]): G[Response[T]] =
+  override def send[T](request: GenericRequest[T, P with Effect[G]]): G[Response[T]] =
     f(backend.send(MapEffect[G, F, T, P](request, g, f, m, backend.responseMonad)))
 
   override def close(): G[Unit] = f(backend.close())

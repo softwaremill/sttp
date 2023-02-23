@@ -1,7 +1,7 @@
 package sttp.client3.akkahttp
 
 import akka.http.scaladsl.model.HttpResponse
-import sttp.client3.{AbstractRequest, SttpClientException}
+import sttp.client3.{GenericRequest, SttpClientException}
 import sttp.model.{Header, HeaderNames}
 
 import scala.collection.immutable.Seq
@@ -15,7 +15,7 @@ private[akkahttp] object FromAkka {
     ch :: (cl.toList ++ other)
   }
 
-  def exception(request: AbstractRequest[_, _], e: Exception): Option[Exception] =
+  def exception(request: GenericRequest[_, _], e: Exception): Option[Exception] =
     e match {
       case e: akka.stream.ConnectionException => Some(new SttpClientException.ConnectException(request, e))
       case e: akka.stream.StreamTcpException =>

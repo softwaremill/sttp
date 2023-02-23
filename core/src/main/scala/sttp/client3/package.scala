@@ -8,7 +8,7 @@ package object client3 extends SttpApi {
     */
   type BodySerializer[B] = B => BasicBodyPart
 
-  type RetryWhen = (AbstractRequest[_, _], Either[Throwable, Response[_]]) => Boolean
+  type RetryWhen = (GenericRequest[_, _], Either[Throwable, Response[_]]) => Boolean
 
   @deprecated(message = "use ResponseException", since = "3.0.0")
   type ResponseError[+HE, +DE] = ResponseException[HE, DE]

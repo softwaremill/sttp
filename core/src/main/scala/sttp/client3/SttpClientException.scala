@@ -18,15 +18,15 @@ import sttp.monad.MonadError
   * @param cause
   *   The original exception.
   */
-abstract class SttpClientException(val request: AbstractRequest[_, _], val cause: Exception)
+abstract class SttpClientException(val request: GenericRequest[_, _], val cause: Exception)
     extends Exception(s"Exception when sending request: ${request.method} ${request.uri}", cause)
 
 object SttpClientException extends SttpClientExceptionExtensions {
-  class ConnectException(request: AbstractRequest[_, _], cause: Exception) extends SttpClientException(request, cause)
+  class ConnectException(request: GenericRequest[_, _], cause: Exception) extends SttpClientException(request, cause)
 
-  class ReadException(request: AbstractRequest[_, _], cause: Exception) extends SttpClientException(request, cause)
+  class ReadException(request: GenericRequest[_, _], cause: Exception) extends SttpClientException(request, cause)
 
-  class TimeoutException(request: AbstractRequest[_, _], cause: Exception) extends ReadException(request, cause)
+  class TimeoutException(request: GenericRequest[_, _], cause: Exception) extends ReadException(request, cause)
 
   def adjustExceptions[F[_], T](
       monadError: MonadError[F]

@@ -21,9 +21,9 @@ private[client3] trait BodyToHttpClient[F[_], S] {
   implicit def monad: MonadError[F]
 
   def apply[T](
-      request: AbstractRequest[T, _],
-      builder: HttpRequest.Builder,
-      contentType: Option[String]
+                request: GenericRequest[T, _],
+                builder: HttpRequest.Builder,
+                contentType: Option[String]
   ): F[BodyPublisher] = {
     val body = request.body match {
       case NoBody              => BodyPublishers.noBody().unit

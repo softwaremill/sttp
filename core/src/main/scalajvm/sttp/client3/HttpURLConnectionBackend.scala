@@ -28,7 +28,7 @@ class HttpURLConnectionBackend private (
 ) extends SyncBackend {
   type R = Any with Effect[Identity]
 
-  override def send[T](r: AbstractRequest[T, R]): Response[T] =
+  override def send[T](r: GenericRequest[T, R]): Response[T] =
     adjustExceptions(r) {
       val c = openConnection(r.uri)
       c.setRequestMethod(r.method.method)
@@ -86,7 +86,7 @@ class HttpURLConnectionBackend private (
     conn.asInstanceOf[HttpURLConnection]
   }
 
-  private def writeBody(r: AbstractRequest[_, R], c: HttpURLConnection): Option[OutputStream] = {
+  private def writeBody(r: GenericRequest[_, R], c: HttpURLConnection): Option[OutputStream] = {
     r.body match {
       case NoBody =>
         // skip
@@ -138,9 +138,9 @@ class HttpURLConnectionBackend private (
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".toCharArray
 
   private def setMultipartBody(
-      r: AbstractRequest[_, R],
-      mp: BasicMultipartBody,
-      c: HttpURLConnection
+                                r: GenericRequest[_, R],
+                                mp: BasicMultipartBody,
+                                c: HttpURLConnection
   ): Option[OutputStream] = {
     val boundary = {
       val tlr = ThreadLocalRandom.current()
@@ -224,7 +224,7 @@ class HttpURLConnectionBackend private (
   private def readResponse[T](
       c: HttpURLConnection,
       is: InputStream,
-      request: AbstractRequest[T, R]
+      request: GenericRequest[T, R]
   ): Response[T] = {
     val headers = c.getHeaderFields.asScala.toVector
       .filter(_._1 != null)
@@ -285,7 +285,7 @@ class HttpURLConnectionBackend private (
         throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
     }
 
-  private def adjustExceptions[T](request: AbstractRequest[_, R])(t: => T): T =
+  private def adjustExceptions[T](request: GenericRequest[_, R])(t: => T): T =
     SttpClientException.adjustExceptions(responseMonad)(t)(
       SttpClientException.defaultExceptionToSttpClientException(request, _)
     )

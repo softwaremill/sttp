@@ -12,7 +12,7 @@ abstract class DigestAuthenticationBackend[F[_], P] private (
     clientNonceGenerator: () => String
 ) extends DelegateBackend(delegate) {
 
-  override def send[T](request: AbstractRequest[T, P with Effect[F]]): F[Response[T]] =
+  override def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] =
     delegate
       .send(request)
       .flatMap { firstResponse =>
@@ -28,10 +28,10 @@ abstract class DigestAuthenticationBackend[F[_], P] private (
       }
 
   private def handleResponse[T](
-      request: AbstractRequest[T, P with Effect[F]],
-      response: Response[T],
-      digestTag: String,
-      digestAuthenticator: DigestAuthData => DigestAuthenticator
+                                 request: GenericRequest[T, P with Effect[F]],
+                                 response: Response[T],
+                                 digestTag: String,
+                                 digestAuthenticator: DigestAuthData => DigestAuthenticator
   ): F[(Response[T], Option[Header])] = {
     request
       .tag(digestTag)

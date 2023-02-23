@@ -14,14 +14,14 @@ import sttp.ws.testing.WebSocketStub
 import scala.util.{Failure, Success, Try}
 
 abstract class AbstractBackendStub[F[_], P](
-    monad: MonadError[F],
-    matchers: PartialFunction[AbstractRequest[_, _], F[Response[_]]],
-    fallback: Option[GenericBackend[F, P]]
+                                             monad: MonadError[F],
+                                             matchers: PartialFunction[GenericRequest[_, _], F[Response[_]]],
+                                             fallback: Option[GenericBackend[F, P]]
 ) extends GenericBackend[F, P] {
 
   type Self
 
-  protected def withMatchers(matchers: PartialFunction[AbstractRequest[_, _], F[Response[_]]]): Self
+  protected def withMatchers(matchers: PartialFunction[GenericRequest[_, _], F[Response[_]]]): Self
 
   override def responseMonad: MonadError[F] = monad
 
@@ -29,7 +29,7 @@ abstract class AbstractBackendStub[F[_], P](
     *
     * Note that the stubs are immutable, and each new specification that is added yields a new stub instance.
     */
-  def whenRequestMatches(p: AbstractRequest[_, _] => Boolean): WhenRequest =
+  def whenRequestMatches(p: GenericRequest[_, _] => Boolean): WhenRequest =
     new WhenRequest(p)
 
   /** Specify how the stub backend should respond to any request (catch-all).
@@ -42,13 +42,13 @@ abstract class AbstractBackendStub[F[_], P](
     *
     * Note that the stubs are immutable, and each new specification that is added yields a new stub instance.
     */
-  def whenRequestMatchesPartial(partial: PartialFunction[AbstractRequest[_, _], Response[_]]): Self = {
-    val wrappedPartial: PartialFunction[AbstractRequest[_, _], F[Response[_]]] =
+  def whenRequestMatchesPartial(partial: PartialFunction[GenericRequest[_, _], Response[_]]): Self = {
+    val wrappedPartial: PartialFunction[GenericRequest[_, _], F[Response[_]]] =
       partial.andThen((r: Response[_]) => monad.unit(r))
     withMatchers(matchers.orElse(wrappedPartial))
   }
 
-  override def send[T](request: AbstractRequest[T, P with Effect[F]]): F[Response[T]] = {
+  override def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] = {
     Try(matchers.lift(request)) match {
       case Success(Some(response)) =>
         adjustExceptions(request)(tryAdjustResponseType(request.response, response.asInstanceOf[F[Response[T]]])(monad))
@@ -61,14 +61,14 @@ abstract class AbstractBackendStub[F[_], P](
     }
   }
 
-  private def adjustExceptions[T](request: AbstractRequest[_, _])(t: => F[T]): F[T] =
+  private def adjustExceptions[T](request: GenericRequest[_, _])(t: => F[T]): F[T] =
     SttpClientException.adjustExceptions(responseMonad)(t)(
       SttpClientException.defaultExceptionToSttpClientException(request, _)
     )
 
   override def close(): F[Unit] = monad.unit(())
 
-  class WhenRequest(p: AbstractRequest[_, _] => Boolean) {
+  class WhenRequest(p: GenericRequest[_, _] => Boolean) {
     def thenRespondOk(): Self = thenRespondWithCode(StatusCode.Ok, "OK")
     def thenRespondNotFound(): Self = thenRespondWithCode(StatusCode.NotFound, "Not found")
     def thenRespondServerError(): Self = thenRespondWithCode(StatusCode.InternalServerError, "Internal server error")
@@ -76,7 +76,7 @@ abstract class AbstractBackendStub[F[_], P](
     def thenRespond[T](body: T): Self = thenRespond(Response[T](body, StatusCode.Ok, "OK"))
     def thenRespond[T](body: T, statusCode: StatusCode): Self = thenRespond(Response[T](body, statusCode))
     def thenRespond[T](resp: => Response[T]): Self = {
-      val m: PartialFunction[AbstractRequest[_, _], F[Response[_]]] = {
+      val m: PartialFunction[GenericRequest[_, _], F[Response[_]]] = {
         case r if p(r) => monad.eval(resp)
       }
       withMatchers(matchers.orElse(m))
@@ -91,13 +91,13 @@ abstract class AbstractBackendStub[F[_], P](
     }
 
     def thenRespondF(resp: => F[Response[_]]): Self = {
-      val m: PartialFunction[AbstractRequest[_, _], F[Response[_]]] = {
+      val m: PartialFunction[GenericRequest[_, _], F[Response[_]]] = {
         case r if p(r) => resp
       }
       withMatchers(matchers.orElse(m))
     }
-    def thenRespondF(resp: AbstractRequest[_, _] => F[Response[_]]): Self = {
-      val m: PartialFunction[AbstractRequest[_, _], F[Response[_]]] = {
+    def thenRespondF(resp: GenericRequest[_, _] => F[Response[_]]): Self = {
+      val m: PartialFunction[GenericRequest[_, _], F[Response[_]]] = {
         case r if p(r) => resp(r)
       }
       withMatchers(matchers.orElse(m))

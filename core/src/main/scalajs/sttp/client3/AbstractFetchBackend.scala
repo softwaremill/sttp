@@ -70,17 +70,17 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S]](
 
   type R = S with WebSockets with Effect[F]
 
-  override def send[T](request: AbstractRequest[T, R]): F[Response[T]] =
+  override def send[T](request: GenericRequest[T, R]): F[Response[T]] =
     adjustExceptions(request) {
       if (request.isWebSocket) sendWebSocket(request) else sendRegular(request)
     }
 
-  private def adjustExceptions[T](request: AbstractRequest[_, _])(t: => F[T]): F[T] =
+  private def adjustExceptions[T](request: GenericRequest[_, _])(t: => F[T]): F[T] =
     SttpClientException.adjustExceptions(responseMonad)(t)(
       SttpClientException.defaultExceptionToSttpClientException(request, _)
     )
 
-  private def sendRegular[T](request: AbstractRequest[T, R]): F[Response[T]] = {
+  private def sendRegular[T](request: GenericRequest[T, R]): F[Response[T]] = {
     // https://stackoverflow.com/q/31061838/4094860
     val readTimeout = request.options.readTimeout
     val (signal, cancelTimeout) = readTimeout match {
@@ -249,7 +249,7 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S]](
     b
   }
 
-  private def sendWebSocket[T](request: AbstractRequest[T, R]): F[Response[T]] = {
+  private def sendWebSocket[T](request: GenericRequest[T, R]): F[Response[T]] = {
     val queue = new JSSimpleQueue[F, WebSocketEvent]
     val ws = new JSWebSocket(request.uri.toString)
     ws.binaryType = BinaryType

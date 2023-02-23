@@ -31,7 +31,7 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
   private var headers: CurlList = _
   private var multiPartHeaders: Seq[CurlList] = Seq()
 
-  override def send[T](request: AbstractRequest[T, R]): F[Response[T]] =
+  override def send[T](request: GenericRequest[T, R]): F[Response[T]] =
     adjustExceptions(request) {
       unsafe.Zone { implicit z =>
         val curl = CurlApi.init
@@ -63,13 +63,13 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
       }
     }
 
-  private def adjustExceptions[T](request: AbstractRequest[_, _])(t: => F[T]): F[T] =
+  private def adjustExceptions[T](request: GenericRequest[_, _])(t: => F[T]): F[T] =
     SttpClientException.adjustExceptions(responseMonad)(t)(
       SttpClientException.defaultExceptionToSttpClientException(request, _)
     )
 
-  private def handleBase[T](request: AbstractRequest[T, R], curl: CurlHandle, spaces: CurlSpaces)(implicit
-      z: unsafe.Zone
+  private def handleBase[T](request: GenericRequest[T, R], curl: CurlHandle, spaces: CurlSpaces)(implicit
+                                                                                                 z: unsafe.Zone
   ) = {
     curl.option(WriteFunction, AbstractCurlBackend.wdFunc)
     curl.option(WriteData, spaces.bodyResp)
@@ -110,7 +110,7 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
     }
   }
 
-  private def handleFile[T](request: AbstractRequest[T, R], curl: CurlHandle, file: SttpFile, spaces: CurlSpaces)(
+  private def handleFile[T](request: GenericRequest[T, R], curl: CurlHandle, file: SttpFile, spaces: CurlSpaces)(
       implicit z: unsafe.Zone
   ) = {
     val outputPath = file.toPath.toString

@@ -31,7 +31,7 @@ trait GenericBackend[F[_], +P] {
   /** Send the given request. Should only be used when implementing new backends, or backend wrappers. Client code
     * should instead use the `send` methods on the request type, e.g. [[Request.send]].
     */
-  def send[T](request: AbstractRequest[T, P with Effect[F]]): F[Response[T]]
+  def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]]
 
   /** Close the backend, releasing any resources (such as thread or connection pools) that have been allocated when
     * opening or using the backend.

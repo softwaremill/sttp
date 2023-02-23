@@ -1,6 +1,6 @@
 package sttp.client3.logging
 
-import sttp.client3.{AbstractRequest, HttpError, Response}
+import sttp.client3.{GenericRequest, HttpError, Response}
 import sttp.model.StatusCode
 
 import scala.concurrent.duration.Duration
@@ -8,17 +8,17 @@ import scala.concurrent.duration.Duration
 /** Performs logging before requests are sent and after requests complete successfully or with an exception.
   */
 trait Log[F[_]] {
-  def beforeRequestSend(request: AbstractRequest[_, _]): F[Unit]
+  def beforeRequestSend(request: GenericRequest[_, _]): F[Unit]
   def response(
-      request: AbstractRequest[_, _],
-      response: Response[_],
-      responseBody: Option[String],
-      elapsed: Option[Duration]
+                request: GenericRequest[_, _],
+                response: Response[_],
+                responseBody: Option[String],
+                elapsed: Option[Duration]
   ): F[Unit]
   def requestException(
-      request: AbstractRequest[_, _],
-      elapsed: Option[Duration],
-      e: Exception
+                        request: GenericRequest[_, _],
+                        elapsed: Option[Duration],
+                        e: Exception
   ): F[Unit]
 }
 
@@ -54,7 +54,7 @@ class DefaultLog[F[_]](
     responseExceptionLogLevel: LogLevel
 ) extends Log[F] {
 
-  def beforeRequestSend(request: AbstractRequest[_, _]): F[Unit] =
+  def beforeRequestSend(request: GenericRequest[_, _]): F[Unit] =
     request.loggingOptions match {
       case Some(options) =>
         before(
@@ -65,7 +65,7 @@ class DefaultLog[F[_]](
       case None => before(request, logRequestBody, logRequestHeaders)
     }
 
-  private def before(request: AbstractRequest[_, _], _logRequestBody: Boolean, _logRequestHeaders: Boolean): F[Unit] = {
+  private def before(request: GenericRequest[_, _], _logRequestBody: Boolean, _logRequestHeaders: Boolean): F[Unit] = {
     logger(
       beforeRequestSendLogLevel, {
         s"Sending request: ${
@@ -77,10 +77,10 @@ class DefaultLog[F[_]](
   }
 
   override def response(
-      request: AbstractRequest[_, _],
-      response: Response[_],
-      responseBody: Option[String],
-      elapsed: Option[Duration]
+                         request: GenericRequest[_, _],
+                         response: Response[_],
+                         responseBody: Option[String],
+                         elapsed: Option[Duration]
   ): F[Unit] = request.loggingOptions match {
     case Some(options) =>
       handleResponse(
@@ -114,7 +114,7 @@ class DefaultLog[F[_]](
     )
   }
 
-  override def requestException(request: AbstractRequest[_, _], elapsed: Option[Duration], e: Exception): F[Unit] = {
+  override def requestException(request: GenericRequest[_, _], elapsed: Option[Duration], e: Exception): F[Unit] = {
     val logLevel = HttpError.find(e) match {
       case Some(HttpError(_, statusCode)) =>
         responseLogLevel(statusCode)

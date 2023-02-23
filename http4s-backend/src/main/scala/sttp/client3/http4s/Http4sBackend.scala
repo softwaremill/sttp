@@ -39,7 +39,7 @@ class Http4sBackend[F[_]: Async](
     customEncodingHandler: EncodingHandler[F]
 ) extends StreamBackend[F, Fs2Streams[F]] {
   type R = Fs2Streams[F] with sttp.capabilities.Effect[F]
-  override def send[T](r: AbstractRequest[T, R]): F[Response[T]] =
+  override def send[T](r: GenericRequest[T, R]): F[Response[T]] =
     adjustExceptions(r) {
       val (entity, extraHeaders) = bodyToHttp4s(r, r.body)
       val request = r.httpVersion match {
@@ -145,7 +145,7 @@ class Http4sBackend[F[_]: Async](
     }
   }
 
-  private def bodyToHttp4s[R](r: AbstractRequest[_, R], body: AbstractBody[R]): (http4s.Entity[F], http4s.Headers) = {
+  private def bodyToHttp4s[R](r: GenericRequest[_, R], body: AbstractBody[R]): (http4s.Entity[F], http4s.Headers) = {
     body match {
       case NoBody => (http4s.Entity(http4s.EmptyBody: http4s.EntityBody[F]), http4s.Headers.empty)
 
@@ -258,10 +258,10 @@ class Http4sBackend[F[_]: Async](
       override protected def cleanupWhenGotWebSocket(response: Nothing, e: GotAWebSocketException): F[Unit] = response
     }
 
-  private def adjustExceptions[T](r: AbstractRequest[_, _])(t: => F[T]): F[T] =
+  private def adjustExceptions[T](r: GenericRequest[_, _])(t: => F[T]): F[T] =
     SttpClientException.adjustExceptions(responseMonad)(t)(http4sExceptionToSttpClientException(r, _))
 
-  private def http4sExceptionToSttpClientException(request: AbstractRequest[_, _], e: Exception): Option[Exception] =
+  private def http4sExceptionToSttpClientException(request: GenericRequest[_, _], e: Exception): Option[Exception] =
     e match {
       case e: org.http4s.client.ConnectionFailure => Some(new SttpClientException.ConnectException(request, e))
       case e: org.http4s.InvalidBodyException     => Some(new SttpClientException.ReadException(request, e))

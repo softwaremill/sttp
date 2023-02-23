@@ -10,10 +10,10 @@ abstract class FollowRedirectsBackend[F[_], P] private (
 
   type R = P with Effect[F]
 
-  override def send[T](request: AbstractRequest[T, R]): F[Response[T]] =
+  override def send[T](request: GenericRequest[T, R]): F[Response[T]] =
     sendWithCounter(request, 0)
 
-  protected def sendWithCounter[T](request: AbstractRequest[T, R], redirects: Int): F[Response[T]] = {
+  protected def sendWithCounter[T](request: GenericRequest[T, R], redirects: Int): F[Response[T]] = {
     // if there are nested follow redirect backends, disabling them and handling redirects here
     val resp = delegate.send(request.followRedirects(false))
     if (request.options.followRedirects) {
@@ -30,9 +30,9 @@ abstract class FollowRedirectsBackend[F[_], P] private (
   }
 
   private def followRedirect[T](
-      request: AbstractRequest[T, R],
-      response: Response[T],
-      redirects: Int
+                                 request: GenericRequest[T, R],
+                                 response: Response[T],
+                                 redirects: Int
   ): F[Response[T]] = {
     response.header(HeaderNames.Location).fold(responseMonad.unit(response)) { loc =>
       if (redirects >= request.options.maxRedirects) {
@@ -44,10 +44,10 @@ abstract class FollowRedirectsBackend[F[_], P] private (
   }
 
   private def followRedirect[T](
-      request: AbstractRequest[T, R],
-      response: Response[T],
-      redirects: Int,
-      loc: String
+                                 request: GenericRequest[T, R],
+                                 response: Response[T],
+                                 redirects: Int,
+                                 loc: String
   ): F[Response[T]] = {
     val uri =
       if (FollowRedirectsBackend.isRelative(loc)) config.transformUri(request.uri.resolve(uri"$loc"))
@@ -65,13 +65,13 @@ abstract class FollowRedirectsBackend[F[_], P] private (
     }
   }
 
-  private def stripSensitiveHeaders[T](request: AbstractRequest[T, R]): AbstractRequest[T, R] = {
+  private def stripSensitiveHeaders[T](request: GenericRequest[T, R]): GenericRequest[T, R] = {
     request.withHeaders(
       request.headers.filterNot(h => config.sensitiveHeaders.contains(h.name.toLowerCase()))
     )
   }
 
-  private def changePostPutToGet[T](r: AbstractRequest[T, R], statusCode: StatusCode): AbstractRequest[T, R] = {
+  private def changePostPutToGet[T](r: GenericRequest[T, R], statusCode: StatusCode): GenericRequest[T, R] = {
     val applicable = r.method == Method.POST || r.method == Method.PUT
     val alwaysChanged = statusCode == StatusCode.SeeOther
     val neverChanged = statusCode == StatusCode.TemporaryRedirect || statusCode == StatusCode.PermanentRedirect

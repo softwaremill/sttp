@@ -14,7 +14,7 @@ import sttp.client3.{
   DefaultReadTimeout,
   FollowRedirectsBackend,
   Identity,
-  AbstractRequest,
+  GenericRequest,
   Response,
   BackendOptions,
   WebSocketBackend,
@@ -36,7 +36,7 @@ class OkHttpSyncBackend private (
   private implicit val ec: ExecutionContext = ExecutionContext.global
   override val streams: Streams[Nothing] = NoStreams
 
-  override protected def sendWebSocket[T](request: AbstractRequest[T, R]): Identity[Response[T]] = {
+  override protected def sendWebSocket[T](request: GenericRequest[T, R]): Identity[Response[T]] = {
     val nativeRequest = convertRequest(request)
     val responseCell = new ArrayBlockingQueue[Either[Throwable, Future[Response[T]]]](5)
     def fillCellError(t: Throwable): Unit = responseCell.add(Left(t))
@@ -70,7 +70,7 @@ class OkHttpSyncBackend private (
     Await.result(response, Duration.Inf)
   }
 
-  override protected def sendRegular[T](request: AbstractRequest[T, R]): Identity[Response[T]] = {
+  override protected def sendRegular[T](request: GenericRequest[T, R]): Identity[Response[T]] = {
     val nativeRequest = convertRequest(request)
     val response = OkHttpBackend
       .updateClientIfCustomReadTimeout(request, client)

@@ -33,7 +33,7 @@ abstract class HttpClientBackend[F[_], S, P, B](
   protected def bodyToHttpClient: BodyToHttpClient[F, S]
   protected def bodyFromHttpClient: BodyFromHttpClient[F, S, B]
 
-  private[client3] def convertRequest[T](request: AbstractRequest[T, R]): F[HttpRequest] =
+  private[client3] def convertRequest[T](request: GenericRequest[T, R]): F[HttpRequest] =
     monad.suspend {
       val builder = HttpRequest
         .newBuilder()
@@ -75,7 +75,7 @@ abstract class HttpClientBackend[F[_], S, P, B](
   private[client3] def readResponse[T](
       res: HttpResponse[_],
       resBody: Either[B, WebSocket[F]],
-      request: AbstractRequest[T, R]
+      request: GenericRequest[T, R]
   ): F[Response[T]] = {
     val headersMap = res.headers().map().asScala
     val headers = headersMap.keySet

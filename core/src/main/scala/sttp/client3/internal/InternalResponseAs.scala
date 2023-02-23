@@ -11,7 +11,7 @@ import scala.collection.immutable.Seq
 import sttp.capabilities.Streams
 import sttp.ws.WebSocketFrame
 
-/** Internal representation of how the response of an [[sttp.client3.AbstractRequest]] should be handled.
+/** Internal representation of how the response of an [[sttp.client3.GenericRequest]] should be handled.
   *
   * @tparam T
   *   Target type as which the response will be read.

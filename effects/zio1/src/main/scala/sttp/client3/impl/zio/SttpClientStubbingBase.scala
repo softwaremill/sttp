@@ -23,7 +23,7 @@ trait AbstractClientStubbing[R, P] {
 
   trait Service {
     def whenRequestMatchesPartial(
-        partial: PartialFunction[AbstractRequest[_, _], Response[_]]
+        partial: PartialFunction[GenericRequest[_, _], Response[_]]
     ): URIO[SttpClientStubbing, Unit]
 
     private[zio] def update(f: BackendStub => BackendStub): UIO[Unit]
@@ -31,14 +31,14 @@ trait AbstractClientStubbing[R, P] {
 
   private[sttp] class StubWrapper(stub: Ref[BackendStub]) extends Service {
     override def whenRequestMatchesPartial(
-        partial: PartialFunction[AbstractRequest[_, _], Response[_]]
+        partial: PartialFunction[GenericRequest[_, _], Response[_]]
     ): URIO[SttpClientStubbing, Unit] =
       update(_.whenRequestMatchesPartial(partial))
 
     override private[zio] def update(f: BackendStub => BackendStub) = stub.update(f)
   }
 
-  case class StubbingWhenRequest private[sttp] (p: AbstractRequest[_, _] => Boolean) {
+  case class StubbingWhenRequest private[sttp] (p: GenericRequest[_, _] => Boolean) {
     implicit val _serviceTag: Tag[Service] = serviceTag
     val thenRespondOk: URIO[SttpClientStubbing, Unit] =
       whenRequest(_.whenRequestMatches(p).thenRespondOk(): BackendStub)
@@ -67,7 +67,7 @@ trait AbstractClientStubbing[R, P] {
     def thenRespondF(resp: => RIO[R, Response[_]]): URIO[SttpClientStubbing, Unit] =
       whenRequest(_.whenRequestMatches(p).thenRespondF(resp))
 
-    def thenRespondF(resp: AbstractRequest[_, _] => RIO[R, Response[_]]): URIO[SttpClientStubbing, Unit] =
+    def thenRespondF(resp: GenericRequest[_, _] => RIO[R, Response[_]]): URIO[SttpClientStubbing, Unit] =
       whenRequest(_.whenRequestMatches(p).thenRespondF(resp))
 
     private def whenRequest(f: BackendStub => BackendStub): URIO[SttpClientStubbing, Unit] =
@@ -93,7 +93,7 @@ trait StreamClientStubbing[R, P] extends AbstractClientStubbing[R, P] {
 
   def backendStub: StreamBackendStub[RIO[R, *], P] = StreamBackendStub(monad)
   def proxy(stub: Ref[StreamBackendStub[RIO[R, *], P]]): StreamBackend[RIO[R, *], P] = new StreamBackend[RIO[R, *], P] {
-    def send[T](request: AbstractRequest[T, P with Effect[RIO[R, *]]]): RIO[R, Response[T]] =
+    def send[T](request: GenericRequest[T, P with Effect[RIO[R, *]]]): RIO[R, Response[T]] =
       stub.get >>= (_.send(request))
     def close(): RIO[R, Unit] =
       stub.get >>= (_.close())
@@ -111,7 +111,7 @@ trait WebSocketStreamClientStubbing[R, P] extends AbstractClientStubbing[R, P wi
   def proxy(stub: Ref[WebSocketStreamBackendStub[RIO[R, *], P]]): WebSocketStreamBackend[RIO[R, *], P] =
     new WebSocketStreamBackend[RIO[R, *], P] {
       def send[T](
-          request: AbstractRequest[T, P with WebSockets with Effect[RIO[R, *]]]
+          request: GenericRequest[T, P with WebSockets with Effect[RIO[R, *]]]
       ): RIO[R, Response[T]] =
         stub.get >>= (_.send(request))
       def close(): RIO[R, Unit] =

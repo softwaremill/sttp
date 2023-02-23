@@ -7,17 +7,17 @@ import scala.util.Random
 
 object ToRfc2616Converter {
 
-  def requestToRfc2616(request: AbstractRequest[_, _]): String = apply(request, HeaderNames.SensitiveHeaders)
+  def requestToRfc2616(request: GenericRequest[_, _]): String = apply(request, HeaderNames.SensitiveHeaders)
 
-  def requestToRfc2616(request: AbstractRequest[_, _], sensitiveHeaders: Set[String]): String =
+  def requestToRfc2616(request: GenericRequest[_, _], sensitiveHeaders: Set[String]): String =
     apply(request, sensitiveHeaders)
 
   private val BoundaryChars =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".toCharArray
 
-  def apply(request: AbstractRequest[_, _]): String = apply(request, HeaderNames.SensitiveHeaders)
+  def apply(request: GenericRequest[_, _]): String = apply(request, HeaderNames.SensitiveHeaders)
 
-  def apply(request: AbstractRequest[_, _], sensitiveHeaders: Set[String]): String = {
+  def apply(request: GenericRequest[_, _], sensitiveHeaders: Set[String]): String = {
     val extractMethod = request.method.method
     val extractUri = request.uri
     val result = s"$extractMethod $extractUri"
@@ -27,7 +27,7 @@ object ToRfc2616Converter {
     if (body.isEmpty) resultWithHeaders else resultWithHeaders + s"\n\n$body"
   }
 
-  private def extractBody(r: AbstractRequest[_, _]): String = {
+  private def extractBody(r: GenericRequest[_, _]): String = {
     r.body match {
       case StringBody(text, _, _) => s"$text"
       case ByteArrayBody(_, _)    => "<PLACEHOLDER>"
@@ -61,7 +61,7 @@ object ToRfc2616Converter {
       .mkString("") + s"--$boundary--"
   }
 
-  private def extractHeaders(r: AbstractRequest[_, _], sensitiveHeaders: Set[String]): String = {
+  private def extractHeaders(r: GenericRequest[_, _], sensitiveHeaders: Set[String]): String = {
     r.headers
       // filtering out compression headers so that the results are human-readable, if possible
       .filterNot(_.name.equalsIgnoreCase(HeaderNames.AcceptEncoding))

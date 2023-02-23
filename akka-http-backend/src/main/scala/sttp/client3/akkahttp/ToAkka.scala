@@ -2,14 +2,14 @@ package sttp.client3.akkahttp
 
 import akka.http.scaladsl.model.{HttpHeader, HttpMethod, HttpMethods, HttpRequest}
 import akka.http.scaladsl.model.HttpHeader.ParsingResult
-import sttp.client3.AbstractRequest
+import sttp.client3.GenericRequest
 import sttp.model.{Header, Method}
 
 import scala.collection.immutable.Seq
 import scala.util.{Failure, Success, Try}
 
 private[akkahttp] object ToAkka {
-  def request(r: AbstractRequest[_, _]): Try[HttpRequest] = {
+  def request(r: GenericRequest[_, _]): Try[HttpRequest] = {
     val ar = HttpRequest(uri = r.uri.toString, method = method(r.method))
     ToAkka.headers(r.headers).map(ar.withHeaders)
   }

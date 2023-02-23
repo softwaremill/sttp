@@ -35,8 +35,14 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
 
   def headers: Seq[Header]
   def body: AbstractBody[_]
+
+  /** Description of how the response body should be handled. Needs to be specified upfront so that the response is
+    * always consumed and hence there are no requirements on client code to consume it.
+    */
   def response: AbstractResponseAs[_, _]
   def options: RequestOptions
+
+  /** Request-specific tags which can be used by backends for logging, metrics, etc. Empty by default. */
   def tags: Map[String, Any]
 
   /** Set the method & uri to the given ones. */

@@ -411,7 +411,7 @@ class PrometheusBackendTest
     val backend = PrometheusBackend(
       backendStub,
       PrometheusConfig.Default.copy(
-        responseToErrorCounterMapper = (req: AbstractRequest[_, _], resp: Response[_]) =>
+        responseToErrorCounterMapper = (req: GenericRequest[_, _], resp: Response[_]) =>
           Some(addHostLabel(addMethodLabel(CollectorConfig(DefaultFailureCounterName), req), resp))
       )
     )

@@ -44,7 +44,7 @@ class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
 
   override val streams: Fs2Streams[F] = Fs2Streams[F]
 
-  override def send[T](request: AbstractRequest[T, R]): F[Response[T]] =
+  override def send[T](request: GenericRequest[T, R]): F[Response[T]] =
     super.send(request).guarantee(ContextShift[F].shift)
 
   override protected val bodyToHttpClient: BodyToHttpClient[F, Fs2Streams[F]] =

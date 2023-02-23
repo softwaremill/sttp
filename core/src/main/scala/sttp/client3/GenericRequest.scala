@@ -1,12 +1,60 @@
 package sttp.client3
 
-import sttp.model.Header
-import sttp.model.Method
-import sttp.model.Uri
-import sttp.model.Part
+import sttp.model.{Header, Method, Part, RequestMetadata, Uri}
 import sttp.capabilities.{Effect, Streams, WebSockets}
+import sttp.client3.internal.{ToCurlConverter, ToRfc2616Converter}
 
 import scala.collection.immutable.Seq
+
+/** A generic description of an HTTP request, along with a description of how the response body should be handled.
+  *
+  * Client code should use concrete subtypes of this trait. The [[Request.send]], [[StreamRequest.send]],
+  * [[WebSocketRequest.send]] or [[WebSocketStreamRequest.send]] methods should be used to send the request, providing
+  * an instance of the appropriate [[Backend]] subtype.
+  *
+  * However, the request can aso be sent using the [[GenericBackend.send]] method, which provides a superset of the
+  * required capabilities.
+  *
+  * @tparam T
+  *   The target type, to which the response body should be read.
+  * @tparam R
+  *   The backend capabilities required by the request or response description. This might be `Any` (no requirements),
+  *   [[sttp.capabilities.Effect]] (the backend must support the given effect type), [[sttp.capabilities.Streams]] (the
+  *   ability to send and receive streaming bodies) or [[sttp.capabilities.WebSockets]] (the ability to handle websocket
+  *   requests).
+  */
+trait GenericRequest[+T, -R] extends RequestBuilder[GenericRequest[T, R]] with RequestMetadata {
+  def body: AbstractBody[R]
+  def response: AbstractResponseAs[T, R]
+  def mapResponse[T2](f: T => T2): GenericRequest[T2, R]
+
+  def toCurl: String = ToCurlConverter(this)
+  def toCurl(sensitiveHeaders: Set[String]): String = ToCurlConverter(this, sensitiveHeaders)
+
+  def toRfc2616Format: String = ToRfc2616Converter.requestToRfc2616(this)
+  def toRfc2616Format(sensitiveHeaders: Set[String]): String =
+    ToRfc2616Converter.requestToRfc2616(this, sensitiveHeaders)
+
+  /** Metadata of the request, which doesn't retain the request body, or the response handling specification. */
+  def onlyMetadata: RequestMetadata = {
+    val m = method
+    val u = uri
+    val h = headers
+    new RequestMetadata {
+      override val method: Method = m
+      override val uri: Uri = u
+      override val headers: Seq[Header] = h
+    }
+  }
+
+  def isWebSocket: Boolean = (this: Any) match {
+    case _: WebSocketRequest[_, _]       => true
+    case _: WebSocketStreamRequest[_, _] => true
+    case _                               => false
+  }
+}
+
+//
 
 /** Describes an HTTP request, along with a description of how the response body should be handled.
   *
@@ -28,7 +76,7 @@ case class Request[T](
     response: ResponseAs[T],
     options: RequestOptions,
     tags: Map[String, Any]
-) extends AbstractRequest[T, Any]
+) extends GenericRequest[T, Any]
     with RequestBuilder[Request[T]] {
 
   override def showBasic: String = s"$method $uri"
@@ -146,7 +194,7 @@ final case class StreamRequest[T, R](
     response: StreamResponseAs[T, R],
     options: RequestOptions,
     tags: Map[String, Any]
-) extends AbstractRequest[T, R]
+) extends GenericRequest[T, R]
     with RequestBuilder[StreamRequest[T, R]] {
 
   override def showBasic: String = s"$method $uri"
@@ -216,7 +264,7 @@ final case class WebSocketRequest[F[_], T](
     response: WebSocketResponseAs[F, T],
     options: RequestOptions,
     tags: Map[String, Any]
-) extends AbstractRequest[T, WebSockets with Effect[F]]
+) extends GenericRequest[T, WebSockets with Effect[F]]
     with RequestBuilder[WebSocketRequest[F, T]] {
 
   override def showBasic: String = s"$method (WebSocket) $uri"
@@ -272,7 +320,7 @@ final case class WebSocketStreamRequest[T, S](
     response: WebSocketStreamResponseAs[T, S],
     options: RequestOptions,
     tags: Map[String, Any]
-) extends AbstractRequest[T, S with WebSockets]
+) extends GenericRequest[T, S with WebSockets]
     with RequestBuilder[WebSocketStreamRequest[T, S]] {
 
   override def showBasic: String = s"$method (WebSocket) $uri"
