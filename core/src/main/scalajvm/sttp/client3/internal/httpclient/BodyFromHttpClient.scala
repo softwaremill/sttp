@@ -15,7 +15,7 @@ private[client3] trait BodyFromHttpClient[F[_], S, B] {
 
   def apply[T](
                 response: Either[B, WebSocket[F]],
-                responseAs: GenericResponseDelegate[T, _],
+                responseAs: ResponseAsDelegate[T, _],
                 responseMetadata: ResponseMetadata
   ): F[T] = bodyFromResponseAs(responseAs, responseMetadata, response)
 

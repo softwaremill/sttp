@@ -88,7 +88,7 @@ private[asynchttpclient] trait BodyFromAHC[F[_], S] {
 
   def apply[TT](
                  response: Either[Publisher[ByteBuffer], WebSocket[F]],
-                 responseAs: GenericResponseDelegate[TT, _],
+                 responseAs: ResponseAsDelegate[TT, _],
                  responseMetadata: ResponseMetadata,
                  isSubscribed: () => Boolean
   ): F[TT] = bodyFromResponseAs(isSubscribed)(responseAs, responseMetadata, response)

@@ -8,9 +8,9 @@ import sttp.monad.syntax._
 
 abstract class BodyFromResponseAs[F[_], RegularResponse, WSResponse, Stream](implicit m: MonadError[F]) {
   def apply[T](
-      responseAs: GenericResponseDelegate[T, _],
-      meta: ResponseMetadata,
-      response: Either[RegularResponse, WSResponse]
+                responseAs: ResponseAsDelegate[T, _],
+                meta: ResponseMetadata,
+                response: Either[RegularResponse, WSResponse]
   ): F[T] = doApply(responseAs.delegate, meta, response).map(_._1)
 
   private def doApply[T](

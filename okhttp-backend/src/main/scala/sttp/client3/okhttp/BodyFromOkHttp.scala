@@ -31,7 +31,7 @@ private[okhttp] trait BodyFromOkHttp[F[_], S] {
 
   def apply[T](
                 responseBody: InputStream,
-                responseAs: GenericResponseDelegate[T, _],
+                responseAs: ResponseAsDelegate[T, _],
                 responseMetadata: ResponseMetadata,
                 ws: Option[WebSocket[F]]
   ): F[T] = bodyFromResponseAs(responseAs, responseMetadata, ws.toRight(responseBody))

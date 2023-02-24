@@ -108,7 +108,7 @@ abstract class AbstractBackendStub[F[_], P](
 object AbstractBackendStub {
 
   private[client3] def tryAdjustResponseType[DesiredRType, RType, F[_]](
-                                                                         ra: GenericResponseDelegate[DesiredRType, _],
+                                                                         ra: ResponseAsDelegate[DesiredRType, _],
                                                                          m: F[Response[RType]]
   )(implicit monad: MonadError[F]): F[Response[DesiredRType]] = {
     monad.flatMap[Response[RType], Response[DesiredRType]](m) { r =>

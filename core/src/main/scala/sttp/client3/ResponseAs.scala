@@ -19,7 +19,7 @@ import scala.util.{Failure, Success, Try}
   *   ability to send and receive streaming bodies) or [[sttp.capabilities.WebSockets]] (the ability to handle websocket
   *   requests).
   */
-trait GenericResponseDelegate[+T, -R] {
+trait ResponseAsDelegate[+T, -R] {
   def delegate: GenericResponseAs[T, R]
   def show: String = delegate.show
 }
@@ -36,7 +36,7 @@ trait GenericResponseDelegate[+T, -R] {
   * @tparam T
   *   Target type as which the response will be read.
   */
-case class ResponseAs[+T](delegate: GenericResponseAs[T, Any]) extends GenericResponseDelegate[T, Any] {
+case class ResponseAs[+T](delegate: GenericResponseAs[T, Any]) extends ResponseAsDelegate[T, Any] {
   def map[T2](f: T => T2): ResponseAs[T2] = ResponseAs(delegate.mapWithMetadata { case (t, _) => f(t) })
   def mapWithMetadata[T2](f: (T, ResponseMetadata) => T2): ResponseAs[T2] = ResponseAs(delegate.mapWithMetadata(f))
 
@@ -159,7 +159,7 @@ object ResponseAs {
   * @tparam S
   *   The type of stream, used to receive the response body bodies.
   */
-case class StreamResponseAs[+T, S](delegate: GenericResponseAs[T, S]) extends GenericResponseDelegate[T, S] {
+case class StreamResponseAs[+T, S](delegate: GenericResponseAs[T, S]) extends ResponseAsDelegate[T, S] {
   def map[T2](f: T => T2): StreamResponseAs[T2, S] =
     StreamResponseAs(delegate.mapWithMetadata { case (t, _) => f(t) })
   def mapWithMetadata[T2](f: (T, ResponseMetadata) => T2): StreamResponseAs[T2, S] =
@@ -180,7 +180,7 @@ case class StreamResponseAs[+T, S](delegate: GenericResponseAs[T, S]) extends Ge
   *   Target type as which the response will be read.
   */
 case class WebSocketResponseAs[F[_], +T](delegate: GenericResponseAs[T, Effect[F] with WebSockets])
-    extends GenericResponseDelegate[T, Effect[F] with WebSockets] {
+    extends ResponseAsDelegate[T, Effect[F] with WebSockets] {
   def map[T2](f: T => T2): WebSocketResponseAs[F, T2] =
     WebSocketResponseAs(delegate.mapWithMetadata { case (t, _) => f(t) })
   def mapWithMetadata[T2](f: (T, ResponseMetadata) => T2): WebSocketResponseAs[F, T2] =
@@ -201,7 +201,7 @@ case class WebSocketResponseAs[F[_], +T](delegate: GenericResponseAs[T, Effect[F
   *   Target type as which the response will be read.
   */
 case class WebSocketStreamResponseAs[+T, S](delegate: GenericResponseAs[T, S with WebSockets])
-    extends GenericResponseDelegate[T, S with WebSockets] {
+    extends ResponseAsDelegate[T, S with WebSockets] {
   def map[T2](f: T => T2): WebSocketStreamResponseAs[T2, S] =
     WebSocketStreamResponseAs[T2, S](delegate.mapWithMetadata { case (t, _) => f(t) })
   def mapWithMetadata[T2](f: (T, ResponseMetadata) => T2): WebSocketStreamResponseAs[T2, S] =
@@ -227,7 +227,7 @@ case class ConditionalResponseAs[+R](condition: ResponseMetadata => Boolean, res
 //
 
 /** Generic representation of how the response of an [[GenericRequest]] should be handled. To set on a request, should
-  * be wrapped with a [[GenericResponseDelegate]], depending on the `R` capabilities.
+  * be wrapped with a [[ResponseAsDelegate]], depending on the `R` capabilities.
   *
   * @tparam T
   *   Target type as which the response will be read.

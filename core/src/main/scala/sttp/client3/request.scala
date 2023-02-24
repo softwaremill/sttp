@@ -25,7 +25,7 @@ import scala.collection.immutable.Seq
   */
 trait GenericRequest[+T, -R] extends RequestBuilder[GenericRequest[T, R]] with RequestMetadata {
   def body: AbstractBody[R]
-  def response: GenericResponseDelegate[T, R]
+  def response: ResponseAsDelegate[T, R]
   def mapResponse[T2](f: T => T2): GenericRequest[T2, R]
 
   def toCurl: String = ToCurlConverter(this)

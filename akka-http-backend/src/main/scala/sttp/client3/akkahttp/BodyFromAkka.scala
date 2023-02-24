@@ -20,9 +20,9 @@ import scala.util.Failure
 
 private[akkahttp] class BodyFromAkka()(implicit ec: ExecutionContext, mat: Materializer, m: MonadError[Future]) {
   def apply[T, R](
-      responseAs: GenericResponseDelegate[T, R],
-      meta: ResponseMetadata,
-      response: Either[HttpResponse, Promise[Flow[Message, Message, NotUsed]]]
+                   responseAs: ResponseAsDelegate[T, R],
+                   meta: ResponseMetadata,
+                   response: Either[HttpResponse, Promise[Flow[Message, Message, NotUsed]]]
   ): Future[T] =
     bodyFromResponseAs(responseAs, meta, response)
 
