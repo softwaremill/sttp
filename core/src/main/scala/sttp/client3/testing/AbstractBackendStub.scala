@@ -108,20 +108,20 @@ abstract class AbstractBackendStub[F[_], P](
 object AbstractBackendStub {
 
   private[client3] def tryAdjustResponseType[DesiredRType, RType, F[_]](
-      ra: AbstractResponseAs[DesiredRType, _],
-      m: F[Response[RType]]
+                                                                         ra: GenericResponseDelegate[DesiredRType, _],
+                                                                         m: F[Response[RType]]
   )(implicit monad: MonadError[F]): F[Response[DesiredRType]] = {
     monad.flatMap[Response[RType], Response[DesiredRType]](m) { r =>
-      tryAdjustResponseBody(ra.internal, r.body, r).getOrElse(monad.unit(r.body)).map { nb =>
+      tryAdjustResponseBody(ra.delegate, r.body, r).getOrElse(monad.unit(r.body)).map { nb =>
         r.copy(body = nb.asInstanceOf[DesiredRType])
       }
     }
   }
 
   private[client3] def tryAdjustResponseBody[F[_], T, U](
-      ra: InternalResponseAs[T, _],
-      b: U,
-      meta: ResponseMetadata
+                                                          ra: GenericResponseAs[T, _],
+                                                          b: U,
+                                                          meta: ResponseMetadata
   )(implicit monad: MonadError[F]): Option[F[T]] = {
     ra match {
       case IgnoreResponse => Some(().unit.asInstanceOf[F[T]])

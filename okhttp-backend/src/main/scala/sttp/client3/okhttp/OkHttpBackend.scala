@@ -76,7 +76,7 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
   private[okhttp] def readResponse[T](
                                        res: OkHttpResponse,
                                        request: GenericRequest[_, R],
-                                       responseAs: AbstractResponseAs[T, R]
+                                       responseAs: GenericResponseDelegate[T, R]
   ): F[Response[T]] = {
     val headers = readHeaders(res)
     val responseMetadata = ResponseMetadata(StatusCode(res.code()), res.message(), headers)

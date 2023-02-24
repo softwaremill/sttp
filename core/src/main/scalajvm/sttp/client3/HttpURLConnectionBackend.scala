@@ -260,9 +260,9 @@ class HttpURLConnectionBackend private (
     override protected def regularAsStream(response: InputStream): (Nothing, () => Identity[Unit]) =
       throw new IllegalStateException()
     override protected def handleWS[T](
-        responseAs: InternalWebSocketResponseAs[T, _],
-        meta: ResponseMetadata,
-        ws: Nothing
+                                        responseAs: GenericWebSocketResponseAs[T, _],
+                                        meta: ResponseMetadata,
+                                        ws: Nothing
     ): Identity[T] = ws
     override protected def cleanupWhenNotAWebSocket(response: InputStream, e: NotAWebSocketException): Identity[Unit] =
       ()

@@ -25,7 +25,7 @@ import scala.collection.immutable.Seq
   */
 trait GenericRequest[+T, -R] extends RequestBuilder[GenericRequest[T, R]] with RequestMetadata {
   def body: AbstractBody[R]
-  def response: AbstractResponseAs[T, R]
+  def response: GenericResponseDelegate[T, R]
   def mapResponse[T2](f: T => T2): GenericRequest[T2, R]
 
   def toCurl: String = ToCurlConverter(this)
@@ -88,7 +88,7 @@ case class Request[T](
   override protected def copyWithBody(body: BasicBody): Request[T] = copy(body = body)
 
   def multipartStreamBody[S](ps: Seq[Part[BodyPart[S]]]): StreamRequest[T, S] =
-    StreamRequest(method, uri, MultipartStreamBody(ps), headers, new StreamResponseAs(response.internal), options, tags)
+    StreamRequest(method, uri, MultipartStreamBody(ps), headers, StreamResponseAs(response.delegate), options, tags)
 
   def multipartStreamBody[S](p1: Part[BodyPart[S]], ps: Part[BodyPart[S]]*): StreamRequest[T, S] =
     StreamRequest(
@@ -96,13 +96,13 @@ case class Request[T](
       uri,
       MultipartStreamBody(p1 :: ps.toList),
       headers,
-      new StreamResponseAs(response.internal),
+      StreamResponseAs(response.delegate),
       options,
       tags
     )
 
   def streamBody[S](s: Streams[S])(b: s.BinaryStream): StreamRequest[T, S] =
-    StreamRequest(method, uri, StreamBody(s)(b), headers, new StreamResponseAs(response.internal), options, tags)
+    StreamRequest(method, uri, StreamBody(s)(b), headers, StreamResponseAs(response.delegate), options, tags)
 
   /** Specifies the target type to which the response body should be read. Note that this replaces any previous
     * specifications, which also includes any previous `mapResponse` invocations.
@@ -208,7 +208,7 @@ final case class StreamRequest[T, R](
   /** Specifies the target type to which the response body should be read. Note that this replaces any previous
     * specifications, which also includes any previous `mapResponse` invocations.
     */
-  def response[T2](ra: ResponseAs[T2]): StreamRequest[T2, R] = copy(response = new StreamResponseAs(ra.internal))
+  def response[T2](ra: ResponseAs[T2]): StreamRequest[T2, R] = copy(response = new StreamResponseAs(ra.delegate))
 
   /** Specifies that the response body should be processed using a non-blocking, asynchronous stream, as witnessed by
     * the `R2` capability. This capability must be a subset of any capabilities required by previously (`R`). A

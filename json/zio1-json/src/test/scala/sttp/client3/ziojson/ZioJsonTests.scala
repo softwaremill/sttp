@@ -5,7 +5,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import zio.json._
 import sttp.client3._
-import sttp.client3.internal.{MappedResponseAs, ResponseAsByteArray, Utf8}
+import sttp.client3.internal.Utf8
 
 import sttp.model._
 
@@ -99,7 +99,7 @@ class ZioJsonTests extends AnyFlatSpec with Matchers with EitherValues {
     }
 
   def runJsonResponseAs[A](responseAs: ResponseAs[A]): String => A =
-    responseAs.internal match {
+    responseAs.delegate match {
       case responseAs: MappedResponseAs[_, A, Nothing] =>
         responseAs.raw match {
           case ResponseAsByteArray =>

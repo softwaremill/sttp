@@ -109,7 +109,7 @@ class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
     }
 
   def runJsonResponseAs[A](responseAs: ResponseAs[A]): String => A =
-    responseAs.internal match {
+    responseAs.delegate match {
       case responseAs: MappedResponseAs[_, A, Nothing] =>
         responseAs.raw match {
           case ResponseAsByteArray =>

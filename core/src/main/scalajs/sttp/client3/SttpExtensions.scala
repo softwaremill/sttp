@@ -2,7 +2,7 @@ package sttp.client3
 
 import org.scalajs.dom.File
 import sttp.client3.internal.SttpFile
-import sttp.client3.internal.ResponseAsFile
+import sttp.client3.ResponseAsFile
 import sttp.model.{Part, StatusCode}
 
 trait SttpExtensions {

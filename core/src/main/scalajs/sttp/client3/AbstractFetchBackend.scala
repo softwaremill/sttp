@@ -328,9 +328,9 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S]](
       handleResponseAsStream(response)
 
     override protected def handleWS[T](
-        responseAs: InternalWebSocketResponseAs[T, _],
-        meta: ResponseMetadata,
-        ws: WebSocket[F]
+                                        responseAs: GenericWebSocketResponseAs[T, _],
+                                        meta: ResponseMetadata,
+                                        ws: WebSocket[F]
     ): F[T] =
       responseAs match {
         case ResponseAsWebSocket(f) =>

@@ -397,7 +397,7 @@ class BackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
   } {
     it should s"adjust $body to $expectedResult when specified as $responseAs" in {
       AbstractBackendStub.tryAdjustResponseBody(
-        responseAs.internal,
+        responseAs.delegate,
         body,
         ResponseMetadata(StatusCode.Ok, "", Nil)
       )(IdMonad) should be(

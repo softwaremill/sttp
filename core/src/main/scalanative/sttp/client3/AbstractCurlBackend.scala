@@ -56,7 +56,7 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
         }
 
         val spaces = responseSpace
-        FileHelpers.getFilePath(request.response.internal) match {
+        FileHelpers.getFilePath(request.response.delegate) match {
           case Some(file) => handleFile(request, curl, file, spaces)
           case None       => handleBase(request, curl, spaces)
         }
@@ -239,9 +239,9 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
       throw new IllegalStateException("CurlBackend does not support streaming responses")
 
     override protected def handleWS[T](
-        responseAs: InternalWebSocketResponseAs[T, _],
-        meta: ResponseMetadata,
-        ws: Nothing
+                                        responseAs: GenericWebSocketResponseAs[T, _],
+                                        meta: ResponseMetadata,
+                                        ws: Nothing
     ): F[T] = ws
 
     override protected def cleanupWhenNotAWebSocket(

@@ -48,7 +48,7 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
 
   // response specifications
 
-  def ignore: ResponseAs[Unit] = new ResponseAs(IgnoreResponse)
+  def ignore: ResponseAs[Unit] = ResponseAs(IgnoreResponse)
 
   /** Use the `utf-8` charset by default, unless specified otherwise in the response headers. */
   def asString: ResponseAs[Either[String, String]] = asString(Utf8)
@@ -75,7 +75,7 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
 
   def asByteArray: ResponseAs[Either[String, Array[Byte]]] = asEither(asStringAlways, asByteArrayAlways)
 
-  def asByteArrayAlways: ResponseAs[Array[Byte]] = new ResponseAs(ResponseAsByteArray)
+  def asByteArrayAlways: ResponseAs[Array[Byte]] = ResponseAs(ResponseAsByteArray)
 
   /** Use the `utf-8` charset by default, unless specified otherwise in the response headers. */
   def asParams: ResponseAs[Either[String, Seq[(String, String)]]] = asParams(Utf8)
@@ -90,13 +90,13 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
   /** Use the given charset by default, unless specified otherwise in the response headers. */
   def asParamsAlways(charset: String): ResponseAs[Seq[(String, String)]] = {
     val charset2 = sanitizeCharset(charset)
-    asStringAlways(charset2).map(InternalResponseAs.parseParams(_, charset2)).showAs("as params")
+    asStringAlways(charset2).map(GenericResponseAs.parseParams(_, charset2)).showAs("as params")
   }
 
-  private[client3] def asSttpFile(file: SttpFile): ResponseAs[SttpFile] = new ResponseAs(ResponseAsFile(file))
+  private[client3] def asSttpFile(file: SttpFile): ResponseAs[SttpFile] = ResponseAs(ResponseAsFile(file))
 
   def fromMetadata[T](default: ResponseAs[T], conditions: ConditionalResponseAs[ResponseAs[T]]*): ResponseAs[T] =
-    new ResponseAs(ResponseAsFromMetadata(conditions.map(_.map(_.internal)).toList, default.internal))
+    ResponseAs(ResponseAsFromMetadata(conditions.map(_.map(_.delegate)).toList, default.delegate))
 
   /** Uses the `onSuccess` response specification for successful responses (2xx), and the `onError` specification
     * otherwise.
@@ -118,7 +118,7 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     * array), also use `r` to read the response body. Otherwise ignore `r` (if the raw body is a stream).
     */
   def asBothOption[A, B](l: ResponseAs[A], r: ResponseAs[B]): ResponseAs[(A, Option[B])] =
-    new ResponseAs(ResponseAsBoth(l.internal, r.internal))
+    ResponseAs(ResponseAsBoth(l.delegate, r.delegate))
 
   // multipart factory methods
 
@@ -219,19 +219,19 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
 
   def asStreamAlwaysWithMetadata[F[_], T, S](s: Streams[S])(
       f: (s.BinaryStream, ResponseMetadata) => F[T]
-  ): StreamResponseAs[T, S with Effect[F]] = new StreamResponseAs(ResponseAsStream(s)(f))
+  ): StreamResponseAs[T, S with Effect[F]] = StreamResponseAs(ResponseAsStream(s)(f))
 
   def asStreamUnsafe[S](s: Streams[S]): StreamResponseAs[Either[String, s.BinaryStream], S] =
     asEither(asStringAlways, asStreamAlwaysUnsafe(s))
 
   def asStreamAlwaysUnsafe[S](s: Streams[S]): StreamResponseAs[s.BinaryStream, S] =
-    new StreamResponseAs(ResponseAsStreamUnsafe(s))
+    StreamResponseAs(ResponseAsStreamUnsafe(s))
 
   def fromMetadata[T, S](
       default: ResponseAs[T],
       conditions: ConditionalResponseAs[StreamResponseAs[T, S]]*
   ): StreamResponseAs[T, S] =
-    new StreamResponseAs[T, S](ResponseAsFromMetadata(conditions.map(_.map(_.internal)).toList, default.internal))
+    StreamResponseAs[T, S](ResponseAsFromMetadata(conditions.map(_.map(_.delegate)).toList, default.delegate))
 
   /** Uses the `onSuccess` response specification for successful responses (2xx), and the `onError` specification
     * otherwise.
@@ -244,7 +244,7 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     * array), also use `r` to read the response body. Otherwise ignore `r` (if the raw body is a stream).
     */
   def asBothOption[A, B, S](l: StreamResponseAs[A, S], r: ResponseAs[B]): StreamResponseAs[(A, Option[B]), S] =
-    new StreamResponseAs[(A, Option[B]), S](ResponseAsBoth(l.internal, r.internal))
+    StreamResponseAs[(A, Option[B]), S](ResponseAsBoth(l.delegate, r.delegate))
 
   /** Content type will be set to `application/octet-stream`, can be overridden later using the `contentType` method.
     */
@@ -269,19 +269,19 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     asWebSocketAlwaysWithMetadata((w, _) => f(w))
 
   def asWebSocketAlwaysWithMetadata[F[_], T](f: (WebSocket[F], ResponseMetadata) => F[T]): WebSocketResponseAs[F, T] =
-    new WebSocketResponseAs(ResponseAsWebSocket(f))
+    WebSocketResponseAs(ResponseAsWebSocket(f))
 
   def asWebSocketUnsafe[F[_]]: WebSocketResponseAs[F, Either[String, WebSocket[F]]] =
     asWebSocketEither(asStringAlways, asWebSocketAlwaysUnsafe)
 
   def asWebSocketAlwaysUnsafe[F[_]]: WebSocketResponseAs[F, WebSocket[F]] =
-    new WebSocketResponseAs(ResponseAsWebSocketUnsafe())
+    WebSocketResponseAs(ResponseAsWebSocketUnsafe())
 
   def fromMetadata[F[_], T](
       default: ResponseAs[T],
       conditions: ConditionalResponseAs[WebSocketResponseAs[F, T]]*
   ): WebSocketResponseAs[F, T] =
-    new WebSocketResponseAs(ResponseAsFromMetadata(conditions.map(_.map(_.internal)).toList, default.internal))
+    WebSocketResponseAs(ResponseAsFromMetadata(conditions.map(_.map(_.delegate)).toList, default.delegate))
 
   /** Uses the `onSuccess` response specification for 101 responses (switching protocols) on JVM/Native, 200 responses
     * on JS. Otherwise, use the `onError` specification.
@@ -301,14 +301,14 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
 
   def asWebSocketStreamAlways[S](s: Streams[S])(
       p: s.Pipe[WebSocketFrame.Data[_], WebSocketFrame]
-  ): WebSocketStreamResponseAs[Unit, S] = new WebSocketStreamResponseAs[Unit, S](ResponseAsWebSocketStream(s, p))
+  ): WebSocketStreamResponseAs[Unit, S] = WebSocketStreamResponseAs[Unit, S](ResponseAsWebSocketStream(s, p))
 
   def fromMetadata[T, S](
       default: ResponseAs[T],
       conditions: ConditionalResponseAs[WebSocketStreamResponseAs[T, S]]*
   ): WebSocketStreamResponseAs[T, S] =
-    new WebSocketStreamResponseAs[T, S](
-      ResponseAsFromMetadata(conditions.map(_.map(_.internal)).toList, default.internal)
+    WebSocketStreamResponseAs[T, S](
+      ResponseAsFromMetadata(conditions.map(_.map(_.delegate)).toList, default.delegate)
     )
 
   /** Uses the `onSuccess` response specification for 101 responses (switching protocols), and the `onError`

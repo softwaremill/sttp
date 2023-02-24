@@ -4,7 +4,7 @@ import java.io.{ByteArrayInputStream, File}
 import java.nio.ByteBuffer
 import org.reactivestreams.Publisher
 import sttp.capabilities.Streams
-import sttp.client3.AbstractResponseAs
+import sttp.client3._
 import sttp.client3.internal._
 import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.model.ResponseMetadata
@@ -72,7 +72,7 @@ private[asynchttpclient] trait BodyFromAHC[F[_], S] {
         (publisherToStream(response), () => ignoreIfNotSubscribed(response, isSubscribed)).unit
 
       override protected def handleWS[T](
-          responseAs: InternalWebSocketResponseAs[T, _],
+          responseAs: GenericWebSocketResponseAs[T, _],
           meta: ResponseMetadata,
           ws: WebSocket[F]
       ): F[T] = bodyFromWs(responseAs, ws, meta)
@@ -87,13 +87,13 @@ private[asynchttpclient] trait BodyFromAHC[F[_], S] {
     }
 
   def apply[TT](
-      response: Either[Publisher[ByteBuffer], WebSocket[F]],
-      responseAs: AbstractResponseAs[TT, _],
-      responseMetadata: ResponseMetadata,
-      isSubscribed: () => Boolean
+                 response: Either[Publisher[ByteBuffer], WebSocket[F]],
+                 responseAs: GenericResponseDelegate[TT, _],
+                 responseMetadata: ResponseMetadata,
+                 isSubscribed: () => Boolean
   ): F[TT] = bodyFromResponseAs(isSubscribed)(responseAs, responseMetadata, response)
 
-  private def bodyFromWs[TT](r: InternalWebSocketResponseAs[TT, _], ws: WebSocket[F], meta: ResponseMetadata): F[TT] =
+  private def bodyFromWs[TT](r: GenericWebSocketResponseAs[TT, _], ws: WebSocket[F], meta: ResponseMetadata): F[TT] =
     r match {
       case ResponseAsWebSocket(f) =>
         f.asInstanceOf[(WebSocket[F], ResponseMetadata) => F[TT]].apply(ws, meta).ensure(ws.close())

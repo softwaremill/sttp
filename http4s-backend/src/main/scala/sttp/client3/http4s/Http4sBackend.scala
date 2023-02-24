@@ -19,7 +19,6 @@ import sttp.client3.httpclient.fs2.Fs2Compression
 import sttp.client3.impl.cats.CatsMonadAsyncError
 import sttp.client3.internal.{
   BodyFromResponseAs,
-  InternalWebSocketResponseAs,
   IOBufferSize,
   SttpFile,
   throwNestedMultipartNotAllowed
@@ -245,9 +244,9 @@ class Http4sBackend[F[_]: Async](
         (response.body, () => signalBodyComplete).pure[F]
 
       override protected def handleWS[T](
-          responseAs: InternalWebSocketResponseAs[T, _],
-          meta: ResponseMetadata,
-          ws: Nothing
+                                          responseAs: GenericWebSocketResponseAs[T, _],
+                                          meta: ResponseMetadata,
+                                          ws: Nothing
       ): F[T] = ws
 
       override protected def cleanupWhenNotAWebSocket(

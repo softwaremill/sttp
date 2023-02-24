@@ -3,9 +3,10 @@ package sttp.client3.httpclient.fs2
 import cats.effect.{Blocker, ConcurrentEffect, ContextShift}
 import fs2.{Pipe, Stream}
 import sttp.capabilities.fs2.Fs2Streams
+import sttp.client3.GenericWebSocketResponseAs
 import sttp.client3.impl.cats.CatsMonadAsyncError
 import sttp.client3.impl.fs2.Fs2WebSockets
-import sttp.client3.internal.{BodyFromResponseAs, InternalWebSocketResponseAs, SttpFile}
+import sttp.client3.internal.{BodyFromResponseAs, SttpFile}
 import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.client3.internal.httpclient.BodyFromHttpClient
 import sttp.model.ResponseMetadata
@@ -56,7 +57,7 @@ private[fs2] class Fs2BodyFromHttpClient[F[_]: ConcurrentEffect: ContextShift](b
       }
 
       override protected def handleWS[T](
-          responseAs: InternalWebSocketResponseAs[T, _],
+          responseAs: GenericWebSocketResponseAs[T, _],
           meta: ResponseMetadata,
           ws: WebSocket[F]
       ): F[T] = bodyFromWs(responseAs, ws, meta)

@@ -1,9 +1,10 @@
 package sttp.client3.httpclient.zio
 
 import sttp.capabilities.zio.ZioStreams
+import sttp.client3.GenericWebSocketResponseAs
 import sttp.client3.impl.zio.{RIOMonadAsyncError, ZioWebSockets}
 import sttp.client3.internal.httpclient.BodyFromHttpClient
-import sttp.client3.internal.{BodyFromResponseAs, InternalWebSocketResponseAs, SttpFile}
+import sttp.client3.internal.{BodyFromResponseAs, SttpFile}
 import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.model.ResponseMetadata
 import sttp.monad.MonadError
@@ -88,7 +89,7 @@ private[zio] class ZioBodyFromHttpClient extends BodyFromHttpClient[Task, ZioStr
         Task.succeed((response, () => response.runDrain.catchAll(_ => ZIO.unit)))
 
       override protected def handleWS[T](
-          responseAs: InternalWebSocketResponseAs[T, _],
+          responseAs: GenericWebSocketResponseAs[T, _],
           meta: ResponseMetadata,
           ws: WebSocket[Task]
       ): Task[T] = bodyFromWs(responseAs, ws, meta)

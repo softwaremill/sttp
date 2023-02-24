@@ -3,7 +3,6 @@ package sttp.client3
 import java.io.File
 import java.nio.file.Path
 
-import sttp.client3.internal.ResponseAsFile
 import sttp.client3.internal.SttpFile
 import sttp.model.{Part, StatusCode}
 

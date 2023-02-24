@@ -15,7 +15,7 @@ import com.twitter.io.Buf.{ByteArray, ByteBuffer}
 import com.twitter.util
 import com.twitter.util.{Duration, Future => TFuture}
 import sttp.capabilities.Effect
-import sttp.client3.internal.{BodyFromResponseAs, FileHelpers, InternalWebSocketResponseAs, SttpFile, Utf8}
+import sttp.client3.internal.{BodyFromResponseAs, FileHelpers, SttpFile, Utf8}
 import sttp.client3.testing.BackendStub
 import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.client3._
@@ -175,9 +175,9 @@ class FinagleBackend(client: Option[Client] = None) extends Backend[TFuture] {
         TFuture.exception(new IllegalStateException("Streaming isn't supported"))
 
       override protected def handleWS[T](
-          responseAs: InternalWebSocketResponseAs[T, _],
-          meta: ResponseMetadata,
-          ws: Nothing
+                                          responseAs: GenericWebSocketResponseAs[T, _],
+                                          meta: ResponseMetadata,
+                                          ws: Nothing
       ): TFuture[T] = ws
 
       override protected def cleanupWhenNotAWebSocket(response: FResponse, e: NotAWebSocketException): TFuture[Unit] =
