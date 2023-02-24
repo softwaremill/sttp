@@ -34,7 +34,7 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
       Map()
     )
 
-  /** A starting request, with the following modification comparing to `emptyRequest`: `Accept-Encoding` is set to
+  /** A starting request, with the following modification comparing to [[emptyRequest]]: `Accept-Encoding` is set to
     * `gzip, deflate` (compression/decompression is handled automatically by the library).
     *
     * Reads the response body as an `Either[String, String]`, where `Left` is used if the status code is non-2xx, and
@@ -43,24 +43,20 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
   val basicRequest: PartialRequest[Either[String, String]] =
     emptyRequest.acceptEncoding("gzip, deflate")
 
-  /** A starting request which always reads the response body as a string, regardless of the status code.
-    */
+  /** A starting request which always reads the response body as a string, regardless of the status code. */
   val quickRequest: PartialRequest[String] = basicRequest.response(asStringAlways)
 
   // response specifications
 
   def ignore: ResponseAs[Unit] = new ResponseAs(IgnoreResponse)
 
-  /** Use the `utf-8` charset by default, unless specified otherwise in the response headers.
-    */
+  /** Use the `utf-8` charset by default, unless specified otherwise in the response headers. */
   def asString: ResponseAs[Either[String, String]] = asString(Utf8)
 
-  /** Use the `utf-8` charset by default, unless specified otherwise in the response headers.
-    */
+  /** Use the `utf-8` charset by default, unless specified otherwise in the response headers. */
   def asStringAlways: ResponseAs[String] = asStringAlways(Utf8)
 
-  /** Use the given charset by default, unless specified otherwise in the response headers.
-    */
+  /** Use the given charset by default, unless specified otherwise in the response headers. */
   def asString(charset: String): ResponseAs[Either[String, String]] =
     asStringAlways(charset)
       .mapWithMetadata { (s, m) =>
@@ -81,28 +77,23 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
 
   def asByteArrayAlways: ResponseAs[Array[Byte]] = new ResponseAs(ResponseAsByteArray)
 
-  /** Use the `utf-8` charset by default, unless specified otherwise in the response headers.
-    */
+  /** Use the `utf-8` charset by default, unless specified otherwise in the response headers. */
   def asParams: ResponseAs[Either[String, Seq[(String, String)]]] = asParams(Utf8)
 
-  /** Use the `utf-8` charset by default, unless specified otherwise in the response headers.
-    */
+  /** Use the `utf-8` charset by default, unless specified otherwise in the response headers. */
   def asParamsAlways: ResponseAs[Seq[(String, String)]] = asParamsAlways(Utf8)
 
-  /** Use the given charset by default, unless specified otherwise in the response headers.
-    */
+  /** Use the given charset by default, unless specified otherwise in the response headers. */
   def asParams(charset: String): ResponseAs[Either[String, Seq[(String, String)]]] =
     asEither(asStringAlways, asParamsAlways(charset)).showAs("either(as string, as params)")
 
-  /** Use the given charset by default, unless specified otherwise in the response headers.
-    */
+  /** Use the given charset by default, unless specified otherwise in the response headers. */
   def asParamsAlways(charset: String): ResponseAs[Seq[(String, String)]] = {
     val charset2 = sanitizeCharset(charset)
     asStringAlways(charset2).map(InternalResponseAs.parseParams(_, charset2)).showAs("as params")
   }
 
-  private[client3] def asSttpFile(file: SttpFile): ResponseAs[SttpFile] =
-    new ResponseAs(ResponseAsFile(file))
+  private[client3] def asSttpFile(file: SttpFile): ResponseAs[SttpFile] = new ResponseAs(ResponseAsFile(file))
 
   def fromMetadata[T](default: ResponseAs[T], conditions: ConditionalResponseAs[ResponseAs[T]]*): ResponseAs[T] =
     new ResponseAs(ResponseAsFromMetadata(conditions.map(_.map(_.internal)).toList, default.internal))
@@ -114,8 +105,7 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     fromMetadata(onError.map(Left(_)), ConditionalResponseAs(_.isSuccess, onSuccess.map(Right(_))))
       .showAs(s"either(${onError.show}, ${onSuccess.show})")
 
-  /** Use both `l` and `r` to read the response body. Neither response specifications may use streaming or web sockets.
-    */
+  /** Use both `l` and `r` to read the response body. Neither response specifications may use streaming or web sockets. */
   def asBoth[A, B](l: ResponseAs[A], r: ResponseAs[B]): ResponseAs[(A, B)] =
     asBothOption(l, r)
       .map { case (a, bo) =>
@@ -145,18 +135,15 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     Part(name, StringBody(data, encoding), contentType = Some(MediaType.TextPlain.charset(encoding)))
   }
 
-  /** Content type will be set to `application/octet-stream`, can be overridden later using the `contentType` method.
-    */
+  /** Content type will be set to `application/octet-stream`, can be overridden later using the `contentType` method. */
   def multipart(name: String, data: Array[Byte]): Part[BasicBodyPart] =
     Part(name, ByteArrayBody(data), contentType = Some(MediaType.ApplicationOctetStream))
 
-  /** Content type will be set to `application/octet-stream`, can be overridden later using the `contentType` method.
-    */
+  /** Content type will be set to `application/octet-stream`, can be overridden later using the `contentType` method. */
   def multipart(name: String, data: ByteBuffer): Part[BasicBodyPart] =
     Part(name, ByteBufferBody(data), contentType = Some(MediaType.ApplicationOctetStream))
 
-  /** Content type will be set to `application/octet-stream`, can be overridden later using the `contentType` method.
-    */
+  /** Content type will be set to `application/octet-stream`, can be overridden later using the `contentType` method. */
   def multipart(name: String, data: InputStream): Part[BasicBodyPart] =
     Part(name, InputStreamBody(data), contentType = Some(MediaType.ApplicationOctetStream))
 
@@ -211,8 +198,7 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
       contentType = Some(MediaType.ApplicationXWwwFormUrlencoded)
     )
 
-  /** Content type will be set to `application/octet-stream`, can be overridden later using the `contentType` method.
-    */
+  /** Content type will be set to `application/octet-stream`, can be overridden later using the `contentType` method. */
   def multipart[B: BodySerializer](name: String, b: B): Part[BasicBodyPart] =
     Part(name, implicitly[BodySerializer[B]].apply(b), contentType = Some(MediaType.ApplicationXWwwFormUrlencoded))
 

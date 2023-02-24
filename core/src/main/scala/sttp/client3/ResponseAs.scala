@@ -1,7 +1,9 @@
 package sttp.client3
 
+import sttp.capabilities.{Effect, WebSockets}
 import sttp.client3.internal.InternalResponseAs
 import sttp.model.ResponseMetadata
+
 import scala.util.{Failure, Success, Try}
 
 /** Describes how the response body of a [[Request]] should be handled.
@@ -124,4 +126,83 @@ object ResponseAs {
         case Left(e)  => throw DeserializationException(s, e)
         case Right(b) => b
       }
+}
+
+/** Describes how the response body of a [[StreamRequest]] should be handled.
+  *
+  * The stream response can be mapped over, to support custom types. The mapping can take into account the
+  * [[ResponseMetadata]], that is the headers and status code.
+  *
+  * A number of `asStream[Type]` helper methods are available as part of [[SttpApi]] and when importing
+  * `sttp.client3._`.
+  *
+  * @tparam T
+  *   Target type as which the response will be read.
+  * @tparam S
+  *   The type of stream, used to receive the response body bodies.
+  */
+class StreamResponseAs[+T, S](private[client3] val internal: InternalResponseAs[T, S])
+    extends AbstractResponseAs[T, S] {
+  def map[T2](f: T => T2): StreamResponseAs[T2, S] =
+    new StreamResponseAs(internal.mapWithMetadata { case (t, _) => f(t) })
+  def mapWithMetadata[T2](f: (T, ResponseMetadata) => T2): StreamResponseAs[T2, S] =
+    new StreamResponseAs(internal.mapWithMetadata(f))
+
+  def showAs(s: String): StreamResponseAs[T, S] = new StreamResponseAs(internal.showAs(s))
+}
+
+/** Describes how the response of a [[WebSocketRequest]] should be handled.
+  *
+  * The websocket response can be mapped over, to support custom types. The mapping can take into account the
+  * [[ResponseMetadata]], that is the headers and status code. Responses can also be handled depending on the response
+  * metadata.
+  *
+  * A number of `asWebSocket` helper methods are available as part of [[SttpApi]] and when importing `sttp.client3._`.
+  *
+  * @tparam T
+  *   Target type as which the response will be read.
+  */
+class WebSocketResponseAs[F[_], +T](private[client3] val internal: InternalResponseAs[T, Effect[F] with WebSockets])
+    extends AbstractResponseAs[T, Effect[F] with WebSockets] {
+  def map[T2](f: T => T2): WebSocketResponseAs[F, T2] =
+    new WebSocketResponseAs(internal.mapWithMetadata { case (t, _) => f(t) })
+  def mapWithMetadata[T2](f: (T, ResponseMetadata) => T2): WebSocketResponseAs[F, T2] =
+    new WebSocketResponseAs(internal.mapWithMetadata(f))
+
+  def showAs(s: String): WebSocketResponseAs[F, T] = new WebSocketResponseAs(internal.showAs(s))
+}
+
+/** Describes how the response of a [[WebSocketStreamRequest]] should be handled.
+  *
+  * The websocket response can be mapped over, to support custom types. The mapping can take into account the
+  * [[ResponseMetadata]], that is the headers and status code. Responses can also be handled depending on the response
+  * metadata.
+  *
+  * A number of `asWebSocket` helper methods are available as part of [[SttpApi]] and when importing `sttp.client3._`.
+  *
+  * @tparam T
+  *   Target type as which the response will be read.
+  */
+class WebSocketStreamResponseAs[+T, S](private[client3] val internal: InternalResponseAs[T, S with WebSockets])
+    extends AbstractResponseAs[T, S with WebSockets] {
+  def map[T2](f: T => T2): WebSocketStreamResponseAs[T2, S] =
+    new WebSocketStreamResponseAs[T2, S](internal.mapWithMetadata { case (t, _) => f(t) })
+  def mapWithMetadata[T2](f: (T, ResponseMetadata) => T2): WebSocketStreamResponseAs[T2, S] =
+    new WebSocketStreamResponseAs[T2, S](internal.mapWithMetadata(f))
+
+  def showAs(s: String): WebSocketStreamResponseAs[T, S] = new WebSocketStreamResponseAs[T, S](internal.showAs(s))
+}
+
+//
+
+/** A wrapper around a ResponseAs to supplement it with a condition on the response metadata.
+  *
+  * Used in [[SttpApi.fromMetadata()]] to condition the response handler upon the response metadata: status code,
+  * headers, etc.
+  *
+  * @tparam R
+  *   The type of response
+  */
+case class ConditionalResponseAs[+R](condition: ResponseMetadata => Boolean, responseAs: R) {
+  def map[R2](f: R => R2): ConditionalResponseAs[R2] = ConditionalResponseAs(condition, f(responseAs))
 }
