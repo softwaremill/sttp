@@ -58,7 +58,7 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
         val spaces = responseSpace
         FileHelpers.getFilePath(request.response) match {
           case Some(file) => handleFile(request, curl, file, spaces)
-          case None => handleBase(request, curl, spaces)
+          case None       => handleBase(request, curl, spaces)
         }
       }
     }

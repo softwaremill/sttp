@@ -1,6 +1,9 @@
 package sttp.client3.armeria.zio
 
-import _root_.zio.interop.reactivestreams.{publisherToStream => publisherToZioStream, streamToPublisher => zioStreamToPublisher}
+import _root_.zio.interop.reactivestreams.{
+  publisherToStream => publisherToZioStream,
+  streamToPublisher => zioStreamToPublisher
+}
 import _root_.zio.{Chunk, Task, _}
 import com.linecorp.armeria.client.WebClient
 import com.linecorp.armeria.common.HttpData
