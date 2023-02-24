@@ -9,7 +9,10 @@ import sttp.ws.{WebSocket, WebSocketFrame}
 import scala.collection.immutable.Seq
 import scala.util.{Failure, Success, Try}
 
-/** Abstract representation of how a response body should be handled.
+/** Describes how the response body of a request should be handled. A number of `as<Type>` helper methods are available
+  * as part of [[SttpApi]] and when importing `sttp.client3._`. These methods yield specific implementations of this
+  * trait, which can then be set on a [[Request]], [[StreamRequest]], [[WebSocketRequest]] or
+  * [[WebSocketStreamRequest]], depending on the response type.
   *
   * @tparam T
   *   Target type as which the response will be read.
@@ -226,8 +229,8 @@ case class ConditionalResponseAs[+R](condition: ResponseMetadata => Boolean, res
 
 //
 
-/** Generic representation of how the response of an [[GenericRequest]] should be handled. To set on a request, should
-  * be wrapped with a [[ResponseAsDelegate]], depending on the `R` capabilities.
+/** Generic description of how the response to a [[GenericRequest]] should be handled. To set on a request, should be
+  * wrapped with an appropriate subtype of [[ResponseAsDelegate]], depending on the `R` capabilities.
   *
   * @tparam T
   *   Target type as which the response will be read.
@@ -243,6 +246,30 @@ sealed trait GenericResponseAs[+T, -R] {
 
   def show: String
   def showAs(s: String): GenericResponseAs[T, R] = MappedResponseAs[T, T, R](this, (t, _) => t, Some(s))
+}
+
+object GenericResponseAs {
+  private[client3] def parseParams(s: String, charset: String): Seq[(String, String)] = {
+    s.split("&")
+      .toList
+      .flatMap(kv =>
+        kv.split("=", 2) match {
+          case Array(k, v) =>
+            Some((Rfc3986.decode()(k, charset), Rfc3986.decode()(v, charset)))
+          case _ => None
+        }
+      )
+  }
+
+  def isWebSocket(ra: GenericResponseAs[_, _]): Boolean =
+    ra match {
+      case _: GenericWebSocketResponseAs[_, _] => true
+      case ResponseAsFromMetadata(conditions, default) =>
+        conditions.exists(c => isWebSocket(c.responseAs)) || isWebSocket(default)
+      case MappedResponseAs(raw, _, _) => isWebSocket(raw)
+      case ResponseAsBoth(l, r)        => isWebSocket(l) || isWebSocket(r)
+      case _                           => false
+    }
 }
 
 case object IgnoreResponse extends GenericResponseAs[Unit, Any] {
@@ -315,28 +342,4 @@ case class MappedResponseAs[T, T2, R](
 case class ResponseAsBoth[A, B, R](l: GenericResponseAs[A, R], r: GenericResponseAs[B, Any])
     extends GenericResponseAs[(A, Option[B]), R] {
   override def show: String = s"(${l.show}, optionally ${r.show})"
-}
-
-object GenericResponseAs {
-  private[client3] def parseParams(s: String, charset: String): Seq[(String, String)] = {
-    s.split("&")
-      .toList
-      .flatMap(kv =>
-        kv.split("=", 2) match {
-          case Array(k, v) =>
-            Some((Rfc3986.decode()(k, charset), Rfc3986.decode()(v, charset)))
-          case _ => None
-        }
-      )
-  }
-
-  def isWebSocket(ra: GenericResponseAs[_, _]): Boolean =
-    ra match {
-      case _: GenericWebSocketResponseAs[_, _] => true
-      case ResponseAsFromMetadata(conditions, default) =>
-        conditions.exists(c => isWebSocket(c.responseAs)) || isWebSocket(default)
-      case MappedResponseAs(raw, _, _) => isWebSocket(raw)
-      case ResponseAsBoth(l, r)        => isWebSocket(l) || isWebSocket(r)
-      case _                           => false
-    }
 }
