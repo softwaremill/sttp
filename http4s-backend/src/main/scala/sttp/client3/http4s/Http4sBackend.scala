@@ -3,7 +3,7 @@ package sttp.client3.http4s
 import java.io.{InputStream, UnsupportedEncodingException}
 import java.nio.charset.Charset
 import cats.data.NonEmptyList
-import cats.effect.{Async, Deferred, Resource}
+import cats.effect.{Async, Deferred}
 import cats.implicits._
 import cats.effect.implicits._
 import fs2.io.file.Files
@@ -11,7 +11,6 @@ import fs2.{Chunk, Stream}
 import org.http4s.{ContentCoding, EntityBody, Status, Request => Http4sRequest}
 import org.http4s
 import org.http4s.client.Client
-import org.http4s.blaze.client.BlazeClientBuilder
 import org.typelevel.ci.CIString
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client3.http4s.Http4sBackend.EncodingHandler
@@ -23,8 +22,6 @@ import sttp.monad.MonadError
 import sttp.client3.testing.SttpBackendStub
 import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.client3.{BasicRequestBody, NoBody, RequestBody, Response, SttpBackend, _}
-
-import scala.concurrent.ExecutionContext
 
 // needs http4s using cats-effect
 class Http4sBackend[F[_]: Async](
@@ -291,25 +288,6 @@ object Http4sBackend {
   ): SttpBackend[F, Fs2Streams[F]] =
     new FollowRedirectsBackend[F, Fs2Streams[F]](
       new Http4sBackend[F](client, customizeRequest, customEncodingHandler)
-    )
-
-  def usingBlazeClientBuilder[F[_]: Async](
-      blazeClientBuilder: BlazeClientBuilder[F],
-      customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _,
-      customEncodingHandler: EncodingHandler[F] = PartialFunction.empty
-  ): Resource[F, SttpBackend[F, Fs2Streams[F]]] = {
-    blazeClientBuilder.resource.map(c => usingClient(c, customizeRequest, customEncodingHandler))
-  }
-
-  def usingDefaultBlazeClientBuilder[F[_]: Async](
-      clientExecutionContext: ExecutionContext = ExecutionContext.global,
-      customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _,
-      customEncodingHandler: EncodingHandler[F] = PartialFunction.empty
-  ): Resource[F, SttpBackend[F, Fs2Streams[F]]] =
-    usingBlazeClientBuilder(
-      BlazeClientBuilder[F](clientExecutionContext),
-      customizeRequest,
-      customEncodingHandler
     )
 
   /** Create a stub backend for testing, which uses the `F` response wrapper, and supports `Stream[F, Byte]` streaming.

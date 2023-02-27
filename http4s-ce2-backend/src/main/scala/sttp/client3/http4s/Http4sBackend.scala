@@ -11,7 +11,6 @@ import fs2.{Chunk, Stream}
 import org.http4s.{ContentCoding, EntityBody, Status, Request => Http4sRequest}
 import org.http4s
 import org.http4s.client.Client
-import org.http4s.blaze.client.BlazeClientBuilder
 import org.http4s.headers.`Content-Encoding`
 import org.typelevel.ci.CIString
 import sttp.capabilities.fs2.Fs2Streams
@@ -291,28 +290,6 @@ object Http4sBackend {
   ): SttpBackend[F, Fs2Streams[F]] =
     new FollowRedirectsBackend[F, Fs2Streams[F]](
       new Http4sBackend[F](client, blocker, customizeRequest, customEncodingHandler)
-    )
-
-  def usingBlazeClientBuilder[F[_]: ConcurrentEffect: ContextShift](
-      blazeClientBuilder: BlazeClientBuilder[F],
-      blocker: Blocker,
-      customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _,
-      customEncodingHandler: EncodingHandler[F] = PartialFunction.empty
-  ): Resource[F, SttpBackend[F, Fs2Streams[F]]] = {
-    blazeClientBuilder.resource.map(c => usingClient(c, blocker, customizeRequest, customEncodingHandler))
-  }
-
-  def usingDefaultBlazeClientBuilder[F[_]: ConcurrentEffect: ContextShift](
-      blocker: Blocker,
-      clientExecutionContext: ExecutionContext = ExecutionContext.global,
-      customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _,
-      customEncodingHandler: EncodingHandler[F] = PartialFunction.empty
-  ): Resource[F, SttpBackend[F, Fs2Streams[F]]] =
-    usingBlazeClientBuilder(
-      BlazeClientBuilder[F](clientExecutionContext),
-      blocker,
-      customizeRequest,
-      customEncodingHandler
     )
 
   /** Create a stub backend for testing, which uses the `F` response wrapper, and supports `Stream[F, Byte]` streaming.
