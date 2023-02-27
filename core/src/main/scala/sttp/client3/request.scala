@@ -216,6 +216,18 @@ final case class StreamRequest[T, R](
     */
   def response[T2, R2 <: R](ra: StreamResponseAs[T2, R2]): StreamRequest[T2, R2] = copy(response = ra)
 
+  /** Specifies that this is a WebSocket request. A [[WebSocketStreamBackend]] will be required to send this request. */
+  def response[T2, F[_]](ra: WebSocketResponseAs[F, T2]): WebSocketStreamRequest[T2, Effect[F] with R] =
+    WebSocketStreamRequest(
+      method,
+      uri,
+      body,
+      headers,
+      WebSocketStreamResponseAs[T2, Effect[F] with R](ra.delegate),
+      options,
+      tags
+    )
+
   def mapResponse[T2](f: T => T2): StreamRequest[T2, R] = copy(response = response.map(f))
 
   /** Sends the request, using the given backend.
@@ -274,6 +286,17 @@ final case class WebSocketRequest[F[_], T](
   override def withOptions(options: RequestOptions): WebSocketRequest[F, T] = copy(options = options)
   override def withTags(tags: Map[String, Any]): WebSocketRequest[F, T] = copy(tags = tags)
   override protected def copyWithBody(body: BasicBody): WebSocketRequest[F, T] = copy(body = body)
+
+  def streamBody[S](s: Streams[S])(b: s.BinaryStream): WebSocketStreamRequest[T, Effect[F] with S] =
+    WebSocketStreamRequest(
+      method,
+      uri,
+      StreamBody(s)(b),
+      headers,
+      WebSocketStreamResponseAs[T, Effect[F] with S](response.delegate),
+      options,
+      tags
+    )
 
   def mapResponse[T2](f: T => T2): WebSocketRequest[F, T2] = copy(response = response.map(f))
 
