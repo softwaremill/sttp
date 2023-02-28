@@ -12,9 +12,10 @@ class BackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFutures wi
 
   "backend stub" should "cycle through responses using a single sent request" in {
     // given
-    val backend: BackendStub[Task] = BackendStub(new RIOMonadAsyncError[Any])
+    val backend: BackendStub[Task] = HttpClientZioBackend.stub
       .whenRequestMatches(_ => true)
       .thenRespondCyclic("a", "b", "c")
+
     // when
     val r = basicRequest.get(uri"http://example.org/a/b/c").send(backend)
 
@@ -27,7 +28,7 @@ class BackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFutures wi
 
   it should "cycle through responses when called concurrently" in {
     // given
-    val backend: BackendStub[Task] = BackendStub(new RIOMonadAsyncError[Any])
+    val backend: BackendStub[Task] = HttpClientZioBackend.stub
       .whenRequestMatches(_ => true)
       .thenRespondCyclic("a", "b", "c")
 
@@ -46,7 +47,8 @@ class BackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFutures wi
   }
 
   it should "lift errors due to mapping with impure functions into the response monad" in {
-    val backend: BackendStub[Task] = BackendStub(new RIOMonadAsyncError[Any]).whenAnyRequest.thenRespondOk()
+    val backend: BackendStub[Task] =
+      HttpClientZioBackend.stub.whenAnyRequest.thenRespondOk()
 
     val error = new IllegalStateException("boom")
 

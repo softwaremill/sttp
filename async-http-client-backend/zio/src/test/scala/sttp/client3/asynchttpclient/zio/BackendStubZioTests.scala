@@ -6,15 +6,16 @@ import org.scalatest.matchers.should.Matchers
 import sttp.client3._
 import sttp.client3.impl.zio._
 import sttp.client3.testing._
-import zio._
+import zio.{Task, ZIO}
 
 class BackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFutures with ZioTestBase {
 
   "backend stub" should "cycle through responses using a single sent request" in {
     // given
-    val backend: BackendStub[Task] = BackendStub(new RIOMonadAsyncError[Any])
+    val backend: BackendStub[Task] = AsyncHttpClientZioBackend.stub
       .whenRequestMatches(_ => true)
       .thenRespondCyclic("a", "b", "c")
+
     // when
     val r = basicRequest.get(uri"http://example.org/a/b/c").send(backend)
 
@@ -27,7 +28,7 @@ class BackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFutures wi
 
   it should "cycle through responses when called concurrently" in {
     // given
-    val backend: BackendStub[Task] = BackendStub(new RIOMonadAsyncError[Any])
+    val backend: BackendStub[Task] = AsyncHttpClientZioBackend.stub
       .whenRequestMatches(_ => true)
       .thenRespondCyclic("a", "b", "c")
 
@@ -46,7 +47,8 @@ class BackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFutures wi
   }
 
   it should "lift errors due to mapping with impure functions into the response monad" in {
-    val backend: BackendStub[Task] = BackendStub(new RIOMonadAsyncError[Any]).whenAnyRequest.thenRespondOk()
+    val backend: BackendStub[Task] =
+      AsyncHttpClientZioBackend.stub.whenAnyRequest.thenRespondOk()
 
     val error = new IllegalStateException("boom")
 
@@ -62,8 +64,9 @@ class BackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFutures wi
   }
 
   it should "lift errors due to mapping stream with impure functions into the response monad" in {
-    val backend = StreamBackendStub[Task, TestStreams](new RIOMonadAsyncError[Any]).whenAnyRequest
-      .thenRespond(RawStream(List(1: Byte)))
+    val backend =
+      StreamBackendStub[Task, TestStreams](new RIOMonadAsyncError[Any]).whenAnyRequest
+        .thenRespond(RawStream(List(1: Byte)))
 
     val error = new IllegalStateException("boom")
 

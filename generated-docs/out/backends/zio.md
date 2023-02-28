@@ -9,8 +9,8 @@ The `*-zio` modules depend on ZIO 2.x. For ZIO 1.x support, use modules with the
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "zio" % "3.8.11"  // for ZIO 2.x
-"com.softwaremill.sttp.client3" %% "zio1" % "3.8.11" // for ZIO 1.x
+"com.softwaremill.sttp.client3" %% "zio" % "3.8.12"  // for ZIO 2.x
+"com.softwaremill.sttp.client3" %% "zio1" % "3.8.12" // for ZIO 1.x
 ```
 
 Create the backend using:
@@ -40,14 +40,13 @@ Host header override is supported in environments running Java 12 onwards, but i
 -Djdk.httpclient.allowRestrictedHeaders=host
 ```
 
-
 ## Using Armeria
 
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "armeria-backend-zio" % "3.8.11"  // for ZIO 2.x
-"com.softwaremill.sttp.client3" %% "armeria-backend-zio1" % "3.8.11" // for ZIO 1.x
+"com.softwaremill.sttp.client3" %% "armeria-backend-zio" % "3.8.12"  // for ZIO 2.x
+"com.softwaremill.sttp.client3" %% "armeria-backend-zio1" % "3.8.12" // for ZIO 1.x
 ```
 
 add imports:
@@ -96,9 +95,9 @@ This backend is build on top of [Armeria](https://armeria.dev/docs/client-http).
 Armeria's [ClientFactory](https://armeria.dev/docs/client-factory) manages connections and protocol-specific properties.
 Please visit [the official documentation](https://armeria.dev/docs/client-factory) to learn how to configure it.
 
-## ZIO layers
+## ZIO layers + constructors
 
-As an alternative to effectfully or resourcefully creating backend instances, ZIO layers can be used. In this scenario, the lifecycle of a `SttpBackend` service is described by `ZLayer`s, which can be created using the `.layer`/`.layerUsingConfig`/... methods on `HttpClientZioBackend` / `ArmeriaZioBackend`.
+When using constructors to express service dependencies, ZIO layers can be used to provide the `SttpBackend` instance, instead of creating one by hand. In this scenario, the lifecycle of a `SttpBackend` service is described by `ZLayer`s, which can be created using the `.layer`/`.layerUsingConfig`/... methods on `HttpClientZioBackend` / `ArmeriaZioBackend`.
 
 The layers can be used to provide an implementation of the `SttpBackend` dependency when creating services. For example:
 
@@ -120,6 +119,33 @@ object MyService {
 
 ZLayer.make[MyService](MyService.live, HttpClientZioBackend.layer())
 ```
+
+## ZIO environment
+
+As yet another alternative to effectfully or resourcefully creating backend instances, ZIO environment can be used. There are top-level `send` and `sendR` top-level methods which require a `SttpClient` to be available in the environment. The `SttpClient` itself is a type alias:
+
+ ```scala
+ package sttp.client3.httpclient.zio
+ type SttpClient = SttpBackend[Task, ZioStreams with WebSockets]
+
+ // or, when using Armeria
+ package sttp.client3.armeria.zio
+ type SttpClient = SttpBackend[Task, ZioStreams]
+ ```
+
+The lifecycle of the `SttpClient` service is described by `ZLayer`s, which can be created using the `.layer`/`.layerUsingConfig`/... methods on `HttpClientZioBackend` / `ArmeriaZioBackend`.
+
+The `SttpClient` companion object contains effect descriptions which use the `SttpClient` service from the environment to send requests or open websockets. This is different from sttp usage with other effect libraries (which require invoking `.send(backend)` on the request), but is more in line with one of the styles of using ZIO. For example:
+
+ ```scala mdoc:compile-only
+ import sttp.client3._
+ import sttp.client3.httpclient.zio._
+ import zio._
+
+ val request = basicRequest.get(uri"https://httpbin.org/get")
+ val sent: ZIO[SttpClient, Throwable, Response[Either[String, String]]] = 
+   send(request)
+ ```
 
 ## Streaming
 
