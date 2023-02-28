@@ -112,9 +112,9 @@ object HttpClientZioBackend {
     )
 
   def apply(
-             options: BackendOptions = BackendOptions.Default,
-             customizeRequest: HttpRequest => HttpRequest = identity,
-             customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
+      options: BackendOptions = BackendOptions.Default,
+      customizeRequest: HttpRequest => HttpRequest = identity,
+      customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
   ): Task[WebSocketStreamBackend[Task, ZioStreams]] = {
     ZIO.executor.flatMap(executor =>
       ZIO.attempt(
@@ -129,9 +129,9 @@ object HttpClientZioBackend {
   }
 
   def scoped(
-              options: BackendOptions = BackendOptions.Default,
-              customizeRequest: HttpRequest => HttpRequest = identity,
-              customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
+      options: BackendOptions = BackendOptions.Default,
+      customizeRequest: HttpRequest => HttpRequest = identity,
+      customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
   ): ZIO[Scope, Throwable, WebSocketStreamBackend[Task, ZioStreams]] =
     ZIO.acquireRelease(apply(options, customizeRequest, customEncodingHandler))(
       _.close().ignore
@@ -196,7 +196,7 @@ object HttpClientZioBackend {
   /** Create a stub backend for testing, which uses the [[Task]] response wrapper, and supports `Stream[Throwable,
     * ByteBuffer]` streaming.
     *
-    * See [[SttpBackendStub]] for details on how to configure stub responses.
+    * See [[WebSocketStreamBackendStub]] for details on how to configure stub responses.
     */
   def stub: WebSocketStreamBackendStub[Task, ZioStreams] = WebSocketStreamBackendStub(new RIOMonadAsyncError[Any])
 }

@@ -21,9 +21,9 @@ import scala.concurrent.ExecutionContext
   */
 
 class BackendStub[F[_]](
-                         monad: MonadError[F],
-                         matchers: PartialFunction[GenericRequest[_, _], F[Response[_]]],
-                         fallback: Option[Backend[F]]
+    monad: MonadError[F],
+    matchers: PartialFunction[GenericRequest[_, _], F[Response[_]]],
+    fallback: Option[Backend[F]]
 ) extends AbstractBackendStub[F, Any](monad, matchers, fallback)
     with Backend[F] {
 
