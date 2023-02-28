@@ -61,7 +61,7 @@ object ArmeriaZioBackend {
         .map(runtime => apply(runtime, client, closeFactory = true))
     )(_.close().ignore)
 
-  def layer(options: SttpBackendOptions = SttpBackendOptions.Default): Layer[Throwable, SttpBackend[Task, ZioStreams]] =
+  def layer(options: SttpBackendOptions = SttpBackendOptions.Default): Layer[Throwable, SttpClient] =
     ZLayer.scoped(scoped(options))
 
   def usingClient(client: WebClient): Task[SttpBackend[Task, ZioStreams]] =

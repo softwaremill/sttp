@@ -150,7 +150,7 @@ object HttpClientZioBackend {
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
-  ): ZLayer[Any, Throwable, SttpBackend[Task, ZioStreams with WebSockets]] = {
+  ): ZLayer[Any, Throwable, SttpClient] = {
     ZLayer.scoped(
       (for {
         backend <- HttpClientZioBackend(
@@ -178,7 +178,7 @@ object HttpClientZioBackend {
       client: HttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
-  ): ZLayer[Any, Throwable, SttpBackend[Task, ZioStreams with WebSockets]] = {
+  ): ZLayer[Any, Throwable, SttpClient] = {
     ZLayer.scoped(
       ZIO
         .acquireRelease(
