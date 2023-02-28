@@ -3,9 +3,6 @@ package sttp.client3.asynchttpclient.zio
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import sttp.capabilities
-import sttp.capabilities.{Effect, Streams}
-import sttp.capabilities.zio.ZioStreams
 import sttp.client3._
 import sttp.client3.impl.zio._
 import sttp.client3.testing.{SttpBackendStub, TestStreams}
@@ -67,8 +64,9 @@ class SttpBackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFuture
   }
 
   it should "lift errors due to mapping stream with impure functions into the response monad" in {
-    val backend: SttpBackendStub[Task, TestStreams] = SttpBackendStub[Task, TestStreams](new RIOMonadAsyncError[Any]).whenAnyRequest
-      .thenRespond(SttpBackendStub.RawStream(List(1: Byte)))
+    val backend: SttpBackendStub[Task, TestStreams] =
+      SttpBackendStub[Task, TestStreams](new RIOMonadAsyncError[Any]).whenAnyRequest
+        .thenRespond(SttpBackendStub.RawStream(List(1: Byte)))
 
     val error = new IllegalStateException("boom")
 

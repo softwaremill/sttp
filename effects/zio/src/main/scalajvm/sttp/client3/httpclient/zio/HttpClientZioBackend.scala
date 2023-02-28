@@ -150,7 +150,7 @@ object HttpClientZioBackend {
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
-  ): ZLayer[Any, Throwable, SttpBackend[Task, ZioStreams with WebSockets]] = {
+  ): ZLayer[Any, Throwable, SttpClient] = {
     ZLayer.scoped(
       (for {
         backend <- HttpClientZioBackend(
@@ -178,7 +178,7 @@ object HttpClientZioBackend {
       client: HttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
-  ): ZLayer[Any, Throwable, SttpBackend[Task, ZioStreams with WebSockets]] = {
+  ): ZLayer[Any, Throwable, SttpClient] = {
     ZLayer.scoped(
       ZIO
         .acquireRelease(
@@ -198,6 +198,5 @@ object HttpClientZioBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub: SttpBackendStub[Task, ZioStreams with WebSockets] =
-    SttpBackendStub(new RIOMonadAsyncError[Any])
+  def stub: SttpBackendStub[Task, ZioStreams with WebSockets] = SttpBackendStub(new RIOMonadAsyncError[Any])
 }

@@ -9,7 +9,6 @@ import zio._
 object GetAndParseJsonZioCirce extends ZIOAppDefault {
 
   override def run = {
-
     case class HttpBinResponse(origin: String, headers: Map[String, String])
 
     val request = basicRequest
@@ -17,9 +16,9 @@ object GetAndParseJsonZioCirce extends ZIOAppDefault {
       .response(asJson[HttpBinResponse])
 
     for {
-      response <- send(request).provideLayer(HttpClientZioBackend.layer())
+      response <- send(request)
       _ <- Console.printLine(s"Got response code: ${response.code}")
       _ <- Console.printLine(response.body.toString)
     } yield ()
-  }
+  }.provideLayer(HttpClientZioBackend.layer())
 }
