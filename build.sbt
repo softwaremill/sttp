@@ -662,7 +662,7 @@ lazy val http4sCe2Backend = (projectMatrix in file("http4s-ce2-backend"))
     name := "http4s-ce2-backend",
     libraryDependencies ++= Seq(
       "org.http4s" %% "http4s-client" % http4s_ce2_version,
-      "org.http4s" %% "http4s-blaze-client" % http4s_ce2_version % Test
+      "org.http4s" %% "http4s-blaze-client" % http4s_ce2_version % Provided
     )
   )
   .jvmPlatform(scalaVersions = scala2alive)
@@ -675,7 +675,8 @@ lazy val http4sBackend = (projectMatrix in file("http4s-backend"))
     name := "http4s-backend",
     libraryDependencies ++= Seq(
       "org.http4s" %% "http4s-client" % http4s_ce3_version,
-      "org.http4s" %% "http4s-blaze-client" % "0.23.13" % Test
+      "org.http4s" %% "http4s-ember-client" % "0.23.13" % Provided,
+      "org.http4s" %% "http4s-blaze-client" % "0.23.13" % Provided,
     ),
     evictionErrorLevel := Level.Info
   )
