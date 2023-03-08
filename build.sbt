@@ -130,7 +130,7 @@ val playJsonVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.7.4"
   case _             => "2.9.2"
 }
-val catsEffect_3_version = "3.4.7"
+val catsEffect_3_version = "3.4.8"
 val fs2_3_version = "3.6.1"
 
 val catsEffect_2_version: Option[(Long, Long)] => String = {
@@ -151,9 +151,9 @@ val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", 
 )
 
 val zio1Version = "1.0.17"
-val zio2Version = "2.0.9"
+val zio2Version = "2.0.10"
 val zio1InteropRsVersion = "1.3.12"
-val zio2InteropRsVersion = "2.0.0"
+val zio2InteropRsVersion = "2.0.1"
 
 val sttpModelVersion = "1.5.5"
 val sttpSharedVersion = "1.3.13"
@@ -167,7 +167,7 @@ val resilience4jVersion = "2.0.2"
 val http4s_ce2_version = "0.22.15"
 val http4s_ce3_version = "0.23.18"
 
-val openTelemetryVersion = "1.23.0"
+val openTelemetryVersion = "1.23.1"
 
 val compileAndTest = "compile->compile;test->test"
 
@@ -279,7 +279,7 @@ lazy val testServer = (projectMatrix in file("testing/server"))
     name := "testing-server",
     libraryDependencies ++= Seq(
       akkaHttp,
-      "ch.megard" %% "akka-http-cors" % "1.1.3",
+      "ch.megard" %% "akka-http-cors" % "1.2.0",
       akkaStreams
     ),
     // the test server needs to be started before running any backend tests
@@ -970,7 +970,7 @@ lazy val scribeBackend = (projectMatrix in file("logging/scribe"))
   .settings(
     name := "scribe-backend",
     libraryDependencies ++= Seq(
-      "com.outr" %%% "scribe" % "3.11.0"
+      "com.outr" %%% "scribe" % "3.11.1"
     ),
     scalaTest
   )

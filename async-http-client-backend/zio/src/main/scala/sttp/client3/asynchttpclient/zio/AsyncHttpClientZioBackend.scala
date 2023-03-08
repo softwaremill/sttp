@@ -253,4 +253,5 @@ object AsyncHttpClientZioBackend {
     */
   def stub: SttpBackendStub[Task, ZioStreams with WebSockets] =
     SttpBackendStub(new RIOMonadAsyncError[Any])
+
 }

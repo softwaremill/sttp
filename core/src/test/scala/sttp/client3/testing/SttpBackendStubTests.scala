@@ -95,14 +95,14 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
   }
 
   it should "adjust exceptions so they are wrapped with SttpClientException" in {
-    val testingBackend = SttpBackendStub.synchronous
-      .whenAnyRequest
+    val testingBackend = SttpBackendStub.synchronous.whenAnyRequest
       .thenRespond("{}", StatusCode(200))
 
-    val request = () => basicRequest
-      .get(uri"./test")
-      .response(asString.map(_ => throw DeserializationException("", new RuntimeException("test"))))
-      .send(testingBackend)
+    val request = () =>
+      basicRequest
+        .get(uri"./test")
+        .response(asString.map(_ => throw DeserializationException("", new RuntimeException("test"))))
+        .send(testingBackend)
 
     val readException = the[sttp.client3.SttpClientException.ReadException] thrownBy request()
     readException.cause shouldBe a[sttp.client3.DeserializationException[_]]
