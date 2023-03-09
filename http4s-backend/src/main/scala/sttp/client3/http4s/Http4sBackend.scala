@@ -25,8 +25,6 @@ import sttp.client3.testing.SttpBackendStub
 import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.client3.{BasicRequestBody, NoBody, RequestBody, Response, SttpBackend, _}
 
-import scala.concurrent.ExecutionContext
-
 // needs http4s using cats-effect
 class Http4sBackend[F[_]: Async](
     client: Client[F],
@@ -298,17 +296,31 @@ object Http4sBackend {
       blazeClientBuilder: BlazeClientBuilder[F],
       customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _,
       customEncodingHandler: EncodingHandler[F] = PartialFunction.empty
-  ): Resource[F, SttpBackend[F, Fs2Streams[F]]] = {
+  ): Resource[F, SttpBackend[F, Fs2Streams[F]]] =
     blazeClientBuilder.resource.map(c => usingClient(c, customizeRequest, customEncodingHandler))
-  }
+
+  def usingDefaultBlazeClientBuilder[F[_]: Async](
+      customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _,
+      customEncodingHandler: EncodingHandler[F] = PartialFunction.empty
+  ): Resource[F, SttpBackend[F, Fs2Streams[F]]] =
+    usingBlazeClientBuilder(
+      BlazeClientBuilder[F],
+      customizeRequest,
+      customEncodingHandler
+    )
 
   def usingEmberClientBuilder[F[_]: Async](
       emberClientBuilder: EmberClientBuilder[F],
       customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _,
       customEncodingHandler: EncodingHandler[F] = PartialFunction.empty
-  ): Resource[F, SttpBackend[F, Fs2Streams[F]]] = {
+  ): Resource[F, SttpBackend[F, Fs2Streams[F]]] =
     emberClientBuilder.build.map(c => usingClient(c, customizeRequest, customEncodingHandler))
-  }
+
+  def usingDefaultEmberClientBuilder[F[_]: Async](
+      customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _,
+      customEncodingHandler: EncodingHandler[F] = PartialFunction.empty
+  ): Resource[F, SttpBackend[F, Fs2Streams[F]]] =
+    usingEmberClientBuilder(EmberClientBuilder.default[F], customizeRequest, customEncodingHandler)
 
   /** Create a stub backend for testing, which uses the `F` response wrapper, and supports `Stream[F, Byte]` streaming.
     *

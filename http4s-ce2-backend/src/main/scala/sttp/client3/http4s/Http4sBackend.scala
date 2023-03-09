@@ -302,6 +302,19 @@ object Http4sBackend {
     blazeClientBuilder.resource.map(c => usingClient(c, blocker, customizeRequest, customEncodingHandler))
   }
 
+  def usingDefaultBlazeClientBuilder[F[_]: ConcurrentEffect: ContextShift](
+      blocker: Blocker,
+      clientExecutionContext: ExecutionContext = ExecutionContext.global,
+      customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _,
+      customEncodingHandler: EncodingHandler[F] = PartialFunction.empty
+  ): Resource[F, SttpBackend[F, Fs2Streams[F]]] =
+    usingBlazeClientBuilder(
+      BlazeClientBuilder[F](clientExecutionContext),
+      blocker,
+      customizeRequest,
+      customEncodingHandler
+    )
+
   /** Create a stub backend for testing, which uses the `F` response wrapper, and supports `Stream[F, Byte]` streaming.
     *
     * See [[sttp.client3.testing.SttpBackendStub]] for details on how to configure stub responses.
