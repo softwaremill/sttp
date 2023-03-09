@@ -10,8 +10,9 @@ import fs2.io.file.Files
 import fs2.{Chunk, Stream}
 import org.http4s.{ContentCoding, EntityBody, Status, Request => Http4sRequest}
 import org.http4s
-import org.http4s.client.Client
 import org.http4s.blaze.client.BlazeClientBuilder
+import org.http4s.client.Client
+import org.http4s.ember.client.EmberClientBuilder
 import org.typelevel.ci.CIString
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client3.http4s.Http4sBackend.EncodingHandler
@@ -28,8 +29,6 @@ import sttp.monad.MonadError
 import sttp.client3.testing.StreamBackendStub
 import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.client3._
-
-import scala.concurrent.ExecutionContext
 
 // needs http4s using cats-effect
 class Http4sBackend[F[_]: Async](
@@ -297,18 +296,29 @@ object Http4sBackend {
       customEncodingHandler: EncodingHandler[F] = PartialFunction.empty
   ): Resource[F, StreamBackend[F, Fs2Streams[F]]] = {
     blazeClientBuilder.resource.map(c => usingClient(c, customizeRequest, customEncodingHandler))
-  }
 
   def usingDefaultBlazeClientBuilder[F[_]: Async](
-      clientExecutionContext: ExecutionContext = ExecutionContext.global,
       customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _,
       customEncodingHandler: EncodingHandler[F] = PartialFunction.empty
   ): Resource[F, StreamBackend[F, Fs2Streams[F]]] =
     usingBlazeClientBuilder(
-      BlazeClientBuilder[F](clientExecutionContext),
+      BlazeClientBuilder[F],
       customizeRequest,
       customEncodingHandler
     )
+
+  def usingEmberClientBuilder[F[_]: Async](
+      emberClientBuilder: EmberClientBuilder[F],
+      customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _,
+      customEncodingHandler: EncodingHandler[F] = PartialFunction.empty
+  ): Resource[F, StreamBackend[F, Fs2Streams[F]]] =
+    emberClientBuilder.build.map(c => usingClient(c, customizeRequest, customEncodingHandler))
+
+  def usingDefaultEmberClientBuilder[F[_]: Async](
+      customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _,
+      customEncodingHandler: EncodingHandler[F] = PartialFunction.empty
+  ): Resource[F, StreamBackend[F, Fs2Streams[F]]] =
+    usingEmberClientBuilder(EmberClientBuilder.default[F], customizeRequest, customEncodingHandler)
 
   /** Create a stub backend for testing, which uses the `F` response wrapper, and supports `Stream[F, Byte]` streaming.
     *

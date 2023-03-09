@@ -9,7 +9,7 @@ import sttp.client3.testing.HttpTest
 import scala.concurrent.ExecutionContext
 
 class Http4sHttpTest extends HttpTest[IO] with CatsRetryTest with CatsTestBase {
-  private val blazeClientBuilder = BlazeClientBuilder[IO](ExecutionContext.global)
+  private val blazeClientBuilder = BlazeClientBuilder[IO]
 
   override val backend: Backend[IO] =
     Http4sBackend.usingBlazeClientBuilder(blazeClientBuilder).allocated.unsafeRunSync()._1

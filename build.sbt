@@ -152,7 +152,7 @@ val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", 
 )
 
 val zio1Version = "1.0.17"
-val zio2Version = "2.0.9"
+val zio2Version = "2.0.10"
 val zio1InteropRsVersion = "1.3.12"
 val zio2InteropRsVersion = "2.0.1"
 
@@ -280,7 +280,7 @@ lazy val testServer = (projectMatrix in file("testing/server"))
     name := "testing-server",
     libraryDependencies ++= Seq(
       akkaHttp,
-      "ch.megard" %% "akka-http-cors" % "1.1.3",
+      "ch.megard" %% "akka-http-cors" % "1.2.0",
       akkaStreams
     ),
     // the test server needs to be started before running any backend tests
@@ -676,7 +676,8 @@ lazy val http4sBackend = (projectMatrix in file("http4s-backend"))
     name := "http4s-backend",
     libraryDependencies ++= Seq(
       "org.http4s" %% "http4s-client" % http4s_ce3_version,
-      "org.http4s" %% "http4s-blaze-client" % "0.23.13" % Optional
+      "org.http4s" %% "http4s-ember-client" % "0.23.13" % Optional,
+      "org.http4s" %% "http4s-blaze-client" % "0.23.13" % Optional,
     ),
     evictionErrorLevel := Level.Info
   )

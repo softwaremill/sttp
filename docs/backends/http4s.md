@@ -16,6 +16,10 @@ import sttp.capabilities.fs2.Fs2Streams
 import sttp.client3._
 import sttp.client3.http4s._
 
+// the "org.http4s" %% "http4s-ember-client" % http4sVersion dependency needs to be explicitly added
+Http4sBackend.usingDefaultEmberClientBuilder[IO](): Resource[IO, StreamBackend[IO, Fs2Streams[IO]]]
+
+// the "org.http4s" %% "http4s-blaze-client" % http4sVersion dependency needs to be explicitly added
 Http4sBackend.usingDefaultBlazeClientBuilder[IO](): Resource[IO, StreamBackend[IO, Fs2Streams[IO]]]
 ```
 
@@ -25,7 +29,7 @@ There are also [other cats-effect-based backends](catseffect.md), which don't de
 
 Please note that: 
 
-* the backend contains an **optional** dependency on `http4s-blaze-client`, to provide the `Http4sBackend.usingBlazeClientBuilder` and `Http4sBackend.usingDefaultBlazeClientBuilder` methods. This makes the client usable with other http4s client implementations, without the need to depend on blaze.
+* the backend contains **optional** dependencies on `http4s-ember-client` and `http4s-blaze-client`, to provide the `Http4sBackend.usingEmberClientBuilder`, `Http4sBackend.usingBlazeClientBuilder`, `Http4sBackend.usingDefaultEmberClientBuilder` and `Http4sBackend.usingDefaultBlazeClientBuilder` methods. This makes the client usable with other http4s client implementations, without the need to depend on ember or blaze.
 * the backend does not support `SttpBackendOptions`, that is specifying proxy settings (proxies are not implemented in http4s, see [this issue](https://github.com/http4s/http4s/issues/251)), as well as configuring the connect timeout 
 * the backend does not support the `RequestT.options.readTimeout` option
 
