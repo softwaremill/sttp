@@ -10,8 +10,9 @@ import fs2.io.file.Files
 import fs2.{Chunk, Stream}
 import org.http4s.{ContentCoding, EntityBody, Status, Request => Http4sRequest}
 import org.http4s
-import org.http4s.client.Client
 import org.http4s.blaze.client.BlazeClientBuilder
+import org.http4s.client.Client
+import org.http4s.ember.client.EmberClientBuilder
 import org.typelevel.ci.CIString
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client3.http4s.Http4sBackend.EncodingHandler
@@ -301,16 +302,13 @@ object Http4sBackend {
     blazeClientBuilder.resource.map(c => usingClient(c, customizeRequest, customEncodingHandler))
   }
 
-  def usingDefaultBlazeClientBuilder[F[_]: Async](
-      clientExecutionContext: ExecutionContext = ExecutionContext.global,
+  def usingEmberClientBuilder[F[_]: Async](
+      emberClientBuilder: EmberClientBuilder[F],
       customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _,
       customEncodingHandler: EncodingHandler[F] = PartialFunction.empty
-  ): Resource[F, SttpBackend[F, Fs2Streams[F]]] =
-    usingBlazeClientBuilder(
-      BlazeClientBuilder[F](clientExecutionContext),
-      customizeRequest,
-      customEncodingHandler
-    )
+  ): Resource[F, SttpBackend[F, Fs2Streams[F]]] = {
+    emberClientBuilder.build.map(c => usingClient(c, customizeRequest, customEncodingHandler))
+  }
 
   /** Create a stub backend for testing, which uses the `F` response wrapper, and supports `Stream[F, Byte]` streaming.
     *
