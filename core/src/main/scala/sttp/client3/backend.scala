@@ -7,7 +7,7 @@ import sttp.client3.monad.IdMonad
 /** A specific implementation of HTTP request sending logic.
   *
   * The [[send]] method '''should not''' be used directly by client code, if possible. Instead, the [[Request.send]],
-  * [[StreamingRequest.send]], [[WebSocketRequest.send]] or [[WebSocketStreamRequest.send]] methods (depending on the
+  * [[StreamRequest.send]], [[WebSocketRequest.send]] or [[WebSocketStreamRequest.send]] methods (depending on the
   * type of the request) should be used, providing a specific backend instance as a parameter.
   *
   * When creating an instance of a backend, one of the [[Backend]] traits should be mixed in, reflecting the effect type
