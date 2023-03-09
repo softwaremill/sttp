@@ -50,7 +50,7 @@ private[client3] trait BodyToHttpClient[F[_], S] {
 
   def streamToPublisher(stream: streams.BinaryStream): F[BodyPublisher]
 
-  private def multipartBody[T](parts: Seq[Part[AbstractBody[_]]]) = {
+  private def multipartBody[T](parts: Seq[Part[GenericRequestBody[_]]]) = {
     val multipartBuilder = new MultiPartBodyPublisher()
     parts.foreach { p =>
       val allHeaders = Header(HeaderNames.ContentDisposition, p.contentDispositionHeaderValue) +: p.headers

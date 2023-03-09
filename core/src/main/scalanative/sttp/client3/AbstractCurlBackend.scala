@@ -158,7 +158,7 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
     lift(m)
   }
 
-  private def setRequestBody(curl: CurlHandle, body: AbstractBody[R])(implicit zone: Zone): F[CurlCode] =
+  private def setRequestBody(curl: CurlHandle, body: GenericRequestBody[R])(implicit zone: Zone): F[CurlCode] =
     body match { // todo: assign to responseMonad object
       case b: BasicBodyPart =>
         val str = basicBodyToString(b)

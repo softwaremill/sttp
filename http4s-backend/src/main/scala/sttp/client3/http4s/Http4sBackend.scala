@@ -138,7 +138,7 @@ class Http4sBackend[F[_]: Async](
     }
   }
 
-  private def bodyToHttp4s[R](r: GenericRequest[_, R], body: AbstractBody[R]): (http4s.Entity[F], http4s.Headers) = {
+  private def bodyToHttp4s[R](r: GenericRequest[_, R], body: GenericRequestBody[R]): (http4s.Entity[F], http4s.Headers) = {
     body match {
       case NoBody => (http4s.Entity(http4s.EmptyBody: http4s.EntityBody[F]), http4s.Headers.empty)
 

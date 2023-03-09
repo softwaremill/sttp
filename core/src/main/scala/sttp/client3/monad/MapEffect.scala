@@ -34,7 +34,7 @@ object MapEffect {
     val newRequest = r match {
       case srf: StreamRequest[_, R0 with Effect[F]] =>
         srf.copy(
-          body = srf.body.asInstanceOf[AbstractBody[R0]],
+          body = srf.body.asInstanceOf[GenericRequestBody[R0]],
           response = new StreamResponseAs(internalResponse[R0])
         )
       case wr: WebSocketRequest[_, _] =>

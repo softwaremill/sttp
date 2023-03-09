@@ -185,7 +185,7 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S]](
       .toList
   }
 
-  private def createBody(body: AbstractBody[R]): F[js.UndefOr[BodyInit]] = {
+  private def createBody(body: GenericRequestBody[R]): F[js.UndefOr[BodyInit]] = {
     body match {
       case NoBody =>
         responseMonad.unit(js.undefined) // skip

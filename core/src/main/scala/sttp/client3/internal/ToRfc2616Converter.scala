@@ -40,7 +40,7 @@ object ToRfc2616Converter {
     }
   }
 
-  def handleMultipartBody(parts: Seq[Part[AbstractBody[_]]]): String = {
+  def handleMultipartBody(parts: Seq[Part[GenericRequestBody[_]]]): String = {
     val boundary = generateBoundary()
     parts
       .map { p =>

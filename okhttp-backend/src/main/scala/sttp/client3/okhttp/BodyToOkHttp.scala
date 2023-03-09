@@ -19,7 +19,7 @@ private[okhttp] trait BodyToOkHttp[F[_], S] {
   val streams: Streams[S]
   def streamToRequestBody(stream: streams.BinaryStream, mt: MediaType, cl: Option[Long]): OkHttpRequestBody
 
-  def apply[R](body: AbstractBody[R], ct: Option[String], cl: Option[Long]): Option[OkHttpRequestBody] = {
+  def apply[R](body: GenericRequestBody[R], ct: Option[String], cl: Option[Long]): Option[OkHttpRequestBody] = {
     val mediaType = ct.flatMap(c => Try(MediaType.parse(c)).toOption).orNull
     body match {
       case NoBody                                          => None
@@ -46,7 +46,7 @@ private[okhttp] trait BodyToOkHttp[F[_], S] {
     }
   }
 
-  private def addMultipart(builder: OkHttpMultipartBody.Builder, mp: Part[AbstractBody[_]]): Unit = {
+  private def addMultipart(builder: OkHttpMultipartBody.Builder, mp: Part[GenericRequestBody[_]]): Unit = {
     val allHeaders = mp.headers :+ Header(HeaderNames.ContentDisposition, mp.contentDispositionHeaderValue)
     val headers =
       OkHttpHeaders.of(allHeaders.filterNot(_.is(HeaderNames.ContentType)).map(h => (h.name, h.value)).toMap.asJava)

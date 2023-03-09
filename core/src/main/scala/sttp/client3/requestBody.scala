@@ -10,19 +10,19 @@ import sttp.model.internal.UriCompatibility
 
 import scala.collection.immutable.Seq
 
-sealed trait AbstractBody[-R] {
+sealed trait GenericRequestBody[-R] {
   def defaultContentType: MediaType
   def show: String
 }
 
-sealed trait BasicBody extends AbstractBody[Any]
+sealed trait BasicBody extends GenericRequestBody[Any]
 
 case object NoBody extends BasicBody {
   override def defaultContentType: MediaType = MediaType.ApplicationOctetStream
   def show: String = "empty"
 }
 
-sealed trait BodyPart[-S] extends AbstractBody[S]
+sealed trait BodyPart[-S] extends GenericRequestBody[S]
 
 sealed trait BasicBodyPart extends BasicBody with BodyPart[Any]
 
@@ -73,7 +73,7 @@ case class FileBody(
   override def show: String = s"file: ${f.name}"
 }
 
-sealed trait MultipartBody[S] extends AbstractBody[S] {
+sealed trait MultipartBody[S] extends GenericRequestBody[S] {
   override def defaultContentType: MediaType = MediaType.MultipartFormData
   override def show: String = s"multipart: ${parts.map(p => p.name).mkString(",")}"
   def parts: Seq[Part[BodyPart[S]]]

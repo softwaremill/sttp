@@ -22,7 +22,7 @@ import scala.util.{Failure, Success, Try}
 private[akkahttp] object BodyToAkka {
   def apply[R](
                 r: GenericRequest[_, R],
-                body: AbstractBody[R],
+                body: GenericRequestBody[R],
                 ar: HttpRequest
   ): Try[HttpRequest] = {
     def ctWithCharset(ct: ContentType, charset: String) =

@@ -34,7 +34,7 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
   def showBasic: String
 
   def headers: Seq[Header]
-  def body: AbstractBody[_]
+  def body: GenericRequestBody[_]
 
   /** Description of how the response body should be handled. Needs to be specified upfront so that the response is
     * always consumed and hence there are no requirements on client code to consume it.

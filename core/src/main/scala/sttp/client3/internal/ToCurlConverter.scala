@@ -51,7 +51,7 @@ object ToCurlConverter {
     }
   }
 
-  def handleMultipartBody(parts: Seq[Part[AbstractBody[_]]]): String = {
+  def handleMultipartBody(parts: Seq[Part[GenericRequestBody[_]]]): String = {
     parts
       .map { p =>
         p.body match {
