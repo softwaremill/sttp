@@ -8,6 +8,8 @@
 
 # The Scala HTTP client that you always wanted!
 
+> This is a development version of the upcoming sttp client 4. For the current stable version, see [sttp 3 on GitHub](https://github.com/softwaremill/sttp/tree/v3) and its [documentation](https://sttp.softwaremill.com/en/v3/).
+
 ## Welcome!
 
 [sttp client](https://github.com/softwaremill/sttp) is an open-source library which provides a clean, programmer-friendly API to describe HTTP
@@ -39,9 +41,11 @@ println(response.body)
 
 ## Documentation
 
-sttp (v3) documentation is available at [sttp.softwaremill.com](http://sttp.softwaremill.com).
+sttp (v4) documentation is available at [sttp.softwaremill.com](https://sttp.softwaremill.com/).
 
-sttp (v2) documentation is available at [sttp.softwaremill.com/en/v2](http://sttp.softwaremill.com/en/v2).
+sttp (v3) documentation is available at [sttp.softwaremill.com/en/v3](https://sttp.softwaremill.com/en/v3/).
+
+sttp (v2) documentation is available at [sttp.softwaremill.com/en/v2](https://sttp.softwaremill.com/en/v2).
 
 sttp (v1) documentation is available at [sttp.softwaremill.com/en/v1](https://sttp.softwaremill.com/en/v1).
 
