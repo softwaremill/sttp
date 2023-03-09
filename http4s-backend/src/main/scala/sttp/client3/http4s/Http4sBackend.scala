@@ -18,12 +18,7 @@ import sttp.capabilities.fs2.Fs2Streams
 import sttp.client3.http4s.Http4sBackend.EncodingHandler
 import sttp.client3.httpclient.fs2.Fs2Compression
 import sttp.client3.impl.cats.CatsMonadAsyncError
-import sttp.client3.internal.{
-  BodyFromResponseAs,
-  IOBufferSize,
-  SttpFile,
-  throwNestedMultipartNotAllowed
-}
+import sttp.client3.internal.{BodyFromResponseAs, IOBufferSize, SttpFile, throwNestedMultipartNotAllowed}
 import sttp.model._
 import sttp.monad.MonadError
 import sttp.client3.testing.StreamBackendStub
@@ -243,9 +238,9 @@ class Http4sBackend[F[_]: Async](
         (response.body, () => signalBodyComplete).pure[F]
 
       override protected def handleWS[T](
-                                          responseAs: GenericWebSocketResponseAs[T, _],
-                                          meta: ResponseMetadata,
-                                          ws: Nothing
+          responseAs: GenericWebSocketResponseAs[T, _],
+          meta: ResponseMetadata,
+          ws: Nothing
       ): F[T] = ws
 
       override protected def cleanupWhenNotAWebSocket(
@@ -294,7 +289,7 @@ object Http4sBackend {
       blazeClientBuilder: BlazeClientBuilder[F],
       customizeRequest: Http4sRequest[F] => Http4sRequest[F] = identity[Http4sRequest[F]] _,
       customEncodingHandler: EncodingHandler[F] = PartialFunction.empty
-  ): Resource[F, StreamBackend[F, Fs2Streams[F]]] = {
+  ): Resource[F, StreamBackend[F, Fs2Streams[F]]] =
     blazeClientBuilder.resource.map(c => usingClient(c, customizeRequest, customEncodingHandler))
 
   def usingDefaultBlazeClientBuilder[F[_]: Async](
