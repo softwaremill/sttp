@@ -3,9 +3,9 @@
 This backend is based on [http4s](https://http4s.org) (client) and is **asynchronous**. To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "http4s-backend" % "3.8.12" // for cats-effect 3.x & http4s 1.0.0-Mx
+"com.softwaremill.sttp.client3" %% "http4s-backend" % "3.8.13" // for cats-effect 3.x & http4s 1.0.0-Mx
 // or
-"com.softwaremill.sttp.client3" %% "http4s-ce2-backend" % "3.8.12" // for cats-effect 2.x & http4s 0.21.x
+"com.softwaremill.sttp.client3" %% "http4s-ce2-backend" % "3.8.13" // for cats-effect 2.x & http4s 0.21.x
 ```
 
 The backend can be created in a couple of ways, e.g.:
@@ -16,6 +16,10 @@ import sttp.capabilities.fs2.Fs2Streams
 import sttp.client3._
 import sttp.client3.http4s._
 
+// the "org.http4s" %% "http4s-ember-client" % http4sVersion dependency needs to be explicitly added
+Http4sBackend.usingDefaultEmberClientBuilder[IO](): Resource[IO, SttpBackend[IO, Fs2Streams[IO]]]
+
+// the "org.http4s" %% "http4s-blaze-client" % http4sVersion dependency needs to be explicitly added
 Http4sBackend.usingDefaultBlazeClientBuilder[IO](): Resource[IO, SttpBackend[IO, Fs2Streams[IO]]]
 ```
 
@@ -25,7 +29,7 @@ There are also [other cats-effect-based backends](catseffect.md), which don't de
 
 Please note that: 
 
-* the backend contains an **optional** dependency on `http4s-blaze-client`, to provide the `Http4sBackend.usingBlazeClientBuilder` and `Http4sBackend.usingDefaultBlazeClientBuilder` methods. This makes the client usable with other http4s client implementations, without the need to depend on blaze.
+* the backend contains **optional** dependencies on `http4s-ember-client` and `http4s-blaze-client`, to provide the `Http4sBackend.usingEmberClientBuilder`, `Http4sBackend.usingBlazeClientBuilder`, `Http4sBackend.usingDefaultEmberClientBuilder` and `Http4sBackend.usingDefaultBlazeClientBuilder` methods. This makes the client usable with other http4s client implementations, without the need to depend on ember or blaze.
 * the backend does not support `SttpBackendOptions`, that is specifying proxy settings (proxies are not implemented in http4s, see [this issue](https://github.com/http4s/http4s/issues/251)), as well as configuring the connect timeout 
 * the backend does not support the `RequestT.options.readTimeout` option
 
