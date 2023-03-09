@@ -3,15 +3,7 @@ package sttp.client3.upicklejson
 import upickle.default._
 import org.scalatest._
 import sttp.client3.internal._
-import sttp.client3.{
-  basicRequest,
-  DeserializationException,
-  MappedResponseAs,
-  RequestT,
-  ResponseAs,
-  ResponseAsByteArray,
-  StringBody
-}
+import sttp.client3._
 import sttp.model._
 
 import org.scalatest.flatspec.AnyFlatSpec
@@ -108,7 +100,7 @@ class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
     implicit val readWriter: ReadWriter[Outer] = macroRW[Outer]
   }
 
-  def extractBody[A[_], B, C](request: RequestT[A, B, C]): String =
+  def extractBody[T](request: PartialRequest[T]): String =
     request.body match {
       case StringBody(body, "utf-8", MediaType.ApplicationJson) =>
         body
@@ -116,8 +108,8 @@ class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
         fail(s"Request body does not serialize to correct StringBody: $wrongBody")
     }
 
-  def runJsonResponseAs[A](responseAs: ResponseAs[A, Nothing]): String => A =
-    responseAs match {
+  def runJsonResponseAs[A](responseAs: ResponseAs[A]): String => A =
+    responseAs.delegate match {
       case responseAs: MappedResponseAs[_, A, Nothing] =>
         responseAs.raw match {
           case ResponseAsByteArray =>

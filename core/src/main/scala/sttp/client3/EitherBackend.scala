@@ -1,44 +1,18 @@
 package sttp.client3
 
-import sttp.capabilities.Effect
-import sttp.client3.monad.{FunctionK, MapEffect}
-import sttp.monad.{EitherMonad, MonadError}
+import sttp.client3.monad.FunctionK
+import sttp.monad.EitherMonad
 
-import scala.util.control.NonFatal
-
-/** A synchronous backend that safely wraps [[SttpBackend]] exceptions in `Either[Throwable, *]`'s
-  *
-  * @param delegate
-  *   A synchronous `SttpBackend` which to which this backend forwards all requests
-  * @tparam P
-  *   TODO
-  */
-class EitherBackend[P](delegate: SttpBackend[Identity, P]) extends SttpBackend[Either[Throwable, *], P] {
-  override def send[T, R >: P with Effect[Either[Throwable, *]]](
-      request: Request[T, R]
-  ): Either[Throwable, Response[T]] =
-    doTry(
-      delegate.send(
-        MapEffect[Either[Throwable, *], Identity, Identity, T, P](
-          request: Request[T, P with Effect[Either[Throwable, *]]],
-          eitherToId,
-          idToEither,
-          responseMonad,
-          delegate.responseMonad
-        )
-      )
-    )
-
-  override def close(): Either[Throwable, Unit] = doTry(delegate.close())
-
-  private def doTry[T](t: => T): Either[Throwable, T] = {
-    try Right(t)
-    catch {
-      case NonFatal(e) => Left(e)
-    }
-  }
-
-  override def responseMonad: MonadError[Either[Throwable, *]] = EitherMonad
+/** A synchronous backend that safely wraps exceptions in `Either[Throwable, *]`'s */
+object EitherBackend {
+  def apply(backend: SyncBackend): Backend[Either[Throwable, *]] =
+    MappedEffectBackend(backend, idToEither, eitherToId, EitherMonad)
+  def apply(backend: WebSocketBackend[Identity]): WebSocketBackend[Either[Throwable, *]] =
+    MappedEffectBackend(backend, idToEither, eitherToId, EitherMonad)
+  def apply[S](backend: StreamBackend[Identity, S]): StreamBackend[Either[Throwable, *], S] =
+    MappedEffectBackend(backend, idToEither, eitherToId, EitherMonad)
+  def apply[S](backend: WebSocketStreamBackend[Identity, S]): WebSocketStreamBackend[Either[Throwable, *], S] =
+    MappedEffectBackend(backend, idToEither, eitherToId, EitherMonad)
 
   private val eitherToId: FunctionK[Either[Throwable, *], Identity] =
     new FunctionK[Either[Throwable, *], Identity] {

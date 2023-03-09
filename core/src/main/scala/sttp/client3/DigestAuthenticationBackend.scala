@@ -7,11 +7,12 @@ import sttp.client3.internal.DigestAuthenticator.DigestAuthData
 import sttp.monad.syntax._
 import sttp.model.Header
 
-class DigestAuthenticationBackend[F[_], P](
-    delegate: SttpBackend[F, P],
-    clientNonceGenerator: () => String = DigestAuthenticator.defaultClientNonceGenerator
-) extends DelegateSttpBackend[F, P](delegate) {
-  override def send[T, R >: P with Effect[F]](request: Request[T, R]): F[Response[T]] = {
+abstract class DigestAuthenticationBackend[F[_], P] private (
+    delegate: GenericBackend[F, P],
+    clientNonceGenerator: () => String
+) extends DelegateBackend(delegate) {
+
+  override def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] =
     delegate
       .send(request)
       .flatMap { firstResponse =>
@@ -25,13 +26,12 @@ class DigestAuthenticationBackend[F[_], P](
           DigestAuthenticator.apply(_, clientNonceGenerator)
         ).map(_._1)
       }
-  }
 
-  private def handleResponse[T, R >: P with Effect[F]](
-      request: Request[T, R],
-      response: Response[T],
-      digestTag: String,
-      digestAuthenticator: DigestAuthData => DigestAuthenticator
+  private def handleResponse[T](
+                                 request: GenericRequest[T, P with Effect[F]],
+                                 response: Response[T],
+                                 digestTag: String,
+                                 digestAuthenticator: DigestAuthData => DigestAuthenticator
   ): F[(Response[T], Option[Header])] = {
     request
       .tag(digestTag)
@@ -45,6 +45,28 @@ class DigestAuthenticationBackend[F[_], P](
 }
 
 object DigestAuthenticationBackend {
+  def apply(delegate: SyncBackend): SyncBackend = apply(delegate, DigestAuthenticator.defaultClientNonceGenerator _)
+  def apply[F[_]](delegate: Backend[F]): Backend[F] = apply(delegate, DigestAuthenticator.defaultClientNonceGenerator _)
+  def apply[F[_]](delegate: WebSocketBackend[F]): WebSocketBackend[F] =
+    apply(delegate, DigestAuthenticator.defaultClientNonceGenerator _)
+  def apply[F[_], S](delegate: StreamBackend[F, S]): StreamBackend[F, S] =
+    apply(delegate, DigestAuthenticator.defaultClientNonceGenerator _)
+  def apply[F[_], S](delegate: WebSocketStreamBackend[F, S]): WebSocketStreamBackend[F, S] =
+    apply(delegate, DigestAuthenticator.defaultClientNonceGenerator _)
+  def apply(delegate: SyncBackend, clientNonceGenerator: () => String): SyncBackend =
+    new DigestAuthenticationBackend(delegate, clientNonceGenerator) with SyncBackend {}
+  def apply[F[_]](delegate: Backend[F], clientNonceGenerator: () => String): Backend[F] =
+    new DigestAuthenticationBackend(delegate, clientNonceGenerator) with Backend[F] {}
+  def apply[F[_]](delegate: WebSocketBackend[F], clientNonceGenerator: () => String): WebSocketBackend[F] =
+    new DigestAuthenticationBackend(delegate, clientNonceGenerator) with WebSocketBackend[F] {}
+  def apply[F[_], S](delegate: StreamBackend[F, S], clientNonceGenerator: () => String): StreamBackend[F, S] =
+    new DigestAuthenticationBackend(delegate, clientNonceGenerator) with StreamBackend[F, S] {}
+  def apply[F[_], S](
+      delegate: WebSocketStreamBackend[F, S],
+      clientNonceGenerator: () => String
+  ): WebSocketStreamBackend[F, S] =
+    new DigestAuthenticationBackend(delegate, clientNonceGenerator) with WebSocketStreamBackend[F, S] {}
+
   private[client3] val DigestAuthTag = "__sttp_DigestAuth"
   private[client3] val ProxyDigestAuthTag = "__sttp_ProxyDigestAuth"
 }

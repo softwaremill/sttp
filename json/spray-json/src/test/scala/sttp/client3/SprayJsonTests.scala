@@ -77,7 +77,7 @@ class SprayJsonTests extends AnyFlatSpec with Matchers with EitherValues {
     ct shouldBe Some(MediaType.ApplicationJson.copy(charset = Some(Utf8)).toString)
   }
 
-  def extractBody[A[_], B, C](request: RequestT[A, B, C]): String =
+  def extractBody[T](request: PartialRequest[T]): String =
     request.body match {
       case StringBody(body, "utf-8", MediaType.ApplicationJson) =>
         body
@@ -85,8 +85,8 @@ class SprayJsonTests extends AnyFlatSpec with Matchers with EitherValues {
         fail(s"Request body does not serialize to correct StringBody: $wrongBody")
     }
 
-  def runJsonResponseAs[A](responseAs: ResponseAs[A, Nothing]): String => A =
-    responseAs match {
+  def runJsonResponseAs[A](responseAs: ResponseAs[A]): String => A =
+    responseAs.delegate match {
       case responseAs: MappedResponseAs[_, A, Nothing] =>
         responseAs.raw match {
           case ResponseAsByteArray =>

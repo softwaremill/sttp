@@ -4,12 +4,12 @@ import java.io.IOException
 import java.net.{InetSocketAddress, SocketAddress}
 import java.{net, util}
 
-import sttp.client3.SttpBackendOptions._
+import sttp.client3.BackendOptions._
 
 import scala.concurrent.duration._
 import scala.util.Try
 
-case class SttpBackendOptions(
+case class BackendOptions(
     connectionTimeout: FiniteDuration,
     proxy: Option[Proxy]
 ) {
@@ -17,19 +17,19 @@ case class SttpBackendOptions(
   /** When the request is sent, if the connection can't be established during the given period of time, a failed effect
     * will be returned, or an exception will be thrown
     */
-  def connectionTimeout(ct: FiniteDuration): SttpBackendOptions =
+  def connectionTimeout(ct: FiniteDuration): BackendOptions =
     this.copy(connectionTimeout = ct)
-  def httpProxy(host: String, port: Int): SttpBackendOptions =
+  def httpProxy(host: String, port: Int): BackendOptions =
     this.copy(proxy = Some(Proxy(host, port, ProxyType.Http)))
-  def httpProxy(host: String, port: Int, username: String, password: String): SttpBackendOptions =
+  def httpProxy(host: String, port: Int, username: String, password: String): BackendOptions =
     this.copy(proxy = Some(Proxy(host, port, ProxyType.Http, auth = Some(ProxyAuth(username, password)))))
-  def socksProxy(host: String, port: Int): SttpBackendOptions =
+  def socksProxy(host: String, port: Int): BackendOptions =
     this.copy(proxy = Some(Proxy(host, port, ProxyType.Socks)))
-  def socksProxy(host: String, port: Int, username: String, password: String): SttpBackendOptions =
+  def socksProxy(host: String, port: Int, username: String, password: String): BackendOptions =
     this.copy(proxy = Some(Proxy(host, port, ProxyType.Socks, auth = Some(ProxyAuth(username, password)))))
 }
 
-object SttpBackendOptions {
+object BackendOptions {
   case class ProxyAuth(username: String, password: String)
   case class Proxy(
       host: String,
@@ -109,25 +109,25 @@ object SttpBackendOptions {
     }
   }
 
-  private val Empty: SttpBackendOptions =
-    SttpBackendOptions(30.seconds, None)
+  private val Empty: BackendOptions =
+    BackendOptions(30.seconds, None)
 
-  val Default: SttpBackendOptions =
+  val Default: BackendOptions =
     Empty.copy(proxy = loadSystemProxy)
 
-  def connectionTimeout(ct: FiniteDuration): SttpBackendOptions =
+  def connectionTimeout(ct: FiniteDuration): BackendOptions =
     Default.connectionTimeout(ct)
 
-  def httpProxy(host: String, port: Int): SttpBackendOptions =
+  def httpProxy(host: String, port: Int): BackendOptions =
     Empty.httpProxy(host, port)
 
-  def httpProxy(host: String, port: Int, username: String, password: String): SttpBackendOptions =
+  def httpProxy(host: String, port: Int, username: String, password: String): BackendOptions =
     Empty.httpProxy(host, port, username, password)
 
-  def socksProxy(host: String, port: Int): SttpBackendOptions =
+  def socksProxy(host: String, port: Int): BackendOptions =
     Empty.socksProxy(host, port)
 
-  def socksProxy(host: String, port: Int, username: String, password: String): SttpBackendOptions =
+  def socksProxy(host: String, port: Int, username: String, password: String): BackendOptions =
     Empty.socksProxy(host, port, username, password)
 
   private def loadSystemProxy: Option[Proxy] = {

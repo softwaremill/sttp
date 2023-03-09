@@ -1,6 +1,6 @@
 package sttp.client3
 
-import sttp.model.{Header, HeaderNames, Headers, Method, RequestMetadata, ResponseMetadata, StatusCode, StatusText, Uri}
+import sttp.model._
 
 import scala.collection.immutable.Seq
 
@@ -8,7 +8,7 @@ import scala.collection.immutable.Seq
   *   If redirects are followed, and there were redirects, contains responses for the intermediate requests. The first
   *   response (oldest) comes first.
   */
-case class Response[T](
+case class Response[+T](
     body: T,
     code: StatusCode,
     statusText: String,

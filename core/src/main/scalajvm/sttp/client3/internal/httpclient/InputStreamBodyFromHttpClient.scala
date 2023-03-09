@@ -1,6 +1,6 @@
 package sttp.client3.internal.httpclient
 
-import sttp.client3.WebSocketResponseAs
+import sttp.client3.GenericWebSocketResponseAs
 import sttp.client3.internal.{BodyFromResponseAs, FileHelpers, SttpFile}
 import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.model.ResponseMetadata
@@ -43,7 +43,7 @@ private[client3] trait InputStreamBodyFromHttpClient[F[_], S] extends BodyFromHt
         inputStreamToStream(response)
 
       override protected def handleWS[T](
-          responseAs: WebSocketResponseAs[T, _],
+          responseAs: GenericWebSocketResponseAs[T, _],
           meta: ResponseMetadata,
           ws: WebSocket[F]
       ): F[T] = bodyFromWs(responseAs, ws, meta)

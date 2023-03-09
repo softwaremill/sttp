@@ -21,17 +21,17 @@ import scala.scalanative.unsafe
 import scala.scalanative.unsafe.{CSize, Ptr, _}
 import scala.scalanative.unsigned._
 
-abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean) extends SttpBackend[F, Any] {
-  override implicit val responseMonad: MonadError[F] = monad
+abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean) extends GenericBackend[F, Any] {
+  override implicit def responseMonad: MonadError[F] = monad
+
+  type R = Any with Effect[F]
 
   override def close(): F[Unit] = monad.unit(())
 
   private var headers: CurlList = _
   private var multiPartHeaders: Seq[CurlList] = Seq()
 
-  type PE = Any with Effect[F]
-
-  override def send[T, R >: PE](request: Request[T, R]): F[Response[T]] =
+  override def send[T](request: GenericRequest[T, R]): F[Response[T]] =
     adjustExceptions(request) {
       unsafe.Zone { implicit z =>
         val curl = CurlApi.init
@@ -56,20 +56,20 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
         }
 
         val spaces = responseSpace
-        FileHelpers.getFilePath(request.response) match {
+        FileHelpers.getFilePath(request.response.delegate) match {
           case Some(file) => handleFile(request, curl, file, spaces)
           case None       => handleBase(request, curl, spaces)
         }
       }
     }
 
-  private def adjustExceptions[T](request: Request[_, _])(t: => F[T]): F[T] =
+  private def adjustExceptions[T](request: GenericRequest[_, _])(t: => F[T]): F[T] =
     SttpClientException.adjustExceptions(responseMonad)(t)(
       SttpClientException.defaultExceptionToSttpClientException(request, _)
     )
 
-  private def handleBase[R >: PE, T](request: Request[T, R], curl: CurlHandle, spaces: CurlSpaces)(implicit
-      z: unsafe.Zone
+  private def handleBase[T](request: GenericRequest[T, R], curl: CurlHandle, spaces: CurlSpaces)(implicit
+                                                                                                 z: unsafe.Zone
   ) = {
     curl.option(WriteFunction, AbstractCurlBackend.wdFunc)
     curl.option(WriteData, spaces.bodyResp)
@@ -110,7 +110,7 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
     }
   }
 
-  private def handleFile[R >: PE, T](request: Request[T, R], curl: CurlHandle, file: SttpFile, spaces: CurlSpaces)(
+  private def handleFile[T](request: GenericRequest[T, R], curl: CurlHandle, file: SttpFile, spaces: CurlSpaces)(
       implicit z: unsafe.Zone
   ) = {
     val outputPath = file.toPath.toString
@@ -158,14 +158,14 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
     lift(m)
   }
 
-  private def setRequestBody[R >: PE](curl: CurlHandle, body: RequestBody[R])(implicit zone: Zone): F[CurlCode] =
+  private def setRequestBody(curl: CurlHandle, body: GenericRequestBody[R])(implicit zone: Zone): F[CurlCode] =
     body match { // todo: assign to responseMonad object
-      case b: BasicRequestBody =>
+      case b: BasicBodyPart =>
         val str = basicBodyToString(b)
         lift(curl.option(PostFields, toCString(str)))
-      case MultipartBody(parts) =>
+      case m: MultipartBody[R] =>
         val mime = curl.mime
-        parts.foreach { case p @ Part(name, partBody, _, headers) =>
+        m.parts.foreach { case p @ Part(name, partBody, _, headers) =>
           val part = mime.addPart()
           part.withName(name)
           val str = basicBodyToString(partBody)
@@ -187,14 +187,13 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
         responseMonad.unit(CurlCode.Ok)
     }
 
-  private def basicBodyToString(body: RequestBody[_]): String =
+  private def basicBodyToString(body: BodyPart[_]): String =
     body match {
       case StringBody(b, _, _)   => b
       case ByteArrayBody(b, _)   => new String(b)
       case ByteBufferBody(b, _)  => new String(b.array)
       case InputStreamBody(b, _) => Source.fromInputStream(b).mkString
       case FileBody(f, _)        => Source.fromFile(f.toFile).mkString
-      case NoBody                => new String("")
       case _                     => throw new IllegalArgumentException(s"Unsupported body: $body")
     }
 
@@ -240,9 +239,9 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
       throw new IllegalStateException("CurlBackend does not support streaming responses")
 
     override protected def handleWS[T](
-        responseAs: WebSocketResponseAs[T, _],
-        meta: ResponseMetadata,
-        ws: Nothing
+                                        responseAs: GenericWebSocketResponseAs[T, _],
+                                        meta: ResponseMetadata,
+                                        ws: Nothing
     ): F[T] = ws
 
     override protected def cleanupWhenNotAWebSocket(

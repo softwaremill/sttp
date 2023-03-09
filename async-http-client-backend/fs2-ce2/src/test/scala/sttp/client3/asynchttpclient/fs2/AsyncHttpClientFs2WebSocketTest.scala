@@ -3,7 +3,6 @@ package sttp.client3.asynchttpclient.fs2
 import cats.effect.{Blocker, IO}
 import cats.implicits._
 import fs2.Pipe
-import sttp.capabilities.WebSockets
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client3._
 import sttp.client3.asynchttpclient.AsyncHttpClientWebSocketTest
@@ -15,7 +14,7 @@ import scala.concurrent.ExecutionContext.global
 import scala.concurrent.duration._
 
 class AsyncHttpClientFs2WebSocketTest extends AsyncHttpClientWebSocketTest[IO, Fs2Streams[IO]] with CatsTestBase {
-  implicit val backend: SttpBackend[IO, Fs2Streams[IO] with WebSockets] =
+  implicit val backend: WebSocketStreamBackend[IO, Fs2Streams[IO]] =
     AsyncHttpClientFs2Backend[IO](Blocker.liftExecutionContext(global)).unsafeRunSync()
 
   override val streams: Fs2Streams[IO] = new Fs2Streams[IO] {}

@@ -3,7 +3,6 @@ package sttp.client3.asynchttpclient.monix
 import monix.eval.Task
 import monix.execution.Scheduler.Implicits.global
 import monix.reactive.Observable
-import sttp.capabilities.WebSockets
 import sttp.capabilities.monix.MonixStreams
 import sttp.client3._
 import sttp.client3.asynchttpclient.AsyncHttpClientWebSocketTest
@@ -17,7 +16,7 @@ import scala.concurrent.duration.FiniteDuration
 class AsyncHttpClientMonixWebSocketTest extends AsyncHttpClientWebSocketTest[Task, MonixStreams] {
   override val streams: MonixStreams = MonixStreams
 
-  override val backend: SttpBackend[Task, MonixStreams with WebSockets] =
+  override val backend: WebSocketStreamBackend[Task, MonixStreams] =
     AsyncHttpClientMonixBackend().runSyncUnsafe()
   override implicit val convertToFuture: ConvertToFuture[Task] = convertMonixTaskToFuture
   override implicit val monad: MonadError[Task] = TaskMonadAsyncError

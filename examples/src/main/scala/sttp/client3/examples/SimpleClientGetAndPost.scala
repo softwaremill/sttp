@@ -19,7 +19,7 @@ object SimpleClientGetAndPost extends App {
 
     //
 
-    val request2: Request[String, Any] = basicRequest
+    val request2: Request[String] = basicRequest
       .header("X-Correlation-ID", UUID.randomUUID().toString)
       .response(asStringAlways)
       .body("Hello, world!")

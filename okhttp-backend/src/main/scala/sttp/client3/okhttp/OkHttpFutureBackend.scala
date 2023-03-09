@@ -6,8 +6,8 @@ import sttp.capabilities.{Streams, WebSockets}
 import sttp.client3.internal.NoStreams
 import sttp.client3.internal.ws.{FutureSimpleQueue, SimpleQueue}
 import sttp.client3.okhttp.OkHttpBackend.EncodingHandler
-import sttp.client3.testing.SttpBackendStub
-import sttp.client3.{DefaultReadTimeout, FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
+import sttp.client3.testing.WebSocketBackendStub
+import sttp.client3.{DefaultReadTimeout, FollowRedirectsBackend, BackendOptions, WebSocketBackend}
 import sttp.monad.{FutureMonad, MonadError}
 import sttp.ws.WebSocket
 
@@ -20,7 +20,8 @@ class OkHttpFutureBackend private (
     webSocketBufferCapacity: Option[Int]
 )(implicit
     ec: ExecutionContext
-) extends OkHttpAsyncBackend[Future, Nothing, WebSockets](client, new FutureMonad, closeClient, customEncodingHandler) {
+) extends OkHttpAsyncBackend[Future, Nothing, WebSockets](client, new FutureMonad, closeClient, customEncodingHandler)
+    with WebSocketBackend[Future] {
   override val streams: Streams[Nothing] = NoStreams
 
   override protected def createSimpleQueue[T]: Future[SimpleQueue[Future, T]] =
@@ -48,16 +49,14 @@ object OkHttpFutureBackend {
       webSocketBufferCapacity: Option[Int]
   )(implicit
       ec: ExecutionContext
-  ): SttpBackend[Future, WebSockets] =
-    new FollowRedirectsBackend(
-      new OkHttpFutureBackend(client, closeClient, customEncodingHandler, webSocketBufferCapacity)
-    )
+  ): WebSocketBackend[Future] =
+    FollowRedirectsBackend(new OkHttpFutureBackend(client, closeClient, customEncodingHandler, webSocketBufferCapacity))
 
   def apply(
-      options: SttpBackendOptions = SttpBackendOptions.Default,
-      customEncodingHandler: EncodingHandler = PartialFunction.empty,
-      webSocketBufferCapacity: Option[Int] = OkHttpBackend.DefaultWebSocketBufferCapacity
-  )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, WebSockets] =
+             options: BackendOptions = BackendOptions.Default,
+             customEncodingHandler: EncodingHandler = PartialFunction.empty,
+             webSocketBufferCapacity: Option[Int] = OkHttpBackend.DefaultWebSocketBufferCapacity
+  )(implicit ec: ExecutionContext = ExecutionContext.global): WebSocketBackend[Future] =
     OkHttpFutureBackend(
       OkHttpBackend.defaultClient(DefaultReadTimeout.toMillis, options),
       closeClient = true,
@@ -69,14 +68,13 @@ object OkHttpFutureBackend {
       client: OkHttpClient,
       customEncodingHandler: EncodingHandler = PartialFunction.empty,
       webSocketBufferCapacity: Option[Int] = OkHttpBackend.DefaultWebSocketBufferCapacity
-  )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, WebSockets] =
+  )(implicit ec: ExecutionContext = ExecutionContext.global): WebSocketBackend[Future] =
     OkHttpFutureBackend(client, closeClient = false, customEncodingHandler, webSocketBufferCapacity)
 
   /** Create a stub backend for testing, which uses the [[Future]] response wrapper, and doesn't support streaming.
     *
-    * See [[SttpBackendStub]] for details on how to configure stub responses.
+    * See [[WebSocketBackendStub]] for details on how to configure stub responses.
     */
-  def stub(implicit
-      ec: ExecutionContext = ExecutionContext.global
-  ): SttpBackendStub[Future, WebSockets] = SttpBackendStub.asynchronousFuture
+  def stub(implicit ec: ExecutionContext = ExecutionContext.global): WebSocketBackendStub[Future] =
+    WebSocketBackendStub.asynchronousFuture
 }

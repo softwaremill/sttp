@@ -5,14 +5,11 @@ import sttp.client3._
 import sttp.client3.testing.{ConvertToFuture, ToFutureWrapper}
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
-import sttp.capabilities.WebSockets
 
 @Ignore
 class OkHttpSyncDigestAuthProxyManualTest extends AsyncFreeSpec with Matchers with ToFutureWrapper {
-  val backend: SttpBackend[Identity, WebSockets] =
-    new DigestAuthenticationBackend[Identity, WebSockets](
-      OkHttpSyncBackend(options = SttpBackendOptions.httpProxy("localhost", 3128))
-    )
+  val backend: WebSocketBackend[Identity] =
+    DigestAuthenticationBackend(OkHttpSyncBackend(options = BackendOptions.httpProxy("localhost", 3128)))
 
   implicit val convertToFuture: ConvertToFuture[Identity] = ConvertToFuture.id
 

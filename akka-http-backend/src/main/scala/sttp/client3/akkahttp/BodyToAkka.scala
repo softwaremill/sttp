@@ -13,18 +13,7 @@ import akka.stream.scaladsl.{Source, StreamConverters}
 import akka.util.ByteString
 import sttp.capabilities.akka.AkkaStreams
 import sttp.client3.internal.throwNestedMultipartNotAllowed
-import sttp.client3.{
-  ByteArrayBody,
-  ByteBufferBody,
-  FileBody,
-  InputStreamBody,
-  MultipartBody,
-  NoBody,
-  Request,
-  RequestBody,
-  StreamBody,
-  StringBody
-}
+import sttp.client3._
 import sttp.model.{HeaderNames, Part}
 
 import scala.collection.immutable.Seq
@@ -32,9 +21,9 @@ import scala.util.{Failure, Success, Try}
 
 private[akkahttp] object BodyToAkka {
   def apply[R](
-      r: Request[_, R],
-      body: RequestBody[R],
-      ar: HttpRequest
+                r: GenericRequest[_, R],
+                body: GenericRequestBody[R],
+                ar: HttpRequest
   ): Try[HttpRequest] = {
     def ctWithCharset(ct: ContentType, charset: String) =
       HttpCharsets
@@ -44,7 +33,7 @@ private[akkahttp] object BodyToAkka {
 
     def contentLength = r.headers.find(_.is(HeaderNames.ContentLength)).flatMap(h => Try(h.value.toLong).toOption)
 
-    def toBodyPart(mp: Part[RequestBody[_]]): Try[AkkaMultipart.FormData.BodyPart] = {
+    def toBodyPart(mp: Part[BodyPart[_]]): Try[AkkaMultipart.FormData.BodyPart] = {
       def streamPartEntity(contentType: ContentType, s: AkkaStreams.BinaryStream) =
         mp.contentLength match {
           case None    => HttpEntity.IndefiniteLength(contentType, s)
@@ -59,8 +48,6 @@ private[akkahttp] object BodyToAkka {
           case isb: InputStreamBody       => streamPartEntity(ct, StreamConverters.fromInputStream(() => isb.b))
           case FileBody(b, _)             => HttpEntity.fromPath(ct, b.toPath)
           case StreamBody(b)              => streamPartEntity(ct, b.asInstanceOf[AkkaStreams.BinaryStream])
-          case MultipartBody(_)           => throwNestedMultipartNotAllowed
-          case NoBody                     => HttpEntity.Empty
         }
 
       for {
@@ -87,15 +74,18 @@ private[akkahttp] object BodyToAkka {
           Success(ar.withEntity(streamEntity(ct, StreamConverters.fromInputStream(() => b))))
         case FileBody(b, _) => Success(ar.withEntity(ct, b.toPath))
         case StreamBody(s)  => Success(ar.withEntity(streamEntity(ct, s.asInstanceOf[AkkaStreams.BinaryStream])))
-        case MultipartBody(ps) =>
+        case m: MultipartBody[_] =>
           Util
-            .traverseTry(ps.map(toBodyPart))
+            .traverseTry(m.parts.map(toBodyPart))
             .flatMap(bodyParts => multipartEntity(r, bodyParts).map(ar.withEntity))
       }
     }
   }
 
-  private def multipartEntity(r: Request[_, _], bodyParts: Seq[AkkaMultipart.FormData.BodyPart]): Try[RequestEntity] = {
+  private def multipartEntity(
+                               r: GenericRequest[_, _],
+                               bodyParts: Seq[AkkaMultipart.FormData.BodyPart]
+  ): Try[RequestEntity] = {
     r.headers.find(Util.isContentType) match {
       case None => Success(AkkaMultipart.FormData(bodyParts: _*).toEntity())
       case Some(ct) =>

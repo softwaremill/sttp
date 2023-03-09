@@ -1,23 +1,8 @@
 package sttp.client3.monad
 
-import sttp.capabilities.Effect
-import sttp.client3.{
-  ConditionalResponseAs,
-  IgnoreResponse,
-  MappedResponseAs,
-  RequestBody,
-  RequestT,
-  ResponseAs,
-  ResponseAsBoth,
-  ResponseAsByteArray,
-  ResponseAsFile,
-  ResponseAsFromMetadata,
-  ResponseAsStream,
-  ResponseAsStreamUnsafe,
-  ResponseAsWebSocket,
-  ResponseAsWebSocketStream,
-  ResponseAsWebSocketUnsafe
-}
+import sttp.capabilities.{Effect, WebSockets}
+import sttp.client3._
+import sttp.client3.internal._
 import sttp.model.{Headers, ResponseMetadata}
 import sttp.monad.MonadError
 import sttp.ws.{WebSocket, WebSocketFrame}
@@ -35,43 +20,39 @@ object MapEffect {
     * @tparam R0
     *   The requirements of this request, without the `Effect[F]` capability.
     */
-  def apply[F[_], G[_], U[_], T, R0](
-      r: RequestT[U, T, R0 with Effect[F]],
-      fk: FunctionK[F, G],
-      gk: FunctionK[G, F],
-      fm: MonadError[F],
-      gm: MonadError[G]
-  ): RequestT[U, T, R0 with Effect[G]] = {
-    if (usesEffect(r.response)) {
-      RequestT(
-        r.method,
-        r.uri,
-        r.body.asInstanceOf[RequestBody[R0 with Effect[G]]], // request body can't use the Effect capability
-        r.headers,
-        apply[F, G](
-          r.response, // this is witnessed by rHasEffectF
-          fk,
-          gk,
-          fm,
-          gm
-        ).asInstanceOf[ResponseAs[T, R0 with Effect[G]]],
-        r.options,
-        r.tags
-      )
-    } else {
-      r.asInstanceOf[RequestT[U, T, R0 with Effect[G]]]
+  def apply[F[_], G[_], T, R0](
+                                r: GenericRequest[T, R0 with Effect[F]],
+                                fk: FunctionK[F, G],
+                                gk: FunctionK[G, F],
+                                fm: MonadError[F],
+                                gm: MonadError[G]
+  ): GenericRequest[T, R0 with Effect[G]] = {
+    def internalResponse[R] = apply[F, G](r.response.delegate, fk, gk, fm, gm)
+      .asInstanceOf[GenericResponseAs[T, R with Effect[G]]]
+
+    // Only StreamRequest and WebSocketRequest can have an effectful response
+    val newRequest = r match {
+      case srf: StreamRequest[_, R0 with Effect[F]] =>
+        srf.copy(
+          body = srf.body.asInstanceOf[GenericRequestBody[R0]],
+          response = new StreamResponseAs(internalResponse[R0])
+        )
+      case wr: WebSocketRequest[_, _] =>
+        wr.copy[G, T](response = new WebSocketResponseAs[G, T](internalResponse[WebSockets]))
+      case _ => r
     }
+    newRequest.asInstanceOf[GenericRequest[T, R0 with Effect[G]]]
   }
 
   // TODO: an even more dumbed-down version of the slightly more type-safe version below, which is needed due to a
   // TODO: bug in Dotty: https://github.com/lampepfl/dotty/issues/9533
   private def apply[F[_], G[_]](
-      r: ResponseAs[_, _],
-      fk: FunctionK[F, G],
-      gk: FunctionK[G, F],
-      fm: MonadError[F],
-      gm: MonadError[G]
-  ): ResponseAs[_, _] = {
+                                 r: GenericResponseAs[_, _],
+                                 fk: FunctionK[F, G],
+                                 gk: FunctionK[G, F],
+                                 fm: MonadError[F],
+                                 gm: MonadError[G]
+  ): GenericResponseAs[_, _] = {
     r match {
       case IgnoreResponse      => IgnoreResponse
       case ResponseAsByteArray => ResponseAsByteArray
@@ -87,30 +68,29 @@ object MapEffect {
       case ResponseAsWebSocketStream(s, p) =>
         ResponseAsWebSocketStream(s, p)
       case ResponseAsFromMetadata(conditions, default) =>
-        ResponseAsFromMetadata(
+        ResponseAsFromMetadata[Any, Any](
           conditions.map(c =>
-            ConditionalResponseAs[Any, Any](
+            ConditionalResponseAs(
               c.condition,
-              apply[F, G](c.responseAs, fk, gk, fm, gm).asInstanceOf[ResponseAs[Any, Any]]
+              apply[F, G](c.responseAs, fk, gk, fm, gm).asInstanceOf[GenericResponseAs[Any, Any]]
             )
           ),
-          apply[F, G](default, fk, gk, fm, gm).asInstanceOf[ResponseAs[Any, Any]]
+          apply[F, G](default, fk, gk, fm, gm).asInstanceOf[GenericResponseAs[Any, Any]]
         )
       case MappedResponseAs(raw, g, showAs) =>
         MappedResponseAs(apply[F, G](raw, fk, gk, fm, gm), g.asInstanceOf[(Any, ResponseMetadata) => Any], showAs)
       case ResponseAsBoth(l, r) =>
-        ResponseAsBoth(apply(l, fk, gk, fm, gm), apply(r, fk, gk, fm, gm).asInstanceOf[ResponseAs[_, Any]])
+        ResponseAsBoth(apply(l, fk, gk, fm, gm), apply(r, fk, gk, fm, gm).asInstanceOf[GenericResponseAs[_, Any]])
     }
   }
 
-  /*
-  private def apply[TT, R0, F[_], G[_]](
-      r: ResponseAs[TT, R0 with Effect[F]],
+  /* private def apply[TT, R0, F[_], G[_]](
+      r: InternalResponseAs[TT, R0 with Effect[F]],
       fk: FunctionK[F, G],
       gk: FunctionK[G, F],
       fm: MonadError[F],
       gm: MonadError[G]
-  ): ResponseAs[TT, R0 with Effect[G]] = {
+  ): InternalResponseAs[TT, R0 with Effect[G]] = {
     r match {
       case IgnoreResponse      => IgnoreResponse
       case ResponseAsByteArray => ResponseAsByteArray
@@ -133,8 +113,7 @@ object MapEffect {
       case MappedResponseAs(raw, g) =>
         MappedResponseAs(apply[Any, R0, F, G](raw, fk, gk, fm, gm), g).asInstanceOf[ResponseAs[TT, R0 with Effect[G]]]
     }
-  }
-   */
+  } */
 
   private def apply[F[_], G[_]](ws: WebSocket[F], fk: FunctionK[F, G], gm: MonadError[G]): WebSocket[G] =
     new WebSocket[G] {
@@ -143,16 +122,5 @@ object MapEffect {
       override def upgradeHeaders: Headers = ws.upgradeHeaders
       override def isOpen(): G[Boolean] = fk(ws.isOpen())
       override implicit def monad: MonadError[G] = gm
-    }
-
-  private def usesEffect(ra: ResponseAs[_, _]): Boolean =
-    ra match {
-      case ResponseAsWebSocket(_)      => true
-      case ResponseAsWebSocketUnsafe() => true
-      case ResponseAsStream(_, _)      => true
-      case ResponseAsFromMetadata(conditions, default) =>
-        usesEffect(default) || conditions.exists(c => usesEffect(c.responseAs))
-      case MappedResponseAs(raw, _, _) => usesEffect(raw)
-      case _                           => false
     }
 }

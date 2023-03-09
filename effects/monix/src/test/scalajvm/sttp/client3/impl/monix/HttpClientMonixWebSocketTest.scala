@@ -3,7 +3,6 @@ package sttp.client3.impl.monix
 import monix.eval.Task
 import monix.execution.Scheduler.Implicits.global
 import monix.reactive.Observable
-import sttp.capabilities.WebSockets
 import sttp.capabilities.monix.MonixStreams
 import sttp.client3._
 import sttp.client3.httpclient.monix.HttpClientMonixBackend
@@ -16,7 +15,7 @@ class HttpClientMonixWebSocketTest
     extends WebSocketTest[Task]
     with WebSocketStreamingTest[Task, MonixStreams]
     with WebSocketConcurrentTest[Task] {
-  implicit val backend: SttpBackend[Task, MonixStreams with WebSockets] =
+  implicit val backend: WebSocketStreamBackend[Task, MonixStreams] =
     HttpClientMonixBackend().runSyncUnsafe()
   implicit val convertToFuture: ConvertToFuture[Task] = convertMonixTaskToFuture
   implicit val monad: MonadError[Task] = TaskMonadAsyncError

@@ -45,8 +45,8 @@ import akka.util.ByteString
 val source: Source[ByteString, Any] = ???
 
 basicRequest
-  .streamBody(AkkaStreams)(source)
   .post(uri"...")
+  .streamBody(AkkaStreams)(source)
 ```
 
 To receive the response body as a stream:
@@ -113,6 +113,8 @@ import sttp.client3._
 
 def processEvents(source: Source[ServerSentEvent, Any]): Future[Unit] = ???
 
-basicRequest.response(asStream(AkkaStreams)(stream => 
-  processEvents(stream.via(AkkaHttpServerSentEvents.parse))))
+basicRequest
+  .get(uri"...")
+  .response(asStream(AkkaStreams)(stream => 
+    processEvents(stream.via(AkkaHttpServerSentEvents.parse))))
 ```

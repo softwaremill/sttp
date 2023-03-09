@@ -143,8 +143,8 @@ val effect = HttpClientFs2Backend.resource[IO]().use { backend =>
   val stream: Stream[IO, Byte] = ???
 
   basicRequest
-    .streamBody(Fs2Streams[IO])(stream)
     .post(uri"...")
+    .streamBody(Fs2Streams[IO])(stream)
     .send(backend)
 }
 // run the effect
@@ -191,6 +191,8 @@ import sttp.model.sse.ServerSentEvent
 
 def processEvents(source: Stream[IO, ServerSentEvent]): IO[Unit] = ???
 
-basicRequest.response(asStream(Fs2Streams[IO])(stream => 
-  processEvents(stream.through(Fs2ServerSentEvents.parse))))
+basicRequest
+  .get(uri"")
+  .response(asStream(Fs2Streams[IO])(stream =>
+    processEvents(stream.through(Fs2ServerSentEvents.parse))))
 ```

@@ -6,12 +6,12 @@ import org.scalatest.matchers.should.Matchers
 import java.io.IOException
 import java.net.URI
 
-class SttpBackendOptionsProxyTest2 extends AnyFlatSpec with Matchers {
+class BackendOptionsProxyTest2 extends AnyFlatSpec with Matchers {
   it should "throw UnsupportedOperationException with reason" in {
-    val proxySetting = SttpBackendOptions.Proxy(
+    val proxySetting = BackendOptions.Proxy(
       "fakeproxyserverhost",
       8080,
-      SttpBackendOptions.ProxyType.Http,
+      BackendOptions.ProxyType.Http,
       nonProxyHosts = Nil,
       onlyProxyHosts = Nil
     )

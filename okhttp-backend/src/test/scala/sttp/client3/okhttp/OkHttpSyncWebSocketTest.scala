@@ -1,7 +1,6 @@
 package sttp.client3.okhttp
 
 import org.scalatest.Assertion
-import sttp.capabilities.WebSockets
 import sttp.client3._
 import sttp.monad.syntax._
 import sttp.client3.monad.IdMonad
@@ -13,7 +12,7 @@ import sttp.monad.MonadError
 import scala.concurrent.duration._
 
 class OkHttpSyncWebSocketTest extends WebSocketTest[Identity] {
-  override val backend: SttpBackend[Identity, WebSockets] = OkHttpSyncBackend()
+  override val backend: WebSocketBackend[Identity] = OkHttpSyncBackend()
   override implicit val convertToFuture: ConvertToFuture[Identity] = ConvertToFuture.id
   override implicit val monad: MonadError[Identity] = IdMonad
 

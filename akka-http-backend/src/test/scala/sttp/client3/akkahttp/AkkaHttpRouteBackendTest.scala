@@ -3,7 +3,7 @@ package sttp.client3.akkahttp
 import akka.actor.ActorSystem
 import akka.http.scaladsl.server.Route
 import org.scalatest.BeforeAndAfterAll
-import sttp.client3.SttpBackend
+import sttp.client3.Backend
 import sttp.model.StatusCode
 
 import scala.concurrent.duration._
@@ -19,7 +19,7 @@ class AkkaHttpRouteBackendTest extends AsyncWordSpec with Matchers with BeforeAn
     Await.result(system.terminate(), 5.seconds)
   }
 
-  val backend: SttpBackend[Future, Any] =
+  val backend: Backend[Future] =
     AkkaHttpBackend.usingClient(system, http = AkkaHttpClient.stubFromRoute(Routes.route))
 
   import sttp.client3._
@@ -27,7 +27,7 @@ class AkkaHttpRouteBackendTest extends AsyncWordSpec with Matchers with BeforeAn
   "matched route" should {
 
     "respond" in {
-      backend.send(basicRequest.get(uri"http://localhost/hello")).map { response =>
+      basicRequest.get(uri"http://localhost/hello").send(backend).map { response =>
         response.code shouldBe StatusCode.Ok
         response.body.right.get shouldBe "Hello, world!"
       }
@@ -36,7 +36,7 @@ class AkkaHttpRouteBackendTest extends AsyncWordSpec with Matchers with BeforeAn
 
   "unmatched route" should {
     "respond with 404" in {
-      backend.send(basicRequest.get(uri"http://localhost/not-matching")).map { response =>
+      basicRequest.get(uri"http://localhost/not-matching").send(backend).map { response =>
         response.code shouldBe StatusCode.NotFound
         response.body.left.get shouldBe "The requested resource could not be found."
       }

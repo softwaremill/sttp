@@ -15,15 +15,15 @@ private[client3] class DigestAuthenticator private (
     unauthorizedStatusCode: StatusCode,
     clientNonceGenerator: () => String
 ) {
-  def authenticate[T](request: Request[T, _], response: Response[T]): Option[Header] = {
+  def authenticate[T](request: GenericRequest[T, _], response: Response[T]): Option[Header] = {
     responseHeaderValue(response.headers(requestHeaderName), request, response.code)
       .map(Header(responseHeaderName, _))
   }
 
   private def responseHeaderValue(
-      authHeaderValues: Seq[String],
-      request: Request[_, _],
-      statusCode: StatusCode
+                                   authHeaderValues: Seq[String],
+                                   request: GenericRequest[_, _],
+                                   statusCode: StatusCode
   ): Option[String] = {
     val wwwAuthRawHeaders = authHeaderValues
     wwwAuthRawHeaders.find(_.contains("Digest")).flatMap { inputHeader =>
@@ -42,12 +42,12 @@ private[client3] class DigestAuthenticator private (
     }
   }
 
-  private def responseHeaderValue[T](
-      request: Request[T, _],
-      digestAuthData: DigestAuthData,
-      wwwAuthHeader: WwwAuthHeaderValue,
-      realmMatch: String,
-      nonceMatch: String
+  private def responseHeaderValue(
+                                   request: GenericRequest[_, _],
+                                   digestAuthData: DigestAuthData,
+                                   wwwAuthHeader: WwwAuthHeaderValue,
+                                   realmMatch: String,
+                                   nonceMatch: String
   ): Option[String] = {
     val isFirstOrShouldRetry =
       if (
@@ -103,17 +103,17 @@ private[client3] class DigestAuthenticator private (
     }
   }
 
-  private def calculateResponseChallenge[T](
-      request: Request[T, _],
-      digestAuthData: DigestAuthData,
-      realm: String,
-      qop: Option[String],
-      nonce: String,
-      digestUri: String,
-      clientNonce: String,
-      nonceCount: String,
-      messageDigest: MessageDigestCompatibility,
-      algorithm: String
+  private def calculateResponseChallenge(
+                                          request: GenericRequest[_, _],
+                                          digestAuthData: DigestAuthData,
+                                          realm: String,
+                                          qop: Option[String],
+                                          nonce: String,
+                                          digestUri: String,
+                                          clientNonce: String,
+                                          nonceCount: String,
+                                          messageDigest: MessageDigestCompatibility,
+                                          algorithm: String
   ) = {
     val ha1 = calculateHa1(digestAuthData, realm, messageDigest, algorithm, nonce, clientNonce)
     val ha2 = calculateHa2(request, qop, digestUri, messageDigest)
@@ -152,18 +152,18 @@ private[client3] class DigestAuthenticator private (
     }
   }
 
-  private def calculateHa2[T](
-      request: Request[T, _],
-      qop: Option[String],
-      digestUri: String,
-      messageDigest: MessageDigestCompatibility
+  private def calculateHa2(
+                            request: GenericRequest[_, _],
+                            qop: Option[String],
+                            digestUri: String,
+                            messageDigest: MessageDigestCompatibility
   ) = {
     qop match {
       case Some(QualityOfProtectionAuth) => md5HexString(s"${request.method.method}:$digestUri", messageDigest)
       case None                          => md5HexString(s"${request.method.method}:$digestUri", messageDigest)
       case Some(QualityOfProtectionAuthInt) =>
         val body = request.body match {
-          case brb: BasicRequestBody =>
+          case brb: BasicBodyPart =>
             brb match {
               case StringBody(s, e, _)   => s.getBytes(Charset.forName(e))
               case ByteArrayBody(b, _)   => b

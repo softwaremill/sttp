@@ -2,13 +2,12 @@ package sttp.client3
 
 import sttp.client3.SttpClientException.{ConnectException, ReadException, TimeoutException}
 import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
-import sttp.monad.MonadError
 
 import scala.annotation.tailrec
 
 trait SttpClientExceptionExtensions {
   @tailrec
-  final def defaultExceptionToSttpClientException(request: Request[_, _], e: Exception): Option[Exception] =
+  final def defaultExceptionToSttpClientException(request: GenericRequest[_, _], e: Exception): Option[Exception] =
     e match {
       case e: java.net.ConnectException             => Some(new ConnectException(request, e))
       case e: java.net.UnknownHostException         => Some(new ConnectException(request, e))

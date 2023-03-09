@@ -16,8 +16,8 @@ import sttp.capabilities.akka.AkkaStreams
 import sttp.capabilities.{Effect, WebSockets}
 import sttp.client3
 import sttp.client3.akkahttp.AkkaHttpBackend.EncodingHandler
-import sttp.client3.testing.SttpBackendStub
-import sttp.client3.{FollowRedirectsBackend, Response, SttpBackend, SttpBackendOptions, _}
+import sttp.client3.testing.WebSocketStreamBackendStub
+import sttp.client3._
 import sttp.model.{ResponseMetadata, StatusCode}
 import sttp.monad.{FutureMonad, MonadError}
 
@@ -27,15 +27,15 @@ class AkkaHttpBackend private (
     actorSystem: ActorSystem,
     ec: ExecutionContext,
     terminateActorSystemOnClose: Boolean,
-    opts: SttpBackendOptions,
+    opts: BackendOptions,
     customConnectionPoolSettings: Option[ConnectionPoolSettings],
     http: AkkaHttpClient,
     customizeRequest: HttpRequest => HttpRequest,
     customizeWebsocketRequest: WebSocketRequest => WebSocketRequest,
     customizeResponse: (HttpRequest, HttpResponse) => HttpResponse,
     customEncodingHandler: EncodingHandler
-) extends SttpBackend[Future, AkkaStreams with WebSockets] {
-  type PE = AkkaStreams with Effect[Future] with WebSockets
+) extends WebSocketStreamBackend[Future, AkkaStreams] {
+  type R = AkkaStreams with WebSockets with Effect[Future]
 
   private implicit val as: ActorSystem = actorSystem
   private implicit val _ec: ExecutionContext = ec
@@ -44,12 +44,12 @@ class AkkaHttpBackend private (
     .getOrElse(ConnectionPoolSettings(actorSystem))
     .withUpdatedConnectionSettings(_.withConnectingTimeout(opts.connectionTimeout))
 
-  override def send[T, R >: PE](r: Request[T, R]): Future[Response[T]] =
+  override def send[T](r: GenericRequest[T, R]): Future[Response[T]] =
     adjustExceptions(r) {
       if (r.isWebSocket) sendWebSocket(r) else sendRegular(r)
     }
 
-  private def sendRegular[T, R >: PE](r: Request[T, R]): Future[Response[T]] = {
+  private def sendRegular[T](r: GenericRequest[T, R]): Future[Response[T]] = {
     Future
       .fromTry(ToAkka.request(r).flatMap(BodyToAkka(r, r.body, _)))
       .map(customizeRequest)
@@ -63,7 +63,7 @@ class AkkaHttpBackend private (
       )
   }
 
-  private def sendWebSocket[T, R >: PE](r: Request[T, R]): Future[Response[T]] = {
+  private def sendWebSocket[T](r: GenericRequest[T, R]): Future[Response[T]] = {
     val akkaWebsocketRequest = ToAkka
       .headers(r.headers)
       .map(h => WebSocketRequest(uri = r.uri.toString, extraHeaders = h))
@@ -99,7 +99,7 @@ class AkkaHttpBackend private (
 
   override val responseMonad: MonadError[Future] = new FutureMonad()(ec)
 
-  private def connectionSettings(r: Request[_, _]): ConnectionPoolSettings = {
+  private def connectionSettings(r: GenericRequest[_, _]): ConnectionPoolSettings = {
     val connectionPoolSettingsWithProxy = opts.proxy match {
       case Some(p) if r.uri.host.forall(!p.ignoreProxy(_)) =>
         val clientTransport = p.auth match {
@@ -120,9 +120,9 @@ class AkkaHttpBackend private (
   private lazy val bodyFromAkka = new BodyFromAkka()(ec, implicitly[Materializer], responseMonad)
 
   private def responseFromAkka[T](
-      r: Request[T, PE],
-      hr: HttpResponse,
-      wsFlow: Option[Promise[Flow[Message, Message, NotUsed]]]
+                                   r: GenericRequest[T, R],
+                                   hr: HttpResponse,
+                                   wsFlow: Option[Promise[Flow[Message, Message, NotUsed]]]
   ): Future[Response[T]] = {
     val code = StatusCode(hr.status.intValue())
     val statusText = hr.status.reason()
@@ -152,7 +152,7 @@ class AkkaHttpBackend private (
     case (_, ce)                        => throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
   }
 
-  private def adjustExceptions[T](request: Request[_, _])(t: => Future[T]): Future[T] =
+  private def adjustExceptions[T](request: GenericRequest[_, _])(t: => Future[T]): Future[T] =
     SttpClientException.adjustExceptions(responseMonad)(t)(FromAkka.exception(request, _))
 
   override def close(): Future[Unit] = {
@@ -178,15 +178,15 @@ object AkkaHttpBackend {
       actorSystem: ActorSystem,
       ec: ExecutionContext,
       terminateActorSystemOnClose: Boolean,
-      options: SttpBackendOptions,
+      options: BackendOptions,
       customConnectionPoolSettings: Option[ConnectionPoolSettings],
       http: AkkaHttpClient,
       customizeRequest: HttpRequest => HttpRequest,
       customizeWebsocketRequest: WebSocketRequest => WebSocketRequest = identity,
       customizeResponse: (HttpRequest, HttpResponse) => HttpResponse = (_, r) => r,
       customEncodingHandler: EncodingHandler = PartialFunction.empty
-  ): SttpBackend[Future, AkkaStreams with WebSockets] =
-    new FollowRedirectsBackend(
+  ): WebSocketStreamBackend[Future, AkkaStreams] =
+    FollowRedirectsBackend(
       new AkkaHttpBackend(
         actorSystem,
         ec,
@@ -206,7 +206,7 @@ object AkkaHttpBackend {
     *   execution context backing the given `actorSystem`.
     */
   def apply(
-      options: SttpBackendOptions = SttpBackendOptions.Default,
+      options: BackendOptions = BackendOptions.Default,
       customHttpsContext: Option[HttpsConnectionContext] = None,
       customConnectionPoolSettings: Option[ConnectionPoolSettings] = None,
       customLog: Option[LoggingAdapter] = None,
@@ -216,7 +216,7 @@ object AkkaHttpBackend {
       customEncodingHandler: EncodingHandler = PartialFunction.empty
   )(implicit
       ec: Option[ExecutionContext] = None
-  ): SttpBackend[Future, AkkaStreams with WebSockets] = {
+  ): WebSocketStreamBackend[Future, AkkaStreams] = {
     val actorSystem = ActorSystem("sttp")
 
     make(
@@ -241,7 +241,7 @@ object AkkaHttpBackend {
     */
   def usingActorSystem(
       actorSystem: ActorSystem,
-      options: SttpBackendOptions = SttpBackendOptions.Default,
+      options: BackendOptions = BackendOptions.Default,
       customHttpsContext: Option[HttpsConnectionContext] = None,
       customConnectionPoolSettings: Option[ConnectionPoolSettings] = None,
       customLog: Option[LoggingAdapter] = None,
@@ -251,7 +251,7 @@ object AkkaHttpBackend {
       customEncodingHandler: EncodingHandler = PartialFunction.empty
   )(implicit
       ec: Option[ExecutionContext] = None
-  ): SttpBackend[Future, AkkaStreams with WebSockets] = {
+  ): WebSocketStreamBackend[Future, AkkaStreams] = {
     usingClient(
       actorSystem,
       options,
@@ -272,7 +272,7 @@ object AkkaHttpBackend {
     */
   def usingClient(
       actorSystem: ActorSystem,
-      options: SttpBackendOptions = SttpBackendOptions.Default,
+      options: BackendOptions = BackendOptions.Default,
       customConnectionPoolSettings: Option[ConnectionPoolSettings] = None,
       http: AkkaHttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,
@@ -281,7 +281,7 @@ object AkkaHttpBackend {
       customEncodingHandler: EncodingHandler = PartialFunction.empty
   )(implicit
       ec: Option[ExecutionContext] = None
-  ): SttpBackend[Future, AkkaStreams with WebSockets] = {
+  ): WebSocketStreamBackend[Future, AkkaStreams] = {
     make(
       actorSystem,
       ec.getOrElse(actorSystem.dispatcher),
@@ -298,10 +298,10 @@ object AkkaHttpBackend {
 
   /** Create a stub backend for testing, which uses the [[Future]] response wrapper, and doesn't support streaming.
     *
-    * See [[SttpBackendStub]] for details on how to configure stub responses.
+    * See [[WebSocketStreamBackendStub]] for details on how to configure stub responses.
     */
   def stub(implicit
       ec: ExecutionContext = ExecutionContext.global
-  ): SttpBackendStub[Future, AkkaStreams with WebSockets] =
-    SttpBackendStub(new FutureMonad())
+  ): WebSocketStreamBackendStub[Future, AkkaStreams with WebSockets] =
+    WebSocketStreamBackendStub(new FutureMonad())
 }

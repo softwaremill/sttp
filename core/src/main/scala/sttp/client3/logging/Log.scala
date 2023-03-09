@@ -1,26 +1,42 @@
 package sttp.client3.logging
 
-import sttp.client3.{HttpError, Request, Response}
-import sttp.model.{HeaderNames, StatusCode}
+import sttp.client3.{GenericRequest, HttpError, Response}
+import sttp.model.StatusCode
 
-import scala.annotation.tailrec
 import scala.concurrent.duration.Duration
 
 /** Performs logging before requests are sent and after requests complete successfully or with an exception.
   */
 trait Log[F[_]] {
-  def beforeRequestSend(request: Request[_, _]): F[Unit]
+  def beforeRequestSend(request: GenericRequest[_, _]): F[Unit]
   def response(
-      request: Request[_, _],
-      response: Response[_],
-      responseBody: Option[String],
-      elapsed: Option[Duration]
+                request: GenericRequest[_, _],
+                response: Response[_],
+                responseBody: Option[String],
+                elapsed: Option[Duration]
   ): F[Unit]
   def requestException(
-      request: Request[_, _],
-      elapsed: Option[Duration],
-      e: Exception
+                        request: GenericRequest[_, _],
+                        elapsed: Option[Duration],
+                        e: Exception
   ): F[Unit]
+}
+
+object Log {
+  def default[F[_]](
+      logger: Logger[F],
+      config: LogConfig
+  ): Log[F] = new DefaultLog(
+    logger,
+    config.beforeCurlInsteadOfShow,
+    config.logRequestBody,
+    config.logRequestHeaders,
+    config.logResponseHeaders,
+    config.sensitiveHeaders,
+    config.beforeRequestSendLogLevel,
+    config.responseLogLevel,
+    config.responseExceptionLogLevel
+  )
 }
 
 /** Default implementation of [[Log]] to be used by the [[LoggingBackend]]. Creates default log messages and delegates
@@ -28,17 +44,17 @@ trait Log[F[_]] {
   */
 class DefaultLog[F[_]](
     logger: Logger[F],
-    beforeCurlInsteadOfShow: Boolean = false,
-    logRequestBody: Boolean = false,
-    logRequestHeaders: Boolean = true,
-    logResponseHeaders: Boolean = true,
-    sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders,
-    beforeRequestSendLogLevel: LogLevel = LogLevel.Debug,
-    responseLogLevel: StatusCode => LogLevel = DefaultLog.defaultResponseLogLevel,
-    responseExceptionLogLevel: LogLevel = LogLevel.Error
+    beforeCurlInsteadOfShow: Boolean,
+    logRequestBody: Boolean,
+    logRequestHeaders: Boolean,
+    logResponseHeaders: Boolean,
+    sensitiveHeaders: Set[String],
+    beforeRequestSendLogLevel: LogLevel,
+    responseLogLevel: StatusCode => LogLevel,
+    responseExceptionLogLevel: LogLevel
 ) extends Log[F] {
 
-  def beforeRequestSend(request: Request[_, _]): F[Unit] =
+  def beforeRequestSend(request: GenericRequest[_, _]): F[Unit] =
     request.loggingOptions match {
       case Some(options) =>
         before(
@@ -49,7 +65,7 @@ class DefaultLog[F[_]](
       case None => before(request, logRequestBody, logRequestHeaders)
     }
 
-  private def before(request: Request[_, _], _logRequestBody: Boolean, _logRequestHeaders: Boolean): F[Unit] = {
+  private def before(request: GenericRequest[_, _], _logRequestBody: Boolean, _logRequestHeaders: Boolean): F[Unit] = {
     logger(
       beforeRequestSendLogLevel, {
         s"Sending request: ${
@@ -61,10 +77,10 @@ class DefaultLog[F[_]](
   }
 
   override def response(
-      request: Request[_, _],
-      response: Response[_],
-      responseBody: Option[String],
-      elapsed: Option[Duration]
+                         request: GenericRequest[_, _],
+                         response: Response[_],
+                         responseBody: Option[String],
+                         elapsed: Option[Duration]
   ): F[Unit] = request.loggingOptions match {
     case Some(options) =>
       handleResponse(
@@ -98,7 +114,7 @@ class DefaultLog[F[_]](
     )
   }
 
-  override def requestException(request: Request[_, _], elapsed: Option[Duration], e: Exception): F[Unit] = {
+  override def requestException(request: GenericRequest[_, _], elapsed: Option[Duration], e: Exception): F[Unit] = {
     val logLevel = HttpError.find(e) match {
       case Some(HttpError(_, statusCode)) =>
         responseLogLevel(statusCode)

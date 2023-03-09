@@ -1,37 +1,27 @@
 package sttp.client3.impl
 
-import sttp.capabilities.Effect
-import sttp.client3.monad.{FunctionK, MapEffect}
-import sttp.client3.{Identity, Request, Response, SttpBackend}
-import sttp.monad.MonadError
-import _root_.zio.{RIO, ZIO}
+import sttp.capabilities.WebSockets
+import sttp.client3.{Backend, StreamBackend, WebSocketBackend, WebSocketStreamBackend}
+import _root_.zio.RIO
 
 package object zio {
-  implicit class ExtendEnv[R0, P](delegate: SttpBackend[RIO[R0, *], P]) {
-    def extendEnv[R1]: SttpBackend[RIO[R0 with R1, *], P] =
-      new SttpBackend[RIO[R0 with R1, *], P] {
-        override def send[T, R >: P with Effect[RIO[R0 with R1, *]]](
-            request: Request[T, R]
-        ): RIO[R0 with R1, Response[T]] =
-          for {
-            env <- ZIO.environment[R0 with R1]
-            mappedRequest = MapEffect[RIO[R0 with R1, *], RIO[R0, *], Identity, T, P](
-              request,
-              new FunctionK[RIO[R0 with R1, *], RIO[R0, *]] {
-                override def apply[A](fa: RIO[R0 with R1, A]): RIO[R0, A] = fa.provideEnvironment(env)
-              },
-              new FunctionK[RIO[R0, *], RIO[R0 with R1, *]] {
-                override def apply[A](fa: RIO[R0, A]): RIO[R0 with R1, A] = fa
-              },
-              responseMonad,
-              delegate.responseMonad
-            )
-            resp <- delegate.send(mappedRequest)
-          } yield resp
+  implicit class BackendExtendEnv[R0](delegate: Backend[RIO[R0, *]]) {
+    def extendEnv[R1]: Backend[RIO[R0 with R1, *]] =
+      new ExtendedEnvBackend[R0, R1, Any](delegate) with Backend[RIO[R0 with R1, *]] {}
+  }
 
-        override def close(): RIO[R0 with R1, Unit] = delegate.close()
+  implicit class WebSocketBackendExtendEnv[R0](delegate: WebSocketBackend[RIO[R0, *]]) {
+    def extendEnv[R1]: WebSocketBackend[RIO[R0 with R1, *]] =
+      new ExtendedEnvBackend[R0, R1, WebSockets](delegate) with WebSocketBackend[RIO[R0 with R1, *]] {}
+  }
 
-        override val responseMonad: MonadError[RIO[R0 with R1, *]] = new RIOMonadAsyncError[R0 with R1]
-      }
+  implicit class StreamBackendExtendEnv[R0, S](delegate: StreamBackend[RIO[R0, *], S]) {
+    def extendEnv[R1]: StreamBackend[RIO[R0 with R1, *], S] =
+      new ExtendedEnvBackend[R0, R1, S](delegate) with StreamBackend[RIO[R0 with R1, *], S] {}
+  }
+
+  implicit class WebSocketStreamBackendExtendEnv[R0, S](delegate: WebSocketStreamBackend[RIO[R0, *], S]) {
+    def extendEnv[R1]: StreamBackend[RIO[R0 with R1, *], S] =
+      new ExtendedEnvBackend[R0, R1, S with WebSockets](delegate) with WebSocketStreamBackend[RIO[R0 with R1, *], S] {}
   }
 }

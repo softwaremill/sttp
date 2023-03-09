@@ -3,11 +3,10 @@ package sttp.client3.impl.monix
 import monix.eval.Task
 import monix.reactive.Observable
 import org.scalajs.dom.experimental.{BodyInit, Request => FetchRequest, Response => FetchResponse}
-import sttp.capabilities.WebSockets
 import sttp.capabilities.monix.MonixStreams
 import sttp.client3.internal.ConvertFromFuture
-import sttp.client3.testing.SttpBackendStub
-import sttp.client3.{AbstractFetchBackend, FetchOptions, SttpBackend}
+import sttp.client3.testing.WebSocketStreamBackendStub
+import sttp.client3.{AbstractFetchBackend, FetchOptions, WebSocketStreamBackend}
 import sttp.ws.{WebSocket, WebSocketFrame}
 
 import scala.concurrent.Future
@@ -24,11 +23,8 @@ import scala.scalajs.js.typedarray.{Int8Array, _}
   *   https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream
   */
 class FetchMonixBackend private (fetchOptions: FetchOptions, customizeRequest: FetchRequest => FetchRequest)
-    extends AbstractFetchBackend[Task, MonixStreams, MonixStreams with WebSockets](
-      fetchOptions,
-      customizeRequest,
-      TaskMonadAsyncError
-    ) {
+    extends AbstractFetchBackend[Task, MonixStreams](fetchOptions, customizeRequest, TaskMonadAsyncError)
+    with WebSocketStreamBackend[Task, MonixStreams] {
 
   override val streams: MonixStreams = MonixStreams
 
@@ -82,13 +78,13 @@ object FetchMonixBackend {
   def apply(
       fetchOptions: FetchOptions = FetchOptions.Default,
       customizeRequest: FetchRequest => FetchRequest = identity
-  ): SttpBackend[Task, MonixStreams with WebSockets] =
+  ): WebSocketStreamBackend[Task, MonixStreams] =
     new FetchMonixBackend(fetchOptions, customizeRequest)
 
   /** Create a stub backend for testing, which uses the [[Task]] response wrapper, and supports `Observable[ByteBuffer]`
     * streaming.
     *
-    * See [[SttpBackendStub]] for details on how to configure stub responses.
+    * See [[WebSocketStreamBackendStub]] for details on how to configure stub responses.
     */
-  def stub: SttpBackendStub[Task, MonixStreams] = SttpBackendStub(TaskMonadAsyncError)
+  def stub: WebSocketStreamBackendStub[Task, MonixStreams] = WebSocketStreamBackendStub(TaskMonadAsyncError)
 }

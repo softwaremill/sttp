@@ -8,7 +8,7 @@ import sttp.capabilities.Streams
 import sttp.client3.internal.ws.{SimpleQueue, WebSocketEvent}
 import sttp.monad.syntax._
 import sttp.client3.okhttp.OkHttpBackend.EncodingHandler
-import sttp.client3.{Request, Response, ignore}
+import sttp.client3.{GenericRequest, Response, ignore}
 import sttp.monad.{Canceler, MonadAsyncError}
 
 abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](
@@ -18,7 +18,7 @@ abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](
     customEncodingHandler: EncodingHandler
 ) extends OkHttpBackend[F, S, P](client, closeClient, customEncodingHandler) {
 
-  override protected def sendRegular[T, R >: PE](request: Request[T, R]): F[Response[T]] = {
+  override protected def sendRegular[T](request: GenericRequest[T, R]): F[Response[T]] = {
     val nativeRequest = convertRequest(request)
     monad.flatten(monad.async[F[Response[T]]] { cb =>
       def success(r: F[Response[T]]): Unit = cb(Right(r))
@@ -34,7 +34,7 @@ abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](
           error(e)
 
         override def onResponse(call: Call, response: OkHttpResponse): Unit =
-          try success(readResponse(response, request))
+          try success(readResponse(response, request, request.response))
           catch {
             case e: Exception =>
               response.close()
@@ -46,8 +46,8 @@ abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](
     })
   }
 
-  override protected def sendWebSocket[T, R >: PE](
-      request: Request[T, R]
+  override protected def sendWebSocket[T](
+      request: GenericRequest[T, R]
   ): F[Response[T]] = {
     val nativeRequest = convertRequest(request)
     monad.flatten(
@@ -65,17 +65,17 @@ abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](
     )
   }
 
-  private def createListener[R >: PE, T](
+  private def createListener[T](
       queue: SimpleQueue[F, WebSocketEvent],
       cb: Either[Throwable, F[Response[T]]] => Unit,
-      request: Request[T, R]
+      request: GenericRequest[T, R]
   ): DelegatingWebSocketListener = {
     val isOpen = new AtomicBoolean(false)
     val addToQueue = new AddToQueueListener(queue, isOpen)
 
     def onOpen(nativeWs: OkHttpWebSocket, response: OkHttpResponse) = {
       val webSocket = new WebSocketImpl(nativeWs, queue, isOpen, response.headers())
-      val wsResponse = readResponse(response, request.response(ignore))
+      val wsResponse = readResponse(response, request, ignore)
         .flatMap { baseResponse =>
           bodyFromOkHttp(
             response.body().byteStream(),

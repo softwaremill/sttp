@@ -1,7 +1,6 @@
 package sttp.client3.akkahttp
 
 import akka.stream.scaladsl.{Flow, Source}
-import sttp.capabilities.WebSockets
 import sttp.capabilities.akka.AkkaStreams
 import sttp.client3._
 import sttp.client3.testing.ConvertToFuture
@@ -18,7 +17,7 @@ class AkkaHttpWebSocketTest
   override val streams: AkkaStreams = AkkaStreams
   implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.global
 
-  override val backend: SttpBackend[Future, AkkaStreams with WebSockets] = AkkaHttpBackend()
+  override val backend: WebSocketStreamBackend[Future, AkkaStreams] = AkkaHttpBackend()
   override implicit val convertToFuture: ConvertToFuture[Future] = ConvertToFuture.future
   override implicit val monad: MonadError[Future] = new FutureMonad
 

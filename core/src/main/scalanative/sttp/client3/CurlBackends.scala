@@ -7,20 +7,14 @@ import scala.util.Try
 
 // Curl supports redirects, but it doesn't store the history, so using FollowRedirectsBackend is more convenient
 
-private class CurlBackend(verbose: Boolean) extends AbstractCurlBackend[Identity](IdMonad, verbose) {}
+private class CurlBackend(verbose: Boolean) extends AbstractCurlBackend(IdMonad, verbose) with SyncBackend {}
 
 object CurlBackend {
-  def apply(verbose: Boolean = false): SttpBackend[Identity, Any] =
-    new FollowRedirectsBackend[Identity, Any](
-      new CurlBackend(verbose): SttpBackend[Identity, Any]
-    )
+  def apply(verbose: Boolean = false): SyncBackend = FollowRedirectsBackend(new CurlBackend(verbose))
 }
 
-private class CurlTryBackend(verbose: Boolean) extends AbstractCurlBackend[Try](TryMonad, verbose) {}
+private class CurlTryBackend(verbose: Boolean) extends AbstractCurlBackend(TryMonad, verbose) with Backend[Try] {}
 
 object CurlTryBackend {
-  def apply(verbose: Boolean = false): SttpBackend[Try, Any] =
-    new FollowRedirectsBackend[Try, Any](
-      new CurlTryBackend(verbose): SttpBackend[Try, Any]
-    )
+  def apply(verbose: Boolean = false): Backend[Try] = FollowRedirectsBackend(new CurlTryBackend(verbose))
 }

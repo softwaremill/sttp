@@ -16,25 +16,9 @@ import com.twitter.util
 import com.twitter.util.{Duration, Future => TFuture}
 import sttp.capabilities.Effect
 import sttp.client3.internal.{BodyFromResponseAs, FileHelpers, SttpFile, Utf8}
-import sttp.client3.testing.SttpBackendStub
+import sttp.client3.testing.BackendStub
 import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
-import sttp.client3.{
-  ByteArrayBody,
-  ByteBufferBody,
-  FileBody,
-  FollowRedirectsBackend,
-  InputStreamBody,
-  MultipartBody,
-  NoBody,
-  Request,
-  RequestBody,
-  Response,
-  StreamBody,
-  StringBody,
-  SttpBackend,
-  SttpClientException,
-  WebSocketResponseAs
-}
+import sttp.client3._
 import sttp.model.HttpVersion.HTTP_1
 import sttp.model._
 import sttp.monad.MonadError
@@ -42,9 +26,9 @@ import sttp.monad.syntax._
 
 import scala.io.Source
 
-class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture, Any] {
-  type PE = Any with Effect[TFuture]
-  override def send[T, R >: PE](request: Request[T, R]): TFuture[Response[T]] =
+class FinagleBackend(client: Option[Client] = None) extends Backend[TFuture] {
+  type R = Any with Effect[TFuture]
+  override def send[T](request: GenericRequest[T, R]): TFuture[Response[T]] =
     adjustExceptions(request) {
       val service = getClient(client, request)
       val finagleRequest = requestBodyToFinagle(request)
@@ -87,7 +71,7 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
       case _              => FMethod(m.method)
     }
 
-  private def requestBodyToFinagle(r: Request[_, Nothing]): http.Request = {
+  private def requestBodyToFinagle(r: GenericRequest[_, Nothing]): http.Request = {
     val finagleMethod = methodToFinagle(r.method)
     val url = r.uri.toString
     val headers = headersToMap(r.headers)
@@ -110,16 +94,16 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
           Some(ByteArray(Stream.continually(is.read).takeWhile(_ != -1).map(_.toByte).toArray: _*)),
           r.httpVersion
         )
-      case MultipartBody(parts) =>
+      case m: MultipartBody[_] =>
         val requestBuilder = RequestBuilder.create().url(url).addHeaders(headers)
-        val elements = parts.map { part => getBasicBodyContent(part) }
+        val elements = m.parts.map { part => getBasicBodyContent(part) }
         requestBuilder.add(elements).buildFormPost(true)
       // requestBuilder.addFormElement(elements: _*).buildFormPost(true)
       case _ => buildRequest(url, headers, finagleMethod, None, r.httpVersion)
     }
   }
 
-  private def getBasicBodyContent(part: Part[RequestBody[_]]): FormElement = {
+  private def getBasicBodyContent(part: Part[BodyPart[_]]): FormElement = {
 
     val content: String = part.body match {
       case StringBody(s, e, _) if e.equalsIgnoreCase(Utf8) => s
@@ -128,9 +112,7 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
       case ByteBufferBody(b, _)                            => Source.fromBytes(b.array()).mkString
       case InputStreamBody(is, _)                          => Source.fromInputStream(is).mkString
       case FileBody(f, _)                                  => Source.fromFile(f.toFile).mkString
-      case NoBody                                          => ""
-      case StreamBody(_)    => throw new IllegalArgumentException("Streaming is not supported")
-      case MultipartBody(_) => throw new IllegalArgumentException("Nested multipart bodies are not supported")
+      case StreamBody(_) => throw new IllegalArgumentException("Streaming is not supported")
     }
 
     part.fileName match {
@@ -193,9 +175,9 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
         TFuture.exception(new IllegalStateException("Streaming isn't supported"))
 
       override protected def handleWS[T](
-          responseAs: WebSocketResponseAs[T, _],
-          meta: ResponseMetadata,
-          ws: Nothing
+                                          responseAs: GenericWebSocketResponseAs[T, _],
+                                          meta: ResponseMetadata,
+                                          ws: Nothing
       ): TFuture[T] = ws
 
       override protected def cleanupWhenNotAWebSocket(response: FResponse, e: NotAWebSocketException): TFuture[Unit] =
@@ -205,7 +187,10 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
         response
     }
 
-  private def getClient(c: Option[Client], request: Request[_, Nothing]): Service[http.Request, FResponse] = {
+  private def getClient(
+      c: Option[Client],
+      request: GenericRequest[_, Nothing]
+  ): Service[http.Request, FResponse] = {
     val client = c.getOrElse {
       request.uri.scheme match {
         case Some("https") => Http.client.withTransport.tls
@@ -232,10 +217,10 @@ class FinagleBackend(client: Option[Client] = None) extends SttpBackend[TFuture,
     s"${uri.host.getOrElse("localhost")}:${uri.port.getOrElse(defaultPort)}"
   }
 
-  private def adjustExceptions[T](request: Request[_, _])(t: => TFuture[T]): TFuture[T] =
+  private def adjustExceptions[T](request: GenericRequest[_, _])(t: => TFuture[T]): TFuture[T] =
     SttpClientException.adjustExceptions(responseMonad)(t)(exceptionToSttpClientException(request, _))
 
-  private def exceptionToSttpClientException(request: Request[_, _], e: Exception): Option[Exception] =
+  private def exceptionToSttpClientException(request: GenericRequest[_, _], e: Exception): Option[Exception] =
     e match {
       case e: com.twitter.finagle.NoBrokersAvailableException =>
         Some(new SttpClientException.ConnectException(request, e))
@@ -262,17 +247,15 @@ object TFutureMonadError extends MonadError[TFuture] {
 
 object FinagleBackend {
 
-  def apply(): SttpBackend[TFuture, Any] = {
-    new FollowRedirectsBackend[TFuture, Any](new FinagleBackend())
-  }
+  def apply(): Backend[TFuture] =
+    FollowRedirectsBackend(new FinagleBackend())
 
-  def usingClient(client: Client): SttpBackend[TFuture, Any] = {
-    new FollowRedirectsBackend[TFuture, Any](new FinagleBackend(Some(client)))
-  }
+  def usingClient(client: Client): Backend[TFuture] =
+    FollowRedirectsBackend(new FinagleBackend(Some(client)))
 
   /** Create a stub backend for testing, which uses the [[TFuture]] response wrapper, and doesn't support streaming.
     *
-    * See [[SttpBackendStub]] for details on how to configure stub responses.
+    * See [[BackendStub]] for details on how to configure stub responses.
     */
-  def stub: SttpBackendStub[TFuture, Any] = SttpBackendStub(TFutureMonadError)
+  def stub: BackendStub[TFuture] = BackendStub(TFutureMonadError)
 }

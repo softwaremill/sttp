@@ -1,6 +1,5 @@
 package sttp.client3.examples
 
-import sttp.capabilities.WebSockets
 import sttp.client3._
 import sttp.client3.httpclient.zio.HttpClientZioBackend
 import sttp.ws.WebSocket
@@ -14,8 +13,8 @@ object WebSocketZio extends ZIOAppDefault {
   }
 
   // create a description of a program, which requires SttpClient dependency in the environment
-  def sendAndPrint(backend: SttpBackend[Task, WebSockets]): Task[Response[Unit]] =
-    backend.send(basicRequest.get(uri"wss://ws.postman-echo.com/raw").response(asWebSocketAlways(useWebSocket)))
+  def sendAndPrint(backend: WebSocketBackend[Task]): Task[Response[Unit]] =
+    basicRequest.get(uri"wss://ws.postman-echo.com/raw").response(asWebSocketAlways(useWebSocket)).send(backend)
 
   override def run = {
     // provide an implementation for the SttpClient dependency

@@ -11,7 +11,7 @@ import sttp.capabilities.monix.MonixStreams
 import sttp.client3.armeria.ArmeriaWebClient.newClient
 import sttp.client3.armeria.{AbstractArmeriaBackend, BodyFromStreamMessage}
 import sttp.client3.impl.monix.TaskMonadAsyncError
-import sttp.client3.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
+import sttp.client3.{FollowRedirectsBackend, StreamBackend, BackendOptions}
 import sttp.monad.MonadAsyncError
 
 private final class ArmeriaMonixBackend(client: WebClient, closeFactory: Boolean)(implicit scheduler: Scheduler)
@@ -42,25 +42,25 @@ object ArmeriaMonixBackend {
     * @param scheduler
     *   The scheduler used for streaming request bodies. Defaults to the global scheduler.
     */
-  def apply(options: SttpBackendOptions = SttpBackendOptions.Default)(implicit
-      scheduler: Scheduler = Scheduler.global
-  ): SttpBackend[Task, MonixStreams] =
+  def apply(options: BackendOptions = BackendOptions.Default)(implicit
+                                                              scheduler: Scheduler = Scheduler.global
+  ): StreamBackend[Task, MonixStreams] =
     apply(newClient(options), closeFactory = true)
 
   /** @param scheduler The scheduler used for streaming request bodies. Defaults to the global scheduler. */
   def usingClient(client: WebClient)(implicit
       scheduler: Scheduler = Scheduler.global
-  ): SttpBackend[Task, MonixStreams] =
+  ): StreamBackend[Task, MonixStreams] =
     apply(client, closeFactory = false)
 
   /** @param scheduler The scheduler used for streaming request bodies. Defaults to the global scheduler. */
   def usingDefaultClient()(implicit
       scheduler: Scheduler = Scheduler.global
-  ): SttpBackend[Task, MonixStreams] =
+  ): StreamBackend[Task, MonixStreams] =
     apply(newClient(), closeFactory = false)
 
   private def apply(client: WebClient, closeFactory: Boolean)(implicit
       scheduler: Scheduler
-  ): SttpBackend[Task, MonixStreams] =
-    new FollowRedirectsBackend(new ArmeriaMonixBackend(client, closeFactory))
+  ): StreamBackend[Task, MonixStreams] =
+    FollowRedirectsBackend(new ArmeriaMonixBackend(client, closeFactory))
 }

@@ -1,105 +1,75 @@
 package sttp.client3.logging
 
-import java.util.concurrent.TimeUnit
-import sttp.capabilities.Effect
 import sttp.client3._
-import sttp.client3.listener.{ListenerBackend, RequestListener}
-import sttp.model.{HeaderNames, StatusCode}
-import sttp.monad.MonadError
-import sttp.monad.syntax._
-
-import scala.concurrent.duration.Duration
+import sttp.client3.listener.ListenerBackend
 
 object LoggingBackend {
+  def apply(delegate: SyncBackend, logger: Logger[Identity]): SyncBackend =
+    apply(delegate, logger, LogConfig.Default)
+
+  def apply[F[_]](delegate: Backend[F], logger: Logger[F]): Backend[F] =
+    apply(delegate, logger, LogConfig.Default)
+
+  def apply[F[_]](delegate: WebSocketBackend[F], logger: Logger[F]): WebSocketBackend[F] =
+    apply(delegate, logger, LogConfig.Default)
+
+  def apply[F[_], S](delegate: StreamBackend[F, S], logger: Logger[F]): StreamBackend[F, S] =
+    apply(delegate, logger, LogConfig.Default)
+
+  def apply[F[_], S](delegate: WebSocketStreamBackend[F, S], logger: Logger[F]): WebSocketStreamBackend[F, S] =
+    apply(delegate, logger, LogConfig.Default)
+
+  def apply(delegate: SyncBackend, logger: Logger[Identity], config: LogConfig): SyncBackend =
+    apply(delegate, Log.default(logger, config), config.includeTiming, config.logResponseBody)
+
+  def apply[F[_]](delegate: Backend[F], logger: Logger[F], config: LogConfig): Backend[F] =
+    apply(delegate, Log.default(logger, config), config.includeTiming, config.logResponseBody)
+
+  def apply[F[_]](delegate: WebSocketBackend[F], logger: Logger[F], config: LogConfig): WebSocketBackend[F] =
+    apply(delegate, Log.default(logger, config), config.includeTiming, config.logResponseBody)
+
+  def apply[F[_], S](delegate: StreamBackend[F, S], logger: Logger[F], config: LogConfig): StreamBackend[F, S] =
+    apply(delegate, Log.default(logger, config), config.includeTiming, config.logResponseBody)
+
   def apply[F[_], S](
-      delegate: SttpBackend[F, S],
+      delegate: WebSocketStreamBackend[F, S],
       logger: Logger[F],
-      includeTiming: Boolean = true,
-      beforeCurlInsteadOfShow: Boolean = false,
-      logRequestBody: Boolean = false,
-      logRequestHeaders: Boolean = true,
-      logResponseBody: Boolean = false,
-      logResponseHeaders: Boolean = true,
-      sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders,
-      beforeRequestSendLogLevel: LogLevel = LogLevel.Debug,
-      responseLogLevel: StatusCode => LogLevel = DefaultLog.defaultResponseLogLevel,
-      responseExceptionLogLevel: LogLevel = LogLevel.Error
-  ): SttpBackend[F, S] = {
-    val log = new DefaultLog(
-      logger,
-      beforeCurlInsteadOfShow,
-      logRequestBody,
-      logRequestHeaders,
-      logResponseHeaders,
-      sensitiveHeaders,
-      beforeRequestSendLogLevel,
-      responseLogLevel,
-      responseExceptionLogLevel
-    )
-    apply(delegate, log, includeTiming, logResponseBody)
-  }
+      config: LogConfig
+  ): WebSocketStreamBackend[F, S] =
+    apply(delegate, Log.default(logger, config), config.includeTiming, config.logResponseBody)
 
-  def apply[F[_], S](delegate: SttpBackend[F, S], log: Log[F]): SttpBackend[F, S] =
-    apply(delegate, log, includeTiming = true, logResponseBody = false)
+  def apply(delegate: SyncBackend, log: Log[Identity], includeTiming: Boolean, logResponseBody: Boolean): SyncBackend =
+    if (logResponseBody) LoggingWithResponseBodyBackend(delegate, log, includeTiming)
+    else ListenerBackend(delegate, new LoggingListener(log, includeTiming)(delegate.responseMonad))
 
-  def apply[F[_], S](
-      delegate: SttpBackend[F, S],
+  def apply[F[_]](delegate: Backend[F], log: Log[F], includeTiming: Boolean, logResponseBody: Boolean): Backend[F] =
+    if (logResponseBody) LoggingWithResponseBodyBackend[F](delegate, log, includeTiming)
+    else ListenerBackend[F, Option[Long]](delegate, new LoggingListener(log, includeTiming)(delegate.responseMonad))
+
+  def apply[F[_]](
+      delegate: WebSocketBackend[F],
       log: Log[F],
       includeTiming: Boolean,
       logResponseBody: Boolean
-  ): SttpBackend[F, S] = {
-    implicit val m: MonadError[F] = delegate.responseMonad
-    if (logResponseBody) new LoggingWithResponseBodyBackend(delegate, log, includeTiming)
-    else
-      new ListenerBackend(delegate, new LoggingListener(log, includeTiming))
-  }
-}
+  ): WebSocketBackend[F] =
+    if (logResponseBody) LoggingWithResponseBodyBackend(delegate, log, includeTiming)
+    else ListenerBackend(delegate, new LoggingListener(log, includeTiming)(delegate.responseMonad))
 
-class LoggingListener[F[_]](log: Log[F], includeTiming: Boolean)(implicit m: MonadError[F])
-    extends RequestListener[F, Option[Long]] {
-  private def now(): Long = System.currentTimeMillis()
-  private def elapsed(from: Option[Long]): Option[Duration] = from.map(f => Duration(now() - f, TimeUnit.MILLISECONDS))
+  def apply[F[_], S](
+      delegate: StreamBackend[F, S],
+      log: Log[F],
+      includeTiming: Boolean,
+      logResponseBody: Boolean
+  ): StreamBackend[F, S] =
+    if (logResponseBody) LoggingWithResponseBodyBackend(delegate, log, includeTiming)
+    else ListenerBackend(delegate, new LoggingListener(log, includeTiming)(delegate.responseMonad))
 
-  override def beforeRequest(request: Request[_, _]): F[Option[Long]] = {
-    log.beforeRequestSend(request).map(_ => if (includeTiming) Some(now()) else None)
-  }
-
-  override def requestException(request: Request[_, _], tag: Option[Long], e: Exception): F[Unit] = {
-    log.requestException(request, elapsed(tag), e)
-  }
-
-  override def requestSuccessful(request: Request[_, _], response: Response[_], tag: Option[Long]): F[Unit] = {
-    log.response(request, response, None, elapsed(tag))
-  }
-}
-
-class LoggingWithResponseBodyBackend[F[_], S](
-    delegate: SttpBackend[F, S],
-    log: Log[F],
-    includeTiming: Boolean
-) extends DelegateSttpBackend[F, S](delegate) {
-  private def now(): Long = System.currentTimeMillis()
-  private def elapsed(from: Option[Long]): Option[Duration] = from.map(f => Duration(now() - f, TimeUnit.MILLISECONDS))
-
-  override def send[T, R >: S with Effect[F]](request: Request[T, R]): F[Response[T]] = {
-    log.beforeRequestSend(request).flatMap { _ =>
-      val start = if (includeTiming) Some(now()) else None
-      if (request.isWebSocket) {
-        for {
-          response <- request.send(delegate)
-          _ <- log.response(request, response, None, elapsed(start))
-        } yield response
-      } else
-        {
-          for {
-            response <- request.response(asBothOption(request.response, asStringAlways)).send(delegate)
-            _ <- log.response(request, response, response.body._2, elapsed(start))
-          } yield response.copy(body = response.body._1)
-        }.handleError { case e: Exception =>
-          log
-            .requestException(request, elapsed(start), e)
-            .flatMap(_ => responseMonad.error(e))
-        }
-    }
-  }
+  def apply[F[_], S](
+      delegate: WebSocketStreamBackend[F, S],
+      log: Log[F],
+      includeTiming: Boolean,
+      logResponseBody: Boolean
+  ): WebSocketStreamBackend[F, S] =
+    if (logResponseBody) LoggingWithResponseBodyBackend(delegate, log, includeTiming)
+    else ListenerBackend(delegate, new LoggingListener(log, includeTiming)(delegate.responseMonad))
 }

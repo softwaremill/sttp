@@ -8,7 +8,7 @@ import com.linecorp.armeria.client.{
   WebClient,
   WebClientRequestPreparation
 }
-import com.linecorp.armeria.common.multipart.{BodyPart, Multipart}
+import com.linecorp.armeria.common.multipart.{BodyPart => ArmeriaBodyPart, Multipart}
 import com.linecorp.armeria.common.stream.{ClosedStreamException, StreamMessage}
 import com.linecorp.armeria.common.{
   ContentDisposition,
@@ -35,7 +35,7 @@ import sttp.capabilities.{Effect, Streams}
 import sttp.client3.SttpClientException.{ConnectException, ReadException, TimeoutException}
 import sttp.client3._
 import sttp.client3.armeria.AbstractArmeriaBackend.{RightUnit, noopCanceler}
-import sttp.client3.internal.{throwNestedMultipartNotAllowed, toByteArray}
+import sttp.client3.internal.toByteArray
 import sttp.model._
 import sttp.monad.syntax._
 import sttp.monad.{Canceler, MonadAsyncError, MonadError}
@@ -44,11 +44,11 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
     client: WebClient = WebClient.of(),
     closeFactory: Boolean,
     private implicit val monad: MonadAsyncError[F]
-) extends SttpBackend[F, S] {
+) extends StreamBackend[F, S] {
 
   val streams: Streams[S]
 
-  type SE = S with Effect[F]
+  type R = S with Effect[F]
 
   protected def bodyFromStreamMessage: BodyFromStreamMessage[F, S]
 
@@ -56,10 +56,10 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
 
   override def responseMonad: MonadError[F] = monad
 
-  override def send[T, R >: SE](request: Request[T, R]): F[Response[T]] =
+  override def send[T](request: GenericRequest[T, R]): F[Response[T]] =
     monad.suspend(adjustExceptions(request)(execute(request)))
 
-  private def execute[T, R >: SE](request: Request[T, R]): F[Response[T]] = {
+  private def execute[T](request: GenericRequest[T, R]): F[Response[T]] = {
     val captor = Clients.newContextCaptor()
     try {
       val armeriaRes = requestToArmeria(request).execute()
@@ -91,7 +91,7 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
     }
   }
 
-  private def requestToArmeria(request: Request[_, Nothing]): WebClientRequestPreparation = {
+  private def requestToArmeria(request: GenericRequest[_, Nothing]): WebClientRequestPreparation = {
     val requestPreparation = client
       .prepare()
       .disablePathParams()
@@ -136,7 +136,7 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
         requestPreparation.content(contentType, HttpData.wrap(toByteArray(is)))
       case ByteBufferBody(b, _) =>
         requestPreparation.content(contentType, HttpData.wrap(Unpooled.wrappedBuffer(b)))
-      case multipart @ MultipartBody(_) =>
+      case multipart: MultipartBody[_] =>
         val armeriaMultipart = Multipart.of(multipart.parts.map(toArmeriaBodyPart): _*)
         requestPreparation.content(
           contentType.withParameter("boundary", armeriaMultipart.boundary()),
@@ -161,7 +161,7 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
       case _              => HttpMethod.UNKNOWN
     }
 
-  private def toArmeriaBodyPart(bodyPart: Part[RequestBody[_]]): BodyPart = {
+  private def toArmeriaBodyPart(bodyPart: Part[BodyPart[_]]): ArmeriaBodyPart = {
     val dispositionBuilder = ContentDisposition.builder("form-data")
     dispositionBuilder.name(bodyPart.name)
     bodyPart.fileName.foreach(dispositionBuilder.filename)
@@ -174,7 +174,7 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
       headersBuilder.add(header.name, header.value)
     }
 
-    val bodyPartBuilder = BodyPart
+    val bodyPartBuilder = ArmeriaBodyPart
       .builder()
       .headers(headersBuilder.build())
 
@@ -191,12 +191,10 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
         bodyPartBuilder.content(StreamMessage.of(f.toPath))
       case StreamBody(s) =>
         bodyPartBuilder.content(streamToPublisher(s.asInstanceOf[streams.BinaryStream]))
-      case MultipartBody(_) => throwNestedMultipartNotAllowed
-      case NoBody           => bodyPartBuilder.content(HttpData.empty())
     }).build()
   }
 
-  private def adjustExceptions[T](request: Request[_, _])(execute: => F[T]): F[T] =
+  private def adjustExceptions[T](request: GenericRequest[_, _])(execute: => F[T]): F[T] =
     SttpClientException.adjustExceptions(responseMonad)(execute) {
       case ex: UnprocessedRequestException =>
         // The cause of an UnprocessedRequestException is always not null
@@ -209,10 +207,10 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
         SttpClientException.defaultExceptionToSttpClientException(request, ex)
     }
 
-  private def fromArmeriaResponse[T, R >: SE](
-      request: Request[T, R],
-      response: HttpResponse,
-      ctx: ClientRequestContext
+  private def fromArmeriaResponse[T](
+                                      request: GenericRequest[T, R],
+                                      response: HttpResponse,
+                                      ctx: ClientRequestContext
   ): F[Response[T]] = {
     val splitHttpResponse = response.split()
     val aggregatorRef = new AtomicReference[StreamMessageAggregator]()

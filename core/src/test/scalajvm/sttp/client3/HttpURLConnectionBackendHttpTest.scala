@@ -5,7 +5,7 @@ import sttp.client3.testing.{ConvertToFuture, HttpTest}
 import java.io.ByteArrayInputStream
 
 class HttpURLConnectionBackendHttpTest extends HttpTest[Identity] {
-  override val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend(
+  override val backend: SyncBackend = HttpURLConnectionBackend(
     customEncodingHandler = { case (_, "custom") => new ByteArrayInputStream(customEncodedData.getBytes()) }
   )
   override implicit val convertToFuture: ConvertToFuture[Identity] = ConvertToFuture.id

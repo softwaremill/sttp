@@ -11,7 +11,7 @@ import monix.execution.Scheduler.Implicits.global
 import scala.concurrent.duration._
 
 class AsyncHttpClientMonixHttpTest extends HttpTest[Task] {
-  override val backend: SttpBackend[Task, Any] = AsyncHttpClientMonixBackend().runSyncUnsafe()
+  override val backend: Backend[Task] = AsyncHttpClientMonixBackend().runSyncUnsafe()
   override implicit val convertToFuture: ConvertToFuture[Task] = convertMonixTaskToFuture
 
   override def timeoutToNone[T](t: Task[T], timeoutMillis: Int): Task[Option[T]] =

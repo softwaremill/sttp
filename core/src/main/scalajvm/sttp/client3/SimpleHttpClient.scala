@@ -11,17 +11,16 @@ package sttp.client3
   * println(response.body)
   * }}}
   *
-  * Wraps an [[SttpBackend]], which can be substituted or modified using [[wrapBackend]], adding e.g. logging.
+  * Wraps a [[SyncBackend]], which can be substituted or modified using [[wrapBackend]], adding e.g. logging.
   *
   * Creating a client allocates resources, hence when no longer needed, the client should be closed using [[close]].
   */
-case class SimpleHttpClient(backend: SttpBackend[Identity, Any]) {
+case class SimpleHttpClient(backend: SyncBackend) {
 
-  def send[T](request: Request[T, Any]): Response[T] = backend.send(request)
+  def send[T](request: Request[T]): Response[T] = backend.send(request)
 
-  def withBackend(newBackend: SttpBackend[Identity, Any]): SimpleHttpClient = copy(backend = newBackend)
-  def wrapBackend(f: SttpBackend[Identity, Any] => SttpBackend[Identity, Any]): SimpleHttpClient =
-    copy(backend = f(backend))
+  def withBackend(newBackend: SyncBackend): SimpleHttpClient = copy(backend = newBackend)
+  def wrapBackend(f: SyncBackend => SyncBackend): SimpleHttpClient = copy(backend = f(backend))
 
   def close(): Unit = backend.close()
 }

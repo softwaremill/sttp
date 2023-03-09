@@ -34,7 +34,7 @@ case class User(id: String)
 Behavior of the stub can be specified using a series of invocations of the `whenRequestMatches` and `thenRespond` methods:
 
 ```scala mdoc:compile-only
-val testingBackend = SttpBackendStub.synchronous
+val testingBackend = SyncBackendStub
   .whenRequestMatches(_.uri.path.startsWith(List("a", "b")))
   .thenRespond("Hello there!")
   .whenRequestMatches(_.method == Method.POST)
@@ -50,7 +50,7 @@ val response2 = basicRequest.post(uri"http://example.org/d/e").send(testingBacke
 It is also possible to match requests by partial function, returning a response. E.g.:
 
 ```scala mdoc:compile-only
-val testingBackend = SttpBackendStub.synchronous
+val testingBackend = SyncBackendStub
   .whenRequestMatchesPartial({
     case r if r.uri.path.endsWith(List("partial10")) =>
       Response("Not found", StatusCode.NotFound)
@@ -77,7 +77,7 @@ val response2 = basicRequest.post(uri"http://example.org/partialAda").send(testi
 Another way to specify the behaviour is passing response wrapped in the effect to the stub. It is useful if you need to test a scenario with a slow server, when the response should be not returned immediately, but after some time. Example with Futures:
 
 ```scala mdoc:compile-only
-val testingBackend = SttpBackendStub.asynchronousFuture
+val testingBackend = BackendStub.asynchronousFuture
   .whenAnyRequest
   .thenRespondF(Future {
     Thread.sleep(5000)
@@ -91,7 +91,7 @@ val responseFuture = basicRequest.get(uri"http://example.org").send(testingBacke
 The returned response may also depend on the request: 
 
 ```scala mdoc:compile-only
-val testingBackend = SttpBackendStub.synchronous
+val testingBackend = SyncBackendStub
   .whenAnyRequest
   .thenRespondF(req =>
     Response.ok(Right(s"OK, got request sent to ${req.uri.host}"))
@@ -104,7 +104,7 @@ val response = basicRequest.get(uri"http://example.org").send(testingBackend)
 You can define consecutive raw responses that will be served:
 
 ```scala mdoc:compile-only
-val testingBackend: SttpBackendStub[Identity, Any] = SttpBackendStub.synchronous
+val testingBackend: SyncBackendStub = SyncBackendStub
   .whenAnyRequest
   .thenRespondCyclic("first", "second", "third")
 
@@ -117,7 +117,7 @@ basicRequest.get(uri"http://example.org").send(testingBackend)       // Right("O
 Or multiple `Response` instances:
 
 ```scala mdoc:compile-only
-val testingBackend: SttpBackendStub[Identity, Any] = SttpBackendStub.synchronous
+val testingBackend: SyncBackendStub = SyncBackendStub
   .whenAnyRequest
   .thenRespondCyclicResponses(
     Response.ok[String]("first"),
@@ -132,7 +132,7 @@ basicRequest.get(uri"http://example.org").send(testingBackend)       // code wil
 The `sttp.client3.testing` package also contains a utility method to force the body as a string (`forceBodyAsString`) or as a byte array (`forceBodyAsByteArray`), if the body is not a stream or multipart:
 
 ```scala mdoc:compile-only
-val testingBackend = SttpBackendStub.synchronous
+val testingBackend = SyncBackendStub
   .whenRequestMatches(_.forceBodyAsString.contains("Hello, world!"))
   .thenRespond("Hello back!")
 ```
@@ -144,7 +144,7 @@ If the stub is given a request, for which no behavior is stubbed, it will return
 If you want to simulate an exception being thrown by a backend, e.g. a socket timeout exception, you can do so by throwing the appropriate exception instead of the response, e.g.:
 
 ```scala mdoc:compile-only
-val testingBackend = SttpBackendStub.synchronous
+val testingBackend = SyncBackendStub
   .whenRequestMatches(_ => true)
   .thenRespond(throw new SttpClientException.ConnectException(
     basicRequest.get(uri"http://example.com"), new RuntimeException))
@@ -173,7 +173,7 @@ The following conversions are supported:
 For example, if you want to return a JSON response, simply use `.withResponse(String)` as below:
 
 ```scala mdoc:compile-only
-val testingBackend = SttpBackendStub.synchronous
+val testingBackend = SyncBackendStub
   .whenRequestMatches(_ => true)
   .thenRespond(""" {"username": "john", "age": 65 } """)
 
@@ -199,7 +199,7 @@ With the stub created as follows:
 
 ```scala mdoc:compile-only
 val fileResponseHandle = new File("path/to/file.ext")
-SttpBackendStub.synchronous
+SyncBackendStub
   .whenRequestMatches(_ => true)
   .thenRespond(fileResponseHandle)
 ```
@@ -216,7 +216,7 @@ import sttp.monad.MonadAsyncError
 
 val sourceFile = new File("path/to/file.ext")
 val destinationFile = new File("path/to/file.ext")
-SttpBackendStub(implicitly[MonadAsyncError[IO]])
+BackendStub(implicitly[MonadAsyncError[IO]])
   .whenRequestMatches(_ => true)
   .thenRespondF { _ =>
     FileUtils.copyFile(sourceFile, destinationFile)
@@ -230,7 +230,7 @@ It is also possible to create a stub backend which delegates calls to another (p
 
 ```scala mdoc:compile-only
 val testingBackend =
-  SttpBackendStub.withFallback(HttpClientSyncBackend())
+  SyncBackendStub.withFallback(HttpClientSyncBackend())
     .whenRequestMatches(_.uri.path.startsWith(List("a")))
     .thenRespond("I'm a STUB!")
 
@@ -269,7 +269,7 @@ For example:
 import sttp.ws.testing.WebSocketStub
 import sttp.ws.WebSocketFrame
 
-val backend = SttpBackendStub.synchronous
+val backend = WebSocketBackendStub.synchronous
 val webSocketStub = WebSocketStub
   .initialReceive(
     List(WebSocketFrame.text("Hello from the server!"))
@@ -297,8 +297,8 @@ Example usage:
 ```scala mdoc:compile-only
 import scala.util.Try
 
-val testingBackend = new RecordingSttpBackend(
-  SttpBackendStub.synchronous
+val testingBackend = RecordingBackend(
+  SyncBackendStub
     .whenRequestMatches(_.uri.path.startsWith(List("a", "b")))
     .thenRespond("Hello there!")
 )
@@ -306,6 +306,6 @@ val testingBackend = new RecordingSttpBackend(
 val response1 = basicRequest.get(uri"http://example.org/a/b/c").send(testingBackend)
 // response1.body will be Right("Hello there")
 
-testingBackend.allInteractions: List[(Request[_, _], Try[Response[_]])]
+testingBackend.allInteractions: List[(GenericRequest[_, _], Try[Response[_]])]
 // the list will contain one element and can be verified in a test 
 ```

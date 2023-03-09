@@ -5,16 +5,16 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import sttp.client3._
 import sttp.client3.impl.zio._
-import sttp.client3.testing.{SttpBackendStub, TestStreams}
+import sttp.client3.testing.{BackendStub, RawStream, StreamBackendStub, TestStreams}
 import sttp.model.Method
 import zio.stream.ZStream
 import zio.{Task, ZIO}
 
-class SttpBackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFutures with ZioTestBase {
+class BackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFutures with ZioTestBase {
 
   "backend stub" should "cycle through responses using a single sent request" in {
     // given
-    val backend: SttpBackendStub[Task, Any] = SttpBackendStub(new RIOMonadAsyncError[Any])
+    val backend: BackendStub[Task] = BackendStub(new RIOMonadAsyncError[Any])
       .whenRequestMatches(_ => true)
       .thenRespondCyclic("a", "b", "c")
     // when
@@ -29,7 +29,7 @@ class SttpBackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFuture
 
   it should "cycle through responses when called concurrently" in {
     // given
-    val backend: SttpBackendStub[Task, Any] = SttpBackendStub(new RIOMonadAsyncError[Any])
+    val backend: BackendStub[Task] = BackendStub(new RIOMonadAsyncError[Any])
       .whenRequestMatches(_ => true)
       .thenRespondCyclic("a", "b", "c")
 
@@ -75,8 +75,8 @@ class SttpBackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFuture
   }
 
   it should "lift errors due to mapping with impure functions into the response monad" in {
-    val backend: SttpBackendStub[Task, Any] =
-      SttpBackendStub(new RIOMonadAsyncError[Any]).whenAnyRequest.thenRespondOk()
+    val backend: BackendStub[Task] =
+      BackendStub(new RIOMonadAsyncError[Any]).whenAnyRequest.thenRespondOk()
 
     val error = new IllegalStateException("boom")
 
@@ -92,8 +92,8 @@ class SttpBackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFuture
   }
 
   it should "lift errors due to mapping stream with impure functions into the response monad" in {
-    val backend = SttpBackendStub[Task, TestStreams](new RIOMonadAsyncError[Any]).whenAnyRequest
-      .thenRespond(SttpBackendStub.RawStream(List(1: Byte)))
+    val backend = StreamBackendStub[Task, TestStreams](new RIOMonadAsyncError[Any]).whenAnyRequest
+      .thenRespond(RawStream(List(1: Byte)))
 
     val error = new IllegalStateException("boom")
 

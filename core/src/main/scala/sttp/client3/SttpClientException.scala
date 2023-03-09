@@ -10,23 +10,23 @@ import sttp.monad.MonadError
   * In general, it's safe to assume that the request hasn't been sent in case of connect exceptions. With read
   * exceptions, the target host might or might have not received and processed the request.
   *
-  * The [[SttpBackend.send]] methods might also throw other exceptions, due to programming errors, bugs in the
-  * underlying implementations, bugs in sttp or an uncovered exception.
+  * The [[Backend.send]] methods might also throw other exceptions, due to programming errors, bugs in the underlying
+  * implementations, bugs in sttp or an uncovered exception.
   *
   * @param request
   *   The request, which was being sent when the exception was thrown
   * @param cause
   *   The original exception.
   */
-abstract class SttpClientException(val request: Request[_, _], val cause: Exception)
+abstract class SttpClientException(val request: GenericRequest[_, _], val cause: Exception)
     extends Exception(s"Exception when sending request: ${request.method} ${request.uri}", cause)
 
 object SttpClientException extends SttpClientExceptionExtensions {
-  class ConnectException(request: Request[_, _], cause: Exception) extends SttpClientException(request, cause)
+  class ConnectException(request: GenericRequest[_, _], cause: Exception) extends SttpClientException(request, cause)
 
-  class ReadException(request: Request[_, _], cause: Exception) extends SttpClientException(request, cause)
+  class ReadException(request: GenericRequest[_, _], cause: Exception) extends SttpClientException(request, cause)
 
-  class TimeoutException(request: Request[_, _], cause: Exception) extends ReadException(request, cause)
+  class TimeoutException(request: GenericRequest[_, _], cause: Exception) extends ReadException(request, cause)
 
   def adjustExceptions[F[_], T](
       monadError: MonadError[F]

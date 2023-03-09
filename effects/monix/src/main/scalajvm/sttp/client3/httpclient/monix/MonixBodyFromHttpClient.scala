@@ -5,7 +5,7 @@ import monix.execution.Scheduler
 import monix.nio.file._
 import monix.reactive.{Consumer, Observable}
 import sttp.capabilities.monix.MonixStreams
-import sttp.client3.WebSocketResponseAs
+import sttp.client3.GenericWebSocketResponseAs
 import sttp.client3.impl.monix.MonixWebSockets
 import sttp.client3.internal.httpclient.BodyFromHttpClient
 import sttp.client3.internal.{BodyFromResponseAs, SttpFile}
@@ -55,7 +55,7 @@ private[monix] trait MonixBodyFromHttpClient extends BodyFromHttpClient[Task, Mo
         Task.pure((response, () => response.consumeWith(Consumer.complete).onErrorFallbackTo(Task.unit)))
 
       override protected def handleWS[T](
-          responseAs: WebSocketResponseAs[T, _],
+          responseAs: GenericWebSocketResponseAs[T, _],
           meta: ResponseMetadata,
           ws: WebSocket[Task]
       ): Task[T] = bodyFromWs(responseAs, ws, meta)

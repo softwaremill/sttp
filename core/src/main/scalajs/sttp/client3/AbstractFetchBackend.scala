@@ -58,27 +58,29 @@ final case class FetchOptions(
   * @see
   *   https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API
   */
-abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
+abstract class AbstractFetchBackend[F[_], S <: Streams[S]](
     options: FetchOptions,
     customizeRequest: FetchRequest => FetchRequest,
     monad: MonadError[F]
-) extends SttpBackend[F, P] {
+) extends GenericBackend[F, S with WebSockets]
+    with WebSocketBackend[F] {
   override implicit def responseMonad: MonadError[F] = monad
 
   val streams: Streams[S]
-  type PE = P with Effect[F] with WebSockets
 
-  override def send[T, R >: PE](request: Request[T, R]): F[Response[T]] =
+  type R = S with WebSockets with Effect[F]
+
+  override def send[T](request: GenericRequest[T, R]): F[Response[T]] =
     adjustExceptions(request) {
       if (request.isWebSocket) sendWebSocket(request) else sendRegular(request)
     }
 
-  private def adjustExceptions[T](request: Request[_, _])(t: => F[T]): F[T] =
+  private def adjustExceptions[T](request: GenericRequest[_, _])(t: => F[T]): F[T] =
     SttpClientException.adjustExceptions(responseMonad)(t)(
       SttpClientException.defaultExceptionToSttpClientException(request, _)
     )
 
-  private def sendRegular[T, R >: PE](request: Request[T, R]): F[Response[T]] = {
+  private def sendRegular[T](request: GenericRequest[T, R]): F[Response[T]] = {
     // https://stackoverflow.com/q/31061838/4094860
     val readTimeout = request.options.readTimeout
     val (signal, cancelTimeout) = readTimeout match {
@@ -183,12 +185,12 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
       .toList
   }
 
-  private def createBody[R >: PE](body: RequestBody[R]): F[js.UndefOr[BodyInit]] = {
+  private def createBody(body: GenericRequestBody[R]): F[js.UndefOr[BodyInit]] = {
     body match {
       case NoBody =>
         responseMonad.unit(js.undefined) // skip
 
-      case b: BasicRequestBody =>
+      case b: BasicBodyPart =>
         responseMonad.unit(writeBasicBody(b))
 
       case StreamBody(s) =>
@@ -198,10 +200,8 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
         val formData = new FormData()
         mp.parts.foreach { part =>
           val value = part.body match {
-            case NoBody                 => Array[Byte]().toTypedArray.asInstanceOf[BodyInit]
-            case body: BasicRequestBody => writeBasicBody(body)
-            case StreamBody(_)    => throw new IllegalArgumentException("Streaming multipart bodies are not supported")
-            case MultipartBody(_) => throwNestedMultipartNotAllowed
+            case body: BasicBodyPart => writeBasicBody(body)
+            case StreamBody(_) => throw new IllegalArgumentException("Streaming multipart bodies are not supported")
           }
           // the only way to set the content type is to use a blob
           val blob =
@@ -222,7 +222,7 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
     }
   }
 
-  private def writeBasicBody(body: BasicRequestBody): BodyInit = {
+  private def writeBasicBody(body: BasicBodyPart): BodyInit = {
     body match {
       case StringBody(b, encoding, _) =>
         if (encoding.compareToIgnoreCase(Utf8) == 0) b
@@ -249,7 +249,7 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
     b
   }
 
-  private def sendWebSocket[T, R >: PE](request: Request[T, R]): F[Response[T]] = {
+  private def sendWebSocket[T](request: GenericRequest[T, R]): F[Response[T]] = {
     val queue = new JSSimpleQueue[F, WebSocketEvent]
     val ws = new JSWebSocket(request.uri.toString)
     ws.binaryType = BinaryType
@@ -328,9 +328,9 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
       handleResponseAsStream(response)
 
     override protected def handleWS[T](
-        responseAs: WebSocketResponseAs[T, _],
-        meta: ResponseMetadata,
-        ws: WebSocket[F]
+                                        responseAs: GenericWebSocketResponseAs[T, _],
+                                        meta: ResponseMetadata,
+                                        ws: WebSocket[F]
     ): F[T] =
       responseAs match {
         case ResponseAsWebSocket(f) =>

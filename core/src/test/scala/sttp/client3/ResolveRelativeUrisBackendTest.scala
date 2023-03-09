@@ -2,13 +2,13 @@ package sttp.client3
 
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import sttp.client3.testing.SttpBackendStub
+import sttp.client3.testing.BackendStub
 import sttp.model.StatusCode
 
 class ResolveRelativeUrisBackendTest extends AnyFlatSpec with Matchers {
   it should "not resolve absolute URIs" in {
     // given
-    val delegate = SttpBackendStub.synchronous.whenRequestMatchesPartial { case r =>
+    val delegate = BackendStub.synchronous.whenRequestMatchesPartial { case r =>
       Response(r.uri.toString, StatusCode.Ok)
     }
     val backend = ResolveRelativeUrisBackend(delegate, uri"http://example.org")
@@ -22,7 +22,7 @@ class ResolveRelativeUrisBackendTest extends AnyFlatSpec with Matchers {
 
   it should "resolve relative URIs" in {
     // given
-    val delegate = SttpBackendStub.synchronous.whenRequestMatchesPartial { case r =>
+    val delegate = BackendStub.synchronous.whenRequestMatchesPartial { case r =>
       Response(r.uri.toString, StatusCode.Ok)
     }
     val backend = ResolveRelativeUrisBackend(delegate, uri"http://example.org")

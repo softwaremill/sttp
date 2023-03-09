@@ -2,7 +2,7 @@ package sttp.client3
 
 import scala.concurrent.{ExecutionContext, Future}
 
-/** A simple, synchronous http client. Usage example:
+/** A simple asynchronous http client. Usage example:
   *
   * {{{
   * import sttp.client3.{SimpleHttpClient, UriContext, basicRequest}
@@ -13,17 +13,16 @@ import scala.concurrent.{ExecutionContext, Future}
   * response.map(r => println(r.body))
   * }}}
   *
-  * Wraps an [[SttpBackend]], which can be substituted or modified using [[wrapBackend]], adding e.g. logging.
+  * Wraps an [[Backend[Future]]], which can be substituted or modified using [[wrapBackend]], adding e.g. logging.
   *
   * Creating a client allocates resources, hence when no longer needed, the client should be closed using [[close]].
   */
-case class SimpleHttpClient(backend: SttpBackend[Future, Any]) {
+case class SimpleHttpClient(backend: Backend[Future]) {
 
-  def send[T](request: Request[T, Any]): Future[Response[T]] = backend.send(request)
+  def send[T](request: Request[T]): Future[Response[T]] = backend.send(request)
 
-  def withBackend(newBackend: SttpBackend[Future, Any]): SimpleHttpClient = copy(backend = newBackend)
-  def wrapBackend(f: SttpBackend[Future, Any] => SttpBackend[Future, Any]): SimpleHttpClient =
-    copy(backend = f(backend))
+  def withBackend(newBackend: Backend[Future]): SimpleHttpClient = copy(backend = newBackend)
+  def wrapBackend(f: Backend[Future] => Backend[Future]): SimpleHttpClient = copy(backend = f(backend))
 
   def close(): Future[Unit] = backend.close()
 }

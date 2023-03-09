@@ -11,7 +11,7 @@ import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
-class SttpBackendStubAkkaTests extends AnyFlatSpec with Matchers with ScalaFutures with BeforeAndAfterAll {
+class BackendStubAkkaTests extends AnyFlatSpec with Matchers with ScalaFutures with BeforeAndAfterAll {
 
   implicit val system: ActorSystem = ActorSystem()
 

@@ -3,13 +3,13 @@ package sttp.client3
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-class SttpBackendOptionsProxyTest extends AnyFlatSpec with Matchers {
+class BackendOptionsProxyTest extends AnyFlatSpec with Matchers {
 
   "ignoreProxy" should "return true for a exact match with nonProxyHosts" in {
-    val proxySetting = SttpBackendOptions.Proxy(
+    val proxySetting = BackendOptions.Proxy(
       "fakeproxyserverhost",
       8080,
-      SttpBackendOptions.ProxyType.Http,
+      BackendOptions.ProxyType.Http,
       List("a.nonproxy.host", "localhost", "127.*")
     )
 
@@ -18,10 +18,10 @@ class SttpBackendOptionsProxyTest extends AnyFlatSpec with Matchers {
   }
 
   it should "return true for wildcard suffix match" in {
-    val proxySetting = SttpBackendOptions.Proxy(
+    val proxySetting = BackendOptions.Proxy(
       "fakeproxyserverhost",
       8080,
-      SttpBackendOptions.ProxyType.Http,
+      BackendOptions.ProxyType.Http,
       List("localhost", "127.*")
     )
 
@@ -30,10 +30,10 @@ class SttpBackendOptionsProxyTest extends AnyFlatSpec with Matchers {
   }
 
   it should "return true for wildcard prefix match" in {
-    val proxySetting = SttpBackendOptions.Proxy(
+    val proxySetting = BackendOptions.Proxy(
       "fakeproxyserverhost",
       8080,
-      SttpBackendOptions.ProxyType.Http,
+      BackendOptions.ProxyType.Http,
       List("localhost", "*.local", "127.*")
     )
 
@@ -42,10 +42,10 @@ class SttpBackendOptionsProxyTest extends AnyFlatSpec with Matchers {
   }
 
   it should "return false for others" in {
-    val proxySetting = SttpBackendOptions.Proxy(
+    val proxySetting = BackendOptions.Proxy(
       "fakeproxyserverhost",
       8080,
-      SttpBackendOptions.ProxyType.Http,
+      BackendOptions.ProxyType.Http,
       List("localhost", "*.local", "127.*")
     )
 
@@ -54,10 +54,10 @@ class SttpBackendOptionsProxyTest extends AnyFlatSpec with Matchers {
   }
 
   it should "return false for exact onlyProxyHosts match" in {
-    val proxySetting = SttpBackendOptions.Proxy(
+    val proxySetting = BackendOptions.Proxy(
       "fakeproxyserverhost",
       8080,
-      SttpBackendOptions.ProxyType.Http,
+      BackendOptions.ProxyType.Http,
       nonProxyHosts = Nil,
       onlyProxyHosts = List("a.nonproxy.host", "localhost", "127.*")
     )
@@ -67,10 +67,10 @@ class SttpBackendOptionsProxyTest extends AnyFlatSpec with Matchers {
   }
 
   it should "return false for onlyProxyHosts suffix match" in {
-    val proxySetting = SttpBackendOptions.Proxy(
+    val proxySetting = BackendOptions.Proxy(
       "fakeproxyserverhost",
       8080,
-      SttpBackendOptions.ProxyType.Http,
+      BackendOptions.ProxyType.Http,
       nonProxyHosts = Nil,
       onlyProxyHosts = List("localhost", "127.*")
     )
@@ -80,10 +80,10 @@ class SttpBackendOptionsProxyTest extends AnyFlatSpec with Matchers {
   }
 
   it should "return false for onlyProxyHosts prefix match" in {
-    val proxySetting = SttpBackendOptions.Proxy(
+    val proxySetting = BackendOptions.Proxy(
       "fakeproxyserverhost",
       8080,
-      SttpBackendOptions.ProxyType.Http,
+      BackendOptions.ProxyType.Http,
       nonProxyHosts = Nil,
       onlyProxyHosts = List("localhost", "*.local")
     )
@@ -93,10 +93,10 @@ class SttpBackendOptionsProxyTest extends AnyFlatSpec with Matchers {
   }
 
   it should "return true if host does not match any host from onlyProxyHosts" in {
-    val proxySetting = SttpBackendOptions.Proxy(
+    val proxySetting = BackendOptions.Proxy(
       "fakeproxyserverhost",
       8080,
-      SttpBackendOptions.ProxyType.Http,
+      BackendOptions.ProxyType.Http,
       nonProxyHosts = Nil,
       onlyProxyHosts = List("localhost", "*.local", "127.*")
     )
@@ -106,10 +106,10 @@ class SttpBackendOptionsProxyTest extends AnyFlatSpec with Matchers {
   }
 
   it should "return true if host matches nonProxyHost despite matching onlyProxyHosts" in {
-    val proxySetting = SttpBackendOptions.Proxy(
+    val proxySetting = BackendOptions.Proxy(
       "fakeproxyserverhost",
       8080,
-      SttpBackendOptions.ProxyType.Http,
+      BackendOptions.ProxyType.Http,
       nonProxyHosts = List("localhost"),
       onlyProxyHosts = List("localhost")
     )
@@ -118,10 +118,10 @@ class SttpBackendOptionsProxyTest extends AnyFlatSpec with Matchers {
   }
 
   it should "return false if both nonProxyHost and onlyProxyHosts is Nil" in {
-    val proxySetting = SttpBackendOptions.Proxy(
+    val proxySetting = BackendOptions.Proxy(
       "fakeproxyserverhost",
       8080,
-      SttpBackendOptions.ProxyType.Http,
+      BackendOptions.ProxyType.Http,
       nonProxyHosts = Nil,
       onlyProxyHosts = Nil
     )

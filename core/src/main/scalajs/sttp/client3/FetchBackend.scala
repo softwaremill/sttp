@@ -1,9 +1,8 @@
 package sttp.client3
 
 import org.scalajs.dom.experimental.{BodyInit, Request => FetchRequest, Response => FetchResponse}
-import sttp.capabilities.WebSockets
 import sttp.client3.internal.{ConvertFromFuture, NoStreams}
-import sttp.client3.testing.SttpBackendStub
+import sttp.client3.testing.WebSocketBackendStub
 import sttp.monad.FutureMonad
 import sttp.ws.WebSocket
 
@@ -12,7 +11,7 @@ import scala.scalajs.js
 
 class FetchBackend private (fetchOptions: FetchOptions, customizeRequest: FetchRequest => FetchRequest)(implicit
     ec: ExecutionContext
-) extends AbstractFetchBackend[Future, Nothing, WebSockets](fetchOptions, customizeRequest, new FutureMonad()) {
+) extends AbstractFetchBackend[Future, Nothing](fetchOptions, customizeRequest, new FutureMonad()) {
 
   override val streams: NoStreams = NoStreams
 
@@ -41,13 +40,13 @@ object FetchBackend {
   def apply(
       fetchOptions: FetchOptions = FetchOptions.Default,
       customizeRequest: FetchRequest => FetchRequest = identity
-  )(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackend[Future, WebSockets] =
+  )(implicit ec: ExecutionContext = ExecutionContext.global): WebSocketBackend[Future] =
     new FetchBackend(fetchOptions, customizeRequest)
 
-  /** Create a stub backend for testing, which uses the [[Future]] response wrapper, and doesn't support streaming.
+  /** Create a stub backend for testing, which uses the [[Future]] response wrapper.
     *
-    * See [[SttpBackendStub]] for details on how to configure stub responses.
+    * See [[WebSocketBackendStub]] for details on how to configure stub responses.
     */
-  def stub(implicit ec: ExecutionContext = ExecutionContext.global): SttpBackendStub[Future, Any] =
-    SttpBackendStub(new FutureMonad())
+  def stub(implicit ec: ExecutionContext = ExecutionContext.global): WebSocketBackendStub[Future] =
+    WebSocketBackendStub.asynchronousFuture
 }

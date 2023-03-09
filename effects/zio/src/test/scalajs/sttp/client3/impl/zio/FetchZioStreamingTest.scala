@@ -3,7 +3,7 @@ package sttp.client3.impl.zio
 import zio._
 import zio.stream._
 import sttp.capabilities.zio.ZioStreams
-import sttp.client3.SttpBackend
+import sttp.client3.StreamBackend
 import sttp.client3.internal._
 import sttp.client3.testing.ConvertToFuture
 import sttp.client3.testing.streaming.StreamingTest
@@ -12,7 +12,7 @@ import sttp.model.sse.ServerSentEvent
 class FetchZioStreamingTest extends StreamingTest[Task, ZioStreams] with ZioTestBase {
   override val streams: ZioStreams = ZioStreams
 
-  override val backend: SttpBackend[Task, ZioStreams] = FetchZioBackend()
+  override val backend: StreamBackend[Task, ZioStreams] = FetchZioBackend()
 
   override implicit val convertToFuture: ConvertToFuture[Task] = convertZioTaskToFuture
 

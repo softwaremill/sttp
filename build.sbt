@@ -42,6 +42,7 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
   }.value,
   ideSkipProject := (scalaVersion.value != scala2_13)
     || thisProjectRef.value.project.contains("JS") || thisProjectRef.value.project.contains("Native"),
+  bspEnabled := !ideSkipProject.value,
   mimaPreviousArtifacts := Set.empty // we only use MiMa for `core` for now, using enableMimaSettings
 )
 
@@ -307,7 +308,7 @@ lazy val core = (projectMatrix in file("core"))
   .jvmPlatform(
     scalaVersions = scala2 ++ scala3,
     settings = {
-      commonJvmSettings ++ versioningSchemeSettings ++ enableMimaSettings ++ List(
+      commonJvmSettings ++ versioningSchemeSettings ++ /*enableMimaSettings ++*/ List(
         Test / publishArtifact := true, // allow implementations outside of this repo
         scalacOptions ++= Seq("-J--add-modules", "-Jjava.net.http"),
         scalacOptions ++= {

@@ -27,8 +27,8 @@ object WebSocketStreamFs2 extends App {
     .resource[IO]()
     .use { backend =>
       basicRequest
-        .response(asWebSocketStream(Fs2Streams[IO])(webSocketFramePipe))
         .get(uri"wss://ws.postman-echo.com/raw")
+        .response(asWebSocketStream(Fs2Streams[IO])(webSocketFramePipe))
         .send(backend)
         .void
     }

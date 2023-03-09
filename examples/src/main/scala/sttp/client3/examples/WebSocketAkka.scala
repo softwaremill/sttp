@@ -22,8 +22,8 @@ object WebSocketAkka extends App {
   val backend = AkkaHttpBackend()
 
   basicRequest
-    .response(asWebSocket(useWebSocket))
     .get(uri"wss://ws.postman-echo.com/raw")
+    .response(asWebSocket(useWebSocket))
     .send(backend)
     .onComplete(_ => backend.close())
 }

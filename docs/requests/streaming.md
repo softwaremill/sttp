@@ -23,8 +23,8 @@ val chunks = "Streaming test".getBytes("utf-8").grouped(10).to(Iterable)
 val source: Source[ByteString, Any] = Source.apply(chunks.toList.map(ByteString(_)))
 
 basicRequest
-  .streamBody(AkkaStreams)(source)
   .post(uri"...")
+  .streamBody(AkkaStreams)(source)
 ```
 
 ```eval_rst

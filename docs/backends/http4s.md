@@ -17,10 +17,10 @@ import sttp.client3._
 import sttp.client3.http4s._
 
 // the "org.http4s" %% "http4s-ember-client" % http4sVersion dependency needs to be explicitly added
-Http4sBackend.usingDefaultEmberClientBuilder[IO](): Resource[IO, SttpBackend[IO, Fs2Streams[IO]]]
+Http4sBackend.usingDefaultEmberClientBuilder[IO](): Resource[IO, StreamBackend[IO, Fs2Streams[IO]]]
 
 // the "org.http4s" %% "http4s-blaze-client" % http4sVersion dependency needs to be explicitly added
-Http4sBackend.usingDefaultBlazeClientBuilder[IO](): Resource[IO, SttpBackend[IO, Fs2Streams[IO]]]
+Http4sBackend.usingDefaultBlazeClientBuilder[IO](): Resource[IO, StreamBackend[IO, Fs2Streams[IO]]]
 ```
 
 Sending a request is a non-blocking, lazily-evaluated operation and results in a wrapped response. There's a transitive dependency on `http4s`. 

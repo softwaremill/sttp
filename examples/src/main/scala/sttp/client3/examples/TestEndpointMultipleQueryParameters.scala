@@ -4,7 +4,7 @@ object TestEndpointMultipleQueryParameters extends App {
   import sttp.client3._
   import sttp.client3.testing._
 
-  val backend = SttpBackendStub.synchronous
+  val backend = SyncBackendStub
     .whenRequestMatches(_.uri.paramsMap.contains("filter"))
     .thenRespond("Filtered")
     .whenRequestMatches(_.uri.path.contains("secret"))

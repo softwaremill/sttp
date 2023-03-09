@@ -9,7 +9,7 @@ import sttp.client3.armeria.ArmeriaWebClient.newClient
 import sttp.client3.armeria.{AbstractArmeriaBackend, BodyFromStreamMessage}
 import sttp.client3.impl.cats.CatsMonadAsyncError
 import sttp.client3.internal.NoStreams
-import sttp.client3.{FollowRedirectsBackend, SttpBackend, SttpBackendOptions}
+import sttp.client3.{Backend, FollowRedirectsBackend, BackendOptions}
 import sttp.monad.MonadAsyncError
 
 private final class ArmeriaCatsBackend[F[_]: Concurrent](client: WebClient, closeFactory: Boolean)
@@ -38,28 +38,28 @@ object ArmeriaCatsBackend {
     * client will manage its own connection pool. If you'd like to reuse the default Armeria
     * [[https://armeria.dev/docs/client-factory ClientFactory]] use `.usingDefaultClient`.
     */
-  def apply[F[_]: Concurrent](options: SttpBackendOptions = SttpBackendOptions.Default): SttpBackend[F, Any] =
+  def apply[F[_]: Concurrent](options: BackendOptions = BackendOptions.Default): Backend[F] =
     apply(newClient(options), closeFactory = true)
 
   def resource[F[_]: Concurrent](
-      options: SttpBackendOptions = SttpBackendOptions.Default
-  ): Resource[F, SttpBackend[F, Any]] = {
+      options: BackendOptions = BackendOptions.Default
+  ): Resource[F, Backend[F]] = {
     Resource.make(Sync[F].delay(apply(newClient(options), closeFactory = true)))(_.close())
   }
 
-  def resourceUsingClient[F[_]: Concurrent](client: WebClient): Resource[F, SttpBackend[F, Any]] = {
+  def resourceUsingClient[F[_]: Concurrent](client: WebClient): Resource[F, Backend[F]] = {
     Resource.make(Sync[F].delay(apply(client, closeFactory = true)))(_.close())
   }
 
-  def usingDefaultClient[F[_]: Concurrent](): SttpBackend[F, Any] =
+  def usingDefaultClient[F[_]: Concurrent](): Backend[F] =
     apply(newClient(), closeFactory = false)
 
-  def usingClient[F[_]: Concurrent](client: WebClient): SttpBackend[F, Any] =
+  def usingClient[F[_]: Concurrent](client: WebClient): Backend[F] =
     apply(client, closeFactory = false)
 
   private def apply[F[_]: Concurrent](
       client: WebClient,
       closeFactory: Boolean
-  ): SttpBackend[F, Any] =
-    new FollowRedirectsBackend(new ArmeriaCatsBackend(client, closeFactory))
+  ): Backend[F] =
+    FollowRedirectsBackend(new ArmeriaCatsBackend(client, closeFactory))
 }

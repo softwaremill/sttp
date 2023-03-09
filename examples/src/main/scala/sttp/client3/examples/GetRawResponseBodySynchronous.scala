@@ -12,7 +12,7 @@ object GetRawResponseBodySynchronous extends App {
     .get(uri"https://httpbin.org/get")
     .response(asBoth(asJson[HttpBinResponse], asStringAlways))
 
-  val backend: SttpBackend[Identity, Any] = HttpClientSyncBackend()
+  val backend: SyncBackend = HttpClientSyncBackend()
 
   try {
     val response: Response[(Either[ResponseException[String, circe.Error], HttpBinResponse], String)] =

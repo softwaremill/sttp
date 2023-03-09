@@ -4,7 +4,7 @@ import _root_.zio._
 import sttp.capabilities.Effect
 import sttp.capabilities.zio.ZioStreams
 import sttp.client3._
-import sttp.client3.impl.zio.{ExtendEnv, SttpClientStubbingBase}
+import sttp.client3.impl.zio.{StreamBackendExtendEnv, StreamClientStubbing}
 
 package object zio {
 
@@ -16,7 +16,7 @@ package object zio {
   type SttpClientStubbing = Has[SttpClientStubbing.Service]
 
   object SttpClient {
-    type Service = SttpBackend[Task, ZioStreams]
+    type Service = StreamBackend[Task, ZioStreams]
   }
 
   /** Sends the request. Only requests for which the method & URI are specified can be sent.
@@ -32,7 +32,7 @@ package object zio {
     * Known exceptions are converted to one of `SttpClientException`. Other exceptions are kept unchanged.
     */
   def send[T](
-      request: Request[T, Effect[Task] with ZioStreams]
+      request: GenericRequest[T, Effect[Task] with ZioStreams]
   ): ZIO[SttpClient, Throwable, Response[T]] =
     ZIO.accessM(env => env.get[SttpClient.Service].send(request))
 
@@ -40,11 +40,11 @@ package object zio {
     * websockets or resource-safe streaming) to use an `R` environment.
     */
   def sendR[T, R](
-      request: Request[T, Effect[RIO[R, *]] with ZioStreams]
+      request: GenericRequest[T, Effect[RIO[R, *]] with ZioStreams]
   ): ZIO[SttpClient with R, Throwable, Response[T]] =
     ZIO.accessM(env => env.get[SttpClient.Service].extendEnv[R].send(request))
 
-  object SttpClientStubbing extends SttpClientStubbingBase[Any, ZioStreams] {
+  object SttpClientStubbing extends StreamClientStubbing[Any, ZioStreams] {
     override private[sttp] def serviceTag: Tag[SttpClientStubbing.Service] = implicitly
     override private[sttp] def sttpBackendTag: Tag[SttpClient.Service] = implicitly
   }
@@ -52,14 +52,14 @@ package object zio {
   object stubbing {
     import SttpClientStubbing.StubbingWhenRequest
 
-    def whenRequestMatches(p: Request[_, _] => Boolean): StubbingWhenRequest =
+    def whenRequestMatches(p: GenericRequest[_, _] => Boolean): StubbingWhenRequest =
       StubbingWhenRequest(p)
 
     val whenAnyRequest: StubbingWhenRequest =
       StubbingWhenRequest(_ => true)
 
     def whenRequestMatchesPartial(
-        partial: PartialFunction[Request[_, _], Response[_]]
+        partial: PartialFunction[GenericRequest[_, _], Response[_]]
     ): URIO[SttpClientStubbing, Unit] =
       ZIO.accessM(_.get.whenRequestMatchesPartial(partial))
   }

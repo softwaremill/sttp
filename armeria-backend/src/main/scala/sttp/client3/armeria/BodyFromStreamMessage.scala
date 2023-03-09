@@ -3,11 +3,12 @@ package sttp.client3.armeria
 import com.linecorp.armeria.common.{CommonPools, HttpData}
 import com.linecorp.armeria.common.stream.{StreamMessage, StreamMessages}
 import io.netty.util.concurrent.EventExecutor
+
 import java.io.File
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicReference
 import sttp.capabilities.Streams
-import sttp.client3.WebSocketResponseAs
+import sttp.client3.GenericWebSocketResponseAs
 import sttp.client3.armeria.AbstractArmeriaBackend.{RightUnit, noopCanceler}
 import sttp.client3.internal.{BodyFromResponseAs, SttpFile}
 import sttp.client3.ws.{GotAWebSocketException, NotAWebSocketException}
@@ -107,7 +108,7 @@ private[armeria] trait BodyFromStreamMessage[F[_], S] {
       }
 
       override protected def handleWS[T](
-          responseAs: WebSocketResponseAs[T, _],
+          responseAs: GenericWebSocketResponseAs[T, _],
           meta: ResponseMetadata,
           ws: Nothing
       ): F[T] = ws

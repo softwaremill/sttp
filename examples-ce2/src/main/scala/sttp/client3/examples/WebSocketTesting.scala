@@ -1,11 +1,10 @@
 package sttp.client3.examples
 
 import monix.eval.Task
-import sttp.capabilities.WebSockets
 import sttp.capabilities.monix.MonixStreams
 import sttp.client3._
 import sttp.client3.httpclient.monix.HttpClientMonixBackend
-import sttp.client3.testing.SttpBackendStub
+import sttp.client3.testing.WebSocketStreamBackendStub
 import sttp.model.StatusCode
 import sttp.ws.{WebSocket, WebSocketFrame}
 import sttp.ws.testing.WebSocketStub
@@ -19,16 +18,16 @@ object WebSocketTesting extends App {
   }
 
   // the request description
-  def openWebSocket(backend: SttpBackend[Task, WebSockets]): Task[Unit] = {
+  def openWebSocket(backend: WebSocketBackend[Task]): Task[Unit] = {
     basicRequest
-      .response(asWebSocket(useWebSocket))
       .get(uri"wss://echo.websocket.org")
+      .response(asWebSocket(useWebSocket))
       .send(backend)
       .void
   }
 
   // the backend stub which we'll use instead of a "real" backend
-  val stubBackend: SttpBackendStub[Task, MonixStreams with WebSockets] =
+  val stubBackend: WebSocketStreamBackendStub[Task, MonixStreams] =
     HttpClientMonixBackend.stub
       .whenRequestMatches(_.uri.toString().contains("echo.websocket.org"))
       .thenRespond(

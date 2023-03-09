@@ -2,10 +2,10 @@ package sttp.client3.armeria
 
 import com.linecorp.armeria.client.{ClientFactory, WebClient, WebClientBuilder}
 import com.linecorp.armeria.client.encoding.DecodingClient
-import sttp.client3.SttpBackendOptions
+import sttp.client3.BackendOptions
 
 object ArmeriaWebClient {
-  private def newClientFactory(options: SttpBackendOptions): ClientFactory = {
+  private def newClientFactory(options: BackendOptions): ClientFactory = {
     val builder = ClientFactory
       .builder()
       .connectTimeoutMillis(options.connectionTimeout.toMillis)
@@ -39,8 +39,8 @@ object ArmeriaWebClient {
     * `options`.
     */
   def newClient(
-      options: SttpBackendOptions,
-      customizeWebClient: WebClientBuilder => WebClientBuilder = identity
+                 options: BackendOptions,
+                 customizeWebClient: WebClientBuilder => WebClientBuilder = identity
   ): WebClient = {
     customizeWebClient(
       WebClient

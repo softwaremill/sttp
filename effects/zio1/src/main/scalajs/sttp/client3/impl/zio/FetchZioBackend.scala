@@ -7,8 +7,8 @@ import org.scalajs.dom.experimental.{BodyInit, Request => FetchRequest, Response
 import sttp.capabilities.WebSockets
 import sttp.capabilities.zio.ZioStreams
 import sttp.client3.internal.ConvertFromFuture
-import sttp.client3.testing.SttpBackendStub
-import sttp.client3.{AbstractFetchBackend, FetchOptions, SttpBackend}
+import sttp.client3.testing.WebSocketStreamBackendStub
+import sttp.client3.{AbstractFetchBackend, FetchOptions, WebSocketStreamBackend}
 import sttp.ws.{WebSocket, WebSocketFrame}
 
 import scala.concurrent.Future
@@ -25,11 +25,12 @@ import scala.scalajs.js.typedarray.{Int8Array, _}
   *   https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream
   */
 class FetchZioBackend private (fetchOptions: FetchOptions, customizeRequest: FetchRequest => FetchRequest)
-    extends AbstractFetchBackend[Task, ZioStreams, ZioStreams with WebSockets](
+    extends AbstractFetchBackend[Task, ZioStreams](
       fetchOptions,
       customizeRequest,
       new RIOMonadAsyncError[Any]
-    ) {
+    )
+    with WebSocketStreamBackend[Task, ZioStreams] {
 
   type Observable[+A] = ZStream[Any, Throwable, A]
 
@@ -84,13 +85,13 @@ object FetchZioBackend {
   def apply(
       fetchOptions: FetchOptions = FetchOptions.Default,
       customizeRequest: FetchRequest => FetchRequest = identity
-  ): SttpBackend[Task, ZioStreams with WebSockets] =
+  ): WebSocketStreamBackend[Task, ZioStreams] =
     new FetchZioBackend(fetchOptions, customizeRequest)
 
   /** Create a stub backend for testing, which uses the [[Task]] response wrapper, and supports `Observable[ByteBuffer]`
     * streaming.
     *
-    * See [[SttpBackendStub]] for details on how to configure stub responses.
+    * See [[WebSocketStreamBackendStub]] for details on how to configure stub responses.
     */
-  def stub: SttpBackendStub[Task, ZioStreams] = SttpBackendStub(new RIOMonadAsyncError[Any])
+  def stub: WebSocketStreamBackendStub[Task, ZioStreams] = WebSocketStreamBackendStub(new RIOMonadAsyncError[Any])
 }

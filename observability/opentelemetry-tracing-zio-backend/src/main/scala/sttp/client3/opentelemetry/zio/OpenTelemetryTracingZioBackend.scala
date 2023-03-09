@@ -12,11 +12,12 @@ import zio.telemetry.opentelemetry._
 import scala.collection.mutable
 
 private class OpenTelemetryTracingZioBackend[+P](
-    delegate: SttpBackend[Task, P],
-    tracer: OpenTelemetryZioTracer,
-    tracing: Tracing
-) extends DelegateSttpBackend[Task, P](delegate) {
-  def send[T, R >: P with Effect[Task]](request: Request[T, R]): Task[Response[T]] = {
+                                                  delegate: GenericBackend[Task, P],
+                                                  tracer: OpenTelemetryZioTracer,
+                                                  tracing: Tracing
+) extends DelegateBackend[Task, P](delegate)
+    with Backend[Task] {
+  def send[T](request: GenericRequest[T, P with Effect[Task]]): Task[Response[T]] = {
     val carrier: mutable.Map[String, String] = mutable.Map().empty
     val propagator: TextMapPropagator = W3CTraceContextPropagator.getInstance()
     val setter: TextMapSetter[mutable.Map[String, String]] = (carrier, key, value) => carrier.update(key, value)
@@ -33,25 +34,49 @@ private class OpenTelemetryTracingZioBackend[+P](
 }
 
 object OpenTelemetryTracingZioBackend {
-  def apply[P](
-      other: SttpBackend[Task, P],
-      tracing: Tracing,
-      tracer: OpenTelemetryZioTracer = OpenTelemetryZioTracer.Default
-  ): SttpBackend[Task, P] =
-    new OpenTelemetryTracingZioBackend[P](other, tracer, tracing)
+  def apply(other: Backend[Task], tracing: Tracing): Backend[Task] =
+    apply(other, tracing, OpenTelemetryZioTracer.Default)
 
+  def apply(other: WebSocketBackend[Task], tracing: Tracing): WebSocketBackend[Task] =
+    apply(other, tracing, OpenTelemetryZioTracer.Default)
+
+  def apply[S](other: StreamBackend[Task, S], tracing: Tracing): StreamBackend[Task, S] =
+    apply(other, tracing, OpenTelemetryZioTracer.Default)
+
+  def apply[S](other: WebSocketStreamBackend[Task, S], tracing: Tracing): WebSocketStreamBackend[Task, S] =
+    apply(other, tracing, OpenTelemetryZioTracer.Default)
+
+  def apply(other: Backend[Task], tracing: Tracing, tracer: OpenTelemetryZioTracer): Backend[Task] =
+    new OpenTelemetryTracingZioBackend(other, tracer, tracing)
+
+  def apply(other: WebSocketBackend[Task], tracing: Tracing, tracer: OpenTelemetryZioTracer): WebSocketBackend[Task] =
+    new OpenTelemetryTracingZioBackend(other, tracer, tracing) with WebSocketBackend[Task]
+
+  def apply[S](
+      other: StreamBackend[Task, S],
+      tracing: Tracing,
+      tracer: OpenTelemetryZioTracer
+  ): StreamBackend[Task, S] =
+    new OpenTelemetryTracingZioBackend(other, tracer, tracing) with StreamBackend[Task, S]
+
+  def apply[S](
+      other: WebSocketStreamBackend[Task, S],
+      tracing: Tracing,
+      tracer: OpenTelemetryZioTracer
+  ): WebSocketStreamBackend[Task, S] =
+    new OpenTelemetryTracingZioBackend(other, tracer, tracing) with WebSocketStreamBackend[Task, S]
 }
 
 trait OpenTelemetryZioTracer {
-  def spanName[T](request: Request[T, Nothing]): String
-  def before[T](request: Request[T, Nothing]): RIO[Tracing, Unit]
+  def spanName[T](request: GenericRequest[T, Nothing]): String
+  def before[T](request: GenericRequest[T, Nothing]): RIO[Tracing, Unit]
   def after[T](response: Response[T]): RIO[Tracing, Unit]
 }
 
 object OpenTelemetryZioTracer {
   val Default: OpenTelemetryZioTracer = new OpenTelemetryZioTracer {
-    override def spanName[T](request: Request[T, Nothing]): String = s"HTTP ${request.method.method}"
-    override def before[T](request: Request[T, Nothing]): RIO[Tracing, Unit] =
+    override def spanName[T](request: GenericRequest[T, Nothing]): String = s"HTTP ${request.method.method}"
+    override def before[T](request: GenericRequest[T, Nothing]): RIO[Tracing, Unit] =
       Tracing.setAttribute("http.method", request.method.method) *>
         Tracing.setAttribute("http.url", request.uri.toString()) *>
         ZIO.unit

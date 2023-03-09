@@ -3,7 +3,6 @@ package sttp.client3.okhttp.monix
 import monix.eval.Task
 import monix.execution.Scheduler.Implicits.global
 import monix.reactive.Observable
-import sttp.capabilities.WebSockets
 import sttp.capabilities.monix.MonixStreams
 import sttp.client3._
 import sttp.client3.impl.monix.{MonixWebSockets, TaskMonadAsyncError, convertMonixTaskToFuture}
@@ -26,7 +25,7 @@ class OkHttpMonixWebSocketTest
     with WebSocketBufferOverflowTest[Task]
     with WebSocketConcurrentTest[Task] {
   override val streams: MonixStreams = MonixStreams
-  override val backend: SttpBackend[Task, MonixStreams with WebSockets] =
+  override val backend: WebSocketStreamBackend[Task, MonixStreams] =
     OkHttpMonixBackend().runSyncUnsafe()
   override implicit val convertToFuture: ConvertToFuture[Task] = convertMonixTaskToFuture
   override implicit val monad: MonadError[Task] = TaskMonadAsyncError
