@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        scala-version: [ "2.11", "2.12", "2.13", "3" ]
+        scala-version: [ "2.12", "2.13", "3" ]
         target-platform: [ "JVM", "JS", "Native" ]
         exclude:
           - scala-version: "2.11"
