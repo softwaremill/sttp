@@ -19,11 +19,11 @@ private[curl] object CCurl {
   @name("curl_easy_cleanup")
   def cleanup(handle: Ptr[Curl]): Unit = extern
 
-  @name("curl_easy_setopt")
-  def setopt(handle: Ptr[Curl], option: CInt, parameter: Ptr[_]): CInt = extern
-
-  @name("curl_easy_setopt")
+  @name("setopt_wrapper")
   def setopt(handle: Ptr[Curl], option: CInt, parameter: CVarArgList): CInt = extern
+
+  @name("setopt_wrapper_ptr")
+  def setopt_ptr(handle: Ptr[Curl], option: CInt, parameter: Ptr[_]): CInt = extern
 
   @name("curl_easy_perform")
   def perform(easy_handle: Ptr[Curl]): CInt = extern
