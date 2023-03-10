@@ -1,6 +1,6 @@
 # Quickstart
 
-The core sttp client API comes in a single jar, with a transitive dependency on [sttp model](https://github.com/softwaremill/sttp-model). This also includes a default [synchronous simple client](simple_sync.md) and [synchronous](backends/synchronous.md) and [`Future`-based] backends, based on Java's `HttpClient`.
+The core sttp client API comes in a single jar, with a transitive dependency on [sttp model](https://github.com/softwaremill/sttp-model). This also includes [synchronous](backends/synchronous.md) and [`Future`-based] backends, based on Java's `HttpClient`.
 
 To integrate with other parts of your application and various effect systems, you'll often need to use an alternate backend (but what's important is that the API remains the same!). See the section on [backends](backends/summary.md) for a short guide on which backend to choose, and a list of all implementations.
 
@@ -17,9 +17,13 @@ The basic dependency which provides the API, together with a synchronous and `Fu
 "com.softwaremill.sttp.client4" %% "core" % "@VERSION@"
 ```
 
-## Simple synchronous client
+## Using scala-cli
 
-If you'd like to send some requests synchronously, take a look at the [simple synchronous client](simple_sync.md).
+Add the following directive to the top of your scala file to add the core sttp dependency:
+
+```
+//> using lib "com.softwaremill.sttp.client4:core:@VERSION@"
+```
 
 ## Using Ammonite
 
@@ -27,18 +31,6 @@ If you are an [Ammonite](https://ammonite.io) user, you can quickly start experi
 
 ```scala
 import $ivy.`com.softwaremill.sttp.client4::core:@VERSION@`
-import sttp.client4.quick._
-simpleHttpClient.send(quickRequest.get(uri"http://httpbin.org/ip"))
-```
-
-Importing the `quick` object has the same effect as importing `sttp.client4._`, plus defining a synchronous backend (`val backend = HttpClientSyncBackend()`), so that sttp can be used right away.
-
-If the default backend is for some reason insufficient, you can also use one based on OkHttp:
-
-```scala
-import $ivy.`com.softwaremill.sttp.client4::okhttp-backend:@VERSION@`
-import sttp.client4.okhttp.quick._
-quickRequest.get(uri"http://httpbin.org/ip").send(backend)
 ```
 
 ## Imports
@@ -51,6 +43,8 @@ import sttp.client4._
 
 This brings into scope the starting point for defining requests and some helper methods. All examples in this guide assume that this import is in place.
 
+## Synchronous requests
+
 And that's all you need to start using sttp client! To create and send your first request, import the above, type `basicRequest.` and see where your IDE's auto-complete gets you! Here's a simple request, using the synchronous backend:
 
 ```scala
@@ -59,9 +53,83 @@ import sttp.client4._
 val backend = HttpClientSyncBackend()
 val response = basicRequest
   .body("Hello, world!")  
-  .post(uri"https://httpbin.org/post?hello=world").send(backend)
+  .post(uri"https://httpbin.org/post?hello=world")
+  .send(backend)
 
 println(response.body)            
 ```
+
+Creating a backend allocates resources (such as selector threads / connection pools), so when it's no longer needed, it
+should be closed using `.close()`. Typically, you should have one backend instance for your entire application.
+
+## Serialising and parsing JSON
+
+To serialize a custom type to a JSON body, or to deserialize the response body that is in the JSON format, you'll need
+to add an integration with a JSON library. See [json](json.md) for a list of available libraries.
+
+As an example, to integrate with the [uPickle](https://github.com/com-lihaoyi/upickle) library, add the following
+dependency:
+
+```scala
+"com.softwaremill.sttp.client4" %% "upickle" % "@VERSION@"
+```
+
+Your code might then look as follows:
+
+```scala mdoc:compile-only
+import sttp.client4.{SimpleHttpClient, UriContext, basicRequest}
+import sttp.client4.upicklejson._
+import upickle.default._
+
+val backend = HttpClientSyncBackend()
+
+case class MyRequest(field1: String, field2: Int)
+// selected fields from the JSON that is being returned by httpbin
+case class HttpBinResponse(origin: String, headers: Map[String, String])
+
+implicit val myRequestRW: ReadWriter[MyRequest] = macroRW[MyRequest]
+implicit val responseRW: ReadWriter[HttpBinResponse] = macroRW[HttpBinResponse]
+
+val request = basicRequest
+  .post(uri"https://httpbin.org/post")
+  .body(MyRequest("test", 42))
+  .response(asJson[HttpBinResponse])
+val response = request.send(backend)
+
+response.body match {
+  case Left(e)  => println(s"Got response exception:\n$e")
+  case Right(r) => println(s"Origin's ip: ${r.origin}, header count: ${r.headers.size}")
+}
+```
+
+## Adding logging
+
+Logging can be added using the [logging backend wrapper](backends/wrappers/logging.md). For example, if you'd like to
+use slf4j, you'll need the following dependency:
+
+```
+"com.softwaremill.sttp.client4" %% "slf4j-backend" % "@VERSION@"
+```
+
+Then, you'll need to configure your client:
+
+```scala mdoc:compile-only
+import sttp.client4.{SimpleHttpClient, UriContext, basicRequest}
+import sttp.client4.logging.slf4j.Slf4jLoggingBackend
+
+val backend = Slf4jLoggingBackend(HttpClientSyncBackend())
+```
+
+## Even quicker
+
+You can skip the step of creating a backend instance, by using `import sttp.client4.quick._` instead of the usual `import sttp.client4._`.
+This brings into scope the same sttp API, and additionally a synchronous backend instance, which can be used to send requests:
+
+```scala
+import sttp.client4.quick._
+quickRequest.get(uri"http://httpbin.org/ip").send(backend)
+```
+
+## Next steps
 
 Next, read on [how sttp client works](how.md) or see some [examples](examples.md).
