@@ -70,7 +70,6 @@ We offer commercial support for sttp and related technologies, as well as develo
    :caption: Getting started
 
    quickstart
-   simple_sync
    how
    goals
    community
