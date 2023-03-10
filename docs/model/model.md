@@ -21,7 +21,7 @@ The model also contains aggregate/helper classes such as `Headers` and `QueryPar
 Example with objects:
 
 ```scala mdoc:compile-only
-import sttp.client3._
+import sttp.client4._
 import sttp.model._
 
 object Example {
@@ -37,7 +37,7 @@ object Example {
 Example with traits:
 
 ```scala mdoc:compile-only
-import sttp.client3._
+import sttp.client4._
 import sttp.model._
 
 object Example extends HeaderNames with MediaTypes with StatusCodes {

@@ -5,7 +5,7 @@ By default, sttp follows redirects.
 If you'd like to disable following redirects, use the `followRedirects` method:
 
 ```scala mdoc:compile-only
-import sttp.client3._
+import sttp.client4._
 
 basicRequest.followRedirects(false)
 ```
@@ -19,7 +19,7 @@ If a `POST` or `PUT` request is redirected, by default it will be sent unchanged
 To enable this behavior, use the `redirectToGet` method:
 
 ```scala mdoc:compile-only
-import sttp.client3._
+import sttp.client4._
 
 basicRequest.redirectToGet(true)
 ```
@@ -33,7 +33,7 @@ Most modern http clients will, by default, strip the `Authorization` header when
 You can disable the stripping of all sensitive headers using the following code:
 
 ```scala mdoc:compile-only
-import sttp.client3._
+import sttp.client4._
 
 val myBackend: SyncBackend = HttpClientSyncBackend()
 val backend: SyncBackend  = FollowRedirectsBackend(
@@ -47,7 +47,7 @@ val backend: SyncBackend  = FollowRedirectsBackend(
 If you just want to disable stripping of the `Authorization` header, you can do the following:
 
 ```scala mdoc:compile-only
-import sttp.client3._
+import sttp.client4._
 import sttp.model._
 
 val myBackend: SyncBackend = HttpClientSyncBackend()
@@ -69,7 +69,7 @@ For example:
 
 ```scala mdoc:compile-only
 import sttp.capabilities.Effect
-import sttp.client3._
+import sttp.client4._
 import sttp.monad.MonadError
 
 abstract class MyWrapper[F[_], P] private (delegate: GenericBackend[F, P])
@@ -97,7 +97,7 @@ Whenever a redirect request is about to be created, the `FollowRedirectsBackend`
 For example:
 
 ```scala mdoc:compile-only
-import sttp.client3._
+import sttp.client4._
 import sttp.model.Uri.QuerySegmentEncoding
 
 val myBackend: SyncBackend = HttpClientSyncBackend()

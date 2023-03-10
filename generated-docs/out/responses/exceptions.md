@@ -24,7 +24,8 @@ Exceptions might also be thrown when deserializing the response body - depending
 This means that a typical `asJson` response specification will result in the body being read as:
 
 ```scala
-import sttp.client3._
+import sttp.client4._
+
 def asJson[T]: ResponseAs[Either[ResponseException[String, Exception], T], Any] = ???
 ``` 
 

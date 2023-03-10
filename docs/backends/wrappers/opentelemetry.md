@@ -12,15 +12,15 @@ The backend depends only on [opentelemetry-api](https://github.com/open-telemetr
 following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "opentelemetry-metrics-backend" % "@VERSION@"
+"com.softwaremill.sttp.client4" %% "opentelemetry-metrics-backend" % "@VERSION@"
 ```
 
 Then an instance can be obtained as follows:
 
 ```scala mdoc:compile-only
 import scala.concurrent.Future
-import sttp.client3._
-import sttp.client3.opentelemetry._
+import sttp.client4._
+import sttp.client4.opentelemetry._
 import io.opentelemetry.api.OpenTelemetry
 
 // any effect and capabilities are supported
@@ -34,8 +34,8 @@ All counters have provided default names, but the names can be customized by set
 
 ```scala mdoc:compile-only
 import scala.concurrent.Future
-import sttp.client3._
-import sttp.client3.opentelemetry._
+import sttp.client4._
+import sttp.client4.opentelemetry._
 import io.opentelemetry.api.OpenTelemetry
 
 val sttpBackend: Backend[Future] = ??? 
@@ -55,8 +55,8 @@ OpenTelemetryMetricsBackend(
 To use, add the following dependency to your project (the `zio-*` modules depend on ZIO 2.x; for ZIO 1.x support, use `zio1-*`):
 
 ```
-"com.softwaremill.sttp.client3" %% "opentelemetry-tracing-zio-backend" % "@VERSION@"  // for ZIO 2.x
-"com.softwaremill.sttp.client3" %% "opentelemetry-tracing-zio1-backend" % "@VERSION@" // for ZIO 1.x
+"com.softwaremill.sttp.client4" %% "opentelemetry-tracing-zio-backend" % "@VERSION@"  // for ZIO 2.x
+"com.softwaremill.sttp.client4" %% "opentelemetry-tracing-zio1-backend" % "@VERSION@" // for ZIO 1.x
 ```
 
 This backend depends on [zio-opentelemetry](https://github.com/zio/zio-telemetry).
@@ -67,10 +67,10 @@ In order to do that, you need to provide the wrapper with a `Tracing` from zio-t
 Here's how you construct `ZioTelemetryOpenTelemetryBackend`. I would recommend wrapping this is in `ZLayer`
 
 ```scala mdoc:compile-only
-import sttp.client3._
+import sttp.client4._
 import zio._
 import zio.telemetry.opentelemetry._
-import sttp.client3.opentelemetry.zio._
+import sttp.client4.opentelemetry.zio._
 
 val zioBackend: Backend[Task] = ???
 val tracing: Tracing = ???

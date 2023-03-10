@@ -12,16 +12,16 @@ Creation of the backend can be done in two basic ways:
 Firstly, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "fs2" % "@VERSION@" // for cats-effect 3.x & fs2 3.x
+"com.softwaremill.sttp.client4" %% "fs2" % "@VERSION@" // for cats-effect 3.x & fs2 3.x
 // or 
-"com.softwaremill.sttp.client3" %% "fs2-ce2" % "@VERSION@" // for cats-effect 2.x & fs2 2.x
+"com.softwaremill.sttp.client4" %% "fs2-ce2" % "@VERSION@" // for cats-effect 2.x & fs2 2.x
 ```
 
 Obtain a cats-effect `Resource` which creates the backend, and closes the thread pool after the resource is no longer used:
 
 ```scala mdoc:compile-only
 import cats.effect.IO
-import sttp.client3.httpclient.fs2.HttpClientFs2Backend
+import sttp.client4.httpclient.fs2.HttpClientFs2Backend
 
 HttpClientFs2Backend.resource[IO]().use { backend => ??? }
 ```
@@ -31,7 +31,7 @@ or, by providing a custom `Dispatcher`:
 ```scala mdoc:compile-only
 import cats.effect.IO
 import cats.effect.std.Dispatcher
-import sttp.client3.httpclient.fs2.HttpClientFs2Backend
+import sttp.client4.httpclient.fs2.HttpClientFs2Backend
 
 val dispatcher: Dispatcher[IO] = ???
 
@@ -44,7 +44,7 @@ or, if you'd like to instantiate the `HttpClient` yourself:
 import cats.effect.IO
 import cats.effect.std.Dispatcher
 import java.net.http.HttpClient
-import sttp.client3.httpclient.fs2.HttpClientFs2Backend
+import sttp.client4.httpclient.fs2.HttpClientFs2Backend
 
 val httpClient: HttpClient = ???
 val dispatcher: Dispatcher[IO] = ???
@@ -57,7 +57,7 @@ or, obtain a cats-effect `Resource` with a custom instance of the `HttpClient`:
 ```scala mdoc:compile-only
 import cats.effect.IO
 import java.net.http.HttpClient
-import sttp.client3.httpclient.fs2.HttpClientFs2Backend
+import sttp.client4.httpclient.fs2.HttpClientFs2Backend
 
 val httpClient: HttpClient = ???
 
@@ -78,9 +78,9 @@ Host header override is supported in environments running Java 12 onwards, but i
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "armeria-backend-fs2" % "@VERSION@" // for cats-effect 3.x & fs2 3.x
+"com.softwaremill.sttp.client4" %% "armeria-backend-fs2" % "@VERSION@" // for cats-effect 3.x & fs2 3.x
 // or
-"com.softwaremill.sttp.client3" %% "armeria-backend-fs2" % "@VERSION@" // for cats-effect 2.x & fs2 2.x
+"com.softwaremill.sttp.client4" %% "armeria-backend-fs2" % "@VERSION@" // for cats-effect 2.x & fs2 2.x
 ```
 
 create client:
@@ -88,7 +88,7 @@ create client:
 ```scala mdoc:compile-only
 import cats.effect.IO
 import cats.effect.std.Dispatcher
-import sttp.client3.armeria.fs2.ArmeriaFs2Backend
+import sttp.client4.armeria.fs2.ArmeriaFs2Backend
 
 ArmeriaFs2Backend.resource[IO]().use { backend => ??? }
 
@@ -104,7 +104,7 @@ import cats.effect.IO
 import cats.effect.std.Dispatcher
 import com.linecorp.armeria.client.WebClient
 import com.linecorp.armeria.client.circuitbreaker._
-import sttp.client3.armeria.fs2.ArmeriaFs2Backend
+import sttp.client4.armeria.fs2.ArmeriaFs2Backend
 
 val dispatcher: Dispatcher[IO] = ???
 
@@ -128,7 +128,7 @@ Please visit [the official documentation](https://armeria.dev/docs/client-factor
 
 ## Streaming
 
-The fs2 backends support streaming for any instance of the `cats.effect.Effect` typeclass, such as `cats.effect.IO`. If `IO` is used then the type of supported streams is `fs2.Stream[IO, Byte]`. The streams capability is represented as `sttp.client3.fs2.Fs2Streams`.
+The fs2 backends support streaming for any instance of the `cats.effect.Effect` typeclass, such as `cats.effect.IO`. If `IO` is used then the type of supported streams is `fs2.Stream[IO, Byte]`. The streams capability is represented as `sttp.client4.fs2.Fs2Streams`.
 
 Requests can be sent with a streaming body like this:
 
@@ -136,8 +136,8 @@ Requests can be sent with a streaming body like this:
 import cats.effect.IO
 import fs2.Stream
 import sttp.capabilities.fs2.Fs2Streams
-import sttp.client3._
-import sttp.client3.httpclient.fs2.HttpClientFs2Backend
+import sttp.client4._
+import sttp.client4.httpclient.fs2.HttpClientFs2Backend
 
 val effect = HttpClientFs2Backend.resource[IO]().use { backend =>
   val stream: Stream[IO, Byte] = ???
@@ -156,8 +156,8 @@ Responses can also be streamed:
 import cats.effect.IO
 import fs2.Stream
 import sttp.capabilities.fs2.Fs2Streams
-import sttp.client3._
-import sttp.client3.httpclient.fs2.HttpClientFs2Backend
+import sttp.client4._
+import sttp.client4.httpclient.fs2.HttpClientFs2Backend
 import scala.concurrent.duration.Duration
 
 val effect = HttpClientFs2Backend.resource[IO]().use { backend =>
@@ -184,9 +184,9 @@ Received data streams can be parsed to a stream of server-sent events (SSE):
 ```scala mdoc:compile-only
 import cats.effect._
 import fs2.Stream
-import sttp.client3._
+import sttp.client4._
 import sttp.capabilities.fs2.Fs2Streams
-import sttp.client3.impl.fs2.Fs2ServerSentEvents
+import sttp.client4.impl.fs2.Fs2ServerSentEvents
 import sttp.model.sse.ServerSentEvent
 
 def processEvents(source: Stream[IO, ServerSentEvent]): IO[Unit] = ???

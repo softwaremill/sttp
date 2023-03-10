@@ -6,7 +6,7 @@ the need to choose or explicitly create a backend.
 A simple request can be sent as follows:
 
 ```scala
-import sttp.client3.{SimpleHttpClient, UriContext, basicRequest}
+import sttp.client4.{SimpleHttpClient, UriContext, basicRequest}
 
 val client = SimpleHttpClient()
 val response = client.send(basicRequest.get(uri"https://httpbin.org/get"))
@@ -25,19 +25,20 @@ As an example, to integrate with the [uPickle](https://github.com/com-lihaoyi/up
 dependency:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "upickle" % "3.8.13"
+"com.softwaremill.sttp.client4" %% "upickle" % "3.8.13"
 ```
 
 Your code might then look as follows:
 
 ```scala
-import sttp.client3.{SimpleHttpClient, UriContext, basicRequest}
-import sttp.client3.upicklejson._
+import sttp.client4.{SimpleHttpClient, UriContext, basicRequest}
+import sttp.client4.upicklejson._
 import upickle.default._
 
 val client = SimpleHttpClient()
 
 case class MyRequest(field1: String, field2: Int)
+
 // selected fields from the JSON that is being returned by httpbin
 case class HttpBinResponse(origin: String, headers: Map[String, String])
 
@@ -51,7 +52,7 @@ val request = basicRequest
 val response = client.send(request)
 
 response.body match {
-  case Left(e)  => println(s"Got response exception:\n$e")
+  case Left(e) => println(s"Got response exception:\n$e")
   case Right(r) => println(s"Origin's ip: ${r.origin}, header count: ${r.headers.size}")
 }
 ```
@@ -62,14 +63,14 @@ Logging can be added using the [logging backend wrapper](backends/wrappers/loggi
 use slf4j, you'll need the following dependency:
 
 ```
-"com.softwaremill.sttp.client3" %% "slf4j-backend" % "3.8.13"
+"com.softwaremill.sttp.client4" %% "slf4j-backend" % "3.8.13"
 ```
 
 Then, you'll need to configure your client:
 
 ```scala
-import sttp.client3.{SimpleHttpClient, UriContext, basicRequest}
-import sttp.client3.logging.slf4j.Slf4jLoggingBackend
+import sttp.client4.{SimpleHttpClient, UriContext, basicRequest}
+import sttp.client4.logging.slf4j.Slf4jLoggingBackend
 
 val client = SimpleHttpClient().wrapBackend(Slf4jLoggingBackend(_))
 ```

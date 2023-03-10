@@ -6,7 +6,7 @@ the need to choose or explicitly create a backend.
 A simple request can be sent as follows:
 
 ```scala mdoc:compile-only
-import sttp.client3.{SimpleHttpClient, UriContext, basicRequest}
+import sttp.client4.{SimpleHttpClient, UriContext, basicRequest}
 
 val client = SimpleHttpClient()
 val response = client.send(basicRequest.get(uri"https://httpbin.org/get"))
@@ -25,14 +25,14 @@ As an example, to integrate with the [uPickle](https://github.com/com-lihaoyi/up
 dependency:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "upickle" % "@VERSION@"
+"com.softwaremill.sttp.client4" %% "upickle" % "@VERSION@"
 ```
 
 Your code might then look as follows:
 
 ```scala mdoc:compile-only
-import sttp.client3.{SimpleHttpClient, UriContext, basicRequest}
-import sttp.client3.upicklejson._
+import sttp.client4.{SimpleHttpClient, UriContext, basicRequest}
+import sttp.client4.upicklejson._
 import upickle.default._
 
 val client = SimpleHttpClient()
@@ -62,14 +62,14 @@ Logging can be added using the [logging backend wrapper](backends/wrappers/loggi
 use slf4j, you'll need the following dependency:
 
 ```
-"com.softwaremill.sttp.client3" %% "slf4j-backend" % "@VERSION@"
+"com.softwaremill.sttp.client4" %% "slf4j-backend" % "@VERSION@"
 ```
 
 Then, you'll need to configure your client:
 
 ```scala mdoc:compile-only
-import sttp.client3.{SimpleHttpClient, UriContext, basicRequest}
-import sttp.client3.logging.slf4j.Slf4jLoggingBackend
+import sttp.client4.{SimpleHttpClient, UriContext, basicRequest}
+import sttp.client4.logging.slf4j.Slf4jLoggingBackend
 
 val client = SimpleHttpClient().wrapBackend(Slf4jLoggingBackend(_))
 ```

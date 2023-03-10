@@ -32,7 +32,7 @@ val testScoped =
   inputKey[Unit](s"Run tests in the given scope. Usage: testScoped [scala version] [platform]. $scopesDescription")
 
 val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
-  organization := "com.softwaremill.sttp.client3",
+  organization := "com.softwaremill.sttp.client4",
   updateDocs := Def.taskDyn {
     val files1 = UpdateVersionInDocs(sLog.value, organization.value, version.value, List(file("README.md")))
     Def.task {
@@ -284,7 +284,7 @@ lazy val testServer = (projectMatrix in file("testing/server"))
       akkaStreams
     ),
     // the test server needs to be started before running any backend tests
-    reStart / mainClass := Some("sttp.client3.testing.server.HttpServer"),
+    reStart / mainClass := Some("sttp.client4.testing.server.HttpServer"),
     reStart / reStartArgs := Seq(s"${(Test / testServerPort).value}"),
     reStart / fullClasspath := (Test / fullClasspath).value,
     testServerPort := 51823,

@@ -14,7 +14,7 @@ How the response body will be read is part of the request description, as alread
 To conveniently specify how to deserialize the response body, a number of `as(...Type...)` methods are available. They can be used to provide a value for the request description's `response` property:
 
 ```scala
-import sttp.client3._
+import sttp.client4._
 
 basicRequest.response(asByteArray)
 ```
@@ -24,7 +24,7 @@ When the above request is completely described and sent, it will result in a `Re
 Other possible response descriptions include (the first type parameter of `ResponseAs` specifies the type returned as the response body, the second - the capabilities that the backend is required to support to send the request; `Any` means no special requirements):
 
 ```scala
-import sttp.client3._
+import sttp.client4._
 import java.io.File
 import java.nio.file.Path
 
@@ -44,9 +44,9 @@ def asFileAlways(file: File): ResponseAs[File, Any] = ???
 def asPath(path: Path): ResponseAs[Either[String, Path], Any] = ???
 def asPathAlways(path: Path): ResponseAs[Path, Any] = ???
 
-def asEither[A, B, R](onError: ResponseAs[A, R], 
+def asEither[A, B, R](onError: ResponseAs[A, R],
                       onSuccess: ResponseAs[B, R]): ResponseAs[Either[A, B], R] = ???
-def fromMetadata[T, R](default: ResponseAs[T, R], 
+def fromMetadata[T, R](default: ResponseAs[T, R],
                        conditions: ConditionalResponseAs[T, R]*): ResponseAs[T, R] = ???
 
 def asBoth[A, B](l: ResponseAs[A, Any], r: ResponseAs[B, Any]): ResponseAs[(A, B), Any] = ???
@@ -56,7 +56,7 @@ def asBothOption[A, B, R](l: ResponseAs[A, R], r: ResponseAs[B, Any]): ResponseA
 Hence, to discard the response body, the request description should include the following:
 
 ```scala
-import sttp.client3._
+import sttp.client4._
 
 basicRequest.response(ignore)
 ```   
@@ -64,7 +64,7 @@ basicRequest.response(ignore)
 And to save the response to a file:
 
 ```scala
-import sttp.client3._
+import sttp.client4._
 import java.io._
 
 val someFile = new File("some/path")
@@ -82,7 +82,7 @@ basicRequest.response(asFile(someFile))
 Sometimes it's convenient to get a failed effect (or an exception thrown) when the response status code is not successful. In such cases, the response specification can be modified using the `.getRight` combinator:
 
 ```scala
-import sttp.client3._
+import sttp.client4._
 
 basicRequest.response(asString.getRight): PartialRequest[String, Any]
 ```
@@ -108,7 +108,7 @@ It's possible to define custom body deserializers by taking any of the built-in 
 As an example, to read the response body as an int, the following response description can be defined (warning: this ignores the possibility of exceptions!):
 
 ```scala
-import sttp.client3._
+import sttp.client4._
 
 val asInt: ResponseAs[Either[String, Int], Any] = asString.mapRight(_.toInt)
 
@@ -120,7 +120,7 @@ basicRequest
 To integrate with a third-party JSON library, and always parse the response as a json (regardless of the status code):
 
 ```scala
-import sttp.client3._
+import sttp.client4._
 
 type JsonError
 type JsonAST
@@ -141,38 +141,44 @@ Using the `fromMetadata` combinator, it's possible to dynamically specify how th
 A more complex case, which uses Circe for deserializing JSON, choosing to which model to deserialize to depending on the status code, can look as following:
 
 ```scala
-import sttp.client3._
+import sttp.client4._
 import sttp.model._
-import sttp.client3.circe._
+import sttp.client4.circe._
 import io.circe._
 import io.circe.generic.auto._
 
 sealed trait MyModel
+
 case class SuccessModel(name: String, age: Int) extends MyModel
+
 case class ErrorModel(message: String) extends MyModel
 
 val myRequest: Request[Either[ResponseException[String, io.circe.Error], MyModel], Nothing] =
   basicRequest
     .get(uri"https://example.com")
     .response(fromMetadata(
-        asJson[ErrorModel], 
-        ConditionalResponseAs(_.code == StatusCode.Ok, asJson[SuccessModel])
+      asJson[ErrorModel],
+      ConditionalResponseAs(_.code == StatusCode.Ok, asJson[SuccessModel])
     ))
 ```
 
 The above example assumes that success and error models are part of one hierarchy (`MyModel`). Sometimes http errors are modelled independently of success. In this case, we can use `asJsonEither`, which uses `asEitherDeserialized` under the covers:
 
 ```scala
-import sttp.client3._
+import sttp.client4._
 import sttp.model._
-import sttp.client3.circe._
+import sttp.client4.circe._
 import io.circe._
 import io.circe.generic.auto._
 
 case class MyModel(p1: Int)
+
 sealed trait MyErrorModel
+
 case class Conflict(message: String) extends MyErrorModel
+
 case class BadRequest(message: String) extends MyErrorModel
+
 case class GenericError(message: String) extends MyErrorModel
 
 basicRequest
@@ -186,28 +192,28 @@ If the backend used supports streaming (see [backends summary](../backends/summa
 
 ```scala
 import sttp.capabilities.{Effect, Streams}
-import sttp.client3._
+import sttp.client4._
 import sttp.model.ResponseMetadata
 
-def asStream[F[_], T, S](s: Streams[S])(f: s.BinaryStream => F[T]): 
-  ResponseAs[Either[String, T], Effect[F] with S] = ???
+def asStream[F[_], T, S](s: Streams[S])(f: s.BinaryStream => F[T]):
+ResponseAs[Either[String, T], Effect[F] with S] = ???
 
 def asStreamWithMetadata[F[_], T, S](s: Streams[S])(
-      f: (s.BinaryStream, ResponseMetadata) => F[T] 
-  ): ResponseAs[Either[String, T], Effect[F] with S] = ???
+  f: (s.BinaryStream, ResponseMetadata) => F[T]
+): ResponseAs[Either[String, T], Effect[F] with S] = ???
 
-def asStreamAlways[F[_], T, S](s: Streams[S])(f: s.BinaryStream => F[T]): 
-  ResponseAs[T, Effect[F] with S] = ???
+def asStreamAlways[F[_], T, S](s: Streams[S])(f: s.BinaryStream => F[T]):
+ResponseAs[T, Effect[F] with S] = ???
 
 def asStreamAlwaysWithMetadata[F[_], T, S](s: Streams[S])(
-      f: (s.BinaryStream, ResponseMetadata) => F[T]
-  ): ResponseAs[T, Effect[F] with S] = ???
+  f: (s.BinaryStream, ResponseMetadata) => F[T]
+): ResponseAs[T, Effect[F] with S] = ???
 
-def asStreamUnsafe[S](s: Streams[S]): 
-  ResponseAs[Either[String, s.BinaryStream], S] = ???
+def asStreamUnsafe[S](s: Streams[S]):
+ResponseAs[Either[String, s.BinaryStream], S] = ???
 
-def asStreamUnsafeAlways[S](s: Streams[S]): 
-  ResponseAs[s.BinaryStream, S] = ???
+def asStreamUnsafeAlways[S](s: Streams[S]):
+ResponseAs[s.BinaryStream, S] = ???
 ```
 
 All of these specifications require the streaming capability to be passed as a parameter, an implementation of `Streams[S]`. This is used to determine the type of binary streams that are supported, and to require that the backend used to send the request supports the given type of streams. These implementations are provided by the backend implementations, e.g. `AkkaStreams` or `Fs2Streams[F]`. 
@@ -223,8 +229,8 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import scala.concurrent.Future
 import sttp.capabilities.akka.AkkaStreams
-import sttp.client3._
-import sttp.client3.akkahttp.AkkaHttpBackend
+import sttp.client4._
+import sttp.client4.akkahttp.AkkaHttpBackend
 
 val backend: SttpBackend[Future, AkkaStreams] = AkkaHttpBackend()
 

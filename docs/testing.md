@@ -19,9 +19,9 @@ An empty backend stub can be created using the following ways:
 Some code which will be reused among following examples:
 
 ```scala mdoc
-import sttp.client3._
+import sttp.client4._
 import sttp.model._
-import sttp.client3.testing._
+import sttp.client4.testing._
 import java.io.File
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global 
@@ -129,7 +129,7 @@ basicRequest.get(uri"http://example.org").send(testingBackend)       // code wil
 basicRequest.get(uri"http://example.org").send(testingBackend)       // code will be 200
 ```
 
-The `sttp.client3.testing` package also contains a utility method to force the body as a string (`forceBodyAsString`) or as a byte array (`forceBodyAsByteArray`), if the body is not a stream or multipart:
+The `sttp.client4.testing` package also contains a utility method to force the body as a string (`forceBodyAsString`) or as a byte array (`forceBodyAsByteArray`), if the body is not a stream or multipart:
 
 ```scala mdoc:compile-only
 val testingBackend = SyncBackendStub
@@ -211,7 +211,7 @@ If you actually want a file to be written you can set up the stub like this:
 ```scala mdoc:compile-only
 import org.apache.commons.io.FileUtils
 import cats.effect._
-import sttp.client3.impl.cats.implicits._
+import sttp.client4.impl.cats.implicits._
 import sttp.monad.MonadAsyncError
 
 val sourceFile = new File("path/to/file.ext")

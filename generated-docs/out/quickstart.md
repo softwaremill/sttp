@@ -14,7 +14,7 @@ platforms, and that each has its own dedicated set of backends.
 The basic dependency which provides the API, together with a synchronous and `Future`-based backends, is:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "core" % "3.8.13"
+"com.softwaremill.sttp.client4" %% "core" % "3.8.13"
 ```
 
 ## Simple synchronous client
@@ -26,27 +26,29 @@ If you'd like to send some requests synchronously, take a look at the [simple sy
 If you are an [Ammonite](https://ammonite.io) user, you can quickly start experimenting with sttp by copy-pasting the following:
 
 ```scala
-import $ivy.`com.softwaremill.sttp.client3::core:3.8.13`
-import sttp.client3.quick._
+import $ivy.`com.softwaremill.sttp.client4::core:3.8.13`
+import sttp.client4.quick._
+
 simpleHttpClient.send(quickRequest.get(uri"http://httpbin.org/ip"))
 ```
 
-Importing the `quick` object has the same effect as importing `sttp.client3._`, plus defining a synchronous backend (`val backend = HttpClientSyncBackend()`), so that sttp can be used right away.
+Importing the `quick` object has the same effect as importing `sttp.client4._`, plus defining a synchronous backend (`val backend = HttpClientSyncBackend()`), so that sttp can be used right away.
 
 If the default backend is for some reason insufficient, you can also use one based on OkHttp:
 
 ```scala
-import $ivy.`com.softwaremill.sttp.client3::okhttp-backend:3.8.13`
-import sttp.client3.okhttp.quick._
+import $ivy.`com.softwaremill.sttp.client4::okhttp-backend:3.8.13`
+import sttp.client4.okhttp.quick._
+
 quickRequest.get(uri"http://httpbin.org/ip").send(backend)
 ```
 
 ## Imports
 
-Working with sttp is most convenient if you import the `sttp.client3` package entirely:
+Working with sttp is most convenient if you import the `sttp.client4` package entirely:
 
 ```scala
-import sttp.client3._
+import sttp.client4._
 ```
 
 This brings into scope the starting point for defining requests and some helper methods. All examples in this guide assume that this import is in place.
@@ -54,11 +56,11 @@ This brings into scope the starting point for defining requests and some helper 
 And that's all you need to start using sttp client! To create and send your first request, import the above, type `basicRequest.` and see where your IDE's auto-complete gets you! Here's a simple request, using the synchronous backend:
 
 ```scala
-import sttp.client3._
+import sttp.client4._
 
 val backend = HttpClientSyncBackend()
 val response = basicRequest
-  .body("Hello, world!")  
+  .body("Hello, world!")
   .post(uri"https://httpbin.org/post?hello=world").send(backend)
 
 println(response.body)            
