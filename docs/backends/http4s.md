@@ -3,9 +3,9 @@
 This backend is based on [http4s](https://http4s.org) (client) and is **asynchronous**. To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "http4s-backend" % "@VERSION@" // for cats-effect 3.x & http4s 1.0.0-Mx
+"com.softwaremill.sttp.client4" %% "http4s-backend" % "@VERSION@" // for cats-effect 3.x & http4s 1.0.0-Mx
 // or
-"com.softwaremill.sttp.client3" %% "http4s-ce2-backend" % "@VERSION@" // for cats-effect 2.x & http4s 0.21.x
+"com.softwaremill.sttp.client4" %% "http4s-ce2-backend" % "@VERSION@" // for cats-effect 2.x & http4s 0.21.x
 ```
 
 The backend can be created in a couple of ways, e.g.:
@@ -13,8 +13,8 @@ The backend can be created in a couple of ways, e.g.:
 ```scala mdoc:compile-only
 import cats.effect._
 import sttp.capabilities.fs2.Fs2Streams
-import sttp.client3._
-import sttp.client3.http4s._
+import sttp.client4._
+import sttp.client4.http4s._
 
 // the "org.http4s" %% "http4s-ember-client" % http4sVersion dependency needs to be explicitly added
 Http4sBackend.usingDefaultEmberClientBuilder[IO](): Resource[IO, StreamBackend[IO, Fs2Streams[IO]]]

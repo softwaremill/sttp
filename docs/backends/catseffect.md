@@ -15,7 +15,7 @@ Obtain a cats-effect `Resource` which creates the backend, and closes the thread
 
 ```scala mdoc:compile-only
 import cats.effect.IO
-import sttp.client3.httpclient.cats.HttpClientCatsBackend
+import sttp.client4.httpclient.cats.HttpClientCatsBackend
 
 HttpClientCatsBackend.resource[IO]().use { backend => ??? }
 ```
@@ -25,7 +25,7 @@ or, by providing a custom `Dispatcher`:
 ```scala mdoc:compile-only
 import cats.effect.IO
 import cats.effect.std.Dispatcher
-import sttp.client3.httpclient.cats.HttpClientCatsBackend
+import sttp.client4.httpclient.cats.HttpClientCatsBackend
 
 val dispatcher: Dispatcher[IO] = ???
 
@@ -38,7 +38,7 @@ or, if you'd like to instantiate the `HttpClient` yourself:
 import cats.effect.IO
 import cats.effect.std.Dispatcher
 import java.net.http.HttpClient
-import sttp.client3.httpclient.cats.HttpClientCatsBackend
+import sttp.client4.httpclient.cats.HttpClientCatsBackend
 
 val httpClient: HttpClient = ???
 val dispatcher: Dispatcher[IO] = ???
@@ -51,7 +51,7 @@ or, obtain a cats-effect `Resource` with a custom instance of the `HttpClient`:
 ```scala mdoc:compile-only
 import cats.effect.IO
 import java.net.http.HttpClient
-import sttp.client3.httpclient.cats.HttpClientCatsBackend
+import sttp.client4.httpclient.cats.HttpClientCatsBackend
 
 val httpClient: HttpClient = ???
 
@@ -76,16 +76,16 @@ Creation of the backend can be done in two basic ways:
 Firstly, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "armeria-backend-cats" % "@VERSION@" // for cats-effect 3.x
+"com.softwaremill.sttp.client4" %% "armeria-backend-cats" % "@VERSION@" // for cats-effect 3.x
 // or
-"com.softwaremill.sttp.client3" %% "armeria-backend-cats-ce2" % "@VERSION@" // for cats-effect 2.x
+"com.softwaremill.sttp.client4" %% "armeria-backend-cats-ce2" % "@VERSION@" // for cats-effect 2.x
 ```
 
 create client:
 
 ```scala mdoc:silent
 import cats.effect.IO
-import sttp.client3.armeria.cats.ArmeriaCatsBackend
+import sttp.client4.armeria.cats.ArmeriaCatsBackend
 
 val backend = ArmeriaCatsBackend[IO]()
 
@@ -97,7 +97,7 @@ or, if you'd like the backend to be wrapped in cats-effect `Resource`:
 
 ```scala mdoc:compile-only
 import cats.effect.IO
-import sttp.client3.armeria.cats.ArmeriaCatsBackend
+import sttp.client4.armeria.cats.ArmeriaCatsBackend
 
 ArmeriaCatsBackend.resource[IO]().use { backend => ??? }
 ```
@@ -108,7 +108,7 @@ or, if you'd like to instantiate the [WebClient](https://armeria.dev/docs/client
 import cats.effect.IO
 import com.linecorp.armeria.client.WebClient
 import com.linecorp.armeria.client.circuitbreaker._
-import sttp.client3.armeria.cats.ArmeriaCatsBackend
+import sttp.client4.armeria.cats.ArmeriaCatsBackend
 
 // Fluently build Armeria WebClient with built-in decorators
 val client = WebClient.builder("https://my-service.com")

@@ -12,7 +12,7 @@ After code generation, create the `SttpScalaxbApi` trait (or trait with another 
 import generated.defaultScope // import may differ depending on location of generated code
 import scalaxb.`package`.{fromXML, toXML} // import may differ depending on location of generated code
 import scalaxb.{CanWriteXML, XMLFormat} // import may differ depending on location of generated code
-import sttp.client3.{BodySerializer, ResponseAs, ResponseException, StringBody, asString}
+import sttp.client4.{BodySerializer, ResponseAs, ResponseException, StringBody, asString}
 import sttp.model.MediaType
 
 import scala.xml.{NodeSeq, XML}

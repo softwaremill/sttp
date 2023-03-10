@@ -20,10 +20,11 @@ Individual headers can be obtained using the methods:
 
 ```scala
 import sttp.model._
-import sttp.client3._
+import sttp.client4._
+
 val backend = HttpClientSyncBackend()
 val request = basicRequest
-    .get(uri"https://httpbin.org/get")
+  .get(uri"https://httpbin.org/get")
 val response = request.send(backend)
 
 val singleHeader: Option[String] = response.header(HeaderNames.Server)

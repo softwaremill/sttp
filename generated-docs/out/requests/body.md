@@ -11,14 +11,16 @@ In its simplest form, the request's body can be set as a `String`. By default, t
 A `String` body can be set on a request as follows:
 
 ```scala
-import sttp.client3._
+import sttp.client4._
+
 basicRequest.body("Hello, world!")
 ```
 
 It is also possible to use a different character encoding:
 
 ```scala
-import sttp.client3._
+import sttp.client4._
+
 basicRequest.body("Hello, world!", "utf-8")
 ```
 
@@ -27,16 +29,18 @@ basicRequest.body("Hello, world!", "utf-8")
 To set a binary-data body, the following methods are available:
 
 ```scala
-import sttp.client3._
+import sttp.client4._
 
 val bytes: Array[Byte] = ???
 basicRequest.body(bytes)
 
 import java.nio.ByteBuffer
+
 val byteBuffer: ByteBuffer = ???
 basicRequest.body(byteBuffer)
 
 import java.io.ByteArrayInputStream
+
 val inputStream: ByteArrayInputStream = ???
 basicRequest.body(inputStream)
 ```
@@ -54,12 +58,14 @@ If not specified before, these methods will set the content type to `application
 To upload a file, simply set the request body as a `File` or `Path`:
 
 ```scala
-import sttp.client3._
+import sttp.client4._
 
 import java.io.File
+
 basicRequest.body(new File("data.txt"))
 
 import java.nio.file.Path
+
 basicRequest.body(Path.of("data.txt"))
 ```
 
@@ -76,7 +82,8 @@ If you set the body as a `Map[String, String]` or `Seq[(String, String)]`, it wi
 By default, the `UTF-8` encoding is used, but can be also specified explicitly:
 
 ```scala
-import sttp.client3._
+import sttp.client4._
+
 basicRequest.body(Map("k1" -> "v1"))
 basicRequest.body(Map("k1" -> "v1"), "utf-8")
 basicRequest.body("k1" -> "v1", "k2" -> "v2")
@@ -96,8 +103,9 @@ A `BasicRequestBody` is a wrapper for one of the supported request body types: a
 For example, here's how to write a custom serializer for a case class, with serializer-specific default content type:
 
 ```scala
-import sttp.client3._
+import sttp.client4._
 import sttp.model.MediaType
+
 case class Person(name: String, surname: String, age: Int)
 
 // for this example, assuming names/surnames can't contain commas

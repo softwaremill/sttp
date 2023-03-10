@@ -11,7 +11,7 @@ The `Uri` class is immutable, and can be constructed by hand, but in many cases 
 Using the URI interpolator it's possible to conveniently create `Uri` instances, for example:
 
 ```scala
-import sttp.client3._
+import sttp.client4._
 import sttp.model._
 
 val user = "Mary Smith"
@@ -30,7 +30,7 @@ Any values embedded in the URI will be URL-encoded, taking into account the cont
 All components of the URI can be embedded from values: scheme, username/password, host, port, path, query and fragment. The embedded values won't be further parsed, except the `:` in the host part, which is commonly used to pass in both the host and port:
 
 ```scala
-import sttp.client3._
+import sttp.client4._
 
 // the embedded / is escaped
 println(uri"http://example.org/${"a/b"}")
@@ -117,7 +117,8 @@ When sending requests using relative URIs, the [`ResolveRelativeUrisBackend`](..
 A fully-featured example:
 
 ```scala
-import sttp.client3._
+import sttp.client4._
+
 val secure = true
 val scheme = if (secure) "https" else "http"
 val subdomains = List("sub1", "sub2")

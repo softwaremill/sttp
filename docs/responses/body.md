@@ -14,7 +14,7 @@ How the response body will be read is part of the request description, as alread
 To conveniently specify how to deserialize the response body, a number of `as(...Type...)` methods are available. They can be used to provide a value for the request description's `response` property:
 
 ```scala mdoc:compile-only
-import sttp.client3._
+import sttp.client4._
 
 basicRequest.response(asByteArray)
 ```
@@ -24,7 +24,7 @@ When the above request is completely described and sent, it will result in a `Re
 Other possible response descriptions include (the first type parameter of `ResponseAs` specifies the type returned as the response body, the second - the capabilities that the backend is required to support to send the request; `Any` means no special requirements):
 
 ```scala mdoc:compile-only
-import sttp.client3._
+import sttp.client4._
 import java.io.File
 import java.nio.file.Path
 
@@ -56,7 +56,7 @@ def asBothOption[A, B](l: ResponseAs[A], r: ResponseAs[B]): ResponseAs[(A, Optio
 Hence, to discard the response body, the request description should include the following:
 
 ```scala mdoc:compile-only
-import sttp.client3._
+import sttp.client4._
 
 basicRequest.response(ignore)
 ```   
@@ -64,7 +64,7 @@ basicRequest.response(ignore)
 And to save the response to a file:
 
 ```scala mdoc:compile-only
-import sttp.client3._
+import sttp.client4._
 import java.io._
 
 val someFile = new File("some/path")
@@ -82,7 +82,7 @@ basicRequest.response(asFile(someFile))
 Sometimes it's convenient to get a failed effect (or an exception thrown) when the response status code is not successful. In such cases, the response specification can be modified using the `.getRight` combinator:
 
 ```scala mdoc:compile-only
-import sttp.client3._
+import sttp.client4._
 
 basicRequest.response(asString.getRight): PartialRequest[String]
 ```
@@ -108,7 +108,7 @@ It's possible to define custom body deserializers by taking any of the built-in 
 As an example, to read the response body as an int, the following response description can be defined (warning: this ignores the possibility of exceptions!):
 
 ```scala mdoc:compile-only
-import sttp.client3._
+import sttp.client4._
 
 val asInt: ResponseAs[Either[String, Int]] = asString.mapRight(_.toInt)
 
@@ -120,7 +120,7 @@ basicRequest
 To integrate with a third-party JSON library, and always parse the response as a json (regardless of the status code):
 
 ```scala mdoc:compile-only
-import sttp.client3._
+import sttp.client4._
 
 type JsonError
 type JsonAST
@@ -141,9 +141,9 @@ Using the `fromMetadata` combinator, it's possible to dynamically specify how th
 A more complex case, which uses Circe for deserializing JSON, choosing to which model to deserialize to depending on the status code, can look as following:
 
 ```scala mdoc:compile-only
-import sttp.client3._
+import sttp.client4._
 import sttp.model._
-import sttp.client3.circe._
+import sttp.client4.circe._
 import io.circe._
 import io.circe.generic.auto._
 
@@ -163,9 +163,9 @@ val myRequest: Request[Either[ResponseException[String, io.circe.Error], MyModel
 The above example assumes that success and error models are part of one hierarchy (`MyModel`). Sometimes http errors are modelled independently of success. In this case, we can use `asJsonEither`, which uses `asEitherDeserialized` under the covers:
 
 ```scala mdoc:compile-only
-import sttp.client3._
+import sttp.client4._
 import sttp.model._
-import sttp.client3.circe._
+import sttp.client4.circe._
 import io.circe._
 import io.circe.generic.auto._
 
@@ -186,7 +186,7 @@ If the backend used supports streaming (see [backends summary](../backends/summa
 
 ```scala mdoc:compile-only
 import sttp.capabilities.{Effect, Streams}
-import sttp.client3._
+import sttp.client4._
 import sttp.model.ResponseMetadata
 
 def asStream[F[_], T, S](s: Streams[S])(f: s.BinaryStream => F[T]): 
@@ -223,8 +223,8 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import scala.concurrent.Future
 import sttp.capabilities.akka.AkkaStreams
-import sttp.client3._
-import sttp.client3.akkahttp.AkkaHttpBackend
+import sttp.client4._
+import sttp.client4.akkahttp.AkkaHttpBackend
 
 val backend: StreamBackend[Future, AkkaStreams] = AkkaHttpBackend()
 

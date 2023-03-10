@@ -3,7 +3,7 @@
 This backend is based on [akka-http](http://doc.akka.io/docs/akka-http/current/scala/http/). To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "akka-http-backend" % "3.8.13"
+"com.softwaremill.sttp.client4" %% "akka-http-backend" % "3.8.13"
 ```
 
 A fully **asynchronous** backend. Uses the `Future` effect to return responses. There are also [other `Future`-based backends](future.md), which don't depend on Akka. 
@@ -17,27 +17,28 @@ Note that you'll also need an explicit dependency on akka-streams, as akka-http 
 Next you'll need to add create the backend instance:
 
 ```scala
-import sttp.client3.akkahttp._
+import sttp.client4.akkahttp._
+
 val backend = AkkaHttpBackend()
 ```
 
 or, if you'd like to use an existing actor system:
 
 ```scala
-import sttp.client3.akkahttp._
+import sttp.client4.akkahttp._
 import akka.actor.ActorSystem
 
 val actorSystem: ActorSystem = ???
 val backend = AkkaHttpBackend.usingActorSystem(actorSystem)
 ```
 
-This backend supports sending and receiving [akka-streams](http://doc.akka.io/docs/akka/current/scala/stream/index.html) streams. The streams capability is represented as `sttp.client3.akkahttp.AkkaStreams`.
+This backend supports sending and receiving [akka-streams](http://doc.akka.io/docs/akka/current/scala/stream/index.html) streams. The streams capability is represented as `sttp.client4.akkahttp.AkkaStreams`.
 
 To set the request body as a stream:
 
 ```scala
 import sttp.capabilities.akka.AkkaStreams
-import sttp.client3._
+import sttp.client4._
 
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
@@ -54,8 +55,8 @@ To receive the response body as a stream:
 ```scala
 import scala.concurrent.Future
 import sttp.capabilities.akka.AkkaStreams
-import sttp.client3._
-import sttp.client3.akkahttp.AkkaHttpBackend
+import sttp.client4._
+import sttp.client4.akkahttp.AkkaHttpBackend
 
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
@@ -80,7 +81,7 @@ That way, you can "mock" a server that the backend will talk to, without startin
 If your application provides a client library for its dependants to use, this is a great way to ensure that the client actually matches the routes exposed by your application:
 
 ```scala
-import sttp.client3.akkahttp._
+import sttp.client4.akkahttp._
 import akka.http.scaladsl.server.Route
 import akka.actor.ActorSystem
 
@@ -107,12 +108,12 @@ import scala.concurrent.Future
 import akka.stream.scaladsl.Source
 
 import sttp.capabilities.akka.AkkaStreams
-import sttp.client3.akkahttp.AkkaHttpServerSentEvents
+import sttp.client4.akkahttp.AkkaHttpServerSentEvents
 import sttp.model.sse.ServerSentEvent
-import sttp.client3._
+import sttp.client4._
 
 def processEvents(source: Source[ServerSentEvent, Any]): Future[Unit] = ???
 
-basicRequest.response(asStream(AkkaStreams)(stream => 
+basicRequest.response(asStream(AkkaStreams)(stream =>
   processEvents(stream.via(AkkaHttpServerSentEvents.parse))))
 ```

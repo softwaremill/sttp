@@ -6,7 +6,7 @@ A websocket request will be sent instead of a regular one if the response specif
 
 ## Using `WebSocket`
 
-The first possibility is using `sttp.client3.ws.WebSocket[F]`, where `F` is the backend-specific effects wrapper, such as `Future` or `IO`. It contains two basic methods, both of which use the `F` effect to return results:
+The first possibility is using `sttp.client4.ws.WebSocket[F]`, where `F` is the backend-specific effects wrapper, such as `Future` or `IO`. It contains two basic methods, both of which use the `F` effect to return results:
  
 * `def receive: F[WebSocketFrame]` which will complete once a message is available, and return the next incoming frame (which can be a data, ping, pong or close)
 * `def send(f: WebSocketFrame, isContinuation: Boolean = false): F[Unit]`, which sends a message to the websocket. The `WebSocketFrame` companion object contains methods for creating binary/text messages. When using fragmentation, the first message should be sent using `finalFragment = false`, and subsequent messages using `isContinuation = true`.
@@ -16,7 +16,7 @@ The `WebSocket` trait also contains other methods for receiving only text/binary
 The following response specifications which use `WebSocket[F]` are available (the first type parameter of `ResponseAs` specifies the type returned as the response body, the second - the capabilities that the backend is required to support to send the request):
 
 ```scala mdoc:compile-only
-import sttp.client3._
+import sttp.client4._
 import sttp.model.ResponseMetadata
 import sttp.ws.WebSocket
 
@@ -56,7 +56,7 @@ Another possibility is to work with websockets by providing a streaming stage, w
 The following response specifications are available: 
 
 ```scala mdoc:compile-only
-import sttp.client3._
+import sttp.client4._
 import sttp.capabilities.{Streams, WebSockets}
 import sttp.ws.WebSocketFrame
 
@@ -77,9 +77,9 @@ These methods can be found in corresponding WebSockets classes for given effect 
 ================ ==========================================
 effect type      class name
 ================ ==========================================
-``monix.Task``   ``sttp.client3.impl.monix.MonixWebSockets``   
-``ZIO``          ``sttp.client3.impl.zio.ZioWebSockets``
-``fs2.Stream``   ``sttp.client3.impl.fs2.Fs2WebSockets``
+``monix.Task``   ``sttp.client4.impl.monix.MonixWebSockets``   
+``ZIO``          ``sttp.client4.impl.zio.ZioWebSockets``
+``fs2.Stream``   ``sttp.client4.impl.fs2.Fs2WebSockets``
 ================ ==========================================
 ```
 

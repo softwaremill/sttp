@@ -7,7 +7,7 @@ A JavaScript backend with web socket support. Implemented using the [Fetch API](
 This is the default backend, available in the main jar for JS. To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %%% "core" % "@VERSION@"
+"com.softwaremill.sttp.client4" %%% "core" % "@VERSION@"
 ```
 
 And create the backend instance:
@@ -26,7 +26,7 @@ Note that `Fetch` does not pass cookies by default. If your request needs cookie
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %%% "monix" % "@VERSION@"
+"com.softwaremill.sttp.client4" %%% "monix" % "@VERSION@"
 ```
 
 And create the backend instance:
@@ -40,7 +40,7 @@ val backend = FetchMonixBackend()
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %%% "zio" % "@VERSION@"
+"com.softwaremill.sttp.client4" %%% "zio" % "@VERSION@"
 ```
 
 And create the backend instance:
@@ -55,13 +55,13 @@ Any effect implementing the cats-effect `Concurrent` typeclass can be used. To u
 your project:
 
 ```
-"com.softwaremill.sttp.client3" %%% "cats" % "@VERSION@"
+"com.softwaremill.sttp.client4" %%% "cats" % "@VERSION@"
 ```
 
 If you are on Cats Effect 2 (CE2) you will need to add the CE2 specific dependency instead:
 
 ```
-"com.softwaremill.sttp.client3" %%% "catsce2 % "@VERSION@"
+"com.softwaremill.sttp.client4" %%% "catsce2 % "@VERSION@"
 ```
 
 And create the backend instance:
@@ -129,14 +129,14 @@ Streaming support is provided via `FetchMonixBackend`. Note that streaming suppo
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %%% "monix" % "@VERSION@"
+"com.softwaremill.sttp.client4" %%% "monix" % "@VERSION@"
 ```
 
 An example of streaming a response:
 
 ```scala   
-import sttp.client3._
-import sttp.client3.impl.monix._
+import sttp.client4._
+import sttp.client4.impl.monix._
 
 import java.nio.ByteBuffer
 import monix.eval.Task
@@ -168,9 +168,9 @@ import monix.reactive.Observable
 import monix.eval.Task
 
 import sttp.capabilities.monix.MonixStreams
-import sttp.client3.impl.monix.MonixServerSentEvents
+import sttp.client4.impl.monix.MonixServerSentEvents
 import sttp.model.sse.ServerSentEvent
-import sttp.client3._
+import sttp.client4._
 
 def processEvents(source: Observable[ServerSentEvent]): Task[Unit] = ???
 

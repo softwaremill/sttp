@@ -2,7 +2,7 @@
 
 [![Ideas, suggestions, problems, questions](https://img.shields.io/badge/Discourse-ask%20question-blue)](https://softwaremill.community/c/sttp-client)
 [![CI](https://github.com/softwaremill/sttp/workflows/CI/badge.svg)](https://github.com/softwaremill/sttp/actions?query=workflow%3ACI+branch%3Amaster)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.softwaremill.sttp.client3/core_2.12/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.softwaremill.sttp.client3/core_2.12)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.softwaremill.sttp.client4/core_2.12/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.softwaremill.sttp.client4/core_2.12)
 
 [![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/softwaremill/sttp)
 
@@ -20,7 +20,7 @@ Backend implementations include ones based on [akka-http](https://doc.akka.io/do
 Here's a quick example of sttp client in action:
  
 ```scala
-import sttp.client3._
+import sttp.client4._
 
 val sort: Option[String] = None
 val query = "http language:scala"
@@ -49,15 +49,15 @@ sttp (v2) documentation is available at [sttp.softwaremill.com/en/v2](https://st
 
 sttp (v1) documentation is available at [sttp.softwaremill.com/en/v1](https://sttp.softwaremill.com/en/v1).
 
-scaladoc is available at [https://www.javadoc.io](https://www.javadoc.io/doc/com.softwaremill.sttp.client3/core_2.12/3.8.13)
+scaladoc is available at [https://www.javadoc.io](https://www.javadoc.io/doc/com.softwaremill.sttp.client4/core_2.12/3.8.13)
 
 ## Quickstart with Ammonite
 
 If you are an [Ammonite](http://ammonite.io) user, you can quickly start experimenting with sttp by copy-pasting the following:
 
 ```scala
-import $ivy.`com.softwaremill.sttp.client3::core:3.8.13`
-import sttp.client3.quick._
+import $ivy.`com.softwaremill.sttp.client4::core:3.8.13`
+import sttp.client4.quick._
 quickRequest.get(uri"http://httpbin.org/ip").send(backend)
 ```
 
@@ -68,13 +68,13 @@ This brings in the sttp API and a synchronous backend instance.
 Add the following dependency:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "core" % "3.8.13"
+"com.softwaremill.sttp.client4" %% "core" % "3.8.13"
 ```
 
 Then, import:
 
 ```scala
-import sttp.client3._
+import sttp.client4._
 ```
 
 Type `basicRequest.` and see where your IDE’s auto-complete gets you!

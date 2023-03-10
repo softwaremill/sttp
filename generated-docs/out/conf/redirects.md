@@ -5,7 +5,7 @@ By default, sttp follows redirects.
 If you'd like to disable following redirects, use the `followRedirects` method:
 
 ```scala
-import sttp.client3._
+import sttp.client4._
 
 basicRequest.followRedirects(false)
 ```
@@ -19,7 +19,7 @@ If a `POST` or `PUT` request is redirected, by default it will be sent unchanged
 To enable this behavior, use the `redirectToGet` method:
 
 ```scala
-import sttp.client3._
+import sttp.client4._
 
 basicRequest.redirectToGet(true)
 ```
@@ -33,11 +33,11 @@ Most modern http clients will, by default, strip the `Authorization` header when
 You can disable the stripping of all sensitive headers using the following code:
 
 ```scala
-import sttp.client3._
+import sttp.client4._
 
 val myBackend: SttpBackend[Identity, Any] = HttpClientSyncBackend()
-val backend: SttpBackend[Identity, Any]  = new FollowRedirectsBackend(
-  delegate = myBackend, 
+val backend: SttpBackend[Identity, Any] = new FollowRedirectsBackend(
+  delegate = myBackend,
   sensitiveHeaders = Set.empty
 )
 ```
@@ -45,12 +45,12 @@ val backend: SttpBackend[Identity, Any]  = new FollowRedirectsBackend(
 If you just want to disable stripping of the `Authorization` header, you can do the following:
 
 ```scala
-import sttp.client3._
+import sttp.client4._
 import sttp.model._
 
 val myBackend: SttpBackend[Identity, Any] = HttpClientSyncBackend()
 val backend: SttpBackend[Identity, Any] = new FollowRedirectsBackend(
-  delegate = myBackend, 
+  delegate = myBackend,
   sensitiveHeaders = HeaderNames.SensitiveHeaders.filterNot(_ == HeaderNames.Authorization.toLowerCase)
 )
 ```
@@ -65,10 +65,10 @@ For example:
 
 ```scala
 import sttp.capabilities.Effect
-import sttp.client3._
+import sttp.client4._
 import sttp.monad.MonadError
 
-class MyWrapper[F[_], P] private (delegate: SttpBackend[F, P])
+class MyWrapper[F[_], P] private(delegate: SttpBackend[F, P])
   extends SttpBackend[F, P] {
 
   def send[T, R >: P with Effect[F]](request: Request[T, R]): F[Response[T]] = ???
@@ -80,7 +80,7 @@ class MyWrapper[F[_], P] private (delegate: SttpBackend[F, P])
 
 object MyWrapper {
   def apply[F[_], P](
-    delegate: SttpBackend[F, P]): SttpBackend[F, P] = {
+                      delegate: SttpBackend[F, P]): SttpBackend[F, P] = {
     // disables any other FollowRedirectsBackend-s further down the delegate chain
     new FollowRedirectsBackend(new MyWrapper(delegate))
   }
@@ -94,11 +94,11 @@ Whenever a redirect request is about to be created, the `FollowRedirectsBackend`
 For example:
 
 ```scala
-import sttp.client3._
+import sttp.client4._
 import sttp.model.Uri.QuerySegmentEncoding
 
 val myBackend: SttpBackend[Identity, Any] = HttpClientSyncBackend()
-val backend: SttpBackend[Identity, Any]  = new FollowRedirectsBackend(
+val backend: SttpBackend[Identity, Any] = new FollowRedirectsBackend(
   delegate = myBackend,
   // encodes all special characters in the query segment, including the allowed ones
   transformUri = _.querySegmentsEncoding(QuerySegmentEncoding.All)
