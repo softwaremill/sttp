@@ -77,7 +77,7 @@ dependency:
 Your code might then look as follows:
 
 ```scala mdoc:compile-only
-import sttp.client4.{SimpleHttpClient, UriContext, basicRequest}
+import sttp.client4._
 import sttp.client4.upicklejson._
 import upickle.default._
 
@@ -114,7 +114,7 @@ use slf4j, you'll need the following dependency:
 Then, you'll need to configure your client:
 
 ```scala mdoc:compile-only
-import sttp.client4.{SimpleHttpClient, UriContext, basicRequest}
+import sttp.client4.
 import sttp.client4.logging.slf4j.Slf4jLoggingBackend
 
 val backend = Slf4jLoggingBackend(HttpClientSyncBackend())
