@@ -16,7 +16,7 @@ object EitherBackend {
 
   private val eitherToId: FunctionK[Either[Throwable, *], Identity] =
     new FunctionK[Either[Throwable, *], Identity] {
-      override def apply[A](fa: Either[Throwable, A]): Identity[A] =
+      override def apply[A](fa: => Either[Throwable, A]): Identity[A] =
         fa match {
           case Left(e)  => throw e
           case Right(v) => v
@@ -25,6 +25,6 @@ object EitherBackend {
 
   private val idToEither: FunctionK[Identity, Either[Throwable, *]] =
     new FunctionK[Identity, Either[Throwable, *]] {
-      override def apply[A](fa: Identity[A]): Either[Throwable, A] = Right(fa)
+      override def apply[A](fa: => Identity[A]): Either[Throwable, A] = Right(fa)
     }
 }
