@@ -9,9 +9,4 @@ package object client4 extends SttpApi {
   type BodySerializer[B] = B => BasicBodyPart
 
   type RetryWhen = (GenericRequest[_, _], Either[Throwable, Response[_]]) => Boolean
-
-  @deprecated(message = "use ResponseException", since = "3.0.0")
-  type ResponseError[+HE, +DE] = ResponseException[HE, DE]
-  @deprecated(message = "use DeserializationException", since = "3.0.0")
-  type DeserializationError[DE] = DeserializationException[DE]
 }
