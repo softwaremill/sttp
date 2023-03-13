@@ -123,11 +123,13 @@ val backend = Slf4jLoggingBackend(HttpClientSyncBackend())
 ## Even quicker
 
 You can skip the step of creating a backend instance, by using `import sttp.client4.quick._` instead of the usual `import sttp.client4._`.
-This brings into scope the same sttp API, and additionally a synchronous backend instance, which can be used to send requests:
+This brings into scope the same sttp API, and additionally a synchronous backend instance, which can be used to send requests. 
 
-```scala
+Then, the `send()` extension method allows sending requests using that `backend` instance:
+
+```scala mdoc:compile-only
 import sttp.client4.quick._
-quickRequest.get(uri"http://httpbin.org/ip").send(backend)
+quickRequest.get(uri"http://httpbin.org/ip").send()
 ```
 
 ## Next steps
