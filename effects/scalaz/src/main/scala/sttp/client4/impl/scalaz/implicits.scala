@@ -3,6 +3,7 @@ package sttp.client4.impl.scalaz
 import scalaz.~>
 import sttp.client4.monad.FunctionK
 import sttp.client4._
+import sttp.client4.wrappers.MappedEffectBackend
 import sttp.monad.MonadError
 
 object implicits extends ScalazImplicits

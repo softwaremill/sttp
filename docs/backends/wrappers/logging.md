@@ -37,6 +37,7 @@ Example usage:
 
 ```scala mdoc:compile-only
 import sttp.client4._
+import sttp.client4.httpclient.HttpClientSyncBackend
 import sttp.client4.logging.slf4j.Slf4jLoggingBackend
 
 val backend = Slf4jLoggingBackend(HttpClientSyncBackend())

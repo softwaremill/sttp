@@ -1,10 +1,7 @@
 package sttp.client4.asynchttpclient.zio
 
 import _root_.zio._
-import _root_.zio.interop.reactivestreams.{
-  publisherToStream => publisherToZioStream,
-  streamToPublisher => zioStreamToPublisher
-}
+import _root_.zio.interop.reactivestreams.{publisherToStream => publisherToZioStream, streamToPublisher => zioStreamToPublisher}
 import _root_.zio.stream._
 import io.netty.buffer.{ByteBuf, Unpooled}
 import org.asynchttpclient._
@@ -17,7 +14,8 @@ import sttp.client4.impl.zio.{RIOMonadAsyncError, ZioSimpleQueue, ZioWebSockets}
 import sttp.client4.internal._
 import sttp.client4.internal.ws.SimpleQueue
 import sttp.client4.testing.WebSocketStreamBackendStub
-import sttp.client4.{BackendOptions, FollowRedirectsBackend, WebSocketStreamBackend}
+import sttp.client4.wrappers.FollowRedirectsBackend
+import sttp.client4.{BackendOptions, WebSocketStreamBackend, wrappers}
 import sttp.monad.MonadAsyncError
 import sttp.ws.{WebSocket, WebSocketFrame}
 
@@ -108,7 +106,7 @@ object AsyncHttpClientZioBackend {
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder,
       webSocketBufferCapacity: Option[Int]
   ): WebSocketStreamBackend[Task, ZioStreams] =
-    FollowRedirectsBackend(
+    wrappers.FollowRedirectsBackend(
       new AsyncHttpClientZioBackend(runtime, asyncHttpClient, closeClient, customizeRequest, webSocketBufferCapacity)
     )
 

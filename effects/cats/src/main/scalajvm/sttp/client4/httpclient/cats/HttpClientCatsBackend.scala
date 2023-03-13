@@ -3,13 +3,15 @@ package sttp.client4.httpclient.cats
 import cats.effect.kernel.{Async, Resource, Sync}
 import cats.effect.std.{Dispatcher, Queue}
 import cats.implicits.{toFlatMapOps, toFunctorOps}
-import sttp.client4.HttpClientBackend.EncodingHandler
+import sttp.client4.httpclient.{HttpClientAsyncBackend, HttpClientBackend}
+import sttp.client4.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client4.impl.cats.CatsMonadAsyncError
 import sttp.client4.internal.httpclient._
 import sttp.client4.internal.ws.SimpleQueue
 import sttp.client4.internal.{NoStreams, emptyInputStream}
 import sttp.client4.testing.WebSocketBackendStub
-import sttp.client4.{FollowRedirectsBackend, HttpClientAsyncBackend, HttpClientBackend, BackendOptions, WebSocketBackend}
+import sttp.client4.wrappers.FollowRedirectsBackend
+import sttp.client4.{BackendOptions, WebSocketBackend, wrappers}
 import sttp.monad.MonadError
 import sttp.ws.{WebSocket, WebSocketFrame}
 
@@ -82,7 +84,7 @@ object HttpClientCatsBackend {
       customEncodingHandler: EncodingHandler[InputStream],
       dispatcher: Dispatcher[F]
   ): WebSocketBackend[F] =
-    FollowRedirectsBackend(
+    wrappers.FollowRedirectsBackend(
       new HttpClientCatsBackend(client, closeClient, customizeRequest, customEncodingHandler, dispatcher)
     )
 

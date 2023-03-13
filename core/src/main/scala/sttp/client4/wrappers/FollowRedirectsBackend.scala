@@ -1,6 +1,7 @@
-package sttp.client4
+package sttp.client4.wrappers
 
 import sttp.capabilities.Effect
+import sttp.client4._
 import sttp.model._
 
 abstract class FollowRedirectsBackend[F[_], P] private (

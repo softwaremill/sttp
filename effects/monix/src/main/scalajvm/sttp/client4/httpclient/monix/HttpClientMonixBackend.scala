@@ -7,20 +7,16 @@ import monix.reactive.Observable
 import monix.reactive.compression._
 import org.reactivestreams.FlowAdapters
 import sttp.capabilities.monix.MonixStreams
-import sttp.client4.HttpClientBackend.EncodingHandler
+import sttp.client4.httpclient.{HttpClientAsyncBackend, HttpClientBackend}
+import sttp.client4.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client4.httpclient.monix.HttpClientMonixBackend.MonixEncodingHandler
 import sttp.client4.impl.monix.{MonixSimpleQueue, TaskMonadAsyncError}
 import sttp.client4.internal._
 import sttp.client4.internal.httpclient.{BodyFromHttpClient, BodyToHttpClient, Sequencer}
 import sttp.client4.internal.ws.SimpleQueue
 import sttp.client4.testing.WebSocketStreamBackendStub
-import sttp.client4.{
-  FollowRedirectsBackend,
-  HttpClientAsyncBackend,
-  HttpClientBackend,
-  BackendOptions,
-  WebSocketStreamBackend
-}
+import sttp.client4.wrappers.FollowRedirectsBackend
+import sttp.client4.{BackendOptions, WebSocketStreamBackend, wrappers}
 import sttp.monad.MonadError
 
 import java.io.UnsupportedEncodingException
@@ -100,7 +96,7 @@ object HttpClientMonixBackend {
   )(implicit
       s: Scheduler
   ): WebSocketStreamBackend[Task, MonixStreams] =
-    FollowRedirectsBackend(
+    wrappers.FollowRedirectsBackend(
       new HttpClientMonixBackend(client, closeClient, customizeRequest, customEncodingHandler)(s)
     )
 

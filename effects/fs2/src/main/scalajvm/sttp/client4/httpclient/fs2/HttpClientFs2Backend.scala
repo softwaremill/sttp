@@ -12,7 +12,7 @@ import fs2.interop.reactivestreams.{PublisherOps, StreamUnicastPublisher}
 import fs2.{Chunk, Stream}
 import org.reactivestreams.FlowAdapters
 import sttp.capabilities.fs2.Fs2Streams
-import sttp.client4.HttpClientBackend.EncodingHandler
+import sttp.client4.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client4.httpclient.fs2.HttpClientFs2Backend.Fs2EncodingHandler
 import sttp.client4.internal.httpclient.{BodyFromHttpClient, BodyToHttpClient, Sequencer}
 import sttp.client4.impl.cats.implicits._
@@ -20,6 +20,8 @@ import sttp.client4.impl.fs2.Fs2SimpleQueue
 import sttp.client4.internal.ws.SimpleQueue
 import sttp.client4.testing.WebSocketStreamBackendStub
 import sttp.client4._
+import sttp.client4.httpclient.{HttpClientAsyncBackend, HttpClientBackend}
+import sttp.client4.wrappers.FollowRedirectsBackend
 import sttp.monad.MonadError
 
 import java.net.http.HttpResponse.BodyHandlers

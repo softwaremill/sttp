@@ -1,4 +1,4 @@
-package sttp.client4.curl
+package sttp.client4.curl.internal
 
 import scala.scalanative.unsafe.Ptr
 

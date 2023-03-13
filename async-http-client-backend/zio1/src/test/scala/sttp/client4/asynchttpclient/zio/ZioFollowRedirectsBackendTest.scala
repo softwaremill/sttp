@@ -5,6 +5,7 @@ import org.scalatest.matchers.should.Matchers
 import sttp.capabilities.Effect
 import sttp.client4.impl.zio.{RIOMonadAsyncError, ZioTestBase}
 import sttp.client4._
+import sttp.client4.wrappers.FollowRedirectsBackend
 import sttp.model.{Header, StatusCode}
 import sttp.monad.MonadError
 import zio.Task

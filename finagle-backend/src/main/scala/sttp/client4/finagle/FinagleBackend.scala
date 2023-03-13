@@ -1,14 +1,7 @@
 package sttp.client4.finagle
 
 import com.twitter.finagle.Http.Client
-import com.twitter.finagle.http.{
-  FileElement,
-  FormElement,
-  RequestBuilder,
-  SimpleElement,
-  Method => FMethod,
-  Response => FResponse
-}
+import com.twitter.finagle.http.{FileElement, FormElement, RequestBuilder, SimpleElement, Method => FMethod, Response => FResponse}
 import com.twitter.finagle.{Http, Service, http}
 import com.twitter.io.Buf
 import com.twitter.io.Buf.{ByteArray, ByteBuffer}
@@ -18,7 +11,8 @@ import sttp.capabilities.Effect
 import sttp.client4.internal.{BodyFromResponseAs, FileHelpers, SttpFile, Utf8}
 import sttp.client4.testing.BackendStub
 import sttp.client4.ws.{GotAWebSocketException, NotAWebSocketException}
-import sttp.client4._
+import sttp.client4.{wrappers, _}
+import sttp.client4.wrappers.FollowRedirectsBackend
 import sttp.model.HttpVersion.HTTP_1
 import sttp.model._
 import sttp.monad.MonadError
@@ -251,7 +245,7 @@ object FinagleBackend {
     FollowRedirectsBackend(new FinagleBackend())
 
   def usingClient(client: Client): Backend[TFuture] =
-    FollowRedirectsBackend(new FinagleBackend(Some(client)))
+    wrappers.FollowRedirectsBackend(new FinagleBackend(Some(client)))
 
   /** Create a stub backend for testing, which uses the [[TFuture]] response wrapper, and doesn't support streaming.
     *

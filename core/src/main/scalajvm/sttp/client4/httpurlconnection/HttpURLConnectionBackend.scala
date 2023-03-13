@@ -1,4 +1,14 @@
-package sttp.client4
+package sttp.client4.httpurlconnection
+
+import sttp.capabilities.Effect
+import sttp.client4.httpurlconnection.HttpURLConnectionBackend.EncodingHandler
+import sttp.client4.internal._
+import sttp.client4.monad.IdMonad
+import sttp.client4.testing.SyncBackendStub
+import sttp.client4.ws.{GotAWebSocketException, NotAWebSocketException}
+import sttp.client4.{BackendOptions, BasicBodyPart, BasicMultipartBody, ByteArrayBody, ByteBufferBody, FileBody, GenericRequest, GenericWebSocketResponseAs, Identity, InputStreamBody, MultipartStreamBody, NoBody, Response, StreamBody, StringBody, SttpClientException, SyncBackend, wrappers}
+import sttp.model._
+import sttp.monad.MonadError
 
 import java.io._
 import java.net._
@@ -7,17 +17,8 @@ import java.nio.charset.CharacterCodingException
 import java.nio.file.Files
 import java.util.concurrent.ThreadLocalRandom
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
-import sttp.client4.HttpURLConnectionBackend.EncodingHandler
-import sttp.client4.internal._
-import sttp.client4.monad.IdMonad
-import sttp.client4.testing.SyncBackendStub
-import sttp.client4.ws.{GotAWebSocketException, NotAWebSocketException}
-import sttp.model.{Header, HeaderNames, ResponseMetadata, StatusCode, Uri}
-import sttp.monad.MonadError
-
 import scala.collection.JavaConverters._
 import scala.concurrent.duration.Duration
-import sttp.capabilities.Effect
 
 class HttpURLConnectionBackend private (
                                          opts: BackendOptions,
@@ -312,7 +313,7 @@ object HttpURLConnectionBackend {
       },
              customEncodingHandler: EncodingHandler = PartialFunction.empty
   ): SyncBackend =
-    FollowRedirectsBackend(
+    wrappers.FollowRedirectsBackend(
       new HttpURLConnectionBackend(options, customizeConnection, createURL, openConnection, customEncodingHandler)
     )
 

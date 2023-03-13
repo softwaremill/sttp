@@ -14,6 +14,7 @@ Otherwise, proxy values can be specified manually when creating a backend:
 
 ```scala mdoc:compile-only
 import sttp.client4._
+import sttp.client4.httpclient.HttpClientSyncBackend
 
 val backend = HttpClientSyncBackend(
   options = BackendOptions.httpProxy("some.host", 8080))

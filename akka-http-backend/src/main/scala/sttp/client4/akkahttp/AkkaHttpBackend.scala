@@ -18,6 +18,7 @@ import sttp.client4
 import sttp.client4.akkahttp.AkkaHttpBackend.EncodingHandler
 import sttp.client4.testing.WebSocketStreamBackendStub
 import sttp.client4._
+import sttp.client4.wrappers.FollowRedirectsBackend
 import sttp.model.{ResponseMetadata, StatusCode}
 import sttp.monad.{FutureMonad, MonadError}
 

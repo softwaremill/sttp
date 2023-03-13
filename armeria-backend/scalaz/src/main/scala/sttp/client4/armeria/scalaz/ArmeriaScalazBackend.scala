@@ -9,7 +9,8 @@ import sttp.client4.armeria.ArmeriaWebClient.newClient
 import sttp.client4.armeria.{AbstractArmeriaBackend, BodyFromStreamMessage}
 import sttp.client4.impl.scalaz.TaskMonadAsyncError
 import sttp.client4.internal.NoStreams
-import sttp.client4.{Backend, FollowRedirectsBackend, BackendOptions}
+import sttp.client4.wrappers.FollowRedirectsBackend
+import sttp.client4.{Backend, BackendOptions, wrappers}
 import sttp.monad.MonadAsyncError
 
 private final class ArmeriaScalazBackend(client: WebClient, closeFactory: Boolean)
@@ -49,5 +50,5 @@ object ArmeriaScalazBackend {
       client: WebClient,
       closeFactory: Boolean
   ): Backend[Task] =
-    FollowRedirectsBackend(new ArmeriaScalazBackend(client, closeFactory))
+    wrappers.FollowRedirectsBackend(new ArmeriaScalazBackend(client, closeFactory))
 }

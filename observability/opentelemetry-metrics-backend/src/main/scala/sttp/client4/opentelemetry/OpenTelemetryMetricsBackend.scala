@@ -3,8 +3,9 @@ package sttp.client4.opentelemetry
 import io.opentelemetry.api.common.Attributes
 import io.opentelemetry.api.metrics.{DoubleHistogram, LongCounter, LongUpDownCounter, Meter}
 import io.opentelemetry.api.OpenTelemetry
-import sttp.client4._
+import sttp.client4.{wrappers, _}
 import sttp.client4.listener.{ListenerBackend, RequestListener}
+import sttp.client4.wrappers.FollowRedirectsBackend
 
 import java.time.Clock
 import java.util.concurrent.ConcurrentHashMap
@@ -45,17 +46,17 @@ object OpenTelemetryMetricsBackend {
   def apply[F[_]](delegate: Backend[F], config: OpenTelemetryMetricsConfig): Backend[F] = {
     val listener = OpenTelemetryMetricsListener(config)
     // redirects should be handled before metrics
-    FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener, delegate.monad)))
+    wrappers.FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener, delegate.monad)))
   }
 
   def apply[F[_]](delegate: WebSocketBackend[F], config: OpenTelemetryMetricsConfig): WebSocketBackend[F] = {
     val listener = OpenTelemetryMetricsListener(config)
-    FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener, delegate.monad)))
+    wrappers.FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener, delegate.monad)))
   }
 
   def apply[F[_], S](delegate: StreamBackend[F, S], config: OpenTelemetryMetricsConfig): StreamBackend[F, S] = {
     val listener = OpenTelemetryMetricsListener(config)
-    FollowRedirectsBackend(
+    wrappers.FollowRedirectsBackend(
       ListenerBackend(delegate, RequestListener.lift(listener, delegate.monad))
     )
   }
@@ -65,7 +66,7 @@ object OpenTelemetryMetricsBackend {
       config: OpenTelemetryMetricsConfig
   ): WebSocketStreamBackend[F, S] = {
     val listener = OpenTelemetryMetricsListener(config)
-    FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener, delegate.monad)))
+    wrappers.FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener, delegate.monad)))
   }
 }
 

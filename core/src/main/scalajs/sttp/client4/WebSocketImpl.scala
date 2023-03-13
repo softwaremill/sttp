@@ -2,6 +2,7 @@ package sttp.client4
 
 import org.scalajs.dom.{WebSocket => JSWebSocket}
 import sttp.client4.WebSocketImpl.OpenState
+import sttp.client4.internal.JSSimpleQueue
 import sttp.client4.internal.ws.WebSocketEvent
 import sttp.model.Headers
 import sttp.monad.MonadError

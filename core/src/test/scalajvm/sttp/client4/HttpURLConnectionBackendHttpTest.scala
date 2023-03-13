@@ -1,5 +1,6 @@
 package sttp.client4
 
+import sttp.client4.httpurlconnection.HttpURLConnectionBackend
 import sttp.client4.testing.{ConvertToFuture, HttpTest}
 
 import java.io.ByteArrayInputStream

@@ -1,4 +1,4 @@
-package sttp.client4.curl
+package sttp.client4.curl.internal
 
 private[client4] object CurlCode extends Enumeration {
   type CurlCode = Value

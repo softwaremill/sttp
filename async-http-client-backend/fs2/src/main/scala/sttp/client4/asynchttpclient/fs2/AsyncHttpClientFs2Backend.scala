@@ -17,7 +17,8 @@ import sttp.client4.impl.fs2.{Fs2SimpleQueue, Fs2WebSockets}
 import sttp.client4.internal._
 import sttp.client4.internal.ws.SimpleQueue
 import sttp.client4.testing.WebSocketStreamBackendStub
-import sttp.client4.{FollowRedirectsBackend, BackendOptions, WebSocketStreamBackend}
+import sttp.client4.wrappers.FollowRedirectsBackend
+import sttp.client4.{BackendOptions, WebSocketStreamBackend, wrappers}
 import sttp.monad.MonadAsyncError
 import sttp.ws.{WebSocket, WebSocketFrame}
 
@@ -102,7 +103,7 @@ object AsyncHttpClientFs2Backend {
       webSocketBufferCapacity: Option[Int],
       dispatcher: Dispatcher[F]
   ): WebSocketStreamBackend[F, Fs2Streams[F]] =
-    FollowRedirectsBackend(
+    wrappers.FollowRedirectsBackend(
       new AsyncHttpClientFs2Backend(asyncHttpClient, closeClient, customizeRequest, webSocketBufferCapacity, dispatcher)
     )
 

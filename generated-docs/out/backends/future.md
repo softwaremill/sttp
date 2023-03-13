@@ -26,7 +26,7 @@ To use, you don't need any extra dependencies, `core` is enough:
 You'll need the following imports:
 
 ```scala
-import sttp.client4.HttpClientFutureBackend
+import sttp.client4.httpclient.HttpClientFutureBackend
 import scala.concurrent.ExecutionContext.Implicits.global
 ```
 

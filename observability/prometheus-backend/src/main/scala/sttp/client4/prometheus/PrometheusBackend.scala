@@ -1,10 +1,11 @@
 package sttp.client4.prometheus
 
 import java.util.concurrent.ConcurrentHashMap
-import sttp.client4._
+import sttp.client4.{wrappers, _}
 import io.prometheus.client.{CollectorRegistry, Counter, Gauge, Histogram, Summary}
 import sttp.client4.listener.{ListenerBackend, RequestListener}
 import sttp.client4.prometheus.PrometheusBackend.RequestCollectors
+import sttp.client4.wrappers.FollowRedirectsBackend
 import sttp.model.StatusCode
 
 import scala.collection.mutable
@@ -41,16 +42,16 @@ object PrometheusBackend {
     FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener(config), delegate.monad)))
 
   def apply[F[_]](delegate: Backend[F], config: PrometheusConfig): Backend[F] =
-    FollowRedirectsBackend[F](ListenerBackend(delegate, RequestListener.lift(listener(config), delegate.monad)))
+    wrappers.FollowRedirectsBackend[F](ListenerBackend(delegate, RequestListener.lift(listener(config), delegate.monad)))
 
   def apply[F[_]](delegate: WebSocketBackend[F], config: PrometheusConfig): WebSocketBackend[F] =
-    FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener(config), delegate.monad)))
+    wrappers.FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener(config), delegate.monad)))
 
   def apply[F[_], S](delegate: StreamBackend[F, S], config: PrometheusConfig): StreamBackend[F, S] =
-    FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener(config), delegate.monad)))
+    wrappers.FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener(config), delegate.monad)))
 
   def apply[F[_], S](delegate: WebSocketStreamBackend[F, S], config: PrometheusConfig): WebSocketStreamBackend[F, S] =
-    FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener(config), delegate.monad)))
+    wrappers.FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener(config), delegate.monad)))
 
   private def listener(config: PrometheusConfig): PrometheusListener =
     new PrometheusListener(

@@ -7,6 +7,7 @@ import sttp.monad.syntax._
 
 import scala.util.{Failure, Success, Try}
 import sttp.capabilities.Effect
+import sttp.client4.wrappers.DelegateBackend
 
 trait RecordingBackend {
   type RequestAndResponse = (GenericRequest[_, _], Try[Response[_]])

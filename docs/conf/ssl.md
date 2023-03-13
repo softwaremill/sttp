@@ -71,6 +71,7 @@ Using `SSLContext` from [first section](#ssl-context) define a function to custo
 
 ```scala mdoc:compile-only
 import sttp.client4._
+import sttp.client4.httpurlconnection.HttpURLConnectionBackend
 import java.net.HttpURLConnection
 import javax.net.ssl.HttpsURLConnection
 

@@ -1,4 +1,4 @@
-package sttp.client4
+package sttp.client4.fetch
 
 import org.scalajs.dom.experimental.{
   AbortController,
@@ -22,6 +22,7 @@ import org.scalajs.dom.File
 import org.scalajs.dom.BlobPropertyBag
 import org.scalajs.dom.FilePropertyBag
 import sttp.capabilities.{Effect, Streams, WebSockets}
+import sttp.client4._
 import sttp.client4.SttpClientException.ReadException
 import sttp.client4.WebSocketImpl.BinaryType
 import sttp.client4.internal.ws.WebSocketEvent

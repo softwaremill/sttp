@@ -18,6 +18,7 @@ import sttp.client4.internal._
 import sttp.client4.internal.ws.SimpleQueue
 import sttp.client4.testing.WebSocketStreamBackendStub
 import sttp.client4._
+import sttp.client4.wrappers.FollowRedirectsBackend
 import sttp.monad.MonadAsyncError
 import sttp.ws.{WebSocket, WebSocketFrame}
 

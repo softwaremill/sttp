@@ -1,15 +1,8 @@
 package sttp.client4.asynchttpclient.scalaz
 
 import java.nio.ByteBuffer
-
 import io.netty.buffer.ByteBuf
-import org.asynchttpclient.{
-  AsyncHttpClient,
-  AsyncHttpClientConfig,
-  BoundRequestBuilder,
-  DefaultAsyncHttpClient,
-  DefaultAsyncHttpClientConfig
-}
+import org.asynchttpclient.{AsyncHttpClient, AsyncHttpClientConfig, BoundRequestBuilder, DefaultAsyncHttpClient, DefaultAsyncHttpClientConfig}
 import org.reactivestreams.Publisher
 import scalaz.concurrent.Task
 import sttp.client4.asynchttpclient.{AsyncHttpClientBackend, BodyFromAHC, BodyToAHC}
@@ -17,7 +10,8 @@ import sttp.client4.impl.scalaz.TaskMonadAsyncError
 import sttp.client4.internal.NoStreams
 import sttp.client4.internal.ws.SimpleQueue
 import sttp.client4.testing.BackendStub
-import sttp.client4.{FollowRedirectsBackend, Backend, BackendOptions}
+import sttp.client4.wrappers.FollowRedirectsBackend
+import sttp.client4.{Backend, BackendOptions, wrappers}
 import sttp.monad.MonadAsyncError
 import sttp.ws.WebSocket
 
@@ -58,7 +52,7 @@ object AsyncHttpClientScalazBackend {
       closeClient: Boolean,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder
   ): Backend[Task] =
-    FollowRedirectsBackend(new AsyncHttpClientScalazBackend(asyncHttpClient, closeClient, customizeRequest))
+    wrappers.FollowRedirectsBackend(new AsyncHttpClientScalazBackend(asyncHttpClient, closeClient, customizeRequest))
 
   def apply(
              options: BackendOptions = BackendOptions.Default,

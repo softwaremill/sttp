@@ -3,6 +3,7 @@ package sttp.client4.listener
 import sttp.client4._
 import sttp.monad.syntax._
 import sttp.capabilities.Effect
+import sttp.client4.wrappers.DelegateBackend
 
 /** A backend wrapper which notifies the given [[RequestListener]] when a request starts and completes.
   */

@@ -30,6 +30,9 @@ This type of authentication works differently. In its assumptions it is based on
 In order to add digest authentication support just wrap other backend as follows:
 
 ```scala mdoc:compile-only
+import sttp.client4.httpclient.HttpClientSyncBackend
+import sttp.client4.wrappers.DigestAuthenticationBackend
+
 val myBackend: SyncBackend = HttpClientSyncBackend()
 DigestAuthenticationBackend(myBackend)
 ```
@@ -65,6 +68,7 @@ You can use sttp with OAuth2. Looking at the [OAuth2 protocol flow](https://tool
 2. (C)/(D) - You need to send a request to the authentication server, passing in the authentication code from step 1. You'll receive an access token in response (and optionally a refresh token). For example, if you were using GitHub as your authentication server, you'd need to take the values of `clientId` and `clientSecret` from the GitHub settings, then take the `authCode` received in step 1 above, and send a request like this:
 ```scala mdoc:compile-only
 import sttp.client4.circe._
+import sttp.client4.httpclient.HttpClientSyncBackend
 import io.circe._
 import io.circe.generic.semiauto._
 

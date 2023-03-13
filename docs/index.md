@@ -11,6 +11,7 @@ Here's a quick example of sttp client in action:
 
 ```scala mdoc:compile-only
 import sttp.client4._
+import sttp.client4.httpclient.HttpClientSyncBackend
 
 val query = "http language:scala"
 val sort: Option[String] = None

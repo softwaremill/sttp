@@ -6,7 +6,8 @@ import org.scalajs.dom.experimental.{BodyInit, Request => FetchRequest, Response
 import sttp.capabilities.monix.MonixStreams
 import sttp.client4.internal.ConvertFromFuture
 import sttp.client4.testing.WebSocketStreamBackendStub
-import sttp.client4.{AbstractFetchBackend, FetchOptions, WebSocketStreamBackend}
+import sttp.client4.WebSocketStreamBackend
+import sttp.client4.fetch.{AbstractFetchBackend, FetchOptions}
 import sttp.ws.{WebSocket, WebSocketFrame}
 
 import scala.concurrent.Future

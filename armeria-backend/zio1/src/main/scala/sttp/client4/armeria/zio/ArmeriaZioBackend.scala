@@ -7,16 +7,14 @@ import org.reactivestreams.Publisher
 import sttp.capabilities.zio.ZioStreams
 import sttp.client4.armeria.{AbstractArmeriaBackend, BodyFromStreamMessage}
 import sttp.client4.impl.zio.RIOMonadAsyncError
-import sttp.client4.{FollowRedirectsBackend, StreamBackend, BackendOptions}
+import sttp.client4.{BackendOptions, StreamBackend, wrappers}
 import sttp.monad.MonadAsyncError
 import zio.{Chunk, Task}
 import zio.stream.Stream
 import _root_.zio._
-import _root_.zio.interop.reactivestreams.{
-  publisherToStream => publisherToZioStream,
-  streamToPublisher => zioStreamToPublisher
-}
+import _root_.zio.interop.reactivestreams.{publisherToStream => publisherToZioStream, streamToPublisher => zioStreamToPublisher}
 import sttp.client4.armeria.ArmeriaWebClient.newClient
+import sttp.client4.wrappers.FollowRedirectsBackend
 
 private final class ArmeriaZioBackend(runtime: Runtime[Any], client: WebClient, closeFactory: Boolean)
     extends AbstractArmeriaBackend[Task, ZioStreams](client, closeFactory, new RIOMonadAsyncError[Any]) {
@@ -69,5 +67,5 @@ object ArmeriaZioBackend {
       .map(runtime => apply(runtime, newClient(), closeFactory = false))
 
   private def apply[R](runtime: Runtime[R], client: WebClient, closeFactory: Boolean): StreamBackend[Task, ZioStreams] =
-    FollowRedirectsBackend(new ArmeriaZioBackend(runtime, client, closeFactory))
+    wrappers.FollowRedirectsBackend(new ArmeriaZioBackend(runtime, client, closeFactory))
 }

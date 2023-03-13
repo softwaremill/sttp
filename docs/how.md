@@ -31,6 +31,7 @@ For example, the following sends a synchronous request, using the default JVM ba
 
 ```scala mdoc:compile-only
 import sttp.client4._
+import sttp.client4.httpclient.HttpClientSyncBackend
 val myRequest: Request[String] = ???
 val backend = HttpClientSyncBackend()
 val response = myRequest.send(backend)

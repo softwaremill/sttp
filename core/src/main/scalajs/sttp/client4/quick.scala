@@ -1,5 +1,7 @@
 package sttp.client4
 
+import sttp.client4.fetch.FetchBackend
+
 import scala.concurrent.Future
 
 object quick extends SttpApi {

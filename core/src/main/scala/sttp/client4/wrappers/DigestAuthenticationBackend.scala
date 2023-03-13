@@ -1,11 +1,12 @@
-package sttp.client4
+package sttp.client4.wrappers
 
 import sttp.capabilities.Effect
-import sttp.client4.DigestAuthenticationBackend._
 import sttp.client4.internal.DigestAuthenticator
 import sttp.client4.internal.DigestAuthenticator.DigestAuthData
-import sttp.monad.syntax._
+import sttp.client4.wrappers.DigestAuthenticationBackend._
+import sttp.client4.{Backend, GenericBackend, GenericRequest, Response, StreamBackend, SyncBackend, WebSocketBackend, WebSocketStreamBackend}
 import sttp.model.Header
+import sttp.monad.syntax._
 
 abstract class DigestAuthenticationBackend[F[_], P] private (
     delegate: GenericBackend[F, P],

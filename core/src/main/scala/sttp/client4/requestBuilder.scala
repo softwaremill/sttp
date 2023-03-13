@@ -4,6 +4,7 @@ import sttp.client4.internal.SttpFile
 import sttp.client4.internal.Utf8
 import sttp.client4.internal.contentTypeWithCharset
 import sttp.client4.logging.LoggingOptions
+import sttp.client4.wrappers.DigestAuthenticationBackend
 import sttp.model.HasHeaders
 import sttp.model.Header
 import sttp.model.HeaderNames
