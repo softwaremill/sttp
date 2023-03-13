@@ -31,7 +31,8 @@ class HttpClientCatsBackend[F[_]: Async] private (
       closeClient,
       customizeRequest,
       customEncodingHandler
-    ) {
+    ) { self =>
+
   override protected def createSimpleQueue[T]: F[SimpleQueue[F, T]] =
     Queue.unbounded[F, T].map(new CatsSimpleQueue(_, None, dispatcher))
 
@@ -39,7 +40,7 @@ class HttpClientCatsBackend[F[_]: Async] private (
 
   override protected val bodyToHttpClient: BodyToHttpClient[F, Nothing] = new BodyToHttpClient[F, Nothing] {
     override val streams: NoStreams = NoStreams
-    override implicit val monad: MonadError[F] = monad
+    override implicit val monad: MonadError[F] = self.monad
 
     override def streamToPublisher(stream: Nothing): F[BodyPublisher] = stream // nothing is everything
   }
@@ -50,9 +51,7 @@ class HttpClientCatsBackend[F[_]: Async] private (
         monad.error(new IllegalStateException("Streaming is not supported"))
 
       override val streams: NoStreams = NoStreams
-
-      override implicit def monad: MonadError[F] = monad
-
+      override implicit def monad: MonadError[F] = self.monad
       override def compileWebSocketPipe(
           ws: WebSocket[F],
           pipe: streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]

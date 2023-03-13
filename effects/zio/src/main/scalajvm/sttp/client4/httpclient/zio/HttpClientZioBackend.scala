@@ -47,7 +47,7 @@ class HttpClientZioBackend private (
       customizeRequest,
       customEncodingHandler
     )
-    with WebSocketStreamBackend[Task, ZioStreams] {
+    with WebSocketStreamBackend[Task, ZioStreams] { self =>
 
   override val streams: ZioStreams = ZioStreams
 
@@ -65,7 +65,7 @@ class HttpClientZioBackend private (
   override protected val bodyToHttpClient: BodyToHttpClient[Task, ZioStreams] =
     new BodyToHttpClient[Task, ZioStreams] {
       override val streams: ZioStreams = ZioStreams
-      override implicit def monad: MonadError[Task] = monad
+      override implicit def monad: MonadError[Task] = self.monad
       override def streamToPublisher(stream: ZStream[Any, Throwable, Byte]): Task[BodyPublisher] = {
         import _root_.zio.interop.reactivestreams.{streamToPublisher => zioStreamToPublisher}
         val publisher = stream.mapChunks(byteChunk => Chunk(ByteBuffer.wrap(byteChunk.toArray))).toPublisher
