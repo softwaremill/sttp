@@ -45,5 +45,5 @@ final class MappableWebSocketStreamBackend[F[_], S] private[scalaz] (private val
 }
 
 private[scalaz] class AsFunctionK[F[_], G[_]](ab: F ~> G) extends FunctionK[F, G] {
-  override def apply[X](x: F[X]): G[X] = ab(x)
+  override def apply[X](x: => F[X]): G[X] = ab(x)
 }
