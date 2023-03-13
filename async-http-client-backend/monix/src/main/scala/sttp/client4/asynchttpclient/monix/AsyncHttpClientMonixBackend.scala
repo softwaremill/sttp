@@ -15,7 +15,8 @@ import sttp.client4.impl.monix.{MonixSimpleQueue, MonixWebSockets, TaskMonadAsyn
 import sttp.client4.internal._
 import sttp.client4.internal.ws.SimpleQueue
 import sttp.client4.testing.WebSocketStreamBackendStub
-import sttp.client4.{FollowRedirectsBackend, BackendOptions, WebSocketStreamBackend}
+import sttp.client4.wrappers.FollowRedirectsBackend
+import sttp.client4.{BackendOptions, WebSocketStreamBackend, wrappers}
 import sttp.monad.MonadAsyncError
 import sttp.ws.{WebSocket, WebSocketFrame}
 
@@ -95,7 +96,7 @@ object AsyncHttpClientMonixBackend {
   )(implicit
       scheduler: Scheduler
   ): WebSocketStreamBackend[Task, MonixStreams] =
-    FollowRedirectsBackend(
+    wrappers.FollowRedirectsBackend(
       new AsyncHttpClientMonixBackend(asyncHttpClient, closeClient, customizeRequest, webSocketBufferCapacity)
     )
 

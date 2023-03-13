@@ -2,7 +2,9 @@ package sttp.client4
 
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import sttp.client4.httpclient.HttpClientSyncBackend
 import sttp.client4.testing.HttpTest.endpoint
+import sttp.client4.wrappers.TryBackend
 
 import scala.util.Try
 

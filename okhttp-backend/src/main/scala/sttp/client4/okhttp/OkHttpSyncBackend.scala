@@ -10,16 +10,8 @@ import sttp.client4.internal.ws.{SimpleQueue, SyncQueue, WebSocketEvent}
 import sttp.client4.monad.IdMonad
 import sttp.client4.okhttp.OkHttpBackend.EncodingHandler
 import sttp.client4.testing.WebSocketBackendStub
-import sttp.client4.{
-  DefaultReadTimeout,
-  FollowRedirectsBackend,
-  Identity,
-  GenericRequest,
-  Response,
-  BackendOptions,
-  WebSocketBackend,
-  ignore
-}
+import sttp.client4.wrappers.FollowRedirectsBackend
+import sttp.client4.{BackendOptions, DefaultReadTimeout, GenericRequest, Identity, Response, WebSocketBackend, ignore, wrappers}
 import sttp.monad.MonadError
 import sttp.ws.WebSocket
 
@@ -105,7 +97,7 @@ object OkHttpSyncBackend {
       customEncodingHandler: EncodingHandler,
       webSocketBufferCapacity: Option[Int]
   ): WebSocketBackend[Identity] =
-    FollowRedirectsBackend(new OkHttpSyncBackend(client, closeClient, customEncodingHandler, webSocketBufferCapacity))
+    wrappers.FollowRedirectsBackend(new OkHttpSyncBackend(client, closeClient, customEncodingHandler, webSocketBufferCapacity))
 
   def apply(
              options: BackendOptions = BackendOptions.Default,

@@ -1,8 +1,8 @@
-package sttp.client4.curl
+package sttp.client4.curl.internal
 
-import sttp.client4.curl.CurlCode.CurlCode
-import sttp.client4.curl.CurlInfo.CurlInfo
-import sttp.client4.curl.CurlOption.CurlOption
+import sttp.client4.curl.internal.CurlCode.CurlCode
+import sttp.client4.curl.internal.CurlInfo.CurlInfo
+import sttp.client4.curl.internal.CurlOption.CurlOption
 
 import scala.scalanative.runtime.Boxes
 import scala.scalanative.unsafe.{Ptr, _}

@@ -45,6 +45,7 @@ Response can be parsed into json using `asJson[T]`, provided there's an implicit
 ```scala mdoc:compile-only
 import sttp.client4._
 import sttp.client4.circe._
+import sttp.client4.httpclient.HttpClientSyncBackend
 
 val backend: SyncBackend = HttpClientSyncBackend()
 
@@ -79,6 +80,7 @@ Usage example:
 ```scala mdoc:compile-only
 import sttp.client4._
 import sttp.client4.json4s._
+import sttp.client4.httpclient.HttpClientSyncBackend
 
 val backend: SyncBackend = HttpClientSyncBackend()
 
@@ -109,6 +111,7 @@ Usage example:
 
 ```scala mdoc:compile-only
 import sttp.client4._
+import sttp.client4.httpclient.HttpClientSyncBackend
 import sttp.client4.sprayJson._
 import spray.json._
 
@@ -160,6 +163,7 @@ Usage example:
 ```scala mdoc:compile-only
 
 import sttp.client4._
+import sttp.client4.httpclient.HttpClientSyncBackend
 import sttp.client4.ziojson._
 import zio.json._
 
@@ -200,6 +204,7 @@ Usage example:
 ```scala mdoc:compile-only
 import sttp.client4._
 import sttp.client4.jsoniter._
+import sttp.client4.httpclient.HttpClientSyncBackend
 import com.github.plokhotnyuk.jsoniter_scala.core._
 import com.github.plokhotnyuk.jsoniter_scala.macros._
 
@@ -237,6 +242,7 @@ Usage example:
 
 ```scala mdoc:compile-only
 import sttp.client4._
+import sttp.client4.httpclient.HttpClientSyncBackend
 import sttp.client4.upicklejson._
 import upickle.default._
 

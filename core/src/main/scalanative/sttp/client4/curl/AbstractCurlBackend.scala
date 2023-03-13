@@ -1,12 +1,13 @@
-package sttp.client4
+package sttp.client4.curl
 
 import sttp.capabilities.Effect
-import sttp.client4.curl.CurlApi._
-import sttp.client4.curl.CurlCode.CurlCode
-import sttp.client4.curl.CurlInfo._
-import sttp.client4.curl.CurlOption.{Header => _, _}
-import sttp.client4.curl._
+import sttp.client4.curl.internal.CurlApi._
+import sttp.client4.curl.internal.CurlCode.CurlCode
+import sttp.client4.curl.internal.CurlInfo._
+import sttp.client4.curl.internal.CurlOption.{Header => _, _}
+import sttp.client4.curl.internal._
 import sttp.client4.internal._
+import sttp.client4._
 import sttp.client4.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.model._
 import sttp.monad.MonadError

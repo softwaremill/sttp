@@ -22,6 +22,7 @@ Example with objects:
 
 ```scala mdoc:compile-only
 import sttp.client4._
+import sttp.client4.httpclient.HttpClientSyncBackend
 import sttp.model._
 
 object Example {
@@ -38,6 +39,7 @@ Example with traits:
 
 ```scala mdoc:compile-only
 import sttp.client4._
+import sttp.client4.httpclient.HttpClientSyncBackend
 import sttp.model._
 
 object Example extends HeaderNames with MediaTypes with StatusCodes {

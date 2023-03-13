@@ -2,6 +2,7 @@ package sttp.client4.testing
 
 import org.scalatest.freespec.AnyFreeSpecLike
 import sttp.client4._
+import sttp.client4.wrappers.{FollowRedirectsBackend, TooManyRedirectsException}
 import sttp.model.{Header, StatusCode}
 
 import java.io.File

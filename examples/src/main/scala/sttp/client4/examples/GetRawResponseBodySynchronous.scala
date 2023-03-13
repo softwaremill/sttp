@@ -4,6 +4,7 @@ import io.circe
 import io.circe.generic.auto._
 import sttp.client4._
 import sttp.client4.circe._
+import sttp.client4.httpclient.HttpClientSyncBackend
 
 object GetRawResponseBodySynchronous extends App {
   case class HttpBinResponse(origin: String, headers: Map[String, String])

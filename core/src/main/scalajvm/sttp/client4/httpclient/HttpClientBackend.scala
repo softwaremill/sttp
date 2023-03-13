@@ -1,9 +1,10 @@
-package sttp.client4
+package sttp.client4.httpclient
 
 import sttp.capabilities.{Effect, Streams}
-import sttp.client4.HttpClientBackend.EncodingHandler
 import sttp.client4.BackendOptions.Proxy
+import sttp.client4.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client4.internal.httpclient.{BodyFromHttpClient, BodyToHttpClient}
+import sttp.client4.{Backend, BackendOptions, GenericBackend, GenericRequest, MultipartBody, Response}
 import sttp.model.HttpVersion.{HTTP_1_1, HTTP_2}
 import sttp.model._
 import sttp.monad.MonadError

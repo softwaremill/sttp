@@ -1,6 +1,8 @@
 package sttp.client4
 
+import sttp.client4.httpclient.HttpClientSyncBackend
 import sttp.client4.testing.{ConvertToFuture, HttpTest}
+import sttp.client4.wrappers.TryBackend
 
 import scala.util.Try
 

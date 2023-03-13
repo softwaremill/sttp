@@ -4,6 +4,7 @@ import org.scalatest.EitherValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import sttp.client4.testing.BackendStub
+import sttp.client4.wrappers.{FollowRedirectsBackend, FollowRedirectsConfig}
 import sttp.model.internal.Rfc3986
 import sttp.model.{Header, StatusCode, Uri}
 
@@ -47,7 +48,7 @@ class FollowRedirectsBackendTest extends AnyFunSuite with Matchers with EitherVa
       original.copy(pathSegments =
         Uri.AbsolutePath(original.pathSegments.segments.map(_.copy(encoding = pathEncoder)).toList)
       )
-    val redirectsBackend = FollowRedirectsBackend(stub0, FollowRedirectsConfig(transformUri = transformUri))
+    val redirectsBackend = wrappers.FollowRedirectsBackend(stub0, FollowRedirectsConfig(transformUri = transformUri))
 
     val result = basicRequest.get(url0).send(redirectsBackend)
     result.body.value shouldBe "All good!"

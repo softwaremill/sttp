@@ -11,7 +11,8 @@ import sttp.capabilities.fs2.Fs2Streams
 import sttp.client4.armeria.ArmeriaWebClient.newClient
 import sttp.client4.armeria.{AbstractArmeriaBackend, BodyFromStreamMessage}
 import sttp.client4.impl.cats.CatsMonadAsyncError
-import sttp.client4.{FollowRedirectsBackend, StreamBackend, BackendOptions}
+import sttp.client4.wrappers.FollowRedirectsBackend
+import sttp.client4.{BackendOptions, StreamBackend, wrappers}
 import sttp.monad.MonadAsyncError
 
 private final class ArmeriaFs2Backend[F[_]: ConcurrentEffect](client: WebClient, closeFactory: Boolean)
@@ -70,5 +71,5 @@ object ArmeriaFs2Backend {
       client: WebClient,
       closeFactory: Boolean
   ): StreamBackend[F, Fs2Streams[F]] =
-    FollowRedirectsBackend(new ArmeriaFs2Backend(client, closeFactory))
+    wrappers.FollowRedirectsBackend(new ArmeriaFs2Backend(client, closeFactory))
 }

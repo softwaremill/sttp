@@ -9,7 +9,8 @@ import sttp.client4.armeria.ArmeriaWebClient.newClient
 import sttp.client4.armeria.{AbstractArmeriaBackend, BodyFromStreamMessage}
 import sttp.client4.impl.cats.CatsMonadAsyncError
 import sttp.client4.internal.NoStreams
-import sttp.client4.{Backend, FollowRedirectsBackend, BackendOptions}
+import sttp.client4.wrappers.FollowRedirectsBackend
+import sttp.client4.{Backend, BackendOptions, wrappers}
 import sttp.monad.MonadAsyncError
 
 private final class ArmeriaCatsBackend[F[_]: Concurrent](client: WebClient, closeFactory: Boolean)
@@ -61,5 +62,5 @@ object ArmeriaCatsBackend {
       client: WebClient,
       closeFactory: Boolean
   ): Backend[F] =
-    FollowRedirectsBackend(new ArmeriaCatsBackend(client, closeFactory))
+    wrappers.FollowRedirectsBackend(new ArmeriaCatsBackend(client, closeFactory))
 }

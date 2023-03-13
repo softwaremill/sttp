@@ -1,11 +1,12 @@
-package sttp.client4
+package sttp.client4.httpclient
 
-import sttp.client4.HttpClientBackend.EncodingHandler
-import sttp.client4.HttpClientFutureBackend.InputStreamEncodingHandler
-import sttp.client4.internal.{NoStreams, emptyInputStream}
+import sttp.client4.httpclient.HttpClientBackend.EncodingHandler
+import sttp.client4.httpclient.HttpClientFutureBackend.InputStreamEncodingHandler
 import sttp.client4.internal.httpclient._
 import sttp.client4.internal.ws.{FutureSimpleQueue, SimpleQueue}
+import sttp.client4.internal.{NoStreams, emptyInputStream}
 import sttp.client4.testing.WebSocketBackendStub
+import sttp.client4.{BackendOptions, WebSocketBackend, wrappers}
 import sttp.monad.{FutureMonad, MonadError}
 import sttp.ws.{WebSocket, WebSocketFrame}
 
@@ -78,7 +79,7 @@ object HttpClientFutureBackend {
       customizeRequest: HttpRequest => HttpRequest,
       customEncodingHandler: InputStreamEncodingHandler
   )(implicit ec: ExecutionContext): WebSocketBackend[Future] =
-    FollowRedirectsBackend(new HttpClientFutureBackend(client, closeClient, customizeRequest, customEncodingHandler))
+    wrappers.FollowRedirectsBackend(new HttpClientFutureBackend(client, closeClient, customizeRequest, customEncodingHandler))
 
   def apply(
              options: BackendOptions = BackendOptions.Default,

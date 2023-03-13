@@ -1,5 +1,6 @@
 package sttp.client4
 
+import sttp.client4.fetch.FetchBackend
 import sttp.client4.testing.ConvertToFuture
 import sttp.client4.testing.websocket.WebSocketTest
 import sttp.monad.{FutureMonad, MonadError}

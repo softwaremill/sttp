@@ -5,6 +5,7 @@ import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.context.propagation.{TextMapPropagator, TextMapSetter}
 import sttp.capabilities.Effect
 import sttp.client4._
+import sttp.client4.wrappers.DelegateBackend
 import zio._
 import zio.telemetry.opentelemetry.TracingSyntax.OpenTelemetryZioOps
 import zio.telemetry.opentelemetry._

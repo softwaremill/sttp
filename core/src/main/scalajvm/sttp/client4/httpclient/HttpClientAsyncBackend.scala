@@ -1,13 +1,14 @@
-package sttp.client4
+package sttp.client4.httpclient
 
 import sttp.capabilities.WebSockets
-import sttp.client4.HttpClientBackend.EncodingHandler
+import sttp.client4.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client4.internal.SttpToJavaConverters.{toJavaBiConsumer, toJavaFunction}
 import sttp.client4.internal.httpclient.{AddToQueueListener, DelegatingWebSocketListener, Sequencer, WebSocketImpl}
 import sttp.client4.internal.ws.{SimpleQueue, WebSocketEvent}
+import sttp.client4.{GenericRequest, Response, SttpClientException, WebSocketBackend}
 import sttp.model.{HeaderNames, StatusCode}
 import sttp.monad.syntax._
-import sttp.monad.{Canceler, MonadAsyncError, MonadError}
+import sttp.monad.{Canceler, MonadAsyncError}
 
 import java.net.http._
 import java.time.Duration

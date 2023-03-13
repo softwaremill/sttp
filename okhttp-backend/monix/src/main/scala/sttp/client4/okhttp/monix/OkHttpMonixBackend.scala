@@ -2,7 +2,6 @@ package sttp.client4.okhttp.monix
 
 import java.io.InputStream
 import java.util.concurrent.ArrayBlockingQueue
-
 import cats.effect.Resource
 import monix.eval.Task
 import monix.execution.Ack.Continue
@@ -20,6 +19,7 @@ import sttp.client4.okhttp.OkHttpBackend.EncodingHandler
 import sttp.client4.okhttp.{BodyFromOkHttp, BodyToOkHttp, OkHttpAsyncBackend, OkHttpBackend}
 import sttp.client4.testing.WebSocketStreamBackendStub
 import sttp.client4._
+import sttp.client4.wrappers.FollowRedirectsBackend
 import sttp.ws.{WebSocket, WebSocketFrame}
 
 import scala.concurrent.Future

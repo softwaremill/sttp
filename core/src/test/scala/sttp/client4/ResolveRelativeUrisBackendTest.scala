@@ -3,6 +3,7 @@ package sttp.client4
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import sttp.client4.testing.BackendStub
+import sttp.client4.wrappers.ResolveRelativeUrisBackend
 import sttp.model.StatusCode
 
 class ResolveRelativeUrisBackendTest extends AnyFlatSpec with Matchers {
@@ -25,7 +26,7 @@ class ResolveRelativeUrisBackendTest extends AnyFlatSpec with Matchers {
     val delegate = BackendStub.synchronous.whenRequestMatchesPartial { case r =>
       Response(r.uri.toString, StatusCode.Ok)
     }
-    val backend = ResolveRelativeUrisBackend(delegate, uri"http://example.org")
+    val backend = wrappers.ResolveRelativeUrisBackend(delegate, uri"http://example.org")
 
     // when
     val response = basicRequest.response(asStringAlways).get(uri"/test?a=1").send(backend)

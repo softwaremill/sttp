@@ -24,6 +24,7 @@ import sttp.monad.MonadError
 import sttp.client4.testing.StreamBackendStub
 import sttp.client4.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.client4._
+import sttp.client4.wrappers.FollowRedirectsBackend
 
 // needs http4s using cats-effect
 class Http4sBackend[F[_]: Async](

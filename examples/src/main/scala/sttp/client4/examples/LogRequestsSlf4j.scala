@@ -3,6 +3,7 @@ package sttp.client4.examples
 import io.circe.generic.auto._
 import sttp.client4._
 import sttp.client4.circe._
+import sttp.client4.httpclient.HttpClientSyncBackend
 import sttp.client4.logging.slf4j.Slf4jLoggingBackend
 import sttp.client4.logging.LogConfig
 

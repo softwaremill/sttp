@@ -1,5 +1,6 @@
-package sttp.client4
+package sttp.client4.wrappers
 
+import sttp.client4.GenericBackend
 import sttp.monad.MonadError
 
 /** A base class for delegate backends, which includes delegating implementations for `close` and `monad`, so

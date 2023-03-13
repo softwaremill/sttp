@@ -6,11 +6,12 @@ import sttp.monad.syntax._
 
 import scala.concurrent.duration.Duration
 import sttp.capabilities.Effect
+import sttp.client4.wrappers.DelegateBackend
 
 abstract class LoggingWithResponseBodyBackend[F[_], P](
-                                                        delegate: GenericBackend[F, P],
-                                                        log: Log[F],
-                                                        includeTiming: Boolean
+    delegate: GenericBackend[F, P],
+    log: Log[F],
+    includeTiming: Boolean
 ) extends DelegateBackend[F, P](delegate) {
 
   private def now(): Long = System.currentTimeMillis()

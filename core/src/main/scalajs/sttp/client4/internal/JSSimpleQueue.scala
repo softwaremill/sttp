@@ -1,4 +1,4 @@
-package sttp.client4
+package sttp.client4.internal
 
 import sttp.client4.internal.ConvertFromFuture
 import sttp.client4.internal.ws.SimpleQueue

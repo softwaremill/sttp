@@ -1,5 +1,7 @@
-package sttp.client4
+package sttp.client4.curl
 
+import sttp.client4._
+import sttp.client4.wrappers.FollowRedirectsBackend
 import sttp.client4.monad.IdMonad
 import sttp.monad.TryMonad
 

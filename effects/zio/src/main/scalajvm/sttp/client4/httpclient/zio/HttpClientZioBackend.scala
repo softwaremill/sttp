@@ -3,19 +3,15 @@ package sttp.client4.httpclient.zio
 import _root_.zio.interop.reactivestreams._
 import org.reactivestreams.FlowAdapters
 import sttp.capabilities.zio.ZioStreams
-import sttp.client4.HttpClientBackend.EncodingHandler
+import sttp.client4.httpclient.{HttpClientAsyncBackend, HttpClientBackend}
+import sttp.client4.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client4.impl.zio.{RIOMonadAsyncError, ZioSimpleQueue}
 import sttp.client4.internal._
 import sttp.client4.internal.httpclient.{BodyFromHttpClient, BodyToHttpClient, Sequencer}
 import sttp.client4.internal.ws.SimpleQueue
 import sttp.client4.testing.WebSocketStreamBackendStub
-import sttp.client4.{
-  FollowRedirectsBackend,
-  HttpClientAsyncBackend,
-  HttpClientBackend,
-  BackendOptions,
-  WebSocketStreamBackend
-}
+import sttp.client4.wrappers.FollowRedirectsBackend
+import sttp.client4.{BackendOptions, WebSocketStreamBackend, wrappers}
 import sttp.monad.MonadError
 import zio.Chunk.ByteArray
 import zio._
@@ -107,7 +103,7 @@ object HttpClientZioBackend {
       customizeRequest: HttpRequest => HttpRequest,
       customEncodingHandler: ZioEncodingHandler
   ): WebSocketStreamBackend[Task, ZioStreams] =
-    FollowRedirectsBackend(
+    wrappers.FollowRedirectsBackend(
       new HttpClientZioBackend(client, closeClient, customizeRequest, customEncodingHandler)
     )
 

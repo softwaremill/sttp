@@ -5,7 +5,8 @@ import cats.effect.kernel.Async
 import org.scalajs.dom.experimental.{BodyInit, Request => FetchRequest, Response => FetchResponse}
 import sttp.client4.internal.{ConvertFromFuture, NoStreams}
 import sttp.client4.testing.WebSocketBackendStub
-import sttp.client4.{AbstractFetchBackend, FetchOptions, WebSocketBackend}
+import sttp.client4.WebSocketBackend
+import sttp.client4.fetch.{AbstractFetchBackend, FetchOptions}
 import sttp.ws.WebSocket
 
 import scala.concurrent.Future

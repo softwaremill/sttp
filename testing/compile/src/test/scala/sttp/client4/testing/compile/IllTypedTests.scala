@@ -10,6 +10,7 @@ class IllTypedTests extends AnyFlatSpec with Matchers {
     val thrown = intercept[ToolBoxError] {
       EvalScala("""
         import sttp.client4._
+        import sttp.client4.httpurlconnection._
 
         val backend = HttpURLConnectionBackend()
         basicRequest.get(uri"http://example.com").response(asWebSocketUnsafe[Identity]).send(backend)
@@ -24,6 +25,8 @@ class IllTypedTests extends AnyFlatSpec with Matchers {
     val thrown = intercept[ToolBoxError] {
       EvalScala("""
         import sttp.client4._
+        import sttp.client4.httpurlconnection._
+
         val backend = HttpURLConnectionBackend()
         basicRequest.send(backend)
         """)

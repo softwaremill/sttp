@@ -1,5 +1,6 @@
 package sttp.client4
 
+import sttp.client4.httpclient.HttpClientSyncBackend
 import sttp.client4.testing.{ConvertToFuture, HttpTest}
 
 class HttpClientSyncHttpTest extends HttpTest[Identity] {

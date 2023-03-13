@@ -2,25 +2,19 @@ package sttp.client4.asynchttpclient.cats
 
 import java.io.{ByteArrayInputStream, File}
 import java.nio.ByteBuffer
-
 import cats.effect.implicits._
 import cats.effect.{Concurrent, ContextShift, Resource, Sync}
 import io.netty.buffer.ByteBuf
-import org.asynchttpclient.{
-  AsyncHttpClient,
-  AsyncHttpClientConfig,
-  BoundRequestBuilder,
-  DefaultAsyncHttpClient,
-  DefaultAsyncHttpClientConfig
-}
+import org.asynchttpclient.{AsyncHttpClient, AsyncHttpClientConfig, BoundRequestBuilder, DefaultAsyncHttpClient, DefaultAsyncHttpClientConfig}
 import org.reactivestreams.Publisher
 import sttp.client4.asynchttpclient.{AsyncHttpClientBackend, BodyFromAHC, BodyToAHC}
 import sttp.client4.impl.cats.CatsMonadAsyncError
 import sttp.client4.internal.{FileHelpers, NoStreams}
-import sttp.client4.{Backend, FollowRedirectsBackend, GenericRequest, Response, BackendOptions}
+import sttp.client4.{Backend, BackendOptions, GenericRequest, Response, wrappers}
 import cats.implicits._
 import sttp.client4.internal.ws.SimpleQueue
 import sttp.client4.testing.BackendStub
+import sttp.client4.wrappers.FollowRedirectsBackend
 import sttp.monad.MonadAsyncError
 import sttp.ws.WebSocket
 
@@ -70,7 +64,7 @@ object AsyncHttpClientCatsBackend {
       closeClient: Boolean,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder
   ): Backend[F] =
-    FollowRedirectsBackend(new AsyncHttpClientCatsBackend(asyncHttpClient, closeClient, customizeRequest))
+    wrappers.FollowRedirectsBackend(new AsyncHttpClientCatsBackend(asyncHttpClient, closeClient, customizeRequest))
 
   /** After sending a request, always shifts to the thread pool backing the given `ContextShift[F]`.
     */

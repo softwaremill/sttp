@@ -11,6 +11,7 @@ import scala.concurrent.duration._
 import sttp.capabilities.Streams
 import sttp.ws.WebSocketFrame
 import sttp.capabilities.Effect
+import sttp.client4.wrappers.FollowRedirectsBackend
 
 trait SttpApi extends SttpExtensions with UriInterpolator {
   val DefaultReadTimeout: Duration = 1.minute

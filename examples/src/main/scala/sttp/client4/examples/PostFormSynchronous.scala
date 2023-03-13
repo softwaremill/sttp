@@ -1,5 +1,7 @@
 package sttp.client4.examples
 
+import sttp.client4.httpclient.HttpClientSyncBackend
+
 object PostFormSynchronous extends App {
   import sttp.client4._
 

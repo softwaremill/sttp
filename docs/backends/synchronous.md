@@ -13,7 +13,7 @@ The default **synchronous** backend. To use, you don't need any extra dependenci
 Create the backend using:
 
 ```scala mdoc:compile-only
-import sttp.client4.HttpClientSyncBackend
+import sttp.client4.httpclient.HttpClientSyncBackend
 
 val backend = HttpClientSyncBackend()
 ```
@@ -21,7 +21,7 @@ val backend = HttpClientSyncBackend()
 or, if you'd like to instantiate the HttpClient yourself:
 
 ```scala mdoc:compile-only
-import sttp.client4.HttpClientSyncBackend
+import sttp.client4.httpclient.HttpClientSyncBackend
 import java.net.http.HttpClient
 val httpClient: HttpClient = ???
 val backend = HttpClientSyncBackend.usingClient(httpClient)
@@ -46,7 +46,7 @@ To use, you don't need any extra dependencies, `core` is enough:
 Create the backend using:
 
 ```scala mdoc:compile-only
-import sttp.client4.HttpURLConnectionBackend
+import sttp.client4.httpurlconnection.HttpURLConnectionBackend
 
 val backend = HttpURLConnectionBackend()
 ```

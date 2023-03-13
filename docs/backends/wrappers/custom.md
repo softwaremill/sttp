@@ -45,6 +45,7 @@ metrics for completed requests and wraps any `Future`-based backend:
 import sttp.capabilities.Effect
 import sttp.client4._
 import sttp.client4.akkahttp._
+import sttp.client4.wrappers.DelegateBackend
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util._
@@ -111,6 +112,7 @@ In some cases it's possible to implement a generic retry mechanism; such a mecha
 ```scala mdoc:compile-only
 import sttp.capabilities.Effect
 import sttp.client4._
+import sttp.client4.wrappers.DelegateBackend
 
 class RetryingBackend[F[_], P](
     delegate: GenericBackend[F, P],
@@ -157,7 +159,8 @@ Below is an example on how to implement a backend wrapper, which integrates with
 ```scala mdoc:compile-only
 import io.github.resilience4j.circuitbreaker.{CallNotPermittedException, CircuitBreaker}
 import sttp.capabilities.Effect
-import sttp.client4.{GenericBackend, GenericRequest, Backend, Response, DelegateBackend}
+import sttp.client4.{GenericBackend, GenericRequest, Backend, Response}
+import sttp.client4.wrappers.DelegateBackend
 import sttp.monad.MonadError
 import java.util.concurrent.TimeUnit
 
@@ -215,7 +218,8 @@ Below is an example on how to implement a backend wrapper, which integrates with
 import io.github.resilience4j.ratelimiter.RateLimiter
 import sttp.capabilities.Effect
 import sttp.monad.MonadError
-import sttp.client4.{GenericBackend, GenericRequest, Response, StreamBackend, DelegateBackend}
+import sttp.client4.{GenericBackend, GenericRequest, Response, StreamBackend}
+import sttp.client4.wrappers.DelegateBackend
 
 class RateLimitingSttpBackend[F[_], P](
     rateLimiter: RateLimiter,
