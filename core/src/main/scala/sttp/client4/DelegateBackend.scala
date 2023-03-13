@@ -7,5 +7,5 @@ import sttp.monad.MonadError
   */
 abstract class DelegateBackend[F[_], +P](delegate: GenericBackend[F, P]) extends GenericBackend[F, P] {
   override def close(): F[Unit] = delegate.close()
-  override implicit def responseMonad: MonadError[F] = delegate.responseMonad
+  override implicit def monad: MonadError[F] = delegate.monad
 }

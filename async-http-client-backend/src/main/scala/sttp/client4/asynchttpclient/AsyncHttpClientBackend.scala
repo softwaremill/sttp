@@ -36,7 +36,7 @@ import scala.util.Try
 
 abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
     asyncHttpClient: AsyncHttpClient,
-    private implicit val monad: MonadAsyncError[F],
+    override implicit val monad: MonadAsyncError[F],
     closeClient: Boolean,
     customizeRequest: BoundRequestBuilder => BoundRequestBuilder
 ) extends GenericBackend[F, P]
@@ -76,8 +76,6 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
         Canceler(() => lf.cancel(true))
       })
     }
-
-  override def responseMonad: MonadError[F] = monad
 
   protected def bodyFromAHC: BodyFromAHC[F, S]
   protected def bodyToAHC: BodyToAHC[F, S]
@@ -221,7 +219,7 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
   }
 
   private def adjustExceptions[T](request: GenericRequest[_, _])(t: => F[T]): F[T] =
-    SttpClientException.adjustExceptions(responseMonad)(t)(
+    SttpClientException.adjustExceptions(monad)(t)(
       SttpClientException.defaultExceptionToSttpClientException(request, _)
     )
 }

@@ -39,24 +39,24 @@ object OpenTelemetryMetricsBackend {
   def apply(delegate: SyncBackend, config: OpenTelemetryMetricsConfig): SyncBackend = {
     val listener = OpenTelemetryMetricsListener(config)
     // redirects should be handled before metrics
-    FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener, delegate.responseMonad)))
+    FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener, delegate.monad)))
   }
 
   def apply[F[_]](delegate: Backend[F], config: OpenTelemetryMetricsConfig): Backend[F] = {
     val listener = OpenTelemetryMetricsListener(config)
     // redirects should be handled before metrics
-    FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener, delegate.responseMonad)))
+    FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener, delegate.monad)))
   }
 
   def apply[F[_]](delegate: WebSocketBackend[F], config: OpenTelemetryMetricsConfig): WebSocketBackend[F] = {
     val listener = OpenTelemetryMetricsListener(config)
-    FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener, delegate.responseMonad)))
+    FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener, delegate.monad)))
   }
 
   def apply[F[_], S](delegate: StreamBackend[F, S], config: OpenTelemetryMetricsConfig): StreamBackend[F, S] = {
     val listener = OpenTelemetryMetricsListener(config)
     FollowRedirectsBackend(
-      ListenerBackend(delegate, RequestListener.lift(listener, delegate.responseMonad))
+      ListenerBackend(delegate, RequestListener.lift(listener, delegate.monad))
     )
   }
 
@@ -65,7 +65,7 @@ object OpenTelemetryMetricsBackend {
       config: OpenTelemetryMetricsConfig
   ): WebSocketStreamBackend[F, S] = {
     val listener = OpenTelemetryMetricsListener(config)
-    FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener, delegate.responseMonad)))
+    FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener, delegate.monad)))
   }
 }
 

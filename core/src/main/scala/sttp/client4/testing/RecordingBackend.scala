@@ -34,7 +34,7 @@ abstract class AbstractRecordingBackend[F[_], P](delegate: GenericBackend[F, P])
       }
       .handleError { case e: Exception =>
         addInteraction(request, Failure(e))
-        responseMonad.error(e)
+        monad.error(e)
       }
   }
 

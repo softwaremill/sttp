@@ -51,7 +51,7 @@ class FinagleBackend(client: Option[Client] = None) extends Backend[TFuture] {
 
   override def close(): TFuture[Unit] = TFuture.Done
 
-  override implicit val responseMonad: MonadError[TFuture] = TFutureMonadError
+  override implicit val monad: MonadError[TFuture] = TFutureMonadError
 
   private def headersToMap(headers: Seq[Header]): Map[String, String] = {
     headers.map(header => header.name -> header.value).toMap
@@ -218,7 +218,7 @@ class FinagleBackend(client: Option[Client] = None) extends Backend[TFuture] {
   }
 
   private def adjustExceptions[T](request: GenericRequest[_, _])(t: => TFuture[T]): TFuture[T] =
-    SttpClientException.adjustExceptions(responseMonad)(t)(exceptionToSttpClientException(request, _))
+    SttpClientException.adjustExceptions(monad)(t)(exceptionToSttpClientException(request, _))
 
   private def exceptionToSttpClientException(request: GenericRequest[_, _], e: Exception): Option[Exception] =
     e match {

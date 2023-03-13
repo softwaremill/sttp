@@ -49,5 +49,5 @@ object BackendStub {
     * any of the specified predicates.
     */
   def withFallback[F[_]](fallback: Backend[F]): BackendStub[F] =
-    new BackendStub[F](fallback.responseMonad, PartialFunction.empty, Some(fallback))
+    new BackendStub[F](fallback.monad, PartialFunction.empty, Some(fallback))
 }

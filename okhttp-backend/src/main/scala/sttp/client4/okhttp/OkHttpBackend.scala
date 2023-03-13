@@ -47,7 +47,7 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
   protected def sendWebSocket[T](request: GenericRequest[T, R]): F[Response[T]]
 
   private def adjustExceptions[T](isWebsocket: Boolean, request: GenericRequest[_, _])(t: => F[T]): F[T] =
-    SttpClientException.adjustExceptions(responseMonad)(t)(
+    SttpClientException.adjustExceptions(monad)(t)(
       OkHttpBackend.exceptionToSttpClientException(isWebsocket, request, _)
     )
 
@@ -99,7 +99,7 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
       }
 
     val body = bodyFromOkHttp(byteBody, responseAs, responseMetadata, None)
-    responseMonad.map(body)(Response(_, StatusCode(res.code()), res.message(), headers, Nil, request.onlyMetadata))
+    monad.map(body)(Response(_, StatusCode(res.code()), res.message(), headers, Nil, request.onlyMetadata))
   }
 
   private def readHeaders(res: OkHttpResponse): List[Header] = {
@@ -119,8 +119,8 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
 
   override def close(): F[Unit] =
     if (closeClient) {
-      responseMonad.eval(client.dispatcher().executorService().shutdown())
-    } else responseMonad.unit(())
+      monad.eval(client.dispatcher().executorService().shutdown())
+    } else monad.unit(())
 
   protected def createSimpleQueue[T]: F[SimpleQueue[F, T]]
 

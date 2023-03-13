@@ -98,7 +98,7 @@ trait StreamClientStubbing[R, P] extends AbstractClientStubbing[R, P] {
     def close(): RIO[R, Unit] =
       stub.get >>= (_.close())
 
-    def responseMonad: MonadError[RIO[R, *]] = monad
+    def monad: MonadError[RIO[R, *]] = monad
   }
 }
 
@@ -117,6 +117,6 @@ trait WebSocketStreamClientStubbing[R, P] extends AbstractClientStubbing[R, P wi
       def close(): RIO[R, Unit] =
         stub.get >>= (_.close())
 
-      def responseMonad: MonadError[RIO[R, *]] = monad
+      def monad: MonadError[RIO[R, *]] = monad
     }
 }

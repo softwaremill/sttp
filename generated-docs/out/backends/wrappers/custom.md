@@ -121,16 +121,16 @@ class RetryingBackend[F[_], P](
   private def sendWithRetryCounter[T, R >: P with Effect[F]](
                                                               request: Request[T, R], retries: Int): F[Response[T]] = {
 
-    val r = responseMonad.handleError(delegate.send(request)) {
+    val r = monad.handleError(delegate.send(request)) {
       case t if shouldRetry(request, Left(t)) && retries < maxRetries =>
         sendWithRetryCounter(request, retries + 1)
     }
 
-    responseMonad.flatMap(r) { resp =>
+    monad.flatMap(r) { resp =>
       if (shouldRetry(request, Right(resp)) && retries < maxRetries) {
         sendWithRetryCounter(request, retries + 1)
       } else {
-        responseMonad.unit(resp)
+        monad.unit(resp)
       }
     }
   }

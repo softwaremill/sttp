@@ -39,7 +39,7 @@ class HttpClientCatsBackend[F[_]: Async] private (
 
   override protected val bodyToHttpClient: BodyToHttpClient[F, Nothing] = new BodyToHttpClient[F, Nothing] {
     override val streams: NoStreams = NoStreams
-    override implicit val monad: MonadError[F] = responseMonad
+    override implicit val monad: MonadError[F] = monad
 
     override def streamToPublisher(stream: Nothing): F[BodyPublisher] = stream // nothing is everything
   }
@@ -51,7 +51,7 @@ class HttpClientCatsBackend[F[_]: Async] private (
 
       override val streams: NoStreams = NoStreams
 
-      override implicit def monad: MonadError[F] = responseMonad
+      override implicit def monad: MonadError[F] = monad
 
       override def compileWebSocketPipe(
           ws: WebSocket[F],

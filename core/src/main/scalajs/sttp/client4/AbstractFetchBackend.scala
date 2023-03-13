@@ -61,10 +61,10 @@ final case class FetchOptions(
 abstract class AbstractFetchBackend[F[_], S <: Streams[S]](
     options: FetchOptions,
     customizeRequest: FetchRequest => FetchRequest,
-    monad: MonadError[F]
+    _monad: MonadError[F]
 ) extends GenericBackend[F, S with WebSockets]
     with WebSocketBackend[F] {
-  override implicit def responseMonad: MonadError[F] = monad
+  override implicit def monad: MonadError[F] = _monad
 
   val streams: Streams[S]
 
@@ -76,7 +76,7 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S]](
     }
 
   private def adjustExceptions[T](request: GenericRequest[_, _])(t: => F[T]): F[T] =
-    SttpClientException.adjustExceptions(responseMonad)(t)(
+    SttpClientException.adjustExceptions(monad)(t)(
       SttpClientException.defaultExceptionToSttpClientException(request, _)
     )
 
@@ -142,9 +142,9 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S]](
       .flatMap { r => convertFromFuture(Fetch.fetch(customizeRequest(r)).toFuture) }
       .flatMap { resp =>
         if (resp.`type` == ResponseType.opaqueredirect) {
-          responseMonad.error[FetchResponse](new RuntimeException("Unexpected redirect"))
+          monad.error[FetchResponse](new RuntimeException("Unexpected redirect"))
         } else {
-          responseMonad.unit(resp)
+          monad.unit(resp)
         }
       }
       .flatMap { resp =>
@@ -188,10 +188,10 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S]](
   private def createBody(body: GenericRequestBody[R]): F[js.UndefOr[BodyInit]] = {
     body match {
       case NoBody =>
-        responseMonad.unit(js.undefined) // skip
+        monad.unit(js.undefined) // skip
 
       case b: BasicBodyPart =>
-        responseMonad.unit(writeBasicBody(b))
+        monad.unit(writeBasicBody(b))
 
       case StreamBody(s) =>
         handleStreamBody(s.asInstanceOf[streams.BinaryStream])
@@ -218,7 +218,7 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S]](
             case Some(fileName) => formData.append(part.name, blob, fileName)
           }
         }
-        responseMonad.unit(formData)
+        monad.unit(formData)
     }
   }
 

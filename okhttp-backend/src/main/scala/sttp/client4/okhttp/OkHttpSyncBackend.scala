@@ -42,7 +42,7 @@ class OkHttpSyncBackend private (
     def fillCellError(t: Throwable): Unit = responseCell.add(Left(t))
     def fillCell(wr: Future[Response[T]]): Unit = responseCell.add(Right(wr))
 
-    implicit val m = responseMonad
+    implicit val m = monad
     val queue = createSimpleQueue[WebSocketEvent]
     val isOpen = new AtomicBoolean(false)
     val listener = new DelegatingWebSocketListener(
@@ -79,7 +79,7 @@ class OkHttpSyncBackend private (
     readResponse(response, request, request.response)
   }
 
-  override val responseMonad: MonadError[Identity] = IdMonad
+  override val monad: MonadError[Identity] = IdMonad
 
   override protected val bodyFromOkHttp: BodyFromOkHttp[Identity, Nothing] = new BodyFromOkHttp[Identity, Nothing] {
     override val streams: NoStreams = NoStreams

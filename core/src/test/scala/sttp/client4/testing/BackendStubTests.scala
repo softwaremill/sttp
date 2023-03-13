@@ -15,7 +15,6 @@ import sttp.ws.testing.WebSocketStub
 import java.io.ByteArrayInputStream
 import java.util.concurrent.TimeoutException
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
 

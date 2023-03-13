@@ -27,7 +27,7 @@ class ZioFollowRedirectsBackendTest extends AsyncFlatSpec with Matchers with Zio
       }
 
       override def close(): Task[Unit] = ZIO.unit
-      override def responseMonad: MonadError[Task] = new RIOMonadAsyncError[Any]
+      override def monad: MonadError[Task] = new RIOMonadAsyncError[Any]
     }
 
     val result: Task[Response[_]] = basicRequest

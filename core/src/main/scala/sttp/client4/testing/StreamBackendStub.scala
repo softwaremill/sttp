@@ -54,5 +54,5 @@ object StreamBackendStub {
     * any of the specified predicates.
     */
   def withFallback[F[_], S](fallback: StreamBackend[F, S]): StreamBackendStub[F, S] =
-    new StreamBackendStub(fallback.responseMonad, PartialFunction.empty, Some(fallback))
+    new StreamBackendStub(fallback.monad, PartialFunction.empty, Some(fallback))
 }
