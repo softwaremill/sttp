@@ -16,10 +16,10 @@ private abstract class ExtendedEnvBackend[R0, R1, P](delegate: GenericBackend[RI
       mappedRequest = MapEffect[RIO[R0 with R1, *], RIO[R0, *], T, P](
         request,
         new FunctionK[RIO[R0 with R1, *], RIO[R0, *]] {
-          override def apply[A](fa: RIO[R0 with R1, A]): RIO[R0, A] = fa.provideEnvironment(env)
+          override def apply[A](fa: => RIO[R0 with R1, A]): RIO[R0, A] = fa.provideEnvironment(env)
         },
         new FunctionK[RIO[R0, *], RIO[R0 with R1, *]] {
-          override def apply[A](fa: RIO[R0, A]): RIO[R0 with R1, A] = fa
+          override def apply[A](fa: => RIO[R0, A]): RIO[R0 with R1, A] = fa
         },
         responseMonad,
         delegate.responseMonad

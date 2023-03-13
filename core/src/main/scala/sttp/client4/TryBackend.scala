@@ -18,11 +18,11 @@ object TryBackend {
 
   private val tryToId: FunctionK[Try, Identity] =
     new FunctionK[Try, Identity] {
-      override def apply[A](fa: Try[A]): Identity[A] = fa.get
+      override def apply[A](fa: => Try[A]): Identity[A] = fa.get
     }
 
   private val idToTry: FunctionK[Identity, Try] =
     new FunctionK[Identity, Try] {
-      override def apply[A](fa: Identity[A]): Try[A] = Try(fa)
+      override def apply[A](fa: => Identity[A]): Try[A] = Try(fa)
     }
 }
