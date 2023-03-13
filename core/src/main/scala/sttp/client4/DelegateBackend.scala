@@ -2,7 +2,7 @@ package sttp.client4
 
 import sttp.monad.MonadError
 
-/** A base class for delegate backends, which includes delegating implementations for `close` and `responseMonad`, so
+/** A base class for delegate backends, which includes delegating implementations for `close` and `monad`, so
   * that only `send` needs to be defined.
   */
 abstract class DelegateBackend[F[_], +P](delegate: GenericBackend[F, P]) extends GenericBackend[F, P] {

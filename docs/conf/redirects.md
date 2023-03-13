@@ -79,7 +79,7 @@ abstract class MyWrapper[F[_], P] private (delegate: GenericBackend[F, P])
 
   def close(): F[Unit] = ???
 
-  def responseMonad: MonadError[F] = ???
+  def monad: MonadError[F] = ???
 }
 
 object MyWrapper {

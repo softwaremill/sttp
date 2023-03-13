@@ -42,8 +42,8 @@ object BackendStub {
     new BackendStub(new FutureMonad(), PartialFunction.empty, None)
 
   /** Create a stub backend using the given response monad (which determines the effect type for responses). */
-  def apply[F[_]](responseMonad: MonadError[F]): BackendStub[F] =
-    new BackendStub[F](responseMonad, PartialFunction.empty, None)
+  def apply[F[_]](monad: MonadError[F]): BackendStub[F] =
+    new BackendStub[F](monad, PartialFunction.empty, None)
 
   /** Create a stub backend which delegates send requests to the given fallback backend, if the request doesn't match
     * any of the specified predicates.
