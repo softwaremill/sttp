@@ -36,10 +36,10 @@ class HttpClientSyncBackend private (
       readResponse(response, Left(response.body()), request)
     }
 
-  override def responseMonad: MonadError[Identity] = IdMonad
+  override def monad: MonadError[Identity] = IdMonad
 
   private def adjustExceptions[T](request: GenericRequest[_, R])(t: => T): T =
-    SttpClientException.adjustExceptions(responseMonad)(t)(
+    SttpClientException.adjustExceptions(monad)(t)(
       SttpClientException.defaultExceptionToSttpClientException(request, _)
     )
 

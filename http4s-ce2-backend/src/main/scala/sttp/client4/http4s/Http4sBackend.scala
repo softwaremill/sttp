@@ -18,12 +18,7 @@ import sttp.capabilities.fs2.Fs2Streams
 import sttp.client4.http4s.Http4sBackend.EncodingHandler
 import sttp.client4.impl.cats.CatsMonadAsyncError
 import sttp.client4.impl.fs2.Fs2Compression
-import sttp.client4.internal.{
-  BodyFromResponseAs,
-  IOBufferSize,
-  SttpFile,
-  throwNestedMultipartNotAllowed
-}
+import sttp.client4.internal.{BodyFromResponseAs, IOBufferSize, SttpFile, throwNestedMultipartNotAllowed}
 import sttp.model._
 import sttp.monad.MonadError
 import sttp.client4.testing.StreamBackendStub
@@ -244,9 +239,9 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
         (response.body, () => signalBodyComplete).pure[F]
 
       override protected def handleWS[T](
-                                          responseAs: GenericWebSocketResponseAs[T, _],
-                                          meta: ResponseMetadata,
-                                          ws: Nothing
+          responseAs: GenericWebSocketResponseAs[T, _],
+          meta: ResponseMetadata,
+          ws: Nothing
       ): F[T] = ws
 
       override protected def cleanupWhenNotAWebSocket(
@@ -258,7 +253,7 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
     }
 
   private def adjustExceptions[T](r: GenericRequest[_, _])(t: => F[T]): F[T] =
-    SttpClientException.adjustExceptions(responseMonad)(t)(http4sExceptionToSttpClientException(r, _))
+    SttpClientException.adjustExceptions(monad)(t)(http4sExceptionToSttpClientException(r, _))
 
   private def http4sExceptionToSttpClientException(request: GenericRequest[_, _], e: Exception): Option[Exception] =
     e match {
@@ -268,10 +263,10 @@ class Http4sBackend[F[_]: ConcurrentEffect: ContextShift](
       case e: Exception => SttpClientException.defaultExceptionToSttpClientException(request, e)
     }
 
-  override implicit val responseMonad: MonadError[F] = new CatsMonadAsyncError
+  override implicit val monad: MonadError[F] = new CatsMonadAsyncError
 
   // no-op. Client lifecycle is managed by Resource
-  override def close(): F[Unit] = responseMonad.unit(())
+  override def close(): F[Unit] = monad.unit(())
 }
 
 object Http4sBackend {

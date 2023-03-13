@@ -45,14 +45,14 @@ class HttpClientMonixBackend private (
       customizeRequest,
       customEncodingHandler
     )
-    with WebSocketStreamBackend[Task, MonixStreams] {
+    with WebSocketStreamBackend[Task, MonixStreams] { self =>
 
   override val streams: MonixStreams = MonixStreams
 
   override protected val bodyToHttpClient: BodyToHttpClient[Task, MonixStreams] =
     new BodyToHttpClient[Task, MonixStreams] {
       override val streams: MonixStreams = MonixStreams
-      override implicit def monad: MonadError[Task] = responseMonad
+      override implicit def monad: MonadError[Task] = self.monad
       override def streamToPublisher(stream: Observable[Array[Byte]]): Task[HttpRequest.BodyPublisher] =
         monad.eval(
           BodyPublishers.fromPublisher(FlowAdapters.toFlowPublisher(stream.map(ByteBuffer.wrap).toReactivePublisher))
@@ -62,7 +62,7 @@ class HttpClientMonixBackend private (
   override protected val bodyFromHttpClient: BodyFromHttpClient[Task, MonixStreams, MonixStreams.BinaryStream] =
     new MonixBodyFromHttpClient {
       override implicit def scheduler: Scheduler = s
-      override implicit def monad: MonadError[Task] = responseMonad
+      override implicit def monad: MonadError[Task] = self.monad
     }
 
   override protected def createSimpleQueue[T]: Task[SimpleQueue[Task, T]] =

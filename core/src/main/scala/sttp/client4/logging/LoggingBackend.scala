@@ -40,11 +40,11 @@ object LoggingBackend {
 
   def apply(delegate: SyncBackend, log: Log[Identity], includeTiming: Boolean, logResponseBody: Boolean): SyncBackend =
     if (logResponseBody) LoggingWithResponseBodyBackend(delegate, log, includeTiming)
-    else ListenerBackend(delegate, new LoggingListener(log, includeTiming)(delegate.responseMonad))
+    else ListenerBackend(delegate, new LoggingListener(log, includeTiming)(delegate.monad))
 
   def apply[F[_]](delegate: Backend[F], log: Log[F], includeTiming: Boolean, logResponseBody: Boolean): Backend[F] =
     if (logResponseBody) LoggingWithResponseBodyBackend[F](delegate, log, includeTiming)
-    else ListenerBackend[F, Option[Long]](delegate, new LoggingListener(log, includeTiming)(delegate.responseMonad))
+    else ListenerBackend[F, Option[Long]](delegate, new LoggingListener(log, includeTiming)(delegate.monad))
 
   def apply[F[_]](
       delegate: WebSocketBackend[F],
@@ -53,7 +53,7 @@ object LoggingBackend {
       logResponseBody: Boolean
   ): WebSocketBackend[F] =
     if (logResponseBody) LoggingWithResponseBodyBackend(delegate, log, includeTiming)
-    else ListenerBackend(delegate, new LoggingListener(log, includeTiming)(delegate.responseMonad))
+    else ListenerBackend(delegate, new LoggingListener(log, includeTiming)(delegate.monad))
 
   def apply[F[_], S](
       delegate: StreamBackend[F, S],
@@ -62,7 +62,7 @@ object LoggingBackend {
       logResponseBody: Boolean
   ): StreamBackend[F, S] =
     if (logResponseBody) LoggingWithResponseBodyBackend(delegate, log, includeTiming)
-    else ListenerBackend(delegate, new LoggingListener(log, includeTiming)(delegate.responseMonad))
+    else ListenerBackend(delegate, new LoggingListener(log, includeTiming)(delegate.monad))
 
   def apply[F[_], S](
       delegate: WebSocketStreamBackend[F, S],
@@ -71,5 +71,5 @@ object LoggingBackend {
       logResponseBody: Boolean
   ): WebSocketStreamBackend[F, S] =
     if (logResponseBody) LoggingWithResponseBodyBackend(delegate, log, includeTiming)
-    else ListenerBackend(delegate, new LoggingListener(log, includeTiming)(delegate.responseMonad))
+    else ListenerBackend(delegate, new LoggingListener(log, includeTiming)(delegate.monad))
 }

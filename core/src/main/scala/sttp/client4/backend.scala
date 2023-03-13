@@ -41,7 +41,7 @@ trait GenericBackend[F[_], +P] {
   /** A monad instance for the `F` effect type. Allows writing wrapper backends, which `map`/`flatMap`` over the return
     * value of [[send]].
     */
-  def responseMonad: MonadError[F]
+  def monad: MonadError[F]
 }
 
 /** A [[GenericBackend]] which doesn't support any capabilities, and uses `F` to represent side-effects. */
@@ -49,7 +49,7 @@ trait Backend[F[_]] extends GenericBackend[F, Any]
 
 /** A [[GenericBackend]] which is synchronous (side effects are run directly), and doesn't support any capabilities. */
 trait SyncBackend extends Backend[Identity] {
-  override def responseMonad: MonadError[Identity] = IdMonad
+  override def monad: MonadError[Identity] = IdMonad
 }
 
 /** A [[GenericBackend]] which supports streams of type `S` and uses `F` to represent side-effects. */

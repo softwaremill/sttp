@@ -21,13 +21,13 @@ private abstract class ExtendedEnvBackend[R0, R1, P](delegate: GenericBackend[RI
         new FunctionK[RIO[R0, *], RIO[R0 with R1, *]] {
           override def apply[A](fa: => RIO[R0, A]): RIO[R0 with R1, A] = fa
         },
-        responseMonad,
-        delegate.responseMonad
+        monad,
+        delegate.monad
       )
       resp <- delegate.send(mappedRequest)
     } yield resp
 
   override def close(): RIO[R0 with R1, Unit] = delegate.close()
 
-  override val responseMonad: MonadError[RIO[R0 with R1, *]] = new RIOMonadAsyncError[R0 with R1]
+  override val monad: MonadError[RIO[R0 with R1, *]] = new RIOMonadAsyncError[R0 with R1]
 }

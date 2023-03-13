@@ -180,7 +180,7 @@ trait HttpTest[F[_]]
     }
 
     "lift errors due to mapping with impure functions into the response monad" in {
-      implicit val monadError: MonadError[F] = backend.responseMonad
+      implicit val monadError: MonadError[F] = backend.monad
 
       val error = new IllegalStateException("boom")
 
@@ -301,7 +301,7 @@ trait HttpTest[F[_]]
     "include a header once when sent effect is used multiple times" in {
       val request = basicRequest.get(uri"$endpoint/echo/headers").header("x-foo", "bar").response(asStringAlways)
       val sent = request.send(backend)
-      backend.responseMonad.flatMap(sent)(_ => sent).toFuture().map(_.body).map { body =>
+      backend.monad.flatMap(sent)(_ => sent).toFuture().map(_.body).map { body =>
         body should include("x-foo->bar")
         body.split(",").toList.count(_ == "x-foo->bar") shouldBe 1
       }
@@ -670,7 +670,7 @@ trait HttpTest[F[_]]
   if (supportsCancellation) {
     "cancel" - {
       "a request in progress" in {
-        implicit val monad: MonadError[F] = backend.responseMonad
+        implicit val monad: MonadError[F] = backend.monad
         import sttp.monad.syntax._
 
         val req = basicRequest

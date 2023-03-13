@@ -40,7 +40,7 @@ class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
       customizeRequest,
       customEncodingHandler
     )
-    with WebSocketStreamBackend[F, Fs2Streams[F]] {
+    with WebSocketStreamBackend[F, Fs2Streams[F]] { self =>
 
   override val streams: Fs2Streams[F] = Fs2Streams[F]
 
@@ -50,7 +50,7 @@ class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
   override protected val bodyToHttpClient: BodyToHttpClient[F, Fs2Streams[F]] =
     new BodyToHttpClient[F, Fs2Streams[F]] {
       override val streams: Fs2Streams[F] = Fs2Streams[F]
-      override implicit def monad: MonadError[F] = responseMonad
+      override implicit def monad: MonadError[F] = self.monad
       override def streamToPublisher(stream: Stream[F, Byte]): F[HttpRequest.BodyPublisher] =
         monad.eval(
           BodyPublishers.fromPublisher(

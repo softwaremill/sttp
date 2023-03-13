@@ -12,9 +12,9 @@ abstract class ListenerBackend[F[_], P, L](
 ) extends DelegateBackend(delegate) {
   override def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] = {
     listener.beforeRequest(request).flatMap { t =>
-      responseMonad
+      monad
         .handleError(delegate.send(request)) { case e: Exception =>
-          listener.requestException(request, t, e).flatMap(_ => responseMonad.error(e))
+          listener.requestException(request, t, e).flatMap(_ => monad.error(e))
         }
         .flatMap { response => listener.requestSuccessful(request, response, t).map(_ => response) }
     }
@@ -23,7 +23,7 @@ abstract class ListenerBackend[F[_], P, L](
 
 object ListenerBackend {
   def lift[F[_], L](delegate: Backend[F], listener: RequestListener[Identity, L]): Backend[F] =
-    apply(delegate, RequestListener.lift(listener, delegate.responseMonad))
+    apply(delegate, RequestListener.lift(listener, delegate.monad))
 
   def apply[L](delegate: SyncBackend, listener: RequestListener[Identity, L]): SyncBackend =
     new ListenerBackend(delegate, listener) with SyncBackend {}

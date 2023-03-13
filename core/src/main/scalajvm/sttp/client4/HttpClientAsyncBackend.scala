@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicBoolean
   */
 abstract class HttpClientAsyncBackend[F[_], S, BH, B](
     client: HttpClient,
-    private implicit val monad: MonadAsyncError[F],
+    override implicit val monad: MonadAsyncError[F],
     closeClient: Boolean,
     customizeRequest: HttpRequest => HttpRequest,
     customEncodingHandler: EncodingHandler[B]
@@ -91,9 +91,9 @@ abstract class HttpClientAsyncBackend[F[_], S, BH, B](
   }
 
   private def sendWebSocket[T](
-                                request: GenericRequest[T, R],
-                                queue: SimpleQueue[F, WebSocketEvent],
-                                sequencer: Sequencer[F]
+      request: GenericRequest[T, R],
+      queue: SimpleQueue[F, WebSocketEvent],
+      sequencer: Sequencer[F]
   ): F[Response[T]] = {
     val isOpen: AtomicBoolean = new AtomicBoolean(false)
     monad.flatten(monad.async[F[Response[T]]] { cb =>
@@ -140,11 +140,9 @@ abstract class HttpClientAsyncBackend[F[_], S, BH, B](
   }
 
   private def adjustExceptions[T](request: GenericRequest[_, _])(t: => F[T]): F[T] =
-    SttpClientException.adjustExceptions(responseMonad)(t)(
+    SttpClientException.adjustExceptions(monad)(t)(
       SttpClientException.defaultExceptionToSttpClientException(request, _)
     )
-
-  override def responseMonad: MonadError[F] = monad
 
   // these headers can't be sent using HttpClient; the SecWebSocketProtocol is supported through a builder method,
   // the resit is ignored

@@ -38,19 +38,19 @@ object PrometheusBackend {
 
   def apply(delegate: SyncBackend, config: PrometheusConfig): SyncBackend =
     // redirects should be handled before prometheus
-    FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener(config), delegate.responseMonad)))
+    FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener(config), delegate.monad)))
 
   def apply[F[_]](delegate: Backend[F], config: PrometheusConfig): Backend[F] =
-    FollowRedirectsBackend[F](ListenerBackend(delegate, RequestListener.lift(listener(config), delegate.responseMonad)))
+    FollowRedirectsBackend[F](ListenerBackend(delegate, RequestListener.lift(listener(config), delegate.monad)))
 
   def apply[F[_]](delegate: WebSocketBackend[F], config: PrometheusConfig): WebSocketBackend[F] =
-    FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener(config), delegate.responseMonad)))
+    FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener(config), delegate.monad)))
 
   def apply[F[_], S](delegate: StreamBackend[F, S], config: PrometheusConfig): StreamBackend[F, S] =
-    FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener(config), delegate.responseMonad)))
+    FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener(config), delegate.monad)))
 
   def apply[F[_], S](delegate: WebSocketStreamBackend[F, S], config: PrometheusConfig): WebSocketStreamBackend[F, S] =
-    FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener(config), delegate.responseMonad)))
+    FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener(config), delegate.monad)))
 
   private def listener(config: PrometheusConfig): PrometheusListener =
     new PrometheusListener(

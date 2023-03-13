@@ -2,7 +2,6 @@ package sttp.client4.monad
 
 import sttp.capabilities.{Effect, WebSockets}
 import sttp.client4._
-import sttp.client4.internal._
 import sttp.model.{Headers, ResponseMetadata}
 import sttp.monad.MonadError
 import sttp.ws.{WebSocket, WebSocketFrame}
@@ -21,11 +20,11 @@ object MapEffect {
     *   The requirements of this request, without the `Effect[F]` capability.
     */
   def apply[F[_], G[_], T, R0](
-                                r: GenericRequest[T, R0 with Effect[F]],
-                                fk: FunctionK[F, G],
-                                gk: FunctionK[G, F],
-                                fm: MonadError[F],
-                                gm: MonadError[G]
+      r: GenericRequest[T, R0 with Effect[F]],
+      fk: FunctionK[F, G],
+      gk: FunctionK[G, F],
+      fm: MonadError[F],
+      gm: MonadError[G]
   ): GenericRequest[T, R0 with Effect[G]] = {
     def internalResponse[R] = apply[F, G](r.response.delegate, fk, gk, fm, gm)
       .asInstanceOf[GenericResponseAs[T, R with Effect[G]]]
@@ -47,11 +46,11 @@ object MapEffect {
   // TODO: an even more dumbed-down version of the slightly more type-safe version below, which is needed due to a
   // TODO: bug in Dotty: https://github.com/lampepfl/dotty/issues/9533
   private def apply[F[_], G[_]](
-                                 r: GenericResponseAs[_, _],
-                                 fk: FunctionK[F, G],
-                                 gk: FunctionK[G, F],
-                                 fm: MonadError[F],
-                                 gm: MonadError[G]
+      r: GenericResponseAs[_, _],
+      fk: FunctionK[F, G],
+      gk: FunctionK[G, F],
+      fm: MonadError[F],
+      gm: MonadError[G]
   ): GenericResponseAs[_, _] = {
     r match {
       case IgnoreResponse      => IgnoreResponse

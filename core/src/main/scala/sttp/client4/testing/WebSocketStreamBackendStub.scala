@@ -58,5 +58,5 @@ object WebSocketStreamBackendStub {
     * any of the specified predicates.
     */
   def withFallback[F[_], S](fallback: WebSocketStreamBackend[F, S]): WebSocketStreamBackendStub[F, S] =
-    new WebSocketStreamBackendStub(fallback.responseMonad, PartialFunction.empty, Some(fallback))
+    new WebSocketStreamBackendStub(fallback.monad, PartialFunction.empty, Some(fallback))
 }

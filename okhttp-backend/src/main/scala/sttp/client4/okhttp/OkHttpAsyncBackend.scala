@@ -13,7 +13,7 @@ import sttp.monad.{Canceler, MonadAsyncError}
 
 abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](
     client: OkHttpClient,
-    monad: MonadAsyncError[F],
+    _monad: MonadAsyncError[F],
     closeClient: Boolean,
     customEncodingHandler: EncodingHandler
 ) extends OkHttpBackend[F, S, P](client, closeClient, customEncodingHandler) {
@@ -95,5 +95,5 @@ abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](
     )
   }
 
-  override implicit val responseMonad: MonadAsyncError[F] = monad
+  override implicit val monad: MonadAsyncError[F] = _monad
 }

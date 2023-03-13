@@ -43,7 +43,7 @@ import sttp.monad.{Canceler, MonadAsyncError, MonadError}
 abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
     client: WebClient = WebClient.of(),
     closeFactory: Boolean,
-    private implicit val monad: MonadAsyncError[F]
+    implicit val monad: MonadAsyncError[F]
 ) extends StreamBackend[F, S] {
 
   val streams: Streams[S]
@@ -53,8 +53,6 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
   protected def bodyFromStreamMessage: BodyFromStreamMessage[F, S]
 
   protected def streamToPublisher(stream: streams.BinaryStream): Publisher[HttpData]
-
-  override def responseMonad: MonadError[F] = monad
 
   override def send[T](request: GenericRequest[T, R]): F[Response[T]] =
     monad.suspend(adjustExceptions(request)(execute(request)))
@@ -195,7 +193,7 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
   }
 
   private def adjustExceptions[T](request: GenericRequest[_, _])(execute: => F[T]): F[T] =
-    SttpClientException.adjustExceptions(responseMonad)(execute) {
+    SttpClientException.adjustExceptions(monad)(execute) {
       case ex: UnprocessedRequestException =>
         // The cause of an UnprocessedRequestException is always not null
         Some(new ConnectException(request, ex.getCause.asInstanceOf[Exception]))

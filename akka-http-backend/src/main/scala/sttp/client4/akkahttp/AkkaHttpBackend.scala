@@ -97,7 +97,7 @@ class AkkaHttpBackend private (
         .recoverWith { case _ => Future.failed(t) }
   }
 
-  override val responseMonad: MonadError[Future] = new FutureMonad()(ec)
+  override val monad: MonadError[Future] = new FutureMonad()(ec)
 
   private def connectionSettings(r: GenericRequest[_, _]): ConnectionPoolSettings = {
     val connectionPoolSettingsWithProxy = opts.proxy match {
@@ -117,7 +117,7 @@ class AkkaHttpBackend private (
       .withUpdatedConnectionSettings(_.withIdleTimeout(r.options.readTimeout))
   }
 
-  private lazy val bodyFromAkka = new BodyFromAkka()(ec, implicitly[Materializer], responseMonad)
+  private lazy val bodyFromAkka = new BodyFromAkka()(ec, implicitly[Materializer], monad)
 
   private def responseFromAkka[T](
                                    r: GenericRequest[T, R],
@@ -153,7 +153,7 @@ class AkkaHttpBackend private (
   }
 
   private def adjustExceptions[T](request: GenericRequest[_, _])(t: => Future[T]): Future[T] =
-    SttpClientException.adjustExceptions(responseMonad)(t)(FromAkka.exception(request, _))
+    SttpClientException.adjustExceptions(monad)(t)(FromAkka.exception(request, _))
 
   override def close(): Future[Unit] = {
     if (terminateActorSystemOnClose) {

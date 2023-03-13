@@ -21,8 +21,8 @@ import scala.scalanative.unsafe
 import scala.scalanative.unsafe.{CSize, Ptr, _}
 import scala.scalanative.unsigned._
 
-abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean) extends GenericBackend[F, Any] {
-  override implicit def responseMonad: MonadError[F] = monad
+abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean) extends GenericBackend[F, Any] {
+  override implicit def monad: MonadError[F] = _monad
 
   type R = Any with Effect[F]
 
@@ -39,7 +39,7 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
           curl.option(Verbose, parameter = true)
         }
         if (request.tags.nonEmpty) {
-          responseMonad.error(new UnsupportedOperationException("Tags are not supported"))
+          monad.error(new UnsupportedOperationException("Tags are not supported"))
         }
         val reqHeaders = request.headers
         if (reqHeaders.nonEmpty) {
@@ -64,7 +64,7 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
     }
 
   private def adjustExceptions[T](request: GenericRequest[_, _])(t: => F[T]): F[T] =
-    SttpClientException.adjustExceptions(responseMonad)(t)(
+    SttpClientException.adjustExceptions(monad)(t)(
       SttpClientException.defaultExceptionToSttpClientException(request, _)
     )
 
@@ -78,7 +78,7 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
     curl.option(Url, request.uri.toString)
     setMethod(curl, request.method)
     setRequestBody(curl, request.body)
-    responseMonad.flatMap(lift(curl.perform)) { _ =>
+    monad.flatMap(lift(curl.perform)) { _ =>
       curl.info(ResponseCode, spaces.httpCode)
       val responseBody = fromCString((!spaces.bodyResp)._1)
       val responseHeaders_ = parseHeaders(fromCString((!spaces.headersResp)._1))
@@ -97,7 +97,7 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
       val responseMetadata = ResponseMetadata(httpCode, statusText, responseHeaders)
 
       val body: F[T] = bodyFromResponseAs(request.response, responseMetadata, Left(responseBody))
-      responseMonad.map(body) { b =>
+      monad.map(body) { b =>
         Response[T](
           body = b,
           code = httpCode,
@@ -119,7 +119,7 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
     curl.option(Url, request.uri.toString)
     setMethod(curl, request.method)
     setRequestBody(curl, request.body)
-    responseMonad.flatMap(lift(curl.perform)) { _ =>
+    monad.flatMap(lift(curl.perform)) { _ =>
       curl.info(ResponseCode, spaces.httpCode)
       val httpCode = StatusCode((!spaces.httpCode).toInt)
       if (headers.ptr != null) headers.ptr.free()
@@ -129,7 +129,7 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
       curl.cleanup()
       val responseMetadata = ResponseMetadata(httpCode, "", List.empty)
       val body: F[T] = bodyFromResponseAs(request.response, responseMetadata, Left(outputPath))
-      responseMonad.map(body) { b =>
+      monad.map(body) { b =>
         Response[T](
           body = b,
           code = httpCode,
@@ -159,7 +159,7 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
   }
 
   private def setRequestBody(curl: CurlHandle, body: GenericRequestBody[R])(implicit zone: Zone): F[CurlCode] =
-    body match { // todo: assign to responseMonad object
+    body match { // todo: assign to monad object
       case b: BasicBodyPart =>
         val str = basicBodyToString(b)
         lift(curl.option(PostFields, toCString(str)))
@@ -182,9 +182,9 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
         }
         lift(curl.option(Mimepost, mime))
       case StreamBody(_) =>
-        responseMonad.error(new IllegalStateException("CurlBackend does not support stream request body"))
+        monad.error(new IllegalStateException("CurlBackend does not support stream request body"))
       case NoBody =>
-        responseMonad.unit(CurlCode.Ok)
+        monad.unit(CurlCode.Ok)
     }
 
   private def basicBodyToString(body: BodyPart[_]): String =
@@ -233,7 +233,7 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
     override protected def regularAsByteArray(response: String): F[Array[Byte]] = toByteArray(response)
 
     override protected def regularAsFile(response: String, file: SttpFile): F[SttpFile] =
-      responseMonad.unit(file)
+      monad.unit(file)
 
     override protected def regularAsStream(response: String): F[(Nothing, () => F[Unit])] =
       throw new IllegalStateException("CurlBackend does not support streaming responses")
@@ -260,12 +260,12 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
       }
   }
 
-  private def toByteArray(str: String): F[Array[Byte]] = responseMonad.unit(str.getBytes)
+  private def toByteArray(str: String): F[Array[Byte]] = monad.unit(str.getBytes)
 
   private def lift(code: CurlCode): F[CurlCode] = {
     code match {
-      case CurlCode.Ok => responseMonad.unit(code)
-      case _           => responseMonad.error(new RuntimeException(s"Command failed with status $code"))
+      case CurlCode.Ok => monad.unit(code)
+      case _           => monad.error(new RuntimeException(s"Command failed with status $code"))
     }
   }
 }

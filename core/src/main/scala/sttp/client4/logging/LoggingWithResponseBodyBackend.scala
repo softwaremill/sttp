@@ -39,7 +39,7 @@ abstract class LoggingWithResponseBodyBackend[F[_], P](
       response.handleError { case e: Exception =>
         log
           .requestException(request, elapsed(start), e)
-          .flatMap(_ => responseMonad.error(e))
+          .flatMap(_ => monad.error(e))
       }
     }
   }

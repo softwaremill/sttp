@@ -14,7 +14,7 @@ import sttp.ws.testing.WebSocketStub
 import scala.util.{Failure, Success, Try}
 
 abstract class AbstractBackendStub[F[_], P](
-                                             monad: MonadError[F],
+                                             _monad: MonadError[F],
                                              matchers: PartialFunction[GenericRequest[_, _], F[Response[_]]],
                                              fallback: Option[GenericBackend[F, P]]
 ) extends GenericBackend[F, P] {
@@ -23,7 +23,7 @@ abstract class AbstractBackendStub[F[_], P](
 
   protected def withMatchers(matchers: PartialFunction[GenericRequest[_, _], F[Response[_]]]): Self
 
-  override def responseMonad: MonadError[F] = monad
+  override def monad: MonadError[F] = _monad
 
   /** Specify how the stub backend should respond to requests matching the given predicate.
     *
@@ -62,7 +62,7 @@ abstract class AbstractBackendStub[F[_], P](
   }
 
   private def adjustExceptions[T](request: GenericRequest[_, _])(t: => F[T]): F[T] =
-    SttpClientException.adjustExceptions(responseMonad)(t)(
+    SttpClientException.adjustExceptions(monad)(t)(
       SttpClientException.defaultExceptionToSttpClientException(request, _)
     )
 

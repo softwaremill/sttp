@@ -65,7 +65,7 @@ class HttpURLConnectionBackend private (
       }
     }
 
-  override implicit val responseMonad: MonadError[Identity] = IdMonad
+  override implicit val monad: MonadError[Identity] = IdMonad
 
   private def openConnection(uri: Uri): HttpURLConnection = {
     val url = createURL(uri.toString)
@@ -286,7 +286,7 @@ class HttpURLConnectionBackend private (
     }
 
   private def adjustExceptions[T](request: GenericRequest[_, R])(t: => T): T =
-    SttpClientException.adjustExceptions(responseMonad)(t)(
+    SttpClientException.adjustExceptions(monad)(t)(
       SttpClientException.defaultExceptionToSttpClientException(request, _)
     )
 

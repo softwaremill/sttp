@@ -17,11 +17,11 @@ abstract class FollowRedirectsBackend[F[_], P] private (
     // if there are nested follow redirect backends, disabling them and handling redirects here
     val resp = delegate.send(request.followRedirects(false))
     if (request.options.followRedirects) {
-      responseMonad.flatMap(resp) { (response: Response[T]) =>
+      monad.flatMap(resp) { (response: Response[T]) =>
         if (response.isRedirect) {
           followRedirect(request, response, redirects)
         } else {
-          responseMonad.unit(response)
+          monad.unit(response)
         }
       }
     } else {
@@ -34,9 +34,9 @@ abstract class FollowRedirectsBackend[F[_], P] private (
                                  response: Response[T],
                                  redirects: Int
   ): F[Response[T]] = {
-    response.header(HeaderNames.Location).fold(responseMonad.unit(response)) { loc =>
+    response.header(HeaderNames.Location).fold(monad.unit(response)) { loc =>
       if (redirects >= request.options.maxRedirects) {
-        responseMonad.error(TooManyRedirectsException(request.uri, redirects))
+        monad.error(TooManyRedirectsException(request.uri, redirects))
       } else {
         followRedirect(request, response, redirects, loc)
       }
@@ -59,7 +59,7 @@ abstract class FollowRedirectsBackend[F[_], P] private (
         (sendWithCounter(_, redirects + 1)))
         .apply(request.method(request.method, uri = uri))
 
-    responseMonad.map(redirectResponse) { rr =>
+    monad.map(redirectResponse) { rr =>
       val responseNoBody = response.copy(body = ())
       rr.copy(history = responseNoBody :: rr.history)
     }

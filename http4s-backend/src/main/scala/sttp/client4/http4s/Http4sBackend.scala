@@ -252,7 +252,7 @@ class Http4sBackend[F[_]: Async](
     }
 
   private def adjustExceptions[T](r: GenericRequest[_, _])(t: => F[T]): F[T] =
-    SttpClientException.adjustExceptions(responseMonad)(t)(http4sExceptionToSttpClientException(r, _))
+    SttpClientException.adjustExceptions(monad)(t)(http4sExceptionToSttpClientException(r, _))
 
   private def http4sExceptionToSttpClientException(request: GenericRequest[_, _], e: Exception): Option[Exception] =
     e match {
@@ -262,10 +262,10 @@ class Http4sBackend[F[_]: Async](
       case e: Exception => SttpClientException.defaultExceptionToSttpClientException(request, e)
     }
 
-  override implicit val responseMonad: MonadError[F] = new CatsMonadAsyncError
+  override implicit val monad: MonadError[F] = new CatsMonadAsyncError
 
   // no-op. Client lifecycle is managed by Resource
-  override def close(): F[Unit] = responseMonad.unit(())
+  override def close(): F[Unit] = monad.unit(())
 }
 
 object Http4sBackend {

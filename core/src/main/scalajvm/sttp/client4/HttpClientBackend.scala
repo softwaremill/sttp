@@ -70,7 +70,7 @@ abstract class HttpClientBackend[F[_], S, P, B](
       }
     }
 
-  private implicit val monad: MonadError[F] = responseMonad
+  private implicit val _monad: MonadError[F] = monad
 
   private[client4] def readResponse[T](
       res: HttpResponse[_],
@@ -99,14 +99,14 @@ abstract class HttpClientBackend[F[_], S, P, B](
       resBody
     }
     val body = bodyFromHttpClient(decodedResBody, request.response, responseMetadata)
-    responseMonad.map(body)(Response(_, code, "", headers, Nil, request.onlyMetadata))
+    monad.map(body)(Response(_, code, "", headers, Nil, request.onlyMetadata))
   }
 
   protected def standardEncoding: (B, String) => B
 
   override def close(): F[Unit] = {
     if (closeClient) {
-      responseMonad.eval(
+      monad.eval(
         client
           .executor()
           .map[Unit](new function.Function[Executor, Unit] {
@@ -117,7 +117,7 @@ abstract class HttpClientBackend[F[_], S, P, B](
           })
       )
     } else {
-      responseMonad.unit(())
+      monad.unit(())
     }
   }
 }
