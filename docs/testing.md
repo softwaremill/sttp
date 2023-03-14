@@ -229,10 +229,8 @@ BackendStub(implicitly[MonadAsyncError[IO]])
 It is also possible to create a stub backend which delegates calls to another (possibly "real") backend if none of the specified predicates match a request. This can be useful during development, to partially stub a yet incomplete API with which we integrate:
 
 ```scala mdoc:compile-only
-import sttp.client4.httpclient.HttpClientSyncBackend
-
 val testingBackend =
-  SyncBackendStub.withFallback(HttpClientSyncBackend())
+  SyncBackendStub.withFallback(DefaultSyncBackend())
     .whenRequestMatches(_.uri.path.startsWith(List("a")))
     .thenRespond("I'm a STUB!")
 

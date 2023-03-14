@@ -34,10 +34,9 @@ You can disable the stripping of all sensitive headers using the following code:
 
 ```scala mdoc:compile-only
 import sttp.client4._
-import sttp.client4.httpclient.HttpClientSyncBackend
 import sttp.client4.wrappers.{FollowRedirectsBackend, FollowRedirectsConfig}
 
-val myBackend: SyncBackend = HttpClientSyncBackend()
+val myBackend: SyncBackend = DefaultSyncBackend()
 val backend: SyncBackend  = FollowRedirectsBackend(
   delegate = myBackend, 
   FollowRedirectsConfig(
@@ -51,10 +50,9 @@ If you just want to disable stripping of the `Authorization` header, you can do 
 ```scala mdoc:compile-only
 import sttp.client4._
 import sttp.model._
-import sttp.client4.httpclient.HttpClientSyncBackend
 import sttp.client4.wrappers.{FollowRedirectsBackend, FollowRedirectsConfig}
 
-val myBackend: SyncBackend = HttpClientSyncBackend()
+val myBackend: SyncBackend = DefaultSyncBackend()
 val backend: SyncBackend = FollowRedirectsBackend(
   delegate = myBackend,
   FollowRedirectsConfig(
@@ -103,11 +101,10 @@ For example:
 
 ```scala mdoc:compile-only
 import sttp.client4._
-import sttp.client4.httpclient.HttpClientSyncBackend
 import sttp.client4.wrappers.{FollowRedirectsBackend, FollowRedirectsConfig}
 import sttp.model.Uri.QuerySegmentEncoding
 
-val myBackend: SyncBackend = HttpClientSyncBackend()
+val myBackend: SyncBackend = DefaultSyncBackend()
 val backend: SyncBackend  = FollowRedirectsBackend(
   delegate = myBackend,
   FollowRedirectsConfig(

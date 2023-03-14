@@ -13,9 +13,9 @@
 ## Welcome!
 
 [sttp client](https://github.com/softwaremill/sttp) is an open-source library which provides a clean, programmer-friendly API to describe HTTP
-requests and how to handle responses. Requests are sent using one of the backends, which wrap other Scala or Java HTTP client implementations. The backends can integrate with a variety of Scala stacks, providing both synchronous and asynchronous, procedural and functional interfaces.
+requests and how to handle responses. Requests are sent using one of the backends, which wrap lower-level Scala or Java HTTP client implementations. The backends can integrate with a variety of Scala stacks, providing both synchronous and asynchronous, procedural and functional interfaces.
  
-Backend implementations include ones based on [akka-http](https://doc.akka.io/docs/akka-http/current/scala/http/), [http4s](https://http4s.org), [OkHttp](http://square.github.io/okhttp/), and HTTP clients which ship with Java. They integrate with [Akka](https://akka.io), [Monix](https://monix.io), [fs2](https://github.com/functional-streams-for-scala/fs2), [cats-effect](https://github.com/typelevel/cats-effect), [scalaz](https://github.com/scalaz/scalaz) and [ZIO](https://github.com/zio/zio). Supported Scala versions include 2.11, 2.12, 2.13 and 3, Scala.JS and Scala Native.
+Backend implementations include the HTTP client that is shipped with Java, as well as ones based on [akka-http](https://doc.akka.io/docs/akka-http/current/scala/http/), [http4s](https://http4s.org), [OkHttp](http://square.github.io/okhttp/). They integrate with [Akka](https://akka.io), [Monix](https://monix.io), [fs2](https://github.com/functional-streams-for-scala/fs2), [cats-effect](https://github.com/typelevel/cats-effect), [scalaz](https://github.com/scalaz/scalaz) and [ZIO](https://github.com/zio/zio). Supported Scala versions include 2.12, 2.13 and 3, Scala.JS and Scala Native; supported Java versions include 11+.
 
 Here's a quick example of sttp client in action:
  
@@ -29,7 +29,7 @@ val query = "http language:scala"
 // `sort` is removed, as the value is not defined
 val request = basicRequest.get(uri"https://api.github.com/search/repositories?q=$query&sort=$sort")
   
-val backend = HttpClientSyncBackend()
+val backend = DefaultSyncBackend()
 val response = request.send(backend)
 
 // response.header(...): Option[String]
@@ -51,17 +51,28 @@ sttp (v1) documentation is available at [sttp.softwaremill.com/en/v1](https://st
 
 scaladoc is available at [https://www.javadoc.io](https://www.javadoc.io/doc/com.softwaremill.sttp.client4/core_2.12/3.8.13)
 
+## Quickstart with scala-cli
+
+Add the following directive to the top of your scala file to add the core sttp dependency:
+If you are using [scala-cli](https://scala-cli.virtuslab.org), you can quickly start experimenting with sttp by copy-pasting the following:
+
+```
+//> using lib "com.softwaremill.sttp.client4:core:3.8.13"
+import sttp.client4.quick._
+quickRequest.get(uri"http://httpbin.org/ip").send()
+```
+
+The `quick` package import brings in the sttp API and a pre-configured, global synchronous backend instance.
+
 ## Quickstart with Ammonite
 
-If you are an [Ammonite](http://ammonite.io) user, you can quickly start experimenting with sttp by copy-pasting the following:
+Similarly, using [Ammonite](http://ammonite.io):
 
 ```scala
 import $ivy.`com.softwaremill.sttp.client4::core:3.8.13`
 import sttp.client4.quick._
-quickRequest.get(uri"http://httpbin.org/ip").send(backend)
+quickRequest.get(uri"http://httpbin.org/ip").send()
 ```
-
-This brings in the sttp API and a synchronous backend instance.
 
 ## Quickstart with sbt
 
@@ -102,7 +113,7 @@ If you'd like to run the tests using *only* the JVM backend, execute: `sbt rootJ
 
 ### Importing into IntelliJ
 
-By default, when importing to IntelliJ, only the Scala 2.13/JVM subprojects will be imported. This is controlled by the `ideSkipProject` setting in `build.sbt` (inside `commonSettings`).
+By default, when importing to IntelliJ or Metals, only the Scala 2.13/JVM subprojects will be imported. This is controlled by the `ideSkipProject` setting in `build.sbt` (inside `commonSettings`).
 
 If you'd like to work on a different platform or Scala version, simply change this setting temporarily so that the correct subprojects are imported. For example:
 
@@ -150,4 +161,4 @@ We offer commercial support for sttp and related technologies, as well as develo
 
 ## Copyright
 
-Copyright (C) 2017-2022 SoftwareMill [https://softwaremill.com](https://softwaremill.com).
+Copyright (C) 2017-2023 SoftwareMill [https://softwaremill.com](https://softwaremill.com).
