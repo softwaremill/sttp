@@ -1,13 +1,12 @@
 package sttp.client4.internal
 
 object WwwAuthHeaderParser {
-  def parse(text: String): WwwAuthHeaderValue = {
+  def parse(text: String): WwwAuthHeaderValue =
     WwwAuthHeaderValue(
       text
-        .foldLeft(KeyParser(Map.empty): Parser) { (parser, char) => parser.parseNext(char) }
+        .foldLeft(KeyParser(Map.empty): Parser)((parser, char) => parser.parseNext(char))
         .close()
     )
-  }
 }
 
 case class WwwAuthHeaderValue(values: Map[String, String]) {
@@ -20,7 +19,7 @@ case class WwwAuthHeaderValue(values: Map[String, String]) {
 }
 
 private case class KeyParser private (currentKey: String, parsed: Map[String, String]) extends Parser {
-  override def parseNext(input: Char): Parser = {
+  override def parseNext(input: Char): Parser =
     if (input == '=') {
       ValueParser(currentKey, parsed)
     } else if (input == ' ') {
@@ -28,7 +27,6 @@ private case class KeyParser private (currentKey: String, parsed: Map[String, St
     } else {
       this.copy(currentKey = currentKey + input)
     }
-  }
 
   override def close(): Map[String, String] = throw new IllegalStateException(this.toString)
 }
@@ -42,13 +40,12 @@ private case class ValueParser private (
     currentValue: String,
     parsed: Map[String, String]
 ) extends Parser {
-  override def parseNext(input: Char): Parser = {
+  override def parseNext(input: Char): Parser =
     if (input == '"') {
       QuotedValueParser(currentKey, parsed)
     } else {
       UnquotedValueParser(currentKey, input.toString, parsed)
     }
-  }
 
   override def close(): Map[String, String] = throw new IllegalStateException(this.toString)
 }
@@ -62,13 +59,12 @@ private case class QuotedValueParser private (
     currentValue: String,
     parsed: Map[String, String]
 ) extends Parser {
-  override def parseNext(input: Char): Parser = {
+  override def parseNext(input: Char): Parser =
     if (input == '"') {
       UnquotedValueParser(currentKey, currentValue, parsed)
     } else {
       this.copy(currentValue = currentValue + input)
     }
-  }
   override def close(): Map[String, String] = throw new IllegalStateException(this.toString)
 }
 
@@ -81,24 +77,22 @@ private case class UnquotedValueParser(
     currentValue: String,
     parsed: Map[String, String]
 ) extends Parser {
-  override def parseNext(input: Char): Parser = {
+  override def parseNext(input: Char): Parser =
     if (input == ',') {
       SeparatorParser(parsed + (currentKey -> currentValue)).parseNext(input)
     } else {
       this.copy(currentValue = currentValue + input)
     }
-  }
   override def close(): Map[String, String] = parsed + (currentKey -> currentValue)
 }
 
 private case class SeparatorParser(parsed: Map[String, String]) extends Parser {
-  override def parseNext(input: Char): Parser = {
+  override def parseNext(input: Char): Parser =
     input match {
       case ',' => this
       case ' ' => KeyParser(parsed)
       case o   => KeyParser(parsed).parseNext(o)
     }
-  }
 
   override def close(): Map[String, String] = parsed
 }

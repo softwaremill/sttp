@@ -11,12 +11,21 @@ import sttp.client4.monad.IdMonad
 import sttp.client4.okhttp.OkHttpBackend.EncodingHandler
 import sttp.client4.testing.WebSocketBackendStub
 import sttp.client4.wrappers.FollowRedirectsBackend
-import sttp.client4.{BackendOptions, DefaultReadTimeout, GenericRequest, Identity, Response, WebSocketBackend, ignore, wrappers}
+import sttp.client4.{
+  ignore,
+  wrappers,
+  BackendOptions,
+  DefaultReadTimeout,
+  GenericRequest,
+  Identity,
+  Response,
+  WebSocketBackend
+}
 import sttp.monad.MonadError
 import sttp.ws.WebSocket
 
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, Future, blocking}
+import scala.concurrent.{blocking, Await, ExecutionContext, Future}
 
 class OkHttpSyncBackend private (
     client: OkHttpClient,
@@ -97,12 +106,14 @@ object OkHttpSyncBackend {
       customEncodingHandler: EncodingHandler,
       webSocketBufferCapacity: Option[Int]
   ): WebSocketBackend[Identity] =
-    wrappers.FollowRedirectsBackend(new OkHttpSyncBackend(client, closeClient, customEncodingHandler, webSocketBufferCapacity))
+    wrappers.FollowRedirectsBackend(
+      new OkHttpSyncBackend(client, closeClient, customEncodingHandler, webSocketBufferCapacity)
+    )
 
   def apply(
-             options: BackendOptions = BackendOptions.Default,
-             customEncodingHandler: EncodingHandler = PartialFunction.empty,
-             webSocketBufferCapacity: Option[Int] = OkHttpBackend.DefaultWebSocketBufferCapacity
+      options: BackendOptions = BackendOptions.Default,
+      customEncodingHandler: EncodingHandler = PartialFunction.empty,
+      webSocketBufferCapacity: Option[Int] = OkHttpBackend.DefaultWebSocketBufferCapacity
   ): WebSocketBackend[Identity] =
     OkHttpSyncBackend(
       OkHttpBackend.defaultClient(DefaultReadTimeout.toMillis, options),

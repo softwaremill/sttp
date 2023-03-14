@@ -43,14 +43,14 @@ class FetchMonixBackend private (fetchOptions: FetchOptions, customizeRequest: F
 
   override protected def handleResponseAsStream(
       response: FetchResponse
-  ): Task[(Observable[Array[Byte]], () => Task[Unit])] = {
+  ): Task[(Observable[Array[Byte]], () => Task[Unit])] =
     Task
       .delay {
         lazy val reader = response.body.getReader()
 
         def read() = convertFromFuture(reader.read().toFuture)
 
-        def go(): Observable[Array[Byte]] = {
+        def go(): Observable[Array[Byte]] =
           Observable.fromTask(read()).flatMap { chunk =>
             if (chunk.done) Observable.empty
             else {
@@ -58,11 +58,9 @@ class FetchMonixBackend private (fetchOptions: FetchOptions, customizeRequest: F
               Observable.pure(bytes) ++ go()
             }
           }
-        }
         val cancel = Task(reader.cancel("Response body reader cancelled")).void
         (go().doOnSubscriptionCancel(cancel), () => cancel)
       }
-  }
 
   override protected def compileWebSocketPipe(
       ws: WebSocket[Task],

@@ -15,7 +15,7 @@ import sttp.monad.syntax._
 
 import scala.collection.immutable.Seq
 import scala.io.Source
-import scala.scalanative.libc.stdio.{FILE, fclose, fopen}
+import scala.scalanative.libc.stdio.{fclose, fopen, FILE}
 import scala.scalanative.libc.stdlib._
 import scala.scalanative.libc.string._
 import scala.scalanative.unsafe
@@ -70,7 +70,7 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
     )
 
   private def handleBase[T](request: GenericRequest[T, R], curl: CurlHandle, spaces: CurlSpaces)(implicit
-                                                                                                 z: unsafe.Zone
+      z: unsafe.Zone
   ) = {
     curl.option(WriteFunction, AbstractCurlBackend.wdFunc)
     curl.option(WriteData, spaces.bodyResp)
@@ -240,9 +240,9 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
       throw new IllegalStateException("CurlBackend does not support streaming responses")
 
     override protected def handleWS[T](
-                                        responseAs: GenericWebSocketResponseAs[T, _],
-                                        meta: ResponseMetadata,
-                                        ws: Nothing
+        responseAs: GenericWebSocketResponseAs[T, _],
+        meta: ResponseMetadata,
+        ws: Nothing
     ): F[T] = ws
 
     override protected def cleanupWhenNotAWebSocket(
@@ -253,22 +253,20 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
     override protected def cleanupWhenGotWebSocket(response: Nothing, e: GotAWebSocketException): F[Unit] = response
   }
 
-  private def transformHeaders(reqHeaders: Iterable[Header])(implicit z: Zone): CurlList = {
+  private def transformHeaders(reqHeaders: Iterable[Header])(implicit z: Zone): CurlList =
     reqHeaders
-      .map { header => s"${header.name}: ${header.value}" }
+      .map(header => s"${header.name}: ${header.value}")
       .foldLeft(new CurlList(null)) { case (acc, h) =>
         new CurlList(acc.ptr.append(h))
       }
-  }
 
   private def toByteArray(str: String): F[Array[Byte]] = monad.unit(str.getBytes)
 
-  private def lift(code: CurlCode): F[CurlCode] = {
+  private def lift(code: CurlCode): F[CurlCode] =
     code match {
       case CurlCode.Ok => monad.unit(code)
       case _           => monad.error(new RuntimeException(s"Command failed with status $code"))
     }
-  }
 }
 
 object AbstractCurlBackend {

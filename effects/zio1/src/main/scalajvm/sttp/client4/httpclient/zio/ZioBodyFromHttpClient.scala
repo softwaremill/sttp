@@ -36,7 +36,7 @@ private[zio] class ZioBodyFromHttpClient extends BodyFromHttpClient[Task, ZioStr
       override protected def withReplayableBody(
           response: ZStream[Any, Throwable, Byte],
           replayableBody: Either[Array[Byte], SttpFile]
-      ): Task[ZStream[Any, Throwable, Byte]] = {
+      ): Task[ZStream[Any, Throwable, Byte]] =
         replayableBody match {
           case Left(byteArray) => ZIO.succeed(Stream.fromIterable(byteArray))
           case Right(file) =>
@@ -49,7 +49,6 @@ private[zio] class ZioBodyFromHttpClient extends BodyFromHttpClient[Task, ZioStr
               } yield bytes
             )
         }
-      }
 
       override protected def regularIgnore(response: ZStream[Any, Throwable, Byte]): Task[Unit] =
         response.run(ZSink.drain)
@@ -62,7 +61,7 @@ private[zio] class ZioBodyFromHttpClient extends BodyFromHttpClient[Task, ZioStr
           response: ZStream[Any, Throwable, Byte],
           file: SttpFile
       ): Task[SttpFile] = response
-        .run({
+        .run {
           ZSink.managed(
             AsynchronousFileChannel
               .open(Path.fromJava(file.toPath), StandardOpenOption.WRITE, StandardOpenOption.CREATE): Managed[
@@ -80,7 +79,7 @@ private[zio] class ZioBodyFromHttpClient extends BodyFromHttpClient[Task, ZioStr
                 )
             }
           }
-        })
+        }
         .as(file)
 
       override protected def regularAsStream(

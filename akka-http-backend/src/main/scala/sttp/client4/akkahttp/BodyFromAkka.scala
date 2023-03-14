@@ -20,9 +20,9 @@ import scala.util.Failure
 
 private[akkahttp] class BodyFromAkka()(implicit ec: ExecutionContext, mat: Materializer, m: MonadError[Future]) {
   def apply[T, R](
-                   responseAs: ResponseAsDelegate[T, R],
-                   meta: ResponseMetadata,
-                   response: Either[HttpResponse, Promise[Flow[Message, Message, NotUsed]]]
+      responseAs: ResponseAsDelegate[T, R],
+      meta: ResponseMetadata,
+      response: Either[HttpResponse, Promise[Flow[Message, Message, NotUsed]]]
   ): Future[T] =
     bodyFromResponseAs(responseAs, meta, response)
 
@@ -40,16 +40,14 @@ private[akkahttp] class BodyFromAkka()(implicit ec: ExecutionContext, mat: Mater
         Future.successful(response.copy(entity = replayEntity))
       }
 
-      override protected def regularIgnore(response: HttpResponse): Future[Unit] = {
+      override protected def regularIgnore(response: HttpResponse): Future[Unit] =
         // todo: Replace with HttpResponse#discardEntityBytes() once https://github.com/akka/akka-http/issues/1459 is resolved
         response.entity.dataBytes.runWith(Sink.ignore).map(_ => ())
-      }
 
-      override protected def regularAsByteArray(response: HttpResponse): Future[Array[Byte]] = {
+      override protected def regularAsByteArray(response: HttpResponse): Future[Array[Byte]] =
         response.entity.dataBytes
           .runFold(ByteString(""))(_ ++ _)
           .map(_.toArray[Byte])
-      }
 
       override protected def regularAsFile(response: HttpResponse, file: SttpFile): Future[SttpFile] = {
         val f = file.toFile
@@ -63,7 +61,7 @@ private[akkahttp] class BodyFromAkka()(implicit ec: ExecutionContext, mat: Mater
 
       override protected def regularAsStream(
           response: HttpResponse
-      ): Future[(Source[ByteString, Any], () => Future[Unit])] = {
+      ): Future[(Source[ByteString, Any], () => Future[Unit])] =
         Future.successful(
           (
             response.entity.dataBytes,
@@ -71,7 +69,6 @@ private[akkahttp] class BodyFromAkka()(implicit ec: ExecutionContext, mat: Mater
             () => response.discardEntityBytes().future().map(_ => ()).recover { case _ => () }
           )
         )
-      }
 
       override protected def handleWS[T](
           responseAs: GenericWebSocketResponseAs[T, _],
@@ -92,7 +89,7 @@ private[akkahttp] class BodyFromAkka()(implicit ec: ExecutionContext, mat: Mater
       rr: GenericWebSocketResponseAs[T, R],
       wsFlow: Promise[Flow[Message, Message, NotUsed]],
       meta: ResponseMetadata
-  )(implicit ec: ExecutionContext, mat: Materializer): Future[T] = {
+  )(implicit ec: ExecutionContext, mat: Materializer): Future[T] =
     rr match {
       case ResponseAsWebSocket(f) =>
         val (flow, wsFuture) = webSocketAndFlow(meta)
@@ -126,7 +123,6 @@ private[akkahttp] class BodyFromAkka()(implicit ec: ExecutionContext, mat: Mater
 
         donePromise.future.map(_ => ())
     }
-  }
 
   private def webSocketAndFlow(meta: ResponseMetadata)(implicit
       ec: ExecutionContext,
@@ -210,7 +206,7 @@ private[akkahttp] class BodyFromAkka()(implicit ec: ExecutionContext, mat: Mater
         msg.dataStream.runFold(ByteString.empty)(_ ++ _).map(b => WebSocketFrame.binary(b.toArray))
     }
 
-  private def frameToMessage(w: WebSocketFrame): Option[Message] = {
+  private def frameToMessage(w: WebSocketFrame): Option[Message] =
     w match {
       case WebSocketFrame.Text(p, _, _)   => Some(TextMessage(p))
       case WebSocketFrame.Binary(p, _, _) => Some(BinaryMessage(ByteString(p)))
@@ -218,5 +214,4 @@ private[akkahttp] class BodyFromAkka()(implicit ec: ExecutionContext, mat: Mater
       case WebSocketFrame.Pong(_)         => None
       case WebSocketFrame.Close(_, _)     => throw WebSocketClosed(None)
     }
-  }
 }

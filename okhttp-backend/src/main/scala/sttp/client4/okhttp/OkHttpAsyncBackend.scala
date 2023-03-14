@@ -8,7 +8,7 @@ import sttp.capabilities.Streams
 import sttp.client4.internal.ws.{SimpleQueue, WebSocketEvent}
 import sttp.monad.syntax._
 import sttp.client4.okhttp.OkHttpBackend.EncodingHandler
-import sttp.client4.{GenericRequest, Response, ignore}
+import sttp.client4.{ignore, GenericRequest, Response}
 import sttp.monad.{Canceler, MonadAsyncError}
 
 abstract class OkHttpAsyncBackend[F[_], S <: Streams[S], P](

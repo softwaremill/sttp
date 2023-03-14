@@ -11,7 +11,7 @@ import sttp.client4.internal.httpclient.{BodyFromHttpClient, BodyToHttpClient, S
 import sttp.client4.internal.ws.SimpleQueue
 import sttp.client4.testing.WebSocketStreamBackendStub
 import sttp.client4.wrappers.FollowRedirectsBackend
-import sttp.client4.{BackendOptions, WebSocketStreamBackend, wrappers}
+import sttp.client4.{wrappers, BackendOptions, WebSocketStreamBackend}
 import sttp.monad.MonadError
 import zio.Chunk.ByteArray
 import zio._
@@ -111,7 +111,7 @@ object HttpClientZioBackend {
       options: BackendOptions = BackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
-  ): Task[WebSocketStreamBackend[Task, ZioStreams]] = {
+  ): Task[WebSocketStreamBackend[Task, ZioStreams]] =
     ZIO.executor.flatMap(executor =>
       ZIO.attempt(
         HttpClientZioBackend(
@@ -122,7 +122,6 @@ object HttpClientZioBackend {
         )
       )
     )
-  }
 
   def scoped(
       options: BackendOptions = BackendOptions.Default,
@@ -146,7 +145,7 @@ object HttpClientZioBackend {
       options: BackendOptions = BackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
-  ): ZLayer[Any, Throwable, SttpClient] = {
+  ): ZLayer[Any, Throwable, SttpClient] =
     ZLayer.scoped(
       (for {
         backend <- HttpClientZioBackend(
@@ -156,7 +155,6 @@ object HttpClientZioBackend {
         )
       } yield backend).tap(client => ZIO.addFinalizer(client.close().ignore))
     )
-  }
 
   def usingClient(
       client: HttpClient,
@@ -174,7 +172,7 @@ object HttpClientZioBackend {
       client: HttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
-  ): ZLayer[Any, Throwable, SttpClient] = {
+  ): ZLayer[Any, Throwable, SttpClient] =
     ZLayer.scoped(
       ZIO
         .acquireRelease(
@@ -187,7 +185,6 @@ object HttpClientZioBackend {
           )
         )(_.close().ignore)
     )
-  }
 
   /** Create a stub backend for testing, which uses the [[Task]] response wrapper, and supports `Stream[Throwable,
     * ByteBuffer]` streaming.

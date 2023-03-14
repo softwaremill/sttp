@@ -26,17 +26,16 @@ private[monix] trait MonixBodyFromHttpClient extends BodyFromHttpClient[Task, Mo
     MonixWebSockets.compilePipe(ws, pipe)
 
   override protected def bodyFromResponseAs
-      : BodyFromResponseAs[Task, Observable[Array[Byte]], WebSocket[Task], Observable[Array[Byte]]] = {
+      : BodyFromResponseAs[Task, Observable[Array[Byte]], WebSocket[Task], Observable[Array[Byte]]] =
     new BodyFromResponseAs[Task, MonixStreams.BinaryStream, WebSocket[Task], MonixStreams.BinaryStream]() {
       override protected def withReplayableBody(
           response: Observable[Array[Byte]],
           replayableBody: Either[Array[Byte], SttpFile]
-      ): Task[Observable[Array[Byte]]] = {
+      ): Task[Observable[Array[Byte]]] =
         replayableBody match {
           case Left(value) => Task.pure(Observable.now(value))
           case Right(file) => Task.pure(readAsync(file.toPath, 32 * 1024))
         }
-      }
 
       override protected def regularIgnore(response: Observable[Array[Byte]]): Task[Unit] =
         response.consumeWith(Consumer.complete)
@@ -68,5 +67,4 @@ private[monix] trait MonixBodyFromHttpClient extends BodyFromHttpClient[Task, Mo
       override protected def cleanupWhenGotWebSocket(response: WebSocket[Task], e: GotAWebSocketException): Task[Unit] =
         response.close()
     }
-  }
 }

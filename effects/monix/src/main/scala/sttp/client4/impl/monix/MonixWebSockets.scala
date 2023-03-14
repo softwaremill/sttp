@@ -10,7 +10,7 @@ object MonixWebSockets {
   def compilePipe(
       ws: WebSocket[Task],
       pipe: Observable[WebSocketFrame.Data[_]] => Observable[WebSocketFrame]
-  ): Task[Unit] = {
+  ): Task[Unit] =
     Task(BooleanCancelable()).flatMap { wsClosed =>
       val onClose = Task(wsClosed.cancel()).map(_ => None)
       pipe(
@@ -32,7 +32,6 @@ object MonixWebSockets {
         .completedL
         .guarantee(ws.close())
     }
-  }
   def fromTextPipe: (String => WebSocketFrame) => MonixStreams.Pipe[WebSocketFrame, WebSocketFrame] =
     f => fromTextPipeF(_.map(f))
 

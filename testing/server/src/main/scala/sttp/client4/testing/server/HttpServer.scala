@@ -94,7 +94,7 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
           }
         } ~ path("exact") {
           post {
-            entity(as[Array[Byte]]) { (body: Array[Byte]) => complete(body) }
+            entity(as[Array[Byte]])((body: Array[Byte]) => complete(body))
           }
         } ~ post {
           parameterMap { params =>
@@ -120,7 +120,7 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
     } ~ pathPrefix("streaming") {
       path("echo") {
         post {
-          parameterMap { _ => entity(as[String]) { (body: String) => complete(body) } }
+          parameterMap(_ => entity(as[String])((body: String) => complete(body)))
         }
       } ~
         path("is_chunked") {
@@ -214,7 +214,7 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
             Some(un)
           case _ => None
         }
-      ) { userName => complete(s"Hello, $userName!") }
+      )(userName => complete(s"Hello, $userName!"))
     } ~ path("secure_digest") {
       get {
         import akka.http.scaladsl.model._
@@ -387,13 +387,13 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
             discardEntity(redirect("/redirect/get_after_post/result", StatusCodes.PermanentRedirect))
           } ~ path("result") {
             get(complete(s"GET")) ~
-              entity(as[String]) { (body: String) => post(complete(s"POST$body")) }
+              entity(as[String])((body: String) => post(complete(s"POST$body")))
           }
         } ~ pathPrefix("strip_sensitive_headers") {
           path("r1") {
             discardEntity(redirect("/redirect/strip_sensitive_headers/result", StatusCodes.PermanentRedirect))
           } ~ path("result") {
-            extractRequest { (req: HttpRequest) => complete(s"${req.headers.mkString(",")}") }
+            extractRequest((req: HttpRequest) => complete(s"${req.headers.mkString(",")}"))
           }
         } ~ pathPrefix("relative") {
           discardEntity(redirect("r4", StatusCodes.PermanentRedirect))
@@ -490,15 +490,14 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
         }
     }
 
-  def discardEntity(inner: Route): Route = {
+  def discardEntity(inner: Route): Route =
     extractRequest { request =>
       onComplete(request.entity.discardBytes().future()) { _ =>
         inner
       }
     }
-  }
 
-  val corsServerRoutes: Route = {
+  val corsServerRoutes: Route =
     handleRejections(CorsDirectives.corsRejectionHandler) {
       cors(corsSettings) {
         handleRejections(RejectionHandler.default) {
@@ -506,15 +505,13 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
         }
       }
     }
-  }
 
-  def start(): Future[Http.ServerBinding] = {
+  def start(): Future[Http.ServerBinding] =
     unbindServer().flatMap { _ =>
       val server = Http().bindAndHandle(corsServerRoutes, "localhost", port)
       this.server = Some(server)
       server
     }
-  }
 
   def close(): Unit = {
     val unbind = unbindServer()
@@ -525,9 +522,8 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
     )
   }
 
-  private def unbindServer(): Future[Done] = {
+  private def unbindServer(): Future[Done] =
     server.map(_.flatMap(_.unbind())).getOrElse(Future.successful(Done))
-  }
 
   private def transfer(is: InputStream, os: OutputStream): Unit = {
     var read = 0

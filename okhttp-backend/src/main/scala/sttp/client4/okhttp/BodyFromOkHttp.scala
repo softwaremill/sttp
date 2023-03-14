@@ -30,10 +30,10 @@ private[okhttp] trait BodyFromOkHttp[F[_], S] {
   def compileWebSocketPipe(ws: WebSocket[F], pipe: streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]): F[Unit]
 
   def apply[T](
-                responseBody: InputStream,
-                responseAs: ResponseAsDelegate[T, _],
-                responseMetadata: ResponseMetadata,
-                ws: Option[WebSocket[F]]
+      responseBody: InputStream,
+      responseAs: ResponseAsDelegate[T, _],
+      responseMetadata: ResponseMetadata,
+      ws: Option[WebSocket[F]]
   ): F[T] = bodyFromResponseAs(responseAs, responseMetadata, ws.toRight(responseBody))
 
   private lazy val bodyFromResponseAs =
@@ -41,12 +41,11 @@ private[okhttp] trait BodyFromOkHttp[F[_], S] {
       override protected def withReplayableBody(
           response: InputStream,
           replayableBody: Either[Array[Byte], SttpFile]
-      ): F[InputStream] = {
+      ): F[InputStream] =
         (replayableBody match {
           case Left(byteArray) => new ByteArrayInputStream(byteArray)
           case Right(file)     => new BufferedInputStream(new FileInputStream(file.toFile))
         }).unit
-      }
 
       override protected def regularIgnore(response: InputStream): F[Unit] = monad.eval(response.close())
 

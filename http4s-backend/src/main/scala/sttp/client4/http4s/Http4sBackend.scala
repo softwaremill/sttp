@@ -8,7 +8,7 @@ import cats.implicits._
 import cats.effect.implicits._
 import fs2.io.file.Files
 import fs2.{Chunk, Stream}
-import org.http4s.{ContentCoding, EntityBody, Status, Request => Http4sRequest}
+import org.http4s.{ContentCoding, EntityBody, Request => Http4sRequest, Status}
 import org.http4s
 import org.http4s.blaze.client.BlazeClientBuilder
 import org.http4s.client.Client
@@ -18,7 +18,7 @@ import sttp.capabilities.fs2.Fs2Streams
 import sttp.client4.http4s.Http4sBackend.EncodingHandler
 import sttp.client4.httpclient.fs2.Fs2Compression
 import sttp.client4.impl.cats.CatsMonadAsyncError
-import sttp.client4.internal.{BodyFromResponseAs, IOBufferSize, SttpFile, throwNestedMultipartNotAllowed}
+import sttp.client4.internal.{throwNestedMultipartNotAllowed, BodyFromResponseAs, IOBufferSize, SttpFile}
 import sttp.model._
 import sttp.monad.MonadError
 import sttp.client4.testing.StreamBackendStub
@@ -81,7 +81,7 @@ class Http4sBackend[F[_]: Async](
                 )
 
               body
-                .map { b => Response(b, code, statusText, headers, Nil, r.onlyMetadata) }
+                .map(b => Response(b, code, statusText, headers, Nil, r.onlyMetadata))
                 .flatMap(r => responseVar.complete(Right(r)))
                 .flatMap(_ => responseBodyCompleteVar.get)
             }
@@ -109,18 +109,17 @@ class Http4sBackend[F[_]: Async](
       case _              => http4s.Method.fromString(m.method).right.get
     }
 
-  private def versionToHttp4s(version: HttpVersion): http4s.HttpVersion = {
+  private def versionToHttp4s(version: HttpVersion): http4s.HttpVersion =
     version match {
       case HttpVersion.HTTP_1   => http4s.HttpVersion.`HTTP/1.0`
       case HttpVersion.HTTP_1_1 => http4s.HttpVersion.`HTTP/1.1`
       case HttpVersion.HTTP_2   => http4s.HttpVersion.`HTTP/2`
       case HttpVersion.HTTP_3   => http4s.HttpVersion.`HTTP/3`
     }
-  }
 
   private def charsetToHttp4s(encoding: String) = http4s.Charset.fromNioCharset(Charset.forName(encoding))
 
-  private def basicBodyToHttp4s(body: BasicBodyPart): http4s.Entity[F] = {
+  private def basicBodyToHttp4s(body: BasicBodyPart): http4s.Entity[F] =
     body match {
       case StringBody(b, encoding, _) =>
         http4s.EntityEncoder.stringEncoder(charsetToHttp4s(encoding)).toEntity(b)
@@ -137,9 +136,11 @@ class Http4sBackend[F[_]: Async](
       case FileBody(b, _) =>
         http4s.EntityEncoder.fileEncoder.toEntity(b.toFile)
     }
-  }
 
-  private def bodyToHttp4s[R](r: GenericRequest[_, R], body: GenericRequestBody[R]): (http4s.Entity[F], http4s.Headers) = {
+  private def bodyToHttp4s[R](
+      r: GenericRequest[_, R],
+      body: GenericRequestBody[R]
+  ): (http4s.Entity[F], http4s.Headers) =
     body match {
       case NoBody => (http4s.Entity(http4s.EmptyBody: http4s.EntityBody[F]), http4s.Headers.empty)
 
@@ -156,7 +157,6 @@ class Http4sBackend[F[_]: Async](
         val multipart = http4s.multipart.Multipart(parts)
         (http4s.EntityEncoder.multipartEncoder.toEntity(multipart), multipart.headers)
     }
-  }
 
   private def multipartToHttp4s(mp: Part[BodyPart[_]]): http4s.multipart.Part[F] = {
     val contentDisposition =
@@ -172,17 +172,15 @@ class Http4sBackend[F[_]: Async](
     http4s.multipart.Part(http4s.Headers(allHeaders), body)
   }
 
-  private def onFinalizeSignal(hr: http4s.Response[F], signal: F[Unit]): http4s.Response[F] = {
+  private def onFinalizeSignal(hr: http4s.Response[F], signal: F[Unit]): http4s.Response[F] =
     hr.copy(body = hr.body.onFinalize(signal))
-  }
 
   private def decompressResponseBodyIfNotHead[T](
       m: Method,
       hr: http4s.Response[F],
       disableAutoDecompression: Boolean
-  ): http4s.Response[F] = {
+  ): http4s.Response[F] =
     if (m == Method.HEAD || disableAutoDecompression) hr else decompressResponseBody(hr)
-  }
 
   private def decompressResponseBody(hr: http4s.Response[F]): http4s.Response[F] = {
     val body = hr.headers

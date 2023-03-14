@@ -105,7 +105,7 @@ abstract class HttpClientBackend[F[_], S, P, B](
 
   protected def standardEncoding: (B, String) => B
 
-  override def close(): F[Unit] = {
+  override def close(): F[Unit] =
     if (closeClient) {
       monad.eval(
         client
@@ -120,7 +120,6 @@ abstract class HttpClientBackend[F[_], S, P, B](
     } else {
       monad.unit(())
     }
-  }
 }
 
 object HttpClientBackend {
@@ -128,9 +127,8 @@ object HttpClientBackend {
   type EncodingHandler[B] = PartialFunction[(B, String), B]
   // TODO not sure if it works
   private class ProxyAuthenticator(auth: BackendOptions.ProxyAuth) extends Authenticator {
-    override def getPasswordAuthentication: PasswordAuthentication = {
+    override def getPasswordAuthentication: PasswordAuthentication =
       new PasswordAuthentication(auth.username, auth.password.toCharArray)
-    }
   }
 
   private[client4] def defaultClient(options: BackendOptions, executor: Option[Executor]): HttpClient = {

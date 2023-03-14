@@ -6,8 +6,8 @@ import akka.http.scaladsl.model.{
   HttpEntity,
   HttpRequest,
   MediaType,
-  RequestEntity,
-  Multipart => AkkaMultipart
+  Multipart => AkkaMultipart,
+  RequestEntity
 }
 import akka.stream.scaladsl.{Source, StreamConverters}
 import akka.util.ByteString
@@ -21,9 +21,9 @@ import scala.util.{Failure, Success, Try}
 
 private[akkahttp] object BodyToAkka {
   def apply[R](
-                r: GenericRequest[_, R],
-                body: GenericRequestBody[R],
-                ar: HttpRequest
+      r: GenericRequest[_, R],
+      body: GenericRequestBody[R],
+      ar: HttpRequest
   ): Try[HttpRequest] = {
     def ctWithCharset(ct: ContentType, charset: String) =
       HttpCharsets
@@ -53,9 +53,7 @@ private[akkahttp] object BodyToAkka {
       for {
         ct <- Util.parseContentTypeOrOctetStream(mp.contentType)
         headers <- ToAkka.headers(mp.headers.toList)
-      } yield {
-        AkkaMultipart.FormData.BodyPart(mp.name, entity(ct), mp.dispositionParams, headers)
-      }
+      } yield AkkaMultipart.FormData.BodyPart(mp.name, entity(ct), mp.dispositionParams, headers)
     }
 
     def streamEntity(contentType: ContentType, s: AkkaStreams.BinaryStream) =
@@ -83,9 +81,9 @@ private[akkahttp] object BodyToAkka {
   }
 
   private def multipartEntity(
-                               r: GenericRequest[_, _],
-                               bodyParts: Seq[AkkaMultipart.FormData.BodyPart]
-  ): Try[RequestEntity] = {
+      r: GenericRequest[_, _],
+      bodyParts: Seq[AkkaMultipart.FormData.BodyPart]
+  ): Try[RequestEntity] =
     r.headers.find(Util.isContentType) match {
       case None => Success(AkkaMultipart.FormData(bodyParts: _*).toEntity())
       case Some(ct) =>
@@ -93,11 +91,10 @@ private[akkahttp] object BodyToAkka {
           case m: MediaType.Multipart =>
             Success(
               AkkaMultipart
-                .General(m, Source(bodyParts.map { bp => AkkaMultipart.General.BodyPart(bp.entity, bp.headers) }))
+                .General(m, Source(bodyParts.map(bp => AkkaMultipart.General.BodyPart(bp.entity, bp.headers))))
                 .toEntity()
             )
           case _ => Failure(new RuntimeException(s"Non-multipart content type: $ct"))
         }
     }
-  }
 }

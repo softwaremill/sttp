@@ -2,7 +2,7 @@ package sttp.client4.internal.httpclient
 
 import sttp.capabilities.Streams
 import sttp.client4.internal.SttpToJavaConverters.toJavaSupplier
-import sttp.client4.internal.{Utf8, throwNestedMultipartNotAllowed}
+import sttp.client4.internal.{throwNestedMultipartNotAllowed, Utf8}
 import sttp.client4._
 import sttp.model.{Header, HeaderNames, Part}
 import sttp.monad.MonadError
@@ -21,9 +21,9 @@ private[client4] trait BodyToHttpClient[F[_], S] {
   implicit def monad: MonadError[F]
 
   def apply[T](
-                request: GenericRequest[T, _],
-                builder: HttpRequest.Builder,
-                contentType: Option[String]
+      request: GenericRequest[T, _],
+      builder: HttpRequest.Builder,
+      contentType: Option[String]
   ): F[BodyPublisher] = {
     val body = request.body match {
       case NoBody              => BodyPublishers.noBody().unit
@@ -81,12 +81,11 @@ private[client4] trait BodyToHttpClient[F[_], S] {
       override def get(): InputStream = t
     }
 
-  private def withKnownContentLength(delegate: HttpRequest.BodyPublisher, cl: Long): HttpRequest.BodyPublisher = {
+  private def withKnownContentLength(delegate: HttpRequest.BodyPublisher, cl: Long): HttpRequest.BodyPublisher =
     new HttpRequest.BodyPublisher {
       override def contentLength(): Long = cl
       override def subscribe(subscriber: Flow.Subscriber[_ >: ByteBuffer]): Unit = delegate.subscribe(subscriber)
     }
-  }
 
   // https://stackoverflow.com/a/6603018/362531
   private class ByteBufferBackedInputStream(buf: ByteBuffer) extends InputStream {

@@ -3,7 +3,7 @@ package sttp.client4
 import sttp.model.Method
 
 object RetryWhen {
-  def isBodyRetryable(body: GenericRequestBody[_]): Boolean = {
+  def isBodyRetryable(body: GenericRequestBody[_]): Boolean =
     body match {
       case NoBody              => true
       case _: StringBody       => true
@@ -14,7 +14,6 @@ object RetryWhen {
       case StreamBody(_)       => false
       case m: MultipartBody[_] => m.parts.forall(p => isBodyRetryable(p.body))
     }
-  }
 
   val Default: RetryWhen = {
     case (_, Left(_: SttpClientException.ConnectException)) => true

@@ -11,7 +11,7 @@ import sttp.client4.internal.httpclient.{BodyFromHttpClient, BodyToHttpClient, S
 import sttp.client4.internal.ws.SimpleQueue
 import sttp.client4.testing.WebSocketStreamBackendStub
 import sttp.client4.wrappers.FollowRedirectsBackend
-import sttp.client4.{BackendOptions, WebSocketStreamBackend, wrappers}
+import sttp.client4.{wrappers, BackendOptions, WebSocketStreamBackend}
 import sttp.monad.MonadError
 import zio.Chunk.ByteArray
 import zio._
@@ -109,10 +109,10 @@ object HttpClientZioBackend {
     )
 
   def apply(
-             options: BackendOptions = BackendOptions.Default,
-             customizeRequest: HttpRequest => HttpRequest = identity,
-             customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
-  ): Task[WebSocketStreamBackend[Task, ZioStreams]] = {
+      options: BackendOptions = BackendOptions.Default,
+      customizeRequest: HttpRequest => HttpRequest = identity,
+      customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
+  ): Task[WebSocketStreamBackend[Task, ZioStreams]] =
     UIO.executor.flatMap(executor =>
       Task.effect(
         HttpClientZioBackend(
@@ -123,22 +123,21 @@ object HttpClientZioBackend {
         )
       )
     )
-  }
 
   def managed(
-               options: BackendOptions = BackendOptions.Default,
-               customizeRequest: HttpRequest => HttpRequest = identity,
-               customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
+      options: BackendOptions = BackendOptions.Default,
+      customizeRequest: HttpRequest => HttpRequest = identity,
+      customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
   ): ZManaged[Any, Throwable, WebSocketStreamBackend[Task, ZioStreams]] =
     ZManaged.make(apply(options, customizeRequest, customEncodingHandler))(
       _.close().ignore
     )
 
   def layer(
-             options: BackendOptions = BackendOptions.Default,
-             customizeRequest: HttpRequest => HttpRequest = identity,
-             customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
-  ): ZLayer[Any, Throwable, SttpClient] = {
+      options: BackendOptions = BackendOptions.Default,
+      customizeRequest: HttpRequest => HttpRequest = identity,
+      customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
+  ): ZLayer[Any, Throwable, SttpClient] =
     ZLayer.fromManaged(
       (for {
         backend <- HttpClientZioBackend(
@@ -148,7 +147,6 @@ object HttpClientZioBackend {
         )
       } yield backend).toManaged(_.close().ignore)
     )
-  }
 
   def usingClient(
       client: HttpClient,
@@ -166,7 +164,7 @@ object HttpClientZioBackend {
       client: HttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
-  ): ZLayer[Any, Throwable, SttpClient] = {
+  ): ZLayer[Any, Throwable, SttpClient] =
     ZLayer.fromManaged(
       ZManaged
         .makeEffect(
@@ -177,7 +175,6 @@ object HttpClientZioBackend {
           )
         )(_.close().ignore)
     )
-  }
 
   /** Create a stub backend for testing, which uses the [[Task]] response wrapper, and supports `Stream[Throwable,
     * ByteBuffer]` streaming.

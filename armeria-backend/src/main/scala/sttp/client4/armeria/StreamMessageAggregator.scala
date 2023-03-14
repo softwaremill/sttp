@@ -19,7 +19,7 @@ private final class StreamMessageAggregator extends Subscriber[HttpData] {
 
   override def onNext(o: HttpData): Unit = {
     var added = false
-    try {
+    try
       if (future.isDone) {
         // no-op
       } else {
@@ -36,14 +36,13 @@ private final class StreamMessageAggregator extends Subscriber[HttpData] {
           added = true
         }
       }
-    } finally {
+    finally
       if (!added) {
         o.close()
       }
-    }
   }
 
-  override def onComplete(): Unit = {
+  override def onComplete(): Unit =
     if (future.isDone) {
       // no-op
     } else {
@@ -53,21 +52,19 @@ private final class StreamMessageAggregator extends Subscriber[HttpData] {
           val merged = new Array[Byte](contentLength)
           var offset = 0
 
-          contentList.foreach(data => {
+          contentList.foreach { data =>
             val dataLength = data.length()
             System.arraycopy(data.array(), 0, merged, offset, dataLength)
             offset += dataLength
-          })
+          }
           contentList.clear()
           HttpData.wrap(merged)
         }
       val _ = future.complete(content)
     }
-  }
 
-  override def onError(t: Throwable): Unit = {
+  override def onError(t: Throwable): Unit =
     fail(t)
-  }
 
   private def fail(cause: Throwable): Unit = {
     contentList.foreach(_.close)

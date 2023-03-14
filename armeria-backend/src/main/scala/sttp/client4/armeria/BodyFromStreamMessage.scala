@@ -9,7 +9,7 @@ import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicReference
 import sttp.capabilities.Streams
 import sttp.client4.GenericWebSocketResponseAs
-import sttp.client4.armeria.AbstractArmeriaBackend.{RightUnit, noopCanceler}
+import sttp.client4.armeria.AbstractArmeriaBackend.{noopCanceler, RightUnit}
 import sttp.client4.internal.{BodyFromResponseAs, SttpFile}
 import sttp.client4.ws.{GotAWebSocketException, NotAWebSocketException}
 import sttp.model.ResponseMetadata
@@ -36,8 +36,8 @@ private[armeria] trait BodyFromStreamMessage[F[_], S] {
       aggregator = aggregatorRef.get()
     }
 
-    monad.async(cb => {
-      aggregator.future.handle((data: HttpData, cause: Throwable) => {
+    monad.async { cb =>
+      aggregator.future.handle { (data: HttpData, cause: Throwable) =>
         if (cause == null) {
           val array = data.array()
           cb(Right(array))
@@ -45,38 +45,35 @@ private[armeria] trait BodyFromStreamMessage[F[_], S] {
           cb(Left(cause))
         }
         null
-      })
+      }
       Canceler(() => streamMessage.abort())
-    })
+    }
   }
 
   def publisherToFile(
       p: StreamMessage[HttpData],
       f: File,
       executor: EventExecutor
-  ): F[Unit] = {
-    monad.async[Unit](cb => {
+  ): F[Unit] =
+    monad.async[Unit] { cb =>
       StreamMessages
         .writeTo(p, f.toPath, executor, CommonPools.blockingTaskExecutor())
-        .handle((_: Void, cause: Throwable) => {
+        .handle { (_: Void, cause: Throwable) =>
           if (cause != null) {
             cb(Left(cause))
           } else {
             cb(RightUnit)
           }
           null
-        })
+        }
       noopCanceler
-    })
-  }
+    }
 
-  def bytesToPublisher(b: Array[Byte]): F[StreamMessage[HttpData]] = {
+  def bytesToPublisher(b: Array[Byte]): F[StreamMessage[HttpData]] =
     StreamMessage.of(Array(HttpData.wrap(b)): _*).unit
-  }
 
-  def pathToPublisher(f: Path): F[StreamMessage[HttpData]] = {
+  def pathToPublisher(f: Path): F[StreamMessage[HttpData]] =
     (StreamMessage.of(f): StreamMessage[HttpData]).unit
-  }
 
   def apply(
       executor: EventExecutor,
@@ -103,9 +100,8 @@ private[armeria] trait BodyFromStreamMessage[F[_], S] {
 
       override protected def regularAsStream(
           response: StreamMessage[HttpData]
-      ): F[(streams.BinaryStream, () => F[Unit])] = {
+      ): F[(streams.BinaryStream, () => F[Unit])] =
         (publisherToStream(response), () => monad.eval(response.abort())).unit
-      }
 
       override protected def handleWS[T](
           responseAs: GenericWebSocketResponseAs[T, _],

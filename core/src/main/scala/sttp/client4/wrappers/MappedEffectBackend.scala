@@ -2,7 +2,15 @@ package sttp.client4.wrappers
 
 import sttp.capabilities.Effect
 import sttp.client4.monad.{FunctionK, MapEffect}
-import sttp.client4.{Backend, GenericBackend, GenericRequest, Response, StreamBackend, WebSocketBackend, WebSocketStreamBackend}
+import sttp.client4.{
+  Backend,
+  GenericBackend,
+  GenericRequest,
+  Response,
+  StreamBackend,
+  WebSocketBackend,
+  WebSocketStreamBackend
+}
 import sttp.monad.MonadError
 
 abstract class MappedEffectBackend[F[_], G[_], P](

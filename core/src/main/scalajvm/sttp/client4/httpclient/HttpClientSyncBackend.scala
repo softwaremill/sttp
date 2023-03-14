@@ -6,7 +6,7 @@ import sttp.client4.internal.NoStreams
 import sttp.client4.internal.httpclient.{BodyFromHttpClient, BodyToHttpClient, InputStreamBodyFromHttpClient}
 import sttp.client4.monad.IdMonad
 import sttp.client4.testing.SyncBackendStub
-import sttp.client4.{BackendOptions, GenericRequest, Identity, Response, SttpClientException, SyncBackend, wrappers}
+import sttp.client4.{wrappers, BackendOptions, GenericRequest, Identity, Response, SttpClientException, SyncBackend}
 import sttp.monad.MonadError
 import sttp.ws.{WebSocket, WebSocketFrame}
 
@@ -79,12 +79,14 @@ object HttpClientSyncBackend {
       customizeRequest: HttpRequest => HttpRequest,
       customEncodingHandler: SyncEncodingHandler
   ): SyncBackend =
-    wrappers.FollowRedirectsBackend(new HttpClientSyncBackend(client, closeClient, customizeRequest, customEncodingHandler))
+    wrappers.FollowRedirectsBackend(
+      new HttpClientSyncBackend(client, closeClient, customizeRequest, customEncodingHandler)
+    )
 
   def apply(
-             options: BackendOptions = BackendOptions.Default,
-             customizeRequest: HttpRequest => HttpRequest = identity,
-             customEncodingHandler: SyncEncodingHandler = PartialFunction.empty
+      options: BackendOptions = BackendOptions.Default,
+      customizeRequest: HttpRequest => HttpRequest = identity,
+      customEncodingHandler: SyncEncodingHandler = PartialFunction.empty
   ): SyncBackend =
     HttpClientSyncBackend(
       HttpClientBackend.defaultClient(options, None),

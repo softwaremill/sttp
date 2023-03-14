@@ -32,13 +32,12 @@ trait SttpSprayJsonApi {
     *   - `Left(DeserializationException)` if there's an error during deserialization
     */
   def asJsonEither[E: JsonReader: IsOption, B: JsonReader: IsOption]
-      : ResponseAs[Either[ResponseException[E, Exception], B]] = {
+      : ResponseAs[Either[ResponseException[E, Exception], B]] =
     asJson[B].mapLeft {
       case HttpError(e, code) =>
         ResponseAs.deserializeCatchingExceptions(deserializeJson[E])(e).fold(identity, HttpError(_, code))
       case de @ DeserializationException(_, _) => de
     }.showAsJsonEither
-  }
 
   def deserializeJson[B: JsonReader: IsOption]: String => B =
     JsonInput.sanitize[B].andThen((_: String).parseJson.convertTo[B])

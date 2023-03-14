@@ -1,6 +1,6 @@
 package sttp.client4.upicklejson
 
-import upickle.default.{Reader, Writer, read, write}
+import upickle.default.{read, write, Reader, Writer}
 import sttp.client4._
 import sttp.client4.internal.Utf8
 import sttp.model.MediaType
@@ -32,17 +32,16 @@ trait SttpUpickleApi {
     *   - `Left(HttpError(E))` if the response was other than 2xx and parsing was successful
     *   - `Left(DeserializationException)` if there's an error during deserialization
     */
-  def asJsonEither[E: Reader: IsOption, B: Reader: IsOption]: ResponseAs[Either[ResponseException[E, Exception], B]] = {
+  def asJsonEither[E: Reader: IsOption, B: Reader: IsOption]: ResponseAs[Either[ResponseException[E, Exception], B]] =
     asJson[B].mapLeft {
       case HttpError(e, code) => deserializeJson[E].apply(e).fold(DeserializationException(e, _), HttpError(_, code))
       case de @ DeserializationException(_, _) => de
     }.showAsJsonEither
-  }
 
   def deserializeJson[B: Reader: IsOption]: String => Either[Exception, B] = { (s: String) =>
-    try {
+    try
       Right(read[B](JsonInput.sanitize[B].apply(s)))
-    } catch {
+    catch {
       case e: Exception => Left(e)
       case t: Throwable =>
         // in ScalaJS, ArrayIndexOutOfBoundsException exceptions are wrapped in org.scalajs.linker.runtime.UndefinedBehaviorError

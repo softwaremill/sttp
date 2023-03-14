@@ -20,7 +20,7 @@ object ArmeriaWebClient {
   def newClient(): WebClient = newClient(identity[WebClientBuilder] _)
 
   /** Create a new [[WebClient]] which is adjusted for sttp client's needs. */
-  def newClient(customizeWebClient: WebClientBuilder => WebClientBuilder): WebClient = {
+  def newClient(customizeWebClient: WebClientBuilder => WebClientBuilder): WebClient =
     customizeWebClient(
       WebClient
         .builder()
@@ -33,15 +33,14 @@ object ArmeriaWebClient {
         )
     )
       .build()
-  }
 
   /** Create a new [[WebClient]] which is adjusted for sttp client's needs, and uses the timeouts/proxy specified in
     * `options`.
     */
   def newClient(
-                 options: BackendOptions,
-                 customizeWebClient: WebClientBuilder => WebClientBuilder = identity
-  ): WebClient = {
+      options: BackendOptions,
+      customizeWebClient: WebClientBuilder => WebClientBuilder = identity
+  ): WebClient =
     customizeWebClient(
       WebClient
         .builder()
@@ -55,5 +54,4 @@ object ArmeriaWebClient {
         .factory(newClientFactory(options))
     )
       .build()
-  }
 }

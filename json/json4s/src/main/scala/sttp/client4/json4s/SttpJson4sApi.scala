@@ -43,13 +43,12 @@ trait SttpJson4sApi {
   def asJsonEither[E: Manifest, B: Manifest](implicit
       formats: Formats,
       serialization: Serialization
-  ): ResponseAs[Either[ResponseException[E, Exception], B]] = {
+  ): ResponseAs[Either[ResponseException[E, Exception], B]] =
     asJson[B].mapLeft {
       case HttpError(e, code) =>
         ResponseAs.deserializeCatchingExceptions(deserializeJson[E])(e).fold(identity, HttpError(_, code))
       case de @ DeserializationException(_, _) => de
     }.showAsJsonEither
-  }
 
   def deserializeJson[B: Manifest](implicit
       formats: Formats,

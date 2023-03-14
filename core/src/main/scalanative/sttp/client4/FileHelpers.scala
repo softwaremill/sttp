@@ -11,9 +11,9 @@ object FileHelpers {
       if (file.getParentFile != null) {
         file.getParentFile.mkdirs()
       }
-      try {
+      try
         file.createNewFile()
-      } catch {
+      catch {
         case e: AccessDeniedException => throw new IOException("Permission denied", e) // aligns SN bahavior with Java
       }
     }
@@ -24,7 +24,7 @@ object FileHelpers {
     file
   }
 
-  private[client4] def getFilePath[T, R](response: GenericResponseAs[T, R]): Option[SttpFile] = {
+  private[client4] def getFilePath[T, R](response: GenericResponseAs[T, R]): Option[SttpFile] =
     response match {
       case MappedResponseAs(raw, g, _) => getFilePath(raw)
       case rfm: ResponseAsFromMetadata[T, _] =>
@@ -34,5 +34,4 @@ object FileHelpers {
       case ResponseAsFile(file) => Some(file)
       case _                    => None
     }
-  }
 }

@@ -12,7 +12,7 @@ import sttp.client4.armeria.ArmeriaWebClient.newClient
 import sttp.client4.armeria.{AbstractArmeriaBackend, BodyFromStreamMessage}
 import sttp.client4.impl.monix.TaskMonadAsyncError
 import sttp.client4.wrappers.FollowRedirectsBackend
-import sttp.client4.{BackendOptions, StreamBackend, wrappers}
+import sttp.client4.{wrappers, BackendOptions, StreamBackend}
 import sttp.monad.MonadAsyncError
 
 private final class ArmeriaMonixBackend(client: WebClient, closeFactory: Boolean)(implicit scheduler: Scheduler)
@@ -44,7 +44,7 @@ object ArmeriaMonixBackend {
     *   The scheduler used for streaming request bodies. Defaults to the global scheduler.
     */
   def apply(options: BackendOptions = BackendOptions.Default)(implicit
-                                                              scheduler: Scheduler = Scheduler.global
+      scheduler: Scheduler = Scheduler.global
   ): StreamBackend[Task, MonixStreams] =
     apply(newClient(options), closeFactory = true)
 

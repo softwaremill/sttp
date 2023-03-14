@@ -17,8 +17,8 @@ import com.linecorp.armeria.common.{
   HttpMethod,
   HttpResponse,
   HttpStatus,
-  ResponseHeaders,
-  MediaType => ArmeriaMediaType
+  MediaType => ArmeriaMediaType,
+  ResponseHeaders
 }
 import io.netty.buffer.Unpooled
 import io.netty.util.AsciiString
@@ -34,7 +34,7 @@ import scala.util.{Failure, Success, Try}
 import sttp.capabilities.{Effect, Streams}
 import sttp.client4.SttpClientException.{ConnectException, ReadException, TimeoutException}
 import sttp.client4._
-import sttp.client4.armeria.AbstractArmeriaBackend.{RightUnit, noopCanceler}
+import sttp.client4.armeria.AbstractArmeriaBackend.{noopCanceler, RightUnit}
 import sttp.client4.internal.toByteArray
 import sttp.model._
 import sttp.monad.syntax._
@@ -68,7 +68,7 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
             armeriaRes
               .aggregate()
               .asInstanceOf[CompletableFuture[Void]]
-              .handle((_: Void, cause: Throwable) => {
+              .handle { (_: Void, cause: Throwable) =>
                 // Get an actual error from a response
                 if (cause != null) {
                   cb(Left(cause))
@@ -76,7 +76,7 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
                   cb(Left(ex))
                 }
                 null
-              })
+              }
             noopCanceler
           }
         case Success(ctx) =>
@@ -84,9 +84,7 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
       }
     } catch {
       case NonFatal(ex) => monad.error(ex)
-    } finally {
-      captor.close()
-    }
+    } finally captor.close()
   }
 
   private def requestToArmeria(request: GenericRequest[_, Nothing]): WebClientRequestPreparation = {
@@ -206,9 +204,9 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
     }
 
   private def fromArmeriaResponse[T](
-                                      request: GenericRequest[T, R],
-                                      response: HttpResponse,
-                                      ctx: ClientRequestContext
+      request: GenericRequest[T, R],
+      response: HttpResponse,
+      ctx: ClientRequestContext
   ): F[Response[T]] = {
     val splitHttpResponse = response.split()
     val aggregatorRef = new AtomicReference[StreamMessageAggregator]()
@@ -216,14 +214,14 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
       headers <- monad.async[ResponseHeaders] { cb =>
         splitHttpResponse
           .headers()
-          .handle((headers: ResponseHeaders, cause: Throwable) => {
+          .handle { (headers: ResponseHeaders, cause: Throwable) =>
             if (cause != null) {
               cb(Left(cause))
             } else {
               cb(Right(headers))
             }
             null
-          })
+          }
         Canceler(() => response.abort())
       }
       meta <- headersToResponseMeta(headers, ctx)
@@ -252,38 +250,37 @@ abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
     } else {
       val builder = Seq.newBuilder[Header]
       builder.sizeHint(responseHeaders.size())
-      responseHeaders.forEach((key: AsciiString, value) => {
+      responseHeaders.forEach { (key: AsciiString, value) =>
         // Skip pseudo header
         if (key.charAt(0) != ':') {
           builder += new Header(key.toString(), value)
         }
-      })
+      }
       monad.unit(ResponseMetadata(StatusCode.unsafeApply(status.code()), status.codeAsText(), builder.result()))
     }
   }
 
-  override def close(): F[Unit] = {
+  override def close(): F[Unit] =
     if (closeFactory) {
-      monad.async(cb => {
+      monad.async { cb =>
         client
           .options()
           .factory()
           .closeAsync()
           .asInstanceOf[CompletableFuture[Void]]
-          .handle((_: Void, cause: Throwable) => {
+          .handle { (_: Void, cause: Throwable) =>
             if (cause != null) {
               cb(Left(cause))
             } else {
               cb(RightUnit)
             }
             null
-          })
+          }
         noopCanceler
-      })
+      }
     } else {
       monad.unit(())
     }
-  }
 }
 
 private[armeria] object AbstractArmeriaBackend {

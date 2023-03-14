@@ -18,13 +18,12 @@ object WebSocketTesting extends App {
   }
 
   // the request description
-  def openWebSocket(backend: WebSocketBackend[Task]): Task[Unit] = {
+  def openWebSocket(backend: WebSocketBackend[Task]): Task[Unit] =
     basicRequest
       .get(uri"wss://echo.websocket.org")
       .response(asWebSocket(useWebSocket))
       .send(backend)
       .void
-  }
 
   // the backend stub which we'll use instead of a "real" backend
   val stubBackend: WebSocketStreamBackendStub[Task, MonixStreams] =

@@ -46,13 +46,13 @@ class FetchZioBackend private (fetchOptions: FetchOptions, customizeRequest: Fet
 
   override protected def handleResponseAsStream(
       response: FetchResponse
-  ): Task[(Observable[Byte], () => Task[Unit])] = {
+  ): Task[(Observable[Byte], () => Task[Unit])] =
     ZIO.attempt {
       lazy val reader = response.body.getReader()
 
       def read() = convertFromFuture(reader.read().toFuture)
 
-      def go(): Observable[Byte] = {
+      def go(): Observable[Byte] =
         ZStream.fromZIO(read()).flatMap { chunk =>
           if (chunk.done) ZStream.empty
           else {
@@ -60,11 +60,9 @@ class FetchZioBackend private (fetchOptions: FetchOptions, customizeRequest: Fet
             ZStream.fromChunk(Chunk.fromArray(bytes)) ++ go()
           }
         }
-      }
       val cancel = ZIO.fromPromiseJS(reader.cancel("Response body reader cancelled"))
       (ZStream.fromIterableZIO(go().runCollect.onInterrupt(cancel.catchAll(_ => ZIO.unit))), () => cancel)
     }
-  }
 
   override protected def compileWebSocketPipe(
       ws: WebSocket[Task],

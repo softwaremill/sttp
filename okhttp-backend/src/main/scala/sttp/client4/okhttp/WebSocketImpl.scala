@@ -2,7 +2,7 @@ package sttp.client4.okhttp
 
 import java.util.concurrent.atomic.AtomicBoolean
 
-import okhttp3.{WebSocketListener, Headers => OkHttpHeaders, Response => OkHttpResponse, WebSocket => OkHttpWebSocket}
+import okhttp3.{Headers => OkHttpHeaders, Response => OkHttpResponse, WebSocket => OkHttpWebSocket, WebSocketListener}
 import okio.ByteString
 import sttp.client4.internal.ws.{SimpleQueue, WebSocketEvent}
 import sttp.model.{Header, Headers}
@@ -24,7 +24,7 @@ private[okhttp] class WebSocketImpl[F[_]](
   /** After receiving a close frame, no further interactions with the web socket should happen. Subsequent invocations
     * of `receive`, as well as `send`, will fail with the [[sttp.ws.WebSocketClosed]] exception.
     */
-  override def receive(): F[WebSocketFrame] = {
+  override def receive(): F[WebSocketFrame] =
     queue.poll.flatMap {
       case WebSocketEvent.Open() =>
         receive()
@@ -38,7 +38,6 @@ private[okhttp] class WebSocketImpl[F[_]](
       case WebSocketEvent.Frame(f: WebSocketFrame) =>
         monad.unit(f)
     }
-  }
 
   override def send(f: WebSocketFrame, isContinuation: Boolean = false): F[Unit] =
     monad.flatten(monad.eval(f match {
@@ -59,13 +58,12 @@ private[okhttp] class WebSocketImpl[F[_]](
         monad.error(new UnsupportedOperationException("Pong is handled by okhttp under the hood"))
     }))
 
-  private def fromBoolean(result: Boolean): F[Unit] = {
+  private def fromBoolean(result: Boolean): F[Unit] =
     if (!result) {
       monad.error(new SendMessageException)
     } else {
       monad.unit(())
     }
-  }
 
   override lazy val upgradeHeaders: Headers = Headers(
     _headers.iterator().asScala.map(p => Header(p.getFirst, p.getSecond)).toList
@@ -132,9 +130,8 @@ private[okhttp] class AddToQueueListener[F[_]](queue: SimpleQueue[F, WebSocketEv
 
   override def onMessage(webSocket: OkHttpWebSocket, bytes: ByteString): Unit =
     onFrame(WebSocketFrame.Binary(bytes.toByteArray, finalFragment = true, None))
-  override def onMessage(webSocket: OkHttpWebSocket, text: String): Unit = {
+  override def onMessage(webSocket: OkHttpWebSocket, text: String): Unit =
     onFrame(WebSocketFrame.Text(text, finalFragment = true, None))
-  }
 
   private def onFrame(f: WebSocketFrame): Unit = queue.offer(WebSocketEvent.Frame(f))
 }

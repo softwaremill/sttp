@@ -4,7 +4,7 @@ import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue, LinkedBlockingQu
 
 import sttp.ws.WebSocketBufferFull
 
-import scala.concurrent.{ExecutionContext, Future, blocking}
+import scala.concurrent.{blocking, ExecutionContext, Future}
 
 class FutureSimpleQueue[T](capacity: Option[Int])(implicit ec: ExecutionContext) extends SimpleQueue[Future, T] {
 
@@ -15,11 +15,10 @@ class FutureSimpleQueue[T](capacity: Option[Int])(implicit ec: ExecutionContext)
 
   /** Eagerly adds the given item to the queue.
     */
-  override def offer(t: T): Unit = {
+  override def offer(t: T): Unit =
     if (!queue.offer(t)) {
       throw WebSocketBufferFull(capacity.getOrElse(Int.MaxValue))
     }
-  }
 
   /** Takes an element from the queue or suspends, until one is available. May be eager or lazy, depending on `F`.
     */

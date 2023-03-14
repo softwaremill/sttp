@@ -14,9 +14,9 @@ private[client4] trait BodyFromHttpClient[F[_], S, B] {
   def compileWebSocketPipe(ws: WebSocket[F], pipe: streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]): F[Unit]
 
   def apply[T](
-                response: Either[B, WebSocket[F]],
-                responseAs: ResponseAsDelegate[T, _],
-                responseMetadata: ResponseMetadata
+      response: Either[B, WebSocket[F]],
+      responseAs: ResponseAsDelegate[T, _],
+      responseMetadata: ResponseMetadata
   ): F[T] = bodyFromResponseAs(responseAs, responseMetadata, response)
 
   protected def bodyFromResponseAs: BodyFromResponseAs[F, B, WebSocket[F], streams.BinaryStream]

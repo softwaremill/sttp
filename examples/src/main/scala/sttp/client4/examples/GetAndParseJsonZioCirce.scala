@@ -3,7 +3,7 @@ package sttp.client4.examples
 import io.circe.generic.auto._
 import sttp.client4._
 import sttp.client4.circe._
-import sttp.client4.httpclient.zio.{HttpClientZioBackend, send}
+import sttp.client4.httpclient.zio.{send, HttpClientZioBackend}
 import zio._
 
 object GetAndParseJsonZioCirce extends ZIOAppDefault {

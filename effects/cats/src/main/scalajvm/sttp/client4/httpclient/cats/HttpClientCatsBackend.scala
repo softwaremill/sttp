@@ -8,10 +8,10 @@ import sttp.client4.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client4.impl.cats.CatsMonadAsyncError
 import sttp.client4.internal.httpclient._
 import sttp.client4.internal.ws.SimpleQueue
-import sttp.client4.internal.{NoStreams, emptyInputStream}
+import sttp.client4.internal.{emptyInputStream, NoStreams}
 import sttp.client4.testing.WebSocketBackendStub
 import sttp.client4.wrappers.FollowRedirectsBackend
-import sttp.client4.{BackendOptions, WebSocketBackend, wrappers}
+import sttp.client4.{wrappers, BackendOptions, WebSocketBackend}
 import sttp.monad.MonadError
 import sttp.ws.{WebSocket, WebSocketFrame}
 
@@ -89,11 +89,11 @@ object HttpClientCatsBackend {
     )
 
   def apply[F[_]: Async](
-                          dispatcher: Dispatcher[F],
-                          options: BackendOptions = BackendOptions.Default,
-                          customizeRequest: HttpRequest => HttpRequest = identity,
-                          customEncodingHandler: EncodingHandler[InputStream] = PartialFunction.empty
-  ): F[WebSocketBackend[F]] = {
+      dispatcher: Dispatcher[F],
+      options: BackendOptions = BackendOptions.Default,
+      customizeRequest: HttpRequest => HttpRequest = identity,
+      customEncodingHandler: EncodingHandler[InputStream] = PartialFunction.empty
+  ): F[WebSocketBackend[F]] =
     Async[F].executor.flatMap(executor =>
       Sync[F].delay(
         HttpClientCatsBackend(
@@ -105,12 +105,11 @@ object HttpClientCatsBackend {
         )
       )
     )
-  }
 
   def resource[F[_]: Async](
-                             options: BackendOptions = BackendOptions.Default,
-                             customizeRequest: HttpRequest => HttpRequest = identity,
-                             customEncodingHandler: EncodingHandler[InputStream] = PartialFunction.empty
+      options: BackendOptions = BackendOptions.Default,
+      customizeRequest: HttpRequest => HttpRequest = identity,
+      customEncodingHandler: EncodingHandler[InputStream] = PartialFunction.empty
   ): Resource[F, WebSocketBackend[F]] =
     Dispatcher
       .parallel[F]

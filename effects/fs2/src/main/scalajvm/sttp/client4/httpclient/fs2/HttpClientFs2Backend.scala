@@ -73,12 +73,11 @@ class HttpClientFs2Backend[F[_]: Async] private (
 
   override protected def createSequencer: F[Sequencer[F]] = Fs2Sequencer.create
 
-  override protected def bodyHandlerBodyToBody(p: Publisher[util.List[ByteBuffer]]): Stream[F, Byte] = {
+  override protected def bodyHandlerBodyToBody(p: Publisher[util.List[ByteBuffer]]): Stream[F, Byte] =
     FlowAdapters
       .toPublisher(p)
       .toStream[F]
       .flatMap(data => Stream.emits(data.asScala.map(Chunk.byteBuffer)).flatMap(Stream.chunk))
-  }
 
   override protected def emptyBody(): Stream[F, Byte] = Stream.empty
 
@@ -104,11 +103,11 @@ object HttpClientFs2Backend {
     )
 
   def apply[F[_]: Async](
-                          dispatcher: Dispatcher[F],
-                          options: BackendOptions = BackendOptions.Default,
-                          customizeRequest: HttpRequest => HttpRequest = identity,
-                          customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty
-  ): F[WebSocketStreamBackend[F, Fs2Streams[F]]] = {
+      dispatcher: Dispatcher[F],
+      options: BackendOptions = BackendOptions.Default,
+      customizeRequest: HttpRequest => HttpRequest = identity,
+      customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty
+  ): F[WebSocketStreamBackend[F, Fs2Streams[F]]] =
     Async[F].executor.flatMap(executor =>
       Sync[F].delay(
         HttpClientFs2Backend(
@@ -120,12 +119,11 @@ object HttpClientFs2Backend {
         )
       )
     )
-  }
 
   def resource[F[_]: Async](
-                             options: BackendOptions = BackendOptions.Default,
-                             customizeRequest: HttpRequest => HttpRequest = identity,
-                             customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty
+      options: BackendOptions = BackendOptions.Default,
+      customizeRequest: HttpRequest => HttpRequest = identity,
+      customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty
   ): Resource[F, WebSocketStreamBackend[F, Fs2Streams[F]]] =
     Dispatcher
       .parallel[F]

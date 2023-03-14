@@ -14,9 +14,9 @@ import sttp.ws.testing.WebSocketStub
 import scala.util.{Failure, Success, Try}
 
 abstract class AbstractBackendStub[F[_], P](
-                                             _monad: MonadError[F],
-                                             matchers: PartialFunction[GenericRequest[_, _], F[Response[_]]],
-                                             fallback: Option[GenericBackend[F, P]]
+    _monad: MonadError[F],
+    matchers: PartialFunction[GenericRequest[_, _], F[Response[_]]],
+    fallback: Option[GenericBackend[F, P]]
 ) extends GenericBackend[F, P] {
 
   type Self
@@ -48,7 +48,7 @@ abstract class AbstractBackendStub[F[_], P](
     withMatchers(matchers.orElse(wrappedPartial))
   }
 
-  override def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] = {
+  override def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] =
     Try(matchers.lift(request)) match {
       case Success(Some(response)) =>
         adjustExceptions(request)(tryAdjustResponseType(request.response, response.asInstanceOf[F[Response[T]]])(monad))
@@ -59,7 +59,6 @@ abstract class AbstractBackendStub[F[_], P](
         }
       case Failure(e) => adjustExceptions(request)(monad.error(e))
     }
-  }
 
   private def adjustExceptions[T](request: GenericRequest[_, _])(t: => F[T]): F[T] =
     SttpClientException.adjustExceptions(monad)(t)(
@@ -108,21 +107,20 @@ abstract class AbstractBackendStub[F[_], P](
 object AbstractBackendStub {
 
   private[client4] def tryAdjustResponseType[DesiredRType, RType, F[_]](
-                                                                         ra: ResponseAsDelegate[DesiredRType, _],
-                                                                         m: F[Response[RType]]
-  )(implicit monad: MonadError[F]): F[Response[DesiredRType]] = {
+      ra: ResponseAsDelegate[DesiredRType, _],
+      m: F[Response[RType]]
+  )(implicit monad: MonadError[F]): F[Response[DesiredRType]] =
     monad.flatMap[Response[RType], Response[DesiredRType]](m) { r =>
       tryAdjustResponseBody(ra.delegate, r.body, r).getOrElse(monad.unit(r.body)).map { nb =>
         r.copy(body = nb.asInstanceOf[DesiredRType])
       }
     }
-  }
 
   private[client4] def tryAdjustResponseBody[F[_], T, U](
-                                                          ra: GenericResponseAs[T, _],
-                                                          b: U,
-                                                          meta: ResponseMetadata
-  )(implicit monad: MonadError[F]): Option[F[T]] = {
+      ra: GenericResponseAs[T, _],
+      b: U,
+      meta: ResponseMetadata
+  )(implicit monad: MonadError[F]): Option[F[T]] =
     ra match {
       case IgnoreResponse => Some(().unit.asInstanceOf[F[T]])
       case ResponseAsByteArray =>
@@ -173,5 +171,4 @@ object AbstractBackendStub {
           }
         }
     }
-  }
 }

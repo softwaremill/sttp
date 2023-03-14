@@ -47,13 +47,12 @@ class OkHttpMonixBackend private (
         stream: streams.BinaryStream,
         mt: MediaType,
         cl: Option[Long]
-    ): OkHttpRequestBody = {
+    ): OkHttpRequestBody =
       new OkHttpRequestBody() {
         override def writeTo(sink: BufferedSink): Unit = toIterable(stream).foreach(sink.write)
         override def contentType(): MediaType = mt
         override def contentLength(): Long = cl.getOrElse(super.contentLength())
       }
-    }
   }
 
   override protected val bodyFromOkHttp: BodyFromOkHttp[Task, MonixStreams] = new BodyFromOkHttp[Task, MonixStreams] {
@@ -82,13 +81,11 @@ class OkHttpMonixBackend private (
           observable.executeAsync.subscribe(new Subscriber[T] {
             override implicit def scheduler: Scheduler = s
 
-            override def onError(ex: Throwable): Unit = {
+            override def onError(ex: Throwable): Unit =
               blockingQueue.put(Left(ex))
-            }
 
-            override def onComplete(): Unit = {
+            override def onComplete(): Unit =
               blockingQueue.put(Left(Completed))
-            }
 
             override def onNext(elem: T): Future[Ack] = {
               blockingQueue.put(Right(elem))
@@ -129,9 +126,9 @@ object OkHttpMonixBackend {
     )
 
   def apply(
-             options: BackendOptions = BackendOptions.Default,
-             customEncodingHandler: EncodingHandler = PartialFunction.empty,
-             webSocketBufferCapacity: Option[Int] = OkHttpBackend.DefaultWebSocketBufferCapacity
+      options: BackendOptions = BackendOptions.Default,
+      customEncodingHandler: EncodingHandler = PartialFunction.empty,
+      webSocketBufferCapacity: Option[Int] = OkHttpBackend.DefaultWebSocketBufferCapacity
   )(implicit
       s: Scheduler = Scheduler.global
   ): Task[WebSocketStreamBackend[Task, MonixStreams]] =
@@ -145,9 +142,9 @@ object OkHttpMonixBackend {
     )
 
   def resource(
-                options: BackendOptions = BackendOptions.Default,
-                customEncodingHandler: EncodingHandler = PartialFunction.empty,
-                webSocketBufferCapacity: Option[Int] = OkHttpBackend.DefaultWebSocketBufferCapacity
+      options: BackendOptions = BackendOptions.Default,
+      customEncodingHandler: EncodingHandler = PartialFunction.empty,
+      webSocketBufferCapacity: Option[Int] = OkHttpBackend.DefaultWebSocketBufferCapacity
   )(implicit
       s: Scheduler = Scheduler.global
   ): Resource[Task, WebSocketStreamBackend[Task, MonixStreams]] =

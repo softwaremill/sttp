@@ -107,7 +107,7 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
     *   If there's already a header with the same name, should it be replaced?
     */
   def headers(hs: Map[String, String], replaceExisting: Boolean): PR =
-    if (replaceExisting) hs.foldLeft(this) { (s, h) => s.header(h._1, h._2, replaceExisting) }
+    if (replaceExisting) hs.foldLeft(this)((s, h) => s.header(h._1, h._2, replaceExisting))
     else headers(hs)
 
   /** Adds the given headers to the end of the headers sequence. */
@@ -115,7 +115,7 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
 
   /** Adds the given headers to the end of the headers sequence. */
   def headers(hs: Seq[Header], replaceExisting: Boolean): PR =
-    if (replaceExisting) hs.foldLeft(this) { (s, h) => s.header(h, replaceExisting) }
+    if (replaceExisting) hs.foldLeft(this)((s, h) => s.header(h, replaceExisting))
     else headers(hs: _*)
 
   def auth: SpecifyAuthScheme[PR] =
@@ -129,13 +129,12 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
   def cookie(n: String, v: String): PR = cookies((n, v))
   def cookies(r: Response[_]): PR = cookies(r.cookies.collect { case Right(c) => c }.map(c => (c.name, c.value)): _*)
   def cookies(cs: Iterable[CookieWithMeta]): PR = cookies(cs.map(c => (c.name, c.value)).toSeq: _*)
-  def cookies(nvs: (String, String)*): PR = {
+  def cookies(nvs: (String, String)*): PR =
     header(
       HeaderNames.Cookie,
       (headers.find(_.name == HeaderNames.Cookie).map(_.value).toSeq ++ nvs.map(p => p._1 + "=" + p._2)).mkString("; "),
       replaceExisting = true
     )
-  }
 
   private[client4] def hasContentType: Boolean = headers.exists(_.is(HeaderNames.ContentType))
   private[client4] def setContentTypeIfMissing(mt: MediaType): PR =

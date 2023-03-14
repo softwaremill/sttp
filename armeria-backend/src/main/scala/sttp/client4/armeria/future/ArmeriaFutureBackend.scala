@@ -8,7 +8,7 @@ import sttp.client4.armeria.ArmeriaWebClient.newClient
 import sttp.client4.armeria.{AbstractArmeriaBackend, BodyFromStreamMessage}
 import sttp.client4.internal.NoStreams
 import sttp.client4.wrappers.FollowRedirectsBackend
-import sttp.client4.{Backend, BackendOptions, wrappers}
+import sttp.client4.{wrappers, Backend, BackendOptions}
 import sttp.monad.{FutureMonad, MonadAsyncError}
 
 import scala.concurrent.ExecutionContext.Implicits.global

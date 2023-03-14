@@ -14,11 +14,10 @@ class SyncQueue[T](capacity: Option[Int]) extends SimpleQueue[Identity, T] {
 
   /** Eagerly adds the given item to the queue.
     */
-  override def offer(t: T): Unit = {
+  override def offer(t: T): Unit =
     if (!queue.offer(t)) {
       throw WebSocketBufferFull(capacity.getOrElse(Int.MaxValue))
     }
-  }
 
   /** Takes an element from the queue or suspends, until one is available. May be eager or lazy, depending on `F`.
     */

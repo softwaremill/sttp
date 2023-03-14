@@ -6,7 +6,7 @@ import io.netty.handler.codec.http.HttpHeaders
 import org.asynchttpclient.AsyncHandler.State
 import org.asynchttpclient.handler.StreamedAsyncHandler
 import org.asynchttpclient.proxy.ProxyServer
-import org.asynchttpclient.ws.{WebSocketListener, WebSocketUpgradeHandler, WebSocket => AHCWebSocket}
+import org.asynchttpclient.ws.{WebSocket => AHCWebSocket, WebSocketListener, WebSocketUpgradeHandler}
 import org.asynchttpclient.{
   AsyncHandler,
   AsyncHttpClient,
@@ -16,8 +16,8 @@ import org.asynchttpclient.{
   HttpResponseBodyPart,
   HttpResponseStatus,
   Realm,
-  RequestBuilder,
   Request => AsyncRequest,
+  RequestBuilder,
   Response => AsyncResponse
 }
 import org.reactivestreams.{Publisher, Subscriber, Subscription}
@@ -27,7 +27,7 @@ import sttp.client4.BackendOptions.ProxyType.{Http, Socks}
 import sttp.client4.internal.ws.{SimpleQueue, WebSocketEvent}
 import sttp.monad.syntax._
 import sttp.monad.{Canceler, MonadAsyncError, MonadError}
-import sttp.client4.{GenericBackend, Response, BackendOptions, _}
+import sttp.client4.{BackendOptions, GenericBackend, Response, _}
 import sttp.model._
 
 import scala.collection.JavaConverters._
@@ -52,7 +52,7 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
       }
     }
 
-  private def sendRegular[T](r: GenericRequest[T, R], ahcRequest: BoundRequestBuilder): F[Response[T]] = {
+  private def sendRegular[T](r: GenericRequest[T, R], ahcRequest: BoundRequestBuilder): F[Response[T]] =
     monad.flatten(monad.async[F[Response[T]]] { cb =>
       def success(r: F[Response[T]]): Unit = cb(Right(r))
       def error(t: Throwable): Unit = cb(Left(t))
@@ -60,7 +60,6 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
       val lf = ahcRequest.execute(streamingAsyncHandler(r, success, error))
       Canceler(() => lf.cancel(true))
     })
-  }
 
   private def sendWebSocket[T, R](r: GenericRequest[T, R], ahcRequest: BoundRequestBuilder): F[Response[T]] =
     createSimpleQueue[WebSocketEvent].flatMap { queue =>
@@ -83,10 +82,10 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
   protected def createSimpleQueue[T]: F[SimpleQueue[F, T]]
 
   private def streamingAsyncHandler[T, R](
-                                           request: GenericRequest[T, R],
-                                           success: F[Response[T]] => Unit,
-                                           error: Throwable => Unit
-  ): AsyncHandler[Unit] = {
+      request: GenericRequest[T, R],
+      success: F[Response[T]] => Unit,
+      error: Throwable => Unit
+  ): AsyncHandler[Unit] =
     new StreamedAsyncHandler[Unit] {
       private val builder = new AsyncResponse.ResponseBuilder()
       private var publisher: Option[Publisher[ByteBuffer]] = None
@@ -129,12 +128,11 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
         State.CONTINUE
       }
 
-      override def onCompleted(): Unit = {
+      override def onCompleted(): Unit =
         // if the request had no body, onStream() will never be called
         doComplete()
-      }
 
-      private def doComplete(): Unit = {
+      private def doComplete(): Unit =
         if (!completed) {
           completed = true
 
@@ -144,19 +142,16 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
 
           success(b.map(t => baseResponse.copy(body = t)))
         }
-      }
 
-      override def onThrowable(t: Throwable): Unit = {
+      override def onThrowable(t: Throwable): Unit =
         error(t)
-      }
     }
-  }
 
   private class WebSocketInitListener[T](
-                                          request: GenericRequest[T, _],
-                                          queue: SimpleQueue[F, WebSocketEvent],
-                                          success: F[Response[T]] => Unit,
-                                          error: Throwable => Unit
+      request: GenericRequest[T, _],
+      queue: SimpleQueue[F, WebSocketEvent],
+      success: F[Response[T]] => Unit,
+      error: Throwable => Unit
   ) extends WebSocketListener {
     override def onOpen(ahcWebSocket: AHCWebSocket): Unit = {
       ahcWebSocket.removeWebSocketListener(this)
@@ -175,16 +170,14 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
       success(bf.map(b => baseResponse.copy(body = b)))
     }
 
-    override def onClose(webSocket: AHCWebSocket, code: Int, reason: String): Unit = {
+    override def onClose(webSocket: AHCWebSocket, code: Int, reason: String): Unit =
       throw new IllegalStateException("Should never be called, as the listener should be removed after onOpen")
-    }
 
     override def onError(t: Throwable): Unit = error(t)
   }
 
-  private def preparedRequest[R](r: GenericRequest[_, R]): F[BoundRequestBuilder] = {
+  private def preparedRequest[R](r: GenericRequest[_, R]): F[BoundRequestBuilder] =
     monad.fromTry(Try(asyncHttpClient.prepareRequest(requestToAsync(r)))).map(customizeRequest)
-  }
 
   private def requestToAsync[R](r: GenericRequest[_, R]): AsyncRequest = {
     val readTimeout = r.options.readTimeout
@@ -192,12 +185,12 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
       .setUrl(r.uri.toString)
       .setReadTimeout(if (readTimeout.isFinite) readTimeout.toMillis.toInt else -1)
       .setRequestTimeout(if (readTimeout.isFinite) readTimeout.toMillis.toInt else -1)
-    r.headers.foreach { header => rb.setHeader(header.name, header.value) }
+    r.headers.foreach(header => rb.setHeader(header.name, header.value))
     bodyToAHC(r, r.body, rb)
     rb.build()
   }
 
-  private def readResponseNoBody(request: GenericRequest[_, _], response: AsyncResponse): Response[Unit] = {
+  private def readResponseNoBody(request: GenericRequest[_, _], response: AsyncResponse): Response[Unit] =
     client4.Response(
       (),
       StatusCode.unsafeApply(response.getStatusCode),
@@ -206,7 +199,6 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
       Nil,
       request.onlyMetadata
     )
-  }
 
   private def readHeaders(h: HttpHeaders): Seq[Header] =
     h.iteratorAsString()
@@ -214,9 +206,8 @@ abstract class AsyncHttpClientBackend[F[_], S <: Streams[S], P](
       .map(e => Header(e.getKey, e.getValue))
       .toList
 
-  override def close(): F[Unit] = {
+  override def close(): F[Unit] =
     if (closeClient) monad.eval(asyncHttpClient.close()) else monad.unit(())
-  }
 
   private def adjustExceptions[T](request: GenericRequest[_, _])(t: => F[T]): F[T] =
     SttpClientException.adjustExceptions(monad)(t)(
@@ -259,14 +250,12 @@ object AsyncHttpClientBackend {
     }
   }
 
-  private[asynchttpclient] def defaultClient(options: BackendOptions): AsyncHttpClient = {
+  private[asynchttpclient] def defaultClient(options: BackendOptions): AsyncHttpClient =
     new DefaultAsyncHttpClient(defaultConfigBuilder(options).build())
-  }
 
   private[asynchttpclient] def clientWithModifiedOptions(
-                                                          options: BackendOptions,
-                                                          updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder
-  ): AsyncHttpClient = {
+      options: BackendOptions,
+      updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder
+  ): AsyncHttpClient =
     new DefaultAsyncHttpClient(updateConfig(defaultConfigBuilder(options)).build())
-  }
 }

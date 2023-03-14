@@ -8,10 +8,10 @@ import okhttp3.{
   Authenticator,
   Credentials,
   OkHttpClient,
-  Route,
   Request => OkHttpRequest,
   RequestBody => OkHttpRequestBody,
-  Response => OkHttpResponse
+  Response => OkHttpResponse,
+  Route
 }
 import sttp.capabilities.{Effect, Streams}
 import sttp.client4.BackendOptions.Proxy
@@ -33,7 +33,7 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
   val streams: Streams[S]
   type R = P with Effect[F]
 
-  override def send[T](request: GenericRequest[T, R]): F[Response[T]] = {
+  override def send[T](request: GenericRequest[T, R]): F[Response[T]] =
     adjustExceptions(request.isWebSocket, request) {
       if (request.isWebSocket) {
         sendWebSocket(request)
@@ -41,7 +41,6 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
         sendRegular(request)
       }
     }
-  }
 
   protected def sendRegular[T](request: GenericRequest[T, R]): F[Response[T]]
   protected def sendWebSocket[T](request: GenericRequest[T, R]): F[Response[T]]
@@ -65,7 +64,7 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
       }
     )
 
-    request.headers.foreach { header => builder.addHeader(header.name, header.value) }
+    request.headers.foreach(header => builder.addHeader(header.name, header.value))
 
     builder.build()
   }
@@ -74,9 +73,9 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
   protected val bodyFromOkHttp: BodyFromOkHttp[F, S]
 
   private[okhttp] def readResponse[T](
-                                       res: OkHttpResponse,
-                                       request: GenericRequest[_, R],
-                                       responseAs: ResponseAsDelegate[T, R]
+      res: OkHttpResponse,
+      request: GenericRequest[_, R],
+      responseAs: ResponseAsDelegate[T, R]
   ): F[Response[T]] = {
     val headers = readHeaders(res)
     val responseMetadata = ResponseMetadata(StatusCode(res.code()), res.message(), headers)
@@ -102,14 +101,13 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
     monad.map(body)(Response(_, StatusCode(res.code()), res.message(), headers, Nil, request.onlyMetadata))
   }
 
-  private def readHeaders(res: OkHttpResponse): List[Header] = {
+  private def readHeaders(res: OkHttpResponse): List[Header] =
     res
       .headers()
       .names()
       .asScala
       .flatMap(name => res.headers().values(name).asScala.map(Header(name, _)))
       .toList
-  }
 
   private def standardEncoding: (InputStream, String) => InputStream = {
     case (body, "gzip")    => new GZIPInputStream(body)
@@ -159,8 +157,8 @@ object OkHttpBackend {
   }
 
   private[okhttp] def updateClientIfCustomReadTimeout[T, S](
-                                                             r: GenericRequest[T, S],
-                                                             client: OkHttpClient
+      r: GenericRequest[T, S],
+      client: OkHttpClient
   ): OkHttpClient = {
     val readTimeoutMillis = if (r.options.readTimeout.isFinite) r.options.readTimeout.toMillis else 0
     val reuseClient = readTimeoutMillis == client.readTimeoutMillis()
@@ -173,9 +171,9 @@ object OkHttpBackend {
   }
 
   private[okhttp] def exceptionToSttpClientException(
-                                                      isWebsocket: Boolean,
-                                                      request: GenericRequest[_, _],
-                                                      e: Exception
+      isWebsocket: Boolean,
+      request: GenericRequest[_, _],
+      e: Exception
   ): Option[Exception] =
     e match {
       // if the websocket protocol upgrade fails, OkHttp throws a ProtocolException - however the whole request has

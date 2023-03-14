@@ -19,7 +19,7 @@ private[asynchttpclient] class WebSocketImpl[F[_]](
     implicit val monad: MonadAsyncError[F]
 ) extends WebSocket[F] {
 
-  override def receive(): F[WebSocketFrame] = {
+  override def receive(): F[WebSocketFrame] =
     queue.poll.flatMap {
       case WebSocketEvent.Open() => receive()
       case WebSocketEvent.Frame(c: WebSocketFrame.Close) =>
@@ -32,7 +32,6 @@ private[asynchttpclient] class WebSocketImpl[F[_]](
       case WebSocketEvent.Error(t)                 => throw t
       case WebSocketEvent.Frame(f: WebSocketFrame) => monad.unit(f)
     }
-  }
 
   override def send(f: WebSocketFrame, isContinuation: Boolean = false): F[Unit] =
     monad.flatten(monad.eval(f match {
@@ -60,17 +59,15 @@ private[asynchttpclient] class WebSocketImpl[F[_]](
 
   override def isOpen(): F[Boolean] = monad.eval(_isOpen.get())
 
-  private def fromNettyFuture(f: io.netty.util.concurrent.Future[Void]): F[Unit] = {
+  private def fromNettyFuture(f: io.netty.util.concurrent.Future[Void]): F[Unit] =
     monad.async { cb =>
       val f2 = f.addListener(new FutureListener[Void] {
-        override def operationComplete(future: Future[Void]): Unit = {
+        override def operationComplete(future: Future[Void]): Unit =
           if (future.isSuccess) cb(Right(())) else cb(Left(future.cause()))
-        }
       })
 
       Canceler(() => f2.cancel(true))
     }
-  }
 }
 
 object WebSocketImpl {
@@ -86,27 +83,23 @@ object WebSocketImpl {
 
 class AddToQueueListener[F[_]](queue: SimpleQueue[F, WebSocketEvent], isOpen: AtomicBoolean)
     extends AHCWebSocketListener {
-  override def onOpen(websocket: AHCWebSocket): Unit = {
+  override def onOpen(websocket: AHCWebSocket): Unit =
     throw new IllegalStateException("Should never be called!")
-  }
 
-  override def onClose(websocket: AHCWebSocket, code: Int, reason: String): Unit = {
+  override def onClose(websocket: AHCWebSocket, code: Int, reason: String): Unit =
     if (isOpen.getAndSet(false)) {
       queue.offer(WebSocketEvent.Frame(WebSocketFrame.Close(code, reason)))
     }
-  }
 
-  override def onError(t: Throwable): Unit = {
+  override def onError(t: Throwable): Unit =
     if (isOpen.getAndSet(false)) {
       queue.offer(WebSocketEvent.Error(t))
     }
-  }
 
   override def onBinaryFrame(payload: Array[Byte], finalFragment: Boolean, rsv: Int): Unit =
     onFrame(WebSocketFrame.Binary(payload, finalFragment, rsvToOption(rsv)))
-  override def onTextFrame(payload: String, finalFragment: Boolean, rsv: Int): Unit = {
+  override def onTextFrame(payload: String, finalFragment: Boolean, rsv: Int): Unit =
     onFrame(WebSocketFrame.Text(payload, finalFragment, rsvToOption(rsv)))
-  }
 
   override def onPingFrame(payload: Array[Byte]): Unit = onFrame(WebSocketFrame.Ping(payload))
   override def onPongFrame(payload: Array[Byte]): Unit = onFrame(WebSocketFrame.Pong(payload))
