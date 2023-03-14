@@ -1,6 +1,6 @@
 # sttp: the Scala HTTP client you always wanted!
 
-> This is the stable version of sttp client (v3). For the upcoming version 4 (currently in development), see [sttp 4 on GitHub](https://github.com/softwaremill/) and its [documentation](https://sttp.softwaremill.com/en/latest).
+> This is the stable version of sttp client (v3). For the upcoming version 4 (currently in development), see [sttp 4 on GitHub](https://github.com/softwaremill/sttp) and its [documentation](https://sttp.softwaremill.com/en/latest).
 
 Welcome!
 
