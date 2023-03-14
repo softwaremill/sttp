@@ -76,9 +76,9 @@ Creation of the backend can be done in two basic ways:
 Firstly, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client4" %% "armeria-backend-cats" % "3.8.13" // for cats-effect 3.x
+"com.softwaremill.sttp.client4" %% "armeria-backend-cats" % "4.0.0-M1" // for cats-effect 3.x
 // or
-"com.softwaremill.sttp.client4" %% "armeria-backend-cats-ce2" % "3.8.13" // for cats-effect 2.x
+"com.softwaremill.sttp.client4" %% "armeria-backend-cats-ce2" % "4.0.0-M1" // for cats-effect 2.x
 ```
 
 create client:
@@ -112,10 +112,10 @@ import sttp.client4.armeria.cats.ArmeriaCatsBackend
 
 // Fluently build Armeria WebClient with built-in decorators
 val client = WebClient.builder("https://my-service.com")
-  // Open circuit on 5xx server error status
-  .decorator(CircuitBreakerClient.newDecorator(CircuitBreaker.ofDefaultName(),
-    CircuitBreakerRule.onServerErrorStatus()))
-  .build()
+             // Open circuit on 5xx server error status
+             .decorator(CircuitBreakerClient.newDecorator(CircuitBreaker.ofDefaultName(),
+               CircuitBreakerRule.onServerErrorStatus()))
+             .build()
 
 val backend = ArmeriaCatsBackend.usingClient[IO](client)
 ```

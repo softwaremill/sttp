@@ -118,7 +118,6 @@ A fully-featured example:
 
 ```scala
 import sttp.client4._
-
 val secure = true
 val scheme = if (secure) "https" else "http"
 val subdomains = List("sub1", "sub2")

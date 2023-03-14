@@ -12,7 +12,7 @@ Creation of the backend can be done in two basic ways:
 Firstly, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %% "monix" % "3.8.13"
+"com.softwaremill.sttp.client4" %% "monix" % "4.0.0-M1"
 ```
 
 and create the backend using:
@@ -26,16 +26,12 @@ HttpClientMonixBackend().flatMap { backend => ??? }
 HttpClientMonixBackend.resource().use { backend => ??? }
 
 // or, if you'd like to instantiate the HttpClient yourself:
-
 import java.net.http.HttpClient
-
 val httpClient: HttpClient = ???
 val backend = HttpClientMonixBackend.usingClient(httpClient)
 
 // or, obtain a cats-effect Resource with a custom instance of the HttpClient:
-
 import java.net.http.HttpClient
-
 val httpClient: HttpClient = ???
 HttpClientMonixBackend.resourceUsingClient(httpClient).use { backend => ??? }
 ```
@@ -54,7 +50,7 @@ Host header override is supported in environments running Java 12 onwards, but i
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client4" %% "okhttp-backend-monix" % "3.8.13"
+"com.softwaremill.sttp.client4" %% "okhttp-backend-monix" % "4.0.0-M1"
 ```
 
 Create the backend using:
@@ -68,9 +64,7 @@ OkHttpMonixBackend().flatMap { backend => ??? }
 OkHttpMonixBackend.resource().use { backend => ??? }
 
 // or, if you'd like to instantiate the OkHttpClient yourself:
-
 import okhttp3._
-
 val okHttpClient: OkHttpClient = ???
 val backend = OkHttpMonixBackend.usingClient(okHttpClient)
 ```
@@ -82,7 +76,7 @@ This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supp
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %% "armeria-backend-monix" % "3.8.13"
+"com.softwaremill.sttp.client4" %% "armeria-backend-monix" % "4.0.0-M1"
 ```
 
 add imports:
@@ -137,7 +131,7 @@ import sttp.client4.httpclient.monix.HttpClientMonixBackend
 import monix.reactive.Observable
 
 HttpClientMonixBackend().flatMap { backend =>
-  val obs: Observable[Array[Byte]] = ???
+  val obs: Observable[Array[Byte]] =  ???
 
   basicRequest
     .streamBody(MonixStreams)(obs)
@@ -164,7 +158,7 @@ HttpClientMonixBackend().flatMap { backend =>
       .response(asStreamUnsafe(MonixStreams))
       .readTimeout(Duration.Inf)
       .send(backend)
-  response
+    response
 }
 ```
 
@@ -187,6 +181,6 @@ import sttp.client4._
 
 def processEvents(source: Observable[ServerSentEvent]): Task[Unit] = ???
 
-basicRequest.response(asStream(MonixStreams)(stream =>
+basicRequest.response(asStream(MonixStreams)(stream => 
   processEvents(stream.transform(MonixServerSentEvents.parse))))
 ```

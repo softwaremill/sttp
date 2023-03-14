@@ -24,11 +24,11 @@ It is often necessary to copy cookies from a response, e.g. after a login reques
 ```scala
 import sttp.client4._
 
-val backend = HttpClientSyncBackend()
+val backend = DefaultSyncBackend()
 val loginRequest = basicRequest
-  .cookie("login", "me")
-  .body("This is a test")
-  .post(uri"http://endpoint.com")
+    .cookie("login", "me")
+    .body("This is a test")
+    .post(uri"http://endpoint.com")
 val response = loginRequest.send(backend)
 
 basicRequest.cookies(response)
@@ -39,11 +39,11 @@ Or, it's also possible to store only the `sttp.model.CookieWithMeta` objects (a 
 ```scala
 import sttp.client4._
 
-val backend = HttpClientSyncBackend()
+val backend = DefaultSyncBackend()
 val loginRequest = basicRequest
-  .cookie("login", "me")
-  .body("This is a test")
-  .post(uri"http://endpoint.com")
+    .cookie("login", "me")
+    .body("This is a test")
+    .post(uri"http://endpoint.com")
 val response = loginRequest.send(backend)
 val cookiesFromResponse = response.unsafeCookies
 

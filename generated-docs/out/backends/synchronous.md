@@ -7,7 +7,7 @@ There are several synchronous backend implementations. Sending a request using t
 The default **synchronous** backend. To use, you don't need any extra dependencies, `core` is enough:
 
 ```
-"com.softwaremill.sttp.client4" %% "core" % "3.8.13"
+"com.softwaremill.sttp.client4" %% "core" % "4.0.0-M1"
 ```
 
 Create the backend using:
@@ -23,7 +23,6 @@ or, if you'd like to instantiate the HttpClient yourself:
 ```scala
 import sttp.client4.httpclient.HttpClientSyncBackend
 import java.net.http.HttpClient
-
 val httpClient: HttpClient = ???
 val backend = HttpClientSyncBackend.usingClient(httpClient)
 ```
@@ -41,7 +40,7 @@ Host header override is supported in environments running Java 12 onwards, but i
 To use, you don't need any extra dependencies, `core` is enough: 
 
 ```
-"com.softwaremill.sttp.client4" %% "core" % "3.8.13"
+"com.softwaremill.sttp.client4" %% "core" % "4.0.0-M1"
 ```
 
 Create the backend using:
@@ -63,7 +62,7 @@ This backend supports host header override, but it has to be enabled by system p
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %% "okhttp-backend" % "3.8.13"
+"com.softwaremill.sttp.client4" %% "okhttp-backend" % "4.0.0-M1"
 ```
 
 Create the backend using:

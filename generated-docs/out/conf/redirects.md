@@ -34,11 +34,14 @@ You can disable the stripping of all sensitive headers using the following code:
 
 ```scala
 import sttp.client4._
+import sttp.client4.wrappers.{FollowRedirectsBackend, FollowRedirectsConfig}
 
-val myBackend: SttpBackend[Identity, Any] = HttpClientSyncBackend()
-val backend: SttpBackend[Identity, Any] = new FollowRedirectsBackend(
-  delegate = myBackend,
-  sensitiveHeaders = Set.empty
+val myBackend: SyncBackend = DefaultSyncBackend()
+val backend: SyncBackend  = FollowRedirectsBackend(
+  delegate = myBackend, 
+  FollowRedirectsConfig(
+    sensitiveHeaders = Set.empty
+  )
 )
 ```
 
@@ -47,11 +50,14 @@ If you just want to disable stripping of the `Authorization` header, you can do 
 ```scala
 import sttp.client4._
 import sttp.model._
+import sttp.client4.wrappers.{FollowRedirectsBackend, FollowRedirectsConfig}
 
-val myBackend: SttpBackend[Identity, Any] = HttpClientSyncBackend()
-val backend: SttpBackend[Identity, Any] = new FollowRedirectsBackend(
+val myBackend: SyncBackend = DefaultSyncBackend()
+val backend: SyncBackend = FollowRedirectsBackend(
   delegate = myBackend,
-  sensitiveHeaders = HeaderNames.SensitiveHeaders.filterNot(_ == HeaderNames.Authorization.toLowerCase)
+  FollowRedirectsConfig(
+    sensitiveHeaders = HeaderNames.SensitiveHeaders.filterNot(_ == HeaderNames.Authorization.toLowerCase)
+  )
 )
 ```
 
@@ -66,23 +72,23 @@ For example:
 ```scala
 import sttp.capabilities.Effect
 import sttp.client4._
+import sttp.client4.wrappers.FollowRedirectsBackend
 import sttp.monad.MonadError
 
-class MyWrapper[F[_], P] private(delegate: SttpBackend[F, P])
-  extends SttpBackend[F, P] {
+abstract class MyWrapper[F[_], P] private (delegate: GenericBackend[F, P])
+  extends GenericBackend[F, P] {
 
-  def send[T, R >: P with Effect[F]](request: Request[T, R]): F[Response[T]] = ???
+  def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] = ???
 
   def close(): F[Unit] = ???
 
-  def responseMonad: MonadError[F] = ???
+  def monad: MonadError[F] = ???
 }
 
 object MyWrapper {
-  def apply[F[_], P](
-                      delegate: SttpBackend[F, P]): SttpBackend[F, P] = {
+  def apply[F[_]](delegate: Backend[F]): Backend[F] = {
     // disables any other FollowRedirectsBackend-s further down the delegate chain
-    new FollowRedirectsBackend(new MyWrapper(delegate))
+    FollowRedirectsBackend(new MyWrapper(delegate) with Backend[F] {})
   }
 }
 ```
@@ -95,12 +101,15 @@ For example:
 
 ```scala
 import sttp.client4._
+import sttp.client4.wrappers.{FollowRedirectsBackend, FollowRedirectsConfig}
 import sttp.model.Uri.QuerySegmentEncoding
 
-val myBackend: SttpBackend[Identity, Any] = HttpClientSyncBackend()
-val backend: SttpBackend[Identity, Any] = new FollowRedirectsBackend(
+val myBackend: SyncBackend = DefaultSyncBackend()
+val backend: SyncBackend  = FollowRedirectsBackend(
   delegate = myBackend,
-  // encodes all special characters in the query segment, including the allowed ones
-  transformUri = _.querySegmentsEncoding(QuerySegmentEncoding.All)
+  FollowRedirectsConfig(
+    // encodes all special characters in the query segment, including the allowed ones
+    transformUri = _.querySegmentsEncoding(QuerySegmentEncoding.All)
+  )
 )
 ```

@@ -12,9 +12,9 @@ Creation of the backend can be done in two basic ways:
 Firstly, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client4" %% "fs2" % "3.8.13" // for cats-effect 3.x & fs2 3.x
+"com.softwaremill.sttp.client4" %% "fs2" % "4.0.0-M1" // for cats-effect 3.x & fs2 3.x
 // or 
-"com.softwaremill.sttp.client4" %% "fs2-ce2" % "3.8.13" // for cats-effect 2.x & fs2 2.x
+"com.softwaremill.sttp.client4" %% "fs2-ce2" % "4.0.0-M1" // for cats-effect 2.x & fs2 2.x
 ```
 
 Obtain a cats-effect `Resource` which creates the backend, and closes the thread pool after the resource is no longer used:
@@ -78,9 +78,9 @@ Host header override is supported in environments running Java 12 onwards, but i
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client4" %% "armeria-backend-fs2" % "3.8.13" // for cats-effect 3.x & fs2 3.x
+"com.softwaremill.sttp.client4" %% "armeria-backend-fs2" % "4.0.0-M1" // for cats-effect 3.x & fs2 3.x
 // or
-"com.softwaremill.sttp.client4" %% "armeria-backend-fs2" % "3.8.13" // for cats-effect 2.x & fs2 2.x
+"com.softwaremill.sttp.client4" %% "armeria-backend-fs2" % "4.0.0-M1" // for cats-effect 2.x & fs2 2.x
 ```
 
 create client:
@@ -110,11 +110,11 @@ val dispatcher: Dispatcher[IO] = ???
 
 // Fluently build Armeria WebClient with built-in decorators
 val client = WebClient.builder("https://my-service.com")
-  // Open circuit on 5xx server error status
-  .decorator(CircuitBreakerClient.newDecorator(CircuitBreaker.ofDefaultName(),
-    CircuitBreakerRule.onServerErrorStatus()))
-  .build()
-
+             // Open circuit on 5xx server error status
+             .decorator(CircuitBreakerClient.newDecorator(CircuitBreaker.ofDefaultName(),
+               CircuitBreakerRule.onServerErrorStatus()))
+             .build()
+             
 val backend = ArmeriaFs2Backend.usingClient[IO](client, dispatcher)
 ```
 
@@ -143,8 +143,8 @@ val effect = HttpClientFs2Backend.resource[IO]().use { backend =>
   val stream: Stream[IO, Byte] = ???
 
   basicRequest
-    .streamBody(Fs2Streams[IO])(stream)
     .post(uri"...")
+    .streamBody(Fs2Streams[IO])(stream)
     .send(backend)
 }
 ```
@@ -189,6 +189,8 @@ import sttp.model.sse.ServerSentEvent
 
 def processEvents(source: Stream[IO, ServerSentEvent]): IO[Unit] = ???
 
-basicRequest.response(asStream(Fs2Streams[IO])(stream =>
-  processEvents(stream.through(Fs2ServerSentEvents.parse))))
+basicRequest
+  .get(uri"")
+  .response(asStream(Fs2Streams[IO])(stream =>
+    processEvents(stream.through(Fs2ServerSentEvents.parse))))
 ```

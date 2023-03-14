@@ -3,14 +3,13 @@
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %% "finagle-backend" % "3.8.13"
+"com.softwaremill.sttp.client4" %% "finagle-backend" % "4.0.0-M1"
 ```
 
 Next you'll need to add an implicit value:
 
 ```scala
 import sttp.client4.finagle.FinagleBackend
-
 val backend = FinagleBackend()
 ```
 

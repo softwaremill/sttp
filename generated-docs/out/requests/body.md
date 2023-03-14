@@ -12,7 +12,6 @@ A `String` body can be set on a request as follows:
 
 ```scala
 import sttp.client4._
-
 basicRequest.body("Hello, world!")
 ```
 
@@ -20,7 +19,6 @@ It is also possible to use a different character encoding:
 
 ```scala
 import sttp.client4._
-
 basicRequest.body("Hello, world!", "utf-8")
 ```
 
@@ -35,12 +33,10 @@ val bytes: Array[Byte] = ???
 basicRequest.body(bytes)
 
 import java.nio.ByteBuffer
-
 val byteBuffer: ByteBuffer = ???
 basicRequest.body(byteBuffer)
 
 import java.io.ByteArrayInputStream
-
 val inputStream: ByteArrayInputStream = ???
 basicRequest.body(inputStream)
 ```
@@ -61,11 +57,9 @@ To upload a file, simply set the request body as a `File` or `Path`:
 import sttp.client4._
 
 import java.io.File
-
 basicRequest.body(new File("data.txt"))
 
 import java.nio.file.Path
-
 basicRequest.body(Path.of("data.txt"))
 ```
 
@@ -83,7 +77,6 @@ By default, the `UTF-8` encoding is used, but can be also specified explicitly:
 
 ```scala
 import sttp.client4._
-
 basicRequest.body(Map("k1" -> "v1"))
 basicRequest.body(Map("k1" -> "v1"), "utf-8")
 basicRequest.body("k1" -> "v1", "k2" -> "v2")
@@ -105,7 +98,6 @@ For example, here's how to write a custom serializer for a case class, with seri
 ```scala
 import sttp.client4._
 import sttp.model.MediaType
-
 case class Person(name: String, surname: String, age: Int)
 
 // for this example, assuming names/surnames can't contain commas

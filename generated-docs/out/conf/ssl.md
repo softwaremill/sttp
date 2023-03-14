@@ -63,6 +63,7 @@ Using `SSLContext` from [first section](#ssl-context) define a function to custo
 
 ```scala
 import sttp.client4._
+import sttp.client4.httpurlconnection.HttpURLConnectionBackend
 import java.net.HttpURLConnection
 import javax.net.ssl.HttpsURLConnection
 
@@ -129,13 +130,12 @@ import cats.effect.IO
 import cats.effect.kernel.Resource
 import cats.effect.std.Dispatcher
 import java.net.http.HttpClient
-import sttp.capabilities.WebSockets
 import sttp.capabilities.fs2.Fs2Streams
-import sttp.client4.SttpBackend
+import sttp.client4.WebSocketStreamBackend
 import sttp.client4.httpclient.fs2.HttpClientFs2Backend
 
 val httpClient: HttpClient = HttpClient.newBuilder().sslContext(ssl).build()
-val backend: Resource[IO, SttpBackend[IO, Fs2Streams[IO] with WebSockets]] = HttpClientFs2Backend.resourceUsingClient[IO](httpClient)
+val backend: Resource[IO, WebSocketStreamBackend[IO, Fs2Streams[IO]]] = HttpClientFs2Backend.resourceUsingClient[IO](httpClient)
 ```
 
 ## Using Async-http-client (deprecated)
@@ -147,6 +147,7 @@ val backend: Resource[IO, SttpBackend[IO, Fs2Streams[IO] with WebSockets]] = Htt
 Using `kmf: KeyManagerFactory` and `tmf: TrustManagerFactory` from [first section](#ssl-context) create a `AsyncHttpClientConfig`.
 
 Backends using `AsyncHttpClient` provides factory methods accepting custom config.
+
 
 ```scala
 import io.netty.handler.ssl.SslContextBuilder

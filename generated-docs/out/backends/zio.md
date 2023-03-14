@@ -9,8 +9,8 @@ The `*-zio` modules depend on ZIO 2.x. For ZIO 1.x support, use modules with the
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %% "zio" % "3.8.13"  // for ZIO 2.x
-"com.softwaremill.sttp.client4" %% "zio1" % "3.8.13" // for ZIO 1.x
+"com.softwaremill.sttp.client4" %% "zio" % "4.0.0-M1"  // for ZIO 2.x
+"com.softwaremill.sttp.client4" %% "zio1" % "4.0.0-M1" // for ZIO 1.x
 ```
 
 Create the backend using:
@@ -24,9 +24,7 @@ HttpClientZioBackend().flatMap { backend => ??? }
 HttpClientZioBackend.scoped().flatMap { backend => ??? }
 
 // or, if you'd like to instantiate the HttpClient yourself:
-
 import java.net.http.HttpClient
-
 val httpClient: HttpClient = ???
 val backend = HttpClientZioBackend.usingClient(httpClient)
 
@@ -47,8 +45,8 @@ Host header override is supported in environments running Java 12 onwards, but i
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %% "armeria-backend-zio" % "3.8.13"  // for ZIO 2.x
-"com.softwaremill.sttp.client4" %% "armeria-backend-zio1" % "3.8.13" // for ZIO 1.x
+"com.softwaremill.sttp.client4" %% "armeria-backend-zio" % "4.0.0-M1"  // for ZIO 2.x
+"com.softwaremill.sttp.client4" %% "armeria-backend-zio1" % "4.0.0-M1" // for ZIO 1.x
 ```
 
 add imports:
@@ -108,15 +106,15 @@ import sttp.client4._
 import sttp.client4.httpclient.zio._
 import zio._
 
-class MyService(sttpBackend: SttpBackend[Task, Any]) {
+class MyService(sttpBackend: Backend[Task]) {
   def runLogic(): Task[Response[String]] = {
     val request = basicRequest.response(asStringAlways).get(uri"https://httpbin.org/get")
-    sttpBackend.send(request)
+    request.send(sttpBackend)
   }
 }
 
 object MyService {
-  val live: ZLayer[SttpBackend[Task, Any], Any, MyService] = ZLayer.fromFunction(new MyService(_))
+  val live: ZLayer[Backend[Task], Any, MyService] = ZLayer.fromFunction(new MyService(_))
 }
 
 ZLayer.make[MyService](MyService.live, HttpClientZioBackend.layer())
@@ -128,13 +126,11 @@ As yet another alternative to effectfully or resourcefully creating backend inst
 
  ```scala
  package sttp.client4.httpclient.zio
+ type SttpClient = SttpBackend[Task, ZioStreams with WebSockets]
 
-type SttpClient = SttpBackend[Task, ZioStreams with WebSockets]
-
-// or, when using Armeria
-package sttp.client4.armeria.zio
-
-type SttpClient = SttpBackend[Task, ZioStreams]
+ // or, when using Armeria
+ package sttp.client4.armeria.zio
+ type SttpClient = SttpBackend[Task, ZioStreams]
  ```
 
 The lifecycle of the `SttpClient` service is described by `ZLayer`s, which can be created using the `.layer`/`.layerUsingConfig`/... methods on `HttpClientZioBackend` / `ArmeriaZioBackend`.
@@ -143,12 +139,12 @@ The `SttpClient` companion object contains effect descriptions which use the `St
 
  ```scala mdoc:compile-only
  import sttp.client4._
-import sttp.client4.httpclient.zio._
-import zio._
+ import sttp.client4.httpclient.zio._
+ import zio._
 
-val request = basicRequest.get(uri"https://httpbin.org/get")
-val sent: ZIO[SttpClient, Throwable, Response[Either[String, String]]] =
-  send(request)
+ val request = basicRequest.get(uri"https://httpbin.org/get")
+ val sent: ZIO[SttpClient, Throwable, Response[Either[String, String]]] = 
+   send(request)
  ```
 
 ## Streaming
@@ -165,14 +161,14 @@ import sttp.client4._
 import zio.stream._
 import zio.Task
 
-val sttpBackend: SttpBackend[Task, ZioStreams] = ???
-val s: Stream[Throwable, Byte] = ???
+val sttpBackend: StreamBackend[Task, ZioStreams] = ???
+val s: Stream[Throwable, Byte] =  ???
 
 val request = basicRequest
-  .streamBody(ZioStreams)(s)
   .post(uri"...")
+  .streamBody(ZioStreams)(s)
 
-sttpBackend.send(request)
+request.send(sttpBackend)
 ```
 
 And receive response bodies as a stream:
@@ -186,7 +182,7 @@ import zio.stream._
 
 import scala.concurrent.duration.Duration
 
-val sttpBackend: SttpBackend[Task, ZioStreams] = ???
+val sttpBackend: StreamBackend[Task, ZioStreams] = ???
 
 val request =
   basicRequest
@@ -194,7 +190,7 @@ val request =
     .response(asStreamUnsafe(ZioStreams))
     .readTimeout(Duration.Inf)
 
-val response: ZIO[Any, Throwable, Response[Either[String, Stream[Throwable, Byte]]]] = sttpBackend.send(request)
+val response: ZIO[Any, Throwable, Response[Either[String, Stream[Throwable, Byte]]]] = request.send(sttpBackend)
 ```
 
 ## Websockets
@@ -223,6 +219,7 @@ import sttp.client4._
 
 def processEvents(source: Stream[Throwable, ServerSentEvent]): Task[Unit] = ???
 
-basicRequest.response(asStream(ZioStreams)(stream =>
-  processEvents(stream.viaFunction(ZioServerSentEvents.parse))))
+basicRequest
+  .get(uri"...")
+  .response(asStream(ZioStreams)(stream => processEvents(stream.viaFunction(ZioServerSentEvents.parse))))
 ```

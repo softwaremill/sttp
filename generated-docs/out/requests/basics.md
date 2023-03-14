@@ -36,8 +36,8 @@ A request definition can be created without knowing how it will be sent. But to 
 To invoke the `send(backend)` method on a request description, you'll need an instance of `SttpBackend`:
 
 ```scala
-val backend = HttpClientSyncBackend()
-val response: Identity[Response[Either[String, String]]] = request.send(backend)
+val backend = DefaultSyncBackend()
+val response: Response[Either[String, String]] = request.send(backend)
 ```        
 
 The default backend uses the `Identity` effect to return responses, which is equivalent to a synchronous call (no effect at all). Other asynchronous backends use other effect types. See the section on [backends](../backends/summary.md) for more details.

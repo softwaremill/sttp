@@ -12,8 +12,7 @@ To start describing a request, import the sttp client package and customise `bas
 
 ```scala
 import sttp.client4._
-
-val myRequest: Request[_, _] = ??? // basicRequest.(...)
+val myRequest: Request[_] = ??? // basicRequest.(...)
 ```
 
 An alternative to importing the `sttp.client4._` package, is to extend the `sttp.client4.SttpApi` trait. That way, multiple integrations can be grouped in one object, thus reducing the number of necessary imports.
@@ -32,9 +31,8 @@ For example, the following sends a synchronous request, using the default JVM ba
 
 ```scala
 import sttp.client4._
-
-val myRequest: Request[String, Any] = ???
-val backend = HttpClientSyncBackend()
+val myRequest: Request[String] = ???
+val backend = DefaultSyncBackend()
 val response = myRequest.send(backend)
 ```
 

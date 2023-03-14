@@ -28,29 +28,29 @@ import sttp.client4._
 import java.io.File
 import java.nio.file.Path
 
-def ignore: ResponseAs[Unit, Any] = ???
-def asString: ResponseAs[Either[String, String], Any] = ???
-def asStringAlways: ResponseAs[String, Any] = ???
-def asString(encoding: String): ResponseAs[Either[String, String], Any] = ???
-def asStringAlways(encoding: String): ResponseAs[String, Any] = ???
-def asByteArray: ResponseAs[Either[String, Array[Byte]], Any] = ???
-def asByteArrayAlways: ResponseAs[Array[Byte], Any] = ???
-def asParams: ResponseAs[Either[String, Seq[(String, String)]], Any] = ???
-def asParamsAlways: ResponseAs[Seq[(String, String)], Any] = ???
-def asParams(encoding: String): ResponseAs[Either[String, Seq[(String, String)]], Any] = ???
-def asParamsAlways(encoding: String): ResponseAs[Seq[(String, String)], Any] = ???
-def asFile(file: File): ResponseAs[Either[String, File], Any] = ???
-def asFileAlways(file: File): ResponseAs[File, Any] = ???
-def asPath(path: Path): ResponseAs[Either[String, Path], Any] = ???
-def asPathAlways(path: Path): ResponseAs[Path, Any] = ???
+def ignore: ResponseAs[Unit] = ???
+def asString: ResponseAs[Either[String, String]] = ???
+def asStringAlways: ResponseAs[String] = ???
+def asString(encoding: String): ResponseAs[Either[String, String]] = ???
+def asStringAlways(encoding: String): ResponseAs[String] = ???
+def asByteArray: ResponseAs[Either[String, Array[Byte]]] = ???
+def asByteArrayAlways: ResponseAs[Array[Byte]] = ???
+def asParams: ResponseAs[Either[String, Seq[(String, String)]]] = ???
+def asParamsAlways: ResponseAs[Seq[(String, String)]] = ???
+def asParams(encoding: String): ResponseAs[Either[String, Seq[(String, String)]]] = ???
+def asParamsAlways(encoding: String): ResponseAs[Seq[(String, String)]] = ???
+def asFile(file: File): ResponseAs[Either[String, File]] = ???
+def asFileAlways(file: File): ResponseAs[File] = ???
+def asPath(path: Path): ResponseAs[Either[String, Path]] = ???
+def asPathAlways(path: Path): ResponseAs[Path] = ???
 
-def asEither[A, B, R](onError: ResponseAs[A, R],
-                      onSuccess: ResponseAs[B, R]): ResponseAs[Either[A, B], R] = ???
-def fromMetadata[T, R](default: ResponseAs[T, R],
-                       conditions: ConditionalResponseAs[T, R]*): ResponseAs[T, R] = ???
+def asEither[A, B](onError: ResponseAs[A], 
+                      onSuccess: ResponseAs[B]): ResponseAs[Either[A, B]] = ???
+def fromMetadata[T](default: ResponseAs[T], 
+                       conditions: ConditionalResponseAs[T]*): ResponseAs[T] = ???
 
-def asBoth[A, B](l: ResponseAs[A, Any], r: ResponseAs[B, Any]): ResponseAs[(A, B), Any] = ???
-def asBothOption[A, B, R](l: ResponseAs[A, R], r: ResponseAs[B, Any]): ResponseAs[(A, Option[B]), R] = ???
+def asBoth[A, B](l: ResponseAs[A], r: ResponseAs[B]): ResponseAs[(A, B)] = ???
+def asBothOption[A, B](l: ResponseAs[A], r: ResponseAs[B]): ResponseAs[(A, Option[B])] = ???
 ```
 
 Hence, to discard the response body, the request description should include the following:
@@ -84,7 +84,7 @@ Sometimes it's convenient to get a failed effect (or an exception thrown) when t
 ```scala
 import sttp.client4._
 
-basicRequest.response(asString.getRight): PartialRequest[String, Any]
+basicRequest.response(asString.getRight): PartialRequest[String]
 ```
 
 The combinator works in all cases where the response body is specified to be deserialized as an `Either`. If the left is already an exception, it will be thrown unchanged. Otherwise, the left-value will be wrapped in an `HttpError`.
@@ -110,7 +110,7 @@ As an example, to read the response body as an int, the following response descr
 ```scala
 import sttp.client4._
 
-val asInt: ResponseAs[Either[String, Int], Any] = asString.mapRight(_.toInt)
+val asInt: ResponseAs[Either[String, Int]] = asString.mapRight(_.toInt)
 
 basicRequest
   .get(uri"http://example.com")
@@ -126,7 +126,7 @@ type JsonError
 type JsonAST
 
 def parseJson(json: String): Either[JsonError, JsonAST] = ???
-val asJson: ResponseAs[Either[JsonError, JsonAST], Any] = asStringAlways.map(parseJson)
+val asJson: ResponseAs[Either[JsonError, JsonAST]] = asStringAlways.map(parseJson)
 
 basicRequest
   .response(asJson)
@@ -148,17 +148,15 @@ import io.circe._
 import io.circe.generic.auto._
 
 sealed trait MyModel
-
 case class SuccessModel(name: String, age: Int) extends MyModel
-
 case class ErrorModel(message: String) extends MyModel
 
-val myRequest: Request[Either[ResponseException[String, io.circe.Error], MyModel], Nothing] =
+val myRequest: Request[Either[ResponseException[String, io.circe.Error], MyModel]] =
   basicRequest
     .get(uri"https://example.com")
     .response(fromMetadata(
-      asJson[ErrorModel],
-      ConditionalResponseAs(_.code == StatusCode.Ok, asJson[SuccessModel])
+        asJson[ErrorModel], 
+        ConditionalResponseAs(_.code == StatusCode.Ok, asJson[SuccessModel])
     ))
 ```
 
@@ -172,13 +170,9 @@ import io.circe._
 import io.circe.generic.auto._
 
 case class MyModel(p1: Int)
-
 sealed trait MyErrorModel
-
 case class Conflict(message: String) extends MyErrorModel
-
 case class BadRequest(message: String) extends MyErrorModel
-
 case class GenericError(message: String) extends MyErrorModel
 
 basicRequest
@@ -195,25 +189,25 @@ import sttp.capabilities.{Effect, Streams}
 import sttp.client4._
 import sttp.model.ResponseMetadata
 
-def asStream[F[_], T, S](s: Streams[S])(f: s.BinaryStream => F[T]):
-ResponseAs[Either[String, T], Effect[F] with S] = ???
+def asStream[F[_], T, S](s: Streams[S])(f: s.BinaryStream => F[T]): 
+  StreamResponseAs[Either[String, T], Effect[F] with S] = ???
 
 def asStreamWithMetadata[F[_], T, S](s: Streams[S])(
-  f: (s.BinaryStream, ResponseMetadata) => F[T]
-): ResponseAs[Either[String, T], Effect[F] with S] = ???
+      f: (s.BinaryStream, ResponseMetadata) => F[T] 
+  ): StreamResponseAs[Either[String, T], Effect[F] with S] = ???
 
-def asStreamAlways[F[_], T, S](s: Streams[S])(f: s.BinaryStream => F[T]):
-ResponseAs[T, Effect[F] with S] = ???
+def asStreamAlways[F[_], T, S](s: Streams[S])(f: s.BinaryStream => F[T]): 
+  StreamResponseAs[T, Effect[F] with S] = ???
 
 def asStreamAlwaysWithMetadata[F[_], T, S](s: Streams[S])(
-  f: (s.BinaryStream, ResponseMetadata) => F[T]
-): ResponseAs[T, Effect[F] with S] = ???
+      f: (s.BinaryStream, ResponseMetadata) => F[T]
+  ): StreamResponseAs[T, Effect[F] with S] = ???
 
-def asStreamUnsafe[S](s: Streams[S]):
-ResponseAs[Either[String, s.BinaryStream], S] = ???
+def asStreamUnsafe[S](s: Streams[S]): 
+  StreamResponseAs[Either[String, s.BinaryStream], S] = ???
 
-def asStreamUnsafeAlways[S](s: Streams[S]):
-ResponseAs[s.BinaryStream, S] = ???
+def asStreamUnsafeAlways[S](s: Streams[S]): 
+  StreamResponseAs[s.BinaryStream, S] = ???
 ```
 
 All of these specifications require the streaming capability to be passed as a parameter, an implementation of `Streams[S]`. This is used to determine the type of binary streams that are supported, and to require that the backend used to send the request supports the given type of streams. These implementations are provided by the backend implementations, e.g. `AkkaStreams` or `Fs2Streams[F]`. 
@@ -232,7 +226,7 @@ import sttp.capabilities.akka.AkkaStreams
 import sttp.client4._
 import sttp.client4.akkahttp.AkkaHttpBackend
 
-val backend: SttpBackend[Future, AkkaStreams] = AkkaHttpBackend()
+val backend: StreamBackend[Future, AkkaStreams] = AkkaHttpBackend()
 
 val response: Future[Response[Either[String, Source[ByteString, Any]]]] =
   basicRequest

@@ -12,7 +12,7 @@ import sttp.client4._
 import scala.concurrent.duration._
 
 // all backends provide a constructor that allows to specify backend options
-val backend = HttpURLConnectionBackend(
+val backend = DefaultSyncBackend(
   options = BackendOptions.connectionTimeout(1.minute))
 
 basicRequest

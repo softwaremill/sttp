@@ -45,10 +45,10 @@ metrics for completed requests and wraps any `Future`-based backend:
 import sttp.capabilities.Effect
 import sttp.client4._
 import sttp.client4.akkahttp._
+import sttp.client4.wrappers.DelegateBackend
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util._
-
 // the metrics infrastructure
 trait MetricsServer {
   def reportDuration(name: String, duration: Long): Unit
@@ -59,11 +59,11 @@ class CloudMetricsServer extends MetricsServer {
 }
 
 // the backend wrapper
-class MetricWrapper[P](delegate: SttpBackend[Future, P],
+abstract class MetricWrapper[P](delegate: GenericBackend[Future, P],
                        metrics: MetricsServer)
-  extends DelegateBackend[Future, P](delegate) {
+    extends DelegateBackend(delegate) {
 
-  override def send[T, R >: P with Effect[Future]](request: Request[T, R]): Future[Response[T]] = {
+  override def send[T](request: GenericRequest[T, P with Effect[Future]]): Future[Response[T]] = {
     val start = System.currentTimeMillis()
 
     def report(metricSuffix: String): Unit = {
@@ -74,17 +74,22 @@ class MetricWrapper[P](delegate: SttpBackend[Future, P],
 
     delegate.send(request).andThen {
       case Success(response) if response.is200 => report("ok")
-      case Success(response) => report("notok")
-      case Failure(t) => report("exception")
+      case Success(response)                   => report("notok")
+      case Failure(t)                          => report("exception")
     }
   }
 }
 
+object MetricWrapper {
+  def apply[S](
+    backend: WebSocketStreamBackend[Future, S],
+    metrics: MetricsServer
+  ): WebSocketStreamBackend[Future, S] =
+    new MetricWrapper(backend, metrics) with WebSocketStreamBackend[Future, S] {}
+}
+
 // example usage
-val backend = new MetricWrapper(
-  AkkaHttpBackend(),
-  new CloudMetricsServer()
-)
+val backend = MetricWrapper(AkkaHttpBackend(), new CloudMetricsServer())
 
 basicRequest
   .get(uri"http://company.com/api/service1")
@@ -102,24 +107,25 @@ Handling retries is a complex problem when it comes to HTTP requests. When is a 
 * only idempotent HTTP methods (such as `GET`) could potentially be retried
 * some HTTP status codes might also be retryable (e.g. `500 Internal Server Error` or `503 Service Unavailable`)
 
-In some cases it's possible to implement a generic retry mechanism; such a mechanism should take into account logging, metrics, limiting the number of retries and a backoff mechanism. These mechanisms could be quite simple, or involve e.g. retry budgets (see [Finagle's](https://twitter.github.io/finagle/guide/Clients.md#retries) documentation on retries). In sttp, it's possible to recover from errors using the `responseMonad`. A starting point for a retrying backend could be:
+In some cases it's possible to implement a generic retry mechanism; such a mechanism should take into account logging, metrics, limiting the number of retries and a backoff mechanism. These mechanisms could be quite simple, or involve e.g. retry budgets (see [Finagle's](https://twitter.github.io/finagle/guide/Clients.md#retries) documentation on retries). In sttp, it's possible to recover from errors using the `monad`. A starting point for a retrying backend could be:
 
 ```scala
 import sttp.capabilities.Effect
 import sttp.client4._
+import sttp.client4.wrappers.DelegateBackend
 
 class RetryingBackend[F[_], P](
-                                delegate: SttpBackend[F, P],
-                                shouldRetry: RetryWhen,
-                                maxRetries: Int)
-  extends DelegateBackend[F, P](delegate) {
+    delegate: GenericBackend[F, P],
+    shouldRetry: RetryWhen,
+    maxRetries: Int)
+    extends DelegateBackend(delegate) {
 
-  override def send[T, R >: P with Effect[F]](request: Request[T, R]): F[Response[T]] = {
+  override def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] = {
     sendWithRetryCounter(request, 0)
   }
 
-  private def sendWithRetryCounter[T, R >: P with Effect[F]](
-                                                              request: Request[T, R], retries: Int): F[Response[T]] = {
+  private def sendWithRetryCounter[T](
+    request: GenericRequest[T, P with Effect[F]], retries: Int): F[Response[T]] = {
 
     val r = monad.handleError(delegate.send(request)) {
       case t if shouldRetry(request, Left(t)) && retries < maxRetries =>
@@ -135,6 +141,11 @@ class RetryingBackend[F[_], P](
     }
   }
 }
+
+object RetryingBackend {
+  def apply[F[_]](backend: WebSocketBackend[F], shouldRetry: RetryWhen, maxRetries: Int): WebSocketBackend[F] =
+    new RetryingBackend(backend, shouldRetry, maxRetries) with WebSocketBackend[F] {}
+}
 ```                    
 
 ## Example backend with circuit breaker
@@ -148,29 +159,33 @@ Below is an example on how to implement a backend wrapper, which integrates with
 ```scala
 import io.github.resilience4j.circuitbreaker.{CallNotPermittedException, CircuitBreaker}
 import sttp.capabilities.Effect
-import sttp.client4.{Request, Response, SttpBackend, DelegateBackend}
+import sttp.client4.{GenericBackend, GenericRequest, Backend, Response}
+import sttp.client4.wrappers.DelegateBackend
 import sttp.monad.MonadError
 import java.util.concurrent.TimeUnit
 
 class CircuitSttpBackend[F[_], P](
-                                   circuitBreaker: CircuitBreaker,
-                                   delegate: SttpBackend[F, P]) extends DelegateBackend[F, P](delegate) {
+    circuitBreaker: CircuitBreaker,
+    delegate: GenericBackend[F, P]) extends DelegateBackend(delegate) {
 
-  override def send[T, R >: P with Effect[F]](request: Request[T, R]): F[Response[T]] = {
+  override def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] = {
     CircuitSttpBackend.decorateF(circuitBreaker, delegate.send(request))
   }
 }
 
 object CircuitSttpBackend {
 
+  def apply[F[_]](circuitBreaker: CircuitBreaker, backend: Backend[F]): Backend[F] =
+    new CircuitSttpBackend(circuitBreaker, backend) with Backend[F] {}
+
   def decorateF[F[_], T](
-                          circuitBreaker: CircuitBreaker,
-                          service: => F[T]
-                        )(implicit monadError: MonadError[F]): F[T] = {
+      circuitBreaker: CircuitBreaker,
+      service: => F[T]
+  )(implicit monadError: MonadError[F]): F[T] = {
     monadError.suspend {
       if (!circuitBreaker.tryAcquirePermission()) {
         monadError.error(CallNotPermittedException
-          .createCallNotPermittedException(circuitBreaker))
+                              .createCallNotPermittedException(circuitBreaker))
       } else {
         val start = System.nanoTime()
         try {
@@ -203,25 +218,31 @@ Below is an example on how to implement a backend wrapper, which integrates with
 import io.github.resilience4j.ratelimiter.RateLimiter
 import sttp.capabilities.Effect
 import sttp.monad.MonadError
-import sttp.client4.{Request, Response, SttpBackend, DelegateBackend}
+import sttp.client4.{GenericBackend, GenericRequest, Response, StreamBackend}
+import sttp.client4.wrappers.DelegateBackend
 
 class RateLimitingSttpBackend[F[_], P](
-                                        rateLimiter: RateLimiter,
-                                        delegate: SttpBackend[F, P]
-                                      )(implicit monadError: MonadError[F]) extends DelegateBackend[F, P](delegate) {
+    rateLimiter: RateLimiter,
+    delegate: GenericBackend[F, P]
+    )(implicit monadError: MonadError[F]) extends DelegateBackend(delegate) {
 
-  override def send[T, R >: P with Effect[F]](request: Request[T, R]): F[Response[T]] = {
+  override def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] = {
     RateLimitingSttpBackend.decorateF(rateLimiter, delegate.send(request))
   }
 }
 
 object RateLimitingSttpBackend {
+  def apply[F[_], S](
+    rateLimiter: RateLimiter,
+    backend: StreamBackend[F, S]
+  )(implicit monadError: MonadError[F]): StreamBackend[F, S] =
+    new RateLimitingSttpBackend(rateLimiter, backend) with StreamBackend[F, S] {}
 
   def decorateF[F[_], T](
-                          rateLimiter: RateLimiter,
-                          service: => F[T]
-                        )(implicit monadError: MonadError[F]): F[T] = {
-    monadError.suspend {
+      rateLimiter: RateLimiter,
+      service: => F[T]
+  )(implicit monadError: MonadError[F]): F[T] = {
+    monadError.suspend { 
       try {
         RateLimiter.waitForPermission(rateLimiter)
         service
@@ -239,7 +260,7 @@ object RateLimitingSttpBackend {
 Implementing a new backend is made easy as the tests are published in the `core` jar file under the `tests` classifier. Simply add the follow dependencies to your `build.sbt`:
 
 ```
-"com.softwaremill.sttp.client4" %% "core" % "3.8.13" % Test classifier "tests"
+"com.softwaremill.sttp.client4" %% "core" % "4.0.0-M1" % Test classifier "tests"
 ```
 
 Implement your backend and extend the `HttpTest` class:
@@ -251,8 +272,7 @@ import scala.concurrent.Future
 
 class MyCustomBackendHttpTest extends HttpTest[Future] {
   override implicit val convertToFuture: ConvertToFuture[Future] = ConvertToFuture.future
-  override lazy val backend: SttpBackend[Future, Any] = ??? //new MyCustomBackend()
-
+  override lazy val backend: Backend[Future] = ??? //new MyCustomBackend()
   override def timeoutToNone[T](t: Future[T], timeoutMillis: Int): Future[Option[T]] = ???
 }
 ```
@@ -270,9 +290,9 @@ import sttp.client4.impl.cats.implicits._
 from the cats integration module. The module should be available on the classpath after adding following dependency:
 
 ```scala
-"com.softwaremill.sttp.client4" %% "cats" % "3.8.13" // for cats-effect 3.x
+"com.softwaremill.sttp.client4" %% "cats" % "4.0.0-M1" // for cats-effect 3.x
 // or
-"com.softwaremill.sttp.client4" %% "catsce2" % "3.8.13" // for cats-effect 2.x
+"com.softwaremill.sttp.client4" %% "catsce2" % "4.0.0-M1" // for cats-effect 2.x
 ```
 
 The object contains implicits to convert a cats `MonadError` into the sttp `MonadError`, 

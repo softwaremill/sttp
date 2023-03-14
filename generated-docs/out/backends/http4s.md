@@ -3,9 +3,9 @@
 This backend is based on [http4s](https://http4s.org) (client) and is **asynchronous**. To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client4" %% "http4s-backend" % "3.8.13" // for cats-effect 3.x & http4s 1.0.0-Mx
+"com.softwaremill.sttp.client4" %% "http4s-backend" % "4.0.0-M1" // for cats-effect 3.x & http4s 1.0.0-Mx
 // or
-"com.softwaremill.sttp.client4" %% "http4s-ce2-backend" % "3.8.13" // for cats-effect 2.x & http4s 0.21.x
+"com.softwaremill.sttp.client4" %% "http4s-ce2-backend" % "4.0.0-M1" // for cats-effect 2.x & http4s 0.21.x
 ```
 
 The backend can be created in a couple of ways, e.g.:
@@ -17,10 +17,10 @@ import sttp.client4._
 import sttp.client4.http4s._
 
 // the "org.http4s" %% "http4s-ember-client" % http4sVersion dependency needs to be explicitly added
-Http4sBackend.usingDefaultEmberClientBuilder[IO](): Resource[IO, SttpBackend[IO, Fs2Streams[IO]]]
+Http4sBackend.usingDefaultEmberClientBuilder[IO](): Resource[IO, StreamBackend[IO, Fs2Streams[IO]]]
 
 // the "org.http4s" %% "http4s-blaze-client" % http4sVersion dependency needs to be explicitly added
-Http4sBackend.usingDefaultBlazeClientBuilder[IO](): Resource[IO, SttpBackend[IO, Fs2Streams[IO]]]
+Http4sBackend.usingDefaultBlazeClientBuilder[IO](): Resource[IO, StreamBackend[IO, Fs2Streams[IO]]]
 ```
 
 Sending a request is a non-blocking, lazily-evaluated operation and results in a wrapped response. There's a transitive dependency on `http4s`. 

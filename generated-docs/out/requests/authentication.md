@@ -30,8 +30,10 @@ This type of authentication works differently. In its assumptions it is based on
 In order to add digest authentication support just wrap other backend as follows:
 
 ```scala
-val myBackend: SttpBackend[Identity, Any] = HttpClientSyncBackend()
-new DigestAuthenticationBackend(myBackend)
+import sttp.client4.wrappers.DigestAuthenticationBackend
+
+val myBackend: SyncBackend = DefaultSyncBackend()
+DigestAuthenticationBackend(myBackend)
 ```
 
 Then only thing which we need to do is to pass our credentials to the relevant request:
@@ -63,7 +65,6 @@ You can use sttp with OAuth2. Looking at the [OAuth2 protocol flow](https://tool
 1. (A)/(B) - Your UI needs to enable the user to authenticate. Your application will then receive a callback from the authentication server, which will include an authentication code.
 
 2. (C)/(D) - You need to send a request to the authentication server, passing in the authentication code from step 1. You'll receive an access token in response (and optionally a refresh token). For example, if you were using GitHub as your authentication server, you'd need to take the values of `clientId` and `clientSecret` from the GitHub settings, then take the `authCode` received in step 1 above, and send a request like this:
-
 ```scala
 import sttp.client4.circe._
 import io.circe._
@@ -72,17 +73,15 @@ import io.circe.generic.semiauto._
 val authCode = "SplxlOBeZQQYbYS6WxSbIA"
 val clientId = "myClient123"
 val clientSecret = "s3cret"
-
 case class MyTokenResponse(access_token: String, scope: String, token_type: String, refresh_token: Option[String])
-
 implicit val tokenResponseDecoder: Decoder[MyTokenResponse] = deriveDecoder[MyTokenResponse]
-val backend = HttpClientSyncBackend()
+val backend = DefaultSyncBackend()
 
 val tokenRequest = basicRequest
-  .post(uri"https://github.com/login/oauth/access_token?code=$authCode&grant_type=authorization_code")
-  .auth
-  .basic(clientId, clientSecret)
-  .header("accept", "application/json")
+    .post(uri"https://github.com/login/oauth/access_token?code=$authCode&grant_type=authorization_code")
+    .auth
+    .basic(clientId, clientSecret)
+    .header("accept","application/json")
 val authResponse = tokenRequest.response(asJson[MyTokenResponse]).send(backend)
 val accessToken = authResponse.body.map(_.access_token)
 ```

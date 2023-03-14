@@ -3,7 +3,7 @@
 This backend is based on [akka-http](http://doc.akka.io/docs/akka-http/current/scala/http/). To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %% "akka-http-backend" % "3.8.13"
+"com.softwaremill.sttp.client4" %% "akka-http-backend" % "4.0.0-M1"
 ```
 
 A fully **asynchronous** backend. Uses the `Future` effect to return responses. There are also [other `Future`-based backends](future.md), which don't depend on Akka. 
@@ -18,7 +18,6 @@ Next you'll need to add create the backend instance:
 
 ```scala
 import sttp.client4.akkahttp._
-
 val backend = AkkaHttpBackend()
 ```
 
@@ -46,8 +45,8 @@ import akka.util.ByteString
 val source: Source[ByteString, Any] = ???
 
 basicRequest
-  .streamBody(AkkaStreams)(source)
   .post(uri"...")
+  .streamBody(AkkaStreams)(source)
 ```
 
 To receive the response body as a stream:
@@ -114,6 +113,8 @@ import sttp.client4._
 
 def processEvents(source: Source[ServerSentEvent, Any]): Future[Unit] = ???
 
-basicRequest.response(asStream(AkkaStreams)(stream =>
-  processEvents(stream.via(AkkaHttpServerSentEvents.parse))))
+basicRequest
+  .get(uri"...")
+  .response(asStream(AkkaStreams)(stream => 
+    processEvents(stream.via(AkkaHttpServerSentEvents.parse))))
 ```

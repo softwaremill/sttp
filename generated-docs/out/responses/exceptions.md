@@ -25,8 +25,7 @@ This means that a typical `asJson` response specification will result in the bod
 
 ```scala
 import sttp.client4._
-
-def asJson[T]: ResponseAs[Either[ResponseException[String, Exception], T], Any] = ???
+def asJson[T]: ResponseAs[Either[ResponseException[String, Exception], T]] = ???
 ``` 
 
 There are also the `.getRight` and `.getEither` methods on eligible response specifications, which convert http errors or deserialization exceptions as failed effects.
