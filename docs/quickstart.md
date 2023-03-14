@@ -1,10 +1,11 @@
 # Quickstart
 
-The core sttp client API comes in a single jar, with a transitive dependency on [sttp model](https://github.com/softwaremill/sttp-model). This also includes [synchronous](backends/synchronous.md) and [`Future`-based] backends, based on Java's `HttpClient`.
+The core sttp client API comes in a single jar, with a transitive dependency on [sttp model](https://github.com/softwaremill/sttp-model). 
+This also includes [synchronous](backends/synchronous.md) and [`Future`-based] backends, based on Java's `HttpClient`.
 
-To integrate with other parts of your application and various effect systems, you'll often need to use an alternate backend (but what's important is that the API remains the same!). See the section on [backends](backends/summary.md) for a short guide on which backend to choose, and a list of all implementations.
+To integrate with other parts of your application and various effect systems, you'll often need to use an alternate backend, or backend wrappers (but what's important is that the API remains the same!). See the section on [backends](backends/summary.md) for a short guide on which backend to choose, and a list of all implementations.
 
-`sttp client` is available for Scala 2.11, 2.12 and 2.13, as well as for Scala 3 and requires Java 11 or higher.
+`sttp client` is available for Scala 2.12 and 2.13, as well as for Scala 3 and requires Java 11 or higher.
 
 `sttp client` is also available for Scala.js 1.0 and Scala Native. Note that not all modules are compatible with these
 platforms, and that each has its own dedicated set of backends.
@@ -50,7 +51,7 @@ And that's all you need to start using sttp client! To create and send your firs
 ```scala
 import sttp.client4._
 
-val backend = HttpClientSyncBackend()
+val backend = DefaultSyncBackend()
 val response = basicRequest
   .body("Hello, world!")  
   .post(uri"https://httpbin.org/post?hello=world")
@@ -78,11 +79,10 @@ Your code might then look as follows:
 
 ```scala mdoc:compile-only
 import sttp.client4._
-import sttp.client4.httpclient.HttpClientSyncBackend
 import sttp.client4.upicklejson._
 import upickle.default._
 
-val backend = HttpClientSyncBackend()
+val backend = DefaultSyncBackend()
 
 case class MyRequest(field1: String, field2: Int)
 // selected fields from the JSON that is being returned by httpbin
@@ -116,18 +116,18 @@ Then, you'll need to configure your client:
 
 ```scala mdoc:compile-only
 import sttp.client4._
-import sttp.client4.httpclient.HttpClientSyncBackend
 import sttp.client4.logging.slf4j.Slf4jLoggingBackend
 
-val backend = Slf4jLoggingBackend(HttpClientSyncBackend())
+val backend = Slf4jLoggingBackend(DefaultSyncBackend())
 ```
 
 ## Even quicker
 
 You can skip the step of creating a backend instance, by using `import sttp.client4.quick._` instead of the usual `import sttp.client4._`.
 This brings into scope the same sttp API, and additionally a synchronous backend instance, which can be used to send requests. 
+This backend instance is global (created on first access), can't be customised and shouldn't be closed.
 
-Then, the `send()` extension method allows sending requests using that `backend` instance:
+The `send()` extension method allows sending requests using that `backend` instance:
 
 ```scala mdoc:compile-only
 import sttp.client4.quick._

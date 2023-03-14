@@ -79,12 +79,14 @@ object HttpClientFutureBackend {
       customizeRequest: HttpRequest => HttpRequest,
       customEncodingHandler: InputStreamEncodingHandler
   )(implicit ec: ExecutionContext): WebSocketBackend[Future] =
-    wrappers.FollowRedirectsBackend(new HttpClientFutureBackend(client, closeClient, customizeRequest, customEncodingHandler))
+    wrappers.FollowRedirectsBackend(
+      new HttpClientFutureBackend(client, closeClient, customizeRequest, customEncodingHandler)
+    )
 
   def apply(
-             options: BackendOptions = BackendOptions.Default,
-             customizeRequest: HttpRequest => HttpRequest = identity,
-             customEncodingHandler: InputStreamEncodingHandler = PartialFunction.empty
+      options: BackendOptions = BackendOptions.Default,
+      customizeRequest: HttpRequest => HttpRequest = identity,
+      customEncodingHandler: InputStreamEncodingHandler = PartialFunction.empty
   )(implicit ec: ExecutionContext = ExecutionContext.global): WebSocketBackend[Future] = {
     val executor = Some(ec).collect { case executor: Executor => executor }
     HttpClientFutureBackend(
@@ -107,9 +109,9 @@ object HttpClientFutureBackend {
       customEncodingHandler
     )
 
-  /** Create a stub backend for testing, which uses the [[Future]] response wrapper, and doesn't support streaming.
+  /** Create a stub backend for testing, which uses [[Future]] to represent side effects, and doesn't support streaming.
     *
-    * See [[SttpBackendStub]] for details on how to configure stub responses.
+    * See [[WebSocketBackendStub]] for details on how to configure stub responses.
     */
   def stub(implicit ec: ExecutionContext = ExecutionContext.global): WebSocketBackendStub[Future] =
     WebSocketBackendStub.asynchronousFuture

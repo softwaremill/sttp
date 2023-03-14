@@ -21,9 +21,8 @@ Individual headers can be obtained using the methods:
 ```scala mdoc:silent
 import sttp.model._
 import sttp.client4._
-import sttp.client4.httpclient.HttpClientSyncBackend
 
-val backend = HttpClientSyncBackend()
+val backend = DefaultSyncBackend()
 val request = basicRequest
     .get(uri"https://httpbin.org/get")
 val response = request.send(backend)

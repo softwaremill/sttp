@@ -45,9 +45,8 @@ Response can be parsed into json using `asJson[T]`, provided there's an implicit
 ```scala mdoc:compile-only
 import sttp.client4._
 import sttp.client4.circe._
-import sttp.client4.httpclient.HttpClientSyncBackend
 
-val backend: SyncBackend = HttpClientSyncBackend()
+val backend: SyncBackend = DefaultSyncBackend()
 
 import io.circe.generic.auto._
 val requestPayload = RequestPayload("some data")
@@ -80,9 +79,8 @@ Usage example:
 ```scala mdoc:compile-only
 import sttp.client4._
 import sttp.client4.json4s._
-import sttp.client4.httpclient.HttpClientSyncBackend
 
-val backend: SyncBackend = HttpClientSyncBackend()
+val backend: SyncBackend = DefaultSyncBackend()
 
 val requestPayload = RequestPayload("some data")
 
@@ -111,11 +109,10 @@ Usage example:
 
 ```scala mdoc:compile-only
 import sttp.client4._
-import sttp.client4.httpclient.HttpClientSyncBackend
 import sttp.client4.sprayJson._
 import spray.json._
 
-val backend: SyncBackend = HttpClientSyncBackend()
+val backend: SyncBackend = DefaultSyncBackend()
 
 implicit val payloadJsonFormat: RootJsonFormat[RequestPayload] = ???
 implicit val myResponseJsonFormat: RootJsonFormat[ResponsePayload] = ???
@@ -163,11 +160,10 @@ Usage example:
 ```scala mdoc:compile-only
 
 import sttp.client4._
-import sttp.client4.httpclient.HttpClientSyncBackend
 import sttp.client4.ziojson._
 import zio.json._
 
-val backend: SyncBackend = HttpClientSyncBackend()
+val backend: SyncBackend = DefaultSyncBackend()
 
 implicit val payloadJsonEncoder: JsonEncoder[RequestPayload] = DeriveJsonEncoder.gen[RequestPayload]
 implicit val myResponseJsonDecoder: JsonDecoder[ResponsePayload] = DeriveJsonDecoder.gen[ResponsePayload]
@@ -204,11 +200,10 @@ Usage example:
 ```scala mdoc:compile-only
 import sttp.client4._
 import sttp.client4.jsoniter._
-import sttp.client4.httpclient.HttpClientSyncBackend
 import com.github.plokhotnyuk.jsoniter_scala.core._
 import com.github.plokhotnyuk.jsoniter_scala.macros._
 
-val backend: SyncBackend = HttpClientSyncBackend()
+val backend: SyncBackend = DefaultSyncBackend()
 
 implicit val payloadJsonCodec: JsonValueCodec[RequestPayload] = JsonCodecMaker.make
 //note that the jsoniter doesn't support 'implicit defs' and so either has to be generated seperatly
@@ -242,11 +237,10 @@ Usage example:
 
 ```scala mdoc:compile-only
 import sttp.client4._
-import sttp.client4.httpclient.HttpClientSyncBackend
 import sttp.client4.upicklejson._
 import upickle.default._
 
-val backend: SyncBackend = HttpClientSyncBackend()
+val backend: SyncBackend = DefaultSyncBackend()
 
 implicit val requestPayloadRW: ReadWriter[RequestPayload] = macroRW[RequestPayload]
 implicit val responsePayloadRW: ReadWriter[ResponsePayload] = macroRW[ResponsePayload]
