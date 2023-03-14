@@ -20,13 +20,12 @@ abstract class AbstractRecordingBackend[F[_], P](delegate: GenericBackend[F, P])
 
   private val _allInteractions = new AtomicReference[Vector[RequestAndResponse]](Vector())
 
-  private def addInteraction(request: GenericRequest[_, _], response: Try[Response[_]]): Unit = {
+  private def addInteraction(request: GenericRequest[_, _], response: Try[Response[_]]): Unit =
     _allInteractions.updateAndGet(new UnaryOperator[Vector[RequestAndResponse]] {
       override def apply(t: Vector[RequestAndResponse]): Vector[RequestAndResponse] = t.:+((request, response))
     })
-  }
 
-  override def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] = {
+  override def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] =
     delegate
       .send(request)
       .map { response =>
@@ -37,7 +36,6 @@ abstract class AbstractRecordingBackend[F[_], P](delegate: GenericBackend[F, P])
         addInteraction(request, Failure(e))
         monad.error(e)
       }
-  }
 
   override def allInteractions: List[RequestAndResponse] = _allInteractions.get().toList
 }

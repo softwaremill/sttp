@@ -1,8 +1,15 @@
 package sttp.client4.finagle
 
 import com.twitter.finagle.Http.Client
-import com.twitter.finagle.http.{FileElement, FormElement, RequestBuilder, SimpleElement, Method => FMethod, Response => FResponse}
-import com.twitter.finagle.{Http, Service, http}
+import com.twitter.finagle.http.{
+  FileElement,
+  FormElement,
+  Method => FMethod,
+  RequestBuilder,
+  Response => FResponse,
+  SimpleElement
+}
+import com.twitter.finagle.{http, Http, Service}
 import com.twitter.io.Buf
 import com.twitter.io.Buf.{ByteArray, ByteBuffer}
 import com.twitter.util
@@ -47,9 +54,8 @@ class FinagleBackend(client: Option[Client] = None) extends Backend[TFuture] {
 
   override implicit val monad: MonadError[TFuture] = TFutureMonadError
 
-  private def headersToMap(headers: Seq[Header]): Map[String, String] = {
+  private def headersToMap(headers: Seq[Header]): Map[String, String] =
     headers.map(header => header.name -> header.value).toMap
-  }
 
   private def methodToFinagle(m: Method): FMethod =
     m match {
@@ -90,7 +96,7 @@ class FinagleBackend(client: Option[Client] = None) extends Backend[TFuture] {
         )
       case m: MultipartBody[_] =>
         val requestBuilder = RequestBuilder.create().url(url).addHeaders(headers)
-        val elements = m.parts.map { part => getBasicBodyContent(part) }
+        val elements = m.parts.map(part => getBasicBodyContent(part))
         requestBuilder.add(elements).buildFormPost(true)
       // requestBuilder.addFormElement(elements: _*).buildFormPost(true)
       case _ => buildRequest(url, headers, finagleMethod, None, r.httpVersion)
@@ -144,12 +150,13 @@ class FinagleBackend(client: Option[Client] = None) extends Backend[TFuture] {
       override protected def withReplayableBody(
           response: FResponse,
           replayableBody: Either[Array[Byte], SttpFile]
-      ): TFuture[FResponse] = {
-        response.content(replayableBody match {
-          case Left(byteArray) => Buf.ByteArray(byteArray: _*)
-          case Right(file)     => Buf.ByteArray(FileHelpers.readFile(file.toFile): _*)
-        })
-      }.unit
+      ): TFuture[FResponse] =
+        response
+          .content(replayableBody match {
+            case Left(byteArray) => Buf.ByteArray(byteArray: _*)
+            case Right(file)     => Buf.ByteArray(FileHelpers.readFile(file.toFile): _*)
+          })
+          .unit
 
       override protected def regularIgnore(response: FResponse): TFuture[Unit] = TFuture(response.clearContent())
 
@@ -161,17 +168,16 @@ class FinagleBackend(client: Option[Client] = None) extends Backend[TFuture] {
           b
         })
 
-      override protected def regularAsFile(response: FResponse, file: SttpFile): TFuture[SttpFile] = {
+      override protected def regularAsFile(response: FResponse, file: SttpFile): TFuture[SttpFile] =
         TFuture.const(util.Try(FileHelpers.saveFile(file.toFile, response.getInputStream()))).map(_ => file)
-      }
 
       override protected def regularAsStream(response: FResponse): TFuture[Nothing] =
         TFuture.exception(new IllegalStateException("Streaming isn't supported"))
 
       override protected def handleWS[T](
-                                          responseAs: GenericWebSocketResponseAs[T, _],
-                                          meta: ResponseMetadata,
-                                          ws: Nothing
+          responseAs: GenericWebSocketResponseAs[T, _],
+          meta: ResponseMetadata,
+          ws: Nothing
       ): TFuture[T] = ws
 
       override protected def cleanupWhenNotAWebSocket(response: FResponse, e: NotAWebSocketException): TFuture[Unit] =

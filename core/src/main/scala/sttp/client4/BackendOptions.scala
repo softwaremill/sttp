@@ -40,7 +40,7 @@ object BackendOptions {
       onlyProxyHosts: List[String] = Nil
   ) {
     // only matches prefix or suffix wild card(*)
-    private def isWildCardMatch(targetHost: String, nonProxyHost: String): Boolean = {
+    private def isWildCardMatch(targetHost: String, nonProxyHost: String): Boolean =
       if (nonProxyHost.length > 1) {
         if (nonProxyHost.charAt(0) == '*') {
           targetHost.regionMatches(
@@ -58,7 +58,6 @@ object BackendOptions {
       } else {
         nonProxyHost.equalsIgnoreCase(targetHost)
       }
-    }
 
     def ignoreProxy(host: String): Boolean =
       matchesNonProxyHost(host) || doesNotMatchAnyHostToProxy(host)
@@ -82,12 +81,11 @@ object BackendOptions {
           proxyList
         }
 
-        override def connectFailed(uri: net.URI, sa: SocketAddress, ioe: IOException): Unit = {
+        override def connectFailed(uri: net.URI, sa: SocketAddress, ioe: IOException): Unit =
           throw new UnsupportedOperationException(
             s"Couldn't connect to the proxy server, uri: $uri, socket: $sa",
             ioe
           )
-        }
       }
     def asJavaProxy = new java.net.Proxy(proxyType.asJava, inetSocketAddress)
     def inetSocketAddress: InetSocketAddress =
@@ -140,14 +138,13 @@ object BackendOptions {
     ) = {
       val host = Option(System.getProperty(hostProp))
       def port = Try(System.getProperty(portProp).toInt).getOrElse(defaultPort)
-      def nonProxyHosts: List[String] = {
+      def nonProxyHosts: List[String] =
         nonProxyHostsPropOption
           .map(nonProxyHostsProp =>
             Try(Option(System.getProperty(nonProxyHostsProp))).toOption.flatten.getOrElse("localhost|127.*")
           )
           .map(_.split('|').toList)
           .getOrElse(Nil)
-      }
       host.map(make(_, port, nonProxyHosts))
     }
 

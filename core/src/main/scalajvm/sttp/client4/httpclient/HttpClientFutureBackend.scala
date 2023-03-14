@@ -4,9 +4,9 @@ import sttp.client4.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client4.httpclient.HttpClientFutureBackend.InputStreamEncodingHandler
 import sttp.client4.internal.httpclient._
 import sttp.client4.internal.ws.{FutureSimpleQueue, SimpleQueue}
-import sttp.client4.internal.{NoStreams, emptyInputStream}
+import sttp.client4.internal.{emptyInputStream, NoStreams}
 import sttp.client4.testing.WebSocketBackendStub
-import sttp.client4.{BackendOptions, WebSocketBackend, wrappers}
+import sttp.client4.{wrappers, BackendOptions, WebSocketBackend}
 import sttp.monad.{FutureMonad, MonadError}
 import sttp.ws.{WebSocket, WebSocketFrame}
 

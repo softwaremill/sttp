@@ -1,7 +1,17 @@
 package sttp.client4.wrappers
 
 import sttp.capabilities.Effect
-import sttp.client4.{Backend, GenericBackend, GenericRequest, Identity, Response, StreamBackend, SyncBackend, WebSocketBackend, WebSocketStreamBackend}
+import sttp.client4.{
+  Backend,
+  GenericBackend,
+  GenericRequest,
+  Identity,
+  Response,
+  StreamBackend,
+  SyncBackend,
+  WebSocketBackend,
+  WebSocketStreamBackend
+}
 import sttp.model.Uri
 import sttp.monad.syntax._
 
@@ -23,8 +33,7 @@ object ResolveRelativeUrisBackend {
   def apply(delegate: SyncBackend, baseUri: Uri): SyncBackend =
     new ResolveRelativeUrisBackend[Identity, Any](delegate, baseUri.resolve) with SyncBackend {}
   def apply[F[_]](delegate: Backend[F], baseUri: Uri): Backend[F] =
-    new ResolveRelativeUrisBackend(delegate, uri => delegate.monad.unit(baseUri.resolve(uri)))
-      with Backend[F] {}
+    new ResolveRelativeUrisBackend(delegate, uri => delegate.monad.unit(baseUri.resolve(uri))) with Backend[F] {}
   def apply[F[_]](delegate: WebSocketBackend[F], baseUri: Uri): WebSocketBackend[F] =
     new ResolveRelativeUrisBackend(delegate, uri => delegate.monad.unit(baseUri.resolve(uri)))
       with WebSocketBackend[F] {}

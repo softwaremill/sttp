@@ -1,8 +1,8 @@
 package sttp.client4.okhttp
 
 import okhttp3.{
-  MediaType,
   Headers => OkHttpHeaders,
+  MediaType,
   MultipartBody => OkHttpMultipartBody,
   RequestBody => OkHttpRequestBody
 }

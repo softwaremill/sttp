@@ -18,7 +18,7 @@ private[asynchttpclient] trait BodyFromAHC[F[_], S] {
 
   def publisherToStream(p: Publisher[ByteBuffer]): streams.BinaryStream
 
-  def publisherToBytes(p: Publisher[ByteBuffer]): F[Array[Byte]] = {
+  def publisherToBytes(p: Publisher[ByteBuffer]): F[Array[Byte]] =
     monad.async { cb =>
       def success(r: ByteBuffer): Unit = cb(Right(r.array()))
       def error(t: Throwable): Unit = cb(Left(t))
@@ -28,11 +28,9 @@ private[asynchttpclient] trait BodyFromAHC[F[_], S] {
 
       Canceler(() => subscriber.cancel())
     }
-  }
 
-  def publisherToFile(p: Publisher[ByteBuffer], f: File): F[Unit] = {
+  def publisherToFile(p: Publisher[ByteBuffer], f: File): F[Unit] =
     publisherToBytes(p).map(bytes => FileHelpers.saveFile(f, new ByteArrayInputStream(bytes)))
-  }
 
   def bytesToPublisher(b: Array[Byte]): F[Publisher[ByteBuffer]] =
     (new SingleElementPublisher(ByteBuffer.wrap(b)): Publisher[ByteBuffer]).unit
@@ -55,10 +53,9 @@ private[asynchttpclient] trait BodyFromAHC[F[_], S] {
           case Right(file)     => fileToPublisher(file.toFile)
         }
 
-      override protected def regularIgnore(response: Publisher[ByteBuffer]): F[Unit] = {
+      override protected def regularIgnore(response: Publisher[ByteBuffer]): F[Unit] =
         // getting the body and discarding it
         publisherToBytes(response).map(_ => ((), nonReplayableBody))
-      }
 
       override protected def regularAsByteArray(response: Publisher[ByteBuffer]): F[Array[Byte]] =
         publisherToBytes(response)
@@ -87,10 +84,10 @@ private[asynchttpclient] trait BodyFromAHC[F[_], S] {
     }
 
   def apply[TT](
-                 response: Either[Publisher[ByteBuffer], WebSocket[F]],
-                 responseAs: ResponseAsDelegate[TT, _],
-                 responseMetadata: ResponseMetadata,
-                 isSubscribed: () => Boolean
+      response: Either[Publisher[ByteBuffer], WebSocket[F]],
+      responseAs: ResponseAsDelegate[TT, _],
+      responseMetadata: ResponseMetadata,
+      isSubscribed: () => Boolean
   ): F[TT] = bodyFromResponseAs(isSubscribed)(responseAs, responseMetadata, response)
 
   private def bodyFromWs[TT](r: GenericWebSocketResponseAs[TT, _], ws: WebSocket[F], meta: ResponseMetadata): F[TT] =
@@ -102,15 +99,13 @@ private[asynchttpclient] trait BodyFromAHC[F[_], S] {
         compileWebSocketPipe(ws, p.asInstanceOf[streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]])
     }
 
-  private def ignoreIfNotSubscribed(p: Publisher[ByteBuffer], isSubscribed: () => Boolean): F[Unit] = {
+  private def ignoreIfNotSubscribed(p: Publisher[ByteBuffer], isSubscribed: () => Boolean): F[Unit] =
     monad.eval(isSubscribed()).flatMap(is => if (is) monad.unit(()) else ignorePublisher(p))
-  }
 
-  private def ignorePublisher(p: Publisher[ByteBuffer]): F[Unit] = {
+  private def ignorePublisher(p: Publisher[ByteBuffer]): F[Unit] =
     monad.async { cb =>
       val subscriber = new IgnoreSubscriber(() => cb(Right(())), t => cb(Left(t)))
       p.subscribe(subscriber)
       Canceler(() => ())
     }
-  }
 }

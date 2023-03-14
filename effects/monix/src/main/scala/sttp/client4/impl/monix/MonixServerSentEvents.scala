@@ -22,13 +22,12 @@ object MonixServerSentEvents {
   // -------
   // this part is utf8 incomplete byte detection from monix from monix.nio.text.UTF8Codec
   // it is added to this file instead of called from library for compatibility with scalajs that does not have nio
-  private def indexIncrement(b: Byte): Int = {
+  private def indexIncrement(b: Byte): Int =
     if ((b & 0x80) == 0) 0 // ASCII byte
     else if ((b & 0xe0) == 0xc0) 2 // first of a 2 byte seq
     else if ((b & 0xf0) == 0xe0) 3 // first of a 3 byte seq
     else if ((b & 0xf8) == 0xf0) 4 // first of a 4 byte seq
     else 0 // following char
-  }
   private def missingBytes(bytes: Array[Byte]): Option[Int] = {
     val lastThree = bytes.drop(0 max bytes.length - 3)
     val addBytesFromLast3 = lastThree.zipWithIndex.foldLeft(Option.empty[Int]) { (acc, elem) =>

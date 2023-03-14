@@ -13,15 +13,12 @@ class LoggingListener[F[_]](log: Log[F], includeTiming: Boolean)(implicit m: Mon
   private def now(): Long = System.currentTimeMillis()
   private def elapsed(from: Option[Long]): Option[Duration] = from.map(f => Duration(now() - f, TimeUnit.MILLISECONDS))
 
-  override def beforeRequest(request: GenericRequest[_, _]): F[Option[Long]] = {
+  override def beforeRequest(request: GenericRequest[_, _]): F[Option[Long]] =
     log.beforeRequestSend(request).map(_ => if (includeTiming) Some(now()) else None)
-  }
 
-  override def requestException(request: GenericRequest[_, _], tag: Option[Long], e: Exception): F[Unit] = {
+  override def requestException(request: GenericRequest[_, _], tag: Option[Long], e: Exception): F[Unit] =
     log.requestException(request, elapsed(tag), e)
-  }
 
-  override def requestSuccessful(request: GenericRequest[_, _], response: Response[_], tag: Option[Long]): F[Unit] = {
+  override def requestSuccessful(request: GenericRequest[_, _], response: Response[_], tag: Option[Long]): F[Unit] =
     log.response(request, response, None, elapsed(tag))
-  }
 }

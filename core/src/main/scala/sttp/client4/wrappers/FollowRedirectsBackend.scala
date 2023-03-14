@@ -31,10 +31,10 @@ abstract class FollowRedirectsBackend[F[_], P] private (
   }
 
   private def followRedirect[T](
-                                 request: GenericRequest[T, R],
-                                 response: Response[T],
-                                 redirects: Int
-  ): F[Response[T]] = {
+      request: GenericRequest[T, R],
+      response: Response[T],
+      redirects: Int
+  ): F[Response[T]] =
     response.header(HeaderNames.Location).fold(monad.unit(response)) { loc =>
       if (redirects >= request.options.maxRedirects) {
         monad.error(TooManyRedirectsException(request.uri, redirects))
@@ -42,13 +42,12 @@ abstract class FollowRedirectsBackend[F[_], P] private (
         followRedirect(request, response, redirects, loc)
       }
     }
-  }
 
   private def followRedirect[T](
-                                 request: GenericRequest[T, R],
-                                 response: Response[T],
-                                 redirects: Int,
-                                 loc: String
+      request: GenericRequest[T, R],
+      response: Response[T],
+      redirects: Int,
+      loc: String
   ): F[Response[T]] = {
     val uri =
       if (FollowRedirectsBackend.isRelative(loc)) config.transformUri(request.uri.resolve(uri"$loc"))
@@ -66,11 +65,10 @@ abstract class FollowRedirectsBackend[F[_], P] private (
     }
   }
 
-  private def stripSensitiveHeaders[T](request: GenericRequest[T, R]): GenericRequest[T, R] = {
+  private def stripSensitiveHeaders[T](request: GenericRequest[T, R]): GenericRequest[T, R] =
     request.withHeaders(
       request.headers.filterNot(h => config.sensitiveHeaders.contains(h.name.toLowerCase()))
     )
-  }
 
   private def changePostPutToGet[T](r: GenericRequest[T, R], statusCode: StatusCode): GenericRequest[T, R] = {
     val applicable = r.method == Method.POST || r.method == Method.PUT

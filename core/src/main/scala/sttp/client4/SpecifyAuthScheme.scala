@@ -20,7 +20,6 @@ class SpecifyAuthScheme[+R <: PartialRequestBuilder[R, _]](
   def bearer(token: String): R =
     req.header(hn, s"Bearer $token")
 
-  def digest(user: String, password: String): R = {
+  def digest(user: String, password: String): R =
     req.tag(digestTag, DigestAuthenticator.DigestAuthData(user, password))
-  }
 }

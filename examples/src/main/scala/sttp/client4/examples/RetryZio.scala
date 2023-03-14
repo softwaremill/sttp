@@ -2,10 +2,10 @@ package sttp.client4.examples
 
 import sttp.client4._
 import sttp.client4.httpclient.zio.HttpClientZioBackend
-import zio.{Schedule, Task, ZIO, ZIOAppDefault, durationInt}
+import zio.{durationInt, Schedule, Task, ZIO, ZIOAppDefault}
 
 object RetryZio extends ZIOAppDefault {
-  override def run: ZIO[Any, Throwable, Response[String]] = {
+  override def run: ZIO[Any, Throwable, Response[String]] =
     HttpClientZioBackend()
       .flatMap { backend =>
         val localhostRequest = basicRequest
@@ -24,5 +24,4 @@ object RetryZio extends ZIOAppDefault {
 
         sendWithRetries.ensuring(backend.close().ignore)
       }
-  }
 }

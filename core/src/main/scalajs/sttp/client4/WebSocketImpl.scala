@@ -11,7 +11,7 @@ import sttp.ws.{WebSocket, WebSocketClosed, WebSocketFrame}
 
 import scala.scalajs.js.typedarray.{ArrayBuffer, _}
 
-private[client4] class WebSocketImpl[F[_]] private(
+private[client4] class WebSocketImpl[F[_]] private (
     ws: JSWebSocket,
     queue: JSSimpleQueue[F, WebSocketEvent],
     implicit val monad: MonadError[F]

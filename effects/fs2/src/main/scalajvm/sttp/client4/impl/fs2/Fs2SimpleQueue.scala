@@ -9,7 +9,7 @@ import sttp.ws.WebSocketBufferFull
 class Fs2SimpleQueue[F[_], A](queue: Queue[F, A], capacity: Option[Int], dispatcher: Dispatcher[F])(implicit
     F: MonadError[F, Throwable]
 ) extends SimpleQueue[F, A] {
-  override def offer(t: A): Unit = {
+  override def offer(t: A): Unit =
     dispatcher.unsafeRunSync(
       queue
         .tryOffer(t)
@@ -18,7 +18,6 @@ class Fs2SimpleQueue[F[_], A](queue: Queue[F, A], capacity: Option[Int], dispatc
           case false => F.raiseError(new WebSocketBufferFull(capacity.getOrElse(Int.MaxValue)))
         }
     )
-  }
 
   override def poll: F[A] = queue.take
 }

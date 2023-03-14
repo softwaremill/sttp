@@ -22,7 +22,7 @@ object Fs2WebSockets {
     */
   def handleThroughPipe[F[_]: Concurrent](
       ws: WebSocket[F]
-  )(pipe: Pipe[F, WebSocketFrame.Data[_], WebSocketFrame]): F[Unit] = {
+  )(pipe: Pipe[F, WebSocketFrame.Data[_], WebSocketFrame]): F[Unit] =
     Stream
       .eval(Ref.of[F, Option[WebSocketFrame.Close]](None))
       .flatMap { closeRef =>
@@ -50,7 +50,6 @@ object Fs2WebSockets {
       .compile
       .drain
       .guarantee(ws.close())
-  }
 
   def fromTextPipe[F[_]]: (String => WebSocketFrame) => fs2.Pipe[F, WebSocketFrame, WebSocketFrame] =
     f => fromTextPipeF(_.map(f))

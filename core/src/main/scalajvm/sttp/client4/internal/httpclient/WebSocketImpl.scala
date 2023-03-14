@@ -21,7 +21,7 @@ private[client4] class WebSocketImpl[F[_]](
     _monad: MonadAsyncError[F],
     sequencer: Sequencer[F]
 ) extends WebSocket[F] {
-  override def receive(): F[WebSocketFrame] = {
+  override def receive(): F[WebSocketFrame] =
     queue.poll.flatMap {
       case WebSocketEvent.Open() => receive()
       case WebSocketEvent.Frame(c: WebSocketFrame.Close) =>
@@ -38,9 +38,8 @@ private[client4] class WebSocketImpl[F[_]](
           f
         }
     }
-  }
 
-  override def send(f: WebSocketFrame, isContinuation: Boolean = false): F[Unit] = {
+  override def send(f: WebSocketFrame, isContinuation: Boolean = false): F[Unit] =
     // ws.send* is not thread-safe - at least one can run at a time. Hence, adding a sequencer to ensure that
     // even if called concurrently, these will be run in sequence.
     sequencer(monad.flatten(monad.eval {
@@ -57,7 +56,6 @@ private[client4] class WebSocketImpl[F[_]](
           if (wasOpen) fromCompletableFuture(ws.sendClose(statusCode, reasonText)) else ().unit
       }
     }))
-  }
 
   override lazy val upgradeHeaders: Headers = Headers(Nil)
 
@@ -65,23 +63,21 @@ private[client4] class WebSocketImpl[F[_]](
 
   override implicit def monad: MonadError[F] = _monad
 
-  private def fromCompletableFuture(cf: CompletableFuture[JWebSocket]): F[Unit] = {
+  private def fromCompletableFuture(cf: CompletableFuture[JWebSocket]): F[Unit] =
     _monad.async { cb =>
       cf.whenComplete(new BiConsumer[JWebSocket, Throwable] {
-        override def accept(t: JWebSocket, error: Throwable): Unit = {
+        override def accept(t: JWebSocket, error: Throwable): Unit =
           if (error != null) {
             cb(Left(error))
           } else {
             cb(Right(()))
           }
-        }
       })
       Canceler { () =>
         cf.cancel(true)
         ()
       }
     }
-  }
 }
 
 private[client4] class AddToQueueListener[F[_]](

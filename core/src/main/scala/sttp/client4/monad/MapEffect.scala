@@ -51,7 +51,7 @@ object MapEffect {
       gk: FunctionK[G, F],
       fm: MonadError[F],
       gm: MonadError[G]
-  ): GenericResponseAs[_, _] = {
+  ): GenericResponseAs[_, _] =
     r match {
       case IgnoreResponse      => IgnoreResponse
       case ResponseAsByteArray => ResponseAsByteArray
@@ -81,7 +81,6 @@ object MapEffect {
       case ResponseAsBoth(l, r) =>
         ResponseAsBoth(apply(l, fk, gk, fm, gm), apply(r, fk, gk, fm, gm).asInstanceOf[GenericResponseAs[_, Any]])
     }
-  }
 
   /* private def apply[TT, R0, F[_], G[_]](
       r: InternalResponseAs[TT, R0 with Effect[F]],

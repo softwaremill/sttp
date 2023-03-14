@@ -16,12 +16,11 @@ final class AtomicCyclicIterator[+T] private (val elements: Seq[T]) {
 
 object AtomicCyclicIterator {
 
-  def tryFrom[T](elements: Seq[T]): Try[AtomicCyclicIterator[T]] = {
+  def tryFrom[T](elements: Seq[T]): Try[AtomicCyclicIterator[T]] =
     if (elements.nonEmpty)
       Success(new AtomicCyclicIterator(elements))
     else
       Failure(new IllegalArgumentException("Argument must be a non-empty collection."))
-  }
 
   def unsafeFrom[T](elements: Seq[T]): AtomicCyclicIterator[T] = tryFrom(elements).get
 

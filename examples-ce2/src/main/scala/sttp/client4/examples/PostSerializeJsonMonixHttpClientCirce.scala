@@ -15,7 +15,7 @@ object PostSerializeJsonMonixHttpClientCirce extends App {
       .post(uri"https://httpbin.org/post")
 
     r.send(backend)
-      .flatMap { response => Task(println(s"""Got ${response.code} response, body:\n${response.body}""")) }
+      .flatMap(response => Task(println(s"""Got ${response.code} response, body:\n${response.body}""")))
       .guarantee(backend.close())
   }
 

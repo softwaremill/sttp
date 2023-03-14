@@ -10,9 +10,8 @@ import org.reactivestreams.{Publisher, Subscriber, Subscription}
 import scala.collection.JavaConverters._
 
 private[asynchttpclient] object EmptyPublisher extends Publisher[ByteBuffer] {
-  override def subscribe(s: Subscriber[_ >: ByteBuffer]): Unit = {
+  override def subscribe(s: Subscriber[_ >: ByteBuffer]): Unit =
     s.onComplete()
-  }
 }
 
 // based on org.asynchttpclient.request.body.generator.ReactiveStreamsBodyGenerator.SimpleSubscriber
@@ -68,7 +67,7 @@ private[asynchttpclient] class SimpleSubscriber(success: ByteBuffer => Unit, err
     success(result)
   }
 
-  def cancel(): Unit = {
+  def cancel(): Unit =
     // subscription.cancel is idempotent:
     // https://github.com/reactive-streams/reactive-streams-jvm/blob/v1.0.3/README.md#specification
     // so the following can be safely retried
@@ -78,7 +77,6 @@ private[asynchttpclient] class SimpleSubscriber(success: ByteBuffer => Unit, err
         (true, null)
       }
     })
-  }
 }
 
 /** A subscriber which does its best to signal that it's not interested in the data being sent.
@@ -94,17 +92,15 @@ private[asynchttpclient] class IgnoreSubscriber(success: () => Unit, error: Thro
     // ignore
   }
 
-  override def onError(t: Throwable): Unit = {
+  override def onError(t: Throwable): Unit =
     error(t)
-  }
 
-  override def onComplete(): Unit = {
+  override def onComplete(): Unit =
     success()
-  }
 }
 
 private[asynchttpclient] class SingleElementPublisher[T](v: T) extends Publisher[T] {
-  override def subscribe(s: Subscriber[_ >: T]): Unit = {
+  override def subscribe(s: Subscriber[_ >: T]): Unit =
     s.onSubscribe(new Subscription {
       override def request(n: Long): Unit =
         if (n > 0) {
@@ -114,5 +110,4 @@ private[asynchttpclient] class SingleElementPublisher[T](v: T) extends Publisher
 
       override def cancel(): Unit = {}
     })
-  }
 }

@@ -7,14 +7,13 @@ import sttp.ws.WebSocketBufferFull
 
 class Fs2SimpleQueue[F[_], A](queue: InspectableQueue[F, A], capacity: Option[Int])(implicit F: Effect[F])
     extends SimpleQueue[F, A] {
-  override def offer(t: A): Unit = {
+  override def offer(t: A): Unit =
     F.toIO(queue.offer1(t))
       .flatMap {
         case true  => IO.unit
         case false => IO.raiseError(WebSocketBufferFull(capacity.getOrElse(Int.MaxValue)))
       }
       .unsafeRunSync()
-  }
 
   override def poll: F[A] = queue.dequeue1
 }

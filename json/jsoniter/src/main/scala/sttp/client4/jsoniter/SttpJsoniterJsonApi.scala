@@ -3,6 +3,8 @@ package sttp.client4.jsoniter
 import sttp.client4.internal.Utf8
 import sttp.client4.json.RichResponseAs
 import sttp.client4.{
+  asString,
+  asStringAlways,
   BodySerializer,
   DeserializationException,
   HttpError,
@@ -11,9 +13,7 @@ import sttp.client4.{
   ResponseAs,
   ResponseException,
   ShowError,
-  StringBody,
-  asString,
-  asStringAlways
+  StringBody
 }
 import sttp.model.MediaType
 
@@ -47,12 +47,11 @@ trait SttpJsoniterJsonApi {
   def asJsonEither[
       E: JsonValueCodec: IsOption,
       B: JsonValueCodec: IsOption
-  ]: ResponseAs[Either[ResponseException[E, Exception], B]] = {
+  ]: ResponseAs[Either[ResponseException[E, Exception], B]] =
     asJson[B].mapLeft {
       case de @ DeserializationException(_, _) => de
       case HttpError(e, code) => deserializeJson[E].apply(e).fold(DeserializationException(e, _), HttpError(_, code))
     }.showAsJsonEither
-  }
 
   def deserializeJson[B: JsonValueCodec: IsOption]: String => Either[Exception, B] = { (s: String) =>
     try Right(readFromString[B](JsonInput.sanitize[B].apply(s)))
@@ -63,7 +62,7 @@ trait SttpJsoniterJsonApi {
 
   implicit def optionDecoder[T: JsonValueCodec]: JsonValueCodec[Option[T]] = new JsonValueCodec[Option[T]] {
     private val codec = implicitly[JsonValueCodec[T]]
-    override def decodeValue(in: JsonReader, default: Option[T]): Option[T] = {
+    override def decodeValue(in: JsonReader, default: Option[T]): Option[T] =
       if (
         in.isNextToken('n'.toByte)
         && in.isNextToken('u'.toByte)
@@ -75,7 +74,6 @@ trait SttpJsoniterJsonApi {
         in.rollbackToken()
         Some(codec.decodeValue(in, codec.nullValue))
       }
-    }
 
     override def encodeValue(x: Option[T], out: JsonWriter): Unit = x.foreach(codec.encodeValue(_, out))
 

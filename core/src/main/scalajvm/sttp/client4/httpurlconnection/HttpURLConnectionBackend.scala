@@ -6,7 +6,26 @@ import sttp.client4.internal._
 import sttp.client4.monad.IdMonad
 import sttp.client4.testing.SyncBackendStub
 import sttp.client4.ws.{GotAWebSocketException, NotAWebSocketException}
-import sttp.client4.{BackendOptions, BasicBodyPart, BasicMultipartBody, ByteArrayBody, ByteBufferBody, FileBody, GenericRequest, GenericWebSocketResponseAs, Identity, InputStreamBody, MultipartStreamBody, NoBody, Response, StreamBody, StringBody, SttpClientException, SyncBackend, wrappers}
+import sttp.client4.{
+  wrappers,
+  BackendOptions,
+  BasicBodyPart,
+  BasicMultipartBody,
+  ByteArrayBody,
+  ByteBufferBody,
+  FileBody,
+  GenericRequest,
+  GenericWebSocketResponseAs,
+  Identity,
+  InputStreamBody,
+  MultipartStreamBody,
+  NoBody,
+  Response,
+  StreamBody,
+  StringBody,
+  SttpClientException,
+  SyncBackend
+}
 import sttp.model._
 import sttp.monad.MonadError
 
@@ -21,11 +40,11 @@ import scala.collection.JavaConverters._
 import scala.concurrent.duration.Duration
 
 class HttpURLConnectionBackend private (
-                                         opts: BackendOptions,
-                                         customizeConnection: HttpURLConnection => Unit,
-                                         createURL: String => URL,
-                                         openConnection: (URL, Option[java.net.Proxy]) => URLConnection,
-                                         customEncodingHandler: EncodingHandler
+    opts: BackendOptions,
+    customizeConnection: HttpURLConnection => Unit,
+    createURL: String => URL,
+    openConnection: (URL, Option[java.net.Proxy]) => URLConnection,
+    customEncodingHandler: EncodingHandler
 ) extends SyncBackend {
   type R = Any with Effect[Identity]
 
@@ -33,7 +52,7 @@ class HttpURLConnectionBackend private (
     adjustExceptions(r) {
       val c = openConnection(r.uri)
       c.setRequestMethod(r.method.method)
-      r.headers.foreach { h => c.setRequestProperty(h.name, h.value) }
+      r.headers.foreach(h => c.setRequestProperty(h.name, h.value))
       c.setDoInput(true)
       c.setReadTimeout(timeout(r.options.readTimeout))
       c.setConnectTimeout(timeout(opts.connectionTimeout))
@@ -74,9 +93,8 @@ class HttpURLConnectionBackend private (
       case Some(p) if uri.host.forall(!p.ignoreProxy(_)) =>
         p.auth.foreach { proxyAuth =>
           Authenticator.setDefault(new Authenticator() {
-            override def getPasswordAuthentication: PasswordAuthentication = {
+            override def getPasswordAuthentication: PasswordAuthentication =
               new PasswordAuthentication(proxyAuth.username, proxyAuth.password.toCharArray)
-            }
           })
         }
 
@@ -87,7 +105,7 @@ class HttpURLConnectionBackend private (
     conn.asInstanceOf[HttpURLConnection]
   }
 
-  private def writeBody(r: GenericRequest[_, R], c: HttpURLConnection): Option[OutputStream] = {
+  private def writeBody(r: GenericRequest[_, R], c: HttpURLConnection): Option[OutputStream] =
     r.body match {
       case NoBody =>
         // skip
@@ -105,13 +123,12 @@ class HttpURLConnectionBackend private (
       case mp: BasicMultipartBody =>
         setMultipartBody(r, mp, c)
     }
-  }
 
   private def timeout(t: Duration): Int =
     if (t.isFinite) t.toMillis.toInt
     else 0
 
-  private def writeBasicBody(body: BasicBodyPart, os: OutputStream): Unit = {
+  private def writeBasicBody(body: BasicBodyPart, os: OutputStream): Unit =
     body match {
       case StringBody(b, encoding, _) =>
         val writer = new OutputStreamWriter(os, encoding)
@@ -133,15 +150,14 @@ class HttpURLConnectionBackend private (
       case FileBody(f, _) =>
         Files.copy(f.toPath, os)
     }
-  }
 
   private val BoundaryChars =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".toCharArray
 
   private def setMultipartBody(
-                                r: GenericRequest[_, R],
-                                mp: BasicMultipartBody,
-                                c: HttpURLConnection
+      r: GenericRequest[_, R],
+      mp: BasicMultipartBody,
+      c: HttpURLConnection
   ): Option[OutputStream] = {
     val boundary = {
       val tlr = ThreadLocalRandom.current()
@@ -261,9 +277,9 @@ class HttpURLConnectionBackend private (
     override protected def regularAsStream(response: InputStream): (Nothing, () => Identity[Unit]) =
       throw new IllegalStateException()
     override protected def handleWS[T](
-                                        responseAs: GenericWebSocketResponseAs[T, _],
-                                        meta: ResponseMetadata,
-                                        ws: Nothing
+        responseAs: GenericWebSocketResponseAs[T, _],
+        meta: ResponseMetadata,
+        ws: Nothing
     ): Identity[T] = ws
     override protected def cleanupWhenNotAWebSocket(response: InputStream, e: NotAWebSocketException): Identity[Unit] =
       ()
@@ -304,14 +320,14 @@ object HttpURLConnectionBackend {
   }
 
   def apply(
-             options: BackendOptions = BackendOptions.Default,
-             customizeConnection: HttpURLConnection => Unit = _ => (),
-             createURL: String => URL = new URL(_),
-             openConnection: (URL, Option[java.net.Proxy]) => URLConnection = {
+      options: BackendOptions = BackendOptions.Default,
+      customizeConnection: HttpURLConnection => Unit = _ => (),
+      createURL: String => URL = new URL(_),
+      openConnection: (URL, Option[java.net.Proxy]) => URLConnection = {
         case (url, None)        => url.openConnection()
         case (url, Some(proxy)) => url.openConnection(proxy)
       },
-             customEncodingHandler: EncodingHandler = PartialFunction.empty
+      customEncodingHandler: EncodingHandler = PartialFunction.empty
   ): SyncBackend =
     wrappers.FollowRedirectsBackend(
       new HttpURLConnectionBackend(options, customizeConnection, createURL, openConnection, customEncodingHandler)

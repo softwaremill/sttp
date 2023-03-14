@@ -27,7 +27,7 @@ object ToRfc2616Converter {
     if (body.isEmpty) resultWithHeaders else resultWithHeaders + s"\n\n$body"
   }
 
-  private def extractBody(r: GenericRequest[_, _]): String = {
+  private def extractBody(r: GenericRequest[_, _]): String =
     r.body match {
       case StringBody(text, _, _) => s"$text"
       case ByteArrayBody(_, _)    => "<PLACEHOLDER>"
@@ -38,7 +38,6 @@ object ToRfc2616Converter {
       case FileBody(file, _)      => s"<${file.name}"
       case NoBody                 => ""
     }
-  }
 
   def handleMultipartBody(parts: Seq[Part[GenericRequestBody[_]]]): String = {
     val boundary = generateBoundary()
@@ -61,13 +60,12 @@ object ToRfc2616Converter {
       .mkString("") + s"--$boundary--"
   }
 
-  private def extractHeaders(r: GenericRequest[_, _], sensitiveHeaders: Set[String]): String = {
+  private def extractHeaders(r: GenericRequest[_, _], sensitiveHeaders: Set[String]): String =
     r.headers
       // filtering out compression headers so that the results are human-readable, if possible
       .filterNot(_.name.equalsIgnoreCase(HeaderNames.AcceptEncoding))
       .map(h => h.toStringSafe(sensitiveHeaders))
       .mkString("\n")
-  }
 
   private def generateBoundary(): String = {
     val random = Random

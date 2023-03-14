@@ -4,16 +4,16 @@ import org.scalajs.dom.experimental.{
   AbortController,
   BodyInit,
   Fetch,
+  Headers => JSHeaders,
   HttpMethod,
+  Request => FetchRequest,
   RequestCredentials,
   RequestInit,
   RequestMode,
   RequestRedirect,
+  Response => FetchResponse,
   ResponseInit,
-  ResponseType,
-  Headers => JSHeaders,
-  Request => FetchRequest,
-  Response => FetchResponse
+  ResponseType
 }
 import org.scalajs.dom.raw._
 import org.scalajs.dom.{FormData, WebSocket => JSWebSocket}
@@ -140,7 +140,7 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S]](
     }
 
     val result = req
-      .flatMap { r => convertFromFuture(Fetch.fetch(customizeRequest(r)).toFuture) }
+      .flatMap(r => convertFromFuture(Fetch.fetch(customizeRequest(r)).toFuture))
       .flatMap { resp =>
         if (resp.`type` == ResponseType.opaqueredirect) {
           monad.error[FetchResponse](new RuntimeException("Unexpected redirect"))
@@ -170,7 +170,7 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S]](
 
   protected def addCancelTimeoutHook[T](result: F[T], cancel: () => Unit): F[T]
 
-  private def convertResponseHeaders(headers: JSHeaders): Seq[Header] = {
+  private def convertResponseHeaders(headers: JSHeaders): Seq[Header] =
     headers
       .jsIterator()
       .toIterator
@@ -184,9 +184,8 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S]](
         }
       }
       .toList
-  }
 
-  private def createBody(body: GenericRequestBody[R]): F[js.UndefOr[BodyInit]] = {
+  private def createBody(body: GenericRequestBody[R]): F[js.UndefOr[BodyInit]] =
     body match {
       case NoBody =>
         monad.unit(js.undefined) // skip
@@ -221,9 +220,8 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S]](
         }
         monad.unit(formData)
     }
-  }
 
-  private def writeBasicBody(body: BasicBodyPart): BodyInit = {
+  private def writeBasicBody(body: BasicBodyPart): BodyInit =
     body match {
       case StringBody(b, encoding, _) =>
         if (encoding.compareToIgnoreCase(Utf8) == 0) b
@@ -241,7 +239,6 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S]](
       case FileBody(f, _) =>
         f.toDomFile
     }
-  }
 
   // https://stackoverflow.com/questions/679298/gets-byte-array-from-a-bytebuffer-in-java
   private def byteBufferToArray(bb: ByteBuffer): Array[Byte] = {
@@ -311,7 +308,7 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S]](
       convertFromFuture(response.arrayBuffer().toFuture).map(_ => ())
 
     override protected def regularAsByteArray(response: FetchResponse): F[Array[Byte]] =
-      convertFromFuture(response.arrayBuffer().toFuture).map { ab => new Int8Array(ab).toArray }
+      convertFromFuture(response.arrayBuffer().toFuture).map(ab => new Int8Array(ab).toArray)
 
     override protected def regularAsFile(response: FetchResponse, file: SttpFile): F[SttpFile] =
       convertFromFuture(response.arrayBuffer().toFuture)
@@ -329,9 +326,9 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S]](
       handleResponseAsStream(response)
 
     override protected def handleWS[T](
-                                        responseAs: GenericWebSocketResponseAs[T, _],
-                                        meta: ResponseMetadata,
-                                        ws: WebSocket[F]
+        responseAs: GenericWebSocketResponseAs[T, _],
+        meta: ResponseMetadata,
+        ws: WebSocket[F]
     ): F[T] =
       responseAs match {
         case ResponseAsWebSocket(f) =>

@@ -4,7 +4,16 @@ import sttp.capabilities.Effect
 import sttp.client4.internal.DigestAuthenticator
 import sttp.client4.internal.DigestAuthenticator.DigestAuthData
 import sttp.client4.wrappers.DigestAuthenticationBackend._
-import sttp.client4.{Backend, GenericBackend, GenericRequest, Response, StreamBackend, SyncBackend, WebSocketBackend, WebSocketStreamBackend}
+import sttp.client4.{
+  Backend,
+  GenericBackend,
+  GenericRequest,
+  Response,
+  StreamBackend,
+  SyncBackend,
+  WebSocketBackend,
+  WebSocketStreamBackend
+}
 import sttp.model.Header
 import sttp.monad.syntax._
 
@@ -29,11 +38,11 @@ abstract class DigestAuthenticationBackend[F[_], P] private (
       }
 
   private def handleResponse[T](
-                                 request: GenericRequest[T, P with Effect[F]],
-                                 response: Response[T],
-                                 digestTag: String,
-                                 digestAuthenticator: DigestAuthData => DigestAuthenticator
-  ): F[(Response[T], Option[Header])] = {
+      request: GenericRequest[T, P with Effect[F]],
+      response: Response[T],
+      digestTag: String,
+      digestAuthenticator: DigestAuthData => DigestAuthenticator
+  ): F[(Response[T], Option[Header])] =
     request
       .tag(digestTag)
       .map(_.asInstanceOf[DigestAuthData])
@@ -42,7 +51,6 @@ abstract class DigestAuthenticationBackend[F[_], P] private (
         header.map(h => delegate.send(request.header(h)).map(_ -> Option(h)))
       }
       .getOrElse((response -> Option.empty[Header]).unit)
-  }
 }
 
 object DigestAuthenticationBackend {

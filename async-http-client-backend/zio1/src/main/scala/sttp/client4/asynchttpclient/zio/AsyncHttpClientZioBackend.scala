@@ -2,7 +2,10 @@ package sttp.client4.asynchttpclient.zio
 
 import _root_.zio._
 import _root_.zio.blocking.Blocking
-import _root_.zio.interop.reactivestreams.{publisherToStream => publisherToZioStream, streamToPublisher => zioStreamToPublisher}
+import _root_.zio.interop.reactivestreams.{
+  publisherToStream => publisherToZioStream,
+  streamToPublisher => zioStreamToPublisher
+}
 import _root_.zio.stream._
 import io.netty.buffer.{ByteBuf, Unpooled}
 import org.asynchttpclient._
@@ -15,7 +18,7 @@ import sttp.client4.internal._
 import sttp.client4.internal.ws.SimpleQueue
 import sttp.client4.testing.WebSocketStreamBackendStub
 import sttp.client4.wrappers.FollowRedirectsBackend
-import sttp.client4.{BackendOptions, WebSocketStreamBackend, wrappers}
+import sttp.client4.{wrappers, BackendOptions, WebSocketStreamBackend}
 import sttp.monad.MonadAsyncError
 import sttp.ws.{WebSocket, WebSocketFrame}
 
@@ -54,14 +57,13 @@ class AsyncHttpClientZioBackend private (
           .fold(immutable.Queue.empty[Array[Byte]])(enqueueBytes)
           .map(concatBytes)
 
-      override def publisherToFile(p: Publisher[ByteBuffer], f: File): Task[Unit] = {
+      override def publisherToFile(p: Publisher[ByteBuffer], f: File): Task[Unit] =
         p.toStream(bufferSize)
           .map(Chunk.fromByteBuffer)
           .flattenChunks
           .run(ZSink.fromOutputStream(new FileOutputStream(f)))
           .unit
           .provideLayer(Blocking.live)
-      }
 
       override def bytesToPublisher(b: Array[Byte]): Task[Publisher[ByteBuffer]] =
         Stream.apply(ByteBuffer.wrap(b)).toPublisher
@@ -109,9 +111,9 @@ object AsyncHttpClientZioBackend {
     )
 
   def apply(
-             options: BackendOptions = BackendOptions.Default,
-             customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
-             webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
+      options: BackendOptions = BackendOptions.Default,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
+      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): Task[WebSocketStreamBackend[Task, ZioStreams]] =
     ZIO
       .runtime[Any]
@@ -128,16 +130,16 @@ object AsyncHttpClientZioBackend {
       )
 
   def managed(
-               options: BackendOptions = BackendOptions.Default,
-               customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
-               webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
+      options: BackendOptions = BackendOptions.Default,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
+      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): TaskManaged[WebSocketStreamBackend[Task, ZioStreams]] =
     ZManaged.make(apply(options, customizeRequest, webSocketBufferCapacity))(_.close().ignore)
 
   def layer(
-             options: BackendOptions = BackendOptions.Default,
-             customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
-             webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
+      options: BackendOptions = BackendOptions.Default,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
+      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): Layer[Throwable, SttpClient] =
     ZLayer.fromManaged(managed(options, customizeRequest, webSocketBufferCapacity))
 
@@ -178,10 +180,10 @@ object AsyncHttpClientZioBackend {
     *   A function which updates the default configuration (created basing on `options`).
     */
   def usingConfigBuilder(
-                          updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
-                          options: BackendOptions = BackendOptions.Default,
-                          customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
-                          webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
+      updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
+      options: BackendOptions = BackendOptions.Default,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
+      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): Task[WebSocketStreamBackend[Task, ZioStreams]] =
     ZIO
       .runtime[Any]
@@ -201,10 +203,10 @@ object AsyncHttpClientZioBackend {
     *   A function which updates the default configuration (created basing on `options`).
     */
   def managedUsingConfigBuilder(
-                                 updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
-                                 options: BackendOptions = BackendOptions.Default,
-                                 customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
-                                 webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
+      updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
+      options: BackendOptions = BackendOptions.Default,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
+      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): TaskManaged[WebSocketStreamBackend[Task, ZioStreams]] =
     ZManaged.make(usingConfigBuilder(updateConfig, options, customizeRequest, webSocketBufferCapacity))(
       _.close().ignore
@@ -214,10 +216,10 @@ object AsyncHttpClientZioBackend {
     *   A function which updates the default configuration (created basing on `options`).
     */
   def layerUsingConfigBuilder(
-                               updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
-                               options: BackendOptions = BackendOptions.Default,
-                               customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
-                               webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
+      updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
+      options: BackendOptions = BackendOptions.Default,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
+      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): Layer[Throwable, SttpClient] =
     ZLayer.fromManaged(managedUsingConfigBuilder(updateConfig, options, customizeRequest, webSocketBufferCapacity))
 

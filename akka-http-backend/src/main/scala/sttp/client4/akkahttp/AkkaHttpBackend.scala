@@ -50,7 +50,7 @@ class AkkaHttpBackend private (
       if (r.isWebSocket) sendWebSocket(r) else sendRegular(r)
     }
 
-  private def sendRegular[T](r: GenericRequest[T, R]): Future[Response[T]] = {
+  private def sendRegular[T](r: GenericRequest[T, R]): Future[Response[T]] =
     Future
       .fromTry(ToAkka.request(r).flatMap(BodyToAkka(r, r.body, _)))
       .map(customizeRequest)
@@ -62,7 +62,6 @@ class AkkaHttpBackend private (
               .flatMap(response => responseFromAkka(r, response, None).recoverWith(consumeResponseOnFailure(response)))
           )
       )
-  }
 
   private def sendWebSocket[T](r: GenericRequest[T, R]): Future[Response[T]] = {
     val akkaWebsocketRequest = ToAkka
@@ -121,9 +120,9 @@ class AkkaHttpBackend private (
   private lazy val bodyFromAkka = new BodyFromAkka()(ec, implicitly[Materializer], monad)
 
   private def responseFromAkka[T](
-                                   r: GenericRequest[T, R],
-                                   hr: HttpResponse,
-                                   wsFlow: Option[Promise[Flow[Message, Message, NotUsed]]]
+      r: GenericRequest[T, R],
+      hr: HttpResponse,
+      wsFlow: Option[Promise[Flow[Message, Message, NotUsed]]]
   ): Future[Response[T]] = {
     val code = StatusCode(hr.status.intValue())
     val statusText = hr.status.reason()
@@ -141,10 +140,9 @@ class AkkaHttpBackend private (
   }
 
   // http://doc.akka.io/docs/akka-http/10.0.7/scala/http/common/de-coding.html
-  private def decodeAkkaResponse(response: HttpResponse, disableAutoDecompression: Boolean): HttpResponse = {
+  private def decodeAkkaResponse(response: HttpResponse, disableAutoDecompression: Boolean): HttpResponse =
     if (!response.status.allowsEntity() || disableAutoDecompression) response
     else customEncodingHandler.orElse(EncodingHandler(standardEncoding)).apply(response -> response.encoding)
-  }
 
   private def standardEncoding: (HttpResponse, HttpEncoding) => HttpResponse = {
     case (body, HttpEncodings.gzip)     => Coders.Gzip.decodeMessage(body)
@@ -156,7 +154,7 @@ class AkkaHttpBackend private (
   private def adjustExceptions[T](request: GenericRequest[_, _])(t: => Future[T]): Future[T] =
     SttpClientException.adjustExceptions(monad)(t)(FromAkka.exception(request, _))
 
-  override def close(): Future[Unit] = {
+  override def close(): Future[Unit] =
     if (terminateActorSystemOnClose) {
       CoordinatedShutdown(as).addTask(
         CoordinatedShutdown.PhaseServiceRequestsDone,
@@ -164,7 +162,6 @@ class AkkaHttpBackend private (
       )(() => Http(as).shutdownAllConnectionPools.map(_ => Done))
       actorSystem.terminate().map(_ => ())
     } else Future.successful(())
-  }
 }
 
 object AkkaHttpBackend {
@@ -252,7 +249,7 @@ object AkkaHttpBackend {
       customEncodingHandler: EncodingHandler = PartialFunction.empty
   )(implicit
       ec: Option[ExecutionContext] = None
-  ): WebSocketStreamBackend[Future, AkkaStreams] = {
+  ): WebSocketStreamBackend[Future, AkkaStreams] =
     usingClient(
       actorSystem,
       options,
@@ -263,7 +260,6 @@ object AkkaHttpBackend {
       customizeResponse,
       customEncodingHandler
     )
-  }
 
   /** @param actorSystem
     *   The actor system which will be used for the http-client actors.
@@ -282,7 +278,7 @@ object AkkaHttpBackend {
       customEncodingHandler: EncodingHandler = PartialFunction.empty
   )(implicit
       ec: Option[ExecutionContext] = None
-  ): WebSocketStreamBackend[Future, AkkaStreams] = {
+  ): WebSocketStreamBackend[Future, AkkaStreams] =
     make(
       actorSystem,
       ec.getOrElse(actorSystem.dispatcher),
@@ -295,7 +291,6 @@ object AkkaHttpBackend {
       customizeResponse,
       customEncodingHandler
     )
-  }
 
   /** Create a stub backend for testing, which uses the [[Future]] response wrapper, and doesn't support streaming.
     *

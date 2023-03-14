@@ -24,9 +24,9 @@ import scala.concurrent.ExecutionContext
   * request, a response is specified with the incorrect or inconvertible body type.
   */
 class StreamBackendStub[F[_], S](
-                                  monad: MonadError[F],
-                                  matchers: PartialFunction[GenericRequest[_, _], F[Response[_]]],
-                                  fallback: Option[StreamBackend[F, S]]
+    monad: MonadError[F],
+    matchers: PartialFunction[GenericRequest[_, _], F[Response[_]]],
+    fallback: Option[StreamBackend[F, S]]
 ) extends AbstractBackendStub[F, S](monad, matchers, fallback)
     with StreamBackend[F, S] {
 

@@ -2,7 +2,13 @@ package sttp.client4.asynchttpclient.scalaz
 
 import java.nio.ByteBuffer
 import io.netty.buffer.ByteBuf
-import org.asynchttpclient.{AsyncHttpClient, AsyncHttpClientConfig, BoundRequestBuilder, DefaultAsyncHttpClient, DefaultAsyncHttpClientConfig}
+import org.asynchttpclient.{
+  AsyncHttpClient,
+  AsyncHttpClientConfig,
+  BoundRequestBuilder,
+  DefaultAsyncHttpClient,
+  DefaultAsyncHttpClientConfig
+}
 import org.reactivestreams.Publisher
 import scalaz.concurrent.Task
 import sttp.client4.asynchttpclient.{AsyncHttpClientBackend, BodyFromAHC, BodyToAHC}
@@ -11,7 +17,7 @@ import sttp.client4.internal.NoStreams
 import sttp.client4.internal.ws.SimpleQueue
 import sttp.client4.testing.BackendStub
 import sttp.client4.wrappers.FollowRedirectsBackend
-import sttp.client4.{Backend, BackendOptions, wrappers}
+import sttp.client4.{wrappers, Backend, BackendOptions}
 import sttp.monad.MonadAsyncError
 import sttp.ws.WebSocket
 
@@ -55,8 +61,8 @@ object AsyncHttpClientScalazBackend {
     wrappers.FollowRedirectsBackend(new AsyncHttpClientScalazBackend(asyncHttpClient, closeClient, customizeRequest))
 
   def apply(
-             options: BackendOptions = BackendOptions.Default,
-             customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+      options: BackendOptions = BackendOptions.Default,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   ): Task[Backend[Task]] =
     Task.delay(
       AsyncHttpClientScalazBackend(AsyncHttpClientBackend.defaultClient(options), closeClient = true, customizeRequest)
@@ -72,9 +78,9 @@ object AsyncHttpClientScalazBackend {
     *   A function which updates the default configuration (created basing on `options`).
     */
   def usingConfigBuilder(
-                          updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
-                          options: BackendOptions = BackendOptions.Default,
-                          customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+      updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
+      options: BackendOptions = BackendOptions.Default,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   ): Task[Backend[Task]] =
     Task.delay(
       AsyncHttpClientScalazBackend(

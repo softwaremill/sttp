@@ -16,36 +16,33 @@ private[client4] object FileHelpers {
     withResources(new FileOutputStream(file))(os => transfer(is, os))
   }
 
-  def readFile(file: File): Array[Byte] = {
+  def readFile(file: File): Array[Byte] =
     withResources(new BufferedInputStream(new FileInputStream(file)))(toByteArray)
-  }
 
   // based on https://medium.com/@dkomanov/scala-try-with-resources-735baad0fd7d
   private def withResources[T <: AutoCloseable, V](r: => T)(f: T => V): V = {
     val resource: T = r
     require(resource != null, "resource is null")
     var exception: Throwable = null
-    try {
+    try
       f(resource)
-    } catch {
+    catch {
       case NonFatal(e) =>
         exception = e
         throw e
-    } finally {
+    } finally
       closeAndAddSuppressed(exception, resource)
-    }
   }
 
-  private def closeAndAddSuppressed(e: Throwable, resource: AutoCloseable): Unit = {
+  private def closeAndAddSuppressed(e: Throwable, resource: AutoCloseable): Unit =
     if (e != null) {
-      try {
+      try
         resource.close()
-      } catch {
+      catch {
         case NonFatal(suppressed) =>
           e.addSuppressed(suppressed)
       }
     } else {
       resource.close()
     }
-  }
 }

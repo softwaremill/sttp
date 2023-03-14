@@ -86,15 +86,15 @@ private object OpenTelemetryMetricsListener {
 }
 
 private class OpenTelemetryMetricsListener(
-                                            meter: Meter,
-                                            clock: Clock,
-                                            requestToLatencyHistogramMapper: GenericRequest[_, _] => Option[CollectorConfig],
-                                            requestToInProgressCounterMapper: GenericRequest[_, _] => Option[CollectorConfig],
-                                            responseToSuccessCounterMapper: Response[_] => Option[CollectorConfig],
-                                            requestToErrorCounterMapper: Response[_] => Option[CollectorConfig],
-                                            requestToFailureCounterMapper: (GenericRequest[_, _], Throwable) => Option[CollectorConfig],
-                                            requestToSizeHistogramMapper: GenericRequest[_, _] => Option[CollectorConfig],
-                                            responseToSizeHistogramMapper: Response[_] => Option[CollectorConfig]
+    meter: Meter,
+    clock: Clock,
+    requestToLatencyHistogramMapper: GenericRequest[_, _] => Option[CollectorConfig],
+    requestToInProgressCounterMapper: GenericRequest[_, _] => Option[CollectorConfig],
+    responseToSuccessCounterMapper: Response[_] => Option[CollectorConfig],
+    requestToErrorCounterMapper: Response[_] => Option[CollectorConfig],
+    requestToFailureCounterMapper: (GenericRequest[_, _], Throwable) => Option[CollectorConfig],
+    requestToSizeHistogramMapper: GenericRequest[_, _] => Option[CollectorConfig],
+    responseToSizeHistogramMapper: Response[_] => Option[CollectorConfig]
 ) extends RequestListener[Identity, Option[Long]] {
 
   private val counters = new ConcurrentHashMap[String, LongCounter]
@@ -118,7 +118,7 @@ private class OpenTelemetryMetricsListener(
     updateInProgressCounter(request, -1)
   }
 
-  override def requestException(request: GenericRequest[_, _], tag: Option[Long], e: Exception): Unit = {
+  override def requestException(request: GenericRequest[_, _], tag: Option[Long], e: Exception): Unit =
     HttpError.find(e) match {
       case Some(HttpError(body, statusCode)) =>
         requestSuccessful(request, Response(body, statusCode).copy(request = request.onlyMetadata), tag)
@@ -127,23 +127,20 @@ private class OpenTelemetryMetricsListener(
         recordHistogram(requestToLatencyHistogramMapper(request), tag.map(clock.millis() - _))
         updateInProgressCounter(request, -1)
     }
-  }
 
-  private def updateInProgressCounter[R, T](request: GenericRequest[T, R], delta: Long): Unit = {
+  private def updateInProgressCounter[R, T](request: GenericRequest[T, R], delta: Long): Unit =
     requestToInProgressCounterMapper(request)
       .foreach(config =>
         getOrCreateMetric(upAndDownCounter, config, createNewUpDownCounter).add(delta, config.attributes)
       )
-  }
 
   private def recordHistogram(config: Option[CollectorConfig], size: Option[Long]): Unit = config.foreach { cfg =>
     getOrCreateMetric(histograms, cfg, createNewHistogram).record(size.getOrElse(0L).toDouble, cfg.attributes)
   }
 
-  private def incrementCounter(collectorConfig: Option[CollectorConfig]): Unit = {
+  private def incrementCounter(collectorConfig: Option[CollectorConfig]): Unit =
     collectorConfig
       .foreach(config => getOrCreateMetric(counters, config, createNewCounter).add(1, config.attributes))
-  }
 
   private def getOrCreateMetric[T](
       cache: ConcurrentHashMap[String, T],

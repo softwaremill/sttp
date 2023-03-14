@@ -18,8 +18,8 @@ import sttp.capabilities.WebSockets
   * conversions will be attempted (e.g. from a `String` to a custom mapped type, as specified in the request, see the
   * documentation for more details).
   *
-  * For web socket requests, the stub can be configured to returned both custom [[sttp.ws.WebSocket]] implementations, as well
-  * as [[sttp.ws.testing.WebSocketStub]] instances.
+  * For web socket requests, the stub can be configured to returned both custom [[sttp.ws.WebSocket]] implementations,
+  * as well as [[sttp.ws.testing.WebSocketStub]] instances.
   *
   * For requests which return the response as a stream, if the stub should return a raw stream value (which should then
   * be passed to the stream-consuming function, or mapped to another value), it should be wrapped with [[RawStream]].
@@ -28,9 +28,9 @@ import sttp.capabilities.WebSockets
   * request, a response is specified with the incorrect or inconvertible body type.
   */
 class WebSocketStreamBackendStub[F[_], S](
-                                           monad: MonadError[F],
-                                           matchers: PartialFunction[GenericRequest[_, _], F[Response[_]]],
-                                           fallback: Option[WebSocketStreamBackend[F, S]]
+    monad: MonadError[F],
+    matchers: PartialFunction[GenericRequest[_, _], F[Response[_]]],
+    fallback: Option[WebSocketStreamBackend[F, S]]
 ) extends AbstractBackendStub[F, S with WebSockets](monad, matchers, fallback)
     with WebSocketStreamBackend[F, S] {
   type Self = WebSocketStreamBackendStub[F, S]

@@ -16,8 +16,7 @@ object WebSocketZio extends ZIOAppDefault {
   def sendAndPrint(backend: WebSocketBackend[Task]): Task[Response[Unit]] =
     basicRequest.get(uri"wss://ws.postman-echo.com/raw").response(asWebSocketAlways(useWebSocket)).send(backend)
 
-  override def run = {
+  override def run =
     // provide an implementation for the SttpClient dependency
     HttpClientZioBackend.scoped().flatMap(sendAndPrint)
-  }
 }

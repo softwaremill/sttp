@@ -4,12 +4,18 @@ import java.io.{ByteArrayInputStream, File}
 import java.nio.ByteBuffer
 import cats.effect.kernel.{Async, Resource, Sync}
 import io.netty.buffer.ByteBuf
-import org.asynchttpclient.{AsyncHttpClient, AsyncHttpClientConfig, BoundRequestBuilder, DefaultAsyncHttpClient, DefaultAsyncHttpClientConfig}
+import org.asynchttpclient.{
+  AsyncHttpClient,
+  AsyncHttpClientConfig,
+  BoundRequestBuilder,
+  DefaultAsyncHttpClient,
+  DefaultAsyncHttpClientConfig
+}
 import org.reactivestreams.Publisher
 import sttp.client4.asynchttpclient.{AsyncHttpClientBackend, BodyFromAHC, BodyToAHC}
 import sttp.client4.impl.cats.CatsMonadAsyncError
 import sttp.client4.internal.{FileHelpers, NoStreams}
-import sttp.client4.{Backend, BackendOptions, wrappers}
+import sttp.client4.{wrappers, Backend, BackendOptions}
 import cats.implicits._
 import sttp.client4.internal.ws.SimpleQueue
 import sttp.client4.testing.BackendStub
@@ -37,10 +43,9 @@ class AsyncHttpClientCatsBackend[F[_]: Async] private (
       throw new IllegalStateException("This backend does not support streaming")
     override def compileWebSocketPipe(ws: WebSocket[F], pipe: Nothing): F[Unit] = pipe // nothing is everything
 
-    override def publisherToFile(p: Publisher[ByteBuffer], f: File): F[Unit] = {
+    override def publisherToFile(p: Publisher[ByteBuffer], f: File): F[Unit] =
       publisherToBytes(p)
         .map(bytes => FileHelpers.saveFile(f, new ByteArrayInputStream(bytes)))
-    }
   }
 
   override protected def bodyToAHC: BodyToAHC[F, Nothing] =
@@ -62,8 +67,8 @@ object AsyncHttpClientCatsBackend {
     wrappers.FollowRedirectsBackend(new AsyncHttpClientCatsBackend(asyncHttpClient, closeClient, customizeRequest))
 
   def apply[F[_]: Async](
-                          options: BackendOptions = BackendOptions.Default,
-                          customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+      options: BackendOptions = BackendOptions.Default,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   ): F[Backend[F]] =
     Sync[F].delay(
       AsyncHttpClientCatsBackend(AsyncHttpClientBackend.defaultClient(options), closeClient = true, customizeRequest)
@@ -71,8 +76,8 @@ object AsyncHttpClientCatsBackend {
 
   /** Makes sure the backend is closed after usage. */
   def resource[F[_]: Async](
-                             options: BackendOptions = BackendOptions.Default,
-                             customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+      options: BackendOptions = BackendOptions.Default,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   ): Resource[F, Backend[F]] =
     Resource.make(apply(options, customizeRequest))(_.close())
 
@@ -91,9 +96,9 @@ object AsyncHttpClientCatsBackend {
 
   /** @param updateConfig A function which updates the default configuration (created basing on `options`). */
   def usingConfigBuilder[F[_]: Async](
-                                       updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
-                                       options: BackendOptions = BackendOptions.Default,
-                                       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+      updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
+      options: BackendOptions = BackendOptions.Default,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   ): F[Backend[F]] =
     Sync[F].delay(
       AsyncHttpClientCatsBackend(
@@ -108,9 +113,9 @@ object AsyncHttpClientCatsBackend {
     *   A function which updates the default configuration (created basing on `options`).
     */
   def resourceUsingConfigBuilder[F[_]: Async](
-                                               updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
-                                               options: BackendOptions = BackendOptions.Default,
-                                               customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
+      updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
+      options: BackendOptions = BackendOptions.Default,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity
   ): Resource[F, Backend[F]] =
     Resource.make(usingConfigBuilder(updateConfig, options, customizeRequest))(_.close())
 

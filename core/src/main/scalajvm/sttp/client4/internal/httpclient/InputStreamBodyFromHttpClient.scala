@@ -16,12 +16,11 @@ private[client4] trait InputStreamBodyFromHttpClient[F[_], S] extends BodyFromHt
       override protected def withReplayableBody(
           response: InputStream,
           replayableBody: Either[Array[Byte], SttpFile]
-      ): F[InputStream] = {
+      ): F[InputStream] =
         (replayableBody match {
           case Left(byteArray) => new ByteArrayInputStream(byteArray)
           case Right(file)     => new BufferedInputStream(new FileInputStream(file.toFile))
         }).unit
-      }
 
       override protected def regularIgnore(response: InputStream): F[Unit] = monad.blocking(response.close())
 

@@ -13,9 +13,9 @@ import zio.telemetry.opentelemetry._
 import scala.collection.mutable
 
 private class OpenTelemetryTracingZioBackend[+P](
-                                                  delegate: GenericBackend[Task, P],
-                                                  tracer: OpenTelemetryZioTracer,
-                                                  tracing: Tracing
+    delegate: GenericBackend[Task, P],
+    tracer: OpenTelemetryZioTracer,
+    tracing: Tracing
 ) extends DelegateBackend[Task, P](delegate)
     with Backend[Task] {
   def send[T](request: GenericRequest[T, P with Effect[Task]]): Task[Response[T]] = {

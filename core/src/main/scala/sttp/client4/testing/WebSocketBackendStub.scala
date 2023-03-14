@@ -25,9 +25,9 @@ import sttp.capabilities.WebSockets
   * request, a response is specified with the incorrect or inconvertible body type.
   */
 class WebSocketBackendStub[F[_]](
-                                  monad: MonadError[F],
-                                  matchers: PartialFunction[GenericRequest[_, _], F[Response[_]]],
-                                  fallback: Option[WebSocketBackend[F]]
+    monad: MonadError[F],
+    matchers: PartialFunction[GenericRequest[_, _], F[Response[_]]],
+    fallback: Option[WebSocketBackend[F]]
 ) extends AbstractBackendStub[F, WebSockets](monad, matchers, fallback)
     with WebSocketBackend[F] {
 

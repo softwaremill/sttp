@@ -19,25 +19,22 @@ private[akkahttp] object Util {
     else Failure[Seq[T]](fs.head.exception)
   }
 
-  def parseContentTypeOrOctetStream(r: GenericRequest[_, _]): Try[ContentType] = {
+  def parseContentTypeOrOctetStream(r: GenericRequest[_, _]): Try[ContentType] =
     parseContentTypeOrOctetStream(
       r.headers
         .find(isContentType)
         .map(_.value)
     )
-  }
 
-  def parseContentTypeOrOctetStream(ctHeader: Option[String]): Try[ContentType] = {
+  def parseContentTypeOrOctetStream(ctHeader: Option[String]): Try[ContentType] =
     ctHeader
       .map(parseContentType)
       .getOrElse(Success(`application/octet-stream`))
-  }
 
-  def parseContentType(ctHeader: String): Try[ContentType] = {
+  def parseContentType(ctHeader: String): Try[ContentType] =
     ContentType
       .parse(ctHeader)
       .fold(errors => Failure(new RuntimeException(s"Cannot parse content type: $errors")), Success(_))
-  }
 
   def isContentType(header: Header): Boolean =
     header.name.toLowerCase.contains(`Content-Type`.lowercaseName)

@@ -42,7 +42,9 @@ object PrometheusBackend {
     FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener(config), delegate.monad)))
 
   def apply[F[_]](delegate: Backend[F], config: PrometheusConfig): Backend[F] =
-    wrappers.FollowRedirectsBackend[F](ListenerBackend(delegate, RequestListener.lift(listener(config), delegate.monad)))
+    wrappers.FollowRedirectsBackend[F](
+      ListenerBackend(delegate, RequestListener.lift(listener(config), delegate.monad))
+    )
 
   def apply[F[_]](delegate: WebSocketBackend[F], config: PrometheusConfig): WebSocketBackend[F] =
     wrappers.FollowRedirectsBackend(ListenerBackend(delegate, RequestListener.lift(listener(config), delegate.monad)))
@@ -77,13 +79,12 @@ object PrometheusBackend {
     *   The modified collector config. The config can be used when configuring the backend using [[apply]].
     */
   def addMethodLabel[T <: BaseCollectorConfig](config: T, req: GenericRequest[_, _]): config.T = {
-    val methodLabel: Option[(String, String)] = {
+    val methodLabel: Option[(String, String)] =
       if (config.labels.map(_._1.toLowerCase).contains(DefaultMethodLabel)) {
         None
       } else {
         Some((DefaultMethodLabel, req.method.method.toUpperCase))
       }
-    }
 
     config.addLabels(methodLabel.toList)
   }
@@ -96,13 +97,12 @@ object PrometheusBackend {
     *   The modified collector config. The config can be used when configuring the backend using [[apply]].
     */
   def addStatusLabel[T <: BaseCollectorConfig](config: T, resp: Response[_]): config.T = {
-    val statusLabel: Option[(String, String)] = {
+    val statusLabel: Option[(String, String)] =
       if (config.labels.map(_._1.toLowerCase).contains(DefaultStatusLabel)) {
         None
       } else {
         Some((DefaultStatusLabel, mapStatusToLabelValue(resp.code)))
       }
-    }
 
     config.addLabels(statusLabel.toList)
   }
@@ -148,18 +148,18 @@ object PrometheusBackend {
 }
 
 class PrometheusListener(
-                          requestToHistogramNameMapper: GenericRequest[_, _] => Option[HistogramCollectorConfig],
-                          requestToInProgressGaugeNameMapper: GenericRequest[_, _] => Option[CollectorConfig],
-                          requestToSuccessCounterMapper: ((GenericRequest[_, _], Response[_])) => Option[CollectorConfig],
-                          requestToErrorCounterMapper: ((GenericRequest[_, _], Response[_])) => Option[CollectorConfig],
-                          requestToFailureCounterMapper: ((GenericRequest[_, _], Exception)) => Option[CollectorConfig],
-                          requestToSizeSummaryMapper: GenericRequest[_, _] => Option[CollectorConfig],
-                          responseToSizeSummaryMapper: ((GenericRequest[_, _], Response[_])) => Option[CollectorConfig],
-                          collectorRegistry: CollectorRegistry,
-                          histogramsCache: ConcurrentHashMap[String, Histogram],
-                          gaugesCache: ConcurrentHashMap[String, Gauge],
-                          countersCache: ConcurrentHashMap[String, Counter],
-                          summariesCache: ConcurrentHashMap[String, Summary]
+    requestToHistogramNameMapper: GenericRequest[_, _] => Option[HistogramCollectorConfig],
+    requestToInProgressGaugeNameMapper: GenericRequest[_, _] => Option[CollectorConfig],
+    requestToSuccessCounterMapper: ((GenericRequest[_, _], Response[_])) => Option[CollectorConfig],
+    requestToErrorCounterMapper: ((GenericRequest[_, _], Response[_])) => Option[CollectorConfig],
+    requestToFailureCounterMapper: ((GenericRequest[_, _], Exception)) => Option[CollectorConfig],
+    requestToSizeSummaryMapper: GenericRequest[_, _] => Option[CollectorConfig],
+    responseToSizeSummaryMapper: ((GenericRequest[_, _], Response[_])) => Option[CollectorConfig],
+    collectorRegistry: CollectorRegistry,
+    histogramsCache: ConcurrentHashMap[String, Histogram],
+    gaugesCache: ConcurrentHashMap[String, Gauge],
+    countersCache: ConcurrentHashMap[String, Counter],
+    summariesCache: ConcurrentHashMap[String, Summary]
 ) extends RequestListener[Identity, RequestCollectors] {
 
   override def beforeRequest(request: GenericRequest[_, _]): RequestCollectors = {
@@ -180,10 +180,10 @@ class PrometheusListener(
   }
 
   override def requestException(
-                                 request: GenericRequest[_, _],
-                                 requestCollectors: RequestCollectors,
-                                 e: Exception
-  ): Unit = {
+      request: GenericRequest[_, _],
+      requestCollectors: RequestCollectors,
+      e: Exception
+  ): Unit =
     HttpError.find(e) match {
       case Some(HttpError(body, statusCode)) =>
         requestSuccessful(request, Response(body, statusCode).copy(request = request.onlyMetadata), requestCollectors)
@@ -192,12 +192,11 @@ class PrometheusListener(
         requestCollectors.maybeGauge.foreach(_.dec())
         incCounterIfMapped((request, e), requestToFailureCounterMapper)
     }
-  }
 
   override def requestSuccessful(
-                                  request: GenericRequest[_, _],
-                                  response: Response[_],
-                                  requestCollectors: RequestCollectors
+      request: GenericRequest[_, _],
+      response: Response[_],
+      requestCollectors: RequestCollectors
   ): Unit = {
     requestCollectors.maybeTimer.foreach(_.observeDuration())
     requestCollectors.maybeGauge.foreach(_.dec())
@@ -219,9 +218,9 @@ class PrometheusListener(
     }
 
   private def observeResponseContentLengthSummaryIfMapped(
-                                                           request: GenericRequest[_, _],
-                                                           response: Response[_],
-                                                           mapper: ((GenericRequest[_, _], Response[_])) => Option[BaseCollectorConfig]
+      request: GenericRequest[_, _],
+      response: Response[_],
+      mapper: ((GenericRequest[_, _], Response[_])) => Option[BaseCollectorConfig]
   ): Unit =
     mapper((request, response)).foreach { data =>
       response.contentLength.map(_.toDouble).foreach { size =>
@@ -230,8 +229,8 @@ class PrometheusListener(
     }
 
   private def observeRequestContentLengthSummaryIfMapped(
-                                                          request: GenericRequest[_, _],
-                                                          mapper: GenericRequest[_, _] => Option[BaseCollectorConfig]
+      request: GenericRequest[_, _],
+      mapper: GenericRequest[_, _] => Option[BaseCollectorConfig]
   ): Unit =
     mapper(request).foreach { data =>
       (request.contentLength: Option[Long]).map(_.toDouble).foreach { size =>

@@ -72,12 +72,11 @@ class HttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
 
   override protected def createSequencer: F[Sequencer[F]] = Fs2Sequencer.create
 
-  override protected def bodyHandlerBodyToBody(p: Publisher[ju.List[ByteBuffer]]): Stream[F, Byte] = {
+  override protected def bodyHandlerBodyToBody(p: Publisher[ju.List[ByteBuffer]]): Stream[F, Byte] =
     FlowAdapters
       .toPublisher(p)
       .toStream[F]
       .flatMap(data => Stream.emits(data.asScala.map(Chunk.byteBuffer)).flatMap(Stream.chunk))
-  }
 
   override protected def emptyBody(): Stream[F, Byte] = Stream.empty
 
@@ -103,10 +102,10 @@ object HttpClientFs2Backend {
     )
 
   def apply[F[_]: ConcurrentEffect: ContextShift](
-                                                   blocker: Blocker,
-                                                   options: BackendOptions = BackendOptions.Default,
-                                                   customizeRequest: HttpRequest => HttpRequest = identity,
-                                                   customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty
+      blocker: Blocker,
+      options: BackendOptions = BackendOptions.Default,
+      customizeRequest: HttpRequest => HttpRequest = identity,
+      customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty
   ): F[WebSocketStreamBackend[F, Fs2Streams[F]]] =
     Sync[F].delay(
       HttpClientFs2Backend(
@@ -119,10 +118,10 @@ object HttpClientFs2Backend {
     )
 
   def resource[F[_]: ConcurrentEffect: ContextShift](
-                                                      blocker: Blocker,
-                                                      options: BackendOptions = BackendOptions.Default,
-                                                      customizeRequest: HttpRequest => HttpRequest = identity,
-                                                      customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty
+      blocker: Blocker,
+      options: BackendOptions = BackendOptions.Default,
+      customizeRequest: HttpRequest => HttpRequest = identity,
+      customEncodingHandler: Fs2EncodingHandler[F] = PartialFunction.empty
   ): Resource[F, WebSocketStreamBackend[F, Fs2Streams[F]]] =
     Resource.make(apply(blocker, options, customizeRequest, customEncodingHandler))(_.close())
 

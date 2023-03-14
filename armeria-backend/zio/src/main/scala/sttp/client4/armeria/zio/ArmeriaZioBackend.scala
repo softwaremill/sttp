@@ -1,6 +1,9 @@
 package sttp.client4.armeria.zio
 
-import _root_.zio.interop.reactivestreams.{publisherToStream => publisherToZioStream, streamToPublisher => zioStreamToPublisher}
+import _root_.zio.interop.reactivestreams.{
+  publisherToStream => publisherToZioStream,
+  streamToPublisher => zioStreamToPublisher
+}
 import _root_.zio.{Chunk, Task, _}
 import com.linecorp.armeria.client.WebClient
 import com.linecorp.armeria.common.HttpData
@@ -11,7 +14,7 @@ import sttp.client4.armeria.ArmeriaWebClient.newClient
 import sttp.client4.armeria.{AbstractArmeriaBackend, BodyFromStreamMessage}
 import sttp.client4.impl.zio.RIOMonadAsyncError
 import sttp.client4.wrappers.FollowRedirectsBackend
-import sttp.client4.{BackendOptions, StreamBackend, wrappers}
+import sttp.client4.{wrappers, BackendOptions, StreamBackend}
 import sttp.monad.MonadAsyncError
 import zio.stream.Stream
 

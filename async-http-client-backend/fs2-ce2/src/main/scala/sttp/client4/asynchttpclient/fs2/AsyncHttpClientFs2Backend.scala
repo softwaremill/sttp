@@ -53,20 +53,18 @@ class AsyncHttpClientFs2Backend[F[_]: ConcurrentEffect: ContextShift] private (
       override def publisherToStream(p: Publisher[ByteBuffer]): Stream[F, Byte] =
         p.toStream[F].flatMap(buf => Stream.chunk(Chunk.byteBuffer(buf)))
 
-      override def publisherToBytes(p: Publisher[ByteBuffer]): F[Array[Byte]] = {
+      override def publisherToBytes(p: Publisher[ByteBuffer]): F[Array[Byte]] =
         p.toStream[F]
           .compile
           .fold(Queue.empty[Array[Byte]])(enqueueBytes)
           .map(concatBytes)
-      }
 
-      override def publisherToFile(p: Publisher[ByteBuffer], f: File): F[Unit] = {
+      override def publisherToFile(p: Publisher[ByteBuffer], f: File): F[Unit] =
         p.toStream[F]
           .flatMap(b => Stream.emits(b.array()))
           .through(fs2.io.file.writeAll(f.toPath, blocker))
           .compile
           .drain
-      }
 
       override def bytesToPublisher(b: Array[Byte]): F[Publisher[ByteBuffer]] =
         (Stream.apply[F, ByteBuffer](ByteBuffer.wrap(b)).toUnicastPublisher: Publisher[ByteBuffer]).pure[F]
@@ -109,10 +107,10 @@ object AsyncHttpClientFs2Backend {
     )
 
   def apply[F[_]: ConcurrentEffect: ContextShift](
-                                                   blocker: Blocker,
-                                                   options: BackendOptions = BackendOptions.Default,
-                                                   customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
-                                                   webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
+      blocker: Blocker,
+      options: BackendOptions = BackendOptions.Default,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
+      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): F[WebSocketStreamBackend[F, Fs2Streams[F]]] =
     implicitly[Sync[F]]
       .delay(
@@ -128,10 +126,10 @@ object AsyncHttpClientFs2Backend {
   /** Makes sure the backend is closed after usage.
     */
   def resource[F[_]: ConcurrentEffect: ContextShift](
-                                                      blocker: Blocker,
-                                                      options: BackendOptions = BackendOptions.Default,
-                                                      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
-                                                      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
+      blocker: Blocker,
+      options: BackendOptions = BackendOptions.Default,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
+      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): Resource[F, WebSocketStreamBackend[F, Fs2Streams[F]]] =
     Resource.make(apply(blocker, options, customizeRequest, webSocketBufferCapacity))(_.close())
 
@@ -159,11 +157,11 @@ object AsyncHttpClientFs2Backend {
     *   A function which updates the default configuration (created basing on `options`).
     */
   def usingConfigBuilder[F[_]: ConcurrentEffect: ContextShift](
-                                                                blocker: Blocker,
-                                                                updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
-                                                                options: BackendOptions = BackendOptions.Default,
-                                                                customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
-                                                                webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
+      blocker: Blocker,
+      updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
+      options: BackendOptions = BackendOptions.Default,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
+      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): F[WebSocketStreamBackend[F, Fs2Streams[F]]] =
     implicitly[Sync[F]].delay(
       AsyncHttpClientFs2Backend[F](
@@ -180,11 +178,11 @@ object AsyncHttpClientFs2Backend {
     *   A function which updates the default configuration (created basing on `options`).
     */
   def resourceUsingConfigBuilder[F[_]: ConcurrentEffect: ContextShift](
-                                                                        blocker: Blocker,
-                                                                        updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
-                                                                        options: BackendOptions = BackendOptions.Default,
-                                                                        customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
-                                                                        webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
+      blocker: Blocker,
+      updateConfig: DefaultAsyncHttpClientConfig.Builder => DefaultAsyncHttpClientConfig.Builder,
+      options: BackendOptions = BackendOptions.Default,
+      customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,
+      webSocketBufferCapacity: Option[Int] = AsyncHttpClientBackend.DefaultWebSocketBufferCapacity
   ): Resource[F, WebSocketStreamBackend[F, Fs2Streams[F]]] =
     Resource.make(usingConfigBuilder(blocker, updateConfig, options, customizeRequest, webSocketBufferCapacity))(
       _.close()

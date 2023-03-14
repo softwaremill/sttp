@@ -187,13 +187,13 @@ object Request {
   *   The capabilities required to send this request: a subtype of [[Streams]], and optionally an [[Effect]].
   */
 final case class StreamRequest[T, R](
-                                      method: Method,
-                                      uri: Uri,
-                                      body: GenericRequestBody[R],
-                                      headers: Seq[Header],
-                                      response: StreamResponseAs[T, R],
-                                      options: RequestOptions,
-                                      tags: Map[String, Any]
+    method: Method,
+    uri: Uri,
+    body: GenericRequestBody[R],
+    headers: Seq[Header],
+    response: StreamResponseAs[T, R],
+    options: RequestOptions,
+    tags: Map[String, Any]
 ) extends GenericRequest[T, R]
     with RequestBuilder[StreamRequest[T, R]] {
 
@@ -336,13 +336,13 @@ final case class WebSocketRequest[F[_], T](
   *   The stream capability required to send this request, a subtype of [[Streams]].
   */
 final case class WebSocketStreamRequest[T, S](
-                                               method: Method,
-                                               uri: Uri,
-                                               body: GenericRequestBody[S],
-                                               headers: Seq[Header],
-                                               response: WebSocketStreamResponseAs[T, S],
-                                               options: RequestOptions,
-                                               tags: Map[String, Any]
+    method: Method,
+    uri: Uri,
+    body: GenericRequestBody[S],
+    headers: Seq[Header],
+    response: WebSocketStreamResponseAs[T, S],
+    options: RequestOptions,
+    tags: Map[String, Any]
 ) extends GenericRequest[T, S with WebSockets]
     with RequestBuilder[WebSocketStreamRequest[T, S]] {
 

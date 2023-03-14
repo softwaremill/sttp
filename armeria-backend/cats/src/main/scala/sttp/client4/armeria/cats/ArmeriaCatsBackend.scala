@@ -10,7 +10,7 @@ import sttp.client4.armeria.{AbstractArmeriaBackend, BodyFromStreamMessage}
 import sttp.client4.impl.cats.CatsMonadAsyncError
 import sttp.client4.internal.NoStreams
 import sttp.client4.wrappers.FollowRedirectsBackend
-import sttp.client4.{Backend, BackendOptions, wrappers}
+import sttp.client4.{wrappers, Backend, BackendOptions}
 import sttp.monad.MonadAsyncError
 
 private final class ArmeriaCatsBackend[F[_]: Async](client: WebClient, closeFactory: Boolean)
@@ -44,13 +44,11 @@ object ArmeriaCatsBackend {
 
   def resource[F[_]: Async](
       options: BackendOptions = BackendOptions.Default
-  ): Resource[F, Backend[F]] = {
+  ): Resource[F, Backend[F]] =
     Resource.make(Sync[F].delay(apply(newClient(options), closeFactory = true)))(_.close())
-  }
 
-  def resourceUsingClient[F[_]: Async](client: WebClient): Resource[F, Backend[F]] = {
+  def resourceUsingClient[F[_]: Async](client: WebClient): Resource[F, Backend[F]] =
     Resource.make(Sync[F].delay(apply(client, closeFactory = true)))(_.close())
-  }
 
   def usingDefaultClient[F[_]: Async](): Backend[F] =
     apply(newClient(), closeFactory = false)

@@ -8,7 +8,7 @@ import sttp.client4.internal.ws.{FutureSimpleQueue, SimpleQueue}
 import sttp.client4.okhttp.OkHttpBackend.EncodingHandler
 import sttp.client4.testing.WebSocketBackendStub
 import sttp.client4.wrappers.FollowRedirectsBackend
-import sttp.client4.{BackendOptions, DefaultReadTimeout, WebSocketBackend, wrappers}
+import sttp.client4.{wrappers, BackendOptions, DefaultReadTimeout, WebSocketBackend}
 import sttp.monad.{FutureMonad, MonadError}
 import sttp.ws.WebSocket
 
@@ -51,12 +51,14 @@ object OkHttpFutureBackend {
   )(implicit
       ec: ExecutionContext
   ): WebSocketBackend[Future] =
-    wrappers.FollowRedirectsBackend(new OkHttpFutureBackend(client, closeClient, customEncodingHandler, webSocketBufferCapacity))
+    wrappers.FollowRedirectsBackend(
+      new OkHttpFutureBackend(client, closeClient, customEncodingHandler, webSocketBufferCapacity)
+    )
 
   def apply(
-             options: BackendOptions = BackendOptions.Default,
-             customEncodingHandler: EncodingHandler = PartialFunction.empty,
-             webSocketBufferCapacity: Option[Int] = OkHttpBackend.DefaultWebSocketBufferCapacity
+      options: BackendOptions = BackendOptions.Default,
+      customEncodingHandler: EncodingHandler = PartialFunction.empty,
+      webSocketBufferCapacity: Option[Int] = OkHttpBackend.DefaultWebSocketBufferCapacity
   )(implicit ec: ExecutionContext = ExecutionContext.global): WebSocketBackend[Future] =
     OkHttpFutureBackend(
       OkHttpBackend.defaultClient(DefaultReadTimeout.toMillis, options),

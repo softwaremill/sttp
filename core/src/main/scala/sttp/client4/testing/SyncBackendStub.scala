@@ -17,8 +17,8 @@ import sttp.client4.monad.IdMonad
   * request, a response is specified with the incorrect or inconvertible body type.
   */
 class SyncBackendStub(
-                       matchers: PartialFunction[GenericRequest[_, _], Response[_]],
-                       fallback: Option[SyncBackend]
+    matchers: PartialFunction[GenericRequest[_, _], Response[_]],
+    fallback: Option[SyncBackend]
 ) extends AbstractBackendStub[Identity, Any](IdMonad, matchers, fallback)
     with SyncBackend {
 

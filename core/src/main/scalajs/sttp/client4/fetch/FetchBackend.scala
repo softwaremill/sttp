@@ -21,10 +21,9 @@ class FetchBackend private (fetchOptions: FetchOptions, customizeRequest: FetchR
     result
   }
 
-  override protected def handleStreamBody(s: Nothing): Future[js.UndefOr[BodyInit]] = {
+  override protected def handleStreamBody(s: Nothing): Future[js.UndefOr[BodyInit]] =
     // we have an instance of nothing - everything's possible!
     Future.successful(js.undefined)
-  }
 
   override protected def handleResponseAsStream(
       response: FetchResponse

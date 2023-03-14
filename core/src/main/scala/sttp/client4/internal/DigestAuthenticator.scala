@@ -8,22 +8,21 @@ import sttp.model.{Header, HeaderNames, StatusCode}
 
 import scala.util.Random
 
-private[client4] class DigestAuthenticator private(
+private[client4] class DigestAuthenticator private (
     digestAuthData: DigestAuthData,
     requestHeaderName: String,
     responseHeaderName: String,
     unauthorizedStatusCode: StatusCode,
     clientNonceGenerator: () => String
 ) {
-  def authenticate[T](request: GenericRequest[T, _], response: Response[T]): Option[Header] = {
+  def authenticate[T](request: GenericRequest[T, _], response: Response[T]): Option[Header] =
     responseHeaderValue(response.headers(requestHeaderName), request, response.code)
       .map(Header(responseHeaderName, _))
-  }
 
   private def responseHeaderValue(
-                                   authHeaderValues: Seq[String],
-                                   request: GenericRequest[_, _],
-                                   statusCode: StatusCode
+      authHeaderValues: Seq[String],
+      request: GenericRequest[_, _],
+      statusCode: StatusCode
   ): Option[String] = {
     val wwwAuthRawHeaders = authHeaderValues
     wwwAuthRawHeaders.find(_.contains("Digest")).flatMap { inputHeader =>
@@ -43,11 +42,11 @@ private[client4] class DigestAuthenticator private(
   }
 
   private def responseHeaderValue(
-                                   request: GenericRequest[_, _],
-                                   digestAuthData: DigestAuthData,
-                                   wwwAuthHeader: WwwAuthHeaderValue,
-                                   realmMatch: String,
-                                   nonceMatch: String
+      request: GenericRequest[_, _],
+      digestAuthData: DigestAuthData,
+      wwwAuthHeader: WwwAuthHeaderValue,
+      realmMatch: String,
+      nonceMatch: String
   ): Option[String] = {
     val isFirstOrShouldRetry =
       if (
@@ -104,16 +103,16 @@ private[client4] class DigestAuthenticator private(
   }
 
   private def calculateResponseChallenge(
-                                          request: GenericRequest[_, _],
-                                          digestAuthData: DigestAuthData,
-                                          realm: String,
-                                          qop: Option[String],
-                                          nonce: String,
-                                          digestUri: String,
-                                          clientNonce: String,
-                                          nonceCount: String,
-                                          messageDigest: MessageDigestCompatibility,
-                                          algorithm: String
+      request: GenericRequest[_, _],
+      digestAuthData: DigestAuthData,
+      realm: String,
+      qop: Option[String],
+      nonce: String,
+      digestUri: String,
+      clientNonce: String,
+      nonceCount: String,
+      messageDigest: MessageDigestCompatibility,
+      algorithm: String
   ) = {
     val ha1 = calculateHa1(digestAuthData, realm, messageDigest, algorithm, nonce, clientNonce)
     val ha2 = calculateHa2(request, qop, digestUri, messageDigest)
@@ -144,20 +143,19 @@ private[client4] class DigestAuthenticator private(
       messageDigest: MessageDigestCompatibility,
       ha1: String,
       ha2: String
-  ) = {
+  ) =
     qop match {
       case Some(v) if v == QualityOfProtectionAuth || v == QualityOfProtectionAuthInt =>
         md5HexString(s"$ha1:$nonce:$nonceCount:$clientNonce:$v:$ha2", messageDigest)
       case _ => md5HexString(s"$ha1:$nonce:$ha2", messageDigest)
     }
-  }
 
   private def calculateHa2(
-                            request: GenericRequest[_, _],
-                            qop: Option[String],
-                            digestUri: String,
-                            messageDigest: MessageDigestCompatibility
-  ) = {
+      request: GenericRequest[_, _],
+      qop: Option[String],
+      digestUri: String,
+      messageDigest: MessageDigestCompatibility
+  ) =
     qop match {
       case Some(QualityOfProtectionAuth) => md5HexString(s"${request.method.method}:$digestUri", messageDigest)
       case None                          => md5HexString(s"${request.method.method}:$digestUri", messageDigest)
@@ -179,7 +177,6 @@ private[client4] class DigestAuthenticator private(
         )
       case Some(q) => throw new IllegalArgumentException(s"Unknown qop: $q")
     }
-  }
 
   private def createAuthHeaderValue[T](
       digestAuthData: DigestAuthData,
@@ -215,15 +212,13 @@ private[client4] object DigestAuthenticator {
   val QualityOfProtectionAuthInt = "auth-int"
   case class DigestAuthData(username: String, password: String)
 
-  private def md5HexString(text: String, messageDigest: MessageDigestCompatibility) = {
+  private def md5HexString(text: String, messageDigest: MessageDigestCompatibility) =
     byteArrayToHexString(messageDigest.digest(text.getBytes(Charset.forName("UTF-8"))))
-  }
 
   private def byteArrayToHexString(bytes: Seq[Byte]): String = {
     val sb = new StringBuilder
-    for (b <- bytes) {
+    for (b <- bytes)
       sb.append(String.format("%02x", Byte.box(b)))
-    }
     sb.toString
   }
 

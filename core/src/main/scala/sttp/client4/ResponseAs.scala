@@ -249,7 +249,7 @@ sealed trait GenericResponseAs[+T, -R] {
 }
 
 object GenericResponseAs {
-  private[client4] def parseParams(s: String, charset: String): Seq[(String, String)] = {
+  private[client4] def parseParams(s: String, charset: String): Seq[(String, String)] =
     s.split("&")
       .toList
       .flatMap(kv =>
@@ -259,7 +259,6 @@ object GenericResponseAs {
           case _ => None
         }
       )
-  }
 
   def isWebSocket(ra: GenericResponseAs[_, _]): Boolean =
     ra match {

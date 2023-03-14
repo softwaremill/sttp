@@ -16,7 +16,7 @@ import sttp.client4.internal.httpclient.{BodyFromHttpClient, BodyToHttpClient, S
 import sttp.client4.internal.ws.SimpleQueue
 import sttp.client4.testing.WebSocketStreamBackendStub
 import sttp.client4.wrappers.FollowRedirectsBackend
-import sttp.client4.{BackendOptions, WebSocketStreamBackend, wrappers}
+import sttp.client4.{wrappers, BackendOptions, WebSocketStreamBackend}
 import sttp.monad.MonadError
 
 import java.io.UnsupportedEncodingException
@@ -69,12 +69,11 @@ class HttpClientMonixBackend private (
   override protected def createBodyHandler: HttpResponse.BodyHandler[Publisher[ju.List[ByteBuffer]]] =
     BodyHandlers.ofPublisher()
 
-  override protected def bodyHandlerBodyToBody(p: Publisher[ju.List[ByteBuffer]]): Observable[Array[Byte]] = {
+  override protected def bodyHandlerBodyToBody(p: Publisher[ju.List[ByteBuffer]]): Observable[Array[Byte]] =
     Observable
       .fromReactivePublisher(FlowAdapters.toPublisher(p))
       .flatMapIterable(_.asScala.toList)
       .map(_.safeRead())
-  }
 
   override protected def emptyBody(): Observable[Array[Byte]] = Observable.empty
 
@@ -101,9 +100,9 @@ object HttpClientMonixBackend {
     )
 
   def apply(
-             options: BackendOptions = BackendOptions.Default,
-             customizeRequest: HttpRequest => HttpRequest = identity,
-             customEncodingHandler: MonixEncodingHandler = PartialFunction.empty
+      options: BackendOptions = BackendOptions.Default,
+      customizeRequest: HttpRequest => HttpRequest = identity,
+      customEncodingHandler: MonixEncodingHandler = PartialFunction.empty
   )(implicit
       s: Scheduler = Scheduler.global
   ): Task[WebSocketStreamBackend[Task, MonixStreams]] =
@@ -117,9 +116,9 @@ object HttpClientMonixBackend {
     )
 
   def resource(
-                options: BackendOptions = BackendOptions.Default,
-                customizeRequest: HttpRequest => HttpRequest = identity,
-                customEncodingHandler: MonixEncodingHandler = PartialFunction.empty
+      options: BackendOptions = BackendOptions.Default,
+      customizeRequest: HttpRequest => HttpRequest = identity,
+      customEncodingHandler: MonixEncodingHandler = PartialFunction.empty
   )(implicit
       s: Scheduler = Scheduler.global
   ): Resource[Task, WebSocketStreamBackend[Task, MonixStreams]] =

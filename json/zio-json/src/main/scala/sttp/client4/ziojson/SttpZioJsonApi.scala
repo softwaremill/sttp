@@ -3,6 +3,8 @@ package sttp.client4.ziojson
 import sttp.client4.internal.Utf8
 import sttp.client4.json.RichResponseAs
 import sttp.client4.{
+  asString,
+  asStringAlways,
   BodySerializer,
   DeserializationException,
   HttpError,
@@ -11,9 +13,7 @@ import sttp.client4.{
   ResponseAs,
   ResponseException,
   ShowError,
-  StringBody,
-  asString,
-  asStringAlways
+  StringBody
 }
 import sttp.model.MediaType
 

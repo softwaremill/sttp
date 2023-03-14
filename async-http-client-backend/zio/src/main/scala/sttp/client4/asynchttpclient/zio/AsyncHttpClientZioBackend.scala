@@ -1,7 +1,10 @@
 package sttp.client4.asynchttpclient.zio
 
 import _root_.zio._
-import _root_.zio.interop.reactivestreams.{publisherToStream => publisherToZioStream, streamToPublisher => zioStreamToPublisher}
+import _root_.zio.interop.reactivestreams.{
+  publisherToStream => publisherToZioStream,
+  streamToPublisher => zioStreamToPublisher
+}
 import _root_.zio.stream._
 import io.netty.buffer.{ByteBuf, Unpooled}
 import org.asynchttpclient._
@@ -15,7 +18,7 @@ import sttp.client4.internal._
 import sttp.client4.internal.ws.SimpleQueue
 import sttp.client4.testing.WebSocketStreamBackendStub
 import sttp.client4.wrappers.FollowRedirectsBackend
-import sttp.client4.{BackendOptions, WebSocketStreamBackend, wrappers}
+import sttp.client4.{wrappers, BackendOptions, WebSocketStreamBackend}
 import sttp.monad.MonadAsyncError
 import sttp.ws.{WebSocket, WebSocketFrame}
 
@@ -54,13 +57,12 @@ class AsyncHttpClientZioBackend private (
           .runFold(immutable.Queue.empty[Array[Byte]])(enqueueBytes)
           .map(concatBytes)
 
-      override def publisherToFile(p: Publisher[ByteBuffer], f: File): Task[Unit] = {
+      override def publisherToFile(p: Publisher[ByteBuffer], f: File): Task[Unit] =
         p.toZIOStream(bufferSize)
           .map(Chunk.fromByteBuffer)
           .flattenChunks
           .run(ZSink.fromOutputStream(new FileOutputStream(f)))
           .unit
-      }
 
       override def bytesToPublisher(b: Array[Byte]): Task[Publisher[ByteBuffer]] =
         ZStream.apply(ByteBuffer.wrap(b)).toPublisher

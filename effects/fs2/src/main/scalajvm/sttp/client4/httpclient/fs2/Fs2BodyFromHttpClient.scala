@@ -28,33 +28,30 @@ private[fs2] class Fs2BodyFromHttpClient[F[_]: Async]() extends BodyFromHttpClie
       override protected def withReplayableBody(
           response: Stream[F, Byte],
           replayableBody: Either[Array[Byte], SttpFile]
-      ): F[Stream[F, Byte]] = {
+      ): F[Stream[F, Byte]] =
         replayableBody match {
           case Left(value)     => Stream.evalSeq[F, List, Byte](value.toList.unit).unit
           case Right(sttpFile) => Files[F].readAll(sttpFile.toPath, 32 * 1024).unit
         }
-      }
 
       override protected def regularIgnore(response: Stream[F, Byte]): F[Unit] = response.compile.drain
 
       override protected def regularAsByteArray(response: Stream[F, Byte]): F[Array[Byte]] =
         response.chunkAll.compile.last.map(_.map(_.toArray).getOrElse(Array()))
 
-      override protected def regularAsFile(response: Stream[F, Byte], file: SttpFile): F[SttpFile] = {
+      override protected def regularAsFile(response: Stream[F, Byte], file: SttpFile): F[SttpFile] =
         response
           .through(Files[F].writeAll(file.toPath))
           .compile
           .drain
           .map(_ => file)
-      }
 
-      override protected def regularAsStream(response: Stream[F, Byte]): F[(Stream[F, Byte], () => F[Unit])] = {
+      override protected def regularAsStream(response: Stream[F, Byte]): F[(Stream[F, Byte], () => F[Unit])] =
         (
           response,
           // ignoring exceptions that occur when draining (i.e. the stream is already drained)
           () => response.compile.drain.handleError { case _: Exception => ().unit }
         ).unit
-      }
 
       override protected def handleWS[T](
           responseAs: GenericWebSocketResponseAs[T, _],

@@ -37,14 +37,13 @@ object AkkaHttpClient {
       override def singleRequest(
           request: HttpRequest,
           settings: ConnectionPoolSettings
-      ): Future[HttpResponse] = {
+      ): Future[HttpResponse] =
         http.singleRequest(
           request,
           connectionContext.getOrElse(http.defaultClientHttpsContext),
           settings,
           customLog.getOrElse(system.log)
         )
-      }
 
       override def singleWebsocketRequest[WS_RESULT](
           request: WebSocketRequest,

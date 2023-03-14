@@ -17,15 +17,14 @@ abstract class LoggingWithResponseBodyBackend[F[_], P](
   private def now(): Long = System.currentTimeMillis()
   private def elapsed(from: Option[Long]): Option[Duration] = from.map(f => Duration(now() - f, TimeUnit.MILLISECONDS))
 
-  override def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] = {
+  override def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] =
     log.beforeRequestSend(request).flatMap { _ =>
       val start = if (includeTiming) Some(now()) else None
-      def sendAndLog(request: GenericRequest[(T, Option[String]), P with Effect[F]]): F[Response[T]] = {
+      def sendAndLog(request: GenericRequest[(T, Option[String]), P with Effect[F]]): F[Response[T]] =
         for {
           r <- delegate.send(request)
           _ <- log.response(request, r, r.body._2, elapsed(start))
         } yield r.copy(body = r.body._1)
-      }
       val response = request match {
         case request: Request[T] =>
           sendAndLog(request.response(asBothOption(request.response, asStringAlways)))
@@ -43,7 +42,6 @@ abstract class LoggingWithResponseBodyBackend[F[_], P](
           .flatMap(_ => monad.error(e))
       }
     }
-  }
 }
 
 object LoggingWithResponseBodyBackend {

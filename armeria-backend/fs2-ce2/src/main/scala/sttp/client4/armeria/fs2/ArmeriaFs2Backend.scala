@@ -12,7 +12,7 @@ import sttp.client4.armeria.ArmeriaWebClient.newClient
 import sttp.client4.armeria.{AbstractArmeriaBackend, BodyFromStreamMessage}
 import sttp.client4.impl.cats.CatsMonadAsyncError
 import sttp.client4.wrappers.FollowRedirectsBackend
-import sttp.client4.{BackendOptions, StreamBackend, wrappers}
+import sttp.client4.{wrappers, BackendOptions, StreamBackend}
 import sttp.monad.MonadAsyncError
 
 private final class ArmeriaFs2Backend[F[_]: ConcurrentEffect](client: WebClient, closeFactory: Boolean)
@@ -32,12 +32,10 @@ private final class ArmeriaFs2Backend[F[_]: ConcurrentEffect](client: WebClient,
     }
 
   override protected def streamToPublisher(stream: Stream[F, Byte]): Publisher[HttpData] =
-    stream.chunks
-      .map(chunk => {
-        val bytes = chunk.toBytes
-        HttpData.wrap(bytes.values, bytes.offset, bytes.length)
-      })
-      .toUnicastPublisher
+    stream.chunks.map { chunk =>
+      val bytes = chunk.toBytes
+      HttpData.wrap(bytes.values, bytes.offset, bytes.length)
+    }.toUnicastPublisher
 }
 
 object ArmeriaFs2Backend {
@@ -53,13 +51,11 @@ object ArmeriaFs2Backend {
 
   def resource[F[_]: ConcurrentEffect](
       options: BackendOptions = BackendOptions.Default
-  ): Resource[F, StreamBackend[F, Fs2Streams[F]]] = {
+  ): Resource[F, StreamBackend[F, Fs2Streams[F]]] =
     Resource.make(Sync[F].delay(apply(newClient(options), closeFactory = true)))(_.close())
-  }
 
-  def resourceUsingClient[F[_]: ConcurrentEffect](client: WebClient): Resource[F, StreamBackend[F, Fs2Streams[F]]] = {
+  def resourceUsingClient[F[_]: ConcurrentEffect](client: WebClient): Resource[F, StreamBackend[F, Fs2Streams[F]]] =
     Resource.make(Sync[F].delay(apply(client, closeFactory = true)))(_.close())
-  }
 
   def usingClient[F[_]: ConcurrentEffect](client: WebClient): StreamBackend[F, Fs2Streams[F]] =
     apply(client, closeFactory = false)

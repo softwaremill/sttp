@@ -106,7 +106,8 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     fromMetadata(onError.map(Left(_)), ConditionalResponseAs(_.isSuccess, onSuccess.map(Right(_))))
       .showAs(s"either(${onError.show}, ${onSuccess.show})")
 
-  /** Use both `l` and `r` to read the response body. Neither response specifications may use streaming or web sockets. */
+  /** Use both `l` and `r` to read the response body. Neither response specifications may use streaming or web sockets.
+    */
   def asBoth[A, B](l: ResponseAs[A], r: ResponseAs[B]): ResponseAs[(A, B)] =
     asBothOption(l, r)
       .map { case (a, bo) =>
@@ -132,9 +133,8 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
   /** Content type will be set to `text/plain` with given encoding, can be overridden later using the `contentType`
     * method.
     */
-  def multipart(name: String, data: String, encoding: String): Part[BasicBodyPart] = {
+  def multipart(name: String, data: String, encoding: String): Part[BasicBodyPart] =
     Part(name, StringBody(data, encoding), contentType = Some(MediaType.TextPlain.charset(encoding)))
-  }
 
   /** Content type will be set to `application/octet-stream`, can be overridden later using the `contentType` method. */
   def multipart(name: String, data: Array[Byte]): Part[BasicBodyPart] =

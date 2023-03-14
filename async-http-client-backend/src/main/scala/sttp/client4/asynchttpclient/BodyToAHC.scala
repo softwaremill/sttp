@@ -17,7 +17,7 @@ private[asynchttpclient] trait BodyToAHC[F[_], S] {
   val streams: Streams[S]
   protected def streamToPublisher(s: streams.BinaryStream): Publisher[ByteBuf]
 
-  def apply[R](r: GenericRequest[_, R], body: GenericRequestBody[R], rb: RequestBuilder): Unit = {
+  def apply[R](r: GenericRequest[_, R], body: GenericRequestBody[R], rb: RequestBuilder): Unit =
     body match {
       case NoBody => // skip
       case StringBody(b, encoding, _) =>
@@ -45,14 +45,13 @@ private[asynchttpclient] trait BodyToAHC[F[_], S] {
       case m: MultipartBody[_] =>
         m.parts.foreach(addMultipartBody(rb, _))
     }
-  }
 
   private def addMultipartBody(rb: RequestBuilder, mp: Part[BodyPart[_]]): Unit = {
     // async http client only supports setting file names on file parts. To
     // set a file name on an arbitrary part we have to use a small "work
     // around", combining the file name with the name (surrounding quotes
     // are added by ahc).
-    def nameWithFilename = mp.fileName.fold(mp.name) { fn => s"""${mp.name}"; ${Part.FileNameDispositionParam}="$fn""" }
+    def nameWithFilename = mp.fileName.fold(mp.name)(fn => s"""${mp.name}"; ${Part.FileNameDispositionParam}="$fn""")
 
     val ctOrNull = mp.contentType.orNull
 

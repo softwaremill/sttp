@@ -2,7 +2,7 @@ package sttp.client4.ziojson
 
 import sttp.capabilities.Effect
 import sttp.capabilities.zio.ZioStreams
-import sttp.client4.{DeserializationException, HttpError, IsOption, ResponseException, StreamResponseAs, asStream}
+import sttp.client4.{asStream, DeserializationException, HttpError, IsOption, ResponseException, StreamResponseAs}
 import zio.json.JsonDecoder
 import zio.stream.ZPipeline
 import zio.{Task, ZIO}
