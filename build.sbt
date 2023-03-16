@@ -112,10 +112,10 @@ val testServerSettings = Seq(
   Test / testOnly := (Test / testOnly)
     .dependsOn(testServer2_13 / startTestServer)
     .evaluated,
-  Test / testOptions += Tests.Setup(() => {
+  Test / testOptions += Tests.Setup { () =>
     val port = (testServer2_13 / testServerPort).value
     PollingUtils.waitUntilServerAvailable(new URL(s"http://localhost:$port"))
-  })
+  }
 )
 
 val circeVersion: String = "0.14.5"
@@ -154,7 +154,7 @@ val zio2InteropRsVersion = "2.0.1"
 val sttpModelVersion = "1.5.5"
 val sttpSharedVersion = "1.3.13"
 
-val logback = "ch.qos.logback" % "logback-classic" % "1.4.5"
+val logback = "ch.qos.logback" % "logback-classic" % "1.4.6"
 
 val jeagerClientVersion = "1.8.1"
 val braveOpentracingVersion = "1.0.0"
@@ -301,33 +301,28 @@ lazy val core = (projectMatrix in file("core"))
   .settings(testServerSettings)
   .jvmPlatform(
     scalaVersions = scala2 ++ scala3,
-    settings = {
-      commonJvmSettings ++ versioningSchemeSettings ++ /*enableMimaSettings ++*/ List(
-        Test / publishArtifact := true, // allow implementations outside of this repo
-        scalacOptions ++= Seq("-J--add-modules", "-Jjava.net.http"),
-        scalacOptions ++= {
-          if (scalaVersion.value == scala2_13 || scalaVersion.value == scala3.head) List("-target:jvm-11")
-          else if (scalaVersion.value == scala2_12) List("-target:jvm-1.8")
-          else Nil
-        }
-      )
-    }
+    settings = commonJvmSettings ++ versioningSchemeSettings ++ /*enableMimaSettings ++*/ List(
+      Test / publishArtifact := true, // allow implementations outside of this repo
+      scalacOptions ++= Seq("-J--add-modules", "-Jjava.net.http"),
+      scalacOptions ++= {
+        if (scalaVersion.value == scala2_13 || scalaVersion.value == scala3.head) List("-target:jvm-11")
+        else if (scalaVersion.value == scala2_12) List("-target:jvm-1.8")
+        else Nil
+      }
+    )
   )
   .jsPlatform(
     scalaVersions = scala2 ++ scala3,
-    settings = {
+    settings =
       commonJsSettings ++ commonJsBackendSettings ++ browserChromeTestSettings ++ versioningSchemeSettings ++ List(
         Test / publishArtifact := true
       )
-    }
   )
   .nativePlatform(
     scalaVersions = scala2 ++ scala3,
-    settings = {
-      commonNativeSettings ++ versioningSchemeSettings ++ List(
-        Test / publishArtifact := true
-      )
-    }
+    settings = commonNativeSettings ++ versioningSchemeSettings ++ List(
+      Test / publishArtifact := true
+    )
   )
 
 lazy val testCompilation = (projectMatrix in file("testing/compile"))
@@ -552,7 +547,7 @@ lazy val asyncHttpClientBackend = (projectMatrix in file("async-http-client-back
     scalaVersions = scala2 ++ scala3
   )
 
-def asyncHttpClientBackendProject(proj: String, includeDotty: Boolean = false) = {
+def asyncHttpClientBackendProject(proj: String, includeDotty: Boolean = false) =
   ProjectMatrix(s"asyncHttpClientBackend${proj.capitalize}", file(s"async-http-client-backend/$proj"))
     .settings(commonJvmSettings)
     .settings(testServerSettings)
@@ -561,7 +556,6 @@ def asyncHttpClientBackendProject(proj: String, includeDotty: Boolean = false) =
     .jvmPlatform(
       scalaVersions = scala2 ++ (if (includeDotty) scala3 else Nil)
     )
-}
 
 lazy val asyncHttpClientFutureBackend =
   asyncHttpClientBackendProject("future", includeDotty = true)
@@ -636,14 +630,13 @@ lazy val okhttpBackend = (projectMatrix in file("okhttp-backend"))
   .jvmPlatform(scalaVersions = scala2 ++ scala3)
   .dependsOn(core % compileAndTest)
 
-def okhttpBackendProject(proj: String, includeDotty: Boolean) = {
+def okhttpBackendProject(proj: String, includeDotty: Boolean) =
   ProjectMatrix(s"okhttpBackend${proj.capitalize}", file(s"okhttp-backend/$proj"))
     .settings(commonJvmSettings)
     .settings(testServerSettings)
     .settings(name := s"okhttp-backend-$proj")
     .jvmPlatform(scalaVersions = scala2 ++ (if (includeDotty) scala3 else Nil))
     .dependsOn(okhttpBackend)
-}
 
 lazy val okhttpMonixBackend =
   okhttpBackendProject("monix", includeDotty = true)
