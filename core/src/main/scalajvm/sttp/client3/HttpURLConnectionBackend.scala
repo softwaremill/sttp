@@ -150,7 +150,8 @@ class HttpURLConnectionBackend private (
     // inspired by: https://github.com/scalaj/scalaj-http/blob/master/src/main/scala/scalaj/http/Http.scala#L542
     val partsWithHeaders = mp.parts.map { p =>
       val contentDisposition = s"${HeaderNames.ContentDisposition}: ${p.contentDispositionHeaderValue}"
-      val otherHeaders = p.headers.map(h => s"${h.name}: ${h.value}")
+      val otherHeaders =
+        p.headers.map(h => s"${h.name}: ${h.value}").filterNot(_.equalsIgnoreCase(HeaderNames.ContentLength))
       val allHeaders = List(contentDisposition) ++ otherHeaders
       (allHeaders.mkString(CrLf), p)
     }
@@ -165,16 +166,18 @@ class HttpURLConnectionBackend private (
     // https://stackoverflow.com/questions/31406022/how-is-an-http-multipart-content-length-header-value-calculated
     val contentLength = partsWithHeaders
       .map { case (headers, p) =>
-        val bodyLen: Option[Long] = p.body match {
-          case StringBody(b, encoding, _) =>
-            Some(b.getBytes(encoding).length.toLong)
-          case ByteArrayBody(b, _)   => Some(b.length.toLong)
-          case ByteBufferBody(_, _)  => None
-          case InputStreamBody(_, _) => None
-          case FileBody(b, _)        => Some(b.toFile.length())
-          case NoBody                => None
-          case StreamBody(_)         => None
-          case MultipartBody(_)      => None
+        val bodyLen: Option[Long] = p.contentLength.orElse {
+          p.body match {
+            case StringBody(b, encoding, _) =>
+              Some(b.getBytes(encoding).length.toLong)
+            case ByteArrayBody(b, _)   => Some(b.length.toLong)
+            case ByteBufferBody(_, _)  => None
+            case InputStreamBody(_, _) => None
+            case FileBody(b, _)        => Some(b.toFile.length())
+            case NoBody                => None
+            case StreamBody(_)         => None
+            case MultipartBody(_)      => None
+          }
         }
 
         val headersLen = headers.getBytes(Iso88591).length
