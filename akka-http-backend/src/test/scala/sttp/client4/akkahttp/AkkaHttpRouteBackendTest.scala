@@ -15,9 +15,8 @@ class AkkaHttpRouteBackendTest extends AsyncWordSpec with Matchers with BeforeAn
 
   implicit val system: ActorSystem = ActorSystem()
 
-  override protected def afterAll(): Unit = {
+  override protected def afterAll(): Unit =
     Await.result(system.terminate(), 5.seconds)
-  }
 
   val backend: Backend[Future] =
     AkkaHttpBackend.usingClient(system, http = AkkaHttpClient.stubFromRoute(Routes.route))

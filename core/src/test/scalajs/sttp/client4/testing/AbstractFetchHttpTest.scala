@@ -9,11 +9,10 @@ abstract class AbstractFetchHttpTest[F[_], +P] extends HttpTest[F] {
   override protected def expectRedirectResponse(
       response: F[Response[String]],
       code: Int
-  ): Future[Assertion] = {
+  ): Future[Assertion] =
     response.toFuture().failed.map { t =>
       t.getMessage should be("Unexpected redirect")
     }
-  }
 
   // the fetch spec requires multiple values with the same name to be sorted and joined together...
   // https://fetch.spec.whatwg.org/#concept-header-value

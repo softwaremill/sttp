@@ -6,7 +6,7 @@ import sttp.client4._
 import io.prometheus.client.CollectorRegistry
 import org.scalatest.concurrent.{Eventually, IntegrationPatience}
 import org.scalatest.{BeforeAndAfter, OptionValues}
-import sttp.client4.testing.{SyncBackendStub, BackendStub}
+import sttp.client4.testing.{BackendStub, SyncBackendStub}
 import sttp.model.{Header, StatusCode}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -400,10 +400,9 @@ class PrometheusBackendTest
 
     val HostLabel = "Host"
     def addHostLabel[T <: BaseCollectorConfig](config: T, resp: Response[_]): config.T = {
-      val hostLabel: Option[(String, String)] = {
+      val hostLabel: Option[(String, String)] =
         if (config.labels.map(_._1.toLowerCase).contains(HostLabel)) None
         else Some((HostLabel, resp.request.uri.host.getOrElse("-")))
-      }
 
       config.addLabels(hostLabel.toList)
     }
@@ -417,7 +416,7 @@ class PrometheusBackendTest
     )
 
     // when
-    assertThrows[SttpClientException] { basicRequest.get(uri"http://127.0.0.1/foo").send(backend) }
+    assertThrows[SttpClientException](basicRequest.get(uri"http://127.0.0.1/foo").send(backend))
 
     // then
     getMetricValue(

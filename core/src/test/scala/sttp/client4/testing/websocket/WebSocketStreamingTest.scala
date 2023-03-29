@@ -23,7 +23,7 @@ trait WebSocketStreamingTest[F[_], S] extends ToFutureWrapper { outer: Suite wit
 
   def webSocketPipeTerminatedByServerTest(
       postfix: String
-  )(pipe: ConcurrentLinkedQueue[String] => streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]) = {
+  )(pipe: ConcurrentLinkedQueue[String] => streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]) =
     it should s"use pipe to process websocket messages - server-terminated - $postfix" in {
       val received = new ConcurrentLinkedQueue[String]()
       basicRequest
@@ -35,11 +35,10 @@ trait WebSocketStreamingTest[F[_], S] extends ToFutureWrapper { outer: Suite wit
         }
         .toFuture()
     }
-  }
 
   def webSocketPipeClientTerminated(
       postfix: String
-  )(pipe: ConcurrentLinkedQueue[String] => streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]) = {
+  )(pipe: ConcurrentLinkedQueue[String] => streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]) =
     it should s"use pipe to process websocket messages - client-terminated - $postfix" in {
       val received = new ConcurrentLinkedQueue[String]()
       basicRequest
@@ -53,7 +52,6 @@ trait WebSocketStreamingTest[F[_], S] extends ToFutureWrapper { outer: Suite wit
         }
         .toFuture()
     }
-  }
 
   webSocketPipeTerminatedByServerTest("raw") { received =>
     val buffer = new AtomicReference[String]("")

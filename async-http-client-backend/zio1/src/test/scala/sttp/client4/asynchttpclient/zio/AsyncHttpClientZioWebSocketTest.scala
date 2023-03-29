@@ -21,9 +21,8 @@ class AsyncHttpClientZioWebSocketTest extends AsyncHttpClientWebSocketTest[Task,
   override implicit val convertToFuture: ConvertToFuture[Task] = convertZioTaskToFuture
   override implicit val monad: MonadError[Task] = new RIOMonadAsyncError
 
-  override def eventually[T](interval: FiniteDuration, attempts: Int)(f: => Task[T]): Task[T] = {
+  override def eventually[T](interval: FiniteDuration, attempts: Int)(f: => Task[T]): Task[T] =
     ZIO.sleep(interval.toMillis.millis).andThen(f).retry(Schedule.recurs(attempts)).provideLayer(Clock.live)
-  }
 
   override def functionToPipe(
       f: WebSocketFrame.Data[_] => Option[WebSocketFrame]

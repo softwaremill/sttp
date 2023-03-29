@@ -24,9 +24,7 @@ trait WebSocketConcurrentTest[F[_]] { outer: Suite with AsyncFlatSpecLike with W
           _ <- concurrently(tasks)
           r <- sequence(List.fill(n)(() => ws.receiveText()))
           _ <- ws.close()
-        } yield {
-          r shouldBe List.fill(n)("echo: test")
-        }
+        } yield r shouldBe List.fill(n)("echo: test")
       })
       .send(backend)
       .map(_ => succeed)

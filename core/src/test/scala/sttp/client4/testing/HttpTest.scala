@@ -85,7 +85,7 @@ trait HttpTest[F[_]]
         .response(asString.mapRight(_.length))
         .send(backend)
         .toFuture()
-        .map { response => response.body should be(Right(expectedPostEchoResponse.length)) }
+        .map(response => response.body should be(Right(expectedPostEchoResponse.length)))
     }
 
     "as string with mapping using mapResponse" in {
@@ -94,13 +94,13 @@ trait HttpTest[F[_]]
         .mapResponseRight(_.length)
         .send(backend)
         .toFuture()
-        .map { response => response.body should be(Right(expectedPostEchoResponse.length)) }
+        .map(response => response.body should be(Right(expectedPostEchoResponse.length)))
     }
 
     "as string with mapping using mapWithHeaders" in {
       postEcho
         .body(testBody)
-        .response(asStringAlways.mapWithMetadata { (b, h) => b + " " + h.contentType.getOrElse("") })
+        .response(asStringAlways.mapWithMetadata((b, h) => b + " " + h.contentType.getOrElse("")))
         .send(backend)
         .toFuture()
         .map { response =>
@@ -130,7 +130,7 @@ trait HttpTest[F[_]]
         .response(asParams)
         .send(backend)
         .toFuture()
-        .map { response => response.body.right.map(_.toList) should be(Right(params)) }
+        .map(response => response.body.right.map(_.toList) should be(Right(params)))
     }
 
     "as string with response via metadata" in {
@@ -165,7 +165,7 @@ trait HttpTest[F[_]]
         .body(testBody)
         .send(backend)
         .toFuture()
-        .map { response => response.body should be(Right(testBody)) }
+        .map(response => response.body should be(Right(testBody)))
     }
 
     "as both string and mapped string" in {
@@ -203,7 +203,7 @@ trait HttpTest[F[_]]
         .get(uri"$endpoint/echo?p2=v2&p1=v1")
         .send(backend)
         .toFuture()
-        .map { response => response.body should be(Right("GET /echo p1=v1 p2=v2")) }
+        .map(response => response.body should be(Right("GET /echo p1=v1 p2=v2")))
     }
   }
 
@@ -225,7 +225,7 @@ trait HttpTest[F[_]]
         .body(new ByteArrayInputStream(testBodyBytes))
         .send(backend)
         .toFuture()
-        .map { response => response.body should be(Right(expectedPostEchoResponse)) }
+        .map(response => response.body should be(Right(expectedPostEchoResponse)))
     }
 
     "post a byte buffer" in {
@@ -233,7 +233,7 @@ trait HttpTest[F[_]]
         .body(ByteBuffer.wrap(testBodyBytes))
         .send(backend)
         .toFuture()
-        .map { response => response.body should be(Right(expectedPostEchoResponse)) }
+        .map(response => response.body should be(Right(expectedPostEchoResponse)))
     }
 
     "post a byte buffer with a capacity higher than the limit" in {
@@ -256,7 +256,7 @@ trait HttpTest[F[_]]
         .body(ByteBuffer.wrap(testBodyBytes).asReadOnlyBuffer())
         .send(backend)
         .toFuture()
-        .map { response => response.body should be(Right(expectedPostEchoResponse)) }
+        .map(response => response.body should be(Right(expectedPostEchoResponse)))
     }
 
     "post form data" in {
@@ -265,7 +265,7 @@ trait HttpTest[F[_]]
         .body("a" -> "b", "c" -> "d")
         .send(backend)
         .toFuture()
-        .map { response => response.body should be(Right("a=b c=d")) }
+        .map(response => response.body should be(Right("a=b c=d")))
     }
 
     "post form data with special characters" in {
@@ -274,11 +274,11 @@ trait HttpTest[F[_]]
         .body("a=" -> "/b", "c:" -> "/d")
         .send(backend)
         .toFuture()
-        .map { response => response.body should be(Right("a==/b c:=/d")) }
+        .map(response => response.body should be(Right("a==/b c:=/d")))
     }
 
     "post without a body" in {
-      postEcho.send(backend).toFuture().map { response => response.body should be(Right("POST /echo")) }
+      postEcho.send(backend).toFuture().map(response => response.body should be(Right("POST /echo")))
     }
   }
 
@@ -367,53 +367,53 @@ trait HttpTest[F[_]]
 
     "decompress using the default accept encoding header" in {
       val req = compress
-      req.send(backend).toFuture().map { resp => resp.body should be(decompressedBody) }
+      req.send(backend).toFuture().map(resp => resp.body should be(decompressedBody))
     }
 
     "decompress empty body using gzip" in {
       val req = basicRequest.get(uri"$endpoint/compress-empty-gzip").response(asStringAlways).acceptEncoding("gzip")
-      req.send(backend).toFuture().map { resp => resp.body should be("") }
+      req.send(backend).toFuture().map(resp => resp.body should be(""))
     }
 
     "decompress empty body using deflate" in {
       val req =
         basicRequest.get(uri"$endpoint/compress-empty-deflate").response(asStringAlways).acceptEncoding("deflate")
-      req.send(backend).toFuture().map { resp => resp.body should be("") }
+      req.send(backend).toFuture().map(resp => resp.body should be(""))
     }
 
     "decompress using gzip" in {
       val req = compress.acceptEncoding("gzip")
-      req.send(backend).toFuture().map { resp => resp.body should be(decompressedBody) }
+      req.send(backend).toFuture().map(resp => resp.body should be(decompressedBody))
     }
 
     "decompress using deflate" in {
       val req = compress.acceptEncoding("deflate")
-      req.send(backend).toFuture().map { resp => resp.body should be(decompressedBody) }
+      req.send(backend).toFuture().map(resp => resp.body should be(decompressedBody))
     }
 
     if (supportsDeflateWrapperChecking) {
       "decompress using deflate nowrap" in {
         val req =
           basicRequest.get(uri"$endpoint/compress-deflate-nowrap").response(asStringAlways).acceptEncoding("deflate")
-        req.send(backend).toFuture().map { resp => resp.body should be(decompressedBody) }
+        req.send(backend).toFuture().map(resp => resp.body should be(decompressedBody))
       }
     }
 
     "work despite providing an unsupported encoding" in {
       val req = compress.acceptEncoding("br")
-      req.send(backend).toFuture().map { resp => resp.body should be(decompressedBody) }
+      req.send(backend).toFuture().map(resp => resp.body should be(decompressedBody))
     }
 
     "not attempt to decompress HEAD requests" in {
       val req = basicRequest.head(uri"$endpoint/compress")
-      req.send(backend).toFuture().map { resp => resp.code shouldBe StatusCode.Ok }
+      req.send(backend).toFuture().map(resp => resp.code shouldBe StatusCode.Ok)
     }
 
     if (supportsCustomContentEncoding) {
       "decompress using custom content encoding" in {
         val req =
           basicRequest.get(uri"$endpoint/compress-custom").acceptEncoding(customEncoding).response(asStringAlways)
-        req.send(backend).toFuture().map { resp => resp.body should be(customEncodedData) }
+        req.send(backend).toFuture().map(resp => resp.body should be(customEncodedData))
       }
     }
 
@@ -458,14 +458,13 @@ trait HttpTest[F[_]]
 
       "send a multipart message with filenames" in {
         val req = mp.multipartBody(multipart("p1", "v1").fileName("f1"), multipart("p2", "v2").fileName("f2"))
-        req.send(backend).toFuture().map { resp => resp.body should be("p1=v1 (f1), p2=v2 (f2)") }
+        req.send(backend).toFuture().map(resp => resp.body should be("p1=v1 (f1), p2=v2 (f2)"))
       }
 
       "send a multipart message with binary data and filename" in {
-        val binaryPart = {
+        val binaryPart =
           multipart("p1", "v1".getBytes)
             .fileName("f1")
-        }
         val req = mp.multipartBody(binaryPart)
         req.send(backend).toFuture().map { resp =>
           resp.body should include("f1")
@@ -515,12 +514,11 @@ trait HttpTest[F[_]]
   protected def expectRedirectResponse(
       response: F[Response[String]],
       code: Int
-  ): Future[Assertion] = {
+  ): Future[Assertion] =
     response.toFuture().map { resp =>
       resp.code shouldBe StatusCode(code)
       resp.history shouldBe Symbol("empty")
     }
-  }
 
   "redirect" - {
     def r1 = basicRequest.post(uri"$endpoint/redirect/r1").response(asStringAlways)
@@ -578,7 +576,7 @@ trait HttpTest[F[_]]
           .readTimeout(200.milliseconds)
           .response(asString)
 
-        Future(req.send(backend)).flatMap(_.toFuture()).failed.map { _ => succeed }
+        Future(req.send(backend)).flatMap(_.toFuture()).failed.map(_ => succeed)
       }
 
       "not fail if read timeout is big enough" in {
@@ -587,7 +585,7 @@ trait HttpTest[F[_]]
           .readTimeout(5.seconds)
           .response(asString)
 
-        req.send(backend).toFuture().map { response => response.body should be(Right("Done")) }
+        req.send(backend).toFuture().map(response => response.body should be(Right("Done")))
       }
     }
   }
@@ -601,7 +599,7 @@ trait HttpTest[F[_]]
         .contentType("application/json")
 
     "parse an empty error response as empty string" in {
-      postEmptyResponse.send(backend).toFuture().map { response => response.body should be(Left("")) }
+      postEmptyResponse.send(backend).toFuture().map(response => response.body should be(Left("")))
     }
 
     "in a head request" in {
