@@ -24,11 +24,10 @@ class AsyncHttpClientFs2WebSocketTest extends AsyncHttpClientWebSocketTest[IO, F
   ): fs2.Pipe[IO, WebSocketFrame.Data[_], WebSocketFrame] = in => in.mapFilter(f)
 
   override def eventually[T](interval: FiniteDuration, attempts: Int)(f: => IO[T]): IO[T] = {
-    def tryWithCounter(i: Int): IO[T] = {
+    def tryWithCounter(i: Int): IO[T] =
       (IO.sleep(interval) >> f).recoverWith {
         case _: Exception if i < attempts => tryWithCounter(i + 1)
       }
-    }
     tryWithCounter(0)
   }
 

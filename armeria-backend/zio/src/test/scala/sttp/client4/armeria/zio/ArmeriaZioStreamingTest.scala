@@ -2,7 +2,7 @@ package sttp.client4.armeria.zio
 
 import sttp.capabilities.zio.ZioStreams
 import sttp.client4.armeria.ArmeriaWebClient
-import sttp.client4.{StreamBackend, BackendOptions}
+import sttp.client4.{BackendOptions, StreamBackend}
 import sttp.client4.impl.zio.{ZioServerSentEvents, ZioTestBase}
 import sttp.client4.internal._
 import sttp.client4.testing.{ConvertToFuture, RetryTests}

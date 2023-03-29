@@ -2,7 +2,7 @@ package sttp.client4.armeria.fs2
 
 import cats.effect.IO
 import sttp.capabilities.fs2.Fs2Streams
-import sttp.client4.{StreamBackend, BackendOptions}
+import sttp.client4.{BackendOptions, StreamBackend}
 import sttp.client4.armeria.ArmeriaWebClient
 import sttp.client4.impl.cats.TestIODispatcher
 import sttp.client4.impl.fs2.Fs2StreamingTest

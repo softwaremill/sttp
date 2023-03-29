@@ -26,12 +26,12 @@ class BackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
     .thenRespond("10")
     .whenRequestMatches(_.method == Method.GET)
     .thenRespondServerError()
-    .whenRequestMatchesPartial({
+    .whenRequestMatchesPartial {
       case r if r.method == Method.POST && r.uri.path.endsWith(List("partial10")) =>
         Response(Right("10"), StatusCode.Ok, "OK")
       case r if r.method == Method.POST && r.uri.path.endsWith(List("partialAda")) =>
         Response(Right("Ada"), StatusCode.Ok, "OK")
-    })
+    }
     .whenRequestMatches(_.uri.port.exists(_ == 8080))
     .thenRespondF(Response(Right("OK from monad"), StatusCode.Ok, "OK"))
     .whenRequestMatches(_.uri.port.exists(_ == 8081))
@@ -393,7 +393,7 @@ class BackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
 
   for {
     (body, responseAs, expectedResult) <- adjustTestData
-  } {
+  }
     it should s"adjust $body to $expectedResult when specified as $responseAs" in {
       AbstractBackendStub.tryAdjustResponseBody(
         responseAs.delegate,
@@ -403,5 +403,4 @@ class BackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
         expectedResult
       )
     }
-  }
 }

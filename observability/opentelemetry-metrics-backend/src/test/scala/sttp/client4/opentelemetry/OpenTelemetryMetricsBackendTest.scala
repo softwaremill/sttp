@@ -9,14 +9,14 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import sttp.client4.testing.SyncBackendStub
 import sttp.client4.{
+  asString,
+  basicRequest,
   DeserializationException,
   HttpError,
   Identity,
   Response,
   SttpClientException,
-  UriContext,
-  asString,
-  basicRequest
+  UriContext
 }
 import sttp.model.{Header, StatusCode}
 
@@ -248,14 +248,13 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
     getMetricValue(reader, OpenTelemetryMetricsBackend.DefaultErrorCounterName) shouldBe None
   }
 
-  private[this] def getMetricValue(reader: InMemoryMetricReader, name: String): Option[Long] = {
+  private[this] def getMetricValue(reader: InMemoryMetricReader, name: String): Option[Long] =
     reader
       .collectAllMetrics()
       .asScala
       .find(_.getName.equals(name))
       .map(_.getLongSumData)
       .map(_.getPoints.asScala.head.getValue)
-  }
 
   private[this] def getHistogramValue(reader: InMemoryMetricReader, name: String): Option[HistogramPointData] =
     reader

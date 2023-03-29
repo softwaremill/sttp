@@ -172,15 +172,14 @@ class DigestAuthenticatorTest extends AnyFreeSpec with Matchers with OptionValue
     }
   }
 
-  private def responseWithAuthenticateHeader(headerValue: String) = {
+  private def responseWithAuthenticateHeader(headerValue: String) =
     response(headerValue, HeaderNames.WwwAuthenticate, StatusCode.Unauthorized)
-  }
 
   private def response(
       headerValue: String,
       headerName: String,
       statusCode: StatusCode
-  ): Response[Either[String, String]] = {
+  ): Response[Either[String, String]] =
     response(
       List(
         Header(
@@ -190,14 +189,12 @@ class DigestAuthenticatorTest extends AnyFreeSpec with Matchers with OptionValue
       ),
       statusCode
     )
-  }
 
-  private def response(headers: List[Header], statusCode: StatusCode): Response[Either[String, String]] = {
+  private def response(headers: List[Header], statusCode: StatusCode): Response[Either[String, String]] =
     Response[Either[String, String]](
       Right(""),
       statusCode,
       "Unauthorized",
       headers
     )
-  }
 }

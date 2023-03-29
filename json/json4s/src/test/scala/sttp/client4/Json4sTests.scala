@@ -1,7 +1,7 @@
 package sttp.client4
 
 import org.json4s.ParserUtil.ParseException
-import org.json4s.{DefaultFormats, MappingException, native}
+import org.json4s.{native, DefaultFormats, MappingException}
 import org.scalatest._
 import sttp.client4.internal._
 import sttp.model._

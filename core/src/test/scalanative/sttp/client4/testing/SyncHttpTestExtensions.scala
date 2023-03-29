@@ -23,7 +23,7 @@ trait SyncHttpTestExtensions extends AnyFreeSpecLike {
       val resp = r3.send(backend)
       resp.code shouldBe StatusCode.Ok
       resp.body should be(r4response)
-      resp.history should have size (1)
+      resp.history should have size 1
       resp.history(0).code shouldBe StatusCode.Found
     }
 
@@ -31,7 +31,7 @@ trait SyncHttpTestExtensions extends AnyFreeSpecLike {
       val resp = r1.send(backend)
       resp.code shouldBe StatusCode.Ok
       resp.body should be(r4response)
-      resp.history should have size (3)
+      resp.history should have size 3
       resp.history(0).code shouldBe StatusCode.TemporaryRedirect
       resp.history(1).code shouldBe StatusCode.PermanentRedirect
       resp.history(2).code shouldBe StatusCode.Found

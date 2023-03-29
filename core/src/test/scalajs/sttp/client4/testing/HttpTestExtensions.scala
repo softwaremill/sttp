@@ -63,7 +63,7 @@ trait HttpTestExtensions[F[_]] extends AsyncFreeSpecLike with AsyncExecutionCont
       withTemporaryNonExistentFile { file =>
         val req = basicRequest.get(uri"$endpoint/download/binary").response(asFile(file))
         req.send(backend).toFuture().flatMap { resp =>
-          md5Hash(resp.body.right.get).map { _ shouldBe binaryFileMD5Hash }
+          md5Hash(resp.body.right.get).map(_ shouldBe binaryFileMD5Hash)
         }
       }
     }
@@ -72,7 +72,7 @@ trait HttpTestExtensions[F[_]] extends AsyncFreeSpecLike with AsyncExecutionCont
       withTemporaryNonExistentFile { file =>
         val req = basicRequest.get(uri"$endpoint/download/text").response(asFile(file))
         req.send(backend).toFuture().flatMap { resp =>
-          md5Hash(resp.body.right.get).map { _ shouldBe textFileMD5Hash }
+          md5Hash(resp.body.right.get).map(_ shouldBe textFileMD5Hash)
         }
       }
     }
