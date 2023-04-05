@@ -23,7 +23,7 @@ The basic dependency which provides the API, together with a synchronous and `Fu
 Add the following directive to the top of your scala file to add the core sttp dependency:
 
 ```
-//> using lib "com.softwaremill.sttp.client4:core:@VERSION@"
+//> using lib "com.softwaremill.sttp.client4::core:@VERSION@"
 ```
 
 ## Using Ammonite
