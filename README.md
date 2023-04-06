@@ -56,7 +56,7 @@ Add the following directive to the top of your scala file to add the core sttp d
 If you are using [scala-cli](https://scala-cli.virtuslab.org), you can quickly start experimenting with sttp by copy-pasting the following:
 
 ```
-//> using lib "com.softwaremill.sttp.client4:core:4.0.0-M1"
+//> using lib "com.softwaremill.sttp.client4::core:4.0.0-M1"
 import sttp.client4.quick._
 quickRequest.get(uri"http://httpbin.org/ip").send()
 ```
