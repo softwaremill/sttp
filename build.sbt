@@ -815,7 +815,7 @@ lazy val jsoniter = (projectMatrix in file("json/jsoniter"))
     scalaTest
   )
   .jvmPlatform(
-    scalaVersions = scala2 ++ scala3,
+    scalaVersions = scala2alive ++ scala3,
     settings = commonJvmSettings
   )
   .jsPlatform(scalaVersions = scala2alive ++ scala3, settings = commonJsSettings)
