@@ -13,10 +13,10 @@ Settings are loaded **in given order** and the **first existing value** is being
 Otherwise, proxy values can be specified manually when creating a backend:
 
 ```scala mdoc:compile-only
-import sttp.client3._
+import sttp.client4._
 
-val backend = HttpClientSyncBackend(
-  options = SttpBackendOptions.httpProxy("some.host", 8080))
+val backend = DefaultSyncBackend(
+  options = BackendOptions.httpProxy("some.host", 8080))
 
 basicRequest
   .get(uri"...")
@@ -26,14 +26,14 @@ basicRequest
 Or in case your proxy requires authentication (supported by the JVM backends):
 
 ```scala mdoc:compile-only
-import sttp.client3._
+import sttp.client4._
 
-SttpBackendOptions.httpProxy("some.host", 8080, "username", "password")
+BackendOptions.httpProxy("some.host", 8080, "username", "password")
 ```
 
 ## Ignoring and allowing specific hosts
 
-There are two additional settings that can be provided to via `SttpBackendOptions`:
+There are two additional settings that can be provided to via `BackendOptions`:
 
 * `nonProxyHosts`: used to define hosts for which request SHOULD NOT be proxied
 * `onlyProxyHosts`: used to define hosts for which request SHOULD be proxied

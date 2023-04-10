@@ -62,7 +62,8 @@ ssl.init(kmf.getKeyManagers, tmf.getTrustManagers, new SecureRandom)
 Using `SSLContext` from [first section](#ssl-context) define a function to customize connection.
 
 ```scala
-import sttp.client3._
+import sttp.client4._
+import sttp.client4.httpurlconnection.HttpURLConnectionBackend
 import java.net.HttpURLConnection
 import javax.net.ssl.HttpsURLConnection
 
@@ -84,7 +85,7 @@ Using `SSLContext` from [first section](#ssl-context) create a `HttpsConnectionC
 ```scala
 import akka.actor.ActorSystem
 import akka.http.scaladsl.{ConnectionContext, HttpsConnectionContext}
-import sttp.client3.akkahttp._
+import sttp.client4.akkahttp._
 
 val actorSystem: ActorSystem = ActorSystem()
 val https: HttpsConnectionContext = ConnectionContext.httpsClient(ssl)
@@ -103,7 +104,7 @@ You can instantiate one your self, or extract one from `tmf: TrustManagerFactory
 
 ```scala
 import okhttp3.OkHttpClient
-import sttp.client3.okhttp.OkHttpFutureBackend
+import sttp.client4.okhttp.OkHttpFutureBackend
 import javax.net.ssl.X509TrustManager
 
 val yourTrustManager: X509TrustManager = ???
@@ -129,13 +130,12 @@ import cats.effect.IO
 import cats.effect.kernel.Resource
 import cats.effect.std.Dispatcher
 import java.net.http.HttpClient
-import sttp.capabilities.WebSockets
 import sttp.capabilities.fs2.Fs2Streams
-import sttp.client3.SttpBackend
-import sttp.client3.httpclient.fs2.HttpClientFs2Backend
+import sttp.client4.WebSocketStreamBackend
+import sttp.client4.httpclient.fs2.HttpClientFs2Backend
 
 val httpClient: HttpClient = HttpClient.newBuilder().sslContext(ssl).build()
-val backend: Resource[IO, SttpBackend[IO, Fs2Streams[IO] with WebSockets]] = HttpClientFs2Backend.resourceUsingClient[IO](httpClient)
+val backend: Resource[IO, WebSocketStreamBackend[IO, Fs2Streams[IO]]] = HttpClientFs2Backend.resourceUsingClient[IO](httpClient)
 ```
 
 ## Using Async-http-client (deprecated)
@@ -152,7 +152,7 @@ Backends using `AsyncHttpClient` provides factory methods accepting custom confi
 ```scala
 import io.netty.handler.ssl.SslContextBuilder
 import org.asynchttpclient.{AsyncHttpClientConfig, DefaultAsyncHttpClientConfig}
-import sttp.client3.asynchttpclient.future._
+import sttp.client4.asynchttpclient.future._
 
 val sslContext = SslContextBuilder.forClient()
   .keyManager(kmf)

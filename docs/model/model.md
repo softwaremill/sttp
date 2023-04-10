@@ -21,14 +21,14 @@ The model also contains aggregate/helper classes such as `Headers` and `QueryPar
 Example with objects:
 
 ```scala mdoc:compile-only
-import sttp.client3._
+import sttp.client4._
 import sttp.model._
 
 object Example {
   val request = basicRequest.header(Header.contentType(MediaType.ApplicationJson))
     .get(uri"https://httpbin.org")
 
-  val backend = HttpClientSyncBackend()
+  val backend = DefaultSyncBackend()
   val response = request.send(backend)
   if (response.code == StatusCode.Ok) println("Ok!")
 }
@@ -37,14 +37,14 @@ object Example {
 Example with traits:
 
 ```scala mdoc:compile-only
-import sttp.client3._
+import sttp.client4._
 import sttp.model._
 
 object Example extends HeaderNames with MediaTypes with StatusCodes {
   val request = basicRequest.header(ContentType, ApplicationJson.toString)
     .get(uri"https://httpbin.org")
 
-  val backend = HttpClientSyncBackend()
+  val backend = DefaultSyncBackend()
   val response = request.send(backend)
   if (response.code == Ok) println("Ok!")
 }     

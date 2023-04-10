@@ -1,19 +1,19 @@
 # Usage examples
 
-All of the examples are available [in the sources](https://github.com/softwaremill/sttp/blob/master/examples/src/main/scala/sttp/client3/examples) in runnable form.
+All of the examples are available [in the sources](https://github.com/softwaremill/sttp/blob/master/examples/src/main/scala/sttp/client4/examples) in runnable form.
 
 ## Use the simple synchronous client
 
 Required dependencies:
 
 ```scala            
-libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "core" % "3.8.12")
+libraryDependencies ++= List("com.softwaremill.sttp.client4" %% "core" % "4.0.0-M1")
 ```
 
 Example code:
 
 ```eval_rst
-.. literalinclude:: ../../examples/src/main/scala/sttp/client3/examples/SimpleClientGetAndPost.scala
+.. literalinclude:: ../../examples/src/main/scala/sttp/client4/examples/SimpleClientGetAndPost.scala
     :language: scala
 ```
 
@@ -22,13 +22,13 @@ Example code:
 Required dependencies:
 
 ```scala            
-libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "core" % "3.8.12")
+libraryDependencies ++= List("com.softwaremill.sttp.client4" %% "core" % "4.0.0-M1")
 ```
 
 Example code:
 
 ```eval_rst
-.. literalinclude:: ../../examples/src/main/scala/sttp/client3/examples/PostFormSynchronous.scala
+.. literalinclude:: ../../examples/src/main/scala/sttp/client4/examples/PostFormSynchronous.scala
     :language: scala
 ```
 
@@ -38,8 +38,8 @@ Required dependencies:
 
 ```scala
 libraryDependencies ++= List(
-  "com.softwaremill.sttp.client3" %% "akka-http-backend" % "3.8.12",
-  "com.softwaremill.sttp.client3" %% "json4s" % "3.8.12",
+  "com.softwaremill.sttp.client4" %% "akka-http-backend" % "4.0.0-M1",
+  "com.softwaremill.sttp.client4" %% "json4s" % "4.0.0-M1",
   "org.json4s" %% "json4s-native" % "3.6.0"
 )
 ```
@@ -47,7 +47,7 @@ libraryDependencies ++= List(
 Example code:
 
 ```eval_rst
-.. literalinclude:: ../../examples/src/main/scala/sttp/client3/examples/GetAndParseJsonAkkaHttpJson4s.scala
+.. literalinclude:: ../../examples/src/main/scala/sttp/client4/examples/GetAndParseJsonAkkaHttpJson4s.scala
     :language: scala
 ```
 
@@ -57,16 +57,16 @@ Required dependencies:
 
 ```scala
 libraryDependencies ++= List(
-  "com.softwaremill.sttp.client3" %% "zio" % "3.8.12",
-  "com.softwaremill.sttp.client3" %% "circe" % "3.8.12",
-  "io.circe" %% "circe-generic" % "0.14.1"
+  "com.softwaremill.sttp.client4" %% "zio" % "4.0.0-M1",
+  "com.softwaremill.sttp.client4" %% "circe" % "4.0.0-M1",
+  "io.circe" %% "circe-generic" % "0.14.5"
 )
 ```
 
 Example code:
 
 ```eval_rst
-.. literalinclude:: ../../examples/src/main/scala/sttp/client3/examples/GetAndParseJsonZioCirce.scala
+.. literalinclude:: ../../examples/src/main/scala/sttp/client4/examples/GetAndParseJsonZioCirce.scala
     :language: scala
 ```
 
@@ -76,16 +76,16 @@ Required dependencies:
 
 ```scala
 libraryDependencies ++= List(
-  "com.softwaremill.sttp.client3" %% "monix" % "3.8.12",
-  "com.softwaremill.sttp.client3" %% "circe" % "3.8.12",
-  "io.circe" %% "circe-generic" % "0.14.1"
+  "com.softwaremill.sttp.client4" %% "monix" % "4.0.0-M1",
+  "com.softwaremill.sttp.client4" %% "circe" % "4.0.0-M1",
+  "io.circe" %% "circe-generic" % "0.14.5"
 )
 ```
 
 Example code:
 
 ```eval_rst
-.. literalinclude:: ../../examples-ce2/src/main/scala/sttp/client3/examples/GetAndParseJsonGetRightMonixCirce.scala
+.. literalinclude:: ../../examples-ce2/src/main/scala/sttp/client4/examples/GetAndParseJsonGetRightMonixCirce.scala
     :language: scala
 ```
 
@@ -95,16 +95,16 @@ Required dependencies:
 
 ```scala
 libraryDependencies ++= List(
-  "com.softwaremill.sttp.client3" %% "slf4j-backend" % "3.8.12",
-  "com.softwaremill.sttp.client3" %% "circe" % "3.8.12",
-  "io.circe" %% "circe-generic" % "0.14.1"
+  "com.softwaremill.sttp.client4" %% "slf4j-backend" % "4.0.0-M1",
+  "com.softwaremill.sttp.client4" %% "circe" % "4.0.0-M1",
+  "io.circe" %% "circe-generic" % "0.14.5"
 )
 ```
 
 Example code:
 
 ```eval_rst
-.. literalinclude:: ../../examples/src/main/scala/sttp/client3/examples/LogRequestsSlf4j.scala
+.. literalinclude:: ../../examples/src/main/scala/sttp/client4/examples/LogRequestsSlf4j.scala
     :language: scala
 ```
 
@@ -114,16 +114,16 @@ Required dependencies:
 
 ```scala
 libraryDependencies ++= List(
-  "com.softwaremill.sttp.client3" %% "monix" % "3.8.12",
-  "com.softwaremill.sttp.client3" %% "circe" % "3.8.12",
-  "io.circe" %% "circe-generic" % "0.14.1"
+  "com.softwaremill.sttp.client4" %% "monix" % "4.0.0-M1",
+  "com.softwaremill.sttp.client4" %% "circe" % "4.0.0-M1",
+  "io.circe" %% "circe-generic" % "0.14.5"
 )
 ```
 
 Example code:
 
 ```eval_rst
-.. literalinclude:: ../../examples-ce2/src/main/scala/sttp/client3/examples/PostSerializeJsonMonixHttpClientCirce.scala
+.. literalinclude:: ../../examples-ce2/src/main/scala/sttp/client4/examples/PostSerializeJsonMonixHttpClientCirce.scala
     :language: scala
 ```
 
@@ -132,13 +132,13 @@ Example code:
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "core" % "3.8.12")
+libraryDependencies ++= List("com.softwaremill.sttp.client4" %% "core" % "4.0.0-M1")
 ```
 
 Example code:
 
 ```eval_rst
-.. literalinclude:: ../../examples/src/main/scala/sttp/client3/examples/TestEndpointMultipleQueryParameters.scala
+.. literalinclude:: ../../examples/src/main/scala/sttp/client4/examples/TestEndpointMultipleQueryParameters.scala
     :language: scala
 ```
 ## Open a websocket using ZIO
@@ -146,13 +146,13 @@ Example code:
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "zio" % "3.8.12")
+libraryDependencies ++= List("com.softwaremill.sttp.client4" %% "zio" % "4.0.0-M1")
 ```
 
 Example code:
 
 ```eval_rst
-.. literalinclude:: ../../examples/src/main/scala/sttp/client3/examples/WebSocketZio.scala
+.. literalinclude:: ../../examples/src/main/scala/sttp/client4/examples/WebSocketZio.scala
     :language: scala
 ```
 
@@ -161,13 +161,13 @@ Example code:
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "fs2" % "3.8.12")
+libraryDependencies ++= List("com.softwaremill.sttp.client4" %% "fs2" % "4.0.0-M1")
 ```
 
 Example code:
 
 ```eval_rst
-.. literalinclude:: ../../examples/src/main/scala/sttp/client3/examples/WebSocketStreamFs2.scala
+.. literalinclude:: ../../examples/src/main/scala/sttp/client4/examples/WebSocketStreamFs2.scala
     :language: scala
 ```
 
@@ -176,13 +176,13 @@ Example code:
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "monix" % "3.8.12")
+libraryDependencies ++= List("com.softwaremill.sttp.client4" %% "monix" % "4.0.0-M1")
 ```
 
 Example code:
 
 ```eval_rst
-.. literalinclude:: ../../examples-ce2/src/main/scala/sttp/client3/examples/WebSocketTesting.scala
+.. literalinclude:: ../../examples-ce2/src/main/scala/sttp/client4/examples/WebSocketTesting.scala
     :language: scala
 ```
 
@@ -191,13 +191,13 @@ Example code:
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "akka-http-backend" % "3.8.12")
+libraryDependencies ++= List("com.softwaremill.sttp.client4" %% "akka-http-backend" % "4.0.0-M1")
 ```
 
 Example code:
 
 ```eval_rst
-.. literalinclude:: ../../examples/src/main/scala/sttp/client3/examples/WebSocketAkka.scala
+.. literalinclude:: ../../examples/src/main/scala/sttp/client4/examples/WebSocketAkka.scala
     :language: scala
 ```
 
@@ -206,13 +206,13 @@ Example code:
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "monix" % "3.8.12")
+libraryDependencies ++= List("com.softwaremill.sttp.client4" %% "monix" % "4.0.0-M1")
 ```
 
 Example code:
 
 ```eval_rst
-.. literalinclude:: ../../examples-ce2/src/main/scala/sttp/client3/examples/WebSocketMonix.scala
+.. literalinclude:: ../../examples-ce2/src/main/scala/sttp/client4/examples/WebSocketMonix.scala
     :language: scala
 ```
 
@@ -221,13 +221,13 @@ Example code:
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "fs2" % "3.8.12")
+libraryDependencies ++= List("com.softwaremill.sttp.client4" %% "fs2" % "4.0.0-M1")
 ```
 
 Example code:
 
 ```eval_rst
-.. literalinclude:: ../../examples/src/main/scala/sttp/client3/examples/StreamFs2.scala
+.. literalinclude:: ../../examples/src/main/scala/sttp/client4/examples/StreamFs2.scala
     :language: scala
 ```
 
@@ -236,13 +236,13 @@ Example code:
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "zio" % "3.8.12")
+libraryDependencies ++= List("com.softwaremill.sttp.client4" %% "zio" % "4.0.0-M1")
 ```
 
 Example code:
 
 ```eval_rst
-.. literalinclude:: ../../examples/src/main/scala/sttp/client3/examples/StreamZio.scala
+.. literalinclude:: ../../examples/src/main/scala/sttp/client4/examples/StreamZio.scala
     :language: scala
 ```
 
@@ -251,13 +251,13 @@ Example code:
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "zio" % "3.8.12")
+libraryDependencies ++= List("com.softwaremill.sttp.client4" %% "zio" % "4.0.0-M1")
 ```
 
 Example code:
 
 ```eval_rst
-.. literalinclude:: ../../examples/src/main/scala/sttp/client3/examples/RetryZio.scala
+.. literalinclude:: ../../examples/src/main/scala/sttp/client4/examples/RetryZio.scala
     :language: scala
 ```
 
@@ -266,12 +266,12 @@ Example code:
 Required dependencies:
 
 ```scala            
-libraryDependencies ++= List("com.softwaremill.sttp.client3" %% "core" % "3.8.12")
+libraryDependencies ++= List("com.softwaremill.sttp.client4" %% "core" % "4.0.0-M1")
 ```
 
 Example code:
 
 ```eval_rst
-.. literalinclude:: ../../examples/src/main/scala/sttp/client3/examples/GetRawResponseBodySynchronous.scala
+.. literalinclude:: ../../examples/src/main/scala/sttp/client4/examples/GetRawResponseBodySynchronous.scala
     :language: scala
 ```

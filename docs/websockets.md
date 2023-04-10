@@ -6,7 +6,7 @@ A websocket request will be sent instead of a regular one if the response specif
 
 ## Using `WebSocket`
 
-The first possibility is using `sttp.client3.ws.WebSocket[F]`, where `F` is the backend-specific effects wrapper, such as `Future` or `IO`. It contains two basic methods, both of which use the `F` effect to return results:
+The first possibility is using `sttp.client4.ws.WebSocket[F]`, where `F` is the backend-specific effects wrapper, such as `Future` or `IO`. It contains two basic methods, both of which use the `F` effect to return results:
  
 * `def receive: F[WebSocketFrame]` which will complete once a message is available, and return the next incoming frame (which can be a data, ping, pong or close)
 * `def send(f: WebSocketFrame, isContinuation: Boolean = false): F[Unit]`, which sends a message to the websocket. The `WebSocketFrame` companion object contains methods for creating binary/text messages. When using fragmentation, the first message should be sent using `finalFragment = false`, and subsequent messages using `isContinuation = true`.
@@ -16,30 +16,29 @@ The `WebSocket` trait also contains other methods for receiving only text/binary
 The following response specifications which use `WebSocket[F]` are available (the first type parameter of `ResponseAs` specifies the type returned as the response body, the second - the capabilities that the backend is required to support to send the request):
 
 ```scala mdoc:compile-only
-import sttp.client3._
-import sttp.capabilities.{Effect, WebSockets}
+import sttp.client4._
 import sttp.model.ResponseMetadata
 import sttp.ws.WebSocket
 
 def asWebSocket[F[_], T](f: WebSocket[F] => F[T]): 
-  ResponseAs[Either[String, T], Effect[F] with WebSockets] = ???
+  WebSocketResponseAs[F, Either[String, T]] = ???
 
 def asWebSocketWithMetadata[F[_], T](
       f: (WebSocket[F], ResponseMetadata) => F[T]
-  ): ResponseAs[Either[String, T], Effect[F] with WebSockets] = ???
+  ): WebSocketResponseAs[F, Either[String, T]] = ???
 
 def asWebSocketAlways[F[_], T](f: WebSocket[F] => F[T]): 
-  ResponseAs[T, Effect[F] with WebSockets] = ???
+  WebSocketResponseAs[F, T] = ???
 
 def asWebSocketAlwaysWithMetadata[F[_], T](
       f: (WebSocket[F], ResponseMetadata) => F[T]
-  ): ResponseAs[T, Effect[F] with WebSockets] = ???
+  ): WebSocketResponseAs[F, T] = ???
 
 def asWebSocketUnsafe[F[_]]: 
-  ResponseAs[Either[String, WebSocket[F]], Effect[F] with WebSockets] = ???
+  WebSocketResponseAs[F, Either[String, WebSocket[F]]] = ???
 
 def asWebSocketUnsafeAlways[F[_]]: 
-  ResponseAs[WebSocket[F], Effect[F] with WebSockets] = ???
+  WebSocketResponseAs[F, WebSocket[F]] = ???
 ```
 
 The first variant, `asWebSocket`, passes an open `WebSocket` to the user-provided function. This function should return an effect which completes, once interaction with the websocket is finished. The backend can then safely close the websocket. The value that's returned as the response body is either an error (represented as a `String`), in case the websocket upgrade didn't complete successfully, or the value returned by the websocket-interacting method. 
@@ -57,15 +56,15 @@ Another possibility is to work with websockets by providing a streaming stage, w
 The following response specifications are available: 
 
 ```scala mdoc:compile-only
-import sttp.client3._
+import sttp.client4._
 import sttp.capabilities.{Streams, WebSockets}
 import sttp.ws.WebSocketFrame
 
 def asWebSocketStream[S](s: Streams[S])(p: s.Pipe[WebSocketFrame.Data[_], WebSocketFrame]): 
-  ResponseAs[Either[String, Unit], S with WebSockets] = ???
+  WebSocketStreamResponseAs[Either[String, Unit], S] = ???
 
 def asWebSocketStreamAlways[S](s: Streams[S])(p: s.Pipe[WebSocketFrame.Data[_], WebSocketFrame]): 
-  ResponseAs[Unit, S with WebSockets] = ???
+  WebSocketStreamResponseAs[Unit, S] = ???
 ```
 
 Using streaming websockets requires the backend to support the given streaming capability (see also [streaming](requests/streaming.md)). Streaming capabilities are described as implementations of `Streams[S]`, and are provided by backend implementations, e.g. `AkkaStreams` or `Fs2Streams[F]`.
@@ -78,9 +77,9 @@ These methods can be found in corresponding WebSockets classes for given effect 
 ================ ==========================================
 effect type      class name
 ================ ==========================================
-``monix.Task``   ``sttp.client3.impl.monix.MonixWebSockets``   
-``ZIO``          ``sttp.client3.impl.zio.ZioWebSockets``
-``fs2.Stream``   ``sttp.client3.impl.fs2.Fs2WebSockets``
+``monix.Task``   ``sttp.client4.impl.monix.MonixWebSockets``   
+``ZIO``          ``sttp.client4.impl.zio.ZioWebSockets``
+``fs2.Stream``   ``sttp.client4.impl.fs2.Fs2WebSockets``
 ================ ==========================================
 ```
 

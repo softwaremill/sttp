@@ -1,19 +1,19 @@
 # Synchronous backends
 
-There are several synchronous backend implementations. Sending a request using these backends is a blocking operation, and results in a `sttp.client3.Response[T]`.
+There are several synchronous backend implementations. Sending a request using these backends is a blocking operation, and results in a `sttp.client4.Response[T]`.
 
 ## Using HttpClient
 
 The default **synchronous** backend. To use, you don't need any extra dependencies, `core` is enough:
 
 ```
-"com.softwaremill.sttp.client3" %% "core" % "3.8.12"
+"com.softwaremill.sttp.client4" %% "core" % "4.0.0-M1"
 ```
 
 Create the backend using:
 
 ```scala
-import sttp.client3.HttpClientSyncBackend
+import sttp.client4.httpclient.HttpClientSyncBackend
 
 val backend = HttpClientSyncBackend()
 ```
@@ -21,7 +21,7 @@ val backend = HttpClientSyncBackend()
 or, if you'd like to instantiate the HttpClient yourself:
 
 ```scala
-import sttp.client3.HttpClientSyncBackend
+import sttp.client4.httpclient.HttpClientSyncBackend
 import java.net.http.HttpClient
 val httpClient: HttpClient = ???
 val backend = HttpClientSyncBackend.usingClient(httpClient)
@@ -40,13 +40,13 @@ Host header override is supported in environments running Java 12 onwards, but i
 To use, you don't need any extra dependencies, `core` is enough: 
 
 ```
-"com.softwaremill.sttp.client3" %% "core" % "3.8.12"
+"com.softwaremill.sttp.client4" %% "core" % "4.0.0-M1"
 ```
 
 Create the backend using:
 
 ```scala
-import sttp.client3.HttpURLConnectionBackend
+import sttp.client4.httpurlconnection.HttpURLConnectionBackend
 
 val backend = HttpURLConnectionBackend()
 ```
@@ -62,13 +62,13 @@ This backend supports host header override, but it has to be enabled by system p
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "okhttp-backend" % "3.8.12"
+"com.softwaremill.sttp.client4" %% "okhttp-backend" % "4.0.0-M1"
 ```
 
 Create the backend using:
 
 ```scala
-import sttp.client3.okhttp.OkHttpSyncBackend
+import sttp.client4.okhttp.OkHttpSyncBackend
 
 val backend = OkHttpSyncBackend()
 ```
@@ -76,7 +76,7 @@ val backend = OkHttpSyncBackend()
 or, if you'd like to instantiate the OkHttpClient yourself:
 
 ```scala
-import sttp.client3.okhttp.OkHttpSyncBackend
+import sttp.client4.okhttp.OkHttpSyncBackend
 import okhttp3._
 
 val okHttpClient: OkHttpClient = ???

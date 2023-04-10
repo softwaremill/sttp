@@ -9,9 +9,8 @@ class DeflateNoWrap private[http] (
     compressionLevel: Int,
     override val messageFilter: HttpMessage => Boolean
 ) extends Deflate(compressionLevel, messageFilter) {
-  def this(messageFilter: HttpMessage => Boolean) = {
+  def this(messageFilter: HttpMessage => Boolean) =
     this(DeflateCompressor.DefaultCompressionLevel, messageFilter)
-  }
 
   override def newCompressor = new DeflateCompressor(compressionLevel) {
     override protected lazy val deflater = new Deflater(compressionLevel, true)

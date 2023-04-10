@@ -12,13 +12,13 @@ Creation of the backend can be done in two basic ways:
 Firstly, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "monix" % "3.8.12"
+"com.softwaremill.sttp.client4" %% "monix" % "4.0.0-M1"
 ```
 
 and create the backend using:
 
 ```scala
-import sttp.client3.httpclient.monix.HttpClientMonixBackend
+import sttp.client4.httpclient.monix.HttpClientMonixBackend
 
 HttpClientMonixBackend().flatMap { backend => ??? }
 
@@ -50,13 +50,13 @@ Host header override is supported in environments running Java 12 onwards, but i
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "okhttp-backend-monix" % "3.8.12"
+"com.softwaremill.sttp.client4" %% "okhttp-backend-monix" % "4.0.0-M1"
 ```
 
 Create the backend using:
 
 ```scala
-import sttp.client3.okhttp.monix.OkHttpMonixBackend
+import sttp.client4.okhttp.monix.OkHttpMonixBackend
 
 OkHttpMonixBackend().flatMap { backend => ??? }
 
@@ -76,13 +76,13 @@ This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supp
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "armeria-backend-monix" % "3.8.12"
+"com.softwaremill.sttp.client4" %% "armeria-backend-monix" % "4.0.0-M1"
 ```
 
 add imports:
 
 ```scala
-import sttp.client3.armeria.monix.ArmeriaMonixBackend
+import sttp.client4.armeria.monix.ArmeriaMonixBackend
 ```
 
 create client:
@@ -121,12 +121,12 @@ Please visit [the official documentation](https://armeria.dev/docs/client-factor
 
 ## Streaming
 
-The Monix backends support streaming. The streams capability is represented as `sttp.client3.impl.monix.MonixStreams`. The type of supported streams in this case is `Observable[ByteBuffer]`. That is, you can set such an observable as a request body (using the http-client backend as an example, but any of the above backends can be used):
+The Monix backends support streaming. The streams capability is represented as `sttp.client4.impl.monix.MonixStreams`. The type of supported streams in this case is `Observable[ByteBuffer]`. That is, you can set such an observable as a request body (using the http-client backend as an example, but any of the above backends can be used):
 
 ```scala
 import sttp.capabilities.monix.MonixStreams
-import sttp.client3._
-import sttp.client3.httpclient.monix.HttpClientMonixBackend
+import sttp.client4._
+import sttp.client4.httpclient.monix.HttpClientMonixBackend
 
 import monix.reactive.Observable
 
@@ -144,8 +144,8 @@ And receive responses as an observable stream:
 
 ```scala
 import sttp.capabilities.monix.MonixStreams
-import sttp.client3._
-import sttp.client3.httpclient.monix.HttpClientMonixBackend
+import sttp.client4._
+import sttp.client4.httpclient.monix.HttpClientMonixBackend
 
 import monix.eval.Task
 import monix.reactive.Observable
@@ -175,9 +175,9 @@ import monix.reactive.Observable
 import monix.eval.Task
 
 import sttp.capabilities.monix.MonixStreams
-import sttp.client3.impl.monix.MonixServerSentEvents
+import sttp.client4.impl.monix.MonixServerSentEvents
 import sttp.model.sse.ServerSentEvent
-import sttp.client3._
+import sttp.client4._
 
 def processEvents(source: Observable[ServerSentEvent]): Task[Unit] = ???
 

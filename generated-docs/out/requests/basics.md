@@ -3,7 +3,7 @@
 As mentioned in the [quickstart](../quickstart.md), the following import will be needed:
 
 ```scala
-import sttp.client3._
+import sttp.client4._
 ```
 
 This brings into scope `basicRequest`, the starting request. This request can be customised, each time yielding a new, immutable request definition (unless a mutable body is set on the request, such as a byte array). As the request definition is immutable, it can be freely stored in values, shared across threads, and customized multiple times in various ways.
@@ -36,8 +36,8 @@ A request definition can be created without knowing how it will be sent. But to 
 To invoke the `send(backend)` method on a request description, you'll need an instance of `SttpBackend`:
 
 ```scala
-val backend = HttpClientSyncBackend()
-val response: Identity[Response[Either[String, String]]] = request.send(backend)
+val backend = DefaultSyncBackend()
+val response: Response[Either[String, String]] = request.send(backend)
 ```        
 
 The default backend uses the `Identity` effect to return responses, which is equivalent to a synchronous call (no effect at all). Other asynchronous backends use other effect types. See the section on [backends](../backends/summary.md) for more details.
