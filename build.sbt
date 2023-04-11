@@ -119,9 +119,8 @@ val testServerSettings = Seq(
   })
 )
 
-val circeVersion: Option[(Long, Long)] => String = {
-  case Some((2, 11)) => "0.11.2"
-  case _             => "0.14.1"
+val circeVersion: Option[(Long, Long)] => String = { _ =>
+  "0.14.5"
 }
 
 val jsoniterVersion = "2.22.1"
@@ -175,7 +174,8 @@ def dependenciesFor(version: String)(deps: (Option[(Long, Long)] => ModuleID)*):
   deps.map(_.apply(CrossVersion.partialVersion(version)))
 
 lazy val projectsWithOptionalNative: Seq[ProjectReference] = {
-  val base = core.projectRefs ++ jsonCommon.projectRefs ++ upickle.projectRefs ++ jsoniter.projectRefs
+  val base =
+    core.projectRefs ++ jsonCommon.projectRefs ++ upickle.projectRefs ++ jsoniter.projectRefs ++ circe.projectRefs
   if (sys.env.isDefinedAt("STTP_NATIVE")) {
     println("[info] STTP_NATIVE defined, including sttp-native in the aggregate projects")
     base
@@ -799,10 +799,11 @@ lazy val circe = (projectMatrix in file("json/circe"))
     }
   )
   .jvmPlatform(
-    scalaVersions = scala2 ++ scala3,
+    scalaVersions = scala2alive ++ scala3,
     settings = commonJvmSettings
   )
   .jsPlatform(scalaVersions = scala2alive ++ scala3, settings = commonJsSettings)
+  .nativePlatform(scalaVersions = scala2alive ++ scala3, settings = commonNativeSettings)
   .dependsOn(core, jsonCommon)
 
 lazy val jsoniter = (projectMatrix in file("json/jsoniter"))
