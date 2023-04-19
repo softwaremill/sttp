@@ -45,6 +45,7 @@ val commonSettings = commonSmlBuildSettings ++ ossPublishSettings ++ Seq(
 )
 
 val commonJvmSettings = commonSettings ++ Seq(
+  scalacOptions += "-release:11",
   Test / testOptions += Tests.Argument("-oD") // add test timings; js build specify other options which conflict
 )
 
@@ -126,7 +127,7 @@ val playJsonVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.7.4"
   case _             => "2.9.2"
 }
-val catsEffect_3_version = "3.4.8"
+val catsEffect_3_version = "3.4.9"
 val fs2_3_version = "3.6.1"
 
 val catsEffect_2_version: Option[(Long, Long)] => String = {
@@ -147,7 +148,7 @@ val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", 
 )
 
 val zio1Version = "1.0.17"
-val zio2Version = "2.0.12"
+val zio2Version = "2.0.13"
 val zio1InteropRsVersion = "1.3.12"
 val zio2InteropRsVersion = "2.0.1"
 
@@ -303,12 +304,7 @@ lazy val core = (projectMatrix in file("core"))
     scalaVersions = scala2 ++ scala3,
     settings = commonJvmSettings ++ versioningSchemeSettings ++ /*enableMimaSettings ++*/ List(
       Test / publishArtifact := true, // allow implementations outside of this repo
-      scalacOptions ++= Seq("-J--add-modules", "-Jjava.net.http"),
-      scalacOptions ++= {
-        if (scalaVersion.value == scala2_13 || scalaVersion.value == scala3.head) List("-target:jvm-11")
-        else if (scalaVersion.value == scala2_12) List("-target:jvm-1.8")
-        else Nil
-      }
+      scalacOptions ++= Seq("-J--add-modules", "-Jjava.net.http")
     )
   )
   .jsPlatform(
