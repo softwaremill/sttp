@@ -620,7 +620,7 @@ lazy val okhttpBackend = (projectMatrix in file("okhttp-backend"))
   .settings(
     name := "okhttp-backend",
     libraryDependencies ++= Seq(
-      "com.squareup.okhttp3" % "okhttp" % "4.10.0"
+      "com.squareup.okhttp3" % "okhttp" % "4.11.0"
     )
   )
   .jvmPlatform(scalaVersions = scala2 ++ scala3)
