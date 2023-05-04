@@ -24,10 +24,10 @@ import sttp.model._
 import sttp.client4.testing._
 import java.io.File
 import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global 
+import scala.concurrent.ExecutionContext.Implicits.global
 
 case class User(id: String)
-``` 
+```
 
 ## Specifying behavior
 
@@ -88,7 +88,7 @@ val responseFuture = basicRequest.get(uri"http://example.org").send(testingBacke
 // responseFuture will complete after 5 seconds with "OK" response
 ```
 
-The returned response may also depend on the request: 
+The returned response may also depend on the request:
 
 ```scala mdoc:compile-only
 val testingBackend = SyncBackendStub
@@ -137,7 +137,7 @@ val testingBackend = SyncBackendStub
   .thenRespond("Hello back!")
 ```
 
-If the stub is given a request, for which no behavior is stubbed, it will return a failed effect with an `IllegalArgumentException`. 
+If the stub is given a request, for which no behavior is stubbed, it will return a failed effect with an `IllegalArgumentException`.
 
 ## Simulating exceptions
 
@@ -163,10 +163,10 @@ The following conversions are supported:
 * anything to `()` (unit), when the response is ignored
 * `InputStream` and `Array[Byte]` to `String`
 * `InputStream` and `String` to `Array[Byte]`
-* `WebSocketStub` to `WebSocket` 
+* `WebSocketStub` to `WebSocket`
 * `WebSocketStub` and `WebSocket` are supplied to the websocket-consuming functions, if the response specification describes such interactions
 * `SttpBackendStub.RawStream` is always treated as a raw stream value, and returned when the response should be returned as a stream or consumed using the provided function
-* any of the above to custom types through mapped response specifications 
+* any of the above to custom types through mapped response specifications
 
 ## Example: returning JSON
 
@@ -182,7 +182,7 @@ def parseUserJson(a: Array[Byte]): User = ???
 val response = basicRequest.get(uri"http://example.com")
   .response(asByteArrayAlways.map(parseUserJson))
   .send(testingBackend)
-```                                                                  
+```
 
 In the example above, the stub's rules specify that a response with a `String`-body should be returned for any request; the request, on the other hand, specifies that response body should be parsed from a byte array to a custom `User` type. These type don't match, so the `SttpBackendStub` will in this case convert the body to the desired type.
 
@@ -261,7 +261,7 @@ The stub can be configured to return the high-level (already mapped/transformed)
 
 `WebSocketStub` allows easy creation of stub `WebSocket` instances. Such instances wrap a state machine that can be used
 to simulate simple WebSocket interactions. The user sets initial responses for `receive` calls as well as logic to add
-further messages in reaction to `send` calls. 
+further messages in reaction to `send` calls.
 
 For example:
 
@@ -282,7 +282,7 @@ val webSocketStub = WebSocketStub
 backend.whenAnyRequest.thenRespond(webSocketStub)
 ```
 
-There is a possiblity to add error responses as well. If this is not enough, using a custom implementation of 
+There is a possiblity to add error responses as well. If this is not enough, using a custom implementation of
 the `WebSocket` trait is recommended.
 
 ## Verifying, that a request was sent
@@ -290,7 +290,7 @@ the `WebSocket` trait is recommended.
 Using `RecordingSttpBackend` it's possible to capture all interactions in which a backend has been involved.
 
 The recording backend is a [backend wrapper](backends/wrappers/custom.md), and it can wrap any backend, but it's most
-useful when combine witht the backend stub. 
+useful when combine with the backend stub.
 
 Example usage:
 
@@ -307,5 +307,5 @@ val response1 = basicRequest.get(uri"http://example.org/a/b/c").send(testingBack
 // response1.body will be Right("Hello there")
 
 testingBackend.allInteractions: List[(GenericRequest[_, _], Try[Response[_]])]
-// the list will contain one element and can be verified in a test 
+// the list will contain one element and can be verified in a test
 ```
