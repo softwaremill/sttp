@@ -121,14 +121,14 @@ val testServerSettings = Seq(
 
 val circeVersion: String = "0.14.5"
 
-val jsoniterVersion = "2.22.2"
+val jsoniterVersion = "2.23.0"
 
 val playJsonVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.7.4"
   case _             => "2.9.2"
 }
-val catsEffect_3_version = "3.4.9"
-val fs2_3_version = "3.6.1"
+val catsEffect_3_version = "3.5.0"
+val fs2_3_version = "3.7.0"
 
 val catsEffect_2_version: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.0.0"
@@ -144,27 +144,27 @@ val akkaStreamVersion = "2.6.20"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % akkaStreamVersion
 
 val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", "wordspec", "shouldmatchers").map(m =>
-  "org.scalatest" %%% s"scalatest-$m" % "3.2.15" % Test
+  "org.scalatest" %%% s"scalatest-$m" % "3.2.16" % Test
 )
 
 val zio1Version = "1.0.17"
-val zio2Version = "2.0.13"
+val zio2Version = "2.0.14"
 val zio1InteropRsVersion = "1.3.12"
-val zio2InteropRsVersion = "2.0.1"
+val zio2InteropRsVersion = "2.0.2"
 
 val sttpModelVersion = "1.5.5"
 val sttpSharedVersion = "1.3.13"
 
-val logback = "ch.qos.logback" % "logback-classic" % "1.4.6"
+val logback = "ch.qos.logback" % "logback-classic" % "1.4.7"
 
 val jeagerClientVersion = "1.8.1"
 val braveOpentracingVersion = "1.0.0"
-val zipkinSenderOkHttpVersion = "2.16.3"
+val zipkinSenderOkHttpVersion = "2.16.4"
 val resilience4jVersion = "2.0.2"
 val http4s_ce2_version = "0.22.15"
-val http4s_ce3_version = "0.23.18"
+val http4s_ce3_version = "0.23.19"
 
-val openTelemetryVersion = "1.25.0"
+val openTelemetryVersion = "1.26.0"
 
 val compileAndTest = "compile->compile;test->test"
 
@@ -620,7 +620,7 @@ lazy val okhttpBackend = (projectMatrix in file("okhttp-backend"))
   .settings(
     name := "okhttp-backend",
     libraryDependencies ++= Seq(
-      "com.squareup.okhttp3" % "okhttp" % "4.10.0"
+      "com.squareup.okhttp3" % "okhttp" % "4.11.0"
     )
   )
   .jvmPlatform(scalaVersions = scala2 ++ scala3)
@@ -659,8 +659,8 @@ lazy val http4sBackend = (projectMatrix in file("http4s-backend"))
     name := "http4s-backend",
     libraryDependencies ++= Seq(
       "org.http4s" %% "http4s-client" % http4s_ce3_version,
-      "org.http4s" %% "http4s-ember-client" % "0.23.18" % Optional,
-      "org.http4s" %% "http4s-blaze-client" % "0.23.14" % Optional
+      "org.http4s" %% "http4s-ember-client" % "0.23.19" % Optional,
+      "org.http4s" %% "http4s-blaze-client" % "0.23.15" % Optional
     ),
     evictionErrorLevel := Level.Info
   )
@@ -918,7 +918,7 @@ lazy val openTelemetryTracingZio1Backend = (projectMatrix in file("observability
     name := "opentelemetry-tracing-zio1-backend",
     libraryDependencies ++= Seq(
       "dev.zio" %% "zio-opentelemetry" % "1.0.0",
-      "org.scala-lang.modules" %% "scala-collection-compat" % "2.9.0",
+      "org.scala-lang.modules" %% "scala-collection-compat" % "2.10.0",
       "io.opentelemetry" % "opentelemetry-sdk-testing" % openTelemetryVersion % Test
     ),
     scalaTest
@@ -945,7 +945,7 @@ lazy val scribeBackend = (projectMatrix in file("logging/scribe"))
   .settings(
     name := "scribe-backend",
     libraryDependencies ++= Seq(
-      "com.outr" %%% "scribe" % "3.11.1"
+      "com.outr" %%% "scribe" % "3.11.5"
     ),
     scalaTest
   )
@@ -1034,7 +1034,7 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
       "org.json4s" %% "json4s-native" % json4sVersion,
       "io.circe" %% "circe-generic" % circeVersion,
       "com.github.plokhotnyuk.jsoniter-scala" %% "jsoniter-scala-macros" % jsoniterVersion,
-      "commons-io" % "commons-io" % "2.11.0",
+      "commons-io" % "commons-io" % "2.12.0",
       "io.github.resilience4j" % "resilience4j-circuitbreaker" % resilience4jVersion,
       "io.github.resilience4j" % "resilience4j-ratelimiter" % resilience4jVersion,
       "io.jaegertracing" % "jaeger-client" % jeagerClientVersion,
