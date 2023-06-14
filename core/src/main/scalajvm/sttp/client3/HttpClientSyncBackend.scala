@@ -12,7 +12,7 @@ import sttp.ws.{WebSocket, WebSocketFrame}
 import java.io.{InputStream, UnsupportedEncodingException}
 import java.net.http.HttpRequest.BodyPublisher
 import java.net.http.HttpResponse.BodyHandlers
-import java.net.http.{HttpClient, HttpRequest}
+import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
 
 class HttpClientSyncBackend private (
@@ -28,12 +28,21 @@ class HttpClientSyncBackend private (
 
   override val streams: NoStreams = NoStreams
 
-  override def send[T, R >: PE](request: Request[T, R]): Identity[Response[T]] =
+  override def send[T, R >: PE](request: Request[T, R]): Identity[Response[T]] = {
+    val contentEncoding = "content-encoding"
+    println(s"request = $request")
     adjustExceptions(request) {
       val jRequest = customizeRequest(convertRequest(request))
-      val response = client.send(jRequest, BodyHandlers.ofInputStream())
-      readResponse(response, Left(response.body()), request)
+
+      //może jest jakiś sposób, żeby stąd wyrzucić ten header response.headers().firstValue(contentEncoding).filter(_.nonEmpty)
+      //albo stworzyć kopię bez tego headera
+      val response: HttpResponse[InputStream] = client.send(jRequest, BodyHandlers.ofInputStream())
+      readResponse(
+        response,
+        Left(response.body()),
+        request)  //<- ^ przekazywane tutaj
     }
+  }
 
   override def responseMonad: MonadError[Identity] = IdMonad
 
@@ -62,9 +71,18 @@ class HttpClientSyncBackend private (
     }
 
   override protected def standardEncoding: (InputStream, String) => InputStream = {
-    case (body, "gzip")    => new GZIPInputStream(body)
-    case (body, "deflate") => new InflaterInputStream(body)
-    case (_, ce)           => throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
+    case (body, "gzip")    => {
+      println("here?")
+      new GZIPInputStream(body)
+    }
+    case (body, "deflate") => {
+      println("there?")
+      new InflaterInputStream(body)
+    }
+    case (_, ce)           => {
+      println("test")
+      throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
+    }
   }
 }
 

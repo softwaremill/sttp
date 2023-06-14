@@ -16,6 +16,8 @@ import java.time.{Duration => JDuration}
 import java.util.concurrent.{Executor, ThreadPoolExecutor}
 import java.util.function
 import scala.collection.JavaConverters._
+import scala.collection.mutable
+import java.util
 
 /** @param closeClient
   *   If the executor underlying the client is a [[ThreadPoolExecutor]], should it be shutdown on [[close]].
@@ -75,9 +77,10 @@ abstract class HttpClientBackend[F[_], S, P, B](
       resBody: Either[B, WebSocket[F]],
       request: Request[T, R]
   ): F[Response[T]] = {
-    val headersMap = res.headers().map().asScala
+    val headersMap = filterEmptyContentEncoding(res.headers().map().asScala)
+
     val headers = headersMap.keySet
-      .flatMap(name => headersMap(name).asScala.map(Header(name, _)))
+      .flatMap(name => headersMap(name).map(Header(name, _)))
       .toList
 
     val code = StatusCode(res.statusCode())
@@ -98,6 +101,14 @@ abstract class HttpClientBackend[F[_], S, P, B](
     }
     val body = bodyFromHttpClient(decodedResBody, request.response, responseMetadata)
     responseMonad.map(body)(Response(_, code, "", headers, Nil, request.onlyMetadata))
+  }
+
+  private def filterEmptyContentEncoding(headersMap: mutable.Map[String, util.List[String]]): Map[String, List[String]] = {
+    val contentEncoding = "content-encoding"
+    headersMap
+      .filterKeys(_ != contentEncoding || !headersMap(contentEncoding).contains(""))
+      .mapValues(_.asScala.toList)
+      .toMap
   }
 
   protected def standardEncoding: (B, String) => B
