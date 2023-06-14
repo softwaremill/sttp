@@ -155,7 +155,7 @@ val zio2InteropRsVersion = "2.0.2"
 val sttpModelVersion = "1.5.5"
 val sttpSharedVersion = "1.3.13"
 
-val logback = "ch.qos.logback" % "logback-classic" % "1.4.7"
+val logback = "ch.qos.logback" % "logback-classic" % "1.4.8"
 
 val jeagerClientVersion = "1.8.1"
 val braveOpentracingVersion = "1.0.0"
