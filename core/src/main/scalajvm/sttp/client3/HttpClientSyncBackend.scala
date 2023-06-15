@@ -28,17 +28,12 @@ class HttpClientSyncBackend private (
 
   override val streams: NoStreams = NoStreams
 
-  override def send[T, R >: PE](request: Request[T, R]): Identity[Response[T]] = {
-//    val contentEncoding = "content-encoding"
-//    println(s"request = $request")
-// może jest jakiś sposób, żeby stąd wyrzucić ten header response.headers().firstValue(contentEncoding).filter(_.nonEmpty)
-//albo stworzyć kopię bez tego headera
+  override def send[T, R >: PE](request: Request[T, R]): Identity[Response[T]] =
     adjustExceptions(request) {
       val jRequest = customizeRequest(convertRequest(request))
       val response: HttpResponse[InputStream] = client.send(jRequest, BodyHandlers.ofInputStream())
       readResponse(response, Left(response.body()), request)
     }
-  }
 
   override def responseMonad: MonadError[Identity] = IdMonad
 
