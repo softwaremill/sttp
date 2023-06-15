@@ -283,8 +283,7 @@ class HttpURLConnectionBackend private (
     else
       is
 
-  private def wrapInput(contentEncoding: Option[String], is: InputStream): InputStream = {
-    println(contentEncoding)
+  private def wrapInput(contentEncoding: Option[String], is: InputStream): InputStream =
     contentEncoding.map(_.toLowerCase) match {
       case None                                                    => is
       case Some("gzip")                                            => new GZIPInputStream(is)
@@ -293,7 +292,6 @@ class HttpURLConnectionBackend private (
       case Some(ce) =>
         throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
     }
-  }
 
   private def adjustExceptions[T](request: Request[_, _])(t: => T): T =
     SttpClientException.adjustExceptions(responseMonad)(t)(
