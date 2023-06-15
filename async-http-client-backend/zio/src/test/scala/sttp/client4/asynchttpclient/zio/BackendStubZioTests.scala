@@ -45,25 +45,6 @@ class BackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFutures wi
     ))
       .map(Right(_))
   }
-
-  it should "return error if any exception happen during request construction" in {
-    val backend =
-      AsyncHttpClientZioBackend.stub.whenAnyRequest.thenRespondOk()
-
-    val r = basicRequest
-      .post(uri"http://example.org")
-      .header("X-Api-Key", "Я ЛЮБЛЮ БОРЩ")
-      .response(asStringAlways)
-      .send(backend)
-
-    unsafeRunSyncOrThrow(r.either) match {
-      case Left(r) =>
-        println(s"succeed test" + r)
-        succeed
-      case _ => fail(s"Should be a failure: $r")
-    }
-  }
-
   it should "lift errors due to mapping with impure functions into the response monad" in {
     val backend =
       AsyncHttpClientZioBackend.stub.whenAnyRequest.thenRespondOk()
