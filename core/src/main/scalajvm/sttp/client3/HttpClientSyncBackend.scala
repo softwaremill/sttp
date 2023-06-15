@@ -29,18 +29,14 @@ class HttpClientSyncBackend private (
   override val streams: NoStreams = NoStreams
 
   override def send[T, R >: PE](request: Request[T, R]): Identity[Response[T]] = {
-    val contentEncoding = "content-encoding"
-    println(s"request = $request")
+//    val contentEncoding = "content-encoding"
+//    println(s"request = $request")
+// może jest jakiś sposób, żeby stąd wyrzucić ten header response.headers().firstValue(contentEncoding).filter(_.nonEmpty)
+//albo stworzyć kopię bez tego headera
     adjustExceptions(request) {
       val jRequest = customizeRequest(convertRequest(request))
-
-      //może jest jakiś sposób, żeby stąd wyrzucić ten header response.headers().firstValue(contentEncoding).filter(_.nonEmpty)
-      //albo stworzyć kopię bez tego headera
       val response: HttpResponse[InputStream] = client.send(jRequest, BodyHandlers.ofInputStream())
-      readResponse(
-        response,
-        Left(response.body()),
-        request)  //<- ^ przekazywane tutaj
+      readResponse(response, Left(response.body()), request)
     }
   }
 
@@ -71,18 +67,9 @@ class HttpClientSyncBackend private (
     }
 
   override protected def standardEncoding: (InputStream, String) => InputStream = {
-    case (body, "gzip")    => {
-      println("here?")
-      new GZIPInputStream(body)
-    }
-    case (body, "deflate") => {
-      println("there?")
-      new InflaterInputStream(body)
-    }
-    case (_, ce)           => {
-      println("test")
-      throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
-    }
+    case (body, "gzip")    => new GZIPInputStream(body)
+    case (body, "deflate") => new InflaterInputStream(body)
+    case (_, ce)           => throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
   }
 }
 
