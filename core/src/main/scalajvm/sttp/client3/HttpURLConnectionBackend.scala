@@ -234,9 +234,11 @@ class HttpURLConnectionBackend private (
   ): Response[T] = {
     val headers = c.getHeaderFields.asScala.toVector
       .filter(_._1 != null)
+//      .filter { case(k, v) => k != HeaderNames.ContentEncoding || !v.contains("") } //<- here we can filter out empty contentEncoding
+      //      but it might be not necessary because the logic with header value
+      //      is invoked in initialization of contentEncoding
       .flatMap { case (k, vv) => vv.asScala.map(Header(k, _)) }
-    val contentEncoding = Option(c.getHeaderField(HeaderNames.ContentEncoding))
-
+    val contentEncoding = Option(c.getHeaderField(HeaderNames.ContentEncoding)).filter(_.nonEmpty)
     val code = StatusCode(c.getResponseCode)
     val wrappedIs =
       if (c.getRequestMethod != "HEAD" && !code.equals(StatusCode.NoContent) && !request.autoDecompressionDisabled) {
@@ -281,7 +283,8 @@ class HttpURLConnectionBackend private (
     else
       is
 
-  private def wrapInput(contentEncoding: Option[String], is: InputStream): InputStream =
+  private def wrapInput(contentEncoding: Option[String], is: InputStream): InputStream = {
+    println(contentEncoding)
     contentEncoding.map(_.toLowerCase) match {
       case None                                                    => is
       case Some("gzip")                                            => new GZIPInputStream(is)
@@ -290,6 +293,7 @@ class HttpURLConnectionBackend private (
       case Some(ce) =>
         throw new UnsupportedEncodingException(s"Unsupported encoding: $ce")
     }
+  }
 
   private def adjustExceptions[T](request: Request[_, _])(t: => T): T =
     SttpClientException.adjustExceptions(responseMonad)(t)(
