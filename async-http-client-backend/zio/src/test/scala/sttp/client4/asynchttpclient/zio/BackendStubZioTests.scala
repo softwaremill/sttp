@@ -45,6 +45,7 @@ class BackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFutures wi
     ))
       .map(Right(_))
   }
+
   it should "lift errors due to mapping with impure functions into the response monad" in {
     val backend =
       AsyncHttpClientZioBackend.stub.whenAnyRequest.thenRespondOk()
