@@ -12,7 +12,7 @@ import sttp.ws.{WebSocket, WebSocketFrame}
 import java.io.{InputStream, UnsupportedEncodingException}
 import java.net.http.HttpRequest.BodyPublisher
 import java.net.http.HttpResponse.BodyHandlers
-import java.net.http.{HttpClient, HttpRequest, HttpResponse}
+import java.net.http.{HttpClient, HttpRequest}
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
 
 class HttpClientSyncBackend private (
@@ -31,7 +31,7 @@ class HttpClientSyncBackend private (
   override def send[T, R >: PE](request: Request[T, R]): Identity[Response[T]] =
     adjustExceptions(request) {
       val jRequest = customizeRequest(convertRequest(request))
-      val response: HttpResponse[InputStream] = client.send(jRequest, BodyHandlers.ofInputStream())
+      val response = client.send(jRequest, BodyHandlers.ofInputStream())
       readResponse(response, Left(response.body()), request)
     }
 
