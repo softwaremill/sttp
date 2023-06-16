@@ -72,7 +72,7 @@ val commonJsSettings = commonSettings ++ Seq(
 
 val commonJsBackendSettings = JSDependenciesPlugin.projectSettings ++ List(
   jsDependencies ++= Seq(
-    "org.webjars.npm" % "spark-md5" % "3.0.0" % Test / "spark-md5.js" minified "spark-md5.min.js"
+    "org.webjars.npm" % "spark-md5" % "3.0.2" % Test / "spark-md5.js" minified "spark-md5.min.js"
   )
 )
 
