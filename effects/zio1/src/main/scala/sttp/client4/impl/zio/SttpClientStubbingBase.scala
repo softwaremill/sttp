@@ -5,7 +5,7 @@ import sttp.client4.testing._
 import sttp.client4._
 import sttp.model.StatusCode
 import sttp.monad.MonadError
-import zio.{Has, RIO, Ref, Tag, UIO, URIO, ZIO, ZLayer}
+import zio.{Has, RIO, Ref, Tag, UIO, URIO, ZLayer}
 import sttp.capabilities.WebSockets
 
 trait AbstractClientStubbing[R, P] {
@@ -94,9 +94,7 @@ trait StreamClientStubbing[R, P] extends AbstractClientStubbing[R, P] {
   def backendStub: StreamBackendStub[RIO[R, *], P] = StreamBackendStub(monad)
   def proxy(stub: Ref[StreamBackendStub[RIO[R, *], P]]): StreamBackend[RIO[R, *], P] = new StreamBackend[RIO[R, *], P] {
     def send[T](request: GenericRequest[T, P with Effect[RIO[R, *]]]): RIO[R, Response[T]] =
-      stub.get >>= (_.send(request).catchSomeDefect { case e: Exception =>
-        ZIO.fail(e)
-      })
+      stub.get >>= (_.send(request))
     def close(): RIO[R, Unit] =
       stub.get >>= (_.close())
 
@@ -115,9 +113,7 @@ trait WebSocketStreamClientStubbing[R, P] extends AbstractClientStubbing[R, P wi
       def send[T](
           request: GenericRequest[T, P with WebSockets with Effect[RIO[R, *]]]
       ): RIO[R, Response[T]] =
-        stub.get >>= (_.send(request).catchSomeDefect { case e: Exception =>
-          ZIO.fail(e)
-        })
+        stub.get >>= (_.send(request))
       def close(): RIO[R, Unit] =
         stub.get >>= (_.close())
 

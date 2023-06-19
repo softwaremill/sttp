@@ -24,9 +24,7 @@ private abstract class ExtendedEnvBackend[R0, R1, P](delegate: GenericBackend[RI
         monad,
         delegate.monad
       )
-      resp <- delegate.send(mappedRequest).catchSomeDefect { case e: Exception =>
-        ZIO.fail(e)
-      }
+      resp <- delegate.send(mappedRequest)
     } yield resp
 
   override def close(): RIO[R0 with R1, Unit] = delegate.close()
