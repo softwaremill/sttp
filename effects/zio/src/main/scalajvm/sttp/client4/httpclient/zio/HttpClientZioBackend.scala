@@ -63,6 +63,7 @@ class HttpClientZioBackend private (
       override val streams: ZioStreams = ZioStreams
       override implicit def monad: MonadError[Task] = self.monad
       override def streamToPublisher(stream: ZStream[Any, Throwable, Byte]): Task[BodyPublisher] = {
+        import _root_.zio.interop.reactivestreams.{streamToPublisher => zioStreamToPublisher}
         val publisher = stream.mapChunks(byteChunk => Chunk(ByteBuffer.wrap(byteChunk.toArray))).toPublisher
         publisher.map { pub =>
           BodyPublishers.fromPublisher(FlowAdapters.toFlowPublisher(pub))
