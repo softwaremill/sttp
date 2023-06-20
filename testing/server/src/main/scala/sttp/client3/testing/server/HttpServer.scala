@@ -12,7 +12,7 @@ import akka.http.scaladsl.model.ws.{BinaryMessage, Message, TextMessage}
 import akka.http.scaladsl.server.Directives.{entity, path, _}
 import akka.http.scaladsl.server.directives.Credentials
 import akka.http.scaladsl.server.directives.RouteDirectives.complete
-import akka.http.scaladsl.server.{RejectionHandler, Route}
+import akka.http.scaladsl.server.{Directive0, RejectionHandler, Route}
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import akka.util.ByteString
 import akka.{Done, NotUsed}
@@ -488,7 +488,17 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
             )
           }
         }
+    } ~ path("empty_content_encoding") {
+      get {
+        respondWithHeader(RawHeader("Content-Encoding", "")) {
+          complete("OK")
+        }
+      }
     }
+
+  def includeEmptyContentEncodingHeader: Directive0 = mapResponseHeaders { headers =>
+    headers :+ RawHeader("Content-Encoding", "")
+  }
 
   def discardEntity(inner: Route): Route = {
     extractRequest { request =>
