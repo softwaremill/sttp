@@ -106,7 +106,7 @@ abstract class HttpClientBackend[F[_], S, P, B](
   private def filterEmptyContentEncoding(headersMap: mutable.Map[String, util.List[String]]): Map[String, List[String]] = {
     val contentEncoding = "content-encoding"
     headersMap
-      .filterKeys(_ != contentEncoding || !headersMap(contentEncoding).contains(""))
+      .filterNot(header => header._1 == contentEncoding && header._2.contains(""))
       .mapValues(_.asScala.toList)
       .toMap
   }
