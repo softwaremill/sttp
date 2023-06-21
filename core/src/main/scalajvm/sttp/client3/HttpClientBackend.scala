@@ -77,7 +77,7 @@ abstract class HttpClientBackend[F[_], S, P, B](
   ): F[Response[T]] = {
     val headersMap = res.headers().map().asScala
 
-    val headers: List[Header] = headersMap.keySet
+    val headers = headersMap.keySet
       .flatMap(name => headersMap(name).asScala.map(Header(name, _)))
       .toList
 
