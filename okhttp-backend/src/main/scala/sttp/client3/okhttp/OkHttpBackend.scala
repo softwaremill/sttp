@@ -4,7 +4,15 @@ import java.io.{InputStream, UnsupportedEncodingException}
 import java.util.concurrent.TimeUnit
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
 import okhttp3.internal.http.HttpMethod
-import okhttp3.{Authenticator, Credentials, OkHttpClient, Route, Request => OkHttpRequest, RequestBody => OkHttpRequestBody, Response => OkHttpResponse}
+import okhttp3.{
+  Authenticator,
+  Credentials,
+  OkHttpClient,
+  Route,
+  Request => OkHttpRequest,
+  RequestBody => OkHttpRequestBody,
+  Response => OkHttpResponse
+}
 import sttp.capabilities.{Effect, Streams}
 import sttp.client3.SttpBackendOptions.Proxy
 import sttp.client3.SttpClientException.ReadException

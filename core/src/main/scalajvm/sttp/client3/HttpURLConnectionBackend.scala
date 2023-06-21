@@ -234,9 +234,6 @@ class HttpURLConnectionBackend private (
   ): Response[T] = {
     val headers = c.getHeaderFields.asScala.toVector
       .filter(_._1 != null)
-//      .filter { case(k, v) => k != HeaderNames.ContentEncoding || !v.contains("") } //<- here we can filter out empty contentEncoding
-      //      but it might be not necessary because the logic with header value
-      //      is invoked in initialization of contentEncoding
       .flatMap { case (k, vv) => vv.asScala.map(Header(k, _)) }
     val contentEncoding = Option(c.getHeaderField(HeaderNames.ContentEncoding)).filter(_.nonEmpty)
     val code = StatusCode(c.getResponseCode)

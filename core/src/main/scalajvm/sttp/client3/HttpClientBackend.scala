@@ -103,7 +103,9 @@ abstract class HttpClientBackend[F[_], S, P, B](
     responseMonad.map(body)(Response(_, code, "", headers, Nil, request.onlyMetadata))
   }
 
-  private def filterEmptyContentEncoding(headersMap: mutable.Map[String, util.List[String]]): Map[String, List[String]] = {
+  private def filterEmptyContentEncoding(
+      headersMap: mutable.Map[String, util.List[String]]
+  ): Map[String, List[String]] = {
     val contentEncoding = "content-encoding"
     headersMap
       .filterNot(header => header._1 == contentEncoding && header._2.contains(""))
