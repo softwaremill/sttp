@@ -76,7 +76,6 @@ abstract class HttpClientBackend[F[_], S, P, B](
       request: Request[T, R]
   ): F[Response[T]] = {
     val headersMap = res.headers().map().asScala
-
     val headers = headersMap.keySet
       .flatMap(name => headersMap(name).asScala.map(Header(name, _)))
       .toList
@@ -85,7 +84,6 @@ abstract class HttpClientBackend[F[_], S, P, B](
     val responseMetadata = ResponseMetadata(code, "", headers)
 
     val encoding = headers.collectFirst { case h if h.is(HeaderNames.ContentEncoding) => h.value }
-
     val method = Method(res.request().method())
     val decodedResBody = if (method != Method.HEAD) {
       resBody.left

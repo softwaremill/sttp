@@ -6,7 +6,7 @@ import org.scalatest.matchers.should.Matchers
 import sttp.client3.internal.{Iso88591, Utf8}
 import sttp.client3.testing.HttpTest.endpoint
 import sttp.client3.{Response, ResponseAs, SttpBackend, _}
-import sttp.model.{HeaderNames, MediaType, StatusCode}
+import sttp.model.StatusCode
 import sttp.monad.MonadError
 import sttp.monad.syntax._
 
