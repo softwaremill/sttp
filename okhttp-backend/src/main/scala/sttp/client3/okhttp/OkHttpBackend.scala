@@ -19,7 +19,6 @@ import sttp.client3.SttpClientException.ReadException
 import sttp.client3.internal.ws.SimpleQueue
 import sttp.client3.okhttp.OkHttpBackend.EncodingHandler
 import sttp.client3.{Response, SttpBackend, SttpBackendOptions, _}
-import sttp.model.HeaderNames.ContentEncoding
 import sttp.model._
 
 import scala.collection.JavaConverters._
@@ -88,6 +87,7 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
           .equals(StatusCode.NoContent.code) && !request.autoDecompressionDisabled
       ) {
         encoding
+          .filterNot(_.isEmpty)
           .map(e =>
             customEncodingHandler // There is no PartialFunction.fromFunction in scala 2.12
               .orElse(EncodingHandler(standardEncoding))(res.body().byteStream() -> e)
@@ -107,7 +107,6 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
       .names()
       .asScala
       .flatMap(name => res.headers().values(name).asScala.map(Header(name, _)))
-      .filterNot(header => header.name == ContentEncoding && header.value.isEmpty)
       .toList
   }
 
