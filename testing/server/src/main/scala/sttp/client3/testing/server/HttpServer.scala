@@ -496,10 +496,6 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
       }
     }
 
-  def includeEmptyContentEncodingHeader: Directive0 = mapResponseHeaders { headers =>
-    headers :+ RawHeader("Content-Encoding", "")
-  }
-
   def discardEntity(inner: Route): Route = {
     extractRequest { request =>
       onComplete(request.entity.discardBytes().future()) { _ =>
