@@ -4,21 +4,14 @@ import java.io.{InputStream, UnsupportedEncodingException}
 import java.util.concurrent.TimeUnit
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
 import okhttp3.internal.http.HttpMethod
-import okhttp3.{
-  Authenticator,
-  Credentials,
-  OkHttpClient,
-  Route,
-  Request => OkHttpRequest,
-  RequestBody => OkHttpRequestBody,
-  Response => OkHttpResponse
-}
+import okhttp3.{Authenticator, Credentials, OkHttpClient, Route, Request => OkHttpRequest, RequestBody => OkHttpRequestBody, Response => OkHttpResponse}
 import sttp.capabilities.{Effect, Streams}
 import sttp.client3.SttpBackendOptions.Proxy
 import sttp.client3.SttpClientException.ReadException
 import sttp.client3.internal.ws.SimpleQueue
 import sttp.client3.okhttp.OkHttpBackend.EncodingHandler
 import sttp.client3.{Response, SttpBackend, SttpBackendOptions, _}
+import sttp.model.HeaderNames.ContentEncoding
 import sttp.model._
 
 import scala.collection.JavaConverters._
@@ -106,6 +99,7 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
       .names()
       .asScala
       .flatMap(name => res.headers().values(name).asScala.map(Header(name, _)))
+      .filterNot(header => header.name == ContentEncoding && header.value.isEmpty)
       .toList
   }
 
