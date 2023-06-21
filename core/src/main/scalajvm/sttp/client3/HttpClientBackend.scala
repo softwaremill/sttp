@@ -16,8 +16,6 @@ import java.time.{Duration => JDuration}
 import java.util.concurrent.{Executor, ThreadPoolExecutor}
 import java.util.function
 import scala.collection.JavaConverters._
-import scala.collection.mutable
-import java.util
 
 /** @param closeClient
   *   If the executor underlying the client is a [[ThreadPoolExecutor]], should it be shutdown on [[close]].
@@ -77,22 +75,24 @@ abstract class HttpClientBackend[F[_], S, P, B](
       resBody: Either[B, WebSocket[F]],
       request: Request[T, R]
   ): F[Response[T]] = {
-    val headersMap = filterEmptyContentEncoding(res.headers().map().asScala)
+    val headersMap = res.headers().map().asScala
 
-    val headers = headersMap.keySet
-      .flatMap(name => headersMap(name).map(Header(name, _)))
+    val headers: List[Header] = headersMap.keySet
+      .flatMap(name => headersMap(name).asScala.map(Header(name, _)))
       .toList
 
     val code = StatusCode(res.statusCode())
     val responseMetadata = ResponseMetadata(code, "", headers)
 
     val encoding = headers.collectFirst { case h if h.is(HeaderNames.ContentEncoding) => h.value }
+
+    println(encoding)
     val method = Method(res.request().method())
     val decodedResBody = if (method != Method.HEAD) {
       resBody.left
         .map { is =>
           encoding
-            .filterNot(_ => code.equals(StatusCode.NoContent) || request.autoDecompressionDisabled)
+            .filterNot(e => code.equals(StatusCode.NoContent) || request.autoDecompressionDisabled || e.isEmpty)
             .map(e => customEncodingHandler.applyOrElse((is, e), standardEncoding.tupled))
             .getOrElse(is)
         }
@@ -101,16 +101,6 @@ abstract class HttpClientBackend[F[_], S, P, B](
     }
     val body = bodyFromHttpClient(decodedResBody, request.response, responseMetadata)
     responseMonad.map(body)(Response(_, code, "", headers, Nil, request.onlyMetadata))
-  }
-
-  private def filterEmptyContentEncoding(
-      headersMap: mutable.Map[String, util.List[String]]
-  ): Map[String, List[String]] = {
-    val contentEncoding = "content-encoding"
-    headersMap
-      .filterNot(header => header._1 == contentEncoding && header._2.contains(""))
-      .mapValues(_.asScala.toList)
-      .toMap
   }
 
   protected def standardEncoding: (B, String) => B
