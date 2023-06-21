@@ -86,7 +86,6 @@ abstract class HttpClientBackend[F[_], S, P, B](
 
     val encoding = headers.collectFirst { case h if h.is(HeaderNames.ContentEncoding) => h.value }
 
-    println(encoding)
     val method = Method(res.request().method())
     val decodedResBody = if (method != Method.HEAD) {
       resBody.left
