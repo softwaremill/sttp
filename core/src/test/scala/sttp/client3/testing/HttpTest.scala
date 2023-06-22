@@ -57,6 +57,7 @@ trait HttpTest[F[_]]
   protected def supportsCancellation = true
   protected def supportsAutoDecompressionDisabling = true
   protected def supportsDeflateWrapperChecking = true
+  protected def supportsEmptyContentEncoding = true
 
   "request parsing" - {
     "Inf timeout should not throw exception" in {
@@ -690,6 +691,16 @@ trait HttpTest[F[_]]
             }
         )
       }
+    }
+  }
+
+  if (supportsEmptyContentEncoding) {
+    "a request process correctly" in {
+      val req = basicRequest
+        .get(uri"$endpoint/empty_content_encoding")
+        .response(asString)
+
+      Future(req.send(backend)).flatMap(_.toFuture()).map(_.code shouldBe StatusCode.Ok)
     }
   }
 

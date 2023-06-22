@@ -22,5 +22,6 @@ class ArmeriaMonixHttpTest extends HttpTest[Task] {
   override def supportsHostHeaderOverride = false
   override def supportsAutoDecompressionDisabling = false
   override def supportsDeflateWrapperChecking = false // armeria hangs
+  override def supportsEmptyContentEncoding = false
 
 }

@@ -89,7 +89,7 @@ abstract class HttpClientBackend[F[_], S, P, B](
       resBody.left
         .map { is =>
           encoding
-            .filterNot(_ => code.equals(StatusCode.NoContent) || request.autoDecompressionDisabled)
+            .filterNot(e => code.equals(StatusCode.NoContent) || request.autoDecompressionDisabled || e.isEmpty)
             .map(e => customEncodingHandler.applyOrElse((is, e), standardEncoding.tupled))
             .getOrElse(is)
         }

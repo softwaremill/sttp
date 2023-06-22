@@ -7,6 +7,7 @@ import sttp.client3._
 import sttp.client3.impl.zio.ExtendEnv
 
 package object zio {
+
   /** Type alias to be used as the sttp ZIO service (mainly in ZIO environment). */
   type SttpClient = SttpBackend[Task, ZioStreams with WebSockets]
 
