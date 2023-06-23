@@ -79,4 +79,21 @@ class BackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFutures wi
       case _                              => fail(s"Should be a failure: $r")
     }
   }
+
+  it should "throw an exception instead of ZIO defect if the header value is invalid" in {
+
+    val backend = for {
+      backend <- HttpClientZioBackend.scoped()
+      _ <- basicRequest
+        .get(uri"https://example.com")
+        .header("X-Api-Key", " Я ЛЮБЛЮ БОРЩ")
+        .response(asString)
+        .send(backend)
+    } yield ()
+
+    backend.catchSomeCause {
+      case c if c.defects.nonEmpty => fail("Defect occurred during the operation")
+      case _                       => ZIO.succeed("No defects occurred during the operation")
+    }
+  }
 }

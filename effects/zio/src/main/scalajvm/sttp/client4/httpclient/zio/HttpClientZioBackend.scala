@@ -11,7 +11,7 @@ import sttp.client4.internal.httpclient.{BodyFromHttpClient, BodyToHttpClient, S
 import sttp.client4.internal.ws.SimpleQueue
 import sttp.client4.testing.WebSocketStreamBackendStub
 import sttp.client4.wrappers.FollowRedirectsBackend
-import sttp.client4.{wrappers, BackendOptions, WebSocketStreamBackend}
+import sttp.client4.{BackendOptions, GenericRequest, Response, WebSocketStreamBackend, wrappers}
 import sttp.monad.MonadError
 import zio.Chunk.ByteArray
 import zio._
@@ -70,6 +70,9 @@ class HttpClientZioBackend private (
         }
       }
     }
+
+  override def send[T](request: GenericRequest[T, R]): Task[Response[T]] =
+    super.send(request).resurrect
 
   override protected val bodyFromHttpClient: BodyFromHttpClient[Task, ZioStreams, ZioStreams.BinaryStream] =
     new ZioBodyFromHttpClient
