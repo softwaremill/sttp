@@ -80,7 +80,7 @@ class BackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFutures wi
     }
   }
 
-  it should "throw an exception instead of ZIO defect if the header value is inappropriate" in {
+  it should "throw an exception instead of ZIO defect if the header value is invalid" in {
 
     val backend = for {
       backend <- HttpClientZioBackend.scoped()
