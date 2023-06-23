@@ -30,6 +30,9 @@ trait GenericRequest[+T, -R] extends RequestBuilder[GenericRequest[T, R]] with R
 
   def toCurl: String = ToCurlConverter(this)
   def toCurl(sensitiveHeaders: Set[String]): String = ToCurlConverter(this, sensitiveHeaders)
+  def toCurl(omitAcceptEncoding: Boolean): String = ToCurlConverter(this, omitAcceptEncoding)
+  def toCurl(sensitiveHeaders: Set[String], omitAcceptEncoding: Boolean): String =
+    ToCurlConverter(this, sensitiveHeaders, omitAcceptEncoding)
 
   def toRfc2616Format: String = ToRfc2616Converter.requestToRfc2616(this)
   def toRfc2616Format(sensitiveHeaders: Set[String]): String =
