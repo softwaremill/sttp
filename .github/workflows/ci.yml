@@ -49,7 +49,7 @@ jobs:
     - name: Test
       uses: nick-fields/retry@v2
       with:
-        timeout_minutes: 45
+        timeout_minutes: 20
         max_attempts: 3
         command: sbt -v "testScoped ${{ matrix.scala-version }} ${{ matrix.target-platform }}"
     - name: Prepare release notes
