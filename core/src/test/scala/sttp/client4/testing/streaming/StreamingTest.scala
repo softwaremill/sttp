@@ -194,7 +194,7 @@ abstract class StreamingTest[F[_], S]
     implicit val monadError: MonadError[Future] = new FutureMonad
 
     def retryImmediatelyOnError[A](action: => Future[A], retriesLeft: Int): Future[A] =
-      action.handleError { error =>
+      action.handleError { case error =>
         new Exception(s"Error in ${getClass.getSimpleName}, retries left = $retriesLeft", error).printStackTrace
         if (retriesLeft > 1)
           retryImmediatelyOnError(action, retriesLeft - 1)
