@@ -57,7 +57,10 @@ class ToCurlConverterTest extends AnyFlatSpec with Matchers with ToCurlConverter
     )
   }
   it should "hide Accept-Encoding header when asked when converting request with custom sensitive header" in {
-    basicRequest.header("X-Auth", "xyzabc").get(localhost).toCurl(Set("X-Auth"), omitAcceptEncoding = true) shouldNot include(
+    basicRequest
+      .header("X-Auth", "xyzabc")
+      .get(localhost)
+      .toCurl(Set("X-Auth"), omitAcceptEncoding = true) shouldNot include(
       """--header 'Accept-Encoding: """
     )
   }
