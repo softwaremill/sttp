@@ -25,6 +25,6 @@ class HttpClientZioHttpTest extends HttpTest[Task] with ZioTestBase {
       case _                       => ZIO.succeed("No defects occurred during the operation")
     }
 
-    resultTask.toFuture().map(_ => succeed)
+    convertToFuture.toFuture(resultTask).map(_ => succeed)
   }
 }
