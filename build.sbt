@@ -11,7 +11,7 @@ import com.softwaremill.SbtSoftwareMillBrowserTestJS._
 val scala2_12 = "2.12.18"
 val scala2_13 = "2.13.11"
 val scala2 = List(scala2_12, scala2_13)
-val scala3 = List("3.2.2")
+val scala3 = List("3.3.0")
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests")
@@ -152,7 +152,7 @@ val zio2Version = "2.0.14"
 val zio1InteropRsVersion = "1.3.12"
 val zio2InteropRsVersion = "2.0.2"
 
-val sttpModelVersion = "1.5.5"
+val sttpModelVersion = "1.6.0"
 val sttpSharedVersion = "1.3.13"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.4.8"
