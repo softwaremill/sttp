@@ -11,7 +11,7 @@ import sttp.client4.internal.httpclient.{BodyFromHttpClient, BodyToHttpClient, S
 import sttp.client4.internal.ws.SimpleQueue
 import sttp.client4.testing.WebSocketStreamBackendStub
 import sttp.client4.wrappers.FollowRedirectsBackend
-import sttp.client4.{BackendOptions, GenericRequest, Response, WebSocketStreamBackend, wrappers}
+import sttp.client4.{wrappers, BackendOptions, GenericRequest, Response, WebSocketStreamBackend}
 import sttp.monad.MonadError
 import zio.Chunk.ByteArray
 import zio._
