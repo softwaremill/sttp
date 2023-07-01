@@ -5,13 +5,20 @@ import sttp.model._
 
 object ToCurlConverter {
 
-  def apply(request: GenericRequest[_, _]): String = apply(request, HeaderNames.SensitiveHeaders)
+  def apply(request: GenericRequest[_, _]): String =
+    apply(request, HeaderNames.SensitiveHeaders, omitAcceptEncoding = false)
 
-  def apply(request: GenericRequest[_, _], sensitiveHeaders: Set[String]): String = {
+  def apply(request: GenericRequest[_, _], omitAcceptEncoding: Boolean): String =
+    apply(request, HeaderNames.SensitiveHeaders, omitAcceptEncoding = omitAcceptEncoding)
+
+  def apply(request: GenericRequest[_, _], sensitiveHeaders: Set[String]): String =
+    apply(request, sensitiveHeaders, omitAcceptEncoding = false)
+
+  def apply(request: GenericRequest[_, _], sensitiveHeaders: Set[String], omitAcceptEncoding: Boolean): String = {
     val params = List(
       extractMethod(_),
       extractUrl(_),
-      (r: GenericRequest[_, _]) => extractHeaders(r, sensitiveHeaders),
+      extractHeaders(sensitiveHeaders, omitAcceptEncoding)(_),
       extractBody(_),
       extractOptions(_)
     )
@@ -28,10 +35,15 @@ object ToCurlConverter {
   private def extractUrl(r: GenericRequest[_, _]): String =
     s"--url '${r.uri}'"
 
-  private def extractHeaders(r: GenericRequest[_, _], sensitiveHeaders: Set[String]): String =
-    r.headers
-      // filtering out compression headers so that the results are human-readable, if possible
-      .filterNot(_.name.equalsIgnoreCase(HeaderNames.AcceptEncoding))
+  private def extractHeaders(sensitiveHeaders: Set[String], omitAcceptEncoding: Boolean)(
+      r: GenericRequest[_, _]
+  ): String =
+    (if (!omitAcceptEncoding) {
+       r.headers
+     } else {
+       // filtering out compression headers so that the results are human-readable, if possible
+       r.headers.filterNot(_.name.equalsIgnoreCase(HeaderNames.AcceptEncoding))
+     })
       .map(h => s"--header '${h.toStringSafe(sensitiveHeaders)}'")
       .mkString(newline)
 

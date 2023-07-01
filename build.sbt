@@ -8,10 +8,10 @@ import complete.DefaultParsers._
 // run JS tests inside Chrome, due to jsdom not supporting fetch
 import com.softwaremill.SbtSoftwareMillBrowserTestJS._
 
-val scala2_12 = "2.12.17"
-val scala2_13 = "2.13.10"
+val scala2_12 = "2.12.18"
+val scala2_13 = "2.13.11"
 val scala2 = List(scala2_12, scala2_13)
-val scala3 = List("3.2.2")
+val scala3 = List("3.3.0")
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests")
@@ -72,7 +72,7 @@ val commonJsSettings = commonSettings ++ Seq(
 
 val commonJsBackendSettings = JSDependenciesPlugin.projectSettings ++ List(
   jsDependencies ++= Seq(
-    "org.webjars.npm" % "spark-md5" % "3.0.0" % Test / "spark-md5.js" minified "spark-md5.min.js"
+    "org.webjars.npm" % "spark-md5" % "3.0.2" % Test / "spark-md5.js" minified "spark-md5.min.js"
   )
 )
 
@@ -121,13 +121,13 @@ val testServerSettings = Seq(
 
 val circeVersion: String = "0.14.5"
 
-val jsoniterVersion = "2.23.0"
+val jsoniterVersion = "2.23.2"
 
 val playJsonVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.7.4"
   case _             => "2.9.2"
 }
-val catsEffect_3_version = "3.5.0"
+val catsEffect_3_version = "3.5.1"
 val fs2_3_version = "3.7.0"
 
 val catsEffect_2_version: Option[(Long, Long)] => String = {
@@ -148,23 +148,23 @@ val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", 
 )
 
 val zio1Version = "1.0.17"
-val zio2Version = "2.0.14"
+val zio2Version = "2.0.15"
 val zio1InteropRsVersion = "1.3.12"
 val zio2InteropRsVersion = "2.0.2"
 
-val sttpModelVersion = "1.5.5"
+val sttpModelVersion = "1.6.0"
 val sttpSharedVersion = "1.3.13"
 
-val logback = "ch.qos.logback" % "logback-classic" % "1.4.7"
+val logback = "ch.qos.logback" % "logback-classic" % "1.4.8"
 
 val jeagerClientVersion = "1.8.1"
 val braveOpentracingVersion = "1.0.0"
 val zipkinSenderOkHttpVersion = "2.16.4"
 val resilience4jVersion = "2.0.2"
 val http4s_ce2_version = "0.22.15"
-val http4s_ce3_version = "0.23.19"
+val http4s_ce3_version = "0.23.22"
 
-val openTelemetryVersion = "1.26.0"
+val openTelemetryVersion = "1.27.0"
 
 val compileAndTest = "compile->compile;test->test"
 
@@ -659,7 +659,7 @@ lazy val http4sBackend = (projectMatrix in file("http4s-backend"))
     name := "http4s-backend",
     libraryDependencies ++= Seq(
       "org.http4s" %% "http4s-client" % http4s_ce3_version,
-      "org.http4s" %% "http4s-ember-client" % "0.23.19" % Optional,
+      "org.http4s" %% "http4s-ember-client" % "0.23.22" % Optional,
       "org.http4s" %% "http4s-blaze-client" % "0.23.15" % Optional
     ),
     evictionErrorLevel := Level.Info
@@ -685,7 +685,7 @@ lazy val armeriaBackend = (projectMatrix in file("armeria-backend"))
   .settings(testServerSettings)
   .settings(
     name := "armeria-backend",
-    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.23.1"
+    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.24.0"
   )
   .jvmPlatform(scalaVersions = scala2 ++ scala3)
   .dependsOn(core % compileAndTest)
@@ -831,7 +831,7 @@ lazy val upickle = (projectMatrix in file("json/upickle"))
   .settings(
     name := "upickle",
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %%% "upickle" % "3.0.0"
+      "com.lihaoyi" %%% "upickle" % "3.1.0"
     ),
     scalaTest,
     // using macroRW causes a "match may not be exhaustive" error
@@ -918,7 +918,7 @@ lazy val openTelemetryTracingZio1Backend = (projectMatrix in file("observability
     name := "opentelemetry-tracing-zio1-backend",
     libraryDependencies ++= Seq(
       "dev.zio" %% "zio-opentelemetry" % "1.0.0",
-      "org.scala-lang.modules" %% "scala-collection-compat" % "2.10.0",
+      "org.scala-lang.modules" %% "scala-collection-compat" % "2.11.0",
       "io.opentelemetry" % "opentelemetry-sdk-testing" % openTelemetryVersion % Test
     ),
     scalaTest
@@ -1034,7 +1034,7 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
       "org.json4s" %% "json4s-native" % json4sVersion,
       "io.circe" %% "circe-generic" % circeVersion,
       "com.github.plokhotnyuk.jsoniter-scala" %% "jsoniter-scala-macros" % jsoniterVersion,
-      "commons-io" % "commons-io" % "2.12.0",
+      "commons-io" % "commons-io" % "2.13.0",
       "io.github.resilience4j" % "resilience4j-circuitbreaker" % resilience4jVersion,
       "io.github.resilience4j" % "resilience4j-ratelimiter" % resilience4jVersion,
       "io.jaegertracing" % "jaeger-client" % jeagerClientVersion,
