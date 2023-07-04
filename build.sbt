@@ -147,11 +147,10 @@ val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", 
   "org.scalatest" %%% s"scalatest-$m" % "3.2.16" % Test
 )
 
-val zio1Version = "1.0.17"
+val zio1Version = "1.0.18"
 val zio2Version = "2.0.14"
 val zio1InteropRsVersion = "1.3.12"
 val zio2InteropRsVersion = "2.0.2"
-
 
 val sttpModelVersion = "1.6.0"
 val sttpSharedVersion = "1.3.15"
@@ -217,7 +216,6 @@ lazy val allAggregates = projectsWithOptionalNative ++
   playJson.projectRefs ++
   prometheusBackend.projectRefs ++
   openTelemetryMetricsBackend.projectRefs ++
-  openTelemetryTracingZio1Backend.projectRefs ++
   openTelemetryTracingZioBackend.projectRefs ++
   finagleBackend.projectRefs ++
   armeriaBackend.projectRefs ++
@@ -911,21 +909,6 @@ lazy val openTelemetryMetricsBackend = (projectMatrix in file("observability/ope
     scalaTest
   )
   .jvmPlatform(scalaVersions = scala2 ++ scala3)
-  .dependsOn(core)
-
-lazy val openTelemetryTracingZio1Backend = (projectMatrix in file("observability/opentelemetry-tracing-zio1-backend"))
-  .settings(commonJvmSettings)
-  .settings(
-    name := "opentelemetry-tracing-zio1-backend",
-    libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-opentelemetry" % "1.0.0",
-      "org.scala-lang.modules" %% "scala-collection-compat" % "2.10.0",
-      "io.opentelemetry" % "opentelemetry-sdk-testing" % openTelemetryVersion % Test
-    ),
-    scalaTest
-  )
-  .jvmPlatform(scalaVersions = scala2 ++ scala3)
-  .dependsOn(zio1 % compileAndTest)
   .dependsOn(core)
 
 lazy val openTelemetryTracingZioBackend = (projectMatrix in file("observability/opentelemetry-tracing-zio-backend"))
