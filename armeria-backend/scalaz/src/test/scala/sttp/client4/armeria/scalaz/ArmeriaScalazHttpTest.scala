@@ -14,6 +14,7 @@ class ArmeriaScalazHttpTest extends HttpTest[Task] {
   override def supportsCancellation = false
   override def supportsAutoDecompressionDisabling = false
   override def supportsDeflateWrapperChecking = false // armeria hangs
+  override def supportsEmptyContentEncoding = false
 
   override def timeoutToNone[T](t: Task[T], timeoutMillis: Int): Task[Option[T]] = t.map(Some(_))
 }
