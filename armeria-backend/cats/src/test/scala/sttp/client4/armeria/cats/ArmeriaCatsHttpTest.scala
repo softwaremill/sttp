@@ -20,4 +20,5 @@ class ArmeriaCatsHttpTest extends HttpTest[IO] with CatsRetryTest with CatsTestB
   override def supportsCancellation = false
   override def supportsAutoDecompressionDisabling = false
   override def supportsDeflateWrapperChecking = false // armeria hangs
+  override def supportsEmptyContentEncoding = false
 }

@@ -121,7 +121,7 @@ val testServerSettings = Seq(
 
 val circeVersion: String = "0.14.5"
 
-val jsoniterVersion = "2.23.0"
+val jsoniterVersion = "2.23.2"
 
 val playJsonVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.7.4"
@@ -148,7 +148,7 @@ val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", 
 )
 
 val zio1Version = "1.0.18"
-val zio2Version = "2.0.14"
+val zio2Version = "2.0.15"
 val zio1InteropRsVersion = "1.3.12"
 val zio2InteropRsVersion = "2.0.2"
 
@@ -162,7 +162,7 @@ val braveOpentracingVersion = "1.0.0"
 val zipkinSenderOkHttpVersion = "2.16.4"
 val resilience4jVersion = "2.0.2"
 val http4s_ce2_version = "0.22.15"
-val http4s_ce3_version = "0.23.19"
+val http4s_ce3_version = "0.23.22"
 
 val openTelemetryVersion = "1.27.0"
 
@@ -658,7 +658,7 @@ lazy val http4sBackend = (projectMatrix in file("http4s-backend"))
     name := "http4s-backend",
     libraryDependencies ++= Seq(
       "org.http4s" %% "http4s-client" % http4s_ce3_version,
-      "org.http4s" %% "http4s-ember-client" % "0.23.19" % Optional,
+      "org.http4s" %% "http4s-ember-client" % "0.23.22" % Optional,
       "org.http4s" %% "http4s-blaze-client" % "0.23.15" % Optional
     ),
     evictionErrorLevel := Level.Info
@@ -830,7 +830,7 @@ lazy val upickle = (projectMatrix in file("json/upickle"))
   .settings(
     name := "upickle",
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %%% "upickle" % "3.0.0"
+      "com.lihaoyi" %%% "upickle" % "3.1.0"
     ),
     scalaTest,
     // using macroRW causes a "match may not be exhaustive" error
