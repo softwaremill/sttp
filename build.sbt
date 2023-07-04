@@ -129,8 +129,8 @@ val playJsonVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.7.4"
   case _             => "2.9.2"
 }
-val catsEffect_3_version = "3.4.8"
-val fs2_3_version = "3.6.1"
+val catsEffect_3_version = "3.5.0"
+val fs2_3_version = "3.7.0"
 
 val catsEffect_2_version: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.0.0"
@@ -164,7 +164,7 @@ val braveOpentracingVersion = "1.0.0"
 val zipkinSenderOkHttpVersion = "2.16.3"
 val resilience4jVersion = "2.0.2"
 val http4s_ce2_version = "0.22.15"
-val http4s_ce3_version = "0.23.18"
+val http4s_ce3_version = "0.23.19"
 
 val openTelemetryVersion = "1.23.1"
 
