@@ -129,7 +129,7 @@ val playJsonVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.7.4"
   case _             => "2.9.2"
 }
-val catsEffect_3_version = "3.5.1"
+val catsEffect_3_version = "3.5.0"
 val fs2_3_version = "3.7.0"
 
 val catsEffect_2_version: Option[(Long, Long)] => String = {
@@ -676,7 +676,7 @@ lazy val http4sBackend = (projectMatrix in file("http4s-backend"))
     libraryDependencies ++= Seq(
       "org.http4s" %% "http4s-client" % http4s_ce3_version,
       "org.http4s" %% "http4s-ember-client" % "0.23.13" % Optional,
-      "org.http4s" %% "http4s-blaze-client" % "0.23.13" % Optional,
+      "org.http4s" %% "http4s-blaze-client" % "0.23.13" % Optional
     ),
     evictionErrorLevel := Level.Info
   )
