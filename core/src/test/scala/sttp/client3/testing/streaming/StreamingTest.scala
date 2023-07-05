@@ -1,6 +1,6 @@
 package sttp.client3.testing.streaming
 
-import org.scalatest.BeforeAndAfterAll
+import org.scalatest.{ Assertion, BeforeAndAfterAll }
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
 import sttp.capabilities.Streams
