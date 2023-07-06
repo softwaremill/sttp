@@ -3,7 +3,7 @@
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "prometheus-backend" % "3.8.15"
+"com.softwaremill.sttp.client3" %% "prometheus-backend" % "3.8.16"
 ```
 
 and some imports:
