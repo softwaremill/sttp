@@ -221,6 +221,7 @@ abstract class StreamingTest[F[_], S]
 
         urlRegex.findAllIn(responseBody).length shouldBe numChunks
       }
+    // Repeating, because this request to a real https endpoint of httpbin occasionally fails
     retryImmediatelyOnError(runTest, retriesLeft = 5)
   }
 
