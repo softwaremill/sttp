@@ -68,8 +68,9 @@ basicRequest.get(uri"http://httpbin.org/ip").toCurl
 // res1: String = """curl \
 //   --request GET \
 //   --url 'http://httpbin.org/ip' \
+//   --header 'Accept-Encoding: gzip, deflate' \
 //   --location \
 //   --max-redirs 32"""
 ```
 
-Note that the `Accept-Encoding` header, which is added by default to all requests (`Accept-Encoding: gzip, deflate`) is filtered out from the generated command, so that when running a request from the command line, the result has higher chance of being human-readable, and not compressed.
+Note that the `Accept-Encoding` header, which is added by default to all requests (`Accept-Encoding: gzip, deflate`), can make curl warn that _binary output can mess up your terminal_, when running generated command from the command line. It can be omitted by setting `omitAcceptEncoding = true` when calling `.toCurl` method.
