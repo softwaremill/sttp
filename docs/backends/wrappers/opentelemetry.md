@@ -2,13 +2,13 @@
 
 Currently the following OpenTelemetry features are supported:
 
-* metrics using `OpenTelemetryMetricsBackend`, wrapping any other backend
-* tracing using `OpenTelemetryTracingZioBackend`, wrapping any ZIO1/ZIO2 backend
-* tracing using [trace4cats](https://github.com/trace4cats/trace4cats), wrapping a cats-effect backend
+- metrics using `OpenTelemetryMetricsBackend`, wrapping any other backend
+- tracing using `OpenTelemetryTracingZioBackend`, wrapping any ZIO2 backend
+- tracing using [trace4cats](https://github.com/trace4cats/trace4cats), wrapping a cats-effect backend
 
 ### Metrics
 
-The backend depends only on [opentelemetry-api](https://github.com/open-telemetry/opentelemetry-java). To use add the 
+The backend depends only on [opentelemetry-api](https://github.com/open-telemetry/opentelemetry-java). To use add the
 following dependency to your project:
 
 ```
@@ -24,7 +24,7 @@ import sttp.client3.opentelemetry._
 import io.opentelemetry.api.OpenTelemetry
 
 // any effect and capabilities are supported
-val sttpBackend: SttpBackend[Future, Any] = ??? 
+val sttpBackend: SttpBackend[Future, Any] = ???
 val openTelemetry: OpenTelemetry = ???
 
 OpenTelemetryMetricsBackend(sttpBackend, openTelemetry)
@@ -38,7 +38,7 @@ import sttp.client3._
 import sttp.client3.opentelemetry._
 import io.opentelemetry.api.OpenTelemetry
 
-val sttpBackend: SttpBackend[Future, Any] = ??? 
+val sttpBackend: SttpBackend[Future, Any] = ???
 val openTelemetry: OpenTelemetry = ???
 
 OpenTelemetryMetricsBackend(
@@ -50,11 +50,10 @@ OpenTelemetryMetricsBackend(
 
 ### Tracing (ZIO)
 
-To use, add the following dependency to your project (the `zio-*` modules depend on ZIO 2.x; for ZIO 1.x support, use `zio1-*`):
+To use, add the following dependency to your project:
 
 ```
 "com.softwaremill.sttp.client3" %% "opentelemetry-tracing-zio-backend" % "@VERSION@"  // for ZIO 2.x
-"com.softwaremill.sttp.client3" %% "opentelemetry-tracing-zio1-backend" % "@VERSION@" // for ZIO 1.x
 ```
 
 This backend depends on [zio-opentelemetry](https://github.com/zio/zio-telemetry).

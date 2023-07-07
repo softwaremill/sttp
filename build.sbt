@@ -13,7 +13,7 @@ val scala2_12 = "2.12.17"
 val scala2_13 = "2.13.10"
 val scala2 = List(scala2_11, scala2_12, scala2_13)
 val scala2alive = List(scala2_12, scala2_13)
-val scala3 = List("3.2.2")
+val scala3 = List("3.3.0")
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests")
@@ -149,13 +149,13 @@ val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", 
   "org.scalatest" %%% s"scalatest-$m" % "3.2.15" % Test
 )
 
-val zio1Version = "1.0.17"
+val zio1Version = "1.0.18"
 val zio2Version = "2.0.10"
 val zio1InteropRsVersion = "1.3.12"
 val zio2InteropRsVersion = "2.0.1"
 
 val sttpModelVersion = "1.5.5"
-val sttpSharedVersion = "1.3.13"
+val sttpSharedVersion = "1.3.15"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.4.5"
 
@@ -219,7 +219,6 @@ lazy val allAggregates = projectsWithOptionalNative ++
   playJson.projectRefs ++
   prometheusBackend.projectRefs ++
   openTelemetryMetricsBackend.projectRefs ++
-  openTelemetryTracingZio1Backend.projectRefs ++
   openTelemetryTracingZioBackend.projectRefs ++
   finagleBackend.projectRefs ++
   armeriaBackend.projectRefs ++
@@ -938,21 +937,6 @@ lazy val openTelemetryMetricsBackend = (projectMatrix in file("observability/ope
     scalaTest
   )
   .jvmPlatform(scalaVersions = scala2alive ++ scala3)
-  .dependsOn(core)
-
-lazy val openTelemetryTracingZio1Backend = (projectMatrix in file("observability/opentelemetry-tracing-zio1-backend"))
-  .settings(commonJvmSettings)
-  .settings(
-    name := "opentelemetry-tracing-zio1-backend",
-    libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-opentelemetry" % "1.0.0",
-      "org.scala-lang.modules" %% "scala-collection-compat" % "2.9.0",
-      "io.opentelemetry" % "opentelemetry-sdk-testing" % openTelemetryVersion % Test
-    ),
-    scalaTest
-  )
-  .jvmPlatform(scalaVersions = scala2alive ++ scala3)
-  .dependsOn(zio1 % compileAndTest)
   .dependsOn(core)
 
 lazy val openTelemetryTracingZioBackend = (projectMatrix in file("observability/opentelemetry-tracing-zio-backend"))
