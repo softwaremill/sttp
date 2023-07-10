@@ -322,6 +322,16 @@ trait HttpTest[F[_]]
           }
       }
     }
+
+    if (supportsEmptyContentEncoding) {
+      "a request process correctly" in {
+        val req = basicRequest
+          .get(uri"$endpoint/empty_content_encoding")
+          .response(asString)
+
+        Future(req.send(backend)).flatMap(_.toFuture()).map(_.code shouldBe StatusCode.Ok)
+      }
+    }
   }
 
   "errors" - {
