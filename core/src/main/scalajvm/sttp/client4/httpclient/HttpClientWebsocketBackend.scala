@@ -6,7 +6,16 @@ import sttp.client4.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client4.internal.httpclient.{BodyFromHttpClient, BodyToHttpClient}
 import sttp.client4.internal.ws.SimpleQueue
 import sttp.client4.monad.IdMonad
-import sttp.client4.{Backend, BackendOptions, GenericBackend, GenericRequest, Identity, MultipartBody, Response, SttpClientException}
+import sttp.client4.{
+  Backend,
+  BackendOptions,
+  GenericBackend,
+  GenericRequest,
+  Identity,
+  MultipartBody,
+  Response,
+  SttpClientException
+}
 import sttp.model.HttpVersion.{HTTP_1_1, HTTP_2}
 import sttp.model._
 import sttp.monad.MonadError
@@ -23,7 +32,7 @@ import scala.collection.JavaConverters._
 /** @param closeClient
   *   If the executor underlying the client is a [[ThreadPoolExecutor]], should it be shutdown on [[close]].
   */
-abstract class HttpClientBackend2[F[_], S <: Streams[S], P, B](
+abstract class HttpClientWebsocketBackend[F[_], S <: Streams[S], P, B](
     client: HttpClient,
     closeClient: Boolean,
     customEncodingHandler: EncodingHandler[B]
@@ -33,15 +42,10 @@ abstract class HttpClientBackend2[F[_], S <: Streams[S], P, B](
 
   type R = P with Effect[F]
 
-  override def send[T](request: GenericRequest[T, R]): F[Response[T]] = {
+  override def send[T](request: GenericRequest[T, R]): F[Response[T]] =
     adjustExceptions(request) {
-      if (request.isWebSocket) {
-        sendWebSocket(request)
-      } else {
-        sendRegular(request)
-      }
+      if (request.isWebSocket) sendWebSocket(request) else sendRegular(request)
     }
-  }
 
   protected def sendRegular[T](request: GenericRequest[T, R]): F[Response[T]]
 
@@ -144,7 +148,7 @@ abstract class HttpClientBackend2[F[_], S <: Streams[S], P, B](
     }
 }
 
-object HttpClientBackend2 {
+object HttpClientWebsocketBackend {
 
   type EncodingHandler[B] = PartialFunction[(B, String), B]
   // TODO not sure if it works
