@@ -43,7 +43,7 @@ class HttpClientWebsocketSyncBackend private (
       customEncodingHandler
     )
     with WebSocketBackend[Identity] {
-  implicit val ec = ExecutionContext.global
+  private implicit val ec: ExecutionContext = ExecutionContext.global
   override val streams: NoStreams = NoStreams
 
   override def monad: MonadError[Identity] = IdMonad
