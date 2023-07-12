@@ -1,6 +1,5 @@
 package sttp.client4.internal.httpclient
 
-import sttp.client4.internal._
 import sttp.client4.internal.ws.{SimpleQueue, WebSocketEvent}
 import sttp.model.Headers
 import sttp.monad.syntax._
@@ -11,7 +10,7 @@ import java.net.http.{WebSocket => JWebSocket}
 import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.CompletableFuture
-import scala.util.{Failure, Success, Try}
+import scala.util.Try
 
 private[client4] class WebSocketSyncImpl[F[_]](
     ws: JWebSocket,
@@ -61,9 +60,6 @@ private[client4] class WebSocketSyncImpl[F[_]](
 
   private def fromCompletableFutureBlocking(cf: CompletableFuture[JWebSocket]): F[Unit] =
     monad.suspend {
-      Try(cf.get()) match {
-        case Success(_)         => ().unit
-        case Failure(exception) => monad.error(exception)
-      }
+      Try(cf.get()).fold(monad.error, _ => monad.unit(()))
     }
 }

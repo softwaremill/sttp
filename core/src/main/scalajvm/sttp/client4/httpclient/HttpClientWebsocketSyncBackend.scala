@@ -3,7 +3,7 @@ package sttp.client4.httpclient
 import sttp.capabilities.WebSockets
 import sttp.client4.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client4.httpclient.HttpClientSyncBackend.SyncEncodingHandler
-import sttp.client4.internal.NoStreams
+import sttp.client4.internal.{emptyInputStream, NoStreams}
 import sttp.client4.internal.SttpToJavaConverters.toJavaFunction
 import sttp.client4.internal.httpclient.{
   AddToQueueListener,
@@ -17,13 +17,6 @@ import sttp.client4.internal.ws.{SimpleQueue, SyncQueue, WebSocketEvent}
 import sttp.client4.monad.IdMonad
 import sttp.client4.testing.SyncBackendStub
 import sttp.client4.{wrappers, BackendOptions, GenericRequest, Identity, Response, WebSocketBackend}
-import sttp.model.HeaderNames.{
-  SecWebSocketAccept,
-  SecWebSocketExtensions,
-  SecWebSocketKey,
-  SecWebSocketProtocol,
-  SecWebSocketVersion
-}
 import sttp.model.{HeaderNames, StatusCode}
 import sttp.monad.MonadError
 import sttp.monad.syntax._
@@ -32,11 +25,12 @@ import sttp.ws.{WebSocket, WebSocketFrame}
 import java.io.{InputStream, UnsupportedEncodingException}
 import java.net.http.HttpRequest.BodyPublisher
 import java.net.http.HttpResponse.BodyHandlers
-import java.net.http.{HttpClient, HttpRequest}
+import java.net.http.{HttpClient, HttpRequest, WebSocketHandshakeException}
 import java.time.Duration
-import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.{ArrayBlockingQueue, CompletionException}
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
+import scala.concurrent.{blocking, Await, ExecutionContext, Future}
 
 class HttpClientWebsocketSyncBackend private (
     client: HttpClient,
@@ -49,8 +43,10 @@ class HttpClientWebsocketSyncBackend private (
       customEncodingHandler
     )
     with WebSocketBackend[Identity] {
-
+  implicit val ec = ExecutionContext.global
   override val streams: NoStreams = NoStreams
+
+  override def monad: MonadError[Identity] = IdMonad
 
   override protected def sendRegular[T](request: GenericRequest[T, R]): Identity[Response[T]] = {
     val jRequest = customizeRequest(convertRequest(request))
@@ -60,8 +56,14 @@ class HttpClientWebsocketSyncBackend private (
 
   override protected def sendWebSocket[T](request: GenericRequest[T, R]): Identity[Response[T]] = {
     val queue = createSimpleQueue[WebSocketEvent]
-    sendWebSocket(request, queue)
-
+    sendWebSocket(request, queue).handleError {
+      case e: CompletionException if e.getCause.isInstanceOf[WebSocketHandshakeException] =>
+        readResponse(
+          e.getCause.asInstanceOf[WebSocketHandshakeException].getResponse,
+          Left(emptyInputStream()),
+          request
+        )
+    }(monad)
   }
 
   private def sendWebSocket[T](
@@ -69,17 +71,16 @@ class HttpClientWebsocketSyncBackend private (
       queue: SimpleQueue[Identity, WebSocketEvent]
   ): Identity[Response[T]] = {
     val isOpen: AtomicBoolean = new AtomicBoolean(false)
-    val responseCell = new ArrayBlockingQueue[Either[Throwable, Response[T]]](5)
+    val responseCell = new ArrayBlockingQueue[Either[Throwable, Future[Response[T]]]](5)
     def fillCellError(t: Throwable): Unit = responseCell.add(Left(t))
-    def fillCell(wr: Response[T]): Unit = responseCell.add(Right(wr))
-
+    def fillCell(wr: Future[Response[T]]): Unit = responseCell.add(Right(wr))
     val listener = new DelegatingWebSocketListener(
       new AddToQueueListener(queue, isOpen),
       ws => {
         val webSocket = new WebSocketSyncImpl[Identity](ws, queue, isOpen, monad)
         val baseResponse = Response((), StatusCode.SwitchingProtocols, "", Nil, Nil, request.onlyMetadata)
-        val body = bodyFromHttpClient(Right(webSocket), request.response, baseResponse)
-        val wsResponse = baseResponse.copy(body = body)
+        val body = Future(blocking(bodyFromHttpClient(Right(webSocket), request.response, baseResponse)))
+        val wsResponse = body.map(b => baseResponse.copy(body = b))
         fillCell(wsResponse)
       },
       fillCellError
@@ -103,12 +104,11 @@ class HttpClientWebsocketSyncBackend private (
     wsBuilder
       .buildAsync(request.uri.toJavaUri, listener)
       .get()
-
-    responseCell.take().fold(throw _, identity)
+    val response = responseCell.take().fold(throw _, identity)
+    Await.result(response, scala.concurrent.duration.Duration.Inf)
   }
 
   override protected def createSimpleQueue[T]: Identity[SimpleQueue[Identity, T]] = new SyncQueue[T](None)
-  override def monad: MonadError[Identity] = IdMonad
 
   override protected val bodyToHttpClient: BodyToHttpClient[Identity, Nothing] =
     new BodyToHttpClient[Identity, Nothing] {
