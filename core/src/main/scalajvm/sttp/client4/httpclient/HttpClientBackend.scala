@@ -4,7 +4,16 @@ import sttp.capabilities.{Effect, Streams}
 import sttp.client4.BackendOptions.Proxy
 import sttp.client4.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client4.internal.httpclient.{BodyFromHttpClient, BodyToHttpClient}
-import sttp.client4.{Backend, BackendOptions, GenericBackend, GenericRequest, MultipartBody, Response}
+import sttp.client4.internal.ws.SimpleQueue
+import sttp.client4.{
+  Backend,
+  BackendOptions,
+  GenericBackend,
+  GenericRequest,
+  MultipartBody,
+  Response,
+  SttpClientException
+}
 import sttp.model.HttpVersion.{HTTP_1_1, HTTP_2}
 import sttp.model._
 import sttp.monad.MonadError
@@ -21,7 +30,7 @@ import scala.collection.JavaConverters._
 /** @param closeClient
   *   If the executor underlying the client is a [[ThreadPoolExecutor]], should it be shutdown on [[close]].
   */
-abstract class HttpClientBackend[F[_], S, P, B](
+abstract class HttpClientBackend[F[_], S <: Streams[S], P, B](
     client: HttpClient,
     closeClient: Boolean,
     customEncodingHandler: EncodingHandler[B]
@@ -30,6 +39,20 @@ abstract class HttpClientBackend[F[_], S, P, B](
   val streams: Streams[S]
 
   type R = P with Effect[F]
+
+  override def send[T](request: GenericRequest[T, R]): F[Response[T]] =
+    adjustExceptions(request) {
+      if (request.isWebSocket) sendWebSocket(request) else sendRegular(request)
+    }
+
+  protected def sendRegular[T](request: GenericRequest[T, R]): F[Response[T]]
+
+  protected def sendWebSocket[T](request: GenericRequest[T, R]): F[Response[T]]
+
+  private def adjustExceptions[T](request: GenericRequest[_, _])(t: => F[T]): F[T] =
+    SttpClientException.adjustExceptions(monad)(t)(
+      SttpClientException.defaultExceptionToSttpClientException(request, _)
+    )
 
   protected def bodyToHttpClient: BodyToHttpClient[F, S]
   protected def bodyFromHttpClient: BodyFromHttpClient[F, S, B]
@@ -103,8 +126,21 @@ abstract class HttpClientBackend[F[_], S, P, B](
     monad.map(body)(Response(_, code, "", headers, Nil, request.onlyMetadata))
   }
 
+  protected def createSimpleQueue[T]: F[SimpleQueue[F, T]]
+
   protected def standardEncoding: (B, String) => B
 
+  private[client4] def filterIllegalWsHeaders[T](request: GenericRequest[T, R]): GenericRequest[T, R] =
+    request.withHeaders(request.headers.filter(h => !wsIllegalHeaders.contains(h.name.toLowerCase)))
+
+  // these headers can't be sent using HttpClient; the SecWebSocketProtocol is supported through a builder method,
+  // the resit is ignored
+  private[client4] lazy val wsIllegalHeaders: Set[String] = {
+    import HeaderNames._
+    Set(SecWebSocketAccept, SecWebSocketExtensions, SecWebSocketKey, SecWebSocketVersion, SecWebSocketProtocol).map(
+      _.toLowerCase
+    )
+  }
   override def close(): F[Unit] =
     if (closeClient) {
       monad.eval(

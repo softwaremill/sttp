@@ -1,11 +1,11 @@
 package sttp.client4.httpclient
 
-import sttp.capabilities.WebSockets
+import sttp.capabilities.{Streams, WebSockets}
 import sttp.client4.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client4.internal.SttpToJavaConverters.{toJavaBiConsumer, toJavaFunction}
 import sttp.client4.internal.httpclient.{AddToQueueListener, DelegatingWebSocketListener, Sequencer, WebSocketImpl}
 import sttp.client4.internal.ws.{SimpleQueue, WebSocketEvent}
-import sttp.client4.{GenericRequest, Response, SttpClientException, WebSocketBackend}
+import sttp.client4.{GenericRequest, Response, WebSocketBackend}
 import sttp.model.{HeaderNames, StatusCode}
 import sttp.monad.syntax._
 import sttp.monad.{Canceler, MonadAsyncError}
@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicBoolean
   *   The higher-level body to which `BH` is transformed (e.g. a backend-native stream representation), which then is
   *   used to read the body as described by `responseAs`.
   */
-abstract class HttpClientAsyncBackend[F[_], S, BH, B](
+abstract class HttpClientAsyncBackend[F[_], S <: Streams[S], BH, B](
     client: HttpClient,
     override implicit val monad: MonadAsyncError[F],
     closeClient: Boolean,
@@ -34,18 +34,13 @@ abstract class HttpClientAsyncBackend[F[_], S, BH, B](
 ) extends HttpClientBackend[F, S, S with WebSockets, B](client, closeClient, customEncodingHandler)
     with WebSocketBackend[F] {
 
-  override def send[T](request: GenericRequest[T, R]): F[Response[T]] =
-    adjustExceptions(request) {
-      if (request.isWebSocket) sendWebSocket(request) else sendRegular(request)
-    }
-
   protected def createBodyHandler: HttpResponse.BodyHandler[BH]
   protected def createSimpleQueue[T]: F[SimpleQueue[F, T]]
   protected def createSequencer: F[Sequencer[F]]
   protected def bodyHandlerBodyToBody(p: BH): B
   protected def emptyBody(): B
 
-  private def sendRegular[T](request: GenericRequest[T, R]): F[Response[T]] =
+  override def sendRegular[T](request: GenericRequest[T, R]): F[Response[T]] =
     monad.flatMap(convertRequest(request)) { convertedRequest =>
       val jRequest = customizeRequest(convertedRequest)
 
@@ -75,7 +70,7 @@ abstract class HttpClientAsyncBackend[F[_], S, BH, B](
       })
     }
 
-  private def sendWebSocket[T](request: GenericRequest[T, R]): F[Response[T]] =
+  override def sendWebSocket[T](request: GenericRequest[T, R]): F[Response[T]] =
     (for {
       queue <- createSimpleQueue[WebSocketEvent]
       sequencer <- createSequencer
@@ -132,22 +127,5 @@ abstract class HttpClientAsyncBackend[F[_], S, BH, B](
         .exceptionally(toJavaFunction((t: Throwable) => cb(Left(t))))
       Canceler(() => cf.cancel(true))
     })
-  }
-
-  private def filterIllegalWsHeaders[T](request: GenericRequest[T, R]): GenericRequest[T, R] =
-    request.withHeaders(request.headers.filter(h => !wsIllegalHeaders.contains(h.name.toLowerCase)))
-
-  private def adjustExceptions[T](request: GenericRequest[_, _])(t: => F[T]): F[T] =
-    SttpClientException.adjustExceptions(monad)(t)(
-      SttpClientException.defaultExceptionToSttpClientException(request, _)
-    )
-
-  // these headers can't be sent using HttpClient; the SecWebSocketProtocol is supported through a builder method,
-  // the resit is ignored
-  private val wsIllegalHeaders: Set[String] = {
-    import HeaderNames._
-    Set(SecWebSocketAccept, SecWebSocketExtensions, SecWebSocketKey, SecWebSocketVersion, SecWebSocketProtocol).map(
-      _.toLowerCase
-    )
   }
 }

@@ -14,7 +14,7 @@ object LogRequestsSlf4j extends App {
     .get(uri"https://httpbin.org/get")
     .response(asJson[HttpBinResponse].getRight)
 
-  val backend: SyncBackend =
+  val backend: WebSocketBackend[Identity] =
     Slf4jLoggingBackend(
       HttpClientSyncBackend(),
       LogConfig(
