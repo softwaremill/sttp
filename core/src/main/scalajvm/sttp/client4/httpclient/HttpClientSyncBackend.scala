@@ -16,14 +16,7 @@ import sttp.client4.internal.httpclient.{
 import sttp.client4.internal.ws.{SimpleQueue, SyncQueue, WebSocketEvent}
 import sttp.client4.monad.IdMonad
 import sttp.client4.testing.WebSocketBackendStub
-import sttp.client4.{
-  wrappers,
-  BackendOptions,
-  GenericRequest,
-  Identity,
-  Response,
-  WebSocketBackend
-}
+import sttp.client4.{wrappers, BackendOptions, GenericRequest, Identity, Response, WebSocketBackend}
 import sttp.model.{HeaderNames, StatusCode}
 import sttp.monad.MonadError
 import sttp.monad.syntax.MonadErrorOps
