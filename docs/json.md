@@ -46,7 +46,7 @@ Response can be parsed into json using `asJson[T]`, provided there's an implicit
 import sttp.client4._
 import sttp.client4.circe._
 
-val backend: SyncBackend = DefaultSyncBackend()
+val backend: WebSocketBackend[Identity] = DefaultSyncBackend()
 
 import io.circe.generic.auto._
 val requestPayload = RequestPayload("some data")
@@ -80,7 +80,7 @@ Usage example:
 import sttp.client4._
 import sttp.client4.json4s._
 
-val backend: SyncBackend = DefaultSyncBackend()
+val backend: WebSocketBackend[Identity] = DefaultSyncBackend()
 
 val requestPayload = RequestPayload("some data")
 
@@ -112,7 +112,7 @@ import sttp.client4._
 import sttp.client4.sprayJson._
 import spray.json._
 
-val backend: SyncBackend = DefaultSyncBackend()
+val backend: WebSocketBackend[Identity] = DefaultSyncBackend()
 
 implicit val payloadJsonFormat: RootJsonFormat[RequestPayload] = ???
 implicit val myResponseJsonFormat: RootJsonFormat[ResponsePayload] = ???
@@ -163,7 +163,7 @@ import sttp.client4._
 import sttp.client4.ziojson._
 import zio.json._
 
-val backend: SyncBackend = DefaultSyncBackend()
+val backend: WebSocketBackend[Identity] = DefaultSyncBackend()
 
 implicit val payloadJsonEncoder: JsonEncoder[RequestPayload] = DeriveJsonEncoder.gen[RequestPayload]
 implicit val myResponseJsonDecoder: JsonDecoder[ResponsePayload] = DeriveJsonDecoder.gen[ResponsePayload]
@@ -203,7 +203,7 @@ import sttp.client4.jsoniter._
 import com.github.plokhotnyuk.jsoniter_scala.core._
 import com.github.plokhotnyuk.jsoniter_scala.macros._
 
-val backend: SyncBackend = DefaultSyncBackend()
+val backend: WebSocketBackend[Identity] = DefaultSyncBackend()
 
 implicit val payloadJsonCodec: JsonValueCodec[RequestPayload] = JsonCodecMaker.make
 //note that the jsoniter doesn't support 'implicit defs' and so either has to be generated seperatly
@@ -240,7 +240,7 @@ import sttp.client4._
 import sttp.client4.upicklejson._
 import upickle.default._
 
-val backend: SyncBackend = DefaultSyncBackend()
+val backend: WebSocketBackend[Identity] = DefaultSyncBackend()
 
 implicit val requestPayloadRW: ReadWriter[RequestPayload] = macroRW[RequestPayload]
 implicit val responsePayloadRW: ReadWriter[ResponsePayload] = macroRW[ResponsePayload]

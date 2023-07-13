@@ -36,8 +36,8 @@ You can disable the stripping of all sensitive headers using the following code:
 import sttp.client4._
 import sttp.client4.wrappers.{FollowRedirectsBackend, FollowRedirectsConfig}
 
-val myBackend: SyncBackend = DefaultSyncBackend()
-val backend: SyncBackend  = FollowRedirectsBackend(
+val myBackend: WebSocketBackend[Identity] = DefaultSyncBackend()
+val backend: WebSocketBackend[Identity]  = FollowRedirectsBackend(
   delegate = myBackend, 
   FollowRedirectsConfig(
     sensitiveHeaders = Set.empty
@@ -52,8 +52,8 @@ import sttp.client4._
 import sttp.model._
 import sttp.client4.wrappers.{FollowRedirectsBackend, FollowRedirectsConfig}
 
-val myBackend: SyncBackend = DefaultSyncBackend()
-val backend: SyncBackend = FollowRedirectsBackend(
+val myBackend: WebSocketBackend[Identity] = DefaultSyncBackend()
+val backend: WebSocketBackend[Identity] = FollowRedirectsBackend(
   delegate = myBackend,
   FollowRedirectsConfig(
     sensitiveHeaders = HeaderNames.SensitiveHeaders.filterNot(_ == HeaderNames.Authorization.toLowerCase)
@@ -104,8 +104,8 @@ import sttp.client4._
 import sttp.client4.wrappers.{FollowRedirectsBackend, FollowRedirectsConfig}
 import sttp.model.Uri.QuerySegmentEncoding
 
-val myBackend: SyncBackend = DefaultSyncBackend()
-val backend: SyncBackend  = FollowRedirectsBackend(
+val myBackend: WebSocketBackend[Identity] = DefaultSyncBackend()
+val backend: WebSocketBackend[Identity]  = FollowRedirectsBackend(
   delegate = myBackend,
   FollowRedirectsConfig(
     // encodes all special characters in the query segment, including the allowed ones
