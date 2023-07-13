@@ -11,7 +11,7 @@ import sttp.client4.internal.httpclient.{
   BodyToHttpClient,
   DelegatingWebSocketListener,
   InputStreamBodyFromHttpClient,
-  WebSocketSyncImpl
+  WebSocketImpl
 }
 import sttp.client4.internal.ws.{SimpleQueue, SyncQueue, WebSocketEvent}
 import sttp.client4.monad.IdMonad
@@ -79,7 +79,7 @@ class HttpClientSyncBackend private (
     val listener = new DelegatingWebSocketListener(
       new AddToQueueListener(queue, isOpen),
       ws => {
-        val webSocket = new WebSocketSyncImpl[Identity](ws, queue, isOpen, monad)
+        val webSocket = WebSocketImpl.sync[Identity](ws, queue, isOpen, monad)
         val baseResponse = Response((), StatusCode.SwitchingProtocols, "", Nil, Nil, request.onlyMetadata)
         val body = Future(blocking(bodyFromHttpClient(Right(webSocket), request.response, baseResponse)))
         val wsResponse = body.map(b => baseResponse.copy(body = b))

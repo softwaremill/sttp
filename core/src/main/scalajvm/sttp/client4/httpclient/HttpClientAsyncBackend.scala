@@ -97,7 +97,7 @@ abstract class HttpClientAsyncBackend[F[_], S <: Streams[S], BH, B](
       val listener = new DelegatingWebSocketListener(
         new AddToQueueListener(queue, isOpen),
         ws => {
-          val webSocket = new WebSocketImpl[F](ws, queue, isOpen, monad, sequencer)
+          val webSocket = WebSocketImpl.async[F](ws, queue, isOpen, monad, sequencer)
           val baseResponse = Response((), StatusCode.SwitchingProtocols, "", Nil, Nil, request.onlyMetadata)
           val body = bodyFromHttpClient(Right(webSocket), request.response, baseResponse)
           success(body.map(b => baseResponse.copy(body = b)))
