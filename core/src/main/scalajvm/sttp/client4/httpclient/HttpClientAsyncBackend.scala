@@ -6,12 +6,11 @@ import sttp.client4.internal.SttpToJavaConverters.{toJavaBiConsumer, toJavaFunct
 import sttp.client4.internal.httpclient.{AddToQueueListener, DelegatingWebSocketListener, Sequencer, WebSocketImpl}
 import sttp.client4.internal.ws.{SimpleQueue, WebSocketEvent}
 import sttp.client4.{GenericRequest, Response, WebSocketBackend}
-import sttp.model.{HeaderNames, StatusCode}
+import sttp.model.StatusCode
 import sttp.monad.syntax._
 import sttp.monad.{Canceler, MonadAsyncError}
 
 import java.net.http._
-import java.time.Duration
 import java.util.concurrent.CompletionException
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -105,23 +104,7 @@ abstract class HttpClientAsyncBackend[F[_], S <: Streams[S], BH, B](
         error
       )
 
-      val wsSubProtocols = request.headers
-        .find(_.is(HeaderNames.SecWebSocketProtocol))
-        .map(_.value)
-        .toSeq
-        .flatMap(_.split(","))
-        .map(_.trim)
-        .toList
-      val wsBuilder = wsSubProtocols match {
-        case Nil          => client.newWebSocketBuilder()
-        case head :: Nil  => client.newWebSocketBuilder().subprotocols(head)
-        case head :: tail => client.newWebSocketBuilder().subprotocols(head, tail: _*)
-      }
-      client
-        .connectTimeout()
-        .map[java.net.http.WebSocket.Builder](toJavaFunction((d: Duration) => wsBuilder.connectTimeout(d)))
-      filterIllegalWsHeaders(request).headers.foreach(h => wsBuilder.header(h.name, h.value))
-      val cf = wsBuilder
+      val cf = prepareWebSocketBuilder(request, client)
         .buildAsync(request.uri.toJavaUri, listener)
         .thenApply[Unit](toJavaFunction((_: WebSocket) => ()))
         .exceptionally(toJavaFunction((t: Throwable) => cb(Left(t))))

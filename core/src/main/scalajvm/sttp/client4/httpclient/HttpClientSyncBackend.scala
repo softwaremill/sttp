@@ -4,7 +4,6 @@ import sttp.capabilities.WebSockets
 import sttp.client4.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client4.httpclient.HttpClientSyncBackend.SyncEncodingHandler
 import sttp.client4.internal.{emptyInputStream, NoStreams}
-import sttp.client4.internal.SttpToJavaConverters.toJavaFunction
 import sttp.client4.internal.httpclient.{
   AddToQueueListener,
   BodyFromHttpClient,
@@ -17,7 +16,7 @@ import sttp.client4.internal.ws.{SimpleQueue, SyncQueue, WebSocketEvent}
 import sttp.client4.monad.IdMonad
 import sttp.client4.testing.WebSocketBackendStub
 import sttp.client4.{wrappers, BackendOptions, GenericRequest, Identity, Response, WebSocketBackend}
-import sttp.model.{HeaderNames, StatusCode}
+import sttp.model.StatusCode
 import sttp.monad.MonadError
 import sttp.monad.syntax.MonadErrorOps
 import sttp.ws.{WebSocket, WebSocketFrame}
@@ -26,7 +25,6 @@ import java.io.{InputStream, UnsupportedEncodingException}
 import java.net.http.HttpRequest.BodyPublisher
 import java.net.http.HttpResponse.BodyHandlers
 import java.net.http.{HttpClient, HttpRequest, WebSocketHandshakeException}
-import java.time.Duration
 import java.util.concurrent.{ArrayBlockingQueue, CompletionException}
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
@@ -87,23 +85,7 @@ class HttpClientSyncBackend private (
       },
       fillCellError
     )
-    val wsSubProtocols = request.headers
-      .find(_.is(HeaderNames.SecWebSocketProtocol))
-      .map(_.value)
-      .toSeq
-      .flatMap(_.split(","))
-      .map(_.trim)
-      .toList
-    val wsBuilder = wsSubProtocols match {
-      case Nil          => client.newWebSocketBuilder()
-      case head :: Nil  => client.newWebSocketBuilder().subprotocols(head)
-      case head :: tail => client.newWebSocketBuilder().subprotocols(head, tail: _*)
-    }
-    client
-      .connectTimeout()
-      .map[java.net.http.WebSocket.Builder](toJavaFunction((d: Duration) => wsBuilder.connectTimeout(d)))
-    filterIllegalWsHeaders(request).headers.foreach(h => wsBuilder.header(h.name, h.value))
-    wsBuilder
+    prepareWebSocketBuilder(request, client)
       .buildAsync(request.uri.toJavaUri, listener)
       .get()
     val response = responseCell.take().fold(throw _, identity)

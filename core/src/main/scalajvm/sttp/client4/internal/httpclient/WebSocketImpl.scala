@@ -107,7 +107,6 @@ private[client4] object WebSocketImpl {
         }
       }
   }
-
 }
 
 private[client4] class AddToQueueListener[F[_]](

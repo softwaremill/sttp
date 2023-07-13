@@ -3,6 +3,7 @@ package sttp.client4.httpclient
 import sttp.capabilities.{Effect, Streams}
 import sttp.client4.BackendOptions.Proxy
 import sttp.client4.httpclient.HttpClientBackend.EncodingHandler
+import sttp.client4.internal.SttpToJavaConverters.toJavaFunction
 import sttp.client4.internal.httpclient.{BodyFromHttpClient, BodyToHttpClient}
 import sttp.client4.internal.ws.SimpleQueue
 import sttp.client4.{
@@ -20,7 +21,7 @@ import sttp.monad.MonadError
 import sttp.monad.syntax._
 import sttp.ws.WebSocket
 
-import java.net.http.{HttpClient, HttpRequest, HttpResponse}
+import java.net.http.{HttpClient, HttpRequest, HttpResponse, WebSocket => JWebSocket}
 import java.net.{Authenticator, PasswordAuthentication}
 import java.time.{Duration => JDuration}
 import java.util.concurrent.{Executor, ThreadPoolExecutor}
@@ -129,6 +130,29 @@ abstract class HttpClientBackend[F[_], S <: Streams[S], P, B](
   protected def createSimpleQueue[T]: F[SimpleQueue[F, T]]
 
   protected def standardEncoding: (B, String) => B
+
+  private[client4] def prepareWebSocketBuilder[T](
+      request: GenericRequest[T, R],
+      client: HttpClient
+  ): JWebSocket.Builder = {
+    val wsSubProtocols = request.headers
+      .find(_.is(HeaderNames.SecWebSocketProtocol))
+      .map(_.value)
+      .toSeq
+      .flatMap(_.split(","))
+      .map(_.trim)
+      .toList
+    val wsBuilder = wsSubProtocols match {
+      case Nil          => client.newWebSocketBuilder()
+      case head :: Nil  => client.newWebSocketBuilder().subprotocols(head)
+      case head :: tail => client.newWebSocketBuilder().subprotocols(head, tail: _*)
+    }
+    client
+      .connectTimeout()
+      .map[java.net.http.WebSocket.Builder](toJavaFunction((d: JDuration) => wsBuilder.connectTimeout(d)))
+    filterIllegalWsHeaders(request).headers.foreach(h => wsBuilder.header(h.name, h.value))
+    wsBuilder
+  }
 
   private[client4] def filterIllegalWsHeaders[T](request: GenericRequest[T, R]): GenericRequest[T, R] =
     request.withHeaders(request.headers.filter(h => !wsIllegalHeaders.contains(h.name.toLowerCase)))
