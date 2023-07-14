@@ -52,3 +52,5 @@ trait SttpUpickleApi {
     }
   }
 }
+
+object SttpUpickleApi extends SttpUpickleApi
