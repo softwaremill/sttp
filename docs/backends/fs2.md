@@ -14,7 +14,7 @@ Firstly, add the following dependency to your project:
 ```scala
 "com.softwaremill.sttp.client4" %% "fs2" % "@VERSION@" // for cats-effect 3.x & fs2 3.x
 // or 
-"com.softwaremill.sttp.client4" %% "fs2-ce2" % "@VERSION@" // for cats-effect 2.x & fs2 2.x
+"com.softwaremill.sttp.client4" %% "fs2ce2" % "@VERSION@" // for cats-effect 2.x & fs2 2.x
 ```
 
 Obtain a cats-effect `Resource` which creates the backend, and closes the thread pool after the resource is no longer used:
