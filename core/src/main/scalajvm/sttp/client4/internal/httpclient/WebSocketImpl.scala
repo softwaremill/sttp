@@ -39,8 +39,6 @@ private[client4] abstract class WebSocketImpl[F[_]](
     }
 
   override def send(f: WebSocketFrame, isContinuation: Boolean = false): F[Unit] =
-    // ws.send* is not thread-safe - at least one can run at a time. Hence, adding a sequencer to ensure that
-    // even if called concurrently, these will be run in sequence.
     monad.suspend {
       f match {
         case WebSocketFrame.Text(payload, finalFragment, _) =>
@@ -89,6 +87,8 @@ private[client4] object WebSocketImpl {
   ): WebSocketImpl[F] = new WebSocketImpl[F](ws, queue, _isOpen) {
     override implicit def monad: MonadError[F] = _monad
 
+    // ws.send* is not thread-safe - at least one can run at a time. Hence, adding a sequencer to ensure that
+    // even if called concurrently, these will be run in sequence.
     override def send(f: WebSocketFrame, isContinuation: Boolean): F[Unit] = sequencer(super.send(f, isContinuation))
 
     override protected[client4] def fromCompletableFuture(cf: CompletableFuture[JWebSocket]): F[Unit] =
