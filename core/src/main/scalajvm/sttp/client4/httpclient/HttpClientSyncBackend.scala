@@ -158,6 +158,6 @@ object HttpClientSyncBackend {
       customEncodingHandler
     )
 
-  /** Create a stub backend for testing. See [[SyncBackendStub]] for details on how to configure stub responses. */
+  /** Create a stub backend for testing. See [[WebSocketBackendStub]] for details on how to configure stub responses. */
   def stub: WebSocketBackendStub[Identity] = WebSocketBackendStub.synchronous
 }
