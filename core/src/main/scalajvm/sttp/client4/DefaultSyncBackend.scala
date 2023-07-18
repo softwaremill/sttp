@@ -11,6 +11,6 @@ object DefaultSyncBackend {
   def apply(options: BackendOptions = BackendOptions.Default): WebSocketBackend[Identity] =
     HttpClientSyncBackend(options, identity, PartialFunction.empty)
 
-  /** Create a stub backend for testing. See [[SyncBackendStub]] for details on how to configure stub responses. */
+  /** Create a stub backend for testing. See [[WebSocketBackendStub]] for details on how to configure stub responses. */
   def stub: WebSocketBackendStub[Identity] = WebSocketBackendStub.synchronous
 }
