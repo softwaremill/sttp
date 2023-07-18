@@ -16,7 +16,6 @@ object Person {
 
 class BackendStubUpickleTests extends AnyFlatSpec with Matchers with ScalaFutures {
 
-
   it should "deserialize to json using a string stub" in {
     val backend = SyncBackendStub.whenAnyRequest.thenRespond("""{"name": "John"}""")
     val r = basicRequest.get(Uri("http://example.org")).response(asJson[Person]).send(backend)
@@ -31,7 +30,7 @@ class BackendStubUpickleTests extends AnyFlatSpec with Matchers with ScalaFuture
     )
 
     val backend = SyncBackendStub.whenAnyRequest.thenRespond(json)
-    val r = basicRequest.get(Uri("http://example.org")).body(json).response(asJson[Person]).send(backend)
+    val r = basicRequest.get(Uri("http://example.org")).body(json).send(backend)
 
     r.is200 should be(true)
     r.body should be(json)
