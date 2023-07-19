@@ -19,7 +19,7 @@ class BackendStubCirceTests extends AnyFlatSpec with Matchers with ScalaFutures 
     r.body should be(Right(Person("John")))
   }
 
-  it should "serialize from JsonObject using implicit upickleBodySerializer" in {
+  it should "serialize from JsonObject using implicit circeBodySerializer" in {
 
     val jObject: JsonObject = JsonObject(("location", "hometown".asJson), ("bio", "Scala programmer".asJson))
 

@@ -17,11 +17,23 @@ object Person {
 
 class BackendStubJsoniterTests extends AnyFlatSpec with Matchers with ScalaFutures {
 
+  import sttp.client4.basicRequest
+
   it should "deserialize to json using a string stub" in {
     val backend = SyncBackendStub.whenAnyRequest.thenRespond("""{"name": "John"}""")
     val r = basicRequest.get(Uri("http://example.org")).response(asJson[Person]).send(backend)
 
     r.is200 should be(true)
     r.body should be(Right(Person("John")))
+  }
+
+  it should "serialize from case class Person using implicit jsoniterBodySerializer" in {
+    val person = Person("John")
+
+    val backend = SyncBackendStub.whenAnyRequest.thenRespond(person)
+    val r = basicRequest.get(Uri("http://example.org")).body(person).send(backend)
+
+    r.is200 should be(true)
+    r.body should be(person)
   }
 }

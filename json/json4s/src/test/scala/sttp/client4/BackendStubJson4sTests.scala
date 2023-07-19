@@ -25,7 +25,7 @@ class BackendStubJson4sTests extends AnyFlatSpec with Matchers with ScalaFutures
     r.body should be(Right(Person("John")))
   }
 
-  it should "serialize from JsObject using implicit upickleBodySerializer" in {
+  it should "serialize from JObject using implicit json4sBodySerializer" in {
     val jObject: JObject = JObject(JField("location", JString("hometown")), JField("bio", JString("Scala programmer")))
 
     val backend = SyncBackendStub.whenAnyRequest.thenRespond(jObject)

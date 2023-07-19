@@ -15,7 +15,7 @@ object Person {
   implicit val personFormat: OFormat[Person] = Json.format[Person]
 }
 
-class BackendStubSprayJsonTests extends AnyFlatSpec with Matchers with ScalaFutures {
+class BackendStubPlayJsonTests extends AnyFlatSpec with Matchers with ScalaFutures {
 
   it should "deserialize to json using a string stub" in {
     val backend = SyncBackendStub.whenAnyRequest.thenRespond("""{"name": "John"}""")
@@ -25,7 +25,7 @@ class BackendStubSprayJsonTests extends AnyFlatSpec with Matchers with ScalaFutu
     r.body should be(Right(Person("John")))
   }
 
-  it should "serialize from JsObject using implicit upickleBodySerializer" in {
+  it should "serialize from JsObject using implicit playJsonBodySerializer" in {
     val fields: Seq[(String, JsValue)] =
       Seq[(String, JsValue)](("location", JsString("hometown")), ("bio", JsString("Scala programmer")))
     val json: JsObject = JsObject(fields)
