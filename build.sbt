@@ -142,9 +142,8 @@ val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.2.10"
 val akkaStreamVersion = "2.6.20"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % akkaStreamVersion
 
-ThisBuild / resolvers += "Apache Snapshots".at("https://repository.apache.org/content/repositories/snapshots/") // Remove once Pekko makes a proper release
-val pekkoHttp = "org.apache.pekko" %% "pekko-http" % "0.0.0+4329-fad15dd0-SNAPSHOT"
-val pekkoStreamVersion = "0.0.0+26621-44d03df6-SNAPSHOT"
+val pekkoHttp = "org.apache.pekko" %% "pekko-http" % "1.0.0"
+val pekkoStreamVersion = "1.0.0"
 val pekkoStreams = "org.apache.pekko" %% "pekko-stream" % pekkoStreamVersion
 
 val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", "wordspec", "shouldmatchers").map(m =>
@@ -157,7 +156,7 @@ val zio1InteropRsVersion = "1.3.12"
 val zio2InteropRsVersion = "2.0.1"
 
 val sttpModelVersion = "1.5.5"
-val sttpSharedVersion = "1.3.13"
+val sttpSharedVersion = "1.3.16"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.4.6"
 
@@ -539,7 +538,6 @@ lazy val akkaHttpBackend = (projectMatrix in file("akka-http-backend"))
   )
 
 //-- pekko
-ThisBuild / resolvers ++= Resolver.sonatypeOssRepos("snapshots") // Remove once sttp makes a proper release
 lazy val pekkoHttpBackend = (projectMatrix in file("pekko-http-backend"))
   .settings(commonJvmSettings)
   .settings(testServerSettings)
@@ -550,12 +548,12 @@ lazy val pekkoHttpBackend = (projectMatrix in file("pekko-http-backend"))
       // provided as we don't want to create a transitive dependency on a specific streams version,
       // just as akka-http doesn't
       pekkoStreams % "provided",
-      "com.softwaremill.sttp.shared" %% "pekko" % "1.3.14+1-51f34857-SNAPSHOT"
+      "com.softwaremill.sttp.shared" %% "pekko" % sttpSharedVersion
     )
   )
   .dependsOn(core % compileAndTest)
   .jvmPlatform(
-    scalaVersions = scala2
+    scalaVersions = scala2 ++ scala3
   )
 
 //-- async http client
