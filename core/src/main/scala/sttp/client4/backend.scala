@@ -52,6 +52,11 @@ trait SyncBackend extends Backend[Identity] {
   override def monad: MonadError[Identity] = IdMonad
 }
 
+/** A [[GenericBackend]] which is synchronous (side effects are run directly), and supports web sockets. */
+trait WebSocketSyncBackend extends SyncBackend with WebSocketBackend[Identity] {
+  override def monad: MonadError[Identity] = IdMonad
+}
+
 /** A [[GenericBackend]] which supports streams of type `S` and uses `F` to represent side-effects. */
 trait StreamBackend[F[_], +S] extends Backend[F] with GenericBackend[F, S]
 

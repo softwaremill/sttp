@@ -4,17 +4,9 @@ import sttp.capabilities.{Effect, Streams}
 import sttp.client4.BackendOptions.Proxy
 import sttp.client4.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client4.internal.SttpToJavaConverters.toJavaFunction
-import sttp.client4.internal.httpclient.{BodyFromHttpClient, BodyToHttpClient}
+import sttp.client4.internal.httpclient.{BodyFromHttpClient, BodyToHttpClient, Sequencer}
 import sttp.client4.internal.ws.SimpleQueue
-import sttp.client4.{
-  Backend,
-  BackendOptions,
-  GenericBackend,
-  GenericRequest,
-  MultipartBody,
-  Response,
-  SttpClientException
-}
+import sttp.client4.{Backend, BackendOptions, GenericBackend, GenericRequest, MultipartBody, Response, SttpClientException}
 import sttp.model.HttpVersion.{HTTP_1_1, HTTP_2}
 import sttp.model._
 import sttp.monad.MonadError
@@ -128,6 +120,8 @@ abstract class HttpClientBackend[F[_], S <: Streams[S], P, B](
   }
 
   protected def createSimpleQueue[T]: F[SimpleQueue[F, T]]
+
+  protected def createSequencer: F[Sequencer[F]]
 
   protected def standardEncoding: (B, String) => B
 

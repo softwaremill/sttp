@@ -54,6 +54,9 @@ object LoggingWithResponseBodyBackend {
   def apply[F[_]](backend: WebSocketBackend[F], log: Log[F], includeTiming: Boolean): WebSocketBackend[F] =
     new LoggingWithResponseBodyBackend(backend, log, includeTiming) with WebSocketBackend[F] {}
 
+  def apply(backend: WebSocketSyncBackend, log: Log[Identity], includeTiming: Boolean): WebSocketSyncBackend =
+    new LoggingWithResponseBodyBackend(backend, log, includeTiming) with WebSocketSyncBackend {}
+
   def apply[F[_], S](backend: StreamBackend[F, S], log: Log[F], includeTiming: Boolean): StreamBackend[F, S] =
     new LoggingWithResponseBodyBackend(backend, log, includeTiming) with StreamBackend[F, S] {}
 

@@ -13,6 +13,9 @@ object LoggingBackend {
   def apply[F[_]](delegate: WebSocketBackend[F], logger: Logger[F]): WebSocketBackend[F] =
     apply(delegate, logger, LogConfig.Default)
 
+  def apply(delegate: WebSocketSyncBackend, logger: Logger[Identity]): WebSocketSyncBackend =
+    apply(delegate, logger, LogConfig.Default)
+
   def apply[F[_], S](delegate: StreamBackend[F, S], logger: Logger[F]): StreamBackend[F, S] =
     apply(delegate, logger, LogConfig.Default)
 
@@ -26,6 +29,9 @@ object LoggingBackend {
     apply(delegate, Log.default(logger, config), config.includeTiming, config.logResponseBody)
 
   def apply[F[_]](delegate: WebSocketBackend[F], logger: Logger[F], config: LogConfig): WebSocketBackend[F] =
+    apply(delegate, Log.default(logger, config), config.includeTiming, config.logResponseBody)
+
+  def apply(delegate: WebSocketSyncBackend, logger: Logger[Identity], config: LogConfig): WebSocketSyncBackend =
     apply(delegate, Log.default(logger, config), config.includeTiming, config.logResponseBody)
 
   def apply[F[_], S](delegate: StreamBackend[F, S], logger: Logger[F], config: LogConfig): StreamBackend[F, S] =
@@ -52,6 +58,15 @@ object LoggingBackend {
       includeTiming: Boolean,
       logResponseBody: Boolean
   ): WebSocketBackend[F] =
+    if (logResponseBody) LoggingWithResponseBodyBackend(delegate, log, includeTiming)
+    else ListenerBackend(delegate, new LoggingListener(log, includeTiming)(delegate.monad))
+
+  def apply(
+                   delegate: WebSocketSyncBackend,
+                   log: Log[Identity],
+                   includeTiming: Boolean,
+                   logResponseBody: Boolean
+                 ): WebSocketSyncBackend =
     if (logResponseBody) LoggingWithResponseBodyBackend(delegate, log, includeTiming)
     else ListenerBackend(delegate, new LoggingListener(log, includeTiming)(delegate.monad))
 

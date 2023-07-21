@@ -3,19 +3,12 @@ package sttp.client4.httpclient
 import sttp.capabilities.WebSockets
 import sttp.client4.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client4.httpclient.HttpClientSyncBackend.SyncEncodingHandler
-import sttp.client4.internal.{emptyInputStream, NoStreams}
-import sttp.client4.internal.httpclient.{
-  AddToQueueListener,
-  BodyFromHttpClient,
-  BodyToHttpClient,
-  DelegatingWebSocketListener,
-  InputStreamBodyFromHttpClient,
-  WebSocketImpl
-}
+import sttp.client4.internal.{NoStreams, emptyInputStream}
+import sttp.client4.internal.httpclient.{AddToQueueListener, BodyFromHttpClient, BodyToHttpClient, DelegatingWebSocketListener, IdSequencer, InputStreamBodyFromHttpClient, Sequencer, WebSocketImpl}
 import sttp.client4.internal.ws.{SimpleQueue, SyncQueue, WebSocketEvent}
 import sttp.client4.monad.IdMonad
-import sttp.client4.testing.WebSocketBackendStub
-import sttp.client4.{wrappers, BackendOptions, GenericRequest, Identity, Response, WebSocketBackend}
+import sttp.client4.testing.{WebSocketBackendStub, WebSocketSyncBackendStub}
+import sttp.client4.{BackendOptions, GenericRequest, Identity, Response, WebSocketSyncBackend, wrappers}
 import sttp.model.StatusCode
 import sttp.monad.MonadError
 import sttp.monad.syntax.MonadErrorOps
@@ -28,7 +21,7 @@ import java.net.http.{HttpClient, HttpRequest, WebSocketHandshakeException}
 import java.util.concurrent.{ArrayBlockingQueue, CompletionException}
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
-import scala.concurrent.{blocking, Await, ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext, Future, blocking}
 
 class HttpClientSyncBackend private (
     client: HttpClient,
@@ -40,7 +33,7 @@ class HttpClientSyncBackend private (
       closeClient,
       customEncodingHandler
     )
-    with WebSocketBackend[Identity] {
+    with WebSocketSyncBackend {
 
   private implicit val ec: ExecutionContext = ExecutionContext.global
   override val streams: NoStreams = NoStreams
@@ -53,7 +46,8 @@ class HttpClientSyncBackend private (
 
   override protected def sendWebSocket[T](request: GenericRequest[T, R]): Identity[Response[T]] = {
     val queue = createSimpleQueue[WebSocketEvent]
-    sendWebSocket(request, queue).handleError {
+    val sequencer = createSequencer
+    sendWebSocket(request, queue, sequencer).handleError {
       case e: CompletionException if e.getCause.isInstanceOf[WebSocketHandshakeException] =>
         readResponse(
           e.getCause.asInstanceOf[WebSocketHandshakeException].getResponse,
@@ -65,7 +59,8 @@ class HttpClientSyncBackend private (
 
   private def sendWebSocket[T](
       request: GenericRequest[T, R],
-      queue: SimpleQueue[Identity, WebSocketEvent]
+      queue: SimpleQueue[Identity, WebSocketEvent],
+      sequencer: Sequencer[Identity]
   ): Identity[Response[T]] = {
     val isOpen: AtomicBoolean = new AtomicBoolean(false)
     val responseCell = new ArrayBlockingQueue[Either[Throwable, Future[Response[T]]]](5)
@@ -77,7 +72,7 @@ class HttpClientSyncBackend private (
     val listener = new DelegatingWebSocketListener(
       new AddToQueueListener(queue, isOpen),
       ws => {
-        val webSocket = WebSocketImpl.sync[Identity](ws, queue, isOpen, monad)
+        val webSocket = WebSocketImpl.sync[Identity](ws, queue, isOpen,sequencer, monad)
         val baseResponse = Response((), StatusCode.SwitchingProtocols, "", Nil, Nil, request.onlyMetadata)
         val body = Future(blocking(bodyFromHttpClient(Right(webSocket), request.response, baseResponse)))
         val wsResponse = body.map(b => baseResponse.copy(body = b))
@@ -93,7 +88,7 @@ class HttpClientSyncBackend private (
   }
   override protected def createSimpleQueue[T]: Identity[SimpleQueue[Identity, T]] = new SyncQueue[T](None)
 
-  override def monad: MonadError[Identity] = IdMonad
+  override protected def createSequencer: Identity[Sequencer[Identity]] = new IdSequencer
 
   override protected val bodyToHttpClient: BodyToHttpClient[Identity, Nothing] =
     new BodyToHttpClient[Identity, Nothing] {
@@ -129,7 +124,7 @@ object HttpClientSyncBackend {
       closeClient: Boolean,
       customizeRequest: HttpRequest => HttpRequest,
       customEncodingHandler: SyncEncodingHandler
-  ): WebSocketBackend[Identity] =
+  ): WebSocketSyncBackend =
     wrappers.FollowRedirectsBackend(
       new HttpClientSyncBackend(client, closeClient, customizeRequest, customEncodingHandler)
     )
@@ -138,7 +133,7 @@ object HttpClientSyncBackend {
       options: BackendOptions = BackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: SyncEncodingHandler = PartialFunction.empty
-  ): WebSocketBackend[Identity] =
+  ): WebSocketSyncBackend =
     HttpClientSyncBackend(
       HttpClientBackend.defaultClient(options, None),
       closeClient = true,
@@ -150,7 +145,7 @@ object HttpClientSyncBackend {
       client: HttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: SyncEncodingHandler = PartialFunction.empty
-  ): WebSocketBackend[Identity] =
+  ): WebSocketSyncBackend =
     HttpClientSyncBackend(
       client,
       closeClient = false,
@@ -159,5 +154,5 @@ object HttpClientSyncBackend {
     )
 
   /** Create a stub backend for testing. See [[WebSocketBackendStub]] for details on how to configure stub responses. */
-  def stub: WebSocketBackendStub[Identity] = WebSocketBackendStub.synchronous
+  def stub: WebSocketSyncBackendStub = WebSocketSyncBackendStub
 }

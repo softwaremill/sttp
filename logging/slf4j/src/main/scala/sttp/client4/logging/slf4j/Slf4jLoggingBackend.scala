@@ -14,6 +14,9 @@ object Slf4jLoggingBackend {
   def apply[F[_]](delegate: WebSocketBackend[F]): WebSocketBackend[F] =
     LoggingBackend(delegate, logger(delegate.monad))
 
+  def apply(delegate: WebSocketSyncBackend): WebSocketSyncBackend =
+    LoggingBackend(delegate, logger(delegate.monad))
+
   def apply[F[_], S](delegate: StreamBackend[F, S]): StreamBackend[F, S] =
     LoggingBackend(delegate, logger(delegate.monad))
 
@@ -27,6 +30,9 @@ object Slf4jLoggingBackend {
     LoggingBackend(delegate, logger(delegate.monad), config)
 
   def apply[F[_]](delegate: WebSocketBackend[F], config: LogConfig): WebSocketBackend[F] =
+    LoggingBackend(delegate, logger(delegate.monad), config)
+
+  def apply(delegate: WebSocketSyncBackend, config: LogConfig): WebSocketSyncBackend =
     LoggingBackend(delegate, logger(delegate.monad), config)
 
   def apply[F[_], S](delegate: StreamBackend[F, S], config: LogConfig): StreamBackend[F, S] =

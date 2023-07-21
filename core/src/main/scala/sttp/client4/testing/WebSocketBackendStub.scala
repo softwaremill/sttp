@@ -1,6 +1,5 @@
 package sttp.client4.testing
 
-import sttp.client4.monad.IdMonad
 import sttp.client4._
 import sttp.monad.{FutureMonad, MonadError}
 
@@ -41,7 +40,7 @@ class WebSocketBackendStub[F[_]](
 object WebSocketBackendStub {
 
   /** Create a stub of a synchronous backend (which doesn't use an effect type) */
-  def synchronous: WebSocketBackendStub[Identity] = new WebSocketBackendStub(IdMonad, PartialFunction.empty, None)
+  def synchronous: WebSocketSyncBackendStub = WebSocketSyncBackendStub
 
   /** Create a stub of an asynchronous backend (which uses the Scala's built-in [[Future]] as the effect type). */
   def asynchronousFuture(implicit ec: ExecutionContext): WebSocketBackendStub[Future] =

@@ -32,7 +32,7 @@ In order to add digest authentication support just wrap other backend as follows
 ```scala mdoc:compile-only
 import sttp.client4.wrappers.DigestAuthenticationBackend
 
-val myBackend: WebSocketBackend[Identity] = DefaultSyncBackend()
+val myBackend: WebSocketSyncBackend = DefaultSyncBackend()
 DigestAuthenticationBackend(myBackend)
 ```
 
