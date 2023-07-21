@@ -98,7 +98,6 @@ object FollowRedirectsBackend {
     new FollowRedirectsBackend(delegate, config) with Backend[F] {}
   def apply[F[_]](delegate: WebSocketBackend[F], config: FollowRedirectsConfig): WebSocketBackend[F] =
     new FollowRedirectsBackend(delegate, config) with WebSocketBackend[F] {}
-
   def apply(delegate: WebSocketSyncBackend, config: FollowRedirectsConfig): WebSocketSyncBackend =
     new FollowRedirectsBackend(delegate, config) with WebSocketSyncBackend {}
   def apply[F[_], S](delegate: StreamBackend[F, S], config: FollowRedirectsConfig): StreamBackend[F, S] =
