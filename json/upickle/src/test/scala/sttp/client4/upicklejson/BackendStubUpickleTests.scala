@@ -28,11 +28,10 @@ class BackendStubUpickleTests extends AnyFlatSpec with Matchers with ScalaFuture
       "location" -> "hometown",
       "bio" -> "Scala programmer"
     )
+    val result = basicRequest.get(Uri("http://example.org")).body(json).body.show
 
-    val backend = SyncBackendStub.whenAnyRequest.thenRespond(json)
-    val r = basicRequest.get(Uri("http://example.org")).body(json).send(backend)
+    val expectedResult = "string: {\"location\":\"hometown\",\"bio\":\"Scala programmer\"}"
 
-    r.is200 should be(true)
-    r.body should be(json)
+    result should be(expectedResult)
   }
 }

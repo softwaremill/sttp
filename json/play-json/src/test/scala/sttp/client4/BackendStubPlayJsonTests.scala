@@ -29,11 +29,10 @@ class BackendStubPlayJsonTests extends AnyFlatSpec with Matchers with ScalaFutur
     val fields: Seq[(String, JsValue)] =
       Seq[(String, JsValue)](("location", JsString("hometown")), ("bio", JsString("Scala programmer")))
     val json: JsObject = JsObject(fields)
+    val result = basicRequest.get(Uri("http://example.org")).body(json).body.show
 
-    val backend = SyncBackendStub.whenAnyRequest.thenRespond(json)
-    val r = basicRequest.get(Uri("http://example.org")).body(json).send(backend)
+    val expectedResult = "string: {\"location\":\"hometown\",\"bio\":\"Scala programmer\"}"
 
-    r.is200 should be(true)
-    r.body should be(json)
+    result should be(expectedResult)
   }
 }

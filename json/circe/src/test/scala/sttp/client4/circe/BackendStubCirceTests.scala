@@ -20,14 +20,12 @@ class BackendStubCirceTests extends AnyFlatSpec with Matchers with ScalaFutures 
   }
 
   it should "serialize from JsonObject using implicit circeBodySerializer" in {
-
     val jObject: JsonObject = JsonObject(("location", "hometown".asJson), ("bio", "Scala programmer".asJson))
+    val result = basicRequest.get(Uri("http://example.org")).body(jObject).body.show
 
-    val backend = SyncBackendStub.whenAnyRequest.thenRespond(jObject)
-    val r = basicRequest.get(Uri("http://example.org")).body(jObject).send(backend)
+    val expectedResult = "string: {\"location\":\"hometown\",\"bio\":\"Scala programmer\"}"
 
-    r.is200 should be(true)
-    r.body should be(jObject)
+    result should be(expectedResult)
   }
 
   case class Person(name: String)

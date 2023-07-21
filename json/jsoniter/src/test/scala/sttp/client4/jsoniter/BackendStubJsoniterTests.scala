@@ -29,11 +29,10 @@ class BackendStubJsoniterTests extends AnyFlatSpec with Matchers with ScalaFutur
 
   it should "serialize from case class Person using implicit jsoniterBodySerializer" in {
     val person = Person("John")
+    val result = basicRequest.get(Uri("http://example.org")).body(person).body.show
 
-    val backend = SyncBackendStub.whenAnyRequest.thenRespond(person)
-    val r = basicRequest.get(Uri("http://example.org")).body(person).send(backend)
+    val expectedResult = "string: {\"name\":\"John\"}"
 
-    r.is200 should be(true)
-    r.body should be(person)
+    result should be(expectedResult)
   }
 }

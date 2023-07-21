@@ -30,11 +30,10 @@ class BackendStubJson4sTests extends AnyFlatSpec with Matchers with ScalaFutures
   it should "serialize from Json.Obj using implicit zioJsonBodySerializer" in {
     val fields: Chunk[(String, Json)] = Chunk(("location", Json.Str("hometown")), ("bio", Json.Str("Scala programmer")))
     val jObject: Json.Obj = Json.Obj(fields)
+    val result = basicRequest.get(Uri("http://example.org")).body(jObject).body.show
 
-    val backend = SyncBackendStub.whenAnyRequest.thenRespond(jObject)
-    val r = basicRequest.get(Uri("http://example.org")).body(jObject).send(backend)
+    val expectedResult = "string: {\"location\":\"hometown\",\"bio\":\"Scala programmer\"}"
 
-    r.is200 should be(true)
-    r.body should be(jObject)
+    result should be(expectedResult)
   }
 }

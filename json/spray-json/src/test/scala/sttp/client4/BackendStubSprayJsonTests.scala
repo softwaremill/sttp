@@ -31,11 +31,10 @@ class BackendStubSprayJsonTests extends AnyFlatSpec with Matchers with ScalaFutu
       "location" -> "hometown".toJson,
       "bio" -> "Scala programmer".toJson
     )
+    val result = basicRequest.get(Uri("http://example.org")).body(json).body.show
 
-    val backend = SyncBackendStub.whenAnyRequest.thenRespond(json)
-    val r = basicRequest.get(Uri("http://example.org")).body(json).send(backend)
+    val expectedResult = "string: {\"bio\":\"Scala programmer\",\"location\":\"hometown\"}"
 
-    r.is200 should be(true)
-    r.body should be(json)
+    result should be(expectedResult)
   }
 }
