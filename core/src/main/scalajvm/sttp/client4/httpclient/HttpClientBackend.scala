@@ -6,7 +6,15 @@ import sttp.client4.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client4.internal.SttpToJavaConverters.toJavaFunction
 import sttp.client4.internal.httpclient.{BodyFromHttpClient, BodyToHttpClient, Sequencer}
 import sttp.client4.internal.ws.SimpleQueue
-import sttp.client4.{Backend, BackendOptions, GenericBackend, GenericRequest, MultipartBody, Response, SttpClientException}
+import sttp.client4.{
+  Backend,
+  BackendOptions,
+  GenericBackend,
+  GenericRequest,
+  MultipartBody,
+  Response,
+  SttpClientException
+}
 import sttp.model.HttpVersion.{HTTP_1_1, HTTP_2}
 import sttp.model._
 import sttp.monad.MonadError

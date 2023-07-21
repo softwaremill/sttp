@@ -62,11 +62,11 @@ object LoggingBackend {
     else ListenerBackend(delegate, new LoggingListener(log, includeTiming)(delegate.monad))
 
   def apply(
-                   delegate: WebSocketSyncBackend,
-                   log: Log[Identity],
-                   includeTiming: Boolean,
-                   logResponseBody: Boolean
-                 ): WebSocketSyncBackend =
+      delegate: WebSocketSyncBackend,
+      log: Log[Identity],
+      includeTiming: Boolean,
+      logResponseBody: Boolean
+  ): WebSocketSyncBackend =
     if (logResponseBody) LoggingWithResponseBodyBackend(delegate, log, includeTiming)
     else ListenerBackend(delegate, new LoggingListener(log, includeTiming)(delegate.monad))
 

@@ -3,12 +3,21 @@ package sttp.client4.httpclient
 import sttp.capabilities.WebSockets
 import sttp.client4.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client4.httpclient.HttpClientSyncBackend.SyncEncodingHandler
-import sttp.client4.internal.{NoStreams, emptyInputStream}
-import sttp.client4.internal.httpclient.{AddToQueueListener, BodyFromHttpClient, BodyToHttpClient, DelegatingWebSocketListener, IdSequencer, InputStreamBodyFromHttpClient, Sequencer, WebSocketImpl}
+import sttp.client4.internal.{emptyInputStream, NoStreams}
+import sttp.client4.internal.httpclient.{
+  AddToQueueListener,
+  BodyFromHttpClient,
+  BodyToHttpClient,
+  DelegatingWebSocketListener,
+  IdSequencer,
+  InputStreamBodyFromHttpClient,
+  Sequencer,
+  WebSocketImpl
+}
 import sttp.client4.internal.ws.{SimpleQueue, SyncQueue, WebSocketEvent}
 import sttp.client4.monad.IdMonad
 import sttp.client4.testing.{WebSocketBackendStub, WebSocketSyncBackendStub}
-import sttp.client4.{BackendOptions, GenericRequest, Identity, Response, WebSocketSyncBackend, wrappers}
+import sttp.client4.{wrappers, BackendOptions, GenericRequest, Identity, Response, WebSocketSyncBackend}
 import sttp.model.StatusCode
 import sttp.monad.MonadError
 import sttp.monad.syntax.MonadErrorOps
@@ -21,7 +30,7 @@ import java.net.http.{HttpClient, HttpRequest, WebSocketHandshakeException}
 import java.util.concurrent.{ArrayBlockingQueue, CompletionException}
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
-import scala.concurrent.{Await, ExecutionContext, Future, blocking}
+import scala.concurrent.{blocking, Await, ExecutionContext, Future}
 
 class HttpClientSyncBackend private (
     client: HttpClient,
@@ -72,7 +81,7 @@ class HttpClientSyncBackend private (
     val listener = new DelegatingWebSocketListener(
       new AddToQueueListener(queue, isOpen),
       ws => {
-        val webSocket = WebSocketImpl.sync[Identity](ws, queue, isOpen,sequencer, monad)
+        val webSocket = WebSocketImpl.sync[Identity](ws, queue, isOpen, sequencer, monad)
         val baseResponse = Response((), StatusCode.SwitchingProtocols, "", Nil, Nil, request.onlyMetadata)
         val body = Future(blocking(bodyFromHttpClient(Right(webSocket), request.response, baseResponse)))
         val wsResponse = body.map(b => baseResponse.copy(body = b))

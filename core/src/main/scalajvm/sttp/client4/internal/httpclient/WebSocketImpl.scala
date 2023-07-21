@@ -40,8 +40,8 @@ private[client4] abstract class WebSocketImpl[F[_]](
     }
 
   override def send(f: WebSocketFrame, isContinuation: Boolean = false): F[Unit] =
-  // ws.send* is not thread-safe - at least one can run at a time. Hence, adding a sequencer to ensure that
-  // even if called concurrently, these will be run in sequence.
+    // ws.send* is not thread-safe - at least one can run at a time. Hence, adding a sequencer to ensure that
+    // even if called concurrently, these will be run in sequence.
     sequencer(monad.suspend {
       f match {
         case WebSocketFrame.Text(payload, finalFragment, _) =>

@@ -21,10 +21,10 @@ import sttp.client4.monad.IdMonad
   * request, a response is specified with the incorrect or inconvertible body type.
   */
 class WebSocketSyncBackendStub(
-                       matchers: PartialFunction[GenericRequest[_, _], Response[_]],
-                       fallback: Option[WebSocketSyncBackend]
-                     ) extends AbstractBackendStub[Identity, WebSockets](IdMonad, matchers, fallback)
-  with WebSocketSyncBackend {
+    matchers: PartialFunction[GenericRequest[_, _], Response[_]],
+    fallback: Option[WebSocketSyncBackend]
+) extends AbstractBackendStub[Identity, WebSockets](IdMonad, matchers, fallback)
+    with WebSocketSyncBackend {
 
   type Self = WebSocketSyncBackendStub
   override protected def withMatchers(matchers: PartialFunction[GenericRequest[_, _], Response[_]]) =

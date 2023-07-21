@@ -10,12 +10,22 @@ import sttp.client4.internal.ws.{SimpleQueue, SyncQueue, WebSocketEvent}
 import sttp.client4.monad.IdMonad
 import sttp.client4.okhttp.OkHttpBackend.EncodingHandler
 import sttp.client4.testing.WebSocketSyncBackendStub
-import sttp.client4.{BackendOptions, DefaultReadTimeout, GenericRequest, Identity, Response, WebSocketBackend, WebSocketSyncBackend, ignore, wrappers}
+import sttp.client4.{
+  ignore,
+  wrappers,
+  BackendOptions,
+  DefaultReadTimeout,
+  GenericRequest,
+  Identity,
+  Response,
+  WebSocketBackend,
+  WebSocketSyncBackend
+}
 import sttp.monad.MonadError
 import sttp.ws.WebSocket
 
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, Future, blocking}
+import scala.concurrent.{blocking, Await, ExecutionContext, Future}
 
 class OkHttpSyncBackend private (
     client: OkHttpClient,

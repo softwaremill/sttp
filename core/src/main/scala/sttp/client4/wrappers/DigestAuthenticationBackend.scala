@@ -4,7 +4,17 @@ import sttp.capabilities.Effect
 import sttp.client4.internal.DigestAuthenticator
 import sttp.client4.internal.DigestAuthenticator.DigestAuthData
 import sttp.client4.wrappers.DigestAuthenticationBackend._
-import sttp.client4.{Backend, GenericBackend, GenericRequest, Response, StreamBackend, SyncBackend, WebSocketBackend, WebSocketStreamBackend, WebSocketSyncBackend}
+import sttp.client4.{
+  Backend,
+  GenericBackend,
+  GenericRequest,
+  Response,
+  StreamBackend,
+  SyncBackend,
+  WebSocketBackend,
+  WebSocketStreamBackend,
+  WebSocketSyncBackend
+}
 import sttp.model.Header
 import sttp.monad.syntax._
 
