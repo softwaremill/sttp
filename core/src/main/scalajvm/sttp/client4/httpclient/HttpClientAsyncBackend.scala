@@ -13,6 +13,7 @@ import sttp.monad.{Canceler, MonadAsyncError}
 import java.net.http._
 import java.util.concurrent.CompletionException
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.function.BiConsumer
 
 /** @tparam F
   *   The effect type
@@ -94,7 +95,28 @@ abstract class HttpClientAsyncBackend[F[_], S <: Streams[S], BH, B](
       val listener = new DelegatingWebSocketListener(
         new AddToQueueListener(queue, isOpen),
         ws => {
-          val webSocket = WebSocketImpl.async[F](ws, queue, isOpen, monad, sequencer)
+          val webSocket = new WebSocketImpl[F](
+            ws,
+            queue,
+            isOpen,
+            sequencer,
+            monad,
+            cf =>
+              monad.async { cb =>
+                cf.whenComplete(new BiConsumer[WebSocket, Throwable] {
+                  override def accept(t: WebSocket, error: Throwable): Unit =
+                    if (error != null) {
+                      cb(Left(error))
+                    } else {
+                      cb(Right(()))
+                    }
+                })
+                Canceler { () =>
+                  cf.cancel(true)
+                  ()
+                }
+              }
+          )
           val baseResponse = Response((), StatusCode.SwitchingProtocols, "", Nil, Nil, request.onlyMetadata)
           val body = bodyFromHttpClient(Right(webSocket), request.response, baseResponse)
           success(body.map(b => baseResponse.copy(body = b)))

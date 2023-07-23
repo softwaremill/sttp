@@ -8,12 +8,12 @@ import scala.concurrent.blocking
 private[client4] class IdSequencer extends Sequencer[Identity] {
   private val semaphore = new Semaphore(1)
 
-  def apply[T](t: => Identity[T]): Identity[T] = {
-    blocking {
-      semaphore.acquire()
-    }
-    val result = t
-    semaphore.release()
-    result
-  }
+  def apply[T](t: => Identity[T]): Identity[T] =
+    try {
+      blocking {
+        semaphore.acquire()
+      }
+      val result = t
+      result
+    } finally semaphore.release()
 }

@@ -1,8 +1,5 @@
 package sttp.client4.okhttp
 
-import java.io.InputStream
-import java.util.concurrent.ArrayBlockingQueue
-import java.util.concurrent.atomic.AtomicBoolean
 import okhttp3.{MediaType, OkHttpClient, RequestBody => OkHttpRequestBody}
 import sttp.capabilities.{Streams, WebSockets}
 import sttp.client4.internal.NoStreams
@@ -18,12 +15,14 @@ import sttp.client4.{
   GenericRequest,
   Identity,
   Response,
-  WebSocketBackend,
   WebSocketSyncBackend
 }
 import sttp.monad.MonadError
 import sttp.ws.WebSocket
 
+import java.io.InputStream
+import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.atomic.AtomicBoolean
 import scala.concurrent.duration.Duration
 import scala.concurrent.{blocking, Await, ExecutionContext, Future}
 
@@ -39,7 +38,7 @@ class OkHttpSyncBackend private (
 
   override protected def sendWebSocket[T](request: GenericRequest[T, R]): Identity[Response[T]] = {
     val nativeRequest = convertRequest(request)
-    val responseCell = new ArrayBlockingQueue[Either[Throwable, Future[Response[T]]]](5)
+    val responseCell = new ArrayBlockingQueue[Either[Throwable, Future[Response[T]]]](1)
     def fillCellError(t: Throwable): Unit = responseCell.add(Left(t))
     def fillCell(wr: Future[Response[T]]): Unit = responseCell.add(Right(wr))
 

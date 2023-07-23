@@ -31,6 +31,7 @@ import java.util.concurrent.{ArrayBlockingQueue, CompletionException}
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
 import scala.concurrent.{blocking, Await, ExecutionContext, Future}
+import scala.util.Try
 
 class HttpClientSyncBackend private (
     client: HttpClient,
@@ -72,7 +73,7 @@ class HttpClientSyncBackend private (
       sequencer: Sequencer[Identity]
   ): Identity[Response[T]] = {
     val isOpen: AtomicBoolean = new AtomicBoolean(false)
-    val responseCell = new ArrayBlockingQueue[Either[Throwable, Future[Response[T]]]](5)
+    val responseCell = new ArrayBlockingQueue[Either[Throwable, Future[Response[T]]]](1)
 
     def fillCellError(t: Throwable): Unit = responseCell.add(Left(t))
 
@@ -81,7 +82,17 @@ class HttpClientSyncBackend private (
     val listener = new DelegatingWebSocketListener(
       new AddToQueueListener(queue, isOpen),
       ws => {
-        val webSocket = WebSocketImpl.sync[Identity](ws, queue, isOpen, sequencer, monad)
+        val webSocket = new WebSocketImpl[Identity](
+          ws,
+          queue,
+          isOpen,
+          sequencer,
+          monad,
+          cf =>
+            monad.suspend {
+              Try(cf.get()).fold(monad.error, _ => monad.unit(()))
+            }
+        )
         val baseResponse = Response((), StatusCode.SwitchingProtocols, "", Nil, Nil, request.onlyMetadata)
         val body = Future(blocking(bodyFromHttpClient(Right(webSocket), request.response, baseResponse)))
         val wsResponse = body.map(b => baseResponse.copy(body = b))
