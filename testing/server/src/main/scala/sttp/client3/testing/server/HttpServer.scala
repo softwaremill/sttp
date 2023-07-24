@@ -488,6 +488,12 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
             )
           }
         }
+    } ~ path("empty_content_encoding") {
+      get {
+        respondWithHeader(RawHeader("Content-Encoding", "")) {
+          complete("OK")
+        }
+      }
     }
 
   def discardEntity(inner: Route): Route = {

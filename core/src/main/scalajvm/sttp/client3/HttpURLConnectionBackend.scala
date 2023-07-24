@@ -235,8 +235,7 @@ class HttpURLConnectionBackend private (
     val headers = c.getHeaderFields.asScala.toVector
       .filter(_._1 != null)
       .flatMap { case (k, vv) => vv.asScala.map(Header(k, _)) }
-    val contentEncoding = Option(c.getHeaderField(HeaderNames.ContentEncoding))
-
+    val contentEncoding = Option(c.getHeaderField(HeaderNames.ContentEncoding)).filter(_.nonEmpty)
     val code = StatusCode(c.getResponseCode)
     val wrappedIs =
       if (c.getRequestMethod != "HEAD" && !code.equals(StatusCode.NoContent) && !request.autoDecompressionDisabled) {

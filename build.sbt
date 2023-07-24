@@ -13,7 +13,7 @@ val scala2_12 = "2.12.17"
 val scala2_13 = "2.13.10"
 val scala2 = List(scala2_11, scala2_12, scala2_13)
 val scala2alive = List(scala2_12, scala2_13)
-val scala3 = List("3.2.2")
+val scala3 = List("3.3.0")
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests")
@@ -129,8 +129,8 @@ val playJsonVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.7.4"
   case _             => "2.9.2"
 }
-val catsEffect_3_version = "3.4.8"
-val fs2_3_version = "3.6.1"
+val catsEffect_3_version = "3.5.1"
+val fs2_3_version = "3.7.0"
 
 val catsEffect_2_version: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.0.0"
@@ -145,21 +145,21 @@ val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.2.10"
 val akkaStreamVersion = "2.6.20"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % akkaStreamVersion
 
-val pekkoHttp = "org.apache.pekko" %% "pekko-http" % "0.0.0+4342-c527a7c4-SNAPSHOT"
-val pekkoStreamVersion = "0.0.0+26638-1e514f6a-SNAPSHOT"
+val pekkoHttp = "org.apache.pekko" %% "pekko-http" % "1.0.0"
+val pekkoStreamVersion = "1.0.0"
 val pekkoStreams = "org.apache.pekko" %% "pekko-stream" % pekkoStreamVersion
 
 val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", "wordspec", "shouldmatchers").map(m =>
   "org.scalatest" %%% s"scalatest-$m" % "3.2.15" % Test
 )
 
-val zio1Version = "1.0.17"
+val zio1Version = "1.0.18"
 val zio2Version = "2.0.10"
 val zio1InteropRsVersion = "1.3.12"
 val zio2InteropRsVersion = "2.0.1"
 
 val sttpModelVersion = "1.5.5"
-val sttpSharedVersion = "0.0.0+650-201a3968+20230511-1105-SNAPSHOT"
+val sttpSharedVersion = "1.3.16"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.4.5"
 
@@ -168,7 +168,7 @@ val braveOpentracingVersion = "1.0.0"
 val zipkinSenderOkHttpVersion = "2.16.3"
 val resilience4jVersion = "2.0.2"
 val http4s_ce2_version = "0.22.15"
-val http4s_ce3_version = "0.23.18"
+val http4s_ce3_version = "0.23.19"
 
 val openTelemetryVersion = "1.23.1"
 
@@ -224,7 +224,6 @@ lazy val allAggregates = projectsWithOptionalNative ++
   playJson.projectRefs ++
   prometheusBackend.projectRefs ++
   openTelemetryMetricsBackend.projectRefs ++
-  openTelemetryTracingZio1Backend.projectRefs ++
   openTelemetryTracingZioBackend.projectRefs ++
   finagleBackend.projectRefs ++
   armeriaBackend.projectRefs ++
@@ -699,7 +698,7 @@ lazy val http4sBackend = (projectMatrix in file("http4s-backend"))
     libraryDependencies ++= Seq(
       "org.http4s" %% "http4s-client" % http4s_ce3_version,
       "org.http4s" %% "http4s-ember-client" % "0.23.13" % Optional,
-      "org.http4s" %% "http4s-blaze-client" % "0.23.13" % Optional,
+      "org.http4s" %% "http4s-blaze-client" % "0.23.13" % Optional
     ),
     evictionErrorLevel := Level.Info
   )
@@ -961,21 +960,6 @@ lazy val openTelemetryMetricsBackend = (projectMatrix in file("observability/ope
     scalaTest
   )
   .jvmPlatform(scalaVersions = scala2alive ++ scala3)
-  .dependsOn(core)
-
-lazy val openTelemetryTracingZio1Backend = (projectMatrix in file("observability/opentelemetry-tracing-zio1-backend"))
-  .settings(commonJvmSettings)
-  .settings(
-    name := "opentelemetry-tracing-zio1-backend",
-    libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-opentelemetry" % "1.0.0",
-      "org.scala-lang.modules" %% "scala-collection-compat" % "2.9.0",
-      "io.opentelemetry" % "opentelemetry-sdk-testing" % openTelemetryVersion % Test
-    ),
-    scalaTest
-  )
-  .jvmPlatform(scalaVersions = scala2alive ++ scala3)
-  .dependsOn(zio1 % compileAndTest)
   .dependsOn(core)
 
 lazy val openTelemetryTracingZioBackend = (projectMatrix in file("observability/opentelemetry-tracing-zio-backend"))

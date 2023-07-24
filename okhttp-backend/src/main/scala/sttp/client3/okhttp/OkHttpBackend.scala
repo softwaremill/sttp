@@ -87,6 +87,7 @@ abstract class OkHttpBackend[F[_], S <: Streams[S], P](
           .equals(StatusCode.NoContent.code) && !request.autoDecompressionDisabled
       ) {
         encoding
+          .filterNot(_.isEmpty)
           .map(e =>
             customEncodingHandler // There is no PartialFunction.fromFunction in scala 2.12
               .orElse(EncodingHandler(standardEncoding))(res.body().byteStream() -> e)

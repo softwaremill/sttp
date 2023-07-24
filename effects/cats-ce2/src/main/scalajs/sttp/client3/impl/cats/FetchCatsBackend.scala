@@ -48,5 +48,5 @@ object FetchCatsBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub[F[_]: Concurrent: ContextShift]: SttpBackendStub[F, Any] = SttpBackendStub(new CatsMonadAsyncError)
+  def stub[F[_]: Concurrent: ContextShift]: SttpBackendStub[F, WebSockets] = SttpBackendStub(new CatsMonadAsyncError)
 }
