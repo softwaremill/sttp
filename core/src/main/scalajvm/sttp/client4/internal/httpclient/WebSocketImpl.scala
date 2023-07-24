@@ -19,7 +19,7 @@ private[client4] class WebSocketImpl[F[_]](
     _isOpen: AtomicBoolean,
     sequencer: Sequencer[F],
     _monad: MonadError[F],
-    handleWS: CompletableFuture[JWebSocket] => F[Unit]
+    fromCompletableFutureToEffect: CompletableFuture[JWebSocket] => F[Unit]
 ) extends WebSocket[F] {
   override def receive(): F[WebSocketFrame] =
     queue.poll.flatMap {
@@ -45,15 +45,15 @@ private[client4] class WebSocketImpl[F[_]](
     sequencer(monad.suspend {
       f match {
         case WebSocketFrame.Text(payload, finalFragment, _) =>
-          handleWS(ws.sendText(payload, finalFragment))
+          fromCompletableFutureToEffect(ws.sendText(payload, finalFragment))
         case WebSocketFrame.Binary(payload, finalFragment, _) =>
-          handleWS(ws.sendBinary(ByteBuffer.wrap(payload), finalFragment))
-        case WebSocketFrame.Ping(payload) => handleWS(ws.sendPing(ByteBuffer.wrap(payload)))
-        case WebSocketFrame.Pong(payload) => handleWS(ws.sendPong(ByteBuffer.wrap(payload)))
+          fromCompletableFutureToEffect(ws.sendBinary(ByteBuffer.wrap(payload), finalFragment))
+        case WebSocketFrame.Ping(payload) => fromCompletableFutureToEffect(ws.sendPing(ByteBuffer.wrap(payload)))
+        case WebSocketFrame.Pong(payload) => fromCompletableFutureToEffect(ws.sendPong(ByteBuffer.wrap(payload)))
         case WebSocketFrame.Close(statusCode, reasonText) =>
           val wasOpen = _isOpen.getAndSet(false)
           // making close sequentially idempotent
-          if (wasOpen) handleWS(ws.sendClose(statusCode, reasonText)) else ().unit
+          if (wasOpen) fromCompletableFutureToEffect(ws.sendClose(statusCode, reasonText)) else ().unit
       }
     })
 

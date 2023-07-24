@@ -127,13 +127,9 @@ abstract class HttpClientBackend[F[_], S <: Streams[S], P, B](
     monad.map(body)(Response(_, code, "", headers, Nil, request.onlyMetadata))
   }
 
-  protected def createSimpleQueue[T]: F[SimpleQueue[F, T]]
-
-  protected def createSequencer: F[Sequencer[F]]
-
   protected def standardEncoding: (B, String) => B
 
-  private[client4] def prepareWebSocketBuilder[T](
+  protected def prepareWebSocketBuilder[T](
       request: GenericRequest[T, R],
       client: HttpClient
   ): JWebSocket.Builder = {

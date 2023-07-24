@@ -55,8 +55,8 @@ class HttpClientSyncBackend private (
   }
 
   override protected def sendWebSocket[T](request: GenericRequest[T, R]): Identity[Response[T]] = {
-    val queue = createSimpleQueue[WebSocketEvent]
-    val sequencer = createSequencer
+    val queue = new SyncQueue[WebSocketEvent](None)
+    val sequencer = new IdSequencer
     sendWebSocket(request, queue, sequencer).handleError {
       case e: CompletionException if e.getCause.isInstanceOf[WebSocketHandshakeException] =>
         readResponse(
@@ -94,7 +94,7 @@ class HttpClientSyncBackend private (
             }
         )
         val baseResponse = Response((), StatusCode.SwitchingProtocols, "", Nil, Nil, request.onlyMetadata)
-        val body = Future(blocking(bodyFromHttpClient(Right(webSocket), request.response, baseResponse)))
+        val body = Future.successful(bodyFromHttpClient(Right(webSocket), request.response, baseResponse))
         val wsResponse = body.map(b => baseResponse.copy(body = b))
         fillCell(wsResponse)
       },
@@ -106,9 +106,6 @@ class HttpClientSyncBackend private (
     val response = responseCell.take().fold(throw _, identity)
     Await.result(response, scala.concurrent.duration.Duration.Inf)
   }
-  override protected def createSimpleQueue[T]: Identity[SimpleQueue[Identity, T]] = new SyncQueue[T](None)
-
-  override protected def createSequencer: Identity[Sequencer[Identity]] = new IdSequencer
 
   override protected val bodyToHttpClient: BodyToHttpClient[Identity, Nothing] =
     new BodyToHttpClient[Identity, Nothing] {

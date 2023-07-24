@@ -240,7 +240,7 @@ import sttp.client4._
 import sttp.client4.upicklejson._
 import upickle.default._
 
-val backend: WebSocketSyncBackend = DefaultSyncBackend()
+val backend: SyncBackend = DefaultSyncBackend()
 
 implicit val requestPayloadRW: ReadWriter[RequestPayload] = macroRW[RequestPayload]
 implicit val responsePayloadRW: ReadWriter[ResponsePayload] = macroRW[ResponsePayload]

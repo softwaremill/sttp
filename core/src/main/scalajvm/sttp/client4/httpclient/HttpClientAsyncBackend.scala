@@ -33,7 +33,8 @@ abstract class HttpClientAsyncBackend[F[_], S <: Streams[S], BH, B](
     customEncodingHandler: EncodingHandler[B]
 ) extends HttpClientBackend[F, S, S with WebSockets, B](client, closeClient, customEncodingHandler)
     with WebSocketBackend[F] {
-
+  protected def createSimpleQueue[T]: F[SimpleQueue[F, T]]
+  protected def createSequencer: F[Sequencer[F]]
   protected def createBodyHandler: HttpResponse.BodyHandler[BH]
   protected def bodyHandlerBodyToBody(p: BH): B
   protected def emptyBody(): B
