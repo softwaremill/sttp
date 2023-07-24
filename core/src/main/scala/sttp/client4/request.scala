@@ -328,7 +328,7 @@ final case class WebSocketRequest[F[_], T](
     * Known exceptions are converted by backends to one of [[SttpClientException]]. Other exceptions are thrown
     * unchanged.
     */
-  def send(backend: WebSocketSyncBackend)(implicit ev: Identity[T] <:< F[T]): Response[T] =
+  def send(backend: WebSocketSyncBackend)(implicit ev: Identity[T] =:= F[T]): Response[T] =
     backend.send(this.asInstanceOf[WebSocketRequest[Identity, T]]) // as witnessed by ev
 }
 
