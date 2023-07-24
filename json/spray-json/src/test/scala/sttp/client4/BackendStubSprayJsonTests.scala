@@ -25,16 +25,4 @@ class BackendStubSprayJsonTests extends AnyFlatSpec with Matchers with ScalaFutu
     r.is200 should be(true)
     r.body should be(Right(Person("John")))
   }
-
-  it should "serialize from JsObject using implicit sprayBodySerializer" in {
-    val json: JsObject = JsObject(
-      "location" -> "hometown".toJson,
-      "bio" -> "Scala programmer".toJson
-    )
-    val result = basicRequest.get(Uri("http://example.org")).body(json).body.show
-
-    val expectedResult = "string: {\"bio\":\"Scala programmer\",\"location\":\"hometown\"}"
-
-    result should be(expectedResult)
-  }
 }

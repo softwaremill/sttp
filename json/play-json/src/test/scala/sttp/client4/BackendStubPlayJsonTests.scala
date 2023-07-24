@@ -24,15 +24,4 @@ class BackendStubPlayJsonTests extends AnyFlatSpec with Matchers with ScalaFutur
     r.is200 should be(true)
     r.body should be(Right(Person("John")))
   }
-
-  it should "serialize from JsObject using implicit playJsonBodySerializer" in {
-    val fields: Seq[(String, JsValue)] =
-      Seq[(String, JsValue)](("location", JsString("hometown")), ("bio", JsString("Scala programmer")))
-    val json: JsObject = JsObject(fields)
-    val result = basicRequest.get(Uri("http://example.org")).body(json).body.show
-
-    val expectedResult = "string: {\"location\":\"hometown\",\"bio\":\"Scala programmer\"}"
-
-    result should be(expectedResult)
-  }
 }

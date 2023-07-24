@@ -1,7 +1,8 @@
 package sttp.client4
 
+import org.json4s.JsonAST.JString
 import org.json4s.ParserUtil.ParseException
-import org.json4s.{native, DefaultFormats, MappingException}
+import org.json4s.{DefaultFormats, JField, JObject, MappingException, native}
 import org.scalatest._
 import sttp.client4.internal._
 import sttp.model._
@@ -78,6 +79,15 @@ class Json4sTests extends AnyFlatSpec with Matchers with EitherValues {
     val ct = req.headers.map(h => (h.name, h.value)).toMap.get("Content-Type")
 
     ct shouldBe Some(MediaType.ApplicationJson.copy(charset = Some(Utf8)).toString)
+  }
+
+  it should "serialize from JObject using implicit json4sBodySerializer" in {
+    val jObject: JObject = JObject(JField("location", JString("hometown")), JField("bio", JString("Scala programmer")))
+    val result = basicRequest.get(Uri("http://example.org")).body(jObject).body.show
+
+    val expectedResult = "string: {\"location\":\"hometown\",\"bio\":\"Scala programmer\"}"
+
+    result should be(expectedResult)
   }
 
   def extractBody[T](request: PartialRequest[T]): String =

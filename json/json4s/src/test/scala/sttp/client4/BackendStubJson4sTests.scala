@@ -24,13 +24,4 @@ class BackendStubJson4sTests extends AnyFlatSpec with Matchers with ScalaFutures
     r.is200 should be(true)
     r.body should be(Right(Person("John")))
   }
-
-  it should "serialize from JObject using implicit json4sBodySerializer" in {
-    val jObject: JObject = JObject(JField("location", JString("hometown")), JField("bio", JString("Scala programmer")))
-    val result = basicRequest.get(Uri("http://example.org")).body(jObject).body.show
-
-    val expectedResult = "string: {\"location\":\"hometown\",\"bio\":\"Scala programmer\"}"
-
-    result should be(expectedResult)
-  }
 }

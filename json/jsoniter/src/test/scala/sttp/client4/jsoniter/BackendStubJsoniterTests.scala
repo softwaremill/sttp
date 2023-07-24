@@ -26,13 +26,4 @@ class BackendStubJsoniterTests extends AnyFlatSpec with Matchers with ScalaFutur
     r.is200 should be(true)
     r.body should be(Right(Person("John")))
   }
-
-  it should "serialize from case class Person using implicit jsoniterBodySerializer" in {
-    val person = Person("John")
-    val result = basicRequest.get(Uri("http://example.org")).body(person).body.show
-
-    val expectedResult = "string: {\"name\":\"John\"}"
-
-    result should be(expectedResult)
-  }
 }

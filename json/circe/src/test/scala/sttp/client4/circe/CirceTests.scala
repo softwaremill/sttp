@@ -1,11 +1,14 @@
 package sttp.client4.circe
 
 import io.circe._
+import io.circe.syntax.EncoderOps
+import io.circe.syntax.EncoderOps
+import io.circe.JsonObject
+import sttp.model.Uri
 import org.scalatest._
 import sttp.client4.internal._
 import sttp.client4._
 import sttp.model._
-
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -103,6 +106,15 @@ class CirceTests extends AnyFlatSpec with Matchers with EitherValues {
     val ct = req.headers.map(h => (h.name, h.value)).toMap.get("Content-Type")
 
     ct shouldBe Some("horses/cats")
+  }
+
+  it should "serialize from JsonObject using implicit circeBodySerializer" in {
+    val jObject: JsonObject = JsonObject(("location", "hometown".asJson), ("bio", "Scala programmer".asJson))
+    val result = basicRequest.get(Uri("http://example.org")).body(jObject).body.show
+
+    val expectedResult = "string: {\"location\":\"hometown\",\"bio\":\"Scala programmer\"}"
+
+    result should be(expectedResult)
   }
 
   case class Inner(a: Int, b: Boolean, c: String)

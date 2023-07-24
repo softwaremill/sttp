@@ -22,16 +22,4 @@ class BackendStubUpickleTests extends AnyFlatSpec with Matchers with ScalaFuture
     r.is200 should be(true)
     r.body should be(Right(Person("John")))
   }
-
-  it should "serialize ujson.Obj using implicit upickleBodySerializer" in {
-    val json: Obj = ujson.Obj(
-      "location" -> "hometown",
-      "bio" -> "Scala programmer"
-    )
-    val result = basicRequest.get(Uri("http://example.org")).body(json).body.show
-
-    val expectedResult = "string: {\"location\":\"hometown\",\"bio\":\"Scala programmer\"}"
-
-    result should be(expectedResult)
-  }
 }
