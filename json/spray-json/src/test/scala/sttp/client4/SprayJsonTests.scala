@@ -77,6 +77,18 @@ class SprayJsonTests extends AnyFlatSpec with Matchers with EitherValues {
     ct shouldBe Some(MediaType.ApplicationJson.copy(charset = Some(Utf8)).toString)
   }
 
+  it should "serialize from JsObject using implicit sprayBodySerializer" in {
+    val json: JsObject = JsObject(
+      "location" -> "hometown".toJson,
+      "bio" -> "Scala programmer".toJson
+    )
+    val result = basicRequest.get(Uri("http://example.org")).body(json).body.show
+
+    val expectedResult = "string: {\"bio\":\"Scala programmer\",\"location\":\"hometown\"}"
+
+    result should be(expectedResult)
+  }
+
   def extractBody[T](request: PartialRequest[T]): String =
     request.body match {
       case StringBody(body, "utf-8", MediaType.ApplicationJson) =>

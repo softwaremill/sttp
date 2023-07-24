@@ -1,23 +1,27 @@
-package sttp.client4.upicklejson
+package sttp.client4.jsoniter
 
-import upickle.default._
 import org.scalatest.concurrent.ScalaFutures
-import sttp.client4.basicRequest
-import sttp.client4.testing.SyncBackendStub
-import sttp.model.Uri
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import sttp.client4.testing.SyncBackendStub
+import sttp.model.Uri
+import com.github.plokhotnyuk.jsoniter_scala.core.JsonValueCodec
+import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
 
 case class Person(name: String)
+
 object Person {
-  implicit val personRW: ReadWriter[Person] = macroRW[Person]
+  implicit val personJsonValueCodec: JsonValueCodec[Person] = JsonCodecMaker.make
 }
 
-class BackendStubUpickleTests extends AnyFlatSpec with Matchers with ScalaFutures {
+class BackendStubJsoniterTests extends AnyFlatSpec with Matchers with ScalaFutures {
+
+  import sttp.client4.basicRequest
 
   it should "deserialize to json using a string stub" in {
     val backend = SyncBackendStub.whenAnyRequest.thenRespond("""{"name": "John"}""")
     val r = basicRequest.get(Uri("http://example.org")).response(asJson[Person]).send(backend)
+
     r.is200 should be(true)
     r.body should be(Right(Person("John")))
   }
