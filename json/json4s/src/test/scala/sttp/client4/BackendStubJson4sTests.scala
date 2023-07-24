@@ -5,8 +5,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import sttp.client4.testing.SyncBackendStub
 import sttp.model.Uri
-import org.json4s.{native, DefaultFormats, JField, JObject}
-import org.json4s.JsonAST.JString
+import org.json4s.{native, DefaultFormats}
 
 case class Person(name: String)
 

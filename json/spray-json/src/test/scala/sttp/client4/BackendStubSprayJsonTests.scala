@@ -5,8 +5,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import sttp.client4.testing.SyncBackendStub
 import sttp.model.Uri
-import spray.json.{enrichAny, JsObject}
-import spray.json.DefaultJsonProtocol.{jsonFormat1, RootJsObjectFormat, StringJsonFormat}
+import spray.json.DefaultJsonProtocol.{jsonFormat1, StringJsonFormat}
 import spray.json.RootJsonFormat
 import sprayJson._
 

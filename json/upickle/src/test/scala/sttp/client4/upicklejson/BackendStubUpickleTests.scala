@@ -7,7 +7,6 @@ import sttp.client4.testing.SyncBackendStub
 import sttp.model.Uri
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import ujson.Obj
 
 case class Person(name: String)
 object Person {

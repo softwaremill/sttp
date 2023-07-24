@@ -7,8 +7,6 @@ import sttp.client4.testing.SyncBackendStub
 import sttp.model.Uri
 import sttp.client4.basicRequest
 import zio.json.{DeriveJsonDecoder, DeriveJsonEncoder, JsonDecoder, JsonEncoder}
-import zio.json.ast.Json
-import zio.Chunk
 
 case class Person(name: String)
 

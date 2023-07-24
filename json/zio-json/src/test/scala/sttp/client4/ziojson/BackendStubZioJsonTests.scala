@@ -6,9 +6,7 @@ import org.scalatest.matchers.should.Matchers
 import sttp.client4.basicRequest
 import sttp.client4.testing.SyncBackendStub
 import sttp.model.Uri
-import zio.json.ast.Json
 import zio.json.{DeriveJsonDecoder, DeriveJsonEncoder, JsonDecoder, JsonEncoder}
-import zio.Chunk
 
 case class Person(name: String)
 

@@ -5,8 +5,8 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import sttp.client4.testing.SyncBackendStub
 import sttp.model.Uri
-import play.api.libs.json.{JsObject, JsValue, Json}
-import play.api.libs.json.{JsString, OFormat}
+import play.api.libs.json.Json
+import play.api.libs.json.OFormat
 import playJson._
 
 case class Person(name: String)
