@@ -83,11 +83,13 @@ class JsoniterJsonTests extends AnyFlatSpec with Matchers with EitherValues {
 
   it should "serialize from case class Person using implicit jsoniterBodySerializer" in {
     val person = Person("John")
-    val result = basicRequest.get(Uri("http://example.org")).body(person).body.show
+    val request = basicRequest.get(Uri("http://example.org")).body(person)
 
-    val expectedResult = "string: {\"name\":\"John\"}"
+    val expectedBody = "string: {\"location\":\"hometown\",\"bio\":\"Scala programmer\"}"
+    val expectedContentType = Some("application/json; charset=utf-8")
 
-    result should be(expectedResult)
+    request.contentType should be(expectedContentType)
+    request.body.show should be(expectedBody)
   }
 
   def extractBody[T](request: PartialRequest[T]): String =
