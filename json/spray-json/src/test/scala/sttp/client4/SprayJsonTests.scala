@@ -82,11 +82,16 @@ class SprayJsonTests extends AnyFlatSpec with Matchers with EitherValues {
       "location" -> "hometown".toJson,
       "bio" -> "Scala programmer".toJson
     )
-    val result = basicRequest.get(Uri("http://example.org")).body(json).body.show
+    val request: Request[Either[String, String]] = basicRequest.get(Uri("http://example.org")).body(json)
 
-    val expectedResult = "string: {\"bio\":\"Scala programmer\",\"location\":\"hometown\"}"
+    val actualBody: String = request.body.show
+    val actualContentType: Option[String] = request.contentType
 
-    result should be(expectedResult)
+    val expectedBody: String = "string: {\"bio\":\"Scala programmer\",\"location\":\"hometown\"}"
+    val expectedContentType: Option[String] = Some("application/json; charset=utf-8")
+
+    actualBody should be(expectedBody)
+    actualContentType should be(expectedContentType)
   }
 
   def extractBody[T](request: PartialRequest[T]): String =

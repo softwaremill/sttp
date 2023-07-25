@@ -94,11 +94,16 @@ class ZioJsonTests extends AnyFlatSpec with Matchers with EitherValues {
   it should "serialize from Json.Obj using implicit zioJsonBodySerializer" in {
     val fields: Chunk[(String, Json)] = Chunk(("location", Json.Str("hometown")), ("bio", Json.Str("Scala programmer")))
     val jObject: Json.Obj = Json.Obj(fields)
-    val result = basicRequest.get(Uri("http://example.org")).body(jObject).body.show
+    val request = basicRequest.get(Uri("http://example.org")).body(jObject)
 
-    val expectedResult = "string: {\"location\":\"hometown\",\"bio\":\"Scala programmer\"}"
+    val actualBody: String = request.body.show
+    val actualContentType: Option[String] = request.contentType
 
-    result should be(expectedResult)
+    val expectedBody: String = "string: {\"location\":\"hometown\",\"bio\":\"Scala programmer\"}"
+    val expectedContentType: Option[String] = Some("application/json; charset=utf-8")
+
+    actualBody should be(expectedBody)
+    actualContentType should be(expectedContentType)
   }
 
   def extractBody[T](request: PartialRequest[T]): String =

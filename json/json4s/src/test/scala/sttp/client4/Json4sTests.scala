@@ -2,7 +2,7 @@ package sttp.client4
 
 import org.json4s.JsonAST.JString
 import org.json4s.ParserUtil.ParseException
-import org.json4s.{DefaultFormats, JField, JObject, MappingException, native}
+import org.json4s.{native, DefaultFormats, JField, JObject, MappingException}
 import org.scalatest._
 import sttp.client4.internal._
 import sttp.model._
@@ -83,11 +83,16 @@ class Json4sTests extends AnyFlatSpec with Matchers with EitherValues {
 
   it should "serialize from JObject using implicit json4sBodySerializer" in {
     val jObject: JObject = JObject(JField("location", JString("hometown")), JField("bio", JString("Scala programmer")))
-    val result = basicRequest.get(Uri("http://example.org")).body(jObject).body.show
+    val request: Request[Either[String, String]] = basicRequest.get(Uri("http://example.org")).body(jObject)
 
-    val expectedResult = "string: {\"location\":\"hometown\",\"bio\":\"Scala programmer\"}"
+    val actualBody: String = request.body.show
+    val actualContentType: Option[String] = request.contentType
 
-    result should be(expectedResult)
+    val expectedBody: String = "string: {\"location\":\"hometown\",\"bio\":\"Scala programmer\"}"
+    val expectedContentType: Option[String] = Some("application/json; charset=utf-8")
+
+    actualBody should be(expectedBody)
+    actualContentType should be(expectedContentType)
   }
 
   def extractBody[T](request: PartialRequest[T]): String =

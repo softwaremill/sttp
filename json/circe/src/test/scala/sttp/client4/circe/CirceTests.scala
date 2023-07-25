@@ -107,11 +107,16 @@ class CirceTests extends AnyFlatSpec with Matchers with EitherValues {
     import sttp.model.Uri
 
     val jObject: JsonObject = JsonObject(("location", "hometown".asJson), ("bio", "Scala programmer".asJson))
-    val result = basicRequest.get(Uri("http://example.org")).body(jObject).body.show
+    val request: Request[Either[String, String]] = basicRequest.get(Uri("http://example.org")).body(jObject)
 
-    val expectedResult = "string: {\"location\":\"hometown\",\"bio\":\"Scala programmer\"}"
+    val actualBody: String = request.body.show
+    val actualContentType: Option[String] = request.contentType
 
-    result should be(expectedResult)
+    val expectedBody: String = "string: {\"location\":\"hometown\",\"bio\":\"Scala programmer\"}"
+    val expectedContentType: Option[String] = Some("application/json; charset=utf-8")
+
+    actualBody should be(expectedBody)
+    actualContentType should be(expectedContentType)
   }
 
   case class Inner(a: Int, b: Boolean, c: String)
