@@ -2,7 +2,7 @@ package sttp.client4
 
 import org.json4s.JsonAST.JString
 import org.json4s.ParserUtil.ParseException
-import org.json4s.{DefaultFormats, JField, JObject, MappingException, native}
+import org.json4s.{native, DefaultFormats, JField, JObject, MappingException}
 import org.scalatest._
 import sttp.client4.internal._
 import sttp.model._
@@ -91,8 +91,8 @@ class Json4sTests extends AnyFlatSpec with Matchers with EitherValues {
     val expectedBody: String = "string: {\"location\":\"hometown\",\"bio\":\"Scala programmer\"}"
     val expectedContentType: Option[String] = Some("application/json; charset=utf-8")
 
-    actualContentType should be(expectedContentType)
     actualBody should be(expectedBody)
+    actualContentType should be(expectedContentType)
   }
 
   def extractBody[T](request: PartialRequest[T]): String =

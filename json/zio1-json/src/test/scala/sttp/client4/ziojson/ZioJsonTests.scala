@@ -102,8 +102,8 @@ class ZioJsonTests extends AnyFlatSpec with Matchers with EitherValues {
     val expectedBody: String = "string: {\"location\":\"hometown\",\"bio\":\"Scala programmer\"}"
     val expectedContentType: Option[String] = Some("application/json; charset=utf-8")
 
-    actualContentType should be(expectedContentType)
     actualBody should be(expectedBody)
+    actualContentType should be(expectedContentType)
   }
 
   def extractBody[T](request: PartialRequest[T]): String =

@@ -88,11 +88,11 @@ class JsoniterJsonTests extends AnyFlatSpec with Matchers with EitherValues {
     val actualBody: String = request.body.show
     val actualContentType: Option[String] = request.contentType
 
-    val expectedBody: String = "string: {\"location\":\"hometown\",\"bio\":\"Scala programmer\"}"
+    val expectedBody: String = "string: {\"name\":\"John\"}"
     val expectedContentType: Option[String] = Some("application/json; charset=utf-8")
 
-    actualContentType should be(expectedContentType)
     actualBody should be(expectedBody)
+    actualContentType should be(expectedContentType)
   }
 
   def extractBody[T](request: PartialRequest[T]): String =

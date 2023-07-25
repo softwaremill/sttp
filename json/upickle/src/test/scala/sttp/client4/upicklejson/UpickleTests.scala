@@ -101,8 +101,8 @@ class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
     val expectedBody: String = "string: {\"location\":\"hometown\",\"bio\":\"Scala programmer\"}"
     val expectedContentType: Option[String] = Some("application/json; charset=utf-8")
 
-    actualContentType should be(expectedContentType)
     actualBody should be(expectedBody)
+    actualContentType should be(expectedContentType)
   }
 
   case class Inner(a: Int, b: Boolean, c: String)
