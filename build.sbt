@@ -152,8 +152,8 @@ val zio2Version = "2.0.15"
 val zio1InteropRsVersion = "1.3.12"
 val zio2InteropRsVersion = "2.0.2"
 
-val sttpModelVersion = "1.7.0"
-val sttpSharedVersion = "1.3.15"
+val sttpModelVersion = "1.7.1"
+val sttpSharedVersion = "1.3.16"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.4.8"
 
@@ -162,7 +162,7 @@ val braveOpentracingVersion = "1.0.0"
 val zipkinSenderOkHttpVersion = "2.16.4"
 val resilience4jVersion = "2.1.0"
 val http4s_ce2_version = "0.22.15"
-val http4s_ce3_version = "0.23.22"
+val http4s_ce3_version = "0.23.23"
 
 val openTelemetryVersion = "1.28.0"
 
@@ -658,7 +658,7 @@ lazy val http4sBackend = (projectMatrix in file("http4s-backend"))
     name := "http4s-backend",
     libraryDependencies ++= Seq(
       "org.http4s" %% "http4s-client" % http4s_ce3_version,
-      "org.http4s" %% "http4s-ember-client" % "0.23.22" % Optional,
+      "org.http4s" %% "http4s-ember-client" % "0.23.23" % Optional,
       "org.http4s" %% "http4s-blaze-client" % "0.23.15" % Optional
     ),
     evictionErrorLevel := Level.Info
@@ -929,7 +929,7 @@ lazy val scribeBackend = (projectMatrix in file("logging/scribe"))
   .settings(
     name := "scribe-backend",
     libraryDependencies ++= Seq(
-      "com.outr" %%% "scribe" % "3.11.7"
+      "com.outr" %%% "scribe" % "3.11.8"
     ),
     scalaTest
   )
