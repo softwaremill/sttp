@@ -87,7 +87,7 @@ class SprayJsonTests extends AnyFlatSpec with Matchers with EitherValues {
     val actualBody: String = request.body.show
     val actualContentType: Option[String] = request.contentType
 
-    val expectedBody: String = "string: {\"location\":\"hometown\",\"bio\":\"Scala programmer\"}"
+    val expectedBody: String = "string: {\"bio\":\"Scala programmer\",\"location\":\"hometown\"}"
     val expectedContentType: Option[String] = Some("application/json; charset=utf-8")
 
     actualBody should be(expectedBody)
