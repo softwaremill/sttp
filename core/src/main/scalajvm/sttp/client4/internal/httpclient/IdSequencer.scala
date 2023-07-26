@@ -9,9 +9,7 @@ private[client4] class IdSequencer extends Sequencer[Identity] {
   private val semaphore = new Semaphore(1)
 
   def apply[T](t: => T): T = {
-    blocking {
-      semaphore.acquire()
-    }
+    blocking(semaphore.acquire())
     try t
     finally semaphore.release()
   }

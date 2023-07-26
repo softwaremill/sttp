@@ -16,7 +16,7 @@ import sttp.client4.internal.httpclient.{
 }
 import sttp.client4.internal.ws.{SimpleQueue, SyncQueue, WebSocketEvent}
 import sttp.client4.monad.IdMonad
-import sttp.client4.testing.{WebSocketBackendStub, WebSocketSyncBackendStub}
+import sttp.client4.testing.WebSocketSyncBackendStub
 import sttp.client4.{wrappers, BackendOptions, GenericRequest, Identity, Response, WebSocketSyncBackend}
 import sttp.model.StatusCode
 import sttp.monad.MonadError
@@ -31,7 +31,6 @@ import java.util.concurrent.{ArrayBlockingQueue, CompletionException}
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
 import scala.concurrent.{blocking, Await, ExecutionContext, Future}
-import scala.util.Try
 
 class HttpClientSyncBackend private (
     client: HttpClient,
@@ -46,6 +45,7 @@ class HttpClientSyncBackend private (
     with WebSocketSyncBackend {
 
   private implicit val ec: ExecutionContext = ExecutionContext.global
+  private implicit def _monad: MonadError[Identity] = monad
   override val streams: NoStreams = NoStreams
 
   override protected def sendRegular[T](request: GenericRequest[T, R]): Identity[Response[T]] = {
@@ -64,7 +64,7 @@ class HttpClientSyncBackend private (
           Left(emptyInputStream()),
           request
         )
-    }(monad)
+    }
   }
 
   private def sendWebSocket[T](
@@ -75,9 +75,9 @@ class HttpClientSyncBackend private (
     val isOpen: AtomicBoolean = new AtomicBoolean(false)
     val responseCell = new ArrayBlockingQueue[Either[Throwable, Future[Response[T]]]](1)
 
-    def fillCellError(t: Throwable): Unit = responseCell.add(Left(t))
+    def fillCellError(t: Throwable): Unit = responseCell.add(Left(t)): Unit
 
-    def fillCell(wr: Future[Response[T]]): Unit = responseCell.add(Right(wr))
+    def fillCell(wr: Future[Response[T]]): Unit = responseCell.add(Right(wr)): Unit
 
     val listener = new DelegatingWebSocketListener(
       new AddToQueueListener(queue, isOpen),
@@ -88,10 +88,7 @@ class HttpClientSyncBackend private (
           isOpen,
           sequencer,
           monad,
-          cf =>
-            monad.suspend {
-              Try(cf.get()).fold(monad.error, _ => monad.unit(()))
-            }
+          _.get(): Unit
         )
         val baseResponse = Response((), StatusCode.SwitchingProtocols, "", Nil, Nil, request.onlyMetadata)
         val body = Future(blocking(bodyFromHttpClient(Right(webSocket), request.response, baseResponse)))

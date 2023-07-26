@@ -163,7 +163,7 @@ import sttp.client4._
 import sttp.client4.ziojson._
 import zio.json._
 
-val backend: WebSocketSyncBackend = DefaultSyncBackend()
+val backend: SyncBackend = DefaultSyncBackend()
 
 implicit val payloadJsonEncoder: JsonEncoder[RequestPayload] = DeriveJsonEncoder.gen[RequestPayload]
 implicit val myResponseJsonDecoder: JsonDecoder[ResponsePayload] = DeriveJsonDecoder.gen[ResponsePayload]

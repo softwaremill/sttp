@@ -152,12 +152,12 @@ abstract class HttpClientBackend[F[_], S <: Streams[S], P, B](
     wsBuilder
   }
 
-  private[client4] def filterIllegalWsHeaders[T](request: GenericRequest[T, R]): GenericRequest[T, R] =
+  private def filterIllegalWsHeaders[T](request: GenericRequest[T, R]): GenericRequest[T, R] =
     request.withHeaders(request.headers.filter(h => !wsIllegalHeaders.contains(h.name.toLowerCase)))
 
   // these headers can't be sent using HttpClient; the SecWebSocketProtocol is supported through a builder method,
   // the resit is ignored
-  private[client4] lazy val wsIllegalHeaders: Set[String] = {
+  private lazy val wsIllegalHeaders: Set[String] = {
     import HeaderNames._
     Set(SecWebSocketAccept, SecWebSocketExtensions, SecWebSocketKey, SecWebSocketVersion, SecWebSocketProtocol).map(
       _.toLowerCase
