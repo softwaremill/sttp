@@ -91,7 +91,7 @@ class HttpClientSyncBackend private (
           _.get(): Unit
         )
         val baseResponse = Response((), StatusCode.SwitchingProtocols, "", Nil, Nil, request.onlyMetadata)
-        val body = Future(blocking(bodyFromHttpClient(Right(webSocket), request.response, baseResponse)))
+        val body = Future(bodyFromHttpClient(Right(webSocket), request.response, baseResponse))
         val wsResponse = body.map(b => baseResponse.copy(body = b))
         fillCell(wsResponse)
       },
