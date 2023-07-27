@@ -46,7 +46,7 @@ Response can be parsed into json using `asJson[T]`, provided there's an implicit
 import sttp.client4._
 import sttp.client4.circe._
 
-val backend: WebSocketSyncBackend = DefaultSyncBackend()
+val backend: SyncBackend = DefaultSyncBackend()
 
 import io.circe.generic.auto._
 val requestPayload = RequestPayload("some data")
@@ -80,7 +80,7 @@ Usage example:
 import sttp.client4._
 import sttp.client4.json4s._
 
-val backend: WebSocketSyncBackend = DefaultSyncBackend()
+val backend: SyncBackend = DefaultSyncBackend()
 
 val requestPayload = RequestPayload("some data")
 
@@ -112,7 +112,7 @@ import sttp.client4._
 import sttp.client4.sprayJson._
 import spray.json._
 
-val backend: WebSocketSyncBackend = DefaultSyncBackend()
+val backend: SyncBackend = DefaultSyncBackend()
 
 implicit val payloadJsonFormat: RootJsonFormat[RequestPayload] = ???
 implicit val myResponseJsonFormat: RootJsonFormat[ResponsePayload] = ???
@@ -203,7 +203,7 @@ import sttp.client4.jsoniter._
 import com.github.plokhotnyuk.jsoniter_scala.core._
 import com.github.plokhotnyuk.jsoniter_scala.macros._
 
-val backend: WebSocketSyncBackend = DefaultSyncBackend()
+val backend: SyncBackend = DefaultSyncBackend()
 
 implicit val payloadJsonCodec: JsonValueCodec[RequestPayload] = JsonCodecMaker.make
 //note that the jsoniter doesn't support 'implicit defs' and so either has to be generated seperatly
