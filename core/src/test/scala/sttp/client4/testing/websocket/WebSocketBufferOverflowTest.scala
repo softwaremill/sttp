@@ -6,6 +6,7 @@ import org.scalatest.Suite
 import org.scalatest.flatspec.AsyncFlatSpecLike
 import sttp.client4.testing.HttpTest.wsEndpoint
 import sttp.client4._
+import sttp.client4.ws.async._
 import sttp.monad.MonadError
 import sttp.client4.testing.ConvertToFuture
 

@@ -2,6 +2,7 @@ package sttp.client4.examples
 
 import monix.eval.Task
 import sttp.client4._
+import sttp.client4.ws.async._
 import sttp.client4.httpclient.monix.HttpClientMonixBackend
 import sttp.ws.WebSocket
 

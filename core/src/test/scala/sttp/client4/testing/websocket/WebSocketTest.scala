@@ -7,6 +7,7 @@ import org.scalatest.time.{Seconds, Span}
 import org.scalatest.{Assertion, BeforeAndAfterAll}
 import sttp.client4.SttpClientException.ReadException
 import sttp.client4._
+import sttp.client4.ws.async._
 import sttp.client4.logging.{LogConfig, LogLevel, Logger, LoggingBackend}
 import sttp.client4.testing.HttpTest.wsEndpoint
 import sttp.client4.testing.{ConvertToFuture, ToFutureWrapper}
