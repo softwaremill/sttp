@@ -11,9 +11,9 @@ import sttp.client4.monad.IdMonad
   * of the request) should be used, providing a specific backend instance as a parameter.
   *
   * When creating an instance of a backend, one of the [[Backend]] traits should be mixed in, reflecting the effect type
-  * and the `P` capabilities: [[Backend]], [[SyncBackend]], [[WebSocketBackend]], [[StreamBackend]],
-  * [[WebSocketStreamBackend]]. This is required in order to provide a better developer experience when sending
-  * requests: the resulting type has less type parameters.
+  * and the `P` capabilities: [[Backend]], [[SyncBackend]], [[WebSocketBackend]], [[WebSocketSyncBackend]],
+  * [[StreamBackend]], [[WebSocketStreamBackend]]. This is required in order to provide a better developer experience
+  * when sending requests: the resulting type has less type parameters.
   *
   * @note
   *   Backends should try to classify known HTTP-related exceptions into one of the categories specified by
@@ -51,6 +51,9 @@ trait Backend[F[_]] extends GenericBackend[F, Any]
 trait SyncBackend extends Backend[Identity] {
   override def monad: MonadError[Identity] = IdMonad
 }
+
+/** A [[GenericBackend]] which is synchronous (side effects are run directly), and supports web sockets. */
+trait WebSocketSyncBackend extends SyncBackend with WebSocketBackend[Identity]
 
 /** A [[GenericBackend]] which supports streams of type `S` and uses `F` to represent side-effects. */
 trait StreamBackend[F[_], +S] extends Backend[F] with GenericBackend[F, S]

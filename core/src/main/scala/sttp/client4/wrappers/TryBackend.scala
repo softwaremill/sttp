@@ -1,7 +1,15 @@
 package sttp.client4.wrappers
 
 import sttp.client4.monad.FunctionK
-import sttp.client4.{Backend, Identity, StreamBackend, SyncBackend, WebSocketBackend, WebSocketStreamBackend}
+import sttp.client4.{
+  Backend,
+  Identity,
+  StreamBackend,
+  SyncBackend,
+  WebSocketBackend,
+  WebSocketStreamBackend,
+  WebSocketSyncBackend
+}
 import sttp.monad.TryMonad
 
 import scala.util.Try
@@ -11,6 +19,8 @@ object TryBackend {
   def apply(backend: SyncBackend): Backend[Try] =
     MappedEffectBackend(backend, idToTry, tryToId, TryMonad)
   def apply(backend: WebSocketBackend[Identity]): WebSocketBackend[Try] =
+    MappedEffectBackend(backend, idToTry, tryToId, TryMonad)
+  def apply(backend: WebSocketSyncBackend): WebSocketBackend[Try] =
     MappedEffectBackend(backend, idToTry, tryToId, TryMonad)
   def apply[S](backend: StreamBackend[Identity, S]): StreamBackend[Try, S] =
     MappedEffectBackend(backend, idToTry, tryToId, TryMonad)

@@ -17,8 +17,10 @@ class IllTypedTests extends AnyFlatSpec with Matchers {
         """)
     }
 
-    thrown.getMessage should include("found   : sttp.client4.SyncBackend")
-    thrown.getMessage should include("required: sttp.client4.WebSocketBackend[[+X]sttp.client4.Identity[X]]")
+    thrown.getMessage should include("""overloaded method send with alternatives:
+        |  (backend: sttp.client4.WebSocketSyncBackend)""".stripMargin)
+    thrown.getMessage should include("(backend: sttp.client4.WebSocketBackend[[+X]sttp.client4.Identity[X]])")
+    thrown.getMessage should include("cannot be applied to (sttp.client4.SyncBackend)")
   }
 
   "compilation" should "fail when trying to send a request without giving an URL" in {

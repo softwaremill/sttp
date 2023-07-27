@@ -262,7 +262,7 @@ class BackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
   }
 
   it should "return a web socket, given a stub, for a safe websocket-always request" in {
-    val backend: WebSocketBackend[Identity] = WebSocketBackendStub.synchronous.whenAnyRequest
+    val backend: WebSocketSyncBackend = WebSocketBackendStub.synchronous.whenAnyRequest
       .thenRespond(WebSocketStub.initialReceive(List(WebSocketFrame.text("hello"))))
 
     val frame = basicRequest
@@ -275,7 +275,7 @@ class BackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
   }
 
   it should "return a web socket, given a web socket, for a safe websocket-always request" in {
-    val backend: WebSocketBackend[Identity] = WebSocketBackendStub.synchronous.whenAnyRequest
+    val backend: WebSocketSyncBackend = WebSocketBackendStub.synchronous.whenAnyRequest
       .thenRespond(WebSocketStub.initialReceive(List(WebSocketFrame.text("hello"))).build(IdMonad))
 
     val frame = basicRequest
@@ -288,7 +288,7 @@ class BackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
   }
 
   it should "return a web socket, given a web socket, for a safe websocket request" in {
-    val backend: WebSocketBackend[Identity] = WebSocketBackendStub.synchronous.whenAnyRequest
+    val backend: WebSocketSyncBackend = WebSocketBackendStub.synchronous.whenAnyRequest
       .thenRespond(
         WebSocketStub.initialReceive(List(WebSocketFrame.text("hello"))).build(IdMonad),
         if (TestPlatform.Current == TestPlatform.JS) StatusCode.Ok else StatusCode.SwitchingProtocols
