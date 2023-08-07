@@ -1,5 +1,6 @@
 package sttp.client4.testing.streaming
 
+import org.scalatest.Assertion
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
@@ -10,8 +11,9 @@ import sttp.client4.testing.HttpTest.endpoint
 import sttp.client4.testing.streaming.StreamingTest._
 import sttp.client4.testing.{ConvertToFuture, ToFutureWrapper}
 import sttp.model.sse.ServerSentEvent
-import sttp.monad.MonadError
+import sttp.monad.{FutureMonad, MonadError}
 import sttp.monad.syntax._
+import scala.concurrent.Future
 
 abstract class StreamingTest[F[_], S]
     extends AsyncFreeSpec
@@ -189,6 +191,17 @@ abstract class StreamingTest[F[_], S]
     val numChunks = 100
     val url = uri"https://httpbin.org/stream/$numChunks"
 
+    implicit val monadError: MonadError[Future] = new FutureMonad
+
+    def retryImmediatelyOnError[A](action: => Future[A], retriesLeft: Int): Future[A] =
+      action.handleError { case error =>
+        new Exception(s"Error in ${getClass.getSimpleName}, retries left = $retriesLeft", error).printStackTrace
+        if (retriesLeft > 1)
+          retryImmediatelyOnError(action, retriesLeft - 1)
+        else
+          action
+      }
+
     // TODO: for some reason these explicit types are needed in Dotty
     val r0: StreamRequest[streams.BinaryStream, S] = basicRequest
       // of course, you should never rely on the internet being available
@@ -197,7 +210,7 @@ abstract class StreamingTest[F[_], S]
       .get(url)
       .response(asStreamAlwaysUnsafe(streams))
 
-    r0
+    def runTest: Future[Assertion] = r0
       .send(backend)
       .toFuture()
       .flatMap { response =>
@@ -208,6 +221,8 @@ abstract class StreamingTest[F[_], S]
 
         urlRegex.findAllIn(responseBody).length shouldBe numChunks
       }
+    // Repeating, because this request to a real https endpoint of httpbin occasionally fails
+    retryImmediatelyOnError(runTest, retriesLeft = 5)
   }
 
   "lift errors due to mapping with impure functions into the response monad" in {

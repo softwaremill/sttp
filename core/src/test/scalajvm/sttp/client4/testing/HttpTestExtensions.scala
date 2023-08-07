@@ -22,7 +22,7 @@ trait HttpTestExtensions[F[_]] extends AsyncFreeSpecLike { self: HttpTest[F] =>
         .send(backend)
         .toFuture()
         .map { response =>
-          response.unsafeCookies should have length (3)
+          response.unsafeCookies should have length 3
           response.unsafeCookies.toSet should be(
             Set(
               CookieWithMeta.unsafeApply("cookie1", "value1", secure = true, httpOnly = true, maxAge = Some(123L)),
@@ -40,7 +40,7 @@ trait HttpTestExtensions[F[_]] extends AsyncFreeSpecLike { self: HttpTest[F] =>
         .send(backend)
         .toFuture()
         .map { response =>
-          response.unsafeCookies should have length (1)
+          response.unsafeCookies should have length 1
           val c = response.unsafeCookies(0)
 
           c.name should be("c")
@@ -68,7 +68,7 @@ trait HttpTestExtensions[F[_]] extends AsyncFreeSpecLike { self: HttpTest[F] =>
             .response(asStringAlways)
             .send(backend)
             .toFuture()
-            .map { response => response.body shouldBe "no cookie" }
+            .map(response => response.body shouldBe "no cookie")
         }
     }
   }
@@ -84,7 +84,7 @@ trait HttpTestExtensions[F[_]] extends AsyncFreeSpecLike { self: HttpTest[F] =>
       r3.send(backend).toFuture().map { resp =>
         resp.code shouldBe StatusCode.Ok
         resp.body should be(r4response)
-        resp.history should have size (1)
+        resp.history should have size 1
         resp.history(0).code shouldBe StatusCode.Found
       }
     }
@@ -93,7 +93,7 @@ trait HttpTestExtensions[F[_]] extends AsyncFreeSpecLike { self: HttpTest[F] =>
       r1.send(backend).toFuture().map { resp =>
         resp.code shouldBe StatusCode.Ok
         resp.body should be(r4response)
-        resp.history should have size (3)
+        resp.history should have size 3
         resp.history(0).code shouldBe StatusCode.TemporaryRedirect
         resp.history(1).code shouldBe StatusCode.PermanentRedirect
         resp.history(2).code shouldBe StatusCode.Found
@@ -130,8 +130,8 @@ trait HttpTestExtensions[F[_]] extends AsyncFreeSpecLike { self: HttpTest[F] =>
       (308, true, "POSTx")
     )
 
-    for ((statusCode, redirectToGet, expectedBody) <- redirectToGetTestData) yield {
-      s"for $statusCode redirect, with redirect post to get = $redirectToGet, should return body $expectedBody" in {
+    for ((statusCode, redirectToGet, expectedBody) <- redirectToGetTestData)
+      yield s"for $statusCode redirect, with redirect post to get = $redirectToGet, should return body $expectedBody" in {
         basicRequest
           .redirectToGet(redirectToGet)
           .body("x")
@@ -139,9 +139,8 @@ trait HttpTestExtensions[F[_]] extends AsyncFreeSpecLike { self: HttpTest[F] =>
           .response(asStringAlways)
           .send(backend)
           .toFuture()
-          .map { resp => resp.body shouldBe expectedBody }
+          .map(resp => resp.body shouldBe expectedBody)
       }
-    }
 
     "strip sensitive headers" - {
       val testData = List(
@@ -150,19 +149,17 @@ trait HttpTestExtensions[F[_]] extends AsyncFreeSpecLike { self: HttpTest[F] =>
         Header(HeaderNames.SetCookie, "A=B")
       )
 
-      for (header <- testData) yield {
-        s"for $header redirect" in {
-          basicRequest
-            .get(uri"$endpoint/redirect/strip_sensitive_headers/r1")
-            .header(header)
-            .response(asStringAlways)
-            .send(backend)
-            .toFuture()
-            .map { resp =>
-              println(resp.body)
-              resp.body should not include header.toString
-            }
-        }
+      for (header <- testData) yield s"for $header redirect" in {
+        basicRequest
+          .get(uri"$endpoint/redirect/strip_sensitive_headers/r1")
+          .header(header)
+          .response(asStringAlways)
+          .send(backend)
+          .toFuture()
+          .map { resp =>
+            println(resp.body)
+            resp.body should not include header.toString
+          }
       }
     }
   }
@@ -172,7 +169,7 @@ trait HttpTestExtensions[F[_]] extends AsyncFreeSpecLike { self: HttpTest[F] =>
     "read response body encoded using ISO-8859-2, as specified in the header, overriding the default" in {
       val req = basicRequest.get(uri"$endpoint/respond_with_iso_8859_2")
 
-      req.send(backend).toFuture().map { response => response.body should be(Right("Żółć!")) }
+      req.send(backend).toFuture().map(response => response.body should be(Right("Żółć!")))
     }
   }
 
@@ -183,7 +180,7 @@ trait HttpTestExtensions[F[_]] extends AsyncFreeSpecLike { self: HttpTest[F] =>
         case None       => Files.deleteIfExists(file)
         case Some(data) => Files.write(file, data)
       }
-    }.flatMap { _ => f(file.toFile) }
+    }.flatMap(_ => f(file.toFile))
 
     result.onComplete(_ => Files.deleteIfExists(file))
     result
@@ -198,11 +195,10 @@ trait HttpTestExtensions[F[_]] extends AsyncFreeSpecLike { self: HttpTest[F] =>
     hash.map(0xff & _).map("%02x".format(_)).mkString
   }
 
-  private def md5FileHash(file: File): Future[String] = {
+  private def md5FileHash(file: File): Future[String] =
     Future.successful {
       md5Hash(Files.readAllBytes(file.toPath))
     }
-  }
 
   "body" - {
     "post a file" in {
@@ -219,7 +215,7 @@ trait HttpTestExtensions[F[_]] extends AsyncFreeSpecLike { self: HttpTest[F] =>
       withTemporaryNonExistentFile { file =>
         val req = basicRequest.get(uri"$endpoint/download/binary").response(asFile(file))
         req.send(backend).toFuture().flatMap { resp =>
-          md5FileHash(resp.body.right.get).map { _ shouldBe binaryFileMD5Hash }
+          md5FileHash(resp.body.right.get).map(_ shouldBe binaryFileMD5Hash)
         }
       }
     }
@@ -228,7 +224,7 @@ trait HttpTestExtensions[F[_]] extends AsyncFreeSpecLike { self: HttpTest[F] =>
       withTemporaryFile(Some(Array(1))) { file =>
         val req = basicRequest.get(uri"$endpoint/download/binary").response(asFile(file))
         req.send(backend).toFuture().flatMap { resp =>
-          md5FileHash(resp.body.right.get).map { _ shouldBe binaryFileMD5Hash }
+          md5FileHash(resp.body.right.get).map(_ shouldBe binaryFileMD5Hash)
         }
       }
     }
@@ -237,7 +233,7 @@ trait HttpTestExtensions[F[_]] extends AsyncFreeSpecLike { self: HttpTest[F] =>
       withTemporaryNonExistentFile { file =>
         val req = basicRequest.get(uri"$endpoint/download/text").response(asFile(file))
         req.send(backend).toFuture().flatMap { resp =>
-          md5FileHash(resp.body.right.get).map { _ shouldBe textFileMD5Hash }
+          md5FileHash(resp.body.right.get).map(_ shouldBe textFileMD5Hash)
         }
       }
     }
@@ -283,7 +279,7 @@ trait HttpTestExtensions[F[_]] extends AsyncFreeSpecLike { self: HttpTest[F] =>
       "send a multipart message with custom file name" in {
         withTemporaryFile(Some(testBodyBytes)) { f =>
           val req = mp.multipartBody(multipartFile("p1", f).fileName("test.txt"))
-          req.send(backend).toFuture().map { resp => resp.body should be(Right(s"p1=$testBody (test.txt)")) }
+          req.send(backend).toFuture().map(resp => resp.body should be(Right(s"p1=$testBody (test.txt)")))
         }
       }
     }

@@ -5,9 +5,9 @@ import org.scalatest._
 import sttp.client4.internal._
 import sttp.client4._
 import sttp.model._
-
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import ujson.Obj
 
 class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
   "The upickle module" should "encode arbitrary bodies given an encoder" in {
@@ -86,6 +86,23 @@ class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
     val ct = req.headers.map(h => (h.name, h.value)).toMap.get("Content-Type")
 
     ct shouldBe Some("horses/cats")
+  }
+
+  it should "serialize ujson.Obj using implicit upickleBodySerializer" in {
+    val json: Obj = ujson.Obj(
+      "location" -> "hometown",
+      "bio" -> "Scala programmer"
+    )
+    val request: Request[Either[String, String]] = basicRequest.get(Uri("http://example.org")).body(json)
+
+    val actualBody: String = request.body.show
+    val actualContentType: Option[String] = request.contentType
+
+    val expectedBody: String = "string: {\"location\":\"hometown\",\"bio\":\"Scala programmer\"}"
+    val expectedContentType: Option[String] = Some("application/json; charset=utf-8")
+
+    actualBody should be(expectedBody)
+    actualContentType should be(expectedContentType)
   }
 
   case class Inner(a: Int, b: Boolean, c: String)

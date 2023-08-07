@@ -12,11 +12,10 @@ trait ZioTestBase {
   val runtime: Runtime[ZEnv] = Runtime.default
 
   val convertZioTaskToFuture: ConvertToFuture[Task] = new ConvertToFuture[Task] {
-    override def toFuture[T](value: Task[T]): Future[T] = {
+    override def toFuture[T](value: Task[T]): Future[T] =
       runtime.unsafeRunToFuture(value.tapError { e =>
         e.printStackTrace(); ZIO.unit
       })
-    }
   }
 
   def timeoutToNone[T](t: Task[T], timeoutMillis: Int): Task[Option[T]] =

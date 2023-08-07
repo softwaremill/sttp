@@ -1,16 +1,12 @@
 package sttp.client4.okhttp
 
-import java.io.InputStream
-import java.util.concurrent.ArrayBlockingQueue
-import java.util.concurrent.atomic.AtomicBoolean
 import okhttp3.{MediaType, OkHttpClient, RequestBody => OkHttpRequestBody}
 import sttp.capabilities.{Streams, WebSockets}
 import sttp.client4.internal.NoStreams
 import sttp.client4.internal.ws.{SimpleQueue, SyncQueue, WebSocketEvent}
 import sttp.client4.monad.IdMonad
 import sttp.client4.okhttp.OkHttpBackend.EncodingHandler
-import sttp.client4.testing.WebSocketBackendStub
-import sttp.client4.wrappers.FollowRedirectsBackend
+import sttp.client4.testing.WebSocketSyncBackendStub
 import sttp.client4.{
   ignore,
   wrappers,
@@ -19,11 +15,14 @@ import sttp.client4.{
   GenericRequest,
   Identity,
   Response,
-  WebSocketBackend
+  WebSocketSyncBackend
 }
 import sttp.monad.MonadError
 import sttp.ws.WebSocket
 
+import java.io.InputStream
+import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.atomic.AtomicBoolean
 import scala.concurrent.duration.Duration
 import scala.concurrent.{blocking, Await, ExecutionContext, Future}
 
@@ -33,13 +32,13 @@ class OkHttpSyncBackend private (
     customEncodingHandler: EncodingHandler,
     webSocketBufferCapacity: Option[Int]
 ) extends OkHttpBackend[Identity, Nothing, WebSockets](client, closeClient, customEncodingHandler)
-    with WebSocketBackend[Identity] {
+    with WebSocketSyncBackend {
   private implicit val ec: ExecutionContext = ExecutionContext.global
   override val streams: Streams[Nothing] = NoStreams
 
   override protected def sendWebSocket[T](request: GenericRequest[T, R]): Identity[Response[T]] = {
     val nativeRequest = convertRequest(request)
-    val responseCell = new ArrayBlockingQueue[Either[Throwable, Future[Response[T]]]](5)
+    val responseCell = new ArrayBlockingQueue[Either[Throwable, Future[Response[T]]]](1)
     def fillCellError(t: Throwable): Unit = responseCell.add(Left(t))
     def fillCell(wr: Future[Response[T]]): Unit = responseCell.add(Right(wr))
 
@@ -105,7 +104,7 @@ object OkHttpSyncBackend {
       closeClient: Boolean,
       customEncodingHandler: EncodingHandler,
       webSocketBufferCapacity: Option[Int]
-  ): WebSocketBackend[Identity] =
+  ): WebSocketSyncBackend =
     wrappers.FollowRedirectsBackend(
       new OkHttpSyncBackend(client, closeClient, customEncodingHandler, webSocketBufferCapacity)
     )
@@ -114,7 +113,7 @@ object OkHttpSyncBackend {
       options: BackendOptions = BackendOptions.Default,
       customEncodingHandler: EncodingHandler = PartialFunction.empty,
       webSocketBufferCapacity: Option[Int] = OkHttpBackend.DefaultWebSocketBufferCapacity
-  ): WebSocketBackend[Identity] =
+  ): WebSocketSyncBackend =
     OkHttpSyncBackend(
       OkHttpBackend.defaultClient(DefaultReadTimeout.toMillis, options),
       closeClient = true,
@@ -126,12 +125,12 @@ object OkHttpSyncBackend {
       client: OkHttpClient,
       customEncodingHandler: EncodingHandler = PartialFunction.empty,
       webSocketBufferCapacity: Option[Int] = OkHttpBackend.DefaultWebSocketBufferCapacity
-  ): WebSocketBackend[Identity] =
+  ): WebSocketSyncBackend =
     OkHttpSyncBackend(client, closeClient = false, customEncodingHandler, webSocketBufferCapacity)
 
   /** Create a stub backend for testing, which uses the [[Identity]] response wrapper, and doesn't support streaming.
     *
-    * See [[WebSocketBackendStub]] for details on how to configure stub responses.
+    * See [[WebSocketSyncBackendStub]] for details on how to configure stub responses.
     */
-  def stub: WebSocketBackendStub[Identity] = WebSocketBackendStub.synchronous
+  def stub: WebSocketSyncBackendStub = WebSocketSyncBackendStub
 }

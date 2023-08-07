@@ -29,8 +29,8 @@ Below is a summary of all the JVM backends; see the sections on individual backe
 ==================================== ================================ ================================================= ========================== ===================
 Class                                Effect type                      Supported stream type                             Supports websockets        Fully non-blocking
 ==================================== ================================ ================================================= ========================== ===================
-``DefaultSyncBackend``               None (``Identity``)              n/a                                               no                         no
-``HttpClientSyncBackend``            None (``Identity``)              n/a                                               no                         no
+``DefaultSyncBackend``               None (``Identity``)              n/a                                               yes (regular)              no
+``HttpClientSyncBackend``            None (``Identity``)              n/a                                               yes (regular)              no
 ``DefaultFutureBackend``             ``scala.concurrent.Future``      n/a                                               yes (regular)              no
 ``HttpClientFutureBackend``          ``scala.concurrent.Future``      n/a                                               yes (regular)              no
 ``HttpClientMonixBackend``           ``monix.eval.Task``              ``monix.reactive.Observable[ByteBuffer]``         yes (regular & streaming)  yes

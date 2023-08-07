@@ -1,19 +1,24 @@
 package sttp.client4.httpclient
 
+import sttp.capabilities.WebSockets
 import sttp.client4.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client4.httpclient.HttpClientSyncBackend.SyncEncodingHandler
-import sttp.client4.internal.NoStreams
-import sttp.client4.internal.httpclient.{BodyFromHttpClient, BodyToHttpClient, InputStreamBodyFromHttpClient}
+import sttp.client4.internal.httpclient._
+import sttp.client4.internal.ws.{SimpleQueue, SyncQueue, WebSocketEvent}
+import sttp.client4.internal.{emptyInputStream, NoStreams}
 import sttp.client4.monad.IdMonad
-import sttp.client4.testing.SyncBackendStub
-import sttp.client4.{wrappers, BackendOptions, GenericRequest, Identity, Response, SttpClientException, SyncBackend}
+import sttp.client4.testing.WebSocketSyncBackendStub
+import sttp.client4.{wrappers, BackendOptions, GenericRequest, Identity, Response, WebSocketSyncBackend}
+import sttp.model.StatusCode
 import sttp.monad.MonadError
 import sttp.ws.{WebSocket, WebSocketFrame}
 
 import java.io.{InputStream, UnsupportedEncodingException}
 import java.net.http.HttpRequest.BodyPublisher
 import java.net.http.HttpResponse.BodyHandlers
-import java.net.http.{HttpClient, HttpRequest}
+import java.net.http.{HttpClient, HttpRequest, WebSocketHandshakeException}
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.{ArrayBlockingQueue, CompletionException}
 import java.util.zip.{GZIPInputStream, InflaterInputStream}
 
 class HttpClientSyncBackend private (
@@ -21,28 +26,61 @@ class HttpClientSyncBackend private (
     closeClient: Boolean,
     customizeRequest: HttpRequest => HttpRequest,
     customEncodingHandler: SyncEncodingHandler
-) extends HttpClientBackend[Identity, Nothing, Any, InputStream](
+) extends HttpClientBackend[Identity, Nothing, WebSockets, InputStream](
       client,
       closeClient,
       customEncodingHandler
     )
-    with SyncBackend {
+    with WebSocketSyncBackend {
 
   override val streams: NoStreams = NoStreams
 
-  override def send[T](request: GenericRequest[T, R]): Response[T] =
-    adjustExceptions(request) {
-      val jRequest = customizeRequest(convertRequest(request))
-      val response = client.send(jRequest, BodyHandlers.ofInputStream())
-      readResponse(response, Left(response.body()), request)
+  override protected def sendRegular[T](request: GenericRequest[T, R]): Response[T] = {
+    val jRequest = customizeRequest(convertRequest(request))
+    val response = client.send(jRequest, BodyHandlers.ofInputStream())
+    readResponse(response, Left(response.body()), request)
+  }
+
+  override protected def sendWebSocket[T](request: GenericRequest[T, R]): Response[T] = {
+    val queue = new SyncQueue[WebSocketEvent](None)
+    val sequencer = new IdSequencer
+    try sendWebSocket(request, queue, sequencer)
+    catch {
+      case e: CompletionException if e.getCause.isInstanceOf[WebSocketHandshakeException] =>
+        readResponse(
+          e.getCause.asInstanceOf[WebSocketHandshakeException].getResponse,
+          Left(emptyInputStream()),
+          request
+        )
     }
+  }
 
-  override def monad: MonadError[Identity] = IdMonad
+  private def sendWebSocket[T](
+      request: GenericRequest[T, R],
+      queue: SimpleQueue[Identity, WebSocketEvent],
+      sequencer: Sequencer[Identity]
+  ): Response[T] = {
+    val isOpen: AtomicBoolean = new AtomicBoolean(false)
+    val responseCell = new ArrayBlockingQueue[Either[Throwable, () => Response[T]]](1)
 
-  private def adjustExceptions[T](request: GenericRequest[_, R])(t: => T): T =
-    SttpClientException.adjustExceptions(monad)(t)(
-      SttpClientException.defaultExceptionToSttpClientException(request, _)
+    def fillCellError(t: Throwable): Unit = responseCell.add(Left(t)): Unit
+    def fillCell(wr: () => Response[T]): Unit = responseCell.add(Right(wr)): Unit
+
+    val listener = new DelegatingWebSocketListener(
+      new AddToQueueListener(queue, isOpen),
+      ws => {
+        val webSocket = new WebSocketImpl[Identity](ws, queue, isOpen, sequencer, monad, _.get(): Unit)
+        val baseResponse = Response((), StatusCode.SwitchingProtocols, "", Nil, Nil, request.onlyMetadata)
+        val body = () => bodyFromHttpClient(Right(webSocket), request.response, baseResponse)
+        fillCell(() => baseResponse.copy(body = body()))
+      },
+      fillCellError
     )
+    prepareWebSocketBuilder(request, client)
+      .buildAsync(request.uri.toJavaUri, listener)
+      .get()
+    responseCell.take().fold(throw _, f => f())
+  }
 
   override protected val bodyToHttpClient: BodyToHttpClient[Identity, Nothing] =
     new BodyToHttpClient[Identity, Nothing] {
@@ -78,7 +116,7 @@ object HttpClientSyncBackend {
       closeClient: Boolean,
       customizeRequest: HttpRequest => HttpRequest,
       customEncodingHandler: SyncEncodingHandler
-  ): SyncBackend =
+  ): WebSocketSyncBackend =
     wrappers.FollowRedirectsBackend(
       new HttpClientSyncBackend(client, closeClient, customizeRequest, customEncodingHandler)
     )
@@ -87,7 +125,7 @@ object HttpClientSyncBackend {
       options: BackendOptions = BackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: SyncEncodingHandler = PartialFunction.empty
-  ): SyncBackend =
+  ): WebSocketSyncBackend =
     HttpClientSyncBackend(
       HttpClientBackend.defaultClient(options, None),
       closeClient = true,
@@ -99,7 +137,7 @@ object HttpClientSyncBackend {
       client: HttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: SyncEncodingHandler = PartialFunction.empty
-  ): SyncBackend =
+  ): WebSocketSyncBackend =
     HttpClientSyncBackend(
       client,
       closeClient = false,
@@ -107,6 +145,6 @@ object HttpClientSyncBackend {
       customEncodingHandler
     )
 
-  /** Create a stub backend for testing. See [[SyncBackendStub]] for details on how to configure stub responses. */
-  def stub: SyncBackendStub = SyncBackendStub
+  /** Create a stub backend for testing. See [[WebSocketBackendStub]] for details on how to configure stub responses. */
+  def stub: WebSocketSyncBackendStub = WebSocketSyncBackendStub
 }

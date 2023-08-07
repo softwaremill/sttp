@@ -1,6 +1,6 @@
 package sttp.client4.finagle
 
-import com.twitter.util.{Return, Throw, Future => TFuture}
+import com.twitter.util.{Future => TFuture, Return, Throw}
 import sttp.client4.testing.{ConvertToFuture, HttpTest}
 
 import sttp.client4.Backend

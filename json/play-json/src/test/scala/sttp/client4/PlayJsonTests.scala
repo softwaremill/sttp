@@ -100,6 +100,22 @@ class PlayJsonTests extends AnyFlatSpec with Matchers with EitherValues {
     ct shouldBe Some("horses/cats")
   }
 
+  it should "serialize from JsObject using implicit playJsonBodySerializer" in {
+    val fields: Seq[(String, JsValue)] =
+      Seq[(String, JsValue)](("location", JsString("hometown")), ("bio", JsString("Scala programmer")))
+    val json: JsObject = JsObject(fields)
+    val request: Request[Either[String, String]] = basicRequest.get(Uri("http://example.org")).body(json)
+
+    val actualBody: String = request.body.show
+    val actualContentType: Option[String] = request.contentType
+
+    val expectedBody: String = "string: {\"location\":\"hometown\",\"bio\":\"Scala programmer\"}"
+    val expectedContentType: Option[String] = Some("application/json; charset=utf-8")
+
+    actualBody should be(expectedBody)
+    actualContentType should be(expectedContentType)
+  }
+
   case class Inner(a: Int, b: Boolean, c: String)
 
   object Inner {

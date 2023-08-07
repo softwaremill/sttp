@@ -87,6 +87,7 @@ object FollowRedirectsBackend {
   def apply(delegate: SyncBackend): SyncBackend = apply(delegate, FollowRedirectsConfig.Default)
   def apply[F[_]](delegate: Backend[F]): Backend[F] = apply(delegate, FollowRedirectsConfig.Default)
   def apply[F[_]](delegate: WebSocketBackend[F]): WebSocketBackend[F] = apply(delegate, FollowRedirectsConfig.Default)
+  def apply(delegate: WebSocketSyncBackend): WebSocketSyncBackend = apply(delegate, FollowRedirectsConfig.Default)
   def apply[F[_], S](delegate: StreamBackend[F, S]): StreamBackend[F, S] =
     apply(delegate, FollowRedirectsConfig.Default)
   def apply[F[_], S](delegate: WebSocketStreamBackend[F, S]): WebSocketStreamBackend[F, S] =
@@ -97,6 +98,8 @@ object FollowRedirectsBackend {
     new FollowRedirectsBackend(delegate, config) with Backend[F] {}
   def apply[F[_]](delegate: WebSocketBackend[F], config: FollowRedirectsConfig): WebSocketBackend[F] =
     new FollowRedirectsBackend(delegate, config) with WebSocketBackend[F] {}
+  def apply(delegate: WebSocketSyncBackend, config: FollowRedirectsConfig): WebSocketSyncBackend =
+    new FollowRedirectsBackend(delegate, config) with WebSocketSyncBackend {}
   def apply[F[_], S](delegate: StreamBackend[F, S], config: FollowRedirectsConfig): StreamBackend[F, S] =
     new FollowRedirectsBackend(delegate, config) with StreamBackend[F, S] {}
   def apply[F[_], S](

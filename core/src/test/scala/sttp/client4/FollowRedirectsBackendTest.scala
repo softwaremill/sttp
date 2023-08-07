@@ -23,11 +23,10 @@ class FollowRedirectsBackendTest extends AnyFunSuite with Matchers with EitherVa
     ("index.html", true)
   )
 
-  for ((uri, isRelative) <- testData) {
+  for ((uri, isRelative) <- testData)
     test(s"$uri should ${if (isRelative) "" else "not "}be relative") {
       FollowRedirectsBackend.isRelative(uri) shouldBe isRelative
     }
-  }
 
   test("send should encode the redirect location with the provided encoder") {
     val pathEncoder: String => String = Rfc3986.encode(Rfc3986.PathSegment - '+' - '(' - ')' - ',')

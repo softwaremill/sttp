@@ -34,6 +34,9 @@ object ListenerBackend {
   def apply[F[_], L](delegate: WebSocketBackend[F], listener: RequestListener[F, L]): WebSocketBackend[F] =
     new ListenerBackend(delegate, listener) with WebSocketBackend[F]
 
+  def apply[L](delegate: WebSocketSyncBackend, listener: RequestListener[Identity, L]): WebSocketSyncBackend =
+    new ListenerBackend(delegate, listener) with WebSocketSyncBackend {}
+
   def apply[F[_], S, L](delegate: StreamBackend[F, S], listener: RequestListener[F, L]): StreamBackend[F, S] =
     new ListenerBackend(delegate, listener) with StreamBackend[F, S]
 

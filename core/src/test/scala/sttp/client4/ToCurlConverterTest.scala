@@ -14,7 +14,13 @@ class ToCurlConverterTest extends AnyFlatSpec with Matchers with ToCurlConverter
       .get(uri"$localhost")
       .toCurl
 
-    req shouldBe "curl \\\n  --request GET \\\n  --url 'http://localhost' \\\n  --location \\\n  --max-redirs 32"
+    req shouldBe "curl \\\n  --request GET \\\n  --url 'http://localhost' \\\n  --header 'Accept-Encoding: gzip, deflate' \\\n  --location \\\n  --max-redirs 32"
+  }
+
+  it should "hide Accept-Encoding header when asked" in {
+    basicRequest.get(localhost).toCurl(omitAcceptEncoding = true) shouldNot include(
+      """--header 'Accept-Encoding: """
+    )
   }
 
   it should "convert request with method to curl" in {
@@ -42,6 +48,20 @@ class ToCurlConverterTest extends AnyFlatSpec with Matchers with ToCurlConverter
   it should "convert request with custom sensitive header" in {
     basicRequest.header("X-Auth", "xyzabc").get(localhost).toCurl(Set("X-Auth")) should include(
       """--header 'X-Auth: ***'"""
+    )
+  }
+
+  it should "not hide Accept-Encoding header when converting request with custom sensitive header" in {
+    basicRequest.header("X-Auth", "xyzabc").get(localhost).toCurl(Set("X-Auth")) should include(
+      """--header 'Accept-Encoding: """
+    )
+  }
+  it should "hide Accept-Encoding header when asked when converting request with custom sensitive header" in {
+    basicRequest
+      .header("X-Auth", "xyzabc")
+      .get(localhost)
+      .toCurl(Set("X-Auth"), omitAcceptEncoding = true) shouldNot include(
+      """--header 'Accept-Encoding: """
     )
   }
 

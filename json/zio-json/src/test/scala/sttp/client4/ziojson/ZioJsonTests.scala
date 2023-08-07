@@ -6,8 +6,9 @@ import org.scalatest.matchers.should.Matchers
 import zio.json._
 import sttp.client4._
 import sttp.client4.internal.Utf8
-
 import sttp.model._
+import zio.Chunk
+import zio.json.ast.Json
 
 class ZioJsonTests extends AnyFlatSpec with Matchers with EitherValues {
 
@@ -88,6 +89,21 @@ class ZioJsonTests extends AnyFlatSpec with Matchers with EitherValues {
     val ct = req.headers.map(h => (h.name, h.value)).toMap.get("Content-Type")
 
     ct shouldBe Some("horses/cats")
+  }
+
+  it should "serialize from Json.Obj using implicit zioJsonBodySerializer" in {
+    val fields: Chunk[(String, Json)] = Chunk(("location", Json.Str("hometown")), ("bio", Json.Str("Scala programmer")))
+    val jObject: Json.Obj = Json.Obj(fields)
+    val request = basicRequest.get(Uri("http://example.org")).body(jObject)
+
+    val actualBody: String = request.body.show
+    val actualContentType: Option[String] = request.contentType
+
+    val expectedBody: String = "string: {\"location\":\"hometown\",\"bio\":\"Scala programmer\"}"
+    val expectedContentType: Option[String] = Some("application/json; charset=utf-8")
+
+    actualBody should be(expectedBody)
+    actualContentType should be(expectedContentType)
   }
 
   def extractBody[T](request: PartialRequest[T]): String =

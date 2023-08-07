@@ -5,14 +5,10 @@ import org.scalatest._
 import sttp.client4.internal._
 import sttp.client4._
 import sttp.model._
-
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class CirceTests extends AnyFlatSpec with Matchers with EitherValues {
-  // Needed for the implicit to work in Scala3. Normally this is imported explicitly, only in tests we are in the same package
-  import sttp.client4.circe.circeBodySerializer
-  import EitherDecoders._
 
   "The circe module" should "encode arbitrary bodies given an encoder" in {
     val body = Outer(Inner(42, true, "horses"), "cats")
@@ -103,6 +99,24 @@ class CirceTests extends AnyFlatSpec with Matchers with EitherValues {
     val ct = req.headers.map(h => (h.name, h.value)).toMap.get("Content-Type")
 
     ct shouldBe Some("horses/cats")
+  }
+
+  it should "serialize from JsonObject using implicit circeBodySerializer" in {
+    import io.circe.syntax.EncoderOps
+    import io.circe.JsonObject
+    import sttp.model.Uri
+
+    val jObject: JsonObject = JsonObject(("location", "hometown".asJson), ("bio", "Scala programmer".asJson))
+    val request: Request[Either[String, String]] = basicRequest.get(Uri("http://example.org")).body(jObject)
+
+    val actualBody: String = request.body.show
+    val actualContentType: Option[String] = request.contentType
+
+    val expectedBody: String = "string: {\"location\":\"hometown\",\"bio\":\"Scala programmer\"}"
+    val expectedContentType: Option[String] = Some("application/json; charset=utf-8")
+
+    actualBody should be(expectedBody)
+    actualContentType should be(expectedContentType)
   }
 
   case class Inner(a: Int, b: Boolean, c: String)

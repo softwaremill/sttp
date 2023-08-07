@@ -21,5 +21,4 @@ class BackendStubUpickleTests extends AnyFlatSpec with Matchers with ScalaFuture
     r.is200 should be(true)
     r.body should be(Right(Person("John")))
   }
-
 }

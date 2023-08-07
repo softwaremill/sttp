@@ -51,7 +51,7 @@ val backend: SyncBackend = DefaultSyncBackend()
 import io.circe.generic.auto._
 val requestPayload = RequestPayload("some data")
 
-val response: Identity[Response[Either[ResponseException[String, io.circe.Error], ResponsePayload]]] =
+val response: Response[Either[ResponseException[String, io.circe.Error], ResponsePayload]] =
   basicRequest
     .post(uri"...")
     .body(requestPayload)
@@ -87,7 +87,7 @@ val requestPayload = RequestPayload("some data")
 implicit val serialization = org.json4s.native.Serialization
 implicit val formats = org.json4s.DefaultFormats
 
-val response: Identity[Response[Either[ResponseException[String, Exception], ResponsePayload]]] =
+val response: Response[Either[ResponseException[String, Exception], ResponsePayload]] =
   basicRequest
     .post(uri"...")
     .body(requestPayload)
@@ -119,7 +119,7 @@ implicit val myResponseJsonFormat: RootJsonFormat[ResponsePayload] = ???
 
 val requestPayload = RequestPayload("some data")
 
-val response: Identity[Response[Either[ResponseException[String, Exception], ResponsePayload]]] =
+val response: Response[Either[ResponseException[String, Exception], ResponsePayload]] =
   basicRequest
     .post(uri"...")
     .body(requestPayload)
@@ -170,7 +170,7 @@ implicit val myResponseJsonDecoder: JsonDecoder[ResponsePayload] = DeriveJsonDec
 
 val requestPayload = RequestPayload("some data")
 
-val response: Identity[Response[Either[ResponseException[String, String], ResponsePayload]]] =
+val response: Response[Either[ResponseException[String, String], ResponsePayload]] =
 basicRequest
   .post(uri"...")
   .body(requestPayload)
@@ -210,7 +210,7 @@ implicit val payloadJsonCodec: JsonValueCodec[RequestPayload] = JsonCodecMaker.m
 implicit val jsonEitherDecoder: JsonValueCodec[ResponsePayload] = JsonCodecMaker.make
 val requestPayload = RequestPayload("some data")
 
-val response: Identity[Response[Either[ResponseException[String, Exception], ResponsePayload]]] =
+val response: Response[Either[ResponseException[String, Exception], ResponsePayload]] =
 basicRequest
   .post(uri"...")
   .body(requestPayload)
@@ -247,7 +247,7 @@ implicit val responsePayloadRW: ReadWriter[ResponsePayload] = macroRW[ResponsePa
 
 val requestPayload = RequestPayload("some data")
 
-val response: Identity[Response[Either[ResponseException[String, Exception], ResponsePayload]]] =
+val response: Response[Either[ResponseException[String, Exception], ResponsePayload]] =
 basicRequest
   .post(uri"...")
   .body(requestPayload)

@@ -7,7 +7,7 @@ All of the examples are available [in the sources](https://github.com/softwaremi
 Required dependencies:
 
 ```scala            
-libraryDependencies ++= List("com.softwaremill.sttp.client4" %% "core" % "4.0.0-M1")
+libraryDependencies ++= List("com.softwaremill.sttp.client4" %% "core" % "4.0.0-M2")
 ```
 
 Example code:
@@ -22,7 +22,7 @@ Example code:
 Required dependencies:
 
 ```scala            
-libraryDependencies ++= List("com.softwaremill.sttp.client4" %% "core" % "4.0.0-M1")
+libraryDependencies ++= List("com.softwaremill.sttp.client4" %% "core" % "4.0.0-M2")
 ```
 
 Example code:
@@ -38,8 +38,8 @@ Required dependencies:
 
 ```scala
 libraryDependencies ++= List(
-  "com.softwaremill.sttp.client4" %% "akka-http-backend" % "4.0.0-M1",
-  "com.softwaremill.sttp.client4" %% "json4s" % "4.0.0-M1",
+  "com.softwaremill.sttp.client4" %% "akka-http-backend" % "4.0.0-M2",
+  "com.softwaremill.sttp.client4" %% "json4s" % "4.0.0-M2",
   "org.json4s" %% "json4s-native" % "3.6.0"
 )
 ```
@@ -57,8 +57,8 @@ Required dependencies:
 
 ```scala
 libraryDependencies ++= List(
-  "com.softwaremill.sttp.client4" %% "zio" % "4.0.0-M1",
-  "com.softwaremill.sttp.client4" %% "circe" % "4.0.0-M1",
+  "com.softwaremill.sttp.client4" %% "zio" % "4.0.0-M2",
+  "com.softwaremill.sttp.client4" %% "circe" % "4.0.0-M2",
   "io.circe" %% "circe-generic" % "0.14.5"
 )
 ```
@@ -76,8 +76,8 @@ Required dependencies:
 
 ```scala
 libraryDependencies ++= List(
-  "com.softwaremill.sttp.client4" %% "monix" % "4.0.0-M1",
-  "com.softwaremill.sttp.client4" %% "circe" % "4.0.0-M1",
+  "com.softwaremill.sttp.client4" %% "monix" % "4.0.0-M2",
+  "com.softwaremill.sttp.client4" %% "circe" % "4.0.0-M2",
   "io.circe" %% "circe-generic" % "0.14.5"
 )
 ```
@@ -95,8 +95,8 @@ Required dependencies:
 
 ```scala
 libraryDependencies ++= List(
-  "com.softwaremill.sttp.client4" %% "slf4j-backend" % "4.0.0-M1",
-  "com.softwaremill.sttp.client4" %% "circe" % "4.0.0-M1",
+  "com.softwaremill.sttp.client4" %% "slf4j-backend" % "4.0.0-M2",
+  "com.softwaremill.sttp.client4" %% "circe" % "4.0.0-M2",
   "io.circe" %% "circe-generic" % "0.14.5"
 )
 ```
@@ -114,8 +114,8 @@ Required dependencies:
 
 ```scala
 libraryDependencies ++= List(
-  "com.softwaremill.sttp.client4" %% "monix" % "4.0.0-M1",
-  "com.softwaremill.sttp.client4" %% "circe" % "4.0.0-M1",
+  "com.softwaremill.sttp.client4" %% "monix" % "4.0.0-M2",
+  "com.softwaremill.sttp.client4" %% "circe" % "4.0.0-M2",
   "io.circe" %% "circe-generic" % "0.14.5"
 )
 ```
@@ -132,7 +132,7 @@ Example code:
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client4" %% "core" % "4.0.0-M1")
+libraryDependencies ++= List("com.softwaremill.sttp.client4" %% "core" % "4.0.0-M2")
 ```
 
 Example code:
@@ -146,7 +146,7 @@ Example code:
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client4" %% "zio" % "4.0.0-M1")
+libraryDependencies ++= List("com.softwaremill.sttp.client4" %% "zio" % "4.0.0-M2")
 ```
 
 Example code:
@@ -161,7 +161,7 @@ Example code:
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client4" %% "fs2" % "4.0.0-M1")
+libraryDependencies ++= List("com.softwaremill.sttp.client4" %% "fs2" % "4.0.0-M2")
 ```
 
 Example code:
@@ -176,7 +176,7 @@ Example code:
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client4" %% "monix" % "4.0.0-M1")
+libraryDependencies ++= List("com.softwaremill.sttp.client4" %% "monix" % "4.0.0-M2")
 ```
 
 Example code:
@@ -191,7 +191,7 @@ Example code:
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client4" %% "akka-http-backend" % "4.0.0-M1")
+libraryDependencies ++= List("com.softwaremill.sttp.client4" %% "akka-http-backend" % "4.0.0-M2")
 ```
 
 Example code:
@@ -221,7 +221,7 @@ Example code:
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client4" %% "monix" % "4.0.0-M1")
+libraryDependencies ++= List("com.softwaremill.sttp.client4" %% "monix" % "4.0.0-M2")
 ```
 
 Example code:
@@ -236,7 +236,7 @@ Example code:
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client4" %% "fs2" % "4.0.0-M1")
+libraryDependencies ++= List("com.softwaremill.sttp.client4" %% "fs2" % "4.0.0-M2")
 ```
 
 Example code:
@@ -251,7 +251,7 @@ Example code:
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client4" %% "zio" % "4.0.0-M1")
+libraryDependencies ++= List("com.softwaremill.sttp.client4" %% "zio" % "4.0.0-M2")
 ```
 
 Example code:
@@ -266,7 +266,7 @@ Example code:
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client4" %% "zio" % "4.0.0-M1")
+libraryDependencies ++= List("com.softwaremill.sttp.client4" %% "zio" % "4.0.0-M2")
 ```
 
 Example code:
@@ -281,7 +281,7 @@ Example code:
 Required dependencies:
 
 ```scala            
-libraryDependencies ++= List("com.softwaremill.sttp.client4" %% "core" % "4.0.0-M1")
+libraryDependencies ++= List("com.softwaremill.sttp.client4" %% "core" % "4.0.0-M2")
 ```
 
 Example code:

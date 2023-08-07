@@ -12,7 +12,8 @@ import sttp.client4.{
   StreamBackend,
   SyncBackend,
   WebSocketBackend,
-  WebSocketStreamBackend
+  WebSocketStreamBackend,
+  WebSocketSyncBackend
 }
 import sttp.model.Header
 import sttp.monad.syntax._
@@ -58,6 +59,8 @@ object DigestAuthenticationBackend {
   def apply[F[_]](delegate: Backend[F]): Backend[F] = apply(delegate, DigestAuthenticator.defaultClientNonceGenerator _)
   def apply[F[_]](delegate: WebSocketBackend[F]): WebSocketBackend[F] =
     apply(delegate, DigestAuthenticator.defaultClientNonceGenerator _)
+  def apply[F[_]](delegate: WebSocketSyncBackend): WebSocketSyncBackend =
+    apply(delegate, DigestAuthenticator.defaultClientNonceGenerator _)
   def apply[F[_], S](delegate: StreamBackend[F, S]): StreamBackend[F, S] =
     apply(delegate, DigestAuthenticator.defaultClientNonceGenerator _)
   def apply[F[_], S](delegate: WebSocketStreamBackend[F, S]): WebSocketStreamBackend[F, S] =
@@ -68,6 +71,8 @@ object DigestAuthenticationBackend {
     new DigestAuthenticationBackend(delegate, clientNonceGenerator) with Backend[F] {}
   def apply[F[_]](delegate: WebSocketBackend[F], clientNonceGenerator: () => String): WebSocketBackend[F] =
     new DigestAuthenticationBackend(delegate, clientNonceGenerator) with WebSocketBackend[F] {}
+  def apply(delegate: WebSocketSyncBackend, clientNonceGenerator: () => String): WebSocketSyncBackend =
+    new DigestAuthenticationBackend(delegate, clientNonceGenerator) with WebSocketSyncBackend {}
   def apply[F[_], S](delegate: StreamBackend[F, S], clientNonceGenerator: () => String): StreamBackend[F, S] =
     new DigestAuthenticationBackend(delegate, clientNonceGenerator) with StreamBackend[F, S] {}
   def apply[F[_], S](

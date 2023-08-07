@@ -2,7 +2,7 @@ package sttp.client4.armeria.monix
 
 import monix.eval.Task
 import sttp.capabilities.monix.MonixStreams
-import sttp.client4.{StreamBackend, BackendOptions}
+import sttp.client4.{BackendOptions, StreamBackend}
 import sttp.client4.impl.monix.MonixStreamingTest
 import monix.execution.Scheduler.Implicits.global
 import sttp.client4.armeria.ArmeriaWebClient

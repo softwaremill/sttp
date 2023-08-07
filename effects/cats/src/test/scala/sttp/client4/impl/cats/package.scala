@@ -1,6 +1,6 @@
 package sttp.client4.impl
 
-import _root_.cats.effect.{IO, unsafe}
+import _root_.cats.effect.{unsafe, IO}
 import sttp.client4.testing.ConvertToFuture
 
 import scala.concurrent.Future

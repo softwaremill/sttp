@@ -30,6 +30,9 @@ trait GenericRequest[+T, -R] extends RequestBuilder[GenericRequest[T, R]] with R
 
   def toCurl: String = ToCurlConverter(this)
   def toCurl(sensitiveHeaders: Set[String]): String = ToCurlConverter(this, sensitiveHeaders)
+  def toCurl(omitAcceptEncoding: Boolean): String = ToCurlConverter(this, omitAcceptEncoding)
+  def toCurl(sensitiveHeaders: Set[String], omitAcceptEncoding: Boolean): String =
+    ToCurlConverter(this, sensitiveHeaders, omitAcceptEncoding)
 
   def toRfc2616Format: String = ToRfc2616Converter.requestToRfc2616(this)
   def toRfc2616Format(sensitiveHeaders: Set[String]): String =
@@ -314,6 +317,19 @@ final case class WebSocketRequest[F[_], T](
     * unchanged.
     */
   def send(backend: WebSocketBackend[F]): F[Response[T]] = backend.send(this)
+
+  /** Sends the WebSocket request synchronously, using the given backend.
+    *
+    * @return
+    *   A [[Response]], with the body handled as specified by this request (see [[Request.response]]).
+    *
+    * The response WebSocket is handled as specified by this request (see [[Request.response]]).
+    *
+    * Known exceptions are converted by backends to one of [[SttpClientException]]. Other exceptions are thrown
+    * unchanged.
+    */
+  def send(backend: WebSocketSyncBackend)(implicit ev: Identity[T] =:= F[T]): Response[T] =
+    backend.send(this.asInstanceOf[WebSocketRequest[Identity, T]]) // as witnessed by ev
 }
 
 //
