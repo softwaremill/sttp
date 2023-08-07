@@ -206,7 +206,7 @@ Example code:
 Required dependencies:
 
 ```scala
-libraryDependencies ++= List("com.softwaremill.sttp.client4" %% "pekko-http-backend" % "4.0.0-M1")
+libraryDependencies ++= List("com.softwaremill.sttp.client4" %% "pekko-http-backend" % "@VERSION@")
 ```
 
 Example code:
