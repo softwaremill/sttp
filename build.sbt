@@ -997,7 +997,7 @@ lazy val examples = (projectMatrix in file("examples"))
     libraryDependencies ++= Seq(
       "io.circe" %% "circe-generic" % circeVersion,
       "org.json4s" %% "json4s-native" % json4sVersion,
-      akkaStreams,
+      akkaStreams.exclude("org.scala-lang.modules", "scala-java8-compat_2.12"),
       pekkoStreams,
       logback
     )
