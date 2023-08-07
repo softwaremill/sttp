@@ -86,14 +86,14 @@ private[pekkohttp] object BodyToPekko {
       bodyParts: Seq[PekkoMultipart.FormData.BodyPart]
   ): Try[RequestEntity] =
     r.headers.find(Util.isContentType) match {
-      case None => Success(PekkoMultipart.FormData(bodyParts: _*).toEntity())
+      case None => Success(PekkoMultipart.FormData(bodyParts: _*).toEntity)
       case Some(ct) =>
         Util.parseContentType(ct.value).map(_.mediaType).flatMap {
           case m: MediaType.Multipart =>
             Success(
               PekkoMultipart
                 .General(m, Source(bodyParts.map(bp => PekkoMultipart.General.BodyPart(bp.entity, bp.headers))))
-                .toEntity()
+                .toEntity
             )
           case _ => Failure(new RuntimeException(s"Non-multipart content type: $ct"))
         }

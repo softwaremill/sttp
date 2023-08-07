@@ -147,7 +147,7 @@ private[pekkohttp] class BodyFromPekko()(implicit ec: ExecutionContext, mat: Mat
       private val open = new AtomicBoolean(true)
       private val closeReceived = new AtomicBoolean(false)
 
-      override def receive: Future[WebSocketFrame] = {
+      override def receive(): Future[WebSocketFrame] = {
         val result = sinkQueue.pull().flatMap {
           case Some(m) => messageToFrame(m)
           case None =>
@@ -189,7 +189,7 @@ private[pekkohttp] class BodyFromPekko()(implicit ec: ExecutionContext, mat: Mat
 
       override def upgradeHeaders: Headers = Headers(meta.headers)
 
-      override def isOpen: Future[Boolean] = Future.successful(open.get())
+      override def isOpen(): Future[Boolean] = Future.successful(open.get())
 
       override implicit def monad: MonadError[Future] = new FutureMonad()(ec)
     }

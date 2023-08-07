@@ -160,7 +160,7 @@ class PekkoHttpBackend private (
       CoordinatedShutdown(as).addTask(
         CoordinatedShutdown.PhaseServiceRequestsDone,
         "shut down all connection pools"
-      )(() => Http(as).shutdownAllConnectionPools.map(_ => Done))
+      )(() => Http(as).shutdownAllConnectionPools().map(_ => Done))
       actorSystem.terminate().map(_ => ())
     } else Future.successful(())
 }
