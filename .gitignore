@@ -24,7 +24,7 @@ core/native/local.sbt
 
 .metals/
 .bloop/
-project/metals.sbt
+metals.sbt
 .bsp/
 .java-version
 
