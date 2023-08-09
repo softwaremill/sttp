@@ -34,7 +34,7 @@ case class ResponsePayload(data: String)
 JSON encoding of bodies and decoding of responses can be handled using [Circe](https://circe.github.io/circe/) by the `circe` module. To use add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client4" %% "circe" % "4.0.0-M2"
+"com.softwaremill.sttp.client4" %% "circe" % "4.0.0-M3"
 ```
 
 This module adds a body serialized, so that json payloads can be sent as request bodies. To send a payload of type `T` as json, a `io.circe.Encoder[T]` implicit value must be available in scope.
@@ -51,7 +51,7 @@ val backend: SyncBackend = DefaultSyncBackend()
 import io.circe.generic.auto._
 val requestPayload = RequestPayload("some data")
 
-val response: Identity[Response[Either[ResponseException[String, io.circe.Error], ResponsePayload]]] =
+val response: Response[Either[ResponseException[String, io.circe.Error], ResponsePayload]] =
   basicRequest
     .post(uri"...")
     .body(requestPayload)
@@ -66,7 +66,7 @@ Arbitrary JSON structures can be traversed by parsing the result as `io.circe.Js
 To encode and decode json using json4s, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %% "json4s" % "4.0.0-M2"
+"com.softwaremill.sttp.client4" %% "json4s" % "4.0.0-M3"
 "org.json4s" %% "json4s-native" % "3.6.0"
 ```
 
@@ -87,7 +87,7 @@ val requestPayload = RequestPayload("some data")
 implicit val serialization = org.json4s.native.Serialization
 implicit val formats = org.json4s.DefaultFormats
 
-val response: Identity[Response[Either[ResponseException[String, Exception], ResponsePayload]]] =
+val response: Response[Either[ResponseException[String, Exception], ResponsePayload]] =
   basicRequest
     .post(uri"...")
     .body(requestPayload)
@@ -100,7 +100,7 @@ val response: Identity[Response[Either[ResponseException[String, Exception], Res
 To encode and decode JSON using [spray-json](https://github.com/spray/spray-json), add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %% "spray-json" % "4.0.0-M2"
+"com.softwaremill.sttp.client4" %% "spray-json" % "4.0.0-M3"
 ```
 
 Using this module it is possible to set request bodies and read response bodies as your custom types, using the implicitly available instances of `spray.json.JsonWriter` / `spray.json.JsonReader` or `spray.json.JsonFormat`.
@@ -119,7 +119,7 @@ implicit val myResponseJsonFormat: RootJsonFormat[ResponsePayload] = ???
 
 val requestPayload = RequestPayload("some data")
 
-val response: Identity[Response[Either[ResponseException[String, Exception], ResponsePayload]]] =
+val response: Response[Either[ResponseException[String, Exception], ResponsePayload]] =
   basicRequest
     .post(uri"...")
     .body(requestPayload)
@@ -132,7 +132,7 @@ val response: Identity[Response[Either[ResponseException[String, Exception], Res
 To encode and decode JSON using [play-json](https://www.playframework.com), add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client4" %% "play-json" % "4.0.0-M2"
+"com.softwaremill.sttp.client4" %% "play-json" % "4.0.0-M3"
 ```
 
 To use, add an import: `import sttp.client4.playJson._`.
@@ -144,13 +144,13 @@ To encode and decode JSON using the high-performance [zio-json](https://zio.gith
 The `zio-json` module depends on ZIO 2.x. For ZIO 1.x support, use `zio1-json`.
 
 ```scala
-"com.softwaremill.sttp.client4" %% "zio-json" % "4.0.0-M2"  // for ZIO 2.x
-"com.softwaremill.sttp.client4" %% "zio1-json" % "4.0.0-M2" // for ZIO 1.x
+"com.softwaremill.sttp.client4" %% "zio-json" % "4.0.0-M3"  // for ZIO 2.x
+"com.softwaremill.sttp.client4" %% "zio1-json" % "4.0.0-M3" // for ZIO 1.x
 ```
 or for ScalaJS (cross build) projects:
 ```scala
-"com.softwaremill.sttp.client4" %%% "zio-json" % "4.0.0-M2"  // for ZIO 2.x
-"com.softwaremill.sttp.client4" %%% "zio1-json" % "4.0.0-M2" // for ZIO 1.x
+"com.softwaremill.sttp.client4" %%% "zio-json" % "4.0.0-M3"  // for ZIO 2.x
+"com.softwaremill.sttp.client4" %%% "zio1-json" % "4.0.0-M3" // for ZIO 1.x
 ```
 
 To use, add an import: `import sttp.client4.ziojson._` (or extend `SttpZioJsonApi`), define an implicit `JsonCodec`, or `JsonDecoder`/`JsonEncoder` for your datatype.
@@ -169,7 +169,7 @@ implicit val myResponseJsonDecoder: JsonDecoder[ResponsePayload] = DeriveJsonDec
 
 val requestPayload = RequestPayload("some data")
 
-val response: Identity[Response[Either[ResponseException[String, String], ResponsePayload]]] =
+val response: Response[Either[ResponseException[String, String], ResponsePayload]] =
 basicRequest
   .post(uri"...")
   .body(requestPayload)
@@ -182,13 +182,13 @@ basicRequest
 To encode and decode JSON using the [high(est)-performant](https://plokhotnyuk.github.io/jsoniter-scala/) [jsoniter-scala](https://github.com/plokhotnyuk/jsoniter-scala) library, one add the following dependency to your project.
 
 ```scala
-"com.softwaremill.sttp.client4" %% "jsoniter" % "4.0.0-M2"
+"com.softwaremill.sttp.client4" %% "jsoniter" % "4.0.0-M3"
 ```
 
 or for ScalaJS (cross build) projects:
 
 ```scala
-"com.softwaremill.sttp.client4" %%% "jsoniter" % "4.0.0-M2"
+"com.softwaremill.sttp.client4" %%% "jsoniter" % "4.0.0-M3"
 ```
 
 To use, add an import: `import sttp.client4.jsoniter._` (or extend `SttpJsonIterJsonApi`), define an implicit `JsonCodec`, or `JsonDecoder`/`JsonEncoder` for your datatype.
@@ -209,7 +209,7 @@ implicit val payloadJsonCodec: JsonValueCodec[RequestPayload] = JsonCodecMaker.m
 implicit val jsonEitherDecoder: JsonValueCodec[ResponsePayload] = JsonCodecMaker.make
 val requestPayload = RequestPayload("some data")
 
-val response: Identity[Response[Either[ResponseException[String, Exception], ResponsePayload]]] =
+val response: Response[Either[ResponseException[String, Exception], ResponsePayload]] =
 basicRequest
   .post(uri"...")
   .body(requestPayload)
@@ -222,13 +222,13 @@ basicRequest
 To encode and decode JSON using the [uPickle](https://github.com/com-lihaoyi/upickle) library, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client4" %% "upickle" % "4.0.0-M2"
+"com.softwaremill.sttp.client4" %% "upickle" % "4.0.0-M3"
 ```
 
 or for ScalaJS (cross build) projects:
 
 ```scala
-"com.softwaremill.sttp.client4" %%% "upickle" % "4.0.0-M2"
+"com.softwaremill.sttp.client4" %%% "upickle" % "4.0.0-M3"
 ```
 
 To use, add an import: `import sttp.client4.upicklejson._` (or extend `SttpUpickleApi`) and define an implicit `ReadWriter` (or separately `Reader` and `Writer`) for your datatype.
@@ -246,7 +246,7 @@ implicit val responsePayloadRW: ReadWriter[ResponsePayload] = macroRW[ResponsePa
 
 val requestPayload = RequestPayload("some data")
 
-val response: Identity[Response[Either[ResponseException[String, Exception], ResponsePayload]]] =
+val response: Response[Either[ResponseException[String, Exception], ResponsePayload]] =
 basicRequest
   .post(uri"...")
   .body(requestPayload)
