@@ -143,6 +143,10 @@ val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.2.10"
 val akkaStreamVersion = "2.6.20"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % akkaStreamVersion
 
+val pekkoHttp = "org.apache.pekko" %% "pekko-http" % "1.0.0"
+val pekkoStreamVersion = "1.0.1"
+val pekkoStreams = "org.apache.pekko" %% "pekko-stream" % pekkoStreamVersion
+
 val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", "wordspec", "shouldmatchers").map(m =>
   "org.scalatest" %%% s"scalatest-$m" % "3.2.16" % Test
 )
@@ -193,6 +197,7 @@ lazy val allAggregates = projectsWithOptionalNative ++
   zio1.projectRefs ++
   zio.projectRefs ++
   akkaHttpBackend.projectRefs ++
+  pekkoHttpBackend.projectRefs ++
   asyncHttpClientBackend.projectRefs ++
   asyncHttpClientFutureBackend.projectRefs ++
   asyncHttpClientScalazBackend.projectRefs ++
@@ -525,6 +530,25 @@ lazy val akkaHttpBackend = (projectMatrix in file("akka-http-backend"))
   .dependsOn(core % compileAndTest)
   .jvmPlatform(
     scalaVersions = scala2
+  )
+
+//-- pekko
+lazy val pekkoHttpBackend = (projectMatrix in file("pekko-http-backend"))
+  .settings(commonJvmSettings)
+  .settings(testServerSettings)
+  .settings(
+    name := "pekko-http-backend",
+    libraryDependencies ++= Seq(
+      pekkoHttp,
+      // provided as we don't want to create a transitive dependency on a specific streams version,
+      // just as akka-http doesn't
+      pekkoStreams % "provided",
+      "com.softwaremill.sttp.shared" %% "pekko" % sttpSharedVersion
+    )
+  )
+  .dependsOn(core % compileAndTest)
+  .jvmPlatform(
+    scalaVersions = scala2 ++ scala3
   )
 
 //-- async http client
@@ -973,7 +997,8 @@ lazy val examples = (projectMatrix in file("examples"))
     libraryDependencies ++= Seq(
       "io.circe" %% "circe-generic" % circeVersion,
       "org.json4s" %% "json4s-native" % json4sVersion,
-      akkaStreams,
+      akkaStreams.exclude("org.scala-lang.modules", "scala-java8-compat_2.12"),
+      pekkoStreams,
       logback
     )
   )
@@ -982,6 +1007,7 @@ lazy val examples = (projectMatrix in file("examples"))
     core,
     asyncHttpClientZioBackend,
     akkaHttpBackend,
+    pekkoHttpBackend,
     asyncHttpClientFs2Backend,
     json4s,
     circe,
@@ -1008,6 +1034,7 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
       "BRAVE_OPENTRACING_VERSION" -> braveOpentracingVersion,
       "ZIPKIN_SENDER_OKHTTP_VERSION" -> zipkinSenderOkHttpVersion,
       "AKKA_STREAM_VERSION" -> akkaStreamVersion,
+      "PEKKO_STREAM_VERSION" -> pekkoStreamVersion,
       "CIRCE_VERSION" -> circeVersion
     ),
     mdocOut := file("generated-docs/out"),
@@ -1025,13 +1052,15 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
       "io.opentracing.brave" % "brave-opentracing" % braveOpentracingVersion,
       "io.zipkin.reporter2" % "zipkin-sender-okhttp3" % zipkinSenderOkHttpVersion,
       "io.opentelemetry" % "opentelemetry-semconv" % "1.2.0-alpha",
-      akkaStreams
+      akkaStreams,
+      pekkoStreams
     ),
     evictionErrorLevel := Level.Info
   )
   .dependsOn(
     core % "compile->test",
     akkaHttpBackend,
+    pekkoHttpBackend,
     json4s,
     circe,
     sprayJson,

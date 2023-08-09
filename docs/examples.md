@@ -201,6 +201,21 @@ Example code:
     :language: scala
 ```
 
+## Open a websocket using Pekko
+
+Required dependencies:
+
+```scala
+libraryDependencies ++= List("com.softwaremill.sttp.client4" %% "pekko-http-backend" % "@VERSION@")
+```
+
+Example code:
+
+```eval_rst
+.. literalinclude:: ../../examples/src/main/scala/sttp/client4/examples/WebSocketPekko.scala
+    :language: scala
+```
+
 ## Open a websocket using Monix
 
 Required dependencies:
