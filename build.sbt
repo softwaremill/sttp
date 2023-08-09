@@ -1026,6 +1026,7 @@ lazy val examples = (projectMatrix in file("examples"))
       "io.circe" %% "circe-generic" % circeVersion(_),
       _ => "org.json4s" %% "json4s-native" % json4sVersion,
       _ => akkaStreams.exclude("org.scala-lang.modules", "scala-java8-compat_2.12"),
+      _ => pekkoStreams,
       _ => logback
     )
   )
