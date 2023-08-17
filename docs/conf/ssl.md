@@ -146,11 +146,7 @@ val httpClient: HttpClient = HttpClient.newBuilder().sslContext(ssl).build()
 val backend: Resource[IO, SttpBackend[IO, Fs2Streams[IO] with WebSockets]] = HttpClientFs2Backend.resourceUsingClient[IO](httpClient)
 ```
 
-## Using Async-http-client (deprecated)
-
-```eval_rst
-.. note:: Note that the async-http-client is no longer maintained, thus backends based on it should not be used in the new projects.
-```
+## Using Async-http-client
 
 Using `kmf: KeyManagerFactory` and `tmf: TrustManagerFactory` from [first section](#ssl-context) create a `AsyncHttpClientConfig`.
 
