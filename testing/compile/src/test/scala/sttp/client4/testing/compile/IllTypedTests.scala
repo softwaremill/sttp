@@ -10,6 +10,7 @@ class IllTypedTests extends AnyFlatSpec with Matchers {
     val thrown = intercept[ToolBoxError] {
       EvalScala("""
         import sttp.client4._
+        import sttp.client4.ws.async._
         import sttp.client4.httpurlconnection._
 
         val backend = HttpURLConnectionBackend()

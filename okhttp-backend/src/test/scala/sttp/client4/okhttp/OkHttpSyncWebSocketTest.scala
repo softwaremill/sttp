@@ -2,6 +2,7 @@ package sttp.client4.okhttp
 
 import org.scalatest.Assertion
 import sttp.client4._
+import sttp.client4.ws.sync._
 import sttp.monad.syntax._
 import sttp.client4.monad.IdMonad
 import sttp.client4.testing.ConvertToFuture
@@ -21,9 +22,9 @@ class OkHttpSyncWebSocketTest extends WebSocketTest[Identity] {
   it should "error if incoming messages overflow the buffer" in {
     basicRequest
       .get(uri"$wsEndpoint/ws/echo")
-      .response(asWebSocket[Identity, Assertion] { ws =>
-        sendText(ws, OkHttpBackend.DefaultWebSocketBufferCapacity.get + 1).flatMap(_ =>
-          eventually(10.millis, 400)(() => ws.isOpen().map(_ shouldBe false))
+      .response(asWebSocket[Assertion] { ws =>
+        sendText(ws.delegate, OkHttpBackend.DefaultWebSocketBufferCapacity.get + 1).flatMap(_ =>
+          eventually(10.millis, 400)(() => ws.isOpen() shouldBe false)
         )
       })
       .send(backend)

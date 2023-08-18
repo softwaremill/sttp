@@ -7,6 +7,7 @@ import sttp.client4.SttpClientException.ReadException
 import sttp.client4._
 import sttp.client4.internal._
 import sttp.client4.monad.IdMonad
+import sttp.client4.ws.async._
 import sttp.model._
 import sttp.monad.{FutureMonad, TryMonad}
 import sttp.ws.WebSocketFrame

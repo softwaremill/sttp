@@ -7,6 +7,7 @@ import sttp.capabilities.Streams
 import sttp.client4.testing.HttpTest.wsEndpoint
 import sttp.client4.testing.{ConvertToFuture, ToFutureWrapper}
 import sttp.client4._
+import sttp.client4.ws.stream._
 import sttp.monad.MonadError
 import sttp.monad.syntax._
 import sttp.ws.WebSocketFrame

@@ -1,6 +1,7 @@
 package sttp.client4.examples
 
 import sttp.client4._
+import sttp.client4.ws.async._
 import sttp.client4.akkahttp.AkkaHttpBackend
 import sttp.ws.WebSocket
 

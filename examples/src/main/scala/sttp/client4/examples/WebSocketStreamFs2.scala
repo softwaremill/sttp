@@ -5,6 +5,7 @@ import cats.effect.unsafe.IORuntime
 import fs2._
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client4._
+import sttp.client4.ws.stream._
 import sttp.client4.httpclient.fs2.HttpClientFs2Backend
 import sttp.ws.WebSocketFrame
 
