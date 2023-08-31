@@ -7,10 +7,10 @@ import org.scalatest.time.{Seconds, Span}
 import org.scalatest.{Assertion, BeforeAndAfterAll}
 import sttp.client4.SttpClientException.ReadException
 import sttp.client4._
-import sttp.client4.ws.async._
 import sttp.client4.logging.{LogConfig, LogLevel, Logger, LoggingBackend}
 import sttp.client4.testing.HttpTest.wsEndpoint
 import sttp.client4.testing.{ConvertToFuture, ToFutureWrapper}
+import sttp.client4.ws.async._
 import sttp.monad.MonadError
 import sttp.monad.syntax._
 import sttp.ws.{WebSocket, WebSocketFrame}
@@ -160,9 +160,10 @@ abstract class WebSocketTest[F[_]]
   class TestLogger extends Logger[F] {
     val msgCounter = new AtomicInteger()
     val errCounter = new AtomicInteger()
-    override def apply(level: LogLevel, message: => String): F[Unit] =
+
+    override def apply(level: LogLevel, message: => String, context: Map[String, Any]): F[Unit] =
       monad.unit(println(message)).map(_ => msgCounter.incrementAndGet())
-    override def apply(level: LogLevel, message: => String, t: Throwable): F[Unit] =
+    override def apply(level: LogLevel, message: => String, t: Throwable, context: Map[String, Any]): F[Unit] =
       monad.unit(println(message + t.toString)).map(_ => errCounter.incrementAndGet())
   }
 
