@@ -95,6 +95,11 @@ This backend is build on top of [Armeria](https://armeria.dev/docs/client-http).
 Armeria's [ClientFactory](https://armeria.dev/docs/client-factory) manages connections and protocol-specific properties.
 Please visit [the official documentation](https://armeria.dev/docs/client-factory) to learn how to configure it.
 
+## Using JavaScript
+
+The ZIO backend is also available for the JS platform, see [the `FetchBackend` documentation](javascript/fetch.md).
+The `FetchBackend` companion object contains methods to create the backend directly, as a layer or scoped.
+
 ## ZIO layers + constructors
 
 When using constructors to express service dependencies, ZIO layers can be used to provide the `SttpBackend` instance, instead of creating one by hand. In this scenario, the lifecycle of a `SttpBackend` service is described by `ZLayer`s, which can be created using the `.layer`/`.layerUsingConfig`/... methods on `HttpClientZioBackend` / `ArmeriaZioBackend`.

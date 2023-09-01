@@ -4,7 +4,7 @@ addSbtPlugin("org.scala-native" % "sbt-scala-native" % "0.4.14")
 addSbtPlugin("io.spray" % "sbt-revolver" % "0.10.0")
 addSbtPlugin("com.eed3si9n" % "sbt-projectmatrix" % "0.9.1")
 
-val sbtSoftwareMillVersion = "2.0.13"
+val sbtSoftwareMillVersion = "2.0.17"
 addSbtPlugin("com.softwaremill.sbt-softwaremill" % "sbt-softwaremill-common" % sbtSoftwareMillVersion)
 addSbtPlugin("com.softwaremill.sbt-softwaremill" % "sbt-softwaremill-publish" % sbtSoftwareMillVersion)
 addSbtPlugin("com.softwaremill.sbt-softwaremill" % "sbt-softwaremill-browser-test-js" % sbtSoftwareMillVersion)
