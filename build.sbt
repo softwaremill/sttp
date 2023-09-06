@@ -466,7 +466,7 @@ lazy val zio1 = (projectMatrix in file("effects/zio1"))
     settings = commonJvmSettings ++ Seq(
       libraryDependencies ++= Seq(
         "dev.zio" %% "zio-interop-reactivestreams" % zio1InteropRsVersion,
-        "dev.zio" %% "zio-nio" % "1.0.0-RC12"
+        "dev.zio" %% "zio-nio" % "2.0.2"
       )
     )
   )
