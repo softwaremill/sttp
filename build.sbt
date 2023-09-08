@@ -148,7 +148,7 @@ val pekkoStreamVersion = "1.0.1"
 val pekkoStreams = "org.apache.pekko" %% "pekko-stream" % pekkoStreamVersion
 
 val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", "wordspec", "shouldmatchers").map(m =>
-  "org.scalatest" %%% s"scalatest-$m" % "3.2.16" % Test
+  "org.scalatest" %%% s"scalatest-$m" % "3.2.17" % Test
 )
 
 val zio1Version = "1.0.18"
