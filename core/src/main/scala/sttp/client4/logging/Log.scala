@@ -1,9 +1,8 @@
 package sttp.client4.logging
 
 import sttp.client4.{GenericRequest, HttpError, Response}
-import sttp.model.{RequestMetadata, StatusCode}
+import sttp.model.StatusCode
 
-import scala.collection.mutable
 import scala.concurrent.duration.Duration
 
 /** Performs logging before requests are sent and after requests complete successfully or with an exception.
@@ -36,7 +35,8 @@ object Log {
     config.sensitiveHeaders,
     config.beforeRequestSendLogLevel,
     config.responseLogLevel,
-    config.responseExceptionLogLevel
+    config.responseExceptionLogLevel,
+    LogContext.default(config.logRequestHeaders, config.logResponseHeaders, config.sensitiveHeaders)
   )
 }
 
@@ -52,33 +52,9 @@ class DefaultLog[F[_]](
     sensitiveHeaders: Set[String],
     beforeRequestSendLogLevel: LogLevel,
     responseLogLevel: StatusCode => LogLevel,
-    responseExceptionLogLevel: LogLevel
+    responseExceptionLogLevel: LogLevel,
+    logContext: LogContext
 ) extends Log[F] {
-  def contextOfRequest(request: RequestMetadata): Map[String, Any] = {
-    val context = mutable.Map.empty[String, Any]
-
-    context += "http.request.method" -> request.method.toString
-    context += "http.request.uri" -> request.uri.toString
-    if (logRequestHeaders)
-      context += "http.request.headers" -> request.headers.map(_.toStringSafe(sensitiveHeaders)).mkString(" | ")
-
-    context.toMap
-  }
-
-  def contextOfResponse(response: Response[_], duration: Option[Duration]): Map[String, Any] = {
-    val context = mutable.Map.empty[String, Any]
-
-    context ++= contextOfRequest(response.request)
-    context += "http.response.status_code" -> response.code.code
-
-    if (logResponseHeaders)
-      context += "http.response.headers" -> response.headers.map(_.toStringSafe(sensitiveHeaders)).mkString(" | ")
-    duration.foreach {
-      context += "http.duration" -> _.toNanos
-    }
-
-    context.toMap
-  }
 
   def beforeRequestSend(request: GenericRequest[_, _]): F[Unit] =
     request.loggingOptions match {
@@ -98,7 +74,7 @@ class DefaultLog[F[_]](
           if (beforeCurlInsteadOfShow && _logRequestBody && _logRequestHeaders) request.toCurl(sensitiveHeaders)
           else request.show(includeBody = _logRequestBody, _logRequestHeaders, sensitiveHeaders)
         }",
-      context = contextOfRequest(request)
+      context = logContext.ofRequest(request)
     )
 
   override def response(
@@ -137,7 +113,7 @@ class DefaultLog[F[_]](
             .show(logResponseBody, _logResponseHeaders, sensitiveHeaders)
         s"Request: $showBasic${took(elapsed)}, response: $responseAsString"
       },
-      context = contextOfResponse(response, elapsed)
+      context = logContext.ofResponse(response, elapsed)
     )
 
   override def requestException(request: GenericRequest[_, _], elapsed: Option[Duration], e: Exception): F[Unit] = {
@@ -151,7 +127,7 @@ class DefaultLog[F[_]](
       level = logLevel,
       message = s"Exception when sending request: ${request.showBasic}${took(elapsed)}",
       throwable = e,
-      context = contextOfRequest(request)
+      context = logContext.ofRequest(request)
     )
   }
 

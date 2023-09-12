@@ -28,8 +28,10 @@ object SttpExtensions {
       onError: ResponseAs[A],
       onSuccess: WebSocketResponseAs[F, B]
   ): WebSocketResponseAs[F, Either[A, B]] =
-    ws.async.fromMetadata(
-      onError.map(Left(_)),
-      ConditionalResponseAs(_.code == StatusCode.Ok, onSuccess.map(Right(_)))
-    ).showAs(s"either(${onError.show}, ${onSuccess.show})")
+    ws.async
+      .fromMetadata(
+        onError.map(Left(_)),
+        ConditionalResponseAs(_.code == StatusCode.Ok, onSuccess.map(Right(_)))
+      )
+      .showAs(s"either(${onError.show}, ${onSuccess.show})")
 }
