@@ -5,6 +5,7 @@ import org.scalatest.matchers.should.Matchers
 import sttp.client4.logging.LogContext
 import sttp.model.{Header, HeaderNames, StatusCode}
 
+import scala.collection.immutable.Seq
 import scala.concurrent.duration.DurationInt
 
 class LogContextTests extends AnyFlatSpec with Matchers {
