@@ -9,9 +9,9 @@ import complete.DefaultParsers._
 import com.softwaremill.SbtSoftwareMillBrowserTestJS._
 
 val scala2_12 = "2.12.18"
-val scala2_13 = "2.13.11"
+val scala2_13 = "2.13.12"
 val scala2 = List(scala2_12, scala2_13)
-val scala3 = List("3.3.0")
+val scala3 = List("3.3.1")
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests")
@@ -119,16 +119,16 @@ val testServerSettings = Seq(
   }
 )
 
-val circeVersion: String = "0.14.5"
+val circeVersion: String = "0.14.6"
 
-val jsoniterVersion = "2.23.2"
+val jsoniterVersion = "2.23.4"
 
 val playJsonVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.7.4"
   case _             => "2.9.2"
 }
 val catsEffect_3_version = "3.5.1"
-val fs2_3_version = "3.8.0"
+val fs2_3_version = "3.9.1"
 
 val catsEffect_2_version: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.0.0"
@@ -148,11 +148,11 @@ val pekkoStreamVersion = "1.0.1"
 val pekkoStreams = "org.apache.pekko" %% "pekko-stream" % pekkoStreamVersion
 
 val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", "wordspec", "shouldmatchers").map(m =>
-  "org.scalatest" %%% s"scalatest-$m" % "3.2.16" % Test
+  "org.scalatest" %%% s"scalatest-$m" % "3.2.17" % Test
 )
 
 val zio1Version = "1.0.18"
-val zio2Version = "2.0.15"
+val zio2Version = "2.0.16"
 val zio1InteropRsVersion = "1.3.12"
 val zio2InteropRsVersion = "2.0.2"
 
@@ -168,7 +168,7 @@ val resilience4jVersion = "2.1.0"
 val http4s_ce2_version = "0.22.15"
 val http4s_ce3_version = "0.23.23"
 
-val openTelemetryVersion = "1.29.0"
+val openTelemetryVersion = "1.30.1"
 
 val compileAndTest = "compile->compile;test->test"
 
@@ -708,7 +708,7 @@ lazy val armeriaBackend = (projectMatrix in file("armeria-backend"))
   .settings(testServerSettings)
   .settings(
     name := "armeria-backend",
-    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.24.3"
+    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.25.2"
   )
   .jvmPlatform(scalaVersions = scala2 ++ scala3)
   .dependsOn(core % compileAndTest)
@@ -822,7 +822,7 @@ lazy val zioJson = (projectMatrix in file("json/zio-json"))
   .settings(
     name := "zio-json",
     libraryDependencies ++= Seq(
-      "dev.zio" %%% "zio-json" % "0.6.0",
+      "dev.zio" %%% "zio-json" % "0.6.2",
       "com.softwaremill.sttp.shared" %%% "zio" % sttpSharedVersion
     ),
     scalaTest
@@ -953,7 +953,7 @@ lazy val scribeBackend = (projectMatrix in file("logging/scribe"))
   .settings(
     name := "scribe-backend",
     libraryDependencies ++= Seq(
-      "com.outr" %%% "scribe" % "3.12.1"
+      "com.outr" %%% "scribe" % "3.12.2"
     ),
     scalaTest
   )

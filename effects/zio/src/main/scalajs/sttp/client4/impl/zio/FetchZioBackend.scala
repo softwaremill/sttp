@@ -82,6 +82,20 @@ object FetchZioBackend {
   ): WebSocketStreamBackend[Task, ZioStreams] =
     new FetchZioBackend(fetchOptions, customizeRequest)
 
+  def scoped(
+      fetchOptions: FetchOptions = FetchOptions.Default,
+      customizeRequest: FetchRequest => FetchRequest = identity
+  ): ZIO[Scope, Throwable, WebSocketStreamBackend[Task, ZioStreams]] =
+    ZIO.acquireRelease(ZIO.attempt(apply(fetchOptions, customizeRequest)))(_.close().ignore)
+
+  def layer(
+      fetchOptions: FetchOptions = FetchOptions.Default,
+      customizeRequest: FetchRequest => FetchRequest = identity
+  ): ZLayer[Any, Throwable, SttpClient] =
+    ZLayer.scoped(
+      ZIO.attempt(apply(fetchOptions, customizeRequest)).tap(client => ZIO.addFinalizer(client.close().ignore))
+    )
+
   /** Create a stub backend for testing, which uses the [[Task]] response wrapper, and supports `Observable[ByteBuffer]`
     * streaming.
     *

@@ -16,9 +16,8 @@ class BackendStubPekkoTests extends AnyFlatSpec with Matchers with ScalaFutures 
 
   implicit val system: ActorSystem = ActorSystem()
 
-  override protected def afterAll(): Unit = {
+  override protected def afterAll(): Unit =
     Await.result(system.terminate().map(_ => ()), 5.seconds)
-  }
 
   "backend stub" should "cycle through responses using a single sent request" in {
     // given

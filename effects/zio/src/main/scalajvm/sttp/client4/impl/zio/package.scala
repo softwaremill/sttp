@@ -1,8 +1,8 @@
 package sttp.client4.impl
 
+import _root_.zio.RIO
 import sttp.capabilities.WebSockets
 import sttp.client4.{Backend, StreamBackend, WebSocketBackend, WebSocketStreamBackend}
-import _root_.zio.RIO
 
 package object zio {
   implicit class BackendExtendEnv[R0](delegate: Backend[RIO[R0, *]]) {
@@ -21,7 +21,7 @@ package object zio {
   }
 
   implicit class WebSocketStreamBackendExtendEnv[R0, S](delegate: WebSocketStreamBackend[RIO[R0, *], S]) {
-    def extendEnv[R1]: StreamBackend[RIO[R0 with R1, *], S] =
+    def extendEnv[R1]: WebSocketStreamBackend[RIO[R0 with R1, *], S] =
       new ExtendedEnvBackend[R0, R1, S with WebSockets](delegate) with WebSocketStreamBackend[RIO[R0 with R1, *], S] {}
   }
 }

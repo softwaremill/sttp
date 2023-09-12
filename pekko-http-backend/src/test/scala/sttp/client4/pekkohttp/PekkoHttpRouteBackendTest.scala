@@ -16,9 +16,8 @@ class PekkoHttpRouteBackendTest extends AsyncWordSpec with Matchers with BeforeA
 
   implicit val system: ActorSystem = ActorSystem()
 
-  override protected def afterAll(): Unit = {
+  override protected def afterAll(): Unit =
     Await.result(system.terminate(), 5.seconds)
-  }
 
   val backend: Backend[Future] =
     PekkoHttpBackend.usingClient(system, http = PekkoHttpClient.stubFromRoute(Routes.route))
