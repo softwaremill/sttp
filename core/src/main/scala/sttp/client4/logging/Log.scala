@@ -74,7 +74,7 @@ class DefaultLog[F[_]](
           if (beforeCurlInsteadOfShow && _logRequestBody && _logRequestHeaders) request.toCurl(sensitiveHeaders)
           else request.show(includeBody = _logRequestBody, _logRequestHeaders, sensitiveHeaders)
         }",
-      context = logContext.ofRequest(request)
+      context = logContext.forRequest(request)
     )
 
   override def response(
@@ -113,7 +113,7 @@ class DefaultLog[F[_]](
             .show(logResponseBody, _logResponseHeaders, sensitiveHeaders)
         s"Request: $showBasic${took(elapsed)}, response: $responseAsString"
       },
-      context = logContext.ofResponse(response, elapsed)
+      context = logContext.forResponse(response, elapsed)
     )
 
   override def requestException(request: GenericRequest[_, _], elapsed: Option[Duration], e: Exception): F[Unit] = {
@@ -127,7 +127,7 @@ class DefaultLog[F[_]](
       level = logLevel,
       message = s"Exception when sending request: ${request.showBasic}${took(elapsed)}",
       throwable = e,
-      context = logContext.ofRequest(request)
+      context = logContext.forRequest(request)
     )
   }
 

@@ -7,24 +7,34 @@ import scala.collection.mutable
 import scala.concurrent.duration.Duration
 
 trait LogContext {
-  def ofRequest(request: RequestMetadata): Map[String, Any]
+  def forRequest(request: RequestMetadata): Map[String, Any]
 
-  def ofResponse(response: Response[_], duration: Option[Duration]): Map[String, Any]
+  def forResponse(response: Response[_], duration: Option[Duration]): Map[String, Any]
 }
 
 object LogContext {
 
-  def noop: LogContext = new LogContext {
-    def ofRequest(request: RequestMetadata): Map[String, Any] = Map.empty
-    def ofResponse(response: Response[_], duration: Option[Duration]): Map[String, Any] = Map.empty
+  /** An empty log context.
+    */
+  def empty: LogContext = new LogContext {
+    def forRequest(request: RequestMetadata): Map[String, Any] = Map.empty
+    def forResponse(response: Response[_], duration: Option[Duration]): Map[String, Any] = Map.empty
   }
 
+  /** Default log context, which logs the main request and response metadata.
+    * @param logRequestHeaders
+    *   Whether to log request headers.
+    * @param logResponseHeaders
+    *   Whether to log response headers.
+    * @param sensitiveHeaders
+    *   Headers which should not be logged.
+    */
   def default(
       logRequestHeaders: Boolean = true,
       logResponseHeaders: Boolean = true,
       sensitiveHeaders: Set[String] = HeaderNames.SensitiveHeaders
   ): LogContext = new LogContext {
-    def ofRequest(request: RequestMetadata): Map[String, Any] = {
+    def forRequest(request: RequestMetadata): Map[String, Any] = {
       val context = mutable.Map.empty[String, Any]
 
       context += "http.request.method" -> request.method.toString
@@ -35,10 +45,10 @@ object LogContext {
       context.toMap
     }
 
-    def ofResponse(response: Response[_], duration: Option[Duration]): Map[String, Any] = {
+    def forResponse(response: Response[_], duration: Option[Duration]): Map[String, Any] = {
       val context = mutable.Map.empty[String, Any]
 
-      context ++= ofRequest(response.request)
+      context ++= forRequest(response.request)
       context += "http.response.status_code" -> response.code.code
 
       if (logResponseHeaders)

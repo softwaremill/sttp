@@ -7,14 +7,22 @@ import sttp.monad.MonadError
 class Slf4jLogger[F[_]](name: String, monad: MonadError[F]) extends Logger[F] {
   private val underlying = LoggerFactory.getLogger(name)
 
+  private def setContext(context: Map[String, Any]): Unit =
+    context.foreach { case (k, v) =>
+      MDC.put(k, v.toString)
+    }
+
+  private def clearContext(context: Map[String, Any]): Unit =
+    context.keys.foreach { key =>
+      MDC.remove(key)
+    }
+
   override def apply(
       level: LogLevel,
       message: => String,
       context: Map[String, Any]
   ): F[Unit] = monad.eval {
-    context.foreach { case (k, v) =>
-      MDC.put(k, v.toString)
-    }
+    setContext(context)
     level match {
       case LogLevel.Trace if underlying.isTraceEnabled =>
         underlying.trace(message)
@@ -33,14 +41,12 @@ class Slf4jLogger[F[_]](name: String, monad: MonadError[F]) extends Logger[F] {
 
       case _ => ()
     }
-    MDC.clear()
+    clearContext(context)
   }
 
   override def apply(level: LogLevel, message: => String, throwable: Throwable, context: Map[String, Any]): F[Unit] =
     monad.eval {
-      context.foreach { case (k, v) =>
-        MDC.put(k, v.toString)
-      }
+      setContext(context)
       level match {
         case LogLevel.Trace if underlying.isTraceEnabled =>
           underlying.trace(message, throwable)
@@ -59,6 +65,6 @@ class Slf4jLogger[F[_]](name: String, monad: MonadError[F]) extends Logger[F] {
 
         case _ => ()
       }
-      MDC.clear()
+      clearContext(context)
     }
 }

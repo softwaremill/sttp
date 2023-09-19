@@ -12,7 +12,7 @@ class LogContextTests extends AnyFlatSpec with Matchers {
 
   "default log context of request" should "be provide full context by default" in {
     val defaultLogContext = LogContext.default()
-    defaultLogContext.ofRequest(basicRequest.get(uri"http://example.org").auth.bearer("token")) should be(
+    defaultLogContext.forRequest(basicRequest.get(uri"http://example.org").auth.bearer("token")) should be(
       Map(
         "http.request.uri" -> "http://example.org",
         "http.request.method" -> "GET",
@@ -23,7 +23,7 @@ class LogContextTests extends AnyFlatSpec with Matchers {
 
   it should "be provide context without headers according to settings" in {
     val defaultLogContext = LogContext.default(logRequestHeaders = false)
-    defaultLogContext.ofRequest(basicRequest.get(uri"http://example.org")) should be(
+    defaultLogContext.forRequest(basicRequest.get(uri"http://example.org")) should be(
       Map(
         "http.request.uri" -> "http://example.org",
         "http.request.method" -> "GET"
@@ -42,7 +42,7 @@ class LogContextTests extends AnyFlatSpec with Matchers {
       request = basicRequest.get(uri"http://example.org").auth.bearer("token")
     )
 
-    defaultLogContext.ofResponse(response, Some(1234.millis)) should be(
+    defaultLogContext.forResponse(response, Some(1234.millis)) should be(
       Map(
         "http.request.uri" -> "http://example.org",
         "http.request.method" -> "GET",
@@ -65,7 +65,7 @@ class LogContextTests extends AnyFlatSpec with Matchers {
       request = basicRequest.get(uri"http://example.org").auth.bearer("token")
     )
 
-    defaultLogContext.ofResponse(response, Some(1234.millis)) should be(
+    defaultLogContext.forResponse(response, Some(1234.millis)) should be(
       Map(
         "http.request.uri" -> "http://example.org",
         "http.request.method" -> "GET",
