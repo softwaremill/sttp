@@ -35,7 +35,8 @@ object Log {
     config.sensitiveHeaders,
     config.beforeRequestSendLogLevel,
     config.responseLogLevel,
-    config.responseExceptionLogLevel
+    config.responseExceptionLogLevel,
+    LogContext.default(config.logRequestHeaders, config.logResponseHeaders, config.sensitiveHeaders)
   )
 }
 
@@ -51,7 +52,8 @@ class DefaultLog[F[_]](
     sensitiveHeaders: Set[String],
     beforeRequestSendLogLevel: LogLevel,
     responseLogLevel: StatusCode => LogLevel,
-    responseExceptionLogLevel: LogLevel
+    responseExceptionLogLevel: LogLevel,
+    logContext: LogContext
 ) extends Log[F] {
 
   def beforeRequestSend(request: GenericRequest[_, _]): F[Unit] =
@@ -67,11 +69,12 @@ class DefaultLog[F[_]](
 
   private def before(request: GenericRequest[_, _], _logRequestBody: Boolean, _logRequestHeaders: Boolean): F[Unit] =
     logger(
-      beforeRequestSendLogLevel,
-      s"Sending request: ${
+      level = beforeRequestSendLogLevel,
+      message = s"Sending request: ${
           if (beforeCurlInsteadOfShow && _logRequestBody && _logRequestHeaders) request.toCurl(sensitiveHeaders)
           else request.show(includeBody = _logRequestBody, _logRequestHeaders, sensitiveHeaders)
-        }"
+        }",
+      context = logContext.forRequest(request)
     )
 
   override def response(
@@ -102,13 +105,15 @@ class DefaultLog[F[_]](
       elapsed: Option[Duration]
   ): F[Unit] =
     logger(
-      responseLogLevel(response.code), {
+      level = responseLogLevel(response.code),
+      message = {
         val responseAsString =
           response
             .copy(body = responseBody.getOrElse(""))
             .show(logResponseBody, _logResponseHeaders, sensitiveHeaders)
         s"Request: $showBasic${took(elapsed)}, response: $responseAsString"
-      }
+      },
+      context = logContext.forResponse(response, elapsed)
     )
 
   override def requestException(request: GenericRequest[_, _], elapsed: Option[Duration], e: Exception): F[Unit] = {
@@ -118,7 +123,12 @@ class DefaultLog[F[_]](
       case _ =>
         responseExceptionLogLevel
     }
-    logger(logLevel, s"Exception when sending request: ${request.showBasic}${took(elapsed)}", e)
+    logger(
+      level = logLevel,
+      message = s"Exception when sending request: ${request.showBasic}${took(elapsed)}",
+      throwable = e,
+      context = logContext.forRequest(request)
+    )
   }
 
   private def took(elapsed: Option[Duration]): String = elapsed.fold("")(e => f", took: ${e.toMillis / 1000.0}%.3fs")
