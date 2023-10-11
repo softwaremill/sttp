@@ -79,7 +79,7 @@ Your code might then look as follows:
 
 ```scala mdoc:compile-only
 import sttp.client4._
-import sttp.client4.upicklejson._
+import sttp.client4.upicklejson.default._
 import upickle.default._
 
 val backend = DefaultSyncBackend()

@@ -262,7 +262,7 @@ For example, if you want to use the `legacy` upickle configuration, the integrat
 ```scala mdoc:compile-only
 import upickle.legacy._ // get access to ReadWriter type, macroRW derivation, etc.
 
-object legacyUpickle extends SttpUpickleApi {
+object legacyUpickle extends sttp.client4.upicklejson.SttpUpickleApi {
   override val upickleApi: upickle.legacy.type = upickle.legacy
 }
 import legacyUpickle._
