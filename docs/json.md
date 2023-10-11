@@ -232,12 +232,12 @@ or for ScalaJS (cross build) projects:
 "com.softwaremill.sttp.client4" %%% "upickle" % "@VERSION@"
 ```
 
-To use, add an import: `import sttp.client4.upicklejson._` (or extend `SttpUpickleApi`) and define an implicit `ReadWriter` (or separately `Reader` and `Writer`) for your datatype.
+To use, add an import: `import sttp.client4.upicklejson.default._` and define an implicit `ReadWriter` (or separately `Reader` and `Writer`) for your datatype.
 Usage example:
 
 ```scala mdoc:compile-only
 import sttp.client4._
-import sttp.client4.upicklejson._
+import sttp.client4.upicklejson.default._
 import upickle.default._
 
 val backend: SyncBackend = DefaultSyncBackend()
@@ -253,4 +253,19 @@ basicRequest
   .body(requestPayload)
   .response(asJson[ResponsePayload])
   .send(backend)
+```
+
+If you have a customised version of upickle, with [custom configuration](https://com-lihaoyi.github.io/upickle/#CustomConfiguration), you'll need to create a dedicated object, which provides the upickle <-> sttp integration. There, you'll need to provide the implementation of `upickle.Api` that you are using. That's needed as the api contains the `read`/`write` methods to serialize/deserialize the JSON; moreover, the `ReadWriter` isn't a top-level type, but path-dependent one, also part of the `upickle.Api` instance.
+
+For example, if you want to use the `legacy` upickle configuration, the integration might look as follows:
+
+```scala mdoc:compile-only
+import upickle.legacy._ // get access to ReadWriter type, macroRW derivation, etc.
+
+object legacyUpickle extends SttpUpickleApi {
+  override val upickleApi: upickle.legacy.type = upickle.legacy
+}
+import legacyUpickle._
+
+// use upickle as in the above examples
 ```
