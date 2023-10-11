@@ -255,7 +255,9 @@ basicRequest
   .send(backend)
 ```
 
-If you have a customised version of upickle, with [custom configuration](https://com-lihaoyi.github.io/upickle/#CustomConfiguration), you'll need to create a dedicated object, which provides the upickle <-> sttp integration. There, you'll need to provide the implementation of `upickle.Api` that you are using. That's needed as the api contains the `read`/`write` methods to serialize/deserialize the JSON; moreover, the `ReadWriter` isn't a top-level type, but path-dependent one, also part of the `upickle.Api` instance.
+If you have a customised version of upickle, with [custom configuration](https://com-lihaoyi.github.io/upickle/#CustomConfiguration), you'll need to create a dedicated object, which provides the upickle <-> sttp integration. There, you'll need to provide the implementation of `upickle.Api` that you are using. Moreover, the type of the overridden `upickleApi` needs to be the singleton type of the value (as in the example below).
+
+That's needed as the `upickle.Api` contains the `read`/`write` methods to serialize/deserialize the JSON; moreover, `ReadWriter` isn't a top-level type, but path-dependent one.
 
 For example, if you want to use the `legacy` upickle configuration, the integration might look as follows:
 
