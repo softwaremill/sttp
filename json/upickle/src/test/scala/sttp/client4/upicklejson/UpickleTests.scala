@@ -1,6 +1,5 @@
 package sttp.client4.upicklejson
 
-import upickle.default._
 import org.scalatest._
 import sttp.client4.internal._
 import sttp.client4._
@@ -11,6 +10,9 @@ import ujson.Obj
 
 class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
   "The upickle module" should "encode arbitrary bodies given an encoder" in {
+    import UsingDefaultReaderWriters._
+    import sttp.client4.upicklejson.default._
+
     val body = Outer(Inner(42, true, "horses"), "cats")
     val expected = """{"foo":{"a":42,"b":true,"c":"horses"},"bar":"cats"}"""
 
@@ -20,6 +22,9 @@ class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
   }
 
   it should "decode arbitrary bodies given a decoder" in {
+    import UsingDefaultReaderWriters._
+    import sttp.client4.upicklejson.default._
+
     val body = """{"foo":{"a":42,"b":true,"c":"horses"},"bar":"cats"}"""
     val expected = Outer(Inner(42, true, "horses"), "cats")
 
@@ -29,30 +34,45 @@ class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
   }
 
   it should "decode None from empty array body" in {
+    import UsingDefaultReaderWriters._
+    import sttp.client4.upicklejson.default._
+
     val responseAs = asJson[Option[Inner]]
 
     runJsonResponseAs(responseAs)("[]").right.value shouldBe None
   }
 
   it should "decode Left(None) from upickle notation" in {
+    import UsingDefaultReaderWriters._
+    import sttp.client4.upicklejson.default._
+
     val responseAs = asJson[Either[Option[Inner], Outer]]
 
     runJsonResponseAs(responseAs)("[0,[]]").right.value shouldBe Left(None)
   }
 
   it should "decode Right(None) from upickle notation" in {
+    import UsingDefaultReaderWriters._
+    import sttp.client4.upicklejson.default._
+
     val responseAs = asJson[Either[Outer, Option[Inner]]]
 
     runJsonResponseAs(responseAs)("[1,[]]").right.value shouldBe Right(None)
   }
 
   it should "fail to decode from empty input" in {
+    import UsingDefaultReaderWriters._
+    import sttp.client4.upicklejson.default._
+
     val responseAs = asJson[Inner]
 
     runJsonResponseAs(responseAs)("").left.value should matchPattern { case DeserializationException(_, _) => }
   }
 
   it should "fail to decode invalid json" in {
+    import UsingDefaultReaderWriters._
+    import sttp.client4.upicklejson.default._
+
     val body = """not valid json"""
 
     val responseAs = asJson[Outer]
@@ -62,6 +82,9 @@ class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
   }
 
   it should "encode and decode back to the same thing" in {
+    import UsingDefaultReaderWriters._
+    import sttp.client4.upicklejson.default._
+
     val outer = Outer(Inner(42, true, "horses"), "cats")
 
     val encoded = extractBody(basicRequest.body(outer))
@@ -71,6 +94,9 @@ class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
   }
 
   it should "set the content type" in {
+    import UsingDefaultReaderWriters._
+    import sttp.client4.upicklejson.default._
+
     val body = Outer(Inner(42, true, "horses"), "cats")
     val req = basicRequest.body(body)
 
@@ -80,6 +106,9 @@ class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
   }
 
   it should "only set the content type if it was not set earlier" in {
+    import UsingDefaultReaderWriters._
+    import sttp.client4.upicklejson.default._
+
     val body = Outer(Inner(42, true, "horses"), "cats")
     val req = basicRequest.contentType("horses/cats").body(body)
 
@@ -89,6 +118,9 @@ class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
   }
 
   it should "serialize ujson.Obj using implicit upickleBodySerializer" in {
+    import UsingDefaultReaderWriters._
+    import sttp.client4.upicklejson.default._
+
     val json: Obj = ujson.Obj(
       "location" -> "hometown",
       "bio" -> "Scala programmer"
@@ -105,15 +137,33 @@ class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
     actualContentType should be(expectedContentType)
   }
 
-  case class Inner(a: Int, b: Boolean, c: String)
+  it should "encode using a non-default reader/writer" in {
+    import UsingLegacyReaderWriters._
+    object legacyUpickle extends SttpUpickleApi {
+      override val upickleApi: upickle.legacy.type = upickle.legacy
+    }
+    import legacyUpickle._
 
-  object Inner {
-    implicit val reader: ReadWriter[Inner] = macroRW[Inner]
+    val body = Outer(Inner(42, true, "horses"), "cats")
+    val expected = """{"foo":{"a":42,"b":true,"c":"horses"},"bar":"cats"}"""
+
+    val req = basicRequest.body(body)
+
+    extractBody(req) shouldBe expected
   }
 
+  case class Inner(a: Int, b: Boolean, c: String)
   case class Outer(foo: Inner, bar: String)
 
-  object Outer {
+  object UsingDefaultReaderWriters {
+    import upickle.default._
+    implicit val reader: ReadWriter[Inner] = macroRW[Inner]
+    implicit val readWriter: ReadWriter[Outer] = macroRW[Outer]
+  }
+
+  object UsingLegacyReaderWriters {
+    import upickle.legacy._
+    implicit val reader: ReadWriter[Inner] = macroRW[Inner]
     implicit val readWriter: ReadWriter[Outer] = macroRW[Outer]
   }
 

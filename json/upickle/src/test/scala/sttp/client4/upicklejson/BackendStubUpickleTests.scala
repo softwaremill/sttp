@@ -1,6 +1,7 @@
 package sttp.client4.upicklejson
 
 import upickle.default._
+import sttp.client4.upicklejson.default._
 import org.scalatest.concurrent.ScalaFutures
 import sttp.client4.basicRequest
 import sttp.client4.testing.SyncBackendStub
