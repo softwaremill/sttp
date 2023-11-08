@@ -46,9 +46,9 @@ class PekkoHttpBackend private (
     .withUpdatedConnectionSettings(_.withConnectingTimeout(opts.connectionTimeout))
 
   override def send[T, R >: PE](r: Request[T, R]): Future[Response[T]] =
-  adjustExceptions(r) {
-    if (r.isWebSocket) sendWebSocket(r) else sendRegular(r)
-  }
+    adjustExceptions(r) {
+      if (r.isWebSocket) sendWebSocket(r) else sendRegular(r)
+    }
 
   private def sendRegular[T, R >: PE](r: Request[T, R]): Future[Response[T]] =
     Future
