@@ -6,4 +6,6 @@ package object internal {
   type CurlSlist = CStruct2[CString, Ptr[_]]
   type CurlFetch = CStruct2[CString, CSize]
   val CurlZeroTerminated = -1L
+
+  private[curl] final val CCurl = libcurlPlatformCompat.instance
 }

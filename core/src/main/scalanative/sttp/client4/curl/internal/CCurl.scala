@@ -3,6 +3,7 @@ package sttp.client4.curl.internal
 import sttp.client4.curl.internal.CurlCode.CurlCode
 
 import scala.scalanative.unsafe._
+import scala.scalanative.meta.LinktimeInfo.isWindows
 
 private[curl] trait Curl {}
 
@@ -10,9 +11,20 @@ private[curl] trait Mime {}
 
 private[curl] trait MimePart {}
 
-@link("curl")
+private[curl] object libcurlPlatformCompat {
+  @extern @link("libcurl") @link("crypt32")
+  private object libcurlWin64 extends CCurl
+
+  @extern @link("curl")
+  private object libcurlDefault extends CCurl
+
+  val instance: CCurl =
+    if (isWindows) libcurlWin64
+    else libcurlDefault
+}
+
 @extern
-private[curl] object CCurl {
+private[curl] trait CCurl {
   @name("curl_easy_init")
   def init: Ptr[Curl] = extern
 
