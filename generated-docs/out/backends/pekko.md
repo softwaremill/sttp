@@ -3,7 +3,7 @@
 This backend is based on [pekko-http](https://pekko.apache.org/docs/pekko-http/current/). To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %% "pekko-http-backend" % "4.0.0-M6"
+"com.softwaremill.sttp.client4" %% "pekko-http-backend" % "4.0.0-M7"
 ```
 
 A fully **asynchronous** backend. Uses the `Future` effect to return responses. There are also [other `Future`-based backends](future.md), which don't depend on Pekko. 
