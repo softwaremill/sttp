@@ -59,7 +59,9 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
   }
 
   private object Context {
-    def apply[T](body: Context => F[T]): F[T] = {
+
+    /** Create a new context and evaluates the body with it. Closes the context at the end. */
+    def evaluateUsing[T](body: Context => F[T]): F[T] = {
       implicit val ctx = new Context()
       body(ctx).ensure(monad.unit(ctx.close()))
     }
@@ -97,7 +99,7 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
         }
       }
 
-      Context(ctx => perform(ctx))
+      Context.evaluateUsing(ctx => perform(ctx))
     }
 
   private def adjustExceptions[T](request: GenericRequest[_, _])(t: => F[T]): F[T] =
