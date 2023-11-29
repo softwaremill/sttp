@@ -14,6 +14,7 @@ import sttp.monad.MonadError
 import sttp.monad.syntax._
 
 import scala.collection.immutable.Seq
+import scala.collection.mutable.ArrayBuffer
 import scala.io.Source
 import scala.scalanative.libc.stdio.{fclose, fopen, FILE}
 import scala.scalanative.libc.stdlib._
@@ -37,14 +38,23 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
 
   /** A request-specific context, with allocated zones and headers. */
   private class Context() {
-    val zone: Zone = Zone.open()
-    var headers: CurlList = _
-    var multiPartHeaders: Seq[CurlList] = Seq()
+    implicit val zone: Zone = Zone.open()
+    private val headers = ArrayBuffer[CurlList]()
+
+    /** Create a new Headers list that gets cleaned up when the context is destroyed. */
+    def transformHeaders(reqHeaders: Iterable[Header]): CurlList = {
+      val h = reqHeaders
+        .map(header => s"${header.name}: ${header.value}")
+        .foldLeft(new CurlList(null)) { case (acc, h) =>
+          new CurlList(acc.ptr.append(h))
+        }
+      headers += h
+      h
+    }
 
     def close() = {
       zone.close()
-      if (headers.ptr != null) headers.ptr.free()
-      multiPartHeaders.foreach(_.ptr.free())
+      headers.foreach(l => if (l.ptr != null) l.ptr.free())
     }
   }
 
@@ -69,15 +79,15 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
         val reqHeaders = request.headers
         if (reqHeaders.nonEmpty) {
           reqHeaders.find(_.name == "Accept-Encoding").foreach(h => curl.option(AcceptEncoding, h.value))
-          request.body match {
+          val headers = request.body match {
             case _: MultipartBody[_] =>
-              ctx.headers = transformHeaders(
+              ctx.transformHeaders(
                 reqHeaders :+ Header.contentType(MediaType.MultipartFormData)
               )
             case _ =>
-              ctx.headers = transformHeaders(reqHeaders)
+              ctx.transformHeaders(reqHeaders)
           }
-          curl.option(HttpHeader, ctx.headers.ptr)
+          curl.option(HttpHeader, headers.ptr)
         }
 
         val spaces = responseSpace
@@ -203,9 +213,8 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
 
           val otherHeaders = headers.filterNot(_.is(HeaderNames.ContentType))
           if (otherHeaders.nonEmpty) {
-            val curlList = transformHeaders(otherHeaders)
+            val curlList = ctx.transformHeaders(otherHeaders)
             part.withHeaders(curlList.ptr)
-            ctx.multiPartHeaders = ctx.multiPartHeaders :+ curlList
           }
         }
         lift(curl.option(Mimepost, mime))
@@ -280,13 +289,6 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
 
     override protected def cleanupWhenGotWebSocket(response: Nothing, e: GotAWebSocketException): F[Unit] = response
   }
-
-  private def transformHeaders(reqHeaders: Iterable[Header])(implicit z: Zone): CurlList =
-    reqHeaders
-      .map(header => s"${header.name}: ${header.value}")
-      .foldLeft(new CurlList(null)) { case (acc, h) =>
-        new CurlList(acc.ptr.append(h))
-      }
 
   private def toByteArray(str: String): F[Array[Byte]] = monad.unit(str.getBytes)
 
