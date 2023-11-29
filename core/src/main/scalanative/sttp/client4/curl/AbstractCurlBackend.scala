@@ -29,7 +29,7 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
   protected def performCurl(c: CurlHandle): F[CurlCode]
 
   /** Same as [[performCurl]], but also checks and throws runtime exceptions on bad [[CurlCode]]s. */
-  final def perform(c: CurlHandle) = performCurl(c).flatMap(lift)
+  private final def perform(c: CurlHandle) = performCurl(c).flatMap(lift)
 
   type R = Any with Effect[F]
 
