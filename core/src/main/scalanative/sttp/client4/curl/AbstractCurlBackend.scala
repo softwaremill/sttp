@@ -25,35 +25,59 @@ import scala.scalanative.unsigned._
 abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean) extends GenericBackend[F, Any] {
   override implicit def monad: MonadError[F] = _monad
 
+  /** Given a [[CurlHandle]], perform the request and return a [[CurlCode]]. */
+  protected def performCurl(c: CurlHandle): F[CurlCode]
+
+  /** Same as [[performCurl]], but also checks and throws runtime exceptions on bad [[CurlCode]]s. */
+  final def perform(c: CurlHandle) = performCurl(c).flatMap(lift)
+
   type R = Any with Effect[F]
 
   override def close(): F[Unit] = monad.unit(())
 
-  private var headers: CurlList = _
-  private var multiPartHeaders: Seq[CurlList] = Seq()
+  /** A request-specific context, with allocated zones and headers. */
+  private class Context() {
+    val zone: Zone = Zone.open()
+    var headers: CurlList = _
+    var multiPartHeaders: Seq[CurlList] = Seq()
+
+    def close() = {
+      zone.close()
+      if (headers.ptr != null) headers.ptr.free()
+      multiPartHeaders.foreach(_.ptr.free())
+    }
+  }
+
+  private object Context {
+    def apply[T](body: Context => F[T]): F[T] = {
+      implicit val ctx = new Context()
+      body(ctx).ensure(monad.unit(ctx.close()))
+    }
+  }
 
   override def send[T](request: GenericRequest[T, R]): F[Response[T]] =
     adjustExceptions(request) {
-      unsafe.Zone { implicit z =>
+      def perform(implicit ctx: Context): F[Response[T]] = {
+        implicit val z = ctx.zone
         val curl = CurlApi.init
         if (verbose) {
           curl.option(Verbose, parameter = true)
         }
         if (request.tags.nonEmpty) {
-          monad.error(new UnsupportedOperationException("Tags are not supported"))
+          return monad.error(new UnsupportedOperationException("Tags are not supported"))
         }
         val reqHeaders = request.headers
         if (reqHeaders.nonEmpty) {
           reqHeaders.find(_.name == "Accept-Encoding").foreach(h => curl.option(AcceptEncoding, h.value))
           request.body match {
             case _: MultipartBody[_] =>
-              headers = transformHeaders(
+              ctx.headers = transformHeaders(
                 reqHeaders :+ Header.contentType(MediaType.MultipartFormData)
               )
             case _ =>
-              headers = transformHeaders(reqHeaders)
+              ctx.headers = transformHeaders(reqHeaders)
           }
-          curl.option(HttpHeader, headers.ptr)
+          curl.option(HttpHeader, ctx.headers.ptr)
         }
 
         val spaces = responseSpace
@@ -62,6 +86,8 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
           case None       => handleBase(request, curl, spaces)
         }
       }
+
+      Context(ctx => perform(ctx))
     }
 
   private def adjustExceptions[T](request: GenericRequest[_, _])(t: => F[T]): F[T] =
@@ -70,8 +96,9 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
     )
 
   private def handleBase[T](request: GenericRequest[T, R], curl: CurlHandle, spaces: CurlSpaces)(implicit
-      z: unsafe.Zone
+      ctx: Context
   ) = {
+    implicit val z = ctx.zone
     curl.option(WriteFunction, AbstractCurlBackend.wdFunc)
     curl.option(WriteData, spaces.bodyResp)
     curl.option(TimeoutMs, request.options.readTimeout.toMillis)
@@ -79,13 +106,11 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
     curl.option(Url, request.uri.toString)
     setMethod(curl, request.method)
     setRequestBody(curl, request.body)
-    monad.flatMap(lift(curl.perform)) { _ =>
+    monad.flatMap(perform(curl)) { _ =>
       curl.info(ResponseCode, spaces.httpCode)
       val responseBody = fromCString((!spaces.bodyResp)._1)
       val responseHeaders_ = parseHeaders(fromCString((!spaces.headersResp)._1))
       val httpCode = StatusCode((!spaces.httpCode).toInt)
-      if (headers.ptr != null) headers.ptr.free()
-      multiPartHeaders.foreach(_.ptr.free())
       free((!spaces.bodyResp)._1)
       free((!spaces.headersResp)._1)
       free(spaces.bodyResp.asInstanceOf[Ptr[CSignedChar]])
@@ -112,19 +137,18 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
   }
 
   private def handleFile[T](request: GenericRequest[T, R], curl: CurlHandle, file: SttpFile, spaces: CurlSpaces)(
-      implicit z: unsafe.Zone
+      implicit ctx: Context
   ) = {
+    implicit val z = ctx.zone
     val outputPath = file.toPath.toString
     val outputFilePtr: Ptr[FILE] = fopen(toCString(outputPath), toCString("wb"))
     curl.option(WriteData, outputFilePtr)
     curl.option(Url, request.uri.toString)
     setMethod(curl, request.method)
     setRequestBody(curl, request.body)
-    monad.flatMap(lift(curl.perform)) { _ =>
+    monad.flatMap(perform(curl)) { _ =>
       curl.info(ResponseCode, spaces.httpCode)
       val httpCode = StatusCode((!spaces.httpCode).toInt)
-      if (headers.ptr != null) headers.ptr.free()
-      multiPartHeaders.foreach(_.ptr.free())
       free(spaces.httpCode.asInstanceOf[Ptr[CSignedChar]])
       fclose(outputFilePtr)
       curl.cleanup()
@@ -159,7 +183,10 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
     lift(m)
   }
 
-  private def setRequestBody(curl: CurlHandle, body: GenericRequestBody[R])(implicit zone: Zone): F[CurlCode] =
+  private def setRequestBody(curl: CurlHandle, body: GenericRequestBody[R])(implicit
+      ctx: Context
+  ): F[CurlCode] = {
+    implicit val z = ctx.zone
     body match { // todo: assign to monad object
       case b: BasicBodyPart =>
         val str = basicBodyToString(b)
@@ -178,7 +205,7 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
           if (otherHeaders.nonEmpty) {
             val curlList = transformHeaders(otherHeaders)
             part.withHeaders(curlList.ptr)
-            multiPartHeaders = multiPartHeaders :+ curlList
+            ctx.multiPartHeaders = ctx.multiPartHeaders :+ curlList
           }
         }
         lift(curl.option(Mimepost, mime))
@@ -187,6 +214,7 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
       case NoBody =>
         monad.unit(CurlCode.Ok)
     }
+  }
 
   private def basicBodyToString(body: BodyPart[_]): String =
     body match {
@@ -267,6 +295,12 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
       case CurlCode.Ok => monad.unit(code)
       case _           => monad.error(new RuntimeException(s"Command failed with status $code"))
     }
+}
+
+/** Curl backends that performs the curl operation with a simple `curl_easy_perform`. */
+abstract class AbstractSyncCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean)
+    extends AbstractCurlBackend[F](_monad, verbose) {
+  override def performCurl(c: CurlHandle): F[CurlCode.CurlCode] = monad.unit(c.perform)
 }
 
 object AbstractCurlBackend {
