@@ -123,21 +123,16 @@ val circeVersion: String = "0.14.6"
 
 val jsoniterVersion = "2.24.4"
 
-val playJsonVersion: Option[(Long, Long)] => String = {
-  case Some((2, 11)) => "2.7.4"
-  case _             => "2.9.2"
-}
+val play29JsonVersion = "2.9.2"
+
+val playJsonVersion = "3.0.0"
+
 val catsEffect_3_version = "3.5.2"
 val fs2_3_version = "3.9.3"
 
-val catsEffect_2_version: Option[(Long, Long)] => String = {
-  case Some((2, 11)) => "2.0.0"
-  case _             => "2.5.4"
-}
-val fs2_2_version: Option[(Long, Long)] => String = {
-  case Some((2, 11)) => "2.1.0"
-  case _             => "2.5.9"
-}
+val catsEffect_2_version = "2.5.4"
+
+val fs2_2_version = "2.5.9"
 
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.2.10"
 val akkaStreamVersion = "2.6.20"
@@ -171,9 +166,6 @@ val http4s_ce3_version = "0.23.24"
 val openTelemetryVersion = "1.32.0"
 
 val compileAndTest = "compile->compile;test->test"
-
-def dependenciesFor(version: String)(deps: (Option[(Long, Long)] => ModuleID)*): Seq[ModuleID] =
-  deps.map(_.apply(CrossVersion.partialVersion(version)))
 
 lazy val projectsWithOptionalNative: Seq[ProjectReference] = {
   val base = core.projectRefs ++ jsonCommon.projectRefs ++ upickle.projectRefs
@@ -218,6 +210,7 @@ lazy val allAggregates = projectsWithOptionalNative ++
   json4s.projectRefs ++
   jsoniter.projectRefs ++
   sprayJson.projectRefs ++
+  play29Json.projectRefs ++
   playJson.projectRefs ++
   prometheusBackend.projectRefs ++
   openTelemetryMetricsBackend.projectRefs ++
@@ -343,8 +336,8 @@ lazy val catsCe2 = (projectMatrix in file("effects/cats-ce2"))
   .settings(
     name := "catsCe2",
     Test / publishArtifact := true,
-    libraryDependencies ++= dependenciesFor(scalaVersion.value)(
-      "org.typelevel" %%% "cats-effect" % catsEffect_2_version(_)
+    libraryDependencies ++= Seq(
+      "org.typelevel" %%% "cats-effect" % catsEffect_2_version
     )
   )
   .dependsOn(core % compileAndTest)
@@ -386,8 +379,8 @@ lazy val fs2Ce2 = (projectMatrix in file("effects/fs2-ce2"))
   .settings(
     name := "fs2Ce2",
     Test / publishArtifact := true,
-    libraryDependencies ++= dependenciesFor(scalaVersion.value)(
-      "co.fs2" %%% "fs2-core" % fs2_2_version(_)
+    libraryDependencies ++= Seq(
+      "co.fs2" %%% "fs2-core" % fs2_2_version
     ),
     libraryDependencies += "com.softwaremill.sttp.shared" %% "fs2-ce2" % sttpSharedVersion
   )
@@ -396,9 +389,9 @@ lazy val fs2Ce2 = (projectMatrix in file("effects/fs2-ce2"))
   .jvmPlatform(
     scalaVersions = scala2 ++ scala3,
     settings = commonJvmSettings ++ Seq(
-      libraryDependencies ++= dependenciesFor(scalaVersion.value)(
-        "co.fs2" %%% "fs2-reactive-streams" % fs2_2_version(_),
-        "co.fs2" %%% "fs2-io" % fs2_2_version(_)
+      libraryDependencies ++= Seq(
+        "co.fs2" %%% "fs2-reactive-streams" % fs2_2_version,
+        "co.fs2" %%% "fs2-io" % fs2_2_version
       )
     )
   )
@@ -617,9 +610,9 @@ lazy val asyncHttpClientCatsBackend =
 lazy val asyncHttpClientFs2Ce2Backend =
   asyncHttpClientBackendProject("fs2-ce2", includeDotty = true)
     .settings(
-      libraryDependencies ++= dependenciesFor(scalaVersion.value)(
-        "co.fs2" %% "fs2-reactive-streams" % fs2_2_version(_),
-        "co.fs2" %% "fs2-io" % fs2_2_version(_)
+      libraryDependencies ++= Seq(
+        "co.fs2" %% "fs2-reactive-streams" % fs2_2_version,
+        "co.fs2" %% "fs2-io" % fs2_2_version
       )
     )
     .dependsOn(catsCe2 % compileAndTest)
@@ -730,8 +723,8 @@ lazy val armeriaMonixBackend =
 lazy val armeriaFs2Ce2Backend =
   armeriaBackendProject("fs2-ce2")
     .settings(
-      libraryDependencies ++= dependenciesFor(scalaVersion.value)(
-        "co.fs2" %% "fs2-reactive-streams" % fs2_2_version(_)
+      libraryDependencies ++= Seq(
+        "co.fs2" %% "fs2-reactive-streams" % fs2_2_version
       )
     )
     .dependsOn(fs2Ce2 % compileAndTest)
@@ -895,11 +888,28 @@ lazy val sprayJson = (projectMatrix in file("json/spray-json"))
   .jvmPlatform(scalaVersions = scala2)
   .dependsOn(core, jsonCommon)
 
-lazy val playJson = (projectMatrix in file("json/play-json"))
+lazy val play29Json = (projectMatrix in file("json/play29-json"))
+  .settings(
+    name := "play29-json",
+    Compile / unmanagedSourceDirectories += (ThisBuild / baseDirectory).value / "json" / "play-json" / "src" / "main" / "scala",
+    Test / unmanagedSourceDirectories += (ThisBuild / baseDirectory).value / "json" / "play-json" / "src" / "test" / "scala",
+    libraryDependencies ++= Seq(
+      "com.typesafe.play" %%% "play-json" % play29JsonVersion
+    ),
+    scalaTest
+  )
+  .jvmPlatform(
+    scalaVersions = scala2,
+    settings = commonJvmSettings
+  )
+  .jsPlatform(scalaVersions = scala2, settings = commonJsSettings)
+  .dependsOn(core, jsonCommon)
+
+ lazy val playJson = (projectMatrix in file("json/play-json"))
   .settings(
     name := "play-json",
-    libraryDependencies ++= dependenciesFor(scalaVersion.value)(
-      "com.typesafe.play" %%% "play-json" % playJsonVersion(_)
+    libraryDependencies ++= Seq(
+      "org.playframework" %%% "play-json" % playJsonVersion
     ),
     scalaTest
   )
