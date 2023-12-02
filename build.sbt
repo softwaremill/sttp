@@ -121,7 +121,7 @@ val testServerSettings = Seq(
 
 val circeVersion: String = "0.14.6"
 
-val jsoniterVersion = "2.24.4"
+val jsoniterVersion = "2.25.0"
 
 val playJsonVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.7.4"
