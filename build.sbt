@@ -125,10 +125,11 @@ val circeVersion: Option[(Long, Long)] => String = { _ =>
 
 val jsoniterVersion = "2.22.1"
 
-val playJsonVersion: Option[(Long, Long)] => String = {
+val play2JsonVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.7.4"
   case _             => "2.9.2"
 }
+val playJsonVersion = "3.0.0"
 val catsEffect_3_version = "3.5.1"
 val fs2_3_version = "3.7.0"
 
@@ -221,6 +222,7 @@ lazy val allAggregates = projectsWithOptionalNative ++
   json4s.projectRefs ++
   jsoniter.projectRefs ++
   sprayJson.projectRefs ++
+  play2Json.projectRefs ++
   playJson.projectRefs ++
   prometheusBackend.projectRefs ++
   openTelemetryMetricsBackend.projectRefs ++
@@ -923,16 +925,33 @@ lazy val sprayJson = (projectMatrix in file("json/spray-json"))
   .jvmPlatform(scalaVersions = scala2)
   .dependsOn(core, jsonCommon)
 
-lazy val playJson = (projectMatrix in file("json/play-json"))
+lazy val play2Json = (projectMatrix in file("json/play2-json"))
   .settings(
-    name := "play-json",
+    name := "play2-json",
+    Compile / unmanagedSourceDirectories += (ThisBuild / baseDirectory).value / "json" / "play-json" / "src" / "main" / "scala",
+    Test / unmanagedSourceDirectories += (ThisBuild / baseDirectory).value / "json" / "play-json" / "src" / "test" / "scala",
     libraryDependencies ++= dependenciesFor(scalaVersion.value)(
-      "com.typesafe.play" %%% "play-json" % playJsonVersion(_)
+      "com.typesafe.play" %%% "play-json" % play2JsonVersion(_)
     ),
     scalaTest
   )
   .jvmPlatform(
     scalaVersions = scala2,
+    settings = commonJvmSettings
+  )
+  .jsPlatform(scalaVersions = scala2alive, settings = commonJsSettings)
+  .dependsOn(core, jsonCommon)  
+
+lazy val playJson = (projectMatrix in file("json/play-json"))
+  .settings(
+    name := "play-json",
+    libraryDependencies ++= Seq(
+      "org.playframework" %%% "play-json" % playJsonVersion
+    ),
+    scalaTest
+  )
+  .jvmPlatform(
+    scalaVersions = scala2alive,
     settings = commonJvmSettings
   )
   .jsPlatform(scalaVersions = scala2alive, settings = commonJsSettings)
