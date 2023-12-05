@@ -123,7 +123,7 @@ val circeVersion: String = "0.14.6"
 
 val jsoniterVersion = "2.25.0"
 
-val play29JsonVersion = "2.9.2"
+val play29JsonVersion = "2.9.4"
 
 val playJsonVersion = "3.0.0"
 
@@ -905,7 +905,7 @@ lazy val play29Json = (projectMatrix in file("json/play29-json"))
   .jsPlatform(scalaVersions = scala2, settings = commonJsSettings)
   .dependsOn(core, jsonCommon)
 
- lazy val playJson = (projectMatrix in file("json/play-json"))
+lazy val playJson = (projectMatrix in file("json/play-json"))
   .settings(
     name := "play-json",
     libraryDependencies ++= Seq(
