@@ -125,7 +125,7 @@ val jsoniterVersion = "2.25.0"
 
 val play29JsonVersion = "2.9.2"
 
-val playJsonVersion = "3.0.0"
+val playJsonVersion = "3.0.1"
 
 val catsEffect_3_version = "3.5.2"
 val fs2_3_version = "3.9.3"
@@ -905,7 +905,7 @@ lazy val play29Json = (projectMatrix in file("json/play29-json"))
   .jsPlatform(scalaVersions = scala2, settings = commonJsSettings)
   .dependsOn(core, jsonCommon)
 
- lazy val playJson = (projectMatrix in file("json/play-json"))
+lazy val playJson = (projectMatrix in file("json/play-json"))
   .settings(
     name := "play-json",
     libraryDependencies ++= Seq(
