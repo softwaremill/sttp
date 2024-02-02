@@ -35,7 +35,7 @@ import sttp.client4._
 // the embedded / is escaped
 println(uri"http://example.org/${"a/b"}")
 
-// the embedded / is not escaped
+// the literal / is not escaped
 println(uri"http://example.org/${"a"}/${"b"}")
 
 // the embedded : is not escaped
