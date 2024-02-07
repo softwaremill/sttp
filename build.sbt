@@ -940,7 +940,7 @@ lazy val play2Json = (projectMatrix in file("json/play2-json"))
     settings = commonJvmSettings
   )
   .jsPlatform(scalaVersions = scala2alive, settings = commonJsSettings)
-  .dependsOn(core, jsonCommon)  
+  .dependsOn(core, jsonCommon)
 
 lazy val playJson = (projectMatrix in file("json/play-json"))
   .settings(
