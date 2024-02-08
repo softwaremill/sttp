@@ -81,19 +81,20 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
   private def sendRegular[T, R >: PE](request: Request[T, R]): F[Response[T]] = {
     // https://stackoverflow.com/q/31061838/4094860
     val readTimeout = request.options.readTimeout
-    val (signal, cancelTimeout) = readTimeout match {
+    val controller = new AbortController()
+    val signal = controller.signal
+    val cancelTimeout = readTimeout match {
       case timeout: FiniteDuration =>
-        val controller = new AbortController()
-        val signal = controller.signal
-
         val timeoutHandle = setTimeout(timeout) {
           controller.abort()
         }
-        (Some(signal), () => clearTimeout(timeoutHandle))
+        () => clearTimeout(timeoutHandle)
 
       case _ =>
-        (None, () => ())
+        () => ()
     }
+
+    val cancel = () => controller.abort()
 
     val rheaders = new JSHeaders()
     request.headers.foreach { header =>
@@ -110,7 +111,7 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
     val req = createBody(request.body).map { rbody =>
       // use manual so we can return a specific error instead of the generic "TypeError: Failed to fetch"
       val rredirect = if (request.options.followRedirects) RequestRedirect.follow else RequestRedirect.manual
-      val rsignal = signal.orUndefined
+      val rsignal = signal
 
       val requestInitStatic = new RequestInit() {
         this.method = request.method.method.asInstanceOf[HttpMethod]
@@ -129,7 +130,7 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
       }
 
       val requestInitDynamic = requestInitStatic.asInstanceOf[js.Dynamic]
-      signal.foreach(s => requestInitDynamic.updateDynamic("signal")(s))
+      requestInitDynamic.updateDynamic("signal")(signal)
       requestInitDynamic.updateDynamic("redirect")(rredirect) // named wrong in RequestInit
       val requestInit = requestInitDynamic.asInstanceOf[RequestInit]
 
@@ -162,10 +163,10 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S], P](
           )
         }
       }
-    addCancelTimeoutHook(result, cancelTimeout)
+    addCancelTimeoutHook(result, cancel, cancelTimeout)
   }
 
-  protected def addCancelTimeoutHook[T](result: F[T], cancel: () => Unit): F[T]
+  protected def addCancelTimeoutHook[T](result: F[T], cancel: () => Unit, cleanup: () => Unit): F[T]
 
   private def convertResponseHeaders(headers: JSHeaders): Seq[Header] = {
     headers

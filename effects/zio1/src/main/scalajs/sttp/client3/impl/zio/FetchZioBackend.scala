@@ -35,9 +35,10 @@ class FetchZioBackend private (fetchOptions: FetchOptions, customizeRequest: Fet
 
   override val streams: ZioStreams = ZioStreams
 
-  override protected def addCancelTimeoutHook[T](result: Task[T], cancel: () => Unit): Task[T] = {
-    val doCancel = ZIO.effect(cancel())
-    result.onInterrupt(doCancel.catchAll(_ => ZIO.unit)).tap(_ => doCancel)
+  override protected def addCancelTimeoutHook[T](result: Task[T], cancel: () => Unit, cleanup: () => Unit): Task[T] = {
+    val doCancel = ZIO.effect(cancel()).ignore
+    val doCleanup = ZIO.effect(cleanup()).ignore
+    result.onInterrupt(doCancel).onExit(_ => doCleanup)
   }
 
   override protected def handleStreamBody(s: Observable[Byte]): Task[js.UndefOr[BodyInit]] = {
