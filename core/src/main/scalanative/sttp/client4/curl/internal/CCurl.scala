@@ -25,23 +25,29 @@ private[curl] object libcurlPlatformCompat {
 
 @extern
 private[curl] trait CCurl {
+  @name("sttp_curl_setopt_int")
+  def setoptInt(handle: Ptr[Curl], option: CInt, parameter: Int): CInt = extern
+
+  @name("sttp_curl_setopt_long")
+  def setoptLong(handle: Ptr[Curl], option: CInt, parameter: Long): CInt = extern
+
+  @name("sttp_curl_setopt_pointer")
+  def setoptPtr(handle: Ptr[Curl], option: CInt, parameter: Ptr[_]): CInt = extern
+
+
+  @name("sttp_curl_getinfo_pointer")
+  def getInfo(handle: Ptr[Curl], info: CInt, parameter: Ptr[_]): CInt = extern
+
+
   @name("curl_easy_init")
   def init: Ptr[Curl] = extern
 
   @name("curl_easy_cleanup")
   def cleanup(handle: Ptr[Curl]): Unit = extern
 
-  @name("curl_easy_setopt")
-  def setopt(handle: Ptr[Curl], option: CInt, parameter: Ptr[_]): CInt = extern
-
-  @name("curl_easy_setopt")
-  def setopt(handle: Ptr[Curl], option: CInt, parameter: CVarArgList): CInt = extern
-
   @name("curl_easy_perform")
   def perform(easy_handle: Ptr[Curl]): CInt = extern
 
-  @name("curl_easy_getinfo")
-  def getInfo(handle: Ptr[Curl], info: CInt, parameter: Ptr[_]): CInt = extern
 
   @name("curl_mime_init")
   def mimeInit(easy: Ptr[Curl]): Ptr[Mime] = extern
