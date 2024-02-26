@@ -33,7 +33,7 @@ println(response.header("Content-Length"))
 println(response.body)     
 ```
 
-For more examples, see the [usage examples](examples.md) section. To start using sttp client in your project, see the [quickstart](quickstart.md). Or, browse the documentation to find the topics that interest you the most!
+For more examples, see the [usage examples](examples.md) section. To start using sttp client in your project, see the [quickstart](quickstart.md). Or, browse the documentation to find the topics that interest you the most! ScalaDoc is available at [https://www.javadoc.io](https://www.javadoc.io/doc/com.softwaremill.sttp.client4/core_2.12/4.0.0-M9).
 
 ## Other sttp projects
 
@@ -56,7 +56,7 @@ Third party projects:
 
 ## Sponsors
 
-Development and maintenance of sttp client is sponsored by [SoftwareMill](https://softwaremill.com), a software development and consulting company. We help clients scale their business through software. Our areas of expertise include backends, distributed systems, blockchain, machine learning and data analytics.
+Development and maintenance of sttp client is sponsored by [SoftwareMill](https://softwaremill.com), a software development and consulting company. We help clients scale their business through software. Our areas of expertise include backends, distributed systems, machine learning, platform engineering and data analytics.
 
 [![](https://files.softwaremill.com/logo/logo.png "SoftwareMill")](https://softwaremill.com)
 
