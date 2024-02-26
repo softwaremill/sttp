@@ -19,9 +19,10 @@ class FetchCatsBackend[F[_]: Concurrent: ContextShift] private (
 
   override val streams: NoStreams = NoStreams
 
-  override protected def addCancelTimeoutHook[T](result: F[T], cancel: () => Unit): F[T] = {
+  override protected def addCancelTimeoutHook[T](result: F[T], cancel: () => Unit, cleanup: () => Unit): F[T] = {
     val doCancel = Sync[F].delay(cancel())
-    result.guarantee(doCancel)
+    val doCleanup = Sync[F].delay(cleanup())
+    result.onCancel(doCancel).guarantee(doCleanup)
   }
 
   override protected def handleStreamBody(s: Nothing): F[js.UndefOr[BodyInit]] = s
