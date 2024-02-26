@@ -29,9 +29,10 @@ class FetchMonixBackend private (fetchOptions: FetchOptions, customizeRequest: F
 
   override val streams: MonixStreams = MonixStreams
 
-  override protected def addCancelTimeoutHook[T](result: Task[T], cancel: () => Unit): Task[T] = {
+  override protected def addCancelTimeoutHook[T](result: Task[T], cancel: () => Unit, cleanup: () => Unit): Task[T] = {
     val doCancel = Task.delay(cancel())
-    result.doOnCancel(doCancel).doOnFinish(_ => doCancel)
+    val doCleanup = Task.delay(cleanup())
+    result.doOnCancel(doCancel).doOnFinish(_ => doCleanup)
   }
 
   override protected def handleStreamBody(s: Observable[Array[Byte]]): Task[js.UndefOr[BodyInit]] = {

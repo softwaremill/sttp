@@ -35,7 +35,7 @@ import sttp.client4._
 // the embedded / is escaped
 println(uri"http://example.org/${"a/b"}")
 
-// the embedded / is not escaped
+// the literal / is not escaped
 println(uri"http://example.org/${"a"}/${"b"}")
 
 // the embedded : is not escaped
@@ -132,7 +132,7 @@ which is an ordinary `case class`, will contain a path segment with `a b`.
 
 When parsing, that includes creating URIs from constant strings e.g. `uri"http://example.com/a%20b"`, all of the 
 components are decoded and stored in this form. This means that `Uri` might **not** exactly preserve the original
-form, in which path segments or query parameters have been writte down (this might change in a future major release,
+form, in which path segments or query parameters have been written down (this might change in a future major release,
 though).
 
 When serialising the `Uri` back to a `String`, the code follows the escaping rules defined in 

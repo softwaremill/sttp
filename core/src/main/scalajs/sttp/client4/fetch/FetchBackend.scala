@@ -16,8 +16,12 @@ class FetchBackend private (fetchOptions: FetchOptions, customizeRequest: FetchR
 
   override val streams: NoStreams = NoStreams
 
-  override protected def addCancelTimeoutHook[T](result: Future[T], cancel: () => Unit): Future[T] = {
-    result.onComplete(_ => cancel())
+  override protected def addCancelTimeoutHook[T](
+      result: Future[T],
+      cancel: () => Unit,
+      cleanup: () => Unit
+  ): Future[T] = {
+    result.onComplete(_ => cleanup())
     result
   }
 
