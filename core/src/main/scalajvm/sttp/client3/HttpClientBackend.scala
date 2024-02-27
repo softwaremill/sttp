@@ -10,12 +10,13 @@ import sttp.monad.MonadError
 import sttp.monad.syntax._
 import sttp.ws.WebSocket
 
+import java.net.Authenticator.RequestorType
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 import java.net.{Authenticator, PasswordAuthentication}
 import java.time.{Duration => JDuration}
 import java.util.concurrent.{Executor, ThreadPoolExecutor}
 import java.util.function
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 /** @param closeClient
   *   If the executor underlying the client is a [[ThreadPoolExecutor]], should it be shutdown on [[close]].
@@ -123,10 +124,12 @@ abstract class HttpClientBackend[F[_], S, P, B](
 object HttpClientBackend {
 
   type EncodingHandler[B] = PartialFunction[(B, String), B]
-  // TODO not sure if it works
+
   private class ProxyAuthenticator(auth: SttpBackendOptions.ProxyAuth) extends Authenticator {
     override def getPasswordAuthentication: PasswordAuthentication = {
-      new PasswordAuthentication(auth.username, auth.password.toCharArray)
+      if (getRequestorType == RequestorType.PROXY) {
+        new PasswordAuthentication(auth.username, auth.password.toCharArray)
+      } else null
     }
   }
 
