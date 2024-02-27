@@ -16,7 +16,7 @@ import java.net.{Authenticator, PasswordAuthentication}
 import java.time.{Duration => JDuration}
 import java.util.concurrent.{Executor, ThreadPoolExecutor}
 import java.util.function
-import scala.jdk.CollectionConverters._
+import scala.collection.JavaConverters._
 
 /** @param closeClient
   *   If the executor underlying the client is a [[ThreadPoolExecutor]], should it be shutdown on [[close]].
