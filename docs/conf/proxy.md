@@ -31,16 +31,15 @@ import sttp.client3._
 SttpBackendOptions.httpProxy("some.host", 8080, "username", "password")
 ```
 
-If your backend implements `HttpClientBackend` and your proxy server requires Basic authentication, you will need to enable it by setting
-the `jdk.http.auth.tunneling.disabledSchemes` system property to an empty string (`""`). This can be done by
-calling `System.setProperty("jdk.http.auth.tunneling.disabledSchemes", "")` before creating the backend.
+If your backend implements `HttpClientBackend` and your proxy server requires Basic authentication, you will need to enable it by 
+removing Basic from the `jdk.http.auth.tunneling.disabledSchemes` networking property, or by setting a system property of the same name to "".
 
 ```scala mdoc:compile-only 
 System.setProperty("jdk.http.auth.tunneling.disabledSchemes", "")
 ```
 
 Please be aware that enabling Basic authentication for HTTP tunneling can expose your credentials to interception, so it
-should only be done if you understand the risks and your network is secure.
+should only be done if you understand the risks and your network is secure. This behaviour is described in https://www.oracle.com/java/technologies/javase/8u111-relnotes.html.
 
 ## Ignoring and allowing specific hosts
 
