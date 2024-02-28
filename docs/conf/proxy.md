@@ -31,7 +31,7 @@ import sttp.client3._
 SttpBackendOptions.httpProxy("some.host", 8080, "username", "password")
 ```
 
-If your backend implements `HttpClientBackend` and your proxy server requires Basic authentication, you will need to enable it by 
+if you use a HttpClient-based backend (e.g. `HttpClientBackend`) and your proxy server requires Basic authentication, you will need to enable it by 
 removing Basic from the `jdk.http.auth.tunneling.disabledSchemes` networking property, or by setting a system property of the same name to "".
 
 ```scala mdoc:compile-only 
