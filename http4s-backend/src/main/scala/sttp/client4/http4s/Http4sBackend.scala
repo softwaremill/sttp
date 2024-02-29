@@ -149,13 +149,12 @@ class Http4sBackend[F[_]: Async](
       case StreamBody(s) =>
         val cl = r.headers
           .find(_.is(HeaderNames.ContentLength))
-          .map(_.value.toLong)
-        (http4s.Entity(s.asInstanceOf[Stream[F, Byte]], cl), http4s.Headers.empty)
+          .map(_.value.toLong)(http4s.Entity(s.asInstanceOf[Stream[F, Byte]], cl), http4s.Headers.empty)
 
       case m: MultipartBody[_] =>
         val parts = m.parts.toVector.map(multipartToHttp4s)
-        val multipart = http4s.multipart.Multipart(parts)
-        (http4s.EntityEncoder.multipartEncoder.toEntity(multipart), multipart.headers)
+        val multipart = http4s.multipart
+          .Multipart(parts)(http4s.EntityEncoder.multipartEncoder.toEntity(multipart), multipart.headers)
     }
 
   private def multipartToHttp4s(mp: Part[BodyPart[_]]): http4s.multipart.Part[F] = {
