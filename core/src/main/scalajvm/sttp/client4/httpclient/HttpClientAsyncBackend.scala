@@ -50,7 +50,12 @@ abstract class HttpClientAsyncBackend[F[_], S <: Streams[S], BH, B](
 
         val consumer = toJavaBiConsumer { (t: HttpResponse[BH], u: Throwable) =>
           if (t != null) {
-            try success(readResponse(t, Left(bodyHandlerBodyToBody(t.body())), request))
+            // sometimes body returned by HttpClient can be null, we handle this by returning empty body to prevent NPE
+            val body = Option(t.body())
+              .map(bodyHandlerBodyToBody)
+              .getOrElse(emptyBody())
+
+            try success(readResponse(t, Left(body), request))
             catch {
               case e: Exception => error(e)
             }
