@@ -383,7 +383,7 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
     val counter = new AtomicInteger(0)
     val backend: SttpBackend[Lazy, Any] = SttpBackendStub(LazyMonad).whenRequestMatchesPartial { case _ =>
       counter.getAndIncrement()
-      Response.ok()
+      Response.ok("ok")
     }
 
     // creating the "send effect" once ...
@@ -391,8 +391,8 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
 
     // when
     // ... and then using it twice
-    result().code shouldBe StatusCode.Ok
-    result().code shouldBe StatusCode.Ok
+    result().body shouldBe Right("ok")
+    result().body shouldBe Right("ok")
 
     // then
     counter.get() shouldBe 2
