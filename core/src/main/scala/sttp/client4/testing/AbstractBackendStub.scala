@@ -48,7 +48,7 @@ abstract class AbstractBackendStub[F[_], P](
     withMatchers(matchers.orElse(wrappedPartial))
   }
 
-  override def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] =
+  override def send[T](request: GenericRequest[T, P with Effect[F]]): F[Response[T]] = monad.suspend {
     Try(matchers.lift(request)) match {
       case Success(Some(response)) =>
         adjustExceptions(request)(tryAdjustResponseType(request.response, response.asInstanceOf[F[Response[T]]])(monad))
@@ -59,6 +59,7 @@ abstract class AbstractBackendStub[F[_], P](
         }
       case Failure(e) => adjustExceptions(request)(monad.error(e))
     }
+  }
 
   private def adjustExceptions[T](request: GenericRequest[_, _])(t: => F[T]): F[T] =
     SttpClientException.adjustExceptions(monad)(t)(
