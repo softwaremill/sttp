@@ -65,7 +65,7 @@ class SttpBackendStub[F[_], +P](
     new SttpBackendStub[F, P](monad, matchers.orElse(wrappedPartial), fallback)
   }
 
-  override def send[T, R >: P with Effect[F]](request: Request[T, R]): F[Response[T]] = {
+  override def send[T, R >: P with Effect[F]](request: Request[T, R]): F[Response[T]] = monad.suspend {
     Try(matchers.lift(request)) match {
       case Success(Some(response)) =>
         adjustExceptions(request)(tryAdjustResponseType(request.response, response.asInstanceOf[F[Response[T]]])(monad))

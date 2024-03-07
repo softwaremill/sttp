@@ -9,12 +9,13 @@ import sttp.client3._
 import sttp.client3.internal._
 import sttp.client3.monad.IdMonad
 import sttp.model._
-import sttp.monad.{FutureMonad, TryMonad}
+import sttp.monad.{FutureMonad, MonadError, TryMonad}
 import sttp.ws.WebSocketFrame
 import sttp.ws.testing.WebSocketStub
 
 import java.io.ByteArrayInputStream
 import java.util.concurrent.TimeoutException
+import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -358,6 +359,43 @@ class SttpBackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
       .map(_.body)
 
     result shouldBe Success(Right(1: Byte))
+  }
+
+  it should "evaluate side effects on each request" in {
+    // given
+    type Lazy[T] = () => T
+    object LazyMonad extends MonadError[Lazy] {
+      override def unit[T](t: T): Lazy[T] = () => t
+      override def map[T, T2](fa: Lazy[T])(f: T => T2): Lazy[T2] = () => f(fa())
+      override def flatMap[T, T2](fa: Lazy[T])(f: T => Lazy[T2]): Lazy[T2] = () => f(fa())()
+      override def error[T](t: Throwable): Lazy[T] = () => throw t
+      override protected def handleWrappedError[T](rt: Lazy[T])(h: PartialFunction[Throwable, Lazy[T]]): Lazy[T] =
+        () => {
+          try rt()
+          catch { case e if h.isDefinedAt(e) => h(e)() }
+        }
+      override def ensure[T](f: Lazy[T], e: => Lazy[Unit]): Lazy[T] = () => {
+        try f()
+        finally e()
+      }
+    }
+
+    val counter = new AtomicInteger(0)
+    val backend: SttpBackend[Lazy, Any] = SttpBackendStub(LazyMonad).whenRequestMatchesPartial { case _ =>
+      counter.getAndIncrement()
+      Response.ok("ok")
+    }
+
+    // creating the "send effect" once ...
+    val result = basicRequest.get(uri"http://example.org").send(backend)
+
+    // when
+    // ... and then using it twice
+    result().body shouldBe Right("ok")
+    result().body shouldBe Right("ok")
+
+    // then
+    counter.get() shouldBe 2
   }
 
   private val testingStubWithFallback = SttpBackendStub
