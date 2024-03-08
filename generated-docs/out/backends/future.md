@@ -20,7 +20,7 @@ Class                                 Supported stream type                     
 To use, you don't need any extra dependencies, `core` is enough:
 
 ```
-"com.softwaremill.sttp.client4" %% "core" % "4.0.0-M8"
+"com.softwaremill.sttp.client4" %% "core" % "4.0.0-M10"
 ```
 
 You'll need the following imports:
@@ -41,7 +41,7 @@ or, if you'd like to instantiate the HttpClient yourself:
 ```scala
 import java.net.http.HttpClient
 
-val client: HttpClient = ???  
+val client: HttpClient = ??? 
 val backend = HttpClientFutureBackend.usingClient(client)
 ```
 
@@ -59,7 +59,7 @@ Host header override is supported in environments running Java 12 onwards, but i
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client4" %% "okhttp-backend" % "4.0.0-M8"
+"com.softwaremill.sttp.client4" %% "okhttp-backend" % "4.0.0-M10"
 ```
 
 and some imports:
@@ -80,7 +80,7 @@ or, if you'd like to instantiate the OkHttpClient yourself:
 ```scala
 import okhttp3.OkHttpClient
 
-val okHttpClient: OkHttpClient = ???  
+val okHttpClient: OkHttpClient = ??? 
 val backend = OkHttpFutureBackend.usingClient(okHttpClient)
 ```
 
@@ -91,7 +91,7 @@ This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supp
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %% "armeria-backend" % "4.0.0-M8"
+"com.softwaremill.sttp.client4" %% "armeria-backend" % "4.0.0-M10"
 ```
 
 add imports:

@@ -8,10 +8,10 @@ import complete.DefaultParsers._
 // run JS tests inside Chrome, due to jsdom not supporting fetch
 import com.softwaremill.SbtSoftwareMillBrowserTestJS._
 
-val scala2_12 = "2.12.18"
-val scala2_13 = "2.13.12"
+val scala2_12 = "2.12.19"
+val scala2_13 = "2.13.13"
 val scala2 = List(scala2_12, scala2_13)
-val scala3 = List("3.3.1")
+val scala3 = List("3.3.3")
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests")
@@ -121,14 +121,14 @@ val testServerSettings = Seq(
 
 val circeVersion: String = "0.14.6"
 
-val jsoniterVersion = "2.25.0"
+val jsoniterVersion = "2.28.3"
 
-val play29JsonVersion = "2.10.3"
+val play29JsonVersion = "2.10.4"
 
-val playJsonVersion = "3.0.1"
+val playJsonVersion = "3.0.2"
 
-val catsEffect_3_version = "3.5.2"
-val fs2_3_version = "3.9.3"
+val catsEffect_3_version = "3.5.4"
+val fs2_3_version = "3.9.4"
 
 val catsEffect_2_version = "2.5.5"
 
@@ -138,32 +138,32 @@ val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.2.10"
 val akkaStreamVersion = "2.6.20"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % akkaStreamVersion
 
-val pekkoHttp = "org.apache.pekko" %% "pekko-http" % "1.0.0"
+val pekkoHttp = "org.apache.pekko" %% "pekko-http" % "1.0.1"
 val pekkoStreamVersion = "1.0.2"
 val pekkoStreams = "org.apache.pekko" %% "pekko-stream" % pekkoStreamVersion
 
 val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", "wordspec", "shouldmatchers").map(m =>
-  "org.scalatest" %%% s"scalatest-$m" % "3.2.17" % Test
+  "org.scalatest" %%% s"scalatest-$m" % "3.2.18" % Test
 )
 
 val zio1Version = "1.0.18"
-val zio2Version = "2.0.19"
+val zio2Version = "2.0.21"
 val zio1InteropRsVersion = "1.3.12"
 val zio2InteropRsVersion = "2.0.2"
 
-val sttpModelVersion = "1.7.6"
+val sttpModelVersion = "1.7.7"
 val sttpSharedVersion = "1.3.17"
 
-val logback = "ch.qos.logback" % "logback-classic" % "1.4.14"
+val logback = "ch.qos.logback" % "logback-classic" % "1.5.3"
 
 val jeagerClientVersion = "1.8.1"
-val braveOpentracingVersion = "1.0.0"
-val zipkinSenderOkHttpVersion = "2.16.5"
-val resilience4jVersion = "2.1.0"
+val braveOpentracingVersion = "1.0.1"
+val zipkinSenderOkHttpVersion = "3.3.0"
+val resilience4jVersion = "2.2.0"
 val http4s_ce2_version = "0.22.15"
-val http4s_ce3_version = "0.23.24"
+val http4s_ce3_version = "0.23.26"
 
-val openTelemetryVersion = "1.33.0"
+val openTelemetryVersion = "1.35.0"
 
 val compileAndTest = "compile->compile;test->test"
 
@@ -675,8 +675,8 @@ lazy val http4sBackend = (projectMatrix in file("http4s-backend"))
     name := "http4s-backend",
     libraryDependencies ++= Seq(
       "org.http4s" %% "http4s-client" % http4s_ce3_version,
-      "org.http4s" %% "http4s-ember-client" % "0.23.24" % Optional,
-      "org.http4s" %% "http4s-blaze-client" % "0.23.15" % Optional
+      "org.http4s" %% "http4s-ember-client" % "0.23.26" % Optional,
+      "org.http4s" %% "http4s-blaze-client" % "0.23.16" % Optional
     ),
     evictionErrorLevel := Level.Info
   )
@@ -701,7 +701,7 @@ lazy val armeriaBackend = (projectMatrix in file("armeria-backend"))
   .settings(testServerSettings)
   .settings(
     name := "armeria-backend",
-    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.26.4"
+    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.27.2"
   )
   .jvmPlatform(scalaVersions = scala2 ++ scala3)
   .dependsOn(core % compileAndTest)
@@ -847,7 +847,7 @@ lazy val upickle = (projectMatrix in file("json/upickle"))
   .settings(
     name := "upickle",
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %%% "upickle" % "3.1.3"
+      "com.lihaoyi" %%% "upickle" % "3.1.4"
     ),
     scalaTest,
     // using macroRW causes a "match may not be exhaustive" error

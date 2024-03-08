@@ -21,6 +21,7 @@ import sttp.monad.MonadError
 import sttp.monad.syntax._
 import sttp.ws.WebSocket
 
+import java.net.Authenticator.RequestorType
 import java.net.http.{HttpClient, HttpRequest, HttpResponse, WebSocket => JWebSocket}
 import java.net.{Authenticator, PasswordAuthentication}
 import java.time.{Duration => JDuration}
@@ -183,10 +184,12 @@ abstract class HttpClientBackend[F[_], S <: Streams[S], P, B](
 object HttpClientBackend {
 
   type EncodingHandler[B] = PartialFunction[(B, String), B]
-  // TODO not sure if it works
+
   private class ProxyAuthenticator(auth: BackendOptions.ProxyAuth) extends Authenticator {
     override def getPasswordAuthentication: PasswordAuthentication =
-      new PasswordAuthentication(auth.username, auth.password.toCharArray)
+      if (getRequestorType == RequestorType.PROXY) {
+        new PasswordAuthentication(auth.username, auth.password.toCharArray)
+      } else null
   }
 
   private[client4] def defaultClient(options: BackendOptions, executor: Option[Executor]): HttpClient = {
