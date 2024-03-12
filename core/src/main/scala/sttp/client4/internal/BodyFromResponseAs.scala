@@ -92,7 +92,7 @@ abstract class BodyFromResponseAs[F[_], RegularResponse, WSResponse, Stream](imp
   protected def regularAsFile(response: RegularResponse, file: SttpFile): F[SttpFile]
   protected def regularAsStream(response: RegularResponse): F[(Stream, () => F[Unit])]
   protected def regularAsInputStream(response: RegularResponse): F[InputStream] =
-    throw new UnsupportedOperationException("Responses as a java.util.InputStream are not supported")
+    throw new UnsupportedOperationException("Responses as a java.io.InputStream are not supported")
   protected def handleWS[T](responseAs: GenericWebSocketResponseAs[T, _], meta: ResponseMetadata, ws: WSResponse): F[T]
   protected def cleanupWhenNotAWebSocket(response: RegularResponse, e: NotAWebSocketException): F[Unit]
   protected def cleanupWhenGotWebSocket(response: WSResponse, e: GotAWebSocketException): F[Unit]
