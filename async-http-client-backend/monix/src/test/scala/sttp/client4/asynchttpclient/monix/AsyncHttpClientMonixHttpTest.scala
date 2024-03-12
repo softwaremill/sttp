@@ -23,4 +23,5 @@ class AsyncHttpClientMonixHttpTest extends HttpTest[Task] {
 
   override def throwsExceptionOnUnsupportedEncoding = false
   override def supportsAutoDecompressionDisabling = false
+  override def supportsResponseAsInputStream = false
 }

@@ -4,7 +4,7 @@ import com.linecorp.armeria.common.{CommonPools, HttpData}
 import com.linecorp.armeria.common.stream.{StreamMessage, StreamMessages}
 import io.netty.util.concurrent.EventExecutor
 
-import java.io.File
+import java.io.{File, InputStream}
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicReference
 import sttp.capabilities.Streams
@@ -102,6 +102,9 @@ private[armeria] trait BodyFromStreamMessage[F[_], S] {
           response: StreamMessage[HttpData]
       ): F[(streams.BinaryStream, () => F[Unit])] =
         (publisherToStream(response), () => monad.eval(response.abort())).unit
+
+      override protected def regularAsInputStream(response: StreamMessage[HttpData]): F[InputStream] =
+        response.toInputStream(x => HttpData.wrap(x.array())).unit
 
       override protected def handleWS[T](
           responseAs: GenericWebSocketResponseAs[T, _],

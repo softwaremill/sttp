@@ -67,6 +67,8 @@ private[okhttp] trait BodyFromOkHttp[F[_], S] {
       override protected def regularAsStream(response: InputStream): F[(streams.BinaryStream, () => F[Unit])] =
         monad.eval((responseBodyToStream(response), () => monad.eval(response.close())))
 
+      override protected def regularAsInputStream(response: InputStream): F[InputStream] = monad.unit(response)
+
       override protected def handleWS[T](
           responseAs: GenericWebSocketResponseAs[T, _],
           meta: ResponseMetadata,

@@ -1,12 +1,45 @@
 package sttp.client4
 
-import java.io.File
+import java.io.{File, InputStream}
 import java.nio.file.Path
-
 import sttp.client4.internal.SttpFile
 import sttp.model.{Part, StatusCode}
 
 trait SttpExtensions {
+
+  /** Specify that the body should be passed as an input stream to the given function `f`. After the function completes,
+    * the input stream is always closed.
+    *
+    * If the response code is not successful, the body is returned as a `String`.
+    *
+    * '''Warning:''' this type of responses is supported only by some backends on the JVM.
+    */
+  def asInputStream[T](f: InputStream => T): ResponseAs[Either[String, T]] =
+    asEither(asStringAlways, asInputStreamAlways(f))
+
+  /** Specify that the body should be passed as an input stream to the given function `f`. After the function completes,
+    * the input stream is always closed.
+    *
+    * '''Warning:''' this type of responses is supported only by some backends on the JVM.
+    */
+  def asInputStreamAlways[T](f: InputStream => T): ResponseAs[T] = new ResponseAs(ResponseAsInputStream(f))
+
+  /** Specify that the body should be returned as an input stream. It is the responsibility of the user to properly
+    * close the stream.
+    *
+    * If the response code is not successful, the body is returned as a `String`.
+    *
+    * '''Warning:''' this type of responses is supported only by some backends on the JVM.
+    */
+  def asInputStreamUnsafe: ResponseAs[Either[String, InputStream]] = asEither(asStringAlways, asInputStreamAlwaysUnsafe)
+
+  /** Specify that the body should be returned as an input stream. It is the responsibility of the user to properly
+    * close the stream.
+    *
+    * '''Warning:''' this type of responses is supported only by some backends on the JVM.
+    */
+  def asInputStreamAlwaysUnsafe: ResponseAs[InputStream] = new ResponseAs(ResponseAsInputStreamUnsafe)
+
   def asFile(file: File): ResponseAs[Either[String, File]] = asEither(asStringAlways, asFileAlways(file))
 
   def asFileAlways(file: File): ResponseAs[File] =

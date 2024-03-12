@@ -14,6 +14,27 @@ import sttp.client4.wrappers.{DigestAuthenticationBackend, FollowRedirectsBacken
 import sttp.model.headers.CookieWithMeta
 
 trait HttpTestExtensions[F[_]] extends AsyncFreeSpecLike { self: HttpTest[F] =>
+  "parse response" - {
+    if (supportsResponseAsInputStream) {
+      "as input stream" in {
+        postEcho.body(testBody).response(asInputStreamAlways(_.readAllBytes())).send(backend).toFuture().map {
+          response =>
+            val allBytes = response.body
+            val fc = new String(allBytes, "UTF-8")
+            fc should be(expectedPostEchoResponse)
+        }
+      }
+
+      "as input stream unsafe" in {
+        postEcho.body(testBody).response(asInputStreamAlwaysUnsafe).send(backend).toFuture().map { response =>
+          val allBytes = response.body.readAllBytes()
+          val fc = new String(allBytes, "UTF-8")
+          fc should be(expectedPostEchoResponse)
+        }
+      }
+    }
+  }
+
   "cookies" - {
     "read response cookies" in {
       basicRequest
