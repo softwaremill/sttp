@@ -29,9 +29,13 @@ trait HttpTestExtensions[F[_]] extends AsyncFreeSpecLike { self: HttpTest[F] =>
 
       "as input stream unsafe" in {
         postEcho.body(testBody).response(asInputStreamAlwaysUnsafe).send(backend).toFuture().map { response =>
-          val allBytes = response.body.readAllBytes()
-          val fc = new String(allBytes, "UTF-8")
-          fc should be(expectedPostEchoResponse)
+          try {
+            val allBytes = response.body.readAllBytes()
+            val fc = new String(allBytes, "UTF-8")
+            fc should be(expectedPostEchoResponse)
+          } finally {
+            response.body.close()
+          }
         }
       }
     }
