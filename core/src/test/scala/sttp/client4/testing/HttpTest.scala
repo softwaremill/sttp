@@ -58,7 +58,6 @@ trait HttpTest[F[_]]
   protected def supportsAutoDecompressionDisabling = true
   protected def supportsDeflateWrapperChecking = true
   protected def supportsEmptyContentEncoding = true
-  protected def supportsResponseAsInputStream = true
 
   "request parsing" - {
     "Inf timeout should not throw exception" in {

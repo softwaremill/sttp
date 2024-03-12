@@ -14,6 +14,8 @@ import sttp.client4.wrappers.{DigestAuthenticationBackend, FollowRedirectsBacken
 import sttp.model.headers.CookieWithMeta
 
 trait HttpTestExtensions[F[_]] extends AsyncFreeSpecLike { self: HttpTest[F] =>
+  protected def supportsResponseAsInputStream = true
+
   "parse response" - {
     if (supportsResponseAsInputStream) {
       "as input stream" in {
