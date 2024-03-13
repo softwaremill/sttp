@@ -1,8 +1,7 @@
 # OpenAPI
 
-sttp-client [request definitions](requests/basics.md) can be automatically generated from [openapi](https://swagger.io/specification/) `.yaml` specifications using:
-
-. the `scala-sttp` code generator, included in the [openapi-generator](https://github.com/OpenAPITools/openapi-generator) project
+sttp-client [request definitions](requests/basics.md) can be automatically generated from [openapi](https://swagger.io/specification/) `.yaml` specifications using
+the `scala-sttp` code generator, included in the [openapi-generator](https://github.com/OpenAPITools/openapi-generator) project.
 
 ## Using the openapi-generator
 
@@ -25,8 +24,9 @@ openapi-generator-cli generate \
   -o samples/client/petstore/
 ```
 
-### maven managed
-for maven proejct use plugin [openapi-generator-maven-plugin](https://github.com/OpenAPITools/openapi-generator/tree/master/modules/openapi-generator-maven-plugin)
+### Maven managed
+
+For maven project use plugin [openapi-generator-maven-plugin](https://github.com/OpenAPITools/openapi-generator/tree/master/modules/openapi-generator-maven-plugin)
 
 ### Sbt managed
 
