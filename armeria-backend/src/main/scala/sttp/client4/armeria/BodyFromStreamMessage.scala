@@ -103,9 +103,6 @@ private[armeria] trait BodyFromStreamMessage[F[_], S] {
       ): F[(streams.BinaryStream, () => F[Unit])] =
         (publisherToStream(response), () => monad.eval(response.abort())).unit
 
-      override protected def regularAsInputStream(response: StreamMessage[HttpData]): F[InputStream] =
-        response.toInputStream(x => HttpData.wrap(x.array())).unit
-
       override protected def handleWS[T](
           responseAs: GenericWebSocketResponseAs[T, _],
           meta: ResponseMetadata,
