@@ -29,15 +29,15 @@ Below is a summary of all the JVM backends; see the sections on individual backe
 ==================================== ================================ ================================================= ========================== ===================
 Class                                Effect type                      Supported stream type                             Supports websockets        Fully non-blocking
 ==================================== ================================ ================================================= ========================== ===================
-``DefaultSyncBackend``               None (``Identity``)              n/a                                               yes (regular)              no
-``HttpClientSyncBackend``            None (``Identity``)              n/a                                               yes (regular)              no
-``DefaultFutureBackend``             ``scala.concurrent.Future``      n/a                                               yes (regular)              no
-``HttpClientFutureBackend``          ``scala.concurrent.Future``      n/a                                               yes (regular)              no
+``DefaultSyncBackend``               None (``Identity``)              ``java.io.InputStream`` (blocking)                yes (regular)              no
+``HttpClientSyncBackend``            None (``Identity``)              ``java.io.InputStream`` (blocking)                yes (regular)              no
+``DefaultFutureBackend``             ``scala.concurrent.Future``      ``java.io.InputStream`` (blocking)                yes (regular)              no
+``HttpClientFutureBackend``          ``scala.concurrent.Future``      ``java.io.InputStream`` (blocking)                yes (regular)              no
 ``HttpClientMonixBackend``           ``monix.eval.Task``              ``monix.reactive.Observable[ByteBuffer]``         yes (regular & streaming)  yes
 ``HttpClientFs2Backend``             ``F[_]: cats.effect.Concurrent`` ``fs2.Stream[F, Byte]``                           yes (regular & streaming)  yes
 ``HttpClientZioBackend``             ``zio.Task``                     ``zio.stream.Stream[Throwable, Byte]``            yes (regular & streaming)  yes
-``HttpURLConnectionBackend``         None (``Identity``)              n/a                                               no                         no
-``TryHttpURLConnectionBackend``      ``scala.util.Try``               n/a                                               no                         no
+``HttpURLConnectionBackend``         None (``Identity``)              ``java.io.InputStream`` (blocking)                no                         no
+``TryHttpURLConnectionBackend``      ``scala.util.Try``               ``java.io.InputStream`` (blocking)                no                         no
 ``AkkaHttpBackend``                  ``scala.concurrent.Future``      ``akka.stream.scaladsl.Source[ByteString, Any]``  yes (regular & streaming)  yes
 ``ArmeriaFutureBackend``             ``scala.concurrent.Future``      n/a                                               no                         yes
 ``ArmeriaScalazBackend``             ``scalaz.concurrent.Task``       n/a                                               no                         yes
@@ -45,8 +45,8 @@ Class                                Effect type                      Supported 
 ``ArmeriaMonixBackend``              ``monix.eval.Task``              ``monix.reactive.Observable[HttpData]``           no                         yes
 ``ArmeriaCatsBackend``               ``F[_]: cats.effect.Concurrent`` n/a                                               no                         yes
 ``ArmeriaFs2Backend``                ``F[_]: cats.effect.Concurrent`` ``fs2.Stream[F, Byte]``                           no                         yes
-``OkHttpSyncBackend``                None (``Identity``)              n/a                                               yes (regular)              no
-``OkHttpFutureBackend``              ``scala.concurrent.Future``      n/a                                               yes (regular)              no
+``OkHttpSyncBackend``                None (``Identity``)              ``java.io.InputStream`` (blocking)                yes (regular)              no
+``OkHttpFutureBackend``              ``scala.concurrent.Future``      ``java.io.InputStream`` (blocking)                yes (regular)              no
 ``OkHttpMonixBackend``               ``monix.eval.Task``              ``monix.reactive.Observable[ByteBuffer]``         yes (regular & streaming)  no
 ``Http4sBackend``                    ``F[_]: cats.effect.Effect``     ``fs2.Stream[F, Byte]``                           no                         no
 ``FinagleBackend``                   ``com.twitter.util.Future``      n/a                                               no                         no
