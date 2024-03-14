@@ -1,6 +1,6 @@
 package sttp.client4.testing
 
-import java.io.InputStream
+import java.io.{ByteArrayInputStream, InputStream}
 import sttp.capabilities.Effect
 import sttp.client4.internal._
 import sttp.client4.testing.AbstractBackendStub._
@@ -121,7 +121,15 @@ object AbstractBackendStub {
       ra: GenericResponseAs[T, _],
       b: U,
       meta: ResponseMetadata
-  )(implicit monad: MonadError[F]): Option[F[T]] =
+  )(implicit monad: MonadError[F]): Option[F[T]] = {
+    def bAsInputStream = b match {
+      case s: String       => Some(new ByteArrayInputStream(s.getBytes(Utf8)))
+      case a: Array[Byte]  => Some(new ByteArrayInputStream(a))
+      case is: InputStream => Some(is)
+      case ()              => Some(new ByteArrayInputStream(new Array[Byte](0)))
+      case _               => None
+    }
+
     ra match {
       case IgnoreResponse => Some(().unit.asInstanceOf[F[T]])
       case ResponseAsByteArray =>
@@ -142,6 +150,8 @@ object AbstractBackendStub {
           case RawStream(s) => Some(s.unit.asInstanceOf[F[T]])
           case _            => None
         }
+      case ResponseAsInputStream(f)    => bAsInputStream.map(f).map(_.unit.asInstanceOf[F[T]])
+      case ResponseAsInputStreamUnsafe => bAsInputStream.map(_.unit.asInstanceOf[F[T]])
       case ResponseAsFile(_) =>
         b match {
           case f: SttpFile => Some(f.unit.asInstanceOf[F[T]])
@@ -172,4 +182,5 @@ object AbstractBackendStub {
           }
         }
     }
+  }
 }

@@ -16,4 +16,5 @@ class Http4sHttpTest extends HttpTest[IO] with CatsRetryTest with CatsTestBase {
 
   override protected def supportsRequestTimeout = false
   override protected def supportsCustomMultipartContentType = false
+  override protected def supportsResponseAsInputStream = false
 }

@@ -13,6 +13,7 @@ class AsyncHttpClientZioHttpTest extends HttpTest[Task] with ZioTestBase {
 
   override def throwsExceptionOnUnsupportedEncoding = false
   override def supportsAutoDecompressionDisabling = false
+  override def supportsResponseAsInputStream = false
 
   "throw an exception instead of ZIO defect if the header value is invalid" in {
 

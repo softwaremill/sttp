@@ -4,7 +4,7 @@ import com.linecorp.armeria.common.{CommonPools, HttpData}
 import com.linecorp.armeria.common.stream.{StreamMessage, StreamMessages}
 import io.netty.util.concurrent.EventExecutor
 
-import java.io.File
+import java.io.{File, InputStream}
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicReference
 import sttp.capabilities.Streams

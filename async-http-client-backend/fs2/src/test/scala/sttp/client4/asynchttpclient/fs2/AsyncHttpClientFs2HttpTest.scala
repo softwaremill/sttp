@@ -13,4 +13,5 @@ class AsyncHttpClientFs2HttpTest extends HttpTest[IO] with TestIODispatcher with
   // for some unknown reason this single test fails using the fs2 implementation
   override def supportsConnectionRefusedTest = false
   override def supportsAutoDecompressionDisabling = false
+  override def supportsResponseAsInputStream = false
 }

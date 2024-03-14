@@ -11,6 +11,7 @@ class HttpClientZioHttpTest extends HttpTest[Task] with ZioTestBase {
   override implicit val convertToFuture: ConvertToFuture[Task] = convertZioTaskToFuture
 
   override def supportsHostHeaderOverride = false
+  override def supportsResponseAsInputStream = false
 
   "compile" - {
     "SttpClient usage" in {
