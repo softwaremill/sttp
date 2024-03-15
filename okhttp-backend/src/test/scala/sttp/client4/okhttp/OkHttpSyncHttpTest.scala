@@ -3,7 +3,7 @@ package sttp.client4.okhttp
 import sttp.client4.testing.{ConvertToFuture, HttpTest}
 import sttp.client4.{Identity, WebSocketBackend}
 
-class OkHttpSyncHttpTest extends HttpTest[Identity] {
+class OkHttpSyncHttpTest extends OkHttpHttpTest[Identity] {
   override val backend: WebSocketBackend[Identity] = OkHttpSyncBackend()
 
   override implicit val convertToFuture: ConvertToFuture[Identity] = ConvertToFuture.id

@@ -2,10 +2,11 @@ package sttp.client4.asynchttpclient.scalaz
 
 import scalaz.concurrent.Task
 import sttp.client4.Backend
+import sttp.client3.asynchttpclient.AsyncHttpClientHttpTest
 import sttp.client4.impl.scalaz.convertScalazTaskToFuture
 import sttp.client4.testing.{ConvertToFuture, HttpTest}
 
-class AsyncHttpClientScalazHttpTest extends HttpTest[Task] {
+class AsyncHttpClientScalazHttpTest extends AsyncHttpClientHttpTest[Task] {
 
   override val backend: Backend[Task] = AsyncHttpClientScalazBackend().unsafePerformSync
   override implicit val convertToFuture: ConvertToFuture[Task] = convertScalazTaskToFuture

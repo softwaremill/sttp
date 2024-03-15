@@ -5,7 +5,7 @@ import sttp.client4.testing.{ConvertToFuture, HttpTest}
 
 import scala.concurrent.Future
 
-class OkHttpFutureHttpTest extends HttpTest[Future] {
+class OkHttpFutureHttpTest extends OkHttpHttpTest[Future] {
 
   override val backend: WebSocketBackend[Future] = OkHttpFutureBackend()
   override implicit val convertToFuture: ConvertToFuture[Future] = ConvertToFuture.future

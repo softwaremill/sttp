@@ -6,11 +6,12 @@ import monix.eval.Task
 import sttp.client4._
 import sttp.client4.impl.monix.convertMonixTaskToFuture
 import sttp.client4.testing.{ConvertToFuture, HttpTest}
+import sttp.client4.asynchttpclient.AsyncHttpClientHttpTest
 import monix.execution.Scheduler.Implicits.global
 
 import scala.concurrent.duration._
 
-class AsyncHttpClientMonixHttpTest extends HttpTest[Task] {
+class AsyncHttpClientMonixHttpTest extends AsyncHttpClientHttpTest[Task] {
   override val backend: Backend[Task] = AsyncHttpClientMonixBackend().runSyncUnsafe()
   override implicit val convertToFuture: ConvertToFuture[Task] = convertMonixTaskToFuture
 
