@@ -58,6 +58,7 @@ trait HttpTest[F[_]]
   protected def supportsAutoDecompressionDisabling = true
   protected def supportsDeflateWrapperChecking = true
   protected def supportsEmptyContentEncoding = true
+  protected def supportsNonAsciiHeaderValues = true
 
   "request parsing" - {
     "Inf timeout should not throw exception" in {
@@ -462,9 +463,11 @@ trait HttpTest[F[_]]
         req.send(backend).toFuture().map { resp => resp.body should be("p1=v1 (f1), p2=v2 (f2)") }
       }
 
-      "send a multipart message with non-ascii filenames" in {
-        val req = mp.multipartBody(multipart("p1", "v1").fileName("fó1"), multipart("p2", "v2").fileName("fó2"))
-        req.send(backend).toFuture().map { resp => resp.body should be("p1=v1 (fó1), p2=v2 (fó2)") }
+      if(supportsNonAsciiHeaderValues) {
+        "send a multipart message with non-ascii filenames" in {
+          val req = mp.multipartBody(multipart("p1", "v1").fileName("fó1"), multipart("p2", "v2").fileName("fó2"))
+          req.send(backend).toFuture().map { resp => resp.body should be("p1=v1 (fó1), p2=v2 (fó2)") }
+        }
       }
 
       "send a multipart message with binary data and filename" in {

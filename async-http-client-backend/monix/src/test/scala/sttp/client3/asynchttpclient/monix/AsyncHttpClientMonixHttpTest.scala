@@ -1,16 +1,16 @@
 package sttp.client3.asynchttpclient.monix
 
 import java.util.concurrent.TimeoutException
-
 import monix.eval.Task
 import sttp.client3._
 import sttp.client3.impl.monix.convertMonixTaskToFuture
-import sttp.client3.testing.{ConvertToFuture, HttpTest}
+import sttp.client3.testing.ConvertToFuture
 import monix.execution.Scheduler.Implicits.global
+import sttp.client3.asynchttpclient.AsyncHttpClientHttpTest
 
 import scala.concurrent.duration._
 
-class AsyncHttpClientMonixHttpTest extends HttpTest[Task] {
+class AsyncHttpClientMonixHttpTest extends AsyncHttpClientHttpTest[Task] {
   override val backend: SttpBackend[Task, Any] = AsyncHttpClientMonixBackend().runSyncUnsafe()
   override implicit val convertToFuture: ConvertToFuture[Task] = convertMonixTaskToFuture
 

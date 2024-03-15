@@ -18,6 +18,8 @@ class OkHttpMonixHttpTest extends HttpTest[Task] {
 
   override def supportsDeflateWrapperChecking = false
 
+  override def supportsNonAsciiHeaderValues = false
+
   override def timeoutToNone[T](t: Task[T], timeoutMillis: Int): Task[Option[T]] =
     t.map(Some(_))
       .timeout(timeoutMillis.milliseconds)
