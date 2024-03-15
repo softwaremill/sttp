@@ -177,7 +177,7 @@ class HttpURLConnectionBackend private (
           case MultipartBody(_)      => None
         }
 
-        val headersLen = headers.getBytes(Iso88591).length
+        val headersLen = headers.getBytes(Utf8).length
 
         bodyLen.map(bl => dashesLen + boundaryLen + crLfLen + headersLen + crLfLen + crLfLen + bl + crLfLen)
       }
@@ -198,8 +198,8 @@ class HttpURLConnectionBackend private (
 
     val os = c.getOutputStream
     def writeMeta(s: String): Unit = {
-      os.write(s.getBytes(Iso88591))
-      total += s.getBytes(Iso88591).length.toLong
+      os.write(s.getBytes(Utf8))
+      total += s.getBytes(Utf8).length.toLong
     }
 
     partsWithHeaders.foreach { case (headers, p) =>
