@@ -1,14 +1,13 @@
 package sttp.client4.asynchttpclient.monix
 
-import java.util.concurrent.TimeoutException
-
 import monix.eval.Task
-import sttp.client4._
-import sttp.client4.impl.monix.convertMonixTaskToFuture
-import sttp.client4.testing.{ConvertToFuture, HttpTest}
-import sttp.client4.asynchttpclient.AsyncHttpClientHttpTest
 import monix.execution.Scheduler.Implicits.global
+import sttp.client4._
+import sttp.client4.asynchttpclient.AsyncHttpClientHttpTest
+import sttp.client4.impl.monix.convertMonixTaskToFuture
+import sttp.client4.testing.ConvertToFuture
 
+import java.util.concurrent.TimeoutException
 import scala.concurrent.duration._
 
 class AsyncHttpClientMonixHttpTest extends AsyncHttpClientHttpTest[Task] {
@@ -22,7 +21,5 @@ class AsyncHttpClientMonixHttpTest extends AsyncHttpClientHttpTest[Task] {
         None
       }
 
-  override def throwsExceptionOnUnsupportedEncoding = false
-  override def supportsAutoDecompressionDisabling = false
   override def supportsResponseAsInputStream = false
 }
