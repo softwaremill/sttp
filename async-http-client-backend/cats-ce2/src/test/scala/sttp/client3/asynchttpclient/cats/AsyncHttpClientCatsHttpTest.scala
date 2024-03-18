@@ -15,7 +15,4 @@ class AsyncHttpClientCatsHttpTest extends AsyncHttpClientHttpTest[IO] with CatsT
       }
     }
   }
-
-  override def throwsExceptionOnUnsupportedEncoding = false
-  override def supportsAutoDecompressionDisabling = false
 }

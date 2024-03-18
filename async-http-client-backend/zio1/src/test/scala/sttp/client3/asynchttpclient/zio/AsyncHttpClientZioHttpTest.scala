@@ -12,7 +12,4 @@ class AsyncHttpClientZioHttpTest extends AsyncHttpClientHttpTest[Task] with ZioT
     runtime.unsafeRun(AsyncHttpClientZioBackend())
   override implicit val convertToFuture: ConvertToFuture[Task] = convertZioTaskToFuture
 
-  override def throwsExceptionOnUnsupportedEncoding = false
-  override def supportsAutoDecompressionDisabling = false
-
 }

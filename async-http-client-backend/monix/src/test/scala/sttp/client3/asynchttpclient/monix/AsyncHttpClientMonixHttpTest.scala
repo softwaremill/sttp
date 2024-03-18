@@ -20,7 +20,4 @@ class AsyncHttpClientMonixHttpTest extends AsyncHttpClientHttpTest[Task] {
       .onErrorRecover { case _: TimeoutException =>
         None
       }
-
-  override def throwsExceptionOnUnsupportedEncoding = false
-  override def supportsAutoDecompressionDisabling = false
 }

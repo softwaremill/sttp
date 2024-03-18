@@ -11,9 +11,6 @@ class AsyncHttpClientFutureHttpTest extends AsyncHttpClientHttpTest[Future] {
   override val backend: SttpBackend[Future, Any] = AsyncHttpClientFutureBackend()
   override implicit val convertToFuture: ConvertToFuture[Future] = ConvertToFuture.future
 
-  override def throwsExceptionOnUnsupportedEncoding = false
-
   override def supportsCancellation: Boolean = false
   override def timeoutToNone[T](t: Future[T], timeoutMillis: Int): Future[Option[T]] = t.map(Some(_))
-  override def supportsAutoDecompressionDisabling = false
 }

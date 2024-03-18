@@ -9,8 +9,6 @@ class AsyncHttpClientFs2HttpTest extends AsyncHttpClientHttpTest[IO] with TestIO
   override val backend: SttpBackend[IO, Any] =
     AsyncHttpClientFs2Backend[IO](dispatcher = dispatcher).unsafeRunSync()
 
-  override def throwsExceptionOnUnsupportedEncoding = false
   // for some unknown reason this single test fails using the fs2 implementation
   override def supportsConnectionRefusedTest = false
-  override def supportsAutoDecompressionDisabling = false
 }
