@@ -214,8 +214,9 @@ class HttpURLConnectionBackend private (
 
     val os = c.getOutputStream
     def writeMeta(s: String): Unit = {
-      os.write(s.getBytes(Utf8))
-      total += s.getBytes(Utf8).length.toLong
+      val utf8Bytes = s.getBytes(Utf8)
+      os.write(utf8Bytes)
+      total += utf8Bytes.length.toLong
     }
 
     partsWithHeaders.foreach { case (headers, p) =>
