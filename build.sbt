@@ -8,10 +8,9 @@ import complete.DefaultParsers._
 // run JS tests inside Chrome, due to jsdom not supporting fetch
 import com.softwaremill.SbtSoftwareMillBrowserTestJS._
 
-val scala2_11 = "2.11.12"
 val scala2_12 = "2.12.18"
 val scala2_13 = "2.13.12"
-val scala2 = List(scala2_11, scala2_12, scala2_13)
+val scala2 = List(scala2_12, scala2_13)
 val scala2alive = List(scala2_12, scala2_13)
 val scala3 = List("3.3.1")
 
@@ -159,7 +158,7 @@ val zio2Version = "2.0.10"
 val zio1InteropRsVersion = "1.3.12"
 val zio2InteropRsVersion = "2.0.1"
 
-val sttpModelVersion = "1.5.5"
+val sttpModelVersion = "1.7.9"
 val sttpSharedVersion = "1.3.16"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.4.5"
@@ -318,7 +317,7 @@ lazy val core = (projectMatrix in file("core"))
         scalacOptions ++= Seq("-J--add-modules", "-Jjava.net.http"),
         scalacOptions ++= {
           if (scalaVersion.value == scala2_13 || scalaVersion.value == scala3.head) List("-target:jvm-11")
-          else if (scalaVersion.value == scala2_11 || scalaVersion.value == scala2_12) List("-target:jvm-1.8")
+          else if (scalaVersion.value == scala2_12) List("-target:jvm-1.8")
           else Nil
         }
       )
@@ -582,14 +581,14 @@ lazy val asyncHttpClientBackend = (projectMatrix in file("async-http-client-back
     scalaVersions = scala2 ++ scala3
   )
 
-def asyncHttpClientBackendProject(proj: String, includeDotty: Boolean = false, include2_11: Boolean = true) = {
+def asyncHttpClientBackendProject(proj: String, includeDotty: Boolean = false) = {
   ProjectMatrix(s"asyncHttpClientBackend${proj.capitalize}", file(s"async-http-client-backend/$proj"))
     .settings(commonJvmSettings)
     .settings(testServerSettings)
     .settings(name := s"async-http-client-backend-$proj")
     .dependsOn(asyncHttpClientBackend % compileAndTest)
     .jvmPlatform(
-      scalaVersions = (if (include2_11) List(scala2_11) else Nil) ++ scala2alive ++ (if (includeDotty) scala3 else Nil)
+      scalaVersions = scala2alive ++ (if (includeDotty) scala3 else Nil)
     )
 }
 
@@ -602,7 +601,7 @@ lazy val asyncHttpClientScalazBackend =
     .dependsOn(scalaz % compileAndTest)
 
 lazy val asyncHttpClientZio1Backend =
-  asyncHttpClientBackendProject("zio1", includeDotty = true, include2_11 = false)
+  asyncHttpClientBackendProject("zio1", includeDotty = true)
     .settings(
       libraryDependencies ++= Seq(
         "dev.zio" %% "zio-interop-reactivestreams" % zio1InteropRsVersion
@@ -620,7 +619,7 @@ lazy val asyncHttpClientZioBackend =
     .dependsOn(zio % compileAndTest)
 
 lazy val asyncHttpClientMonixBackend =
-  asyncHttpClientBackendProject("monix", includeDotty = true, include2_11 = false)
+  asyncHttpClientBackendProject("monix", includeDotty = true)
     .dependsOn(monix % compileAndTest)
 
 lazy val asyncHttpClientCatsCe2Backend =
@@ -628,11 +627,11 @@ lazy val asyncHttpClientCatsCe2Backend =
     .dependsOn(catsCe2 % compileAndTest)
 
 lazy val asyncHttpClientCatsBackend =
-  asyncHttpClientBackendProject("cats", includeDotty = true, include2_11 = false)
+  asyncHttpClientBackendProject("cats", includeDotty = true)
     .dependsOn(cats % compileAndTest)
 
 lazy val asyncHttpClientFs2Ce2Backend =
-  asyncHttpClientBackendProject("fs2-ce2", includeDotty = true, include2_11 = false)
+  asyncHttpClientBackendProject("fs2-ce2", includeDotty = true)
     .settings(
       libraryDependencies ++= dependenciesFor(scalaVersion.value)(
         "co.fs2" %% "fs2-reactive-streams" % fs2_2_version(_),
@@ -643,7 +642,7 @@ lazy val asyncHttpClientFs2Ce2Backend =
     .dependsOn(fs2Ce2 % compileAndTest)
 
 lazy val asyncHttpClientFs2Backend =
-  asyncHttpClientBackendProject("fs2", includeDotty = true, include2_11 = false)
+  asyncHttpClientBackendProject("fs2", includeDotty = true)
     .settings(
       libraryDependencies ++= Seq(
         "co.fs2" %% "fs2-reactive-streams" % fs2_3_version,
@@ -672,7 +671,7 @@ def okhttpBackendProject(proj: String, includeDotty: Boolean) = {
     .settings(testServerSettings)
     .settings(name := s"okhttp-backend-$proj")
     .jvmPlatform(scalaVersions = scala2alive ++ (if (includeDotty) scala3 else Nil))
-    .dependsOn(okhttpBackend)
+    .dependsOn(okhttpBackend % compileAndTest)
 }
 
 lazy val okhttpMonixBackend =
