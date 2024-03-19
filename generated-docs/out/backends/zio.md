@@ -9,8 +9,8 @@ The `*-zio` modules depend on ZIO 2.x. For ZIO 1.x support, use modules with the
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "zio" % "3.9.4"  // for ZIO 2.x
-"com.softwaremill.sttp.client3" %% "zio1" % "3.9.4" // for ZIO 1.x
+"com.softwaremill.sttp.client3" %% "zio" % "3.9.5"  // for ZIO 2.x
+"com.softwaremill.sttp.client3" %% "zio1" % "3.9.5" // for ZIO 1.x
 ```
 
 Create the backend using:
@@ -45,8 +45,8 @@ Host header override is supported in environments running Java 12 onwards, but i
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "armeria-backend-zio" % "3.9.4"  // for ZIO 2.x
-"com.softwaremill.sttp.client3" %% "armeria-backend-zio1" % "3.9.4" // for ZIO 1.x
+"com.softwaremill.sttp.client3" %% "armeria-backend-zio" % "3.9.5"  // for ZIO 2.x
+"com.softwaremill.sttp.client3" %% "armeria-backend-zio1" % "3.9.5" // for ZIO 1.x
 ```
 
 add imports:
