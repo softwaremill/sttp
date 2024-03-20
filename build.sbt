@@ -648,7 +648,7 @@ def okhttpBackendProject(proj: String, includeDotty: Boolean) =
     .settings(testServerSettings)
     .settings(name := s"okhttp-backend-$proj")
     .jvmPlatform(scalaVersions = scala2 ++ (if (includeDotty) scala3 else Nil))
-    .dependsOn(okhttpBackend)
+    .dependsOn(okhttpBackend % compileAndTest)
 
 lazy val okhttpMonixBackend =
   okhttpBackendProject("monix", includeDotty = true)
