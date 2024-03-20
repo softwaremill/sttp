@@ -11,5 +11,4 @@ class AsyncHttpClientFs2HttpTest extends AsyncHttpClientHttpTest[IO] with TestIO
 
   // for some unknown reason this single test fails using the fs2 implementation
   override def supportsConnectionRefusedTest = false
-  override def supportsResponseAsInputStream = false
 }

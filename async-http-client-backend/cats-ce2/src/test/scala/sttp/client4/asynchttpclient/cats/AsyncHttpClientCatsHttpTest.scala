@@ -15,6 +15,4 @@ class AsyncHttpClientCatsHttpTest extends AsyncHttpClientHttpTest[IO] with CatsT
       }
     }
   }
-
-  override def supportsResponseAsInputStream = false
 }

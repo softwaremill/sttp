@@ -13,5 +13,4 @@ class AsyncHttpClientScalazHttpTest extends AsyncHttpClientHttpTest[Task] {
 
   override def supportsCancellation: Boolean = false
   override def timeoutToNone[T](t: Task[T], timeoutMillis: Int): Task[Option[T]] = t.map(Some(_))
-  override def supportsResponseAsInputStream = false
 }

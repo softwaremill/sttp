@@ -1,19 +1,16 @@
 package sttp.client4.asynchttpclient.zio
 
 import sttp.client4._
+import sttp.client4.asynchttpclient.AsyncHttpClientHttpTest
 import sttp.client4.impl.zio.ZioTestBase
 import sttp.client4.testing.{ConvertToFuture, HttpTest}
 import zio.{Task, ZIO}
 
-class AsyncHttpClientZioHttpTest extends HttpTest[Task] with ZioTestBase {
+class AsyncHttpClientZioHttpTest extends AsyncHttpClientHttpTest[Task] with ZioTestBase {
 
   override val backend: Backend[Task] =
     unsafeRunSyncOrThrow(AsyncHttpClientZioBackend())
   override implicit val convertToFuture: ConvertToFuture[Task] = convertZioTaskToFuture
-
-  override def throwsExceptionOnUnsupportedEncoding = false
-  override def supportsAutoDecompressionDisabling = false
-  override def supportsResponseAsInputStream = false
 
   "throw an exception instead of ZIO defect if the header value is invalid" in {
 

@@ -10,6 +10,4 @@ import scala.concurrent.ExecutionContext.global
 class AsyncHttpClientFs2HttpTest extends AsyncHttpClientHttpTest[IO] with CatsTestBase {
   override val backend: Backend[IO] =
     AsyncHttpClientFs2Backend[IO](Blocker.liftExecutionContext(global)).unsafeRunSync()
-
-  override def supportsResponseAsInputStream = false
 }
