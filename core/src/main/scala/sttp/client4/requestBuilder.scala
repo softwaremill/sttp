@@ -309,6 +309,11 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
     this.tag(loggingOptionsTagKey, loggingOptions)
   }
 
+  def logSettings(
+      loggingOptions: Option[LoggingOptions]
+  ): PR =
+    this.tag(loggingOptionsTagKey, loggingOptions)
+
   def loggingOptions: Option[LoggingOptions] = tag(loggingOptionsTagKey).asInstanceOf[Option[LoggingOptions]]
 
   def show(
