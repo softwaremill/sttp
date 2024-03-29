@@ -1055,7 +1055,7 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
       "org.json4s" %% "json4s-native" % json4sVersion,
       "io.circe" %% "circe-generic" % circeVersion,
       "com.github.plokhotnyuk.jsoniter-scala" %% "jsoniter-scala-macros" % jsoniterVersion,
-      "commons-io" % "commons-io" % "2.15.1",
+      "commons-io" % "commons-io" % "2.16.0",
       "io.github.resilience4j" % "resilience4j-circuitbreaker" % resilience4jVersion,
       "io.github.resilience4j" % "resilience4j-ratelimiter" % resilience4jVersion,
       "io.jaegertracing" % "jaeger-client" % jeagerClientVersion,
