@@ -473,10 +473,10 @@ trait HttpTest[F[_]]
         req.send(backend).toFuture().map(resp => resp.body should be("p1=v1 (f1), p2=v2 (f2)"))
       }
 
-      if(supportsNonAsciiHeaderValues) {
+      if (supportsNonAsciiHeaderValues) {
         "send a multipart message with non-ascii filenames" in {
           val req = mp.multipartBody(multipart("p1", "v1").fileName("fó1"), multipart("p2", "v2").fileName("fó2"))
-          req.send(backend).toFuture().map { resp => resp.body should be("p1=v1 (fó1), p2=v2 (fó2)") }
+          req.send(backend).toFuture().map(resp => resp.body should be("p1=v1 (fó1), p2=v2 (fó2)"))
         }
       }
 
