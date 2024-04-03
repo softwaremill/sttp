@@ -33,9 +33,7 @@ trait HttpTestExtensions[F[_]] extends AsyncFreeSpecLike { self: HttpTest[F] =>
             val allBytes = response.body.readAllBytes()
             val fc = new String(allBytes, "UTF-8")
             fc should be(expectedPostEchoResponse)
-          } finally {
-            response.body.close()
-          }
+          } finally response.body.close()
         }
       }
     }
