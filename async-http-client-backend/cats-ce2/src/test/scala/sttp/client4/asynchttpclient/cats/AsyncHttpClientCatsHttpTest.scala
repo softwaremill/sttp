@@ -2,10 +2,10 @@ package sttp.client4.asynchttpclient.cats
 
 import cats.effect.IO
 import sttp.client4._
+import sttp.client4.asynchttpclient.AsyncHttpClientHttpTest
 import sttp.client4.impl.cats.CatsTestBase
-import sttp.client4.testing.HttpTest
 
-class AsyncHttpClientCatsHttpTest extends HttpTest[IO] with CatsTestBase {
+class AsyncHttpClientCatsHttpTest extends AsyncHttpClientHttpTest[IO] with CatsTestBase {
   override val backend: Backend[IO] = AsyncHttpClientCatsBackend[IO]().unsafeRunSync()
 
   "illegal url exceptions" - {
@@ -15,7 +15,4 @@ class AsyncHttpClientCatsHttpTest extends HttpTest[IO] with CatsTestBase {
       }
     }
   }
-
-  override def throwsExceptionOnUnsupportedEncoding = false
-  override def supportsAutoDecompressionDisabling = false
 }

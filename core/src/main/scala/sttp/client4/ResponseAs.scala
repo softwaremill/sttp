@@ -6,6 +6,7 @@ import sttp.model.ResponseMetadata
 import sttp.model.internal.Rfc3986
 import sttp.ws.{WebSocket, WebSocketFrame}
 
+import java.io.InputStream
 import scala.collection.immutable.Seq
 import scala.util.{Failure, Success, Try}
 
@@ -297,6 +298,13 @@ case class ResponseAsStreamUnsafe[BinaryStream, S] private (s: Streams[S]) exten
 }
 object ResponseAsStreamUnsafe {
   def apply[S](s: Streams[S]): GenericResponseAs[s.BinaryStream, S] = new ResponseAsStreamUnsafe(s)
+}
+
+case class ResponseAsInputStream[T](f: InputStream => T) extends GenericResponseAs[T, Any] {
+  override def show: String = s"as input stream"
+}
+case object ResponseAsInputStreamUnsafe extends GenericResponseAs[InputStream, Any] {
+  override def show: String = s"as input stream unsafe"
 }
 
 case class ResponseAsFile(output: SttpFile) extends GenericResponseAs[SttpFile, Any] {

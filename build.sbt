@@ -121,14 +121,14 @@ val testServerSettings = Seq(
 
 val circeVersion: String = "0.14.6"
 
-val jsoniterVersion = "2.28.3"
+val jsoniterVersion = "2.28.4"
 
 val play29JsonVersion = "2.10.4"
 
 val playJsonVersion = "3.0.2"
 
 val catsEffect_3_version = "3.5.4"
-val fs2_3_version = "3.9.4"
+val fs2_3_version = "3.10.2"
 
 val catsEffect_2_version = "2.5.5"
 
@@ -151,7 +151,7 @@ val zio2Version = "2.0.21"
 val zio1InteropRsVersion = "1.3.12"
 val zio2InteropRsVersion = "2.0.2"
 
-val sttpModelVersion = "1.7.7"
+val sttpModelVersion = "1.7.9"
 val sttpSharedVersion = "1.3.17"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.5.3"
@@ -163,7 +163,7 @@ val resilience4jVersion = "2.2.0"
 val http4s_ce2_version = "0.22.15"
 val http4s_ce3_version = "0.23.26"
 
-val openTelemetryVersion = "1.35.0"
+val openTelemetryVersion = "1.36.0"
 
 val compileAndTest = "compile->compile;test->test"
 
@@ -648,7 +648,7 @@ def okhttpBackendProject(proj: String, includeDotty: Boolean) =
     .settings(testServerSettings)
     .settings(name := s"okhttp-backend-$proj")
     .jvmPlatform(scalaVersions = scala2 ++ (if (includeDotty) scala3 else Nil))
-    .dependsOn(okhttpBackend)
+    .dependsOn(okhttpBackend % compileAndTest)
 
 lazy val okhttpMonixBackend =
   okhttpBackendProject("monix", includeDotty = true)
@@ -701,7 +701,7 @@ lazy val armeriaBackend = (projectMatrix in file("armeria-backend"))
   .settings(testServerSettings)
   .settings(
     name := "armeria-backend",
-    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.27.2"
+    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.27.3"
   )
   .jvmPlatform(scalaVersions = scala2 ++ scala3)
   .dependsOn(core % compileAndTest)
@@ -963,7 +963,7 @@ lazy val scribeBackend = (projectMatrix in file("logging/scribe"))
   .settings(
     name := "scribe-backend",
     libraryDependencies ++= Seq(
-      "com.outr" %%% "scribe" % "3.13.0"
+      "com.outr" %%% "scribe" % "3.13.2"
     ),
     scalaTest
   )
@@ -1055,7 +1055,7 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
       "org.json4s" %% "json4s-native" % json4sVersion,
       "io.circe" %% "circe-generic" % circeVersion,
       "com.github.plokhotnyuk.jsoniter-scala" %% "jsoniter-scala-macros" % jsoniterVersion,
-      "commons-io" % "commons-io" % "2.15.1",
+      "commons-io" % "commons-io" % "2.16.0",
       "io.github.resilience4j" % "resilience4j-circuitbreaker" % resilience4jVersion,
       "io.github.resilience4j" % "resilience4j-ratelimiter" % resilience4jVersion,
       "io.jaegertracing" % "jaeger-client" % jeagerClientVersion,

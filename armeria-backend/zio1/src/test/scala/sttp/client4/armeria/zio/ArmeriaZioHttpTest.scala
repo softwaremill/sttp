@@ -15,6 +15,7 @@ class ArmeriaZioHttpTest extends HttpTest[Task] with ZioTestBase {
   override def supportsAutoDecompressionDisabling = false
   override def supportsDeflateWrapperChecking = false // armeria hangs
   override def supportsEmptyContentEncoding = false
+  override def supportsResponseAsInputStream = false
 
   "throw an exception instead of ZIO defect if the header value is invalid" in {
 

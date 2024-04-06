@@ -59,6 +59,8 @@ object MapEffect {
         ResponseAsStream(s)((s, m) => fk(f.asInstanceOf[(Any, ResponseMetadata) => F[Any]](s, m)))
       case rasu: ResponseAsStreamUnsafe[_, _] => rasu
       case ResponseAsFile(output)             => ResponseAsFile(output)
+      case ResponseAsInputStream(f)           => ResponseAsInputStream(f)
+      case ResponseAsInputStreamUnsafe        => ResponseAsInputStreamUnsafe
       case ResponseAsWebSocket(f) =>
         ResponseAsWebSocket((wg: WebSocket[G], m: ResponseMetadata) =>
           fk(f.asInstanceOf[(WebSocket[F], ResponseMetadata) => F[Any]](apply[G, F](wg, gk, fm), m))

@@ -38,7 +38,7 @@ import sttp.client4.armeria.AbstractArmeriaBackend.{noopCanceler, RightUnit}
 import sttp.client4.internal.toByteArray
 import sttp.model._
 import sttp.monad.syntax._
-import sttp.monad.{Canceler, MonadAsyncError, MonadError}
+import sttp.monad.{Canceler, MonadAsyncError}
 
 abstract class AbstractArmeriaBackend[F[_], S <: Streams[S]](
     client: WebClient = WebClient.of(),

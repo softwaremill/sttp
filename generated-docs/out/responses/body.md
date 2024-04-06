@@ -182,7 +182,15 @@ basicRequest
 
 ## Streaming
 
-If the backend used supports streaming (see [backends summary](../backends/summary.md)), it's possible to receive responses as a stream. This can be described using the following methods:
+### Blocking streaming (InputStream)
+
+Some backends on the JVM support receiving the response body as a `java.io.InputStream`. This is possible either using the safe `asInputStream(f)` specification, where the entire stream has to be consumed by the provided `f` function, and is then closed by sttp client. Alternatively, there's `asInputStreamUnsafe`, which returns the stream directly to the user, who is then responsible for closing it.
+
+`InputStream`s have two major limitations. First, they operate on the relatively low `byte`-level. The consumer is responsible for any decoding, chunking etc. Moreover, all `InputStream` operations are blocking, hence using them in a non-virtual-threads environment may severely limit performance. If you're using a functional effect system, see below on how to use non-blocking streams instead.
+
+### Non-blocking streaming
+
+If the backend used supports non-blocking streaming (see "Supported stream type" in the [backends summary](../backends/summary.md)), it's possible to receive responses as a stream. This can be described using the following methods:
 
 ```scala
 import sttp.capabilities.{Effect, Streams}

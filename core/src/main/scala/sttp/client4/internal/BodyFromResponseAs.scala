@@ -6,6 +6,8 @@ import sttp.model.ResponseMetadata
 import sttp.monad.MonadError
 import sttp.monad.syntax._
 
+import java.io.InputStream
+
 abstract class BodyFromResponseAs[F[_], RegularResponse, WSResponse, Stream](implicit m: MonadError[F]) {
   def apply[T](
       responseAs: ResponseAsDelegate[T, _],
@@ -58,6 +60,13 @@ abstract class BodyFromResponseAs[F[_], RegularResponse, WSResponse, Stream](imp
           (stream.asInstanceOf[T], nonReplayableBody)
         }
 
+      case (ResponseAsInputStream(f), Left(regular)) =>
+        regularAsInputStream(regular)
+          .flatMap(w => m.eval(f(w)).ensure(m.eval(w.close())))
+          .map(t => (t, nonReplayableBody))
+      case (ResponseAsInputStreamUnsafe, Left(regular)) =>
+        regularAsInputStream(regular).map(w => (w, nonReplayableBody))
+
       case (ResponseAsFile(file), Left(regular)) =>
         regularAsFile(regular, file).map(f => (f, replayableBody(f)))
 
@@ -82,6 +91,8 @@ abstract class BodyFromResponseAs[F[_], RegularResponse, WSResponse, Stream](imp
   protected def regularAsByteArray(response: RegularResponse): F[Array[Byte]]
   protected def regularAsFile(response: RegularResponse, file: SttpFile): F[SttpFile]
   protected def regularAsStream(response: RegularResponse): F[(Stream, () => F[Unit])]
+  protected def regularAsInputStream(response: RegularResponse): F[InputStream] =
+    throw new UnsupportedOperationException("Responses as a java.io.InputStream are not supported")
   protected def handleWS[T](responseAs: GenericWebSocketResponseAs[T, _], meta: ResponseMetadata, ws: WSResponse): F[T]
   protected def cleanupWhenNotAWebSocket(response: RegularResponse, e: NotAWebSocketException): F[Unit]
   protected def cleanupWhenGotWebSocket(response: WSResponse, e: GotAWebSocketException): F[Unit]

@@ -15,6 +15,7 @@ class HttpClientMonixHttpTest extends HttpTest[Task] {
 
   override def supportsHostHeaderOverride = false
   override def supportsDeflateWrapperChecking = false
+  override def supportsResponseAsInputStream = false
 
   override def timeoutToNone[T](t: Task[T], timeoutMillis: Int): Task[Option[T]] =
     t.map(Some(_))
