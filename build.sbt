@@ -843,6 +843,23 @@ lazy val zio1Json = (projectMatrix in file("json/zio1-json"))
   .jsPlatform(scalaVersions = scala2 ++ scala3, settings = commonJsSettings)
   .dependsOn(core, jsonCommon)
 
+lazy val tethysJson = (projectMatrix in file("json/tethys-json"))
+  .settings(
+    name := "tethys-json",
+    libraryDependencies ++= Seq(
+      "com.tethys-json" %% "tethys-core" % "0.26.0",
+      "com.tethys-json" %% "tethys-jackson" % "0.26.0",
+      "com.tethys-json" %% "tethys-derivation" % "0.26.0"
+    ),
+    scalaTest
+  )
+  .jvmPlatform(
+    scalaVersions = Seq(scala2_12, scala2_13),
+    settings = commonJvmSettings
+  )
+  .jsPlatform(scalaVersions = scala2, settings = commonJsSettings)
+  .dependsOn(core, jsonCommon)
+
 lazy val upickle = (projectMatrix in file("json/upickle"))
   .settings(
     name := "upickle",
