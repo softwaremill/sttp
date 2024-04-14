@@ -83,7 +83,7 @@ abstract class HttpClientBackend[F[_], S <: Streams[S], P, B](
       bodyToHttpClient(request, builder, contentType).map { httpBody =>
         builder.method(request.method.method, httpBody)
         request.headers
-          .filterNot(h => (h.name == HeaderNames.ContentLength) || h.name == HeaderNames.ContentType)
+          .filterNot(h => h.is(HeaderNames.ContentLength) || h.is(HeaderNames.ContentType))
           .foreach(h => builder.header(h.name, h.value))
         val timeout = request.options.readTimeout
         if (timeout.isFinite) {
