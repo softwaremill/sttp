@@ -163,7 +163,7 @@ val resilience4jVersion = "2.2.0"
 val http4s_ce2_version = "0.22.15"
 val http4s_ce3_version = "0.23.26"
 
-val tethysVersion = "0.26.0"
+val tethysVersion = "0.28.3"
 
 val openTelemetryVersion = "1.37.0"
 
@@ -851,16 +851,16 @@ lazy val tethysJson = (projectMatrix in file("json/tethys-json"))
     name := "tethys-json",
     libraryDependencies ++= Seq(
       "com.tethys-json" %% "tethys-core" % tethysVersion,
-      "com.tethys-json" %% "tethys-jackson" % tethysVersion,
+      "com.tethys-json" %% "tethys-jackson213" % tethysVersion,
       "com.tethys-json" %% "tethys-derivation" % tethysVersion
     ),
     scalaTest
   )
   .jvmPlatform(
-    scalaVersions = Seq(scala2_12, scala2_13),
+    scalaVersions = scala2 ++ scala3,
     settings = commonJvmSettings
   )
-  .jsPlatform(scalaVersions = scala2, settings = commonJsSettings)
+  .jsPlatform(scalaVersions = scala2 ++ scala3, settings = commonJsSettings)
   .dependsOn(core, jsonCommon)
 
 lazy val upickle = (projectMatrix in file("json/upickle"))
