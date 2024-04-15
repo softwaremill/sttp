@@ -154,11 +154,11 @@ val zio2InteropRsVersion = "2.0.2"
 val sttpModelVersion = "1.7.9"
 val sttpSharedVersion = "1.3.17"
 
-val logback = "ch.qos.logback" % "logback-classic" % "1.5.4"
+val logback = "ch.qos.logback" % "logback-classic" % "1.5.5"
 
 val jeagerClientVersion = "1.8.1"
 val braveOpentracingVersion = "1.0.1"
-val zipkinSenderOkHttpVersion = "3.3.0"
+val zipkinSenderOkHttpVersion = "3.4.0"
 val resilience4jVersion = "2.2.0"
 val http4s_ce2_version = "0.22.15"
 val http4s_ce3_version = "0.23.26"
@@ -501,7 +501,7 @@ lazy val scalaz = (projectMatrix in file("effects/scalaz"))
   .settings(
     name := "scalaz",
     Test / publishArtifact := true,
-    libraryDependencies ++= Seq("org.scalaz" %% "scalaz-concurrent" % "7.2.35")
+    libraryDependencies ++= Seq("org.scalaz" %% "scalaz-concurrent" % "7.2.36")
   )
   .dependsOn(core % compileAndTest)
   .jvmPlatform(
@@ -704,7 +704,7 @@ lazy val armeriaBackend = (projectMatrix in file("armeria-backend"))
   .settings(testServerSettings)
   .settings(
     name := "armeria-backend",
-    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.27.3"
+    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.28.0"
   )
   .jvmPlatform(scalaVersions = scala2 ++ scala3)
   .dependsOn(core % compileAndTest)
