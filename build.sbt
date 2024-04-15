@@ -860,8 +860,6 @@ lazy val tethysJson = (projectMatrix in file("json/tethys-json"))
     scalaVersions = scala2 ++ scala3,
     settings = commonJvmSettings
   )
-  .jsPlatform(scalaVersions = scala2 ++ scala3, settings = commonJsSettings)
-  .nativePlatform(scalaVersions = scala2 ++ scala3, settings = commonNativeSettings)
   .dependsOn(core, jsonCommon)
 
 lazy val upickle = (projectMatrix in file("json/upickle"))
