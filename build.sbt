@@ -163,6 +163,8 @@ val resilience4jVersion = "2.2.0"
 val http4s_ce2_version = "0.22.15"
 val http4s_ce3_version = "0.23.26"
 
+val tethysVersion = "0.26.0"
+
 val openTelemetryVersion = "1.37.0"
 
 val compileAndTest = "compile->compile;test->test"
@@ -212,6 +214,7 @@ lazy val allAggregates = projectsWithOptionalNative ++
   sprayJson.projectRefs ++
   play29Json.projectRefs ++
   playJson.projectRefs ++
+  tethysJson.projectRefs ++
   prometheusBackend.projectRefs ++
   openTelemetryMetricsBackend.projectRefs ++
   openTelemetryTracingZioBackend.projectRefs ++
@@ -847,9 +850,9 @@ lazy val tethysJson = (projectMatrix in file("json/tethys-json"))
   .settings(
     name := "tethys-json",
     libraryDependencies ++= Seq(
-      "com.tethys-json" %% "tethys-core" % "0.26.0",
-      "com.tethys-json" %% "tethys-jackson" % "0.26.0",
-      "com.tethys-json" %% "tethys-derivation" % "0.26.0"
+      "com.tethys-json" %% "tethys-core" % tethysVersion,
+      "com.tethys-json" %% "tethys-jackson" % tethysVersion,
+      "com.tethys-json" %% "tethys-derivation" % tethysVersion
     ),
     scalaTest
   )
