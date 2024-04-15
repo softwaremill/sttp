@@ -142,8 +142,8 @@ class TethysTests extends AnyFlatSpec with Matchers with EitherValues {
     }
 
   def runJsonResponseAs[A](responseAs: ResponseAs[A]): String => A =
-    responseAs match {
-      case responseAs: MappedResponseAs[Array[Byte], A, Nothing] =>
+    responseAs.delegate match {
+      case responseAs: MappedResponseAs[_, A, Nothing] =>
         responseAs.raw match {
           case ResponseAsByteArray =>
             s => responseAs.g(s.getBytes(Utf8), ResponseMetadata(StatusCode.Ok, "", Seq.empty))
