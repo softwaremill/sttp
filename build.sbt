@@ -933,10 +933,10 @@ lazy val playJson = (projectMatrix in file("json/play-json"))
     scalaTest
   )
   .jvmPlatform(
-    scalaVersions = scala2,
+    scalaVersions = scala2 ++ scala3,
     settings = commonJvmSettings
   )
-  .jsPlatform(scalaVersions = scala2, settings = commonJsSettings)
+  .jsPlatform(scalaVersions = scala2 ++ scala3, settings = commonJsSettings)
   .dependsOn(core, jsonCommon)
 
 lazy val prometheusBackend = (projectMatrix in file("observability/prometheus-backend"))
