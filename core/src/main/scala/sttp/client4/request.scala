@@ -156,6 +156,8 @@ case class Request[T](
     * unchanged.
     */
   def send(backend: SyncBackend): Response[T] = backend.send(this)
+
+  def send[C](backend: Backend[[X] =>> C ?=> X])(using C): Response[T] = backend.send(this)
 }
 
 object Request {
