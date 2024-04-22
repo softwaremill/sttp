@@ -1,20 +1,23 @@
 package sttp.client4.prometheus
 
-import java.lang
-import java.util.concurrent.CountDownLatch
-import sttp.client4._
-import io.prometheus.client.CollectorRegistry
+import io.prometheus.metrics.model.registry.PrometheusRegistry
+import io.prometheus.metrics.model.snapshots.CounterSnapshot.CounterDataPointSnapshot
+import io.prometheus.metrics.model.snapshots.GaugeSnapshot.GaugeDataPointSnapshot
+import io.prometheus.metrics.model.snapshots.HistogramSnapshot.HistogramDataPointSnapshot
+import io.prometheus.metrics.model.snapshots.{DataPointSnapshot, Labels}
+import io.prometheus.metrics.model.snapshots.SummarySnapshot.SummaryDataPointSnapshot
 import org.scalatest.concurrent.{Eventually, IntegrationPatience}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfter, OptionValues}
+import sttp.client4._
 import sttp.client4.testing.{BackendStub, SyncBackendStub}
 import sttp.model.{Header, StatusCode}
 
+import java.util.concurrent.CountDownLatch
+import java.util.stream.Collectors
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
-import scala.concurrent.blocking
-import scala.collection.immutable.Seq
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
+import scala.concurrent.{Future, blocking}
 
 class PrometheusBackendTest
     extends AnyFlatSpec
@@ -25,7 +28,7 @@ class PrometheusBackendTest
     with IntegrationPatience {
 
   before {
-    PrometheusBackend.clear(CollectorRegistry.defaultRegistry)
+    PrometheusBackend.clear(PrometheusRegistry.defaultRegistry)
   }
 
   val stubAlwaysOk = SyncBackendStub.whenAnyRequest.thenRespondOk()
@@ -39,10 +42,10 @@ class PrometheusBackendTest
     (0 until requestsNumber).foreach(_ => basicRequest.get(uri"http://127.0.0.1/foo").send(backend))
 
     // then
-    getMetricValue(
-      s"${PrometheusBackend.DefaultHistogramName}_count",
+    getMetricValue[HistogramDataPointSnapshot](
+      s"${PrometheusBackend.DefaultHistogramName}",
       List("method" -> "GET")
-    ).value shouldBe requestsNumber
+    ).map(_.getCount).value shouldBe requestsNumber
   }
 
   it should "allow creating two prometheus backends" in {
@@ -68,7 +71,7 @@ class PrometheusBackendTest
     basicRequest.get(uri"http://127.0.0.1/foo").send(backend1)
 
     // then
-    getMetricValue(s"${histogramName}_count").value shouldBe 2
+    getMetricSnapshot[HistogramDataPointSnapshot](s"$histogramName").map(_.getCount).value shouldBe 2
   }
 
   it should "use mapped request to histogram name" in {
@@ -85,8 +88,8 @@ class PrometheusBackendTest
     (0 until requestsNumber).foreach(_ => basicRequest.get(uri"http://127.0.0.1/foo").send(backend))
 
     // then
-    getMetricValue(s"${PrometheusBackend.DefaultHistogramName}_count") shouldBe empty
-    getMetricValue(s"${customHistogramName}_count").value shouldBe requestsNumber
+    getMetricSnapshot[HistogramDataPointSnapshot](s"${PrometheusBackend.DefaultHistogramName}") shouldBe empty
+    getMetricSnapshot[HistogramDataPointSnapshot](s"$customHistogramName").map(_.getCount).value shouldBe requestsNumber
   }
 
   it should "use mapped request to histogram name with labels and buckets" in {
@@ -113,9 +116,9 @@ class PrometheusBackendTest
     (0 until requestsNumber2).foreach(_ => basicRequest.post(uri"http://127.0.0.1/foo").send(backend))
 
     // then
-    getMetricValue(s"${PrometheusBackend.DefaultHistogramName}_count") shouldBe empty
-    getMetricValue(s"${customHistogramName}_count", List("method" -> "GET")).value shouldBe requestsNumber1
-    getMetricValue(s"${customHistogramName}_count", List("method" -> "POST")).value shouldBe requestsNumber2
+    getMetricSnapshot(s"${PrometheusBackend.DefaultHistogramName}") shouldBe empty
+    getMetricValue[HistogramDataPointSnapshot](s"$customHistogramName", List("method" -> "GET")).map(_.getCount).value shouldBe requestsNumber1
+    getMetricValue[HistogramDataPointSnapshot](s"$customHistogramName", List("method" -> "POST")).map(_.getCount).value shouldBe requestsNumber2
   }
 
   it should "use mapped request to gauge name with labels" in {
@@ -137,10 +140,12 @@ class PrometheusBackendTest
     (0 until requestsNumber2).foreach(_ => basicRequest.post(uri"http://127.0.0.1/foo").send(backend))
 
     // then
-    getMetricValue(s"${PrometheusBackend.DefaultRequestsInProgressGaugeName}_count") shouldBe empty
+    getMetricSnapshot[GaugeDataPointSnapshot](s"${PrometheusBackend.DefaultRequestsInProgressGaugeName}") shouldBe empty
     // the gauges should be created, but set to 0
-    getMetricValue(s"$customGaugeName", List("method" -> "GET")).value shouldBe 0.0
-    getMetricValue(s"$customGaugeName", List("method" -> "POST")).value shouldBe 0.0
+    val value1 = getMetricValue[GaugeDataPointSnapshot](s"$customGaugeName", List("method" -> "GET")).map(_.getValue).value
+    value1 shouldBe 0.0
+    val value2 = getMetricValue[GaugeDataPointSnapshot](s"$customGaugeName", List("method" -> "POST")).map(_.getValue).value
+    value2 shouldBe 0.0
   }
 
   it should "disable histograms" in {
@@ -152,7 +157,7 @@ class PrometheusBackendTest
     (0 until requestsNumber).foreach(_ => basicRequest.get(uri"http://127.0.0.1/foo").send(backend))
 
     // then
-    getMetricValue(s"${PrometheusBackend.DefaultHistogramName}_count") shouldBe empty
+    getMetricSnapshot(s"${PrometheusBackend.DefaultHistogramName}") shouldBe empty
   }
 
   it should "use default gauge name" in {
@@ -172,15 +177,15 @@ class PrometheusBackendTest
 
     // then
     eventually {
-      getMetricValue(
+      getMetricValue[GaugeDataPointSnapshot](
         PrometheusBackend.DefaultRequestsInProgressGaugeName,
         List("method" -> "GET")
-      ).value shouldBe requestsNumber
+      ).map(_.getValue).value shouldBe requestsNumber
     }
 
     countDownLatch.countDown()
     eventually {
-      getMetricValue(PrometheusBackend.DefaultRequestsInProgressGaugeName, List("method" -> "GET")).value shouldBe 0
+      getMetricValue[GaugeDataPointSnapshot](PrometheusBackend.DefaultRequestsInProgressGaugeName, List("method" -> "GET")).map(_.getValue).value shouldBe 0
     }
   }
 
@@ -208,14 +213,14 @@ class PrometheusBackendTest
 
     // then
     eventually {
-      getMetricValue(PrometheusBackend.DefaultRequestsInProgressGaugeName) shouldBe empty
-      getMetricValue(customGaugeName).value shouldBe requestsNumber
+      getMetricSnapshot(PrometheusBackend.DefaultRequestsInProgressGaugeName) shouldBe empty
+      getMetricSnapshot[GaugeDataPointSnapshot](customGaugeName).map(_.getValue).value shouldBe requestsNumber
     }
 
     countDownLatch.countDown()
     eventually {
-      getMetricValue(PrometheusBackend.DefaultRequestsInProgressGaugeName) shouldBe empty
-      getMetricValue(customGaugeName).value shouldBe 0
+      getMetricSnapshot(PrometheusBackend.DefaultRequestsInProgressGaugeName) shouldBe empty
+      getMetricSnapshot[GaugeDataPointSnapshot](customGaugeName).map(_.getValue).value shouldBe 0
     }
   }
 
@@ -236,15 +241,15 @@ class PrometheusBackendTest
     (0 until requestsNumber).foreach(_ => basicRequest.get(uri"http://127.0.0.1/foo").send(backend))
 
     // then
-    getMetricValue(PrometheusBackend.DefaultRequestsInProgressGaugeName) shouldBe empty
+    getMetricSnapshot(PrometheusBackend.DefaultRequestsInProgressGaugeName) shouldBe empty
 
     countDownLatch.countDown()
     eventually {
-      getMetricValue(
-        s"${PrometheusBackend.DefaultHistogramName}_count",
+      getMetricValue[HistogramDataPointSnapshot](
+        s"${PrometheusBackend.DefaultHistogramName}",
         List("method" -> "GET")
-      ).value shouldBe requestsNumber
-      getMetricValue(PrometheusBackend.DefaultRequestsInProgressGaugeName) shouldBe empty
+      ).map(_.getCount).value shouldBe requestsNumber
+      getMetricSnapshot(PrometheusBackend.DefaultRequestsInProgressGaugeName) shouldBe empty
     }
   }
 
@@ -260,14 +265,14 @@ class PrometheusBackendTest
     (0 until 5).foreach(_ => basicRequest.get(uri"http://127.0.0.1/foo").send(backend2))
 
     // then
-    getMetricValue(
-      PrometheusBackend.DefaultSuccessCounterName + "_total",
+    getMetricValue[CounterDataPointSnapshot](
+      PrometheusBackend.DefaultSuccessCounterName,
       List("method" -> "GET", "status" -> "2xx")
-    ).value shouldBe 10
-    getMetricValue(
-      PrometheusBackend.DefaultErrorCounterName + "_total",
+    ).map(_.getValue).value shouldBe 10
+    getMetricValue[CounterDataPointSnapshot](
+      PrometheusBackend.DefaultErrorCounterName,
       List("method" -> "GET", "status" -> "4xx")
-    ).value shouldBe 5
+    ).map(_.getValue).value shouldBe 5
   }
 
   it should "not override user-supplied 'method' and 'status' labels" in {
@@ -285,10 +290,10 @@ class PrometheusBackendTest
     (0 until 10).foreach(_ => basicRequest.get(uri"http://127.0.0.1/foo").send(backend))
 
     // then
-    getMetricValue(
-      PrometheusBackend.DefaultSuccessCounterName + "_total",
+    getMetricValue[CounterDataPointSnapshot](
+      PrometheusBackend.DefaultSuccessCounterName,
       List("method" -> "foo", "status" -> "bar")
-    ).value shouldBe 10
+    ).map(_.getValue).value shouldBe 10
   }
 
   it should "use default summary name" in {
@@ -306,16 +311,16 @@ class PrometheusBackendTest
     )
 
     // then
-    getMetricValue(PrometheusBackend.DefaultRequestSizeName + "_count", List("method" -> "GET")).value shouldBe 5
-    getMetricValue(PrometheusBackend.DefaultRequestSizeName + "_sum", List("method" -> "GET")).value shouldBe 25
-    getMetricValue(
-      PrometheusBackend.DefaultResponseSizeName + "_count",
+    getMetricValue[SummaryDataPointSnapshot](PrometheusBackend.DefaultRequestSizeName, List("method" -> "GET")).map(_.getCount).value shouldBe 5
+    getMetricValue[SummaryDataPointSnapshot](PrometheusBackend.DefaultRequestSizeName, List("method" -> "GET")).map(_.getSum).value shouldBe 25
+    getMetricValue[SummaryDataPointSnapshot](
+      PrometheusBackend.DefaultResponseSizeName,
       List("method" -> "GET", "status" -> "2xx")
-    ).value shouldBe 5
-    getMetricValue(
-      PrometheusBackend.DefaultResponseSizeName + "_sum",
+    ).map(_.getCount).value shouldBe 5
+    getMetricValue[SummaryDataPointSnapshot](
+      PrometheusBackend.DefaultResponseSizeName,
       List("method" -> "GET", "status" -> "2xx")
-    ).value shouldBe 50
+    ).map(_.getSum).value shouldBe 50
   }
 
   it should "use error counter when http error is thrown" in {
@@ -332,15 +337,15 @@ class PrometheusBackendTest
     }
 
     // then
-    getMetricValue(
-      PrometheusBackend.DefaultSuccessCounterName + "_total",
+    getMetricValue[CounterDataPointSnapshot](
+      PrometheusBackend.DefaultSuccessCounterName,
       List("method" -> "GET", "status" -> "2xx")
-    ) shouldBe None
-    getMetricValue(PrometheusBackend.DefaultFailureCounterName + "_total", List("method" -> "GET")) shouldBe None
-    getMetricValue(
-      PrometheusBackend.DefaultErrorCounterName + "_total",
+    ).map(_.getValue) shouldBe None
+    getMetricValue[CounterDataPointSnapshot](PrometheusBackend.DefaultFailureCounterName, List("method" -> "GET")).map(_.getValue) shouldBe None
+    getMetricValue[CounterDataPointSnapshot](
+      PrometheusBackend.DefaultErrorCounterName,
       List("method" -> "GET", "status" -> "5xx")
-    ) shouldBe Some(1)
+    ).map(_.getValue) shouldBe Some(1)
   }
 
   it should "use failure counter when other exception is thrown" in {
@@ -357,15 +362,15 @@ class PrometheusBackendTest
     }
 
     // then
-    getMetricValue(
-      PrometheusBackend.DefaultSuccessCounterName + "_total",
+    getMetricValue[CounterDataPointSnapshot](
+      PrometheusBackend.DefaultSuccessCounterName,
       List("method" -> "GET", "status" -> "2xx")
-    ) shouldBe None
-    getMetricValue(PrometheusBackend.DefaultFailureCounterName + "_total", List("method" -> "GET")) shouldBe Some(1)
-    getMetricValue(
-      PrometheusBackend.DefaultErrorCounterName + "_total",
+    ).map(_.getValue) shouldBe None
+    getMetricValue[CounterDataPointSnapshot](PrometheusBackend.DefaultFailureCounterName, List("method" -> "GET")).map(_.getValue) shouldBe Some(1)
+    getMetricValue[CounterDataPointSnapshot](
+      PrometheusBackend.DefaultErrorCounterName,
       List("method" -> "GET", "status" -> "5xx")
-    ) shouldBe None
+    ).map(_.getValue) shouldBe None
   }
 
   it should "use success counter on success response" in {
@@ -380,15 +385,15 @@ class PrometheusBackendTest
       .send(backend)
 
     // then
-    getMetricValue(
-      PrometheusBackend.DefaultSuccessCounterName + "_total",
+    getMetricValue[CounterDataPointSnapshot](
+      PrometheusBackend.DefaultSuccessCounterName,
       List("method" -> "GET", "status" -> "2xx")
-    ) shouldBe Some(1)
-    getMetricValue(PrometheusBackend.DefaultFailureCounterName + "_total", List("method" -> "GET")) shouldBe None
-    getMetricValue(
-      PrometheusBackend.DefaultErrorCounterName + "_total",
+    ).map(_.getValue) shouldBe Some(1)
+    getMetricValue[CounterDataPointSnapshot](PrometheusBackend.DefaultFailureCounterName, List("method" -> "GET")).map(_.getValue) shouldBe None
+    getMetricValue[CounterDataPointSnapshot](
+      PrometheusBackend.DefaultErrorCounterName,
       List("method" -> "GET", "status" -> "5xx")
-    ) shouldBe None
+    ).map(_.getValue) shouldBe None
   }
 
   it should "report correct host when it is extracted from the response" in {
@@ -419,15 +424,24 @@ class PrometheusBackendTest
     assertThrows[SttpClientException](basicRequest.get(uri"http://127.0.0.1/foo").send(backend))
 
     // then
-    getMetricValue(
-      PrometheusBackend.DefaultFailureCounterName + "_total",
+    getMetricValue[CounterDataPointSnapshot](
+      PrometheusBackend.DefaultFailureCounterName,
       List("method" -> "GET", HostLabel -> "127.0.0.1")
-    ) shouldBe Some(1)
+    ).map(_.getValue) shouldBe Some(1)
   }
 
-  private[this] def getMetricValue(name: String): Option[lang.Double] =
-    Option(CollectorRegistry.defaultRegistry.getSampleValue(name))
+  private[this] def getMetricSnapshot[T](name: String): Option[T] =
+    Option(PrometheusRegistry.defaultRegistry.scrape((s: String) => s.equals(name)))
+      .filter(_.size() > 0)
+      .map(_.get(0).getDataPoints.get(0))
+      .map(_.asInstanceOf[T])
 
-  private[this] def getMetricValue(name: String, labels: List[(String, String)]): Option[lang.Double] =
-    Option(CollectorRegistry.defaultRegistry.getSampleValue(name, labels.map(_._1).toArray, labels.map(_._2).toArray))
+  private[this] def getMetricValue[T <: DataPointSnapshot](name: String, labels: List[(String, String)]): Option[T] = {
+    val condition = Labels.of(labels.map(_._1).toArray, labels.map(_._2).toArray)
+    Option(PrometheusRegistry.defaultRegistry.scrape((s: String) => s.equals(name)))
+      .filter(_.size() > 0)
+      .map(_.get(0).getDataPoints.asInstanceOf[java.util.List[T]])
+      .map(_.stream().filter(_.getLabels.hasSameValues(condition)).collect(Collectors.toList[T]))
+      .map(_.get(0))
+  }
 }
