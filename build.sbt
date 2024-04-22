@@ -851,8 +851,8 @@ lazy val tethysJson = (projectMatrix in file("json/tethys-json"))
     name := "tethys-json",
     libraryDependencies ++= Seq(
       "com.tethys-json" %% "tethys-core" % tethysVersion,
-      "com.tethys-json" %% "tethys-jackson213" % tethysVersion,
-      "com.tethys-json" %% "tethys-derivation" % tethysVersion
+      "com.tethys-json" %% "tethys-jackson213" % tethysVersion % Test,
+      "com.tethys-json" %% "tethys-derivation" % tethysVersion % Test
     ),
     scalaTest
   )
