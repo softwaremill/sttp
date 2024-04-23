@@ -143,10 +143,8 @@ class PrometheusBackendTest
     // then
     getMetricSnapshot[GaugeDataPointSnapshot](s"${PrometheusBackend.DefaultRequestsInProgressGaugeName}") shouldBe empty
     // the gauges should be created, but set to 0
-    val value1 = getMetricValue[GaugeDataPointSnapshot](s"$customGaugeName", List("method" -> "GET")).map(_.getValue).value
-    value1 shouldBe 0.0
-    val value2 = getMetricValue[GaugeDataPointSnapshot](s"$customGaugeName", List("method" -> "POST")).map(_.getValue).value
-    value2 shouldBe 0.0
+    getMetricValue[GaugeDataPointSnapshot](s"$customGaugeName", List("method" -> "GET")).map(_.getValue).value shouldBe 0.0
+    getMetricValue[GaugeDataPointSnapshot](s"$customGaugeName", List("method" -> "POST")).map(_.getValue).value shouldBe 0.0
   }
 
   it should "disable histograms" in {
