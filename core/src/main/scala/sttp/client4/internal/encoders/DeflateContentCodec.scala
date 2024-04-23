@@ -20,7 +20,7 @@ class DeflateContentCodec extends AbstractContentCodec[Deflate] {
     }.toEither.left.map(ex => EncoderError.EncodingFailure(encoding, ex.getMessage))
 
   override def decode(bytes: Array[Byte]): Either[EncoderError, Array[Byte]] =
-    Using(new ByteArrayOutputStream()){ bos =>
+    Using(new ByteArrayOutputStream()) { bos =>
       val buf = new Array[Byte](1024)
       val decompresser = new Inflater()
       decompresser.setInput(bytes, 0, bytes.length)

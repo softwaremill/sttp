@@ -145,20 +145,19 @@ case class Request[T](
     * Known exceptions are converted by backends to one of [[SttpClientException]]. Other exceptions are thrown
     * unchanged.
     */
-  def send[F[_]](backend: Backend[F]): F[Response[T]] = {
+  def send[F[_]](backend: Backend[F]): F[Response[T]] =
     (this.options.encoding, this.body) match {
       case (Nil, _) => backend.send(this)
       case (codecs, b: BasicBodyPart) if codecs.nonEmpty =>
         val (newBody, newLength) = ContentCodec.encode(b, codecs) match {
           case Left(err) => throw new EncodingException(this, err)
-          case Right(v) => v
+          case Right(v)  => v
         }
         val newReq = this.contentLength(newLength.toLong).copyWithBody(newBody)
         backend.send(newReq)
 
       case _ => backend.send(this)
     }
-  }
 
   /** Sends the request synchronously, using the given backend.
     *
@@ -170,19 +169,18 @@ case class Request[T](
     * Known exceptions are converted by backends to one of [[SttpClientException]]. Other exceptions are thrown
     * unchanged.
     */
-  def send(backend: SyncBackend): Response[T] = {
+  def send(backend: SyncBackend): Response[T] =
     (this.options.encoding, this.body) match {
       case (codecs, b: BasicBodyPart) if codecs.nonEmpty =>
         val (newBody, newLength) = ContentCodec.encode(b, codecs) match {
           case Left(err) => throw new EncodingException(this, err)
-          case Right(v) => v
+          case Right(v)  => v
         }
         val newReq = this.contentLength(newLength.toLong).copyWithBody(newBody)
         backend.send(newReq)
 
       case _ => backend.send(this)
     }
-  }
 }
 
 object Request {

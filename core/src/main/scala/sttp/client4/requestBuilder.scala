@@ -1,6 +1,6 @@
 package sttp.client4
 
-import sttp.client4.internal.{ContentEncoding, SttpFile, Utf8, contentTypeWithCharset}
+import sttp.client4.internal.{contentTypeWithCharset, ContentEncoding, SttpFile, Utf8}
 import sttp.client4.logging.LoggingOptions
 import sttp.client4.wrappers.DigestAuthenticationBackend
 import sttp.model.HasHeaders
