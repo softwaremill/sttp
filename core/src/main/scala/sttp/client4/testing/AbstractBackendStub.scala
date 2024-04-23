@@ -77,7 +77,7 @@ abstract class AbstractBackendStub[F[_], P](
     def thenRespond[T](body: T, statusCode: StatusCode): Self = thenRespond(Response[T](body, statusCode))
     def thenRespond[T](resp: => Response[T]): Self = {
       val m: PartialFunction[GenericRequest[_, _], F[Response[_]]] = {
-        case r if p(r) => monad.eval(resp)
+        case r if p(r) => monad.eval(resp.copy(request = r.onlyMetadata))
       }
       withMatchers(matchers.orElse(m))
     }

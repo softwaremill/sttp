@@ -31,38 +31,28 @@ case class Response[+T](
     s"Response($body,$code,$statusText,${Headers.toStringSafe(headers)},$history,$request)"
 }
 
-object Response {
+private[sttp] object Response {
 
-  /** Mainly useful in tests using [[sttp.client4.testing.SttpBackendStub]], when creating stub responses.
-    */
-  val ExampleGet: RequestMetadata = new RequestMetadata {
+  val emptyGet: RequestMetadata = new RequestMetadata {
     override def method: Method = Method.GET
     override def uri: Uri = uri"http://example.com"
     override def headers: Seq[Header] = Nil
   }
 
-  /** Convenience method to create a Response instance, mainly useful in tests using
-    * [[sttp.client4.testing.SttpBackendStub]] and partial matchers.
-    */
   def apply[T](body: T, code: StatusCode): Response[T] =
-    Response(body, code, resolveStatusText(code), Nil, Nil, ExampleGet)
+    Response(body, code, resolveStatusText(code), Nil, Nil, emptyGet)
 
-  /** Convenience method to create a Response instance, mainly useful in tests using
-    * [[sttp.client4.testing.SttpBackendStub]] and partial matchers.
-    */
   def apply[T](body: T, code: StatusCode, statusText: String): Response[T] =
-    Response(body, code, resolveStatusText(code, statusText), Nil, Nil, ExampleGet)
+    Response(body, code, resolveStatusText(code, statusText), Nil, Nil, emptyGet)
 
-  /** Convenience method to create a Response instance, mainly useful in tests using
-    * [[sttp.client4.testing.SttpBackendStub]] and partial matchers.
-    */
-  def apply[T](body: T, code: StatusCode, statusText: String, headers: Seq[Header]): Response[T] =
-    Response(body, code, resolveStatusText(code, statusText), headers, Nil, ExampleGet)
+  def apply[T](body: T, code: StatusCode, requestMetadata: RequestMetadata): Response[T] =
+    Response(body, code, resolveStatusText(code), Nil, Nil, requestMetadata)
 
-  /** Convenience method to create a Response instance, mainly useful in tests using
-    * [[sttp.client4.testing.SttpBackendStub]] and partial matchers.
-    */
-  def ok[T](body: T): Response[T] = apply(body, StatusCode.Ok)
+  def apply[T](body: T, code: StatusCode, statusText: String, requestMetadata: RequestMetadata): Response[T] =
+    Response(body, code, resolveStatusText(code, statusText), Nil, Nil, requestMetadata)
+
+  def ok[T](body: T, requestMetadata: RequestMetadata): Response[T] =
+    Response(body, StatusCode.Ok, resolveStatusText(StatusCode.Ok), Nil, Nil, requestMetadata)
 
   private def resolveStatusText(statusCode: StatusCode, provided: String = ""): String =
     if (provided.isEmpty) StatusText.default(statusCode).getOrElse(provided)

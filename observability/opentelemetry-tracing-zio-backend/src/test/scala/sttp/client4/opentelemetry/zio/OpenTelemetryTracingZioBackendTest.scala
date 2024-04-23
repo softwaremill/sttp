@@ -7,8 +7,8 @@ import org.scalatest.BeforeAndAfter
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import sttp.client4.impl.zio.{RIOMonadAsyncError, ZioTestBase}
-import sttp.client4.testing.BackendStub
-import sttp.client4.{basicRequest, Backend, GenericRequest, Response, UriContext}
+import sttp.client4.testing.{BackendStub, TestResponse}
+import sttp.client4.{Backend, GenericRequest, Response, UriContext, basicRequest}
 import sttp.model.StatusCode
 import zio.{Runtime, Task, Unsafe, ZIO}
 import zio.telemetry.opentelemetry.Tracing
@@ -33,7 +33,7 @@ class OpenTelemetryTracingZioBackendTest extends AnyFlatSpec with Matchers with 
       BackendStub(new RIOMonadAsyncError[Any]).whenRequestMatchesPartial {
         case r if r.uri.toString.contains("echo") =>
           recordedRequests += r
-          Response.ok("")
+          TestResponse.ok("")
         case r if r.uri.toString.contains("error") =>
           throw new RuntimeException("something went wrong")
       },

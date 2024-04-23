@@ -30,15 +30,15 @@ class BackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
     .thenRespondServerError()
     .whenRequestMatchesPartial {
       case r if r.method == Method.POST && r.uri.path.endsWith(List("partial10")) =>
-        Response(Right("10"), StatusCode.Ok, "OK")
+        TestResponse(Right("10"), StatusCode.Ok, "OK")
       case r if r.method == Method.POST && r.uri.path.endsWith(List("partialAda")) =>
-        Response(Right("Ada"), StatusCode.Ok, "OK")
+        TestResponse(Right("Ada"), StatusCode.Ok, "OK")
     }
     .whenRequestMatches(_.uri.port.exists(_ == 8080))
-    .thenRespondF(Response(Right("OK from monad"), StatusCode.Ok, "OK"))
+    .thenRespondF(TestResponse(Right("OK from monad"), StatusCode.Ok, "OK"))
     .whenRequestMatches(_.uri.port.exists(_ == 8081))
     .thenRespondF(r =>
-      Response(Right(s"OK from request. Request was sent to host: ${r.uri.host.getOrElse("?")}"), StatusCode.Ok, "OK")
+      TestResponse(Right(s"OK from request. Request was sent to host: ${r.uri.host.getOrElse("?")}"), StatusCode.Ok, "OK")
     )
 
   "backend stub" should "use the first rule if it matches" in {
@@ -194,7 +194,7 @@ class BackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
 
     val backend = BackendStub(new FutureMonad()).whenAnyRequest
       .thenRespondF(Platform.delayedFuture(LongTime) {
-        Response(Right("OK"), StatusCode.Ok, "")
+        TestResponse(Right("OK"), StatusCode.Ok, "")
       })
 
     basicRequest
@@ -219,8 +219,8 @@ class BackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
   it should "serve consecutive responses" in {
     val backend = SyncBackendStub.whenAnyRequest
       .thenRespondCyclicResponses(
-        Response.ok[String]("first"),
-        Response("error", StatusCode.InternalServerError, "Something went wrong")
+        TestResponse.ok[String]("first"),
+        TestResponse("error", StatusCode.InternalServerError, "Something went wrong")
       )
 
     def testResult = basicRequest.get(uri"http://example.org").send(backend)
@@ -380,7 +380,7 @@ class BackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
     val counter = new AtomicInteger(0)
     val backend: Backend[Lazy] = BackendStub(LazyMonad).whenRequestMatchesPartial { case _ =>
       counter.getAndIncrement()
-      Response.ok("ok")
+      TestResponse.ok("ok")
     }
 
     // creating the "send effect" once ...
