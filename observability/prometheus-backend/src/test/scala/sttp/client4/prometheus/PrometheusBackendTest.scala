@@ -4,8 +4,8 @@ import io.prometheus.metrics.model.registry.PrometheusRegistry
 import io.prometheus.metrics.model.snapshots.CounterSnapshot.CounterDataPointSnapshot
 import io.prometheus.metrics.model.snapshots.GaugeSnapshot.GaugeDataPointSnapshot
 import io.prometheus.metrics.model.snapshots.HistogramSnapshot.HistogramDataPointSnapshot
-import io.prometheus.metrics.model.snapshots.{DataPointSnapshot, Labels}
 import io.prometheus.metrics.model.snapshots.SummarySnapshot.SummaryDataPointSnapshot
+import io.prometheus.metrics.model.snapshots.{DataPointSnapshot, Labels}
 import org.scalatest.concurrent.{Eventually, IntegrationPatience}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -18,6 +18,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.stream.Collectors
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future, blocking}
+import scala.collection.immutable.Seq
 
 class PrometheusBackendTest
     extends AnyFlatSpec
