@@ -28,6 +28,8 @@ object SttpClientException extends SttpClientExceptionExtensions {
 
   class TimeoutException(request: GenericRequest[_, _], cause: Exception) extends ReadException(request, cause)
 
+  class EncodingException(request: GenericRequest[_, _], cause: Exception) extends SttpClientException(request, cause)
+
   def adjustExceptions[F[_], T](
       monadError: MonadError[F]
   )(t: => F[T])(usingFn: Exception => Option[Exception]): F[T] =

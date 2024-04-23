@@ -1,8 +1,6 @@
 package sttp.client4
 
-import sttp.client4.internal.SttpFile
-import sttp.client4.internal.Utf8
-import sttp.client4.internal.contentTypeWithCharset
+import sttp.client4.internal.{ContentEncoding, SttpFile, Utf8, contentTypeWithCharset}
 import sttp.client4.logging.LoggingOptions
 import sttp.client4.wrappers.DigestAuthenticationBackend
 import sttp.model.HasHeaders
@@ -76,6 +74,10 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
     header(HeaderNames.ContentType, contentTypeWithCharset(ct, encoding), replaceExisting = true)
   def contentLength(l: Long): PR =
     header(HeaderNames.ContentLength, l.toString, replaceExisting = true)
+
+  def contentEncoding(encoding: ContentEncoding): PR =
+    header(HeaderNames.ContentEncoding, encoding.name, replaceExisting = false)
+      .withOptions(options.copy(encoding = options.encoding :+ encoding))
 
   /** Adds the given header to the end of the headers sequence.
     * @param replaceExisting

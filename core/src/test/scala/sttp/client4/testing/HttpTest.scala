@@ -3,15 +3,18 @@ package sttp.client4.testing
 import org.scalatest._
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
-import sttp.client4.internal.{Iso88591, Utf8}
+import sttp.client4.internal.{ContentEncoding, Iso88591, Utf8}
 import sttp.client4.testing.HttpTest.endpoint
 import sttp.client4._
+import sttp.client4.internal.encoders.EncoderError.EncodingFailure
+import sttp.client4.internal.encoders.{DeflateContentCodec, GzipContentCodec}
 import sttp.model.StatusCode
 import sttp.monad.MonadError
 import sttp.monad.syntax._
 
 import java.io.{ByteArrayInputStream, UnsupportedEncodingException}
 import java.nio.ByteBuffer
+import scala.Right
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
@@ -21,6 +24,7 @@ trait HttpTest[F[_]]
     with Matchers
     with ToFutureWrapper
     with OptionValues
+    with EitherValues
     with HttpTestExtensions[F]
     with AsyncRetries {
 
@@ -419,6 +423,52 @@ trait HttpTest[F[_]]
     "not attempt to decompress HEAD requests" in {
       val req = basicRequest.head(uri"$endpoint/compress")
       req.send(backend).toFuture().map(resp => resp.code shouldBe StatusCode.Ok)
+    }
+
+    "should compress request body gzip" in {
+      val codec = new GzipContentCodec
+      val req = basicRequest.contentEncoding(ContentEncoding.gzip)
+        .response(asByteArrayAlways)
+        .post(uri"$endpoint/echo/exact")
+        .body("I`m not compressed")
+      req.send(backend).toFuture().map{resp =>
+        resp.code shouldBe StatusCode.Ok
+        val res = codec.decode(resp.body)
+        res.isRight shouldBe true
+        res.right.value shouldBe "I`m not compressed".getBytes()
+      }
+    }
+
+    "should compress request body deflate" in {
+      val codec = new DeflateContentCodec
+      val req = basicRequest.contentEncoding(ContentEncoding.deflate)
+        .response(asByteArrayAlways)
+        .post(uri"$endpoint/echo/exact")
+        .body("I`m not compressed")
+      req.send(backend).toFuture().map{resp =>
+        resp.code shouldBe StatusCode.Ok
+        val res = codec.decode(resp.body)
+        res.isRight shouldBe true
+        res.right.value shouldBe "I`m not compressed".getBytes()
+      }
+    }
+
+    "should compress request body multiple codecs" in {
+      val codecDeflate = new DeflateContentCodec
+      val codecGzip = new GzipContentCodec
+      val req = basicRequest
+        .contentEncoding(ContentEncoding.gzip)
+        .contentEncoding(ContentEncoding.deflate)
+        .response(asByteArrayAlways)
+        .post(uri"$endpoint/echo/exact")
+        .body("I`m not compressed")
+      req.send(backend).toFuture().map{resp =>
+        resp.code shouldBe StatusCode.Ok
+        val res = codecDeflate.decode(resp.body)
+          .flatMap(b => codecGzip.decode(b))
+        res.isRight shouldBe true
+        res.right.value shouldBe "I`m not compressed".getBytes()
+      }
     }
 
     if (supportsCustomContentEncoding) {
