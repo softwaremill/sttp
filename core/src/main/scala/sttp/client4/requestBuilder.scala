@@ -68,73 +68,83 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
   def options(uri: Uri): R = method(Method.OPTIONS, uri)
   def patch(uri: Uri): R = method(Method.PATCH, uri)
 
-  def contentType(ct: String): PR =
-    header(HeaderNames.ContentType, ct, replaceExisting = true)
-  def contentType(mt: MediaType): PR =
-    header(HeaderNames.ContentType, mt.toString, replaceExisting = true)
+  def contentType(ct: String): PR = header(HeaderNames.ContentType, ct)
+  def contentType(mt: MediaType): PR = header(HeaderNames.ContentType, mt.toString)
   def contentType(ct: String, encoding: String): PR =
-    header(HeaderNames.ContentType, contentTypeWithCharset(ct, encoding), replaceExisting = true)
-  def contentLength(l: Long): PR =
-    header(HeaderNames.ContentLength, l.toString, replaceExisting = true)
+    header(HeaderNames.ContentType, contentTypeWithCharset(ct, encoding))
+  def contentLength(l: Long): PR = header(HeaderNames.ContentLength, l.toString)
 
-  /** Adds the given header to the end of the headers sequence.
-    * @param replaceExisting
-    *   If there's already a header with the same name, should it be replaced?
+  /** Adds the given header to the headers of this request. If a header with the same name already exists, the default
+    * is to replace it with the given one.
+    *
+    * @param onDuplicate
+    *   What should happen if there's already a header with the same name. The default is to replace.
     */
-  def header(h: Header, replaceExisting: Boolean = false): PR = {
-    val current = if (replaceExisting) headers.filterNot(_.is(h.name)) else headers
-    withHeaders(headers = current :+ h)
-  }
+  def header(h: Header, onDuplicate: DuplicateHeaderBehavior = DuplicateHeaderBehavior.Replace): PR =
+    onDuplicate match {
+      case DuplicateHeaderBehavior.Replace =>
+        val filtered = headers.filterNot(_.is(h.name))
+        withHeaders(headers = filtered :+ h)
+      case DuplicateHeaderBehavior.Combine =>
+        val (existing, other) = headers.partition(_.is(h.name))
+        val separator = if (h.is(HeaderNames.Cookie)) "; " else ", "
+        val combined = Header(h.name, (existing.map(_.value) :+ h.value).mkString(separator))
+        withHeaders(headers = other :+ combined)
+      case DuplicateHeaderBehavior.Add =>
+        withHeaders(headers = headers :+ h)
+    }
 
-  /** Adds the given header to the end of the headers sequence.
-    * @param replaceExisting
-    *   If there's already a header with the same name, should it be replaced?
+  /** Adds the given header to the headers of this request.
+    * @param onDuplicate
+    *   What should happen if there's already a header with the same name. See [[header(Header)]].
     */
-  def header(k: String, v: String, replaceExisting: Boolean): PR =
-    header(Header(k, v), replaceExisting)
+  def header(k: String, v: String, onDuplicate: DuplicateHeaderBehavior): PR =
+    header(Header(k, v), onDuplicate)
 
-  /** Adds the given header to the end of the headers sequence. */
+  /** Adds the given header to the headers of this request. If a header with the same name already exists, it's
+    * replaced.
+    */
   def header(k: String, v: String): PR = header(Header(k, v))
 
-  /** Adds the given header to the end of the headers sequence, if the value is defined. Otherwise has no effect. */
+  /** Adds the given header to the headers of this request, if the value is defined. Otherwise has no effect. If a
+    * header with the same name already exists, it's replaced.
+    */
   def header(k: String, ov: Option[String]): PR = ov.fold(this)(header(k, _))
 
-  /** Adds the given headers to the end of the headers sequence. */
+  /** Adds the given headers to the headers of this request. If a header with the same name already exists, it's
+    * replaced.
+    */
   def headers(hs: Map[String, String]): PR = headers(hs.map(t => Header(t._1, t._2)).toSeq: _*)
 
-  /** Adds the given headers to the end of the headers sequence.
-    * @param replaceExisting
-    *   If there's already a header with the same name, should it be replaced?
+  /** Adds the given headers to the headers of this request. If a header with the same name already exists, it's
+    * replaced.
     */
-  def headers(hs: Map[String, String], replaceExisting: Boolean): PR =
-    if (replaceExisting) hs.foldLeft(this)((s, h) => s.header(h._1, h._2, replaceExisting))
-    else headers(hs)
-
-  /** Adds the given headers to the end of the headers sequence. */
-  def headers(hs: Header*): PR = withHeaders(headers = headers ++ hs)
-
-  /** Adds the given headers to the end of the headers sequence. */
-  def headers(hs: Seq[Header], replaceExisting: Boolean): PR =
-    if (replaceExisting) hs.foldLeft(this)((s, h) => s.header(h, replaceExisting))
-    else headers(hs: _*)
+  def headers(hs: Header*): PR = hs.foldLeft(this)(_.header(_))
 
   def auth: SpecifyAuthScheme[PR] =
     new SpecifyAuthScheme[PR](HeaderNames.Authorization, this, DigestAuthenticationBackend.DigestAuthTag)
   def proxyAuth: SpecifyAuthScheme[PR] =
     new SpecifyAuthScheme[PR](HeaderNames.ProxyAuthorization, this, DigestAuthenticationBackend.ProxyDigestAuthTag)
-  def acceptEncoding(encoding: String): PR =
-    header(HeaderNames.AcceptEncoding, encoding, replaceExisting = true)
+  def acceptEncoding(encoding: String): PR = header(HeaderNames.AcceptEncoding, encoding)
 
+  /** Adds the given cookie. Any previously defined cookies are left intact. */
   def cookie(nv: (String, String)): PR = cookies(nv)
+
+  /** Adds the given cookie. Any previously defined cookies are left intact. */
   def cookie(n: String, v: String): PR = cookies((n, v))
+
+  /** Adds the cookies from the given response. Any previously defined cookies are left intact. */
   def cookies(r: Response[_]): PR = cookies(r.cookies.collect { case Right(c) => c }.map(c => (c.name, c.value)): _*)
+
+  /** Adds the given cookies. Any previously defined cookies are left intact. */
   def cookies(cs: Iterable[CookieWithMeta]): PR = cookies(cs.map(c => (c.name, c.value)).toSeq: _*)
-  def cookies(nvs: (String, String)*): PR =
-    header(
-      HeaderNames.Cookie,
-      (headers.find(_.name == HeaderNames.Cookie).map(_.value).toSeq ++ nvs.map(p => p._1 + "=" + p._2)).mkString("; "),
-      replaceExisting = true
-    )
+
+  /** Adds the given cookies. Any previously defined cookies are left intact. */
+  def cookies(nvs: (String, String)*): PR = header(
+    HeaderNames.Cookie,
+    nvs.map(p => p._1 + "=" + p._2).mkString("; "),
+    onDuplicate = DuplicateHeaderBehavior.Combine
+  )
 
   private[client4] def hasContentType: Boolean = headers.exists(_.is(HeaderNames.ContentType))
   private[client4] def setContentTypeIfMissing(mt: MediaType): PR =
@@ -364,3 +374,19 @@ final case class PartialRequest[T](
   *   The type of request
   */
 trait RequestBuilder[+R <: RequestBuilder[R]] extends PartialRequestBuilder[R, R] { self: R => }
+
+/** Specifies what should happen when adding a header to a request description, and a header with that name already
+  * exists. See [[PartialRequestBuilder.header(Header)]].
+  */
+sealed trait DuplicateHeaderBehavior
+object DuplicateHeaderBehavior {
+
+  /** Replaces any headers with the same name. */
+  case object Replace extends DuplicateHeaderBehavior
+
+  /** Combines the header values using `,`, except for `Cookie`, where values are combined using `;`. */
+  case object Combine extends DuplicateHeaderBehavior
+
+  /** Adds the header, leaving any other headers with the same name intact. */
+  case object Add extends DuplicateHeaderBehavior
+}
