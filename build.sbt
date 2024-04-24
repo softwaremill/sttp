@@ -77,7 +77,6 @@ val commonJsBackendSettings = JSDependenciesPlugin.projectSettings ++ List(
 )
 
 val commonNativeSettings = commonSettings ++ Seq(
-  nativeLinkStubs := true,
   Test / test := {
     // TODO: re-enable after scala-native release > 0.4.0-M2
     if (sys.env.isDefinedAt("RELEASE_VERSION")) {
@@ -151,8 +150,8 @@ val zio2Version = "2.0.22"
 val zio1InteropRsVersion = "1.3.12"
 val zio2InteropRsVersion = "2.0.2"
 
-val sttpModelVersion = "1.7.9"
-val sttpSharedVersion = "1.3.17"
+val sttpModelVersion = "1.7.10"
+val sttpSharedVersion = "1.3.18"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.5.5"
 
@@ -373,10 +372,6 @@ lazy val cats = (projectMatrix in file("effects/cats"))
     scalaVersions = scala2 ++ scala3,
     settings = commonJsSettings ++ commonJsBackendSettings ++ browserChromeTestSettings ++ testServerSettings
   )
-  .nativePlatform(
-    scalaVersions = scala2 ++ scala3,
-    settings = commonNativeSettings
-  )
 
 lazy val fs2Ce2 = (projectMatrix in file("effects/fs2-ce2"))
   .settings(
@@ -421,7 +416,6 @@ lazy val fs2 = (projectMatrix in file("effects/fs2"))
     )
   )
   .jsPlatform(scalaVersions = scala2 ++ scala3, settings = commonJsSettings)
-  .nativePlatform(scalaVersions = scala2 ++ scala3, settings = commonNativeSettings)
 
 lazy val monix = (projectMatrix in file("effects/monix"))
   .settings(
@@ -795,7 +789,6 @@ lazy val circe = (projectMatrix in file("json/circe"))
     settings = commonJvmSettings
   )
   .jsPlatform(scalaVersions = scala2 ++ scala3, settings = commonJsSettings)
-  .nativePlatform(scalaVersions = scala2 ++ scala3, settings = commonNativeSettings)
   .dependsOn(core, jsonCommon)
 
 lazy val jsoniter = (projectMatrix in file("json/jsoniter"))
@@ -866,7 +859,7 @@ lazy val upickle = (projectMatrix in file("json/upickle"))
   .settings(
     name := "upickle",
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %%% "upickle" % "3.1.4"
+      "com.lihaoyi" %%% "upickle" % "3.3.0"
     ),
     scalaTest,
     // using macroRW causes a "match may not be exhaustive" error
@@ -982,7 +975,7 @@ lazy val scribeBackend = (projectMatrix in file("logging/scribe"))
   .settings(
     name := "scribe-backend",
     libraryDependencies ++= Seq(
-      "com.outr" %%% "scribe" % "3.13.2"
+      "com.outr" %%% "scribe" % "3.13.3"
     ),
     scalaTest
   )
