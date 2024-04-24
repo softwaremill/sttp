@@ -5,7 +5,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import sttp.client4._
 import sttp.client4.impl.zio._
-import sttp.client4.testing.{BackendStub, RawStream, StreamBackendStub, TestResponse, TestStreams}
+import sttp.client4.testing.{BackendStub, RawStream, StreamBackendStub, ResponseStub, TestStreams}
 import sttp.model.Method
 import zio.stream.ZStream
 import zio.{Task, ZIO}
@@ -53,7 +53,7 @@ class BackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFutures wi
 
     val effect = for {
       _ <- whenRequestMatches(_.uri.toString.endsWith("c")).thenRespond("c")
-      _ <- whenRequestMatchesPartial { case r if r.method == Method.POST => TestResponse.ok("b") }
+      _ <- whenRequestMatchesPartial { case r if r.method == Method.POST => ResponseStub.ok("b") }
       _ <- whenAnyRequest.thenRespond("a")
       resp <- r1 <&> r2 <&> r3
     } yield resp

@@ -33,23 +33,8 @@ case class Response[+T](
 
 private[sttp] object Response {
 
-  val emptyGet: RequestMetadata = new RequestMetadata {
-    override def method: Method = Method.GET
-    override def uri: Uri = uri"http://example.com"
-    override def headers: Seq[Header] = Nil
-  }
-
-  def apply[T](body: T, code: StatusCode): Response[T] =
-    Response(body, code, resolveStatusText(code), Nil, Nil, emptyGet)
-
-  def apply[T](body: T, code: StatusCode, statusText: String): Response[T] =
-    Response(body, code, resolveStatusText(code, statusText), Nil, Nil, emptyGet)
-
   def apply[T](body: T, code: StatusCode, requestMetadata: RequestMetadata): Response[T] =
     Response(body, code, resolveStatusText(code), Nil, Nil, requestMetadata)
-
-  def apply[T](body: T, code: StatusCode, statusText: String, requestMetadata: RequestMetadata): Response[T] =
-    Response(body, code, resolveStatusText(code, statusText), Nil, Nil, requestMetadata)
 
   def ok[T](body: T, requestMetadata: RequestMetadata): Response[T] =
     Response(body, StatusCode.Ok, resolveStatusText(StatusCode.Ok), Nil, Nil, requestMetadata)

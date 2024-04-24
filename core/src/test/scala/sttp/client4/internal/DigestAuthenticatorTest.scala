@@ -8,7 +8,7 @@ import sttp.model.{Header, HeaderNames, StatusCode}
 import scala.util.{Failure, Try}
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
-import sttp.client4.testing.TestResponse
+import sttp.client4.testing.ResponseStub
 
 class DigestAuthenticatorTest extends AnyFreeSpec with Matchers with OptionValues {
   "should work" in {
@@ -192,7 +192,7 @@ class DigestAuthenticatorTest extends AnyFreeSpec with Matchers with OptionValue
     )
 
   private def response(headers: List[Header], statusCode: StatusCode): Response[Either[String, String]] =
-    TestResponse[Either[String, String]](
+    ResponseStub[Either[String, String]](
       Right(""),
       statusCode,
       "Unauthorized",

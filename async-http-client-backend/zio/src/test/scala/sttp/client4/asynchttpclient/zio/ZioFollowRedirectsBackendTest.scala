@@ -5,7 +5,7 @@ import org.scalatest.matchers.should.Matchers
 import sttp.capabilities.Effect
 import sttp.client4._
 import sttp.client4.impl.zio.{RIOMonadAsyncError, ZioTestBase}
-import sttp.client4.testing.TestResponse
+import sttp.client4.testing.ResponseStub
 import sttp.client4.wrappers.FollowRedirectsBackend
 import sttp.model.{Header, StatusCode}
 import sttp.monad.MonadError
@@ -17,9 +17,9 @@ class ZioFollowRedirectsBackendTest extends AsyncFlatSpec with Matchers with Zio
       override def send[T](request: GenericRequest[T, Any with Effect[Task]]): Task[Response[T]] =
         ZIO.succeed(
           if (request.uri.toString.contains("redirect"))
-            TestResponse.ok("ok".asInstanceOf[T])
+            ResponseStub.ok("ok".asInstanceOf[T])
           else
-            TestResponse.apply(
+            ResponseStub.apply(
               "".asInstanceOf[T],
               StatusCode.PermanentRedirect,
               "",
