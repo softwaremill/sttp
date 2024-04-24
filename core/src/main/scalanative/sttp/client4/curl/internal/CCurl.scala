@@ -12,10 +12,10 @@ private[curl] trait Mime {}
 private[curl] trait MimePart {}
 
 private[curl] object libcurlPlatformCompat {
-  @extern @link("libcurl") @link("crypt32")
+  @extern @link("libcurl") @link("crypt32") @define("STTP_CURL_FFI")
   private object libcurlWin64 extends CCurl
 
-  @extern @link("curl")
+  @extern @link("curl") @define("STTP_CURL_FFI")
   private object libcurlDefault extends CCurl
 
   val instance: CCurl =
@@ -34,10 +34,8 @@ private[curl] trait CCurl {
   @name("sttp_curl_setopt_pointer")
   def setoptPtr(handle: Ptr[Curl], option: CInt, parameter: Ptr[_]): CInt = extern
 
-
   @name("sttp_curl_getinfo_pointer")
   def getInfo(handle: Ptr[Curl], info: CInt, parameter: Ptr[_]): CInt = extern
-
 
   @name("curl_easy_init")
   def init: Ptr[Curl] = extern
@@ -47,7 +45,6 @@ private[curl] trait CCurl {
 
   @name("curl_easy_perform")
   def perform(easy_handle: Ptr[Curl]): CInt = extern
-
 
   @name("curl_mime_init")
   def mimeInit(easy: Ptr[Curl]): Ptr[Mime] = extern
