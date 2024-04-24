@@ -40,6 +40,10 @@ class BackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
     .thenRespondF(r =>
       ResponseStub(Right(s"OK from request. Request was sent to host: ${r.uri.host.getOrElse("?")}"), StatusCode.Ok, "OK")
     )
+    .whenRequestMatches(r => r.uri.path.contains("metadata") && r.method == Method.POST)
+    .thenRespondOk()
+    .whenRequestMatches(r => r.uri.path.contains("metadata") && r.method == Method.PUT)
+    .thenRespondServerError()
 
   "backend stub" should "use the first rule if it matches" in {
     val backend = testingStub
@@ -412,6 +416,29 @@ class BackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
 
     val r = basicRequest.post(uri"http://example.org/a/b").send(backend)
     r.is200 should be(true)
+  }
+
+  "backend stub" should "preserve request metadata" in {
+    val uri = uri"http://test/metadata"
+    val request = basicRequest.post(uri)
+    val r = request.send(testingStub)
+    val metadata = r.request
+    metadata.method should be(Method.POST)
+    metadata.uri should be(uri)
+    metadata.toString() should be(request.onlyMetadata.toString())
+    r.is200 should be(true)
+    r.body should be(Right("OK"))
+  }
+
+  "backend stub" should "preserve request metadata for failed request" in {
+    val uri = uri"http://test-2/metadata"
+    val request = basicRequest.put(uri)
+    val r = request.send(testingStub)
+    val metadata = r.request
+    metadata.method should be(Method.PUT)
+    metadata.uri should be(uri)
+    metadata.toString() should be(request.onlyMetadata.toString())
+    r.isServerError should be(true)
   }
 
   private val s = "Hello, world!"
