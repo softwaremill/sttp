@@ -14,6 +14,7 @@ import sttp.model.StatusCode
 import scala.collection.mutable
 
 object PrometheusBackend {
+  // TODO: Refactor metrics names according to Prometheus/OpenTelemetry standards
   val DefaultHistogramName = "sttp_request_latency"
   val DefaultRequestsInProgressGaugeName = "sttp_requests_in_progress"
   val DefaultSuccessCounterName = "sttp_requests_success_count"
@@ -121,15 +122,10 @@ object PrometheusBackend {
   /** Clear cached collectors (gauges and histograms) both from the given collector registry, and from the backend.
     */
   def clear(prometheusRegistry: PrometheusRegistry): Unit = {
-    unregister(prometheusRegistry, histograms)
-    histograms.remove(prometheusRegistry)
-    unregister(prometheusRegistry, gauges)
-    gauges.remove(prometheusRegistry)
-    unregister(prometheusRegistry, counters)
-    counters.remove(prometheusRegistry)
-    unregister(prometheusRegistry, summaries)
-    summaries.remove(prometheusRegistry)
-    ()
+    clear(prometheusRegistry, histograms)
+    clear(prometheusRegistry, gauges)
+    clear(prometheusRegistry, counters)
+    clear(prometheusRegistry, summaries)
   }
 
   /*
@@ -138,11 +134,13 @@ object PrometheusBackend {
   Hence, we need to store a global cache o created histograms/gauges, so that we can properly re-use them.
    */
 
-  private def unregister[T <: Collector](prometheusRegistry: PrometheusRegistry, collectors: mutable.WeakHashMap[PrometheusRegistry, ConcurrentHashMap[String, T]]): Unit =
+  private def clear[T <: Collector](prometheusRegistry: PrometheusRegistry, collectors: mutable.WeakHashMap[PrometheusRegistry, ConcurrentHashMap[String, T]]): Unit = {
     collectors
       .getOrElse(prometheusRegistry, new ConcurrentHashMap[String, T]())
       .values()
       .forEach(c => prometheusRegistry.unregister(c))
+    collectors.remove(prometheusRegistry)
+  }
 
   private val histograms = new mutable.WeakHashMap[PrometheusRegistry, ConcurrentHashMap[String, Histogram]]
   private val gauges = new mutable.WeakHashMap[PrometheusRegistry, ConcurrentHashMap[String, Gauge]]
@@ -154,6 +152,7 @@ object PrometheusBackend {
       prometheusRegistry: PrometheusRegistry
   ): ConcurrentHashMap[String, T] =
     cache.synchronized {
+      // TODO remove synchronized and improve caching
       cache.getOrElseUpdate(prometheusRegistry, new ConcurrentHashMap[String, T]())
     }
   final case class RequestCollectors(maybeTimer: Option[Timer], maybeGauge: Option[GaugeDataPoint])
