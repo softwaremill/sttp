@@ -97,4 +97,14 @@ class RequestTests extends AnyFlatSpec with Matchers {
       .headers(List(Header("H1", "V11"), Header("H3", "V3")), replaceExisting = true)
       .headers shouldBe List(Header("H2", "V2"), Header("H1", "V11"), Header("H3", "V3"))
   }
+
+  it should "use same headers regardless of order in which body() and headers() are called" in {
+    emptyRequest.headers(Map("Content-Type" -> "application/json")).body("1234").headers shouldBe List(
+      Header("Content-Type", "application/json"), Header("Content-Length", "4")
+    )
+
+    emptyRequest.body("1234").headers(Map("Content-Type" -> "application/json")).headers shouldBe List(
+      Header("Content-Type", "application/json"), Header("Content-Length", "4")
+    )
+  }
 }

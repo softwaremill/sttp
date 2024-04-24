@@ -77,6 +77,9 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
   def contentLength(l: Long): PR =
     header(HeaderNames.ContentLength, l.toString, replaceExisting = true)
 
+  // replace - default
+  // combine - with , (default for everything, e.g. accept, accept-encoding, TE, cache-control, x-forwarded-for) or ; for cookie
+  // add - for set-cookie
   /** Adds the given header to the end of the headers sequence.
     * @param replaceExisting
     *   If there's already a header with the same name, should it be replaced?
