@@ -11,7 +11,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfter, OptionValues}
 import sttp.client4._
-import sttp.client4.testing.{BackendStub, SyncBackendStub}
+import sttp.client4.testing.{BackendStub, ResponseStub, SyncBackendStub}
 import sttp.model.{Header, StatusCode}
 
 import java.util.concurrent.CountDownLatch
@@ -166,7 +166,7 @@ class PrometheusBackendTest
     val backendStub = BackendStub.asynchronousFuture.whenAnyRequest.thenRespondF {
       Future {
         blocking(countDownLatch.await())
-        Response.ok(Right(""))
+        ResponseStub.ok(Right(""))
       }
     }
     val backend = PrometheusBackend(backendStub)
@@ -196,7 +196,7 @@ class PrometheusBackendTest
     val backendStub = BackendStub.asynchronousFuture.whenAnyRequest.thenRespondF {
       Future {
         blocking(countDownLatch.await())
-        Response.ok(Right(""))
+        ResponseStub.ok(Right(""))
       }
     }
     val backend =
@@ -230,7 +230,7 @@ class PrometheusBackendTest
     val backendStub = BackendStub.asynchronousFuture.whenAnyRequest.thenRespondF {
       Future {
         blocking(countDownLatch.await())
-        Response.ok(Right(""))
+        ResponseStub.ok(Right(""))
       }
     }
     val backend =
@@ -297,7 +297,7 @@ class PrometheusBackendTest
 
   it should "use default summary name" in {
     // given
-    val response = Response("Ok", StatusCode.Ok, "Ok", Seq(Header.contentLength(10)))
+    val response = ResponseStub("Ok", StatusCode.Ok, "Ok", Seq(Header.contentLength(10)))
     val backendStub = SyncBackendStub.whenAnyRequest.thenRespond(response)
     val backend = PrometheusBackend(backendStub)
 

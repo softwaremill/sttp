@@ -220,7 +220,7 @@ BackendStub(implicitly[MonadAsyncError[IO]])
   .whenRequestMatches(_ => true)
   .thenRespondF { _ =>
     FileUtils.copyFile(sourceFile, destinationFile)
-    IO(Response(Right(destinationFile), StatusCode.Ok, ""))
+    IO(ResponseStub(Right(destinationFile), StatusCode.Ok, ""))
   }
 ```
 
