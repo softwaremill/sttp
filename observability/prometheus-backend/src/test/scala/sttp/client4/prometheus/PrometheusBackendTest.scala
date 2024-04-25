@@ -11,8 +11,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfter, OptionValues}
 import sttp.client4._
-import sttp.client4.testing.{BackendStub, SyncBackendStub}
-import sttp.client4.testing.{BackendStub, SyncBackendStub, ResponseStub}
+import sttp.client4.testing.{BackendStub, ResponseStub, SyncBackendStub}
 import sttp.model.{Header, StatusCode}
 
 import java.util.concurrent.CountDownLatch
