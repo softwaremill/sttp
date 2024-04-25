@@ -66,14 +66,22 @@ class RequestTests extends AnyFlatSpec with Matchers {
   }
 
   it should "properly replace headers" in {
-    emptyRequest.header("H1", "V1").header("H1", "V2").headers shouldBe List(Header("H1", "V1"), Header("H1", "V2"))
-    emptyRequest.header("H1", "V1").header("H1", "V2", replaceExisting = true).headers shouldBe List(Header("H1", "V2"))
-
-    emptyRequest.header(Header("H1", "V1")).header(Header("H1", "V2")).headers shouldBe List(
+    emptyRequest.header("H1", "V1").header("H1", "V2").headers shouldBe List(Header("H1", "V2"))
+    emptyRequest.header("H1", "V1").header("H1", "V2", onDuplicate = DuplicateHeaderBehavior.Add).headers shouldBe List(
       Header("H1", "V1"),
       Header("H1", "V2")
     )
-    emptyRequest.header(Header("H1", "V1")).header(Header("H1", "V2"), replaceExisting = true).headers shouldBe List(
+    emptyRequest
+      .header("H1", "V1")
+      .header("H1", "V2", onDuplicate = DuplicateHeaderBehavior.Combine)
+      .headers shouldBe List(Header("H1", "V1, V2"))
+
+    emptyRequest.header(Header("H1", "V1")).header(Header("H1", "V2")).headers shouldBe List(Header("H1", "V2"))
+    emptyRequest
+      .header(Header("H1", "V1"))
+      .header(Header("H1", "V2"), onDuplicate = DuplicateHeaderBehavior.Add)
+      .headers shouldBe List(
+      Header("H1", "V1"),
       Header("H1", "V2")
     )
 
@@ -81,20 +89,23 @@ class RequestTests extends AnyFlatSpec with Matchers {
       .headers(Map("H1" -> "V1", "H2" -> "V2"))
       .headers(Map("H1" -> "V11", "H3" -> "V3"))
       .headers
-      .toSet shouldBe Set(Header("H1", "V1"), Header("H2", "V2"), Header("H1", "V11"), Header("H3", "V3"))
-    emptyRequest
-      .headers(Map("H1" -> "V1", "H2" -> "V2"))
-      .headers(Map("H1" -> "V11", "H3" -> "V3"), replaceExisting = true)
-      .headers
       .toSet shouldBe Set(Header("H2", "V2"), Header("H1", "V11"), Header("H3", "V3"))
 
     emptyRequest
       .headers(Header("H1", "V1"), Header("H2", "V2"))
       .headers(Header("H1", "V11"), Header("H3", "V3"))
-      .headers shouldBe List(Header("H1", "V1"), Header("H2", "V2"), Header("H1", "V11"), Header("H3", "V3"))
-    emptyRequest
-      .headers(Header("H1", "V1"), Header("H2", "V2"))
-      .headers(List(Header("H1", "V11"), Header("H3", "V3")), replaceExisting = true)
       .headers shouldBe List(Header("H2", "V2"), Header("H1", "V11"), Header("H3", "V3"))
+  }
+
+  it should "use same headers regardless of order in which body() and headers() are called" in {
+    emptyRequest.headers(Map("Content-Type" -> "application/json")).body("1234").headers.toSet shouldBe Set(
+      Header("Content-Type", "application/json"),
+      Header("Content-Length", "4")
+    )
+
+    emptyRequest.body("1234").headers(Map("Content-Type" -> "application/json")).headers.toSet shouldBe Set(
+      Header("Content-Type", "application/json"),
+      Header("Content-Length", "4")
+    )
   }
 }
