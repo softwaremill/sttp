@@ -3,15 +3,13 @@ package sttp.client4.prometheus
 import io.prometheus.metrics.core.datapoints.{GaugeDataPoint, Timer}
 import io.prometheus.metrics.core.metrics.{Counter, Gauge, Histogram, Summary}
 import io.prometheus.metrics.model.registry.{Collector, PrometheusRegistry}
-
-import java.util.concurrent.ConcurrentHashMap
-import sttp.client4.{wrappers, _}
 import sttp.client4.listener.{ListenerBackend, RequestListener}
 import sttp.client4.prometheus.PrometheusBackend.RequestCollectors
 import sttp.client4.wrappers.FollowRedirectsBackend
+import sttp.client4.{wrappers, _}
 import sttp.model.StatusCode
 
-import scala.collection.mutable
+import java.util.concurrent.ConcurrentHashMap
 
 object PrometheusBackend {
   // TODO: Refactor metrics names according to Prometheus/OpenTelemetry standards
@@ -134,27 +132,30 @@ object PrometheusBackend {
   Hence, we need to store a global cache o created histograms/gauges, so that we can properly re-use them.
    */
 
-  private def clear[T <: Collector](prometheusRegistry: PrometheusRegistry, collectors: mutable.WeakHashMap[PrometheusRegistry, ConcurrentHashMap[String, T]]): Unit = {
+  private def clear[T <: Collector](prometheusRegistry: PrometheusRegistry, collectors: ConcurrentHashMap[PrometheusRegistry, ConcurrentHashMap[String, T]]): Unit = {
     collectors
-      .getOrElse(prometheusRegistry, new ConcurrentHashMap[String, T]())
-      .values()
+      .getOrDefault(prometheusRegistry, new ConcurrentHashMap[String, T]())
+      .values
       .forEach(c => prometheusRegistry.unregister(c))
     collectors.remove(prometheusRegistry)
   }
 
-  private val histograms = new mutable.WeakHashMap[PrometheusRegistry, ConcurrentHashMap[String, Histogram]]
-  private val gauges = new mutable.WeakHashMap[PrometheusRegistry, ConcurrentHashMap[String, Gauge]]
-  private val counters = new mutable.WeakHashMap[PrometheusRegistry, ConcurrentHashMap[String, Counter]]
-  private val summaries = new mutable.WeakHashMap[PrometheusRegistry, ConcurrentHashMap[String, Summary]]
+  private val histograms = new ConcurrentHashMap[PrometheusRegistry, ConcurrentHashMap[String, Histogram]]
+  private val gauges = new ConcurrentHashMap[PrometheusRegistry, ConcurrentHashMap[String, Gauge]]
+  private val counters = new ConcurrentHashMap[PrometheusRegistry, ConcurrentHashMap[String, Counter]]
+  private val summaries = new ConcurrentHashMap[PrometheusRegistry, ConcurrentHashMap[String, Summary]]
 
   private def cacheFor[T](
-      cache: mutable.WeakHashMap[PrometheusRegistry, ConcurrentHashMap[String, T]],
+      cache: ConcurrentHashMap[PrometheusRegistry, ConcurrentHashMap[String, T]],
       prometheusRegistry: PrometheusRegistry
   ): ConcurrentHashMap[String, T] =
-    cache.synchronized {
-      // TODO remove synchronized and improve caching
-      cache.getOrElseUpdate(prometheusRegistry, new ConcurrentHashMap[String, T]())
-    }
+      cache.computeIfAbsent(
+        prometheusRegistry,
+        new java.util.function.Function[PrometheusRegistry, ConcurrentHashMap[String, T]] {
+          override def apply(t: PrometheusRegistry): ConcurrentHashMap[String, T] = new ConcurrentHashMap[String, T]()
+        }
+      )
+
   final case class RequestCollectors(maybeTimer: Option[Timer], maybeGauge: Option[GaugeDataPoint])
 }
 
