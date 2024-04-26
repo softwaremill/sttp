@@ -213,7 +213,9 @@ class PrometheusBackendTest
     // then
     eventually {
       getMetricSnapshot(PrometheusBackend.DefaultRequestsInProgressGaugeName) shouldBe empty
-      getMetricSnapshot[GaugeDataPointSnapshot](customGaugeName).map(_.getValue).value shouldBe requestsNumber
+      val value1 = getMetricSnapshot[GaugeDataPointSnapshot](customGaugeName).map(_.getValue).value
+      println(value1)
+      value1 shouldBe requestsNumber
     }
 
     countDownLatch.countDown()
