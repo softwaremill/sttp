@@ -214,6 +214,8 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
     */
   def body(fs: Seq[(String, String)], encoding: String): PR = formDataBody(fs, encoding)
 
+  def body(b: BasicBody): PR = copyWithBody(b)
+
   def multipartBody(ps: Seq[Part[BasicBodyPart]]): PR = copyWithBody(BasicMultipartBody(ps))
 
   def multipartBody(p1: Part[BasicBodyPart], ps: Part[BasicBodyPart]*): PR = copyWithBody(
