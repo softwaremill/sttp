@@ -19,7 +19,7 @@ These default backends provide limited customisation options, hence for any more
 Which one to choose?
 
 * for simple exploratory requests, use the [synchronous](synchronous.md) `DefaultSyncBackend` / `HttpClientSyncBackend`.
-* if you have Akka in your stack, use the [Akka backend](akka.md) or [Pekko backend](pekko.md)
+* if you have Akka in your stack, use the [Akka backend](akka.md)
 * if you have Pekko in your stack, use the [Pekko backend](pekko.md)
 * if you are using `Future` without Akka, use the `DefaultFutureBackend` / `HttpClientFutureBackend`
 * finally, if you are using a functional effect wrapper, use one of the "functional" backends, for [ZIO](zio.md), [Monix](monix.md), [Scalaz](scalaz.md), [cats-effect](catseffect.md) or [fs2](fs2.md).
