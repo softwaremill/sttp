@@ -53,12 +53,12 @@ It is also possible to match requests by partial function, returning a response.
 val testingBackend = SyncBackendStub
   .whenRequestMatchesPartial({
     case r if r.uri.path.endsWith(List("partial10")) =>
-      Response("Not found", StatusCode.NotFound)
+      ResponseStub("Not found", StatusCode.NotFound)
 
     case r if r.uri.path.endsWith(List("partialAda")) =>
       // additional verification of the request is possible
       assert(r.body == StringBody("z", "utf-8"))
-      Response.ok("Ada")
+      ResponseStub.ok("Ada")
   })
 
 val response1 = basicRequest.get(uri"http://example.org/partial10").send(testingBackend)
@@ -81,7 +81,7 @@ val testingBackend = BackendStub.asynchronousFuture
   .whenAnyRequest
   .thenRespondF(Future {
     Thread.sleep(5000)
-    Response.ok(Right("OK"))
+    ResponseStub.ok(Right("OK"))
   })
 
 val responseFuture = basicRequest.get(uri"http://example.org").send(testingBackend)
@@ -94,7 +94,7 @@ The returned response may also depend on the request:
 val testingBackend = SyncBackendStub
   .whenAnyRequest
   .thenRespondF(req =>
-    Response.ok(Right(s"OK, got request sent to ${req.uri.host}"))
+    ResponseStub.ok(Right(s"OK, got request sent to ${req.uri.host}"))
   )
 
 val response = basicRequest.get(uri"http://example.org").send(testingBackend)
@@ -120,8 +120,8 @@ Or multiple `Response` instances:
 val testingBackend: SyncBackendStub = SyncBackendStub
   .whenAnyRequest
   .thenRespondCyclicResponses(
-    Response.ok[String]("first"),
-    Response("error", StatusCode.InternalServerError, "Something went wrong")
+    ResponseStub.ok[String]("first"),
+    ResponseStub("error", StatusCode.InternalServerError, "Something went wrong")
   )
 
 basicRequest.get(uri"http://example.org").send(testingBackend)       // code will be 200

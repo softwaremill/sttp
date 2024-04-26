@@ -43,8 +43,8 @@ lazy val petstoreApi: Project = project
     openApiGeneratorName := "scala-sttp",
     openApiOutputDir := baseDirectory.value.name,
     libraryDependencies ++= Seq(
-      "com.softwaremill.sttp.client4" %% "core" % "4.0.0-M12",
-      "com.softwaremill.sttp.client4" %% "json4s" % "4.0.0-M12",
+      "com.softwaremill.sttp.client4" %% "core" % "4.0.0-M13",
+      "com.softwaremill.sttp.client4" %% "json4s" % "4.0.0-M13",
       "org.json4s" %% "json4s-jackson" % "3.6.8"
     )
   )
@@ -94,8 +94,8 @@ lazy val petstoreApi: Project = project
     openApiOutputDir := baseDirectory.value.name,
     openApiIgnoreFileOverride := s"${baseDirectory.in(ThisBuild).value.getPath}/openapi-ignore-file",
     libraryDependencies ++= Seq(
-      "com.softwaremill.sttp.client4" %% "core" % "4.0.0-M12",
-      "com.softwaremill.sttp.client4" %% "json4s" % "4.0.0-M12",
+      "com.softwaremill.sttp.client4" %% "core" % "4.0.0-M13",
+      "com.softwaremill.sttp.client4" %% "json4s" % "4.0.0-M13",
       "org.json4s" %% "json4s-jackson" % "3.6.8"
     ),
     (compile in Compile) := ((compile in Compile) dependsOn openApiGenerate).value,

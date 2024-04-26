@@ -12,9 +12,9 @@ Creation of the backend can be done in two basic ways:
 Firstly, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client4" %% "fs2" % "4.0.0-M12" // for cats-effect 3.x & fs2 3.x
+"com.softwaremill.sttp.client4" %% "fs2" % "4.0.0-M13" // for cats-effect 3.x & fs2 3.x
 // or 
-"com.softwaremill.sttp.client4" %% "fs2ce2" % "4.0.0-M12" // for cats-effect 2.x & fs2 2.x
+"com.softwaremill.sttp.client4" %% "fs2ce2" % "4.0.0-M13" // for cats-effect 2.x & fs2 2.x
 ```
 
 Obtain a cats-effect `Resource` which creates the backend, and closes the thread pool after the resource is no longer used:
@@ -78,9 +78,9 @@ Host header override is supported in environments running Java 12 onwards, but i
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client4" %% "armeria-backend-fs2" % "4.0.0-M12" // for cats-effect 3.x & fs2 3.x
+"com.softwaremill.sttp.client4" %% "armeria-backend-fs2" % "4.0.0-M13" // for cats-effect 3.x & fs2 3.x
 // or
-"com.softwaremill.sttp.client4" %% "armeria-backend-fs2" % "4.0.0-M12" // for cats-effect 2.x & fs2 2.x
+"com.softwaremill.sttp.client4" %% "armeria-backend-fs2" % "4.0.0-M13" // for cats-effect 2.x & fs2 2.x
 ```
 
 create client:
