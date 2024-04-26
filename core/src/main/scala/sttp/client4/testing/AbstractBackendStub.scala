@@ -72,18 +72,18 @@ abstract class AbstractBackendStub[F[_], P](
     def thenRespondOk(): Self = thenRespondWithCode(StatusCode.Ok, "OK")
     def thenRespondNotFound(): Self = thenRespondWithCode(StatusCode.NotFound, "Not found")
     def thenRespondServerError(): Self = thenRespondWithCode(StatusCode.InternalServerError, "Internal server error")
-    def thenRespondWithCode(status: StatusCode, msg: String = ""): Self = thenRespond(Response(msg, status, msg))
-    def thenRespond[T](body: T): Self = thenRespond(Response[T](body, StatusCode.Ok, "OK"))
-    def thenRespond[T](body: T, statusCode: StatusCode): Self = thenRespond(Response[T](body, statusCode))
+    def thenRespondWithCode(status: StatusCode, msg: String = ""): Self = thenRespond(ResponseStub(msg, status, msg))
+    def thenRespond[T](body: T): Self = thenRespond(ResponseStub[T](body, StatusCode.Ok, "OK"))
+    def thenRespond[T](body: T, statusCode: StatusCode): Self = thenRespond(ResponseStub[T](body, statusCode))
     def thenRespond[T](resp: => Response[T]): Self = {
       val m: PartialFunction[GenericRequest[_, _], F[Response[_]]] = {
-        case r if p(r) => monad.eval(resp)
+        case r if p(r) => monad.eval(resp.copy(request = r.onlyMetadata))
       }
       withMatchers(matchers.orElse(m))
     }
 
     def thenRespondCyclic[T](bodies: T*): Self =
-      thenRespondCyclicResponses(bodies.map(body => Response[T](body, StatusCode.Ok, "OK")): _*)
+      thenRespondCyclicResponses(bodies.map(body => ResponseStub[T](body, StatusCode.Ok, "OK")): _*)
 
     def thenRespondCyclicResponses[T](responses: Response[T]*): Self = {
       val iterator = AtomicCyclicIterator.unsafeFrom(responses)

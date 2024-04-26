@@ -1,18 +1,19 @@
 package sttp.client4
 
+import org.json4s.native.Serialization
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import sttp.client4.testing.SyncBackendStub
 import sttp.model.Uri
-import org.json4s.{native, DefaultFormats}
+import org.json4s.{DefaultFormats, native}
 
 case class Person(name: String)
 
 class BackendStubJson4sTests extends AnyFlatSpec with Matchers with ScalaFutures {
 
-  implicit val serialization = native.Serialization
-  implicit val formats = DefaultFormats
+  implicit val serialization: Serialization.type = native.Serialization
+  implicit val formats: DefaultFormats.type = DefaultFormats
 
   import json4s._
 
