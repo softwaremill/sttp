@@ -19,7 +19,7 @@ These default backends provide limited customisation options, hence for any more
 Which one to choose?
 
 * for simple exploratory requests, use the [synchronous](synchronous.md) `DefaultSyncBackend` / `HttpClientSyncBackend`.
-* if you have Akka in your stack, use the [Akka backend](akka.md)
+* if you have Akka in your stack, use the [Akka backend](akka.md) or [Pekko backend](pekko.md)
 * if you are using `Future` without Akka, use the `DefaultFutureBackend` / `HttpClientFutureBackend`
 * finally, if you are using a functional effect wrapper, use one of the "functional" backends, for [ZIO](zio.md), [Monix](monix.md), [Scalaz](scalaz.md), [cats-effect](catseffect.md) or [fs2](fs2.md).
 
@@ -39,6 +39,7 @@ Class                                Effect type                      Supported 
 ``HttpURLConnectionBackend``         None (``Identity``)              ``java.io.InputStream`` (blocking)                no                         no
 ``TryHttpURLConnectionBackend``      ``scala.util.Try``               ``java.io.InputStream`` (blocking)                no                         no
 ``AkkaHttpBackend``                  ``scala.concurrent.Future``      ``akka.stream.scaladsl.Source[ByteString, Any]``  yes (regular & streaming)  yes
+``PekkoHttpBackend``                  ``scala.concurrent.Future``     ``pekko.stream.scaladsl.Source[ByteString, Any]``  yes (regular & streaming)  yes
 ``ArmeriaFutureBackend``             ``scala.concurrent.Future``      n/a                                               no                         yes
 ``ArmeriaScalazBackend``             ``scalaz.concurrent.Task``       n/a                                               no                         yes
 ``ArmeriaZioBackend``                ``zio.Task``                     ``zio.stream.Stream[Throwable, Byte]``            no                         yes
