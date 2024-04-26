@@ -39,7 +39,7 @@ Class                                Effect type                      Supported 
 ``HttpURLConnectionBackend``         None (``Identity``)              ``java.io.InputStream`` (blocking)                no                         no
 ``TryHttpURLConnectionBackend``      ``scala.util.Try``               ``java.io.InputStream`` (blocking)                no                         no
 ``AkkaHttpBackend``                  ``scala.concurrent.Future``      ``akka.stream.scaladsl.Source[ByteString, Any]``  yes (regular & streaming)  yes
-``PekkoHttpBackend``                  ``scala.concurrent.Future``     ``pekko.stream.scaladsl.Source[ByteString, Any]``  yes (regular & streaming)  yes
+``PekkoHttpBackend``                  ``scala.concurrent.Future``     ``org.apache.pekko.stream.scaladsl.Source[ByteString, Any]``  yes (regular & streaming)  yes
 ``ArmeriaFutureBackend``             ``scala.concurrent.Future``      n/a                                               no                         yes
 ``ArmeriaScalazBackend``             ``scalaz.concurrent.Task``       n/a                                               no                         yes
 ``ArmeriaZioBackend``                ``zio.Task``                     ``zio.stream.Stream[Throwable, Byte]``            no                         yes
