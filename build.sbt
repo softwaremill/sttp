@@ -118,7 +118,7 @@ val testServerSettings = Seq(
   }
 )
 
-val circeVersion: String = "0.14.6"
+val circeVersion: String = "0.14.7"
 
 val jsoniterVersion = "2.28.4"
 
