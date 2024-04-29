@@ -79,7 +79,7 @@ class PlayJsonTests extends AnyFlatSpec with Matchers with EitherValues {
     val encoded = extractBody(basicRequest.body(outer))
     val decoded = runJsonResponseAs(asJson[Outer])(encoded)
 
-    decoded.right.value shouldBe outer
+    decoded.value shouldBe outer
   }
 
   it should "set the content type" in {
@@ -136,7 +136,7 @@ class PlayJsonTests extends AnyFlatSpec with Matchers with EitherValues {
 
   def runJsonResponseAs[A](responseAs: ResponseAs[A, Nothing]): String => A =
     responseAs match {
-      case responseAs: MappedResponseAs[_, A, Nothing] =>
+      case responseAs: MappedResponseAs[_, _, _] =>
         responseAs.raw match {
           case ResponseAsByteArray =>
             s => responseAs.g(s.getBytes(Utf8), ResponseMetadata(StatusCode.Ok, "", Nil))
