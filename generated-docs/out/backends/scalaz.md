@@ -8,7 +8,7 @@ The [Scalaz](https://github.com/scalaz/scalaz) backend is **asynchronous**. Send
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client3" %% "armeria-backend-scalaz" % "3.9.5"
+"com.softwaremill.sttp.client3" %% "armeria-backend-scalaz" % "3.9.6"
 ```
 
 add imports:
