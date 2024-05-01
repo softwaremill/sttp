@@ -122,7 +122,7 @@ val circeVersion: String = "0.14.6"
 
 val jsoniterVersion = "2.28.4"
 
-val play29JsonVersion = "2.10.4"
+val play29JsonVersion = "2.10.5"
 
 val playJsonVersion = "3.0.2"
 
