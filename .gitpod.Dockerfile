@@ -10,5 +10,4 @@ RUN bash -cl "set -eux \
     coursier fetch \
         org.scalameta:metals_2.12:$version \
         org.scalameta:mtags_2.13.4:$version \
-        org.scalameta:mtags_2.12.12:$version \
-        org.scalameta:mtags_2.11.12:$version"
+        org.scalameta:mtags_2.12.12:$version"

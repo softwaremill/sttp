@@ -9,7 +9,7 @@ import complete.DefaultParsers._
 import com.softwaremill.SbtSoftwareMillBrowserTestJS._
 
 val scala2_12 = "2.12.19"
-val scala2_13 = "2.13.13"
+val scala2_13 = "2.13.14"
 val scala2 = List(scala2_12, scala2_13)
 val scala3 = List("3.3.3")
 
@@ -118,13 +118,13 @@ val testServerSettings = Seq(
   }
 )
 
-val circeVersion: String = "0.14.6"
+val circeVersion: String = "0.14.7"
 
-val jsoniterVersion = "2.28.4"
+val jsoniterVersion = "2.28.5"
 
-val play29JsonVersion = "2.10.4"
+val play29JsonVersion = "2.10.5"
 
-val playJsonVersion = "3.0.2"
+val playJsonVersion = "3.0.3"
 
 val catsEffect_3_version = "3.5.4"
 val fs2_3_version = "3.10.2"
@@ -160,7 +160,7 @@ val braveOpentracingVersion = "1.0.1"
 val zipkinSenderOkHttpVersion = "3.4.0"
 val resilience4jVersion = "2.2.0"
 val http4s_ce2_version = "0.22.15"
-val http4s_ce3_version = "0.23.26"
+val http4s_ce3_version = "0.23.27"
 
 val tethysVersion = "0.28.3"
 
@@ -672,7 +672,7 @@ lazy val http4sBackend = (projectMatrix in file("http4s-backend"))
     name := "http4s-backend",
     libraryDependencies ++= Seq(
       "org.http4s" %% "http4s-client" % http4s_ce3_version,
-      "org.http4s" %% "http4s-ember-client" % "0.23.26" % Optional,
+      "org.http4s" %% "http4s-ember-client" % "0.23.27" % Optional,
       "org.http4s" %% "http4s-blaze-client" % "0.23.16" % Optional
     ),
     evictionErrorLevel := Level.Info
@@ -698,7 +698,7 @@ lazy val armeriaBackend = (projectMatrix in file("armeria-backend"))
   .settings(testServerSettings)
   .settings(
     name := "armeria-backend",
-    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.28.2"
+    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.28.4"
   )
   .jvmPlatform(scalaVersions = scala2 ++ scala3)
   .dependsOn(core % compileAndTest)
