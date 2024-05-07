@@ -118,7 +118,7 @@ val testServerSettings = Seq(
   }
 )
 
-val circeVersion: String = "0.14.6"
+val circeVersion: String = "0.14.7"
 
 val jsoniterVersion = "2.28.4"
 
@@ -160,7 +160,7 @@ val braveOpentracingVersion = "1.0.1"
 val zipkinSenderOkHttpVersion = "3.4.0"
 val resilience4jVersion = "2.2.0"
 val http4s_ce2_version = "0.22.15"
-val http4s_ce3_version = "0.23.26"
+val http4s_ce3_version = "0.23.27"
 
 val tethysVersion = "0.28.3"
 
@@ -672,7 +672,7 @@ lazy val http4sBackend = (projectMatrix in file("http4s-backend"))
     name := "http4s-backend",
     libraryDependencies ++= Seq(
       "org.http4s" %% "http4s-client" % http4s_ce3_version,
-      "org.http4s" %% "http4s-ember-client" % "0.23.26" % Optional,
+      "org.http4s" %% "http4s-ember-client" % "0.23.27" % Optional,
       "org.http4s" %% "http4s-blaze-client" % "0.23.16" % Optional
     ),
     evictionErrorLevel := Level.Info
