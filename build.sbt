@@ -11,7 +11,7 @@ import com.softwaremill.SbtSoftwareMillBrowserTestJS._
 val scala2_12 = "2.12.19"
 val scala2_13 = "2.13.14"
 val scala2 = List(scala2_12, scala2_13)
-val scala3 = List("3.4.1")
+val scala3 = List("3.3.3")
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests")
