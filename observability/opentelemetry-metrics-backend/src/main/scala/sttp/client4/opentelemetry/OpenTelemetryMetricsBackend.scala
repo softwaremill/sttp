@@ -11,13 +11,13 @@ import java.time.Clock
 import java.util.concurrent.ConcurrentHashMap
 
 object OpenTelemetryMetricsBackend {
-  val DefaultLatencyHistogramName = "sttp.request.latency"
+  val DefaultLatencyHistogramName = "sttp.request.duration"
   val DefaultRequestSizeHistogramName = "sttp.request.size.bytes"
   val DefaultResponseSizeHistogramName = "sttp.response.size.bytes"
-  val DefaultRequestsInProgressCounterName = "sttp.requests.in_progress"
-  val DefaultSuccessCounterName = "sttp.requests.success.count"
-  val DefaultErrorCounterName = "sttp.requests.error.count"
-  val DefaultFailureCounterName = "sttp.requests.failure.count"
+  val DefaultRequestsInProgressCounterName = "sttp.requests.active"
+  val DefaultSuccessCounterName = "sttp.requests.success"
+  val DefaultErrorCounterName = "sttp.requests.error"
+  val DefaultFailureCounterName = "sttp.requests.failure"
 
 
   def apply(delegate: SyncBackend, openTelemetry: OpenTelemetry): SyncBackend =

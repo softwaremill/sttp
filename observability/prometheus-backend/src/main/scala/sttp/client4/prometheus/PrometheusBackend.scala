@@ -13,13 +13,13 @@ import sttp.model.StatusCode
 import java.util.concurrent.ConcurrentHashMap
 
 object PrometheusBackend {
-  val DefaultHistogramName = "sttp_request_latency_seconds"
-  val DefaultRequestsInProgressGaugeName = "sttp_requests_in_progress"
+  val DefaultHistogramName = "sttp_request_duration"
+  val DefaultRequestSizeName = "sttp_request_size_bytes"
+  val DefaultResponseSizeName = "sttp_response_size_bytes"
+  val DefaultRequestsInProgressGaugeName = "sttp_requests_active"
   val DefaultSuccessCounterName = "sttp_requests_success"
   val DefaultErrorCounterName = "sttp_requests_error"
   val DefaultFailureCounterName = "sttp_requests_failure"
-  val DefaultRequestSizeName = "sttp_request_size_bytes"
-  val DefaultResponseSizeName = "sttp_response_size_bytes"
 
   val DefaultMethodLabel = "method"
   val DefaultStatusLabel = "status"
