@@ -10,13 +10,13 @@ import java.time.Clock
 final case class OpenTelemetryMetricsConfig(
     meter: Meter,
     clock: Clock,
-    requestToLatencyHistogramMapper: GenericRequest[_, _] => Option[CollectorConfig],
+    requestToLatencyHistogramMapper: GenericRequest[_, _] => Option[HistogramCollectorConfig],
     requestToInProgressCounterMapper: GenericRequest[_, _] => Option[CollectorConfig],
     responseToSuccessCounterMapper: Response[_] => Option[CollectorConfig],
     requestToErrorCounterMapper: Response[_] => Option[CollectorConfig],
     requestToFailureCounterMapper: (GenericRequest[_, _], Throwable) => Option[CollectorConfig],
-    requestToSizeHistogramMapper: GenericRequest[_, _] => Option[CollectorConfig],
-    responseToSizeHistogramMapper: Response[_] => Option[CollectorConfig]
+    requestToSizeHistogramMapper: GenericRequest[_, _] => Option[HistogramCollectorConfig],
+    responseToSizeHistogramMapper: Response[_] => Option[HistogramCollectorConfig]
 )
 
 object OpenTelemetryMetricsConfig {
@@ -24,8 +24,8 @@ object OpenTelemetryMetricsConfig {
       openTelemetry: OpenTelemetry,
       meterConfig: MeterConfig = MeterConfig.Default,
       clock: Clock = Clock.systemUTC(),
-      requestToLatencyHistogramMapper: GenericRequest[_, _] => Option[CollectorConfig] = (_: GenericRequest[_, _]) =>
-        Some(CollectorConfig(DefaultLatencyHistogramName, unit = Some(CollectorConfig.Milliseconds))),
+      requestToLatencyHistogramMapper: GenericRequest[_, _] => Option[HistogramCollectorConfig] = (_: GenericRequest[_, _]) =>
+        Some(HistogramCollectorConfig(DefaultLatencyHistogramName, unit = HistogramCollectorConfig.Milliseconds, buckets = HistogramCollectorConfig.DefaultLatencyBuckets)),
       requestToInProgressCounterMapper: GenericRequest[_, _] => Option[CollectorConfig] = (_: GenericRequest[_, _]) =>
         Some(CollectorConfig(DefaultRequestsInProgressCounterName)),
       responseToSuccessCounterMapper: Response[_] => Option[CollectorConfig] = (_: Response[_]) =>
@@ -34,10 +34,10 @@ object OpenTelemetryMetricsConfig {
         Some(CollectorConfig(DefaultErrorCounterName)),
       requestToFailureCounterMapper: (GenericRequest[_, _], Throwable) => Option[CollectorConfig] =
         (_: GenericRequest[_, _], _: Throwable) => Some(CollectorConfig(DefaultFailureCounterName)),
-      requestToSizeHistogramMapper: GenericRequest[_, _] => Option[CollectorConfig] = (_: GenericRequest[_, _]) =>
-        Some(CollectorConfig(DefaultRequestSizeHistogramName, unit = Some(CollectorConfig.Bytes))),
-      responseToSizeHistogramMapper: Response[_] => Option[CollectorConfig] = (_: Response[_]) =>
-        Some(CollectorConfig(DefaultResponseSizeHistogramName, unit = Some(CollectorConfig.Bytes)))
+      requestToSizeHistogramMapper: GenericRequest[_, _] => Option[HistogramCollectorConfig] = (_: GenericRequest[_, _]) =>
+        Some(HistogramCollectorConfig(DefaultRequestSizeHistogramName, unit = HistogramCollectorConfig.Bytes, buckets = HistogramCollectorConfig.DefaultSizeBuckets)),
+      responseToSizeHistogramMapper: Response[_] => Option[HistogramCollectorConfig] = (_: Response[_]) =>
+        Some(HistogramCollectorConfig(DefaultResponseSizeHistogramName, unit = HistogramCollectorConfig.Bytes, buckets = HistogramCollectorConfig.DefaultSizeBuckets))
   ): OpenTelemetryMetricsConfig = usingMeter(
     openTelemetry.meterBuilder(meterConfig.name).setInstrumentationVersion(meterConfig.version).build(),
     clock,
@@ -53,8 +53,8 @@ object OpenTelemetryMetricsConfig {
   def usingMeter(
       meter: Meter,
       clock: Clock = Clock.systemUTC(),
-      requestToLatencyHistogramMapper: GenericRequest[_, _] => Option[CollectorConfig] = (_: GenericRequest[_, _]) =>
-        Some(CollectorConfig(DefaultLatencyHistogramName, unit = Some(CollectorConfig.Milliseconds))),
+      requestToLatencyHistogramMapper: GenericRequest[_, _] => Option[HistogramCollectorConfig] = (_: GenericRequest[_, _]) =>
+        Some(HistogramCollectorConfig(DefaultLatencyHistogramName, unit = HistogramCollectorConfig.Milliseconds, buckets = HistogramCollectorConfig.DefaultLatencyBuckets)),
       requestToInProgressCounterMapper: GenericRequest[_, _] => Option[CollectorConfig] = (_: GenericRequest[_, _]) =>
         Some(CollectorConfig(DefaultRequestsInProgressCounterName)),
       responseToSuccessCounterMapper: Response[_] => Option[CollectorConfig] = (_: Response[_]) =>
@@ -63,10 +63,10 @@ object OpenTelemetryMetricsConfig {
         Some(CollectorConfig(DefaultErrorCounterName)),
       requestToFailureCounterMapper: (GenericRequest[_, _], Throwable) => Option[CollectorConfig] =
         (_: GenericRequest[_, _], _: Throwable) => Some(CollectorConfig(DefaultFailureCounterName)),
-      requestToSizeHistogramMapper: GenericRequest[_, _] => Option[CollectorConfig] = (_: GenericRequest[_, _]) =>
-        Some(CollectorConfig(DefaultRequestSizeHistogramName, unit = Some(CollectorConfig.Bytes))),
-      responseToSizeHistogramMapper: Response[_] => Option[CollectorConfig] = (_: Response[_]) =>
-        Some(CollectorConfig(DefaultResponseSizeHistogramName, unit = Some(CollectorConfig.Bytes)))
+      requestToSizeHistogramMapper: GenericRequest[_, _] => Option[HistogramCollectorConfig] = (_: GenericRequest[_, _]) =>
+        Some(HistogramCollectorConfig(DefaultRequestSizeHistogramName, unit = HistogramCollectorConfig.Bytes, buckets = HistogramCollectorConfig.DefaultSizeBuckets)),
+      responseToSizeHistogramMapper: Response[_] => Option[HistogramCollectorConfig] = (_: Response[_]) =>
+        Some(HistogramCollectorConfig(DefaultResponseSizeHistogramName, unit = HistogramCollectorConfig.Bytes, buckets = HistogramCollectorConfig.DefaultSizeBuckets))
   ): OpenTelemetryMetricsConfig =
     OpenTelemetryMetricsConfig(
       meter,

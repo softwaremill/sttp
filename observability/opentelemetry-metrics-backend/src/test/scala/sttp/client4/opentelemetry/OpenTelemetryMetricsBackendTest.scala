@@ -85,7 +85,6 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
     // then
     getMetricValue(reader, OpenTelemetryMetricsBackend.DefaultSuccessCounterName) shouldBe empty
     getMetricValue(reader, customSuccessCounterName).value shouldBe 5
-
   }
 
   it should "use mapped request to change collector config" in {
