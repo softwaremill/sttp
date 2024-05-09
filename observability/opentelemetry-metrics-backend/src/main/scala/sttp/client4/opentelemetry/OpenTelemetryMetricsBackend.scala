@@ -19,7 +19,6 @@ object OpenTelemetryMetricsBackend {
   val DefaultErrorCounterName = "sttp.requests.error"
   val DefaultFailureCounterName = "sttp.requests.failure"
 
-
   def apply(delegate: SyncBackend, openTelemetry: OpenTelemetry): SyncBackend =
     apply(delegate, OpenTelemetryMetricsConfig(openTelemetry))
 
@@ -135,8 +134,9 @@ private class OpenTelemetryMetricsListener(
         getOrCreateMetric(upAndDownCounter, config, createNewUpDownCounter).add(delta, config.attributes)
       )
 
-  private def recordHistogram(config: Option[HistogramCollectorConfig], size: Option[Long]): Unit = config.foreach { cfg =>
-    getOrCreateHistogram(histograms, cfg, createNewHistogram).record(size.getOrElse(0L).toDouble, cfg.attributes)
+  private def recordHistogram(config: Option[HistogramCollectorConfig], size: Option[Long]): Unit = config.foreach {
+    cfg =>
+      getOrCreateHistogram(histograms, cfg, createNewHistogram).record(size.getOrElse(0L).toDouble, cfg.attributes)
   }
 
   private def incrementCounter(collectorConfig: Option[CollectorConfig]): Unit =
@@ -156,17 +156,16 @@ private class OpenTelemetryMetricsListener(
     )
 
   private def getOrCreateHistogram[T](
-                                    cache: ConcurrentHashMap[String, T],
-                                    data: HistogramCollectorConfig,
-                                    create: HistogramCollectorConfig => T
-                                  ): T =
+      cache: ConcurrentHashMap[String, T],
+      data: HistogramCollectorConfig,
+      create: HistogramCollectorConfig => T
+  ): T =
     cache.computeIfAbsent(
       data.name,
       new java.util.function.Function[String, T] {
         override def apply(t: String): T = create(data)
       }
     )
-
 
   private def createNewUpDownCounter(collectorConfig: CollectorConfig): LongUpDownCounter = {
     var b = meter.upDownCounterBuilder(collectorConfig.name)
@@ -204,15 +203,17 @@ case class HistogramCollectorConfig(
     unit: String,
     description: Option[String] = None,
     attributes: Attributes = Attributes.empty(),
-    buckets: java.util.List[java.lang.Double],
+    buckets: java.util.List[java.lang.Double]
 )
 
 object HistogramCollectorConfig {
   val Bytes = "By"
   val Milliseconds = "ms"
-  val DefaultLatencyBuckets: java.util.List[java.lang.Double] = java.util.List.of(.005, .01, .025, .05, .075, .1, .25, .5, .75, 1, 2.5, 5, 7.5, 10)
+  val DefaultLatencyBuckets: java.util.List[java.lang.Double] =
+    java.util.List.of(.005, .01, .025, .05, .075, .1, .25, .5, .75, 1, 2.5, 5, 7.5, 10)
   // Should go as follows 100 bytes, 1Kb, 10Kb, 100kB, 1 Mb, 10 Mb, 100Mb, 100Mb +
-  val DefaultSizeBuckets: java.util.List[java.lang.Double] = java.util.List.of(100, 1024, 10240, 102400, 1048576, 10485760, 104857600)
+  val DefaultSizeBuckets: java.util.List[java.lang.Double] =
+    java.util.List.of(100, 1024, 10240, 102400, 1048576, 10485760, 104857600)
 }
 
 case class MeterConfig(name: String, version: String)
