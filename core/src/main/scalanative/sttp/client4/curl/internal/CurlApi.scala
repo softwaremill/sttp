@@ -4,7 +4,6 @@ import sttp.client4.curl.internal.CurlCode.CurlCode
 import sttp.client4.curl.internal.CurlInfo.CurlInfo
 import sttp.client4.curl.internal.CurlOption.CurlOption
 
-import scala.scalanative.runtime.Boxes
 import scala.scalanative.unsafe.{Ptr, _}
 import scala.scalanative.unsigned._
 import java.nio.charset.StandardCharsets
@@ -23,28 +22,28 @@ private[client4] object CurlApi {
   implicit class CurlHandleOps(handle: CurlHandle) {
     def mime: MimeHandle = CCurl.mimeInit(handle)
 
-    def perform: CurlCode = 
+    def perform: CurlCode =
       CurlCode(CCurl.perform(handle))
 
     def cleanup(): Unit = CCurl.cleanup(handle)
 
     def option(option: CurlOption, parameter: String)(implicit z: Zone): CurlCode =
-      CurlCode(CCurl.setoptPtr(handle, option.id, toCString(parameter, StandardCharsets.UTF_8)))
+      this.option(option, toCString(parameter, StandardCharsets.UTF_8))
 
-    def option(option: CurlOption, parameter: Long)(implicit z: Zone): CurlCode =
+    def option(option: CurlOption, parameter: Long): CurlCode =
       CurlCode(CCurl.setoptLong(handle, option.id, parameter))
 
-    def option(option: CurlOption, parameter: Int)(implicit z: Zone): CurlCode =
+    def option(option: CurlOption, parameter: Int): CurlCode =
       CurlCode(CCurl.setoptInt(handle, option.id, parameter))
 
-    def option(option: CurlOption, parameter: Boolean)(implicit z: Zone): CurlCode =
-      CurlCode(CCurl.setoptInt(handle, option.id, if (parameter) 1 else 0))
+    def option(option: CurlOption, parameter: Boolean): CurlCode =
+      this.option(option, if (parameter) 1 else 0)
 
     def option(option: CurlOption, parameter: Ptr[_]): CurlCode =
       CurlCode(CCurl.setoptPtr(handle, option.id, parameter))
 
-    def option[FuncPtr <: CFuncPtr](option: CurlOption, parameter: FuncPtr)(implicit z: Zone): CurlCode =
-      CurlCode(CCurl.setoptPtr(handle, option.id, Boxes.boxToPtr[Byte](Boxes.unboxToCFuncPtr0(parameter))))
+    def option(option: CurlOption, parameter: CFuncPtr): CurlCode =
+      this.option(option, CFuncPtr.toPtr(parameter))
 
     def info(curlInfo: CurlInfo, parameter: Long)(implicit z: Zone): CurlCode = {
       val lPtr = alloc[Long](sizeof[Long])
@@ -57,7 +56,7 @@ private[client4] object CurlApi {
 
     def info(curlInfo: CurlInfo, parameter: Ptr[_]): CurlCode =
       getInfo(handle, curlInfo, parameter)
-  }    
+  }
 
   private def getInfo(handle: CurlHandle, curlInfo: CurlInfo, parameter: Ptr[_]): CurlCode =
     CurlCode(CCurl.getInfo(handle, curlInfo.id, parameter))
