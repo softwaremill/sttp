@@ -11,13 +11,18 @@ import java.time.Clock
 import java.util.concurrent.ConcurrentHashMap
 
 object OpenTelemetryMetricsBackend {
-  val DefaultLatencyHistogramName = "sttp.request.duration"
-  val DefaultRequestSizeHistogramName = "sttp.request.size.bytes"
-  val DefaultResponseSizeHistogramName = "sttp.response.size.bytes"
-  val DefaultRequestsInProgressCounterName = "sttp.requests.active"
-  val DefaultSuccessCounterName = "sttp.requests.success"
-  val DefaultErrorCounterName = "sttp.requests.error"
-  val DefaultFailureCounterName = "sttp.requests.failure"
+  /*
+    Metrics names and model for Open Telemetry is based on these two specifications:
+    https://opentelemetry.io/docs/specs/semconv/http/http-metrics/#http-client
+    https://github.com/open-telemetry/opentelemetry-specification/blob/v1.31.0/specification/metrics/api.md#instrument
+  * */
+  val DefaultLatencyHistogramName = "http.client.request.duration"
+  val DefaultRequestSizeHistogramName = "http.client.request.size.bytes"
+  val DefaultResponseSizeHistogramName = "http.client.response.size.bytes"
+  val DefaultRequestsActiveCounterName = "http.client.requests.active"
+  val DefaultSuccessCounterName = "http.client.requests.success"
+  val DefaultErrorCounterName = "http.client.requests.error"
+  val DefaultFailureCounterName = "http.client.requests.failure"
 
   def apply(delegate: SyncBackend, openTelemetry: OpenTelemetry): SyncBackend =
     apply(delegate, OpenTelemetryMetricsConfig(openTelemetry))

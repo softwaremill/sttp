@@ -50,7 +50,7 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
     (0 until 10).foreach(_ => basicRequest.get(uri"http://127.0.0.1/echo").send(backend))
 
     // then
-    getMetricValue(reader, OpenTelemetryMetricsBackend.DefaultRequestsInProgressCounterName).value shouldBe 0
+    getMetricValue(reader, OpenTelemetryMetricsBackend.DefaultRequestsActiveCounterName).value shouldBe 0
   }
 
   it should "allow creating two backends" in {

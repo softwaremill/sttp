@@ -143,7 +143,7 @@ class PrometheusBackendTest
     (0 until requestsNumber2).foreach(_ => basicRequest.post(uri"http://127.0.0.1/foo").send(backend))
 
     // then
-    getMetricSnapshot[GaugeDataPointSnapshot](s"${PrometheusBackend.DefaultRequestsInProgressGaugeName}") shouldBe empty
+    getMetricSnapshot[GaugeDataPointSnapshot](s"${PrometheusBackend.DefaultRequestsActiveGaugeName}") shouldBe empty
     // the gauges should be created, but set to 0
     getMetricValue[GaugeDataPointSnapshot](s"$customGaugeName", List("method" -> "GET")).map(_.getValue).value shouldBe 0.0
     getMetricValue[GaugeDataPointSnapshot](s"$customGaugeName", List("method" -> "POST")).map(_.getValue).value shouldBe 0.0
@@ -179,14 +179,14 @@ class PrometheusBackendTest
     // then
     eventually {
       getMetricValue[GaugeDataPointSnapshot](
-        PrometheusBackend.DefaultRequestsInProgressGaugeName,
+        PrometheusBackend.DefaultRequestsActiveGaugeName,
         List("method" -> "GET")
       ).map(_.getValue).value shouldBe requestsNumber
     }
 
     countDownLatch.countDown()
     eventually {
-      getMetricValue[GaugeDataPointSnapshot](PrometheusBackend.DefaultRequestsInProgressGaugeName, List("method" -> "GET")).map(_.getValue).value shouldBe 0
+      getMetricValue[GaugeDataPointSnapshot](PrometheusBackend.DefaultRequestsActiveGaugeName, List("method" -> "GET")).map(_.getValue).value shouldBe 0
     }
   }
 
@@ -214,13 +214,13 @@ class PrometheusBackendTest
 
     // then
     eventually {
-      getMetricSnapshot(PrometheusBackend.DefaultRequestsInProgressGaugeName) shouldBe empty
+      getMetricSnapshot(PrometheusBackend.DefaultRequestsActiveGaugeName) shouldBe empty
       getMetricSnapshot[GaugeDataPointSnapshot](customGaugeName).map(_.getValue).value shouldBe requestsNumber
     }
 
     countDownLatch.countDown()
     eventually {
-      getMetricSnapshot(PrometheusBackend.DefaultRequestsInProgressGaugeName) shouldBe empty
+      getMetricSnapshot(PrometheusBackend.DefaultRequestsActiveGaugeName) shouldBe empty
       getMetricSnapshot[GaugeDataPointSnapshot](customGaugeName).map(_.getValue).value shouldBe 0
     }
   }
@@ -242,7 +242,7 @@ class PrometheusBackendTest
     (0 until requestsNumber).foreach(_ => basicRequest.get(uri"http://127.0.0.1/foo").send(backend))
 
     // then
-    getMetricSnapshot(PrometheusBackend.DefaultRequestsInProgressGaugeName) shouldBe empty
+    getMetricSnapshot(PrometheusBackend.DefaultRequestsActiveGaugeName) shouldBe empty
 
     countDownLatch.countDown()
     eventually {
@@ -250,7 +250,7 @@ class PrometheusBackendTest
         s"${PrometheusBackend.DefaultHistogramName}",
         List("method" -> "GET")
       ).map(_.getCount).value shouldBe requestsNumber
-      getMetricSnapshot(PrometheusBackend.DefaultRequestsInProgressGaugeName) shouldBe empty
+      getMetricSnapshot(PrometheusBackend.DefaultRequestsActiveGaugeName) shouldBe empty
     }
   }
 

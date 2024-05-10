@@ -13,13 +13,18 @@ import sttp.model.StatusCode
 import java.util.concurrent.ConcurrentHashMap
 
 object PrometheusBackend {
-  val DefaultHistogramName = "sttp_request_duration_seconds"
-  val DefaultRequestSizeName = "sttp_request_size_bytes"
-  val DefaultResponseSizeName = "sttp_response_size_bytes"
-  val DefaultRequestsInProgressGaugeName = "sttp_requests_active"
-  val DefaultSuccessCounterName = "sttp_requests_success"
-  val DefaultErrorCounterName = "sttp_requests_error"
-  val DefaultFailureCounterName = "sttp_requests_failure"
+  /*
+    Metrics names and model for Prometheus is based on these two specifications:
+    https://prometheus.io/docs/practices/naming/
+    https://prometheus.io/docs/concepts/data_model/#metric-names-and-labels
+  * */
+  val DefaultHistogramName = "http_client_request_duration_seconds"
+  val DefaultRequestSizeName = "http_client_request_size_bytes"
+  val DefaultResponseSizeName = "http_client_response_size_bytes"
+  val DefaultRequestsActiveGaugeName = "http_client_requests_active"
+  val DefaultSuccessCounterName = "http_client_requests_success"
+  val DefaultErrorCounterName = "http_client_requests_error"
+  val DefaultFailureCounterName = "http_client_requests_failure"
 
   val DefaultMethodLabel = "method"
   val DefaultStatusLabel = "status"
