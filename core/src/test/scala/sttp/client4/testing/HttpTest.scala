@@ -47,7 +47,6 @@ trait HttpTest[F[_]]
 
   protected def supportsRequestTimeout = true
   protected def supportsSttpExceptions = true
-  protected def supportsConnectionRefusedTest = true
   protected def supportsMultipart = true
   protected def supportsCustomMultipartContentType = true
   protected def supportsCustomMultipartEncoding = true
@@ -640,21 +639,19 @@ trait HttpTest[F[_]]
         }
       }
 
-      if (supportsConnectionRefusedTest) {
-        "connection exceptions - connection refused" in {
-          val req = basicRequest
-            .get(uri"http://localhost:7918")
-            .response(asString)
+      "connection exceptions - connection refused" in {
+        val req = basicRequest
+          .get(uri"http://localhost:7918")
+          .response(asString)
 
-          Future(req.send(backend)).flatMap(_.toFuture()).failed.map { e =>
-            info("Sending request failed", Some(e))
-            try e shouldBe a[SttpClientException.ConnectException]
-            catch {
-              case t: Throwable =>
-                info("Not a connect exception, printing stack trace")
-                e.printStackTrace()
-                throw t
-            }
+        Future(req.send(backend)).flatMap(_.toFuture()).failed.map { e =>
+          info("Sending request failed", Some(e))
+          try e shouldBe a[SttpClientException.ConnectException]
+          catch {
+            case t: Throwable =>
+              info("Not a connect exception, printing stack trace")
+              e.printStackTrace()
+              throw t
           }
         }
       }
