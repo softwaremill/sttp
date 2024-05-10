@@ -21,7 +21,7 @@ import sttp.client4.akkahttp._
 val backend = PrometheusBackend(AkkaHttpBackend())
 ```
 
-It gathers request execution times in `Histogram`. It uses by default `sttp_request_latency` name, defined in `PrometheusBackend.DefaultHistogramName`. It is possible to define custom histograms name by passing function mapping request to histogram name:
+It gathers request execution times in `Histogram`. It uses by default `http_client_request_duration_seconds` name, defined in `PrometheusBackend.DefaultHistogramName`. It is possible to define custom histograms name by passing function mapping request to histogram name:
 
 ```scala mdoc:compile-only
 import sttp.client4.akkahttp._
@@ -40,7 +40,7 @@ import sttp.client4.akkahttp._
 val backend = PrometheusBackend(AkkaHttpBackend(), PrometheusConfig(requestToHistogramNameMapper = _ => None))
 ```
 
-This backend also offers `Gauge` with currently in-progress requests number. It uses by default `sttp_requests_in_progress` name, defined in `PrometheusBackend.DefaultRequestsInProgressGaugeName`. It is possible to define custom gauge name by passing function mapping request to gauge name:
+This backend also offers `Gauge` with currently in-progress requests number. It uses by default `http_client_requests_active` name, defined in `PrometheusBackend.DefaultRequestsActiveCounterName`. It is possible to define custom gauge name by passing function mapping request to gauge name:
 
 ```scala mdoc:compile-only
 import sttp.client4.akkahttp._

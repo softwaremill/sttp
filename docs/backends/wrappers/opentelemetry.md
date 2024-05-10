@@ -1,6 +1,6 @@
 # OpenTelemetry
 
-Currently the following OpenTelemetry features are supported:
+Currently, the following OpenTelemetry features are supported:
 
 - metrics using `OpenTelemetryMetricsBackend`, wrapping any other backend
 - tracing using `OpenTelemetryTracingZioBackend`, wrapping any ZIO2 backend

@@ -9,7 +9,7 @@ final case class PrometheusConfig(
     requestToHistogramNameMapper: GenericRequest[_, _] => Option[HistogramCollectorConfig] =
       (req: GenericRequest[_, _]) => Some(addMethodLabel(HistogramCollectorConfig(DefaultHistogramName), req)),
     requestToInProgressGaugeNameMapper: GenericRequest[_, _] => Option[CollectorConfig] = (req: GenericRequest[_, _]) =>
-      Some(addMethodLabel(CollectorConfig(DefaultRequestsInProgressGaugeName), req)),
+      Some(addMethodLabel(CollectorConfig(DefaultRequestsActiveGaugeName), req)),
     responseToSuccessCounterMapper: (GenericRequest[_, _], Response[_]) => Option[CollectorConfig] =
       (req: GenericRequest[_, _], resp: Response[_]) =>
         Some(addStatusLabel(addMethodLabel(CollectorConfig(DefaultSuccessCounterName), req), resp)),

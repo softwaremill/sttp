@@ -3,6 +3,7 @@ package sttp.client4.prometheus
 import io.prometheus.metrics.core.datapoints.{GaugeDataPoint, Timer}
 import io.prometheus.metrics.core.metrics.{Counter, Gauge, Histogram, Summary}
 import io.prometheus.metrics.model.registry.{Collector, PrometheusRegistry}
+import io.prometheus.metrics.model.snapshots.Unit.SECONDS
 import sttp.client4.listener.{ListenerBackend, RequestListener}
 import sttp.client4.prometheus.PrometheusBackend.RequestCollectors
 import sttp.client4.wrappers.FollowRedirectsBackend
@@ -12,14 +13,18 @@ import sttp.model.StatusCode
 import java.util.concurrent.ConcurrentHashMap
 
 object PrometheusBackend {
-  // TODO: Refactor metrics names according to Prometheus/OpenTelemetry standards
-  val DefaultHistogramName = "sttp_request_latency"
-  val DefaultRequestsInProgressGaugeName = "sttp_requests_in_progress"
-  val DefaultSuccessCounterName = "sttp_requests_success_count"
-  val DefaultErrorCounterName = "sttp_requests_error_count"
-  val DefaultFailureCounterName = "sttp_requests_failure_count"
-  val DefaultRequestSizeName = "sttp_request_size_bytes"
-  val DefaultResponseSizeName = "sttp_response_size_bytes"
+  /*
+    Metrics names and model for Prometheus is based on these two specifications:
+    https://prometheus.io/docs/practices/naming/
+    https://prometheus.io/docs/concepts/data_model/#metric-names-and-labels
+  * */
+  val DefaultHistogramName = "http_client_request_duration_seconds"
+  val DefaultRequestSizeName = "http_client_request_size_bytes"
+  val DefaultResponseSizeName = "http_client_response_size_bytes"
+  val DefaultRequestsActiveGaugeName = "http_client_requests_active"
+  val DefaultSuccessCounterName = "http_client_requests_success"
+  val DefaultErrorCounterName = "http_client_requests_error"
+  val DefaultFailureCounterName = "http_client_requests_failure"
 
   val DefaultMethodLabel = "method"
   val DefaultStatusLabel = "status"
@@ -265,10 +270,11 @@ class PrometheusListener(
   private def createNewHistogram(data: HistogramCollectorConfig): Histogram =
     Histogram
       .builder()
+      .unit(data.unit)
       .classicUpperBounds(data.buckets: _*)
       .name(data.collectorName)
       .labelNames(data.labelNames: _*)
-      .help(data.collectorName)
+      .help(data.help)
       .register(prometheusRegistry)
 
   private def createNewGauge(data: BaseCollectorConfig): Gauge =
@@ -276,7 +282,7 @@ class PrometheusListener(
       .builder()
       .name(data.collectorName)
       .labelNames(data.labelNames: _*)
-      .help(data.collectorName)
+      .help(data.help)
       .register(prometheusRegistry)
 
   private def createNewCounter(data: BaseCollectorConfig): Counter =
@@ -284,7 +290,7 @@ class PrometheusListener(
       .builder()
       .name(data.collectorName)
       .labelNames(data.labelNames: _*)
-      .help(data.collectorName)
+      .help(data.help)
       .register(prometheusRegistry)
 
   private def createNewSummary(data: BaseCollectorConfig): Summary =
@@ -292,7 +298,7 @@ class PrometheusListener(
       .builder()
       .name(data.collectorName)
       .labelNames(data.labelNames: _*)
-      .help(data.collectorName)
+      .help(data.help)
       .register(prometheusRegistry)
 }
 
@@ -301,6 +307,7 @@ trait BaseCollectorConfig {
 
   def collectorName: String
   def labels: List[(String, String)]
+  def help: String
 
   def addLabels(lbs: List[(String, String)]): T
 
@@ -311,19 +318,23 @@ trait BaseCollectorConfig {
 /** Represents the name of a collector, together with label names and values. The same labels must be always returned,
   * and in the same order.
   */
-case class CollectorConfig(collectorName: String, labels: List[(String, String)] = Nil) extends BaseCollectorConfig {
+case class CollectorConfig(collectorName: String, description: Option[String] = None, labels: List[(String, String)] = Nil) extends BaseCollectorConfig {
   override type T = CollectorConfig
   override def addLabels(lbs: List[(String, String)]): CollectorConfig = copy(labels = labels ++ lbs)
+  override def help: String = description.getOrElse(collectorName)
 }
 
 /** Represents the name of a collector with configurable histogram buckets. */
 case class HistogramCollectorConfig(
     collectorName: String,
+    description: Option[String] = None,
+    unit: io.prometheus.metrics.model.snapshots.Unit = SECONDS,
     labels: List[(String, String)] = Nil,
     buckets: List[Double] = HistogramCollectorConfig.DefaultBuckets
 ) extends BaseCollectorConfig {
   override type T = HistogramCollectorConfig
   override def addLabels(lbs: List[(String, String)]): HistogramCollectorConfig = copy(labels = labels ++ lbs)
+  override def help: String = description.getOrElse(collectorName)
 }
 
 object HistogramCollectorConfig {
