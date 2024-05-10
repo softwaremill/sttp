@@ -117,7 +117,7 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
     curl.option(HeaderData, spaces.headersResp)
     curl.option(Url, request.uri.toString)
     setMethod(curl, request.method)
-    setRequestBody(curl, request.body)
+    setRequestBody(curl, request.body, request.method)
     monad.flatMap(perform(curl)) { _ =>
       curl.info(ResponseCode, spaces.httpCode)
       val responseBody = fromCString((!spaces.bodyResp)._1)
@@ -157,7 +157,7 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
     curl.option(WriteData, outputFilePtr)
     curl.option(Url, request.uri.toString)
     setMethod(curl, request.method)
-    setRequestBody(curl, request.body)
+    setRequestBody(curl, request.body, request.method)
     monad.flatMap(perform(curl)) { _ =>
       curl.info(ResponseCode, spaces.httpCode)
       val httpCode = StatusCode((!spaces.httpCode).toInt)
@@ -195,7 +195,7 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
     lift(m)
   }
 
-  private def setRequestBody(curl: CurlHandle, body: GenericRequestBody[R])(implicit
+  private def setRequestBody(curl: CurlHandle, body: GenericRequestBody[R], method: Method)(implicit
       ctx: Context
   ): F[CurlCode] = {
     implicit val z = ctx.zone
@@ -223,7 +223,9 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
       case StreamBody(_) =>
         monad.error(new IllegalStateException("CurlBackend does not support stream request body"))
       case NoBody =>
-        monad.unit(CurlCode.Ok)
+        // POST with empty body might wait for the input on stdin
+        if (method.is(Method.POST)) lift(curl.option(PostFields, c""))
+        else monad.unit(CurlCode.Ok)
     }
   }
 
