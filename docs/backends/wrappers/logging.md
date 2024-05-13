@@ -31,7 +31,7 @@ To use the [slf4j](http://www.slf4j.org) logging backend wrapper, add the follow
 "com.softwaremill.sttp.client4" %% "slf4j-backend" % "@VERSION@"
 ``` 
 
-There are three backend wrappers available, which log request & response information using a slf4j `Logger`. To see the logs, you'll need to use an slf4j-compatible logger implementation, e.g.  [logback](http://logback.qos.ch), or use a binding, e.g. [log4j-slf4j](https://logging.apache.org/log4j/2.0/log4j-slf4j-impl/index.html).
+There are three backend wrappers available, which log request & response information using a slf4j `Logger`. To see the logs, you'll need to use an slf4j-compatible logger implementation, e.g.  [logback](http://logback.qos.ch), or use a binding, e.g. [log4j-slf4j](https://logging.apache.org/log4j/2.x/log4j-slf4j-impl.html).
 
 Example usage:
 

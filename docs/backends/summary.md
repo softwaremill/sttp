@@ -103,7 +103,7 @@ Class                            Effect type                  Supported stream t
 ``CurlBackend``                  None (``Identity``)          n/a                                       no
 ================================ ============================ ========================================= ===================
 ```
-
+[//]: # (TO REVIEWER all of them updated from 2 to 4 years ago)
 Finally, there are third-party backends:
 
 * [sttp-play-ws](https://github.com/scalamania/sttp-play-ws) for "standard" play-ws (not standalone).

@@ -12,7 +12,7 @@ and some imports:
 import sttp.client4.prometheus._
 ```
 
-This backend depends on [Prometheus JVM Client](https://github.com/prometheus/client_java). Keep in mind this backend registers histograms and gathers request times, but you have to expose those metrics to [Prometheus](https://prometheus.io/) e.g. using [prometheus-akka-http](https://github.com/lonelyplanet/prometheus-akka-http).
+This backend depends on [Prometheus JVM Client](https://github.com/prometheus/client_java). Keep in mind this backend registers histograms and gathers request times, but you have to expose those metrics to [Prometheus](https://prometheus.io/).
 
 The Prometheus backend wraps any other backend, for example:
 

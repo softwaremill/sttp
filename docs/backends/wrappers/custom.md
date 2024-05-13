@@ -107,7 +107,7 @@ Handling retries is a complex problem when it comes to HTTP requests. When is a 
 * only idempotent HTTP methods (such as `GET`) could potentially be retried
 * some HTTP status codes might also be retryable (e.g. `500 Internal Server Error` or `503 Service Unavailable`)
 
-In some cases it's possible to implement a generic retry mechanism; such a mechanism should take into account logging, metrics, limiting the number of retries and a backoff mechanism. These mechanisms could be quite simple, or involve e.g. retry budgets (see [Finagle's](https://twitter.github.io/finagle/guide/Clients.md#retries) documentation on retries). In sttp, it's possible to recover from errors using the `monad`. A starting point for a retrying backend could be:
+In some cases it's possible to implement a generic retry mechanism; such a mechanism should take into account logging, metrics, limiting the number of retries and a backoff mechanism. These mechanisms could be quite simple, or involve e.g. retry budgets (see [Finagle's](https://twitter.github.io/finagle/guide/Clients.html#retries) documentation on retries). In sttp, it's possible to recover from errors using the `monad`. A starting point for a retrying backend could be:
 
 ```scala mdoc:compile-only
 import sttp.capabilities.Effect
@@ -277,6 +277,7 @@ class MyCustomBackendHttpTest extends HttpTest[Future] {
 }
 ```
 
+[//]: # (TO REVIEWER last update 6 years ago maybe we have sth newer)
 You can find a more detailed example in the [sttp-vertx](https://github.com/guymers/sttp-vertx) repository.
 
 ## Custom backend wrapper using cats
