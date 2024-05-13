@@ -103,12 +103,6 @@ Class                            Effect type                  Supported stream t
 ``CurlBackend``                  None (``Identity``)          n/a                                       no
 ================================ ============================ ========================================= ===================
 ```
-[//]: # (TO REVIEWER all of them updated from 2 to 4 years ago)
-Finally, there are third-party backends:
-
-* [sttp-play-ws](https://github.com/scalamania/sttp-play-ws) for "standard" play-ws (not standalone).
-* [akkaMonixSttpBackend](https://github.com/fullfacing/akkaMonixSttpBackend), an Akka-based backend, but using Monix's `Task` & `Observable`.
-* [be-kind-rewind](https://github.com/reibitto/be-kind-rewind), a VCR testing library for Scala
 
 ## Backend types
 

@@ -277,9 +277,6 @@ class MyCustomBackendHttpTest extends HttpTest[Future] {
 }
 ```
 
-[//]: # (TO REVIEWER last update 6 years ago maybe we have sth newer)
-You can find a more detailed example in the [sttp-vertx](https://github.com/guymers/sttp-vertx) repository.
-
 ## Custom backend wrapper using cats
 
 When implementing a backend wrapper using cats, it might be useful to import:
