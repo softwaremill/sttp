@@ -921,7 +921,7 @@ lazy val sprayJson = (projectMatrix in file("json/spray-json"))
     ),
     scalaTest
   )
-  .jvmPlatform(scalaVersions = scala2)
+  .jvmPlatform(scalaVersions = scala2 ++ scala3)
   .dependsOn(core, jsonCommon)
 
 lazy val play2Json = (projectMatrix in file("json/play2-json"))
