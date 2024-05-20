@@ -87,6 +87,6 @@ private def optionallyConcatenateFrames(s: Source[WebSocketFrame], doConcatenate
         (None, Some(f.copy(payload = acc + f.payload)))
       case (Some(Right(acc)), f: WebSocketFrame.Text) if !f.finalFragment => (Some(Right(acc + f.payload)), None)
       case (acc, f) =>
-        throw new IllegalStateException(s"Cannot accumulate web socket frames. Accumulator: $acc, frame: $f.")
+        throw new IllegalStateException(s"Unexpected WebSocket frame received during concatenation. Frame received: ${f.getClass.getSimpleName()}, accumulator type: ${acc.map(_.getClass.getSimpleName)}")
     }.collectAsView { case Some(f: WebSocketFrame) => f }
   else s
