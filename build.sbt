@@ -186,6 +186,7 @@ lazy val allAggregates = projectsWithOptionalNative ++
   fs2Ce2.projectRefs ++
   fs2.projectRefs ++
   monix.projectRefs ++
+  ox.projectRefs ++
   scalaz.projectRefs ++
   zio1.projectRefs ++
   zio.projectRefs ++
@@ -231,6 +232,7 @@ lazy val allAggregates = projectsWithOptionalNative ++
   slf4jBackend.projectRefs ++
   examplesCe2.projectRefs ++
   examples.projectRefs ++
+  examples3.projectRefs ++
   docs.projectRefs ++
   testServer.projectRefs
 
@@ -438,6 +440,17 @@ lazy val monix = (projectMatrix in file("effects/monix"))
     scalaVersions = scala2 ++ scala3,
     settings = commonJsSettings ++ commonJsBackendSettings ++ browserChromeTestSettings ++ testServerSettings
   )
+
+lazy val ox = (projectMatrix in file("effects/ox"))
+  .settings(commonJvmSettings)
+  .settings(
+    name := "ox",
+    libraryDependencies ++= Seq(
+      "com.softwaremill.ox" %% "core" % "0.1.1"
+    )
+  )
+  .jvmPlatform(scalaVersions = scala3)
+  .dependsOn(core)
 
 lazy val zio1 = (projectMatrix in file("effects/zio1"))
   .settings(
@@ -1036,6 +1049,21 @@ lazy val examples = (projectMatrix in file("examples"))
     upickle,
     scribeBackend,
     slf4jBackend
+  )
+
+lazy val examples3 = (projectMatrix in file("examples3"))
+  .settings(commonJvmSettings)
+  .settings(
+    name := "examples3",
+    publish / skip := true,
+    libraryDependencies ++= Seq(
+      logback
+    )
+  )
+  .jvmPlatform(scalaVersions = scala3)
+  .dependsOn(
+    core,
+    ox
   )
 
 //TODO this should be invoked by compilation process, see #https://github.com/scalameta/mdoc/issues/355
