@@ -1,7 +1,7 @@
 package sttp.client4.examples
 
-import _root_.ox.*
-import _root_.ox.channels.Source
+import ox.*
+import ox.channels.Source
 import sttp.client4.*
 import sttp.client4.ox.ws.*
 import sttp.client4.ws.SyncWebSocket
@@ -12,7 +12,7 @@ import sttp.ws.WebSocketFrame
   def useWebSocket(ws: SyncWebSocket): Unit =
     supervised {
       val inputs = Source.fromValues(1, 2, 3).map(i => WebSocketFrame.text(s"Frame no $i"))
-      val (wsSource, wsSink) = ws.asSourceAndSink()
+      val (wsSource, wsSink) = asSourceAndSink(ws)
       fork {
         inputs.pipeTo(wsSink)
       }

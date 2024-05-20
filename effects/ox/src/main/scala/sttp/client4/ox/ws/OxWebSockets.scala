@@ -10,8 +10,7 @@ import sttp.ws.WebSocketFrame
 
 import scala.util.control.NonFatal
 
-extension (ws: SyncWebSocket)
-  def asSource(concatenateFragmented: Boolean = true, pongOnPing: Boolean = true)(using Ox, StageCapacity): Source[WebSocketFrame] =
+  def asSource(ws: SyncWebSocket, concatenateFragmented: Boolean = true, pongOnPing: Boolean = true)(using Ox, StageCapacity): Source[WebSocketFrame] =
     val srcChannel = StageCapacity.newChannel[WebSocketFrame]
     fork {
       repeatWhile {
@@ -40,7 +39,7 @@ extension (ws: SyncWebSocket)
     }.discard
     optionallyConcatenateFrames(srcChannel, concatenateFragmented)
 
-  def asSink(using Ox, StageCapacity): Sink[WebSocketFrame] =
+  def asSink(ws: SyncWebSocket)(using Ox, StageCapacity): Sink[WebSocketFrame] =
     val sinkChannel = StageCapacity.newChannel[WebSocketFrame]
     fork {
       try
@@ -64,10 +63,10 @@ extension (ws: SyncWebSocket)
     }.discard
     sinkChannel
 
-  def asSourceAndSink(concatenateFragmented: Boolean = true, pongOnPing: Boolean = true)(using Ox, StageCapacity): (Source[WebSocketFrame], Sink[WebSocketFrame]) =
-    (asSource(concatenateFragmented, pongOnPing), asSink)
+  def asSourceAndSink(ws: SyncWebSocket, concatenateFragmented: Boolean = true, pongOnPing: Boolean = true)(using Ox, StageCapacity): (Source[WebSocketFrame], Sink[WebSocketFrame]) =
+    (asSource(ws, concatenateFragmented, pongOnPing), asSink(ws))
 
-class WebSocketClosedWithError(statusCode: Int, msg: String) extends Exception(s"WebSocket closed with status $statusCode: $msg")
+final case class WebSocketClosedWithError(statusCode: Int, msg: String) extends Exception(s"WebSocket closed with status $statusCode: $msg")
 
 private def optionallyConcatenateFrames(s: Source[WebSocketFrame], doConcatenate: Boolean)(using
     Ox
