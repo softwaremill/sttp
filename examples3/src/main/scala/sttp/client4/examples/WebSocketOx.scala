@@ -12,7 +12,7 @@ import sttp.ws.WebSocketFrame
   def useWebSocket(ws: SyncWebSocket): Unit =
     supervised {
       val inputs = Source.fromValues(1, 2, 3).map(i => WebSocketFrame.text(s"Frame no $i"))
-      val (wsSource, wsSink) = ws.asSourceAndSink
+      val (wsSource, wsSink) = ws.asSourceAndSink()
       fork {
         inputs.pipeTo(wsSink)
       }
@@ -26,6 +26,7 @@ import sttp.ws.WebSocketFrame
     basicRequest
       .get(uri"wss://ws.postman-echo.com/raw")
       .response(asWebSocket(useWebSocket))
-      .send(backend).discard
+      .send(backend)
+      .discard
   finally
     backend.close()
