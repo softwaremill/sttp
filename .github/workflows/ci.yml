@@ -19,13 +19,22 @@ jobs:
       matrix:
         scala-version: [ "2.12", "2.13", "3" ]
         target-platform: [ "JVM", "JS", "Native" ]
+        java: [ "11", "21" ]
+        exclude:
+          - java: "21"
+        include: # Restricted to build only specific Loom-based modules
+          - scala-version: "3"
+            target-platform: "JVM"
+            java: "21"
     steps:
     - name: Checkout
       uses: actions/checkout@v2
-    - name: Set up JDK 11
-      uses: actions/setup-java@v1
+    - name: Set up JDK 
+      uses: actions/setup-java@v4
       with:
-        java-version: 11
+        distribution: 'temurin'
+        cache: 'sbt'
+        java-version: ${{ matrix.java }}
     - name: Cache sbt
       uses: actions/cache@v2
       with:
@@ -40,14 +49,18 @@ jobs:
         sudo apt-get update
         sudo apt-get install libidn2-dev libcurl3-dev
         echo "STTP_NATIVE=1" >> $GITHUB_ENV
+    - name: Enable Loom-specific modules
+      if: matrix.java == '21'
+      run: echo "ONLY_LOOM=1" >> $GITHUB_ENV
     - name: Compile
       run: sbt -v "compileScoped ${{ matrix.scala-version }} ${{ matrix.target-platform }}"
     - name: Compile documentation
-      if: matrix.target-platform == 'JVM'
+      if: matrix.target-platform == 'JVM' && matrix.java == '11'
       run: sbt -v compileDocs
     - name: Test
       run: sbt -v "testScoped ${{ matrix.scala-version }} ${{ matrix.target-platform }}"        
     - name: Prepare release notes
+      if: matrix.java == '11'
       uses: release-drafter/release-drafter@v5
       with:
         config-name: release-drafter.yml
@@ -100,16 +113,19 @@ jobs:
     name: Publish release
     needs: [ci]
     if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v'))
-    runs-on: ubuntu-20.04
-    env:
-      STTP_NATIVE: 1
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix: 
+        java: [ "11", "21" ]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Set up JDK 11
-        uses: actions/setup-java@v1
+      - name: Set up JDK 
+        uses: actions/setup-java@v4
         with:
-          java-version: 11
+          distribution: 'temurin'
+          java-version: ${{ matrix.java }}
+          cache: 'sbt'
       - name: Cache sbt
         uses: actions/cache@v2
         with:
@@ -122,6 +138,12 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install libidn2-dev libcurl3-dev
+      - name: Enable Native-specific modules
+        if: matrix.java == '11'
+        run: echo "STTP_NATIVE=1" >> $GITHUB_ENV
+      - name: Enable Loom-specific modules
+        if: matrix.java == '21'
+        run: echo "ONLY_LOOM=1" >> $GITHUB_ENV
       - name: Compile
         run: sbt compile
       - name: Publish artifacts
@@ -132,12 +154,14 @@ jobs:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
       - name: Extract version from commit message
+        if: matrix.java == '11'
         run: |
           version=${GITHUB_REF/refs\/tags\/v/}
           echo "VERSION=$version" >> $GITHUB_ENV
         env:
           COMMIT_MSG: ${{ github.event.head_commit.message }}
       - name: Publish release notes
+        if: matrix.java == '11'
         uses: release-drafter/release-drafter@v5
         with:
           config-name: release-drafter.yml

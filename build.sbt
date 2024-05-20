@@ -168,18 +168,37 @@ val openTelemetryVersion = "1.38.0"
 
 val compileAndTest = "compile->compile;test->test"
 
-lazy val projectsWithOptionalNative: Seq[ProjectReference] = {
-  val base = core.projectRefs ++ jsonCommon.projectRefs ++ upickle.projectRefs
-  if (sys.env.isDefinedAt("STTP_NATIVE")) {
-    println("[info] STTP_NATIVE defined, including sttp-native in the aggregate projects")
-    base
+lazy val loomProjects: Seq[String] = Seq(ox, examples3).flatMap(_.projectRefs).flatMap(projectId)
+
+def projectId(projectRef: ProjectReference): Option[String] =
+  projectRef match {
+    case ProjectRef(_, id) => Some(id)
+    case LocalProject(id)  => Some(id)
+    case _                 => None
+  }
+
+lazy val allAggregates: Seq[ProjectReference] = {
+  val filteredByNative = if (sys.env.isDefinedAt("STTP_NATIVE")) {
+    println("[info] STTP_NATIVE defined, including native in the aggregate projects")
+    rawAllAggregates
   } else {
-    println("[info] STTP_NATIVE *not* defined, *not* including sttp-native in the aggregate projects")
-    base.filterNot(_.toString.contains("Native"))
+    println("[info] STTP_NATIVE *not* defined, *not* including native in the aggregate projects")
+    rawAllAggregates.filterNot(_.toString.contains("Native"))
+  }
+  if (sys.env.isDefinedAt("ONLY_LOOM")) {
+    println("[info] ONLY_LOOM defined, including only loom-based projects")
+    filteredByNative.filter(p => projectId(p).forall(loomProjects.contains))
+  } else if (sys.env.isDefinedAt("ALSO_LOOM")) {
+    println("[info] ALSO_LOOM defined, including also loom-based projects")
+    filteredByNative
+  } else {
+    println("[info] ONLY_LOOM *not* defined, *not* including loom-based-projects")
+    filteredByNative.filterNot(p => projectId(p).forall(loomProjects.contains))
   }
 }
 
-lazy val allAggregates = projectsWithOptionalNative ++
+
+lazy val rawAllAggregates =
   testCompilation.projectRefs ++
   catsCe2.projectRefs ++
   cats.projectRefs ++
@@ -449,8 +468,9 @@ lazy val ox = (projectMatrix in file("effects/ox"))
       "com.softwaremill.ox" %% "core" % "0.1.1"
     )
   )
+  .settings(testServerSettings)
   .jvmPlatform(scalaVersions = scala3)
-  .dependsOn(core)
+  .dependsOn(core % compileAndTest)
 
 lazy val zio1 = (projectMatrix in file("effects/zio1"))
   .settings(
