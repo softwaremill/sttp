@@ -1,14 +1,14 @@
 package sttp.client4.examples
 
+import _root_.ox.*
+import _root_.ox.channels.Source
 import sttp.client4.*
+import sttp.client4.ox.ws.*
 import sttp.client4.ws.SyncWebSocket
 import sttp.client4.ws.sync.*
-import _root_.ox.*
-import sttp.client4.ox.ws.*
-import _root_.ox.channels.Source
 import sttp.ws.WebSocketFrame
 
-object WebSocketOx extends App:
+@main def wsOxExample =
   def useWebSocket(ws: SyncWebSocket): Unit =
     supervised {
       val inputs = Source.fromValues(1, 2, 3).map(i => WebSocketFrame.text(s"Frame no $i"))
@@ -26,6 +26,6 @@ object WebSocketOx extends App:
     basicRequest
       .get(uri"wss://ws.postman-echo.com/raw")
       .response(asWebSocket(useWebSocket))
-      .send(backend)
+      .send(backend).discard
   finally
     backend.close()
