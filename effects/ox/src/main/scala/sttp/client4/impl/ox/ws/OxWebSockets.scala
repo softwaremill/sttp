@@ -1,76 +1,70 @@
 package sttp.client4.impl.ox.ws
 
 import ox.*
-import ox.channels.ChannelClosed
-import ox.channels.Sink
-import ox.channels.Source
-import ox.channels.StageCapacity
+import ox.channels.*
 import sttp.client4.ws.SyncWebSocket
 import sttp.ws.WebSocketFrame
 
 import scala.util.control.NonFatal
 
-def asSource(ws: SyncWebSocket, concatenateFragmented: Boolean = true, pongOnPing: Boolean = true)(using
+def asSourceAndSink(ws: SyncWebSocket, concatenateFragmented: Boolean = true, pongOnPing: Boolean = true)(using
     Ox,
     StageCapacity
-): Source[WebSocketFrame] =
-  val srcChannel = StageCapacity.newChannel[WebSocketFrame]
+): (Source[WebSocketFrame], Sink[WebSocketFrame]) =
+  val requestsChannel = StageCapacity.newChannel[WebSocketFrame]
+  val responsesChannel = StageCapacity.newChannel[WebSocketFrame]
   fork {
-    repeatWhile {
-      try
+    try
+      repeatWhile {
         ws.receive() match
           case frame: WebSocketFrame.Data[_] =>
-            srcChannel.send(frame)
-            true
+            responsesChannel.sendOrClosed(frame) match
+              case _: ChannelClosed => false
+              case _                => true
           case WebSocketFrame.Close(status, msg) if status > 1001 =>
-            srcChannel.error(new WebSocketClosedWithError(status, msg))
+            responsesChannel.errorOrClosed(new WebSocketClosedWithError(status, msg)).discard
             false
           case _: WebSocketFrame.Close =>
-            srcChannel.done()
+            responsesChannel.doneOrClosed().discard
             false
           case ping: WebSocketFrame.Ping =>
-            if pongOnPing then ws.send(WebSocketFrame.Pong(ping.payload))
+            if pongOnPing then requestsChannel.sendOrClosed(WebSocketFrame.Pong(ping.payload)).discard
             true
           case _: WebSocketFrame.Pong =>
             // ignore pongs
             true
-      catch
-        case NonFatal(err) =>
-          srcChannel.error(err)
-          false
-    }
+      }
+    catch
+      case NonFatal(err) =>
+        responsesChannel.errorOrClosed(err).discard
+    finally requestsChannel.doneOrClosed().discard
   }.discard
-  optionallyConcatenateFrames(srcChannel, concatenateFragmented)
 
-def asSink(ws: SyncWebSocket)(using Ox, StageCapacity): Sink[WebSocketFrame] =
-  val sinkChannel = StageCapacity.newChannel[WebSocketFrame]
   fork {
     try
       repeatWhile {
-        sinkChannel.receiveOrClosed() match
+        requestsChannel.receiveOrClosed() match
           case closeFrame: WebSocketFrame.Close =>
-            ws.send(closeFrame) // TODO should we just let 'send' throw exceptions?
+            ws.send(closeFrame)
             false
           case frame: WebSocketFrame =>
             ws.send(frame)
             true
           case ChannelClosed.Done =>
-            ws.send(WebSocketFrame.close)
+            ws.close()
             false
           case ChannelClosed.Error(err) =>
             // There's no proper "client error" status. Statuses 4000+ are available for custom cases
-            ws.send(WebSocketFrame.Close(4000, "Client error")) // TODO should we bother the server with client error?
+            ws.send(WebSocketFrame.Close(4000, "Client error"))
+            responsesChannel.doneOrClosed().discard
             false
       }
-    finally uninterruptible(ws.close())
+    catch
+      case NonFatal(err) =>
+        requestsChannel.errorOrClosed(err).discard
   }.discard
-  sinkChannel
 
-def asSourceAndSink(ws: SyncWebSocket, concatenateFragmented: Boolean = true, pongOnPing: Boolean = true)(using
-    Ox,
-    StageCapacity
-): (Source[WebSocketFrame], Sink[WebSocketFrame]) =
-  (asSource(ws, concatenateFragmented, pongOnPing), asSink(ws))
+  (optionallyConcatenateFrames(responsesChannel, concatenateFragmented), requestsChannel)
 
 final case class WebSocketClosedWithError(statusCode: Int, msg: String)
     extends Exception(s"WebSocket closed with status $statusCode: $msg")
