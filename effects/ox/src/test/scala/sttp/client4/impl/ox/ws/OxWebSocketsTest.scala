@@ -1,10 +1,9 @@
-package sttp.client4.integ.ox.ws
+package sttp.client4.impl.ox.ws
 
 import ox.*
 import ox.channels.Source
 import ox.channels.Sink
 import sttp.client4.*
-import sttp.client4.integ.ox.ws.*
 import sttp.client4.testing.HttpTest.*
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.BeforeAndAfterAll

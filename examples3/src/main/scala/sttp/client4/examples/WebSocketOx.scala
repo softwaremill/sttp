@@ -3,7 +3,7 @@ package sttp.client4.examples
 import ox.*
 import ox.channels.Source
 import sttp.client4.*
-import sttp.client4.ox.ws.*
+import sttp.client4.impl.ox.ws.*
 import sttp.client4.ws.SyncWebSocket
 import sttp.client4.ws.sync.*
 import sttp.ws.WebSocketFrame

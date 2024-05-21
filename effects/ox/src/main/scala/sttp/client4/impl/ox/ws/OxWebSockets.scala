@@ -1,4 +1,4 @@
-package sttp.client4.integ.ox.ws
+package sttp.client4.impl.ox.ws
 
 import ox.*
 import ox.channels.ChannelClosed
