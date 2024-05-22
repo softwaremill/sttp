@@ -61,7 +61,8 @@ def asSourceAndSink(ws: SyncWebSocket, concatenateFragmented: Boolean = true, po
       }
     catch
       case NonFatal(err) =>
-        requestsChannel.errorOrClosed(err).discard
+        // If responses are closed, server finished the communication and we can ignore that send() failed
+        if (!responsesChannel.isClosedForReceive) requestsChannel.errorOrClosed(err).discard
   }.discard
 
   (optionallyConcatenateFrames(responsesChannel, concatenateFragmented), requestsChannel)
