@@ -62,7 +62,6 @@ def asSourceAndSink(ws: SyncWebSocket, concatenateFragmented: Boolean = true, po
     catch
       case NonFatal(err) =>
         requestsChannel.errorOrClosed(err).discard
-        responsesChannel.doneOrClosed().discard
   }.discard
 
   (optionallyConcatenateFrames(responsesChannel, concatenateFragmented), requestsChannel)
