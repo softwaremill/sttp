@@ -130,17 +130,14 @@ basicRequest
 
 See the [full example here](https://github.com/softwaremill/sttp/blob/master/examples/src/main/scala/sttp/client4/examples3/WebSocketOx.scala).
 
-Make sure that the `Source` is contiunually read. This will guarantee that server-side Close signal is received and handled.
+Make sure that the `Source` is contiunually read. This will guarantee that server-side Close signal is received and handled. 
 If you don't want to process frames from the server, you can at least handle it with a `fork { source.drain() }`.
-
-You don't need to manually call `ws.close()` when using this approach, this will be
-handled automatically underneath, according to following rules:
- - If the request `Sink` fails with an error, the `Source` is automatically completed, sending a `Close` frame to
-   the server if needed.
- - If the request `Sink` completes without an error, a `Close` frame is sent, and the response `Sink` keeps
-   receiving responses until the server closes communication.
- - If the response `Source` is completed (either due to completion or an error), the request Sink is completed,
-   right after sending all outstanding buffered frames.
+  
+You don't need to manually call `ws.close()` when using this approach, this will be handled automatically underneath, 
+according to following rules:
+ - If the request `Sink` is closed due to an upstream error, a Close frame is sent, and the `Source` with incoming responses gets completed as `Done`.
+ - If the request `Sink` completes as `Done`, a `Close` frame is sent, and the response `Sink` keeps receiving responses until the server closes communication.
+ - If the response `Source` is closed by a Close frome from the server or due to an error, the request Sink is closed as `Done`, which will still send all outstanding buffered frames, and then finish.
 
 Read more about Ox, structured concurrency, Sources and Sinks on the [project website](https://ox.softwaremill.com).
 
