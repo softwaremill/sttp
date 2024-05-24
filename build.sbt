@@ -150,6 +150,7 @@ val zio2Version = "2.1.1"
 val zio1InteropRsVersion = "1.3.12"
 val zio2InteropRsVersion = "2.0.2"
 
+val oxVersion = "0.2.0"
 val sttpModelVersion = "1.7.10"
 val sttpSharedVersion = "1.3.18"
 
@@ -465,7 +466,7 @@ lazy val ox = (projectMatrix in file("effects/ox"))
   .settings(
     name := "ox",
     libraryDependencies ++= Seq(
-      "com.softwaremill.ox" %% "core" % "0.1.1"
+      "com.softwaremill.ox" %% "core" % oxVersion
     )
   )
   .settings(testServerSettings)
