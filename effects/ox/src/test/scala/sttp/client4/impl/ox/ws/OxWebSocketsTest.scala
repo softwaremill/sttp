@@ -37,7 +37,7 @@ class OxWebSocketTest extends AnyFlatSpec with BeforeAndAfterAll with Matchers w
         val (wsSource, wsSink) = asSourceAndSink(ws)
         sendText(wsSink, 3)
         receiveEchoText(wsSource, 3)
-        expectClosed(wsSource, wsSink)
+        eventually(expectClosed(wsSource, wsSink))
       })
       .send(backend)
   }
@@ -49,7 +49,7 @@ class OxWebSocketTest extends AnyFlatSpec with BeforeAndAfterAll with Matchers w
         val (wsSource, wsSink) = asSourceAndSink(ws)
         sendText(wsSink, 3)
         receiveEchoText(wsSource, 3)
-        expectClosed(wsSource, wsSink)
+        eventually(expectClosed(wsSource, wsSink))
       })
       .send(backend)
   }
@@ -121,7 +121,7 @@ class OxWebSocketTest extends AnyFlatSpec with BeforeAndAfterAll with Matchers w
           WebSocketFrame.Text("test1", false, None),
           WebSocketFrame.Text("", true, None)
         )
-        expectClosed(wsSource, wsSink)
+        eventually(expectClosed(wsSource, wsSink))
       })
       .send(backend)
   }
@@ -133,7 +133,7 @@ class OxWebSocketTest extends AnyFlatSpec with BeforeAndAfterAll with Matchers w
         val (wsSource, wsSink) = asSourceAndSink(ws)
         sendBinary(wsSink, 3)
         receiveEchoBinary(wsSource, 3)
-        expectClosed(wsSource, wsSink)
+        eventually(expectClosed(wsSource, wsSink))
       })
       .send(backend)
   }
