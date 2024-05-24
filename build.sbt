@@ -931,7 +931,7 @@ lazy val sprayJson = (projectMatrix in file("json/spray-json"))
     ),
     scalaTest
   )
-  .jvmPlatform(scalaVersions = scala2)
+  .jvmPlatform(scalaVersions = scala2 ++ scala3)
   .dependsOn(core, jsonCommon)
 
 lazy val play29Json = (projectMatrix in file("json/play29-json"))
@@ -971,7 +971,7 @@ lazy val prometheusBackend = (projectMatrix in file("observability/prometheus-ba
   .settings(
     name := "prometheus-backend",
     libraryDependencies ++= Seq(
-      "io.prometheus" % "prometheus-metrics-core" % "1.3.0"
+      "io.prometheus" % "prometheus-metrics-core" % "1.3.1"
     ),
     scalaTest
   )
