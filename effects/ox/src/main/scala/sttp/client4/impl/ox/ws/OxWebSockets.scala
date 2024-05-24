@@ -47,8 +47,10 @@ def asSourceAndSink(ws: SyncWebSocket, concatenateFragmented: Boolean = true)(us
           case _: WebSocketFrame.Close =>
             responsesChannel.doneOrClosed().discard
             false
-          case ping: WebSocketFrame.Ping =>
+          case ping: WebSocketFrame.Ping =>            
             requestsChannel.sendOrClosed(WebSocketFrame.Pong(ping.payload)).discard
+            // Keep receiving even if pong couldn't be send due to closed request channel. We want to process
+            // whatever responses there are still coming from the server until it signals the end with a Close frome.
             true
           case _: WebSocketFrame.Pong =>
             // ignore pongs
