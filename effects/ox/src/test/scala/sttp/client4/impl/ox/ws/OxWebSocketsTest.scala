@@ -54,7 +54,7 @@ class OxWebSocketTest extends AnyFlatSpec with BeforeAndAfterAll with Matchers w
       .send(backend)
   }
 
-  it should "Close response source if request sink fails" in supervised {
+  it should "close response source if request sink fails" in supervised {
     basicRequest
       .get(uri"$wsEndpoint/ws/echo")
       .response(asWebSocket { ws =>
@@ -66,7 +66,7 @@ class OxWebSocketTest extends AnyFlatSpec with BeforeAndAfterAll with Matchers w
       .send(backend)
   }
 
-  it should "Close request sink if response source fails" in supervised {
+  it should "close request sink if response source fails" in supervised {
     val expectedException = new Exception("test exception")
     val stubBackend: WebSocketSyncBackend =
       DefaultSyncBackend.stub
@@ -82,6 +82,30 @@ class OxWebSocketTest extends AnyFlatSpec with BeforeAndAfterAll with Matchers w
         val (wsSource, wsSink) = asSourceAndSink(ws)
         eventually(wsSource.isClosedForReceiveDetail shouldBe Some(ChannelClosed.Error(expectedException)))
         wsSink.isClosedForSendDetail shouldBe Some(ChannelClosed.Done)
+      })
+      .send(stubBackend)
+  }
+
+  it should "pong on ping" in supervised {
+    val stubBackend: WebSocketSyncBackend =
+      DefaultSyncBackend.stub
+        .whenRequestMatches(_.uri.toString().contains("echo.websocket.org"))
+        .thenRespond(
+          WebSocketStub
+            .initialReceive(List.fill(50)(WebSocketFrame.Ping("test-ping".getBytes)))
+            .thenRespond {
+              case WebSocketFrame.Pong(payload) if new String(payload) == "test-ping" =>
+                List(WebSocketFrame.text("test"))
+              case other => 
+                fail(s"Unexpected frame: $other")
+            },
+          StatusCode.SwitchingProtocols
+        )
+    basicRequest
+      .get(uri"ws://echo.websocket.org")
+      .response(asWebSocket { ws =>
+        val (wsSource, wsSink) = asSourceAndSink(ws)
+        wsSource.receiveOrClosed() shouldBe WebSocketFrame.text("test")
       })
       .send(stubBackend)
   }
