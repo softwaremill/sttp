@@ -150,6 +150,7 @@ val zio2Version = "2.1.1"
 val zio1InteropRsVersion = "1.3.12"
 val zio2InteropRsVersion = "2.0.2"
 
+val oxVersion = "0.2.0"
 val sttpModelVersion = "1.7.10"
 val sttpSharedVersion = "1.3.18"
 
@@ -168,24 +169,44 @@ val openTelemetryVersion = "1.38.0"
 
 val compileAndTest = "compile->compile;test->test"
 
-lazy val projectsWithOptionalNative: Seq[ProjectReference] = {
-  val base = core.projectRefs ++ jsonCommon.projectRefs ++ upickle.projectRefs
-  if (sys.env.isDefinedAt("STTP_NATIVE")) {
-    println("[info] STTP_NATIVE defined, including sttp-native in the aggregate projects")
-    base
+lazy val loomProjects: Seq[String] = Seq(ox, examples3).flatMap(_.projectRefs).flatMap(projectId)
+
+def projectId(projectRef: ProjectReference): Option[String] =
+  projectRef match {
+    case ProjectRef(_, id) => Some(id)
+    case LocalProject(id)  => Some(id)
+    case _                 => None
+  }
+
+lazy val allAggregates: Seq[ProjectReference] = {
+  val filteredByNative = if (sys.env.isDefinedAt("STTP_NATIVE")) {
+    println("[info] STTP_NATIVE defined, including native in the aggregate projects")
+    rawAllAggregates
   } else {
-    println("[info] STTP_NATIVE *not* defined, *not* including sttp-native in the aggregate projects")
-    base.filterNot(_.toString.contains("Native"))
+    println("[info] STTP_NATIVE *not* defined, *not* including native in the aggregate projects")
+    rawAllAggregates.filterNot(_.toString.contains("Native"))
+  }
+  if (sys.env.isDefinedAt("ONLY_LOOM")) {
+    println("[info] ONLY_LOOM defined, including only loom-based projects")
+    filteredByNative.filter(p => projectId(p).forall(loomProjects.contains))
+  } else if (sys.env.isDefinedAt("ALSO_LOOM")) {
+    println("[info] ALSO_LOOM defined, including also loom-based projects")
+    filteredByNative
+  } else {
+    println("[info] ONLY_LOOM *not* defined, *not* including loom-based-projects")
+    filteredByNative.filterNot(p => projectId(p).forall(loomProjects.contains))
   }
 }
 
-lazy val allAggregates = projectsWithOptionalNative ++
+
+lazy val rawAllAggregates =
   testCompilation.projectRefs ++
   catsCe2.projectRefs ++
   cats.projectRefs ++
   fs2Ce2.projectRefs ++
   fs2.projectRefs ++
   monix.projectRefs ++
+  ox.projectRefs ++
   scalaz.projectRefs ++
   zio1.projectRefs ++
   zio.projectRefs ++
@@ -231,6 +252,7 @@ lazy val allAggregates = projectsWithOptionalNative ++
   slf4jBackend.projectRefs ++
   examplesCe2.projectRefs ++
   examples.projectRefs ++
+  examples3.projectRefs ++
   docs.projectRefs ++
   testServer.projectRefs
 
@@ -438,6 +460,18 @@ lazy val monix = (projectMatrix in file("effects/monix"))
     scalaVersions = scala2 ++ scala3,
     settings = commonJsSettings ++ commonJsBackendSettings ++ browserChromeTestSettings ++ testServerSettings
   )
+
+lazy val ox = (projectMatrix in file("effects/ox"))
+  .settings(commonJvmSettings)
+  .settings(
+    name := "ox",
+    libraryDependencies ++= Seq(
+      "com.softwaremill.ox" %% "core" % oxVersion
+    )
+  )
+  .settings(testServerSettings)
+  .jvmPlatform(scalaVersions = scala3)
+  .dependsOn(core % compileAndTest)
 
 lazy val zio1 = (projectMatrix in file("effects/zio1"))
   .settings(
@@ -1036,6 +1070,21 @@ lazy val examples = (projectMatrix in file("examples"))
     upickle,
     scribeBackend,
     slf4jBackend
+  )
+
+lazy val examples3 = (projectMatrix in file("examples3"))
+  .settings(commonJvmSettings)
+  .settings(
+    name := "examples3",
+    publish / skip := true,
+    libraryDependencies ++= Seq(
+      logback
+    )
+  )
+  .jvmPlatform(scalaVersions = scala3)
+  .dependsOn(
+    core,
+    ox
   )
 
 //TODO this should be invoked by compilation process, see #https://github.com/scalameta/mdoc/issues/355
