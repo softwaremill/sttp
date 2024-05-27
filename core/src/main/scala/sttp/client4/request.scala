@@ -3,6 +3,7 @@ package sttp.client4
 import sttp.model.{Header, Method, Part, RequestMetadata, Uri}
 import sttp.capabilities.{Effect, Streams, WebSockets}
 import sttp.client4.internal.{ToCurlConverter, ToRfc2616Converter}
+import sttp.shared.Identity
 
 import scala.collection.immutable.Seq
 

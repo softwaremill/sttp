@@ -3,31 +3,12 @@ package sttp.client4.httpurlconnection
 import sttp.capabilities.Effect
 import sttp.client4.httpurlconnection.HttpURLConnectionBackend.EncodingHandler
 import sttp.client4.internal._
-import sttp.client4.monad.IdMonad
 import sttp.client4.testing.SyncBackendStub
 import sttp.client4.ws.{GotAWebSocketException, NotAWebSocketException}
-import sttp.client4.{
-  wrappers,
-  BackendOptions,
-  BasicBodyPart,
-  BasicMultipartBody,
-  ByteArrayBody,
-  ByteBufferBody,
-  FileBody,
-  GenericRequest,
-  GenericWebSocketResponseAs,
-  Identity,
-  InputStreamBody,
-  MultipartStreamBody,
-  NoBody,
-  Response,
-  StreamBody,
-  StringBody,
-  SttpClientException,
-  SyncBackend
-}
+import sttp.client4.{BackendOptions, BasicBodyPart, BasicMultipartBody, ByteArrayBody, ByteBufferBody, FileBody, GenericRequest, GenericWebSocketResponseAs, InputStreamBody, MultipartStreamBody, NoBody, Response, StreamBody, StringBody, SttpClientException, SyncBackend, wrappers}
 import sttp.model._
-import sttp.monad.MonadError
+import sttp.monad.{IdentityMonad, MonadError}
+import sttp.shared.Identity
 
 import java.io._
 import java.net._
@@ -85,7 +66,7 @@ class HttpURLConnectionBackend private (
       }
     }
 
-  override implicit val monad: MonadError[Identity] = IdMonad
+  override implicit val monad: MonadError[Identity] = IdentityMonad
 
   private def openConnection(uri: Uri): HttpURLConnection = {
     val url = createURL(uri.toString)

@@ -4,18 +4,18 @@ import org.scalatest.Assertion
 import sttp.client4._
 import sttp.client4.ws.sync._
 import sttp.monad.syntax._
-import sttp.client4.monad.IdMonad
 import sttp.client4.testing.ConvertToFuture
 import sttp.client4.testing.HttpTest.wsEndpoint
 import sttp.client4.testing.websocket.WebSocketTest
-import sttp.monad.MonadError
+import sttp.monad.{IdentityMonad, MonadError}
+import sttp.shared.Identity
 
 import scala.concurrent.duration._
 
 class OkHttpSyncWebSocketTest extends WebSocketTest[Identity] {
   override val backend: WebSocketBackend[Identity] = OkHttpSyncBackend()
   override implicit val convertToFuture: ConvertToFuture[Identity] = ConvertToFuture.id
-  override implicit val monad: MonadError[Identity] = IdMonad
+  override implicit val monad: MonadError[Identity] = IdentityMonad
 
   override def throwsWhenNotAWebSocket: Boolean = true
 

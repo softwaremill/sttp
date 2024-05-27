@@ -18,6 +18,7 @@ import sttp.client4.logging.LoggingBackend
 import sttp.client4.testing.HttpTest.*
 import sttp.client4.ws.sync.*
 import sttp.model.StatusCode
+import sttp.shared.Identity
 import sttp.ws.WebSocketFrame
 import sttp.ws.testing.WebSocketStub
 

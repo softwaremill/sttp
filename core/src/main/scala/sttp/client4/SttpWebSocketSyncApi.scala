@@ -2,6 +2,7 @@ package sttp.client4
 
 import sttp.client4.ws.SyncWebSocket
 import sttp.model.ResponseMetadata
+import sttp.shared.Identity
 import sttp.ws.WebSocket
 
 trait SttpWebSocketSyncApi {

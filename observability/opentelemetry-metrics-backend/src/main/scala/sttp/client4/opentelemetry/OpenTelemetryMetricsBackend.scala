@@ -6,6 +6,7 @@ import io.opentelemetry.api.metrics.{DoubleHistogram, LongCounter, LongUpDownCou
 import sttp.client4.listener.{ListenerBackend, RequestListener}
 import sttp.client4.wrappers.FollowRedirectsBackend
 import sttp.client4._
+import sttp.shared.Identity
 
 import java.time.Clock
 import java.util.concurrent.ConcurrentHashMap

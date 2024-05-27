@@ -7,6 +7,7 @@ import sttp.monad.syntax._
 import scala.concurrent.duration.Duration
 import sttp.capabilities.Effect
 import sttp.client4.wrappers.DelegateBackend
+import sttp.shared.Identity
 
 abstract class LoggingWithResponseBodyBackend[F[_], P](
     delegate: GenericBackend[F, P],

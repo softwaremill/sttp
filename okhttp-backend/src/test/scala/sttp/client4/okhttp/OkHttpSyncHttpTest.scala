@@ -1,7 +1,8 @@
 package sttp.client4.okhttp
 
-import sttp.client4.testing.{ConvertToFuture, HttpTest}
-import sttp.client4.{Identity, WebSocketBackend}
+import sttp.client4.testing.ConvertToFuture
+import sttp.client4.WebSocketBackend
+import sttp.shared.Identity
 
 class OkHttpSyncHttpTest extends OkHttpHttpTest[Identity] {
   override val backend: WebSocketBackend[Identity] = OkHttpSyncBackend()

@@ -6,10 +6,10 @@ import org.scalatest.matchers.should.Matchers
 import sttp.client4.SttpClientException.ReadException
 import sttp.client4._
 import sttp.client4.internal._
-import sttp.client4.monad.IdMonad
 import sttp.client4.ws.async._
 import sttp.model._
-import sttp.monad.{FutureMonad, MonadError, TryMonad}
+import sttp.monad.{FutureMonad, IdentityMonad, MonadError, TryMonad}
+import sttp.shared.Identity
 import sttp.ws.WebSocketFrame
 import sttp.ws.testing.WebSocketStub
 
@@ -282,7 +282,7 @@ class BackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
 
   it should "return a web socket, given a web socket, for a safe websocket-always request" in {
     val backend: WebSocketSyncBackend = WebSocketBackendStub.synchronous.whenAnyRequest
-      .thenRespond(WebSocketStub.initialReceive(List(WebSocketFrame.text("hello"))).build(IdMonad))
+      .thenRespond(WebSocketStub.initialReceive(List(WebSocketFrame.text("hello"))).build(IdentityMonad))
 
     val frame = basicRequest
       .get(uri"ws://example.org")
@@ -296,7 +296,7 @@ class BackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
   it should "return a web socket, given a web socket, for a safe websocket request" in {
     val backend: WebSocketSyncBackend = WebSocketBackendStub.synchronous.whenAnyRequest
       .thenRespond(
-        WebSocketStub.initialReceive(List(WebSocketFrame.text("hello"))).build(IdMonad),
+        WebSocketStub.initialReceive(List(WebSocketFrame.text("hello"))).build(IdentityMonad),
         if (TestPlatform.Current == TestPlatform.JS) StatusCode.Ok else StatusCode.SwitchingProtocols
       )
 
@@ -463,7 +463,7 @@ class BackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
         responseAs.delegate,
         body,
         ResponseMetadata(StatusCode.Ok, "", Nil)
-      )(IdMonad) should be(
+      )(IdentityMonad) should be(
         expectedResult
       )
     }

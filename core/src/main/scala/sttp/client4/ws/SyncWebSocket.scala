@@ -1,7 +1,7 @@
 package sttp.client4.ws
 
-import sttp.client4.Identity
 import sttp.model.Headers
+import sttp.shared.Identity
 import sttp.ws.{WebSocket, WebSocketClosed, WebSocketFrame}
 
 /** Allows interacting with a web socket. Interactions can happen:
