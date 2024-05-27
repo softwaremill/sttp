@@ -23,8 +23,9 @@ The following response specifications which use `SyncWebSocket` are available in
 
 ```scala mdoc:compile-only
 import sttp.client4._
-import sttp.model.ResponseMetadata
 import sttp.client4.ws.SyncWebSocket
+import sttp.model.ResponseMetadata
+import sttp.shared.Identity
 
 // when using import sttp.client4.ws.sync._
 
