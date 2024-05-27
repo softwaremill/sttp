@@ -12,7 +12,7 @@ The backend depends only on [opentelemetry-api](https://github.com/open-telemetr
 following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %% "opentelemetry-metrics-backend" % "4.0.0-M14"
+"com.softwaremill.sttp.client4" %% "opentelemetry-metrics-backend" % "4.0.0-M15"
 ```
 
 Then an instance can be obtained as follows:
@@ -55,7 +55,7 @@ OpenTelemetryMetricsBackend(
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %% "opentelemetry-tracing-zio-backend" % "4.0.0-M14"  // for ZIO 2.x
+"com.softwaremill.sttp.client4" %% "opentelemetry-tracing-zio-backend" % "4.0.0-M15"  // for ZIO 2.x
 ```
 
 This backend depends on [zio-opentelemetry](https://github.com/zio/zio-telemetry).
@@ -77,7 +77,7 @@ val tracing: Tracing = ???
 OpenTelemetryTracingZioBackend(zioBackend, tracing)
 ```
 
-By default, the span is named after the HTTP method (e.g "HTTP POST") as [recommended by OpenTelemetry](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/http.md#name) for HTTP clients,
+By default, the span is named after the HTTP method (e.g "HTTP POST") as [recommended by OpenTelemetry](https://opentelemetry.io/docs/specs/semconv/http/http-metrics/#http-client) for HTTP clients,
 and the http method, url and response status codes are set as span attributes.
 You can override these defaults by supplying a custom `OpenTelemetryZioTracer`.
 
