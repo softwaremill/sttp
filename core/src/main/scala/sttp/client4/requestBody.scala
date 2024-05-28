@@ -87,8 +87,8 @@ object BasicBody {
   private[client4] def paramsToStringBody(fs: Seq[(String, String)], encoding: String): StringBody = {
     val b = fs
       .map { case (key, value) =>
-        UriCompatibility.encodeQuery(key, encoding) + "=" +
-          UriCompatibility.encodeQuery(value, encoding)
+        UriCompatibility.encodeBodyPart(key, encoding) + "=" +
+          UriCompatibility.encodeBodyPart(value, encoding)
       }
       .mkString("&")
 
