@@ -6,6 +6,7 @@ import sttp.client4.testing.{ConvertToFuture, ToFutureWrapper}
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
 import sttp.client4.wrappers.DigestAuthenticationBackend
+import sttp.shared.Identity
 
 @Ignore
 class OkHttpSyncDigestAuthProxyManualTest extends AsyncFreeSpec with Matchers with ToFutureWrapper {

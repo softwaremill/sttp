@@ -2,14 +2,13 @@ package sttp.client4.curl
 
 import sttp.client4._
 import sttp.client4.wrappers.FollowRedirectsBackend
-import sttp.client4.monad.IdMonad
-import sttp.monad.TryMonad
+import sttp.monad.{IdentityMonad, TryMonad}
 
 import scala.util.Try
 
 // Curl supports redirects, but it doesn't store the history, so using FollowRedirectsBackend is more convenient
 
-private class CurlBackend(verbose: Boolean) extends AbstractSyncCurlBackend(IdMonad, verbose) with SyncBackend {}
+private class CurlBackend(verbose: Boolean) extends AbstractSyncCurlBackend(IdentityMonad, verbose) with SyncBackend {}
 
 object CurlBackend {
   def apply(verbose: Boolean = false): SyncBackend = FollowRedirectsBackend(new CurlBackend(verbose))

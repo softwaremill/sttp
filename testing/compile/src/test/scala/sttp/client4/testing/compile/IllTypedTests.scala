@@ -12,6 +12,7 @@ class IllTypedTests extends AnyFlatSpec with Matchers {
         import sttp.client4._
         import sttp.client4.ws.async._
         import sttp.client4.httpurlconnection._
+        import sttp.shared.Identity
 
         val backend = HttpURLConnectionBackend()
         basicRequest.get(uri"http://example.com").response(asWebSocketUnsafe[Identity]).send(backend)
@@ -20,7 +21,7 @@ class IllTypedTests extends AnyFlatSpec with Matchers {
 
     thrown.getMessage should include("""overloaded method send with alternatives:
         |  (backend: sttp.client4.WebSocketSyncBackend)""".stripMargin)
-    thrown.getMessage should include("(backend: sttp.client4.WebSocketBackend[[+X]sttp.client4.Identity[X]])")
+    thrown.getMessage should include("(backend: sttp.client4.WebSocketBackend[[X]sttp.shared.Identity[X]])")
     thrown.getMessage should include("cannot be applied to (sttp.client4.SyncBackend)")
   }
 

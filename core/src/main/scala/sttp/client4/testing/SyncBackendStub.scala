@@ -1,7 +1,8 @@
 package sttp.client4.testing
 
 import sttp.client4._
-import sttp.client4.monad.IdMonad
+import sttp.monad.IdentityMonad
+import sttp.shared.Identity
 
 /** A stub backend to use in tests.
   *
@@ -19,7 +20,7 @@ import sttp.client4.monad.IdMonad
 class SyncBackendStub(
     matchers: PartialFunction[GenericRequest[_, _], Response[_]],
     fallback: Option[SyncBackend]
-) extends AbstractBackendStub[Identity, Any](IdMonad, matchers, fallback)
+) extends AbstractBackendStub[Identity, Any](IdentityMonad, matchers, fallback)
     with SyncBackend {
 
   type Self = SyncBackendStub

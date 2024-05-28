@@ -1,5 +1,7 @@
 package sttp.client4
 
+import sttp.shared.Identity
+
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, InputStream, OutputStream}
 import java.nio.ByteBuffer
 import scala.annotation.{implicitNotFound, tailrec}

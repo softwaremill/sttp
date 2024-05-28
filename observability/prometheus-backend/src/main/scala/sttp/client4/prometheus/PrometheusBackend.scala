@@ -9,6 +9,7 @@ import sttp.client4.prometheus.PrometheusBackend.RequestCollectors
 import sttp.client4.wrappers.FollowRedirectsBackend
 import sttp.client4.{wrappers, _}
 import sttp.model.StatusCode
+import sttp.shared.Identity
 
 import java.util.concurrent.ConcurrentHashMap
 

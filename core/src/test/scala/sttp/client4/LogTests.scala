@@ -5,6 +5,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import sttp.client4.logging.{Log, LogConfig, LogLevel, Logger}
 import sttp.model.{Header, StatusCode}
+import sttp.shared.Identity
 
 import scala.collection.immutable.Seq
 import scala.collection.mutable

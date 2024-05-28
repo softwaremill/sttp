@@ -1,12 +1,12 @@
 package sttp.client4.testing
 
-import sttp.client4.monad.IdMonad
 import sttp.client4._
-import sttp.monad.{FutureMonad, MonadError}
+import sttp.monad.{FutureMonad, IdentityMonad, MonadError}
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 import sttp.capabilities.WebSockets
+import sttp.shared.Identity
 
 /** A stub backend to use in tests.
   *
@@ -44,7 +44,7 @@ object WebSocketStreamBackendStub {
 
   /** Create a stub of a synchronous backend (which doesn't use an effect type). */
   def synchronous[S]: WebSocketStreamBackendStub[Identity, S] =
-    new WebSocketStreamBackendStub(IdMonad, PartialFunction.empty, None)
+    new WebSocketStreamBackendStub(IdentityMonad, PartialFunction.empty, None)
 
   /** Create a stub of an asynchronous backend (which uses the Scala's built-in [[Future]] as the effect type). */
   def asynchronousFuture[S](implicit ec: ExecutionContext): WebSocketStreamBackendStub[Future, S] =

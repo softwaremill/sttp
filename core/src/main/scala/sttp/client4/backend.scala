@@ -1,8 +1,8 @@
 package sttp.client4
 
-import sttp.monad.MonadError
+import sttp.monad.{IdentityMonad, MonadError}
 import sttp.capabilities.{Effect, WebSockets}
-import sttp.client4.monad.IdMonad
+import sttp.shared.Identity
 
 /** A specific implementation of HTTP request sending logic.
   *
@@ -49,7 +49,7 @@ trait Backend[F[_]] extends GenericBackend[F, Any]
 
 /** A [[GenericBackend]] which is synchronous (side effects are run directly), and doesn't support any capabilities. */
 trait SyncBackend extends Backend[Identity] {
-  override def monad: MonadError[Identity] = IdMonad
+  override def monad: MonadError[Identity] = IdentityMonad
 }
 
 /** A [[GenericBackend]] which is synchronous (side effects are run directly), and supports web sockets. */

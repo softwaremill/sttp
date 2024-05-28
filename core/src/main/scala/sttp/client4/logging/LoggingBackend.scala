@@ -2,6 +2,7 @@ package sttp.client4.logging
 
 import sttp.client4._
 import sttp.client4.listener.ListenerBackend
+import sttp.shared.Identity
 
 object LoggingBackend {
   def apply(delegate: SyncBackend, logger: Logger[Identity]): SyncBackend =
