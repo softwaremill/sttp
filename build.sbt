@@ -199,7 +199,10 @@ lazy val allAggregates: Seq[ProjectReference] = {
 }
 
 lazy val rawAllAggregates =
-  testCompilation.projectRefs ++
+  core.projectRefs ++
+    jsonCommon.projectRefs ++
+    upickle.projectRefs ++
+    testCompilation.projectRefs ++
     catsCe2.projectRefs ++
     cats.projectRefs ++
     fs2Ce2.projectRefs ++
