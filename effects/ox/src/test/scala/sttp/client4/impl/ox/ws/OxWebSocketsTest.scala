@@ -82,7 +82,7 @@ class OxWebSocketTest extends AnyFlatSpec with BeforeAndAfterAll with Matchers w
       .response(asWebSocket { ws =>
         val (wsSource, wsSink) = asSourceAndSink(ws)
         eventually(wsSource.isClosedForReceiveDetail shouldBe Some(ChannelClosed.Error(expectedException)))
-        wsSink.isClosedForSendDetail shouldBe Some(ChannelClosed.Done)
+        eventually(wsSink.isClosedForSendDetail shouldBe Some(ChannelClosed.Done))
       })
       .send(stubBackend)
   }
