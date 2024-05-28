@@ -23,8 +23,9 @@ The following response specifications which use `SyncWebSocket` are available in
 
 ```scala
 import sttp.client4._
-import sttp.model.ResponseMetadata
 import sttp.client4.ws.SyncWebSocket
+import sttp.model.ResponseMetadata
+import sttp.shared.Identity
 
 // when using import sttp.client4.ws.sync._
 
@@ -103,7 +104,7 @@ as Ox `Source` and `Sink`:
 
 ```
 // sbt dependency
-"com.softwaremill.sttp.client4" %% "ox" % "4.0.0-M15",
+"com.softwaremill.sttp.client4" %% "ox" % "4.0.0-M16",
 ```
 
 ```scala 

@@ -20,7 +20,7 @@ Class                                 Supported stream type                     
 To use, you don't need any extra dependencies, `core` is enough:
 
 ```
-"com.softwaremill.sttp.client4" %% "core" % "4.0.0-M15"
+"com.softwaremill.sttp.client4" %% "core" % "4.0.0-M16"
 ```
 
 You'll need the following imports:
@@ -59,7 +59,7 @@ Host header override is supported in environments running Java 12 onwards, but i
 To use, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client4" %% "okhttp-backend" % "4.0.0-M15"
+"com.softwaremill.sttp.client4" %% "okhttp-backend" % "4.0.0-M16"
 ```
 
 and some imports:
@@ -91,7 +91,7 @@ This backend depends on [OkHttp](http://square.github.io/okhttp/) and fully supp
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %% "armeria-backend" % "4.0.0-M15"
+"com.softwaremill.sttp.client4" %% "armeria-backend" % "4.0.0-M16"
 ```
 
 add imports:

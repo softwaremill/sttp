@@ -15,7 +15,7 @@ platforms, and that each has its own dedicated set of backends.
 The basic dependency which provides the API, together with a synchronous and `Future`-based backends, is:
 
 ```scala
-"com.softwaremill.sttp.client4" %% "core" % "4.0.0-M15"
+"com.softwaremill.sttp.client4" %% "core" % "4.0.0-M16"
 ```
 
 ## Using scala-cli
@@ -23,7 +23,7 @@ The basic dependency which provides the API, together with a synchronous and `Fu
 Add the following directive to the top of your scala file to add the core sttp dependency:
 
 ```
-//> using dep "com.softwaremill.sttp.client4::core:4.0.0-M15"
+//> using dep "com.softwaremill.sttp.client4::core:4.0.0-M16"
 ```
 
 ## Using Ammonite
@@ -31,7 +31,7 @@ Add the following directive to the top of your scala file to add the core sttp d
 If you are an [Ammonite](https://ammonite.io) user, you can quickly start experimenting with sttp by copy-pasting the following:
 
 ```scala
-import $ivy.`com.softwaremill.sttp.client4::core:4.0.0-M15`
+import $ivy.`com.softwaremill.sttp.client4::core:4.0.0-M16`
 ```
 
 ## Imports
@@ -72,7 +72,7 @@ As an example, to integrate with the [uPickle](https://github.com/com-lihaoyi/up
 dependency:
 
 ```scala
-"com.softwaremill.sttp.client4" %% "upickle" % "4.0.0-M15"
+"com.softwaremill.sttp.client4" %% "upickle" % "4.0.0-M16"
 ```
 
 Your code might then look as follows:
@@ -109,7 +109,7 @@ Logging can be added using the [logging backend wrapper](backends/wrappers/loggi
 use slf4j, you'll need the following dependency:
 
 ```
-"com.softwaremill.sttp.client4" %% "slf4j-backend" % "4.0.0-M15"
+"com.softwaremill.sttp.client4" %% "slf4j-backend" % "4.0.0-M16"
 ```
 
 Then, you'll need to configure your client:
