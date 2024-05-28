@@ -152,7 +152,7 @@ val zio2InteropRsVersion = "2.0.2"
 
 val oxVersion = "0.2.0"
 val sttpModelVersion = "1.7.10"
-val sttpSharedVersion = "1.3.18"
+val sttpSharedVersion = "1.3.19"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.5.6"
 
@@ -198,63 +198,62 @@ lazy val allAggregates: Seq[ProjectReference] = {
   }
 }
 
-
 lazy val rawAllAggregates =
   testCompilation.projectRefs ++
-  catsCe2.projectRefs ++
-  cats.projectRefs ++
-  fs2Ce2.projectRefs ++
-  fs2.projectRefs ++
-  monix.projectRefs ++
-  ox.projectRefs ++
-  scalaz.projectRefs ++
-  zio1.projectRefs ++
-  zio.projectRefs ++
-  akkaHttpBackend.projectRefs ++
-  pekkoHttpBackend.projectRefs ++
-  asyncHttpClientBackend.projectRefs ++
-  asyncHttpClientFutureBackend.projectRefs ++
-  asyncHttpClientScalazBackend.projectRefs ++
-  asyncHttpClientZio1Backend.projectRefs ++
-  asyncHttpClientZioBackend.projectRefs ++
-  asyncHttpClientMonixBackend.projectRefs ++
-  asyncHttpClientCatsCe2Backend.projectRefs ++
-  asyncHttpClientCatsBackend.projectRefs ++
-  asyncHttpClientFs2Ce2Backend.projectRefs ++
-  asyncHttpClientFs2Backend.projectRefs ++
-  okhttpBackend.projectRefs ++
-  okhttpMonixBackend.projectRefs ++
-  http4sCe2Backend.projectRefs ++
-  http4sBackend.projectRefs ++
-  circe.projectRefs ++
-  zio1Json.projectRefs ++
-  zioJson.projectRefs ++
-  json4s.projectRefs ++
-  jsoniter.projectRefs ++
-  sprayJson.projectRefs ++
-  play29Json.projectRefs ++
-  playJson.projectRefs ++
-  tethysJson.projectRefs ++
-  prometheusBackend.projectRefs ++
-  openTelemetryMetricsBackend.projectRefs ++
-  openTelemetryTracingZioBackend.projectRefs ++
-  finagleBackend.projectRefs ++
-  armeriaBackend.projectRefs ++
-  armeriaScalazBackend.projectRefs ++
-  armeriaZio1Backend.projectRefs ++
-  armeriaZioBackend.projectRefs ++
-  armeriaMonixBackend.projectRefs ++
-  armeriaCatsCe2Backend.projectRefs ++
-  armeriaCatsBackend.projectRefs ++
-  armeriaFs2Ce2Backend.projectRefs ++
-  armeriaFs2Backend.projectRefs ++
-  scribeBackend.projectRefs ++
-  slf4jBackend.projectRefs ++
-  examplesCe2.projectRefs ++
-  examples.projectRefs ++
-  examples3.projectRefs ++
-  docs.projectRefs ++
-  testServer.projectRefs
+    catsCe2.projectRefs ++
+    cats.projectRefs ++
+    fs2Ce2.projectRefs ++
+    fs2.projectRefs ++
+    monix.projectRefs ++
+    ox.projectRefs ++
+    scalaz.projectRefs ++
+    zio1.projectRefs ++
+    zio.projectRefs ++
+    akkaHttpBackend.projectRefs ++
+    pekkoHttpBackend.projectRefs ++
+    asyncHttpClientBackend.projectRefs ++
+    asyncHttpClientFutureBackend.projectRefs ++
+    asyncHttpClientScalazBackend.projectRefs ++
+    asyncHttpClientZio1Backend.projectRefs ++
+    asyncHttpClientZioBackend.projectRefs ++
+    asyncHttpClientMonixBackend.projectRefs ++
+    asyncHttpClientCatsCe2Backend.projectRefs ++
+    asyncHttpClientCatsBackend.projectRefs ++
+    asyncHttpClientFs2Ce2Backend.projectRefs ++
+    asyncHttpClientFs2Backend.projectRefs ++
+    okhttpBackend.projectRefs ++
+    okhttpMonixBackend.projectRefs ++
+    http4sCe2Backend.projectRefs ++
+    http4sBackend.projectRefs ++
+    circe.projectRefs ++
+    zio1Json.projectRefs ++
+    zioJson.projectRefs ++
+    json4s.projectRefs ++
+    jsoniter.projectRefs ++
+    sprayJson.projectRefs ++
+    play29Json.projectRefs ++
+    playJson.projectRefs ++
+    tethysJson.projectRefs ++
+    prometheusBackend.projectRefs ++
+    openTelemetryMetricsBackend.projectRefs ++
+    openTelemetryTracingZioBackend.projectRefs ++
+    finagleBackend.projectRefs ++
+    armeriaBackend.projectRefs ++
+    armeriaScalazBackend.projectRefs ++
+    armeriaZio1Backend.projectRefs ++
+    armeriaZioBackend.projectRefs ++
+    armeriaMonixBackend.projectRefs ++
+    armeriaCatsCe2Backend.projectRefs ++
+    armeriaCatsBackend.projectRefs ++
+    armeriaFs2Ce2Backend.projectRefs ++
+    armeriaFs2Backend.projectRefs ++
+    scribeBackend.projectRefs ++
+    slf4jBackend.projectRefs ++
+    examplesCe2.projectRefs ++
+    examples.projectRefs ++
+    examples3.projectRefs ++
+    docs.projectRefs ++
+    testServer.projectRefs
 
 def filterProject(p: String => Boolean) =
   ScopeFilter(inProjects(allAggregates.filter(pr => p(display(pr.project))): _*))
