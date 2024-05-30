@@ -156,7 +156,7 @@ val sttpSharedVersion = "1.3.19"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.5.6"
 
-val jeagerClientVersion = "1.8.1"
+val jaegerClientVersion = "1.8.1"
 val braveOpentracingVersion = "1.0.1"
 val zipkinSenderOkHttpVersion = "3.4.0"
 val resilience4jVersion = "2.2.0"
@@ -1103,9 +1103,6 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
     moduleName := "sttp-docs",
     mdocVariables := Map(
       "VERSION" -> version.value,
-      "JEAGER_CLIENT_VERSION" -> jeagerClientVersion,
-      "BRAVE_OPENTRACING_VERSION" -> braveOpentracingVersion,
-      "ZIPKIN_SENDER_OKHTTP_VERSION" -> zipkinSenderOkHttpVersion,
       "AKKA_STREAM_VERSION" -> akkaStreamVersion,
       "PEKKO_STREAM_VERSION" -> pekkoStreamVersion,
       "CIRCE_VERSION" -> circeVersion
@@ -1121,7 +1118,7 @@ lazy val docs: ProjectMatrix = (projectMatrix in file("generated-docs")) // impo
       "commons-io" % "commons-io" % "2.16.1",
       "io.github.resilience4j" % "resilience4j-circuitbreaker" % resilience4jVersion,
       "io.github.resilience4j" % "resilience4j-ratelimiter" % resilience4jVersion,
-      "io.jaegertracing" % "jaeger-client" % jeagerClientVersion,
+      "io.jaegertracing" % "jaeger-client" % jaegerClientVersion,
       "io.opentracing.brave" % "brave-opentracing" % braveOpentracingVersion,
       "io.zipkin.reporter2" % "zipkin-sender-okhttp3" % zipkinSenderOkHttpVersion,
       "io.opentelemetry" % "opentelemetry-semconv" % "1.2.0-alpha",
