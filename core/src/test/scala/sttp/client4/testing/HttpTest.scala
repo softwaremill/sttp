@@ -6,7 +6,7 @@ import org.scalatest.matchers.should.Matchers
 import sttp.client4.internal.{Iso88591, Utf8}
 import sttp.client4.testing.HttpTest.endpoint
 import sttp.client4._
-import sttp.model.StatusCode
+import sttp.model.{Part, StatusCode}
 import sttp.monad.MonadError
 import sttp.monad.syntax._
 
@@ -450,6 +450,12 @@ trait HttpTest[F[_]]
   if (supportsMultipart) {
     "multipart" - {
       def mp = basicRequest.post(uri"$endpoint/multipart").response(asStringAlways)
+
+
+      "not encode tilde" in {
+        val part = multipart("v1", Map("k1" -> "v1~", "~k2" -> "v2"))
+        part.body.show should be("string: k1=v1~&~k2=v2")
+      }
 
       "send a multipart message" in {
         val req = mp.multipartBody(multipart("p1", "v1"), multipart("p2", "v2"))
