@@ -451,6 +451,12 @@ trait HttpTest[F[_]]
     "multipart" - {
       def mp = basicRequest.post(uri"$endpoint/multipart").response(asStringAlways)
 
+
+      "not encode tilde" in {
+        val part = multipart("v1", Map("k1" -> "v1~", "~k2" -> "v2"))
+        part.body.show should be("string: k1=v1~&~k2=v2")
+      }
+
       "send a multipart message" in {
         val req = mp.multipartBody(multipart("p1", "v1"), multipart("p2", "v2"))
         req.send(backend).toFuture().map { resp =>
