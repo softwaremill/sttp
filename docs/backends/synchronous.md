@@ -117,8 +117,8 @@ def handleSse(is: InputStream)(using IO): Unit =
 
 val backend = DefaultSyncBackend()
 IO.unsafe:
-    basicRequest
-      .get(uri"https://postman-echo.com/server-events/3")
-        .response(asInputStreamAlways(handleSse))
-        .send(backend)
+  basicRequest
+    .get(uri"https://postman-echo.com/server-events/3")
+      .response(asInputStreamAlways(handleSse))
+      .send(backend)
 ```
