@@ -18,7 +18,7 @@ object PrometheusBackend {
     Metrics names and model for Prometheus is based on these two specifications:
     https://prometheus.io/docs/practices/naming/
     https://prometheus.io/docs/concepts/data_model/#metric-names-and-labels
-  * */
+   * */
   val DefaultHistogramName = "http_client_request_duration_seconds"
   val DefaultRequestSizeName = "http_client_request_size_bytes"
   val DefaultResponseSizeName = "http_client_response_size_bytes"
@@ -138,7 +138,10 @@ object PrometheusBackend {
   Hence, we need to store a global cache o created histograms/gauges, so that we can properly re-use them.
    */
 
-  private def clear[T <: Collector](prometheusRegistry: PrometheusRegistry, collectors: ConcurrentHashMap[PrometheusRegistry, ConcurrentHashMap[String, T]]): Unit = {
+  private def clear[T <: Collector](
+      prometheusRegistry: PrometheusRegistry,
+      collectors: ConcurrentHashMap[PrometheusRegistry, ConcurrentHashMap[String, T]]
+  ): Unit = {
     collectors
       .getOrDefault(prometheusRegistry, new ConcurrentHashMap[String, T]())
       .values
@@ -155,12 +158,12 @@ object PrometheusBackend {
       cache: ConcurrentHashMap[PrometheusRegistry, ConcurrentHashMap[String, T]],
       prometheusRegistry: PrometheusRegistry
   ): ConcurrentHashMap[String, T] =
-      cache.computeIfAbsent(
-        prometheusRegistry,
-        new java.util.function.Function[PrometheusRegistry, ConcurrentHashMap[String, T]] {
-          override def apply(t: PrometheusRegistry): ConcurrentHashMap[String, T] = new ConcurrentHashMap[String, T]()
-        }
-      )
+    cache.computeIfAbsent(
+      prometheusRegistry,
+      new java.util.function.Function[PrometheusRegistry, ConcurrentHashMap[String, T]] {
+        override def apply(t: PrometheusRegistry): ConcurrentHashMap[String, T] = new ConcurrentHashMap[String, T]()
+      }
+    )
 
   final case class RequestCollectors(maybeTimer: Option[Timer], maybeGauge: Option[GaugeDataPoint])
 }
@@ -319,7 +322,11 @@ trait BaseCollectorConfig {
 /** Represents the name of a collector, together with label names and values. The same labels must be always returned,
   * and in the same order.
   */
-case class CollectorConfig(collectorName: String, description: Option[String] = None, labels: List[(String, String)] = Nil) extends BaseCollectorConfig {
+case class CollectorConfig(
+    collectorName: String,
+    description: Option[String] = None,
+    labels: List[(String, String)] = Nil
+) extends BaseCollectorConfig {
   override type T = CollectorConfig
   override def addLabels(lbs: List[(String, String)]): CollectorConfig = copy(labels = labels ++ lbs)
   override def help: String = description.getOrElse(collectorName)

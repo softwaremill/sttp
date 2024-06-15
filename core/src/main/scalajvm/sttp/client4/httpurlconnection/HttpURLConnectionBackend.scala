@@ -5,7 +5,25 @@ import sttp.client4.httpurlconnection.HttpURLConnectionBackend.EncodingHandler
 import sttp.client4.internal._
 import sttp.client4.testing.SyncBackendStub
 import sttp.client4.ws.{GotAWebSocketException, NotAWebSocketException}
-import sttp.client4.{BackendOptions, BasicBodyPart, BasicMultipartBody, ByteArrayBody, ByteBufferBody, FileBody, GenericRequest, GenericWebSocketResponseAs, InputStreamBody, MultipartStreamBody, NoBody, Response, StreamBody, StringBody, SttpClientException, SyncBackend, wrappers}
+import sttp.client4.{
+  wrappers,
+  BackendOptions,
+  BasicBodyPart,
+  BasicMultipartBody,
+  ByteArrayBody,
+  ByteBufferBody,
+  FileBody,
+  GenericRequest,
+  GenericWebSocketResponseAs,
+  InputStreamBody,
+  MultipartStreamBody,
+  NoBody,
+  Response,
+  StreamBody,
+  StringBody,
+  SttpClientException,
+  SyncBackend
+}
 import sttp.model._
 import sttp.monad.{IdentityMonad, MonadError}
 import sttp.shared.Identity

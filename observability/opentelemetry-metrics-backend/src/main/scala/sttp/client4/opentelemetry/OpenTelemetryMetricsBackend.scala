@@ -16,7 +16,7 @@ object OpenTelemetryMetricsBackend {
     Metrics names and model for Open Telemetry is based on these two specifications:
     https://opentelemetry.io/docs/specs/semconv/http/http-metrics/#http-client
     https://github.com/open-telemetry/opentelemetry-specification/blob/v1.31.0/specification/metrics/api.md#instrument
-  * */
+   * */
   val DefaultLatencyHistogramName = "http.client.request.duration"
   val DefaultRequestSizeHistogramName = "http.client.request.size.bytes"
   val DefaultResponseSizeHistogramName = "http.client.response.size.bytes"

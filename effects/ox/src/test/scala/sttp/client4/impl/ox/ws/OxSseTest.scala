@@ -24,12 +24,12 @@ class OxServerSentEventsTest extends AnyFlatSpec with Matchers with BeforeAndAft
       .post(uri"$endpoint/sse/echo3")
       .body(sseData)
       .response(asInputStreamAlways { is =>
-        OxServerSentEvents.parse(is).take(3).toList shouldBe(expectedEvents) 
+        OxServerSentEvents.parse(is).take(3).toList shouldBe expectedEvents
         ()
       })
       .send(backend)
   }
-  
+
   override protected def afterAll(): Unit =
     backend.close()
     super.afterAll()

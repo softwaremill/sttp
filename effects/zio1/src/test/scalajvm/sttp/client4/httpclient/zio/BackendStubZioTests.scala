@@ -5,7 +5,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import sttp.client4._
 import sttp.client4.impl.zio._
-import sttp.client4.testing.{BackendStub, RawStream, StreamBackendStub, ResponseStub, TestStreams}
+import sttp.client4.testing.{BackendStub, RawStream, ResponseStub, StreamBackendStub, TestStreams}
 import sttp.model.Method
 import zio.stream.ZStream
 import zio.{Task, ZIO}
