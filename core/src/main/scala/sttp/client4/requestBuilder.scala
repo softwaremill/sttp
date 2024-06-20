@@ -73,7 +73,7 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
   def contentLength(l: Long): PR = header(HeaderNames.ContentLength, l.toString)
 
   def contentEncoding(encoding: ContentEncoding): PR =
-    header(HeaderNames.ContentEncoding, encoding.name, replaceExisting = false)
+    header(HeaderNames.ContentEncoding, encoding.name, DuplicateHeaderBehavior.Add)
       .withOptions(options.copy(encoding = options.encoding :+ encoding))
 
   /** Adds the given header to the headers of this request. If a header with the same name already exists, the default
@@ -258,8 +258,8 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
   def followRedirects(fr: Boolean): PR = withOptions(options.copy(followRedirects = fr))
 
   def maxRedirects(n: Int): PR =
-  if (n <= 0) withOptions(options.copy(followRedirects = false))
-  else withOptions(options.copy(followRedirects = true, maxRedirects = n))
+    if (n <= 0) withOptions(options.copy(followRedirects = false))
+    else withOptions(options.copy(followRedirects = true, maxRedirects = n))
 
   /** When a POST or PUT request is redirected, should the redirect be a POST/PUT as well (with the original body), or
     * should the request be converted to a GET without a body.
