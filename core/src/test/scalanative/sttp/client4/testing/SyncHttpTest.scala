@@ -288,19 +288,19 @@ trait SyncHttpTest
     }
 
     "decompress using gzip" in {
-      val req = compress.header("Accept-Encoding", "gzip", replaceExisting = true)
+      val req = compress.header("Accept-Encoding", "gzip")
       val resp = req.send(backend)
       resp.body should be(Right(decompressedBody))
     }
 
     "decompress using deflate" in {
-      val req = compress.header("Accept-Encoding", "deflate", replaceExisting = true)
+      val req = compress.header("Accept-Encoding", "deflate")
       val resp = req.send(backend)
       resp.body should be(Right(decompressedBody))
     }
 
     "work despite providing an unsupported encoding" in {
-      val req = compress.header("Accept-Encoding", "br", replaceExisting = true)
+      val req = compress.header("Accept-Encoding", "br")
       val resp = req.send(backend)
       resp.body should be(Right(decompressedBody))
     }
@@ -388,7 +388,8 @@ trait SyncHttpTest
         .get(uri"$endpoint/timeout")
         .readTimeout(200.milliseconds)
         .response(asString)
-      req.send(backend)
+      val caught = intercept[RuntimeException](req.send(backend))
+      caught.getMessage should include("TIMEDOUT")
     }
 
     "not fail if read timeout is big enough" in {

@@ -7,21 +7,34 @@ on:
     tags: [v*]
 jobs:
   ci:
-    # Run on external PRs, but not on internal PRs since those will be run by push to branch
-    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    # run on 1) push, 2) external PRs, 3) softwaremill-ci PRs
+    # do not run on internal, non-steward PRs since those will be run by push to branch
+    if: |
+      github.event_name == 'push' || 
+      github.event.pull_request.head.repo.full_name != github.repository ||
+      github.event.pull_request.user.login == 'softwaremill-ci'
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
       matrix:
         scala-version: [ "2.12", "2.13", "3" ]
         target-platform: [ "JVM", "JS", "Native" ]
+        java: [ "11", "21" ]
+        exclude:
+          - java: "21"
+        include: # Restricted to build only specific Loom-based modules
+          - scala-version: "3"
+            target-platform: "JVM"
+            java: "21"
     steps:
     - name: Checkout
       uses: actions/checkout@v2
-    - name: Set up JDK 11
-      uses: actions/setup-java@v1
+    - name: Set up JDK 
+      uses: actions/setup-java@v4
       with:
-        java-version: 11
+        distribution: 'temurin'
+        cache: 'sbt'
+        java-version: ${{ matrix.java }}
     - name: Cache sbt
       uses: actions/cache@v2
       with:
@@ -36,14 +49,18 @@ jobs:
         sudo apt-get update
         sudo apt-get install libidn2-dev libcurl3-dev
         echo "STTP_NATIVE=1" >> $GITHUB_ENV
+    - name: Enable Loom-specific modules
+      if: matrix.java == '21'
+      run: echo "ONLY_LOOM=1" >> $GITHUB_ENV
     - name: Compile
       run: sbt -v "compileScoped ${{ matrix.scala-version }} ${{ matrix.target-platform }}"
     - name: Compile documentation
-      if: matrix.target-platform == 'JVM'
+      if: matrix.target-platform == 'JVM' && matrix.java == '11'
       run: sbt -v compileDocs
     - name: Test
       run: sbt -v "testScoped ${{ matrix.scala-version }} ${{ matrix.target-platform }}"        
     - name: Prepare release notes
+      if: matrix.java == '11'
       uses: release-drafter/release-drafter@v5
       with:
         config-name: release-drafter.yml
@@ -58,8 +75,12 @@ jobs:
         find $HOME/.sbt                              -name "*.lock"               -delete || true
 
   mima:
-    # run on external PRs, but not on internal PRs since those will be run by push to branch
-    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    # run on 1) push, 2) external PRs, 3) softwaremill-ci PRs
+    # do not run on internal, non-steward PRs since those will be run by push to branch
+    if: |
+      github.event_name == 'push' || 
+      github.event.pull_request.head.repo.full_name != github.repository ||
+      github.event.pull_request.user.login == 'softwaremill-ci'
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
@@ -92,16 +113,19 @@ jobs:
     name: Publish release
     needs: [ci]
     if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v'))
-    runs-on: ubuntu-20.04
-    env:
-      STTP_NATIVE: 1
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix: 
+        java: [ "11", "21" ]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Set up JDK 11
-        uses: actions/setup-java@v1
+      - name: Set up JDK 
+        uses: actions/setup-java@v4
         with:
-          java-version: 11
+          distribution: 'temurin'
+          java-version: ${{ matrix.java }}
+          cache: 'sbt'
       - name: Cache sbt
         uses: actions/cache@v2
         with:
@@ -114,6 +138,12 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install libidn2-dev libcurl3-dev
+      - name: Enable Native-specific modules
+        if: matrix.java == '11'
+        run: echo "STTP_NATIVE=1" >> $GITHUB_ENV
+      - name: Enable Loom-specific modules
+        if: matrix.java == '21'
+        run: echo "ONLY_LOOM=1" >> $GITHUB_ENV
       - name: Compile
         run: sbt compile
       - name: Publish artifacts
@@ -124,12 +154,14 @@ jobs:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
       - name: Extract version from commit message
+        if: matrix.java == '11'
         run: |
           version=${GITHUB_REF/refs\/tags\/v/}
           echo "VERSION=$version" >> $GITHUB_ENV
         env:
           COMMIT_MSG: ${{ github.event.head_commit.message }}
       - name: Publish release notes
+        if: matrix.java == '11'
         uses: release-drafter/release-drafter@v5
         with:
           config-name: release-drafter.yml
@@ -146,3 +178,41 @@ jobs:
           find $HOME/.ivy2/cache                       -name "*-LM-SNAPSHOT*"       -delete || true
           find $HOME/.cache/coursier/v1                -name "ivydata-*.properties" -delete || true
           find $HOME/.sbt                              -name "*.lock"               -delete || true
+
+  # `automerge` label is attached iff there is exactly one file changed by steward and this file belongs to a
+  # whitelist specified by `labeler.yml`
+  label:
+    name: Attach automerge label
+    # only for PRs by softwaremill-ci
+    if: github.event.pull_request.user.login == 'softwaremill-ci'
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      # count number of files changed
+      - name: Count number of files changed
+        id: count-changed-files
+        run: |
+          N=$(git diff --name-only -r HEAD^1 HEAD | wc -w)
+          echo "changed_files_num=$N" >> $GITHUB_OUTPUT
+      - name: Launch labeler
+        # skip if more than one file changed
+        if: steps.count-changed-files.outputs.changed_files_num == 1
+        uses: srvaroa/labeler@master
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+
+  auto-merge:
+    name: Auto merge
+    # only for PRs by softwaremill-ci
+    if: github.event.pull_request.user.login == 'softwaremill-ci'
+    needs: [ ci, mima, label ]
+    runs-on: ubuntu-22.04
+    steps:
+      - id: automerge
+        name: automerge
+        uses: "pascalgn/automerge-action@v0.15.6"
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          MERGE_METHOD: "squash"

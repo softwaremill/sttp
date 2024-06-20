@@ -2,6 +2,7 @@ package sttp.client4
 
 import sttp.client4.httpclient.HttpClientSyncBackend
 import sttp.client4.testing.{ConvertToFuture, HttpTest}
+import sttp.shared.Identity
 
 class HttpClientSyncHttpTest extends HttpTest[Identity] {
   override val backend: WebSocketSyncBackend = HttpClientSyncBackend()

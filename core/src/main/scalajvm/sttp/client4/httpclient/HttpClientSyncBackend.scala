@@ -6,11 +6,11 @@ import sttp.client4.httpclient.HttpClientSyncBackend.SyncEncodingHandler
 import sttp.client4.internal.httpclient._
 import sttp.client4.internal.ws.{SimpleQueue, SyncQueue, WebSocketEvent}
 import sttp.client4.internal.{emptyInputStream, NoStreams}
-import sttp.client4.monad.IdMonad
 import sttp.client4.testing.WebSocketSyncBackendStub
-import sttp.client4.{wrappers, BackendOptions, GenericRequest, Identity, Response, WebSocketSyncBackend}
+import sttp.client4.{wrappers, BackendOptions, GenericRequest, Response, WebSocketSyncBackend}
 import sttp.model.StatusCode
-import sttp.monad.MonadError
+import sttp.monad.{IdentityMonad, MonadError}
+import sttp.shared.Identity
 import sttp.ws.{WebSocket, WebSocketFrame}
 
 import java.io.{InputStream, UnsupportedEncodingException}
@@ -85,7 +85,7 @@ class HttpClientSyncBackend private (
   override protected val bodyToHttpClient: BodyToHttpClient[Identity, Nothing] =
     new BodyToHttpClient[Identity, Nothing] {
       override val streams: NoStreams = NoStreams
-      override implicit val monad: MonadError[Identity] = IdMonad
+      override implicit val monad: MonadError[Identity] = IdentityMonad
       override def streamToPublisher(stream: Nothing): Identity[BodyPublisher] = stream // nothing is everything
     }
 
@@ -94,7 +94,7 @@ class HttpClientSyncBackend private (
       override def inputStreamToStream(is: InputStream): Identity[(streams.BinaryStream, () => Identity[Unit])] =
         monad.error(new IllegalStateException("Streaming is not supported"))
       override val streams: NoStreams = NoStreams
-      override implicit def monad: MonadError[Identity] = IdMonad
+      override implicit def monad: MonadError[Identity] = IdentityMonad
       override def compileWebSocketPipe(
           ws: WebSocket[Identity],
           pipe: streams.Pipe[WebSocketFrame.Data[_], WebSocketFrame]

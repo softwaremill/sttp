@@ -107,7 +107,7 @@ Handling retries is a complex problem when it comes to HTTP requests. When is a 
 * only idempotent HTTP methods (such as `GET`) could potentially be retried
 * some HTTP status codes might also be retryable (e.g. `500 Internal Server Error` or `503 Service Unavailable`)
 
-In some cases it's possible to implement a generic retry mechanism; such a mechanism should take into account logging, metrics, limiting the number of retries and a backoff mechanism. These mechanisms could be quite simple, or involve e.g. retry budgets (see [Finagle's](https://twitter.github.io/finagle/guide/Clients.md#retries) documentation on retries). In sttp, it's possible to recover from errors using the `monad`. A starting point for a retrying backend could be:
+In some cases it's possible to implement a generic retry mechanism; such a mechanism should take into account logging, metrics, limiting the number of retries and a backoff mechanism. These mechanisms could be quite simple, or involve e.g. retry budgets (see [Finagle's](https://twitter.github.io/finagle/guide/Clients.html#retries) documentation on retries). In sttp, it's possible to recover from errors using the `monad`. A starting point for a retrying backend could be:
 
 ```scala
 import sttp.capabilities.Effect
@@ -260,7 +260,7 @@ object RateLimitingSttpBackend {
 Implementing a new backend is made easy as the tests are published in the `core` jar file under the `tests` classifier. Simply add the follow dependencies to your `build.sbt`:
 
 ```
-"com.softwaremill.sttp.client4" %% "core" % "4.0.0-M12" % Test classifier "tests"
+"com.softwaremill.sttp.client4" %% "core" % "4.0.0-M16" % Test classifier "tests"
 ```
 
 Implement your backend and extend the `HttpTest` class:
@@ -277,8 +277,6 @@ class MyCustomBackendHttpTest extends HttpTest[Future] {
 }
 ```
 
-You can find a more detailed example in the [sttp-vertx](https://github.com/guymers/sttp-vertx) repository.
-
 ## Custom backend wrapper using cats
 
 When implementing a backend wrapper using cats, it might be useful to import:
@@ -290,9 +288,9 @@ import sttp.client4.impl.cats.implicits._
 from the cats integration module. The module should be available on the classpath after adding following dependency:
 
 ```scala
-"com.softwaremill.sttp.client4" %% "cats" % "4.0.0-M12" // for cats-effect 3.x
+"com.softwaremill.sttp.client4" %% "cats" % "4.0.0-M16" // for cats-effect 3.x
 // or
-"com.softwaremill.sttp.client4" %% "catsce2" % "4.0.0-M12" // for cats-effect 2.x
+"com.softwaremill.sttp.client4" %% "catsce2" % "4.0.0-M16" // for cats-effect 2.x
 ```
 
 The object contains implicits to convert a cats `MonadError` into the sttp `MonadError`, 

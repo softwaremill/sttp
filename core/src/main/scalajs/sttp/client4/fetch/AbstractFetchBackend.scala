@@ -271,8 +271,7 @@ abstract class AbstractFetchBackend[F[_], S <: Streams[S]](
       val webSocket = WebSocketImpl.newJSCoupledWebSocket(ws, queue)
       bodyFromResponseAs
         .apply(request.response, ResponseMetadata(StatusCode.Ok, "", request.headers), Right(webSocket))
-        .map(Response.ok)
-        .map(_.copy(request = request.onlyMetadata))
+        .map(e => Response.ok(e, request.onlyMetadata))
     }
   }
 

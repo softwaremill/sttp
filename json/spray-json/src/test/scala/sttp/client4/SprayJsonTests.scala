@@ -2,17 +2,20 @@ package sttp.client4
 
 import org.scalatest.EitherValues
 import spray.json.DefaultJsonProtocol._
+import spray.json.DefaultJsonProtocol.RootJsObjectFormat
 import spray.json.JsonParser.ParsingException
 import spray.json.{DeserializationException => _, _}
 import sttp.client4.SprayJsonTests._
 import sttp.client4.internal.Utf8
-import sttp.client4.sprayJson._
+import sttp.client4.sprayJson.{sprayBodySerializer, _}
 import sttp.model._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class SprayJsonTests extends AnyFlatSpec with Matchers with EitherValues {
   behavior of "The spray-json module"
+
+  implicit private val jsObjectSerializer: BodySerializer[JsObject] = sprayBodySerializer(RootJsObjectFormat)
 
   it should "encode arbitrary json bodies" in {
     val body = Outer(Inner(42, true, "horses"), "cats")

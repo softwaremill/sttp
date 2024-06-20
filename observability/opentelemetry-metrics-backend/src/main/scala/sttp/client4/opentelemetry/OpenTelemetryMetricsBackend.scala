@@ -1,23 +1,29 @@
 package sttp.client4.opentelemetry
 
+import io.opentelemetry.api.OpenTelemetry
 import io.opentelemetry.api.common.Attributes
 import io.opentelemetry.api.metrics.{DoubleHistogram, LongCounter, LongUpDownCounter, Meter}
-import io.opentelemetry.api.OpenTelemetry
-import sttp.client4.{wrappers, _}
 import sttp.client4.listener.{ListenerBackend, RequestListener}
 import sttp.client4.wrappers.FollowRedirectsBackend
+import sttp.client4._
+import sttp.shared.Identity
 
 import java.time.Clock
 import java.util.concurrent.ConcurrentHashMap
 
 object OpenTelemetryMetricsBackend {
-  val DefaultLatencyHistogramName = "sttp_request_latency"
-  val DefaultRequestsInProgressCounterName = "sttp_requests_in_progress"
-  val DefaultSuccessCounterName = "sttp_requests_success_count"
-  val DefaultErrorCounterName = "sttp_requests_error_count"
-  val DefaultFailureCounterName = "sttp_requests_failure_count"
-  val DefaultRequestSizeHistogramName = "sttp_request_size_bytes"
-  val DefaultResponseSizeHistogramName = "sttp_response_size_bytes"
+  /*
+    Metrics names and model for Open Telemetry is based on these two specifications:
+    https://opentelemetry.io/docs/specs/semconv/http/http-metrics/#http-client
+    https://github.com/open-telemetry/opentelemetry-specification/blob/v1.31.0/specification/metrics/api.md#instrument
+   * */
+  val DefaultLatencyHistogramName = "http.client.request.duration"
+  val DefaultRequestSizeHistogramName = "http.client.request.size.bytes"
+  val DefaultResponseSizeHistogramName = "http.client.response.size.bytes"
+  val DefaultRequestsActiveCounterName = "http.client.requests.active"
+  val DefaultSuccessCounterName = "http.client.requests.success"
+  val DefaultErrorCounterName = "http.client.requests.error"
+  val DefaultFailureCounterName = "http.client.requests.failure"
 
   def apply(delegate: SyncBackend, openTelemetry: OpenTelemetry): SyncBackend =
     apply(delegate, OpenTelemetryMetricsConfig(openTelemetry))
@@ -88,13 +94,13 @@ private object OpenTelemetryMetricsListener {
 private class OpenTelemetryMetricsListener(
     meter: Meter,
     clock: Clock,
-    requestToLatencyHistogramMapper: GenericRequest[_, _] => Option[CollectorConfig],
+    requestToLatencyHistogramMapper: GenericRequest[_, _] => Option[HistogramCollectorConfig],
     requestToInProgressCounterMapper: GenericRequest[_, _] => Option[CollectorConfig],
     responseToSuccessCounterMapper: Response[_] => Option[CollectorConfig],
     requestToErrorCounterMapper: Response[_] => Option[CollectorConfig],
     requestToFailureCounterMapper: (GenericRequest[_, _], Throwable) => Option[CollectorConfig],
-    requestToSizeHistogramMapper: GenericRequest[_, _] => Option[CollectorConfig],
-    responseToSizeHistogramMapper: Response[_] => Option[CollectorConfig]
+    requestToSizeHistogramMapper: GenericRequest[_, _] => Option[HistogramCollectorConfig],
+    responseToSizeHistogramMapper: Response[_] => Option[HistogramCollectorConfig]
 ) extends RequestListener[Identity, Option[Long]] {
 
   private val counters = new ConcurrentHashMap[String, LongCounter]
@@ -121,7 +127,7 @@ private class OpenTelemetryMetricsListener(
   override def requestException(request: GenericRequest[_, _], tag: Option[Long], e: Exception): Unit =
     HttpError.find(e) match {
       case Some(HttpError(body, statusCode)) =>
-        requestSuccessful(request, Response(body, statusCode).copy(request = request.onlyMetadata), tag)
+        requestSuccessful(request, Response(body, statusCode, request.onlyMetadata), tag)
       case _ =>
         incrementCounter(requestToFailureCounterMapper(request, e))
         recordHistogram(requestToLatencyHistogramMapper(request), tag.map(clock.millis() - _))
@@ -134,8 +140,9 @@ private class OpenTelemetryMetricsListener(
         getOrCreateMetric(upAndDownCounter, config, createNewUpDownCounter).add(delta, config.attributes)
       )
 
-  private def recordHistogram(config: Option[CollectorConfig], size: Option[Long]): Unit = config.foreach { cfg =>
-    getOrCreateMetric(histograms, cfg, createNewHistogram).record(size.getOrElse(0L).toDouble, cfg.attributes)
+  private def recordHistogram(config: Option[HistogramCollectorConfig], size: Option[Long]): Unit = config.foreach {
+    cfg =>
+      getOrCreateHistogram(histograms, cfg, createNewHistogram).record(size.getOrElse(0L).toDouble, cfg.attributes)
   }
 
   private def incrementCounter(collectorConfig: Option[CollectorConfig]): Unit =
@@ -146,6 +153,18 @@ private class OpenTelemetryMetricsListener(
       cache: ConcurrentHashMap[String, T],
       data: CollectorConfig,
       create: CollectorConfig => T
+  ): T =
+    cache.computeIfAbsent(
+      data.name,
+      new java.util.function.Function[String, T] {
+        override def apply(t: String): T = create(data)
+      }
+    )
+
+  private def getOrCreateHistogram[T](
+      cache: ConcurrentHashMap[String, T],
+      data: HistogramCollectorConfig,
+      create: HistogramCollectorConfig => T
   ): T =
     cache.computeIfAbsent(
       data.name,
@@ -168,10 +187,12 @@ private class OpenTelemetryMetricsListener(
     b.build()
   }
 
-  private def createNewHistogram(collectorConfig: CollectorConfig): DoubleHistogram = {
-    var b = meter.histogramBuilder(collectorConfig.name)
-    b = collectorConfig.unit.fold(b)(b.setUnit)
-    b = collectorConfig.description.fold(b)(b.setDescription)
+  private def createNewHistogram(config: HistogramCollectorConfig): DoubleHistogram = {
+    var b = meter
+      .histogramBuilder(config.name)
+      .setExplicitBucketBoundariesAdvice(config.buckets)
+      .setUnit(config.unit)
+    b = config.description.fold(b)(b.setDescription)
     b.build()
   }
 }
@@ -182,9 +203,23 @@ case class CollectorConfig(
     unit: Option[String] = None,
     attributes: Attributes = Attributes.empty()
 )
-object CollectorConfig {
-  val Bytes = "b"
+
+case class HistogramCollectorConfig(
+    name: String,
+    unit: String,
+    description: Option[String] = None,
+    attributes: Attributes = Attributes.empty(),
+    buckets: java.util.List[java.lang.Double]
+)
+
+object HistogramCollectorConfig {
+  val Bytes = "By"
   val Milliseconds = "ms"
+  val DefaultLatencyBuckets: java.util.List[java.lang.Double] =
+    java.util.List.of(.005, .01, .025, .05, .075, .1, .25, .5, .75, 1, 2.5, 5, 7.5, 10)
+  // Should go as follows 100 bytes, 1Kb, 10Kb, 100kB, 1 Mb, 10 Mb, 100Mb, 100Mb +
+  val DefaultSizeBuckets: java.util.List[java.lang.Double] =
+    java.util.List.of(100, 1024, 10240, 102400, 1048576, 10485760, 104857600)
 }
 
 case class MeterConfig(name: String, version: String)

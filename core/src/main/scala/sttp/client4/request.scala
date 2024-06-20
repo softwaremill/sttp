@@ -5,6 +5,7 @@ import sttp.capabilities.{Effect, Streams, WebSockets}
 import sttp.client4.SttpClientException.EncodingException
 import sttp.client4.internal.encoders.ContentCodec
 import sttp.client4.internal.{ToCurlConverter, ToRfc2616Converter}
+import sttp.shared.Identity
 
 import scala.collection.immutable.Seq
 

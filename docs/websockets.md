@@ -23,8 +23,9 @@ The following response specifications which use `SyncWebSocket` are available in
 
 ```scala mdoc:compile-only
 import sttp.client4._
-import sttp.model.ResponseMetadata
 import sttp.client4.ws.SyncWebSocket
+import sttp.model.ResponseMetadata
+import sttp.shared.Identity
 
 // when using import sttp.client4.ws.sync._
 
@@ -94,6 +95,52 @@ effect type      class name
 ``fs2.Stream``   ``sttp.client4.impl.fs2.Fs2WebSockets``
 ================ ==========================================
 ```
+
+## WebSockets as Ox Source and Sink
+
+[Ox](https://ox.softwaremill.com) is a Scala 3 toolkit that allows you to handle concurrency and resiliency in direct-style, leveraging Java 21 virtual threads.
+If you're using Ox with `sttp`, you can use the `DefaultSyncBackend` from `sttp-core` for HTTP communication. An additional `ox` module allows handling WebSockets 
+as Ox `Source` and `Sink`:
+
+```
+// sbt dependency
+"com.softwaremill.sttp.client4" %% "ox" % "@VERSION@",
+```
+
+```scala 
+import ox.*
+import ox.channels.{Sink, Source}
+import sttp.client4.*
+import sttp.client4.impl.ox.ws.* // import to access asSourceAnkSink
+import sttp.client4.ws.SyncWebSocket
+import sttp.client4.ws.sync.*
+import sttp.ws.WebSocketFrame
+
+def useWebSocket(ws: SyncWebSocket): Unit =
+    supervised {
+      val (wsSource, wsSink) = asSourceAndSink(ws) // (Source[WebSocketFrame], Sink[WebSocketFrame])
+      // ...
+    }
+
+val backend = DefaultSyncBackend()
+basicRequest
+  .get(uri"wss://ws.postman-echo.com/raw")
+  .response(asWebSocket(useWebSocket))
+  .send(backend)
+```
+
+See the [full example here](https://github.com/softwaremill/sttp/blob/master/examples/src/main/scala/sttp/client4/examples3/WebSocketOx.scala).
+
+Make sure that the `Source` is contiunually read. This will guarantee that server-side Close signal is received and handled. 
+If you don't want to process frames from the server, you can at least handle it with a `fork { source.drain() }`.
+  
+You don't need to manually call `ws.close()` when using this approach, this will be handled automatically underneath, 
+according to following rules:
+ - If the request `Sink` is closed due to an upstream error, a Close frame is sent, and the `Source` with incoming responses gets completed as `Done`.
+ - If the request `Sink` completes as `Done`, a `Close` frame is sent, and the response `Sink` keeps receiving responses until the server closes communication.
+ - If the response `Source` is closed by a Close frome from the server or due to an error, the request Sink is closed as `Done`, which will still send all outstanding buffered frames, and then finish.
+
+Read more about Ox, structured concurrency, Sources and Sinks on the [project website](https://ox.softwaremill.com).
 
 ## Compression
 

@@ -5,7 +5,6 @@ import sttp.client4.{
   Backend,
   GenericBackend,
   GenericRequest,
-  Identity,
   Response,
   StreamBackend,
   SyncBackend,
@@ -14,6 +13,7 @@ import sttp.client4.{
 }
 import sttp.model.Uri
 import sttp.monad.syntax._
+import sttp.shared.Identity
 
 abstract class ResolveRelativeUrisBackend[F[_], P](delegate: GenericBackend[F, P], resolve: Uri => F[Uri])
     extends DelegateBackend(delegate) {

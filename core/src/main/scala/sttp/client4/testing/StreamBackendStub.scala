@@ -1,8 +1,8 @@
 package sttp.client4.testing
 
-import sttp.client4.monad.IdMonad
 import sttp.client4._
-import sttp.monad.{FutureMonad, MonadError}
+import sttp.monad.{FutureMonad, IdentityMonad, MonadError}
+import sttp.shared.Identity
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
@@ -40,7 +40,7 @@ class StreamBackendStub[F[_], S](
 object StreamBackendStub {
 
   /** Create a stub of a synchronous backend. */
-  def synchronous[S]: StreamBackendStub[Identity, S] = new StreamBackendStub(IdMonad, PartialFunction.empty, None)
+  def synchronous[S]: StreamBackendStub[Identity, S] = new StreamBackendStub(IdentityMonad, PartialFunction.empty, None)
 
   /** Create a stub of an asynchronous backend (which uses the Scala's built-in [[Future]] as the effect type). */
   def asynchronousFuture[S](implicit ec: ExecutionContext): StreamBackendStub[Future, S] =

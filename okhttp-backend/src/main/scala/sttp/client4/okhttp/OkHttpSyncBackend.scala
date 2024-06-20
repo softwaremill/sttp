@@ -4,7 +4,6 @@ import okhttp3.{MediaType, OkHttpClient, RequestBody => OkHttpRequestBody}
 import sttp.capabilities.{Streams, WebSockets}
 import sttp.client4.internal.NoStreams
 import sttp.client4.internal.ws.{SimpleQueue, SyncQueue, WebSocketEvent}
-import sttp.client4.monad.IdMonad
 import sttp.client4.okhttp.OkHttpBackend.EncodingHandler
 import sttp.client4.testing.WebSocketSyncBackendStub
 import sttp.client4.{
@@ -13,11 +12,11 @@ import sttp.client4.{
   BackendOptions,
   DefaultReadTimeout,
   GenericRequest,
-  Identity,
   Response,
   WebSocketSyncBackend
 }
-import sttp.monad.MonadError
+import sttp.monad.{IdentityMonad, MonadError}
+import sttp.shared.Identity
 import sttp.ws.WebSocket
 
 import java.io.InputStream
@@ -79,11 +78,11 @@ class OkHttpSyncBackend private (
     readResponse(response, request, request.response)
   }
 
-  override val monad: MonadError[Identity] = IdMonad
+  override val monad: MonadError[Identity] = IdentityMonad
 
   override protected val bodyFromOkHttp: BodyFromOkHttp[Identity, Nothing] = new BodyFromOkHttp[Identity, Nothing] {
     override val streams: NoStreams = NoStreams
-    override implicit val monad: MonadError[Identity] = IdMonad
+    override implicit val monad: MonadError[Identity] = IdentityMonad
     override def responseBodyToStream(inputStream: InputStream): Nothing =
       throw new IllegalStateException("Streaming isn't supported")
     override def compileWebSocketPipe(ws: WebSocket[Identity], pipe: Nothing): Identity[Unit] = pipe

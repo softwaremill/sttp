@@ -1,8 +1,9 @@
 package sttp.client4
 
-import sttp.model.{StatusCode, _}
+import sttp.model._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import sttp.client4.testing.ResponseStub
 
 class CookieRequestTests extends AnyFlatSpec with Matchers {
 
@@ -35,7 +36,7 @@ class CookieRequestTests extends AnyFlatSpec with Matchers {
 
   it should "set cookies from a response" in {
     val response =
-      Response(
+      ResponseStub(
         Right(()),
         StatusCode.Ok,
         "",

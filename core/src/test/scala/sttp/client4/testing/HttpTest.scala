@@ -51,7 +51,6 @@ trait HttpTest[F[_]]
 
   protected def supportsRequestTimeout = true
   protected def supportsSttpExceptions = true
-  protected def supportsConnectionRefusedTest = true
   protected def supportsMultipart = true
   protected def supportsCustomMultipartContentType = true
   protected def supportsCustomMultipartEncoding = true
@@ -502,6 +501,11 @@ trait HttpTest[F[_]]
     "multipart" - {
       def mp = basicRequest.post(uri"$endpoint/multipart").response(asStringAlways)
 
+      "not encode tilde" in {
+        val part = multipart("v1", Map("k1" -> "v1~", "~k2" -> "v2"))
+        part.body.show should be("string: k1=v1~&~k2=v2")
+      }
+
       "send a multipart message" in {
         val req = mp.multipartBody(multipart("p1", "v1"), multipart("p2", "v2"))
         req.send(backend).toFuture().map { resp =>
@@ -690,21 +694,19 @@ trait HttpTest[F[_]]
         }
       }
 
-      if (supportsConnectionRefusedTest) {
-        "connection exceptions - connection refused" in {
-          val req = basicRequest
-            .get(uri"http://localhost:7918")
-            .response(asString)
+      "connection exceptions - connection refused" in {
+        val req = basicRequest
+          .get(uri"http://localhost:7918")
+          .response(asString)
 
-          Future(req.send(backend)).flatMap(_.toFuture()).failed.map { e =>
-            info("Sending request failed", Some(e))
-            try e shouldBe a[SttpClientException.ConnectException]
-            catch {
-              case t: Throwable =>
-                info("Not a connect exception, printing stack trace")
-                e.printStackTrace()
-                throw t
-            }
+        Future(req.send(backend)).flatMap(_.toFuture()).failed.map { e =>
+          info("Sending request failed", Some(e))
+          try e shouldBe a[SttpClientException.ConnectException]
+          catch {
+            case t: Throwable =>
+              info("Not a connect exception, printing stack trace")
+              e.printStackTrace()
+              throw t
           }
         }
       }

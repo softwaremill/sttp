@@ -3,7 +3,6 @@ package sttp.client4.wrappers
 import sttp.client4.monad.FunctionK
 import sttp.client4.{
   Backend,
-  Identity,
   StreamBackend,
   SyncBackend,
   WebSocketBackend,
@@ -11,6 +10,7 @@ import sttp.client4.{
   WebSocketSyncBackend
 }
 import sttp.monad.TryMonad
+import sttp.shared.Identity
 
 import scala.util.Try
 

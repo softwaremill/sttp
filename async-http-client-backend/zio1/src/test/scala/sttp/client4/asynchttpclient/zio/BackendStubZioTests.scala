@@ -53,7 +53,7 @@ class BackendStubZioTests extends AnyFlatSpec with Matchers with ScalaFutures wi
 
     val effect = for {
       _ <- whenRequestMatches(_.uri.toString.endsWith("c")).thenRespond("c")
-      _ <- whenRequestMatchesPartial { case r if r.method == Method.POST => Response.ok("b") }
+      _ <- whenRequestMatchesPartial { case r if r.method == Method.POST => ResponseStub.ok("b") }
       _ <- whenAnyRequest.thenRespond("a")
       resp <- r1 <&> r2 <&> r3
     } yield resp

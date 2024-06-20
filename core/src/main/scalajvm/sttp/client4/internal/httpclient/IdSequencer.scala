@@ -1,6 +1,6 @@
 package sttp.client4.internal.httpclient
 
-import sttp.client4.Identity
+import sttp.shared.Identity
 
 import java.util.concurrent.Semaphore
 import scala.concurrent.blocking

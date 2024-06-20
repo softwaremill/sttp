@@ -1,0 +1,14 @@
+version: 1
+labels:
+  - label: "automerge"
+    authors: ["softwaremill-ci"]
+    files:
+      - "build.sbt"
+      - "project/plugins.sbt"
+      - "project/build.properties"
+  - label: "dependency"
+    authors: ["softwaremill-ci"]
+    files:
+      - "build.sbt"
+      - "project/plugins.sbt"
+      - "project/build.properties"

@@ -1,7 +1,8 @@
 package sttp.client4.listener
 
 import sttp.monad.MonadError
-import sttp.client4.{GenericRequest, Identity, Response}
+import sttp.client4.{GenericRequest, Response}
+import sttp.shared.Identity
 
 /** A listener to be used by the [[ListenerBackend]] to get notified on request lifecycle events.
   *

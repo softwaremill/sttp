@@ -3,7 +3,7 @@ package sttp.client4
 import org.scalatest.EitherValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import sttp.client4.testing.BackendStub
+import sttp.client4.testing.{BackendStub, ResponseStub}
 import sttp.client4.wrappers.{FollowRedirectsBackend, FollowRedirectsConfig}
 import sttp.model.internal.Rfc3986
 import sttp.model.{Header, StatusCode, Uri}
@@ -34,8 +34,8 @@ class FollowRedirectsBackendTest extends AnyFunSuite with Matchers with EitherVa
     val url0 = uri"https://server.com/download"
     val url1Source = "https://elsewhere.com/A%2C%20File%20With%20Spaces%20.txt"
 
-    val response0 = Response("", StatusCode.Found, "", Vector(Header.location(url1Source)))
-    val response1 = Response.ok("All good!")
+    val response0 = ResponseStub("", StatusCode.Found, "", Vector(Header.location(url1Source)))
+    val response1 = ResponseStub.ok("All good!")
 
     val stub0 = BackendStub.synchronous
       .whenRequestMatches(_.uri == url0)

@@ -2,7 +2,8 @@ package sttp.client4.testing
 
 import sttp.capabilities.WebSockets
 import sttp.client4._
-import sttp.client4.monad.IdMonad
+import sttp.monad.IdentityMonad
+import sttp.shared.Identity
 
 /** A stub backend to use in tests.
   *
@@ -23,7 +24,7 @@ import sttp.client4.monad.IdMonad
 class WebSocketSyncBackendStub(
     matchers: PartialFunction[GenericRequest[_, _], Response[_]],
     fallback: Option[WebSocketSyncBackend]
-) extends AbstractBackendStub[Identity, WebSockets](IdMonad, matchers, fallback)
+) extends AbstractBackendStub[Identity, WebSockets](IdentityMonad, matchers, fallback)
     with WebSocketSyncBackend {
 
   type Self = WebSocketSyncBackendStub

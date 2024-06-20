@@ -1,6 +1,6 @@
 # OpenTelemetry
 
-Currently the following OpenTelemetry features are supported:
+Currently, the following OpenTelemetry features are supported:
 
 - metrics using `OpenTelemetryMetricsBackend`, wrapping any other backend
 - tracing using `OpenTelemetryTracingZioBackend`, wrapping any ZIO2 backend
@@ -77,7 +77,7 @@ val tracing: Tracing = ???
 OpenTelemetryTracingZioBackend(zioBackend, tracing)
 ```
 
-By default, the span is named after the HTTP method (e.g "HTTP POST") as [recommended by OpenTelemetry](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/http.md#name) for HTTP clients,
+By default, the span is named after the HTTP method (e.g "HTTP POST") as [recommended by OpenTelemetry](https://opentelemetry.io/docs/specs/semconv/http/http-metrics/#http-client) for HTTP clients,
 and the http method, url and response status codes are set as span attributes.
 You can override these defaults by supplying a custom `OpenTelemetryZioTracer`.
 
