@@ -6,7 +6,15 @@ import sttp.client4.internal.NoStreams
 import sttp.client4.internal.ws.{SimpleQueue, SyncQueue, WebSocketEvent}
 import sttp.client4.okhttp.OkHttpBackend.EncodingHandler
 import sttp.client4.testing.WebSocketSyncBackendStub
-import sttp.client4.{BackendOptions, DefaultReadTimeout, GenericRequest, Response, WebSocketSyncBackend, ignore, wrappers}
+import sttp.client4.{
+  ignore,
+  wrappers,
+  BackendOptions,
+  DefaultReadTimeout,
+  GenericRequest,
+  Response,
+  WebSocketSyncBackend
+}
 import sttp.monad.{IdentityMonad, MonadError}
 import sttp.shared.Identity
 import sttp.ws.WebSocket
@@ -15,7 +23,7 @@ import java.io.InputStream
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.atomic.AtomicBoolean
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, Future, blocking}
+import scala.concurrent.{blocking, Await, ExecutionContext, Future}
 
 class OkHttpSyncBackend private (
     client: OkHttpClient,

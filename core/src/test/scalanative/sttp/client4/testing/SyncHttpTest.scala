@@ -388,7 +388,7 @@ trait SyncHttpTest
         .get(uri"$endpoint/timeout")
         .readTimeout(200.milliseconds)
         .response(asString)
-      val caught = intercept[RuntimeException] { req.send(backend) }
+      val caught = intercept[RuntimeException](req.send(backend))
       caught.getMessage should include("TIMEDOUT")
     }
 

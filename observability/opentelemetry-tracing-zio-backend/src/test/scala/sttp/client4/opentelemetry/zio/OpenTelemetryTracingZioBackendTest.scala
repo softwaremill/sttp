@@ -8,7 +8,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import sttp.client4.impl.zio.{RIOMonadAsyncError, ZioTestBase}
 import sttp.client4.testing.{BackendStub, ResponseStub}
-import sttp.client4.{Backend, GenericRequest, Response, UriContext, basicRequest}
+import sttp.client4.{basicRequest, Backend, GenericRequest, Response, UriContext}
 import sttp.model.StatusCode
 import zio.{Runtime, Task, Unsafe, ZIO}
 import zio.telemetry.opentelemetry.Tracing

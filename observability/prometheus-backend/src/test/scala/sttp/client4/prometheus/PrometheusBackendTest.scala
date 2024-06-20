@@ -17,7 +17,7 @@ import sttp.model.{Header, StatusCode}
 import java.util.concurrent.CountDownLatch
 import java.util.stream.Collectors
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{Future, blocking}
+import scala.concurrent.{blocking, Future}
 import scala.collection.immutable.Seq
 
 class PrometheusBackendTest
@@ -118,8 +118,12 @@ class PrometheusBackendTest
 
     // then
     getMetricSnapshot(s"${PrometheusBackend.DefaultHistogramName}") shouldBe empty
-    getMetricValue[HistogramDataPointSnapshot](s"$customHistogramName", List("method" -> "GET")).map(_.getCount).value shouldBe requestsNumber1
-    getMetricValue[HistogramDataPointSnapshot](s"$customHistogramName", List("method" -> "POST")).map(_.getCount).value shouldBe requestsNumber2
+    getMetricValue[HistogramDataPointSnapshot](s"$customHistogramName", List("method" -> "GET"))
+      .map(_.getCount)
+      .value shouldBe requestsNumber1
+    getMetricValue[HistogramDataPointSnapshot](s"$customHistogramName", List("method" -> "POST"))
+      .map(_.getCount)
+      .value shouldBe requestsNumber2
   }
 
   it should "use mapped request to gauge name with labels" in {
@@ -130,9 +134,7 @@ class PrometheusBackendTest
         stubAlwaysOk,
         PrometheusConfig(
           requestToInProgressGaugeNameMapper =
-            r => Some(CollectorConfig(
-              collectorName = customGaugeName,
-              labels = List("method" -> r.method.method)))
+            r => Some(CollectorConfig(collectorName = customGaugeName, labels = List("method" -> r.method.method)))
         )
       )
     val requestsNumber1 = 5
@@ -145,8 +147,12 @@ class PrometheusBackendTest
     // then
     getMetricSnapshot[GaugeDataPointSnapshot](s"${PrometheusBackend.DefaultRequestsActiveGaugeName}") shouldBe empty
     // the gauges should be created, but set to 0
-    getMetricValue[GaugeDataPointSnapshot](s"$customGaugeName", List("method" -> "GET")).map(_.getValue).value shouldBe 0.0
-    getMetricValue[GaugeDataPointSnapshot](s"$customGaugeName", List("method" -> "POST")).map(_.getValue).value shouldBe 0.0
+    getMetricValue[GaugeDataPointSnapshot](s"$customGaugeName", List("method" -> "GET"))
+      .map(_.getValue)
+      .value shouldBe 0.0
+    getMetricValue[GaugeDataPointSnapshot](s"$customGaugeName", List("method" -> "POST"))
+      .map(_.getValue)
+      .value shouldBe 0.0
   }
 
   it should "disable histograms" in {
@@ -186,7 +192,9 @@ class PrometheusBackendTest
 
     countDownLatch.countDown()
     eventually {
-      getMetricValue[GaugeDataPointSnapshot](PrometheusBackend.DefaultRequestsActiveGaugeName, List("method" -> "GET")).map(_.getValue).value shouldBe 0
+      getMetricValue[GaugeDataPointSnapshot](PrometheusBackend.DefaultRequestsActiveGaugeName, List("method" -> "GET"))
+        .map(_.getValue)
+        .value shouldBe 0
     }
   }
 
@@ -283,10 +291,12 @@ class PrometheusBackendTest
       backendStub,
       PrometheusConfig(
         responseToSuccessCounterMapper = (_, _) =>
-          Some(CollectorConfig(
-            collectorName = PrometheusBackend.DefaultSuccessCounterName,
-            labels = List(("method", "foo"), ("status", "bar"))
-          ))
+          Some(
+            CollectorConfig(
+              collectorName = PrometheusBackend.DefaultSuccessCounterName,
+              labels = List(("method", "foo"), ("status", "bar"))
+            )
+          )
       )
     )
 
@@ -315,8 +325,12 @@ class PrometheusBackendTest
     )
 
     // then
-    getMetricValue[SummaryDataPointSnapshot](PrometheusBackend.DefaultRequestSizeName, List("method" -> "GET")).map(_.getCount).value shouldBe 5
-    getMetricValue[SummaryDataPointSnapshot](PrometheusBackend.DefaultRequestSizeName, List("method" -> "GET")).map(_.getSum).value shouldBe 25
+    getMetricValue[SummaryDataPointSnapshot](PrometheusBackend.DefaultRequestSizeName, List("method" -> "GET"))
+      .map(_.getCount)
+      .value shouldBe 5
+    getMetricValue[SummaryDataPointSnapshot](PrometheusBackend.DefaultRequestSizeName, List("method" -> "GET"))
+      .map(_.getSum)
+      .value shouldBe 25
     getMetricValue[SummaryDataPointSnapshot](
       PrometheusBackend.DefaultResponseSizeName,
       List("method" -> "GET", "status" -> "2xx")
@@ -345,7 +359,8 @@ class PrometheusBackendTest
       PrometheusBackend.DefaultSuccessCounterName,
       List("method" -> "GET", "status" -> "2xx")
     ).map(_.getValue) shouldBe None
-    getMetricValue[CounterDataPointSnapshot](PrometheusBackend.DefaultFailureCounterName, List("method" -> "GET")).map(_.getValue) shouldBe None
+    getMetricValue[CounterDataPointSnapshot](PrometheusBackend.DefaultFailureCounterName, List("method" -> "GET"))
+      .map(_.getValue) shouldBe None
     getMetricValue[CounterDataPointSnapshot](
       PrometheusBackend.DefaultErrorCounterName,
       List("method" -> "GET", "status" -> "5xx")
@@ -370,7 +385,8 @@ class PrometheusBackendTest
       PrometheusBackend.DefaultSuccessCounterName,
       List("method" -> "GET", "status" -> "2xx")
     ).map(_.getValue) shouldBe None
-    getMetricValue[CounterDataPointSnapshot](PrometheusBackend.DefaultFailureCounterName, List("method" -> "GET")).map(_.getValue) shouldBe Some(1)
+    getMetricValue[CounterDataPointSnapshot](PrometheusBackend.DefaultFailureCounterName, List("method" -> "GET"))
+      .map(_.getValue) shouldBe Some(1)
     getMetricValue[CounterDataPointSnapshot](
       PrometheusBackend.DefaultErrorCounterName,
       List("method" -> "GET", "status" -> "5xx")
@@ -393,7 +409,8 @@ class PrometheusBackendTest
       PrometheusBackend.DefaultSuccessCounterName,
       List("method" -> "GET", "status" -> "2xx")
     ).map(_.getValue) shouldBe Some(1)
-    getMetricValue[CounterDataPointSnapshot](PrometheusBackend.DefaultFailureCounterName, List("method" -> "GET")).map(_.getValue) shouldBe None
+    getMetricValue[CounterDataPointSnapshot](PrometheusBackend.DefaultFailureCounterName, List("method" -> "GET"))
+      .map(_.getValue) shouldBe None
     getMetricValue[CounterDataPointSnapshot](
       PrometheusBackend.DefaultErrorCounterName,
       List("method" -> "GET", "status" -> "5xx")

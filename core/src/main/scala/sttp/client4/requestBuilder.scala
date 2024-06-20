@@ -254,17 +254,17 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
   def followRedirects(fr: Boolean): PR = withOptions(options.copy(followRedirects = fr))
 
   def maxRedirects(n: Int): PR =
-    if (n <= 0) withOptions(options.copy(followRedirects = false))
-    else withOptions(options.copy(followRedirects = true, maxRedirects = n))
+  if (n <= 0) withOptions(options.copy(followRedirects = false))
+  else withOptions(options.copy(followRedirects = true, maxRedirects = n))
 
-    /** When a POST or PUT request is redirected, should the redirect be a POST/PUT as well (with the original body), or
-      * should the request be converted to a GET without a body.
-      *
-      * Note that this only affects 301 and 302 redirects. 303 redirects are always converted, while 307 and 308
-      * redirects always keep the same method.
-      *
-      * See https://developer.mozilla.org/en-US/docs/Web/HTTP/Redirections for details.
-      */
+  /** When a POST or PUT request is redirected, should the redirect be a POST/PUT as well (with the original body), or
+    * should the request be converted to a GET without a body.
+    *
+    * Note that this only affects 301 and 302 redirects. 303 redirects are always converted, while 307 and 308 redirects
+    * always keep the same method.
+    *
+    * See https://developer.mozilla.org/en-US/docs/Web/HTTP/Redirections for details.
+    */
   def redirectToGet(r: Boolean): PR = withOptions(options.copy(redirectToGet = r))
 
   def tag(k: String, v: Any): PR = withTags(tags + (k -> v))

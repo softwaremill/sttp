@@ -97,7 +97,7 @@ class OxWebSocketTest extends AnyFlatSpec with BeforeAndAfterAll with Matchers w
             .thenRespond {
               case WebSocketFrame.Pong(payload) if new String(payload) == "test-ping" =>
                 List(WebSocketFrame.text("test"))
-              case other => 
+              case other =>
                 fail(s"Unexpected frame: $other")
             },
           StatusCode.SwitchingProtocols

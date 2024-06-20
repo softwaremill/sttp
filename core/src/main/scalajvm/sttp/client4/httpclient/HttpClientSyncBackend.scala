@@ -5,9 +5,9 @@ import sttp.client4.httpclient.HttpClientBackend.EncodingHandler
 import sttp.client4.httpclient.HttpClientSyncBackend.SyncEncodingHandler
 import sttp.client4.internal.httpclient._
 import sttp.client4.internal.ws.{SimpleQueue, SyncQueue, WebSocketEvent}
-import sttp.client4.internal.{NoStreams, emptyInputStream}
+import sttp.client4.internal.{emptyInputStream, NoStreams}
 import sttp.client4.testing.WebSocketSyncBackendStub
-import sttp.client4.{BackendOptions, GenericRequest, Response, WebSocketSyncBackend, wrappers}
+import sttp.client4.{wrappers, BackendOptions, GenericRequest, Response, WebSocketSyncBackend}
 import sttp.model.StatusCode
 import sttp.monad.{IdentityMonad, MonadError}
 import sttp.shared.Identity

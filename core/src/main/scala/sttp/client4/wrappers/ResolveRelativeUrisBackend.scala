@@ -1,7 +1,16 @@
 package sttp.client4.wrappers
 
 import sttp.capabilities.Effect
-import sttp.client4.{Backend, GenericBackend, GenericRequest, Response, StreamBackend, SyncBackend, WebSocketBackend, WebSocketStreamBackend}
+import sttp.client4.{
+  Backend,
+  GenericBackend,
+  GenericRequest,
+  Response,
+  StreamBackend,
+  SyncBackend,
+  WebSocketBackend,
+  WebSocketStreamBackend
+}
 import sttp.model.Uri
 import sttp.monad.syntax._
 import sttp.shared.Identity

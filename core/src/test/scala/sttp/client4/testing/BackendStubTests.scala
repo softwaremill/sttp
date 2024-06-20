@@ -38,7 +38,11 @@ class BackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
     .thenRespondF(ResponseStub(Right("OK from monad"), StatusCode.Ok, "OK"))
     .whenRequestMatches(_.uri.port.exists(_ == 8081))
     .thenRespondF(r =>
-      ResponseStub(Right(s"OK from request. Request was sent to host: ${r.uri.host.getOrElse("?")}"), StatusCode.Ok, "OK")
+      ResponseStub(
+        Right(s"OK from request. Request was sent to host: ${r.uri.host.getOrElse("?")}"),
+        StatusCode.Ok,
+        "OK"
+      )
     )
     .whenRequestMatches(r => r.uri.path.contains("metadata") && r.method == Method.POST)
     .thenRespondOk()

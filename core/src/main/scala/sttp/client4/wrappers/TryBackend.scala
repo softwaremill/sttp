@@ -1,7 +1,14 @@
 package sttp.client4.wrappers
 
 import sttp.client4.monad.FunctionK
-import sttp.client4.{Backend, StreamBackend, SyncBackend, WebSocketBackend, WebSocketStreamBackend, WebSocketSyncBackend}
+import sttp.client4.{
+  Backend,
+  StreamBackend,
+  SyncBackend,
+  WebSocketBackend,
+  WebSocketStreamBackend,
+  WebSocketSyncBackend
+}
 import sttp.monad.TryMonad
 import sttp.shared.Identity
 
