@@ -163,7 +163,7 @@ val resilience4jVersion = "2.2.0"
 val http4s_ce2_version = "0.22.15"
 val http4s_ce3_version = "0.23.27"
 
-val tethysVersion = "0.28.3"
+val tethysVersion = "0.28.4"
 
 val openTelemetryVersion = "1.39.0"
 
