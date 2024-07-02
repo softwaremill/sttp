@@ -825,6 +825,7 @@ lazy val circe = (projectMatrix in file("json/circe"))
     settings = commonJvmSettings
   )
   .jsPlatform(scalaVersions = scala2 ++ scala3, settings = commonJsSettings)
+  .nativePlatform(scalaVersions = scala2 ++ scala3, settings = commonNativeSettings)
   .dependsOn(core, jsonCommon)
 
 lazy val jsoniter = (projectMatrix in file("json/jsoniter"))
