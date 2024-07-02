@@ -118,7 +118,7 @@ val testServerSettings = Seq(
   }
 )
 
-val circeVersion: String = "0.14.8"
+val circeVersion: String = "0.14.9"
 
 val jsoniterVersion = "2.30.1"
 
@@ -138,15 +138,15 @@ val akkaStreamVersion = "2.6.20"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % akkaStreamVersion
 
 val pekkoHttp = "org.apache.pekko" %% "pekko-http" % "1.0.1"
-val pekkoStreamVersion = "1.0.2"
+val pekkoStreamVersion = "1.0.3"
 val pekkoStreams = "org.apache.pekko" %% "pekko-stream" % pekkoStreamVersion
 
 val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", "wordspec", "shouldmatchers").map(m =>
-  "org.scalatest" %%% s"scalatest-$m" % "3.2.18" % Test
+  "org.scalatest" %%% s"scalatest-$m" % "3.2.19" % Test
 )
 
 val zio1Version = "1.0.18"
-val zio2Version = "2.1.3"
+val zio2Version = "2.1.5"
 val zio1InteropRsVersion = "1.3.12"
 val zio2InteropRsVersion = "2.0.2"
 
@@ -163,7 +163,7 @@ val resilience4jVersion = "2.2.0"
 val http4s_ce2_version = "0.22.15"
 val http4s_ce3_version = "0.23.27"
 
-val tethysVersion = "0.28.3"
+val tethysVersion = "0.28.4"
 
 val openTelemetryVersion = "1.39.0"
 
@@ -734,7 +734,7 @@ lazy val armeriaBackend = (projectMatrix in file("armeria-backend"))
   .settings(testServerSettings)
   .settings(
     name := "armeria-backend",
-    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.29.0"
+    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.29.1"
   )
   .jvmPlatform(scalaVersions = scala2 ++ scala3)
   .dependsOn(core % compileAndTest)
@@ -848,7 +848,7 @@ lazy val zioJson = (projectMatrix in file("json/zio-json"))
   .settings(
     name := "zio-json",
     libraryDependencies ++= Seq(
-      "dev.zio" %%% "zio-json" % "0.7.0",
+      "dev.zio" %%% "zio-json" % "0.7.1",
       "com.softwaremill.sttp.shared" %%% "zio" % sttpSharedVersion
     ),
     scalaTest
