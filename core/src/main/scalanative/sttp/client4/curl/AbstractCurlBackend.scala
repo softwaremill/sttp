@@ -120,11 +120,11 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
     setRequestBody(curl, request.body, request.method)
     monad.flatMap(perform(curl)) { _ =>
       curl.info(ResponseCode, spaces.httpCode)
-      val responseBody = fromCString((!spaces.bodyResp)._1)
-      val responseHeaders_ = parseHeaders(fromCString((!spaces.headersResp)._1))
-      val httpCode = StatusCode((!spaces.httpCode).toInt)
-      free((!spaces.bodyResp)._1)
-      free((!spaces.headersResp)._1)
+      val responseBody = fromCString(!spaces.bodyResp._1)
+      val responseHeaders_ = parseHeaders(fromCString(!spaces.headersResp._1))
+      val httpCode = StatusCode(!spaces.httpCode.toInt)
+      free(!spaces.bodyResp._1)
+      free(!spaces.headersResp._1)
       free(spaces.bodyResp.asInstanceOf[Ptr[CSignedChar]])
       free(spaces.headersResp.asInstanceOf[Ptr[CSignedChar]])
       free(spaces.httpCode.asInstanceOf[Ptr[CSignedChar]])
@@ -160,7 +160,7 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
     setRequestBody(curl, request.body, request.method)
     monad.flatMap(perform(curl)) { _ =>
       curl.info(ResponseCode, spaces.httpCode)
-      val httpCode = StatusCode((!spaces.httpCode).toInt)
+      val httpCode = StatusCode(!spaces.httpCode.toInt)
       free(spaces.httpCode.asInstanceOf[Ptr[CSignedChar]])
       fclose(outputFilePtr)
       curl.cleanup()
@@ -241,11 +241,11 @@ abstract class AbstractCurlBackend[F[_]](_monad: MonadError[F], verbose: Boolean
 
   private def responseSpace: CurlSpaces = {
     val bodyResp = malloc(sizeof[CurlFetch]).asInstanceOf[Ptr[CurlFetch]]
-    (!bodyResp)._1 = calloc(4096.toUInt, sizeof[CChar])
-    (!bodyResp)._2 = 0.toUInt
+    !bodyResp._1 = calloc(4096.toUInt, sizeof[CChar])
+    !bodyResp._2 = 0.toUInt
     val headersResp = malloc(sizeof[CurlFetch]).asInstanceOf[Ptr[CurlFetch]]
-    (!headersResp)._1 = calloc(4096.toUInt, sizeof[CChar])
-    (!headersResp)._2 = 0.toUInt
+    !headersResp._1 = calloc(4096.toUInt, sizeof[CChar])
+    !headersResp._2 = 0.toUInt
     val httpCode = malloc(sizeof[Long]).asInstanceOf[Ptr[Long]]
     new CurlSpaces(bodyResp, headersResp, httpCode)
   }
@@ -312,12 +312,12 @@ abstract class AbstractSyncCurlBackend[F[_]](_monad: MonadError[F], verbose: Boo
 object AbstractCurlBackend {
   val wdFunc: CFuncPtr4[Ptr[Byte], CSize, CSize, Ptr[CurlFetch], CSize] = {
     (ptr: Ptr[CChar], size: CSize, nmemb: CSize, data: Ptr[CurlFetch]) =>
-      val index: CSize = (!data)._2
+      val index: CSize = !data._2
       val increment: CSize = size * nmemb
-      (!data)._2 = (!data)._2 + increment
-      (!data)._1 = realloc((!data)._1, (!data)._2 + 1.toUInt)
-      memcpy((!data)._1 + index, ptr, increment)
-      !(!data)._1.+((!data)._2) = 0.toByte
+      !data._2 = !data._2 + increment
+      !data._1 = realloc(!data._1, !data._2 + 1.toUInt)
+      memcpy(!data._1 + index, ptr, increment)
+      ! !data._1.+(!data._2) = 0.toByte
       size * nmemb
   }
 }
