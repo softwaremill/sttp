@@ -48,7 +48,7 @@ trait GenericBackend[F[_], +P] {
 trait Backend[F[_]] extends GenericBackend[F, Any]
 
 /** A [[GenericBackend]] which is synchronous (side effects are run directly), and doesn't support any capabilities. */
-trait SyncBackend extends Backend[Identity] {
+trait SyncBackend extends Backend[Identity] with AutoCloseable {
   override def monad: MonadError[Identity] = IdentityMonad
 }
 
