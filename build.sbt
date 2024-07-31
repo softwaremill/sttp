@@ -734,7 +734,7 @@ lazy val armeriaBackend = (projectMatrix in file("armeria-backend"))
   .settings(testServerSettings)
   .settings(
     name := "armeria-backend",
-    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.29.3"
+    libraryDependencies += "com.linecorp.armeria" % "armeria" % "1.29.4"
   )
   .jvmPlatform(scalaVersions = scala2 ++ scala3)
   .dependsOn(core % compileAndTest)
