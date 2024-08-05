@@ -8,11 +8,11 @@ import complete.DefaultParsers._
 // run JS tests inside Chrome, due to jsdom not supporting fetch
 import com.softwaremill.SbtSoftwareMillBrowserTestJS._
 
-val scala2_12 = "2.12.18"
-val scala2_13 = "2.13.12"
+val scala2_12 = "2.12.19"
+val scala2_13 = "2.13.14"
 val scala2 = List(scala2_12, scala2_13)
 val scala2alive = List(scala2_12, scala2_13)
-val scala3 = List("3.3.1")
+val scala3 = List("3.3.3")
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests")
@@ -154,9 +154,9 @@ val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", 
 )
 
 val zio1Version = "1.0.18"
-val zio2Version = "2.0.10"
+val zio2Version = "2.1.7"
 val zio1InteropRsVersion = "1.3.12"
-val zio2InteropRsVersion = "2.0.1"
+val zio2InteropRsVersion = "2.0.2"
 
 val sttpModelVersion = "1.7.9"
 val sttpSharedVersion = "1.3.16"
