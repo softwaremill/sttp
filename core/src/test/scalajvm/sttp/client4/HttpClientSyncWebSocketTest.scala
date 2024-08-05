@@ -12,4 +12,6 @@ class HttpClientSyncWebSocketTest extends WebSocketTest[Identity] {
   override implicit val monad: MonadError[Identity] = IdentityMonad
 
   override def throwsWhenNotAWebSocket: Boolean = true
+  // HttpClient doesn't expose the response headers for web sockets in any way
+  override def supportsReadingWebSocketResponseHeaders: Boolean = false
 }

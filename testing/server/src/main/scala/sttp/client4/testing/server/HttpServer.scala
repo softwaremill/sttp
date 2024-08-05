@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.coding.Coders._
 import akka.http.scaladsl.coding.DeflateNoWrap
+import akka.http.scaladsl.model.HttpHeader.ParsingResult
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.CacheDirectives._
 import akka.http.scaladsl.model.headers._
@@ -486,6 +487,15 @@ private class HttpServer(port: Int, info: String => Unit) extends AutoCloseable 
                   .lazyFutureSource(() => sourcePromise.future)
               )
             )
+          }
+        } ~
+        path("header") {
+          respondWithHeader(HttpHeader.parse("Correlation-ID", "ABC-XYZ-123").asInstanceOf[ParsingResult.Ok].header) {
+            handleWebSocketMessages(Flow[Message].mapConcat {
+              case tm: TextMessage =>
+                TextMessage(Source.single("echo: ") ++ tm.textStream) :: Nil
+              case bm: BinaryMessage => bm :: Nil
+            })
           }
         }
     } ~ path("empty_content_encoding") {
