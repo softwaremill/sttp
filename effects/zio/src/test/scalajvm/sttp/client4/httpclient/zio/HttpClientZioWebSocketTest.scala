@@ -37,4 +37,6 @@ class HttpClientZioWebSocketTest
     to.andThen(rest => ZStream(item) ++ rest)
 
   override def concurrently[T](fs: List[() => Task[T]]): Task[List[T]] = ZIO.collectAllPar(fs.map(_()))
+
+  override def supportsReadingWebSocketResponseHeaders: Boolean = false
 }

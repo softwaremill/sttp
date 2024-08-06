@@ -29,6 +29,7 @@ abstract class WebSocketTest[F[_]]
   implicit def monad: MonadError[F]
 
   def throwsWhenNotAWebSocket: Boolean = false
+  def supportsReadingWebSocketResponseHeaders: Boolean = true
 
   it should "send and receive three messages using asWebSocketAlways" in {
     basicRequest
@@ -205,6 +206,19 @@ abstract class WebSocketTest[F[_]]
         logger.errCounter.get() shouldBe 0
       }
       .toFuture()
+  }
+
+  if (supportsReadingWebSocketResponseHeaders) {
+    it should "receive the extra headers set by the server" in {
+      basicRequest
+        .get(uri"$wsEndpoint/ws/header")
+        .response(asWebSocketAlways((ws: WebSocket[F]) => ws.close()))
+        .send(backend)
+        .map { response =>
+          response.header("Correlation-id") shouldBe Some("ABC-XYZ-123")
+        }
+        .toFuture()
+    }
   }
 
   def sendText(ws: WebSocket[F], count: Int): F[Unit] =

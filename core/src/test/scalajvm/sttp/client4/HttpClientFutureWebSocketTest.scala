@@ -13,4 +13,6 @@ class HttpClientFutureWebSocketTest[F[_]] extends WebSocketTest[Future] with Web
   override implicit val monad: MonadError[Future] = new FutureMonad()
 
   override def concurrently[T](fs: List[() => Future[T]]): Future[List[T]] = Future.sequence(fs.map(_()))
+
+  override def supportsReadingWebSocketResponseHeaders: Boolean = false
 }

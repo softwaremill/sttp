@@ -36,4 +36,6 @@ class HttpClientMonixWebSocketTest
     to.andThen(rest => Observable.now(item) ++ rest)
 
   override def concurrently[T](fs: List[() => Task[T]]): Task[List[T]] = Task.parSequence(fs.map(_()))
+
+  override def supportsReadingWebSocketResponseHeaders: Boolean = false
 }

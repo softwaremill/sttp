@@ -15,6 +15,7 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 class FetchMonixWebSocketTest extends WebSocketTest[Task] with WebSocketStreamingTest[Task, MonixStreams] {
   implicit override def executionContext: ExecutionContext = queue
   override def throwsWhenNotAWebSocket: Boolean = true
+  override def supportsReadingWebSocketResponseHeaders: Boolean = false
 
   override val backend: WebSocketStreamBackend[Task, MonixStreams] = FetchMonixBackend()
   override implicit val convertToFuture: ConvertToFuture[Task] = convertMonixTaskToFuture

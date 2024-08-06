@@ -10,4 +10,6 @@ class HttpClientCatsWebSocketTest
     with HttpClientCatsTestBase {
 
   override def concurrently[T](fs: List[() => IO[T]]): IO[List[T]] = fs.map(_()).parSequence
+
+  override def supportsReadingWebSocketResponseHeaders: Boolean = false
 }
