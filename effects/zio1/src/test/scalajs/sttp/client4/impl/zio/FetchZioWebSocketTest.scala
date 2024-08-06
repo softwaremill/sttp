@@ -15,6 +15,7 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 class FetchZioWebSocketTest extends WebSocketTest[Task] with WebSocketStreamingTest[Task, ZioStreams] with ZioTestBase {
   implicit override def executionContext: ExecutionContext = queue
   override def throwsWhenNotAWebSocket: Boolean = true
+  override def supportsReadingWebSocketResponseHeaders: Boolean = false
 
   override val backend: WebSocketStreamBackend[Task, ZioStreams] = FetchZioBackend()
   override implicit val convertToFuture: ConvertToFuture[Task] = convertZioTaskToFuture
