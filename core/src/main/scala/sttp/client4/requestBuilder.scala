@@ -254,8 +254,8 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
   def followRedirects(fr: Boolean): PR = withOptions(options.copy(followRedirects = fr))
 
   def maxRedirects(n: Int): PR =
-  if (n <= 0) withOptions(options.copy(followRedirects = false))
-  else withOptions(options.copy(followRedirects = true, maxRedirects = n))
+    if (n <= 0) withOptions(options.copy(followRedirects = false))
+    else withOptions(options.copy(followRedirects = true, maxRedirects = n))
 
   /** When a POST or PUT request is redirected, should the redirect be a POST/PUT as well (with the original body), or
     * should the request be converted to a GET without a body.

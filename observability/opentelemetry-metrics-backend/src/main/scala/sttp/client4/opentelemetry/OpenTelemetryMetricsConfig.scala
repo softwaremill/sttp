@@ -57,7 +57,7 @@ object OpenTelemetryMetricsConfig {
             buckets = HistogramCollectorConfig.DefaultSizeBuckets,
             unit = HistogramCollectorConfig.Bytes
           )
-        ),
+        )
   ): OpenTelemetryMetricsConfig = usingMeter(
     openTelemetry.meterBuilder(meterConfig.name).setInstrumentationVersion(meterConfig.version).build(),
     clock,
