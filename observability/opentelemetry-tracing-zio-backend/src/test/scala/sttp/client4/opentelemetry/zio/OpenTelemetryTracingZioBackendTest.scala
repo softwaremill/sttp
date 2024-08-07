@@ -8,10 +8,11 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import sttp.client4.impl.zio.{RIOMonadAsyncError, ZioTestBase}
 import sttp.client4.testing.{BackendStub, ResponseStub}
-import sttp.client4.{basicRequest, Backend, GenericRequest, Response, UriContext}
+import sttp.client4.{basicRequest, Backend, GenericRequest, UriContext}
 import sttp.model.StatusCode
-import zio.{Runtime, Task, Unsafe, ZIO}
-import zio.telemetry.opentelemetry.Tracing
+import zio.telemetry.opentelemetry.OpenTelemetry
+import zio.telemetry.opentelemetry.tracing.Tracing
+import zio.{Runtime, Task, Unsafe, ZIO, ZLayer}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
@@ -24,21 +25,30 @@ class OpenTelemetryTracingZioBackendTest extends AnyFlatSpec with Matchers with 
 
   private val mockTracer =
     SdkTracerProvider.builder().addSpanProcessor(SimpleSpanProcessor.create(spanExporter)).build().get(getClass.getName)
-  private val mockTracing = Unsafe.unsafeCompat { implicit u =>
-    Runtime.default.unsafe.run(ZIO.scoped(Tracing.scoped(mockTracer))).getOrThrow()
-  }
+
+  private val mockTracingLayer = (OpenTelemetry.contextJVM ++ ZLayer.succeed(mockTracer)) >>> Tracing.live()
 
   private val backend: Backend[Task] =
-    OpenTelemetryTracingZioBackend(
-      BackendStub(new RIOMonadAsyncError[Any]).whenRequestMatchesPartial {
-        case r if r.uri.toString.contains("echo") =>
-          recordedRequests += r
-          ResponseStub.ok("")
-        case r if r.uri.toString.contains("error") =>
-          throw new RuntimeException("something went wrong")
-      },
-      mockTracing
-    )
+    Unsafe.unsafe { implicit u =>
+      Runtime.default.unsafe
+        .run(
+          ZIO
+            .serviceWith[Tracing](
+              OpenTelemetryTracingZioBackend(
+                BackendStub(new RIOMonadAsyncError[Any]).whenRequestMatchesPartial {
+                  case r if r.uri.toString.contains("echo") =>
+                    recordedRequests += r
+                    ResponseStub.ok("")
+                  case r if r.uri.toString.contains("error") =>
+                    throw new RuntimeException("something went wrong")
+                },
+                _
+              )
+            )
+            .provideLayer(mockTracingLayer)
+        )
+        .getOrThrow()
+    }
 
   before {
     recordedRequests.clear()
@@ -46,7 +56,7 @@ class OpenTelemetryTracingZioBackendTest extends AnyFlatSpec with Matchers with 
   }
 
   "ZioTelemetryOpenTelemetryBackend" should "record spans for requests" in {
-    val response = Unsafe.unsafeCompat { implicit u =>
+    val response = Unsafe.unsafe { implicit u =>
       Runtime.default.unsafe.run(basicRequest.post(uri"http://stub/echo").send(backend)).getOrThrow()
     }
     response.code shouldBe StatusCode.Ok
@@ -57,7 +67,7 @@ class OpenTelemetryTracingZioBackendTest extends AnyFlatSpec with Matchers with 
   }
 
   it should "propagate span" in {
-    val response = Unsafe.unsafeCompat { implicit u =>
+    val response = Unsafe.unsafe { implicit u =>
       Runtime.default.unsafe.run(basicRequest.post(uri"http://stub/echo").send(backend)).getOrThrow()
     }
     response.code shouldBe StatusCode.Ok
@@ -71,7 +81,7 @@ class OpenTelemetryTracingZioBackendTest extends AnyFlatSpec with Matchers with 
   }
 
   it should "set span status in case of error" in {
-    Unsafe.unsafeCompat { implicit u =>
+    Unsafe.unsafe { implicit u =>
       Runtime.default.unsafe.run(basicRequest.post(uri"http://stub/error").send(backend))
     }
 

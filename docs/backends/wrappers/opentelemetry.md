@@ -68,7 +68,7 @@ Here's how you construct `ZioTelemetryOpenTelemetryBackend`. I would recommend w
 ```scala mdoc:compile-only
 import sttp.client4._
 import zio._
-import zio.telemetry.opentelemetry._
+import zio.telemetry.opentelemetry.tracing._
 import sttp.client4.opentelemetry.zio._
 
 val zioBackend: Backend[Task] = ???
