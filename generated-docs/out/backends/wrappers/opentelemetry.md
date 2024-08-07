@@ -12,7 +12,7 @@ The backend depends only on [opentelemetry-api](https://github.com/open-telemetr
 following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %% "opentelemetry-metrics-backend" % "4.0.0-M16"
+"com.softwaremill.sttp.client4" %% "opentelemetry-metrics-backend" % "4.0.0-M17"
 ```
 
 Then an instance can be obtained as follows:
@@ -55,7 +55,7 @@ OpenTelemetryMetricsBackend(
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %% "opentelemetry-tracing-zio-backend" % "4.0.0-M16"  // for ZIO 2.x
+"com.softwaremill.sttp.client4" %% "opentelemetry-tracing-zio-backend" % "4.0.0-M17"  // for ZIO 2.x
 ```
 
 This backend depends on [zio-opentelemetry](https://github.com/zio/zio-telemetry).
@@ -68,7 +68,7 @@ Here's how you construct `ZioTelemetryOpenTelemetryBackend`. I would recommend w
 ```scala
 import sttp.client4._
 import zio._
-import zio.telemetry.opentelemetry._
+import zio.telemetry.opentelemetry.tracing._
 import sttp.client4.opentelemetry.zio._
 
 val zioBackend: Backend[Task] = ???

@@ -7,7 +7,7 @@ There are several synchronous backend implementations. Sending a request using t
 The default **synchronous** backend. To use, you don't need any extra dependencies, `core` is enough:
 
 ```
-"com.softwaremill.sttp.client4" %% "core" % "4.0.0-M16"
+"com.softwaremill.sttp.client4" %% "core" % "4.0.0-M17"
 ```
 
 Create the backend using:
@@ -40,7 +40,7 @@ Host header override is supported in environments running Java 12 onwards, but i
 To use, you don't need any extra dependencies, `core` is enough: 
 
 ```
-"com.softwaremill.sttp.client4" %% "core" % "4.0.0-M16"
+"com.softwaremill.sttp.client4" %% "core" % "4.0.0-M17"
 ```
 
 Create the backend using:
@@ -62,7 +62,7 @@ This backend supports host header override, but it has to be enabled by system p
 To use, add the following dependency to your project:
 
 ```
-"com.softwaremill.sttp.client4" %% "okhttp-backend" % "4.0.0-M16"
+"com.softwaremill.sttp.client4" %% "okhttp-backend" % "4.0.0-M17"
 ```
 
 Create the backend using:
@@ -92,3 +92,33 @@ Synchronous backends don't support non-blocking [streaming](../requests/streamin
 ## Websockets
 
 Both HttpClient and OkHttp backends support regular [websockets](../websockets.md).
+
+## Server-sent events
+
+[Ox](https://ox.softwaremill.com) is a Scala 3 toolkit that allows you to handle concurrency and resiliency in direct-style, leveraging Java 21 virtual threads. If you're using Ox with `sttp`, you can handle SSE as a `Source[ServerSentEvent]`:
+
+```
+// sbt dependency
+"com.softwaremill.sttp.client4" %% "ox" % "4.0.0-M17",
+```
+
+```scala 
+import ox.*
+import ox.channels.Source
+import sttp.client4.*
+import sttp.client4.impl.ox.sse.OxServerSentEvents
+import sttp.model.sse.ServerSentEvent
+import java.io.InputStream
+
+def handleSse(is: InputStream)(using IO): Unit =
+  supervised {
+    OxServerSentEvents.parse(is).foreach(event => println(s"Received event: $event"))
+  }
+
+val backend = DefaultSyncBackend()
+IO.unsafe:
+  basicRequest
+    .get(uri"https://postman-echo.com/server-events/3")
+      .response(asInputStreamAlways(handleSse))
+      .send(backend)
+```
