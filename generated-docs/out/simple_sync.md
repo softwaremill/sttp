@@ -25,7 +25,7 @@ As an example, to integrate with the [uPickle](https://github.com/com-lihaoyi/up
 dependency:
 
 ```scala
-"com.softwaremill.sttp.client3" %% "upickle" % "3.9.7"
+"com.softwaremill.sttp.client3" %% "upickle" % "3.9.8"
 ```
 
 Your code might then look as follows:
@@ -62,7 +62,7 @@ Logging can be added using the [logging backend wrapper](backends/wrappers/loggi
 use slf4j, you'll need the following dependency:
 
 ```
-"com.softwaremill.sttp.client3" %% "slf4j-backend" % "3.9.7"
+"com.softwaremill.sttp.client3" %% "slf4j-backend" % "3.9.8"
 ```
 
 Then, you'll need to configure your client:
