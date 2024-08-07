@@ -897,7 +897,7 @@ lazy val upickle = (projectMatrix in file("json/upickle"))
   .nativePlatform(scalaVersions = scala2alive ++ scala3, settings = commonNativeSettings)
   .dependsOn(core, jsonCommon)
 
-lazy val json4sVersion = "4.0.6"
+lazy val json4sVersion = "4.0.7"
 
 lazy val json4s = (projectMatrix in file("json/json4s"))
   .settings(commonJvmSettings)
@@ -909,7 +909,7 @@ lazy val json4s = (projectMatrix in file("json/json4s"))
     ),
     scalaTest
   )
-  .jvmPlatform(scalaVersions = scala2)
+  .jvmPlatform(scalaVersions = scala2 ++ scala3)
   .dependsOn(core, jsonCommon)
 
 lazy val sprayJson = (projectMatrix in file("json/spray-json"))
