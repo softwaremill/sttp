@@ -1,7 +1,7 @@
 package sttp.client3.json4s
 
 import org.json4s.{Formats, Serialization}
-import sttp.client3.{ResponseAs, _}
+import sttp.client3._
 import sttp.client3.internal.Utf8
 import sttp.client3.json._
 import sttp.model._
