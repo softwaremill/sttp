@@ -11,7 +11,7 @@ import zio.telemetry.opentelemetry.context.OutgoingContextCarrier
 import zio.telemetry.opentelemetry.tracing.Tracing
 import zio.telemetry.opentelemetry.tracing.propagation.TraceContextPropagator
 
-private abstract class OpenTelemetryTracingZioBackend[+P](
+abstract class OpenTelemetryTracingZioBackend[+P](
     delegate: GenericBackend[Task, P],
     tracer: OpenTelemetryTracer,
     tracing: Tracing
@@ -24,7 +24,7 @@ private abstract class OpenTelemetryTracingZioBackend[+P](
         _ <- tracing.spanScoped(tracer.spanName(request), SpanKind.CLIENT, tracer.requestAttributes(request))
         _ <- tracing.injectSpan(TraceContextPropagator.default, carrier)
         resp <- delegate.send(request.headers(carrier.kernel.toMap))
-        _ <- ZIO.addFinalizer(tracing.getCurrentSpanUnsafe.map(_.setAllAttributes(tracer.responseAttribute(resp))))
+        _ <- ZIO.addFinalizer(tracing.getCurrentSpanUnsafe.map(_.setAllAttributes(tracer.responseAttributes(resp))))
       } yield resp
     }
 }
@@ -66,7 +66,7 @@ object OpenTelemetryTracingZioBackend {
 trait OpenTelemetryTracer {
   def spanName[T](request: GenericRequest[T, Nothing]): String
   def requestAttributes[T](request: GenericRequest[T, Nothing]): Attributes
-  def responseAttribute[T](response: Response[T]): Attributes
+  def responseAttributes[T](response: Response[T]): Attributes
 }
 
 object OpenTelemetryTracer {
@@ -75,10 +75,10 @@ object OpenTelemetryTracer {
     override def requestAttributes[T](request: GenericRequest[T, Nothing]): Attributes =
       Attributes.builder
         .put(HttpAttributes.HTTP_REQUEST_METHOD, request.method.method)
-        .put(UrlAttributes.URL_FULL, request.uri.path.mkString("/"))
+        .put(UrlAttributes.URL_FULL, request.uri.toString())
         .build()
 
-    override def responseAttribute[T](response: Response[T]): Attributes =
+    override def responseAttributes[T](response: Response[T]): Attributes =
       Attributes.builder
         .put(HttpAttributes.HTTP_RESPONSE_STATUS_CODE, response.code.code.toLong: java.lang.Long)
         .build()
