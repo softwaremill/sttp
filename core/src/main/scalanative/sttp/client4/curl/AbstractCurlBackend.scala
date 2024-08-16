@@ -314,10 +314,12 @@ object AbstractCurlBackend {
     (ptr: Ptr[CChar], size: CSize, nmemb: CSize, data: Ptr[CurlFetch]) =>
       val index: CSize = !data._2
       val increment: CSize = size * nmemb
-      !data._2 = !data._2 + increment
-      !data._1 = realloc(!data._1, !data._2 + 1.toUInt)
-      memcpy(!data._1 + index, ptr, increment)
-      ! !data._1.+(!data._2) = 0.toByte
+      // format: off
+      (!data)._2 = (!data)._2 + increment
+      (!data)._1 = realloc((!data)._1, (!data)._2 + 1.toUInt)
+      memcpy((!data)._1 + index, ptr, increment)
+      !(!data)._1.+((!data)._2) = 0.toByte
+      // format: on
       size * nmemb
   }
 }
