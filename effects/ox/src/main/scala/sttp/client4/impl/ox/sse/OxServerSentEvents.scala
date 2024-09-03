@@ -18,5 +18,5 @@ object OxServerSentEvents:
           else None
         }
       )
-      .filter(_.nonEmpty)
+      .filterAsView(_.nonEmpty)
       .map(ServerSentEvent.parse)
