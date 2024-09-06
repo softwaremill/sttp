@@ -47,7 +47,7 @@ private[akkahttp] class BodyFromAkka()(implicit ec: ExecutionContext, mat: Mater
       override protected def regularAsByteArray(response: HttpResponse): Future[Array[Byte]] =
         response.entity.dataBytes
           .runFold(ByteString(""))(_ ++ _)
-          .map(_.toArray[Byte])
+          .map(_.toArrayUnsafe())
 
       override protected def regularAsFile(response: HttpResponse, file: SttpFile): Future[SttpFile] = {
         val f = file.toFile
@@ -203,13 +203,13 @@ private[akkahttp] class BodyFromAkka()(implicit ec: ExecutionContext, mat: Mater
       case msg: TextMessage =>
         msg.textStream.runFold("")(_ + _).map(t => WebSocketFrame.text(t))
       case msg: BinaryMessage =>
-        msg.dataStream.runFold(ByteString.empty)(_ ++ _).map(b => WebSocketFrame.binary(b.toArray))
+        msg.dataStream.runFold(ByteString.empty)(_ ++ _).map(b => WebSocketFrame.binary(b.toArrayUnsafe()))
     }
 
   private def frameToMessage(w: WebSocketFrame): Option[Message] =
     w match {
       case WebSocketFrame.Text(p, _, _)   => Some(TextMessage(p))
-      case WebSocketFrame.Binary(p, _, _) => Some(BinaryMessage(ByteString(p)))
+      case WebSocketFrame.Binary(p, _, _) => Some(BinaryMessage(ByteString.fromArrayUnsafe(p)))
       case WebSocketFrame.Ping(_)         => None
       case WebSocketFrame.Pong(_)         => None
       case WebSocketFrame.Close(_, _)     => throw WebSocketClosed(None)
