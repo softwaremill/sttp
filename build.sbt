@@ -138,7 +138,7 @@ val akkaStreamVersion = "2.6.20"
 val akkaStreams = "com.typesafe.akka" %% "akka-stream" % akkaStreamVersion
 
 val pekkoHttp = "org.apache.pekko" %% "pekko-http" % "1.0.1"
-val pekkoStreamVersion = "1.1.0"
+val pekkoStreamVersion = "1.1.1"
 val pekkoStreams = "org.apache.pekko" %% "pekko-stream" % pekkoStreamVersion
 
 val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", "wordspec", "shouldmatchers").map(m =>
