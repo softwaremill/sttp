@@ -10,16 +10,13 @@ import sttp.ws.WebSocketFrame
 
 @main def wsOxExample =
   def useWebSocket(ws: SyncWebSocket): Unit =
-    supervised {
+    supervised:
       val inputs = Source.fromValues(1, 2, 3).map(i => WebSocketFrame.text(s"Frame no $i"))
       val (wsSource, wsSink) = asSourceAndSink(ws)
-      fork {
-        inputs.pipeTo(wsSink)
-      }
-      wsSource.foreach { frame =>
+      fork:
+        inputs.pipeTo(wsSink, propagateDone = true)
+      wsSource.foreach: frame =>
         println(s"RECEIVED: $frame")
-      }
-    }
 
   val backend = DefaultSyncBackend()
   try

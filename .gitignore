@@ -24,11 +24,13 @@ core/native/local.sbt
 
 .metals/
 .bloop/
-project/metals.sbt
 .bsp/
 .java-version
+metals.sbt
 
 .vscode
 
 # scala-native
 lowered.hnir
+
+work.txt

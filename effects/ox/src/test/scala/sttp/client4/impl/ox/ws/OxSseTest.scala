@@ -4,7 +4,6 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import ox.*
-import ox.IO.globalForTesting.given
 import sttp.client4.*
 import sttp.client4.testing.HttpTest.*
 import sttp.model.sse.ServerSentEvent

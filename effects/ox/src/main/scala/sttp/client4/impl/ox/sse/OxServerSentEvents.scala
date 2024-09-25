@@ -7,7 +7,7 @@ import sttp.model.sse.ServerSentEvent
 import java.io.InputStream
 
 object OxServerSentEvents:
-  def parse(is: InputStream)(using Ox, IO): Source[ServerSentEvent] =
+  def parse(is: InputStream)(using Ox): Source[ServerSentEvent] =
     Source
       .fromInputStream(is)
       .linesUtf8
