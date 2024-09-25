@@ -164,10 +164,13 @@ class OxWebSocketTest extends AnyFlatSpec with BeforeAndAfterAll with Matchers w
   }
 
   def sendText(wsSink: Sink[WebSocketFrame], count: Int)(using Ox): Unit =
-    Source.fromIterable(1 to count).map(i => WebSocketFrame.text(s"test$i")).pipeTo(wsSink)
+    Source.fromIterable(1 to count).map(i => WebSocketFrame.text(s"test$i")).pipeTo(wsSink, propagateDone = true)
 
   def sendBinary(wsSink: Sink[WebSocketFrame], count: Int)(using Ox): Unit =
-    Source.fromIterable(1 to count).map(i => WebSocketFrame.binary(Array(i.toByte))).pipeTo(wsSink)
+    Source
+      .fromIterable(1 to count)
+      .map(i => WebSocketFrame.binary(Array(i.toByte)))
+      .pipeTo(wsSink, propagateDone = true)
 
   def receiveEchoText(wsSource: Source[WebSocketFrame], count: Int): Unit =
     for (i <- 1 to count)

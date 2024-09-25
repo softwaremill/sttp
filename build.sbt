@@ -150,7 +150,7 @@ val zio2Version = "2.1.9"
 val zio1InteropRsVersion = "1.3.12"
 val zio2InteropRsVersion = "2.0.2"
 
-val oxVersion = "0.2.0"
+val oxVersion = "0.4.0"
 val sttpModelVersion = "1.7.11"
 val sttpSharedVersion = "1.3.22"
 
