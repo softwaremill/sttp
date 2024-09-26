@@ -9,7 +9,7 @@ import complete.DefaultParsers._
 import com.softwaremill.SbtSoftwareMillBrowserTestJS._
 
 val scala2_12 = "2.12.20"
-val scala2_13 = "2.13.14"
+val scala2_13 = "2.13.15"
 val scala2 = List(scala2_12, scala2_13)
 val scala3 = List("3.3.3")
 
