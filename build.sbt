@@ -8,7 +8,7 @@ import complete.DefaultParsers._
 // run JS tests inside Chrome, due to jsdom not supporting fetch
 import com.softwaremill.SbtSoftwareMillBrowserTestJS._
 
-val scala2_12 = "2.12.19"
+val scala2_12 = "2.12.20"
 val scala2_13 = "2.13.14"
 val scala2 = List(scala2_12, scala2_13)
 val scala2alive = List(scala2_12, scala2_13)
@@ -157,7 +157,7 @@ val zio2Version = "2.1.9"
 val zio1InteropRsVersion = "1.3.12"
 val zio2InteropRsVersion = "2.0.2"
 
-val sttpModelVersion = "1.7.9"
+val sttpModelVersion = "1.7.11"
 val sttpSharedVersion = "1.3.22"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.4.5"
