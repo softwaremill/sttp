@@ -50,7 +50,7 @@ Next, based on [one way SSL example](#one-way-ssl), add `TrustManagerFactory` to
 ```scala
 ks.load(new FileInputStream("/path/to/server_trust"), "password".toCharArray)
 
-val tmf: TrustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm)  
+val tmf: TrustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm) 
 tmf.init(ks)
 
 val ssl: SSLContext = SSLContext.getInstance("TLS")

@@ -24,7 +24,7 @@ import sttp.model._
 import sttp.client3.testing._
 import java.io.File
 import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global  
+import scala.concurrent.ExecutionContext.Implicits.global 
 
 case class User(id: String)
 ``` 
@@ -44,6 +44,7 @@ val response1 = basicRequest.get(uri"http://example.org/a/b/c").send(testingBack
 // response1.body will be Right("Hello there")
 
 val response2 = basicRequest.post(uri"http://example.org/d/e").send(testingBackend)
+// response2.code will be 500
 ```
 
 It is also possible to match requests by partial function, returning a response. E.g.:
@@ -64,6 +65,7 @@ val response1 = basicRequest.get(uri"http://example.org/partial10").send(testing
 // response1.body will be Right(10)
 
 val response2 = basicRequest.post(uri"http://example.org/partialAda").send(testingBackend)
+// response2.body will be Right("Ada")
 ```
 
 ```eval_rst
@@ -83,6 +85,7 @@ val testingBackend = SttpBackendStub.asynchronousFuture
   })
 
 val responseFuture = basicRequest.get(uri"http://example.org").send(testingBackend)
+// responseFuture will complete after 5 seconds with "OK" response
 ```
 
 The returned response may also depend on the request: 
@@ -95,6 +98,7 @@ val testingBackend = SttpBackendStub.synchronous
   )
 
 val response = basicRequest.get(uri"http://example.org").send(testingBackend)
+// response.body will be Right("OK, got request sent to example.org")
 ```
 
 You can define consecutive raw responses that will be served:
@@ -104,9 +108,9 @@ val testingBackend: SttpBackendStub[Identity, Any] = SttpBackendStub.synchronous
   .whenAnyRequest
   .thenRespondCyclic("first", "second", "third")
 
-basicRequest.get(uri"http://example.org").send(testingBackend)       // Right("OK, first")       // Right("OK, first")
-basicRequest.get(uri"http://example.org").send(testingBackend)       // Right("OK, second")       // Right("OK, second")
-basicRequest.get(uri"http://example.org").send(testingBackend)       // Right("OK, third")       // Right("OK, third")
+basicRequest.get(uri"http://example.org").send(testingBackend)       // Right("OK, first")
+basicRequest.get(uri"http://example.org").send(testingBackend)       // Right("OK, second")
+basicRequest.get(uri"http://example.org").send(testingBackend)       // Right("OK, third")
 basicRequest.get(uri"http://example.org").send(testingBackend)       // Right("OK, first")
 ```
 
@@ -120,8 +124,8 @@ val testingBackend: SttpBackendStub[Identity, Any] = SttpBackendStub.synchronous
     Response("error", StatusCode.InternalServerError, "Something went wrong")
   )
 
-basicRequest.get(uri"http://example.org").send(testingBackend)       // code will be 200       // code will be 200
-basicRequest.get(uri"http://example.org").send(testingBackend)       // code will be 500       // code will be 500
+basicRequest.get(uri"http://example.org").send(testingBackend)       // code will be 200
+basicRequest.get(uri"http://example.org").send(testingBackend)       // code will be 500
 basicRequest.get(uri"http://example.org").send(testingBackend)       // code will be 200
 ```
 
@@ -234,6 +238,7 @@ val response1 = basicRequest.get(uri"http://api.internal/a").send(testingBackend
 // response1.body will be Right("I'm a STUB")
 
 val response2 = basicRequest.post(uri"http://api.internal/b").send(testingBackend)
+// response2 will be whatever a "real" network call to api.internal/b returns
 ```
 
 ## Testing streams
@@ -302,4 +307,5 @@ val response1 = basicRequest.get(uri"http://example.org/a/b/c").send(testingBack
 // response1.body will be Right("Hello there")
 
 testingBackend.allInteractions: List[(Request[_, _], Try[Response[_]])]
+// the list will contain one element and can be verified in a test
 ```
