@@ -2,6 +2,8 @@ package sttp.client4
 
 import sttp.model.{Header, Method, Part, RequestMetadata, Uri}
 import sttp.capabilities.{Effect, Streams, WebSockets}
+import sttp.client4.SttpClientException.EncodingException
+import sttp.client4.internal.encoders.ContentCodec
 import sttp.client4.internal.{ToCurlConverter, ToRfc2616Converter}
 import sttp.shared.Identity
 
@@ -144,7 +146,8 @@ case class Request[T](
     * Known exceptions are converted by backends to one of [[SttpClientException]]. Other exceptions are thrown
     * unchanged.
     */
-  def send[F[_]](backend: Backend[F]): F[Response[T]] = backend.send(this)
+  def send[F[_]](backend: Backend[F]): F[Response[T]] =
+    backend.send(this)
 
   /** Sends the request synchronously, using the given backend.
     *
@@ -156,7 +159,8 @@ case class Request[T](
     * Known exceptions are converted by backends to one of [[SttpClientException]]. Other exceptions are thrown
     * unchanged.
     */
-  def send(backend: SyncBackend): Response[T] = backend.send(this)
+  def send(backend: SyncBackend): Response[T] =
+    backend.send(this)
 }
 
 object Request {

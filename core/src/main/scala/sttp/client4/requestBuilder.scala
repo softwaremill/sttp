@@ -1,8 +1,6 @@
 package sttp.client4
 
-import sttp.client4.internal.SttpFile
-import sttp.client4.internal.Utf8
-import sttp.client4.internal.contentTypeWithCharset
+import sttp.client4.internal.{contentTypeWithCharset, ContentEncoding, SttpFile, Utf8}
 import sttp.client4.logging.LoggingOptions
 import sttp.client4.wrappers.DigestAuthenticationBackend
 import sttp.model.HasHeaders
@@ -73,6 +71,10 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
   def contentType(ct: String, encoding: String): PR =
     header(HeaderNames.ContentType, contentTypeWithCharset(ct, encoding))
   def contentLength(l: Long): PR = header(HeaderNames.ContentLength, l.toString)
+
+  def contentEncoding(encoding: ContentEncoding): PR =
+    header(HeaderNames.ContentEncoding, encoding.name, DuplicateHeaderBehavior.Add)
+      .withOptions(options.copy(encoding = options.encoding :+ encoding))
 
   /** Adds the given header to the headers of this request. If a header with the same name already exists, the default
     * is to replace it with the given one.
@@ -222,6 +224,8 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
     */
   def body(fs: Seq[(String, String)], encoding: String): PR = formDataBody(fs, encoding)
 
+  def body(b: BasicBody): PR = copyWithBody(b)
+
   def multipartBody(ps: Seq[Part[BasicBodyPart]]): PR = copyWithBody(BasicMultipartBody(ps))
 
   def multipartBody(p1: Part[BasicBodyPart], ps: Part[BasicBodyPart]*): PR = copyWithBody(
@@ -254,8 +258,8 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
   def followRedirects(fr: Boolean): PR = withOptions(options.copy(followRedirects = fr))
 
   def maxRedirects(n: Int): PR =
-  if (n <= 0) withOptions(options.copy(followRedirects = false))
-  else withOptions(options.copy(followRedirects = true, maxRedirects = n))
+    if (n <= 0) withOptions(options.copy(followRedirects = false))
+    else withOptions(options.copy(followRedirects = true, maxRedirects = n))
 
   /** When a POST or PUT request is redirected, should the redirect be a POST/PUT as well (with the original body), or
     * should the request be converted to a GET without a body.
