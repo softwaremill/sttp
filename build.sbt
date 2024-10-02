@@ -118,26 +118,26 @@ val testServerSettings = Seq(
 )
 
 val circeVersion: Option[(Long, Long)] => String = { _ =>
-  "0.14.6"
+  "0.14.10"
 }
 
-val jsoniterVersion = "2.22.1"
+val jsoniterVersion = "2.30.11"
 
 val play2JsonVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.7.4"
   case _             => "2.9.2"
 }
 val playJsonVersion = "3.0.2"
-val catsEffect_3_version = "3.5.1"
-val fs2_3_version = "3.7.0"
+val catsEffect_3_version = "3.5.4"
+val fs2_3_version = "3.11.0"
 
 val catsEffect_2_version: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.0.0"
-  case _             => "2.5.4"
+  case _             => "2.5.5"
 }
 val fs2_2_version: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.1.0"
-  case _             => "2.5.9"
+  case _             => "2.5.12"
 }
 
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.2.10"
@@ -149,7 +149,7 @@ val pekkoStreamVersion = "1.0.1"
 val pekkoStreams = "org.apache.pekko" %% "pekko-stream" % pekkoStreamVersion
 
 val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", "wordspec", "shouldmatchers").map(m =>
-  "org.scalatest" %%% s"scalatest-$m" % "3.2.15" % Test
+  "org.scalatest" %%% s"scalatest-$m" % "3.2.19" % Test
 )
 
 val zio1Version = "1.0.18"
@@ -391,10 +391,6 @@ lazy val cats = (projectMatrix in file("effects/cats"))
     scalaVersions = scala2alive ++ scala3,
     settings = commonJsSettings ++ commonJsBackendSettings ++ browserChromeTestSettings ++ testServerSettings
   )
-  .nativePlatform(
-    scalaVersions = scala2alive ++ scala3,
-    settings = commonNativeSettings
-  )
 
 lazy val fs2Ce2 = (projectMatrix in file("effects/fs2-ce2"))
   .settings(
@@ -439,7 +435,6 @@ lazy val fs2 = (projectMatrix in file("effects/fs2"))
     )
   )
   .jsPlatform(scalaVersions = scala2alive ++ scala3, settings = commonJsSettings)
-  .nativePlatform(scalaVersions = scala2alive ++ scala3, settings = commonNativeSettings)
 
 lazy val monix = (projectMatrix in file("effects/monix"))
   .settings(
@@ -882,7 +877,7 @@ lazy val upickle = (projectMatrix in file("json/upickle"))
   .settings(
     name := "upickle",
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %%% "upickle" % "2.0.0"
+      "com.lihaoyi" %%% "upickle" % "3.3.1"
     ),
     scalaTest,
     // using macroRW causes a "match may not be exhaustive" error
@@ -998,7 +993,7 @@ lazy val scribeBackend = (projectMatrix in file("logging/scribe"))
   .settings(
     name := "scribe-backend",
     libraryDependencies ++= Seq(
-      "com.outr" %%% "scribe" % "3.11.1"
+      "com.outr" %%% "scribe" % "3.15.0"
     ),
     scalaTest
   )
