@@ -110,6 +110,10 @@ object AsyncHttpClientZioBackend {
       new AsyncHttpClientZioBackend(runtime, asyncHttpClient, closeClient, customizeRequest, webSocketBufferCapacity)
     )
 
+  // work-around for "You must not use an intersection type, yet have provided SttpBackend[Task, ZioStreams & WebSockets]", #2244
+  implicit val sttpClientTag: Tag[SttpBackend[Task, ZioStreams with WebSockets]] =
+    Tag.materialize[SttpBackend[Task, ZioStreams]].asInstanceOf[Tag[SttpBackend[Task, ZioStreams with WebSockets]]]
+
   def apply(
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: BoundRequestBuilder => BoundRequestBuilder = identity,

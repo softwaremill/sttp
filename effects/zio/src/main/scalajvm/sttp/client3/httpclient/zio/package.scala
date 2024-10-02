@@ -9,7 +9,11 @@ import sttp.client3.impl.zio.ExtendEnv
 package object zio {
 
   /** Type alias to be used as the sttp ZIO service (mainly in ZIO environment). */
-  type SttpClient = SttpBackend[Task, ZioStreams with WebSockets]
+  type SttpClient = SttpBackend[Task, ZioStreams & WebSockets]
+
+  // work-around for "You must not use an intersection type, yet have provided SttpBackend[Task, ZioStreams & WebSockets]", #2244
+  implicit val sttpClientTag: Tag[SttpClient] =
+    Tag.materialize[SttpBackend[Task, ZioStreams]].asInstanceOf[Tag[SttpClient]]
 
   /** Sends the request. Only requests for which the method & URI are specified can be sent.
     *

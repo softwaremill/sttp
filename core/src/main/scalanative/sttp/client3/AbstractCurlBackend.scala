@@ -13,6 +13,7 @@ import sttp.monad.MonadError
 import sttp.monad.syntax._
 
 import scala.collection.immutable.Seq
+import scala.collection.mutable.ArrayBuffer
 import scala.io.Source
 import scala.scalanative.libc.stdio.{FILE, fclose, fopen}
 import scala.scalanative.libc.stdlib._
@@ -31,9 +32,41 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
 
   type PE = Any with Effect[F]
 
+  /** A request-specific context, with allocated zones and headers. */
+  private class Context() {
+    implicit val zone: Zone = Zone.open()
+    private val headers = ArrayBuffer[CurlList]()
+
+    /** Create a new Headers list that gets cleaned up when the context is destroyed. */
+    def transformHeaders(reqHeaders: Iterable[Header]): CurlList = {
+      val h = reqHeaders
+        .map(header => s"${header.name}: ${header.value}")
+        .foldLeft(new CurlList(null)) { case (acc, h) =>
+          new CurlList(acc.ptr.append(h))
+        }
+      headers += h
+      h
+    }
+
+    def close() = {
+      zone.close()
+      headers.foreach(l => if (l.ptr != null) l.ptr.free())
+    }
+  }
+
+  private object Context {
+
+    /** Create a new context and evaluates the body with it. Closes the context at the end. */
+    def evaluateUsing[T](body: Context => F[T]): F[T] = {
+      implicit val ctx = new Context()
+      body(ctx).ensure(monad.unit(ctx.close()))
+    }
+  }
+
   override def send[T, R >: PE](request: Request[T, R]): F[Response[T]] =
     adjustExceptions(request) {
-      unsafe.Zone { implicit z =>
+      def perform(implicit ctx: Context): F[Response[T]] = {
+        implicit val z = ctx.zone
         val curl = CurlApi.init
         if (verbose) {
           curl.option(Verbose, parameter = true)
@@ -61,6 +94,7 @@ abstract class AbstractCurlBackend[F[_]](monad: MonadError[F], verbose: Boolean)
           case None       => handleBase(request, curl, spaces)
         }
       }
+      Context.evaluateUsing(ctx => perform(ctx))
     }
 
   private def adjustExceptions[T](request: Request[_, _])(t: => F[T]): F[T] =

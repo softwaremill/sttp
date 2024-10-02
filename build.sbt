@@ -8,11 +8,11 @@ import complete.DefaultParsers._
 // run JS tests inside Chrome, due to jsdom not supporting fetch
 import com.softwaremill.SbtSoftwareMillBrowserTestJS._
 
-val scala2_12 = "2.12.18"
-val scala2_13 = "2.13.12"
+val scala2_12 = "2.12.20"
+val scala2_13 = "2.13.14"
 val scala2 = List(scala2_12, scala2_13)
 val scala2alive = List(scala2_12, scala2_13)
-val scala3 = List("3.3.1")
+val scala3 = List("3.3.3")
 
 lazy val testServerPort = settingKey[Int]("Port to run the http test server on")
 lazy val startTestServer = taskKey[Unit]("Start a http server used by tests")
@@ -76,7 +76,6 @@ val commonJsBackendSettings = JSDependenciesPlugin.projectSettings ++ List(
 )
 
 val commonNativeSettings = commonSettings ++ Seq(
-  nativeLinkStubs := true,
   Test / test := {
     // TODO: re-enable after scala-native release > 0.4.0-M2
     if (sys.env.isDefinedAt("RELEASE_VERSION")) {
@@ -119,26 +118,26 @@ val testServerSettings = Seq(
 )
 
 val circeVersion: Option[(Long, Long)] => String = { _ =>
-  "0.14.6"
+  "0.14.10"
 }
 
-val jsoniterVersion = "2.22.1"
+val jsoniterVersion = "2.30.11"
 
 val play2JsonVersion: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.7.4"
   case _             => "2.9.2"
 }
 val playJsonVersion = "3.0.2"
-val catsEffect_3_version = "3.5.1"
-val fs2_3_version = "3.7.0"
+val catsEffect_3_version = "3.5.4"
+val fs2_3_version = "3.11.0"
 
 val catsEffect_2_version: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.0.0"
-  case _             => "2.5.4"
+  case _             => "2.5.5"
 }
 val fs2_2_version: Option[(Long, Long)] => String = {
   case Some((2, 11)) => "2.1.0"
-  case _             => "2.5.9"
+  case _             => "2.5.12"
 }
 
 val akkaHttp = "com.typesafe.akka" %% "akka-http" % "10.2.10"
@@ -150,16 +149,16 @@ val pekkoStreamVersion = "1.0.1"
 val pekkoStreams = "org.apache.pekko" %% "pekko-stream" % pekkoStreamVersion
 
 val scalaTest = libraryDependencies ++= Seq("freespec", "funsuite", "flatspec", "wordspec", "shouldmatchers").map(m =>
-  "org.scalatest" %%% s"scalatest-$m" % "3.2.15" % Test
+  "org.scalatest" %%% s"scalatest-$m" % "3.2.19" % Test
 )
 
 val zio1Version = "1.0.18"
-val zio2Version = "2.0.10"
+val zio2Version = "2.1.9"
 val zio1InteropRsVersion = "1.3.12"
-val zio2InteropRsVersion = "2.0.1"
+val zio2InteropRsVersion = "2.0.2"
 
-val sttpModelVersion = "1.7.9"
-val sttpSharedVersion = "1.3.16"
+val sttpModelVersion = "1.7.11"
+val sttpSharedVersion = "1.3.22"
 
 val logback = "ch.qos.logback" % "logback-classic" % "1.4.5"
 
@@ -392,10 +391,6 @@ lazy val cats = (projectMatrix in file("effects/cats"))
     scalaVersions = scala2alive ++ scala3,
     settings = commonJsSettings ++ commonJsBackendSettings ++ browserChromeTestSettings ++ testServerSettings
   )
-  .nativePlatform(
-    scalaVersions = scala2alive ++ scala3,
-    settings = commonNativeSettings
-  )
 
 lazy val fs2Ce2 = (projectMatrix in file("effects/fs2-ce2"))
   .settings(
@@ -440,7 +435,6 @@ lazy val fs2 = (projectMatrix in file("effects/fs2"))
     )
   )
   .jsPlatform(scalaVersions = scala2alive ++ scala3, settings = commonJsSettings)
-  .nativePlatform(scalaVersions = scala2alive ++ scala3, settings = commonNativeSettings)
 
 lazy val monix = (projectMatrix in file("effects/monix"))
   .settings(
@@ -883,7 +877,7 @@ lazy val upickle = (projectMatrix in file("json/upickle"))
   .settings(
     name := "upickle",
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %%% "upickle" % "2.0.0"
+      "com.lihaoyi" %%% "upickle" % "3.3.1"
     ),
     scalaTest,
     // using macroRW causes a "match may not be exhaustive" error
@@ -999,7 +993,7 @@ lazy val scribeBackend = (projectMatrix in file("logging/scribe"))
   .settings(
     name := "scribe-backend",
     libraryDependencies ++= Seq(
-      "com.outr" %%% "scribe" % "3.11.1"
+      "com.outr" %%% "scribe" % "3.15.0"
     ),
     scalaTest
   )
