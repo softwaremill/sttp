@@ -154,7 +154,7 @@ val oxVersion = "0.4.0"
 val sttpModelVersion = "1.7.11"
 val sttpSharedVersion = "1.3.22"
 
-val logback = "ch.qos.logback" % "logback-classic" % "1.5.9"
+val logback = "ch.qos.logback" % "logback-classic" % "1.5.10"
 
 val jaegerClientVersion = "1.8.1"
 val braveOpentracingVersion = "1.0.1"
