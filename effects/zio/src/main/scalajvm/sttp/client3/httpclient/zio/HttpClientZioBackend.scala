@@ -33,7 +33,7 @@ class HttpClientZioBackend private (
 ) extends HttpClientAsyncBackend[
       Task,
       ZioStreams,
-      ZioStreams with WebSockets,
+      ZioWebSocketsStreams,
       Publisher[ju.List[ByteBuffer]],
       ZioStreams.BinaryStream
     ](
@@ -101,7 +101,7 @@ object HttpClientZioBackend {
       closeClient: Boolean,
       customizeRequest: HttpRequest => HttpRequest,
       customEncodingHandler: ZioEncodingHandler
-  ): SttpBackend[Task, ZioStreams with WebSockets] =
+  ): SttpBackend[Task, ZioWebSocketsStreams] =
     new FollowRedirectsBackend(
       new HttpClientZioBackend(
         client,
@@ -115,7 +115,7 @@ object HttpClientZioBackend {
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
-  ): Task[SttpBackend[Task, ZioStreams with WebSockets]] = {
+  ): Task[SttpBackend[Task, ZioWebSocketsStreams]] = {
     ZIO.executor.flatMap(executor =>
       ZIO.attempt(
         HttpClientZioBackend(
@@ -132,7 +132,7 @@ object HttpClientZioBackend {
       options: SttpBackendOptions = SttpBackendOptions.Default,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
-  ): ZIO[Scope, Throwable, SttpBackend[Task, ZioStreams with WebSockets]] =
+  ): ZIO[Scope, Throwable, SttpBackend[Task, ZioWebSocketsStreams]] =
     ZIO.acquireRelease(apply(options, customizeRequest, customEncodingHandler))(
       _.close().ignore
     )
@@ -141,7 +141,7 @@ object HttpClientZioBackend {
       client: HttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
-  ): ZIO[Scope, Throwable, SttpBackend[Task, ZioStreams with WebSockets]] =
+  ): ZIO[Scope, Throwable, SttpBackend[Task, ZioWebSocketsStreams]] =
     ZIO.acquireRelease(
       ZIO.attempt(HttpClientZioBackend(client, closeClient = true, customizeRequest, customEncodingHandler))
     )(_.close().ignore)
@@ -166,7 +166,7 @@ object HttpClientZioBackend {
       client: HttpClient,
       customizeRequest: HttpRequest => HttpRequest = identity,
       customEncodingHandler: ZioEncodingHandler = PartialFunction.empty
-  ): SttpBackend[Task, ZioStreams with WebSockets] =
+  ): SttpBackend[Task, ZioWebSocketsStreams] =
     HttpClientZioBackend(
       client,
       closeClient = false,
@@ -198,5 +198,5 @@ object HttpClientZioBackend {
     *
     * See [[SttpBackendStub]] for details on how to configure stub responses.
     */
-  def stub: SttpBackendStub[Task, ZioStreams with WebSockets] = SttpBackendStub(new RIOMonadAsyncError[Any])
+  def stub: SttpBackendStub[Task, ZioWebSocketsStreams] = SttpBackendStub(new RIOMonadAsyncError[Any])
 }
