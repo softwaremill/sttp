@@ -6,21 +6,23 @@ import sttp.client4.ws.SyncWebSocket
 import sttp.ws.WebSocketFrame
 
 import scala.util.control.NonFatal
+import ox.flow.Flow
 
-/** Converts a [[SyncWebSocket]] into a pair of `Source` of server responses and a `Sink` for client requests. The
+/** Converts a [[SyncWebSocket]] into a pair of [[Source]] of server responses and a [[Sink]] for client requests. The
   * `Source` starts receiving frames immediately, its internal buffer size can be adjusted with an implicit
-  * [[ox.channels.StageCapacity]]. Make sure that the `Source` is contiunually read. This will guarantee that
-  * server-side Close signal is received and handled. If you don't want to process frames from the server, you can at
+  * [[ox.channels.BufferCapacity]]. Make sure that the `Source` is contiunually read. This will guarantee that
+  * server-side close signal is received and handled. If you don't want to process frames from the server, you can at
   * least handle it with a `fork { source.drain() }`.
   *
   * You don't need to manually call `ws.close()` when using this approach, this will be handled automatically
   * underneath, according to following rules:
-  *   - If the request `Sink` is closed due to an upstream error, a Close frame is sent, and the `Source` with incoming
-  *     responses gets completed as `Done`.
-  *   - If the request `Sink` completes as `Done`, a `Close` frame is sent, and the response `Sink` keeps receiving
+  *   - If the request sink is closed due to an upstream error, a close frame is sent. The response sink keeps receiving
+  *     responses, until the enclosing [[Ox]] scope ends (that is controlled by the caller). When this happens, the fork
+  *     which populates the response channel will be interrupted.
+  *   - If the request sink completes as done, a close frame is sent. As above, the response sink keeps receiving
   *     responses until the server closes communication.
-  *   - If the response `Source` is closed by a Close frome from the server or due to an error, the request Sink is
-  *     closed as `Done`, which will still send all outstanding buffered frames, and then finish.
+  *   - If the response source is closed by a close frame from the server or due to an error, the request sink is closed
+  *     as done. This will attempt to send all outstanding buffered frames, unless the enclosing scope ends beforehand).
   *
   * @param ws
   *   a `SyncWebSocket` where the underlying `Sink` will send requests, and where the `Source` will pull responses from.
@@ -29,38 +31,30 @@ import scala.util.control.NonFatal
   */
 def asSourceAndSink(ws: SyncWebSocket, concatenateFragmented: Boolean = true)(using
     Ox,
-    StageCapacity
+    BufferCapacity
 ): (Source[WebSocketFrame], Sink[WebSocketFrame]) =
-  val requestsChannel = StageCapacity.newChannel[WebSocketFrame]
-  val responsesChannel = StageCapacity.newChannel[WebSocketFrame]
-  fork {
-    try
+  val requestsChannel = BufferCapacity.newChannel[WebSocketFrame]
+
+  val responsesChannel = Flow
+    .usingEmit[WebSocketFrame] { emit =>
       repeatWhile {
         ws.receive() match
-          case frame: WebSocketFrame.Data[_] =>
-            responsesChannel.sendOrClosed(frame) match
-              case _: ChannelClosed => false
-              case _                => true
-          case WebSocketFrame.Close(status, msg) if status > 1001 =>
-            responsesChannel.errorOrClosed(new WebSocketClosedWithError(status, msg)).discard
-            false
-          case _: WebSocketFrame.Close =>
-            responsesChannel.doneOrClosed().discard
-            false
+          case frame: WebSocketFrame.Data[_]                      => emit(frame); true
+          case WebSocketFrame.Close(status, msg) if status > 1001 => throw new WebSocketClosedWithError(status, msg)
+          case _: WebSocketFrame.Close                            => false
           case ping: WebSocketFrame.Ping =>
             requestsChannel.sendOrClosed(WebSocketFrame.Pong(ping.payload)).discard
-            // Keep receiving even if pong couldn't be send due to closed request channel. We want to process
+            // Keep receiving even if pong couldn't be sent due to closed request channel. We want to process
             // whatever responses there are still coming from the server until it signals the end with a Close frome.
             true
           case _: WebSocketFrame.Pong =>
             // ignore pongs
             true
       }
-    catch
-      case NonFatal(err) =>
-        responsesChannel.errorOrClosed(err).discard
-    finally requestsChannel.doneOrClosed().discard
-  }.discard
+    }
+    .pipe(optionallyConcatenateFrames(_, concatenateFragmented))
+    .onComplete(requestsChannel.doneOrClosed().discard)
+    .runToChannel()
 
   fork {
     try
@@ -78,7 +72,7 @@ def asSourceAndSink(ws: SyncWebSocket, concatenateFragmented: Boolean = true)(us
           case ChannelClosed.Error(err) =>
             // There's no proper "client error" status. Statuses 4000+ are available for custom cases
             ws.send(WebSocketFrame.Close(4000, "Client error"))
-            responsesChannel.doneOrClosed().discard
+            // Assuming the responsesChannel fork will get interrupted because the enclosing scope will end
             false
       }
     catch
@@ -87,17 +81,17 @@ def asSourceAndSink(ws: SyncWebSocket, concatenateFragmented: Boolean = true)(us
         if (!responsesChannel.isClosedForReceive) requestsChannel.errorOrClosed(err).discard
   }.discard
 
-  (optionallyConcatenateFrames(responsesChannel, concatenateFragmented), requestsChannel)
+  (responsesChannel, requestsChannel)
 
 final case class WebSocketClosedWithError(statusCode: Int, msg: String)
     extends Exception(s"WebSocket closed with status $statusCode: $msg")
 
-private def optionallyConcatenateFrames(s: Source[WebSocketFrame], doConcatenate: Boolean)(using
+private def optionallyConcatenateFrames(f: Flow[WebSocketFrame], doConcatenate: Boolean)(using
     Ox
-): Source[WebSocketFrame] =
+): Flow[WebSocketFrame] =
   if doConcatenate then
     type Accumulator = Option[Either[Array[Byte], String]]
-    s.mapStateful(() => None: Accumulator) {
+    f.mapStateful(() => None: Accumulator) {
       case (None, f: WebSocketFrame.Ping)                       => (None, Some(f))
       case (None, f: WebSocketFrame.Pong)                       => (None, Some(f))
       case (None, f: WebSocketFrame.Close)                      => (None, Some(f))
@@ -115,5 +109,5 @@ private def optionallyConcatenateFrames(s: Source[WebSocketFrame], doConcatenate
           s"Unexpected WebSocket frame received during concatenation. Frame received: ${f.getClass
               .getSimpleName()}, accumulator type: ${acc.map(_.getClass.getSimpleName)}"
         )
-    }.collectAsView { case Some(f: WebSocketFrame) => f }
-  else s
+    }.collect { case Some(f: WebSocketFrame) => f }
+  else f

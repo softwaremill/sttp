@@ -7,6 +7,7 @@ import org.scalatest.concurrent.Eventually
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import ox.*
+import ox.flow.Flow
 import ox.channels.ChannelClosed
 import ox.channels.Sink
 import ox.channels.Source
@@ -62,7 +63,7 @@ class OxWebSocketTest extends AnyFlatSpec with BeforeAndAfterAll with Matchers w
         val (wsSource, wsSink) = asSourceAndSink(ws)
         wsSink.send(WebSocketFrame.text("test1"))
         wsSink.error(new Exception("failed source"))
-        eventually(wsSource.isClosedForReceiveDetail shouldBe Some(ChannelClosed.Done))
+        eventually(wsSource.isClosedForReceiveDetail should matchPattern { case Some(ChannelClosed.Error(_)) => })
       })
       .send(backend)
   }
@@ -117,7 +118,7 @@ class OxWebSocketTest extends AnyFlatSpec with BeforeAndAfterAll with Matchers w
       .response(asWebSocket { ws =>
         val (wsSource, wsSink) = asSourceAndSink(ws, concatenateFragmented = false)
         sendText(wsSink, 1)
-        wsSource.take(3).toList shouldBe List(
+        Flow.fromSource(wsSource).take(3).runToList() shouldBe List(
           WebSocketFrame.Text("echo: ", false, None),
           WebSocketFrame.Text("test1", false, None),
           WebSocketFrame.Text("", true, None)
