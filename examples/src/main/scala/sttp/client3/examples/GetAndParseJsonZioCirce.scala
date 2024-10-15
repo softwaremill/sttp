@@ -20,5 +20,6 @@ object GetAndParseJsonZioCirce extends ZIOAppDefault {
       _ <- Console.printLine(s"Got response code: ${response.code}")
       _ <- Console.printLine(response.body.toString)
     } yield ()
-  }.provideLayer(HttpClientZioBackend.layer())
+  }.provideLayer(ZLayer.debug("additional layer") ++ HttpClientZioBackend.layer())
+
 }

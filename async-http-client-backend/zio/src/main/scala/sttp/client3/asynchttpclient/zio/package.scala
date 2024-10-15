@@ -1,12 +1,14 @@
 package sttp.client3.asynchttpclient
 
 import _root_.zio._
-import sttp.capabilities.Effect
+import sttp.capabilities.{Effect, WebSockets}
 import sttp.capabilities.zio.ZioStreams
 import sttp.client3._
 import sttp.client3.impl.zio.ExtendEnv
 
 package object zio {
+
+  type ZioWebSocketsStreams = ZioStreams & WebSockets
 
   /** Type alias to be used as the sttp ZIO service (mainly in ZIO environment). */
   type SttpClient = SttpBackend[Task, ZioStreams]
