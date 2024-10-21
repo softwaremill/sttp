@@ -110,6 +110,8 @@ We are also always looking for contributions and new ideas, so if you’d like t
 Note that running the default `test` task will run the tests using both the JVM and JS backends, and is likely to run out of memory.
 If you'd like to run the tests using *only* the JVM backend, execute: `sbt rootJVM/test`.
 
+When you have a PR ready, take a look at our ["How to prepare a good PR" guide](https://softwaremill.community/t/how-to-prepare-a-good-pr-to-a-library/448). Thanks! :)
+
 ### Importing into IntelliJ
 
 By default, when importing to IntelliJ or Metals, only the Scala 2.13/JVM subprojects will be imported. This is controlled by the `ideSkipProject` setting in `build.sbt` (inside `commonSettings`).
