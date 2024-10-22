@@ -2,8 +2,9 @@ package sttp.client4.internal.httpclient
 
 import sttp.capabilities.Streams
 import sttp.client4.internal.SttpToJavaConverters.toJavaSupplier
-import sttp.client4.internal.{throwNestedMultipartNotAllowed, Utf8}
+import sttp.client4.internal.{throwNestedMultipartNotAllowed, ContentEncoding, Utf8}
 import sttp.client4._
+import sttp.client4.internal.encoders.ContentCodec
 import sttp.model.{Header, HeaderNames, Part}
 import sttp.monad.MonadError
 import sttp.monad.syntax._
@@ -25,26 +26,44 @@ private[client4] trait BodyToHttpClient[F[_], S] {
       builder: HttpRequest.Builder,
       contentType: Option[String]
   ): F[BodyPublisher] = {
-    val body = request.body match {
-      case NoBody              => BodyPublishers.noBody().unit
-      case StringBody(b, _, _) => BodyPublishers.ofString(b).unit
-      case ByteArrayBody(b, _) => BodyPublishers.ofByteArray(b).unit
-      case ByteBufferBody(b, _) =>
+    val body: F[BodyPublisher] = request.options.encoding -> request.body match {
+      case (_, NoBody)                => BodyPublishers.noBody().unit
+      case (Nil, StringBody(b, _, _)) => BodyPublishers.ofString(b).unit
+      case (Nil, ByteArrayBody(b, _)) => BodyPublishers.ofByteArray(b).unit
+      case (Nil, ByteBufferBody(b, _)) =>
         if (b.hasArray) BodyPublishers.ofByteArray(b.array(), 0, b.limit()).unit
         else { val a = new Array[Byte](b.remaining()); b.get(a); BodyPublishers.ofByteArray(a).unit }
-      case InputStreamBody(b, _) => BodyPublishers.ofInputStream(toJavaSupplier(() => b)).unit
-      case FileBody(f, _)        => BodyPublishers.ofFile(f.toFile.toPath).unit
-      case StreamBody(s)         => streamToPublisher(s.asInstanceOf[streams.BinaryStream])
-      case m: MultipartBody[_] =>
+      case (Nil, InputStreamBody(b, _)) => BodyPublishers.ofInputStream(toJavaSupplier(() => b)).unit
+      case (Nil, FileBody(f, _))        => BodyPublishers.ofFile(f.toFile.toPath).unit
+      case (_, StreamBody(s))           => streamToPublisher(s.asInstanceOf[streams.BinaryStream])
+      case (_, m: MultipartBody[_]) =>
         val multipartBodyPublisher = multipartBody(m.parts)
         val baseContentType = contentType.getOrElse("multipart/form-data")
         builder.header(HeaderNames.ContentType, s"$baseContentType; boundary=${multipartBodyPublisher.getBoundary}")
         multipartBodyPublisher.build().unit
+
+      case (coders, r: BasicBodyPart) =>
+        ContentCodec.encode(r, coders) match {
+          case Left(err) => monad.error(err)
+          case Right(newBody) =>
+            val (body, length) = newBody
+            val newRequest = request
+              .contentLength(length.toLong)
+              .body(body)
+              .withOptions(request.options.copy(encoding = Nil))
+            apply[T](newRequest, builder, contentType) // can we avoid recursion?
+        }
     }
 
     (request.contentLength: Option[Long]) match {
-      case None     => body
-      case Some(cl) => body.map(b => withKnownContentLength(b, cl))
+      case None => body
+      case Some(cl) =>
+        body.map { b =>
+          if (b.contentLength() >= 0) // see BodyPublisher.contentLength docs
+            withKnownContentLength(b, b.contentLength())
+          else
+            withKnownContentLength(b, cl)
+        }
     }
   }
 
