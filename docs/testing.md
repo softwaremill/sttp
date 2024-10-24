@@ -285,12 +285,12 @@ backend.whenAnyRequest.thenRespond(webSocketStub)
 There is a possiblity to add error responses as well. If this is not enough, using a custom implementation of
 the `WebSocket` trait is recommended.
 
-## Verifying, that a request was sent
+## Verifying that a request was sent
 
 Using `RecordingSttpBackend` it's possible to capture all interactions in which a backend has been involved.
 
 The recording backend is a [backend wrapper](backends/wrappers/custom.md), and it can wrap any backend, but it's most
-useful when combine with the backend stub.
+useful when combined with the backend stub.
 
 Example usage:
 
