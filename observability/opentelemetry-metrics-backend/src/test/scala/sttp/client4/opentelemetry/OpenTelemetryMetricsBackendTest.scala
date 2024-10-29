@@ -178,11 +178,8 @@ class OpenTelemetryMetricsBackendTest extends AnyFlatSpec with Matchers with Opt
     (0 until 5).foreach(_ => basicRequest.get(uri"http://127.0.0.1/foo").send(backend))
 
     // then
-    val histogram = getHistogramValue(reader, OpenTelemetryMetricsBackend.DefaultLatencyHistogramName).value
-    val attributes = histogram.getAttributes
-    attributes.get(AttributeKey.stringKey("http.request.method")) shouldBe "GET"
-    attributes.get(AttributeKey.stringKey("server.address")) shouldBe "127.0.0.1"
-    attributes.get(AttributeKey.longKey("http.response.status_code")) shouldBe 200L
+    val metrics = reader.collectAllMetrics().asScala.toList
+    specTest(metrics, OpenTelemetryMetricsBackend.DefaultLatencyHistogramName)
   }
 
   it should "use error counter when http error is thrown" in {

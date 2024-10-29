@@ -212,21 +212,29 @@ private class OpenTelemetryMetricsListener(
     b.build()
   }
 
+  /*
+    OpenTelemetry HTTP Client Metrics Spec: Mapping request attributes as per
+    https://opentelemetry.io/docs/specs/semconv/http/http-metrics/#http-client
+   * */
   private def createRequestAttributes(request: GenericRequest[_, _]): Attributes = {
     val attributes = Attributes
       .builder()
       .put(AttributeKey.stringKey("http.request.method"), request.method.method)
       .put(AttributeKey.stringKey("server.address"), request.uri.host.getOrElse("unknown"))
-      .put(AttributeKey.longKey("server.port").asInstanceOf[AttributeKey[Any]], request.uri.port.getOrElse(80).toLong)
+      .put(AttributeKey.longKey("server.port"), request.uri.port.getOrElse(80))
       .build()
 
     attributes
   }
 
+  /*
+    OpenTelemetry HTTP Client Metrics Spec: Mapping response attributes as per
+    https://opentelemetry.io/docs/specs/semconv/http/http-metrics/#http-client
+   * */
   private def createResponseAttributes(response: Response[_]): Attributes =
     Attributes
       .builder()
-      .put(AttributeKey.longKey("http.response.status_code").asInstanceOf[AttributeKey[Any]], response.code.code.toLong)
+      .put(AttributeKey.longKey("http.response.status_code"), response.code.code)
       .build()
 
   private def createErrorAttributes(e: Throwable): Attributes = {
