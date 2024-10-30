@@ -1,7 +1,7 @@
 package sttp.client4.opentelemetry
 
 import io.opentelemetry.api.OpenTelemetry
-import io.opentelemetry.api.common.Attributes
+import io.opentelemetry.api.common.{AttributeKey, Attributes}
 import io.opentelemetry.api.metrics.{DoubleHistogram, LongCounter, LongUpDownCounter, Meter}
 import sttp.client4.listener.{ListenerBackend, RequestListener}
 import sttp.client4.wrappers.FollowRedirectsBackend
@@ -108,44 +108,60 @@ private class OpenTelemetryMetricsListener(
   private val upAndDownCounter = new ConcurrentHashMap[String, LongUpDownCounter]()
 
   override def beforeRequest(request: GenericRequest[_, _]): Option[Long] = {
-    updateInProgressCounter(request, 1)
-    recordHistogram(requestToSizeHistogramMapper(request), request.contentLength)
-    requestToLatencyHistogramMapper(request).map(_ => clock.millis())
+    val attributes = createRequestAttributes(request)
+
+    updateInProgressCounter(request, 1, attributes)
+    recordHistogram(requestToSizeHistogramMapper(request), request.contentLength, attributes)
+    requestToLatencyHistogramMapper(request).map { _ =>
+      val timestamp = clock.millis()
+      timestamp
+    }
   }
 
   override def requestSuccessful(request: GenericRequest[_, _], response: Response[_], tag: Option[Long]): Unit = {
+    val requestAttributes = createRequestAttributes(request)
+    val responseAttributes = createResponseAttributes(response)
+
+    val combinedAttributes = requestAttributes.toBuilder().putAll(responseAttributes).build()
+
     if (response.isSuccess) {
-      incrementCounter(responseToSuccessCounterMapper(response))
+      incrementCounter(responseToSuccessCounterMapper(response), combinedAttributes)
     } else {
-      incrementCounter(requestToErrorCounterMapper(response))
+      incrementCounter(requestToErrorCounterMapper(response), combinedAttributes)
     }
-    recordHistogram(responseToSizeHistogramMapper(response), response.contentLength)
-    recordHistogram(requestToLatencyHistogramMapper(request), tag.map(clock.millis() - _))
-    updateInProgressCounter(request, -1)
+
+    recordHistogram(responseToSizeHistogramMapper(response), response.contentLength, combinedAttributes)
+    recordHistogram(requestToLatencyHistogramMapper(request), tag.map(clock.millis() - _), combinedAttributes)
+    updateInProgressCounter(request, -1, requestAttributes)
   }
 
-  override def requestException(request: GenericRequest[_, _], tag: Option[Long], e: Exception): Unit =
+  override def requestException(request: GenericRequest[_, _], tag: Option[Long], e: Exception): Unit = {
+    val requestAttributes = createRequestAttributes(request)
+    val errorAttributes = createErrorAttributes(e)
+
     HttpError.find(e) match {
       case Some(HttpError(body, statusCode)) =>
         requestSuccessful(request, Response(body, statusCode, request.onlyMetadata), tag)
       case _ =>
-        incrementCounter(requestToFailureCounterMapper(request, e))
-        recordHistogram(requestToLatencyHistogramMapper(request), tag.map(clock.millis() - _))
-        updateInProgressCounter(request, -1)
+        incrementCounter(requestToFailureCounterMapper(request, e), errorAttributes)
+        recordHistogram(requestToLatencyHistogramMapper(request), tag.map(clock.millis() - _), errorAttributes)
+        updateInProgressCounter(request, -1, requestAttributes)
     }
-
-  private def updateInProgressCounter[R, T](request: GenericRequest[T, R], delta: Long): Unit =
-    requestToInProgressCounterMapper(request)
-      .foreach(config =>
-        getOrCreateMetric(upAndDownCounter, config, createNewUpDownCounter).add(delta, config.attributes)
-      )
-
-  private def recordHistogram(config: Option[HistogramCollectorConfig], size: Option[Long]): Unit = config.foreach {
-    cfg =>
-      getOrCreateHistogram(histograms, cfg, createNewHistogram).record(size.getOrElse(0L).toDouble, cfg.attributes)
   }
 
-  private def incrementCounter(collectorConfig: Option[CollectorConfig]): Unit =
+  private def updateInProgressCounter[R, T](request: GenericRequest[T, R], delta: Long, attributes: Attributes): Unit =
+    requestToInProgressCounterMapper(request)
+      .foreach(config => getOrCreateMetric(upAndDownCounter, config, createNewUpDownCounter).add(delta, attributes))
+
+  private def recordHistogram(
+      config: Option[HistogramCollectorConfig],
+      size: Option[Long],
+      attributes: Attributes
+  ): Unit = config.foreach { cfg =>
+    getOrCreateHistogram(histograms, cfg, createNewHistogram).record(size.getOrElse(0L).toDouble, attributes)
+  }
+
+  private def incrementCounter(collectorConfig: Option[CollectorConfig], attributes: Attributes): Unit =
     collectorConfig
       .foreach(config => getOrCreateMetric(counters, config, createNewCounter).add(1, config.attributes))
 
@@ -195,6 +211,40 @@ private class OpenTelemetryMetricsListener(
     b = config.description.fold(b)(b.setDescription)
     b.build()
   }
+
+  /*
+    OpenTelemetry HTTP Client Metrics Spec: Mapping request attributes as per
+    https://opentelemetry.io/docs/specs/semconv/http/http-metrics/#http-client
+   * */
+  private def createRequestAttributes(request: GenericRequest[_, _]): Attributes = {
+    val attributes = Attributes
+      .builder()
+      .put(AttributeKey.stringKey("http.request.method"), request.method.method)
+      .put(AttributeKey.stringKey("server.address"), request.uri.host.getOrElse("unknown"))
+      .put(AttributeKey.longKey("server.port"), request.uri.port.getOrElse(80))
+      .build()
+
+    attributes
+  }
+
+  /*
+    OpenTelemetry HTTP Client Metrics Spec: Mapping response attributes as per
+    https://opentelemetry.io/docs/specs/semconv/http/http-metrics/#http-client
+   * */
+  private def createResponseAttributes(response: Response[_]): Attributes =
+    Attributes
+      .builder()
+      .put(AttributeKey.longKey("http.response.status_code"), response.code.code)
+      .build()
+
+  private def createErrorAttributes(e: Throwable): Attributes = {
+    val errorType = e match {
+      case _: java.net.UnknownHostException => "unknown_host"
+      case _                                => e.getClass.getSimpleName
+    }
+    Attributes.builder().put("error.type", errorType).build()
+  }
+
 }
 
 case class CollectorConfig(
