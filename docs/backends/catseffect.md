@@ -14,7 +14,7 @@ Also note that the [http4s](http4s.md) backend can also be created for a type im
 Firstly, add the following dependency to your project:
 
 ```scala
-"com.softwaremill.sttp.client4" %% "cats" % "@VERSION@"
+"com.softwaremill.sttp.client3" %% "cats" % "@VERSION@"
 ```
 
 Obtain a cats-effect `Resource` which creates the backend, and closes the thread pool after the resource is no longer used:
