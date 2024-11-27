@@ -999,7 +999,7 @@ lazy val openTelemetryTracingZioBackend = (projectMatrix in file("observability/
   .settings(
     name := "opentelemetry-tracing-zio-backend",
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-opentelemetry" % "3.0.2",
+      "dev.zio" %% "zio-opentelemetry" % "3.1.0",
       "io.opentelemetry.semconv" % "opentelemetry-semconv" % "1.26.0-alpha",
       "io.opentelemetry" % "opentelemetry-api" % openTelemetryVersion,
       "io.opentelemetry" % "opentelemetry-sdk-testing" % openTelemetryVersion % Test
