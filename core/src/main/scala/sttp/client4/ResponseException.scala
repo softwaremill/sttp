@@ -5,9 +5,9 @@ import sttp.model.StatusCode
 import scala.annotation.tailrec
 
 sealed abstract class ResponseException[+HE, +DE](error: String) extends Exception(error)
-case class HttpError[HE](body: HE, statusCode: StatusCode)
+case class HttpError[+HE](body: HE, statusCode: StatusCode)
     extends ResponseException[HE, Nothing](s"statusCode: $statusCode, response: $body")
-case class DeserializationException[DE: ShowError](body: String, error: DE)
+case class DeserializationException[+DE: ShowError](body: String, error: DE)
     extends ResponseException[Nothing, DE](implicitly[ShowError[DE]].show(error))
 
 object HttpError {
