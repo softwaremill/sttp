@@ -165,7 +165,7 @@ val http4s_ce3_version = "0.23.30"
 
 val tethysVersion = "0.29.3"
 
-val openTelemetryVersion = "1.44.1"
+val openTelemetryVersion = "1.45.0"
 
 val compileAndTest = "compile->compile;test->test"
 
