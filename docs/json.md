@@ -2,19 +2,21 @@
 
 Adding support for JSON (or other format) bodies in requests/responses is a matter of providing a [body serializer](requests/body.md) and/or a [response body specification](responses/body.md). Both are quite straightforward to implement, so integrating with your favorite JSON library shouldn't be a problem. However, there are some integrations available out-of-the-box.
 
-Each integration is available as an import, which brings the implicit `BodySerializer`s and `asJson` methods into scope. Alternatively, these values are grouped intro traits (e.g. `sttp.client4.circe.SttpCirceApi`), which can be extended to group multiple integrations in one object, and thus reduce the number of necessary imports.
+Each integration is available as an import, which brings `asJson` methods into scope. Alternatively, these values are grouped intro traits (e.g. `sttp.client4.circe.SttpCirceApi`), which can be extended to group multiple integrations in one object, and thus reduce the number of necessary imports.
 
 The following variants of `asJson` methods are available:
 
-* regular - deserializes the body to json, only if the response is successful (2xx)
-* `always` - deserializes the body to json regardless of the status code
-* `either` - uses different deserializers for error and successful (2xx) responses
+* `asJson(b: B)` - serializes the body so that it can be used as a request's body, e.g. using `basicRequest.body(asJson(myValue))`
+* `asJson[B]` - specifies that the body should be deserialized to json, but only if the response is successful (2xx); shoud be used to specify how a response should be handled, e.g. `basicRequest.response(asJson[T])`
+* `asJsonAlways[B]` - specifies that the body should be deserialized to json, regardless of the status code
+* `asJsonEither[E, B]` - specifies that the body should be deserialized to json, using different deserializers for error and successful (2xx) responses
 
 The type signatures vary depending on the underlying library (required implicits and error representation differs), but they obey the following pattern:
 
 ```scala mdoc:compile-only
 import sttp.client4._
 
+def asJson[B](b: B): StringBody = ???
 def asJson[B]: ResponseAs[Either[ResponseException[String, Exception], B]] = ???
 def asJsonAlways[B]: ResponseAs[Either[DeserializationException[Exception], B]] = ???
 def asJsonEither[E, B]: ResponseAs[Either[ResponseException[E, Exception], B]] = ???
@@ -54,7 +56,7 @@ val requestPayload = RequestPayload("some data")
 val response: Response[Either[ResponseException[String, io.circe.Error], ResponsePayload]] =
   basicRequest
     .post(uri"...")
-    .body(requestPayload)
+    .body(asJson(requestPayload))
     .response(asJson[ResponsePayload])
     .send(backend)
 ```
@@ -90,7 +92,7 @@ implicit val formats = org.json4s.DefaultFormats
 val response: Response[Either[ResponseException[String, Exception], ResponsePayload]] =
   basicRequest
     .post(uri"...")
-    .body(requestPayload)
+    .body(asJson(requestPayload))
     .response(asJson[ResponsePayload])
     .send(backend)
 ```
@@ -122,7 +124,7 @@ val requestPayload = RequestPayload("some data")
 val response: Response[Either[ResponseException[String, Exception], ResponsePayload]] =
   basicRequest
     .post(uri"...")
-    .body(requestPayload)
+    .body(asJson(requestPayload))
     .response(asJson[ResponsePayload])
     .send(backend)
 ```
@@ -179,7 +181,7 @@ val requestPayload = RequestPayload("some data")
 val response: Response[Either[ResponseException[String, String], ResponsePayload]] =
 basicRequest
   .post(uri"...")
-  .body(requestPayload)
+  .body(asJson(requestPayload))
   .response(asJson[ResponsePayload])
   .send(backend)
 ```
@@ -219,7 +221,7 @@ val requestPayload = RequestPayload("some data")
 val response: Response[Either[ResponseException[String, Exception], ResponsePayload]] =
 basicRequest
   .post(uri"...")
-  .body(requestPayload)
+  .body(asJson(requestPayload))
   .response(asJson[ResponsePayload])
   .send(backend)
 ```
@@ -256,7 +258,7 @@ val requestPayload = RequestPayload("some data")
 val response: Response[Either[ResponseException[String, Exception], ResponsePayload]] =
 basicRequest
   .post(uri"...")
-  .body(requestPayload)
+  .body(asJson(requestPayload))
   .response(asJson[ResponsePayload])
   .send(backend)
 ```
