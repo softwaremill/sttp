@@ -23,7 +23,7 @@ class Json4sTests extends AnyFlatSpec with Matchers with EitherValues {
     val body = Outer(Inner(42, true, "horses"), "cats")
     val expected = """{"foo":{"a":42,"b":true,"c":"horses"},"bar":"cats"}"""
 
-    val req = basicRequest.body(body)
+    val req = basicRequest.body(asJson(body))
 
     extractBody(req) shouldBe expected
   }
@@ -75,16 +75,16 @@ class Json4sTests extends AnyFlatSpec with Matchers with EitherValues {
 
   it should "set the content type" in {
     val body = Outer(Inner(42, true, "horses"), "cats")
-    val req = basicRequest.body(body)
+    val req = basicRequest.body(asJson(body))
 
     val ct = req.headers.map(h => (h.name, h.value)).toMap.get("Content-Type")
 
     ct shouldBe Some(MediaType.ApplicationJson.copy(charset = Some(Utf8)).toString)
   }
 
-  it should "serialize from JObject using implicit json4sBodySerializer" in {
+  it should "serialize from JObject using" in {
     val jObject: JObject = JObject(JField("location", JString("hometown")), JField("bio", JString("Scala programmer")))
-    val request: Request[Either[String, String]] = basicRequest.get(Uri("http://example.org")).body(jObject)
+    val request: Request[Either[String, String]] = basicRequest.get(Uri("http://example.org")).body(asJson(jObject))
 
     val actualBody: String = request.body.show
     val actualContentType: Option[String] = request.contentType

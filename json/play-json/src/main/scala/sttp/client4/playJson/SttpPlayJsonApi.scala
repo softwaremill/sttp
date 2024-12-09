@@ -13,8 +13,9 @@ trait SttpPlayJsonApi {
     override def show(t: JsError): String = t.errors.mkString(",")
   }
 
-  implicit def playJsonBodySerializer[B: Writes]: BodySerializer[B] =
-    b => StringBody(Json.stringify(Json.toJson(b)), Utf8, MediaType.ApplicationJson)
+  /** Serialize the given value as JSON, to be used as a request's body using [[sttp.client4.Request.body]]. */
+  def asJson[B: Writes](b: B): StringBody =
+    StringBody(Json.stringify(Json.toJson(b)), Utf8, MediaType.ApplicationJson)
 
   /** If the response is successful (2xx), tries to deserialize the body from a string into JSON. Returns:
     *   - `Right(b)` if the parsing was successful

@@ -9,11 +9,12 @@ import sttp.client4.json._
 
 trait SttpCirceApi {
 
-  implicit def circeBodySerializer[B](implicit
+  /** Serialize the given value as JSON, to be used as a request's body using [[sttp.client4.Request.body]]. */
+  def asJson[B](b: B)(implicit
       encoder: Encoder[B],
       printer: Printer = Printer.noSpaces
-  ): BodySerializer[B] =
-    b => StringBody(encoder(b).printWith(printer), Utf8, MediaType.ApplicationJson)
+  ): StringBody =
+    StringBody(encoder(b).printWith(printer), Utf8, MediaType.ApplicationJson)
 
   /** If the response is successful (2xx), tries to deserialize the body from a string into JSON. Returns:
     *   - `Right(b)` if the parsing was successful

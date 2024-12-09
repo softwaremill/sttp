@@ -18,10 +18,4 @@ trait PartialRequestExtensions[+R <: PartialRequestBuilder[R, _]] { self: R =>
     * If content length is not yet specified, will be set to the length of the given file.
     */
   def body(path: Path): R = body(SttpFile.fromPath(path))
-
-  // this method needs to be in the extensions, so that it has lowest priority when considering overloading options
-  /** If content type is not yet specified, will be set to `application/octet-stream`.
-    */
-  def body[B: BodySerializer](b: B): R =
-    withBody(implicitly[BodySerializer[B]].apply(b))
 }

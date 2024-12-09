@@ -155,78 +155,86 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
   private[client4] def setContentLengthIfMissing(l: => Long): PR =
     if (hasContentLength) this else contentLength(l)
 
-  /** Uses the `utf-8` encoding.
+  /** Sets the body of this request to the given string, using the UTF-8 encoding.
     *
-    * If content type is not yet specified, will be set to `text/plain` with `utf-8` encoding.
+    * If content type is not yet specified, will be set to `text/plain` with UTF-8 encoding.
     *
-    * If content length is not yet specified, will be set to the number of bytes in the string using the `utf-8`
-    * encoding.
+    * If content length is not yet specified, will be set to the number of bytes in the string using the UTF-8 encoding.
     */
   def body(b: String): PR = body(b, Utf8)
 
-  /** If content type is not yet specified, will be set to `text/plain` with the given encoding.
+  /** Sets the body of this request to the given string, using the given encoding.
+    *
+    * If content type is not yet specified, will be set to `text/plain` with the given encoding.
     *
     * If content length is not yet specified, will be set to the number of bytes in the string using the given encoding.
     */
   def body(b: String, encoding: String): PR =
-    withBody(StringBody(b, encoding)).setContentLengthIfMissing(b.getBytes(encoding).length.toLong)
+    body(StringBody(b, encoding)).setContentLengthIfMissing(b.getBytes(encoding).length.toLong)
 
-  /** If content type is not yet specified, will be set to `application/octet-stream`.
+  /** Sets the body of this request to the given byte array.
+    *
+    * If content type is not yet specified, will be set to `application/octet-stream`.
     *
     * If content length is not yet specified, will be set to the length of the given array.
     */
-  def body(b: Array[Byte]): PR = withBody(ByteArrayBody(b)).setContentLengthIfMissing(b.length.toLong)
+  def body(b: Array[Byte]): PR = body(ByteArrayBody(b)).setContentLengthIfMissing(b.length.toLong)
 
-  /** If content type is not yet specified, will be set to `application/octet-stream`. */
-  def body(b: ByteBuffer): PR = withBody(ByteBufferBody(b))
-
-  /** If content type is not yet specified, will be set to `application/octet-stream`.
+  /** Sets the body of this request to the given byte buffer.
+    *
+    * If content type is not yet specified, will be set to `application/octet-stream`.
     */
-  def body(b: InputStream): PR = withBody(InputStreamBody(b))
+  def body(b: ByteBuffer): PR = body(ByteBufferBody(b))
+
+  /** Sets the body of this request to the given input stream.
+    *
+    * If content type is not yet specified, will be set to `application/octet-stream`.
+    */
+  def body(b: InputStream): PR = body(InputStreamBody(b))
 
   /** If content type is not yet specified, will be set to `application/octet-stream`.
     *
     * If content length is not yet specified, will be set to the length of the given file.
     */
-  private[client4] def body(f: SttpFile): PR = withBody(FileBody(f)).setContentLengthIfMissing(f.size)
+  private[client4] def body(f: SttpFile): PR = body(FileBody(f)).setContentLengthIfMissing(f.size)
 
-  /** Encodes the given parameters as form data using `utf-8`. If content type is not yet specified, will be set to
-    * `application/x-www-form-urlencoded`.
+  /** Sets the body of this request to the given form-data parameters. The parameters are encoded using UTF-8.
+    *
+    * If content type is not yet specified, will be set to `application/x-www-form-urlencoded`.
     *
     * If content length is not yet specified, will be set to the length of the number of bytes in the url-encoded
     * parameter string.
     */
   def body(fs: Map[String, String]): PR = formDataBody(fs.toList, Utf8)
 
-  /** Encodes the given parameters as form data. If content type is not yet specified, will be set to
-    * `application/x-www-form-urlencoded`.
+  /** Sets the body of this request to the given form-data parameters. The parameters are encoded using the given
+    * encoding.
+    *
+    * If content type is not yet specified, will be set to `application/x-www-form-urlencoded`.
     *
     * If content length is not yet specified, will be set to the length of the number of bytes in the url-encoded
     * parameter string.
     */
   def body(fs: Map[String, String], encoding: String): PR = formDataBody(fs.toList, encoding)
 
-  /** Encodes the given parameters as form data using `utf-8`. If content type is not yet specified, will be set to
-    * `application/x-www-form-urlencoded`.
+  /** Sets the body of this request to the given form-data parameters. The parameters are encoded using UTF-8.
+    *
+    * If content type is not yet specified, will be set to `application/x-www-form-urlencoded`.
     *
     * If content length is not yet specified, will be set to the length of the number of bytes in the url-encoded
     * parameter string.
     */
   def body(fs: (String, String)*): PR = formDataBody(fs.toList, Utf8)
 
-  /** Encodes the given parameters as form data. If content type is not yet specified, will be set to
-    * `application/x-www-form-urlencoded`.
+  /** Sets the body of this request to the given form-data parameters. The parameters are encoded using the given
+    * encoding.
+    *
+    * If content type is not yet specified, will be set to `application/x-www-form-urlencoded`.
     *
     * If content length is not yet specified, will be set to the length of the number of bytes in the url-encoded
     * parameter string.
     */
   def body(fs: Seq[(String, String)], encoding: String): PR = formDataBody(fs, encoding)
-
-  def multipartBody(ps: Seq[Part[BasicBodyPart]]): PR = copyWithBody(BasicMultipartBody(ps))
-
-  def multipartBody(p1: Part[BasicBodyPart], ps: Part[BasicBodyPart]*): PR = copyWithBody(
-    BasicMultipartBody(p1 :: ps.toList)
-  )
 
   private def formDataBody(fs: Seq[(String, String)], encoding: String): PR = {
     val b = BasicBody.paramsToStringBody(fs, encoding)
@@ -235,7 +243,20 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
       .setContentLengthIfMissing(b.s.getBytes(encoding).length.toLong)
   }
 
-  def withBody(body: BasicBody): PR = {
+  /** Sets the body of this request to the given multipart form parts. */
+  def multipartBody(ps: Seq[Part[BasicBodyPart]]): PR = copyWithBody(BasicMultipartBody(ps))
+
+  /** Sets the body of this request to the given multipart form parts. */
+  def multipartBody(p1: Part[BasicBodyPart], ps: Part[BasicBodyPart]*): PR = copyWithBody(
+    BasicMultipartBody(p1 :: ps.toList)
+  )
+
+  /** Sets the body of this request to the given [[BasicBody]] implementation.
+    *
+    * If content type is not yet specified, it will be set to the default content type of the body, including the
+    * encoding in case of a string body.
+    */
+  def body(body: BasicBody): PR = {
     val defaultCt = body match {
       case StringBody(_, encoding, ct) =>
         ct.copy(charset = Some(encoding))
@@ -254,8 +275,8 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
   def followRedirects(fr: Boolean): PR = withOptions(options.copy(followRedirects = fr))
 
   def maxRedirects(n: Int): PR =
-  if (n <= 0) withOptions(options.copy(followRedirects = false))
-  else withOptions(options.copy(followRedirects = true, maxRedirects = n))
+    if (n <= 0) withOptions(options.copy(followRedirects = false))
+    else withOptions(options.copy(followRedirects = true, maxRedirects = n))
 
   /** When a POST or PUT request is redirected, should the redirect be a POST/PUT as well (with the original body), or
     * should the request be converted to a GET without a body.

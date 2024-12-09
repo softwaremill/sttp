@@ -1,28 +1,25 @@
 package sttp.client4.ziojson
 
+import sttp.client4.DeserializationException
+import sttp.client4.HttpError
+import sttp.client4.IsOption
+import sttp.client4.JsonInput
+import sttp.client4.ResponseAs
+import sttp.client4.ResponseException
+import sttp.client4.ShowError
+import sttp.client4.StringBody
+import sttp.client4.asString
+import sttp.client4.asStringAlways
 import sttp.client4.internal.Utf8
 import sttp.client4.json.RichResponseAs
-import sttp.client4.{
-  asString,
-  asStringAlways,
-  BodySerializer,
-  DeserializationException,
-  HttpError,
-  IsOption,
-  JsonInput,
-  ResponseAs,
-  ResponseException,
-  ShowError,
-  StringBody
-}
 import sttp.model.MediaType
 
 trait SttpZioJsonApi extends SttpZioJsonApiExtensions {
   import zio.json._
   private[ziojson] implicit val stringShowError: ShowError[String] = t => t
 
-  implicit def zioJsonBodySerializer[B: JsonEncoder]: BodySerializer[B] =
-    b => StringBody(b.toJson, Utf8, MediaType.ApplicationJson)
+  /** Serialize the given value as JSON, to be used as a request's body using [[sttp.client4.Request.body]]. */
+  def asJson[B: JsonEncoder](b: B): StringBody = StringBody(b.toJson, Utf8, MediaType.ApplicationJson)
 
   /** If the response is successful (2xx), tries to deserialize the body from a string into JSON. Returns:
     *   - `Right(b)` if the parsing was successful

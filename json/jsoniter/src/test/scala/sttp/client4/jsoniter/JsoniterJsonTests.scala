@@ -15,7 +15,7 @@ class JsoniterJsonTests extends AnyFlatSpec with Matchers with EitherValues {
   "The jsoniter module" should "encode arbitrary bodies given an encoder" in {
     val body = Outer(Inner(42, true, "horses"), "cats")
     val expected = """{"foo":{"a":42,"b":true,"c":"horses"},"bar":"cats"}"""
-    val req = basicRequest.body(body)
+    val req = basicRequest.body(asJson(body))
     extractBody(req) shouldBe expected
   }
 
@@ -57,7 +57,7 @@ class JsoniterJsonTests extends AnyFlatSpec with Matchers with EitherValues {
   it should "read what it writes" in {
     val outer = Outer(Inner(42, true, "horses"), "cats")
 
-    val encoded = extractBody(basicRequest.body(outer))
+    val encoded = extractBody(basicRequest.body(asJson(outer)))
     val decoded = runJsonResponseAs(asJson[Outer])(encoded)
 
     decoded.right.value shouldBe outer
@@ -65,7 +65,7 @@ class JsoniterJsonTests extends AnyFlatSpec with Matchers with EitherValues {
 
   it should "set the content type" in {
     val body = Outer(Inner(42, true, "horses"), "cats")
-    val req = basicRequest.body(body)
+    val req = basicRequest.body(asJson(body))
 
     val ct = req.headers.map(h => (h.name, h.value)).toMap.get("Content-Type")
 
@@ -74,16 +74,16 @@ class JsoniterJsonTests extends AnyFlatSpec with Matchers with EitherValues {
 
   it should "only set the content type if it was not set earlier" in {
     val body = Outer(Inner(42, true, "horses"), "cats")
-    val req = basicRequest.contentType("horses/cats").body(body)
+    val req = basicRequest.contentType("horses/cats").body(asJson(body))
 
     val ct = req.headers.map(h => (h.name, h.value)).toMap.get("Content-Type")
 
     ct shouldBe Some("horses/cats")
   }
 
-  it should "serialize from case class Person using implicit jsoniterBodySerializer" in {
+  it should "serialize from case class Person" in {
     val person = Person("John")
-    val request = basicRequest.get(Uri("http://example.org")).body(person)
+    val request = basicRequest.get(Uri("http://example.org")).body(asJson(person))
 
     val actualBody: String = request.body.show
     val actualContentType: Option[String] = request.contentType

@@ -7,8 +7,10 @@ import sttp.client4.json._
 import sttp.model._
 
 trait SttpSprayJsonApi {
-  implicit def sprayBodySerializer[B: JsonWriter](implicit printer: JsonPrinter = CompactPrinter): BodySerializer[B] =
-    b => StringBody(printer(b.toJson), Utf8, MediaType.ApplicationJson)
+
+  /** Serialize the given value as JSON, to be used as a request's body using [[sttp.client4.Request.body]]. */
+  def asJson[B: JsonWriter](b: B)(implicit printer: JsonPrinter = CompactPrinter): StringBody =
+    StringBody(printer(b.toJson), Utf8, MediaType.ApplicationJson)
 
   /** If the response is successful (2xx), tries to deserialize the body from a string into JSON. Returns:
     *   - `Right(b)` if the parsing was successful

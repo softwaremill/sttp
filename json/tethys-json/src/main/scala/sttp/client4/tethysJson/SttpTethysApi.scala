@@ -11,11 +11,11 @@ import tethys.writers.tokens.TokenWriterProducer
 
 trait SttpTethysApi {
 
-  implicit def tethysBodySerializer[B](implicit
+  /** Serialize the given value as JSON, to be used as a request's body using [[sttp.client4.Request.body]]. */
+  def asJson[B](b: B)(implicit
       jsonWriter: JsonWriter[B],
       tokenWriterProducer: TokenWriterProducer
-  ): BodySerializer[B] =
-    b => StringBody(b.asJson, Utf8, MediaType.ApplicationJson)
+  ): StringBody = StringBody(b.asJson, Utf8, MediaType.ApplicationJson)
 
   /** If the response is successful (2xx), tries to deserialize the body from a string into JSON. Returns:
     *   - `Right(b)` if the parsing was successful

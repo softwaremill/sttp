@@ -14,7 +14,7 @@ class CirceTests extends AnyFlatSpec with Matchers with EitherValues {
     val body = Outer(Inner(42, true, "horses"), "cats")
     val expected = """{"foo":{"a":42,"b":true,"c":"horses"},"bar":"cats"}"""
 
-    val req = basicRequest.body(body)
+    val req = basicRequest.body(asJson(body))
 
     extractBody(req) shouldBe expected
   }
@@ -23,7 +23,7 @@ class CirceTests extends AnyFlatSpec with Matchers with EitherValues {
     val body = Outer(Inner(42, true, "horses"), "cats")
     implicit val printer = Printer.spaces4
 
-    val req = basicRequest.body(body)
+    val req = basicRequest.body(asJson(body))
 
     extractBody(req) should include("\n    \"foo")
   }
@@ -77,7 +77,7 @@ class CirceTests extends AnyFlatSpec with Matchers with EitherValues {
   it should "encode and decode back to the same thing" in {
     val outer = Outer(Inner(42, true, "horses"), "cats")
 
-    val encoded = extractBody(basicRequest.body(outer))
+    val encoded = extractBody(basicRequest.body(asJson(outer)))
     val decoded = runJsonResponseAs(asJson[Outer])(encoded)
 
     decoded.right.value shouldBe outer
@@ -85,7 +85,7 @@ class CirceTests extends AnyFlatSpec with Matchers with EitherValues {
 
   it should "set the content type" in {
     val body = Outer(Inner(42, true, "horses"), "cats")
-    val req = basicRequest.body(body)
+    val req = basicRequest.body(asJson(body))
 
     val ct = req.headers.map(h => (h.name, h.value)).toMap.get("Content-Type")
 
@@ -94,20 +94,20 @@ class CirceTests extends AnyFlatSpec with Matchers with EitherValues {
 
   it should "only set the content type if it was not set earlier" in {
     val body = Outer(Inner(42, true, "horses"), "cats")
-    val req = basicRequest.contentType("horses/cats").body(body)
+    val req = basicRequest.contentType("horses/cats").body(asJson(body))
 
     val ct = req.headers.map(h => (h.name, h.value)).toMap.get("Content-Type")
 
     ct shouldBe Some("horses/cats")
   }
 
-  it should "serialize from JsonObject using implicit circeBodySerializer" in {
+  it should "serialize from JsonObject" in {
     import io.circe.syntax.EncoderOps
     import io.circe.JsonObject
     import sttp.model.Uri
 
     val jObject: JsonObject = JsonObject(("location", "hometown".asJson), ("bio", "Scala programmer".asJson))
-    val request: Request[Either[String, String]] = basicRequest.get(Uri("http://example.org")).body(jObject)
+    val request: Request[Either[String, String]] = basicRequest.get(Uri("http://example.org")).body(asJson(jObject))
 
     val actualBody: String = request.body.show
     val actualContentType: Option[String] = request.contentType

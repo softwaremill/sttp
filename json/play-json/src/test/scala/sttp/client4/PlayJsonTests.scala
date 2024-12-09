@@ -17,7 +17,7 @@ class PlayJsonTests extends AnyFlatSpec with Matchers with EitherValues {
     val body = Outer(Inner(42, true, "horses"), "cats")
     val expected = """{"foo":{"a":42,"b":true,"c":"horses"},"bar":"cats"}"""
 
-    val req = basicRequest.body(body)
+    val req = basicRequest.body(asJson(body))
 
     extractBody(req) shouldBe expected
   }
@@ -76,7 +76,7 @@ class PlayJsonTests extends AnyFlatSpec with Matchers with EitherValues {
   it should "read and write back to the same thing" in {
     val outer = Outer(Inner(42, true, "horses"), "cats")
 
-    val encoded = extractBody(basicRequest.body(outer))
+    val encoded = extractBody(basicRequest.body(asJson(outer)))
     val decoded = runJsonResponseAs(asJson[Outer])(encoded)
 
     decoded.value shouldBe outer
@@ -84,7 +84,7 @@ class PlayJsonTests extends AnyFlatSpec with Matchers with EitherValues {
 
   it should "set the content type" in {
     val body = Outer(Inner(42, true, "horses"), "cats")
-    val req = basicRequest.body(body)
+    val req = basicRequest.body(asJson(body))
 
     val ct = req.headers.map(h => (h.name, h.value)).toMap.get("Content-Type")
 
@@ -93,18 +93,18 @@ class PlayJsonTests extends AnyFlatSpec with Matchers with EitherValues {
 
   it should "only set the content type if it was not set earlier" in {
     val body = Outer(Inner(42, true, "horses"), "cats")
-    val req = basicRequest.contentType("horses/cats").body(body)
+    val req = basicRequest.contentType("horses/cats").body(asJson(body))
 
     val ct = req.headers.map(h => (h.name, h.value)).toMap.get("Content-Type")
 
     ct shouldBe Some("horses/cats")
   }
 
-  it should "serialize from JsObject using implicit playJsonBodySerializer" in {
+  it should "serialize from JsObject" in {
     val fields: Seq[(String, JsValue)] =
       Seq[(String, JsValue)](("location", JsString("hometown")), ("bio", JsString("Scala programmer")))
     val json: JsObject = JsObject(fields)
-    val request: Request[Either[String, String]] = basicRequest.get(Uri("http://example.org")).body(json)
+    val request: Request[Either[String, String]] = basicRequest.get(Uri("http://example.org")).body(asJson(json))
 
     val actualBody: String = request.body.show
     val actualContentType: Option[String] = request.contentType

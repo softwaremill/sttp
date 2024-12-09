@@ -16,7 +16,7 @@ class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
     val body = Outer(Inner(42, true, "horses"), "cats")
     val expected = """{"foo":{"a":42,"b":true,"c":"horses"},"bar":"cats"}"""
 
-    val req = basicRequest.body(body)
+    val req = basicRequest.body(asJson(body))
 
     extractBody(req) shouldBe expected
   }
@@ -87,7 +87,7 @@ class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
 
     val outer = Outer(Inner(42, true, "horses"), "cats")
 
-    val encoded = extractBody(basicRequest.body(outer))
+    val encoded = extractBody(basicRequest.body(asJson(outer)))
     val decoded = runJsonResponseAs(asJson[Outer])(encoded)
 
     decoded.right.value shouldBe outer
@@ -98,7 +98,7 @@ class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
     import sttp.client4.upicklejson.default._
 
     val body = Outer(Inner(42, true, "horses"), "cats")
-    val req = basicRequest.body(body)
+    val req = basicRequest.body(asJson(body))
 
     val ct = req.headers.map(h => (h.name, h.value)).toMap.get("Content-Type")
 
@@ -110,14 +110,14 @@ class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
     import sttp.client4.upicklejson.default._
 
     val body = Outer(Inner(42, true, "horses"), "cats")
-    val req = basicRequest.contentType("horses/cats").body(body)
+    val req = basicRequest.contentType("horses/cats").body(asJson(body))
 
     val ct = req.headers.map(h => (h.name, h.value)).toMap.get("Content-Type")
 
     ct shouldBe Some("horses/cats")
   }
 
-  it should "serialize ujson.Obj using implicit upickleBodySerializer" in {
+  it should "serialize ujson.Obj" in {
     import UsingDefaultReaderWriters._
     import sttp.client4.upicklejson.default._
 
@@ -125,7 +125,7 @@ class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
       "location" -> "hometown",
       "bio" -> "Scala programmer"
     )
-    val request: Request[Either[String, String]] = basicRequest.get(Uri("http://example.org")).body(json)
+    val request: Request[Either[String, String]] = basicRequest.get(Uri("http://example.org")).body(asJson(json))
 
     val actualBody: String = request.body.show
     val actualContentType: Option[String] = request.contentType
@@ -147,7 +147,7 @@ class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
     val body = Outer(Inner(42, true, "horses"), "cats")
     val expected = """{"foo":{"a":42,"b":true,"c":"horses"},"bar":"cats"}"""
 
-    val req = basicRequest.body(body)
+    val req = basicRequest.body(asJson(body))
 
     extractBody(req) shouldBe expected
   }
@@ -177,7 +177,7 @@ class UpickleTests extends AnyFlatSpec with Matchers with EitherValues {
 
   def runJsonResponseAs[A](responseAs: ResponseAs[A]): String => A =
     responseAs.delegate match {
-      case responseAs: MappedResponseAs[_, A, Nothing] =>
+      case responseAs: MappedResponseAs[_, A, Nothing] @unchecked =>
         responseAs.raw match {
           case ResponseAsByteArray =>
             s => responseAs.g(s.getBytes(Utf8), ResponseMetadata(StatusCode.Ok, "", Nil))

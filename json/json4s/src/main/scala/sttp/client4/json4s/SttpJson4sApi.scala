@@ -7,11 +7,13 @@ import sttp.client4.json._
 import sttp.model._
 
 trait SttpJson4sApi {
-  implicit def json4sBodySerializer[B <: AnyRef](implicit
+
+  /** Serialize the given value as JSON, to be used as a request's body using [[sttp.client4.Request.body]]. */
+  def asJson[B <: AnyRef](b: B)(implicit
       formats: Formats,
       serialization: Serialization
-  ): BodySerializer[B] =
-    b => StringBody(serialization.write(b), Utf8, MediaType.ApplicationJson)
+  ): StringBody =
+    StringBody(serialization.write(b), Utf8, MediaType.ApplicationJson)
 
   /** If the response is successful (2xx), tries to deserialize the body from a string into JSON. Returns:
     *   - `Right(b)` if the parsing was successful

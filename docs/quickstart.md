@@ -93,7 +93,7 @@ implicit val responseRW: ReadWriter[HttpBinResponse] = macroRW[HttpBinResponse]
 
 val request = basicRequest
   .post(uri"https://httpbin.org/post")
-  .body(MyRequest("test", 42))
+  .body(asJson(MyRequest("test", 42)))
   .response(asJson[HttpBinResponse])
 val response = request.send(backend)
 
