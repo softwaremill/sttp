@@ -41,47 +41,71 @@ trait ResponseAsDelegate[+T, -R] {
   *   Target type as which the response will be read.
   */
 case class ResponseAs[+T](delegate: GenericResponseAs[T, Any]) extends ResponseAsDelegate[T, Any] {
+
+  /** Applies the given function `f` to the deserialized value `T`. */
   def map[T2](f: T => T2): ResponseAs[T2] = ResponseAs(delegate.mapWithMetadata { case (t, _) => f(t) })
+
+  /** Applies the given function `f` to the deserialized value `T`, and the response's metadata. */
   def mapWithMetadata[T2](f: (T, ResponseMetadata) => T2): ResponseAs[T2] = ResponseAs(delegate.mapWithMetadata(f))
+
+  /** If the type to which the response body should be deserialized is an `Either[A, B]`, applies the given function `f`
+    * to `Left` values.
+    *
+    * Because of type inference, the type of `f` must be fully provided, e.g.
+    *
+    * ```
+    * asString.mapLeft((s: String) => new CustomHttpError(s))`
+    * ```
+    */
+  def mapLeft[A, B, A2](f: A => A2)(implicit tIsEither: T <:< Either[A, B]): ResponseAs[Either[A2, B]] = map(
+    _.left.map(f)
+  )
+
+  /** If the type to which the response body should be deserialized is an `Either[A, B]`, applies the given function `f`
+    * to `Right` values.
+    *
+    * Because of type inference, the type of `f` must be fully provided, e.g.
+    *
+    * ```
+    * asString.mapRight((s: String) => parse(s))`
+    * ```
+    */
+  def mapRight[A, B, B2](f: B => B2)(implicit tIsEither: T <:< Either[A, B]): ResponseAs[Either[A, B2]] = map(
+    _.right.map(f)
+  )
+
+  /** If the type to which the response body should be deserialized is an `Either[A, B]`:
+    *   - in case of `A`, throws as an exception / returns a failed effect (wrapped with an [[HttpError]] if `A` is not
+    *     yet an exception)
+    *   - in case of `B`, returns the value directly
+    */
+  def getRight[A, B](implicit tIsEither: T <:< Either[A, B]): ResponseAs[B] =
+    mapWithMetadata { case (t, meta) =>
+      (t: Either[A, B]) match {
+        case Left(a: Exception) => throw a
+        case Left(a)            => throw HttpError(a, meta.code)
+        case Right(b)           => b
+      }
+    }
+
+  /** If the type to which the response body should be deserialized is an `Either[ResponseException[HE, DE], B]`, either
+    * throws the [[DeserializationException]], returns the deserialized body from the [[HttpError]], or the deserialized
+    * successful body `B`.
+    */
+  def getEither[HE, DE, B](implicit
+      tIsEither: T <:< Either[ResponseException[HE, DE], B]
+  ): ResponseAs[Either[HE, B]] = map { t =>
+    (t: Either[ResponseException[HE, DE], B]) match {
+      case Left(HttpError(he, _))               => Left(he)
+      case Left(d: DeserializationException[_]) => throw d
+      case Right(b)                             => Right(b)
+    }
+  }
 
   def showAs(s: String): ResponseAs[T] = ResponseAs(delegate.showAs(s))
 }
 
 object ResponseAs {
-  implicit class RichResponseAsEither[A, B](ra: ResponseAs[Either[A, B]]) {
-    def mapLeft[L2](f: A => L2): ResponseAs[Either[L2, B]] = ra.map(_.left.map(f))
-    def mapRight[R2](f: B => R2): ResponseAs[Either[A, R2]] = ra.map(_.right.map(f))
-
-    /** If the type to which the response body should be deserialized is an `Either[A, B]`:
-      *   - in case of `A`, throws as an exception / returns a failed effect (wrapped with an [[HttpError]] if `A` is
-      *     not yet an exception)
-      *   - in case of `B`, returns the value directly
-      */
-    def getRight: ResponseAs[B] =
-      ra.mapWithMetadata { case (t, meta) =>
-        t match {
-          case Left(a: Exception) => throw a
-          case Left(a)            => throw HttpError(a, meta.code)
-          case Right(b)           => b
-        }
-      }
-  }
-
-  implicit class RichResponseAsEitherResponseException[HE, DE, B](
-      ra: ResponseAs[Either[ResponseException[HE, DE], B]]
-  ) {
-
-    /** If the type to which the response body should be deserialized is an `Either[ResponseException[HE, DE], B]`,
-      * either throws the [[DeserializationException]], returns the deserialized body from the [[HttpError]], or the
-      * deserialized successful body `B`.
-      */
-    def getEither: ResponseAs[Either[HE, B]] =
-      ra.map {
-        case Left(HttpError(he, _))               => Left(he)
-        case Left(d: DeserializationException[_]) => throw d
-        case Right(b)                             => Right(b)
-      }
-  }
 
   /** Returns a function, which maps `Left` values to [[HttpError]] s, and attempts to deserialize `Right` values using
     * the given function, catching any exceptions and representing them as [[DeserializationException]] s.

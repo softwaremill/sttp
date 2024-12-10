@@ -110,7 +110,7 @@ As an example, to read the response body as an int, the following response descr
 ```scala mdoc:compile-only
 import sttp.client4._
 
-val asInt: ResponseAs[Either[String, Int]] = asString.mapRight(_.toInt)
+val asInt: ResponseAs[Either[String, Int]] = asString.mapRight((_: String).toInt)
 
 basicRequest
   .get(uri"http://example.com")

@@ -53,7 +53,7 @@ trait SyncHttpTest
     "as string with mapping using map" in {
       val response = postEcho
         .body(testBody)
-        .response(asString.mapRight(_.length))
+        .response(asString.mapRight((_: String).length))
         .send(backend)
       response.body should be(Right(expectedPostEchoResponse.length))
     }
@@ -119,7 +119,7 @@ trait SyncHttpTest
     "as both string and mapped string" in {
       val response = postEcho
         .body(testBody)
-        .response(asBoth(asStringAlways, asByteArray.mapRight(_.length)))
+        .response(asBoth(asStringAlways, asByteArray.mapRight((_: Array[Byte]).length)))
         .send(backend)
 
       response.body shouldBe ((expectedPostEchoResponse, Right(expectedPostEchoResponse.getBytes.length)))
@@ -367,7 +367,7 @@ trait SyncHttpTest
     }
 
     "redirect when redirects should be followed, and the response is parsed" in {
-      val resp = r2.response(asString.mapRight(_.toInt)).send(backend)
+      val resp = r2.response(asString.mapRight((_: String).toInt)).send(backend)
       resp.code shouldBe StatusCode.Ok
       resp.body should be(Right(r4response.toInt))
     }

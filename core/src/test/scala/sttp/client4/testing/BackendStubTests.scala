@@ -60,7 +60,7 @@ class BackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
     val backend = testingStub
     val r = basicRequest
       .get(uri"http://example.org/d?p=v")
-      .response(asString.mapRight(_.toInt))
+      .response(asString.mapRight((_: String).toInt))
       .send(backend)
     r.body should be(Right(10))
   }
@@ -253,7 +253,7 @@ class BackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
     val backend = BackendStub.synchronous.whenAnyRequest.thenRespond("1234")
     basicRequest
       .get(uri"http://example.org")
-      .response(asBoth(asString.mapRight(_.toInt), asStringAlways))
+      .response(asBoth(asString.mapRight((_: String).toInt), asStringAlways))
       .send(backend)
       .body shouldBe ((Right(1234), "1234"))
   }
@@ -452,8 +452,8 @@ class BackendStubTests extends AnyFlatSpec with Matchers with ScalaFutures {
     (s.getBytes(Utf8), asString(Utf8), Some(Right(s))),
     (new ByteArrayInputStream(s.getBytes(Utf8)), asString(Utf8), Some(Right(s))),
     (10, asString(Utf8), None),
-    ("10", asString(Utf8).mapRight(_.toInt), Some(Right(10))),
-    (11, asString(Utf8).mapRight(_.toInt), None),
+    ("10", asString(Utf8).mapRight((_: String).toInt), Some(Right(10))),
+    (11, asString(Utf8).mapRight((_: String).toInt), None),
     ((), asString(Utf8), Some(Right("")))
   )
 

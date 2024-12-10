@@ -47,9 +47,11 @@ trait SttpJsoniterJsonApi {
       E: JsonValueCodec: IsOption,
       B: JsonValueCodec: IsOption
   ]: ResponseAs[Either[ResponseException[E, Exception], B]] =
-    asJson[B].mapLeft {
-      case de @ DeserializationException(_, _) => de
-      case HttpError(e, code) => deserializeJson[E].apply(e).fold(DeserializationException(e, _), HttpError(_, code))
+    asJson[B].mapLeft { (l: ResponseException[String, Exception]) =>
+      l match {
+        case de @ DeserializationException(_, _) => de
+        case HttpError(e, code) => deserializeJson[E].apply(e).fold(DeserializationException(e, _), HttpError(_, code))
+      }
     }.showAsJsonEither
 
   def deserializeJson[B: JsonValueCodec: IsOption]: String => Either[Exception, B] = { (s: String) =>

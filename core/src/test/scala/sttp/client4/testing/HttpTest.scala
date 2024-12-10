@@ -83,7 +83,7 @@ trait HttpTest[F[_]]
     "as string with mapping using map" in {
       postEcho
         .body(testBody)
-        .response(asString.mapRight(_.length))
+        .response(asString.mapRight((_: String).length))
         .send(backend)
         .toFuture()
         .map(response => response.body should be(Right(expectedPostEchoResponse.length)))
@@ -172,7 +172,7 @@ trait HttpTest[F[_]]
     "as both string and mapped string" in {
       postEcho
         .body(testBody)
-        .response(asBoth(asStringAlways, asByteArray.mapRight(_.length)))
+        .response(asBoth(asStringAlways, asByteArray.mapRight((_: Array[Byte]).length)))
         .send(backend)
         .toFuture()
         .map { response =>
