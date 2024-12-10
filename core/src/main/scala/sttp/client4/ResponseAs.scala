@@ -79,7 +79,7 @@ case class ResponseAs[+T](delegate: GenericResponseAs[T, Any]) extends ResponseA
     *     yet an exception)
     *   - in case of `B`, returns the value directly
     */
-  def getRight[A, B](implicit tIsEither: T <:< Either[A, B]): ResponseAs[B] =
+  def orFail[A, B](implicit tIsEither: T <:< Either[A, B]): ResponseAs[B] =
     mapWithMetadata { case (t, meta) =>
       (t: Either[A, B]) match {
         case Left(a: Exception) => throw a
@@ -89,10 +89,10 @@ case class ResponseAs[+T](delegate: GenericResponseAs[T, Any]) extends ResponseA
     }
 
   /** If the type to which the response body should be deserialized is an `Either[ResponseException[HE, DE], B]`, either
-    * throws the [[DeserializationException]], returns the deserialized body from the [[HttpError]], or the deserialized
-    * successful body `B`.
+    * throws /returns a failed effect with the [[DeserializationException]], returns the deserialized body from the
+    * [[HttpError]], or the deserialized successful body `B`.
     */
-  def getEither[HE, DE, B](implicit
+  def orFailDeserialization[HE, DE, B](implicit
       tIsEither: T <:< Either[ResponseException[HE, DE], B]
   ): ResponseAs[Either[HE, B]] = map { t =>
     (t: Either[ResponseException[HE, DE], B]) match {

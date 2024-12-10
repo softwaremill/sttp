@@ -171,13 +171,13 @@ case class Request[T](
 object Request {
   implicit class RichRequestTEither[A, B](r: Request[Either[A, B]]) {
     def mapResponseRight[B2](f: B => B2): Request[Either[A, B2]] = r.copy(response = r.response.mapRight(f))
-    def responseGetRight: Request[B] = r.copy(response = r.response.getRight)
+    def responseGetRight: Request[B] = r.copy(response = r.response.orFail)
   }
 
   implicit class RichRequestTEitherResponseException[HE, DE, B](
       r: Request[Either[ResponseException[HE, DE], B]]
   ) {
-    def responseGetEither: Request[Either[HE, B]] = r.copy(response = r.response.getEither)
+    def responseGetEither: Request[Either[HE, B]] = r.copy(response = r.response.orFailDeserialization)
   }
 }
 
