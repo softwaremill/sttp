@@ -1,26 +1,33 @@
-package sttp.client4
+package sttp.client4.sprayJson
 
 import org.scalatest.EitherValues
 import spray.json.DefaultJsonProtocol._
-import spray.json.DefaultJsonProtocol.RootJsObjectFormat
-import spray.json.JsonParser.ParsingException
 import spray.json.{DeserializationException => _, _}
-import sttp.client4.SprayJsonTests._
 import sttp.client4.internal.Utf8
-import sttp.client4.sprayJson.{sprayBodySerializer, _}
 import sttp.model._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import sttp.client4.basicRequest
+import sttp.client4.ResponseAs
+import sttp.client4.PartialRequest
+import sttp.client4.StringBody
+import sttp.client4.MappedResponseAs
+import sttp.client4.ResponseAsByteArray
+import sttp.client4.Request
+import sttp.client4.DeserializationException
+import spray.json.JsonParser.ParsingException
 
 class SprayJsonTests extends AnyFlatSpec with Matchers with EitherValues {
+  import SprayJsonTests._
+
   behavior of "The spray-json module"
 
-  implicit private val jsObjectSerializer: BodySerializer[JsObject] = sprayBodySerializer(RootJsObjectFormat)
+  // implicit private val jsObjectSerializer: BodySerializer[JsObject] = sprayBodySerializer(RootJsObjectFormat)
 
   it should "encode arbitrary json bodies" in {
     val body = Outer(Inner(42, true, "horses"), "cats")
 
-    val req = basicRequest.body(body)
+    val req = basicRequest.body(asJson(body))
 
     extractBody(req) should include(""""foo":{"a":42,"b":true,"c":"horses"}""")
     extractBody(req) should include(""""bar":"cats"""")
@@ -73,7 +80,7 @@ class SprayJsonTests extends AnyFlatSpec with Matchers with EitherValues {
 
   it should "set the content type" in {
     val body = Outer(Inner(42, true, "horses"), "cats")
-    val req = basicRequest.body(body)
+    val req = basicRequest.body(asJson(body))
 
     val ct = req.headers.map(h => (h.name, h.value)).toMap.get("Content-Type")
 
@@ -85,7 +92,7 @@ class SprayJsonTests extends AnyFlatSpec with Matchers with EitherValues {
       "location" -> "hometown".toJson,
       "bio" -> "Scala programmer".toJson
     )
-    val request: Request[Either[String, String]] = basicRequest.get(Uri("http://example.org")).body(json)
+    val request: Request[Either[String, String]] = basicRequest.get(Uri("http://example.org")).body(asJson(json))
 
     val actualBody: String = request.body.show
     val actualContentType: Option[String] = request.contentType
@@ -107,7 +114,7 @@ class SprayJsonTests extends AnyFlatSpec with Matchers with EitherValues {
 
   def runJsonResponseAs[A](responseAs: ResponseAs[A]): String => A =
     responseAs.delegate match {
-      case responseAs: MappedResponseAs[_, A, Nothing] =>
+      case responseAs: MappedResponseAs[_, A, Nothing] @unchecked =>
         responseAs.raw match {
           case ResponseAsByteArray =>
             s => responseAs.g(s.getBytes(Utf8), ResponseMetadata(StatusCode.Ok, "", Nil))

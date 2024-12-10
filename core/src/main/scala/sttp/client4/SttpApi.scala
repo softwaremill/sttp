@@ -200,8 +200,8 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
     )
 
   /** Content type will be set to `application/octet-stream`, can be overridden later using the `contentType` method. */
-  def multipart[B: BodySerializer](name: String, b: B): Part[BasicBodyPart] =
-    Part(name, implicitly[BodySerializer[B]].apply(b), contentType = Some(MediaType.ApplicationXWwwFormUrlencoded))
+  def multipart(name: String, b: BasicBodyPart): Part[BasicBodyPart] =
+    Part(name, b, contentType = Some(MediaType.ApplicationXWwwFormUrlencoded))
 
   // stream response specifications
 
