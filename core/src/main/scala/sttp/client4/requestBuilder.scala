@@ -19,6 +19,8 @@ import java.io.InputStream
 import java.nio.ByteBuffer
 import scala.concurrent.duration.Duration
 import scala.collection.immutable.Seq
+import sttp.attributes.AttributeKey
+import sttp.attributes.AttributeMap
 
 /** The builder methods of requests or partial requests of type `PR`.
   *
@@ -43,8 +45,8 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
   def response: ResponseAsDelegate[_, _]
   def options: RequestOptions
 
-  /** Request-specific tags which can be used by backends for logging, metrics, etc. Empty by default. */
-  def tags: Map[String, Any]
+  /** Request-specific attributes which can be used by backends for logging, metrics, etc. Empty by default. */
+  def attributes: AttributeMap
 
   /** Set the method & uri to the given ones. */
   def method(method: Method, uri: Uri): R
@@ -55,8 +57,8 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
   /** Replace all options with the given ones. */
   def withOptions(options: RequestOptions): PR
 
-  /** Replace all tags with the given ones. */
-  def withTags(tags: Map[String, Any]): PR
+  /** Replace attributes with the given ones. */
+  def withAttributes(attributes: AttributeMap): PR
 
   protected def copyWithBody(body: BasicBody): PR
 
@@ -121,10 +123,21 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
     */
   def headers(hs: Header*): PR = hs.foldLeft(this)(_.header(_))
 
+  /** Allows specifying basic, token, bearer (in the `Authorization` header) or digest authentication for this request.
+    */
   def auth: SpecifyAuthScheme[PR] =
-    new SpecifyAuthScheme[PR](HeaderNames.Authorization, this, DigestAuthenticationBackend.DigestAuthTag)
+    new SpecifyAuthScheme[PR](HeaderNames.Authorization, this, DigestAuthenticationBackend.DigestAuthAttributeKey)
+
+  /** Allows specifying basic, token, bearer (in the `Proxy-Authorization` header) or digest proxy authentication for
+    * this request.
+    */
   def proxyAuth: SpecifyAuthScheme[PR] =
-    new SpecifyAuthScheme[PR](HeaderNames.ProxyAuthorization, this, DigestAuthenticationBackend.ProxyDigestAuthTag)
+    new SpecifyAuthScheme[PR](
+      HeaderNames.ProxyAuthorization,
+      this,
+      DigestAuthenticationBackend.ProxyDigestAuthAttributeKey
+    )
+
   def acceptEncoding(encoding: String): PR = header(HeaderNames.AcceptEncoding, encoding)
 
   /** Adds the given cookie. Any previously defined cookies are left intact. */
@@ -288,10 +301,6 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
     */
   def redirectToGet(r: Boolean): PR = withOptions(options.copy(redirectToGet = r))
 
-  def tag(k: String, v: Any): PR = withTags(tags + (k -> v))
-
-  def tag(k: String): Option[Any] = tags.get(k)
-
   /** Disables auto-decompression of response bodies which are received with supported `Content-Encoding headers. */
   def disableAutoDecompression: PR = withOptions(options.copy(disableAutoDecompression = true))
 
@@ -341,6 +350,12 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
     */
   def loggingOptions: LoggingOptions = options.loggingOptions
 
+  /** Reads a per-request attribute for the given key, if present. */
+  def attribute[T](k: AttributeKey[T]): Option[T] = attributes.get(k)
+
+  /** Sets a per-request attribute for the given key, with the given value. */
+  def attribute[T](k: AttributeKey[T], v: T): PR = withAttributes(attributes.put(k, v))
+
   def show(
       includeBody: Boolean = true,
       includeHeaders: Boolean = true,
@@ -359,8 +374,8 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
   * @param response
   *   Description of how the response body should be handled. Needs to be specified upfront so that the response is
   *   always consumed and hence there are no requirements on client code to consume it.
-  * @param tags
-  *   Request-specific tags which can be used by backends for logging, metrics, etc. Empty by default.
+  * @param attributes
+  *   Request-specific attributes which can be used by backends for logging, metrics, etc. Empty by default.
   * @tparam T
   *   The target type, to which the response body should be read.
   */
@@ -369,16 +384,16 @@ final case class PartialRequest[T](
     headers: Seq[Header],
     response: ResponseAs[T],
     options: RequestOptions,
-    tags: Map[String, Any]
+    attributes: AttributeMap
 ) extends PartialRequestBuilder[PartialRequest[T], Request[T]] {
 
   override def showBasic: String = "(no method & uri set)"
 
   override def method(method: Method, uri: Uri): Request[T] =
-    Request(method, uri, body, headers, response, options, tags)
+    Request(method, uri, body, headers, response, options, attributes)
   override def withHeaders(headers: Seq[Header]): PartialRequest[T] = copy(headers = headers)
   override def withOptions(options: RequestOptions): PartialRequest[T] = copy(options = options)
-  override def withTags(tags: Map[String, Any]): PartialRequest[T] = copy(tags = tags)
+  override def withAttributes(attributes: AttributeMap): PartialRequest[T] = copy(attributes = attributes)
   override protected def copyWithBody(body: BasicBody): PartialRequest[T] = copy(body = body)
   def response[T2](ra: ResponseAs[T2]): PartialRequest[T2] = copy(response = ra)
 }

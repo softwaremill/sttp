@@ -10,13 +10,13 @@ Possible use-cases for wrapper-backend include:
 
 See also the section on [resilience](../../resilience.md) which covers topics such as retries, circuit breaking and rate limiting.
 
-## Request tagging
+## Request attributes
 
-Each request contains a `tags: Map[String, Any]` map. This map can be used to tag the request with any backend-specific information, and isn't used in any way by sttp itself.
+Each request contains a `attributes: AttributeMap` type-safe map. This map can be used to tag the request with any backend-specific information, and isn't used in any way by sttp itself.
 
-Tags can be added to a request using the `def tag(k: String, v: Any)` method, and read using the `def tag(k: String): Option[Any]` method.
+Attributes can be added to a request using the `def attribute[T](k: AttributeKey[T], v: T)` method, and read using the `def attribute[T](k: Attribute[T]): Option[T]` method.
 
-Backends, or backend wrappers can use tags e.g. for logging, passing a metric name, using different connection pools, or even different delegate backends.
+Backends, or backend wrappers can use attributes e.g. for logging, passing a metric name, using different connection pools, or even different delegate backends.
 
 ## Listener backend
 
