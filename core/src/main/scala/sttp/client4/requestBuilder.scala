@@ -292,35 +292,28 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
 
   def tag(k: String): Option[Any] = tags.get(k)
 
-  private val disableAutoDecompressionKey = "disableAutoDecompression"
+  /** Disables auto-decompression of response bodies which are received with supported `Content-Encoding headers. */
+  def disableAutoDecompression: PR = withOptions(options.copy(disableAutoDecompression = true))
 
-  // Used as a workaround to keep binary compatibility
-  // TODO: replace with additional parameter in RequestOptions when writing sttp4
-  def disableAutoDecompression: PR = tag(disableAutoDecompressionKey, true)
+  /** True iff auto-decompression is disabled.
+    *
+    * @see
+    *   disableAutoDecompression
+    */
+  def autoDecompressionDisabled: Boolean = options.disableAutoDecompression
 
-  def autoDecompressionDisabled: Boolean = tags.getOrElse(disableAutoDecompressionKey, false).asInstanceOf[Boolean]
-
-  private val httpVersionKey = "httpVersion"
-
-  // Used as a workaround to keep binary compatibility
-  // TODO: replace with additional parameter in RequestOptions when writing sttp4
   // TODO: add similar functionality to Response
 
-  /** Allows setting HTTP version per request. Supported only is a few backends
-    *
-    * @param version:
-    *   one of values from [[HttpVersion]] enum.
-    * @return
-    *   request with version tag
-    */
-  def httpVersion(version: HttpVersion): PR = tag(httpVersionKey, version)
+  /** Set the HTTP version with which this request should be sent. Supported only in a few backends. */
+  def httpVersion(version: HttpVersion): PR = withOptions(options.copy(httpVersion = Some(version)))
 
-  /** Get[[HttpVersion]] from tags in request. Supported only is a few backends
+  /** Get the [[HttpVersion]], with which this request should be sent, if any. Setting the HTTP version is supported
+    * only in a few backends.
     *
     * @return
-    *   one of values form [[HttpVersion]] enum or [[None]]
+    *   [[None]], if the request will be sent with the backend-default HTTP version.
     */
-  def httpVersion: Option[HttpVersion] = tags.get(httpVersionKey).map(_.asInstanceOf[HttpVersion])
+  def httpVersion: Option[HttpVersion] = options.httpVersion
 
   private val loggingOptionsTagKey = "loggingOptions"
 
