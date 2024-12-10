@@ -302,8 +302,6 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
     */
   def autoDecompressionDisabled: Boolean = options.disableAutoDecompression
 
-  // TODO: add similar functionality to Response
-
   /** Set the HTTP version with which this request should be sent. Supported only in a few backends. */
   def httpVersion(version: HttpVersion): PR = withOptions(options.copy(httpVersion = Some(version)))
 
@@ -315,30 +313,33 @@ trait PartialRequestBuilder[+PR <: PartialRequestBuilder[PR, R], +R]
     */
   def httpVersion: Option[HttpVersion] = options.httpVersion
 
-  private val loggingOptionsTagKey = "loggingOptions"
-
-  /** Will only have effect when using the `LoggingBackend` */
-  def logSettings(
+  /** Sets per-request logging options. Will only have effect when using the [[sttp.client4.logging.LoggingBackend]]
+    * wrapper.
+    */
+  def loggingOptions(
       logRequestBody: Option[Boolean] = None,
       logResponseBody: Option[Boolean] = None,
       logRequestHeaders: Option[Boolean] = None,
       logResponseHeaders: Option[Boolean] = None
-  ): PR = {
-    val loggingOptions = LoggingOptions(
-      logRequestBody = logRequestBody,
-      logResponseBody = logResponseBody,
-      logRequestHeaders = logRequestHeaders,
-      logResponseHeaders = logResponseHeaders
+  ): PR = withOptions(
+    options.copy(loggingOptions =
+      LoggingOptions(
+        logRequestBody = logRequestBody,
+        logResponseBody = logResponseBody,
+        logRequestHeaders = logRequestHeaders,
+        logResponseHeaders = logResponseHeaders
+      )
     )
-    this.tag(loggingOptionsTagKey, loggingOptions)
-  }
+  )
 
-  def logSettings(
-      loggingOptions: Option[LoggingOptions]
-  ): PR =
-    this.tag(loggingOptionsTagKey, loggingOptions)
+  /** Sets per-request logging options. Will only have effect when using the [[sttp.client4.logging.LoggingBackend]]
+    * wrapper.
+    */
+  def loggingOptions(loggingOptions: LoggingOptions): PR = withOptions(options.copy(loggingOptions = loggingOptions))
 
-  def loggingOptions: Option[LoggingOptions] = tag(loggingOptionsTagKey).asInstanceOf[Option[LoggingOptions]]
+  /** The per-request logging options, which have effect when using the [[sttp.client4.logging.LoggingBackend]] wrapper.
+    */
+  def loggingOptions: LoggingOptions = options.loggingOptions
 
   def show(
       includeBody: Boolean = true,

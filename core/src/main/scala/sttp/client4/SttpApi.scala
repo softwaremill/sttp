@@ -10,6 +10,7 @@ import scala.concurrent.duration._
 import sttp.capabilities.Streams
 import sttp.capabilities.Effect
 import sttp.client4.wrappers.FollowRedirectsBackend
+import sttp.client4.logging.LoggingOptions
 
 trait SttpApi extends SttpExtensions with UriInterpolator {
   val DefaultReadTimeout: Duration = 1.minute
@@ -30,7 +31,8 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
         FollowRedirectsBackend.MaxRedirects,
         redirectToGet = false,
         disableAutoDecompression = false,
-        httpVersion = None
+        httpVersion = None,
+        loggingOptions = LoggingOptions()
       ),
       Map()
     )

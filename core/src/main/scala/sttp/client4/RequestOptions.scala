@@ -2,6 +2,7 @@ package sttp.client4
 
 import scala.concurrent.duration.Duration
 import sttp.model.HttpVersion
+import sttp.client4.logging.LoggingOptions
 
 case class RequestOptions(
     followRedirects: Boolean,
@@ -9,5 +10,6 @@ case class RequestOptions(
     maxRedirects: Int,
     redirectToGet: Boolean,
     disableAutoDecompression: Boolean,
-    httpVersion: Option[HttpVersion]
+    httpVersion: Option[HttpVersion],
+    loggingOptions: LoggingOptions
 )
