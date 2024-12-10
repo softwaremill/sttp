@@ -17,6 +17,7 @@ import sttp.client4.{
 }
 import sttp.model.Header
 import sttp.monad.syntax._
+import sttp.attributes.AttributeKey
 
 abstract class DigestAuthenticationBackend[F[_], P] private (
     delegate: GenericBackend[F, P],
@@ -27,13 +28,18 @@ abstract class DigestAuthenticationBackend[F[_], P] private (
     delegate
       .send(request)
       .flatMap { firstResponse =>
-        handleResponse(request, firstResponse, ProxyDigestAuthTag, DigestAuthenticator.proxy(_, clientNonceGenerator))
+        handleResponse(
+          request,
+          firstResponse,
+          ProxyDigestAuthAttributeKey,
+          DigestAuthenticator.proxy(_, clientNonceGenerator)
+        )
       }
       .flatMap { case (secondResponse, proxyAuthHeader) =>
         handleResponse(
           proxyAuthHeader.map(h => request.header(h)).getOrElse(request),
           secondResponse,
-          DigestAuthTag,
+          DigestAuthAttributeKey,
           DigestAuthenticator.apply(_, clientNonceGenerator)
         ).map(_._1)
       }
@@ -41,12 +47,11 @@ abstract class DigestAuthenticationBackend[F[_], P] private (
   private def handleResponse[T](
       request: GenericRequest[T, P with Effect[F]],
       response: Response[T],
-      digestTag: String,
+      digestAttributeKey: AttributeKey[DigestAuthenticator.DigestAuthData],
       digestAuthenticator: DigestAuthData => DigestAuthenticator
   ): F[(Response[T], Option[Header])] =
     request
-      .tag(digestTag)
-      .map(_.asInstanceOf[DigestAuthData])
+      .attribute(digestAttributeKey)
       .flatMap { digestAuthData =>
         val header = digestAuthenticator(digestAuthData).authenticate(request, response)
         header.map(h => delegate.send(request.header(h)).map(_ -> Option(h)))
@@ -81,6 +86,10 @@ object DigestAuthenticationBackend {
   ): WebSocketStreamBackend[F, S] =
     new DigestAuthenticationBackend(delegate, clientNonceGenerator) with WebSocketStreamBackend[F, S] {}
 
-  private[client4] val DigestAuthTag = "__sttp_DigestAuth"
-  private[client4] val ProxyDigestAuthTag = "__sttp_ProxyDigestAuth"
+  private[client4] val DigestAuthAttributeKey = new AttributeKey[DigestAuthenticator.DigestAuthData](
+    "sttp.client4.internal.DigestAuthenticator.DigestAuthData.direct"
+  )
+  private[client4] val ProxyDigestAuthAttributeKey = new AttributeKey[DigestAuthenticator.DigestAuthData](
+    "sttp.client4.internal.DigestAuthenticator.DigestAuthData.proxy"
+  )
 }

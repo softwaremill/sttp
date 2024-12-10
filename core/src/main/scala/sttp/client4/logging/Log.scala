@@ -57,15 +57,11 @@ class DefaultLog[F[_]](
 ) extends Log[F] {
 
   def beforeRequestSend(request: GenericRequest[_, _]): F[Unit] =
-    request.loggingOptions match {
-      case Some(options) =>
-        before(
-          request,
-          options.logRequestBody.getOrElse(logRequestBody),
-          options.logRequestHeaders.getOrElse(logRequestHeaders)
-        )
-      case None => before(request, logRequestBody, logRequestHeaders)
-    }
+    before(
+      request,
+      request.loggingOptions.logRequestBody.getOrElse(logRequestBody),
+      request.loggingOptions.logRequestHeaders.getOrElse(logRequestHeaders)
+    )
 
   private def before(request: GenericRequest[_, _], _logRequestBody: Boolean, _logRequestHeaders: Boolean): F[Unit] =
     logger(
@@ -82,19 +78,14 @@ class DefaultLog[F[_]](
       response: Response[_],
       responseBody: Option[String],
       elapsed: Option[Duration]
-  ): F[Unit] = request.loggingOptions match {
-    case Some(options) =>
-      handleResponse(
-        request.showBasic,
-        response,
-        responseBody,
-        options.logResponseBody.getOrElse(responseBody.isDefined),
-        options.logResponseHeaders.getOrElse(logResponseHeaders),
-        elapsed
-      )
-    case None =>
-      handleResponse(request.showBasic, response, responseBody, responseBody.isDefined, logResponseHeaders, elapsed)
-  }
+  ): F[Unit] = handleResponse(
+    request.showBasic,
+    response,
+    responseBody,
+    request.loggingOptions.logResponseBody.getOrElse(responseBody.isDefined),
+    request.loggingOptions.logResponseHeaders.getOrElse(logResponseHeaders),
+    elapsed
+  )
 
   private def handleResponse(
       showBasic: String,

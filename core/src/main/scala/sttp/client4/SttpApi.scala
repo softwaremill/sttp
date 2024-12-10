@@ -2,16 +2,16 @@ package sttp.client4
 
 import sttp.client4.internal._
 import sttp.model._
-import sttp.ws.WebSocket
 
 import java.io.InputStream
 import java.nio.ByteBuffer
 import scala.collection.immutable.Seq
 import scala.concurrent.duration._
 import sttp.capabilities.Streams
-import sttp.ws.WebSocketFrame
 import sttp.capabilities.Effect
 import sttp.client4.wrappers.FollowRedirectsBackend
+import sttp.client4.logging.LoggingOptions
+import sttp.attributes.AttributeMap
 
 trait SttpApi extends SttpExtensions with UriInterpolator {
   val DefaultReadTimeout: Duration = 1.minute
@@ -30,9 +30,12 @@ trait SttpApi extends SttpExtensions with UriInterpolator {
         followRedirects = true,
         DefaultReadTimeout,
         FollowRedirectsBackend.MaxRedirects,
-        redirectToGet = false
+        redirectToGet = false,
+        disableAutoDecompression = false,
+        httpVersion = None,
+        loggingOptions = LoggingOptions()
       ),
-      Map()
+      AttributeMap.Empty
     )
 
   /** A starting request, with the following modification comparing to [[emptyRequest]]: `Accept-Encoding` is set to

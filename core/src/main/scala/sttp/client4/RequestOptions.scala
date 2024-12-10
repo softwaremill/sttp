@@ -1,10 +1,16 @@
 package sttp.client4
 
 import scala.concurrent.duration.Duration
+import sttp.model.HttpVersion
+import sttp.client4.logging.LoggingOptions
 
+/** Options for a [[Request]]. The defaults can be found on [[emptyRequest]]. */
 case class RequestOptions(
     followRedirects: Boolean,
-    readTimeout: Duration, // TODO: Use FiniteDuration while migrating to sttp-4
+    readTimeout: Duration,
     maxRedirects: Int,
-    redirectToGet: Boolean
+    redirectToGet: Boolean,
+    disableAutoDecompression: Boolean,
+    httpVersion: Option[HttpVersion],
+    loggingOptions: LoggingOptions
 )
