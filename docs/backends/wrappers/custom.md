@@ -42,6 +42,7 @@ Below is an example on how to implement a backend wrapper, which sends
 metrics for completed requests and wraps any `Future`-based backend:
 
 ```scala mdoc:compile-only
+import sttp.attributes.AttributeKey
 import sttp.capabilities.Effect
 import sttp.client4._
 import sttp.client4.akkahttp._
@@ -49,6 +50,7 @@ import sttp.client4.wrappers.DelegateBackend
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util._
+
 // the metrics infrastructure
 trait MetricsServer {
   def reportDuration(name: String, duration: Long): Unit
@@ -57,6 +59,9 @@ trait MetricsServer {
 class CloudMetricsServer extends MetricsServer {
   override def reportDuration(name: String, duration: Long): Unit = ???
 }
+
+case class MetricPrefix(prefix: String)
+val MetricPrefixAttributeKey = AttributeKey[MetricPrefix]
 
 // the backend wrapper
 abstract class MetricWrapper[P](delegate: GenericBackend[Future, P],
@@ -67,7 +72,7 @@ abstract class MetricWrapper[P](delegate: GenericBackend[Future, P],
     val start = System.currentTimeMillis()
 
     def report(metricSuffix: String): Unit = {
-      val metricPrefix = request.tag("metric").getOrElse("?")
+      val metricPrefix = request.attribute(MetricPrefixAttributeKey).getOrElse(MetricPrefix("?"))
       val end = System.currentTimeMillis()
       metrics.reportDuration(metricPrefix + "-" + metricSuffix, end - start)
     }
@@ -93,7 +98,7 @@ val backend = MetricWrapper(AkkaHttpBackend(), new CloudMetricsServer())
 
 basicRequest
   .get(uri"http://company.com/api/service1")
-  .tag("metric", "service1")
+  .attribute(MetricPrefixAttributeKey, MetricPrefix("service1"))
   .send(backend)
 ```
 
