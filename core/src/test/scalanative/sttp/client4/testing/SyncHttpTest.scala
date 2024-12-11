@@ -61,7 +61,7 @@ trait SyncHttpTest
     "as string with mapping using mapResponse" in {
       val response = postEcho
         .body(testBody)
-        .response(asString.mapRight((_: String).length))
+        .mapResponseRight(_.length)
         .send(backend)
       response.body should be(Right(expectedPostEchoResponse.length))
     }

@@ -28,7 +28,6 @@ import sttp.attributes.AttributeMap
 trait GenericRequest[+T, -R] extends RequestBuilder[GenericRequest[T, R]] with RequestMetadata {
   def body: GenericRequestBody[R]
   def response: ResponseAsDelegate[T, R]
-
   def mapResponse[T2](f: T => T2): GenericRequest[T2, R]
 
   def toCurl: String = ToCurlConverter(this)
@@ -167,6 +166,19 @@ case class Request[T](
     * unchanged.
     */
   def send(backend: SyncBackend): Response[T] = backend.send(this)
+}
+
+object Request {
+  implicit class RichRequestTEither[A, B](r: Request[Either[A, B]]) {
+    def mapResponseRight[B2](f: B => B2): Request[Either[A, B2]] = r.copy(response = r.response.mapRight(f))
+    def responseGetRight: Request[B] = r.copy(response = r.response.orFail)
+  }
+
+  implicit class RichRequestTEitherResponseException[HE, DE, B](
+      r: Request[Either[ResponseException[HE, DE], B]]
+  ) {
+    def responseGetEither: Request[Either[HE, B]] = r.copy(response = r.response.orFailDeserialization)
+  }
 }
 
 //
